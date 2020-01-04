@@ -21,6 +21,7 @@ NS_IMPL_ADDREF_INHERITED(nsHostObjectURI, mozilla::net::nsSimpleURI)
 NS_IMPL_RELEASE_INHERITED(nsHostObjectURI, mozilla::net::nsSimpleURI)
 
 NS_INTERFACE_MAP_BEGIN(nsHostObjectURI)
+  NS_INTERFACE_MAP_ENTRY(nsIURIWithBlobImpl)
   NS_INTERFACE_MAP_ENTRY(nsIURIWithPrincipal)
   if (aIID.Equals(kHOSTOBJECTURICID))
     foundInterface = static_cast<nsIURI*>(this);
@@ -33,6 +34,16 @@ NS_INTERFACE_MAP_BEGIN(nsHostObjectURI)
   }
   else
 NS_INTERFACE_MAP_END_INHERITING(mozilla::net::nsSimpleURI)
+
+
+
+NS_IMETHODIMP
+nsHostObjectURI::GetBlobImpl(nsISupports** aBlobImpl)
+{
+  RefPtr<BlobImpl> blobImpl(mBlobImpl);
+  blobImpl.forget(aBlobImpl);
+  return NS_OK;
+}
 
 
 
@@ -126,6 +137,10 @@ nsHostObjectURI::Deserialize(const mozilla::ipc::URIParams& aParams)
   if (!mozilla::net::nsSimpleURI::Deserialize(hostParams.simpleParams())) {
     return false;
   }
+
+  
+  
+
   if (hostParams.principal().type() == OptionalPrincipalInfo::Tvoid_t) {
     return true;
   }
@@ -162,6 +177,7 @@ nsHostObjectURI::CloneInternal(mozilla::net::nsSimpleURI::RefHandlingEnum aRefHa
   nsHostObjectURI* u = static_cast<nsHostObjectURI*>(simpleClone.get());
 
   u->mPrincipal = mPrincipal;
+  u->mBlobImpl = mBlobImpl;
 
   simpleClone.forget(aClone);
   return NS_OK;
@@ -191,6 +207,9 @@ nsHostObjectURI::EqualsInternal(nsIURI* aOther,
   }
 
   
+  
+  
+
   if (mPrincipal && otherUri->mPrincipal) {
     
     return mPrincipal->Equals(otherUri->mPrincipal, aResult);
