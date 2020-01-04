@@ -979,7 +979,7 @@ loop.store.ActiveRoomStore = (function() {
     endScreenShare: function() {
       if (this._browserSharingListener) {
         
-        loop.request("RemoveBrowserSharingListener", this.getStoreState().windowId);
+        loop.request("RemoveBrowserSharingListener");
         loop.unsubscribe("BrowserSwitch", this._browserSharingListener);
         this._browserSharingListener = null;
       }
@@ -1117,8 +1117,13 @@ loop.store.ActiveRoomStore = (function() {
         loop.standaloneMedia.multiplexGum.reset();
       }
 
+      var requests = [
+        ["SetScreenShareState", this.getStoreState().windowId, false]
+      ];
+
       if (this._browserSharingListener) {
         
+        requests.push(["RemoveBrowserSharingListener"]);
         loop.unsubscribe("BrowserSwitch", this._browserSharingListener);
         this._browserSharingListener = null;
       }
@@ -1140,14 +1145,16 @@ loop.store.ActiveRoomStore = (function() {
         delete this._timeout;
       }
 
-      
-      
-      
-      
-      if ((nextState === ROOM_STATES.FAILED || !this._isDesktop) && !failedJoinRequest) {
-        loop.request("HangupNow", this._storeState.roomToken,
-          this._storeState.sessionToken, this._storeState.windowId);
+      if (!failedJoinRequest &&
+          (this._storeState.roomState === ROOM_STATES.JOINING ||
+           this._storeState.roomState === ROOM_STATES.JOINED ||
+           this._storeState.roomState === ROOM_STATES.SESSION_CONNECTED ||
+           this._storeState.roomState === ROOM_STATES.HAS_PARTICIPANTS)) {
+        requests.push(["Rooms:Leave", this._storeState.roomToken,
+          this._storeState.sessionToken]);
       }
+
+      loop.requestMulti.apply(null, requests);
 
       this.setStoreState({ roomState: nextState });
     },

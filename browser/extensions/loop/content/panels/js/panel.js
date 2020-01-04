@@ -819,7 +819,7 @@ loop.panel = (function(_, mozL10n) {
       loop.request("GetSelectedTabMetadata").then(function(metadata) {
         
         
-        if (!this.isMounted() || !metadata) {
+        if (!this.isMounted()) {
           return;
         }
 

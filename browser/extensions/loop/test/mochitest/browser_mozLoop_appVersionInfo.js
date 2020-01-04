@@ -2,6 +2,7 @@
 
 "use strict";
 
+const { LoopAPI } = Cu.import("chrome://loop/content/modules/MozLoopAPI.jsm", {});
 var [, gHandlers] = LoopAPI.inspect();
 
 add_task(function* test_mozLoop_appVersionInfo() {

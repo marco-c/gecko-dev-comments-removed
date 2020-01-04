@@ -123,7 +123,7 @@ const updateSocialProvidersCache = function() {
 };
 
 var gAppVersionInfo = null;
-var gBrowserSharingListeners = new Set();
+var gBrowserSharingListenerCount = 0;
 var gBrowserSharingWindows = new Set();
 var gPageListeners = null;
 var gOriginalPageListeners = null;
@@ -139,8 +139,6 @@ const kPushSubscription = "pushSubscription";
 const kRoomsPushPrefix = "Rooms:";
 const kMessageHandlers = {
   
-
-
 
 
 
@@ -171,13 +169,10 @@ const kMessageHandlers = {
       return;
     }
 
-    let [windowId] = message.data;
-
     win.LoopUI.startBrowserSharing();
 
     gBrowserSharingWindows.add(Cu.getWeakReference(win));
-    gBrowserSharingListeners.add(windowId);
-    reply();
+    ++gBrowserSharingListenerCount;
   },
 
   
@@ -238,14 +233,13 @@ const kMessageHandlers = {
 
 
 
-  ComposeEmail: function(message, reply) {
+  ComposeEmail: function(message) {
     let [subject, body, recipient] = message.data;
     recipient = recipient || "";
     let mailtoURL = "mailto:" + encodeURIComponent(recipient) +
                     "?subject=" + encodeURIComponent(subject) +
                     "&body=" + encodeURIComponent(body);
     extProtocolSvc.loadURI(CommonUtils.makeURI(mailtoURL));
-    reply();
   },
 
   
@@ -369,7 +363,6 @@ const kMessageHandlers = {
       TWO_WAY_MEDIA_CONN_LENGTH: TWO_WAY_MEDIA_CONN_LENGTH
     });
   },
-
   
 
 
@@ -694,45 +687,8 @@ const kMessageHandlers = {
   
 
 
-
-
-
-
-
-
-
-  HangupAllChatWindows: function(message, reply) {
+  HangupAllChatWindows: function() {
     MozLoopService.hangupAllChatWindows();
-    reply();
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  HangupNow: function(message, reply) {
-    let [roomToken, sessionToken, windowId] = message.data;
-    if (!windowId) {
-      windowId = sessionToken;
-    }
-
-    LoopRooms.leave(roomToken);
-    MozLoopService.setScreenShareState(windowId, false);
-    LoopAPI.sendMessageToHandler({
-      name: "RemoveBrowserSharingListener",
-      data: [windowId]
-    });
-    reply();
   },
 
   
@@ -859,7 +815,6 @@ const kMessageHandlers = {
     let win = Services.wm.getMostRecentWindow("navigator:browser");
     let url = message.data[0] ? message.data[0] : "about:home";
     win.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no,non-remote", url);
-    reply();
   },
 
   
@@ -883,26 +838,13 @@ const kMessageHandlers = {
   
 
 
-
-
-
-
-
-
-
-
-
-  RemoveBrowserSharingListener: function(message, reply) {
-    if (!gBrowserSharingListeners.size) {
-      reply();
+  RemoveBrowserSharingListener: function() {
+    if (!gBrowserSharingListenerCount) {
       return;
     }
 
-    let [windowId] = message.data;
-    gBrowserSharingListeners.delete(windowId);
-    if (gBrowserSharingListeners.size > 0) {
+    if (--gBrowserSharingListenerCount > 0) {
       
-      reply();
       return;
     }
 
@@ -915,7 +857,6 @@ const kMessageHandlers = {
     }
 
     gBrowserSharingWindows.clear();
-    reply();
   },
 
   "Rooms:*": function(action, message, reply) {
@@ -1001,10 +942,9 @@ const kMessageHandlers = {
 
 
 
-  SetScreenShareState: function(message, reply) {
+  SetScreenShareState: function(message) {
     let [windowId, active] = message.data;
     MozLoopService.setScreenShareState(windowId, active);
-    reply();
   },
 
   
@@ -1373,46 +1313,6 @@ this.LoopAPI = Object.freeze({
   
   destroy: function() {
     LoopAPIInternal.destroy();
-  },
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  sendMessageToHandler: function(message, reply) {
-    reply = reply || function() {};
-    let handlerName = message.name;
-    let handler = kMessageHandlers[handlerName];
-    if (gStubbedMessageHandlers && gStubbedMessageHandlers[handlerName]) {
-      handler = gStubbedMessageHandlers[handlerName];
-    }
-    if (!handler) {
-      let msg = "Ouch, no message handler available for '" + handlerName + "'";
-      MozLoopService.log.error(msg);
-      reply(cloneableError(msg));
-      return;
-    }
-
-    if (!message.data) {
-      message.data = [];
-    }
-
-    if (handlerName.endsWith("*")) {
-      handler(message.action, message, reply);
-    } else {
-      handler(message, reply);
-    }
   },
   
   inspect: function() {
