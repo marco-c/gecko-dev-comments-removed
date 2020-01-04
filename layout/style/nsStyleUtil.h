@@ -41,8 +41,7 @@ public:
   
   
   
-  
-  static bool AppendEscapedCSSIdent(const nsAString& aIdent,
+  static void AppendEscapedCSSIdent(const nsAString& aIdent,
                                     nsAString& aResult);
 
   static void
