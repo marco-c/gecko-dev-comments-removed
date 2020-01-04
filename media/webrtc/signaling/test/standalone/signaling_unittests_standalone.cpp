@@ -1,6 +1,0 @@
-
-
-
-
-#define SIGNALING_UNITTEST_STANDALONE 1
-#include "../signaling_unittests.cpp"
