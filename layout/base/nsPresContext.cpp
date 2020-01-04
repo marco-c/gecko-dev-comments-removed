@@ -37,7 +37,7 @@
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerHandle.h"
 #include "mozilla/RestyleManagerHandleInlines.h"
-#include "SurfaceCache.h"
+#include "SurfaceCacheUtils.h"
 #include "nsCSSRuleProcessor.h"
 #include "nsRuleNode.h"
 #include "gfxPlatform.h"
@@ -1631,7 +1631,7 @@ nsPresContext::ThemeChangedInternal()
     
     
     
-    mozilla::image::SurfaceCache::DiscardAll();
+    image::SurfaceCacheUtils::DiscardAll();
   }
 
   

@@ -1,0 +1,20 @@
+
+
+
+
+
+#include "SurfaceCacheUtils.h"
+
+#include "SurfaceCache.h"
+
+namespace mozilla {
+namespace image {
+
+ void
+SurfaceCacheUtils::DiscardAll()
+{
+  SurfaceCache::DiscardAll();
+}
+
+} 
+} 
