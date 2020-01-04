@@ -1256,7 +1256,7 @@ Search.prototype = {
         
         value: makeActionURL("remotetab", { url, deviceName }),
         comment: title || url,
-        style: "action",
+        style: "action remotetab",
         
         
         frecency: FRECENCY_DEFAULT + 1,
