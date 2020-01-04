@@ -1465,37 +1465,11 @@ MacroAssemblerARM::ma_bx(Register dest, Assembler::Condition c)
     as_bx(dest, c);
 }
 
-static Assembler::RelocBranchStyle
-b_type()
-{
-    return Assembler::B_LDR;
-}
 void
-MacroAssemblerARM::ma_b(void* target, Relocation::Kind reloc, Assembler::Condition c)
+MacroAssemblerARM::ma_b(void* target, Assembler::Condition c)
 {
-    ScratchRegisterScope scratch(asMasm());
-
     
-    
-    
-    uint32_t trg = (uint32_t)target;
-    switch (b_type()) {
-      case Assembler::B_MOVWT:
-        as_movw(scratch, Imm16(trg & 0xffff), c);
-        as_movt(scratch, Imm16(trg >> 16), c);
-        
-        as_bx(scratch, c);
-        break;
-      case Assembler::B_LDR_BX:
-        as_Imm32Pool(scratch, trg, c);
-        as_bx(scratch, c);
-        break;
-      case Assembler::B_LDR:
-        as_Imm32Pool(pc, trg, c);
-        break;
-      default:
-        MOZ_CRASH("Other methods of generating tracable jumps NYI");
-    }
+    as_Imm32Pool(pc, uint32_t(target), c);
 }
 
 

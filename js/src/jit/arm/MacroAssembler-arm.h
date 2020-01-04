@@ -347,9 +347,8 @@ class MacroAssemblerARM : public Assembler
 
     
     BufferOffset ma_b(Label* dest, Condition c = Always);
+    void ma_b(void* target, Condition c = Always);
     void ma_bx(Register dest, Condition c = Always);
-
-    void ma_b(void* target, Relocation::Kind reloc, Condition c = Always);
 
     
     
