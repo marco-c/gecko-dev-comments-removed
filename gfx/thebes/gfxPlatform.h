@@ -696,12 +696,6 @@ protected:
     
 
 
-    virtual void SetDeviceInitData(mozilla::gfx::DeviceInitData& aData)
-    {}
-
-    
-
-
 
     static mozilla::gfx::BackendType GetCanvasBackendPref(uint32_t aBackendBitmask);
 
@@ -726,6 +720,8 @@ protected:
 
     static already_AddRefed<mozilla::gfx::ScaledFont>
       GetScaledFontForFontWithCairoSkia(mozilla::gfx::DrawTarget* aTarget, gfxFont* aFont);
+
+    static mozilla::gfx::DeviceInitData& GetParentDevicePrefs();
 
     int8_t  mAllowDownloadableFonts;
     int8_t  mGraphiteShapingEnabled;
