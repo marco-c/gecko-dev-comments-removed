@@ -1,0 +1,26 @@
+
+
+
+
+
+function run_test() {
+  
+  
+  
+  
+  
+  var badMimeType = "text/plainÿ";
+  do_check_eq(badMimeType.length, 11);
+
+  try {
+    var type = Cc["@mozilla.org/mime;1"].
+               getService(Ci.nsIMIMEService).
+               getFromTypeAndExtension(badMimeType, "txt");
+  } catch (e if (e instanceof Ci.nsIException &&
+                 e.result == Cr.NS_ERROR_NOT_AVAILABLE)) {
+    
+  } finally {
+  }
+  
+  do_check_eq(true, true);
+}
