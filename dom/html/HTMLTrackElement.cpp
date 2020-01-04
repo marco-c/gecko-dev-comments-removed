@@ -76,6 +76,7 @@ static constexpr const nsAttrValue::EnumTable* kKindTableInvalidValueDefault = &
 
 HTMLTrackElement::HTMLTrackElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : nsGenericHTMLElement(aNodeInfo)
+  , mLoadResourceDispatched(false)
 {
 }
 
@@ -183,8 +184,45 @@ HTMLTrackElement::ParseAttribute(int32_t aNamespaceID,
 }
 
 void
+HTMLTrackElement::SetSrc(const nsAString& aSrc, ErrorResult& aError)
+{
+  SetHTMLAttr(nsGkAtoms::src, aSrc, aError);
+  uint16_t oldReadyState = ReadyState();
+  SetReadyState(TextTrackReadyState::NotLoaded);
+  if (!mMediaParent) {
+    return;
+  }
+  if (mTrack && (oldReadyState != TextTrackReadyState::NotLoaded)) {
+    
+    mMediaParent->RemoveTextTrack(mTrack);
+    
+    CreateTextTrack();
+  }
+  
+  mListener = nullptr;
+  if (mChannel) {
+    mChannel->Cancel(NS_BINDING_ABORTED);
+    mChannel = nullptr;
+  }
+
+  DispatchLoadResource();
+}
+
+void
+HTMLTrackElement::DispatchLoadResource()
+{
+  if (!mLoadResourceDispatched) {
+    RefPtr<Runnable> r = NewRunnableMethod(this, &HTMLTrackElement::LoadResource);
+    nsContentUtils::RunInStableState(r.forget());
+    mLoadResourceDispatched = true;
+  }
+}
+
+void
 HTMLTrackElement::LoadResource()
 {
+  mLoadResourceDispatched = false;
+
   
   nsAutoString src;
   if (!GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
@@ -258,8 +296,7 @@ HTMLTrackElement::BindToTree(nsIDocument* aDocument,
     if (!mTrack) {
       CreateTextTrack();
     }
-    RefPtr<Runnable> r = NewRunnableMethod(this, &HTMLTrackElement::LoadResource);
-    nsContentUtils::RunInStableState(r.forget());
+    DispatchLoadResource();
   }
 
   return NS_OK;
