@@ -337,6 +337,10 @@ public:
 
   void ForcePresent() { mCompositor->ForcePresent(); }
 
+  void HoldTextureUntilNextComposite(TextureHost* aTextureHost) {
+    mCurrentHeldTextureHosts.AppendElement(aTextureHost);
+  }
+
 private:
   
   nsIntRegion mClippingRegion;
@@ -396,6 +400,9 @@ private:
   UniquePtr<LayerProperties> mClonedLayerTreeProperties;
 
   nsTArray<ImageCompositeNotification> mImageCompositeNotifications;
+
+  nsTArray<RefPtr<TextureHost>> mCurrentHeldTextureHosts;
+  nsTArray<RefPtr<TextureHost>> mPreviousHeldTextureHosts;
 
   
 
