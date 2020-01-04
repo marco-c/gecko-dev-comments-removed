@@ -839,7 +839,10 @@ or run without that action (ie: --no-{action})"
         env['MOZ_BUILD_DATE'] = self.query_buildid()
 
         if self.query_is_nightly() or self.query_is_nightly_promotion():
-            env["IS_NIGHTLY"] = "yes"
+            if self.query_is_nightly():
+                
+                
+                env["IS_NIGHTLY"] = "yes"
             
             if c.get('update_channel'):
                 env["MOZ_UPDATE_CHANNEL"] = c['update_channel']
