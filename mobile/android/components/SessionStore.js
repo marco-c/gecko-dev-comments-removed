@@ -48,6 +48,12 @@ const PRIVACY_FULL = 2;
 const PREFS_RESTORE_FROM_CRASH = "browser.sessionstore.resume_from_crash";
 const PREFS_MAX_CRASH_RESUMES = "browser.sessionstore.max_resumed_crashes";
 
+const MINIMUM_SAVE_DELAY = 2000;
+
+
+
+const MINIMUM_SAVE_DELAY_BACKGROUND = 200;
+
 function SessionStore() { }
 
 SessionStore.prototype = {
@@ -61,6 +67,7 @@ SessionStore.prototype = {
   _windows: {},
   _lastSaveTime: 0,
   _interval: 10000,
+  _minSaveDelay: MINIMUM_SAVE_DELAY,
   _maxTabsUndo: 5,
   _pendingWrite: 0,
   _scrollSavePending: null,
@@ -122,6 +129,7 @@ SessionStore.prototype = {
         observerService.addObserver(this, "Session:Restore", true);
         observerService.addObserver(this, "Session:NotifyLocationChange", true);
         observerService.addObserver(this, "application-background", true);
+        observerService.addObserver(this, "application-foreground", true);
         observerService.addObserver(this, "ClosedTabs:StartNotifications", true);
         observerService.addObserver(this, "ClosedTabs:StopNotifications", true);
         observerService.addObserver(this, "last-pb-context-exited", true);
@@ -269,7 +277,17 @@ SessionStore.prototype = {
         
         
         log("application-background");
+        
+        
+        this._interval = 0;
+        this._minSaveDelay = MINIMUM_SAVE_DELAY_BACKGROUND; 
         this.flushPendingState();
+        break;
+      case "application-foreground":
+        
+        log("application-foreground");
+        this._interval = Services.prefs.getIntPref("browser.sessionstore.interval");
+        this._minSaveDelay = MINIMUM_SAVE_DELAY;
         break;
       case "ClosedTabs:StartNotifications":
         this._notifyClosedTabs = true;
@@ -782,10 +800,10 @@ SessionStore.prototype = {
   saveStateDelayed: function ss_saveStateDelayed() {
     if (!this._saveTimer) {
       
-      let minimalDelay = this._lastSaveTime + this._interval - Date.now();
+      let currentDelay = this._lastSaveTime + this._interval - Date.now();
 
       
-      let delay = Math.max(minimalDelay, 2000);
+      let delay = Math.max(currentDelay, this._minSaveDelay);
       if (delay > 0) {
         this._pendingWrite++;
         this._saveTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
