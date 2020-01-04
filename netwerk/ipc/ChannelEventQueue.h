@@ -10,6 +10,7 @@
 
 #include "nsTArray.h"
 #include "nsAutoPtr.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/UniquePtr.h"
 
 class nsISupports;
@@ -43,15 +44,18 @@ class ChannelEventQueue final
     , mSuspended(false)
     , mForced(false)
     , mFlushing(false)
-    , mOwner(owner) {}
+    , mOwner(owner)
+    , mMutex("ChannelEventQueue::mMutex")
+  {}
 
   
   
-  inline bool ShouldEnqueue();
-
   
   
-  inline void Enqueue(ChannelEvent* callback);
+  
+  
+  inline void RunOrEnqueue(ChannelEvent* aCallback,
+                           bool aAssertWhenNotQueued = true);
   inline nsresult PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents);
 
   
@@ -83,6 +87,8 @@ class ChannelEventQueue final
   void FlushQueue();
   inline void CompleteResume();
 
+  ChannelEvent* TakeEvent();
+
   nsTArray<UniquePtr<ChannelEvent>> mEventQueue;
 
   uint32_t mSuspendCount;
@@ -93,45 +99,60 @@ class ChannelEventQueue final
   
   nsISupports *mOwner;
 
+  Mutex mMutex;
+
   
   nsCOMPtr<nsIEventTarget> mTargetThread;
 
   friend class AutoEventEnqueuer;
 };
 
-inline bool
-ChannelEventQueue::ShouldEnqueue()
-{
-  bool answer =  mForced || mSuspended || mFlushing;
-
-  MOZ_ASSERT(answer == true || mEventQueue.IsEmpty(),
-             "Should always enqueue if ChannelEventQueue not empty");
-
-  return answer;
-}
-
 inline void
-ChannelEventQueue::Enqueue(ChannelEvent* callback)
+ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
+                                bool aAssertWhenNotQueued)
 {
-  mEventQueue.AppendElement(callback);
+  MOZ_ASSERT(aCallback);
+
+  {
+    MutexAutoLock lock(mMutex);
+
+    bool enqueue =  mForced || mSuspended || mFlushing;
+    MOZ_ASSERT(enqueue == true || mEventQueue.IsEmpty(),
+               "Should always enqueue if ChannelEventQueue not empty");
+
+    if (enqueue) {
+      mEventQueue.AppendElement(aCallback);
+      return;
+    }
+  }
+
+  MOZ_RELEASE_ASSERT(aAssertWhenNotQueued);
+  aCallback->Run();
 }
 
 inline void
 ChannelEventQueue::StartForcedQueueing()
 {
+  MutexAutoLock lock(mMutex);
   mForced = true;
 }
 
 inline void
 ChannelEventQueue::EndForcedQueueing()
 {
-  mForced = false;
+  {
+    MutexAutoLock lock(mMutex);
+    mForced = false;
+  }
+
   MaybeFlushQueue();
 }
 
 inline nsresult
 ChannelEventQueue::PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents)
 {
+  MutexAutoLock lock(mMutex);
+
   UniquePtr<ChannelEvent>* newEvents =
     mEventQueue.InsertElementsAt(0, aEvents.Length());
   if (!newEvents) {
@@ -141,12 +162,15 @@ ChannelEventQueue::PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents)
   for (uint32_t i = 0; i < aEvents.Length(); i++) {
     newEvents[i] = Move(aEvents[i]);
   }
+
   return NS_OK;
 }
 
 inline void
 ChannelEventQueue::Suspend()
 {
+  MutexAutoLock lock(mMutex);
+
   mSuspended = true;
   mSuspendCount++;
 }
@@ -154,14 +178,20 @@ ChannelEventQueue::Suspend()
 inline void
 ChannelEventQueue::CompleteResume()
 {
-  
-  if (!mSuspendCount) {
+  {
+    MutexAutoLock lock(mMutex);
+
     
     
-    
-    mSuspended = false;
-    MaybeFlushQueue();
+    if (!mSuspendCount) {
+      
+      
+      
+      mSuspended = false;
+    }
   }
+
+  MaybeFlushQueue();
 }
 
 inline void
@@ -169,8 +199,17 @@ ChannelEventQueue::MaybeFlushQueue()
 {
   
   
-  if (!mForced && !mFlushing && !mSuspended && !mEventQueue.IsEmpty())
+  bool flushQueue = false;
+
+  {
+    MutexAutoLock lock(mMutex);
+    flushQueue = !mForced && !mFlushing && !mSuspended &&
+                 !mEventQueue.IsEmpty();
+  }
+
+  if (flushQueue) {
     FlushQueue();
+  }
 }
 
 
