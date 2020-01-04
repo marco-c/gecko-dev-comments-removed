@@ -144,7 +144,7 @@ function configureLogging() {
 
 
 function loadJSONAsync(file, options) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     let rawData = yield OS.File.read(file, options);
     
     let data;
@@ -156,7 +156,7 @@ function loadJSONAsync(file, options) {
       gLogger.error("Experiments: Could not parse JSON: " + file + " " + ex);
       throw ex;
     }
-    throw new Task.Result(data);
+    return data;
   });
 }
 
