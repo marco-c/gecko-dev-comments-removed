@@ -50,6 +50,15 @@ public:
 
   bool IsNull() const { return mBits == 0; }
 
+  uint32_t ChildCount() const
+  {
+    if (IsProxy()) {
+      return AsProxy()->ChildrenCount();
+    }
+
+    return AsAccessible()->ChildCount();
+  }
+
   
   uintptr_t Bits() const { return mBits; }
   void SetBits(uintptr_t aBits) { mBits = aBits; }
