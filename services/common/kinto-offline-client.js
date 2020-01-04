@@ -52,6 +52,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 
 
+
 Components.utils.import("resource://gre/modules/Sqlite.jsm");
 Components.utils.import("resource://gre/modules/Task.jsm");
 
@@ -84,10 +85,8 @@ const statements = {
       VALUES (:collection_name, :record_id, :record);`,
 
   "updateData": `
-    UPDATE collection_data
-      SET record = :record
-        WHERE collection_name = :collection_name
-        AND record_id = :record_id;`,
+    INSERT OR REPLACE INTO collection_data (collection_name, record_id, record)
+      VALUES (:collection_name, :record_id, :record);`,
 
   "deleteData": `
     DELETE FROM collection_data
@@ -114,6 +113,14 @@ const statements = {
       FROM collection_data
         WHERE collection_name = :collection_name;`,
 
+  
+  
+  "listRecordsById": `
+    SELECT record_id, record
+      FROM collection_data
+        WHERE collection_name = ?
+          AND record_id IN `,
+
   "importData": `
     REPLACE INTO collection_data (collection_name, record_id, record)
       VALUES (:collection_name, :record_id, :record);`
@@ -124,10 +131,20 @@ const createStatements = ["createCollectionData", "createCollectionMetadata", "c
 
 const currentSchemaVersion = 1;
 
+
+
+
+
+
+
+
+
 class FirefoxAdapter extends _base2.default {
-  constructor(collection) {
+  constructor(collection, options = {}) {
     super();
     this.collection = collection;
+    this._connection = null;
+    this._options = options;
   }
 
   _init(connection) {
@@ -160,7 +177,8 @@ class FirefoxAdapter extends _base2.default {
   open() {
     const self = this;
     return Task.spawn(function* () {
-      const opts = { path: SQLITE_PATH, sharedMemoryCache: false };
+      const path = self._options.path || SQLITE_PATH;
+      const opts = { path, sharedMemoryCache: false };
       if (!self._connection) {
         self._connection = yield Sqlite.openConnection(opts).then(self._init);
       }
@@ -185,24 +203,31 @@ class FirefoxAdapter extends _base2.default {
     if (!this._connection) {
       throw new Error("The storage adapter is not open");
     }
-    const preloaded = options.preload.reduce((acc, record) => {
-      acc[record.id] = record;
-      return acc;
-    }, {});
 
-    const proxy = transactionProxy(this.collection, preloaded);
     let result;
-    try {
-      result = callback(proxy);
-    } catch (e) {
-      return Promise.reject(e);
-    }
     const conn = this._connection;
+    const collection = this.collection;
+
     return conn.executeTransaction(function* doExecuteTransaction() {
+      
+      const parameters = [collection, ...options.preload];
+      const placeholders = options.preload.map(_ => "?");
+      const stmt = statements.listRecordsById + "(" + placeholders.join(",") + ");";
+      const rows = yield conn.execute(stmt, parameters);
+
+      const preloaded = rows.reduce((acc, row) => {
+        const record = JSON.parse(row.getResultByName("record"));
+        acc[row.getResultByName("record_id")] = record;
+        return acc;
+      }, {});
+
+      const proxy = transactionProxy(collection, preloaded);
+      result = callback(proxy);
+
       for (let { statement, params } of proxy.operations) {
         yield conn.executeCached(statement, params);
       }
-    }).then(_ => result);
+    }, conn.TRANSACTION_EXCLUSIVE).then(_ => result);
   }
 
   get(id) {
@@ -264,7 +289,7 @@ class FirefoxAdapter extends _base2.default {
           collection_name: collection_name
         };
         const previousLastModified = yield connection.execute(statements.getLastModified, params).then(result => {
-          return result.length > 0 ? result[0].getResultByName('last_modified') : -1;
+          return result.length > 0 ? result[0].getResultByName("last_modified") : -1;
         });
         if (lastModified > previousLastModified) {
           const params = {
@@ -348,7 +373,7 @@ function transactionProxy(collection, preloaded) {
   };
 }
 
-},{"../src/adapters/base":5,"../src/utils":7}],2:[function(require,module,exports){
+},{"../src/adapters/base":6,"../src/utils":8}],2:[function(require,module,exports){
 
 
 
@@ -369,6 +394,9 @@ function transactionProxy(collection, preloaded) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 exports.default = loadKinto;
 
 var _base = require("../src/adapters/base");
@@ -423,16 +451,17 @@ function loadKinto() {
 
       const defaults = {
         events: emitter,
-        ApiClass: KintoHttpClient
+        ApiClass: KintoHttpClient,
+        adapter: _FirefoxStorage2.default
       };
 
-      const expandedOptions = Object.assign(defaults, options);
+      const expandedOptions = _extends({}, defaults, options);
       super(expandedOptions);
     }
 
     collection(collName, options = {}) {
       const idSchema = makeIDSchema();
-      const expandedOptions = Object.assign({ idSchema }, options);
+      const expandedOptions = _extends({ idSchema }, options);
       return super.collection(collName, expandedOptions);
     }
   }
@@ -446,7 +475,7 @@ if (typeof module === "object") {
   module.exports = loadKinto;
 }
 
-},{"../src/KintoBase":4,"../src/adapters/base":5,"../src/utils":7,"./FirefoxStorage":1}],3:[function(require,module,exports){
+},{"../src/KintoBase":4,"../src/adapters/base":6,"../src/utils":8,"./FirefoxStorage":1}],3:[function(require,module,exports){
 
 },{}],4:[function(require,module,exports){
 "use strict";
@@ -454,6 +483,8 @@ if (typeof module === "object") {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _collection = require("./collection");
 
@@ -511,20 +542,27 @@ class KintoBase {
 
 
 
+
+
   constructor(options = {}) {
     const defaults = {
       bucket: DEFAULT_BUCKET_NAME,
       remote: DEFAULT_REMOTE
     };
-    this._options = Object.assign(defaults, options);
+    this._options = _extends({}, defaults, options);
     if (!this._options.adapter) {
       throw new Error("No adapter provided");
     }
 
-    const { remote, events, headers, requestMode, ApiClass } = this._options;
-    this._api = new ApiClass(remote, { events, headers, requestMode });
+    const { remote, events, headers, requestMode, timeout, ApiClass } = this._options;
 
     
+
+    
+
+
+
+    this.api = new ApiClass(remote, { events, headers, requestMode, timeout });
     
 
 
@@ -547,9 +585,10 @@ class KintoBase {
     }
 
     const bucket = this._options.bucket;
-    return new _collection2.default(bucket, collName, this._api, {
+    return new _collection2.default(bucket, collName, this.api, {
       events: this._options.events,
       adapter: this._options.adapter,
+      adapterOptions: this._options.adapterOptions,
       dbPrefix: this._options.dbPrefix,
       idSchema: options.idSchema,
       remoteTransformers: options.remoteTransformers,
@@ -559,7 +598,451 @@ class KintoBase {
 }
 exports.default = KintoBase;
 
-},{"./adapters/base":5,"./collection":6}],5:[function(require,module,exports){
+},{"./adapters/base":6,"./collection":7}],5:[function(require,module,exports){
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _base = require("./base.js");
+
+var _base2 = _interopRequireDefault(_base);
+
+var _utils = require("../utils");
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+const INDEXED_FIELDS = ["id", "_status", "last_modified"];
+
+
+
+
+
+const cursorHandlers = {
+  all(done) {
+    const results = [];
+    return function (event) {
+      const cursor = event.target.result;
+      if (cursor) {
+        results.push(cursor.value);
+        cursor.continue();
+      } else {
+        done(results);
+      }
+    };
+  },
+
+  in(values, done) {
+    const sortedValues = [].slice.call(values).sort();
+    const results = [];
+    return function (event) {
+      const cursor = event.target.result;
+      if (!cursor) {
+        done(results);
+        return;
+      }
+      const { key, value } = cursor;
+      let i = 0;
+      while (key > sortedValues[i]) {
+        
+        ++i;
+        if (i === sortedValues.length) {
+          done(results); 
+          return;
+        }
+      }
+      if (key === sortedValues[i]) {
+        results.push(value);
+        cursor.continue();
+      } else {
+        cursor.continue(sortedValues[i]);
+      }
+    };
+  }
+};
+
+
+
+
+
+
+
+
+function findIndexedField(filters) {
+  const filteredFields = Object.keys(filters);
+  const indexedFields = filteredFields.filter(field => {
+    return INDEXED_FIELDS.indexOf(field) !== -1;
+  });
+  return indexedFields[0];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createListRequest(store, indexField, value, done) {
+  if (!indexField) {
+    
+    const request = store.openCursor();
+    request.onsuccess = cursorHandlers.all(done);
+    return request;
+  }
+
+  
+  if (Array.isArray(value)) {
+    const request = store.index(indexField).openCursor();
+    request.onsuccess = cursorHandlers.in(value, done);
+    return request;
+  }
+
+  
+  const request = store.index(indexField).openCursor(IDBKeyRange.only(value));
+  request.onsuccess = cursorHandlers.all(done);
+  return request;
+}
+
+
+
+
+
+
+class IDB extends _base2.default {
+  
+
+
+
+
+  constructor(dbname) {
+    super();
+    this._db = null;
+    
+    
+
+
+
+    this.dbname = dbname;
+  }
+
+  _handleError(method) {
+    return err => {
+      const error = new Error(method + "() " + err.message);
+      error.stack = err.stack;
+      throw error;
+    };
+  }
+
+  
+
+
+
+
+
+  open() {
+    if (this._db) {
+      return Promise.resolve(this);
+    }
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.dbname, 1);
+      request.onupgradeneeded = event => {
+        
+        const db = event.target.result;
+        
+        const collStore = db.createObjectStore(this.dbname, {
+          keyPath: "id"
+        });
+        
+        collStore.createIndex("id", "id", { unique: true });
+        
+        collStore.createIndex("_status", "_status");
+        
+        collStore.createIndex("last_modified", "last_modified");
+
+        
+        const metaStore = db.createObjectStore("__meta__", {
+          keyPath: "name"
+        });
+        metaStore.createIndex("name", "name", { unique: true });
+      };
+      request.onerror = event => reject(event.target.error);
+      request.onsuccess = event => {
+        this._db = event.target.result;
+        resolve(this);
+      };
+    });
+  }
+
+  
+
+
+
+
+
+  close() {
+    if (this._db) {
+      this._db.close(); 
+      this._db = null;
+    }
+    return super.close();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  prepare(mode = undefined, name = null) {
+    const storeName = name || this.dbname;
+    
+    
+    const transaction = mode ? this._db.transaction([storeName], mode) : this._db.transaction([storeName]);
+    const store = transaction.objectStore(storeName);
+    return { transaction, store };
+  }
+
+  
+
+
+
+
+
+  clear() {
+    return this.open().then(() => {
+      return new Promise((resolve, reject) => {
+        const { transaction, store } = this.prepare("readwrite");
+        store.clear();
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = () => resolve();
+      });
+    }).catch(this._handleError("clear"));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  execute(callback, options = { preload: [] }) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return this.open().then(_ => new Promise((resolve, reject) => {
+      
+      const { transaction, store } = this.prepare("readwrite");
+      
+      const ids = options.preload;
+      store.index("id").openCursor().onsuccess = cursorHandlers.in(ids, records => {
+        
+        const preloaded = records.reduce((acc, record) => {
+          acc[record.id] = record;
+          return acc;
+        }, {});
+        
+        const proxy = transactionProxy(store, preloaded);
+        
+        let result;
+        try {
+          result = callback(proxy);
+        } catch (e) {
+          transaction.abort();
+          reject(e);
+        }
+        if (result instanceof Promise) {
+          
+          reject(new Error("execute() callback should not return a Promise."));
+        }
+        
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = event => resolve(result);
+      });
+    }));
+  }
+
+  
+
+
+
+
+
+
+  get(id) {
+    return this.open().then(() => {
+      return new Promise((resolve, reject) => {
+        const { transaction, store } = this.prepare();
+        const request = store.get(id);
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = () => resolve(request.result);
+      });
+    }).catch(this._handleError("get"));
+  }
+
+  
+
+
+
+
+
+  list(params = { filters: {} }) {
+    const { filters } = params;
+    const indexField = findIndexedField(filters);
+    const value = filters[indexField];
+    return this.open().then(() => {
+      return new Promise((resolve, reject) => {
+        let results = [];
+        const { transaction, store } = this.prepare();
+        createListRequest(store, indexField, value, _results => {
+          
+          
+          results = _results;
+        });
+        transaction.onerror = event => reject(new Error(event.target.error));
+        transaction.oncomplete = event => resolve(results);
+      });
+    }).then(results => {
+      
+      const remainingFilters = _extends({}, filters);
+      
+      delete remainingFilters[indexField];
+      
+      return (0, _utils.reduceRecords)(remainingFilters, params.order, results);
+    }).catch(this._handleError("list"));
+  }
+
+  
+
+
+
+
+
+
+  saveLastModified(lastModified) {
+    const value = parseInt(lastModified, 10) || null;
+    return this.open().then(() => {
+      return new Promise((resolve, reject) => {
+        const { transaction, store } = this.prepare("readwrite", "__meta__");
+        store.put({ name: "lastModified", value: value });
+        transaction.onerror = event => reject(event.target.error);
+        transaction.oncomplete = event => resolve(value);
+      });
+    });
+  }
+
+  
+
+
+
+
+
+  getLastModified() {
+    return this.open().then(() => {
+      return new Promise((resolve, reject) => {
+        const { transaction, store } = this.prepare(undefined, "__meta__");
+        const request = store.get("lastModified");
+        transaction.onerror = event => reject(event.target.error);
+        transaction.oncomplete = event => {
+          resolve(request.result && request.result.value || null);
+        };
+      });
+    });
+  }
+
+  
+
+
+
+
+
+  loadDump(records) {
+    return this.execute(transaction => {
+      records.forEach(record => transaction.update(record));
+    }).then(() => this.getLastModified()).then(previousLastModified => {
+      const lastModified = Math.max(...records.map(record => record.last_modified));
+      if (lastModified > previousLastModified) {
+        return this.saveLastModified(lastModified);
+      }
+    }).then(() => records).catch(this._handleError("loadDump"));
+  }
+}
+
+exports.default = IDB; 
+
+
+
+
+
+
+
+
+function transactionProxy(store, preloaded = []) {
+  return {
+    create(record) {
+      store.add(record);
+    },
+
+    update(record) {
+      store.put(record);
+    },
+
+    delete(id) {
+      store.delete(id);
+    },
+
+    get(id) {
+      return preloaded[id];
+    }
+  };
+}
+
+},{"../utils":8,"./base.js":6}],6:[function(require,module,exports){
 "use strict";
 
 
@@ -669,18 +1152,25 @@ class BaseAdapter {
 }
 exports.default = BaseAdapter;
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SyncResultObject = undefined;
-exports.cleanRecord = cleanRecord;
+exports.CollectionTransaction = exports.SyncResultObject = undefined;
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+exports.recordsEqual = recordsEqual;
 
 var _base = require("./adapters/base");
 
 var _base2 = _interopRequireDefault(_base);
+
+var _IDB = require("./adapters/IDB");
+
+var _IDB2 = _interopRequireDefault(_IDB);
 
 var _utils = require("./utils");
 
@@ -688,7 +1178,7 @@ var _uuid = require("uuid");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const RECORD_FIELDS_TO_CLEAN = ["_status", "last_modified"];
+const RECORD_FIELDS_TO_CLEAN = ["_status"];
 const AVAILABLE_HOOKS = ["incoming-changes"];
 
 
@@ -698,13 +1188,10 @@ const AVAILABLE_HOOKS = ["incoming-changes"];
 
 
 
-function cleanRecord(record, excludeFields = RECORD_FIELDS_TO_CLEAN) {
-  return Object.keys(record).reduce((acc, key) => {
-    if (excludeFields.indexOf(key) === -1) {
-      acc[key] = record[key];
-    }
-    return acc;
-  }, {});
+function recordsEqual(a, b, localFields = []) {
+  const fieldsToClean = RECORD_FIELDS_TO_CLEAN.concat(["last_modified"]).concat(localFields);
+  const cleanLocal = r => (0, _utils.omitKeys)(r, fieldsToClean);
+  return (0, _utils.deepEqual)(cleanLocal(a), cleanLocal(b));
 }
 
 
@@ -786,7 +1273,7 @@ function createUUIDSchema() {
 }
 
 function markStatus(record, status) {
-  return Object.assign({}, record, { _status: status });
+  return _extends({}, record, { _status: status });
 }
 
 function markDeleted(record) {
@@ -804,7 +1291,8 @@ function markSynced(record) {
 
 
 
-function importChange(transaction, remote) {
+
+function importChange(transaction, remote, localFields) {
   const local = transaction.get(remote.id);
   if (!local) {
     
@@ -816,34 +1304,48 @@ function importChange(transaction, remote) {
     transaction.create(synced);
     return { type: "created", data: synced };
   }
-  const identical = (0, _utils.deepEqual)(cleanRecord(local), cleanRecord(remote));
+  
+  const isIdentical = recordsEqual(local, remote, localFields);
+  
+  const synced = _extends({}, local, markSynced(remote));
+  
   if (local._status !== "synced") {
     
     if (local._status === "deleted") {
       return { type: "skipped", data: local };
     }
-    if (identical) {
+    if (isIdentical) {
       
       
       
-      const synced = markSynced(remote);
       transaction.update(synced);
-      return { type: "updated", data: synced, previous: local };
+      return { type: "updated", data: { old: local, new: synced } };
+    }
+    if (local.last_modified !== undefined && local.last_modified === remote.last_modified) {
+      
+      
+      
+      
+      
+      
+      
+      return { type: "void" };
     }
     return {
       type: "conflicts",
       data: { type: "incoming", local: local, remote: remote }
     };
   }
+  
   if (remote.deleted) {
     transaction.delete(remote.id);
-    return { type: "deleted", data: { id: local.id } };
+    return { type: "deleted", data: local };
   }
-  const synced = markSynced(remote);
+  
   transaction.update(synced);
   
-  const type = identical ? "void" : "updated";
-  return { type, data: synced };
+  const type = isIdentical ? "void" : "updated";
+  return { type, data: { old: local, new: synced } };
 }
 
 
@@ -868,12 +1370,12 @@ class Collection {
     this._name = name;
     this._lastModified = null;
 
-    const DBAdapter = options.adapter;
+    const DBAdapter = options.adapter || _IDB2.default;
     if (!DBAdapter) {
       throw new Error("No adapter provided");
     }
     const dbPrefix = options.dbPrefix || "";
-    const db = new DBAdapter(`${ dbPrefix }${ bucket }/${ name }`);
+    const db = new DBAdapter(`${ dbPrefix }${ bucket }/${ name }`, options.adapterOptions);
     if (!(db instanceof _base2.default)) {
       throw new Error("Unsupported adapter.");
     }
@@ -888,7 +1390,6 @@ class Collection {
 
 
     this.api = api;
-    this._apiCollection = this.api.bucket(this.bucket).collection(this.name);
     
 
 
@@ -909,6 +1410,11 @@ class Collection {
 
 
     this.hooks = this._validateHooks(options.hooks);
+    
+
+
+
+    this.localFields = options.localFields || [];
   }
 
   
@@ -1103,28 +1609,29 @@ class Collection {
 
 
 
+
   create(record, options = { useRecordId: false, synced: false }) {
+    
+    
+    
     const reject = msg => Promise.reject(new Error(msg));
     if (typeof record !== "object") {
       return reject("Record is not an object.");
     }
-    if ((options.synced || options.useRecordId) && !record.id) {
+    if ((options.synced || options.useRecordId) && !record.hasOwnProperty("id")) {
       return reject("Missing required Id; synced and useRecordId options require one");
     }
-    if (!options.synced && !options.useRecordId && record.id) {
+    if (!options.synced && !options.useRecordId && record.hasOwnProperty("id")) {
       return reject("Extraneous Id; can't create a record having one set.");
     }
-    const newRecord = Object.assign({}, record, {
+    const newRecord = _extends({}, record, {
       id: options.synced || options.useRecordId ? record.id : this.idSchema.generate(),
       _status: options.synced ? "synced" : "created"
     });
     if (!this.idSchema.validate(newRecord.id)) {
       return reject(`Invalid Id: ${ newRecord.id }`);
     }
-    return this.db.execute(transaction => {
-      transaction.create(newRecord);
-      return { data: newRecord, permissions: {} };
-    }).catch(err => {
+    return this.execute(txn => txn.create(newRecord), { preloadIds: [newRecord.id] }).catch(err => {
       if (options.useRecordId) {
         throw new Error("Couldn't create record. It may have been virtually deleted.");
       }
@@ -1145,28 +1652,43 @@ class Collection {
 
 
   update(record, options = { synced: false, patch: false }) {
+    
+    
+    
     if (typeof record !== "object") {
       return Promise.reject(new Error("Record is not an object."));
     }
-    if (!record.id) {
+    if (!record.hasOwnProperty("id")) {
       return Promise.reject(new Error("Cannot update a record missing id."));
     }
     if (!this.idSchema.validate(record.id)) {
       return Promise.reject(new Error(`Invalid Id: ${ record.id }`));
     }
-    return this.get(record.id).then(res => {
-      const existing = res.data;
-      const newStatus = options.synced ? "synced" : "updated";
-      return this.db.execute(transaction => {
-        const source = options.patch ? Object.assign({}, existing, record) : record;
-        const updated = markStatus(source, newStatus);
-        if (existing.last_modified && !updated.last_modified) {
-          updated.last_modified = existing.last_modified;
-        }
-        transaction.update(updated);
-        return { data: updated, permissions: {} };
-      });
-    });
+
+    return this.execute(txn => txn.update(record, options), { preloadIds: [record.id] });
+  }
+
+  
+
+
+
+
+
+  upsert(record) {
+    
+    
+    
+    if (typeof record !== "object") {
+      return Promise.reject(new Error("Record is not an object."));
+    }
+    if (!record.hasOwnProperty("id")) {
+      return Promise.reject(new Error("Cannot update a record missing id."));
+    }
+    if (!this.idSchema.validate(record.id)) {
+      return Promise.reject(new Error(`Invalid Id: ${ record.id }`));
+    }
+
+    return this.execute(txn => txn.upsert(record), { preloadIds: [record.id] });
   }
 
   
@@ -1176,17 +1698,21 @@ class Collection {
 
 
 
+
+
+
   get(id, options = { includeDeleted: false }) {
-    if (!this.idSchema.validate(id)) {
-      return Promise.reject(Error(`Invalid Id: ${ id }`));
-    }
-    return this.db.get(id).then(record => {
-      if (!record || !options.includeDeleted && record._status === "deleted") {
-        throw new Error(`Record with id=${ id } not found.`);
-      } else {
-        return { data: record, permissions: {} };
-      }
-    });
+    return this.execute(txn => txn.get(id, options), { preloadIds: [id] });
+  }
+
+  
+
+
+
+
+
+  getAny(id) {
+    return this.execute(txn => txn.getAny(id), { preloadIds: [id] });
   }
 
   
@@ -1201,23 +1727,20 @@ class Collection {
 
 
   delete(id, options = { virtual: true }) {
-    if (!this.idSchema.validate(id)) {
-      return Promise.reject(new Error(`Invalid Id: ${ id }`));
-    }
-    
-    return this.get(id, { includeDeleted: true }).then(res => {
-      const existing = res.data;
-      return this.db.execute(transaction => {
-        
-        if (options.virtual) {
-          transaction.update(markDeleted(existing));
-        } else {
-          
-          transaction.delete(id);
-        }
-        return { data: { id: id }, permissions: {} };
-      });
-    });
+    return this.execute(transaction => {
+      return transaction.delete(id, options);
+    }, { preloadIds: [id] });
+  }
+
+  
+
+
+
+
+
+
+  deleteAny(id) {
+    return this.execute(txn => txn.deleteAny(id), { preloadIds: [id] });
   }
 
   
@@ -1235,7 +1758,7 @@ class Collection {
 
 
   list(params = {}, options = { includeDeleted: false }) {
-    params = Object.assign({ order: "-last_modified", filters: {} }, params);
+    params = _extends({ order: "-last_modified", filters: {} }, params);
     return this.db.list(params).then(results => {
       let data = results;
       if (!options.includeDeleted) {
@@ -1264,15 +1787,12 @@ class Collection {
         return Promise.resolve(syncResultObject);
       }
       
-      const remoteIds = decodedChanges.map(change => change.id);
-      return this.list({ filters: { id: remoteIds }, order: "" }, { includeDeleted: true }).then(res => ({ decodedChanges, existingRecords: res.data })).then(({ decodedChanges, existingRecords }) => {
-        return this.db.execute(transaction => {
-          return decodedChanges.map(remote => {
-            
-            return importChange(transaction, remote);
-          });
-        }, { preload: existingRecords });
-      }).catch(err => {
+      return this.db.execute(transaction => {
+        return decodedChanges.map(remote => {
+          
+          return importChange(transaction, remote, this.localFields);
+        });
+      }, { preload: decodedChanges.map(record => record.id) }).catch(err => {
         const data = {
           type: "incoming",
           message: err.message,
@@ -1311,6 +1831,41 @@ class Collection {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  execute(doOperations, { preloadIds = [] } = {}) {
+    for (let id of preloadIds) {
+      if (!this.idSchema.validate(id)) {
+        return Promise.reject(Error(`Invalid Id: ${ id }`));
+      }
+    }
+
+    return this.db.execute(transaction => {
+      const txn = new CollectionTransaction(this, transaction);
+      return doOperations(txn);
+    }, { preload: preloadIds });
+  }
+
+  
+
+
+
+
+
+
+
+
   resetSyncStatus() {
     let _count;
     return this.list({ filters: { _status: ["deleted", "synced"] }, order: "" }, { includeDeleted: true }).then(unsynced => {
@@ -1322,7 +1877,7 @@ class Collection {
             transaction.delete(record.id);
           } else {
             
-            transaction.update(Object.assign({}, record, {
+            transaction.update(_extends({}, record, {
               last_modified: undefined,
               _status: "created"
             }));
@@ -1361,24 +1916,37 @@ class Collection {
 
 
 
-  pullChanges(syncResultObject, options = {}) {
+
+  pullChanges(client, syncResultObject, options = {}) {
     if (!syncResultObject.ok) {
       return Promise.resolve(syncResultObject);
     }
-    options = Object.assign({
-      strategy: Collection.strategy.MANUAL,
+    options = _extends({ strategy: Collection.strategy.MANUAL,
       lastModified: this.lastModified,
       headers: {}
     }, options);
+
     
-    return this._apiCollection.listRecords({
-      since: options.lastModified || undefined,
-      headers: options.headers
+    
+    let filters;
+    if (options.exclude) {
+      
+      
+      
+      const exclude_id = options.exclude.slice(0, 50).map(r => r.id).join(",");
+      filters = { exclude_id };
+    }
+    
+    return client.listRecords({
+      
+      since: options.lastModified ? `${ options.lastModified }` : undefined,
+      headers: options.headers,
+      filters
     }).then(({ data, last_modified }) => {
       
       
       
-      const unquoted = last_modified ? parseInt(last_modified.replace(/"/g, ""), 10) : undefined;
+      const unquoted = last_modified ? parseInt(last_modified, 10) : undefined;
 
       
       
@@ -1386,7 +1954,7 @@ class Collection {
       const localSynced = options.lastModified;
       const serverChanged = unquoted > options.lastModified;
       const emptyCollection = data.length === 0;
-      if (localSynced && serverChanged && emptyCollection) {
+      if (!options.exclude && localSynced && serverChanged && emptyCollection) {
         throw Error("Server has been flushed.");
       }
 
@@ -1404,7 +1972,15 @@ class Collection {
       return Promise.resolve(payload);
     }
     return (0, _utils.waterfall)(this.hooks[hookName].map(hook => {
-      return record => hook(payload, this);
+      return record => {
+        const result = hook(payload, this);
+        const resultThenable = result && typeof result.then === "function";
+        const resultChanges = result && result.hasOwnProperty("changes");
+        if (!(resultThenable || resultChanges)) {
+          throw new Error(`Invalid return value for hook: ${ JSON.stringify(result) } has no 'then()' or 'changes' properties`);
+        }
+        return result;
+      };
     }), payload);
   }
 
@@ -1416,17 +1992,17 @@ class Collection {
 
 
 
-  pushChanges(syncResultObject, options = {}) {
+
+  pushChanges(client, syncResultObject, options = {}) {
     if (!syncResultObject.ok) {
       return Promise.resolve(syncResultObject);
     }
-    const safe = options.strategy === Collection.SERVER_WINS;
-    options = Object.assign({ safe }, options);
+    const safe = !options.strategy || options.strategy !== Collection.CLIENT_WINS;
 
     
     return this.gatherLocalChanges().then(({ toDelete, toSync }) => {
       
-      return this._apiCollection.batch(batch => {
+      return client.batch(batch => {
         toDelete.forEach(r => {
           
           if (r.last_modified) {
@@ -1434,17 +2010,15 @@ class Collection {
           }
         });
         toSync.forEach(r => {
-          const isCreated = r._status === "created";
           
-          
-          delete r._status;
-          if (isCreated) {
-            batch.createRecord(r);
+          const published = this.cleanLocalFields(r);
+          if (r._status === "created") {
+            batch.createRecord(published);
           } else {
-            batch.updateRecord(r);
+            batch.updateRecord(published);
           }
         });
-      }, { headers: options.headers, safe: true, aggregate: true });
+      }, { headers: options.headers, safe, aggregate: true });
     })
     
     .then(synced => {
@@ -1459,18 +2033,23 @@ class Collection {
       const conflicts = synced.conflicts.map(c => {
         return { type: c.type, local: c.local.data, remote: c.remote };
       });
+      
+      syncResultObject.add("conflicts", conflicts);
+
+      
+      
+      
+      
       const published = synced.published.map(c => c.data);
       const skipped = synced.skipped.map(c => c.data);
 
       
-      syncResultObject.add("conflicts", conflicts);
       
-      const missingRemotely = skipped.map(r => Object.assign({}, r, { deleted: true }));
+      const missingRemotely = skipped.map(r => {
+        return _extends({}, r, { deleted: true });
+      });
       const toApplyLocally = published.concat(missingRemotely);
-      
-      
-      
-      
+
       const toDeleteLocally = toApplyLocally.filter(r => r.deleted);
       const toUpdateLocally = toApplyLocally.filter(r => !r.deleted);
       
@@ -1505,7 +2084,7 @@ class Collection {
         return result;
       } else if (options.strategy === Collection.strategy.CLIENT_WINS && !options.resolved) {
         
-        return this.pushChanges(result, Object.assign({}, options, { resolved: true }));
+        return this.pushChanges(client, result, _extends({}, options, { resolved: true }));
       } else if (options.strategy === Collection.strategy.SERVER_WINS) {
         
         
@@ -1525,14 +2104,41 @@ class Collection {
 
 
 
+  cleanLocalFields(record) {
+    const localKeys = RECORD_FIELDS_TO_CLEAN.concat(this.localFields);
+    return (0, _utils.omitKeys)(record, localKeys);
+  }
+
+  
+
+
+
+
+
 
 
 
   resolve(conflict, resolution) {
-    return this.update(Object.assign({}, resolution, {
+    return this.db.execute(transaction => {
+      const updated = this._resolveRaw(conflict, resolution);
+      transaction.update(updated);
+      return { data: updated, permissions: {} };
+    });
+  }
+
+  
+
+
+  _resolveRaw(conflict, resolution) {
+    const resolved = _extends({}, resolution, {
       
       last_modified: conflict.remote.last_modified
-    }));
+    });
+    
+    
+    
+    const synced = (0, _utils.deepEqual)(resolved, conflict.remote);
+    return markStatus(resolved, synced ? "synced" : "updated");
   }
 
   
@@ -1546,15 +2152,21 @@ class Collection {
     if (strategy === Collection.strategy.MANUAL || result.conflicts.length === 0) {
       return Promise.resolve(result);
     }
-    return Promise.all(result.conflicts.map(conflict => {
-      const resolution = strategy === Collection.strategy.CLIENT_WINS ? conflict.local : conflict.remote;
-      return this.resolve(conflict, resolution);
-    })).then(imports => {
-      return result.reset("conflicts").add("resolved", imports.map(res => res.data));
+    return this.db.execute(transaction => {
+      return result.conflicts.map(conflict => {
+        const resolution = strategy === Collection.strategy.CLIENT_WINS ? conflict.local : conflict.remote;
+        const updated = this._resolveRaw(conflict, resolution);
+        transaction.update(updated);
+        return updated;
+      });
+    }).then(imports => {
+      return result.reset("conflicts").add("resolved", imports);
     });
   }
 
   
+
+
 
 
 
@@ -1576,6 +2188,8 @@ class Collection {
     strategy: Collection.strategy.MANUAL,
     headers: {},
     ignoreBackoff: false,
+    bucket: null,
+    collection: null,
     remote: null
   }) {
     const previousRemote = this.api.remote;
@@ -1587,13 +2201,17 @@ class Collection {
       const seconds = Math.ceil(this.api.backoff / 1000);
       return Promise.reject(new Error(`Server is asking clients to back off; retry in ${ seconds }s or use the ignoreBackoff option.`));
     }
+
+    const client = this.api.bucket(options.bucket || this.bucket).collection(options.collection || this.name);
     const result = new SyncResultObject();
-    const syncPromise = this.db.getLastModified().then(lastModified => this._lastModified = lastModified).then(_ => this.pullChanges(result, options)).then(result => this.pushChanges(result, options)).then(result => {
+    const syncPromise = this.db.getLastModified().then(lastModified => this._lastModified = lastModified).then(_ => this.pullChanges(client, result, options)).then(result => this.pushChanges(client, result, options)).then(result => {
       
       if (result.published.length === 0) {
         return result;
       }
-      return this.pullChanges(result, options);
+      
+      const pullOpts = _extends({}, options, { exclude: result.published });
+      return this.pullChanges(client, result, pullOpts);
     });
     
     return (0, _utils.pFinally)(syncPromise, () => this.api.remote = previousRemote);
@@ -1615,7 +2233,7 @@ class Collection {
     }
 
     for (let record of records) {
-      if (!record.id || !this.idSchema.validate(record.id)) {
+      if (!record.hasOwnProperty("id") || !this.idSchema.validate(record.id)) {
         return reject("Record has invalid ID: " + JSON.stringify(record));
       }
 
@@ -1651,9 +2269,211 @@ class Collection {
     }).then(newRecords => newRecords.map(markSynced)).then(newRecords => this.db.loadDump(newRecords));
   }
 }
-exports.default = Collection;
 
-},{"./adapters/base":5,"./utils":7,"uuid":3}],7:[function(require,module,exports){
+exports.default = Collection; 
+
+
+
+
+
+
+
+class CollectionTransaction {
+  constructor(collection, adapterTransaction) {
+    this.collection = collection;
+    this.adapterTransaction = adapterTransaction;
+  }
+
+  
+
+
+
+
+
+
+
+
+  getAny(id) {
+    const record = this.adapterTransaction.get(id);
+    return { data: record, permissions: {} };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  get(id, options = { includeDeleted: false }) {
+    const res = this.getAny(id);
+    if (!res.data || !options.includeDeleted && res.data._status === "deleted") {
+      throw new Error(`Record with id=${ id } not found.`);
+    }
+
+    return res;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  delete(id, options = { virtual: true }) {
+    
+    const existing = this.adapterTransaction.get(id);
+    const alreadyDeleted = existing && existing._status == "deleted";
+    if (!existing || alreadyDeleted && options.virtual) {
+      throw new Error(`Record with id=${ id } not found.`);
+    }
+    
+    if (options.virtual) {
+      this.adapterTransaction.update(markDeleted(existing));
+    } else {
+      
+      this.adapterTransaction.delete(id);
+    }
+    return { data: existing, permissions: {} };
+  }
+
+  
+
+
+
+
+
+
+  deleteAny(id) {
+    const existing = this.adapterTransaction.get(id);
+    if (existing) {
+      this.adapterTransaction.update(markDeleted(existing));
+    }
+    return { data: _extends({ id }, existing), deleted: !!existing, permissions: {} };
+  }
+
+  
+
+
+
+
+
+
+  create(record) {
+    if (typeof record !== "object") {
+      throw new Error("Record is not an object.");
+    }
+    if (!record.hasOwnProperty("id")) {
+      throw new Error("Cannot create a record missing id");
+    }
+    if (!this.collection.idSchema.validate(record.id)) {
+      throw new Error(`Invalid Id: ${ record.id }`);
+    }
+
+    this.adapterTransaction.create(record);
+    return { data: record, permissions: {} };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  update(record, options = { synced: false, patch: false }) {
+    if (typeof record !== "object") {
+      throw new Error("Record is not an object.");
+    }
+    if (!record.hasOwnProperty("id")) {
+      throw new Error("Cannot update a record missing id.");
+    }
+    if (!this.collection.idSchema.validate(record.id)) {
+      throw new Error(`Invalid Id: ${ record.id }`);
+    }
+
+    const oldRecord = this.adapterTransaction.get(record.id);
+    if (!oldRecord) {
+      throw new Error(`Record with id=${ record.id } not found.`);
+    }
+    const newRecord = options.patch ? _extends({}, oldRecord, record) : record;
+    const updated = this._updateRaw(oldRecord, newRecord, options);
+    this.adapterTransaction.update(updated);
+    return { data: updated, oldRecord: oldRecord, permissions: {} };
+  }
+
+  
+
+
+
+
+
+
+
+  _updateRaw(oldRecord, newRecord, { synced = false } = {}) {
+    const updated = _extends({}, newRecord);
+    
+    if (oldRecord && oldRecord.last_modified && !updated.last_modified) {
+      updated.last_modified = oldRecord.last_modified;
+    }
+    
+    
+    
+    const isIdentical = oldRecord && recordsEqual(oldRecord, updated, this.localFields);
+    const keepSynced = isIdentical && oldRecord._status == "synced";
+    const neverSynced = !oldRecord || oldRecord && oldRecord._status == "created";
+    const newStatus = keepSynced || synced ? "synced" : neverSynced ? "created" : "updated";
+    return markStatus(updated, newStatus);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  upsert(record) {
+    if (typeof record !== "object") {
+      throw new Error("Record is not an object.");
+    }
+    if (!record.hasOwnProperty("id")) {
+      throw new Error("Cannot update a record missing id.");
+    }
+    if (!this.collection.idSchema.validate(record.id)) {
+      throw new Error(`Invalid Id: ${ record.id }`);
+    }
+    let oldRecord = this.adapterTransaction.get(record.id);
+    const updated = this._updateRaw(oldRecord, record);
+    this.adapterTransaction.update(updated);
+    
+    if (oldRecord && oldRecord._status == "deleted") {
+      oldRecord = undefined;
+    }
+
+    return { data: updated, oldRecord: oldRecord, permissions: {} };
+  }
+}
+exports.CollectionTransaction = CollectionTransaction;
+
+},{"./adapters/IDB":5,"./adapters/base":6,"./utils":8,"uuid":3}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1666,6 +2486,7 @@ exports.isUUID = isUUID;
 exports.waterfall = waterfall;
 exports.pFinally = pFinally;
 exports.deepEqual = deepEqual;
+exports.omitKeys = omitKeys;
 const RE_UUID = exports.RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 
@@ -1802,6 +2623,22 @@ function deepEqual(a, b) {
     }
   }
   return true;
+}
+
+
+
+
+
+
+
+
+function omitKeys(obj, keys = []) {
+  return Object.keys(obj).reduce((acc, key) => {
+    if (keys.indexOf(key) === -1) {
+      acc[key] = obj[key];
+    }
+    return acc;
+  }, {});
 }
 
 },{}]},{},[2])(2)

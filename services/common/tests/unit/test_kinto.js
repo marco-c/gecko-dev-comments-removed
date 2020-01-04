@@ -119,7 +119,8 @@ add_task(function* test_kinto_update() {
     
     do_check_eq(updateResult.data.foo, copiedRecord.foo);
     
-    do_check_eq(updateResult.data._status, "updated");
+    
+    do_check_eq(updateResult.data._status, "created");
   } finally {
     yield collection.db.close();
   }
