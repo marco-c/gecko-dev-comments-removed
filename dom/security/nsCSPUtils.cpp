@@ -144,6 +144,18 @@ CSP_LogMessage(const nsAString& aMessage,
   cspMsg.Append(NS_LITERAL_STRING("Content Security Policy: "));
   cspMsg.Append(aMessage);
 
+  
+  
+  
+  
+  
+  
+  if (!aSourceLine.IsEmpty()) {
+    cspMsg.Append(NS_LITERAL_STRING(" Source: "));
+    cspMsg.Append(aSourceLine);
+    cspMsg.Append(NS_LITERAL_STRING("."));
+  }
+
   nsresult rv;
   if (aInnerWindowID > 0) {
     nsCString catStr;
