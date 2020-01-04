@@ -626,6 +626,22 @@ GetAndCleanTempDir()
 
   
   
+  nsCOMPtr<nsIFile> realTempDir;
+  rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(realTempDir));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+  bool isRealTemp;
+  rv = tempDir->Equals(realTempDir, &isRealTemp);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+  if (isRealTemp) {
+    return tempDir.forget();
+  }
+
+  
+  
   
   rv = tempDir->Remove( true);
   if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND &&
