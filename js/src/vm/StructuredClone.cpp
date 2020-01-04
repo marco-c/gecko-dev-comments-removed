@@ -342,7 +342,7 @@ struct JSStructuredCloneWriter {
     
     
     
-    using CloneMemory = TraceableHashMap<JSObject*, uint32_t>;
+    using CloneMemory = TraceableHashMap<JSObject*, uint32_t, MovableCellHasher<JSObject*>>;
     Rooted<CloneMemory> memory;
 
     
