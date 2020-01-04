@@ -163,13 +163,13 @@ CloneAndAppend(nsIFile* aFile, const nsAString& aDir)
 }
 
 static void
-MoveAndOverwrite(nsIFile* aOldStorageDir,
-                 nsIFile* aNewStorageDir,
+MoveAndOverwrite(nsIFile* aOldParentDir,
+                 nsIFile* aNewParentDir,
                  const nsAString& aSubDir)
 {
   nsresult rv;
 
-  nsCOMPtr<nsIFile> srcDir(CloneAndAppend(aOldStorageDir, aSubDir));
+  nsCOMPtr<nsIFile> srcDir(CloneAndAppend(aOldParentDir, aSubDir));
   if (NS_WARN_IF(!srcDir)) {
     return;
   }
@@ -179,7 +179,13 @@ MoveAndOverwrite(nsIFile* aOldStorageDir,
     return;
   }
 
-  nsCOMPtr<nsIFile> dstDir(CloneAndAppend(aNewStorageDir, aSubDir));
+  
+  rv = aNewParentDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
+  if (rv != NS_ERROR_FILE_ALREADY_EXISTS && NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  nsCOMPtr<nsIFile> dstDir(CloneAndAppend(aNewParentDir, aSubDir));
   if (FileExists(dstDir)) {
     
     
@@ -191,7 +197,7 @@ MoveAndOverwrite(nsIFile* aOldStorageDir,
     }
   }
 
-  rv = srcDir->MoveTo(aNewStorageDir, EmptyString());
+  rv = srcDir->MoveTo(aNewParentDir, EmptyString());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -203,6 +209,21 @@ MigratePreGecko42StorageDir(nsIFile* aOldStorageDir,
 {
   MoveAndOverwrite(aOldStorageDir, aNewStorageDir, NS_LITERAL_STRING("id"));
   MoveAndOverwrite(aOldStorageDir, aNewStorageDir, NS_LITERAL_STRING("storage"));
+}
+
+static void
+MigratePreGecko45StorageDir(nsIFile* aStorageDirBase)
+{
+  nsCOMPtr<nsIFile> adobeStorageDir(CloneAndAppend(aStorageDirBase, NS_LITERAL_STRING("gmp-eme-adobe")));
+  if (NS_WARN_IF(!adobeStorageDir)) {
+    return;
+  }
+
+  
+  
+  
+  MoveAndOverwrite(aStorageDirBase, adobeStorageDir, NS_LITERAL_STRING("id"));
+  MoveAndOverwrite(aStorageDirBase, adobeStorageDir, NS_LITERAL_STRING("storage"));
 }
 
 static nsresult
@@ -295,6 +316,14 @@ GeckoMediaPluginServiceParent::InitStorage()
   
   
   MigratePreGecko42StorageDir(gmpDirWithoutPlatform, mStorageBaseDir);
+
+  
+  
+  
+  
+  
+  
+  MigratePreGecko45StorageDir(mStorageBaseDir);
 
   return GeckoMediaPluginService::Init();
 }
