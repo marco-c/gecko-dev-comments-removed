@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+#import "mozAccessible.h"
+
+@interface mozTablePartAccessible : mozAccessible
+- (BOOL)isLayoutTablePart;
+- (NSString*)role;
+@end
+
+@interface mozTableAccessible : mozTablePartAccessible
+- (NSArray*)additionalAccessibilityAttributeNames;
+- (id)accessibilityAttributeValue:(NSString*)attribute;
+@end
+
+@interface mozTableRowAccessible : mozTablePartAccessible
+- (NSArray*)additionalAccessibilityAttributeNames;
+- (id)accessibilityAttributeValue:(NSString*)attribute;
+@end
+
+@interface mozTableCellAccessible : mozTablePartAccessible
+- (NSArray*)additionalAccessibilityAttributeNames;
+- (id)accessibilityAttributeValue:(NSString*)attribute;
+@end
