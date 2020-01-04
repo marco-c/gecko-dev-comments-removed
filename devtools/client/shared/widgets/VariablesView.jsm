@@ -117,7 +117,7 @@ VariablesView.prototype = {
   set rawObject(aObject) {
     this.empty();
     this.addScope()
-        .addItem(undefined, { enumerable: true })
+        .addItem("", { enumerable: true })
         .populate(aObject, { sorted: true });
   },
 
@@ -1325,7 +1325,7 @@ Scope.prototype = {
 
 
 
-  addItem: function (aName, aDescriptor = {}, aOptions = {}) {
+  addItem: function (aName = "", aDescriptor = {}, aOptions = {}) {
     let {relaxed} = aOptions;
     if (this._store.has(aName) && !relaxed) {
       return this._store.get(aName);
@@ -1335,7 +1335,7 @@ Scope.prototype = {
     this._store.set(aName, child);
     this._variablesView._itemsByElement.set(child._target, child);
     this._variablesView._currHierarchy.set(child.absoluteName, child);
-    child.header = typeof aName === 'string';
+    child.header = !!aName;
 
     return child;
   },
@@ -2449,7 +2449,7 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
   setGrip: function (aGrip) {
     
     
-    if (typeof this._nameString !== "string" || aGrip === undefined || aGrip === null) {
+    if (!this._nameString || aGrip === undefined || aGrip === null) {
       return;
     }
     
@@ -2535,9 +2535,7 @@ Variable.prototype = Heritage.extend(Scope.prototype, {
 
 
   _init: function (aName, aDescriptor) {
-    this._nameString = aName;
-    aName = String(aName);
-    this._idString = generateId(aName);
+    this._idString = generateId(this._nameString = aName);
     this._displayScope(aName, this.targetClassName);
     this._displayVariable();
     this._customizeVariable();
