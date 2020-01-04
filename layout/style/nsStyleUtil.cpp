@@ -675,7 +675,7 @@ nsStyleUtil::IsSignificantChild(nsIContent* aChild, bool aTextIsSignificant,
 
 
 
-typedef nsStyleBackground::Position::PositionCoord PositionCoord;
+typedef nsStyleImageLayers::Position::PositionCoord PositionCoord;
 static bool
 ObjectPositionCoordMightCauseOverflow(const PositionCoord& aCoord)
 {
@@ -713,7 +713,7 @@ nsStyleUtil::ObjectPropsMightCauseOverflow(const nsStylePosition* aStylePos)
 
   
   
-  const nsStyleBackground::Position& objectPosistion = aStylePos->mObjectPosition;
+  const nsStyleImageLayers::Position& objectPosistion = aStylePos->mObjectPosition;
   if (ObjectPositionCoordMightCauseOverflow(objectPosistion.mXPosition) ||
       ObjectPositionCoordMightCauseOverflow(objectPosistion.mYPosition)) {
     return true;

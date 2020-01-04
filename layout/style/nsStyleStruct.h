@@ -398,29 +398,11 @@ struct nsStyleColor
   nscolor mColor;                 
 };
 
-struct nsStyleBackground
-{
-  nsStyleBackground();
-  nsStyleBackground(const nsStyleBackground& aOther);
-  ~nsStyleBackground();
-
-  void* operator new(size_t sz, nsPresContext* aContext) CPP_THROW_NEW {
-    return aContext->PresShell()->
-      AllocateByObjectID(mozilla::eArenaObjectID_nsStyleBackground, sz);
-  }
-  void Destroy(nsPresContext* aContext);
-
-  nsChangeHint CalcDifference(const nsStyleBackground& aOther) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateEffects |
-           nsChangeHint_RepaintFrame |
-           nsChangeHint_SchedulePaint |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
+struct nsStyleImageLayers {
+  nsStyleImageLayers();
+  nsStyleImageLayers(const nsStyleImageLayers &aSource);
+  ~nsStyleImageLayers() {
+    MOZ_COUNT_DTOR(nsStyleImageLayers);
   }
 
   struct Position;
@@ -536,14 +518,24 @@ struct nsStyleBackground
   struct Layer;
   friend struct Layer;
   struct Layer {
-    uint8_t mAttachment;                
-    uint8_t mClip;                      
-    uint8_t mOrigin;                    
-    uint8_t mBlendMode;                 
-    Repeat mRepeat;                     
-    Position mPosition;                 
-    nsStyleImage mImage;                
-    Size mSize;                         
+   nsStyleImage   mImage;         
+    Position      mPosition;      
+    Size          mSize;          
+    uint8_t       mClip;          
+    uint8_t       mOrigin;        
+    uint8_t       mAttachment;    
+                                  
+                                  
+                                  
+                                  
+                                  
+    uint8_t       mBlendMode;     
+                                  
+                                  
+                                  
+                                  
+                                  
+    Repeat        mRepeat;        
 
     
     Layer();
@@ -559,8 +551,6 @@ struct nsStyleBackground
       if (mImage.GetType() == eStyleImageType_Image)
         mImage.UntrackImage(aContext);
     }
-
-    void SetInitialValues();
 
     
     
@@ -590,6 +580,7 @@ struct nsStyleBackground
            mImageCount,
            mSizeCount,
            mBlendModeCount;
+
   
   
   
@@ -604,14 +595,46 @@ struct nsStyleBackground
 
   const Layer& BottomLayer() const { return mLayers[mImageCount - 1]; }
 
-  #define NS_FOR_VISIBLE_BACKGROUND_LAYERS_BACK_TO_FRONT(var_, stylebg_) \
-    for (uint32_t var_ = (stylebg_) ? (stylebg_)->mImageCount : 1; var_-- != 0; )
-  #define NS_FOR_VISIBLE_BACKGROUND_LAYERS_BACK_TO_FRONT_WITH_RANGE(var_, stylebg_, start_, count_) \
-    NS_ASSERTION((int32_t)(start_) >= 0 && (uint32_t)(start_) < ((stylebg_) ? (stylebg_)->mImageCount : 1), "Invalid layer start!"); \
+  void TrackImages(nsPresContext* aContext) {
+    for (uint32_t i = 0; i < mImageCount; ++i) {
+        mLayers[i].TrackImages(aContext);
+    }
+  }
+  void UntrackImages(nsPresContext* aContext) {
+    for (uint32_t i = 0; i < mImageCount; ++i)
+      mLayers[i].UntrackImages(aContext);
+  }
+  #define NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(var_, layers_) \
+    for (uint32_t var_ = (layers_).mImageCount; var_-- != 0; )
+  #define NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT_WITH_RANGE(var_, layers_, start_, count_) \
+    NS_ASSERTION((int32_t)(start_) >= 0 && (uint32_t)(start_) < (layers_).mImageCount, "Invalid layer start!"); \
     NS_ASSERTION((count_) > 0 && (count_) <= (start_) + 1, "Invalid layer range!"); \
     for (uint32_t var_ = (start_) + 1; var_-- != (uint32_t)((start_) + 1 - (count_)); )
+};
 
-  nscolor mBackgroundColor;       
+struct nsStyleBackground {
+  nsStyleBackground();
+  nsStyleBackground(const nsStyleBackground& aOther);
+  ~nsStyleBackground();
+
+  void* operator new(size_t sz, nsPresContext* aContext) CPP_THROW_NEW {
+    return aContext->PresShell()->
+      AllocateByObjectID(mozilla::eArenaObjectID_nsStyleBackground, sz);
+  }
+  void Destroy(nsPresContext* aContext);
+
+  nsChangeHint CalcDifference(const nsStyleBackground& aOther) const;
+  static nsChangeHint MaxDifference() {
+     return nsChangeHint_UpdateEffects |
+           nsChangeHint_RepaintFrame |
+           nsChangeHint_SchedulePaint |
+           nsChangeHint_NeutralChange;
+  }
+  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
+    
+    
+    return nsChangeHint(0);
+  }
 
   
   bool IsTransparent() const;
@@ -621,6 +644,11 @@ struct nsStyleBackground
   
   
   bool HasFixedBackground() const;
+
+  const nsStyleImageLayers::Layer& BottomLayer() const { return mLayers.BottomLayer(); }
+
+  nsStyleImageLayers mLayers;
+  nscolor mBackgroundColor;       
 };
 
 
@@ -1450,7 +1478,7 @@ struct nsStylePosition
 
   
   
-  typedef nsStyleBackground::Position Position;
+  typedef nsStyleImageLayers::Position Position;
 
   
 
@@ -2270,7 +2298,7 @@ struct nsStyleDisplay
   
   
   
-  typedef nsStyleBackground::Position Position;
+  typedef nsStyleImageLayers::Position Position;
 
   
   
@@ -3191,7 +3219,7 @@ public:
     mFillRule = aFillRule;
   }
 
-  typedef nsStyleBackground::Position Position;
+  typedef nsStyleImageLayers::Position Position;
   Position& GetPosition() {
     NS_ASSERTION(mType == eCircle || mType == eEllipse,
                  "expected circle or ellipse");
