@@ -1103,6 +1103,7 @@ bool MinidumpCallback(
                        "-a", "org.mozilla.gecko.reportCrash",
                        "-n", crashReporterPath,
                        "--es", "minidumpPath", minidumpPath,
+                       "--ez", "minidumpSuccess", succeeded ? "true" : "false",
                        (char*)0);
     } else {
       Unused << execlp("/system/bin/am",
@@ -1111,6 +1112,7 @@ bool MinidumpCallback(
                        "-a", "org.mozilla.gecko.reportCrash",
                        "-n", crashReporterPath,
                        "--es", "minidumpPath", minidumpPath,
+                       "--ez", "minidumpSuccess", succeeded ? "true" : "false",
                        (char*)0);
     }
 #endif
@@ -1618,7 +1620,7 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory,
 
 #ifdef XP_WIN
   gExceptionHandler->set_handle_debug_exceptions(true);
-  
+
 #ifdef _WIN64
   
   sUnhandledExceptionFilter = GetUnhandledExceptionFilter();
@@ -2095,7 +2097,7 @@ class DelayedNote
       AppendAppNotesToCrashReport(mData);
     }
   }
-  
+
  private:
   nsCString mKey;
   nsCString mData;
@@ -2443,7 +2445,7 @@ static nsresult PrefSubmitReports(bool* aSubmitReports, bool writePref)
 
   
   
-  
+
   
   if(!appVendor.IsEmpty()) {
     regPath.Append(appVendor);
@@ -2504,7 +2506,7 @@ static nsresult PrefSubmitReports(bool* aSubmitReports, bool writePref)
     *aSubmitReports = true;
     return NS_OK;
   }
-  
+
   rv = regKey->ReadIntValue(NS_LITERAL_STRING("SubmitCrashReport"), &value);
   
   if (NS_FAILED(rv)) {
@@ -2582,7 +2584,7 @@ static nsresult PrefSubmitReports(bool* aSubmitReports, bool writePref)
     rv = iniWriter->WriteFile(nullptr, 0);
     return rv;
   }
-  
+
   nsAutoCString submitReportValue;
   rv = iniParser->GetString(NS_LITERAL_CSTRING("Crash Reporter"),
                             NS_LITERAL_CSTRING("SubmitReport"),
@@ -2858,7 +2860,7 @@ GetMinidumpForID(const nsAString& id, nsIFile** minidump)
 {
   if (!GetMinidumpLimboDir(minidump))
     return false;
-  (*minidump)->Append(id + NS_LITERAL_STRING(".dmp")); 
+  (*minidump)->Append(id + NS_LITERAL_STRING(".dmp"));
   return true;
 }
 
@@ -3863,7 +3865,7 @@ CreateMinidumpsAndPair(ProcessHandle aTargetPid,
   } else {
     incomingDump = aIncomingDumpToPair;
   }
-  
+
   RenameAdditionalHangMinidump(incomingDump, targetMinidump, aIncomingPairName);
 
   if (ShouldReport()) {
