@@ -85,31 +85,50 @@ public:
 
   
   
-  struct NodePosition final
+  
+  
+  struct NodePosition
   {
     nsCOMPtr<nsINode> mNode;
     int32_t mOffset;
+    
+    
+    bool mAfterOpenTag;
 
     NodePosition()
       : mOffset(-1)
+      , mAfterOpenTag(true)
     {
     }
 
     NodePosition(nsINode* aNode, int32_t aOffset)
       : mNode(aNode)
       , mOffset(aOffset)
+      , mAfterOpenTag(true)
     {
     }
 
     explicit NodePosition(const nsIFrame::ContentOffsets& aContentOffsets)
       : mNode(aContentOffsets.content)
       , mOffset(aContentOffsets.offset)
+      , mAfterOpenTag(true)
     {
     }
 
+  protected:
+    NodePosition(nsINode* aNode, int32_t aOffset, bool aAfterOpenTag)
+      : mNode(aNode)
+      , mOffset(aOffset)
+      , mAfterOpenTag(aAfterOpenTag)
+    {
+    }
+
+  public:
     bool operator==(const NodePosition& aOther) const
     {
-      return mNode == aOther.mNode && mOffset == aOther.mOffset;
+      return mNode == aOther.mNode &&
+             mOffset == aOther.mOffset &&
+             mAfterOpenTag == aOther.mAfterOpenTag;
     }
 
     bool IsValid() const
@@ -119,6 +138,14 @@ public:
     bool OffsetIsValid() const
     {
       return IsValid() && static_cast<uint32_t>(mOffset) <= mNode->Length();
+    }
+    bool IsBeforeOpenTag() const
+    {
+      return IsValid() && mNode->IsElement() && !mOffset && !mAfterOpenTag;
+    }
+    bool IsImmediatelyAfterOpenTag() const
+    {
+      return IsValid() && mNode->IsElement() && !mOffset && mAfterOpenTag;
     }
     nsresult SetToRangeStart(nsRange* aRange) const
     {
@@ -140,6 +167,32 @@ public:
   
   
   
+  struct NodePositionBefore final : public NodePosition
+  {
+    NodePositionBefore(nsINode* aNode, int32_t aOffset)
+      : NodePosition(aNode, aOffset, false)
+    {
+    }
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static nsresult GetFlatTextLengthInRange(const NodePosition& aStartPosition,
                                            const NodePosition& aEndPosition,
                                            nsIContent* aRootContent,
@@ -156,7 +209,8 @@ public:
                                       uint32_t aMaxLength = UINT32_MAX);
   
   
-  static uint32_t GetNativeTextLengthBefore(nsIContent* aContent);
+  static uint32_t GetNativeTextLengthBefore(nsIContent* aContent,
+                                            nsINode* aRootNode);
 
 protected:
   
@@ -177,6 +231,11 @@ protected:
   nsresult GetFlatTextLengthBefore(nsRange* aRange,
                                    uint32_t* aOffset,
                                    LineBreakType aLineBreakType);
+  
+  
+  
+  static bool ShouldBreakLineBefore(nsIContent* aContent,
+                                    nsINode* aRootNode);
   
   static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
   static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);
@@ -221,10 +280,10 @@ protected:
                                int32_t aXPStartOffset,
                                int32_t aXPEndOffset,
                                LineBreakType aLineBreakType);
-  static nsresult GenerateFlatFontRanges(nsRange* aRange,
-                                         FontRangeArray& aFontRanges,
-                                         uint32_t& aLength,
-                                         LineBreakType aLineBreakType);
+  nsresult GenerateFlatFontRanges(nsRange* aRange,
+                                  FontRangeArray& aFontRanges,
+                                  uint32_t& aLength,
+                                  LineBreakType aLineBreakType);
 };
 
 } 

@@ -90,6 +90,12 @@ using namespace widget;
 
 
 
+
+
+
+
+
+
 ContentEventHandler::ContentEventHandler(nsPresContext* aPresContext)
   : mPresContext(aPresContext)
   , mPresShell(aPresContext->GetPresShell())
@@ -398,12 +404,14 @@ ContentEventHandler::GetNativeTextLength(nsIContent* aContent,
 }
 
  uint32_t
-ContentEventHandler::GetNativeTextLengthBefore(nsIContent* aContent)
+ContentEventHandler::GetNativeTextLengthBefore(nsIContent* aContent,
+                                               nsINode* aRootNode)
 {
   if (NS_WARN_IF(aContent->IsNodeOfType(nsINode::eTEXT))) {
     return 0;
   }
-  return IsContentBR(aContent) ? GetBRLength(LINE_BREAK_TYPE_NATIVE) : 0;
+  return ShouldBreakLineBefore(aContent, aRootNode) ?
+           GetBRLength(LINE_BREAK_TYPE_NATIVE) : 0;
 }
 
  uint32_t
@@ -457,6 +465,67 @@ static uint32_t ConvertToXPOffset(nsIContent* aContent, uint32_t aNativeOffset)
 #endif
 }
 
+ bool
+ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
+                                           nsINode* aRootNode)
+{
+  
+  if (aContent == aRootNode) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (!aContent->IsHTMLElement()) {
+    return false;
+  }
+
+  
+  
+  
+  if (aContent->IsHTMLElement(nsGkAtoms::br)) {
+    return IsContentBR(aContent);
+  }
+
+  
+  
+  
+  
+  
+  return !aContent->IsAnyOfHTMLElements(nsGkAtoms::a,
+                                        nsGkAtoms::abbr,
+                                        nsGkAtoms::acronym,
+                                        nsGkAtoms::b,
+                                        nsGkAtoms::bdi,
+                                        nsGkAtoms::bdo,
+                                        nsGkAtoms::big,
+                                        nsGkAtoms::cite,
+                                        nsGkAtoms::code,
+                                        nsGkAtoms::data,
+                                        nsGkAtoms::del,
+                                        nsGkAtoms::dfn,
+                                        nsGkAtoms::em,
+                                        nsGkAtoms::font,
+                                        nsGkAtoms::i,
+                                        nsGkAtoms::ins,
+                                        nsGkAtoms::kbd,
+                                        nsGkAtoms::mark,
+                                        nsGkAtoms::s,
+                                        nsGkAtoms::samp,
+                                        nsGkAtoms::small,
+                                        nsGkAtoms::span,
+                                        nsGkAtoms::strike,
+                                        nsGkAtoms::strong,
+                                        nsGkAtoms::sub,
+                                        nsGkAtoms::sup,
+                                        nsGkAtoms::time,
+                                        nsGkAtoms::tt,
+                                        nsGkAtoms::u,
+                                        nsGkAtoms::var);
+}
+
 nsresult
 ContentEventHandler::GenerateFlatTextContent(nsRange* aRange,
                                              nsAFlatString& aString,
@@ -506,7 +575,7 @@ ContentEventHandler::GenerateFlatTextContent(nsRange* aRange,
       } else {
         AppendString(aString, content);
       }
-    } else if (IsContentBR(content)) {
+    } else if (ShouldBreakLineBefore(content, mRootContent)) {
       aString.Append(char16_t('\n'));
     }
   }
@@ -626,7 +695,7 @@ ContentEventHandler::AppendFontRanges(FontRangeArray& aFontRanges,
   }
 }
 
- nsresult
+nsresult
 ContentEventHandler::GenerateFlatFontRanges(nsRange* aRange,
                                             FontRangeArray& aFontRanges,
                                             uint32_t& aLength,
@@ -669,7 +738,7 @@ ContentEventHandler::GenerateFlatFontRanges(nsRange* aRange,
                        startOffset, endOffset, aLineBreakType);
       baseOffset += GetTextLengthInRange(content, startOffset, endOffset,
                                          aLineBreakType);
-    } else if (IsContentBR(content)) {
+    } else if (ShouldBreakLineBefore(content, mRootContent)) {
       if (aFontRanges.IsEmpty()) {
         MOZ_ASSERT(baseOffset == 0);
         FontRange* fontRange = AppendFontRange(aFontRanges, baseOffset);
@@ -789,7 +858,8 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
     uint32_t textLength =
       content->IsNodeOfType(nsINode::eTEXT) ?
         GetTextLength(content, aLineBreakType) :
-        (IsContentBR(content) ? GetBRLength(aLineBreakType) : 0);
+        (ShouldBreakLineBefore(content, mRootContent) ?
+           GetBRLength(aLineBreakType) : 0);
     if (!textLength) {
       continue;
     }
@@ -898,6 +968,16 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
         MOZ_ASSERT(false, "This case should've already been handled at "
                           "the last node which caused some text");
         return NS_ERROR_FAILURE;
+      }
+
+      if (content->HasChildren() &&
+          ShouldBreakLineBefore(content, mRootContent)) {
+        
+        rv = aRange->SetEnd(content, 0);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
+        return NS_OK;
       }
 
       
@@ -1612,9 +1692,38 @@ ContentEventHandler::GetFlatTextLengthInRange(
       return rv;
     }
 
-    if (aEndPosition.OffsetIsValid()) {
+    
+    
+    NodePosition endPosition;
+    if (aEndPosition.mNode != aRootContent &&
+        aEndPosition.IsImmediatelyAfterOpenTag()) {
+      if (aEndPosition.mNode->HasChildren()) {
+        
+        
+        nsINode* firstChild = aEndPosition.mNode->GetFirstChild();
+        if (NS_WARN_IF(!firstChild)) {
+          return NS_ERROR_FAILURE;
+        }
+        endPosition = NodePosition(firstChild, 0);
+      } else {
+        
+        nsIContent* parentContent = aEndPosition.mNode->GetParent();
+        if (NS_WARN_IF(!parentContent)) {
+          return NS_ERROR_FAILURE;
+        }
+        int32_t indexInParent = parentContent->IndexOf(aEndPosition.mNode);
+        if (NS_WARN_IF(indexInParent < 0)) {
+          return NS_ERROR_FAILURE;
+        }
+        endPosition = NodePosition(parentContent, indexInParent + 1);
+      }
+    } else {
+      endPosition = aEndPosition;
+    }
+
+    if (endPosition.OffsetIsValid()) {
       
-      rv = aEndPosition.SetToRangeEnd(prev);
+      rv = endPosition.SetToRangeEnd(prev);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1623,9 +1732,9 @@ ContentEventHandler::GetFlatTextLengthInRange(
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-    } else if (aEndPosition.mNode != aRootContent) {
+    } else if (endPosition.mNode != aRootContent) {
       
-      rv = aEndPosition.SetToRangeEndAfter(prev);
+      rv = endPosition.SetToRangeEndAfter(prev);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1663,7 +1772,12 @@ ContentEventHandler::GetFlatTextLengthInRange(
       } else {
         *aLength += GetTextLength(content, aLineBreakType);
       }
-    } else if (IsContentBR(content)) {
+    } else if (ShouldBreakLineBefore(content, aRootContent)) {
+      
+      
+      if (node == aStartPosition.mNode && !aStartPosition.IsBeforeOpenTag()) {
+        continue;
+      }
       *aLength += GetBRLength(aLineBreakType);
     }
   }
@@ -1678,7 +1792,7 @@ ContentEventHandler::GetFlatTextLengthBefore(nsRange* aRange,
   MOZ_ASSERT(aRange);
   return GetFlatTextLengthInRange(
            NodePosition(mRootContent, 0),
-           NodePosition(aRange->GetStartParent(), aRange->StartOffset()),
+           NodePositionBefore(aRange->GetStartParent(), aRange->StartOffset()),
            mRootContent, aOffset, aLineBreakType);
 }
 
