@@ -11,6 +11,10 @@ Cu.importGlobalProperties(['File']);
 
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 
 this.EXPORTED_SYMBOLS = [
   "CrashSubmit"
@@ -23,9 +27,7 @@ const SUCCESS = "success";
 const FAILED  = "failed";
 const SUBMITTING = "submitting";
 
-var reportURL = null;
-var strings = null;
-var myListener = null;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function parseINIStrings(file) {
   var factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].
@@ -58,11 +60,11 @@ function getL10nStrings() {
     path.append("crashreporter.ini");
     if (!path.exists()) {
       
-      return;
+      return null;
     }
   }
   let crstrings = parseINIStrings(path);
-  strings = {
+  let strings = {
     'crashid': crstrings.CrashID,
     'reporturl': crstrings.CrashDetailsURL
   };
@@ -76,7 +78,10 @@ function getL10nStrings() {
     if ('CrashDetailsURL' in crstrings)
       strings['reporturl'] = crstrings.CrashDetailsURL;
   }
+  return strings;
 }
+
+XPCOMUtils.defineLazyGetter(this, "strings", getL10nStrings);
 
 function getDir(name) {
   let directoryService = Cc["@mozilla.org/file/directory_service;1"].
@@ -481,9 +486,77 @@ this.CrashSubmit = {
 
 
 
+
+
+  ignore: function CrashSubmit_ignore(id) {
+    let [dump, extra, mem] = getPendingMinidump(id);
+    return OS.File.open(dump.path + ".ignore", {create: true},
+                        {unixFlags: OS.Constants.libc.O_CREAT})
+      .then((file) => {file.close(); });
+  },
+
+  
+
+
+
+
+
   pendingIDs: function CrashSubmit_pendingIDs() {
     return getAllPendingMinidumpsIDs();
   },
+
+  
+
+
+
+
+
+
+
+  pendingIDsAsync: Task.async(function* CrashSubmit_pendingIDsAsync(maxFileDate) {
+    let ids = [];
+    let info = null;
+    try {
+      info = yield OS.File.stat(getDir("pending").path)
+    } catch (ex) {
+      
+      return ids;
+    }
+
+    if (info.isDir) {
+      let iterator = new OS.File.DirectoryIterator(getDir("pending").path);
+      try {
+        yield iterator.forEach(
+          function onEntry(file) {
+            if (file.name.endsWith(".dmp")) {
+              return OS.File.exists(file.path + ".ignore")
+                .then(ignoreExists => {
+                  if (!ignoreExists) {
+                    let id = file.name.slice(0, -4);
+                    if (UUID_REGEX.test(id)) {
+                      return OS.File.stat(file.path)
+                        .then(info => {
+                          if (info.lastAccessDate.valueOf() >
+                              maxFileDate.valueOf()) {
+                            ids.push(id);
+                          }
+                        });
+                    }
+                  }
+                  return null;
+                });
+            }
+            return null;
+          }
+        );
+      } catch(ex) {
+        Cu.reportError(ex);
+      } finally {
+        iterator.close();
+      }
+    }
+    return ids;
+  }),
 
   
 
@@ -495,6 +568,3 @@ this.CrashSubmit = {
   
   _activeSubmissions: []
 };
-
-
-getL10nStrings();
