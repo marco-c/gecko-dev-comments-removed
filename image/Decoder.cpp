@@ -418,9 +418,10 @@ Decoder::PostIsAnimated(int32_t aFirstFrameTimeout)
 }
 
 void
-Decoder::PostFrameStop(Opacity aFrameOpacity    ,
+Decoder::PostFrameStop(Opacity aFrameOpacity
+                         ,
                        DisposalMethod aDisposalMethod
-                                                ,
+                         ,
                        int32_t aTimeout         ,
                        BlendMethod aBlendMethod )
 {
