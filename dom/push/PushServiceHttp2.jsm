@@ -713,6 +713,11 @@ this.PushServiceHttp2 = {
     return this._unsubscribeResource(aRecord.subscriptionUri);
   },
 
+  reportDeliveryError: function(messageID, reason) {
+    console.warn("reportDeliveryError: Ignoring message delivery error",
+      messageID, reason);
+  },
+
   
 
 
