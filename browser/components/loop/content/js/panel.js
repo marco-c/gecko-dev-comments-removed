@@ -809,6 +809,21 @@ loop.panel = (function(_, mozL10n) {
         mozL10n.get("display_name_guest");
     },
 
+    
+
+
+
+    _renderLoadingRoomsView: function() {
+      return (
+        React.createElement("div", {className: "room-list"}, 
+          React.createElement("div", {className: "room-list-loading"}, 
+            React.createElement("img", {src: "loop/shared/img/animated-spinner.svg"})
+          ), 
+          this._renderNewRoomButton()
+        )
+      );
+    },
+
     _renderNoRoomsView: function() {
       return (
         React.createElement("div", {className: "room-list"}, 
@@ -839,6 +854,10 @@ loop.panel = (function(_, mozL10n) {
       if (this.state.error) {
         
         console.error("RoomList error", this.state.error);
+      }
+
+      if (this.state.pendingInitialRetrieval) {
+        return this._renderLoadingRoomsView();
       }
 
       if (!this.state.rooms.length) {
