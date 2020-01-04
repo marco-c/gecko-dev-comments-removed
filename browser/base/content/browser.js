@@ -5010,6 +5010,10 @@ nsBrowserAccess.prototype = {
   isTabContentWindow: function (aWindow) {
     return gBrowser.browsers.some(browser => browser.contentWindow == aWindow);
   },
+
+  canClose() {
+    return CanCloseWindow();
+  },
 }
 
 function getTogglableToolbars() {
@@ -6566,6 +6570,26 @@ var IndexedDBPromptHelper = {
   }
 };
 
+function CanCloseWindow()
+{
+  
+  
+  if (window.skipNextCanClose) {
+    return true;
+  }
+
+  for (let browser of gBrowser.browsers) {
+    let {permitUnload, timedOut} = browser.permitUnload();
+    if (timedOut) {
+      return true;
+    }
+    if (!permitUnload) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function WindowIsClosing()
 {
   if (TabView.isVisible()) {
@@ -6577,26 +6601,18 @@ function WindowIsClosing()
     return false;
 
   
-  if (gMultiProcessBrowser)
+  
+  
+  
+  if (CanCloseWindow()) {
+    
+    
+    
+    window.skipNextCanClose = true;
     return true;
-
-  for (let browser of gBrowser.browsers) {
-    let ds = browser.docShell;
-    
-    
-    
-    
-    if (ds.contentViewer && !ds.contentViewer.permitUnload(true)) {
-      
-      
-      
-      
-      window.getInterface(Ci.nsIDocShell).contentViewer.resetCloseWindow();
-      return false;
-    }
   }
 
-  return true;
+  return false;
 }
 
 
