@@ -101,6 +101,7 @@ enum class WebGLTexelFormat : uint8_t {
     RA16F, 
     RA32F, 
     RG8,
+    RG16F,
     
     RGB8,
     RGB565,
