@@ -292,8 +292,15 @@ public:
 
 class MediaStreamTrackDirectListener : public MediaStreamTrackListener
 {
+  friend class SourceMediaStream;
+  friend class TrackUnionStream;
+
 public:
   
+
+
+
+
 
 
 
@@ -332,6 +339,50 @@ public:
 
 protected:
   virtual ~MediaStreamTrackDirectListener() {}
+
+  void MirrorAndDisableSegment(AudioSegment& aFrom, AudioSegment& aTo)
+  {
+    aTo.Clear();
+    aTo.AppendNullData(aFrom.GetDuration());
+  }
+
+  void NotifyRealtimeTrackDataAndApplyTrackDisabling(MediaStreamGraph* aGraph,
+                                                     StreamTime aTrackOffset,
+                                                     MediaSegment& aMedia)
+  {
+    if (mDisabledCount == 0) {
+      NotifyRealtimeTrackData(aGraph, aTrackOffset, aMedia);
+      return;
+    }
+
+    if (!mMedia) {
+      mMedia = aMedia.CreateEmptyClone();
+    }
+    if (aMedia.GetType() == MediaSegment::AUDIO) {
+      MirrorAndDisableSegment(static_cast<AudioSegment&>(aMedia),
+                              static_cast<AudioSegment&>(*mMedia));
+    } else {
+      MOZ_CRASH("Unsupported media type");
+    }
+    NotifyRealtimeTrackData(aGraph, aTrackOffset, *mMedia);
+  }
+
+  void IncreaseDisabled()
+  {
+    ++mDisabledCount;
+  }
+  void DecreaseDisabled()
+  {
+    --mDisabledCount;
+    MOZ_ASSERT(mDisabledCount >= 0, "Double decrease");
+  }
+
+  
+  
+  
+  Atomic<int32_t> mDisabledCount;
+
+  nsAutoPtr<MediaSegment> mMedia;
 };
 
 
@@ -992,11 +1043,7 @@ public:
   }
 
   
-  void
-  SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled) override {
-    MutexAutoLock lock(mMutex);
-    MediaStream::SetTrackEnabledImpl(aTrackID, aEnabled);
-  }
+  void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled) override;
 
   
   void

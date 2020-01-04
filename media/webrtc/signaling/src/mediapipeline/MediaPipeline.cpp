@@ -72,7 +72,6 @@ static char kDTLSExporterLabel[] = "EXTRACTOR-dtls_srtp";
 
 MediaPipeline::~MediaPipeline() {
   ASSERT_ON_THREAD(main_thread_);
-  MOZ_ASSERT(!stream_);  
   MOZ_MTLOG(ML_INFO, "Destroying MediaPipeline: " << description_);
 }
 
@@ -103,13 +102,6 @@ nsresult MediaPipeline::Init_s() {
 
 
 
-
-void MediaPipeline::ShutdownTransport_s() {
-  ASSERT_ON_THREAD(sts_thread_);
-  MOZ_ASSERT(!stream_); 
-
-  DetachTransport_s();
-}
 
 void
 MediaPipeline::DetachTransport_s()
@@ -666,16 +658,16 @@ void MediaPipelineTransmit::AttachToTrack(const std::string& track_id) {
   description_ += "]";
 
   
-  MOZ_MTLOG(ML_DEBUG, "Attaching pipeline to stream "
-            << static_cast<void *>(stream_) << " conduit type=" <<
+  MOZ_MTLOG(ML_DEBUG, "Attaching pipeline to track "
+            << static_cast<void *>(domtrack_) << " conduit type=" <<
             (conduit_->type() == MediaSessionConduit::AUDIO ?"audio":"video"));
 
-  stream_->AddListener(listener_);
-
   
   
   
-  listener_->direct_connect_ = domstream_->AddDirectListener(listener_);
+  
+  domtrack_->AddDirectListener(listener_);
+  domtrack_->AddListener(listener_);
 
 #ifndef MOZILLA_INTERNAL_API
   
@@ -688,16 +680,12 @@ void MediaPipelineTransmit::UpdateSinkIdentity_m(nsIPrincipal* principal,
                                                  const PeerIdentity* sinkIdentity) {
   ASSERT_ON_THREAD(main_thread_);
 
-  MediaStreamTrack* track =
-    domstream_->GetOwnedTrackById(NS_ConvertUTF8toUTF16(trackid().c_str()));
-  MOZ_RELEASE_ASSERT(track);
-
-  bool enableTrack = principal->Subsumes(track->GetPrincipal());
+  bool enableTrack = principal->Subsumes(domtrack_->GetPrincipal());
   if (!enableTrack) {
     
     
     
-    const PeerIdentity* trackIdentity = track->GetPeerIdentity();
+    const PeerIdentity* trackIdentity = domtrack_->GetPeerIdentity();
     if (sinkIdentity && trackIdentity) {
       enableTrack = (*sinkIdentity == *trackIdentity);
     }
@@ -720,21 +708,24 @@ nsresult MediaPipelineTransmit::TransportReady_s(TransportInfo &info) {
   return NS_OK;
 }
 
-nsresult MediaPipelineTransmit::ReplaceTrack(DOMMediaStream *domstream,
-                                             const std::string& track_id) {
+nsresult MediaPipelineTransmit::ReplaceTrack(MediaStreamTrack& domtrack) {
   
-  MOZ_MTLOG(ML_DEBUG, "Reattaching pipeline " << description_ << " to stream "
-            << static_cast<void *>(domstream->GetOwnedStream())
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+  nsString nsTrackId;
+  domtrack.GetId(nsTrackId);
+  std::string track_id(NS_ConvertUTF16toUTF8(nsTrackId).get());
+#else
+  std::string track_id = domtrack.GetId();
+#endif
+  MOZ_MTLOG(ML_DEBUG, "Reattaching pipeline " << description_ << " to track "
+            << static_cast<void *>(&domtrack)
             << " track " << track_id << " conduit type=" <<
             (conduit_->type() == MediaSessionConduit::AUDIO ?"audio":"video"));
 
-  if (domstream_) { 
-    DetachMediaStream();
-  }
-  domstream_ = domstream; 
-  stream_ = domstream->GetOwnedStream();
+  DetachMedia();
+  domtrack_ = &domtrack; 
   
-  listener_->UnsetTrackId(stream_->GraphImpl());
+  listener_->UnsetTrackId(domtrack_->GraphImpl());
   track_id_ = track_id;
   AttachToTrack(track_id);
   return NS_OK;
@@ -896,28 +887,41 @@ UnsetTrackId(MediaStreamGraphImpl* graph) {
 }
 
 void MediaPipelineTransmit::PipelineListener::
-NotifyRealtimeData(MediaStreamGraph* graph, TrackID tid,
-                   StreamTime offset,
-                   uint32_t events,
-                   const MediaSegment& media) {
-  MOZ_MTLOG(ML_DEBUG, "MediaPipeline::NotifyRealtimeData()");
+NotifyRealtimeTrackData(MediaStreamGraph* graph,
+                        StreamTime offset,
+                        const MediaSegment& media) {
+  MOZ_MTLOG(ML_DEBUG, "MediaPipeline::NotifyRealtimeTrackData() listener=" <<
+                      this << ", offset=" << offset <<
+                      ", duration=" << media.GetDuration());
 
-  NewData(graph, tid, offset, events, media);
+  NewData(graph, offset, media);
 }
 
 void MediaPipelineTransmit::PipelineListener::
-NotifyQueuedTrackChanges(MediaStreamGraph* graph, TrackID tid,
-                         StreamTime offset,
-                         uint32_t events,
-                         const MediaSegment& queued_media,
-                         MediaStream* aInputStream,
-                         TrackID aInputTrackID) {
-  MOZ_MTLOG(ML_DEBUG, "MediaPipeline::NotifyQueuedTrackChanges()");
+NotifyQueuedChanges(MediaStreamGraph* graph,
+                    StreamTime offset,
+                    const MediaSegment& queued_media) {
+  MOZ_MTLOG(ML_DEBUG, "MediaPipeline::NotifyQueuedChanges()");
 
   
   if (!direct_connect_) {
-    NewData(graph, tid, offset, events, queued_media);
+    NewData(graph, offset, queued_media);
   }
+}
+
+void MediaPipelineTransmit::PipelineListener::
+NotifyDirectListenerInstalled(InstallationResult aResult) {
+  MOZ_MTLOG(ML_INFO, "MediaPipeline::NotifyDirectListenerInstalled() listener= " <<
+                     this << ", result=" << static_cast<int32_t>(aResult));
+
+  direct_connect_ = InstallationResult::SUCCESS == aResult;
+}
+
+void MediaPipelineTransmit::PipelineListener::
+NotifyDirectListenerUninstalled() {
+  MOZ_MTLOG(ML_INFO, "MediaPipeline::NotifyDirectListenerUninstalled() listener=" << this);
+
+  direct_connect_ = false;
 }
 
 
@@ -925,14 +929,9 @@ NotifyQueuedTrackChanges(MediaStreamGraph* graph, TrackID tid,
 #define CRSIZE(x,y) ((((x)+1) >> 1) * (((y)+1) >> 1))
 #define I420SIZE(x,y) (YSIZE((x),(y)) + 2 * CRSIZE((x),(y)))
 
-
-
-
-
 void MediaPipelineTransmit::PipelineListener::
-NewData(MediaStreamGraph* graph, TrackID tid,
+NewData(MediaStreamGraph* graph,
         StreamTime offset,
-        uint32_t events,
         const MediaSegment& media) {
   if (!active_) {
     MOZ_MTLOG(ML_DEBUG, "Discarding packets because transport not ready");
@@ -942,15 +941,8 @@ NewData(MediaStreamGraph* graph, TrackID tid,
   if (conduit_->type() !=
       (media.GetType() == MediaSegment::AUDIO ? MediaSessionConduit::AUDIO :
                                                 MediaSessionConduit::VIDEO)) {
-    
-    return;
-  }
-
-  if (track_id_ == TRACK_INVALID) {
-    
-    MutexAutoLock lock(mMutex);
-    track_id_ = track_id_external_ = tid;
-  } else if (tid != track_id_) {
+    MOZ_ASSERT(false, "The media type should always be correct since the "
+                      "listener is locked to a specific track");
     return;
   }
 

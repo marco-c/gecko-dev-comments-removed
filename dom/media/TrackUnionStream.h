@@ -21,6 +21,8 @@ public:
   void RemoveInput(MediaInputPort* aPort) override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
+  void SetTrackEnabledImpl(TrackID aTrackID, bool aEnabled) override;
+
 protected:
   
   struct TrackMapEntry {
@@ -44,6 +46,10 @@ protected:
     TrackID mInputTrackID;
     TrackID mOutputTrackID;
     nsAutoPtr<MediaSegment> mSegment;
+    
+    
+    
+    nsTArray<RefPtr<MediaStreamTrackDirectListener>> mOwnedDirectListeners;
   };
 
   

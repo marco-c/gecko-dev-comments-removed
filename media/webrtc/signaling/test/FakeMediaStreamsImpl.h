@@ -58,12 +58,22 @@ void Fake_SourceMediaStream::Periodic() {
   if (mPullEnabled && !mStop) {
     
     mDesiredTime += 100;
-    for (std::set<Fake_MediaStreamListener *>::iterator it =
+    for (std::set<RefPtr<Fake_MediaStreamListener>>::iterator it =
              mListeners.begin(); it != mListeners.end(); ++it) {
       (*it)->NotifyPull(nullptr, TicksToTimeRoundDown(1000 ,
                                                       mDesiredTime));
     }
   }
+}
+
+
+void Fake_MediaStreamTrack::AddListener(Fake_MediaStreamTrackListener *aListener)
+{
+  mOwningStream->GetInputStream()->AddTrackListener(aListener, mTrackID);
+}
+void Fake_MediaStreamTrack::RemoveListener(Fake_MediaStreamTrackListener *aListener)
+{
+  mOwningStream->GetInputStream()->RemoveTrackListener(aListener, mTrackID);
 }
 
 
@@ -110,7 +120,7 @@ void Fake_AudioStreamSource::Periodic() {
   channels.AppendElement(data);
   segment.AppendFrames(samples.forget(), channels, AUDIO_BUFFER_SIZE);
 
-  for(std::set<Fake_MediaStreamListener *>::iterator it = mListeners.begin();
+  for(std::set<RefPtr<Fake_MediaStreamListener>>::iterator it = mListeners.begin();
        it != mListeners.end(); ++it) {
     (*it)->NotifyQueuedTrackChanges(nullptr, 
                                     0, 
@@ -119,6 +129,12 @@ void Fake_AudioStreamSource::Periodic() {
                                     segment,
                                     nullptr, 
                                     -1);     
+  }
+  for(std::vector<BoundTrackListener>::iterator it = mTrackListeners.begin();
+       it != mTrackListeners.end(); ++it) {
+    it->mListener->NotifyQueuedChanges(nullptr, 
+                                       0, 
+                                       segment);
   }
 }
 
