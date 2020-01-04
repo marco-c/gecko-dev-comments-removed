@@ -97,7 +97,8 @@ this.DownloadLastDir = function DownloadLastDir(aWindow) {
   
   this.fakeContext = {
     QueryInterface: XPCOMUtils.generateQI([Components.interfaces.nsILoadContext]),
-    usePrivateBrowsing: loadContext.usePrivateBrowsing
+    usePrivateBrowsing: loadContext.usePrivateBrowsing,
+    originAttributes: {},
   };
 }
 

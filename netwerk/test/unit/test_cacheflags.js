@@ -20,6 +20,7 @@ function LoadContext(usePrivateBrowsing) {
 }
 
 LoadContext.prototype = {
+  originAttributes: {},
   usePrivateBrowsing: false,
   
 
