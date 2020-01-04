@@ -2693,7 +2693,10 @@ bool AsyncPanZoomController::SnapBackIfOverscrolled() {
   }
   
   
-  RequestSnap();
+  
+  if (mState != FLING) {
+    RequestSnap();
+  }
   return false;
 }
 
@@ -3563,6 +3566,8 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics() {
 
 void AsyncPanZoomController::RequestSnap() {
   if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
+    APZC_LOG("%p requesting snap near %s\n", this,
+        Stringify(mFrameMetrics.GetScrollOffset()).c_str());
     controller->RequestFlingSnap(mFrameMetrics.GetScrollId(),
                                  mFrameMetrics.GetScrollOffset());
   }
