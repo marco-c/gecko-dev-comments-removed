@@ -25,6 +25,7 @@
 
 
 #include "jit/arm64/Architecture-arm64.h"
+#include "jit/arm64/vixl/Assembler-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"
 
 namespace vixl {
@@ -128,6 +129,19 @@ ptrdiff_t Instruction::ImmPCRawOffset() const {
     offset = ImmBranch();
   }
   return offset;
+}
+
+void
+Instruction::SetImmPCRawOffset(ptrdiff_t offset)
+{
+  if (IsPCRelAddressing()) {
+    
+    
+    Instr imm = vixl::Assembler::ImmPCRelAddress(offset);
+    SetInstructionBits(Mask(~ImmPCRel_mask) | imm);
+  } else {
+    SetBranchImmTarget(this + (offset << kInstructionSizeLog2));
+  }
 }
 
 

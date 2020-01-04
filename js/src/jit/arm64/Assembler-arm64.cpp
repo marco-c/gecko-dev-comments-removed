@@ -225,27 +225,25 @@ Assembler::bind(Label* label, BufferOffset targetOffset)
 
     
     
-    uint32_t branchOffset = label->offset();
+    BufferOffset branchOffset(label);
 
-    while ((int32_t)branchOffset != LabelBase::INVALID_OFFSET) {
-        Instruction* link = getInstructionAt(BufferOffset(branchOffset));
-
+    while (branchOffset.assigned()) {
         
         
-        uint32_t nextLinkOffset = uint32_t(link->ImmPCRawOffset());
-        if (nextLinkOffset != uint32_t(LabelBase::INVALID_OFFSET))
-            nextLinkOffset += branchOffset;
-        
-        
-        
-        
-        
-        ptrdiff_t relativeByteOffset = targetOffset.getOffset() - branchOffset;
-        Instruction* target = (Instruction*)(((uint8_t*)link) + relativeByteOffset);
+        BufferOffset nextOffset = NextLink(branchOffset);
 
         
-        link->SetImmPCOffsetTarget(target);
-        branchOffset = nextLinkOffset;
+        
+        
+        
+        
+        ptrdiff_t relativeByteOffset = targetOffset.getOffset() - branchOffset.getOffset();
+        Instruction* link = getInstructionAt(branchOffset);
+
+        
+        link->SetImmPCOffsetTarget(link + relativeByteOffset);
+
+        branchOffset = nextOffset;
     }
 
     
@@ -617,17 +615,18 @@ Assembler::retarget(Label* label, Label* target)
             
             
             BufferOffset labelBranchOffset(label);
-            BufferOffset next;
 
             
-            while (nextLink(labelBranchOffset, &next))
+            BufferOffset next = NextLink(labelBranchOffset);
+            while (next.assigned()) {
                 labelBranchOffset = next;
+                next = NextLink(next);
+            }
 
             
             
-            Instruction* branch = getInstructionAt(labelBranchOffset);
+            SetNextLink(labelBranchOffset, BufferOffset(target));
             target->use(label->offset());
-            branch->SetImmPCOffsetTarget(branch - labelBranchOffset.getOffset());
         } else {
             
             

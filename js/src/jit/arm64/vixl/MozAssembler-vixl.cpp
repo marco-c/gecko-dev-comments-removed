@@ -49,10 +49,57 @@ void Assembler::FinalizeCode() {
 
 
 
+
+
+
+
+
+static const ptrdiff_t kEndOfLabelUseList = 0;
+
+BufferOffset
+MozBaseAssembler::NextLink(BufferOffset cur)
+{
+    Instruction* link = getInstructionAt(cur);
+    
+    ptrdiff_t offset = link->ImmPCRawOffset();
+    
+    if (offset == kEndOfLabelUseList)
+        return BufferOffset();
+    
+    return BufferOffset(cur.getOffset() + offset * kInstructionSize);
+}
+
+static ptrdiff_t
+EncodeOffset(BufferOffset cur, BufferOffset next)
+{
+    MOZ_ASSERT(next.assigned() && cur.assigned());
+    ptrdiff_t offset = next.getOffset() - cur.getOffset();
+    MOZ_ASSERT(offset % kInstructionSize == 0);
+    return offset / kInstructionSize;
+}
+
+void
+MozBaseAssembler::SetNextLink(BufferOffset cur, BufferOffset next)
+{
+    Instruction* link = getInstructionAt(cur);
+    link->SetImmPCRawOffset(EncodeOffset(cur, next));
+}
+
+
+
+
+
+
+
+
+
+
 template <int element_size>
-ptrdiff_t Assembler::LinkAndGetOffsetTo(BufferOffset branch, Label* label) {
+ptrdiff_t
+MozBaseAssembler::LinkAndGetOffsetTo(BufferOffset branch, Label* label)
+{
   if (armbuffer_.oom())
-    return js::jit::LabelBase::INVALID_OFFSET;
+    return kEndOfLabelUseList;
 
   if (label->bound()) {
     
@@ -65,32 +112,28 @@ ptrdiff_t Assembler::LinkAndGetOffsetTo(BufferOffset branch, Label* label) {
     
     
     label->use(branch.getOffset());
-    return js::jit::LabelBase::INVALID_OFFSET;
+    return kEndOfLabelUseList;
   }
 
   
   
-  ptrdiff_t prevHeadOffset = static_cast<ptrdiff_t>(label->offset());
+  ptrdiff_t offset = EncodeOffset(branch, BufferOffset(label));
   label->use(branch.getOffset());
-  VIXL_ASSERT(prevHeadOffset - branch.getOffset() != js::jit::LabelBase::INVALID_OFFSET);
-  return prevHeadOffset - branch.getOffset();
+  MOZ_ASSERT(offset != kEndOfLabelUseList);
+  return offset;
 }
 
-
-ptrdiff_t Assembler::LinkAndGetByteOffsetTo(BufferOffset branch, Label* label) {
+ptrdiff_t MozBaseAssembler::LinkAndGetByteOffsetTo(BufferOffset branch, Label* label) {
   return LinkAndGetOffsetTo<1>(branch, label);
 }
 
-
-ptrdiff_t Assembler::LinkAndGetInstructionOffsetTo(BufferOffset branch, Label* label) {
+ptrdiff_t MozBaseAssembler::LinkAndGetInstructionOffsetTo(BufferOffset branch, Label* label) {
   return LinkAndGetOffsetTo<kInstructionSize>(branch, label);
 }
 
-
-ptrdiff_t Assembler::LinkAndGetPageOffsetTo(BufferOffset branch, Label* label) {
+ptrdiff_t MozBaseAssembler::LinkAndGetPageOffsetTo(BufferOffset branch, Label* label) {
   return LinkAndGetOffsetTo<kPageSize>(branch, label);
 }
-
 
 BufferOffset Assembler::b(int imm26) {
   return EmitBranch(B | ImmUncondBranch(imm26));

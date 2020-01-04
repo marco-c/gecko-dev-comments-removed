@@ -4225,17 +4225,6 @@ class Assembler : public MozBaseAssembler {
                             unsigned access_size,
                             LoadStoreScalingOption option);
 
-  
-  
-  
-  ptrdiff_t LinkAndGetByteOffsetTo(BufferOffset branch, Label * label);
-  ptrdiff_t LinkAndGetInstructionOffsetTo(BufferOffset branch, Label * label);
-  ptrdiff_t LinkAndGetPageOffsetTo(BufferOffset branch, Label * label);
-
-  
-  template <int element_size>
-  ptrdiff_t LinkAndGetOffsetTo(BufferOffset branch, Label* label);
-
  protected:
   
   
