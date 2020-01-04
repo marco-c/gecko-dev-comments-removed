@@ -10459,9 +10459,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
 
     
     
-    bool hasNoExtraIndexedProperty = !ElementAccessHasExtraIndexedProperty(this, obj);
-
-    bool mayBeFrozen = ElementAccessMightBeFrozen(constraints(), obj);
+    bool writeOutOfBounds = !ElementAccessHasExtraIndexedProperty(this, obj);
 
     
     MInstruction* idInt32 = MToInt32::New(alloc(), id);
@@ -10507,21 +10505,10 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
     
     
     
-    
-    
     MInstruction* store;
     MStoreElementCommon *common = nullptr;
-    if (writeHole && hasNoExtraIndexedProperty && !mayBeFrozen) {
+    if (writeHole && writeOutOfBounds) {
         MStoreElementHole* ins = MStoreElementHole::New(alloc(), obj, elements, id, newValue, unboxedType);
-        store = ins;
-        common = ins;
-
-        current->add(ins);
-        current->push(value);
-    } else if (hasNoExtraIndexedProperty && mayBeFrozen) {
-        bool strict = IsStrictSetPC(pc);
-        MFallibleStoreElement* ins = MFallibleStoreElement::New(alloc(), obj, elements, id,
-                                                                newValue, unboxedType, strict);
         store = ins;
         common = ins;
 
@@ -10531,7 +10518,7 @@ IonBuilder::jsop_setelem_dense(TemporaryTypeSet::DoubleConversion conversion,
         MInstruction* initLength = initializedLength(obj, elements, unboxedType);
 
         id = addBoundsCheck(id, initLength);
-        bool needsHoleCheck = !packed && !hasNoExtraIndexedProperty;
+        bool needsHoleCheck = !packed && !writeOutOfBounds;
 
         if (unboxedType != JSVAL_TYPE_MAGIC) {
             store = storeUnboxedValue(obj, elements, 0, id, unboxedType, newValue);

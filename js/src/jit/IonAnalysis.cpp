@@ -3563,13 +3563,6 @@ jit::AddKeepAliveInstructions(MIRGraph& graph)
                     continue;
                 }
 
-                if (use->isFallibleStoreElement()) {
-                    
-                    MOZ_ASSERT_IF(!use->toFallibleStoreElement()->object()->isUnbox() && !ownerObject->isUnbox(),
-                                  use->toFallibleStoreElement()->object() == ownerObject);
-                    continue;
-                }
-
                 if (use->isInArray()) {
                     
                     MOZ_ASSERT_IF(!use->toInArray()->object()->isUnbox() && !ownerObject->isUnbox(),
