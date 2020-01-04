@@ -53,6 +53,13 @@ private:
   bool StartupPDM(PlatformDecoderModule* aPDM);
   
   already_AddRefed<PlatformDecoderModule> GetDecoder(const nsACString& aMimeType);
+  already_AddRefed<MediaDataDecoder>
+  CreateDecoderWithPDM(PlatformDecoderModule* aPDM,
+                       const TrackInfo& aConfig,
+                       FlushableTaskQueue* aTaskQueue,
+                       MediaDataDecoderCallback* aCallback,
+                       layers::LayersBackend aLayersBackend,
+                       layers::ImageContainer* aImageContainer);
 
   
   static bool sUseBlankDecoder;
