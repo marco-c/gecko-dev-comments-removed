@@ -268,11 +268,6 @@ public:
   
 
 
-  void SendPaintTime(uint64_t aId, TimeDuration aPaintTime);
-
-  
-
-
 
 
   bool EndTransaction(InfallibleTArray<EditReply>* aReplies,
