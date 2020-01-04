@@ -117,6 +117,7 @@ private:
                       nsIEditor* aEditor);
   bool InitWithPlugin(nsPresContext* aPresContext, nsIContent* aContent);
   bool IsInitializedWithPlugin() const { return !mEditor; }
+  void OnIMEReceivedFocus();
   void Clear();
   bool IsObservingContent(nsPresContext* aPresContext,
                           nsIContent* aContent) const;
@@ -261,6 +262,8 @@ private:
   bool mNeedsToNotifyIMEOfTextChange;
   bool mNeedsToNotifyIMEOfSelectionChange;
   bool mNeedsToNotifyIMEOfPositionChange;
+  
+  
   
   
   

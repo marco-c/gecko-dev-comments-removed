@@ -251,25 +251,55 @@ IMEContentObserver::Init(nsIWidget* aWidget,
   }
 
   if (firstInitialization) {
+    
     MaybeNotifyIMEOfFocusSet();
-
     
     
     
     
-    if (GetState() != eState_Initializing) {
-      return;
-    }
-
     
-    
-    
-    if (!mRootContent) {
-      return;
-    }
+    return;
   }
 
+  
+  
+  
+  
   ObserveEditableNode();
+
+  if (!NeedsToNotifyIMEOfSomething()) {
+    return;
+  }
+
+  
+  
+  FlushMergeableNotifications();
+}
+
+void
+IMEContentObserver::OnIMEReceivedFocus()
+{
+  
+  
+  
+  
+  if (GetState() != eState_Initializing) {
+    return;
+  }
+
+  
+  
+  
+  if (!mRootContent) {
+    return;
+  }
+
+  
+  ObserveEditableNode();
+
+  if (!NeedsToNotifyIMEOfSomething()) {
+    return;
+  }
 
   
   
@@ -403,6 +433,18 @@ IMEContentObserver::ObserveEditableNode()
   MOZ_RELEASE_ASSERT(mSelection);
   MOZ_RELEASE_ASSERT(mRootContent);
   MOZ_RELEASE_ASSERT(GetState() != eState_Observing);
+
+  
+  
+  
+  
+  
+  if (!mIMEHasFocus) {
+    MOZ_ASSERT(!mWidget || mNeedsToNotifyIMEOfFocusSet ||
+               mSendingNotification == NOTIFY_IME_OF_FOCUS,
+               "Wow, OnIMEReceivedFocus() won't be called?");
+    return;
+  }
 
   mIsObserving = true;
   if (mEditor) {
@@ -1418,10 +1460,25 @@ IMEContentObserver::IMENotificationSender::Run()
   if (mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet) {
     mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet = false;
     SendFocusSet();
+    mIMEContentObserver->mIsFlushingPendingNotifications = false;
+    
+    
+    
+    
+    
+    if (mIMEContentObserver->mNeedsToNotifyIMEOfFocusSet) {
+      MOZ_ASSERT(!mIMEContentObserver->mIMEHasFocus);
+      MOZ_LOG(sIMECOLog, LogLevel::Debug,
+        ("IMECO: 0x%p IMEContentObserver::IMENotificationSender::Run(), "
+         "posting AsyncMergeableNotificationsFlusher to current thread", this));
+      RefPtr<AsyncMergeableNotificationsFlusher> asyncFlusher =
+        new AsyncMergeableNotificationsFlusher(mIMEContentObserver);
+      NS_DispatchToCurrentThread(asyncFlusher);
+      return NS_OK;
+    }
     
     
     mIMEContentObserver->ClearPendingNotifications();
-    mIMEContentObserver->mIsFlushingPendingNotifications = false;
     return NS_OK;
   }
 
@@ -1454,10 +1511,10 @@ IMEContentObserver::IMENotificationSender::Run()
     }
   }
 
+  mIMEContentObserver->mIsFlushingPendingNotifications = false;
+
   
-  mIMEContentObserver->mIsFlushingPendingNotifications =
-    mIMEContentObserver->NeedsToNotifyIMEOfSomething();
-  if (mIMEContentObserver->mIsFlushingPendingNotifications) {
+  if (mIMEContentObserver->NeedsToNotifyIMEOfSomething()) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("IMECO: 0x%p IMEContentObserver::IMENotificationSender::Run(), "
        "posting AsyncMergeableNotificationsFlusher to current thread", this));
@@ -1504,6 +1561,12 @@ IMEContentObserver::IMENotificationSender::SendFocusSet()
   IMEStateManager::NotifyIME(IMENotification(NOTIFY_IME_OF_FOCUS),
                              mIMEContentObserver->mWidget);
   mIMEContentObserver->mSendingNotification = NOTIFY_IME_OF_NOTHING;
+
+  
+  
+  
+  
+  mIMEContentObserver->OnIMEReceivedFocus();
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,
     ("IMECO: 0x%p IMEContentObserver::IMENotificationSender::"
@@ -1675,6 +1738,18 @@ IMEContentObserver::IMENotificationSender::SendPositionChange()
 NS_IMETHODIMP
 IMEContentObserver::AsyncMergeableNotificationsFlusher::Run()
 {
+  
+  
+  if (!mIMEContentObserver->NeedsToNotifyIMEOfSomething()) {
+    NS_ASSERTION(!mIMEContentObserver->mIsFlushingPendingNotifications,
+      "It shouldn't be flushing pending notifications now");
+    MOZ_LOG(sIMECOLog, LogLevel::Debug,
+      ("IMECO: 0x%p IMEContentObserver::AsyncMergeableNotificationsFlusher::"
+       "Run(), does nothing, due to already flushed the pending notifications",
+       this));
+    return NS_OK;
+  }
+
   if (!CanNotifyIME(eChangeEventType_FlushPendingEvents)) {
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
       ("IMECO: 0x%p IMEContentObserver::AsyncMergeableNotificationsFlusher::"
