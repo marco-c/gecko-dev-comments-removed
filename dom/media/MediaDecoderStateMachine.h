@@ -134,7 +134,7 @@ public:
                            MediaDecoderReader* aReader,
                            bool aRealTime = false);
 
-  nsresult Init(MediaDecoderStateMachine* aCloneDonor);
+  nsresult Init();
 
   
   enum State {

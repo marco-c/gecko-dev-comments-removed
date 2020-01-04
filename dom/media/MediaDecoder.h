@@ -323,8 +323,7 @@ public:
   
   
   
-  virtual nsresult Load(nsIStreamListener** aListener,
-                        MediaDecoder* aCloneDonor);
+  virtual nsresult Load(nsIStreamListener** aListener);
 
   
   nsresult OpenResource(nsIStreamListener** aStreamListener);
@@ -363,7 +362,7 @@ public:
   virtual nsresult Seek(double aTime, SeekTarget::Type aSeekType);
 
   
-  nsresult InitializeStateMachine(MediaDecoder* aCloneDonor);
+  nsresult InitializeStateMachine();
 
   
   

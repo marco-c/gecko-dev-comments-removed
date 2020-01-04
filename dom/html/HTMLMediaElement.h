@@ -651,7 +651,7 @@ public:
 
 
   nsresult FinishDecoderSetup(MediaDecoder* aDecoder, MediaResource* aStream) {
-    return FinishDecoderSetup(aDecoder, aStream, nullptr, nullptr);
+    return FinishDecoderSetup(aDecoder, aStream, nullptr);
   }
 
   
@@ -811,8 +811,7 @@ protected:
 
   nsresult FinishDecoderSetup(MediaDecoder* aDecoder,
                               MediaResource* aStream,
-                              nsIStreamListener **aListener,
-                              MediaDecoder* aCloneDonor);
+                              nsIStreamListener **aListener);
 
   
 
