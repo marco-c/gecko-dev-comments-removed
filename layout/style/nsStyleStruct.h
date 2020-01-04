@@ -824,10 +824,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin
 
   nsStyleSides  mMargin;          
 
-  bool IsWidthDependent() const {
-    return !mMargin.ConvertsToLength();
-  }
-
   bool GetMargin(nsMargin& aMargin) const
   {
     if (mMargin.ConvertsToLength()) {
