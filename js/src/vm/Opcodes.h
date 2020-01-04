@@ -1668,7 +1668,14 @@
 
  \
     macro(JSOP_DEFLET,        162,"deflet",     NULL,     5,  0,  0,  JOF_ATOM) \
-    macro(JSOP_UNUSED163,     163,"unused163",  NULL,     1,  0,  1,  JOF_BYTE) \
+    
+
+
+
+
+
+ \
+    macro(JSOP_CHECKOBJCOERCIBLE, 163, "checkobjcoercible", NULL, 1,  1,  1, JOF_BYTE) \
     
 
 
@@ -2122,9 +2129,6 @@
     macro(JSOP_REST,          224, "rest",         NULL,  1,  0,  1,  JOF_BYTE|JOF_TYPESET) \
     \
     
-
-
-
 
 
 

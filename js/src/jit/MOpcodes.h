@@ -279,7 +279,8 @@ namespace jit {
     _(Debugger)                                                             \
     _(NewTarget)                                                            \
     _(ArrowNewTarget)                                                       \
-    _(CheckReturn)
+    _(CheckReturn)                                                          \
+    _(CheckObjCoercible)
 
 
 #define FORWARD_DECLARE(op) class M##op;
