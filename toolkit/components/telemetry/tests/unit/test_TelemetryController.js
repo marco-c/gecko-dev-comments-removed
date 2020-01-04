@@ -104,13 +104,13 @@ function run_test() {
 }
 
 add_task(function* asyncSetup() {
-  yield TelemetryController.testSetup();
+  yield TelemetryController.setup();
 
   gClientID = yield ClientID.getClientID();
 
   
   
-  let promisePingSetup = TelemetryController.testReset();
+  let promisePingSetup = TelemetryController.reset();
   do_check_eq(TelemetryController.clientID, gClientID);
   yield promisePingSetup;
 });
@@ -177,7 +177,7 @@ add_task(function* test_disableDataUpload() {
   
   yield TelemetryStorage.shutdown();
   
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
 
   
   let pendingPings = yield TelemetryStorage.loadPendingPingList();
@@ -191,7 +191,7 @@ add_task(function* test_disableDataUpload() {
   Preferences.set(PREF_TELEMETRY_SERVER, "http://localhost:" + PingServer.port);
 
   
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
   ping = yield PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
 
@@ -301,7 +301,7 @@ add_task(function* test_midnightPingSendFuzzing() {
   });
 
   PingServer.clearRequests();
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
 
   
   now = new Date(2030, 5, 2, 0, 40, 0);
@@ -382,7 +382,7 @@ add_task(function* test_telemetryEnabledUnexpectedValue(){
   
   Preferences.set(PREF_ENABLED, "false");
   
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
   Assert.equal(Telemetry.canRecordExtended, false,
                "Invalid values must not enable Telemetry recording.");
 
@@ -391,13 +391,13 @@ add_task(function* test_telemetryEnabledUnexpectedValue(){
 
   
   Preferences.set(PREF_ENABLED, true);
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
   Assert.equal(Telemetry.canRecordExtended, true,
                "True must enable Telemetry recording.");
 
   
   Preferences.set(PREF_ENABLED, false);
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
   Assert.equal(Telemetry.canRecordExtended, false,
                "False must disable Telemetry recording.");
 });

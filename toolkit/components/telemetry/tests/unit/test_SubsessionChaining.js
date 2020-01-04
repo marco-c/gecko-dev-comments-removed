@@ -122,16 +122,16 @@ add_task(function* test_subsessionsChaining() {
 
   
   
-  yield TelemetryController.testSetup();
-  yield TelemetryController.testShutdown();
+  yield TelemetrySession.reset();
+  yield TelemetrySession.shutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
   
   
   moveClockForward(30);
-  TelemetryController.testReset();
-  yield TelemetryController.testShutdown();
+  TelemetrySession.reset();
+  yield TelemetrySession.shutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
@@ -139,7 +139,7 @@ add_task(function* test_subsessionsChaining() {
   
   let schedulerTickCallback = null;
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetryController.testReset();
+  yield TelemetrySession.reset();
   moveClockForward(6);
   
   
@@ -152,8 +152,9 @@ add_task(function* test_subsessionsChaining() {
   
   
   moveClockForward(30);
-  yield TelemetryController.testReset();
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  yield TelemetryController.reset();
+  yield TelemetrySession.reset();
+  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
   Preferences.set(PREF_TEST, 1);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
@@ -161,14 +162,14 @@ add_task(function* test_subsessionsChaining() {
   
   
   moveClockForward(30);
-  yield TelemetryController.testShutdown();
+  yield TelemetrySession.shutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
   
   
   moveClockForward(30);
-  yield TelemetryController.testReset();
+  yield TelemetrySession.reset();
 
   
   now = fakeNow(futureDate(now, MS_IN_ONE_DAY));
@@ -185,12 +186,12 @@ add_task(function* test_subsessionsChaining() {
 
   
   moveClockForward(30);
-  yield TelemetryController.testShutdown();
+  yield TelemetrySession.shutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
-  yield TelemetryController.testReset();
-  TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
+  yield TelemetrySession.reset();
+  TelemetryEnvironment._watchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
   Preferences.set(PREF_TEST, 1);
   expectedReasons.push(REASON_ENVIRONMENT_CHANGE);
@@ -203,7 +204,8 @@ add_task(function* test_subsessionsChaining() {
 
   
   moveClockForward(30);
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
+  yield TelemetrySession.reset();
   
   now = futureDate(now, MS_IN_ONE_DAY);
   fakeNow(now);
@@ -223,12 +225,13 @@ add_task(function* test_subsessionsChaining() {
   expectedReasons.push(REASON_ABORTED_SESSION);
 
   
-  yield TelemetryController.testReset();
+  yield TelemetryController.reset();
+  yield TelemetrySession.reset();
 
   yield promiseValidateArchivedPings(expectedReasons);
 });
 
 add_task(function* () {
-  yield TelemetryController.testShutdown();
+  yield TelemetrySend.shutdown();
   do_test_finished();
 });
