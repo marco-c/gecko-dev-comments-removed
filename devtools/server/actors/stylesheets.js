@@ -14,13 +14,11 @@ Cu.import("resource://gre/modules/Task.jsm");
 
 const promise = require("promise");
 const events = require("sdk/event/core");
-const {OriginalSourceFront} = require("devtools/client/fronts/stylesheets");
 const protocol = require("devtools/server/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 const {LongStringActor, ShortLongString} = require("devtools/server/actors/string");
 const {fetch} = require("devtools/shared/DevToolsUtils");
 const {listenOnce} = require("devtools/shared/async-utils");
-const {originalSourceSpec} = require("devtools/shared/specs/stylesheets");
 const {SourceMapConsumer} = require("source-map");
 
 loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css-logic").CssLogic);
@@ -68,7 +66,9 @@ let modifiedStyleSheets = new WeakMap();
 
 
 
-var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
+var OriginalSourceActor = protocol.ActorClass({
+  typeName: "originalsource",
+
   initialize: function(aUrl, aSourceMap, aParentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
@@ -110,12 +110,43 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
   
 
 
-  getText: function() {
+  getText: method(function() {
     return this._getText().then((text) => {
       return new LongStringActor(this.conn, text || "");
     });
-  }
+  }, {
+    response: {
+      text: RetVal("longstring")
+    }
+  })
 })
+
+
+
+
+var OriginalSourceFront = protocol.FrontClass(OriginalSourceActor, {
+  initialize: function(client, form) {
+    protocol.Front.prototype.initialize.call(this, client, form);
+
+    this.isOriginalSource = true;
+  },
+
+  form: function(form, detail) {
+    if (detail === "actorid") {
+      this.actorID = form;
+      return;
+    }
+    this.actorID = form.actor;
+    this._form = form;
+  },
+
+  get href() {
+    return this._form.url;
+  },
+  get url() {
+    return this._form.url;
+  }
+});
 
 
 
