@@ -1643,7 +1643,7 @@ nsListControlFrame::MouseUp(nsIDOMEvent* aMouseEvent)
     
     
     WidgetMouseEvent* mouseEvent =
-      aMouseEvent->GetInternalNSEvent()->AsMouseEvent();
+      aMouseEvent->WidgetEventPtr()->AsMouseEvent();
 
     int32_t selectedIndex;
     if (NS_SUCCEEDED(GetIndexFromDOMEvent(aMouseEvent, selectedIndex))) {
@@ -2097,7 +2097,7 @@ nsListControlFrame::KeyDown(nsIDOMEvent* aKeyEvent)
   
 
   const WidgetKeyboardEvent* keyEvent =
-    aKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
+    aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
   MOZ_ASSERT(keyEvent,
     "DOM event must have WidgetKeyboardEvent for its internal event");
 
@@ -2250,7 +2250,7 @@ nsListControlFrame::KeyPress(nsIDOMEvent* aKeyEvent)
   AutoIncrementalSearchResetter incrementalSearchResetter;
 
   const WidgetKeyboardEvent* keyEvent =
-    aKeyEvent->GetInternalNSEvent()->AsKeyboardEvent();
+    aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
   MOZ_ASSERT(keyEvent,
     "DOM event must have WidgetKeyboardEvent for its internal event");
 

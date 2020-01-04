@@ -1141,7 +1141,7 @@ nsDocumentViewer::PermitUnloadInternal(bool *aShouldPrompt,
   
   if (!sIsBeforeUnloadDisabled && *aShouldPrompt && dialogsAreEnabled && mDocument &&
       (!sBeforeUnloadRequiresInteraction || mDocument->UserHasInteracted()) &&
-      (event->GetInternalNSEvent()->mFlags.mDefaultPrevented ||
+      (event->WidgetEventPtr()->mFlags.mDefaultPrevented ||
        !text.IsEmpty())) {
     
 
