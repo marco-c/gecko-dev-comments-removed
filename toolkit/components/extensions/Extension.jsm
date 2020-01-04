@@ -33,8 +33,12 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "OS",
+                                  "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 
 Cu.import("resource://gre/modules/ExtensionManagement.jsm");
 
@@ -336,22 +340,48 @@ this.ExtensionData = function(rootURI)
   this.rootURI = rootURI;
 
   this.manifest = null;
-  this.localeMessages = null;
+  this.id = null;
+  
+  
+  
+  
+  this.localeMessages = new Map();
   this.selectedLocale = null;
+  this._promiseLocales = null;
 
   this.errors = [];
 }
 
 ExtensionData.prototype = {
+  get logger() {
+    let id = this.id || "<unknown>";
+    return Log.repository.getLogger(LOGGER_ID_BASE + id);
+  },
+
   
-  localizeMessage(message, substitutions) {
-    if (message in this.localeMessages) {
-      let str = this.localeMessages[message].message;
+  manifestError(message) {
+    this.packagingError(`Reading manifest: ${message}`);
+  },
+
+  
+  packagingError(message) {
+    this.errors.push(message);
+    this.logger.error(`Loading extension '${this.id}': ${message}`);
+  },
+
+  
+  localizeMessage(message, substitutions, locale = this.selectedLocale) {
+    let messages = {};
+    if (this.localeMessages.has(locale)) {
+      messages = this.localeMessages.get(locale);
+    }
+
+    if (message in messages) {
+      let str = messages[message].message;
 
       if (!substitutions) {
         substitutions = [];
-      }
-      if (!Array.isArray(substitutions)) {
+      } else if (!Array.isArray(substitutions)) {
         substitutions = [substitutions];
       }
 
@@ -364,7 +394,7 @@ ExtensionData.prototype = {
         if (name.length == 1 && name[0] >= '1' && name[0] <= '9') {
           return substitutions[parseInt(name) - 1];
         } else {
-          let content = this.localeMessages[message].placeholders[name].content;
+          let content = messages[message].placeholders[name].content;
           if (content[0] == '$') {
             return replacer(matched, content[1]);
           } else {
@@ -379,7 +409,13 @@ ExtensionData.prototype = {
 
     
     if (message == "@@extension_id") {
-      return this.id;
+      if ("uuid" in this) {
+        
+        
+        
+        
+        return this.uuid;
+      }
     } else if (message == "@@ui_locale") {
       return Locale.getLocale();
     } else if (message == "@@bidi_dir") {
@@ -390,28 +426,115 @@ ExtensionData.prototype = {
     return "??";
   },
 
-  localize(str) {
+  
+  
+  
+  
+  
+  
+  localize(str, locale = this.selectedLocale) {
     if (!str) {
       return str;
     }
 
-    if (str.startsWith("__MSG_") && str.endsWith("__")) {
-      let message = str.substring("__MSG_".length, str.length - "__".length);
-      return this.localizeMessage(message);
-    }
-
-    return str;
+    return str.replace(/__MSG_([A-Za-z0-9@_]+?)__/g, (matched, message) => {
+      return this.localizeMessage(message, [], locale);
+    });
   },
 
-  readJSON(uri) {
+  
+  
+  get defaultLocale() {
+    if ("default_locale" in this.manifest) {
+      return this.normalizeLocaleCode(this.manifest.default_locale);
+    }
+
+    return null;
+  },
+
+  
+  
+  
+  normalizeLocaleCode(locale) {
+    return String.replace(locale, /_/g, "-");
+  },
+
+  readDirectory: Task.async(function* (path) {
+    if (this.rootURI instanceof Ci.nsIFileURL) {
+      let uri = NetUtil.newURI(this.rootURI.resolve("./" + path));
+      let fullPath = uri.QueryInterface(Ci.nsIFileURL).file.path;
+
+      let iter = new OS.File.DirectoryIterator(fullPath);
+      let results = [];
+
+      try {
+        yield iter.forEach(entry => {
+          results.push(entry);
+        });
+      } catch (e) {}
+      iter.close();
+
+      
+      
+      return results;
+    }
+
+    if (!(this.rootURI instanceof Ci.nsIJARURI &&
+          this.rootURI.JARFile instanceof Ci.nsIFileURL)) {
+      throw Error("Invalid extension root URL");
+    }
+
+    
+
+    let file = this.rootURI.JARFile.file;
+    let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
+    try {
+      zipReader.open(file);
+
+      let results = [];
+
+      
+      path = path.replace(/\/\/+/g, "/").replace(/^\/|\/$/g, "") + "/";
+
+      
+      let pattern = path.replace(/[[\]()?*~|$\\]/g, "\\$&");
+
+      let enumerator = zipReader.findEntries(pattern + "*");
+      while (enumerator.hasMore()) {
+        let name = enumerator.getNext();
+        if (!name.startsWith(path)) {
+          throw new Error("Unexpected ZipReader entry");
+        }
+
+        
+        
+        
+        name = name.slice(path.length);
+        if (name && !/\/./.test(name)) {
+          results.push({
+            name: name.replace("/", ""),
+            isDir: name.endsWith("/"),
+          });
+        }
+      }
+
+      return results;
+    } finally {
+      zipReader.close();
+    }
+  }),
+
+  readJSON(path) {
     return new Promise((resolve, reject) => {
+      let uri = this.rootURI.resolve(`./${path}`);
+
       NetUtil.asyncFetch({uri, loadUsingSystemPrincipal: true}, (inputStream, status) => {
         if (!Components.isSuccessCode(status)) {
-          reject(status);
+          reject(new Error(status));
           return;
         }
-        let text = NetUtil.readInputStreamToString(inputStream, inputStream.available());
         try {
+          let text = NetUtil.readInputStreamToString(inputStream, inputStream.available());
           resolve(JSON.parse(text));
         } catch (e) {
           reject(e);
@@ -420,69 +543,108 @@ ExtensionData.prototype = {
     });
   },
 
+  
+  
   readManifest() {
-    let manifestURI = Services.io.newURI("manifest.json", null, this.baseURI);
-    return this.readJSON(manifestURI);
-  },
+    return this.readJSON("manifest.json").then(manifest => {
+      this.manifest = manifest;
 
-  readLocaleFile(locale) {
-    let dir = locale.replace("-", "_");
-    let url = `_locales/${dir}/messages.json`;
-    let uri = Services.io.newURI(url, null, this.baseURI);
-    return this.readJSON(uri);
-  },
-
-  readLocaleMessages() {
-    let locales = [];
-
-    
-    
-    
-    let uri = Services.io.newURI("_locales", null, this.addonData.resourceURI);
-    if (uri instanceof Ci.nsIFileURL) {
-      let file = uri.file;
-      let enumerator;
       try {
-        enumerator = file.directoryEntries;
-      } catch (e) {
-        return {};
+        this.id = this.manifest.applications.gecko.id;
+      } catch (e) {}
+
+      if (typeof this.id != "string") {
+        this.manifestError("Missing required `applications.gecko.id` property");
       }
-      while (enumerator.hasMoreElements()) {
-        let file = enumerator.getNext().QueryInterface(Ci.nsIFile);
-        locales.push({
-          name: file.leafName,
-          locales: [file.leafName.replace("_", "-")]
-        });
-      }
+
+      return manifest;
+    });
+  },
+
+  
+  
+  readLocaleFile: Task.async(function* (locale) {
+    let locales = yield this.promiseLocales();
+    let dir = locales.get(locale);
+    let file = `_locales/${dir}/messages.json`;
+
+    let messages = {};
+    try {
+      messages = yield this.readJSON(file);
+    } catch (e) {
+      this.packagingError(`Loading locale file ${file}: ${e}`);
     }
 
-    if (uri instanceof Ci.nsIJARURI && uri.JARFile instanceof Ci.nsIFileURL) {
-      let file = uri.JARFile.file;
-      let zipReader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(Ci.nsIZipReader);
-      try {
-        zipReader.open(file);
-        let enumerator = zipReader.findEntries("_locales/*");
-        while (enumerator.hasMore()) {
-          let name = enumerator.getNext();
-          let match = name.match(new RegExp("_locales\/([^/]*)"));
-          if (match && match[1]) {
-            locales.push({
-              name: match[1],
-              locales: [match[1].replace("_", "-")]
-            });
+    this.localeMessages.set(locale, messages);
+    return messages;
+  }),
+
+  
+  
+  
+  
+  
+  
+  promiseLocales() {
+    if (!this._promiseLocales) {
+      this._promiseLocales = Task.spawn(function* () {
+        let locales = new Map();
+
+        let entries = yield this.readDirectory("_locales");
+        for (let file of entries) {
+          if (file.isDir) {
+            let locale = this.normalizeLocaleCode(file.name);
+            locales.set(locale, file.name);
           }
         }
-      } finally {
-        zipReader.close();
-      }
+
+        return locales;
+      }.bind(this));
     }
 
-    let locale = Locale.findClosestLocale(locales);
-    if (locale) {
-      return this.readLocaleFile(locale.name).catch(() => {});
+    return this._promiseLocales;
+  },
+
+  
+  
+  
+  
+  initAllLocales: Task.async(function* () {
+    let locales = yield this.promiseLocales();
+
+    yield Promise.all(Array.from(locales.keys(),
+                                 locale => this.readLocaleFile(locale)));
+
+    let defaultLocale = this.defaultLocale;
+    if (defaultLocale) {
+      if (!locales.has(defaultLocale)) {
+        this.manifestError('Value for "default_locale" property must correspond to ' +
+                           'a directory in "_locales/". Not found: ' +
+                           JSON.stringify(`_locales/${default_locale}/`));
+      }
+    } else if (this.localeMessages.size) {
+      this.manifestError('The "default_locale" property is required when a ' +
+                         '"_locales/" directory is present.');
     }
-    return {};
-  }
+
+    return this.localeMessages;
+  }),
+
+  
+  
+  
+  
+  
+  initLocale: Task.async(function* (locale = this.defaultLocale) {
+    if (locale == null) {
+      return null;
+    }
+
+    let localeData = yield this.readLocaleFile(locale);
+
+    this.selectedLocale = locale;
+    return localeData;
+  }),
 };
 
 
@@ -506,7 +668,6 @@ this.Extension = function(addonData)
   this.id = addonData.id;
   this.baseURI = Services.io.newURI("moz-extension://" + uuid, null, null);
   this.baseURI.QueryInterface(Ci.nsIURL);
-  this.logger = Log.repository.getLogger(LOGGER_ID_BASE + this.id.replace(/\./g, "-"));
   this.principal = this.createPrincipal();
 
   this.views = new Set();
@@ -669,11 +830,6 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
   },
 
   
-  manifestError(message) {
-    this.logger.error(`Loading extension '${this.id}': ${message}`);
-  },
-
-  
   
   
   serialize() {
@@ -745,6 +901,24 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
     this.onShutdown.delete(obj);
   },
 
+  
+  
+  
+  initLocale: Task.async(function* (locale = undefined) {
+    if (locale === undefined) {
+      let locales = yield this.promiseLocales();
+
+      let localeList = Object.keys(locales).map(locale => {
+        return { name: locale, locales: [locale] };
+      });
+
+      let match = Locale.findClosestLocale(localeList);
+      locale = match ? match.name : this.defaultLocale;
+    }
+
+    return ExtensionData.prototype.initLocale.call(this, locale);
+  }),
+
   startup() {
     try {
       ExtensionManagement.startupExtension(this.uuid, this.addonData.resourceURI, this);
@@ -752,21 +926,20 @@ Extension.prototype = extend(Object.create(ExtensionData.prototype), {
       return Promise.reject(e);
     }
 
-    return Promise.all([this.readManifest(), this.readLocaleMessages()]).then(([manifest, messages]) => {
+    return this.readManifest().then(() => {
+      return this.initLocale();
+    }).then(() => {
       if (this.hasShutdown) {
         return;
       }
 
       GlobalManager.init(this);
 
-      this.manifest = manifest;
-      this.localeMessages = messages;
-
       Management.emit("startup", this);
 
-      return this.runManifest(manifest);
+      return this.runManifest(this.manifest);
     }).catch(e => {
-      dump(`Extension error: ${e} ${e.fileName}:${e.lineNumber}\n`);
+      dump(`Extension error: ${e} ${e.filename}:${e.lineNumber}\n`);
       Cu.reportError(e);
       throw e;
     });
