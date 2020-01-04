@@ -12,6 +12,16 @@
 
 namespace mozilla {
 
+
+
+
+
+
+
+
+
+
+
 template<>
 struct RefPtrTraits<DBusConnection>
 {
