@@ -1,77 +1,61 @@
+registerCleanupFunction(function* cleanup() {
+  while (gBrowser.tabs.length > 1) {
+    yield BrowserTestUtils.removeTab(gBrowser.tabs[gBrowser.tabs.length - 1]);
+  }
+  Services.search.currentEngine = originalEngine;
+  let engine = Services.search.getEngineByName("MozSearch");
+  Services.search.removeEngine(engine);
+});
 
+let originalEngine;
+add_task(function* test_setup() {
+  
+  Services.search.addEngineWithDetails("MozSearch", "", "", "", "GET",
+                                       "http://example.com/?q={searchTerms}");
+  let engine = Services.search.getEngineByName("MozSearch");
+  originalEngine = Services.search.currentEngine;
+  Services.search.currentEngine = engine;
+});
 
+add_task(function*() { yield drop("mochi.test/first", true); });
+add_task(function*() { yield drop("javascript:'bad'"); });
+add_task(function*() { yield drop("jAvascript:'bad'"); });
+add_task(function*() { yield drop("search this", true); });
+add_task(function*() { yield drop("mochi.test/second", true); });
+add_task(function*() { yield drop("data:text/html,bad"); });
+add_task(function*() { yield drop("mochi.test/third", true); });
 
-function test() {
-  waitForExplicitFinish();
-
-  let newTab = gBrowser.selectedTab = gBrowser.addTab("about:blank", {skipAnimation: true});
-  registerCleanupFunction(function () {
-    gBrowser.removeTab(newTab);
-  });
-
+function* drop(text, valid = false) {
+  info(`Starting test for text:${text}; valid:${valid}`);
   let scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
                      getService(Ci.mozIJSSubScriptLoader);
   let ChromeUtils = {};
   scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js", ChromeUtils);
 
-  let tabContainer = gBrowser.tabContainer;
-  var receivedDropCount = 0;
-  function dropListener() {
-    receivedDropCount++;
-    if (receivedDropCount == triggeredDropCount) {
-      is(openedTabs, validDropCount, "correct number of tabs were opened");
-      executeSoon(finish);
-    }
-  }
-  tabContainer.addEventListener("drop", dropListener, false);
-  registerCleanupFunction(function () {
-    tabContainer.removeEventListener("drop", dropListener, false);
-  });
-
-  var openedTabs = 0;
-  function tabOpenListener(e) {
-    openedTabs++;
-    let tab = e.target;
-    executeSoon(function () {
-      gBrowser.removeTab(tab);
-    });
-  }
-
-  tabContainer.addEventListener("TabOpen", tabOpenListener, false);
-  registerCleanupFunction(function () {
-    tabContainer.removeEventListener("TabOpen", tabOpenListener, false);
-  });
-
-  var triggeredDropCount = 0;
-  var validDropCount = 0;
-  function drop(text, valid) {
-    triggeredDropCount++;
-    if (valid)
-      validDropCount++;
-    executeSoon(function () {
-      
-      
-      
-      
-      
-      
-      var event = {
-        clientX: 0,
-        clientY: 0,
-        screenX: 0,
-        screenY: 0,
-      };
-      ChromeUtils.synthesizeDrop(newTab, newTab, [[{type: "text/plain", data: text}]], "link", window, undefined, event);
-    });
-  }
-
+  let awaitDrop = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "drop");
+  let awaitTabOpen = valid && BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
   
   
-  drop("mochi.test/first", true);
-  drop("javascript:'bad'");
-  drop("jAvascript:'bad'");
-  drop("search this", true);
-  drop("mochi.test/second", true);
-  drop("data:text/html,bad");
-  drop("mochi.test/third", true);
+  
+  
+  
+  
+  var event = {
+    clientX: 0,
+    clientY: 0,
+    screenX: 0,
+    screenY: 0,
+  };
+  ChromeUtils.synthesizeDrop(gBrowser.selectedTab, gBrowser.selectedTab, [[{type: "text/plain", data: text}]], "link", window, undefined, event);
+  let tabOpened = false;
+  if (awaitTabOpen) {
+    let tabOpenEvent = yield awaitTabOpen;
+    info("Got TabOpen event");
+    tabOpened = true;
+    yield BrowserTestUtils.removeTab(tabOpenEvent.target);
+  }
+  is(tabOpened, valid, `Tab for ${text} should only open if valid`);
+
+  yield awaitDrop;
+  ok(true, "Got drop event");
 }
