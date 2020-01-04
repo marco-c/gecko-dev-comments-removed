@@ -454,7 +454,7 @@ var clickContainer = Task.async(function* (selector, inspector) {
 
 function mouseLeaveMarkupView(inspector) {
   info("Leaving the markup-view area");
-  let def = promise.defer();
+  let def = defer();
 
   
   let btn = inspector.toolbox.doc.querySelector("#toolbox-controls");
@@ -655,7 +655,7 @@ function* waitForMultipleChildrenUpdates(inspector) {
 
 function waitForChildrenUpdated({markup}) {
   info("Waiting for queued children updates to be handled");
-  let def = promise.defer();
+  let def = defer();
   markup._waitForChildren().then(() => {
     executeSoon(def.resolve);
   });
@@ -674,7 +674,7 @@ function waitForChildrenUpdated({markup}) {
 
 
 function waitForStyleEditor(toolbox, href) {
-  let def = promise.defer();
+  let def = defer();
 
   info("Waiting for the toolbox to switch to the styleeditor");
   toolbox.once("styleeditor-selected").then(() => {
@@ -725,7 +725,7 @@ function waitForStyleEditor(toolbox, href) {
 
 
 function waitForClipboard(setup, expected) {
-  let def = promise.defer();
+  let def = defer();
   SimpleTest.waitForClipboard(expected, setup, def.resolve, def.reject);
   return def.promise;
 }

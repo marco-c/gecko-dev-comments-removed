@@ -59,7 +59,7 @@ add_task(function* () {
 });
 
 function waitForTabLoad(tab) {
-  let def = promise.defer();
+  let def = defer();
   tab.addEventListener("load", function onLoad() {
     
     if (tab.linkedBrowser.currentURI.spec === "about:blank") {

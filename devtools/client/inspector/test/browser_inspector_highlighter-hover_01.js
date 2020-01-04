@@ -33,7 +33,7 @@ add_task(function* () {
 });
 
 function waitForTheBrieflyShowBoxModelTimeout() {
-  let deferred = promise.defer();
+  let deferred = defer();
   
   
   setTimeout(deferred.resolve, 1500);

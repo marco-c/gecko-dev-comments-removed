@@ -20,7 +20,7 @@ var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
 var {CssLogic} = require("devtools/shared/inspector/css-logic");
-var promise = require("promise");
+var defer = require("devtools/shared/defer");
 
 
 
@@ -128,7 +128,7 @@ var dumpn = msg => dump(msg + "\n");
 
 
 function waitForSuccess(validatorFn, name = "untitled") {
-  let def = promise.defer();
+  let def = defer();
 
   function wait(fn) {
     if (fn()) {

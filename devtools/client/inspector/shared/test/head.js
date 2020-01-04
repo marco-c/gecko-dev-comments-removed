@@ -101,7 +101,7 @@ function waitForContentMessage(name) {
 
   let mm = gBrowser.selectedBrowser.messageManager;
 
-  let def = promise.defer();
+  let def = defer();
   mm.addMessageListener(name, function onMessage(msg) {
     mm.removeMessageListener(name, onMessage);
     def.resolve(msg.data);
@@ -214,7 +214,7 @@ var focusEditableField = Task.async(function* (ruleView, editable, xOffset = 1,
 
 
 function waitForSuccess(validatorFn, name = "untitled") {
-  let def = promise.defer();
+  let def = defer();
 
   function wait(validator) {
     if (validator()) {

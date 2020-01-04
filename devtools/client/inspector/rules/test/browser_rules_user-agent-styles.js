@@ -86,7 +86,7 @@ function* setUserAgentStylesPref(val) {
 
   
   
-  let oncePrefChanged = promise.defer();
+  let oncePrefChanged = defer();
   let prefObserver = new PrefObserver("devtools.");
   prefObserver.on(PREF_UA_STYLES, oncePrefChanged.resolve);
   Services.prefs.setBoolPref(PREF_UA_STYLES, val);
