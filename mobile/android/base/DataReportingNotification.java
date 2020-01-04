@@ -71,7 +71,7 @@ public class DataReportingNotification {
     
 
 
-    private static void notifyDataPolicy(Context context, SharedPreferences sharedPrefs) {
+    public static void notifyDataPolicy(Context context, SharedPreferences sharedPrefs) {
         boolean result = false;
         try {
             
