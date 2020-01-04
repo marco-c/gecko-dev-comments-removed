@@ -253,9 +253,6 @@ user_pref("identity.fxaccounts.settings.uri", "https://%(server)s/fxa-settings")
 user_pref('identity.fxaccounts.remote.webchannel.uri', 'https://%(server)s/');
 
 
-user_pref('apz.test.logging_enabled', true);
-
-
 user_pref("security.ssl.errorReporting.url", "https://example.com/browser/browser/base/content/test/general/pinning_reports.sjs?succeed");
 
 
