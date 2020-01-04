@@ -24,6 +24,8 @@
 #include "nsContentUtils.h"
 #include "nsIURLFormatter.h"
 
+using mozilla::DocShellOriginAttributes;
+
 static const char* gQuitApplicationMessage = "quit-application";
 
 
@@ -178,8 +180,9 @@ nsUrlClassifierStreamUpdater::FetchUpdate(nsIURI *aUpdateUrl,
   
   
   
-  nsCOMPtr<nsIInterfaceRequestor> sbContext =
-    new mozilla::LoadContext(NECKO_SAFEBROWSING_APP_ID);
+  DocShellOriginAttributes attrs;
+  attrs.mAppId = NECKO_SAFEBROWSING_APP_ID;
+  nsCOMPtr<nsIInterfaceRequestor> sbContext = new mozilla::LoadContext(attrs);
   rv = mChannel->SetNotificationCallbacks(sbContext);
   NS_ENSURE_SUCCESS(rv, rv);
 

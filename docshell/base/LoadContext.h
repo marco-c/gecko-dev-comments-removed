@@ -94,13 +94,13 @@ public:
   }
 
   
-  explicit LoadContext(uint32_t aAppId)
+  explicit LoadContext(DocShellOriginAttributes& aAttrs)
     : mTopFrameElement(nullptr)
     , mNestedFrameId(0)
     , mIsContent(false)
-    , mUsePrivateBrowsing(false)
+    , mUsePrivateBrowsing(aAttrs.mPrivateBrowsingId != 0)
     , mUseRemoteTabs(false)
-    , mOriginAttributes(aAppId, false)
+    , mOriginAttributes(aAttrs)
 #ifdef DEBUG
     , mIsNotNull(true)
 #endif
