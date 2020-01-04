@@ -232,6 +232,15 @@ function MergeSort(array, len, comparefn) {
     var denseList = new List();
     var denseLen = 0;
 
+    
+    
+    
+    
+    
+    if (IsPossiblyWrappedTypedArray(array)) {
+        return TypedArraySort.call(array, comparefn);
+    }
+
     for (var i = 0; i < len; i++) {
         if (i in array)
             denseList[denseLen++] = array[i];
