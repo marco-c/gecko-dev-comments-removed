@@ -732,6 +732,19 @@ public:
 
   Element* GetRootElement() const;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   virtual nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize) = 0;
 
   

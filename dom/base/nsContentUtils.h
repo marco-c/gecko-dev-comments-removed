@@ -1673,24 +1673,6 @@ public:
   static void RunInMetastableState(already_AddRefed<nsIRunnable> aRunnable);
 
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsViewportInfo GetViewportInfo(nsIDocument* aDocument,
-                                        const mozilla::ScreenIntSize& aDisplaySize);
-
-  
   
   static void EnterMicroTask();
   static void LeaveMicroTask();
