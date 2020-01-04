@@ -510,6 +510,7 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType, MediaRawDataQueue *aSampl
     return false;
   }
   int64_t tstamp = holder->Timestamp();
+  int64_t duration = holder->Duration();
 
   
   
@@ -521,6 +522,8 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType, MediaRawDataQueue *aSampl
     if (next_holder) {
       next_tstamp = next_holder->Timestamp();
       PushAudioPacket(next_holder);
+    } else if (duration >= 0) {
+      next_tstamp = tstamp + duration;
     } else if (!mIsMediaSource ||
                (mIsMediaSource && mLastAudioFrameTime.isSome())) {
       next_tstamp = tstamp;
@@ -534,6 +537,8 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType, MediaRawDataQueue *aSampl
     if (next_holder) {
       next_tstamp = next_holder->Timestamp();
       PushVideoPacket(next_holder);
+    } else if (duration >= 0) {
+      next_tstamp = tstamp + duration;
     } else if (!mIsMediaSource ||
                (mIsMediaSource && mLastVideoFrameTime.isSome())) {
       next_tstamp = tstamp;
