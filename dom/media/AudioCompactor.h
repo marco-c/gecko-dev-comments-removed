@@ -17,7 +17,15 @@ class AudioCompactor
 public:
   explicit AudioCompactor(MediaQueue<AudioData>& aQueue)
     : mQueue(aQueue)
-  { }
+  {
+    
+    size_t paddedSize = AlignedAudioBuffer::AlignmentPaddingSize();
+    mSamplesPadding = paddedSize / sizeof(AudioDataValue);
+    if (mSamplesPadding * sizeof(AudioDataValue) < paddedSize) {
+      
+      mSamplesPadding++;
+    }
+  }
 
   
   
@@ -41,6 +49,9 @@ public:
 
     while (aFrames > 0) {
       uint32_t samples = GetChunkSamples(aFrames, aChannels, maxSlop);
+      if (aFrames * aChannels > mSamplesPadding) {
+        samples -= mSamplesPadding;
+      }
       AlignedAudioBuffer buffer(samples);
       if (!buffer) {
         return false;
@@ -118,6 +129,7 @@ private:
   }
 
   MediaQueue<AudioData> &mQueue;
+  size_t mSamplesPadding;
 };
 
 } 
