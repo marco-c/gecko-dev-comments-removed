@@ -190,9 +190,7 @@ ExtensionContext = class extends BaseContext {
     this.type = type;
     this.uri = uri || extension.baseURI;
 
-    if (params.contentWindow) {
-      this.setContentWindow(params.contentWindow);
-    }
+    this.setContentWindow(params.contentWindow);
 
     
     
@@ -200,15 +198,16 @@ ExtensionContext = class extends BaseContext {
     if (uri) {
       sender.url = uri.spec;
     }
-    let delegate = {
-      getSender() {},
-    };
-    Management.emit("page-load", this, params, sender, delegate);
+    Management.emit("page-load", this, params, sender);
 
     
     
     let filter = {extensionId: extension.id};
-    this.messenger = new Messenger(this, [Services.mm, Services.ppmm], sender, filter, delegate);
+    
+    
+    
+    
+    this.messenger = new Messenger(this, [Services.cpmm, this.messageManager], sender, filter);
 
     if (this.externallyVisible) {
       this.extension.views.add(this);
@@ -251,6 +250,86 @@ ExtensionContext = class extends BaseContext {
       this.extension.views.delete(this);
     }
   }
+};
+
+
+
+
+let ProxyMessenger = {
+  _initialized: false,
+  init() {
+    if (this._initialized) {
+      return;
+    }
+    this._initialized = true;
+
+    
+    
+    
+    let pipmm = Services.ppmm.getChildAt(0);
+    
+    
+    
+    
+    
+    let messageManagers = [Services.mm, pipmm];
+
+    MessageChannel.addListener(messageManagers, "Extension:Connect", this);
+    MessageChannel.addListener(messageManagers, "Extension:Message", this);
+    MessageChannel.addListener(messageManagers, "Extension:Port:Disconnect", this);
+    MessageChannel.addListener(messageManagers, "Extension:Port:PostMessage", this);
+  },
+
+  receiveMessage({target, messageName, channelId, sender, recipient, data, responseType}) {
+    let extension = GlobalManager.extensionMap.get(sender.extensionId);
+    let receiverMM = this._getMessageManagerForRecipient(recipient);
+    if (!extension || !receiverMM) {
+      return Promise.reject({
+        result: MessageChannel.RESULT_NO_HANDLER,
+        message: "No matching message handler for the given recipient.",
+      });
+    }
+
+    if ((messageName == "Extension:Message" ||
+         messageName == "Extension:Connect") &&
+        Management.global.tabGetSender) {
+      
+      Management.global.tabGetSender(extension, target, sender);
+    }
+    return MessageChannel.sendMessage(receiverMM, messageName, data, {
+      sender,
+      recipient,
+      responseType,
+    });
+  },
+
+  
+
+
+
+
+  _getMessageManagerForRecipient(recipient) {
+    let {extensionId, tabId} = recipient;
+    
+    if (tabId) {
+      
+      
+      let tab = Management.global.TabManager.getTab(tabId, null, null);
+      return tab && tab.linkedBrowser.messageManager;
+    }
+
+    
+    if (extensionId) {
+      
+      
+      let pipmm = Services.ppmm.getChildAt(0);
+      return pipmm;
+    }
+
+    
+    
+    return null;
+  },
 };
 
 class ProxyContext extends BaseContext {
@@ -552,6 +631,13 @@ GlobalManager = {
     if (this.extensionMap.size == 0) {
       Services.obs.addObserver(this, "document-element-inserted", false);
       UninstallObserver.init();
+      ProxyMessenger.init();
+      
+      
+      
+      
+      
+      MessageChannel.setupMessageManagers([Services.cpmm]);
       this.initialized = true;
     }
 

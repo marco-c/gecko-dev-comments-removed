@@ -21,27 +21,36 @@ var {
 
 
 
-function getSender(context, target, sender) {
-  
-  
-  if (target instanceof Ci.nsIDOMXULElement) {
+function getSender(extension, target, sender) {
+  if ("tabId" in sender) {
     
-    let tabbrowser = target.ownerGlobal.gBrowser;
-    if (!tabbrowser) {
+    
+    
+    let tab = TabManager.getTab(sender.tabId, null, null);
+    delete sender.tabId;
+    if (tab) {
+      sender.tab = TabManager.convert(extension, tab);
       return;
     }
-    let tab = tabbrowser.getTabForBrowser(target);
+  }
+  if (target instanceof Ci.nsIDOMXULElement) {
+    
+    
+    let tabbrowser = target.ownerGlobal.gBrowser;
+    if (tabbrowser) {
+      let tab = tabbrowser.getTabForBrowser(target);
 
-    sender.tab = TabManager.convert(context.extension, tab);
-  } else if ("tabId" in sender) {
-    
-    
-    
-    sender.tab = TabManager.convert(context.extension,
-                                    TabManager.getTab(sender.tabId, context));
-    delete sender.tabId;
+      
+      
+      if (tab) {
+        sender.tab = TabManager.convert(extension, tab);
+      }
+    }
   }
 }
+
+
+global.tabGetSender = getSender;
 
 function getDocShellOwner(docShell) {
   let browser = docShell.chromeEventHandler;
@@ -63,7 +72,7 @@ function getDocShellOwner(docShell) {
 
 
 
-extensions.on("page-load", (type, context, params, sender, delegate) => {
+extensions.on("page-load", (type, context, params, sender) => {
   if (params.type == "tab" || params.type == "popup") {
     let {xulWindow, tab} = getDocShellOwner(params.docShell);
 
@@ -74,8 +83,6 @@ extensions.on("page-load", (type, context, params, sender, delegate) => {
       context.tabId = TabManager.getId(tab);
     }
   }
-
-  delegate.getSender = getSender;
 });
 
 extensions.on("page-shutdown", (type, context) => {

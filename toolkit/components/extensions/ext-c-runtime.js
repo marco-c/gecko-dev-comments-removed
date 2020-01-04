@@ -3,12 +3,6 @@
 function runtimeApiFactory(context) {
   let {extension} = context;
 
-  
-  
-  
-  
-  let mm = context.envType == "content_child" ? context.messageManager : Services.cpmm;
-
   return {
     runtime: {
       onConnect: context.messenger.onConnect("runtime.onConnect"),
@@ -20,7 +14,7 @@ function runtimeApiFactory(context) {
         extensionId = extensionId || extension.id;
         let recipient = {extensionId};
 
-        return context.messenger.connect(mm, name, recipient);
+        return context.messenger.connect(context.messageManager, name, recipient);
       },
 
       sendMessage: function(...args) {
@@ -58,7 +52,7 @@ function runtimeApiFactory(context) {
         extensionId = extensionId || extension.id;
         let recipient = {extensionId};
 
-        return context.messenger.sendMessage(mm, message, recipient, responseCallback);
+        return context.messenger.sendMessage(context.messageManager, message, recipient, responseCallback);
       },
 
       get lastError() {
