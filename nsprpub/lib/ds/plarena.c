@@ -17,6 +17,8 @@
 #include "prlock.h"
 #include "prinit.h"
 
+static PLArena *arena_freelist;
+
 #ifdef PL_ARENAMETER
 static PLArenaStats *arena_stats_list;
 
@@ -26,6 +28,49 @@ static PLArenaStats *arena_stats_list;
 #endif
 
 #define PL_ARENA_DEFAULT_ALIGN  sizeof(double)
+
+static PRLock    *arenaLock;
+static PRCallOnceType once;
+static const PRCallOnceType pristineCallOnce;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static PRStatus InitializeArenas( void )
+{
+    PR_ASSERT( arenaLock == NULL );
+    arenaLock = PR_NewLock();
+    if ( arenaLock == NULL )
+        return PR_FAILURE;
+    else
+        return PR_SUCCESS;
+} 
+
+static PRStatus LockArena( void )
+{
+    PRStatus rc = PR_CallOnce( &once, InitializeArenas );
+
+    if ( PR_FAILURE != rc )
+        PR_Lock( arenaLock );
+    return(rc);
+} 
+
+static void UnlockArena( void )
+{
+    PR_Unlock( arenaLock );
+    return;
+} 
 
 PR_IMPLEMENT(void) PL_InitArenaPool(
     PLArenaPool *pool, const char *name, PRUint32 size, PRUint32 align)
@@ -91,6 +136,13 @@ PR_IMPLEMENT(void) PL_InitArenaPool(
 
 
 
+
+
+
+
+
+
+
 PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
 {
     PLArena *a;   
@@ -115,6 +167,37 @@ PR_IMPLEMENT(void *) PL_ArenaAllocate(PLArenaPool *pool, PRUint32 nb)
                 return rp;
             }
         } while( NULL != (a = a->next) );
+    }
+
+    
+    {
+        PLArena *p; 
+
+        
+        if ( PR_FAILURE == LockArena())
+            return(0);
+
+        for ( a = arena_freelist, p = NULL; a != NULL ; p = a, a = a->next ) {
+            if ( nb <= a->limit - a->base )  {
+                if ( p == NULL )
+                    arena_freelist = a->next;
+                else
+                    p->next = a->next;
+                UnlockArena();
+                a->avail = a->base;
+                rp = (char *)a->avail;
+                a->avail += nb;
+                
+
+                a->next = pool->current->next;
+                pool->current->next = a;
+                pool->current = a;
+                if ( NULL == pool->first.next )
+                    pool->first.next = a;
+                return(rp);
+            }
+        }
+        UnlockArena();
     }
 
      
@@ -163,11 +246,10 @@ PR_IMPLEMENT(void *) PL_ArenaGrow(
     return newp;
 }
 
-PR_IMPLEMENT(void) PL_ClearArenaPool(PLArenaPool *pool, PRInt32 pattern)
+static void ClearArenaList(PLArena *a, PRInt32 pattern)
 {
-    PLArena *a;
 
-    for (a = pool->first.next; a; a = a->next) {
+    for (; a; a = a->next) {
         PR_ASSERT(a->base <= a->avail && a->avail <= a->limit);
         a->avail = a->base;
         PL_CLEAR_UNUSED_PATTERN(a, pattern);
@@ -175,25 +257,48 @@ PR_IMPLEMENT(void) PL_ClearArenaPool(PLArenaPool *pool, PRInt32 pattern)
     }
 }
 
-
-
-
-
-static void FreeArenaList(PLArenaPool *pool, PLArena *head)
+PR_IMPLEMENT(void) PL_ClearArenaPool(PLArenaPool *pool, PRInt32 pattern)
 {
-    PLArena *a = head->next;
+    ClearArenaList(pool->first.next, pattern);
+}
+
+
+
+
+
+static void FreeArenaList(PLArenaPool *pool, PLArena *head, PRBool reallyFree)
+{
+    PLArena **ap, *a;
+
+    ap = &head->next;
+    a = *ap;
     if (!a)
         return;
 
-    head->next = NULL;
+#ifdef DEBUG
+    ClearArenaList(a, PL_FREE_PATTERN);
+#endif
 
-    do {
-        PLArena *tmp = a;
-        a = a->next;
-        PL_CLEAR_ARENA(tmp);
-        PL_COUNT_ARENA(pool,--);
-        PR_DELETE(tmp);
-    } while (a);
+    if (reallyFree) {
+        do {
+            *ap = a->next;
+            PL_CLEAR_ARENA(a);
+            PL_COUNT_ARENA(pool,--);
+            PR_DELETE(a);
+        } while ((a = *ap) != 0);
+    } else {
+        
+        do {
+            PL_MAKE_MEM_NOACCESS((void*)(*ap)->base,
+                                 (*ap)->limit - (*ap)->base);
+            ap = &(*ap)->next;
+        } while (*ap);
+        LockArena();
+        *ap = arena_freelist;
+        arena_freelist = a;
+        head->next = 0;
+        UnlockArena();
+    }
 
     pool->current = head;
 }
@@ -205,7 +310,7 @@ PR_IMPLEMENT(void) PL_ArenaRelease(PLArenaPool *pool, char *mark)
     for (a = &pool->first; a; a = a->next) {
         if (PR_UPTRDIFF(mark, a->base) <= PR_UPTRDIFF(a->avail, a->base)) {
             a->avail = (PRUword)PL_ARENA_ALIGN(pool, mark);
-            FreeArenaList(pool, a);
+            FreeArenaList(pool, a, PR_FALSE);
             return;
         }
     }
@@ -213,13 +318,13 @@ PR_IMPLEMENT(void) PL_ArenaRelease(PLArenaPool *pool, char *mark)
 
 PR_IMPLEMENT(void) PL_FreeArenaPool(PLArenaPool *pool)
 {
-    FreeArenaList(pool, &pool->first);
+    FreeArenaList(pool, &pool->first, PR_FALSE);
     COUNT(pool, ndeallocs);
 }
 
 PR_IMPLEMENT(void) PL_FinishArenaPool(PLArenaPool *pool)
 {
-    FreeArenaList(pool, &pool->first);
+    FreeArenaList(pool, &pool->first, PR_TRUE);
 #ifdef PL_ARENAMETER
     {
         PLArenaStats *stats, **statsp;
@@ -243,6 +348,19 @@ PR_IMPLEMENT(void) PL_CompactArenaPool(PLArenaPool *ap)
 
 PR_IMPLEMENT(void) PL_ArenaFinish(void)
 {
+    PLArena *a, *next;
+
+    for (a = arena_freelist; a; a = next) {
+        next = a->next;
+        PR_DELETE(a);
+    }
+    arena_freelist = NULL;
+
+    if (arenaLock) {
+        PR_DestroyLock(arenaLock);
+        arenaLock = NULL;
+    }
+    once = pristineCallOnce;
 }
 
 PR_IMPLEMENT(size_t) PL_SizeOfArenaPoolExcludingPool(
