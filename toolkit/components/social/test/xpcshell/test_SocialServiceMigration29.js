@@ -41,7 +41,7 @@ function run_test() {
   runner.next();
 }
 
-function testMigration(manifest, next) {
+function* testMigration(manifest, next) {
   
   
   do_check_true(Services.prefs.prefHasUserValue("social.enabled"));

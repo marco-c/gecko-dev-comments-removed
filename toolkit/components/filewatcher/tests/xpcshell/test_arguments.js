@@ -29,14 +29,18 @@ add_task(function* test_null_args_addPath() {
   
   try {
     watcher.addPath(testPath, null, dummyFunc);
-  } catch (ex if ex.result == Cr.NS_ERROR_NULL_POINTER) {
+  } catch (ex) {
+    if (ex.result != Cr.NS_ERROR_NULL_POINTER)
+      throw ex;
     do_print("Initialisation thrown NS_ERROR_NULL_POINTER as expected.");
   }
 
   
   try {
     watcher.addPath(testPath, null, null);
-  } catch (ex if ex.result == Cr.NS_ERROR_NULL_POINTER) {
+  } catch (ex) {
+    if (ex.result != Cr.NS_ERROR_NULL_POINTER)
+      throw ex;
     do_print("Initialisation thrown NS_ERROR_NULL_POINTER as expected.");
   }
 });
@@ -58,14 +62,18 @@ add_task(function* test_null_args_removePath() {
   
   try {
     watcher.removePath(testPath, null, dummyFunc);
-  } catch (ex if ex.result == Cr.NS_ERROR_NULL_POINTER) {
+  } catch (ex) {
+    if (ex.result != Cr.NS_ERROR_NULL_POINTER)
+      throw ex;
     do_print("Initialisation thrown NS_ERROR_NULL_POINTER as expected.");
   }
 
   
   try {
     watcher.removePath(testPath, null, null);
-  } catch (ex if ex.result == Cr.NS_ERROR_NULL_POINTER) {
+  } catch (ex) {
+    if (ex.result != Cr.NS_ERROR_NULL_POINTER)
+      throw ex;
     do_print("Initialisation thrown NS_ERROR_NULL_POINTER as expected.");
   }
 });

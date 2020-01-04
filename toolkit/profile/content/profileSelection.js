@@ -4,6 +4,7 @@
 
 
 
+Components.utils.import("resource://gre/modules/AppConstants.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 
 const C = Components.classes;
@@ -131,12 +132,12 @@ function updateStartupPrefs()
 
 function onProfilesKey(aEvent)
 {
-  switch( aEvent.keyCode ) 
+  switch( aEvent.keyCode )
   {
-  case KeyEvent.DOM_VK_DELETE:
-#ifdef XP_MACOSX
   case KeyEvent.DOM_VK_BACK_SPACE:
-#endif
+    if (AppConstants.platform != "macosx")
+      break;
+  case KeyEvent.DOM_VK_DELETE:
     ConfirmDelete();
     break;
   case KeyEvent.DOM_VK_F2:
