@@ -1151,7 +1151,12 @@ HTMLImageElement::UpdateResponsiveSource()
     mResponsiveSelector = nullptr;
   }
 
-  return !hadSelector || mResponsiveSelector;
+  
+  
+  
+  
+  
+  return hadSelector || mResponsiveSelector;
 }
 
  bool
