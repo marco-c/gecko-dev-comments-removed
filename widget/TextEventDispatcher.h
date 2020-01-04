@@ -56,7 +56,8 @@ public:
 
 
   nsresult BeginInputTransaction(TextEventDispatcherListener* aListener);
-  nsresult BeginTestInputTransaction(TextEventDispatcherListener* aListener);
+  nsresult BeginTestInputTransaction(TextEventDispatcherListener* aListener,
+                                     bool aIsAPZAware);
   nsresult BeginNativeInputTransaction();
 
   
@@ -196,28 +197,7 @@ public:
 
   nsresult NotifyIME(const IMENotification& aIMENotification);
 
-
   
-
-
-
-
-
-  enum DispatchTo
-  {
-    
-    
-    
-    
-    eDispatchToParentProcess = 0,
-    
-    
-    
-    eDispatchToCurrentProcess = 1
-  };
-
-  
-
 
 
 
@@ -233,8 +213,7 @@ public:
 
   bool DispatchKeyboardEvent(EventMessage aMessage,
                              const WidgetKeyboardEvent& aKeyboardEvent,
-                             nsEventStatus& aStatus,
-                             DispatchTo aDispatchTo = eDispatchToParentProcess);
+                             nsEventStatus& aStatus);
 
   
 
@@ -251,11 +230,8 @@ public:
 
 
 
-
   bool MaybeDispatchKeypressEvents(const WidgetKeyboardEvent& aKeyboardEvent,
-                                   nsEventStatus& aStatus,
-                                   DispatchTo aDispatchTo =
-                                     eDispatchToParentProcess);
+                                   nsEventStatus& aStatus);
 
 private:
   
@@ -301,14 +277,54 @@ private:
     
     eNoInputTransaction,
     
+    
     eNativeInputTransaction,
     
-    eTestInputTransaction,
     
-    eOtherInputTransaction
+    eAsyncTestInputTransaction,
+    
+    
+    
+    eSameProcessSyncTestInputTransaction,
+    
+    
+    
+    
+    
+    
+    eSameProcessSyncInputTransaction
   };
 
   InputTransactionType mInputTransactionType;
+
+  bool IsForTests() const
+  {
+    return mInputTransactionType == eAsyncTestInputTransaction ||
+           mInputTransactionType == eSameProcessSyncTestInputTransaction;
+  }
+
+  
+  
+  
+  
+  
+  bool ShouldSendInputEventToAPZ() const
+  {
+    switch (mInputTransactionType) {
+      case eNativeInputTransaction:
+      case eAsyncTestInputTransaction:
+        return true;
+      case eSameProcessSyncTestInputTransaction:
+      case eSameProcessSyncInputTransaction:
+        return false;
+      case eNoInputTransaction:
+        NS_WARNING("Why does the caller need to dispatch an event when "
+                   "there is no input transaction?");
+        return true;
+      default:
+        MOZ_CRASH("Define the behavior of new InputTransactionType");
+    }
+  }
 
   
   bool mIsComposing;
@@ -338,12 +354,9 @@ private:
   
 
 
-
-
   nsresult DispatchInputEvent(nsIWidget* aWidget,
                               WidgetInputEvent& aEvent,
-                              nsEventStatus& aStatus,
-                              DispatchTo aDispatchTo);
+                              nsEventStatus& aStatus);
 
   
 
@@ -382,12 +395,9 @@ private:
 
 
 
-
   bool DispatchKeyboardEventInternal(EventMessage aMessage,
                                      const WidgetKeyboardEvent& aKeyboardEvent,
                                      nsEventStatus& aStatus,
-                                     DispatchTo aDispatchTo =
-                                       eDispatchToParentProcess,
                                      uint32_t aIndexOfKeypress = 0);
 };
 
