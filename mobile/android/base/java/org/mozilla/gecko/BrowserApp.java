@@ -993,6 +993,9 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onResume() {
         super.onResume();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
 
         
         AdjustConstants.getAdjustHelper().onResume();
@@ -1013,6 +1016,9 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onPause() {
         super.onPause();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
 
         
         AdjustConstants.getAdjustHelper().onPause();
@@ -1032,6 +1038,9 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onRestart() {
         super.onRestart();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
 
         for (final BrowserAppDelegate delegate : delegates) {
             delegate.onRestart(this);
@@ -1041,6 +1050,9 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onStart() {
         super.onStart();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
 
         
         
@@ -1081,6 +1093,9 @@ public class BrowserApp extends GeckoApp
     @Override
     public void onStop() {
         super.onStop();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
 
         
         GuestSession.hideNotification(this);
@@ -1325,8 +1340,7 @@ public class BrowserApp extends GeckoApp
 
     @Override
     public void onDestroy() {
-        if (!HardwareUtils.isSupportedSystem()) {
-            
+        if (mIsAbortingAppLaunch) {
             super.onDestroy();
             return;
         }

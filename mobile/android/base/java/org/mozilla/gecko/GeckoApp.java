@@ -178,6 +178,9 @@ public abstract class GeckoApp
     protected Menu mMenu;
     protected boolean mIsRestoringActivity;
 
+    
+    protected boolean mIsAbortingAppLaunch;
+
     private ContactService mContactService;
     private PromptService mPromptService;
     protected TextSelection mTextSelection;
@@ -1094,6 +1097,7 @@ public abstract class GeckoApp
 
         if (!HardwareUtils.isSupportedSystem()) {
             
+            mIsAbortingAppLaunch = true;
             super.onCreate(savedInstanceState);
             showSDKVersionError();
             finish();
@@ -1348,7 +1352,21 @@ public abstract class GeckoApp
     @Override
     public void onStart() {
         super.onStart();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
+
         mWasFirstTabShownAfterActivityUnhidden = false; 
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        
+        
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
     }
 
     
@@ -1976,6 +1994,9 @@ public abstract class GeckoApp
         
         
         super.onResume();
+        if (mIsAbortingAppLaunch) {
+            return;
+        }
 
         int newOrientation = getResources().getConfiguration().orientation;
         if (GeckoScreenOrientation.getInstance().update(newOrientation)) {
@@ -2053,6 +2074,11 @@ public abstract class GeckoApp
     @Override
     public void onPause()
     {
+        if (mIsAbortingAppLaunch) {
+            super.onPause();
+            return;
+        }
+
         final HealthRecorder rec = mHealthRecorder;
         final Context context = this;
 
@@ -2101,6 +2127,11 @@ public abstract class GeckoApp
 
     @Override
     public void onRestart() {
+        if (mIsAbortingAppLaunch) {
+            super.onRestart();
+            return;
+        }
+
         
         final StrictMode.ThreadPolicy savedPolicy = StrictMode.allowThreadDiskReads();
         try {
@@ -2116,7 +2147,7 @@ public abstract class GeckoApp
 
     @Override
     public void onDestroy() {
-        if (!HardwareUtils.isSupportedSystem()) {
+        if (mIsAbortingAppLaunch) {
             
             
             super.onDestroy();
