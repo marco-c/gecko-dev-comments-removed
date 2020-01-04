@@ -12,6 +12,10 @@
 #define mozilla_MacroArgs_h
 
 
+#define MOZ_CONCAT2(x, y) x ## y
+#define MOZ_CONCAT(x, y) MOZ_CONCAT2(x, y)
+
+
 
 
 
