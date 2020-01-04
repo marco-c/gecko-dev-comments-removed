@@ -1,0 +1,10 @@
+
+
+
+
+#include "win-driver-target-type.h"
+
+NTSTATUS DriverEntry(_In_ struct _DRIVER_OBJECT *DriverObject,
+                     _In_ PUNICODE_STRING RegistryPath) {
+  return STATUS_SUCCESS;
+}

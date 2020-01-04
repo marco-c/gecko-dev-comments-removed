@@ -1,0 +1,9 @@
+
+
+
+
+#if defined(_MSC_VER)
+__declspec(dllexport)
+#endif
+    void SomeFunction() {
+}

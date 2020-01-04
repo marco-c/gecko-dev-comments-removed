@@ -4,9 +4,6 @@
 
 
 
-"""
-"""
-
 import TestGyp
 
 test = TestGyp.TestGyp()
@@ -15,9 +12,7 @@ test.run_gyp('multiple.gyp', chdir='src')
 
 test.relocate('src', 'relocate/src')
 
-
-
-test.build('multiple.gyp', chdir='relocate/src', stderr=None)
+test.build('multiple.gyp', chdir='relocate/src')
 
 expect1 = """\
 hello from prog1.c

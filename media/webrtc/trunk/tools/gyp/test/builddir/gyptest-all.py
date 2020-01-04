@@ -24,7 +24,7 @@ import TestGyp
 
 
 
-test = TestGyp.TestGyp(formats=['!make', '!ninja', '!android'])
+test = TestGyp.TestGyp(formats=['!make', '!ninja', '!cmake'])
 
 test.run_gyp('prog1.gyp', '--depth=..', chdir='src')
 if test.format == 'msvs':

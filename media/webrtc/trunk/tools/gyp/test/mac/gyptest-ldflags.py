@@ -16,6 +16,12 @@ import sys
 if sys.platform == 'darwin':
   test = TestGyp.TestGyp(formats=['ninja', 'make', 'xcode'])
 
+  
+  
+  
+  if test.format == 'xcode-ninja':
+    test.skip_test()
+
   CHDIR = 'ldflags'
   test.run_gyp('subdirectory/test.gyp', chdir=CHDIR)
 

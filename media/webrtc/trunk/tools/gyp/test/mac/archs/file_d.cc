@@ -1,0 +1,11 @@
+
+
+
+
+#include "file_a.h"
+#include "file_b.h"
+
+void PublicFunctionD() {
+  DependentFunctionA();
+  DependentFunctionB();
+}

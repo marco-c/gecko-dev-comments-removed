@@ -1,0 +1,11 @@
+
+
+
+
+extern "C" {
+int zero(void);
+}
+
+int main() {
+  return zero();
+}

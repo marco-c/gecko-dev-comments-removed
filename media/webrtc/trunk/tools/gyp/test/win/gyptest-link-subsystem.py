@@ -23,6 +23,16 @@ if sys.platform == 'win32':
   test.build('subsystem.gyp', 'test_windows_ok', chdir=CHDIR)
   test.build('subsystem.gyp', 'test_windows_fail', chdir=CHDIR, status=1)
 
+  test.build('subsystem.gyp', 'test_console_xp', chdir=CHDIR)
+  test.build('subsystem.gyp', 'test_windows_xp', chdir=CHDIR)
+  
+  def GetHeaders(exe):
+    return test.run_dumpbin('/headers', test.built_file_path(exe, chdir=CHDIR))
+  if '5.01 subsystem version' not in GetHeaders('test_console_xp.exe'):
+    test.fail_test()
+  if '5.01 subsystem version' not in GetHeaders('test_windows_xp.exe'):
+    test.fail_test()
+
   
 
   test.pass_test()

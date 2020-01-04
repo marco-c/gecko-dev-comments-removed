@@ -10,13 +10,29 @@ Verifies that xcode-style GCC_... settings are handled properly.
 
 import TestGyp
 
+import os
+import subprocess
 import sys
 
 def IgnoreOutput(string, expected_string):
   return True
 
+def CompilerVersion(compiler):
+  stdout = subprocess.check_output([compiler, '-v'], stderr=subprocess.STDOUT)
+  return stdout.rstrip('\n')
+
+def CompilerSupportsWarnAboutInvalidOffsetOfMacro(test):
+  
+  
+  
+  
+  return 'clang' not in CompilerVersion('/usr/bin/cc')
+
 if sys.platform == 'darwin':
   test = TestGyp.TestGyp(formats=['ninja', 'make', 'xcode'])
+
+  if test.format == 'xcode-ninja':
+    test.skip_test()
 
   CHDIR = 'xcode-gcc'
   test.run_gyp('test.gyp', chdir=CHDIR)
@@ -24,9 +40,13 @@ if sys.platform == 'darwin':
   
   
   targets = [
-    'warn_about_invalid_offsetof_macro',
     'warn_about_missing_newline',
   ]
+
+  
+  
+  if CompilerSupportsWarnAboutInvalidOffsetOfMacro(test):
+    targets.append('warn_about_invalid_offsetof_macro')
 
   for target in targets:
     test.build('test.gyp', target, chdir=CHDIR)

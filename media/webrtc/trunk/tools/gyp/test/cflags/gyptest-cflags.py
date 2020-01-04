@@ -5,61 +5,71 @@
 
 
 """
-Verifies build of an executable with C++ define specified by a gyp define, and
-the use of the environment during regeneration when the gyp file changes.
+Verifies the use of the environment during regeneration when the gyp file
+changes, specifically via build of an executable with C preprocessor
+definition specified by CFLAGS.
+
+In this test, gyp and build both run in same local environment.
 """
 
-import os
 import TestGyp
 
-env_stack = []
+
+FORMATS = ('make', 'ninja')
+
+test = TestGyp.TestGyp(formats=FORMATS)
 
 
-def PushEnv():
-  env_copy = os.environ.copy()
-  env_stack.append(env_copy)
-
-def PopEnv():
-  os.eniron=env_stack.pop()
-
-
-
-test = TestGyp.TestGyp(formats=['make', 'android'])
-
-try:
-  PushEnv()
-  os.environ['CFLAGS'] = '-O0'
+with TestGyp.LocalEnv({'CFLAGS': '',
+                       'GYP_CROSSCOMPILE': '1'}):
   test.run_gyp('cflags.gyp')
-finally:
-  
-  
-  
-  PopEnv()
+  test.build('cflags.gyp')
 
-test.build('cflags.gyp')
+expect = """FOO not defined\n"""
+test.run_built_executable('cflags', stdout=expect)
+test.run_built_executable('cflags_host', stdout=expect)
 
-expect = """\
-Using no optimization flag
-"""
+test.sleep()
+
+with TestGyp.LocalEnv({'CFLAGS': '-DFOO=1',
+                       'GYP_CROSSCOMPILE': '1'}):
+  test.run_gyp('cflags.gyp')
+  test.build('cflags.gyp')
+
+expect = """FOO defined\n"""
+test.run_built_executable('cflags', stdout=expect)
+
+
+expect = """FOO not defined\n"""
+test.run_built_executable('cflags_host', stdout=expect)
+
+test.sleep()
+
+with TestGyp.LocalEnv({'CFLAGS_host': '-DFOO=1',
+                       'GYP_CROSSCOMPILE': '1'}):
+  test.run_gyp('cflags.gyp')
+  test.build('cflags.gyp')
+
+
+expect = """FOO defined\n"""
+test.run_built_executable('cflags_host', stdout=expect)
+
+test.sleep()
+
+with TestGyp.LocalEnv({'CFLAGS': ''}):
+  test.run_gyp('cflags.gyp')
+  test.build('cflags.gyp')
+
+expect = """FOO not defined\n"""
 test.run_built_executable('cflags', stdout=expect)
 
 test.sleep()
 
-try:
-  PushEnv()
-  os.environ['CFLAGS'] = '-O2'
+with TestGyp.LocalEnv({'CFLAGS': '-DFOO=1'}):
   test.run_gyp('cflags.gyp')
-finally:
-  
-  
-  
-  PopEnv()
+  test.build('cflags.gyp')
 
-test.build('cflags.gyp')
-
-expect = """\
-Using an optimization flag
-"""
+expect = """FOO defined\n"""
 test.run_built_executable('cflags', stdout=expect)
 
 test.pass_test()

@@ -1,0 +1,10 @@
+
+
+
+
+#ifndef _INCLUDED_TEST_MAC_DEPENDENCIES_FILE_B_H_
+#define _INCLUDED_TEST_MAC_DEPENDENCIES_FILE_B_H_
+
+void DependentFunctionB();
+
+#endif 

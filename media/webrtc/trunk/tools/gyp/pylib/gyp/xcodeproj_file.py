@@ -169,11 +169,11 @@ _quoted = re.compile('___')
 
 
 
-_escaped = re.compile('[\\\\"]|[^ -~]')
+_escaped = re.compile('[\\\\"]|[\x00-\x1f]')
 
 
 
-_path_leading_variable = re.compile('^\$\((.*?)\)(/(.*))?$')
+_path_leading_variable = re.compile(r'^\$\((.*?)\)(/(.*))?$')
 
 def SourceTreeAndPathFromPath(input_path):
   """Given input_path, returns a tuple with sourceTree and path values.
@@ -196,7 +196,7 @@ def SourceTreeAndPathFromPath(input_path):
   return (source_tree, output_path)
 
 def ConvertVariablesToShellSyntax(input_string):
-  return re.sub('\$\((.*?)\)', '${\\1}', input_string)
+  return re.sub(r'\$\((.*?)\)', '${\\1}', input_string)
 
 class XCObject(object):
   """The abstract base of all class types used in Xcode project files.
@@ -341,13 +341,13 @@ class XCObject(object):
       elif isinstance(value, dict):
         
         if is_strong:
-          raise TypeError, 'Strong dict for key ' + key + ' in ' + \
-                           self.__class__.__name__
+          raise TypeError('Strong dict for key ' + key + ' in ' + \
+                          self.__class__.__name__)
         else:
           that._properties[key] = value.copy()
       else:
-        raise TypeError, 'Unexpected type ' + value.__class__.__name__ + \
-                         ' for key ' + key + ' in ' + self.__class__.__name__
+        raise TypeError('Unexpected type ' + value.__class__.__name__ + \
+                        ' for key ' + key + ' in ' + self.__class__.__name__)
 
     return that
 
@@ -366,8 +366,7 @@ class XCObject(object):
         ('name' in self._schema and self._schema['name'][3]):
       return self._properties['name']
 
-    raise NotImplementedError, \
-          self.__class__.__name__ + ' must implement Name'
+    raise NotImplementedError(self.__class__.__name__ + ' must implement Name')
 
   def Comment(self):
     """Return a comment string for the object.
@@ -466,10 +465,10 @@ class XCObject(object):
     for descendant in descendants:
       if descendant.id in ids:
         other = ids[descendant.id]
-        raise KeyError, \
+        raise KeyError(
               'Duplicate ID %s, objects "%s" and "%s" in "%s"' % \
               (descendant.id, str(descendant._properties),
-               str(other._properties), self._properties['rootObject'].Name())
+               str(other._properties), self._properties['rootObject'].Name()))
       ids[descendant.id] = descendant
 
   def Children(self):
@@ -630,7 +629,7 @@ class XCObject(object):
             sep
       printable += end_tabs + '}'
     else:
-      raise TypeError, "Can't make " + value.__class__.__name__ + ' printable'
+      raise TypeError("Can't make " + value.__class__.__name__ + ' printable')
 
     if comment != None:
       printable += ' ' + self._EncodeComment(comment)
@@ -756,31 +755,31 @@ class XCObject(object):
     for property, value in properties.iteritems():
       
       if not property in self._schema:
-        raise KeyError, property + ' not in ' + self.__class__.__name__
+        raise KeyError(property + ' not in ' + self.__class__.__name__)
 
       
       (is_list, property_type, is_strong) = self._schema[property][0:3]
       if is_list:
         if value.__class__ != list:
-          raise TypeError, \
+          raise TypeError(
                 property + ' of ' + self.__class__.__name__ + \
-                ' must be list, not ' + value.__class__.__name__
+                ' must be list, not ' + value.__class__.__name__)
         for item in value:
           if not isinstance(item, property_type) and \
              not (item.__class__ == unicode and property_type == str):
             
             
-            raise TypeError, \
+            raise TypeError(
                   'item of ' + property + ' of ' + self.__class__.__name__ + \
                   ' must be ' + property_type.__name__ + ', not ' + \
-                  item.__class__.__name__
+                  item.__class__.__name__)
       elif not isinstance(value, property_type) and \
            not (value.__class__ == unicode and property_type == str):
         
         
-        raise TypeError, \
+        raise TypeError(
               property + ' of ' + self.__class__.__name__ + ' must be ' + \
-              property_type.__name__ + ', not ' + value.__class__.__name__
+              property_type.__name__ + ', not ' + value.__class__.__name__)
 
       
       if do_copy:
@@ -804,9 +803,9 @@ class XCObject(object):
         elif isinstance(value, dict):
           self._properties[property] = value.copy()
         else:
-          raise TypeError, "Don't know how to copy a " + \
-                           value.__class__.__name__ + ' object for ' + \
-                           property + ' in ' + self.__class__.__name__
+          raise TypeError("Don't know how to copy a " + \
+                          value.__class__.__name__ + ' object for ' + \
+                          property + ' in ' + self.__class__.__name__)
       else:
         self._properties[property] = value
 
@@ -837,15 +836,15 @@ class XCObject(object):
 
     
     if not key in self._schema:
-      raise KeyError, key + ' not in ' + self.__class__.__name__
+      raise KeyError(key + ' not in ' + self.__class__.__name__)
 
     (is_list, property_type, is_strong) = self._schema[key][0:3]
     if not is_list:
-      raise TypeError, key + ' of ' + self.__class__.__name__ + ' must be list'
+      raise TypeError(key + ' of ' + self.__class__.__name__ + ' must be list')
     if not isinstance(value, property_type):
-      raise TypeError, 'item of ' + key + ' of ' + self.__class__.__name__ + \
-                       ' must be ' + property_type.__name__ + ', not ' + \
-                       value.__class__.__name__
+      raise TypeError('item of ' + key + ' of ' + self.__class__.__name__ + \
+                      ' must be ' + property_type.__name__ + ', not ' + \
+                      value.__class__.__name__)
 
     
     
@@ -869,7 +868,7 @@ class XCObject(object):
     for property, attributes in self._schema.iteritems():
       (is_list, property_type, is_strong, is_required) = attributes[0:4]
       if is_required and not property in self._properties:
-        raise KeyError, self.__class__.__name__ + ' requires ' + property
+        raise KeyError(self.__class__.__name__ + ' requires ' + property)
 
   def _SetDefaultsFromSchema(self):
     """Assign object default values according to the schema.  This will not
@@ -1143,16 +1142,16 @@ class PBXGroup(XCHierarchicalElement):
     child_path = child.PathFromSourceTreeAndPath()
     if child_path:
       if child_path in self._children_by_path:
-        raise ValueError, 'Found multiple children with path ' + child_path
+        raise ValueError('Found multiple children with path ' + child_path)
       self._children_by_path[child_path] = child
 
     if isinstance(child, PBXVariantGroup):
       child_name = child._properties.get('name', None)
       key = (child_name, child_path)
       if key in self._variant_children_by_name_and_path:
-        raise ValueError, 'Found multiple PBXVariantGroup children with ' + \
-                          'name ' + str(child_name) + ' and path ' + \
-                          str(child_path)
+        raise ValueError('Found multiple PBXVariantGroup children with ' + \
+                         'name ' + str(child_name) + ' and path ' + \
+                         str(child_path))
       self._variant_children_by_name_and_path[key] = child
 
   def AppendChild(self, child):
@@ -1474,44 +1473,60 @@ class PBXFileReference(XCFileLikeElement, XCContainerPortal, XCRemoteObject):
       
       
       extension_map = {
-        'a':         'archive.ar',
-        'app':       'wrapper.application',
-        'bdic':      'file',
-        'bundle':    'wrapper.cfbundle',
-        'c':         'sourcecode.c.c',
-        'cc':        'sourcecode.cpp.cpp',
-        'cpp':       'sourcecode.cpp.cpp',
-        'css':       'text.css',
-        'cxx':       'sourcecode.cpp.cpp',
-        'dylib':     'compiled.mach-o.dylib',
-        'framework': 'wrapper.framework',
-        'h':         'sourcecode.c.h',
-        'hxx':       'sourcecode.cpp.h',
-        'icns':      'image.icns',
-        'java':      'sourcecode.java',
-        'js':        'sourcecode.javascript',
-        'm':         'sourcecode.c.objc',
-        'mm':        'sourcecode.cpp.objcpp',
-        'nib':       'wrapper.nib',
-        'o':         'compiled.mach-o.objfile',
-        'pdf':       'image.pdf',
-        'pl':        'text.script.perl',
-        'plist':     'text.plist.xml',
-        'pm':        'text.script.perl',
-        'png':       'image.png',
-        'py':        'text.script.python',
-        'r':         'sourcecode.rez',
-        'rez':       'sourcecode.rez',
-        's':         'sourcecode.asm',
-        'strings':   'text.plist.strings',
-        'ttf':       'file',
-        'xcconfig':  'text.xcconfig',
-        'xib':       'file.xib',
-        'y':         'sourcecode.yacc',
+        'a':           'archive.ar',
+        'app':         'wrapper.application',
+        'bdic':        'file',
+        'bundle':      'wrapper.cfbundle',
+        'c':           'sourcecode.c.c',
+        'cc':          'sourcecode.cpp.cpp',
+        'cpp':         'sourcecode.cpp.cpp',
+        'css':         'text.css',
+        'cxx':         'sourcecode.cpp.cpp',
+        'dart':        'sourcecode',
+        'dylib':       'compiled.mach-o.dylib',
+        'framework':   'wrapper.framework',
+        'gyp':         'sourcecode',
+        'gypi':        'sourcecode',
+        'h':           'sourcecode.c.h',
+        'hxx':         'sourcecode.cpp.h',
+        'icns':        'image.icns',
+        'java':        'sourcecode.java',
+        'js':          'sourcecode.javascript',
+        'kext':        'wrapper.kext',
+        'm':           'sourcecode.c.objc',
+        'mm':          'sourcecode.cpp.objcpp',
+        'nib':         'wrapper.nib',
+        'o':           'compiled.mach-o.objfile',
+        'pdf':         'image.pdf',
+        'pl':          'text.script.perl',
+        'plist':       'text.plist.xml',
+        'pm':          'text.script.perl',
+        'png':         'image.png',
+        'py':          'text.script.python',
+        'r':           'sourcecode.rez',
+        'rez':         'sourcecode.rez',
+        's':           'sourcecode.asm',
+        'storyboard':  'file.storyboard',
+        'strings':     'text.plist.strings',
+        'swift':       'sourcecode.swift',
+        'ttf':         'file',
+        'xcassets':    'folder.assetcatalog',
+        'xcconfig':    'text.xcconfig',
+        'xcdatamodel': 'wrapper.xcdatamodel',
+        'xcdatamodeld':'wrapper.xcdatamodeld',
+        'xib':         'file.xib',
+        'y':           'sourcecode.yacc',
+      }
+
+      prop_map = {
+        'dart':        'explicitFileType',
+        'gyp':         'explicitFileType',
+        'gypi':        'explicitFileType',
       }
 
       if is_dir:
         file_type = 'folder'
+        prop_name = 'lastKnownFileType'
       else:
         basename = posixpath.basename(self._properties['path'])
         (root, ext) = posixpath.splitext(basename)
@@ -1526,8 +1541,9 @@ class PBXFileReference(XCFileLikeElement, XCContainerPortal, XCRemoteObject):
         
         
         file_type = extension_map.get(ext, 'text')
+        prop_name = prop_map.get(ext, 'lastKnownFileType')
 
-      self._properties['lastKnownFileType'] = file_type
+      self._properties[prop_name] = file_type
 
 
 class PBXVariantGroup(PBXGroup, XCFileLikeElement):
@@ -1592,7 +1608,7 @@ class XCConfigurationList(XCObject):
       if configuration._properties['name'] == name:
         return configuration
 
-    raise KeyError, name
+    raise KeyError(name)
 
   def DefaultConfiguration(self):
     """Convenience accessor to obtain the default XCBuildConfiguration."""
@@ -1649,7 +1665,7 @@ class XCConfigurationList(XCObject):
         value = configuration_value
       else:
         if value != configuration_value:
-          raise ValueError, 'Variant values for ' + key
+          raise ValueError('Variant values for ' + key)
 
     return value
 
@@ -1756,8 +1772,8 @@ class XCBuildPhase(XCObject):
     
     
     
-    raise NotImplementedError, \
-          self.__class__.__name__ + ' must implement FileGroup'
+    raise NotImplementedError(
+          self.__class__.__name__ + ' must implement FileGroup')
 
   def _AddPathToDict(self, pbxbuildfile, path):
     """Adds path to the dict tracking paths belonging to this build phase.
@@ -1766,7 +1782,7 @@ class XCBuildPhase(XCObject):
     """
 
     if path in self._files_by_path:
-      raise ValueError, 'Found multiple build files with path ' + path
+      raise ValueError('Found multiple build files with path ' + path)
     self._files_by_path[path] = pbxbuildfile
 
   def _AddBuildFileToDicts(self, pbxbuildfile, path=None):
@@ -1821,8 +1837,8 @@ class XCBuildPhase(XCObject):
     
     if xcfilelikeelement in self._files_by_xcfilelikeelement and \
        self._files_by_xcfilelikeelement[xcfilelikeelement] != pbxbuildfile:
-      raise ValueError, 'Found multiple build files for ' + \
-                        xcfilelikeelement.Name()
+      raise ValueError('Found multiple build files for ' + \
+                       xcfilelikeelement.Name())
     self._files_by_xcfilelikeelement[xcfilelikeelement] = pbxbuildfile
 
   def AppendBuildFile(self, pbxbuildfile, path=None):
@@ -1931,22 +1947,38 @@ class PBXCopyFilesBuildPhase(XCBuildPhase):
 
   
   
-  path_tree_re = re.compile('^\\$\\((.*)\\)(/(.*)|)$')
+  
+  
+  path_tree_re = re.compile(r'^\$\((.*?)\)(/(\$\((.*?)\)(/(.*)|)|(.*)|)|)$')
 
   
   
-  path_tree_to_subfolder = {
-    'BUILT_PRODUCTS_DIR': 16,  
+  
+  path_tree_first_to_subfolder = {
+    
+    'BUILT_PRODUCTS_DIR':               16,  
+    'BUILT_FRAMEWORKS_DIR':             10,  
+                                             
+                                             
+                                             
+  }
+
+  path_tree_second_to_subfolder = {
+    'WRAPPER_NAME':                      1,  
     
     
     
+    'EXECUTABLE_FOLDER_PATH':            6,  
+    'UNLOCALIZED_RESOURCES_FOLDER_PATH': 7,  
+    'JAVA_FOLDER_PATH':                 15,  
+    'FRAMEWORKS_FOLDER_PATH':           10,  
+    'SHARED_FRAMEWORKS_FOLDER_PATH':    11,  
+    'SHARED_SUPPORT_FOLDER_PATH':       12,  
+    'PLUGINS_FOLDER_PATH':              13,  
     
     
     
-    
-    
-    
-    
+    'XPCSERVICES_FOLDER_PATH':          16,  
   }
 
   def Name(self):
@@ -1967,14 +1999,61 @@ class PBXCopyFilesBuildPhase(XCBuildPhase):
 
     path_tree_match = self.path_tree_re.search(path)
     if path_tree_match:
-      
-      path_tree = path_tree_match.group(1)
-      relative_path = path_tree_match.group(3)
-
-      if path_tree in self.path_tree_to_subfolder:
-        subfolder = self.path_tree_to_subfolder[path_tree]
+      path_tree = path_tree_match.group(1);
+      if path_tree in self.path_tree_first_to_subfolder:
+        subfolder = self.path_tree_first_to_subfolder[path_tree]
+        relative_path = path_tree_match.group(3)
         if relative_path is None:
           relative_path = ''
+
+        if subfolder == 16 and path_tree_match.group(4) is not None:
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          path_tree = path_tree_match.group(4)
+          relative_path = path_tree_match.group(6)
+          separator = '/'
+
+          if path_tree in self.path_tree_second_to_subfolder:
+            subfolder = self.path_tree_second_to_subfolder[path_tree]
+            if relative_path is None:
+              relative_path = ''
+              separator = ''
+            if path_tree == 'XPCSERVICES_FOLDER_PATH':
+              relative_path = '$(CONTENTS_FOLDER_PATH)/XPCServices' \
+                              + separator + relative_path
+          else:
+            
+            
+            
+            relative_path = path_tree_match.group(3);
+
       else:
         
         
@@ -1986,8 +2065,8 @@ class PBXCopyFilesBuildPhase(XCBuildPhase):
       subfolder = 0
       relative_path = path[1:]
     else:
-      raise ValueError, 'Can\'t use path %s in a %s' % \
-                        (path, self.__class__.__name__)
+      raise ValueError('Can\'t use path %s in a %s' % \
+                       (path, self.__class__.__name__))
 
     self._properties['dstPath'] = relative_path
     self._properties['dstSubfolderSpec'] = subfolder
@@ -2225,20 +2304,32 @@ class PBXNativeTarget(XCTarget):
   
   
   _product_filetypes = {
-    'com.apple.product-type.application':     ['wrapper.application',
-                                               '', '.app'],
-    'com.apple.product-type.bundle':          ['wrapper.cfbundle',
-                                               '', '.bundle'],
-    'com.apple.product-type.framework':       ['wrapper.framework',
-                                               '', '.framework'],
-    'com.apple.product-type.library.dynamic': ['compiled.mach-o.dylib',
-                                               'lib', '.dylib'],
-    'com.apple.product-type.library.static':  ['archive.ar',
-                                               'lib', '.a'],
-    'com.apple.product-type.tool':            ['compiled.mach-o.executable',
-                                               '', ''],
-    'com.googlecode.gyp.xcode.bundle':        ['compiled.mach-o.dylib',
-                                               '', '.so'],
+    'com.apple.product-type.application':           ['wrapper.application',
+                                                     '', '.app'],
+    'com.apple.product-type.application.watchapp':  ['wrapper.application',
+                                                     '', '.app'],
+    'com.apple.product-type.watchkit-extension':    ['wrapper.app-extension',
+                                                     '', '.appex'],
+    'com.apple.product-type.app-extension':         ['wrapper.app-extension',
+                                                     '', '.appex'],
+    'com.apple.product-type.bundle':            ['wrapper.cfbundle',
+                                                 '', '.bundle'],
+    'com.apple.product-type.framework':         ['wrapper.framework',
+                                                 '', '.framework'],
+    'com.apple.product-type.library.dynamic':   ['compiled.mach-o.dylib',
+                                                 'lib', '.dylib'],
+    'com.apple.product-type.library.static':    ['archive.ar',
+                                                 'lib', '.a'],
+    'com.apple.product-type.tool':              ['compiled.mach-o.executable',
+                                                 '', ''],
+    'com.apple.product-type.bundle.unit-test':  ['wrapper.cfbundle',
+                                                 '', '.xctest'],
+    'com.apple.product-type.bundle.ui-testing':  ['wrapper.cfbundle',
+                                                  '', '.xctest'],
+    'com.googlecode.gyp.xcode.bundle':          ['compiled.mach-o.dylib',
+                                                 '', '.so'],
+    'com.apple.product-type.kernel-extension':  ['wrapper.kext',
+                                                 '', '.kext'],
   }
 
   def __init__(self, properties=None, id=None, parent=None,
@@ -2290,13 +2381,20 @@ class PBXNativeTarget(XCTarget):
           if force_extension is None:
             force_extension = suffix[1:]
 
+        if self._properties['productType'] == \
+           'com.apple.product-type-bundle.unit.test' or \
+           self._properties['productType'] == \
+           'com.apple.product-type-bundle.ui-testing':
+          if force_extension is None:
+            force_extension = suffix[1:]
+
         if force_extension is not None:
           
+          
+          suffix = '.' + force_extension
           if filetype.startswith('wrapper.'):
             self.SetBuildSetting('WRAPPER_EXTENSION', force_extension)
           else:
-            
-            suffix = '.' + force_extension
             self.SetBuildSetting('EXECUTABLE_EXTENSION', force_extension)
 
           if filetype.startswith('compiled.mach-o.executable'):
@@ -2712,7 +2810,52 @@ class PBXProject(XCContainerPortal):
 
     self._SetUpProductReferences(other_pbxproject, product_group, project_ref)
 
+    inherit_unique_symroot = self._AllSymrootsUnique(other_pbxproject, False)
+    targets = other_pbxproject.GetProperty('targets')
+    if all(self._AllSymrootsUnique(t, inherit_unique_symroot) for t in targets):
+      dir_path = project_ref._properties['path']
+      product_group._hashables.extend(dir_path)
+
     return [product_group, project_ref]
+
+  def _AllSymrootsUnique(self, target, inherit_unique_symroot):
+    
+    
+    
+    
+    symroots = self._DefinedSymroots(target)
+    for s in self._DefinedSymroots(target):
+      if (s is not None and not self._IsUniqueSymrootForTarget(s) or
+          s is None and not inherit_unique_symroot):
+        return False
+    return True if symroots else inherit_unique_symroot
+
+  def _DefinedSymroots(self, target):
+    
+    
+    
+    
+    
+    config_list = target.GetProperty('buildConfigurationList')
+    symroots = set()
+    for config in config_list.GetProperty('buildConfigurations'):
+      setting = config.GetProperty('buildSettings')
+      if 'SYMROOT' in setting:
+        symroots.add(setting['SYMROOT'])
+      else:
+        symroots.add(None)
+    if len(symroots) == 1 and None in symroots:
+      return set()
+    return symroots
+
+  def _IsUniqueSymrootForTarget(self, symroot):
+    
+    
+    
+    uniquifier = ['$SRCROOT', '$(SRCROOT)']
+    if any(x in symroot for x in uniquifier):
+      return True
+    return False
 
   def _SetUpProductReferences(self, other_pbxproject, product_group,
                               project_ref):
@@ -2782,7 +2925,7 @@ class PBXProject(XCContainerPortal):
       product_group = ref_dict['ProductGroup']
       product_group._properties['children'] = sorted(
           product_group._properties['children'],
-          cmp=lambda x, y: CompareProducts(x, y, remote_products))
+          cmp=lambda x, y, rp=remote_products: CompareProducts(x, y, rp))
 
 
 class XCProjectFile(XCObject):
@@ -2790,26 +2933,9 @@ class XCProjectFile(XCObject):
   _schema.update({
     'archiveVersion': [0, int,        0, 1, 1],
     'classes':        [0, dict,       0, 1, {}],
-    'objectVersion':  [0, int,        0, 1, 45],
+    'objectVersion':  [0, int,        0, 1, 46],
     'rootObject':     [0, PBXProject, 1, 1],
   })
-
-  def SetXcodeVersion(self, version):
-    version_to_object_version = {
-      '2.4': 45,
-      '3.0': 45,
-      '3.1': 45,
-      '3.2': 46,
-    }
-    if not version in version_to_object_version:
-      supported_str = ', '.join(sorted(version_to_object_version.keys()))
-      raise Exception(
-          'Unsupported Xcode version %s (supported: %s)' %
-          ( version, supported_str ) )
-    compatibility_version = 'Xcode %s' % version
-    self._properties['rootObject'].SetProperty('compatibilityVersion',
-                                               compatibility_version)
-    self.SetProperty('objectVersion', version_to_object_version[version]);
 
   def ComputeIDs(self, recursive=True, overwrite=True, hash=None):
     

@@ -1,0 +1,13 @@
+
+
+
+
+
+int f(bool b) {
+  int i;
+  if (b)
+    i = 0;
+  return i;
+}
+
+int main() {}

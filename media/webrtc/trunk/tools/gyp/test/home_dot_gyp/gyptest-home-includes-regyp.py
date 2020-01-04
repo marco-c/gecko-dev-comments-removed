@@ -14,7 +14,7 @@ import TestGyp
 
 
 
-test = TestGyp.TestGyp(formats=['make', 'android'])
+test = TestGyp.TestGyp(formats=['make'])
 
 os.environ['HOME'] = os.path.abspath('home')
 

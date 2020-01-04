@@ -21,6 +21,10 @@ if sys.platform == 'win32':
 
   
   
-  test.built_file_must_exist('test_pdbname.pdb', chdir=CHDIR)
+  test.built_file_must_exist('obj/test_pdbname.cc.pdb', chdir=CHDIR)
+
+  
+  test.built_file_must_exist('test_pdbname.exe', chdir=CHDIR)
+  test.built_file_must_exist('test_pdbname.exe.pdb', chdir=CHDIR)
 
   test.pass_test()

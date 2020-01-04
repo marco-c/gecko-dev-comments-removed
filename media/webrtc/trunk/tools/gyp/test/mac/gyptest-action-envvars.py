@@ -15,6 +15,12 @@ import sys
 if sys.platform == 'darwin':
   test = TestGyp.TestGyp(formats=['ninja', 'make', 'xcode'])
 
+  
+  
+  
+  if test.format == 'xcode-ninja':
+    test.skip_test()
+
   CHDIR = 'action-envvars'
   test.run_gyp('action/action.gyp', chdir=CHDIR)
   test.build('action/action.gyp', 'action', chdir=CHDIR, SYMROOT='../build')

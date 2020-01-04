@@ -1,0 +1,11 @@
+
+
+
+
+
+
+import sys
+
+f = open(sys.argv[1], 'wb')
+f.write(' '.join(sys.argv[2:]))
+f.close()

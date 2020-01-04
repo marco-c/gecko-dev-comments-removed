@@ -19,37 +19,92 @@ if sys.platform == 'win32':
   
   sys.exit(0)
 
-test = TestGyp.TestGyp(formats=['ninja', 'make'])
 
-def CheckCompiler(test, gypfile, check_for):
-  test.run_gyp(gypfile)
+for key in ['CC', 'CXX', 'LINK', 'CC_host', 'CXX_host', 'LINK_host']:
+  if key in os.environ:
+    del os.environ[key]
+
+
+def CheckCompiler(test, gypfile, check_for, run_gyp):
+  if run_gyp:
+    test.run_gyp(gypfile)
   test.build(gypfile)
 
-  
-  
   test.must_contain_all_lines(test.stdout(), check_for)
 
-oldenv = os.environ.copy()
-try:
-  
-  os.environ['CC'] = 'python %s/my_cc.py FOO' % here
-  os.environ['CXX'] = 'python %s/my_cxx.py FOO' % here
-  os.environ['LD'] = 'python %s/my_ld.py FOO_LINK' % here
-  CheckCompiler(test, 'compiler.gyp',
-                ['my_cc.py', 'my_cxx.py', 'FOO', 'FOO_LINK'])
-finally:
-  os.environ.clear()
-  os.environ.update(oldenv)
 
-try:
+test = TestGyp.TestGyp(formats=['ninja', 'make'])
+
+def TestTargetOveride():
+  expected = ['my_cc.py', 'my_cxx.py', 'FOO' ]
+
   
-  os.environ['CC_host'] = 'python %s/my_cc.py HOST' % here
-  os.environ['CXX_host'] = 'python %s/my_cxx.py HOST' % here
-  os.environ['LD_host'] = 'python %s/my_ld.py HOST_LINK' % here
-  CheckCompiler(test, 'compiler-host.gyp',
-                ['my_cc.py', 'my_cxx.py', 'HOST', 'HOST_LINK'])
-finally:
-  os.environ.clear()
-  os.environ.update(oldenv)
+  if test.format not in ['ninja', 'xcode-ninja']:
+    expected.append('FOO_LINK')
+
+  
+  oldenv = os.environ.copy()
+  try:
+    os.environ['CC'] = 'python %s/my_cc.py FOO' % here
+    os.environ['CXX'] = 'python %s/my_cxx.py FOO' % here
+    os.environ['LINK'] = 'python %s/my_ld.py FOO_LINK' % here
+
+    CheckCompiler(test, 'compiler-exe.gyp', expected, True)
+  finally:
+    os.environ.clear()
+    os.environ.update(oldenv)
+
+  
+  
+  
+  CheckCompiler(test, 'compiler-exe.gyp', expected, False)
+
+
+def TestTargetOverideCompilerOnly():
+  
+  oldenv = os.environ.copy()
+  try:
+    os.environ['CC'] = 'python %s/my_cc.py FOO' % here
+    os.environ['CXX'] = 'python %s/my_cxx.py FOO' % here
+
+    CheckCompiler(test, 'compiler-exe.gyp',
+                  ['my_cc.py', 'my_cxx.py', 'FOO'],
+                  True)
+  finally:
+    os.environ.clear()
+    os.environ.update(oldenv)
+
+  
+  
+  
+  CheckCompiler(test, 'compiler-exe.gyp',
+                ['my_cc.py', 'my_cxx.py', 'FOO'],
+                False)
+
+
+def TestHostOveride():
+  expected = ['my_cc.py', 'my_cxx.py', 'HOST' ]
+  if test.format != 'ninja':  
+    expected.append('HOST_LINK')
+
+  
+  oldenv = os.environ.copy()
+  try:
+    os.environ['CC_host'] = 'python %s/my_cc.py HOST' % here
+    os.environ['CXX_host'] = 'python %s/my_cxx.py HOST' % here
+    os.environ['LINK_host'] = 'python %s/my_ld.py HOST_LINK' % here
+    CheckCompiler(test, 'compiler-host.gyp', expected, True)
+  finally:
+    os.environ.clear()
+    os.environ.update(oldenv)
+
+  
+  
+  
+  CheckCompiler(test, 'compiler-host.gyp', expected, False)
+
+
+TestTargetOveride()
+TestTargetOverideCompilerOnly()
 
 test.pass_test()

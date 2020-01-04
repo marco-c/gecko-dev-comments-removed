@@ -32,8 +32,6 @@ except:
 
 
 
-
-
 open(persistoutput, 'w').write('%d' % (count))
 
 

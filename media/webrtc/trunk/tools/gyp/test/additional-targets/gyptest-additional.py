@@ -12,7 +12,10 @@ import TestGyp
 
 test = TestGyp.TestGyp()
 
-test.run_gyp('all.gyp', chdir='src')
+test.run_gyp('all.gyp',
+             '-G', 'xcode_ninja_target_pattern=^all_targets$',
+             chdir='src')
+
 test.relocate('src', 'relocate/src')
 
 
@@ -33,7 +36,11 @@ test.built_file_must_not_exist('foolib1',
                                chdir=chdir)
 
 
-if test.format in ('make', 'ninja', 'android'):
+if test.format == 'xcode-ninja':
+  test.pass_test()
+
+
+if test.format in ('make', 'ninja', 'cmake'):
   chdir='relocate/src'
 else:
   chdir='relocate/src/dir1'

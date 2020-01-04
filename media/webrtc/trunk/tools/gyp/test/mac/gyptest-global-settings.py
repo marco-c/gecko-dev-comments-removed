@@ -15,6 +15,13 @@ import sys
 
 if sys.platform == 'darwin':
   test = TestGyp.TestGyp(formats=['ninja', 'make', 'xcode'])
+
+  
+  
+  
+  if test.format == 'xcode-ninja':
+    test.skip_test()
+
   test.run_gyp('src/dir2/dir2.gyp', chdir='global-settings', depth='src')
   
 

@@ -15,6 +15,9 @@ import sys
 import time
 
 if sys.platform == 'darwin':
+  print "This test is currently disabled: https://crbug.com/483696."
+  sys.exit(0)
+
   test = TestGyp.TestGyp(formats=['ninja', 'make', 'xcode'])
 
   test.run_gyp('framework.gyp', chdir='framework')
@@ -32,6 +35,11 @@ if sys.platform == 'darwin':
       'Test Framework.framework/Versions/A/Libraries/empty.c',
       chdir='framework')
 
+  
+  test.build('framework.gyp', 'copy_embedded', chdir='framework')
+
+  test.built_file_must_exist(
+      'Embedded/Test Framework.framework', chdir='framework')
 
   
   dep_bundle = test.built_file_path('Dependency Bundle.framework',
@@ -45,5 +53,8 @@ if sys.platform == 'darwin':
 
   
   test.built_file_must_exist('action_file', chdir='framework')
+
+  
+  test.build('framework.gyp', 'copy_target_code_sign', chdir='framework')
 
   test.pass_test()

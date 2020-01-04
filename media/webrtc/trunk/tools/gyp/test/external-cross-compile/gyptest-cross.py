@@ -13,10 +13,6 @@ import TestGyp
 
 test = TestGyp.TestGyp()
 
-
-if test.format == 'scons':
-  test.skip_test()
-
 test.run_gyp('cross.gyp', chdir='src')
 
 test.relocate('src', 'relocate/src')

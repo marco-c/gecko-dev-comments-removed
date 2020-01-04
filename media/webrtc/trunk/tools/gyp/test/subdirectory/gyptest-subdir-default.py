@@ -14,7 +14,8 @@ import TestGyp
 import errno
 
 
-test = TestGyp.TestGyp(formats=['!ninja', '!android'])
+
+test = TestGyp.TestGyp(formats=['!ninja', '!cmake'])
 
 test.run_gyp('prog1.gyp', chdir='src')
 

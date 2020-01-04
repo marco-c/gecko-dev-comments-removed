@@ -22,6 +22,11 @@ import TestGyp
 
 test = TestGyp.TestGyp(formats=['ninja'])
 
+if not os.environ.get('ProgramFiles(x86)'):
+  
+  print 'Skipping test on x86, http://crbug.com/365833'
+  test.pass_test()
+
 test.run_gyp('solibs_avoid_relinking.gyp')
 
 

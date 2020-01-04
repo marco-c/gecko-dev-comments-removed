@@ -20,7 +20,7 @@ test = TestGyp.TestGyp()
 
 
 
-sys.path.append(os.path.join(test._cwd, 'pylib'))
+sys.path.insert(0, os.path.join(test._cwd, 'pylib'))
 
 
 files_to_test = [
@@ -28,7 +28,9 @@ files_to_test = [
     'pylib/gyp/easy_xml_test.py',
     'pylib/gyp/generator/msvs_test.py',
     'pylib/gyp/generator/ninja_test.py',
+    'pylib/gyp/generator/xcode_test.py',
     'pylib/gyp/common_test.py',
+    'pylib/gyp/input_test.py',
 ]
 
 

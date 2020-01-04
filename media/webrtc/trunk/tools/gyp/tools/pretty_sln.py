@@ -38,12 +38,13 @@ def ParseSolution(solution_file):
 
   
   
-  begin_project = re.compile(('^Project\("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942'
-                              '}"\) = "(.*)", "(.*)", "(.*)"$'))
+  begin_project = re.compile(r'^Project\("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942'
+                             r'}"\) = "(.*)", "(.*)", "(.*)"$')
   
   end_project = re.compile('^EndProject$')
   
-  begin_dep = re.compile('ProjectSection\(ProjectDependencies\) = postProject$')
+  begin_dep = re.compile(
+      r'ProjectSection\(ProjectDependencies\) = postProject$')
   
   end_dep = re.compile('EndProjectSection$')
   

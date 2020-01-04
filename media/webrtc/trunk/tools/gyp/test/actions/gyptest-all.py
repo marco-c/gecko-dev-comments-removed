@@ -22,8 +22,7 @@ test.relocate('src', 'relocate/src')
 
 
 
-
-if test.format in ['ninja', 'android']:
+if test.format in ['ninja', 'xcode-ninja']:
   test.build('actions.gyp', test.ALL, chdir='relocate/src')
 else:
   

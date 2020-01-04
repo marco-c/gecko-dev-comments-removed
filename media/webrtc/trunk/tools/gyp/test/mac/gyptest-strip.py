@@ -9,6 +9,7 @@ Verifies that stripping works.
 """
 
 import TestGyp
+import TestMac
 
 import re
 import subprocess
@@ -28,9 +29,7 @@ if sys.platform == 'darwin':
 
   def CheckNsyms(p, n_expected):
     r = re.compile(r'nsyms\s+(\d+)')
-    proc = subprocess.Popen(['otool', '-l', p], stdout=subprocess.PIPE)
-    o = proc.communicate()[0]
-    assert not proc.returncode
+    o = subprocess.check_output(['otool', '-l', p])
     m = r.search(o)
     n = int(m.group(1))
     if n != n_expected:
@@ -39,15 +38,24 @@ if sys.platform == 'darwin':
 
   
   
-  CheckNsyms(OutPath('no_postprocess'), 11)
-  CheckNsyms(OutPath('no_strip'), 11)
+  
+  
+  expected_extra_symbol_count = 0
+  if test.format in ['ninja', 'xcode-ninja'] \
+      and TestMac.Xcode.Version() >= '0500':
+    expected_extra_symbol_count = 1
+
+  
+  
+  CheckNsyms(OutPath('no_postprocess'), 29 + expected_extra_symbol_count)
+  CheckNsyms(OutPath('no_strip'), 29 + expected_extra_symbol_count)
   CheckNsyms(OutPath('strip_all'), 0)
-  CheckNsyms(OutPath('strip_nonglobal'), 2)
-  CheckNsyms(OutPath('strip_debugging'), 3)
+  CheckNsyms(OutPath('strip_nonglobal'), 6)
+  CheckNsyms(OutPath('strip_debugging'), 7)
   CheckNsyms(OutPath('strip_all_custom_flags'), 0)
   CheckNsyms(test.built_file_path(
       'strip_all_bundle.framework/Versions/A/strip_all_bundle', chdir='strip'),
       0)
-  CheckNsyms(OutPath('strip_save'), 3)
+  CheckNsyms(OutPath('strip_save'), 7)
 
   test.pass_test()

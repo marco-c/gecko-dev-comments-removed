@@ -14,7 +14,7 @@ import TestGyp
 
 
 
-test = TestGyp.TestGyp(formats=['make', 'android'])
+test = TestGyp.TestGyp(formats=['make'])
 
 os.environ['GYP_DEFINES'] = 'key=repeated_value key=value1 key=repeated_value'
 test.run_gyp('defines.gyp')

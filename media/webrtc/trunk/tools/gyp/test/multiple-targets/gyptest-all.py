@@ -4,9 +4,6 @@
 
 
 
-"""
-"""
-
 import TestGyp
 
 test = TestGyp.TestGyp()
@@ -14,8 +11,6 @@ test = TestGyp.TestGyp()
 test.run_gyp('multiple.gyp', chdir='src')
 
 test.relocate('src', 'relocate/src')
-
-
 
 test.build('multiple.gyp', test.ALL, chdir='relocate/src', stderr=None)
 

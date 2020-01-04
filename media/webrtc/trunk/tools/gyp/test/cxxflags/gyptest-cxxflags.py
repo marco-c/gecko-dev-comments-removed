@@ -5,60 +5,40 @@
 
 
 """
-Verifies build of an executable with C++ define specified by a gyp define, and
-the use of the environment during regeneration when the gyp file changes.
+Verifies the use of the environment during regeneration when the gyp file
+changes, specifically via build of an executable with C++ flags specified by
+CXXFLAGS.
+
+In this test, gyp happens within a local environment, but build outside of it.
 """
 
-import os
 import TestGyp
 
-env_stack = []
+FORMATS = ('ninja',)
 
-
-def PushEnv():
-  env_copy = os.environ.copy()
-  env_stack.append(env_copy)
-
-def PopEnv():
-  os.eniron=env_stack.pop()
+test = TestGyp.TestGyp(formats=FORMATS)
 
 
 
-test = TestGyp.TestGyp(formats=['make', 'android'])
-
-try:
-  PushEnv()
-  os.environ['CXXFLAGS'] = '-O0'
+with TestGyp.LocalEnv({'CXXFLAGS': ''}):
   test.run_gyp('cxxflags.gyp')
-finally:
-  
-  
-  
-  PopEnv()
 
 test.build('cxxflags.gyp')
 
 expect = """\
-Using no optimization flag
+No define
 """
 test.run_built_executable('cxxflags', stdout=expect)
 
 test.sleep()
 
-try:
-  PushEnv()
-  os.environ['CXXFLAGS'] = '-O2'
+with TestGyp.LocalEnv({'CXXFLAGS': '-DABC'}):
   test.run_gyp('cxxflags.gyp')
-finally:
-  
-  
-  
-  PopEnv()
 
 test.build('cxxflags.gyp')
 
 expect = """\
-Using an optimization flag
+With define
 """
 test.run_built_executable('cxxflags', stdout=expect)
 

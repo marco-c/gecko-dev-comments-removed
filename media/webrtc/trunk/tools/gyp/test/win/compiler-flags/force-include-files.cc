@@ -1,0 +1,8 @@
+
+
+
+
+int main() {
+  std::list<std::vector<std::string> > l;
+  return 0;
+}

@@ -4,12 +4,15 @@
 
 
 
-"""
-"""
-
 import TestGyp
 
 test = TestGyp.TestGyp()
+
+
+
+
+if test.format == 'xcode-ninja':
+  test.skip_test()
 
 test.run_gyp('build/all.gyp', chdir='src')
 
@@ -21,7 +24,7 @@ chdir = 'src/build'
 
 
 
-if test.format in ('make', 'ninja'):
+if test.format in ('make', 'ninja', 'cmake'):
   chdir = 'src'
 
 if test.format == 'xcode':

@@ -18,6 +18,10 @@ import TestGyp
 
 
 test = TestGyp.TestGyp(formats=['ninja'])
+
+if test.format == 'xcode-ninja':
+  test.skip_test()
+
 test.run_gyp('chained-dependency.gyp')
 objext = '.obj' if sys.platform == 'win32' else '.o'
 test.build('chained-dependency.gyp',

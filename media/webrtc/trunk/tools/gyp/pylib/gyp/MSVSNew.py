@@ -2,7 +2,7 @@
 
 
 
-"""New implementation of Visual Studio project generation for SCons."""
+"""New implementation of Visual Studio project generation."""
 
 import os
 import random
@@ -172,7 +172,7 @@ class MSVSProject(MSVSSolutionEntry):
 
 
 
-class MSVSSolution:
+class MSVSSolution(object):
   """Visual Studio solution."""
 
   def __init__(self, path, version, entries=None, variants=None,
@@ -326,13 +326,14 @@ class MSVSSolution:
 
     
     
-    f.write('\tGlobalSection(NestedProjects) = preSolution\r\n')
-    for e in all_entries:
-      if not isinstance(e, MSVSFolder):
-        continue        
-      for subentry in e.entries:
-        f.write('\t\t%s = %s\r\n' % (subentry.get_guid(), e.get_guid()))
-    f.write('\tEndGlobalSection\r\n')
+    if any([e.entries for e in all_entries if isinstance(e, MSVSFolder)]):
+      f.write('\tGlobalSection(NestedProjects) = preSolution\r\n')
+      for e in all_entries:
+        if not isinstance(e, MSVSFolder):
+          continue        
+        for subentry in e.entries:
+          f.write('\t\t%s = %s\r\n' % (subentry.get_guid(), e.get_guid()))
+      f.write('\tEndGlobalSection\r\n')
 
     f.write('EndGlobal\r\n')
 

@@ -14,7 +14,7 @@ import TestGyp
 
 
 
-test = TestGyp.TestGyp(formats=['make', 'android'])
+test = TestGyp.TestGyp(formats=['make'])
 
 try:
   os.environ['GYP_DEFINES'] = 'value=50'

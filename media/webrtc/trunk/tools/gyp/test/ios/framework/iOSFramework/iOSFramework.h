@@ -1,0 +1,9 @@
+#import <UIKit/UIKit.h>
+
+
+FOUNDATION_EXPORT double iOSFrameworkVersionNumber;
+
+
+FOUNDATION_EXPORT const unsigned char iOSFrameworkVersionString[];
+
+#import <iOSFramework/Thing.h>

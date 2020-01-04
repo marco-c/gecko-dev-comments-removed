@@ -1,0 +1,9 @@
+
+
+
+
+import sys
+
+with open('external_builder.out', 'w') as f:
+  f.write(' '.join(sys.argv))
+

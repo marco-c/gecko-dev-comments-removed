@@ -13,7 +13,8 @@ and using the subdirectory's solution or project file as the entry point.
 import TestGyp
 
 
-test = TestGyp.TestGyp(formats=['!ninja', '!android'])
+
+test = TestGyp.TestGyp(formats=['!ninja', '!cmake'])
 
 test.run_gyp('prog1.gyp', chdir='src')
 

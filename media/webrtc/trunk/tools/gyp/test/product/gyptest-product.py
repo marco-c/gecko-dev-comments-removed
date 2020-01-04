@@ -11,8 +11,7 @@ using the default build target.
 
 import TestGyp
 
-
-test = TestGyp.TestGyp(formats=['!android'])
+test = TestGyp.TestGyp()
 
 test.run_gyp('product.gyp')
 test.build('product.gyp')

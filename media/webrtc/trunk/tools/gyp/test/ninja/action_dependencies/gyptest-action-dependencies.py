@@ -11,6 +11,12 @@ dependent targets, but not the targets themselves.
 
 import os
 import sys
+
+if sys.platform == 'win32':
+  print "This test is currently disabled: https://crbug.com/483696."
+  sys.exit(0)
+
+
 import TestGyp
 
 
@@ -21,6 +27,9 @@ import TestGyp
 
 
 test = TestGyp.TestGyp(formats=['ninja'])
+
+if test.format == 'xcode-ninja':
+  test.skip_test()
 
 test.run_gyp('action_dependencies.gyp', chdir='src')
 
