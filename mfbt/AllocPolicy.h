@@ -60,11 +60,18 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
+
 class MallocAllocPolicy
 {
 public:
   template <typename T>
-  T* pod_malloc(size_t aNumElems)
+  T* maybe_pod_malloc(size_t aNumElems)
   {
     if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
       return nullptr;
@@ -73,18 +80,36 @@ public:
   }
 
   template <typename T>
-  T* pod_calloc(size_t aNumElems)
+  T* maybe_pod_calloc(size_t aNumElems)
   {
     return static_cast<T*>(calloc(aNumElems, sizeof(T)));
   }
 
   template <typename T>
-  T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize)
+  T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize)
   {
     if (aNewSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
       return nullptr;
     }
     return static_cast<T*>(realloc(aPtr, aNewSize * sizeof(T)));
+  }
+
+  template <typename T>
+  T* pod_malloc(size_t aNumElems)
+  {
+    return maybe_pod_malloc<T>(aNumElems);
+  }
+
+  template <typename T>
+  T* pod_calloc(size_t aNumElems)
+  {
+    return maybe_pod_calloc<T>(aNumElems);
+  }
+
+  template <typename T>
+  T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize)
+  {
+    return maybe_pod_realloc<T>(aPtr, aOldSize, aNewSize);
   }
 
   void free_(void* aPtr)
