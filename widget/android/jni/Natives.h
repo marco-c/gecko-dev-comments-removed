@@ -183,15 +183,16 @@ namespace detail {
 
 
 
-template<bool IsStatic, typename ReturnType,
-         class Traits, class Impl, class Args>
+template<class Traits, class Impl, class Args, bool IsStatic, bool IsVoid>
 class NativeStubImpl;
 
 
-template<typename ReturnType, class Traits, class Impl, typename... Args>
-class NativeStubImpl<false, ReturnType, Traits, Impl, jni::Args<Args...>>
+template<class Traits, class Impl, typename... Args>
+class NativeStubImpl<Traits, Impl, jni::Args<Args...>,
+                      false,  false>
 {
     typedef typename Traits::Owner Owner;
+    typedef typename Traits::ReturnType ReturnType;
     typedef typename TypeAdapter<ReturnType>::JNIType ReturnJNIType;
 
 public:
@@ -227,7 +228,8 @@ public:
 
 
 template<class Traits, class Impl, typename... Args>
-class NativeStubImpl<false, void, Traits, Impl, jni::Args<Args...>>
+class NativeStubImpl<Traits, Impl, jni::Args<Args...>,
+                      false,  true>
 {
     typedef typename Traits::Owner Owner;
 
@@ -260,9 +262,11 @@ public:
 };
 
 
-template<typename ReturnType, class Traits, class Impl, typename... Args>
-class NativeStubImpl<true, ReturnType, Traits, Impl, jni::Args<Args...>>
+template<class Traits, class Impl, typename... Args>
+class NativeStubImpl<Traits, Impl, jni::Args<Args...>,
+                      true,  false>
 {
+    typedef typename Traits::ReturnType ReturnType;
     typedef typename TypeAdapter<ReturnType>::JNIType ReturnJNIType;
 
 public:
@@ -290,7 +294,8 @@ public:
 
 
 template<class Traits, class Impl, typename... Args>
-class NativeStubImpl<true, void, Traits, Impl, jni::Args<Args...>>
+class NativeStubImpl<Traits, Impl, jni::Args<Args...>,
+                      true,  true>
 {
 public:
     
@@ -317,9 +322,9 @@ public:
 
 
 template<class Traits, class Impl>
-struct NativeStub : detail::NativeStubImpl<Traits::isStatic,
-                                           typename Traits::ReturnType,
-                                           Traits, Impl, typename Traits::Args>
+struct NativeStub : detail::NativeStubImpl
+    <Traits, Impl, typename Traits::Args, Traits::isStatic,
+     mozilla::IsVoid<typename Traits::ReturnType>::value>
 {
 };
 
