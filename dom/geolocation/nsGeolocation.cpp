@@ -1365,6 +1365,11 @@ Geolocation::HandleEvent(nsIDOMEvent* aEvent)
     }
   } else {
     mService->SetDisconnectTimer();
+
+    
+    
+    
+    
     for (uint32_t i = 0, length = mWatchingCallbacks.Length(); i < length; ++i) {
       mWatchingCallbacks[i]->Allow(JS::UndefinedHandleValue);
     }
