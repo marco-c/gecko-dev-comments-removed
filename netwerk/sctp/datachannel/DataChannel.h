@@ -456,6 +456,7 @@ public:
     ON_DATA,
     START_DEFER,
     BUFFER_LOW_THRESHOLD,
+    NO_LONGER_BUFFERED,
   };  
 
   DataChannelOnMessageAvailable(int32_t     aType,
@@ -493,11 +494,17 @@ public:
   NS_IMETHOD Run()
   {
     MOZ_ASSERT(NS_IsMainThread());
+
+    
+    
+    
+    
     switch (mType) {
       case ON_DATA:
       case ON_CHANNEL_OPEN:
       case ON_CHANNEL_CLOSED:
       case BUFFER_LOW_THRESHOLD:
+      case NO_LONGER_BUFFERED:
         {
           MutexAutoLock lock(mChannel->mListenerLock);
           if (!mChannel->mListener) {
@@ -521,6 +528,9 @@ public:
               break;
             case BUFFER_LOW_THRESHOLD:
               mChannel->mListener->OnBufferLow(mChannel->mContext);
+              break;
+            case NO_LONGER_BUFFERED:
+              mChannel->mListener->NotBuffered(mChannel->mContext);
               break;
           }
           break;

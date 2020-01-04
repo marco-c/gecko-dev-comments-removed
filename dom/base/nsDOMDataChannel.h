@@ -42,6 +42,10 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsDOMDataChannel,
                                            mozilla::DOMEventTargetHelper)
 
+  
+  virtual void EventListenerAdded(nsIAtom* aType) override;
+  virtual void EventListenerRemoved(nsIAtom* aType) override;
+
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
     override;
   nsPIDOMWindowInner* GetParentObject() const
@@ -103,8 +107,19 @@ public:
   virtual nsresult
   OnBufferLow(nsISupports* aContext) override;
 
+  virtual nsresult
+  NotBuffered(nsISupports* aContext) override;
+
   virtual void
   AppReady();
+
+  
+  
+  
+  void UpdateMustKeepAlive();
+  
+  
+  void DontKeepAliveAnyMore();
 
 protected:
   ~nsDOMDataChannel();
@@ -114,6 +129,8 @@ private:
             uint32_t aMsgLength, bool aIsBinary, mozilla::ErrorResult& aRv);
 
   
+  RefPtr<nsDOMDataChannel> mSelfRef;
+  
   RefPtr<mozilla::DataChannel> mDataChannel;
   nsString  mOrigin;
   enum DataChannelBinaryType {
@@ -121,6 +138,8 @@ private:
     DC_BINARY_TYPE_BLOB,
   };
   DataChannelBinaryType mBinaryType;
+  bool mCheckMustKeepAlive;
+  bool mSentClose;
 };
 
 #endif 

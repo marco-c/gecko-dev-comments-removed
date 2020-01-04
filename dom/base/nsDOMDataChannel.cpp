@@ -23,6 +23,7 @@
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIScriptObjectPrincipal.h"
+#include "nsProxyRelease.h"
 
 #include "DataChannel.h"
 #include "DataChannelLog.h"
@@ -44,7 +45,7 @@ nsDOMDataChannel::~nsDOMDataChannel()
   
   
   
-  LOG(("Close()ing %p", mDataChannel.get()));
+  LOG(("%p: Close()ing %p", this, mDataChannel.get()));
   mDataChannel->SetListener(nullptr, nullptr);
   mDataChannel->Close();
 }
@@ -77,6 +78,8 @@ nsDOMDataChannel::nsDOMDataChannel(already_AddRefed<mozilla::DataChannel>& aData
   : DOMEventTargetHelper(aWindow)
   , mDataChannel(aDataChannel)
   , mBinaryType(DC_BINARY_TYPE_BLOB)
+  , mCheckMustKeepAlive(true)
+  , mSentClose(false)
 {
 }
 
@@ -263,6 +266,7 @@ NS_IMETHODIMP
 nsDOMDataChannel::Close()
 {
   mDataChannel->Close();
+  UpdateMustKeepAlive();
   return NS_OK;
 }
 
@@ -471,9 +475,20 @@ nsDOMDataChannel::OnChannelConnected(nsISupports* aContext)
 nsresult
 nsDOMDataChannel::OnChannelClosed(nsISupports* aContext)
 {
-  LOG(("%p(%p): %s - Dispatching\n",this,(void*)mDataChannel,__FUNCTION__));
+  nsresult rv;
+  
+  
+  if (!mSentClose) {
+    LOG(("%p(%p): %s - Dispatching\n",this,(void*)mDataChannel,__FUNCTION__));
 
-  return OnSimpleEvent(aContext, NS_LITERAL_STRING("close"));
+    rv = OnSimpleEvent(aContext, NS_LITERAL_STRING("close"));
+    
+    mSentClose = true;
+  } else {
+    rv = NS_OK;
+  }
+  DontKeepAliveAnyMore();
+  return rv;
 }
 
 nsresult
@@ -484,11 +499,110 @@ nsDOMDataChannel::OnBufferLow(nsISupports* aContext)
   return OnSimpleEvent(aContext, NS_LITERAL_STRING("bufferedamountlow"));
 }
 
+nsresult
+nsDOMDataChannel::NotBuffered(nsISupports* aContext)
+{
+  
+  UpdateMustKeepAlive();
+  return NS_OK;
+}
+
 void
 nsDOMDataChannel::AppReady()
 {
   mDataChannel->AppReady();
 }
+
+
+
+
+
+
+
+
+void
+nsDOMDataChannel::UpdateMustKeepAlive()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!mCheckMustKeepAlive) {
+    return;
+  }
+
+  bool shouldKeepAlive = false;
+  uint16_t readyState = mDataChannel->GetReadyState();
+
+  switch (readyState)
+  {
+    case DataChannel::CONNECTING:
+    case DataChannel::WAITING_TO_OPEN:
+    {
+      if (mListenerManager &&
+          (mListenerManager->HasListenersFor(nsGkAtoms::onopen) ||
+           mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
+           mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
+           mListenerManager->HasListenersFor(nsGkAtoms::onbufferedamountlow) ||
+           mListenerManager->HasListenersFor(nsGkAtoms::onclose))) {
+        shouldKeepAlive = true;
+      }
+    }
+    break;
+
+    case DataChannel::OPEN:
+    case DataChannel::CLOSING:
+    {
+      if (mDataChannel->GetBufferedAmount() != 0 ||
+          (mListenerManager &&
+           (mListenerManager->HasListenersFor(nsGkAtoms::onmessage) ||
+            mListenerManager->HasListenersFor(nsGkAtoms::onerror) ||
+            mListenerManager->HasListenersFor(nsGkAtoms::onbufferedamountlow) ||
+            mListenerManager->HasListenersFor(nsGkAtoms::onclose)))) {
+        shouldKeepAlive = true;
+      }
+    }
+    break;
+
+    case DataChannel::CLOSED:
+    {
+      shouldKeepAlive = false;
+    }
+  }
+
+  if (mSelfRef && !shouldKeepAlive) {
+    
+    NS_ReleaseOnMainThread(mSelfRef.forget(), true);
+  } else if (!mSelfRef && shouldKeepAlive) {
+    mSelfRef = this;
+  }
+}
+
+void
+nsDOMDataChannel::DontKeepAliveAnyMore()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (mSelfRef) {
+    
+    NS_ReleaseOnMainThread(mSelfRef.forget(), true);
+  }
+
+  mCheckMustKeepAlive = false;
+}
+
+void
+nsDOMDataChannel::EventListenerAdded(nsIAtom* aType)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  UpdateMustKeepAlive();
+}
+
+void
+nsDOMDataChannel::EventListenerRemoved(nsIAtom* aType)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  UpdateMustKeepAlive();
+}
+
 
 
 nsresult

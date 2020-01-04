@@ -35,6 +35,9 @@ public:
 
   
   virtual nsresult OnBufferLow(nsISupports *aContext) = 0;
+
+  
+  virtual nsresult NotBuffered(nsISupports *aContext) = 0;
 };
 
 }
