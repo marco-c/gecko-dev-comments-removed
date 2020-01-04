@@ -3,6 +3,7 @@
 
 
 
+
 #include "mozilla/dom/BoxObject.h"
 #include "nsCOMPtr.h"
 #include "nsIDocument.h"
@@ -46,17 +47,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BoxObject)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-static PLDHashOperator
-PropertyTraverser(const nsAString& aKey, nsISupports* aProperty, void* userArg)
-{
-  nsCycleCollectionTraversalCallback *cb =
-    static_cast<nsCycleCollectionTraversalCallback*>(userArg);
-
-  cb->NoteXPCOMChild(aProperty);
-
-  return PL_DHASH_NEXT;
-}
-
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BoxObject)
   
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -65,7 +55,9 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(BoxObject)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
   if (tmp->mPropertyTable) {
-    tmp->mPropertyTable->EnumerateRead(PropertyTraverser, &cb);
+    for (auto iter = tmp->mPropertyTable->Iter(); !iter.Done(); iter.Next()) {
+      cb.NoteXPCOMChild(iter.UserData());
+    }
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
