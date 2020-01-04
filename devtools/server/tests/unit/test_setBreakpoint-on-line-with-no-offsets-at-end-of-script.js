@@ -26,12 +26,12 @@ function run_test() {
     let { source } = yield promise;
     let sourceClient = threadClient.source(source);
 
-    let location = { line: 7 };
+    let location = { line: 8 };
     let [packet, breakpointClient] = yield setBreakpoint(sourceClient, location);
     do_check_false(packet.isPending); 
     do_check_true("actualLocation" in packet);
     let actualLocation = packet.actualLocation;
-    do_check_eq(actualLocation.line, 10);
+    do_check_eq(actualLocation.line, 11);
 
     packet = yield executeOnNextTickAndWaitForPause(function () {
       Cu.evalInSandbox("f()", global);

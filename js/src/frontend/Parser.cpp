@@ -3148,6 +3148,8 @@ Parser<ParseHandler>::functionArgsAndBodyGeneric(InHandling inHandling,
             return false;
     }
 
+    handler.setEndPosition(body, pos().begin);
+
     return finishFunctionDefinition(pn, funbox, body);
 }
 
@@ -6356,7 +6358,7 @@ Parser<ParseHandler>::yieldExpression(InHandling inHandling)
           case TOK_MUL:
             kind = PNK_YIELD_STAR;
             tokenStream.consumeKnownToken(TOK_MUL, TokenStream::Operand);
-            MOZ_FALLTHROUGH;
+            
           default:
             exprNode = assignExpr(inHandling, YieldIsKeyword, TripledotProhibited);
             if (!exprNode)
@@ -6388,7 +6390,7 @@ Parser<ParseHandler>::yieldExpression(InHandling inHandling)
                             JSMSG_BAD_ANON_GENERATOR_RETURN);
             return null();
         }
-        MOZ_FALLTHROUGH;
+        
 
       case LegacyGenerator:
       {
@@ -6659,7 +6661,7 @@ Parser<ParseHandler>::tryStatement(YieldHandling yieldHandling)
                 
                 if (!checkYieldNameValidity())
                     return null();
-                MOZ_FALLTHROUGH;
+                
               case TOK_NAME:
               {
                 RootedPropertyName label(context, tokenStream.currentName());
@@ -9121,7 +9123,7 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
       case TOK_YIELD:
         if (!checkYieldNameValidity())
             return null();
-        MOZ_FALLTHROUGH;
+        
       case TOK_NAME:
         return identifierName(yieldHandling);
 

@@ -2108,7 +2108,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       
       case PNK_COMMA:
         MOZ_ASSERT(pn->pn_count > 0);
-        MOZ_FALLTHROUGH;
       
       case PNK_ARRAY:
       case PNK_OBJECT:
@@ -3580,6 +3579,9 @@ BytecodeEmitter::emitFunctionScript(ParseNode* body)
     }
 
     if (!emitTree(body))
+        return false;
+
+    if (!updateSourceCoordNotes(body->pn_pos.end))
         return false;
 
     if (sc->isFunctionBox()) {
@@ -8803,7 +8805,7 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
         break;
 
       case PNK_POSHOLDER:
-        MOZ_FALLTHROUGH_ASSERT("Should never try to emit PNK_POSHOLDER");
+        MOZ_ASSERT_UNREACHABLE("Should never try to emit PNK_POSHOLDER");
 
       default:
         MOZ_ASSERT(0);
