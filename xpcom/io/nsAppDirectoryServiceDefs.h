@@ -85,6 +85,30 @@
 #define NS_APP_PERMISSION_PARENT_DIR            "permissionDBPDir"
 
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define NS_APP_CONTENT_PROCESS_TEMP_DIR         "ContentTmpD"
 #endif 
 

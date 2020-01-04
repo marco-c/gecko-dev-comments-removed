@@ -610,143 +610,6 @@ CanShowProfileManager()
   return true;
 }
 
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
-static already_AddRefed<nsIFile>
-GetAndCleanTempDir()
-{
-  
-  
-  nsCOMPtr<nsIFile> tempDir;
-  nsresult rv = NS_GetSpecialDirectory(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                       getter_AddRefs(tempDir));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  
-  
-  nsCOMPtr<nsIFile> realTempDir;
-  rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(realTempDir));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-  bool isRealTemp;
-  rv = tempDir->Equals(realTempDir, &isRealTemp);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-  if (isRealTemp) {
-    return tempDir.forget();
-  }
-
-  
-  
-  
-  rv = tempDir->Remove( true);
-  if (NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND &&
-      rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-    NS_WARNING("Failed to delete temp directory.");
-    return nullptr;
-  }
-
-  return tempDir.forget();
-}
-
-static void
-SetUpSandboxEnvironment()
-{
-  
-  
-  
-  
-  if (!BrowserTabsRemoteAutostart()) {
-    return;
-  }
-
-#if defined(XP_WIN)
-  
-  
-  if (!IsVistaOrLater() ||
-      (Preferences::GetInt("security.sandbox.content.level") < 1)) {
-    return;
-  }
-#endif
-
-#if defined(XP_MACOSX)
-  
-  if (Preferences::GetInt("security.sandbox.content.level") < 1) {
-    return;
-  }
-#endif
-
-  
-  nsresult rv;
-  nsAdoptingString tempDirSuffix =
-    Preferences::GetString("security.sandbox.content.tempDirSuffix");
-  if (tempDirSuffix.IsEmpty()) {
-    nsCOMPtr<nsIUUIDGenerator> uuidgen =
-      do_GetService("@mozilla.org/uuid-generator;1", &rv);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    nsID uuid;
-    rv = uuidgen->GenerateUUIDInPlace(&uuid);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
-    }
-
-    char uuidChars[NSID_LENGTH];
-    uuid.ToProvidedString(uuidChars);
-    tempDirSuffix.AssignASCII(uuidChars);
-
-    
-    rv = Preferences::SetCString("security.sandbox.content.tempDirSuffix",
-                                 uuidChars);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      
-      
-      return;
-    }
-
-    nsCOMPtr<nsIPrefService> prefsvc = Preferences::GetService();
-    if (!prefsvc || NS_FAILED(prefsvc->SavePrefFile(nullptr))) {
-      
-      
-      NS_WARNING("Failed to save pref file, cannot create temp dir.");
-      return;
-    }
-  }
-
-  
-  nsCOMPtr<nsIFile> tempDir = GetAndCleanTempDir();
-  if (!tempDir) {
-    NS_WARNING("Failed to get or clean sandboxed temp directory.");
-    return;
-  }
-
-  rv = tempDir->Create(nsIFile::DIRECTORY_TYPE, 0700);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-}
-
-static void
-CleanUpSandboxEnvironment()
-{
-#if defined(XP_WIN)
-  
-  if (!IsVistaOrLater()) {
-    return;
-  }
-#endif
-
-  
-  
-  nsCOMPtr<nsIFile> tempDir = GetAndCleanTempDir();
-}
-#endif
-
 bool gSafeMode = false;
 
 
@@ -4382,9 +4245,6 @@ XREMain::XRE_mainRun()
   
   SandboxInfo::SubmitTelemetry();
 #endif
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
-  SetUpSandboxEnvironment();
-#endif
 
   {
     rv = appStartup->Run();
@@ -4393,10 +4253,6 @@ XREMain::XRE_mainRun()
       gLogConsoleErrors = true;
     }
   }
-
-#if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
-  CleanUpSandboxEnvironment();
-#endif
 
   return rv;
 }
