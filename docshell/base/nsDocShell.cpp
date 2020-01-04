@@ -13486,7 +13486,7 @@ nsDocShell::OnLinkClickSync(nsIContent* aContent,
   
   
   if (IsElementAnchor(aContent)) {
-    net::ReferrerPolicy refPolEnum = aContent->AsElement()->GetReferrerPolicy();
+    net::ReferrerPolicy refPolEnum = aContent->AsElement()->GetReferrerPolicyAsEnum();
     if (refPolEnum != net::RP_Unset) {
       refererPolicy = refPolEnum;
     }
