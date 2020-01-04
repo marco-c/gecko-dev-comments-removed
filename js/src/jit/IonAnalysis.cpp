@@ -925,6 +925,9 @@ jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph)
                     continue;
                 }
 
+                if (!graph.alloc().ensureBallast())
+                    return false;
+
                 
                 
                 
