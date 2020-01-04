@@ -83,53 +83,16 @@ static MOZ_NEVER_INLINE void js_failedAllocBreakpoint() { asm(""); }
 namespace js {
 namespace oom {
 
-
-
-
-
-
-
-enum ThreadType {
-    THREAD_TYPE_NONE,           
-    THREAD_TYPE_MAIN,           
-    THREAD_TYPE_ASMJS,          
-    THREAD_TYPE_ION,            
-    THREAD_TYPE_PARSE,          
-    THREAD_TYPE_COMPRESS,       
-    THREAD_TYPE_GCHELPER,       
-    THREAD_TYPE_GCPARALLEL,     
-    THREAD_TYPE_MAX             
-};
-extern JS_PUBLIC_DATA(uint32_t) targetThread;
-
-
-
-
-
-extern bool InitThreadType(void);
-extern void SetThreadType(ThreadType);
-extern uint32_t GetThreadType(void);
-
-static inline bool
-OOMThreadCheck()
-{
-    return (!js::oom::targetThread 
-            || js::oom::targetThread == js::oom::GetThreadType());
-}
-
 static inline bool
 IsSimulatedOOMAllocation()
 {
-    return OOMThreadCheck() && (OOM_counter == OOM_maxAllocations ||
-           (OOM_counter > OOM_maxAllocations && OOM_failAlways));
+    return OOM_counter == OOM_maxAllocations ||
+           (OOM_counter > OOM_maxAllocations && OOM_failAlways);
 }
 
 static inline bool
 ShouldFailWithOOM()
 {
-    if (!OOMThreadCheck())
-        return false;
-
     OOM_counter++;
     if (IsSimulatedOOMAllocation()) {
         JS_OOM_CALL_BP_FUNC();
