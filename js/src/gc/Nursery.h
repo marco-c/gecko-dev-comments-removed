@@ -57,7 +57,6 @@ class ObjectElements;
 class NativeObject;
 class Nursery;
 class HeapSlot;
-class ObjectGroup;
 
 void SetGCZeal(JSRuntime*, uint8_t, uint32_t);
 
@@ -173,13 +172,11 @@ class Nursery
     
     static const size_t MaxNurseryBufferSize = 1024;
 
-    typedef Vector<ObjectGroup*, 0, SystemAllocPolicy> ObjectGroupList;
-
     
 
 
 
-    void collect(JSRuntime* rt, JS::gcreason::Reason reason, ObjectGroupList* pretenureGroups);
+    void collect(JSRuntime* rt, JS::gcreason::Reason reason);
 
     
 
