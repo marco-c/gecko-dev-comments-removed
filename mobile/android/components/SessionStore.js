@@ -112,6 +112,7 @@ SessionStore.prototype = {
         observerService.addObserver(this, "domwindowclosed", true);
         observerService.addObserver(this, "browser:purge-session-history", true);
         observerService.addObserver(this, "Session:Restore", true);
+        observerService.addObserver(this, "Session:NotifyLocationChange", true);
         observerService.addObserver(this, "application-background", true);
         observerService.addObserver(this, "ClosedTabs:StartNotifications", true);
         observerService.addObserver(this, "ClosedTabs:StopNotifications", true);
@@ -185,6 +186,14 @@ SessionStore.prototype = {
         } else {
           
           Services.obs.notifyObservers(null, "sessionstore-windows-restored", "");
+        }
+        break;
+      }
+      case "Session:NotifyLocationChange": {
+        let browser = aSubject;
+        if (browser.__SS_restoreDataOnLocationChange) {
+          delete browser.__SS_restoreDataOnLocationChange;
+          this._restoreZoom(browser.__SS_data.scrolldata, browser);
         }
         break;
       }
@@ -291,6 +300,25 @@ SessionStore.prototype = {
         if (browser.__SS_restoreDataOnLoad) {
           delete browser.__SS_restoreDataOnLoad;
           this._restoreTextData(browser.__SS_data.formdata, browser);
+        }
+        break;
+      }
+      case "pageshow": {
+        let browser = aEvent.currentTarget;
+
+        
+        if (browser.contentDocument !== aEvent.originalTarget) {
+          return;
+        }
+
+        
+        
+        
+        
+        
+        log("pageshow for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+        if (browser.__SS_restoreDataOnPageshow) {
+          delete browser.__SS_restoreDataOnPageshow;
           this._restoreScrollPosition(browser.__SS_data.scrolldata, browser);
         } else {
           
@@ -306,11 +334,12 @@ SessionStore.prototype = {
         this.onTabInput(window, browser);
         break;
       }
+      case "resize":
       case "scroll": {
         let browser = aEvent.currentTarget;
         
         if (loggingEnabled) {
-          log("scroll for tab " + window.BrowserApp.getTabForBrowser(browser).id);
+          log(aEvent.type + " for tab " + window.BrowserApp.getTabForBrowser(browser).id);
         }
         if (!this._scrollSavePending) {
           this._scrollSavePending =
@@ -398,12 +427,17 @@ SessionStore.prototype = {
     aBrowser.addEventListener("load", this, true);
 
     
+    
+    aBrowser.addEventListener("pageshow", this, true);
+
+    
     aBrowser.addEventListener("change", this, true);
     aBrowser.addEventListener("input", this, true);
     aBrowser.addEventListener("DOMAutoComplete", this, true);
 
     
     aBrowser.addEventListener("scroll", this, true);
+    aBrowser.addEventListener("resize", this, true);
 
     log("onTabAdd() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
         ", aNoNotification = " + aNoNotification);
@@ -417,10 +451,12 @@ SessionStore.prototype = {
     
     aBrowser.removeEventListener("DOMTitleChanged", this, true);
     aBrowser.removeEventListener("load", this, true);
+    aBrowser.removeEventListener("pageshow", this, true);
     aBrowser.removeEventListener("change", this, true);
     aBrowser.removeEventListener("input", this, true);
     aBrowser.removeEventListener("DOMAutoComplete", this, true);
     aBrowser.removeEventListener("scroll", this, true);
+    aBrowser.removeEventListener("resize", this, true);
 
     let tabId = aWindow.BrowserApp.getTabForBrowser(aBrowser).id;
 
@@ -507,7 +543,7 @@ SessionStore.prototype = {
     delete aBrowser.__SS_data;
 
     this._collectTabData(aWindow, aBrowser, data);
-    if (aBrowser.__SS_restoreDataOnLoad) {
+    if (aBrowser.__SS_restoreDataOnLoad || aBrowser.__SS_restoreDataOnPageshow) {
       
       
       
@@ -634,7 +670,7 @@ SessionStore.prototype = {
     }
 
     
-    if (aBrowser.__SS_restoreDataOnLoad) {
+    if (aBrowser.__SS_restoreDataOnLoad || aBrowser.__SS_restoreDataOnPageshow) {
       return;
     }
 
@@ -661,11 +697,17 @@ SessionStore.prototype = {
     }
 
     
-    if (Object.keys(scrolldata).length) {
-      data.scrolldata = scrolldata;
-      log("onTabScroll() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
-      this.saveStateDelayed();
-    }
+    let zoom = { value: 1 };
+    content.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(
+      Ci.nsIDOMWindowUtils).getResolution(zoom);
+    scrolldata.zoom = {};
+    scrolldata.zoom.resolution = zoom.value;
+    log("onTabScroll() zoom level: " + zoom.value);
+
+    
+    data.scrolldata = scrolldata;
+    log("onTabScroll() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
+    this.saveStateDelayed();
   },
 
   saveStateDelayed: function ss_saveStateDelayed() {
@@ -1211,7 +1253,15 @@ SessionStore.prototype = {
 
     
     
+    
+    
+    aBrowser.__SS_restoreDataOnLocationChange = true;
+    
+    
     aBrowser.__SS_restoreDataOnLoad = true;
+    
+    
+    aBrowser.__SS_restoreDataOnPageshow = true;
   },
 
   
@@ -1255,6 +1305,20 @@ SessionStore.prototype = {
     if (aFormData) {
       log("_restoreTextData()");
       FormData.restoreTree(aBrowser.contentWindow, aFormData);
+    }
+  },
+
+  
+
+
+
+  _restoreZoom: function ss_restoreZoom(aScrollData, aBrowser) {
+    if (aScrollData && aScrollData.zoom) {
+      log("_restoreZoom(), resolution: " + aScrollData.zoom.resolution);
+      let utils = aBrowser.contentWindow.QueryInterface(
+        Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+      
+      utils.setRestoreResolution(aScrollData.zoom.resolution);
     }
   },
 
