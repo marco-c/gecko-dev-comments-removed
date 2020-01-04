@@ -188,8 +188,10 @@ public:
 
 
 
-  static bool GetDisplayPortForVisibilityTesting(nsIContent* aContent,
-                                                 nsRect* aResult = nullptr);
+
+  static bool GetDisplayPortRelativeToScrollFrameForVisibilityTesting(
+    nsIContent* aContent,
+    nsRect* aResult);
 
   enum class RepaintMode : uint8_t {
     Repaint,
