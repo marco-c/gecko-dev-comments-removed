@@ -107,6 +107,13 @@ class MessageChannel : HasResultCodes
     void SetChannelFlags(ChannelFlags aFlags) { mFlags = aFlags; }
     ChannelFlags GetChannelFlags() { return mFlags; }
 
+    void BlockScripts();
+
+    bool ShouldBlockScripts() const
+    {
+        return mBlockScripts;
+    }
+
     
     bool Send(Message* aMsg);
 
@@ -728,6 +735,9 @@ class MessageChannel : HasResultCodes
     
     
     bool mAbortOnError;
+
+    
+    bool mBlockScripts;
 
     
     ChannelFlags mFlags;
