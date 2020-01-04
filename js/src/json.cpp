@@ -348,7 +348,11 @@ JO(JSContext* cx, HandleObject obj, StringifyContext* scx)
     Maybe<AutoIdVector> ids;
     const AutoIdVector* props;
     if (scx->replacer && !scx->replacer->isCallable()) {
-        MOZ_ASSERT(IsArray(scx->replacer, cx));
+        
+        
+        
+        
+        
         props = &scx->propertyList;
     } else {
         MOZ_ASSERT_IF(scx->replacer, scx->propertyList.length() == 0);
