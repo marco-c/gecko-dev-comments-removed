@@ -62,12 +62,23 @@ public class TelemetryUploadService extends IntentService {
         }
 
         final TelemetryPingStore store = intent.getParcelableExtra(EXTRA_STORE);
-        uploadPendingPingsFromStore(this, store);
+        final boolean wereAllUploadsSuccessful = uploadPendingPingsFromStore(this, store);
         store.maybePrunePings();
         Log.d(LOGTAG, "Service finished: upload and prune attempts completed");
+
+        if (!wereAllUploadsSuccessful) {
+            
+            
+            
+            Log.d(LOGTAG, "Clearing Intent queue due to connection failures");
+            stopSelf();
+        }
     }
 
-    private static void uploadPendingPingsFromStore(final Context context, final TelemetryPingStore store) {
+    
+
+
+    private static boolean uploadPendingPingsFromStore(final Context context, final TelemetryPingStore store) {
         final ArrayList<TelemetryPingFromStore> pingsToUpload = store.getAllPings();
         if (pingsToUpload.isEmpty()) {
             return true;
@@ -88,11 +99,13 @@ public class TelemetryUploadService extends IntentService {
             uploadPayload(url, ping.getPayload(), delegate);
         }
 
-        if (!delegate.hadConnectionError()) {
+        final boolean wereAllUploadsSuccessful = !delegate.hadConnectionError();
+        if (wereAllUploadsSuccessful) {
             
             Log.d(LOGTAG, "Telemetry upload success!");
         }
         store.onUploadAttemptComplete(successfulUploadIDs);
+        return wereAllUploadsSuccessful;
     }
 
     private static String getServerSchemeHostPort(final Context context) {
@@ -209,14 +222,8 @@ public class TelemetryUploadService extends IntentService {
     private static class PingResultDelegate extends ResultDelegate {
         
         
-        
-        
-        
-        
-        
-        
-        private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(20);
-        private static final int CONNECTION_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(15);
+        private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(30);
+        private static final int CONNECTION_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(30);
 
         
         private int pingID = -1;
