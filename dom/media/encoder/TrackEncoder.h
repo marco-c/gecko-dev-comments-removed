@@ -148,6 +148,28 @@ public:
                                         uint32_t aTrackEvents,
                                         const MediaSegment& aQueuedMedia) override;
 
+  template<typename T>
+  static
+  void InterleaveTrackData(nsTArray<const T*>& aInput,
+                           int32_t aDuration,
+                           uint32_t aOutputChannels,
+                           AudioDataValue* aOutput,
+                           float aVolume)
+  {
+    if (aInput.Length() < aOutputChannels) {
+      
+      AudioChannelsUpMix(&aInput, aOutputChannels, SilentChannel::ZeroChannel<T>());
+    }
+
+    if (aInput.Length() > aOutputChannels) {
+      DownmixAndInterleave(aInput, aDuration,
+                           aVolume, aOutputChannels, aOutput);
+    } else {
+      InterleaveAndConvertBuffer(aInput.Elements(), aDuration, aVolume,
+                                 aOutputChannels, aOutput);
+    }
+  }
+
   
 
 
