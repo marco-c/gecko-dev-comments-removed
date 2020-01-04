@@ -184,6 +184,20 @@ exports.setInspectingNode = function (val) {
 
 
 
+
+
+
+
+
+
+const getNodeDisplayName = function (rawNode) {
+  return (rawNode.prefix ? rawNode.prefix + ":" : "") + rawNode.localName;
+};
+exports.getNodeDisplayName = getNodeDisplayName;
+
+
+
+
 var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
   initialize: function (walker, node) {
     protocol.Actor.prototype.initialize.call(this, null);
@@ -243,6 +257,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       nodeType: this.rawNode.nodeType,
       namespaceURI: this.rawNode.namespaceURI,
       nodeName: this.rawNode.nodeName,
+      displayName: getNodeDisplayName(this.rawNode),
       numChildren: this.numChildren,
       singleTextChild: singleTextChild ? singleTextChild.form() : undefined,
 
@@ -1636,7 +1651,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
           nodes = this._multiFrameQuerySelectorAll(query);
         }
         for (let node of nodes) {
-          let tag = node.tagName.toLowerCase();
+          let tag = node.localName;
           sugs.tags.set(tag, (sugs.tags.get(tag)|0) + 1);
         }
         for (let [tag, count] of sugs.tags) {
@@ -1663,7 +1678,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
         nodes = this._multiFrameQuerySelectorAll(query);
         for (let node of nodes) {
           sugs.ids.set(node.id, (sugs.ids.get(node.id)|0) + 1);
-          let tag = node.tagName.toLowerCase();
+          let tag = node.localName;
           sugs.tags.set(tag, (sugs.tags.get(tag)|0) + 1);
           for (let className of node.classList) {
             sugs.classes.set(className, (sugs.classes.get(className)|0) + 1);

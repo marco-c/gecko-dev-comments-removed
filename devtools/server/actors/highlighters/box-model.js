@@ -12,6 +12,7 @@ const {
   createSVGNode, createNode, isNodeValid } = require("./utils/markup");
 const { getCurrentZoom,
   setIgnoreLayoutChanges } = require("devtools/shared/layout/utils");
+const inspector = require("devtools/server/actors/inspector");
 
 
 
@@ -654,7 +655,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
         getBindingElementAndPseudo(this.currentNode);
 
     
-    let tagName = node.tagName;
+    let displayName = inspector.getNodeDisplayName(node);
 
     let id = node.id ? "#" + node.id : "";
 
@@ -675,7 +676,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
               " \u00D7 " +
               parseFloat(rect.height.toPrecision(6));
 
-    this.getElement("nodeinfobar-tagname").setTextContent(tagName);
+    this.getElement("nodeinfobar-tagname").setTextContent(displayName);
     this.getElement("nodeinfobar-id").setTextContent(id);
     this.getElement("nodeinfobar-classes").setTextContent(classList);
     this.getElement("nodeinfobar-pseudo-classes").setTextContent(pseudos);

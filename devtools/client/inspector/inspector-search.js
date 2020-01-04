@@ -452,11 +452,6 @@ SelectorAutocompleter.prototype = {
       };
 
       
-      if (value.match(/.*[\.#][^\.#]{0,}$/) == null) {
-        item.label = value.toLowerCase();
-      }
-
-      
       
       if (aState === this.States.TAG && state === this.States.CLASS) {
         item.preLabel = "." + item.preLabel;

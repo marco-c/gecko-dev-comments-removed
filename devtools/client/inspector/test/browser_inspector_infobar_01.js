@@ -15,7 +15,7 @@ add_task(function* () {
     {
       selector: "#top",
       position: "bottom",
-      tag: "DIV",
+      tag: "div",
       id: "top",
       classes: ".class1.class2",
       dims: "500" + " \u00D7 " + "100"
@@ -23,7 +23,7 @@ add_task(function* () {
     {
       selector: "#vertical",
       position: "overlap",
-      tag: "DIV",
+      tag: "div",
       id: "vertical",
       classes: ""
       
@@ -31,7 +31,7 @@ add_task(function* () {
     {
       selector: "#bottom",
       position: "top",
-      tag: "DIV",
+      tag: "div",
       id: "bottom",
       classes: "",
       dims: "500" + " \u00D7 " + "100"
@@ -39,7 +39,15 @@ add_task(function* () {
     {
       selector: "body",
       position: "bottom",
-      tag: "BODY",
+      tag: "body",
+      classes: ""
+      
+    },
+    {
+      selector: "clipPath",
+      position: "bottom",
+      tag: "clipPath",
+      id: "clip",
       classes: ""
       
     },
