@@ -1,6 +1,5 @@
 
 #updates:not([currentpageid="checking"]) #checkingProgress,
-#updates:not([currentpageid="incompatibleCheck"]) #incompatibleCheckProgress,
 #updates:not([currentpageid="downloading"]) #downloadProgress {
   display: none;
 }
@@ -27,15 +26,8 @@ updateheader {
 }
 
 
-remotecontent {
-  -moz-binding: url("chrome://mozapps/content/update/updates.xml#remotecontent");
-  display: -moz-deck;
-}
-
-
 update {
   -moz-binding: url("chrome://mozapps/content/update/updates.xml#update");
   display: -moz-box;
   -moz-box-orient: vertical;
 }
-
