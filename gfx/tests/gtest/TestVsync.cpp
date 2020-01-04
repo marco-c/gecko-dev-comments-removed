@@ -22,7 +22,8 @@ using namespace mozilla::layers;
 using ::testing::_;
 
 
-const int kVsyncTimeoutMS = 50;
+
+const int kVsyncTimeoutMS = 80;
 
 class TestVsyncObserver : public VsyncObserver {
 public:
