@@ -275,12 +275,11 @@ ServiceWorkerUpdateJob2::ComparisonResult(nsresult aStatus,
     return;
   }
 
-  if (aInCacheAndEqual) {
-    Finish(NS_OK);
-    return;
-  }
-
-  Telemetry::Accumulate(Telemetry::SERVICE_WORKER_UPDATED, 1);
+  
+  
+  
+  
+  
 
   nsCOMPtr<nsIURI> scriptURI;
   nsresult rv = NS_NewURI(getter_AddRefs(scriptURI), mScriptSpec);
@@ -335,6 +334,15 @@ ServiceWorkerUpdateJob2::ComparisonResult(nsresult aStatus,
     FailUpdateJob(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
+
+  
+  
+  if (aInCacheAndEqual) {
+    Finish(NS_OK);
+    return;
+  }
+
+  Telemetry::Accumulate(Telemetry::SERVICE_WORKER_UPDATED, 1);
 
   MOZ_ASSERT(!mServiceWorker);
   mServiceWorker = new ServiceWorkerInfo(mRegistration->mPrincipal,
