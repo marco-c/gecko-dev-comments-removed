@@ -57,6 +57,12 @@ static CriticalAddress gCriticalAddress;
 extern MOZ_EXPORT void* __libc_stack_end; 
 #endif
 
+#ifdef ANDROID
+#include <algorithm>
+#include <unistd.h>
+#include <pthread.h>
+#endif
+
 #if MOZ_STACKWALK_SUPPORTS_MACOSX
 #include <pthread.h>
 #include <sys/errno.h>
@@ -901,8 +907,35 @@ MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
   void* stackEnd;
 #if HAVE___LIBC_STACK_END
   stackEnd = __libc_stack_end;
+#elif defined(XP_DARWIN)
+  stackEnd = pthread_get_stackaddr_np(pthread_self());
+#elif defined(ANDROID)
+  pthread_attr_t sattr;
+  pthread_attr_init(&sattr);
+  pthread_getattr_np(pthread_self(), &sattr);
+  void* stackBase = stackEnd = nullptr;
+  size_t stackSize = 0;
+  if (gettid() != getpid()) {
+    
+    
+    if (!pthread_attr_getstack(&sattr, &stackBase, &stackSize)) {
+      stackEnd = static_cast<char*>(stackBase) + stackSize;
+    } else {
+      stackEnd = nullptr;
+    }
+  }
+  if (!stackEnd) {
+    
+    
+    
+    
+    static const uintptr_t kMaxStackSize = 8 * 1024 * 1024;
+    uintptr_t maxStackStart = uintptr_t(-1) - kMaxStackSize;
+    uintptr_t stackStart = std::max(maxStackStart, uintptr_t(bp));
+    stackEnd = reinterpret_cast<void*>(stackStart + kMaxStackSize);
+  }
 #else
-  stackEnd = reinterpret_cast<void*>(-1);
+#  error Unsupported configuration
 #endif
   return FramePointerStackWalk(aCallback, aSkipFrames, aMaxFrames,
                                aClosure, bp, stackEnd);
