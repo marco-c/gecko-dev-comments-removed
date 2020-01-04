@@ -382,6 +382,7 @@ void Axis::EndTouch(uint32_t aTimestampMs) {
   
   APZThreadUtils::AssertOnControllerThread();
 
+  mAxisLocked = false;
   mVelocity = 0;
   int count = 0;
   while (!mVelocityQueue.IsEmpty()) {
