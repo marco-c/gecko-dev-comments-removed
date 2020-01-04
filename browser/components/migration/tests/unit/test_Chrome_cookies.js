@@ -34,7 +34,7 @@ add_task(function* () {
                "Migrated the expected number of encrypted cookies");
 
   
-  let enumerator = Services.cookies.getCookiesFromHost(COOKIE.host);
+  let enumerator = Services.cookies.getCookiesFromHost(COOKIE.host, {});
   Assert.ok(enumerator.hasMoreElements(), "Cookies available");
   let foundCookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
 
