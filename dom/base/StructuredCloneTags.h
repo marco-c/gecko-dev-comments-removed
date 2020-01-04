@@ -51,6 +51,8 @@ enum StructuredCloneTags {
   
   SCTAG_DOM_CANVAS,
 
+  SCTAG_DOM_EXPANDED_PRINCIPAL,
+
   SCTAG_DOM_MAX
 };
 
