@@ -804,6 +804,38 @@ EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve_,
     return cx->runtime()->enqueuePromiseJob(cx, job, promise, incumbentGlobal);
 }
 
+PromiseTask::PromiseTask(JSContext* cx, Handle<PromiseObject*> promise)
+  : runtime_(cx),
+    promise_(cx, promise)
+{}
+
+PromiseTask::~PromiseTask()
+{
+    MOZ_ASSERT(CurrentThreadCanAccessZone(promise_->zone()));
+}
+
+void
+PromiseTask::finish(JSContext* cx)
+{
+    MOZ_ASSERT(cx == runtime_);
+    {
+        
+        
+        
+        AutoCompartment ac(cx, promise_);
+        if (!finishPromise(cx, promise_))
+            cx->clearPendingException();
+    }
+    js_delete(this);
+}
+
+void
+PromiseTask::cancel(JSContext* cx)
+{
+    MOZ_ASSERT(cx == runtime_);
+    js_delete(this);
+}
+
 } 
 
 static JSObject*

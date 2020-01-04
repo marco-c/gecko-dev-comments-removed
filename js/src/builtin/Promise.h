@@ -98,6 +98,42 @@ bool EnqueuePromiseReactionJob(JSContext* cx, HandleValue handler, HandleValue h
 bool EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve,
                                       HandleValue thenable, HandleValue then);
 
+
+
+
+
+
+
+
+class PromiseTask : public JS::AsyncTask
+{
+    JSRuntime* runtime_;
+    PersistentRooted<PromiseObject*> promise_;
+
+    
+    
+    
+    void finish(JSContext* cx) override final;
+    void cancel(JSContext* cx) override final;
+
+  protected:
+    
+    
+    
+    virtual bool finishPromise(JSContext* cx, Handle<PromiseObject*> promise) = 0;
+
+  public:
+    PromiseTask(JSContext* cx, Handle<PromiseObject*> promise);
+    ~PromiseTask();
+    JSRuntime* runtime() const { return runtime_; }
+
+    
+    
+    
+    
+    virtual void execute() = 0;
+};
+
 } 
 
 #endif 

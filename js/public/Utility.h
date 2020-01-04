@@ -72,6 +72,7 @@ enum ThreadType {
     THREAD_TYPE_COMPRESS,       
     THREAD_TYPE_GCHELPER,       
     THREAD_TYPE_GCPARALLEL,     
+    THREAD_TYPE_PROMISE_TASK,   
     THREAD_TYPE_MAX             
 };
 
