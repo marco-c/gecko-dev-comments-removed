@@ -250,6 +250,19 @@ ServiceWorkerRegistrationMainThread::InvalidateWorkers(WhichServiceWorker aWhich
   if (aWhichOnes & WhichServiceWorker::ACTIVE_WORKER) {
     mActiveWorker = nullptr;
   }
+
+}
+
+void
+ServiceWorkerRegistrationMainThread::RegistrationRemoved()
+{
+  
+  
+  
+  nsCOMPtr<nsPIDOMWindow> window = GetOwner();
+  if (window) {
+    window->InvalidateServiceWorkerRegistration(mScope);
+  }
 }
 
 namespace {
@@ -862,6 +875,12 @@ public:
   {
     AssertIsOnMainThread();
     
+  }
+
+  void
+  RegistrationRemoved() override
+  {
+    AssertIsOnMainThread();
   }
 
   void
