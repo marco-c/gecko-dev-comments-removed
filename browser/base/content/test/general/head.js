@@ -606,8 +606,6 @@ var FullZoomHelper = {
 
 
 
-
-
 function promiseTabLoadEvent(tab, url)
 {
   let deferred = Promise.defer();
