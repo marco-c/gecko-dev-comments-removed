@@ -830,18 +830,12 @@ private:
   
 
   CallbackID mAudioCallbackID;
-  MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise> mAudioWaitRequest;
+  CallbackID mWaitAudioCallbackID;
   const char* AudioRequestStatus() const;
 
   CallbackID mVideoCallbackID;
-  MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise> mVideoWaitRequest;
+  CallbackID mWaitVideoCallbackID;
   const char* VideoRequestStatus() const;
-
-  MozPromiseRequestHolder<MediaDecoderReader::WaitForDataPromise>& WaitRequestRef(MediaData::Type aType)
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return aType == MediaData::AUDIO_DATA ? mAudioWaitRequest : mVideoWaitRequest;
-  }
 
   
   
