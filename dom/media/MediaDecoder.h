@@ -499,6 +499,8 @@ private:
   
   virtual void GetMozDebugReaderData(nsAString& aString) {}
 
+  virtual void DumpDebugInfo();
+
 protected:
   virtual ~MediaDecoder();
 

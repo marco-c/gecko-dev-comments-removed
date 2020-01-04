@@ -156,6 +156,8 @@ public:
     DECODER_STATE_ERROR
   };
 
+  void DumpDebugInfo();
+
   void AddOutputStream(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
   
   void RemoveOutputStream(MediaStream* aStream);
