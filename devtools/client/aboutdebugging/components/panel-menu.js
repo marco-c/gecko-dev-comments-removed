@@ -1,0 +1,26 @@
+
+
+
+
+"use strict";
+
+const { createClass, createFactory, DOM: dom } =
+  require("devtools/client/shared/vendor/react");
+const PanelMenuEntry = createFactory(require("./panel-menu-entry"));
+
+module.exports = createClass({
+  displayName: "PanelMenu",
+
+  render() {
+    let { panels, selectedPanelId, selectPanel } = this.props;
+    let panelLinks = panels.map(({ id, panelId, name, icon }) => {
+      let selected = id == selectedPanelId;
+      return PanelMenuEntry({
+        id, panelId, name, icon, selected, selectTab
+      });
+    });
+
+    
+    return dom.div({ id: "categories", role: "tablist" }, panelLinks);
+  },
+});
