@@ -1,16 +1,12 @@
 
 
 
-
-
 "use strict";
 
 
 
-const HTTP_ROOT = CHROME_ROOT.replace("chrome://mochitests/content/",
-                                      "http://mochi.test:8888/");
-const SERVICE_WORKER = HTTP_ROOT + "service-workers/empty-sw.js";
-const TAB_URL = HTTP_ROOT + "service-workers/empty-sw.html";
+const SERVICE_WORKER = URL_ROOT + "service-workers/empty-sw.js";
+const TAB_URL = URL_ROOT + "service-workers/empty-sw.html";
 
 add_task(function* () {
   yield new Promise(done => {

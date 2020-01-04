@@ -11,15 +11,13 @@
 
 "use strict";
 
-var { utils: Cu, classes: Cc, interfaces: Ci } = Components;
 
-const { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
+  this);
+
 const { AddonManager } = Cu.import("resource://gre/modules/AddonManager.jsm", {});
-const Services = require("Services");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 DevToolsUtils.testing = true;
-
-const CHROME_ROOT = gTestPath.substr(0, gTestPath.lastIndexOf("/") + 1);
 
 registerCleanupFunction(() => {
   DevToolsUtils.testing = false;
@@ -112,7 +110,7 @@ function removeTab(tab, win) {
 function getSupportsFile(path) {
   let cr = Cc["@mozilla.org/chrome/chrome-registry;1"]
     .getService(Ci.nsIChromeRegistry);
-  let uri = Services.io.newURI(CHROME_ROOT + path, null, null);
+  let uri = Services.io.newURI(CHROME_URL_ROOT + path, null, null);
   let fileurl = cr.convertChromeURL(uri);
   return fileurl.QueryInterface(Ci.nsIFileURL);
 }

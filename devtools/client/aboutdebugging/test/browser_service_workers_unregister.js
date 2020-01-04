@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 
@@ -12,9 +10,7 @@
 
 
 
-const HTTP_ROOT = CHROME_ROOT.replace(
-  "chrome://mochitests/content/", "http://mochi.test:8888/");
-const SCOPE = HTTP_ROOT + "service-workers/";
+const SCOPE = URL_ROOT + "service-workers/";
 const SERVICE_WORKER = SCOPE + "empty-sw.js";
 const TAB_URL = SCOPE + "empty-sw.html";
 
