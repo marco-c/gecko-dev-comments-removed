@@ -227,8 +227,10 @@ class UpdateTestCase(FirefoxTestCase):
                     dialog.select_next_page()
 
                 
-                if dialog.wizard.selected_panel == dialog.wizard.incompatible_list:
-                    dialog.select_next_page()
+                
+                if self.utils.compare_version(self.appinfo.version, '49.0a1') == -1:
+                    if dialog.wizard.selected_panel == dialog.wizard.incompatible_list:
+                        dialog.select_next_page()
 
                 
                 if dialog.wizard.selected_panel in [dialog.wizard.finished,
@@ -271,8 +273,8 @@ class UpdateTestCase(FirefoxTestCase):
                 message='Download of the update has been started.')
 
         
+        
         if window.deck.selected_panel == window.deck.apply_billboard:
-            
             dialog = self.browser.open_window(
                 callback=lambda _: window.deck.update_button.click(),
                 expected_window_class=UpdateWizardDialog
