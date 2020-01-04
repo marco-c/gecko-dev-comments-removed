@@ -1254,12 +1254,22 @@ _retainobject(NPObject* npobj)
 void
 _releaseobject(NPObject* npobj)
 {
+  
+  if (!npobj) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
   if (!NS_IsMainThread()) {
     NPN_PLUGIN_LOG(PLUGIN_LOG_ALWAYS,("NPN_releaseobject called from the wrong thread\n"));
-    MOZ_CRASH("NPN_releaseobject called from the wrong thread");
-  }
-  if (!npobj)
     return;
+  }
 
   int32_t refCnt = PR_ATOMIC_DECREMENT((int32_t*)&npobj->referenceCount);
   NS_LOG_RELEASE(npobj, refCnt, "BrowserNPObject");
