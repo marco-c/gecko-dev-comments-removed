@@ -61,9 +61,11 @@ public:
 
 
 
+
+
     static already_AddRefed<GLContext>
     CreateOffscreen(const mozilla::gfx::IntSize& size,
-                    const SurfaceCaps& caps,
+                    const SurfaceCaps& minCaps,
                     CreateContextFlags flags);
 
     
