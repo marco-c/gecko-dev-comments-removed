@@ -649,7 +649,8 @@ protected:
 
   
   
-  void OverscrollAnimationEnding();
+  
+  void RequestSnap();
 
   uint64_t mLayersId;
   RefPtr<CompositorParent> mCompositorParent;

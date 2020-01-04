@@ -663,7 +663,14 @@ public:
     bool continueX = mApzc.mX.SampleOverscrollAnimation(aDelta);
     bool continueY = mApzc.mY.SampleOverscrollAnimation(aDelta);
     if (!continueX && !continueY) {
-      mApzc.OverscrollAnimationEnding();
+      
+      
+      
+      
+      
+      
+      
+      mApzc.RequestSnap();
       return false;
     }
     return true;
@@ -3531,14 +3538,7 @@ void AsyncPanZoomController::ShareCompositorFrameMetrics() {
   }
 }
 
-void AsyncPanZoomController::OverscrollAnimationEnding() {
-  
-  
-  
-  
-  
-  
-  
+void AsyncPanZoomController::RequestSnap() {
   if (RefPtr<GeckoContentController> controller = GetGeckoContentController()) {
     controller->RequestFlingSnap(mFrameMetrics.GetScrollId(),
                                  mFrameMetrics.GetScrollOffset());
