@@ -88,6 +88,7 @@ public:
     AAC_ENC, 
     AMR_NB_ENC, 
     AVC_ENC, 
+    EVRC_ENC, 
     TYPE_COUNT
   };
 
@@ -119,6 +120,9 @@ public:
 
   
   static OMXAudioEncoder* CreateAMRNBEncoder();
+
+  
+  static OMXAudioEncoder* CreateEVRCEncoder();
 
   
   static OMXVideoEncoder* CreateAVCEncoder();
@@ -204,6 +208,7 @@ private:
   int mCodecType;
   bool mStarted; 
   bool mAMRCSDProvided;
+  bool mEVRCCSDProvided;
 };
 
 

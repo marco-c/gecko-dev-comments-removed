@@ -28,6 +28,10 @@ public:
 
   
   
+  const static uint32_t TYPE_FRAG_3G2 = 1 << 2;
+
+  
+  
   
   
   

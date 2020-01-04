@@ -60,6 +60,8 @@ public:
     AAC_CSD,          
     AMR_AUDIO_CSD,
     AMR_AUDIO_FRAME,
+    EVRC_AUDIO_CSD,
+    EVRC_AUDIO_FRAME,
     UNKNOWN           
   };
   void SwapInFrameData(nsTArray<uint8_t>& aData)
