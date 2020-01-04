@@ -146,6 +146,7 @@ TEST_F(APZCBasicTester, ComplexTransform) {
 }
 
 TEST_F(APZCBasicTester, Fling) {
+  SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
   int touchStart = 50;
   int touchEnd = 10;
   ParentLayerPoint pointOut;
@@ -164,6 +165,7 @@ TEST_F(APZCBasicTester, Fling) {
 TEST_F(APZCBasicTester, FlingIntoOverscroll) {
   
   SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+  SCOPED_GFX_PREF(APZFlingMinVelocityThreshold, float, 0.0f);
 
   
   ApzcPanNoFling(apzc, 50, 25);

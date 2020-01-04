@@ -377,6 +377,12 @@ typedef GenericFlingAnimation FlingAnimation;
 
 
 
+
+
+
+
+
+
 StaticAutoPtr<ComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -1240,7 +1246,14 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
     
     StateChangeNotificationBlocker blocker(this);
     SetState(NOTHING);
-    APZC_LOG("%p starting a fling animation\n", this);
+
+    APZC_LOG("%p starting a fling animation if %f >= %f\n", this,
+        flingVelocity.Length(), gfxPrefs::APZFlingMinVelocityThreshold());
+
+    if (flingVelocity.Length() < gfxPrefs::APZFlingMinVelocityThreshold()) {
+      return nsEventStatus_eConsumeNoDefault;
+    }
+
     
     
     
