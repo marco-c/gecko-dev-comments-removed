@@ -59,6 +59,13 @@ var kVersion = 4;
 
 
 
+
+var ObsoleteBuiltinButtons = {};
+
+
+
+
+
 var gPalette = new Map();
 
 
@@ -154,6 +161,7 @@ var CustomizableUIInternal = {
     this._defineBuiltInWidgets();
     this.loadSavedState();
     this._introduceNewBuiltinWidgets();
+    this._markObsoleteBuiltinButtonsSeen();
 
     let panelPlacements = [
       "edit-controls",
@@ -349,6 +357,26 @@ var CustomizableUIInternal = {
 
     if (currentVersion < 4) {
       CustomizableUI.removeWidgetFromArea("loop-button-throttled");
+    }
+  },
+
+  
+
+
+
+  _markObsoleteBuiltinButtonsSeen: function() {
+    if (!gSavedState)
+      return;
+    let currentVersion = gSavedState.currentVersion;
+    if (currentVersion >= kVersion)
+      return;
+    
+    for (let id in ObsoleteBuiltinButtons) {
+      let version = ObsoleteBuiltinButtons[id]
+      if (version == kVersion) {
+        gSeenWidgets.add(id);
+        gDirty = true;
+      }
     }
   },
 
