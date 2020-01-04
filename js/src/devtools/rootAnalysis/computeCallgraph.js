@@ -60,6 +60,7 @@ function processCSU(csuName, csu)
 function findVirtualFunctions(initialCSU, field, suppressed)
 {
     var worklist = [initialCSU];
+    var functions = [];
 
     
     
@@ -71,8 +72,12 @@ function findVirtualFunctions(initialCSU, field, suppressed)
             suppressed[0] = true;
             return [];
         }
-        if (isOverridableField(initialCSU, csu, field))
-            return null;
+        if (isOverridableField(initialCSU, csu, field)) {
+            
+            
+            
+            functions.push(null);
+        }
 
         if (csu in superclasses) {
             for (var superclass of superclasses[csu])
@@ -80,9 +85,7 @@ function findVirtualFunctions(initialCSU, field, suppressed)
         }
     }
 
-    var functions = [];
-    var worklist = [csu];
-
+    worklist = [csu];
     while (worklist.length) {
         var csu = worklist.pop();
         var key = csu + ":" + field;
@@ -155,13 +158,20 @@ function getCallees(edge)
                 
                 
                 var targets = [];
+                var fullyResolved = true;
                 for (var name of functions) {
-                    callees.push({'kind': "direct", 'name': name});
-                    targets.push({'kind': "direct", 'name': name});
+                    if (name === null) {
+                        
+                        callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
+                        fullyResolved = false;
+                    } else {
+                        callees.push({'kind': "direct", 'name': name});
+                        targets.push({'kind': "direct", 'name': name});
+                    }
                 }
-                callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
+                if (fullyResolved)
+                    callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
             } else {
-                
                 
                 callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
             }
