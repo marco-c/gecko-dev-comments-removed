@@ -5,7 +5,6 @@
 
 package org.mozilla.gecko.home;
 
-import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
@@ -74,9 +73,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
     
     private int mMaxSavedSuggestions;
     private int mMaxSearchSuggestions;
-
-    
-    private static final int SUGGESTIONS_MAX = 4;
 
     public SearchEngineRow(Context context) {
         this(context, null);
@@ -269,14 +265,10 @@ class SearchEngineRow extends AnimatedHeightLayout {
 
 
     private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount, int savedSuggestionCount) {
+        int maxSuggestions = mMaxSearchSuggestions;
         
-        int maxSuggestions = SUGGESTIONS_MAX;
-        if (AppConstants.NIGHTLY_BUILD) {
-            maxSuggestions = mMaxSearchSuggestions;
-            
-            if (!HardwareUtils.isTablet() && savedSuggestionCount < mMaxSavedSuggestions) {
-                maxSuggestions += mMaxSavedSuggestions - savedSuggestionCount;
-            }
+        if (!HardwareUtils.isTablet() && savedSuggestionCount < mMaxSavedSuggestions) {
+            maxSuggestions += mMaxSavedSuggestions - savedSuggestionCount;
         }
 
         int suggestionCounter = 0;
@@ -319,13 +311,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
         mIconView.updateAndScaleImage(mSearchEngine.getIcon(), mSearchEngine.getEngineIdentifier());
         
         setDescriptionOnSuggestion(mUserEnteredTextView, mUserEnteredTextView.getText().toString());
-
-        if (!AppConstants.NIGHTLY_BUILD) {
-            if (searchSuggestionsEnabled) {
-                updateFromSearchEngine(animate, mSuggestionView.getChildCount(), 0);
-            }
-            return;
-        }
 
         final int recycledSuggestionCount = mSuggestionView.getChildCount();
         final SharedPreferences prefs = GeckoSharedPrefs.forApp(getContext());

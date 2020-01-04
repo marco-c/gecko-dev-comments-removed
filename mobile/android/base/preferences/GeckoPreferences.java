@@ -767,13 +767,6 @@ OnSharedPreferenceChangeListener
                         i--;
                         continue;
                     }
-                } else if (PREFS_HISTORY_SAVED_SEARCH.equals(key)) {
-                    
-                    if (!AppConstants.NIGHTLY_BUILD) {
-                        preferences.removePreference(pref);
-                        i--;
-                        continue;
-                    }
                 } else if (PREFS_TRACKING_PROTECTION.equals(key)) {
                     
                     if (!AppConstants.NIGHTLY_BUILD) {
