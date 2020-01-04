@@ -24,7 +24,7 @@ nsresult xpcJSWeakReference::Init(JSContext* cx, const JS::Value& object)
 
     JS::RootedObject obj(cx, &object.toObject());
 
-    XPCCallContext ccx(NATIVE_CALLER, cx);
+    XPCCallContext ccx(cx);
 
     
     nsISupports* supports =
