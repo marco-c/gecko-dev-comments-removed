@@ -21,17 +21,22 @@ this.ResetProfile = {
 
 
   resetSupported: function() {
+    
+    let migrator = "@mozilla.org/profile/migrator;1?app=" + MOZ_BUILD_APP +
+                   "&type=" + MOZ_APP_NAME;
+    if (!(migrator in Cc)) {
+      return false;
+    }
+    
     let profileService = Cc["@mozilla.org/toolkit/profile-service;1"].
                          getService(Ci.nsIToolkitProfileService);
     let currentProfileDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
-
-    
-    try {
-      return currentProfileDir.equals(profileService.selectedProfile.rootDir) &&
-        ("@mozilla.org/profile/migrator;1?app=" + MOZ_BUILD_APP + "&type=" + MOZ_APP_NAME in Cc);
-    } catch (e) {
-      
-      Cu.reportError(e);
+    let profileEnumerator = profileService.profiles;
+    while (profileEnumerator.hasMoreElements()) {
+      let profile = profileEnumerator.getNext().QueryInterface(Ci.nsIToolkitProfile);
+      if (profile.rootDir && profile.rootDir.equals(currentProfileDir)) {
+        return true;
+      }
     }
     return false;
   },

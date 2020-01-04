@@ -556,6 +556,7 @@ this.MigrationUtils = Object.freeze({
 
 
 
+
   showMigrationWizard:
   function MU_showMigrationWizard(aOpener, aParams) {
     let features = "chrome,dialog,modal,centerscreen,titlebar,resizable=no";
@@ -637,8 +638,10 @@ this.MigrationUtils = Object.freeze({
 
 
 
+
+
   startupMigration:
-  function MU_startupMigrator(aProfileStartup, aMigratorKey) {
+  function MU_startupMigrator(aProfileStartup, aMigratorKey, aProfileToMigrate) {
     if (!aProfileStartup) {
       throw new Error("an profile-startup instance is required for startup-migration");
     }
@@ -688,7 +691,8 @@ this.MigrationUtils = Object.freeze({
       migratorKey,
       migrator,
       aProfileStartup,
-      skipSourcePage
+      skipSourcePage,
+      aProfileToMigrate,
     ];
     this.showMigrationWizard(null, params);
   },
