@@ -900,34 +900,6 @@ IMEStateManager::GetNewIMEState(nsPresContext* aPresContext,
   return newIMEState;
 }
 
-
-class IMEEnabledStateChangedEvent : public Runnable {
-public:
-  explicit IMEEnabledStateChangedEvent(uint32_t aState)
-    : mState(aState)
-  {
-  }
-
-  NS_IMETHOD Run()
-  {
-    nsCOMPtr<nsIObserverService> observerService =
-      services::GetObserverService();
-    if (observerService) {
-      MOZ_LOG(sISMLog, LogLevel::Info,
-        ("ISM: IMEEnabledStateChangedEvent::Run(), notifies observers of "
-         "\"ime-enabled-state-changed\""));
-      nsAutoString state;
-      state.AppendInt(mState);
-      observerService->NotifyObservers(nullptr, "ime-enabled-state-changed",
-                                       state.get());
-    }
-    return NS_OK;
-  }
-
-private:
-  uint32_t mState;
-};
-
 static bool
 MayBeIMEUnawareWebApp(nsINode* aNode)
 {
@@ -1120,15 +1092,6 @@ IMEStateManager::SetInputContext(nsIWidget* aWidget,
 
   aWidget->SetInputContext(aInputContext, aAction);
   sActiveInputContextWidget = aWidget;
-
-  
-  
-  
-  
-
-  
-  nsContentUtils::AddScriptRunner(
-    new IMEEnabledStateChangedEvent(aInputContext.mIMEState.mEnabled));
 }
 
 
