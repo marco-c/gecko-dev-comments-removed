@@ -1466,8 +1466,13 @@ Object.defineProperty(OS.File, "queue", {
 
 
 
+
+const isContent = Components.classes["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULRuntime).processType == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
+
+
+
+
 var Barriers = {
-  profileBeforeChange: new AsyncShutdown.Barrier("OS.File: Waiting for clients before profile-before-shutdown"),
   shutdown: new AsyncShutdown.Barrier("OS.File: Waiting for clients before full shutdown"),
   
 
@@ -1495,25 +1500,35 @@ var Barriers = {
   }
 };
 
-File.profileBeforeChange = Barriers.profileBeforeChange.client;
+function setupShutdown(phaseName) {
+  Barriers[phaseName] = new AsyncShutdown.Barrier(`OS.File: Waiting for clients before ${phaseName}`),
+  File[phaseName] = Barriers[phaseName].client;
+
+  
+  
+  
+  
+  AsyncShutdown[phaseName].addBlocker(
+    `OS.File: flush I/O queued before ${phaseName}`,
+    Task.async(function*() {
+      
+      yield Barriers[phaseName].wait({crashAfterMS: null});
+
+      
+      yield Scheduler.queue;
+    }),
+    () => {
+      let details = Barriers.getDetails();
+      details.clients = Barriers[phaseName].state;
+      return details;
+    }
+  );
+}
+
+
+if (isContent) {
+  setupShutdown("contentChildShutdown");
+} else {
+  setupShutdown("profileBeforeChange")
+}
 File.shutdown = Barriers.shutdown.client;
-
-
-
-
-
-AsyncShutdown.profileBeforeChange.addBlocker(
-  "OS.File: flush I/O queued before profile-before-change",
-  Task.async(function*() {
-    
-    yield Barriers.profileBeforeChange.wait({crashAfterMS: null});
-
-    
-    yield Scheduler.queue;
-  }),
-  () => {
-    let details = Barriers.getDetails();
-    details.clients = Barriers.profileBeforeChange.state;
-    return details;
-  }
-);
