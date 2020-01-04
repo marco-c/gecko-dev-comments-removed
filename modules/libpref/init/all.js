@@ -4343,9 +4343,6 @@ pref("image.http.accept", "*/*");
 pref("image.infer-src-animation.threshold-ms", 2000);
 
 
-pref("image.single-color-optimization.enabled", true);
-
-
 
 
 
