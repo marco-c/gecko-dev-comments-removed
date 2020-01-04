@@ -632,10 +632,10 @@ Blocklist.prototype = {
 
     
     if (gPref.getBoolPref(PREF_KINTO_UPDATE_ENABLED)) {
-      let KintoUpdater =
+      const updater =
         Components.utils.import("resource://services-common/blocklist-updater.js",
                                 {});
-      KintoUpdater.checkVersions().catch(() => {
+      updater.checkVersions().catch(() => {
         
         
       });
