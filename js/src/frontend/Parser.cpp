@@ -5318,6 +5318,7 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     
     
     
+    
     ParseNode* forLetImpliedBlock = nullptr;
     ParseNode* forLetDecl = nullptr;
 
