@@ -120,6 +120,7 @@ public:
     void UpdateFontList();
 
     void ClearPrefFonts() { mPrefFonts.Clear(); }
+    void ClearLangGroupPrefFonts();
 
     virtual void GetFontFamilyList(nsTArray<nsRefPtr<gfxFontFamily> >& aFamilyArray);
 
@@ -203,7 +204,8 @@ public:
     }
 
     virtual void
-    AddGenericFonts(mozilla::FontFamilyType aGenericType, gfxFontStyle* aStyle,
+    AddGenericFonts(mozilla::FontFamilyType aGenericType,
+                    nsIAtom* aLanguage,
                     nsTArray<gfxFontFamily*>& aFamilyList);
 
     
@@ -334,8 +336,12 @@ protected:
 
     void
     ResolveGenericFontNames(mozilla::FontFamilyType aGenericType,
-                            nsIAtom *aLanguage,
-                            nsTArray<nsString>& aGenericFamilies);
+                            eFontPrefLang aPrefLang,
+                            nsTArray<nsRefPtr<gfxFontFamily> >* aGenericFamilies);
+
+    nsTArray<nsRefPtr<gfxFontFamily> >*
+    GetPrefFontsLangGroup(mozilla::FontFamilyType aGenericType,
+                          eFontPrefLang aPrefLang);
 
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontFamily> FontFamilyTable;
     typedef nsRefPtrHashtable<nsStringHashKey, gfxFontEntry> FontEntryTable;
@@ -385,6 +391,8 @@ protected:
     
     
     nsDataHashtable<nsUint32HashKey, nsTArray<nsRefPtr<gfxFontFamily> > > mPrefFonts;
+
+    nsTArray<nsTArray<nsRefPtr<gfxFontFamily> >* > mLangGroupPrefFonts;
 
     
     gfxSparseBitSet mCodepointsWithNoFonts;

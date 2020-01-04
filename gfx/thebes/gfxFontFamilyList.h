@@ -29,7 +29,7 @@ enum FontFamilyType {
   eFamily_named_quoted,
 
   
-  eFamily_serif,
+  eFamily_serif,         
   eFamily_sans_serif,
   eFamily_monospace,
   eFamily_cursive,
