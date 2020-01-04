@@ -185,14 +185,14 @@ KeyframeEffectReadOnly::NotifyAnimationTimingUpdated()
       EffectCompositor::RestyleType::Throttled :
       EffectCompositor::RestyleType::Standard;
     RequestRestyle(restyleType);
+  }
 
-    
-    
-    
-    
-    if (!isRelevant) {
-      mProgressOnLastCompose.SetNull();
-    }
+  
+  
+  
+  
+  if (!inEffect) {
+     mProgressOnLastCompose.SetNull();
   }
 }
 
