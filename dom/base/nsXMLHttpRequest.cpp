@@ -2703,6 +2703,13 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
                                        contentType)) ||
           contentType.IsEmpty()) {
         contentType = defaultContentType;
+
+        if (!charset.IsEmpty()) {
+          
+          
+          contentType.Append(NS_LITERAL_CSTRING(";charset="));
+          contentType.Append(charset);
+        }
       }
 
       
@@ -2713,7 +2720,7 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
         rv = NS_ExtractCharsetFromContentType(contentType, specifiedCharset,
                                               &haveCharset, &charsetStart,
                                               &charsetEnd);
-        if (NS_SUCCEEDED(rv)) {
+        while (NS_SUCCEEDED(rv) && haveCharset) {
           
           
           
@@ -2733,11 +2740,26 @@ nsXMLHttpRequest::Send(nsIVariant* aVariant, const Nullable<RequestBody>& aBody)
           
           if (!specifiedCharset.Equals(charset,
                                        nsCaseInsensitiveCStringComparator())) {
-            nsAutoCString newCharset("; charset=");
-            newCharset.Append(charset);
-            contentType.Replace(charsetStart, charsetEnd - charsetStart,
-                                newCharset);
+            
+            
+            int32_t charIdx =
+              Substring(contentType, charsetStart,
+                        charsetEnd - charsetStart).FindChar('=') + 1;
+            MOZ_ASSERT(charIdx != -1);
+
+            contentType.Replace(charsetStart + charIdx,
+                                charsetEnd - charsetStart - charIdx,
+                                charset);
           }
+
+          
+          
+          
+          nsDependentCSubstring interestingSection =
+            Substring(contentType, 0, charsetStart);
+          rv = NS_ExtractCharsetFromContentType(interestingSection,
+                                                specifiedCharset, &haveCharset,
+                                                &charsetStart, &charsetEnd);
         }
       }
 
