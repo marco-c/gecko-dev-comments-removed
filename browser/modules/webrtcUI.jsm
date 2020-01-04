@@ -271,14 +271,7 @@ function getHost(uri, href) {
   if (!host) {
     if (uri && uri.scheme.toLowerCase() == "about") {
       
-      if (uri.specIgnoringRef == "about:loopconversation") {
-        const kBundleURI = "chrome://browser/locale/loop/loop.properties";
-        let bundle = Services.strings.createBundle(kBundleURI);
-        host = bundle.GetStringFromName("clientShortname2");
-      } else {
-        
-        host = uri.specIgnoringRef;
-      }
+      host = uri.specIgnoringRef;
     } else {
       
       const kBundleURI = "chrome://browser/locale/browser.properties";
