@@ -28,7 +28,8 @@
 #define AVCODEC_RL_H
 
 #include <stdint.h>
-#include "get_bits.h"
+
+#include "vlc.h"
 
 
 #define MAX_RUN    64
@@ -46,7 +47,6 @@ typedef struct RLTable {
     int8_t *max_run[2];            
     RL_VLC_ELEM *rl_vlc[32];       
 } RLTable;
-
 
 
 

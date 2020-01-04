@@ -98,6 +98,94 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum AVCodecID {
     AV_CODEC_ID_NONE,
 
@@ -316,6 +404,11 @@ enum AVCodecID {
     AV_CODEC_ID_APNG,
     AV_CODEC_ID_DAALA,
     AV_CODEC_ID_CFHD,
+    AV_CODEC_ID_TRUEMOTION2RT,
+    AV_CODEC_ID_M101,
+    AV_CODEC_ID_MAGICYUV,
+    AV_CODEC_ID_SHEERVIDEO,
+    AV_CODEC_ID_YLC,
 
     
     AV_CODEC_ID_FIRST_AUDIO = 0x10000,     
@@ -398,6 +491,8 @@ enum AVCodecID {
     AV_CODEC_ID_ADPCM_THP_LE,
     AV_CODEC_ID_ADPCM_PSX,
     AV_CODEC_ID_ADPCM_AICA,
+    AV_CODEC_ID_ADPCM_IMA_DAT4,
+    AV_CODEC_ID_ADPCM_MTAF,
 
     
     AV_CODEC_ID_AMR_NB = 0x12000,
@@ -500,6 +595,7 @@ enum AVCodecID {
     AV_CODEC_ID_INTERPLAY_ACM,
     AV_CODEC_ID_XMA1,
     AV_CODEC_ID_XMA2,
+    AV_CODEC_ID_DST,
 
     
     AV_CODEC_ID_FIRST_SUBTITLE = 0x17000,          
@@ -836,6 +932,10 @@ typedef struct RcOverride{
 
 
 #define AV_CODEC_FLAG2_SKIP_MANUAL    (1 << 29)
+
+
+
+#define AV_CODEC_FLAG2_RO_FLUSH_NOOP  (1 << 30)
 
 
 
@@ -1403,6 +1503,19 @@ enum AVPacketSideDataType {
 
 
     AV_PKT_DATA_METADATA_UPDATE,
+
+    
+
+
+
+    AV_PKT_DATA_MPEGTS_STREAM_ID,
+
+    
+
+
+
+
+    AV_PKT_DATA_MASTERING_DISPLAY_METADATA
 };
 
 #define AV_PKT_DATA_QUALITY_FACTOR AV_PKT_DATA_QUALITY_STATS //DEPRECATED
@@ -1519,6 +1632,10 @@ enum AVFieldOrder {
     AV_FIELD_TB,          
     AV_FIELD_BT,          
 };
+
+
+
+
 
 
 
@@ -1648,6 +1765,14 @@ typedef struct AVCodecContext {
     int extradata_size;
 
     
+
+
+
+
+
+
+
+
 
 
 
@@ -2065,7 +2190,7 @@ typedef struct AVCodecContext {
 
     int slice_flags;
 #define SLICE_FLAG_CODED_ORDER    0x0001 ///< draw_horiz_band() is called in coded order instead of display
-#define SLICE_FLAG_ALLOW_FIELD    0x0002 ///< allow draw_horiz_band() with field slices (MPEG2 field pics)
+#define SLICE_FLAG_ALLOW_FIELD    0x0002 ///< allow draw_horiz_band() with field slices (MPEG-2 field pics)
 #define SLICE_FLAG_ALLOW_PLANE    0x0004 ///< allow draw_horiz_band() with 1 component at a time (SVQ1)
 
 #if FF_API_XVMC
@@ -2181,7 +2306,6 @@ typedef struct AVCodecContext {
 
 
 
-
     int bidir_refine;
 
 #if FF_API_PRIVATE_OPT
@@ -2220,7 +2344,6 @@ typedef struct AVCodecContext {
 #endif
 
     
-
 
 
 
@@ -2442,6 +2565,8 @@ typedef struct AVCodecContext {
     int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     
+
+
 
 
 
@@ -2798,9 +2923,9 @@ typedef struct AVCodecContext {
 
 
     int debug_mv;
-#define FF_DEBUG_VIS_MV_P_FOR  0x00000001 //visualize forward predicted MVs of P frames
-#define FF_DEBUG_VIS_MV_B_FOR  0x00000002 //visualize forward predicted MVs of B frames
-#define FF_DEBUG_VIS_MV_B_BACK 0x00000004 //visualize backward predicted MVs of B frames
+#define FF_DEBUG_VIS_MV_P_FOR  0x00000001 // visualize forward predicted MVs of P-frames
+#define FF_DEBUG_VIS_MV_B_FOR  0x00000002 // visualize forward predicted MVs of B-frames
+#define FF_DEBUG_VIS_MV_B_BACK 0x00000004 // visualize backward predicted MVs of B-frames
 #endif
 
     
@@ -3093,9 +3218,9 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_MPEG4_SIMPLE_STUDIO             14
 #define FF_PROFILE_MPEG4_ADVANCED_SIMPLE           15
 
-#define FF_PROFILE_JPEG2000_CSTREAM_RESTRICTION_0   0
-#define FF_PROFILE_JPEG2000_CSTREAM_RESTRICTION_1   1
-#define FF_PROFILE_JPEG2000_CSTREAM_NO_RESTRICTION  2
+#define FF_PROFILE_JPEG2000_CSTREAM_RESTRICTION_0   1
+#define FF_PROFILE_JPEG2000_CSTREAM_RESTRICTION_1   2
+#define FF_PROFILE_JPEG2000_CSTREAM_NO_RESTRICTION  32768
 #define FF_PROFILE_JPEG2000_DCINEMA_2K              3
 #define FF_PROFILE_JPEG2000_DCINEMA_4K              4
 
@@ -3204,6 +3329,7 @@ typedef struct AVCodecContext {
     int initial_padding;
 
     
+
 
 
 
@@ -3355,6 +3481,30 @@ typedef struct AVCodecContext {
     AVPacketSideData *coded_side_data;
     int            nb_coded_side_data;
 
+    
+
+
+
+
+
+
+
+
+
+
+    AVBufferRef *hw_frames_ctx;
+
+    
+
+
+
+
+    int sub_text_format;
+#define FF_SUB_TEXT_FMT_ASS              0
+#if FF_API_ASS_TIMING
+#define FF_SUB_TEXT_FMT_ASS_WITH_TIMINGS 1
+#endif
+
 } AVCodecContext;
 
 AVRational av_codec_get_pkt_timebase         (const AVCodecContext *avctx);
@@ -3474,6 +3624,21 @@ typedef struct AVCodec {
                    int *got_packet_ptr);
     int (*decode)(AVCodecContext *, void *outdata, int *outdata_size, AVPacket *avpkt);
     int (*close)(AVCodecContext *);
+    
+
+
+
+
+
+
+
+
+
+
+    int (*send_frame)(AVCodecContext *avctx, const AVFrame *frame);
+    int (*send_packet)(AVCodecContext *avctx, const AVPacket *avpkt);
+    int (*receive_frame)(AVCodecContext *avctx, AVFrame *frame);
+    int (*receive_packet)(AVCodecContext *avctx, AVPacket *avpkt);
     
 
 
@@ -3744,6 +3909,164 @@ typedef struct AVSubtitle {
 
 
 
+
+
+typedef struct AVCodecParameters {
+    
+
+
+    enum AVMediaType codec_type;
+    
+
+
+    enum AVCodecID   codec_id;
+    
+
+
+    uint32_t         codec_tag;
+
+    
+
+
+
+
+
+
+
+    uint8_t *extradata;
+    
+
+
+    int      extradata_size;
+
+    
+
+
+
+    int format;
+
+    
+
+
+    int64_t bit_rate;
+
+    
+
+
+
+
+
+
+
+
+
+
+    int bits_per_coded_sample;
+
+    
+
+
+
+
+
+
+
+
+
+
+    int bits_per_raw_sample;
+
+    
+
+
+    int profile;
+    int level;
+
+    
+
+
+    int width;
+    int height;
+
+    
+
+
+
+
+
+
+    AVRational sample_aspect_ratio;
+
+    
+
+
+    enum AVFieldOrder                  field_order;
+
+    
+
+
+    enum AVColorRange                  color_range;
+    enum AVColorPrimaries              color_primaries;
+    enum AVColorTransferCharacteristic color_trc;
+    enum AVColorSpace                  color_space;
+    enum AVChromaLocation              chroma_location;
+
+    
+
+
+    int video_delay;
+
+    
+
+
+
+
+    uint64_t channel_layout;
+    
+
+
+    int      channels;
+    
+
+
+    int      sample_rate;
+    
+
+
+
+
+
+    int      block_align;
+    
+
+
+    int      frame_size;
+
+    
+
+
+
+
+
+    int initial_padding;
+    
+
+
+
+
+
+    int trailing_padding;
+    
+
+
+    int seek_preroll;
+} AVCodecParameters;
+
+
+
+
+
+
 AVCodec *av_codec_next(const AVCodec *c);
 
 
@@ -3796,7 +4119,6 @@ void avcodec_register_all(void);
 
 
 
-
 AVCodecContext *avcodec_alloc_context3(const AVCodec *codec);
 
 
@@ -3805,16 +4127,14 @@ AVCodecContext *avcodec_alloc_context3(const AVCodec *codec);
 
 void avcodec_free_context(AVCodecContext **avctx);
 
-
-
-
-
+#if FF_API_GET_CONTEXT_DEFAULTS
 
 
 
 
 
 int avcodec_get_context_defaults3(AVCodecContext *s, const AVCodec *codec);
+#endif
 
 
 
@@ -3824,6 +4144,7 @@ int avcodec_get_context_defaults3(AVCodecContext *s, const AVCodec *codec);
 
 const AVClass *avcodec_get_class(void);
 
+#if FF_API_COPY_CONTEXT
 
 
 
@@ -3851,8 +4172,57 @@ const AVClass *avcodec_get_subtitle_rect_class(void);
 
 
 
-int avcodec_copy_context(AVCodecContext *dest, const AVCodecContext *src);
 
+
+
+
+
+
+attribute_deprecated
+int avcodec_copy_context(AVCodecContext *dest, const AVCodecContext *src);
+#endif
+
+
+
+
+
+
+AVCodecParameters *avcodec_parameters_alloc(void);
+
+
+
+
+
+void avcodec_parameters_free(AVCodecParameters **par);
+
+
+
+
+
+
+
+int avcodec_parameters_copy(AVCodecParameters *dst, const AVCodecParameters *src);
+
+
+
+
+
+
+
+
+int avcodec_parameters_from_context(AVCodecParameters *par,
+                                    const AVCodecContext *codec);
+
+
+
+
+
+
+
+
+
+int avcodec_parameters_to_context(AVCodecContext *codec,
+                                  const AVCodecParameters *par);
 
 
 
@@ -3893,6 +4263,10 @@ int avcodec_copy_context(AVCodecContext *dest, const AVCodecContext *src);
 
 
 int avcodec_open2(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
+
+
+
+
 
 
 
@@ -4170,7 +4544,6 @@ void av_packet_move_ref(AVPacket *dst, AVPacket *src);
 
 
 
-
 int av_packet_copy_props(AVPacket *dst, const AVPacket *src);
 
 
@@ -4325,6 +4698,9 @@ enum AVChromaLocation avcodec_chroma_pos_to_enum(int xpos, int ypos);
 
 
 
+
+
+attribute_deprecated
 int avcodec_decode_audio4(AVCodecContext *avctx, AVFrame *frame,
                           int *got_frame_ptr, const AVPacket *avpkt);
 
@@ -4371,6 +4747,9 @@ int avcodec_decode_audio4(AVCodecContext *avctx, AVFrame *frame,
 
 
 
+
+
+attribute_deprecated
 int avcodec_decode_video2(AVCodecContext *avctx, AVFrame *picture,
                          int *got_picture_ptr,
                          const AVPacket *avpkt);
@@ -4405,6 +4784,129 @@ int avcodec_decode_video2(AVCodecContext *avctx, AVFrame *picture,
 int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
                             int *got_sub_ptr,
                             AVPacket *avpkt);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int avcodec_send_frame(AVCodecContext *avctx, const AVFrame *frame);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int avcodec_receive_packet(AVCodecContext *avctx, AVPacket *avpkt);
+
 
 
 
@@ -4714,6 +5216,9 @@ AVCodec *avcodec_find_encoder_by_name(const char *name);
 
 
 
+
+
+attribute_deprecated
 int avcodec_encode_audio2(AVCodecContext *avctx, AVPacket *avpkt,
                           const AVFrame *frame, int *got_packet_ptr);
 
@@ -4750,6 +5255,9 @@ int avcodec_encode_audio2(AVCodecContext *avctx, AVPacket *avpkt,
 
 
 
+
+
+attribute_deprecated
 int avcodec_encode_video2(AVCodecContext *avctx, AVPacket *avpkt,
                           const AVFrame *frame, int *got_packet_ptr);
 
@@ -5135,6 +5643,12 @@ int av_get_exact_bits_per_sample(enum AVCodecID codec_id);
 int av_get_audio_frame_duration(AVCodecContext *avctx, int frame_bytes);
 
 
+
+
+
+int av_get_audio_frame_duration2(AVCodecParameters *par, int frame_bytes);
+
+#if FF_API_OLD_BSF
 typedef struct AVBitStreamFilterContext {
     void *priv_data;
     struct AVBitStreamFilter *filter;
@@ -5146,19 +5660,102 @@ typedef struct AVBitStreamFilterContext {
 
     char *args;
 } AVBitStreamFilterContext;
+#endif
 
+typedef struct AVBSFInternal AVBSFInternal;
+
+
+
+
+
+
+
+
+
+
+
+typedef struct AVBSFContext {
+    
+
+
+    const AVClass *av_class;
+
+    
+
+
+    const struct AVBitStreamFilter *filter;
+
+    
+
+
+
+    AVBSFInternal *internal;
+
+    
+
+
+
+    void *priv_data;
+
+    
+
+
+    AVCodecParameters *par_in;
+
+    
+
+
+    AVCodecParameters *par_out;
+
+    
+
+
+
+    AVRational time_base_in;
+
+    
+
+
+
+    AVRational time_base_out;
+} AVBSFContext;
 
 typedef struct AVBitStreamFilter {
     const char *name;
+
+    
+
+
+
+
+    const enum AVCodecID *codec_ids;
+
+    
+
+
+
+
+
+
+
+
+    const AVClass *priv_class;
+
+    
+
+
+
+
+
+
+
     int priv_data_size;
-    int (*filter)(AVBitStreamFilterContext *bsfc,
-                  AVCodecContext *avctx, const char *args,
-                  uint8_t **poutbuf, int *poutbuf_size,
-                  const uint8_t *buf, int buf_size, int keyframe);
-    void (*close)(AVBitStreamFilterContext *bsfc);
-    struct AVBitStreamFilter *next;
+    int (*init)(AVBSFContext *ctx);
+    int (*filter)(AVBSFContext *ctx, AVPacket *pkt);
+    void (*close)(AVBSFContext *ctx);
 } AVBitStreamFilter;
 
+#if FF_API_OLD_BSF
 
 
 
@@ -5168,6 +5765,7 @@ typedef struct AVBitStreamFilter {
 
 
 
+attribute_deprecated
 void av_register_bitstream_filter(AVBitStreamFilter *bsf);
 
 
@@ -5180,6 +5778,7 @@ void av_register_bitstream_filter(AVBitStreamFilter *bsf);
 
 
 
+attribute_deprecated
 AVBitStreamFilterContext *av_bitstream_filter_init(const char *name);
 
 
@@ -5210,6 +5809,8 @@ AVBitStreamFilterContext *av_bitstream_filter_init(const char *name);
 
 
 
+
+attribute_deprecated
 int av_bitstream_filter_filter(AVBitStreamFilterContext *bsfc,
                                AVCodecContext *avctx, const char *args,
                                uint8_t **poutbuf, int *poutbuf_size,
@@ -5221,6 +5822,7 @@ int av_bitstream_filter_filter(AVBitStreamFilterContext *bsfc,
 
 
 
+attribute_deprecated
 void av_bitstream_filter_close(AVBitStreamFilterContext *bsf);
 
 
@@ -5231,7 +5833,103 @@ void av_bitstream_filter_close(AVBitStreamFilterContext *bsf);
 
 
 
+attribute_deprecated
 AVBitStreamFilter *av_bitstream_filter_next(const AVBitStreamFilter *f);
+#endif
+
+
+
+
+
+const AVBitStreamFilter *av_bsf_get_by_name(const char *name);
+
+
+
+
+
+
+
+
+
+
+const AVBitStreamFilter *av_bsf_next(void **opaque);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_bsf_alloc(const AVBitStreamFilter *filter, AVBSFContext **ctx);
+
+
+
+
+
+int av_bsf_init(AVBSFContext *ctx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_bsf_send_packet(AVBSFContext *ctx, AVPacket *pkt);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_bsf_receive_packet(AVBSFContext *ctx, AVPacket *pkt);
+
+
+
+
+
+void av_bsf_free(AVBSFContext **ctx);
+
+
+
+
+
+
+
+const AVClass *av_bsf_get_class(void);
 
 
 

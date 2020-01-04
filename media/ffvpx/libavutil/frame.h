@@ -22,7 +22,6 @@
 
 
 
-
 #ifndef AVUTIL_FRAME_H
 #define AVUTIL_FRAME_H
 
@@ -178,9 +177,16 @@ typedef struct AVFrameSideData {
 
 
 
+
+
+
+
 typedef struct AVFrame {
 #define AV_NUM_DATA_POINTERS 8
     
+
+
+
 
 
 
@@ -512,6 +518,11 @@ typedef struct AVFrame {
 
     AVBufferRef *qp_table_buf;
 #endif
+    
+
+
+
+    AVBufferRef *hw_frames_ctx;
 } AVFrame;
 
 
@@ -585,6 +596,10 @@ void av_frame_free(AVFrame **frame);
 
 
 
+
+
+
+
 int av_frame_ref(AVFrame *dst, const AVFrame *src);
 
 
@@ -604,7 +619,15 @@ void av_frame_unref(AVFrame *frame);
 
 
 
+
+
+
+
 void av_frame_move_ref(AVFrame *dst, AVFrame *src);
+
+
+
+
 
 
 

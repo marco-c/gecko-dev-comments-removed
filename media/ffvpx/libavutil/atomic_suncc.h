@@ -16,7 +16,6 @@
 
 
 
-
 #ifndef AVUTIL_ATOMIC_SUNCC_H
 #define AVUTIL_ATOMIC_SUNCC_H
 

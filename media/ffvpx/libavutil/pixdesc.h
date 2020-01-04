@@ -89,7 +89,7 @@ typedef struct AVPixFmtDescriptor {
 
 
 
-    uint8_t log2_chroma_w;  
+    uint8_t log2_chroma_w;
 
     
 
