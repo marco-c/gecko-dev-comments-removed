@@ -224,14 +224,14 @@ tests:
     allowed_build_tasks:
       tasks/builds/mulet_linux.yml:
         task: tasks/tests/mulet_gaia_unit_oop.yml
-  jittests:
-    allowed_build_tasks:
-      tasks/builds/dbg_linux64.yml:
-        task: tasks/tests/fx_linux64_jittests.yml
   jsreftest:
     allowed_build_tasks:
       tasks/builds/dbg_linux64.yml:
         task: tasks/tests/fx_linux64_jsreftest.yml
+  marionette-webapi:
+    allowed_build_tasks:
+      tasks/builds/b2g_emulator_x86_kk_opt.yml:
+        task: tasks/tests/b2g_emulator_marionette_webapi.yml
   mochitest:
     allowed_build_tasks:
       tasks/builds/mulet_linux.yml:
@@ -262,7 +262,3 @@ tests:
     allowed_build_tasks:
       tasks/builds/dbg_linux64.yml:
         task: tasks/tests/fx_linux64_web_platform_tests_reftests.yml
-  xpcshell:
-    allowed_build_tasks:
-      tasks/builds/dbg_linux64.yml:
-        task: tasks/tests/fx_linux64_xpcshell.yml
