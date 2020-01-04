@@ -4934,10 +4934,6 @@ pref("dom.presentation.discoverable", false);
 
 pref("intl.collation.mac.use_icu", true);
 
-
-
-pref("intl.ime.nstextinput.enable", false);
-
 #if !defined(RELEASE_BUILD) || defined(DEBUG)
 
 
