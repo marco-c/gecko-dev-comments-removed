@@ -44,6 +44,12 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
         return mProfile;
     }
 
+    
+    @Override
+    public PromptService getPromptService() {
+        return null;
+    }
+
     @Override
     public Activity getActivity() {
         return (Activity)mContext;
