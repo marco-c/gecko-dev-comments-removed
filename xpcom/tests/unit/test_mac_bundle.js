@@ -1,8 +1,9 @@
 function run_test() { 
   
   
-  if (!("nsILocalFileMac" in Components.interfaces))
+  if (mozinfo.os != "mac") {
     return;
+  }
   
   
   

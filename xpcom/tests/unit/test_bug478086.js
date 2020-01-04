@@ -9,8 +9,7 @@ function run_test() {
   
   
   
-  var isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
-  if (isWindows) {
+  if (mozinfo.os == "win") {
     root.initWithPath("\\\\.");
   } else {
     return; 
