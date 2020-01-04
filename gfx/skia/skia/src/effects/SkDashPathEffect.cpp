@@ -248,7 +248,15 @@ bool SkDashPathEffect::asPoints(PointData* results,
                 len2 -= clampedInitialDashLength; 
             }
         }
-        int numMidPoints = SkScalarFloorToInt(len2 / fIntervalLength);
+        
+        
+        
+        static const SkScalar kMaxPoints = 1000000;
+        SkScalar numIntervals = len2 / fIntervalLength;
+        if (!SkScalarIsFinite(numIntervals) || numIntervals > kMaxPoints) {
+            return false;
+        }
+        int numMidPoints = SkScalarFloorToInt(numIntervals);
         results->fNumPoints += numMidPoints;
         len2 -= numMidPoints * fIntervalLength;
         bool partialLast = false;
