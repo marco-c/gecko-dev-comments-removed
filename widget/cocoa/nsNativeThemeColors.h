@@ -15,14 +15,6 @@ enum ColorName {
   toolbarBottomBorderGrey,
 };
 
-static const int sSnowLeopardThemeColors[][2] = {
-  
-  
-  { 0xD0, 0xF1 }, 
-  { 0xA7, 0xD8 }, 
-  { 0x51, 0x99 }, 
-};
-
 static const int sLionThemeColors[][2] = {
   
   
@@ -44,11 +36,7 @@ static int NativeGreyColorAsInt(ColorName name, BOOL isMain)
 {
   if (nsCocoaFeatures::OnYosemiteOrLater())
     return sYosemiteThemeColors[name][isMain ? 0 : 1];
-
-  if (nsCocoaFeatures::OnLionOrLater())
-    return sLionThemeColors[name][isMain ? 0 : 1];
-
-  return sSnowLeopardThemeColors[name][isMain ? 0 : 1];
+  return sLionThemeColors[name][isMain ? 0 : 1];
 }
 
 __attribute__((unused))
