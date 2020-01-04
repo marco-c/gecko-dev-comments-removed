@@ -2510,7 +2510,6 @@ BuildStyleRule(nsCSSProperty aProperty,
 
   
   if (!declaration->HasNonImportantValueFor(propertyToCheck)) {
-    NS_WARNING("failure in BuildStyleRule");
     return nullptr;
   }
 
