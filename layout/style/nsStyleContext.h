@@ -562,7 +562,7 @@ private:
   bool ShouldLogRestyle() { return true; }
 #endif
 
-  nsStyleContext* mParent; 
+  RefPtr<nsStyleContext> mParent;
 
   
   
