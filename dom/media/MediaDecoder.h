@@ -568,13 +568,15 @@ public:
   
   void DispatchPlaybackStopped() {
     nsRefPtr<MediaDecoder> self = this;
-    nsCOMPtr<nsIRunnable> r =
-      NS_NewRunnableFunction([self] () { self->mPlaybackStatistics->Stop(); });
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self] () {
+      self->mPlaybackStatistics->Stop();
+      self->ComputePlaybackRate();
+    });
     AbstractThread::MainThread()->Dispatch(r.forget());
   }
 
   
-  virtual double ComputePlaybackRate(bool* aReliable);
+  void ComputePlaybackRate();
 
   
   
@@ -883,11 +885,6 @@ protected:
   
   
   
-  int64_t mDecoderPosition;
-  
-  
-  
-  
   int64_t mPlaybackPosition;
 
   
@@ -1088,6 +1085,18 @@ protected:
   
   Canonical<bool> mSameOriginMedia;
 
+  
+  Canonical<double> mPlaybackBytesPerSecond;
+
+  
+  Canonical<bool> mPlaybackRateReliable;
+
+  
+  
+  
+  
+  Canonical<int64_t> mDecoderPosition;
+
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() {
@@ -1116,6 +1125,15 @@ public:
   }
   AbstractCanonical<bool>* CanonicalSameOriginMedia() {
     return &mSameOriginMedia;
+  }
+  AbstractCanonical<double>* CanonicalPlaybackBytesPerSecond() {
+    return &mPlaybackBytesPerSecond;
+  }
+  AbstractCanonical<bool>* CanonicalPlaybackRateReliable() {
+    return &mPlaybackRateReliable;
+  }
+  AbstractCanonical<int64_t>* CanonicalDecoderPosition() {
+    return &mDecoderPosition;
   }
 };
 
