@@ -7,7 +7,7 @@
 
 
 
-if (!isAsmJSCompilationAvailable())
+if (!this.SharedArrayBuffer || !isAsmJSCompilationAvailable())
     quit(0);
 
 function module_a(stdlib, foreign, heap) {
