@@ -4596,9 +4596,6 @@ pref("layers.d3d11.disable-warp", true);
 #endif
 
 
-pref("layers.shared-buffer-provider.enabled", false)
-
-
 pref("layers.force-active", false);
 
 
