@@ -2196,7 +2196,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
                                              containerItemScrollClip));
   }
 
-  if (!isTransformed) {
+  if (!isTransformed && !useFixedPosition && !useStickyPosition) {
     
     
     clipState.Restore();
@@ -2278,7 +2278,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     }
 
     
-    if (!HasPerspective()) {
+    if (!HasPerspective() && !useFixedPosition && !useStickyPosition) {
       clipState.Restore();
       if (didResetClip) {
         containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
@@ -2303,9 +2303,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     resultList.AppendNewToTop(transformItem);
 
     if (HasPerspective()) {
-      clipState.Restore();
-      if (didResetClip) {
-        containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
+      if (!useFixedPosition && !useStickyPosition) {
+        clipState.Restore();
+        if (didResetClip) {
+          containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
+        }
       }
       resultList.AppendNewToTop(
         new (aBuilder) nsDisplayPerspective(
@@ -2319,6 +2321,13 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     if (useOpacity && !usingSVGEffects) {
       CreateOpacityItem(aBuilder, this, resultList, opacityItemForEventsOnly,
                         containerItemScrollClip);
+    }
+  }
+
+  if (useFixedPosition || useStickyPosition) {
+    clipState.Restore();
+    if (didResetClip) {
+      containerItemScrollClip = aBuilder->ClipState().GetCurrentInnermostScrollClip();
     }
   }
 
