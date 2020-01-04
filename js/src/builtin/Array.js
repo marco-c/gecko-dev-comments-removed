@@ -716,42 +716,60 @@ function CreateArrayIterator(obj, kind) {
 }
 
 
+
 function ArrayIteratorNext() {
+    
     if (!IsObject(this) || !IsArrayIterator(this)) {
         return callFunction(CallArrayIteratorMethodIfWrapped, this,
                             "ArrayIteratorNext");
     }
-    var a = UnsafeGetObjectFromReservedSlot(this, ITERATOR_SLOT_TARGET);
+
+    
+    var a = UnsafeGetReservedSlot(this, ITERATOR_SLOT_TARGET);
+    var result = { value: undefined, done: false };
+
+    
+    if (!a) {
+      result.done = true;
+      return result;
+    }
+
+    
     
     var index = UnsafeGetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX);
+
+    
     var itemKind = UnsafeGetInt32FromReservedSlot(this, ITERATOR_SLOT_ITEM_KIND);
-    var result = { value: undefined, done: false };
+
+    
     var len = IsPossiblyWrappedTypedArray(a)
               ? PossiblyWrappedTypedArrayLength(a)
               : TO_UINT32(a.length);
 
     
     if (index >= len) {
-        
-        
-        UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, 0xffffffff);
+        UnsafeSetReservedSlot(this, ITERATOR_SLOT_TARGET, null);
         result.done = true;
         return result;
     }
 
+    
     UnsafeSetReservedSlot(this, ITERATOR_SLOT_NEXT_INDEX, index + 1);
 
+    
     if (itemKind === ITEM_KIND_VALUE) {
         result.value = a[index];
         return result;
     }
 
+    
     if (itemKind === ITEM_KIND_KEY_AND_VALUE) {
         var pair = [index, a[index]];
         result.value = pair;
         return result;
     }
 
+    
     assert(itemKind === ITEM_KIND_KEY, itemKind);
     result.value = index;
     return result;
