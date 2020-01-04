@@ -19,7 +19,6 @@ class nsICanvasRenderingContextInternal;
 namespace mozilla {
 
 namespace layers {
-class AsyncCanvasRenderer;
 class Image;
 } 
 
@@ -41,7 +40,6 @@ public:
                               const nsAString& aOptions,
                               const nsIntSize aSize,
                               nsICanvasRenderingContextInternal* aContext,
-                              layers::AsyncCanvasRenderer* aRenderer,
                               nsIInputStream** aStream);
 
   
@@ -95,7 +93,6 @@ private:
                       const nsIntSize aSize,
                       layers::Image* aImage,
                       nsICanvasRenderingContextInternal* aContext,
-                      layers::AsyncCanvasRenderer* aRenderer,
                       nsIInputStream** aStream,
                       imgIEncoder* aEncoder);
 
