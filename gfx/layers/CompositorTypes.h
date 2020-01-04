@@ -66,9 +66,11 @@ enum class TextureFlags : uint32_t {
   
   
   INVALID_COMPOSITOR = 1 << 12,
+  
+  RGB_FROM_YCBCR = 1 << 13,
 
   
-  ALL_BITS           = (1 << 13) - 1,
+  ALL_BITS           = (1 << 14) - 1,
   
   DEFAULT = NO_FLAGS
 };
