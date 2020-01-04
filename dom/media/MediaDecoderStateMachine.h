@@ -156,7 +156,7 @@ public:
   void RemoveOutputStream(MediaStream* aStream);
 
   
-  void SetDormant(bool aDormant);
+  void DispatchSetDormant(bool aDormant);
 
   TimedMetadataEventSource& TimedMetadataEvent() {
     return mMetadataManager.TimedMetadataEvent();
@@ -168,11 +168,17 @@ private:
   
   void InitializationTask();
 
+  void SetDormant(bool aDormant);
+
   void SetAudioCaptured(bool aCaptured);
 
-  void Shutdown();
-public:
+  void NotifyWaitingForResourcesStatusChanged();
 
+  nsRefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
+
+  void Shutdown();
+
+public:
   void DispatchShutdown();
 
   void FinishShutdown();
@@ -186,8 +192,7 @@ public:
   bool OnTaskQueue() const;
 
   
-  
-  nsRefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
+  nsRefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
 
   
   
@@ -341,7 +346,7 @@ public:
 
   
   
-  void NotifyWaitingForResourcesStatusChanged();
+  void DispatchWaitingForResourcesStatusChanged();
 
   
   

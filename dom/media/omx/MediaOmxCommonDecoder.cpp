@@ -116,12 +116,7 @@ MediaOmxCommonDecoder::PauseStateMachine()
     return;
   }
   
-  RefPtr<nsRunnable> event =
-    NS_NewRunnableMethodWithArg<bool>(
-      GetStateMachine(),
-      &MediaDecoderStateMachine::SetDormant,
-      true);
-  GetStateMachine()->OwnerThread()->Dispatch(event.forget());
+  GetStateMachine()->DispatchSetDormant(true);
 }
 
 void
@@ -145,22 +140,12 @@ MediaOmxCommonDecoder::ResumeStateMachine()
                                  SeekTarget::Accurate,
                                  MediaDecoderEventVisibility::Suppressed);
   
-  RefPtr<nsRunnable> event =
-    NS_NewRunnableMethodWithArg<SeekTarget>(
-      GetStateMachine(),
-      &MediaDecoderStateMachine::Seek,
-      target);
-  GetStateMachine()->OwnerThread()->Dispatch(event.forget());
+  GetStateMachine()->InvokeSeek(target);
 
   mNextState = mPlayState;
   ChangeState(PLAY_STATE_LOADING);
   
-  event =
-    NS_NewRunnableMethodWithArg<bool>(
-      GetStateMachine(),
-      &MediaDecoderStateMachine::SetDormant,
-      false);
-  GetStateMachine()->OwnerThread()->Dispatch(event.forget());
+  GetStateMachine()->DispatchSetDormant(false);
   UpdateLogicalPosition();
 }
 
