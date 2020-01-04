@@ -77,7 +77,7 @@ CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation
   
   
   CompositableHost* compositable = CompositableHost::FromIPDLActor(aEdit.compositableParent());
-  if (compositable->GetCompositor() && compositable->GetCompositor()->IsValid()) {
+  if (compositable->GetCompositor() && !compositable->GetCompositor()->IsValid()) {
     return true;
   }
 
