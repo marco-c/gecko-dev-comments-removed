@@ -365,14 +365,13 @@ private:
     MOZ_ASSERT(!NS_IsMainThread());
 
     
-    StreamTime playbackTick = mSource->GraphTimeToStreamTime(aFrom);
+    StreamTime playbackTick = mDestination->GraphTimeToStreamTime(aFrom);
     
     playbackTick += WEBAUDIO_BLOCK_SIZE;
     
     playbackTick += mSharedBuffers->DelaySoFar();
     
-    double playbackTime =
-      mSource->DestinationTimeFromTicks(mDestination, playbackTick);
+    double playbackTime = mDestination->StreamTimeToSeconds(playbackTick);
 
     class Command final : public nsRunnable
     {

@@ -87,7 +87,7 @@ public:
       aOutput->AllocateChannels(aInput.ChannelCount());
 
       
-      StreamTime tick = aStream->GraphTimeToStreamTime(aFrom);
+      StreamTime tick = mDestination->GraphTimeToStreamTime(aFrom);
       float computedGain[WEBAUDIO_BLOCK_SIZE];
       mGain.GetValuesAtTime(tick, computedGain, WEBAUDIO_BLOCK_SIZE);
 

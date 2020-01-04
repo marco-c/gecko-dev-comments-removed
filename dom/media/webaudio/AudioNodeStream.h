@@ -150,25 +150,6 @@ public:
   AudioNodeEngine* Engine() { return mEngine; }
   TrackRate SampleRate() const { return mSampleRate; }
 
-  
-
-
-
-  double FractionalTicksFromDestinationTime(AudioNodeStream* aDestination,
-                                            double aSeconds);
-  
-
-
-
-  StreamTime TicksFromDestinationTime(MediaStream* aDestination,
-                                      double aSeconds);
-  
-
-
-
-  double DestinationTimeFromTicks(AudioNodeStream* aDestination,
-                                  StreamTime aPosition);
-
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 

@@ -141,7 +141,7 @@ public:
       
       
       
-      StreamTime tick = mSource->GraphTimeToStreamTime(aFrom);
+      StreamTime tick = mDestination->GraphTimeToStreamTime(aFrom);
       float values[WEBAUDIO_BLOCK_SIZE];
       mDelay.GetValuesAtTime(tick, values,WEBAUDIO_BLOCK_SIZE);
 
