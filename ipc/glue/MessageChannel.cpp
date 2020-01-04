@@ -773,22 +773,23 @@ MessageChannel::OnMessageReceivedFromLink(const Message& aMsg)
 
     if (shouldWakeUp) {
         NotifyWorkerThread();
-    } else {
+    }
+
+    
+    
+    
+    
+    if (!compress) {
         
         
-        
-        if (!compress) {
-            
-            
-            mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
-        }
+        mWorkerLoop->PostTask(FROM_HERE, new DequeueTask(mDequeueOneTask));
     }
 }
 
 void
 MessageChannel::ProcessPendingRequests(int transaction, int prio)
 {
-    IPC_LOG("ProcessPendingRequests");
+    IPC_LOG("ProcessPendingRequests for seqno=%d, xid=%d", seqno, transaction);
 
     
     for (;;) {
