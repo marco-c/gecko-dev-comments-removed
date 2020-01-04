@@ -1889,9 +1889,11 @@ void nsDisplayList::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
   if (aState->mInPreserves3D) {
     
     for (item = GetBottom(); item; item = item->GetAbove()) {
-      MOZ_ASSERT(item->GetType() == nsDisplayTransform::TYPE_TRANSFORM);
+      MOZ_ASSERT(item->GetType() == nsDisplayTransform::TYPE_TRANSFORM ||
+                 item->GetType() == nsDisplayTransform::TYPE_PERSPECTIVE);
       if (item->Frame()->Extend3DContext() &&
-          !static_cast<nsDisplayTransform*>(item)->IsTransformSeparator()) {
+          (item->GetType() == nsDisplayTransform::TYPE_PERSPECTIVE ||
+           !static_cast<nsDisplayTransform*>(item)->IsTransformSeparator())) {
         item->HitTest(aBuilder, aRect, aState, aOutFrames);
       } else {
         
