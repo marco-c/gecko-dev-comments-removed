@@ -29,7 +29,7 @@ private:
   assign_with_AddRef(T* aRawPtr)
   {
     if (aRawPtr) {
-      AddRefTraits<T>::AddRef(aRawPtr);
+      ConstRemovingRefPtrTraits<T>::AddRef(aRawPtr);
     }
     assign_assuming_AddRef(aRawPtr);
   }
@@ -40,7 +40,7 @@ private:
     T* oldPtr = mRawPtr;
     mRawPtr = aNewPtr;
     if (oldPtr) {
-      AddRefTraits<T>::Release(oldPtr);
+      ConstRemovingRefPtrTraits<T>::Release(oldPtr);
     }
   }
 
@@ -53,7 +53,7 @@ public:
   ~RefPtr()
   {
     if (mRawPtr) {
-      AddRefTraits<T>::Release(mRawPtr);
+      ConstRemovingRefPtrTraits<T>::Release(mRawPtr);
     }
   }
 
@@ -70,7 +70,7 @@ public:
     
   {
     if (mRawPtr) {
-      AddRefTraits<T>::AddRef(mRawPtr);
+      ConstRemovingRefPtrTraits<T>::AddRef(mRawPtr);
     }
   }
 
@@ -86,7 +86,7 @@ public:
     : mRawPtr(aRawPtr)
   {
     if (mRawPtr) {
-      AddRefTraits<T>::AddRef(mRawPtr);
+      ConstRemovingRefPtrTraits<T>::AddRef(mRawPtr);
     }
   }
 
@@ -110,7 +110,7 @@ public:
     
   {
     if (mRawPtr) {
-      AddRefTraits<T>::AddRef(mRawPtr);
+      ConstRemovingRefPtrTraits<T>::AddRef(mRawPtr);
     }
   }
 
@@ -340,17 +340,6 @@ private:
   
   
   
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
   static MOZ_ALWAYS_INLINE void
   AddRefTraitsAddRefHelper(typename mozilla::RemoveConst<T>::Type* aPtr)
   {
@@ -362,8 +351,18 @@ private:
     aPtr->Release();
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   template<class U>
-  struct AddRefTraits
+  struct ConstRemovingRefPtrTraits
   {
     static void AddRef(U* aPtr) {
       RefPtr<T>::AddRefTraitsAddRefHelper(aPtr);
@@ -373,7 +372,7 @@ private:
     }
   };
   template<class U>
-  struct AddRefTraits<const U>
+  struct ConstRemovingRefPtrTraits<const U>
   {
     static void AddRef(const U* aPtr) {
       RefPtr<T>::AddRefTraitsAddRefHelper(const_cast<U*>(aPtr));
