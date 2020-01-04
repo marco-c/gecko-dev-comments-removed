@@ -90,30 +90,31 @@ enum class WebGLTexelFormat : uint8_t {
     
     Auto,
     
-    R8,
     A8,
-    R16F, 
     A16F, 
-    R32F, 
     A32F, 
+    R8,
+    R16F, 
+    R32F, 
     
     RA8,
     RA16F, 
     RA32F, 
     
     RGB8,
-    RGBX8, 
-    BGRX8, 
     RGB565,
     RGB16F, 
     RGB32F, 
     
     RGBA8,
-    BGRA8, 
     RGBA5551,
     RGBA4444,
     RGBA16F, 
-    RGBA32F 
+    RGBA32F, 
+    
+    RGBX8,
+    BGRX8,
+    BGRA8
 };
 
 enum class WebGLTexImageFunc : uint8_t {
