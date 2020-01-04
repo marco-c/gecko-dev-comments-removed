@@ -238,8 +238,13 @@ MacroAssemblerCompat::branchValueIsNurseryObject(Condition cond, ValueOperand va
     MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
     MOZ_ASSERT(temp != ScratchReg && temp != ScratchReg2); 
 
-    
     const Nursery& nursery = GetJitContext()->runtime->gcNursery();
+
+    
+    if (!nursery.exists())
+        return;
+
+    
     Value start = ObjectValue(*reinterpret_cast<JSObject*>(nursery.start()));
 
     movePtr(ImmWord(-ptrdiff_t(start.asRawBits())), temp);
