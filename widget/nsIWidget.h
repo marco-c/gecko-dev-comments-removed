@@ -819,16 +819,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-
-
     NS_IMETHOD GetBounds(LayoutDeviceIntRect& aRect) = 0;
-    NS_IMETHOD GetBoundsUntyped(nsIntRect& aRect) {
-      LayoutDeviceIntRect tmp;
-      nsresult rv = GetBounds(tmp);
-      aRect = tmp.ToUnknownRect();
-      return rv;
-    }
 
     
 

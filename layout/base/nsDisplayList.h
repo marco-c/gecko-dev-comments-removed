@@ -158,6 +158,9 @@ struct AnimatedGeometryRoot
 
 
 class nsDisplayListBuilder {
+  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+  typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
+
   
 
 
@@ -612,7 +615,7 @@ public:
 
   void AdjustWindowDraggingRegion(nsIFrame* aFrame);
 
-  const nsIntRegion& GetWindowDraggingRegion() { return mWindowDraggingRegion; }
+  const LayoutDeviceIntRegion& GetWindowDraggingRegion() { return mWindowDraggingRegion; }
 
   
 
@@ -1209,7 +1212,7 @@ private:
   nsRect                         mDirtyRect;
   nsRegion                       mWindowExcludeGlassRegion;
   nsRegion                       mWindowOpaqueRegion;
-  nsIntRegion                    mWindowDraggingRegion;
+  LayoutDeviceIntRegion          mWindowDraggingRegion;
   
   nsDisplayItem*                 mGlassDisplayItem;
   
