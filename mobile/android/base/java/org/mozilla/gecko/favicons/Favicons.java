@@ -202,20 +202,6 @@ public class Favicons {
 
 
 
-    public static Bitmap getSizedFaviconForPageFromCache(final String pageURL, int targetSize) {
-        final String faviconURL = pageURLMappings.get(pageURL);
-        if (faviconURL == null) {
-            return null;
-        }
-        return getSizedFaviconFromCache(faviconURL, targetSize);
-    }
-
-    
-
-
-
-
-
 
 
 
