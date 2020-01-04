@@ -175,7 +175,7 @@ function test5() {
   
   
   var doc = ParseXML('<root xmlns="ns1"/>')
-  var child = doc.createElementNS(null, 'child');
+  var child = doc.createElement('child');
   doc.documentElement.appendChild(child);
   do_check_serialize(doc);
   do_check_eq(SerializeXML(doc),
