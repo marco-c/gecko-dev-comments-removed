@@ -161,7 +161,7 @@ public:
     static void NotifyMozMouseScrollEvent(const FrameMetrics::ViewID& aScrollId, const nsString& aEvent);
 
     
-    static void NotifyFlushComplete();
+    static void NotifyFlushComplete(nsIPresShell* aShell);
 
     
     static void SuppressDisplayport(const bool& aEnabled);
