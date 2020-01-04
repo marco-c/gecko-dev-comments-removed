@@ -126,48 +126,6 @@ likeCompare(nsAString::const_iterator aPatternItr,
 
 
 
-template <class T, size_t N> class AutoArray
-{
-
-public:
-
-  explicit AutoArray(size_t size)
-  : mBuffer(size <= N ? mAutoBuffer : new T[size])
-  {
-  }
-
-  ~AutoArray()
-  { 
-    if (mBuffer != mAutoBuffer)
-      delete[] mBuffer; 
-  }
-
-  
-
-
-
-
-
-  T *get() 
-  {
-    return mBuffer; 
-  }
-
-private:
-  T *mBuffer;           
-  T mAutoBuffer[N];     
-};
-
-
-
-
-
-
-
-
-
-
-
 
 int
 levenshteinDistance(const nsAString &aStringS,
@@ -207,16 +165,12 @@ levenshteinDistance(const nsAString &aStringS,
     
 
     
-    
-    
-    AutoArray<int, nsAutoString::kDefaultStorageSize> row1(sLen + 1);
-    AutoArray<int, nsAutoString::kDefaultStorageSize> row2(sLen + 1);
+    nsAutoTArray<int, nsAutoString::kDefaultStorageSize> row1;
+    nsAutoTArray<int, nsAutoString::kDefaultStorageSize> row2;
 
     
-    int *prevRow = row1.get();
-    NS_ENSURE_TRUE(prevRow, SQLITE_NOMEM);
-    int *currRow = row2.get();
-    NS_ENSURE_TRUE(currRow, SQLITE_NOMEM);
+    int *prevRow = row1.AppendElements(sLen + 1);
+    int *currRow = row2.AppendElements(sLen + 1);
 
     
     for (uint32_t i = 0; i <= sLen; i++)
