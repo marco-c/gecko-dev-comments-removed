@@ -1723,6 +1723,13 @@ public:
 
   void SyncWindowProperties(nsView* aView);
 
+  
+
+
+  void SetPreventPopupRetargeting(bool aValue) {
+    mPreventPopupRetargeting = aValue;
+  }
+
 #ifdef ANDROID
   virtual nsIDocument* GetTouchEventTargetDocument() = 0;
 #endif
@@ -1856,6 +1863,9 @@ protected:
   
   
   bool mIsNeverPainting;
+
+  
+  bool mPreventPopupRetargeting;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIPresShell, NS_IPRESSHELL_IID)

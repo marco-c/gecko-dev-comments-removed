@@ -262,6 +262,13 @@ nsWebShellWindow::WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y)
   }
 
   
+  
+  nsIPresShell* presShell = GetPresShell();
+  if (presShell) {
+    presShell->SetPreventPopupRetargeting(true);
+  }
+
+  
   if (mDocShell && mDocShell->GetWindow()) {
     nsCOMPtr<EventTarget> eventTarget = mDocShell->GetWindow()->GetTopWindowRoot();
     nsContentUtils::DispatchChromeEvent(mDocShell->GetDocument(),
@@ -283,6 +290,14 @@ nsWebShellWindow::WindowResized(nsIWidget* aWidget, int32_t aWidth, int32_t aHei
   if (shellAsWin) {
     shellAsWin->SetPositionAndSize(0, 0, aWidth, aHeight, 0);
   }
+
+  
+  
+  nsIPresShell* presShell = GetPresShell();
+  if (presShell) {
+    presShell->SetPreventPopupRetargeting(true);
+  }
+
   
   
   if (!IsLocked())
