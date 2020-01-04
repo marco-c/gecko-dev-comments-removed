@@ -75,8 +75,10 @@ ThreadNode.prototype = {
 
 
 
-  _buildInverted: function buildInverted(samples, stackTable, frameTable, stringTable, options) {
-    function getOrAddFrameNode(calls, isLeaf, frameKey, inflatedFrame, isMetaCategory, leafTable) {
+  _buildInverted: function buildInverted(samples, stackTable, frameTable, stringTable,
+                                         options) {
+    function getOrAddFrameNode(calls, isLeaf, frameKey, inflatedFrame, isMetaCategory,
+                               leafTable) {
       
       let frameNode;
 
@@ -114,7 +116,6 @@ ThreadNode.prototype = {
     const STACK_PREFIX_SLOT = stackTable.schema.prefix;
     const STACK_FRAME_SLOT = stackTable.schema.frame;
 
-    const InflatedFrame = FrameUtils.InflatedFrame;
     const getOrAddInflatedFrame = FrameUtils.getOrAddInflatedFrame;
 
     let samplesData = samples.data;
@@ -206,8 +207,8 @@ ThreadNode.prototype = {
         }
 
         
-        let inflatedFrame = getOrAddInflatedFrame(inflatedFrameCache, frameIndex, frameTable,
-                                                  stringTable);
+        let inflatedFrame = getOrAddInflatedFrame(inflatedFrameCache, frameIndex,
+                                                  frameTable, stringTable);
 
         
         mutableFrameKeyOptions.isRoot = stackIndex === null;
@@ -230,8 +231,9 @@ ThreadNode.prototype = {
                                           leafTable);
         if (isLeaf) {
           frameNode.youngestFrameSamples++;
-          frameNode._addOptimizations(inflatedFrame.optimizations, inflatedFrame.implementation,
-                                      sampleTime, stringTable);
+          frameNode._addOptimizations(inflatedFrame.optimizations,
+                                      inflatedFrame.implementation, sampleTime,
+                                      stringTable);
 
           if (byteSize) {
             frameNode.youngestFrameByteSize += byteSize;
@@ -287,53 +289,57 @@ ThreadNode.prototype = {
     let rootCalls = [];
 
     
-    while (entry = workstack.pop()) {
-      spine[entry.level] = entry;
+    do {
+      entry = workstack.pop();
+      if (entry) {
+        spine[entry.level] = entry;
 
-      let node = entry.node;
-      let calls = node.calls;
-      let callSamples = 0;
-      let callByteSize = 0;
+        let node = entry.node;
+        let calls = node.calls;
+        let callSamples = 0;
+        let callByteSize = 0;
 
-      
-      for (let i = 0; i < calls.length; i++) {
-        workstack.push({ node: calls[i], level: entry.level + 1 });
-        callSamples += calls[i].samples;
-        callByteSize += calls[i].byteSize;
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
-      let samplesDelta = node.samples - callSamples;
-      let byteSizeDelta = node.byteSize - callByteSize;
-      if (samplesDelta > 0) {
         
-        let uninvertedCalls = rootCalls;
-        for (let level = entry.level; level > 0; level--) {
-          let callee = spine[level];
-          uninvertedCalls = mergeOrAddFrameNode(uninvertedCalls, callee.node, samplesDelta, byteSizeDelta);
+        for (let i = 0; i < calls.length; i++) {
+          workstack.push({ node: calls[i], level: entry.level + 1 });
+          callSamples += calls[i].samples;
+          callByteSize += calls[i].byteSize;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let samplesDelta = node.samples - callSamples;
+        let byteSizeDelta = node.byteSize - callByteSize;
+        if (samplesDelta > 0) {
+          
+          let uninvertedCalls = rootCalls;
+          for (let level = entry.level; level > 0; level--) {
+            let callee = spine[level];
+            uninvertedCalls = mergeOrAddFrameNode(uninvertedCalls, callee.node,
+                                                  samplesDelta, byteSizeDelta);
+          }
         }
       }
-    }
+    } while (entry);
 
     
     

@@ -28,7 +28,6 @@ function createParentNode(marker) {
 
 
 
-
 function collapseMarkersIntoNode({ rootNode, markersList, filter }) {
   let {
     getCurrentParentNode,

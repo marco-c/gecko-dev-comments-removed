@@ -8,18 +8,20 @@
 
 
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
 const { Heritage } = require("devtools/client/shared/widgets/view-helpers");
 const { AbstractTreeItem } = require("resource://devtools/client/shared/widgets/AbstractTreeItem.jsm");
 const { MarkerBlueprintUtils } = require("devtools/client/performance/modules/marker-blueprint-utils");
 
-const HTML_NS = "http://www.w3.org/1999/xhtml";
 
-const LEVEL_INDENT = 10; 
-const ARROW_NODE_OFFSET = -15; 
-const WATERFALL_MARKER_SIDEBAR_SAFE_BOUNDS = 20; 
-const WATERFALL_MARKER_SIDEBAR_WIDTH = 175; 
-const WATERFALL_MARKER_TIMEBAR_WIDTH_MIN = 5; 
+const LEVEL_INDENT = 10;
+
+const ARROW_NODE_OFFSET = -15;
+
+const WATERFALL_MARKER_SIDEBAR_SAFE_BOUNDS = 20;
+
+const WATERFALL_MARKER_SIDEBAR_WIDTH = 175;
+
+const WATERFALL_MARKER_TIMEBAR_WIDTH_MIN = 5;
 
 
 
@@ -177,7 +179,8 @@ MarkerView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
     let endTime = this.root._interval.endTime;
 
     let sidebarCell = this._buildMarkerSidebar(doc, blueprint, marker);
-    let timebarCell = this._buildMarkerTimebar(doc, blueprint, marker, startTime, endTime, arrowNode);
+    let timebarCell = this._buildMarkerTimebar(doc, blueprint, marker, startTime,
+                                               endTime, arrowNode);
 
     targetNode.appendChild(sidebarCell);
     targetNode.appendChild(timebarCell);
@@ -281,13 +284,19 @@ MarkerView.prototype = Heritage.extend(AbstractTreeItem.prototype, {
 
 
 function isMarkerInRange(e, start, end) {
-  let m_start = e.start|0;
-  let m_end = e.end|0;
+  let mStart = e.start|0;
+  let mEnd = e.end|0;
 
-  return (m_start >= start && m_end <= end) || 
-         (m_start < start && m_end > end) || 
-         (m_start < start && m_end >= start && m_end <= end) || 
-         (m_end > end && m_start >= start && m_start <= end); 
+  return (
+    
+    (mStart >= start && mEnd <= end) ||
+    
+    (mStart < start && mEnd > end) ||
+    
+    (mStart < start && mEnd >= start && mEnd <= end) ||
+    
+    (mEnd > end && mStart >= start && mStart <= end)
+  );
 }
 
 exports.MarkerView = MarkerView;

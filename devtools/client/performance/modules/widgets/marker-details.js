@@ -7,8 +7,6 @@
 
 
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
-
 const EventEmitter = require("devtools/shared/event-emitter");
 const { MarkerDOMUtils } = require("devtools/client/performance/modules/marker-dom-utils");
 
@@ -88,6 +86,7 @@ MarkerDetails.prototype = {
 
 
 
+
   render: function (options) {
     let { marker, frames } = options;
     this.empty();
@@ -96,7 +95,8 @@ MarkerDetails.prototype = {
     elements.push(MarkerDOMUtils.buildTitle(this._document, marker));
     elements.push(MarkerDOMUtils.buildDuration(this._document, marker));
     MarkerDOMUtils.buildFields(this._document, marker).forEach(f => elements.push(f));
-    MarkerDOMUtils.buildCustom(this._document, marker, options).forEach(f => elements.push(f));
+    MarkerDOMUtils.buildCustom(this._document, marker, options)
+                  .forEach(f => elements.push(f));
 
     
     
@@ -152,7 +152,8 @@ function findActionFromEvent(target, container) {
   let el = target;
   let action;
   while (el !== container) {
-    if (action = el.getAttribute("data-action")) {
+    action = el.getAttribute("data-action");
+    if (action) {
       return JSON.parse(action);
     }
     el = el.parentNode;

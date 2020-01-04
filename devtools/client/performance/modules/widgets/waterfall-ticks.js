@@ -15,16 +15,23 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 const FIND_OPTIMAL_TICK_INTERVAL_MAX_ITERS = 100;
 
-const WATERFALL_HEADER_TICKS_MULTIPLE = 5; 
-const WATERFALL_HEADER_TICKS_SPACING_MIN = 50; 
-const WATERFALL_HEADER_TEXT_PADDING = 3; 
 
-const WATERFALL_BACKGROUND_TICKS_MULTIPLE = 5; 
+const WATERFALL_HEADER_TICKS_MULTIPLE = 5;
+
+const WATERFALL_HEADER_TICKS_SPACING_MIN = 50;
+
+const WATERFALL_HEADER_TEXT_PADDING = 3;
+
+
+const WATERFALL_BACKGROUND_TICKS_MULTIPLE = 5;
 const WATERFALL_BACKGROUND_TICKS_SCALES = 3;
-const WATERFALL_BACKGROUND_TICKS_SPACING_MIN = 10; 
+
+const WATERFALL_BACKGROUND_TICKS_SPACING_MIN = 10;
 const WATERFALL_BACKGROUND_TICKS_COLOR_RGB = [128, 136, 144];
-const WATERFALL_BACKGROUND_TICKS_OPACITY_MIN = 32; 
-const WATERFALL_BACKGROUND_TICKS_OPACITY_ADD = 32; 
+
+const WATERFALL_BACKGROUND_TICKS_OPACITY_MIN = 32;
+
+const WATERFALL_BACKGROUND_TICKS_OPACITY_ADD = 32;
 
 
 
@@ -115,7 +122,8 @@ WaterfallHeader.prototype = {
 
     
     let canvasWidth = canvas.width = waterfallWidth;
-    let canvasHeight = canvas.height = 1; 
+    
+    let canvasHeight = canvas.height = 1;
 
     
     let imageData = ctx.createImageData(canvasWidth, canvasHeight);

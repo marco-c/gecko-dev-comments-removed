@@ -114,6 +114,7 @@ const SUCCESSFUL_OUTCOMES = [
 
 
 
+
 const OptimizationSite = function (id, opts) {
   this.id = id;
   this.data = opts;
@@ -159,7 +160,9 @@ const JITOptimizations = function (rawSites, stringTable) {
     let types = data.types.map((t) => {
       let typeset = maybeTypeset(t.typeset, stringTable);
       if (typeset) {
-        typeset.forEach(t => t.id = site.id);
+        typeset.forEach(ts => {
+          ts.id = site.id;
+        });
       }
 
       return {
@@ -288,7 +291,6 @@ function createTierGraphDataFromFrameNode(frameNode, sampleTimes, bucketSize) {
     
     if (sampleTime >= (currentBucketStartTime + bucketSize) ||
         i >= sampleTimes.length) {
-
       let dataPoint = {};
       dataPoint.values = [];
       dataPoint.delta = currentBucketStartTime;
@@ -320,7 +322,8 @@ function createTierGraphDataFromFrameNode(frameNode, sampleTimes, bucketSize) {
     
     if (nextOptSample && nextOptSample.time === sampleTime) {
       
-      implEnum = IMPLEMENTATION_MAP[stringTable[nextOptSample.implementation] || "interpreter"];
+      implEnum = IMPLEMENTATION_MAP[stringTable[nextOptSample.implementation] ||
+                                    "interpreter"];
       bucket[implEnum] = (bucket[implEnum] || 0) + 1;
       nextOptSample = tierData[++tierDataIndex];
     }
