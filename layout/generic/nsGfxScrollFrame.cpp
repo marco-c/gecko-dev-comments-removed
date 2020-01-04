@@ -2881,7 +2881,7 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       
       
       usingDisplayport = nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
-    } else if (mIsRoot) {
+    } else {
       
       
       nsRect displayportBase = dirtyRect;
@@ -2891,14 +2891,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       }
       usingDisplayport = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
             *aBuilder, mOuter, displayportBase, &displayPort);
-    } else {
-      
-      
-      
-      
-      nsRect displayportBase = dirtyRect;
-      usingDisplayport = nsLayoutUtils::GetOrMaybeCreateDisplayPort(
-          *aBuilder, mOuter, displayportBase, &displayPort);
     }
 
     
