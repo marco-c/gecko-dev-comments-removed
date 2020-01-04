@@ -926,8 +926,9 @@ public:
   
   void NotifyInvalidation(const nsIntRect& aRect, uint32_t aFlags);
   
-  void NotifyDidPaintForSubtree(uint32_t aFlags);
-  void FireDOMPaintEvent(nsInvalidateRequestList* aList);
+  void NotifyDidPaintForSubtree(uint32_t aFlags, uint64_t aTransactionId = 0,
+                                const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());
+  void FireDOMPaintEvent(nsInvalidateRequestList* aList, uint64_t aTransactionId);
 
   
   

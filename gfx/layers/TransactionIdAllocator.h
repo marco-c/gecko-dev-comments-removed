@@ -33,6 +33,13 @@ public:
 
 
 
+  virtual uint64_t LastTransactionId() const = 0;
+
+  
+
+
+
+
 
 
 
