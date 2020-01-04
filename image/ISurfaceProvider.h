@@ -18,6 +18,7 @@
 #include "mozilla/gfx/2D.h"
 
 #include "imgFrame.h"
+#include "SurfaceCache.h"
 
 namespace mozilla {
 namespace image {
@@ -38,11 +39,6 @@ public:
   virtual DrawableFrameRef DrawableRef() = 0;
 
   
-  
-  
-  virtual bool IsPlaceholder() const = 0;
-
-  
   virtual bool IsFinished() const = 0;
 
   
@@ -57,8 +53,22 @@ public:
   
   virtual size_t LogicalSizeInBytes() const = 0;
 
+  
+  
+  
+  
+  AvailabilityState& Availability() { return mAvailability; }
+  const AvailabilityState& Availability() const { return mAvailability; }
+
 protected:
+  explicit ISurfaceProvider(AvailabilityState aAvailability)
+    : mAvailability(aAvailability)
+  { }
+
   virtual ~ISurfaceProvider() { }
+
+private:
+  AvailabilityState mAvailability;
 };
 
 
@@ -70,11 +80,11 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SimpleSurfaceProvider, override)
 
   explicit SimpleSurfaceProvider(NotNull<imgFrame*> aSurface)
-    : mSurface(aSurface)
+    : ISurfaceProvider(AvailabilityState::StartAvailable())
+    , mSurface(aSurface)
   { }
 
   DrawableFrameRef DrawableRef() override { return mSurface->DrawableRef(); }
-  bool IsPlaceholder() const override { return false; }
   bool IsFinished() const override { return mSurface->IsFinished(); }
   bool IsLocked() const override { return bool(mLockRef); }
 

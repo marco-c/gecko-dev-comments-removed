@@ -71,6 +71,8 @@ typedef size_t Cost;
 
 
 
+
+
 static const Cost sPlaceholderCost = 1;
 
 static Cost
@@ -141,8 +143,8 @@ public:
     , mImageKey(aImageKey)
     , mSurfaceKey(aSurfaceKey)
   {
-    MOZ_ASSERT(!IsPlaceholder() || mCost == sPlaceholderCost,
-               "Placeholder should have trivial cost");
+    MOZ_ASSERT(aProvider || mCost == sPlaceholderCost,
+               "Old-style placeholders should have trivial cost");
     MOZ_ASSERT(mImageKey, "Must have a valid image key");
   }
 
@@ -168,7 +170,11 @@ public:
     mProvider->SetLocked(aLocked);
   }
 
-  bool IsPlaceholder() const { return !mProvider || mProvider->IsPlaceholder(); }
+  bool IsPlaceholder() const
+  {
+    return !mProvider || mProvider->Availability().IsPlaceholder();
+  }
+
   bool IsLocked() const { return !IsPlaceholder() && mProvider->IsLocked(); }
 
   ImageKey GetImageKey() const { return mImageKey; }
@@ -449,7 +455,8 @@ public:
   InsertOutcome Insert(ISurfaceProvider* aProvider,
                        const Cost        aCost,
                        const ImageKey    aImageKey,
-                       const SurfaceKey& aSurfaceKey)
+                       const SurfaceKey& aSurfaceKey,
+                       bool              aSetAvailable)
   {
     
     
@@ -488,6 +495,11 @@ public:
     if (!cache) {
       cache = new ImageSurfaceCache;
       mImageCaches.Put(aImageKey, cache);
+    }
+
+    
+    if (aSetAvailable) {
+      aProvider->Availability().SetAvailable();
     }
 
     RefPtr<CachedSurface> surface =
@@ -665,6 +677,25 @@ public:
   size_t MaximumCapacity() const
   {
     return size_t(mMaxCost);
+  }
+
+  void SurfaceAvailable(NotNull<ISurfaceProvider*> aProvider,
+                        const ImageKey             aImageKey,
+                        const SurfaceKey&          aSurfaceKey)
+  {
+    if (!aProvider->Availability().IsPlaceholder()) {
+      MOZ_ASSERT_UNREACHABLE("Calling SurfaceAvailable on non-placeholder");
+      return;
+    }
+
+    
+    
+    
+    
+    
+    
+    Cost cost = aProvider->LogicalSizeInBytes();
+    Insert(aProvider, cost, aImageKey, aSurfaceKey,  true);
   }
 
   void LockImage(const ImageKey aImageKey)
@@ -1039,7 +1070,8 @@ SurfaceCache::Insert(NotNull<ISurfaceProvider*> aProvider,
 
   MutexAutoLock lock(sInstance->GetMutex());
   Cost cost = aProvider->LogicalSizeInBytes();
-  return sInstance->Insert(aProvider.get(), cost, aImageKey, aSurfaceKey);
+  return sInstance->Insert(aProvider.get(), cost, aImageKey, aSurfaceKey,
+                            false);
 }
 
  InsertOutcome
@@ -1051,7 +1083,8 @@ SurfaceCache::InsertPlaceholder(const ImageKey    aImageKey,
   }
 
   MutexAutoLock lock(sInstance->GetMutex());
-  return sInstance->Insert(nullptr, sPlaceholderCost, aImageKey, aSurfaceKey);
+  return sInstance->Insert(nullptr, sPlaceholderCost, aImageKey, aSurfaceKey,
+                            false);
 }
 
  bool
@@ -1073,6 +1106,19 @@ SurfaceCache::CanHold(size_t aSize)
   }
 
   return sInstance->CanHold(aSize);
+}
+
+ void
+SurfaceCache::SurfaceAvailable(NotNull<ISurfaceProvider*> aProvider,
+                               const ImageKey             aImageKey,
+                               const SurfaceKey&          aSurfaceKey)
+{
+  if (!sInstance) {
+    return;
+  }
+
+  MutexAutoLock lock(sInstance->GetMutex());
+  sInstance->SurfaceAvailable(aProvider, aImageKey, aSurfaceKey);
 }
 
  void

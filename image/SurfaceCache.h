@@ -29,6 +29,7 @@ namespace image {
 class Image;
 class ISurfaceProvider;
 class LookupResult;
+class SurfaceCacheImpl;
 struct SurfaceMemoryCounter;
 
 
@@ -117,6 +118,36 @@ VectorSurfaceKey(const gfx::IntSize& aSize,
   
   return SurfaceKey(aSize, aSVGContext, aAnimationTime, DefaultSurfaceFlags());
 }
+
+
+
+
+
+
+
+
+
+
+
+
+class AvailabilityState
+{
+public:
+  static AvailabilityState StartAvailable() { return AvailabilityState(true); }
+  static AvailabilityState StartAsPlaceholder() { return AvailabilityState(false); }
+
+  bool IsAvailable() const { return mIsAvailable; }
+  bool IsPlaceholder() const { return !mIsAvailable; }
+
+private:
+  friend class SurfaceCacheImpl;
+
+  explicit AvailabilityState(bool aIsAvailable) : mIsAvailable(aIsAvailable) { }
+
+  void SetAvailable() { mIsAvailable = true; }
+
+  bool mIsAvailable;
+};
 
 enum class InsertOutcome : uint8_t {
   SUCCESS,                 
@@ -282,6 +313,37 @@ struct SurfaceCache
 
   static InsertOutcome InsertPlaceholder(const ImageKey    aImageKey,
                                          const SurfaceKey& aSurfaceKey);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void SurfaceAvailable(NotNull<ISurfaceProvider*> aProvider,
+                               const ImageKey    aImageKey,
+                               const SurfaceKey& aSurfaceKey);
 
   
 
