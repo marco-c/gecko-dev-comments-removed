@@ -66,8 +66,8 @@ public:
 
   int32_t AsyncShutdownTimeoutMs();
 
-  void RunPluginCrashCallbacks(const uint32_t aPluginId,
-                               const nsACString& aPluginName);
+  NS_IMETHOD RunPluginCrashCallbacks(uint32_t aPluginId,
+                                     const nsACString& aPluginName) override;
 
   
   
