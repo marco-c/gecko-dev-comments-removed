@@ -4752,9 +4752,15 @@ ScrollFrameHelper::FinishReflowForScrollbar(nsIContent* aContent,
 bool
 ScrollFrameHelper::ReflowFinished()
 {
-  nsAutoScriptBlocker scriptBlocker;
   mPostedReflowCallback = false;
 
+  if (NS_SUBTREE_DIRTY(mOuter)) {
+    
+    
+    return false;
+  }
+
+  nsAutoScriptBlocker scriptBlocker;
   ScrollToRestoredPosition();
 
   
@@ -4768,9 +4774,9 @@ ScrollFrameHelper::ReflowFinished()
     mDestination = GetScrollPosition();
   }
 
-  if (NS_SUBTREE_DIRTY(mOuter) || !mUpdateScrollbarAttributes)
+  if (!mUpdateScrollbarAttributes) {
     return false;
-
+  }
   mUpdateScrollbarAttributes = false;
 
   
