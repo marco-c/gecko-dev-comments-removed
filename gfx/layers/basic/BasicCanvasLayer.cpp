@@ -52,7 +52,7 @@ BasicCanvasLayer::Paint(DrawTarget* aDT,
 
   FillRectWithMask(aDT, aDeviceOffset,
                    Rect(0, 0, mBounds.width, mBounds.height),
-                   mSurface, ToFilter(mFilter),
+                   mSurface, mFilter,
                    DrawOptions(GetEffectiveOpacity(), GetEffectiveOperator(this)),
                    aMaskLayer);
 
@@ -65,7 +65,7 @@ already_AddRefed<CanvasLayer>
 BasicLayerManager::CreateCanvasLayer()
 {
   NS_ASSERTION(InConstruction(), "Only allowed in construction phase");
-  RefPtr<CanvasLayer> layer = new BasicCanvasLayer(this);
+  nsRefPtr<CanvasLayer> layer = new BasicCanvasLayer(this);
   return layer.forget();
 }
 

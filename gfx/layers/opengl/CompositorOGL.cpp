@@ -12,7 +12,6 @@
 #include "GLUploadHelpers.h"
 #include "Layers.h"                     
 #include "LayerScope.h"                 
-#include "gfx2DGlue.h"                  
 #include "gfxCrashReporterUtils.h"      
 #include "GraphicsFilter.h"             
 #include "gfxPlatform.h"                
@@ -103,7 +102,7 @@ CompositorOGL::~CompositorOGL()
 already_AddRefed<mozilla::gl::GLContext>
 CompositorOGL::CreateContext()
 {
-  RefPtr<GLContext> context;
+  nsRefPtr<GLContext> context;
 
   
   void* widgetOpenGLContext = mWidget->GetNativeData(NS_NATIVE_OPENGL_CONTEXT);
@@ -170,7 +169,7 @@ CompositorOGL::CleanupResources()
                          reinterpret_cast<uintptr_t>(nullptr));
 #endif
 
-  RefPtr<GLContext> ctx = mGLContext->GetSharedContext();
+  nsRefPtr<GLContext> ctx = mGLContext->GetSharedContext();
   if (!ctx) {
     ctx = mGLContext;
   }
@@ -1506,7 +1505,7 @@ CompositorOGL::GetReleaseFence()
     return FenceHandle();
   }
 
-  RefPtr<FenceHandle::FdObj> fdObj = mReleaseFenceHandle.GetDupFdObj();
+  nsRefPtr<FenceHandle::FdObj> fdObj = mReleaseFenceHandle.GetDupFdObj();
   return FenceHandle(fdObj);
 }
 

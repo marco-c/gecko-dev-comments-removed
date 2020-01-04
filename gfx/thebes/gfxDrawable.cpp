@@ -91,7 +91,7 @@ gfxSurfaceDrawable::DrawInternal(gfxContext* aContext,
     patternTransform.Invert();
 
     SurfacePattern pattern(mSourceSurface, extend,
-                           patternTransform, ToFilter(aFilter), aSamplingRect);
+                           patternTransform, aFilter, aSamplingRect);
 
     Rect fillRect = ToRect(aFillRect);
     DrawTarget* dt = aContext->GetDrawTarget();
@@ -126,12 +126,12 @@ gfxCallbackDrawable::MakeSurfaceDrawable(const GraphicsFilter aFilter)
     if (!dt)
         return nullptr;
 
-    RefPtr<gfxContext> ctx = new gfxContext(dt);
+    nsRefPtr<gfxContext> ctx = new gfxContext(dt);
     Draw(ctx, gfxRect(0, 0, mSize.width, mSize.height), false, aFilter);
 
     RefPtr<SourceSurface> surface = dt->Snapshot();
     if (surface) {
-        RefPtr<gfxSurfaceDrawable> drawable = new gfxSurfaceDrawable(surface, mSize);
+        nsRefPtr<gfxSurfaceDrawable> drawable = new gfxSurfaceDrawable(surface, mSize);
         return drawable.forget();
     }
     return nullptr;
@@ -188,15 +188,15 @@ public:
                                aTransform);
     }
 private:
-    RefPtr<gfxDrawable> mDrawable;
+    nsRefPtr<gfxDrawable> mDrawable;
 };
 
 already_AddRefed<gfxCallbackDrawable>
 gfxPatternDrawable::MakeCallbackDrawable()
 {
-    RefPtr<gfxDrawingCallback> callback =
+    nsRefPtr<gfxDrawingCallback> callback =
         new DrawingCallbackFromDrawable(this);
-    RefPtr<gfxCallbackDrawable> callbackDrawable =
+    nsRefPtr<gfxCallbackDrawable> callbackDrawable =
         new gfxCallbackDrawable(callback, mSize);
     return callbackDrawable.forget();
 }
@@ -222,7 +222,7 @@ gfxPatternDrawable::Draw(gfxContext* aContext,
         
         
         
-        RefPtr<gfxCallbackDrawable> callbackDrawable = MakeCallbackDrawable();
+        nsRefPtr<gfxCallbackDrawable> callbackDrawable = MakeCallbackDrawable();
         return callbackDrawable->Draw(aContext, aFillRect, true, aFilter,
                                       aOpacity, aTransform);
     }

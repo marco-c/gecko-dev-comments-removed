@@ -35,6 +35,7 @@ using mozilla::gfx::BackendType;
 using mozilla::gfx::DataSourceSurface;
 using mozilla::gfx::DrawTarget;
 using mozilla::gfx::Factory;
+using mozilla::gfx::Filter;
 using mozilla::gfx::IntPoint;
 using mozilla::gfx::IntRect;
 using mozilla::gfx::IntSize;
@@ -484,14 +485,14 @@ nsresult nsCocoaUtils::CreateNSImageFromImageContainer(imgIContainer *aImage, ui
       return NS_ERROR_FAILURE;
     }
 
-    RefPtr<gfxContext> context = new gfxContext(drawTarget);
+    nsRefPtr<gfxContext> context = new gfxContext(drawTarget);
     if (!context) {
       NS_ERROR("Failed to create gfxContext");
       return NS_ERROR_FAILURE;
     }
 
     aImage->Draw(context, scaledSize, ImageRegion::Create(scaledSize),
-                 aWhichFrame, GraphicsFilter::FILTER_NEAREST, Nothing(),
+                 aWhichFrame, Filter::POINT, Nothing(),
                  imgIContainer::FLAG_SYNC_DECODE);
 
     surface = drawTarget->Snapshot();

@@ -18,7 +18,6 @@
 #include "GLUploadHelpers.h"
 #include "Layers.h"                     
 #include "LayerScope.h"                 
-#include "gfx2DGlue.h"                  
 #include "gfxCrashReporterUtils.h"      
 #include "gfxMatrix.h"                  
 #include "GraphicsFilter.h"             

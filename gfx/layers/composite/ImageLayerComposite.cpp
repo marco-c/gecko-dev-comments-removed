@@ -18,7 +18,7 @@
 #include "mozilla/layers/TextureHost.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"
-#include "mozilla/RefPtr.h"                   
+#include "mozilla/nsRefPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
 #include "nsString.h"                   
@@ -166,7 +166,7 @@ ImageLayerComposite::CleanupResources()
 gfx::Filter
 ImageLayerComposite::GetEffectFilter()
 {
-  return gfx::ToFilter(mFilter);
+  return mFilter;
 }
 
 void

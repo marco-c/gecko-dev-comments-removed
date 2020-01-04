@@ -2,9 +2,10 @@
 
 
 
+
+
 #ifndef GFX_2D_GLUE_H
 #define GFX_2D_GLUE_H
-
 
 #include "gfxPlatform.h"
 #include "gfxRect.h"
@@ -58,30 +59,6 @@ inline IntMargin ToIntMargin(const nsIntMargin& aMargin)
 inline Size ToSize(const gfxSize &aSize)
 {
   return Size(Float(aSize.width), Float(aSize.height));
-}
-
-inline Filter ToFilter(GraphicsFilter aFilter)
-{
-  switch (aFilter) {
-  case GraphicsFilter::FILTER_NEAREST:
-    return Filter::POINT;
-  case GraphicsFilter::FILTER_GOOD:
-    return Filter::GOOD;
-  default:
-    return Filter::LINEAR;
-  }
-}
-
-inline GraphicsFilter ThebesFilter(Filter aFilter)
-{
-  switch (aFilter) {
-  case Filter::POINT:
-    return GraphicsFilter::FILTER_NEAREST;
-  case Filter::GOOD:
-    return GraphicsFilter::FILTER_GOOD;
-  default:
-    return GraphicsFilter::FILTER_BEST;
-  }
 }
 
 inline gfxPoint ThebesPoint(const Point &aPoint)

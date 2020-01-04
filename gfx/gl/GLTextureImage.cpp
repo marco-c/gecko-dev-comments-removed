@@ -270,7 +270,7 @@ TextureImage::TextureImage(const gfx::IntSize& aSize,
     : mSize(aSize)
     , mWrapMode(aWrapMode)
     , mContentType(aContentType)
-    , mFilter(GraphicsFilter::FILTER_GOOD)
+    , mFilter(Filter::GOOD)
     , mFlags(aFlags)
 {}
 
@@ -664,7 +664,7 @@ void TiledTextureImage::Resize(const gfx::IntSize& aSize)
             }
 
             
-            RefPtr<TextureImage> teximg =
+            nsRefPtr<TextureImage> teximg =
                 TileGenFunc(mGL, size, mContentType, mFlags, mImageFormat);
             if (replace)
                 mImages.ReplaceElementAt(i, teximg);
@@ -723,7 +723,7 @@ CreateBasicTextureImage(GLContext* aGL,
     aGL->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_S, aWrapMode);
     aGL->fTexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_T, aWrapMode);
 
-    RefPtr<BasicTextureImage> texImage =
+    nsRefPtr<BasicTextureImage> texImage =
         new BasicTextureImage(texture, aSize, aWrapMode, aContentType,
                               aGL, aFlags, aImageFormat);
     return texImage.forget();

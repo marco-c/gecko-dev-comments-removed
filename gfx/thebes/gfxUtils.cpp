@@ -453,8 +453,8 @@ CreateSamplingRestrictedDrawable(gfxDrawable* aDrawable,
 
     nsRefPtr<gfxContext> tmpCtx = new gfxContext(target);
     tmpCtx->SetOp(OptimalFillOp());
-    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), true,
-                    GraphicsFilter::FILTER_BEST, 1.0, gfxMatrix::Translation(needed.TopLeft()));
+    aDrawable->Draw(tmpCtx, needed - needed.TopLeft(), true, Filter::LINEAR,
+                    1.0, gfxMatrix::Translation(needed.TopLeft()));
     RefPtr<SourceSurface> surface = target->Snapshot();
 
     nsRefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(surface, size, gfxMatrix::Translation(-needed.TopLeft()));
@@ -559,7 +559,7 @@ static GraphicsFilter ReduceResamplingFilter(GraphicsFilter aFilter,
         || aImgHeight <= kSmallImageSizeThreshold) {
         
         
-        return GraphicsFilter::FILTER_NEAREST;
+        return Filter::POINT;
     }
 
     if (aImgHeight * kLargeStretch <= aSourceHeight || aImgWidth * kLargeStretch <= aSourceWidth) {
@@ -570,7 +570,7 @@ static GraphicsFilter ReduceResamplingFilter(GraphicsFilter aFilter,
         
         
         if (fabs(aSourceWidth - aImgWidth)/aImgWidth < 0.5 || fabs(aSourceHeight - aImgHeight)/aImgHeight < 0.5)
-            return GraphicsFilter::FILTER_NEAREST;
+            return Filter::POINT;
 
         
         
@@ -695,7 +695,7 @@ PrescaleAndTileDrawable(gfxDrawable* aDrawable,
                             aContext->CurrentAntialiasMode());
 
     SurfacePattern scaledImagePattern(scaledImage, ExtendMode::REPEAT,
-                                      Matrix(), ToFilter(aFilter));
+                                      Matrix(), aFilter);
     destDrawTarget->FillRect(scaledNeededRect, scaledImagePattern, drawOptions);
   }
   return true;

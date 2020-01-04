@@ -112,7 +112,7 @@ protected:
   }
 
   
-  const RefPtr<SVGDocumentWrapper> mDocWrapper;
+  const nsRefPtr<SVGDocumentWrapper> mDocWrapper;
   VectorImage* const mVectorImage;   
   bool mHonoringInvalidations;
 };
@@ -152,7 +152,7 @@ public:
 
     
     
-    RefPtr<SVGParseCompleteListener> kungFuDeathGroup(this);
+    nsRefPtr<SVGParseCompleteListener> kungFuDeathGroup(this);
 
     mImage->OnSVGDocumentParsed();
   }
@@ -211,7 +211,7 @@ public:
 
     
     
-    RefPtr<SVGLoadEventListener> kungFuDeathGroup(this);
+    nsRefPtr<SVGLoadEventListener> kungFuDeathGroup(this);
 
     nsAutoString eventType;
     aEvent->GetType(eventType);
@@ -266,7 +266,7 @@ public:
                           const GraphicsFilter& aFilter,
                           const gfxMatrix& aTransform);
 private:
-  RefPtr<SVGDocumentWrapper> mSVGDocumentWrapper;
+  nsRefPtr<SVGDocumentWrapper> mSVGDocumentWrapper;
   const IntRect              mViewport;
   const IntSize                mSize;
   uint32_t                     mImageFlags;
@@ -733,12 +733,10 @@ VectorImage::GetFrameAtSize(const IntSize& aSize,
     return nullptr;
   }
 
-  RefPtr<gfxContext> context = new gfxContext(dt);
+  nsRefPtr<gfxContext> context = new gfxContext(dt);
 
-  auto result = Draw(context, aSize,
-                     ImageRegion::Create(aSize),
-                     aWhichFrame, GraphicsFilter::FILTER_NEAREST,
-                     Nothing(), aFlags);
+  auto result = Draw(context, aSize, ImageRegion::Create(aSize),
+                     aWhichFrame, Filter::POINT, Nothing(), aFlags);
 
   return result == DrawResult::SUCCESS ? dt->Snapshot() : nullptr;
 }
@@ -864,7 +862,7 @@ VectorImage::Draw(gfxContext* aContext,
   if (result) {
     RefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
     if (surface) {
-      RefPtr<gfxDrawable> svgDrawable =
+      nsRefPtr<gfxDrawable> svgDrawable =
         new gfxSurfaceDrawable(surface, result.DrawableRef()->GetSize());
       Show(svgDrawable, params);
       return DrawResult::SUCCESS;
@@ -885,13 +883,13 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
   mSVGDocumentWrapper->UpdateViewportBounds(aParams.viewportSize);
   mSVGDocumentWrapper->FlushImageTransformInvalidation();
 
-  RefPtr<gfxDrawingCallback> cb =
+  nsRefPtr<gfxDrawingCallback> cb =
     new SVGDrawingCallback(mSVGDocumentWrapper,
                            IntRect(IntPoint(0, 0), aParams.viewportSize),
                            aParams.size,
                            aParams.flags);
 
-  RefPtr<gfxDrawable> svgDrawable =
+  nsRefPtr<gfxDrawable> svgDrawable =
     new gfxCallbackDrawable(cb, aParams.size);
 
   bool bypassCache = bool(aParams.flags & FLAG_BYPASS_SURFACE_CACHE) ||
@@ -914,11 +912,11 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
 
   
   
-  RefPtr<imgFrame> frame = new imgFrame;
+  nsRefPtr<imgFrame> frame = new imgFrame;
   nsresult rv =
     frame->InitWithDrawable(svgDrawable, aParams.size,
                             SurfaceFormat::B8G8R8A8,
-                            GraphicsFilter::FILTER_NEAREST, aParams.flags);
+                            Filter::POINT, aParams.flags);
 
   
   
@@ -941,7 +939,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
                                         aParams.animationTime));
 
   
-  RefPtr<gfxDrawable> drawable =
+  nsRefPtr<gfxDrawable> drawable =
     new gfxSurfaceDrawable(surface, aParams.size);
   Show(drawable, aParams);
 

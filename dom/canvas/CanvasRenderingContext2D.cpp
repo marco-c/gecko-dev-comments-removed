@@ -1018,7 +1018,7 @@ CanvasRenderingContext2D::ParseColor(const nsAString& aString,
   } else {
     
     nsCOMPtr<nsIPresShell> presShell = GetPresShell();
-    RefPtr<nsStyleContext> parentContext;
+    nsRefPtr<nsStyleContext> parentContext;
     if (mCanvasElement && mCanvasElement->IsInDoc()) {
       
       parentContext = nsComputedDOMStyle::GetStyleContextForElement(
@@ -1389,7 +1389,7 @@ CanvasRenderingContext2D::EnsureTarget(RenderingMode aRenderingMode)
       ownerDoc = mCanvasElement->OwnerDoc();
     }
 
-    RefPtr<LayerManager> layerManager = nullptr;
+    nsRefPtr<LayerManager> layerManager = nullptr;
 
     if (ownerDoc) {
       layerManager =
@@ -1527,7 +1527,7 @@ CanvasRenderingContext2D::ClearTarget()
 
   
   
-  RefPtr<nsStyleContext> canvasStyle;
+  nsRefPtr<nsStyleContext> canvasStyle;
   if (mCanvasElement && mCanvasElement->IsInDoc()) {
     nsCOMPtr<nsIPresShell> presShell = GetPresShell();
     if (presShell) {
@@ -1999,7 +1999,7 @@ CanvasRenderingContext2D::GetFillRule(nsAString& aString)
 already_AddRefed<CanvasGradient>
 CanvasRenderingContext2D::CreateLinearGradient(double x0, double y0, double x1, double y1)
 {
-  RefPtr<CanvasGradient> grad =
+  nsRefPtr<CanvasGradient> grad =
     new CanvasLinearGradient(this, Point(x0, y0), Point(x1, y1));
 
   return grad.forget();
@@ -2015,7 +2015,7 @@ CanvasRenderingContext2D::CreateRadialGradient(double x0, double y0, double r0,
     return nullptr;
   }
 
-  RefPtr<CanvasGradient> grad =
+  nsRefPtr<CanvasGradient> grad =
     new CanvasRadialGradient(this, Point(x0, y0), r0, Point(x1, y1), r1);
 
   return grad.forget();
@@ -2059,7 +2059,7 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& source,
       
       RefPtr<SourceSurface> srcSurf = srcCanvas->GetSurfaceSnapshot();
 
-      RefPtr<CanvasPattern> pat =
+      nsRefPtr<CanvasPattern> pat =
         new CanvasPattern(this, srcSurf, repeatMode, htmlElement->NodePrincipal(), canvas->IsWriteOnly(), false);
 
       return pat.forget();
@@ -2083,7 +2083,7 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& source,
     
     
     
-    RefPtr<CanvasPattern> pat =
+    nsRefPtr<CanvasPattern> pat =
       new CanvasPattern(this, srcSurf, repeatMode, nullptr, false, true);
 
     return pat.forget();
@@ -2102,7 +2102,7 @@ CanvasRenderingContext2D::CreatePattern(const CanvasImageSource& source,
     return nullptr;
   }
 
-  RefPtr<CanvasPattern> pat =
+  nsRefPtr<CanvasPattern> pat =
     new CanvasPattern(this, res.mSourceSurface, repeatMode, res.mPrincipal,
                              res.mIsWriteOnly, res.mCORSUsed);
 
@@ -2133,7 +2133,7 @@ CreateStyleRule(nsINode* aNode,
   const nsCSSProperty aProp2, const nsAString& aValue2, bool* aChanged2,
   ErrorResult& error)
 {
-  RefPtr<StyleRule> rule;
+  nsRefPtr<StyleRule> rule;
 
   nsIPrincipal* principal = aNode->NodePrincipal();
   nsIDocument* document = aNode->OwnerDoc();
@@ -2185,7 +2185,7 @@ GetFontParentStyleContext(Element* aElement, nsIPresShell* presShell,
 {
   if (aElement && aElement->IsInDoc()) {
     
-    RefPtr<nsStyleContext> result =
+    nsRefPtr<nsStyleContext> result =
       nsComputedDOMStyle::GetStyleContextForElement(aElement, nullptr,
                                                     presShell);
     if (!result) {
@@ -2197,7 +2197,7 @@ GetFontParentStyleContext(Element* aElement, nsIPresShell* presShell,
 
   
   bool changed;
-  RefPtr<css::StyleRule> parentRule =
+  nsRefPtr<css::StyleRule> parentRule =
     CreateFontStyleRule(NS_LITERAL_STRING("10px sans-serif"),
                         presShell->GetDocument(), &changed, error);
 
@@ -2207,7 +2207,7 @@ GetFontParentStyleContext(Element* aElement, nsIPresShell* presShell,
 
   nsTArray<nsCOMPtr<nsIStyleRule>> parentRules;
   parentRules.AppendElement(parentRule);
-  RefPtr<nsStyleContext> result =
+  nsRefPtr<nsStyleContext> result =
     presShell->StyleSet()->ResolveStyleForRules(nullptr, parentRules);
 
   if (!result) {
@@ -2237,7 +2237,7 @@ GetFontStyleContext(Element* aElement, const nsAString& aFont,
                     ErrorResult& error)
 {
   bool fontParsedSuccessfully = false;
-  RefPtr<css::StyleRule> rule =
+  nsRefPtr<css::StyleRule> rule =
     CreateFontStyleRule(aFont, presShell->GetDocument(),
                         &fontParsedSuccessfully, error);
 
@@ -2260,7 +2260,7 @@ GetFontStyleContext(Element* aElement, const nsAString& aFont,
 
   
   
-  RefPtr<nsStyleContext> parentContext =
+  nsRefPtr<nsStyleContext> parentContext =
     GetFontParentStyleContext(aElement, presShell, error);
 
   if (error.Failed()) {
@@ -2280,7 +2280,7 @@ GetFontStyleContext(Element* aElement, const nsAString& aFont,
   rules.AppendElement(new nsDisableTextZoomStyleRule);
 
   nsStyleSet* styleSet = presShell->StyleSet();
-  RefPtr<nsStyleContext> sc =
+  nsRefPtr<nsStyleContext> sc =
     styleSet->ResolveStyleForRules(parentContext, rules);
 
   
@@ -2313,7 +2313,7 @@ ResolveStyleForFilterRule(const nsAString& aFilterString,
 {
   nsIDocument* document = aPresShell->GetDocument();
   bool filterChanged = false;
-  RefPtr<css::StyleRule> rule =
+  nsRefPtr<css::StyleRule> rule =
     CreateFilterStyleRule(aFilterString, document, &filterChanged, error);
 
   if (error.Failed()) {
@@ -2334,7 +2334,7 @@ ResolveStyleForFilterRule(const nsAString& aFilterString,
   nsTArray<nsCOMPtr<nsIStyleRule>> rules;
   rules.AppendElement(rule);
 
-  RefPtr<nsStyleContext> sc =
+  nsRefPtr<nsStyleContext> sc =
     aPresShell->StyleSet()->ResolveStyleForRules(aParentContext, rules);
 
   return sc.forget();
@@ -2358,7 +2358,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
   }
 
   nsString usedFont;
-  RefPtr<nsStyleContext> parentContext =
+  nsRefPtr<nsStyleContext> parentContext =
     GetFontStyleContext(mCanvasElement, GetFont(),
                         presShell, usedFont, error);
   if (!parentContext) {
@@ -2366,7 +2366,7 @@ CanvasRenderingContext2D::ParseFilter(const nsAString& aString,
     return false;
   }
 
-  RefPtr<nsStyleContext> sc =
+  nsRefPtr<nsStyleContext> sc =
     ResolveStyleForFilterRule(aString, presShell, parentContext, error);
 
   if (!sc) {
@@ -2440,7 +2440,7 @@ public:
   virtual float GetExLength() const override
   {
     gfxTextPerfMetrics* tp = mPresContext->GetTextPerfMetrics();
-    RefPtr<nsFontMetrics> fontMetrics;
+    nsRefPtr<nsFontMetrics> fontMetrics;
     nsDeviceContext* dc = mPresContext->DeviceContext();
     dc->GetMetricsFor(mFont, mFontLanguage, mExplicitLanguage,
                       gfxFont::eHorizontal, nullptr, tp,
@@ -3138,7 +3138,7 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& font,
   }
 
   nsString usedFont;
-  RefPtr<nsStyleContext> sc =
+  nsRefPtr<nsStyleContext> sc =
     GetFontStyleContext(mCanvasElement, font, presShell, usedFont, error);
   if (!sc) {
     return false;
@@ -3164,7 +3164,7 @@ CanvasRenderingContext2D::SetFontInternal(const nsAString& font,
   resizedFont.size =
     (fontStyle->mSize * c->AppUnitsPerDevPixel()) / c->AppUnitsPerCSSPixel();
 
-  RefPtr<nsFontMetrics> metrics;
+  nsRefPtr<nsFontMetrics> metrics;
   c->DeviceContext()->GetMetricsFor(resizedFont,
                                     fontStyle->mLanguage,
                                     fontStyle->mExplicitLanguage,
@@ -3690,7 +3690,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor : public nsBidiPresUtils::BidiProcess
   nsAutoPtr<gfxTextRun> mTextRun;
 
   
-  RefPtr<gfxContext> mThebes;
+  nsRefPtr<gfxContext> mThebes;
 
   
   CanvasRenderingContext2D *mCtx;
@@ -3759,7 +3759,7 @@ CanvasRenderingContext2D::DrawOrMeasureText(const nsAString& aRawText,
   
   bool isRTL = false;
 
-  RefPtr<nsStyleContext> canvasStyle;
+  nsRefPtr<nsStyleContext> canvasStyle;
   if (mCanvasElement && mCanvasElement->IsInDoc()) {
     
     canvasStyle =
@@ -4667,7 +4667,7 @@ CanvasRenderingContext2D::DrawDirectlyToCanvas(
   
   AutoRestoreTransform autoRestoreTransform(mTarget);
 
-  RefPtr<gfxContext> context = new gfxContext(tempTarget);
+  nsRefPtr<gfxContext> context = new gfxContext(tempTarget);
   context->SetMatrix(contextMatrix.
                        Scale(1.0 / contextScale.width,
                              1.0 / contextScale.height).
@@ -4682,8 +4682,7 @@ CanvasRenderingContext2D::DrawDirectlyToCanvas(
   auto result = image.mImgContainer->
     Draw(context, scaledImageSize,
          ImageRegion::Create(gfxRect(src.x, src.y, src.width, src.height)),
-         image.mWhichFrame, GraphicsFilter::FILTER_GOOD,
-         Some(svgContext), modifiedFlags);
+         image.mWhichFrame, Filter::GOOD, Some(svgContext), modifiedFlags);
 
   if (result != DrawResult::SUCCESS) {
     NS_WARNING("imgIContainer::Draw failed");
@@ -4809,7 +4808,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& window, double x,
     nsContentUtils::FlushLayoutForTree(&window);
   }
 
-  RefPtr<nsPresContext> presContext;
+  nsRefPtr<nsPresContext> presContext;
   nsIDocShell* docshell = window.GetDocShell();
   if (docshell) {
     docshell->GetPresContext(getter_AddRefs(presContext));
@@ -4857,7 +4856,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& window, double x,
     return;
   }
 
-  RefPtr<gfxContext> thebes;
+  nsRefPtr<gfxContext> thebes;
   RefPtr<DrawTarget> drawDT;
   
   
@@ -4948,7 +4947,7 @@ CanvasRenderingContext2D::AsyncDrawXULElement(nsXULElement& elem,
     return;
   }
 
-  RefPtr<nsFrameLoader> frameloader = loaderOwner->GetFrameLoader();
+  nsRefPtr<nsFrameLoader> frameloader = loaderOwner->GetFrameLoader();
   if (!frameloader) {
     error.Throw(NS_ERROR_FAILURE);
     return;
@@ -5023,7 +5022,7 @@ CanvasRenderingContext2D::DrawWidgetAsOnScreen(nsGlobalWindow& aWindow,
     return;
   }
 
-  RefPtr<nsPresContext> presContext;
+  nsRefPtr<nsPresContext> presContext;
   nsIDocShell* docshell = aWindow.GetDocShell();
   if (docshell) {
     docshell->GetPresContext(getter_AddRefs(presContext));
@@ -5137,7 +5136,7 @@ CanvasRenderingContext2D::GetImageData(JSContext* aCx, double aSx,
   }
   MOZ_ASSERT(array);
 
-  RefPtr<ImageData> imageData = new ImageData(w, h, *array);
+  nsRefPtr<ImageData> imageData = new ImageData(w, h, *array);
   return imageData.forget();
 }
 
@@ -5398,7 +5397,7 @@ CanvasRenderingContext2D::PutImageData_explicit(int32_t x, int32_t y, uint32_t w
 
   uint32_t copyWidth = dirtyRect.Width();
   uint32_t copyHeight = dirtyRect.Height();
-  RefPtr<gfxImageSurface> imgsurf = new gfxImageSurface(gfx::IntSize(copyWidth, copyHeight),
+  nsRefPtr<gfxImageSurface> imgsurf = new gfxImageSurface(gfx::IntSize(copyWidth, copyHeight),
                                                           gfxImageFormat::ARGB32,
                                                           false);
   if (!imgsurf || imgsurf->CairoStatus()) {
@@ -5488,7 +5487,7 @@ CreateImageData(JSContext* cx, CanvasRenderingContext2D* context,
     return nullptr;
   }
 
-  RefPtr<mozilla::dom::ImageData> imageData =
+  nsRefPtr<mozilla::dom::ImageData> imageData =
     new mozilla::dom::ImageData(w, h, *darray);
   return imageData.forget();
 }
@@ -5600,12 +5599,12 @@ CanvasRenderingContext2D::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
     }
 
     if (userData && userData->IsForContext(this) && aOldLayer->IsDataValid(data)) {
-      RefPtr<CanvasLayer> ret = aOldLayer;
+      nsRefPtr<CanvasLayer> ret = aOldLayer;
       return ret.forget();
     }
   }
 
-  RefPtr<CanvasLayer> canvasLayer = aManager->CreateCanvasLayer();
+  nsRefPtr<CanvasLayer> canvasLayer = aManager->CreateCanvasLayer();
   if (!canvasLayer) {
     NS_WARNING("CreateCanvasLayer returned null!");
     
@@ -5715,7 +5714,7 @@ CanvasPath::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
 already_AddRefed<CanvasPath>
 CanvasPath::Constructor(const GlobalObject& aGlobal, ErrorResult& aRv)
 {
-  RefPtr<CanvasPath> path = new CanvasPath(aGlobal.GetAsSupports());
+  nsRefPtr<CanvasPath> path = new CanvasPath(aGlobal.GetAsSupports());
   return path.forget();
 }
 
@@ -5725,7 +5724,7 @@ CanvasPath::Constructor(const GlobalObject& aGlobal, CanvasPath& aCanvasPath, Er
   RefPtr<gfx::Path> tempPath = aCanvasPath.GetPath(CanvasWindingRule::Nonzero,
                                                    gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget());
 
-  RefPtr<CanvasPath> path = new CanvasPath(aGlobal.GetAsSupports(), tempPath->CopyToBuilder());
+  nsRefPtr<CanvasPath> path = new CanvasPath(aGlobal.GetAsSupports(), tempPath->CopyToBuilder());
   return path.forget();
 }
 
@@ -5737,7 +5736,7 @@ CanvasPath::Constructor(const GlobalObject& aGlobal, const nsAString& aPathStrin
     return Constructor(aGlobal, aRv);
   }
 
-  RefPtr<CanvasPath> path = new CanvasPath(aGlobal.GetAsSupports(), tempPath->CopyToBuilder());
+  nsRefPtr<CanvasPath> path = new CanvasPath(aGlobal.GetAsSupports(), tempPath->CopyToBuilder());
   return path.forget();
 }
 
