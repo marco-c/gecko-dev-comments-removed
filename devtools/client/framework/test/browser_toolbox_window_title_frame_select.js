@@ -31,12 +31,16 @@ add_task(function* () {
     "Devtools title correct after switching to detached window host");
 
   
+  
+  yield waitForTick();
+
+  
   let btn = toolbox.doc.getElementById("command-button-frames");
   let menu = toolbox.showFramesMenu({target: btn});
   yield once(menu, "open");
 
   
-  let frames = menu.menuitems;
+  let frames = menu.items;
   is(frames.length, 2, "We have both frames in the list");
 
   let topFrameBtn = frames.filter(b => b.label == URL)[0];
