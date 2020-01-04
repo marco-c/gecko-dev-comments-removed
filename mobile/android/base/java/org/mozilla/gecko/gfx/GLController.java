@@ -71,7 +71,8 @@ public class GLController extends JNIObject {
 
     
     @WrapForJNI
-     native void setLayerClient(GeckoLayerClient layerClient);
+     native void attachToJava(GeckoLayerClient layerClient,
+                                           NativePanZoomController npzc);
 
     
     @WrapForJNI
