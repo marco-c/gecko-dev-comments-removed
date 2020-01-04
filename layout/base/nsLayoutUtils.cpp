@@ -4511,6 +4511,43 @@ static int32_t gNoiseIndent = 0;
 
 
 
+inline static bool
+FormControlShrinksForPercentISize(nsIFrame* aFrame)
+{
+  if (!aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
+    
+    return false;
+  }
+
+  nsIAtom* fType = aFrame->GetType();
+  if (fType == nsGkAtoms::meterFrame || fType == nsGkAtoms::progressFrame) {
+    
+    
+    return true;
+  }
+
+  if (!static_cast<nsIFormControlFrame*>(do_QueryFrame(aFrame))) {
+    
+    
+    return false;
+  }
+
+  if (fType == nsGkAtoms::gfxButtonControlFrame ||
+      fType == nsGkAtoms::HTMLButtonControlFrame) {
+    
+    
+    
+    return false;
+  }
+
+  return true;
+}
+
+
+
+
+
+
 
 
 
@@ -4586,7 +4623,7 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
       (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
         aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
        (aStyleSize.HasPercent() &&
-        aFrame->GetType() == nsGkAtoms::textInputFrame))) {
+        FormControlShrinksForPercentISize(aFrame)))) {
     
     
     
