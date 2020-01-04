@@ -94,12 +94,7 @@ this.PluralForm = {
     delete PluralForm.get;
 
     
-    let ruleNum = Number(Cc["@mozilla.org/intl/stringbundle;1"].
-      getService(Ci.nsIStringBundleService).createBundle(kIntlProperties).
-      GetStringFromName("pluralRule"));
-
-    
-    [PluralForm.get, PluralForm.numForms] = PluralForm.makeGetter(ruleNum);
+    [PluralForm.get, PluralForm.numForms] = PluralForm.makeGetter(PluralForm.ruleNum);
     return PluralForm.get;
   },
 
@@ -160,6 +155,18 @@ this.PluralForm = {
     PluralForm.get();
     return PluralForm.numForms;
   },
+
+  
+
+
+
+
+  get ruleNum()
+  {
+    return Number(Cc["@mozilla.org/intl/stringbundle;1"].
+      getService(Ci.nsIStringBundleService).createBundle(kIntlProperties).
+      GetStringFromName("pluralRule"));
+  }
 };
 
 
