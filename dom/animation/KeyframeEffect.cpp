@@ -2106,9 +2106,12 @@ KeyframeEffectReadOnly::CanAnimateTransformOnCompositor(
   
   if (aFrame->Combines3DTransformWithAncestors() ||
       aFrame->StyleDisplay()->mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D) {
-    aPerformanceWarning.AssignLiteral(
-      "Gecko bug: Async animation of 'preserve-3d' "
-      "transforms is not supported.  See bug 779598");
+    nsXPIDLString localizedMessage;
+    nsContentUtils::GetLocalizedString(
+      nsContentUtils::eLAYOUT_PROPERTIES,
+      "AnimationWarningTransformPreserve3D",
+      localizedMessage);
+    aPerformanceWarning = localizedMessage;
     return false;
   }
   
@@ -2116,16 +2119,23 @@ KeyframeEffectReadOnly::CanAnimateTransformOnCompositor(
   
   
   if (aFrame->StyleDisplay()->BackfaceIsHidden()) {
-    aPerformanceWarning.AssignLiteral(
-      "Gecko bug: Async animation of "
-      "'backface-visibility: hidden' transforms is not supported."
-      "  See bug 1186204");
+    nsXPIDLString localizedMessage;
+    nsContentUtils::GetLocalizedString(
+      nsContentUtils::eLAYOUT_PROPERTIES,
+      "AnimationWarningTransformBackfaceVisibilityHidden",
+      localizedMessage);
+    aPerformanceWarning = localizedMessage;
     return false;
   }
+  
+  
   if (aFrame->IsSVGTransformed()) {
-    aPerformanceWarning.AssignLiteral(
-      "Gecko bug: Async 'transform' animations of "
-      "aFrames with SVG transforms is not supported.  See bug 779599");
+    nsXPIDLString localizedMessage;
+    nsContentUtils::GetLocalizedString(
+      nsContentUtils::eLAYOUT_PROPERTIES,
+      "AnimationWarningTransformSVG",
+      localizedMessage);
+    aPerformanceWarning = localizedMessage;
     return false;
   }
 
@@ -2152,10 +2162,12 @@ KeyframeEffectReadOnly::ShouldBlockCompositorAnimations(
     }
     
     if (IsGeometricProperty(property.mProperty)) {
-      aPerformanceWarning.AssignLiteral(
-        "Performance warning: Async animation of "
-        "'transform' or 'opacity' not possible due to animation of geometric "
-        "properties on the same element");
+      nsXPIDLString localizedMessage;
+      nsContentUtils::GetLocalizedString(
+        nsContentUtils::eLAYOUT_PROPERTIES,
+        "AnimationWarningWithGeometricProperties",
+        localizedMessage);
+      aPerformanceWarning = localizedMessage;
       return true;
     }
 
