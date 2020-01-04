@@ -145,6 +145,7 @@ void TreeInfo(const char* aMsg, uint32_t aExtraFlags, Accessible* aParent);
 typedef const char* (*GetTreePrefix)(void* aData, Accessible*);
 void Tree(const char* aTitle, const char* aMsgText, DocAccessible* aDoc,
           GetTreePrefix aPrefixFunc = nullptr, void* aGetTreePrefixData = nullptr);
+void DOMTree(const char* aTitle, const char* aMsgText, DocAccessible* aDoc);
 
 
 
