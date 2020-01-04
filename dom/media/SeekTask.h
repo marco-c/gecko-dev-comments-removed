@@ -84,7 +84,6 @@ protected:
   
 
 
-  SeekJob& mSeekJob;
   SeekTarget& mTarget;
   MozPromiseHolder<SeekTaskPromise> mSeekTaskPromise;
   bool mIsDiscarded;
