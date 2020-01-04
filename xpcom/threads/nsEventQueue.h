@@ -26,6 +26,8 @@ struct MonitorAutoEnterChooser<mozilla::Monitor>
 template<typename MonitorType>
 class nsEventQueueBase
 {
+  typedef mozilla::MutexAutoLock MutexAutoLock;
+
 public:
   typedef MonitorType Monitor;
   typedef typename MonitorAutoEnterChooser<Monitor>::Type MonitorAutoEnterType;
@@ -37,7 +39,7 @@ public:
   
   
   void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
-                MonitorAutoEnterType& aProofOfLock);
+                MonitorAutoEnterType& aProofOfLock, MutexAutoLock&);
 
   
   
@@ -46,16 +48,16 @@ public:
   
   
   bool GetEvent(bool aMayWait, nsIRunnable** aEvent,
-                MonitorAutoEnterType& aProofOfLock);
+                MonitorAutoEnterType& aProofOfLock, MutexAutoLock&);
 
   
   bool GetPendingEvent(nsIRunnable** aRunnable,
-                       MonitorAutoEnterType& aProofOfLock)
+                       MonitorAutoEnterType& aProofOfLock, MutexAutoLock& aExtraneousLock)
   {
-    return GetEvent(false, aRunnable, aProofOfLock);
+    return GetEvent(false, aRunnable, aProofOfLock, aExtraneousLock);
   }
 
-  size_t Count(MonitorAutoEnterType& aProofOfLock);
+  size_t Count(MonitorAutoEnterType& aProofOfLock, MutexAutoLock&);
 
 private:
   bool IsEmpty()
@@ -103,6 +105,7 @@ private:
   
   friend class nsEventQueueBase<mozilla::Monitor>;
 
+  typedef mozilla::MutexAutoLock MutexAutoLock;
   typedef Base::Monitor MonitorType;
   typedef Base::MonitorAutoEnterType MonitorAutoEnterType;
   MonitorType mMonitor;
@@ -113,8 +116,8 @@ public:
   
   
   
-  void PutEvent(nsIRunnable* aEvent);
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent);
+  void PutEvent(nsIRunnable* aEvent, MutexAutoLock&);
+  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent, MutexAutoLock&);
 
   
   
@@ -122,21 +125,21 @@ public:
   
   
   
-  bool GetEvent(bool aMayWait, nsIRunnable** aEvent);
+  bool GetEvent(bool aMayWait, nsIRunnable** aEvent, MutexAutoLock&);
 
   
-  bool HasPendingEvent()
+  bool HasPendingEvent(MutexAutoLock& aProofOfLock)
   {
-    return GetEvent(false, nullptr);
+    return GetEvent(false, nullptr, aProofOfLock);
   }
 
   
-  bool GetPendingEvent(nsIRunnable** aRunnable)
+  bool GetPendingEvent(nsIRunnable** aRunnable, MutexAutoLock& aProofOfLock)
   {
-    return GetEvent(false, aRunnable);
+    return GetEvent(false, aRunnable, aProofOfLock);
   }
 
-  size_t Count();
+  size_t Count(MutexAutoLock&);
 };
 
 #endif  
