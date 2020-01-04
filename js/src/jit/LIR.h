@@ -726,6 +726,13 @@ class LNode
     virtual bool isCall() const {
         return false;
     }
+
+    
+    
+    virtual bool isCallPreserved(AnyRegister reg) const {
+        return false;
+    }
+
     uint32_t id() const {
         return id_;
     }
