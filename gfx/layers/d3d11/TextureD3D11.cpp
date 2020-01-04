@@ -579,8 +579,7 @@ TextureClientD3D11::AllocateForSurface(gfx::IntSize aSize, TextureAllocationFlag
 
   
   
-  BackendType backend = windowsPlatform->GetContentBackendFor(LayersBackend::LAYERS_D3D11);
-  bool haveD3d11Backend = (backend == BackendType::DIRECT2D1_1) || !NS_IsMainThread();
+  bool haveD3d11Backend = windowsPlatform->GetContentBackend() == BackendType::DIRECT2D1_1 || !NS_IsMainThread();
 
   if (haveD3d11Backend) {
     if (!AllocateD3D11Surface(d3d11device, aSize)) {

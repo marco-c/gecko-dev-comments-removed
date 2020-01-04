@@ -81,7 +81,7 @@ nsSVGPathGeometryElement::GetOrBuildPath(const DrawTarget& aDrawTarget,
 {
   
   bool cacheable  = aDrawTarget.GetBackendType() ==
-                    gfxPlatform::GetPlatform()->GetDefaultContentBackend();
+                      gfxPlatform::GetPlatform()->GetContentBackend();
 
   
   

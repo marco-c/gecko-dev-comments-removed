@@ -271,16 +271,7 @@ public:
     }
     void GetApzSupportInfo(mozilla::widget::InfoObject& aObj);
 
-    
-    
-    
-    mozilla::gfx::BackendType GetDefaultContentBackend() {
-      return mContentBackend;
-    }
-
-    
-    
-    virtual mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) {
+    mozilla::gfx::BackendType GetContentBackend() {
       return mContentBackend;
     }
 
