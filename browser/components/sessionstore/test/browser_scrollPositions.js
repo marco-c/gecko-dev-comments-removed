@@ -3,8 +3,9 @@
 
 "use strict";
 
-const URL = ROOT + "browser_scrollPositions_sample.html";
-const URL_FRAMESET = ROOT + "browser_scrollPositions_sample_frameset.html";
+const BASE = "http://example.com/browser/browser/components/sessionstore/test/"
+const URL = BASE + "browser_scrollPositions_sample.html";
+const URL_FRAMESET = BASE + "browser_scrollPositions_sample_frameset.html";
 
 
 const SCROLL_X = Math.round(100 * (1 + Math.random()));
@@ -100,6 +101,53 @@ add_task(function test_scroll_nested() {
   
   yield promiseRemoveTab(tab);
   yield promiseRemoveTab(tab2);
+});
+
+
+
+
+
+add_task(function test_scroll_background_tabs() {
+  pushPrefs(["browser.sessionstore.restore_on_demand", true]);
+
+  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  let tab = newWin.gBrowser.addTab(URL);
+  let browser = tab.linkedBrowser;
+  yield BrowserTestUtils.browserLoaded(browser);
+
+  
+  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y});
+  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is fine");
+
+  
+  yield BrowserTestUtils.closeWindow(newWin);
+
+  
+  newWin = ss.undoCloseWindow(0);
+
+  
+  yield BrowserTestUtils.waitForEvent(newWin, "SSWindowStateReady");
+
+  is(newWin.gBrowser.tabs.length, 2, "There should be two tabs");
+
+  
+  tab = newWin.gBrowser.tabs[1];
+  yield promiseTabRestoring(tab);
+
+  ok(tab.hasAttribute("pending"), "Tab should be pending");
+  browser = tab.linkedBrowser;
+
+  
+  yield TabStateFlusher.flush(browser);
+
+  
+  
+  newWin.gBrowser.selectedTab = tab;
+  yield promiseTabRestored(tab);
+
+  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is still fine");
+
+  yield BrowserTestUtils.closeWindow(newWin);
 });
 
 function* checkScroll(tab, expected, msg) {
