@@ -790,10 +790,7 @@ FontFaceSet::UpdateRules(const nsTArray<nsFontFaceRuleContainer>& aRules)
   }
 
   
-  if (mUserFontSet->mRebuildLocalRules) {
-    mUserFontSet->mLocalRulesUsed = false;
-    mUserFontSet->mRebuildLocalRules = false;
-  }
+  mUserFontSet->mLocalRulesUsed = false;
 
   if (LOG_ENABLED() && !mRuleFaces.IsEmpty()) {
     LOG(("userfonts (%p) userfont rules update (%s) rule count: %d",
@@ -878,8 +875,7 @@ FontFaceSet::InsertRuleFontFace(FontFace* aFontFace, SheetType aSheetType,
 
       
       
-      if (mUserFontSet->mLocalRulesUsed &&
-          mUserFontSet->mRebuildLocalRules) {
+      if (mUserFontSet->mLocalRulesUsed) {
         nsCSSValue val;
         aFontFace->GetDesc(eCSSFontDesc_Src, val);
         nsCSSUnit unit = val.GetUnit();
