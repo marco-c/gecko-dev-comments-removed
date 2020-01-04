@@ -7,7 +7,6 @@
 import android.content.Context;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v7.widget.LinearLayoutManager;
@@ -17,15 +16,11 @@ import android.widget.FrameLayout;
 
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
-import org.mozilla.gecko.animation.PropertyAnimator;
-import org.mozilla.gecko.home.HomeBanner;
-import org.mozilla.gecko.home.HomeFragment;
-import org.mozilla.gecko.home.HomeScreen;
 import org.mozilla.gecko.home.SimpleCursorLoader;
 import org.mozilla.gecko.home.activitystream.topsites.TopSitesPagerAdapter;
 
 public class ActivityStream extends FrameLayout {
-    private StreamRecyclerAdapter adapter;
+    private final StreamRecyclerAdapter adapter;
 
     private static final int LOADER_ID_HIGHLIGHTS = 0;
     private static final int LOADER_ID_TOPSITES = 1;
@@ -34,20 +29,19 @@ public class ActivityStream extends FrameLayout {
         super(context, attrs);
 
         inflate(context, R.layout.as_content, this);
-    }
 
-    public void load(LoaderManager lm) {
-        
+        adapter = new StreamRecyclerAdapter();
+
         RecyclerView rv = (RecyclerView) findViewById(R.id.activity_stream_main_recyclerview);
 
-        
-        
-        adapter = new StreamRecyclerAdapter(lm, null);
         rv.setAdapter(adapter);
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
         rv.setHasFixedSize(true);
+    }
 
+    public void load(LoaderManager lm) {
         CursorLoaderCallbacks callbacks = new CursorLoaderCallbacks();
+
         lm.initLoader(LOADER_ID_HIGHLIGHTS, null, callbacks);
         lm.initLoader(LOADER_ID_TOPSITES, null, callbacks);
     }
@@ -55,7 +49,6 @@ public class ActivityStream extends FrameLayout {
     public void unload() {
         adapter.swapHighlightsCursor(null);
         adapter.swapTopSitesCursor(null);
-        
     }
 
     
