@@ -67,6 +67,15 @@ def main(argv):
                     mk.dump(dep_file)
                 
                 ret = None
+        
+        
+        
+        try:
+            os.utime(args.output_file, None)
+        except:
+            print('Error processing file "{0}"'.format(args.output_file),
+                  file=sys.stderr)
+            traceback.print_exc()
     except IOError as e:
         print('Error opening file "{0}"'.format(e.filename), file=sys.stderr)
         traceback.print_exc()
