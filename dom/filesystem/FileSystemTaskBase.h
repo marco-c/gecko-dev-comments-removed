@@ -10,14 +10,15 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/FileSystemRequestParent.h"
 #include "mozilla/dom/PFileSystemRequestChild.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace dom {
 
 class BlobImpl;
-class BlobParent;
 class FileSystemBase;
 class FileSystemParams;
+class PBlobParent;
 
 
 
@@ -106,13 +107,16 @@ class FileSystemParams;
 
 
 
-class FileSystemTaskBase
-  : public nsRunnable
-  , public PFileSystemRequestChild
+
+
+
+
+class FileSystemTaskBase : public PFileSystemRequestChild
 {
 public:
-  
+  NS_INLINE_DECL_REFCOUNTING(FileSystemTaskBase)
 
+  
 
 
 
@@ -135,32 +139,6 @@ public:
   virtual void
   GetPermissionAccessType(nsCString& aAccess) const = 0;
 
-  NS_DECL_NSIRUNNABLE
-protected:
-  
-
-
-  explicit FileSystemTaskBase(FileSystemBase* aFileSystem);
-
-  
-
-
-
-  FileSystemTaskBase(FileSystemBase* aFileSystem,
-                     const FileSystemParams& aParam,
-                     FileSystemRequestParent* aParent);
-
-  virtual
-  ~FileSystemTaskBase();
-
-  
-
-
-
-
-  virtual nsresult
-  Work() = 0;
-
   
 
 
@@ -168,6 +146,18 @@ protected:
 
   virtual void
   HandlerCallback() = 0;
+
+  bool
+  HasError() const { return NS_FAILED(mErrorValue); }
+
+protected:
+  
+
+
+  explicit FileSystemTaskBase(FileSystemBase* aFileSystem);
+
+  virtual
+  ~FileSystemTaskBase();
 
   
 
@@ -185,31 +175,63 @@ protected:
 
 
 
-  virtual FileSystemResponseValue
-  GetSuccessRequestResult(ErrorResult& aRv) const = 0;
-
-  
-
-
-
-
-
   virtual void
   SetSuccessRequestResult(const FileSystemResponseValue& aValue,
                           ErrorResult& aRv) = 0;
-
-  bool
-  HasError() const { return mErrorValue != NS_OK; }
 
   
   virtual bool
   Recv__delete__(const FileSystemResponseValue& value) override;
 
   nsresult mErrorValue;
-
   RefPtr<FileSystemBase> mFileSystem;
-  RefPtr<FileSystemRequestParent> mRequestParent;
+
 private:
+
+  
+
+
+
+
+
+  void
+  SetRequestResult(const FileSystemResponseValue& aValue);
+};
+
+
+class FileSystemTaskParentBase : public nsRunnable
+{
+public:
+  
+
+
+  void
+  Start();
+
+  
+
+
+
+  void
+  SetError(const nsresult& aErrorCode);
+
+  
+
+
+
+
+  virtual nsresult
+  IOWork() = 0;
+
+  
+
+
+
+
+
+  virtual FileSystemResponseValue
+  GetSuccessRequestResult(ErrorResult& aRv) const = 0;
+
   
 
 
@@ -219,6 +241,31 @@ private:
   HandleResult();
 
   
+  
+  
+  virtual bool
+  NeedToGoToMainThread() const;
+
+  
+  
+  virtual nsresult
+  MainThreadWork();
+
+  
+
+
+  virtual void
+  GetPermissionAccessType(nsCString& aAccess) const = 0;
+
+  bool
+  HasError() const { return NS_FAILED(mErrorValue); }
+
+  NS_IMETHOD
+  Run() override;
+
+private:
+  
+
 
 
 
@@ -226,13 +273,22 @@ private:
   FileSystemResponseValue
   GetRequestResult() const;
 
+protected:
   
 
 
 
+  FileSystemTaskParentBase(FileSystemBase* aFileSystem,
+                           const FileSystemParams& aParam,
+                           FileSystemRequestParent* aParent);
 
-  void
-  SetRequestResult(const FileSystemResponseValue& aValue);
+  virtual
+  ~FileSystemTaskParentBase();
+
+  nsresult mErrorValue;
+  RefPtr<FileSystemBase> mFileSystem;
+  RefPtr<FileSystemRequestParent> mRequestParent;
+  nsCOMPtr<nsIEventTarget> mBackgroundEventTarget;
 };
 
 } 

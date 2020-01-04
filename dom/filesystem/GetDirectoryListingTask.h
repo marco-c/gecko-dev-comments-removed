@@ -27,12 +27,6 @@ public:
          const nsAString& aFilters,
          ErrorResult& aRv);
 
-  static already_AddRefed<GetDirectoryListingTask>
-  Create(FileSystemBase* aFileSystem,
-         const FileSystemGetDirectoryListingParams& aParam,
-         FileSystemRequestParent* aParent,
-         ErrorResult& aRv);
-
   virtual
   ~GetDirectoryListingTask();
 
@@ -49,28 +43,50 @@ private:
                           Directory::DirectoryType aType,
                           const nsAString& aFilters);
 
-  GetDirectoryListingTask(FileSystemBase* aFileSystem,
-                          const FileSystemGetDirectoryListingParams& aParam,
-                          FileSystemRequestParent* aParent);
-
   virtual FileSystemParams
   GetRequestParams(const nsString& aSerializedDOMPath,
                    ErrorResult& aRv) const override;
-
-  virtual FileSystemResponseValue
-  GetSuccessRequestResult(ErrorResult& aRv) const override;
 
   virtual void
   SetSuccessRequestResult(const FileSystemResponseValue& aValue,
                           ErrorResult& aRv) override;
 
-  virtual nsresult
-  Work() override;
-
   virtual void
   HandlerCallback() override;
 
   RefPtr<Promise> mPromise;
+  nsCOMPtr<nsIFile> mTargetPath;
+  nsString mFilters;
+  Directory::DirectoryType mType;
+
+  
+  
+  FallibleTArray<Directory::FileOrDirectoryPath> mTargetData;
+};
+
+class GetDirectoryListingTaskParent final : public FileSystemTaskParentBase
+{
+public:
+  static already_AddRefed<GetDirectoryListingTaskParent>
+  Create(FileSystemBase* aFileSystem,
+         const FileSystemGetDirectoryListingParams& aParam,
+         FileSystemRequestParent* aParent,
+         ErrorResult& aRv);
+
+  virtual void
+  GetPermissionAccessType(nsCString& aAccess) const override;
+
+private:
+  GetDirectoryListingTaskParent(FileSystemBase* aFileSystem,
+                                const FileSystemGetDirectoryListingParams& aParam,
+                                FileSystemRequestParent* aParent);
+
+  virtual FileSystemResponseValue
+  GetSuccessRequestResult(ErrorResult& aRv) const override;
+
+  virtual nsresult
+  IOWork() override;
+
   nsCOMPtr<nsIFile> mTargetPath;
   nsString mFilters;
   Directory::DirectoryType mType;

@@ -18,8 +18,8 @@ class BlobImpl;
 
 class FileSystemBase
 {
-  NS_INLINE_DECL_REFCOUNTING(FileSystemBase)
 public:
+  NS_INLINE_DECL_REFCOUNTING(FileSystemBase)
 
   
   static already_AddRefed<FileSystemBase>
@@ -87,15 +87,52 @@ public:
     return mPermission;
   }
 
-  bool
-  RequiresPermissionChecks() const
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum ePermissionCheckType {
+    
+    
+    ePermissionCheckByTestingPref,
+
+    
+    ePermissionCheckNotRequired,
+
+    
+    ePermissionCheckRequired,
+
+    
+    eNotSet
+  };
+
+  ePermissionCheckType
+  PermissionCheckType() const
   {
-    return mRequiresPermissionChecks;
+    MOZ_ASSERT(mPermissionCheckType != eNotSet);
+    return mPermissionCheckType;
   }
+
+  
+  
+
+  virtual bool
+  NeedToGoToMainThread() const { return false; }
+
+  virtual nsresult
+  MainThreadWork() { return NS_ERROR_FAILURE; }
 
   
   virtual void Unlink() {}
   virtual void Traverse(nsCycleCollectionTraversalCallback &cb) {}
+
+  void
+  AssertIsOnOwningThread() const;
 
 protected:
   virtual ~FileSystemBase();
@@ -119,7 +156,11 @@ protected:
   
   nsCString mPermission;
 
-  bool mRequiresPermissionChecks;
+  ePermissionCheckType mPermissionCheckType;
+
+#ifdef DEBUG
+  PRThread* mOwningThread;
+#endif
 };
 
 } 

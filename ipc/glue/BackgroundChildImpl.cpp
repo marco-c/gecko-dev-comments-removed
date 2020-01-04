@@ -1,10 +1,10 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "BackgroundChildImpl.h"
 
-#include "ActorsChild.h" 
+#include "ActorsChild.h" // IndexedDB
 #include "BroadcastChannelChild.h"
 #include "ServiceWorkerManagerChild.h"
 #include "FileDescriptorSetChild.h"
@@ -14,6 +14,8 @@
 #include "mozilla/media/MediaChild.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/PBlobChild.h"
+#include "mozilla/dom/PFileSystemRequestChild.h"
+#include "mozilla/dom/FileSystemTaskBase.h"
 #include "mozilla/dom/asmjscache/AsmJSCache.h"
 #include "mozilla/dom/cache/ActorUtils.h"
 #include "mozilla/dom/indexedDB/PBackgroundIDBFactoryChild.h"
@@ -54,7 +56,7 @@ public:
   Recv__delete__(const nsCString& aTestArg) override;
 };
 
-} 
+} // namespace
 
 namespace mozilla {
 namespace ipc {
@@ -68,45 +70,45 @@ using mozilla::dom::cache::PCacheStorageChild;
 using mozilla::dom::cache::PCacheStreamControlChild;
 using mozilla::dom::PNuwaChild;
 
-
-
-
+// -----------------------------------------------------------------------------
+// BackgroundChildImpl::ThreadLocal
+// -----------------------------------------------------------------------------
 
 BackgroundChildImpl::
 ThreadLocal::ThreadLocal()
   : mCurrentFileHandle(nullptr)
 {
-  
+  // May happen on any thread!
   MOZ_COUNT_CTOR(mozilla::ipc::BackgroundChildImpl::ThreadLocal);
 }
 
 BackgroundChildImpl::
 ThreadLocal::~ThreadLocal()
 {
-  
+  // May happen on any thread!
   MOZ_COUNT_DTOR(mozilla::ipc::BackgroundChildImpl::ThreadLocal);
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// BackgroundChildImpl
+// -----------------------------------------------------------------------------
 
 BackgroundChildImpl::BackgroundChildImpl()
 {
-  
+  // May happen on any thread!
   MOZ_COUNT_CTOR(mozilla::ipc::BackgroundChildImpl);
 }
 
 BackgroundChildImpl::~BackgroundChildImpl()
 {
-  
+  // May happen on any thread!
   MOZ_COUNT_DTOR(mozilla::ipc::BackgroundChildImpl);
 }
 
 void
 BackgroundChildImpl::ProcessingError(Result aCode, const char* aReason)
 {
-  
+  // May happen on any thread!
 
   nsAutoCString abortMessage;
 
@@ -131,15 +133,15 @@ BackgroundChildImpl::ProcessingError(Result aCode, const char* aReason)
       MOZ_CRASH("Unknown error code!");
   }
 
-  
-  
+  // This is just MOZ_CRASH() un-inlined so that we can pass the result code as
+  // a string. MOZ_CRASH() only supports string literals at the moment.
   MOZ_ReportCrash(abortMessage.get(), __FILE__, __LINE__); MOZ_REALLY_CRASH();
 }
 
 void
 BackgroundChildImpl::ActorDestroy(ActorDestroyReason aWhy)
 {
-  
+  // May happen on any thread!
 }
 
 PBackgroundTestChild*
@@ -231,8 +233,8 @@ BackgroundChildImpl::PVsyncChild*
 BackgroundChildImpl::AllocPVsyncChild()
 {
   RefPtr<mozilla::layout::VsyncChild> actor = new mozilla::layout::VsyncChild();
-  
-  
+  // There still has one ref-count after return, and it will be released in
+  // DeallocPVsyncChild().
   return actor.forget().take();
 }
 
@@ -241,7 +243,7 @@ BackgroundChildImpl::DeallocPVsyncChild(PVsyncChild* aActor)
 {
   MOZ_ASSERT(aActor);
 
-  
+  // This actor already has one ref-count. Please check AllocPVsyncChild().
   RefPtr<mozilla::layout::VsyncChild> actor =
       dont_AddRef(static_cast<mozilla::layout::VsyncChild*>(aActor));
   return true;
@@ -264,9 +266,9 @@ BackgroundChildImpl::DeallocPUDPSocketChild(PUDPSocketChild* child)
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// BroadcastChannel API
+// -----------------------------------------------------------------------------
 
 dom::PBroadcastChannelChild*
 BackgroundChildImpl::AllocPBroadcastChannelChild(const PrincipalInfo& aPrincipalInfo,
@@ -312,9 +314,9 @@ BackgroundChildImpl::DeallocPCamerasChild(camera::PCamerasChild *aActor)
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// ServiceWorkerManager
+// -----------------------------------------------------------------------------
 
 dom::PServiceWorkerManagerChild*
 BackgroundChildImpl::AllocPServiceWorkerManagerChild()
@@ -334,9 +336,9 @@ BackgroundChildImpl::DeallocPServiceWorkerManagerChild(
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// Cache API
+// -----------------------------------------------------------------------------
 
 PCacheStorageChild*
 BackgroundChildImpl::AllocPCacheStorageChild(const Namespace& aNamespace,
@@ -379,9 +381,9 @@ BackgroundChildImpl::DeallocPCacheStreamControlChild(PCacheStreamControlChild* a
   return true;
 }
 
-
-
-
+// -----------------------------------------------------------------------------
+// MessageChannel/MessagePort API
+// -----------------------------------------------------------------------------
 
 dom::PMessagePortChild*
 BackgroundChildImpl::AllocPMessagePortChild(const nsID& aUUID,
@@ -449,8 +451,25 @@ BackgroundChildImpl::DeallocPQuotaChild(PQuotaChild* aActor)
   return true;
 }
 
-} 
-} 
+dom::PFileSystemRequestChild*
+BackgroundChildImpl::AllocPFileSystemRequestChild(const FileSystemParams& aParams)
+{
+  MOZ_CRASH("Should never get here!");
+  return nullptr;
+}
+
+bool
+BackgroundChildImpl::DeallocPFileSystemRequestChild(PFileSystemRequestChild* aActor)
+{
+  // The reference is increased in FileSystemTaskBase::Start of
+  // FileSystemTaskBase.cpp. We should decrease it after IPC.
+  RefPtr<dom::FileSystemTaskBase> child =
+    dont_AddRef(static_cast<dom::FileSystemTaskBase*>(aActor));
+  return true;
+}
+
+} // namespace ipc
+} // namespace mozilla
 
 bool
 TestChild::Recv__delete__(const nsCString& aTestArg)

@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef mozilla_ipc_backgroundparentimpl_h__
 #define mozilla_ipc_backgroundparentimpl_h__
@@ -12,12 +12,12 @@ namespace mozilla {
 
 namespace layout {
 class VsyncParent;
-} 
+} // namespace layout
 
 namespace ipc {
 
-
-
+// Instances of this class should never be created directly. This class is meant
+// to be inherited in BackgroundImpl.
 class BackgroundParentImpl : public PBackgroundParent
 {
 protected:
@@ -186,9 +186,20 @@ protected:
 
   virtual bool
   DeallocPQuotaParent(PQuotaParent* aActor) override;
+
+  virtual PFileSystemRequestParent*
+  AllocPFileSystemRequestParent(const FileSystemParams&) override;
+
+  virtual bool
+  RecvPFileSystemRequestConstructor(PFileSystemRequestParent* aActor,
+                                    const FileSystemParams& aParams) override;
+
+  virtual bool
+  DeallocPFileSystemRequestParent(PFileSystemRequestParent*) override;
+
 };
 
-} 
-} 
+} // namespace ipc
+} // namespace mozilla
 
-#endif 
+#endif // mozilla_ipc_backgroundparentimpl_h__
