@@ -33,7 +33,6 @@ public:
   
   
   static BufferTextureData* CreateForYCbCrWithBufferSize(ClientIPCAllocator* aAllocator,
-                                                         gfx::SurfaceFormat aFormat,
                                                          int32_t aSize,
                                                          TextureFlags aTextureFlags);
 

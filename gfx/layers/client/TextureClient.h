@@ -380,7 +380,6 @@ public:
   
   static already_AddRefed<TextureClient>
   CreateForYCbCrWithBufferSize(ClientIPCAllocator* aAllocator,
-                               gfx::SurfaceFormat aFormat,
                                size_t aSize,
                                TextureFlags aTextureFlags);
 
