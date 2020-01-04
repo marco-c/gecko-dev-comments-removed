@@ -257,6 +257,8 @@ class JitFrameIterator
 
     inline BaselineFrame* baselineFrame() const;
 
+    
+    
 #ifdef DEBUG
     bool verifyReturnAddressUsingNativeToBytecodeMap();
 #else
