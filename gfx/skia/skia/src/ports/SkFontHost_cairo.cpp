@@ -67,6 +67,12 @@ void SkInitCairoFT(bool fontHintingEnabled)
     gSetLcdFilter = &FT_Library_SetLcdFilter;
     gGlyphSlotEmbolden = &FT_GlyphSlot_Embolden;
 #endif
+    
+    
+    if (gSetLcdFilter &&
+        gSetLcdFilter(nullptr, FT_LCD_FILTER_NONE) == FT_Err_Unimplemented_Feature) {
+        gSetLcdFilter = nullptr;
+    }
 }
 
 #ifndef CAIRO_HAS_FC_FONT
