@@ -1,23 +1,8 @@
 
 
-function iterableProxy(arr) {
-    return Proxy.create({
-        getPropertyDescriptor: function (name) {
-            for (var obj = arr; obj; obj = Object.getPrototypeOf(obj)) {
-                var desc = Object.getOwnPropertyDescriptor(obj, name);
-                if (desc)
-                    return desc;
-            }
-            return undefined;
-        }
-    });
-}
-
 var s = '';
 var arr = ['a', 'b', 'c', 'd'];
-var p = iterableProxy(arr);
-
-
+var p = new Proxy(arr, {});
 
 
 for (var i = 0; i < 2; i++) {

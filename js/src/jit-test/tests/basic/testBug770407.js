@@ -1,4 +1,4 @@
 
 var otherGlobal = newGlobal();
-var proxy = otherGlobal.Proxy.create({}, {});
+var proxy = new (otherGlobal.Proxy)({}, {});
 Int8Array.set(proxy);

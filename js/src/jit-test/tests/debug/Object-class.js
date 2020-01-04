@@ -16,11 +16,11 @@ dbg.onDebuggerStatement = function (frame) {
     hits++;
 };
 g.f(Object.prototype, [], eval, new Date,
-    Proxy.create({}), Proxy.createFunction({}, eval), new Proxy(new Date, {}));
+    new Proxy({}, {}), new Proxy(eval, {}), new Proxy(new Date, {}));
 assertEq(hits, 1);
 
 
 
 g.eval('f(Object.prototype, [], eval, new Date,\
-          Proxy.create({}), Proxy.createFunction({}, f), new Proxy(new Date, {}));');
+          new Proxy({}, {}), new Proxy(f, {}), new Proxy(new Date, {}));');
 assertEq(hits, 2);
