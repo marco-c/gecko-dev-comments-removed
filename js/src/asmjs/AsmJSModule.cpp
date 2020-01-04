@@ -540,6 +540,12 @@ TryEnablingJit(JSContext* cx, AsmJSModule& module, HandleFunction fun, uint32_t 
     }
 
     
+    
+    
+    if (script->baselineScript()->hasPendingIonBuilder())
+        return true;
+
+    
     if (fun->nargs() > size_t(argc))
         return true;
 

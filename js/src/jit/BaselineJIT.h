@@ -401,6 +401,7 @@ struct BaselineScript
 
     bool addDependentAsmJSModule(JSContext* cx, DependentAsmJSModuleExit exit);
     void unlinkDependentAsmJSModules(FreeOp* fop);
+    void clearDependentAsmJSModules();
     void removeDependentAsmJSModule(DependentAsmJSModuleExit exit);
 
     
@@ -476,6 +477,9 @@ struct BaselineScript
             script->setIonScript(maybecx, ION_PENDING_SCRIPT);
 
         pendingBuilder_ = builder;
+
+        
+        clearDependentAsmJSModules();
 
         script->updateBaselineOrIonRaw(maybecx);
     }
