@@ -103,6 +103,11 @@ this.HawkClient.prototype = {
   
 
 
+  willUTF8EncodeRequests: HAWKAuthenticatedRESTRequest.prototype.willUTF8EncodeObjectRequests,
+
+  
+
+
 
 
 

@@ -613,7 +613,9 @@ var MozLoopServiceInternal = {
                                           2 * 32, true);
     }
 
-    if (payloadObj) {
+    
+    
+    if (!gHawkClient.willUTF8EncodeRequests && payloadObj) {
       
       
       let newPayloadObj = {};

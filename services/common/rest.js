@@ -107,6 +107,13 @@ RESTRequest.prototype = {
   
 
 
+
+
+  willUTF8EncodeObjectRequests: true,
+
+  
+
+
   uri: null,
 
   
