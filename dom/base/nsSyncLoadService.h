@@ -38,8 +38,13 @@ public:
 
 
 
-    static nsresult LoadDocument(nsIURI *aURI, nsIPrincipal *aLoaderPrincipal,
-                                 nsILoadGroup *aLoadGroup, bool aForceToXML,
+
+    static nsresult LoadDocument(nsIURI *aURI,
+                                 nsContentPolicyType aContentPolicyType,
+                                 nsIPrincipal *aLoaderPrincipal,
+                                 nsSecurityFlags aSecurityFlags,
+                                 nsILoadGroup *aLoadGroup,
+                                 bool aForceToXML,
                                  mozilla::net::ReferrerPolicy aReferrerPolicy,
                                  nsIDOMDocument** aResult);
 
