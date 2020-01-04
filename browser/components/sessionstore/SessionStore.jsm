@@ -2934,8 +2934,8 @@ var SessionStoreInternal = {
     
     
     
-    for (let tab of Array.slice(tabbrowser.tabs, 0, tab._tPos)) {
-      let emptyState = {entries: [], lastAccessed: tab.lastAccessed};
+    for (let otherTab of Array.slice(tabbrowser.tabs, 0, tab._tPos)) {
+      let emptyState = {entries: [], lastAccessed: otherTab.lastAccessed};
       this._windows[window.__SSi].tabs.push(emptyState);
     }
 
