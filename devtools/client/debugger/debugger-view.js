@@ -311,7 +311,10 @@ var DebuggerView = {
       if (button == 2) {
         this.clickedLine = line;
       }
-      else {
+      
+      
+      
+      else if (DebuggerView.Sources.selectedValue) {
         if (this.editor.hasBreakpoint(line)) {
           this.editor.removeBreakpoint(line);
         } else {
