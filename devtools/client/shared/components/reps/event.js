@@ -35,8 +35,32 @@ define(function (require, exports, module) {
       delete props.object.preview.properties;
       props.object.ownPropertyLength =
         Object.keys(props.object.preview.ownProperties).length;
+
+      switch (props.object.class) {
+        case "MouseEvent":
+          props.isInterestingProp = (type, value, name) => {
+            return (name == "clientX" ||
+                    name == "clientY" ||
+                    name == "layerX" ||
+                    name == "layerY");
+          };
+          break;
+        case "KeyboardEvent":
+          props.isInterestingProp = (type, value, name) => {
+            return (name == "key" ||
+                    name == "charCode" ||
+                    name == "keyCode");
+          };
+          break;
+        case "MessageEvent":
+          props.isInterestingProp = (type, value, name) => {
+            return (name == "isTrusted" ||
+                    name == "data");
+          };
+          break;
+      }
       return rep(props);
-    },
+    }
   });
 
   
