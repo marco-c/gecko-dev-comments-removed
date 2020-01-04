@@ -41,7 +41,7 @@ var ActionBarHandler = {
         case 'taponcaret':
           
           
-          this._init();
+          this._init(e.boundingClientRect);
           break;
 
         case 'updateposition':
@@ -57,22 +57,24 @@ var ActionBarHandler = {
 
     
     if (!this._selectionID && e.caretVisuallyVisible) {
-      this._init();
+      this._init(e.boundingClientRect);
       return;
     }
 
     
     if (this._selectionID) {
       let [element, win] = this._getSelectionTargets();
-      if (this._targetElement === element &&
-          this._contentWindow === win) {
-        
-        
-        this._sendActionBarActions();
+      if (this._targetElement === element && this._contentWindow === win) {
+        if (e.reason == 'visibilitychange' || e.reason == 'presscaret') {
+          this._updateVisibility();
+        } else {
+          let forceUpdate = e.reason == 'updateposition' || e.reason == 'releasecaret';
+          this._sendActionBarActions(forceUpdate, e.boundingClientRect);
+        }
       } else {
         
         this._uninit(false);
-        this._init();
+        this._init(e.boundingClientRect);
       }
     }
   },
@@ -123,7 +125,7 @@ var ActionBarHandler = {
   
 
 
-  _init: function() {
+  _init: function(boundingClientRect) {
     let [element, win] = this._getSelectionTargets();
     if (!win) {
       return this.START_TOUCH_ERROR.NO_CONTENT_WINDOW;
@@ -138,9 +140,19 @@ var ActionBarHandler = {
       type: "TextSelection:ActionbarInit",
       selectionID: this._selectionID,
     });
-    this._sendActionBarActions(true);
+    this._sendActionBarActions(true, boundingClientRect);
 
     return this.START_TOUCH_ERROR.NONE;
+  },
+
+  
+
+
+  _updateVisibility: function() {
+    Messaging.sendRequest({
+      type: "TextSelection:Visibility",
+      selectionID: this._selectionID,
+    });
   },
 
   
@@ -224,7 +236,7 @@ var ActionBarHandler = {
 
 
 
-  _sendActionBarActions: function(sendAlways) {
+  _sendActionBarActions: function(sendAlways, boundingClientRect) {
     let actions = this._getActionBarActions();
     let actionCountUnchanged = this._actionBarActions &&
       actions.length === this._actionBarActions.length;
@@ -237,7 +249,11 @@ var ActionBarHandler = {
       Messaging.sendRequest({
         type: "TextSelection:ActionbarStatus",
         actions: actions,
-      });
+        x: boundingClientRect.x,
+        y: boundingClientRect.y,
+        width: boundingClientRect.width,
+        height: boundingClientRect.height
+      });;
     }
 
     this._actionBarActions = actions;
@@ -257,6 +273,7 @@ var ActionBarHandler = {
           label: this._getActionValue(action, "label", "", element),
           icon: this._getActionValue(action, "icon", "drawable://ic_status_logo", element),
           order: this._getActionValue(action, "order", 0, element),
+          floatingOrder: this._getActionValue(action, "floatingOrder", 9, element),
           showAsAction: this._getActionValue(action, "showAsAction", true, element),
         };
         actions.push(a);
@@ -292,6 +309,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.selectAll"),
       icon: "drawable://ab_select_all",
       order: 5,
+      floatingOrder: 5,
 
       selector: {
         matches: function(element, win) {
@@ -326,6 +344,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.cut"),
       icon: "drawable://ab_cut",
       order: 4,
+      floatingOrder: 1,
 
       selector: {
         matches: function(element, win) {
@@ -370,6 +389,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.copy"),
       icon: "drawable://ab_copy",
       order: 3,
+      floatingOrder: 2,
 
       selector: {
         matches: function(element, win) {
@@ -402,6 +422,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.paste"),
       icon: "drawable://ab_paste",
       order: 2,
+      floatingOrder: 3,
 
       selector: {
         matches: function(element, win) {
@@ -434,6 +455,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.call"),
       icon: "drawable://phone",
       order: 1,
+      floatingOrder: 0,
 
       selector: {
         matches: function(element, win) {
@@ -452,16 +474,17 @@ var ActionBarHandler = {
 
     SEARCH: {
       id: "search_action",
-      label: Strings.browser.formatStringFromName("contextmenu.search",
+      label: () => Strings.browser.formatStringFromName("contextmenu.search",
         [Services.search.defaultEngine.name], 1),
       icon: "drawable://ab_search",
       order: 1,
+      floatingOrder: 6,
 
       selector: {
         matches: function(element, win) {
           
           return (ActionBarHandler._getSelectedText().length > 0);
-        },  
+        },
       },
 
       action: function(element, win) {
@@ -489,6 +512,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.addSearchEngine2"),
       icon: "drawable://ab_add_search_engine",
       order: 0,
+      floatingOrder: 8,
 
       selector: {
         matches: function(element, win) {
@@ -516,6 +540,7 @@ var ActionBarHandler = {
       label: Strings.browser.GetStringFromName("contextmenu.share"),
       icon: "drawable://ic_menu_share",
       order: 0,
+      floatingOrder: 4,
 
       selector: {
         matches: function(element, win) {
