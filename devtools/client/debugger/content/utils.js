@@ -3,30 +3,12 @@
 
 "use strict";
 
-const { promiseInvoke } = require("devtools/shared/async-utils");
 const { reportException } = require("devtools/shared/DevToolsUtils");
-
-
-
-function rdpInvoke(client, method, ...args) {
-  return (promiseInvoke(client, method, ...args)
-    .then((packet) => {
-      if (packet.error) {
-        let { error, message } = packet;
-        const err = new Error(error + ": " + message);
-        err.rdpError = error;
-        err.rdpMessage = message;
-        throw err;
-      }
-
-      return packet;
-    }));
-}
 
 function asPaused(client, func) {
   if (client.state != "paused") {
     return Task.spawn(function*() {
-      yield rdpInvoke(client, client.interrupt);
+      yield client.interrupt();
       let result;
 
       try {
@@ -35,11 +17,11 @@ function asPaused(client, func) {
       catch(e) {
         
         
-        yield rdpInvoke(client, client.resume);
+        yield client.resume();
         throw e;
       }
 
-      yield rdpInvoke(client, client.resume);
+      yield client.resume();
       return result;
     });
   } else {
@@ -93,7 +75,6 @@ function deleteIn(destObj, path) {
 }
 
 module.exports = {
-  rdpInvoke,
   asPaused,
   handleError,
   onReducerEvents,
