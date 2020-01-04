@@ -327,10 +327,12 @@ struct ReflowInput : public SizeComputationInput {
 
   
   
+  MOZ_INIT_OUTSIDE_CTOR
   const ReflowInput *mCBReflowInput;
 
   
   
+  MOZ_INIT_OUTSIDE_CTOR
   nsCSSFrameType   mFrameType;
 
   
@@ -536,6 +538,7 @@ private:
   
   
   
+  MOZ_INIT_OUTSIDE_CTOR
   nscoord          mComputedWidth; 
 
   
@@ -551,6 +554,7 @@ private:
   
   
   
+  MOZ_INIT_OUTSIDE_CTOR
   nscoord          mComputedHeight;
 
   
@@ -560,17 +564,26 @@ private:
   
   
   
+  MOZ_INIT_OUTSIDE_CTOR
   nscoord          mComputedMinWidth, mComputedMaxWidth;
+  MOZ_INIT_OUTSIDE_CTOR
   nscoord          mComputedMinHeight, mComputedMaxHeight;
 
 public:
   
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStyleDisplay*    mStyleDisplay;
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStyleVisibility* mStyleVisibility;
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStylePosition*   mStylePosition;
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStyleBorder*     mStyleBorder;
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStyleMargin*     mStyleMargin;
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStylePadding*    mStylePadding;
+  MOZ_INIT_OUTSIDE_CTOR
   const nsStyleText*       mStyleText;
 
   bool IsFloating() const;
