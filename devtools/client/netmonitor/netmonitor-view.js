@@ -2981,7 +2981,6 @@ NetworkDetailsView.prototype = {
       
       $("#response-content-image-name-value").setAttribute("value", NetworkHelper.nsIURL(aUrl).fileName);
       $("#response-content-image-mime-value").setAttribute("value", mimeType);
-      $("#response-content-image-encoding-value").setAttribute("value", encoding);
 
       
       $("#response-content-image").onload = e => {
