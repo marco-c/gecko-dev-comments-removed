@@ -403,7 +403,7 @@ public:
   
   
   
-  virtual TrackID const trackid_locked() { return listener_->trackid(); }
+  virtual TrackID trackid_locked() const { return listener_->trackid(); }
   
   virtual bool IsVideo() const override { return is_video_; }
 

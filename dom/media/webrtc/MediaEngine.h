@@ -133,7 +133,7 @@ public:
   virtual bool IsFake() = 0;
 
   
-  virtual const dom::MediaSourceEnum GetMediaSource() = 0;
+  virtual dom::MediaSourceEnum GetMediaSource() const = 0;
 
   
   
