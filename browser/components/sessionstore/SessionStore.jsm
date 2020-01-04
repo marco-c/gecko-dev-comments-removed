@@ -3216,17 +3216,8 @@ var SessionStoreInternal = {
     let tabbrowser = window.gBrowser;
     let forceOnDemand = options.forceOnDemand;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (browser.isRemoteBrowser && (!restoreImmediately || forceOnDemand)) {
-      tabbrowser.updateBrowserRemoteness(browser, false);
-    }
+    this._maybeUpdateBrowserRemoteness(Object.assign({
+      browser, tabbrowser, tabData }, options));
 
     
     this._setWindowStateBusy(window);
@@ -3619,6 +3610,50 @@ var SessionStoreInternal = {
   },
 
   
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _maybeUpdateBrowserRemoteness({ browser, tabbrowser, tabData,
+                                  restoreImmediately, forceOnDemand }) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (browser.isRemoteBrowser &&
+        !tabData.pinned &&
+        (!restoreImmediately || forceOnDemand)) {
+      tabbrowser.updateBrowserRemoteness(browser, false);
+    }
+  },
 
   
 
