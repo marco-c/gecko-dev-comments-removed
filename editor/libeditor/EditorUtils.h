@@ -95,40 +95,41 @@ class MOZ_RAII nsAutoSelectionReset
     void Abort();
 };
 
+namespace mozilla {
 
 
 
-class MOZ_RAII nsAutoRules
+
+class MOZ_RAII AutoRules final
 {
-  public:
-
-  nsAutoRules(nsEditor *ed, EditAction action,
-              nsIEditor::EDirection aDirection
-              MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mEd(ed), mDoNothing(false)
+public:
+  AutoRules(nsEditor* aEditor, EditAction aAction,
+            nsIEditor::EDirection aDirection
+            MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+    : mEditor(aEditor)
+    , mDoNothing(false)
   {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    if (mEd && !mEd->mAction) 
-    {
-      mEd->StartOperation(action, aDirection);
-    }
-    else mDoNothing = true; 
-  }
-  ~nsAutoRules()
-  {
-    if (mEd && !mDoNothing)
-    {
-      mEd->EndOperation();
+    
+    if (mEditor && !mEditor->mAction) {
+      mEditor->StartOperation(aAction, aDirection);
+    } else {
+      mDoNothing = true; 
     }
   }
 
-  protected:
-  nsEditor *mEd;
+  ~AutoRules()
+  {
+    if (mEditor && !mDoNothing) {
+      mEditor->EndOperation();
+    }
+  }
+
+protected:
+  nsEditor* mEditor;
   bool mDoNothing;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
-
-namespace mozilla {
 
 
 
