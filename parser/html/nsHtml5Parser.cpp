@@ -210,14 +210,15 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
   
   
   RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
-  RefPtr<nsHtml5TreeOpExecutor> treeOpKungFuDeathGrip(mExecutor);
+  mozilla::Unused << streamKungFuDeathGrip; 
+  RefPtr<nsHtml5TreeOpExecutor> executor(mExecutor);
 
-  if (!mExecutor->HasStarted()) {
+  if (!executor->HasStarted()) {
     NS_ASSERTION(!GetStreamParser(),
                  "Had stream parser but document.write started life cycle.");
     
-    mExecutor->SetParser(this);
-    mTreeBuilder->setScriptingEnabled(mExecutor->IsScriptEnabled());
+    executor->SetParser(this);
+    mTreeBuilder->setScriptingEnabled(executor->IsScriptEnabled());
 
     bool isSrcdoc = false;
     nsCOMPtr<nsIChannel> channel;
@@ -228,7 +229,7 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
     mTreeBuilder->setIsSrcdocDocument(isSrcdoc);
 
     mTokenizer->start();
-    mExecutor->Start();
+    executor->Start();
     if (!aContentType.EqualsLiteral("text/html")) {
       mTreeBuilder->StartPlainText();
       mTokenizer->StartPlainText();
@@ -238,12 +239,12 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
 
 
 
-    rv = mExecutor->WillBuildModel(eDTDMode_unknown);
+    rv = executor->WillBuildModel(eDTDMode_unknown);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
-  if (mExecutor->IsComplete()) {
+  if (executor->IsComplete()) {
     return NS_OK;
   }
 
@@ -371,11 +372,11 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
       }
 
       if (!mTokenizer->EnsureBufferSpace(stackBuffer.getLength())) {
-        return mExecutor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
+        return executor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
       }
       mLastWasCR = mTokenizer->tokenizeBuffer(&stackBuffer);
       if (NS_FAILED((rv = mTreeBuilder->IsBroken()))) {
-        return mExecutor->MarkAsBroken(rv);
+        return executor->MarkAsBroken(rv);
       }
 
       if (inRootContext) {
@@ -386,11 +387,11 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
 
       if (mTreeBuilder->HasScript()) {
         mTreeBuilder->Flush(); 
-        rv = mExecutor->FlushDocumentWrite(); 
+        rv = executor->FlushDocumentWrite(); 
         NS_ENSURE_SUCCESS(rv, rv);
         
         
-        if (mExecutor->IsComplete()) {
+        if (executor->IsComplete()) {
           return NS_OK;
         }
       }
@@ -405,7 +406,7 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
     heapBuffer = stackBuffer.FalliblyCopyAsOwningBuffer();
     if (!heapBuffer) {
       
-      return mExecutor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
+      return executor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
     }
   }
 
@@ -446,7 +447,7 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
       "Buffer wasn't tokenized to completion?");
     
     mTreeBuilder->Flush(); 
-    rv = mExecutor->FlushDocumentWrite(); 
+    rv = executor->FlushDocumentWrite(); 
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (stackBuffer.hasMore()) {
     
@@ -457,7 +458,7 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
       if (!mDocWriteSpeculativeTreeBuilder) {
         
         mDocWriteSpeculativeTreeBuilder =
-            new nsHtml5TreeBuilder(nullptr, mExecutor->GetStage());
+            new nsHtml5TreeBuilder(nullptr, executor->GetStage());
         mDocWriteSpeculativeTreeBuilder->setScriptingEnabled(
             mTreeBuilder->isScriptingEnabled());
         mDocWriteSpeculativeTokenizer =
@@ -484,20 +485,20 @@ nsHtml5Parser::Parse(const nsAString& aSourceBuffer,
       if (stackBuffer.hasMore()) {
         if (!mDocWriteSpeculativeTokenizer->EnsureBufferSpace(
             stackBuffer.getLength())) {
-          return mExecutor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
+          return executor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
         }
         mDocWriteSpeculativeLastWasCR =
             mDocWriteSpeculativeTokenizer->tokenizeBuffer(&stackBuffer);
         nsresult rv;
         if (NS_FAILED((rv = mDocWriteSpeculativeTreeBuilder->IsBroken()))) {
-          return mExecutor->MarkAsBroken(rv);
+          return executor->MarkAsBroken(rv);
         }
       }
     }
 
     mDocWriteSpeculativeTreeBuilder->Flush();
     mDocWriteSpeculativeTreeBuilder->DropHandles();
-    mExecutor->FlushSpeculativeLoads();
+    executor->FlushSpeculativeLoads();
   }
 
   return NS_OK;
@@ -514,12 +515,12 @@ nsHtml5Parser::Terminate()
   
   
   nsCOMPtr<nsIParser> kungFuDeathGrip(this);
-  RefPtr<nsHtml5StreamParser> streamKungFuDeathGrip(GetStreamParser());
-  RefPtr<nsHtml5TreeOpExecutor> treeOpKungFuDeathGrip(mExecutor);
-  if (GetStreamParser()) {
-    GetStreamParser()->Terminate();
+  RefPtr<nsHtml5StreamParser> streamParser(GetStreamParser());
+  RefPtr<nsHtml5TreeOpExecutor> executor(mExecutor);
+  if (streamParser) {
+    streamParser->Terminate();
   }
-  return mExecutor->DidBuildModel(true);
+  return executor->DidBuildModel(true);
 }
 
 NS_IMETHODIMP
