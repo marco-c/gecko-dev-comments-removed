@@ -92,9 +92,9 @@
 
 
 
+using namespace mozilla;
+
 nsGrid::nsGrid():mBox(nullptr),
-                 mRows(nullptr),
-                 mColumns(nullptr), 
                  mRowsBox(nullptr),
                  mColumnsBox(nullptr),
                  mNeedsRebuild(true),
@@ -102,7 +102,6 @@ nsGrid::nsGrid():mBox(nullptr),
                  mColumnCount(0),
                  mExtraRowCount(0),
                  mExtraColumnCount(0),
-                 mCellMap(nullptr),
                  mMarkingDirty(false)
 {
     MOZ_COUNT_CTOR(nsGrid);
@@ -205,8 +204,8 @@ nsGrid::RebuildIfNeeded()
   }
 
   
-  BuildRows(mRowsBox, rowCount, &mRows, true);
-  BuildRows(mColumnsBox, columnCount, &mColumns, false);
+  mRows = BuildRows(mRowsBox, rowCount, true);
+  mColumns = BuildRows(mColumnsBox, columnCount, false);
 
   
   mCellMap = BuildCellMap(rowCount, columnCount);
@@ -215,22 +214,13 @@ nsGrid::RebuildIfNeeded()
   mColumnCount = columnCount;
 
   
-  PopulateCellMap(mRows, mColumns, mRowCount, mColumnCount, true);
-  PopulateCellMap(mColumns, mRows, mColumnCount, mRowCount, false);
+  PopulateCellMap(mRows.get(), mColumns.get(), mRowCount, mColumnCount, true);
+  PopulateCellMap(mColumns.get(), mRows.get(), mColumnCount, mRowCount, false);
 }
 
 void
 nsGrid::FreeMap()
 {
-  if (mRows) 
-    delete[] mRows;
-
-  if (mColumns)
-    delete[] mColumns;
-
-  if (mCellMap)
-    delete[] mCellMap;
-
   mRows = nullptr;
   mColumns = nullptr;
   mCellMap = nullptr;
@@ -313,44 +303,36 @@ nsGrid::CountRowsColumns(nsIFrame* aRowBox, int32_t& aRowCount, int32_t& aComput
 
 
 
-void
-nsGrid::BuildRows(nsIFrame* aBox, int32_t aRowCount, nsGridRow** aRows, bool aIsHorizontal)
+UniquePtr<nsGridRow[]>
+nsGrid::BuildRows(nsIFrame* aBox, int32_t aRowCount, bool aIsHorizontal)
 {
   
   if (aRowCount == 0) {
-
-    
-    if (*aRows)
-      delete[] (*aRows);
-
-    *aRows = nullptr;
-    return;
+    return nullptr;
   }
 
   
-  nsGridRow* row;
+  UniquePtr<nsGridRow[]> row;
   
   
   if (aIsHorizontal)
   { 
     if (aRowCount > mRowCount) {
-       delete[] mRows;
-       row = new nsGridRow[aRowCount];
+       row = MakeUnique<nsGridRow[]>(aRowCount);
     } else {
       for (int32_t i=0; i < mRowCount; i++)
         mRows[i].Init(nullptr, false);
 
-      row = mRows;
+      row = Move(mRows);
     }
   } else {
     if (aRowCount > mColumnCount) {
-       delete[] mColumns;
-       row = new nsGridRow[aRowCount];
+       row = MakeUnique<nsGridRow[]>(aRowCount);
     } else {
        for (int32_t i=0; i < mColumnCount; i++)
          mColumns[i].Init(nullptr, false);
 
-       row = mColumns;
+       row = Move(mColumns);
     }
   }
 
@@ -359,40 +341,36 @@ nsGrid::BuildRows(nsIFrame* aBox, int32_t aRowCount, nsGridRow** aRows, bool aIs
   {
     nsCOMPtr<nsIGridPart> monument = GetPartFromBox(aBox);
     if (monument) {
-       monument->BuildRows(aBox, row);
+       monument->BuildRows(aBox, row.get());
     }
   }
 
-  *aRows = row;
+  return row;
 }
 
 
 
 
 
-nsGridCell*
+UniquePtr<nsGridCell[]>
 nsGrid::BuildCellMap(int32_t aRows, int32_t aColumns)
 {
   int32_t size = aRows*aColumns;
   int32_t oldsize = mRowCount*mColumnCount;
   if (size == 0) {
-    delete[] mCellMap;
+    return nullptr;
   }
-  else {
-    if (size > oldsize) {
-      delete[] mCellMap;
-      return new nsGridCell[size];
-    } else {
-      
-      for (int32_t i=0; i < oldsize; i++)
-      {
-        mCellMap[i].SetBoxInRow(nullptr);
-        mCellMap[i].SetBoxInColumn(nullptr);
-      }
-      return mCellMap;
-    }
+
+  if (size > oldsize) {
+    return MakeUnique<nsGridCell[]>(size);
   }
-  return nullptr;
+
+  
+  for (int32_t i=0; i < oldsize; i++) {
+    mCellMap[i].SetBoxInRow(nullptr);
+    mCellMap[i].SetBoxInColumn(nullptr);
+  }
+  return Move(mCellMap);
 }
 
 

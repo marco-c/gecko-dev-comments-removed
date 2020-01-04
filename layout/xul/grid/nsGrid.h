@@ -10,6 +10,7 @@
 #include "nsStackLayout.h"
 #include "nsIGridPart.h"
 #include "nsCOMPtr.h"
+#include "mozilla/UniquePtr.h"
 
 class nsBoxLayoutState;
 class nsGridCell;
@@ -84,8 +85,9 @@ private:
 
   void FreeMap();
   void FindRowsAndColumns(nsIFrame** aRows, nsIFrame** aColumns);
-  void BuildRows(nsIFrame* aBox, int32_t aSize, nsGridRow** aColumnsRows, bool aIsHorizontal = true);
-  nsGridCell* BuildCellMap(int32_t aRows, int32_t aColumns);
+  mozilla::UniquePtr<nsGridRow[]> BuildRows(nsIFrame* aBox, int32_t aSize,
+                                            bool aIsHorizontal = true);
+  mozilla::UniquePtr<nsGridCell[]> BuildCellMap(int32_t aRows, int32_t aColumns);
   void PopulateCellMap(nsGridRow* aRows, nsGridRow* aColumns, int32_t aRowCount, int32_t aColumnCount, bool aIsHorizontal = true);
   void CountRowsColumns(nsIFrame* aBox, int32_t& aRowCount, int32_t& aComputedColumnCount);
   void SetLargestSize(nsSize& aSize, nscoord aHeight, bool aIsHorizontal = true);
@@ -96,10 +98,10 @@ private:
   nsIFrame* mBox;
 
   
-  nsGridRow* mRows;
+  mozilla::UniquePtr<nsGridRow[]> mRows;
 
   
-  nsGridRow* mColumns;
+  mozilla::UniquePtr<nsGridRow[]> mColumns;
 
   
   nsIFrame* mRowsBox;
@@ -120,7 +122,7 @@ private:
   int32_t mExtraColumnCount;
 
   
-  nsGridCell* mCellMap;
+  mozilla::UniquePtr<nsGridCell[]> mCellMap;
 
   
   
