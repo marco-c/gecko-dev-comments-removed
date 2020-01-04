@@ -2,18 +2,15 @@
 
 "use strict";
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var { gDevTools } = require("devtools/client/framework/devtools");
-var { Task } = require("devtools/shared/task");
+
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/framework/test/shared-head.js",
+  this);
+
 var { CurlUtils } = Cu.import("resource://devtools/client/shared/Curl.jsm", {});
-var Services = require("Services");
-var promise = require("promise");
 var NetworkHelper = require("devtools/shared/webconsole/network-helper");
-var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var flags = require("devtools/shared/flags");
-var { TargetFactory } = require("devtools/client/framework/target");
 var { Toolbox } = require("devtools/client/framework/toolbox");
 
 const EXAMPLE_URL = "http://example.com/browser/devtools/client/netmonitor/test/";
@@ -61,11 +58,6 @@ const TEST_IMAGE_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAA
 
 const FRAME_SCRIPT_UTILS_URL = "chrome://devtools/content/shared/frame-script-utils.js";
 
-flags.testing = true;
-SimpleTest.registerCleanupFunction(() => {
-  flags.testing = false;
-});
-
 
 waitForExplicitFinish();
 
@@ -85,37 +77,7 @@ registerCleanupFunction(() => {
   Services.prefs.setBoolPref("devtools.debugger.log", gEnableLogging);
   Services.prefs.setCharPref("devtools.netmonitor.filters", gDefaultFilters);
   Services.prefs.clearUserPref("devtools.cache.disabled");
-  Services.prefs.clearUserPref("devtools.dump.emit");
 });
-
-function addTab(aUrl, aWindow) {
-  info("Adding tab: " + aUrl);
-
-  let deferred = promise.defer();
-  let targetWindow = aWindow || window;
-  let targetBrowser = targetWindow.gBrowser;
-
-  targetWindow.focus();
-  let tab = targetBrowser.selectedTab = targetBrowser.addTab(aUrl);
-  let browser = tab.linkedBrowser;
-
-  browser.addEventListener("load", function onLoad() {
-    browser.removeEventListener("load", onLoad, true);
-    deferred.resolve(tab);
-  }, true);
-
-  return deferred.promise;
-}
-
-function removeTab(aTab, aWindow) {
-  info("Removing tab.");
-
-  let targetWindow = aWindow || window;
-  let targetBrowser = targetWindow.gBrowser;
-
-  
-  targetBrowser.removeTab(aTab, {skipPermitUnload: true});
-}
 
 function waitForNavigation(aTarget) {
   let deferred = promise.defer();
