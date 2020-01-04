@@ -14,6 +14,10 @@ function run_test() {
   run_next_test();
 }
 
+
+
+EXPECTED_DTU_ASSERT_FAILURE_COUNT = 1;
+
 add_task(function *() {
   let front = new StubbedMemoryFront();
   let heapWorker = new HeapAnalysesClient();
