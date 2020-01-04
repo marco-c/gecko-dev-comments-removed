@@ -48,90 +48,12 @@
 #include "webrtc/video_engine/include/vie_codec.h"
 #include "webrtc/video_engine/include/vie_render.h"
 #include "webrtc/video_engine/include/vie_capture.h"
+#include "CamerasChild.h"
 
 #include "NullTransport.h"
 #include "AudioOutputObserver.h"
 
 namespace mozilla {
-
-
-
-
-class MediaEngineWebRTCVideoSource : public MediaEngineCameraVideoSource
-                                   , public webrtc::ExternalRenderer
-{
-public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-
-  
-  virtual int FrameSizeChange(unsigned int w, unsigned int h, unsigned int streams) override;
-  virtual int DeliverFrame(unsigned char* buffer,
-                           int size,
-                           uint32_t time_stamp,
-                           int64_t ntp_time_ms,
-                           int64_t render_time,
-                           void *handle) override;
-  
-
-
-
-
-  virtual bool IsTextureSupported() override { return false; }
-
-  MediaEngineWebRTCVideoSource(webrtc::VideoEngine* aVideoEnginePtr, int aIndex,
-                               dom::MediaSourceEnum aMediaSource = dom::MediaSourceEnum::Camera)
-    : MediaEngineCameraVideoSource(aIndex, "WebRTCCamera.Monitor")
-    , mVideoEngine(aVideoEnginePtr)
-    , mMinFps(-1)
-    , mMediaSource(aMediaSource)
-  {
-    MOZ_ASSERT(aVideoEnginePtr);
-    MOZ_ASSERT(aMediaSource != dom::MediaSourceEnum::Other);
-    Init();
-  }
-
-  virtual nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
-                            const MediaEnginePrefs& aPrefs,
-                            const nsString& aDeviceId) override;
-  virtual nsresult Deallocate() override;
-  virtual nsresult Start(SourceMediaStream*, TrackID) override;
-  virtual nsresult Stop(SourceMediaStream*, TrackID) override;
-  virtual void NotifyPull(MediaStreamGraph* aGraph,
-                          SourceMediaStream* aSource,
-                          TrackID aId,
-                          StreamTime aDesiredTime) override;
-
-  virtual const dom::MediaSourceEnum GetMediaSource() override {
-    return mMediaSource;
-  }
-  virtual nsresult TakePhoto(PhotoCallback* aCallback) override
-  {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  void Refresh(int aIndex);
-
-  virtual void Shutdown() override;
-
-protected:
-  ~MediaEngineWebRTCVideoSource() { Shutdown(); }
-
-private:
-  
-  void Init();
-
-  
-  webrtc::VideoEngine* mVideoEngine; 
-  ScopedCustomReleasePtr<webrtc::ViEBase> mViEBase;
-  ScopedCustomReleasePtr<webrtc::ViECapture> mViECapture;
-  ScopedCustomReleasePtr<webrtc::ViERender> mViERender;
-
-  int mMinFps; 
-  dom::MediaSourceEnum mMediaSource; 
-
-  size_t NumCapabilities() override;
-  void GetCapability(size_t aIndex, webrtc::CaptureCapability& aOut) override;
-};
 
 class MediaEngineWebRTCAudioCaptureSource : public MediaEngineAudioSource
 {
@@ -266,9 +188,9 @@ public:
                int16_t audio10ms[], int length,
                int samplingFreq, bool isStereo) override;
 
-  NS_DECL_THREADSAFE_ISUPPORTS
-
   virtual void Shutdown() override;
+
+  NS_DECL_THREADSAFE_ISUPPORTS
 
 protected:
   ~MediaEngineWebRTCMicrophoneSource() { Shutdown(); }
@@ -330,29 +252,11 @@ private:
 
   nsCOMPtr<nsIThread> mThread;
 
+  
   Mutex mMutex;
-
-  
-  webrtc::VideoEngine* mScreenEngine;
-  webrtc::VideoEngine* mBrowserEngine;
-  webrtc::VideoEngine* mWinEngine;
-  webrtc::VideoEngine* mAppEngine;
-  webrtc::VideoEngine* mVideoEngine;
   webrtc::VoiceEngine* mVoiceEngine;
-
-  
-  webrtc::Config mAppEngineConfig;
-  webrtc::Config mWinEngineConfig;
-  webrtc::Config mScreenEngineConfig;
-  webrtc::Config mBrowserEngineConfig;
-
-  
-  bool mVideoEngineInit;
   bool mAudioEngineInit;
-  bool mScreenEngineInit;
-  bool mBrowserEngineInit;
-  bool mWinEngineInit;
-  bool mAppEngineInit;
+
   bool mHasTabVideoSource;
 
   
