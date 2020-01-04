@@ -164,7 +164,7 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
     mFlagSynchronous(false), mFlagAborted(false), mFlagParseBody(false),
     mFlagSyncLooping(false), mFlagBackgroundRequest(false),
     mFlagHadUploadListenersOnSend(false), mFlagACwithCredentials(false),
-    mFlagTimedOut(false), mFlagDeleted(false),
+    mFlagTimedOut(false), mFlagDeleted(false), mFlagSend(false),
     mUploadTransferred(0), mUploadTotal(0), mUploadComplete(true),
     mProgressSinceLastProgressEvent(false),
     mRequestSentTime(0), mTimeoutMilliseconds(0),
@@ -188,7 +188,8 @@ XMLHttpRequestMainThread::~XMLHttpRequestMainThread()
 {
   mFlagDeleted = true;
 
-  if (mState == State::sent || mState == State::loading) {
+  if ((mState == State::opened && mFlagSend) ||
+      mState == State::loading) {
     Abort();
   }
 
@@ -1020,7 +1021,7 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
   }
 
   if (mState != State::unsent &&
-      mState != State::opened &&
+      !(mState == State::opened && !mFlagSend) &&
       mState != State::done) {
     ChangeState(State::done, true);
 
@@ -1132,9 +1133,7 @@ XMLHttpRequestMainThread::GetAllResponseHeaders(nsACString& aResponseHeaders,
 
   
   
-  if (mState == State::unsent ||
-      mState == State::opened ||
-      mState == State::sent) {
+  if (mState == State::unsent || mState == State::opened) {
     return;
   }
 
@@ -1198,9 +1197,7 @@ XMLHttpRequestMainThread::GetResponseHeader(const nsACString& header,
   if (!httpChannel) {
     
     
-    if (mState == State::unsent ||
-        mState == State::opened ||
-        mState == State::sent) {
+    if (mState == State::unsent || mState == State::opened) {
       return;
     }
 
@@ -1406,7 +1403,7 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
   nsCOMPtr<nsIURI> uri;
 
   if (mState == State::opened || mState == State::headers_received ||
-      mState == State::loading || mState == State::sent) {
+      mState == State::loading) {
     
     Abort();
 
@@ -1416,6 +1413,8 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
     
     
   }
+
+  mFlagSend = false;
 
   
   mFlagAborted = false;
@@ -2112,6 +2111,8 @@ XMLHttpRequestMainThread::ChangeStateToDone()
 
   ChangeState(State::done, true);
 
+  mFlagSend = false;
+
   if (mTimeoutTimer) {
     mTimeoutTimer->Cancel();
   }
@@ -2426,13 +2427,9 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   nsresult rv = CheckInnerWindowCorrectness();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  if (mState == State::sent) {
-    return NS_ERROR_DOM_INVALID_STATE_ERR;
-  }
-
-  
-  if (!mChannel || mState != State::opened) {
+  if (mState != State::opened || 
+      mFlagSend || 
+      !mChannel) { 
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
@@ -2752,6 +2749,9 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   mWaitingForOnStopRequest = true;
 
   
+  mFlagSend = true;
+
+  
   if (mFlagSynchronous) {
     mFlagSyncLooping = true;
 
@@ -2770,11 +2770,13 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
       }
     }
 
-    ChangeState(State::sent);
+    if (mProgressNotifier) {
+      mProgressTimerIsActive = false;
+      mProgressNotifier->Cancel();
+    }
 
     {
       nsAutoSyncOperation sync(suspendedDoc);
-      
       nsIThread *thread = NS_GetCurrentThread();
       while (mFlagSyncLooping) {
         if (!NS_ProcessNextEvent(thread)) {
@@ -2797,7 +2799,11 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
     
     
     
-    ChangeState(State::sent);
+    if (mProgressNotifier) {
+      mProgressTimerIsActive = false;
+      mProgressNotifier->Cancel();
+    }
+
     if (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress)) {
       StartProgressEventTimer();
     }
@@ -2822,7 +2828,7 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& header,
                                            const nsACString& value)
 {
   
-  if (mState != State::opened) {
+  if (mState != State::opened || mFlagSend) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
   NS_ASSERTION(mChannel, "mChannel must be valid if we're OPENED.");
@@ -2986,20 +2992,21 @@ uint16_t
 XMLHttpRequestMainThread::ReadyState() const
 {
   
-  if (mState == State::unsent) {
-    return UNSENT;
+  switch(mState) {
+    case State::unsent:
+      return UNSENT;
+    case State::opened:
+      return OPENED;
+    case State::headers_received:
+      return HEADERS_RECEIVED;
+    case State::loading:
+      return LOADING;
+    case State::done:
+      return DONE;
+    default:
+      MOZ_CRASH("Unknown state");
   }
-  if (mState == State::opened || mState == State::sent) {
-    return OPENED;
-  }
-  if (mState == State::headers_received) {
-    return HEADERS_RECEIVED;
-  }
-  if (mState == State::loading) {
-    return LOADING;
-  }
-  MOZ_ASSERT(mState == State::done);
-  return DONE;
+  return 0;
 }
 
 void XMLHttpRequestMainThread::OverrideMimeType(const nsAString& aMimeType, ErrorResult& aRv)
@@ -3086,7 +3093,8 @@ XMLHttpRequestMainThread::SetWithCredentials(bool aWithCredentials, ErrorResult&
   
   
   
-  if ((mState != State::unsent && mState != State::opened) || mIsAnon) {
+  if ((mState != State::unsent && mState != State::opened) ||
+      mFlagSend || mIsAnon) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
@@ -3097,9 +3105,6 @@ XMLHttpRequestMainThread::SetWithCredentials(bool aWithCredentials, ErrorResult&
 nsresult
 XMLHttpRequestMainThread::ChangeState(State aState, bool aBroadcast)
 {
-  bool droppingFromSENTtoOPENED = mState == State::sent &&
-                                  aState == State::opened;
-
   mState = aState;
   nsresult rv = NS_OK;
 
@@ -3109,10 +3114,10 @@ XMLHttpRequestMainThread::ChangeState(State aState, bool aBroadcast)
     mProgressNotifier->Cancel();
   }
 
-  if (aState != State::sent && 
-      !droppingFromSENTtoOPENED && 
-      aBroadcast &&
-      (!mFlagSynchronous || aState == State::opened || aState == State::done)) {
+
+  if (aBroadcast && (!mFlagSynchronous ||
+                     aState == State::opened ||
+                     aState == State::done)) {
     nsCOMPtr<nsIDOMEvent> event;
     rv = CreateReadystatechangeEvent(getter_AddRefs(event));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -3213,7 +3218,7 @@ XMLHttpRequestMainThread::MaybeDispatchProgressEvents(bool aFinalProgress)
   }
 
   
-  if (mState == State::opened || mState == State::sent) {
+  if (mState == State::opened) {
     if (mUpload && !mUploadComplete) {
       DispatchProgressEvent(mUpload, ProgressEventType::progress,
                             mUploadLengthComputable, mUploadTransferred,
@@ -3244,7 +3249,7 @@ NS_IMETHODIMP
 XMLHttpRequestMainThread::OnProgress(nsIRequest *aRequest, nsISupports *aContext, int64_t aProgress, int64_t aProgressMax)
 {
   
-  bool upload = mState == State::opened || mState == State::sent;
+  bool upload = mState == State::opened;
   
   
   bool lengthComputable = (aProgressMax != -1);
