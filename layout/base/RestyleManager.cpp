@@ -358,7 +358,7 @@ ApplyRenderingChangeToTree(nsPresContext* aPresContext,
   nsIPresShell *shell = aPresContext->PresShell();
   if (shell->IsPaintingSuppressed()) {
     
-    aChange = NS_SubtractHint(aChange, nsChangeHint_RepaintFrame);
+    aChange &= ~nsChangeHint_RepaintFrame;
     if (!aChange) {
       return;
     }
@@ -381,7 +381,7 @@ ApplyRenderingChangeToTree(nsPresContext* aPresContext,
 
     if (propagatedFrame != aFrame) {
       DoApplyRenderingChangeToTree(propagatedFrame, nsChangeHint_RepaintFrame);
-      aChange = NS_SubtractHint(aChange, nsChangeHint_RepaintFrame);
+      aChange &= ~nsChangeHint_RepaintFrame;
       if (!aChange) {
         return;
       }
@@ -839,17 +839,17 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       if (!frame->FrameMaintainsOverflow()) {
         
         
-        hint = NS_SubtractHint(hint, nsChangeHint_UpdateOverflow |
-                                     nsChangeHint_ChildrenOnlyTransform |
-                                     nsChangeHint_UpdatePostTransformOverflow |
-                                     nsChangeHint_UpdateParentOverflow);
+        hint &= ~(nsChangeHint_UpdateOverflow |
+                  nsChangeHint_ChildrenOnlyTransform |
+                  nsChangeHint_UpdatePostTransformOverflow |
+                  nsChangeHint_UpdateParentOverflow);
       }
 
       if (!(frame->GetStateBits() & NS_FRAME_MAY_BE_TRANSFORMED)) {
         
         
         
-        hint = NS_SubtractHint(hint, nsChangeHint_UpdatePostTransformOverflow);
+        hint &= ~nsChangeHint_UpdatePostTransformOverflow;
       }
 
       if (hint & nsChangeHint_UpdateEffects) {
@@ -924,8 +924,8 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
           }
           
           
-          hint = NS_SubtractHint(hint, nsChangeHint_UpdateOverflow |
-                                       nsChangeHint_UpdatePostTransformOverflow);
+          hint &= ~(nsChangeHint_UpdateOverflow |
+                    nsChangeHint_UpdatePostTransformOverflow);
         }
         if (hint & nsChangeHint_ChildrenOnlyTransform) {
           
@@ -2581,8 +2581,8 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
     
   , mContent(mFrame->GetContent() ? mFrame->GetContent() : mParentContent)
   , mChangeList(aChangeList)
-  , mHintsHandled(NS_SubtractHint(aHintsHandledByAncestors,
-                  NS_HintsNotHandledForDescendantsIn(aHintsHandledByAncestors)))
+  , mHintsHandled(aHintsHandledByAncestors &
+                  ~NS_HintsNotHandledForDescendantsIn(aHintsHandledByAncestors))
   , mParentFrameHintsNotHandledForDescendants(nsChangeHint(0))
   , mHintsNotHandledForDescendants(nsChangeHint(0))
   , mRestyleTracker(aRestyleTracker)
@@ -2614,8 +2614,8 @@ ElementRestyler::ElementRestyler(const ElementRestyler& aParentRestyler,
     
   , mContent(mFrame->GetContent() ? mFrame->GetContent() : mParentContent)
   , mChangeList(aParentRestyler.mChangeList)
-  , mHintsHandled(NS_SubtractHint(aParentRestyler.mHintsHandled,
-                  NS_HintsNotHandledForDescendantsIn(aParentRestyler.mHintsHandled)))
+  , mHintsHandled(aParentRestyler.mHintsHandled &
+                  ~NS_HintsNotHandledForDescendantsIn(aParentRestyler.mHintsHandled))
   , mParentFrameHintsNotHandledForDescendants(
       aParentRestyler.mHintsNotHandledForDescendants)
   , mHintsNotHandledForDescendants(nsChangeHint(0))
@@ -2647,7 +2647,7 @@ ElementRestyler::ElementRestyler(const ElementRestyler& aParentRestyler,
     
     
     
-    mHintsHandled = NS_SubtractHint(mHintsHandled, nsChangeHint_AllReflowHints);
+    mHintsHandled &= ~nsChangeHint_AllReflowHints;
   }
 }
 
@@ -2661,8 +2661,8 @@ ElementRestyler::ElementRestyler(ParentContextFromChildFrame,
     
   , mContent(mFrame->GetContent() ? mFrame->GetContent() : mParentContent)
   , mChangeList(aParentRestyler.mChangeList)
-  , mHintsHandled(NS_SubtractHint(aParentRestyler.mHintsHandled,
-                  NS_HintsNotHandledForDescendantsIn(aParentRestyler.mHintsHandled)))
+  , mHintsHandled(aParentRestyler.mHintsHandled &
+                  ~NS_HintsNotHandledForDescendantsIn(aParentRestyler.mHintsHandled))
   , mParentFrameHintsNotHandledForDescendants(
       
       nsChangeHint_Hints_NotHandledForDescendants)
@@ -2703,8 +2703,8 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
   , mParentContent(nullptr)
   , mContent(aContent)
   , mChangeList(aChangeList)
-  , mHintsHandled(NS_SubtractHint(aHintsHandledByAncestors,
-                  NS_HintsNotHandledForDescendantsIn(aHintsHandledByAncestors)))
+  , mHintsHandled(aHintsHandledByAncestors &
+                  ~NS_HintsNotHandledForDescendantsIn(aHintsHandledByAncestors))
   , mParentFrameHintsNotHandledForDescendants(nsChangeHint(0))
   , mHintsNotHandledForDescendants(nsChangeHint(0))
   , mRestyleTracker(aRestyleTracker)
@@ -2792,7 +2792,7 @@ ElementRestyler::CaptureChange(nsStyleContext* aOldContext,
   
   if ((ourChange & nsChangeHint_UpdateEffects) &&
       mContent && !mContent->IsElement()) {
-    ourChange = NS_SubtractHint(ourChange, nsChangeHint_UpdateEffects);
+    ourChange &= ~nsChangeHint_UpdateEffects;
   }
 
   NS_UpdateHint(ourChange, aChangeToAssume);

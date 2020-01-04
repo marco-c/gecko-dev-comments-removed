@@ -221,11 +221,6 @@ inline void operator>=(nsChangeHint s1, nsChangeHint s2) {}
 
 
 
-inline nsChangeHint NS_SubtractHint(nsChangeHint aH1, nsChangeHint aH2) {
-  return (nsChangeHint)(aH1 & ~aH2);
-}
-
-
 
 inline bool NS_UpdateHint(nsChangeHint& aDest, nsChangeHint aSrc) {
   nsChangeHint r = (nsChangeHint)(aDest | aSrc);
