@@ -460,6 +460,18 @@ SSL_IMPORT SECStatus SSL_VersionRangeSet(PRFileDesc *fd,
 
 
 
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_SetDowngradeCheckVersion(PRFileDesc *fd,
+                                                  PRUint16 version);
+
+
+
 #define SSL_NOT_ALLOWED		 0	      /* or invalid or unimplemented */
 #define SSL_ALLOWED		 1
 #define SSL_RESTRICTED		 2	      /* only with "Step-Up" certs. */

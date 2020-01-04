@@ -86,6 +86,11 @@ dtls_DTLSVersionToTLSVersion(SSL3ProtocolVersion dtlsv)
     if (dtlsv == SSL_LIBRARY_VERSION_DTLS_1_0_WIRE) {
         return SSL_LIBRARY_VERSION_TLS_1_1;
     }
+    
+
+    if (dtlsv == ((~0x0101) & 0xffff)) {
+        return 0;
+    }
     if (dtlsv == SSL_LIBRARY_VERSION_DTLS_1_2_WIRE) {
         return SSL_LIBRARY_VERSION_TLS_1_2;
     }
@@ -94,7 +99,7 @@ dtls_DTLSVersionToTLSVersion(SSL3ProtocolVersion dtlsv)
     }
 
     
-    return SSL_LIBRARY_VERSION_TLS_1_2 + 1;
+    return SSL_LIBRARY_VERSION_MAX_SUPPORTED + 1;
 }
 
 
@@ -814,9 +819,13 @@ dtls_CompressMACEncryptRecord(sslSocket *        ss,
     }
 
     if (cwSpec) {
-        rv = ssl3_CompressMACEncryptRecord(cwSpec, ss->sec.isServer, PR_TRUE,
-                                           PR_FALSE, type, pIn, contentLen,
-                                           wrBuf);
+        if (ss->ssl3.cwSpec->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+            rv = ssl3_CompressMACEncryptRecord(cwSpec, ss->sec.isServer, PR_TRUE,
+                                               PR_FALSE, type, pIn, contentLen,
+                                               wrBuf);
+        } else {
+            rv = tls13_ProtectRecord(ss, type, pIn, contentLen, wrBuf);
+        }
     } else {
         PR_NOT_REACHED("Couldn't find a cipher spec matching epoch");
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
@@ -1050,7 +1059,7 @@ dtls_InitRecvdRecords(DTLSRecvdRecords *records)
 
 
 int
-dtls_RecordGetRecvd(DTLSRecvdRecords *records, PRUint64 seq)
+dtls_RecordGetRecvd(const DTLSRecvdRecords *records, PRUint64 seq)
 {
     PRUint64 offset;
 
@@ -1143,4 +1152,42 @@ DTLS_GetHandshakeTimeout(PRFileDesc *socket, PRIntervalTime *timeout)
     }
 
     return SECSuccess;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+PRBool
+dtls_IsRelevant(sslSocket *ss, const ssl3CipherSpec *crSpec,
+                const SSL3Ciphertext *cText, PRUint64 *seqNum)
+{
+    DTLSEpoch epoch = cText->seq_num.high >> 16;
+    PRUint64 dtls_seq_num;
+
+    if (crSpec->epoch != epoch) {
+        SSL_DBG(("%d: SSL3[%d]: dtls_IsRelevant, received packet "
+                 "from irrelevant epoch %d", SSL_GETPID(), ss->fd, epoch));
+        return PR_FALSE;
+    }
+
+    dtls_seq_num = (((PRUint64)(cText->seq_num.high & 0xffff)) << 32) |
+                   ((PRUint64)cText->seq_num.low);
+
+    if (dtls_RecordGetRecvd(&crSpec->recvdRecords, dtls_seq_num) != 0) {
+        SSL_DBG(("%d: SSL3[%d]: dtls_IsRelevant, rejecting "
+                 "potentially replayed packet", SSL_GETPID(), ss->fd));
+        return PR_FALSE;
+    }
+
+    *seqNum = dtls_seq_num;
+    return PR_TRUE;
 }

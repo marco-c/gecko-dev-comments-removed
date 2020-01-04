@@ -36,14 +36,15 @@
 
 
 typedef struct entry {
-	char *key;
-	char *data;
+    char *key;
+    char *data;
 } ENTRY;
 
 typedef enum {
-	FIND, ENTER
+    FIND,
+    ENTER
 } ACTION;
 
-int	 hcreate (unsigned int);
-void	 hdestroy (void);
-ENTRY	*hsearch (ENTRY, ACTION);
+int hcreate(unsigned int);
+void hdestroy(void);
+ENTRY *hsearch(ENTRY, ACTION);

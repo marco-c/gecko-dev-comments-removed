@@ -34,22 +34,20 @@ PR_BEGIN_EXTERN_C
 typedef struct nssSessionStr nssSession;
 
 
-struct nssDeviceBaseStr
-{
-  NSSArena *arena;
-  PZLock *lock;
-  PRInt32 refCount;
-  NSSUTF8 *name;
-  PRUint32 flags;
+struct nssDeviceBaseStr {
+    NSSArena *arena;
+    PZLock *lock;
+    PRInt32 refCount;
+    NSSUTF8 *name;
+    PRUint32 flags;
 };
 
 typedef struct nssTokenObjectCacheStr nssTokenObjectCache;
 
 
-struct NSSTokenStr
-{
+struct NSSTokenStr {
     struct nssDeviceBaseStr base;
-    NSSSlot *slot;  
+    NSSSlot *slot;    
     CK_FLAGS ckFlags; 
     PRUint32 flags;
     void *epv;
@@ -61,40 +59,36 @@ struct NSSTokenStr
 };
 
 typedef enum {
-  nssSlotAskPasswordTimes_FirstTime = 0,
-  nssSlotAskPasswordTimes_EveryTime = 1,
-  nssSlotAskPasswordTimes_Timeout = 2
-} 
-nssSlotAskPasswordTimes;
+    nssSlotAskPasswordTimes_FirstTime = 0,
+    nssSlotAskPasswordTimes_EveryTime = 1,
+    nssSlotAskPasswordTimes_Timeout = 2
+} nssSlotAskPasswordTimes;
 
-struct nssSlotAuthInfoStr
-{
-  PRTime lastLogin;
-  nssSlotAskPasswordTimes askTimes;
-  PRIntervalTime askPasswordTimeout;
+struct nssSlotAuthInfoStr {
+    PRTime lastLogin;
+    nssSlotAskPasswordTimes askTimes;
+    PRIntervalTime askPasswordTimeout;
 };
 
-struct NSSSlotStr
-{
-  struct nssDeviceBaseStr base;
-  NSSModule *module; 
-  NSSToken *token;  
-  CK_SLOT_ID slotID;
-  CK_FLAGS ckFlags; 
-  struct nssSlotAuthInfoStr authInfo;
-  PRIntervalTime lastTokenPing;
-  PZLock *lock;
-  void *epv;
-  PK11SlotInfo *pk11slot;
+struct NSSSlotStr {
+    struct nssDeviceBaseStr base;
+    NSSModule *module; 
+    NSSToken *token;   
+    CK_SLOT_ID slotID;
+    CK_FLAGS ckFlags; 
+    struct nssSlotAuthInfoStr authInfo;
+    PRIntervalTime lastTokenPing;
+    PZLock *lock;
+    void *epv;
+    PK11SlotInfo *pk11slot;
 };
 
-struct nssSessionStr
-{
-  PZLock *lock;
-  CK_SESSION_HANDLE handle;
-  NSSSlot *slot;
-  PRBool isRW;
-  PRBool ownLock;
+struct nssSessionStr {
+    PZLock *lock;
+    CK_SESSION_HANDLE handle;
+    NSSSlot *slot;
+    PRBool isRW;
+    PRBool ownLock;
 };
 
 typedef enum {
@@ -113,8 +107,7 @@ typedef enum {
 
 typedef struct nssCryptokiInstanceStr nssCryptokiInstance;
 
-struct nssCryptokiInstanceStr
-{
+struct nssCryptokiInstanceStr {
     CK_OBJECT_HANDLE handle;
     NSSToken *token;
     PRBool isTokenObject;
@@ -132,10 +125,9 @@ typedef enum {
     nssTokenSearchType_TokenForced = 3
 } nssTokenSearchType;
 
-struct nssTokenCertSearchStr
-{
+struct nssTokenCertSearchStr {
     nssTokenSearchType searchType;
-    PRStatus (* callback)(NSSCertificate *c, void *arg);
+    PRStatus (*callback)(NSSCertificate *c, void *arg);
     void *cbarg;
     nssList *cached;
     
@@ -146,8 +138,7 @@ struct nssTokenCertSearchStr
 struct nssSlotListStr;
 typedef struct nssSlotListStr nssSlotList;
 
-struct NSSAlgorithmAndParametersStr
-{
+struct NSSAlgorithmAndParametersStr {
     CK_MECHANISM mechanism;
 };
 

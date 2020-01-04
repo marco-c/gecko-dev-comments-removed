@@ -64,7 +64,8 @@ class DataBuffer {
   }
 
   
-  void Write(size_t index, const uint8_t* val, size_t count) {
+  
+  size_t Write(size_t index, const uint8_t* val, size_t count) {
     if (index + count > len_) {
       size_t newlen = index + count;
       uint8_t* tmp = new uint8_t[newlen]; 
@@ -79,18 +80,20 @@ class DataBuffer {
     }
     memcpy(static_cast<void*>(data_ + index),
            static_cast<const void*>(val), count);
+    return index + count;
   }
 
-  void Write(size_t index, const DataBuffer& buf) {
-    Write(index, buf.data(), buf.len());
+  size_t Write(size_t index, const DataBuffer& buf) {
+    return Write(index, buf.data(), buf.len());
   }
 
   
-  void Write(size_t index, uint32_t val, size_t count) {
+  
+  size_t Write(size_t index, uint32_t val, size_t count) {
     assert(count <= sizeof(uint32_t));
     uint32_t nvalue = htonl(val);
     auto* addr = reinterpret_cast<const uint8_t*>(&nvalue);
-    Write(index, addr + sizeof(uint32_t) - count, count);
+    return Write(index, addr + sizeof(uint32_t) - count, count);
   }
 
   

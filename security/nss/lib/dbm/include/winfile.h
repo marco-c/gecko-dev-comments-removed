@@ -21,35 +21,34 @@
 #endif
 
 typedef struct DIR_Struct {
-    void            * directoryPtr;
-    WIN32_FIND_DATA   data;
+    void* directoryPtr;
+    WIN32_FIND_DATA data;
 } DIR;
 
 #define _ST_FSTYPSZ 16
 
 #if !defined(__BORLANDC__) && !defined(__GNUC__)
- typedef unsigned long mode_t;
- typedef          long uid_t;
- typedef          long gid_t;
- typedef          long off_t;
- typedef unsigned long nlink_t;
-#endif 
+typedef unsigned long mode_t;
+typedef long uid_t;
+typedef long gid_t;
+typedef long off_t;
+typedef unsigned long nlink_t;
+#endif
 
 typedef struct timestruc {
-    time_t  tv_sec;         
-    long    tv_nsec;        
+    time_t tv_sec; 
+    long tv_nsec;  
 } timestruc_t;
 
-
-struct dirent {                                 
-        ino_t           d_ino;                  
-        off_t           d_off;                  
-        unsigned short  d_reclen;               
-        char            d_name[_MAX_FNAME];     
+struct dirent {              
+    ino_t d_ino;             
+    off_t d_off;             
+    unsigned short d_reclen; 
+    char d_name[_MAX_FNAME]; 
 };
 
-#if !defined(__BORLANDC__) && !defined (__GNUC__)
-#define S_ISDIR(s)  ((s) & _S_IFDIR)
+#if !defined(__BORLANDC__) && !defined(__GNUC__)
+#define S_ISDIR(s) ((s)&_S_IFDIR)
 #endif
 
 #else 
@@ -60,42 +59,40 @@ struct dirent {
 #include <dos.h>
 
 
-
-
-typedef struct	dirStruct_tag	{
-	struct _find_t	file_data;
-	char			c_checkdrive;
+typedef struct dirStruct_tag {
+    struct _find_t file_data;
+    char c_checkdrive;
 } dirStruct;
 
 typedef struct DIR_Struct {
-    void            * directoryPtr;
-    dirStruct         data;
+    void* directoryPtr;
+    dirStruct data;
 } DIR;
 
 #define _ST_FSTYPSZ 16
 typedef unsigned long mode_t;
-typedef          long uid_t;
-typedef          long gid_t;
-typedef          long off_t;
+typedef long uid_t;
+typedef long gid_t;
+typedef long off_t;
 typedef unsigned long nlink_t;
 
 typedef struct timestruc {
-    time_t  tv_sec;         
-    long    tv_nsec;        
+    time_t tv_sec; 
+    long tv_nsec;  
 } timestruc_t;
 
-struct dirent {                             
-        ino_t           d_ino;              
-        off_t           d_off;              
-        unsigned short  d_reclen;           
+struct dirent {              
+    ino_t d_ino;             
+    off_t d_off;             
+    unsigned short d_reclen; 
 #ifdef XP_WIN32
-        char            d_name[_MAX_FNAME]; 
+    char d_name[_MAX_FNAME]; 
 #else
-        char            d_name[20]; 
+    char d_name[20]; 
 #endif
 };
 
-#define S_ISDIR(s)  ((s) & _S_IFDIR)
+#define S_ISDIR(s) ((s)&_S_IFDIR)
 
 #endif 
 

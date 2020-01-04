@@ -25,6 +25,12 @@ class DummyPrSocket;
 
 class PacketFilter {
  public:
+  enum Action {
+    KEEP,   
+    CHANGE, 
+    DROP    
+  };
+
   virtual ~PacketFilter() {}
 
   
@@ -32,7 +38,8 @@ class PacketFilter {
   
   
   
-  virtual bool Filter(const DataBuffer& input, DataBuffer* output) = 0;
+  
+  virtual Action Filter(const DataBuffer& input, DataBuffer* output) = 0;
 };
 
 enum Mode { STREAM, DGRAM };
@@ -49,6 +56,7 @@ class DummyPrSocket {
                               Mode mode);  
   static DummyPrSocket* GetAdapter(PRFileDesc* fd);
 
+  DummyPrSocket* peer() const { return peer_; }
   void SetPeer(DummyPrSocket* peer) { peer_ = peer; }
   void SetPacketFilter(PacketFilter* filter) { filter_ = filter; }
   

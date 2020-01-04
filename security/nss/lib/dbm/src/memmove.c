@@ -34,7 +34,7 @@
 
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bcopy.c	8.1 (Berkeley) 6/4/93";
+static char sccsid[] = "@(#)bcopy.c 8.1 (Berkeley) 6/4/93";
 #endif 
 
 #include <string.h>
@@ -43,10 +43,10 @@ static char sccsid[] = "@(#)bcopy.c	8.1 (Berkeley) 6/4/93";
 
 
 
-typedef	int word;		
+typedef int word; 
 
-#define	wsize	sizeof(word)
-#define	wmask	(wsize - 1)
+#define wsize sizeof(word)
+#define wmask (wsize - 1)
 
 
 
@@ -55,84 +55,90 @@ typedef	int word;
 
 #ifdef MEMCOPY
 void *
-memcpy(dst0, src0, length)
+    memcpy(dst0, src0, length)
 #else
 #ifdef MEMMOVE
 void *
-memmove(dst0, src0, length)
+    memmove(dst0, src0, length)
 #else
 void
-bcopy(src0, dst0, length)
+    bcopy(src0, dst0, length)
 #endif
 #endif
-	void *dst0;
-	const void *src0;
-	register size_t length;
+        void *dst0;
+const void *src0;
+register size_t length;
 {
-	register char *dst = dst0;
-	register const char *src = src0;
-	register size_t t;
+    register char *dst = dst0;
+    register const char *src = src0;
+    register size_t t;
 
-	if (length == 0 || dst == src)		
-		goto done;
+    if (length == 0 || dst == src) 
+        goto done;
 
-	
-
-
-#define	TLOOP(s) if (t) TLOOP1(s)
-#define	TLOOP1(s) do { s; } while (--t)
-
-	if ((unsigned long)dst < (unsigned long)src) {
-		
+    
 
 
-		t = (int)src;	
-		if ((t | (int)dst) & wmask) {
-			
+#define TLOOP(s) \
+    if (t)       \
+    TLOOP1(s)
+#define TLOOP1(s) \
+    do {          \
+        s;        \
+    } while (--t)
+
+    if ((unsigned long)dst < (unsigned long)src) {
+        
 
 
-
-			if ((t ^ (int)dst) & wmask || length < wsize)
-				t = length;
-			else
-				t = wsize - (t & wmask);
-			length -= t;
-			TLOOP1(*dst++ = *src++);
-		}
-		
-
-
-		t = length / wsize;
-		TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
-		t = length & wmask;
-		TLOOP(*dst++ = *src++);
-	} else {
-		
+        t = (int)src; 
+        if ((t | (int)dst) & wmask) {
+            
 
 
 
+            if ((t ^ (int)dst) & wmask || length < wsize)
+                t = length;
+            else
+                t = wsize - (t & wmask);
+            length -= t;
+            TLOOP1(*dst++ = *src++);
+        }
+        
 
-		src += length;
-		dst += length;
-		t = (int)src;
-		if ((t | (int)dst) & wmask) {
-			if ((t ^ (int)dst) & wmask || length <= wsize)
-				t = length;
-			else
-				t &= wmask;
-			length -= t;
-			TLOOP1(*--dst = *--src);
-		}
-		t = length / wsize;
-		TLOOP(src -= wsize; dst -= wsize; *(word *)dst = *(word *)src);
-		t = length & wmask;
-		TLOOP(*--dst = *--src);
-	}
+
+        t = length / wsize;
+        TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
+        t = length & wmask;
+        TLOOP(*dst++ = *src++);
+    }
+    else {
+        
+
+
+
+
+        src += length;
+        dst += length;
+        t = (int)src;
+        if ((t | (int)dst) & wmask) {
+            if ((t ^ (int)dst) & wmask || length <= wsize)
+                t = length;
+            else
+                t &= wmask;
+            length -= t;
+            TLOOP1(*--dst = *--src);
+        }
+        t = length / wsize;
+        TLOOP(src -= wsize; dst -= wsize; *(word *)dst = *(word *)src);
+        t = length & wmask;
+        TLOOP(*--dst = *--src);
+    }
 done:
 #if defined(MEMCOPY) || defined(MEMMOVE)
-	return (dst0);
+    return (dst0);
 #else
-	return;
+    return;
 #endif
 }
 #endif 
