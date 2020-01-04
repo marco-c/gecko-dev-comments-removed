@@ -1126,23 +1126,39 @@ HttpChannelParent::OnDataAvailable(nsIRequest *aRequest,
   MOZ_RELEASE_ASSERT(!mDivertingFromChild,
     "Cannot call OnDataAvailable if diverting is set!");
 
-  nsCString data;
-  nsresult rv = NS_ReadInputStreamToString(aInputStream, data, aCount);
-  if (NS_FAILED(rv))
-    return rv;
-
   nsresult channelStatus = NS_OK;
   mChannel->GetStatus(&channelStatus);
 
-  
-  
-  
-  
-  if (mIPCClosed || !SendOnTransportAndData(channelStatus, mStoredStatus,
-                                            mStoredProgress, mStoredProgressMax,
-                                            data, aOffset, aCount)) {
-    return NS_ERROR_UNEXPECTED;
+  static uint32_t const kCopyChunkSize = 128 * 1024;
+  uint32_t toRead = std::min<uint32_t>(aCount, kCopyChunkSize);
+
+  nsCString data;
+  if (!data.SetCapacity(toRead, fallible)) {
+    LOG(("  out of memory!"));
+    return NS_ERROR_OUT_OF_MEMORY;
   }
+
+  while (aCount) {
+    nsresult rv = NS_ReadInputStreamToString(aInputStream, data, toRead);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    
+    
+    
+    if (mIPCClosed || !SendOnTransportAndData(channelStatus, mStoredStatus,
+                                              mStoredProgress, mStoredProgressMax,
+                                              data, aOffset, toRead)) {
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    aOffset += toRead;
+    aCount -= toRead;
+    toRead = std::min<uint32_t>(aCount, kCopyChunkSize);
+  }
+
   return NS_OK;
 }
 
