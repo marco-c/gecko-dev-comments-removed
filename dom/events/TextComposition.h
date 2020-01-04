@@ -259,6 +259,10 @@ private:
   bool mAllowControlCharacters;
 
   
+  
+  bool mWasCompositionStringEmpty;
+
+  
   TextComposition()
     : mPresContext(nullptr)
     , mNativeContext(nullptr)
@@ -272,6 +276,7 @@ private:
     , mRequestedToCommitOrCancel(false)
     , mWasNativeCompositionEndEventDiscarded(false)
     , mAllowControlCharacters(false)
+    , mWasCompositionStringEmpty(true)
   {}
   TextComposition(const TextComposition& aOther);
 
@@ -377,7 +382,16 @@ private:
   
 
 
-  void OnCompositionEventHandled(
+
+  void OnCompositionEventDispatched(
+         const WidgetCompositionEvent* aDispatchEvent);
+
+  
+
+
+
+
+  void MaybeNotifyIMEOfCompositionEventHandled(
          const WidgetCompositionEvent* aCompositionEvent);
 
   
