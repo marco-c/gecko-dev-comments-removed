@@ -55,12 +55,19 @@ public:
 
 
   nsresult ApplyUpdates(nsTArray<TableUpdate*>* aUpdates);
+
+  
+
+
+  nsresult ApplyFullHashes(nsTArray<TableUpdate*>* aUpdates);
+
   
 
 
 
   nsresult MarkSpoiled(nsTArray<nsCString>& aTables);
   void SetLastUpdateTime(const nsACString& aTableName, uint64_t updateTime);
+  int64_t GetLastUpdateTime(const nsACString& aTableName);
   nsresult CacheCompletions(const CacheResultArray& aResults);
   uint32_t GetHashKey(void) { return mHashKey; }
   
@@ -84,10 +91,15 @@ private:
   nsresult RegenActiveTables();
   nsresult ScanStoreDir(nsTArray<nsCString>& aTables);
 
-  nsresult ApplyTableUpdates(nsTArray<TableUpdate*>* aUpdates,
-                             const nsACString& aTable);
+  nsresult UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
+                           const nsACString& aTable);
+
+  nsresult UpdateCache(TableUpdate* aUpdates);
 
   LookupCache *GetLookupCache(const nsACString& aTable);
+
+  bool CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
+                        const nsACString& aTable);
 
   
   nsCOMPtr<nsIFile> mCacheDirectory;
