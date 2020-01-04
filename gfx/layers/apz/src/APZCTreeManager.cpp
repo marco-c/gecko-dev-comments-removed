@@ -620,11 +620,28 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
       }
       break;
     } case PANGESTURE_INPUT: {
+      FlushRepaintsToClearScreenToGeckoTransform();
+
       PanGestureInput& panInput = aEvent.AsPanGestureInput();
       nsRefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(panInput.mPanStartPoint,
                                                             &hitResult);
       if (apzc) {
         MOZ_ASSERT(hitResult == HitLayer || hitResult == HitDispatchToContentRegion);
+
+        
+        
+        
+        
+        
+        
+        
+        Matrix4x4 transformToGecko = GetScreenToApzcTransform(apzc)
+                                   * GetApzcToGeckoTransform(apzc);
+        MOZ_ASSERT(transformToGecko.Is2D());
+        ScreenPoint untransformedStartPoint = TransformTo<ScreenPixel>(
+          transformToGecko, panInput.mPanStartPoint);
+        ScreenPoint untransformedDisplacement = TransformVector<ScreenPixel>(
+            transformToGecko, panInput.mPanDisplacement, panInput.mPanStartPoint);
 
         result = mInputQueue->ReceiveInputEvent(
             apzc,
@@ -633,13 +650,8 @@ APZCTreeManager::ReceiveInputEvent(InputData& aEvent,
 
         
         apzc->GetGuid(aOutTargetGuid);
-        Matrix4x4 transformToGecko = GetScreenToApzcTransform(apzc)
-                                   * GetApzcToGeckoTransform(apzc);
-        MOZ_ASSERT(transformToGecko.Is2D());
-        panInput.mPanStartPoint = TransformTo<ScreenPixel>(
-            transformToGecko, panInput.mPanStartPoint);
-        panInput.mPanDisplacement = TransformVector<ScreenPixel>(
-            transformToGecko, panInput.mPanDisplacement, panInput.mPanStartPoint);
+        panInput.mPanStartPoint = untransformedStartPoint;
+        panInput.mPanDisplacement = untransformedDisplacement;
       }
       break;
     } case PINCHGESTURE_INPUT: {  
