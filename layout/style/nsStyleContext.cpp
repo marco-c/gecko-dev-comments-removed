@@ -5,6 +5,7 @@
  
 
 
+#include "CSSVariableImageTable.h"
 #include "mozilla/DebugOnly.h"
 
 #include "nsCSSAnonBoxes.h"
@@ -165,6 +166,9 @@ nsStyleContext::~nsStyleContext()
   if (mCachedResetData) {
     mCachedResetData->Destroy(mBits, presContext);
   }
+
+  
+  CSSVariableImageTable::RemoveAll(this);
 }
 
 #ifdef DEBUG

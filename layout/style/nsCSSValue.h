@@ -1542,18 +1542,6 @@ public:
   uint32_t mLineNumber;
   uint32_t mLineOffset;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsTHashtable<nsRefPtrHashKey<mozilla::css::ImageValue> > mImageValues;
-
 private:
   nsCSSValueTokenStream(const nsCSSValueTokenStream& aOther) = delete;
   nsCSSValueTokenStream& operator=(const nsCSSValueTokenStream& aOther) = delete;
