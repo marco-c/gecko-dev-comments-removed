@@ -48,6 +48,9 @@ public:
   const nsAString& Format() const { return mFormat; }
   bool CanPlay() const { return mCanPlay; }
 
+  void SetWMFFailedToLoad() { mWMFFailedToLoad = true; }
+  bool DidWMFFailToLoad() const { return mWMFFailedToLoad; }
+
   void SetFFmpegFailedToLoad() { mFFmpegFailedToLoad = true; }
   bool DidFFmpegFailToLoad() const { return mFFmpegFailedToLoad; }
 
@@ -56,6 +59,7 @@ private:
   
   bool mCanPlay = false;
 
+  bool mWMFFailedToLoad = false;
   bool mFFmpegFailedToLoad = false;
 };
 
