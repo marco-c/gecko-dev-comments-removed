@@ -618,7 +618,26 @@ ContentChild::Init(MessageLoop* aIOLoop,
                    IPC::Channel* aChannel)
 {
 #ifdef MOZ_WIDGET_GTK
-  gtk_init(nullptr, nullptr);
+  
+  
+  
+  
+  
+  char* display_name = PR_GetEnv("DISPLAY");
+  if (display_name) {
+    int argc = 3;
+    char option_name[] = "--display";
+    char* argv[] = {
+      nullptr,
+      option_name,
+      display_name,
+      nullptr
+    };
+    char** argvp = argv;
+    gtk_init(&argc, &argvp);
+  } else {
+    gtk_init(nullptr, nullptr);
+  }
 #endif
 
 #ifdef MOZ_WIDGET_QT
