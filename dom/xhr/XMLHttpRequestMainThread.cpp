@@ -115,37 +115,6 @@ namespace {
 }
 
 
-
-
-#define XML_HTTP_REQUEST_UNSENT           (1 << 0) // 0 UNSENT
-#define XML_HTTP_REQUEST_OPENED           (1 << 1) // 1 OPENED
-#define XML_HTTP_REQUEST_HEADERS_RECEIVED (1 << 2) // 2 HEADERS_RECEIVED
-#define XML_HTTP_REQUEST_LOADING          (1 << 3) // 3 LOADING
-#define XML_HTTP_REQUEST_DONE             (1 << 4) // 4 DONE
-#define XML_HTTP_REQUEST_SENT             (1 << 5) // Internal, corresponds to
-                                                   
-                                                   
-                                                   
-
-
-#define XML_HTTP_REQUEST_ABORTED        (1 << 7)  // Internal
-#define XML_HTTP_REQUEST_ASYNC          (1 << 8)  // Internal
-#define XML_HTTP_REQUEST_PARSEBODY      (1 << 9)  // Internal
-#define XML_HTTP_REQUEST_SYNCLOOPING    (1 << 10) // Internal
-#define XML_HTTP_REQUEST_BACKGROUND     (1 << 13) // Internal
-#define XML_HTTP_REQUEST_HAD_UPLOAD_LISTENERS_ON_SEND (1 << 14) // Internal
-#define XML_HTTP_REQUEST_AC_WITH_CREDENTIALS (1 << 15) // Internal
-#define XML_HTTP_REQUEST_TIMED_OUT (1 << 16) // Internal
-#define XML_HTTP_REQUEST_DELETED (1 << 17) // Internal
-
-#define XML_HTTP_REQUEST_LOADSTATES         \
-  (XML_HTTP_REQUEST_UNSENT |                \
-   XML_HTTP_REQUEST_OPENED |                \
-   XML_HTTP_REQUEST_HEADERS_RECEIVED |      \
-   XML_HTTP_REQUEST_LOADING |               \
-   XML_HTTP_REQUEST_DONE |                  \
-   XML_HTTP_REQUEST_SENT)
-
 #define NS_BADCERTHANDLER_CONTRACTID \
   "@mozilla.org/content/xmlhttprequest-bad-cert-handler;1"
 
@@ -191,7 +160,11 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
   : mResponseBodyDecodedPos(0),
     mResponseType(XMLHttpRequestResponseType::_empty),
     mRequestObserver(nullptr),
-    mState(XML_HTTP_REQUEST_UNSENT | XML_HTTP_REQUEST_ASYNC),
+    mState(State::unsent),
+    mFlagAsynchronous(true), mFlagAborted(false), mFlagParseBody(false),
+    mFlagSyncLooping(false), mFlagBackgroundRequest(false),
+    mFlagHadUploadListenersOnSend(false), mFlagACwithCredentials(false),
+    mFlagTimedOut(false), mFlagDeleted(false),
     mUploadTransferred(0), mUploadTotal(0), mUploadComplete(true),
     mProgressSinceLastProgressEvent(false),
     mRequestSentTime(0), mTimeoutMilliseconds(0),
@@ -213,15 +186,14 @@ XMLHttpRequestMainThread::XMLHttpRequestMainThread()
 
 XMLHttpRequestMainThread::~XMLHttpRequestMainThread()
 {
-  mState |= XML_HTTP_REQUEST_DELETED;
+  mFlagDeleted = true;
 
-  if (mState & (XML_HTTP_REQUEST_SENT |
-                XML_HTTP_REQUEST_LOADING)) {
+  if (mState == State::sent || mState == State::loading) {
     Abort();
   }
 
-  MOZ_ASSERT(!(mState & XML_HTTP_REQUEST_SYNCLOOPING), "we rather crash than hang");
-  mState &= ~XML_HTTP_REQUEST_SYNCLOOPING;
+  MOZ_ASSERT(!mFlagSyncLooping, "we rather crash than hang");
+  mFlagSyncLooping = false;
 
   mResultJSON.setUndefined();
   mResultArrayBuffer = nullptr;
@@ -507,7 +479,7 @@ XMLHttpRequestMainThread::GetResponseXML(ErrorResult& aRv)
     mWarnAboutSyncHtml = false;
     LogMessage("HTMLSyncXHRWarning", GetOwner());
   }
-  if (!(XML_HTTP_REQUEST_DONE & mState)) {
+  if (mState != State::done) {
     return nullptr;
   }
   return mResponseXML;
@@ -623,7 +595,7 @@ XMLHttpRequestMainThread::GetResponseText(nsAString& aResponseText,
     return;
   }
 
-  if (!(mState & (XML_HTTP_REQUEST_DONE | XML_HTTP_REQUEST_LOADING))) {
+  if (mState != State::loading && mState != State::done) {
     return;
   }
 
@@ -653,7 +625,7 @@ XMLHttpRequestMainThread::GetResponseText(nsAString& aResponseText,
 
   mResponseBodyDecodedPos = mResponseBody.Length();
 
-  if (mState & XML_HTTP_REQUEST_DONE) {
+  if (mState == State::done) {
     
     mResponseBody.Truncate();
     mResponseBodyDecodedPos = 0;
@@ -741,20 +713,19 @@ XMLHttpRequestMainThread::SetResponseType(XMLHttpRequestResponseType aResponseTy
 {
   
   
-  if ((mState & (XML_HTTP_REQUEST_LOADING | XML_HTTP_REQUEST_DONE))) {
+  if (mState == State::loading || mState == State::done) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
   
-  if (HasOrHasHadOwner() &&
-      !(mState & (XML_HTTP_REQUEST_UNSENT | XML_HTTP_REQUEST_ASYNC))) {
+  if (HasOrHasHadOwner() && mState != State::unsent && !mFlagAsynchronous) {
     LogMessage("ResponseTypeSyncXHRWarning", GetOwner());
     aRv.Throw(NS_ERROR_DOM_INVALID_ACCESS_ERR);
     return;
   }
 
-  if (!(mState & XML_HTTP_REQUEST_ASYNC) &&
+  if (!mFlagAsynchronous &&
       (aResponseType == XMLHttpRequestResponseType::Moz_chunked_text ||
        aResponseType == XMLHttpRequestResponseType::Moz_chunked_arraybuffer)) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -798,7 +769,7 @@ XMLHttpRequestMainThread::GetResponse(JSContext* aCx,
   case XMLHttpRequestResponseType::Moz_chunked_arraybuffer:
   {
     if (!(mResponseType == XMLHttpRequestResponseType::Arraybuffer &&
-          mState & XML_HTTP_REQUEST_DONE) &&
+          mState == State::done) &&
         !(mResponseType == XMLHttpRequestResponseType::Moz_chunked_arraybuffer &&
           mInLoadProgressEvent)) {
       aResponse.setNull();
@@ -821,7 +792,7 @@ XMLHttpRequestMainThread::GetResponse(JSContext* aCx,
   case XMLHttpRequestResponseType::Blob:
   case XMLHttpRequestResponseType::Moz_blob:
   {
-    if (!(mState & XML_HTTP_REQUEST_DONE)) {
+    if (mState != State::done) {
       if (mResponseType != XMLHttpRequestResponseType::Moz_blob) {
         aResponse.setNull();
         return;
@@ -842,7 +813,7 @@ XMLHttpRequestMainThread::GetResponse(JSContext* aCx,
   }
   case XMLHttpRequestResponseType::Document:
   {
-    if (!(mState & XML_HTTP_REQUEST_DONE) || !mResponseXML) {
+    if (!mResponseXML || mState != State::done) {
       aResponse.setNull();
       return;
     }
@@ -852,7 +823,7 @@ XMLHttpRequestMainThread::GetResponse(JSContext* aCx,
   }
   case XMLHttpRequestResponseType::Json:
   {
-    if (!(mState & XML_HTTP_REQUEST_DONE)) {
+    if (mState != State::done) {
       aResponse.setNull();
       return;
     }
@@ -1031,8 +1002,7 @@ XMLHttpRequestMainThread::GetStatusText(nsACString& aStatusText,
 }
 
 void
-XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType,
-                                                const uint32_t aFlag)
+XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
 {
   if (mChannel) {
     mChannel->Cancel(NS_BINDING_ABORTED);
@@ -1042,20 +1012,19 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType,
   }
   uint32_t responseLength = mResponseBody.Length();
   ResetResponse();
-  mState |= aFlag;
 
   
-  if (mState & XML_HTTP_REQUEST_DELETED) {
-    mState &= ~XML_HTTP_REQUEST_SYNCLOOPING;
+  if (mFlagDeleted) {
+    mFlagSyncLooping = false;
     return;
   }
 
-  if (!(mState & (XML_HTTP_REQUEST_UNSENT |
-                  XML_HTTP_REQUEST_OPENED |
-                  XML_HTTP_REQUEST_DONE))) {
-    ChangeState(XML_HTTP_REQUEST_DONE, true);
+  if (mState != State::unsent &&
+      mState != State::opened &&
+      mState != State::done) {
+    ChangeState(State::done, true);
 
-    if (!(mState & XML_HTTP_REQUEST_SYNCLOOPING)) {
+    if (!mFlagSyncLooping) {
       DispatchProgressEvent(this, aType, mLoadLengthComputable, responseLength,
                             mLoadTotal);
       if (mUpload && !mUploadComplete) {
@@ -1069,17 +1038,18 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType,
   
   
   
-  if (mState & XML_HTTP_REQUEST_ABORTED) {
-    ChangeState(XML_HTTP_REQUEST_UNSENT, false);  
+  if (mFlagAborted) {
+    ChangeState(State::unsent, false);  
   }
 
-  mState &= ~XML_HTTP_REQUEST_SYNCLOOPING;
+  mFlagSyncLooping = false;
 }
 
 void
 XMLHttpRequestMainThread::Abort(ErrorResult& arv)
 {
-  CloseRequestWithError(ProgressEventType::abort, XML_HTTP_REQUEST_ABORTED);
+  mFlagAborted = true;
+  CloseRequestWithError(ProgressEventType::abort);
 }
 
 NS_IMETHODIMP
@@ -1162,8 +1132,9 @@ XMLHttpRequestMainThread::GetAllResponseHeaders(nsACString& aResponseHeaders,
 
   
   
-  if (mState & (XML_HTTP_REQUEST_UNSENT |
-                XML_HTTP_REQUEST_OPENED | XML_HTTP_REQUEST_SENT)) {
+  if (mState == State::unsent ||
+      mState == State::opened ||
+      mState == State::sent) {
     return;
   }
 
@@ -1227,8 +1198,9 @@ XMLHttpRequestMainThread::GetResponseHeader(const nsACString& header,
   if (!httpChannel) {
     
     
-    if (mState & (XML_HTTP_REQUEST_UNSENT |
-                  XML_HTTP_REQUEST_OPENED | XML_HTTP_REQUEST_SENT)) {
+    if (mState == State::unsent ||
+        mState == State::opened ||
+        mState == State::sent) {
       return;
     }
 
@@ -1285,7 +1257,7 @@ XMLHttpRequestMainThread::GetResponseHeader(const nsACString& header,
 already_AddRefed<nsILoadGroup>
 XMLHttpRequestMainThread::GetLoadGroup() const
 {
-  if (mState & XML_HTTP_REQUEST_BACKGROUND) {
+  if (mFlagBackgroundRequest) {
     return nullptr;
   }
 
@@ -1434,10 +1406,8 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
 
   nsCOMPtr<nsIURI> uri;
 
-  if (mState & (XML_HTTP_REQUEST_OPENED |
-                XML_HTTP_REQUEST_HEADERS_RECEIVED |
-                XML_HTTP_REQUEST_LOADING |
-                XML_HTTP_REQUEST_SENT)) {
+  if (mState == State::opened || mState == State::headers_received ||
+      mState == State::loading || mState == State::sent) {
     
     Abort();
 
@@ -1449,13 +1419,10 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
   }
 
   
-  mState &= ~XML_HTTP_REQUEST_ABORTED & ~XML_HTTP_REQUEST_TIMED_OUT;
+  mFlagAborted = false;
+  mFlagTimedOut = false;
 
-  if (async) {
-    mState |= XML_HTTP_REQUEST_ASYNC;
-  } else {
-    mState &= ~XML_HTTP_REQUEST_ASYNC;
-  }
+  mFlagAsynchronous = async;
 
   nsCOMPtr<nsIDocument> doc = GetDocumentIfCurrent();
   if (!doc) {
@@ -1561,7 +1528,7 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
 
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mState &= ~XML_HTTP_REQUEST_HAD_UPLOAD_LISTENERS_ON_SEND;
+  mFlagHadUploadListenersOnSend = false;
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
   if (httpChannel) {
@@ -1575,7 +1542,7 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
     }
   }
 
-  ChangeState(XML_HTTP_REQUEST_OPENED);
+  ChangeState(State::opened);
 
   return NS_OK;
 }
@@ -1649,7 +1616,7 @@ XMLHttpRequestMainThread::StreamReaderFunc(nsIInputStream* in,
     xmlHttpRequest->AppendToResponseText(fromRawSegment, count);
   }
 
-  if (xmlHttpRequest->mState & XML_HTTP_REQUEST_PARSEBODY) {
+  if (xmlHttpRequest->mFlagParseBody) {
     
 
     
@@ -1668,7 +1635,7 @@ XMLHttpRequestMainThread::StreamReaderFunc(nsIInputStream* in,
       
       
       if (NS_FAILED(parsingResult)) {
-        xmlHttpRequest->mState &= ~XML_HTTP_REQUEST_PARSEBODY;
+        xmlHttpRequest->mFlagParseBody = false;
       }
     }
   }
@@ -1738,13 +1705,13 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest *request,
       return error.StealNSResult();
     }
 
-    ChangeState(XML_HTTP_REQUEST_LOADING);
+    ChangeState(State::loading);
     return request->Cancel(NS_OK);
   }
 
   mDataAvailable += totalRead;
 
-  ChangeState(XML_HTTP_REQUEST_LOADING);
+  ChangeState(State::loading);
 
   MaybeDispatchProgressEvents(false);
 
@@ -1769,19 +1736,20 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   }
 
   
-  if (mState & XML_HTTP_REQUEST_UNSENT)
+  if (mState == State::unsent) {
     return NS_OK;
+  }
 
   
 
-  if (mState & XML_HTTP_REQUEST_ABORTED) {
+  if (mFlagAborted) {
     NS_ERROR("Ugh, still getting data on an aborted XMLHttpRequest!");
 
     return NS_ERROR_UNEXPECTED;
   }
 
   
-  if (mState & XML_HTTP_REQUEST_TIMED_OUT) {
+  if (mFlagTimedOut) {
     return NS_OK;
   }
 
@@ -1792,8 +1760,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   request->GetStatus(&status);
   mErrorLoad = mErrorLoad || NS_FAILED(status);
 
-  if (mUpload && !mUploadComplete && !mErrorLoad &&
-      (mState & XML_HTTP_REQUEST_ASYNC)) {
+  if (mUpload && !mUploadComplete && !mErrorLoad && mFlagAsynchronous) {
     if (mProgressTimerIsActive) {
       mProgressTimerIsActive = false;
       mProgressNotifier->Cancel();
@@ -1810,8 +1777,8 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   }
 
   mContext = ctxt;
-  mState |= XML_HTTP_REQUEST_PARSEBODY;
-  ChangeState(XML_HTTP_REQUEST_HEADERS_RECEIVED);
+  mFlagParseBody = true;
+  ChangeState(State::headers_received);
 
   ResetResponse();
 
@@ -1898,11 +1865,11 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
       
       
       
-      if (!(mState & XML_HTTP_REQUEST_ASYNC)) {
+      if (!mFlagAsynchronous) {
         
         
         mWarnAboutSyncHtml = true;
-        mState &= ~XML_HTTP_REQUEST_PARSEBODY;
+        mFlagParseBody = false;
       } else {
         mIsHtml = true;
       }
@@ -1912,14 +1879,14 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
       
       
       
-      mState &= ~XML_HTTP_REQUEST_PARSEBODY;
+      mFlagParseBody = false;
     }
   } else {
     
-    mState &= ~XML_HTTP_REQUEST_PARSEBODY;
+    mFlagParseBody = false;
   }
 
-  if (mState & XML_HTTP_REQUEST_PARSEBODY) {
+  if (mFlagParseBody) {
     nsCOMPtr<nsIURI> baseURI, docURI;
     rv = mChannel->GetURI(getter_AddRefs(docURI));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1992,7 +1959,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   
   
   if (NS_SUCCEEDED(rv) &&
-      (mState & XML_HTTP_REQUEST_ASYNC) &&
+      mFlagAsynchronous &&
       HasListenersFor(nsGkAtoms::onprogress)) {
     StartProgressEventTimer();
   }
@@ -2022,15 +1989,14 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   
   
   
-  if ((mState & XML_HTTP_REQUEST_UNSENT) ||
-      (mState & XML_HTTP_REQUEST_TIMED_OUT)) {
+  if (mState == State::unsent || mFlagTimedOut) {
     if (mXMLParserStreamListener)
       (void) mXMLParserStreamListener->OnStopRequest(request, ctxt, status);
     return NS_OK;
   }
 
   
-  if (mState & XML_HTTP_REQUEST_PARSEBODY && mXMLParserStreamListener) {
+  if (mXMLParserStreamListener && mFlagParseBody) {
     mXMLParserStreamListener->OnStopRequest(request, ctxt, status);
   }
 
@@ -2094,7 +2060,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   mChannelEventSink = nullptr;
   mProgressEventSink = nullptr;
 
-  mState &= ~XML_HTTP_REQUEST_SYNCLOOPING;
+  mFlagSyncLooping = false;
 
   if (NS_FAILED(status)) {
     
@@ -2107,8 +2073,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
   
   
   
-  if (mState & (XML_HTTP_REQUEST_UNSENT |
-                XML_HTTP_REQUEST_DONE)) {
+  if (mState == State::unsent || mState == State::done) {
     return NS_OK;
   }
 
@@ -2117,7 +2082,7 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
     return NS_OK;
   }
   if (mIsHtml) {
-    NS_ASSERTION(!(mState & XML_HTTP_REQUEST_SYNCLOOPING),
+    NS_ASSERTION(!mFlagSyncLooping,
       "We weren't supposed to support HTML parsing with XHR!");
     nsCOMPtr<EventTarget> eventTarget = do_QueryInterface(mResponseXML);
     EventListenerManager* manager =
@@ -2147,7 +2112,8 @@ XMLHttpRequestMainThread::ChangeStateToDone()
     MaybeDispatchProgressEvents(true);
   }
 
-  ChangeState(XML_HTTP_REQUEST_DONE, true);
+  ChangeState(State::done, true);
+
   if (mTimeoutTimer) {
     mTimeoutTimer->Cancel();
   }
@@ -2463,12 +2429,12 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (XML_HTTP_REQUEST_SENT & mState) {
+  if (mState == State::sent) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
   
-  if (!mChannel || !(XML_HTTP_REQUEST_OPENED & mState)) {
+  if (!mChannel || mState != State::opened) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
 
@@ -2657,8 +2623,7 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
 
   ResetResponse();
 
-  if (!IsSystemXHR() && !mIsAnon &&
-      (mState & XML_HTTP_REQUEST_AC_WITH_CREDENTIALS)) {
+  if (!IsSystemXHR() && !mIsAnon && mFlagACwithCredentials) {
     
     
     
@@ -2732,14 +2697,14 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
 
   
   if (mUpload && mUpload->HasListeners()) {
-    mState |= XML_HTTP_REQUEST_HAD_UPLOAD_LISTENERS_ON_SEND;
+    mFlagHadUploadListenersOnSend = true;
   }
 
   
   if (!IsSystemXHR()) {
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
     loadInfo->SetCorsPreflightInfo(mCORSUnsafeHeaders,
-                                   mState & XML_HTTP_REQUEST_HAD_UPLOAD_LISTENERS_ON_SEND);
+                                   mFlagHadUploadListenersOnSend);
   }
 
   mIsMappedArrayBuffer = false;
@@ -2789,8 +2754,8 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   mWaitingForOnStopRequest = true;
 
   
-  if (!(mState & XML_HTTP_REQUEST_ASYNC)) {
-    mState |= XML_HTTP_REQUEST_SYNCLOOPING;
+  if (!mFlagAsynchronous) {
+    mFlagSyncLooping = true;
 
     nsCOMPtr<nsIDocument> suspendedDoc;
     nsCOMPtr<nsIRunnable> resumeTimeoutRunnable;
@@ -2807,14 +2772,13 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
       }
     }
 
-    ChangeState(XML_HTTP_REQUEST_SENT);
+    ChangeState(State::sent);
 
     {
       nsAutoSyncOperation sync(suspendedDoc);
       
-      
       nsIThread *thread = NS_GetCurrentThread();
-      while (mState & XML_HTTP_REQUEST_SYNCLOOPING) {
+      while (mFlagSyncLooping) {
         if (!NS_ProcessNextEvent(thread)) {
           rv = NS_ERROR_UNEXPECTED;
           break;
@@ -2835,7 +2799,7 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
     
     
     
-    ChangeState(XML_HTTP_REQUEST_SENT);
+    ChangeState(State::sent);
     if (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress)) {
       StartProgressEventTimer();
     }
@@ -2860,7 +2824,7 @@ XMLHttpRequestMainThread::SetRequestHeader(const nsACString& header,
                                            const nsACString& value)
 {
   
-  if (!(mState & XML_HTTP_REQUEST_OPENED)) {
+  if (mState != State::opened) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
   NS_ASSERTION(mChannel, "mChannel must be valid if we're OPENED.");
@@ -2969,8 +2933,7 @@ XMLHttpRequestMainThread::SetTimeout(uint32_t aTimeout)
 void
 XMLHttpRequestMainThread::SetTimeout(uint32_t aTimeout, ErrorResult& aRv)
 {
-  if (!(mState & (XML_HTTP_REQUEST_ASYNC | XML_HTTP_REQUEST_UNSENT)) &&
-      HasOrHasHadOwner()) {
+  if (!mFlagAsynchronous && mState != State::unsent && HasOrHasHadOwner()) {
     
 
     LogMessage("TimeoutSyncXHRWarning", GetOwner());
@@ -2989,7 +2952,7 @@ XMLHttpRequestMainThread::StartTimeoutTimer()
 {
   MOZ_ASSERT(mRequestSentTime,
              "StartTimeoutTimer mustn't be called before the request was sent!");
-  if (mState & XML_HTTP_REQUEST_DONE) {
+  if (mState == State::done) {
     
     return;
   }
@@ -3025,25 +2988,25 @@ uint16_t
 XMLHttpRequestMainThread::ReadyState() const
 {
   
-  if (mState & XML_HTTP_REQUEST_UNSENT) {
+  if (mState == State::unsent) {
     return UNSENT;
   }
-  if (mState & (XML_HTTP_REQUEST_OPENED | XML_HTTP_REQUEST_SENT)) {
+  if (mState == State::opened || mState == State::sent) {
     return OPENED;
   }
-  if (mState & XML_HTTP_REQUEST_HEADERS_RECEIVED) {
+  if (mState == State::headers_received) {
     return HEADERS_RECEIVED;
   }
-  if (mState & XML_HTTP_REQUEST_LOADING) {
+  if (mState == State::loading) {
     return LOADING;
   }
-  MOZ_ASSERT(mState & XML_HTTP_REQUEST_DONE);
+  MOZ_ASSERT(mState == State::done);
   return DONE;
 }
 
 void XMLHttpRequestMainThread::OverrideMimeType(const nsAString& aMimeType, ErrorResult& aRv)
 {
-  if ((mState & XML_HTTP_REQUEST_LOADING) || (mState & XML_HTTP_REQUEST_DONE)) {
+  if (mState == State::loading || mState == State::done) {
     ResetResponse();
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
@@ -3070,7 +3033,7 @@ XMLHttpRequestMainThread::GetMozBackgroundRequest(bool *_retval)
 bool
 XMLHttpRequestMainThread::MozBackgroundRequest() const
 {
-  return !!(mState & XML_HTTP_REQUEST_BACKGROUND);
+  return mFlagBackgroundRequest;
 }
 
 NS_IMETHODIMP
@@ -3080,16 +3043,12 @@ XMLHttpRequestMainThread::SetMozBackgroundRequest(bool aMozBackgroundRequest)
     return NS_ERROR_DOM_SECURITY_ERR;
   }
 
-  if (!(mState & XML_HTTP_REQUEST_UNSENT)) {
+  if (mState != State::unsent) {
     
      return NS_ERROR_IN_PROGRESS;
   }
 
-  if (aMozBackgroundRequest) {
-    mState |= XML_HTTP_REQUEST_BACKGROUND;
-  } else {
-    mState &= ~XML_HTTP_REQUEST_BACKGROUND;
-  }
+  mFlagBackgroundRequest = aMozBackgroundRequest;
 
   return NS_OK;
 }
@@ -3112,7 +3071,7 @@ XMLHttpRequestMainThread::GetWithCredentials(bool *_retval)
 bool
 XMLHttpRequestMainThread::WithCredentials() const
 {
-  return !!(mState & XML_HTTP_REQUEST_AC_WITH_CREDENTIALS);
+  return mFlagACwithCredentials;
 }
 
 NS_IMETHODIMP
@@ -3129,43 +3088,33 @@ XMLHttpRequestMainThread::SetWithCredentials(bool aWithCredentials, ErrorResult&
   
   
   
-  if ((!(mState & XML_HTTP_REQUEST_UNSENT) &&
-       !(mState & XML_HTTP_REQUEST_OPENED)) ||
-      mIsAnon) {
+  if ((mState != State::unsent && mState != State::opened) || mIsAnon) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
-  if (aWithCredentials) {
-    mState |= XML_HTTP_REQUEST_AC_WITH_CREDENTIALS;
-  } else {
-    mState &= ~XML_HTTP_REQUEST_AC_WITH_CREDENTIALS;
-  }
+  mFlagACwithCredentials = aWithCredentials;
 }
 
 nsresult
-XMLHttpRequestMainThread::ChangeState(uint32_t aState, bool aBroadcast)
+XMLHttpRequestMainThread::ChangeState(State aState, bool aBroadcast)
 {
-  
-  
-  if (aState & XML_HTTP_REQUEST_LOADSTATES) {
-    mState &= ~XML_HTTP_REQUEST_LOADSTATES;
-  }
-  mState |= aState;
+  bool droppingFromSENTtoOPENED = mState == State::sent &&
+                                  aState == State::opened;
+
+  mState = aState;
   nsresult rv = NS_OK;
 
   if (mProgressNotifier &&
-      !(aState & (XML_HTTP_REQUEST_HEADERS_RECEIVED | XML_HTTP_REQUEST_LOADING))) {
+      aState != State::headers_received && aState != State::loading) {
     mProgressTimerIsActive = false;
     mProgressNotifier->Cancel();
   }
 
-  if ((aState & XML_HTTP_REQUEST_LOADSTATES) &&  
-      aState != XML_HTTP_REQUEST_SENT && 
+  if (aState != State::sent && 
+      !droppingFromSENTtoOPENED && 
       aBroadcast &&
-      (mState & XML_HTTP_REQUEST_ASYNC ||
-       aState & XML_HTTP_REQUEST_OPENED ||
-       aState & XML_HTTP_REQUEST_DONE)) {
+      (mFlagAsynchronous || aState == State::opened || aState == State::done)) {
     nsCOMPtr<nsIDOMEvent> event;
     rv = CreateReadystatechangeEvent(getter_AddRefs(event));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -3257,7 +3206,7 @@ XMLHttpRequestMainThread::MaybeDispatchProgressEvents(bool aFinalProgress)
   if (mProgressTimerIsActive ||
       !mProgressSinceLastProgressEvent ||
       mErrorLoad ||
-      !(mState & XML_HTTP_REQUEST_ASYNC)) {
+      !mFlagAsynchronous) {
     return;
   }
 
@@ -3266,8 +3215,7 @@ XMLHttpRequestMainThread::MaybeDispatchProgressEvents(bool aFinalProgress)
   }
 
   
-  
-  if ((XML_HTTP_REQUEST_OPENED | XML_HTTP_REQUEST_SENT) & mState) {
+  if (mState == State::opened || mState == State::sent) {
     if (mUpload && !mUploadComplete) {
       DispatchProgressEvent(mUpload, ProgressEventType::progress,
                             mUploadLengthComputable, mUploadTransferred,
@@ -3298,8 +3246,7 @@ NS_IMETHODIMP
 XMLHttpRequestMainThread::OnProgress(nsIRequest *aRequest, nsISupports *aContext, int64_t aProgress, int64_t aProgressMax)
 {
   
-  
-  bool upload = !!((XML_HTTP_REQUEST_OPENED | XML_HTTP_REQUEST_SENT) & mState);
+  bool upload = mState == State::opened || mState == State::sent;
   
   
   bool lengthComputable = (aProgressMax != -1);
@@ -3344,7 +3291,7 @@ bool
 XMLHttpRequestMainThread::AllowUploadProgress()
 {
   return !IsCrossSiteCORSRequest() ||
-    (mState & XML_HTTP_REQUEST_HAD_UPLOAD_LISTENERS_ON_SEND);
+         mFlagHadUploadListenersOnSend;
 }
 
 
@@ -3379,7 +3326,7 @@ XMLHttpRequestMainThread::GetInterface(const nsIID & aIID, void **aResult)
     }
   }
 
-  if (mState & XML_HTTP_REQUEST_BACKGROUND) {
+  if (mFlagBackgroundRequest) {
     nsCOMPtr<nsIInterfaceRequestor> badCertHandler(do_CreateInstance(NS_BADCERTHANDLER_CONTRACTID, &rv));
 
     
@@ -3481,13 +3428,14 @@ XMLHttpRequestMainThread::GetMozSystem(bool* aSystem)
 void
 XMLHttpRequestMainThread::HandleTimeoutCallback()
 {
-  if (mState & XML_HTTP_REQUEST_DONE) {
+  if (mState == State::done) {
     NS_NOTREACHED("XMLHttpRequestMainThread::HandleTimeoutCallback with completed request");
     
     return;
   }
 
-  CloseRequestWithError(ProgressEventType::timeout, XML_HTTP_REQUEST_TIMED_OUT);
+  mFlagTimedOut = true;
+  CloseRequestWithError(ProgressEventType::timeout);
 }
 
 NS_IMETHODIMP

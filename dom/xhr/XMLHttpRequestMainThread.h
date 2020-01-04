@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_XMLHttpRequestMainThread_h
 #define mozilla_dom_XMLHttpRequestMainThread_h
 
+#include <bitset>
 #include "nsAutoPtr.h"
 #include "nsIXMLHttpRequest.h"
 #include "nsISupportsUtils.h"
@@ -558,6 +559,18 @@ public:
     return sDontWarnAboutSyncXHR;
   }
 protected:
+  
+  
+  
+  enum class State : uint8_t {
+    unsent,           
+    opened,           
+    sent,             
+    headers_received, 
+    loading,          
+    done,             
+  };
+
   nsresult DetectCharset();
   nsresult AppendToResponseText(const char * aBuffer, uint32_t aBufferLen);
   static NS_METHOD StreamReaderFunc(nsIInputStream* in,
@@ -571,7 +584,7 @@ protected:
   bool CreateDOMBlob(nsIRequest *request);
   
   
-  nsresult ChangeState(uint32_t aState, bool aBroadcast = true);
+  nsresult ChangeState(State aState, bool aBroadcast = true);
   already_AddRefed<nsILoadGroup> GetLoadGroup() const;
   nsIURI *GetBaseURI();
 
@@ -675,7 +688,17 @@ protected:
   nsCOMPtr<nsIURI> mBaseURI;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
-  uint32_t mState;
+  State mState;
+
+  bool mFlagAsynchronous;
+  bool mFlagAborted;
+  bool mFlagParseBody;
+  bool mFlagSyncLooping;
+  bool mFlagBackgroundRequest;
+  bool mFlagHadUploadListenersOnSend;
+  bool mFlagACwithCredentials;
+  bool mFlagTimedOut;
+  bool mFlagDeleted;
 
   RefPtr<XMLHttpRequestUpload> mUpload;
   int64_t mUploadTransferred;
@@ -726,9 +749,7 @@ protected:
 
 
 
-
-
-  void CloseRequestWithError(const ProgressEventType aType, const uint32_t aFlag);
+  void CloseRequestWithError(const ProgressEventType aType);
 
   bool mFirstStartRequestSeen;
   bool mInLoadProgressEvent;
