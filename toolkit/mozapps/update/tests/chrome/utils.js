@@ -1295,7 +1295,6 @@ function setupAddons(aCallback) {
   
   AddonManager.getAllAddons(function(aAddons) {
     let disabledAddons = [];
-    let harnessAddons = ["special-powers@mozilla.org", "mochikit@mozilla.org"];
     aAddons.forEach(function(aAddon) {
       
       
@@ -1306,7 +1305,7 @@ function setupAddons(aCallback) {
       if (aAddon.type != "plugin" && !aAddon.appDisabled &&
           !aAddon.userDisabled &&
           aAddon.scope != AddonManager.SCOPE_APPLICATION &&
-          harnessAddons.indexOf(aAddon.id) == -1) {
+          aAddon.id != "special-powers@mozilla.org") {
         disabledAddons.push(aAddon);
         aAddon.userDisabled = true;
       }

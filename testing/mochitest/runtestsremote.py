@@ -196,20 +196,6 @@ class MochiRemote(MochitestDesktop):
         options.profilePath = self.remoteProfile
         return manifest
 
-    def addChromeToProfile(self, options):
-        manifest = MochitestDesktop.addChromeToProfile(self, options)
-
-        
-        
-        if options.chrome:
-            
-            chrome = "overlay chrome://browser/content/browser.xul chrome://mochikit/content/browser-test-overlay.xul"
-            path = os.path.join(options.profilePath, 'extensions', 'staged',
-                                'mochikit@mozilla.org', 'chrome.manifest')
-            with open(path, "a") as f:
-                f.write(chrome)
-        return manifest
-
     def buildURLOptions(self, options, env):
         self.localLog = options.logFile
         options.logFile = self.remoteLog
@@ -295,9 +281,8 @@ class MochiRemote(MochitestDesktop):
         if 'profileDir' not in kwargs and 'profile' in kwargs:
             kwargs['profileDir'] = kwargs.pop('profile').profile
 
-        
-        kwargs.pop('marionette_args', None)
-        kwargs.pop('quiet', None)
+        if 'quiet' in kwargs:
+            kwargs.pop('quiet')
 
         return self._automation.runApp(*args, **kwargs)
 
