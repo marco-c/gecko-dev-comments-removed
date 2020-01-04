@@ -746,6 +746,58 @@ SystemHeapSize(int64_t* aSizeOut)
   return NS_OK;
 }
 
+struct SegmentKind
+{
+  DWORD mState;
+  DWORD mType;
+  DWORD mProtect;
+  int mIsStack;
+};
+
+struct SegmentEntry : public PLDHashEntryHdr
+{
+  static PLDHashNumber HashKey(PLDHashTable* aTable, const void* aKey)
+  {
+    auto kind = static_cast<const SegmentKind*>(aKey);
+    return mozilla::HashGeneric(kind->mState, kind->mType, kind->mProtect,
+                                kind->mIsStack);
+  }
+
+  static bool MatchEntry(PLDHashTable* aTable,
+                         const PLDHashEntryHdr* aEntry, const void* aKey)
+  {
+    auto kind = static_cast<const SegmentKind*>(aKey);
+    auto entry = static_cast<const SegmentEntry*>(aEntry);
+    return kind->mState == entry->mKind.mState &&
+           kind->mType == entry->mKind.mType &&
+           kind->mProtect == entry->mKind.mProtect &&
+           kind->mIsStack == entry->mKind.mIsStack;
+  }
+
+  static void InitEntry(PLDHashEntryHdr* aEntry, const void* aKey)
+  {
+    auto kind = static_cast<const SegmentKind*>(aKey);
+    auto entry = static_cast<SegmentEntry*>(aEntry);
+    entry->mKind = *kind;
+    entry->mCount = 0;
+    entry->mSize = 0;
+  }
+
+  static const PLDHashTableOps Ops;
+
+  SegmentKind mKind;  
+  uint32_t mCount;    
+  size_t mSize;       
+};
+
+ const PLDHashTableOps SegmentEntry::Ops = {
+  SegmentEntry::HashKey,
+  SegmentEntry::MatchEntry,
+  PLDHashTable::MoveEntryStub,
+  PLDHashTable::ClearEntryStub,
+  SegmentEntry::InitEntry
+};
+
 class WindowsAddressSpaceReporter final : public nsIMemoryReporter
 {
   ~WindowsAddressSpaceReporter() {}
@@ -756,6 +808,11 @@ public:
   NS_METHOD CollectReports(nsIHandleReportCallback* aHandleReport,
                            nsISupports* aData, bool aAnonymize) override
   {
+    
+    
+    
+
+    PLDHashTable table(&SegmentEntry::Ops, sizeof(SegmentEntry));
     MEMORY_BASIC_INFORMATION info = { 0 };
     bool isPrevSegStackGuard = false;
     for (size_t currentAddress = 0; ; ) {
@@ -767,6 +824,41 @@ public:
       size_t size = info.RegionSize;
 
       
+      DWORD state = info.State;
+      DWORD type =
+        (state == MEM_RESERVE || state == MEM_COMMIT) ? info.Type : 0;
+      DWORD protect = (state == MEM_COMMIT) ? info.Protect : 0;
+      bool isStack = isPrevSegStackGuard &&
+                     state == MEM_COMMIT &&
+                     type == MEM_PRIVATE &&
+                     protect == PAGE_READWRITE;
+
+      SegmentKind kind = { state, type, protect, isStack ? 1 : 0 };
+      auto entry =
+        static_cast<SegmentEntry*>(table.Add(&kind, mozilla::fallible));
+      if (entry) {
+        entry->mCount += 1;
+        entry->mSize += size;
+      }
+
+      isPrevSegStackGuard = info.State == MEM_COMMIT &&
+                            info.Type == MEM_PRIVATE &&
+                            info.Protect == (PAGE_READWRITE|PAGE_GUARD);
+
+      size_t lastAddress = currentAddress;
+      currentAddress += size;
+
+      
+      if (currentAddress < lastAddress) {
+        break;
+      }
+    }
+
+    
+    
+
+    for (auto iter = table.Iter(); !iter.Done(); iter.Next()) {
+      
       
       
       
@@ -777,9 +869,11 @@ public:
       bool doType = false;
       bool doProtect = false;
 
+      auto entry = static_cast<const SegmentEntry*>(iter.Get());
+
       nsCString path("address-space");
 
-      switch (info.State) {
+      switch (entry->mKind.mState) {
         case MEM_FREE:
           path.AppendLiteral("/free");
           break;
@@ -802,7 +896,7 @@ public:
       }
 
       if (doType) {
-        switch (info.Type) {
+        switch (entry->mKind.mType) {
           case MEM_IMAGE:
             path.AppendLiteral("/image");
             break;
@@ -823,71 +917,59 @@ public:
       }
 
       if (doProtect) {
+        DWORD protect = entry->mKind.mProtect;
         
-        if (info.Protect & PAGE_EXECUTE) {
+        if (protect & PAGE_EXECUTE) {
           path.AppendLiteral("/execute");
         }
-        if (info.Protect & PAGE_EXECUTE_READ) {
+        if (protect & PAGE_EXECUTE_READ) {
           path.AppendLiteral("/execute-read");
         }
-        if (info.Protect & PAGE_EXECUTE_READWRITE) {
+        if (protect & PAGE_EXECUTE_READWRITE) {
           path.AppendLiteral("/execute-readwrite");
         }
-        if (info.Protect & PAGE_EXECUTE_WRITECOPY) {
+        if (protect & PAGE_EXECUTE_WRITECOPY) {
           path.AppendLiteral("/execute-writecopy");
         }
-        if (info.Protect & PAGE_NOACCESS) {
+        if (protect & PAGE_NOACCESS) {
           path.AppendLiteral("/noaccess");
         }
-        if (info.Protect & PAGE_READONLY) {
+        if (protect & PAGE_READONLY) {
           path.AppendLiteral("/readonly");
         }
-        if (info.Protect & PAGE_READWRITE) {
+        if (protect & PAGE_READWRITE) {
           path.AppendLiteral("/readwrite");
         }
-        if (info.Protect & PAGE_WRITECOPY) {
+        if (protect & PAGE_WRITECOPY) {
           path.AppendLiteral("/writecopy");
         }
 
         
-        if (info.Protect & PAGE_GUARD) {
+        if (protect & PAGE_GUARD) {
           path.AppendLiteral("+guard");
         }
-        if (info.Protect & PAGE_NOCACHE) {
+        if (protect & PAGE_NOCACHE) {
           path.AppendLiteral("+nocache");
         }
-        if (info.Protect & PAGE_WRITECOMBINE) {
+        if (protect & PAGE_WRITECOMBINE) {
           path.AppendLiteral("+writecombine");
         }
 
         
-        if (isPrevSegStackGuard &&
-            info.State == MEM_COMMIT &&
-            doType && info.Type == MEM_PRIVATE &&
-            doProtect && info.Protect == PAGE_READWRITE) {
-          path.AppendLiteral(" (stack)");
+        if (entry->mKind.mIsStack) {
+          path.AppendLiteral("+stack");
         }
       }
 
-      isPrevSegStackGuard =
-        info.State == MEM_COMMIT &&
-        doType && info.Type == MEM_PRIVATE &&
-        doProtect && info.Protect == (PAGE_READWRITE|PAGE_GUARD);
+      
+      path.AppendPrintf("(segments=%u)", entry->mCount);
 
       nsresult rv;
       rv = aHandleReport->Callback(
-        EmptyCString(), path, KIND_OTHER, UNITS_BYTES, size,
+        EmptyCString(), path, KIND_OTHER, UNITS_BYTES, entry->mSize,
         NS_LITERAL_CSTRING("From MEMORY_BASIC_INFORMATION."), aData);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
-      }
-
-      size_t lastAddress = currentAddress;
-      currentAddress += size;
-
-      
-      if (currentAddress < lastAddress) {
-        break;
       }
     }
 
