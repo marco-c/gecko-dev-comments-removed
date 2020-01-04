@@ -128,6 +128,16 @@ MacroAssembler::add64(Imm32 imm, Register64 dest)
     adcl(Imm32(0), dest.high);
 }
 
+void
+MacroAssembler::addConstantDouble(double d, FloatRegister dest)
+{
+    Double* dbl = getDouble(d);
+    if (!dbl)
+        return;
+    masm.vaddsd_mr(nullptr, dest.encoding(), dest.encoding());
+    propagateOOM(dbl->uses.append(CodeOffset(masm.size())));
+}
+
 
 
 
@@ -165,6 +175,29 @@ MacroAssembler::rshift64(Imm32 imm, Register64 dest)
 
 
 
+
+
+void
+MacroAssemblerX86::convertUInt32ToDouble(Register src, FloatRegister dest)
+{
+    
+    subl(Imm32(0x80000000), src);
+
+    
+    convertInt32ToDouble(src, dest);
+
+    
+    
+    asMasm().addConstantDouble(2147483648.0, dest);
+}
+
+
+void
+MacroAssemblerX86::convertUInt32ToFloat32(Register src, FloatRegister dest)
+{
+    convertUInt32ToDouble(src, dest);
+    convertDoubleToFloat32(dest, dest);
+}
 
 } 
 } 
