@@ -47,6 +47,7 @@
 #include "mozilla/Unused.h"
 #include "mozIApplication.h"
 #include "nsContentUtils.h"
+#include "nsCSSFrameConstructor.h"
 #include "nsDocShell.h"
 #include "nsEmbedCID.h"
 #include "nsGlobalWindow.h"
@@ -84,6 +85,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
+#include "nsViewManager.h"
 #include "nsWeakReference.h"
 #include "nsWindowWatcher.h"
 #include "PermissionMessageUtils.h"
@@ -549,6 +551,7 @@ TabChild::TabChild(nsIContentChild* aManager,
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   , mNativeWindowHandle(0)
 #endif
+  , mLayerObserverEpoch(0)
 {
   
   
@@ -2622,19 +2625,85 @@ TabChild::RecvSetUpdateHitRegion(const bool& aEnabled)
 }
 
 bool
-TabChild::RecvSetDocShellIsActive(const bool& aIsActive, const bool& aIsHidden)
+TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
+                                  const bool& aPreserveLayers,
+                                  const uint64_t& aLayerObserverEpoch)
 {
-    
-    mIsPrerendered &= !aIsActive;
-    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-    if (docShell) {
-      if (aIsHidden) {
-        docShell->SetIsActive(aIsActive);
-      } else {
-        docShell->SetIsActiveAndForeground(aIsActive);
-      }
-    }
+  
+  
+  
+  
+  if (mLayerObserverEpoch >= aLayerObserverEpoch) {
     return true;
+  }
+  mLayerObserverEpoch = aLayerObserverEpoch;
+
+  MOZ_ASSERT(mPuppetWidget);
+  MOZ_ASSERT(mPuppetWidget->GetLayerManager());
+  MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() ==
+             LayersBackend::LAYERS_CLIENT);
+
+  
+  
+  
+  ClientLayerManager *manager = mPuppetWidget->GetLayerManager()->AsClientLayerManager();
+  manager->SetLayerObserverEpoch(aLayerObserverEpoch);
+
+  
+  mIsPrerendered &= !aIsActive;
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  if (docShell) {
+    bool wasActive;
+    docShell->GetIsActive(&wasActive);
+    if (aIsActive && wasActive) {
+      
+      
+      
+      if (IPCOpen()) {
+        Unused << SendForcePaintNoOp(aLayerObserverEpoch);
+      }
+      return true;
+    }
+
+    docShell->SetIsActive(aIsActive);
+  }
+
+  if (aIsActive) {
+    MakeVisible();
+
+    
+    
+    
+    
+    if (nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell()) {
+      if (nsIFrame* root = presShell->FrameConstructor()->GetRootFrame()) {
+        FrameLayerBuilder::InvalidateAllLayersForFrame(
+          nsLayoutUtils::GetDisplayRootFrame(root));
+        root->SchedulePaint();
+      }
+
+      
+      
+      
+      
+      APZCCallbackHelper::SuppressDisplayport(true, presShell);
+      if (nsContentUtils::IsSafeToRunScript()) {
+        WebWidget()->PaintNowIfNeeded();
+      } else {
+        RefPtr<nsViewManager> vm = presShell->GetViewManager();
+        if (nsView* view = vm->GetRootView()) {
+          presShell->Paint(view, view->GetBounds(),
+                           nsIPresShell::PAINT_LAYERS |
+                           nsIPresShell::PAINT_SYNC_DECODE_IMAGES);
+        }
+      }
+      APZCCallbackHelper::SuppressDisplayport(false, presShell);
+    }
+  } else if (!aPreserveLayers) {
+    MakeHidden();
+  }
+
+  return true;
 }
 
 bool
@@ -2857,6 +2926,10 @@ TabChild::NotifyPainted()
 void
 TabChild::MakeVisible()
 {
+  if (mPuppetWidget && mPuppetWidget->IsVisible()) {
+    return;
+  }
+
   if (mPuppetWidget) {
     mPuppetWidget->Show(true);
   }
@@ -2865,6 +2938,10 @@ TabChild::MakeVisible()
 void
 TabChild::MakeHidden()
 {
+  if (mPuppetWidget && !mPuppetWidget->IsVisible()) {
+    return;
+  }
+
   CompositorBridgeChild* compositor = CompositorBridgeChild::Get();
 
   
@@ -3221,6 +3298,13 @@ TabChild::GetOuterRect()
   LayoutDeviceIntRect outerRect =
     RoundedToInt(mUnscaledOuterRect * mPuppetWidget->GetDefaultScale());
   return ViewAs<ScreenPixel>(outerRect, PixelCastJustification::LayoutDeviceIsScreenForTabDims);
+}
+
+void
+TabChild::ForcePaint(uint64_t aLayerObserverEpoch)
+{
+  nsAutoScriptBlocker scriptBlocker;
+  RecvSetDocShellIsActive(true, false, aLayerObserverEpoch);
 }
 
 TabChildGlobal::TabChildGlobal(TabChildBase* aTabChild)

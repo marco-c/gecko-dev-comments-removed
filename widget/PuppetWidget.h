@@ -194,6 +194,9 @@ public:
 
   virtual bool NeedsPaint() override;
 
+  
+  void PaintNowIfNeeded();
+
   virtual TabChild* GetOwningTabChild() override { return mTabChild; }
 
   void UpdateBackingScaleCache(float aDpi, double aScale)

@@ -191,17 +191,6 @@ private:
 #endif
 };
 
-class CompositorUpdateObserver
-{
-public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorUpdateObserver);
-
-  virtual void ObserveUpdate(uint64_t aLayersId, bool aActive) = 0;
-
-protected:
-  virtual ~CompositorUpdateObserver() {}
-};
-
 class CompositorBridgeParentBase : public PCompositorBridgeParent,
                                    public HostIPCAllocator,
                                    public ShmemAllocator
@@ -464,8 +453,6 @@ public:
     LayerTransactionParent* mLayerTree;
     nsTArray<PluginWindowData> mPluginData;
     bool mUpdatedPluginDataAvailable;
-    RefPtr<CompositorUpdateObserver> mLayerTreeReadyObserver;
-    RefPtr<CompositorUpdateObserver> mLayerTreeClearedObserver;
 
     
     
@@ -548,10 +535,6 @@ private:
 
 
   static void DeallocateLayerTreeId(uint64_t aId);
-
-  static void RequestNotifyLayerTreeReady(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
-  static void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
-  static void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
 
 protected:
   

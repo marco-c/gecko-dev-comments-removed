@@ -761,7 +761,6 @@ PresShell::PresShell()
   mSelectionFlags = nsISelectionDisplay::DISPLAY_TEXT | nsISelectionDisplay::DISPLAY_IMAGES;
   mIsThemeSupportDisabled = false;
   mIsActive = true;
-  mIsHidden = false;
   
   mIsFirstPaint = true;
   mPresShellId = sNextPresShellId++;
@@ -10892,15 +10891,11 @@ SetPluginIsActive(nsISupports* aSupports, void* aClosure)
 }
 
 nsresult
-PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
+PresShell::SetIsActive(bool aIsActive)
 {
   NS_PRECONDITION(mDocument, "should only be called with a document");
 
   mIsActive = aIsActive;
-
-  
-  
-  mIsHidden |= aIsHidden;
 
   nsPresContext* presContext = GetPresContext();
   if (presContext &&
@@ -10922,45 +10917,6 @@ PresShell::SetIsActive(bool aIsActive, bool aIsHidden)
     }
   }
 #endif
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mIsHidden) {
-    if (TabChild* tab = TabChild::GetFrom(this)) {
-      if (aIsActive) {
-        tab->MakeVisible();
-        
-        
-        mIsHidden = false;
-
-        if (!mIsZombie) {
-          if (nsIFrame* root = mFrameConstructor->GetRootFrame()) {
-            FrameLayerBuilder::InvalidateAllLayersForFrame(
-              nsLayoutUtils::GetDisplayRootFrame(root));
-            root->SchedulePaint();
-          }
-        }
-      } else {
-        tab->MakeHidden();
-      }
-    }
-  }
   return rv;
 }
 

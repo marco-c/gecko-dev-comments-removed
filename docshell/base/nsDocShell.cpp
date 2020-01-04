@@ -6160,19 +6160,7 @@ nsDocShell::GetIsOffScreenBrowser(bool* aIsOffScreen)
 }
 
 NS_IMETHODIMP
-nsDocShell::SetIsActiveAndForeground(bool aIsActive)
-{
-  return SetIsActiveInternal(aIsActive, false);
-}
-
-NS_IMETHODIMP
 nsDocShell::SetIsActive(bool aIsActive)
-{
-  return SetIsActiveInternal(aIsActive, true);
-}
-
-nsresult
-nsDocShell::SetIsActiveInternal(bool aIsActive, bool aIsHidden)
 {
   
   if (mItemType == nsIDocShellTreeItem::typeChrome) {
@@ -6188,7 +6176,7 @@ nsDocShell::SetIsActiveInternal(bool aIsActive, bool aIsHidden)
   
   nsCOMPtr<nsIPresShell> pshell = GetPresShell();
   if (pshell) {
-    pshell->SetIsActive(aIsActive, aIsHidden);
+    pshell->SetIsActive(aIsActive);
   }
 
   
@@ -6222,11 +6210,7 @@ nsDocShell::SetIsActiveInternal(bool aIsActive, bool aIsHidden)
     }
 
     if (!docshell->GetIsMozBrowserOrApp()) {
-      if (aIsHidden) {
-        docshell->SetIsActive(aIsActive);
-      } else {
-        docshell->SetIsActiveAndForeground(aIsActive);
-      }
+      docshell->SetIsActive(aIsActive);
     }
   }
 
