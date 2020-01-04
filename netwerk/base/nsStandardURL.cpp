@@ -1775,6 +1775,8 @@ nsStandardURL::FindHostLimit(nsACString::const_iterator& aStart,
   }
 }
 
+
+
 NS_IMETHODIMP
 nsStandardURL::SetHostPort(const nsACString &aValue)
 {
@@ -1843,6 +1845,18 @@ nsStandardURL::SetHostPort(const nsACString &aValue)
     }
 
     return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
+nsStandardURL::SetHostAndPort(const nsACString &aValue)
+{
+  
+  
+  nsresult rv = SetPort(-1);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return SetHostPort(aValue);
 }
 
 NS_IMETHODIMP
