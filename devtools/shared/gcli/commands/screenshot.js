@@ -179,36 +179,14 @@ exports.items = [
     params: [
       filenameParam,
       standardParams,
-      {
-        group: l10n.lookup("screenshotAdvancedOptions"),
-        params: [
-          {
-            name: "chrome",
-            type: "boolean",
-            description: l10n.lookupFormat("screenshotChromeDesc2", [BRAND_SHORT_NAME]),
-            manual: l10n.lookupFormat("screenshotChromeManual2", [BRAND_SHORT_NAME])
-          },
-        ]
-      },
     ],
     exec: function (args, context) {
-      if (args.chrome && args.selector) {
-        
-        
-        
-        throw new Error(l10n.lookup("screenshotSelectorChromeConflict"));
-      }
+      
+      const command = context.typed.replace(/^screenshot/, "screenshot_server");
+      let capture = context.updateExec(command).then(output => {
+        return output.error ? Promise.reject(output.data) : output.data;
+      });
 
-      let capture;
-      if (!args.chrome) {
-        
-        const command = context.typed.replace(/^screenshot/, "screenshot_server");
-        capture = context.updateExec(command).then(output => {
-          return output.error ? Promise.reject(output.data) : output.data;
-        });
-      } else {
-        capture = captureScreenshot(args, context.environment.chromeDocument);
-      }
       simulateCameraEffect(context.environment.chromeDocument, "shutter");
       return capture.then(saveScreenshot.bind(null, args, context));
     },
