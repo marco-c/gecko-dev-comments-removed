@@ -49,18 +49,27 @@ H264Converter::Init()
            TrackType::kVideoTrack, __func__);
 }
 
-nsresult
+void
 H264Converter::Input(MediaRawData* aSample)
 {
   if (!mp4_demuxer::AnnexB::ConvertSampleToAVCC(aSample)) {
     
     
-    return NS_ERROR_FAILURE;
+    mCallback->Error(MediaDataDecoderError::DECODE_ERROR);
+    return;
   }
 
   if (mInitPromiseRequest.Exists()) {
+    if (mNeedKeyframe) {
+      if (!aSample->mKeyframe) {
+        
+        mCallback->InputExhausted();
+        return;
+      }
+      mNeedKeyframe = false;
+    }
     mMediaRawSamples.AppendElement(aSample);
-    return NS_OK;
+    return;
   }
 
   nsresult rv;
@@ -72,52 +81,63 @@ H264Converter::Input(MediaRawData* aSample)
     if (rv == NS_ERROR_NOT_INITIALIZED) {
       
       
-      return NS_OK;
+      mCallback->InputExhausted();
+      return;
     }
   } else {
     rv = CheckForSPSChange(aSample);
   }
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (NS_FAILED(rv)) {
+    mCallback->Error(MediaDataDecoderError::DECODE_ERROR);
+    return;
+  }
+
+  if (mNeedKeyframe && !aSample->mKeyframe) {
+    mCallback->InputExhausted();
+    return;
+  }
 
   if (!mNeedAVCC &&
       !mp4_demuxer::AnnexB::ConvertSampleToAnnexB(aSample)) {
-    return NS_ERROR_FAILURE;
+    mCallback->Error(MediaDataDecoderError::FATAL_ERROR);
+    return;
   }
+
+  mNeedKeyframe = false;
 
   aSample->mExtraData = mCurrentConfig.mExtraData;
 
-  return mDecoder->Input(aSample);
+  mDecoder->Input(aSample);
 }
 
-nsresult
+void
 H264Converter::Flush()
 {
+  mNeedKeyframe = true;
   if (mDecoder) {
-    return mDecoder->Flush();
+    mDecoder->Flush();
   }
-  return mLastError;
 }
 
-nsresult
+void
 H264Converter::Drain()
 {
+  mNeedKeyframe = true;
   if (mDecoder) {
-    return mDecoder->Drain();
+    mDecoder->Drain();
+    return;
   }
   mCallback->DrainComplete();
-  return mLastError;
 }
 
-nsresult
+void
 H264Converter::Shutdown()
 {
   if (mDecoder) {
-    nsresult rv = mDecoder->Shutdown();
+    mDecoder->Shutdown();
     mInitPromiseRequest.DisconnectIfExists();
     mDecoder = nullptr;
-    return rv;
   }
-  return NS_OK;
 }
 
 bool
@@ -175,6 +195,9 @@ H264Converter::CreateDecoder(DecoderDoctorDiagnostics* aDiagnostics)
     mLastError = NS_ERROR_FAILURE;
     return NS_ERROR_FAILURE;
   }
+
+  mNeedKeyframe = true;
+
   return NS_OK;
 }
 
@@ -208,10 +231,19 @@ void
 H264Converter::OnDecoderInitDone(const TrackType aTrackType)
 {
   mInitPromiseRequest.Complete();
+  bool gotInput = false;
   for (uint32_t i = 0 ; i < mMediaRawSamples.Length(); i++) {
-    if (NS_FAILED(mDecoder->Input(mMediaRawSamples[i]))) {
-      mCallback->Error(MediaDataDecoderError::FATAL_ERROR);
+    const RefPtr<MediaRawData>& sample = mMediaRawSamples[i];
+    if (mNeedKeyframe) {
+      if (!sample->mKeyframe) {
+        continue;
+      }
+      mNeedKeyframe = false;
     }
+    mDecoder->Input(sample);
+  }
+  if (!gotInput) {
+    mCallback->InputExhausted();
   }
   mMediaRawSamples.Clear();
 }

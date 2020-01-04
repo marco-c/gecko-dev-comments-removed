@@ -210,6 +210,10 @@ public:
 
 
 
+
+
+
+
 class MediaDataDecoder {
 protected:
   virtual ~MediaDataDecoder() {};
@@ -235,7 +239,7 @@ public:
   virtual RefPtr<InitPromise> Init() = 0;
 
   
-  virtual nsresult Input(MediaRawData* aSample) = 0;
+  virtual void Input(MediaRawData* aSample) = 0;
 
   
   
@@ -244,7 +248,7 @@ public:
   
   
   
-  virtual nsresult Flush() = 0;
+  virtual void Flush() = 0;
 
   
   
@@ -255,7 +259,7 @@ public:
   
   
   
-  virtual nsresult Drain() = 0;
+  virtual void Drain() = 0;
 
   
   
@@ -264,7 +268,7 @@ public:
   
   
   
-  virtual nsresult Shutdown() = 0;
+  virtual void Shutdown() = 0;
 
   
   
@@ -277,10 +281,7 @@ public:
   
   
   
-  virtual nsresult ConfigurationChanged(const TrackInfo& aConfig)
-  {
-    return NS_OK;
-  }
+  virtual void ConfigurationChanged(const TrackInfo& aConfig) {}
 
   
   

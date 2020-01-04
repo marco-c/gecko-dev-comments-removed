@@ -348,36 +348,33 @@ GonkMediaDataDecoder::Init()
   return mManager->Init();
 }
 
-nsresult
+void
 GonkMediaDataDecoder::Shutdown()
 {
-  nsresult rv = mManager->Shutdown();
+  mManager->Shutdown();
 
   
   
   mManager = nullptr;
-  return rv;
 }
 
 
-nsresult
+void
 GonkMediaDataDecoder::Input(MediaRawData* aSample)
 {
   mManager->Input(aSample);
-  return NS_OK;
 }
 
-nsresult
+void
 GonkMediaDataDecoder::Flush()
 {
-  return mManager->Flush();
+  mManager->Flush();
 }
 
-nsresult
+void
 GonkMediaDataDecoder::Drain()
 {
   mManager->Input(nullptr);
-  return NS_OK;
 }
 
 } 
