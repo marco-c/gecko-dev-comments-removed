@@ -36,6 +36,9 @@ actions.SET_BREAKDOWN = "set-breakdown";
 actions.SNAPSHOT_ERROR = "snapshot-error";
 
 
+actions.SET_FILTER_STRING = "set-filter-string";
+
+
 exports.ALLOCATION_RECORDING_OPTIONS = {
   probability: 1,
   maxLogLength: 1
