@@ -386,6 +386,16 @@ using GCNurseryCollectionCallback = void(*)(JSContext* cx, GCNurseryProgress pro
 extern JS_PUBLIC_API(GCNurseryCollectionCallback)
 SetGCNurseryCollectionCallback(JSContext* cx, GCNurseryCollectionCallback callback);
 
+typedef void
+(* DoCycleCollectionCallback)(JSContext* cx);
+
+
+
+
+
+extern JS_PUBLIC_API(DoCycleCollectionCallback)
+SetDoCycleCollectionCallback(JSContext* cx, DoCycleCollectionCallback callback);
+
 
 
 
