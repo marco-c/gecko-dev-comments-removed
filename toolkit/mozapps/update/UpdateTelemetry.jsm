@@ -37,21 +37,12 @@ this.AUSTLMY = {
   
   CHK_NO_UPDATE_FOUND: 0,
   
-  CHK_ADDON_NO_INCOMPAT: 1,
+  CHK_DOWNLOAD_UPDATE: 1,
   
   
   CHK_SHOWPROMPT_SNIPPET: 2,
   
   CHK_SHOWPROMPT_PREF: 3,
-  
-  CHK_ADDON_PREF_DISABLED: 4,
-  
-  
-  CHK_ADDON_SAME_APP_VER: 5,
-  
-  CHK_ADDON_UPDATES_FOR_INCOMPAT: 6,
-  
-  CHK_ADDON_HAVE_INCOMPAT: 7,
   
   CHK_HAS_ACTIVEUPDATE: 8,
   
@@ -336,11 +327,9 @@ this.AUSTLMY = {
                     noupdatesfound: 4,
                     manualUpdate: 5,
                     unsupported: 6,
-                    incompatibleCheck: 7,
                     updatesfoundbasic: 8,
                     updatesfoundbillboard: 9,
                     license: 10,
-                    incompatibleList: 11,
                     downloading: 12,
                     errors: 13,
                     errorextra: 14,

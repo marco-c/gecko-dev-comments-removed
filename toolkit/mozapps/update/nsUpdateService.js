@@ -10,7 +10,6 @@ const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/FileUtils.jsm", this);
-Cu.import("resource://gre/modules/AddonManager.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/ctypes.jsm", this);
 Cu.import("resource://gre/modules/UpdateTelemetry.jsm", this);
@@ -32,10 +31,8 @@ const PREF_APP_UPDATE_CERT_MAXERRORS      = "app.update.cert.maxErrors";
 const PREF_APP_UPDATE_CERT_REQUIREBUILTIN = "app.update.cert.requireBuiltIn";
 const PREF_APP_UPDATE_ENABLED             = "app.update.enabled";
 const PREF_APP_UPDATE_IDLETIME            = "app.update.idletime";
-const PREF_APP_UPDATE_INCOMPATIBLE_MODE   = "app.update.incompatible.mode";
 const PREF_APP_UPDATE_INTERVAL            = "app.update.interval";
 const PREF_APP_UPDATE_LOG                 = "app.update.log";
-const PREF_APP_UPDATE_MODE                = "app.update.mode";
 const PREF_APP_UPDATE_NEVER_BRANCH        = "app.update.never.";
 const PREF_APP_UPDATE_NOTIFIEDUNSUPPORTED = "app.update.notifiedUnsupported";
 const PREF_APP_UPDATE_POSTUPDATE          = "app.update.postupdate";
@@ -51,8 +48,6 @@ const PREF_APP_UPDATE_SERVICE_ERRORS      = "app.update.service.errors";
 const PREF_APP_UPDATE_SERVICE_MAX_ERRORS  = "app.update.service.maxErrors";
 const PREF_APP_UPDATE_SOCKET_ERRORS       = "app.update.socket.maxErrors";
 const PREF_APP_UPDATE_RETRY_TIMEOUT       = "app.update.socket.retryTimeout";
-
-const PREF_EM_HOTFIX_ID                   = "extensions.hotfix.id";
 
 const URI_UPDATE_PROMPT_DIALOG  = "chrome://mozapps/content/update/updates.xul";
 const URI_UPDATE_HISTORY_DIALOG = "chrome://mozapps/content/update/history.xul";
@@ -1843,11 +1838,6 @@ UpdateService.prototype = {
   
 
 
-  _incompatAddonsCount: 0,
-
-  
-
-
   _registeredOnlineObserver: false,
 
   
@@ -2463,12 +2453,6 @@ UpdateService.prototype = {
 
 
 
-  _update: null,
-
-  
-
-
-
 
 
   _selectAndInstallUpdate: function AUS__selectAndInstallUpdate(updates) {
@@ -2535,16 +2519,6 @@ UpdateService.prototype = {
 
 
 
-
-
-
-
-
-
-
-
-
-
     if (update.showPrompt) {
       LOG("UpdateService:_selectAndInstallUpdate - prompting because the " +
           "update snippet specified showPrompt");
@@ -2561,186 +2535,18 @@ UpdateService.prototype = {
       return;
     }
 
-    if (getPref("getIntPref", PREF_APP_UPDATE_MODE, 1) == 0) {
-      
-      LOG("UpdateService:_selectAndInstallUpdate - add-on compatibility " +
-          "check disabled by preference, just download the update");
-      let status = this.downloadUpdate(update, true);
-      if (status == STATE_NONE) {
-        cleanupActiveUpdate();
-      }
-      AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_ADDON_PREF_DISABLED);
-      return;
+    LOG("UpdateService:_selectAndInstallUpdate - download the update");
+    let status = this.downloadUpdate(update, true);
+    if (status == STATE_NONE) {
+      cleanupActiveUpdate();
     }
-
-    
-    if (update.appVersion &&
-        Services.vc.compare(update.appVersion, Services.appinfo.version) != 0) {
-      this._update = update;
-      this._checkAddonCompatibility();
-    }
-    else {
-      LOG("UpdateService:_selectAndInstallUpdate - add-on compatibility " +
-          "check not performed due to the update version being the same as " +
-          "the current application version, just download the update");
-      let status = this.downloadUpdate(update, true);
-      if (status == STATE_NONE) {
-        cleanupActiveUpdate();
-      }
-      AUSTLMY.pingCheckCode(this._pingSuffix,AUSTLMY.CHK_ADDON_SAME_APP_VER);
-    }
+    AUSTLMY.pingCheckCode(this._pingSuffix,AUSTLMY.CHK_DOWNLOAD_UPDATE);
   },
 
   _showPrompt: function AUS__showPrompt(update) {
     let prompter = Cc["@mozilla.org/updates/update-prompt;1"].
                    createInstance(Ci.nsIUpdatePrompt);
     prompter.showUpdateAvailable(update);
-  },
-
-  _checkAddonCompatibility: function AUS__checkAddonCompatibility() {
-    try {
-      var hotfixID = Services.prefs.getCharPref(PREF_EM_HOTFIX_ID);
-    }
-    catch (e) { }
-
-    
-    var self = this;
-    AddonManager.getAllAddons(function(addons) {
-      self._incompatibleAddons = [];
-      addons.forEach(function(addon) {
-        
-        
-        if (!("isCompatibleWith" in addon) || !("findUpdates" in addon)) {
-          let errMsg = "Add-on doesn't implement either the isCompatibleWith " +
-                       "or the findUpdates method!";
-          if (addon.id) {
-            errMsg += " Add-on ID: " + addon.id;
-          }
-          Cu.reportError(errMsg);
-          return;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        try {
-          if (addon.type != "plugin" && addon.id != hotfixID &&
-              !addon.appDisabled && !addon.userDisabled &&
-              addon.scope != AddonManager.SCOPE_APPLICATION &&
-              addon.isCompatible &&
-              !addon.isCompatibleWith(self._update.appVersion,
-                                      self._update.platformVersion)) {
-            self._incompatibleAddons.push(addon);
-          }
-        } catch (e) {
-          Cu.reportError(e);
-        }
-      });
-
-      if (self._incompatibleAddons.length > 0) {
-      
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        self._updateCheckCount = self._incompatibleAddons.length;
-        LOG("UpdateService:_checkAddonCompatibility - checking for " +
-            "incompatible add-ons");
-
-        self._incompatibleAddons.forEach(function(addon) {
-          addon.findUpdates(this, AddonManager.UPDATE_WHEN_NEW_APP_DETECTED,
-                            this._update.appVersion, this._update.platformVersion);
-        }, self);
-      }
-      else {
-        LOG("UpdateService:_checkAddonCompatibility - no incompatible " +
-            "add-ons found, just download the update");
-        var status = self.downloadUpdate(self._update, true);
-        if (status == STATE_NONE)
-          cleanupActiveUpdate();
-        self._update = null;
-        AUSTLMY.pingCheckCode(self._pingSuffix, AUSTLMY.CHK_ADDON_NO_INCOMPAT);
-      }
-    });
-  },
-
-  
-  onCompatibilityUpdateAvailable: function(addon) {
-    
-    
-    for (var i = 0; i < this._incompatibleAddons.length; ++i) {
-      if (this._incompatibleAddons[i].id == addon.id) {
-        LOG("UpdateService:onCompatibilityUpdateAvailable - found update for " +
-            "add-on ID: " + addon.id);
-        this._incompatibleAddons.splice(i, 1);
-      }
-    }
-  },
-
-  onUpdateAvailable: function(addon, install) {
-    if (getPref("getIntPref", PREF_APP_UPDATE_INCOMPATIBLE_MODE, 0) == 1) {
-      return;
-    }
-
-    
-    
-    
-    if (Services.blocklist.isAddonBlocklisted(addon, this._update.appVersion,
-                                              this._update.platformVersion)) {
-      return;
-    }
-
-    
-    this.onCompatibilityUpdateAvailable(addon);
-  },
-
-  onUpdateFinished: function(addon) {
-    if (--this._updateCheckCount > 0) {
-      return;
-    }
-
-    if (this._incompatibleAddons.length > 0 || !getCanApplyUpdates()) {
-      LOG("UpdateService:onUpdateEnded - prompting because there are " +
-          "incompatible add-ons");
-      if (this._incompatibleAddons.length > 0) {
-        AUSTLMY.pingCheckCode(this._pingSuffix,
-                              AUSTLMY.CHK_ADDON_HAVE_INCOMPAT);
-      } else {
-        AUSTLMY.pingCheckCode(this._pingSuffix, AUSTLMY.CHK_UNABLE_TO_APPLY);
-      }
-      this._showPrompt(this._update);
-    } else {
-      LOG("UpdateService:_selectAndInstallUpdate - updates for all " +
-          "incompatible add-ons found, just download the update");
-      var status = this.downloadUpdate(this._update, true);
-      if (status == STATE_NONE)
-        cleanupActiveUpdate();
-      AUSTLMY.pingCheckCode(this._pingSuffix,
-                            AUSTLMY.CHK_ADDON_UPDATES_FOR_INCOMPAT);
-    }
-    this._update = null;
   },
 
   
