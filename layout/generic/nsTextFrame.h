@@ -558,6 +558,7 @@ public:
 protected:
   virtual ~nsTextFrame();
 
+  gfxTextRun* mTextRun;
   nsIFrame*   mNextContinuation;
   
   
@@ -574,7 +575,6 @@ protected:
   
   int32_t     mContentLengthHint;
   nscoord     mAscent;
-  gfxTextRun* mTextRun;
 
   
 
