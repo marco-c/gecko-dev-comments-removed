@@ -1778,15 +1778,14 @@ HttpBaseChannel::GetRequestSucceeded(bool *aValue)
 }
 
 NS_IMETHODIMP
-HttpBaseChannel::RedirectTo(nsIURI *targetURI)
+HttpBaseChannel::RedirectTo(nsIURI *newURI)
 {
   
-  
-  
-  
-  NS_ENSURE_FALSE(mOnStartRequestCalled, NS_ERROR_NOT_AVAILABLE);
+  ENSURE_CALLED_BEFORE_CONNECT();
 
-  mAPIRedirectToURI = targetURI;
+  
+  mAPIRedirectToURI = newURI;
+
   return NS_OK;
 }
 
@@ -2463,6 +2462,41 @@ HttpBaseChannel::ShouldIntercept(nsIURI* aURI)
     }
   }
   return shouldIntercept;
+}
+
+void
+HttpBaseChannel::SetLoadGroupUserAgentOverride()
+{
+  nsCOMPtr<nsIURI> uri;
+  GetURI(getter_AddRefs(uri));
+  nsAutoCString uriScheme;
+  if (uri) {
+    uri->GetScheme(uriScheme);
+  }
+  nsCOMPtr<nsILoadGroupChild> childLoadGroup = do_QueryInterface(mLoadGroup);
+  nsCOMPtr<nsILoadGroup> rootLoadGroup;
+  if (childLoadGroup) {
+    childLoadGroup->GetRootLoadGroup(getter_AddRefs(rootLoadGroup));
+  }
+  if (rootLoadGroup && !uriScheme.EqualsLiteral("file")) {
+    nsAutoCString ua;
+    if (nsContentUtils::IsNonSubresourceRequest(this)) {
+      gHttpHandler->OnUserAgentRequest(this);
+      GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
+      rootLoadGroup->SetUserAgentOverrideCache(ua);
+    } else {
+      GetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua);
+      
+      if (ua.IsEmpty()) {
+        rootLoadGroup->GetUserAgentOverrideCache(ua);
+        SetRequestHeader(NS_LITERAL_CSTRING("User-Agent"), ua, false);
+      }
+    }
+  } else {
+    
+    
+    gHttpHandler->OnUserAgentRequest(this);
+  }
 }
 
 

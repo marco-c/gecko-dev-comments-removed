@@ -276,6 +276,12 @@ public:
     }
 
     
+    void OnUserAgentRequest(nsIHttpChannel *chan)
+    {
+      NotifyObservers(chan, NS_HTTP_ON_USERAGENT_REQUEST_TOPIC);
+    }
+
+    
     void OnExamineResponse(nsIHttpChannel *chan)
     {
         NotifyObservers(chan, NS_HTTP_ON_EXAMINE_RESPONSE_TOPIC);
