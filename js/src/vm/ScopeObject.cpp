@@ -868,7 +868,7 @@ with_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id, ObjectOpResult
     return DeleteProperty(cx, actual, id, result);
 }
 
-const ObjectOps DynamicWithObject::objectOps_ = {
+static const ObjectOps DynamicWithObjectObjectOps = {
     with_LookupProperty,
     with_DefineProperty,
     with_HasProperty,
@@ -900,7 +900,7 @@ const Class DynamicWithObject::class_ = {
     nullptr, 
     JS_NULL_CLASS_SPEC,
     JS_NULL_CLASS_EXT,
-    &DynamicWithObject::objectOps_
+    &DynamicWithObjectObjectOps
 };
 
  StaticEvalScope*
@@ -1383,7 +1383,7 @@ lexicalError_DeleteProperty(JSContext* cx, HandleObject obj, HandleId id, Object
     return false;
 }
 
-const ObjectOps RuntimeLexicalErrorObject::objectOps_ = {
+static const ObjectOps RuntimeLexicalErrorObjectObjectOps = {
     lexicalError_LookupProperty,
     nullptr,             
     lexicalError_HasProperty,
@@ -1415,7 +1415,7 @@ const Class RuntimeLexicalErrorObject::class_ = {
     nullptr, 
     JS_NULL_CLASS_SPEC,
     JS_NULL_CLASS_EXT,
-    &RuntimeLexicalErrorObject::objectOps_
+    &RuntimeLexicalErrorObjectObjectOps
 };
 
 
