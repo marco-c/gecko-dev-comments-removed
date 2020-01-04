@@ -36,6 +36,7 @@ this.EXPORTED_SYMBOLS = [
 ];
 
 const DOCUMENT_POSITION_DISCONNECTED = 1;
+const XMLNS = "http://www.w3.org/1999/xhtml";
 
 const uuidGen = Cc["@mozilla.org/uuid-generator;1"]
     .getService(Ci.nsIUUIDGenerator);
@@ -910,4 +911,55 @@ element.isKeyboardInteractable = function(el) {
 element.isXULElement = function(el) {
   let ns = atom.getElementAttribute(el, "namespaceURI");
   return ns.indexOf("there.is.only.xul") >= 0;
+};
+
+const boolEls = {
+  audio: ["autoplay", "controls", "loop", "muted"],
+  button: ["autofocus", "disabled", "formnovalidate"],
+  details: ["open"],
+  dialog: ["open"],
+  fieldset: ["disabled"],
+  form: ["novalidate"],
+  iframe: ["allowfullscreen"],
+  img: ["ismap"],
+  input: ["autofocus", "checked", "disabled", "formnovalidate", "multiple", "readonly", "required"],
+  keygen: ["autofocus", "disabled"],
+  menuitem: ["checked", "default", "disabled"],
+  object: ["typemustmatch"],
+  ol: ["reversed"],
+  optgroup: ["disabled"],
+  option: ["disabled", "selected"],
+  script: ["async", "defer"],
+  select: ["autofocus", "disabled", "multiple", "required"],
+  textarea: ["autofocus", "disabled", "readonly", "required"],
+  track: ["default"],
+  video: ["autoplay", "controls", "loop", "muted"],
+};
+
+
+
+
+
+
+
+
+
+
+
+
+element.isBooleanAttribute = function(el, attr) {
+  if (el.namespaceURI !== XMLNS) {
+    return false;
+  }
+
+  
+  
+  if ((attr == "hidden" || attr == "itemscope") && !el.localName.includes("-")) {
+    return true;
+  }
+
+  if (!boolEls.hasOwnProperty(el.localName)) {
+    return false;
+  }
+  return boolEls[el.localName].includes(attr)
 };
