@@ -61,7 +61,7 @@ const EXTRA_BORDER = {
 
 
 
-const calculateVerticalPosition = function (anchorRect, docRect, preferredHeight, pos) {
+const calculateVerticalPosition = function (anchorRect, docRect, height, pos, offset) {
   let {TOP, BOTTOM} = POSITION;
 
   let {top: anchorTop, height: anchorHeight} = anchorRect;
@@ -74,9 +74,9 @@ const calculateVerticalPosition = function (anchorRect, docRect, preferredHeight
   
   let keepPosition = false;
   if (pos === TOP) {
-    keepPosition = availableTop >= preferredHeight;
+    keepPosition = availableTop >= height + offset;
   } else if (pos === BOTTOM) {
-    keepPosition = availableBottom >= preferredHeight;
+    keepPosition = availableBottom >= height + offset;
   }
   if (!keepPosition) {
     pos = availableTop > availableBottom ? TOP : BOTTOM;
@@ -84,11 +84,11 @@ const calculateVerticalPosition = function (anchorRect, docRect, preferredHeight
 
   
   let availableHeight = pos === TOP ? availableTop : availableBottom;
-  let height = Math.min(preferredHeight, availableHeight);
+  height = Math.min(height, availableHeight - offset);
   height = Math.floor(height);
 
   
-  let top = pos === TOP ? anchorTop - height : anchorTop + anchorHeight;
+  let top = pos === TOP ? anchorTop - height - offset : anchorTop + anchorHeight + offset;
 
   return {top, height, computedPosition: pos};
 };
@@ -109,18 +109,18 @@ const calculateVerticalPosition = function (anchorRect, docRect, preferredHeight
 
 
 
-const calculateHorizontalPosition = function (anchorRect, docRect, preferredWidth, type) {
+const calculateHorizontalPosition = function (anchorRect, docRect, width, type, offset) {
   let {left: anchorLeft, width: anchorWidth} = anchorRect;
   let {right: docRight} = docRect;
 
   
   let availableWidth = docRight;
-  let width = Math.min(preferredWidth, availableWidth);
+  width = Math.min(width, availableWidth);
 
   
   
   
-  let left = Math.min(anchorLeft, docRight - width);
+  let left = Math.min(anchorLeft + offset, docRight - width);
 
   
   let arrowLeft;
@@ -258,7 +258,9 @@ HTMLTooltip.prototype = {
 
 
 
-  show: function (anchor, {position} = {}) {
+
+
+  show: function (anchor, {position, x = 0, y = 0} = {}) {
     
     let anchorRect = getRelativeRect(anchor, this.doc);
     
@@ -268,7 +270,7 @@ HTMLTooltip.prototype = {
     let preferredHeight = this.preferredHeight + themeHeight;
 
     let {top, height, computedPosition} =
-      calculateVerticalPosition(anchorRect, docRect, preferredHeight, position);
+      calculateVerticalPosition(anchorRect, docRect, preferredHeight, position, y);
 
     
     let isTop = computedPosition === POSITION.TOP;
@@ -282,7 +284,7 @@ HTMLTooltip.prototype = {
       this._measureContainerWidth() : this.preferredWidth + themeWidth;
 
     let {left, width, arrowLeft} =
-      calculateHorizontalPosition(anchorRect, docRect, preferredWidth, this.type);
+      calculateHorizontalPosition(anchorRect, docRect, preferredWidth, this.type, x);
 
     this.container.style.width = width + "px";
     this.container.style.left = left + "px";
@@ -306,6 +308,8 @@ HTMLTooltip.prototype = {
 
   _measureContainerWidth: function () {
     this.container.classList.add("tooltip-hidden");
+    this.container.style.left = "0px";
+    this.container.style.width = "auto";
     let width = this.container.getBoundingClientRect().width;
     this.container.classList.remove("tooltip-hidden");
     return width;

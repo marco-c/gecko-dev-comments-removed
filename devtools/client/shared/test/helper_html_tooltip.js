@@ -20,10 +20,9 @@
 
 
 
-
-function* showTooltip(tooltip, anchor, position) {
+function* showTooltip(tooltip, anchor, {position, x, y} = {}) {
   let onShown = tooltip.once("shown");
-  tooltip.show(anchor, {position});
+  tooltip.show(anchor, {position, x, y});
   yield onShown;
   return waitForReflow(tooltip);
 }
