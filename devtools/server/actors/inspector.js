@@ -76,6 +76,7 @@ const {
 } = require("devtools/shared/layout/utils");
 const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
   require("devtools/server/actors/layout");
+const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
@@ -2774,7 +2775,7 @@ function isNodeDead(node) {
 
 
 function DocumentWalker(node, rootWin,
-    whatToShow = Ci.nsIDOMNodeFilter.SHOW_ALL,
+    whatToShow = nodeFilterConstants.SHOW_ALL,
     filter = standardTreeWalkerFilter) {
   if (!rootWin.location) {
     throw new Error("Got an invalid root window in DocumentWalker");
@@ -2793,7 +2794,7 @@ function DocumentWalker(node, rootWin,
   
   this.walker.currentNode = node;
   while (node &&
-         this.filter(node) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+         this.filter(node) === nodeFilterConstants.FILTER_SKIP) {
     node = this.walker.parentNode();
   }
 }
@@ -2824,7 +2825,7 @@ DocumentWalker.prototype = {
 
     let nextNode = this.walker.nextNode();
     while (nextNode &&
-           this.filter(nextNode) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+           this.filter(nextNode) === nodeFilterConstants.FILTER_SKIP) {
       nextNode = this.walker.nextNode();
     }
 
@@ -2839,7 +2840,7 @@ DocumentWalker.prototype = {
 
     let firstChild = this.walker.firstChild();
     while (firstChild &&
-           this.filter(firstChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+           this.filter(firstChild) === nodeFilterConstants.FILTER_SKIP) {
       firstChild = this.walker.nextSibling();
     }
 
@@ -2854,7 +2855,7 @@ DocumentWalker.prototype = {
 
     let lastChild = this.walker.lastChild();
     while (lastChild &&
-           this.filter(lastChild) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+           this.filter(lastChild) === nodeFilterConstants.FILTER_SKIP) {
       lastChild = this.walker.previousSibling();
     }
 
@@ -2863,7 +2864,7 @@ DocumentWalker.prototype = {
 
   previousSibling: function () {
     let node = this.walker.previousSibling();
-    while (node && this.filter(node) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+    while (node && this.filter(node) === nodeFilterConstants.FILTER_SKIP) {
       node = this.walker.previousSibling();
     }
     return node;
@@ -2871,7 +2872,7 @@ DocumentWalker.prototype = {
 
   nextSibling: function () {
     let node = this.walker.nextSibling();
-    while (node && this.filter(node) === Ci.nsIDOMNodeFilter.FILTER_SKIP) {
+    while (node && this.filter(node) === nodeFilterConstants.FILTER_SKIP) {
       node = this.walker.nextSibling();
     }
     return node;
@@ -2895,13 +2896,13 @@ function standardTreeWalkerFilter(node) {
   
   if (node.nodeName === "_moz_generated_content_before" ||
       node.nodeName === "_moz_generated_content_after") {
-    return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
+    return nodeFilterConstants.FILTER_ACCEPT;
   }
 
   
   if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
       !/[^\s]/.exec(node.nodeValue)) {
-    return Ci.nsIDOMNodeFilter.FILTER_SKIP;
+    return nodeFilterConstants.FILTER_SKIP;
   }
 
   
@@ -2911,10 +2912,10 @@ function standardTreeWalkerFilter(node) {
     
     
     
-    return Ci.nsIDOMNodeFilter.FILTER_SKIP;
+    return nodeFilterConstants.FILTER_SKIP;
   }
 
-  return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
+  return nodeFilterConstants.FILTER_ACCEPT;
 }
 
 
@@ -2925,9 +2926,9 @@ function allAnonymousContentTreeWalkerFilter(node) {
   
   if (node.nodeType == Ci.nsIDOMNode.TEXT_NODE &&
       !/[^\s]/.exec(node.nodeValue)) {
-    return Ci.nsIDOMNodeFilter.FILTER_SKIP;
+    return nodeFilterConstants.FILTER_SKIP;
   }
-  return Ci.nsIDOMNodeFilter.FILTER_ACCEPT;
+  return nodeFilterConstants.FILTER_ACCEPT;
 }
 
 
