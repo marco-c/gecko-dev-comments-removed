@@ -353,29 +353,6 @@ bool PluginModuleMapping::sIsLoadModuleOnStack = false;
 
 } 
 
-base::ProcessId
-mozilla::plugins::PluginProcessId(uint32_t aPluginId)
-{
-  RefPtr<nsPluginHost> host = nsPluginHost::GetInst();
-  if (!host) {
-    return mozilla::ipc::kInvalidProcessId;
-  }
-
-  nsPluginTag* pluginTag = host->PluginWithId(aPluginId);
-  if (!pluginTag || !pluginTag->mPlugin) {
-      return mozilla::ipc::kInvalidProcessId;
-  }
-
-  RefPtr<nsNPAPIPlugin> plugin = pluginTag->mPlugin;
-  PluginModuleChromeParent* chromeParent =
-      static_cast<PluginModuleChromeParent*>(plugin->GetLibrary());
-  if (!chromeParent) {
-    return mozilla::ipc::kInvalidProcessId;
-  }
-
-  return chromeParent->OtherPid();
-}
-
 void
 mozilla::plugins::TerminatePlugin(uint32_t aPluginId,
                                   base::ProcessId aContentProcessId,
@@ -1259,6 +1236,7 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
     
     
     
+    
     bool exists;
     nsCOMPtr<nsIFile> browserDumpFile;
     if (!aBrowserDumpId.IsEmpty() &&
@@ -1266,8 +1244,14 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
         browserDumpFile &&
         NS_SUCCEEDED(browserDumpFile->Exists(&exists)) && exists)
     {
-        crashReporter->UseMinidump(browserDumpFile);
-        reportsReady = true;
+        
+        
+        reportsReady = crashReporter->GenerateMinidumpAndPair(this, browserDumpFile,
+                                                              NS_LITERAL_CSTRING("browser"));
+        if (!reportsReady) {
+          browserDumpFile = nullptr;
+          CrashReporter::DeleteMinidumpFilesForID(aBrowserDumpId);
+        }
     }
 
     
@@ -1303,9 +1287,7 @@ PluginModuleChromeParent::TerminateChildProcess(MessageLoop* aMsgLoop,
 #endif
             if (aContentPid != mozilla::ipc::kInvalidProcessId) {
                 
-                
-                if (exists ||
-                    CreatePluginMinidump(aContentPid, 0,
+                if (CreatePluginMinidump(aContentPid, 0,
                                          pluginDumpFile,
                                          NS_LITERAL_CSTRING("content"))) {
                     additionalDumps.AppendLiteral(",content");
