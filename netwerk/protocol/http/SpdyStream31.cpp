@@ -28,11 +28,6 @@
 
 #include <algorithm>
 
-#ifdef DEBUG
-
-extern PRThread *gSocketThread;
-#endif
-
 namespace mozilla {
 namespace net {
 

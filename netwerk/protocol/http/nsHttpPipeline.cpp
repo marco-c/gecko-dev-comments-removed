@@ -12,12 +12,11 @@
 #include "nsISocketTransport.h"
 #include "nsIPipe.h"
 #include "nsCOMPtr.h"
+#include "nsSocketTransportService2.h"
 #include <algorithm>
 
 #ifdef DEBUG
 #include "prthread.h"
-
-extern PRThread *gSocketThread;
 #endif
 
 namespace mozilla {

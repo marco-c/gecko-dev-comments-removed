@@ -44,13 +44,6 @@
 
 
 
-#ifdef DEBUG
-
-extern PRThread *gSocketThread;
-#endif
-
-
-
 static NS_DEFINE_CID(kMultiplexInputStream, NS_MULTIPLEXINPUTSTREAM_CID);
 
 

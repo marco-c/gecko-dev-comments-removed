@@ -32,11 +32,6 @@
 #include "nsStandardURL.h"
 #include "prnetdb.h"
 
-#ifdef DEBUG
-
-extern PRThread *gSocketThread;
-#endif
-
 namespace mozilla {
 namespace net {
 
