@@ -8,7 +8,6 @@
 #define mozilla_image_decoders_nsICODecoder_h
 
 #include "nsAutoPtr.h"
-#include "StreamingLexer.h"
 #include "Decoder.h"
 #include "imgFrame.h"
 #include "nsBMPDecoder.h"
@@ -20,57 +19,27 @@ namespace image {
 
 class RasterImage;
 
-enum class ICOState
-{
-  SUCCESS,
-  FAILURE,
-  HEADER,
-  DIR_ENTRY,
-  SKIP_TO_RESOURCE,
-  FOUND_RESOURCE,
-  SNIFF_RESOURCE,
-  READ_PNG,
-  READ_BIH,
-  READ_BMP,
-  PREPARE_FOR_MASK,
-  READ_MASK_ROW,
-  SKIP_MASK,
-  FINISHED_RESOURCE
-};
-
 class nsICODecoder : public Decoder
 {
 public:
-  virtual ~nsICODecoder() { }
-
-  nsresult SetTargetSize(const nsIntSize& aSize) override;
+  virtual ~nsICODecoder();
 
   
-  static uint32_t GetRealWidth(const IconDirEntry& aEntry)
+  uint32_t GetRealWidth() const
   {
-    return aEntry.mWidth == 0 ? 256 : aEntry.mWidth;
+    return mDirEntry.mWidth == 0 ? 256 : mDirEntry.mWidth;
   }
 
   
-  uint32_t GetRealWidth() const { return GetRealWidth(mDirEntry); }
-
-  
-  static uint32_t GetRealHeight(const IconDirEntry& aEntry)
+  uint32_t GetRealHeight() const
   {
-    return aEntry.mHeight == 0 ? 256 : aEntry.mHeight;
+    return mDirEntry.mHeight == 0 ? 256 : mDirEntry.mHeight;
   }
 
-  
-  uint32_t GetRealHeight() const { return GetRealHeight(mDirEntry); }
-
-  
-  gfx::IntSize GetRealSize() const
+  virtual void SetResolution(const gfx::IntSize& aResolution) override
   {
-    return gfx::IntSize(GetRealWidth(), GetRealHeight());
+    mResolution = aResolution;
   }
-
-  
-  size_t FirstResourceOffset() const;
 
   virtual void WriteInternal(const char* aBuffer, uint32_t aCount) override;
   virtual void FinishInternal() override;
@@ -90,6 +59,10 @@ private:
   void GetFinalStateFromContainedDecoder();
 
   
+  void ProcessDirEntry(IconDirEntry& aTarget);
+  
+  void SetHotSpotIfCursor();
+  
   bool FillBitmapFileHeaderBuffer(int8_t* bfh);
   
   
@@ -100,40 +73,36 @@ private:
   
   bool FixBitmapWidth(int8_t* bih);
   
-  int32_t ReadBIHSize(const char* aBIH);
+  int32_t ExtractBIHSizeFromBitmap(int8_t* bih);
   
-  int32_t ReadBPP(const char* aBIH);
+  int32_t ExtractBPPFromBitmap(int8_t* bih);
   
   uint32_t CalcAlphaRowSize();
   
   uint16_t GetNumColors();
 
-  LexerTransition<ICOState> ReadHeader(const char* aData);
-  LexerTransition<ICOState> ReadDirEntry(const char* aData);
-  LexerTransition<ICOState> SniffResource(const char* aData);
-  LexerTransition<ICOState> ReadPNG(const char* aData, uint32_t aLen);
-  LexerTransition<ICOState> ReadBIH(const char* aData);
-  LexerTransition<ICOState> ReadBMP(const char* aData, uint32_t aLen);
-  LexerTransition<ICOState> PrepareForMask();
-  LexerTransition<ICOState> ReadMaskRow(const char* aData);
-  LexerTransition<ICOState> FinishResource();
-
-  StreamingLexer<ICOState, 32> mLexer; 
-  Maybe<Downscaler> mDownscaler;       
-  nsRefPtr<Decoder> mContainedDecoder; 
-  char mBIHraw[40];                    
-  IconDirEntry mDirEntry;              
-  IntSize mBiggestResourceSize;        
-  IntSize mBiggestResourceHotSpot;     
-  uint16_t mBiggestResourceColorDepth; 
-  int32_t mBestResourceDelta;          
-  uint16_t mBestResourceColorDepth;    
+  gfx::IntSize mResolution;  
+  uint16_t mBPP; 
+  uint32_t mPos; 
   uint16_t mNumIcons; 
   uint16_t mCurrIcon; 
-  uint16_t mBPP;      
-  uint32_t mMaskRowSize;  
-  uint32_t mCurrMaskLine; 
-  bool mIsCursor;         
+  uint32_t mImageOffset; 
+  uint8_t* mRow;      
+  int32_t mCurLine;   
+  uint32_t mRowBytes; 
+  int32_t mOldLine;   
+  nsRefPtr<Decoder> mContainedDecoder; 
+
+  char mDirEntryArray[ICODIRENTRYSIZE]; 
+  IconDirEntry mDirEntry; 
+  
+  char mSignature[PNGSIGNATURESIZE];
+  
+  char mBIHraw[40];
+  
+  bool mIsCursor;
+  
+  bool mIsPNG;
 };
 
 } 

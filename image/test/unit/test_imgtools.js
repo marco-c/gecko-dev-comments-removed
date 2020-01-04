@@ -169,7 +169,7 @@ var encodedBytes = streamToArray(istream);
 var refName = "image1png16x16.jpg";
 var refFile = do_get_file(refName);
 istream = getFileInputStream(refFile);
-do_check_eq(istream.available(), 1051);
+do_check_eq(istream.available(), 1078);
 var referenceBytes = streamToArray(istream);
 
 
@@ -228,7 +228,7 @@ encodedBytes = streamToArray(istream);
 refName = isWindows ? "image2jpg16x16-win.png" : "image2jpg16x16.png";
 refFile = do_get_file(refName);
 istream = getFileInputStream(refFile);
-do_check_eq(istream.available(), 950);
+do_check_eq(istream.available(), 948);
 referenceBytes = streamToArray(istream);
 
 
@@ -693,8 +693,6 @@ try {
 
   
   
-  
-  
   try {
       istream = imgTools.encodeImage(container, "image/png");
   } catch (e) {
@@ -706,7 +704,7 @@ try {
   errsrc = "decode";
 }
 
-do_check_eq(errsrc, "encode");
+do_check_eq(errsrc, "decode");
 checkExpectedError(/NS_ERROR_FAILURE/, err);
 
 

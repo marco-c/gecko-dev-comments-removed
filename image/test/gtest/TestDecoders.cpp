@@ -212,7 +212,8 @@ TEST(ImageDecoders, ICOSingleChunk)
   CheckDecoderSingleChunk(GreenICOTestCase());
 }
 
-TEST(ImageDecoders, ICOMultiChunk)
+
+TEST(ImageDecoders, DISABLED_ICOMultiChunk)
 {
   CheckDecoderMultiChunk(GreenICOTestCase());
 }
