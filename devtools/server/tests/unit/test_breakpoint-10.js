@@ -79,10 +79,11 @@ function test_child_breakpoint()
   });
 
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "debugger;\n" +                      
-                 "var a, i = 0;\n" +                  
-                 "for (i = 1; i <= 2; i++) {\n" +     
-                 "  a = i;\n" +                       
-                 "}\n");                              
+  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                   "debugger;\n" +                      
+                   "var a, i = 0;\n" +                  
+                   "for (i = 1; i <= 2; i++) {\n" +     
+                   "  a = i;\n" +                       
+                   "}\n",                               
+                   gDebuggee);
 }

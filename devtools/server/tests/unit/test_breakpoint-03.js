@@ -5,6 +5,8 @@
 
 
 
+
+
 var gDebuggee;
 var gClient;
 var gThreadClient;
@@ -65,14 +67,18 @@ function test_skip_breakpoint()
         });
       });
 
-      
       gThreadClient.resume();
     });
   });
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "debugger;\n" +      
-                 "var a = 1;\n" +     
-                 "// A comment.\n" +  
-                 "var b = 2;");     
+  
+  
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "debugger;\n" +      
+    "var a = 1;\n" +     
+    "// A comment.\n" +  
+    "var b = 2;",        
+    gDebuggee
+  );
 }

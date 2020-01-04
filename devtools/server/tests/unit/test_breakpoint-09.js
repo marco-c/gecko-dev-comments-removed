@@ -71,15 +71,16 @@ function test_remove_breakpoint()
 
   });
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "function foo(stop) {\n" + 
-                 "  this.a = 1;\n" +        
-                 "  if (stop) return;\n" +  
-                 "  delete this.a;\n" +     
-                 "  foo(true);\n" +         
-                 "}\n" +                    
-                 "debugger;\n" +            
-                 "foo();\n");               
+  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                   "function foo(stop) {\n" + 
+                   "  this.a = 1;\n" +        
+                   "  if (stop) return;\n" +  
+                   "  delete this.a;\n" +     
+                   "  foo(true);\n" +         
+                   "}\n" +                    
+                   "debugger;\n" +            
+                   "foo();\n",                
+                   gDebuggee);
   if (!done) {
     do_check_true(false);
   }

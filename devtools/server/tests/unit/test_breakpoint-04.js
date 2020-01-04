@@ -67,11 +67,14 @@ function test_child_breakpoint()
 
   });
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "function foo() {\n" + 
-                 "  this.a = 1;\n" +    
-                 "  this.b = 2;\n" +    
-                 "}\n" +                
-                 "debugger;\n" +        
-                 "foo();\n");           
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "function foo() {\n" + 
+    "  this.a = 1;\n" +    
+    "  this.b = 2;\n" +    
+    "}\n" +                
+    "debugger;\n" +        
+    "foo();\n",            
+    gDebuggee
+  );
 }

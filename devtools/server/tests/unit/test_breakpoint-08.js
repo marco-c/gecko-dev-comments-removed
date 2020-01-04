@@ -49,7 +49,6 @@ function test_child_skip_breakpoint()
 
       source.setBreakpoint(location, function (aResponse, bpClient) {
         
-        
         do_check_eq(aResponse.actualLocation.source.actor, source.actor);
         do_check_eq(aResponse.actualLocation.line, location.line + 1);
 
@@ -78,13 +77,20 @@ function test_child_skip_breakpoint()
     }
   });
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "function foo() {\n" + 
-                 "  this.a = 1;\n" +    
-                 "  // A comment.\n" +  
-                 "  this.b = 2;\n" +    
-                 "}\n");                
-  gDebuggee.eval("var line1 = Error().lineNumber;\n" +
-                 "debugger;\n" +        
-                 "foo();\n");           
+  Cu.evalInSandbox("var line0 = Error().lineNumber;\n" +
+                   "function foo() {\n" + 
+                   "  this.a = 1;\n" +    
+                   "  // A comment.\n" +  
+                   "  this.b = 2;\n" +    
+                   "}\n",                 
+                   gDebuggee,
+                   "1.7",
+                   "script1.js");
+
+  Cu.evalInSandbox("var line1 = Error().lineNumber;\n" +
+                   "debugger;\n" +        
+                   "foo();\n",           
+                   gDebuggee,
+                   "1.7",
+                   "script2.js");
 }

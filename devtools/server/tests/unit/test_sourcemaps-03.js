@@ -27,58 +27,46 @@ function run_test()
 
 function testBreakpointMapping(aName, aCallback)
 {
-  
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    do_check_true(!aPacket.error);
-    do_check_eq(aPacket.why.type, "debuggerStatement");
+  Task.spawn(function*() {
+    let response = yield waitForPause(gThreadClient);
+    do_check_eq(response.why.type, "debuggerStatement");
 
-    getSource(gThreadClient, "http://example.com/www/js/" + aName + ".js").then(source => {
-      source.setBreakpoint({
-        
-        
-        line: 3
-      }, function (aResponse) {
-        do_check_true(!aResponse.error);
-
-        
-        
-        do_check_eq(aResponse.actualLocation.line, 4);
-        do_check_eq(aResponse.actualLocation.source.url,
-                    "http://example.com/www/js/" + aName + ".js");
-
-        
-        
-        
-        
-        gThreadClient.eval(null, aName + "()", function (aResponse) {
-          do_check_true(!aResponse.error, "Shouldn't be an error resuming to eval");
-          do_check_eq(aResponse.type, "resumed");
-
-          gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-            do_check_eq(aPacket.why.type, "breakpoint");
-            
-            
-            
-            do_check_eq(aPacket.frame.environment.bindings.variables.ret.value.type,
-                        "undefined");
-
-            gThreadClient.resume(function (aResponse) {
-              do_check_true(!aResponse.error);
-
-              gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-                do_check_eq(aPacket.why.type, "clientEvaluated");
-                do_check_eq(aPacket.why.frameFinished.return, aName);
-
-                gThreadClient.resume(function (aResponse) {
-                  do_check_true(!aResponse.error);
-                  aCallback();
-                });
-              });
-            });
-          });
-        });
-      });
+    const source = yield getSource(gThreadClient, "http://example.com/www/js/" + aName + ".js");
+    response = yield setBreakpoint(source, {
+      
+      
+      line: 3
     });
+
+    
+    do_check_true(!response.actualLocation);
+
+    yield setBreakpoint(source, { line: 4 });
+
+    
+    
+    
+    
+    response = yield rdpRequest(gThreadClient, gThreadClient.eval, null, aName + "()");
+    do_check_eq(response.type, "resumed");
+
+    response = yield waitForPause(gThreadClient);
+    do_check_eq(response.why.type, "breakpoint");
+    
+    
+    
+    do_check_eq(response.frame.environment.bindings.variables.ret.value.type,
+                "undefined");
+
+    response = yield resume(gThreadClient);
+
+    response = yield waitForPause(gThreadClient);
+    do_check_eq(response.why.type, "clientEvaluated");
+    do_check_eq(response.why.frameFinished.return, aName);
+
+    response = yield resume(gThreadClient);
+
+    aCallback();
   });
 
   gDebuggee.eval("(" + function () {

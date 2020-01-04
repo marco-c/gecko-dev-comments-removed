@@ -68,15 +68,18 @@ function test_second_child_skip_breakpoint()
     });
   });
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "function foo() {\n" + 
-                 "  bar();\n" +         
-                 "}\n" +                
-                 "function bar() {\n" + 
-                 "  this.a = 1;\n" +    
-                 "  // A comment.\n" +  
-                 "  this.b = 2;\n" +    
-                 "}\n" +                
-                 "debugger;\n" +        
-                 "foo();\n");           
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "function foo() {\n" + 
+    "  bar();\n" +         
+    "}\n" +                
+    "function bar() {\n" + 
+    "  this.a = 1;\n" +    
+    "  // A comment.\n" +  
+    "  this.b = 2;\n" +    
+    "}\n" +                
+    "debugger;\n" +        
+    "foo();\n",           
+    gDebuggee
+  )
 }

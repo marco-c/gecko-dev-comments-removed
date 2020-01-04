@@ -57,8 +57,11 @@ function test_breakpoint_running()
     });
   });
 
-  gDebuggee.eval("var line0 = Error().lineNumber;\n" +
-                 "debugger;\n" +
-                 "var a = 1;\n" +  
-                 "var b = 2;\n");  
+  Cu.evalInSandbox(
+    "var line0 = Error().lineNumber;\n" +
+    "debugger;\n" +
+    "var a = 1;\n" +  
+    "var b = 2;\n",  
+    gDebuggee
+  );
 }
