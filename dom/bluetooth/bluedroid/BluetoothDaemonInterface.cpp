@@ -278,13 +278,6 @@ BluetoothDaemonProtocol::FetchResultHandler(
 
 
 
-
-
-
-#define container(_t, _v, _m) \
-  ( (_t*)( ((const unsigned char*)(_v)) - offsetof(_t, _m) ) )
-
-
 static bool
 IsDaemonRunning()
 {
