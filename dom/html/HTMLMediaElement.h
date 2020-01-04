@@ -1631,6 +1631,8 @@ private:
 
   
   bool mAudible;
+
+  nsAutoCString mMimeType;
 };
 
 } 
