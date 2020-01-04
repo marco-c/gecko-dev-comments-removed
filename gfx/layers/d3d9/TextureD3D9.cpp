@@ -497,7 +497,13 @@ static CompositorD3D9* AssertD3D9Compositor(Compositor* aCompositor)
 {
   CompositorD3D9* compositor = aCompositor ? aCompositor->AsCompositorD3D9()
                                            : nullptr;
-  MOZ_DIAGNOSTIC_ASSERT(!!compositor);
+  if (!compositor) {
+    
+    
+    
+    
+    gfxCriticalNote << "[D3D9] Attempt to set an incompatible compositor";
+  }
   return compositor;
 }
 
