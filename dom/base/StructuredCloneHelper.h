@@ -171,28 +171,6 @@ public:
   void MoveBufferDataToArray(FallibleTArray<uint8_t>& aArray,
                              ErrorResult& aRv);
 
-  
-  
-  
-  void ReadFromBuffer(nsISupports* aParent,
-                      JSContext* aCx,
-                      uint64_t* aBuffer,
-                      size_t aBufferLength,
-                      JS::MutableHandle<JS::Value> aValue,
-                      ErrorResult &aRv);
-
-  void ReadFromBuffer(nsISupports* aParent,
-                      JSContext* aCx,
-                      uint64_t* aBuffer,
-                      size_t aBufferLength,
-                      uint32_t aAlgorithmVersion,
-                      JS::MutableHandle<JS::Value> aValue,
-                      ErrorResult &aRv);
-
-  
-  void FreeBuffer(uint64_t* aBuffer,
-                  size_t aBufferLength);
-
   bool HasClonedDOMObjects() const
   {
     return !mBlobImplArray.IsEmpty() ||
@@ -261,6 +239,28 @@ public:
                                     void* aContent,
                                     uint64_t aExtraData) override;
 protected:
+  
+  
+  
+  void ReadFromBuffer(nsISupports* aParent,
+                      JSContext* aCx,
+                      uint64_t* aBuffer,
+                      size_t aBufferLength,
+                      JS::MutableHandle<JS::Value> aValue,
+                      ErrorResult &aRv);
+
+  void ReadFromBuffer(nsISupports* aParent,
+                      JSContext* aCx,
+                      uint64_t* aBuffer,
+                      size_t aBufferLength,
+                      uint32_t aAlgorithmVersion,
+                      JS::MutableHandle<JS::Value> aValue,
+                      ErrorResult &aRv);
+
+  
+  void FreeBuffer(uint64_t* aBuffer,
+                  size_t aBufferLength);
+
   bool mSupportsCloning;
   bool mSupportsTransferring;
   ContextSupport mContext;
