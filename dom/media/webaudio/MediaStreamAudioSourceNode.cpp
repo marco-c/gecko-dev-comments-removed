@@ -133,8 +133,12 @@ MediaStreamAudioSourceNode::AttachToFirstTrack(const RefPtr<DOMMediaStream>& aMe
     }
 
     AttachToTrack(track);
+    MarkActive();
     return;
   }
+
+  
+  MarkInactive();
 }
 
 void
