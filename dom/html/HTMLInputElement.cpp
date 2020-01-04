@@ -3289,7 +3289,7 @@ HTMLInputElement::GetRadioGroupContainer() const
 }
 
 already_AddRefed<nsIDOMHTMLInputElement>
-HTMLInputElement::GetSelectedRadioButton()
+HTMLInputElement::GetSelectedRadioButton() const
 {
   nsIRadioGroupContainer* container = GetRadioGroupContainer();
   if (!container) {
@@ -3360,6 +3360,13 @@ HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify)
   
   
   UpdateState(aNotify);
+
+  
+  
+  if (mType == NS_FORM_INPUT_RADIO) {
+    nsCOMPtr<nsIRadioVisitor> visitor = new nsRadioUpdateStateVisitor(this);
+    VisitGroup(visitor, aNotify);
+  }
 }
 
 void
@@ -6420,6 +6427,15 @@ HTMLInputElement::IntrinsicState() const
       state |= NS_EVENT_STATE_INDETERMINATE;
     }
 
+    if (mType == NS_FORM_INPUT_RADIO) {
+      nsCOMPtr<nsIDOMHTMLInputElement> selected = GetSelectedRadioButton();
+      bool indeterminate = !selected && !mChecked;
+
+      if (indeterminate) {
+        state |= NS_EVENT_STATE_INDETERMINATE;
+      }
+    }
+
     
     if (DefaultChecked()) {
       state |= NS_EVENT_STATE_DEFAULT;
@@ -6643,6 +6659,9 @@ HTMLInputElement::WillRemoveFromRadioGroup()
   
   if (mChecked) {
     container->SetCurrentRadioButton(name, nullptr);
+
+    nsCOMPtr<nsIRadioVisitor> visitor = new nsRadioUpdateStateVisitor(this);
+    VisitGroup(visitor, true);
   }
 
   
