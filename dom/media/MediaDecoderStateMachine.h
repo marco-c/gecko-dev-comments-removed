@@ -235,8 +235,6 @@ public:
 
   
   
-  bool OnDecodeTaskQueue() const;
-
   bool OnTaskQueue() const;
 
   size_t SizeOfVideoQueue() {
