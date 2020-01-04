@@ -14,6 +14,8 @@
 
 namespace js {
 
+class DateTimeInfo;
+
 class DateObject : public NativeObject
 {
     static const uint32_t UTC_TIME_SLOT = 0;
@@ -56,12 +58,12 @@ class DateObject : public NativeObject
     void setUTCTime(JS::ClippedTime t);
     void setUTCTime(JS::ClippedTime t, MutableHandleValue vp);
 
-    inline double cachedLocalTime();
+    inline double cachedLocalTime(DateTimeInfo* dtInfo);
 
     
     
     
-    void fillLocalTimeSlots();
+    void fillLocalTimeSlots(DateTimeInfo* dtInfo);
 
     static MOZ_ALWAYS_INLINE bool getTime_impl(JSContext* cx, const CallArgs& args);
     static MOZ_ALWAYS_INLINE bool getYear_impl(JSContext* cx, const CallArgs& args);

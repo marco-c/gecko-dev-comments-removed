@@ -1205,6 +1205,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     js::LazyScriptCache lazyScriptCache;
 
     js::CompressedSourceSet compressedSourceSet;
+    js::DateTimeInfo    dateTimeInfo;
 
     
     

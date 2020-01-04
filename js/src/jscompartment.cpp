@@ -18,7 +18,6 @@
 
 #include "gc/Marking.h"
 #include "jit/JitCompartment.h"
-#include "js/Date.h"
 #include "js/Proxy.h"
 #include "js/RootingAPI.h"
 #include "proxy/DeadObjectProxy.h"
@@ -124,7 +123,8 @@ JSCompartment::init(JSContext* maybecx)
 
 
 
-    JS::ResetTimeZone();
+    if (maybecx)
+        maybecx->runtime()->dateTimeInfo.updateTimeZoneAdjustment();
 
     if (!crossCompartmentWrappers.init(0)) {
         if (maybecx)

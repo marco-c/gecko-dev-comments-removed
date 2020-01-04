@@ -39,22 +39,6 @@ struct JSContext;
 
 namespace JS {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(void)
-ResetTimeZone();
-
 class ClippedTime;
 inline ClippedTime TimeClip(double time);
 
