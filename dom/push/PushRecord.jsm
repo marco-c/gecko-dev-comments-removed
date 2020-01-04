@@ -19,7 +19,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "Messaging",
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
-
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -109,23 +110,19 @@ PushRecord.prototype = {
 
 
 
-  getLastVisit() {
+  getLastVisit: Task.async(function* () {
     if (!this.quotaApplies() || this.isTabOpen()) {
       
       
-      return Promise.resolve(Date.now());
+      return Date.now();
     }
 
     if (AppConstants.MOZ_ANDROID_HISTORY) {
-      return Messaging.sendRequestForResult({
+      let result = yield Messaging.sendRequestForResult({
         type: "History:GetPrePathLastVisitedTimeMilliseconds",
         prePath: this.uri.prePath,
-      }).then(result => {
-        if (result == 0) {
-          return -Infinity;
-        }
-        return result;
       });
+      return result == 0 ? -Infinity : result;
     }
 
     
@@ -140,36 +137,35 @@ PushRecord.prototype = {
       Ci.nsINavHistoryService.TRANSITION_REDIRECT_TEMPORARY
     ].join(",");
 
-    return PlacesUtils.withConnectionWrapper("PushRecord.getLastVisit", db => {
-      
-      
-      
-      
-      
-      return db.executeCached(
-        `SELECT MAX(p.last_visit_date)
-         FROM moz_places p
-         INNER JOIN moz_historyvisits h ON p.id = h.place_id
-         WHERE (
-           p.url >= :urlLowerBound AND p.url <= :urlUpperBound AND
-           h.visit_type IN (${QUOTA_REFRESH_TRANSITIONS_SQL})
-         )
-        `,
-        {
-          
-          urlLowerBound: this.uri.prePath,
-          urlUpperBound: this.uri.prePath + "\x7f",
-        }
-      );
-    }).then(rows => {
-      if (!rows.length) {
-        return -Infinity;
+    let db =  yield PlacesUtils.promiseDBConnection();
+    
+    
+    
+    
+    
+    let rows = yield db.executeCached(
+      `SELECT MAX(visit_date) AS lastVisit
+       FROM moz_places p
+       JOIN moz_historyvisits ON p.id = place_id
+       WHERE rev_host = get_unreversed_host(:host || '.') || '.'
+         AND url BETWEEN :prePath AND :prePath || X'FFFF'
+         AND visit_type IN (${QUOTA_REFRESH_TRANSITIONS_SQL})
+      `,
+      {
+        
+        host: this.uri.host,
+        prePath: this.uri.prePath,
       }
-      
-      let lastVisit = rows[0].getResultByIndex(0);
-      return lastVisit / 1000;
-    });
-  },
+    );
+
+    if (!rows.length) {
+      return -Infinity;
+    }
+    
+    let lastVisit = rows[0].getResultByName("lastVisit");
+
+    return lastVisit / 1000;
+  }),
 
   isTabOpen() {
     let windows = Services.wm.getEnumerator("navigator:browser");

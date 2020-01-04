@@ -1391,9 +1391,18 @@ this.PlacesUtils = {
 
 
 
+
+
+
+
+
+
+
   promiseDBConnection: () => gAsyncDBConnPromised,
 
   
+
+
 
 
 
