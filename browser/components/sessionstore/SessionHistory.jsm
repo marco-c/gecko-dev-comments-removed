@@ -172,7 +172,7 @@ var SessionHistoryInternal = {
 
     
     try {
-      let triggeringPrincipal = this.serializeTriggeringPrincipal(shEntry);
+      let triggeringPrincipal = Utils.serializePrincipal(shEntry.triggeringPrincipal);
       if (triggeringPrincipal) {
         entry.triggeringPrincipal_b64 = triggeringPrincipal;
       }
@@ -216,39 +216,6 @@ var SessionHistoryInternal = {
     }
 
     return entry;
-  },
-
-  
-
-
-
-
-
-
-  serializeTriggeringPrincipal: function (shEntry) {
-    if (!shEntry.triggeringPrincipal) {
-      return null;
-    }
-
-    let binaryStream = Cc["@mozilla.org/binaryoutputstream;1"].
-                       createInstance(Ci.nsIObjectOutputStream);
-    let pipe = Cc["@mozilla.org/pipe;1"].createInstance(Ci.nsIPipe);
-    pipe.init(false, false, 0, 0xffffffff, null);
-    binaryStream.setOutputStream(pipe.outputStream);
-    binaryStream.writeCompoundObject(shEntry.triggeringPrincipal, Ci.nsIPrincipal, true);
-    binaryStream.close();
-
-    
-    let scriptableStream = Cc["@mozilla.org/binaryinputstream;1"].
-                           createInstance(Ci.nsIBinaryInputStream);
-    scriptableStream.setInputStream(pipe.inputStream);
-    let triggeringPrincipalBytes =
-      scriptableStream.readByteArray(scriptableStream.available());
-
-    
-    
-    
-    return btoa(String.fromCharCode.apply(null, triggeringPrincipalBytes));
   },
 
   
@@ -388,16 +355,7 @@ var SessionHistoryInternal = {
     }
 
     if (entry.triggeringPrincipal_b64) {
-      var triggeringPrincipalInput = Cc["@mozilla.org/io/string-input-stream;1"]
-                                       .createInstance(Ci.nsIStringInputStream);
-      var binaryData = atob(entry.triggeringPrincipal_b64);
-      triggeringPrincipalInput.setData(binaryData, binaryData.length);
-      var binaryStream = Cc["@mozilla.org/binaryinputstream;1"].
-                         createInstance(Ci.nsIObjectInputStream);
-      binaryStream.setInputStream(triggeringPrincipalInput);
-      try { 
-        shEntry.triggeringPrincipal = binaryStream.readObject(true);
-      } catch (ex) { debug(ex); }
+      shEntry.triggeringPrincipal = Utils.deserializePrincipal(entry.triggeringPrincipal_b64);
     }
 
     if (entry.children && shEntry instanceof Ci.nsISHContainer) {
