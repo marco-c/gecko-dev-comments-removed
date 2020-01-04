@@ -465,11 +465,12 @@ AppProtocolHandler::NewChannel2(nsIURI* aUri,
     mAppInfoCache.Put(host, appInfo);
   }
 
+  bool noRemote = (appInfo->mIsCoreApp ||
+                   XRE_IsParentProcess());
+
   
-  
-  
-  nsAutoCString jarSpec(XRE_IsParentProcess() ? "jar:file://"
-                                              : "jar:remoteopenfile://");
+  nsAutoCString jarSpec(noRemote ? "jar:file://"
+                                 : "jar:remoteopenfile://");
   jarSpec += NS_ConvertUTF16toUTF8(appInfo->mPath) +
              NS_LITERAL_CSTRING("/application.zip!") +
              fileSpec;
