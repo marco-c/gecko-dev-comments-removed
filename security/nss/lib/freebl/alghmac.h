@@ -22,13 +22,13 @@ HMAC_Destroy(HMACContext *cx, PRBool freeit);
 
 
 extern HMACContext *
-HMAC_Create(const SECHashObject *hash_obj, const unsigned char *secret, 
-	    unsigned int secret_len, PRBool isFIPS);
+HMAC_Create(const SECHashObject *hash_obj, const unsigned char *secret,
+            unsigned int secret_len, PRBool isFIPS);
 
 
 SECStatus
-HMAC_Init(HMACContext *cx, const SECHashObject *hash_obj, 
-	  const unsigned char *secret, unsigned int secret_len, PRBool isFIPS);
+HMAC_Init(HMACContext *cx, const SECHashObject *hash_obj,
+          const unsigned char *secret, unsigned int secret_len, PRBool isFIPS);
 
 
 extern void
@@ -39,7 +39,7 @@ HMAC_Begin(HMACContext *cx);
 
 
 
-extern void 
+extern void
 HMAC_Update(HMACContext *cx, const unsigned char *data, unsigned int data_len);
 
 
@@ -50,7 +50,7 @@ HMAC_Update(HMACContext *cx, const unsigned char *data, unsigned int data_len);
 
 extern SECStatus
 HMAC_Finish(HMACContext *cx, unsigned char *result, unsigned int *result_len,
-	    unsigned int max_result_len);
+            unsigned int max_result_len);
 
 
 

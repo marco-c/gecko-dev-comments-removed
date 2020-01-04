@@ -40,8 +40,8 @@ RC5_CreateContext(const SECItem *key, unsigned int rounds,
 
 
 
-void 
-RC5_DestroyContext(RC5Context *cx, PRBool freeit) 
+void
+RC5_DestroyContext(RC5Context *cx, PRBool freeit)
 {
     PORT_SetError(PR_NOT_IMPLEMENTED_ERROR);
 }
@@ -57,32 +57,31 @@ RC5_DestroyContext(RC5Context *cx, PRBool freeit)
 
 
 
-SECStatus 
-RC5_Encrypt(RC5Context *cx, unsigned char *output, unsigned int *outputLen, 
-	    unsigned int maxOutputLen, 
-	    const unsigned char *input, unsigned int inputLen)
-{
-    PORT_SetError(PR_NOT_IMPLEMENTED_ERROR);
-    return SECFailure;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-SECStatus 
-RC5_Decrypt(RC5Context *cx, unsigned char *output, unsigned int *outputLen, 
-	    unsigned int maxOutputLen,
+SECStatus
+RC5_Encrypt(RC5Context *cx, unsigned char *output, unsigned int *outputLen,
+            unsigned int maxOutputLen,
             const unsigned char *input, unsigned int inputLen)
 {
     PORT_SetError(PR_NOT_IMPLEMENTED_ERROR);
     return SECFailure;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+SECStatus
+RC5_Decrypt(RC5Context *cx, unsigned char *output, unsigned int *outputLen,
+            unsigned int maxOutputLen,
+            const unsigned char *input, unsigned int inputLen)
+{
+    PORT_SetError(PR_NOT_IMPLEMENTED_ERROR);
+    return SECFailure;
+}

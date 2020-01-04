@@ -25,13 +25,14 @@
 
 
 
-static char* loader_GetOriginalPathname(const char* link)
+static char*
+loader_GetOriginalPathname(const char* link)
 {
 #ifdef __GLIBC__
     char* tmp = realpath(link, NULL);
     char* resolved;
-    if (! tmp)
-    	return NULL;
+    if (!tmp)
+        return NULL;
     resolved = PR_Malloc(strlen(tmp) + 1);
     strcpy(resolved, tmp); 
     free(tmp);
@@ -58,8 +59,8 @@ static char* loader_GetOriginalPathname(const char* link)
         return NULL;
     }
     strcpy(input, link);
-    while ( (iterations++ < BL_MAXSYMLINKS) &&
-            ( (retlen = readlink(input, resolved, len - 1)) > 0) ) {
+    while ((iterations++ < BL_MAXSYMLINKS) &&
+           ((retlen = readlink(input, resolved, len - 1)) > 0)) {
         char* tmp = input;
         resolved[retlen] = '\0'; 
         input = resolved;
@@ -79,11 +80,11 @@ static char* loader_GetOriginalPathname(const char* link)
 
 
 
-static PRLibrary *
-loader_LoadLibInReferenceDir(const char *referencePath, const char *name)
+static PRLibrary*
+loader_LoadLibInReferenceDir(const char* referencePath, const char* name)
 {
-    PRLibrary *dlh = NULL;
-    char *fullName = NULL;
+    PRLibrary* dlh = NULL;
+    char* fullName = NULL;
     char* c;
     PRLibSpec libSpec;
 
@@ -91,12 +92,12 @@ loader_LoadLibInReferenceDir(const char *referencePath, const char *name)
     c = strrchr(referencePath, PR_GetDirectorySeparator());
     if (c) {
         size_t referencePathSize = 1 + c - referencePath;
-        fullName = (char*) PORT_Alloc(strlen(name) + referencePathSize + 1);
+        fullName = (char*)PORT_Alloc(strlen(name) + referencePathSize + 1);
         if (fullName) {
             memcpy(fullName, referencePath, referencePathSize);
-            strcpy(fullName + referencePathSize, name); 
+            strcpy(fullName + referencePathSize, name);
 #ifdef DEBUG_LOADER
-            PR_fprintf(PR_STDOUT, "\nAttempting to load fully-qualified %s\n", 
+            PR_fprintf(PR_STDOUT, "\nAttempting to load fully-qualified %s\n",
                        fullName);
 #endif
             libSpec.type = PR_LibSpec_Pathname;
@@ -114,10 +115,10 @@ loader_LoadLibInReferenceDir(const char *referencePath, const char *name)
 
 
 
-static PRLibrary *
-loader_LoadLibrary(const char *nameToLoad)
+static PRLibrary*
+loader_LoadLibrary(const char* nameToLoad)
 {
-    PRLibrary *lib = NULL;
+    PRLibrary* lib = NULL;
     char* fullPath = NULL;
     PRLibSpec libSpec;
 
@@ -164,4 +165,3 @@ loader_LoadLibrary(const char *nameToLoad)
     }
     return lib;
 }
-

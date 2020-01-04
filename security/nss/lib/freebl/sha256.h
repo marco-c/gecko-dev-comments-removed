@@ -9,11 +9,11 @@
 
 struct SHA256ContextStr {
     union {
-	PRUint32 w[64];	    
-	PRUint8  b[256];
+        PRUint32 w[64]; 
+        PRUint8 b[256];
     } u;
-    PRUint32 h[8];		
-    PRUint32 sizeHi,sizeLo;	
+    PRUint32 h[8];           
+    PRUint32 sizeHi, sizeLo; 
 };
 
 #endif 

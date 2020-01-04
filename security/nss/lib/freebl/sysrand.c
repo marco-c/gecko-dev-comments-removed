@@ -27,23 +27,23 @@ static size_t rng_systemFromNoise(unsigned char *dest, size_t maxLen);
 
 
 
-static size_t 
-rng_systemFromNoise(unsigned char *dest, size_t maxLen) 
+static size_t
+rng_systemFromNoise(unsigned char *dest, size_t maxLen)
 {
-   size_t retBytes = maxLen;
+    size_t retBytes = maxLen;
 
-   while (maxLen) {
-	size_t nbytes = RNG_GetNoise(dest, maxLen);
+    while (maxLen) {
+        size_t nbytes = RNG_GetNoise(dest, maxLen);
 
-	PORT_Assert(nbytes != 0);
+        PORT_Assert(nbytes != 0);
 
-	dest += nbytes;
-	maxLen -= nbytes;
+        dest += nbytes;
+        maxLen -= nbytes;
 
-	
+        
 
-	rng_systemJitter();
-   }
-   return retBytes;
+        rng_systemJitter();
+    }
+    return retBytes;
 }
 #endif

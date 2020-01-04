@@ -15,15 +15,15 @@
 #else
 #define BIG_ENDIAN_WITH_64_BIT_REGISTERS 1
 #endif
-#include "prtypes.h"	
-#include "secport.h"	
+#include "prtypes.h" 
+#include "secport.h" 
 #include "secerr.h"
-#include "blapi.h"	
+#include "blapi.h" 
 #include "rijndael.h"
 
 struct AESKeyWrapContextStr {
-     unsigned char iv[AES_KEY_WRAP_IV_BYTES];
-     AESContext    aescx;
+    unsigned char iv[AES_KEY_WRAP_IV_BYTES];
+    AESContext aescx;
 };
 
 
@@ -31,34 +31,34 @@ struct AESKeyWrapContextStr {
 
 
 
-AESKeyWrapContext * 
+AESKeyWrapContext *
 AESKeyWrap_AllocateContext(void)
 {
-    AESKeyWrapContext * cx = PORT_New(AESKeyWrapContext);
+    AESKeyWrapContext *cx = PORT_New(AESKeyWrapContext);
     return cx;
 }
 
-SECStatus  
-AESKeyWrap_InitContext(AESKeyWrapContext *cx, 
-		       const unsigned char *key, 
-		       unsigned int keylen,
-		       const unsigned char *iv, 
-		       int x1,
-		       unsigned int encrypt,
-		       unsigned int x2)
+SECStatus
+AESKeyWrap_InitContext(AESKeyWrapContext *cx,
+                       const unsigned char *key,
+                       unsigned int keylen,
+                       const unsigned char *iv,
+                       int x1,
+                       unsigned int encrypt,
+                       unsigned int x2)
 {
     SECStatus rv = SECFailure;
     if (!cx) {
-	PORT_SetError(SEC_ERROR_INVALID_ARGS);
-    	return SECFailure;
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
     }
     if (iv) {
-    	memcpy(cx->iv, iv, sizeof cx->iv);
+        memcpy(cx->iv, iv, sizeof cx->iv);
     } else {
-	memset(cx->iv, 0xA6, sizeof cx->iv);
+        memset(cx->iv, 0xA6, sizeof cx->iv);
     }
-    rv = AES_InitContext(&cx->aescx, key, keylen, NULL, NSS_AES, encrypt, 
-                                  AES_BLOCK_SIZE);
+    rv = AES_InitContext(&cx->aescx, key, keylen, NULL, NSS_AES, encrypt,
+                         AES_BLOCK_SIZE);
     return rv;
 }
 
@@ -68,17 +68,17 @@ AESKeyWrap_InitContext(AESKeyWrapContext *cx,
 
 
 extern AESKeyWrapContext *
-AESKeyWrap_CreateContext(const unsigned char *key, const unsigned char *iv, 
+AESKeyWrap_CreateContext(const unsigned char *key, const unsigned char *iv,
                          int encrypt, unsigned int keylen)
 {
     SECStatus rv;
-    AESKeyWrapContext * cx = AESKeyWrap_AllocateContext();
-    if (!cx) 
-    	return NULL;	
+    AESKeyWrapContext *cx = AESKeyWrap_AllocateContext();
+    if (!cx)
+        return NULL; 
     rv = AESKeyWrap_InitContext(cx, key, keylen, iv, 0, encrypt, 0);
     if (rv != SECSuccess) {
         PORT_Free(cx);
-	cx = NULL; 	
+        cx = NULL; 
     }
     return cx;
 }
@@ -88,14 +88,14 @@ AESKeyWrap_CreateContext(const unsigned char *key, const unsigned char *iv,
 
 
 
-extern void 
+extern void
 AESKeyWrap_DestroyContext(AESKeyWrapContext *cx, PRBool freeit)
 {
     if (cx) {
-	AES_DestroyContext(&cx->aescx, PR_FALSE);
-
-	if (freeit)
-	    PORT_Free(cx);
+        AES_DestroyContext(&cx->aescx, PR_FALSE);
+        
+        if (freeit)
+            PORT_Free(cx);
     }
 }
 
@@ -112,18 +112,18 @@ AESKeyWrap_DestroyContext(AESKeyWrapContext *cx, PRBool freeit)
 
 
 
- 
+
 static void
 increment_and_xor(unsigned char *A, unsigned char *T)
 {
     if (!++T[7])
         if (!++T[6])
-	    if (!++T[5])
-		if (!++T[4])
-		    if (!++T[3])
-			if (!++T[2])
-			    if (!++T[1])
-				 ++T[0];
+            if (!++T[5])
+                if (!++T[4])
+                    if (!++T[3])
+                        if (!++T[2])
+                            if (!++T[1])
+                                ++T[0];
 
     A[0] ^= T[0];
     A[1] ^= T[1];
@@ -142,7 +142,7 @@ increment_and_xor(unsigned char *A, unsigned char *T)
 static void
 xor_and_decrement(PRUint64 *A, PRUint64 *T)
 {
-    unsigned char* TP = (unsigned char*)T;
+    unsigned char *TP = (unsigned char *)T;
     const PRUint64 mask = 0xFF;
     *A = ((*A & mask << 56) ^ (*T & mask << 56)) |
          ((*A & mask << 48) ^ (*T & mask << 48)) |
@@ -155,13 +155,12 @@ xor_and_decrement(PRUint64 *A, PRUint64 *T)
 
     if (!TP[7]--)
         if (!TP[6]--)
-	    if (!TP[5]--)
-		if (!TP[4]--)
-		    if (!TP[3]--)
-			if (!TP[2]--)
-			    if (!TP[1]--)
-				 TP[0]--;
-
+            if (!TP[5]--)
+                if (!TP[4]--)
+                    if (!TP[3]--)
+                        if (!TP[2]--)
+                            if (!TP[1]--)
+                                TP[0]--;
 }
 
 
@@ -170,13 +169,20 @@ xor_and_decrement(PRUint64 *A, PRUint64 *T)
 static void
 set_t(unsigned char *pt, unsigned long t)
 {
-    pt[7] = (unsigned char)t; t >>= 8;
-    pt[6] = (unsigned char)t; t >>= 8;
-    pt[5] = (unsigned char)t; t >>= 8;
-    pt[4] = (unsigned char)t; t >>= 8;
-    pt[3] = (unsigned char)t; t >>= 8;
-    pt[2] = (unsigned char)t; t >>= 8;
-    pt[1] = (unsigned char)t; t >>= 8;
+    pt[7] = (unsigned char)t;
+    t >>= 8;
+    pt[6] = (unsigned char)t;
+    t >>= 8;
+    pt[5] = (unsigned char)t;
+    t >>= 8;
+    pt[4] = (unsigned char)t;
+    t >>= 8;
+    pt[3] = (unsigned char)t;
+    t >>= 8;
+    pt[2] = (unsigned char)t;
+    t >>= 8;
+    pt[1] = (unsigned char)t;
+    t >>= 8;
     pt[0] = (unsigned char)t;
 }
 
@@ -193,46 +199,46 @@ set_t(unsigned char *pt, unsigned long t)
 
 
 
-extern SECStatus 
+extern SECStatus
 AESKeyWrap_Encrypt(AESKeyWrapContext *cx, unsigned char *output,
-            unsigned int *pOutputLen, unsigned int maxOutputLen,
-            const unsigned char *input, unsigned int inputLen)
+                   unsigned int *pOutputLen, unsigned int maxOutputLen,
+                   const unsigned char *input, unsigned int inputLen)
 {
-    PRUint64 *     R          = NULL;
-    unsigned int   nBlocks;
-    unsigned int   i, j;
-    unsigned int   aesLen     = AES_BLOCK_SIZE;
-    unsigned int   outLen     = inputLen + AES_KEY_WRAP_BLOCK_SIZE;
-    SECStatus      s          = SECFailure;
+    PRUint64 *R = NULL;
+    unsigned int nBlocks;
+    unsigned int i, j;
+    unsigned int aesLen = AES_BLOCK_SIZE;
+    unsigned int outLen = inputLen + AES_KEY_WRAP_BLOCK_SIZE;
+    SECStatus s = SECFailure;
     
-    PRUint64       t;
-    PRUint64       B[2];
+    PRUint64 t;
+    PRUint64 B[2];
 
 #define A B[0]
 
     
     if (!inputLen || 0 != inputLen % AES_KEY_WRAP_BLOCK_SIZE) {
-	PORT_SetError(SEC_ERROR_INPUT_LEN);
-	return s;
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return s;
     }
 #ifdef maybe
-    if (!output && pOutputLen) {	
-    	*pOutputLen = outLen;
-	return SECSuccess;
+    if (!output && pOutputLen) { 
+        *pOutputLen = outLen;
+        return SECSuccess;
     }
 #endif
     if (maxOutputLen < outLen) {
-	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
-	return s;
+        PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+        return s;
     }
     if (cx == NULL || output == NULL || input == NULL) {
-	PORT_SetError(SEC_ERROR_INVALID_ARGS);
-	return s;
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return s;
     }
     nBlocks = inputLen / AES_KEY_WRAP_BLOCK_SIZE;
     R = PORT_NewArray(PRUint64, nBlocks + 1);
     if (!R)
-    	return s;	
+        return s; 
     
 
 
@@ -247,31 +253,31 @@ AESKeyWrap_Encrypt(AESKeyWrapContext *cx, unsigned char *output,
 
 
     for (j = 0; j < 6; ++j) {
-    	for (i = 1; i <= nBlocks; ++i) {
-	    B[1] = R[i];
-	    s = AES_Encrypt(&cx->aescx, (unsigned char *)B, &aesLen, 
-	                    sizeof B,  (unsigned char *)B, sizeof B);
-	    if (s != SECSuccess) 
-	        break;
-	    R[i] = B[1];
-	    
+        for (i = 1; i <= nBlocks; ++i) {
+            B[1] = R[i];
+            s = AES_Encrypt(&cx->aescx, (unsigned char *)B, &aesLen,
+                            sizeof B, (unsigned char *)B, sizeof B);
+            if (s != SECSuccess)
+                break;
+            R[i] = B[1];
+
 #if BIG_ENDIAN_WITH_64_BIT_REGISTERS
-   	    A ^= ++t; 
+            A ^= ++t;
 #else
-	    increment_and_xor((unsigned char *)&A, (unsigned char *)&t);
+            increment_and_xor((unsigned char *)&A, (unsigned char *)&t);
 #endif
-	}
+        }
     }
     
 
 
     if (s == SECSuccess) {
-    	R[0] =  A;
-	memcpy(output, &R[0], outLen);
-	if (pOutputLen)
-	    *pOutputLen = outLen;
+        R[0] = A;
+        memcpy(output, &R[0], outLen);
+        if (pOutputLen)
+            *pOutputLen = outLen;
     } else if (pOutputLen) {
-    	*pOutputLen = 0;
+        *pOutputLen = 0;
     }
     PORT_ZFree(R, outLen);
     return s;
@@ -289,46 +295,46 @@ AESKeyWrap_Encrypt(AESKeyWrapContext *cx, unsigned char *output,
 
 
 
-extern SECStatus 
+extern SECStatus
 AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
-            unsigned int *pOutputLen, unsigned int maxOutputLen,
-            const unsigned char *input, unsigned int inputLen)
+                   unsigned int *pOutputLen, unsigned int maxOutputLen,
+                   const unsigned char *input, unsigned int inputLen)
 {
-    PRUint64 *     R          = NULL;
-    unsigned int   nBlocks;
-    unsigned int   i, j;
-    unsigned int   aesLen     = AES_BLOCK_SIZE;
-    unsigned int   outLen;
-    SECStatus      s          = SECFailure;
+    PRUint64 *R = NULL;
+    unsigned int nBlocks;
+    unsigned int i, j;
+    unsigned int aesLen = AES_BLOCK_SIZE;
+    unsigned int outLen;
+    SECStatus s = SECFailure;
     
-    PRUint64       t;
-    PRUint64       B[2];
+    PRUint64 t;
+    PRUint64 B[2];
 
     
     if (inputLen < 3 * AES_KEY_WRAP_BLOCK_SIZE ||
         0 != inputLen % AES_KEY_WRAP_BLOCK_SIZE) {
-	PORT_SetError(SEC_ERROR_INPUT_LEN);
-	return s;
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return s;
     }
     outLen = inputLen - AES_KEY_WRAP_BLOCK_SIZE;
 #ifdef maybe
-    if (!output && pOutputLen) {	
-    	*pOutputLen = outLen;
-	return SECSuccess;
+    if (!output && pOutputLen) { 
+        *pOutputLen = outLen;
+        return SECSuccess;
     }
 #endif
     if (maxOutputLen < outLen) {
-	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
-	return s;
+        PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+        return s;
     }
     if (cx == NULL || output == NULL || input == NULL) {
-	PORT_SetError(SEC_ERROR_INVALID_ARGS);
-	return s;
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return s;
     }
     nBlocks = inputLen / AES_KEY_WRAP_BLOCK_SIZE;
     R = PORT_NewArray(PRUint64, nBlocks);
     if (!R)
-    	return s;	
+        return s; 
     nBlocks--;
     
 
@@ -344,38 +350,38 @@ AESKeyWrap_Decrypt(AESKeyWrapContext *cx, unsigned char *output,
 
 
     for (j = 0; j < 6; ++j) {
-    	for (i = nBlocks; i; --i) {
-	    
+        for (i = nBlocks; i; --i) {
+
 #if BIG_ENDIAN_WITH_64_BIT_REGISTERS
-   	    B[0] ^= t--;
+            B[0] ^= t--;
 #else
-	    xor_and_decrement(&B[0], &t);
+            xor_and_decrement(&B[0], &t);
 #endif
-	    B[1] = R[i];
-	    s = AES_Decrypt(&cx->aescx, (unsigned char *)B, &aesLen,
-	                    sizeof B,  (unsigned char *)B, sizeof B);
-	    if (s != SECSuccess)
-	        break;
-	    R[i] = B[1];
-	}
+            B[1] = R[i];
+            s = AES_Decrypt(&cx->aescx, (unsigned char *)B, &aesLen,
+                            sizeof B, (unsigned char *)B, sizeof B);
+            if (s != SECSuccess)
+                break;
+            R[i] = B[1];
+        }
     }
     
 
 
     if (s == SECSuccess) {
-	int bad = memcmp(&B[0], cx->iv, AES_KEY_WRAP_IV_BYTES);
-	if (!bad) {
-	    memcpy(output, &R[1], outLen);
-	    if (pOutputLen)
-		*pOutputLen = outLen;
-	} else {
-	    s = SECFailure;
-	    PORT_SetError(SEC_ERROR_BAD_DATA);
-	    if (pOutputLen)
-		*pOutputLen = 0;
-    	}
+        int bad = memcmp(&B[0], cx->iv, AES_KEY_WRAP_IV_BYTES);
+        if (!bad) {
+            memcpy(output, &R[1], outLen);
+            if (pOutputLen)
+                *pOutputLen = outLen;
+        } else {
+            s = SECFailure;
+            PORT_SetError(SEC_ERROR_BAD_DATA);
+            if (pOutputLen)
+                *pOutputLen = 0;
+        }
     } else if (pOutputLen) {
-    	*pOutputLen = 0;
+        *pOutputLen = 0;
     }
     PORT_ZFree(R, inputLen);
     return s;

@@ -95,12 +95,11 @@ TEST_P(TlsConnectGeneric, ConnectSendReceive) {
 
 TEST_P(TlsConnectDatagram, ShortRead) {
   Connect();
-  client_->SetExpectedReadError(true);
+  client_->ExpectReadWriteError();
   server_->SendData(1200, 1200);
   client_->WaitForErrorCode(SSL_ERROR_RX_SHORT_DTLS_READ, 2000);
 
   
-  client_->SetExpectedReadError(false);
   server_->ResetSentBytes();  
   SendReceive();
 }
@@ -183,7 +182,7 @@ TEST_P(TlsConnectTls13, UnknownAlert) {
   Connect();
   SSLInt_SendAlert(server_->ssl_fd(), kTlsAlertWarning,
                    0xff);  
-  client_->SetExpectedReadError(true);
+  client_->ExpectReadWriteError();
   client_->WaitForErrorCode(SSL_ERROR_RX_UNKNOWN_ALERT, 2000);
 }
 
@@ -191,7 +190,7 @@ TEST_P(TlsConnectTls13, AlertWrongLevel) {
   Connect();
   SSLInt_SendAlert(server_->ssl_fd(), kTlsAlertWarning,
                    kTlsAlertUnexpectedMessage);
-  client_->SetExpectedReadError(true);
+  client_->ExpectReadWriteError();
   client_->WaitForErrorCode(SSL_ERROR_HANDSHAKE_UNEXPECTED_ALERT, 2000);
 }
 

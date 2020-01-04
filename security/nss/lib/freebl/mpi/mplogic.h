@@ -21,8 +21,8 @@
 
 
 
-#define MP_EVEN       MP_YES
-#define MP_ODD        MP_NO
+#define MP_EVEN MP_YES
+#define MP_ODD MP_NO
 
 
 
@@ -33,14 +33,14 @@ mp_err mpl_xor(mp_int *a, mp_int *b, mp_int *c);
 
 
 
-mp_err mpl_rsh(const mp_int *a, mp_int *b, mp_digit d);   
-mp_err mpl_lsh(const mp_int *a, mp_int *b, mp_digit d);   
+mp_err mpl_rsh(const mp_int *a, mp_int *b, mp_digit d); 
+mp_err mpl_lsh(const mp_int *a, mp_int *b, mp_digit d); 
 
 
 
-mp_err mpl_num_set(mp_int *a, int *num);         
-mp_err mpl_num_clear(mp_int *a, int *num);       
-mp_err mpl_parity(mp_int *a);                    
+mp_err mpl_num_set(mp_int *a, int *num);   
+mp_err mpl_num_clear(mp_int *a, int *num); 
+mp_err mpl_parity(mp_int *a);              
 
 
 

@@ -10,21 +10,21 @@
 
 
 struct CTRContextStr {
-   freeblCipherFunc cipher;
-   void *context;
-   unsigned char counter[MAX_BLOCK_SIZE];
-   unsigned char buffer[MAX_BLOCK_SIZE];
-   unsigned char counterFirst[MAX_BLOCK_SIZE];  
-   PRBool checkWrap;				
-   unsigned long counterBits;
-   unsigned int bufPtr;
+    freeblCipherFunc cipher;
+    void *context;
+    unsigned char counter[MAX_BLOCK_SIZE];
+    unsigned char buffer[MAX_BLOCK_SIZE];
+    unsigned char counterFirst[MAX_BLOCK_SIZE]; 
+    PRBool checkWrap;                           
+    unsigned long counterBits;
+    unsigned int bufPtr;
 };
 
 typedef struct CTRContextStr CTRContext;
 
 SECStatus CTR_InitContext(CTRContext *ctr, void *context,
-			freeblCipherFunc cipher, const unsigned char *param,
-			unsigned int blocksize);
+                          freeblCipherFunc cipher, const unsigned char *param,
+                          unsigned int blocksize);
 
 
 
@@ -33,21 +33,21 @@ SECStatus CTR_InitContext(CTRContext *ctr, void *context,
 
 
 
-CTRContext * CTR_CreateContext(void *context, freeblCipherFunc cipher,
-			const unsigned char *param, unsigned int blocksize);
+CTRContext *CTR_CreateContext(void *context, freeblCipherFunc cipher,
+                              const unsigned char *param, unsigned int blocksize);
 
 void CTR_DestroyContext(CTRContext *ctr, PRBool freeit);
 
 SECStatus CTR_Update(CTRContext *ctr, unsigned char *outbuf,
-			unsigned int *outlen, unsigned int maxout,
-			const unsigned char *inbuf, unsigned int inlen,
-			unsigned int blocksize);
+                     unsigned int *outlen, unsigned int maxout,
+                     const unsigned char *inbuf, unsigned int inlen,
+                     unsigned int blocksize);
 
 #ifdef USE_HW_AES
 SECStatus CTR_Update_HW_AES(CTRContext *ctr, unsigned char *outbuf,
-			unsigned int *outlen, unsigned int maxout,
-			const unsigned char *inbuf, unsigned int inlen,
-			unsigned int blocksize);
+                            unsigned int *outlen, unsigned int maxout,
+                            const unsigned char *inbuf, unsigned int inlen,
+                            unsigned int blocksize);
 #endif
 
 #endif

@@ -10,7 +10,7 @@
 #define RIJNDAEL_MIN_BLOCKSIZE 16 /* bytes */
 #define RIJNDAEL_MAX_BLOCKSIZE 32 /* bytes */
 
-typedef SECStatus AESBlockFunc(AESContext *cx, 
+typedef SECStatus AESBlockFunc(AESContext *cx,
                                unsigned char *output,
                                const unsigned char *input);
 
@@ -50,19 +50,18 @@ typedef SECStatus AESBlockFunc(AESContext *cx,
 
 
 
-struct AESContextStr
-{
-    unsigned int   Nb;
-    unsigned int   Nr;
+struct AESContextStr {
+    unsigned int Nb;
+    unsigned int Nr;
     freeblCipherFunc worker;
     
 
     unsigned char iv[RIJNDAEL_MAX_BLOCKSIZE];
-    PRUint32      expandedKey[RIJNDAEL_MAX_EXP_KEY_SIZE];
+    PRUint32 expandedKey[RIJNDAEL_MAX_EXP_KEY_SIZE];
     freeblDestroyFunc destroy;
-    void	      *worker_cx;
-    PRBool	      isBlock;
-    int           mode;
+    void *worker_cx;
+    PRBool isBlock;
+    int mode;
 };
 
 #endif 

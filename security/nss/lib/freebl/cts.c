@@ -20,17 +20,17 @@ struct CTSContextStr {
 
 CTSContext *
 CTS_CreateContext(void *context, freeblCipherFunc cipher,
-		  const unsigned char *iv, unsigned int blocksize)
+                  const unsigned char *iv, unsigned int blocksize)
 {
-    CTSContext  *cts;
+    CTSContext *cts;
 
     if (blocksize > MAX_BLOCK_SIZE) {
-	PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
-	return NULL;
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return NULL;
     }
     cts = PORT_ZNew(CTSContext);
     if (cts == NULL) {
-	return NULL;
+        return NULL;
     }
     PORT_Memcpy(cts->iv, iv, blocksize);
     cts->cipher = cipher;
@@ -42,10 +42,10 @@ void
 CTS_DestroyContext(CTSContext *cts, PRBool freeit)
 {
     if (freeit) {
-	PORT_Free(cts);
+        PORT_Free(cts);
     }
 }
-	
+
 
 
 
@@ -89,9 +89,9 @@ CTS_DestroyContext(CTSContext *cts, PRBool freeit)
 
 SECStatus
 CTS_EncryptUpdate(CTSContext *cts, unsigned char *outbuf,
-		unsigned int *outlen, unsigned int maxout,
-		const unsigned char *inbuf, unsigned int inlen,
-		unsigned int blocksize)
+                  unsigned int *outlen, unsigned int maxout,
+                  const unsigned char *inbuf, unsigned int inlen,
+                  unsigned int blocksize)
 {
     unsigned char lastBlock[MAX_BLOCK_SIZE];
     unsigned int tmp;
@@ -101,26 +101,26 @@ CTS_EncryptUpdate(CTSContext *cts, unsigned char *outbuf,
     SECStatus rv;
 
     if (inlen < blocksize) {
-	PORT_SetError(SEC_ERROR_INPUT_LEN);
-	return SECFailure;
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return SECFailure;
     }
 
     if (maxout < inlen) {
-	*outlen = inlen;
-	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
-	return SECFailure;
+        *outlen = inlen;
+        PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+        return SECFailure;
     }
-    fullblocks = (inlen/blocksize)*blocksize;
+    fullblocks = (inlen / blocksize) * blocksize;
     rv = (*cts->cipher)(cts->context, outbuf, outlen, maxout, inbuf,
-	 fullblocks, blocksize);
+                        fullblocks, blocksize);
     if (rv != SECSuccess) {
-	return SECFailure;
+        return SECFailure;
     }
     *outlen = fullblocks; 
     inbuf += fullblocks;
     inlen -= fullblocks;
     if (inlen == 0) {
-	return SECSuccess;
+        return SECSuccess;
     }
     written = *outlen - (blocksize - inlen);
     outbuf += written;
@@ -138,18 +138,19 @@ CTS_EncryptUpdate(CTSContext *cts, unsigned char *outbuf,
     PORT_Memcpy(lastBlock, inbuf, inlen);
     PORT_Memset(lastBlock + inlen, 0, blocksize - inlen);
     rv = (*cts->cipher)(cts->context, outbuf, &tmp, maxout, lastBlock,
-			blocksize, blocksize);
+                        blocksize, blocksize);
     PORT_Memset(lastBlock, 0, blocksize);
     if (rv == SECSuccess) {
-	*outlen = written + blocksize;
+        *outlen = written + blocksize;
     } else {
-	PORT_Memset(saveout, 0, written+blocksize);
+        PORT_Memset(saveout, 0, written + blocksize);
     }
     return rv;
 }
 
-
-#define XOR_BLOCK(x,y,count) for(i=0; i < count; i++) x[i] = x[i] ^ y[i]
+#define XOR_BLOCK(x, y, count)  \
+    for (i = 0; i < count; i++) \
+    x[i] = x[i] ^ y[i]
 
 
 
@@ -177,9 +178,9 @@ CTS_EncryptUpdate(CTSContext *cts, unsigned char *outbuf,
 
 SECStatus
 CTS_DecryptUpdate(CTSContext *cts, unsigned char *outbuf,
-		unsigned int *outlen, unsigned int maxout,
-		const unsigned char *inbuf, unsigned int inlen,
-		unsigned int blocksize)
+                  unsigned int *outlen, unsigned int maxout,
+                  const unsigned char *inbuf, unsigned int inlen,
+                  unsigned int blocksize)
 {
     unsigned char *Pn;
     unsigned char Cn_2[MAX_BLOCK_SIZE]; 
@@ -194,17 +195,17 @@ CTS_DecryptUpdate(CTSContext *cts, unsigned char *outbuf,
     SECStatus rv;
 
     if (inlen < blocksize) {
-	PORT_SetError(SEC_ERROR_INPUT_LEN);
-	return SECFailure;
+        PORT_SetError(SEC_ERROR_INPUT_LEN);
+        return SECFailure;
     }
 
     if (maxout < inlen) {
-	*outlen = inlen;
-	PORT_SetError(SEC_ERROR_OUTPUT_LEN);
-	return SECFailure;
+        *outlen = inlen;
+        PORT_SetError(SEC_ERROR_OUTPUT_LEN);
+        return SECFailure;
     }
 
-    fullblocks = (inlen/blocksize)*blocksize;
+    fullblocks = (inlen / blocksize) * blocksize;
 
     
 
@@ -213,34 +214,33 @@ CTS_DecryptUpdate(CTSContext *cts, unsigned char *outbuf,
 
     pad = inlen - fullblocks;
     if (pad != 0) {
-	if (inbuf != outbuf) {
-	    memcpy(outbuf, inbuf, inlen);
-	    
+        if (inbuf != outbuf) {
+            memcpy(outbuf, inbuf, inlen);
+            
 
-	    inbuf = outbuf;
-	}
-	memcpy(lastBlock, inbuf+inlen-blocksize, blocksize);
-	
+            inbuf = outbuf;
+        }
+        memcpy(lastBlock, inbuf + inlen - blocksize, blocksize);
+        
 
-	memcpy(outbuf+inlen-pad, inbuf+inlen-blocksize-pad, pad);
-	memcpy(outbuf+inlen-blocksize-pad, lastBlock, blocksize);
+        memcpy(outbuf + inlen - pad, inbuf + inlen - blocksize - pad, pad);
+        memcpy(outbuf + inlen - blocksize - pad, lastBlock, blocksize);
     }
     
 
-    tmp =  (fullblocks < blocksize*2) ? cts->iv :
-			inbuf+fullblocks-blocksize*2;
+    tmp = (fullblocks < blocksize * 2) ? cts->iv : inbuf + fullblocks - blocksize * 2;
     PORT_Memcpy(Cn_2, tmp, blocksize);
-    PORT_Memcpy(Cn, inbuf+fullblocks-blocksize, blocksize);
+    PORT_Memcpy(Cn, inbuf + fullblocks - blocksize, blocksize);
     rv = (*cts->cipher)(cts->context, outbuf, outlen, maxout, inbuf,
-	 fullblocks, blocksize);
+                        fullblocks, blocksize);
     if (rv != SECSuccess) {
-	return SECFailure;
+        return SECFailure;
     }
     *outlen = fullblocks; 
     inbuf += fullblocks;
     inlen -= fullblocks;
     if (inlen == 0) {
-	return SECSuccess;
+        return SECSuccess;
     }
     outbuf += fullblocks;
 
@@ -248,7 +248,7 @@ CTS_DecryptUpdate(CTSContext *cts, unsigned char *outbuf,
     PORT_Memset(lastBlock, 0, blocksize);
     PORT_Memcpy(lastBlock, inbuf, inlen);
     PORT_Memcpy(Cn_1, inbuf, inlen);
-    Pn = outbuf-blocksize;
+    Pn = outbuf - blocksize;
     
     
 
@@ -282,11 +282,11 @@ CTS_DecryptUpdate(CTSContext *cts, unsigned char *outbuf,
 
 
     rv = (*cts->cipher)(cts->context, Pn, &tmpLen, blocksize, lastBlock,
-	 blocksize, blocksize);
+                        blocksize, blocksize);
     if (rv != SECSuccess) {
-	PORT_Memset(lastBlock, 0, blocksize);
-	PORT_Memset(saveout, 0, *outlen);
-	return SECFailure;
+        PORT_Memset(lastBlock, 0, blocksize);
+        PORT_Memset(saveout, 0, *outlen);
+        return SECFailure;
     }
     
     XOR_BLOCK(Pn, Cn_2, blocksize);
@@ -296,8 +296,8 @@ CTS_DecryptUpdate(CTSContext *cts, unsigned char *outbuf,
     
 
 
-    (void) (*cts->cipher)(cts->context, lastBlock, &tmpLen, blocksize, Cn,
-		blocksize, blocksize);
+    (void)(*cts->cipher)(cts->context, lastBlock, &tmpLen, blocksize, Cn,
+                         blocksize, blocksize);
     
 
 
