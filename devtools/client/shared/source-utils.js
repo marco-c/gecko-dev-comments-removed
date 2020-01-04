@@ -4,11 +4,9 @@
 "use strict";
 
 const { URL } = require("sdk/url");
-const { Cu } = require("chrome");
-Cu.import("resource://devtools/client/shared/widgets/ViewHelpers.jsm");
-const STRINGS_URI = "chrome://devtools/locale/components.properties";
-const L10N = new ViewHelpers.L10N(STRINGS_URI);
-const UNKNOWN_SOURCE_STRING = L10N.getStr("frame.unknownSource");
+const { L10N } = require("resource://devtools/client/shared/widgets/ViewHelpers.jsm").ViewHelpers;
+const l10n = new L10N("chrome://devtools/locale/components.properties");
+const UNKNOWN_SOURCE_STRING = l10n.getStr("frame.unknownSource");
 
 
 const CHAR_CODE_A = "a".charCodeAt(0);
@@ -29,6 +27,7 @@ const CHAR_CODE_T = "t".charCodeAt(0);
 const CHAR_CODE_U = "u".charCodeAt(0);
 const CHAR_CODE_COLON = ":".charCodeAt(0);
 const CHAR_CODE_SLASH = "/".charCodeAt(0);
+const CHAR_CODE_CAP_S = "S".charCodeAt(0);
 
 
 const gURLStore = new Map();
@@ -121,6 +120,14 @@ function getSourceNames (source) {
     }
   }
 
+  
+  
+  if (isScratchpadScheme(sourceStr)) {
+    let result = { short: sourceStr, long: sourceStr };
+    gSourceNamesStore.set(source, result);
+    return result;
+  }
+
   const parsedUrl = parseURL(sourceStr);
 
   if (!parsedUrl) {
@@ -168,6 +175,22 @@ function getSourceNames (source) {
 function isColonSlashSlash(location, i=0) {
   return location.charCodeAt(++i) === CHAR_CODE_COLON &&
          location.charCodeAt(++i) === CHAR_CODE_SLASH &&
+         location.charCodeAt(++i) === CHAR_CODE_SLASH;
+}
+
+
+
+
+function isScratchpadScheme(location, i=0) {
+  return location.charCodeAt(i)   === CHAR_CODE_CAP_S &&
+         location.charCodeAt(++i) === CHAR_CODE_C &&
+         location.charCodeAt(++i) === CHAR_CODE_R &&
+         location.charCodeAt(++i) === CHAR_CODE_A &&
+         location.charCodeAt(++i) === CHAR_CODE_T &&
+         location.charCodeAt(++i) === CHAR_CODE_H &&
+         location.charCodeAt(++i) === CHAR_CODE_P &&
+         location.charCodeAt(++i) === CHAR_CODE_A &&
+         location.charCodeAt(++i) === CHAR_CODE_D &&
          location.charCodeAt(++i) === CHAR_CODE_SLASH;
 }
 
@@ -259,6 +282,7 @@ function isChromeScheme(location, i=0) {
 
 exports.parseURL = parseURL;
 exports.getSourceNames = getSourceNames;
+exports.isScratchpadScheme = isScratchpadScheme;
 exports.isChromeScheme = isChromeScheme;
 exports.isContentScheme = isContentScheme;
 exports.isDataScheme = isDataScheme;

@@ -2,27 +2,20 @@
 
 
 
+"use strict";
+
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
 const { getSourceNames } = require("devtools/client/shared/source-utils");
 const { L10N } = require("resource://devtools/client/shared/widgets/ViewHelpers.jsm").ViewHelpers;
 const l10n = new L10N("chrome://devtools/locale/components.properties");
 
-const Frame = module.exports = createClass({
-  displayName: "Frame",
-
-  getDefaultProps() {
-    return {
-      showFunctionName: false,
-      showHost: false,
-    };
-  },
-
+module.exports = createClass({
   propTypes: {
     
     frame: PropTypes.shape({
       functionDisplayName: PropTypes.string,
       source: PropTypes.string.isRequired,
-      line: PropTypes.number.isRequired,
+      line: PropTypes.number,
       column: PropTypes.number,
     }).isRequired,
     
@@ -33,46 +26,71 @@ const Frame = module.exports = createClass({
     showHost: PropTypes.bool,
   },
 
+  getDefaultProps() {
+    return {
+      showFunctionName: false,
+      showHost: false,
+    };
+  },
+
+  displayName: "Frame",
+
   render() {
     let { onClick, frame, showFunctionName, showHost } = this.props;
-
     const { short, long, host } = getSourceNames(frame.source);
 
-    let tooltip = `${long}:${frame.line}`;
-    if (frame.column) {
-      tooltip += `:${frame.column}`;
+    let tooltip = long;
+    
+    
+    if (frame.line) {
+      tooltip += `:${frame.line}`;
+      
+      if (frame.column) {
+        tooltip += `:${frame.column}`;
+      }
     }
 
-    let sourceString = `${long}:${frame.line}`;
-    if (frame.column) {
-      sourceString += `:${frame.column}`;
-    }
-
-    let onClickTooltipString = l10n.getFormatStr("frame.viewsourceindebugger", sourceString);
+    let onClickTooltipString = l10n.getFormatStr("frame.viewsourceindebugger", tooltip);
+    let attributes = {
+      "data-url": long,
+      className: "frame-link",
+      title: tooltip,
+    };
 
     let fields = [
       dom.a({
         className: "frame-link-filename",
         onClick,
         title: onClickTooltipString
-      }, short),
-      dom.span({ className: "frame-link-colon" }, ":"),
-      dom.span({ className: "frame-link-line" }, frame.line),
+      }, short)
     ];
 
-    if (frame.column != null) {
+    
+    if (frame.line) {
       fields.push(dom.span({ className: "frame-link-colon" }, ":"));
-      fields.push(dom.span({ className: "frame-link-column" }, frame.column));
+      fields.push(dom.span({ className: "frame-link-line" }, frame.line));
+      
+      if (frame.column) {
+        fields.push(dom.span({ className: "frame-link-colon" }, ":"));
+        fields.push(dom.span({ className: "frame-link-column" }, frame.column));
+        
+        attributes["data-column"] = frame.column;
+      }
+
+      
+      attributes["data-line"] = frame.line;
     }
 
     if (showFunctionName && frame.functionDisplayName) {
-      fields.unshift(dom.span({ className: "frame-link-function-display-name" }, frame.functionDisplayName));
+      fields.unshift(
+        dom.span({ className: "frame-link-function-display-name" }, frame.functionDisplayName)
+      );
     }
 
     if (showHost && host) {
       fields.push(dom.span({ className: "frame-link-host" }, host));
     }
 
-    return dom.span({ className: "frame-link", title: tooltip }, ...fields);
+    return dom.span(attributes, ...fields);
   }
 });
