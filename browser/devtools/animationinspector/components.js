@@ -873,20 +873,24 @@ AnimationsTimeline.prototype = {
 
     
     
-    let x = TimeScale.startTimeToDistance(state.startTime + (state.delay || 0),
-                                          width);
     
-    let count = state.iterationCount || 1;
-    let w = TimeScale.durationToDistance(state.duration, width);
+    let start = state.startTime;
+    let duration = state.duration;
+    let rate = state.playbackRate;
+    let count = state.iterationCount;
+    let delay = state.delay || 0;
+
+    let x = TimeScale.startTimeToDistance(start + (delay / rate), width);
+    let w = TimeScale.durationToDistance(duration / rate, width);
 
     let iterations = createNode({
       parent: el,
       attributes: {
-        "class": "iterations" + (state.iterationCount ? "" : " infinite"),
+        "class": "iterations" + (count ? "" : " infinite"),
         
         
         "style": `left:${x}px;
-                  width:${w * count}px;
+                  width:${w * (count || 1)}px;
                   background-size:${Math.max(w, 2)}px 100%;`
       }
     });
@@ -901,14 +905,14 @@ AnimationsTimeline.prototype = {
     });
 
     
-    if (state.delay) {
-      let delay = TimeScale.durationToDistance(state.delay, width);
+    if (delay) {
+      let w = TimeScale.durationToDistance(delay / rate, width);
       createNode({
         parent: iterations,
         attributes: {
           "class": "delay",
-          "style": `left:-${delay}px;
-                    width:${delay}px;`
+          "style": `left:-${w}px;
+                    width:${w}px;`
         }
       });
     }
