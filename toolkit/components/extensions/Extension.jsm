@@ -684,7 +684,10 @@ this.Extension = function(addonData)
 
 
 
-this.Extension.generate = function(id, data)
+
+
+
+this.Extension.generateXPI = function(id, data)
 {
   let manifest = data.manifest;
   if (!manifest) {
@@ -766,6 +769,17 @@ this.Extension.generate = function(id, data)
 
   zipW.close();
 
+  return file;
+};
+
+
+
+
+
+this.Extension.generate = function(id, data)
+{
+  let file = this.generateXPI(id, data);
+
   flushJarCache(file);
   Services.ppmm.broadcastAsyncMessage("Extension:FlushJarCache", {path: file.path});
 
@@ -777,7 +791,7 @@ this.Extension.generate = function(id, data)
     resourceURI: jarURI,
     cleanupFile: file
   });
-}
+};
 
 Extension.prototype = extend(Object.create(ExtensionData.prototype), {
   on(hook, f) {

@@ -2975,6 +2975,8 @@ this.AddonManager = {
   ERROR_FILE_ACCESS: -4,
   
   ERROR_SIGNEDSTATE_REQUIRED: -5,
+  
+  ERROR_UNEXPECTED_ADDON_TYPE: -6,
 
   
   

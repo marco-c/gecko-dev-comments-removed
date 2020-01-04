@@ -40,7 +40,6 @@ Cu.import("resource://testing-common/MockRegistrar.jsm");
 
 Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false)
 
-Cu.import("resource://testing-common/httpd.js");
 var testserver = createHttpServer();
 gPort = testserver.identity.primaryPort;
 

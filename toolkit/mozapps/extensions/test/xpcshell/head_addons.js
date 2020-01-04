@@ -30,6 +30,11 @@ Components.utils.import("resource://gre/modules/osfile.jsm");
 Components.utils.import("resource://gre/modules/AsyncShutdown.jsm");
 Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "Extension",
+                                  "resource://gre/modules/Extension.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "HttpServer",
+                                  "resource://testing-common/httpd.js");
+
 
 var AMscope = Components.utils.import("resource://gre/modules/AddonManager.jsm");
 var AddonManager = AMscope.AddonManager;
@@ -1031,6 +1036,26 @@ function createTempXPIFile(aData) {
 
 
 
+function createTempWebExtensionFile(aData) {
+  if (!aData.id) {
+    const uuidGenerator = AM_Cc["@mozilla.org/uuid-generator;1"].getService(AM_Ci.nsIUUIDGenerator);
+    aData.id = uuidGenerator.generateUUID().number;
+  }
+
+  let file = Extension.generateXPI(aData.id, aData);
+  temp_xpis.push(file);
+  return file;
+}
+
+
+
+
+
+
+
+
+
+
 
 function setExtensionModifiedTime(aExt, aTime) {
   aExt.lastModifiedTime = aTime;
@@ -1802,7 +1827,7 @@ function interpolateAndServeFile(request, response) {
 
     response.write(data);
   } catch (e) {
-    do_throw("Exception while serving interpolated file.");
+    do_throw(`Exception while serving interpolated file: ${e}\n${e.stack}`);
   } finally {
     cstream.close(); 
   }
@@ -1953,23 +1978,23 @@ function promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIOD
         if ("compatibilityUpdate" in result) {
           do_throw("Saw multiple compatibility update events");
         }
-        equal(addon, addon2);
-        addon.compatibilityUpdate = false;
+        equal(addon, addon2, "onNoCompatibilityUpdateAvailable");
+        result.compatibilityUpdate = false;
       },
 
       onCompatibilityUpdateAvailable: function(addon2) {
         if ("compatibilityUpdate" in result) {
           do_throw("Saw multiple compatibility update events");
         }
-        equal(addon, addon2);
-        addon.compatibilityUpdate = true;
+        equal(addon, addon2, "onCompatibilityUpdateAvailable");
+        result.compatibilityUpdate = true;
       },
 
       onNoUpdateAvailable: function(addon2) {
         if ("updateAvailable" in result) {
           do_throw("Saw multiple update available events");
         }
-        equal(addon, addon2);
+        equal(addon, addon2, "onNoUpdateAvailable");
         result.updateAvailable = false;
       },
 
@@ -1977,12 +2002,12 @@ function promiseFindAddonUpdates(addon, reason = AddonManager.UPDATE_WHEN_PERIOD
         if ("updateAvailable" in result) {
           do_throw("Saw multiple update available events");
         }
-        equal(addon, addon2);
+        equal(addon, addon2, "onUpdateAvailable");
         result.updateAvailable = install;
       },
 
       onUpdateFinished: function(addon2, error) {
-        equal(addon, addon2);
+        equal(addon, addon2, "onUpdateFinished");
         if (error == AddonManager.UPDATE_STATUS_NO_ERROR) {
           resolve(result);
         } else {
