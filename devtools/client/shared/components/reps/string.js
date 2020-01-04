@@ -10,7 +10,7 @@
 define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
-  const { createFactories } = require("./rep-utils");
+  const { createFactories, cropMultipleLines } = require("./rep-utils");
   const { ObjectBox } = createFactories(require("./object-box"));
 
   
@@ -40,53 +40,6 @@ define(function (require, exports, module) {
 
   
 
-  function escapeNewLines(value) {
-    return value.replace(/\r/gm, "\\r").replace(/\n/gm, "\\n");
-  }
-
-  function cropMultipleLines(text, limit) {
-    return escapeNewLines(cropString(text, limit));
-  }
-
-  function cropString(text, limit, alternativeText) {
-    if (!alternativeText) {
-      alternativeText = "\u2026";
-    }
-
-    
-    text = text + "";
-
-    
-    if (!limit) {
-      limit = 50;
-    }
-
-    
-    if (limit <= 0) {
-      return text;
-    }
-
-    
-    
-    if (limit <= alternativeText.length) {
-      limit = alternativeText.length + 1;
-    }
-
-    let halfLimit = (limit - alternativeText.length) / 2;
-
-    if (text.length > limit) {
-      return text.substr(0, Math.ceil(halfLimit)) + alternativeText +
-        text.substr(text.length - Math.floor(halfLimit));
-    }
-
-    return text;
-  }
-
-  function isCropped(value) {
-    let cropLength = 50;
-    return typeof value == "string" && value.length > cropLength;
-  }
-
   function supportsObject(object, type) {
     return (type == "string");
   }
@@ -97,8 +50,4 @@ define(function (require, exports, module) {
     rep: StringRep,
     supportsObject: supportsObject,
   };
-
-  exports.isCropped = isCropped;
-  exports.cropString = cropString;
-  exports.cropMultipleLines = cropMultipleLines;
 });

@@ -11,9 +11,8 @@ define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
 
   
-  const { createFactories, isGrip } = require("./rep-utils");
+  const { createFactories, isGrip, cropString } = require("./rep-utils");
   const { ObjectLink } = createFactories(require("./object-link"));
-  const { cropString } = require("./string");
 
   
 
