@@ -181,6 +181,9 @@ js::CheckTracedThing(JSTracer* trc, T* thing)
     MOZ_ASSERT(trc);
     MOZ_ASSERT(thing);
 
+    if (!trc->checkEdges())
+        return;
+
     thing = MaybeForwarded(thing);
 
     
