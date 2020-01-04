@@ -968,12 +968,15 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
         
         
         
+        
         switch (mOriginalVirtualKeyCode) {
           case VK_CONTROL:
-            mVirtualKeyCode = VK_RCONTROL;
+            mVirtualKeyCode =
+              mIsExtended && mScanCode == 0x1D ? VK_RCONTROL : VK_LCONTROL;
             break;
           case VK_MENU:
-            mVirtualKeyCode = VK_RMENU;
+            mVirtualKeyCode =
+              mIsExtended && mScanCode == 0x38 ? VK_RMENU : VK_LMENU;
             break;
           case VK_SHIFT:
             
@@ -1283,12 +1286,7 @@ NativeKey::IsIMEDoingKakuteiUndo() const
 UINT
 NativeKey::GetScanCodeWithExtendedFlag() const
 {
-  
-  
-  
-  
-  
-  if (!mIsExtended || !IsVistaOrLater()) {
+  if (!mIsExtended) {
     return mScanCode;
   }
   return (0xE000 | mScanCode);
@@ -1382,6 +1380,12 @@ NativeKey::ComputeVirtualKeyCodeFromScanCode() const
 uint8_t
 NativeKey::ComputeVirtualKeyCodeFromScanCodeEx() const
 {
+  
+  
+  
+  
+  
+  
   if (NS_WARN_IF(!CanComputeVirtualKeyCodeFromScanCode())) {
     return 0;
   }
