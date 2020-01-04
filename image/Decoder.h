@@ -291,9 +291,9 @@ protected:
 
   virtual nsresult InitInternal();
   virtual Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator) = 0;
-  virtual void BeforeFinishInternal();
-  virtual void FinishInternal();
-  virtual void FinishWithErrorInternal();
+  virtual nsresult BeforeFinishInternal();
+  virtual nsresult FinishInternal();
+  virtual nsresult FinishWithErrorInternal();
 
   
 

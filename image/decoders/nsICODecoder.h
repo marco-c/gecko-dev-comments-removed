@@ -71,8 +71,8 @@ public:
   size_t FirstResourceOffset() const;
 
   Maybe<TerminalState> DoDecode(SourceBufferIterator& aIterator) override;
-  virtual void FinishInternal() override;
-  virtual void FinishWithErrorInternal() override;
+  nsresult FinishInternal() override;
+  nsresult FinishWithErrorInternal() override;
 
 private:
   friend class DecoderFactory;
@@ -85,7 +85,7 @@ private:
   bool WriteToContainedDecoder(const char* aBuffer, uint32_t aCount);
 
   
-  void GetFinalStateFromContainedDecoder();
+  nsresult GetFinalStateFromContainedDecoder();
 
   
 

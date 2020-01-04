@@ -67,26 +67,26 @@ nsICODecoder::nsICODecoder(RasterImage* aImage)
   , mHasMaskAlpha(false)
 { }
 
-void
+nsresult
 nsICODecoder::FinishInternal()
 {
   
   MOZ_ASSERT(!HasError(), "Shouldn't call FinishInternal after error!");
 
-  GetFinalStateFromContainedDecoder();
+  return GetFinalStateFromContainedDecoder();
 }
 
-void
+nsresult
 nsICODecoder::FinishWithErrorInternal()
 {
-  GetFinalStateFromContainedDecoder();
+  return GetFinalStateFromContainedDecoder();
 }
 
-void
+nsresult
 nsICODecoder::GetFinalStateFromContainedDecoder()
 {
   if (!mContainedDecoder) {
-    return;
+    return NS_OK;
   }
 
   MOZ_ASSERT(mContainedSourceBuffer,
@@ -95,20 +95,23 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
   
   if (!mContainedSourceBuffer->IsComplete()) {
     mContainedSourceBuffer->Complete(NS_OK);
-    if (NS_FAILED(mContainedDecoder->Decode(mDoNotResume))) {
-      PostDataError();
-    }
+    mContainedDecoder->Decode(mDoNotResume);
   }
 
   
   mDecodeDone = mContainedDecoder->GetDecodeDone();
-  mDataError = mDataError || mContainedDecoder->HasDataError();
   mDecodeAborted = mContainedDecoder->WasAborted();
   mProgress |= mContainedDecoder->TakeProgress();
   mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
   mCurrentFrame = mContainedDecoder->GetCurrentFrameRef();
 
-  MOZ_ASSERT(HasError() || !mCurrentFrame || mCurrentFrame->IsFinished());
+  
+  nsresult rv = HasError() || mContainedDecoder->HasError()
+              ? NS_ERROR_FAILURE
+              : NS_OK;
+
+  MOZ_ASSERT(NS_FAILED(rv) || !mCurrentFrame || mCurrentFrame->IsFinished());
+  return rv;
 }
 
 bool
@@ -647,22 +650,25 @@ nsICODecoder::WriteToContainedDecoder(const char* aBuffer, uint32_t aCount)
   
   mContainedSourceBuffer->Append(aBuffer, aCount);
 
+  bool succeeded = true;
+
   
   
   
   
   if (NS_FAILED(mContainedDecoder->Decode(mDoNotResume))) {
-    PostDataError();
+    succeeded = false;
   }
 
+  
   
   mProgress |= mContainedDecoder->TakeProgress();
   mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
   if (mContainedDecoder->HasDataError()) {
-    PostDataError();
+    succeeded = false;
   }
 
-  return !HasError();
+  return succeeded;
 }
 
 } 
