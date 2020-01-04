@@ -29,6 +29,12 @@ public:
 
 
 
+    static SkString* ImageToString(const SkImage* image);
+
+    
+
+
+
     static SkString* BoolToString(bool doAA);
 
     
@@ -83,13 +89,13 @@ public:
 
 
 
-    static SkString* RectToString(const SkRect& rect, const char* title = NULL);
+    static SkString* RectToString(const SkRect& rect, const char* title = nullptr);
 
     
 
 
 
-    static SkString* RRectToString(const SkRRect& rrect, const char* title = NULL);
+    static SkString* RRectToString(const SkRRect& rrect, const char* title = nullptr);
 
     
 

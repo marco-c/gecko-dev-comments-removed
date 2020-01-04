@@ -32,5 +32,5 @@ SkMovie* SkMovie::DecodeStream(SkStreamRewindable* stream) {
         stream->rewind();
         curr = curr->next();
     }
-    return NULL;
+    return nullptr;
 }

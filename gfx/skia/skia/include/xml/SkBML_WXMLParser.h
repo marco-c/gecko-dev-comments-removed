@@ -40,7 +40,7 @@ private:
     char*       fAttrValues[256];
 
     
-    U8  fNextElem, fNextAttrName, fNextAttrValue;
+    uint8_t  fNextElem, fNextAttrName, fNextAttrValue;
 };
 
 #endif 

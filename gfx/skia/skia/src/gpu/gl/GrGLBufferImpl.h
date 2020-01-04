@@ -9,9 +9,9 @@
 #define GrGLBufferImpl_DEFINED
 
 #include "SkTypes.h"
-#include "gl/GrGLFunctions.h"
+#include "gl/GrGLTypes.h"
 
-class GrGpuGL;
+class GrGLGpu;
 
 
 
@@ -20,30 +20,27 @@ class GrGpuGL;
 class GrGLBufferImpl : SkNoncopyable {
 public:
     struct Desc {
-        bool        fIsWrapped;
         GrGLuint    fID;            
         size_t      fSizeInBytes;
         bool        fDynamic;
     };
 
-    GrGLBufferImpl(GrGpuGL*, const Desc&, GrGLenum bufferType);
+    GrGLBufferImpl(GrGLGpu*, const Desc&, GrGLenum bufferType);
     ~GrGLBufferImpl() {
         
         SkASSERT(0 == fDesc.fID);
     }
 
     void abandon();
-    void release(GrGpuGL* gpu);
+    void release(GrGLGpu* gpu);
 
     GrGLuint bufferID() const { return fDesc.fID; }
     size_t baseOffset() const { return reinterpret_cast<size_t>(fCPUData); }
 
-    void bind(GrGpuGL* gpu) const;
-
-    void* map(GrGpuGL* gpu);
-    void unmap(GrGpuGL* gpu);
+    void* map(GrGLGpu* gpu);
+    void unmap(GrGLGpu* gpu);
     bool isMapped() const;
-    bool updateData(GrGpuGL* gpu, const void* src, size_t srcSizeInBytes);
+    bool updateData(GrGLGpu* gpu, const void* src, size_t srcSizeInBytes);
 
 private:
     void validate() const;

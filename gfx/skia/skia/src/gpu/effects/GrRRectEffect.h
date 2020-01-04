@@ -11,7 +11,8 @@
 #include "GrTypes.h"
 #include "GrTypesPriv.h"
 
-class GrEffect;
+class GrFragmentProcessor;
+class GrProcessor;
 class SkRRect;
 
 namespace GrRRectEffect {
@@ -19,7 +20,7 @@ namespace GrRRectEffect {
 
 
 
-    GrEffect* Create(GrEffectEdgeType, const SkRRect&);
+    GrFragmentProcessor* Create(GrPrimitiveEdgeType, const SkRRect&);
 };
 
 #endif

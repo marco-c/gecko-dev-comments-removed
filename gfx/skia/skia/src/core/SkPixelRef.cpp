@@ -5,125 +5,103 @@
 
 
 
+#include "SkBitmapCache.h"
+#include "SkMutex.h"
 #include "SkPixelRef.h"
-#include "SkThread.h"
+#include "SkTraceEvent.h"
 
-#ifdef SK_USE_POSIX_THREADS
 
-    static SkBaseMutex gPixelRefMutexRing[] = {
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
 
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
 
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
+#include "SkNextID.h"
 
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-        SK_BASE_MUTEX_INIT, SK_BASE_MUTEX_INIT,
-    };
-
+uint32_t SkNextID::ImageID() {
+    static uint32_t gID = 0;
+    uint32_t id;
     
-    #define PIXELREF_MUTEX_RING_COUNT SK_ARRAY_COUNT(gPixelRefMutexRing)
-
-#else 
-
-    
-    #define PIXELREF_MUTEX_RING_COUNT       32
-    static SkBaseMutex gPixelRefMutexRing[PIXELREF_MUTEX_RING_COUNT];
-
-#endif
-
-static SkBaseMutex* get_default_mutex() {
-    static int32_t gPixelRefMutexRingIndex;
-
-    SkASSERT(SkIsPow2(PIXELREF_MUTEX_RING_COUNT));
-
-    
-    
-    int index = sk_atomic_inc(&gPixelRefMutexRingIndex);
-    return &gPixelRefMutexRing[index & (PIXELREF_MUTEX_RING_COUNT - 1)];
-}
-
-
-
-int32_t SkNextPixelRefGenerationID();
-
-int32_t SkNextPixelRefGenerationID() {
-    static int32_t  gPixelRefGenerationID;
-    
-    
-    int32_t genID;
     do {
-        genID = sk_atomic_inc(&gPixelRefGenerationID) + 1;
-    } while (0 == genID);
-    return genID;
+        id = sk_atomic_fetch_add(&gID, 2u) + 2;  
+    } while (0 == id);
+    return id;
 }
 
 
-
-void SkPixelRef::setMutex(SkBaseMutex* mutex) {
-    if (NULL == mutex) {
-        mutex = get_default_mutex();
-    }
-    fMutex = mutex;
-}
 
 
 #define SKPIXELREF_PRELOCKED_LOCKCOUNT     123456789
 
-SkPixelRef::SkPixelRef(const SkImageInfo& info) : fInfo(info) {
-    SkAssertResult(SkColorTypeValidateAlphaType(fInfo.colorType(), fInfo.alphaType(),
-                                                const_cast<SkAlphaType*>(&fInfo.fAlphaType)));
-
-    this->setMutex(NULL);
-    fRec.zero();
-    fLockCount = 0;
-    this->needsNewGenID();
-    fIsImmutable = false;
-    fPreLocked = false;
+static SkImageInfo validate_info(const SkImageInfo& info) {
+    SkAlphaType newAlphaType = info.alphaType();
+    SkAssertResult(SkColorTypeValidateAlphaType(info.colorType(), info.alphaType(), &newAlphaType));
+    return info.makeAlphaType(newAlphaType);
 }
 
+#ifdef SK_TRACE_PIXELREF_LIFETIME
+    static int32_t gInstCounter;
+#endif
 
-SkPixelRef::SkPixelRef(const SkImageInfo& info, SkBaseMutex* mutex) : fInfo(info) {
-    SkAssertResult(SkColorTypeValidateAlphaType(fInfo.colorType(), fInfo.alphaType(),
-                                                const_cast<SkAlphaType*>(&fInfo.fAlphaType)));
+SkPixelRef::SkPixelRef(const SkImageInfo& info)
+    : fInfo(validate_info(info))
+#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
+    , fStableID(SkNextID::ImageID())
+#endif
 
-    this->setMutex(mutex);
+{
+#ifdef SK_TRACE_PIXELREF_LIFETIME
+    SkDebugf(" pixelref %d\n", sk_atomic_inc(&gInstCounter));
+#endif
     fRec.zero();
     fLockCount = 0;
     this->needsNewGenID();
-    fIsImmutable = false;
+    fMutability = kMutable;
     fPreLocked = false;
+    fAddedToCache.store(false);
 }
 
 SkPixelRef::~SkPixelRef() {
+#ifndef SK_SUPPORT_LEGACY_UNBALANCED_PIXELREF_LOCKCOUNT
+    SkASSERT(SKPIXELREF_PRELOCKED_LOCKCOUNT == fLockCount || 0 == fLockCount);
+#endif
+
+#ifdef SK_TRACE_PIXELREF_LIFETIME
+    SkDebugf("~pixelref %d\n", sk_atomic_dec(&gInstCounter) - 1);
+#endif
     this->callGenIDChangeListeners();
 }
 
 void SkPixelRef::needsNewGenID() {
-    fGenerationID = 0;
-    fUniqueGenerationID = false;
+    fTaggedGenID.store(0);
+    SkASSERT(!this->genIDIsUnique()); 
 }
 
 void SkPixelRef::cloneGenID(const SkPixelRef& that) {
     
-    this->fGenerationID = that.getGenerationID();
-    this->fUniqueGenerationID = false;
-    that.fUniqueGenerationID = false;
+    uint32_t genID = that.getGenerationID();
+
+    
+    
+    this->fTaggedGenID.store(genID & ~1u);
+    that. fTaggedGenID.store(genID & ~1u);
+
+    
+    SkASSERT(!this->genIDIsUnique());
+    SkASSERT(!that. genIDIsUnique());
+}
+
+static void validate_pixels_ctable(const SkImageInfo& info, const SkColorTable* ctable) {
+    if (info.isEmpty()) {
+        return; 
+    }
+    if (kIndex_8_SkColorType == info.colorType()) {
+        SkASSERT(ctable);
+    } else {
+        SkASSERT(nullptr == ctable);
+    }
 }
 
 void SkPixelRef::setPreLocked(void* pixels, size_t rowBytes, SkColorTable* ctable) {
-#ifndef SK_IGNORE_PIXELREF_SETPRELOCKED
+    SkASSERT(pixels);
+    validate_pixels_ctable(fInfo, ctable);
     
     
     fRec.fPixels = pixels;
@@ -131,40 +109,70 @@ void SkPixelRef::setPreLocked(void* pixels, size_t rowBytes, SkColorTable* ctabl
     fRec.fRowBytes = rowBytes;
     fLockCount = SKPIXELREF_PRELOCKED_LOCKCOUNT;
     fPreLocked = true;
-#endif
 }
 
-bool SkPixelRef::lockPixels(LockRec* rec) {
+
+bool SkPixelRef::lockPixelsInsideMutex() {
+    fMutex.assertHeld();
+
+    if (1 == ++fLockCount) {
+        SkASSERT(fRec.isZero());
+        if (!this->onNewLockPixels(&fRec)) {
+            fRec.zero();
+            fLockCount -= 1;    
+            return false;
+        }
+    }
+    if (fRec.fPixels) {
+        validate_pixels_ctable(fInfo, fRec.fColorTable);
+        return true;
+    }
+    
+    --fLockCount;
+    return false;
+}
+
+
+
+bool SkPixelRef::lockPixels() {
     SkASSERT(!fPreLocked || SKPIXELREF_PRELOCKED_LOCKCOUNT == fLockCount);
 
     if (!fPreLocked) {
-        SkAutoMutexAcquire  ac(*fMutex);
+        TRACE_EVENT_BEGIN0("skia", "SkPixelRef::lockPixelsMutex");
+        SkAutoMutexAcquire  ac(fMutex);
+        TRACE_EVENT_END0("skia", "SkPixelRef::lockPixelsMutex");
+        SkDEBUGCODE(int oldCount = fLockCount;)
+        bool success = this->lockPixelsInsideMutex();
+        
+        SkASSERT(oldCount + (int)success == fLockCount);
 
-        if (1 == ++fLockCount) {
-            SkASSERT(fRec.isZero());
-
-            LockRec rec;
-            if (!this->onNewLockPixels(&rec)) {
-                return false;
-            }
-            SkASSERT(!rec.isZero());    
-            fRec = rec;
+        if (!success) {
+            
+            
+            fLockCount += 1;
+            return false;
         }
     }
-    *rec = fRec;
-    return true;
+    if (fRec.fPixels) {
+        validate_pixels_ctable(fInfo, fRec.fColorTable);
+        return true;
+    }
+    return false;
 }
 
-bool SkPixelRef::lockPixels() {
-    LockRec rec;
-    return this->lockPixels(&rec);
+bool SkPixelRef::lockPixels(LockRec* rec) {
+    if (this->lockPixels()) {
+        *rec = fRec;
+        return true;
+    }
+    return false;
 }
 
 void SkPixelRef::unlockPixels() {
     SkASSERT(!fPreLocked || SKPIXELREF_PRELOCKED_LOCKCOUNT == fLockCount);
 
     if (!fPreLocked) {
-        SkAutoMutexAcquire  ac(*fMutex);
+        SkAutoMutexAcquire  ac(fMutex);
 
         SkASSERT(fLockCount > 0);
         if (0 == --fLockCount) {
@@ -179,6 +187,36 @@ void SkPixelRef::unlockPixels() {
     }
 }
 
+bool SkPixelRef::requestLock(const LockRequest& request, LockResult* result) {
+    SkASSERT(result);
+    if (request.fSize.isEmpty()) {
+        return false;
+    }
+    
+    if (request.fSize.width() != fInfo.width() || request.fSize.height() != fInfo.height()) {
+        return false;
+    }
+
+    if (fPreLocked) {
+        result->fUnlockProc = nullptr;
+        result->fUnlockContext = nullptr;
+        result->fCTable = fRec.fColorTable;
+        result->fPixels = fRec.fPixels;
+        result->fRowBytes = fRec.fRowBytes;
+        result->fSize.set(fInfo.width(), fInfo.height());
+    } else {
+        SkAutoMutexAcquire  ac(fMutex);
+        if (!this->onRequestLock(request, result)) {
+            return false;
+        }
+    }
+    if (result->fPixels) {
+        validate_pixels_ctable(fInfo, result->fCTable);
+        return true;
+    }
+    return false;
+}
+
 bool SkPixelRef::lockPixelsAreWritable() const {
     return this->onLockPixelsAreWritable();
 }
@@ -187,36 +225,42 @@ bool SkPixelRef::onLockPixelsAreWritable() const {
     return true;
 }
 
-bool SkPixelRef::onImplementsDecodeInto() {
-    return false;
-}
-
-bool SkPixelRef::onDecodeInto(int pow2, SkBitmap* bitmap) {
-    return false;
-}
-
 uint32_t SkPixelRef::getGenerationID() const {
-    if (0 == fGenerationID) {
-        fGenerationID = SkNextPixelRefGenerationID();
-        fUniqueGenerationID = true;  
+    uint32_t id = fTaggedGenID.load();
+    if (0 == id) {
+        uint32_t next = SkNextID::ImageID() | 1u;
+        if (fTaggedGenID.compare_exchange(&id, next)) {
+            id = next;  
+        } else {
+            
+        }
+        
+        
     }
-    return fGenerationID;
+    return id & ~1u;  
 }
 
 void SkPixelRef::addGenIDChangeListener(GenIDChangeListener* listener) {
-    if (NULL == listener || !fUniqueGenerationID) {
+    if (nullptr == listener || !this->genIDIsUnique()) {
         
-        SkDELETE(listener);
+        delete listener;
         return;
     }
     *fGenIDChangeListeners.append() = listener;
 }
 
+
 void SkPixelRef::callGenIDChangeListeners() {
     
-    if (fUniqueGenerationID) {
+    if (this->genIDIsUnique()) {
         for (int i = 0; i < fGenIDChangeListeners.count(); i++) {
             fGenIDChangeListeners[i]->onChange();
+        }
+
+        
+        if (fAddedToCache.load()) {
+            SkNotifyBitmapGenIDIsStale(this->getGenerationID());
+            fAddedToCache.store(false);
         }
     }
     
@@ -225,35 +269,62 @@ void SkPixelRef::callGenIDChangeListeners() {
 
 void SkPixelRef::notifyPixelsChanged() {
 #ifdef SK_DEBUG
-    if (fIsImmutable) {
+    if (this->isImmutable()) {
         SkDebugf("========== notifyPixelsChanged called on immutable pixelref");
     }
 #endif
     this->callGenIDChangeListeners();
     this->needsNewGenID();
+    this->onNotifyPixelsChanged();
 }
 
 void SkPixelRef::changeAlphaType(SkAlphaType at) {
-    *const_cast<SkAlphaType*>(&fInfo.fAlphaType) = at;
+    *const_cast<SkImageInfo*>(&fInfo) = fInfo.makeAlphaType(at);
 }
 
 void SkPixelRef::setImmutable() {
-    fIsImmutable = true;
+    fMutability = kImmutable;
+}
+
+void SkPixelRef::setImmutableWithID(uint32_t genID) {
+    
+
+
+
+
+
+    fMutability = kImmutable;
+    fTaggedGenID.store(genID);
+}
+
+void SkPixelRef::setTemporarilyImmutable() {
+    SkASSERT(fMutability != kImmutable);
+    fMutability = kTemporarilyImmutable;
+}
+
+void SkPixelRef::restoreMutability() {
+    SkASSERT(fMutability != kImmutable);
+    fMutability = kMutable;
 }
 
 bool SkPixelRef::readPixels(SkBitmap* dst, const SkIRect* subset) {
     return this->onReadPixels(dst, subset);
 }
 
+
+
 bool SkPixelRef::onReadPixels(SkBitmap* dst, const SkIRect* subset) {
     return false;
 }
 
+void SkPixelRef::onNotifyPixelsChanged() { }
+
 SkData* SkPixelRef::onRefEncodedData() {
-    return NULL;
+    return nullptr;
 }
 
-bool SkPixelRef::onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3]) {
+bool SkPixelRef::onGetYUV8Planes(SkISize sizes[3], void* planes[3], size_t rowBytes[3],
+                                 SkYUVColorSpace* colorSpace) {
     return false;
 }
 
@@ -261,14 +332,22 @@ size_t SkPixelRef::getAllocatedSizeInBytes() const {
     return 0;
 }
 
-
-
-#ifdef SK_BUILD_FOR_ANDROID
-void SkPixelRef::globalRef(void* data) {
-    this->ref();
+static void unlock_legacy_result(void* ctx) {
+    SkPixelRef* pr = (SkPixelRef*)ctx;
+    pr->unlockPixels();
+    pr->unref();    
 }
 
-void SkPixelRef::globalUnref() {
-    this->unref();
+bool SkPixelRef::onRequestLock(const LockRequest& request, LockResult* result) {
+    if (!this->lockPixelsInsideMutex()) {
+        return false;
+    }
+
+    result->fUnlockProc = unlock_legacy_result;
+    result->fUnlockContext = SkRef(this);   
+    result->fCTable = fRec.fColorTable;
+    result->fPixels = fRec.fPixels;
+    result->fRowBytes = fRec.fRowBytes;
+    result->fSize.set(fInfo.width(), fInfo.height());
+    return true;
 }
-#endif

@@ -5,38 +5,58 @@
 
 
 
-
-
 #ifndef SkOSWindow_SDL_DEFINED
 #define SkOSWindow_SDL_DEFINED
 
 #include "SDL.h"
+#include "SDL_opengl.h"
 #include "SkWindow.h"
-
-class SkGLCanvas;
 
 class SkOSWindow : public SkWindow {
 public:
     SkOSWindow(void* screen);
     virtual ~SkOSWindow();
 
-    static bool PostEvent(SkEvent* evt, SkEventSinkID, SkMSec delay);
+    static bool PostEvent(SkEvent* evt, SkEventSinkID, SkMSec delay) {
+        SkFAIL("not implemented\n");
+        return false;
+    }
 
-    void handleSDLEvent(const SDL_Event& event);
+    enum SkBackEndTypes {
+        kNone_BackEndType,
+        kNativeGL_BackEndType,
+#if SK_ANGLE
+        kANGLE_BackEndType,
+#endif 
+#if SK_COMMAND_BUFFER
+        kCommandBuffer_BackEndType,
+#endif 
+    };
+
+    void detach();
+    bool attach(SkBackEndTypes attachType, int msaaSampleCount, AttachmentInfo*);
+    void present();
+    bool makeFullscreen();
+    void setVsync(bool);
+    void closeWindow();
+    void loop() {
+        while (!fQuit) {
+            this->handleEvents();
+            this->update(nullptr);
+        }
+    }
 
 protected:
-    
-    virtual void onHandleInval(const SkIRect&);
-    
-    virtual void onAddMenu(const SkOSMenu*);
-    virtual void onSetTitle(const char[]);
+    void onSetTitle(const char title[]) override;
+    void onHandleInval(const SkIRect&) override;
+    void onPDFSaved(const char title[], const char desc[], const char path[]) override;
 
 private:
-    SDL_Surface* fScreen;
-    SDL_Surface* fSurface;
-    SkGLCanvas* fGLCanvas;
-
-    void doDraw();
+    void handleEvents();
+    bool fQuit;
+    uint32_t fWindowFlags;
+    SDL_Window* fWindow;
+    SDL_GLContext fGLContext;
 
     typedef SkWindow INHERITED;
 };

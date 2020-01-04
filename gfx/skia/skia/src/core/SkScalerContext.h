@@ -14,11 +14,7 @@
 #include "SkPaint.h"
 #include "SkTypeface.h"
 
-#ifdef SK_BUILD_FOR_ANDROID
-    #include "SkPaintOptionsAndroid.h"
-#endif
-
-struct SkGlyph;
+class SkGlyph;
 class SkDescriptor;
 class SkMaskFilter;
 class SkPathEffect;
@@ -29,7 +25,6 @@ class SkRasterizer;
 
 
 struct SkScalerContextRec {
-    uint32_t    fOrigFontID;
     uint32_t    fFontID;
     SkScalar    fTextSize, fPreScaleX, fPreSkewX;
     SkScalar    fPost2x2[2][2];
@@ -88,6 +83,50 @@ struct SkScalerContextRec {
     void    getMatrixFrom2x2(SkMatrix*) const;
     void    getLocalMatrix(SkMatrix*) const;
     void    getSingleMatrix(SkMatrix*) const;
+
+    
+    enum PreMatrixScale {
+        kFull_PreMatrixScale,  
+        kVertical_PreMatrixScale,  
+        kVerticalInteger_PreMatrixScale  
+    };
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void computeMatrices(PreMatrixScale preMatrixScale,
+                         SkVector* scale, SkMatrix* remaining,
+                         SkMatrix* remainingWithoutRotation = nullptr,
+                         SkMatrix* remainingRotation = nullptr,
+                         SkMatrix* total = nullptr);
 
     inline SkPaint::Hinting getHinting() const;
     inline void setHinting(SkPaint::Hinting);
@@ -165,21 +204,20 @@ public:
     }
 
     
-    void setBaseGlyphCount(unsigned baseGlyphCount) {
-        fBaseGlyphCount = baseGlyphCount;
+
+
+
+
+    uint16_t charToGlyphID(SkUnichar uni) {
+        return generateCharToGlyph(uni);
     }
 
     
 
 
-
-
-    uint16_t charToGlyphID(SkUnichar uni);
-
-    
-
-
-    SkUnichar glyphIDToChar(uint16_t glyphID);
+    SkUnichar glyphIDToChar(uint16_t glyphID) {
+        return (glyphID < getGlyphCount()) ? generateGlyphToChar(glyphID) : 0;
+    }
 
     unsigned    getGlyphCount() { return this->generateGlyphCount(); }
     void        getAdvance(SkGlyph*);
@@ -199,23 +237,16 @@ public:
     static void   GetGammaLUTData(SkScalar contrast, SkScalar paintGamma, SkScalar deviceGamma,
                                   void* data);
 
-#ifdef SK_BUILD_FOR_ANDROID
-    unsigned getBaseGlyphCount(SkUnichar charCode);
-
-    
-    
-    SkFontID findTypefaceIdForChar(SkUnichar uni);
-#endif
-
-    static void MakeRec(const SkPaint&, const SkDeviceProperties* deviceProperties,
+    static void MakeRec(const SkPaint&, const SkSurfaceProps* surfaceProps,
                         const SkMatrix*, Rec* rec);
     static inline void PostMakeRec(const SkPaint&, Rec*);
 
     static SkMaskGamma::PreBlend GetMaskPreBlend(const Rec& rec);
 
+    const Rec& getRec() const { return fRec; }
+
 protected:
     Rec         fRec;
-    unsigned    fBaseGlyphCount;
 
     
 
@@ -267,14 +298,13 @@ protected:
     virtual SkUnichar generateGlyphToChar(uint16_t glyphId);
 
     void forceGenerateImageFromPath() { fGenerateImageFromPath = true; }
+    void forceOffGenerateImageFromPath() { fGenerateImageFromPath = false; }
 
 private:
+    friend class SkRandomScalerContext; 
+
     
     SkAutoTUnref<SkTypeface> fTypeface;
-
-#ifdef SK_BUILD_FOR_ANDROID
-    SkPaintOptionsAndroid fPaintOptionsAndroid;
-#endif
 
     
     SkPathEffect*   fPathEffect;
@@ -290,22 +320,8 @@ private:
 
     
     
-    SkScalerContext* allocNextContext() const;
-
-    
-    SkScalerContext* getNextContext();
-
-    
-    
-    SkScalerContext* getGlyphContext(const SkGlyph& glyph);
-
-    
-    
     
     SkScalerContext* getContextFromChar(SkUnichar uni, uint16_t* glyphID);
-
-    
-    SkScalerContext* fNextContext;
 
     
 protected:
@@ -321,9 +337,6 @@ private:
 #define kPathEffect_SkDescriptorTag     SkSetFourByteTag('p', 't', 'h', 'e')
 #define kMaskFilter_SkDescriptorTag     SkSetFourByteTag('m', 's', 'k', 'f')
 #define kRasterizer_SkDescriptorTag     SkSetFourByteTag('r', 'a', 's', 't')
-#ifdef SK_BUILD_FOR_ANDROID
-#define kAndroidOpts_SkDescriptorTag    SkSetFourByteTag('a', 'n', 'd', 'r')
-#endif
 
 
 

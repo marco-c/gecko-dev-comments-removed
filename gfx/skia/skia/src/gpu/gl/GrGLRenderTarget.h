@@ -13,41 +13,27 @@
 #include "GrRenderTarget.h"
 #include "SkScalar.h"
 
-class GrGpuGL;
-class GrGLTexture;
-class GrGLTexID;
+class GrGLGpu;
+class GrGLStencilAttachment;
 
 class GrGLRenderTarget : public GrRenderTarget {
-
 public:
     
     
     enum { kUnresolvableFBOID = 0 };
 
-    struct Desc {
-        GrGLuint         fRTFBOID;
-        GrGLuint         fTexFBOID;
-        GrGLuint         fMSColorRenderbufferID;
-        bool             fIsWrapped;
-        GrPixelConfig    fConfig;
-        int              fSampleCnt;
-        GrSurfaceOrigin  fOrigin;
-        bool             fCheckAllocation;
+    struct IDDesc {
+        GrGLuint                     fRTFBOID;
+        GrGLuint                     fTexFBOID;
+        GrGLuint                     fMSColorRenderbufferID;
+        GrGpuResource::LifeCycle     fLifeCycle;
+        GrRenderTarget::SampleConfig fSampleConfig;
     };
 
-    
-    GrGLRenderTarget(GrGpuGL*          gpu,
-                     const Desc&       desc,
-                     const GrGLIRect&  viewport,
-                     GrGLTexID*        texID,
-                     GrGLTexture*      texture);
-
-    
-    GrGLRenderTarget(GrGpuGL*          gpu,
-                     const Desc&       desc,
-                     const GrGLIRect&  viewport);
-
-    virtual ~GrGLRenderTarget() { this->release(); }
+    static GrGLRenderTarget* CreateWrapped(GrGLGpu*,
+                                           const GrSurfaceDesc&,
+                                           const IDDesc&,
+                                           int stencilBits);
 
     void setViewport(const GrGLIRect& rect) { fViewport = rect; }
     const GrGLIRect& getViewport() const { return fViewport; }
@@ -61,15 +47,8 @@ public:
     GrGLuint textureFBOID() const { return fTexFBOID; }
 
     
-    virtual GrBackendObject getRenderTargetHandle() const {
-        return this->renderFBOID();
-    }
-    virtual GrBackendObject getRenderTargetResolvedHandle() const {
-        return this->textureFBOID();
-    }
-    virtual ResolveType getResolveType() const {
-
-        if (!this->isMultisampled() ||
+    ResolveType getResolveType() const override {
+        if (!this->isUnifiedMultisampled() ||
             fRTFBOID == fTexFBOID) {
             
             return kAutoResolves_ResolveType;
@@ -80,26 +59,62 @@ public:
         }
     }
 
+    GrBackendObject getRenderTargetHandle() const override { return fRTFBOID; }
+
+    
+    bool canAttemptStencilAttachment() const override {
+        return kCached_LifeCycle == fRTLifecycle || kUncached_LifeCycle == fRTLifecycle;
+    }
+
+    
+    
+    void dumpMemoryStatistics(SkTraceMemoryDump* traceMemoryDump) const override;
+
 protected:
     
-    virtual void onAbandon() SK_OVERRIDE;
-    virtual void onRelease() SK_OVERRIDE;
+    
+    
+    enum Derived { kDerived };
+    GrGLRenderTarget(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, Derived);
+
+    void init(const GrSurfaceDesc&, const IDDesc&);
+
+    void onAbandon() override;
+    void onRelease() override;
+
+    
+    size_t onGpuMemorySize() const override;
 
 private:
-    GrGLuint      fRTFBOID;
-    GrGLuint      fTexFBOID;
+    
+    
+    GrGLRenderTarget(GrGLGpu*, const GrSurfaceDesc&, const IDDesc&, GrGLStencilAttachment*);
 
-    GrGLuint      fMSColorRenderbufferID;
+    GrGLGpu* getGLGpu() const;
+    bool completeStencilAttachment() override;
+
+    
+    size_t totalBytesPerSample() const;
+    int msaaSamples() const;
+    
+    int totalSamples() const;
+
+    GrGLuint    fRTFBOID;
+    GrGLuint    fTexFBOID;
+    GrGLuint    fMSColorRenderbufferID;
+
+    
+    
+    LifeCycle   fRTLifecycle;
 
     
     
     
-    GrGLIRect fViewport;
+    GrGLIRect   fViewport;
 
     
-    SkAutoTUnref<GrGLTexID> fTexIDObj;
-
-    void init(const Desc& desc, const GrGLIRect& viewport, GrGLTexID* texID);
+    
+    size_t      fGpuMemorySize;
 
     typedef GrRenderTarget INHERITED;
 };

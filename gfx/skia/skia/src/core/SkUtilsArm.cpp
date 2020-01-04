@@ -16,72 +16,29 @@
 #include <string.h>
 #include <pthread.h>
 
-
-
-
-
-#if !defined(USE_ANDROID_NDK_CPU_FEATURES)
-#  if defined(SK_BUILD_FOR_ANDROID)
-#    define USE_ANDROID_NDK_CPU_FEATURES 1
+#if defined(SK_BUILD_FOR_ANDROID)
+#  ifdef MOZ_SKIA
+#    include "mozilla/arm.h"
 #  else
-#    define USE_ANDROID_NDK_CPU_FEATURES 0
-#  endif
-#endif
-
-#if USE_ANDROID_NDK_CPU_FEATURES
-#  include <cpu-features.h>
-#endif
-
-
-
-#ifdef SK_DEBUG
-#  define NEON_DEBUG  1
-#else
-#  define NEON_DEBUG 0
-#endif
-
-#if NEON_DEBUG
-#  ifdef SK_BUILD_FOR_ANDROID
-     
-#    include <sys/system_properties.h>
+#    include <cpu-features.h>
 #  endif
 #endif
 
 
 
 static bool sk_cpu_arm_check_neon(void) {
+    
+    
     bool result = false;
 
-#if NEON_DEBUG
-    
-#  ifdef SK_BUILD_FOR_ANDROID
-    
-#   define PROP_NAME  "debug.skia.arm_neon_mode"
-    char prop[PROP_VALUE_MAX];
-    if (__system_property_get(PROP_NAME, prop) > 0) {
+
+
+#ifdef SK_BUILD_FOR_ANDROID
+#  ifdef MOZ_SKIA
+  result = mozilla::supports_neon();
 #  else
-#   define PROP_NAME   "SKIA_ARM_NEON_MODE"
-    
-    const char* prop = getenv(PROP_NAME);
-    if (prop != NULL) {
-#  endif
-        SkDebugf("%s: %s", PROP_NAME, prop);
-        if (!strcmp(prop, "1")) {
-            SkDebugf("Forcing ARM Neon mode to full!\n");
-            return true;
-        }
-        if (!strcmp(prop, "0")) {
-            SkDebugf("Disabling ARM NEON mode\n");
-            return false;
-        }
-    }
-    SkDebugf("Running dynamic CPU feature detection\n");
-#endif
-
-#if USE_ANDROID_NDK_CPU_FEATURES
-
   result = (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON) != 0;
-
+#endif
 #else  
 
     
@@ -102,10 +59,6 @@ static bool sk_cpu_arm_check_neon(void) {
 
 
     char   buffer[4096];
-
-    
-    
-    result = false;
 
     do {
         
@@ -141,7 +94,7 @@ static bool sk_cpu_arm_check_neon(void) {
 
         char*  line = (char*) memmem(buffer, buffer_end - buffer,
                                      features, features_len);
-        if (line == NULL) {  
+        if (line == nullptr) {  
             SkDebugf("Could not find a line starting with 'Features'"
               "in /proc/cpuinfo ?\n");
             break;
@@ -151,7 +104,7 @@ static bool sk_cpu_arm_check_neon(void) {
 
         
         char* line_end = (char*) memchr(line, '\n', buffer_end - line);
-        if (line_end == NULL)
+        if (line_end == nullptr)
             line_end = buffer_end;
 
         
@@ -161,7 +114,7 @@ static bool sk_cpu_arm_check_neon(void) {
         const size_t neon_len = sizeof(neon)-1;
         const char* flag = (const char*) memmem(line, line_end - line,
                                                 neon, neon_len);
-        if (flag == NULL)
+        if (flag == nullptr)
             break;
 
         
@@ -176,9 +129,9 @@ static bool sk_cpu_arm_check_neon(void) {
 #endif  
 
     if (result) {
-        SkDebugf("Device supports ARM NEON instructions!\n");
+        SkDEBUGF(("Device supports ARM NEON instructions!\n"));
     } else {
-        SkDebugf("Device does NOT support ARM NEON instructions!\n");
+        SkDEBUGF(("Device does NOT support ARM NEON instructions!\n"));
     }
     return result;
 }

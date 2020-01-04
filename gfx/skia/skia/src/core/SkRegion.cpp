@@ -7,9 +7,9 @@
 
 
 
+#include "SkAtomics.h"
 #include "SkRegionPriv.h"
 #include "SkTemplates.h"
-#include "SkThread.h"
 #include "SkUtils.h"
 
 
@@ -193,9 +193,9 @@ char* SkRegion::toString() {
     }
     
     const int max = (count*((11*4)+5))+11+1;
-    char* result = (char*)malloc(max);
-    if (result == NULL) {
-        return NULL;
+    char* result = (char*)sk_malloc_throw(max);
+    if (result == nullptr) {
+        return nullptr;
     }
     count = sprintf(result, "SkRegion(");
     iter.reset(*this);
@@ -408,7 +408,7 @@ bool SkRegion::contains(const SkRegion& rgn) const {
 
 
 
-    return !Oper(rgn, *this, kDifference_Op, NULL);
+    return !Oper(rgn, *this, kDifference_Op, nullptr);
 }
 
 const SkRegion::RunType* SkRegion::getRuns(RunType tmpStorage[],
@@ -498,7 +498,7 @@ bool SkRegion::intersects(const SkRegion& rgn) const {
     }
 
     
-    return Oper(*this, rgn, kIntersect_Op, NULL);
+    return Oper(*this, rgn, kIntersect_Op, nullptr);
 }
 
 
@@ -533,7 +533,7 @@ bool SkRegion::operator==(const SkRegion& b) const {
 void SkRegion::translate(int dx, int dy, SkRegion* dst) const {
     SkDEBUGCODE(this->validate();)
 
-    if (NULL == dst) {
+    if (nullptr == dst) {
         return;
     }
     if (this->isEmpty()) {
@@ -1074,7 +1074,7 @@ bool SkRegion::Oper(const SkRegion& rgnaOrig, const SkRegion& rgnbOrig, Op op,
 
 #endif
 
-    int count = operate(a_runs, b_runs, array.get(), op, NULL == result);
+    int count = operate(a_runs, b_runs, array.get(), op, nullptr == result);
     SkASSERT(count <= dstCount);
 
     if (result) {
@@ -1095,7 +1095,7 @@ bool SkRegion::op(const SkRegion& rgna, const SkRegion& rgnb, Op op) {
 #include "SkBuffer.h"
 
 size_t SkRegion::writeToMemory(void* storage) const {
-    if (NULL == storage) {
+    if (nullptr == storage) {
         size_t size = sizeof(int32_t); 
         if (!this->isEmpty()) {
             size += sizeof(fBounds);
@@ -1295,7 +1295,7 @@ void SkRegion::Iterator::reset(const SkRegion& rgn) {
         fDone = false;
         if (rgn.isRect()) {
             fRect = rgn.fBounds;
-            fRuns = NULL;
+            fRuns = nullptr;
         } else {
             fRuns = rgn.fRunHead->readonly_runs();
             fRect.set(fRuns[3], fRuns[0], fRuns[4], fRuns[1]);
@@ -1310,7 +1310,7 @@ void SkRegion::Iterator::next() {
         return;
     }
 
-    if (fRuns == NULL) {   
+    if (fRuns == nullptr) {   
         fDone = true;
         return;
     }
@@ -1402,7 +1402,7 @@ SkRegion::Spanerator::Spanerator(const SkRegion& rgn, int y, int left,
             }
             fLeft = left;
             fRight = right;
-            fRuns = NULL;    
+            fRuns = nullptr;    
             fDone = false;
         } else {
             const SkRegion::RunType* runs = rgn.fRunHead->findScanline(y);
@@ -1433,7 +1433,7 @@ bool SkRegion::Spanerator::next(int* left, int* right) {
         return false;
     }
 
-    if (fRuns == NULL) {   
+    if (fRuns == nullptr) {   
         fDone = true;   
         if (left) {
             *left = fLeft;

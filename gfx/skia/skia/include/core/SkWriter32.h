@@ -10,6 +10,7 @@
 #ifndef SkWriter32_DEFINED
 #define SkWriter32_DEFINED
 
+#include "../private/SkTemplates.h"
 #include "SkData.h"
 #include "SkMatrix.h"
 #include "SkPath.h"
@@ -19,7 +20,6 @@
 #include "SkRegion.h"
 #include "SkScalar.h"
 #include "SkStream.h"
-#include "SkTemplates.h"
 #include "SkTypes.h"
 
 class SK_API SkWriter32 : SkNoncopyable {
@@ -45,7 +45,6 @@ public:
         SkASSERT(SkIsAlign4((uintptr_t)external));
         SkASSERT(SkIsAlign4(externalBytes));
 
-        fSnapshot.reset(NULL);
         fData = (uint8_t*)external;
         fCapacity = externalBytes;
         fUsed = 0;
@@ -89,7 +88,6 @@ public:
     void overwriteTAt(size_t offset, const T& value) {
         SkASSERT(SkAlign4(offset) == offset);
         SkASSERT(offset < fUsed);
-        SkASSERT(fSnapshot.get() == NULL);
         *(T*)(fData + offset) = value;
     }
 
@@ -236,14 +234,6 @@ public:
     
 
 
-
-
-
-
-
-
-
-
     SkData* snapshotAsData() const;
 private:
     void growToAtLeast(size_t size);
@@ -253,7 +243,6 @@ private:
     size_t fUsed;                      
     void* fExternal;                   
     SkAutoTMalloc<uint8_t> fInternal;  
-    SkAutoTUnref<SkData> fSnapshot;    
 };
 
 

@@ -7,16 +7,21 @@
 
 
 
-#include <string>
-#include <unistd.h>
-#include <fcntl.h>
+#include "SkBuffer.h"
+#include "SkDataTable.h"
+#include "SkFontConfigInterface_direct.h"
+#include "SkFontStyle.h"
+#include "SkMutex.h"
+#include "SkStream.h"
+#include "SkString.h"
+#include "SkTArray.h"
+#include "SkTDArray.h"
+#include "SkTemplates.h"
+#include "SkTypeface.h"
+#include "SkTypes.h"
 
 #include <fontconfig/fontconfig.h>
-
-#include "SkBuffer.h"
-#include "SkFontConfigInterface.h"
-#include "SkLazyPtr.h"
-#include "SkStream.h"
+#include <unistd.h>
 
 size_t SkFontConfigInterface::FontIdentity::writeToMemory(void* addr) const {
     size_t size = sizeof(fID) + sizeof(fTTCIndex);
@@ -72,7 +77,7 @@ static void test_writeToMemory(const SkFontConfigInterface::FontIdentity& iden0,
                                int initValue) {
     SkFontConfigInterface::FontIdentity iden1;
 
-    size_t size0 = iden0.writeToMemory(NULL);
+    size_t size0 = iden0.writeToMemory(nullptr);
 
     SkAutoMalloc storage(size0);
     memset(storage.get(), initValue, size0);
@@ -102,37 +107,6 @@ static void fontconfiginterface_unittest() {
 }
 #endif
 
-class SkFontConfigInterfaceDirect : public SkFontConfigInterface {
-public:
-            SkFontConfigInterfaceDirect();
-    virtual ~SkFontConfigInterfaceDirect();
-
-    virtual bool matchFamilyName(const char familyName[],
-                                 SkTypeface::Style requested,
-                                 FontIdentity* outFontIdentifier,
-                                 SkString* outFamilyName,
-                                 SkTypeface::Style* outStyle) SK_OVERRIDE;
-    virtual SkStream* openStream(const FontIdentity&) SK_OVERRIDE;
-
-    
-    virtual SkDataTable* getFamilyNames() SK_OVERRIDE;
-    virtual bool matchFamilySet(const char inFamilyName[],
-                                SkString* outFamilyName,
-                                SkTArray<FontIdentity>*) SK_OVERRIDE;
-
-private:
-    SkMutex mutex_;
-};
-
-SkFontConfigInterface* SkFontConfigInterface::GetSingletonDirectInterface(SkBaseMutex* mutex) {
-    SkAutoMutexAcquire ac(mutex);
-    static SkFontConfigInterfaceDirect* singleton = NULL;
-    if (singleton == NULL) {
-        singleton = SkNEW(SkFontConfigInterfaceDirect);
-    }
-    return singleton;
-}
-
 
 
 
@@ -141,7 +115,7 @@ static const char* get_name(FcPattern* pattern, const char field[],
     const char* name;
     if (FcPatternGetString(pattern, field, index,
                            (FcChar8**)&name) != FcResultMatch) {
-        name = NULL;
+        name = nullptr;
     }
     return name;
 }
@@ -221,6 +195,7 @@ FontEquivClass GetFontEquivClass(const char* fontname)
         { PGOTHIC, "MS PGothic" },
         { PGOTHIC, "\xef\xbc\xad\xef\xbc\xb3 \xef\xbc\xb0"
                    "\xe3\x82\xb4\xe3\x82\xb7\xe3\x83\x83\xe3\x82\xaf" },
+        { PGOTHIC, "Noto Sans CJK JP" },
         { PGOTHIC, "IPAPGothic" },
         { PGOTHIC, "MotoyaG04Gothic" },
 
@@ -228,6 +203,7 @@ FontEquivClass GetFontEquivClass(const char* fontname)
         { GOTHIC, "MS Gothic" },
         { GOTHIC, "\xef\xbc\xad\xef\xbc\xb3 "
                   "\xe3\x82\xb4\xe3\x82\xb7\xe3\x83\x83\xe3\x82\xaf" },
+        { GOTHIC, "Noto Sans Mono CJK JP" },
         { GOTHIC, "IPAGothic" },
         { GOTHIC, "MotoyaG04GothicMono" },
 
@@ -259,6 +235,7 @@ FontEquivClass GetFontEquivClass(const char* fontname)
         
         { SIMHEI, "Simhei" },
         { SIMHEI, "\xe9\xbb\x91\xe4\xbd\x93" },
+        { SIMHEI, "Noto Sans CJK SC" },
         { SIMHEI, "MYingHeiGB18030" },
         { SIMHEI, "MYingHeiB5HK" },
 
@@ -318,72 +295,12 @@ bool IsMetricCompatibleReplacement(const char* font_a, const char* font_b)
 
 
 
-bool IsFallbackFontAllowed(const std::string& family) {
+bool IsFallbackFontAllowed(const SkString& family) {
   const char* family_cstr = family.c_str();
-  return family.empty() ||
+  return family.isEmpty() ||
          strcasecmp(family_cstr, "sans") == 0 ||
          strcasecmp(family_cstr, "serif") == 0 ||
          strcasecmp(family_cstr, "monospace") == 0;
-}
-
-static bool valid_pattern(FcPattern* pattern) {
-#ifdef SK_FONT_CONFIG_ONLY_ALLOW_SCALABLE_FONTS
-    FcBool is_scalable;
-    if (FcPatternGetBool(pattern, FC_SCALABLE, 0, &is_scalable) != FcResultMatch
-        || !is_scalable) {
-        return false;
-    }
-#endif
-
-    
-    const char* c_filename = get_name(pattern, FC_FILE);
-    if (!c_filename) {
-        return false;
-    }
-    if (access(c_filename, R_OK) != 0) {
-        return false;
-    }
-    return true;
-}
-
-
-FcPattern* MatchFont(FcFontSet* font_set,
-                     const char* post_config_family,
-                     const std::string& family) {
-  
-  
-  FcPattern* match = NULL;
-  for (int i = 0; i < font_set->nfont; ++i) {
-    FcPattern* current = font_set->fonts[i];
-    if (valid_pattern(current)) {
-      match = current;
-      break;
-    }
-  }
-
-  if (match && !IsFallbackFontAllowed(family)) {
-    bool acceptable_substitute = false;
-    for (int id = 0; id < 255; ++id) {
-      const char* post_match_family = get_name(match, FC_FAMILY, id);
-      if (!post_match_family)
-        break;
-      acceptable_substitute =
-          (strcasecmp(post_config_family, post_match_family) == 0 ||
-           
-           
-           
-           
-           
-           strcasecmp(family.c_str(), post_match_family) == 0) ||
-           IsMetricCompatibleReplacement(family.c_str(), post_match_family);
-      if (acceptable_substitute)
-        break;
-    }
-    if (!acceptable_substitute)
-      return NULL;
-  }
-
-  return match;
 }
 
 
@@ -436,13 +353,77 @@ SkFontConfigInterfaceDirect::SkFontConfigInterfaceDirect() {
 SkFontConfigInterfaceDirect::~SkFontConfigInterfaceDirect() {
 }
 
+bool SkFontConfigInterfaceDirect::isAccessible(const char* filename) {
+    if (access(filename, R_OK) != 0) {
+        return false;
+    }
+    return true;
+}
+
+bool SkFontConfigInterfaceDirect::isValidPattern(FcPattern* pattern) {
+#ifdef SK_FONT_CONFIG_ONLY_ALLOW_SCALABLE_FONTS
+    FcBool is_scalable;
+    if (FcPatternGetBool(pattern, FC_SCALABLE, 0, &is_scalable) != FcResultMatch
+        || !is_scalable) {
+        return false;
+    }
+#endif
+
+    
+    const char* c_filename = get_name(pattern, FC_FILE);
+    if (!c_filename) {
+        return false;
+    }
+    return this->isAccessible(c_filename);
+}
+
+
+FcPattern* SkFontConfigInterfaceDirect::MatchFont(FcFontSet* font_set,
+                                                  const char* post_config_family,
+                                                  const SkString& family) {
+  
+  
+  FcPattern* match = nullptr;
+  for (int i = 0; i < font_set->nfont; ++i) {
+    FcPattern* current = font_set->fonts[i];
+    if (this->isValidPattern(current)) {
+      match = current;
+      break;
+    }
+  }
+
+  if (match && !IsFallbackFontAllowed(family)) {
+    bool acceptable_substitute = false;
+    for (int id = 0; id < 255; ++id) {
+      const char* post_match_family = get_name(match, FC_FAMILY, id);
+      if (!post_match_family)
+        break;
+      acceptable_substitute =
+          (strcasecmp(post_config_family, post_match_family) == 0 ||
+           
+           
+           
+           
+           
+           strcasecmp(family.c_str(), post_match_family) == 0) ||
+           IsMetricCompatibleReplacement(family.c_str(), post_match_family);
+      if (acceptable_substitute)
+        break;
+    }
+    if (!acceptable_substitute)
+      return nullptr;
+  }
+
+  return match;
+}
+
 bool SkFontConfigInterfaceDirect::matchFamilyName(const char familyName[],
                                                   SkTypeface::Style style,
                                                   FontIdentity* outIdentity,
                                                   SkString* outFamilyName,
                                                   SkTypeface::Style* outStyle) {
-    std::string familyStr(familyName ? familyName : "");
-    if (familyStr.length() > kMaxFontFamilyLength) {
+    SkString familyStr(familyName ? familyName : "");
+    if (familyStr.size() > kMaxFontFamilyLength) {
         return false;
     }
 
@@ -461,7 +442,7 @@ bool SkFontConfigInterfaceDirect::matchFamilyName(const char familyName[],
                                                       : FC_SLANT_ROMAN);
     FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
 
-    FcConfigSubstitute(NULL, pattern, FcMatchPattern);
+    FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
     FcDefaultSubstitute(pattern);
 
     
@@ -506,7 +487,7 @@ bool SkFontConfigInterfaceDirect::matchFamilyName(const char familyName[],
         return false;
     }
 
-    FcPattern* match = MatchFont(font_set, post_config_family, familyStr);
+    FcPattern* match = this->MatchFont(font_set, post_config_family, familyStr);
     if (!match) {
         FcPatternDestroy(pattern);
         FcFontSetDestroy(font_set);
@@ -550,7 +531,7 @@ bool SkFontConfigInterfaceDirect::matchFamilyName(const char familyName[],
     return true;
 }
 
-SkStream* SkFontConfigInterfaceDirect::openStream(const FontIdentity& identity) {
+SkStreamAsset* SkFontConfigInterfaceDirect::openStream(const FontIdentity& identity) {
     return SkStream::NewFromFile(identity.fString.c_str());
 }
 
@@ -571,20 +552,20 @@ SkDataTable* SkFontConfigInterfaceDirect::getFamilyNames() {
 
     FcPattern* pat = FcPatternCreate();
     SkAutoTCallVProc<FcPattern, FcPatternDestroy> autoDestroyPat(pat);
-    if (NULL == pat) {
-        return NULL;
+    if (nullptr == pat) {
+        return nullptr;
     }
 
     FcObjectSet* os = FcObjectSetBuild(FC_FAMILY, (char *)0);
     SkAutoTCallVProc<FcObjectSet, FcObjectSetDestroy> autoDestroyOs(os);
-    if (NULL == os) {
-        return NULL;
+    if (nullptr == os) {
+        return nullptr;
     }
 
-    FcFontSet* fs = FcFontList(NULL, pat, os);
+    FcFontSet* fs = FcFontList(nullptr, pat, os);
     SkAutoTCallVProc<FcFontSet, FcFontSetDestroy> autoDestroyFs(fs);
-    if (NULL == fs) {
-        return NULL;
+    if (nullptr == fs) {
+        return nullptr;
     }
 
     SkTDArray<const char*> names;
@@ -608,8 +589,8 @@ bool SkFontConfigInterfaceDirect::matchFamilySet(const char inFamilyName[],
     SkAutoMutexAcquire ac(mutex_);
 
 #if 0
-    std::string familyStr(familyName ? familyName : "");
-    if (familyStr.length() > kMaxFontFamilyLength) {
+    SkString familyStr(familyName ? familyName : "");
+    if (familyStr.size() > kMaxFontFamilyLength) {
         return false;
     }
 
@@ -622,7 +603,7 @@ bool SkFontConfigInterfaceDirect::matchFamilySet(const char inFamilyName[],
     }
     FcPatternAddBool(pattern, FC_SCALABLE, FcTrue);
 
-    FcConfigSubstitute(NULL, pattern, FcMatchPattern);
+    FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
     FcDefaultSubstitute(pattern);
 
     
@@ -663,7 +644,7 @@ bool SkFontConfigInterfaceDirect::matchFamilySet(const char inFamilyName[],
         return false;
     }
 
-    FcPattern* match = MatchFont(font_set, post_config_family, familyStr);
+    FcPattern* match = this->MatchFont(font_set, post_config_family, familyStr);
     if (!match) {
         FcPatternDestroy(pattern);
         FcFontSetDestroy(font_set);
@@ -708,11 +689,11 @@ bool SkFontConfigInterfaceDirect::matchFamilySet(const char inFamilyName[],
 
 
         int count;
-        FcPattern** match = MatchFont(font_set, post_config_family, &count);
+        FcPattern** match = this->MatchFont(font_set, post_config_family, &count);
         if (!match) {
             FcPatternDestroy(pattern);
             FcFontSetDestroy(font_set);
-            return NULL;
+            return nullptr;
         }
 
         FcPatternDestroy(pattern);
@@ -725,9 +706,7 @@ bool SkFontConfigInterfaceDirect::matchFamilySet(const char inFamilyName[],
             }
         }
 
-        SkFontStyleSet_FC* sset = SkNEW_ARGS(SkFontStyleSet_FC,
-                                             (trimmedMatches.begin(),
-                                              trimmedMatches.count()));
+        SkFontStyleSet_FC* sset = new SkFontStyleSet_FC                                               (trimmedMatches.begin(),                                               trimmedMatches.count());
 #endif
     return false;
 }

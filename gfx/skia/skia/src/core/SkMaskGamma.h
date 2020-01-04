@@ -92,7 +92,7 @@ void SkTMaskGamma_build_correcting_lut(uint8_t table[256], U8CPU srcI, SkScalar 
 
 
 template <int R_LUM_BITS, int G_LUM_BITS, int B_LUM_BITS> class SkTMaskGamma : public SkRefCnt {
-    SK_DECLARE_INST_COUNT(SkTMaskGamma)
+    
 public:
 
     
@@ -182,7 +182,7 @@ private:
     friend class SkTMaskGamma<R_LUM_BITS, G_LUM_BITS, B_LUM_BITS>;
 public:
     
-    SkTMaskPreBlend() : fParent(), fR(NULL), fG(NULL), fB(NULL) { }
+    SkTMaskPreBlend() : fParent(), fR(nullptr), fG(nullptr), fB(nullptr) { }
 
     
 
@@ -194,9 +194,7 @@ public:
     ~SkTMaskPreBlend() { }
 
     
-    bool isApplicable() const {
-        return NULL != this->fG;
-    }
+    bool isApplicable() const { return SkToBool(this->fG); }
 
     const uint8_t* fR;
     const uint8_t* fG;

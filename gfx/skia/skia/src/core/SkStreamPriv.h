@@ -43,4 +43,10 @@ SkData *SkCopyStreamToData(SkStream* stream);
 
 SkStreamRewindable* SkStreamRewindableFromSkStream(SkStream* stream);
 
+
+
+
+
+bool SkStreamCopy(SkWStream* out, SkStream* input);
+
 #endif  

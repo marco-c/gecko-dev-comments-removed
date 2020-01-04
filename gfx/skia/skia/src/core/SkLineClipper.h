@@ -30,7 +30,7 @@ public:
 
 
     static int ClipLine(const SkPoint pts[2], const SkRect& clip,
-                        SkPoint lines[kMaxPoints]);
+                        SkPoint lines[kMaxPoints], bool canCullToTheRight);
 
     
 
@@ -40,8 +40,7 @@ public:
 
 
 
-    static bool IntersectLine(const SkPoint src[2], const SkRect& clip,
-                              SkPoint dst[2]);
+    static bool IntersectLine(const SkPoint src[2], const SkRect& clip, SkPoint dst[2]);
 };
 
 #endif

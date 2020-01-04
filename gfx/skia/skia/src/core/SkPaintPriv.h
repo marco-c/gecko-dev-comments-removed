@@ -8,25 +8,43 @@
 #ifndef SkPaintPriv_DEFINED
 #define SkPaintPriv_DEFINED
 
-class SkBitmap;
-class SkPaint;
-
 #include "SkTypes.h"
 
+class SkBitmap;
+class SkImage;
+class SkPaint;
+
+class SkPaintPriv {
+public:
+    enum ShaderOverrideOpacity {
+        kNone_ShaderOverrideOpacity,        
+        kOpaque_ShaderOverrideOpacity,      
+        kNotOpaque_ShaderOverrideOpacity,   
+    };
+    
+    
 
 
 
 
 
+    static bool Overwrites(const SkPaint* paint, ShaderOverrideOpacity);
+
+    static bool Overwrites(const SkPaint& paint) {
+        return Overwrites(&paint, kNone_ShaderOverrideOpacity);
+    }
+
+    
 
 
-bool isPaintOpaque(const SkPaint* paint,
-                   const SkBitmap* bmpReplacesShader = NULL);
+
+    static bool Overwrites(const SkBitmap&, const SkPaint* paint);
+
+    
 
 
 
+    static bool Overwrites(const SkImage*, const SkPaint* paint);
+};
 
-
-
-bool NeedsDeepCopy(const SkPaint& paint);
 #endif

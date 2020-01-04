@@ -12,12 +12,16 @@
 
 #include "SkTypes.h"
 
+class SkString;
+
 
 
 
 class SkTime {
 public:
     struct DateTime {
+        int16_t  fTimeZoneMinutes;  
+                                    
         uint16_t fYear;          
         uint8_t  fMonth;         
         uint8_t  fDayOfWeek;     
@@ -25,10 +29,13 @@ public:
         uint8_t  fHour;          
         uint8_t  fMinute;        
         uint8_t  fSecond;        
+
+        void toISO8601(SkString* dst) const;
     };
     static void GetDateTime(DateTime*);
 
-    static SkMSec GetMSecs();
+    static SkMSec GetMSecs() { return (SkMSec)(GetNSecs() * 1e-6); }
+    static double GetNSecs();
 };
 
 #if defined(SK_DEBUG) && defined(SK_BUILD_FOR_WIN32)

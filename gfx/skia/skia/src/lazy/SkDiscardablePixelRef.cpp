@@ -17,9 +17,10 @@ SkDiscardablePixelRef::SkDiscardablePixelRef(const SkImageInfo& info,
     , fGenerator(generator)
     , fDMFactory(fact)
     , fRowBytes(rowBytes)
-    , fDiscardableMemory(NULL)
+    , fDiscardableMemory(nullptr)
+    , fDiscardableMemoryIsLocked(false)
 {
-    SkASSERT(fGenerator != NULL);
+    SkASSERT(fGenerator != nullptr);
     SkASSERT(fRowBytes > 0);
     
     
@@ -28,34 +29,40 @@ SkDiscardablePixelRef::SkDiscardablePixelRef(const SkImageInfo& info,
 }
 
 SkDiscardablePixelRef::~SkDiscardablePixelRef() {
-    if (this->isLocked()) {
+    if (fDiscardableMemoryIsLocked) {
         fDiscardableMemory->unlock();
+        fDiscardableMemoryIsLocked = false;
     }
-    SkDELETE(fDiscardableMemory);
+    delete fDiscardableMemory;
     SkSafeUnref(fDMFactory);
-    SkDELETE(fGenerator);
+    delete fGenerator;
 }
 
 bool SkDiscardablePixelRef::onNewLockPixels(LockRec* rec) {
-    if (fDiscardableMemory != NULL) {
+    if (fDiscardableMemory != nullptr) {
         if (fDiscardableMemory->lock()) {
+            fDiscardableMemoryIsLocked = true;
             rec->fPixels = fDiscardableMemory->data();
             rec->fColorTable = fCTable.get();
             rec->fRowBytes = fRowBytes;
             return true;
         }
-        SkDELETE(fDiscardableMemory);
-        fDiscardableMemory = NULL;
+        delete fDiscardableMemory;
+        fDiscardableMemory = nullptr;
+        fDiscardableMemoryIsLocked = false;
     }
 
     const size_t size = this->info().getSafeSize(fRowBytes);
 
-    if (fDMFactory != NULL) {
+    if (fDMFactory != nullptr) {
         fDiscardableMemory = fDMFactory->create(size);
+        fDiscardableMemoryIsLocked = true;
     } else {
         fDiscardableMemory = SkDiscardableMemory::Create(size);
+        fDiscardableMemoryIsLocked = true;
     }
-    if (NULL == fDiscardableMemory) {
+    if (nullptr == fDiscardableMemory) {
+        fDiscardableMemoryIsLocked = false;
         return false;  
     }
 
@@ -64,14 +71,11 @@ bool SkDiscardablePixelRef::onNewLockPixels(LockRec* rec) {
     SkPMColor colors[256];
     int colorCount = 0;
 
-#ifdef SK_SUPPORT_LEGACY_IMAGEGENERATORAPI
-    if (!fGenerator->getPixels(info, pixels, fRowBytes)) {
-#else
     if (!fGenerator->getPixels(info, pixels, fRowBytes, colors, &colorCount)) {
-#endif
         fDiscardableMemory->unlock();
-        SkDELETE(fDiscardableMemory);
-        fDiscardableMemory = NULL;
+        fDiscardableMemoryIsLocked = false;
+        delete fDiscardableMemory;
+        fDiscardableMemory = nullptr;
         return false;
     }
 
@@ -81,9 +85,9 @@ bool SkDiscardablePixelRef::onNewLockPixels(LockRec* rec) {
     
     
     if (colorCount > 0) {
-        fCTable.reset(SkNEW_ARGS(SkColorTable, (colors, colorCount)));
+        fCTable.reset(new SkColorTable(colors, colorCount));
     } else {
-        fCTable.reset(NULL);
+        fCTable.reset(nullptr);
     }
 
     rec->fPixels = pixels;
@@ -94,29 +98,58 @@ bool SkDiscardablePixelRef::onNewLockPixels(LockRec* rec) {
 
 void SkDiscardablePixelRef::onUnlockPixels() {
     fDiscardableMemory->unlock();
+    fDiscardableMemoryIsLocked = false;
 }
 
-bool SkInstallDiscardablePixelRef(SkImageGenerator* generator, SkBitmap* dst,
-                                  SkDiscardableMemory::Factory* factory) {
-    SkImageInfo info;
+bool SkDEPRECATED_InstallDiscardablePixelRef(SkImageGenerator* generator, const SkIRect* subset,
+                                             SkBitmap* dst, SkDiscardableMemory::Factory* factory) {
     SkAutoTDelete<SkImageGenerator> autoGenerator(generator);
-    if ((NULL == autoGenerator.get())
-        || (!autoGenerator->getInfo(&info))
-        || (!dst->setInfo(info))) {
+    if (nullptr == autoGenerator.get()) {
         return false;
     }
-    SkASSERT(dst->colorType() != kUnknown_SkColorType);
+
+    SkImageInfo prInfo = autoGenerator->getInfo();
+    if (prInfo.isEmpty()) {
+        return false;
+    }
+
+    SkIPoint origin = SkIPoint::Make(0, 0);
+    SkImageInfo bmInfo = prInfo;
+    if (subset) {
+        const SkIRect prBounds = SkIRect::MakeWH(prInfo.width(), prInfo.height());
+        if (subset->isEmpty() || !prBounds.contains(*subset)) {
+            return false;
+        }
+        bmInfo = prInfo.makeWH(subset->width(), subset->height());
+        origin.set(subset->x(), subset->y());
+    }
+
+    
+    
+    if (!dst->setInfo(bmInfo, prInfo.minRowBytes())) {
+        return false;
+    }
+
+    
+    SkASSERT(dst->info().colorType() != kUnknown_SkColorType);
+
     if (dst->empty()) {  
-        return dst->allocPixels();
+        return dst->tryAllocPixels();
     }
     SkAutoTUnref<SkDiscardablePixelRef> ref(
-        SkNEW_ARGS(SkDiscardablePixelRef,
-                   (info, autoGenerator.detach(), dst->rowBytes(), factory)));
-    dst->setPixelRef(ref);
+            new SkDiscardablePixelRef(prInfo, autoGenerator.detach(), dst->rowBytes(), factory));
+    dst->setPixelRef(ref, origin.x(), origin.y());
     return true;
 }
 
 
-bool SkInstallDiscardablePixelRef(SkImageGenerator* generator, SkBitmap* dst) {
-    return SkInstallDiscardablePixelRef(generator, dst, NULL);
+
+bool SkDEPRECATED_InstallDiscardablePixelRef(SkImageGenerator* generator, SkBitmap* dst) {
+    return SkDEPRECATED_InstallDiscardablePixelRef(generator, nullptr, dst, nullptr);
+}
+
+bool SkDEPRECATED_InstallDiscardablePixelRef(SkData* encoded, SkBitmap* dst) {
+    SkImageGenerator* generator = SkImageGenerator::NewFromEncoded(encoded);
+    return generator ?
+            SkDEPRECATED_InstallDiscardablePixelRef(generator, nullptr, dst, nullptr) : false;
 }

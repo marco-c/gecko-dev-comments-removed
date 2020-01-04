@@ -24,7 +24,7 @@ struct SkBaseMutex;
 
 class SK_API SkFontConfigInterface : public SkRefCnt {
 public:
-    SK_DECLARE_INST_COUNT(SkFontConfigInterface)
+    
 
     
 
@@ -92,21 +92,32 @@ public:
 
 
 
-    virtual SkStream* openStream(const FontIdentity&) = 0;
+    virtual SkStreamAsset* openStream(const FontIdentity&) = 0;
 
     
 
 
 
 
-    static SkFontConfigInterface* GetSingletonDirectInterface
-        (SkBaseMutex* mutex = NULL);
+
+
+
+    virtual SkTypeface* createTypeface(const FontIdentity& identity) {
+        return SkTypeface::CreateFromStream(this->openStream(identity), identity.fTTCIndex);
+    }
+
+    
+
+
+
+
+    static SkFontConfigInterface* GetSingletonDirectInterface(SkBaseMutex* mutex = NULL);
 
     
 
     virtual SkDataTable* getFamilyNames() { return SkDataTable::NewEmpty(); }
-    virtual bool matchFamilySet(const char inFamilyName[],
-                                SkString* outFamilyName,
+    virtual bool matchFamilySet(const char[] ,
+                                SkString* ,
                                 SkTArray<FontIdentity>*) {
         return false;
     }

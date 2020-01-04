@@ -10,6 +10,7 @@
 #ifndef SkColorTable_DEFINED
 #define SkColorTable_DEFINED
 
+#include "../private/SkOncePtr.h"
 #include "SkColor.h"
 #include "SkFlattenable.h"
 #include "SkImageInfo.h"
@@ -19,22 +20,14 @@
 
 
 
-class SkColorTable : public SkRefCnt {
-public:
-    SK_DECLARE_INST_COUNT(SkColorTable)
 
+
+class SK_API SkColorTable : public SkRefCnt {
+public:
     
 
-    SkColorTable(const SkColorTable& src);
-    SkColorTable(const SkPMColor colors[], int count,
-                 SkAlphaType alphaType = kPremul_SkAlphaType);
+    SkColorTable(const SkPMColor colors[], int count);
     virtual ~SkColorTable();
-
-    SkAlphaType alphaType() const { return (SkAlphaType)fAlphaType; }
-
-    bool isOpaque() const {
-        return SkAlphaTypeIsOpaque(this->alphaType());
-    }
 
     
 
@@ -44,49 +37,46 @@ public:
 
 
     SkPMColor operator[](int index) const {
-        SkASSERT(fColors != NULL && (unsigned)index < fCount);
+        SkASSERT(fColors != NULL && (unsigned)index < (unsigned)fCount);
         return fColors[index];
     }
 
     
 
-
-
-    const SkPMColor* lockColors() {
-        SkDEBUGCODE(sk_atomic_inc(&fColorLockCount);)
-        return fColors;
-    }
+    const SkPMColor* readColors() const { return fColors; }
 
     
 
+    const uint16_t* read16BitCache() const;
 
-    void unlockColors();
-
-    
-
-
-
-
-    const uint16_t* lock16BitCache();
-    
-
-    void unlock16BitCache() {
-        SkASSERT(f16BitCacheLockCount > 0);
-        SkDEBUGCODE(f16BitCacheLockCount -= 1);
-    }
-
-    explicit SkColorTable(SkReadBuffer&);
     void writeToBuffer(SkWriteBuffer&) const;
 
-private:
-    SkPMColor*  fColors;
-    uint16_t*   f16BitCache;
-    uint16_t    fCount;
-    uint8_t     fAlphaType;
-    SkDEBUGCODE(int fColorLockCount;)
-    SkDEBUGCODE(int f16BitCacheLockCount;)
+    
+    static SkColorTable* Create(SkReadBuffer&);
 
-    void inval16BitCache();
+private:
+    enum AllocatedWithMalloc {
+        kAllocatedWithMalloc
+    };
+    
+    SkColorTable(SkPMColor* colors, int count, AllocatedWithMalloc);
+
+    SkPMColor*            fColors;
+    SkOncePtr<uint16_t[]> f16BitCache;
+    int                   fCount;
+
+    void init(const SkPMColor* colors, int count);
+
+    friend class SkImageGenerator;
+    
+    void dangerous_overwriteColors(const SkPMColor newColors[], int count) {
+        if (count < 0 || count > fCount) {
+            sk_throw();
+        }
+        
+        memcpy(fColors, newColors, count * sizeof(SkPMColor));
+        fCount = count; 
+    }
 
     typedef SkRefCnt INHERITED;
 };

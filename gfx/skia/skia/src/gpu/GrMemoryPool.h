@@ -43,6 +43,11 @@ public:
 
     bool isEmpty() const { return fTail == fHead && !fHead->fLiveCount; }
 
+    
+
+
+    size_t size() const { return fSize; }
+
 private:
     struct BlockHeader;
 
@@ -60,6 +65,7 @@ private:
         intptr_t     fCurrPtr;   
         intptr_t     fPrevPtr;   
         size_t       fFreeSize;  
+        size_t       fSize;      
     };
 
     enum {
@@ -68,12 +74,14 @@ private:
         kHeaderSize   = GR_CT_ALIGN_UP(sizeof(BlockHeader), kAlignment),
         kPerAllocPad  = GR_CT_ALIGN_UP(sizeof(BlockHeader*), kAlignment),
     };
+    size_t                            fSize;
     size_t                            fPreallocSize;
     size_t                            fMinAllocSize;
     BlockHeader*                      fHead;
     BlockHeader*                      fTail;
 #ifdef SK_DEBUG
     int                               fAllocationCnt;
+    int                               fAllocBlockCnt;
 #endif
 };
 

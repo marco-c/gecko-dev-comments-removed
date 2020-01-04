@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+#ifndef SkRunnable_DEFINED
+#define SkRunnable_DEFINED
+
+struct SkRunnable {
+    virtual ~SkRunnable() {};
+    virtual void run() = 0;
+};
+
+#endif

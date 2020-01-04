@@ -5,12 +5,11 @@
 
 
 
-
-
 #ifndef SkColor_DEFINED
 #define SkColor_DEFINED
 
 #include "SkScalar.h"
+#include "SkTypes.h"
 
 
 
@@ -160,10 +159,5 @@ SK_API SkPMColor SkPreMultiplyColor(SkColor c);
 
 
 typedef SkPMColor (*SkXfermodeProc)(SkPMColor src, SkPMColor dst);
-
-
-
-
-typedef uint16_t (*SkXfermodeProc16)(SkPMColor src, uint16_t dst);
 
 #endif

@@ -5,7 +5,6 @@
 
 
 
-
 #include "SkBitmapScaler.h"
 #include "SkBitmapProcState.h"
 

@@ -10,6 +10,7 @@
 
 #include "SkRefCnt.h"
 #include "SkImage.h"
+#include "SkSurfaceProps.h"
 
 class SkCanvas;
 class SkPaint;
@@ -24,9 +25,22 @@ class GrRenderTarget;
 
 
 
+
+
+
 class SK_API SkSurface : public SkRefCnt {
 public:
-    SK_DECLARE_INST_COUNT(SkSurface)
+    
+
+
+
+
+    enum Budgeted {
+        
+        kNo_Budgeted,
+        
+        kYes_Budgeted
+    };
 
     
 
@@ -35,7 +49,8 @@ public:
 
 
 
-    static SkSurface* NewRasterDirect(const SkImageInfo&, void* pixels, size_t rowBytes);
+    static SkSurface* NewRasterDirect(const SkImageInfo&, void* pixels, size_t rowBytes,
+                                      const SkSurfaceProps* = NULL);
 
     
 
@@ -43,7 +58,7 @@ public:
 
     static SkSurface* NewRasterDirectReleaseProc(const SkImageInfo&, void* pixels, size_t rowBytes,
                                                  void (*releaseProc)(void* pixels, void* context),
-                                                 void* context);
+                                                 void* context, const SkSurfaceProps* = NULL);
 
     
 
@@ -52,54 +67,25 @@ public:
 
 
 
-    static SkSurface* NewRaster(const SkImageInfo&);
+    static SkSurface* NewRaster(const SkImageInfo&, const SkSurfaceProps* = NULL);
 
     
 
 
 
 
-    static SkSurface* NewRasterPMColor(int width, int height) {
-        return NewRaster(SkImageInfo::MakeN32Premul(width, height));
+    static SkSurface* NewRasterN32Premul(int width, int height, const SkSurfaceProps* props = NULL) {
+        return NewRaster(SkImageInfo::MakeN32Premul(width, height), props);
     }
 
     
 
 
-    enum TextRenderMode {
-        
+    static SkSurface* NewRenderTargetDirect(GrRenderTarget*, const SkSurfaceProps*);
 
-
-        kStandard_TextRenderMode,
-        
-
-
-        kDistanceField_TextRenderMode,
-    };
-
-    enum RenderTargetFlags {
-        kNone_RenderTargetFlag      = 0x0,
-        
-
-
-
-        kDontClear_RenderTargetFlag = 0x01,
-    };
-
-    
-
-
-    static SkSurface* NewRenderTargetDirect(GrRenderTarget*,
-                                            TextRenderMode trm = kStandard_TextRenderMode,
-                                            RenderTargetFlags flags = kNone_RenderTargetFlag);
-
-    
-
-
-
-    static SkSurface* NewRenderTarget(GrContext*, const SkImageInfo&, int sampleCount = 0,
-                                      TextRenderMode trm = kStandard_TextRenderMode,
-                                      RenderTargetFlags flags = kNone_RenderTargetFlag);
+    static SkSurface* NewRenderTargetDirect(GrRenderTarget* target) {
+        return NewRenderTargetDirect(target, NULL);
+    }
 
     
 
@@ -107,15 +93,33 @@ public:
 
 
 
+    static SkSurface* NewFromBackendTexture(GrContext*, const GrBackendTextureDesc&,
+                                            const SkSurfaceProps*);
+    
+    static SkSurface* NewWrappedRenderTarget(GrContext* ctx, const GrBackendTextureDesc& desc,
+                                             const SkSurfaceProps* props) {
+        return NewFromBackendTexture(ctx, desc, props);
+    }
+
+
+    
 
 
 
 
+    static SkSurface* NewFromBackendRenderTarget(GrContext*, const GrBackendRenderTargetDesc&,
+                                                 const SkSurfaceProps*);
+
+    
 
 
-    static SkSurface* NewScratchRenderTarget(GrContext*, const SkImageInfo&, int sampleCount = 0,
-                                             TextRenderMode trm = kStandard_TextRenderMode,
-                                             RenderTargetFlags flags = kNone_RenderTargetFlag);
+
+    static SkSurface* NewRenderTarget(GrContext*, Budgeted, const SkImageInfo&, int sampleCount,
+                                      const SkSurfaceProps* = NULL);
+
+    static SkSurface* NewRenderTarget(GrContext* gr, Budgeted b, const SkImageInfo& info) {
+        return NewRenderTarget(gr, b, info, 0, NULL);
+    }
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }
@@ -151,7 +155,43 @@ public:
 
 
 
+
+
     void notifyContentWillChange(ContentChangeMode mode);
+
+    enum BackendHandleAccess {
+        kFlushRead_BackendHandleAccess,     
+        kFlushWrite_BackendHandleAccess,    
+        kDiscardWrite_BackendHandleAccess,  
+    };
+
+    
+
+
+    static const BackendHandleAccess kFlushRead_TextureHandleAccess =
+            kFlushRead_BackendHandleAccess;
+    static const BackendHandleAccess kFlushWrite_TextureHandleAccess =
+            kFlushWrite_BackendHandleAccess;
+    static const BackendHandleAccess kDiscardWrite_TextureHandleAccess =
+            kDiscardWrite_BackendHandleAccess;
+
+
+    
+
+
+
+
+
+
+    GrBackendObject getTextureHandle(BackendHandleAccess);
+
+    
+
+
+
+
+
+    bool getRenderTargetHandle(GrBackendObject*, BackendHandleAccess);
 
     
 
@@ -181,7 +221,9 @@ public:
 
 
 
-    SkImage* newImageSnapshot();
+
+
+    SkImage* newImageSnapshot(Budgeted = kYes_Budgeted);
 
     
 
@@ -204,9 +246,32 @@ public:
 
     const void* peekPixels(SkImageInfo* info, size_t* rowBytes);
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    bool readPixels(const SkImageInfo& dstInfo, void* dstPixels, size_t dstRowBytes,
+                    int srcX, int srcY);
+
+    const SkSurfaceProps& props() const { return fProps; }
+
 protected:
-    SkSurface(int width, int height);
-    SkSurface(const SkImageInfo&);
+    SkSurface(int width, int height, const SkSurfaceProps*);
+    SkSurface(const SkImageInfo&, const SkSurfaceProps*);
 
     
     void dirtyGenerationID() {
@@ -214,9 +279,10 @@ protected:
     }
 
 private:
-    const int   fWidth;
-    const int   fHeight;
-    uint32_t    fGenerationID;
+    const SkSurfaceProps fProps;
+    const int            fWidth;
+    const int            fHeight;
+    uint32_t             fGenerationID;
 
     typedef SkRefCnt INHERITED;
 };

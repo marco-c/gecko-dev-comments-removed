@@ -35,7 +35,7 @@
 
 bool SkGenerateDistanceFieldFromA8Image(unsigned char* distanceField,
                                         const unsigned char* image,
-                                        int w, int h, int rowBytes);
+                                        int w, int h, size_t rowBytes);
 
 
 
@@ -48,7 +48,7 @@ bool SkGenerateDistanceFieldFromA8Image(unsigned char* distanceField,
 
 bool SkGenerateDistanceFieldFromBWImage(unsigned char* distanceField,
                                         const unsigned char* image,
-                                        int w, int h, int rowBytes);
+                                        int w, int h, size_t rowBytes);
 
 
 

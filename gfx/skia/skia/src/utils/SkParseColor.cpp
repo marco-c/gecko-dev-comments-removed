@@ -423,11 +423,11 @@ const char* SkParse::FindNamedColor(const char* name, size_t len, SkColor* color
             while ((int) gColorNames[lo] >= 0)
                 ++lo;
         } else if (hi == mid)
-            return NULL;
+            return nullptr;
         else
             hi = mid;
     }
-    return NULL;
+    return nullptr;
 }
 
 
@@ -459,7 +459,7 @@ const char* SkParse::FindColor(const char* value, SkColor* colorPtr) {
         uint32_t    hex;
         const char* end = SkParse::FindHex(value + 1, &hex);
 
-        if (end == NULL)
+        if (end == nullptr)
             return end;
         size_t len = end - value - 1;
         if (len == 3 || len == 4) {
@@ -476,7 +476,7 @@ const char* SkParse::FindColor(const char* value, SkColor* colorPtr) {
             return end;
         } else {
 
-            return NULL;
+            return nullptr;
         }
 
 
@@ -503,7 +503,7 @@ void SkParse::TestColor() {
     for (index = 0; index < colorNamesSize; index++) {
         result = SK_ColorBLACK;
         SkNameRGB nameRGB = colorNames[index];
-        SkASSERT(FindColor(nameRGB.name, &result) != NULL);
+        SkASSERT(FindColor(nameRGB.name, &result) != nullptr);
         SkASSERT(result == (SkColor) (nameRGB.rgb | 0xFF000000));
     }
     for (index = 0; index < colorNamesSize; index++) {
@@ -513,9 +513,9 @@ void SkParse::TestColor() {
         size_t len = strlen(nameRGB.name);
         memcpy(bad, nameRGB.name, len);
         bad[len - 1] -= 1;
-        SkASSERT(FindColor(bad, &result) == NULL);
+        SkASSERT(FindColor(bad, &result) == nullptr);
         bad[len - 1] += 2;
-        SkASSERT(FindColor(bad, &result) == NULL);
+        SkASSERT(FindColor(bad, &result) == nullptr);
     }
     result = SK_ColorBLACK;
     SkASSERT(FindColor("lightGrey", &result));

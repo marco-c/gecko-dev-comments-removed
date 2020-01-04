@@ -14,9 +14,6 @@
 void SkRecordOptimize(SkRecord*);
 
 
-void SkRecordNoopCulls(SkRecord*);
-
-
 void SkRecordNoopSaveRestores(SkRecord*);
 
 
@@ -24,12 +21,10 @@ void SkRecordNoopSaveRestores(SkRecord*);
 void SkRecordNoopSaveLayerDrawRestores(SkRecord*);
 
 
-void SkRecordAnnotateCullingPairs(SkRecord*);
+
+void SkRecordMergeSvgOpacityAndFilterLayers(SkRecord*);
 
 
-void SkRecordReduceDrawPosTextStrength(SkRecord*);
-
-
-void SkRecordBoundDrawPosTextH(SkRecord*);
+void SkRecordOptimize2(SkRecord*);
 
 #endif

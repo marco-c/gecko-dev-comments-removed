@@ -90,42 +90,6 @@ public:
     static void SetSubpixelOrder(LCDOrder order);
     
     static LCDOrder GetSubpixelOrder();
-
-private:
-    
-
-
-
-
-
-
-    static SkTypeface* CreateTypeface(const SkTypeface* familyFace,
-                                      const char familyName[],
-                                      SkTypeface::Style style);
-
-    
-
-
-
-
-
-
-
-
-
-
-    static SkTypeface* CreateTypefaceFromStream(SkStream*);
-
-    
-
-
-
-    static SkTypeface* CreateTypefaceFromFile(const char path[]);
-
-    
-
-    friend class SkScalerContext;
-    friend class SkTypeface;
 };
 
 #endif

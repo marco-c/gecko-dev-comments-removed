@@ -10,6 +10,8 @@
 
 #include <emmintrin.h>
 
+#define ASSERT_EQ(a,b) SkASSERT(0xffff == _mm_movemask_epi8(_mm_cmpeq_epi8((a), (b))))
+
 
 
 
@@ -42,7 +44,7 @@ static inline __m128i SkAlphaMulAlpha_SSE2(const __m128i& a,
 
 
 static inline __m128i SkAlphaMulQ_SSE2(const __m128i& c, const __m128i& scale) {
-    __m128i mask = _mm_set1_epi32(0xFF00FF);
+    const __m128i mask = _mm_set1_epi32(0xFF00FF);
     __m128i s = _mm_or_si128(_mm_slli_epi32(scale, 16), scale);
 
     
@@ -52,18 +54,39 @@ static inline __m128i SkAlphaMulQ_SSE2(const __m128i& c, const __m128i& scale) {
 
     
     __m128i ag = _mm_srli_epi16(c, 8);
-    ag = _mm_and_si128(ag, mask);
+    ASSERT_EQ(ag, _mm_and_si128(mask, ag));  
     ag = _mm_mullo_epi16(ag, s);
 
     
-    rb = _mm_and_si128(mask, rb);
+    ASSERT_EQ(rb, _mm_and_si128(mask, rb));  
     ag = _mm_andnot_si128(mask, ag);
     return _mm_or_si128(rb, ag);
 }
 
+
+static inline __m128i SkAlphaMulQ_SSE2(const __m128i& c, const unsigned scale) {
+    const __m128i mask = _mm_set1_epi32(0xFF00FF);
+    __m128i s = _mm_set1_epi16(scale << 8); 
+
+    
+    
+    __m128i rb = _mm_and_si128(mask, c);
+    rb = _mm_mulhi_epu16(rb, s);
+
+    __m128i ag = _mm_andnot_si128(mask, c);
+    ag = _mm_mulhi_epu16(ag, s);     
+    ag = _mm_andnot_si128(mask, ag);
+
+    return _mm_or_si128(rb, ag);
+}
+
 static inline __m128i SkGetPackedA32_SSE2(const __m128i& src) {
+#if SK_A32_SHIFT == 24                
+    return _mm_srli_epi32(src, 24);   
+#else                                 
     __m128i a = _mm_slli_epi32(src, (24 - SK_A32_SHIFT));
     return _mm_srli_epi32(a, 24);
+#endif
 }
 
 static inline __m128i SkGetPackedR32_SSE2(const __m128i& src) {
@@ -183,4 +206,41 @@ static inline __m128i SkPixel32ToPixel16_ToU16_SSE2(const __m128i& src_pixel1,
     return d_pixel;
 }
 
+
+static inline __m128i SkPMSrcOver_SSE2(const __m128i& src, const __m128i& dst) {
+    return _mm_add_epi32(src,
+                         SkAlphaMulQ_SSE2(dst, _mm_sub_epi32(_mm_set1_epi32(256),
+                                                             SkGetPackedA32_SSE2(src))));
+}
+
+
+static inline __m128i SkBlendARGB32_SSE2(const __m128i& src, const __m128i& dst,
+                                         const __m128i& aa) {
+    __m128i src_scale = SkAlpha255To256_SSE2(aa);
+    
+    __m128i dst_scale = SkGetPackedA32_SSE2(src);
+    dst_scale = _mm_mullo_epi16(dst_scale, src_scale);
+    dst_scale = _mm_srli_epi16(dst_scale, 8);
+    dst_scale = _mm_sub_epi32(_mm_set1_epi32(256), dst_scale);
+
+    __m128i result = SkAlphaMulQ_SSE2(src, src_scale);
+    return _mm_add_epi8(result, SkAlphaMulQ_SSE2(dst, dst_scale));
+}
+
+
+static inline __m128i SkBlendARGB32_SSE2(const __m128i& src, const __m128i& dst,
+                                         const unsigned aa) {
+    unsigned alpha = SkAlpha255To256(aa);
+    __m128i src_scale = _mm_set1_epi32(alpha);
+    
+    __m128i dst_scale = SkGetPackedA32_SSE2(src);
+    dst_scale = _mm_mullo_epi16(dst_scale, src_scale);
+    dst_scale = _mm_srli_epi16(dst_scale, 8);
+    dst_scale = _mm_sub_epi32(_mm_set1_epi32(256), dst_scale);
+
+    __m128i result = SkAlphaMulQ_SSE2(src, alpha);
+    return _mm_add_epi8(result, SkAlphaMulQ_SSE2(dst, dst_scale));
+}
+
+#undef ASSERT_EQ
 #endif 

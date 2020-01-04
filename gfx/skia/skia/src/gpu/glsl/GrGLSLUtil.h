@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+#ifndef GrGLSLUtil_DEFINED
+#define GrGLSLUtil_DEFINED
+
+class SkMatrix;
+
+
+
+
+
+template<int MatrixSize> void GrGLSLGetMatrix(float* dest, const SkMatrix& src);
+
+#endif

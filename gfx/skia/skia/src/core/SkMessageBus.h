@@ -8,9 +8,10 @@
 #ifndef SkMessageBus_DEFINED
 #define SkMessageBus_DEFINED
 
-#include "SkLazyPtr.h"
+#include "SkMutex.h"
+#include "SkOncePtr.h"
+#include "SkTArray.h"
 #include "SkTDArray.h"
-#include "SkThread.h"
 #include "SkTypes.h"
 
 template <typename Message>
@@ -25,10 +26,10 @@ public:
         ~Inbox();
 
         
-        void poll(SkTDArray<Message>* out);
+        void poll(SkTArray<Message>* out);
 
     private:
-        SkTDArray<Message> fMessages;
+        SkTArray<Message>  fMessages;
         SkMutex            fMessagesMutex;
 
         friend class SkMessageBus;
@@ -38,7 +39,6 @@ public:
 private:
     SkMessageBus();
     static SkMessageBus* Get();
-    static SkMessageBus* New();
 
     SkTDArray<Inbox*> fInboxes;
     SkMutex           fInboxesMutex;
@@ -46,11 +46,11 @@ private:
 
 
 
-#define DECLARE_SKMESSAGEBUS_MESSAGE(Message)                        \
-    template <>                                                      \
-    SkMessageBus<Message>* SkMessageBus<Message>::Get() {            \
-        SK_DECLARE_STATIC_LAZY_PTR(SkMessageBus<Message>, bus, New); \
-        return bus.get();                                            \
+#define DECLARE_SKMESSAGEBUS_MESSAGE(Message)                      \
+    SK_DECLARE_STATIC_ONCE_PTR(SkMessageBus<Message>, bus);        \
+    template <>                                                    \
+    SkMessageBus<Message>* SkMessageBus<Message>::Get() {          \
+        return bus.get([]{ return new SkMessageBus<Message>(); }); \
     }
 
 
@@ -80,26 +80,21 @@ SkMessageBus<Message>::Inbox::~Inbox() {
 template<typename Message>
 void SkMessageBus<Message>::Inbox::receive(const Message& m) {
     SkAutoMutexAcquire lock(fMessagesMutex);
-    fMessages.push(m);
+    fMessages.push_back(m);
 }
 
 template<typename Message>
-void SkMessageBus<Message>::Inbox::poll(SkTDArray<Message>* messages) {
-    SkASSERT(NULL != messages);
+void SkMessageBus<Message>::Inbox::poll(SkTArray<Message>* messages) {
+    SkASSERT(messages);
     messages->reset();
     SkAutoMutexAcquire lock(fMessagesMutex);
-    messages->swap(fMessages);
+    fMessages.swap(messages);
 }
 
 
 
 template <typename Message>
 SkMessageBus<Message>::SkMessageBus() {}
-
-template <typename Message>
- SkMessageBus<Message>* SkMessageBus<Message>::New() {
-    return SkNEW(SkMessageBus<Message>);
-}
 
 template <typename Message>
  void SkMessageBus<Message>::Post(const Message& m) {

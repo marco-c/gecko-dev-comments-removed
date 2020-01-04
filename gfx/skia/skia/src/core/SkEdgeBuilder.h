@@ -22,7 +22,7 @@ public:
 
     
     
-    int build(const SkPath& path, const SkIRect* clip, int shiftUp);
+    int build(const SkPath& path, const SkIRect* clip, int shiftUp, bool clipToTheRight);
 
     SkEdge** edgeList() { return fEdgeList; }
 
@@ -36,9 +36,9 @@ private:
 
 
 
-    SkEdge**            fEdgeList;
+    SkEdge**    fEdgeList;
 
-    int                 fShiftUp;
+    int         fShiftUp;
 
 public:
     void addLine(const SkPoint pts[]);
@@ -46,7 +46,7 @@ public:
     void addCubic(const SkPoint pts[]);
     void addClipper(SkEdgeClipper*);
 
-    int buildPoly(const SkPath& path, const SkIRect* clip, int shiftUp);
+    int buildPoly(const SkPath& path, const SkIRect* clip, int shiftUp, bool clipToTheRight);
 };
 
 #endif

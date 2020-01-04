@@ -5,18 +5,17 @@
 
 
 
-
-
 #ifndef SkColorFilter_DEFINED
 #define SkColorFilter_DEFINED
 
 #include "SkColor.h"
 #include "SkFlattenable.h"
+#include "SkTDArray.h"
 #include "SkXfermode.h"
 
-class SkBitmap;
-class GrEffect;
 class GrContext;
+class GrFragmentProcessor;
+class SkBitmap;
 
 
 
@@ -28,8 +27,6 @@ class GrContext;
 
 class SK_API SkColorFilter : public SkFlattenable {
 public:
-    SK_DECLARE_INST_COUNT(SkColorFilter)
-
     
 
 
@@ -69,33 +66,26 @@ public:
 
 
 
-    virtual void filterSpan(const SkPMColor src[], int count,
-                            SkPMColor result[]) const = 0;
-    
-
-
-
-
-
-
-    virtual void filterSpan16(const uint16_t shader[], int count,
-                              uint16_t result[]) const;
+    virtual void filterSpan(const SkPMColor src[], int count, SkPMColor result[]) const = 0;
 
     enum Flags {
         
 
-
         kAlphaUnchanged_Flag = 0x01,
-        
-
-
-        kHasFilter16_Flag    = 0x02
     };
 
     
 
-
     virtual uint32_t getFlags() const { return 0; }
+
+    
+
+
+
+
+
+
+    virtual SkColorFilter* newComposed(const SkColorFilter* ) const { return NULL; }
 
     
 
@@ -126,7 +116,28 @@ public:
     
 
 
-    virtual GrEffect* asNewEffect(GrContext*) const;
+
+
+
+
+    static SkColorFilter* CreateComposeFilter(SkColorFilter* outer, SkColorFilter* inner);
+
+    
+
+
+
+
+
+
+
+
+    virtual const GrFragmentProcessor* asFragmentProcessor(GrContext*) const {
+        return nullptr;
+    }
+
+    bool affectsTransparentBlack() const {
+        return this->filterColor(0) != 0;
+    }
 
     SK_TO_STRING_PUREVIRT()
 
@@ -135,9 +146,18 @@ public:
 
 protected:
     SkColorFilter() {}
-    SkColorFilter(SkReadBuffer& rb) : INHERITED(rb) {}
 
 private:
+    
+
+
+
+
+
+
+    virtual int privateComposedFilterCount() const { return 1; }
+    friend class SkComposeColorFilter;
+
     typedef SkFlattenable INHERITED;
 };
 

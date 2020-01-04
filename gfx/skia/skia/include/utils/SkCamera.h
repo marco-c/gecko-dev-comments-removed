@@ -84,8 +84,8 @@ public:
     }
 
     
-    void rotate(SkScalar x, SkScalar y, SkScalar z) {}
-    void rotateDegrees(SkScalar x, SkScalar y, SkScalar z) {}
+    void rotate(SkScalar , SkScalar , SkScalar ) {}
+    void rotateDegrees(SkScalar , SkScalar , SkScalar ) {}
 
 private:
 public: 

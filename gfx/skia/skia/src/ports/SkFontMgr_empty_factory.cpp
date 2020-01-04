@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+#include "SkFontMgr.h"
+
+SkFontMgr* SkFontMgr::Factory() {
+    
+    return nullptr;
+}

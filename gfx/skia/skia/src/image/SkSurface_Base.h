@@ -8,14 +8,23 @@
 #ifndef SkSurface_Base_DEFINED
 #define SkSurface_Base_DEFINED
 
-#include "SkSurface.h"
 #include "SkCanvas.h"
+#include "SkSurface.h"
+#include "SkSurfacePriv.h"
 
 class SkSurface_Base : public SkSurface {
 public:
-    SkSurface_Base(int width, int height);
-    explicit SkSurface_Base(const SkImageInfo&);
+    SkSurface_Base(int width, int height, const SkSurfaceProps*);
+    SkSurface_Base(const SkImageInfo&, const SkSurfaceProps*);
     virtual ~SkSurface_Base();
+
+    virtual GrBackendObject onGetTextureHandle(BackendHandleAccess) {
+        return 0;
+    }
+
+    virtual bool onGetRenderTargetHandle(GrBackendObject*, BackendHandleAccess) {
+        return false;
+    }
 
     
 
@@ -33,7 +42,7 @@ public:
 
 
 
-    virtual SkImage* onNewImageSnapshot() = 0;
+    virtual SkImage* onNewImageSnapshot(Budgeted) = 0;
 
     
 
@@ -59,8 +68,16 @@ public:
 
     virtual void onCopyOnWrite(ContentChangeMode) = 0;
 
+    
+
+
+
+    virtual void onRestoreBackingMutability() {}
+
     inline SkCanvas* getCachedCanvas();
-    inline SkImage* getCachedImage();
+    inline SkImage* getCachedImage(Budgeted);
+
+    bool hasCachedImage() const { return fCachedImage != nullptr; }
 
     
     uint32_t newGenerationID();
@@ -70,6 +87,11 @@ private:
     SkImage*    fCachedImage;
 
     void aboutToDraw(ContentChangeMode mode);
+
+    
+    
+    bool outstandingImageSnapshot() const;
+
     friend class SkCanvas;
     friend class SkSurface;
 
@@ -77,18 +99,18 @@ private:
 };
 
 SkCanvas* SkSurface_Base::getCachedCanvas() {
-    if (NULL == fCachedCanvas) {
+    if (nullptr == fCachedCanvas) {
         fCachedCanvas = this->onNewCanvas();
-        if (NULL != fCachedCanvas) {
+        if (fCachedCanvas) {
             fCachedCanvas->setSurfaceBase(this);
         }
     }
     return fCachedCanvas;
 }
 
-SkImage* SkSurface_Base::getCachedImage() {
-    if (NULL == fCachedImage) {
-        fCachedImage = this->onNewImageSnapshot();
+SkImage* SkSurface_Base::getCachedImage(Budgeted budgeted) {
+    if (nullptr == fCachedImage) {
+        fCachedImage = this->onNewImageSnapshot(budgeted);
         SkASSERT(!fCachedCanvas || fCachedCanvas->getSurfaceBase() == this);
     }
     return fCachedImage;

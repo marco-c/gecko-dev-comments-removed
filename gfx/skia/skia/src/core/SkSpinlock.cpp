@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+#include "SkSpinlock.h"
+
+void SkPODSpinlock::contendedAcquire() {
+    
+    while(sk_atomic_exchange(&fLocked, true, sk_memory_order_acquire)) {  }
+}

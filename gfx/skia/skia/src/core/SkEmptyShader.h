@@ -20,7 +20,7 @@ class SK_API SkEmptyShader : public SkShader {
 public:
     SkEmptyShader() {}
 
-    virtual size_t contextSize() const SK_OVERRIDE {
+    size_t contextSize() const override {
         
         
         return sizeof(SkShader::Context);
@@ -30,10 +30,14 @@ public:
     SK_DECLARE_PUBLIC_FLATTENABLE_DESERIALIZATION_PROCS(SkEmptyShader)
 
 protected:
-    SkEmptyShader(SkReadBuffer& buffer) : INHERITED(buffer) {}
+    SkShader::Context* onCreateContext(const ContextRec&, void*) const override {
+        return nullptr;
+    }
 
-    virtual SkShader::Context* onCreateContext(const ContextRec&, void*) const SK_OVERRIDE {
-        return NULL;
+    void flatten(SkWriteBuffer& buffer) const override {
+        
+        
+        
     }
 
 private:

@@ -4,6 +4,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #include "SkBitmapProcState.h"
 #include "SkPerspIter.h"
 #include "SkShader.h"
@@ -321,7 +330,7 @@ static int nofilter_trans_preamble(const SkBitmapProcState& s, uint32_t** xy,
     s.fInvProc(s.fInvMatrix, SkIntToScalar(x) + SK_ScalarHalf,
                SkIntToScalar(y) + SK_ScalarHalf, &pt);
     **xy = s.fIntTileProcY(SkScalarToFixed(pt.fY) >> 16,
-                           s.fBitmap->height());
+                           s.fPixmap.height());
     *xy += 1;   
     
     return SkScalarToFixed(pt.fX) >> 16;
@@ -332,7 +341,7 @@ static void clampx_nofilter_trans(const SkBitmapProcState& s,
     SkASSERT((s.fInvType & ~SkMatrix::kTranslate_Mask) == 0);
 
     int xpos = nofilter_trans_preamble(s, &xy, x, y);
-    const int width = s.fBitmap->width();
+    const int width = s.fPixmap.width();
     if (1 == width) {
         
         memset(xy, 0, count * sizeof(uint16_t));
@@ -380,7 +389,7 @@ static void repeatx_nofilter_trans(const SkBitmapProcState& s,
     SkASSERT((s.fInvType & ~SkMatrix::kTranslate_Mask) == 0);
 
     int xpos = nofilter_trans_preamble(s, &xy, x, y);
-    const int width = s.fBitmap->width();
+    const int width = s.fPixmap.width();
     if (1 == width) {
         
         memset(xy, 0, count * sizeof(uint16_t));
@@ -420,7 +429,7 @@ static void mirrorx_nofilter_trans(const SkBitmapProcState& s,
     SkASSERT((s.fInvType & ~SkMatrix::kTranslate_Mask) == 0);
 
     int xpos = nofilter_trans_preamble(s, &xy, x, y);
-    const int width = s.fBitmap->width();
+    const int width = s.fPixmap.width();
     if (1 == width) {
         
         memset(xy, 0, count * sizeof(uint16_t));
@@ -477,8 +486,7 @@ static void mirrorx_nofilter_trans(const SkBitmapProcState& s,
 SkBitmapProcState::MatrixProc SkBitmapProcState::chooseMatrixProc(bool trivial_matrix) {
 
     
-    if (trivial_matrix) {
-        SkASSERT(SkPaint::kNone_FilterLevel == fFilterLevel);
+    if (trivial_matrix && kNone_SkFilterQuality == fFilterLevel) {
         fIntTileProcY = choose_int_tile_proc(fTileModeY);
         switch (fTileModeX) {
             case SkShader::kClamp_TileMode:
@@ -491,7 +499,7 @@ SkBitmapProcState::MatrixProc SkBitmapProcState::chooseMatrixProc(bool trivial_m
     }
 
     int index = 0;
-    if (fFilterLevel != SkPaint::kNone_FilterLevel) {
+    if (fFilterLevel != kNone_SkFilterQuality) {
         index = 1;
     }
     if (fInvType & SkMatrix::kPerspective_Mask) {
@@ -508,8 +516,8 @@ SkBitmapProcState::MatrixProc SkBitmapProcState::chooseMatrixProc(bool trivial_m
     }
 
     
-    fFilterOneX = SK_Fixed1 / fBitmap->width();
-    fFilterOneY = SK_Fixed1 / fBitmap->height();
+    fFilterOneX = SK_Fixed1 / fPixmap.width();
+    fFilterOneY = SK_Fixed1 / fPixmap.height();
 
     if (SkShader::kRepeat_TileMode == fTileModeX && SkShader::kRepeat_TileMode == fTileModeY) {
         return SK_ARM_NEON_WRAP(RepeatX_RepeatY_Procs)[index];

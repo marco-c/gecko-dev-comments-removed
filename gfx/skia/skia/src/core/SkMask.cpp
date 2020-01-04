@@ -10,6 +10,8 @@
 
 
 
+
+
 static int32_t safeMul32(int32_t a, int32_t b) {
     int64_t size = sk_64_mul(a, b);
     if (size > 0 && sk_64_isS32(size)) {
@@ -30,10 +32,17 @@ size_t SkMask::computeTotalImageSize() const {
     return size;
 }
 
+#ifdef TRACK_SKMASK_LIFETIME
+    static int gCounter;
+#endif
+
 
 
 
 uint8_t* SkMask::AllocImage(size_t size) {
+#ifdef TRACK_SKMASK_LIFETIME
+    SkDebugf("SkMask::AllocImage %d\n", gCounter++);
+#endif
     return (uint8_t*)sk_malloc_throw(SkAlign4(size));
 }
 
@@ -41,6 +50,11 @@ uint8_t* SkMask::AllocImage(size_t size) {
 
 
 void SkMask::FreeImage(void* image) {
+#ifdef TRACK_SKMASK_LIFETIME
+    if (image) {
+        SkDebugf("SkMask::FreeImage  %d\n", --gCounter);
+    }
+#endif
     sk_free(image);
 }
 
@@ -52,7 +66,6 @@ static const int gMaskFormatToShift[] = {
     0,  
     2,  
     1,  
-    2   
 };
 
 static int maskFormatToShift(SkMask::Format format) {

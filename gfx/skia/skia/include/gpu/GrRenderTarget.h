@@ -11,8 +11,9 @@
 #include "GrSurface.h"
 #include "SkRect.h"
 
-class GrStencilBuffer;
-class GrTexture;
+class GrDrawTarget;
+class GrStencilAttachment;
+class GrRenderTargetPriv;
 
 
 
@@ -21,64 +22,73 @@ class GrTexture;
 
 
 
-class GrRenderTarget : public GrSurface {
+class GrRenderTarget : virtual public GrSurface {
 public:
-    SK_DECLARE_INST_COUNT(GrRenderTarget)
+    
+    GrRenderTarget* asRenderTarget() override { return this; }
+    const GrRenderTarget* asRenderTarget() const  override { return this; }
 
     
-    virtual size_t gpuMemorySize() const SK_OVERRIDE;
-
-    
-    
-
-
-    virtual GrTexture* asTexture() SK_OVERRIDE { return fTexture; }
-    virtual const GrTexture* asTexture() const SK_OVERRIDE { return fTexture; }
-
     
 
 
-    virtual GrRenderTarget* asRenderTarget() SK_OVERRIDE { return this; }
-    virtual const GrRenderTarget* asRenderTarget() const  SK_OVERRIDE {
-        return this;
+
+
+
+
+
+
+
+    enum SampleConfig {
+        kUnified_SampleConfig = 0,
+        kStencil_SampleConfig = 1
+    };
+
+    
+
+
+
+    bool isUnifiedMultisampled() const {
+        if (fSampleConfig != kUnified_SampleConfig) {
+            return false;
+        }
+        return 0 != fDesc.fSampleCnt;
     }
 
-    virtual bool readPixels(int left, int top, int width, int height,
-                            GrPixelConfig config,
-                            void* buffer,
-                            size_t rowBytes = 0,
-                            uint32_t pixelOpsFlags = 0) SK_OVERRIDE;
-
-    virtual void writePixels(int left, int top, int width, int height,
-                             GrPixelConfig config,
-                             const void* buffer,
-                             size_t rowBytes = 0,
-                             uint32_t pixelOpsFlags = 0) SK_OVERRIDE;
-
-    
     
 
 
 
-    virtual GrBackendObject getRenderTargetHandle() const = 0;
+    bool isStencilBufferMultisampled() const {
+        return 0 != fDesc.fSampleCnt;
+    }
 
     
 
 
 
-
-
-    virtual GrBackendObject getRenderTargetResolvedHandle() const = 0;
-
-    
-
-
-    bool isMultisampled() const { return 0 != fDesc.fSampleCnt; }
+    int numColorSamples() const {
+        if (fSampleConfig == kUnified_SampleConfig) {
+            return fDesc.fSampleCnt;
+        }
+        return 0;
+    }
 
     
 
 
-    int numSamples() const { return fDesc.fSampleCnt; }
+    int numStencilSamples() const {
+        return fDesc.fSampleCnt;
+    }
+
+    
+
+
+    bool hasMixedSamples() const {
+        SkASSERT(kStencil_SampleConfig != fSampleConfig ||
+                 this->isStencilBufferMultisampled());
+        return kStencil_SampleConfig == fSampleConfig;
+    }
 
     
 
@@ -117,14 +127,6 @@ public:
 
 
 
-
-
-    void resolve();
-
-    
-
-
-
     void discard();
 
     
@@ -140,38 +142,59 @@ public:
     
 
 
-    GrStencilBuffer* getStencilBuffer() const { return fStencilBuffer; }
-    void setStencilBuffer(GrStencilBuffer* stencilBuffer);
+
+    virtual GrBackendObject getRenderTargetHandle() const = 0;
+
+    
+    virtual bool canAttemptStencilAttachment() const = 0;
+
+    
+    GrRenderTargetPriv renderTargetPriv();
+    const GrRenderTargetPriv renderTargetPriv() const;
+
+    void setLastDrawTarget(GrDrawTarget* dt);
+    GrDrawTarget* getLastDrawTarget() { return fLastDrawTarget; }
 
 protected:
-    GrRenderTarget(GrGpu* gpu,
-                   bool isWrapped,
-                   GrTexture* texture,
-                   const GrTextureDesc& desc)
-        : INHERITED(gpu, isWrapped, desc)
-        , fStencilBuffer(NULL)
-        , fTexture(texture) {
+    GrRenderTarget(GrGpu* gpu, LifeCycle lifeCycle, const GrSurfaceDesc& desc,
+                   SampleConfig sampleConfig, GrStencilAttachment* stencil = nullptr)
+        : INHERITED(gpu, lifeCycle, desc)
+        , fStencilAttachment(stencil)
+        , fSampleConfig(sampleConfig)
+        , fLastDrawTarget(nullptr) {
         fResolveRect.setLargestInverted();
     }
 
+    ~GrRenderTarget() override;
+
     
-    virtual void onAbandon() SK_OVERRIDE;
-    virtual void onRelease() SK_OVERRIDE;
+    void onAbandon() override;
+    void onRelease() override;
 
 private:
-    friend class GrTexture;
     
-    void owningTextureDestroyed() {
-        SkASSERT(NULL != fTexture);
-        fTexture = NULL;
-    }
+    
+    
+    
+    virtual bool completeStencilAttachment() = 0;
 
-    GrStencilBuffer*  fStencilBuffer;
-    GrTexture*        fTexture; 
+    friend class GrRenderTargetPriv;
 
-    SkIRect           fResolveRect;
+    GrStencilAttachment*  fStencilAttachment;
+    SampleConfig          fSampleConfig;
+
+    SkIRect               fResolveRect;
+
+    
+    
+    
+    
+    
+    
+    GrDrawTarget* fLastDrawTarget;
 
     typedef GrSurface INHERITED;
 };
+
 
 #endif

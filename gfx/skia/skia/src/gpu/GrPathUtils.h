@@ -9,7 +9,7 @@
 #define GrPathUtils_DEFINED
 
 #include "SkRect.h"
-#include "SkPath.h"
+#include "SkPathPriv.h"
 #include "SkTArray.h"
 
 class SkMatrix;
@@ -74,7 +74,7 @@ namespace GrPathUtils {
 
 
         template <int N, size_t STRIDE, size_t UV_OFFSET>
-        void apply(const void* vertices) {
+        void apply(const void* vertices) const {
             intptr_t xyPtr = reinterpret_cast<intptr_t>(vertices);
             intptr_t uvPtr = reinterpret_cast<intptr_t>(vertices) + UV_OFFSET;
             float sx = fM[0];
@@ -121,7 +121,7 @@ namespace GrPathUtils {
     void convertCubicToQuads(const SkPoint p[4],
                              SkScalar tolScale,
                              bool constrainWithinTangents,
-                             SkPath::Direction dir,
+                             SkPathPriv::FirstDirection dir,
                              SkTArray<SkPoint, true>* quads);
 
     
@@ -153,8 +153,8 @@ namespace GrPathUtils {
     
     
     
-    int chopCubicAtLoopIntersection(const SkPoint src[4], SkPoint dst[10] = NULL,
-                                    SkScalar klm[9] = NULL, SkScalar klm_rev[3] = NULL);
+    int chopCubicAtLoopIntersection(const SkPoint src[4], SkPoint dst[10] = nullptr,
+                                    SkScalar klm[9] = nullptr, SkScalar klm_rev[3] = nullptr);
 
     
     
@@ -168,5 +168,12 @@ namespace GrPathUtils {
     
     
     void getCubicKLM(const SkPoint p[4], SkScalar klm[9]);
+
+    
+    
+    
+    
+    
+    static const SkScalar kDefaultTolerance = SkDoubleToScalar(0.25);
 };
 #endif

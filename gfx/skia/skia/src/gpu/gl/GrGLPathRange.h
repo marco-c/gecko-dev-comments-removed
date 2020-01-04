@@ -10,9 +10,10 @@
 #define GrGLPathRange_DEFINED
 
 #include "../GrPathRange.h"
-#include "gl/GrGLFunctions.h"
+#include "GrStrokeInfo.h"
+#include "gl/GrGLTypes.h"
 
-class GrGpuGL;
+class GrGLGpu;
 
 
 
@@ -22,25 +23,43 @@ class GrGpuGL;
 
 class GrGLPathRange : public GrPathRange {
 public:
-    GrGLPathRange(GrGpu*, size_t size, const SkStrokeRec&);
-    virtual ~GrGLPathRange();
+    
+
+
+
+    GrGLPathRange(GrGLGpu*, PathGenerator*, const GrStrokeInfo&);
+
+    
+
+
+
+
+    GrGLPathRange(GrGLGpu*,
+                  GrGLuint basePathID,
+                  int numPaths,
+                  size_t gpuMemorySize,
+                  const GrStrokeInfo&);
 
     GrGLuint basePathID() const { return fBasePathID; }
 
-    virtual void initAt(size_t index, const SkPath&);
-
-    
-    virtual size_t gpuMemorySize() const SK_OVERRIDE {
-        return 100 * fNumDefinedPaths;
-    }
+    bool shouldStroke() const { return fShouldStroke; }
+    bool shouldFill() const { return fShouldFill; }
 
 protected:
-    virtual void onRelease() SK_OVERRIDE;
-    virtual void onAbandon() SK_OVERRIDE;
+    void onInitPath(int index, const SkPath&) const override;
+
+    void onRelease() override;
+    void onAbandon() override;
 
 private:
+    void init();
+    size_t onGpuMemorySize() const override { return fGpuMemorySize; }
+
+    const GrStrokeInfo fStroke;
     GrGLuint fBasePathID;
-    size_t fNumDefinedPaths;
+    mutable size_t fGpuMemorySize;
+    bool fShouldStroke;
+    bool fShouldFill;
 
     typedef GrPathRange INHERITED;
 };

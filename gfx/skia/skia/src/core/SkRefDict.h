@@ -39,7 +39,7 @@ public:
     
 
 
-    void remove(const char name[]) { this->set(name, NULL); }
+    void remove(const char name[]) { this->set(name, nullptr); }
 
     
 

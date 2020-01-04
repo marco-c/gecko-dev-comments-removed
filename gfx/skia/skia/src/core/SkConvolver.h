@@ -46,7 +46,7 @@ public:
         
         
         
-        SK_COMPILE_ASSERT(sizeof(ConvolutionFixed) == 2, ConvolutionFixed_type_should_fit_in_float_mantissa);
+        static_assert(sizeof(ConvolutionFixed) == 2, "ConvolutionFixed_type_should_fit_in_float_mantissa");
         float raw = static_cast<float>(x);
         return ldexpf(raw, -kShiftBits);
     }
@@ -91,7 +91,7 @@ public:
         *filterOffset = filter.fOffset;
         *filterLength = filter.fTrimmedLength;
         if (filter.fTrimmedLength == 0) {
-            return NULL;
+            return nullptr;
         }
         return &fFilterValues[filter.fDataLocation];
     }
@@ -153,7 +153,8 @@ typedef void (*SkConvolveVertically_pointer)(
 typedef void (*SkConvolve4RowsHorizontally_pointer)(
     const unsigned char* srcData[4],
     const SkConvolutionFilter1D& filter,
-    unsigned char* outRow[4]);
+    unsigned char* outRow[4],
+    size_t outRowBytes);
 typedef void (*SkConvolveHorizontally_pointer)(
     const unsigned char* srcData,
     const SkConvolutionFilter1D& filter,
@@ -192,7 +193,11 @@ struct SkConvolutionProcs {
 
 
 
-SK_API void BGRAConvolve2D(const unsigned char* sourceData,
+
+
+
+
+SK_API bool BGRAConvolve2D(const unsigned char* sourceData,
     int sourceByteRowStride,
     bool sourceHasAlpha,
     const SkConvolutionFilter1D& xfilter,

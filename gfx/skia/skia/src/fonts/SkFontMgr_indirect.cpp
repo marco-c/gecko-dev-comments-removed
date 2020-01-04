@@ -5,17 +5,22 @@
 
 
 
-#include "SkFontMgr_indirect.h"
-
 #include "SkDataTable.h"
+#include "SkFontMgr.h"
+#include "SkFontMgr_indirect.h"
 #include "SkFontStyle.h"
+#include "SkMutex.h"
 #include "SkOnce.h"
+#include "SkRefCnt.h"
+#include "SkRemotableFontMgr.h"
 #include "SkStream.h"
-#include "SkTSearch.h"
+#include "SkString.h"
+#include "SkTArray.h"
 #include "SkTypeface.h"
+#include "SkTypes.h"
+#include "SkTemplates.h"
 
 class SkData;
-class SkString;
 
 class SkStyleSet_Indirect : public SkFontStyleSet {
 public:
@@ -25,9 +30,9 @@ public:
         : fOwner(SkRef(owner)), fFamilyIndex(familyIndex), fData(data)
     { }
 
-    virtual int count() SK_OVERRIDE { return fData->count(); }
+    int count() override { return fData->count(); }
 
-    virtual void getStyle(int index, SkFontStyle* fs, SkString* style) SK_OVERRIDE {
+    void getStyle(int index, SkFontStyle* fs, SkString* style) override {
         if (fs) {
             *fs = fData->at(index).fFontStyle;
         }
@@ -37,112 +42,17 @@ public:
         }
     }
 
-    virtual SkTypeface* createTypeface(int index) SK_OVERRIDE {
+    SkTypeface* createTypeface(int index) override {
         return fOwner->createTypefaceFromFontId(fData->at(index));
     }
 
-    virtual SkTypeface* matchStyle(const SkFontStyle& pattern) SK_OVERRIDE {
+    SkTypeface* matchStyle(const SkFontStyle& pattern) override {
         if (fFamilyIndex >= 0) {
             SkFontIdentity id = fOwner->fProxy->matchIndexStyle(fFamilyIndex, pattern);
             return fOwner->createTypefaceFromFontId(id);
         }
 
-        
-        
-        
-
-        
-        struct Score {
-            int score;
-            int index;
-        };
-
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        Score maxScore = { 0, 0 };
-        for (int i = 0; i < fData->count(); ++i) {
-            const SkFontStyle& current = fData->at(i).fFontStyle;
-            Score currentScore = { 0, i };
-
-            
-            
-            if (pattern.width() <= SkFontStyle::kNormal_Width) {
-                if (current.width() <= pattern.width()) {
-                    currentScore.score += 10 - pattern.width() + current.width();
-                } else {
-                    currentScore.score += 10 - current.width();
-                }
-            } else {
-                if (current.width() > pattern.width()) {
-                    currentScore.score += 10 + pattern.width() - current.width();
-                } else {
-                    currentScore.score += current.width();
-                }
-            }
-            currentScore.score *= 1002;
-
-            
-            
-            
-            if (pattern.isItalic() && current.isItalic()) {
-                currentScore.score += 1001;
-            }
-
-            
-
-            
-            
-            if (pattern.weight() == current.weight()) {
-                currentScore.score += 1000;
-            } else if (pattern.weight() <= 500) {
-                if (pattern.weight() >= 400 && pattern.weight() < 450) {
-                    if (current.weight() >= 450 && current.weight() <= 500) {
-                        
-                        
-                        currentScore.score += 500;
-                    }
-                }
-                if (current.weight() <= pattern.weight()) {
-                    currentScore.score += 1000 - pattern.weight() + current.weight();
-                } else {
-                    currentScore.score += 1000 - current.weight();
-                }
-            } else if (pattern.weight() > 500) {
-                if (current.weight() > pattern.weight()) {
-                    currentScore.score += 1000 + pattern.weight() - current.weight();
-                } else {
-                    currentScore.score += current.weight();
-                }
-            }
-
-            if (currentScore.score > maxScore.score) {
-                maxScore = currentScore;
-            }
-        }
-
-        return this->createTypeface(maxScore.index);
+        return this->matchStyleCSS3(pattern);
     }
 private:
     SkAutoTUnref<const SkFontMgr_Indirect> fOwner;
@@ -170,19 +80,19 @@ void SkFontMgr_Indirect::onGetFamilyName(int index, SkString* familyName) const 
 
 SkFontStyleSet* SkFontMgr_Indirect::onCreateStyleSet(int index) const {
     SkRemotableFontIdentitySet* set = fProxy->getIndex(index);
-    if (NULL == set) {
-        return NULL;
+    if (nullptr == set) {
+        return nullptr;
     }
-    return SkNEW_ARGS(SkStyleSet_Indirect, (this, index, set));
+    return new SkStyleSet_Indirect(this, index, set);
 }
 
 SkFontStyleSet* SkFontMgr_Indirect::onMatchFamily(const char familyName[]) const {
-    return SkNEW_ARGS(SkStyleSet_Indirect, (this, -1, fProxy->matchName(familyName)));
+    return new SkStyleSet_Indirect(this, -1, fProxy->matchName(familyName));
 }
 
 SkTypeface* SkFontMgr_Indirect::createTypefaceFromFontId(const SkFontIdentity& id) const {
     if (id.fDataId == SkFontIdentity::kInvalidDataId) {
-        return NULL;
+        return nullptr;
     }
 
     SkAutoMutexAcquire ama(fDataCacheMutex);
@@ -197,7 +107,7 @@ SkTypeface* SkFontMgr_Indirect::createTypefaceFromFontId(const SkFontIdentity& i
             {
                 return entry.fTypeface;
             }
-            if (dataTypeface.get() == NULL &&
+            if (dataTypeface.get() == nullptr &&
                 !entry.fTypeface->weak_expired() && entry.fTypeface->try_ref())
             {
                 dataTypeface.reset(entry.fTypeface);
@@ -212,22 +122,22 @@ SkTypeface* SkFontMgr_Indirect::createTypefaceFromFontId(const SkFontIdentity& i
     }
 
     
-    if (dataTypeface.get() != NULL) {
-        SkAutoTUnref<SkStream> stream(dataTypeface->openStream(NULL));
-        if (stream.get() != NULL) {
-            return fImpl->createFromStream(stream.get(), dataTypefaceIndex);
+    if (dataTypeface.get() != nullptr) {
+        SkAutoTDelete<SkStreamAsset> stream(dataTypeface->openStream(nullptr));
+        if (stream.get() != nullptr) {
+            return fImpl->createFromStream(stream.detach(), dataTypefaceIndex);
         }
     }
 
     
-    SkAutoTUnref<SkStreamAsset> stream(fProxy->getData(id.fDataId));
-    if (stream.get() == NULL) {
-        return NULL;
+    SkAutoTDelete<SkStreamAsset> stream(fProxy->getData(id.fDataId));
+    if (stream.get() == nullptr) {
+        return nullptr;
     }
 
-    SkAutoTUnref<SkTypeface> typeface(fImpl->createFromStream(stream, id.fTtcIndex));
-    if (typeface.get() == NULL) {
-        return NULL;
+    SkAutoTUnref<SkTypeface> typeface(fImpl->createFromStream(stream.detach(), id.fTtcIndex));
+    if (typeface.get() == nullptr) {
+        return nullptr;
     }
 
     DataEntry& newEntry = fDataCache.push_back();
@@ -247,9 +157,11 @@ SkTypeface* SkFontMgr_Indirect::onMatchFamilyStyle(const char familyName[],
 
 SkTypeface* SkFontMgr_Indirect::onMatchFamilyStyleCharacter(const char familyName[],
                                                             const SkFontStyle& style,
-                                                            const char bpc47[],
-                                                            uint32_t character) const {
-    SkFontIdentity id = fProxy->matchNameStyleCharacter(familyName, style, bpc47, character);
+                                                            const char* bcp47[],
+                                                            int bcp47Count,
+                                                            SkUnichar character) const {
+    SkFontIdentity id = fProxy->matchNameStyleCharacter(familyName, style, bcp47,
+                                                        bcp47Count, character);
     return this->createTypefaceFromFontId(id);
 }
 
@@ -260,7 +172,7 @@ SkTypeface* SkFontMgr_Indirect::onMatchFaceStyle(const SkTypeface* familyMember,
     return this->matchFamilyStyle(familyName.c_str(), fontStyle);
 }
 
-SkTypeface* SkFontMgr_Indirect::onCreateFromStream(SkStream* stream, int ttcIndex) const {
+SkTypeface* SkFontMgr_Indirect::onCreateFromStream(SkStreamAsset* stream, int ttcIndex) const {
     return fImpl->createFromStream(stream, ttcIndex);
 }
 
@@ -284,11 +196,11 @@ SkTypeface* SkFontMgr_Indirect::onLegacyCreateTypeface(const char familyName[],
 
     SkAutoTUnref<SkTypeface> face(this->matchFamilyStyle(familyName, style));
 
-    if (NULL == face.get()) {
-        face.reset(this->matchFamilyStyle(NULL, style));
+    if (nullptr == face.get()) {
+        face.reset(this->matchFamilyStyle(nullptr, style));
     }
 
-    if (NULL == face.get()) {
+    if (nullptr == face.get()) {
         SkFontIdentity fontId = this->fProxy->matchIndexStyle(0, style);
         face.reset(this->createTypefaceFromFontId(fontId));
     }

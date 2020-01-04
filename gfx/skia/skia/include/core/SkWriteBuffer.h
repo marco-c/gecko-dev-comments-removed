@@ -9,14 +9,15 @@
 #ifndef SkWriteBuffer_DEFINED
 #define SkWriteBuffer_DEFINED
 
-#include "SkBitmapHeap.h"
 #include "SkData.h"
 #include "SkPath.h"
 #include "SkPicture.h"
+#include "SkPixelSerializer.h"
 #include "SkRefCnt.h"
 #include "SkWriter32.h"
 
 class SkBitmap;
+class SkBitmapHeap;
 class SkFactorySet;
 class SkFlattenable;
 class SkNamedFactorySet;
@@ -72,6 +73,7 @@ public:
     void writePath(const SkPath& path);
     size_t writeStream(SkStream* stream, size_t length);
     void writeBitmap(const SkBitmap& bitmap);
+    void writeImage(const SkImage*);
     void writeTypeface(SkTypeface* typeface);
     void writePaint(const SkPaint& paint) { paint.flatten(*this); }
 
@@ -90,6 +92,7 @@ public:
 
 
 
+
     void setBitmapHeap(SkBitmapHeap*);
 
     
@@ -101,7 +104,10 @@ public:
 
 
 
-    void setBitmapEncoder(SkPicture::EncodeBitmap bitmapEncoder);
+
+
+    void setPixelSerializer(SkPixelSerializer*);
+    SkPixelSerializer* getPixelSerializer() const { return fPixelSerializer; }
 
 private:
     bool isValidating() const { return SkToBool(fFlags & kValidation_Flag); }
@@ -114,7 +120,7 @@ private:
     SkBitmapHeap* fBitmapHeap;
     SkRefCntSet* fTFSet;
 
-    SkPicture::EncodeBitmap fBitmapEncoder;
+    SkAutoTUnref<SkPixelSerializer> fPixelSerializer;
 };
 
 #endif 

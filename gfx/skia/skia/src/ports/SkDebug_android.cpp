@@ -5,34 +5,32 @@
 
 
 
-
-
 #include "SkTypes.h"
-#include <stdio.h>
+#if defined(SK_BUILD_FOR_ANDROID)
 
-static const size_t kBufferSize = 256;
+#include <stdio.h>
 
 #define LOG_TAG "skia"
 #include <android/log.h>
 
-static bool gSkDebugToStdOut = false;
 
-extern "C" void AndroidSkDebugToStdOut(bool debugToStdOut) {
-    gSkDebugToStdOut = debugToStdOut;
-}
+
+
+bool gSkDebugToStdOut = false;
 
 void SkDebugf(const char format[], ...) {
     va_list args1, args2;
     va_start(args1, format);
-    va_copy(args2, args1);
-    __android_log_vprint(ANDROID_LOG_DEBUG, LOG_TAG, format, args1);
 
-    
-    
     if (gSkDebugToStdOut) {
+        va_copy(args2, args1);
         vprintf(format, args2);
+        va_end(args2);
     }
 
+    __android_log_vprint(ANDROID_LOG_DEBUG, LOG_TAG, format, args1);
+
     va_end(args1);
-    va_end(args2);
 }
+
+#endif
