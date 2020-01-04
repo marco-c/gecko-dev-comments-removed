@@ -161,6 +161,11 @@ PuppetWidget::CreateChild(const LayoutDeviceIntRect& aRect,
 NS_IMETHODIMP
 PuppetWidget::Destroy()
 {
+  if (mOnDestroyCalled) {
+    return NS_OK;
+  }
+  mOnDestroyCalled = true;
+
   Base::OnDestroy();
   Base::Destroy();
   mPaintTask.Revoke();
@@ -586,34 +591,51 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
 }
 
 nsresult
-PuppetWidget::IMEEndComposition(bool aCancel)
+PuppetWidget::RequestIMEToCommitComposition(bool aCancel)
 {
-#ifndef MOZ_CROSS_PROCESS_IME
-  return NS_OK;
-#endif
+#ifdef MOZ_CROSS_PROCESS_IME
+  if (!mTabChild) {
+    return NS_ERROR_FAILURE;
+  }
+
+  MOZ_ASSERT(!Destroyed());
 
   
   if (NS_WARN_IF(!mNativeIMEContext.IsValid())) {
     return NS_OK;
   }
 
-  nsEventStatus status;
-  bool noCompositionEvent = true;
-  WidgetCompositionEvent compositionCommitEvent(true, eCompositionCommit, this);
-  InitEvent(compositionCommitEvent, nullptr);
+  RefPtr<TextComposition> composition =
+    IMEStateManager::GetTextCompositionFor(this);
   
-  
-  if (!mTabChild ||
-      !mTabChild->SendEndIMEComposition(aCancel, &noCompositionEvent,
-                                        &compositionCommitEvent.mData)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (noCompositionEvent) {
+  if (NS_WARN_IF(!composition)) {
     return NS_OK;
   }
 
+  bool isCommitted = false;
+  nsAutoString committedString;
+  if (NS_WARN_IF(!mTabChild->SendRequestIMEToCommitComposition(
+                               aCancel, &isCommitted, &committedString))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  
+  if (!isCommitted) {
+    return NS_OK;
+  }
+
+  
+  WidgetCompositionEvent compositionCommitEvent(true, eCompositionCommit, this);
+  InitEvent(compositionCommitEvent, nullptr);
+  compositionCommitEvent.mData = committedString;
+  nsEventStatus status = nsEventStatus_eIgnore;
   DispatchEvent(&compositionCommitEvent, status);
+
+  
+
+#endif 
+
   return NS_OK;
 }
 
@@ -622,9 +644,9 @@ PuppetWidget::NotifyIMEInternal(const IMENotification& aIMENotification)
 {
   switch (aIMENotification.mMessage) {
     case REQUEST_TO_COMMIT_COMPOSITION:
-      return IMEEndComposition(false);
+      return RequestIMEToCommitComposition(false);
     case REQUEST_TO_CANCEL_COMPOSITION:
-      return IMEEndComposition(true);
+      return RequestIMEToCommitComposition(true);
     case NOTIFY_IME_OF_FOCUS:
     case NOTIFY_IME_OF_BLUR:
       return NotifyIMEOfFocusChange(aIMENotification);

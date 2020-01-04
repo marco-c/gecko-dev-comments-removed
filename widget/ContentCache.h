@@ -338,9 +338,9 @@ public:
 
 
 
-  uint32_t RequestToCommitComposition(nsIWidget* aWidget,
-                                      bool aCancel,
-                                      nsAString& aLastString);
+  bool RequestIMEToCommitComposition(nsIWidget* aWidget,
+                                     bool aCancel,
+                                     nsAString& aCommittedString);
 
   
 
@@ -357,19 +357,17 @@ private:
   IMENotification mPendingCompositionUpdate;
 
   
-  nsString mCommitStringByRequest;
+  
+  
+  nsAString* mCommitStringByRequest;
   
   uint32_t mCompositionStart;
-  
-  
-  uint32_t mCompositionEventsDuringRequest;
   
   
   
   uint32_t mPendingEventsNeedingAck;
 
   bool mIsComposing;
-  bool mRequestedToCommitOrCancelComposition;
 
   bool GetCaretRect(uint32_t aOffset, LayoutDeviceIntRect& aCaretRect) const;
   bool GetTextRect(uint32_t aOffset,

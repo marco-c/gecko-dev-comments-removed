@@ -448,11 +448,10 @@ ContentCacheInChild::SetSelection(nsIWidget* aWidget,
 
 ContentCacheInParent::ContentCacheInParent()
   : ContentCache()
+  , mCommitStringByRequest(nullptr)
   , mCompositionStart(UINT32_MAX)
-  , mCompositionEventsDuringRequest(0)
   , mPendingEventsNeedingAck(0)
   , mIsComposing(false)
-  , mRequestedToCommitOrCancelComposition(false)
 {
 }
 
@@ -827,48 +826,34 @@ ContentCacheInParent::OnCompositionEvent(const WidgetCompositionEvent& aEvent)
     ("ContentCacheInParent: 0x%p OnCompositionEvent(aEvent={ "
      "mMessage=%s, mData=\"%s\" (Length()=%u), mRanges->Length()=%u }), "
      "mPendingEventsNeedingAck=%u, mIsComposing=%s, "
-     "mRequestedToCommitOrCancelComposition=%s",
+     "mCommitStringByRequest=0x%p",
      this, ToChar(aEvent.mMessage),
      NS_ConvertUTF16toUTF8(aEvent.mData).get(), aEvent.mData.Length(),
      aEvent.mRanges ? aEvent.mRanges->Length() : 0, mPendingEventsNeedingAck,
-     GetBoolName(mIsComposing),
-     GetBoolName(mRequestedToCommitOrCancelComposition)));
-
-  if (!aEvent.CausesDOMTextEvent()) {
-    MOZ_ASSERT(aEvent.mMessage == eCompositionStart);
-    mIsComposing = !aEvent.CausesDOMCompositionEndEvent();
-    mCompositionStart = mSelection.StartOffset();
-    
-    if (mRequestedToCommitOrCancelComposition) {
-      mCommitStringByRequest = aEvent.mData;
-      mCompositionEventsDuringRequest++;
-      return false;
-    }
-    mPendingEventsNeedingAck++;
-    return true;
-  }
-
-  
-  
-
-  
-  
-  
-  
-  
-  
-  if (mRequestedToCommitOrCancelComposition) {
-    mCommitStringByRequest = aEvent.mData;
-    mCompositionEventsDuringRequest++;
-    return false;
-  }
+     GetBoolName(mIsComposing), mCommitStringByRequest));
 
   
   
   if (!mIsComposing) {
     mCompositionStart = mSelection.StartOffset();
   }
+
   mIsComposing = !aEvent.CausesDOMCompositionEndEvent();
+
+  
+  
+  
+  
+  
+  
+  
+  if (mCommitStringByRequest) {
+    MOZ_ASSERT(aEvent.mMessage == eCompositionChange ||
+               aEvent.mMessage == eCompositionCommit);
+    *mCommitStringByRequest = aEvent.mData;
+    return false;
+  }
+
   mPendingEventsNeedingAck++;
   return true;
 }
@@ -912,29 +897,63 @@ ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
   FlushPendingNotifications(aWidget);
 }
 
-uint32_t
-ContentCacheInParent::RequestToCommitComposition(nsIWidget* aWidget,
-                                                 bool aCancel,
-                                                 nsAString& aLastString)
+bool
+ContentCacheInParent::RequestIMEToCommitComposition(nsIWidget* aWidget,
+                                                    bool aCancel,
+                                                    nsAString& aCommittedString)
 {
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
     ("ContentCacheInParent: 0x%p RequestToCommitComposition(aWidget=%p, "
-     "aCancel=%s), mIsComposing=%s, mRequestedToCommitOrCancelComposition=%s, "
-     "mCompositionEventsDuringRequest=%u",
+     "aCancel=%s), mIsComposing=%s, mCommitStringByRequest=%p",
      this, aWidget, GetBoolName(aCancel), GetBoolName(mIsComposing),
-     GetBoolName(mRequestedToCommitOrCancelComposition),
-     mCompositionEventsDuringRequest));
+     mCommitStringByRequest));
 
-  mRequestedToCommitOrCancelComposition = true;
-  mCompositionEventsDuringRequest = 0;
+  MOZ_ASSERT(!mCommitStringByRequest);
+
+  RefPtr<TextComposition> composition =
+    IMEStateManager::GetTextCompositionFor(aWidget);
+  if (NS_WARN_IF(!composition)) {
+    MOZ_LOG(sContentCacheLog, LogLevel::Warning,
+      ("  ContentCacheInParent: 0x%p RequestToCommitComposition(), "
+       "does nothing due to no composition", this));
+    return false;
+  }
+
+  mCommitStringByRequest = &aCommittedString;
 
   aWidget->NotifyIME(IMENotification(aCancel ? REQUEST_TO_CANCEL_COMPOSITION :
                                                REQUEST_TO_COMMIT_COMPOSITION));
 
-  mRequestedToCommitOrCancelComposition = false;
-  aLastString = mCommitStringByRequest;
-  mCommitStringByRequest.Truncate(0);
-  return mCompositionEventsDuringRequest;
+  mCommitStringByRequest = nullptr;
+
+  MOZ_LOG(sContentCacheLog, LogLevel::Info,
+    ("  ContentCacheInParent: 0x%p RequestToCommitComposition(), "
+     "mIsComposing=%s, the composition %s committed synchronously",
+     this, GetBoolName(mIsComposing),
+     composition->Destroyed() ? "WAS" : "has NOT been"));
+
+  if (!composition->Destroyed()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  return true;
 }
 
 void
