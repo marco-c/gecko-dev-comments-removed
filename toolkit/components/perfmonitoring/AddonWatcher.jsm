@@ -165,8 +165,11 @@ let AddonWatcher = {
             
             continue;
           }
-          let previous = this._previousPerformanceIndicators[addonId];
-          this._previousPerformanceIndicators[addonId] = item;
+
+          
+          
+          let previous = this._previousPerformanceIndicators[item.groupId];
+          this._previousPerformanceIndicators[item.groupId] = item;
 
           if (!previous) {
             
