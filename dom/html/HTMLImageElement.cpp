@@ -80,8 +80,9 @@ namespace dom {
 class ImageLoadTask : public nsRunnable
 {
 public:
-  explicit ImageLoadTask(HTMLImageElement *aElement) :
-    mElement(aElement)
+  ImageLoadTask(HTMLImageElement *aElement, bool aAlwaysLoad)
+    : mElement(aElement)
+    , mAlwaysLoad(aAlwaysLoad)
   {
     mDocument = aElement->OwnerDoc();
     mDocument->BlockOnload();
@@ -91,7 +92,7 @@ public:
   {
     if (mElement->mPendingImageLoadTask == this) {
       mElement->mPendingImageLoadTask = nullptr;
-      mElement->LoadSelectedImage(true, true);
+      mElement->LoadSelectedImage(true, true, mAlwaysLoad);
     }
     mDocument->UnblockOnload(false);
     return NS_OK;
@@ -101,11 +102,13 @@ private:
   ~ImageLoadTask() {}
   RefPtr<HTMLImageElement> mElement;
   nsCOMPtr<nsIDocument> mDocument;
+  bool mAlwaysLoad;
 };
 
 HTMLImageElement::HTMLImageElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : nsGenericHTMLElement(aNodeInfo)
   , mForm(nullptr)
+  , mInDocResponsiveContent(false)
 {
   
   AddStatesSilently(NS_EVENT_STATE_BROKEN);
@@ -427,7 +430,7 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
           mResponsiveSelector->Content() == this) {
         mResponsiveSelector->SetDefaultSource(NullString());
       }
-      QueueImageLoadTask();
+      QueueImageLoadTask(true);
     } else {
       
       CancelImageRequests(aNotify);
@@ -447,7 +450,7 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     if (InResponsiveMode()) {
       
       
-      QueueImageLoadTask();
+      QueueImageLoadTask(true);
     } else {
       
       
@@ -543,7 +546,7 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
           mResponsiveSelector->Content() == this) {
         mResponsiveSelector->SetDefaultSource(aValue);
       }
-      QueueImageLoadTask();
+      QueueImageLoadTask(true);
     } else if (aNotify) {
       
       
@@ -586,13 +589,15 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     UpdateFormOwner();
   }
 
-  bool addedToPicture = aParent && aParent->IsHTMLElement(nsGkAtoms::picture) &&
-                        HTMLPictureElement::IsPictureEnabled();
-  if (addedToPicture) {
-    if (aDocument) {
+  if (HaveSrcsetOrInPicture()) {
+    if (aDocument && !mInDocResponsiveContent) {
       aDocument->AddResponsiveContent(this);
+      mInDocResponsiveContent = true;
     }
-    QueueImageLoadTask();
+
+    bool forceLoadEvent = HTMLPictureElement::IsPictureEnabled() &&
+      aParent && aParent->IsHTMLElement(nsGkAtoms::picture);
+    QueueImageLoadTask(forceLoadEvent);
   } else if (!InResponsiveMode() &&
              HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
     
@@ -633,17 +638,22 @@ HTMLImageElement::UnbindFromTree(bool aDeep, bool aNullParent)
     }
   }
 
+  if (mInDocResponsiveContent) {
+    nsIDocument* doc = GetOurOwnerDoc();
+    MOZ_ASSERT(doc);
+    if (doc) {
+      doc->RemoveResponsiveContent(this);
+      mInDocResponsiveContent = false;
+    }
+  }
+
   if (GetParent() &&
       GetParent()->IsHTMLElement(nsGkAtoms::picture) &&
       HTMLPictureElement::IsPictureEnabled()) {
-    nsIDocument* doc = GetOurOwnerDoc();
-    if (doc) {
-      doc->RemoveResponsiveContent(this);
-    }
     
     
     if (aNullParent) {
-      QueueImageLoadTask();
+      QueueImageLoadTask(true);
     }
   }
 
@@ -687,7 +697,7 @@ HTMLImageElement::MaybeLoadImage()
 
   
 
-  LoadSelectedImage(false, true);
+  LoadSelectedImage(false, true, false);
 
   if (!LoadingEnabled()) {
     CancelImageRequests(true);
@@ -887,7 +897,7 @@ HTMLImageElement::ClearForm(bool aRemoveFromForm)
 }
 
 void
-HTMLImageElement::QueueImageLoadTask()
+HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad)
 {
   
   
@@ -895,7 +905,7 @@ HTMLImageElement::QueueImageLoadTask()
     return;
   }
 
-  nsCOMPtr<nsIRunnable> task = new ImageLoadTask(this);
+  nsCOMPtr<nsIRunnable> task = new ImageLoadTask(this, aAlwaysLoad);
   
   
   mPendingImageLoadTask = task;
@@ -929,7 +939,7 @@ HTMLImageElement::InResponsiveMode()
 }
 
 nsresult
-HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify)
+HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad)
 {
   nsresult rv = NS_ERROR_FAILURE;
 
@@ -937,7 +947,9 @@ HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify)
     
     
     
-    UpdateResponsiveSource();
+    if (!UpdateResponsiveSource() && !aAlwaysLoad) {
+      return NS_OK;
+    }
   }
 
   if (mResponsiveSelector) {
@@ -990,9 +1002,17 @@ HTMLImageElement::PictureSourceSrcsetChanged(nsIContent *aSourceNode,
     mResponsiveSelector->SetCandidatesFromSourceSet(aNewValue);
   }
 
+  if (!mInDocResponsiveContent) {
+    nsIDocument* doc = GetOurOwnerDoc();
+    if (doc) {
+      doc->AddResponsiveContent(this);
+      mInDocResponsiveContent = true;
+    }
+  }
+
   
   
-  QueueImageLoadTask();
+  QueueImageLoadTask(true);
 }
 
 void
@@ -1019,7 +1039,7 @@ HTMLImageElement::PictureSourceSizesChanged(nsIContent *aSourceNode,
 
   
   
-  QueueImageLoadTask();
+  QueueImageLoadTask(true);
 }
 
 void
@@ -1035,7 +1055,7 @@ HTMLImageElement::PictureSourceMediaOrTypeChanged(nsIContent *aSourceNode,
 
   
   
-  QueueImageLoadTask();
+  QueueImageLoadTask(true);
 }
 
 void
@@ -1045,7 +1065,7 @@ HTMLImageElement::PictureSourceAdded(nsIContent *aSourceNode)
     return;
   }
 
-  QueueImageLoadTask();
+  QueueImageLoadTask(true);
 }
 
 void
@@ -1055,15 +1075,17 @@ HTMLImageElement::PictureSourceRemoved(nsIContent *aSourceNode)
     return;
   }
 
-  QueueImageLoadTask();
+  QueueImageLoadTask(true);
 }
 
-void
+bool
 HTMLImageElement::UpdateResponsiveSource()
 {
+  bool hadSelector = !!mResponsiveSelector;
+
   if (!IsSrcsetEnabled()) {
     mResponsiveSelector = nullptr;
-    return;
+    return hadSelector;
   }
 
   nsIContent *currentSource =
@@ -1083,7 +1105,7 @@ HTMLImageElement::UpdateResponsiveSource()
     if (candidateSource == currentSource) {
       
       
-      mResponsiveSelector->SelectImage(true);
+      bool changed = mResponsiveSelector->SelectImage(true);
       if (mResponsiveSelector->NumCandidates()) {
         bool isUsableCandidate = true;
 
@@ -1095,7 +1117,7 @@ HTMLImageElement::UpdateResponsiveSource()
         }
 
         if (isUsableCandidate) {
-          break;
+          return changed;
         }
       }
 
@@ -1124,6 +1146,8 @@ HTMLImageElement::UpdateResponsiveSource()
     
     mResponsiveSelector = nullptr;
   }
+
+  return !hadSelector || mResponsiveSelector;
 }
 
  bool
@@ -1296,7 +1320,7 @@ HTMLImageElement::DestroyContent()
 void
 HTMLImageElement::MediaFeatureValuesChanged()
 {
-  QueueImageLoadTask();
+  QueueImageLoadTask(false);
 }
 
 void

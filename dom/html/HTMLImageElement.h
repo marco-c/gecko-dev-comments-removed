@@ -280,7 +280,7 @@ protected:
   
   
   
-  void QueueImageLoadTask();
+  void QueueImageLoadTask(bool aAlwaysLoad);
 
   
   
@@ -292,7 +292,7 @@ protected:
 
   
   
-  nsresult LoadSelectedImage(bool aForce, bool aNotify);
+  nsresult LoadSelectedImage(bool aForce, bool aNotify, bool aAlwaysLoad);
 
   
   static bool SupportedPictureSourceType(const nsAString& aType);
@@ -321,7 +321,9 @@ protected:
   
   
   
-  void UpdateResponsiveSource();
+  
+  
+  bool UpdateResponsiveSource();
 
   
   
@@ -359,6 +361,7 @@ private:
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                     nsRuleData* aData);
 
+  bool mInDocResponsiveContent;
   nsCOMPtr<nsIRunnable> mPendingImageLoadTask;
 };
 
