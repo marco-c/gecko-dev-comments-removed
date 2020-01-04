@@ -784,7 +784,11 @@ var SessionStoreInternal = {
 
         
         if ("image" in tabData) {
-          win.gBrowser.setIcon(tab, tabData.image);
+          
+          
+          
+          
+          win.gBrowser.setIcon(tab, tabData.image, null);
           TabStateCache.update(browser, {image: null});
         }
 

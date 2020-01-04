@@ -165,8 +165,10 @@ XPCOMUtils.defineLazyGetter(this, "gCustomizeMode", function() {
   return new scope.CustomizeMode(window);
 });
 
+#ifdef MOZ_SERVICES_SYNC
 XPCOMUtils.defineLazyModuleGetter(this, "Weave",
   "resource://services-sync/main.js");
+#endif
 
 XPCOMUtils.defineLazyGetter(this, "PopupNotifications", function () {
   let tmp = {};
@@ -280,13 +282,16 @@ var gInitialPages = [
 #include browser-safebrowsing.js
 #include browser-sidebar.js
 #include browser-social.js
-#include browser-syncui.js
 #include browser-tabview.js
 #include browser-thumbnails.js
 #include browser-trackingprotection.js
 
 #ifdef MOZ_DATA_REPORTING
 #include browser-data-submission-info-bar.js
+#endif
+
+#ifdef MOZ_SERVICES_SYNC
+#include browser-syncui.js
 #endif
 
 #include browser-fxaccounts.js
@@ -1349,9 +1354,11 @@ var gBrowserInit = {
 
     FullScreen.init();
 
+#ifdef MOZ_SERVICES_SYNC
     
     gSyncUI.init();
     gFxAccounts.init();
+#endif
 
 #ifdef MOZ_DATA_REPORTING
     gDataNotificationInfoBar.init();
@@ -1493,7 +1500,9 @@ var gBrowserInit = {
 
     FullScreen.uninit();
 
+#ifdef MOZ_SERVICES_SYNC
     gFxAccounts.uninit();
+#endif
 
     Services.obs.removeObserver(gPluginHandler.NPAPIPluginCrashed, "plugin-crashed");
 
@@ -1650,8 +1659,10 @@ var gBrowserInit = {
     
     gPrivateBrowsingUI.init();
 
+#ifdef MOZ_SERVICES_SYNC
     
     gSyncUI.init();
+#endif
 
 #ifdef E10S_TESTING_ONLY
     gRemoteTabsUI.init();
@@ -3407,7 +3418,7 @@ const DOMLinkHandler = {
         break;
 
       case "Link:SetIcon":
-        return this.setIcon(aMsg.target, aMsg.data.url);
+        return this.setIcon(aMsg.target, aMsg.data.url, aMsg.data.loadingPrincipal);
         break;
 
       case "Link:AddSearch":
@@ -3416,7 +3427,7 @@ const DOMLinkHandler = {
     }
   },
 
-  setIcon: function(aBrowser, aURL) {
+  setIcon: function(aBrowser, aURL, aLoadingPrincipal) {
     if (gBrowser.isFailedIcon(aURL))
       return false;
 
@@ -3424,7 +3435,7 @@ const DOMLinkHandler = {
     if (!tab)
       return false;
 
-    gBrowser.setIcon(tab, aURL);
+    gBrowser.setIcon(tab, aURL, aLoadingPrincipal);
     return true;
   },
 
@@ -6833,9 +6844,11 @@ function isTabEmpty(aTab) {
   return true;
 }
 
+#ifdef MOZ_SERVICES_SYNC
 function BrowserOpenSyncTabs() {
   switchToTabHavingURI("about:sync-tabs", true);
 }
+#endif
 
 
 

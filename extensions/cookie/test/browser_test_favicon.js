@@ -23,5 +23,6 @@ function test() {
   }, "cookie-rejected", false);
 
   
-  gBrowser.setIcon(gBrowser.selectedTab, "http://example.org/tests/extensions/cookie/test/damonbowling.jpg");
+  gBrowser.setIcon(gBrowser.selectedTab, "http://example.org/tests/extensions/cookie/test/damonbowling.jpg",
+                   Services.scriptSecurityManager.getSystemPrincipal());
 }
