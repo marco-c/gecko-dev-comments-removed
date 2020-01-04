@@ -78,6 +78,7 @@ included_inclnames_to_ignore = set([
     'selfhosted.out.h',         
     'unicode/locid.h',          
     'unicode/numsys.h',         
+    'unicode/timezone.h',       
     'unicode/ucal.h',           
     'unicode/uclean.h',         
     'unicode/ucol.h',           
