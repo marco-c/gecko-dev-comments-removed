@@ -1465,7 +1465,7 @@ XMLHttpRequestMainThread::Open(const nsACString& inMethod, const nsACString& url
 
   
   
-  mAuthorRequestHeaders.Clear();
+  mAlreadySetHeaders.Clear();
 
   
   
@@ -2480,9 +2480,6 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
 
   if (httpChannel) {
-    
-    SetAuthorRequestHeadersOnChannel(httpChannel);
-
     httpChannel->GetRequestMethod(method); 
 
     if (!IsSystemXHR()) {
@@ -2538,13 +2535,14 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
 
     if (postDataStream) {
       
+      
       nsAutoCString contentType;
-
-      GetAuthorRequestHeaderValue("content-type", contentType);
-      if (contentType.IsVoid()) {
+      if (NS_FAILED(httpChannel->
+                      GetRequestHeader(NS_LITERAL_CSTRING("Content-Type"),
+                                       contentType))) {
         contentType = defaultContentType;
 
-        if (!charset.IsEmpty()) {
+        if (!charset.IsEmpty() && !contentType.IsVoid()) {
           
           
           contentType.Append(NS_LITERAL_CSTRING(";charset="));
@@ -2722,26 +2720,8 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
 
   
   if (!IsSystemXHR()) {
-    nsTArray<nsCString> CORSUnsafeHeaders;
-    const char *kCrossOriginSafeHeaders[] = {
-      "accept", "accept-language", "content-language", "content-type",
-      "last-event-id"
-    };
-    for (RequestHeader& header : mAuthorRequestHeaders) {
-      bool safe = false;
-      for (uint32_t i = 0; i < ArrayLength(kCrossOriginSafeHeaders); ++i) {
-        if (header.name.EqualsASCII(kCrossOriginSafeHeaders[i])) {
-          safe = true;
-          break;
-        }
-      }
-      if (!safe) {
-        CORSUnsafeHeaders.AppendElement(header.name);
-      }
-    }
-
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
+    loadInfo->SetCorsPreflightInfo(mCORSUnsafeHeaders,
                                    mFlagHadUploadListenersOnSend);
   }
 
@@ -2867,62 +2847,99 @@ XMLHttpRequestMainThread::Send(nsIVariant* aVariant, const Nullable<RequestBody>
 
 
 NS_IMETHODIMP
-XMLHttpRequestMainThread::SetRequestHeader(const nsACString& aName,
-                                           const nsACString& aValue)
+XMLHttpRequestMainThread::SetRequestHeader(const nsACString& header,
+                                           const nsACString& value)
 {
   
   if (mState != State::opened || mFlagSend) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
+  NS_ASSERTION(mChannel, "mChannel must be valid if we're OPENED.");
 
   
-  nsAutoCString value(aValue);
-  static const char kHTTPWhitespace[] = "\n\t\r ";
-  value.Trim(kHTTPWhitespace);
-
   
-  if (!NS_IsValidHTTPToken(aName) || !NS_IsReasonableHTTPHeaderValue(value)) {
+  if (!NS_IsValidHTTPToken(header)) {
     return NS_ERROR_DOM_SYNTAX_ERR;
   }
 
-  
-  bool isPrivilegedCaller = IsSystemXHR();
-  bool isForbiddenHeader = nsContentUtils::IsForbiddenRequestHeader(aName);
-  if (!isPrivilegedCaller && isForbiddenHeader) {
-    NS_WARNING("refusing to set request header");
+  if (!mChannel)             
+    return NS_ERROR_FAILURE; 
+
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+  if (!httpChannel) {
     return NS_OK;
   }
 
   
-  nsAutoCString lowercaseName;
-  nsContentUtils::ASCIIToLower(aName, lowercaseName);
-
   
-  bool notAlreadySet = true;
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(lowercaseName)) {
+  
+  
+  
+  bool mergeHeaders = true;
+
+  if (!IsSystemXHR()) {
+    
+    
+    
+    if (nsContentUtils::IsForbiddenRequestHeader(header)) {
+      NS_WARNING("refusing to set request header");
+      return NS_OK;
+    }
+
+    
+    bool safeHeader = IsSystemXHR();
+    if (!safeHeader) {
       
-      
-      if (isPrivilegedCaller && isForbiddenHeader) {
-        header.value.Assign(value);
-      } else {
-        header.value.AppendLiteral(", ");
-        header.value.Append(value);
+      const char *kCrossOriginSafeHeaders[] = {
+        "accept", "accept-language", "content-language", "content-type",
+        "last-event-id"
+      };
+      for (uint32_t i = 0; i < ArrayLength(kCrossOriginSafeHeaders); ++i) {
+        if (header.LowerCaseEqualsASCII(kCrossOriginSafeHeaders[i])) {
+          safeHeader = true;
+          break;
+        }
       }
-      notAlreadySet = false;
-      break;
+    }
+
+    if (!safeHeader) {
+      if (!mCORSUnsafeHeaders.Contains(header, nsCaseInsensitiveCStringArrayComparator())) {
+        mCORSUnsafeHeaders.AppendElement(header);
+      }
+    }
+  } else {
+    
+    if (nsContentUtils::IsForbiddenSystemRequestHeader(header)) {
+      mergeHeaders = false;
     }
   }
 
-  
-  if (notAlreadySet) {
-    RequestHeader newHeader = {
-      nsCString(lowercaseName), nsCString(value)
-    };
-    mAuthorRequestHeaders.AppendElement(newHeader);
+  if (!mAlreadySetHeaders.Contains(header)) {
+    
+    mergeHeaders = false;
   }
 
-  return NS_OK;
+  nsresult rv;
+  if (value.IsEmpty()) {
+    rv = httpChannel->SetEmptyRequestHeader(header);
+  } else {
+    
+    rv = httpChannel->SetRequestHeader(header, value, mergeHeaders);
+  }
+  if (rv == NS_ERROR_INVALID_ARG) {
+    return NS_ERROR_DOM_SYNTAX_ERR;
+  }
+  if (NS_SUCCEEDED(rv)) {
+    
+    mAlreadySetHeaders.PutEntry(nsCString(header));
+
+    
+    RequestHeader reqHeader = {
+      nsCString(header), nsCString(value)
+    };
+    mModifiedRequestHeaders.AppendElement(reqHeader);
+  }
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -3162,32 +3179,6 @@ XMLHttpRequestMainThread::AsyncOnChannelRedirect(nsIChannel *aOldChannel,
   return NS_OK;
 }
 
-void
-XMLHttpRequestMainThread::GetAuthorRequestHeaderValue(const char* aName,
-                                                      nsACString& outValue)
-{
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.name.Equals(aName)) {
-      outValue.Assign(header.value);
-      return;
-    }
-  }
-  outValue.SetIsVoid(true);
-}
-
-void
-XMLHttpRequestMainThread::SetAuthorRequestHeadersOnChannel(
-  nsCOMPtr<nsIHttpChannel> aHttpChannel)
-{
-  for (RequestHeader& header : mAuthorRequestHeaders) {
-    if (header.value.IsEmpty()) {
-      aHttpChannel->SetEmptyRequestHeader(header.name);
-    } else {
-      aHttpChannel->SetRequestHeader(header.name, header.value, false);
-    }
-  }
-}
-
 nsresult
 XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
 {
@@ -3200,7 +3191,15 @@ XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
     nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));
     if (httpChannel) {
       
-      SetAuthorRequestHeadersOnChannel(httpChannel);
+      for (RequestHeader& requestHeader : mModifiedRequestHeaders) {
+        if (requestHeader.value.IsEmpty()) {
+          httpChannel->SetEmptyRequestHeader(requestHeader.header);
+        } else {
+          httpChannel->SetRequestHeader(requestHeader.header,
+                                        requestHeader.value,
+                                        false);
+        }
+      }
     }
   } else {
     mErrorLoad = true;
@@ -3516,8 +3515,9 @@ XMLHttpRequestMainThread::ShouldBlockAuthPrompt()
   
   
 
-  for (RequestHeader& requestHeader : mAuthorRequestHeaders) {
-    if (requestHeader.name.EqualsLiteral("authorization")) {
+  for (uint32_t i = 0, len = mModifiedRequestHeaders.Length(); i < len; ++i) {
+    if (mModifiedRequestHeaders[i].header.
+          LowerCaseEqualsLiteral("authorization")) {
       return true;
     }
   }
