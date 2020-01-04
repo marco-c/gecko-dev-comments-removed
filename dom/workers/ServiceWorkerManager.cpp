@@ -1098,14 +1098,21 @@ class ServiceWorkerInstallJob final : public ServiceWorkerJobBase
   friend class ContinueInstallTask;
 
 public:
+  enum InstallType {
+    UpdateSameScript,
+    OverwriteScript
+  };
+
   ServiceWorkerInstallJob(ServiceWorkerJobQueue* aQueue,
                           nsIPrincipal* aPrincipal,
                           const nsACString& aScope,
                           const nsACString& aScriptSpec,
                           ServiceWorkerUpdateFinishCallback* aCallback,
-                          ServiceWorkerInfo* aServiceWorkerInfo)
+                          ServiceWorkerInfo* aServiceWorkerInfo,
+                          InstallType aType)
     : ServiceWorkerJobBase(aQueue, Type::InstallJob, aPrincipal, aScope,
                            aScriptSpec, aCallback, aServiceWorkerInfo)
+    , mType(aType)
   {
   }
 
@@ -1130,6 +1137,16 @@ public:
     nsresult rv = EnsureAndVerifyRegistration();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Fail(NS_ERROR_DOM_ABORT_ERR);
+    }
+
+    
+    
+    
+    if (mType == UpdateSameScript) {
+      RefPtr<ServiceWorkerInfo> newest = mRegistration->Newest();
+      if (!newest || !mScriptSpec.Equals(newest->ScriptSpec())) {
+        return Fail(NS_ERROR_DOM_ABORT_ERR);
+      }
     }
 
     
@@ -1237,6 +1254,9 @@ public:
     
     mRegistration->TryToActivate();
   }
+
+private:
+  const InstallType mType;
 };
 
 class ServiceWorkerRegisterJob final : public ServiceWorkerJobBase,
@@ -1481,9 +1501,22 @@ private:
       return FailWithErrorResult(error);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    ServiceWorkerInstallJob::InstallType installType =
+      mJobType == UpdateJob ? ServiceWorkerInstallJob::UpdateSameScript
+                            : ServiceWorkerInstallJob::OverwriteScript;
+
     RefPtr<ServiceWorkerInstallJob> job =
       new ServiceWorkerInstallJob(mQueue, mPrincipal, mScope, mScriptSpec,
-                                  mCallback, mUpdateAndInstallInfo);
+                                  mCallback, mUpdateAndInstallInfo,
+                                  installType);
     mQueue->Append(job);
     Done(NS_OK);
   }
