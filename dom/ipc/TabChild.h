@@ -265,8 +265,6 @@ public:
   Create(nsIContentChild* aManager, const TabId& aTabId,
          const TabContext& aContext, uint32_t aChromeFlags);
 
-  bool IsRootContentDocument() const;
-
   
   bool IsDestroyed() const{ return mDestroyed; }
 

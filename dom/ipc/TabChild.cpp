@@ -1303,30 +1303,6 @@ TabChild::SetProcessNameToAppName()
 }
 
 bool
-TabChild::IsRootContentDocument() const
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    return !HasAppOwnerApp();
-}
-
-bool
 TabChild::RecvLoadURL(const nsCString& aURI,
                       const BrowserConfiguration& aConfiguration,
                       const ShowInfo& aInfo)
