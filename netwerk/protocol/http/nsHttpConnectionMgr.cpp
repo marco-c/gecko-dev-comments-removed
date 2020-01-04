@@ -188,6 +188,7 @@ nsHttpConnectionMgr::Shutdown()
 
     
     while (!shutdownWrapper->mBool) {
+        fprintf(stderr, "nsHttpConnectionMgr::Shutdown() ProcessNextEvent\n");
         NS_ProcessNextEvent(NS_GetCurrentThread());
     }
 
