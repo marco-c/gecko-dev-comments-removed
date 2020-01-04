@@ -383,15 +383,15 @@ string DwarfCUToModule::GenericDIEHandler::ComputeQualifiedName() {
     qualified_name = &specification_->qualified_name;
   }
 
-  const string *unqualified_name;
+  const string *unqualified_name = NULL;
   const string *enclosing_name;
   if (!qualified_name) {
     
     
-    if (name_attribute_.empty() && specification_)
-      unqualified_name = &specification_->unqualified_name;
-    else
+    if (!name_attribute_.empty())
       unqualified_name = &name_attribute_;
+    else if (specification_)
+      unqualified_name = &specification_->unqualified_name;
 
     
     
@@ -407,7 +407,7 @@ string DwarfCUToModule::GenericDIEHandler::ComputeQualifiedName() {
   string return_value;
   if (qualified_name) {
     return_value = *qualified_name;
-  } else {
+  } else if (unqualified_name && enclosing_name) {
     
     
     return_value = cu_context_->language->MakeQualifiedName(*enclosing_name,
@@ -416,7 +416,7 @@ string DwarfCUToModule::GenericDIEHandler::ComputeQualifiedName() {
 
   
   
-  if (declaration_) {
+  if (declaration_ && qualified_name || (unqualified_name && enclosing_name)) {
     Specification spec;
     if (qualified_name) {
       spec.qualified_name = *qualified_name;

@@ -1323,6 +1323,29 @@ TEST_F(Specifications, InlineFunction) {
 
 
 
+TEST_F(Specifications, InlineFunctionInNamespace) {
+  PushLine(0x1758a0f941b71efbULL, 0x1cf154f1f545e146ULL, "line-file", 75173118);
+
+  StartCU();
+  DIEHandler* space_handler
+      = StartNamedDIE(&root_handler_, dwarf2reader::DW_TAG_namespace,
+                      "Namespace");
+  ASSERT_TRUE(space_handler != NULL);
+  AbstractInstanceDIE(space_handler, 0x1e8dac5d507ed7abULL,
+                      dwarf2reader::DW_INL_inlined, 0LL, "func-name");
+  DefineInlineInstanceDIE(space_handler, "", 0x1e8dac5d507ed7abULL,
+                       0x1758a0f941b71efbULL, 0x1cf154f1f545e146ULL);
+  space_handler->Finish();
+  delete space_handler;
+  root_handler_.Finish();
+
+  TestFunctionCount(1);
+  TestFunction(0, "Namespace::func-name",
+               0x1758a0f941b71efbULL, 0x1cf154f1f545e146ULL);
+}
+
+
+
 
 TEST_F(Specifications, LongChain) {
   PushLine(0x5a0dd6bb85db754cULL, 0x3bccb213d08c7fd3ULL, "line-file", 21192926);
