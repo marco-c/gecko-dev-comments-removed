@@ -336,6 +336,15 @@ public:
                                       EnabledState aEnabled);
   
   
+  static nsCSSProperty LookupPropertyByIDLName(
+      const nsAString& aPropertyIDLName,
+      EnabledState aEnabled);
+  static nsCSSProperty LookupPropertyByIDLName(
+      const nsACString& aPropertyIDLName,
+      EnabledState aEnabled);
+
+  
+  
   static bool IsCustomPropertyName(const nsAString& aProperty);
   static bool IsCustomPropertyName(const nsACString& aProperty);
 
