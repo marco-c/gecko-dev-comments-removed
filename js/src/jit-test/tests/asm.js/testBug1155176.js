@@ -1,11 +1,14 @@
 if (!this.SharedArrayBuffer || !isAsmJSCompilationAvailable())
     quit(0);
 
+load(libdir + "asm.js");
+setJitCompilerOption('wasm.test-mode', 1);
 
 
 
 
-function m(stdlib, ffi, heap) {
+
+var m = asmCompile("stdlib", "ffi", "heap", `
     "use asm";
 
     var view = new stdlib.Uint32Array(heap);
@@ -17,7 +20,7 @@ function m(stdlib, ffi, heap) {
     }
 
     return run;
-}
+`);
 
 assertEq(isAsmJSModule(m), true);
 
