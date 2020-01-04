@@ -187,7 +187,12 @@ KeyShortcuts.prototype = {
     if (shortcut.keyCode) {
       return event.keyCode == shortcut.keyCode;
     }
-    return event.key.toLowerCase() == shortcut.key;
+    
+    
+    
+    return event.key.toLowerCase() == shortcut.key ||
+      ( shortcut.key.match(/[0-9]/) &&
+        event.keyCode == shortcut.key.charCodeAt(0) );
   },
 
   handleEvent(event) {
