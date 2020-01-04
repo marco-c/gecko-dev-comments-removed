@@ -2204,47 +2204,51 @@ public:
 
 
 
-template<class TArrayBase, size_t N>
-class MOZ_NON_MEMMOVABLE nsAutoArrayBase : public TArrayBase
+template<class E, size_t N>
+class MOZ_NON_MEMMOVABLE AutoTArray : public nsTArray<E>
 {
-  static_assert(N != 0, "nsAutoArrayBase<TArrayBase, 0> should be specialized");
+  static_assert(N != 0, "AutoTArray<E, 0> should be specialized");
 public:
-  typedef nsAutoArrayBase<TArrayBase, N> self_type;
-  typedef TArrayBase base_type;
+  typedef AutoTArray<E, N> self_type;
+  typedef nsTArray<E> base_type;
   typedef typename base_type::Header Header;
   typedef typename base_type::elem_type elem_type;
+
+  AutoTArray()
+  {
+    Init();
+  }
+
+  AutoTArray(const self_type& aOther)
+  {
+    Init();
+    this->AppendElements(aOther);
+  }
+
+  explicit AutoTArray(const base_type& aOther)
+  {
+    Init();
+    this->AppendElements(aOther);
+  }
+
+  template<typename Allocator>
+  explicit AutoTArray(nsTArray_Impl<elem_type, Allocator>&& aOther)
+  {
+    Init();
+    this->SwapElements(aOther);
+  }
+
+  self_type& operator=(const self_type& aOther)
+  {
+    base_type::operator=(aOther);
+    return *this;
+  }
 
   template<typename Allocator>
   self_type& operator=(const nsTArray_Impl<elem_type, Allocator>& aOther)
   {
     base_type::operator=(aOther);
     return *this;
-  }
-
-protected:
-  nsAutoArrayBase() { Init(); }
-
-  
-  
-  
-  
-  nsAutoArrayBase(const self_type& aOther)
-  {
-    Init();
-    this->AppendElements(aOther);
-  }
-
-  explicit nsAutoArrayBase(const TArrayBase &aOther)
-  {
-    Init();
-    this->AppendElements(aOther);
-  }
-
-  template<typename Allocator>
-  explicit nsAutoArrayBase(nsTArray_Impl<elem_type, Allocator>&& aOther)
-  {
-    Init();
-    this->SwapElements(aOther);
   }
 
 private:
@@ -2297,42 +2301,9 @@ private:
 
 
 
-template<class TArrayBase>
-class nsAutoArrayBase<TArrayBase, 0> : public TArrayBase
+template<class E>
+class AutoTArray<E, 0> : public nsTArray<E>
 {
-};
-
-
-
-
-
-
-template<class E, size_t N>
-class AutoTArray : public nsAutoArrayBase<nsTArray<E>, N>
-{
-  typedef AutoTArray<E, N> self_type;
-  typedef nsAutoArrayBase<nsTArray<E>, N> Base;
-
-public:
-  AutoTArray() {}
-
-  template<typename Allocator>
-  explicit AutoTArray(const nsTArray_Impl<E, Allocator>& aOther)
-  {
-    Base::AppendElements(aOther);
-  }
-  template<typename Allocator>
-  explicit AutoTArray(nsTArray_Impl<E, Allocator>&& aOther)
-    : Base(mozilla::Move(aOther))
-  {
-  }
-
-  template<typename Allocator>
-  self_type& operator=(const nsTArray_Impl<E, Allocator>& other)
-  {
-    Base::operator=(other);
-    return *this;
-  }
 };
 
 template<class E, size_t N>
