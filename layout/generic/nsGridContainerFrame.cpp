@@ -609,14 +609,54 @@ struct nsGridContainerFrame::GridArea
 
 struct nsGridContainerFrame::GridItemInfo
 {
+  
+
+
+  enum StateBits : uint8_t {
+    eIsFlexing =            0x1, 
+    eFirstBaseline =        0x2, 
+    
+    eLastBaseline =         0x4,
+    eIsBaselineAligned = eFirstBaseline | eLastBaseline,
+    
+    eSelfBaseline =         0x8, 
+    
+    eContentBaseline =     0x10,
+    eAllBaselineBits = eIsBaselineAligned | eSelfBaseline | eContentBaseline,
+  };
+
   explicit GridItemInfo(nsIFrame* aFrame,
                         const GridArea& aArea)
     : mFrame(aFrame)
     , mArea(aArea)
   {
-    mIsFlexing[0] = false;
-    mIsFlexing[1] = false;
+    mState[eLogicalAxisBlock] = StateBits(0);
+    mState[eLogicalAxisInline] = StateBits(0);
+    mBaselineOffset[eLogicalAxisBlock] = nscoord(0);
+    mBaselineOffset[eLogicalAxisInline] = nscoord(0);
   }
+
+  
+
+
+
+
+  uint8_t GetSelfBaseline(uint8_t aAlign, LogicalAxis aAxis,
+                          nscoord* aBaselineOffset) const
+  {
+    MOZ_ASSERT(aAlign == NS_STYLE_ALIGN_BASELINE ||
+               aAlign == NS_STYLE_ALIGN_LAST_BASELINE);
+    if (!(mState[aAxis] & eSelfBaseline)) {
+      return aAlign == NS_STYLE_ALIGN_BASELINE ? NS_STYLE_ALIGN_SELF_START
+                                               : NS_STYLE_ALIGN_SELF_END;
+    }
+    *aBaselineOffset = mBaselineOffset[aAxis];
+    return aAlign;
+  }
+
+#ifdef DEBUG
+  void Dump() const;
+#endif
 
   static bool IsStartRowLessThan(const GridItemInfo* a, const GridItemInfo* b)
   {
@@ -625,12 +665,52 @@ struct nsGridContainerFrame::GridItemInfo
 
   nsIFrame* const mFrame;
   GridArea mArea;
-  bool mIsFlexing[2]; 
+  
+  
+  
+  mutable nscoord mBaselineOffset[2];
+  StateBits mState[2]; 
   static_assert(mozilla::eLogicalAxisBlock == 0, "unexpected index value");
   static_assert(mozilla::eLogicalAxisInline == 1, "unexpected index value");
 };
 
 using GridItemInfo = nsGridContainerFrame::GridItemInfo;
+using ItemState = GridItemInfo::StateBits;
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ItemState)
+
+#ifdef DEBUG
+void
+nsGridContainerFrame::GridItemInfo::Dump() const
+{
+  auto Dump1 = [this] (const char* aMsg, LogicalAxis aAxis) {
+    auto state = mState[aAxis];
+    if (!state) {
+      return;
+    }
+    printf("%s", aMsg);
+    if (state & ItemState::eIsFlexing) {
+      printf("flexing ");
+    }
+    if (state & ItemState::eFirstBaseline) {
+      printf("baseline %s-alignment ",
+             (state & ItemState::eSelfBaseline) ? "self" : "content");
+    }
+    if (state & ItemState::eLastBaseline) {
+      printf("last-baseline %s-alignment ",
+             (state & ItemState::eSelfBaseline) ? "self" : "content");
+    }
+    if (state & ItemState::eIsBaselineAligned) {
+      printf("%.2fpx", NSAppUnitsToFloatPixels(mBaselineOffset[aAxis],
+                                               AppUnitsPerCSSPixel()));
+    }
+    printf("\n");
+  };
+  printf("grid-row: %d %d\n", mArea.mRows.mStart, mArea.mRows.mEnd);
+  Dump1("  grid block-axis: ", eLogicalAxisBlock);
+  printf("grid-column: %d %d\n", mArea.mCols.mStart, mArea.mCols.mEnd);
+  Dump1("  grid inline-axis: ", eLogicalAxisInline);
+}
+#endif
 
 
 
@@ -3468,9 +3548,10 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
     uint32_t span = lineRange.Extent();
     if (span == 1) {
       
-      gridItem.mIsFlexing[mAxis] =
-        ResolveIntrinsicSizeStep1(aState, aFunctions, aPercentageBasis,
-                                  aConstraint, lineRange, gridItem);
+      if (ResolveIntrinsicSizeStep1(aState, aFunctions, aPercentageBasis,
+                                    aConstraint, lineRange, gridItem)) {
+        gridItem.mState[mAxis] |= ItemState::eIsFlexing;
+      }
     } else {
       TrackSize::StateBits state = TrackSize::StateBits(0);
       if (HasIntrinsicButNoFlexSizingInRange(lineRange, aConstraint, &state)) {
@@ -3503,9 +3584,8 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         step2Items.AppendElement(
           Step2ItemData({span, state, lineRange, minSize,
                          minContent, maxContent, *iter}));
-      } else {
-        aGridItems[iter.GridItemIndex()].mIsFlexing[mAxis] =
-          !!(state & TrackSize::eFlexMaxSizing);
+      } else if (state & TrackSize::eFlexMaxSizing) {
+        gridItem.mState[mAxis] |= ItemState::eIsFlexing;
       }
     }
   }
@@ -3759,7 +3839,7 @@ nsGridContainerFrame::Tracks::FindUsedFlexFraction(
   
   for (; !iter.AtEnd(); iter.Next()) {
     const GridItemInfo& item = aGridItems[iter.GridItemIndex()];
-    if (item.mIsFlexing[mAxis]) {
+    if (item.mState[mAxis] & ItemState::eIsFlexing) {
       nscoord spaceToFill = MaxContentContribution(item, rs, rc, wm, mAxis);
       if (spaceToFill <= 0) {
         continue;
