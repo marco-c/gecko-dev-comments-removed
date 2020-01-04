@@ -50,7 +50,7 @@ PerformancePanel.prototype = {
     
     
     if (!front) {
-      Cu.reportError("No PerformanceFront found in toolbox.");
+      console.error("No PerformanceFront found in toolbox.");
     }
 
     this.panelWin.gFront = front;

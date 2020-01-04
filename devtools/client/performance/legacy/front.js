@@ -218,7 +218,7 @@ const LegacyPerformanceFront = Class({
     
     
     if (!model) {
-      Cu.reportError("console.profileEnd() called with label that does not match a recording.");
+      console.error("console.profileEnd() called with label that does not match a recording.");
       return;
     }
 
@@ -229,7 +229,7 @@ const LegacyPerformanceFront = Class({
 
 
   _onProfilerUnexpectedlyStopped: function () {
-    Cu.reportError("Profiler unexpectedly stopped.", arguments);
+    console.error("Profiler unexpectedly stopped.", arguments);
   },
 
   

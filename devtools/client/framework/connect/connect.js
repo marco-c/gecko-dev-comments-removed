@@ -44,7 +44,7 @@ window.addEventListener("DOMContentLoaded", function onDOMReady() {
   let form = document.querySelector("#connection-form form");
   form.addEventListener("submit", function() {
     window.submit().catch(e => {
-      Cu.reportError(e);
+      console.error(e);
       
       showError("unexpected");
     });

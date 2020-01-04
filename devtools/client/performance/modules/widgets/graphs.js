@@ -470,7 +470,7 @@ OptimizationsGraph.prototype = Heritage.extend(MountainGraphWidget.prototype, {
     
     
     if (!data) {
-      Cu.reportError(`FrameNode#${frameNode.location} does not have optimizations data to render.`);
+      console.error(`FrameNode#${frameNode.location} does not have optimizations data to render.`);
       return;
     }
 

@@ -2879,7 +2879,7 @@ NetworkDetailsView.prototype = {
         
         viewState.dirty[tab] = false;
       }
-    }, Cu.reportError);
+    }, e => console.error(e));
   },
 
   

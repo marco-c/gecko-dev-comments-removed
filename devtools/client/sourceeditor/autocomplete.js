@@ -240,7 +240,7 @@ function autoComplete({ ed, cm }) {
       autocompleteOpts.suggestionInsertedOnce = false;
       
       ed.emit("after-suggest");
-    }).then(null, Cu.reportError);
+    }).then(null, e => console.error(e));
 }
 
 

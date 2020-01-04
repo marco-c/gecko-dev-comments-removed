@@ -322,8 +322,8 @@ TabTarget.prototype = {
     
     
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
-      Cu.reportError("The .window getter on devtools' |target| object isn't " +
-                     "e10s friendly!\n" + Error().stack);
+      console.error("The .window getter on devtools' |target| object isn't " +
+                    "e10s friendly!\n" + Error().stack);
     }
     
     

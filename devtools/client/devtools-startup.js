@@ -108,13 +108,13 @@ DevToolsStartup.prototype = {
         return Services.prefs.getBoolPref(pref);
       });
     } catch (ex) {
-      Cu.reportError(ex);
+      console.error(ex);
       return false;
     }
     if (!remoteDebuggingEnabled) {
       let errorMsg = "Could not run chrome debugger! You need the following " +
                      "prefs to be set to true: " + kDebuggerPrefs.join(", ");
-      Cu.reportError(errorMsg);
+      console.error(new Error(errorMsg));
       
       
       dump(errorMsg + "\n");

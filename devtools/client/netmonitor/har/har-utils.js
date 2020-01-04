@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Cu, Ci, Cc, CC } = require("chrome");
+const { Ci, Cc, CC } = require("chrome");
 
 XPCOMUtils.defineLazyGetter(this, "dirService", function () {
   return Cc["@mozilla.org/file/directory_service;1"]
@@ -119,7 +119,7 @@ var HarUtils = {
       
       convertor.close();
     } catch (err) {
-      Cu.reportError(err);
+      console.error(err);
       return false;
     }
 
@@ -157,7 +157,7 @@ var HarUtils = {
       file.remove(true);
       return true;
     } catch (err) {
-      Cu.reportError(err);
+      console.error(err);
 
       
       file.moveTo(null, originalFileName);
