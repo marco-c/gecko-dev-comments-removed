@@ -906,13 +906,13 @@ public:
                              BluetoothGattResultHandler* aRes) = 0;
 
   
-  virtual void SendIndication(int aServerIf,
-                              int aAttributeHandle,
-                              int aConnId,
-                              const nsTArray<uint8_t>& aValue,
-                              bool aConfirm, 
-                                             
-                              BluetoothGattResultHandler* aRes) = 0;
+  virtual void SendIndication(
+    int aServerIf,
+    const BluetoothAttributeHandle& aCharacteristicHandle,
+    int aConnId,
+    const nsTArray<uint8_t>& aValue,
+    bool aConfirm, 
+    BluetoothGattResultHandler* aRes) = 0;
 
   
   virtual void SendResponse(int aConnId,

@@ -287,13 +287,14 @@ public:
     BluetoothGattResultHandler* aRes);
 
   
-  nsresult ServerSendIndicationCmd(int aServerIf,
-                                   int aAttributeHandle,
-                                   int aConnId,
-                                   int aLength,
-                                   bool aConfirm,
-                                   uint8_t* aValue,
-                                   BluetoothGattResultHandler* aRes);
+  nsresult ServerSendIndicationCmd(
+    int aServerIf,
+    const BluetoothAttributeHandle& aCharacteristicHandle,
+    int aConnId,
+    int aLength,
+    bool aConfirm,
+    uint8_t* aValue,
+    BluetoothGattResultHandler* aRes);
 
   
   nsresult ServerSendResponseCmd(int aConnId,
@@ -979,7 +980,7 @@ public:
   
   void SendIndication(
     int aServerIf,
-    int aAttributeHandle,
+    const BluetoothAttributeHandle& aCharacteristicHandle,
     int aConnId,
     const nsTArray<uint8_t>& aValue,
     bool aConfirm, 
