@@ -1,66 +1,67 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(SIMPLE_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    let { document, Prefs, NetMonitorView } = aMonitor.panelWin;
-    let detailsPane = document.getElementById("details-pane");
-    let detailsPaneToggleButton = document.getElementById("details-pane-toggle");
+add_task(function* () {
+  let [,, monitor] = yield initNetMonitor(SIMPLE_URL);
+  info("Starting test... ");
 
-    ok(detailsPane.classList.contains("pane-collapsed") &&
-       detailsPaneToggleButton.classList.contains("pane-collapsed"),
-      "The details pane should initially be hidden.");
+  let { document, Prefs, NetMonitorView } = monitor.panelWin;
+  let detailsPane = document.getElementById("details-pane");
+  let detailsPaneToggleButton = document.getElementById("details-pane-toggle");
 
-    NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
+  ok(detailsPane.classList.contains("pane-collapsed") &&
+     detailsPaneToggleButton.classList.contains("pane-collapsed"),
+    "The details pane should initially be hidden.");
 
-    let width = ~~(detailsPane.getAttribute("width"));
-    is(width, Prefs.networkDetailsWidth,
-      "The details pane has an incorrect width.");
-    is(detailsPane.style.marginLeft, "0px",
-      "The details pane has an incorrect left margin.");
-    is(detailsPane.style.marginRight, "0px",
-      "The details pane has an incorrect right margin.");
-    ok(!detailsPane.hasAttribute("animated"),
-      "The details pane has an incorrect animated attribute.");
-    ok(!detailsPane.classList.contains("pane-collapsed") &&
-       !detailsPaneToggleButton.classList.contains("pane-collapsed"),
-      "The details pane should at this point be visible.");
+  NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
 
-    NetMonitorView.toggleDetailsPane({ visible: false, animated: true });
+  let width = ~~(detailsPane.getAttribute("width"));
+  is(width, Prefs.networkDetailsWidth,
+    "The details pane has an incorrect width.");
+  is(detailsPane.style.marginLeft, "0px",
+    "The details pane has an incorrect left margin.");
+  is(detailsPane.style.marginRight, "0px",
+    "The details pane has an incorrect right margin.");
+  ok(!detailsPane.hasAttribute("animated"),
+    "The details pane has an incorrect animated attribute.");
+  ok(!detailsPane.classList.contains("pane-collapsed") &&
+     !detailsPaneToggleButton.classList.contains("pane-collapsed"),
+    "The details pane should at this point be visible.");
 
-    let margin = -(width + 1) + "px";
-    is(width, Prefs.networkDetailsWidth,
-      "The details pane has an incorrect width after collapsing.");
-    is(detailsPane.style.marginLeft, margin,
-      "The details pane has an incorrect left margin after collapsing.");
-    is(detailsPane.style.marginRight, margin,
-      "The details pane has an incorrect right margin after collapsing.");
-    ok(detailsPane.hasAttribute("animated"),
-      "The details pane has an incorrect attribute after an animated collapsing.");
-    ok(detailsPane.classList.contains("pane-collapsed") &&
-       detailsPaneToggleButton.classList.contains("pane-collapsed"),
-      "The details pane should not be visible after collapsing.");
+  NetMonitorView.toggleDetailsPane({ visible: false, animated: true });
 
-    NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
+  let margin = -(width + 1) + "px";
+  is(width, Prefs.networkDetailsWidth,
+    "The details pane has an incorrect width after collapsing.");
+  is(detailsPane.style.marginLeft, margin,
+    "The details pane has an incorrect left margin after collapsing.");
+  is(detailsPane.style.marginRight, margin,
+    "The details pane has an incorrect right margin after collapsing.");
+  ok(detailsPane.hasAttribute("animated"),
+    "The details pane has an incorrect attribute after an animated collapsing.");
+  ok(detailsPane.classList.contains("pane-collapsed") &&
+     detailsPaneToggleButton.classList.contains("pane-collapsed"),
+    "The details pane should not be visible after collapsing.");
 
-    is(width, Prefs.networkDetailsWidth,
-      "The details pane has an incorrect width after uncollapsing.");
-    is(detailsPane.style.marginLeft, "0px",
-      "The details pane has an incorrect left margin after uncollapsing.");
-    is(detailsPane.style.marginRight, "0px",
-      "The details pane has an incorrect right margin after uncollapsing.");
-    ok(!detailsPane.hasAttribute("animated"),
-      "The details pane has an incorrect attribute after an unanimated uncollapsing.");
-    ok(!detailsPane.classList.contains("pane-collapsed") &&
-       !detailsPaneToggleButton.classList.contains("pane-collapsed"),
-      "The details pane should be visible again after uncollapsing.");
+  NetMonitorView.toggleDetailsPane({ visible: true, animated: false });
 
-    teardown(aMonitor).then(finish);
-  });
-}
+  is(width, Prefs.networkDetailsWidth,
+    "The details pane has an incorrect width after uncollapsing.");
+  is(detailsPane.style.marginLeft, "0px",
+    "The details pane has an incorrect left margin after uncollapsing.");
+  is(detailsPane.style.marginRight, "0px",
+    "The details pane has an incorrect right margin after uncollapsing.");
+  ok(!detailsPane.hasAttribute("animated"),
+    "The details pane has an incorrect attribute after an unanimated uncollapsing.");
+  ok(!detailsPane.classList.contains("pane-collapsed") &&
+     !detailsPaneToggleButton.classList.contains("pane-collapsed"),
+    "The details pane should be visible again after uncollapsing.");
+
+  yield teardown(monitor);
+});

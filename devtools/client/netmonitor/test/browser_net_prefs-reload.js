@@ -1,233 +1,212 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(SIMPLE_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    
-    
-    requestLongerTimeout(3);
+add_task(function* () {
+  let [,, monitor] = yield initNetMonitor(SIMPLE_URL);
+  info("Starting test... ");
 
-    
-    
-    
-    let getView = () => aMonitor.panelWin.NetMonitorView;
-    let getController = () => aMonitor.panelWin.NetMonitorController;
+  
+  
+  requestLongerTimeout(3);
 
-    let prefsToCheck = {
-      filters: {
-        
-        newValue: ["html", "css"],
-        
-        
-        validateValue: ($) => getView().RequestsMenu._activeFilters,
-        
-        
-        modifyFrontend: ($, aValue) => aValue.forEach(e => getView().RequestsMenu.filterOn(e))
-      },
-      networkDetailsWidth: {
-        newValue: ~~(Math.random() * 200 + 100),
-        validateValue: ($) => ~~$("#details-pane").getAttribute("width"),
-        modifyFrontend: ($, aValue) => $("#details-pane").setAttribute("width", aValue)
-      },
-      networkDetailsHeight: {
-        newValue: ~~(Math.random() * 300 + 100),
-        validateValue: ($) => ~~$("#details-pane").getAttribute("height"),
-        modifyFrontend: ($, aValue) => $("#details-pane").setAttribute("height", aValue)
-      }
+  
+  
+  
+  let getView = () => monitor.panelWin.NetMonitorView;
+
+  let prefsToCheck = {
+    filters: {
       
-    };
-
-    function storeFirstPrefValues() {
-      info("Caching initial pref values.");
-
-      for (let name in prefsToCheck) {
-        let currentValue = aMonitor.panelWin.Prefs[name];
-        prefsToCheck[name].firstValue = currentValue;
-      }
-    }
-
-    function validateFirstPrefValues() {
-      info("Validating current pref values to the UI elements.");
-
-      for (let name in prefsToCheck) {
-        let currentValue = aMonitor.panelWin.Prefs[name];
-        let firstValue = prefsToCheck[name].firstValue;
-        let validateValue = prefsToCheck[name].validateValue;
-
-        is(currentValue.toSource(), firstValue.toSource(),
-          "Pref " + name + " should be equal to first value: " + firstValue);
-        is(currentValue.toSource(), validateValue(aMonitor.panelWin.$).toSource(),
-          "Pref " + name + " should validate: " + currentValue);
-      }
-    }
-
-    function modifyFrontend() {
-      info("Modifying UI elements to the specified new values.");
-
-      for (let name in prefsToCheck) {
-        let currentValue = aMonitor.panelWin.Prefs[name];
-        let firstValue = prefsToCheck[name].firstValue;
-        let newValue = prefsToCheck[name].newValue;
-        let validateValue = prefsToCheck[name].validateValue;
-        let modifyFrontend = prefsToCheck[name].modifyFrontend;
-
-        modifyFrontend(aMonitor.panelWin.$, newValue);
-        info("Modified UI element affecting " + name + " to: " + newValue);
-
-        is(currentValue.toSource(), firstValue.toSource(),
-          "Pref " + name + " should still be equal to first value: " + firstValue);
-        isnot(currentValue.toSource(), newValue.toSource(),
-          "Pref " + name + " should't yet be equal to second value: " + newValue);
-        is(newValue.toSource(), validateValue(aMonitor.panelWin.$).toSource(),
-          "The UI element affecting " + name + " should validate: " + newValue);
-      }
-    }
-
-    function validateNewPrefValues() {
-      info("Invalidating old pref values to the modified UI elements.");
-
-      for (let name in prefsToCheck) {
-        let currentValue = aMonitor.panelWin.Prefs[name];
-        let firstValue = prefsToCheck[name].firstValue;
-        let newValue = prefsToCheck[name].newValue;
-        let validateValue = prefsToCheck[name].validateValue;
-
-        isnot(currentValue.toSource(), firstValue.toSource(),
-          "Pref " + name + " should't be equal to first value: " + firstValue);
-        is(currentValue.toSource(), newValue.toSource(),
-          "Pref " + name + " should now be equal to second value: " + newValue);
-        is(newValue.toSource(), validateValue(aMonitor.panelWin.$).toSource(),
-          "The UI element affecting " + name + " should validate: " + newValue);
-      }
-    }
-
-    function resetFrontend() {
-      info("Resetting UI elements to the cached initial pref values.");
-
-      for (let name in prefsToCheck) {
-        let currentValue = aMonitor.panelWin.Prefs[name];
-        let firstValue = prefsToCheck[name].firstValue;
-        let newValue = prefsToCheck[name].newValue;
-        let validateValue = prefsToCheck[name].validateValue;
-        let modifyFrontend = prefsToCheck[name].modifyFrontend;
-
-        modifyFrontend(aMonitor.panelWin.$, firstValue);
-        info("Modified UI element affecting " + name + " to: " + firstValue);
-
-        isnot(currentValue.toSource(), firstValue.toSource(),
-          "Pref " + name + " should't yet be equal to first value: " + firstValue);
-        is(currentValue.toSource(), newValue.toSource(),
-          "Pref " + name + " should still be equal to second value: " + newValue);
-        is(firstValue.toSource(), validateValue(aMonitor.panelWin.$).toSource(),
-          "The UI element affecting " + name + " should validate: " + firstValue);
-      }
-    }
-
-    function testBottom() {
-      info("Testing prefs reload for a bottom host.");
-      storeFirstPrefValues();
-
+      newValue: ["html", "css"],
       
-      validateFirstPrefValues();
-      modifyFrontend();
-
-      return restartNetMonitor(aMonitor)
-        .then(([,, aNewMonitor]) => {
-          aMonitor = aNewMonitor;
-
-          
-          validateNewPrefValues();
-          resetFrontend();
-
-          return restartNetMonitor(aMonitor);
-        })
-        .then(([,, aNewMonitor]) => {
-          aMonitor = aNewMonitor;
-
-          
-          validateFirstPrefValues();
-        });
+      
+      validateValue: ($) => getView().RequestsMenu._activeFilters,
+      
+      
+      modifyFrontend: ($, value) => value.forEach(e => getView().RequestsMenu.filterOn(e))
+    },
+    networkDetailsWidth: {
+      newValue: ~~(Math.random() * 200 + 100),
+      validateValue: ($) => ~~$("#details-pane").getAttribute("width"),
+      modifyFrontend: ($, value) => $("#details-pane").setAttribute("width", value)
+    },
+    networkDetailsHeight: {
+      newValue: ~~(Math.random() * 300 + 100),
+      validateValue: ($) => ~~$("#details-pane").getAttribute("height"),
+      modifyFrontend: ($, value) => $("#details-pane").setAttribute("height", value)
     }
+    
+  };
 
-    function testSide() {
-      info("Moving toolbox to the side...");
+  yield testBottom();
+  yield testSide();
+  yield testWindow();
 
-      return aMonitor._toolbox.switchHost(Toolbox.HostType.SIDE)
-        .then(() => {
-          info("Testing prefs reload for a side host.");
-          storeFirstPrefValues();
+  info("Moving toolbox back to the bottom...");
+  yield monitor._toolbox.switchHost(Toolbox.HostType.BOTTOM);
+  return teardown(monitor);
 
-          
-          validateFirstPrefValues();
-          modifyFrontend();
+  function storeFirstPrefValues() {
+    info("Caching initial pref values.");
 
-          return restartNetMonitor(aMonitor);
-        })
-        .then(([,, aNewMonitor]) => {
-          aMonitor = aNewMonitor;
-
-          
-          validateNewPrefValues();
-          resetFrontend();
-
-          return restartNetMonitor(aMonitor);
-        })
-        .then(([,, aNewMonitor]) => {
-          aMonitor = aNewMonitor;
-
-          
-          validateFirstPrefValues();
-        });
+    for (let name in prefsToCheck) {
+      let currentValue = monitor.panelWin.Prefs[name];
+      prefsToCheck[name].firstValue = currentValue;
     }
+  }
 
-    function testWindow() {
-      info("Moving toolbox into a window...");
+  function validateFirstPrefValues() {
+    info("Validating current pref values to the UI elements.");
 
-      return aMonitor._toolbox.switchHost(Toolbox.HostType.WINDOW)
-        .then(() => {
-          info("Testing prefs reload for a window host.");
-          storeFirstPrefValues();
+    for (let name in prefsToCheck) {
+      let currentValue = monitor.panelWin.Prefs[name];
+      let firstValue = prefsToCheck[name].firstValue;
+      let validateValue = prefsToCheck[name].validateValue;
 
-          
-          validateFirstPrefValues();
-          modifyFrontend();
-
-          return restartNetMonitor(aMonitor);
-        })
-        .then(([,, aNewMonitor]) => {
-          aMonitor = aNewMonitor;
-
-          
-          validateNewPrefValues();
-          resetFrontend();
-
-          return restartNetMonitor(aMonitor);
-        })
-        .then(([,, aNewMonitor]) => {
-          aMonitor = aNewMonitor;
-
-          
-          validateFirstPrefValues();
-        });
+      is(currentValue.toSource(), firstValue.toSource(),
+        "Pref " + name + " should be equal to first value: " + firstValue);
+      is(currentValue.toSource(), validateValue(monitor.panelWin.$).toSource(),
+        "Pref " + name + " should validate: " + currentValue);
     }
+  }
 
-    function cleanupAndFinish() {
-      info("Moving toolbox back to the bottom...");
+  function modifyFrontend() {
+    info("Modifying UI elements to the specified new values.");
 
-      aMonitor._toolbox.switchHost(Toolbox.HostType.BOTTOM)
-        .then(() => teardown(aMonitor))
-        .then(finish);
+    for (let name in prefsToCheck) {
+      let currentValue = monitor.panelWin.Prefs[name];
+      let firstValue = prefsToCheck[name].firstValue;
+      let newValue = prefsToCheck[name].newValue;
+      let validateValue = prefsToCheck[name].validateValue;
+      let modFrontend = prefsToCheck[name].modifyFrontend;
+
+      modFrontend(monitor.panelWin.$, newValue);
+      info("Modified UI element affecting " + name + " to: " + newValue);
+
+      is(currentValue.toSource(), firstValue.toSource(),
+        "Pref " + name + " should still be equal to first value: " + firstValue);
+      isnot(currentValue.toSource(), newValue.toSource(),
+        "Pref " + name + " should't yet be equal to second value: " + newValue);
+      is(newValue.toSource(), validateValue(monitor.panelWin.$).toSource(),
+        "The UI element affecting " + name + " should validate: " + newValue);
     }
+  }
 
-    testBottom()
-      .then(testSide)
-      .then(testWindow)
-      .then(cleanupAndFinish);
-  });
-}
+  function validateNewPrefValues() {
+    info("Invalidating old pref values to the modified UI elements.");
+
+    for (let name in prefsToCheck) {
+      let currentValue = monitor.panelWin.Prefs[name];
+      let firstValue = prefsToCheck[name].firstValue;
+      let newValue = prefsToCheck[name].newValue;
+      let validateValue = prefsToCheck[name].validateValue;
+
+      isnot(currentValue.toSource(), firstValue.toSource(),
+        "Pref " + name + " should't be equal to first value: " + firstValue);
+      is(currentValue.toSource(), newValue.toSource(),
+        "Pref " + name + " should now be equal to second value: " + newValue);
+      is(newValue.toSource(), validateValue(monitor.panelWin.$).toSource(),
+        "The UI element affecting " + name + " should validate: " + newValue);
+    }
+  }
+
+  function resetFrontend() {
+    info("Resetting UI elements to the cached initial pref values.");
+
+    for (let name in prefsToCheck) {
+      let currentValue = monitor.panelWin.Prefs[name];
+      let firstValue = prefsToCheck[name].firstValue;
+      let newValue = prefsToCheck[name].newValue;
+      let validateValue = prefsToCheck[name].validateValue;
+      let modFrontend = prefsToCheck[name].modifyFrontend;
+
+      modFrontend(monitor.panelWin.$, firstValue);
+      info("Modified UI element affecting " + name + " to: " + firstValue);
+
+      isnot(currentValue.toSource(), firstValue.toSource(),
+        "Pref " + name + " should't yet be equal to first value: " + firstValue);
+      is(currentValue.toSource(), newValue.toSource(),
+        "Pref " + name + " should still be equal to second value: " + newValue);
+      is(firstValue.toSource(), validateValue(monitor.panelWin.$).toSource(),
+        "The UI element affecting " + name + " should validate: " + firstValue);
+    }
+  }
+
+  function* testBottom() {
+    info("Testing prefs reload for a bottom host.");
+    storeFirstPrefValues();
+
+    
+    validateFirstPrefValues();
+    modifyFrontend();
+
+    let [,, newMonitor] = yield restartNetMonitor(monitor);
+    monitor = newMonitor;
+
+    
+    validateNewPrefValues();
+    resetFrontend();
+
+    let [,, newMonitor2] = yield restartNetMonitor(monitor);
+    monitor = newMonitor2;
+
+    
+    validateFirstPrefValues();
+  }
+
+  function* testSide() {
+    info("Moving toolbox to the side...");
+
+    yield monitor._toolbox.switchHost(Toolbox.HostType.SIDE);
+    info("Testing prefs reload for a side host.");
+    storeFirstPrefValues();
+
+    
+    validateFirstPrefValues();
+    modifyFrontend();
+
+    let [,, newMonitor] = yield restartNetMonitor(monitor);
+    monitor = newMonitor;
+
+    
+    validateNewPrefValues();
+    resetFrontend();
+
+    let [,, newMonitor2] = yield restartNetMonitor(monitor);
+    monitor = newMonitor2;
+
+    
+    validateFirstPrefValues();
+  }
+
+  function* testWindow() {
+    info("Moving toolbox into a window...");
+
+    yield monitor._toolbox.switchHost(Toolbox.HostType.WINDOW);
+    info("Testing prefs reload for a window host.");
+    storeFirstPrefValues();
+
+    
+    validateFirstPrefValues();
+    modifyFrontend();
+
+    let [,, newMonitor] = yield restartNetMonitor(monitor);
+    monitor = newMonitor;
+
+    
+    validateNewPrefValues();
+    resetFrontend();
+
+    let [,, newMonitor2] = yield restartNetMonitor(monitor);
+    monitor = newMonitor2;
+
+    
+    validateFirstPrefValues();
+  }
+});

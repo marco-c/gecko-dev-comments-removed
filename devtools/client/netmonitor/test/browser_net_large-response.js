@@ -1,51 +1,55 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  initNetMonitor(CUSTOM_GET_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test... ");
 
-    
-    
-    requestLongerTimeout(2);
+const HTML_LONG_URL = CONTENT_TYPE_SJS + "?fmt=html-long";
 
-    let { document, Editor, NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(CUSTOM_GET_URL);
+  info("Starting test... ");
 
-    RequestsMenu.lazyUpdate = false;
+  
+  
+  requestLongerTimeout(2);
 
-    waitForNetworkEvents(aMonitor, 1).then(() => {
-      verifyRequestItemTarget(RequestsMenu.getItemAtIndex(0),
-        "GET", CONTENT_TYPE_SJS + "?fmt=html-long", {
-          status: 200,
-          statusText: "OK"
-        });
+  let { document, EVENTS, Editor, NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
-      aMonitor.panelWin.once(aMonitor.panelWin.EVENTS.RESPONSE_BODY_DISPLAYED, () => {
-        NetMonitorView.editor("#response-content-textarea").then((aEditor) => {
-          ok(aEditor.getText().match(/^<p>/),
-            "The text shown in the source editor is incorrect.");
-          is(aEditor.getMode(), Editor.modes.text,
-            "The mode active in the source editor is incorrect.");
+  RequestsMenu.lazyUpdate = false;
 
-          teardown(aMonitor).then(finish);
-        });
-      });
+  let wait = waitForNetworkEvents(monitor, 1);
+  yield ContentTask.spawn(tab.linkedBrowser, HTML_LONG_URL, function* (url) {
+    content.wrappedJSObject.performRequests(1, url);
+  });
+  yield wait;
 
-      EventUtils.sendMouseEvent({ type: "mousedown" },
-        document.getElementById("details-pane-toggle"));
-      EventUtils.sendMouseEvent({ type: "mousedown" },
-        document.querySelectorAll("#details-pane tab")[3]);
+  verifyRequestItemTarget(RequestsMenu.getItemAtIndex(0),
+    "GET", CONTENT_TYPE_SJS + "?fmt=html-long", {
+      status: 200,
+      statusText: "OK"
     });
 
-    aDebuggee.performRequests(1, CONTENT_TYPE_SJS + "?fmt=html-long");
-  });
+  let onEvent = monitor.panelWin.once(EVENTS.RESPONSE_BODY_DISPLAYED);
+  EventUtils.sendMouseEvent({ type: "mousedown" },
+    document.getElementById("details-pane-toggle"));
+  EventUtils.sendMouseEvent({ type: "mousedown" },
+    document.querySelectorAll("#details-pane tab")[3]);
+  yield onEvent;
+
+  let editor = yield NetMonitorView.editor("#response-content-textarea");
+  ok(editor.getText().match(/^<p>/),
+    "The text shown in the source editor is incorrect.");
+  is(editor.getMode(), Editor.modes.text,
+    "The mode active in the source editor is incorrect.");
+
+  yield teardown(monitor);
 
   
   info("Forcing GC after netmonitor test.");
   Cu.forceGC();
-}
+});

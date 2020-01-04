@@ -1,40 +1,37 @@
 
 
 
+"use strict";
 
 
 
 
-function test() {
-  waitForExplicitFinish();
 
-  initNetMonitor(CUSTOM_GET_URL).then(([aTab, aDebuggee, aMonitor]) => {
-    info("Starting test...");
+add_task(function* () {
+  let [tab, , monitor] = yield initNetMonitor(CUSTOM_GET_URL);
+  info("Starting test...");
 
-    let { NetMonitorView } = aMonitor.panelWin;
-    let { RequestsMenu } = NetMonitorView;
+  let { NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
 
-    RequestsMenu.lazyUpdate = false;
+  RequestsMenu.lazyUpdate = false;
 
-    waitForNetworkEvents(aMonitor, 1).then(() => {
-      let requestItem = RequestsMenu.getItemAtIndex(0);
-      RequestsMenu.selectedItem = requestItem;
-
-      gBrowser.tabContainer.addEventListener("TabOpen", function onOpen(event) {
-        ok(true, "A new tab has been opened ");
-        gBrowser.tabContainer.removeEventListener("TabOpen", onOpen, false);
-        cleanUp();
-      }, false);
-
-      RequestsMenu.openRequestInTab();
-    });
-
-    aDebuggee.performRequests(1);
-    function cleanUp() {
-      teardown(aMonitor).then(() => {
-        gBrowser.removeCurrentTab();
-        finish();
-      });
-    }
+  let wait = waitForNetworkEvents(monitor, 1);
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+    content.wrappedJSObject.performRequests(1);
   });
-}
+  yield wait;
+
+  let requestItem = RequestsMenu.getItemAtIndex(0);
+  RequestsMenu.selectedItem = requestItem;
+
+  let onTabOpen = once(gBrowser.tabContainer, "TabOpen", false);
+  RequestsMenu.openRequestInTab();
+  yield onTabOpen;
+
+  ok(true, "A new tab has been opened");
+
+  yield teardown(monitor);
+
+  gBrowser.removeCurrentTab();
+});
