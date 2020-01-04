@@ -746,7 +746,9 @@ public class BrowserSearch extends HomeFragment
     private void showSuggestionsOptIn() {
         
         
+        
         if (mSuggestionsOptInPrompt != null) {
+            mSuggestionsOptInPrompt.setVisibility(View.VISIBLE);
             return;
         }
 
