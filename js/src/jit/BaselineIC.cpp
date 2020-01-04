@@ -5995,13 +5995,12 @@ CopyArray(JSContext* cx, HandleObject obj, MutableHandleValue result)
 
 static bool
 TryAttachStringSplit(JSContext* cx, ICCall_Fallback* stub, HandleScript script,
-                     uint32_t argc, Value* vp, jsbytecode* pc, HandleValue res,
-                     bool* attached)
+                     uint32_t argc, HandleValue callee, Value* vp, jsbytecode* pc,
+                     HandleValue res, bool* attached)
 {
     if (stub->numOptimizedStubs() != 0)
         return true;
 
-    RootedValue callee(cx, vp[0]);
     RootedValue thisv(cx, vp[1]);
     Value* args = vp + 2;
 
@@ -6068,16 +6067,14 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
     bool constructing = (op == JSOP_NEW);
 
     
-    AutoArrayRooter vpRoot(cx, argc + 2 + constructing, vp);
+    size_t numValues = argc + 2 + constructing;
+    AutoArrayRooter vpRoot(cx, numValues, vp);
 
+    CallArgs callArgs = CallArgsFromSp(argc + constructing, vp + numValues, constructing);
     RootedValue callee(cx, vp[0]);
-    RootedValue thisv(cx, vp[1]);
-
-    Value* args = vp + 2;
 
     
-    if (op == JSOP_FUNAPPLY && argc == 2 && args[1].isMagic(JS_OPTIMIZED_ARGUMENTS)) {
-        CallArgs callArgs = CallArgsFromVp(argc, vp);
+    if (op == JSOP_FUNAPPLY && argc == 2 && callArgs[1].isMagic(JS_OPTIMIZED_ARGUMENTS)) {
         if (!GuardFunApplyArgumentsOptimization(cx, frame, callArgs))
             return false;
     }
@@ -6093,36 +6090,13 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
     }
 
     if (op == JSOP_NEW) {
-        
-        if (!IsConstructor(callee)) {
-            ReportValueError(cx, JSMSG_NOT_CONSTRUCTOR, JSDVG_IGNORE_STACK, callee, nullptr);
+        if (!ConstructFromStack(cx, callArgs))
             return false;
-        }
-
-        ConstructArgs cargs(cx);
-        if (!cargs.init(argc))
-            return false;
-
-        for (uint32_t i = 0; i < argc; i++)
-            cargs[i].set(args[i]);
-
-        RootedValue newTarget(cx, args[argc]);
-        MOZ_ASSERT(IsConstructor(newTarget),
-                   "either callee == newTarget, or the initial |new| checked "
-                   "that IsConstructor(newTarget)");
-
-        RootedObject obj(cx);
-        if (!Construct(cx, callee, cargs, newTarget, &obj))
-            return false;
-
-        res.setObject(*obj);
-
     } else if ((op == JSOP_EVAL || op == JSOP_STRICTEVAL) &&
                frame->scopeChain()->global().valueIsEval(callee))
     {
-        if (!DirectEval(cx, CallArgsFromVp(argc, vp)))
+        if (!DirectEval(cx, callArgs))
             return false;
-        res.set(vp[0]);
     } else {
         MOZ_ASSERT(op == JSOP_CALL ||
                    op == JSOP_CALLITER ||
@@ -6132,13 +6106,15 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
                    op == JSOP_STRICTEVAL);
         if (op == JSOP_CALLITER && callee.isPrimitive()) {
             MOZ_ASSERT(argc == 0, "thisv must be on top of the stack");
-            ReportValueError(cx, JSMSG_NOT_ITERABLE, -1, thisv, nullptr);
+            ReportValueError(cx, JSMSG_NOT_ITERABLE, -1, callArgs.thisv(), nullptr);
             return false;
         }
-        if (!Invoke(cx, thisv, callee, argc, args, res))
+
+        if (!Invoke(cx, callArgs))
             return false;
     }
 
+    res.set(callArgs.rval());
     TypeScript::Monitor(cx, script, pc, res);
 
     
@@ -6158,7 +6134,8 @@ DoCallFallback(JSContext* cx, BaselineFrame* frame, ICCall_Fallback* stub_, uint
 
     
     
-    if (!TryAttachStringSplit(cx, stub, script, argc, vp, pc, res, &handled))
+    
+    if (!TryAttachStringSplit(cx, stub, script, argc, callee, vp, pc, res, &handled))
         return false;
 
     if (!handled)

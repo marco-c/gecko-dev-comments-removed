@@ -95,6 +95,18 @@ Construct(JSContext* cx, HandleValue fval, const AnyConstructArgs& args, HandleV
 
 
 
+
+
+
+extern bool
+ConstructFromStack(JSContext* cx, const CallArgs& args);
+
+
+
+
+
+
+
 extern bool
 InternalConstructWithProvidedThis(JSContext* cx, HandleValue fval, HandleValue thisv,
                                   const AnyConstructArgs& args, HandleValue newTarget,
