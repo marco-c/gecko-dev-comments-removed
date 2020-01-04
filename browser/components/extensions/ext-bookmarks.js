@@ -53,10 +53,9 @@ function getTree(rootGuid, onlyChildren) {
     if (onlyChildren) {
       let children = root.children || [];
       return children.map(child => convert(child, root));
-    } else {
-      
-      return [convert(root, null)];
     }
+    
+    return [convert(root, null)];
   }).catch(e => Promise.reject({message: e.message}));
 }
 

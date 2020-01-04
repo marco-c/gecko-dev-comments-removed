@@ -259,14 +259,13 @@ LoginManagerPrompter.prototype = {
   get _inPrivateBrowsing() {
     if (this._window) {
       return PrivateBrowsingUtils.isContentWindowPrivate(this._window);
-    } else {
-      
-      
-      
-      
-      
-      return true;
     }
+    
+    
+    
+    
+    
+    return true;
   },
 
 
@@ -1484,8 +1483,7 @@ LoginManagerPrompter.prototype = {
     if (formatArgs)
       return this._strBundle.formatStringFromName(
                                   key, formatArgs, formatArgs.length);
-    else
-      return this._strBundle.GetStringFromName(key);
+    return this._strBundle.GetStringFromName(key);
   },
 
 

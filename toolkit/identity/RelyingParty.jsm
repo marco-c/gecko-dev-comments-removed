@@ -110,28 +110,23 @@ IdentityRelyingParty.prototype = {
         
         let options = {loggedInUser: state.email, origin: origin};
         return this._doLogin(aRpCaller, options);
-
-      } else {
-        
-        
-
-        let options = {loggedInUser: state.email, origin: origin};
-        return this._doLogin(aRpCaller, options);
       }
+      
+      
+
+      let options = {loggedInUser: state.email, origin: origin};
+      return this._doLogin(aRpCaller, options);
 
     
     
     
     
 
-    } else {
-      if (aRpCaller.loggedInUser) {
-        return this._doLogout(aRpCaller, {origin: origin});
-
-      } else {
-        return aRpCaller.doReady();
-      }
     }
+    if (aRpCaller.loggedInUser) {
+      return this._doLogout(aRpCaller, {origin: origin});
+    }
+    return aRpCaller.doReady();
   },
 
   

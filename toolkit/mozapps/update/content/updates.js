@@ -912,10 +912,8 @@ var gDownloadingPage = {
         gUpdates.wiz.goTo("errors");
         return;
       }
-      else {
-        
-        aus.addDownloadListener(this);
-      }
+      
+      aus.addDownloadListener(this);
 
       if (activeUpdate)
         this._setUIState(!aus.isDownloading);

@@ -40,9 +40,8 @@ this.PrivateBrowsingUtils = {
       
       
       return this.isWindowPrivate(chromeWin);
-    } else {
-      return this.privacyContextFromWindow(aBrowser.contentWindow).usePrivateBrowsing;
     }
+    return this.privacyContextFromWindow(aBrowser.contentWindow).usePrivateBrowsing;
   },
 
   privacyContextFromWindow: function pbu_privacyContextFromWindow(aWindow) {

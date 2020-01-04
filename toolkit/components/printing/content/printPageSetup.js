@@ -198,9 +198,8 @@ function hfValueToId(val)
   }
   if ( val.length ) {
       return 6; 
-  } else {
-      return 0; 
   }
+  return 0; 
 }
 
 function hfIdToValue(node)
@@ -375,18 +374,16 @@ function convertUnitsMarginToInches(aVal, aIsMetric)
 {
   if (aIsMetric) {
     return aVal / 25.4;
-  } else {
-    return aVal;
   }
+  return aVal;
 }
 
 function convertMarginInchesToUnits(aVal, aIsMetric)
 {
   if (aIsMetric) {
     return aVal * 25.4;
-  } else {
-    return aVal;
   }
+  return aVal;
 }
 
 

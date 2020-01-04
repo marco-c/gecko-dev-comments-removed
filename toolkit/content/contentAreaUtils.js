@@ -1206,17 +1206,15 @@ function getDefaultExtension(aFilename, aURI, aContentType)
   if (urlext && mimeInfo && mimeInfo.extensionExists(urlext)) {
     return urlext;
   }
-  else {
-    try {
-      if (mimeInfo)
-        return mimeInfo.primaryExtension;
-    }
-    catch (e) {
-    }
-    
-    
-    return ext || urlext;
+  try {
+    if (mimeInfo)
+      return mimeInfo.primaryExtension;
   }
+  catch (e) {
+  }
+  
+  
+  return ext || urlext;
 }
 
 function GetSaveModeForContentType(aContentType, aDocument)

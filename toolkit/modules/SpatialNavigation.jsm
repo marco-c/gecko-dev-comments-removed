@@ -98,11 +98,10 @@ function _onInputKeyPress (event, callback) {
       event.stopPropagation();
       event.preventDefault();
       return;
-    } else {
-      
-      
-      return;
     }
+    
+    
+    return;
   }
 
   

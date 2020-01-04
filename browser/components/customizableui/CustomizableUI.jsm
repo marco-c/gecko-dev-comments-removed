@@ -273,14 +273,12 @@ var CustomizableUIInternal = {
           if (AppConstants.MENUBAR_CAN_AUTOHIDE) {
             if (AppConstants.platform == "linux") {
               return true;
-            } else {
-              
-              
-              return AppConstants.isPlatformAndVersionAtLeast("win", 6);
             }
-          } else {
-            return false;
+            
+            
+            return AppConstants.isPlatformAndVersionAtLeast("win", 6);
           }
+          return false;
         }
       }, true);
     }

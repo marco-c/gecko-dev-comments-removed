@@ -674,11 +674,10 @@ LocaleData.prototype = {
             
             index = parseInt(index, 10) - 1;
             return index in substitutions ? substitutions[index] : "";
-          } else {
-            
-            
-            return dollarSigns;
           }
+          
+          
+          return dollarSigns;
         };
         return str.replace(/\$(?:([1-9]\d*)|(\$+))/g, replacer);
       }

@@ -70,14 +70,16 @@ function _deepEqual(a, b) {
     return true;
   
   
-  } else if (instanceOf(a, "Date") && instanceOf(b, "Date")) {
+  }
+  if (instanceOf(a, "Date") && instanceOf(b, "Date")) {
     if (isNaN(a.getTime()) && isNaN(b.getTime()))
       return true;
     return a.getTime() === b.getTime();
   
   
   
-  } else if (instanceOf(a, "RegExp") && instanceOf(b, "RegExp")) {
+  }
+  if (instanceOf(a, "RegExp") && instanceOf(b, "RegExp")) {
     return a.source === b.source &&
            a.global === b.global &&
            a.multiline === b.multiline &&
@@ -85,17 +87,17 @@ function _deepEqual(a, b) {
            a.ignoreCase === b.ignoreCase;
   
   
-  } else if (typeof a != "object" && typeof b != "object") {
-    return a == b;
-  
-  
-  
-  
-  
-  
-  } else {
-    return objEquiv(a, b);
   }
+  if (typeof a != "object" && typeof b != "object") {
+    return a == b;
+  }
+  
+  
+  
+  
+  
+  
+  return objEquiv(a, b);
 }
 
 function instanceOf(object, type) {

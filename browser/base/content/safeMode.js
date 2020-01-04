@@ -44,10 +44,9 @@ function onDefaultButton() {
     restartApp();
     
     return false;
-  } else {
-    
-    return true;
   }
+  
+  return true;
 }
 
 function onCancel() {
@@ -59,10 +58,9 @@ function onExtra1() {
     
     window.close();
     return true;
-  } else {
-    
-    showResetDialog();
   }
+  
+  showResetDialog();
   return false;
 }
 

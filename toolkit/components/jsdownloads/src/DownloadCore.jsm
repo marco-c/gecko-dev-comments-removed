@@ -1006,10 +1006,9 @@ this.Download.prototype = {
       
       this.cancel();
       return this.removePartialData();
-    } else {
-      
-      return this.cancel();
     }
+    
+    return this.cancel();
   },
 
   
