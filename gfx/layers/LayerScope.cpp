@@ -1023,7 +1023,7 @@ SenderHelper::SendLayer(LayerComposite* aLayer,
             Compositor* comp = compHost->GetCompositor();
             
             if (LayersBackend::LAYERS_OPENGL == comp->GetBackendType()) {
-                CompositorOGL* compOGL = static_cast<CompositorOGL*>(comp);
+                CompositorOGL* compOGL = comp->AsCompositorOGL();
                 EffectChain effect;
                 
                 AutoLockCompositableHost lock(compHost);
