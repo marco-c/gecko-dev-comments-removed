@@ -891,17 +891,6 @@ class MOZ_STACK_CLASS SourceBufferHolder final
                                             from script. */
 
 
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(bool)
-JS_CallOnce(JSCallOnceType* once, JSInitCallback func);
-
-
 extern JS_PUBLIC_API(int64_t)
 JS_Now(void);
 
