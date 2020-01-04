@@ -370,6 +370,14 @@ DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
   ProxyAccessible* outerDoc = e->mProxy;
   MOZ_ASSERT(outerDoc);
 
+  
+  
+  
+  if (outerDoc->ChildrenCount() > 1 ||
+      (outerDoc->ChildrenCount() == 1 && !outerDoc->ChildAt(0)->IsDoc())) {
+    return false;
+  }
+
   aChildDoc->mParent = outerDoc;
   outerDoc->SetChildDoc(aChildDoc);
   mChildDocs.AppendElement(aChildDoc);
