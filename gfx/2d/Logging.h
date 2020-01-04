@@ -22,6 +22,7 @@
 #include "Point.h"
 #include "BaseRect.h"
 #include "Matrix.h"
+#include "LoggingConstants.h"
 
 #if defined(MOZ_LOGGING)
 extern GFX2D_API mozilla::LogModule* GetGFX2DLog();
@@ -29,21 +30,6 @@ extern GFX2D_API mozilla::LogModule* GetGFX2DLog();
 
 namespace mozilla {
 namespace gfx {
-
-
-
-
-const int LOG_CRITICAL = 1;
-const int LOG_WARNING = 2;
-const int LOG_DEBUG = 3;
-const int LOG_DEBUG_PRLOG = 4;
-const int LOG_EVERYTHING = 5; 
-
-#if defined(DEBUG)
-const int LOG_DEFAULT = LOG_EVERYTHING;
-#else
-const int LOG_DEFAULT = LOG_CRITICAL;
-#endif
 
 #if defined(MOZ_LOGGING)
 inline mozilla::LogLevel PRLogLevelForLevel(int aLevel) {
