@@ -35,12 +35,24 @@ module.exports = createClass({
       className += " resizing";
     }
 
-    return dom.iframe(
+    
+    location = location.replace(/&/g, "&amp;");
+
+    return dom.div(
       {
-        className,
-        src: location,
-        width,
-        height,
+        
+
+
+
+
+
+
+
+        dangerouslySetInnerHTML: {
+          __html: `<iframe class="${className}" mozbrowser="true" remote="true"
+                           noisolation="true" src="${location}"
+                           width="${width}" height="${height}"></iframe>`
+        }
       }
     );
   },
