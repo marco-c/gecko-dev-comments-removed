@@ -259,8 +259,8 @@ protected:
 
   
   
-  nsresult CacheExternalData(const char* aFormat, uint32_t aIndex,
-                             nsIPrincipal* aPrincipal, bool aHidden);
+  void CacheExternalData(const char* aFormat, uint32_t aIndex,
+                         nsIPrincipal* aPrincipal);
 
   
   
