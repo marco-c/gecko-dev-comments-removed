@@ -932,74 +932,80 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
   nsRect expandedScrollableRect =
     nsLayoutUtils::CalculateExpandedScrollableRect(frame);
 
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ScreenSize alignment;
-
   if (gfxPrefs::LayersTilesEnabled()) {
-    alignment = ScreenSize(gfxPlatform::GetPlatform()->GetTileWidth(),
-                           gfxPlatform::GetPlatform()->GetTileHeight());
-  } else {
     
     
     
-    alignment = ScreenSize(128, 128);
-  }
+    
+    
+    
+    
+    
+    
+    
+    int alignmentX = gfxPlatform::GetPlatform()->GetTileWidth();
+    int alignmentY = gfxPlatform::GetPlatform()->GetTileHeight();
 
-  
-  if (alignment.width == 0) {
-    alignment.width = 128;
-  }
-  if (alignment.height == 0) {
-    alignment.height = 128;
-  }
-
-  if (gfxPrefs::LayersTilesEnabled()) {
     
     screenRect.Inflate(aMarginsData->mMargins);
+
+    
+    
+    
+    
+    screenRect.Inflate(1);
+
+    
+    if (alignmentX == 0) {
+      alignmentX = 1;
+    }
+    if (alignmentY == 0) {
+      alignmentY = 1;
+    }
+
+    ScreenPoint scrollPosScreen = LayoutDevicePoint::FromAppUnits(scrollPos, auPerDevPixel)
+                                * res;
+
+    screenRect += scrollPosScreen;
+    
+    float x = alignmentX * floor(screenRect.x / alignmentX);
+    float y = alignmentY * floor(screenRect.y / alignmentY);
+    float w = alignmentX * ceil(screenRect.width / alignmentX + 1);
+    float h = alignmentY * ceil(screenRect.height / alignmentY + 1);
+    screenRect = ScreenRect(x, y, w, h);
+    screenRect -= scrollPosScreen;
+
+    ScreenRect screenExpScrollableRect =
+      LayoutDeviceRect::FromAppUnits(expandedScrollableRect,
+                                     auPerDevPixel) * res;
+
+    
+    screenRect = screenRect.ForceInside(screenExpScrollableRect - scrollPosScreen);
   } else {
-    
-    
-    nscoord maxSizeAppUnits = GetMaxDisplayPortSize(aContent);
-    if (maxSizeAppUnits == nscoord_MAX) {
+    nscoord maxSizeInAppUnits = GetMaxDisplayPortSize(aContent);
+    if (maxSizeInAppUnits == nscoord_MAX) {
       
       
-      maxSizeAppUnits = presContext->DevPixelsToAppUnits(8192);
+      maxSizeInAppUnits = presContext->DevPixelsToAppUnits(8192);
     }
 
     
-    
-    
-    const int MAX_ALIGN_ROUNDING = 3;
-
-    
-    int32_t maxSizeDevPx = presContext->AppUnitsToDevPixels(maxSizeAppUnits);
-    int32_t maxWidthScreenPx = floor(double(maxSizeDevPx) * res.xScale) -
-      MAX_ALIGN_ROUNDING * alignment.width;
-    int32_t maxHeightScreenPx = floor(double(maxSizeDevPx) * res.yScale) -
-      MAX_ALIGN_ROUNDING * alignment.height;
+    int32_t maxSizeInDevPixels = presContext->AppUnitsToDevPixels(maxSizeInAppUnits);
+    int32_t maxWidthInScreenPixels = floor(double(maxSizeInDevPixels) * res.xScale);
+    int32_t maxHeightInScreenPixels = floor(double(maxSizeInDevPixels) * res.yScale);
 
     
     const ScreenMargin& margins = aMarginsData->mMargins;
-    if (screenRect.height < maxHeightScreenPx) {
-      int32_t budget = maxHeightScreenPx - screenRect.height;
+    if (screenRect.height < maxHeightInScreenPixels) {
+      int32_t budget = maxHeightInScreenPixels - screenRect.height;
 
       float top = std::min(margins.top, float(budget));
       float bottom = std::min(margins.bottom, budget - top);
       screenRect.y -= top;
       screenRect.height += top + bottom;
     }
-    if (screenRect.width < maxWidthScreenPx) {
-      int32_t budget = maxWidthScreenPx - screenRect.width;
+    if (screenRect.width < maxWidthInScreenPixels) {
+      int32_t budget = maxWidthInScreenPixels - screenRect.width;
 
       float left = std::min(margins.left, float(budget));
       float right = std::min(margins.right, budget - left);
@@ -1007,31 +1013,6 @@ GetDisplayPortFromMarginsData(nsIContent* aContent,
       screenRect.width += left + right;
     }
   }
-
-  
-  
-  
-  
-  screenRect.Inflate(1);
-
-  ScreenPoint scrollPosScreen = LayoutDevicePoint::FromAppUnits(scrollPos, auPerDevPixel)
-                              * res;
-
-  
-  screenRect += scrollPosScreen;
-  float x = alignment.width * floor(screenRect.x / alignment.width);
-  float y = alignment.height * floor(screenRect.y / alignment.height);
-  float w = alignment.width * ceil(screenRect.width / alignment.width + 1);
-  float h = alignment.height * ceil(screenRect.height / alignment.height + 1);
-  screenRect = ScreenRect(x, y, w, h);
-  screenRect -= scrollPosScreen;
-
-  ScreenRect screenExpScrollableRect =
-    LayoutDeviceRect::FromAppUnits(expandedScrollableRect,
-                                   auPerDevPixel) * res;
-
-  
-  screenRect = screenRect.ForceInside(screenExpScrollableRect - scrollPosScreen);
 
   
   nsRect result = LayoutDeviceRect::ToAppUnits(screenRect / res, auPerDevPixel);
