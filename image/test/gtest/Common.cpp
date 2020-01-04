@@ -510,5 +510,45 @@ ImageTestCase NoFrameDelayGIFTestCase()
   return ImageTestCase("no-frame-delay.gif", "image/gif", IntSize(100, 100));
 }
 
+ImageTestCase DownscaledPNGTestCase()
+{
+  
+  
+  
+  
+  return ImageTestCase("downscaled.png", "image/png", IntSize(100, 100),
+                       IntSize(20, 20));
+}
+
+ImageTestCase DownscaledGIFTestCase()
+{
+  return ImageTestCase("downscaled.gif", "image/gif", IntSize(100, 100),
+                       IntSize(20, 20));
+}
+
+ImageTestCase DownscaledJPGTestCase()
+{
+  return ImageTestCase("downscaled.jpg", "image/jpeg", IntSize(100, 100),
+                       IntSize(20, 20));
+}
+
+ImageTestCase DownscaledBMPTestCase()
+{
+  return ImageTestCase("downscaled.bmp", "image/bmp", IntSize(100, 100),
+                       IntSize(20, 20));
+}
+
+ImageTestCase DownscaledICOTestCase()
+{
+  return ImageTestCase("downscaled.ico", "image/x-icon", IntSize(100, 100),
+                       IntSize(20, 20), TEST_CASE_IS_TRANSPARENT);
+}
+
+ImageTestCase DownscaledIconTestCase()
+{
+  return ImageTestCase("downscaled.icon", "image/icon", IntSize(100, 100),
+                       IntSize(20, 20), TEST_CASE_IS_TRANSPARENT);
+}
+
 } 
 } 
