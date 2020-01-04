@@ -4,9 +4,8 @@
 
 var Ci = Components.interfaces, Cc = Components.classes, Cu = Components.utils;
 
-Cu.import("resource://services-common/utils.js"); 
 Cu.import("resource://gre/modules/Messaging.jsm");
-Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/Services.jsm")
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/TelemetryStopwatch.jsm");
 
@@ -50,95 +49,39 @@ var Logins = {
   _filterTimer: null,
   _selectedLogin: null,
 
-  
-  
-  
-  
-  
-  
-  
-  _promiseLogins: function() {
+  _getLogins: function() {
+    let logins;
     let contentBody = document.getElementById("content-body");
     let emptyBody = document.getElementById("empty-body");
     let filterIcon = document.getElementById("filter-button");
 
-    let showSpinner = () => {
-      this._toggleListBody(true);
+    this._toggleListBody(true);
+    emptyBody.classList.add("hidden");
+
+    try {
+      TelemetryStopwatch.start("PWMGR_ABOUT_LOGINS_GET_ALL_LOGINS_MS");
+      logins = Services.logins.getAllLogins();
+      TelemetryStopwatch.finish("PWMGR_ABOUT_LOGINS_GET_ALL_LOGINS_MS");
+    } catch(e) {
+      
+      debug("Master password permissions error: " + e);
+      logins = [];
+    }
+    this._toggleListBody(false);
+
+    if (!logins.length) {
+      emptyBody.classList.remove("hidden");
+
+      filterIcon.classList.add("hidden");
+      contentBody.classList.add("hidden");
+    } else {
       emptyBody.classList.add("hidden");
-    };
 
-    let getAllLogins = () => {
-      try {
-        TelemetryStopwatch.start("PWMGR_ABOUT_LOGINS_GET_ALL_LOGINS_MS");
-        let logins = Services.logins.getAllLogins();
-        TelemetryStopwatch.finish("PWMGR_ABOUT_LOGINS_GET_ALL_LOGINS_MS");
-      } catch(e) {
-        
-        
-        throw new Error("Possible Master Password permissions error: " + e.toString());
-      }
+      filterIcon.classList.remove("hidden");
+    }
 
-      logins.sort((a, b) => a.hostname.localeCompare(b.hostname));
-
-      return logins;
-    };
-
-    let hideSpinner = (logins) => {
-      this._toggleListBody(false);
-
-      if (!logins.length) {
-        contentBody.classList.add("hidden");
-        filterIcon.classList.add("hidden");
-        emptyBody.classList.remove("hidden");
-      } else {
-        contentBody.classList.remove("hidden");
-        emptyBody.classList.add("hidden");
-      }
-
-      return logins;
-    };
-
-    
-    let waitForPaint = () => {
-      
-      
-      
-      
-      
-      
-      return new Promise(function(resolve, reject) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            resolve();
-          });
-        });
-      });
-    };
-
-    
-    
-    
-    return Promise.resolve()
-      .then(showSpinner)
-      .then(waitForPaint)
-      .then(getAllLogins)
-      .then(hideSpinner);
-  },
-
-  
-  
-  _reloadList: function() {
-    this._promiseLogins()
-      .then((logins) => {
-        this._logins = logins;
-        this._loadList(logins);
-      })
-      .catch((e) => {
-        
-        
-        this._logins = [];
-        debug("Failed to _reloadList: " + e.toString());
-      });
+    logins.sort((a, b) => a.hostname.localeCompare(b.hostname));
+    return this._logins = logins;
   },
 
   _toggleListBody: function(isLoading) {
@@ -152,6 +95,7 @@ var Logins = {
       loadingBody.classList.add("hidden");
       contentBody.classList.remove("hidden");
     }
+
   },
 
   init: function () {
@@ -160,6 +104,8 @@ var Logins = {
     Services.obs.addObserver(this, "passwordmgr-storage-changed", false);
     document.getElementById("update-btn").addEventListener("click", this._onSaveEditLogin.bind(this), false);
     document.getElementById("password-btn").addEventListener("click", this._onPasswordBtn.bind(this), false);
+
+    this._loadList(this._getLogins());
 
     let filterInput = document.getElementById("filter-input");
     let filterContainer = document.getElementById("filter-input-container");
@@ -201,8 +147,6 @@ var Logins = {
     this._showList();
 
     this._updatePasswordBtn(true);
-
-    this._reloadList();
   },
 
   uninit: function () {
@@ -495,7 +439,8 @@ var Logins = {
   observe: function (subject, topic, data) {
     switch(topic) {
       case "passwordmgr-storage-changed": {
-        this._reloadList();
+        
+        this._loadList(this._getLogins());
         break;
       }
     }
