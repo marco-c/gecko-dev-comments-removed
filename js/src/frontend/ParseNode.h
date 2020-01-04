@@ -490,7 +490,6 @@ IsDeleteKind(ParseNodeKind kind)
 
 
 
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
