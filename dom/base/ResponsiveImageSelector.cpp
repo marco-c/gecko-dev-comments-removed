@@ -260,8 +260,7 @@ ResponsiveImageSelector::AppendCandidateIfUnique(const ResponsiveImageCandidate 
 
   
   
-  
-  if (numCandidates && mCandidates[0].Type() != aCandidate.Type()) {
+  if (aCandidate.Type() == ResponsiveImageCandidate::eCandidateType_Default) {
     return;
   }
 
@@ -370,14 +369,15 @@ ResponsiveImageSelector::SelectImage(bool aReselect)
 
   
   
-  
-  
   int32_t computedWidth = -1;
-  if (numCandidates && mCandidates[0].IsComputedFromWidth()) {
-    DebugOnly<bool> computeResult = \
-      ComputeFinalWidthForCurrentViewport(&computedWidth);
-    MOZ_ASSERT(computeResult,
-               "Computed candidates not allowed without sizes data");
+  for (int i = 0; i < numCandidates; i++) {
+    if (mCandidates[i].IsComputedFromWidth()) {
+      DebugOnly<bool> computeResult = \
+        ComputeFinalWidthForCurrentViewport(&computedWidth);
+      MOZ_ASSERT(computeResult,
+                 "Computed candidates not allowed without sizes data");
+      break;
+    }
   }
 
   int bestIndex = -1;
