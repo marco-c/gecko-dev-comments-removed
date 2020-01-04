@@ -420,8 +420,6 @@ AnimationCollection::Tick()
 void
 AnimationCollection::EnsureStyleRuleFor()
 {
-  mHasPendingAnimationRestyle = false;
-
   nsPresContext* presContext = mManager->PresContext();
   if (!presContext) {
     
@@ -486,20 +484,6 @@ AnimationCollection::RequestRestyle(EffectCompositor::RestyleType aRestyleType)
     if (effectSet) {
       effectSet->UpdateAnimationGeneration(presContext);
     }
-  }
-
-  
-
-  
-  
-  
-  
-  if (mHasPendingAnimationRestyle) {
-    return;
-  }
-
-  if (aRestyleType >= EffectCompositor::RestyleType::Standard) {
-    mHasPendingAnimationRestyle = true;
   }
 }
 
