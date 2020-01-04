@@ -856,8 +856,9 @@ pref("accessibility.typeaheadfind.prefillwithselection", false);
 #else
 pref("accessibility.typeaheadfind.prefillwithselection", true);
 #endif
-pref("accessibility.typeaheadfind.matchesCountTimeout", 250);
-pref("accessibility.typeaheadfind.matchesCountLimit", 100);
+pref("accessibility.typeaheadfind.matchesCountTimeout", 100);
+pref("accessibility.typeaheadfind.matchesCountLimit", 1000);
+pref("findbar.highlightAll", false);
 
 
 pref("gfx.use_text_smoothing_setting", false);
@@ -4628,7 +4629,9 @@ pref("notification.feature.enabled", false);
 
 
 pref("dom.webnotifications.enabled", true);
+#if !defined(RELEASE_BUILD)
 pref("dom.webnotifications.serviceworker.enabled", true);
+#endif
 
 
 pref("alerts.disableSlidingEffect", false);

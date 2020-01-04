@@ -614,6 +614,7 @@ pref("accessibility.typeaheadfind", false);
 pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
+pref("findbar.highlightAll", true);
 
 
 pref("accessibility.loadedInLastSession", false);
@@ -1391,6 +1392,7 @@ pref("view_source.tab", true);
 
 pref("dom.serviceWorkers.enabled", true);
 pref("dom.serviceWorkers.openWindow.enabled", true);
+pref("dom.webnotifications.serviceworker.enabled", true);
 
 
 pref("dom.push.enabled", true);
