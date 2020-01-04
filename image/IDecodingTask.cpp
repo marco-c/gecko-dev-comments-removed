@@ -60,6 +60,9 @@ IDecodingTask::NotifyProgress(NotNull<RasterImage*> aImage,
 IDecodingTask::NotifyDecodeComplete(NotNull<RasterImage*> aImage,
                                     NotNull<Decoder*> aDecoder)
 {
+  MOZ_ASSERT(aDecoder->HasError() || !aDecoder->InFrame(),
+             "Decode complete in the middle of a frame?");
+
   
   if (NS_IsMainThread() &&
       !(aDecoder->GetDecoderFlags() & DecoderFlags::ASYNC_NOTIFY)) {
