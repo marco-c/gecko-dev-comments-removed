@@ -125,25 +125,35 @@ public:
     TransferringNotSupported
   };
 
+  enum ContextSupport
+  {
+    SameProcessSameThread,
+    SameProcessDifferentThread,
+    DifferentProcess
+  };
+
+  
+  
+  
+  
   
   
   
   
   explicit StructuredCloneHelper(CloningSupport aSupportsCloning,
-                                 TransferringSupport aSupportsTransferring);
+                                 TransferringSupport aSupportsTransferring,
+                                 ContextSupport aContextSupport);
   virtual ~StructuredCloneHelper();
 
   
 
   void Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue,
-             bool aMaybeToDifferentThread,
              ErrorResult &aRv);
 
   void Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue,
              JS::Handle<JS::Value> aTransfer,
-             bool aMaybeToDifferentThread,
              ErrorResult &aRv);
 
   void Read(nsISupports* aParent,
@@ -246,9 +256,10 @@ public:
                                     JS::TransferableOwnership aOwnership,
                                     void* aContent,
                                     uint64_t aExtraData) override;
-private:
+protected:
   bool mSupportsCloning;
   bool mSupportsTransferring;
+  ContextSupport mContext;
 
   
 
@@ -272,6 +283,10 @@ private:
   
   
   nsTArray<MessagePortIdentifier> mPortIdentifiers;
+
+#ifdef DEBUG
+  nsCOMPtr<nsIThread> mCreationThread;
+#endif
 };
 
 } 
