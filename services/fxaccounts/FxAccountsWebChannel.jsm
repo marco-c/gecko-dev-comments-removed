@@ -261,9 +261,7 @@ this.FxAccountsWebChannelHelpers.prototype = {
   logout(uid) {
     return fxAccounts.getSignedInUser().then(userData => {
       if (userData.uid === uid) {
-        
-        
-        return fxAccounts.signOut(true);
+        return fxAccounts.signOut();
       }
     });
   },

@@ -204,7 +204,7 @@ this.FxAccountsClient.prototype = {
   signOut: function (sessionTokenHex, options = {}) {
     let path = "/session/destroy";
     if (options.service) {
-      path += "?service=" + encodeURIComponent(options.service);
+      path += "?service=" + options.service;
     }
     return this._request(path, "POST",
       deriveHawkCredentials(sessionTokenHex, "sessionToken"));
@@ -357,116 +357,6 @@ this.FxAccountsClient.prototype = {
         return Promise.reject(error);
       }
     );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  registerDevice(sessionTokenHex, name, type) {
-    let path = "/account/device";
-
-    let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
-    let body = { name, type };
-
-    return this._request(path, "POST", creds, body);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  updateDevice(sessionTokenHex, id, name) {
-    let path = "/account/device";
-
-    let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
-    let body = { id, name };
-
-    return this._request(path, "POST", creds, body);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  signOutAndDestroyDevice(sessionTokenHex, id, options={}) {
-    let path = "/account/device/destroy";
-
-    if (options.service) {
-      path += "?service=" + encodeURIComponent(options.service);
-    }
-
-    let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
-    let body = { id };
-
-    return this._request(path, "POST", creds, body);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getDeviceList(sessionTokenHex) {
-    let path = "/account/devices";
-    let creds = deriveHawkCredentials(sessionTokenHex, "sessionToken");
-
-    return this._request(path, "GET", creds, {});
   },
 
   _clearBackoff: function() {
