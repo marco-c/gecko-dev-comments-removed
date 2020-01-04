@@ -343,6 +343,12 @@ public:
     mToken = nullptr;
   }
 
+  void DisconnectIfExists() {
+    if (mToken) {
+      Disconnect();
+    }
+  }
+
 private:
   
   
