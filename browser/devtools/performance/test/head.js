@@ -81,6 +81,10 @@ Services.prefs.setBoolPref("devtools.debugger.log", false);
 
 
 
+Services.prefs.setBoolPref("devtools.performance.ui.enable-memory-flame", true);
+
+
+
 
 
 function loadFrameScripts () {

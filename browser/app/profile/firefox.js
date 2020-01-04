@@ -1447,6 +1447,10 @@ pref("devtools.performance.ui.enable-framerate", true);
 pref("devtools.performance.ui.enable-jit-optimizations", false);
 
 
+
+pref("devtools.performance.ui.enable-memory-flame", false);
+
+
 #if defined(NIGHTLY_BUILD)
 pref("devtools.performance.ui.experimental", true);
 #else

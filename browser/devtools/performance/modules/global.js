@@ -24,6 +24,8 @@ const PREFS = new ViewHelpers.Prefs("devtools.performance", {
   "memory-max-log-length": ["Int", "memory.max-log-length"],
   "profiler-buffer-size": ["Int", "profiler.buffer-size"],
   "profiler-sample-frequency": ["Int", "profiler.sample-frequency-khz"],
+  
+  "enable-memory-flame": ["Bool", "ui.enable-memory-flame"],
 }, {
   monitorChanges: true
 });
