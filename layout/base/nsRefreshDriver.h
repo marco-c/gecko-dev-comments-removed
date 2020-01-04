@@ -191,16 +191,6 @@ public:
   bool IsLayoutFlushObserver(nsIPresShell* aShell) {
     return mLayoutFlushObservers.Contains(aShell);
   }
-  bool AddPresShellToInvalidateIfHidden(nsIPresShell* aShell) {
-    NS_ASSERTION(!mPresShellsToInvalidateIfHidden.Contains(aShell),
-                 "Double-adding style flush observer");
-    bool appended = mPresShellsToInvalidateIfHidden.AppendElement(aShell) != nullptr;
-    EnsureTimerStarted();
-    return appended;
-  }
-  void RemovePresShellToInvalidateIfHidden(nsIPresShell* aShell) {
-    mPresShellsToInvalidateIfHidden.RemoveElement(aShell);
-  }
 
   
 
@@ -446,7 +436,6 @@ private:
 
   AutoTArray<nsIPresShell*, 16> mStyleFlushObservers;
   AutoTArray<nsIPresShell*, 16> mLayoutFlushObservers;
-  AutoTArray<nsIPresShell*, 16> mPresShellsToInvalidateIfHidden;
   
   nsTArray<nsIDocument*> mFrameRequestCallbackDocs;
   nsTArray<nsIDocument*> mThrottledFrameRequestCallbackDocs;
