@@ -54,6 +54,13 @@ from mozbuild.util import (
     ensureParentDir,
     FileAvoidWrite,
 )
+import mozpack.path as mozpath
+from mozregression.download_manager import (
+    DownloadManager,
+)
+from mozregression.persist_limit import (
+    PersistLimit,
+)
 
 MAX_CACHED_PARENTS = 100  
 NUM_PUSHHEADS_TO_QUERY_PER_PARENT = 50  
@@ -108,7 +115,7 @@ class CacheManager(object):
 
     def __init__(self, cache_dir, cache_name, cache_size, cache_callback=None, log=None):
         self._cache = pylru.lrucache(cache_size, callback=cache_callback)
-        self._cache_filename = os.path.join(cache_dir, cache_name + '-cache.pickle')
+        self._cache_filename = mozpath.join(cache_dir, cache_name + '-cache.pickle')
         self._log = log
 
     def log(self, *args, **kwargs):
@@ -246,6 +253,10 @@ class ArtifactCache(CacheManager):
         
         CacheManager.__init__(self, cache_dir, 'fetch', MAX_CACHED_ARTIFACTS, cache_callback=self.delete_file, log=log)
         self._cache_dir = cache_dir
+        size_limit = 1024 * 1024 * 1024 
+        file_limit = 4 
+        persist_limit = PersistLimit(size_limit, file_limit)
+        self._download_manager = DownloadManager(self._cache_dir, persist_limit=persist_limit)
 
     def delete_file(self, key, value):
         try:
@@ -258,27 +269,15 @@ class ArtifactCache(CacheManager):
 
     @cachedmethod(operator.attrgetter('_cache'))
     def fetch(self, url, force=False):
-        args = ['wget', url]
-
-        if not force:
-            args[1:1] = ['--timestamping']
-
-        proc = subprocess.Popen(args, cwd=self._cache_dir)
-        status = None
-        
-        
-        
-        
-        while status is None:
-            try:
-                status = proc.wait()
-            except KeyboardInterrupt:
-                pass
-
-        if status != 0:
-            raise Exception('Process executed with non-0 exit code: %s' % args)
-
-        return os.path.abspath(os.path.join(self._cache_dir, os.path.basename(url)))
+        fname = os.path.basename(url)
+        try:
+            dl = self._download_manager.download(url, fname)
+            if dl:
+                dl.wait()
+            return os.path.abspath(mozpath.join(self._cache_dir, fname))
+        finally:
+            
+            self._download_manager.cancel()
 
     def print_last_item(self, args, sorted_kwargs, result):
         url, = args
