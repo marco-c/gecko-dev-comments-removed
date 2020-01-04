@@ -58,7 +58,7 @@ public:
     }
     void* mDataToFree;
     void (*mFree)(void*);
-    const float* mSampleData;
+    float* mSampleData;
   };
 
   
@@ -69,12 +69,21 @@ public:
 
 
   const float* GetData(uint32_t aIndex) const { return mContents[aIndex].mSampleData; }
+  
+
+
+
+  float* GetDataForWrite(uint32_t aIndex)
+  {
+    MOZ_ASSERT(!IsShared());
+    return mContents[aIndex].mSampleData;
+  }
 
   
 
 
 
-  void SetData(uint32_t aIndex, void* aDataToFree, void (*aFreeFunc)(void*), const float* aData)
+  void SetData(uint32_t aIndex, void* aDataToFree, void (*aFreeFunc)(void*), float* aData)
   {
     Storage* s = &mContents[aIndex];
     if (s->mFree) {
