@@ -85,8 +85,6 @@ class InstallManifest(object):
 
     FIELD_SEPARATOR = '\x1f'
 
-    
-    
     SYMLINK = 1
     COPY = 2
     REQUIRED_EXISTS = 3
@@ -165,11 +163,8 @@ class InstallManifest(object):
                     silence_missing_directive_warnings=bool(int(warnings)))
                 continue
 
-            
-            
-            if record_type >= 0:
-                raise UnreadableInstallManifest('Unknown record type: %d' %
-                    record_type)
+            raise UnreadableInstallManifest('Unknown record type: %d' %
+                record_type)
 
     def __len__(self):
         return len(self._dests)
