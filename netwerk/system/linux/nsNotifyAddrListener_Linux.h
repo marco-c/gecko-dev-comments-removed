@@ -23,6 +23,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include "nsITimer.h"
+#include "nsClassHashtable.h"
 
 class nsNotifyAddrListener : public nsINetworkLinkService,
                              public nsIRunnable,
@@ -88,6 +89,11 @@ private:
 
     
     mozilla::TimeStamp mChangeTime;
+
+    
+    
+    
+     nsClassHashtable<nsCStringHashKey, struct ifaddrmsg> mAddressInfo;
  };
 
 #endif 
