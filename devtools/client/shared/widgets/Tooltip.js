@@ -347,6 +347,15 @@ Tooltip.prototype = {
 
 
 
+  get container() {
+    return this.panel;
+  },
+
+  
+
+
+
+
 
 
   set content(content) {
