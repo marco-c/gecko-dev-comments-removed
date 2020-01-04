@@ -82,20 +82,35 @@ function addTab(url) {
 
 
 function* openTabAndSetupStorage(url) {
+  
+
+
+
+  let setupIDBInFrames = (w, i, c) => {
+    if (w[i] && w[i].idbGenerator) {
+      w[i].setupIDB = w[i].idbGenerator(() => setupIDBInFrames(w, i + 1, c));
+      w[i].setupIDB.next();
+    } else if (w[i] && w[i + 1]) {
+      setupIDBInFrames(w, i + 1, c);
+    } else {
+      c();
+    }
+  };
+
   let content = yield addTab(url);
 
-  gWindow = content.wrappedJSObject;
-
+  let def = promise.defer();
   
-  let callSetup = function*(win) {
-    if (typeof(win.setup) == "function") {
-      yield win.setup();
-    }
-    for(var i = 0; i < win.frames.length; i++) {
-      yield callSetup(win.frames[i]);
-    }
+  gWindow = content.wrappedJSObject;
+  if (gWindow.idbGenerator) {
+    gWindow.setupIDB = gWindow.idbGenerator(() => {
+      setupIDBInFrames(gWindow, 0, () => {
+        def.resolve();
+      });
+    });
+    gWindow.setupIDB.next();
+    yield def.promise;
   }
-  yield callSetup(gWindow);
 
   
   return yield openStoragePanel();
