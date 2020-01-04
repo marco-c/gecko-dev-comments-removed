@@ -137,6 +137,11 @@ public:
   {
     mPropagationStopped = true;
   }
+  inline void StopImmediatePropagation()
+  {
+    StopPropagation();
+    mImmediatePropagationStopped = true;
+  }
 
   inline void Clear()
   {
@@ -320,6 +325,7 @@ public:
 
 
   void StopPropagation() { mFlags.StopPropagation(); }
+  void StopImmediatePropagation() { mFlags.StopImmediatePropagation(); }
 
   void PreventDefault()
   {
