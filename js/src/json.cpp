@@ -822,7 +822,7 @@ js::ParseJSONWithReviver(JSContext* cx, const mozilla::Range<const CharT> chars,
                          MutableHandleValue vp)
 {
     
-    Rooted<JSONParser<CharT>> parser(cx, JSONParser<CharT>(cx, chars));
+    JSONParser<CharT> parser(cx, chars);
     if (!parser.parse(vp))
         return false;
 

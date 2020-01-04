@@ -224,6 +224,7 @@ class JS_PUBLIC_API(AutoGCRooter)
         IONMASM =     -19, 
         WRAPVECTOR =  -20, 
         WRAPPER =     -21, 
+        JSONPARSER =  -25, 
         CUSTOM =      -26  
     };
 
