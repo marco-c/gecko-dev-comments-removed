@@ -4,16 +4,22 @@
 
 "use strict";
 
+const { Ci } = require("chrome");
 const promise = require("promise");
 const { Task } = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
-const { TouchEventSimulator } = require("devtools/shared/touch/simulator");
 const { getOwnerWindow } = require("sdk/tabs/utils");
 const { startup } = require("sdk/window/helpers");
 const message = require("./utils/message");
 const { swapToInnerBrowser } = require("./browser/swap");
+const { EmulationFront } = require("devtools/shared/fronts/emulation");
 
 const TOOL_URL = "chrome://devtools/content/responsive.html/index.xhtml";
+
+loader.lazyRequireGetter(this, "DebuggerClient",
+                         "devtools/shared/client/main", true);
+loader.lazyRequireGetter(this, "DebuggerServer",
+                         "devtools/server/main", true);
 
 
 
@@ -251,11 +257,6 @@ ResponsiveUI.prototype = {
   
 
 
-  touchEventSimulator: null,
-
-  
-
-
 
 
 
@@ -284,7 +285,8 @@ ResponsiveUI.prototype = {
     
     yield message.request(this.toolWindow, "start-frame-script");
 
-    this.touchEventSimulator = new TouchEventSimulator(this.getViewportBrowser());
+    
+    yield this.connectToServer();
   }),
 
   
@@ -315,13 +317,11 @@ ResponsiveUI.prototype = {
     this.tab.removeEventListener("TabClose", this);
     this.toolWindow.removeEventListener("message", this);
 
-    
     if (!isTabClosing) {
-      yield this.touchEventSimulator.stop();
-    }
+      
+      yield this.emulationFront.clearTouchEventsOverride();
 
-    
-    if (!isTabClosing) {
+      
       yield message.request(this.toolWindow, "stop-frame-script");
     }
 
@@ -331,8 +331,15 @@ ResponsiveUI.prototype = {
     this.tab = null;
     this.inited = null;
     this.toolWindow = null;
-    this.touchEventSimulator = null;
     this.swap = null;
+
+    if (!isTabClosing) {
+      
+      yield new Promise((resolve, reject) => {
+        this.client.close(resolve);
+        this.client = this.emulationFront = null;
+      });
+    }
 
     
     swap.stop();
@@ -340,6 +347,17 @@ ResponsiveUI.prototype = {
     this.destroyed = true;
 
     return true;
+  }),
+
+  connectToServer: Task.async(function* () {
+    if (!DebuggerServer.initialized) {
+      DebuggerServer.init();
+      DebuggerServer.addBrowserActors();
+    }
+    this.client = new DebuggerClient(DebuggerServer.connectPipe());
+    yield this.client.connect();
+    let { tab } = yield this.client.getTab();
+    this.emulationFront = EmulationFront(this.client, tab);
   }),
 
   handleEvent(event) {
@@ -384,12 +402,14 @@ ResponsiveUI.prototype = {
 
   updateTouchSimulation: Task.async(function* (enabled) {
     if (enabled) {
-      let reloadNeeded = yield this.touchEventSimulator.start();
+      let reloadNeeded = yield this.emulationFront.setTouchEventsOverride(
+        Ci.nsIDocShell.TOUCHEVENTS_OVERRIDE_ENABLED
+      );
       if (reloadNeeded) {
         this.getViewportBrowser().reload();
       }
     } else {
-      this.touchEventSimulator.stop();
+      this.emulationFront.clearTouchEventsOverride();
     }
   }),
 
