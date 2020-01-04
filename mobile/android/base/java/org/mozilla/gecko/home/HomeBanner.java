@@ -101,7 +101,7 @@ public class HomeBanner extends LinearLayout
                 HomeBanner.this.dismiss();
 
                 
-                GeckoAppShell.notifyObservers("HomeBanner:Dismiss", (String) getTag());
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Dismiss", (String) getTag()));
             }
         });
 
@@ -111,7 +111,7 @@ public class HomeBanner extends LinearLayout
                 HomeBanner.this.dismiss();
 
                 
-                GeckoAppShell.notifyObservers("HomeBanner:Click", (String) getTag());
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Click", (String) getTag()));
             }
         });
 
@@ -160,7 +160,7 @@ public class HomeBanner extends LinearLayout
 
 
     public void update() {
-        GeckoAppShell.notifyObservers("HomeBanner:Get", null);
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Get", null));
     }
 
     @Override
@@ -195,7 +195,7 @@ public class HomeBanner extends LinearLayout
                     }
                 });
 
-                GeckoAppShell.notifyObservers("HomeBanner:Shown", id);
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("HomeBanner:Shown", id));
 
                 
                 setEnabled(true);

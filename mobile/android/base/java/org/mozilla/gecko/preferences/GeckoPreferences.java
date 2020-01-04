@@ -947,10 +947,10 @@ OnSharedPreferenceChangeListener
 
 
     protected void restoreDefaultSearchEngines() {
-        GeckoAppShell.notifyObservers("SearchEngines:RestoreDefaults", null);
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:RestoreDefaults", null));
 
         
-        GeckoAppShell.notifyObservers("SearchEngines:GetVisible", null);
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:GetVisible", null));
     }
 
     @Override

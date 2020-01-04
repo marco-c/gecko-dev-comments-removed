@@ -262,7 +262,7 @@ public class BrowserSearch extends HomeFragment
                 getLoaderManager().destroyLoader(LOADER_ID_SUGGESTION);
             }
 
-            GeckoAppShell.notifyObservers("SearchEngines:GetVisible", null);
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:GetVisible", null));
         }
         super.onHiddenChanged(hidden);
     }
@@ -276,7 +276,7 @@ public class BrowserSearch extends HomeFragment
 
         
         if (mSearchEngines.isEmpty() || !Locale.getDefault().equals(mLastLocale)) {
-            GeckoAppShell.notifyObservers("SearchEngines:GetVisible", null);
+            GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("SearchEngines:GetVisible", null));
         } else {
             updateSearchEngineBar();
         }
@@ -435,7 +435,7 @@ public class BrowserSearch extends HomeFragment
         }
 
         
-        GeckoAppShell.notifyObservers("Session:Prefetch", "http://" + autocompletion);
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Session:Prefetch", "http://" + autocompletion));
 
         mAutocompleteHandler.onAutocomplete(autocompletion);
         mAutocompleteHandler = null;
@@ -534,7 +534,7 @@ public class BrowserSearch extends HomeFragment
 
             if (searchCount == 0) {
                 
-                GeckoAppShell.notifyObservers("Session:Prefetch", url);
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Session:Prefetch", url));
             }
 
             

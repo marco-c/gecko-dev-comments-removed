@@ -282,7 +282,7 @@ public class Tabs implements GeckoEventListener {
         }
 
         
-        GeckoAppShell.notifyObservers("Tab:Selected", String.valueOf(tab.getId()));
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Tab:Selected", String.valueOf(tab.getId())));
         return tab;
     }
 
@@ -402,7 +402,7 @@ public class Tabs implements GeckoEventListener {
         }
 
         
-        GeckoAppShell.notifyObservers("Tab:Closed", args.toString());
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Tab:Closed", args.toString()));
     }
 
     
@@ -929,7 +929,7 @@ public class Tabs implements GeckoEventListener {
             Log.w(LOGTAG, "Error building JSON arguments for loadUrl.", e);
         }
 
-        GeckoAppShell.notifyObservers("Tab:Load", args.toString());
+        GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Tab:Load", args.toString()));
 
         if (tabToSelect == null) {
             return null;

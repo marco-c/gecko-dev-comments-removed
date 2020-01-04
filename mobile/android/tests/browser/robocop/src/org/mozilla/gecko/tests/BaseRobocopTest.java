@@ -217,7 +217,7 @@ public abstract class BaseRobocopTest extends ActivityInstrumentationTestCase2<A
             if ("1".equals(quitAndFinish)) {
                 
                 Log.i(LOGTAG, "Requesting force quit.");
-                mActions.sendGeckoEvent("Robocop:Quit", null);
+                GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Robocop:Quit", null));
                 mSolo.sleep(ROBOCOP_QUIT_WAIT_MS);
 
                 
