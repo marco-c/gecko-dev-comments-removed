@@ -92,6 +92,17 @@ HTMLLIAccessible::Bounds() const
   return rect;
 }
 
+bool
+HTMLLIAccessible::InsertChildAt(uint32_t aIndex, Accessible* aChild)
+{
+  
+  if (mBullet && aIndex == 0 && aChild != mBullet) {
+    return HyperTextAccessible::InsertChildAt(aIndex + 1, aChild);
+  }
+
+  return HyperTextAccessible::InsertChildAt(aIndex, aChild);
+}
+
 
 
 
