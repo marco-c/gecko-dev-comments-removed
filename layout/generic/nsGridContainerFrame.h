@@ -175,17 +175,19 @@ protected:
 
 
 
-    void ResolveAutoPosition(uint32_t aStart)
+    void ResolveAutoPosition(uint32_t aStart, uint32_t aExplicitGridOffset)
     {
       MOZ_ASSERT(IsAuto(), "Why call me?");
       mStart = aStart;
       mEnd += aStart;
       
-      if (MOZ_UNLIKELY(mStart >= kTranslatedMaxLine)) {
-        mEnd = kTranslatedMaxLine;
+      
+      uint32_t translatedMax = aExplicitGridOffset + nsStyleGridLine::kMaxLine;
+      if (MOZ_UNLIKELY(mStart >= translatedMax)) {
+        mEnd = translatedMax;
         mStart = mEnd - 1;
-      } else if (MOZ_UNLIKELY(mEnd > kTranslatedMaxLine)) {
-        mEnd = kTranslatedMaxLine;
+      } else if (MOZ_UNLIKELY(mEnd > translatedMax)) {
+        mEnd = translatedMax;
       }
     }
     
