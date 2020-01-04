@@ -1049,13 +1049,13 @@ WebrtcVideoConduit::SelectBitrates(unsigned short width,
   if (framerate >= 10) {
     out_min = out_min * (framerate/30);
     out_start = out_start * (framerate/30);
-    out_max = out_max * (framerate/30);
+    out_max = std::max((unsigned int)(out_max * (framerate/30)), cap);
   } else {
     
     
     out_min = out_min * ((10-(framerate/2))/30);
     out_start = out_start * ((10-(framerate/2))/30);
-    out_max = out_max * ((10-(framerate/2))/30);
+    out_max = std::max((unsigned int)(out_max * ((10-(framerate/2))/30)), cap);
   }
 
   if (mMinBitrate && mMinBitrate > out_min) {

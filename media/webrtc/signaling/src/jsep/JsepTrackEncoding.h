@@ -39,6 +39,16 @@ public:
     return false;
   }
 
+  void UpdateMaxBitrate(const SdpMediaSection& remote)
+  {
+    uint32_t tias = remote.GetBandwidth("TIAS");
+    
+    mConstraints.maxBr = std::min(tias ? tias : mConstraints.maxBr,
+                                  mConstraints.maxBr ? mConstraints.maxBr :
+                                                       tias);
+    
+  }
+
   EncodingConstraints mConstraints;
   std::string mRid;
 
