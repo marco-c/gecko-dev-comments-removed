@@ -35,7 +35,6 @@ import org.mozilla.gecko.annotation.JNITarget;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.AppConstants.Versions;
-import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.gfx.LayerView;
 import org.mozilla.gecko.gfx.PanZoomController;
@@ -2099,7 +2098,44 @@ public class GeckoAppShell
 
 
 
+
+
+
         public void createShortcut(String title, String URI);
+
+        
+
+
+
+
+
+
+
+
+
+        public void checkUriVisited(String uri);
+
+        
+
+
+
+
+
+
+
+
+
+        public void markUriVisited(final String uri);
+
+        
+
+
+
+
+
+
+
+        public void setUriTitle(final String uri, final String title);
     };
 
     private static GeckoInterface sGeckoInterface;
@@ -2259,31 +2295,29 @@ public class GeckoAppShell
 
     @WrapForJNI(stubName = "CheckURIVisited")
     static void checkUriVisited(String uri) {
-        GlobalHistory.getInstance().checkUriVisited(uri);
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
+        }
+        geckoInterface.checkUriVisited(uri);
     }
 
     @WrapForJNI(stubName = "MarkURIVisited")
     static void markUriVisited(final String uri) {
-        final Context context = getApplicationContext();
-        final BrowserDB db = GeckoProfile.get(context).getDB();
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                GlobalHistory.getInstance().add(context, db, uri);
-            }
-        });
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
+        }
+        geckoInterface.checkUriVisited(uri);
     }
 
     @WrapForJNI(stubName = "SetURITitle")
     static void setUriTitle(final String uri, final String title) {
-        final Context context = getApplicationContext();
-        final BrowserDB db = GeckoProfile.get(context).getDB();
-        ThreadUtils.postToBackgroundThread(new Runnable() {
-            @Override
-            public void run() {
-                GlobalHistory.getInstance().update(context.getContentResolver(), db, uri, title);
-            }
-        });
+        final GeckoInterface geckoInterface = getGeckoInterface();
+        if (geckoInterface == null) {
+            return;
+        }
+        geckoInterface.checkUriVisited(uri);
     }
 
     @WrapForJNI
