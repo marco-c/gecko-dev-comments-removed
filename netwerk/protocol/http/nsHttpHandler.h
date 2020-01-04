@@ -374,7 +374,7 @@ private:
     nsHttpAuthCache mPrivateAuthCache;
 
     
-    nsHttpConnectionMgr *mConnMgr;
+    RefPtr<nsHttpConnectionMgr> mConnMgr;
 
     
     
