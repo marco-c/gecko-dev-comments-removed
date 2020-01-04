@@ -9,8 +9,6 @@ import android.Manifest;
 import android.app.DownloadManager;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
 import org.json.JSONArray;
 import org.mozilla.gecko.adjust.AdjustHelperInterface;
 import org.mozilla.gecko.annotation.RobocopTarget;
@@ -79,9 +77,8 @@ import org.mozilla.gecko.tabs.TabHistoryFragment;
 import org.mozilla.gecko.tabs.TabHistoryPage;
 import org.mozilla.gecko.tabs.TabsPanel;
 import org.mozilla.gecko.telemetry.TelemetryUploadService;
+import org.mozilla.gecko.telemetry.TelemetryCorePingUploadDelegate;
 import org.mozilla.gecko.telemetry.measurements.SearchCountMeasurements;
-import org.mozilla.gecko.telemetry.TelemetryDispatcher;
-import org.mozilla.gecko.telemetry.UploadTelemetryCorePingCallback;
 import org.mozilla.gecko.telemetry.measurements.SessionMeasurements;
 import org.mozilla.gecko.toolbar.AutocompleteHandler;
 import org.mozilla.gecko.toolbar.BrowserToolbar;
@@ -312,13 +309,13 @@ public class BrowserApp extends GeckoApp
             (BrowserAppDelegate) new ScreenshotDelegate(),
             (BrowserAppDelegate) new BookmarkStateChangeDelegate(),
             (BrowserAppDelegate) new ReaderViewBookmarkPromotion(),
-            (BrowserAppDelegate) new ContentNotificationsDelegate()
+            (BrowserAppDelegate) new ContentNotificationsDelegate(),
+            new TelemetryCorePingUploadDelegate()
     ));
 
     @NonNull
     private SearchEngineManager mSearchEngineManager; 
 
-    private TelemetryDispatcher mTelemetryDispatcher; 
     private final SessionMeasurements mSessionMeasurements = new SessionMeasurements();
 
     private boolean mHasResumed;
@@ -1085,15 +1082,6 @@ public class BrowserApp extends GeckoApp
                 FileCleanupController.startIfReady(BrowserApp.this, sharedPrefs, profile.getDir().getAbsolutePath());
             }
         });
-
-        
-        
-        
-        
-        
-        
-        
-        mSearchEngineManager.getEngine(new UploadTelemetryCorePingCallback(BrowserApp.this));
 
         for (final BrowserAppDelegate delegate : delegates) {
             delegate.onStart(this);
@@ -3923,12 +3911,8 @@ public class BrowserApp extends GeckoApp
     @Override
     public int getLayout() { return R.layout.gecko_app; }
 
-    @WorkerThread 
-    public TelemetryDispatcher getTelemetryDispatcher() {
-        if (mTelemetryDispatcher == null) {
-            mTelemetryDispatcher = new TelemetryDispatcher(getProfile().getDir().getAbsolutePath());
-        }
-        return mTelemetryDispatcher;
+    public SearchEngineManager getSearchEngineManager() {
+        return mSearchEngineManager;
     }
 
     public SessionMeasurements getSessionMeasurementDelegate() {

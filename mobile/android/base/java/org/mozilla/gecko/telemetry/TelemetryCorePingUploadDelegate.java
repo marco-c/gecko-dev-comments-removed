@@ -1,0 +1,132 @@
+
+
+
+
+
+
+package org.mozilla.gecko.telemetry;
+
+import android.content.SharedPreferences;
+import android.support.annotation.Nullable;
+import android.support.annotation.WorkerThread;
+import android.util.Log;
+import org.mozilla.gecko.BrowserApp;
+import org.mozilla.gecko.GeckoProfile;
+import org.mozilla.gecko.GeckoSharedPrefs;
+import org.mozilla.gecko.delegates.BrowserAppDelegate;
+import org.mozilla.gecko.distribution.DistributionStoreCallback;
+import org.mozilla.gecko.search.SearchEngineManager;
+import org.mozilla.gecko.sync.ExtendedJSONObject;
+import org.mozilla.gecko.telemetry.measurements.SearchCountMeasurements;
+import org.mozilla.gecko.telemetry.measurements.SessionMeasurements;
+import org.mozilla.gecko.telemetry.pingbuilders.TelemetryCorePingBuilder;
+import org.mozilla.gecko.util.StringUtils;
+import org.mozilla.gecko.util.ThreadUtils;
+
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+
+
+
+
+public class TelemetryCorePingUploadDelegate extends BrowserAppDelegate {
+    private static final String LOGTAG = StringUtils.safeSubstring(
+            "Gecko" + TelemetryCorePingUploadDelegate.class.getSimpleName(), 0, 23);
+
+    private TelemetryDispatcher telemetryDispatcher; 
+
+    @Override
+    public void onStart(final BrowserApp browserApp) {
+        
+        
+        
+        
+        
+        
+        
+        final SearchEngineManager searchEngineManager = browserApp.getSearchEngineManager();
+        searchEngineManager.getEngine(new UploadTelemetryCorePingCallback(browserApp));
+    }
+
+    @WorkerThread 
+    private TelemetryDispatcher getTelemetryDispatcher(final BrowserApp browserApp) {
+        if (telemetryDispatcher == null) {
+            final String profilePath = browserApp.getProfile().getDir().getAbsolutePath();
+            telemetryDispatcher = new TelemetryDispatcher(profilePath);
+        }
+        return telemetryDispatcher;
+    }
+
+    private class UploadTelemetryCorePingCallback implements SearchEngineManager.SearchEngineCallback {
+        private final WeakReference<BrowserApp> activityWeakReference;
+
+        private UploadTelemetryCorePingCallback(final BrowserApp activity) {
+            this.activityWeakReference = new WeakReference<>(activity);
+        }
+
+        
+        @Override
+        public void execute(@Nullable final org.mozilla.gecko.search.SearchEngine engine) {
+            
+            if (this.activityWeakReference.get() == null) {
+                return;
+            }
+
+            
+            
+            
+            
+            ThreadUtils.postToBackgroundThread(new Runnable() {
+                @WorkerThread
+                @Override
+                public void run() {
+                    final BrowserApp activity = activityWeakReference.get();
+                    if (activity == null) {
+                        return;
+                    }
+
+                    final GeckoProfile profile = activity.getProfile();
+                    if (!TelemetryUploadService.isUploadEnabledByProfileConfig(activity, profile)) {
+                        Log.d(LOGTAG, "Core ping upload disabled by profile config. Returning.");
+                        return;
+                    }
+
+                    final String clientID;
+                    try {
+                        clientID = profile.getClientId();
+                    } catch (final IOException e) {
+                        Log.w(LOGTAG, "Unable to get client ID to generate core ping: " + e);
+                        return;
+                    }
+
+                    
+                    final SharedPreferences sharedPrefs = GeckoSharedPrefs.forProfileName(activity, profile.getName());
+                    final SessionMeasurements.SessionMeasurementsContainer sessionMeasurementsContainer =
+                            activity.getSessionMeasurementDelegate().getAndResetSessionMeasurements(activity);
+                    final TelemetryCorePingBuilder pingBuilder = new TelemetryCorePingBuilder(activity)
+                            .setClientID(clientID)
+                            .setDefaultSearchEngine(TelemetryCorePingBuilder.getEngineIdentifier(engine))
+                            .setProfileCreationDate(TelemetryCorePingBuilder.getProfileCreationDate(activity, profile))
+                            .setSequenceNumber(TelemetryCorePingBuilder.getAndIncrementSequenceNumber(sharedPrefs))
+                            .setSessionCount(sessionMeasurementsContainer.sessionCount)
+                            .setSessionDuration(sessionMeasurementsContainer.elapsedSeconds);
+                    maybeSetOptionalMeasurements(sharedPrefs, pingBuilder);
+
+                    getTelemetryDispatcher(activity).queuePingForUpload(activity, pingBuilder);
+                }
+            });
+        }
+
+        private void maybeSetOptionalMeasurements(final SharedPreferences sharedPrefs, final TelemetryCorePingBuilder pingBuilder) {
+            final String distributionId = sharedPrefs.getString(DistributionStoreCallback.PREF_DISTRIBUTION_ID, null);
+            if (distributionId != null) {
+                pingBuilder.setOptDistributionID(distributionId);
+            }
+
+            final ExtendedJSONObject searchCounts = SearchCountMeasurements.getAndZeroSearch(sharedPrefs);
+            if (searchCounts.size() > 0) {
+                pingBuilder.setOptSearchCounts(searchCounts);
+            }
+        }
+    }
+}
