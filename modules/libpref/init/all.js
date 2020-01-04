@@ -5170,9 +5170,6 @@ pref("browser.addon-watch.ignore", "[\"mochikit@mozilla.org\",\"special-powers@m
 pref("browser.addon-watch.percentage-limit", 5);
 
 
-pref("dom.requestSync.enabled", false);
-
-
 pref("browser.search.log", false);
 pref("browser.search.update", true);
 pref("browser.search.update.log", false);

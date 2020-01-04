@@ -35,12 +35,6 @@
 
 
 
-
-
-
-
-
-
   var gManifestURL;
   var gApp;
   var gOptions;
