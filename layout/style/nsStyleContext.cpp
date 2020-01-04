@@ -89,7 +89,7 @@ nsStyleContext::nsStyleContext(nsStyleContext* aParent,
   
   
   static_assert((UINT64_MAX >> NS_STYLE_CONTEXT_TYPE_SHIFT) >=
-                nsCSSPseudoElements::ePseudo_MAX,
+                 static_cast<uint8_t>(CSSPseudoElementType::MAX),
                 "pseudo element bits no longer fit in a uint64_t");
   MOZ_ASSERT(aRuleNode);
 
@@ -526,7 +526,7 @@ ShouldSuppressLineBreak(const nsStyleContext* aContext,
   
   
   
-  if (aContext->GetPseudoType() == nsCSSPseudoElements::ePseudo_AnonBox &&
+  if (aContext->GetPseudoType() == CSSPseudoElementType::AnonBox &&
       aContext->GetPseudo() != nsCSSAnonBoxes::mozNonElement &&
       !RubyUtils::IsRubyPseudo(aContext->GetPseudo())) {
     return false;

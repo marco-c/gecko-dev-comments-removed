@@ -47,7 +47,9 @@ public:
     if (!aKey)
       return 0;
 
-    return mozilla::HashGeneric(aKey->mElement, aKey->mPseudoType);
+    
+    return mozilla::HashGeneric(aKey->mElement,
+                                static_cast<uint8_t>(aKey->mPseudoType));
   }
   enum { ALLOW_MEMMOVE = true };
 

@@ -241,7 +241,7 @@ nsNodeUtils::GetTargetForAnimation(const Animation* aAnimation)
   
   
   
-  if (pseudoType != nsCSSPseudoElements::ePseudo_NotPseudoElement) {
+  if (pseudoType != CSSPseudoElementType::NotPseudo) {
     return nullptr;
   }
 

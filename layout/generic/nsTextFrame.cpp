@@ -3807,7 +3807,7 @@ nsTextPaintStyle::InitSelectionColorsAndShadow()
     RefPtr<nsStyleContext> sc = nullptr;
     sc = mPresContext->StyleSet()->
       ProbePseudoElementStyle(selectionElement,
-                              nsCSSPseudoElements::ePseudo_mozSelection,
+                              CSSPseudoElementType::mozSelection,
                               mFrame->StyleContext());
     
     if (sc) {
