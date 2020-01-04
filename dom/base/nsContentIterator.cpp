@@ -405,8 +405,8 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
       
 
       if (mFirst &&
-          NS_WARN_IF(!NodeIsInTraversalRange(mFirst, mPre, startNode, startIndx,
-                                             endNode, endIndx))) {
+          !NodeIsInTraversalRange(mFirst, mPre, startNode, startIndx,
+                                  endNode, endIndx)) {
         mFirst = nullptr;
       }
     }
@@ -448,9 +448,9 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
         mLast = GetPrevSibling(endNode);
         NS_WARN_IF(!mLast);
 
-        if (NS_WARN_IF(!NodeIsInTraversalRange(mLast, mPre,
-                                               startNode, startIndx,
-                                               endNode, endIndx))) {
+        if (!NodeIsInTraversalRange(mLast, mPre,
+                                    startNode, startIndx,
+                                    endNode, endIndx)) {
           mLast = nullptr;
         }
       } else {
@@ -485,7 +485,7 @@ nsContentIterator::Init(nsIDOMRange* aDOMRange)
 
   
 
-  if (NS_WARN_IF(!mFirst) || NS_WARN_IF(!mLast)) {
+  if (!mFirst || !mLast) {
     mFirst = nullptr;
     mLast  = nullptr;
   }
