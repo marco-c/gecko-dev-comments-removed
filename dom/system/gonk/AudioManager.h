@@ -41,20 +41,6 @@ typedef Observer<SwitchEvent> SwitchObserver;
 namespace dom {
 namespace gonk {
 
-
-
-
-
-
-
-enum AudioOutputProfiles {
-  DEVICE_ERROR        = -1,
-  DEVICE_PRIMARY      = 0,
-  DEVICE_HEADSET      = 1,
-  DEVICE_BLUETOOTH    = 2,
-  DEVICE_TOTAL_NUMBER = 3,
-};
-
 class VolumeInitCallback;
 
 class AudioManager final : public nsIAudioManager
@@ -100,11 +86,7 @@ public:
     
     nsresult SetVolumeIndexToActiveDevices(uint32_t aIndex);
     
-    
     nsresult SetVolumeIndexToAliasStreams(uint32_t aIndex, uint32_t aDevice);
-    
-    
-    nsresult SetVolumeIndexToAliasDevices(uint32_t aIndex, uint32_t aDevice);
     nsresult SetVolumeIndex(uint32_t aIndex, uint32_t aDevice, bool aUpdateCache = true);
     
     void RestoreVolumeIndexToAllDevices();
@@ -123,10 +105,13 @@ protected:
   bool mIsVolumeInited;
 
   
-  uint32_t mAudioOutProfileUpdated;
+  
+  uint32_t mAudioOutDevicesUpdated;
 
   
   nsDataHashtable<nsUint32HashKey, nsCString> mConnectedDevices;
+
+  nsDataHashtable<nsUint32HashKey, uint32_t> mAudioDeviceTableIdMaps;
 
   bool mSwitchDone;
 
@@ -141,11 +126,11 @@ protected:
 
   bool IsFmOutConnected();
 
-  nsresult SetStreamVolumeForProfile(AudioOutputProfiles aProfile,
-                                     int32_t aStream,
-                                     uint32_t aIndex);
+  nsresult SetStreamVolumeForDevice(int32_t aStream,
+                                    uint32_t aIndex,
+                                    uint32_t aDevice);
   nsresult SetStreamVolumeIndex(int32_t aStream, uint32_t aIndex);
-  nsresult GetStreamVolumeIndex(int32_t aStream, uint32_t *aIndex);
+  nsresult GetStreamVolumeIndex(int32_t aStream, uint32_t* aIndex);
 
   void UpdateCachedActiveDevicesForStreams();
   uint32_t GetDevicesForStream(int32_t aStream, bool aFromCache = true);
@@ -167,23 +152,18 @@ private:
   void HandleAudioChannelProcessChanged();
 
   
-  void InitVolumeForProfile(AudioOutputProfiles aProfile,
-                            int32_t aStreamType,
-                            uint32_t aIndex);
-
-  
-  nsAutoCString AppendProfileToVolumeSetting(const char* aName,
-                                             AudioOutputProfiles aProfile);
+  nsAutoCString AppendDeviceToVolumeSetting(const char* aName,
+                                            uint32_t aDevice);
 
   
   void InitVolumeFromDatabase();
   void MaybeUpdateVolumeSettingToDatabase(bool aForce = false);
 
   
-  void InitProfileVolumeSucceeded();
-  void InitProfileVolumeFailed(const char* aError);
+  void InitDeviceVolumeSucceeded();
+  void InitDeviceVolumeFailed(const char* aError);
 
-  void AudioOutProfileUpdated(AudioOutputProfiles aProfile);
+  void AudioOutDeviceUpdated(uint32_t aDevice);
 
   void UpdateHeadsetConnectionState(hal::SwitchState aState);
   void UpdateDeviceConnectionState(bool aIsConnected, uint32_t aDevice, const nsCString& aDeviceName);

@@ -127,11 +127,21 @@ static const uint32_t sChannelStreamTbl[NUMBER_OF_AUDIO_CHANNELS] = {
 };
 
 
-static const nsAttrValue::EnumTable kAudioOutputProfilesTable[] = {
-  { "primary",   DEVICE_PRIMARY },
-  { "headset",   DEVICE_HEADSET },
-  { "bluetooth", DEVICE_BLUETOOTH },
-  { nullptr }
+struct AudioDeviceInfo {
+  
+  const char* tag;
+  
+  uint32_t value;
+};
+
+
+static const AudioDeviceInfo kAudioDeviceInfos[] = {
+  { "earpiece",        AUDIO_DEVICE_OUT_EARPIECE },
+  { "speaker",         AUDIO_DEVICE_OUT_SPEAKER },
+  { "wired_headset",   AUDIO_DEVICE_OUT_WIRED_HEADSET },
+  { "wired_headphone", AUDIO_DEVICE_OUT_WIRED_HEADPHONE },
+  { "bt_scoheadset",   AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET },
+  { "bt_a2dp",         AUDIO_DEVICE_OUT_BLUETOOTH_A2DP },
 };
 
 static const int kBtSampleRate = 8000;
@@ -261,7 +271,7 @@ AudioManager::HandleAudioFlingerDied()
 
   
   mIsVolumeInited = true;
-  mAudioOutProfileUpdated = 0;
+  mAudioOutDevicesUpdated = 0;
   MaybeUpdateVolumeSettingToDatabase(true);
 }
 
@@ -288,19 +298,20 @@ public:
     for (uint32_t idx = 0; idx < MOZ_ARRAY_LENGTH(gVolumeData); ++idx) {
       NS_ConvertASCIItoUTF16 volumeType(gVolumeData[idx].mChannelName);
       if (StringBeginsWith(aName, volumeType)) {
-        AudioOutputProfiles profile = GetProfileFromSettingName(aName);
-        MOZ_ASSERT(profile != DEVICE_ERROR);
-        int32_t stream = gVolumeData[idx].mStreamType;
-        uint32_t volIndex = aResult.isInt32() ?
-                  aResult.toInt32() : sDefaultStreamVolumeTbl[stream];
-        nsresult rv = audioManager->ValidateVolumeIndex(stream, volIndex);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          mPromiseHolder.Reject("Error : invalid volume index.", __func__);
-          return rv;
+        uint32_t device = GetDeviceFromSettingName(aName);
+        MOZ_ASSERT(device != AUDIO_DEVICE_NONE);
+        if (aResult.isInt32()) {
+          int32_t stream = gVolumeData[idx].mStreamType;
+          uint32_t volIndex = aResult.toInt32();
+          nsresult rv = audioManager->ValidateVolumeIndex(stream, volIndex);
+          if (NS_WARN_IF(NS_FAILED(rv))) {
+            mPromiseHolder.Reject("Error : invalid volume index.", __func__);
+            return rv;
+          }
+          audioManager->SetStreamVolumeForDevice(stream, volIndex, device);
         }
 
-        audioManager->InitVolumeForProfile(profile, stream, volIndex);
-        if (++mInitCounter == DEVICE_TOTAL_NUMBER * MOZ_ARRAY_LENGTH(gVolumeData)) {
+        if (++mInitCounter == MOZ_ARRAY_LENGTH(kAudioDeviceInfos) * MOZ_ARRAY_LENGTH(gVolumeData)) {
           mPromiseHolder.Resolve(true, __func__);
         }
         return NS_OK;
@@ -319,15 +330,15 @@ public:
 protected:
   ~VolumeInitCallback() {}
 
-  AudioOutputProfiles GetProfileFromSettingName(const nsAString& aName) const
+  uint32_t GetDeviceFromSettingName(const nsAString& aName) const
   {
-    for (uint32_t idx = 0; kAudioOutputProfilesTable[idx].tag; ++idx) {
-      NS_ConvertASCIItoUTF16 profile(kAudioOutputProfilesTable[idx].tag);
-      if (StringEndsWith(aName, profile)) {
-        return static_cast<AudioOutputProfiles>(kAudioOutputProfilesTable[idx].value);
+    for (uint32_t idx = 0; idx < MOZ_ARRAY_LENGTH(kAudioDeviceInfos); ++idx) {
+      NS_ConvertASCIItoUTF16 device(kAudioDeviceInfos[idx].tag);
+      if (StringEndsWith(aName, device)) {
+        return kAudioDeviceInfos[idx].value;
       }
     }
-    return DEVICE_ERROR;
+    return AUDIO_DEVICE_NONE;
   }
 
   RefPtr<VolumeInitPromise> mPromise;
@@ -364,9 +375,10 @@ AudioManager::IsFmOutConnected()
 NS_IMPL_ISUPPORTS(AudioManager, nsIAudioManager, nsIObserver)
 
 void
-AudioManager::AudioOutProfileUpdated(AudioOutputProfiles aProfile)
+AudioManager::AudioOutDeviceUpdated(uint32_t aDevice)
 {
-  mAudioOutProfileUpdated |= (1 << aProfile);
+  MOZ_ASSERT(audio_is_output_device(aDevice));
+  mAudioOutDevicesUpdated |= aDevice;
 }
 
 void
@@ -672,7 +684,7 @@ AudioManager::HandleHeadphoneSwitchEvent(const hal::SwitchEvent& aEvent)
 AudioManager::AudioManager()
   : mPhoneState(PHONE_STATE_CURRENT)
   , mIsVolumeInited(false)
-  , mAudioOutProfileUpdated(0)
+  , mAudioOutDevicesUpdated(0)
   , mSwitchDone(true)
 #if defined(MOZ_B2G_BT) || ANDROID_VERSION >= 17
   , mBluetoothA2dpEnabled(false)
@@ -685,6 +697,10 @@ AudioManager::AudioManager()
   , mMuteCallToRIL(false)
 #endif
 {
+  for (uint32_t idx = 0; idx < MOZ_ARRAY_LENGTH(kAudioDeviceInfos); ++idx) {
+    mAudioDeviceTableIdMaps.Put(kAudioDeviceInfos[idx].value, idx);
+  }
+
   AudioSystem::setErrorCallback(BinderDeadCallback);
 #if ANDROID_VERSION >= 21
   android::sp<GonkAudioPortCallback> callback = new GonkAudioPortCallback();
@@ -696,6 +712,11 @@ AudioManager::AudioManager()
     VolumeStreamState* streamState =
       new VolumeStreamState(*this, static_cast<audio_stream_type_t>(loop));
     mStreamStates.AppendElement(streamState);
+  }
+  
+  for (int32_t streamType = 0; streamType < AUDIO_STREAM_MAX; streamType++) {
+      uint32_t volIndex = sDefaultStreamVolumeTbl[streamType];
+      SetStreamVolumeForDevice(streamType, volIndex, AUDIO_DEVICE_OUT_DEFAULT);
   }
   UpdateCachedActiveDevicesForStreams();
 
@@ -978,31 +999,17 @@ AudioManager::ValidateVolumeIndex(int32_t aStream, uint32_t aIndex) const
 }
 
 nsresult
-AudioManager::SetStreamVolumeForProfile(AudioOutputProfiles aProfile,
-                                        int32_t aStream,
-                                        uint32_t aIndex)
+AudioManager::SetStreamVolumeForDevice(int32_t aStream,
+                                       uint32_t aIndex,
+                                       uint32_t aDevice)
 {
   if (aStream <= AUDIO_STREAM_DEFAULT || aStream >= AUDIO_STREAM_MAX) {
     return NS_ERROR_INVALID_ARG;
   }
 
   int32_t streamAlias = sStreamVolumeAliasTbl[aStream];
-  VolumeStreamState* state = mStreamStates[streamAlias].get();
-  
-  switch (aProfile) {
-    case DEVICE_PRIMARY:
-      state->SetVolumeIndexToAliasStreams(aIndex, AUDIO_DEVICE_OUT_SPEAKER);
-      break;
-    case DEVICE_HEADSET:
-      state->SetVolumeIndexToAliasStreams(aIndex, AUDIO_DEVICE_OUT_WIRED_HEADSET);
-      break;
-    case DEVICE_BLUETOOTH:
-      state->SetVolumeIndexToAliasStreams(aIndex, AUDIO_DEVICE_OUT_BLUETOOTH_A2DP);
-      break;
-    default:
-      break;
-  }
-  return NS_OK;
+  VolumeStreamState* streamState = mStreamStates[streamAlias].get();
+  return streamState->SetVolumeIndexToAliasStreams(aIndex, aDevice);
 }
 
 nsresult
@@ -1056,17 +1063,15 @@ AudioManager::GetStreamVolumeIndex(int32_t aStream, uint32_t *aIndex)
 }
 
 nsAutoCString
-AudioManager::AppendProfileToVolumeSetting(const char* aName, AudioOutputProfiles aProfile)
+AudioManager::AppendDeviceToVolumeSetting(const char* aName, uint32_t aDevice)
 {
   nsAutoCString topic;
   topic.Assign(aName);
-  for (uint32_t idx = 0; kAudioOutputProfilesTable[idx].tag; ++idx) {
-    if (kAudioOutputProfilesTable[idx].value == aProfile) {
-      topic.Append(".");
-      topic.Append(kAudioOutputProfilesTable[idx].tag);
-      break;
-    }
-  }
+  topic.Append(".");
+  uint32_t index = 0;
+  DebugOnly<bool> exist = mAudioDeviceTableIdMaps.Get(aDevice, &index);
+  MOZ_ASSERT(exist);
+  topic.Append(kAudioDeviceInfos[index].tag);
   return topic;
 }
 
@@ -1088,37 +1093,29 @@ AudioManager::InitVolumeFromDatabase()
   RefPtr<VolumeInitCallback> callback = new VolumeInitCallback();
   MOZ_ASSERT(callback);
   callback->GetPromise()->Then(AbstractThread::MainThread(), __func__, this,
-                               &AudioManager::InitProfileVolumeSucceeded,
-                               &AudioManager::InitProfileVolumeFailed);
+                               &AudioManager::InitDeviceVolumeSucceeded,
+                               &AudioManager::InitDeviceVolumeFailed);
 
   for (uint32_t idx = 0; idx < MOZ_ARRAY_LENGTH(gVolumeData); ++idx) {
-    for (uint32_t profile = 0; profile < DEVICE_TOTAL_NUMBER; ++profile) {
-      lock->Get(AppendProfileToVolumeSetting(gVolumeData[idx].mChannelName,
-                  static_cast<AudioOutputProfiles>(profile)).get(), callback);
+    for (uint32_t idx2 = 0; idx2 < MOZ_ARRAY_LENGTH(kAudioDeviceInfos); ++idx2) {
+      lock->Get(AppendDeviceToVolumeSetting(gVolumeData[idx].mChannelName,
+                                            kAudioDeviceInfos[idx2].value).get(),
+                callback);
     }
   }
 }
 
 void
-AudioManager::InitProfileVolumeSucceeded()
+AudioManager::InitDeviceVolumeSucceeded()
 {
   mIsVolumeInited = true;
   MaybeUpdateVolumeSettingToDatabase(true);
 }
 
 void
-AudioManager::InitProfileVolumeFailed(const char* aError)
+AudioManager::InitDeviceVolumeFailed(const char* aError)
 {
   
-  for (uint32_t idx = 0; idx < MOZ_ARRAY_LENGTH(gVolumeData); ++idx) {
-    for (int32_t profile = 0; profile < DEVICE_TOTAL_NUMBER; ++profile) {
-      int32_t stream = gVolumeData[idx].mStreamType;
-      uint32_t volIndex = sDefaultStreamVolumeTbl[stream];
-      InitVolumeForProfile(static_cast<AudioOutputProfiles>(profile),
-                           stream,
-                           volIndex);
-    }
-  }
   mIsVolumeInited = true;
   MaybeUpdateVolumeSettingToDatabase(true);
   NS_WARNING(aError);
@@ -1165,29 +1162,21 @@ AudioManager::MaybeUpdateVolumeSettingToDatabase(bool aForce)
         continue;
     }
 
-    if (mAudioOutProfileUpdated & (1 << DEVICE_PRIMARY)) {
-      volume = streamState->GetVolumeIndex(AUDIO_DEVICE_OUT_SPEAKER);
+    uint32_t remainingDevices = mAudioOutDevicesUpdated;
+    for (uint32_t i = 0; remainingDevices != 0; i++) {
+      uint32_t device = (1 << i);
+      if ((device & remainingDevices) == 0) {
+        continue;
+      }
+      remainingDevices &= ~device;
+      if (!mAudioDeviceTableIdMaps.Get(device, nullptr)) {
+        continue;
+      }
+      volume = streamState->GetVolumeIndex(device);
       value.setInt32(volume);
-      lock->Set(AppendProfileToVolumeSetting(
-                  gVolumeData[idx].mChannelName,
-                  DEVICE_PRIMARY).get(),
-                  value, nullptr, nullptr);
-    }
-    if (mAudioOutProfileUpdated & (1 << DEVICE_HEADSET)) {
-      volume = streamState->GetVolumeIndex(AUDIO_DEVICE_OUT_WIRED_HEADSET);
-      value.setInt32(volume);
-      lock->Set(AppendProfileToVolumeSetting(
-                  gVolumeData[idx].mChannelName,
-                  DEVICE_HEADSET).get(),
-                  value, nullptr, nullptr);
-    }
-    if (mAudioOutProfileUpdated & (1 << DEVICE_BLUETOOTH)) {
-      volume = streamState->GetVolumeIndex(AUDIO_DEVICE_OUT_BLUETOOTH_A2DP);
-      value.setInt32(volume);
-      lock->Set(AppendProfileToVolumeSetting(
-                  gVolumeData[idx].mChannelName,
-                  DEVICE_BLUETOOTH).get(),
-                  value, nullptr, nullptr);
+      lock->Set(AppendDeviceToVolumeSetting(gVolumeData[idx].mChannelName,
+                                            device).get(),
+                value, nullptr, nullptr);
     }
   }
 
@@ -1198,20 +1187,7 @@ AudioManager::MaybeUpdateVolumeSettingToDatabase(bool aForce)
     mStreamStates[streamType]->ClearVolumeIndexesChanged();
   }
   
-  mAudioOutProfileUpdated = 0;
-}
-
-void
-AudioManager::InitVolumeForProfile(AudioOutputProfiles aProfile,
-                                   int32_t aStreamType,
-                                   uint32_t aIndex)
-{
-  
-  for (int32_t streamType = 0; streamType < AUDIO_STREAM_MAX; streamType++) {
-    if (aStreamType == sStreamVolumeAliasTbl[streamType]) {
-      SetStreamVolumeForProfile(aProfile, streamType, aIndex);
-    }
-  }
+  mAudioOutDevicesUpdated = 0;
 }
 
 void
@@ -1250,7 +1226,9 @@ AudioManager::GetDevicesForStream(int32_t aStream, bool aFromCache)
 
   return static_cast<uint32_t>(devices);
 #else
-  return AUDIO_DEVICE_OUT_DEFAULT;
+  
+  
+  return AUDIO_DEVICE_OUT_SPEAKER;
 #endif
 }
 
@@ -1383,7 +1361,7 @@ AudioManager::VolumeStreamState::SetVolumeIndexToActiveDevices(uint32_t aIndex)
 
   
   
-  nsresult rv = SetVolumeIndexToAliasDevices(aIndex, device);
+  nsresult rv = SetVolumeIndex(aIndex, device);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1395,7 +1373,7 @@ AudioManager::VolumeStreamState::SetVolumeIndexToActiveDevices(uint32_t aIndex)
   if (device != AUDIO_DEVICE_OUT_SPEAKER &&
       mStreamType == AUDIO_STREAM_NOTIFICATION) {
       
-      rv = SetVolumeIndexToAliasDevices(aIndex, AUDIO_DEVICE_OUT_SPEAKER);
+      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_SPEAKER);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1414,7 +1392,8 @@ AudioManager::VolumeStreamState::SetVolumeIndexToAliasStreams(uint32_t aIndex,
     
     return NS_OK;
   }
-  nsresult rv = SetVolumeIndexToAliasDevices(aIndex, aDevice);
+
+  nsresult rv = SetVolumeIndex(aIndex, aDevice);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1430,65 +1409,7 @@ AudioManager::VolumeStreamState::SetVolumeIndexToAliasStreams(uint32_t aIndex,
       }
     }
   }
-  return NS_OK;
-}
 
-nsresult
-AudioManager::VolumeStreamState::SetVolumeIndexToAliasDevices(uint32_t aIndex,
-                                                              uint32_t aDevice)
-{
-#if ANDROID_VERSION >= 17
-  nsresult rv = NS_ERROR_FAILURE;
-  switch (aDevice) {
-    case AUDIO_DEVICE_OUT_EARPIECE:
-    case AUDIO_DEVICE_OUT_SPEAKER:
-      
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_EARPIECE);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_SPEAKER);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      mManager.AudioOutProfileUpdated(DEVICE_PRIMARY);
-      break;
-    case AUDIO_DEVICE_OUT_WIRED_HEADSET:
-    case AUDIO_DEVICE_OUT_WIRED_HEADPHONE:
-      
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_WIRED_HEADSET);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_WIRED_HEADPHONE);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      mManager.AudioOutProfileUpdated(DEVICE_HEADSET);
-      break;
-    case AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET:
-    case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP:
-      
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      rv = SetVolumeIndex(aIndex, AUDIO_DEVICE_OUT_BLUETOOTH_A2DP);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      mManager.AudioOutProfileUpdated(DEVICE_BLUETOOTH);
-      break;
-    default:
-      rv = SetVolumeIndex(aIndex, aDevice);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-      break;
-  }
-#else
-  SetVolumeIndex(aIndex, aDevice);
-#endif
   return NS_OK;
 }
 
@@ -1502,6 +1423,7 @@ AudioManager::VolumeStreamState::SetVolumeIndex(uint32_t aIndex,
   if (aUpdateCache) {
     mVolumeIndexes.Put(aDevice, aIndex);
     mIsVolumeIndexesChanged = true;
+    mManager.AudioOutDeviceUpdated(aDevice);
   }
 
   rv = AudioSystem::setStreamVolumeIndex(
@@ -1511,8 +1433,11 @@ AudioManager::VolumeStreamState::SetVolumeIndex(uint32_t aIndex,
   return rv ? NS_ERROR_FAILURE : NS_OK;
 #else
   if (aUpdateCache) {
-    mVolumeIndexes.Put(AUDIO_DEVICE_OUT_DEFAULT, aIndex);
+    
+    
+    mVolumeIndexes.Put(AUDIO_DEVICE_OUT_SPEAKER, aIndex);
     mIsVolumeIndexesChanged = true;
+    mManager.AudioOutDeviceUpdated(AUDIO_DEVICE_OUT_SPEAKER);
   }
   rv = AudioSystem::setStreamVolumeIndex(
          static_cast<audio_stream_type_t>(mStreamType),
