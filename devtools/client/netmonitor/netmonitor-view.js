@@ -1166,8 +1166,15 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
   isFreetextMatch: function({ attachment: { url } }, text) {
     let lowerCaseUrl = url.toLowerCase();
     let lowerCaseText = text.toLowerCase();
+    let textLength = text.length;
     
-    return !text || lowerCaseUrl.includes(lowerCaseText);
+    if (text.startsWith("-") && textLength > 1) {
+      lowerCaseText = lowerCaseText.substring(1, textLength);
+      return !lowerCaseUrl.includes(lowerCaseText);
+    } else {
+      
+      return !text || lowerCaseUrl.includes(lowerCaseText);
+    }
   },
 
   

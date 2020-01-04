@@ -123,6 +123,12 @@ function test() {
           setFreetextFilter("SAMPLE");
           return testContents([1, 1, 1, 0, 0, 0, 0, 0]);
         })
+        .then(() => {
+          
+          EventUtils.sendMouseEvent({ type: "click" }, $("#requests-menu-filter-all-button"));
+          setFreetextFilter("-sample");
+          return testContents([0, 0, 0, 1, 1, 1, 1, 1]);
+        })
         
         .then(() => {
           
