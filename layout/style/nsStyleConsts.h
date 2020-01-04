@@ -809,7 +809,7 @@ enum class FillMode : uint32_t;
 
 
 #define NS_STYLE_TEXT_ALIGN_MOZ_CENTER_OR_INHERIT 11
-#define NS_STYLE_TEXT_ALIGN_TRUE                  12
+#define NS_STYLE_TEXT_ALIGN_UNSAFE                12
 #define NS_STYLE_TEXT_ALIGN_MATCH_PARENT          13
 
 
