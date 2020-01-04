@@ -136,6 +136,15 @@ public:
                              nsCSSValue&         aResult);
 
   
+  
+  
+  
+  
+  bool ParseTransformProperty(const nsAString& aPropValue,
+                              bool             aDisallowRelativeValues,
+                              nsCSSValue&      aResult);
+
+  
   void ParseVariable(const nsAString&    aVariableName,
                      const nsAString&    aPropValue,
                      nsIURI*             aSheetURL,

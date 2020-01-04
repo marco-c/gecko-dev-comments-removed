@@ -140,9 +140,13 @@ namespace nsStyleTransformMatrix {
                            nsStyleContext* aContext,
                            nsPresContext* aPresContext,
                            mozilla::RuleNodeCacheConditions& aConditions,
-                           TransformReferenceBox& aBounds);
+                           TransformReferenceBox& aBounds,
+                           bool* aContains3dTransform);
 
   
+
+
+
 
 
 
@@ -163,8 +167,8 @@ namespace nsStyleTransformMatrix {
                                          nsPresContext* aPresContext,
                                          mozilla::RuleNodeCacheConditions& aConditions,
                                          TransformReferenceBox& aBounds,
-                                         float aAppUnitsPerMatrixUnit);
-
+                                         float aAppUnitsPerMatrixUnit,
+                                         bool* aContains3dTransform);
 } 
 
 #endif
