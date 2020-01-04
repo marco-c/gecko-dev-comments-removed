@@ -643,9 +643,12 @@ private:
   already_AddRefed<CSSValue> CreatePrimitiveValueForStyleFilter(
     const nsStyleFilter& aStyleFilter);
 
-  
   already_AddRefed<CSSValue> CreatePrimitiveValueForClipPath(
     const nsStyleBasicShape* aStyleBasicShape, uint8_t aSizingBox);
+
+  
+  already_AddRefed<CSSValue> CreatePrimitiveValueForBasicShape(
+    const nsStyleBasicShape* aStyleBasicShape);
   void BoxValuesToString(nsAString& aString,
                          const nsTArray<nsStyleCoord>& aBoxValues);
   void BasicShapeRadiiToString(nsAString& aCssText,
