@@ -953,6 +953,8 @@ void MediaPipelineTransmit::PipelineListener::ProcessAudioChunk(
   
   
   uint32_t outputChannels = chunk.ChannelCount() == 1 ? 1 : 2;
+  
+  
   nsAutoArrayPtr<int16_t> convertedSamples(
       new int16_t[chunk.mDuration * outputChannels]);
 
@@ -998,8 +1000,16 @@ void MediaPipelineTransmit::PipelineListener::ProcessAudioChunk(
   while (packetizer_->PacketsAvailable()) {
     uint32_t samplesPerPacket = packetizer_->PacketSize() *
                                 packetizer_->Channels();
-    conduit->SendAudioFrame(packetizer_->Output(),
-                            samplesPerPacket ,
+
+    
+    
+    
+    const size_t AUDIO_SAMPLE_BUFFER_MAX = 1920;
+    int16_t packet[AUDIO_SAMPLE_BUFFER_MAX];
+
+    packetizer_->Output(packet);
+    conduit->SendAudioFrame(packet,
+                            samplesPerPacket,
                             rate, 0);
   }
 }
@@ -1329,7 +1339,6 @@ NotifyPull(MediaStreamGraph* graph, StreamTime desired_time) {
   
   while (source_->TicksToTimeRoundDown(track_rate_, played_ticks_) <
          desired_time) {
-    
     
     const size_t AUDIO_SAMPLE_BUFFER_MAX = 1920;
     MOZ_ASSERT((track_rate_/100)*sizeof(uint16_t) * 2 <= AUDIO_SAMPLE_BUFFER_MAX);

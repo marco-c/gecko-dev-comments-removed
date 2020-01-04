@@ -30,6 +30,9 @@ namespace mozilla {
 
 
 
+
+
+
 template <typename InputType, typename OutputType>
 class AudioPacketizer
 {
@@ -98,6 +101,15 @@ public:
     uint32_t samplesNeeded = mPacketSize * mChannels;
     OutputType* out = new OutputType[samplesNeeded];
 
+    Output(out);
+
+    return out;
+  }
+
+  void Output(OutputType* aOutputBuffer)
+  {
+    uint32_t samplesNeeded = mPacketSize * mChannels;
+
     
     if (AvailableSamples() < samplesNeeded) {
 #ifdef LOG_PACKETIZER_UNDERRUN
@@ -108,26 +120,24 @@ public:
       NS_WARNING(buf);
 #endif
       uint32_t zeros = samplesNeeded - AvailableSamples();
-      PodZero(out + AvailableSamples(), zeros);
+      PodZero(aOutputBuffer + AvailableSamples(), zeros);
       samplesNeeded -= zeros;
     }
     if (ReadIndex() + samplesNeeded <= mLength) {
       ConvertAudioSamples<InputType,OutputType>(mStorage.get() + ReadIndex(),
-                                                out,
+                                                aOutputBuffer,
                                                 samplesNeeded);
     } else {
       uint32_t firstPartLength = mLength - ReadIndex();
       uint32_t secondPartLength = samplesNeeded - firstPartLength;
       ConvertAudioSamples<InputType, OutputType>(mStorage.get() + ReadIndex(),
-                                                 out,
+                                                 aOutputBuffer,
                                                  firstPartLength);
       ConvertAudioSamples<InputType, OutputType>(mStorage.get(),
-                                                 out + firstPartLength,
+                                                 aOutputBuffer + firstPartLength,
                                                  secondPartLength);
     }
     mReadIndex += samplesNeeded;
-
-    return out;
   }
 
   uint32_t PacketsAvailable() const {
