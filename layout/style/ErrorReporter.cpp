@@ -112,12 +112,6 @@ InitGlobals()
 static inline bool
 ShouldReportErrors()
 {
-  
-  
-  if (!NS_IsMainThread()) {
-    return false;
-  }
-
   if (!sConsoleService) {
     if (!InitGlobals()) {
       return false;
@@ -153,8 +147,7 @@ ErrorReporter::~ErrorReporter()
   
   
   
-  if (NS_IsMainThread() && sSpecCache && sSpecCache->IsInUse() &&
-      !sSpecCache->IsPending()) {
+  if (sSpecCache && sSpecCache->IsInUse() && !sSpecCache->IsPending()) {
     if (NS_FAILED(NS_DispatchToCurrentThread(sSpecCache))) {
       
       sSpecCache->Run();
