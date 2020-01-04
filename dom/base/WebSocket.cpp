@@ -158,9 +158,6 @@ public:
   
   void DispatchConnectionCloseEvents();
 
-  
-  nsresult DispatchRunnable(nsIRunnable* aRunnable);
-
   nsresult UpdateURI();
 
   void AddRefObject();
