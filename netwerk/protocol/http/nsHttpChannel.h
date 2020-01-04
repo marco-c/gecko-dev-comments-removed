@@ -527,7 +527,7 @@ private:
     
     
     
-    uint32_t                          mConcurentCacheAccess : 1;
+    uint32_t                          mConcurrentCacheAccess : 1;
     
     uint32_t                          mIsPartialRequest : 1;
     

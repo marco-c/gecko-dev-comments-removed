@@ -255,7 +255,7 @@ nsHttpChannel::nsHttpChannel()
     , mCacheEntryIsWriteOnly(false)
     , mCacheEntriesToWaitFor(0)
     , mHasQueryString(0)
-    , mConcurentCacheAccess(0)
+    , mConcurrentCacheAccess(0)
     , mIsPartialRequest(0)
     , mHasAutoRedirectVetoNotifier(0)
     , mPinCacheContent(0)
@@ -945,6 +945,20 @@ nsHttpChannel::CallOnStartRequest()
 
     nsresult rv;
 
+    if (mOnStartRequestCalled) {
+        
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(mConcurrentCacheAccess);
+        LOG(("CallOnStartRequest already invoked before"));
+        return mStatus;
+    }
+
     mTracingEnabled = false;
 
     
@@ -1036,6 +1050,7 @@ nsHttpChannel::CallOnStartRequest()
             return rv;
     } else {
         NS_WARNING("OnStartRequest skipped because of null listener");
+        mOnStartRequestCalled = true;
     }
 
     
@@ -1065,7 +1080,7 @@ nsHttpChannel::CallOnStartRequest()
         
         
         
-        if (!mCachedContentIsPartial && !mConcurentCacheAccess)
+        if (!mCachedContentIsPartial && !mConcurrentCacheAccess)
             CloseCacheEntry(false);
     }
 
@@ -1707,6 +1722,12 @@ nsHttpChannel::ProcessResponse()
         if ((httpStatus < 500) && (httpStatus != 421)) {
             ProcessAltService();
         }
+    }
+
+    if (mConcurrentCacheAccess && mCachedContentIsPartial && httpStatus != 206) {
+        LOG(("  only expecting 206 when doing partial request during "
+             "interrupted cache concurrent read"));
+        return NS_ERROR_CORRUPTED_CONTENT;
     }
 
     
@@ -2737,7 +2758,7 @@ nsHttpChannel::ProcessPartialContent()
         return CallOnStartRequest();
     }
 
-    if (mConcurentCacheAccess) {
+    if (mConcurrentCacheAccess) {
         
         
         
@@ -2778,9 +2799,13 @@ nsHttpChannel::ProcessPartialContent()
     
     gHttpHandler->OnExamineMergedResponse(this);
 
-    if (mConcurentCacheAccess) {
+    if (mConcurrentCacheAccess) {
         mCachedContentIsPartial = false;
-        mConcurentCacheAccess = 0;
+        
+        
+        
+        
+
         
     } else {
         
@@ -3088,7 +3113,7 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
     AutoCacheWaitFlags waitFlags(this);
 
     
-    mConcurentCacheAccess = 0;
+    mConcurrentCacheAccess = 0;
 
     nsresult rv;
 
@@ -3492,7 +3517,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
                 wantCompleteEntry = true;
             }
             else {
-                mConcurentCacheAccess = 1;
+                mConcurrentCacheAccess = 1;
             }
         }
         else if (contentLength != int64_t(-1) && contentLength != size) {
@@ -3740,7 +3765,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
             !mCustomConditionalRequest && !weaklyFramed && !isImmutable &&
             (mCachedResponseHead->Status() < 400)) {
 
-            if (mConcurentCacheAccess) {
+            if (mConcurrentCacheAccess) {
                 
                 
                 
@@ -3749,7 +3774,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, nsIApplicationCache* appC
                 
                 
                 
-                mConcurentCacheAccess = 0;
+                mConcurrentCacheAccess = 0;
                 
                 
                 wantCompleteEntry = true;
@@ -4529,7 +4554,7 @@ nsHttpChannel::InitCacheEntry()
     mInitedCacheEntry = true;
 
     
-    mConcurentCacheAccess = 0;
+    mConcurrentCacheAccess = 0;
 
     return NS_OK;
 }
@@ -6243,7 +6268,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
                 
             }
             else if (request == mTransactionPump) {
-                MOZ_ASSERT(mConcurentCacheAccess);
+                MOZ_ASSERT(mConcurrentCacheAccess);
             }
             else
                 NS_NOTREACHED("unexpected request");
@@ -6346,7 +6371,7 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
 
     
     if (mCacheEntry && mCachePump &&
-        mConcurentCacheAccess && contentComplete) {
+        mConcurrentCacheAccess && contentComplete) {
         int64_t size, contentLength;
         nsresult rv = CheckPartial(mCacheEntry, &size, &contentLength);
         if (NS_SUCCEEDED(rv)) {
