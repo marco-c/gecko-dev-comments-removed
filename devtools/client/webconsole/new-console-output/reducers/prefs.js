@@ -5,7 +5,9 @@
 
 "use strict";
 
-function prefs(state = {}, action) {
+const {Prefs} = require("devtools/client/webconsole/new-console-output/store");
+
+function prefs(state = new Prefs(), action) {
   return state;
 }
 

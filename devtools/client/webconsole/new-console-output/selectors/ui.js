@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+function getAllUi(state) {
+  return state.ui;
+}
+
+exports.getAllUi = getAllUi;

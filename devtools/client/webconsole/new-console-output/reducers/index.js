@@ -5,10 +5,14 @@
 
 "use strict";
 
+const { filters } = require("./filters");
 const { messages } = require("./messages");
 const { prefs } = require("./prefs");
+const { ui } = require("./ui");
 
 exports.reducers = {
+  filters,
   messages,
   prefs,
+  ui,
 };

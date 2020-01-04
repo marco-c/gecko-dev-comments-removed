@@ -5,13 +5,46 @@
 
 "use strict";
 
+const { getAllFilters } = require("devtools/client/webconsole/new-console-output/selectors/filters");
 const { getLogLimit } = require("devtools/client/webconsole/new-console-output/selectors/prefs");
 
 function getAllMessages(state) {
   let messages = state.messages;
-  let messageCount = messages.count();
   let logLimit = getLogLimit(state);
+  let filters = getAllFilters(state);
 
+  return prune(
+    search(
+      filterSeverity(messages, filters),
+      filters.searchText
+    ),
+    logLimit
+  );
+}
+
+function filterSeverity(messages, filters) {
+  return messages.filter((message) => filters[message.severity] === true);
+}
+
+function search(messages, searchText = "") {
+  if (searchText === "") {
+    return messages;
+  }
+
+  return messages.filter(function (message) {
+    
+    if (!Array.isArray(message.parameters)) {
+      return true;
+    }
+    return message
+      .parameters.join("")
+      .toLocaleLowerCase()
+      .includes(searchText.toLocaleLowerCase());
+  });
+}
+
+function prune(messages, logLimit) {
+  let messageCount = messages.count();
   if (messageCount > logLimit) {
     return messages.splice(0, messageCount - logLimit);
   }

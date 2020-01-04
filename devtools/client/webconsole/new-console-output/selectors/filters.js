@@ -1,0 +1,12 @@
+
+
+
+
+
+"use strict";
+
+function getAllFilters(state) {
+  return state.filters;
+}
+
+exports.getAllFilters = getAllFilters;

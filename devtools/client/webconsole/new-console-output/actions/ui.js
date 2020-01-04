@@ -1,0 +1,19 @@
+
+
+
+
+
+
+"use strict";
+
+const {
+  FILTERBAR_TOGGLE,
+} = require("../constants");
+
+function filterBarToggle(show) {
+  return {
+    type: FILTERBAR_TOGGLE
+  };
+}
+
+exports.filterBarToggle = filterBarToggle;

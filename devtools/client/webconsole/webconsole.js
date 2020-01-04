@@ -553,6 +553,9 @@ WebConsoleFrame.prototype = {
       
       this.newConsoleOutput = new this.window.NewConsoleOutput(this.experimentalOutputNode, this.jsterm);
       console.log("Created newConsoleOutput", this.newConsoleOutput);
+
+      let filterToolbar = doc.querySelector(".hud-console-filter-toolbar");
+      filterToolbar.hidden = true;
     }
 
     this.resize();
@@ -583,6 +586,13 @@ WebConsoleFrame.prototype = {
       
       if (event.target.nodeName.toLowerCase() === "a" ||
           event.target.parentNode.nodeName.toLowerCase() === "a") {
+        return;
+      }
+
+      
+      if (this.NEW_CONSOLE_OUTPUT_ENABLED &&
+          event.target.nodeName.toLowerCase() === "input" &&
+          event.target.getAttribute("type").toLowerCase() === "search") {
         return;
       }
 
