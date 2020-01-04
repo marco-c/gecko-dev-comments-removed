@@ -350,10 +350,10 @@ public:
 
 
 
-  void OpenAudioInputImpl(char *aName, MediaStreamListener *aListener);
-  virtual nsresult OpenAudioInput(char *aName, MediaStreamListener *aListener) override;
-  void CloseAudioInputImpl(MediaStreamListener *aListener);
-  virtual void CloseAudioInput(MediaStreamListener *aListener) override;
+  void OpenAudioInputImpl(char *aName, AudioDataListener *aListener);
+  virtual nsresult OpenAudioInput(char *aName, AudioDataListener *aListener) override;
+  void CloseAudioInputImpl(AudioDataListener *aListener);
+  virtual void CloseAudioInput(AudioDataListener *aListener) override;
 
   void FinishStream(MediaStream* aStream);
   
