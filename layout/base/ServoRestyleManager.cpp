@@ -16,33 +16,6 @@ ServoRestyleManager::ServoRestyleManager(nsPresContext* aPresContext)
 {
 }
 
- void
-ServoRestyleManager::DirtyTree(nsIContent* aContent, bool aIncludingRoot)
-{
-  if (aIncludingRoot) {
-    
-    
-    
-    if (aContent->IsDirtyForServo()) {
-      return;
-    }
-
-    aContent->SetIsDirtyForServo();
-  }
-
-  FlattenedChildIterator it(aContent);
-
-  nsIContent* n = it.GetNextChild();
-  bool hadChildren = bool(n);
-  for (; n; n = it.GetNextChild()) {
-    DirtyTree(n, true);
-  }
-
-  if (hadChildren) {
-    aContent->SetHasDirtyDescendantsForServo();
-  }
-}
-
 void
 ServoRestyleManager::PostRestyleEvent(Element* aElement,
                                       nsRestyleHint aRestyleHint,
@@ -151,6 +124,22 @@ MarkParentsAsHavingDirtyDescendants(Element* aElement)
   }
 }
 
+static void
+MarkChildrenAsDirtyForServo(nsIContent* aContent)
+{
+  FlattenedChildIterator it(aContent);
+
+  nsIContent* n = it.GetNextChild();
+  bool hadChildren = bool(n);
+  for (; n; n = it.GetNextChild()) {
+    n->SetIsDirtyForServo();
+  }
+
+  if (hadChildren) {
+    aContent->SetHasDirtyDescendantsForServo();
+  }
+}
+
 void
 ServoRestyleManager::NoteRestyleHint(Element* aElement, nsRestyleHint aHint)
 {
@@ -159,11 +148,10 @@ ServoRestyleManager::NoteRestyleHint(Element* aElement, nsRestyleHint aHint)
     MarkParentsAsHavingDirtyDescendants(aElement);
     
     
-    aHint |= eRestyle_Subtree;
-  }
-
-  if (aHint & eRestyle_Subtree) {
-    DirtyTree(aElement,  false);
+    
+    
+  } else if (aHint & eRestyle_Subtree) {
+    MarkChildrenAsDirtyForServo(aElement);
     MarkParentsAsHavingDirtyDescendants(aElement);
   }
 
@@ -171,7 +159,7 @@ ServoRestyleManager::NoteRestyleHint(Element* aElement, nsRestyleHint aHint)
     for (nsINode* cur = aElement->GetNextSibling(); cur;
          cur = cur->GetNextSibling()) {
       if (cur->IsContent()) {
-        DirtyTree(cur->AsContent(),  true);
+        cur->SetIsDirtyForServo();
       }
     }
   }

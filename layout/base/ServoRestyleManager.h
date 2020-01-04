@@ -96,12 +96,6 @@ private:
   
 
 
-
-  static void DirtyTree(nsIContent* aContent, bool aIncludingRoot = true);
-
-  
-
-
   static void NoteRestyleHint(Element* aElement, nsRestyleHint aRestyleHint);
 
   inline ServoStyleSet* StyleSet() const
