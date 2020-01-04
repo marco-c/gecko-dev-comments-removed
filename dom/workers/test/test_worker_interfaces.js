@@ -174,7 +174,7 @@ var interfaceNamesInGlobalScope =
 
     "Response",
 
-    { name: "ServiceWorkerRegistration", b2g: false, releaseAndroid: false },
+    { name: "ServiceWorkerRegistration", b2g: false, nightlyAndroid: true, android: false },
 
     "TextDecoder",
 
@@ -219,11 +219,11 @@ function createInterfaceMap(permissionMap, version, userAgent, isB2G) {
       } else {
         ok(!("pref" in entry), "Bogus pref annotation for " + entry.name);
         if ((entry.nightly === !isNightly) ||
+            (entry.nightlyAndroid === !(isAndroid && isNightly) && isAndroid) ||
             (entry.desktop === !isDesktop) ||
-            (entry.android === !isAndroid) ||
+            (entry.android === !isAndroid && !entry.nightlyAndroid) ||
             (entry.b2g === !isB2G) ||
             (entry.release === !isRelease) ||
-            (entry.releaseAndroid === !(isAndroid && isRelease)) ||
             (entry.permission && !permissionMap[entry.permission]) ||
             entry.disabled) {
           interfaceMap[entry.name] = false;
