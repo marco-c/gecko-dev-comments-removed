@@ -3299,11 +3299,11 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     
     
     
-    nsIContent* content = couldBuildLayer ? mScrolledFrame->GetContent()
-                                          : nullptr;
-
     nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(
-        aBuilder, content ? mOuter : aBuilder->GetCurrentScrollParent());
+        aBuilder,
+        couldBuildLayer && mScrolledFrame->GetContent()
+            ? nsLayoutUtils::FindOrCreateIDFor(mScrolledFrame->GetContent())
+            : aBuilder->GetCurrentScrollParentId());
 
     nsRect clipRect = mScrollPort + aBuilder->ToReferenceFrame(mOuter);
     

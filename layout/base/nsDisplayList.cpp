@@ -670,72 +670,6 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
                            aLayer, data, pending);
 }
 
-nsDisplayListBuilder::AutoCurrentScrollParentIdSetter::
-  AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder,
-                                  nsIFrame* aScrollParent)
-  : mBuilder(aBuilder)
-  , mOldScrollParent(aBuilder->mCurrentScrollParent)
-  , mOldDisplayPortConsideringAncestors(aBuilder->mDisplayPortConsideringAncestors)
-  , mOldScrollPortConsideringAncestors(aBuilder->mScrollPortConsideringAncestors)
-  , mOldScrollParentId(aBuilder->mCurrentScrollParentId)
-  , mOldForceLayer(aBuilder->mForceLayerForScrollParent)
-  , mChangedSubtrees(false)
-{
-  aBuilder->UpdateCurrentScrollParent(aScrollParent);
-  Init();
-}
-
-nsDisplayListBuilder::AutoCurrentScrollParentIdSetter::
-  AutoCurrentScrollParentIdSetter(nsDisplayListBuilder* aBuilder,
-                                  const OutOfFlowDisplayData* aOutOfFlowData)
-  : mBuilder(aBuilder)
-  , mOldScrollParent(aBuilder->mCurrentScrollParent)
-  , mOldDisplayPortConsideringAncestors(aBuilder->mDisplayPortConsideringAncestors)
-  , mOldScrollPortConsideringAncestors(aBuilder->mScrollPortConsideringAncestors)
-  , mOldScrollParentId(aBuilder->mCurrentScrollParentId)
-  , mOldForceLayer(aBuilder->mForceLayerForScrollParent)
-  , mChangedSubtrees(true)
-{
-  aBuilder->UpdateCurrentScrollParentForOutOfFlow(aOutOfFlowData);
-  Init();
-}
-
-void
-nsDisplayListBuilder::AutoCurrentScrollParentIdSetter::Init()
-{
-  
-  
-  
-  
-  mCanBeScrollParent = mOldScrollParentId != mBuilder->mCurrentScrollParentId;
-
-  mBuilder->mForceLayerForScrollParent = false;
-}
-
-nsDisplayListBuilder::AutoCurrentScrollParentIdSetter::
-  ~AutoCurrentScrollParentIdSetter()
-{
-  mBuilder->mCurrentScrollParent = mOldScrollParent;
-  mBuilder->mDisplayPortConsideringAncestors = mOldDisplayPortConsideringAncestors;
-  mBuilder->mScrollPortConsideringAncestors = mOldScrollPortConsideringAncestors;
-  mBuilder->mCurrentScrollParentId = mOldScrollParentId;
-
-  if (mCanBeScrollParent || mChangedSubtrees) {
-    
-    
-    
-    
-    
-    
-    mBuilder->mForceLayerForScrollParent = mOldForceLayer;
-  } else {
-    
-    
-    
-    mBuilder->mForceLayerForScrollParent |= mOldForceLayer;
-  }
-}
-
 nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
     nsDisplayListBuilderMode aMode, bool aBuildCaret)
     : mReferenceFrame(aReferenceFrame),
@@ -751,7 +685,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mGlassDisplayItem(nullptr),
       mScrollInfoItemsForHoisting(nullptr),
       mMode(aMode),
-      mCurrentScrollParent(nullptr),
       mCurrentScrollParentId(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarTarget(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarFlags(0),
@@ -798,9 +731,6 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
   }
 
   mFrameToAnimatedGeometryRootMap.Put(aReferenceFrame, &mRootAGR);
-
-  UpdateCurrentScrollParent(
-      nsLayoutUtils::GetAsyncScrollableProperAncestorFrameOrFallback(aReferenceFrame));
 
   nsCSSRendering::BeginFrameTreesLocked();
   PR_STATIC_ASSERT(nsDisplayItem::TYPE_MAX < (1 << nsDisplayItem::TYPE_BITS));
@@ -924,12 +854,7 @@ void nsDisplayListBuilder::MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame,
 
   const DisplayItemClip* oldClip = mClipState.GetClipForContainingBlockDescendants();
   const DisplayItemScrollClip* sc = mClipState.GetCurrentInnermostScrollClip();
-  OutOfFlowDisplayData* data =
-    new OutOfFlowDisplayData(oldClip, sc, dirty,
-                             mCurrentScrollParent, mCurrentScrollParentId,
-                             mDisplayPortConsideringAncestors,
-                             mScrollPortConsideringAncestors);
-
+  OutOfFlowDisplayData* data = new OutOfFlowDisplayData(oldClip, sc, dirty);
   aFrame->Properties().Set(nsDisplayListBuilder::OutOfFlowDisplayDataProperty(), data);
 
   MarkFrameForDisplay(aFrame, aDirtyFrame);
@@ -1294,132 +1219,6 @@ nsDisplayListBuilder::FindAnimatedGeometryRootFrameFor(nsIFrame* aFrame)
     cursor = next;
   }
   return cursor;
-}
-
-void
-nsDisplayListBuilder::UpdateCurrentScrollParent(nsIFrame* aScrollParent)
-{
-  
-  
-  
-  
-  if (aScrollParent == mCurrentScrollParent) {
-    return;
-  }
-
-  
-  nsIFrame* oldScrollParent = mCurrentScrollParent;
-  mCurrentScrollParent = aScrollParent;
-
-  
-  
-  
-  
-  if (!aScrollParent) {
-    mDisplayPortConsideringAncestors = nsRect();
-    mScrollPortConsideringAncestors = nsRect();
-    mCurrentScrollParentId = FrameMetrics::NULL_SCROLL_ID;
-    return;
-  }
-
-  
-  nsIContent* content = aScrollParent->GetContent();
-  mCurrentScrollParentId = content ? nsLayoutUtils::FindOrCreateIDFor(content)
-                                   : FrameMetrics::NULL_SCROLL_ID;
-
-  nsIScrollableFrame* newScrollParent = do_QueryFrame(aScrollParent);
-  if (!newScrollParent) {
-    
-    
-    
-    MOZ_ASSERT(!oldScrollParent, "Falling back to the root frame when an ancestor "
-                                 "scrollable frame existed?");
-    nsRect frameRect(nsPoint(0, 0), aScrollParent->GetSize());
-    mDisplayPortConsideringAncestors = frameRect;
-    mScrollPortConsideringAncestors = frameRect;
-    return;
-  }
-
-  MOZ_ASSERT(mCurrentScrollParentId != FrameMetrics::NULL_SCROLL_ID,
-             "Couldn't get a scroll ID for a scrollable frame?");
-
-  
-  
-  if (!oldScrollParent) {
-    mDisplayPortConsideringAncestors =
-      nsLayoutUtils::GetDisplayPortOrFallbackToScrollPort(newScrollParent);
-    mScrollPortConsideringAncestors = newScrollParent->GetScrollPortRect();
-    return;
-  }
-
-#ifdef DEBUG
-  {
-    nsIScrollableFrame* oldScrollableParent = do_QueryFrame(oldScrollParent);
-    if (oldScrollableParent && oldScrollableParent->WantAsyncScroll()) {
-      
-      
-      MOZ_ASSERT(nsLayoutUtils::GetAsyncScrollableProperAncestorFrame(aScrollParent) ==
-                   oldScrollableParent);
-    } else {
-      
-      
-      
-      MOZ_ASSERT(nsLayoutUtils::IsProperAncestorFrameCrossDoc(oldScrollParent,
-                                                              aScrollParent));
-    }
-  }
-#endif
-
-  
-  
-  if (mDisplayPortConsideringAncestors.IsEmpty()) {
-    mDisplayPortConsideringAncestors = nsRect();
-    mScrollPortConsideringAncestors = nsRect();
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  nsRect displayPort =
-    nsLayoutUtils::GetDisplayPortOrFallbackToScrollPort(newScrollParent);
-  nsRect displayPortIntersection =
-    nsLayoutUtils::TransformAndIntersectRect(oldScrollParent,
-                                             mDisplayPortConsideringAncestors,
-                                             aScrollParent,
-                                             displayPort);
-  if (displayPortIntersection.IsEmpty()) {
-    mDisplayPortConsideringAncestors = nsRect();
-    mScrollPortConsideringAncestors = nsRect();
-    return;
-  }
-
-  
-  
-  mDisplayPortConsideringAncestors = displayPort;
-
-  
-  
-  mScrollPortConsideringAncestors =
-    nsLayoutUtils::TransformAndIntersectRect(oldScrollParent,
-                                             mScrollPortConsideringAncestors,
-                                             aScrollParent,
-                                             newScrollParent->GetScrollPortRect());
-}
-
-void
-nsDisplayListBuilder::UpdateCurrentScrollParentForOutOfFlow(const OutOfFlowDisplayData* aOutOfFlowData)
-{
-  MOZ_ASSERT(aOutOfFlowData);
-
-  
-  mCurrentScrollParent = aOutOfFlowData->mCurrentScrollParent;
-  mCurrentScrollParentId = aOutOfFlowData->mCurrentScrollParentId;
-  mDisplayPortConsideringAncestors = aOutOfFlowData->mDisplayPortConsideringAncestors;
-  mScrollPortConsideringAncestors = aOutOfFlowData->mScrollPortConsideringAncestors;
 }
 
 void
