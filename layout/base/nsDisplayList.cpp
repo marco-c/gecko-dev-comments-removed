@@ -608,13 +608,13 @@ nsDisplayListBuilder::nsDisplayListBuilder(nsIFrame* aReferenceFrame,
       mUsedAGRBudget(0),
       mDirtyRect(-1,-1,-1,-1),
       mGlassDisplayItem(nullptr),
-      mScrollInfoItemsForHoisting(nullptr),
+      mPendingScrollInfoItems(nullptr),
+      mCommittedScrollInfoItems(nullptr),
       mMode(aMode),
       mCurrentScrollParentId(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarTarget(FrameMetrics::NULL_SCROLL_ID),
       mCurrentScrollbarFlags(0),
       mPerspectiveItemIndex(0),
-      mSVGEffectsBuildingDepth(0),
       mIsBuildingScrollbar(false),
       mCurrentScrollbarWillHaveLayer(false),
       mBuildCaret(aBuildCaret),
@@ -1366,35 +1366,27 @@ nsDisplayListBuilder::AddToAGRBudget(nsIFrame* aFrame)
   return onBudget;
 }
 
-void
-nsDisplayListBuilder::EnterSVGEffectsContents(nsDisplayList* aHoistedItemsStorage)
+nsDisplayList*
+nsDisplayListBuilder::EnterScrollInfoItemHoisting(nsDisplayList* aScrollInfoItemStorage)
 {
-  MOZ_ASSERT(mSVGEffectsBuildingDepth >= 0);
-  MOZ_ASSERT(aHoistedItemsStorage);
-  if (mSVGEffectsBuildingDepth == 0) {
-    MOZ_ASSERT(!mScrollInfoItemsForHoisting);
-    mScrollInfoItemsForHoisting = aHoistedItemsStorage;
-  }
-  mSVGEffectsBuildingDepth++;
+  MOZ_ASSERT(ShouldBuildScrollInfoItemsForHoisting());
+  nsDisplayList* old = mPendingScrollInfoItems;
+  mPendingScrollInfoItems = aScrollInfoItemStorage;
+  return old;
 }
 
 void
-nsDisplayListBuilder::ExitSVGEffectsContents()
+nsDisplayListBuilder::LeaveScrollInfoItemHoisting(nsDisplayList* aScrollInfoItemStorage)
 {
-  mSVGEffectsBuildingDepth--;
-  MOZ_ASSERT(mSVGEffectsBuildingDepth >= 0);
-  MOZ_ASSERT(mScrollInfoItemsForHoisting);
-  if (mSVGEffectsBuildingDepth == 0) {
-    mScrollInfoItemsForHoisting = nullptr;
-  }
+  MOZ_ASSERT(ShouldBuildScrollInfoItemsForHoisting());
+  mPendingScrollInfoItems = aScrollInfoItemStorage;
 }
 
 void
 nsDisplayListBuilder::AppendNewScrollInfoItemForHoisting(nsDisplayScrollInfoLayer* aScrollInfoItem)
 {
   MOZ_ASSERT(ShouldBuildScrollInfoItemsForHoisting());
-  MOZ_ASSERT(mScrollInfoItemsForHoisting);
-  mScrollInfoItemsForHoisting->AppendNewToTop(aScrollInfoItem);
+  mPendingScrollInfoItems->AppendNewToTop(aScrollInfoItem);
 }
 
 void
@@ -4330,7 +4322,9 @@ nsDisplayMixBlendMode::GetLayerState(nsDisplayListBuilder* aBuilder,
 {
   CompositionOp op =
     nsCSSRendering::GetGFXBlendMode(mFrame->StyleDisplay()->mMixBlendMode);
-  return LAYER_ACTIVE;
+  return aManager->SupportsMixBlendMode(op)
+       ? LAYER_ACTIVE
+       : LAYER_INACTIVE;
 }
 
 
@@ -4434,7 +4428,10 @@ nsDisplayBlendContainer::GetLayerState(nsDisplayListBuilder* aBuilder,
                                        LayerManager* aManager,
                                        const ContainerLayerParameters& aParameters)
 {
-  return mCanBeActive ? mozilla::LAYER_ACTIVE : mozilla::LAYER_INACTIVE;
+  if (mCanBeActive && aManager->SupportsMixBlendModes(mContainedBlendModes)) {
+    return mozilla::LAYER_ACTIVE;
+  }
+  return mozilla::LAYER_INACTIVE;
 }
 
 bool nsDisplayBlendContainer::TryMerge(nsDisplayItem* aItem) {
@@ -4902,6 +4899,7 @@ nsDisplayScrollInfoLayer::nsDisplayScrollInfoLayer(
   , mScrollFrame(aScrollFrame)
   , mScrolledFrame(aScrolledFrame)
   , mScrollParentId(aBuilder->GetCurrentScrollParentId())
+  , mIgnoreIfCompositorSupportsBlending(false)
 {
 #ifdef NS_BUILD_REFCNT_LOGGING
   MOZ_COUNT_CTOR(nsDisplayScrollInfoLayer);
@@ -4924,6 +4922,16 @@ nsDisplayScrollInfoLayer::BuildLayer(nsDisplayListBuilder* aBuilder,
   
   
   
+
+  if (mIgnoreIfCompositorSupportsBlending) {
+    
+    
+    
+    
+    if (aManager->SupportsMixBlendModes(mContainedBlendModes)) {
+      return nullptr;
+    }
+  }
 
   ContainerLayerParameters params = aContainerParameters;
   if (mScrolledFrame->GetContent() &&
@@ -4968,7 +4976,24 @@ nsDisplayScrollInfoLayer::ComputeFrameMetrics(Layer* aLayer,
   return UniquePtr<FrameMetrics>(new FrameMetrics(metrics));
 }
 
+void
+nsDisplayScrollInfoLayer::IgnoreIfCompositorSupportsBlending(BlendModeSet aBlendModes)
+{
+  mContainedBlendModes += aBlendModes;
+  mIgnoreIfCompositorSupportsBlending = true;
+}
 
+void
+nsDisplayScrollInfoLayer::UnsetIgnoreIfCompositorSupportsBlending()
+{
+  mIgnoreIfCompositorSupportsBlending = false;
+}
+
+bool
+nsDisplayScrollInfoLayer::ContainedInMixBlendMode() const
+{
+  return mIgnoreIfCompositorSupportsBlending;
+}
 
 void
 nsDisplayScrollInfoLayer::WriteDebugInfo(std::stringstream& aStream)

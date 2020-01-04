@@ -3262,6 +3262,11 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
                  true);
   }
 
+  nsDisplayList hoistedScrollItemStorage;
+  if (builder.IsPaintingToWindow()) {
+    builder.SetCommittedScrollInfoItemList(&hoistedScrollItemStorage);
+  }
+
   nsRegion visibleRegion;
   if (aFlags & PAINT_WIDGET_LAYERS) {
     
