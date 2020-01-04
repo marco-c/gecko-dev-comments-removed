@@ -1534,7 +1534,9 @@ nsRuleNode::nsRuleNode(nsPresContext* aContext, nsRuleNode* aParent,
 
   if (!IsRoot()) {
     mParent->AddRef();
-    aContext->StyleSet()->RuleNodeUnused();
+    MOZ_ASSERT(aContext->StyleSet()->IsGecko(),
+               "ServoStyleSets should not have rule nodes");
+    aContext->StyleSet()->AsGecko()->RuleNodeUnused();
   }
 
   
@@ -3685,8 +3687,10 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
 
     if (variantAlternates & NS_FONT_VARIANT_ALTERNATES_FUNCTIONAL_MASK) {
       
+      MOZ_ASSERT(aPresContext->StyleSet()->IsGecko(),
+                 "ServoStyleSets should not have rule nodes");
       aFont->mFont.featureValueLookup =
-        aPresContext->StyleSet()->GetFontFeatureValuesLookup();
+        aPresContext->StyleSet()->AsGecko()->GetFontFeatureValuesLookup();
 
       NS_ASSERTION(variantAlternatesValue->GetPairValue().mYValue.GetUnit() ==
                    eCSSUnit_List, "function list not a list value");
@@ -9963,9 +9967,11 @@ nsRuleNode::DestroyIfNotMarked()
   
   
   
+  MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
+             "ServoStyleSets should not have rule nodes");
   if (!(mDependentBits & NS_RULE_NODE_GC_MARK) &&
       
-      !(IsRoot() && mPresContext->StyleSet()->GetRuleTree() == this)) {
+      !(IsRoot() && mPresContext->StyleSet()->AsGecko()->GetRuleTree() == this)) {
     Destroy();
     return true;
   }

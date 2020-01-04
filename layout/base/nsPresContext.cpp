@@ -18,7 +18,8 @@
 #include "nsDocShell.h"
 #include "nsIContentViewer.h"
 #include "nsPIDOMWindow.h"
-#include "nsStyleSet.h"
+#include "mozilla/StyleSetHandle.h"
+#include "mozilla/StyleSetHandleInlines.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIDocument.h"
@@ -1355,7 +1356,7 @@ nsPresContext::CompatibilityModeChanged()
     return;
   }
 
-  nsStyleSet* styleSet = mShell->StyleSet();
+  StyleSetHandle styleSet = mShell->StyleSet();
   CSSStyleSheet* sheet = nsLayoutStylesheetCache::QuirkSheet();
 
   if (needsQuirkSheet) {
@@ -1619,7 +1620,7 @@ GetPropagatedScrollbarStylesForViewport(nsPresContext* aPresContext,
   }
 
   
-  nsStyleSet *styleSet = aPresContext->StyleSet();
+  StyleSetHandle styleSet = aPresContext->StyleSet();
   RefPtr<nsStyleContext> rootStyle;
   rootStyle = styleSet->ResolveStyleFor(docElement, nullptr);
   if (CheckOverflow(rootStyle->StyleDisplay(), aStyles)) {
@@ -2052,8 +2053,17 @@ nsPresContext::MediaFeatureValuesChanged(nsRestyleHint aRestyleHint,
   mPendingMediaFeatureValuesChanged = false;
 
   
-  if (mShell && mShell->StyleSet()->MediumFeaturesChanged()) {
-    aRestyleHint |= eRestyle_Subtree;
+  if (mShell) {
+    
+    
+    if (mShell->StyleSet()->IsGecko()) {
+      if (mShell->StyleSet()->AsGecko()->MediumFeaturesChanged()) {
+        aRestyleHint |= eRestyle_Subtree;
+      }
+    } else {
+      NS_ERROR("stylo: ServoStyleSets don't support responding to medium "
+               "changes yet");
+    }
   }
 
   if (mUsesViewportUnits && mPendingViewportChange) {
@@ -2315,7 +2325,14 @@ nsPresContext::NotifyMissingFonts()
 void
 nsPresContext::EnsureSafeToHandOutCSSRules()
 {
-  if (!mShell->StyleSet()->EnsureUniqueInnerOnCSSSheets()) {
+  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
+  if (!styleSet) {
+    
+    
+    return;
+  }
+
+  if (!styleSet->EnsureUniqueInnerOnCSSSheets()) {
     
     return;
   }
@@ -2640,7 +2657,18 @@ nsPresContext::NotifyDidPaintForSubtree(uint32_t aFlags)
 bool
 nsPresContext::HasCachedStyleData()
 {
-  return mShell && mShell->StyleSet()->HasCachedStyleData();
+  if (!mShell) {
+    return false;
+  }
+
+  nsStyleSet* styleSet = mShell->StyleSet()->GetAsGecko();
+  if (!styleSet) {
+    
+    
+    return true;
+  }
+
+  return styleSet->HasCachedStyleData();
 }
 
 already_AddRefed<nsITimer>

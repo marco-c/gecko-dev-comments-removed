@@ -18,6 +18,8 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsUnicodeProperties.h"
+#include "mozilla/StyleSetHandle.h"
+#include "mozilla/StyleSetHandleInlines.h"
 
 namespace mozilla {
 
@@ -2009,8 +2011,13 @@ CounterStyleManager::BuildCounterStyle(const nsSubstring& aName)
 
   
   
-  nsCSSCounterStyleRule* rule =
-    mPresContext->StyleSet()->CounterStyleRuleForName(aName);
+  
+  StyleSetHandle styleSet = mPresContext->StyleSet();
+  NS_ASSERTION(styleSet->IsGecko(),
+               "stylo: ServoStyleSets do not support custom counter "
+               "styles yet");
+  nsCSSCounterStyleRule* rule = styleSet->IsGecko() ?
+    styleSet->AsGecko()->CounterStyleRuleForName(aName) : nullptr;
   if (rule) {
     data = new (mPresContext) CustomCounterStyle(this, rule);
   } else {
@@ -2050,8 +2057,13 @@ CounterStyleManager::NotifyRuleChanged()
     RefPtr<CounterStyle>& style = iter.Data();
     bool toBeUpdated = false;
     bool toBeRemoved = false;
-    nsCSSCounterStyleRule* newRule =
-      mPresContext->StyleSet()->CounterStyleRuleForName(iter.Key());
+    
+    StyleSetHandle styleSet = mPresContext->StyleSet();
+    NS_ASSERTION(styleSet->IsGecko(),
+                 "stylo: ServoStyleSets do not support custom counter "
+                 "styles yet");
+    nsCSSCounterStyleRule* newRule = styleSet->IsGecko() ?
+        styleSet->AsGecko()->CounterStyleRuleForName(iter.Key()) : nullptr;
     if (!newRule) {
       if (style->IsCustomStyle()) {
         toBeRemoved = true;

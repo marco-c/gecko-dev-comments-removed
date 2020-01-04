@@ -81,8 +81,16 @@ inDOMUtils::GetAllStyleSheets(nsIDOMDocument *aDocument, uint32_t *aLength,
 
   
   nsIPresShell* presShell = document->GetShell();
+
+  if (presShell && presShell->StyleSet()->IsServo()) {
+    
+    
+    NS_ERROR("stylo: ServoStyleSets cannot expose their sheets to script yet");
+    return NS_ERROR_FAILURE;
+  }
+
   if (presShell) {
-    nsStyleSet* styleSet = presShell->StyleSet();
+    nsStyleSet* styleSet = presShell->StyleSet()->AsGecko();
     SheetType sheetType = SheetType::Agent;
     for (int32_t i = 0; i < styleSet->SheetCount(sheetType); i++) {
       sheets.AppendElement(styleSet->StyleSheetAt(sheetType, i));

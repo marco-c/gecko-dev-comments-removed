@@ -8,7 +8,9 @@
 #include "nsISupports.h"
 
 class nsIDocument;
-class nsStyleSet;
+namespace mozilla {
+class StyleSetHandle;
+} 
 class nsIPresShell;
 class nsPresContext;
 class nsViewManager;
@@ -36,7 +38,8 @@ public:
   
   
   
-  virtual nsresult CreateStyleSet(nsIDocument* aDocument, nsStyleSet** aStyleSet) = 0;
+  virtual nsresult CreateStyleSet(nsIDocument* aDocument,
+                                  mozilla::StyleSetHandle* aStyleSet) = 0;
 
   virtual void IncrementDestroyRefCount() = 0;
 
@@ -71,7 +74,8 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentViewerPrint,
   virtual bool     GetIsPrinting() override; \
   virtual void     SetIsPrintPreview(bool aIsPrintPreview) override; \
   virtual bool     GetIsPrintPreview() override; \
-  virtual nsresult CreateStyleSet(nsIDocument* aDocument, nsStyleSet** aStyleSet) override; \
+  virtual nsresult CreateStyleSet(nsIDocument* aDocument, \
+                                  mozilla::StyleSetHandle* aStyleSet) override; \
   virtual void     IncrementDestroyRefCount() override; \
   virtual void     ReturnToGalleyPresentation() override; \
   virtual void     OnDonePrinting() override; \
