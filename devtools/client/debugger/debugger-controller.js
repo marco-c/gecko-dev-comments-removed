@@ -361,14 +361,6 @@ var DebuggerController = {
   _onNavigate: function() {
     this.ThreadState.handleTabNavigation();
     this.StackFrames.handleTabNavigation();
-
-    
-    
-    
-    
-    
-    
-    this.dispatch(actions.loadSources());
   },
 
   

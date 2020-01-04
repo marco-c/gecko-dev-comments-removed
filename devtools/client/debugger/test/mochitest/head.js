@@ -1202,6 +1202,18 @@ function getSplitConsole(toolbox, win) {
 
 
 
+function waitForNavigation(gPanel) {
+  const target = gPanel.panelWin.gTarget;
+  const deferred = promise.defer();
+  target.once('navigate', () => {
+    deferred.resolve();
+  });
+  info("Waiting for navigation...");
+  return deferred.promise;
+}
+
+
+
 function bindActionCreators(panel) {
   const win = panel.panelWin;
   const dispatch = win.DebuggerController.dispatch;

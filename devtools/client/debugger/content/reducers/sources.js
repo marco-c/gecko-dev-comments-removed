@@ -20,19 +20,6 @@ function update(state = initialState, action, emitChange) {
     emitChange('source', action.source);
     return mergeIn(state, ['sources', action.source.actor], action.source);
 
-  case constants.LOAD_SOURCES:
-    if (action.status === 'done') {
-      
-      
-      
-      
-      
-      
-      
-      emitChange('sources', state.sources);
-    }
-    break;
-
   case constants.SELECT_SOURCE:
     emitChange('source-selected', action.source);
     return state.merge({
