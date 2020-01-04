@@ -464,26 +464,30 @@ var commandsPeerConnectionOfferAnswer = [
     return checkAllTrackStats(test.pcRemote);
   },
   function PC_LOCAL_VERIFY_SDP_AFTER_END_OF_TRICKLE(test) {
-    
+    if (test.pcLocal.endOfTrickleSdp) {
+      
 
 
-    return Promise.race([
-      test.pcLocal.endOfTrickleSdp,
-      Promise.reject("No SDP")
-    ])
-    .then(sdp => sdputils.checkSdpAfterEndOfTrickle(sdp, test.testOptions, test.pcLocal.label),
-          () => info("pcLocal: Gathering is not complete yet, skipping post-gathering SDP check"));
+      return Promise.race([
+        test.pcLocal.endOfTrickleSdp,
+        Promise.reject("No SDP")
+      ])
+      .then(sdp => sdputils.checkSdpAfterEndOfTrickle(sdp, test.testOptions, test.pcLocal.label),
+            () => info("pcLocal: Gathering is not complete yet, skipping post-gathering SDP check"));
+    }
   },
   function PC_REMOTE_VERIFY_SDP_AFTER_END_OF_TRICKLE(test) {
-    
+    if (test.pcRemote.endOfTrickelSdp) {
+      
 
 
-    return Promise.race([
-      test.pcRemote.endOfTrickleSdp,
-      Promise.reject("No SDP")
-    ])
-    .then(sdp => sdputils.checkSdpAfterEndOfTrickle(sdp, test.testOptions, test.pcRemote.label),
-          () => info("pcRemote: Gathering is not complete yet, skipping post-gathering SDP check"));
+      return Promise.race([
+        test.pcRemote.endOfTrickleSdp,
+        Promise.reject("No SDP")
+      ])
+      .then(sdp => sdputils.checkSdpAfterEndOfTrickle(sdp, test.testOptions, test.pcRemote.label),
+            () => info("pcRemote: Gathering is not complete yet, skipping post-gathering SDP check"));
+    }
   }
 ];
 
