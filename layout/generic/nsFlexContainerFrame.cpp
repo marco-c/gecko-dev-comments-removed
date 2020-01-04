@@ -1526,7 +1526,7 @@ nsFlexContainerFrame::
   
   
   if (aFlexItem.Frame() == mFrames.FirstChild() ||
-      aFlexItem.GetAlignSelf() == NS_STYLE_ALIGN_ITEMS_BASELINE) {
+      aFlexItem.GetAlignSelf() == NS_STYLE_ALIGN_BASELINE) {
     aFlexItem.SetAscent(childDesiredSize.BlockStartAscent());
   }
 
@@ -1611,9 +1611,9 @@ FlexItem::FlexItem(nsHTMLReflowState& aFlexItemReflowState,
   
   
   
-  if (mAlignSelf == NS_STYLE_ALIGN_ITEMS_BASELINE &&
+  if (mAlignSelf == NS_STYLE_ALIGN_BASELINE &&
       aAxisTracker.IsCrossAxisHorizontal()) {
-    mAlignSelf = NS_STYLE_ALIGN_ITEMS_FLEX_START;
+    mAlignSelf = NS_STYLE_ALIGN_FLEX_START;
   }
 }
 
@@ -1646,7 +1646,7 @@ FlexItem::FlexItem(nsIFrame* aChildFrame, nscoord aCrossSize,
     mIsStrut(true), 
     mNeedsMinSizeAutoResolution(false),
     mWM(aContainerWM),
-    mAlignSelf(NS_STYLE_ALIGN_ITEMS_FLEX_START)
+    mAlignSelf(NS_STYLE_ALIGN_FLEX_START)
 {
   MOZ_ASSERT(mFrame, "expecting a non-null child frame");
   MOZ_ASSERT(NS_STYLE_VISIBILITY_COLLAPSE ==
@@ -2449,20 +2449,20 @@ MainAxisPositionTracker::
   
   
   if (mPackingSpaceRemaining < 0) {
-    if (mJustifyContent == NS_STYLE_JUSTIFY_CONTENT_SPACE_BETWEEN) {
-      mJustifyContent = NS_STYLE_JUSTIFY_CONTENT_FLEX_START;
-    } else if (mJustifyContent == NS_STYLE_JUSTIFY_CONTENT_SPACE_AROUND) {
-      mJustifyContent = NS_STYLE_JUSTIFY_CONTENT_CENTER;
+    if (mJustifyContent == NS_STYLE_JUSTIFY_SPACE_BETWEEN) {
+      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
+    } else if (mJustifyContent == NS_STYLE_JUSTIFY_SPACE_AROUND) {
+      mJustifyContent = NS_STYLE_JUSTIFY_CENTER;
     }
   }
 
   
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (mJustifyContent == NS_STYLE_JUSTIFY_CONTENT_FLEX_START) {
-      mJustifyContent = NS_STYLE_JUSTIFY_CONTENT_FLEX_END;
-    } else if (mJustifyContent == NS_STYLE_JUSTIFY_CONTENT_FLEX_END) {
-      mJustifyContent = NS_STYLE_JUSTIFY_CONTENT_FLEX_START;
+    if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_START) {
+      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_END;
+    } else if (mJustifyContent == NS_STYLE_JUSTIFY_FLEX_END) {
+      mJustifyContent = NS_STYLE_JUSTIFY_FLEX_START;
     }
   }
 
@@ -2472,25 +2472,25 @@ MainAxisPositionTracker::
       mPackingSpaceRemaining != 0 &&
       !aLine->IsEmpty()) {
     switch (mJustifyContent) {
-      case NS_STYLE_JUSTIFY_CONTENT_FLEX_START:
+      case NS_STYLE_JUSTIFY_FLEX_START:
         
         break;
-      case NS_STYLE_JUSTIFY_CONTENT_FLEX_END:
+      case NS_STYLE_JUSTIFY_FLEX_END:
         
         mPosition += mPackingSpaceRemaining;
         break;
-      case NS_STYLE_JUSTIFY_CONTENT_CENTER:
+      case NS_STYLE_JUSTIFY_CENTER:
         
         mPosition += mPackingSpaceRemaining / 2;
         break;
-      case NS_STYLE_JUSTIFY_CONTENT_SPACE_BETWEEN:
+      case NS_STYLE_JUSTIFY_SPACE_BETWEEN:
         MOZ_ASSERT(mPackingSpaceRemaining >= 0,
                    "negative packing space should make us use 'flex-start' "
                    "instead of 'space-between'");
         
         mNumPackingSpacesRemaining = aLine->NumItems() - 1;
         break;
-      case NS_STYLE_JUSTIFY_CONTENT_SPACE_AROUND:
+      case NS_STYLE_JUSTIFY_SPACE_AROUND:
         MOZ_ASSERT(mPackingSpaceRemaining >= 0,
                    "negative packing space should make us use 'center' "
                    "instead of 'space-around'");
@@ -2551,8 +2551,8 @@ void
 MainAxisPositionTracker::TraversePackingSpace()
 {
   if (mNumPackingSpacesRemaining) {
-    MOZ_ASSERT(mJustifyContent == NS_STYLE_JUSTIFY_CONTENT_SPACE_BETWEEN ||
-               mJustifyContent == NS_STYLE_JUSTIFY_CONTENT_SPACE_AROUND,
+    MOZ_ASSERT(mJustifyContent == NS_STYLE_JUSTIFY_SPACE_BETWEEN ||
+               mJustifyContent == NS_STYLE_JUSTIFY_SPACE_AROUND,
                "mNumPackingSpacesRemaining only applies for "
                "space-between/space-around");
 
@@ -2617,21 +2617,21 @@ CrossAxisPositionTracker::
   
   
   if (mPackingSpaceRemaining < 0) {
-    if (mAlignContent == NS_STYLE_ALIGN_CONTENT_SPACE_BETWEEN ||
-        mAlignContent == NS_STYLE_ALIGN_CONTENT_STRETCH) {
-      mAlignContent = NS_STYLE_ALIGN_CONTENT_FLEX_START;
-    } else if (mAlignContent == NS_STYLE_ALIGN_CONTENT_SPACE_AROUND) {
-      mAlignContent = NS_STYLE_ALIGN_CONTENT_CENTER;
+    if (mAlignContent == NS_STYLE_ALIGN_SPACE_BETWEEN ||
+        mAlignContent == NS_STYLE_ALIGN_STRETCH) {
+      mAlignContent = NS_STYLE_ALIGN_FLEX_START;
+    } else if (mAlignContent == NS_STYLE_ALIGN_SPACE_AROUND) {
+      mAlignContent = NS_STYLE_ALIGN_CENTER;
     }
   }
 
   
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (mAlignContent == NS_STYLE_ALIGN_CONTENT_FLEX_START) {
-      mAlignContent = NS_STYLE_ALIGN_CONTENT_FLEX_END;
-    } else if (mAlignContent == NS_STYLE_ALIGN_CONTENT_FLEX_END) {
-      mAlignContent = NS_STYLE_ALIGN_CONTENT_FLEX_START;
+    if (mAlignContent == NS_STYLE_ALIGN_FLEX_START) {
+      mAlignContent = NS_STYLE_ALIGN_FLEX_END;
+    } else if (mAlignContent == NS_STYLE_ALIGN_FLEX_END) {
+      mAlignContent = NS_STYLE_ALIGN_FLEX_START;
     }
   }
 
@@ -2639,25 +2639,25 @@ CrossAxisPositionTracker::
   
   if (mPackingSpaceRemaining != 0) {
     switch (mAlignContent) {
-      case NS_STYLE_ALIGN_CONTENT_FLEX_START:
+      case NS_STYLE_ALIGN_FLEX_START:
         
         break;
-      case NS_STYLE_ALIGN_CONTENT_FLEX_END:
+      case NS_STYLE_ALIGN_FLEX_END:
         
         mPosition += mPackingSpaceRemaining;
         break;
-      case NS_STYLE_ALIGN_CONTENT_CENTER:
+      case NS_STYLE_ALIGN_CENTER:
         
         mPosition += mPackingSpaceRemaining / 2;
         break;
-      case NS_STYLE_ALIGN_CONTENT_SPACE_BETWEEN:
+      case NS_STYLE_ALIGN_SPACE_BETWEEN:
         MOZ_ASSERT(mPackingSpaceRemaining >= 0,
                    "negative packing space should make us use 'flex-start' "
                    "instead of 'space-between'");
         
         mNumPackingSpacesRemaining = numLines - 1;
         break;
-      case NS_STYLE_ALIGN_CONTENT_SPACE_AROUND: {
+      case NS_STYLE_ALIGN_SPACE_AROUND: {
         MOZ_ASSERT(mPackingSpaceRemaining >= 0,
                    "negative packing space should make us use 'center' "
                    "instead of 'space-around'");
@@ -2677,7 +2677,7 @@ CrossAxisPositionTracker::
         mNumPackingSpacesRemaining--;
         break;
       }
-      case NS_STYLE_ALIGN_CONTENT_STRETCH: {
+      case NS_STYLE_ALIGN_STRETCH: {
         
         MOZ_ASSERT(mPackingSpaceRemaining > 0,
                    "negative packing space should make us use 'flex-start' "
@@ -2709,8 +2709,8 @@ void
 CrossAxisPositionTracker::TraversePackingSpace()
 {
   if (mNumPackingSpacesRemaining) {
-    MOZ_ASSERT(mAlignContent == NS_STYLE_ALIGN_CONTENT_SPACE_BETWEEN ||
-               mAlignContent == NS_STYLE_ALIGN_CONTENT_SPACE_AROUND,
+    MOZ_ASSERT(mAlignContent == NS_STYLE_ALIGN_SPACE_BETWEEN ||
+               mAlignContent == NS_STYLE_ALIGN_SPACE_AROUND,
                "mNumPackingSpacesRemaining only applies for "
                "space-between/space-around");
 
@@ -2745,7 +2745,7 @@ FlexLine::ComputeCrossSizeAndBaseline(const FlexboxAxisTracker& aAxisTracker)
     nscoord curOuterCrossSize =
       item->GetOuterCrossSize(aAxisTracker.GetCrossAxis());
 
-    if (item->GetAlignSelf() == NS_STYLE_ALIGN_ITEMS_BASELINE &&
+    if (item->GetAlignSelf() == NS_STYLE_ALIGN_BASELINE &&
         item->GetNumAutoMarginsInAxis(aAxisTracker.GetCrossAxis()) == 0) {
       
       
@@ -2818,7 +2818,7 @@ FlexItem::ResolveStretchedCrossSize(nscoord aLineCrossSize,
   
   
   
-  if (mAlignSelf != NS_STYLE_ALIGN_ITEMS_STRETCH ||
+  if (mAlignSelf != NS_STYLE_ALIGN_STRETCH ||
       GetNumAutoMarginsInAxis(crossAxis) != 0 ||
       eStyleUnit_Auto != aAxisTracker.ComputedCrossSize(mFrame).GetUnit()) {
     return;
@@ -2897,33 +2897,33 @@ SingleLineCrossAxisPositionTracker::
   uint8_t alignSelf = aItem.GetAlignSelf();
   
   
-  if (alignSelf == NS_STYLE_ALIGN_ITEMS_STRETCH) {
-    alignSelf = NS_STYLE_ALIGN_ITEMS_FLEX_START;
+  if (alignSelf == NS_STYLE_ALIGN_STRETCH) {
+    alignSelf = NS_STYLE_ALIGN_FLEX_START;
   }
 
   
   
   if (aAxisTracker.AreAxesInternallyReversed()) {
-    if (alignSelf == NS_STYLE_ALIGN_ITEMS_FLEX_START) {
-      alignSelf = NS_STYLE_ALIGN_ITEMS_FLEX_END;
-    } else if (alignSelf == NS_STYLE_ALIGN_ITEMS_FLEX_END) {
-      alignSelf = NS_STYLE_ALIGN_ITEMS_FLEX_START;
+    if (alignSelf == NS_STYLE_ALIGN_FLEX_START) {
+      alignSelf = NS_STYLE_ALIGN_FLEX_END;
+    } else if (alignSelf == NS_STYLE_ALIGN_FLEX_END) {
+      alignSelf = NS_STYLE_ALIGN_FLEX_START;
     }
   }
 
   switch (alignSelf) {
-    case NS_STYLE_ALIGN_ITEMS_FLEX_START:
+    case NS_STYLE_ALIGN_FLEX_START:
       
       break;
-    case NS_STYLE_ALIGN_ITEMS_FLEX_END:
+    case NS_STYLE_ALIGN_FLEX_END:
       mPosition += aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mAxis);
       break;
-    case NS_STYLE_ALIGN_ITEMS_CENTER:
+    case NS_STYLE_ALIGN_CENTER:
       
       mPosition +=
         (aLine.GetLineCrossSize() - aItem.GetOuterCrossSize(mAxis)) / 2;
       break;
-    case NS_STYLE_ALIGN_ITEMS_BASELINE: {
+    case NS_STYLE_ALIGN_BASELINE: {
       
       
       
@@ -3447,7 +3447,7 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   MOZ_ASSERT(!aItem.HadMeasuringReflow(),
              "We shouldn't need more than one measuring reflow");
 
-  if (aItem.GetAlignSelf() == NS_STYLE_ALIGN_ITEMS_STRETCH) {
+  if (aItem.GetAlignSelf() == NS_STYLE_ALIGN_STRETCH) {
     
     
     
@@ -3504,7 +3504,7 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
   
   
   if (aItem.Frame() == mFrames.FirstChild() ||
-      aItem.GetAlignSelf() == NS_STYLE_ALIGN_ITEMS_BASELINE) {
+      aItem.GetAlignSelf() == NS_STYLE_ALIGN_BASELINE) {
     aItem.SetAscent(childDesiredSize.BlockStartAscent());
   }
 }
@@ -4021,7 +4021,7 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
 
   
   if (aItem.IsStretched()) {
-    MOZ_ASSERT(aItem.GetAlignSelf() == NS_STYLE_ALIGN_ITEMS_STRETCH,
+    MOZ_ASSERT(aItem.GetAlignSelf() == NS_STYLE_ALIGN_STRETCH,
                "stretched item w/o 'align-self: stretch'?");
     if (aAxisTracker.IsCrossAxisHorizontal()) {
       childReflowState.SetComputedWidth(aItem.GetCrossSize());
