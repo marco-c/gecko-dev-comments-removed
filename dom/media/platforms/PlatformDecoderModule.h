@@ -160,6 +160,8 @@ protected:
   static bool sAndroidMCDecoderEnabled;
   static bool sGMPDecoderEnabled;
   static bool sEnableFuzzingWrapper;
+  static uint32_t sVideoOutputMinimumInterval_ms;
+  static bool sDontDelayInputExhausted;
 };
 
 
