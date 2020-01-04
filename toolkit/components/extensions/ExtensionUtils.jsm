@@ -66,6 +66,21 @@ function runSafe(context, f, ...args)
 
 
 
+function extend(obj, ...args) {
+  for (let arg of args) {
+    let props = [...Object.getOwnPropertyNames(arg),
+                 ...Object.getOwnPropertySymbols(arg)];
+    for (let prop of props) {
+      let descriptor = Object.getOwnPropertyDescriptor(arg, prop);
+      Object.defineProperty(obj, prop, descriptor);
+    }
+  }
+
+  return obj;
+}
+
+
+
 function DefaultWeakMap(defaultValue)
 {
   this.defaultValue = defaultValue;
@@ -602,5 +617,6 @@ this.ExtensionUtils = {
   injectAPI,
   MessageBroker,
   Messenger,
+  extend,
   flushJarCache,
 };
