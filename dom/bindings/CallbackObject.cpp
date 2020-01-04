@@ -71,16 +71,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   }
 
   
-  
-  
-  
-  
-
-  
   JSObject* realCallback = js::UncheckedUnwrap(aCallback->CallbackPreserveColor());
-  JSContext* cx = nullptr;
   nsIGlobalObject* globalObject = nullptr;
 
+  JSContext* cx;
   {
     
     
@@ -92,30 +86,20 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       nsGlobalWindow* win =
         aIsJSImplementedWebIDL ? nullptr : xpc::WindowGlobalOrNull(realCallback);
       if (win) {
-        
-        
-        
-        
-        
         MOZ_ASSERT(win->IsInnerWindow());
+        
+        
         if (!win->AsInner()->HasActiveDocument()) {
-          
           return;
         }
-        cx = win->GetContext() ? win->GetContext()->GetNativeContext()
-                               
-                               
-                               : nsContentUtils::GetSafeJSContext();
         globalObject = win;
       } else {
         
         JSObject* glob = js::GetGlobalForObjectCrossCompartment(realCallback);
         globalObject = xpc::NativeGlobal(glob);
         MOZ_ASSERT(globalObject);
-        cx = nsContentUtils::GetSafeJSContext();
       }
     } else {
-      cx = workers::GetCurrentThreadJSContext();
       JSObject *global = js::GetGlobalForObjectCrossCompartment(realCallback);
       globalObject = workers::GetGlobalObjectForGlobal(global);
       MOZ_ASSERT(globalObject);
@@ -128,8 +112,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       return;
     }
 
-    mAutoEntryScript.emplace(globalObject, aExecutionReason,
-                             mIsMainThread, cx);
+    
+    mAutoEntryScript.emplace(globalObject, aExecutionReason, mIsMainThread,
+                             mIsMainThread ? nullptr
+                                           : workers::GetCurrentThreadJSContext());
     mAutoEntryScript->SetWebIDLCallerPrincipal(webIDLCallerPrincipal);
     nsIGlobalObject* incumbent = aCallback->IncumbentGlobalOrNull();
     if (incumbent) {
@@ -143,6 +129,8 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       }
       mAutoIncumbentScript.emplace(incumbent);
     }
+
+    cx = mAutoEntryScript->cx();
 
     
     
