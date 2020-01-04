@@ -251,6 +251,16 @@ class LSimdExtractElementBase : public LInstructionHelper<1, 1, 0>
 };
 
 
+class LSimdExtractElementB : public LSimdExtractElementBase
+{
+  public:
+    LIR_HEADER(SimdExtractElementB);
+    explicit LSimdExtractElementB(const LAllocation& base)
+      : LSimdExtractElementBase(base)
+    {}
+};
+
+
 class LSimdExtractElementI : public LSimdExtractElementBase
 {
   public:
@@ -259,6 +269,7 @@ class LSimdExtractElementI : public LSimdExtractElementBase
       : LSimdExtractElementBase(base)
     {}
 };
+
 
 class LSimdExtractElementF : public LSimdExtractElementBase
 {
@@ -292,6 +303,7 @@ class LSimdInsertElementBase : public LInstructionHelper<1, 2, 0>
         return MSimdInsertElement::LaneName(lane());
     }
 };
+
 
 
 class LSimdInsertElementI : public LSimdInsertElementBase
@@ -605,6 +617,37 @@ class LSimdSelect : public LInstructionHelper<1, 3, 1>
         return mir_->toSimdSelect();
     }
 };
+
+class LSimdAnyTrue : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(SimdAnyTrue)
+    explicit LSimdAnyTrue(const LAllocation& input) {
+        setOperand(0, input);
+    }
+    const LAllocation* vector() {
+        return getOperand(0);
+    }
+    MSimdAnyTrue* mir() const {
+        return mir_->toSimdAnyTrue();
+    }
+};
+
+class LSimdAllTrue : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(SimdAllTrue)
+    explicit LSimdAllTrue(const LAllocation& input) {
+        setOperand(0, input);
+    }
+    const LAllocation* vector() {
+        return getOperand(0);
+    }
+    MSimdAllTrue* mir() const {
+        return mir_->toSimdAllTrue();
+    }
+};
+
 
 
 class LInteger : public LInstructionHelper<1, 0, 0>

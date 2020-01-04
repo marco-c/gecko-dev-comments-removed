@@ -570,6 +570,15 @@ SimdScalarPolicy<Op>::staticAdjustInputs(TempAllocator& alloc, MInstruction* ins
     MIRType laneType = SimdTypeToLaneType(ins->type());
 
     MDefinition* in = ins->getOperand(Op);
+
+    
+    
+    
+    if (laneType == MIRType_Boolean) {
+        MOZ_ASSERT(in->type() == MIRType_Int32, "Boolean SIMD vector requires Int32 lanes.");
+        return true;
+    }
+
     if (in->type() == laneType)
         return true;
 
@@ -858,7 +867,7 @@ SimdSelectPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins)
     MIRType specialization = ins->typePolicySpecialization();
 
     
-    if (!MaybeSimdUnbox(alloc, ins, MIRType_Int32x4, 0))
+    if (!MaybeSimdUnbox(alloc, ins, MIRType_Bool32x4, 0))
         return false;
 
     

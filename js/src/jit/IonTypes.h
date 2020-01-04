@@ -102,6 +102,7 @@ enum BailoutKind
     Bailout_NonSymbolInput,
 
     
+    Bailout_NonSimdBool32x4Input,
     Bailout_NonSimdInt32x4Input,
     Bailout_NonSimdFloat32x4Input,
 
@@ -213,6 +214,8 @@ BailoutKindString(BailoutKind kind)
         return "Bailout_NonStringInput";
       case Bailout_NonSymbolInput:
         return "Bailout_NonSymbolInput";
+      case Bailout_NonSimdBool32x4Input:
+        return "Bailout_NonSimdBool32x4Input";
       case Bailout_NonSimdInt32x4Input:
         return "Bailout_NonSimdInt32x4Input";
       case Bailout_NonSimdFloat32x4Input:
@@ -414,6 +417,7 @@ enum MIRType
     MIRType_Last = MIRType_ObjectGroup,
     MIRType_Float32x4 = MIRType_Float32 | (2 << VECTOR_SCALE_SHIFT),
     MIRType_Int32x4   = MIRType_Int32   | (2 << VECTOR_SCALE_SHIFT),
+    MIRType_Bool32x4  = MIRType_Boolean | (2 << VECTOR_SCALE_SHIFT),
     MIRType_Doublex2  = MIRType_Double  | (1 << VECTOR_SCALE_SHIFT)
 };
 
@@ -571,7 +575,7 @@ IsNullOrUndefined(MIRType type)
 static inline bool
 IsSimdType(MIRType type)
 {
-    return type == MIRType_Int32x4 || type == MIRType_Float32x4;
+    return type == MIRType_Int32x4 || type == MIRType_Float32x4 || type == MIRType_Bool32x4;
 }
 
 static inline bool
@@ -584,6 +588,12 @@ static inline bool
 IsIntegerSimdType(MIRType type)
 {
     return type == MIRType_Int32x4;
+}
+
+static inline bool
+IsBooleanSimdType(MIRType type)
+{
+    return type == MIRType_Bool32x4;
 }
 
 static inline bool
@@ -663,6 +673,19 @@ SimdTypeToLaneType(MIRType type)
     static_assert(MIRType_Last <= ELEMENT_TYPE_MASK,
                   "ELEMENT_TYPE_MASK should be larger than the last MIRType");
     return MIRType((type >> ELEMENT_TYPE_SHIFT) & ELEMENT_TYPE_MASK);
+}
+
+
+
+
+static inline MIRType
+SimdTypeToLaneArgumentType(MIRType type)
+{
+    MIRType laneType = SimdTypeToLaneType(type);
+
+    
+    
+    return laneType == MIRType_Boolean ? MIRType_Int32 : laneType;
 }
 
 

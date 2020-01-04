@@ -32,6 +32,7 @@ ABIArgGenerator::next(MIRType type)
         break;
       case MIRType_Int32x4:
       case MIRType_Float32x4:
+      case MIRType_Bool32x4:
         
         
         
