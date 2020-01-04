@@ -42,11 +42,22 @@ this.accessibility = {};
 
 
 
+
+
+
 accessibility.State = {
-  Unavailable: Ci.nsIAccessibleStates.STATE_UNAVAILABLE,
-  Focusable: Ci.nsIAccessibleStates.STATE_FOCUSABLE,
-  Selectable: Ci.nsIAccessibleStates.STATE_SELECTABLE,
-  Selected: Ci.nsIAccessibleStates.STATE_SELECTED,
+  get Unavailable() {
+    return Ci.nsIAccessibleStates.STATE_UNAVAILABLE;
+  },
+  get Focusable() {
+    return Ci.nsIAccessibleStates.STATE_FOCUSABLE;
+  },
+  get Selectable() {
+    return Ci.nsIAccessibleStates.STATE_SELECTABLE;
+  },
+  get Selected() {
+    return Ci.nsIAccessibleStates.STATE_SELECTED;
+  }
 };
 
 
