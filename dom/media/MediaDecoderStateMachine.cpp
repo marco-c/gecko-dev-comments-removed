@@ -136,7 +136,7 @@ static_assert(LOW_DATA_THRESHOLD_USECS > AMPLE_AUDIO_USECS,
 } 
 
 
-static const uint32_t EXHAUSTED_DATA_MARGIN_USECS = 60000;
+static const uint32_t EXHAUSTED_DATA_MARGIN_USECS = 100000;
 
 
 
@@ -2619,7 +2619,7 @@ void MediaDecoderStateMachine::UpdateRenderedVideoFrames()
       mResource->IsExpectingMoreData()) {
     bool shouldBuffer;
     if (mReader->UseBufferingHeuristics()) {
-      shouldBuffer = HasLowDecodedData(remainingTime + EXHAUSTED_DATA_MARGIN_USECS) &&
+      shouldBuffer = HasLowDecodedData(EXHAUSTED_DATA_MARGIN_USECS) &&
                      (JustExitedQuickBuffering() || HasLowUndecodedData());
     } else {
       MOZ_ASSERT(mReader->IsWaitForDataSupported());
