@@ -18,6 +18,8 @@ class nsILoadContext;
 class nsIObjectOutputStream;
 class nsIObjectInputStream;
 
+class nsExpandedPrincipal;
+
 namespace mozilla {
 
 class OriginAttributes : public dom::OriginAttributesDictionary
@@ -141,6 +143,7 @@ public:
   NS_IMETHOD EqualsConsideringDomain(nsIPrincipal* other, bool* _retval) final;
   NS_IMETHOD Subsumes(nsIPrincipal* other, bool* _retval) final;
   NS_IMETHOD SubsumesConsideringDomain(nsIPrincipal* other, bool* _retval) final;
+  NS_IMETHOD CheckMayLoad(nsIURI* uri, bool report, bool allowIfInheritsPrincipal) final;
   NS_IMETHOD GetCsp(nsIContentSecurityPolicy** aCsp) override;
   NS_IMETHOD SetCsp(nsIContentSecurityPolicy* aCsp) override;
   NS_IMETHOD GetCspJSON(nsAString& outCSPinJSON) override;
@@ -173,6 +176,12 @@ protected:
 
   virtual nsresult GetOriginInternal(nsACString& aOrigin) = 0;
   virtual bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsider) = 0;
+
+  
+  
+  
+  virtual bool MayLoadInternal(nsIURI* aURI) = 0;
+  friend class ::nsExpandedPrincipal;
 
   
   
