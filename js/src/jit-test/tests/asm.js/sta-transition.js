@@ -6,6 +6,9 @@
 
 
 
+if (!isAsmJSCompilationAvailable())
+    quit(0);
+
 
 
 
