@@ -163,6 +163,17 @@ ContentBridgeParent::DeallocPBrowserParent(PBrowserParent* aParent)
   return nsIContentParent::DeallocPBrowserParent(aParent);
 }
 
+void
+ContentBridgeParent::NotifyTabDestroyed()
+{
+  int32_t numLiveTabs = ManagedPBrowserParent().Length();
+  if (numLiveTabs == 1) {
+    MessageLoop::current()->PostTask(
+      FROM_HERE,
+      NewRunnableMethod(this, &ContentBridgeParent::Close));
+  }
+}
+
 
 
 
