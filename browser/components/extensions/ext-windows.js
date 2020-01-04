@@ -30,10 +30,15 @@ extensions.registerSchemaAPI("windows", null, (extension, context) => {
 
       onFocusChanged: new EventManager(context, "windows.onFocusChanged", fire => {
         
+        let lastOnFocusChangedWindowId;
+
         let listener = event => {
           let window = WindowManager.topWindow;
           let windowId = window ? WindowManager.getId(window) : WindowManager.WINDOW_ID_NONE;
-          fire(windowId);
+          if (windowId !== lastOnFocusChangedWindowId) {
+            fire(windowId);
+            lastOnFocusChangedWindowId = windowId;
+          }
         };
         AllWindowEvents.addListener("focus", listener);
         AllWindowEvents.addListener("blur", listener);
