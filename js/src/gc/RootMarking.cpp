@@ -279,6 +279,8 @@ js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc, AutoLockForExclusiveAcc
     if (rt->isBeingDestroyed())
         return;
 
+    gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
+    JSCompartment::traceIncomingCrossCompartmentEdgesForZoneGC(trc);
     traceRuntimeCommon(trc, MarkRuntime, lock);
 }
 
@@ -292,6 +294,7 @@ js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAcc
     
     
     
+    gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }
 
@@ -311,6 +314,8 @@ void
 js::gc::GCRuntime::traceRuntime(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
     MOZ_ASSERT(!rt->isBeingDestroyed());
+
+    gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }
 
@@ -318,15 +323,7 @@ void
 js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrMark,
                                       AutoLockForExclusiveAccess& lock)
 {
-    gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
-
     MOZ_ASSERT(!rt->mainThread.suppressGC);
-
-    
-    if (traceOrMark == MarkRuntime) {
-        gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_CCWS);
-        JSCompartment::traceIncomingCrossCompartmentEdgesForZoneGC(trc);
-    }
 
     
     {
