@@ -865,6 +865,7 @@ HTMLBreadcrumbs.prototype = {
     }
 
     
+    let trimmed = false;
     if (reason === "markupmutation") {
       for (let {type, removed} of mutations) {
         if (type !== "childList") {
@@ -875,6 +876,7 @@ HTMLBreadcrumbs.prototype = {
           let removedIndex = this.indexOf(node);
           if (removedIndex > -1) {
             this.cutAfter(removedIndex - 1);
+            trimmed = true;
           }
         }
       }
@@ -883,6 +885,10 @@ HTMLBreadcrumbs.prototype = {
     if (!this.selection.isElementNode()) {
       
       this.setCursor(-1);
+      if (trimmed) {
+        
+        this.inspector.emit("breadcrumbs-updated", this.selection.nodeFront);
+      }
       return;
     }
 

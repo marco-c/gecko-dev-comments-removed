@@ -6194,6 +6194,7 @@ AddonInstall.prototype = {
             
             let callback = AddonManagerPrivate.getUpgradeListener(this.addon.id);
             callback({
+              version: this.version,
               install: () => {
                 switch (this.state) {
                   case AddonManager.STATE_INSTALLED:
@@ -7663,18 +7664,23 @@ AddonWrapper.prototype = {
 
 
 
+
   reload: function() {
     return new Promise((resolve) => {
       const addon = addonFor(this);
 
-      if (!this.temporarilyInstalled) {
-        logger.debug(`Cannot reload add-on at ${addon._sourceBundle}`);
-        throw new Error("Only temporary add-ons can be reloaded");
-      }
-
       logger.debug(`reloading add-on ${addon.id}`);
-      
-      resolve(AddonManager.installTemporaryAddon(addon._sourceBundle));
+
+      if (!this.temporarilyInstalled) {
+        let addonFile = addon.getResourceURI;
+        XPIProvider.updateAddonDisabledState(addon, true);
+        Services.obs.notifyObservers(addonFile, "flush-cache-entry", null);
+        XPIProvider.updateAddonDisabledState(addon, false)
+        resolve();
+      } else {
+        
+        resolve(AddonManager.installTemporaryAddon(addon._sourceBundle));
+      }
     });
   },
 
