@@ -632,6 +632,12 @@ protected:
 
   
   
+  
+  bool                   mInnerObjectsFreed;
+
+
+  
+  
   bool                   mIsModalContentWindow;
 
   
@@ -779,6 +785,13 @@ public:
     mMayHavePointerEnterLeaveEventListener = true;
   }
 
+  
+
+
+  bool InnerObjectsFreed() const
+  {
+    return mInnerObjectsFreed;
+  }
 
 protected:
   void CreatePerformanceObjectIfNeeded();

@@ -1733,10 +1733,6 @@ protected:
 
   
   
-  bool                   mInnerObjectsFreed : 1;
-
-  
-  
   bool                   mHasGamepad : 1;
 #ifdef MOZ_GAMEPAD
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
