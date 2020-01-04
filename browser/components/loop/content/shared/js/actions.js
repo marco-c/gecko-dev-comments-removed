@@ -456,26 +456,15 @@ loop.shared.actions = (function() {
 
 
 
-    SetupRoomInfo: Action.define("setupRoomInfo", {
-      
-      
-      
-      roomToken: String,
-      roomUrl: String,
-      socialShareProviders: Array
-    }),
-
-    
-
-
-
-
-
     UpdateRoomInfo: Action.define("updateRoomInfo", {
       
       
-      roomUrl: String
       
+      
+      
+      
+      
+      roomUrl: String
       
     }),
 
