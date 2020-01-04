@@ -741,6 +741,7 @@ public:
   
   static KTableEntry kFloatKTable[];
   static const KTableEntry kFloatEdgeKTable[];
+  static const KTableEntry kFontDisplayKTable[];
   static const KTableEntry kFontKTable[];
   static const KTableEntry kFontKerningKTable[];
   static const KTableEntry kFontSizeKTable[];
