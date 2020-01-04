@@ -282,14 +282,14 @@ this.PushService = {
                                                  inBrowser: data.browserOnly });
         this._db.getAllByOriginAttributes(originAttributes)
           .then(records => Promise.all(records.map(record =>
-            this._db.delete(record.keyID).then(
-              _ => this._backgroundUnregister(record),
-              err => {
+            this._db.delete(record.keyID)
+              .catch(err => {
                 console.error("webapps-clear-data: Error removing record",
                   record, err);
-
-                this._backgroundUnregister(record);
+                
+                return record;
               })
+              .then(maybeDeleted => this._backgroundUnregister(maybeDeleted))
             )
           ));
 
@@ -297,16 +297,23 @@ this.PushService = {
     }
   },
 
+  
+
+
+
+
+
   _backgroundUnregister: function(record) {
-    if (this._service.isConnected()) {
-      
-      
-      console.debug("backgroundUnregister: Notifying server", record);
-      return this._sendUnregister(record)
-          .catch(function(e) {
-            console.error("backgroundUnregister: Error notifying server", e);
-          });
+    console.debug("backgroundUnregister()");
+
+    if (!this._service.isConnected() || !record) {
+      return;
     }
+
+    console.debug("backgroundUnregister: Notifying server", record);
+    this._sendUnregister(record).catch(e => {
+      console.error("backgroundUnregister: Error notifying server", e);
+    });
   },
 
   
@@ -573,7 +580,7 @@ this.PushService = {
       return Promise.resolve();
     }
 
-    return this.dropRegistrations()
+    return this.dropUnexpiredRegistrations()
        .then(_ => {
          this._db.close();
          this._db = null;
@@ -664,12 +671,35 @@ this.PushService = {
     }
   },
 
-  dropRegistrations: function() {
-    return this._notifyAllAppsRegister()
-      .then(_ => this._db.drop());
+  
+
+
+
+
+
+
+
+
+
+
+  dropUnexpiredRegistrations: function() {
+    let subscriptionChanges = [];
+    return this._db.clearIf(record => {
+      if (record.isExpired()) {
+        return false;
+      }
+      subscriptionChanges.push(record);
+      return true;
+    }).then(() => {
+      this.notifySubscriptionChanges(subscriptionChanges);
+    });
   },
 
   _notifySubscriptionChangeObservers: function(record) {
+    if (!record) {
+      return;
+    }
+
     
     Services.obs.notifyObservers(
       null,
@@ -705,28 +735,48 @@ this.PushService = {
   },
 
   
-  
-  _notifyAllAppsRegister: function() {
-    console.debug("notifyAllAppsRegister()");
-    
-    return this._db.getAllUnexpired().then(records => {
-      records.forEach(record => {
-        this._notifySubscriptionChangeObservers(record);
-      });
-    });
-  },
 
-  dropRegistrationAndNotifyApp: function(aKeyId) {
-    return this._db.getByKeyID(aKeyId).then(record => {
-      this._notifySubscriptionChangeObservers(record);
-      return this._db.delete(aKeyId);
-    });
-  },
 
-  updateRegistrationAndNotifyApp: function(aOldKey, aRecord) {
-    return this._db.delete(aOldKey)
-      .then(_ => this._db.put(aRecord))
+
+
+
+
+  dropRegistrationAndNotifyApp: function(aKeyID) {
+    return this._db.delete(aKeyID)
       .then(record => this._notifySubscriptionChangeObservers(record));
+  },
+
+  
+
+
+
+
+
+
+
+  updateRegistrationAndNotifyApp: function(aOldKey, aNewRecord) {
+    return this.updateRecordAndNotifyApp(aOldKey, _ => aNewRecord);
+  },
+  
+
+
+
+
+
+
+
+  updateRecordAndNotifyApp: function(aKeyID, aUpdateFunc) {
+    return this._db.update(aKeyID, aUpdateFunc)
+      .then(record => {
+        this._notifySubscriptionChangeObservers(record);
+        return record;
+      });
+  },
+
+  notifySubscriptionChanges: function(records) {
+    records.forEach(record => {
+      this._notifySubscriptionChangeObservers(record);
+    });
   },
 
   ensureP256dhKey: function(record) {
@@ -746,19 +796,6 @@ this.PushService = {
         return this.dropRegistrationAndNotifyApp(record.keyID).then(
           () => Promise.reject(error));
       });
-  },
-
-  updateRecordAndNotifyApp: function(aKeyID, aUpdateFunc) {
-    return this._db.update(aKeyID, aUpdateFunc)
-      .then(record => {
-        this._notifySubscriptionChangeObservers(record);
-        return record;
-      });
-  },
-
-  dropRecordAndNotifyApp: function(aRecord) {
-    return this._db.delete(aRecord.keyID)
-      .then(_ => this._notifySubscriptionChangeObservers(aRecord));
   },
 
   _recordDidNotNotify: function(reason) {
@@ -935,7 +972,7 @@ this.PushService = {
             err => this._onRegisterError(err))
       .then(record => {
         this._deletePendingRequest(aPageRecord);
-        return record.toRegister();
+        return record.toSubscription();
       }, err => {
         this._deletePendingRequest(aPageRecord);
         throw err;
@@ -1076,12 +1113,12 @@ this.PushService = {
             if (isChanged) {
               
               
-              return this._db.delete(record.keyID);
+              return this.dropRegistrationAndNotifyApp(record.keyID);
             }
             throw new Error("Push subscription expired");
           }).then(_ => this._lookupOrPutPendingRequest(aPageRecord));
         }
-        return record.toRegister();
+        return record.toSubscription();
       });
   },
 
@@ -1194,12 +1231,12 @@ this.PushService = {
         if (record.isExpired()) {
           return record.quotaChanged().then(isChanged => {
             if (isChanged) {
-              return this._db.delete(record.keyID).then(_ => null);
+              return this.dropRegistrationAndNotifyApp(record.keyID).then(_ => null);
             }
             return null;
           });
         }
-        return record.toRegistration();
+        return record.toSubscription();
       });
   },
 
@@ -1212,7 +1249,7 @@ this.PushService = {
           if (isChanged) {
             
             
-            return this.dropRecordAndNotifyApp(record);
+            return this.dropRegistrationAndNotifyApp(record.keyID);
           }
         }).catch(error => {
           console.error("dropExpiredRegistrations: Error dropping registration",
@@ -1259,27 +1296,34 @@ this.PushService = {
       
       
       
-      return this._updateByPrincipal(
+      return this._reduceByPrincipal(
         permission.principal,
-        record => this._permissionAllowed(record)
-      );
+        (subscriptionChanges, record, cursor) => {
+          this._permissionAllowed(subscriptionChanges, record, cursor);
+          return subscriptionChanges;
+        },
+        []
+      ).then(subscriptionChanges => {
+        this.notifySubscriptionChanges(subscriptionChanges);
+      });
     } else if (isChange || (isAllow && type == "deleted")) {
       
       
-      return this._updateByPrincipal(
+      return this._reduceByPrincipal(
         permission.principal,
-        record => this._permissionDenied(record)
+        (memo, record, cursor) => this._permissionDenied(record, cursor)
       );
     }
 
     return Promise.resolve();
   },
 
-  _updateByPrincipal: function(principal, updateFunc) {
-    return this._db.updateByOrigin(
+  _reduceByPrincipal: function(principal, callback, initialValue) {
+    return this._db.reduceByOrigin(
       principal.URI.prePath,
       ChromeUtils.originAttributesToSuffix(principal.originAttributes),
-      updateFunc
+      callback,
+      initialValue
     );
   },
 
@@ -1292,15 +1336,18 @@ this.PushService = {
 
 
 
-  _permissionDenied: function(record) {
+
+  _permissionDenied: function(record, cursor) {
+    console.debug("permissionDenied()");
+
     if (!record.quotaApplies() || record.isExpired()) {
       
-      return null;
+      return;
     }
     
     this._backgroundUnregister(record);
     record.setQuota(0);
-    return record;
+    cursor.update(record);
   },
 
   
@@ -1311,17 +1358,22 @@ this.PushService = {
 
 
 
-  _permissionAllowed: function(record) {
+
+
+  _permissionAllowed: function(subscriptionChanges, record, cursor) {
+    console.debug("permissionAllowed()");
+
     if (!record.quotaApplies()) {
-      return null;
+      return;
     }
     if (record.isExpired()) {
       
       
-      this._notifySubscriptionChangeObservers(record);
-      return false;
+      subscriptionChanges.push(record);
+      cursor.delete();
+      return;
     }
     record.resetQuota();
-    return record;
+    cursor.update(record);
   },
 };

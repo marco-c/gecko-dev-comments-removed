@@ -127,7 +127,10 @@ this.PushDB.prototype = {
         this._dbStoreName,
         function txnCb(aTxn, aStore) {
           console.debug("delete: Removing record", aKeyID);
-          aStore.delete(aKeyID);
+          aStore.get(aKeyID).onsuccess = event => {
+            aTxn.result = event.target.result;
+            aStore.delete(aKeyID);
+          };
         },
         resolve,
         reject
@@ -224,17 +227,15 @@ this.PushDB.prototype = {
 
 
 
-
-
-  updateByOrigin: function(origin, originAttributes, updateFunc) {
-    console.debug("updateByOrigin()");
+  reduceByOrigin: function(origin, originAttributes, callback, initialValue) {
+    console.debug("forEachOrigin()");
 
     return new Promise((resolve, reject) =>
       this.newTxn(
         "readwrite",
         this._dbStoreName,
         (aTxn, aStore) => {
-          aTxn.result = [];
+          aTxn.result = initialValue;
 
           let index = aStore.index("identifiers");
           let range = IDBKeyRange.bound(
@@ -247,19 +248,7 @@ this.PushDB.prototype = {
               return;
             }
             let record = this.toPushRecord(cursor.value);
-            let newRecord = updateFunc(record);
-            if (newRecord === false) {
-              console.debug("updateByOrigin: Removing record for key ID",
-                record.keyID);
-              cursor.delete();
-            } else if (this.isValidRecord(newRecord)) {
-              console.debug("updateByOrigin: Updating record for key ID",
-                record.keyID, newRecord);
-              cursor.update(newRecord);
-            } else {
-              console.error("updateByOrigin: Ignoring invalid update for record",
-                record.keyID, newRecord);
-            }
+            aTxn.result = callback(aTxn.result, record, cursor);
             cursor.continue();
           };
         },
