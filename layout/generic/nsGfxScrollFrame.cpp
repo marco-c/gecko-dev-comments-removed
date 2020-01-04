@@ -63,7 +63,9 @@
 #include "nsPluginFrame.h"
 #include <mozilla/layers/AxisPhysicsModel.h>
 #include <mozilla/layers/AxisPhysicsMSDModel.h>
+#include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/ScrollLinkedEffectDetector.h"
+#include "mozilla/layers/ShadowLayers.h"
 #include "mozilla/unused.h"
 #include <algorithm>
 #include <cstdlib> 
@@ -2676,25 +2678,44 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
 
   ScrollVisual();
 
-  if (LastScrollOrigin() == nsGkAtoms::apz && gfxPrefs::APZPaintSkipping()) {
+  bool schedulePaint = true;
+  if (nsLayoutUtils::AsyncPanZoomEnabled(mOuter) && gfxPrefs::APZPaintSkipping()) {
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
     nsRect displayPort;
-    DebugOnly<bool> usingDisplayPort =
+    bool usingDisplayPort =
       nsLayoutUtils::GetDisplayPort(mOuter->GetContent(), &displayPort);
-    NS_ASSERTION(usingDisplayPort, "Must have a displayport for apz scrolls!");
-
     displayPort.MoveBy(-mScrolledFrame->GetPosition());
 
-    if (!displayPort.IsEqualEdges(oldDisplayPort)) {
-      mOuter->SchedulePaint();
-
-      if (needImageVisibilityUpdate) {
-        presContext->PresShell()->ScheduleImageVisibilityUpdate();
+    if (usingDisplayPort && displayPort.IsEqualEdges(oldDisplayPort)) {
+      if (LastScrollOrigin() == nsGkAtoms::apz) {
+        schedulePaint = false;
+      } else if (mScrollableByAPZ) {
+        nsIWidget* widget = presContext->GetNearestWidget();
+        LayerManager* manager = widget ? widget->GetLayerManager() : nullptr;
+        ShadowLayerForwarder* forwarder = manager ? manager->AsShadowForwarder() : nullptr;
+        if (forwarder && forwarder->HasShadowManager()) {
+          mozilla::layers::FrameMetrics::ViewID id;
+          DebugOnly<bool> success = nsLayoutUtils::FindIDFor(mOuter->GetContent(), &id);
+          MOZ_ASSERT(success); 
+          forwarder->GetShadowManager()->SendUpdateScrollOffset(id,
+              mScrollGeneration, CSSPoint::FromAppUnits(GetScrollPosition()));
+          schedulePaint = false;
+        }
       }
     }
-  } else {
+  }
+
+  if (schedulePaint) {
     mOuter->SchedulePaint();
 
     if (needImageVisibilityUpdate) {
