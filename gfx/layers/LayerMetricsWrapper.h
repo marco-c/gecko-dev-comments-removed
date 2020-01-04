@@ -299,6 +299,20 @@ public:
     return gfx::Matrix4x4();
   }
 
+  bool TransformIsPerspective() const
+  {
+    MOZ_ASSERT(IsValid());
+
+    
+    
+    
+    
+    if (AtBottomLayer()) {
+      return mLayer->GetTransformIsPerspective();
+    }
+    return false;
+  }
+
   EventRegions GetEventRegions() const
   {
     MOZ_ASSERT(IsValid());

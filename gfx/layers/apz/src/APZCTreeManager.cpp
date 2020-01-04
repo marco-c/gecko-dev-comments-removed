@@ -592,8 +592,9 @@ APZCTreeManager::UpdateHitTestingTree(TreeBuildingState& aState,
   
   
   
-  Matrix4x4 transform = aLayer.GetTransform();
-  Matrix4x4 ancestorTransform = transform;
+  
+  
+  Matrix4x4 ancestorTransform = aLayer.TransformIsPerspective() ? Matrix4x4() : aLayer.GetTransform();
   if (!apzc) {
     ancestorTransform = ancestorTransform * aAncestorTransform;
   }
