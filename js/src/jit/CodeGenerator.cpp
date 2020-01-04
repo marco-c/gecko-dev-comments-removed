@@ -5155,6 +5155,7 @@ CodeGenerator::generateBody()
             }
 
 #ifdef DEBUG
+            setElement(*iter); 
             emitDebugForceBailing(*iter);
 #endif
 
