@@ -10,7 +10,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
-#include "mozilla/TaskQueue.h"
+#include "AutoTaskQueue.h"
 
 #include "MediaDataDemuxer.h"
 #include "MediaDecoderReader.h"
@@ -47,7 +47,7 @@ public:
   
   void AttachSourceBuffer(TrackBuffersManager* aSourceBuffer);
   void DetachSourceBuffer(TrackBuffersManager* aSourceBuffer);
-  TaskQueue* GetTaskQueue() { return mTaskQueue; }
+  AutoTaskQueue* GetTaskQueue() { return mTaskQueue; }
 
   
   
@@ -73,7 +73,7 @@ private:
     return !GetTaskQueue() || GetTaskQueue()->IsCurrentThreadIn();
   }
 
-  RefPtr<TaskQueue> mTaskQueue;
+  RefPtr<AutoTaskQueue> mTaskQueue;
   nsTArray<RefPtr<MediaSourceTrackDemuxer>> mDemuxers;
 
   nsTArray<RefPtr<TrackBuffersManager>> mSourceBuffers;
