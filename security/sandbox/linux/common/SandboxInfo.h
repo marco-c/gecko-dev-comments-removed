@@ -57,8 +57,6 @@ public:
     return !Test(kEnabledForMedia) || Test(kHasSeccompBPF);
   }
 
-  static void SubmitTelemetry();
-
   
   
   

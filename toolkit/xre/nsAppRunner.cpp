@@ -4361,11 +4361,6 @@ XREMain::XRE_mainRun()
   }
 #endif 
 
-#if defined(MOZ_SANDBOX) && defined(XP_LINUX)
-  
-  
-  SandboxInfo::SubmitTelemetry();
-#endif
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
   SetUpSandboxEnvironment();
 #endif
