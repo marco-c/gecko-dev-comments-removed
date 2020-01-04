@@ -269,6 +269,9 @@ html[dir="rtl"] .standalone-overlay-wrapper > .standalone-moz-logo {
   display: flex;
   justify-content: space-between;
   margin: 3em auto 1em;
+  
+
+  width: 290px;
 }
 
 .room-inner-info-area > .room-waiting-area > a >.room-waiting-help {
@@ -286,7 +289,8 @@ html[dir="rtl"] .standalone-overlay-wrapper > .standalone-moz-logo {
   
   height: 204px;
   
-  width: 100%;
+
+  width: 290px;
 }
 
 
