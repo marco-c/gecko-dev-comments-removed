@@ -251,6 +251,8 @@ public class testGeckoProfile extends PixelTest {
     }
 
     
+    
+    
     private void removeProfile(GeckoProfile profile, boolean inProfilesIni) {
         findInProfilesIni(profile, inProfilesIni);
         File dir = profile.getDir();
