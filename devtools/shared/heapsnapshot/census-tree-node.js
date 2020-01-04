@@ -14,6 +14,9 @@
 const { Visitor, walk } = require("resource://devtools/shared/heapsnapshot/CensusUtils.js");
 
 
+let INC = 0;
+
+
 
 
 
@@ -143,10 +146,12 @@ CensusTreeNodeCache.lookupNode = function (cache, node) {
 
 
 
+
 function addChild(parent, child) {
   if (!parent.children) {
     parent.children = [];
   }
+  child.parent = parent.id;
   parent.children.push(child);
 }
 
@@ -208,7 +213,6 @@ function makeCensusTreeNodeSubTree(breakdown, report, edge, cache, outParams) {
 
   
   
-
   const frames = getArrayOfFrames(edge);
   let currentCache = cache;
   let prevNode;
@@ -389,6 +393,8 @@ function CensusTreeNode (name) {
   this.count = 0;
   this.totalCount = 0;
   this.children = undefined;
+  this.id = INC++;
+  this.parent = undefined;
 }
 
 CensusTreeNode.prototype = null;
@@ -509,6 +515,8 @@ function invert(tree) {
 
   return inverted.node;
 }
+
+
 
 
 
