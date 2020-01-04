@@ -865,7 +865,8 @@ pref("browser.snippets.updateUrl", "https://snippets.cdn.mozilla.net/json/%SNIPP
 pref("browser.snippets.updateInterval", 86400);
 
 
-pref("browser.snippets.geoUrl", "https://geo.mozilla.org/country.json");
+
+pref("browser.snippets.geoUrl", "https://location.services.mozilla.com/v1/country?key=fff72d56-b040-4205-9a11-82feda9d83a3");
 
 
 pref("browser.snippets.statsUrl", "https://snippets-stats.mozilla.org/mobile");
