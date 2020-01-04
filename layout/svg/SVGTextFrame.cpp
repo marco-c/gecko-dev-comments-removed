@@ -3385,8 +3385,7 @@ SVGTextFrame::HandleAttributeChangeInDescendant(Element* aElement,
     if (aNameSpaceID == kNameSpaceID_None &&
         aAttribute == nsGkAtoms::startOffset) {
       NotifyGlyphMetricsChange();
-    } else if ((aNameSpaceID == kNameSpaceID_XLink ||
-                aNameSpaceID == kNameSpaceID_None) &&
+    } else if (aNameSpaceID == kNameSpaceID_XLink &&
                aAttribute == nsGkAtoms::href) {
       
       nsIFrame* childElementFrame = aElement->GetPrimaryFrame();
@@ -4823,14 +4822,7 @@ SVGTextFrame::GetTextPathPathElement(nsIFrame* aTextPathFrame)
     nsIContent* content = aTextPathFrame->GetContent();
     dom::SVGTextPathElement* tp = static_cast<dom::SVGTextPathElement*>(content);
     nsAutoString href;
-    if (tp->mStringAttributes[dom::SVGTextPathElement::HREF].IsExplicitlySet()) {
-      tp->mStringAttributes[dom::SVGTextPathElement::HREF]
-        .GetAnimValue(href, tp);
-    } else {
-      tp->mStringAttributes[dom::SVGTextPathElement::XLINK_HREF]
-        .GetAnimValue(href, tp);
-    }
-
+    tp->mStringAttributes[dom::SVGTextPathElement::HREF].GetAnimValue(href, tp);
     if (href.IsEmpty()) {
       return nullptr; 
     }
@@ -5629,10 +5621,9 @@ SVGTextFrame::TransformFrameRectFromTextChild(const nsRect& aRect,
     
     uint32_t flags = TextRenderedRun::eIncludeFill |
                      TextRenderedRun::eIncludeStroke;
-    rectInFrameUserSpace.IntersectRect
-      (rectInFrameUserSpace, run.GetFrameUserSpaceRect(presContext, flags).ToThebesRect());
 
-    if (!rectInFrameUserSpace.IsEmpty()) {
+    if (rectInFrameUserSpace.IntersectRect(rectInFrameUserSpace,
+        run.GetFrameUserSpaceRect(presContext, flags).ToThebesRect())) {
       
       
       gfxMatrix m = run.GetTransformFromRunUserSpaceToUserSpace(presContext);
