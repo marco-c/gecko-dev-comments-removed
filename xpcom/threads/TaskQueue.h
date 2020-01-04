@@ -15,12 +15,14 @@
 
 #include <queue>
 
+#include "mozilla/SharedThreadPool.h"
 #include "nsThreadUtils.h"
 
-class nsIEventTarget;
 class nsIRunnable;
 
 namespace mozilla {
+
+class SharedThreadPool;
 
 typedef MozPromise<bool, bool, false> ShutdownPromise;
 
@@ -29,29 +31,9 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class TaskQueue : public AbstractThread
-{
-  class EventTargetWrapper;
-
+class TaskQueue : public AbstractThread {
 public:
-  explicit TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     bool aSupportsTailDispatch = false);
+  explicit TaskQueue(already_AddRefed<SharedThreadPool> aPool, bool aSupportsTailDispatch = false);
 
   TaskDispatcher& TailDispatcher() override;
 
@@ -90,15 +72,10 @@ public:
   void AwaitShutdownAndIdle();
 
   bool IsEmpty();
-  uint32_t ImpreciseLengthForHeuristics();
 
   
   
   bool IsCurrentThreadIn() override;
-
-  
-  
-  already_AddRefed<nsIEventTarget> WrapAsEventTarget();
 
 protected:
   virtual ~TaskQueue();
@@ -121,11 +98,11 @@ protected:
     mQueueMonitor.AssertCurrentThreadOwns();
     if (mIsShutdown && !mIsRunning) {
       mShutdownPromise.ResolveIfExists(true, __func__);
-      mTarget = nullptr;
+      mPool = nullptr;
     }
   }
 
-  nsCOMPtr<nsIEventTarget> mTarget;
+  RefPtr<SharedThreadPool> mPool;
 
   
   Monitor mQueueMonitor;
@@ -149,14 +126,13 @@ protected:
   public:
     explicit AutoTaskGuard(TaskQueue* aQueue)
       : AutoTaskDispatcher( true), mQueue(aQueue)
-      , mLastCurrentThread(nullptr)
     {
       
       
       MOZ_ASSERT(!mQueue->mTailDispatcher);
       mQueue->mTailDispatcher = this;
 
-      mLastCurrentThread = sCurrentThreadTLS.get();
+      MOZ_ASSERT(sCurrentThreadTLS.get() == nullptr);
       sCurrentThreadTLS.set(aQueue);
 
       MOZ_ASSERT(mQueue->mRunningThread == nullptr);
@@ -170,13 +146,12 @@ protected:
       MOZ_ASSERT(mQueue->mRunningThread == NS_GetCurrentThread());
       mQueue->mRunningThread = nullptr;
 
-      sCurrentThreadTLS.set(mLastCurrentThread);
+      sCurrentThreadTLS.set(nullptr);
       mQueue->mTailDispatcher = nullptr;
     }
 
   private:
   TaskQueue* mQueue;
-  AbstractThread* mLastCurrentThread;
   };
 
   TaskDispatcher* mTailDispatcher;
