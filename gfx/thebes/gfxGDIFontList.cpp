@@ -143,8 +143,6 @@ GDIFontEntry::GDIFontEntry(const nsAString& aFaceName,
 nsresult
 GDIFontEntry::ReadCMAP(FontInfoData *aFontInfoData)
 {
-    PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
-
     
     if (mCharacterMap) {
         return NS_OK;

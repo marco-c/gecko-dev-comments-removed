@@ -1070,7 +1070,6 @@ nsLocalFile::ResolveAndStat()
     return NS_OK;
   }
 
-  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
   
   if (mWorkingPath.IsEmpty()) {
     return NS_ERROR_FILE_INVALID_PATH;

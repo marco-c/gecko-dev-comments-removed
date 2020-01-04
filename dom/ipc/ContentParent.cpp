@@ -1237,8 +1237,6 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
                                   Element* aFrameElement,
                                   ContentParent* aOpenerContentParent)
 {
-  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
-
   if (!sCanLaunchSubprocesses) {
     return nullptr;
   }
@@ -2388,8 +2386,6 @@ ContentParent::InitializeMembers()
 bool
 ContentParent::LaunchSubprocess(ProcessPriority aInitialPriority )
 {
-  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
-
   std::vector<std::string> extraArgs;
   if (mIsNuwaProcess) {
     extraArgs.push_back("-nuwa");
@@ -3646,8 +3642,6 @@ ContentParent::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure)
 void
 ContentParent::KillHard(const char* aReason)
 {
-  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
-
   
   
   
