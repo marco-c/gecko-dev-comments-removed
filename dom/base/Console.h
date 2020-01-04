@@ -197,11 +197,11 @@ private:
   
   
   bool
-  PopulateConsoleObjectInTheTargetScope(JSContext* aCx,
-                                        const Sequence<JS::Value>& aArguments,
-                                        JSObject* aTargetScope,
-                                        JS::MutableHandle<JS::Value> aValue,
-                                        ConsoleCallData* aData) const;
+  PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
+                                              const Sequence<JS::Value>& aArguments,
+                                              JSObject* aTargetScope,
+                                              JS::MutableHandle<JS::Value> aValue,
+                                              ConsoleCallData* aData) const;
 
   
   
