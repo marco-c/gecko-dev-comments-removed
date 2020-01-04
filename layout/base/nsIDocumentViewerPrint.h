@@ -38,8 +38,7 @@ public:
   
   
   
-  virtual nsresult CreateStyleSet(nsIDocument* aDocument,
-                                  mozilla::StyleSetHandle* aStyleSet) = 0;
+  virtual mozilla::StyleSetHandle CreateStyleSet(nsIDocument* aDocument) = 0;
 
   virtual void IncrementDestroyRefCount() = 0;
 
@@ -74,8 +73,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocumentViewerPrint,
   virtual bool     GetIsPrinting() override; \
   virtual void     SetIsPrintPreview(bool aIsPrintPreview) override; \
   virtual bool     GetIsPrintPreview() override; \
-  virtual nsresult CreateStyleSet(nsIDocument* aDocument, \
-                                  mozilla::StyleSetHandle* aStyleSet) override; \
+  virtual mozilla::StyleSetHandle CreateStyleSet(nsIDocument* aDocument) override; \
   virtual void     IncrementDestroyRefCount() override; \
   virtual void     ReturnToGalleyPresentation() override; \
   virtual void     OnDonePrinting() override; \
