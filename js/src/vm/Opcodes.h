@@ -1479,19 +1479,9 @@
 
 
 
-
-
-
  \
-    macro(JSOP_SETINTRINSIC,  144, "setintrinsic",  NULL, 5,  2,  1, JOF_ATOM|JOF_NAME|JOF_SET|JOF_DETECTING) \
-    
-
-
-
-
-
- \
-    macro(JSOP_BINDINTRINSIC, 145, "bindintrinsic", NULL, 5,  0,  1, JOF_ATOM|JOF_NAME|JOF_SET) \
+    macro(JSOP_SETINTRINSIC,  144, "setintrinsic",  NULL, 5,  1,  1, JOF_ATOM|JOF_NAME|JOF_SET|JOF_DETECTING) \
+    macro(JSOP_UNUSED145,     145, "unused145",     NULL, 1,  0,  0, JOF_BYTE) \
     
 
 
