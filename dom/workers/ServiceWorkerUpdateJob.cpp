@@ -135,6 +135,14 @@ ServiceWorkerUpdateJob::FailUpdateJob(ErrorResult& aRv)
   AssertIsOnMainThread();
   MOZ_ASSERT(aRv.Failed());
 
+  
+  
+  
+  
+  
+  
+  
+  
   if (mRegistration) {
     if (mServiceWorker) {
       mServiceWorker->UpdateState(ServiceWorkerState::Redundant);
@@ -184,6 +192,10 @@ ServiceWorkerUpdateJob::AsyncExecute()
     return;
   }
 
+  
+  
+  
+
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   RefPtr<ServiceWorkerRegistrationInfo> registration =
     swm->GetRegistration(mPrincipal, mScope);
@@ -196,6 +208,7 @@ ServiceWorkerUpdateJob::AsyncExecute()
     return;
   }
 
+  
   
   
   RefPtr<ServiceWorkerInfo> newest = registration->Newest();
@@ -225,16 +238,14 @@ void
 ServiceWorkerUpdateJob::Update()
 {
   AssertIsOnMainThread();
+  MOZ_ASSERT(!Canceled());
 
   
   MOZ_ASSERT(mRegistration);
-
-  if (Canceled()) {
-    FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);
-    return;
-  }
-
   MOZ_ASSERT(!mRegistration->mInstallingWorker);
+
+  
+  
 
   RefPtr<ServiceWorkerInfo> workerInfo = mRegistration->Newest();
   nsAutoString cacheName;
@@ -270,6 +281,8 @@ ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
     return;
   }
 
+  
+  
   if (NS_WARN_IF(NS_FAILED(aStatus))) {
     FailUpdateJob(aStatus);
     return;
@@ -278,6 +291,9 @@ ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
   
   
   
+  
+  
+
   
   
 
@@ -344,6 +360,8 @@ ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
 
   Telemetry::Accumulate(Telemetry::SERVICE_WORKER_UPDATED, 1);
 
+  
+
   MOZ_ASSERT(!mServiceWorker);
   mServiceWorker = new ServiceWorkerInfo(mRegistration->mPrincipal,
                                          mRegistration->mScope,
@@ -373,6 +391,9 @@ ServiceWorkerUpdateJob::ContinueUpdateAfterScriptEval(bool aScriptEvaluationResu
     return;
   }
 
+  
+  
+
   if (NS_WARN_IF(!aScriptEvaluationResult)) {
     ErrorResult error;
 
@@ -390,12 +411,13 @@ void
 ServiceWorkerUpdateJob::Install()
 {
   AssertIsOnMainThread();
-
-  if (Canceled()) {
-    return FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);
-  }
+  MOZ_ASSERT(!Canceled());
 
   MOZ_ASSERT(!mRegistration->mInstallingWorker);
+
+  
+  
+  
 
   MOZ_ASSERT(mServiceWorker);
   mRegistration->mInstallingWorker = mServiceWorker.forget();
@@ -406,8 +428,10 @@ ServiceWorkerUpdateJob::Install()
   swm->InvalidateServiceWorkerRegistrationWorker(mRegistration,
                                                  WhichServiceWorker::INSTALLING_WORKER);
 
+  
   InvokeResultCallbacks(NS_OK);
 
+  
   
 
   
@@ -449,6 +473,8 @@ ServiceWorkerUpdateJob::ContinueAfterInstallEvent(bool aInstallEventSuccess)
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
 
   
+
+  
   if (NS_WARN_IF(!aInstallEventSuccess)) {
     
     FailUpdateJob(NS_ERROR_DOM_ABORT_ERR);
@@ -473,6 +499,12 @@ ServiceWorkerUpdateJob::ContinueAfterInstallEvent(bool aInstallEventSuccess)
 
   Finish(NS_OK);
 
+  
+  
+  
+
+  
+  
   
   mRegistration->TryToActivateAsync();
 }
