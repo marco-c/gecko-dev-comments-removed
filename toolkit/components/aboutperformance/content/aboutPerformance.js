@@ -69,30 +69,51 @@ const MIN_PROPORTION_FOR_NOTICEABLE_IMPACT = .1;
 const MODE_GLOBAL = "global";
 const MODE_RECENT = "recent";
 
-
-
-
-
-
-
-
-
-
-
-function findTabFromWindow(windowIds) {
-  let windows = Services.wm.getEnumerator("navigator:browser");
-  while (windows.hasMoreElements()) {
-    let win = windows.getNext();
-    let tabbrowser = win.gBrowser;
-    for (let windowId of windowIds) {
-      let foundBrowser = tabbrowser.getBrowserForOuterWindowID(windowId);
-      if (foundBrowser) {
-        return {tabbrowser, tab: tabbrowser.getTabForBrowser(foundBrowser)};
+let tabFinder = {
+  update: function() {
+    this._map = new Map();
+    let windows = Services.wm.getEnumerator("navigator:browser");
+    while (windows.hasMoreElements()) {
+      let win = windows.getNext();
+      let tabbrowser = win.gBrowser;
+      for (let browser of tabbrowser.browsers) {
+        let id = browser.outerWindowID; 
+        if (id != null) {
+          this._map.set(id, browser);
+        }
       }
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  get: function(id) {
+    let browser = this._map.get(id);
+    if (!browser) {
+      return null;
+    }
+    let tabbrowser = browser.getTabBrowser();
+    return {tabbrowser, tab:tabbrowser.getTabForBrowser(browser)};
+  },
+
+  getAny: function(ids) {
+    for (let id of ids) {
+      let result = this.get(id);
+      if (result) {
+        return result;
+      }
+    }
+    return null;
   }
-  return null;
-}
+};
 
 function wait(ms = 0) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -225,22 +246,13 @@ Delta.prototype = {
   },
   _initWebpage: function() {
     this._initialized = true;
-    if (!this.diff.title) {
+    let found = tabFinder.getAny(this.diff.windowIds);
+    if (!found || found.tab.linkedBrowser.contentTitle == null) {
       
       return;
     }
 
-    
-    
-
-    if (this.diff.title == document.title) {
-      if (!findTabFromWindow(this.diff.windowIds)) {
-        
-        return;
-      }
-    }
-
-    this.readableName = this.diff.title;
+    this.readableName = found.tab.linkedBrowser.contentTitle;
     this.fullName = this.diff.names.join(", ");
     this._show = true;
   },
@@ -439,6 +451,7 @@ var State = {
       throw new TypeError();
     }
 
+    tabFinder.update();
     
     
     
@@ -773,7 +786,7 @@ var View = {
         eltSpan.appendChild(eltCloseTab);
         let windowIds = delta.diff.windowIds;
         eltCloseTab.addEventListener("click", () => {
-          let found = findTabFromWindow(windowIds);
+          let found = tabFinder.getAny(windowIds);
           if (!found) {
             
             return;
@@ -786,7 +799,7 @@ var View = {
         eltReloadTab.textContent = "Reload tab";
         eltSpan.appendChild(eltReloadTab);
         eltReloadTab.addEventListener("click", () => {
-          let found = findTabFromWindow(windowIds);
+          let found = tabFinder.getAny(windowIds);
           if (!found) {
             
             return;
@@ -829,7 +842,7 @@ var Control = {
   },
   update: Task.async(function*() {
     let mode = this._displayMode;
-    if (this._autoRefreshInterval) {
+    if (this._autoRefreshInterval || !State._buffer[0]) {
       
       yield State.update();
     }
@@ -853,6 +866,7 @@ var Control = {
     Services.obs.notifyObservers(null, UPDATE_COMPLETE_TOPIC, mode);
   }),
   _setOptions: function(options) {
+    dump(`about:performance _setOptions ${JSON.stringify(options)}\n`);
     let eltRefresh = document.getElementById("check-autorefresh");
     if ((options.autoRefresh > 0) != eltRefresh.checked) {
       eltRefresh.click();
