@@ -13,6 +13,7 @@
 #include "AndroidJavaWrappers.h"
 #include "GeneratedJNIWrappers.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/UniquePtr.h"
@@ -53,18 +54,60 @@ private:
              class Impl = typename Lambda::TargetClass>
     class WindowEvent;
 
-    class GeckoViewSupport;
     
     
-    mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
+    
+    
+    template<class Impl> class WindowPtr;
+
+    
+    
+    template<class Impl>
+    class NativePtr final
+    {
+        friend WindowPtr<Impl>;
+
+        static const char sName[];
+
+        WindowPtr<Impl>* mPtr;
+        Impl* mImpl;
+        mozilla::Mutex mImplLock;
+
+    public:
+        class Locked;
+
+        NativePtr() : mPtr(nullptr), mImpl(nullptr), mImplLock(sName) {}
+        ~NativePtr() { MOZ_ASSERT(!mPtr); }
+
+        operator Impl*() const
+        {
+            MOZ_ASSERT(NS_IsMainThread());
+            return mImpl;
+        }
+
+        Impl* operator->() const { return operator Impl*(); }
+
+        template<class Instance, typename... Args>
+        void Attach(Instance aInstance, nsWindow* aWindow, Args&&... aArgs);
+        void Detach();
+    };
 
     class LayerViewSupport;
-    mozilla::UniquePtr<LayerViewSupport> mLayerViewSupport;
+    
+    
+    NativePtr<LayerViewSupport> mLayerViewSupport;
 
     class NPZCSupport;
     
     
-    NPZCSupport* mNPZCSupport;
+    NativePtr<NPZCSupport> mNPZCSupport;
+
+    class GeckoViewSupport;
+    
+    
+    
+    
+    mozilla::UniquePtr<GeckoViewSupport> mGeckoViewSupport;
 
 public:
     static nsWindow* TopWindow();
