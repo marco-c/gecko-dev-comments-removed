@@ -43,23 +43,19 @@ VRManagerChild::Get()
   return sVRManagerChildSingleton;
 }
 
- VRManagerChild*
-VRManagerChild::StartUpInChildProcess(Transport* aTransport, ProcessId aOtherPid)
+ bool
+VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint)
 {
   MOZ_ASSERT(NS_IsMainThread());
-
-  
   MOZ_ASSERT(!sVRManagerChildSingleton);
 
   RefPtr<VRManagerChild> child(new VRManagerChild());
-  if (!child->Open(aTransport, aOtherPid, XRE_GetIOMessageLoop(), ipc::ChildSide)) {
+  if (!aEndpoint.Bind(child, nullptr)) {
     NS_RUNTIMEABORT("Couldn't Open() Compositor channel.");
-    return nullptr;
+    return false;
   }
-
   sVRManagerChildSingleton = child;
-
-  return sVRManagerChildSingleton;
+  return true;
 }
 
  void
