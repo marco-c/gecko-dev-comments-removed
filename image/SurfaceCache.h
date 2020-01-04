@@ -44,6 +44,7 @@ typedef Image* ImageKey;
 
 
 
+
 class SurfaceKey
 {
   typedef gfx::IntSize IntSize;
@@ -144,6 +145,9 @@ enum class InsertOutcome : uint8_t {
 
 
 
+
+
+
 struct SurfaceCache
 {
   typedef gfx::IntSize IntSize;
@@ -185,7 +189,6 @@ struct SurfaceCache
                              const SurfaceKey& aSurfaceKey);
 
   
-
 
 
 
@@ -255,6 +258,7 @@ struct SurfaceCache
                               const SurfaceKey& aSurfaceKey);
 
   
+
 
 
 
@@ -359,7 +363,7 @@ struct SurfaceCache
 
 
 
-  static void UnlockSurfaces(const ImageKey aImageKey);
+  static void UnlockEntries(const ImageKey aImageKey);
 
   
 
@@ -374,8 +378,8 @@ struct SurfaceCache
 
 
 
-  static void RemoveSurface(const ImageKey    aImageKey,
-                            const SurfaceKey& aSurfaceKey);
+  static void RemoveEntry(const ImageKey    aImageKey,
+                          const SurfaceKey& aSurfaceKey);
 
   
 

@@ -1282,7 +1282,7 @@ RasterImage::Decode(const IntSize& aSize, uint32_t aFlags)
   
   
   
-  SurfaceCache::UnlockSurfaces(ImageKey(this));
+  SurfaceCache::UnlockEntries(ImageKey(this));
 
   Maybe<IntSize> targetSize = mSize != aSize ? Some(aSize) : Nothing();
 

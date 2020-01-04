@@ -920,7 +920,7 @@ VectorImage::CreateSurfaceAndShow(const SVGDrawingParameters& aParams)
   
   
   
-  SurfaceCache::UnlockSurfaces(ImageKey(this));
+  SurfaceCache::UnlockEntries(ImageKey(this));
 
   
   
