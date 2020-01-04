@@ -338,15 +338,6 @@ def check_output(out, err, rc, timed_out, test, options):
     if timed_out:
         if test.relpath_tests in options.ignore_timeouts:
             return True
-
-        
-        
-        
-        
-        if sys.platform == 'win32':
-            ver = sys.getwindowsversion()
-            if ver.major == 6 and ver.minor <= 1:
-                return True
         return False
 
     if test.expect_error:
