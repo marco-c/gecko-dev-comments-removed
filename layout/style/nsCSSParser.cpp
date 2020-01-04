@@ -1174,7 +1174,7 @@ protected:
   nsCOMPtr<nsIPrincipal> mSheetPrincipal;
 
   
-  RefPtr<CSSStyleSheet> mSheet;
+  nsRefPtr<CSSStyleSheet> mSheet;
 
   
   mozilla::css::Loader* mChildLoader; 
@@ -1269,7 +1269,7 @@ protected:
   WebkitBoxUnprefixState mWebkitBoxUnprefixState;
 
   
-  InfallibleTArray<RefPtr<css::GroupRule> > mGroupStack;
+  InfallibleTArray<nsRefPtr<css::GroupRule> > mGroupStack;
 
   
   
@@ -2009,7 +2009,7 @@ CSSParserImpl::ParseKeyframeRule(const nsSubstring&  aBuffer,
   css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aURI);
   InitScanner(scanner, reporter, aURI, aURI, nullptr);
 
-  RefPtr<nsCSSKeyframeRule> result = ParseKeyframeRule();
+  nsRefPtr<nsCSSKeyframeRule> result = ParseKeyframeRule();
   if (GetToken(true)) {
     
     result = nullptr;
@@ -3004,6 +3004,8 @@ CSSParserImpl::ParseAtRule(RuleAppendFunc aAppendFunc,
   } else if ((nsCSSProps::IsEnabled(eCSSPropertyAlias_MozAnimation,
                                     PropertyEnabledState()) &&
               mToken.mIdent.LowerCaseEqualsLiteral("-moz-keyframes")) ||
+             (nsCSSProps::IsEnabled(eCSSPropertyAlias_WebkitAnimation) &&
+              mToken.mIdent.LowerCaseEqualsLiteral("-webkit-keyframes")) ||
              mToken.mIdent.LowerCaseEqualsLiteral("keyframes")) {
     parseFunc = &CSSParserImpl::ParseKeyframesRule;
     newSection = eCSSSection_General;
@@ -3350,7 +3352,7 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
       {
         
         
-        RefPtr<nsCSSValue::Array> a = nsCSSValue::Array::Create(2);
+        nsRefPtr<nsCSSValue::Array> a = nsCSSValue::Array::Create(2);
         expr->mValue.SetArrayValue(a, eCSSUnit_Array);
         
         
@@ -3405,7 +3407,7 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
 bool
 CSSParserImpl::ParseImportRule(RuleAppendFunc aAppendFunc, void* aData)
 {
-  RefPtr<nsMediaList> media = new nsMediaList();
+  nsRefPtr<nsMediaList> media = new nsMediaList();
 
   uint32_t linenum, colnum;
   nsAutoString url;
@@ -3440,7 +3442,7 @@ CSSParserImpl::ProcessImport(const nsString& aURLSpec,
                              uint32_t aLineNumber,
                              uint32_t aColumnNumber)
 {
-  RefPtr<css::ImportRule> rule = new css::ImportRule(aMedia, aURLSpec,
+  nsRefPtr<css::ImportRule> rule = new css::ImportRule(aMedia, aURLSpec,
                                                        aLineNumber,
                                                        aColumnNumber);
   (*aAppendFunc)(rule, aData);
@@ -3512,12 +3514,12 @@ CSSParserImpl::ParseGroupRule(css::GroupRule* aRule,
 bool
 CSSParserImpl::ParseMediaRule(RuleAppendFunc aAppendFunc, void* aData)
 {
-  RefPtr<nsMediaList> media = new nsMediaList();
+  nsRefPtr<nsMediaList> media = new nsMediaList();
   uint32_t linenum, colnum;
   if (GetNextTokenLocation(true, &linenum, &colnum) &&
       GatherMedia(media, true)) {
     
-    RefPtr<css::MediaRule> rule = new css::MediaRule(linenum, colnum);
+    nsRefPtr<css::MediaRule> rule = new css::MediaRule(linenum, colnum);
     
     
     if (ParseGroupRule(rule, aAppendFunc, aData)) {
@@ -3603,7 +3605,7 @@ CSSParserImpl::ParseMozDocumentRule(RuleAppendFunc aAppendFunc, void* aData)
     }
   } while (ExpectSymbol(',', true));
 
-  RefPtr<css::DocumentRule> rule = new css::DocumentRule(linenum, colnum);
+  nsRefPtr<css::DocumentRule> rule = new css::DocumentRule(linenum, colnum);
   rule->SetURLs(urls);
 
   return ParseGroupRule(rule, aAppendFunc, aData);
@@ -3657,7 +3659,7 @@ CSSParserImpl::ProcessNameSpace(const nsString& aPrefix,
     prefix = do_GetAtom(aPrefix);
   }
 
-  RefPtr<css::NameSpaceRule> rule = new css::NameSpaceRule(prefix, aURLSpec,
+  nsRefPtr<css::NameSpaceRule> rule = new css::NameSpaceRule(prefix, aURLSpec,
                                                              aLineNumber,
                                                              aColumnNumber);
   (*aAppendFunc)(rule, aData);
@@ -3681,7 +3683,7 @@ CSSParserImpl::ParseFontFaceRule(RuleAppendFunc aAppendFunc, void* aData)
     return false;
   }
 
-  RefPtr<nsCSSFontFaceRule> rule(new nsCSSFontFaceRule(linenum, colnum));
+  nsRefPtr<nsCSSFontFaceRule> rule(new nsCSSFontFaceRule(linenum, colnum));
 
   for (;;) {
     if (!GetToken(true)) {
@@ -3791,7 +3793,7 @@ CSSParserImpl::ParseFontFeatureValuesRule(RuleAppendFunc aAppendFunc,
     return false;
   }
 
-  RefPtr<nsCSSFontFeatureValuesRule>
+  nsRefPtr<nsCSSFontFeatureValuesRule>
                valuesRule(new nsCSSFontFeatureValuesRule(linenum, colnum));
 
   
@@ -4027,11 +4029,11 @@ CSSParserImpl::ParseKeyframesRule(RuleAppendFunc aAppendFunc, void* aData)
     return false;
   }
 
-  RefPtr<nsCSSKeyframesRule> rule = new nsCSSKeyframesRule(name,
+  nsRefPtr<nsCSSKeyframesRule> rule = new nsCSSKeyframesRule(name,
                                                              linenum, colnum);
 
   while (!ExpectSymbol('}', true)) {
-    RefPtr<nsCSSKeyframeRule> kid = ParseKeyframeRule();
+    nsRefPtr<nsCSSKeyframeRule> kid = ParseKeyframeRule();
     if (kid) {
       rule->AppendStyleRule(kid);
     } else {
@@ -4070,7 +4072,7 @@ CSSParserImpl::ParsePageRule(RuleAppendFunc aAppendFunc, void* aData)
   }
 
   
-  RefPtr<nsCSSPageRule> rule = new nsCSSPageRule(Move(declaration),
+  nsRefPtr<nsCSSPageRule> rule = new nsCSSPageRule(Move(declaration),
                                                    linenum, colnum);
 
   (*aAppendFunc)(rule, aData);
@@ -4096,7 +4098,7 @@ CSSParserImpl::ParseKeyframeRule()
   }
 
   
-  RefPtr<nsCSSKeyframeRule> rule =
+  nsRefPtr<nsCSSKeyframeRule> rule =
     new nsCSSKeyframeRule(selectorList, Move(declaration), linenum, colnum);
   return rule.forget();
 }
@@ -4182,7 +4184,7 @@ CSSParserImpl::ParseSupportsRule(RuleAppendFunc aAppendFunc, void* aProcessData)
   
   nsAutoFailingSupportsRule failing(this, conditionMet);
 
-  RefPtr<css::GroupRule> rule = new CSSSupportsRule(conditionMet, condition,
+  nsRefPtr<css::GroupRule> rule = new CSSSupportsRule(conditionMet, condition,
                                                       linenum, colnum);
   return ParseGroupRule(rule, aAppendFunc, aProcessData);
 }
@@ -4457,7 +4459,7 @@ CSSParserImpl::ParseCounterStyleRule(RuleAppendFunc aAppendFunc, void* aData)
     return false;
   }
 
-  RefPtr<nsCSSCounterStyleRule> rule = new nsCSSCounterStyleRule(name,
+  nsRefPtr<nsCSSCounterStyleRule> rule = new nsCSSCounterStyleRule(name,
                                                                    linenum,
                                                                    colnum);
   for (;;) {
@@ -5028,7 +5030,7 @@ CSSParserImpl::ParseRuleSet(RuleAppendFunc aAppendFunc, void* aData,
 
   
 
-  RefPtr<css::StyleRule> rule = new css::StyleRule(slist, declaration,
+  nsRefPtr<css::StyleRule> rule = new css::StyleRule(slist, declaration,
                                                      linenum, colnum);
   (*aAppendFunc)(rule, aData);
 
@@ -7613,7 +7615,7 @@ CSSParserImpl::ParseCounter(nsCSSValue& aValue)
       break;
     }
 
-    RefPtr<nsCSSValue::Array> val =
+    nsRefPtr<nsCSSValue::Array> val =
       nsCSSValue::Array::Create(unit == eCSSUnit_Counter ? 2 : 3);
 
     val->Item(0).SetStringValue(mToken.mIdent, eCSSUnit_Ident);
@@ -7731,7 +7733,7 @@ CSSParserImpl::ParseSymbols(nsCSSValue& aValue)
     return false;
   }
 
-  RefPtr<nsCSSValue::Array> params = nsCSSValue::Array::Create(2);
+  nsRefPtr<nsCSSValue::Array> params = nsCSSValue::Array::Create(2);
   nsCSSValue& type = params->Item(0);
   nsCSSValue& symbols = params->Item(1);
 
@@ -7781,7 +7783,7 @@ CSSParserImpl::SetValueToURL(nsCSSValue& aValue, const nsString& aURL)
     return false;
   }
 
-  RefPtr<nsStringBuffer> buffer(nsCSSValue::BufferFromString(aURL));
+  nsRefPtr<nsStringBuffer> buffer(nsCSSValue::BufferFromString(aURL));
 
   
   mozilla::css::URLValue *urlVal =
@@ -7808,7 +7810,7 @@ CSSParserImpl::ParseImageOrientation(nsCSSValue& aValue)
     nsCSSValue flip;
 
     if (ParseVariant(flip, VARIANT_KEYWORD, nsCSSProps::kImageOrientationFlipKTable)) {
-      RefPtr<nsCSSValue::Array> array = nsCSSValue::Array::Create(2);
+      nsRefPtr<nsCSSValue::Array> array = nsCSSValue::Array::Create(2);
       array->Item(0) = angle;
       array->Item(1) = flip;
       aValue.SetArrayValue(array, eCSSUnit_Array);
@@ -8678,7 +8680,7 @@ CSSParserImpl::ParseGridTemplateAreas()
     return true;
   }
 
-  RefPtr<css::GridTemplateAreasValue> areas =
+  nsRefPtr<css::GridTemplateAreasValue> areas =
     new css::GridTemplateAreasValue();
   nsDataHashtable<nsStringHashKey, uint32_t> areaIndices;
   for (;;) {
@@ -8854,7 +8856,7 @@ CSSParserImpl::ParseGridTemplateAfterString(const nsCSSValue& aFirstLineNames)
              "ParseGridTemplateAfterString called with a non-string token");
 
   nsCSSValue rowsValue;
-  RefPtr<css::GridTemplateAreasValue> areas =
+  nsRefPtr<css::GridTemplateAreasValue> areas =
     new css::GridTemplateAreasValue();
   nsDataHashtable<nsStringHashKey, uint32_t> areaIndices;
   nsCSSValueList* rowsItem = rowsValue.SetListValue();
@@ -9246,7 +9248,7 @@ bool
 CSSParserImpl::ParseLinearGradient(nsCSSValue& aValue, bool aIsRepeating,
                                    bool aIsLegacy)
 {
-  RefPtr<nsCSSValueGradient> cssGradient
+  nsRefPtr<nsCSSValueGradient> cssGradient
     = new nsCSSValueGradient(false, aIsRepeating);
 
   if (!GetToken(true)) {
@@ -9336,7 +9338,7 @@ bool
 CSSParserImpl::ParseRadialGradient(nsCSSValue& aValue, bool aIsRepeating,
                                    bool aIsLegacy)
 {
-  RefPtr<nsCSSValueGradient> cssGradient
+  nsRefPtr<nsCSSValueGradient> cssGradient
     = new nsCSSValueGradient(true, aIsRepeating);
 
   
@@ -10646,7 +10648,7 @@ CSSParserImpl::ParseBackgroundItem(CSSParserImpl::BackgroundParseState& aState)
                                    eCSSUnit_Enumerated);
   aState.mOrigin->mValue.SetIntValue(NS_STYLE_BG_ORIGIN_PADDING,
                                      eCSSUnit_Enumerated);
-  RefPtr<nsCSSValue::Array> positionArr = nsCSSValue::Array::Create(4);
+  nsRefPtr<nsCSSValue::Array> positionArr = nsCSSValue::Array::Create(4);
   aState.mPosition->mValue.SetArrayValue(positionArr, eCSSUnit_Array);
   positionArr->Item(1).SetPercentValue(0.0f);
   positionArr->Item(3).SetPercentValue(0.0f);
@@ -11041,7 +11043,7 @@ bool CSSParserImpl::ParseBoxPositionValues(nsCSSValuePair &aOut,
 bool
 CSSParserImpl::ParsePositionValue(nsCSSValue& aOut)
 {
-  RefPtr<nsCSSValue::Array> value = nsCSSValue::Array::Create(4);
+  nsRefPtr<nsCSSValue::Array> value = nsCSSValue::Array::Create(4);
   aOut.SetArrayValue(value, eCSSUnit_Array);
 
   
@@ -11691,7 +11693,7 @@ CSSParserImpl::ParseCalc(nsCSSValue &aValue, int32_t aVariantMask)
   
   do {
     
-    RefPtr<nsCSSValue::Array> arr = nsCSSValue::Array::Create(1);
+    nsRefPtr<nsCSSValue::Array> arr = nsCSSValue::Array::Create(1);
 
     if (!ParseCalcAdditiveExpression(arr->Item(0), aVariantMask))
       break;
@@ -11747,7 +11749,7 @@ CSSParserImpl::ParseCalcAdditiveExpression(nsCSSValue& aValue,
     if (!RequireWhitespace())
       return false;
 
-    RefPtr<nsCSSValue::Array> arr = nsCSSValue::Array::Create(2);
+    nsRefPtr<nsCSSValue::Array> arr = nsCSSValue::Array::Create(2);
     arr->Item(0) = aValue;
     storage = &arr->Item(1);
     aValue.SetArrayValue(arr, unit);
@@ -11848,7 +11850,7 @@ CSSParserImpl::ParseCalcMultiplicativeExpression(nsCSSValue& aValue,
       break;
     }
 
-    RefPtr<nsCSSValue::Array> arr = nsCSSValue::Array::Create(2);
+    nsRefPtr<nsCSSValue::Array> arr = nsCSSValue::Array::Create(2);
     arr->Item(0) = aValue;
     storage = &arr->Item(1);
     aValue.SetArrayValue(arr, unit);
@@ -12134,7 +12136,7 @@ CSSParserImpl::ParseCursor()
       }
 
       
-      RefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(3);
+      nsRefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(3);
       val->Item(0) = cur->mValue;
 
       
@@ -12921,7 +12923,7 @@ AppendGeneric(nsCSSKeyword aKeyword, FontFamilyList *aFamilyList)
 bool
 CSSParserImpl::ParseFamily(nsCSSValue& aValue)
 {
-  RefPtr<css::FontFamilyListRefCnt> familyList =
+  nsRefPtr<css::FontFamilyListRefCnt> familyList =
     new css::FontFamilyListRefCnt();
   nsAutoString family;
   bool single, quoted;
@@ -13081,7 +13083,7 @@ CSSParserImpl::ParseFontSrc(nsCSSValue& aValue)
   if (values.Length() == 0)
     return false;
 
-  RefPtr<nsCSSValue::Array> srcVals
+  nsRefPtr<nsCSSValue::Array> srcVals
     = nsCSSValue::Array::Create(values.Length());
 
   uint32_t i;
@@ -13164,7 +13166,7 @@ CSSParserImpl::ParseFontRanges(nsCSSValue& aValue)
   if (ranges.Length() == 0)
     return false;
 
-  RefPtr<nsCSSValue::Array> srcVals
+  nsRefPtr<nsCSSValue::Array> srcVals
     = nsCSSValue::Array::Create(ranges.Length());
 
   for (uint32_t i = 0; i < ranges.Length(); i++)
@@ -13827,7 +13829,7 @@ CSSParserImpl::ParseFunction(nsCSSKeyword aFunction,
 
 
   uint16_t numArgs = std::min(foundValues.Length(), MAX_ALLOWED_ELEMS);
-  RefPtr<nsCSSValue::Array> convertedArray =
+  nsRefPtr<nsCSSValue::Array> convertedArray =
     aValue.InitFunction(aFunction, numArgs);
 
   
@@ -14176,7 +14178,7 @@ CSSParserImpl::ParsePolygonFunction(nsCSSValue& aValue)
     item = item->mNext;
   }
 
-  RefPtr<nsCSSValue::Array> functionArray =
+  nsRefPtr<nsCSSValue::Array> functionArray =
     aValue.InitFunction(eCSSKeyword_polygon, numArgs);
   functionArray->Item(numArgs) = coordinates;
   if (numArgs > 1) {
@@ -14228,7 +14230,7 @@ CSSParserImpl::ParseCircleOrEllipseFunction(nsCSSKeyword aKeyword,
   }
 
   size_t count = aKeyword == eCSSKeyword_circle ? 2 : 3;
-  RefPtr<nsCSSValue::Array> functionArray =
+  nsRefPtr<nsCSSValue::Array> functionArray =
     aValue.InitFunction(aKeyword, count);
   if (hasRadius) {
     functionArray->Item(1) = radiusX;
@@ -14246,7 +14248,7 @@ CSSParserImpl::ParseCircleOrEllipseFunction(nsCSSKeyword aKeyword,
 bool
 CSSParserImpl::ParseInsetFunction(nsCSSValue& aValue)
 {
-  RefPtr<nsCSSValue::Array> functionArray =
+  nsRefPtr<nsCSSValue::Array> functionArray =
     aValue.InitFunction(eCSSKeyword_inset, 5);
 
   if (ParseVariant(functionArray->Item(1), VARIANT_LPCALC, nullptr)) {
@@ -14266,7 +14268,7 @@ CSSParserImpl::ParseInsetFunction(nsCSSValue& aValue)
       return false;
     }
 
-    RefPtr<nsCSSValue::Array> radiusArray = nsCSSValue::Array::Create(4);
+    nsRefPtr<nsCSSValue::Array> radiusArray = nsCSSValue::Array::Create(4);
     functionArray->Item(5).SetArrayValue(radiusArray, eCSSUnit_Array);
     if (mToken.mType != eCSSToken_Ident ||
         !mToken.mIdent.LowerCaseEqualsLiteral("round") ||
@@ -14628,7 +14630,7 @@ CSSParserImpl::ParseTransitionTimingFunctionValues(nsCSSValue& aValue)
                mToken.mIdent.LowerCaseEqualsLiteral("cubic-bezier"),
                "unexpected initial state");
 
-  RefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(4);
+  nsRefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(4);
 
   float x1, x2, y1, y2;
   if (!ParseTransitionTimingFunctionValueComponent(x1, ',', true) ||
@@ -14678,7 +14680,7 @@ CSSParserImpl::ParseTransitionStepTimingFunctionValues(nsCSSValue& aValue)
                mToken.mIdent.LowerCaseEqualsLiteral("steps"),
                "unexpected initial state");
 
-  RefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(2);
+  nsRefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(2);
 
   if (!ParseOneOrLargerVariant(val->Item(0), VARIANT_INTEGER, nullptr)) {
     return false;
@@ -14963,7 +14965,7 @@ CSSParserImpl::ParseShadowItem(nsCSSValue& aValue, bool aIsBoxShadow)
     IndexInset    
   };
 
-  RefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(6);
+  nsRefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(6);
 
   if (aIsBoxShadow) {
     
@@ -15366,7 +15368,7 @@ CSSParserImpl::ParseScrollSnapPoints(nsCSSValue& aValue, nsCSSProperty aPropID)
       SkipUntil(')');
       return false;
     }
-    RefPtr<nsCSSValue::Array> functionArray =
+    nsRefPtr<nsCSSValue::Array> functionArray =
       aValue.InitFunction(eCSSKeyword_repeat, 1);
     functionArray->Item(1) = lengthValue;
     return true;

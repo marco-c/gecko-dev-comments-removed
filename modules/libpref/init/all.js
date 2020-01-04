@@ -854,7 +854,7 @@ pref("devtools.debugger.forbid-certified-apps", true);
 pref("devtools.apps.forbidden-permissions", "embed-apps,engineering-mode,embed-widgets");
 
 
-pref("devtools.defaultColorUnit", "authored");
+pref("devtools.defaultColorUnit", "hex");
 
 
 pref("devtools.dump.emit", false);
@@ -2297,6 +2297,9 @@ pref("layout.css.prefixes.animations", true);
 pref("layout.css.prefixes.box-sizing", true);
 pref("layout.css.prefixes.font-features", true);
 pref("layout.css.prefixes.gradients", true);
+
+
+pref("layout.css.prefixes.webkit", false);
 
 
 
