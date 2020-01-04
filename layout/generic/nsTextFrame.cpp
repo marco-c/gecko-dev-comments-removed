@@ -5,7 +5,6 @@
 
 
 
-
 #include "nsTextFrame.h"
 
 #include "gfx2DGlue.h"
@@ -1580,6 +1579,15 @@ void BuildTextRunsScanner::AccumulateRunInfo(nsTextFrame* aFrame)
   }
 }
 
+static nscoord StyleToCoord(const nsStyleCoord& aCoord)
+{
+  if (eStyleUnit_Coord == aCoord.GetUnit()) {
+    return aCoord.GetCoordValue();
+  } else {
+    return 0;
+  }
+}
+
 static bool
 HasTerminalNewline(const nsTextFrame* aFrame)
 {
@@ -1587,29 +1595,6 @@ HasTerminalNewline(const nsTextFrame* aFrame)
     return false;
   const nsTextFragment* frag = aFrame->GetContent()->GetText();
   return frag->CharAt(aFrame->GetContentEnd() - 1) == '\n';
-}
-
-static gfxFont::Metrics
-GetFirstFontMetrics(gfxFontGroup* aFontGroup, bool aVerticalMetrics)
-{
-  if (!aFontGroup)
-    return gfxFont::Metrics();
-  gfxFont* font = aFontGroup->GetFirstValidFont();
-  return font->GetMetrics(aVerticalMetrics ? gfxFont::eVertical
-                                           : gfxFont::eHorizontal);
-}
-
-static gfxFloat
-GetSpaceWidthAppUnits(gfxTextRun* aTextRun)
-{
-  
-  
-  gfxFloat spaceWidthAppUnits =
-    NS_round(GetFirstFontMetrics(aTextRun->GetFontGroup(),
-                                 aTextRun->UseCenterBaseline()).spaceWidth *
-             aTextRun->GetAppUnitsPerDevUnit());
-
-  return spaceWidthAppUnits;
 }
 
 static nscoord
@@ -1621,18 +1606,11 @@ LetterSpacing(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
   if (!aStyleText) {
     aStyleText = aFrame->StyleText();
   }
-
-  const nsStyleCoord& coord = aStyleText->mLetterSpacing;
-  if (eStyleUnit_Coord == coord.GetUnit()) {
-    return coord.GetCoordValue();
-  }
-  return 0;
+  return StyleToCoord(aStyleText->mLetterSpacing);
 }
 
-
 static nscoord
-WordSpacing(nsIFrame* aFrame, gfxTextRun* aTextRun,
-            const nsStyleText* aStyleText = nullptr)
+WordSpacing(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
 {
   if (aFrame->IsSVGText()) {
     return 0;
@@ -1640,43 +1618,7 @@ WordSpacing(nsIFrame* aFrame, gfxTextRun* aTextRun,
   if (!aStyleText) {
     aStyleText = aFrame->StyleText();
   }
-
-  const nsStyleCoord& coord = aStyleText->mWordSpacing;
-  if (eStyleUnit_Coord == coord.GetUnit()) {
-    return coord.GetCoordValue();
-  }
-  if (eStyleUnit_Percent == coord.GetUnit() ||
-      eStyleUnit_Calc == coord.GetUnit()) {
-    return nsRuleNode::ComputeCoordPercentCalc(coord,
-                                               GetSpaceWidthAppUnits(aTextRun));
-  }
-  return 0;
-}
-
-
-
-static uint32_t
-GetSpacingFlags(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
-{
-  if (aFrame->IsSVGText()) {
-    return 0;
-  }
-
-  const nsStyleText* styleText = aFrame->StyleText();
-  const nsStyleCoord& ls = styleText->mLetterSpacing;
-  const nsStyleCoord& ws = styleText->mWordSpacing;
-
-  
-  
-  
-  
-  bool nonStandardSpacing =
-    (eStyleUnit_Coord == ls.GetUnit() && ls.GetCoordValue() != 0) ||
-    (eStyleUnit_Coord == ws.GetUnit() && ws.GetCoordValue() != 0) ||
-    (eStyleUnit_Percent == ws.GetUnit() && ws.GetPercentValue() != 0) ||
-    (eStyleUnit_Calc == ws.GetUnit() && !ws.GetCalcValue()->IsDefinitelyZero());
-
-  return nonStandardSpacing ? gfxTextRunFactory::TEXT_ENABLE_SPACING : 0;
+  return StyleToCoord(aStyleText->mWordSpacing);
 }
 
 bool
@@ -1830,6 +1772,12 @@ BuildTextRunsScanner::GetNextBreakBeforeFrame(uint32_t* aIndex)
   return static_cast<nsTextFrame*>(mLineBreakBeforeFrames.ElementAt(index));
 }
 
+static uint32_t
+GetSpacingFlags(nscoord spacing)
+{
+  return spacing ? gfxTextRunFactory::TEXT_ENABLE_SPACING : 0;
+}
+
 static gfxFontGroup*
 GetFontGroupForFrame(nsIFrame* aFrame, float aFontSizeInflation,
                      nsFontMetrics** aOutFontMetrics = nullptr)
@@ -1876,6 +1824,16 @@ GetHyphenTextRun(gfxTextRun* aTextRun, gfxContext* aContext, nsTextFrame* aTextF
 
   return aTextRun->GetFontGroup()->
     MakeHyphenTextRun(ctx, aTextRun->GetAppUnitsPerDevUnit());
+}
+
+static gfxFont::Metrics
+GetFirstFontMetrics(gfxFontGroup* aFontGroup, bool aVerticalMetrics)
+{
+  if (!aFontGroup)
+    return gfxFont::Metrics();
+  gfxFont* font = aFontGroup->GetFirstValidFont();
+  return font->GetMetrics(aVerticalMetrics ? gfxFont::eVertical
+                                           : gfxFont::eHorizontal);
 }
 
 PR_STATIC_ASSERT(NS_STYLE_WHITESPACE_NORMAL == 0);
@@ -1985,7 +1943,8 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
     if (NS_STYLE_TEXT_TRANSFORM_NONE != textStyle->mTextTransform) {
       anyTextTransformStyle = true;
     }
-    textFlags |= GetSpacingFlags(f);
+    textFlags |= GetSpacingFlags(LetterSpacing(f));
+    textFlags |= GetSpacingFlags(WordSpacing(f));
     nsTextFrameUtils::CompressionMode compression =
       GetCSSWhitespaceToCompressionMode(f, textStyle);
     if ((enabledJustification || f->ShouldSuppressLineBreak()) &&
@@ -2916,7 +2875,7 @@ public:
       mFrame(aFrame), mStart(aStart), mTempIterator(aStart),
       mTabWidths(nullptr), mTabWidthsAnalyzedLimit(0),
       mLength(aLength),
-      mWordSpacing(WordSpacing(aFrame, mTextRun, aTextStyle)),
+      mWordSpacing(WordSpacing(aFrame, aTextStyle)),
       mLetterSpacing(LetterSpacing(aFrame, aTextStyle)),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
@@ -2941,7 +2900,7 @@ public:
       mFrame(aFrame), mStart(aStart), mTempIterator(aStart),
       mTabWidths(nullptr), mTabWidthsAnalyzedLimit(0),
       mLength(aFrame->GetContentLength()),
-      mWordSpacing(WordSpacing(aFrame, mTextRun)),
+      mWordSpacing(WordSpacing(aFrame)),
       mLetterSpacing(LetterSpacing(aFrame)),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(0),
@@ -3266,8 +3225,14 @@ ComputeTabWidthAppUnits(nsIFrame* aFrame, gfxTextRun* aTextRun)
 {
   
   const nsStyleText* textStyle = aFrame->StyleText();
-
-  return textStyle->mTabSize * GetSpaceWidthAppUnits(aTextRun);
+  
+  
+  
+  gfxFloat spaceWidthAppUnits =
+    NS_round(GetFirstFontMetrics(aTextRun->GetFontGroup(),
+                                 aTextRun->UseCenterBaseline()).spaceWidth *
+             aTextRun->GetAppUnitsPerDevUnit());
+  return textStyle->mTabSize * spaceWidthAppUnits;
 }
 
 
