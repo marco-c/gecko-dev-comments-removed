@@ -2120,14 +2120,23 @@ nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
                                const nsSize& aScrollPortSize,
                                uint8_t aDirection)
 {
+  WritingMode wm = aScrolledFrame->GetWritingMode();
+  
+  
+  wm.SetDirectionFromBidiLevel(aDirection == NS_STYLE_DIRECTION_RTL ? 1 : 0);
+
   nscoord x1 = aScrolledFrameOverflowArea.x,
           x2 = aScrolledFrameOverflowArea.XMost(),
           y1 = aScrolledFrameOverflowArea.y,
           y2 = aScrolledFrameOverflowArea.YMost();
-  if (y1 < 0) {
-    y1 = 0;
-  }
-  if (aDirection != NS_STYLE_DIRECTION_RTL) {
+
+  bool horizontal = !wm.IsVertical();
+
+  
+  
+  
+  
+  if ((horizontal && !wm.IsInlineReversed()) || wm.IsVerticalLR()) {
     if (x1 < 0) {
       x1 = 0;
     }
@@ -2141,9 +2150,28 @@ nsLayoutUtils::GetScrolledRect(nsIFrame* aScrolledFrame,
     
     
     
-    nscoord extraWidth = std::max(0, aScrolledFrame->GetSize().width - aScrollPortSize.width);
+    
+    nscoord extraWidth =
+      std::max(0, aScrolledFrame->GetSize().width - aScrollPortSize.width);
     x2 += extraWidth;
   }
+
+  
+  
+  
+  if (horizontal || !wm.IsInlineReversed()) {
+    if (y1 < 0) {
+      y1 = 0;
+    }
+  } else {
+    if (y2 > aScrollPortSize.height) {
+      y2 = aScrollPortSize.height;
+    }
+    nscoord extraHeight =
+      std::max(0, aScrolledFrame->GetSize().height - aScrollPortSize.height);
+    y2 += extraHeight;
+  }
+
   return nsRect(x1, y1, x2 - x1, y2 - y1);
 }
 
