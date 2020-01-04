@@ -2693,7 +2693,7 @@ nsDocument::ApplySettingsFromCSP(bool aSpeculative)
         mReferrerPolicy = static_cast<ReferrerPolicy>(referrerPolicy);
         mReferrerPolicySet = true;
       }
-
+ 
       
       
       if (!mBlockAllMixedContent) {
