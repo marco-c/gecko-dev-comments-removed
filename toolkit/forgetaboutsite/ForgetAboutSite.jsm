@@ -213,23 +213,8 @@ this.ForgetAboutSite = {
         (Components.isSuccessCode(status) ? resolve : reject)(status);
       });
     }).catch(e => {
-      Cu.reportError("Exception thrown while clearing Push notifications: " +
-                     e.toString());
+      dump("Web Push may not be available.\n");
     }));
-
-    
-    
-    
-    
-    try {
-      let sss = Cc["@mozilla.org/ssservice;1"].
-                getService(Ci.nsISiteSecurityService);
-      sss.removeState(Ci.nsISiteSecurityService.HEADER_HSTS, httpsURI, 0);
-      sss.removeState(Ci.nsISiteSecurityService.HEADER_HPKP, httpsURI, 0);
-    } catch (e) {
-      Cu.reportError("Exception thrown while clearing HSTS/HPKP: " +
-                     e.toString());
-    }
 
     return Promise.all(promises);
   }
