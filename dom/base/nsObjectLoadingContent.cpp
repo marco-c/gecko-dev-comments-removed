@@ -86,6 +86,7 @@
 #include "mozilla/EventStates.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/HTMLObjectElementBinding.h"
+#include "mozilla/dom/HTMLSharedObjectElement.h"
 
 #ifdef XP_WIN
 
@@ -3093,24 +3094,35 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
     aType = eFallbackAlternate;
   }
 
+  
+  
+  mType = eType_Null;
+
+  
+  
+  nsTArray<nsINodeList*> childNodes;
   if ((thisContent->IsHTMLElement(nsGkAtoms::object) ||
        thisContent->IsHTMLElement(nsGkAtoms::applet)) &&
       (aType == eFallbackUnsupported ||
        aType == eFallbackDisabled ||
        aType == eFallbackBlocklisted))
   {
-    
-    for (nsIContent* child = thisContent->GetFirstChild();
-         child; child = child->GetNextSibling()) {
-      if (!child->IsHTMLElement(nsGkAtoms::param) &&
+    for (nsIContent* child = thisContent->GetFirstChild(); child;
+         child = child->GetNextNode(thisContent)) {
+      if (aType != eFallbackAlternate &&
+          !child->IsHTMLElement(nsGkAtoms::param) &&
           nsStyleUtil::IsSignificantChild(child, true, false)) {
         aType = eFallbackAlternate;
-        break;
+      }
+      if (child->IsHTMLElement(nsGkAtoms::embed)) {
+        HTMLSharedObjectElement* object = static_cast<HTMLSharedObjectElement*>(child);
+        if (object) {
+          object->StartObjectLoad(true, true);
+        }
       }
     }
   }
 
-  mType = eType_Null;
   mFallbackType = aType;
 
   
