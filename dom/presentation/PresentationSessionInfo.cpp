@@ -142,6 +142,8 @@ PresentationSessionInfo::Init(nsIPresentationControlChannel* aControlChannel)
  void
 PresentationSessionInfo::Shutdown(nsresult aReason)
 {
+  NS_WARN_IF(NS_FAILED(aReason));
+
   
   if (mControlChannel) {
     NS_WARN_IF(NS_FAILED(mControlChannel->Close(aReason)));
@@ -298,9 +300,9 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
   mTransport->SetCallback(nullptr);
   mTransport = nullptr;
 
-  if (!IsSessionReady()) {
+  if (NS_WARN_IF(!IsSessionReady())) {
     
-    return ReplyError(aReason);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   
@@ -375,7 +377,7 @@ PresentationRequesterInfo::Init(nsIPresentationControlChannel* aControlChannel)
   
   mServerSocket = do_CreateInstance(NS_SERVERSOCKET_CONTRACTID);
   if (NS_WARN_IF(!mServerSocket)) {
-    return ReplyError(NS_ERROR_NOT_AVAILABLE);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   nsresult rv = mServerSocket->Init(-1, false, -1);
@@ -464,7 +466,7 @@ PresentationRequesterInfo::OnAnswer(nsIPresentationChannelDescription* aDescript
   
   nsresult rv = mControlChannel->Close(NS_OK);
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    return ReplyError(rv);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   
@@ -515,7 +517,7 @@ PresentationRequesterInfo::NotifyClosed(nsresult aReason)
     }
 
     
-    return ReplyError(aReason);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   return NS_OK;
@@ -531,7 +533,7 @@ PresentationRequesterInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
   
   mTransport = do_CreateInstance(PRESENTATION_SESSION_TRANSPORT_CONTRACTID);
   if (NS_WARN_IF(!mTransport)) {
-    return ReplyError(NS_ERROR_NOT_AVAILABLE);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   nsresult rv = mTransport->InitWithSocketTransport(aTransport, this);
@@ -559,9 +561,9 @@ PresentationRequesterInfo::OnStopListening(nsIServerSocket* aServerSocket,
 
   Shutdown(aStatus);
 
-  if (!IsSessionReady()) {
+  if (NS_WARN_IF(!IsSessionReady())) {
     
-    return ReplyError(aStatus);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   
@@ -720,7 +722,7 @@ PresentationResponderInfo::NotifyResponderReady()
   if (mRequesterDescription) {
     nsresult rv = InitTransportAndSendAnswer();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return ReplyError(rv);
+      return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     }
   }
 
@@ -732,7 +734,7 @@ NS_IMETHODIMP
 PresentationResponderInfo::OnOffer(nsIPresentationChannelDescription* aDescription)
 {
   if (NS_WARN_IF(!aDescription)) {
-    return ReplyError(NS_ERROR_INVALID_ARG);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   mRequesterDescription = aDescription;
@@ -742,7 +744,7 @@ PresentationResponderInfo::OnOffer(nsIPresentationChannelDescription* aDescripti
   if (mIsResponderReady) {
     nsresult rv = InitTransportAndSendAnswer();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return ReplyError(rv);
+      return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     }
   }
 
@@ -781,7 +783,7 @@ PresentationResponderInfo::NotifyClosed(nsresult aReason)
     }
 
     
-    return ReplyError(aReason);
+    return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
   return NS_OK;
@@ -806,13 +808,13 @@ PresentationResponderInfo::ResolvedCallback(JSContext* aCx,
   MOZ_ASSERT(NS_IsMainThread());
 
   if (NS_WARN_IF(!aValue.isObject())) {
-    ReplyError(NS_ERROR_NOT_AVAILABLE);
+    ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     return;
   }
 
   JS::Rooted<JSObject*> obj(aCx, &aValue.toObject());
   if (NS_WARN_IF(!obj)) {
-    ReplyError(NS_ERROR_NOT_AVAILABLE);
+    ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     return;
   }
 
@@ -820,20 +822,20 @@ PresentationResponderInfo::ResolvedCallback(JSContext* aCx,
   HTMLIFrameElement* frame = nullptr;
   nsresult rv = UNWRAP_OBJECT(HTMLIFrameElement, obj, frame);
   if (NS_WARN_IF(!frame)) {
-    ReplyError(NS_ERROR_NOT_AVAILABLE);
+    ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     return;
   }
 
   nsCOMPtr<nsIFrameLoaderOwner> owner = do_QueryInterface((nsIFrameLoaderOwner*) frame);
   if (NS_WARN_IF(!owner)) {
-    ReplyError(NS_ERROR_NOT_AVAILABLE);
+    ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     return;
   }
 
   nsCOMPtr<nsIFrameLoader> frameLoader;
   rv = owner->GetFrameLoader(getter_AddRefs(frameLoader));
   if (NS_WARN_IF(NS_FAILED(rv))) {
-    ReplyError(rv);
+    ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     return;
   }
 
@@ -849,7 +851,7 @@ PresentationResponderInfo::ResolvedCallback(JSContext* aCx,
     nsCOMPtr<nsIDocShell> docShell;
     rv = frameLoader->GetDocShell(getter_AddRefs(docShell));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      ReplyError(rv);
+      ReplyError(NS_ERROR_DOM_OPERATION_ERR);
       return;
     }
 
@@ -857,7 +859,7 @@ PresentationResponderInfo::ResolvedCallback(JSContext* aCx,
     mLoadingCallback = new PresentationResponderLoadingCallback(mSessionId);
     rv = mLoadingCallback->Init(docShell);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      ReplyError(rv);
+      ReplyError(NS_ERROR_DOM_OPERATION_ERR);
       return;
     }
   }
@@ -875,5 +877,5 @@ PresentationResponderInfo::RejectedCallback(JSContext* aCx,
     mTimer = nullptr;
   }
 
-  ReplyError(NS_ERROR_DOM_ABORT_ERR);
+  ReplyError(NS_ERROR_DOM_OPERATION_ERR);
 }
