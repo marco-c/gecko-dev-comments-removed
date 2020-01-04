@@ -209,6 +209,7 @@
 #include "MediaEventSource.h"
 #include "MediaMetadataManager.h"
 #include "MediaResource.h"
+#include "MediaResourceCallback.h"
 #include "MediaStatistics.h"
 #include "MediaStreamGraph.h"
 #include "TimeUnits.h"
@@ -272,7 +273,7 @@ struct SeekTarget {
   MediaDecoderEventVisibility mEventVisibility;
 };
 
-class MediaDecoder : public AbstractMediaDecoder
+class MediaDecoder : public AbstractMediaDecoder, public MediaResourceCallback
 {
 public:
   struct SeekResolveValue {
@@ -303,7 +304,7 @@ public:
 
   
   
-  virtual void ResetConnectionState();
+  virtual void ResetConnectionState() override;
   
   
   virtual MediaDecoder* Clone(MediaDecoderOwner* aOwner) = 0;
@@ -410,7 +411,7 @@ public:
   
   
   
-  virtual void SetInfinite(bool aInfinite);
+  virtual void SetInfinite(bool aInfinite) override;
 
   
   virtual bool IsInfinite();
@@ -419,11 +420,11 @@ public:
   
   
   
-  virtual void NotifySuspendedStatusChanged();
+  virtual void NotifySuspendedStatusChanged() override;
 
   
   
-  virtual void NotifyBytesDownloaded();
+  virtual void NotifyBytesDownloaded() override;
 
   
   
@@ -437,7 +438,7 @@ public:
 
   
   
-  virtual void NotifyPrincipalChanged();
+  virtual void NotifyPrincipalChanged() override;
 
   
   
@@ -509,7 +510,7 @@ public:
   void SetLoadInBackground(bool aLoadInBackground);
 
   
-  MediaDecoderOwner* GetMediaOwner() const;
+  MediaDecoderOwner* GetMediaOwner() const override;
 
   bool OnStateMachineTaskQueue() const override;
 
@@ -1054,6 +1055,13 @@ public:
   AbstractCanonical<bool>* CanonicalMediaSeekable() {
     return &mMediaSeekable;
   }
+
+private:
+  
+  virtual nsresult FinishDecoderSetup(MediaResource* aResource) override;
+  virtual void NotifyNetworkError() override;
+  virtual void NotifyDecodeError() override;
+  virtual void NotifyDataEnded(nsresult aStatus) override;
 };
 
 } 

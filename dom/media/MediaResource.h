@@ -43,7 +43,7 @@ class nsIPrincipal;
 
 namespace mozilla {
 
-class MediaDecoder;
+class MediaResourceCallback;
 class MediaChannelStatistics;
 
 
@@ -270,7 +270,7 @@ public:
   
   
   
-  virtual already_AddRefed<MediaResource> CloneData(MediaDecoder* aDecoder) = 0;
+  virtual already_AddRefed<MediaResource> CloneData(MediaResourceCallback* aCallback) = 0;
   
   virtual void RecordStatisticsTo(MediaChannelStatistics *aStatistics) { }
 
@@ -387,7 +387,7 @@ public:
 
 
 
-  static already_AddRefed<MediaResource> Create(MediaDecoder* aDecoder, nsIChannel* aChannel);
+  static already_AddRefed<MediaResource> Create(MediaResourceCallback* aCallback, nsIChannel* aChannel);
 
   
 
@@ -480,11 +480,11 @@ public:
   }
 
 protected:
-  BaseMediaResource(MediaDecoder* aDecoder,
+  BaseMediaResource(MediaResourceCallback* aCallback,
                     nsIChannel* aChannel,
                     nsIURI* aURI,
                     const nsACString& aContentType) :
-    mDecoder(aDecoder),
+    mCallback(aCallback),
     mChannel(aChannel),
     mURI(aURI),
     mContentType(aContentType),
@@ -516,7 +516,7 @@ protected:
   
   
   
-  MediaDecoder* mDecoder;
+  MediaResourceCallback* mCallback;
 
   
   
@@ -593,7 +593,7 @@ private:
 class ChannelMediaResource : public BaseMediaResource
 {
 public:
-  ChannelMediaResource(MediaDecoder* aDecoder,
+  ChannelMediaResource(MediaResourceCallback* aDecoder,
                        nsIChannel* aChannel,
                        nsIURI* aURI,
                        const nsACString& aContentType);
@@ -643,7 +643,7 @@ public:
   
   bool IsClosed() const { return mCacheStream.IsClosed(); }
   virtual bool     CanClone() override;
-  virtual already_AddRefed<MediaResource> CloneData(MediaDecoder* aDecoder) override;
+  virtual already_AddRefed<MediaResource> CloneData(MediaResourceCallback* aDecoder) override;
   
   
   void RecordStatisticsTo(MediaChannelStatistics *aStatistics) override {
