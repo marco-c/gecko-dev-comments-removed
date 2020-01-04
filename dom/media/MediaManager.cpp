@@ -9,6 +9,7 @@
 #include "MediaStreamGraph.h"
 #include "mozilla/dom/MediaStreamTrack.h"
 #include "GetUserMediaRequest.h"
+#include "nsContentUtils.h"
 #include "nsHashPropertyBag.h"
 #ifdef MOZ_WIDGET_GONK
 #include "nsIAudioManager.h"
@@ -41,6 +42,7 @@
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
 #include "mozilla/dom/GetUserMediaRequestBinding.h"
+#include "mozilla/dom/Promise.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Base64.h"
 #include "mozilla/ipc/BackgroundChild.h"
@@ -103,7 +105,7 @@ const nsIID nsIMediaDevice::COMTypeInfo<mozilla::AudioDevice, void>::kIID = NS_I
 
 namespace {
 already_AddRefed<nsIAsyncShutdownClient> GetShutdownPhase() {
-  nsCOMPtr<nsIAsyncShutdownService> svc = services::GetAsyncShutdown();
+  nsCOMPtr<nsIAsyncShutdownService> svc = mozilla::services::GetAsyncShutdown();
   MOZ_RELEASE_ASSERT(svc);
 
   nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase;
@@ -132,18 +134,24 @@ GetMediaManagerLog()
 }
 #define LOG(msg) MOZ_LOG(GetMediaManagerLog(), mozilla::LogLevel::Debug, msg)
 
+using dom::ConstrainDOMStringParameters;
 using dom::File;
-using dom::MediaStreamConstraints;
-using dom::MediaTrackConstraintSet;
-using dom::MediaTrackConstraints;
-using dom::MediaStreamTrack;
-using dom::MediaStreamError;
 using dom::GetUserMediaRequest;
-using dom::Sequence;
+using dom::MediaSourceEnum;
+using dom::MediaStreamConstraints;
+using dom::MediaStreamError;
+using dom::MediaStreamTrack;
+using dom::MediaTrackConstraints;
+using dom::MediaTrackConstraintSet;
 using dom::OwningBooleanOrMediaTrackConstraints;
-using media::Pledge;
+using dom::OwningStringOrStringSequence;
+using dom::OwningStringOrStringSequenceOrConstrainDOMStringParameters;
+using dom::Promise;
+using dom::Sequence;
 using media::NewRunnableFrom;
 using media::NewTaskFrom;
+using media::Pledge;
+using media::Refcountable;
 
 static Atomic<bool> sInShutdown;
 
@@ -600,11 +608,11 @@ MediaDevice::SetId(const nsAString& aID)
 NS_IMETHODIMP
 MediaDevice::GetMediaSource(nsAString& aMediaSource)
 {
-  if (mMediaSource == dom::MediaSourceEnum::Microphone) {
+  if (mMediaSource == MediaSourceEnum::Microphone) {
     aMediaSource.Assign(NS_LITERAL_STRING("microphone"));
-  } else if (mMediaSource == dom::MediaSourceEnum::AudioCapture) {
+  } else if (mMediaSource == MediaSourceEnum::AudioCapture) {
     aMediaSource.Assign(NS_LITERAL_STRING("audioCapture"));
-  } else if (mMediaSource == dom::MediaSourceEnum::Window) { 
+  } else if (mMediaSource == MediaSourceEnum::Window) { 
     aMediaSource.Assign(NS_LITERAL_STRING("window"));
   } else { 
     aMediaSource.Assign(NS_ConvertUTF8toUTF16(
@@ -920,7 +928,7 @@ public:
     
     
     if (mAudioDevice &&
-        mAudioDevice->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
+        mAudioDevice->GetMediaSource() == MediaSourceEnum::AudioCapture) {
       domStream = DOMLocalMediaStream::CreateAudioCaptureStream(window, msg);
       
       
@@ -1031,8 +1039,8 @@ GetInvariant(const OwningBooleanOrMediaTrackConstraints &aUnion) {
 
 template<class DeviceType>
 static void
-GetSources(MediaEngine *engine, dom::MediaSourceEnum aSrcType,
-           void (MediaEngine::* aEnumerate)(dom::MediaSourceEnum,
+GetSources(MediaEngine *engine, MediaSourceEnum aSrcType,
+           void (MediaEngine::* aEnumerate)(MediaSourceEnum,
                nsTArray<RefPtr<typename DeviceType::Source> >*),
            nsTArray<RefPtr<DeviceType>>& aResult,
            const char* media_device_name = nullptr)
@@ -1840,22 +1848,22 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
     c.mVideo.SetAsBoolean() = false;
   }
 
-  MediaSourceEnum videoType = dom::MediaSourceEnum::Other; 
-  MediaSourceEnum audioType = dom::MediaSourceEnum::Other; 
+  MediaSourceEnum videoType = MediaSourceEnum::Other; 
+  MediaSourceEnum audioType = MediaSourceEnum::Other; 
 
   if (c.mVideo.IsMediaTrackConstraints()) {
     auto& vc = c.mVideo.GetAsMediaTrackConstraints();
     videoType = StringToEnum(dom::MediaSourceEnumValues::strings,
                              vc.mMediaSource,
-                             dom::MediaSourceEnum::Other);
+                             MediaSourceEnum::Other);
     Telemetry::Accumulate(loop ? Telemetry::LOOP_GET_USER_MEDIA_TYPE :
                                  Telemetry::WEBRTC_GET_USER_MEDIA_TYPE,
                           (uint32_t) videoType);
     switch (videoType) {
-      case dom::MediaSourceEnum::Camera:
+      case MediaSourceEnum::Camera:
         break;
 
-      case dom::MediaSourceEnum::Browser:
+      case MediaSourceEnum::Browser:
         
         
         
@@ -1864,20 +1872,20 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
           vc.mBrowserWindow.Construct(outer->WindowID());
         }
         MOZ_FALLTHROUGH;
-      case dom::MediaSourceEnum::Screen:
-      case dom::MediaSourceEnum::Application:
-      case dom::MediaSourceEnum::Window:
+      case MediaSourceEnum::Screen:
+      case MediaSourceEnum::Application:
+      case MediaSourceEnum::Window:
         
         
         
-        if (!Preferences::GetBool(((videoType == dom::MediaSourceEnum::Browser)?
+        if (!Preferences::GetBool(((videoType == MediaSourceEnum::Browser)?
                                    "media.getusermedia.browser.enabled" :
                                    "media.getusermedia.screensharing.enabled"),
                                   false) ||
 #if defined(XP_MACOSX) || defined(XP_WIN)
             (
               
-              (videoType != dom::MediaSourceEnum::Browser) &&
+              (videoType != MediaSourceEnum::Browser) &&
               !Preferences::GetBool("media.getusermedia.screensharing.allow_on_old_platforms",
                                     false) &&
 #if defined(XP_MACOSX)
@@ -1897,8 +1905,8 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
         }
         break;
 
-      case dom::MediaSourceEnum::Microphone:
-      case dom::MediaSourceEnum::Other:
+      case MediaSourceEnum::Microphone:
+      case MediaSourceEnum::Other:
       default: {
         RefPtr<MediaStreamError> error =
             new MediaStreamError(aWindow,
@@ -1910,10 +1918,10 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
       }
     }
 
-    if (vc.mAdvanced.WasPassed() && videoType != dom::MediaSourceEnum::Camera) {
+    if (vc.mAdvanced.WasPassed() && videoType != MediaSourceEnum::Camera) {
       
       const char *unset = EnumToASCII(dom::MediaSourceEnumValues::strings,
-                                      dom::MediaSourceEnum::Camera);
+                                      MediaSourceEnum::Camera);
       for (MediaTrackConstraintSet& cs : vc.mAdvanced.Value()) {
         if (cs.mMediaSource.EqualsASCII(unset)) {
           cs.mMediaSource = vc.mMediaSource;
@@ -1938,23 +1946,23 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
     
     
     
-    if (loop && (videoType == dom::MediaSourceEnum::Window ||
-                 videoType == dom::MediaSourceEnum::Application ||
-                 videoType == dom::MediaSourceEnum::Screen)) {
+    if (loop && (videoType == MediaSourceEnum::Window ||
+                 videoType == MediaSourceEnum::Application ||
+                 videoType == MediaSourceEnum::Screen)) {
        privileged = false;
     }
   } else if (IsOn(c.mVideo)) {
-    videoType = dom::MediaSourceEnum::Camera;
+    videoType = MediaSourceEnum::Camera;
   }
 
   if (c.mAudio.IsMediaTrackConstraints()) {
     auto& ac = c.mAudio.GetAsMediaTrackConstraints();
     audioType = StringToEnum(dom::MediaSourceEnumValues::strings,
                              ac.mMediaSource,
-                             dom::MediaSourceEnum::Other);
+                             MediaSourceEnum::Other);
     
-    if (audioType == dom::MediaSourceEnum::Camera) {
-      audioType = dom::MediaSourceEnum::Microphone;
+    if (audioType == MediaSourceEnum::Camera) {
+      audioType = MediaSourceEnum::Microphone;
       ac.mMediaSource.AssignASCII(EnumToASCII(dom::MediaSourceEnumValues::strings,
                                               audioType));
     }
@@ -1963,10 +1971,10 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
                           (uint32_t) audioType);
 
     switch (audioType) {
-      case dom::MediaSourceEnum::Microphone:
+      case MediaSourceEnum::Microphone:
         break;
 
-      case dom::MediaSourceEnum::AudioCapture:
+      case MediaSourceEnum::AudioCapture:
         
         
         if (!Preferences::GetBool("media.getusermedia.audiocapture.enabled")) {
@@ -1978,7 +1986,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
         }
         break;
 
-      case dom::MediaSourceEnum::Other:
+      case MediaSourceEnum::Other:
       default: {
         RefPtr<MediaStreamError> error =
             new MediaStreamError(aWindow,
@@ -1992,7 +2000,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
     if (ac.mAdvanced.WasPassed()) {
       
       const char *unset = EnumToASCII(dom::MediaSourceEnumValues::strings,
-                                      dom::MediaSourceEnum::Camera);
+                                      MediaSourceEnum::Camera);
       for (MediaTrackConstraintSet& cs : ac.mAdvanced.Value()) {
         if (cs.mMediaSource.EqualsASCII(unset)) {
           cs.mMediaSource = ac.mMediaSource;
@@ -2000,7 +2008,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
       }
     }
   } else if (IsOn(c.mAudio)) {
-   audioType = dom::MediaSourceEnum::Microphone;
+   audioType = MediaSourceEnum::Microphone;
   }
 
   StreamListeners* listeners = AddWindowID(windowID);
@@ -2332,8 +2340,8 @@ MediaManager::EnumerateDevices(nsPIDOMWindowInner* aWindow,
   bool fake = Preferences::GetBool("media.navigator.streams.fake");
 
   RefPtr<PledgeSourceSet> p = EnumerateDevicesImpl(windowId,
-                                                     dom::MediaSourceEnum::Camera,
-                                                     dom::MediaSourceEnum::Microphone,
+                                                     MediaSourceEnum::Camera,
+                                                     MediaSourceEnum::Microphone,
                                                      fake);
   p->Then([onSuccess, windowId, listener](SourceSet*& aDevices) mutable {
     ScopedDeletePtr<SourceSet> devices(aDevices); 
@@ -3095,15 +3103,15 @@ GetUserMediaCallbackMediaStreamListener::StopSharing()
 {
   MOZ_ASSERT(NS_IsMainThread());
   if (mVideoDevice &&
-      (mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Screen ||
-       mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Application ||
-       mVideoDevice->GetMediaSource() == dom::MediaSourceEnum::Window)) {
+      (mVideoDevice->GetMediaSource() == MediaSourceEnum::Screen ||
+       mVideoDevice->GetMediaSource() == MediaSourceEnum::Application ||
+       mVideoDevice->GetMediaSource() == MediaSourceEnum::Window)) {
     
     
     
     StopTrack(kVideoTrack);
   } else if (mAudioDevice &&
-             mAudioDevice->GetMediaSource() == dom::MediaSourceEnum::AudioCapture) {
+             mAudioDevice->GetMediaSource() == MediaSourceEnum::AudioCapture) {
     nsCOMPtr<nsPIDOMWindowInner> window = nsGlobalWindow::GetInnerWindowWithId(mWindowID)->AsInner();
     MOZ_ASSERT(window);
     window->SetAudioCapture(false);
