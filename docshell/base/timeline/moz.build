@@ -7,16 +7,9 @@
 EXPORTS.mozilla += [
     'AutoGlobalTimelineMarker.h',
     'AutoTimelineMarker.h',
-    'ConsoleTimelineMarker.h',
-    'EventTimelineMarker.h',
-    'JavascriptTimelineMarker.h',
-    'LayerTimelineMarker.h',
     'ObservedDocShell.h',
-    'RestyleTimelineMarker.h',
     'TimelineConsumers.h',
     'TimelineMarker.h',
-    'TimelineMarkerEnums.h',
-    'TimestampTimelineMarker.h',
 ]
 
 UNIFIED_SOURCES += [
@@ -26,8 +19,6 @@ UNIFIED_SOURCES += [
     'TimelineConsumers.cpp',
     'TimelineMarker.cpp',
 ]
-
-FAIL_ON_WARNINGS = True
 
 FINAL_LIBRARY = 'xul'
 
