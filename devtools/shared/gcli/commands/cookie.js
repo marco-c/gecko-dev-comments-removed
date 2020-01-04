@@ -4,12 +4,31 @@
 
 "use strict";
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const { Ci, Cc } = require("chrome");
 const l10n = require("gcli/l10n");
 const URL = require("sdk/url").URL;
 
 XPCOMUtils.defineLazyGetter(this, "cookieMgr", function() {
-  const { Cc, Ci } = require("chrome");
   return Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager2);
 });
 
@@ -23,7 +42,7 @@ function sanitizeHost(host) {
   if (host == null || host == "") {
     throw new Error(l10n.lookup("cookieListOutNonePage"));
   }
-  return host.split(':')[0];
+  return host.split(":")[0];
 }
 
 
@@ -46,9 +65,7 @@ function isCookieAtHost(cookie, host) {
   if (cookie.host.startsWith(".")) {
     return host.endsWith(cookie.host);
   }
-  else {
-    return cookie.host == host;
-  }
+  return cookie.host == host;
 }
 
 exports.items = [
@@ -59,12 +76,16 @@ exports.items = [
   },
   {
     item: "command",
-    runAt: "server",
+    runAt: "client",
     name: "cookie list",
     description: l10n.lookup("cookieListDesc"),
     manual: l10n.lookup("cookieListManual"),
     returnType: "cookies",
     exec: function(args, context) {
+      if (context.environment.target.isRemote) {
+        throw new Error("The cookie gcli commands only work in a local tab, " +
+                        "see bug 1221488");
+      }
       let host = sanitizeHost(context.environment.document.location.host);
 
       let enm = cookieMgr.getCookiesFromHost(host);
@@ -91,7 +112,7 @@ exports.items = [
   },
   {
     item: "command",
-    runAt: "server",
+    runAt: "client",
     name: "cookie remove",
     description: l10n.lookup("cookieRemoveDesc"),
     manual: l10n.lookup("cookieRemoveManual"),
@@ -103,10 +124,13 @@ exports.items = [
       }
     ],
     exec: function(args, context) {
+      if (context.environment.target.isRemote) {
+        throw new Error("The cookie gcli commands only work in a local tab, " +
+                        "see bug 1221488");
+      }
       let host = sanitizeHost(context.environment.document.location.host);
       let enm = cookieMgr.getCookiesFromHost(host);
 
-      let cookies = [];
       while (enm.hasMoreElements()) {
         let cookie = enm.getNext().QueryInterface(Ci.nsICookie);
         if (isCookieAtHost(cookie, host)) {
@@ -184,7 +208,7 @@ exports.items = [
   },
   {
     item: "command",
-    runAt: "server",
+    runAt: "client",
     name: "cookie set",
     description: l10n.lookup("cookieSetDesc"),
     manual: l10n.lookup("cookieSetManual"),
@@ -239,6 +263,10 @@ exports.items = [
       }
     ],
     exec: function(args, context) {
+      if (context.environment.target.isRemote) {
+        throw new Error("The cookie gcli commands only work in a local tab, " +
+                        "see bug 1221488");
+      }
       let host = sanitizeHost(context.environment.document.location.host);
       let time = Date.parse(args.expires) / 1000;
 
