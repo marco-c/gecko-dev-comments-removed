@@ -7917,6 +7917,10 @@ CodeGenerator::generateAsmJS(AsmJSFunctionOffsets* offsets)
     if (!generateOutOfLineCode())
         return false;
 
+    
+    
+    masm.flushBuffer();
+
     offsets->end = masm.currentOffset();
 
     MOZ_ASSERT(!masm.failureLabel()->used());
