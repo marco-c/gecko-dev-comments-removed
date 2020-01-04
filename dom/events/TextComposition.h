@@ -374,7 +374,8 @@ private:
   
 
 
-  void NotityUpdateComposition(const WidgetCompositionEvent* aCompositionEvent);
+  void OnCompositionEventHandled(
+         const WidgetCompositionEvent* aCompositionEvent);
 
   
 

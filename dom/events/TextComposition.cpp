@@ -5,6 +5,8 @@
 
 
 #include "ContentEventHandler.h"
+#include "IMEContentObserver.h"
+#include "IMEStateManager.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
 #include "nsIEditor.h"
@@ -397,8 +399,7 @@ TextComposition::DispatchCompositionEvent(
     MOZ_ASSERT(!HasEditor(), "Why does the editor still keep to hold this?");
   }
 
-  
-  NotityUpdateComposition(aCompositionEvent);
+  OnCompositionEventHandled(aCompositionEvent);
 }
 
 
@@ -426,7 +427,7 @@ TextComposition::HandleSelectionEvent(nsPresContext* aPresContext,
 }
 
 void
-TextComposition::NotityUpdateComposition(
+TextComposition::OnCompositionEventHandled(
                    const WidgetCompositionEvent* aCompositionEvent)
 {
   MOZ_RELEASE_ASSERT(!mTabParent);
@@ -456,6 +457,22 @@ TextComposition::NotityUpdateComposition(
     return;
   }
 
+  RefPtr<IMEContentObserver> contentObserver =
+    IMEStateManager::GetActiveContentObserver();
+  
+  
+  
+  
+  
+  
+  
+  
+  if (contentObserver && contentObserver->IsManaging(this)) {
+    contentObserver->MaybeNotifyCompositionEventHandled();
+    return;
+  }
+  
+  
   NotifyIME(NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED);
 }
 

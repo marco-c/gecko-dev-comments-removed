@@ -224,6 +224,12 @@ public:
   static nsINode* GetRootEditableNode(nsPresContext* aPresContext,
                                       nsIContent* aContent);
 
+  
+
+
+
+  static IMEContentObserver* GetActiveContentObserver();
+
 protected:
   static nsresult OnChangeFocusInternal(nsPresContext* aPresContext,
                                         nsIContent* aContent,
