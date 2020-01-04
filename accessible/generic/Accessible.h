@@ -959,6 +959,12 @@ protected:
 
 
 
+  virtual void NativeDescription(nsString& aDescription);
+
+  
+
+
+
   virtual already_AddRefed<nsIPersistentProperties> NativeAttributes();
 
   
