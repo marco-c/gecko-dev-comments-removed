@@ -110,6 +110,7 @@ protected:
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
+    , mAccessKeyForwardedToChild(false)
     , mKeyNameIndex(mozilla::KEY_NAME_INDEX_Unidentified)
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
     , mNativeKeyEvent(nullptr)
@@ -138,6 +139,7 @@ public:
     , mIsRepeat(false)
     , mIsComposing(false)
     , mIsReserved(false)
+    , mAccessKeyForwardedToChild(false)
     , mKeyNameIndex(mozilla::KEY_NAME_INDEX_Unidentified)
     , mCodeNameIndex(CODE_NAME_INDEX_UNKNOWN)
     , mNativeKeyEvent(nullptr)
@@ -220,6 +222,11 @@ public:
   
   
   bool mIsReserved;
+  
+  
+  
+  
+  bool mAccessKeyForwardedToChild;
   
   KeyNameIndex mKeyNameIndex;
   
@@ -374,6 +381,7 @@ public:
     mIsRepeat = aEvent.mIsRepeat;
     mIsComposing = aEvent.mIsComposing;
     mIsReserved = aEvent.mIsReserved;
+    mAccessKeyForwardedToChild = aEvent.mAccessKeyForwardedToChild;
     mKeyNameIndex = aEvent.mKeyNameIndex;
     mCodeNameIndex = aEvent.mCodeNameIndex;
     mKeyValue = aEvent.mKeyValue;

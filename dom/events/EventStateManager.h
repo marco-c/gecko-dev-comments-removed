@@ -183,13 +183,15 @@ public:
 
   static void GetAccessKeyLabelPrefix(dom::Element* aElement, nsAString& aPrefix);
 
-  bool HandleAccessKey(nsPresContext* aPresContext,
+  bool HandleAccessKey(WidgetKeyboardEvent* aEvent,
+                       nsPresContext* aPresContext,
                        nsTArray<uint32_t>& aAccessCharCodes,
-                       bool aIsTrusted,
-                       int32_t aModifierMask)
+                       int32_t aModifierMask,
+                       bool aMatchesContentAccessKey)
   {
-    return HandleAccessKey(aPresContext, aAccessCharCodes, aIsTrusted,
-                           nullptr, eAccessKeyProcessingNormal, aModifierMask);
+    return HandleAccessKey(aEvent, aPresContext, aAccessCharCodes,
+                           aMatchesContentAccessKey, nullptr,
+                           eAccessKeyProcessingNormal, aModifierMask);
   }
 
   nsresult SetCursor(int32_t aCursor, imgIContainer* aContainer,
@@ -447,15 +449,17 @@ protected:
 
 
 
-  bool HandleAccessKey(nsPresContext* aPresContext,
-                     nsTArray<uint32_t>& aAccessCharCodes,
-                     bool aIsTrusted,
-                     nsIDocShellTreeItem* aBubbledFrom,
-                     ProcessingAccessKeyState aAccessKeyState,
-                     int32_t aModifierMask);
+
+  bool HandleAccessKey(WidgetKeyboardEvent* aEvent,
+                       nsPresContext* aPresContext,
+                       nsTArray<uint32_t>& aAccessCharCodes,
+                       bool aMatchesContentAccessKey,
+                       nsIDocShellTreeItem* aBubbledFrom,
+                       ProcessingAccessKeyState aAccessKeyState,
+                       int32_t aModifierMask);
 
   bool ExecuteAccessKey(nsTArray<uint32_t>& aAccessCharCodes,
-                          bool aIsTrustedEvent);
+                        bool aIsTrustedEvent);
 
   
   

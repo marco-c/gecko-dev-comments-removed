@@ -199,83 +199,82 @@ nsMenuBarListener::KeyPress(nsIDOMEvent* aKeyEvent)
     aKeyEvent->GetIsTrusted(&trustedEvent);
   }
 
-  if (!trustedEvent)
+  if (!trustedEvent) {
     return NS_OK;
+  }
 
-  nsresult retVal = NS_OK;  
-  
   InitAccessKey();
 
   if (mAccessKey)
   {
-    bool preventDefault;
-    aKeyEvent->GetDefaultPrevented(&preventDefault);
-    if (!preventDefault) {
-      nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
-      uint32_t keyCode, charCode;
-      keyEvent->GetKeyCode(&keyCode);
-      keyEvent->GetCharCode(&charCode);
+    
+    
+    WidgetKeyboardEvent* nativeKeyEvent =
+      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
+    if (nativeKeyEvent->mAccessKeyForwardedToChild) {
+      return NS_OK;
+    }
 
-      bool hasAccessKeyCandidates = charCode != 0;
-      if (!hasAccessKeyCandidates) {
-        WidgetKeyboardEvent* nativeKeyEvent =
-          aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
-        if (nativeKeyEvent) {
-          AutoTArray<uint32_t, 10> keys;
-          nativeKeyEvent->GetAccessKeyCandidates(keys);
-          hasAccessKeyCandidates = !keys.IsEmpty();
-        }
+    nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
+    uint32_t keyCode, charCode;
+    keyEvent->GetKeyCode(&keyCode);
+    keyEvent->GetCharCode(&charCode);
+
+    bool hasAccessKeyCandidates = charCode != 0;
+    if (!hasAccessKeyCandidates) {
+      if (nativeKeyEvent) {
+        AutoTArray<uint32_t, 10> keys;
+        nativeKeyEvent->GetAccessKeyCandidates(keys);
+        hasAccessKeyCandidates = !keys.IsEmpty();
       }
+    }
 
+    
+    if (keyCode != (uint32_t)mAccessKey) {
+      mAccessKeyDownCanceled = true;
+    }
+
+    if (IsAccessKeyPressed(keyEvent) && hasAccessKeyCandidates) {
       
-      if (keyCode != (uint32_t)mAccessKey) {
-        mAccessKeyDownCanceled = true;
+      
+      
+      nsMenuFrame* result = mMenuBarFrame->FindMenuWithShortcut(keyEvent);
+      if (result) {
+        mMenuBarFrame->SetActiveByKeyboard();
+        mMenuBarFrame->SetActive(true);
+        result->OpenMenu(true);
+
+        
+        
+        mAccessKeyDown = mAccessKeyDownCanceled = false;
+
+        aKeyEvent->StopPropagation();
+        aKeyEvent->PreventDefault();
       }
+    }    
+#ifndef XP_MACOSX
+    
+    else if (nativeKeyEvent->mMessage == eKeyPress && keyCode == NS_VK_F10) {
+      if ((GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
+        
+        
+        mMenuBarFrame->SetActiveByKeyboard();
+        ToggleMenuActiveState();
 
-      if (IsAccessKeyPressed(keyEvent) && hasAccessKeyCandidates) {
-        
-        
-        
-        nsMenuFrame* result = mMenuBarFrame->FindMenuWithShortcut(keyEvent);
-        if (result) {
-          mMenuBarFrame->SetActiveByKeyboard();
-          mMenuBarFrame->SetActive(true);
-          result->OpenMenu(true);
-
+        if (mMenuBarFrame->IsActive()) {
+#ifdef MOZ_WIDGET_GTK
           
-          
-          mAccessKeyDown = mAccessKeyDownCanceled = false;
-
+          mMenuBarFrame->GetCurrentMenuItem()->OpenMenu(true);
+#endif
           aKeyEvent->StopPropagation();
           aKeyEvent->PreventDefault();
-          retVal = NS_OK;       
-        }
-      }    
-#ifndef XP_MACOSX
-      
-      else if (keyCode == NS_VK_F10) {
-        if ((GetModifiersForAccessKey(keyEvent) & ~MODIFIER_CONTROL) == 0) {
-          
-          
-          mMenuBarFrame->SetActiveByKeyboard();
-          ToggleMenuActiveState();
-
-          if (mMenuBarFrame->IsActive()) {
-#ifdef MOZ_WIDGET_GTK
-            
-            mMenuBarFrame->GetCurrentMenuItem()->OpenMenu(true);
-#endif
-            aKeyEvent->StopPropagation();
-            aKeyEvent->PreventDefault();
-            return NS_OK; 
-          }
         }
       }
+    }
 #endif 
-    } 
   }
 
-  return retVal;
+  return NS_OK;
 }
 
 bool
@@ -423,6 +422,9 @@ nsMenuBarListener::HandleEvent(nsIDOMEvent* aEvent)
     return KeyDown(aEvent);
   }
   if (eventType.EqualsLiteral("keypress")) {
+    return KeyPress(aEvent);
+  }
+  if (eventType.EqualsLiteral("mozaccesskeynotfound")) {
     return KeyPress(aEvent);
   }
   if (eventType.EqualsLiteral("blur")) {

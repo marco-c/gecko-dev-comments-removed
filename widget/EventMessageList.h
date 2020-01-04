@@ -52,6 +52,12 @@ NS_EVENT_MESSAGE(eAfterKeyDown)
 NS_EVENT_MESSAGE(eBeforeKeyUp)
 NS_EVENT_MESSAGE(eAfterKeyUp)
 
+
+
+
+
+NS_EVENT_MESSAGE(eAccessKeyNotFound)
+
 NS_EVENT_MESSAGE(eResize)
 NS_EVENT_MESSAGE(eScroll)
 

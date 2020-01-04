@@ -171,7 +171,7 @@ struct EventNameMapping
   mozilla::EventClassID mEventClassID;
 };
 
-typedef void (*CallOnRemoteChildFunction) (mozilla::dom::TabParent* aTabParent,
+typedef bool (*CallOnRemoteChildFunction) (mozilla::dom::TabParent* aTabParent,
                                            void* aArg);
 
 class nsContentUtils
@@ -2598,7 +2598,7 @@ private:
   static AutocompleteAttrState InternalSerializeAutocompleteAttribute(const nsAttrValue* aAttrVal,
                                                                       mozilla::dom::AutocompleteInfo& aInfo);
 
-  static void CallOnAllRemoteChildren(nsIMessageBroadcaster* aManager,
+  static bool CallOnAllRemoteChildren(nsIMessageBroadcaster* aManager,
                                       CallOnRemoteChildFunction aCallback,
                                       void* aArg);
 
