@@ -2271,22 +2271,6 @@ class MethodDefiner(PropertyDefiner):
 
         
         
-        
-        
-        if (not static and
-            not unforgeable and
-            descriptor.interface.isIteratorInterface()):
-            self.regular.append({
-                "name": "@@iterator",
-                "methodInfo": False,
-                "selfHostedName": "IteratorIdentity",
-                "length": 0,
-                "flags": "0",
-                "condition": MemberCondition()
-            })
-
-        
-        
         if descriptor.interface.maplikeOrSetlikeOrIterable:
             if hasIterator(methods, self.regular):
                 raise TypeError("Cannot have maplike/setlike/iterable interface with "
