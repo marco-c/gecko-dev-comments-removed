@@ -389,6 +389,12 @@ public:
 
 
 
+  TrackPort* FindOwnedTrackPort(const MediaStreamTrack& aTrack) const;
+
+  
+
+
+
   MediaStreamTrack* FindPlaybackDOMTrack(MediaStream* aOwningStream,
                                          TrackID aInputTrackID) const;
 
