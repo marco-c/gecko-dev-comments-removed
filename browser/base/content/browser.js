@@ -914,6 +914,30 @@ function RedirectLoad({ target: browser, data }) {
   }
 }
 
+addEventListener("DOMContentLoaded", function onDCL() {
+  removeEventListener("DOMContentLoaded", onDCL);
+
+  
+  
+  
+  if (!gBrowser || !gBrowser.updateBrowserRemoteness) {
+    return;
+  }
+
+  window.QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(nsIWebNavigation)
+        .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
+        .QueryInterface(Ci.nsIInterfaceRequestor)
+        .getInterface(Ci.nsIXULWindow)
+        .XULBrowserWindow = window.XULBrowserWindow;
+  window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow =
+    new nsBrowserAccess();
+
+  let initBrowser =
+    document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
+  gBrowser.updateBrowserRemoteness(initBrowser, gMultiProcessBrowser);
+});
+
 var gBrowserInit = {
   delayedStartupFinished: false,
 
@@ -944,19 +968,11 @@ var gBrowserInit = {
     mm.loadFrameScript("chrome://browser/content/content-UITour.js", true);
     mm.loadFrameScript("chrome://global/content/manifestMessages.js", true);
 
-    window.messageManager.addMessageListener("Browser:LoadURI", RedirectLoad);
-
     
     
     XULBrowserWindow.init();
-    window.QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(nsIWebNavigation)
-          .QueryInterface(Ci.nsIDocShellTreeItem).treeOwner
-          .QueryInterface(Ci.nsIInterfaceRequestor)
-          .getInterface(Ci.nsIXULWindow)
-          .XULBrowserWindow = window.XULBrowserWindow;
-    window.QueryInterface(Ci.nsIDOMChromeWindow).browserDOMWindow =
-      new nsBrowserAccess();
+
+    window.messageManager.addMessageListener("Browser:LoadURI", RedirectLoad);
 
     if (!gMultiProcessBrowser) {
       
@@ -1105,6 +1121,13 @@ var gBrowserInit = {
 
         
         
+        if (tabToOpen.hasAttribute("usercontextid")) {
+          let usercontextid = tabToOpen.getAttribute("usercontextid");
+          gBrowser.selectedBrowser.setAttribute("usercontextid", usercontextid);
+        }
+
+        
+        
         
         try {
           if (tabToOpen.linkedBrowser.isRemoteBrowser) {
@@ -1112,14 +1135,12 @@ var gBrowserInit = {
               throw new Error("Cannot drag a remote browser into a window " +
                               "without the remote tabs load context.");
             }
-
-            
-            
-            if (tabToOpen.hasAttribute("usercontextid")) {
-              let usercontextid = tabToOpen.getAttribute("usercontextid");
-              gBrowser.selectedBrowser.setAttribute("usercontextid", usercontextid);
-            }
             gBrowser.updateBrowserRemoteness(gBrowser.selectedBrowser, true);
+          } else if (gBrowser.selectedBrowser.isRemoteBrowser) {
+            
+            
+            
+            gBrowser.updateBrowserRemoteness(gBrowser.selectedBrowser, false);
           }
           gBrowser.swapBrowsersAndCloseOther(gBrowser.selectedTab, tabToOpen);
         } catch(e) {
@@ -4198,8 +4219,13 @@ var XULBrowserWindow = {
   forceInitialBrowserRemote: function() {
     let initBrowser =
       document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
-    gBrowser.updateBrowserRemoteness(initBrowser, true);
     return initBrowser.frameLoader.tabParent;
+  },
+
+  forceInitialBrowserNonRemote: function() {
+    let initBrowser =
+      document.getAnonymousElementByAttribute(gBrowser, "anonid", "initialBrowser");
+    gBrowser.updateBrowserRemoteness(initBrowser, false);
   },
 
   setDefaultStatus: function (status) {
