@@ -9883,7 +9883,7 @@ nsDocument::PreloadStyle(nsIURI* uri, const nsAString& charset,
   nsCOMPtr<nsICSSLoaderObserver> obs = new StubCSSLoaderObserver();
 
   
-  CSSLoader()->LoadSheet(uri, NodePrincipal(),
+  CSSLoader()->LoadSheet(uri, true, NodePrincipal(),
                          NS_LossyConvertUTF16toASCII(charset),
                          obs,
                          Element::StringToCORSMode(aCrossOriginAttr),
