@@ -217,7 +217,8 @@ public:
                             const nsRect&        aDest,
                             const nsRect&        aFill,
                             const nsPoint&       aAnchor,
-                            const nsRect&        aDirty);
+                            const nsRect&        aDirty,
+                            const nsSize&        aRepeatSize);
 
   
 
@@ -273,6 +274,7 @@ private:
                   const nsRect&        aDest,
                   const nsRect&        aFill,
                   const nsPoint&       aAnchor,
+                  const nsSize&        aRepeatSize,
                   const mozilla::CSSIntRect& aSrc);
 
   
@@ -336,6 +338,11 @@ struct nsBackgroundLayerState {
 
 
   nsPoint mAnchor;
+  
+
+
+
+  nsSize mRepeatSize;
 };
 
 struct nsCSSRendering {

@@ -2046,9 +2046,13 @@ nsCSSRendering::DetermineBackgroundColor(nsPresContext* aPresContext,
   }
 
   
+  nsStyleImageLayers::Repeat repeat = bg->BottomLayer().mRepeat;
+  bool xFullRepeat = repeat.mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT ||
+                     repeat.mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND;
+  bool yFullRepeat = repeat.mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT ||
+                     repeat.mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND;
   if (aDrawBackgroundColor &&
-      bg->BottomLayer().mRepeat.mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
-      bg->BottomLayer().mRepeat.mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
+      xFullRepeat && yFullRepeat &&
       bg->BottomLayer().mImage.IsOpaque() &&
       bg->BottomLayer().mBlendMode == NS_STYLE_BLEND_NORMAL) {
     aDrawBackgroundColor = false;
@@ -3102,7 +3106,8 @@ nsCSSRendering::PaintBackgroundWithSC(const PaintBGParams& aParams,
                                                 aParams.renderingCtx,
                                                 state.mDestArea, state.mFillArea,
                                                 state.mAnchor + paintBorderArea.TopLeft(),
-                                                clipState.mDirtyRect);
+                                                clipState.mDirtyRect,
+                                                state.mRepeatSize);
 
           if (co != CompositionOp::OP_OVER) {
             ctx->SetOp(CompositionOp::OP_OVER);
@@ -3228,12 +3233,28 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
 
 
 
+static nscoord
+ComputeRoundedSize(nscoord aCurrentSize, nscoord aPositioningSize)
+{
+  float repeatCount = NS_roundf(float(aPositioningSize) / float(aCurrentSize));
+  if (repeatCount < 1.0f) {
+    return aPositioningSize;
+  }
+  return nscoord(NS_lround(float(aPositioningSize) / repeatCount));
+}
+
+
+
+
 
 static nsSize
 ComputeDrawnSizeForBackground(const CSSSizeOrRatio& aIntrinsicSize,
                               const nsSize& aBgPositioningArea,
-                              const nsStyleImageLayers::Size& aLayerSize)
+                              const nsStyleImageLayers::Size& aLayerSize,
+                              uint8_t aXRepeat, uint8_t aYRepeat)
 {
+  nsSize imageSize;
+
   
   if (aLayerSize.mWidthType == nsStyleImageLayers::Size::eContain ||
       aLayerSize.mWidthType == nsStyleImageLayers::Size::eCover) {
@@ -3241,25 +3262,82 @@ ComputeDrawnSizeForBackground(const CSSSizeOrRatio& aIntrinsicSize,
       aLayerSize.mWidthType == nsStyleImageLayers::Size::eCover
         ? nsImageRenderer::COVER
         : nsImageRenderer::CONTAIN;
-    return nsImageRenderer::ComputeConstrainedSize(aBgPositioningArea,
-                                                   aIntrinsicSize.mRatio,
-                                                   fitType);
+    imageSize = nsImageRenderer::ComputeConstrainedSize(aBgPositioningArea,
+                                                        aIntrinsicSize.mRatio,
+                                                        fitType);
+  } else {
+    
+    CSSSizeOrRatio specifiedSize;
+    if (aLayerSize.mWidthType == nsStyleImageLayers::Size::eLengthPercentage) {
+      specifiedSize.SetWidth(
+        aLayerSize.ResolveWidthLengthPercentage(aBgPositioningArea));
+    }
+    if (aLayerSize.mHeightType == nsStyleImageLayers::Size::eLengthPercentage) {
+      specifiedSize.SetHeight(
+        aLayerSize.ResolveHeightLengthPercentage(aBgPositioningArea));
+    }
+
+    imageSize = nsImageRenderer::ComputeConcreteSize(specifiedSize,
+                                                     aIntrinsicSize,
+                                                     aBgPositioningArea);
   }
 
   
-  CSSSizeOrRatio specifiedSize;
-  if (aLayerSize.mWidthType == nsStyleImageLayers::Size::eLengthPercentage) {
-    specifiedSize.SetWidth(
-      aLayerSize.ResolveWidthLengthPercentage(aBgPositioningArea));
-  }
-  if (aLayerSize.mHeightType == nsStyleImageLayers::Size::eLengthPercentage) {
-    specifiedSize.SetHeight(
-      aLayerSize.ResolveHeightLengthPercentage(aBgPositioningArea));
+  
+  
+  
+  
+  
+  
+  bool isRepeatRoundInBothDimensions = aXRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND &&
+                                       aYRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND;
+
+  
+  
+  if (imageSize.width && aXRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND) {
+    imageSize.width = ComputeRoundedSize(imageSize.width, aBgPositioningArea.width);
+    if (!isRepeatRoundInBothDimensions &&
+        aLayerSize.mHeightType == nsStyleImageLayers::Size::DimensionType::eAuto) {
+      
+      if (aIntrinsicSize.mRatio.width) {
+        float scale = float(aIntrinsicSize.mRatio.height) / aIntrinsicSize.mRatio.width;
+        imageSize.height = NSCoordSaturatingNonnegativeMultiply(imageSize.width, scale);
+      }
+    }
   }
 
-  return nsImageRenderer::ComputeConcreteSize(specifiedSize,
-                                              aIntrinsicSize,
-                                              aBgPositioningArea);
+  
+  
+  if (imageSize.height && aYRepeat == NS_STYLE_IMAGELAYER_REPEAT_ROUND) {
+    imageSize.height = ComputeRoundedSize(imageSize.height, aBgPositioningArea.height);
+    if (!isRepeatRoundInBothDimensions &&
+        aLayerSize.mWidthType == nsStyleImageLayers::Size::DimensionType::eAuto) {
+      
+      if (aIntrinsicSize.mRatio.height) {
+        float scale = float(aIntrinsicSize.mRatio.width) / aIntrinsicSize.mRatio.height;
+        imageSize.width = NSCoordSaturatingNonnegativeMultiply(imageSize.height, scale);
+      }
+    }
+  }
+
+  return imageSize;
+}
+
+
+
+
+
+
+static nscoord
+ComputeSpacedRepeatSize(nscoord aImageDimension,
+                        nscoord aAvailableSpace) {
+  float ratio = aAvailableSpace / aImageDimension;
+
+  if (ratio < 2.0f) { 
+    return aImageDimension;
+  } else {
+    return (aAvailableSpace - aImageDimension) / (NSToIntFloor(ratio) - 1);
+  }
 }
 
 nsBackgroundLayerState
@@ -3384,6 +3462,9 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
     }
   }
 
+  int repeatX = aLayer.mRepeat.mXRepeat;
+  int repeatY = aLayer.mRepeat.mYRepeat;
+
   
   
   
@@ -3391,7 +3472,10 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   nsSize bgPositionSize = bgPositioningArea.Size();
   nsSize imageSize = ComputeDrawnSizeForBackground(intrinsicSize,
                                                    bgPositionSize,
-                                                   aLayer.mSize);
+                                                   aLayer.mSize,
+                                                   repeatX,
+                                                   repeatY);
+
   if (imageSize.width <= 0 || imageSize.height <= 0)
     return state;
 
@@ -3403,21 +3487,45 @@ nsCSSRendering::PrepareImageLayer(nsPresContext* aPresContext,
   nsImageRenderer::ComputeObjectAnchorPoint(aLayer.mPosition,
                                             bgPositionSize, imageSize,
                                             &imageTopLeft, &state.mAnchor);
+  state.mRepeatSize = imageSize;
+  if (repeatX == NS_STYLE_IMAGELAYER_REPEAT_SPACE) {
+    state.mRepeatSize.width = ComputeSpacedRepeatSize(imageSize.width,
+                                                      bgPositionSize.width);
+    if (state.mRepeatSize.width > imageSize.width) {
+      imageTopLeft.x = 0;
+      state.mAnchor.x = 0;
+    } else {
+      repeatX = NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
+    }
+  }
+
+  if (repeatY == NS_STYLE_IMAGELAYER_REPEAT_SPACE) {
+    state.mRepeatSize.height = ComputeSpacedRepeatSize(imageSize.height,
+                                                       bgPositionSize.height);
+    if (state.mRepeatSize.height > imageSize.height) {
+      imageTopLeft.y = 0;
+      state.mAnchor.y = 0;
+    } else {
+      repeatY = NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
+    }
+  }
+
   imageTopLeft += bgPositioningArea.TopLeft();
   state.mAnchor += bgPositioningArea.TopLeft();
-
   state.mDestArea = nsRect(imageTopLeft + aBorderArea.TopLeft(), imageSize);
   state.mFillArea = state.mDestArea;
-  int repeatX = aLayer.mRepeat.mXRepeat;
-  int repeatY = aLayer.mRepeat.mYRepeat;
 
   ExtendMode repeatMode = ExtendMode::CLAMP;
-  if (repeatX == NS_STYLE_IMAGELAYER_REPEAT_REPEAT) {
+  if (repeatX == NS_STYLE_IMAGELAYER_REPEAT_REPEAT ||
+      repeatX == NS_STYLE_IMAGELAYER_REPEAT_ROUND ||
+      repeatX == NS_STYLE_IMAGELAYER_REPEAT_SPACE) {
     state.mFillArea.x = bgClipRect.x;
     state.mFillArea.width = bgClipRect.width;
     repeatMode = ExtendMode::REPEAT_X;
   }
-  if (repeatY == NS_STYLE_IMAGELAYER_REPEAT_REPEAT) {
+  if (repeatY == NS_STYLE_IMAGELAYER_REPEAT_REPEAT ||
+      repeatY == NS_STYLE_IMAGELAYER_REPEAT_ROUND ||
+      repeatY == NS_STYLE_IMAGELAYER_REPEAT_SPACE) {
     state.mFillArea.y = bgClipRect.y;
     state.mFillArea.height = bgClipRect.height;
 
@@ -5122,6 +5230,7 @@ nsImageRenderer::Draw(nsPresContext*       aPresContext,
                       const nsRect&        aDest,
                       const nsRect&        aFill,
                       const nsPoint&       aAnchor,
+                      const nsSize&        aRepeatSize,
                       const CSSIntRect&    aSrc)
 {
   if (!IsReady()) {
@@ -5158,7 +5267,8 @@ nsImageRenderer::Draw(nsPresContext*       aPresContext,
         nsLayoutUtils::DrawBackgroundImage(*ctx,
                                            aPresContext,
                                            mImageContainer, imageSize, filter,
-                                           aDest, aFill, aAnchor, aDirtyRect,
+                                           aDest, aFill, aRepeatSize,
+                                           aAnchor, aDirtyRect,
                                            ConvertImageRendererToDrawFlags(mFlags),
                                            mExtendMode);
       break;
@@ -5255,7 +5365,8 @@ nsImageRenderer::DrawBackground(nsPresContext*       aPresContext,
                                 const nsRect&        aDest,
                                 const nsRect&        aFill,
                                 const nsPoint&       aAnchor,
-                                const nsRect&        aDirty)
+                                const nsRect&        aDirty,
+                                const nsSize&        aRepeatSize)
 {
   if (!IsReady()) {
     NS_NOTREACHED("Ensure PrepareImage() has returned true before calling me");
@@ -5267,7 +5378,7 @@ nsImageRenderer::DrawBackground(nsPresContext*       aPresContext,
   }
 
   return Draw(aPresContext, aRenderingContext,
-              aDirty, aDest, aFill, aAnchor,
+              aDirty, aDest, aFill, aAnchor, aRepeatSize,
               CSSIntRect(0, 0,
                          nsPresContext::AppUnitsToIntCSSPixels(mSize.width),
                          nsPresContext::AppUnitsToIntCSSPixels(mSize.height)));
@@ -5431,7 +5542,7 @@ nsImageRenderer::DrawBorderImageComponent(nsPresContext*       aPresContext,
                   : aFill;
 
   return Draw(aPresContext, aRenderingContext, aDirtyRect, destTile,
-              aFill, destTile.TopLeft(), aSrc);
+              aFill, destTile.TopLeft(), nsSize(0, 0), aSrc);
 }
 
 bool
