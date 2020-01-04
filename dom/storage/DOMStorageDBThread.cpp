@@ -154,6 +154,7 @@ DOMStorageDBThread::Shutdown()
 void
 DOMStorageDBThread::SyncPreload(DOMStorageCacheBridge* aCache, bool aForceSync)
 {
+  PROFILER_LABEL_FUNC(js::ProfileEntry::Category::STORAGE);
   if (!aForceSync && aCache->LoadedCount()) {
     
     
