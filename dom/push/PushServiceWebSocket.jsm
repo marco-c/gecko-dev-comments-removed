@@ -649,6 +649,10 @@ this.PushServiceWebSocket = {
     }
   },
 
+  isConnected: function() {
+    return !!this._ws;
+  },
+
   
 
 
