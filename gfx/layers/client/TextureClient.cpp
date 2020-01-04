@@ -73,7 +73,7 @@ struct TextureDeallocParams
 {
   TextureData* data;
   RefPtr<TextureChild> actor;
-  RefPtr<ISurfaceAllocator> allocator;
+  RefPtr<ClientIPCAllocator> allocator;
   bool clientDeallocation;
   bool syncDeallocation;
   bool workAroundSharedSurfaceOwnershipIssue;
@@ -144,7 +144,7 @@ public:
 
   CompositableForwarder* GetForwarder() { return mForwarder; }
 
-  ISurfaceAllocator* GetAllocator() { return mForwarder; }
+  ClientIPCAllocator* GetAllocator() { return mForwarder; }
 
   void ActorDestroy(ActorDestroyReason why) override;
 
@@ -189,7 +189,7 @@ private:
 };
 
 
-static void DestroyTextureData(TextureData* aTextureData, ISurfaceAllocator* aAllocator,
+static void DestroyTextureData(TextureData* aTextureData, ClientIPCAllocator* aAllocator,
                                bool aDeallocate, bool aMainThreadOnly)
 {
   if (!aTextureData) {
@@ -197,7 +197,7 @@ static void DestroyTextureData(TextureData* aTextureData, ISurfaceAllocator* aAl
   }
 
   if (aMainThreadOnly && !NS_IsMainThread()) {
-    RefPtr<ISurfaceAllocator> allocatorRef = aAllocator;
+    RefPtr<ClientIPCAllocator> allocatorRef = aAllocator;
     NS_DispatchToMainThread(NS_NewRunnableFunction([aTextureData, allocatorRef, aDeallocate]() -> void {
       DestroyTextureData(aTextureData, allocatorRef, aDeallocate, true);
     }));
@@ -831,7 +831,7 @@ TextureClient::CreateForDrawing(CompositableForwarder* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForRawBufferAccess(ISurfaceAllocator* aAllocator,
+TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
                                         gfx::SurfaceFormat aFormat,
                                         gfx::IntSize aSize,
                                         gfx::BackendType aMoz2DBackend,
@@ -871,7 +871,7 @@ TextureClient::CreateForRawBufferAccess(ISurfaceAllocator* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForYCbCr(ISurfaceAllocator* aAllocator,
+TextureClient::CreateForYCbCr(ClientIPCAllocator* aAllocator,
                               gfx::IntSize aYSize,
                               gfx::IntSize aCbCrSize,
                               StereoMode aStereoMode,
@@ -898,7 +898,7 @@ TextureClient::CreateForYCbCr(ISurfaceAllocator* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForYCbCrWithBufferSize(ISurfaceAllocator* aAllocator,
+TextureClient::CreateForYCbCrWithBufferSize(ClientIPCAllocator* aAllocator,
                                             gfx::SurfaceFormat aFormat,
                                             size_t aSize,
                                             TextureFlags aTextureFlags)
@@ -919,7 +919,7 @@ TextureClient::CreateForYCbCrWithBufferSize(ISurfaceAllocator* aAllocator,
   return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator);
 }
 
-TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags, ISurfaceAllocator* aAllocator)
+TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags, ClientIPCAllocator* aAllocator)
 : mAllocator(aAllocator)
 , mActor(nullptr)
 , mData(aData)
@@ -1081,7 +1081,7 @@ SyncObject::CreateSyncObject(SyncHandle aHandle)
 }
 
 already_AddRefed<TextureClient>
-TextureClient::CreateWithData(TextureData* aData, TextureFlags aFlags, ISurfaceAllocator* aAllocator)
+TextureClient::CreateWithData(TextureData* aData, TextureFlags aFlags, ClientIPCAllocator* aAllocator)
 {
   if (!aData) {
     return nullptr;
