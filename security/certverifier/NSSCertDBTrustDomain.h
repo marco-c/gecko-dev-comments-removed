@@ -21,6 +21,20 @@ enum class ValidityCheckingMode {
   CheckForEV = 1,
 };
 
+
+
+
+
+
+
+
+enum class NetscapeStepUpPolicy : uint32_t {
+  AlwaysMatch = 0,
+  MatchBefore23August2016 = 1,
+  MatchBefore23August2015 = 2,
+  NeverMatch = 3,
+};
+
 SECStatus InitializeNSS(const char* dir, bool readOnly, bool loadPKCS11Modules);
 
 void DisableMD5();
@@ -65,6 +79,7 @@ public:
                        unsigned int minRSABits,
                        ValidityCheckingMode validityCheckingMode,
                        CertVerifier::SHA1Mode sha1Mode,
+                       NetscapeStepUpPolicy netscapeStepUpPolicy,
                        UniqueCERTCertList& builtChain,
            PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
            const char* hostname = nullptr);
@@ -110,6 +125,10 @@ public:
                    mozilla::pkix::EndEntityOrCA endEntityOrCA,
                    mozilla::pkix::KeyPurposeId keyPurpose) override;
 
+  virtual Result NetscapeStepUpMatchesServerAuth(
+                   mozilla::pkix::Time notBefore,
+                    bool& matches) override;
+
   virtual Result CheckRevocation(
                    mozilla::pkix::EndEntityOrCA endEntityOrCA,
                    const mozilla::pkix::CertID& certID,
@@ -151,6 +170,7 @@ private:
   const unsigned int mMinRSABits;
   ValidityCheckingMode mValidityCheckingMode;
   CertVerifier::SHA1Mode mSHA1Mode;
+  NetscapeStepUpPolicy mNetscapeStepUpPolicy;
   UniqueCERTCertList& mBuiltChain; 
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname; 

@@ -26,6 +26,13 @@ function checkEndEntity(cert, expectedResult) {
   checkCertErrorGeneric(certdb, cert, expectedResult, certificateUsageSSLServer);
 }
 
+function checkCertOn25August2016(cert, expectedResult) {
+  
+  const VALIDATION_TIME = 1472083200;
+  checkCertErrorGenericAtTime(certdb, cert, expectedResult,
+                              certificateUsageSSLServer, VALIDATION_TIME);
+}
+
 function run_test() {
   loadCertWithTrust("ca", "CTu,,");
   
@@ -37,10 +44,25 @@ function run_test() {
   checkEndEntity(certFromFile("ee-CA"), SEC_ERROR_INADEQUATE_CERT_TYPE);
   
   checkEndEntity(certFromFile("ee-SA-nsSGC"), PRErrorCodeSuccess);
+
   
   
   
+  
+  
+  
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 0);
   checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 1);
+  checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 2);
+  checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+  
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 3);
+  checkEndEntity(certFromFile("ee-nsSGC"), SEC_ERROR_INADEQUATE_CERT_TYPE);
+
   
   
   checkEndEntity(certFromFile("ee-SA-OCSP"), SEC_ERROR_INADEQUATE_CERT_TYPE);
@@ -58,10 +80,50 @@ function run_test() {
   
   loadCertWithTrust("int-SA-nsSGC", ",,");
   checkEndEntity(certFromFile("ee-int-SA-nsSGC"), PRErrorCodeSuccess);
+
   
   
-  loadCertWithTrust("int-nsSGC", ",,");
-  checkEndEntity(certFromFile("ee-int-nsSGC"), PRErrorCodeSuccess);
+  
+  loadCertWithTrust("int-nsSGC-recent", ",,");
+  loadCertWithTrust("int-nsSGC-old", ",,");
+  loadCertWithTrust("int-nsSGC-older", ",,");
+  
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 0);
+  do_print("Netscape Step Up policy: always accept");
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
+                          PRErrorCodeSuccess);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
+                          PRErrorCodeSuccess);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
+                          PRErrorCodeSuccess);
+  
+  do_print("Netscape Step Up policy: accept before 23 August 2016");
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 1);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
+                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
+                          PRErrorCodeSuccess);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
+                          PRErrorCodeSuccess);
+  
+  do_print("Netscape Step Up policy: accept before 23 August 2015");
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 2);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
+                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
+                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
+                          PRErrorCodeSuccess);
+  
+  do_print("Netscape Step Up policy: never accept");
+  Services.prefs.setIntPref("security.pki.netscape_step_up_policy", 3);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-recent"),
+                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-old"),
+                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+  checkCertOn25August2016(certFromFile("ee-int-nsSGC-older"),
+                          SEC_ERROR_INADEQUATE_CERT_TYPE);
+
   
   
   loadCertWithTrust("int-SA-OCSP", ",,");

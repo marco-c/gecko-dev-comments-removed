@@ -368,4 +368,12 @@ AppTrustDomain::CheckValidityIsAcceptable(Time , Time ,
   return Success;
 }
 
+Result
+AppTrustDomain::NetscapeStepUpMatchesServerAuth(Time ,
+                                                 bool& matches)
+{
+  matches = false;
+  return Success;
+}
+
 } } 

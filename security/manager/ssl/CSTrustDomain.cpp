@@ -208,6 +208,14 @@ CSTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
 }
 
 Result
+CSTrustDomain::NetscapeStepUpMatchesServerAuth(Time notBefore,
+                                                bool& matches)
+{
+  matches = false;
+  return Success;
+}
+
+Result
 CSTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
                           uint8_t* digestBuf, size_t digestBufLen)
 {

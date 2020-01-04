@@ -1,26 +1,26 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This code is made available to you under your choice of the following sets
- * of licensing terms:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
-/* Copyright 2014 Mozilla Contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef mozilla_pkix_pkixgtest_h
 #define mozilla_pkix_pkixgtest_h
 
@@ -38,11 +38,11 @@
 #pragma GCC diagnostic ignored "-Wextra"
 #elif defined(_MSC_VER)
 #pragma warning(push, 3)
-// C4224: Nonstandard extension used: formal parameter 'X' was previously
-//        defined as a type.
+
+
 #pragma warning(disable: 4224)
-// C4826: Conversion from 'type1 ' to 'type_2' is sign - extended. This may
-//        cause unexpected runtime behavior.
+
+
 #pragma warning(disable: 4826)
 #endif
 
@@ -59,7 +59,7 @@
 #include "pkix/pkix.h"
 #include "pkixtestutil.h"
 
-// PrintTo must be in the same namespace as the type we're overloading it for.
+
 namespace mozilla { namespace pkix {
 
 inline void
@@ -73,7 +73,7 @@ PrintTo(const Result& result, ::std::ostream* os)
   }
 }
 
-} } // namespace mozilla::pkix
+} } 
 
 namespace mozilla { namespace pkix { namespace test {
 
@@ -89,7 +89,7 @@ class EverythingFailsByDefaultTrustDomain : public TrustDomain
 {
 public:
   Result GetCertTrust(EndEntityOrCA, const CertPolicyId&,
-                      Input, /*out*/ TrustLevel&) override
+                      Input,  TrustLevel&) override
   {
     ADD_FAILURE();
     return NotReached("GetCertTrust should not be called",
@@ -104,8 +104,8 @@ public:
   }
 
   Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
-                          /*optional*/ const Input*,
-                          /*optional*/ const Input*) override
+                           const Input*,
+                           const Input*) override
   {
     ADD_FAILURE();
     return NotReached("CheckRevocation should not be called",
@@ -119,7 +119,7 @@ public:
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
 
-  Result DigestBuf(Input, DigestAlgorithm, /*out*/ uint8_t*, size_t) override
+  Result DigestBuf(Input, DigestAlgorithm,  uint8_t*, size_t) override
   {
     ADD_FAILURE();
     return NotReached("DigestBuf should not be called",
@@ -171,12 +171,19 @@ public:
     return NotReached("CheckValidityIsAcceptable should not be called",
                       Result::FATAL_ERROR_LIBRARY_FAILURE);
   }
+
+  Result NetscapeStepUpMatchesServerAuth(Time, bool&) override
+  {
+    ADD_FAILURE();
+    return NotReached("NetscapeStepUpMatchesServerAuth should not be called",
+                      Result::FATAL_ERROR_LIBRARY_FAILURE);
+  }
 };
 
 class DefaultCryptoTrustDomain : public EverythingFailsByDefaultTrustDomain
 {
   Result DigestBuf(Input item, DigestAlgorithm digestAlg,
-                   /*out*/ uint8_t* digestBuf, size_t digestBufLen) override
+                    uint8_t* digestBuf, size_t digestBufLen) override
   {
     return TestDigestBuf(item, digestAlg, digestBuf, digestBufLen);
   }
@@ -215,19 +222,25 @@ class DefaultCryptoTrustDomain : public EverythingFailsByDefaultTrustDomain
   {
     return Success;
   }
+
+  Result NetscapeStepUpMatchesServerAuth(Time,  bool& matches) override
+  {
+    matches = true;
+    return Success;
+  }
 };
 
 class DefaultNameMatchingPolicy : public NameMatchingPolicy
 {
 public:
   virtual Result FallBackToCommonName(
-    Time, /*out*/ FallBackToSearchWithinSubject& fallBackToCommonName) override
+    Time,  FallBackToSearchWithinSubject& fallBackToCommonName) override
   {
     fallBackToCommonName = FallBackToSearchWithinSubject::Yes;
     return Success;
   }
 };
 
-} } } // namespace mozilla::pkix::test
+} } } 
 
-#endif // mozilla_pkix_pkixgtest_h
+#endif 

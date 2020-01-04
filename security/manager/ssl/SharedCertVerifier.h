@@ -2,10 +2,9 @@
 
 
 
-#ifndef mozilla_psm__SharedCertVerifier_h
-#define mozilla_psm__SharedCertVerifier_h
+#ifndef SharedCertVerifier_h
+#define SharedCertVerifier_h
 
-#include "certt.h"
 #include "CertVerifier.h"
 #include "mozilla/RefPtr.h"
 
@@ -22,9 +21,11 @@ public:
   SharedCertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
                      OcspGetConfig ogc, uint32_t certShortLifetimeInDays,
                      PinningMode pinningMode, SHA1Mode sha1Mode,
-                     BRNameMatchingPolicy::Mode nameMatchingMode)
+                     BRNameMatchingPolicy::Mode nameMatchingMode,
+                     NetscapeStepUpPolicy netscapeStepUpPolicy)
     : mozilla::psm::CertVerifier(odc, osc, ogc, certShortLifetimeInDays,
-                                 pinningMode, sha1Mode, nameMatchingMode)
+                                 pinningMode, sha1Mode, nameMatchingMode,
+                                 netscapeStepUpPolicy)
   {
   }
 };

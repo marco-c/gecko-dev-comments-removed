@@ -684,7 +684,8 @@ CheckBasicConstraints(EndEntityOrCA endEntityOrCA,
 
 static Result
 MatchEKU(Reader& value, KeyPurposeId requiredEKU,
-         EndEntityOrCA endEntityOrCA,  bool& found,
+         EndEntityOrCA endEntityOrCA, TrustDomain& trustDomain,
+         Time notBefore,  bool& found,
           bool& foundOCSPSigning)
 {
   
@@ -715,15 +716,24 @@ MatchEKU(Reader& value, KeyPurposeId requiredEKU,
 
   if (!found) {
     switch (requiredEKU) {
-      case KeyPurposeId::id_kp_serverAuth:
+      case KeyPurposeId::id_kp_serverAuth: {
+        if (value.MatchRest(server)) {
+          match = true;
+          break;
+        }
         
         
         
-        
-        match = value.MatchRest(server) ||
-                (endEntityOrCA == EndEntityOrCA::MustBeCA &&
-                 value.MatchRest(serverStepUp));
+        if (endEntityOrCA == EndEntityOrCA::MustBeCA &&
+            value.MatchRest(serverStepUp)) {
+          Result rv = trustDomain.NetscapeStepUpMatchesServerAuth(notBefore,
+                                                                  match);
+          if (rv != Success) {
+            return rv;
+          }
+        }
         break;
+      }
 
       case KeyPurposeId::id_kp_clientAuth:
         match = value.MatchRest(client);
@@ -764,7 +774,8 @@ MatchEKU(Reader& value, KeyPurposeId requiredEKU,
 Result
 CheckExtendedKeyUsage(EndEntityOrCA endEntityOrCA,
                       const Input* encodedExtendedKeyUsage,
-                      KeyPurposeId requiredEKU)
+                      KeyPurposeId requiredEKU, TrustDomain& trustDomain,
+                      Time notBefore)
 {
   
   
@@ -779,7 +790,8 @@ CheckExtendedKeyUsage(EndEntityOrCA endEntityOrCA,
     Reader input(*encodedExtendedKeyUsage);
     Result rv = der::NestedOf(input, der::SEQUENCE, der::OIDTag,
                               der::EmptyAllowed::No, [&](Reader& r) {
-      return MatchEKU(r, requiredEKU, endEntityOrCA, found, foundOCSPSigning);
+      return MatchEKU(r, requiredEKU, endEntityOrCA, trustDomain, notBefore,
+                      found, foundOCSPSigning);
     });
     if (rv != Success) {
       return Result::ERROR_INADEQUATE_CERT_TYPE;
@@ -1012,7 +1024,7 @@ CheckIssuerIndependentProperties(TrustDomain& trustDomain,
 
   
   rv = CheckExtendedKeyUsage(endEntityOrCA, cert.GetExtKeyUsage(),
-                             requiredEKUIfPresent);
+                             requiredEKUIfPresent, trustDomain, notBefore);
   if (rv != Success) {
     return rv;
   }

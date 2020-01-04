@@ -68,6 +68,18 @@ pref("security.pki.name_matching_mode", 1);
 pref("security.pki.name_matching_mode", 2);
 #endif
 
+
+
+
+
+
+
+#ifdef RELEASE_BUILD
+pref("security.pki.netscape_step_up_policy", 1);
+#else
+pref("security.pki.netscape_step_up_policy", 2);
+#endif
+
 pref("security.webauth.u2f", false);
 pref("security.webauth.u2f_enable_softtoken", false);
 pref("security.webauth.u2f_enable_usbtoken", false);
