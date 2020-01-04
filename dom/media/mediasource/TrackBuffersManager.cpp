@@ -712,9 +712,6 @@ TrackBuffersManager::SegmentParserLoop()
             mPendingInputBuffer = nullptr;
           }
           mNewMediaSegmentStarted = false;
-          if (newData) {
-            mLastParsedEndTime = Some(TimeUnit::FromMicroseconds(end));
-          }
         } else {
           
           
@@ -871,8 +868,6 @@ TrackBuffersManager::OnDemuxerResetDone(nsresult)
     mParser->ParseStartAndEndTimestamps(mPendingInputBuffer, start, end);
     mProcessedInput += mPendingInputBuffer->Length();
   }
-
-  mLastParsedEndTime.reset();
 
   SegmentParserLoop();
 }
@@ -1318,6 +1313,9 @@ TrackBuffersManager::CompleteCodedFrameProcessing()
     return;
   }
 
+  mLastParsedEndTime = Some(std::max(mAudioTracks.mLastParsedEndTime,
+                                     mVideoTracks.mLastParsedEndTime));
+
   
   
   
@@ -1397,6 +1395,10 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
   
   bool needDiscontinuityCheck = true;
 
+  if (aSamples.Length()) {
+    aTrackData.mLastParsedEndTime = TimeUnit();
+  }
+
   for (auto& sample : aSamples) {
     SAMPLE_DEBUG("Processing %s frame(pts:%lld end:%lld, dts:%lld, duration:%lld, "
                "kf:%d)",
@@ -1406,6 +1408,12 @@ TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
                sample->mTimecode,
                sample->mDuration,
                sample->mKeyframe);
+
+    const TimeUnit sampleEndTime =
+      TimeUnit::FromMicroseconds(sample->GetEndTime());
+    if (sampleEndTime > aTrackData.mLastParsedEndTime) {
+      aTrackData.mLastParsedEndTime = sampleEndTime;
+    }
 
     
     

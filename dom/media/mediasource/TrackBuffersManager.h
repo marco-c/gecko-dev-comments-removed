@@ -241,6 +241,9 @@ private:
     nsRefPtr<MediaTrackDemuxer> mDemuxer;
     MozPromiseRequestHolder<MediaTrackDemuxer::SamplesPromise> mDemuxRequest;
     
+    media::TimeUnit mLastParsedEndTime;
+
+    
     
     
     Maybe<size_t> mNextInsertionIndex;
