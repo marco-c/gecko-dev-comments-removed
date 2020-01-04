@@ -6450,10 +6450,7 @@ nsGlobalWindow::CanMoveResizeWindows(bool aCallerIsChrome)
     }
   }
 
-  
-  
-  if (mDocShell && !Preferences::GetBool("dom.always_allow_move_resize_window",
-                                         false)) {
+  if (mDocShell) {
     bool allow;
     nsresult rv = mDocShell->GetAllowWindowControl(&allow);
     if (NS_SUCCEEDED(rv) && !allow)
