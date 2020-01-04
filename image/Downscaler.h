@@ -162,7 +162,7 @@ public:
   }
 
   uint8_t* RowBuffer() { return nullptr; }
-  void ClearRow(uint32_t = 0);
+  void ClearRow(uint32_t = 0) { }
   void CommitRow() { }
   bool HasInvalidation() const { return false; }
   DownscalerInvalidRect TakeInvalidRect() { return DownscalerInvalidRect(); }
@@ -172,32 +172,6 @@ public:
 #endif 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class Deinterlacer
-{
-public:
-  explicit Deinterlacer(const nsIntSize& aImageSize);
-
-  uint8_t* RowBuffer(uint32_t aRow);
-  void PropagatePassToDownscaler(Downscaler& aDownscaler);
-
-private:
-  uint32_t RowSize() const;
-
-  nsIntSize mImageSize;
-  UniquePtr<uint8_t[]> mBuffer;
-};
 
 } 
 } 
