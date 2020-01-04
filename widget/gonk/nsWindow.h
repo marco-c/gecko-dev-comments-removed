@@ -143,6 +143,11 @@ protected:
     mozilla::RefPtr<mozilla::gfx::DrawTarget> mFramebufferTarget;
     ANativeWindowBuffer* mFramebuffer;
     
+
+
+
+    uint8_t* mMappedBuffer;
+    
     
     
     
