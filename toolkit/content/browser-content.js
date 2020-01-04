@@ -466,7 +466,7 @@ var Printing = {
       }
 
       case "Printing:Print": {
-        this.print(Services.wm.getOuterWindowWithId(data.windowID));
+        this.print(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode);
         break;
       }
     }
@@ -631,9 +631,17 @@ var Printing = {
     docShell.printPreview.exitPrintPreview();
   },
 
-  print(contentWindow) {
+  print(contentWindow, simplifiedMode) {
     let printSettings = this.getPrintSettings();
     let rv = Cr.NS_OK;
+
+    
+    
+    
+    if (printSettings && simplifiedMode) {
+      printSettings.docURL = contentWindow.document.baseURI;
+    }
+
     try {
       let print = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                                .getInterface(Ci.nsIWebBrowserPrint);
