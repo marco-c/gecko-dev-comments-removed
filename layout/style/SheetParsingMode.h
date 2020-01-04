@@ -1,0 +1,43 @@
+
+
+
+
+
+
+#ifndef mozilla_css_SheetParsingMode_h
+#define mozilla_css_SheetParsingMode_h
+
+namespace mozilla {
+namespace css {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum SheetParsingMode {
+  eAuthorSheetFeatures = 0,
+  eUserSheetFeatures,
+  eAgentSheetFeatures
+};
+
+} 
+} 
+
+#endif 

@@ -12,6 +12,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/IncrementalClearCOMRuleArray.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/CSSStyleSheetBinding.h"
 
@@ -50,35 +51,6 @@ class ImportRule;
 namespace dom {
 class CSSRuleList;
 } 
-
-namespace css {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum SheetParsingMode {
-  eAuthorSheetFeatures = 0,
-  eUserSheetFeatures,
-  eAgentSheetFeatures
-};
-}
 
   
 
