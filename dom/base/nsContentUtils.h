@@ -165,8 +165,8 @@ struct EventNameMapping
   
   
   nsIAtom* MOZ_NON_OWNING_REF mAtom;
-  uint32_t mId;
   int32_t  mType;
+  mozilla::EventMessage mMessage;
   mozilla::EventClassID mEventClassID;
 };
 
@@ -1106,7 +1106,7 @@ public:
 
 
 
-  static uint32_t GetEventId(nsIAtom* aName);
+  static mozilla::EventMessage GetEventMessage(nsIAtom* aName);
 
   
 
@@ -1126,9 +1126,9 @@ public:
 
 
 
-  static nsIAtom* GetEventIdAndAtom(const nsAString& aName,
-                                    mozilla::EventClassID aEventClassID,
-                                    uint32_t* aEventID);
+  static nsIAtom* GetEventMessageAndAtom(const nsAString& aName,
+                                         mozilla::EventClassID aEventClassID,
+                                         mozilla::EventMessage* aEventMessage);
 
   
 

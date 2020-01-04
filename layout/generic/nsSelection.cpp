@@ -1720,7 +1720,8 @@ nsFrameSelection::TakeFocus(nsIContent*        aNewFocus,
 #ifdef DEBUG_TABLE_SELECTION
 printf(" * TakeFocus - moving into new cell\n");
 #endif
-        WidgetMouseEvent event(false, 0, nullptr, WidgetMouseEvent::eReal);
+        WidgetMouseEvent event(false, NS_EVENT_NULL, nullptr,
+                               WidgetMouseEvent::eReal);
 
         
         nsINode* parent = ParentOffset(mCellParent, &offset);

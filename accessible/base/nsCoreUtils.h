@@ -6,6 +6,7 @@
 #ifndef nsCoreUtils_h_
 #define nsCoreUtils_h_
 
+#include "mozilla/EventForwards.h"
 #include "nsIContent.h"
 #include "nsIDocument.h" 
 #include "nsIPresShell.h"
@@ -57,7 +58,8 @@ public:
 
 
 
-  static void DispatchMouseEvent(uint32_t aEventType, int32_t aX, int32_t aY,
+  static void DispatchMouseEvent(mozilla::EventMessage aMessage,
+                                 int32_t aX, int32_t aY,
                                  nsIContent *aContent, nsIFrame *aFrame,
                                  nsIPresShell *aPresShell, nsIWidget *aRootWidget);
 
@@ -72,7 +74,8 @@ public:
 
 
 
-  static void DispatchTouchEvent(uint32_t aEventType, int32_t aX, int32_t aY,
+  static void DispatchTouchEvent(mozilla::EventMessage aMessage,
+                                 int32_t aX, int32_t aY,
                                  nsIContent* aContent, nsIFrame* aFrame,
                                  nsIPresShell* aPresShell, nsIWidget* aRootWidget);
 

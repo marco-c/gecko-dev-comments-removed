@@ -322,7 +322,7 @@ public:
 
 
 
-  void OnEventNeedingAckHandled(nsIWidget* aWidget, uint32_t aMessage);
+  void OnEventNeedingAckHandled(nsIWidget* aWidget, EventMessage aMessage);
 
   
 

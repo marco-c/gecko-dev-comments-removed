@@ -6,7 +6,7 @@
 #ifndef nsCopySupport_h__
 #define nsCopySupport_h__
 
-#include "nscore.h"
+#include "mozilla/EventForwards.h"
 
 class nsINode;
 class nsISelection;
@@ -88,7 +88,7 @@ class nsCopySupport
 
 
 
-    static bool FireClipboardEvent(int32_t aType,
+    static bool FireClipboardEvent(mozilla::EventMessage aEventMessage,
                                    int32_t aClipboardType,
                                    nsIPresShell* aPresShell,
                                    nsISelection* aSelection,

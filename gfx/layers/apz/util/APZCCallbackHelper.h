@@ -119,7 +119,7 @@ public:
 
     
 
-    static nsEventStatus DispatchSynthesizedMouseEvent(uint32_t aMsg,
+    static nsEventStatus DispatchSynthesizedMouseEvent(EventMessage aMsg,
                                                        uint64_t aTime,
                                                        const LayoutDevicePoint& aRefPoint,
                                                        Modifiers aModifiers,

@@ -262,7 +262,7 @@ typedef NSInteger NSEventGestureAxis;
 
 - (void)delayedTearDown;
 
-- (void)sendFocusEvent:(uint32_t)eventType;
+- (void)sendFocusEvent:(mozilla::EventMessage)eventMessage;
 
 - (void)handleMouseMoved:(NSEvent*)aEvent;
 

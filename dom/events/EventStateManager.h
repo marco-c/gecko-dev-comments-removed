@@ -303,13 +303,14 @@ protected:
 
 
   nsIFrame* DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
-                                        uint32_t aMessage,
+                                        EventMessage aMessage,
                                         nsIContent* aTargetContent,
                                         nsIContent* aRelatedContent);
   
 
 
-  void GeneratePointerEnterExit(uint32_t aMessage, WidgetMouseEvent* aEvent);
+  void GeneratePointerEnterExit(EventMessage aMessage,
+                                WidgetMouseEvent* aEvent);
   
 
 
@@ -351,7 +352,7 @@ protected:
 
   void FireDragEnterOrExit(nsPresContext* aPresContext,
                            WidgetDragEvent* aDragEvent,
-                           uint32_t aMsg,
+                           EventMessage aMessage,
                            nsIContent* aRelatedTarget,
                            nsIContent* aTargetContent,
                            nsWeakFrame& aTargetFrame);

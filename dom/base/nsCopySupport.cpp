@@ -621,14 +621,18 @@ IsSelectionInsideRuby(nsISelection* aSelection)
 }
 
 bool
-nsCopySupport::FireClipboardEvent(int32_t aType, int32_t aClipboardType, nsIPresShell* aPresShell,
-                                  nsISelection* aSelection, bool* aActionTaken)
+nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
+                                  int32_t aClipboardType,
+                                  nsIPresShell* aPresShell,
+                                  nsISelection* aSelection,
+                                  bool* aActionTaken)
 {
   if (aActionTaken) {
     *aActionTaken = false;
   }
 
-  NS_ASSERTION(aType == NS_CUT || aType == NS_COPY || aType == NS_PASTE,
+  NS_ASSERTION(aEventMessage == NS_CUT || aEventMessage == NS_COPY ||
+               aEventMessage == NS_PASTE,
                "Invalid clipboard event type");
 
   nsCOMPtr<nsIPresShell> presShell = aPresShell;
@@ -684,10 +688,11 @@ nsCopySupport::FireClipboardEvent(int32_t aType, int32_t aClipboardType, nsIPres
   nsRefPtr<DataTransfer> clipboardData;
   if (chromeShell || Preferences::GetBool("dom.event.clipboardevents.enabled", true)) {
     clipboardData =
-      new DataTransfer(piWindow, aType, aType == NS_PASTE, aClipboardType);
+      new DataTransfer(piWindow, aEventMessage, aEventMessage == NS_PASTE,
+                       aClipboardType);
 
     nsEventStatus status = nsEventStatus_eIgnore;
-    InternalClipboardEvent evt(true, aType);
+    InternalClipboardEvent evt(true, aEventMessage);
     evt.clipboardData = clipboardData;
     EventDispatcher::Dispatch(content, presShell->GetPresContext(), &evt,
                               nullptr, &status);
@@ -698,7 +703,7 @@ nsCopySupport::FireClipboardEvent(int32_t aType, int32_t aClipboardType, nsIPres
   
   
   
-  if (aType == NS_PASTE) {
+  if (aEventMessage == NS_PASTE) {
     
     
     if (clipboardData) {
@@ -738,7 +743,7 @@ nsCopySupport::FireClipboardEvent(int32_t aType, int32_t aClipboardType, nsIPres
 
     
     
-    if (aType != NS_CUT || content->IsEditable()) {
+    if (aEventMessage != NS_CUT || content->IsEditable()) {
       
       bool isCollapsed;
       sel->GetIsCollapsed(&isCollapsed);

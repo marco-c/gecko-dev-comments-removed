@@ -418,7 +418,7 @@ struct IMENotification final
         mTextChangeData.Clear();
         break;
       case NOTIFY_IME_OF_MOUSE_BUTTON_EVENT:
-        mMouseButtonEventData.mEventMessage = 0;
+        mMouseButtonEventData.mEventMessage = NS_EVENT_NULL;
         mMouseButtonEventData.mOffset = UINT32_MAX;
         mMouseButtonEventData.mCursorPos.Set(nsIntPoint(0, 0));
         mMouseButtonEventData.mCharRect.Set(nsIntRect(0, 0, 0, 0));
@@ -732,7 +732,7 @@ struct IMENotification final
   struct MouseButtonEventData
   {
     
-    uint32_t mEventMessage;
+    EventMessage mEventMessage;
     
     uint32_t mOffset;
     

@@ -285,7 +285,7 @@ protected:
 
 
 
-  void SendFocusOrBlurEvent(uint32_t aType,
+  void SendFocusOrBlurEvent(mozilla::EventMessage aEventMessage,
                             nsIPresShell* aPresShell,
                             nsIDocument* aDocument,
                             nsISupports* aTarget,

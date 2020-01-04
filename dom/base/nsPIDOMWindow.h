@@ -62,8 +62,8 @@ enum UIStateChangeType
 };
 
 #define NS_PIDOMWINDOW_IID \
-{ 0x2aebbbd7, 0x154b, 0x4341, \
-  { 0x8d, 0x02, 0x7f, 0x70, 0xf8, 0x3e, 0xf7, 0xa1 } }
+{ 0x052e675a, 0xacd3, 0x48d1, \
+  { 0x8a, 0xcd, 0xbf, 0xff, 0xbd, 0x24, 0x4c, 0xed } }
 
 class nsPIDOMWindow : public nsIDOMWindowInternal
 {
@@ -643,7 +643,7 @@ public:
 
 
 
-  virtual void EnableNetworkEvent(uint32_t aType) = 0;
+  virtual void EnableNetworkEvent(mozilla::EventMessage aEventMessage) = 0;
 
   
 
@@ -651,7 +651,7 @@ public:
 
 
 
-  virtual void DisableNetworkEvent(uint32_t aType) = 0;
+  virtual void DisableNetworkEvent(mozilla::EventMessage aEventMessage) = 0;
 #endif 
 
   

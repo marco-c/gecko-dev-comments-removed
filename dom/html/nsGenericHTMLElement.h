@@ -7,6 +7,7 @@
 #define nsGenericHTMLElement_h___
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EventForwards.h"
 #include "nsMappedAttributeElement.h"
 #include "nsIDOMHTMLElement.h"
 #include "nsNameSpaceManager.h"  
@@ -1408,7 +1409,8 @@ protected:
                               void* aData);
 
   
-  bool IsElementDisabledForEvents(uint32_t aMessage, nsIFrame* aFrame);
+  bool IsElementDisabledForEvents(mozilla::EventMessage aMessage,
+                                  nsIFrame* aFrame);
 
   
   

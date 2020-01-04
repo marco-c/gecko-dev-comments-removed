@@ -547,6 +547,9 @@ nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
         
         return nsFrame::HandleEvent(aPresContext, aEvent, aEventStatus);
       }
+
+    default:
+      break;
     }
 
     

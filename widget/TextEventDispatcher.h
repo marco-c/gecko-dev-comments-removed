@@ -215,7 +215,7 @@ public:
 
 
 
-  bool DispatchKeyboardEvent(uint32_t aMessage,
+  bool DispatchKeyboardEvent(EventMessage aMessage,
                              const WidgetKeyboardEvent& aKeyboardEvent,
                              nsEventStatus& aStatus,
                              DispatchTo aDispatchTo = eDispatchToParentProcess);
@@ -354,7 +354,7 @@ private:
 
 
 
-  bool DispatchKeyboardEventInternal(uint32_t aMessage,
+  bool DispatchKeyboardEventInternal(EventMessage aMessage,
                                      const WidgetKeyboardEvent& aKeyboardEvent,
                                      nsEventStatus& aStatus,
                                      DispatchTo aDispatchTo =
