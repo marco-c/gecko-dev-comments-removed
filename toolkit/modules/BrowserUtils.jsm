@@ -108,20 +108,7 @@ this.BrowserUtils = {
 
 
   getElementBoundingScreenRect: function(aElement) {
-    let rect = aElement.getBoundingClientRect();
-    let window = aElement.ownerDocument.defaultView;
-
-    
-    
-    let fullZoom = window.getInterface(Ci.nsIDOMWindowUtils).fullZoom;
-    rect = {
-      left: (rect.left + window.mozInnerScreenX) * fullZoom,
-      top: (rect.top + window.mozInnerScreenY) * fullZoom,
-      width: rect.width * fullZoom,
-      height: rect.height * fullZoom
-    };
-
-    return rect;
+    return this.getElementBoundingRect(aElement, true);
   },
 
   
@@ -130,26 +117,40 @@ this.BrowserUtils = {
 
 
 
+  getElementBoundingRect: function(aElement, aInScreenCoords) {
+    let rect = aElement.getBoundingClientRect();
+    let win = aElement.ownerDocument.defaultView;
 
+    let x = rect.left, y = rect.top;
 
-  offsetToTopLevelWindow: function (aTopLevelWindow, aElement) {
-    let offsetX = 0;
-    let offsetY = 0;
-    let element = aElement;
-    while (element &&
-           element.ownerDocument &&
-           element.ownerDocument.defaultView != aTopLevelWindow) {
-      element = element.ownerDocument.defaultView.frameElement;
-      let rect = element.getBoundingClientRect();
-      offsetX += rect.left;
-      offsetY += rect.top;
+    
+    
+    let parentFrame = win.frameElement;
+    while (parentFrame) {
+      win = parentFrame.ownerDocument.defaultView;
+      let cstyle = win.getComputedStyle(parentFrame, "");
+
+      let framerect = parentFrame.getBoundingClientRect();
+      x += framerect.left + parseFloat(cstyle.borderLeftWidth) + parseFloat(cstyle.paddingLeft);
+      y += framerect.top + parseFloat(cstyle.borderTopWidth) + parseFloat(cstyle.paddingTop);
+
+      parentFrame = win.frameElement;
     }
-    let win = null;
-    if (element == aElement)
-      win = aTopLevelWindow;
-    else
-      win = element.contentDocument.defaultView;
-    return { targetWindow: win, offsetX: offsetX, offsetY: offsetY };
+
+    if (aInScreenCoords) {
+      x += win.mozInnerScreenX;
+      y += win.mozInnerScreenY;
+    }
+
+    let fullZoom = win.getInterface(Ci.nsIDOMWindowUtils).fullZoom;
+    rect = {
+      left: x * fullZoom,
+      top: y * fullZoom,
+      width: rect.width * fullZoom,
+      height: rect.height * fullZoom
+    };
+
+    return rect;
   },
 
   onBeforeLinkTraversal: function(originalTarget, linkURI, linkNode, isAppTab) {

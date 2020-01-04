@@ -190,7 +190,7 @@ FormSubmitObserver.prototype =
 
     
     
-    panelData.contentRect = this._msgRect(aElement);
+    panelData.contentRect = BrowserUtils.getElementBoundingRect(aElement);
 
     
     
@@ -230,22 +230,6 @@ FormSubmitObserver.prototype =
     let target = aEvent.originalTarget;
     return (target == this._content.document ||
             (target.ownerDocument && target.ownerDocument == this._content.document));
-  },
-
-  
-
-
-
-  _msgRect: function (aElement) {
-    let domRect = aElement.getBoundingClientRect();
-    let zoomFactor = this._getWindowUtils().fullZoom;
-    let { offsetX, offsetY } = BrowserUtils.offsetToTopLevelWindow(this._content, aElement);
-    return {
-      left: (domRect.left + offsetX) * zoomFactor,
-      top: (domRect.top + offsetY) * zoomFactor,
-      width: domRect.width * zoomFactor,
-      height: domRect.height * zoomFactor
-    };
   },
 
   QueryInterface : XPCOMUtils.generateQI([Ci.nsIFormSubmitObserver])
