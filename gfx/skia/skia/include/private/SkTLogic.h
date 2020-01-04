@@ -28,17 +28,24 @@
 #include "mozilla/UniquePtr.h"
 
 namespace std {
+  #define std__forward mozilla::Forward
+  #define std__move mozilla::Move
+#if SKIA_IMPLEMENTATION
   using mozilla::Forward;
   using mozilla::Move;
   #define forward Forward
   #define move Move
+#endif
 
   
   
   
   template<typename Signature>
   using moz_function = mozilla::function<Signature>;
+  #define std__function std::moz_function
+#if SKIA_IMPLEMENTATION
   #define function moz_function
+#endif
 
   typedef decltype(nullptr) moz_nullptr_t;
   #define nullptr_t moz_nullptr_t
@@ -87,6 +94,10 @@ template <typename T> using underlying_type_t = typename skstd::underlying_type<
 }
 
 #else 
+
+#define std__forward std::forward
+#define std__move std::move
+#define std__function std::function
 
 #include <type_traits>
 
