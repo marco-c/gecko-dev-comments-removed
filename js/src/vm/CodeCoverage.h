@@ -37,16 +37,12 @@ class LCovSource
 
     
     bool isComplete() const {
-        return hasFilename_ && hasScripts_;
+        return hasFilename_ && hasTopLevelScript_;
     }
 
     
     
-    
-    
-    
-    
-    bool writeTopLevelScript(JSScript* script);
+    bool writeScript(JSScript* script);
 
     
     
@@ -58,10 +54,6 @@ class LCovSource
   private:
     
     bool writeScriptName(LSprinter& out, JSScript* script);
-
-    
-    
-    bool writeScript(JSScript* script);
 
   private:
     
@@ -89,7 +81,7 @@ class LCovSource
 
     
     bool hasFilename_ : 1;
-    bool hasScripts_ : 1;
+    bool hasTopLevelScript_ : 1;
 };
 
 class LCovCompartment

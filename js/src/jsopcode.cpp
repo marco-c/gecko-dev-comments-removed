@@ -1978,16 +1978,10 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
         return true;
 
     
-    
-    auto lessFun = [](const JSScript* lhs, const JSScript* rhs) -> bool {
-        return strcmp(lhs->filename(), rhs->filename()) < 0;
-    };
-    std::sort(topScripts.begin(), topScripts.end(), lessFun);
-
-    
     coverage::LCovCompartment compCover;
     for (JSScript* topLevel: topScripts) {
         RootedScript topScript(cx, topLevel);
+        compCover.collectSourceFile(comp, &topScript->scriptSourceUnwrap());
 
         
         
@@ -1998,6 +1992,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
         RootedScript script(cx);
         do {
             script = queue.popCopy();
+            compCover.collectCodeCoverageInfo(comp, script->sourceObject(), script);
 
             
             
@@ -2025,9 +2020,6 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
                     return false;
             }
         } while (!queue.empty());
-
-        compCover.collectSourceFile(comp, &topScript->scriptSourceUnwrap());
-        compCover.collectCodeCoverageInfo(comp, topScript->sourceObject(), topScript);
     }
 
     bool isEmpty = true;

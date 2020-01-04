@@ -76,7 +76,7 @@ LCovSource::LCovSource(LifoAlloc* alloc, JSObject* sso)
     numLinesInstrumented_(0),
     numLinesHit_(0),
     hasFilename_(false),
-    hasScripts_(false)
+    hasTopLevelScript_(false)
 {
 }
 
@@ -84,7 +84,7 @@ void
 LCovSource::exportInto(GenericPrinter& out) const
 {
     
-    if (!hasFilename_ || !hasScripts_)
+    if (!hasFilename_ || !hasTopLevelScript_)
         return;
 
     outSF_.exportInto(out);
@@ -103,75 +103,6 @@ LCovSource::exportInto(GenericPrinter& out) const
     out.printf("LH:%d\n", numLinesHit_);
 
     out.put("end_of_record\n");
-}
-
-bool
-LCovSource::writeTopLevelScript(JSScript* script)
-{
-    MOZ_ASSERT(script->isTopLevel());
-
-    Vector<JSScript*, 8, SystemAllocPolicy> queue;
-    if (!queue.append(script))
-        return false;
-
-    do {
-        script = queue.popCopy();
-
-        
-        if (!writeScript(script))
-            return false;
-
-        
-        
-        
-        
-        if (!script->hasObjects())
-            continue;
-
-        size_t idx = script->objects()->length;
-        while (idx--) {
-            JSObject* obj = script->getObject(idx);
-
-            
-            if (!obj->is<JSFunction>())
-                continue;
-            JSFunction& fun = obj->as<JSFunction>();
-
-            
-            if (!fun.isInterpreted())
-                continue;
-            MOZ_ASSERT(!fun.isInterpretedLazy());
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            JSScript* child = fun.nonLazyScript();
-            if (child->sourceObject() != source_)
-                continue;
-
-            
-            
-            if (!queue.append(fun.nonLazyScript()))
-                return false;
-        }
-    } while (!queue.empty());
-
-    if (outFN_.hadOutOfMemory() ||
-        outFNDA_.hadOutOfMemory() ||
-        outBRDA_.hadOutOfMemory() ||
-        outDA_.hadOutOfMemory())
-    {
-        return false;
-    }
-
-    hasScripts_ = true;
-    return true;
 }
 
 bool
@@ -408,6 +339,21 @@ LCovSource::writeScript(JSScript* script)
         }
     }
 
+    
+    if (outFN_.hadOutOfMemory() ||
+        outFNDA_.hadOutOfMemory() ||
+        outBRDA_.hadOutOfMemory() ||
+        outDA_.hadOutOfMemory())
+    {
+        return false;
+    }
+
+    
+    
+    
+    if (script->isTopLevel())
+        hasTopLevelScript_ = true;
+
     return true;
 }
 
@@ -421,10 +367,13 @@ LCovCompartment::LCovCompartment()
 
 void
 LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSObject* sso,
-                                         JSScript* topLevel)
+                                         JSScript* script)
 {
     
     if (outTN_.hadOutOfMemory())
+        return;
+
+    if (!script->code())
         return;
 
     
@@ -433,7 +382,7 @@ LCovCompartment::collectCodeCoverageInfo(JSCompartment* comp, JSObject* sso,
         return;
 
     
-    if (!source->writeTopLevelScript(topLevel)) {
+    if (!source->writeScript(script)) {
         outTN_.reportOutOfMemory();
         return;
     }
