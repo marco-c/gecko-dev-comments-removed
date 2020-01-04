@@ -249,6 +249,7 @@ public class FxAccountStatusFragment
 
     if (preference == needsPasswordPreference) {
       final Intent intent = new Intent(FxAccountConstants.ACTION_FXA_UPDATE_CREDENTIALS);
+      intent.putExtra(FxAccountWebFlowActivity.EXTRA_ENDPOINT, FxAccountConstants.ENDPOINT_PREFERENCES);
       final Bundle extras = getExtrasForAccount();
       if (extras != null) {
         intent.putExtras(extras);
@@ -263,6 +264,7 @@ public class FxAccountStatusFragment
 
     if (preference == needsFinishMigratingPreference) {
       final Intent intent = new Intent(FxAccountConstants.ACTION_FXA_FINISH_MIGRATING);
+      intent.putExtra(FxAccountWebFlowActivity.EXTRA_ENDPOINT, FxAccountConstants.ENDPOINT_PREFERENCES);
       final Bundle extras = getExtrasForAccount();
       if (extras != null) {
         intent.putExtras(extras);
@@ -284,6 +286,7 @@ public class FxAccountStatusFragment
       
       
       intent.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+      intent.putExtra(FxAccountWebFlowActivity.EXTRA_ENDPOINT, FxAccountConstants.ENDPOINT_PREFERENCES);
       startActivity(intent);
 
       return true;
