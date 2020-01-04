@@ -893,6 +893,12 @@ TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
     return nullptr;
   }
 
+  
+  if (aMoz2DBackend == gfx::BackendType::DIRECT2D ||
+      aMoz2DBackend == gfx::BackendType::DIRECT2D1_1) {
+    aMoz2DBackend = gfx::BackendType::CAIRO;
+  }
+
   TextureData* texData = BufferTextureData::Create(aSize, aFormat, aMoz2DBackend,
                                                    aTextureFlags, aAllocFlags,
                                                    aAllocator);
