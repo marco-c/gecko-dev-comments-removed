@@ -5463,18 +5463,6 @@ JS_GetRegExpSource(JSContext* cx, JS::HandleObject obj);
 
 
 
-namespace JS {
-
-enum class ExceptionStackBehavior: bool {
-    
-    
-    Capture,
-    
-    DoNotCapture
-};
-
-} 
-
 extern JS_PUBLIC_API(bool)
 JS_IsExceptionPending(JSContext* cx);
 
@@ -5482,8 +5470,7 @@ extern JS_PUBLIC_API(bool)
 JS_GetPendingException(JSContext* cx, JS::MutableHandleValue vp);
 
 extern JS_PUBLIC_API(void)
-JS_SetPendingException(JSContext* cx, JS::HandleValue v,
-                       JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
+JS_SetPendingException(JSContext* cx, JS::HandleValue v);
 
 extern JS_PUBLIC_API(void)
 JS_ClearPendingException(JSContext* cx);
@@ -5992,32 +5979,6 @@ SetOutOfMemoryCallback(JSRuntime* rt, OutOfMemoryCallback cb, void* data);
 
 extern JS_PUBLIC_API(bool)
 CaptureCurrentStack(JSContext* cx, MutableHandleObject stackp, unsigned maxFrameCount = 0);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API(MOZ_MUST_USE bool)
-GetPendingExceptionStack(JSContext* cx, MutableHandleObject stackp);
 
 
 

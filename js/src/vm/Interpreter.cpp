@@ -3634,8 +3634,7 @@ CASE(JSOP_RETSUB)
 
 
 
-        ReservedRooted<Value> v(&rootValue0, rval);
-        cx->setPendingException(v);
+        cx->setPendingException(rval);
         goto error;
     }
     MOZ_ASSERT(rval.isInt32());

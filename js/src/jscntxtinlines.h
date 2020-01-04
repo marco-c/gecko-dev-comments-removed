@@ -365,18 +365,8 @@ ExclusiveContext::typeLifoAlloc()
 }  
 
 inline void
-JSContext::setPendingException(js::HandleValue v, JS::ExceptionStackBehavior behavior)
+JSContext::setPendingException(js::Value v)
 {
-    if (behavior == JS::ExceptionStackBehavior::Capture &&
-        compartment() &&
-        v != StringValue(names().outOfMemory))
-    {
-        js::RootedSavedFrame stack(this);
-        if (!compartment()->savedStacks().saveCurrentStack(this, &stack))
-            clearPendingException();
-        unwrappedPendingExceptionStack_ = stack;
-    }
-
     
     this->overRecursed_ = false;
     this->throwing = true;
