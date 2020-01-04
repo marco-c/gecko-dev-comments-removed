@@ -425,6 +425,10 @@ LayerManagerComposite::UpdateAndRender()
   nsIntRegion invalid;
   bool didEffectiveTransforms = false;
 
+  nsIntRegion opaque;
+  LayerIntRegion visible;
+  PostProcessLayers(mRoot, opaque, visible, Nothing());
+
   if (mClonedLayerTreeProperties) {
     
     mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
@@ -477,10 +481,6 @@ LayerManagerComposite::UpdateAndRender()
     
     mRoot->ComputeEffectiveTransforms(gfx::Matrix4x4());
   }
-
-  nsIntRegion opaque;
-  LayerIntRegion visible;
-  PostProcessLayers(mRoot, opaque, visible, Nothing());
 
   Render(invalid);
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
