@@ -1,10 +1,12 @@
 
 
 
+
 "use strict";
 
 const { Cc, Ci } = require("chrome");
 const Services = require("Services");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { resolve } = require("promise");
 const { HarUtils } = require("./har-utils.js");
 const { HarBuilder } = require("./har-builder.js");

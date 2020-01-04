@@ -1,9 +1,11 @@
 
 
 
+
 "use strict";
 
 const { Ci, Cc, CC } = require("chrome");
+const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "dirService", function () {
   return Cc["@mozilla.org/file/directory_service;1"]

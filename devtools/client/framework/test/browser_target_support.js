@@ -6,8 +6,6 @@
 
 
 
-var { Task } =
-  Cu.import("resource://gre/modules/Task.jsm", {});
 var { WebAudioFront } =
   require("devtools/server/actors/webaudio");
 
