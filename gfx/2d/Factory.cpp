@@ -265,29 +265,28 @@ Factory::CheckSurfaceSize(const IntSize &sz,
     return false;
   }
 
+#if defined(XP_MACOSX)
   
-  CheckedInt<int32_t> tmp = sz.width;
-  tmp *= sz.height;
-  if (!tmp.isValid()) {
-    gfxDebug() << "Surface size too large (would overflow)!";
+  
+  if (sz.height > SHRT_MAX) {
+    gfxDebug() << "Surface size too large (exceeds CoreGraphics limit)!";
     return false;
   }
+#endif
 
   
   
   CheckedInt<int32_t> stride = sz.width;
   stride *= 4;
-
-  
-  stride += 16 - 1;
-
+  if (stride.isValid()) {
+    stride = GetAlignedStride<16>(stride.value());
+  }
   if (!stride.isValid()) {
     gfxDebug() << "Surface size too large (stride overflows int32_t)!";
     return false;
   }
 
-  CheckedInt<int32_t> numBytes = GetAlignedStride<16>(sz.width * 4);
-  numBytes *= sz.height;
+  CheckedInt<int32_t> numBytes = stride * sz.height;
   if (!numBytes.isValid()) {
     gfxDebug() << "Surface size too large (allocation size would overflow int32_t)!";
     return false;

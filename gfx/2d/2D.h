@@ -1241,6 +1241,18 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
   static bool CheckSurfaceSize(const IntSize &sz,
                                int32_t limit = 0,
                                int32_t allocLimit = 0);
