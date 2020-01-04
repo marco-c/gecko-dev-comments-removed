@@ -854,9 +854,11 @@ gfxContext::PushGroupAndCopyBackground(gfxContentType content, Float aOpacity, S
       mDT->PushLayer(content == gfxContentType::COLOR, aOpacity, aMask, aMaskTransform, IntRect(), false);
     }
   } else {
-    if (pushOpaqueWithCopiedBG) {
+    RefPtr<SourceSurface> source;
+    
+    
+    if (pushOpaqueWithCopiedBG && (source = mDT->Snapshot())) {
       DrawTarget *oldDT = mDT;
-      RefPtr<SourceSurface> source = mDT->Snapshot();
       Point oldDeviceOffset = CurrentState().deviceOffset;
 
       PushNewDT(gfxContentType::COLOR);
