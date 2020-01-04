@@ -4713,18 +4713,20 @@ nsBlockFrame::DrainSelfOverflowList()
 
   
   
-  nsAutoOOFFrameList oofs(this);
-  if (oofs.mList.NotEmpty()) {
+  
+  {
+    nsAutoOOFFrameList oofs(this);
+    if (oofs.mList.NotEmpty()) {
 #ifdef DEBUG
-    for (nsIFrame* f : oofs.mList) {
-      MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
-                 "CollectFloats should've removed that bit");
-    }
+      for (nsIFrame* f : oofs.mList) {
+        MOZ_ASSERT(!(f->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT),
+                   "CollectFloats should've removed that bit");
+      }
 #endif
-    
-    mFloats.AppendFrames(nullptr, oofs.mList);
+      
+      mFloats.AppendFrames(nullptr, oofs.mList);
+    }
   }
-
   if (!ourOverflowLines->mLines.empty()) {
     mFrames.AppendFrames(nullptr, ourOverflowLines->mFrames);
     mLines.splice(mLines.end(), ourOverflowLines->mLines);
