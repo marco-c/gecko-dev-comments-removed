@@ -64,11 +64,11 @@ nsresult
 nsThreadPool::PutEvent(nsIRunnable* aEvent)
 {
   nsCOMPtr<nsIRunnable> event(aEvent);
-  return PutEvent(event.forget(), 0);
+  return PutEvent(event.forget());
 }
 
 nsresult
-nsThreadPool::PutEvent(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags)
+nsThreadPool::PutEvent(already_AddRefed<nsIRunnable>&& aEvent)
 {
   
 
@@ -86,7 +86,6 @@ nsThreadPool::PutEvent(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags)
 
     
     if (mThreads.Count() < (int32_t)mThreadLimit &&
-        !(aFlags & NS_DISPATCH_TAIL) &&
         
         
         mEvents.Count(lock) >= mIdleCount) {
@@ -273,7 +272,7 @@ nsThreadPool::Dispatch(already_AddRefed<nsIRunnable>&& aEvent, uint32_t aFlags)
     }
   } else {
     NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL, "unexpected dispatch flags");
-    PutEvent(Move(aEvent), aFlags);
+    PutEvent(Move(aEvent));
   }
   return NS_OK;
 }
