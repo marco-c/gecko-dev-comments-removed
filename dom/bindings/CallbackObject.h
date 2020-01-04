@@ -25,11 +25,13 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "nsWrapperCache.h"
 #include "nsJSEnvironment.h"
 #include "xpcpublic.h"
 #include "jsapi.h"
+#include "js/TracingAPI.h"
 
 namespace mozilla {
 namespace dom {
@@ -184,6 +186,13 @@ private:
     mozilla::HoldJSObjects(this);
   }
 
+  inline void ClearJSReferences()
+  {
+    mCallback = nullptr;
+    mCreationStack = nullptr;
+    mIncumbentJSGlobal = nullptr;
+  }
+
   CallbackObject(const CallbackObject&) = delete;
   CallbackObject& operator =(const CallbackObject&) = delete;
 
@@ -192,12 +201,18 @@ protected:
   {
     MOZ_ASSERT_IF(mIncumbentJSGlobal, mCallback);
     if (mCallback) {
-      mCallback = nullptr;
-      mCreationStack = nullptr;
-      mIncumbentJSGlobal = nullptr;
+      ClearJSReferences();
       mozilla::DropJSObjects(this);
     }
   }
+
+  
+  void Trace(JSTracer* aTracer);
+
+  
+  
+  
+  void HoldJSObjectsIfMoreThanOneOwner();
 
   
   
@@ -505,6 +520,67 @@ ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField)
 {
   aField.UnlinkSelf();
 }
+
+
+
+
+
+template<typename T>
+class RootedCallback : public JS::Rooted<T>
+{
+public:
+  explicit RootedCallback(JSContext* cx)
+    : JS::Rooted<T>(cx)
+  {}
+
+  
+  
+  template<typename S>
+  void operator=(S* arg)
+  {
+    this->get().operator=(arg);
+  }
+
+  
+  
+  void operator=(decltype(nullptr) arg)
+  {
+    this->get().operator=(arg);
+  }
+
+  
+  JS::Handle<JSObject*> Callback() const
+  {
+    return this->get()->Callback();
+  }
+
+  ~RootedCallback()
+  {
+    
+    
+    
+    
+    if (IsInitialized(this->get())) {
+      this->get()->HoldJSObjectsIfMoreThanOneOwner();
+    }
+  }
+
+private:
+  template<typename U>
+  static bool IsInitialized(U& aArg); 
+
+  template<typename U>
+  static bool IsInitialized(RefPtr<U>& aRefPtr)
+  {
+    return aRefPtr;
+  }
+
+  template<typename U>
+  static bool IsInitialized(OwningNonNull<U>& aOwningNonNull)
+  {
+    return aOwningNonNull.isInitialized();
+  }
+};
 
 } 
 } 
