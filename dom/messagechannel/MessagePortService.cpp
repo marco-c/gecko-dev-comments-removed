@@ -3,6 +3,7 @@
 
 
 
+
 #include "MessagePortService.h"
 #include "MessagePortParent.h"
 #include "SharedMessagePortMessage.h"
@@ -263,18 +264,6 @@ MessagePortService::ClosePort(MessagePortParent* aParent)
   return true;
 }
 
-#ifdef DEBUG
-PLDHashOperator
-MessagePortService::CloseAllDebugCheck(const nsID& aID,
-                                       MessagePortServiceData* aData,
-                                       void* aPtr)
-{
-  nsID* id = static_cast<nsID*>(aPtr);
-  MOZ_ASSERT(!id->Equals(aID));
-  return PL_DHASH_NEXT;
-}
-#endif
-
 void
 MessagePortService::CloseAll(const nsID& aUUID, bool aForced)
 {
@@ -319,7 +308,9 @@ MessagePortService::CloseAll(const nsID& aUUID, bool aForced)
   }
 
 #ifdef DEBUG
-  mPorts.EnumerateRead(CloseAllDebugCheck, const_cast<nsID*>(&aUUID));
+  for (auto iter = mPorts.Iter(); !iter.Done(); iter.Next()) {
+    MOZ_ASSERT(!aUUID.Equals(iter.Key()));
+  }
 #endif
 
   MaybeShutdown();
