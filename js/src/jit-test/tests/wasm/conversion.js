@@ -223,17 +223,62 @@ if (hasI64()) {
     }
 }
 
+
+
 testConversion('i32', 'trunc_s', 'f32', 40.1, 40);
-testConversion('i32', 'trunc_u', 'f32', 40.1, 40);
+testConversion('i32', 'trunc_s', 'f32', 2**31 - 128, 2**31 - 128); 
+testConversion('i32', 'trunc_s', 'f32', -2**31, -2**31); 
+
+testTrap('i32', 'trunc_s', 'f32', 'nan');
+testTrap('i32', 'trunc_s', 'f32', 'infinity');
+testTrap('i32', 'trunc_s', 'f32', '-infinity');
+testTrap('i32', 'trunc_s', 'f32', 2**31);
+testTrap('i32', 'trunc_s', 'f32', -(2**31) - 256);
+
 testConversion('i32', 'trunc_s', 'f64', 40.1, 40);
+testConversion('i32', 'trunc_s', 'f64', 2**31 - 0.001, 2**31 - 1); 
+testConversion('i32', 'trunc_s', 'f64', -2**31 - 0.999, -2**31); 
+
+
+testTrap('i32', 'trunc_s', 'f64', 'nan');
+testTrap('i32', 'trunc_s', 'f64', 'infinity');
+testTrap('i32', 'trunc_s', 'f64', '-infinity');
+testTrap('i32', 'trunc_s', 'f64', 2**31);
+testTrap('i32', 'trunc_s', 'f64', -(2**31) - 1);
+
+
+
+testConversion('i32', 'trunc_u', 'f32', 40.1, 40);
+testConversion('i32', 'trunc_u', 'f32', 2**31, (2**31)|0);
+testConversion('i32', 'trunc_u', 'f32', 2**32 - 256, (2**32 - 256)|0); 
+testConversion('i32', 'trunc_u', 'f32', -0.99, 0); 
+
+testTrap('i32', 'trunc_u', 'f32', 'nan');
+testTrap('i32', 'trunc_u', 'f32', 'infinity');
+testTrap('i32', 'trunc_u', 'f32', '-infinity');
+testTrap('i32', 'trunc_u', 'f32', -1);
+testTrap('i32', 'trunc_u', 'f32', 2**32);
+
+
 testConversion('i32', 'trunc_u', 'f64', 40.1, 40);
+testConversion('i32', 'trunc_u', 'f64', 2**32 - 0.001, (2**32 - 1)|0); 
+testConversion('i32', 'trunc_u', 'f64', -0.99999, 0); 
+
+testTrap('i32', 'trunc_u', 'f32', 'nan');
+testTrap('i32', 'trunc_u', 'f32', 'infinity');
+testTrap('i32', 'trunc_u', 'f32', '-infinity');
+testTrap('i32', 'trunc_u', 'f32', -1);
+testTrap('i32', 'trunc_u', 'f32', 2**32);
+
+
 testConversion('i32', 'reinterpret', 'f32', 40.1, 1109419622);
+testConversion('f32', 'reinterpret', 'i32', 40, 5.605193857299268e-44);
 
 testConversion('f32', 'convert_s', 'i32', 40, 40);
 testConversion('f32', 'convert_u', 'i32', 40, 40);
-testConversion('f32', 'demote', 'f64', 40.1, 40.099998474121094);
-testConversion('f32', 'reinterpret', 'i32', 40, 5.605193857299268e-44);
 
 testConversion('f64', 'convert_s', 'i32', 40, 40);
 testConversion('f64', 'convert_u', 'i32', 40, 40);
+
+testConversion('f32', 'demote', 'f64', 40.1, 40.099998474121094);
 testConversion('f64', 'promote', 'f32', 40.1, 40.099998474121094);
