@@ -13,6 +13,10 @@ const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 const baseURI = rootURI + "locale/";
 const preferedLocales = getPreferedLocales(true);
 
+
+
+Services.strings.flushBundles();
+
 function getLocaleURL(locale) {
   
   try {
