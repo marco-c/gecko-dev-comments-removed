@@ -298,6 +298,13 @@ pref("mathml.disabled",    false);
 pref("mathml.scale_stretchy_operators.enabled", true);
 
 
+#ifdef RELEASE_BUILD
+pref("dom.MediaError.message.enabled", false);
+#else
+pref("dom.MediaError.message.enabled", true);
+#endif
+
+
 pref("media.cache_size", 512000);
 
 
@@ -760,7 +767,13 @@ pref("gfx.font_rendering.opentype_svg.enabled", true);
 
 
 pref("gfx.canvas.azure.backends", "direct2d1.1,skia,cairo");
+
+#ifdef NIGHTLY_BUILD
+pref("gfx.content.azure.backends", "direct2d1.1,skia,cairo");
+#else
 pref("gfx.content.azure.backends", "direct2d1.1,cairo");
+#endif
+
 #else
 #ifdef XP_MACOSX
 pref("gfx.content.azure.backends", "skia");
@@ -5075,10 +5088,6 @@ pref("dom.voicemail.defaultServiceId", 0);
 
 
 pref("dom.mapped_arraybuffer.enabled", true);
-
-
-
-pref("dom.fire_extra_xhr_loading_readystatechanges", false);
 
 
 pref("urlclassifier.malwareTable", "goog-malware-shavar,goog-unwanted-shavar,test-malware-simple,test-unwanted-simple");
