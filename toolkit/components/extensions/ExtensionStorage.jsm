@@ -21,11 +21,69 @@ Cu.import("resource://gre/modules/AsyncShutdown.jsm");
 var Path = OS.Path;
 var profileDir = OS.Constants.Path.profileDir;
 
+function jsonReplacer(key, value) {
+  switch (typeof(value)) {
+    
+    case "string":
+    case "number":
+    case "boolean":
+      return value;
+
+    case "object":
+      if (value === null) {
+        return value;
+      }
+
+      switch (Cu.getClassName(value, true)) {
+        
+        case "Array":
+        case "Object":
+          return value;
+
+        
+        
+        case "Date":
+        case "RegExp":
+          return String(value);
+      }
+      break;
+  }
+
+  if (!key) {
+    
+    
+    return {};
+  }
+
+  
+  return undefined;
+}
+
 this.ExtensionStorage = {
   cache: new Map(),
   listeners: new Map(),
 
   extensionDir: Path.join(profileDir, "browser-extension-data"),
+
+  
+
+
+
+  sanitize(value, global) {
+    
+    
+    
+    
+    
+    
+    
+    
+    let JSON_ = Cu.waiveXrays(Cu.Sandbox(global).JSON);
+
+    let json = JSON_.stringify(value, jsonReplacer);
+
+    return JSON.parse(json);
+  },
 
   getExtensionDir(extensionId) {
     return Path.join(this.extensionDir, extensionId);
@@ -75,12 +133,13 @@ this.ExtensionStorage = {
     });
   },
 
-  set(extensionId, items) {
+  set(extensionId, items, global) {
     return this.read(extensionId).then(extData => {
       let changes = {};
       for (let prop in items) {
-        changes[prop] = {oldValue: extData[prop], newValue: items[prop]};
-        extData[prop] = items[prop];
+        let item = this.sanitize(items[prop], global);
+        changes[prop] = {oldValue: extData[prop], newValue: item};
+        extData[prop] = item;
       }
 
       this.notifyListeners(extensionId, changes);
