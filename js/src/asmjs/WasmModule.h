@@ -28,6 +28,7 @@ namespace js {
 
 class AsmJSModule;
 class WasmActivation;
+class WasmModuleObject;
 namespace jit { struct BaselineScript; }
 
 namespace wasm {
@@ -195,6 +196,7 @@ typedef Vector<Import, 0, SystemAllocPolicy> ImportVector;
 
 class CodeRange
 {
+    
     uint32_t nameIndex_;
     uint32_t lineNumber_;
     uint32_t begin_;
@@ -305,6 +307,20 @@ struct CacheableUniquePtr : public UniquePtr<CharT, JS::FreePolicy>
 typedef CacheableUniquePtr<char> CacheableChars;
 typedef CacheableUniquePtr<char16_t> CacheableTwoByteChars;
 typedef Vector<CacheableChars, 0, SystemAllocPolicy> CacheableCharsVector;
+
+
+
+
+struct ExportMap
+{
+    typedef Vector<uint32_t, 0, SystemAllocPolicy> FieldToExportVector;
+
+    CacheableCharsVector exportNames;
+    CacheableCharsVector fieldNames;
+    FieldToExportVector fieldsToExports;
+
+    WASM_DECLARE_SERIALIZABLE(ExportMap)
+};
 
 
 
@@ -531,6 +547,12 @@ class Module
                          Handle<FunctionVector> imports);
 
     
+    
+
+    bool createExportObject(JSContext* cx, Handle<WasmModuleObject*> moduleObj,
+                            const ExportMap& map, MutableHandleObject exportObj);
+
+    
 
     SharedMem<uint8_t*> heap() const;
     size_t heapLength() const;
@@ -568,6 +590,18 @@ class Module
 };
 
 typedef UniquePtr<Module, JS::DeletePolicy<Module>> UniqueModule;
+
+
+
+
+extern bool
+IsExportedFunction(JSFunction* fun);
+
+extern WasmModuleObject*
+ExportedFunctionToModuleObject(JSFunction* fun);
+
+extern uint32_t
+ExportedFunctionToIndex(JSFunction* fun);
 
 } 
 
