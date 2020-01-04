@@ -1146,6 +1146,10 @@ LayerManager* nsBaseWidget::GetLayerManager(PLayerTransactionChild* aShadowManag
                                             bool* aAllowRetaining)
 {
   if (!mLayerManager) {
+    if (!mShutdownObserver) {
+      
+      return nullptr;
+    }
     
     if (ShouldUseOffMainThreadCompositing()) {
       
