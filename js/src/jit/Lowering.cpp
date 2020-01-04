@@ -94,7 +94,7 @@ static void
 TryToUseImplicitInterruptCheck(MIRGraph& graph, MBasicBlock* backedge)
 {
     
-    if (!wasm::HaveSignalHandlers() || JitOptions.ionInterruptWithoutSignals)
+    if (!wasm::HaveSignalHandlers())
         return;
 
     

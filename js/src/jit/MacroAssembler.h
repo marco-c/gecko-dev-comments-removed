@@ -1334,12 +1334,6 @@ class MacroAssembler : public MacroAssemblerSpecific
     void wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee);
 
     
-    
-    
-    void wasmCallBuiltinInstanceMethod(const ABIArg& instanceArg,
-                                       wasm::SymbolicAddress builtin);
-
-    
   public:
 
     

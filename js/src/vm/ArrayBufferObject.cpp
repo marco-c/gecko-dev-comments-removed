@@ -4,13 +4,10 @@
 
 
 
-#include "vm/ArrayBufferObject-inl.h"
 #include "vm/ArrayBufferObject.h"
 
 #include "mozilla/Alignment.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/TaggedAnonymousMemory.h"
 
@@ -37,7 +34,6 @@
 #endif
 #include "jswrapper.h"
 
-#include "asmjs/WasmSignalHandlers.h"
 #include "asmjs/WasmTypes.h"
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
@@ -57,9 +53,6 @@
 using JS::ToInt32;
 
 using mozilla::DebugOnly;
-using mozilla::CheckedInt;
-using mozilla::Some;
-using mozilla::Maybe;
 
 using namespace js;
 using namespace js::gc;
@@ -379,359 +372,150 @@ ArrayBufferObject::changeContents(JSContext* cx, BufferContents newContents)
         changeViewContents(cx, firstView(), oldDataPointer, newContents);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class js::WasmArrayRawBuffer
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+# ifdef XP_WIN
+static void*
+AllocateWasmMappedMemory(uint32_t numBytes)
 {
-    uint32_t length_;
-    Maybe<uint32_t> maxSize_;
-    size_t mappedSize_;
+    MOZ_ASSERT(numBytes % wasm::PageSize == 0);
 
-  protected:
-    WasmArrayRawBuffer(uint8_t* buffer, uint32_t length, Maybe<uint32_t> maxSize, size_t mappedSize)
-      : length_(length), maxSize_(maxSize), mappedSize_(mappedSize)
-    {
-        MOZ_ASSERT(buffer == dataPointer());
-    }
-
-  public:
-    static WasmArrayRawBuffer* Allocate(uint32_t numBytes, Maybe<uint32_t> maxSize);
-    static void Release(void* mem);
-
-    uint8_t* dataPointer() {
-        uint8_t* ptr = reinterpret_cast<uint8_t*>(this);
-        return ptr + sizeof(WasmArrayRawBuffer);
-    }
-
-    uint8_t* basePointer() {
-        return dataPointer() - gc::SystemPageSize();
-    }
-
-    
-    
-    
-    
-    uint32_t actualByteLength() const {
-        return length_;
-    }
-
-    size_t mappedSize() const {
-        return mappedSize_;
-    }
-
-    Maybe<uint32_t> maxSize() const {
-        return maxSize_;
-    }
-
-    size_t allocatedBytes() const {
-        return mappedSize_ + gc::SystemPageSize();
-    }
-
-    uint32_t boundsCheckLimit() const {
-#ifdef WASM_HUGE_MEMORY
-        MOZ_CRASH();
-        return 0;
-#else
-        return (uint32_t) mappedSize_;
-#endif
-    }
-
-    MOZ_MUST_USE bool growLength(uint32_t deltaLength)
-    {
-        
-        MOZ_ASSERT(maxSize_);
-        MOZ_ASSERT(deltaLength % wasm::PageSize == 0);
-
-        CheckedInt<uint32_t> curLength = actualByteLength();
-        CheckedInt<uint32_t> newLength = curLength + deltaLength;
-        MOZ_RELEASE_ASSERT(newLength.isValid());
-        MOZ_ASSERT(newLength.value() <= maxSize_.value());
-
-        uint8_t* dataEnd = dataPointer() + curLength.value();
-        MOZ_ASSERT(((intptr_t)dataEnd) % gc::SystemPageSize() == 0);
-# ifdef XP_WIN
-        if (deltaLength && !VirtualAlloc(dataEnd, deltaLength, MEM_COMMIT, PAGE_READWRITE))
-            return false;
-# else  
-        if (deltaLength && mprotect(dataEnd, deltaLength, PROT_READ | PROT_WRITE))
-            return false;
-# endif  
-
-#  if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-        VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)dataEnd, deltaLength);
-#  endif
-
-        MemProfiler::SampleNative(dataEnd, deltaLength);
-
-        length_ = newLength.value();
-        return true;
-    }
-
-    
-    
-    void tryGrowMaxSize(uint32_t deltaMaxSize)
-    {
-        MOZ_ASSERT(maxSize_);
-        MOZ_RELEASE_ASSERT(deltaMaxSize % wasm::PageSize  == 0);
-
-        CheckedInt<uint32_t> curMax = maxSize_.value();
-        CheckedInt<uint32_t> newMax = curMax + deltaMaxSize;
-        MOZ_RELEASE_ASSERT(newMax.isValid());
-        MOZ_RELEASE_ASSERT(newMax.value() % wasm::PageSize == 0);
-
-        size_t newMapped = wasm::LegalizeMapLength(newMax.value());
-
-# ifdef XP_WIN
-        if (!VirtualAlloc(dataPointer(), newMapped, MEM_RESERVE, PAGE_NOACCESS))
-            return;
-# elif defined(XP_DARWIN)
-        
-        
-        return;
-#else 
-        
-        if (MAP_FAILED == mremap(dataPointer(), mappedSize_, newMapped, 0))
-            return;
-# endif  
-
-        mappedSize_ = newMapped;
-        maxSize_ = Some(newMax.value());
-        return;
-    }
-};
-
- WasmArrayRawBuffer*
-WasmArrayRawBuffer::Allocate(uint32_t numBytes, Maybe<uint32_t> maxSize)
-{
-    size_t mappedSize = wasm::LegalizeMapLength(maxSize.valueOr(numBytes));
-
-    MOZ_RELEASE_ASSERT(mappedSize <= SIZE_MAX - gc::SystemPageSize());
-    MOZ_RELEASE_ASSERT(numBytes <= maxSize.valueOr(UINT32_MAX));
-    MOZ_ASSERT(numBytes % gc::SystemPageSize() == 0);
-    MOZ_ASSERT(mappedSize % gc::SystemPageSize() == 0);
-
-    uint64_t mappedSizeWithHeader = mappedSize + gc::SystemPageSize();
-    uint64_t numBytesWithHeader = numBytes + gc::SystemPageSize();
-
-# ifdef XP_WIN
-    void* data = VirtualAlloc(nullptr, (size_t) mappedSizeWithHeader, MEM_RESERVE, PAGE_NOACCESS);
+    void* data = VirtualAlloc(nullptr, wasm::MappedSize, MEM_RESERVE, PAGE_NOACCESS);
     if (!data)
         return nullptr;
 
-    if (!VirtualAlloc(data, numBytesWithHeader, MEM_COMMIT, PAGE_READWRITE)) {
+    if (numBytes && !VirtualAlloc(data, numBytes, MEM_COMMIT, PAGE_READWRITE)) {
         VirtualFree(data, 0, MEM_RELEASE);
         return nullptr;
     }
+
+    MemProfiler::SampleNative(data, numBytes);
+
+    return data;
+}
+
+static void
+ReleaseWasmMappedMemory(void* base)
+{
+    VirtualFree(base, 0, MEM_RELEASE);
+    MemProfiler::RemoveNative(base);
+}
 # else  
-    void* data = MozTaggedAnonymousMmap(nullptr, (size_t) mappedSizeWithHeader, PROT_NONE,
+static void*
+AllocateWasmMappedMemory(uint32_t numBytes)
+{
+    void* data = MozTaggedAnonymousMmap(nullptr, wasm::MappedSize, PROT_NONE,
                                         MAP_PRIVATE | MAP_ANON, -1, 0, "wasm-reserved");
     if (data == MAP_FAILED)
         return nullptr;
 
-    
-    if (mprotect(data, numBytesWithHeader, PROT_READ | PROT_WRITE)) {
-        munmap(data, mappedSizeWithHeader);
+    if (numBytes && mprotect(data, numBytes, PROT_READ | PROT_WRITE)) {
+        munmap(data, wasm::MappedSize);
         return nullptr;
     }
-# endif  
-    MemProfiler::SampleNative(data, numBytesWithHeader);
+
+    MemProfiler::SampleNative(data, numBytes);
 
 #  if defined(MOZ_VALGRIND) && defined(VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-    VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)data + numBytesWithHeader,
-                                                   mappedSizeWithHeader - numBytesWithHeader);
+    VALGRIND_DISABLE_ADDR_ERROR_REPORTING_IN_RANGE((unsigned char*)data + numBytes,
+                                                   wasm::MappedSize - numBytes);
 #  endif
 
-    uint8_t* base = reinterpret_cast<uint8_t*>(data) + gc::SystemPageSize();
-    uint8_t* header = base - sizeof(WasmArrayRawBuffer);
-
-    auto rawBuf = new (header) WasmArrayRawBuffer(base, numBytes, maxSize, mappedSize);
-    return rawBuf;
+    return data;
 }
 
- void
-WasmArrayRawBuffer::Release(void* mem)
+static void
+ReleaseWasmMappedMemory(void* base)
 {
-    WasmArrayRawBuffer* header = (WasmArrayRawBuffer*)((uint8_t*)mem - sizeof(WasmArrayRawBuffer));
-    uint8_t* base = header->basePointer();
-    MOZ_RELEASE_ASSERT(header->mappedSize() <= SIZE_MAX - gc::SystemPageSize());
-    size_t mappedSizeWithHeader = header->mappedSize() + gc::SystemPageSize();
-
-# ifdef XP_WIN
-    VirtualFree(base, 0, MEM_RELEASE);
-# else  
-    munmap(base, mappedSizeWithHeader);
-# endif  
+    munmap(base, wasm::MappedSize);
     MemProfiler::RemoveNative(base);
 
 #  if defined(MOZ_VALGRIND) && defined(VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE)
-    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(base, mappedSizeWithHeader);
+    VALGRIND_ENABLE_ADDR_ERROR_REPORTING_IN_RANGE(base, wasm::MappedSize);
 #  endif
 }
-
-WasmArrayRawBuffer*
-ArrayBufferObject::BufferContents::wasmBuffer() const
-{
-    MOZ_RELEASE_ASSERT(kind_ == WASM_MAPPED);
-    return (WasmArrayRawBuffer*)(data_ - sizeof(WasmArrayRawBuffer));
-}
-
-#define ROUND_UP(v, a) ((v) % (a) == 0 ? (v) : v + a - ((v) % (a)))
+# endif  
+#endif  
 
  ArrayBufferObject*
-ArrayBufferObject::createForWasm(JSContext* cx, uint32_t numBytes, Maybe<uint32_t> maxSize)
+ArrayBufferObject::createForWasm(JSContext* cx, uint32_t numBytes, bool signalsForOOB)
 {
     MOZ_ASSERT(numBytes % wasm::PageSize == 0);
-    MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
 
-    
-    WasmArrayRawBuffer* wasmBuf = WasmArrayRawBuffer::Allocate(numBytes, maxSize);
-    if (!wasmBuf) {
-#ifdef  WASM_HUGE_MEMORY
-        ReportOutOfMemory(cx);
-        return nullptr;
+    if (signalsForOOB) {
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+        void* data = AllocateWasmMappedMemory(numBytes);
+        if (!data) {
+            ReportOutOfMemory(cx);
+            return nullptr;
+        }
+
+        BufferContents contents = BufferContents::create<WASM_MAPPED>(data);
+        ArrayBufferObject* buffer = ArrayBufferObject::create(cx, numBytes, contents);
+        if (!buffer) {
+            ReleaseWasmMappedMemory(data);
+            return nullptr;
+        }
+
+        return buffer;
 #else
-        
-        
-        if (!maxSize) {
-            ReportOutOfMemory(cx);
-            return nullptr;
-        }
-
-        uint32_t cur = maxSize.value() / 2;
-
-        for (; cur > numBytes; cur = cur / 2) {
-            wasmBuf = WasmArrayRawBuffer::Allocate(numBytes, Some(ROUND_UP(cur, wasm::PageSize)));
-            if (wasmBuf)
-                break;
-        }
-
-        if (!wasmBuf) {
-            ReportOutOfMemory(cx);
-            return nullptr;
-        }
-
-        
-        for (size_t d = cur / 2; d >= wasm::PageSize; d /= 2)
-            wasmBuf->tryGrowMaxSize(ROUND_UP(d, wasm::PageSize));
+        MOZ_CRASH("shouldn't be using signal handlers for out-of-bounds");
 #endif
     }
 
-    void *data = wasmBuf->dataPointer();
-    BufferContents contents = BufferContents::create<WASM_MAPPED>(data);
-    ArrayBufferObject* buffer = ArrayBufferObject::create(cx, numBytes, contents);
-    if (!buffer) {
-        ReportOutOfMemory(cx);
-        WasmArrayRawBuffer::Release(data);
+    auto* buffer = ArrayBufferObject::create(cx, numBytes);
+    if (!buffer)
         return nullptr;
-    }
 
+    buffer->setIsWasmMalloced();
     return buffer;
 }
 
  bool
-ArrayBufferObject::prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer)
+ArrayBufferObject::prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buffer, bool signalsForOOB)
 {
     MOZ_ASSERT(buffer->byteLength() % wasm::PageSize == 0);
-    MOZ_RELEASE_ASSERT(wasm::HaveSignalHandlers());
+
+    if (signalsForOOB) {
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+        if (buffer->isWasmMapped())
+            return true;
+
+        
+        if (buffer->isWasmMalloced()) {
+            JS_ReportError(cx, "can't access same buffer with and without signals enabled");
+            return false;
+        }
+
+        if (buffer->forInlineTypedObject()) {
+            JS_ReportError(cx, "ArrayBuffer can't be used by asm.js");
+            return false;
+        }
+
+        void* data = AllocateWasmMappedMemory(buffer->byteLength());
+        if (!data) {
+            ReportOutOfMemory(cx);
+            return false;
+        }
+
+        
+        memcpy(data, buffer->dataPointer(), buffer->byteLength());
+
+        
+        
+        BufferContents newContents = BufferContents::create<WASM_MAPPED>(data);
+        buffer->changeContents(cx, newContents);
+        MOZ_ASSERT(data == buffer->dataPointer());
+        return true;
+#else
+        MOZ_CRASH("shouldn't be using signal handlers for out-of-bounds");
+#endif  
+    }
 
     if (buffer->forInlineTypedObject()) {
         JS_ReportError(cx, "ArrayBuffer can't be used by asm.js");
         return false;
     }
 
-#ifdef WASM_HUGE_MEMORY
-    if (buffer->isWasmMapped())
-        return true;
-
-    uint32_t length = buffer->byteLength();
-    
-    WasmArrayRawBuffer* wasmBuf = WasmArrayRawBuffer::Allocate(length, Some(length));
-    void* data = wasmBuf->dataPointer();
-
-    if (!data) {
-        
-        
-        ReportOutOfMemory(cx);
-        return false;
-    }
-
-    
-    memcpy(data, buffer->dataPointer(), length);
-
-    
-    
-    BufferContents newContents = BufferContents::create<WASM_MAPPED>(data);
-    buffer->changeContents(cx, newContents);
-    MOZ_ASSERT(data == buffer->dataPointer());
-    return true;
-#else
     if (!buffer->ownsData()) {
         BufferContents contents = AllocateArrayBufferContents(cx, buffer->byteLength());
         if (!contents)
@@ -740,12 +524,7 @@ ArrayBufferObject::prepareForAsmJS(JSContext* cx, Handle<ArrayBufferObject*> buf
         buffer->changeContents(cx, contents);
     }
 
-    buffer->setIsAsmJSMalloced();
-
-    
-    MOZ_RELEASE_ASSERT(buffer->wasmActualByteLength() == buffer->wasmMappedSize());
-    MOZ_RELEASE_ASSERT(buffer->wasmActualByteLength() == buffer->wasmBoundsCheckLimit());
-#endif
+    buffer->setIsWasmMalloced();
     return true;
 }
 
@@ -782,7 +561,7 @@ ArrayBufferObject::releaseData(FreeOp* fop)
 
     switch (bufferKind()) {
       case PLAIN:
-      case ASMJS_MALLOCED:
+      case WASM_MALLOCED:
         fop->free_(dataPointer());
         break;
       case MAPPED:
@@ -790,7 +569,11 @@ ArrayBufferObject::releaseData(FreeOp* fop)
         DeallocateMappedContent(dataPointer(), byteLength());
         break;
       case WASM_MAPPED:
-        WasmArrayRawBuffer::Release(dataPointer());
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
+        ReleaseWasmMappedMemory(dataPointer());
+#else
+        MOZ_CRASH("shouldn't have wasm mapped ArrayBuffer");
+#endif
         break;
     }
 }
@@ -814,72 +597,6 @@ ArrayBufferObject::setByteLength(uint32_t length)
 {
     MOZ_ASSERT(length <= INT32_MAX);
     setSlot(BYTE_LENGTH_SLOT, Int32Value(length));
-}
-
-size_t
-ArrayBufferObject::wasmMappedSize() const
-{
-    if (isWasmMapped()) {
-        return contents().wasmBuffer()->mappedSize();
-    } else {
-        
-        
-        return byteLength();
-    }
-}
-
-Maybe<uint32_t>
-ArrayBufferObject::wasmMaxSize() const
-{
-    if (isWasmMapped())
-        return contents().wasmBuffer()->maxSize();
-    else
-        return Some<uint32_t>(byteLength());
-}
-
-uint32_t
-ArrayBufferObject::wasmBoundsCheckLimit() const
-{
-    if (isWasmMapped())
-        return contents().wasmBuffer()->boundsCheckLimit();
-    else
-        return byteLength();
-}
-
-uint32_t
-ArrayBufferObject::wasmActualByteLength() const
-{
-    if (isWasmMapped())
-        return contents().wasmBuffer()->actualByteLength();
-    else
-        return byteLength();
-}
-
-uint32_t
-ArrayBufferObjectMaybeShared::wasmBoundsCheckLimit() const
-{
-    if (this->is<ArrayBufferObject>())
-        return this->as<ArrayBufferObject>().wasmBoundsCheckLimit();
-
-    
-    
-    return wasmMappedSize();
-}
-
-bool
-ArrayBufferObject::growForWasm(uint32_t delta)
-{
-    MOZ_ASSERT(isWasmMapped());
-
-    if (delta == 0)
-        return true;
-
-    
-    CheckedInt<uint32_t> curSize = wasmActualByteLength();
-    CheckedInt<uint32_t> newSize = curSize + CheckedInt<uint32_t>(delta) * wasm ::PageSize;
-    MOZ_RELEASE_ASSERT(newSize.isValid());
-
-    return contents().wasmBuffer()->growLength(delta * wasm::PageSize);
 }
 
 uint32_t
@@ -916,8 +633,10 @@ ArrayBufferObject::create(JSContext* cx, uint32_t nbytes, BufferContents content
             size_t nAllocated = nbytes;
             if (contents.kind() == MAPPED)
                 nAllocated = JS_ROUNDUP(nbytes, js::gc::SystemPageSize());
+#ifdef ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB
             else if (contents.kind() == WASM_MAPPED)
-                nAllocated = contents.wasmBuffer()->allocatedBytes();
+                nAllocated = wasm::MappedSize;
+#endif
             cx->zone()->updateMallocCounter(nAllocated);
         }
     } else {
@@ -1053,7 +772,7 @@ ArrayBufferObject::addSizeOfExcludingThis(JSObject* obj, mozilla::MallocSizeOf m
       case MAPPED:
         info->objectsNonHeapElementsNormal += buffer.byteLength();
         break;
-      case ASMJS_MALLOCED:
+      case WASM_MALLOCED:
         info->objectsMallocHeapElementsAsmJS += mallocSizeOf(buffer.dataPointer());
         break;
       case WASM_MAPPED:

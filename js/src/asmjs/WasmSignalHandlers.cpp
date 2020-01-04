@@ -319,7 +319,7 @@ enum { REG_EIP = 14 };
 
 
 
-#if defined(XP_DARWIN)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
 # if defined(JS_CODEGEN_X64)
 struct macos_x64_context {
     x86_thread_state64_t thread;
@@ -366,6 +366,8 @@ ContextToPC(CONTEXT* context)
     return reinterpret_cast<uint8_t**>(&PC_sig(context));
 #endif
 }
+
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
 
 #if defined(JS_CODEGEN_X64)
 MOZ_COLD static void
@@ -536,6 +538,7 @@ AddressOfGPRegisterSlot(EMULATOR_CONTEXT* context, Registers::Code code)
     MOZ_CRASH();
 }
 # endif  
+#endif 
 
 MOZ_COLD static void
 SetRegisterToCoercedUndefined(EMULATOR_CONTEXT* context, size_t size,
@@ -606,6 +609,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
                   const MemoryAccess* memoryAccess, const Instance& instance)
 {
     MOZ_RELEASE_ASSERT(instance.codeSegment().containsFunctionPC(pc));
+    MOZ_RELEASE_ASSERT(instance.metadata().assumptions.usesSignal.forOOB);
     MOZ_RELEASE_ASSERT(memoryAccess->insnOffset() == (pc - instance.codeBase()));
 
     
@@ -616,6 +620,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
     MOZ_RELEASE_ASSERT(end > pc);
     MOZ_RELEASE_ASSERT(instance.codeSegment().containsFunctionPC(end));
 
+#if defined(JS_CODEGEN_X64)
     
     MOZ_RELEASE_ASSERT(address.disp() >= 0);
     MOZ_RELEASE_ASSERT(address.base() == HeapReg.code());
@@ -633,6 +638,7 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
                             AddressOfGPRegisterSlot(context, address.index()));
         MOZ_RELEASE_ASSERT(uint32_t(index) == index);
     }
+#endif
 
     
     
@@ -644,11 +650,9 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
                        "faulting address range");
     MOZ_RELEASE_ASSERT(accessAddress >= instance.memoryBase(),
                        "Access begins outside the asm.js heap");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= instance.memoryBase() +
-                       instance.memoryMappedSize(),
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() <= instance.memoryBase() + MappedSize,
                        "Access extends beyond the asm.js heap guard region");
-    MOZ_RELEASE_ASSERT(accessAddress + access.size() > instance.memoryBase() +
-                       instance.memoryLength(),
+    MOZ_RELEASE_ASSERT(accessAddress + access.size() > instance.memoryBase() + instance.memoryLength(),
                        "Computed access address is not actually out of bounds");
 
     
@@ -738,13 +742,32 @@ EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddre
 
     return end;
 }
+
+#elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
+
+MOZ_COLD static uint8_t*
+EmulateHeapAccess(EMULATOR_CONTEXT* context, uint8_t* pc, uint8_t* faultingAddress,
+                  const MemoryAccess* memoryAccess, const Instance& instance)
+{
+    
+    
+    
+    
+    return instance.codeSegment().unalignedAccessCode();
+}
+
 #endif 
+
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
 
 MOZ_COLD static bool
 IsHeapAccessAddress(const Instance &instance, uint8_t* faultingAddress)
 {
-    size_t accessLimit = instance.memoryMappedSize();
-
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
+    size_t accessLimit = MappedSize;
+#elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
+    size_t accessLimit = instance.memoryLength();
+#endif
     return instance.metadata().usesMemory() &&
            faultingAddress >= instance.memoryBase() &&
            faultingAddress < instance.memoryBase() + accessLimit;
@@ -799,18 +822,15 @@ HandleFault(PEXCEPTION_POINTERS exception)
         
         
         return pc == instance->codeSegment().interruptCode() &&
-               instance->codeSegment().containsFunctionPC(activation->resumePC());
+               instance->codeSegment().containsFunctionPC(activation->resumePC()) &&
+               instance->code().lookupMemoryAccess(activation->resumePC());
     }
 
-#ifdef WASM_HUGE_MEMORY
     const MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
     if (!memoryAccess)
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    else
-        *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, *instance);
-#else
-    *ppc = instance->codeSegment().outOfBoundsCode();
-#endif
+        return false;
+
+    *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, *instance);
     return true;
 }
 
@@ -933,15 +953,11 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
     if (!IsHeapAccessAddress(*instance, faultingAddress))
         return false;
 
-#ifdef WASM_HUGE_MEMORY
     const MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
     if (!memoryAccess)
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    else
-        *ppc = EmulateHeapAccess(&context, pc, faultingAddress, memoryAccess, *instance);
-#else
-    *ppc = instance->codeSegment().outOfBoundsCode();
-#endif
+        return false;
+
+    *ppc = EmulateHeapAccess(&context, pc, faultingAddress, memoryAccess, *instance);
 
     
     kret = thread_set_state(rtThread, float_state, (thread_state_t)&context.float_, float_state_count);
@@ -1152,23 +1168,11 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
     if (!IsHeapAccessAddress(*instance, faultingAddress))
         return false;
 
-#ifdef WASM_HUGE_MEMORY
-    MOZ_RELEASE_ASSERT(signal == Signal::SegFault);
     const MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
-    if (!memoryAccess)
-        *ppc = instance->codeSegment().outOfBoundsCode();
-    else
-        *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, *instance);
-#elif defined(JS_CODEGEN_ARM)
-    MOZ_RELEASE_ASSERT(signal == Signal::BusError || signal == Signal::SegFault);
-    if (signal == Signal::BusError)
-        *ppc = instance->codeSegment().unalignedAccessCode();
-    else
-        *ppc = instance->codeSegment().outOfBoundsCode();
-#else 
-    MOZ_RELEASE_ASSERT(signal == Signal::SegFault);
-    *ppc = instance->codeSegment().outOfBoundsCode();
-#endif
+    if (signal == Signal::SegFault && !memoryAccess)
+        return false;
+
+    *ppc = EmulateHeapAccess(context, pc, faultingAddress, memoryAccess, *instance);
 
     return true;
 }
@@ -1207,6 +1211,7 @@ AsmJSFaultHandler(int signum, siginfo_t* info, void* context)
         previousSignal->sa_handler(signum);
 }
 # endif 
+#endif 
 
 static void
 RedirectIonBackedgesToInterruptCheck(JSRuntime* rt)
@@ -1271,16 +1276,15 @@ JitInterruptHandler(int signum, siginfo_t* info, void* context)
 }
 #endif
 
-static bool sTriedInstallSignalHandlers = false;
-static bool sHaveSignalHandlers = false;
-
 static bool
 ProcessHasSignalHandlers()
 {
     
-    if (sTriedInstallSignalHandlers)
-        return sHaveSignalHandlers;
-    sTriedInstallSignalHandlers = true;
+    static bool sTried = false;
+    static bool sResult = false;
+    if (sTried)
+        return sResult;
+    sTried = true;
 
     
     
@@ -1329,6 +1333,7 @@ ProcessHasSignalHandlers()
     }
 #endif 
 
+#if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
     
     
 # if defined(XP_WIN)
@@ -1342,16 +1347,14 @@ ProcessHasSignalHandlers()
     
     
 
-    
+#  if defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_OOB)
     struct sigaction faultHandler;
     faultHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
     faultHandler.sa_sigaction = &AsmJSFaultHandler<Signal::SegFault>;
     sigemptyset(&faultHandler.sa_mask);
     if (sigaction(SIGSEGV, &faultHandler, &sPrevSEGVHandler))
         MOZ_CRASH("unable to install segv handler");
-
-#  if defined(JS_CODEGEN_ARM)
-    
+#  elif defined(ASMJS_MAY_USE_SIGNAL_HANDLERS_FOR_UNALIGNED)
     struct sigaction busHandler;
     busHandler.sa_flags = SA_SIGINFO | SA_NODEFER;
     busHandler.sa_sigaction = &AsmJSFaultHandler<Signal::BusError>;
@@ -1360,8 +1363,9 @@ ProcessHasSignalHandlers()
         MOZ_CRASH("unable to install sigbus handler");
 #  endif
 # endif
+#endif 
 
-    sHaveSignalHandlers = true;
+    sResult = true;
     return true;
 }
 
@@ -1372,7 +1376,7 @@ wasm::EnsureSignalHandlers(JSRuntime* rt)
     if (!ProcessHasSignalHandlers())
         return true;
 
-#if defined(XP_DARWIN)
+#if defined(XP_DARWIN) && defined(ASMJS_MAY_USE_SIGNAL_HANDLERS)
     
     if (!rt->wasmMachExceptionHandler.installed() && !rt->wasmMachExceptionHandler.install(rt))
         return false;
@@ -1381,11 +1385,21 @@ wasm::EnsureSignalHandlers(JSRuntime* rt)
     return true;
 }
 
+static bool sHandlersSuppressedForTesting = false;
+
 bool
 wasm::HaveSignalHandlers()
 {
-    MOZ_ASSERT(sTriedInstallSignalHandlers);
-    return sHaveSignalHandlers;
+    if (!ProcessHasSignalHandlers())
+        return false;
+
+    return !sHandlersSuppressedForTesting;
+}
+
+void
+wasm::SuppressSignalHandlersForTesting(bool suppress)
+{
+    sHandlersSuppressedForTesting = suppress;
 }
 
 
