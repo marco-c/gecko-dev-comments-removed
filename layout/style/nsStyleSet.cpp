@@ -970,13 +970,24 @@ nsStyleSet::GetContext(nsStyleContext* aParentContext,
   }
 
   if (aFlags & eDoAnimation) {
-    
-    
-    
-    
+
     nsIStyleRule *oldAnimRule = GetAnimationRule(aRuleNode);
-    nsIStyleRule *animRule = PresContext()->AnimationManager()->
-      CheckAnimationRule(result, aElementForAnimation);
+    nsIStyleRule *animRule = nullptr;
+
+    
+    
+    if (PresContext()->IsDynamic() &&
+        aElementForAnimation->IsInComposedDoc()) {
+      
+      PresContext()->AnimationManager()->UpdateAnimations(result,
+                                                          aElementForAnimation);
+
+      animRule = PresContext()->EffectCompositor()->
+                   GetAnimationRule(aElementForAnimation,
+                                    result->GetPseudoType(),
+                                    EffectCompositor::CascadeLevel::Animations);
+    }
+
     MOZ_ASSERT(result->RuleNode() == aRuleNode,
                "unexpected rule node");
     MOZ_ASSERT(!result->GetStyleIfVisited() == !aVisitedRuleNode,

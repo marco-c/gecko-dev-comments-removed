@@ -301,15 +301,15 @@ NS_IMPL_CYCLE_COLLECTION(nsAnimationManager, mEventDispatcher)
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsAnimationManager, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsAnimationManager, Release)
 
-nsIStyleRule*
-nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
-                                       mozilla::dom::Element* aElement)
+void
+nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
+                                     mozilla::dom::Element* aElement)
 {
-  
-  
-  if (!mPresContext->IsDynamic() || !aElement->IsInComposedDoc()) {
-    return nullptr;
-  }
+  MOZ_ASSERT(mPresContext->IsDynamic(),
+             "Should not update animations for print or print preview");
+  MOZ_ASSERT(aElement->IsInComposedDoc(),
+             "Should not update animations that are not attached to the "
+             "document tree");
 
   
   
@@ -324,7 +324,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   if (!collection &&
       disp->mAnimationNameCount == 1 &&
       disp->mAnimations[0].GetName().IsEmpty()) {
-    return nullptr;
+    return;
   }
 
   nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
@@ -340,7 +340,7 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
     if (collection) {
       collection->Destroy();
     }
-    return nullptr;
+    return;
   }
 
   if (collection) {
@@ -471,12 +471,10 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
                                          aStyleContext->GetPseudoType(),
                                          aStyleContext);
 
-  EffectCompositor::CascadeLevel cascadeLevel =
-    EffectCompositor::CascadeLevel::Animations;
-  mPresContext->EffectCompositor()
-              ->MaybeUpdateAnimationRule(aElement,
-                                         aStyleContext->GetPseudoType(),
-                                         cascadeLevel);
+  mPresContext->EffectCompositor()->
+    MaybeUpdateAnimationRule(aElement,
+                             aStyleContext->GetPseudoType(),
+                             EffectCompositor::CascadeLevel::Animations);
 
   
   
@@ -485,11 +483,6 @@ nsAnimationManager::CheckAnimationRule(nsStyleContext* aStyleContext,
   if (mEventDispatcher.HasQueuedEvents()) {
     mPresContext->Document()->SetNeedStyleFlush();
   }
-
-  return mPresContext->EffectCompositor()
-                     ->GetAnimationRule(aElement,
-                                        aStyleContext->GetPseudoType(),
-                                        cascadeLevel);
 }
 
 void

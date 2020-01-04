@@ -291,11 +291,8 @@ public:
 
 
 
-
-
-
-  nsIStyleRule* CheckAnimationRule(nsStyleContext* aStyleContext,
-                                   mozilla::dom::Element* aElement);
+  void UpdateAnimations(nsStyleContext* aStyleContext,
+                        mozilla::dom::Element* aElement);
 
   
 
