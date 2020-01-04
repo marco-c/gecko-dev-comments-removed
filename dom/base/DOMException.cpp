@@ -218,7 +218,37 @@ Exception::Exception(const nsACString& aMessage,
     sEverMadeOneFromFactory = true;
   }
 
-  Initialize(aMessage, aResult, aName, aLocation, aData);
+  nsCOMPtr<nsIStackFrame> location;
+  if (aLocation) {
+    location = aLocation;
+  } else {
+    location = GetCurrentJSStack();
+    
+    
+    
+    
+    
+  }
+  
+  if (location) {
+    while (1) {
+      uint32_t language;
+      int32_t lineNumber;
+      if (NS_FAILED(location->GetLanguage(&language)) ||
+          language == nsIProgrammingLanguage::JAVASCRIPT ||
+          NS_FAILED(location->GetLineNumber(&lineNumber)) ||
+          lineNumber) {
+        break;
+      }
+      nsCOMPtr<nsIStackFrame> caller;
+      if (NS_FAILED(location->GetCaller(getter_AddRefs(caller))) || !caller) {
+        break;
+      }
+      location = caller;
+    }
+  }
+
+  Initialize(aMessage, aResult, aName, location, aData);
 }
 
 Exception::Exception()
@@ -424,11 +454,12 @@ Exception::Initialize(const nsACString& aMessage, nsresult aResult,
   if (aLocation) {
     mLocation = aLocation;
   } else {
-    mLocation = GetCurrentJSStack();
-    
-    
-    
-    
+    nsresult rv;
+    nsXPConnect* xpc = nsXPConnect::XPConnect();
+    rv = xpc->GetCurrentJSStack(getter_AddRefs(mLocation));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   mData = aData;

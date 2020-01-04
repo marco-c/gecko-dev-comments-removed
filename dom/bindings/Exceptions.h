@@ -48,11 +48,8 @@ already_AddRefed<Exception>
 CreateException(JSContext* aCx, nsresult aRv,
                 const nsACString& aMessage = EmptyCString());
 
-
-
-
 already_AddRefed<nsIStackFrame>
-GetCurrentJSStack(int32_t aMaxDepth = -1);
+GetCurrentJSStack();
 
 
 
@@ -69,7 +66,6 @@ public:
 
 
 namespace exceptions {
-
 
 
 
