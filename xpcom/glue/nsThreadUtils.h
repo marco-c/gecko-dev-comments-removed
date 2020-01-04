@@ -20,6 +20,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/IndexSequence.h"
 #include "mozilla/Likely.h"
+#include "mozilla/Move.h"
 #include "mozilla/Tuple.h"
 #include "mozilla/TypeTraits.h"
 
@@ -262,12 +263,13 @@ private:
 
 
 
-template<typename Function>
+template<typename StoredFunction>
 class nsRunnableFunction : public mozilla::Runnable
 {
 public:
-  explicit nsRunnableFunction(const Function& aFunction)
-    : mFunction(aFunction)
+  template <typename F>
+  explicit nsRunnableFunction(F&& aFunction)
+    : mFunction(mozilla::Forward<F>(aFunction))
   { }
 
   NS_IMETHOD Run() {
@@ -277,13 +279,18 @@ public:
     return NS_OK;
   }
 private:
-  Function mFunction;
+  StoredFunction mFunction;
 };
 
 template<typename Function>
-nsRunnableFunction<Function>* NS_NewRunnableFunction(const Function& aFunction)
+nsRunnableFunction<typename mozilla::RemoveReference<Function>::Type>*
+NS_NewRunnableFunction(Function&& aFunction)
 {
-  return new nsRunnableFunction<Function>(aFunction);
+  return new nsRunnableFunction
+               
+               <typename mozilla::RemoveReference<Function>::Type>
+               
+               (mozilla::Forward<Function>(aFunction));
 }
 
 
