@@ -26,16 +26,6 @@ using mozilla::UniquePtr;
 #if MOZ_IS_MSVC
    template<typename T> struct Identity { typedef T type; };
 #  define DECLTYPE(EXPR) Identity<decltype(EXPR)>::type
-#elif MOZ_IS_GCC
-
-
-
-#  if MOZ_GCC_VERSION_AT_LEAST(4, 7, 0)
-#    define DECLTYPE(EXPR) decltype(EXPR)
-#  else
-     template<typename T> struct Identity { typedef T type; };
-#    define DECLTYPE(EXPR) Identity<decltype(EXPR)>::type
-#  endif
 #else
 #  define DECLTYPE(EXPR) decltype(EXPR)
 #endif
