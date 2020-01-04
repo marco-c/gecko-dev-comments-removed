@@ -1538,8 +1538,13 @@ BytecodeEmitter::tryConvertFreeName(ParseNode* pn)
         PropertyName* name = pn->pn_atom->asPropertyName();
         for (StaticScopeIter<NoGC> ssi(funbox->staticScope()); !ssi.done(); ssi++) {
             
-            if (ssi.type() == StaticScopeIter<NoGC>::Eval)
-                return false;
+            
+            if (ssi.type() == StaticScopeIter<NoGC>::Eval) {
+                if (ssi.eval().isNonGlobal())
+                    return false;
+                MOZ_ASSERT(!slot.isSome());
+                break;
+            }
 
             if (!ssi.hasSyntacticDynamicScopeObject())
                 continue;

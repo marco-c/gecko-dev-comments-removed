@@ -456,12 +456,7 @@ class StaticEvalObject : public ScopeObject
         return getReservedSlot(STRICT_SLOT).isTrue();
     }
 
-    
-    
-    bool isDirect() const {
-        MOZ_ASSERT_IF(!getReservedSlot(SCOPE_CHAIN_SLOT).isObject(), !isStrict());
-        return getReservedSlot(SCOPE_CHAIN_SLOT).isObject();
-    }
+    inline bool isNonGlobal() const;
 };
 
 
@@ -1213,6 +1208,14 @@ NestedScopeObject::enclosingNestedScope() const
 {
     JSObject* obj = getReservedSlot(SCOPE_CHAIN_SLOT).toObjectOrNull();
     return obj && obj->is<NestedScopeObject>() ? &obj->as<NestedScopeObject>() : nullptr;
+}
+
+inline bool
+StaticEvalObject::isNonGlobal() const
+{
+    if (isStrict())
+        return true;
+    return !IsStaticGlobalLexicalScope(&getReservedSlot(SCOPE_CHAIN_SLOT).toObject());
 }
 
 inline bool

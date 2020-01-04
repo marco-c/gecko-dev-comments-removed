@@ -52,14 +52,12 @@ setLazyParsingDisabled(false);
 }
 
 
-
-
 eval(`
      function h3() {
 	 assertEq(x, 'outer');
      }
      h3();
-     hasGname(h3, 'x', false);
+     hasGname(h3, 'x', true);
      `);
 eval(`
      function h4() {
@@ -67,7 +65,7 @@ eval(`
 	 nest();
 	 return nest;
      }
-     hasGname(h4(), 'x', false);
+     hasGname(h4(), 'x', true);
      `);
 
 setLazyParsingDisabled(true);

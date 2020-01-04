@@ -3486,7 +3486,7 @@ IsFunctionCloneable(HandleFunction fun)
             
             
             if (enclosing->is<StaticEvalObject>())
-                return !enclosing->as<StaticEvalObject>().isDirect();
+                return !enclosing->as<StaticEvalObject>().isNonGlobal();
 
             
             
