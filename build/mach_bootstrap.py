@@ -233,8 +233,11 @@ def bootstrap(topsrcdir, mozilla_dir=None):
     
     
     
-    sys.path[0:0] = [os.path.join(mozilla_dir, path) for path in SEARCH_PATHS]
-    import mach.main
+    try:
+        import mach.main
+    except ImportError:
+        sys.path[0:0] = [os.path.join(mozilla_dir, path) for path in SEARCH_PATHS]
+        import mach.main
 
     def telemetry_handler(context, data):
         
