@@ -67,7 +67,7 @@ const {
   CustomHighlighterActor,
   isTypeRegistered,
 } = require("devtools/server/actors/highlighters");
-const {NodeFront} = require("devtools/client/fronts/inspector");
+const {NodeFront, NodeListFront} = require("devtools/client/fronts/inspector");
 const {
   isAnonymous,
   isNativeAnonymous,
@@ -81,7 +81,7 @@ const {getLayoutChangesObserver, releaseLayoutChangesObserver} =
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
 const {EventParsers} = require("devtools/shared/event-parsers");
-const {nodeSpec} = require("devtools/shared/specs/inspector");
+const {nodeSpec, nodeListSpec} = require("devtools/shared/specs/inspector");
 const FONT_FAMILY_PREVIEW_TEXT = "The quick brown fox jumps over the lazy dog";
 const FONT_FAMILY_PREVIEW_TEXT_SIZE = 20;
 const PSEUDO_CLASSES = [":hover", ":active", ":focus"];
@@ -703,37 +703,7 @@ var NodeActor = exports.NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
-
-types.addDictType("disconnectedNode", {
-  
-  node: "domnode",
-
-  
-  
-  newParents: "array:domnode"
-});
-
-types.addDictType("disconnectedNodeArray", {
-  
-  nodes: "array:domnode",
-
-  
-  newParents: "array:domnode"
-});
-
-types.addDictType("dommutation", {});
-
-types.addDictType("searchresult", {
-  list: "domnodelist",
-  
-  
-  metadata: "array:json"
-});
-
-
-
-
-var NodeListActor = exports.NodeListActor = protocol.ActorClass({
+var NodeListActor = exports.NodeListActor = protocol.ActorClassWithSpec(nodeListSpec, {
   typeName: "domnodelist",
 
   initialize: function (walker, nodeList) {
@@ -772,67 +742,20 @@ var NodeListActor = exports.NodeListActor = protocol.ActorClass({
   
 
 
-  item: method(function (index) {
+  item: function (index) {
     return this.walker.attachElement(this.nodeList[index]);
-  }, {
-    request: { item: Arg(0) },
-    response: RetVal("disconnectedNode")
-  }),
+  },
 
   
 
 
-  items: method(function (start = 0, end = this.nodeList.length) {
+  items: function (start = 0, end = this.nodeList.length) {
     let items = Array.prototype.slice.call(this.nodeList, start, end)
       .map(item => this.walker._ref(item));
     return this.walker.attachElements(items);
-  }, {
-    request: {
-      start: Arg(0, "nullable:number"),
-      end: Arg(1, "nullable:number")
-    },
-    response: RetVal("disconnectedNodeArray")
-  }),
-
-  release: method(function () {}, { release: true })
-});
-
-
-
-
-var NodeListFront = protocol.FrontClass(NodeListActor, {
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
   },
 
-  destroy: function () {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  marshallPool: function () {
-    return this.parent();
-  },
-
-  
-  form: function (json) {
-    this.length = json.length;
-  },
-
-  item: protocol.custom(function (index) {
-    return this._item(index).then(response => {
-      return response.node;
-    });
-  }, {
-    impl: "_item"
-  }),
-
-  items: protocol.custom(function (start, end) {
-    return this._items(start, end).then(response => {
-      return response.nodes;
-    });
-  }, {
-    impl: "_items"
-  })
+  release: function () {}
 });
 
 exports.NodeListFront = NodeListFront;
