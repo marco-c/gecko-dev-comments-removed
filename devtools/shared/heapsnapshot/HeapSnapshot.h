@@ -59,11 +59,13 @@ class HeapSnapshot final : public nsISupports
   
   
   
-  bool init(const uint8_t* buffer, uint32_t size);
+  bool init(JSContext* cx, const uint8_t* buffer, uint32_t size);
+
+  using NodeIdSet = js::HashSet<NodeId>;
 
   
   
-  bool saveNode(const protobuf::Node& node);
+  bool saveNode(const protobuf::Node& node, NodeIdSet& edgeReferents);
 
   
   
