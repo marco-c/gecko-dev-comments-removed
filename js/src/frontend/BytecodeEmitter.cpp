@@ -2323,7 +2323,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
       case PNK_FORIN:           
       case PNK_FOROF:           
       case PNK_FORHEAD:         
-      case PNK_FRESHENBLOCK:    
       case PNK_CLASSMETHOD:     
       case PNK_CLASSNAMES:      
       case PNK_CLASSMETHODLIST: 
@@ -5289,6 +5288,15 @@ BytecodeEmitter::emitIterator()
 bool
 BytecodeEmitter::emitForInOrOfVariables(ParseNode* pn, bool* letDecl)
 {
+    
+    
+    
+    
+    
+    
+    
+    
+
     *letDecl = pn->isKind(PNK_LEXICALSCOPE);
     MOZ_ASSERT_IF(*letDecl, pn->isLexical());
 
@@ -5317,7 +5325,6 @@ BytecodeEmitter::emitForInOrOfVariables(ParseNode* pn, bool* letDecl)
 
     return true;
 }
-
 
 bool
 BytecodeEmitter::emitForOf(StmtType type, ParseNode* pn, ptrdiff_t top)
@@ -5591,8 +5598,9 @@ BytecodeEmitter::emitForIn(ParseNode* pn, ptrdiff_t top)
     return true;
 }
 
+
 bool
-BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
+BytecodeEmitter::emitCStyleFor(ParseNode* pn, ptrdiff_t top)
 {
     LoopStmtInfo stmtInfo(cx);
     pushLoopStatement(&stmtInfo, StmtType::FOR_LOOP, top);
@@ -5601,27 +5609,47 @@ BytecodeEmitter::emitNormalFor(ParseNode* pn, ptrdiff_t top)
     ParseNode* forBody = pn->pn_right;
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     bool forLoopRequiresFreshening = false;
     if (ParseNode* init = forHead->pn_kid1) {
-        if (init->isKind(PNK_FRESHENBLOCK)) {
-            
-            
-            
-            forLoopRequiresFreshening = true;
-        } else {
-            emittingForInit = true;
-            if (!updateSourceCoordNotes(init->pn_pos.begin))
-                return false;
-            if (!emitTree(init))
-                return false;
-            emittingForInit = false;
+        forLoopRequiresFreshening = init->isKind(PNK_LET);
 
-            if (!init->isKind(PNK_VAR) && !init->isKind(PNK_LET) && !init->isKind(PNK_CONST)) {
-                
-                
-                if (!emit1(JSOP_POP))
-                    return false;
-            }
+        
+        
+        
+        emittingForInit = true;
+        if (!updateSourceCoordNotes(init->pn_pos.begin))
+            return false;
+        if (!emitTree(init))
+            return false;
+        emittingForInit = false;
+
+        if (!init->isKind(PNK_VAR) && !init->isKind(PNK_LET) && !init->isKind(PNK_CONST)) {
+            
+            
+            if (!emit1(JSOP_POP))
+                return false;
         }
     }
 
@@ -5749,7 +5777,7 @@ BytecodeEmitter::emitFor(ParseNode* pn, ptrdiff_t top)
         return emitForOf(StmtType::FOR_OF_LOOP, pn, top);
 
     MOZ_ASSERT(pn->pn_left->isKind(PNK_FORHEAD));
-    return emitNormalFor(pn, top);
+    return emitCStyleFor(pn, top);
 }
 
 MOZ_NEVER_INLINE bool

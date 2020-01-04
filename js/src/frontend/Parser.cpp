@@ -4063,7 +4063,8 @@ Parser<FullParseHandler>::pushLetScope(HandleStaticBlockObject blockObj, AutoPus
 
 template <>
 SyntaxParseHandler::Node
-Parser<SyntaxParseHandler>::pushLetScope(HandleStaticBlockObject blockObj, AutoPushStmtInfoPC& stmt)
+Parser<SyntaxParseHandler>::pushLetScope(HandleStaticBlockObject blockObj,
+                                         AutoPushStmtInfoPC& stmt)
 {
     JS_ALWAYS_FALSE(abortIfSyntaxParser());
     return SyntaxParseHandler::NodeFailure;
@@ -5188,16 +5189,34 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     MUST_MATCH_TOKEN(TOK_LP, JSMSG_PAREN_AFTER_FOR);
 
     
-
-
     bool isForDecl = false;
 
     
     
-    bool letIsIdentifier = false;
-
+    
+    
+    
+    
+    
+    
+    
     
     RootedStaticBlockObject blockObj(context);
+
+    
+    
+    
+    
+    
+    
+    Maybe<AutoPushStmtInfoPC> letStmt;
+
+    
+    ParseNode* forLetImpliedBlock = nullptr;
+
+    
+    
+    bool letIsIdentifier = false;
 
     
     ParseNode* pn1;
@@ -5249,9 +5268,19 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
 
                     
                     
+                    blockObj = StaticBlockObject::create(context);
+                    if (!blockObj)
+                        return null();
                     blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
+                    letStmt.emplace(*this, StmtType::BLOCK);
+                    forLetImpliedBlock = pushLetScope(blockObj, *letStmt);
+                    if (!forLetImpliedBlock)
+                        return null();
+                    (*letStmt)->isForLetBlock = true;
+
+                    MOZ_ASSERT(CurrentLexicalStaticBlock(pc) == blockObj);
                     pn1 = variables(yieldHandling, constDecl ? PNK_CONST : PNK_LET, InForInit,
-                                    nullptr, blockObj, DontHoistVars);
+                                    nullptr, blockObj, HoistVars);
                 } else {
                     pn1 = expr(InProhibited, yieldHandling, TripledotProhibited);
                 }
@@ -5269,60 +5298,10 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     }
 
     MOZ_ASSERT_IF(isForDecl, pn1->isArity(PN_LIST));
-    MOZ_ASSERT(!!blockObj == (isForDecl && (pn1->isOp(JSOP_DEFLET) || pn1->isOp(JSOP_DEFCONST))));
+    MOZ_ASSERT(letStmt.isSome() == (isForDecl && (pn1->isOp(JSOP_DEFLET) || pn1->isOp(JSOP_DEFCONST))));
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ParseNode* forLetImpliedBlock = nullptr;
-    ParseNode* forLetDecl = nullptr;
-
-    
-    
-    Maybe<AutoPushStmtInfoPC> letStmt; 
     ParseNode* pn2;      
     ParseNode* pn3;      
     ParseNodeKind headKind = PNK_FORHEAD;
@@ -5393,7 +5372,7 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
             }
         } else {
             
-            MOZ_ASSERT(!blockObj);
+            MOZ_ASSERT(!letStmt);
             pn2 = pn1;
             pn1 = nullptr;
 
@@ -5407,23 +5386,6 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
         if (!pn3)
             return null();
         modifier = TokenStream::None;
-
-        if (blockObj) {
-            
-
-
-
-
-
-            letStmt.emplace(*this, StmtType::BLOCK);
-            ParseNode* block = pushLetScope(blockObj, *letStmt);
-            if (!block)
-                return null();
-            (*letStmt)->isForLetBlock = true;
-            block->pn_expr = pn1;
-            block->pn_pos = pn1->pn_pos;
-            pn1 = block;
-        }
 
         if (isForDecl) {
             
@@ -5450,46 +5412,12 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
 
         MOZ_ASSERT(headKind == PNK_FORHEAD);
 
-        if (blockObj) {
+        if (letStmt) {
             
             
             if (!checkForHeadConstInitializers(pn1)) {
                 report(ParseError, false, nullptr, JSMSG_BAD_CONST_DECL);
                 return null();
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            letStmt.emplace(*this, StmtType::BLOCK);
-            forLetImpliedBlock = pushLetScope(blockObj, *letStmt);
-            if (!forLetImpliedBlock)
-                return null();
-            (*letStmt)->isForLetBlock = true;
-
-            forLetDecl = pn1;
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (pn1->isKind(PNK_CONST)) {
-                pn1 = nullptr;
-            } else {
-                pn1 = handler.newFreshenBlock(pn1->pn_pos);
-                if (!pn1)
-                    return null();
             }
         }
 
@@ -5542,7 +5470,7 @@ Parser<FullParseHandler>::forStatement(YieldHandling yieldHandling)
     if (forLetImpliedBlock) {
         forLetImpliedBlock->pn_expr = forLoop;
         forLetImpliedBlock->pn_pos = forLoop->pn_pos;
-        return handler.newLetBlock(forLetDecl, forLetImpliedBlock, forLoop->pn_pos);
+        return forLetImpliedBlock;
     }
     return forLoop;
 }
@@ -8293,6 +8221,7 @@ Parser<ParseHandler>::comprehensionFor(GeneratorKind comprehensionKind)
     RootedStaticBlockObject blockObj(context, StaticBlockObject::create(context));
     if (!blockObj)
         return null();
+
     
     
     blockObj->initEnclosingScopeFromParser(pc->innermostStaticScope());
