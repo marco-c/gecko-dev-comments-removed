@@ -731,31 +731,8 @@ enum class BarrierKind : uint32_t {
 
     
     
-    ObjectTypesOnly,
-
-    
-    
     TypeSet
 };
-
-static inline BarrierKind
-CombineBarrierKinds(BarrierKind first, BarrierKind second)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (first == BarrierKind::NoBarrier || first == second)
-        return second;
-    if (second == BarrierKind::NoBarrier)
-        return first;
-    return BarrierKind::TypeSet;
-}
 
 } 
 } 
