@@ -33,9 +33,6 @@ namespace HangMonitor {
 } 
 namespace Telemetry {
 
-struct Accumulation;
-struct KeyedAccumulation;
-
 enum TimerResolution {
   Millisecond,
   Microsecond
@@ -127,20 +124,6 @@ void AccumulateCategorical(ID id, const nsCString& label);
 
 
 void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now());
-
-
-
-
-
-
-void AccumulateChild(const nsTArray<Accumulation>& aAccumulations);
-
-
-
-
-
-
-void AccumulateChildKeyed(const nsTArray<KeyedAccumulation>& aAccumulations);
 
 
 
