@@ -7,7 +7,6 @@
 
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
-browserElementTestHelpers.addPermission();
 
 
 
@@ -67,21 +66,19 @@ function createFrames() {
    
    gInputFrame = document.createElement('iframe');
    gInputFrame.setAttribute('mozbrowser', 'true');
-   gInputFrame.src =
-     'data:text/html,<input autofocus value="hello" />' +
-     '<p>This is targetted mozbrowser frame.</p>';
+   gInputFrame.src = 'file_browserElement_SetInputMethodActive.html';
    document.body.appendChild(gInputFrame);
    gInputFrame.addEventListener('mozbrowserloadend', countLoadend);
 
    for (let i = 0; i < 2; i++) {
-    let frame = gInputMethodFrames[i] = document.createElement('iframe');
-    frame.setAttribute('mozbrowser', 'true');
-    if (currentAppManifestURL) {
-      frame.setAttribute('mozapp', currentAppManifestURL);
-    }
-    frame.src = 'file_empty.html#' + i;
-     document.body.appendChild(frame);
+     let frame = gInputMethodFrames[i] = document.createElement('iframe');
+     frame.setAttribute('mozbrowser', 'true');
+     if (currentAppManifestURL) {
+       frame.setAttribute('mozapp', currentAppManifestURL);
+     }
      frame.addEventListener('mozbrowserloadend', countLoadend);
+     frame.src = 'file_empty.html#' + i;
+     document.body.appendChild(frame);
    }
  }
 

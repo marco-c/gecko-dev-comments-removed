@@ -12,18 +12,10 @@
 
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
-browserElementTestHelpers.addPermission();
 
 var iframe;
 
 function runTest() {
-  var principal = SpecialPowers.wrap(document).nodePrincipal;
-  SpecialPowers.addPermission("browser", true, {url: SpecialPowers.wrap(principal.URI).spec,
-                                                originAttributes: {
-                                                  appId: principal.appId,
-                                                  inIsolatedMozBrowser: true
-                                                }});
-
   iframe = document.createElement('iframe');
   iframe.setAttribute('mozbrowser', 'true');
 
@@ -75,13 +67,6 @@ function finish() {
   
   
   iframe.removeEventListener('mozbrowsershowmodalprompt', checkMessage);
-
-  var principal = SpecialPowers.wrap(document).nodePrincipal;
-  SpecialPowers.removePermission("browser", {url: SpecialPowers.wrap(principal.URI).spec,
-                                             originAttributes: {
-                                               appId: principal.appId,
-                                               inIsolatedMozBrowser: true
-                                             }});
   SimpleTest.finish();
 }
 

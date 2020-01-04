@@ -155,21 +155,6 @@ function defer() {
 
 
 function* test_basics() {
-  if (enablePrefsAndPermissions()) {
-    
-    let prefDeferred = defer();
-    SpecialPowers.pushPrefEnv(
-      { set: [ ['dom.mozTCPSocket.enabled', true] ] },
-      prefDeferred.resolve);
-    yield prefDeferred.promise;
-
-    let permDeferred = defer();
-    SpecialPowers.pushPermissions(
-      [ { type: 'tcp-socket', allow: true, context: document } ],
-      permDeferred.resolve);
-    yield permDeferred.promise;
-  }
-
   
   
   

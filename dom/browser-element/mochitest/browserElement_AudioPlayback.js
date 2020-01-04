@@ -8,7 +8,6 @@ const { Services } = SpecialPowers.Cu.import('resource://gre/modules/Services.js
 
 SimpleTest.waitForExplicitFinish();
 browserElementTestHelpers.setEnabledPref(true);
-browserElementTestHelpers.addPermission();
 
 
 
@@ -65,7 +64,7 @@ function runTest() {
   });
 
   
-  iframe.src = browserElementTestHelpers.emptyPage1;
+  iframe.src = browserElementTestHelpers.fileEmptyPage1;
 }
 
 addEventListener('testready', function() {

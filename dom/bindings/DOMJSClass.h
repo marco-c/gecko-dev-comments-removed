@@ -76,18 +76,6 @@ typedef bool
 
 
 
-
-bool
-CheckAnyPermissions(JSContext* aCx, JSObject* aObj, const char* const aPermissions[]);
-
-
-
-
-bool
-CheckAllPermissions(JSContext* aCx, JSObject* aObj, const char* const aPermissions[]);
-
-
-
 bool
 IsNonExposedGlobal(JSContext* aCx, JSObject* aGlobal,
                    uint32_t aNonExposedGlobals);
@@ -138,20 +126,6 @@ struct PrefableDisablers {
         !enabledFunc(cx, js::GetGlobalForObjectCrossCompartment(obj))) {
       return false;
     }
-    if (availableFunc &&
-        !availableFunc(cx, js::GetGlobalForObjectCrossCompartment(obj))) {
-      return false;
-    }
-    if (checkAnyPermissions &&
-        !CheckAnyPermissions(cx, js::GetGlobalForObjectCrossCompartment(obj),
-                             checkAnyPermissions)) {
-      return false;
-    }
-    if (checkAllPermissions &&
-        !CheckAllPermissions(cx, js::GetGlobalForObjectCrossCompartment(obj),
-                             checkAllPermissions)) {
-      return false;
-    }
     return true;
   }
 
@@ -169,14 +143,6 @@ struct PrefableDisablers {
   
   
   const PropertyEnabled enabledFunc;
-
-  
-  
-  
-  
-  const PropertyEnabled availableFunc;
-  const char* const* const checkAnyPermissions;
-  const char* const* const checkAllPermissions;
 };
 
 template<typename T>

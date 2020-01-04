@@ -33,23 +33,12 @@ function runTest() {
   iframe.setAttribute('mozbrowser', 'true');
   iframe.height = '1000px';
 
+  var step1, stepfinish;
   
   iframe.addEventListener('mozbrowsershowmodalprompt', function(e) {
     switch (e.detail.message) {
     case 'step 1':
-      
-      
-      e.preventDefault();
-
-      iframe.getScreenshot(1000, 1000).onsuccess = function(sshot) {
-        var fr = new FileReader();
-        fr.onloadend = function() {
-          if (initialScreenshotArrayBuffer == null)
-            initialScreenshotArrayBuffer = fr.result;
-          e.detail.unblock();
-        };
-        fr.readAsArrayBuffer(sshot.target.result);
-      };
+      step1 = SpecialPowers.snapshotWindow(iframe.contentWindow);
       break;
     case 'step 2':
       ok(false, 'cross origin page loaded');
@@ -57,16 +46,9 @@ function runTest() {
     case 'finish':
       
       
-      iframe.getScreenshot(1000, 1000).onsuccess = function(sshot) {
-        var fr = new FileReader();
-        fr.onloadend = function() {
-          ok(arrayBuffersEqual(fr.result, initialScreenshotArrayBuffer),
-             "Screenshots should be identical");
-          SimpleTest.finish();
-        };
-        fr.readAsArrayBuffer(sshot.target.result);
-      };
-      break;
+      stepfinish = SpecialPowers.snapshotWindow(iframe.contentWindow);
+      ok(step1.toDataURL() == stepfinish.toDataURL(), "Screenshots should be identical");
+      SimpleTest.finish();
     }
   });
 
