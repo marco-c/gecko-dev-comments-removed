@@ -33,6 +33,8 @@ public class TelemetryCorePingUploadDelegate extends BrowserAppDelegate {
     private static final String LOGTAG = StringUtils.safeSubstring(
             "Gecko" + TelemetryCorePingUploadDelegate.class.getSimpleName(), 0, 23);
 
+    private static final String PREF_IS_FIRST_RUN = "telemetry-isFirstRun";
+
     private TelemetryDispatcher telemetryDispatcher; 
     private final SessionMeasurements sessionMeasurements = new SessionMeasurements();
 
@@ -46,6 +48,32 @@ public class TelemetryCorePingUploadDelegate extends BrowserAppDelegate {
         
         
         
+        uploadPing(browserApp);
+    }
+
+    @Override
+    public void onStop(final BrowserApp browserApp) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        final SharedPreferences sharedPrefs = getSharedPreferences(browserApp);
+        if (sharedPrefs.getBoolean(PREF_IS_FIRST_RUN, true)) {
+            sharedPrefs.edit()
+                    .putBoolean(PREF_IS_FIRST_RUN, false)
+                    .apply();
+            uploadPing(browserApp);
+        }
+    }
+
+    private void uploadPing(final BrowserApp browserApp) {
         final SearchEngineManager searchEngineManager = browserApp.getSearchEngineManager();
         searchEngineManager.getEngine(new UploadTelemetryCorePingCallback(browserApp));
     }
