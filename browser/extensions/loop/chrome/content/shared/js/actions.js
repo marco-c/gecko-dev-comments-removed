@@ -179,6 +179,13 @@ loop.shared.actions = (function() {
     
 
 
+    VideoScreenStreamChanged: Action.define("videoScreenStreamChanged", {
+      hasVideo: Boolean
+    }),
+
+    
+
+
     MediaStreamCreated: Action.define("mediaStreamCreated", {
       hasVideo: Boolean,
       isLocal: Boolean,
