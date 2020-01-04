@@ -11,6 +11,12 @@
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/test" +
                  "/test-bug-766001-js-console-links.html";
 
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
+});
+
 function test() {
   let hud;
 

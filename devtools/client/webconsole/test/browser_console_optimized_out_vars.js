@@ -8,6 +8,12 @@
 
 "use strict";
 
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
+});
+
 function test() {
   Task.spawn(function* () {
     const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +

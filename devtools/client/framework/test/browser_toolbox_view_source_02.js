@@ -10,6 +10,12 @@
 var URL = `${URL_ROOT}doc_viewsource.html`;
 var JS_URL = `${URL_ROOT}code_math.js`;
 
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
+});
+
 function* viewSource() {
   let toolbox = yield openNewTabAndToolbox(URL);
   let { panelWin: debuggerWin } = yield toolbox.selectTool("jsdebugger");

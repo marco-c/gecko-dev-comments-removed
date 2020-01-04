@@ -13,6 +13,12 @@ thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
 
 
 
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
+});
+
 const DEBUGGER_ROOT = "http://example.com/browser/devtools/client/debugger/test/mochitest/";
 
 const PAGE_URL = `${DEBUGGER_ROOT}doc_empty-tab-01.html`;

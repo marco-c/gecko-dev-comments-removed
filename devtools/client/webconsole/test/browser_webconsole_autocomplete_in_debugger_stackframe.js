@@ -11,6 +11,12 @@
 const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
                  "test/test-autocomplete-in-stackframe.html";
 
+
+Services.prefs.setBoolPref("devtools.debugger.new-debugger-frontend", false);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.debugger.new-debugger-frontend");
+});
+
 var gStackframes;
 registerCleanupFunction(function () {
   gStackframes = null;
