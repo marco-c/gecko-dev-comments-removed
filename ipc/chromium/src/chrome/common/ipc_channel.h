@@ -50,7 +50,7 @@ class Channel : public Message::Sender {
   enum {
     
     
-    kMaximumMessageSize = 128 * 1024 * 1024,
+    kMaximumMessageSize = 256 * 1024 * 1024,
 
     
     kReadBufferSize = 4 * 1024,
