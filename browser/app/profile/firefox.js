@@ -614,8 +614,6 @@ pref("accessibility.typeaheadfind", false);
 pref("accessibility.typeaheadfind.timeout", 5000);
 pref("accessibility.typeaheadfind.linksonly", false);
 pref("accessibility.typeaheadfind.flashBar", 1);
-pref("findbar.highlightAll", true);
-pref("findbar.modalHighlight", true);
 
 
 pref("accessibility.loadedInLastSession", false);
@@ -1287,11 +1285,21 @@ pref("media.gmp.decoder.h264", 2);
 
 pref("media.gmp.trial-create.enabled", true);
 
+
+
+
+
+
+
+
+
 #ifdef MOZ_ADOBE_EME
+pref("media.gmp-eme-adobe.visible", true);
 pref("media.gmp-eme-adobe.enabled", true);
 #endif
 
 #ifdef MOZ_WIDEVINE_EME
+pref("media.gmp-widevinecdm.visible", true);
 pref("media.gmp-widevinecdm.enabled", true);
 #endif
 
@@ -1409,8 +1417,6 @@ pref("media.webspeech.synth.enabled", true);
 pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
-
-pref("browser.migration.automigrate", false);
 
 
 pref("dom.mozBrowserFramesEnabled", true);
