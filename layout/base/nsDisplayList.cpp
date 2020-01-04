@@ -1123,6 +1123,12 @@ nsDisplayListBuilder::FindAnimatedGeometryRootFor(nsIFrame* aFrame, const nsIFra
 void
 nsDisplayListBuilder::RecomputeCurrentAnimatedGeometryRoot()
 {
+  
+  
+  
+  
+  mAnimatedGeometryRootCache.Clear();
+
   mCurrentAnimatedGeometryRoot = ComputeAnimatedGeometryRootFor(this, const_cast<nsIFrame *>(mCurrentFrame));
   AnimatedGeometryRootLookup lookup(mCurrentFrame, nullptr);
   mAnimatedGeometryRootCache.Put(lookup, mCurrentAnimatedGeometryRoot);
