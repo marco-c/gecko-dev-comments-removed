@@ -4633,5 +4633,11 @@ PluginInstanceChild::AnswerNPP_Destroy(NPError* aResult)
 void
 PluginInstanceChild::ActorDestroy(ActorDestroyReason why)
 {
+#ifdef XP_WIN
+    
+    mCurrentSurfaceActor = nullptr;
+    mBackSurfaceActor = nullptr;
+#endif
+
     Destroy();
 }
