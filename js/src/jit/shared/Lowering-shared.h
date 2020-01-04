@@ -254,7 +254,7 @@ class LIRGeneratorShared : public MDefinitionVisitor
         define(new(alloc()) LFloat32(f), mir);
     }
 
-    void visitConstant(MConstant* ins);
+    void visitConstant(MConstant* ins) override;
 
     
     static bool allowTypedElementHoleCheck() {
@@ -266,6 +266,15 @@ class LIRGeneratorShared : public MDefinitionVisitor
         return false;
     }
 
+    
+    
+    
+    
+    
+    void visitSimdBinaryArith(MSimdBinaryArith*) override { MOZ_CRASH("NYI"); }
+    void visitSimdSelect(MSimdSelect*) override { MOZ_CRASH("NYI"); }
+    void visitSimdSplat(MSimdSplat*) override { MOZ_CRASH("NYI"); }
+    void visitSimdValueX4(MSimdValueX4*) override { MOZ_CRASH("NYI"); }
 };
 
 } 
