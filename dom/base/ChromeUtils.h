@@ -25,24 +25,17 @@ class ThreadSafeChromeUtils
 public:
   
   static void SaveHeapSnapshot(GlobalObject& global,
-                               JSContext* cx,
                                const HeapSnapshotBoundaries& boundaries,
                                nsAString& filePath,
                                ErrorResult& rv);
 
   
   static already_AddRefed<devtools::HeapSnapshot> ReadHeapSnapshot(GlobalObject& global,
-                                                                   JSContext* cx,
                                                                    const nsAString& filePath,
                                                                    ErrorResult& rv);
 
   static void NondeterministicGetWeakMapKeys(GlobalObject& aGlobal,
                                              JS::Handle<JS::Value> aMap,
-                                             JS::MutableHandle<JS::Value> aRetval,
-                                             ErrorResult& aRv);
-
-  static void NondeterministicGetWeakSetKeys(GlobalObject& aGlobal,
-                                             JS::Handle<JS::Value> aSet,
                                              JS::MutableHandle<JS::Value> aRetval,
                                              ErrorResult& aRv);
 };
