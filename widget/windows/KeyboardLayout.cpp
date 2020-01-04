@@ -727,28 +727,26 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
     case MOZ_WM_KEYUP: {
       
       
+      if (mMsg.wParam == VK_PROCESSKEY) {
+        mOriginalVirtualKeyCode =
+          static_cast<uint8_t>(::ImmGetVirtualKey(mMsg.hwnd));
+      } else {
+        mOriginalVirtualKeyCode = static_cast<uint8_t>(mMsg.wParam);
+      }
+
       
       
       
       
       
       
-      
-      if (!mScanCode) {
+      if (!mScanCode && mOriginalVirtualKeyCode != VK_PACKET) {
         uint16_t scanCodeEx = ComputeScanCodeExFromVirtualKeyCode(mMsg.wParam);
         if (scanCodeEx) {
           mScanCode = static_cast<uint8_t>(scanCodeEx & 0xFF);
           uint8_t extended = static_cast<uint8_t>((scanCodeEx & 0xFF00) >> 8);
           mIsExtended = (extended == 0xE0) || (extended == 0xE1);
         }
-      }
-      
-      
-      if (mMsg.wParam == VK_PROCESSKEY) {
-        mOriginalVirtualKeyCode =
-          static_cast<uint8_t>(::ImmGetVirtualKey(mMsg.hwnd));
-      } else {
-        mOriginalVirtualKeyCode = static_cast<uint8_t>(mMsg.wParam);
       }
 
       
@@ -894,12 +892,35 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
      keyboardLayout->IsDeadKey(mOriginalVirtualKeyCode, mModKeyState));
   mIsPrintableKey = KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode);
 
-  
-  
-  
-  
-  if (IsKeyDownMessage() && NeedsToHandleWithoutFollowingCharMessages()) {
-    ComputeInputtingStringWithKeyboardLayout();
+  if (IsKeyDownMessage()) {
+    
+    
+    
+    
+    if (NeedsToHandleWithoutFollowingCharMessages()) {
+      ComputeInputtingStringWithKeyboardLayout();
+    } else if (mVirtualKeyCode == VK_PACKET) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MSG followingCharMsg;
+      if (GetFollowingCharMessage(followingCharMsg, false) &&
+          followingCharMsg.wParam) {
+        mCommittedCharsAndModifiers.Append(
+          static_cast<char16_t>(followingCharMsg.wParam),
+          mModKeyState.GetModifiers());
+      }
+    }
   }
 }
 
@@ -1603,6 +1624,12 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
     return DispatchKeyPressEventForFollowingCharMessage(followingCharMsg);
   }
 
+  
+  
+  if (mVirtualKeyCode == VK_PACKET) {
+    return false;
+  }
+
   if (!mModKeyState.IsControl() && !mModKeyState.IsAlt() &&
       !mModKeyState.IsWin() && mIsPrintableKey) {
     
@@ -1791,6 +1818,12 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
 
   
   
+  if (mVirtualKeyCode == VK_PACKET) {
+    return false;
+  }
+
+  
+  
   if (mDOMKeyCode == NS_VK_RETURN || mDOMKeyCode == NS_VK_BACK) {
     return true;
   }
@@ -1889,7 +1922,7 @@ NativeKey::MayBeSameCharMessage(const MSG& aCharMsg1,
 }
 
 bool
-NativeKey::GetFollowingCharMessage(MSG& aCharMsg) const
+NativeKey::GetFollowingCharMessage(MSG& aCharMsg, bool aRemove) const
 {
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(!IsKeyMessageOnPlugin());
@@ -1903,7 +1936,7 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg) const
         continue;
       }
       MSG charMsg = fakeCharMsg.GetCharMsg(mMsg.hwnd);
-      fakeCharMsg.mConsumed = true;
+      fakeCharMsg.mConsumed = aRemove;
       if (!IsCharMessage(charMsg)) {
         return false;
       }
@@ -1923,6 +1956,11 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg) const
                              PM_NOREMOVE | PM_NOYIELD) ||
       !IsCharMessage(nextKeyMsg)) {
     return false;
+  }
+
+  if (!aRemove) {
+    aCharMsg = nextKeyMsg;
+    return true;
   }
 
   
@@ -2509,6 +2547,8 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     return;
   }
 
+  MOZ_ASSERT(virtualKey != VK_PACKET,
+    "At handling VK_PACKET, we shouldn't refer keyboard layout");
   MOZ_ASSERT(aNativeKey.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING,
     "Printable key's key name index must be KEY_NAME_INDEX_USE_STRING");
 
@@ -3178,7 +3218,7 @@ KeyboardLayout::ConvertNativeKeyCodeToDOMKeyCode(UINT aNativeKeyCode) const
 KeyNameIndex
 KeyboardLayout::ConvertNativeKeyCodeToKeyNameIndex(uint8_t aVirtualKey) const
 {
-  if (IsPrintableCharKey(aVirtualKey)) {
+  if (IsPrintableCharKey(aVirtualKey) || aVirtualKey == VK_PACKET) {
     return KEY_NAME_INDEX_USE_STRING;
   }
 
