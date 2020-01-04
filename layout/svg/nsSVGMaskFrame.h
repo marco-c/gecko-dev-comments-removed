@@ -100,7 +100,7 @@ private:
   
   
   
-  class MOZ_STACK_CLASS AutoMaskReferencer
+  class MOZ_RAII AutoMaskReferencer
   {
   public:
     explicit AutoMaskReferencer(nsSVGMaskFrame *aFrame

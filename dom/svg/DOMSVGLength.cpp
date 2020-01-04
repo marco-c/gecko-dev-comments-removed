@@ -66,7 +66,7 @@ NS_INTERFACE_MAP_END
 
 
 
-class MOZ_STACK_CLASS AutoChangeLengthNotifier
+class MOZ_RAII AutoChangeLengthNotifier
 {
 public:
   explicit AutoChangeLengthNotifier(DOMSVGLength* aLength MOZ_GUARD_OBJECT_NOTIFIER_PARAM)

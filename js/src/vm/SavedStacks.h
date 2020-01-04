@@ -181,7 +181,7 @@ class SavedStacks {
     
     
     
-    struct MOZ_STACK_CLASS AutoReentrancyGuard {
+    struct MOZ_RAII AutoReentrancyGuard {
         MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
         SavedStacks& stacks;
 

@@ -23,7 +23,7 @@ namespace ipc {
 
 
 
-class MOZ_STACK_CLASS NeuteredWindowRegion
+class MOZ_RAII NeuteredWindowRegion
 {
 public:
   explicit NeuteredWindowRegion(bool aDoNeuter MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
@@ -46,7 +46,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS DeneuteredWindowRegion
+class MOZ_RAII DeneuteredWindowRegion
 {
 public:
   DeneuteredWindowRegion(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);

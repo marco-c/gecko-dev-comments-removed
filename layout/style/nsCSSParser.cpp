@@ -428,7 +428,7 @@ protected:
 
 
 
-  class MOZ_STACK_CLASS nsAutoCSSParserInputStateRestorer {
+  class MOZ_RAII nsAutoCSSParserInputStateRestorer {
     public:
       explicit nsAutoCSSParserInputStateRestorer(CSSParserImpl* aParser
                                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
@@ -476,7 +476,7 @@ protected:
 
 
 
-  class MOZ_STACK_CLASS nsAutoScannerChanger {
+  class MOZ_RAII nsAutoScannerChanger {
     public:
       nsAutoScannerChanger(CSSParserImpl* aParser,
                            const nsAString& aStringToScan

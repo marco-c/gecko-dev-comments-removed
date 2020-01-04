@@ -825,7 +825,7 @@ CloneNestedScopeObject(JSContext* cx, HandleObject enclosingScope, Handle<Nested
 
 
 
-class ScopeIter
+class MOZ_RAII ScopeIter
 {
     StaticScopeIter<CanGC> ssi_;
     RootedObject scope_;

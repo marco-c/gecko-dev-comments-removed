@@ -3623,7 +3623,7 @@ nsFlexContainerFrame::Reflow(nsPresContext*           aPresContext,
 
 
 
-class MOZ_STACK_CLASS AutoFlexLineListClearer
+class MOZ_RAII AutoFlexLineListClearer
 {
 public:
   explicit AutoFlexLineListClearer(LinkedList<FlexLine>& aLines

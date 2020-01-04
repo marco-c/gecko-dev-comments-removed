@@ -110,7 +110,7 @@ private:
   
   
   
-  class MOZ_STACK_CLASS AutoMarkerReferencer
+  class MOZ_RAII AutoMarkerReferencer
   {
   public:
     AutoMarkerReferencer(nsSVGMarkerFrame *aFrame,

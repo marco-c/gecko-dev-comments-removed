@@ -407,7 +407,7 @@ private:
 
 
 
-class MOZ_STACK_CLASS AutoSVGRenderingState
+class MOZ_RAII AutoSVGRenderingState
 {
 public:
   AutoSVGRenderingState(const Maybe<SVGImageContext>& aSVGContext,

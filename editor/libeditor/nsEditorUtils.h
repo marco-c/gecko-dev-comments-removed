@@ -31,7 +31,7 @@ class Selection;
 
 
 
-class MOZ_STACK_CLASS nsAutoPlaceHolderBatch
+class MOZ_RAII nsAutoPlaceHolderBatch
 {
   private:
     nsCOMPtr<nsIEditor> mEd;
@@ -58,7 +58,7 @@ class MOZ_STACK_CLASS nsAutoPlaceHolderBatch
 
 
 
-class MOZ_STACK_CLASS nsAutoEditBatch : public nsAutoPlaceHolderBatch
+class MOZ_RAII nsAutoEditBatch : public nsAutoPlaceHolderBatch
 {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   public:
@@ -74,7 +74,7 @@ class MOZ_STACK_CLASS nsAutoEditBatch : public nsAutoPlaceHolderBatch
 
 
 
-class MOZ_STACK_CLASS nsAutoSelectionReset
+class MOZ_RAII nsAutoSelectionReset
 {
   private:
     
@@ -96,7 +96,7 @@ class MOZ_STACK_CLASS nsAutoSelectionReset
 
 
 
-class MOZ_STACK_CLASS nsAutoRules
+class MOZ_RAII nsAutoRules
 {
   public:
 
@@ -131,7 +131,7 @@ class MOZ_STACK_CLASS nsAutoRules
 
 
 
-class MOZ_STACK_CLASS nsAutoTxnsConserveSelection
+class MOZ_RAII nsAutoTxnsConserveSelection
 {
   public:
 
@@ -163,7 +163,7 @@ class MOZ_STACK_CLASS nsAutoTxnsConserveSelection
 
 
 
-class MOZ_STACK_CLASS nsAutoUpdateViewBatch
+class MOZ_RAII nsAutoUpdateViewBatch
 {
   public:
 
@@ -197,7 +197,7 @@ class nsBoolDomIterFunctor
     virtual bool operator()(nsINode* aNode) const = 0;
 };
 
-class MOZ_STACK_CLASS nsDOMIterator
+class MOZ_RAII nsDOMIterator
 {
   public:
     explicit nsDOMIterator(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
@@ -214,7 +214,7 @@ class MOZ_STACK_CLASS nsDOMIterator
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class MOZ_STACK_CLASS nsDOMSubtreeIterator : public nsDOMIterator
+class MOZ_RAII nsDOMSubtreeIterator : public nsDOMIterator
 {
   public:
     explicit nsDOMSubtreeIterator(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);

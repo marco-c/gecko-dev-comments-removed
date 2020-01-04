@@ -227,7 +227,7 @@ class AutoSPSLock
 
 
 
-class AutoSuppressProfilerSampling
+class MOZ_RAII AutoSuppressProfilerSampling
 {
   public:
     explicit AutoSuppressProfilerSampling(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
@@ -260,7 +260,7 @@ SPSProfiler::stringsReset()
 
 
 
-class SPSEntryMarker
+class MOZ_RAII SPSEntryMarker
 {
   public:
     explicit SPSEntryMarker(JSRuntime* rt,
@@ -279,7 +279,7 @@ class SPSEntryMarker
 
 
 
-class SPSBaselineOSRMarker
+class MOZ_RAII SPSBaselineOSRMarker
 {
   public:
     explicit SPSBaselineOSRMarker(JSRuntime* rt, bool hasSPSFrame

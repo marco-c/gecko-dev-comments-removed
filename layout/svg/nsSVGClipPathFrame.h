@@ -104,7 +104,7 @@ public:
   
   
   
-  class MOZ_STACK_CLASS AutoClipPathReferencer
+  class MOZ_RAII AutoClipPathReferencer
   {
   public:
     explicit AutoClipPathReferencer(nsSVGClipPathFrame *aFrame

@@ -79,7 +79,7 @@ DOMSVGLengthList::WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto)
 
 
 
-class MOZ_STACK_CLASS AutoChangeLengthListNotifier
+class MOZ_RAII AutoChangeLengthListNotifier
 {
 public:
   explicit AutoChangeLengthListNotifier(DOMSVGLengthList* aLengthList MOZ_GUARD_OBJECT_NOTIFIER_PARAM)

@@ -225,7 +225,7 @@ struct MOZ_STACK_CLASS TreeMatchContext {
   }
 
   
-  class MOZ_STACK_CLASS AutoAncestorPusher {
+  class MOZ_RAII AutoAncestorPusher {
   public:
     explicit AutoAncestorPusher(TreeMatchContext& aTreeMatchContext
                                 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
@@ -295,7 +295,7 @@ struct MOZ_STACK_CLASS TreeMatchContext {
 
 
 
-  class MOZ_STACK_CLASS AutoParentDisplayBasedStyleFixupSkipper {
+  class MOZ_RAII AutoParentDisplayBasedStyleFixupSkipper {
   public:
     explicit AutoParentDisplayBasedStyleFixupSkipper(TreeMatchContext& aTreeMatchContext,
                                                      bool aSkipParentDisplayBasedStyleFixup = true

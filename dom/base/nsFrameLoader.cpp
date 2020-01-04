@@ -634,7 +634,7 @@ AllDescendantsOfType(nsIDocShellTreeItem* aParentItem, int32_t aType)
 
 
 
-class MOZ_STACK_CLASS AutoResetInShow {
+class MOZ_RAII AutoResetInShow {
   private:
     nsFrameLoader* mFrameLoader;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -989,7 +989,7 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
   return NS_OK;
 }
 
-class MOZ_STACK_CLASS AutoResetInFrameSwap final
+class MOZ_RAII AutoResetInFrameSwap final
 {
 public:
   AutoResetInFrameSwap(nsFrameLoader* aThisFrameLoader,

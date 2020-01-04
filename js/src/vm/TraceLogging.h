@@ -439,7 +439,7 @@ inline void TraceLogStopEventPrivate(TraceLoggerThread* logger, uint32_t id) {
 }
 
 
-class AutoTraceLog
+class MOZ_RAII AutoTraceLog
 {
 #ifdef JS_TRACE_LOGGING
     TraceLoggerThread* logger;

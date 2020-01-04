@@ -16,7 +16,7 @@
 namespace mozilla {
 
 
-class ReentrancyGuard
+class MOZ_RAII ReentrancyGuard
 {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 #ifdef DEBUG

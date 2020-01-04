@@ -33,7 +33,7 @@ typedef HashSet<JSObject*> ObjectSet;
 typedef HashSet<Shape*> ShapeSet;
 
 
-class AutoCycleDetector
+class MOZ_RAII AutoCycleDetector
 {
     JSContext* cx;
     RootedObject obj;
@@ -466,7 +466,7 @@ struct JSContext : public js::ExclusiveContext,
 
 namespace js {
 
-struct AutoResolving {
+struct MOZ_RAII AutoResolving {
   public:
     enum Kind {
         LOOKUP,
@@ -670,7 +670,7 @@ using ShapeVector = js::TraceableVector<Shape*>;
 using StringVector = js::TraceableVector<JSString*>;
 
 
-class AutoArrayRooter : private JS::AutoGCRooter
+class MOZ_RAII AutoArrayRooter : private JS::AutoGCRooter
 {
   public:
     AutoArrayRooter(JSContext* cx, size_t len, Value* vec
@@ -749,7 +749,7 @@ class AutoAssertNoException
 
 bool intrinsic_IsSuspendedStarGenerator(JSContext* cx, unsigned argc, Value* vp);
 
-class AutoLockForExclusiveAccess
+class MOZ_RAII AutoLockForExclusiveAccess
 {
     JSRuntime* runtime;
 

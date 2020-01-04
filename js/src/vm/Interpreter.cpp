@@ -375,7 +375,7 @@ namespace js {
 
 
 
-class AutoStopwatch final
+class MOZ_RAII AutoStopwatch final
 {
     
     

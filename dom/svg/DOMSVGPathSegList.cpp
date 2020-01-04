@@ -55,7 +55,7 @@ NS_INTERFACE_MAP_END
 
 
 
-class MOZ_STACK_CLASS AutoChangePathSegListNotifier
+class MOZ_RAII AutoChangePathSegListNotifier
 {
 public:
   explicit AutoChangePathSegListNotifier(DOMSVGPathSegList* aPathSegList MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
