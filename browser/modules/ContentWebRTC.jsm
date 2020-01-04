@@ -130,6 +130,11 @@ function handleGUMRequest(aSubject, aTopic, aData) {
   contentWindow.navigator.mozGetUserMediaDevices(
     constraints,
     function (devices) {
+      
+      
+      if (contentWindow.closed)
+        return;
+
       prompt(contentWindow, aSubject.windowID, aSubject.callID,
              constraints, devices, secure);
     },
