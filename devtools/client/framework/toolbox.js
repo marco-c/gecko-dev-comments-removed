@@ -2163,6 +2163,14 @@ Toolbox.prototype = {
           
           this._host = null;
           this._toolPanels.clear();
+
+          
+          
+          if (flags.testing) {
+            win.QueryInterface(Ci.nsIInterfaceRequestor)
+              .getInterface(Ci.nsIDOMWindowUtils)
+              .garbageCollect();
+          }
         }).then(null, console.error);
 
     let leakCheckObserver = ({wrappedJSObject: barrier}) => {

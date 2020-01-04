@@ -102,10 +102,6 @@ registerCleanupFunction(function* cleanup() {
   while (gBrowser.tabs.length > 1) {
     yield closeTabAndToolbox(gBrowser.selectedTab);
   }
-
-  
-  Cu.forceGC();
-  Cu.forceCC();
 });
 
 
