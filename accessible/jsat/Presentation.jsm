@@ -684,7 +684,7 @@ this.Presentation = {
       'b2g': [VisualPresenter, B2GPresenter],
       'browser': [VisualPresenter, B2GPresenter, AndroidPresenter]
     };
-    this.presenters = [new P() for (P of presenterMap[Utils.MozBuildApp])]; 
+    this.presenters = presenterMap[Utils.MozBuildApp].map(P => new P());
     return this.presenters;
   },
 
@@ -700,61 +700,58 @@ this.Presentation = {
       aPosition, aOldPosition, aStartOffset, aEndOffset);
     this.displayedAccessibles.set(context.accessible.document.window, context);
 
-    return [p.pivotChanged(context, aReason, aIsUserInput)
-      for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.pivotChanged(context, aReason, aIsUserInput));
   },
 
   actionInvoked: function Presentation_actionInvoked(aObject, aActionName) {
-    return [p.actionInvoked(aObject, aActionName) 
-      for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.actionInvoked(aObject, aActionName));
   },
 
   textChanged: function Presentation_textChanged(aAccessible, aIsInserted,
                                     aStartOffset, aLength, aText,
                                     aModifiedText) {
-    return [p.textChanged(aAccessible, aIsInserted, aStartOffset, aLength, 
-      aText, aModifiedText) for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.textChanged(aAccessible, aIsInserted,
+                                                  aStartOffset, aLength,
+                                                  aText, aModifiedText));
   },
 
   textSelectionChanged: function textSelectionChanged(aText, aStart, aEnd,
                                                       aOldStart, aOldEnd,
                                                       aIsFromUserInput) {
-    return [p.textSelectionChanged(aText, aStart, aEnd, aOldStart, aOldEnd, 
-      aIsFromUserInput) for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.textSelectionChanged(aText, aStart, aEnd,
+                                                           aOldStart, aOldEnd,
+                                                           aIsFromUserInput));
   },
 
   nameChanged: function nameChanged(aAccessible) {
-    return [ p.nameChanged(aAccessible) for (p of this.presenters) ]; 
+    return this.presenters.map(p => p.nameChanged(aAccessible));
   },
 
   valueChanged: function valueChanged(aAccessible) {
-    return [ p.valueChanged(aAccessible) for (p of this.presenters) ]; 
+    return this.presenters.map(p => p.valueChanged(aAccessible));
   },
 
   tabStateChanged: function Presentation_tabStateChanged(aDocObj, aPageState) {
-    return [p.tabStateChanged(aDocObj, aPageState) 
-      for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.tabStateChanged(aDocObj, aPageState));
   },
 
   viewportChanged: function Presentation_viewportChanged(aWindow) {
     let context = this.displayedAccessibles.get(aWindow);
-    return [p.viewportChanged(aWindow, context) 
-      for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.viewportChanged(aWindow, context));
   },
 
   editingModeChanged: function Presentation_editingModeChanged(aIsEditing) {
-    return [p.editingModeChanged(aIsEditing) for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.editingModeChanged(aIsEditing));
   },
 
   announce: function Presentation_announce(aAnnouncement) {
     
     
-    return [p.announce(UtteranceGenerator.genForAnnouncement(aAnnouncement)) 
-      for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.announce(UtteranceGenerator.genForAnnouncement(aAnnouncement)));
   },
 
   noMove: function Presentation_noMove(aMoveMethod) {
-    return [p.noMove(aMoveMethod) for each (p in this.presenters)]; 
+    return this.presenters.map(p => p.noMove(aMoveMethod));
   },
 
   liveRegion: function Presentation_liveRegion(aAccessible, aIsPolite, aIsHide,
@@ -764,7 +761,7 @@ this.Presentation = {
       context = new PivotContext(aAccessible, null, -1, -1, true,
         aIsHide ? true : false);
     }
-    return [p.liveRegion(context, aIsPolite, aIsHide, aModifiedText) 
-      for (p of this.presenters)]; 
+    return this.presenters.map(p => p.liveRegion(context, aIsPolite, aIsHide,
+                                                 aModifiedText));
   }
 };

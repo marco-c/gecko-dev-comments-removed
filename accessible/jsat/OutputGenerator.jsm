@@ -67,11 +67,13 @@ var OutputGenerator = {
     if (this.outputOrder === OUTPUT_DESC_FIRST) {
       contextStart.forEach(addOutput);
       addOutput(aContext.accessible);
-      [addOutput(node) for 
-        (node of aContext.subtreeGenerator(true, ignoreSubtree))]; 
+      for (let node of aContext.subtreeGenerator(true, ignoreSubtree)) {
+        addOutput(node);
+      }
     } else {
-      [addOutput(node) for 
-        (node of aContext.subtreeGenerator(false, ignoreSubtree))]; 
+      for (let node of aContext.subtreeGenerator(false, ignoreSubtree)) {
+        addOutput(node);
+      }
       addOutput(aContext.accessible);
 
       

@@ -166,7 +166,7 @@ var AccessFuTest = {
         AccessFuTest.nextTest();
       } else {
         
-        [testFunc() for (testFunc of gTestFuncs)]; 
+        gTestFuncs.forEach(testFunc => testFunc());
         AccessFuTest.finish();
       }
     });

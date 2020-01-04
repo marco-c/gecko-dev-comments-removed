@@ -211,11 +211,10 @@ this.Utils = {
   localize: function localize(aOutput) {
     let outputArray = Array.isArray(aOutput) ? aOutput : [aOutput];
     let localized =
-      [this.stringBundle.get(details) for (details of outputArray)]; 
+      outputArray.map(details => this.stringBundle.get(details));
     
-    let trimmed;
-    return [trimmed for (word of localized) if (word && 
-      (trimmed = word.trim()))]; 
+    return localized.filter(word => word).map(word => word.trim()).
+      filter(trimmed => trimmed);
   },
 
   get stringBundle() {
@@ -834,9 +833,9 @@ PivotContext.prototype = {
 
   get newAncestry() {
     if (!this._newAncestry) {
-      this._newAncestry = this._ignoreAncestry ? [] : [currentAncestor for ( 
-        [index, currentAncestor] of Iterator(this.currentAncestry)) if ( 
-          currentAncestor !== this.oldAncestry[index])]; 
+      this._newAncestry = this._ignoreAncestry ? [] :
+        this.currentAncestry.filter(
+          (currentAncestor, i) => currentAncestor !== this.oldAncestry[i]);
     }
     return this._newAncestry;
   },
@@ -862,9 +861,13 @@ PivotContext.prototype = {
       if (include) {
         if (aPreorder) {
           yield child;
-          [yield node for (node of this._traverse(child, aPreorder, aStop))]; 
+          for (let node of this._traverse(child, aPreorder, aStop)) {
+            yield node;
+          }
         } else {
-          [yield node for (node of this._traverse(child, aPreorder, aStop))]; 
+          for (let node of this._traverse(child, aPreorder, aStop)) {
+            yield node;
+          }
           yield child;
         }
       }
@@ -986,15 +989,13 @@ PivotContext.prototype = {
     cellInfo.columnHeaders = [];
     if (cellInfo.columnChanged && cellInfo.current.role !==
       Roles.COLUMNHEADER) {
-      cellInfo.columnHeaders = [headers for (headers of getHeaders( 
-        cellInfo.current.columnHeaderCells))];
+      cellInfo.columnHeaders = [...getHeaders(cellInfo.current.columnHeaderCells)];
     }
     cellInfo.rowHeaders = [];
     if (cellInfo.rowChanged &&
         (cellInfo.current.role === Roles.CELL ||
          cellInfo.current.role === Roles.MATHML_CELL)) {
-      cellInfo.rowHeaders = [headers for (headers of getHeaders( 
-        cellInfo.current.rowHeaderCells))];
+      cellInfo.rowHeaders = [...getHeaders(cellInfo.current.rowHeaderCells)];
     }
 
     this._cells.set(domNode, cellInfo);
