@@ -68,12 +68,6 @@ class ArrayBufferViewObject;
 
 
 
-
-
-
-
-
-
 class ArrayBufferObjectMaybeShared;
 
 uint32_t AnyArrayBufferByteLength(const ArrayBufferObjectMaybeShared* buf);
@@ -86,7 +80,7 @@ class ArrayBufferObjectMaybeShared : public NativeObject
         return AnyArrayBufferByteLength(this);
     }
 
-    inline SharedMem<uint8_t*> dataPointerMaybeShared();
+    inline SharedMem<uint8_t*> dataPointerEither();
 };
 
 
@@ -384,12 +378,14 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared
 class ArrayBufferViewObject : public JSObject
 {
   public:
-    static ArrayBufferObject* bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*> obj);
+    static ArrayBufferObjectMaybeShared* bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*> obj);
 
     void neuter(void* newData);
 
-    uint8_t* dataPointer();
-    void setDataPointer(uint8_t* data);
+    
+    
+    uint8_t* dataPointerUnshared();
+    void setDataPointerUnshared(uint8_t* data);
 
     static void trace(JSTracer* trc, JSObject* obj);
 };
