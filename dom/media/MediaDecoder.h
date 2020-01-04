@@ -416,6 +416,7 @@ private:
   void UpdateLogicalPosition()
   {
     MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(!IsShutdown());
     
     if (mPlayState == PLAY_STATE_PAUSED || IsSeeking()) {
       return;
