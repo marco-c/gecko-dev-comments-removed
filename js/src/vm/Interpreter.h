@@ -66,13 +66,6 @@ InternalCallOrConstruct(JSContext* cx, const CallArgs& args,
                         MaybeConstruct construct);
 
 
-inline bool
-Invoke(JSContext* cx, const AnyInvokeArgs& args)
-{
-    return InternalCallOrConstruct(cx, args, NO_CONSTRUCT);
-}
-
-
 
 
 
