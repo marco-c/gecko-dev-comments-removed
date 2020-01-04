@@ -35,7 +35,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
     private static final String LOGTAG = "GeckoHomeConfigBackend";
 
     
-    private static final int VERSION = 4;
+    private static final int VERSION = 5;
 
     
     public static final String PREFS_CONFIG_KEY_OLD = "home_panels";
@@ -186,6 +186,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         PanelConfig newPanel;
         int replaceIndex;
         int removeIndex;
+
         if (historyFlags.contains(PanelConfig.Flags.DISABLED_PANEL) && !syncFlags.contains(PanelConfig.Flags.DISABLED_PANEL)) {
             
             replaceIndex = syncIndex;
@@ -211,6 +212,25 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         }
 
         return newArray;
+    }
+
+    private static void ensureDefaultPanelForV5(Context context, JSONArray jsonPanels) throws JSONException {
+        int historyIndex = -1;
+
+        for (int i = 0; i < jsonPanels.length(); i++) {
+            final PanelConfig panelConfig = new PanelConfig(jsonPanels.getJSONObject(i));
+            if (panelConfig.isDefault()) {
+                return;
+            }
+
+            if (panelConfig.getType() == PanelType.COMBINED_HISTORY) {
+                historyIndex = i;
+            }
+        }
+
+        
+        final PanelConfig historyPanelConfig = createBuiltinPanelConfig(context, PanelType.COMBINED_HISTORY, EnumSet.of(PanelConfig.Flags.DEFAULT_PANEL));
+        jsonPanels.put(historyIndex, historyPanelConfig.toJSON());
     }
 
     
@@ -315,6 +335,11 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                     
                     
                     jsonPanels = combineHistoryAndSyncPanels(context, jsonPanels);
+                    break;
+
+                case 5:
+                    
+                    ensureDefaultPanelForV5(context, jsonPanels);
                     break;
             }
         }
