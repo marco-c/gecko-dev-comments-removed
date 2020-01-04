@@ -13653,14 +13653,27 @@ nsIDocument::ReportHasScrollLinkedEffect()
                                   "ScrollLinkedEffectFound2");
 }
 
-mozilla::StyleBackendType
-nsIDocument::GetStyleBackendType() const
+void
+nsIDocument::UpdateStyleBackendType()
 {
-  if (!mPresShell) {
+  MOZ_ASSERT(mStyleBackendType == StyleBackendType(0),
+             "no need to call UpdateStyleBackendType now");
 #ifdef MOZ_STYLO
-    NS_WARNING("GetStyleBackendType() called on document without a pres shell");
+  
+  
+  
+  
+  
+  
+  
+  NS_ASSERTION(mDocumentContainer, "stylo: calling UpdateStyleBackendType "
+                                   "before we have a docshell");
+  mStyleBackendType =
+    nsLayoutUtils::SupportsServoStyleBackend(this) &&
+    mDocumentContainer ?
+      StyleBackendType::Servo :
+      StyleBackendType::Gecko;
+#else
+  mStyleBackendType = StyleBackendType::Gecko;
 #endif
-    return StyleBackendType::Gecko;
-  }
-  return mPresShell->StyleSet()->BackendType();
 }

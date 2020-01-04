@@ -2854,6 +2854,14 @@ public:
 
   static CSSPoint GetCumulativeApzCallbackTransform(nsIFrame* aFrame);
 
+  
+
+
+
+
+
+  static bool SupportsServoStyleBackend(nsIDocument* aDocument);
+
 private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;

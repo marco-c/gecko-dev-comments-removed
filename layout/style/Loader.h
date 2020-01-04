@@ -201,19 +201,6 @@ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Loader)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(Loader)
 
-  
-
-
-
-
-
-
-  StyleBackendType GetStyleBackendType() const;
-
-  void SetStyleBackendType(StyleBackendType aType) {
-    mStyleBackendType = Some(aType);
-  }
-
   void DropDocumentReference(); 
 
   void SetCompatibilityMode(nsCompatibility aCompatMode)
@@ -552,6 +539,8 @@ private:
   void DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
                        LoadDataArray& aDatasToNotify);
 
+  StyleBackendType GetStyleBackendType() const;
+
   struct Sheets {
     nsBaseHashtable<URIPrincipalReferrerPolicyAndCORSModeHashKey,
                     StyleSheetHandle::RefPtr,
@@ -588,6 +577,8 @@ private:
   nsCompatibility   mCompatMode;
   nsString          mPreferredSheet;  
 
+  
+  
   mozilla::Maybe<StyleBackendType> mStyleBackendType;
 
   bool              mEnabled; 

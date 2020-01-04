@@ -2165,27 +2165,6 @@ nsDocumentViewer::RequestWindowClose(bool* aCanClose)
   return NS_OK;
 }
 
-static StyleBackendType
-StyleBackendTypeForDocument(nsIDocument* aDocument, nsIDocShell* aContainer)
-{
-  MOZ_ASSERT(aDocument);
-
-  
-  
-  
-  
-  
-  
-  
-
-  return nsPresContext::StyloEnabled() &&
-         aDocument->IsHTMLOrXHTML() &&
-         aContainer &&
-         aContainer->ItemType() == nsIDocShell::typeContent ?
-           StyleBackendType::Servo :
-           StyleBackendType::Gecko;
-}
-
 StyleSetHandle
 nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
 {
@@ -2194,8 +2173,7 @@ nsDocumentViewer::CreateStyleSet(nsIDocument* aDocument)
   
   
 
-  StyleBackendType backendType =
-    StyleBackendTypeForDocument(aDocument, mContainer);
+  StyleBackendType backendType = aDocument->GetStyleBackendType();
 
   StyleSetHandle styleSet;
   if (backendType == StyleBackendType::Gecko) {
