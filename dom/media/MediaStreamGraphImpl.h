@@ -187,13 +187,6 @@ public:
   }
 
   
-  nsTArray<MessageBlock>& MessageQueue()
-  {
-    mMonitor.AssertCurrentThreadOwns();
-    return mFrontMessageQueue;
-  }
-
-  
 
   GraphTime IterationEnd() const;
 
@@ -232,6 +225,8 @@ public:
 
   void SwapMessageQueues()
   {
+    MOZ_ASSERT(CurrentDriver()->OnThread());
+    MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mMonitor.AssertCurrentThreadOwns();
     mFrontMessageQueue.SwapElements(mBackMessageQueue);
   }
@@ -593,8 +588,14 @@ public:
 
 
   
+
+
+
   nsTArray<MessageBlock> mFrontMessageQueue;
   
+
+
+
   nsTArray<MessageBlock> mBackMessageQueue;
 
   
