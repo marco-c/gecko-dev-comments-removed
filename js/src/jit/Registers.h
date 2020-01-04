@@ -167,6 +167,34 @@ class MachineState
     }
 };
 
+class MacroAssembler;
+
+
+
+
+
+
+template <class RegisterType>
+struct AutoGenericRegisterScope : public RegisterType
+{
+    
+    
+    AutoGenericRegisterScope(const AutoGenericRegisterScope& other) = delete;
+
+#ifdef DEBUG
+    MacroAssembler& masm_;
+    AutoGenericRegisterScope(MacroAssembler& masm, RegisterType reg);
+    ~AutoGenericRegisterScope();
+#else
+    MOZ_CONSTEXPR AutoGenericRegisterScope(MacroAssembler& masm, RegisterType reg)
+      : RegisterType(reg)
+    { }
+#endif
+};
+
+typedef AutoGenericRegisterScope<Register> AutoRegisterScope;
+typedef AutoGenericRegisterScope<FloatRegister> AutoFloatRegisterScope;
+
 } 
 } 
 

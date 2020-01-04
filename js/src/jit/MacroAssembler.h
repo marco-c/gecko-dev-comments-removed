@@ -462,6 +462,17 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void freeStack(Register amount);
 
+  private:
+    
+    
+#ifdef DEBUG
+    friend AutoRegisterScope;
+    friend AutoFloatRegisterScope;
+    
+    
+    AllocatableRegisterSet debugTrackedRegisters_;
+#endif 
+
   public:
     
     

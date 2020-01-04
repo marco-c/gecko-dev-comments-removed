@@ -30,6 +30,11 @@ JS_STATIC_ASSERT(1 << defaultShift == sizeof(JS::Value));
 
 class MacroAssemblerARM : public Assembler
 {
+  private:
+    
+    MacroAssembler& asMasm();
+    const MacroAssembler& asMasm() const;
+
   protected:
     
     
