@@ -227,27 +227,6 @@ MediaStreamGraphImpl::GraphTimeToStreamTimeWithBlocking(MediaStream* aStream,
 }
 
 GraphTime
-MediaStreamGraphImpl::StreamTimeToGraphTimeWithBlocking(MediaStream* aStream,
-    StreamTime aTime)
-{
-  
-  if (aTime >= STREAM_TIME_MAX) {
-    return GRAPH_TIME_MAX;
-  }
-
-  
-  
-  GraphTime timeAssumingNoBlocking = aTime + aStream->mBufferStartTime;
-  if (timeAssumingNoBlocking <= aStream->mStartBlocking) {
-    return timeAssumingNoBlocking;
-  }
-  
-  
-
-  return timeAssumingNoBlocking + (mStateComputedTime - aStream->mStartBlocking);
-}
-
-GraphTime
 MediaStreamGraphImpl::IterationEnd() const
 {
   return CurrentDriver()->IterationEnd();
@@ -788,8 +767,9 @@ MediaStreamGraphImpl::PlayVideo(MediaStream* aStream)
   nsRefPtr<Image> blackImage;
 
   MOZ_ASSERT(mProcessedTime >= aStream->mBufferStartTime, "frame position before buffer?");
-  StreamTime frameBufferTime = GraphTimeToStreamTimeWithBlocking(aStream, mProcessedTime);
-  StreamTime bufferEndTime = GraphTimeToStreamTimeWithBlocking(aStream, mStateComputedTime);
+  
+  StreamTime frameBufferTime = aStream->GraphTimeToStreamTime(mProcessedTime);
+  StreamTime bufferEndTime = aStream->GraphTimeToStreamTime(aStream->mStartBlocking);
   StreamTime start;
   const VideoChunk* chunk;
   for ( ;
@@ -827,8 +807,8 @@ MediaStreamGraphImpl::PlayVideo(MediaStream* aStream)
     
     
     
-    GraphTime frameTime =
-      StreamTimeToGraphTimeWithBlocking(aStream, frameBufferTime);
+    
+    GraphTime frameTime = aStream->StreamTimeToGraphTime(frameBufferTime);
     TimeStamp targetTime = currentTimeStamp +
       TimeDuration::FromSeconds(MediaTimeToSeconds(frameTime - IterationEnd()));
 

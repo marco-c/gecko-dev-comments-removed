@@ -323,13 +323,6 @@ public:
 
 
   StreamTime GraphTimeToStreamTimeWithBlocking(MediaStream* aStream, GraphTime aTime);
-  
-
-
-
-
-
-  GraphTime StreamTimeToGraphTimeWithBlocking(MediaStream* aStream, StreamTime aTime);
 
   
 
