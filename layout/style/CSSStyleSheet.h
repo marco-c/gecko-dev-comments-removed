@@ -224,7 +224,7 @@ public:
 
   
 
-  virtual nsIURI* GetOriginalURI() const;
+  nsIURI* GetOriginalURI() const { return mInner->mOriginalSheetURI; }
 
   
   NS_IMETHOD StyleSheetLoaded(CSSStyleSheet* aSheet, bool aWasAlternate,
