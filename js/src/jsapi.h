@@ -3054,6 +3054,52 @@ JS_GetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::MutableHa
 
 
 
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_ForwardSetPropertyTo(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleValue v,
+                        JS::HandleValue receiver, JS::ObjectOpResult& result);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+JS_SetPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleValue v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetProperty(JSContext* cx, JS::HandleObject obj, const char* name, JS::HandleValue v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name, size_t namelen,
+                 JS::HandleValue v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::HandleValue v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::HandleObject v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::HandleString v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, int32_t v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, uint32_t v);
+
+extern JS_PUBLIC_API(bool)
+JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, double v);
+
+
+
+
 extern JS_PUBLIC_API(JSObject*)
 JS_DefineObject(JSContext* cx, JS::HandleObject obj, const char* name,
                 const JSClass* clasp = nullptr, unsigned attrs = 0);
@@ -3086,16 +3132,6 @@ extern JS_PUBLIC_API(bool)
 JS_AlreadyHasOwnElement(JSContext* cx, JS::HandleObject obj, uint32_t index, bool* foundp);
 
 extern JS_PUBLIC_API(bool)
-JS_SetProperty(JSContext* cx, JS::HandleObject obj, const char* name, JS::HandleValue v);
-
-extern JS_PUBLIC_API(bool)
-JS_SetPropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleValue v);
-
-extern JS_PUBLIC_API(bool)
-JS_ForwardSetPropertyTo(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleValue v,
-                        JS::HandleValue receiver, JS::ObjectOpResult& result);
-
-extern JS_PUBLIC_API(bool)
 JS_DeleteProperty(JSContext* cx, JS::HandleObject obj, const char* name);
 
 extern JS_PUBLIC_API(bool)
@@ -3108,11 +3144,6 @@ JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, jsid id);
 extern JS_PUBLIC_API(bool)
 JS_DeletePropertyById(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
                       JS::ObjectOpResult& result);
-
-extern JS_PUBLIC_API(bool)
-JS_SetUCProperty(JSContext* cx, JS::HandleObject obj,
-                 const char16_t* name, size_t namelen,
-                 JS::HandleValue v);
 
 extern JS_PUBLIC_API(bool)
 JS_DeleteUCProperty(JSContext* cx, JS::HandleObject obj, const char16_t* name, size_t namelen,
@@ -3145,24 +3176,6 @@ JS_GetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t* lengthp);
 
 extern JS_PUBLIC_API(bool)
 JS_SetArrayLength(JSContext* cx, JS::Handle<JSObject*> obj, uint32_t length);
-
-extern JS_PUBLIC_API(bool)
-JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::HandleValue v);
-
-extern JS_PUBLIC_API(bool)
-JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::HandleObject v);
-
-extern JS_PUBLIC_API(bool)
-JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, JS::HandleString v);
-
-extern JS_PUBLIC_API(bool)
-JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, int32_t v);
-
-extern JS_PUBLIC_API(bool)
-JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, uint32_t v);
-
-extern JS_PUBLIC_API(bool)
-JS_SetElement(JSContext* cx, JS::HandleObject obj, uint32_t index, double v);
 
 extern JS_PUBLIC_API(bool)
 JS_DeleteElement(JSContext* cx, JS::HandleObject obj, uint32_t index);
