@@ -41,7 +41,8 @@ private:
 };
 
 class MediaStreamAudioSourceNode : public AudioNode,
-                                   public PrincipalChangeObserver<DOMMediaStream>
+                                   public DOMMediaStream::TrackListener,
+                                   public PrincipalChangeObserver<MediaStreamTrack>
 {
 public:
   static already_AddRefed<MediaStreamAudioSourceNode>
@@ -64,7 +65,21 @@ public:
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
-  void PrincipalChanged(DOMMediaStream* aMediaStream) override;
+  
+  void AttachToTrack(const RefPtr<MediaStreamTrack>& aTrack);
+
+  
+  void DetachFromTrack();
+
+  
+  void AttachToFirstTrack(const RefPtr<DOMMediaStream>& aMediaStream);
+
+  
+  void NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack) override;
+  void NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack) override;
+
+  
+  void PrincipalChanged(MediaStreamTrack* aMediaStreamTrack) override;
 
 protected:
   explicit MediaStreamAudioSourceNode(AudioContext* aContext);
@@ -74,6 +89,9 @@ protected:
 private:
   RefPtr<MediaInputPort> mInputPort;
   RefPtr<DOMMediaStream> mInputStream;
+
+  
+  RefPtr<MediaStreamTrack> mInputTrack;
 };
 
 } 

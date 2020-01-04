@@ -18,11 +18,17 @@ namespace dom {
 NS_IMPL_CYCLE_COLLECTION_CLASS(MediaStreamAudioSourceNode)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(MediaStreamAudioSourceNode)
+  if (tmp->mInputStream) {
+    tmp->mInputStream->UnregisterTrackListener(tmp);
+  }
+  tmp->DetachFromTrack();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mInputStream)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mInputTrack)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(AudioNode)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(MediaStreamAudioSourceNode, AudioNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInputStream)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInputTrack)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(MediaStreamAudioSourceNode)
@@ -68,19 +74,75 @@ MediaStreamAudioSourceNode::Init(DOMMediaStream* aMediaStream, ErrorResult& aRv)
   mInputStream = aMediaStream;
   AudioNodeEngine* engine = new MediaStreamAudioSourceNodeEngine(this);
   mStream = AudioNodeExternalInputStream::Create(graph, engine);
-  ProcessedMediaStream* outputStream = static_cast<ProcessedMediaStream*>(mStream.get());
-  mInputPort = outputStream->AllocateInputPort(inputStream);
   mInputStream->AddConsumerToKeepAlive(static_cast<nsIDOMEventTarget*>(this));
 
-  PrincipalChanged(mInputStream); 
-  mInputStream->AddPrincipalChangeObserver(this);
+  mInputStream->RegisterTrackListener(this);
+  AttachToFirstTrack(mInputStream);
 }
 
-MediaStreamAudioSourceNode::~MediaStreamAudioSourceNode()
+MediaStreamAudioSourceNode::~MediaStreamAudioSourceNode() {}
+
+void
+MediaStreamAudioSourceNode::AttachToTrack(const RefPtr<MediaStreamTrack>& aTrack)
 {
-  if (mInputStream) {
-    mInputStream->RemovePrincipalChangeObserver(this);
+  MOZ_ASSERT(!mInputTrack);
+  if (!mStream) {
+    return;
   }
+
+  mInputTrack = aTrack;
+  ProcessedMediaStream* outputStream =
+    static_cast<ProcessedMediaStream*>(mStream.get());
+  mInputPort = mInputTrack->ForwardTrackContentsTo(outputStream);
+  PrincipalChanged(mInputTrack); 
+  mInputTrack->AddPrincipalChangeObserver(this);
+}
+
+void
+MediaStreamAudioSourceNode::DetachFromTrack()
+{
+  if (mInputTrack) {
+    mInputTrack->RemovePrincipalChangeObserver(this);
+    mInputTrack = nullptr;
+  }
+  if (mInputPort) {
+    mInputPort->Destroy();
+    mInputPort = nullptr;
+  }
+}
+
+void
+MediaStreamAudioSourceNode::AttachToFirstTrack(const RefPtr<DOMMediaStream>& aMediaStream)
+{
+  nsTArray<RefPtr<AudioStreamTrack>> tracks;
+  aMediaStream->GetAudioTracks(tracks);
+
+  if (tracks.IsEmpty()) {
+    return;
+  }
+
+  AttachToTrack(tracks[0]);
+}
+
+void
+MediaStreamAudioSourceNode::NotifyTrackAdded(const RefPtr<MediaStreamTrack>& aTrack)
+{
+  if (mInputTrack) {
+    return;
+  }
+
+  AttachToTrack(aTrack);
+}
+
+void
+MediaStreamAudioSourceNode::NotifyTrackRemoved(const RefPtr<MediaStreamTrack>& aTrack)
+{
+  if (aTrack != mInputTrack) {
+    return;
+  }
+
+  DetachFromTrack();
+  AttachToFirstTrack(mInputStream);
 }
 
 
@@ -98,22 +160,24 @@ MediaStreamAudioSourceNode::~MediaStreamAudioSourceNode()
 
 
 void
-MediaStreamAudioSourceNode::PrincipalChanged(DOMMediaStream* aDOMMediaStream)
+MediaStreamAudioSourceNode::PrincipalChanged(MediaStreamTrack* aMediaStreamTrack)
 {
+  MOZ_ASSERT(aMediaStreamTrack == mInputTrack);
+
   bool subsumes = false;
   if (nsPIDOMWindowInner* parent = Context()->GetParentObject()) {
     nsIDocument* doc = parent->GetExtantDoc();
     if (doc) {
       nsIPrincipal* docPrincipal = doc->NodePrincipal();
-      nsIPrincipal* streamPrincipal = mInputStream->GetPrincipal();
-      if (!streamPrincipal || NS_FAILED(docPrincipal->Subsumes(streamPrincipal, &subsumes))) {
+      nsIPrincipal* trackPrincipal = aMediaStreamTrack->GetPrincipal();
+      if (!trackPrincipal || NS_FAILED(docPrincipal->Subsumes(trackPrincipal, &subsumes))) {
         subsumes = false;
       }
     }
   }
   auto stream = static_cast<AudioNodeExternalInputStream*>(mStream.get());
   stream->SetInt32Parameter(MediaStreamAudioSourceNodeEngine::ENABLE,
-                            subsumes || aDOMMediaStream->GetCORSMode() != CORS_NONE);
+                            subsumes || aMediaStreamTrack->GetCORSMode() != CORS_NONE);
 }
 
 size_t
