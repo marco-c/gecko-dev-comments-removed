@@ -765,10 +765,12 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
       
       
       
-      WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
+      
+      
+      
       RefPtr<TextComposition> composition =
-        IMEStateManager::GetTextCompositionFor(keyEvent);
-      keyEvent->mIsComposing = !!composition;
+        IMEStateManager::GetTextCompositionFor(aPresContext);
+      aEvent->AsKeyboardEvent()->mIsComposing = !!composition;
     }
     break;
   case eWheel:

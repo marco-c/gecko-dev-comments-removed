@@ -183,9 +183,15 @@ public:
 
 
   static already_AddRefed<TextComposition>
-    GetTextCompositionFor(const WidgetKeyboardEvent* aKeyboardEvent);
-  static already_AddRefed<TextComposition>
     GetTextCompositionFor(const WidgetCompositionEvent* aCompositionEvent);
+
+  
+
+
+
+
+  static already_AddRefed<TextComposition>
+    GetTextCompositionFor(nsPresContext* aPresContext);
 
   
 
