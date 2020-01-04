@@ -166,6 +166,9 @@ this.PushServiceWebSocket = {
     case "nsPref:changed":
       if (aData == "dom.push.debug") {
         gDebuggingEnabled = prefs.get("debug");
+      } else if (aData == "dom.push.userAgentID") {
+        this._shutdownWS();
+        this._reconnectAfterBackoff();
       }
       break;
     case "timer-callback":
@@ -346,6 +349,8 @@ this.PushServiceWebSocket = {
     this._currentState = STATE_SHUT_DOWN;
     this._willBeWokenUpByUDP = false;
 
+    prefs.ignore("userAgentID", this);
+
     if (this._wsListener) {
       this._wsListener._pushService = null;
     }
@@ -370,6 +375,7 @@ this.PushServiceWebSocket = {
   },
 
   uninit: function() {
+    prefs.ignore("debug", this);
 
     if (this._udpServer) {
       this._udpServer.close();
@@ -791,6 +797,8 @@ this.PushServiceWebSocket = {
     function finishHandshake() {
       this._UAID = reply.uaid;
       this._currentState = STATE_READY;
+      prefs.observe("userAgentID", this);
+
       this._dataEnabled = !!reply.use_webpush;
       if (this._dataEnabled) {
         this._mainPushService.getAllUnexpired().then(records =>
@@ -810,7 +818,8 @@ this.PushServiceWebSocket = {
     
     
     
-    if (this._UAID && this._UAID != reply.uaid) {
+    
+    if (this._UAID != reply.uaid) {
       debug("got new UAID: all re-register");
 
       this._mainPushService.dropRegistrations()
