@@ -1878,6 +1878,15 @@ MediaManager::GetUserMedia(nsPIDOMWindow* aWindow,
         break;
 
       case dom::MediaSourceEnum::Browser:
+        
+        
+        
+        if (!vc.mBrowserWindow.WasPassed()) {
+          nsPIDOMWindow *outer = aWindow->GetOuterWindow();
+          vc.mBrowserWindow.Construct(outer->WindowID());
+        }
+        
+        
       case dom::MediaSourceEnum::Screen:
       case dom::MediaSourceEnum::Application:
       case dom::MediaSourceEnum::Window:
