@@ -537,9 +537,10 @@ js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
     
     
     
-    
-    if (cx->runtime()->isSelfHostingCompartment(cx->compartment()))
+    if (cx->runtime()->isSelfHostingCompartment(cx->compartment())) {
+        PrintError(cx, stderr, message, reportp, true);
         return false;
+    }
 
     
     JSErrNum errorNumber = static_cast<JSErrNum>(reportp->errorNumber);
