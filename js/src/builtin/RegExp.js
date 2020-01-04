@@ -54,6 +54,7 @@ function RegExpToString()
     
     return '/' + pattern + '/' + flags;
 }
+_SetCanonicalName(RegExpToString, "toString");
 
 
 
@@ -171,4 +172,3 @@ function RegExpTest(string) {
     
     return RegExpExec(R, S, true);
 }
-_SetCanonicalName(RegExpToString, "toString");
