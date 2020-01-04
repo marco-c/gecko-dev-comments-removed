@@ -52,8 +52,13 @@ loader.lazyRequireGetter(this, "CSS", "CSS");
 
 loader.lazyRequireGetter(this, "CSSLexer", "devtools/shared/css-lexer");
 
-function CssLogic() {
+
+
+
+
+function CssLogic(isInherited) {
   
+  this._isInherited = isInherited;
   this._propertyInfos = {};
 }
 
@@ -254,7 +259,7 @@ CssLogic.prototype = {
 
     let info = this._propertyInfos[property];
     if (!info) {
-      info = new CssPropertyInfo(this, property);
+      info = new CssPropertyInfo(this, property, this._isInherited);
       this._propertyInfos[property] = info;
     }
 
@@ -569,7 +574,7 @@ CssLogic.prototype = {
         if (rule.getPropertyValue(property) &&
             (status == CssLogic.STATUS.MATCHED ||
              (status == CssLogic.STATUS.PARENT_MATCH &&
-              domUtils.isInheritedProperty(property)))) {
+              this._isInherited(property)))) {
           result[property] = true;
           return false;
         }
@@ -1649,10 +1654,13 @@ CssSelector.prototype = {
 
 
 
-function CssPropertyInfo(cssLogic, property) {
+
+
+function CssPropertyInfo(cssLogic, property, isInherited) {
   this._cssLogic = cssLogic;
   this.property = property;
   this._value = "";
+  this._isInherited = isInherited;
 
   
   
@@ -1764,7 +1772,7 @@ CssPropertyInfo.prototype = {
     if (value &&
         (status == CssLogic.STATUS.MATCHED ||
          (status == CssLogic.STATUS.PARENT_MATCH &&
-          domUtils.isInheritedProperty(this.property)))) {
+          this._isInherited(this.property)))) {
       let selectorInfo = new CssSelectorInfo(selector, this.property, value,
           status);
       this._matchedSelectors.push(selectorInfo);

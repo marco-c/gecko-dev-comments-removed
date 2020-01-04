@@ -53,10 +53,15 @@ exports.CssPropertiesFront = CssPropertiesFront;
 
 
 
+
+
+
 function CssProperties(properties) {
   this.properties = properties;
   
+  
   this.isKnown = this.isKnown.bind(this);
+  this.isInherited = this.isInherited.bind(this);
 }
 
 CssProperties.prototype = {
@@ -69,7 +74,11 @@ CssProperties.prototype = {
 
 
   isKnown(property) {
-    return this.properties.includes(property) || isCssVariable(property);
+    return !!this.properties[property] || isCssVariable(property);
+  },
+
+  isInherited(property) {
+    return this.properties[property] && this.properties[property].isInherited;
   }
 };
 
@@ -92,20 +101,18 @@ exports.initCssProperties = Task.async(function* (toolbox) {
     return cachedCssProperties.get(client);
   }
 
-  let propertiesList, front;
+  let db, front;
 
   
   if (toolbox.target.hasActor("cssProperties")) {
     front = CssPropertiesFront(client, toolbox.target.form);
-    const db = yield front.getCSSDatabase();
-    propertiesList = db.propertiesList;
+    db = yield front.getCSSDatabase();
   } else {
     
     
-    const db = require("devtools/client/shared/css-properties-db");
-    propertiesList = db.propertiesList;
+    db = require("devtools/shared/css-properties-db");
   }
-  const cssProperties = new CssProperties(propertiesList);
+  const cssProperties = new CssProperties(db);
   cachedCssProperties.set(client, {cssProperties, front});
   return {cssProperties, front};
 });
