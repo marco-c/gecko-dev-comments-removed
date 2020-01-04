@@ -17,7 +17,7 @@
 
 class AsyncLatencyLogger;
 
-PRLogModuleInfo* GetLatencyLog();
+mozilla::LogModule* GetLatencyLog();
 
 
 class AsyncLatencyLogger : public nsIObserver

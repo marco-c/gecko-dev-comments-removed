@@ -24,7 +24,7 @@
 #include "mozilla/Logging.h"
 
 #undef LOG
-PRLogModuleInfo *gMediaParentLog;
+mozilla::LazyLogModule gMediaParentLog("MediaParent");
 #define LOG(args) MOZ_LOG(gMediaParentLog, mozilla::LogLevel::Debug, args)
 
 
@@ -511,8 +511,6 @@ Parent<Super>::Parent(bool aSameProcess)
   , mDestroyed(false)
   , mSameProcess(aSameProcess)
 {
-  if (!gMediaParentLog)
-    gMediaParentLog = PR_NewLogModule("MediaParent");
   LOG(("media::Parent: %p", this));
 }
 
