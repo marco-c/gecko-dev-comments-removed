@@ -69,8 +69,7 @@ class TestPageInfoWindow(FirefoxTestCase):
                            )
 
         for trigger in open_strategies:
-            if trigger == 'shortcut' and \
-                    self.marionette.session_capabilities['platform'] == 'WINDOWS_NT':
+            if trigger == 'shortcut' and self.platform == 'windows_nt':
                 
                 self.assertRaises(ValueError, self.browser.open_page_info_window,
                                   trigger=trigger)
@@ -92,7 +91,7 @@ class TestPageInfoWindow(FirefoxTestCase):
                             )
         for trigger in close_strategies:
             
-            if trigger == 'menu' and self.platform != 'Darwin':
+            if trigger == 'menu' and self.platform != 'darwin':
                 continue
 
             page_info = self.browser.open_page_info_window()
