@@ -590,11 +590,12 @@ ShareTableAndGetBlob(nsTArray<uint8_t>&& aTable,
     Clear();
     
     mSharedBlobData = new FontTableBlobData(Move(aTable));
+
     mBlob = hb_blob_create(mSharedBlobData->GetTable(),
                            mSharedBlobData->GetTableLength(),
                            HB_MEMORY_MODE_READONLY,
                            mSharedBlobData, DeleteFontTableBlobData);
-    if (!mSharedBlobData) {
+    if (mBlob == hb_blob_get_empty() ) {
         
         
         
