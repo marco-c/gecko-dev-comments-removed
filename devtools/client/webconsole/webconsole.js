@@ -380,8 +380,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  setSaveRequestAndResponseBodies:
-  function WCF_setSaveRequestAndResponseBodies(value) {
+  setSaveRequestAndResponseBodies: function(value) {
     if (!this.webConsoleClient) {
       
       return promise.resolve(null);
@@ -453,7 +452,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _initConnection: function WCF__initConnection() {
+  _initConnection: function() {
     if (this._initDefer) {
       return this._initDefer.promise;
     }
@@ -477,7 +476,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _initUI: function WCF__initUI() {
+  _initUI: function() {
     this.document = this.window.document;
     this.rootElement = this.document.documentElement;
 
@@ -585,7 +584,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _onPanelSelected: function WCF__onPanelSelected(evt, id) {
+  _onPanelSelected: function(evt, id) {
     this.jsterm.inputNode.focus();
   },
 
@@ -593,7 +592,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _initDefaultFilterPrefs: function WCF__initDefaultFilterPrefs() {
+  _initDefaultFilterPrefs: function() {
     let prefs = ["network", "networkinfo", "csserror", "cssparser", "csslog",
                  "exception", "jswarn", "jslog", "error", "info", "warn", "log",
                  "secerror", "secwarn", "netwarn", "netxhr", "sharedworkers",
@@ -614,8 +613,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _updateReflowActivityListener:
-    function WCF__updateReflowActivityListener(callback) {
+  _updateReflowActivityListener: function(callback) {
     if (this.webConsoleClient) {
       let pref = this._filterPrefsPrefix + "csslog";
       if (Services.prefs.getBoolPref(pref)) {
@@ -635,8 +633,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _updateServerLoggingListener:
-    function WCF__updateServerLoggingListener(callback) {
+  _updateServerLoggingListener: function(callback) {
     if (!this.webConsoleClient) {
       return;
     }
@@ -661,7 +658,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _setFilterTextBoxEvents: function WCF__setFilterTextBoxEvents() {
+  _setFilterTextBoxEvents: function() {
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     let timerEvent = this.adjustVisibilityOnSearchStringChange.bind(this);
 
@@ -688,7 +685,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _initFilterButtons: function WCF__initFilterButtons() {
+  _initFilterButtons: function() {
     let categories = this.document
                      .querySelectorAll(".webconsole-filter-button[category]");
     Array.forEach(categories, function(button) {
@@ -740,7 +737,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  changeFontSize: function WCF_changeFontSize(size) {
+  changeFontSize: function(size) {
     let fontSize = this.window
                    .getComputedStyle(this.outputNode, null)
                    .getPropertyValue("font-size").replace("px", "");
@@ -783,7 +780,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _updateCharSize: function WCF__updateCharSize() {
+  _updateCharSize: function() {
     let doc = this.document;
     let tempLabel = doc.createElementNS(XHTML_NS, "span");
     let style = tempLabel.style;
@@ -811,7 +808,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _toggleFilter: function WCF__toggleFilter(event) {
+  _toggleFilter: function(event) {
     let target = event.target;
     let tagName = target.tagName;
     
@@ -912,7 +909,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _setMenuState: function WCF__setMenuState(target, state) {
+  _setMenuState: function(target, state) {
     let menuItems = target.querySelectorAll("menuitem");
     Array.forEach(menuItems, (item) => {
       item.setAttribute("checked", state);
@@ -928,7 +925,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  setFilterState: function WCF_setFilterState(toggleType, state) {
+  setFilterState: function(toggleType, state) {
     this.filterPrefs[toggleType] = state;
     this.adjustVisibilityForMessageType(toggleType, state);
 
@@ -948,7 +945,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  getFilterState: function WCF_getFilterState(toggleType) {
+  getFilterState: function(toggleType) {
     return this.filterPrefs[toggleType];
   },
 
@@ -970,7 +967,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  stringMatchesFilters: function WCF_stringMatchesFilters(str, filter) {
+  stringMatchesFilters: function(str, filter) {
     if (!filter || !str) {
       return true;
     }
@@ -994,8 +991,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  adjustVisibilityForMessageType:
-  function WCF_adjustVisibilityForMessageType(prefKey, state) {
+  adjustVisibilityForMessageType: function(prefKey, state) {
     let outputNode = this.outputNode;
     let doc = this.document;
 
@@ -1024,8 +1020,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  adjustVisibilityOnSearchStringChange:
-  function WCF_adjustVisibilityOnSearchStringChange() {
+  adjustVisibilityOnSearchStringChange: function() {
     let nodes = this.outputNode.getElementsByClassName("message");
     let searchString = this.filterBox.value;
 
@@ -1053,7 +1048,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  filterMessageNode: function WCF_filterMessageNode(node) {
+  filterMessageNode: function(node) {
     let isFiltered = false;
 
     
@@ -1096,8 +1091,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  mergeFilteredMessageNode:
-  function WCF_mergeFilteredMessageNode(original, filtered) {
+  mergeFilteredMessageNode: function(original, filtered) {
     let repeatNode = original.getElementsByClassName("message-repeats")[0];
     if (!repeatNode) {
       return; 
@@ -1121,7 +1115,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _filterRepeatedMessage: function WCF__filterRepeatedMessage(node) {
+  _filterRepeatedMessage: function(node) {
     let repeatNode = node.getElementsByClassName("message-repeats")[0];
     if (!repeatNode) {
       return null;
@@ -1167,7 +1161,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  displayCachedMessages: function WCF_displayCachedMessages(remoteMessages) {
+  displayCachedMessages: function(remoteMessages) {
     if (!remoteMessages.length) {
       return;
     }
@@ -1203,7 +1197,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  logConsoleAPIMessage: function WCF_logConsoleAPIMessage(message) {
+  logConsoleAPIMessage: function(message) {
     let body = null;
     let clipboardText = null;
     let sourceURL = message.filename;
@@ -1254,7 +1248,7 @@ WebConsoleFrame.prototype = {
       case "dirxml": {
         
         message.level = "log";
-        return WCF_logConsoleAPIMessage.call(this, message);
+        return this.logConsoleAPIMessage(message);
       }
       case "group":
       case "groupCollapsed":
@@ -1370,7 +1364,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleConsoleAPICall: function WCF_handleConsoleAPICall(message) {
+  handleConsoleAPICall: function(message) {
     this.outputMessage(CATEGORY_WEBDEV, this.logConsoleAPIMessage, [message]);
   },
 
@@ -1382,7 +1376,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  reportPageError: function WCF_reportPageError(category, scriptError) {
+  reportPageError: function(category, scriptError) {
     
     
     let severity = 'error';
@@ -1465,7 +1459,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  handlePageError: function WCF_handlePageError(pageError) {
+  handlePageError: function(pageError) {
     let category = Utils.categoryForScriptError(pageError);
     this.outputMessage(category, this.reportPageError, [category, pageError]);
   },
@@ -1477,7 +1471,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleLogMessage: function WCF_handleLogMessage(packet) {
+  handleLogMessage: function(packet) {
     if (packet.message) {
       this.outputMessage(CATEGORY_JS, this._reportLogMessage, [packet]);
     }
@@ -1492,7 +1486,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _reportLogMessage: function WCF__reportLogMessage(packet) {
+  _reportLogMessage: function(packet) {
     let msg = packet.message;
     if (msg.type && msg.type == "longString") {
       msg = msg.initial;
@@ -1595,7 +1589,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  makeMixedContentNode: function WCF_makeMixedContentNode(linkNode) {
+  makeMixedContentNode: function(linkNode) {
     let mixedContentWarning = "[" + l10n.getStr("webConsoleMixedContentWarning") + "]";
 
     
@@ -1623,7 +1617,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  addMoreInfoLink: function WCF_addMoreInfoLink(node, scriptError) {
+  addMoreInfoLink: function(node, scriptError) {
     let url;
     switch (scriptError.category) {
       case "Insecure Password Field":
@@ -1665,8 +1659,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  addLearnMoreWarningNode:
-  function WCF_addLearnMoreWarningNode(node, url) {
+  addLearnMoreWarningNode: function(node, url) {
     let moreInfoLabel = "[" + l10n.getStr("webConsoleMoreInfoLabel") + "]";
 
     let warningNode = this.document.createElementNS(XHTML_NS, "a");
@@ -1692,7 +1685,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  logFileActivity: function WCF_logFileActivity(fileURI) {
+  logFileActivity: function(fileURI) {
     let urlNode = this.document.createElementNS(XHTML_NS, "a");
     urlNode.setAttribute("title", fileURI);
     urlNode.className = "url";
@@ -1716,7 +1709,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleFileActivity: function WCF_handleFileActivity(fileURI) {
+  handleFileActivity: function(fileURI) {
     this.outputMessage(CATEGORY_NETWORK, this.logFileActivity, [fileURI]);
   },
 
@@ -1726,7 +1719,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  logReflowActivity: function WCF_logReflowActivity(message) {
+  logReflowActivity: function(message) {
     let {start, end, sourceURL, sourceLine} = message;
     let duration = Math.round((end - start) * 100) / 100;
     let node = this.document.createElementNS(XHTML_NS, "span");
@@ -1750,7 +1743,7 @@ WebConsoleFrame.prototype = {
   },
 
 
-  handleReflowActivity: function WCF_handleReflowActivity(message) {
+  handleReflowActivity: function(message) {
     this.outputMessage(CATEGORY_CSS, this.logReflowActivity, [message]);
   },
 
@@ -1758,7 +1751,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  logWarningAboutReplacedAPI: function WCF_logWarningAboutReplacedAPI() {
+  logWarningAboutReplacedAPI: function() {
     let node = this.createMessageNode(CATEGORY_JS, SEVERITY_WARNING,
                                       l10n.getStr("ConsoleAPIDisabled"));
     this.outputMessage(CATEGORY_JS, node);
@@ -1810,7 +1803,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _updateNetMessage: function WCF__updateNetMessage(actorId) {
+  _updateNetMessage: function(actorId) {
     let networkInfo = this.webConsoleClient.getNetworkRequest(actorId);
     if (!networkInfo || !networkInfo.node) {
       return;
@@ -1863,7 +1856,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  openNetworkPanel: function WCF_openNetworkPanel(requestId) {
+  openNetworkPanel: function(requestId) {
     let toolbox = gDevTools.getToolbox(this.owner.target);
     
     if (!toolbox) {
@@ -1882,7 +1875,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  onLocationChange: function WCF_onLocationChange(uri, title) {
+  onLocationChange: function(uri, title) {
     this.contentLocation = uri;
     if (this.owner.onLocationChange) {
       this.owner.onLocationChange(uri, title);
@@ -1897,7 +1890,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  handleTabNavigated: function WCF_handleTabNavigated(event, packet) {
+  handleTabNavigated: function(event, packet) {
     if (event == "will-navigate") {
       if (this.persistLog) {
         let marker = new Messages.NavigationMarker(packet, Date.now());
@@ -1936,7 +1929,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  outputMessage: function WCF_outputMessage(category, methodOrNode, args) {
+  outputMessage: function(category, methodOrNode, args) {
     if (!this._outputQueue.length) {
       
       
@@ -1955,7 +1948,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _flushMessageQueue: function WCF__flushMessageQueue() {
+  _flushMessageQueue: function() {
     this._outputTimerInitialized = false;
     if (!this._outputTimer) {
       return;
@@ -2075,7 +2068,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _initOutputTimer: function WCF__initOutputTimer() {
+  _initOutputTimer: function() {
     let panelIsDestroyed = !this._outputTimer;
     let alreadyScheduled = this._outputTimerInitialized;
     let nothingToDo = !this._itemDestroyQueue.length &&
@@ -2107,8 +2100,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _outputMessageFromQueue:
-  function WCF__outputMessageFromQueue(hudIdSupportsString, item) {
+  _outputMessageFromQueue: function(hudIdSupportsString, item) {
     let [category, methodOrNode, args] = item;
 
     
@@ -2155,7 +2147,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _pruneOutputQueue: function WCF__pruneOutputQueue() {
+  _pruneOutputQueue: function() {
     let nodes = {};
 
     
@@ -2195,7 +2187,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _destroyItem: function WCF__destroyItem(item) {
+  _destroyItem: function(item) {
     
     
     let [category, methodOrNode, args] = item;
@@ -2263,7 +2255,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  pruneOutputIfNecessary: function WCF_pruneOutputIfNecessary(category) {
+  pruneOutputIfNecessary: function(category) {
     let logLimit = Utils.logLimitForCategory(category);
     let messageNodes = this.outputNode.querySelectorAll(".message[category=" +
                        CATEGORY_CLASS_FRAGMENTS[category] + "]");
@@ -2278,7 +2270,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  removeOutputMessage: function WCF_removeOutputMessage(node) {
+  removeOutputMessage: function(node) {
     if (node._messageObject) {
       node._messageObject.destroy();
     }
@@ -2339,9 +2331,8 @@ WebConsoleFrame.prototype = {
 
 
 
-  createMessageNode:
-  function WCF_createMessageNode(category, severity, body, sourceURL,
-                                 sourceLine, clipboardText, level, timestamp) {
+  createMessageNode: function(category, severity, body, sourceURL, sourceLine,
+                              clipboardText, level, timestamp) {
     if (typeof body != "string" && clipboardText == null && body.innerText) {
       clipboardText = body.innerText;
     }
@@ -2471,8 +2462,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  createLocationNode:
-  function WCF_createLocationNode({url, line, column}, target) {
+  createLocationNode: function({url, line, column}, target) {
     if (!url) {
       url = "";
     }
@@ -2551,8 +2541,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  setMessageType:
-  function WCF_setMessageType(messageNode, category, severity) {
+  setMessageType: function(messageNode, category, severity) {
     messageNode.category = category;
     messageNode.severity = severity;
     messageNode.setAttribute("category", CATEGORY_CLASS_FRAGMENTS[category]);
@@ -2569,7 +2558,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _addMessageLinkCallback: function WCF__addMessageLinkCallback(node, callback) {
+  _addMessageLinkCallback: function(node, callback) {
     node.addEventListener("mousedown", (event) => {
       this._mousedown = true;
       this._startX = event.clientX;
@@ -2602,7 +2591,7 @@ WebConsoleFrame.prototype = {
     }, false);
   },
 
-  _addFocusCallback: function WCF__addFocusCallback(node, callback) {
+  _addFocusCallback: function(node, callback) {
     node.addEventListener("mousedown", (event) => {
       this._mousedown = true;
       this._startX = event.clientX;
@@ -2646,7 +2635,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _onToolboxPrefChanged: function WCF__onToolboxPrefChanged(event, data) {
+  _onToolboxPrefChanged: function(event, data) {
     if (data.pref == PREF_MESSAGE_TIMESTAMP) {
       if (data.newValue) {
         this.outputNode.classList.remove("hideTimestamps");
@@ -2667,7 +2656,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  copySelectedItems: function WCF_copySelectedItems(options) {
+  copySelectedItems: function(options) {
     options = options || { linkOnly: false, contextmenu: false };
 
     
@@ -2703,8 +2692,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  objectPropertiesProvider:
-  function WCF_objectPropertiesProvider(actor, callback) {
+  objectPropertiesProvider: function(actor, callback) {
     this.webConsoleClient.inspectObjectProperties(actor,
       function(response) {
         if (response.error) {
@@ -2723,7 +2711,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  _releaseObject: function WCF__releaseObject(actor) {
+  _releaseObject: function(actor) {
     if (this.proxy) {
       this.proxy.releaseActor(actor);
     }
@@ -2732,7 +2720,7 @@ WebConsoleFrame.prototype = {
   
 
 
-  openSelectedItemInTab: function WCF_openSelectedItemInTab() {
+  openSelectedItemInTab: function() {
     let item = this.output.getSelectedMessages(1)[0] ||
                this._contextMenuHandler.lastClickedMessage;
 
@@ -2751,7 +2739,7 @@ WebConsoleFrame.prototype = {
 
 
 
-  destroy: function WCF_destroy() {
+  destroy: function() {
     if (this._destroyer) {
       return this._destroyer.promise;
     }
@@ -3032,7 +3020,7 @@ JSTerm.prototype = {
   
 
 
-  init: function JST_init() {
+  init: function() {
     let autocompleteOptions = {
       onSelect: this.onAutocompleteSelect.bind(this),
       onClick: this.acceptProposedCompletion.bind(this),
@@ -3089,8 +3077,7 @@ JSTerm.prototype = {
 
 
 
-  _executeResultCallback:
-  function JST__executeResultCallback(callback, response) {
+  _executeResultCallback: function(callback, response) {
     if (!this.hud) {
       return;
     }
@@ -3182,7 +3169,7 @@ JSTerm.prototype = {
 
 
 
-  execute: function JST_execute(executeString, callback) {
+  execute: function(executeString, callback) {
     let deferred = promise.defer();
     let resultCallback = function(msg) {
       deferred.resolve(msg);
@@ -3258,7 +3245,7 @@ JSTerm.prototype = {
 
 
 
-  requestEvaluation: function JST_requestEvaluation(str, options = {}) {
+  requestEvaluation: function(str, options = {}) {
     let deferred = promise.defer();
 
     function onResult(response) {
@@ -3293,7 +3280,7 @@ JSTerm.prototype = {
 
 
 
-  getFrameActor: function JST_getFrameActor(frame) {
+  getFrameActor: function(frame) {
     let state = this.hud.owner.getDebuggerFrames();
     if (!state) {
       return null;
@@ -3330,7 +3317,7 @@ JSTerm.prototype = {
 
 
 
-  openVariablesView: function JST_openVariablesView(options) {
+  openVariablesView: function(options) {
     let onContainerReady = (window) => {
       let container = window.document.querySelector("#variables");
       let view = this._variablesView;
@@ -3389,7 +3376,7 @@ JSTerm.prototype = {
 
 
 
-  _createSidebar: function JST__createSidebar() {
+  _createSidebar: function() {
     let tabbox = this.hud.document.querySelector("#webconsole-sidebar");
     this.sidebar = new ToolSidebar(tabbox, this, "webconsole");
     this.sidebar.show();
@@ -3403,7 +3390,7 @@ JSTerm.prototype = {
 
 
 
-  _addVariablesViewSidebarTab: function JST__addVariablesViewSidebarTab() {
+  _addVariablesViewSidebarTab: function() {
     let deferred = promise.defer();
 
     let onTabReady = () => {
@@ -3435,7 +3422,7 @@ JSTerm.prototype = {
 
 
 
-  _onKeypressInVariablesView: function JST__onKeypressInVariablesView(event) {
+  _onKeypressInVariablesView: function(event) {
     let tag = event.target.nodeName;
     if (event.keyCode != Ci.nsIDOMKeyEvent.DOM_VK_ESCAPE || event.shiftKey ||
         event.altKey || event.ctrlKey || event.metaKey ||
@@ -3460,7 +3447,7 @@ JSTerm.prototype = {
 
 
 
-  _createVariablesView: function JST__createVariablesView(options) {
+  _createVariablesView: function(options) {
     let view = new VariablesView(options.container);
     view.toolbox = gDevTools.getToolbox(this.hud.owner.target);
     view.searchPlaceholder = l10n.getStr("propertiesFilterPlaceholder");
@@ -3506,7 +3493,7 @@ JSTerm.prototype = {
 
 
 
-  _updateVariablesView: function JST__updateVariablesView(options) {
+  _updateVariablesView: function(options) {
     let view = options.view;
     view.empty();
 
@@ -3558,8 +3545,7 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewEvaluate:
-  function JST__variablesViewEvaluate(options, variableObject, value) {
+  _variablesViewEvaluate: function(options, variableObject, value) {
     let updater = this._updateVariablesView.bind(this, options);
     let onEval = this._silentEvalCallback.bind(this, updater);
     let string = variableObject.evaluationMacro(variableObject, value);
@@ -3582,7 +3568,7 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewDelete: function JST__variablesViewDelete(options, variableObject) {
+  _variablesViewDelete: function(options, variableObject) {
     let onEval = this._silentEvalCallback.bind(this, null);
 
     let evalOptions = {
@@ -3606,8 +3592,7 @@ JSTerm.prototype = {
 
 
 
-  _variablesViewSwitch:
-  function JST__variablesViewSwitch(options, variableObject, newName) {
+  _variablesViewSwitch: function(options, variableObject, newName) {
     let updater = this._updateVariablesView.bind(this, options);
     let onEval = this._silentEvalCallback.bind(this, updater);
 
@@ -3641,7 +3626,7 @@ JSTerm.prototype = {
 
 
 
-  _silentEvalCallback: function JST__silentEvalCallback(callback, response) {
+  _silentEvalCallback: function(callback, response) {
     if (response.error) {
       Cu.reportError("Web Console evaluation failed. " + response.error + ":" +
                      response.message);
@@ -3689,7 +3674,7 @@ JSTerm.prototype = {
 
 
 
-  clearOutput: function JST_clearOutput(clearStorage) {
+  clearOutput: function(clearStorage) {
     let hud = this.hud;
     let outputNode = hud.outputNode;
     let node;
@@ -3717,7 +3702,7 @@ JSTerm.prototype = {
 
 
 
-  clearPrivateMessages: function JST_clearPrivateMessages() {
+  clearPrivateMessages: function() {
     let nodes = this.hud.outputNode.querySelectorAll(".message[private]");
     for (let node of nodes) {
       this.hud.removeOutputMessage(node);
@@ -3730,7 +3715,7 @@ JSTerm.prototype = {
 
 
 
-  resizeInput: function JST_resizeInput() {
+  resizeInput: function() {
     let inputNode = this.inputNode;
 
     
@@ -3753,7 +3738,7 @@ JSTerm.prototype = {
 
 
 
-  setInputValue: function JST_setInputValue(newValue) {
+  setInputValue: function(newValue) {
     this.inputNode.value = newValue;
     this.lastInputValue = newValue;
     this.completeNode.value = "";
@@ -3774,7 +3759,7 @@ JSTerm.prototype = {
 
 
 
-  _inputEventHandler: function JST__inputEventHandler() {
+  _inputEventHandler: function() {
     if (this.lastInputValue != this.getInputValue()) {
       this.resizeInput();
       this.complete(this.COMPLETE_HINT_ONLY);
@@ -3787,7 +3772,7 @@ JSTerm.prototype = {
 
 
 
-  _blurEventHandler: function JST__blurEventHandler() {
+  _blurEventHandler: function() {
     if (this.autocompletePopup) {
       this.clearCompletion();
     }
@@ -3799,7 +3784,7 @@ JSTerm.prototype = {
 
 
 
-  _keyPress: function JST__keyPress(event) {
+  _keyPress: function(event) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
     let inputUpdated = false;
@@ -4019,7 +4004,7 @@ JSTerm.prototype = {
 
 
 
-  _focusEventHandler: function JST__focusEventHandler() {
+  _focusEventHandler: function() {
     this._inputChanged = false;
   },
 
@@ -4032,7 +4017,7 @@ JSTerm.prototype = {
 
 
 
-  historyPeruse: function JST_historyPeruse(direction) {
+  historyPeruse: function(direction) {
     if (!this.history.length) {
       return false;
     }
@@ -4074,7 +4059,7 @@ JSTerm.prototype = {
 
 
 
-  hasMultilineInput: function JST_hasMultilineInput() {
+  hasMultilineInput: function() {
     return /[\r\n]/.test(this.getInputValue());
   },
 
@@ -4087,7 +4072,7 @@ JSTerm.prototype = {
 
 
 
-  canCaretGoPrevious: function JST_canCaretGoPrevious() {
+  canCaretGoPrevious: function() {
     let node = this.inputNode;
     if (node.selectionStart != node.selectionEnd) {
       return false;
@@ -4107,7 +4092,7 @@ JSTerm.prototype = {
 
 
 
-  canCaretGoNext: function JST_canCaretGoNext() {
+  canCaretGoNext: function() {
     let node = this.inputNode;
     if (node.selectionStart != node.selectionEnd) {
       return false;
@@ -4151,7 +4136,7 @@ JSTerm.prototype = {
 
 
 
-  complete: function JSTF_complete(type, callback) {
+  complete: function(type, callback) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
@@ -4209,8 +4194,7 @@ JSTerm.prototype = {
 
 
 
-  _updateCompletionResult:
-  function JST__updateCompletionResult(type, callback) {
+  _updateCompletionResult: function(type, callback) {
     let frameActor = this.getFrameActor(this.SELECTED_FRAME);
     if (this.lastCompletion.value == this.getInputValue() &&
         frameActor == this._lastFrameActorId) {
@@ -4285,8 +4269,7 @@ JSTerm.prototype = {
 
 
 
-  _receiveAutocompleteProperties:
-  function JST__receiveAutocompleteProperties(requestId, callback, message) {
+  _receiveAutocompleteProperties: function(requestId, callback, message) {
     let inputNode = this.inputNode;
     let inputValue = this.getInputValue();
     if (this.lastCompletion.value == inputValue ||
@@ -4353,7 +4336,7 @@ JSTerm.prototype = {
     this.emit("autocomplete-updated");
   },
 
-  onAutocompleteSelect: function JSTF_onAutocompleteSelect() {
+  onAutocompleteSelect: function() {
     
     if (this.inputNode.selectionStart != this.getInputValue().length) {
       return;
@@ -4373,7 +4356,7 @@ JSTerm.prototype = {
 
 
 
-  clearCompletion: function JSTF_clearCompletion() {
+  clearCompletion: function() {
     this.autocompletePopup.clearItems();
     this.lastCompletion = { value: null };
     this.updateCompleteNode("");
@@ -4390,7 +4373,7 @@ JSTerm.prototype = {
 
 
 
-  acceptProposedCompletion: function JSTF_acceptProposedCompletion() {
+  acceptProposedCompletion: function() {
     let updated = false;
 
     let currentItem = this.autocompletePopup.selectedItem;
@@ -4416,7 +4399,7 @@ JSTerm.prototype = {
 
 
 
-  updateCompleteNode: function JSTF_updateCompleteNode(suffix) {
+  updateCompleteNode: function(suffix) {
     
     let prefix = suffix ? this.getInputValue().replace(/[\S]/g, " ") : "";
     this.completeNode.value = prefix + suffix;
@@ -4427,7 +4410,7 @@ JSTerm.prototype = {
 
 
 
-  _sidebarDestroy: function JST__sidebarDestroy() {
+  _sidebarDestroy: function() {
     if (this._variablesView) {
       this._variablesView.controller.releaseActors();
       this._variablesView = null;
@@ -4445,7 +4428,7 @@ JSTerm.prototype = {
   
 
 
-  destroy: function JST_destroy() {
+  destroy: function() {
     this._sidebarDestroy();
 
     this.clearCompletion();
@@ -4487,7 +4470,7 @@ var Utils = {
 
 
 
-  scrollToVisible: function Utils_scrollToVisible(node) {
+  scrollToVisible: function(node) {
     node.scrollIntoView(false);
   },
 
@@ -4500,7 +4483,7 @@ var Utils = {
 
 
 
-  isOutputScrolledToBottom: function (outputNode, scrollNode) {
+  isOutputScrolledToBottom: function(outputNode, scrollNode) {
     let lastNodeHeight = outputNode.lastChild ?
                          outputNode.lastChild.clientHeight : 0;
     return scrollNode.scrollTop + scrollNode.clientHeight >=
@@ -4516,7 +4499,7 @@ var Utils = {
 
 
 
-  categoryForScriptError: function Utils_categoryForScriptError(scriptError) {
+  categoryForScriptError: function(scriptError) {
     let category = scriptError.category;
 
     if (/^(?:CSS|Layout)\b/.test(category)) {
@@ -4552,7 +4535,7 @@ var Utils = {
 
 
 
-  logLimitForCategory: function Utils_logLimitForCategory(category) {
+  logLimitForCategory: function(category) {
     let logLimit = DEFAULT_LOG_LIMIT;
 
     try {
@@ -4581,36 +4564,36 @@ CommandController.prototype = {
   
 
 
-  selectAll: function CommandController_selectAll() {
+  selectAll: function() {
     this.owner.output.selectAllMessages();
   },
 
   
 
 
-  openURL: function CommandController_openURL() {
+  openURL: function() {
     this.owner.openSelectedItemInTab();
   },
 
-  copyURL: function CommandController_copyURL() {
+  copyURL: function() {
     this.owner.copySelectedItems({ linkOnly: true, contextmenu: true });
   },
 
   
 
 
-  copyLastClicked: function CommandController_copy() {
+  copyLastClicked: function() {
     this.owner.copySelectedItems({ linkOnly: false, contextmenu: true });
   },
 
-  supportsCommand: function CommandController_supportsCommand(command) {
+  supportsCommand: function(command) {
     if (!this.owner || !this.owner.output) {
       return false;
     }
     return this.isCommandEnabled(command);
   },
 
-  isCommandEnabled: function CommandController_isCommandEnabled(command) {
+  isCommandEnabled: function(command) {
     switch (command) {
       case "consoleCmd_openURL":
       case "consoleCmd_copyURL": {
@@ -4638,7 +4621,7 @@ CommandController.prototype = {
     return false;
   },
 
-  doCommand: function CommandController_doCommand(command) {
+  doCommand: function(command) {
     switch (command) {
       case "consoleCmd_openURL":
         this.openURL();
@@ -4777,7 +4760,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  connect: function WCCP_connect() {
+  connect: function() {
     if (this._connectDefer) {
       return this._connectDefer.promise;
     }
@@ -4827,7 +4810,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _connectionTimeout: function WCCP__connectionTimeout() {
+  _connectionTimeout: function() {
     let error = {
       error: "timeout",
       message: l10n.getStr("connectionTimeout"),
@@ -4840,7 +4823,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _attachConsole: function WCCP__attachConsole() {
+  _attachConsole: function() {
     let listeners = ["PageError", "ConsoleAPI", "NetworkActivity",
                      "FileActivity"];
     this.client.attachConsole(this._consoleActor, listeners,
@@ -4857,7 +4840,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onAttachConsole: function WCCP__onAttachConsole(response, webConsoleClient) {
+  _onAttachConsole: function(response, webConsoleClient) {
     if (response.error) {
       Cu.reportError("attachConsole failed: " + response.error + " " +
                      response.message);
@@ -4889,7 +4872,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onCachedMessages: function WCCP__onCachedMessages(response) {
+  _onCachedMessages: function(response) {
     if (response.error) {
       Cu.reportError("Web Console getCachedMessages error: " + response.error +
                      " " + response.message);
@@ -4926,7 +4909,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onPageError: function WCCP__onPageError(type, packet) {
+  _onPageError: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.handlePageError(packet.pageError);
     }
@@ -4942,7 +4925,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onLogMessage: function WCCP__onLogMessage(type, packet) {
+  _onLogMessage: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.handleLogMessage(packet);
     }
@@ -4958,7 +4941,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onConsoleAPICall: function WCCP__onConsoleAPICall(type, packet) {
+  _onConsoleAPICall: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.handleConsoleAPICall(packet.message);
     }
@@ -5008,13 +4991,13 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onFileActivity: function WCCP__onFileActivity(type, packet) {
+  _onFileActivity: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.handleFileActivity(packet.uri);
     }
   },
 
-  _onReflowActivity: function WCCP__onReflowActivity(type, packet) {
+  _onReflowActivity: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.handleReflowActivity(packet);
     }
@@ -5030,7 +5013,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onServerLogCall: function WCCP__onServerLogCall(type, packet) {
+  _onServerLogCall: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.handleConsoleAPICall(packet.message);
     }
@@ -5046,8 +5029,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onLastPrivateContextExited:
-  function WCCP__onLastPrivateContextExited(type, packet) {
+  _onLastPrivateContextExited: function(type, packet) {
     if (this.webConsoleFrame && packet.from == this._consoleActor) {
       this.webConsoleFrame.jsterm.clearPrivateMessages();
     }
@@ -5063,7 +5045,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  _onTabNavigated: function WCCP__onTabNavigated(event, packet) {
+  _onTabNavigated: function(event, packet) {
     if (!this.webConsoleFrame) {
       return;
     }
@@ -5077,7 +5059,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  releaseActor: function WCCP_releaseActor(actor) {
+  releaseActor: function(actor) {
     if (this.client) {
       this.client.release(actor);
     }
@@ -5089,7 +5071,7 @@ WebConsoleConnectionProxy.prototype = {
 
 
 
-  disconnect: function WCCP_disconnect() {
+  disconnect: function() {
     if (this._disconnecter) {
       return this._disconnecter.promise;
     }
@@ -5153,7 +5135,7 @@ ConsoleContextMenu.prototype = {
   
 
 
-  build: function CCM_build(event) {
+  build: function(event) {
     let metadata = this.getSelectionMetadata(event.rangeParent);
     for (let element of this.popup.children) {
       element.hidden = this.shouldHideMenuItem(element, metadata);
@@ -5168,7 +5150,7 @@ ConsoleContextMenu.prototype = {
 
 
 
-  getSelectionMetadata: function CCM_getSelectionMetadata(clickElement) {
+  getSelectionMetadata: function(clickElement) {
     let metadata = {
       selectionType: "",
       selection: new Set(),
@@ -5216,7 +5198,7 @@ ConsoleContextMenu.prototype = {
 
 
 
-  shouldHideMenuItem: function CCM_shouldHideMenuItem(menuItem, metadata) {
+  shouldHideMenuItem: function(menuItem, metadata) {
     let selectionType = menuItem.getAttribute("selectiontype");
     if (selectionType && !metadata.selectionType == selectionType) {
       return true;
@@ -5243,7 +5225,7 @@ ConsoleContextMenu.prototype = {
   
 
 
-  destroy: function CCM_destroy() {
+  destroy: function() {
     this.popup.removeEventListener("popupshowing", this.build);
     this.popup = null;
     this.owner = null;
