@@ -310,7 +310,8 @@ public:
       mPanDisplacement(aPanDisplacement),
       mLineOrPageDeltaX(0),
       mLineOrPageDeltaY(0),
-      mHandledByAPZ(false)
+      mHandledByAPZ(false),
+      mRequiresContentResponse(false)
   {
   }
 
@@ -336,6 +337,12 @@ public:
   int32_t mLineOrPageDeltaY;
 
   bool mHandledByAPZ;
+
+  
+  
+  
+  
+  bool mRequiresContentResponse;
 };
 
 

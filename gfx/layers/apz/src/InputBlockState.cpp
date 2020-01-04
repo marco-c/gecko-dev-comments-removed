@@ -426,6 +426,7 @@ PanGestureBlockState::PanGestureBlockState(const nsRefPtr<AsyncPanZoomController
                                            const PanGestureInput& aInitialEvent)
   : CancelableBlockState(aTargetApzc, aTargetConfirmed)
   , mInterrupted(false)
+  , mWaitingForContentResponse(aInitialEvent.mRequiresContentResponse)
 {
   if (aTargetConfirmed) {
     
@@ -509,7 +510,22 @@ PanGestureBlockState::SetContentResponse(bool aPreventDefault)
   if (aPreventDefault) {
     mInterrupted = true;
   }
-  return CancelableBlockState::SetContentResponse(aPreventDefault);
+  bool stateChanged = CancelableBlockState::SetContentResponse(aPreventDefault);
+  if (mWaitingForContentResponse) {
+    mWaitingForContentResponse = false;
+    stateChanged = true;
+  }
+  return stateChanged;
+}
+
+bool
+PanGestureBlockState::IsReadyForHandling() const
+{
+  if (!CancelableBlockState::IsReadyForHandling()) {
+    return false;
+  }
+  return !mWaitingForContentResponse ||
+         IsContentResponseTimerExpired();
 }
 
 bool
