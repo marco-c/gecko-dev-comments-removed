@@ -10,7 +10,6 @@
 #include "nsAutoPtr.h"
 #include "nsIRunnable.h"
 #include "nsIContentPermissionPrompt.h"
-#include "nsIIPCBackgroundChildCreateCallback.h"
 #include "nsString.h"
 
 class nsPIDOMWindowInner;
@@ -23,7 +22,6 @@ class FileSystemTaskChildBase;
 class FileSystemPermissionRequest final
   : public nsIContentPermissionRequest
   , public nsIRunnable
-  , public nsIIPCBackgroundChildCreateCallback
 {
 public:
   
@@ -33,13 +31,13 @@ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICONTENTPERMISSIONREQUEST
   NS_DECL_NSIRUNNABLE
-  NS_DECL_NSIIPCBACKGROUNDCHILDCREATECALLBACK
 
 private:
   explicit FileSystemPermissionRequest(FileSystemTaskChildBase* aTask);
 
   ~FileSystemPermissionRequest();
 
+  
   
   
   

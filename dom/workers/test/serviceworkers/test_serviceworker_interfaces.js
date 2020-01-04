@@ -97,6 +97,8 @@ var interfaceNamesInGlobalScope =
 
     { name: "DataStoreCursor", b2g: true },
 
+    "Directory",
+
     "DOMCursor",
 
     "DOMError",
