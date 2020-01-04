@@ -265,13 +265,10 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
     bool someUnreachable = false;
     for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd(); block++) {
         JitSpew(JitSpew_Prune, "Investigate Block %d:", block->id());
-        JitSpewIndent indent(JitSpew_Prune);
 
         
-        if (*block == graph.osrBlock() || *block == graph.entryBlock()) {
-            JitSpew(JitSpew_Prune, "Block %d is an entry point.", block->id());
+        if (*block == graph.osrBlock() || *block == graph.entryBlock())
             continue;
-        }
 
         
         
@@ -305,33 +302,20 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
         
         
         
-        if (!isUnreachable && shouldBailout) {
+        if (shouldBailout) {
             size_t p = numPred;
             size_t predCount = 0;
             bool isLoopExit = false;
-            bool isCaseStatement = false;
             while (p--) {
                 MBasicBlock* pred = block->getPredecessor(p);
                 if (pred->getHitState() == MBasicBlock::HitState::Count)
                     predCount += pred->getHitCount();
                 isLoopExit |= pred->isLoopHeader() && pred->backedge() != *block;
-                isCaseStatement |= pred->numSuccessors() > 2;
             }
 
             
             
-            
-            
-            size_t numDominatedInst = 0;
-            int numInOutEdges = block->numPredecessors();
-            ReversePostorderIterator it(block);
-            do {
-                for (MDefinitionIterator def(*it); def; def++)
-                    numDominatedInst++;
-
-                numInOutEdges += int(it->numSuccessors()) - int(it->numPredecessors());
-                it++;
-            } while (numInOutEdges > 0 && it != graph.rpoEnd());
+            size_t numInst = block->rbegin()->id() - block->begin()->id();
 
             
             
@@ -342,20 +326,7 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
             
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (predCount * numDominatedInst * numDominatedInst < 250000)
+            if (predCount + numInst < 75)
                 shouldBailout = false;
 
             
@@ -363,28 +334,6 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
             
             if (isLoopExit)
                 shouldBailout = false;
-
-            
-            
-            
-            
-            if (isCaseStatement)
-                shouldBailout = false;
-
-            
-            
-            
-            bool isExitBlock = block->numSuccessors() == 0;
-            if (isExitBlock && numDominatedInst < 10)
-                shouldBailout = false;
-
-            JitSpew(JitSpew_Prune, "info: block %d, predCount: %lu, numDomInst: %lu, "
-                    "isLoopExit: %s, isExitBlock: %s, isCaseStatement: %s. (shouldBailout: %s)",
-                    block->id(), predCount, numDominatedInst,
-                    isLoopExit ? "true" : "false",
-                    isExitBlock ? "true" : "false",
-                    isCaseStatement ? "true" : "false",
-                    shouldBailout ? "true" : "false");
         }
 
         
@@ -392,6 +341,7 @@ jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
         if (!isUnreachable && !shouldBailout)
             continue;
 
+        JitSpewIndent indent(JitSpew_Prune);
         someUnreachable = true;
         if (isUnreachable) {
             JitSpew(JitSpew_Prune, "Mark block %d as unreachable.", block->id());
