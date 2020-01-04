@@ -779,6 +779,10 @@ protected:
   
   
   nsPoint                   mMouseLocation;
+  
+  
+  
+  mozilla::layers::ScrollableLayerGuid mMouseEventTargetGuid;
 
   
   RefPtr<mozilla::CSSStyleSheet> mPrefStyleSheet;
