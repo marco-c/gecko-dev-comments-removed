@@ -35,18 +35,12 @@ public:
   
 
 
-  explicit TreeWalker(Accessible* aContext);
-
-  
 
 
 
 
 
-
-
-  TreeWalker(Accessible* aContext, nsIContent* aAnchorNode, uint32_t aFlags = 0);
-
+  TreeWalker(Accessible* aContext, nsIContent* aNode, uint32_t aFlags = 0);
   ~TreeWalker();
 
   
