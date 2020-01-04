@@ -66,6 +66,9 @@
 #elif defined(XP_LINUX)
 #include "mozilla/Sandbox.h"
 #include "mozilla/SandboxInfo.h"
+
+
+#include "CubebUtils.h"
 #elif defined(XP_MACOSX)
 #include "mozilla/Sandbox.h"
 #endif
@@ -1460,6 +1463,13 @@ ContentChild::RecvSetProcessSandbox(const MaybeFileDesc& aBroker)
   if (!SandboxInfo::Get().CanSandboxContent()) {
       return true;
   }
+
+  
+  
+  
+  
+  
+  Unused << CubebUtils::GetCubebContext();
 #endif
   int brokerFd = -1;
   if (aBroker.type() == MaybeFileDesc::TFileDescriptor) {
