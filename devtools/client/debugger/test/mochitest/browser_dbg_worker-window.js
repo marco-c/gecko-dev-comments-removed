@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 thisTestLeaksUncaughtRejectionsAndShouldBeFixed("[object Object]");
@@ -33,7 +35,7 @@ add_task(function* () {
                                             Toolbox.HostType.WINDOW);
 
   is(toolbox._host.type, "window", "correct host");
-  ok(toolbox._host._window.document.title.contains(WORKER_URL),
+  ok(toolbox._host._window.document.title.includes(WORKER_URL),
      "worker URL in host title");
 
   let toolTabs = toolbox.doc.querySelectorAll(".devtools-tab");

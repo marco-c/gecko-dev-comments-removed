@@ -16,7 +16,7 @@ add_task(function*() {
   let client = yield startTestDebuggerServer("promises-actor-test");
   let chromeActors = yield getChromeActors(client);
 
-  ok(Promise.toString().contains("native code"), "Expect native DOM Promise");
+  ok(Promise.toString().includes("native code"), "Expect native DOM Promise");
 
   
   yield attachTab(client, chromeActors);
