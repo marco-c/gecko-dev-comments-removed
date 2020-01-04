@@ -116,6 +116,9 @@ user_pref("network.sntp.pools", "%(server)s");
 user_pref("network.sntp.maxRetryCount", 1);
 
 
+user_pref("browser.push.warning.infoURL", "http://%(server)s/alerts-dummy/infoURL");
+
+
 user_pref("security.notification_enable_delay", 0);
 
 
