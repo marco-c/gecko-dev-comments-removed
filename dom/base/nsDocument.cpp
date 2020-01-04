@@ -1455,6 +1455,7 @@ nsIDocument::nsIDocument()
     mFontFaceSetDirty(true),
     mGetUserFontSetCalled(false),
     mPostedFlushUserFontSet(false),
+    mFullscreenEnabled(false),
     mPartID(0),
     mDidFireDOMContentLoaded(true),
     mHasScrollLinkedEffect(false),
@@ -2593,8 +2594,7 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aContainer);
 
   if (docShell) {
-    nsresult rv = docShell->GetSandboxFlags(&mSandboxFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+    docShell->ApplySandboxAndFullscreenFlags(this);
     WarnIfSandboxIneffective(docShell, mSandboxFlags, GetChannel());
   }
 
@@ -6291,13 +6291,13 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
     {
       JSAutoCompartment ac(aCx, global);
 
-      htmlProto = HTMLElementBinding::GetProtoObjectHandle(aCx, global);
+      htmlProto = HTMLElementBinding::GetProtoObjectHandle(aCx);
       if (!htmlProto) {
         rv.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
       }
 
-      svgProto = SVGElementBinding::GetProtoObjectHandle(aCx, global);
+      svgProto = SVGElementBinding::GetProtoObjectHandle(aCx);
       if (!svgProto) {
         rv.Throw(NS_ERROR_OUT_OF_MEMORY);
         return;
@@ -11802,11 +11802,7 @@ GetFullscreenError(nsIDocument* aDoc, bool aCallerIsChrome)
   if (!nsContentUtils::IsFullScreenApiEnabled()) {
     return "FullscreenDeniedDisabled";
   }
-
-  
-  
-  nsCOMPtr<nsIDocShell> docShell(aDoc->GetDocShell());
-  if (!docShell || !docShell->GetFullscreenAllowed()) {
+  if (!aDoc->FullscreenEnabledInternal()) {
     return "FullscreenDeniedContainerNotAllowed";
   }
   return nullptr;

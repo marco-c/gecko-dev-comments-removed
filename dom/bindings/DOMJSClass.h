@@ -354,16 +354,16 @@ IsInterfacePrototype(DOMObjectType type)
 
 typedef JSObject* (*ParentGetter)(JSContext* aCx, JS::Handle<JSObject*> aObj);
 
-typedef JSObject* (*ProtoGetter)(JSContext* aCx,
-                                 JS::Handle<JSObject*> aGlobal);
+typedef JSObject* (*ProtoGetter)(JSContext* aCx);
 
 
 
 
 
 
-typedef JS::Handle<JSObject*> (*ProtoHandleGetter)(JSContext* aCx,
-                                                   JS::Handle<JSObject*> aGlobal);
+
+
+typedef JS::Handle<JSObject*> (*ProtoHandleGetter)(JSContext* aCx);
 
 
 struct DOMJSClass
