@@ -245,13 +245,6 @@ const SIGNED_TYPES = new Set([
 ]);
 
 
-
-
-
-const TEMP_INSTALL_ID_GEN_SESSION =
-  new Uint8Array(Float64Array.of(Math.random()).buffer);
-
-
 function mustSign(aType) {
   if (!SIGNED_TYPES.has(aType))
     return false;
@@ -440,6 +433,12 @@ SafeInstallOperation.prototype = {
   },
 
   _installDirectory: function(aDirectory, aTargetDirectory, aCopy) {
+    if (aDirectory.contains(aTargetDirectory)) {
+      let err = new Error(`Not installing ${aDirectory} into its own descendent ${aTargetDirectory}`);
+      logger.error(err);
+      throw err;
+    }
+
     let newDir = aTargetDirectory.clone();
     newDir.append(aDirectory.leafName);
     try {
@@ -1336,19 +1335,11 @@ var loadManifestFromDir = Task.async(function*(aDir, aInstallLocation) {
     addon = yield loadManifestFromWebManifest(uri);
     if (!addon.id) {
       if (aInstallLocation == TemporaryInstallLocation) {
-        
-        
-        const hasher = Cc["@mozilla.org/security/hash;1"]
-          .createInstance(Ci.nsICryptoHash);
-        hasher.init(hasher.SHA1);
-        const data = new TextEncoder().encode(aDir.path);
-        
-        const sess = TEMP_INSTALL_ID_GEN_SESSION;
-        hasher.update(sess, sess.length);
-        hasher.update(data, data.length);
-        addon.id = `${getHashStringForCrypto(hasher)}@temporary-addon`;
-        logger.info(
-          `Generated temp id ${addon.id} (${sess.join("")}) for ${aDir.path}`);
+        let id = Cc["@mozilla.org/uuid-generator;1"]
+            .getService(Ci.nsIUUIDGenerator)
+            .generateUUID().toString();
+        logger.info(`Generated temporary id ${id} for ${aDir.path}`);
+        addon.id = id;
       } else {
         addon.id = aDir.leafName;
       }
@@ -5648,6 +5639,13 @@ AddonInstall.prototype = {
     catch (e) {
       zipreader.close();
       return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, e]);
+    }
+
+    
+    
+    if (!this.addon.id && this.addon.type != "multipackage") {
+      let err = new Error(`Cannot find id for addon ${file.path}`);
+      return Promise.reject([AddonManager.ERROR_CORRUPT_FILE, err]);
     }
 
     if (mustSign(this.addon.type)) {
