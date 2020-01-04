@@ -244,6 +244,9 @@ const DebuggerClient = exports.DebuggerClient = function (aTransport)
 
 
 
+
+
+
 DebuggerClient.requester = function (aPacketSkeleton,
                                      { telemetry, before, after }) {
   return DevToolsUtils.makeInfallible(function (...args) {
@@ -276,7 +279,7 @@ DebuggerClient.requester = function (aPacketSkeleton,
       outgoingPacket = before.call(this, outgoingPacket);
     }
 
-    this.request(outgoingPacket, DevToolsUtils.makeInfallible((aResponse) => {
+    return this.request(outgoingPacket, DevToolsUtils.makeInfallible((aResponse) => {
       if (after) {
         let { from } = aResponse;
         aResponse = after.call(this, aResponse);
