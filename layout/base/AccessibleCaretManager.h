@@ -26,6 +26,7 @@ struct nsPoint;
 namespace mozilla {
 
 namespace dom {
+class Element;
 class Selection;
 } 
 
@@ -104,7 +105,6 @@ protected:
     
     Selection
   };
-  CaretMode GetCaretMode() const;
 
   enum class UpdateCaretsHint : uint8_t {
     
@@ -123,7 +123,6 @@ protected:
 
   void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
   void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
-  void UpdateCaretsForTilt();
 
   
   
@@ -145,14 +144,10 @@ protected:
   nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
   void ClearMaintainedSelection() const;
-
+  void FlushLayout() const;
+  dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
   already_AddRefed<nsFrameSelection> GetFrameSelection() const;
-  nsIContent* GetFocusedContent() const;
-
-  
-  
-  void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason) const;
 
   
   
@@ -166,6 +161,33 @@ protected:
   void LaunchCaretTimeoutTimer();
   void CancelCaretTimeoutTimer();
 
+  
+  
+  
+  
+  virtual CaretMode GetCaretMode() const;
+
+  
+  virtual bool CompareTreePosition(nsIFrame* aStartFrame,
+                                   nsIFrame* aEndFrame) const;
+
+  
+  virtual void UpdateCaretsForTilt();
+
+  
+  
+  
+  virtual bool IsCaretDisplayableInCursorMode(nsIFrame** aOutFrame = nullptr,
+                                              int32_t* aOutOffset = nullptr) const;
+
+  virtual bool HasNonEmptyTextContent(nsINode* aNode) const;
+
+  
+  
+  virtual void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason) const;
+
+  
+  
   
   nscoord mOffsetYToCaretLogicalPosition = NS_UNCONSTRAINEDSIZE;
 
