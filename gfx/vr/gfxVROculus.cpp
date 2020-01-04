@@ -758,6 +758,17 @@ VRDisplayOculus::SubmitFrame(TextureSourceD3D11* aSource,
   if (!mIsPresenting) {
     return;
   }
+  if (mRenderTargets.IsEmpty()) {
+    
+
+
+
+
+
+
+
+    return;
+  }
   MOZ_ASSERT(mDevice);
   MOZ_ASSERT(mContext);
 
