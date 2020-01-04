@@ -178,12 +178,23 @@ private:
                                  CancelableBlockState* aBlock);
   void MainThreadTimeout(const uint64_t& aInputBlockId);
   void ProcessInputBlocks();
+  void ClearActiveBlock(CancelableBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);
 
 private:
   
   
   nsTArray<RefPtr<CancelableBlockState>> mInputBlockQueue;
+
+  
+  
+  
+  
+  
+  RefPtr<TouchBlockState> mActiveTouchBlock;
+  RefPtr<WheelBlockState> mActiveWheelBlock;
+  RefPtr<DragBlockState> mActiveDragBlock;
+  RefPtr<PanGestureBlockState> mActivePanGestureBlock;
 
   
   RefPtr<AsyncPanZoomController> mLastActiveApzc;
