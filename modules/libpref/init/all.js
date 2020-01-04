@@ -1561,7 +1561,12 @@ pref("dom.server-events.default-reconnection-time", 5000);
 
 pref("network.jar.open-unsafe-types", false);
 
+#ifdef RELEASE_BUILD
+
+pref("network.jar.block-remote-files", false);
+#else
 pref("network.jar.block-remote-files", true);
+#endif
 
 
 
