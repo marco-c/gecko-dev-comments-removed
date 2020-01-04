@@ -4992,7 +4992,7 @@ public:
   DoIdleProcessing(bool aNeedsCheckpoint);
 
   void
-  Close();
+  Close(uintptr_t aCallsite = 0);
 
   nsresult
   DisableQuotaChecks();
@@ -5360,7 +5360,7 @@ private:
   PerformIdleDatabaseMaintenance(DatabaseInfo* aDatabaseInfo);
 
   void
-  CloseDatabase(DatabaseInfo* aDatabaseInfo);
+  CloseDatabase(DatabaseInfo* aDatabaseInfo, uintptr_t aCallsite);
 
   bool
   CloseDatabaseWhenIdleInternal(const nsACString& aDatabaseId);
@@ -5406,8 +5406,10 @@ class ConnectionPool::CloseConnectionRunnable final
 {
 public:
   explicit
-  CloseConnectionRunnable(DatabaseInfo* aDatabaseInfo)
-    : ConnectionRunnable(aDatabaseInfo)
+  CloseConnectionRunnable(DatabaseInfo* aDatabaseInfo,
+                          uintptr_t aCallsite)
+    : ConnectionRunnable(aDatabaseInfo),
+      mCallsite(aCallsite)
   { }
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -5417,6 +5419,8 @@ private:
   { }
 
   NS_DECL_NSIRUNNABLE
+
+  uintptr_t mCallsite;
 };
 
 struct ConnectionPool::ThreadInfo
@@ -10452,12 +10456,16 @@ DatabaseConnection::GetFreelistCount(CachedStatement& aCachedStatement,
 }
 
 void
-DatabaseConnection::Close()
+DatabaseConnection::Close(uintptr_t aCallsite)
 {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(mStorageConnection);
   MOZ_ASSERT(!mDEBUGSavepointCount);
-  MOZ_RELEASE_ASSERT(!mInWriteTransaction);
+  if (mInWriteTransaction) {
+    uint32_t* crashPtr = (uint32_t*)aCallsite;
+    *crashPtr = 42;
+    MOZ_RELEASE_ASSERT(!mInWriteTransaction);
+  }
 
   PROFILER_LABEL("IndexedDB",
                  "DatabaseConnection::Close",
@@ -11365,7 +11373,7 @@ ConnectionPool::IdleTimerCallback(nsITimer* aTimer, void* aClosure)
       if (info.mDatabaseInfo->mIdle) {
         self->PerformIdleDatabaseMaintenance(info.mDatabaseInfo);
       } else {
-        self->CloseDatabase(info.mDatabaseInfo);
+        self->CloseDatabase(info.mDatabaseInfo, 1);
       }
     } else {
       break;
@@ -11843,7 +11851,7 @@ ConnectionPool::CloseIdleDatabases()
 
   if (!mIdleDatabases.IsEmpty()) {
     for (IdleDatabaseInfo& idleInfo : mIdleDatabases) {
-      CloseDatabase(idleInfo.mDatabaseInfo);
+      CloseDatabase(idleInfo.mDatabaseInfo, 2);
     }
     mIdleDatabases.Clear();
   }
@@ -11851,7 +11859,7 @@ ConnectionPool::CloseIdleDatabases()
   if (!mDatabasesPerformingIdleMaintenance.IsEmpty()) {
     for (DatabaseInfo* dbInfo : mDatabasesPerformingIdleMaintenance) {
       MOZ_ASSERT(dbInfo);
-      CloseDatabase(dbInfo);
+      CloseDatabase(dbInfo, 3);
     }
     mDatabasesPerformingIdleMaintenance.Clear();
   }
@@ -12157,7 +12165,7 @@ ConnectionPool::NoteIdleDatabase(DatabaseInfo* aDatabaseInfo)
       aDatabaseInfo->mCloseOnIdle) {
     
     
-    CloseDatabase(aDatabaseInfo);
+    CloseDatabase(aDatabaseInfo, 4);
 
     if (otherDatabasesWaiting) {
       
@@ -12338,7 +12346,8 @@ ConnectionPool::PerformIdleDatabaseMaintenance(DatabaseInfo* aDatabaseInfo)
 }
 
 void
-ConnectionPool::CloseDatabase(DatabaseInfo* aDatabaseInfo)
+ConnectionPool::CloseDatabase(DatabaseInfo* aDatabaseInfo,
+                              uintptr_t aCallsite)
 {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aDatabaseInfo);
@@ -12351,7 +12360,8 @@ ConnectionPool::CloseDatabase(DatabaseInfo* aDatabaseInfo)
   aDatabaseInfo->mNeedsCheckpoint = false;
   aDatabaseInfo->mClosing = true;
 
-  nsCOMPtr<nsIRunnable> runnable = new CloseConnectionRunnable(aDatabaseInfo);
+  nsCOMPtr<nsIRunnable> runnable = new CloseConnectionRunnable(aDatabaseInfo,
+                                                               aCallsite);
 
   MOZ_ALWAYS_TRUE(NS_SUCCEEDED(
     aDatabaseInfo->mThreadInfo.mThread->Dispatch(runnable,
@@ -12371,7 +12381,7 @@ ConnectionPool::CloseDatabaseWhenIdleInternal(const nsACString& aDatabaseId)
   if (DatabaseInfo* dbInfo = mDatabases.Get(aDatabaseId)) {
     if (mIdleDatabases.RemoveElement(dbInfo) ||
         mDatabasesPerformingIdleMaintenance.RemoveElement(dbInfo)) {
-      CloseDatabase(dbInfo);
+      CloseDatabase(dbInfo, 5);
       AdjustIdleTimer();
     } else {
       dbInfo->mCloseOnIdle = true;
@@ -12459,7 +12469,7 @@ CloseConnectionRunnable::Run()
     if (mDatabaseInfo->mConnection) {
       mDatabaseInfo->AssertIsOnConnectionThread();
 
-      mDatabaseInfo->mConnection->Close();
+      mDatabaseInfo->mConnection->Close(mCallsite);
 
       IDB_DEBUG_LOG(("ConnectionPool closed connection 0x%p",
                      mDatabaseInfo->mConnection.get()));
