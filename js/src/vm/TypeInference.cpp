@@ -4065,12 +4065,7 @@ AssertGCStateForSweep(Zone* zone)
 
     
     
-    
-    
-    
-    DebugOnly<JSRuntime*> rt(zone->runtimeFromMainThread());
-    MOZ_ASSERT_IF(!rt->hasZealMode(ZealMode::CheckHeapOnMovingGC),
-                  !rt->isHeapMinorCollecting());
+    MOZ_ASSERT(!zone->runtimeFromMainThread()->isHeapMinorCollecting());
 }
 
 void
