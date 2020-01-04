@@ -354,7 +354,8 @@ public:
   static nsresult ShouldLoadScript(nsIDocument* aDocument,
                                    nsISupports* aContext,
                                    nsIURI* aURI,
-                                   const nsAString &aType);
+                                   const nsAString &aType,
+                                   bool aIsPreLoad);
 
   
 
@@ -435,7 +436,8 @@ private:
   static nsresult CheckContentPolicy(nsIDocument* aDocument,
                                      nsISupports *aContext,
                                      nsIURI *aURI,
-                                     const nsAString &aType);
+                                     const nsAString &aType,
+                                     bool aIsPreLoad);
 
   
 
