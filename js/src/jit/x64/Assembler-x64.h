@@ -150,11 +150,6 @@ static constexpr FloatRegister FloatArgRegs[NumFloatArgRegs] = { xmm0, xmm1, xmm
 #endif
 
 
-
-
-static constexpr Register WasmTlsReg = r14;
-
-
 static constexpr Register AsmJSIonExitRegCallee = r10;
 static constexpr Register AsmJSIonExitRegE0 = rax;
 static constexpr Register AsmJSIonExitRegE1 = rdi;
@@ -203,6 +198,11 @@ static constexpr Register ABINonArgReg2 = r10;
 static constexpr Register ABINonArgReturnReg0 = r10;
 static constexpr Register ABINonArgReturnReg1 = r12;
 static constexpr Register ABINonVolatileReg = r13;
+
+
+
+
+static constexpr Register WasmTlsReg = r14;
 
 
 

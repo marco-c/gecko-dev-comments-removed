@@ -54,6 +54,11 @@ static constexpr Register ABINonArgReturnReg1 = t1;
 
 
 
+
+static constexpr Register WasmTlsReg = s5;
+
+
+
 static constexpr Register WasmTableCallScratchReg = ABINonArgReg0;
 static constexpr Register WasmTableCallSigReg = ABINonArgReg1;
 static constexpr Register WasmTableCallIndexReg = ABINonArgReg2;

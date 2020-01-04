@@ -74,11 +74,6 @@ static constexpr Register CallTempNonArgRegs[] = { r5, r6, r7, r8 };
 static const uint32_t NumCallTempNonArgRegs =
     mozilla::ArrayLength(CallTempNonArgRegs);
 
-
-
-
-static constexpr Register WasmTlsReg = r9;
-
 class ABIArgGenerator
 {
     unsigned intRegIndex_;
@@ -113,6 +108,11 @@ static constexpr Register ABINonArgReg1 = r5;
 static constexpr Register ABINonArgReg2 = r6;
 static constexpr Register ABINonArgReturnReg0 = r4;
 static constexpr Register ABINonArgReturnReg1 = r5;
+
+
+
+
+static constexpr Register WasmTlsReg = r9;
 
 
 

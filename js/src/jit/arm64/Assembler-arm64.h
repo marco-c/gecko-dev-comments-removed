@@ -89,11 +89,6 @@ static constexpr Register HeapReg = { Registers::x21 };
 static constexpr Register HeapLenReg = { Registers::x22 };
 
 
-
-
-static constexpr Register WasmTlsReg = { Registers::x17 };
-
-
 #define DEFINE_UNSIZED_REGISTERS(N)  \
 static constexpr Register r##N = { Registers::x##N };
 REGISTER_CODE_LIST(DEFINE_UNSIZED_REGISTERS)
@@ -471,6 +466,11 @@ static constexpr Register ABINonArgReg1 = r9;
 static constexpr Register ABINonArgReg2 = r10;
 static constexpr Register ABINonArgReturnReg0 = r8;
 static constexpr Register ABINonArgReturnReg1 = r9;
+
+
+
+
+static constexpr Register WasmTlsReg = { Registers::x17 };
 
 
 

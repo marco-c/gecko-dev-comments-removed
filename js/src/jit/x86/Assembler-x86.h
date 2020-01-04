@@ -53,11 +53,6 @@ static constexpr FloatRegister ScratchDoubleReg = FloatRegister(X86Encoding::xmm
 static constexpr FloatRegister ScratchSimd128Reg = FloatRegister(X86Encoding::xmm7, FloatRegisters::Simd128);
 
 
-
-
-static constexpr Register WasmTlsReg = esi;
-
-
 static constexpr Register ArgumentsRectifierReg = esi;
 static constexpr Register CallTempReg0 = edi;
 static constexpr Register CallTempReg1 = eax;
@@ -94,6 +89,11 @@ static constexpr Register ABINonArgReg2 = ecx;
 static constexpr Register ABINonArgReturnReg0 = ecx;
 static constexpr Register ABINonArgReturnReg1 = edx;
 static constexpr Register ABINonVolatileReg = ebx;
+
+
+
+
+static constexpr Register WasmTlsReg = esi;
 
 
 
