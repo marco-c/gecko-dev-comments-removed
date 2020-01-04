@@ -5747,13 +5747,6 @@ BytecodeEmitter::emitCStyleFor(ParseNode* pn, ptrdiff_t top)
 
         if (!emitTree(forHead->pn_kid2))
             return false;
-    } else if (!forHead->pn_kid3) {
-        
-        
-        
-        
-        if (!updateSourceCoordNotes(pn->pn_pos.begin))
-            return false;
     }
 
     
@@ -8466,11 +8459,9 @@ CGBlockScopeList::findEnclosingScope(uint32_t index)
             
             
             return list[index].index;
-        } else {
-            
-            
-            MOZ_ASSERT_IF(inPrologue == list[index].endInPrologue, list[index].end <= pos);
         }
+        
+        MOZ_ASSERT_IF(inPrologue == list[index].endInPrologue, list[index].end <= pos);
     }
 
     return BlockScopeNote::NoBlockScopeIndex;
