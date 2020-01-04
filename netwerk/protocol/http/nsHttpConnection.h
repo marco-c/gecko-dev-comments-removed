@@ -242,8 +242,7 @@ private:
 
     
     
-    bool     EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
-                               uint32_t &aOut0RTTBytesWritten);
+    bool     EnsureNPNComplete();
     void     SetupSSL();
 
     
@@ -333,7 +332,7 @@ private:
     
     uint8_t                         mUsingSpdyVersion;
 
-    RefPtr<ASpdySession>            mSpdySession;
+    RefPtr<ASpdySession>          mSpdySession;
     int32_t                         mPriority;
     bool                            mReportedSpdy;
 
@@ -358,17 +357,6 @@ private:
     nsresult                        MaybeForceSendIO();
     bool                            mForceSendPending;
     nsCOMPtr<nsITimer>              mForceSendTimer;
-
-    
-    bool                            m0RTTChecked; 
-                                                  
-    bool                            mWaitingFor0RTTResponse; 
-                                                             
-                                                             
-                                                             
-                                                             
-                                                             
-    int64_t                        mContentBytesWritten0RTT;
 };
 
 } 

@@ -79,9 +79,6 @@ nsHttpConnection::nsHttpConnection()
     , mResponseTimeoutEnabled(false)
     , mTCPKeepaliveConfig(kTCPKeepaliveDisabled)
     , mForceSendPending(false)
-    , m0RTTChecked(false)
-    , mWaitingFor0RTTResponse(false)
-    , mContentBytesWritten0RTT(0)
 {
     LOG(("Creating nsHttpConnection @%p\n", this));
 
@@ -274,14 +271,10 @@ nsHttpConnection::StartSpdy(uint8_t spdyVersion)
 }
 
 bool
-nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
-                                    uint32_t &aOut0RTTBytesWritten)
+nsHttpConnection::EnsureNPNComplete()
 {
     
     
-
-    aOut0RTTWriteHandshakeValue = NS_OK;
-    aOut0RTTBytesWritten = 0;
 
     MOZ_ASSERT(mSocketTransport);
     if (!mSocketTransport) {
@@ -309,69 +302,11 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
         goto npnComplete;
 
     rv = ssl->GetNegotiatedNPN(negotiatedNPN);
-    if (!m0RTTChecked && (rv == NS_ERROR_NOT_CONNECTED) &&
-        !mConnInfo->UsingProxy()) {
-        
-        
-        
-        
-        m0RTTChecked = true;
-        nsAutoCString earlyNegotiatedNPN;
-        nsresult rvEarlyAlpn = ssl->GetAlpnEarlySelection(earlyNegotiatedNPN);
-        if (NS_FAILED(rvEarlyAlpn)) {
-            
-            
-            
-            LOG(("nsHttpConnection::EnsureNPNComplete %p - "
-                 "early selected alpn not available, we will try one more time.",
-                 this));
-            
-            rv = ssl->DriveHandshake();
-            if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-                goto npnComplete;
-            }
-
-            
-            rv = ssl->GetNegotiatedNPN(negotiatedNPN);
-            if (rv == NS_ERROR_NOT_CONNECTED) {
-                rvEarlyAlpn = ssl->GetAlpnEarlySelection(earlyNegotiatedNPN);
-            }
-        }
-
-        if (NS_FAILED(rvEarlyAlpn)) {
-            LOG(("nsHttpConnection::EnsureNPNComplete %p - "
-                 "early selected alpn not available", this));
-        } else {
-            LOG(("nsHttpConnection::EnsureNPNComplete %p -"
-                 "early selected alpn: %s", this, earlyNegotiatedNPN.get()));
-            uint32_t infoIndex;
-            const SpdyInformation *info = gHttpHandler->SpdyInfo();
-            
-            if (NS_FAILED(info->GetNPNIndex(earlyNegotiatedNPN, &infoIndex))) {
-                
-                if (mTransaction->Do0RTT()) {
-                    LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - We "
-                         "can do 0RTT!", this));
-                    mWaitingFor0RTTResponse = true;
-                }
-            }
-        }
-    }
-
     if (rv == NS_ERROR_NOT_CONNECTED) {
-        if (mWaitingFor0RTTResponse) {
-            aOut0RTTWriteHandshakeValue = mTransaction->ReadSegments(this,
-                nsIOService::gDefaultSegmentSize, &aOut0RTTBytesWritten);
-            if (NS_FAILED(aOut0RTTWriteHandshakeValue) &&
-                aOut0RTTWriteHandshakeValue != NS_BASE_STREAM_WOULD_BLOCK) {
-                goto npnComplete;
-            }
-            LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - written %d "
-                 "bytes during 0RTT", this, aOut0RTTBytesWritten));
-            mContentBytesWritten0RTT += aOut0RTTBytesWritten;
-        }
-
-        rv = ssl->DriveHandshake();
+        
+        
+        uint32_t count = 0;
+        rv = mSocketOut->Write("", 0, &count);
         if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
             goto npnComplete;
         }
@@ -384,30 +319,10 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
              this, mConnInfo->HashKey().get(), negotiatedNPN.get(),
              mTLSFilter ? " [Double Tunnel]" : ""));
 
-        bool ealyDataAccepted = false;
-        if (mWaitingFor0RTTResponse) {
-            mWaitingFor0RTTResponse = false;
-            
-            rv = ssl->GetEarlyDataAccepted(&ealyDataAccepted);
-            LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - early data "
-                 "that was sent during 0RTT %s been accepted.",
-                 this, ealyDataAccepted ? "has" : "has not"));
-            if (NS_FAILED(rv) ||
-                NS_FAILED(mTransaction->Finish0RTT(!ealyDataAccepted))) {
-                mTransaction->Close(NS_ERROR_NET_RESET);
-                goto npnComplete;
-            }
-        }
-        if (!ealyDataAccepted) {
-            uint32_t infoIndex;
-            const SpdyInformation *info = gHttpHandler->SpdyInfo();
-            if (NS_SUCCEEDED(info->GetNPNIndex(negotiatedNPN, &infoIndex))) {
-                StartSpdy(info->Version[infoIndex]);
-            }
-        } else {
-          LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] - %d bytes "
-               "has been sent during 0RTT.", this, mContentBytesWritten0RTT));
-          mContentBytesWritten = mContentBytesWritten0RTT;
+        uint32_t infoIndex;
+        const SpdyInformation *info = gHttpHandler->SpdyInfo();
+        if (NS_SUCCEEDED(info->GetNPNIndex(negotiatedNPN, &infoIndex))) {
+            StartSpdy(info->Version[infoIndex]);
         }
 
         Telemetry::Accumulate(Telemetry::SPDY_NPN_CONNECT, UsingSpdy());
@@ -416,13 +331,6 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
 npnComplete:
     LOG(("nsHttpConnection::EnsureNPNComplete setting complete to true"));
     mNPNComplete = true;
-    if (mWaitingFor0RTTResponse) {
-        mWaitingFor0RTTResponse = false;
-        if (NS_FAILED(mTransaction->Finish0RTT(true))) {
-            mTransaction->Close(NS_ERROR_NET_RESET);
-        }
-        mContentBytesWritten0RTT = 0;
-    }
     return true;
 }
 
@@ -1678,9 +1586,7 @@ nsHttpConnection::OnSocketWritable()
         
         
 
-        if (mConnInfo->UsingHttpsProxy() &&
-            !EnsureNPNComplete(rv, transactionBytes)) {
-            MOZ_ASSERT(!transactionBytes);
+        if (mConnInfo->UsingHttpsProxy() && !EnsureNPNComplete()) {
             mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
         } else if (mProxyConnectStream) {
             
@@ -1689,11 +1595,8 @@ nsHttpConnection::OnSocketWritable()
             rv = mProxyConnectStream->ReadSegments(ReadFromStream, this,
                                                    nsIOService::gDefaultSegmentSize,
                                                    &transactionBytes);
-        } else if (!EnsureNPNComplete(rv, transactionBytes)) {
-            if (NS_SUCCEEDED(rv) && !transactionBytes &&
-                NS_SUCCEEDED(mSocketOutCondition)) {
-                mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
-            }
+        } else if (!EnsureNPNComplete()) {
+            mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
         } else {
 
             
@@ -1741,7 +1644,7 @@ nsHttpConnection::OnSocketWritable()
         } else if (!transactionBytes) {
             rv = NS_OK;
 
-            if (mTransaction && !mWaitingFor0RTTResponse) { 
+            if (mTransaction) { 
                 
                 
                 
