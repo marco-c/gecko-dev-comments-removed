@@ -74,15 +74,6 @@ enum class StyleBoxShadowType : uint8_t {
 };
 
 
-
-enum class StyleClipPathType : uint8_t {
-  None_,
-  URL,
-  Shape,
-  Box,
-};
-
-
 enum class StyleClipShapeSizing : uint8_t {
   NoBox,
   Content,
@@ -98,6 +89,15 @@ enum class StyleClipShapeSizing : uint8_t {
 enum class StyleFloatEdge : uint8_t {
   ContentBox,
   MarginBox,
+};
+
+
+
+enum class StyleShapeSourceType : uint8_t {
+  None_,
+  URL,
+  Shape,
+  Box,
 };
 
 
