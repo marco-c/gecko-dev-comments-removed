@@ -20,7 +20,7 @@ namespace js {
 
 
 
-class MOZ_STACK_CLASS JSONParserBase : private JS::AutoGCRooter
+class MOZ_STACK_CLASS JSONParserBase
 {
   public:
     enum ErrorHandling { RaiseError, NoError };
@@ -108,8 +108,7 @@ class MOZ_STACK_CLASS JSONParserBase : private JS::AutoGCRooter
 #endif
 
     JSONParserBase(JSContext* cx, ErrorHandling errorHandling)
-      : JS::AutoGCRooter(cx, JSONPARSER),
-        cx(cx),
+      : cx(cx),
         errorHandling(errorHandling),
         stack(cx),
         freeElements(cx),
@@ -119,6 +118,20 @@ class MOZ_STACK_CLASS JSONParserBase : private JS::AutoGCRooter
 #endif
     {}
     ~JSONParserBase();
+
+    
+    JSONParserBase(JSONParserBase&& other)
+      : v(other.v),
+        cx(other.cx),
+        errorHandling(other.errorHandling),
+        stack(mozilla::Move(other.stack)),
+        freeElements(mozilla::Move(other.freeElements)),
+        freeProperties(mozilla::Move(other.freeProperties))
+#ifdef DEBUG
+      , lastToken(mozilla::Move(other.lastToken))
+#endif
+    {}
+
 
     Value numberValue() const {
         MOZ_ASSERT(lastToken == Number);
@@ -169,16 +182,16 @@ class MOZ_STACK_CLASS JSONParserBase : private JS::AutoGCRooter
     bool finishObject(MutableHandleValue vp, PropertyVector& properties);
     bool finishArray(MutableHandleValue vp, ElementVector& elements);
 
-  private:
-    friend void AutoGCRooter::trace(JSTracer* trc);
     void trace(JSTracer* trc);
 
+  private:
     JSONParserBase(const JSONParserBase& other) = delete;
     void operator=(const JSONParserBase& other) = delete;
 };
 
 template <typename CharT>
-class MOZ_STACK_CLASS JSONParser : public JSONParserBase
+class MOZ_STACK_CLASS JSONParser : public JSONParserBase,
+                                   public JS::Traceable
 {
   private:
     typedef mozilla::RangedPtr<const CharT> CharPtr;
@@ -201,6 +214,14 @@ class MOZ_STACK_CLASS JSONParser : public JSONParserBase
     }
 
     
+    JSONParser(JSONParser&& other)
+      : JSONParserBase(mozilla::Forward<JSONParser>(other)),
+        current(other.current),
+        begin(other.begin),
+        end(other.end)
+    {}
+
+    
 
 
 
@@ -211,6 +232,9 @@ class MOZ_STACK_CLASS JSONParser : public JSONParserBase
 
 
     bool parse(MutableHandleValue vp);
+
+    static void trace(JSONParser<CharT>* parser, JSTracer* trc) { parser->trace(trc); }
+    void trace(JSTracer* trc) { JSONParserBase::trace(trc); }
 
   private:
     template<StringType ST> Token readString();
@@ -231,6 +255,13 @@ class MOZ_STACK_CLASS JSONParser : public JSONParserBase
   private:
     JSONParser(const JSONParser& other) = delete;
     void operator=(const JSONParser& other) = delete;
+};
+
+template <typename CharT>
+struct RootedBase<JSONParser<CharT>> {
+    bool parse(MutableHandleValue vp) {
+        return static_cast<Rooted<JSONParser<CharT>>*>(this)->get().parse(vp);
+    }
 };
 
 } 
