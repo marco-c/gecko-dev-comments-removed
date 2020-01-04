@@ -1,9 +1,11 @@
 
 
 
+"use strict";
 
 
-const TEST_URI = "http://mochi.test:8888/browser/devtools/client/commandline/"+
+
+const TEST_URI = "http://mochi.test:8888/browser/devtools/client/commandline/" +
                  "test/browser_cmd_cookie.html";
 
 function test() {
@@ -12,7 +14,7 @@ function test() {
         {
           setup: 'cookie list',
           exec: {
-            output: [ /zap=zep/, /zip=zop/ ],
+            output: [ /zap=zep/, /zip=zop/, /zig=zag/ ],
           }
         },
         {
@@ -30,7 +32,7 @@ function test() {
         {
           setup: "cookie list",
           exec: {
-            output: [ /zap=zep/, /zip=zop/, /zup=banana/, /Edit/ ]
+            output: [ /zap=zep/, /zip=zop/, /zig=zag/, /zup=banana/, /Edit/ ]
           }
         }
     ]);
