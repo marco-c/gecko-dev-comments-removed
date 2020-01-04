@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.favicons.decoders;
+package org.mozilla.gecko.icons.decoders;
 
 import android.graphics.Bitmap;
 import android.util.Log;

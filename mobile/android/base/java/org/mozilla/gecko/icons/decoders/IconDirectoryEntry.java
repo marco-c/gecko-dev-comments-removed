@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.favicons.decoders;
+package org.mozilla.gecko.icons.decoders;
 
 
 
