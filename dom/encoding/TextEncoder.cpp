@@ -21,7 +21,7 @@ TextEncoder::Init(const nsAString& aEncoding, ErrorResult& aRv)
   
   
   if (!EncodingUtils::FindEncodingForLabel(label, mEncoding)) {
-    aRv.ThrowRangeError<MSG_ENCODING_NOT_SUPPORTED>(&label);
+    aRv.ThrowRangeError<MSG_ENCODING_NOT_SUPPORTED>(label);
     return;
   }
 

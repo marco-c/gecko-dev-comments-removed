@@ -51,17 +51,17 @@ public:
   
   
   
-  
   template<typename... Params>
   void
   AddConsoleReport(uint32_t aErrorFlags, const nsACString& aCategory,
                    nsContentUtils::PropertiesFile aPropertiesFile,
                    const nsACString& aSourceFileURI, uint32_t aLineNumber,
                    uint32_t aColumnNumber, const nsACString& aMessageName,
-                   Params... aParams)
+                   Params&&... aParams)
   {
     nsTArray<nsString> params;
-    mozilla::dom::StringArrayAppender::Append(params, sizeof...(Params), aParams...);
+    mozilla::dom::StringArrayAppender::Append(params, sizeof...(Params),
+                                              mozilla::Forward<Params>(aParams)...);
     AddConsoleReport(aErrorFlags, aCategory, aPropertiesFile, aSourceFileURI,
                      aLineNumber, aColumnNumber, aMessageName, params);
   }
