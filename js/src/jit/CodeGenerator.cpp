@@ -1645,6 +1645,8 @@ CodeGenerator::visitOutOfLineRegExpMatcher(OutOfLineRegExpMatcher* ool)
     pushArg(input);
     pushArg(regexp);
 
+    
+    
     callVM(RegExpMatcherRawInfo, lir);
 
     masm.jump(ool->rejoin());
@@ -1796,6 +1798,8 @@ CodeGenerator::visitOutOfLineRegExpTester(OutOfLineRegExpTester* ool)
     pushArg(input);
     pushArg(regexp);
 
+    
+    
     callVM(RegExpTesterRawInfo, lir);
 
     masm.jump(ool->rejoin());

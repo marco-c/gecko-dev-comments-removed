@@ -925,6 +925,7 @@ js::RegExpMatcher(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
+
 bool
 js::RegExpMatcherRaw(JSContext* cx, HandleObject regexp, HandleString input,
                      int32_t lastIndex, bool sticky,
@@ -992,6 +993,7 @@ js::RegExpTester(JSContext* cx, unsigned argc, Value* vp)
     }
     return true;
 }
+
 
 
 bool
