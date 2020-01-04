@@ -1,0 +1,22 @@
+
+
+
+
+
+#include "mozIMozIntl.h"
+
+namespace mozilla {
+
+class MozIntl final : public mozIMozIntl
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZIMOZINTL
+
+  MozIntl();
+
+private:
+  ~MozIntl();
+};
+
+} 
