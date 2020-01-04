@@ -1296,7 +1296,8 @@ EventStateManager::HandleCrossProcessEvent(WidgetEvent* aEvent,
   if (aEvent->mClass != eTouchEventClass || aEvent->mMessage == eTouchStart) {
     
     
-    nsIFrame* frame = GetEventTarget();
+    nsIFrame* frame =
+      aEvent->mMessage == eDragExit ? sLastDragOverFrame.GetFrame() : GetEventTarget();
     nsIContent* target = frame ? frame->GetContent() : nullptr;
     if (IsRemoteTarget(target)) {
       targets.AppendElement(target);
