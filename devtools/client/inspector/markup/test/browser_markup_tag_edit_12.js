@@ -89,7 +89,7 @@ function* editAttributeAndTab(newValue, inspector, goPrevious) {
 
 
 function* activateFirstAttribute(container, inspector) {
-  let {editor} = yield getContainerForSelector(container, inspector);
+  let {editor} = yield focusNode(container, inspector);
   editor.tag.focus();
 
   

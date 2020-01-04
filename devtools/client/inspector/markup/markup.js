@@ -131,11 +131,15 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._onToolboxPickerHover = this._onToolboxPickerHover.bind(this);
   this._onCollapseAttributesPrefChange =
     this._onCollapseAttributesPrefChange.bind(this);
+  this._onBlur = this._onBlur.bind(this);
+
+  EventEmitter.decorate(this);
 
   
   this._elt.addEventListener("click", this._onMouseClick, false);
   this._elt.addEventListener("mousemove", this._onMouseMove, false);
   this._elt.addEventListener("mouseleave", this._onMouseLeave, false);
+  this._elt.addEventListener("blur", this._onBlur, true);
   this.win.addEventListener("mouseup", this._onMouseUp);
   this.win.addEventListener("copy", this._onCopy);
   this._frame.addEventListener("focus", this._onFocus, false);
@@ -154,8 +158,6 @@ function MarkupView(inspector, frame, controllerWindow) {
                         this._onCollapseAttributesPrefChange);
 
   this._initShortcuts();
-
-  EventEmitter.decorate(this);
 }
 
 MarkupView.prototype = {
@@ -218,6 +220,25 @@ MarkupView.prototype = {
     this._showContainerAsHovered(container.node);
 
     this.emit("node-hover");
+  },
+
+  
+
+
+
+  _onBlur: function (event) {
+    if (!this._selectedContainer) {
+      return;
+    }
+
+    let {relatedTarget} = event;
+    if (relatedTarget && relatedTarget.ownerDocument === this.doc) {
+      return;
+    }
+
+    if (this._selectedContainer) {
+      this._selectedContainer.clearFocus();
+    }
   },
 
   
@@ -542,7 +563,7 @@ MarkupView.prototype = {
       this.markNodeAsSelected(selection.nodeFront);
 
       
-      this.maybeFocusNewSelection();
+      this.maybeNavigateToNewSelection();
       return undefined;
     }).catch(e => {
       if (!this._destroyer) {
@@ -560,11 +581,11 @@ MarkupView.prototype = {
 
 
 
-  maybeFocusNewSelection: function () {
+  maybeNavigateToNewSelection: function () {
     let {reason, nodeFront} = this._inspector.selection;
 
     
-    let reasonsToFocus = [
+    let reasonsToNavigate = [
       
       "picker-node-picked",
       
@@ -573,8 +594,9 @@ MarkupView.prototype = {
       "node-inserted"
     ];
 
-    if (reasonsToFocus.includes(reason)) {
-      this.getContainer(nodeFront).focus();
+    if (reasonsToNavigate.includes(reason)) {
+      this.getContainer(this._rootNode).elt.focus();
+      this.navigate(this.getContainer(nodeFront));
     }
   },
 
@@ -633,7 +655,7 @@ MarkupView.prototype = {
 
     
     ["Delete", "Backspace", "Home", "Left", "Right", "Up", "Down", "PageUp",
-     "PageDown", "Esc"].forEach(key => {
+     "PageDown", "Esc", "Enter", "Space"].forEach(key => {
        shortcuts.on(key, this._onShortcut);
      });
   },
@@ -742,6 +764,17 @@ MarkupView.prototype = {
         this.navigate(selection);
         break;
       }
+      case "Enter":
+      case "Space": {
+        if (!this._selectedContainer.canFocus) {
+          this._selectedContainer.canFocus = true;
+          this._selectedContainer.focus();
+        } else {
+          
+          return;
+        }
+        break;
+      }
       case "Esc": {
         if (this.isDragging) {
           this.cancelDragging();
@@ -842,7 +875,7 @@ MarkupView.prototype = {
       parent = parent.parentNode;
     }
     if (parent) {
-      this.navigate(parent.container, true);
+      this.navigate(parent.container);
     }
   },
 
@@ -853,19 +886,13 @@ MarkupView.prototype = {
 
 
 
-
-
-  navigate: function (container, ignoreFocus) {
+  navigate: function (container) {
     if (!container) {
       return;
     }
 
     let node = container.node;
     this.markNodeAsSelected(node, "treepanel");
-
-    if (!ignoreFocus) {
-      container.focus();
-    }
   },
 
   
@@ -945,7 +972,10 @@ MarkupView.prototype = {
       } else if (type === "childList" || type === "nativeAnonymousChildList") {
         container.childrenDirty = true;
         
-        this._updateChildren(container, {flash: true});
+        
+        
+        this._updateChildren(container, {flash: true}).then(() =>
+          container.updateLevel());
       }
     }
 
@@ -1387,6 +1417,7 @@ MarkupView.prototype = {
 
   markNodeAsSelected: function (node, reason) {
     let container = this.getContainer(node);
+
     if (this._selectedContainer === container) {
       return false;
     }
@@ -1394,6 +1425,7 @@ MarkupView.prototype = {
     
     if (this._selectedContainer) {
       this._selectedContainer.selected = false;
+      this._selectedContainer.clearFocus();
     }
 
     
@@ -1488,6 +1520,9 @@ MarkupView.prototype = {
     let flash = options && options.flash;
 
     container.hasChildren = container.node.hasChildren;
+    
+    
+    container.setChildrenRole();
 
     if (!this._queuedChildUpdates) {
       this._queuedChildUpdates = new Map();
@@ -1656,6 +1691,7 @@ MarkupView.prototype = {
     this._elt.removeEventListener("click", this._onMouseClick, false);
     this._elt.removeEventListener("mousemove", this._onMouseMove, false);
     this._elt.removeEventListener("mouseleave", this._onMouseLeave, false);
+    this._elt.removeEventListener("blur", this._onBlur, true);
     this.win.removeEventListener("mouseup", this._onMouseUp);
     this.win.removeEventListener("copy", this._onCopy);
     this._frame.removeEventListener("focus", this._onFocus, false);
@@ -1793,6 +1829,12 @@ MarkupView.prototype = {
 
 function MarkupContainer() { }
 
+
+
+
+
+let markupContainerID = 0;
+
 MarkupContainer.prototype = {
   
 
@@ -1810,6 +1852,7 @@ MarkupContainer.prototype = {
     this.node = node;
     this.undo = this.markup.undo;
     this.win = this.markup._frame.contentWindow;
+    this.id = "treeitem-" + markupContainerID++;
 
     
     this.elt = null;
@@ -1824,6 +1867,7 @@ MarkupContainer.prototype = {
     this._onToggle = this._onToggle.bind(this);
     this._onMouseUp = this._onMouseUp.bind(this);
     this._onMouseMove = this._onMouseMove.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
 
     
     this.elt.addEventListener("mousedown", this._onMouseDown, false);
@@ -1883,6 +1927,67 @@ MarkupContainer.prototype = {
   
 
 
+  get focusableElms() {
+    return [...this.tagLine.querySelectorAll("[tabindex]")];
+  },
+
+  
+
+
+  get canFocus() {
+    return this._canFocus;
+  },
+
+  
+
+
+  set canFocus(value) {
+    if (this._canFocus === value) {
+      return;
+    }
+
+    this._canFocus = value;
+
+    if (value) {
+      this.tagLine.addEventListener("keydown", this._onKeyDown, true);
+      this.focusableElms.forEach(elm => elm.setAttribute("tabindex", "0"));
+    } else {
+      this.tagLine.removeEventListener("keydown", this._onKeyDown, true);
+      
+      this.focusableElms.forEach(elm => elm.setAttribute("tabindex", "-1"));
+    }
+  },
+
+  
+
+
+
+  clearFocus: function () {
+    if (!this.canFocus) {
+      return;
+    }
+
+    this.canFocus = false;
+    let doc = this.markup.doc;
+
+    if (!doc.activeElement || doc.activeElement === doc.body) {
+      return;
+    }
+
+    let parent = doc.activeElement;
+
+    while (parent && parent !== this.elt) {
+      parent = parent.parentNode;
+    }
+
+    if (parent) {
+      doc.activeElement.blur();
+    }
+  },
+
+  
+
+
   get canExpand() {
     return this._hasChildren && !this.node.singleTextChild;
   },
@@ -1894,15 +1999,55 @@ MarkupContainer.prototype = {
     return this.node._parent === this.markup.walker.rootNode;
   },
 
+  
+
+
+  get showExpander() {
+    return this.canExpand && !this.mustExpand;
+  },
+
   updateExpander: function () {
     if (!this.expander) {
       return;
     }
 
-    if (this.canExpand && !this.mustExpand) {
+    if (this.showExpander) {
       this.expander.style.visibility = "visible";
+      
+      this.tagLine.setAttribute("aria-expanded", this.expanded);
     } else {
       this.expander.style.visibility = "hidden";
+      
+      
+      this.tagLine.removeAttribute("aria-expanded");
+    }
+  },
+
+  
+
+
+
+  setChildrenRole: function () {
+    this.children.setAttribute("role",
+      this.hasChildren ? "group" : "presentation");
+  },
+
+  
+
+
+  updateLevel: function () {
+    
+    let currentLevel = this.tagLine.getAttribute("aria-level");
+    let newLevel = this.level;
+    if (currentLevel === newLevel) {
+      
+      return;
+    }
+
+    this.tagLine.setAttribute("aria-level", newLevel);
+    let childContainers = this.getChildContainers();
+    if (childContainers) {
+      childContainers.forEach(container => container.updateLevel());
     }
   },
 
@@ -1945,6 +2090,8 @@ MarkupContainer.prototype = {
         if (!this.closeTagLine) {
           let line = this.markup.doc.createElement("div");
           line.classList.add("tag-line");
+          
+          line.setAttribute("role", "presentation");
 
           let tagState = this.markup.doc.createElement("div");
           tagState.classList.add("tag-state");
@@ -1961,6 +2108,7 @@ MarkupContainer.prototype = {
       this.elt.classList.remove("collapsed");
       this.expander.setAttribute("open", "");
       this.hovered = false;
+      this.markup.emit("expanded");
     } else if (!value) {
       if (this.closeTagLine) {
         this.elt.removeChild(this.closeTagLine);
@@ -1968,6 +2116,10 @@ MarkupContainer.prototype = {
       }
       this.elt.classList.add("collapsed");
       this.expander.removeAttribute("open");
+      this.markup.emit("collapsed");
+    }
+    if (this.showExpander) {
+      this.tagLine.setAttribute("aria-expanded", this.expanded);
     }
   },
 
@@ -1975,19 +2127,37 @@ MarkupContainer.prototype = {
     return this.elt.parentNode ? this.elt.parentNode.container : null;
   },
 
+  
+
+
+
+  get level() {
+    let level = 1;
+    let parent = this.node.parentNode();
+    while (parent && parent !== this.markup.walker.rootNode) {
+      level++;
+      parent = parent.parentNode();
+    }
+    return level;
+  },
+
   _isDragging: false,
   _dragStartY: 0,
 
   set isDragging(isDragging) {
+    let rootElt = this.markup.getContainer(this.markup._rootNode).elt;
     this._isDragging = isDragging;
     this.markup.isDragging = isDragging;
+    this.tagLine.setAttribute("aria-grabbed", isDragging);
 
     if (isDragging) {
       this.elt.classList.add("dragging");
       this.markup.doc.body.classList.add("dragging");
+      rootElt.setAttribute("aria-dropeffect", "move");
     } else {
       this.elt.classList.remove("dragging");
       this.markup.doc.body.classList.remove("dragging");
+      rootElt.setAttribute("aria-dropeffect", "none");
     }
   },
 
@@ -2010,6 +2180,77 @@ MarkupContainer.prototype = {
            this.node.parentNode().tagName !== null;
   },
 
+  
+
+
+
+
+
+
+
+
+  _wrapMoveFocus: function (current, back) {
+    let elms = this.focusableElms;
+    let next;
+    if (back) {
+      if (elms.indexOf(current) === 0) {
+        next = elms[elms.length - 1];
+        next.focus();
+      }
+    } else if (elms.indexOf(current) === elms.length - 1) {
+      next = elms[0];
+      next.focus();
+    }
+    return next;
+  },
+
+  _onKeyDown: function (event) {
+    let {target, keyCode, shiftKey} = event;
+    let isInput = this.markup._isInputOrTextarea(target);
+
+    
+    
+    if (isInput && keyCode !== event.DOM_VK_TAB) {
+      return;
+    }
+
+    switch (keyCode) {
+      case event.DOM_VK_TAB:
+        
+        if (isInput) {
+          
+          let next = this._wrapMoveFocus(target.nextSibling, shiftKey);
+          if (next) {
+            event.preventDefault();
+            
+            if (next._editable) {
+              let e = this.markup.doc.createEvent("Event");
+              e.initEvent(next._trigger, true, true);
+              next.dispatchEvent(e);
+            }
+          }
+        } else {
+          let next = this._wrapMoveFocus(target, shiftKey);
+          if (next) {
+            event.preventDefault();
+          }
+        }
+        break;
+      case event.DOM_VK_ESCAPE:
+        this.clearFocus();
+        this.markup.getContainer(this.markup._rootNode).elt.focus();
+        if (this.isDragging) {
+          
+          return;
+        }
+        event.preventDefault();
+        break;
+      default:
+        return;
+    }
+    event.stopPropagation();
+  },
+
   _onMouseDown: function (event) {
     let {target, button, metaKey, ctrlKey} = event;
     let isLeftClick = button === 0;
@@ -2024,6 +2265,9 @@ MarkupContainer.prototype = {
     
     this.hovered = false;
     this.markup.navigate(this);
+    
+    this.canFocus = true;
+    this.focus();
     event.stopPropagation();
 
     
@@ -2039,6 +2283,8 @@ MarkupContainer.prototype = {
     if (isMiddleClick || isMetaClick) {
       let link = target.dataset.link;
       let type = target.dataset.type;
+      
+      this.canFocus = false;
       this.markup._inspector.followAttributeLink(type, link);
       return;
     }
@@ -2182,7 +2428,11 @@ MarkupContainer.prototype = {
     this.tagState.classList.remove("flash-out");
     this._selected = value;
     this.editor.selected = value;
+    
+    this.tagLine.setAttribute("aria-selected", value);
     if (this._selected) {
+      this.markup.getContainer(this.markup._rootNode).elt.setAttribute(
+        "aria-activedescendant", this.id);
       this.tagLine.setAttribute("selected", "");
       this.tagState.classList.add("theme-selected");
     } else {
@@ -2211,7 +2461,8 @@ MarkupContainer.prototype = {
 
 
   focus: function () {
-    let focusable = this.editor.elt.querySelector("[tabindex]");
+    
+    let focusable = this.editor.elt.querySelector("[tabindex='0']");
     if (focusable) {
       focusable.focus();
     }
@@ -2233,6 +2484,7 @@ MarkupContainer.prototype = {
     
     this.elt.removeEventListener("mousedown", this._onMouseDown, false);
     this.elt.removeEventListener("dblclick", this._onToggle, false);
+    this.tagLine.removeEventListener("keydown", this._onKeyDown, true);
     if (this.win) {
       this.win.removeEventListener("mouseup", this._onMouseUp, true);
       this.win.removeEventListener("mousemove", this._onMouseMove, true);
@@ -2490,6 +2742,10 @@ MarkupElementContainer.prototype = Heritage.extend(MarkupContainer.prototype, {
 function RootContainer(markupView, node) {
   this.doc = markupView.doc;
   this.elt = this.doc.createElement("ul");
+  
+  this.elt.setAttribute("role", "tree");
+  this.elt.setAttribute("tabindex", "0");
+  this.elt.setAttribute("aria-dropeffect", "none");
   this.elt.container = this;
   this.children = this.elt;
   this.node = node;
@@ -2514,7 +2770,17 @@ RootContainer.prototype = {
 
 
 
-  setExpanded: function () {}
+  setExpanded: function () {},
+
+  
+
+
+  setChildrenRole: function () {},
+
+  
+
+
+  updateLevel: function () {}
 };
 
 
@@ -2680,7 +2946,8 @@ function ElementEditor(container, node) {
   
   
   if (!node.isDocumentElement) {
-    this.tag.setAttribute("tabindex", "0");
+    
+    this.tag.setAttribute("tabindex", "-1");
     editableField({
       element: this.tag,
       trigger: "dblclick",

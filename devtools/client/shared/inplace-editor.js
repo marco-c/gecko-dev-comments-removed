@@ -43,7 +43,7 @@ const FOCUS_FORWARD = Ci.nsIFocusManager.MOVEFOCUS_FORWARD;
 const FOCUS_BACKWARD = Ci.nsIFocusManager.MOVEFOCUS_BACKWARD;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-const EventEmitter = require("devtools/shared/event-emitter");
+Cu.import("resource://devtools/shared/event-emitter.js");
 const { findMostRelevantCssPropertyIndex } = require("./suggestion-picker");
 
 
@@ -190,6 +190,9 @@ function editableItem(options, callback) {
 
   
   element._trigger = trigger;
+
+  
+  element.setAttribute("role", "button");
 
   return function turnOnEditMode() {
     callback(element);
@@ -628,9 +631,7 @@ InplaceEditor.prototype = {
 
 
   _parseCSSValue: function (value, offset) {
-    
     const reSplitCSS = /(url\("?[^"\)]+"?\)?)|(rgba?\([^)]*\)?)|(hsla?\([^)]*\)?)|(#[\dA-Fa-f]+)|(-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
-    
     let start = 0;
     let m;
 
