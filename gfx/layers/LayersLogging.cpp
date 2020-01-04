@@ -13,6 +13,7 @@
 #include "nsDebug.h"                    
 #include "nsPoint.h"                    
 #include "nsRect.h"                     
+#include "base/basictypes.h"
 
 using namespace mozilla::gfx;
 
