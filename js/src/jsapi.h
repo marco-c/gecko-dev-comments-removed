@@ -5560,9 +5560,18 @@ CaptureCurrentStack(JSContext* cx, MutableHandleObject stackp, unsigned maxFrame
 
 
 
+
+
+
+
 enum class SavedFrameResult {
     Ok,
     AccessDenied
+};
+
+enum class SavedFrameSelfHosted {
+    Include,
+    Exclude
 };
 
 
@@ -5570,33 +5579,22 @@ enum class SavedFrameResult {
 
 
 extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameSource(JSContext* cx, HandleObject savedFrame, MutableHandleString sourcep);
+GetSavedFrameSource(JSContext* cx, HandleObject savedFrame, MutableHandleString sourcep,
+                    SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
 
 
 
 extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameLine(JSContext* cx, HandleObject savedFrame, uint32_t* linep);
+GetSavedFrameLine(JSContext* cx, HandleObject savedFrame, uint32_t* linep,
+                  SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
 
 
 
 extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameColumn(JSContext* cx, HandleObject savedFrame, uint32_t* columnp);
-
-
-
-
-
-
-extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameFunctionDisplayName(JSContext* cx, HandleObject savedFrame, MutableHandleString namep);
-
-
-
-
-extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameAsyncCause(JSContext* cx, HandleObject savedFrame, MutableHandleString asyncCausep);
+GetSavedFrameColumn(JSContext* cx, HandleObject savedFrame, uint32_t* columnp,
+                    SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
 
 
@@ -5604,7 +5602,15 @@ GetSavedFrameAsyncCause(JSContext* cx, HandleObject savedFrame, MutableHandleStr
 
 
 extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameAsyncParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject asyncParentp);
+GetSavedFrameFunctionDisplayName(JSContext* cx, HandleObject savedFrame, MutableHandleString namep,
+                                 SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
+
+
+
+
+extern JS_PUBLIC_API(SavedFrameResult)
+GetSavedFrameAsyncCause(JSContext* cx, HandleObject savedFrame, MutableHandleString asyncCausep,
+                        SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
 
 
@@ -5612,7 +5618,17 @@ GetSavedFrameAsyncParent(JSContext* cx, HandleObject savedFrame, MutableHandleOb
 
 
 extern JS_PUBLIC_API(SavedFrameResult)
-GetSavedFrameParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject parentp);
+GetSavedFrameAsyncParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject asyncParentp,
+                SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
+
+
+
+
+
+
+extern JS_PUBLIC_API(SavedFrameResult)
+GetSavedFrameParent(JSContext* cx, HandleObject savedFrame, MutableHandleObject parentp,
+                    SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
 
 

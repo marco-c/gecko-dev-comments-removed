@@ -2848,7 +2848,7 @@ GetNearestEnclosingWithScopeObjectForFunction(JSFunction* fun);
 
 
 extern JS_FRIEND_API(JSObject*)
-GetFirstSubsumedSavedFrame(JSContext* cx, JS::HandleObject savedFrame);
+GetFirstSubsumedSavedFrame(JSContext* cx, JS::HandleObject savedFrame, JS::SavedFrameSelfHosted selfHosted);
 
 extern JS_FRIEND_API(bool)
 ReportIsNotFunction(JSContext* cx, JS::HandleValue v);
