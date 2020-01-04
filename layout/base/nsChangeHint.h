@@ -20,72 +20,31 @@ enum nsChangeHint {
   
   
   
-  nsChangeHint_RepaintFrame = 0x01,
+  nsChangeHint_RepaintFrame = 1 << 0,
 
   
   
-  nsChangeHint_NeedReflow = 0x02,
+  nsChangeHint_NeedReflow = 1 << 1,
 
   
   
-  nsChangeHint_ClearAncestorIntrinsics = 0x04,
+  nsChangeHint_ClearAncestorIntrinsics = 1 << 2,
 
   
   
-  nsChangeHint_ClearDescendantIntrinsics = 0x08,
+  nsChangeHint_ClearDescendantIntrinsics = 1 << 3,
 
   
   
   
-  nsChangeHint_NeedDirtyReflow = 0x10,
+  nsChangeHint_NeedDirtyReflow = 1 << 4,
 
   
   
-  nsChangeHint_SyncFrameView = 0x20,
+  nsChangeHint_SyncFrameView = 1 << 5,
 
   
-  nsChangeHint_UpdateCursor = 0x40,
-
-  
-
-
-
-
-
-
-
-  nsChangeHint_UpdateEffects = 0x80,
-
-  
-
-
-
-
-  nsChangeHint_UpdateOpacityLayer = 0x100,
-  
-
-
-
-  nsChangeHint_UpdateTransformLayer = 0x200,
-
-  
-
-
-
-
-  nsChangeHint_ReconstructFrame = 0x400,
-
-  
-
-
-
-  nsChangeHint_UpdateOverflow = 0x800,
-
-  
-
-
-
-  nsChangeHint_UpdateSubtreeOverflow = 0x1000,
+  nsChangeHint_UpdateCursor = 1 << 6,
 
   
 
@@ -95,7 +54,38 @@ enum nsChangeHint {
 
 
 
-  nsChangeHint_UpdatePostTransformOverflow = 0x2000,
+  nsChangeHint_UpdateEffects = 1 << 7,
+
+  
+
+
+
+
+  nsChangeHint_UpdateOpacityLayer = 1 << 8,
+  
+
+
+
+  nsChangeHint_UpdateTransformLayer = 1 << 9,
+
+  
+
+
+
+
+  nsChangeHint_ReconstructFrame = 1 << 10,
+
+  
+
+
+
+  nsChangeHint_UpdateOverflow = 1 << 11,
+
+  
+
+
+
+  nsChangeHint_UpdateSubtreeOverflow = 1 << 12,
 
   
 
@@ -103,25 +93,9 @@ enum nsChangeHint {
 
 
 
-  nsChangeHint_UpdateParentOverflow = 0x4000,
-
-  
 
 
-
-  nsChangeHint_ChildrenOnlyTransform = 0x8000,
-
-  
-
-
-
-
-
-
-
-
-
-  nsChangeHint_RecomputePosition = 0x10000,
+  nsChangeHint_UpdatePostTransformOverflow = 1 << 13,
 
   
 
@@ -129,27 +103,13 @@ enum nsChangeHint {
 
 
 
-  nsChangeHint_UpdateContainingBlock = 0x20000,
+  nsChangeHint_UpdateParentOverflow = 1 << 14,
 
   
 
 
 
-
-
-  nsChangeHint_BorderStyleNoneChange = 0x40000,
-
-  
-
-
-
-  nsChangeHint_UpdateTextPath = 0x80000,
-
-  
-
-
-
-  nsChangeHint_SchedulePaint = 0x100000,
+  nsChangeHint_ChildrenOnlyTransform = 1 << 15,
 
   
 
@@ -161,28 +121,7 @@ enum nsChangeHint {
 
 
 
-
-
-
-
-  nsChangeHint_NeutralChange = 0x200000,
-
-  
-
-
-  nsChangeHint_InvalidateRenderingObservers = 0x400000,
-
-  
-
-
-
-
-  nsChangeHint_ReflowChangesSizeOrPosition = 0x800000,
-
-  
-
-
-  nsChangeHint_UpdateComputedBSize = 0x1000000,
+  nsChangeHint_RecomputePosition = 1 << 16,
 
   
 
@@ -190,9 +129,70 @@ enum nsChangeHint {
 
 
 
+  nsChangeHint_UpdateContainingBlock = 1 << 17,
+
+  
 
 
-  nsChangeHint_UpdateUsesOpacity = 0x2000000,
+
+
+
+  nsChangeHint_BorderStyleNoneChange = 1 << 18,
+
+  
+
+
+
+  nsChangeHint_UpdateTextPath = 1 << 19,
+
+  
+
+
+
+  nsChangeHint_SchedulePaint = 1 << 20,
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsChangeHint_NeutralChange = 1 << 21,
+
+  
+
+
+  nsChangeHint_InvalidateRenderingObservers = 1 << 22,
+
+  
+
+
+
+
+  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 23,
+
+  
+
+
+  nsChangeHint_UpdateComputedBSize = 1 << 24,
+
+  
+
+
+
+
+
+
+
+  nsChangeHint_UpdateUsesOpacity = 1 << 25,
 
   
   
