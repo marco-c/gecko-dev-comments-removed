@@ -293,6 +293,29 @@ private:
   
   UniCharsAndModifiers mCommittedCharsAndModifiers;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  UniCharsAndModifiers inputtingChars;
+  
+  
+  UniCharsAndModifiers shiftedChars;
+  
+  
+  UniCharsAndModifiers unshiftedChars;
+  
+  
+  
+  
+  uint32_t shiftedLatinChar;
+  uint32_t unshiftedLatinChar;
+
   WORD    mScanCode;
   bool    mIsExtended;
   bool    mIsDeadKey;
@@ -484,6 +507,13 @@ private:
 
 
   bool NeedsToHandleWithoutFollowingCharMessages() const;
+
+  
+
+
+
+
+  void ComputeInputtingStringWithKeyboardLayout();
 };
 
 class KeyboardLayout

@@ -669,6 +669,8 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
   , mModKeyState(aModKeyState)
   , mVirtualKeyCode(0)
   , mOriginalVirtualKeyCode(0)
+  , shiftedLatinChar(0)
+  , unshiftedLatinChar(0)
   , mScanCode(0)
   , mIsExtended(false)
   , mIsDeadKey(false)
@@ -857,6 +859,14 @@ NativeKey::NativeKey(nsWindowBase* aWidget,
     (IsFollowedByDeadCharMessage() ||
      keyboardLayout->IsDeadKey(mOriginalVirtualKeyCode, mModKeyState));
   mIsPrintableKey = KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode);
+
+  
+  
+  
+  
+  if (IsKeyDownMessage() && NeedsToHandleWithoutFollowingCharMessages()) {
+    ComputeInputtingStringWithKeyboardLayout();
+  }
 }
 
 void
@@ -2066,83 +2076,93 @@ NativeKey::DispatchPluginEventsAndDiscardsCharMessages() const
   return false;
 }
 
+void
+NativeKey::ComputeInputtingStringWithKeyboardLayout()
+{
+  KeyboardLayout* keyboardLayout = KeyboardLayout::GetInstance();
+
+  if (KeyboardLayout::IsPrintableCharKey(mVirtualKeyCode)) {
+    inputtingChars = mCommittedCharsAndModifiers;
+  } else {
+    inputtingChars.Clear();
+  }
+  shiftedChars.Clear();
+  unshiftedChars.Clear();
+  shiftedLatinChar = unshiftedLatinChar = 0;
+
+  
+  if (mModKeyState.IsControl() == mModKeyState.IsAlt()) {
+    return;
+  }
+
+  ModifierKeyState capsLockState(
+                     mModKeyState.GetModifiers() & MODIFIER_CAPSLOCK);
+
+  unshiftedChars =
+    keyboardLayout->GetUniCharsAndModifiers(mVirtualKeyCode, capsLockState);
+  capsLockState.Set(MODIFIER_SHIFT);
+  shiftedChars =
+    keyboardLayout->GetUniCharsAndModifiers(mVirtualKeyCode, capsLockState);
+
+  
+  
+  
+  capsLockState.Unset(MODIFIER_SHIFT);
+  WidgetUtils::GetLatinCharCodeForKeyCode(mDOMKeyCode,
+                                          capsLockState.GetModifiers(),
+                                          &unshiftedLatinChar,
+                                          &shiftedLatinChar);
+
+  
+  if (shiftedLatinChar) {
+    
+    
+    
+    if (unshiftedLatinChar == unshiftedChars.mChars[0] &&
+        shiftedLatinChar == shiftedChars.mChars[0]) {
+      shiftedLatinChar = unshiftedLatinChar = 0;
+    }
+  } else if (unshiftedLatinChar) {
+    
+    
+    
+    
+    
+    
+    
+    if (unshiftedLatinChar == unshiftedChars.mChars[0] ||
+        unshiftedLatinChar == shiftedChars.mChars[0]) {
+      unshiftedLatinChar = 0;
+    }
+  }
+
+  if (!mModKeyState.IsControl()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  uint32_t ch =
+    mModKeyState.IsShift() ? shiftedLatinChar : unshiftedLatinChar;
+  if (!ch) {
+    return;
+  }
+  if (inputtingChars.IsEmpty() ||
+      inputtingChars.UniCharsCaseInsensitiveEqual(
+        mModKeyState.IsShift() ? shiftedChars : unshiftedChars)) {
+    inputtingChars.Clear();
+    inputtingChars.Append(ch, mModKeyState.GetModifiers());
+  }
+}
+
 bool
 NativeKey::DispatchKeyPressEventsWithKeyboardLayout() const
 {
   MOZ_ASSERT(IsKeyDownMessage());
   MOZ_ASSERT(!mIsDeadKey);
-
-  KeyboardLayout* keyboardLayout = KeyboardLayout::GetInstance();
-
-  UniCharsAndModifiers inputtingChars(mCommittedCharsAndModifiers);
-  UniCharsAndModifiers shiftedChars;
-  UniCharsAndModifiers unshiftedChars;
-  uint32_t shiftedLatinChar = 0;
-  uint32_t unshiftedLatinChar = 0;
-
-  if (!KeyboardLayout::IsPrintableCharKey(mVirtualKeyCode)) {
-    inputtingChars.Clear();
-  }
-
-  if (mModKeyState.IsControl() ^ mModKeyState.IsAlt()) {
-    ModifierKeyState capsLockState(
-                       mModKeyState.GetModifiers() & MODIFIER_CAPSLOCK);
-
-    unshiftedChars =
-      keyboardLayout->GetUniCharsAndModifiers(mVirtualKeyCode, capsLockState);
-    capsLockState.Set(MODIFIER_SHIFT);
-    shiftedChars =
-      keyboardLayout->GetUniCharsAndModifiers(mVirtualKeyCode, capsLockState);
-
-    
-    
-    
-    capsLockState.Unset(MODIFIER_SHIFT);
-    WidgetUtils::GetLatinCharCodeForKeyCode(mDOMKeyCode,
-                                            capsLockState.GetModifiers(),
-                                            &unshiftedLatinChar,
-                                            &shiftedLatinChar);
-
-    
-    if (shiftedLatinChar) {
-      
-      
-      
-      if (unshiftedLatinChar == unshiftedChars.mChars[0] &&
-          shiftedLatinChar == shiftedChars.mChars[0]) {
-        shiftedLatinChar = unshiftedLatinChar = 0;
-      }
-    } else if (unshiftedLatinChar) {
-      
-      
-      
-      
-      
-      
-      
-      if (unshiftedLatinChar == unshiftedChars.mChars[0] ||
-          unshiftedLatinChar == shiftedChars.mChars[0]) {
-        unshiftedLatinChar = 0;
-      }
-    }
-
-    
-    
-    
-    
-    
-    if (mModKeyState.IsControl()) {
-      uint32_t ch =
-        mModKeyState.IsShift() ? shiftedLatinChar : unshiftedLatinChar;
-      if (ch &&
-          (!inputtingChars.mLength ||
-           inputtingChars.UniCharsCaseInsensitiveEqual(
-             mModKeyState.IsShift() ? shiftedChars : unshiftedChars))) {
-        inputtingChars.Clear();
-        inputtingChars.Append(ch, mModKeyState.GetModifiers());
-      }
-    }
-  }
 
   if (inputtingChars.IsEmpty() &&
       shiftedChars.IsEmpty() && unshiftedChars.IsEmpty()) {
