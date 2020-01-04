@@ -244,12 +244,6 @@ class SearchEngineRow extends AnimatedHeightLayout {
     }
 
     private int updateFromSearchEngine(boolean animate, int recycledSuggestionCount) {
-        
-        mIconView.updateAndScaleImage(mSearchEngine.getIcon(), mSearchEngine.getEngineIdentifier());
-
-        
-        setDescriptionOnSuggestion(mUserEnteredTextView, mUserEnteredTextView.getText().toString());
-
         int suggestionCounter = 0;
         
         for (String suggestion : mSearchEngine.getSuggestions()) {
@@ -270,6 +264,10 @@ class SearchEngineRow extends AnimatedHeightLayout {
     public void updateSuggestions(boolean suggestionsEnabled, SearchEngine searchEngine, String searchTerm, boolean animate) {
         
         mSearchEngine = searchEngine;
+        
+        mIconView.updateAndScaleImage(mSearchEngine.getIcon(), mSearchEngine.getEngineIdentifier());
+        
+        setDescriptionOnSuggestion(mUserEnteredTextView, mUserEnteredTextView.getText().toString());
         
         if (suggestionsEnabled) {
             final int recycledSuggestionCount = mSuggestionView.getChildCount();
