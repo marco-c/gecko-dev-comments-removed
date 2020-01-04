@@ -1071,7 +1071,7 @@ class Marionette(object):
         self.start_session(session_id=self.session_id)
         self.reset_timeouts()
 
-        if in_app:
+        if in_app and self.session.get('processId'):
             
             
             
