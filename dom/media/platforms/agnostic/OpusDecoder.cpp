@@ -174,10 +174,7 @@ OpusDataDecoder::DoDecode(MediaRawData* aSample)
     return -1;
   }
 
-  AlignedAudioBuffer buffer(frames * channels);
-  if (!buffer) {
-    return -1;
-  }
+  auto buffer = MakeUnique<AudioDataValue[]>(frames * channels);
 
   
 #ifdef MOZ_SAMPLE_TYPE_FLOAT32
