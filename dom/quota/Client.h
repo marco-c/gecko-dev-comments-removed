@@ -119,7 +119,10 @@ public:
   AbortOperationsForProcess(ContentParentId aContentParentId) = 0;
 
   virtual void
-  PerformIdleMaintenance() = 0;
+  StartIdleMaintenance() = 0;
+
+  virtual void
+  StopIdleMaintenance() = 0;
 
   virtual void
   ShutdownWorkThreads() = 0;
