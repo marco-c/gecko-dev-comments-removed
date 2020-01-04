@@ -28,12 +28,14 @@ using namespace mozilla::gfx;
 
 static std::map<uint64_t, RefPtr<RemoteContentController>> sDestroyedControllers;
 
-RemoteContentController::RemoteContentController(uint64_t aLayersId)
-  : mCompositorThread(MessageLoop::current())
+RemoteContentController::RemoteContentController(uint64_t aLayersId,
+                                                 dom::TabParent* aBrowserParent)
+  : mUILoop(MessageLoop::current())
   , mLayersId(aLayersId)
-  , mCanSend(true)
+  , mBrowserParent(aBrowserParent)
   , mMutex("RemoteContentController")
 {
+  MOZ_ASSERT(NS_IsMainThread());
 }
 
 RemoteContentController::~RemoteContentController()
@@ -43,9 +45,8 @@ RemoteContentController::~RemoteContentController()
 void
 RemoteContentController::RequestContentRepaint(const FrameMetrics& aFrameMetrics)
 {
-  MOZ_ASSERT(IsRepaintThread());
-
-  if (mCanSend) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (CanSend()) {
     Unused << SendRequestContentRepaint(aFrameMetrics);
   }
 }
@@ -57,9 +58,10 @@ RemoteContentController::HandleTap(TapType aTapType,
                                    const ScrollableLayerGuid& aGuid,
                                    uint64_t aInputBlockId)
 {
-  if (MessageLoop::current() != mCompositorThread) {
+  if (MessageLoop::current() != mUILoop) {
     
-    mCompositorThread->PostTask(NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
+    
+    mUILoop->PostTask(NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
                                         ScrollableLayerGuid, uint64_t>(this,
                                           &RemoteContentController::HandleTap,
                                           aTapType, aPoint, aModifiers, aGuid,
@@ -68,9 +70,18 @@ RemoteContentController::HandleTap(TapType aTapType,
   }
 
   bool callTakeFocusForClickFromTap = (aTapType == TapType::eSingleTap);
+  if (callTakeFocusForClickFromTap && mBrowserParent) {
+    layout::RenderFrameParent* frame = mBrowserParent->GetRenderFrame();
+    if (frame && mLayersId == frame->GetLayersId()) {
+      
+      
+      frame->TakeFocusForClickFromTap();
+      callTakeFocusForClickFromTap = false;
+    }
+  }
 
-  if (mCanSend) {
-    Unused << SendHandleTap(aTapType, aPoint,
+  if (CanSend()) {
+    Unused << SendHandleTap(aTapType, mBrowserParent->AdjustTapToChildWidget(aPoint),
             aModifiers, aGuid, aInputBlockId, callTakeFocusForClickFromTap);
   }
 }
@@ -81,21 +92,9 @@ RemoteContentController::PostDelayedTask(already_AddRefed<Runnable> aTask, int a
 #ifdef MOZ_WIDGET_ANDROID
   AndroidBridge::Bridge()->PostTaskToUiThread(Move(aTask), aDelayMs);
 #else
-  (MessageLoop::current() ? MessageLoop::current() : mCompositorThread)->
+  (MessageLoop::current() ? MessageLoop::current() : mUILoop)->
     PostDelayedTask(Move(aTask), aDelayMs);
 #endif
-}
-
-bool
-RemoteContentController::IsRepaintThread()
-{
-  return MessageLoop::current() == mCompositorThread;
-}
-
-void
-RemoteContentController::DispatchToRepaintThread(already_AddRefed<Runnable> aTask)
-{
-  mCompositorThread->PostTask(Move(aTask));
 }
 
 bool
@@ -115,17 +114,15 @@ RemoteContentController::NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
                                               APZStateChange aChange,
                                               int aArg)
 {
-  if (MessageLoop::current() != mCompositorThread) {
-    
-    mCompositorThread->PostTask(NewRunnableMethod<ScrollableLayerGuid,
+  if (MessageLoop::current() != mUILoop) {
+    mUILoop->PostTask(NewRunnableMethod<ScrollableLayerGuid,
                                         APZStateChange,
                                         int>(this,
                                              &RemoteContentController::NotifyAPZStateChange,
                                              aGuid, aChange, aArg));
     return;
   }
-
-  if (mCanSend) {
+  if (CanSend()) {
     Unused << SendNotifyAPZStateChange(aGuid.mScrollId, aChange, aArg);
   }
 }
@@ -134,26 +131,24 @@ void
 RemoteContentController::NotifyMozMouseScrollEvent(const FrameMetrics::ViewID& aScrollId,
                                                    const nsString& aEvent)
 {
-  if (MessageLoop::current() != mCompositorThread) {
-    
-    mCompositorThread->PostTask(NewRunnableMethod<FrameMetrics::ViewID,
+  if (MessageLoop::current() != mUILoop) {
+    mUILoop->PostTask(NewRunnableMethod<FrameMetrics::ViewID,
                                         nsString>(this,
                                                   &RemoteContentController::NotifyMozMouseScrollEvent,
                                                   aScrollId, aEvent));
     return;
   }
 
-  if (mCanSend) {
-    Unused << SendNotifyMozMouseScrollEvent(mLayersId, aScrollId, aEvent);
+  if (mBrowserParent) {
+    Unused << mBrowserParent->SendMouseScrollTestEvent(mLayersId, aScrollId, aEvent);
   }
 }
 
 void
 RemoteContentController::NotifyFlushComplete()
 {
-  MOZ_ASSERT(IsRepaintThread());
-
-  if (mCanSend) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (CanSend()) {
     Unused << SendNotifyFlushComplete();
   }
 }
@@ -169,26 +164,33 @@ RemoteContentController::RecvUpdateHitRegion(const nsRegion& aRegion)
 void
 RemoteContentController::ActorDestroy(ActorDestroyReason aWhy)
 {
-  mCanSend = false;
+  mBrowserParent = nullptr;
 
-  
-  
-  sDestroyedControllers.erase(mLayersId);
+  uint64_t key = mLayersId;
+  NS_DispatchToMainThread(NS_NewRunnableFunction([key]() {
+    
+    
+    sDestroyedControllers.erase(key);
+  }));
 }
 
 void
 RemoteContentController::Destroy()
 {
-  if (mCanSend) {
-    
-    
-    
-    
-    
-    MOZ_ASSERT(sDestroyedControllers.find(mLayersId) == sDestroyedControllers.end());
-    sDestroyedControllers[mLayersId] = this;
-    Unused << SendDestroy();
-  }
+  RefPtr<RemoteContentController> controller = this;
+  NS_DispatchToMainThread(NS_NewRunnableFunction([controller] {
+    if (controller->CanSend()) {
+      
+      
+      
+      
+      
+      uint64_t key = controller->mLayersId;
+      MOZ_ASSERT(sDestroyedControllers.find(key) == sDestroyedControllers.end());
+      sDestroyedControllers[key] = controller;
+      Unused << controller->SendDestroy();
+    }
+  }));
 }
 
 } 

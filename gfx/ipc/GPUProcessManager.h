@@ -115,6 +115,18 @@ public:
   void RequestNotifyLayerTreeCleared(uint64_t aLayersId, CompositorUpdateObserver* aObserver);
   void SwapLayerTreeObservers(uint64_t aLayer, uint64_t aOtherLayer);
 
+  
+  
+  
+  
+  
+  
+  
+  bool UpdateRemoteContentController(uint64_t aLayersId,
+                                     dom::ContentParent* aContentParent,
+                                     const dom::TabId& aTabId,
+                                     dom::TabParent* aBrowserParent);
+
   void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;
 

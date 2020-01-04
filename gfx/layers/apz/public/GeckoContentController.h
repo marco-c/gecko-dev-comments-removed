@@ -12,6 +12,7 @@
 #include "mozilla/Assertions.h"         
 #include "mozilla/EventForwards.h"      
 #include "nsISupportsImpl.h"
+#include "ThreadSafeRefcountingWithMainThreadDestruction.h"
 
 namespace mozilla {
 
@@ -22,7 +23,12 @@ namespace layers {
 class GeckoContentController
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GeckoContentController)
+  
+
+
+
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(GeckoContentController)
 
   
 
@@ -64,16 +70,6 @@ public:
 
 
   virtual void PostDelayedTask(already_AddRefed<Runnable> aRunnable, int aDelayMs) = 0;
-
-  
-
-
-  virtual bool IsRepaintThread() = 0;
-
-  
-
-
-  virtual void DispatchToRepaintThread(already_AddRefed<Runnable> aTask) = 0;
 
   
 
