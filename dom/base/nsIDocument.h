@@ -661,6 +661,8 @@ public:
     return GetBFCacheEntry() ? nullptr : mPresShell;
   }
 
+  
+  
   void DisallowBFCaching()
   {
     NS_ASSERTION(!mBFCacheEntry, "We're already in the bfcache!");
