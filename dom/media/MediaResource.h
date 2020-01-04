@@ -451,10 +451,10 @@ protected:
   
   
   
-  const nsAutoCString mContentType;
+  const nsCString mContentType;
 
   
-  nsAutoCString mContentURL;
+  nsCString mContentURL;
 
   
   

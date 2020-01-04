@@ -209,7 +209,7 @@ private:
   nsCOMPtr<nsITimer> mAsyncShutdownTimeout; 
   
   
-  nsAutoCString mNodeId;
+  nsCString mNodeId;
   
   
   RefPtr<GMPContentParent> mGMPContentParent;

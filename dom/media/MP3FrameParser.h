@@ -198,7 +198,7 @@ private:
 
   
   
-  nsAutoCString mFirstFrame;
+  nsCString mFirstFrame;
 
   
   

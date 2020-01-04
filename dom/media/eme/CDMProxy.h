@@ -185,8 +185,8 @@ private:
 
   struct InitData {
     uint32_t mPromiseId;
-    nsAutoString mOrigin;
-    nsAutoString mTopLevelOrigin;
+    nsString mOrigin;
+    nsString mTopLevelOrigin;
     nsString mGMPName;
     bool mInPrivateBrowsing;
   };
@@ -208,7 +208,7 @@ private:
     dom::SessionType mSessionType;
     uint32_t mCreateSessionToken;
     PromiseId mPromiseId;
-    nsAutoCString mInitDataType;
+    nsCString mInitDataType;
     nsTArray<uint8_t> mInitData;
   };
   
@@ -216,7 +216,7 @@ private:
 
   struct SessionOpData {
     PromiseId mPromiseId;
-    nsAutoCString mSessionId;
+    nsCString mSessionId;
   };
   
   void gmp_LoadSession(nsAutoPtr<SessionOpData> aData);
@@ -230,7 +230,7 @@ private:
 
   struct UpdateSessionData {
     PromiseId mPromiseId;
-    nsAutoCString mSessionId;
+    nsCString mSessionId;
     nsTArray<uint8_t> mResponse;
   };
   
@@ -326,7 +326,7 @@ private:
   
   MainThreadOnlyRawPtr<dom::MediaKeys> mKeys;
 
-  const nsAutoString mKeySystem;
+  const nsString mKeySystem;
 
   
   
