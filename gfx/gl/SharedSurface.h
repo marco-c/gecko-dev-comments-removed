@@ -67,7 +67,6 @@ public:
 protected:
     bool mIsLocked;
     bool mIsProducerAcquired;
-    bool mIsConsumerAcquired;
 #ifdef DEBUG
     nsIThread* const mOwningThread;
 #endif
@@ -87,9 +86,8 @@ public:
     
     virtual layers::TextureFlags GetTextureFlags() const;
 
-    bool IsLocked() const {
-        return mIsLocked;
-    }
+    bool IsLocked() const { return mIsLocked; }
+    bool IsProducerAcquired() const { return mIsProducerAcquired; }
 
     
     
