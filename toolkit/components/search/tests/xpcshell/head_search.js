@@ -215,6 +215,12 @@ function promiseCacheData() {
   }));
 }
 
+function promiseSaveCacheData(data) {
+  return OS.File.writeAtomic(OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME),
+                             new TextEncoder().encode(JSON.stringify(data)),
+                             {compression: "lz4"});
+}
+
 function promiseEngineMetadata() {
   return new Promise(resolve => Task.spawn(function* () {
     let cache = yield promiseCacheData();
@@ -237,9 +243,7 @@ function promiseSaveGlobalMetadata(globalData) {
   return new Promise(resolve => Task.spawn(function* () {
     let data = yield promiseCacheData();
     data.metaData = globalData;
-    yield OS.File.writeAtomic(OS.Path.join(OS.Constants.Path.profileDir, CACHE_FILENAME),
-                              new TextEncoder().encode(JSON.stringify(data)),
-                              {compression: "lz4"});
+    yield promiseSaveCacheData(data);
     resolve();
   }));
 }
@@ -255,13 +259,16 @@ var forceExpiration = Task.async(function* () {
 
 
 
+
 function removeCacheFile()
 {
   let file = gProfD.clone();
   file.append(CACHE_FILENAME);
   if (file.exists()) {
     file.remove(false);
+    return true;
   }
+  return false;
 }
 
 
