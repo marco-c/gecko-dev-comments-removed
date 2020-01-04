@@ -241,10 +241,8 @@ FetchDriver::HttpFetch()
   MOZ_ASSERT(mLoadGroup);
   nsCOMPtr<nsIChannel> chan;
 
-  
-  
-  
-  if (mDocument && mDocument->NodePrincipal() == mPrincipal) {
+  if (mDocument) {
+    MOZ_ASSERT(mDocument->NodePrincipal() == mPrincipal);
     rv = NS_NewChannel(getter_AddRefs(chan),
                        uri,
                        mDocument,
