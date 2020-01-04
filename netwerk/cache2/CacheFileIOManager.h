@@ -442,6 +442,10 @@ private:
   
   
   TimeStamp                            mShutdownDemandedTime;
+  
+  Atomic<bool, Relaxed>                mShutdownDemanded;
+  
+  
   bool                                 mShuttingDown;
   RefPtr<CacheIOThread>                mIOThread;
   nsCOMPtr<nsIFile>                    mCacheDirectory;

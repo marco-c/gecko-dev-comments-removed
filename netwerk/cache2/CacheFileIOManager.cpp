@@ -1158,6 +1158,8 @@ CacheFileIOManager::Shutdown()
     return NS_ERROR_NOT_INITIALIZED;
   }
 
+  gInstance->mShutdownDemanded = true;
+
   Telemetry::AutoTimer<Telemetry::NETWORK_DISK_CACHE_SHUTDOWN_V2> shutdownTimer;
 
   CacheIndex::PreShutdown();
@@ -2293,15 +2295,21 @@ CacheFileIOManager::ReleaseNSPRHandleInternal(CacheFileHandle *aHandle,
   found = mHandlesByLastUsed.RemoveElement(aHandle);
   MOZ_ASSERT(found);
 
-  if (aIgnoreShutdownLag || !IsPastShutdownIOLag()) {
-    PR_Close(aHandle->mFD);
-  } else {
+  
+  
+  if (
+#ifndef DEBUG
+      ((aHandle->mInvalid || aHandle->mIsDoomed) && MOZ_UNLIKELY(mShutdownDemanded)) ||
+#endif
+      MOZ_UNLIKELY(!aIgnoreShutdownLag && IsPastShutdownIOLag())) {
     
     
     
     
     aHandle->mInvalid = false;
     LOG(("  past the shutdown I/O lag, leaking file handle"));
+  } else {
+    PR_Close(aHandle->mFD);
   }
 
   aHandle->mFD = nullptr;
