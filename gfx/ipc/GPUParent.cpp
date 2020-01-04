@@ -43,6 +43,7 @@ GPUParent::Init(base::ProcessId aParentPid,
 
   
   gfxPrefs::GetSingleton();
+  gfxConfig::Init();
   gfxVars::Initialize();
   CompositorThreadHolder::Start();
   VRManager::ManagerInit();
@@ -162,6 +163,9 @@ GPUParent::ActorDestroy(ActorDestroyReason aWhy)
     mVsyncBridge->Shutdown();
   }
   CompositorThreadHolder::Shutdown();
+  gfxVars::Shutdown();
+  gfxConfig::Shutdown();
+  gfxPrefs::DestroySingleton();
   XRE_ShutdownChildProcess();
 }
 
