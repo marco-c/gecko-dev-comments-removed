@@ -67,7 +67,7 @@ enum class Expr : uint16_t
     Select,
     Br,
     BrIf,
-    TableSwitch,
+    BrTable,
     Return,
     Unreachable,
 
@@ -240,20 +240,6 @@ enum class Expr : uint16_t
     F64StoreMem,
 
     
-    While,          
-    DoWhile,
-
-    ForInitInc,
-    ForInitNoInc,
-    ForNoInitNoInc,
-    ForNoInitInc,
-
-    Label,
-    Continue,
-    ContinueLabel,
-    Break,
-    BreakLabel,
-
     Id,
 
     I32Min,
