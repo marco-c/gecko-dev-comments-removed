@@ -307,6 +307,27 @@ function getLocale() {
   return "en-US";
 }
 
+function webAPIForAddon(addon) {
+  if (!addon) {
+    return null;
+  }
+
+  let result = {};
+
+  
+  
+  for (let prop in addon) {
+    if (typeof(addon[prop]) != "function") {
+      result[prop] = addon[prop];
+    }
+  }
+
+  
+  result.isEnabled = !addon.userDisabled;
+
+  return result;
+}
+
 
 
 
@@ -2761,6 +2782,16 @@ var AddonManagerInternal = {
   get hotfixID() {
     return gHotfixID;
   },
+
+  webAPI: {
+    getAddonByID(id) {
+      return new Promise(resolve => {
+        AddonManager.getAddonByID(id, (addon) => {
+          resolve(webAPIForAddon(addon));
+        });
+      });
+    }
+  },
 };
 
 
@@ -3340,6 +3371,10 @@ this.AddonManager = {
 
   getPreferredIconURL: function(aAddon, aSize, aWindow = undefined) {
     return AddonManagerInternal.getPreferredIconURL(aAddon, aSize, aWindow);
+  },
+
+  get webAPI() {
+    return AddonManagerInternal.webAPI;
   },
 
   get shutdown() {
