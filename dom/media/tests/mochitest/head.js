@@ -903,7 +903,7 @@ VideoStreamHelper.prototype = {
         
         
       }
-    }, 100);
+    }, 500);
   },
 
   waitForFrames: function(canvas, timeout_value) {
