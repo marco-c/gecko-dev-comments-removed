@@ -205,6 +205,13 @@ class ArgumentsObject : public NativeObject
     static ArgumentsObject* createForIon(JSContext* cx, jit::JitFrameLayout* frame,
                                          HandleObject scopeChain);
 
+    
+
+
+
+    static ArgumentsObject* finishForIon(JSContext* cx, jit::JitFrameLayout* frame,
+                                         JSObject* scopeChain, ArgumentsObject* obj);
+
     static ArgumentsObject* createTemplateObject(JSContext* cx, bool mapped);
 
     

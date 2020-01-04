@@ -1120,6 +1120,11 @@ MacroAssembler::initGCThing(Register obj, Register temp, JSObject* templateObj,
                           : 0),
                     Address(obj, elementsOffset + ObjectElements::offsetOfFlags()));
             MOZ_ASSERT(!ntemplate->hasPrivate());
+        } else if (ntemplate->is<ArgumentsObject>()) {
+            
+            MOZ_ASSERT(!initContents);
+            MOZ_ASSERT(!ntemplate->hasPrivate());
+            storePtr(ImmPtr(emptyObjectElements), Address(obj, NativeObject::offsetOfElements()));
         } else {
             
             

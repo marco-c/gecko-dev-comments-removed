@@ -847,6 +847,8 @@ struct JSCompartment
 
     js::ArgumentsObject* getOrCreateArgumentsTemplateObject(JSContext* cx, bool mapped);
 
+    js::ArgumentsObject* maybeArgumentsTemplateObject(bool mapped) const;
+
   private:
     
     bool sawDeprecatedLanguageExtension[DeprecatedLanguageExtensionCount];
