@@ -103,7 +103,7 @@ DaemonSocketIO::QueryReceiveBuffer(UnixSocketIOBuffer** aBuffer)
 
   if (!mPDU) {
     
-    mPDU = new DaemonSocketPDU(DaemonSocketPDU::MAX_PAYLOAD_LENGTH);
+    mPDU = new DaemonSocketPDU(DaemonSocketPDU::PDU_MAX_PAYLOAD_LENGTH);
   }
   *aBuffer = mPDU.get();
 
