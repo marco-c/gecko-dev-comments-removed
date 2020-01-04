@@ -371,11 +371,24 @@ CanvasClientSharedSurface::Update(gfx::IntSize aSize, ClientCanvasLayer* aLayer)
     return;
   }
 
+#ifndef MOZ_WIDGET_GONK
   if (mFront) {
     if (mFront->GetFlags() & TextureFlags::RECYCLE) {
       mFront->WaitForCompositorRecycle();
     }
   }
+#else
+  
+  
+  
+  
+  
+  
+  AutoRemoveTexture autoRemove(this);
+  if (mFront && mFront != newFront) {
+    autoRemove.mTexture = mFront;
+  }
+#endif
 
   mFront = newFront;
 
