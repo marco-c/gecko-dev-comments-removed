@@ -1,29 +1,29 @@
+
+
+
+
 import os
 
 from browsermobproxy import Server
 from marionette import MarionetteTestCase
 
 
-class BrowserMobProxyOptionsMixin(object):
+class BrowserMobProxyArguments(object):
+    name = 'Browsermob Proxy'
+    args = [
+        [['--browsermob-script'],
+         {'help': 'path to the browsermob-proxy shell script or batch file',
+          }],
+        [['--browsermob-port'],
+         {'type': int,
+          'help': 'port to run the browsermob proxy on',
+          }],
+    ]
 
-    
-    def browsermob_verify_usage(self, options, tests):
-        if options.browsermob_script is not None:
-            if not os.path.exists(options.browsermob_script):
-                raise ValueError('%s not found' % options.browsermob_script)
-
-    def __init__(self, **kwargs):
-        
-        group = self.add_argument_group('Browsermob Proxy')
-        group.add_argument('--browsermob-script',
-                         dest='browsermob_script',
-                         type='string',
-                         help='path to the browsermob-proxy shell script or batch file')
-        group.add_argument('--browsermob-port',
-                         dest='browsermob_port',
-                         type='int',
-                         help='port to run the browsermob proxy on')
-        self.verify_usage_handlers.append(self.browsermob_verify_usage)
+    def verify_usage_handler(self, args):
+        if args.browsermob_script is not None:
+            if not os.path.exists(args.browsermob_script):
+                raise ValueError('%s not found' % args.browsermob_script)
 
 
 class BrowserMobProxyTestCaseMixin(object):

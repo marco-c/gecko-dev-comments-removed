@@ -2,17 +2,21 @@
 
 
 
-from endurance import (
-        EnduranceOptionsMixin, EnduranceTestCaseMixin, MemoryEnduranceTestCaseMixin
-        )
-from reporting import (
-        HTMLReportingOptionsMixin, HTMLReportingTestResultMixin,
-        HTMLReportingTestRunnerMixin
-        )
-from b2g import B2GTestCaseMixin, B2GTestResultMixin
-from browsermob import (
-    BrowserMobProxyTestCaseMixin,
-    BrowserMobProxyOptionsMixin,
-    BrowserMobTestCase,
-    )
+from .endurance import (
+    EnduranceArguments,
+    EnduranceTestCaseMixin,
+    MemoryEnduranceTestCaseMixin,
+)
 
+from .reporting import (
+    HTMLReportingArguments,
+    HTMLReportingTestResultMixin,
+    HTMLReportingTestRunnerMixin,
+)
+
+from .b2g import B2GTestCaseMixin, B2GTestResultMixin
+from .browsermob import (
+    BrowserMobProxyTestCaseMixin,
+    BrowserMobProxyArguments,
+    BrowserMobTestCase,
+)
