@@ -109,120 +109,28 @@ GMPContentChild::DeallocPGMPVideoEncoderChild(PGMPVideoEncoderChild* aActor)
   return true;
 }
 
-
-class GMPDecryptor7BackwardsCompat : public GMPDecryptor {
-public:
-  explicit GMPDecryptor7BackwardsCompat(GMPDecryptor7* aDecryptorV7)
-    : mDecryptorV7(aDecryptorV7)
-  {
-  }
-
-  void Init(GMPDecryptorCallback* aCallback,
-            bool aDistinctiveIdentifierRequired,
-            bool aPersistentStateRequired) override
-  {
-    
-    
-    mDecryptorV7->Init(aCallback);
-  }
-
-  void CreateSession(uint32_t aCreateSessionToken,
-                     uint32_t aPromiseId,
-                     const char* aInitDataType,
-                     uint32_t aInitDataTypeSize,
-                     const uint8_t* aInitData,
-                     uint32_t aInitDataSize,
-                     GMPSessionType aSessionType) override
-  {
-    mDecryptorV7->CreateSession(aCreateSessionToken,
-                                aPromiseId,
-                                aInitDataType,
-                                aInitDataTypeSize,
-                                aInitData,
-                                aInitDataSize,
-                                aSessionType);
-  }
-
-  void LoadSession(uint32_t aPromiseId,
-                   const char* aSessionId,
-                   uint32_t aSessionIdLength) override
-  {
-    mDecryptorV7->LoadSession(aPromiseId, aSessionId, aSessionIdLength);
-  }
-
-  void UpdateSession(uint32_t aPromiseId,
-                     const char* aSessionId,
-                     uint32_t aSessionIdLength,
-                     const uint8_t* aResponse,
-                     uint32_t aResponseSize) override
-  {
-    mDecryptorV7->UpdateSession(aPromiseId,
-                                aSessionId,
-                                aSessionIdLength,
-                                aResponse,
-                                aResponseSize);
-  }
-
-  void CloseSession(uint32_t aPromiseId,
-                    const char* aSessionId,
-                    uint32_t aSessionIdLength) override
-  {
-    mDecryptorV7->CloseSession(aPromiseId, aSessionId, aSessionIdLength);
-  }
-
-  void RemoveSession(uint32_t aPromiseId,
-                     const char* aSessionId,
-                     uint32_t aSessionIdLength) override
-  {
-    mDecryptorV7->RemoveSession(aPromiseId, aSessionId, aSessionIdLength);
-  }
-
-  void SetServerCertificate(uint32_t aPromiseId,
-                            const uint8_t* aServerCert,
-                            uint32_t aServerCertSize) override
-  {
-    mDecryptorV7->SetServerCertificate(aPromiseId, aServerCert, aServerCertSize);
-  }
-
-  void Decrypt(GMPBuffer* aBuffer,
-               GMPEncryptedBufferMetadata* aMetadata) override
-  {
-    mDecryptorV7->Decrypt(aBuffer, aMetadata);
-  }
-
-  void DecryptingComplete() override
-  {
-    mDecryptorV7->DecryptingComplete();
-    delete this;
-  }
-private:
-  GMPDecryptor7* mDecryptorV7;
-};
-
 bool
 GMPContentChild::RecvPGMPDecryptorConstructor(PGMPDecryptorChild* aActor)
 {
   GMPDecryptorChild* child = static_cast<GMPDecryptorChild*>(aActor);
   GMPDecryptorHost* host = static_cast<GMPDecryptorHost*>(child);
 
-  void* ptr = nullptr;
-  GMPErr err = mGMPChild->GetAPI(GMP_API_DECRYPTOR, host, &ptr);
-  GMPDecryptor* decryptor = nullptr;
-  if (GMP_SUCCEEDED(err) && ptr) {
-    decryptor = static_cast<GMPDecryptor*>(ptr);
-  } else if (err != GMPNoErr) {
+  void* session = nullptr;
+  GMPErr err = mGMPChild->GetAPI(GMP_API_DECRYPTOR, host, &session);
+  if (err != GMPNoErr || !session) {
     
     
     
     
-    err = mGMPChild->GetAPI(GMP_API_DECRYPTOR_BACKWARDS_COMPAT, host, &ptr);
-    if (err != GMPNoErr || !ptr) {
+    
+    
+    err = mGMPChild->GetAPI(GMP_API_DECRYPTOR_BACKWARDS_COMPAT, host, &session);
+    if (err != GMPNoErr || !session) {
       return false;
     }
-    decryptor = new GMPDecryptor7BackwardsCompat(static_cast<GMPDecryptor7*>(ptr));
   }
 
-  child->Init(decryptor);
+  child->Init(static_cast<GMPDecryptor*>(session));
 
   return true;
 }
