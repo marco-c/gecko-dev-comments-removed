@@ -117,16 +117,9 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
 
   
   
+  
+  
   if (aReason & nsISelectionListener::IME_REASON) {
-    if (GetCaretMode() == CaretMode::Cursor) {
-      
-      
-      FlushLayout();
-      UpdateCarets();
-    } else {
-      
-      
-    }
     return NS_OK;
   }
 
