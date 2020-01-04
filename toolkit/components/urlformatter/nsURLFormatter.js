@@ -1,4 +1,5 @@
 #filter substitution
+#include @OBJDIR@/api_keys
 
 
 
