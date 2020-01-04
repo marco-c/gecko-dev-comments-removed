@@ -183,7 +183,7 @@ public:
             const auto natives = reinterpret_cast<
                     mozilla::WeakPtr<typename T::TargetClass>*>(
                     jni::GetNativeHandle(env, thisArg.Get()));
-            jni::HandleUncaughtException(env);
+            MOZ_CATCH_JNI_EXCEPTION(env);
 
             
             

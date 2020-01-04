@@ -145,7 +145,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 
 
-    protected void logException(final Thread thread, final Throwable exc) {
+    public static void logException(final Thread thread, final Throwable exc) {
         try {
             Log.e(LOGTAG, ">>> REPORTING UNCAUGHT EXCEPTION FROM THREAD "
                           + thread.getId() + " (\"" + thread.getName() + "\")", exc);
