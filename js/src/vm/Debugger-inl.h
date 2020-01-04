@@ -76,4 +76,11 @@ js::Debugger::onNewWasmModule(JSContext* cx, Handle<WasmModuleObject*> wasmModul
         slowPathOnNewWasmModule(cx, wasmModule);
 }
 
+inline js::Debugger*
+js::DebuggerObject::owner() const
+{
+    JSObject* dbgobj = &getReservedSlot(OWNER_SLOT).toObject();
+    return Debugger::fromJSObject(dbgobj);
+}
+
 #endif 
