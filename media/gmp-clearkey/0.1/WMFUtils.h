@@ -259,6 +259,10 @@ enum CodecType {
 
 const char* WMFDecoderDllNameFor(CodecType aCodec);
 
+
+
+int32_t GetNumThreads(int32_t aCoreCount);
+
 } 
 
 #endif 
