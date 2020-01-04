@@ -504,10 +504,6 @@ public:
                                      const bool& aIsTrusted,
                                      const int32_t& aModifierMask) override;
 
-    virtual bool RecvAudioChannelChangeNotification(const uint32_t& aAudioChannel,
-                                                    const float& aVolume,
-                                                    const bool& aMuted) override;
-
     
 
 

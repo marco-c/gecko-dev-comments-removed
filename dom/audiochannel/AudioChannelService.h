@@ -23,12 +23,9 @@ struct PRLogModuleInfo;
 
 namespace mozilla {
 namespace dom {
-
 #ifdef MOZ_WIDGET_GONK
 class SpeakerManagerService;
 #endif
-
-class TabParent;
 
 #define NUMBER_OF_AUDIO_CHANNELS (uint32_t)AudioChannel::EndGuard_
 
@@ -65,12 +62,6 @@ public:
 
   void UnregisterAudioChannelAgent(AudioChannelAgent* aAgent,
                                    uint32_t aNotifyPlayback);
-
-  
-
-
-  void RegisterTabParent(TabParent* aTabParent);
-  void UnregisterTabParent(TabParent* aTabParent);
 
   
 
@@ -116,9 +107,6 @@ public:
   bool AnyAudioChannelIsActive();
 
   void RefreshAgentsVolume(nsPIDOMWindow* aWindow);
-
-  void RefreshAgentsVolumeAndPropagate(AudioChannel aAudioChannel,
-                                       nsPIDOMWindow* aWindow);
 
   
   
@@ -234,9 +222,6 @@ private:
 #ifdef MOZ_WIDGET_GONK
   nsTArray<SpeakerManagerService*>  mSpeakerManager;
 #endif
-
-  
-  nsTArray<TabParent*> mTabParents;
 
   nsCOMPtr<nsIRunnable> mRunnable;
 
