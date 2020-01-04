@@ -4,6 +4,8 @@
 
 %include ../shared/devedition.inc.css
 
+:root[devtoolstheme="dark"] .findbar-closebutton:not(:hover),
+:root[devtoolstheme="dark"] #sidebar-header > .close-icon:not(:hover),
 .tab-close-button[visuallyselected]:not(:hover) {
   background-image: -moz-image-rect(url("chrome://global/skin/icons/close.svg"), 0, 80, 16, 64);
 }
@@ -77,7 +79,8 @@
 }
 
 
-
-#sidebar-box {
-  color: initial;
+.sidebar-header,
+#sidebar-header {
+  text-shadow: none;
 }
+
