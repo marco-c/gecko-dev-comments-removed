@@ -106,12 +106,12 @@ public:
   {}
 
   template <class U>
-  int operator()(const U& val) const {
-    if (mTarget == val) {
+  int operator()(const U& aVal) const {
+    if (mTarget == aVal) {
       return 0;
     }
 
-    if (mTarget < val) {
+    if (mTarget < aVal) {
       return -1;
     }
 
