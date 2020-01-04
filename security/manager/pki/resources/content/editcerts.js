@@ -22,7 +22,7 @@ function setWindowName()
 
   
   certdb = Components.classes[nsX509CertDB].getService(nsIX509CertDB);
-  cert = certdb.findCertByDBKey(dbkey, null);
+  cert = certdb.findCertByDBKey(dbkey);
 
   var bundle = document.getElementById("pippki_bundle");
 
