@@ -710,6 +710,18 @@ nsBMPDecoder::ReadColorTable(const char* aData, size_t aLength)
 LexerTransition<nsBMPDecoder::State>
 nsBMPDecoder::SkipGap()
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mH.mWidth == 0 || mH.mHeight == 0) {
+    return Transition::TerminateSuccess();
+  }
+
   bool hasRLE = mH.mCompression == Compression::RLE8 ||
                 mH.mCompression == Compression::RLE4;
   return hasRLE
@@ -720,6 +732,7 @@ nsBMPDecoder::SkipGap()
 LexerTransition<nsBMPDecoder::State>
 nsBMPDecoder::ReadPixelRow(const char* aData)
 {
+  MOZ_ASSERT(mCurrentRow > 0);
   MOZ_ASSERT(mCurrentPos == 0);
 
   const uint8_t* src = reinterpret_cast<const uint8_t*>(aData);
