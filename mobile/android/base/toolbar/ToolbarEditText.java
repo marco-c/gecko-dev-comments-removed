@@ -13,13 +13,11 @@ import org.mozilla.gecko.R;
 import org.mozilla.gecko.toolbar.BrowserToolbar.OnCommitListener;
 import org.mozilla.gecko.toolbar.BrowserToolbar.OnDismissListener;
 import org.mozilla.gecko.toolbar.BrowserToolbar.OnFilterListener;
-import org.mozilla.gecko.util.DrawableUtil;
+import org.mozilla.gecko.toolbar.ToolbarEditLayout.OnSearchStateChangeListener;
 import org.mozilla.gecko.util.GamepadUtils;
 import org.mozilla.gecko.util.StringUtils;
-import org.mozilla.gecko.util.HardwareUtils;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
 import android.graphics.Rect;
 import android.text.Editable;
 import android.text.NoCopySpan;
@@ -56,6 +54,7 @@ public class ToolbarEditText extends CustomEditText
     private OnCommitListener mCommitListener;
     private OnDismissListener mDismissListener;
     private OnFilterListener mFilterListener;
+    private OnSearchStateChangeListener mSearchStateChangeListener;
 
     private ToolbarPrefs mPrefs;
 
@@ -87,14 +86,16 @@ public class ToolbarEditText extends CustomEditText
         mFilterListener = listener;
     }
 
+    void setOnSearchStateChangeListener(OnSearchStateChangeListener listener) {
+        mSearchStateChangeListener = listener;
+    }
+
     @Override
     public void onAttachedToWindow() {
         setOnKeyListener(new KeyListener());
         setOnKeyPreImeListener(new KeyPreImeListener());
         setOnSelectionChangedListener(new SelectionChangeListener());
         addTextChangedListener(new TextChangeListener());
-        
-        updateSearchIcon(false);
     }
 
     @Override
@@ -104,7 +105,9 @@ public class ToolbarEditText extends CustomEditText
         
         
         final boolean isActive = !TextUtils.isEmpty(getText());
-        updateSearchIcon(isActive);
+        if (mSearchStateChangeListener != null) {
+            mSearchStateChangeListener.onSearchStateChange(isActive);
+        }
 
         if (gainFocus) {
             resetAutocompleteState();
@@ -158,33 +161,6 @@ public class ToolbarEditText extends CustomEditText
 
     void setToolbarPrefs(final ToolbarPrefs prefs) {
         mPrefs = prefs;
-    }
-
-    
-
-
-
-
-
-
-    void updateSearchIcon(boolean isActive) {
-        if (!HardwareUtils.isTablet()) {
-            return;
-        }
-
-        
-        final int searchDrawableId = R.drawable.search_icon_active;
-        final Drawable searchDrawable;
-        if (!isActive) {
-            searchDrawable = DrawableUtil.tintDrawable(getContext(), searchDrawableId, R.color.placeholder_grey);
-        } else {
-            if (isPrivateMode()) {
-                searchDrawable = DrawableUtil.tintDrawable(getContext(), searchDrawableId, R.color.tabs_tray_icon_grey);
-            } else {
-                searchDrawable = getResources().getDrawable(searchDrawableId);
-            }
-        }
-        setCompoundDrawablesWithIntrinsicBounds(searchDrawable, null, null, null);
     }
 
     
@@ -564,7 +540,9 @@ public class ToolbarEditText extends CustomEditText
             }
 
             
-            updateSearchIcon(textLength > 0);
+            if (mSearchStateChangeListener != null) {
+                mSearchStateChangeListener.onSearchStateChange(textLength > 0);
+            }
 
             if (mFilterListener != null) {
                 mFilterListener.onFilter(text, doAutocomplete ? ToolbarEditText.this : null);
