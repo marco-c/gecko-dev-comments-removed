@@ -205,7 +205,7 @@ private:
 
 
 
-  nsAutoCString mSha256;
+  nsCString mSha256;
 
   
 
