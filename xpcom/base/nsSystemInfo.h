@@ -12,10 +12,6 @@
 #include "nsIObserver.h"
 #endif 
 
-#ifdef MOZ_WIDGET_ANDROID
-#include "mozilla/dom/PContent.h"
-#endif 
-
 class nsSystemInfo final
   : public nsHashPropertyBag
 #if defined(XP_WIN)
@@ -35,12 +31,6 @@ public:
   
   
   static uint32_t gUserUmask;
-
-#ifdef MOZ_WIDGET_ANDROID
-  static void GetAndroidSystemInfo(mozilla::dom::AndroidSystemInfo* aInfo);
-  protected:
-    void SetupAndroidInfo(const mozilla::dom::AndroidSystemInfo&);
-#endif
 
 protected:
   void SetInt32Property(const nsAString& aPropertyName,

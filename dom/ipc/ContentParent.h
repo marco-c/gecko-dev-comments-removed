@@ -940,9 +940,6 @@ private:
 
     virtual bool RecvGetDeviceStorageLocation(const nsString& aType,
                                               nsString* aPath) override;
-
-    virtual bool RecvGetAndroidSystemInfo(AndroidSystemInfo* aInfo) override;
-
     
     
     
