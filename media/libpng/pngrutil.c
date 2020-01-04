@@ -377,10 +377,16 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
 
       if (((png_ptr->options >> PNG_MAXIMUM_INFLATE_WINDOW) & 3) ==
           PNG_OPTION_ON)
+      {
          window_bits = 15;
+         png_ptr->zstream_start = 0; 
+      }
 
       else
+      {
          window_bits = 0;
+         png_ptr->zstream_start = 1;
+      }
 # else
 #   define window_bits 0
 # endif
@@ -428,6 +434,31 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
 # undef window_bits
 #endif
 }
+
+#if PNG_ZLIB_VERNUM >= 0x1240
+
+
+
+
+
+
+int 
+png_zlib_inflate(png_structrp png_ptr, int flush)
+{
+   if (png_ptr->zstream_start && png_ptr->zstream.avail_in > 0)
+   {
+      if ((*png_ptr->zstream.next_in >> 4) > 7)
+      {
+         png_ptr->zstream.msg = "invalid window size (libpng)";
+         return Z_DATA_ERROR;
+      }
+
+      png_ptr->zstream_start = 0;
+   }
+
+   return inflate(&png_ptr->zstream, flush);
+}
+#endif 
 
 #ifdef PNG_READ_COMPRESSED_TEXT_SUPPORTED
 
@@ -522,7 +553,7 @@ png_inflate(png_structrp png_ptr, png_uint_32 owner, int finish,
 
 
 
-         ret = inflate(&png_ptr->zstream, avail_out > 0 ? Z_NO_FLUSH :
+         ret = PNG_INFLATE(png_ptr, avail_out > 0 ? Z_NO_FLUSH :
              (finish ? Z_FINISH : Z_SYNC_FLUSH));
       } while (ret == Z_OK);
 
@@ -771,7 +802,7 @@ png_inflate_read(png_structrp png_ptr, png_bytep read_buffer, uInt read_size,
 
 
 
-         ret = inflate(&png_ptr->zstream,
+         ret = PNG_INFLATE(png_ptr,
             *chunk_bytes > 0 ? Z_NO_FLUSH : (finish ? Z_FINISH : Z_SYNC_FLUSH));
       }
       while (ret == Z_OK && (*out_size > 0 || png_ptr->zstream.avail_out > 0));
@@ -1675,7 +1706,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    ++entry_start;
 
    
-   if (entry_start > buffer + length - 2)
+   if (length < 2U || entry_start > buffer + (length - 2U))
    {
       png_warning(png_ptr, "malformed sPLT chunk");
       return;
@@ -2179,7 +2210,7 @@ png_handle_pCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    
 
 
-   if (endptr <= buf + 12)
+   if (endptr - buf <= 12)
    {
       png_chunk_benign_error(png_ptr, "invalid");
       return;
@@ -4251,7 +4282,7 @@ png_read_IDAT_data(png_structrp png_ptr, png_bytep output,
 
 
 
-      ret = inflate(&png_ptr->zstream, Z_NO_FLUSH);
+      ret = PNG_INFLATE(png_ptr, Z_NO_FLUSH);
 
       
       if (output != NULL)

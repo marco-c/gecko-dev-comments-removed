@@ -525,8 +525,8 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
    if (png_ptr == NULL || info_ptr == NULL)
       return;
 
-   max_palette_length = (png_ptr->color_type == PNG_COLOR_TYPE_PALETTE) ?
-      (1 << png_ptr->bit_depth) : PNG_MAX_PALETTE_LENGTH;
+   max_palette_length = (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE) ?
+      (1 << info_ptr->bit_depth) : PNG_MAX_PALETTE_LENGTH;
 
    if (num_palette < 0 || num_palette > (int) max_palette_length)
    {
@@ -1789,4 +1789,88 @@ png_set_check_for_invalid_index(png_structrp png_ptr, int allowed)
       png_ptr->num_palette_max = -1;
 }
 #endif
+
+#if defined(PNG_TEXT_SUPPORTED) || defined(PNG_pCAL_SUPPORTED) || \
+    defined(PNG_iCCP_SUPPORTED) || defined(PNG_sPLT_SUPPORTED)
+
+
+
+
+
+
+
+
+
+
+png_uint_32 
+png_check_keyword(png_structrp png_ptr, png_const_charp key, png_bytep new_key)
+{
+   png_const_charp orig_key = key;
+   png_uint_32 key_len = 0;
+   int bad_character = 0;
+   int space = 1;
+
+   png_debug(1, "in png_check_keyword");
+
+   if (key == NULL)
+   {
+      *new_key = 0;
+      return 0;
+   }
+
+   while (*key && key_len < 79)
+   {
+      png_byte ch = (png_byte)*key++;
+
+      if ((ch > 32 && ch <= 126) || (ch >= 161 ))
+         *new_key++ = ch, ++key_len, space = 0;
+
+      else if (space == 0)
+      {
+         
+
+
+         *new_key++ = 32, ++key_len, space = 1;
+
+         
+         if (ch != 32)
+            bad_character = ch;
+      }
+
+      else if (bad_character == 0)
+         bad_character = ch; 
+   }
+
+   if (key_len > 0 && space != 0) 
+   {
+      --key_len, --new_key;
+      if (bad_character == 0)
+         bad_character = 32;
+   }
+
+   
+   *new_key = 0;
+
+   if (key_len == 0)
+      return 0;
+
+#ifdef PNG_WARNINGS_SUPPORTED
+   
+   if (*key != 0) 
+      png_warning(png_ptr, "keyword truncated");
+
+   else if (bad_character != 0)
+   {
+      PNG_WARNING_PARAMETERS(p)
+
+      png_warning_parameter(p, 1, orig_key);
+      png_warning_parameter_signed(p, 2, PNG_NUMBER_FORMAT_02x, bad_character);
+
+      png_formatted_warning(png_ptr, p, "keyword \"@1\": bad character '0x@2'");
+   }
+#endif 
+
+   return key_len;
+}
+#endif 
 #endif 

@@ -665,90 +665,6 @@ png_write_compressed_data_out(png_structrp png_ptr, compression_state *comp)
 }
 #endif 
 
-#if defined(PNG_WRITE_TEXT_SUPPORTED) || defined(PNG_WRITE_pCAL_SUPPORTED) || \
-    defined(PNG_WRITE_iCCP_SUPPORTED) || defined(PNG_WRITE_sPLT_SUPPORTED)
-
-
-
-
-
-
-
-
-
-
-static png_uint_32
-png_check_keyword(png_structrp png_ptr, png_const_charp key, png_bytep new_key)
-{
-   png_const_charp orig_key = key;
-   png_uint_32 key_len = 0;
-   int bad_character = 0;
-   int space = 1;
-
-   png_debug(1, "in png_check_keyword");
-
-   if (key == NULL)
-   {
-      *new_key = 0;
-      return 0;
-   }
-
-   while (*key && key_len < 79)
-   {
-      png_byte ch = (png_byte)*key++;
-
-      if ((ch > 32 && ch <= 126) || (ch >= 161 ))
-         *new_key++ = ch, ++key_len, space = 0;
-
-      else if (space == 0)
-      {
-         
-
-
-         *new_key++ = 32, ++key_len, space = 1;
-
-         
-         if (ch != 32)
-            bad_character = ch;
-      }
-
-      else if (bad_character == 0)
-         bad_character = ch; 
-   }
-
-   if (key_len > 0 && space != 0) 
-   {
-      --key_len, --new_key;
-      if (bad_character == 0)
-         bad_character = 32;
-   }
-
-   
-   *new_key = 0;
-
-   if (key_len == 0)
-      return 0;
-
-#ifdef PNG_WARNINGS_SUPPORTED
-   
-   if (*key != 0) 
-      png_warning(png_ptr, "keyword truncated");
-
-   else if (bad_character != 0)
-   {
-      PNG_WARNING_PARAMETERS(p)
-
-      png_warning_parameter(p, 1, orig_key);
-      png_warning_parameter_signed(p, 2, PNG_NUMBER_FORMAT_02x, bad_character);
-
-      png_formatted_warning(png_ptr, p, "keyword \"@1\": bad character '0x@2'");
-   }
-#endif 
-
-   return key_len;
-}
-#endif 
-
 
 
 
@@ -2660,7 +2576,7 @@ png_write_find_filter(png_structrp png_ptr, png_row_infop row_info)
    if (filter_to_do == PNG_FILTER_SUB)
    
    {
-      (void) png_setup_sub_row(png_ptr, bpp, row_bytes, mins); 
+      (void) png_setup_sub_row(png_ptr, bpp, row_bytes, mins);
       best_row = png_ptr->try_row;
    }
 
@@ -2669,7 +2585,7 @@ png_write_find_filter(png_structrp png_ptr, png_row_infop row_info)
       png_size_t sum;
       png_size_t lmins = mins;
 
-      sum = png_setup_sub_row(png_ptr, bpp, row_bytes, lmins); 
+      sum = png_setup_sub_row(png_ptr, bpp, row_bytes, lmins);
 
       if (sum < mins)
       {
@@ -2695,7 +2611,7 @@ png_write_find_filter(png_structrp png_ptr, png_row_infop row_info)
       png_size_t sum;
       png_size_t lmins = mins;
 
-      sum = png_setup_up_row(png_ptr, row_bytes, lmins); 
+      sum = png_setup_up_row(png_ptr, row_bytes, lmins);
 
       if (sum < mins)
       {

@@ -263,6 +263,9 @@ struct png_struct_def
                               
    png_byte transformed_pixel_depth;
                               
+#if PNG_ZLIB_VERNUM >= 0x1240
+   png_byte zstream_start;    
+#endif 
 #if defined(PNG_READ_FILLER_SUPPORTED) || defined(PNG_WRITE_FILLER_SUPPORTED)
    png_uint_16 filler;           
 #endif

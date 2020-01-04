@@ -1229,6 +1229,14 @@ PNG_INTERNAL_FUNCTION(void,png_read_finish_row,(png_structrp png_ptr),
 
 PNG_INTERNAL_FUNCTION(void,png_read_start_row,(png_structrp png_ptr),PNG_EMPTY);
 
+#if PNG_ZLIB_VERNUM >= 0x1240
+PNG_INTERNAL_FUNCTION(int,png_zlib_inflate,(png_structrp png_ptr, int flush),
+      PNG_EMPTY);
+#  define PNG_INFLATE(pp, flush) png_zlib_inflate(pp, flush)
+#else 
+#  define PNG_INFLATE(pp, flush) inflate(&(pp)->zstream, flush)
+#endif 
+
 #ifdef PNG_READ_TRANSFORMS_SUPPORTED
 
 PNG_INTERNAL_FUNCTION(void,png_read_transform_info,(png_structrp png_ptr,
@@ -1965,6 +1973,9 @@ PNG_INTERNAL_FUNCTION(void, PNG_FILTER_OPTIMIZATIONS, (png_structp png_ptr,
 PNG_INTERNAL_FUNCTION(void, png_init_filter_functions_neon,
    (png_structp png_ptr, unsigned int bpp), PNG_EMPTY);
 #endif
+
+PNG_INTERNAL_FUNCTION(png_uint_32, png_check_keyword, (png_structrp png_ptr,
+   png_const_charp key, png_bytep new_key), PNG_EMPTY);
 
 
 

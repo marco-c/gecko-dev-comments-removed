@@ -133,7 +133,7 @@ png_process_some_data(png_structrp png_ptr, png_inforp info_ptr)
 void 
 png_push_read_sig(png_structrp png_ptr, png_inforp info_ptr)
 {
-   png_size_t num_checked = png_ptr->sig_bytes,  
+   png_size_t num_checked = png_ptr->sig_bytes, 
        num_to_check = 8 - num_checked;
 
    if (png_ptr->buffer_size < num_to_check)
@@ -819,7 +819,7 @@ png_process_IDAT_data(png_structrp png_ptr, png_bytep buffer,
 
 
 
-      ret = inflate(&png_ptr->zstream, Z_SYNC_FLUSH);
+      ret = PNG_INFLATE(png_ptr, Z_SYNC_FLUSH);
 
       
       if (ret != Z_OK && ret != Z_STREAM_END)

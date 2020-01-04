@@ -273,9 +273,6 @@
 
 
 
-
-
-
 #ifndef PNG_H
 #define PNG_H
 
@@ -291,9 +288,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.19+apng"
+#define PNG_LIBPNG_VER_STRING "1.6.21+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.19+apng - November 12, 2015\n"
+     " libpng version 1.6.21+apng - January 15, 2016\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -301,7 +298,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 19
+#define PNG_LIBPNG_VER_RELEASE 21
 
 
 
@@ -332,7 +329,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10619 /* 1.6.19 */
+#define PNG_LIBPNG_VER 10621 /* 1.6.21 */
 
 
 
@@ -457,7 +454,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_19;
+typedef char* png_libpng_version_1_6_21;
 
 
 
