@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_ADDDEFAULTRETURNSTATEMENTS_H_
+#define COMPILER_TRANSLATOR_ADDDEFAULTRETURNSTATEMENTS_H_
+
+class TIntermNode;
+
+namespace sh
+{
+
+void AddDefaultReturnStatements(TIntermNode *node);
+
+}  
+
+#endif  

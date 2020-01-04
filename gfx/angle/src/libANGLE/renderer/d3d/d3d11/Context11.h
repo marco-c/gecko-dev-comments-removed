@@ -50,7 +50,8 @@ class Context11 : public ContextImpl
     FenceSyncImpl *createFenceSync() override;
 
     
-    TransformFeedbackImpl *createTransformFeedback() override;
+    TransformFeedbackImpl *createTransformFeedback(
+        const gl::TransformFeedbackState &state) override;
 
     
     SamplerImpl *createSampler() override;
@@ -89,10 +90,7 @@ class Context11 : public ContextImpl
                                 const gl::IndexRange &indexRange) override;
 
     
-    void notifyDeviceLost() override;
-    bool isDeviceLost() const override;
-    bool testDeviceLost() override;
-    bool testDeviceResettable() override;
+    GLenum getResetStatus() override;
 
     
     std::string getVendorString() const override;

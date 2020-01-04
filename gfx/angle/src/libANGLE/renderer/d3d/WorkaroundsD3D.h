@@ -17,35 +17,22 @@ namespace rx
 {
 struct D3DCompilerWorkarounds
 {
-    D3DCompilerWorkarounds()
-        : skipOptimization(false), useMaxOptimization(false), enableIEEEStrictness(false)
-    {
-    }
-
-    bool skipOptimization;
-    bool useMaxOptimization;
+    bool skipOptimization   = false;
+    bool useMaxOptimization = false;
 
     
-    bool enableIEEEStrictness;
+    bool enableIEEEStrictness = false;
 };
 
 struct WorkaroundsD3D
 {
-    WorkaroundsD3D()
-        : mrtPerfWorkaround(false),
-          setDataFasterThanImageUpload(false),
-          zeroMaxLodWorkaround(false),
-          useInstancedPointSpriteEmulation(false)
-    {
-    }
+    
+    
+    
+    
+    bool mrtPerfWorkaround = false;
 
-    
-    
-    
-    
-    bool mrtPerfWorkaround;
-
-    bool setDataFasterThanImageUpload;
+    bool setDataFasterThanImageUpload = false;
 
     
     
@@ -54,13 +41,42 @@ struct WorkaroundsD3D
     
     
     
-    bool zeroMaxLodWorkaround;
+    bool zeroMaxLodWorkaround = false;
 
     
     
     
-    bool useInstancedPointSpriteEmulation;
+    bool useInstancedPointSpriteEmulation = false;
+
+    
+    
+    
+    
+    
+    bool depthStencilBlitExtraCopy = false;
+
+    
+    
+    
+    bool expandIntegerPowExpressions = false;
+
+    
+    
+    bool flushAfterEndingTransformFeedback = false;
+
+    
+    
+    bool getDimensionsIgnoresBaseLevel = false;
+
+    
+    
+    
+    
+    
+    
+    bool preAddTexelFetchOffsets = false;
 };
-}
+
+}  
 
 #endif  

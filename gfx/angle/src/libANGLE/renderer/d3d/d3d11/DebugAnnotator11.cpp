@@ -68,7 +68,7 @@ void DebugAnnotator11::setMarker(const wchar_t *markerName)
 bool DebugAnnotator11::getStatus()
 {
 #if defined(ANGLE_ENABLE_WINDOWS_STORE)
-#if (NTDDI_VERSION == NTDDI_WIN10)
+    static_assert(NTDDI_VERSION >= NTDDI_WIN10, "GetStatus only works on Win10 and above");
     initializeDevice();
 
     if (mUserDefinedAnnotation != nullptr)
@@ -77,38 +77,6 @@ bool DebugAnnotator11::getStatus()
     }
 
     return true;  
-#elif defined(_DEBUG)
-    static bool underCapture = true;
-
-    
-    
-    
-    
-    
-    
-
-    
-    static bool triedIDXGraphicsAnalysis = false;
-
-    if (!triedIDXGraphicsAnalysis)
-    {
-        IDXGraphicsAnalysis *graphicsAnalysis = nullptr;
-
-        HRESULT result = DXGIGetDebugInterface1(0, IID_PPV_ARGS(&graphicsAnalysis));
-        if (SUCCEEDED(result))
-        {
-            underCapture = (graphicsAnalysis != nullptr);
-        }
-
-        SafeRelease(graphicsAnalysis);
-        triedIDXGraphicsAnalysis = true;
-    }
-
-    return underCapture;
-#else
-    
-    return true;
-#endif  
 #else
     
     return true;

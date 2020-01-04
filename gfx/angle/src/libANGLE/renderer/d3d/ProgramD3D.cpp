@@ -377,16 +377,14 @@ D3DVarying::D3DVarying(const std::string &semanticNameIn,
 
 
 
-ProgramD3DMetadata::ProgramD3DMetadata(int rendererMajorShaderModel,
-                                       const std::string &shaderModelSuffix,
-                                       bool usesInstancedPointSpriteEmulation,
-                                       bool usesViewScale,
+ProgramD3DMetadata::ProgramD3DMetadata(RendererD3D *renderer,
                                        const ShaderD3D *vertexShader,
                                        const ShaderD3D *fragmentShader)
-    : mRendererMajorShaderModel(rendererMajorShaderModel),
-      mShaderModelSuffix(shaderModelSuffix),
-      mUsesInstancedPointSpriteEmulation(usesInstancedPointSpriteEmulation),
-      mUsesViewScale(usesViewScale),
+    : mRendererMajorShaderModel(renderer->getMajorShaderModel()),
+      mShaderModelSuffix(renderer->getShaderModelSuffix()),
+      mUsesInstancedPointSpriteEmulation(
+          renderer->getWorkarounds().useInstancedPointSpriteEmulation),
+      mUsesViewScale(renderer->presentPathFastEnabled()),
       mVertexShader(vertexShader),
       mFragmentShader(fragmentShader)
 {
@@ -399,7 +397,7 @@ int ProgramD3DMetadata::getRendererMajorShaderModel() const
 
 bool ProgramD3DMetadata::usesBroadcast(const gl::ContextState &data) const
 {
-    return (mFragmentShader->usesFragColor() && data.getClientVersion() < 3);
+    return (mFragmentShader->usesFragColor() && data.getClientMajorVersion() < 3);
 }
 
 bool ProgramD3DMetadata::usesFragDepth() const
@@ -424,7 +422,8 @@ bool ProgramD3DMetadata::usesPointSize() const
 
 bool ProgramD3DMetadata::usesInsertedPointCoordValue() const
 {
-    return !usesPointSize() && usesPointCoord() && mRendererMajorShaderModel >= 4;
+    return (!usesPointSize() || !mUsesInstancedPointSpriteEmulation) && usesPointCoord() &&
+           mRendererMajorShaderModel >= 4;
 }
 
 bool ProgramD3DMetadata::usesViewScale() const
@@ -434,7 +433,6 @@ bool ProgramD3DMetadata::usesViewScale() const
 
 bool ProgramD3DMetadata::addsPointCoordToVertexShader() const
 {
-    
     
     
     
@@ -1380,10 +1378,7 @@ LinkResult ProgramD3D::link(const gl::ContextState &data, gl::InfoLog &infoLog)
         return LinkResult(false, gl::Error(GL_NO_ERROR));
     }
 
-    ProgramD3DMetadata metadata(mRenderer->getMajorShaderModel(), mRenderer->getShaderModelSuffix(),
-                                usesInstancedPointSpriteEmulation(),
-                                mRenderer->presentPathFastEnabled(), vertexShaderD3D,
-                                fragmentShaderD3D);
+    ProgramD3DMetadata metadata(mRenderer, vertexShaderD3D, fragmentShaderD3D);
 
     varyingPacking.enableBuiltins(SHADER_VERTEX, metadata);
     varyingPacking.enableBuiltins(SHADER_PIXEL, metadata);
@@ -2309,4 +2304,13 @@ bool ProgramD3D::getUniformBlockMemberInfo(const std::string &memberUniformName,
     *memberInfoOut = infoIter->second;
     return true;
 }
+
+void ProgramD3D::setPathFragmentInputGen(const std::string &inputName,
+                                         GLenum genMode,
+                                         GLint components,
+                                         const GLfloat *coeffs)
+{
+    UNREACHABLE();
+}
+
 }  

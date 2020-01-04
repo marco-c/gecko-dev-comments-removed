@@ -22,6 +22,7 @@ class TranslatorHLSL : public TCompiler
 
   protected:
     void translate(TIntermNode *root, int compileOptions) override;
+    bool shouldFlattenPragmaStdglInvariantAll() override;
 
     
     bool shouldCollectVariables(int compileOptions) override { return true; }

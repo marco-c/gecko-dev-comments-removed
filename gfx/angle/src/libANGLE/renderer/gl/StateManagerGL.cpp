@@ -93,12 +93,14 @@ StateManagerGL::StateManagerGL(const FunctionsGL *functions, const gl::Caps &ren
       mDepthMask(true),
       mStencilTestEnabled(false),
       mStencilFrontFunc(GL_ALWAYS),
+      mStencilFrontRef(0),
       mStencilFrontValueMask(static_cast<GLuint>(-1)),
       mStencilFrontStencilFailOp(GL_KEEP),
       mStencilFrontStencilPassDepthFailOp(GL_KEEP),
       mStencilFrontStencilPassDepthPassOp(GL_KEEP),
       mStencilFrontWritemask(static_cast<GLuint>(-1)),
       mStencilBackFunc(GL_ALWAYS),
+      mStencilBackRef(0),
       mStencilBackValueMask(static_cast<GLuint>(-1)),
       mStencilBackStencilFailOp(GL_KEEP),
       mStencilBackStencilPassDepthFailOp(GL_KEEP),
@@ -658,10 +660,8 @@ gl::Error StateManagerGL::setDrawElementsState(const gl::ContextState &data,
     return setGenericDrawState(data);
 }
 
-gl::Error StateManagerGL::onMakeCurrent(const gl::ContextState &data)
+gl::Error StateManagerGL::pauseTransformFeedback(const gl::ContextState &data)
 {
-    const gl::State &state = data.getState();
-
     
     if (data.getContext() != mPrevDrawContext)
     {
@@ -669,7 +669,17 @@ gl::Error StateManagerGL::onMakeCurrent(const gl::ContextState &data)
         {
             mPrevDrawTransformFeedback->syncPausedState(true);
         }
+    }
+    return gl::Error(GL_NO_ERROR);
+}
 
+gl::Error StateManagerGL::onMakeCurrent(const gl::ContextState &data)
+{
+    const gl::State &state = data.getState();
+
+    
+    if (data.getContext() != mPrevDrawContext)
+    {
         for (QueryGL *prevQuery : mCurrentQueries)
         {
             prevQuery->pause();
@@ -774,7 +784,7 @@ gl::Error StateManagerGL::setGenericDrawState(const gl::ContextState &data)
     framebufferGL->syncDrawState();
 
     
-    setTextureCubemapSeamlessEnabled(data.getClientVersion() >= 3);
+    setTextureCubemapSeamlessEnabled(data.getClientMajorVersion() >= 3);
 
     
     gl::TransformFeedback *transformFeedback = state.getCurrentTransformFeedback();

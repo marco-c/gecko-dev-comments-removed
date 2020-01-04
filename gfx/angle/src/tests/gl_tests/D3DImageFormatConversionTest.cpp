@@ -8,7 +8,7 @@
 
 #include "test_utils/ANGLETest.h"
 
-#include "libANGLE/renderer/imageformats.h"
+#include "image_util/imageformats.h"
 
 using namespace angle;
 
@@ -135,7 +135,7 @@ TEST_P(D3DImageFormatConversionTest, WriteColorFunctionR4G4B4A4)
         return;
     }
 
-    runTest<rx::R4G4B4A4>(GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4);
+    runTest<R4G4B4A4>(GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4);
 }
 
 
@@ -150,7 +150,7 @@ TEST_P(D3DImageFormatConversionTest, WriteColorFunctionR5G5B5A1)
         return;
     }
 
-    runTest<rx::R5G5B5A1>(GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1);
+    runTest<R5G5B5A1>(GL_RGBA, GL_UNSIGNED_SHORT_5_5_5_1);
 }
 
 
@@ -165,7 +165,7 @@ TEST_P(D3DImageFormatConversionTest, WriteColorFunctionR5G6B5)
         return;
     }
 
-    runTest<rx::R5G6B5>(GL_RGB, GL_UNSIGNED_SHORT_5_6_5);
+    runTest<R5G6B5>(GL_RGB, GL_UNSIGNED_SHORT_5_6_5);
 }
 
 
@@ -180,7 +180,7 @@ TEST_P(D3DImageFormatConversionTest, WriteColorFunctionR8G8B8A8)
         return;
     }
 
-    runTest<rx::R8G8B8A8>(GL_RGBA, GL_UNSIGNED_BYTE);
+    runTest<R8G8B8A8>(GL_RGBA, GL_UNSIGNED_BYTE);
 }
 
 
@@ -196,7 +196,7 @@ TEST_P(D3DImageFormatConversionTest, WriteColorFunctionR8G8B8)
     }
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    runTest<rx::R8G8B8>(GL_RGB, GL_UNSIGNED_BYTE);
+    runTest<R8G8B8>(GL_RGB, GL_UNSIGNED_BYTE);
 }
 
 
