@@ -390,21 +390,21 @@ public class ShareDialog extends Locales.LocaleAwareActivity implements SendTabT
         serviceIntent.putExtra(OverlayConstants.EXTRA_PARAMETERS, extraParameters);
 
         startService(serviceIntent);
-        slideOut();
+        animateOut(true);
 
         Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.SHARE_OVERLAY, "sendtab");
     }
 
     public void addToReadingList() {
         startService(getServiceIntent(ShareMethod.Type.ADD_TO_READING_LIST));
-        slideOut();
+        animateOut(true);
 
         Telemetry.sendUIEvent(TelemetryContract.Event.SAVE, TelemetryContract.Method.SHARE_OVERLAY, "reading_list");
     }
 
     public void addBookmark() {
         startService(getServiceIntent(ShareMethod.Type.ADD_BOOKMARK));
-        slideOut();
+        animateOut(true);
 
         Telemetry.sendUIEvent(TelemetryContract.Event.SAVE, TelemetryContract.Method.SHARE_OVERLAY, "bookmark");
     }
@@ -430,33 +430,48 @@ public class ShareDialog extends Locales.LocaleAwareActivity implements SendTabT
     
 
 
-    private void slideOut() {
+
+    private void animateOut(final boolean shouldDisplayConfirmation) {
         if (isAnimating) {
             return;
         }
 
         isAnimating = true;
-        Animation anim = AnimationUtils.loadAnimation(this, R.anim.overlay_slide_down);
-        findViewById(R.id.sharedialog).startAnimation(anim);
+        final Animation slideOutAnim = AnimationUtils.loadAnimation(this, R.anim.overlay_slide_down);
 
-        anim.setAnimationListener(new Animation.AnimationListener() {
+        final Animation animationToFinishActivity;
+        if (!shouldDisplayConfirmation) {
+            animationToFinishActivity = slideOutAnim;
+        } else {
+            final View check = findViewById(R.id.check);
+            check.setVisibility(View.VISIBLE);
+            final Animation checkEntryAnim = AnimationUtils.loadAnimation(this, R.anim.overlay_check_entry);
+            final Animation checkExitAnim = AnimationUtils.loadAnimation(this, R.anim.overlay_check_exit);
+
+            check.startAnimation(checkEntryAnim);
+            final long exitWaitMillis = checkEntryAnim.getDuration() + 750;
+            ThreadUtils.postDelayedToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    check.startAnimation(checkExitAnim);
+                }
+            }, exitWaitMillis);
+
+            animationToFinishActivity = checkExitAnim;
+        }
+
+        findViewById(R.id.sharedialog).startAnimation(slideOutAnim);
+        animationToFinishActivity.setAnimationListener(new Animation.AnimationListener() {
             @Override
-            public void onAnimationStart(Animation animation) {
-                
-            }
+            public void onAnimationStart(Animation animation) {  }
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                
-                ShareDialog.this.setVisible(false);
-
                 finish();
             }
 
             @Override
-            public void onAnimationRepeat(Animation animation) {
-                
-            }
+            public void onAnimationRepeat(Animation animation) {  }
         });
     }
 
@@ -465,7 +480,7 @@ public class ShareDialog extends Locales.LocaleAwareActivity implements SendTabT
 
     @Override
     public void onBackPressed() {
-        slideOut();
+        animateOut(false);
         Telemetry.sendUIEvent(TelemetryContract.Event.CANCEL, TelemetryContract.Method.SHARE_OVERLAY);
     }
 
@@ -474,7 +489,7 @@ public class ShareDialog extends Locales.LocaleAwareActivity implements SendTabT
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        slideOut();
+        animateOut(false);
         Telemetry.sendUIEvent(TelemetryContract.Event.CANCEL, TelemetryContract.Method.SHARE_OVERLAY);
         return true;
     }
