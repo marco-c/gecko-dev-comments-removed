@@ -1923,12 +1923,6 @@ var BrowserApp = {
           }
 
           
-          case SearchEngines.PREF_SUGGEST_ENABLED:
-            Services.prefs.setBoolPref(SearchEngines.PREF_SUGGEST_PROMPTED, true);
-            aSubject.setAsEmpty();
-            break;
-
-          
           case "datareporting.crashreporter.submitEnabled":
             let crashReporterBuilt = "nsICrashReporter" in Ci &&
                 Services.appinfo instanceof Ci.nsICrashReporter;
