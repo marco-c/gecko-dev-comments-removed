@@ -292,14 +292,14 @@ static bool
 WantsSmallTiles(GLContext* gl)
 {
     
-    
-    if (!CanUploadSubTextures(gl))
-        return true;
-
-    
     if (gl->WorkAroundDriverBugs() &&
         gl->Renderer() == GLRenderer::SGX540)
         return false;
+
+    
+    
+    if (!CanUploadSubTextures(gl))
+        return true;
 
     
     
