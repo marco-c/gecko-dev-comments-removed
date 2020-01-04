@@ -1071,7 +1071,19 @@ ContentEventHandler::SetRangeFromFlatTextOffset(nsRange* aRange,
         
         uint32_t xpOffset = endOffset - offset;
         if (aLineBreakType == LINE_BREAK_TYPE_NATIVE) {
-          xpOffset = ConvertToXPOffset(content, xpOffset);
+          uint32_t xpOffsetCurrent = ConvertToXPOffset(content, xpOffset);
+          if (xpOffset && GetBRLength(aLineBreakType) > 1) {
+            MOZ_ASSERT(GetBRLength(aLineBreakType) == 2);
+            uint32_t xpOffsetPre = ConvertToXPOffset(content, xpOffset - 1);
+            
+            
+            
+            if (xpOffsetPre == xpOffsetCurrent) {
+              xpOffset = xpOffsetCurrent + 1;
+            } else {
+              xpOffset = xpOffsetCurrent;
+            }
+          }
         }
         if (aExpandToClusterBoundaries) {
           rv = ExpandToClusterBoundary(content, true, &xpOffset);
