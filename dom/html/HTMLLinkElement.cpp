@@ -451,7 +451,7 @@ HTMLLinkElement::GetLinkTarget(nsAString& aTarget)
 static const DOMTokenListSupportedToken sSupportedRelValues[] = {
   
   
-  "import"
+  "import",
   "prefetch",
   "dns-prefetch",
   "stylesheet",
