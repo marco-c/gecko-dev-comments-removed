@@ -102,7 +102,7 @@ CssColor.prototype = {
 
 
 
-  setAuthoredUnitFromColor: function(color) {
+  setAuthoredUnitFromColor: function (color) {
     if (Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
         CssColor.COLORUNIT.authored) {
       this._colorUnit = classifyColor(color);
@@ -262,7 +262,7 @@ CssColor.prototype = {
 
 
 
-  _getInvalidOrSpecialValue: function() {
+  _getInvalidOrSpecialValue: function () {
     if (this.specialValue) {
       return this.specialValue;
     }
@@ -278,7 +278,7 @@ CssColor.prototype = {
 
 
 
-  newColor: function(color) {
+  newColor: function (color) {
     
     
     
@@ -287,7 +287,7 @@ CssColor.prototype = {
     return this;
   },
 
-  nextColorUnit: function() {
+  nextColorUnit: function () {
     
     
     let formats = ["hex", "hsl", "rgb", "name"];
@@ -309,7 +309,7 @@ CssColor.prototype = {
   
 
 
-  toString: function() {
+  toString: function () {
     let color;
 
     switch (this.colorUnit) {
@@ -344,7 +344,7 @@ CssColor.prototype = {
 
 
 
-  _getRGBATuple: function() {
+  _getRGBATuple: function () {
     let tuple = DOMUtils.colorToRGBA(this.authored);
 
     tuple.a = parseFloat(tuple.a.toFixed(1));
@@ -352,7 +352,7 @@ CssColor.prototype = {
     return tuple;
   },
 
-  _hsl: function(maybeAlpha) {
+  _hsl: function (maybeAlpha) {
     if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
       return this.authored;
@@ -369,7 +369,7 @@ CssColor.prototype = {
   
 
 
-  valueOf: function() {
+  valueOf: function () {
     return this.rgba;
   },
 };
@@ -469,6 +469,6 @@ function classifyColor(value) {
   return CssColor.COLORUNIT.name;
 }
 
-loader.lazyGetter(this, "DOMUtils", function() {
+loader.lazyGetter(this, "DOMUtils", function () {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
 });
