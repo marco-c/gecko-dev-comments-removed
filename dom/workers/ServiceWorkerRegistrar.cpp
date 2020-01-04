@@ -141,6 +141,29 @@ ServiceWorkerRegistrar::GetRegistrations(
   }
 }
 
+namespace {
+
+bool Equivalent(const ServiceWorkerRegistrationData& aLeft,
+                const ServiceWorkerRegistrationData& aRight)
+{
+  MOZ_ASSERT(aLeft.principal().type() ==
+             mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);
+  MOZ_ASSERT(aRight.principal().type() ==
+             mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);
+
+  const auto& leftPrincipal = aLeft.principal().get_ContentPrincipalInfo();
+  const auto& rightPrincipal = aRight.principal().get_ContentPrincipalInfo();
+
+  
+  
+  
+  
+  return aLeft.scope() == aRight.scope() &&
+         leftPrincipal.attrs() == rightPrincipal.attrs();
+}
+
+} 
+
 void
 ServiceWorkerRegistrar::RegisterServiceWorker(
                                      const ServiceWorkerRegistrationData& aData)
@@ -156,26 +179,11 @@ ServiceWorkerRegistrar::RegisterServiceWorker(
     MonitorAutoLock lock(mMonitor);
     MOZ_ASSERT(mDataLoaded);
 
-    const mozilla::ipc::PrincipalInfo& newPrincipalInfo = aData.principal();
-    MOZ_ASSERT(newPrincipalInfo.type() ==
-               mozilla::ipc::PrincipalInfo::TContentPrincipalInfo);
-
-    const mozilla::ipc::ContentPrincipalInfo& newContentPrincipalInfo =
-      newPrincipalInfo.get_ContentPrincipalInfo();
-
     bool found = false;
     for (uint32_t i = 0, len = mData.Length(); i < len; ++i) {
-      if (mData[i].scope() == aData.scope()) {
-        const mozilla::ipc::PrincipalInfo& existingPrincipalInfo =
-          mData[i].principal();
-        const mozilla::ipc::ContentPrincipalInfo& existingContentPrincipalInfo =
-          existingPrincipalInfo.get_ContentPrincipalInfo();
-
-        if (newContentPrincipalInfo == existingContentPrincipalInfo) {
-          mData[i] = aData;
-          found = true;
-          break;
-        }
+      if (Equivalent(aData, mData[i])) {
+        found = true;
+        break;
       }
     }
 
@@ -205,9 +213,12 @@ ServiceWorkerRegistrar::UnregisterServiceWorker(
     MonitorAutoLock lock(mMonitor);
     MOZ_ASSERT(mDataLoaded);
 
+    ServiceWorkerRegistrationData tmp;
+    tmp.principal() = aPrincipalInfo;
+    tmp.scope() = aScope;
+
     for (uint32_t i = 0; i < mData.Length(); ++i) {
-      if (mData[i].principal() == aPrincipalInfo &&
-          mData[i].scope() == aScope) {
+      if (Equivalent(tmp, mData[i])) {
         mData.RemoveElementAt(i);
         deleted = true;
         break;
@@ -315,9 +326,11 @@ ServiceWorkerRegistrar::ReadData()
     return NS_ERROR_FAILURE;
   }
 
+  nsTArray<ServiceWorkerRegistrationData> tmpData;
+
   bool overwrite = false;
   while (hasMoreLines) {
-    ServiceWorkerRegistrationData* entry = mData.AppendElement();
+    ServiceWorkerRegistrationData* entry = tmpData.AppendElement();
 
 #define GET_LINE(x)                                   \
     rv = lineInputStream->ReadLine(x, &hasMoreLines); \
@@ -394,6 +407,28 @@ ServiceWorkerRegistrar::ReadData()
   }
 
   stream->Close();
+
+  
+  
+  for (uint32_t i = 0; i < tmpData.Length(); ++i) {
+    bool match = false;
+    for (uint32_t j = 0; j < mData.Length(); ++j) {
+      
+      
+      if (Equivalent(tmpData[i], mData[j])) {
+        
+        
+        mData[j] = tmpData[i];
+        
+        overwrite = true;
+        match = true;
+        break;
+      }
+    }
+    if (!match) {
+      mData.AppendElement(tmpData[i]);
+    }
+  }
 
   
   
