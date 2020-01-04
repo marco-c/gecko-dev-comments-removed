@@ -277,9 +277,6 @@ pref("browser.triple_click_selects_paragraph", true);
 pref("print.shrink-to-fit.scale-limit-percent", 20);
 
 
-pref("print.use_simplify_page", false);
-
-
 pref("mathml.scale_stretchy_operators.enabled", true);
 
 
@@ -793,7 +790,7 @@ pref("ui.scrollToClick", 0);
 pref("canvas.focusring.enabled", true);
 pref("canvas.customfocusring.enabled", false);
 pref("canvas.hitregions.enabled", false);
-pref("canvas.filters.enabled", false);
+pref("canvas.filters.enabled", true);
 
 pref("canvas.path.enabled", true);
 pref("canvas.capturestream.enabled", true);
