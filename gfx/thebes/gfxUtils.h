@@ -295,16 +295,6 @@ Color ToDeviceColor(nscolor aColor);
 
 
 
-static int
-NextPowerOfTwo(int aNumber)
-{
-    MOZ_ASSERT(aNumber >= 0);
-    return RoundUpPow2((size_t)aNumber + 1);
-}
-
-
-
-
 
 static inline CheckedInt<uint32_t>
 SafeBytesForBitmap(uint32_t aWidth, uint32_t aHeight, unsigned aBytesPerPixel)

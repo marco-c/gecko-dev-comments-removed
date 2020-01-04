@@ -1202,7 +1202,7 @@ gfxPlatform::ComputeTileSize()
       
       
       
-      w = h = clamped(NextPowerOfTwo(screenSize.width) / 4, 256, 1024);
+      w = h = clamped(int32_t(RoundUpPow2(screenSize.width)) / 4, 256, 1024);
     }
 
 #ifdef MOZ_WIDGET_GONK
@@ -2500,7 +2500,7 @@ gfxPlatform::IsGfxInfoStatusOkay(int32_t aFeature, nsCString* aOutMessage, nsCSt
     return true;
   }
 
-  int32_t status;    
+  int32_t status;
   if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(aFeature, aFailureId, &status)) &&
       status != nsIGfxInfo::FEATURE_STATUS_OK)
   {

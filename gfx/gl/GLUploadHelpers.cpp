@@ -261,8 +261,8 @@ TexImage2DHelper(GLContext* gl,
 
             
             
-            GLsizei paddedWidth = NextPowerOfTwo(width);
-            GLsizei paddedHeight = NextPowerOfTwo(height);
+            GLsizei paddedWidth = RoundUpPow2((uint32_t)width);
+            GLsizei paddedHeight = RoundUpPow2((uint32_t)height);
 
             GLvoid* paddedPixels = new unsigned char[paddedWidth * paddedHeight * pixelsize];
 
