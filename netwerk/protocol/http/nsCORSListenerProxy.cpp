@@ -882,6 +882,11 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
   }
 
   
+  
+  rv = CheckPreflightNeeded(aChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
   mHasBeenCrossSite = true;
 
   nsCString userpass;
@@ -909,6 +914,71 @@ nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
     rv = http->SetLoadFlags(flags);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  return NS_OK;
+}
+
+nsresult
+nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel)
+{
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
+  if (!loadInfo ||
+      loadInfo->GetSecurityMode() !=
+        nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS ||
+      loadInfo->GetIsPreflight()) {
+    return NS_OK;
+  }
+
+  bool doPreflight = loadInfo->GetForcePreflight();
+
+  nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aChannel);
+  NS_ENSURE_TRUE(http, NS_ERROR_DOM_BAD_URI);
+  nsAutoCString method;
+  http->GetRequestMethod(method);
+  if (!method.LowerCaseEqualsLiteral("get") &&
+      !method.LowerCaseEqualsLiteral("post") &&
+      !method.LowerCaseEqualsLiteral("head")) {
+    doPreflight = true;
+  }
+
+  
+  const nsTArray<nsCString>& loadInfoHeaders = loadInfo->CorsUnsafeHeaders();
+  if (!loadInfoHeaders.IsEmpty()) {
+    doPreflight = true;
+  }
+
+  
+  nsTArray<nsCString> headers;
+  nsAutoCString contentTypeHeader;
+  nsresult rv = http->GetRequestHeader(NS_LITERAL_CSTRING("Content-Type"),
+                                       contentTypeHeader);
+  
+  
+  if (NS_SUCCEEDED(rv) &&
+      !nsContentUtils::IsAllowedNonCorsContentType(contentTypeHeader) &&
+      !loadInfoHeaders.Contains(NS_LITERAL_CSTRING("content-type"),
+                                nsCaseInsensitiveCStringArrayComparator())) {
+    headers.AppendElements(loadInfoHeaders);
+    headers.AppendElement(NS_LITERAL_CSTRING("content-type"));
+    doPreflight = true;
+  }
+
+  if (!doPreflight) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  NS_ENSURE_FALSE(mHasBeenCrossSite, NS_ERROR_DOM_BAD_URI);
+
+  nsCOMPtr<nsIHttpChannelInternal> internal = do_QueryInterface(http);
+  NS_ENSURE_TRUE(internal, NS_ERROR_DOM_BAD_URI);
+
+  internal->SetCorsPreflightParameters(
+    headers.IsEmpty() ? loadInfoHeaders : headers);
 
   return NS_OK;
 }
@@ -1284,6 +1354,7 @@ nsCORSListenerProxy::StartCORSPreflight(nsIChannel* aRequestChannel,
 
   nsCOMPtr<nsILoadInfo> loadInfo = static_cast<mozilla::LoadInfo*>
     (originalLoadInfo.get())->CloneForNewRequest();
+  static_cast<mozilla::LoadInfo*>(loadInfo.get())->SetIsPreflight();
 
   nsCOMPtr<nsILoadGroup> loadGroup;
   rv = aRequestChannel->GetLoadGroup(getter_AddRefs(loadGroup));

@@ -95,7 +95,6 @@ private:
   nsresult SetTainting();
   nsresult ContinueFetch();
   nsresult HttpFetch();
-  bool IsUnsafeRequest();
   
   
   already_AddRefed<InternalResponse>
