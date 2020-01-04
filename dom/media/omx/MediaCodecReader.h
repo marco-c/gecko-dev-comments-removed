@@ -86,9 +86,6 @@ public:
   
   virtual RefPtr<AudioDataPromise> RequestAudioData() override;
 
-  virtual bool HasAudio();
-  virtual bool HasVideo();
-
   virtual RefPtr<MediaDecoderReader::MetadataPromise> AsyncReadMetadata() override;
 
   
@@ -181,6 +178,8 @@ protected:
   MozPromiseHolder<MediaResourcePromise> mMediaResourcePromise;
 
 private:
+  virtual bool HasAudio() override;
+  virtual bool HasVideo() override;
 
   
   

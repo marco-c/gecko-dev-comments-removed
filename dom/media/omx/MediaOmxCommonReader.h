@@ -49,6 +49,10 @@ protected:
   android::MediaStreamSource* mStreamSource;
   
   bool IsMonoAudioEnabled();
+
+private:
+  virtual bool HasAudio() = 0;
+  virtual bool HasVideo() = 0;
 };
 
 } 

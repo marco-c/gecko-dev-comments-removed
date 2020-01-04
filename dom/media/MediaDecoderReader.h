@@ -165,9 +165,6 @@ public:
   
   virtual void SetDemuxOnly(bool ) {}
 
-  virtual bool HasAudio() = 0;
-  virtual bool HasVideo() = 0;
-
   
   
   
@@ -255,20 +252,8 @@ public:
     UpdateBuffered();
   }
 
-  
-  
-  virtual void NotifyDataRemoved() {}
-
   virtual MediaQueue<AudioData>& AudioQueue() { return mAudioQueue; }
   virtual MediaQueue<VideoData>& VideoQueue() { return mVideoQueue; }
-
-  
-  AbstractMediaDecoder* GetDecoder()
-  {
-    return mDecoder;
-  }
-
-  MediaInfo GetMediaInfo() { return mInfo; }
 
   AbstractCanonical<media::TimeIntervals>* CanonicalBuffered()
   {
