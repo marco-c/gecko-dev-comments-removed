@@ -207,6 +207,7 @@ let isElementEnabledFn = dispatch(isElementEnabled);
 let getCurrentUrlFn = dispatch(getCurrentUrl);
 let findElementContentFn = dispatch(findElementContent);
 let findElementsContentFn = dispatch(findElementsContent);
+let isElementSelectedFn = dispatch(isElementSelected);
 
 
 
@@ -241,7 +242,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getElementSize", getElementSizeFn);  
   addMessageListenerId("Marionette:getElementRect", getElementRectFn);
   addMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
-  addMessageListenerId("Marionette:isElementSelected", isElementSelected);
+  addMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
   addMessageListenerId("Marionette:sendKeysToElement", sendKeysToElement);
   addMessageListenerId("Marionette:getElementLocation", getElementLocation); 
   addMessageListenerId("Marionette:clearElement", clearElement);
@@ -346,7 +347,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getElementSize", getElementSizeFn); 
   removeMessageListenerId("Marionette:getElementRect", getElementRectFn);
   removeMessageListenerId("Marionette:isElementEnabled", isElementEnabledFn);
-  removeMessageListenerId("Marionette:isElementSelected", isElementSelected);
+  removeMessageListenerId("Marionette:isElementSelected", isElementSelectedFn);
   removeMessageListenerId("Marionette:sendKeysToElement", sendKeysToElement);
   removeMessageListenerId("Marionette:getElementLocation", getElementLocation);
   removeMessageListenerId("Marionette:clearElement", clearElement);
@@ -1591,16 +1592,14 @@ function isElementEnabled(id) {
 
 
 
-function isElementSelected(msg) {
-  let command_id = msg.json.command_id;
-  try {
-    let el = elementManager.getKnownElement(msg.json.id, curFrame);
+
+
+
+function isElementSelected(id) {
+  let el = elementManager.getKnownElement(id, curFrame);
     let selected = utils.isElementSelected(el);
     checkSelectedAccessibility(accessibility.getAccessibleObject(el), selected);
-    sendResponse({value: selected}, command_id);
-  } catch (e) {
-    sendError(e, command_id);
-  }
+  return selected;
 }
 
 
