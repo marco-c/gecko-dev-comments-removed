@@ -91,6 +91,9 @@ LIRGeneratorX86Shared::lowerForShiftInt64(LInstructionHelper<INT64_PIECES, INT64
         ins->setTemp(0, temp());
 #endif
 
+    static_assert(LShiftI64::Rhs == INT64_PIECES, "Assume Rhs is located at INT64_PIECES.");
+    static_assert(LRotateI64::Count == INT64_PIECES, "Assume Count is located at INT64_PIECES.");
+
     
     
     if (rhs->isConstant()) {
@@ -100,8 +103,7 @@ LIRGeneratorX86Shared::lowerForShiftInt64(LInstructionHelper<INT64_PIECES, INT64
         
         
         ensureDefined(rhs);
-        bool useAtStart = (lhs == rhs);
-        LUse use(ecx, useAtStart);
+        LUse use(ecx);
         use.setVirtualRegister(rhs->virtualRegister());
         ins->setOperand(INT64_PIECES, use);
     }
