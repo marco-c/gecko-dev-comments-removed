@@ -360,6 +360,7 @@ private:
     nsStyleGradient* mGradient;
     char16_t* mElementId;
   };
+
   
   nsAutoPtr<nsStyleSides> mCropRect;
 #ifdef DEBUG
@@ -702,9 +703,9 @@ struct nsStyleBackground {
   
   bool HasFixedBackground() const;
 
-  const nsStyleImageLayers::Layer& BottomLayer() const { return mLayers.BottomLayer(); }
+  const nsStyleImageLayers::Layer& BottomLayer() const { return mImage.BottomLayer(); }
 
-  nsStyleImageLayers mLayers;
+  nsStyleImageLayers mImage;
   nscolor mBackgroundColor;       
 };
 
@@ -3483,7 +3484,7 @@ struct nsStyleSVGReset
     return mVectorEffect == NS_STYLE_VECTOR_EFFECT_NON_SCALING_STROKE;
   }
 
-  nsStyleImageLayers    mLayers;
+  nsStyleImageLayers    mMask;
   nsStyleClipPath mClipPath;          
   nsTArray<nsStyleFilter> mFilters;   
   nscolor          mStopColor;        

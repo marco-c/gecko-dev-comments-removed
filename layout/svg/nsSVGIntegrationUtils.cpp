@@ -153,7 +153,7 @@ nsSVGIntegrationUtils::UsingEffectsForFrame(const nsIFrame* aFrame)
   
   
   const nsStyleSVGReset *style = aFrame->StyleSVGReset();
-  bool hasValidLayers = style->mLayers.HasLayerWithImage();
+  bool hasValidLayers = style->mMask.HasLayerWithImage();
 
   return (style->HasFilters() || hasValidLayers ||
           (style->mClipPath.GetType() != NS_STYLE_CLIP_PATH_NONE));
@@ -516,7 +516,7 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(gfxContext& aContext,
   nsSVGMaskFrame *svgMaskFrame = effectProperties.GetMaskFrame(&isOK);
 
   bool complexEffects = false;
-  bool hasValidLayers = svgReset->mLayers.HasLayerWithImage();
+  bool hasValidLayers = svgReset->mMask.HasLayerWithImage();
 
   
   RefPtr<gfxContext> target = &aContext;

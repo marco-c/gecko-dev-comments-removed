@@ -562,8 +562,8 @@ nsSVGEffects::GetEffectProperties(nsIFrame *aFrame)
 
   
   
-  MOZ_ASSERT(style->mLayers.mImageCount > 0);
-  nsCOMPtr<nsIURI> uri = style->mLayers.mLayers[0].mSourceURI;
+  MOZ_ASSERT(style->mMask.mImageCount > 0);
+  nsCOMPtr<nsIURI> uri = style->mMask.mLayers[0].mSourceURI;
   result.mMask = uri ? GetPaintingProperty(uri, aFrame, MaskProperty()) :
                          nullptr;
 
