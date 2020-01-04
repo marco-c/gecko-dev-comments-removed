@@ -215,6 +215,7 @@ let getElementValueOfCssPropertyFn = dispatch(getElementValueOfCssProperty);
 let switchToShadowRootFn = dispatch(switchToShadowRoot);
 let singleTapFn = dispatch(singleTap);
 let actionChainFn = dispatch(actionChain);
+let multiActionFn = dispatch(multiAction);
 
 
 
@@ -227,7 +228,7 @@ function startListeners() {
   addMessageListenerId("Marionette:executeJSScript", executeJSScript);
   addMessageListenerId("Marionette:singleTap", singleTapFn);
   addMessageListenerId("Marionette:actionChain", actionChainFn);
-  addMessageListenerId("Marionette:multiAction", multiAction);
+  addMessageListenerId("Marionette:multiAction", multiActionFn);
   addMessageListenerId("Marionette:get", get);
   addMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   addMessageListenerId("Marionette:cancelRequest", cancelRequest);
@@ -333,7 +334,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:executeJSScript", executeJSScript);
   removeMessageListenerId("Marionette:singleTap", singleTapFn);
   removeMessageListenerId("Marionette:actionChain", actionChainFn);
-  removeMessageListenerId("Marionette:multiAction", multiAction);
+  removeMessageListenerId("Marionette:multiAction", multiActionFn);
   removeMessageListenerId("Marionette:get", get);
   removeMessageListenerId("Marionette:pollForReadyState", pollForReadyState);
   removeMessageListenerId("Marionette:cancelRequest", cancelRequest);
@@ -1110,16 +1111,13 @@ function emitMultiEvents(type, touch, touches) {
 
 
 
-function setDispatch(batches, touches, command_id, batchIndex) {
-  if (typeof batchIndex === "undefined") {
-    batchIndex = 0;
-  }
+function setDispatch(batches, touches, batchIndex=0) {
   
   if (batchIndex >= batches.length) {
     multiLast = {};
-    sendOk(command_id);
     return;
   }
+
   
   let batch = batches[batchIndex];
   
@@ -1138,38 +1136,43 @@ function setDispatch(batches, touches, command_id, batchIndex) {
   let waitTime = 0;
   let maxTime = 0;
   let c;
-  batchIndex++;
+
   
+  batchIndex++;
   for (let i = 0; i < batch.length; i++) {
     pack = batch[i];
     touchId = pack[0];
     command = pack[1];
+
     switch (command) {
-      case 'press':
+      case "press":
         el = elementManager.getKnownElement(pack[2], curContainer);
         c = coordinates(el, pack[3], pack[4]);
         touch = createATouch(el, c.x, c.y, touchId);
         multiLast[touchId] = touch;
         touches.push(touch);
-        emitMultiEvents('touchstart', touch, touches);
+        emitMultiEvents("touchstart", touch, touches);
         break;
-      case 'release':
+
+      case "release":
         touch = multiLast[touchId];
         
         touchIndex = touches.indexOf(touch);
         touches.splice(touchIndex, 1);
-        emitMultiEvents('touchend', touch, touches);
+        emitMultiEvents("touchend", touch, touches);
         break;
-      case 'move':
+
+      case "move":
         el = elementManager.getKnownElement(pack[2], curContainer);
         c = coordinates(el);
         touch = createATouch(multiLast[touchId].target, c.x, c.y, touchId);
         touchIndex = touches.indexOf(lastTouch);
         touches[touchIndex] = touch;
         multiLast[touchId] = touch;
-        emitMultiEvents('touchmove', touch, touches);
+        emitMultiEvents("touchmove", touch, touches);
         break;
-      case 'moveByOffset':
+
+      case "moveByOffset":
         el = multiLast[touchId].target;
         lastTouch = multiLast[touchId];
         touchIndex = touches.indexOf(lastTouch);
@@ -1185,11 +1188,12 @@ function setDispatch(batches, touches, command_id, batchIndex) {
         touch = doc.createTouch(win, el, touchId, pageX, pageY, screenX, screenY, clientX, clientY);
         touches[touchIndex] = touch;
         multiLast[touchId] = touch;
-        emitMultiEvents('touchmove', touch, touches);
+        emitMultiEvents("touchmove", touch, touches);
         break;
-      case 'wait':
-        if (pack[2] != undefined ) {
-          waitTime = pack[2]*1000;
+
+      case "wait":
+        if (typeof pack[2] != "undefined") {
+          waitTime = pack[2] * 1000;
           if (waitTime > maxTime) {
             maxTime = waitTime;
           }
@@ -1197,47 +1201,45 @@ function setDispatch(batches, touches, command_id, batchIndex) {
         break;
     }
   }
+
   if (maxTime != 0) {
-    checkTimer.initWithCallback(function(){setDispatch(batches, touches, command_id, batchIndex);}, maxTime, Ci.nsITimer.TYPE_ONE_SHOT);
-  }
-  else {
-    setDispatch(batches, touches, command_id, batchIndex);
+    checkTimer.initWithCallback(function() {
+      setDispatch(batches, touches, batchIndex);
+    }, maxTime, Ci.nsITimer.TYPE_ONE_SHOT);
+  } else {
+    setDispatch(batches, touches, batchIndex);
   }
 }
 
 
 
 
-function multiAction(msg) {
-  let command_id = msg.json.command_id;
-  let args = msg.json.value;
+
+
+
+function multiAction(args, maxLen) {
   
-  let maxlen = msg.json.maxlen;
-  try {
-    
-    let commandArray = elementManager.convertWrappedArguments(args, curContainer);
-    let concurrentEvent = [];
-    let temp;
-    for (let i = 0; i < maxlen; i++) {
-      let row = [];
-      for (let j = 0; j < commandArray.length; j++) {
-        if (commandArray[j][i] != undefined) {
-          
-          temp = commandArray[j][i];
-          temp.unshift(j);
-          row.push(temp);
-        }
+  let commandArray = elementManager.convertWrappedArguments(args, curContainer);
+  let concurrentEvent = [];
+  let temp;
+  for (let i = 0; i < maxLen; i++) {
+    let row = [];
+    for (let j = 0; j < commandArray.length; j++) {
+      if (typeof commandArray[j][i] != "undefined") {
+        
+        temp = commandArray[j][i];
+        temp.unshift(j);
+        row.push(temp);
       }
-      concurrentEvent.push(row);
     }
-    
-    
-    
-    let pendingTouches = [];
-    setDispatch(concurrentEvent, pendingTouches, command_id);
-  } catch (e) {
-    sendError(e, command_id);
+    concurrentEvent.push(row);
   }
+
+  
+  
+  
+  let pendingTouches = [];
+  setDispatch(concurrentEvent, pendingTouches);
 }
 
 
