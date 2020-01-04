@@ -3,6 +3,8 @@
 
 "use strict";
 
+requestLongerTimeout(2);
+
 const TEST_URI = BASE_URI + "browser_fontinspector.html";
 const FONTS = [
   {name: "Ostrich Sans Medium", remote: true, url: BASE_URI + "ostrich-regular.ttf",
