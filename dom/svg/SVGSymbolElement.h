@@ -44,9 +44,6 @@ public:
   already_AddRefed<SVGAnimatedRect> ViewBox();
   already_AddRefed<DOMSVGAnimatedPreserveAspectRatio> PreserveAspectRatio();
 
-  
-  bool IsInChromeDoc() const override;
-
 protected:
   virtual nsSVGViewBox *GetViewBox() override;
   virtual SVGAnimatedPreserveAspectRatio *GetPreserveAspectRatio() override;

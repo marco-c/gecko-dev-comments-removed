@@ -351,15 +351,6 @@ SVGAnimationElement::IsNodeOfType(uint32_t aFlags) const
 
 
 
-bool
-SVGAnimationElement::IsInChromeDoc() const
-{
-  return nsContentUtils::IsChromeDoc(OwnerDoc());
-}
-
-
-
-
 void
 SVGAnimationElement::ActivateByHyperlink()
 {

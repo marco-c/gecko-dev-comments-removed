@@ -30,7 +30,7 @@ public:
 
 
   static bool
-  HasExtension(const nsAString& aExtension, const bool aIsInChrome);
+  HasExtension(const nsAString& aExtension);
 };
 
 #endif 
