@@ -1061,6 +1061,14 @@ pref("dom.activities.developer_mode_only", "import-app");
 pref("dom.serviceWorkers.enabled", false);
 pref("dom.push.enabled", false);
 
+#if defined(RELEASE_BUILD)
+
+
+pref("dom.webnotifications.serviceworker.enabled", false);
+#else
+pref("dom.webnotifications.serviceworker.enabled", true);
+#endif
+
 
 pref("layers.compositor-lru-size", 10);
 

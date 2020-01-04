@@ -159,11 +159,9 @@ var interfaceNamesInGlobalScope =
 
     "MessagePort",
 
-    { name: "Notification", nonReleaseB2G: true, nonReleaseAndroid: true,
-                            b2g: false, android: false },
+    { name: "Notification", nonReleaseB2G: true, b2g: false },
 
-    { name: "NotificationEvent", nonReleaseB2G: true, nonReleaseAndroid: true,
-                                 b2g: false, android: false },
+    { name: "NotificationEvent", nonReleaseB2G: true, b2g: false },
 
     "Performance",
 
