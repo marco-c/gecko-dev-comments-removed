@@ -8498,7 +8498,9 @@ nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
 
 #ifdef ACCESSIBILITY
   
-  ReflowTextA11yNotifier(presContext, mContent);
+  if (StyleVisibility()->IsVisible()) {
+    ReflowTextA11yNotifier(presContext, mContent);
+  }
 #endif
 
   
