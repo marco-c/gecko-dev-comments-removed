@@ -33,6 +33,20 @@ CaptureStreamTestHelper.prototype = {
   elemHeight: 100,
 
   
+
+
+
+  startDrawing: function (f) {
+    var stop = false;
+    var draw = () => {
+      f();
+      if (!stop) { window.requestAnimationFrame(draw); }
+    };
+    draw();
+    return { stop: () => stop = true };
+  },
+
+  
   requestFrame: function (video) {
     info("Requesting frame from " + video.id);
     video.srcObject.requestFrame();
@@ -121,8 +135,8 @@ CaptureStreamTestHelper2D.prototype.clear = function(canvas) {
 CaptureStreamTestHelper2D.prototype.drawColor = function(canvas, color) {
   var ctx = canvas.getContext('2d');
   var rgba = color.data.slice(); 
-  info("Drawing color " + rgba.join(','));
   rgba[3] = rgba[3] / 255.0; 
+  info("Drawing color " + rgba.join(','));
   ctx.fillStyle = "rgba(" + rgba.join(',') + ")";
 
   
