@@ -81,9 +81,6 @@ public class PrintHelper {
                                     }
 
                                     callback.onWriteFinished(new PageRange[] { PageRange.ALL_PAGES });
-
-                                    
-                                    pdfFile.delete();
                                 } catch (FileNotFoundException ee) {
                                     Log.d(LOGTAG, "Unable to find the temporary PDF file.");
                                 } catch (IOException ioe) {
@@ -97,7 +94,7 @@ public class PrintHelper {
                     }
 
                     @Override
-                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes, CancellationSignal cancellationSignal, LayoutResultCallback callback, Bundle extras){
+                    public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes, CancellationSignal cancellationSignal, LayoutResultCallback callback, Bundle extras) {
                         if (cancellationSignal.isCanceled()) {
                             callback.onLayoutCancelled();
                             return;
@@ -105,6 +102,18 @@ public class PrintHelper {
 
                         PrintDocumentInfo pdi = new PrintDocumentInfo.Builder(filePath).setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT).build();
                         callback.onLayoutFinished(pdi, true);
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        
+                        try {
+                            File pdfFile = new File(filePath);
+                            pdfFile.delete();
+                        } catch (NullPointerException npe) {
+                            
+                            
+                        }
                     }
                 };
 
