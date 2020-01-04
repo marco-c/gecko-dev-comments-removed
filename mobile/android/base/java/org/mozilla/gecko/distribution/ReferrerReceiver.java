@@ -68,6 +68,12 @@ public class ReferrerReceiver extends BroadcastReceiver {
 
         if (TextUtils.equals(referrer.campaign, DISTRIBUTION_UTM_CAMPAIGN)) {
             Distribution.onReceivedReferrer(context, referrer);
+            
+            try {
+                AdjustConstants.getAdjustHelper().onReceive(context, intent);
+            } catch (Exception e) {
+                Log.e(LOGTAG, "Got exception in Adjust's onReceive for distribution.", e);
+            }
         } else {
             Log.d(LOGTAG, "Not downloading distribution: non-matching campaign.");
             
