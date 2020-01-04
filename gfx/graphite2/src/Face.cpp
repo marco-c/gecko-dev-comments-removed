@@ -331,10 +331,12 @@ Error Face::Table::decompress()
         uncompressed_size  = hdr & 0x07ffffff;
         uncompressed_table = gralloc<byte>(uncompressed_size);
         if (!e.test(!uncompressed_table || uncompressed_size < 4, E_OUTOFMEM))
+        {
             memset(uncompressed_table, 0, 4);   
             
             
             e.test(lz4::decompress(p, _sz - 2*sizeof(uint32), uncompressed_table, uncompressed_size) != signed(uncompressed_size), E_SHRINKERFAILED);
+        }
         break;
     }
 
