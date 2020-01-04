@@ -255,9 +255,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ReaderMode",
 XPCOMUtils.defineLazyModuleGetter(this, "ReaderParent",
   "resource:///modules/ReaderParent.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerParent",
-  "resource://gre/modules/LoginManagerParent.jsm");
-
 var gInitialPages = [
   "about:blank",
   "about:newtab",
@@ -1194,10 +1191,6 @@ var gBrowserInit = {
         break;
       }
     }, false, true);
-
-    gBrowser.addEventListener("InsecureLoginFormsStateChange", function() {
-      gIdentityHandler.refreshForInsecureLoginForms();
-    });
 
     let uriToLoad = this._getUriToLoad();
     if (uriToLoad && uriToLoad != "about:blank") {
@@ -6997,26 +6990,15 @@ var gIdentityHandler = {
     }
 
     
-    this.refreshIdentityBlock();
 
-    
-    
-    
-    
-  },
-
-  
-
-
-
-  refreshForInsecureLoginForms() {
-    
-    
-    if (!this._uri) {
-      Cu.reportError("Unexpected early call to refreshForInsecureLoginForms.");
-      return;
+    if (this._identityBox) {
+      this.refreshIdentityBlock();
     }
-    this.refreshIdentityBlock();
+
+    
+    
+    
+    
   },
 
   
@@ -7055,10 +7037,6 @@ var gIdentityHandler = {
 
 
   refreshIdentityBlock() {
-    if (!this._identityBox) {
-      return;
-    }
-
     let icon_label = "";
     let tooltip = "";
     let icon_country_label = "";
@@ -7127,11 +7105,6 @@ var gIdentityHandler = {
           this._identityBox.classList.add("weakCipher");
         }
       }
-      if (LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser)) {
-        
-        
-        this._identityBox.classList.add("insecureLoginForms");
-      }
       tooltip = gNavigatorBundle.getString("identity.unknown.tooltip");
     }
 
@@ -7167,12 +7140,6 @@ var gIdentityHandler = {
       connection = "secure-ev";
     } else if (this._isSecure) {
       connection = "secure";
-    }
-
-    
-    let loginforms = "secure";
-    if (LoginManagerParent.hasInsecureLoginForms(gBrowser.selectedBrowser)) {
-      loginforms = "insecure";
     }
 
     
@@ -7212,7 +7179,6 @@ var gIdentityHandler = {
     for (let id of elementIDs) {
       let element = document.getElementById(id);
       updateAttribute(element, "connection", connection);
-      updateAttribute(element, "loginforms", loginforms);
       updateAttribute(element, "ciphers", ciphers);
       updateAttribute(element, "mixedcontent", mixedcontent);
       updateAttribute(element, "isbroken", this._isBroken);
