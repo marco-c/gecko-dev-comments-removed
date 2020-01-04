@@ -20,6 +20,7 @@
 #include "nsURIHashKey.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/CSSStyleSheet.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/net/ReferrerPolicy.h"
 
@@ -30,7 +31,6 @@ class nsMediaList;
 class nsIStyleSheetLinkingElement;
 
 namespace mozilla {
-class CSSStyleSheet;
 namespace dom {
 class Element;
 } 
@@ -130,6 +130,47 @@ namespace css {
 
 class SheetLoadData;
 class ImportRule;
+
+
+
+
+
+class MOZ_RAII LoaderReusableStyleSheets
+{
+public:
+  LoaderReusableStyleSheets()
+  {
+  }
+
+  
+
+
+
+
+
+
+
+
+  bool FindReusableStyleSheet(nsIURI* aURL, nsRefPtr<CSSStyleSheet>& aResult);
+
+  
+
+
+
+
+
+
+  void AddReusableSheet(CSSStyleSheet* aSheet) {
+    mReusableSheets.AppendElement(aSheet);
+  }
+
+private:
+  LoaderReusableStyleSheets(const LoaderReusableStyleSheets&) = delete;
+  LoaderReusableStyleSheets& operator=(const LoaderReusableStyleSheets&) = delete;
+
+  
+  nsTArray<nsRefPtr<CSSStyleSheet>> mReusableSheets;
+};
 
 
 
@@ -243,10 +284,13 @@ public:
 
 
 
+
+
   nsresult LoadChildSheet(CSSStyleSheet* aParentSheet,
                           nsIURI* aURL,
                           nsMediaList* aMedia,
-                          ImportRule* aRule);
+                          ImportRule* aRule,
+                          LoaderReusableStyleSheets* aSavedSheets);
 
   
 

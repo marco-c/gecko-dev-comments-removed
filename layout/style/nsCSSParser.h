@@ -33,6 +33,7 @@ namespace css {
 class Rule;
 class Declaration;
 class Loader;
+class LoaderReusableStyleSheets;
 class StyleRule;
 } 
 } 
@@ -80,12 +81,16 @@ public:
 
 
 
+
+
   nsresult ParseSheet(const nsAString& aInput,
                       nsIURI*          aSheetURL,
                       nsIURI*          aBaseURI,
                       nsIPrincipal*    aSheetPrincipal,
                       uint32_t         aLineNumber,
-                      bool             aAllowUnsafeRules);
+                      bool             aAllowUnsafeRules,
+                      mozilla::css::LoaderReusableStyleSheets* aReusableSheets =
+                        nullptr);
 
   
   
