@@ -241,9 +241,6 @@ nsRange::~nsRange()
   NS_ASSERTION(!IsInSelection(), "deleting nsRange that is in use");
 
   
-  Telemetry::Accumulate(Telemetry::DOM_RANGE_DETACHED, mIsDetached);
-
-  
   DoSetRange(nullptr, 0, nullptr, 0, nullptr);
 }
 
@@ -252,7 +249,6 @@ nsRange::nsRange(nsINode* aNode)
   , mStartOffset(0)
   , mEndOffset(0)
   , mIsPositioned(false)
-  , mIsDetached(false)
   , mMaySpanAnonymousSubtrees(false)
   , mIsGenerated(false)
   , mStartOffsetWasIncremented(false)
@@ -2824,8 +2820,6 @@ nsRange::ToString(nsAString& aReturn)
 NS_IMETHODIMP
 nsRange::Detach()
 {
-  
-  mIsDetached = true;
   return NS_OK;
 }
 
