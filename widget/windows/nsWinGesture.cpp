@@ -348,7 +348,7 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
       else {
         
         
-        evt.mMessage = NS_SIMPLE_GESTURE_MAGNIFY_UPDATE;
+        evt.mMessage = eMagnifyGestureUpdate;
         
         evt.delta = -1.0 * (mZoomIntermediate - (float)gi.ullArguments);
         mZoomIntermediate = (float)gi.ullArguments;
