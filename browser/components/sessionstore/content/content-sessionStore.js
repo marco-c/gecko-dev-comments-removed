@@ -65,20 +65,6 @@ function createLazy(fn) {
 
 
 
-function isSessionStorageEvent(event) {
-  try {
-    return event.storageArea == event.target.sessionStorage;
-  } catch (ex if ex instanceof Ci.nsIException && ex.result == Cr.NS_ERROR_NOT_AVAILABLE) {
-    
-    
-    return false;
-  }
-}
-
-
-
-
-
 var EventListener = {
 
   init: function () {
@@ -520,7 +506,7 @@ var DocShellCapabilitiesListener = {
 
 var SessionStorageListener = {
   init: function () {
-    addEventListener("MozStorageChanged", this, true);
+    addEventListener("MozSessionStorageChanged", this, true);
     Services.obs.addObserver(this, "browser:purge-domain-data", false);
     gFrameTree.addObserver(this);
   },
@@ -530,8 +516,7 @@ var SessionStorageListener = {
   },
 
   handleEvent: function (event) {
-    
-    if (gFrameTree.contains(event.target) && isSessionStorageEvent(event)) {
+    if (gFrameTree.contains(event.target)) {
       this.collect();
     }
   },
