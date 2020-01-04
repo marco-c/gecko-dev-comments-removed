@@ -27,7 +27,7 @@
 
 #if U_HAVE_STD_STRING
 
-#if !defined(_MSC_VER)
+#if defined(__GLIBCXX__)
 namespace std { class type_info; } 
 #endif
 #include <string>
