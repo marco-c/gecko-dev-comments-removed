@@ -118,6 +118,14 @@ var PerformanceView = {
 
 
   setState: function (state) {
+    
+    
+    const iframes = window.document.querySelectorAll('iframe');
+    for (let iframe of iframes) {
+      iframe.blur();
+    }
+    window.focus();
+
     let viewConfig = this.states[state];
     if (!viewConfig) {
       throw new Error(`Invalid state for PerformanceView: ${state}`);
