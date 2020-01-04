@@ -50,7 +50,12 @@ _DEBUGGER_INFO = {
     'wdexpress.exe': {
         'interactive': True,
         'args': ['-debugexe']
-    }
+    },
+
+    
+    'windbg.exe': {
+        'interactive': True,
+    },
 }
 
 
@@ -61,6 +66,19 @@ _DEBUGGER_PRIORITIES = {
       'android': ['gdb'],
       'unknown': ['gdb']
 }
+
+def _windbg_installation_paths():
+    programFilesSuffixes = ['', ' (x86)']
+    programFiles = "C:/Program Files"
+    
+    windowsKitsVersions = ['10', '8.1', '8']
+
+    for suffix in programFilesSuffixes:
+        windowsKitsPrefix = os.path.join(programFiles + suffix,
+                                         'Windows Kits')
+        for version in windowsKitsVersions:
+            yield os.path.join(windowsKitsPrefix, version,
+                               'Debuggers', 'x86', 'windbg.exe')
 
 def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False):
     '''
@@ -88,6 +106,16 @@ def get_debugger_info(debugger, debuggerArgs = None, debuggerInteractive = False
             debugger += '.exe'
 
         debuggerPath = find_executable(debugger)
+
+    
+    
+    
+    
+    if not debuggerPath and debugger == 'windbg.exe':
+        for candidate in _windbg_installation_paths():
+            if os.path.exists(candidate):
+                debuggerPath = candidate
+                break
 
     if not debuggerPath:
         print 'Error: Could not find debugger %s.' % debugger
