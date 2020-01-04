@@ -2973,7 +2973,11 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   httpChannel->SetAllowPipelining(mAllowPipelining);
   httpChannel->SetAllowSTS(mAllowSTS);
   
-  httpChannel->SetRedirectionLimit(mRedirectionLimit - 1);
+  
+  uint32_t redirectionLimit = mRedirectionLimit
+    ? mRedirectionLimit - 1
+    : 0;
+  httpChannel->SetRedirectionLimit(redirectionLimit);
 
   
   {
