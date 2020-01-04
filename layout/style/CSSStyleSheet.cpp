@@ -47,6 +47,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsNullPrincipal.h"
 #include "mozilla/RuleProcessorCache.h"
+#include "nsIStyleSheetLinkingElement.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -2311,9 +2312,18 @@ CSSStyleSheet::ParseSheet(const nsAString& aInput)
   
   bool allowUnsafeRules = nsContentUtils::IsSystemPrincipal(mInner->mPrincipal);
 
+  uint32_t lineNumber = 1;
+  if (mOwningNode) {
+    nsCOMPtr<nsIStyleSheetLinkingElement> link = do_QueryInterface(mOwningNode);
+    if (link) {
+      lineNumber = link->GetLineNumber();
+    }
+  }
+
   nsCSSParser parser(loader, this);
   nsresult rv = parser.ParseSheet(aInput, mInner->mSheetURI, mInner->mBaseURI,
-                                  mInner->mPrincipal, 1, allowUnsafeRules);
+                                  mInner->mPrincipal, lineNumber,
+                                  allowUnsafeRules);
   DidDirty(); 
   NS_ENSURE_SUCCESS(rv, rv);
 
