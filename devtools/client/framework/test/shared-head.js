@@ -69,7 +69,7 @@ registerCleanupFunction(function* cleanup() {
 
 
 var addTab = Task.async(function*(url) {
-  info("Adding a new tab with URL: '" + url + "'");
+  info("Adding a new tab with URL: " + url);
 
   let tab = gBrowser.selectedTab = gBrowser.addTab(url);
   yield once(gBrowser.selectedBrowser, "load", true);
@@ -188,10 +188,42 @@ function waitForTick() {
 
 
 
-var openNewTabAndToolbox = Task.async(function*(url) {
-  let tab = yield addTab(url);
-  let toolbox = yield gDevTools.showToolbox(TargetFactory.forTab(tab));
+
+var openToolboxForTab = Task.async(function*(tab, toolId, hostType) {
+  info("Opening the toolbox");
+
+  let toolbox;
+  let target = TargetFactory.forTab(tab);
+
+  
+  toolbox = gDevTools.getToolbox(target);
+  if (toolbox) {
+    info("Toolbox is already opened");
+    return toolbox;
+  }
+
+  
+  toolbox = yield gDevTools.showToolbox(target, toolId, hostType);
+
+  
+  yield new Promise(resolve => waitForFocus(resolve, toolbox.frame.contentWindow));
+
+  info("Toolbox opened and focused");
+
   return toolbox;
+});
+
+
+
+
+
+
+
+
+
+var openNewTabAndToolbox = Task.async(function*(url, toolId, hostType) {
+  let tab = yield addTab(url);
+  return openToolboxForTab(tab, toolId, hostType)
 });
 
 
