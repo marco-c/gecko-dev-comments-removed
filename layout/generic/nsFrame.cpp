@@ -29,7 +29,7 @@
 #include "nsString.h"
 #include "nsReadableUtils.h"
 #include "nsStyleContext.h"
-#include "nsTableOuterFrame.h"
+#include "nsTableWrapperFrame.h"
 #include "nsView.h"
 #include "nsViewManager.h"
 #include "nsIScrollableFrame.h"
@@ -3067,7 +3067,7 @@ nsFrame::GetDataForTableSelection(const nsFrameSelection* aFrameSelection,
       
       
       
-      nsTableOuterFrame *tableFrame = do_QueryFrame(frame);
+      nsTableWrapperFrame *tableFrame = do_QueryFrame(frame);
       if (tableFrame)
       {
         foundTable = true;
@@ -7270,7 +7270,7 @@ nsIFrame::PeekOffset(nsPeekOffsetStruct* aPos)
 
           lastFrame = aPos->mResultFrame; 
 
-          if (NS_SUCCEEDED(result) && aPos->mResultFrame 
+          if (NS_SUCCEEDED(result) && aPos->mResultFrame
             && blockFrame != aPos->mResultFrame)
           {
 
@@ -7437,8 +7437,11 @@ nsFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
 }
 
 nsIFrame::FrameSearchResult
-nsFrame::PeekOffsetWord(bool aForward, bool aWordSelectEatSpace, bool aIsKeyboardSelect,
-                        int32_t* aOffset, PeekWordState* aState)
+nsFrame::PeekOffsetWord(bool            aForward,
+                        bool            aWordSelectEatSpace,
+                        bool            aIsKeyboardSelect,
+                        int32_t*        aOffset,
+                        PeekWordState*  aState)
 {
   NS_ASSERTION (aOffset && *aOffset <= 1, "aOffset out of range");
   int32_t startOffset = *aOffset;

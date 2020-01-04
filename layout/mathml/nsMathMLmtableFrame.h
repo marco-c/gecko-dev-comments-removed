@@ -9,7 +9,7 @@
 #include "mozilla/Attributes.h"
 #include "nsMathMLContainerFrame.h"
 #include "nsBlockFrame.h"
-#include "nsTableOuterFrame.h"
+#include "nsTableWrapperFrame.h"
 #include "nsTableRowFrame.h"
 #include "nsTableCellFrame.h"
 
@@ -17,7 +17,7 @@
 
 
 
-class nsMathMLmtableOuterFrame : public nsTableOuterFrame,
+class nsMathMLmtableOuterFrame : public nsTableWrapperFrame,
                                  public nsMathMLFrame
 {
 public:
@@ -42,11 +42,11 @@ public:
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
-    return nsTableOuterFrame::IsFrameOfType(aFlags & ~(nsIFrame::eMathML));
+    return nsTableWrapperFrame::IsFrameOfType(aFlags & ~(nsIFrame::eMathML));
   }
 
 protected:
-  explicit nsMathMLmtableOuterFrame(nsStyleContext* aContext) : nsTableOuterFrame(aContext) {}
+  explicit nsMathMLmtableOuterFrame(nsStyleContext* aContext) : nsTableWrapperFrame(aContext) {}
   virtual ~nsMathMLmtableOuterFrame();
 
   

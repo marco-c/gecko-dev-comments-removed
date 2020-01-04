@@ -401,6 +401,7 @@ RestyleManager::RecomputePosition(nsIFrame* aFrame)
   
   
   
+  
   if (aFrame->GetType() == nsGkAtoms::tableFrame) {
     return true;
   }

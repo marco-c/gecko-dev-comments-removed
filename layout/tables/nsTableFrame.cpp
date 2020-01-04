@@ -22,7 +22,7 @@
 #include "nsTableColGroupFrame.h"
 #include "nsTableRowFrame.h"
 #include "nsTableRowGroupFrame.h"
-#include "nsTableOuterFrame.h"
+#include "nsTableWrapperFrame.h"
 #include "nsTablePainter.h"
 
 #include "BasicTableLayoutStrategy.h"
@@ -127,7 +127,7 @@ nsTableFrame::GetParentStyleContext(nsIFrame** aProviderFrame) const
   
   
 
-  NS_PRECONDITION(GetParent(), "table constructed without outer table");
+  NS_PRECONDITION(GetParent(), "table constructed without table wrapper");
   if (!mContent->GetParent() && !StyleContext()->GetPseudo()) {
     
     *aProviderFrame = nullptr;

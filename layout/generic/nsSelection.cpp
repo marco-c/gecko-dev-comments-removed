@@ -25,7 +25,7 @@
 #include "nsCOMArray.h"
 #include "nsITableCellLayout.h"
 #include "nsTArray.h"
-#include "nsTableOuterFrame.h"
+#include "nsTableWrapperFrame.h"
 #include "nsTableCellFrame.h"
 #include "nsIScrollableFrame.h"
 #include "nsCCUncollectableMarker.h"
@@ -2803,7 +2803,7 @@ nsFrameSelection::UnselectCells(nsIContent *aTableContent,
   if (!mDomSelections[index])
     return NS_ERROR_NULL_POINTER;
 
-  nsTableOuterFrame* tableFrame = do_QueryFrame(aTableContent->GetPrimaryFrame());
+  nsTableWrapperFrame* tableFrame = do_QueryFrame(aTableContent->GetPrimaryFrame());
   if (!tableFrame)
     return NS_ERROR_FAILURE;
 
@@ -2883,7 +2883,7 @@ nsFrameSelection::AddCellsToSelection(nsIContent *aTableContent,
   if (!mDomSelections[index])
     return NS_ERROR_NULL_POINTER;
 
-  nsTableOuterFrame* tableFrame = do_QueryFrame(aTableContent->GetPrimaryFrame());
+  nsTableWrapperFrame* tableFrame = do_QueryFrame(aTableContent->GetPrimaryFrame());
   if (!tableFrame) 
     return NS_ERROR_FAILURE;
 
@@ -2957,7 +2957,7 @@ nsFrameSelection::SelectRowOrColumn(nsIContent *aCellContent, uint32_t aTarget)
   
   
   
-  nsTableOuterFrame* tableFrame = do_QueryFrame(table->GetPrimaryFrame());
+  nsTableWrapperFrame* tableFrame = do_QueryFrame(table->GetPrimaryFrame());
   if (!tableFrame) return NS_ERROR_FAILURE;
   nsITableCellLayout *cellLayout = GetCellLayout(aCellContent);
   if (!cellLayout) return NS_ERROR_FAILURE;

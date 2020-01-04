@@ -141,7 +141,7 @@ public:
                                       nsTArray<nsIFrame*>)
 
   
-  friend class nsTableOuterFrame;
+  friend class nsTableWrapperFrame;
 
   
 

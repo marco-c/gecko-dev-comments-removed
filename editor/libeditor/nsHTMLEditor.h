@@ -48,7 +48,7 @@ class nsIClipboard;
 class TypeInState;
 class nsIContentFilter;
 class nsILinkHandler;
-class nsTableOuterFrame;
+class nsTableWrapperFrame;
 class nsIDOMRange;
 class nsRange;
 struct PropItem;
@@ -455,7 +455,7 @@ protected:
   NS_IMETHOD SetRowSpan(nsIDOMElement *aCell, int32_t aRowSpan);
 
   
-  nsTableOuterFrame* GetTableFrame(nsIDOMElement* aTable);
+  nsTableWrapperFrame* GetTableFrame(nsIDOMElement* aTable);
   
   
   int32_t  GetNumberOfCellsInRow(nsIDOMElement* aTable, int32_t rowIndex);

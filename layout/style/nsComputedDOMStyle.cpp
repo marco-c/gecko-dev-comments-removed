@@ -680,9 +680,9 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
         
         
         mInnerFrame = mOuterFrame->PrincipalChildList().FirstChild();
-        NS_ASSERTION(mInnerFrame, "Outer table must have an inner");
+        NS_ASSERTION(mInnerFrame, "table wrapper must have an inner");
         NS_ASSERTION(!mInnerFrame->GetNextSibling(),
-                     "Outer table frames should have just one child, "
+                     "table wrapper frames should have just one child, "
                      "the inner table");
       }
 

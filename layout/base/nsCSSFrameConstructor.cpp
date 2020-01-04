@@ -91,7 +91,7 @@
 #include "nsGfxScrollFrame.h"
 #include "nsPageFrame.h"
 #include "nsSimplePageSequenceFrame.h"
-#include "nsTableOuterFrame.h"
+#include "nsTableWrapperFrame.h"
 #include "nsIScrollableFrame.h"
 #include "nsBackdropFrame.h"
 #include "nsTransitionManager.h"
@@ -2079,7 +2079,7 @@ nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   if (kNameSpaceID_MathML == nameSpaceID)
     newFrame = NS_NewMathMLmtableOuterFrame(mPresShell, outerStyleContext);
   else
-    newFrame = NS_NewTableOuterFrame(mPresShell, outerStyleContext);
+    newFrame = NS_NewTableWrapperFrame(mPresShell, outerStyleContext);
 
   nsContainerFrame* geometricParent =
     aState.GetGeometricParent(outerStyleContext->StyleDisplay(),
@@ -8060,7 +8060,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
       
       NS_ASSERTION(nsGkAtoms::tableOuterFrame == outerTable->GetType(),
                    "Pseudo frame construction failure; "
-                   "a caption can be only a child of an outer table frame");
+                   "a caption can be only a child of a table wrapper frame");
 
       
       
@@ -8689,7 +8689,7 @@ nsCSSFrameConstructor::CreateContinuingOuterTableFrame(nsIPresShell*     aPresSh
                                                        nsIContent*       aContent,
                                                        nsStyleContext*   aStyleContext)
 {
-  nsTableOuterFrame* newFrame = NS_NewTableOuterFrame(aPresShell, aStyleContext);
+  nsTableWrapperFrame* newFrame = NS_NewTableWrapperFrame(aPresShell, aStyleContext);
 
   newFrame->Init(aContent, aParentFrame, aFrame);
 
