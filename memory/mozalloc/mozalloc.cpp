@@ -6,6 +6,7 @@
 
 
 #include <stddef.h>             
+#include <stdint.h>             
 
 
 
@@ -29,7 +30,7 @@
 
 #define MALLOC_DECL(name, return_type, ...) \
   extern "C" MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
-#define MALLOC_FUNS MALLOC_FUNCS_MALLOC
+#define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
 #include "malloc_decls.h"
 
 extern "C" MOZ_MEMORY_API char *strdup_impl(const char *);
@@ -54,6 +55,8 @@ extern "C" MOZ_MEMORY_API char *strndup_impl(const char *, size_t);
 #define free_impl free
 #define memalign_impl memalign
 #define valloc_impl valloc
+#define malloc_protect_impl malloc_protect
+#define malloc_unprotect_impl malloc_unprotect
 #define malloc_usable_size_impl malloc_usable_size
 #define strdup_impl strdup
 #define strndup_impl strndup
@@ -75,6 +78,25 @@ extern "C" MOZ_MEMORY_API char *strndup_impl(const char *, size_t);
 #else
 #define LIKELY(x)    (x)
 #define UNLIKELY(x)  (x)
+#endif
+
+#ifndef MOZ_MEMORY
+MOZ_BEGIN_EXTERN_C
+
+MFBT_API void
+malloc_protect(void* ptr, uint32_t* id)
+{
+    if (ptr)
+        *id = 1;
+}
+
+MFBT_API void
+malloc_unprotect(void* ptr, uint32_t* id)
+{
+    *id = 0;
+}
+
+MOZ_END_EXTERN_C
 #endif
 
 void*
