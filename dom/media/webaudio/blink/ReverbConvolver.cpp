@@ -52,7 +52,7 @@ const int InputBufferSize = 8 * 16384;
 const size_t RealtimeFrameLimit = 8192  + 4096; 
 
 const size_t MinFFTSize = 128;
-const size_t MaxRealtimeFFTSize = 2048;
+const size_t MaxRealtimeFFTSize = 4096;
 
 ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
                                  size_t impulseResponseLength,
@@ -87,7 +87,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
     size_t reverbTotalLatency = 0;
 
     size_t stageOffset = 0;
-    int i = 0;
+    size_t stagePhase = 0;
     size_t fftSize = m_minFFTSize;
     while (stageOffset < totalResponseLength) {
         size_t stageSize = fftSize / 2;
@@ -98,7 +98,7 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
             stageSize = totalResponseLength - stageOffset;
 
         
-        int renderPhase = convolverRenderPhase + i * WEBAUDIO_BLOCK_SIZE;
+        int renderPhase = convolverRenderPhase + stagePhase;
 
         bool useDirectConvolver = !stageOffset;
 
@@ -117,17 +117,36 @@ ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
             m_stages.AppendElement(stage.forget());
 
         stageOffset += stageSize;
-        ++i;
 
         if (!useDirectConvolver) {
             
             fftSize *= 2;
         }
 
-        if (hasRealtimeConstraint && !isBackgroundStage && fftSize > m_maxRealtimeFFTSize)
+        if (hasRealtimeConstraint && !isBackgroundStage
+            && fftSize > m_maxRealtimeFFTSize) {
             fftSize = m_maxRealtimeFFTSize;
-        if (fftSize > m_maxFFTSize)
+            
+            
+            
+            
+            
+            
+            
+            const uint32_t phaseLookup[] = { 10, 4, 14, 0 };
+            stagePhase = WEBAUDIO_BLOCK_SIZE *
+                phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
+        } else if (fftSize > m_maxFFTSize) {
             fftSize = m_maxFFTSize;
+            
+            
+            
+            stagePhase += 5 * WEBAUDIO_BLOCK_SIZE;
+        } else if (stageSize > WEBAUDIO_BLOCK_SIZE) {
+            
+            
+            stagePhase = stageSize - WEBAUDIO_BLOCK_SIZE;
+        }
     }
 
     
