@@ -444,18 +444,14 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
   }
 
   
-  if (mIsOpenChanged) {
-    
-    nsCOMPtr<nsIDOMXULMenuListElement> menulist =
-      do_QueryInterface(aParentMenu ? aParentMenu->GetContent() : nullptr);
-    if (!menulist) {
-      nsIScrollableFrame *scrollframe = do_QueryFrame(nsBox::GetChildXULBox(this));
-      if (scrollframe) {
-        nsWeakFrame weakFrame(this);
-        scrollframe->ScrollTo(nsPoint(0,0), nsIScrollableFrame::INSTANT);
-        if (!weakFrame.IsAlive()) {
-          return;
-        }
+  
+  if (mIsOpenChanged && !IsMenuList()) {
+    nsIScrollableFrame *scrollframe = do_QueryFrame(nsBox::GetChildXULBox(this));
+    if (scrollframe) {
+      nsWeakFrame weakFrame(this);
+      scrollframe->ScrollTo(nsPoint(0,0), nsIScrollableFrame::INSTANT);
+      if (!weakFrame.IsAlive()) {
+        return;
       }
     }
   }
@@ -572,6 +568,18 @@ void
 nsMenuPopupFrame::ReflowCallbackCanceled()
 {
   mReflowCallbackData.Clear();
+}
+
+bool
+nsMenuPopupFrame::IsMenuList()
+{
+  nsIFrame* parentMenu = GetParent();
+  if (!parentMenu) {
+    return false;
+  }
+
+  nsCOMPtr<nsIDOMXULMenuListElement> menulist = do_QueryInterface(parentMenu->GetContent());
+  return menulist != nullptr;
 }
 
 nsIContent*
@@ -1732,13 +1740,9 @@ void nsMenuPopupFrame::EnsureMenuItemIsVisible(nsMenuFrame* aMenuItem)
 
 void nsMenuPopupFrame::ChangeByPage(bool aIsUp)
 {
-  nsIFrame* parentMenu = GetParent();
-  if (parentMenu) {
-    
-    nsCOMPtr<nsIDOMXULMenuListElement> menulist = do_QueryInterface(parentMenu->GetContent());
-    if (!menulist) {
-      return;
-    }
+  
+  if (!IsMenuList()) {
+    return;
   }
 
   nsMenuFrame* newMenu = nullptr;
@@ -1870,19 +1874,13 @@ nsMenuPopupFrame::ChangeMenuItem(nsMenuFrame* aMenuItem,
     
     
 #ifdef XP_WIN
-    if (aFromKey && IsOpen()) {
-      nsIFrame* parentMenu = GetParent();
-      if (parentMenu) {
-        nsCOMPtr<nsIDOMXULMenuListElement> menulist = do_QueryInterface(parentMenu->GetContent());
-        if (menulist) {
-          
-          
-          
-          nsContentUtils::DispatchXULCommand(aMenuItem->GetContent(),  true,
-                                             nullptr, PresContext()->PresShell(),
-                                             false, false, false, false);
-        }
-      }
+    if (aFromKey && IsOpen() && IsMenuList()) {
+      
+      
+      
+      nsContentUtils::DispatchXULCommand(aMenuItem->GetContent(),  true,
+                                         nullptr, PresContext()->PresShell(),
+                                         false, false, false, false);
     }
 #endif
   }

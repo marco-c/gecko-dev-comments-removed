@@ -2605,10 +2605,12 @@ nsXULPopupManager::KeyDown(nsIDOMKeyEvent* aKeyEvent)
       if (!(ctrl || alt || shift || meta)) {
         
         
-        if (mPopups)
+        nsMenuChainItem* item = GetTopVisibleMenu();
+        if (mPopups && item && !item->Frame()->IsMenuList()) {
           Rollup(0, false, nullptr, nullptr);
-        else if (mActiveMenuBar)
+        } else if (mActiveMenuBar) {
           mActiveMenuBar->MenuClosed();
+        }
 
         
         item = nullptr; 

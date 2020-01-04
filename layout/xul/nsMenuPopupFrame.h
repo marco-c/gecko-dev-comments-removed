@@ -272,6 +272,9 @@ public:
   bool IsVisible() { return mPopupState == ePopupVisible ||
                             mPopupState == ePopupShown; }
 
+  
+  bool IsMenuList();
+
   bool IsMouseTransparent() { return mMouseTransparent; }
 
   static nsIContent* GetTriggerContent(nsMenuPopupFrame* aMenuPopupFrame);
