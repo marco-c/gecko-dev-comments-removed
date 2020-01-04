@@ -8476,27 +8476,6 @@ IonBuilder::getStaticName(JSObject* staticObject, PropertyName* name, bool* psuc
 
     *psucceeded = true;
 
-    if (staticObject->is<GlobalObject>()) {
-        
-        if (lexicalCheck)
-            lexicalCheck->setNotGuardUnchecked();
-
-        
-        if (name == names().undefined) {
-            pushConstant(UndefinedValue());
-            return true;
-        }
-        if (name == names().NaN) {
-            pushConstant(compartment->runtime()->NaNValue());
-            return true;
-        }
-        if (name == names().Infinity) {
-            pushConstant(compartment->runtime()->positiveInfinityValue());
-            return true;
-        }
-    }
-
-    
     
     
     if (lexicalCheck) {
@@ -8705,6 +8684,23 @@ IonBuilder::testGlobalLexicalBinding(PropertyName* name)
 bool
 IonBuilder::jsop_getgname(PropertyName* name)
 {
+    
+    
+    
+    
+    if (name == names().undefined) {
+        pushConstant(UndefinedValue());
+        return true;
+    }
+    if (name == names().NaN) {
+        pushConstant(compartment->runtime()->NaNValue());
+        return true;
+    }
+    if (name == names().Infinity) {
+        pushConstant(compartment->runtime()->positiveInfinityValue());
+        return true;
+    }
+
     if (JSObject* obj = testGlobalLexicalBinding(name)) {
         bool emitted = false;
         if (!getStaticName(obj, name, &emitted) || emitted)
