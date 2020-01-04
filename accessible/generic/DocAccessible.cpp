@@ -1130,10 +1130,26 @@ DocAccessible::ContentInserted(nsIDocument* aDocument, nsIContent* aContainer,
 }
 
 void
-DocAccessible::ContentRemoved(nsIDocument* aDocument, nsIContent* aContainer,
-                              nsIContent* aChild, int32_t ,
-                              nsIContent* aPreviousSibling)
+DocAccessible::ContentRemoved(nsIDocument* aDocument,
+                              nsIContent* aContainerNode,
+                              nsIContent* aChildNode, int32_t ,
+                              nsIContent* aPreviousSiblingNode)
 {
+#ifdef A11Y_LOG
+  if (logging::IsEnabled(logging::eTree)) {
+    logging::MsgBegin("TREE", "DOM content removed; doc: %p", this);
+    logging::Node("container node", aContainerNode);
+    logging::Node("content node", aChildNode);
+    logging::MsgEnd();
+  }
+#endif
+  
+  
+  
+  Accessible* container = GetAccessibleOrContainer(aContainerNode);
+  if (container) {
+    UpdateTreeOnRemoval(container, aChildNode);
+  }
 }
 
 void
