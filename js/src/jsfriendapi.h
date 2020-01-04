@@ -968,9 +968,6 @@ IsObjectInContextCompartment(JSObject* obj, const JSContext* cx);
 
 
 
-
-
-
 #define JSITER_ENUMERATE  0x1   /* for-in compatible hidden default iterator */
 #define JSITER_FOREACH    0x2   /* get obj[key] for each property */
 #define JSITER_KEYVALUE   0x4   /* obsolete destructuring for-in wants [key, value] */
