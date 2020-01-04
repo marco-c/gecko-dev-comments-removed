@@ -99,6 +99,7 @@ TaskQueue::AwaitIdleLocked()
 void
 TaskQueue::AwaitShutdownAndIdle()
 {
+  MOZ_ASSERT(!IsCurrentThreadIn());
   
   
   MOZ_ASSERT_IF(AbstractThread::GetCurrent(),
