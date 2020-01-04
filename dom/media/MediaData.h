@@ -459,51 +459,30 @@ public:
   
   
   
-  static already_AddRefed<VideoData> Create(const VideoInfo& aInfo,
-                                            ImageContainer* aContainer,
-                                            Image* aImage,
-                                            int64_t aOffset,
-                                            int64_t aTime,
-                                            int64_t aDuration,
-                                            const YCbCrBuffer &aBuffer,
-                                            bool aKeyframe,
-                                            int64_t aTimecode,
-                                            const IntRect& aPicture);
+
 
   
-  static already_AddRefed<VideoData> Create(const VideoInfo& aInfo,
-                                            ImageContainer* aContainer,
-                                            int64_t aOffset,
-                                            int64_t aTime,
-                                            int64_t aDuration,
-                                            const YCbCrBuffer &aBuffer,
-                                            bool aKeyframe,
-                                            int64_t aTimecode,
-                                            const IntRect& aPicture);
-
   
-  static already_AddRefed<VideoData> Create(const VideoInfo& aInfo,
-                                            Image* aImage,
-                                            int64_t aOffset,
-                                            int64_t aTime,
-                                            int64_t aDuration,
-                                            const YCbCrBuffer &aBuffer,
-                                            bool aKeyframe,
-                                            int64_t aTimecode,
-                                            const IntRect& aPicture);
+  static already_AddRefed<VideoData> CreateAndCopyData(const VideoInfo& aInfo,
+                                                       ImageContainer* aContainer,
+                                                       int64_t aOffset,
+                                                       int64_t aTime,
+                                                       int64_t aDuration,
+                                                       const YCbCrBuffer &aBuffer,
+                                                       bool aKeyframe,
+                                                       int64_t aTimecode,
+                                                       const IntRect& aPicture);
 
-  static already_AddRefed<VideoData> Create(const VideoInfo& aInfo,
-                                            ImageContainer* aContainer,
-                                            int64_t aOffset,
-                                            int64_t aTime,
-                                            int64_t aDuration,
-                                            layers::TextureClient* aBuffer,
-                                            bool aKeyframe,
-                                            int64_t aTimecode,
-                                            const IntRect& aPicture);
+  static already_AddRefed<VideoData> CreateAndCopyIntoTextureClient(const VideoInfo& aInfo,
+                                                                    int64_t aOffset,
+                                                                    int64_t aTime,
+                                                                    int64_t aDuration,
+                                                                    layers::TextureClient* aBuffer,
+                                                                    bool aKeyframe,
+                                                                    int64_t aTimecode,
+                                                                    const IntRect& aPicture);
 
   static already_AddRefed<VideoData> CreateFromImage(const VideoInfo& aInfo,
-                                                     ImageContainer* aContainer,
                                                      int64_t aOffset,
                                                      int64_t aTime,
                                                      int64_t aDuration,
