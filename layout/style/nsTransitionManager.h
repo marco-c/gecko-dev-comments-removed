@@ -138,23 +138,6 @@ public:
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const OwningElementRef& OwningElement() const { return mOwningElement; }
-
-  
-  
-  
-  
   void SetOwningElement(const OwningElementRef& aElement)
   {
     mOwningElement = aElement;
@@ -172,6 +155,21 @@ protected:
   void QueueEvents();
   bool HasEndEventToQueue() const override;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   OwningElementRef mOwningElement;

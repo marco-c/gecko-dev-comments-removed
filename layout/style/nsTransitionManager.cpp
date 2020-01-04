@@ -197,11 +197,11 @@ CSSTransition::HasLowerCompositeOrderThan(const Animation& aOther) const
   }
 
   
-  MOZ_ASSERT(mOwningElement.IsSet() && otherTransition->OwningElement().IsSet(),
+  MOZ_ASSERT(mOwningElement.IsSet() && otherTransition->mOwningElement.IsSet(),
              "Transitions using custom composite order should have an owning "
              "element");
-  if (!mOwningElement.Equals(otherTransition->OwningElement())) {
-    return mOwningElement.LessThan(otherTransition->OwningElement());
+  if (!mOwningElement.Equals(otherTransition->mOwningElement)) {
+    return mOwningElement.LessThan(otherTransition->mOwningElement);
   }
 
   
