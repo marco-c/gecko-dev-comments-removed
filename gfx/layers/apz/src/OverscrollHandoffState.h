@@ -15,6 +15,9 @@
 #include "Units.h"            
 
 namespace mozilla {
+
+class InputData;
+
 namespace layers {
 
 class AsyncPanZoomController;
