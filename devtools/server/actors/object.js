@@ -1793,7 +1793,7 @@ DebuggerServer.ObjectActorPreviewers.Object = [
   },
 
   function PseudoArray({obj, hooks}, grip, rawObj) {
-    let length;
+    let length = 0;
 
     let keys = obj.getOwnPropertyNames();
     if (keys.length == 0) {
@@ -1802,36 +1802,27 @@ DebuggerServer.ObjectActorPreviewers.Object = [
 
     
     
-    if(keys[0] >= OBJECT_PREVIEW_MAX_ITEMS) {
-      return false;
-    }
-
-    
-    
     if(keys[keys.length-1] === "length") {
       keys.pop();
-      length = DevToolsUtils.getProperty(obj, "length");
-    } else {
       
-      length = +keys[keys.length-1] + 1;
-    }
-    
-    if(typeof length !== "number" || length >>> 0 !== length) {
-      return false;
+      
+      if(rawObj.length !== keys.length) {
+        return false;
+      }
     }
 
     
     
     
     
-    let prev = length;
-    for(let i = keys.length - 1; i >= 0; --i) {
-      let key = keys[i];
-      let numKey = key >>> 0; 
-      if (numKey + '' !== key || numKey >= prev) {
+    
+    if(keys.length && keys[keys.length-1] !== keys.length - 1 + '') {
+      return false;
+    }
+    for (let key of keys) {
+      if (key !== (length++) + '') {
         return false;
       }
-      prev = numKey;
     }
 
     grip.preview = {
@@ -1845,14 +1836,12 @@ DebuggerServer.ObjectActorPreviewers.Object = [
     }
 
     let items = grip.preview.items = [];
-    let numItems = Math.min(OBJECT_PREVIEW_MAX_ITEMS, length);
 
-    for (let i = 0; i < numItems; ++i) {
-      let desc = obj.getOwnPropertyDescriptor(i);
-      if (desc && 'value' in desc) {
-        items.push(hooks.createValueGrip(desc.value));
-      } else {
-        items.push(null);
+    let i = 0;
+    for (let key of keys) {
+      if (rawObj.hasOwnProperty(key) && i++ < OBJECT_PREVIEW_MAX_ITEMS) {
+        let value = makeDebuggeeValueIfNeeded(obj, rawObj[key]);
+        items.push(hooks.createValueGrip(value));
       }
     }
 
