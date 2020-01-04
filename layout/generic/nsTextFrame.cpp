@@ -17,6 +17,7 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/BinarySearch.h"
+#include "mozilla/IntegerRange.h"
 
 #include "nsCOMPtr.h"
 #include "nsBlockFrame.h"
@@ -926,6 +927,7 @@ public:
   void AssignTextRun(gfxTextRun* aTextRun, float aInflation);
   nsTextFrame* GetNextBreakBeforeFrame(uint32_t* aIndex);
   void SetupBreakSinksForTextRun(gfxTextRun* aTextRun, const void* aTextPtr);
+  void SetupTextEmphasisForTextRun(gfxTextRun* aTextRun, const void* aTextPtr);
   struct FindBoundaryState {
     nsIFrame*    mStopAtFrame;
     nsTextFrame* mFirstTextFrame;
@@ -1900,6 +1902,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   const void* textPtr = aTextBuffer;
   bool anyTextTransformStyle = false;
   bool anyMathMLStyling = false;
+  bool anyTextEmphasis = false;
   uint8_t sstyScriptLevel = 0;
   uint32_t mathFlags = 0;
   uint32_t textFlags = nsTextFrameUtils::TEXT_NO_BREAKS;
@@ -1967,6 +1970,9 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
     textStyle = f->StyleText();
     if (NS_STYLE_TEXT_TRANSFORM_NONE != textStyle->mTextTransform) {
       anyTextTransformStyle = true;
+    }
+    if (textStyle->HasTextEmphasis()) {
+      anyTextEmphasis = true;
     }
     textFlags |= GetSpacingFlags(f);
     nsTextFrameUtils::CompressionMode compression =
@@ -2256,6 +2262,10 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   
   SetupBreakSinksForTextRun(textRun, textPtr);
 
+  if (anyTextEmphasis) {
+    SetupTextEmphasisForTextRun(textRun, textPtr);
+  }
+
   if (mSkipIncompleteTextRuns) {
     mSkipIncompleteTextRuns = !TextContainsLineBreakerWhiteSpace(textPtr,
         transformedLength, mDoubleByteText);
@@ -2486,6 +2496,65 @@ BuildTextRunsScanner::SetupBreakSinksForTextRun(gfxTextRun* aTextRun,
     }
     
     iter = iterNext;
+  }
+}
+
+static bool
+MayCharacterHaveEmphasisMark(uint32_t aCh)
+{
+  auto category = unicode::GetGeneralCategory(aCh);
+  
+  
+  
+  static_assert(IsUnsigned<decltype(category)>::value &&
+                HB_UNICODE_GENERAL_CATEGORY_CONTROL == 0,
+                "if this constant is not zero, or category is signed, "
+                "we need to explicitly do the comparison below");
+  return !(category <= HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED ||
+           (category >= HB_UNICODE_GENERAL_CATEGORY_LINE_SEPARATOR &&
+            category <= HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR));
+}
+
+static bool
+MayCharacterHaveEmphasisMark(uint8_t aCh)
+{
+  
+  
+  bool result = !(aCh <= 0x20 || (aCh >= 0x7f && aCh <= 0xa0));
+  MOZ_ASSERT(result == MayCharacterHaveEmphasisMark(uint32_t(aCh)),
+             "result for uint8_t should match result for uint32_t");
+  return result;
+}
+
+void
+BuildTextRunsScanner::SetupTextEmphasisForTextRun(gfxTextRun* aTextRun,
+                                                  const void* aTextPtr)
+{
+  if (!mDoubleByteText) {
+    auto text = reinterpret_cast<const uint8_t*>(aTextPtr);
+    for (auto i : MakeRange(aTextRun->GetLength())) {
+      if (!MayCharacterHaveEmphasisMark(text[i])) {
+        aTextRun->SetNoEmphasisMark(i);
+      }
+    }
+  } else {
+    auto text = reinterpret_cast<const char16_t*>(aTextPtr);
+    auto length = aTextRun->GetLength();
+    for (size_t i = 0; i < length; ++i) {
+      if (NS_IS_HIGH_SURROGATE(text[i]) && i + 1 < length &&
+          NS_IS_LOW_SURROGATE(text[i + 1])) {
+        uint32_t ch = SURROGATE_TO_UCS4(text[i], text[i + 1]);
+        if (!MayCharacterHaveEmphasisMark(ch)) {
+          aTextRun->SetNoEmphasisMark(i);
+          aTextRun->SetNoEmphasisMark(i + 1);
+        }
+        ++i;
+      } else {
+        if (!MayCharacterHaveEmphasisMark(uint32_t(text[i]))) {
+          aTextRun->SetNoEmphasisMark(i);
+        }
+      }
+    }
   }
 }
 
