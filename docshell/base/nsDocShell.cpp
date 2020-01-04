@@ -5066,11 +5066,11 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
         break;
       case NS_ERROR_CORRUPTED_CONTENT:
         
-        error.AssignLiteral("corruptedContentError");
+        error.AssignLiteral("corruptedContentErrorv2");
         break;
       case NS_ERROR_INTERCEPTION_FAILED:
         
-        error.AssignLiteral("corruptedContentError");
+        error.AssignLiteral("corruptedContentErrorv2");
         break;
       case NS_ERROR_NET_INADEQUATE_SECURITY:
         
