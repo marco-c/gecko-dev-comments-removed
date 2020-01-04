@@ -435,7 +435,7 @@ nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   }
 
   nsIFrame* kid;
-  for (kid = GetFirstPrincipalChild(); kid; kid = kid->GetNextSibling()) {
+  for (kid = PrincipalChildList().FirstChild(); kid; kid = kid->GetNextSibling()) {
     
     BuildDisplayListForChild(aBuilder, kid, aDirtyRect, aLists);
   }

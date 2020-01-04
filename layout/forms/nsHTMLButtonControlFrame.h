@@ -81,7 +81,7 @@ public:
 
   
   virtual nsContainerFrame* GetContentInsertionFrame() override {
-    return GetFirstPrincipalChild()->GetContentInsertionFrame();
+    return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override

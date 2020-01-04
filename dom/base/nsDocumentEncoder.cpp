@@ -331,7 +331,7 @@ LineHasNonEmptyContentWorker(nsIFrame* aFrame)
   
   
   if (aFrame->GetType() == nsGkAtoms::inlineFrame) {
-    nsIFrame* child = aFrame->GetFirstPrincipalChild();
+    nsIFrame* child = aFrame->PrincipalChildList().FirstChild();
     while (child) {
       if (LineHasNonEmptyContentWorker(child)) {
         return true;

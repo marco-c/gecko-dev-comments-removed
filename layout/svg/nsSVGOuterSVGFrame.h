@@ -96,11 +96,11 @@ public:
 
   virtual nsContainerFrame* GetContentInsertionFrame() override {
     
-    MOZ_ASSERT(GetFirstPrincipalChild() &&
-               GetFirstPrincipalChild()->GetType() ==
+    MOZ_ASSERT(PrincipalChildList().FirstChild() &&
+               PrincipalChildList().FirstChild()->GetType() ==
                  nsGkAtoms::svgOuterSVGAnonChildFrame,
                "Where is our anonymous child?");
-    return GetFirstPrincipalChild()->GetContentInsertionFrame();
+    return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
   virtual bool IsSVGTransformed(Matrix *aOwnTransform,
@@ -108,7 +108,7 @@ public:
     
     
     
-    return GetFirstPrincipalChild()->IsSVGTransformed();
+    return PrincipalChildList().FirstChild()->IsSVGTransformed();
   }
 
   

@@ -3795,7 +3795,7 @@ nsDocumentViewer::PrintPreviewNavigate(int16_t aType, int32_t aPageNum)
 
   
   
-  nsIFrame* pageFrame = seqFrame->GetFirstPrincipalChild();
+  nsIFrame* pageFrame = seqFrame->PrincipalChildList().FirstChild();
   while (pageFrame != nullptr) {
     nsRect pageRect = pageFrame->GetRect();
     if (pageRect.Contains(pageRect.x, pt.y)) {

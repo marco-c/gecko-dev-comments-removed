@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsHTMLParts.h"
 #include "nsStyleConsts.h"
@@ -17,11 +17,11 @@
 
 using namespace mozilla;
 
+// Interface IDs
 
+//#define DEBUG_REFLOW
 
-
-
-
+// static
 nsIRootBox*
 nsIRootBox::GetRootBox(nsIPresShell* aShell)
 {
@@ -34,7 +34,7 @@ nsIRootBox::GetRootBox(nsIPresShell* aShell)
   }
 
   if (rootFrame) {
-    rootFrame = rootFrame->GetFirstPrincipalChild();
+    rootFrame = rootFrame->PrincipalChildList().FirstChild();
   }
 
   nsIRootBox* rootBox = do_QueryFrame(rootFrame);
@@ -78,16 +78,16 @@ public:
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
 
-  
-
-
-
-
+  /**
+   * Get the "type" of the frame
+   *
+   * @see nsGkAtoms::rootFrame
+   */
   virtual nsIAtom* GetType() const override;
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override
   {
-    
+    // Override bogus IsFrameOfType in nsBoxFrame.
     if (aFlags & (nsIFrame::eReplacedContainsBlock | nsIFrame::eReplaced))
       return false;
     return nsBoxFrame::IsFrameOfType(aFlags);
@@ -103,7 +103,7 @@ protected:
   nsIContent* mDefaultTooltip;
 };
 
-
+//----------------------------------------------------------------------
 
 nsContainerFrame*
 NS_NewRootBoxFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
@@ -137,8 +137,8 @@ nsRootBoxFrame::InsertFrames(ChildListID     aListID,
                              nsIFrame*       aPrevFrame,
                              nsFrameList&    aFrameList)
 {
-  
-  
+  // Because we only support a single child frame inserting is the same
+  // as appending.
   MOZ_ASSERT(!aPrevFrame, "unexpected previous sibling frame");
   AppendFrames(aListID, aFrameList);
 }
@@ -180,16 +180,16 @@ nsRootBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                  const nsDisplayListSet& aLists)
 {
   if (mContent && mContent->GetProperty(nsGkAtoms::DisplayPortMargins)) {
-    
-    
-    
+    // The XUL document's root element may have displayport margins set in
+    // ChromeProcessController::InitializeRoot, and we should to supply the
+    // base rect.
     nsRect displayPortBase = aDirtyRect.Intersect(nsRect(nsPoint(0, 0), GetSize()));
     nsLayoutUtils::SetDisplayPortBase(mContent, displayPortBase);
   }
 
-  
-  
-  
+  // root boxes don't need a debug border/outline or a selection overlay...
+  // They *may* have a background propagated to them, so force creation
+  // of a background display list element.
   DisplayBorderBackgroundOutline(aBuilder, aLists, true);
 
   BuildDisplayListForChildren(aBuilder, aDirtyRect, aLists);
@@ -212,8 +212,8 @@ nsRootBoxFrame::HandleEvent(nsPresContext* aPresContext,
   return NS_OK;
 }
 
-
-
+// REVIEW: The override here was doing nothing since nsBoxFrame is our
+// parent class
 nsIAtom*
 nsRootBoxFrame::GetType() const
 {
@@ -229,14 +229,14 @@ nsRootBoxFrame::GetPopupSetFrame()
 void
 nsRootBoxFrame::SetPopupSetFrame(nsPopupSetFrame* aPopupSet)
 {
-  
-  
-  
-  
-  
-  
-  
-  
+  // Under normal conditions this should only be called once.  However,
+  // if something triggers ReconstructDocElementHierarchy, we will
+  // destroy this frame's child (the nsDocElementBoxFrame), but not this
+  // frame.  This will cause the popupset to remove itself by calling
+  // |SetPopupSetFrame(nullptr)|, and then we'll be able to accept a new
+  // popupset.  Since the anonymous content is associated with the
+  // nsDocElementBoxFrame, we'll get a new popupset when the new doc
+  // element box frame is created.
   if (!mPopupSetFrame || !aPopupSet) {
     mPopupSetFrame = aPopupSet;
   } else {
@@ -271,10 +271,10 @@ nsRootBoxFrame::AddTooltipSupport(nsIContent* aNode)
 nsresult
 nsRootBoxFrame::RemoveTooltipSupport(nsIContent* aNode)
 {
-  
-  
-  
-  
+  // XXjh yuck, I'll have to implement a way to get at
+  // the tooltip listener for a given node to make 
+  // this work.  Not crucial, we aren't removing 
+  // tooltips from any nodes in the app just yet.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsNativeTheme.h"
 #include "nsIWidget.h"
@@ -75,8 +75,8 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
   if (frameContent->IsElement()) {
     flags = frameContent->AsElement()->State();
 
-    
-    
+    // <input type=number> needs special handling since its nested native
+    // anonymous <input type=text> takes focus for it.
     if (aWidgetType == NS_THEME_NUMBER_INPUT &&
         frameContent->IsHTMLElement(nsGkAtoms::input)) {
       nsNumberControlFrame *numberControlFrame = do_QueryFrame(aFrame);
@@ -99,11 +99,11 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
       flags |= NS_EVENT_STATE_FOCUS;
   }
 
-  
-  
-  
+  // On Windows and Mac, only draw focus rings if they should be shown. This
+  // means that focus rings are only shown once the keyboard has been used to
+  // focus something in the window.
 #if defined(XP_MACOSX)
-  
+  // Mac always draws focus rings for textboxes and lists.
   if (aWidgetType == NS_THEME_NUMBER_INPUT ||
       aWidgetType == NS_THEME_TEXTFIELD ||
       aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
@@ -113,7 +113,7 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
   }
 #endif
 #if defined(XP_WIN)
-  
+  // On Windows, focused buttons are always drawn as such by the native theme.
   if (aWidgetType == NS_THEME_BUTTON)
     return flags;
 #endif    
@@ -127,7 +127,7 @@ nsNativeTheme::GetContentState(nsIFrame* aFrame, uint8_t aWidgetType)
   return flags;
 }
 
-
+/* static */
 bool
 nsNativeTheme::CheckBooleanAttr(nsIFrame* aFrame, nsIAtom* aAtom)
 {
@@ -141,14 +141,14 @@ nsNativeTheme::CheckBooleanAttr(nsIFrame* aFrame, nsIAtom* aAtom)
   if (content->IsHTMLElement())
     return content->HasAttr(kNameSpaceID_None, aAtom);
 
-  
-  
-  
+  // For XML/XUL elements, an attribute must be equal to the literal
+  // string "true" to be counted as true.  An empty string should _not_
+  // be counted as true.
   return content->AttrValueIs(kNameSpaceID_None, aAtom,
                               NS_LITERAL_STRING("true"), eCaseMatters);
 }
 
-
+/* static */
 int32_t
 nsNativeTheme::CheckIntAttr(nsIFrame* aFrame, nsIAtom* aAtom, int32_t defaultValue)
 {
@@ -165,12 +165,12 @@ nsNativeTheme::CheckIntAttr(nsIFrame* aFrame, nsIAtom* aAtom, int32_t defaultVal
   return value;
 }
 
-
+/* static */
 double
 nsNativeTheme::GetProgressValue(nsIFrame* aFrame)
 {
-  
-  
+  // When we are using the HTML progress element,
+  // we can get the value from the IDL property.
   if (aFrame && aFrame->GetContent()->IsHTMLElement(nsGkAtoms::progress)) {
     return static_cast<HTMLProgressElement*>(aFrame->GetContent())->Value();
   }
@@ -178,12 +178,12 @@ nsNativeTheme::GetProgressValue(nsIFrame* aFrame)
   return (double)nsNativeTheme::CheckIntAttr(aFrame, nsGkAtoms::value, 0);
 }
 
-
+/* static */
 double
 nsNativeTheme::GetProgressMaxValue(nsIFrame* aFrame)
 {
-  
-  
+  // When we are using the HTML progress element,
+  // we can get the max from the IDL property.
   if (aFrame && aFrame->GetContent()->IsHTMLElement(nsGkAtoms::progress)) {
     return static_cast<HTMLProgressElement*>(aFrame->GetContent())->Max();
   }
@@ -200,11 +200,11 @@ nsNativeTheme::GetCheckedOrSelected(nsIFrame* aFrame, bool aCheckSelected)
   nsIContent* content = aFrame->GetContent();
 
   if (content->IsXULElement()) {
-    
-    
+    // For a XUL checkbox or radio button, the state of the parent determines
+    // the checked state
     aFrame = aFrame->GetParent();
   } else {
-    
+    // Check for an HTML input element
     nsCOMPtr<nsIDOMHTMLInputElement> inputElt = do_QueryInterface(content);
     if (inputElt) {
       bool checked;
@@ -249,12 +249,12 @@ nsNativeTheme::GetIndeterminate(nsIFrame* aFrame)
   nsIContent* content = aFrame->GetContent();
 
   if (content->IsXULElement()) {
-    
-    
+    // For a XUL checkbox or radio button, the state of the parent determines
+    // the state
     return CheckBooleanAttr(aFrame->GetParent(), nsGkAtoms::indeterminate);
   }
 
-  
+  // Check for an HTML input element
   nsCOMPtr<nsIDOMHTMLInputElement> inputElt = do_QueryInterface(content);
   if (inputElt) {
     bool indeterminate;
@@ -269,20 +269,20 @@ bool
 nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
                               uint8_t aWidgetType)
 {
-  
+  // Check for specific widgets to see if HTML has overridden the style.
   if (!aFrame)
     return false;
 
-  
-  
-  
-  
-  
+  // Resizers have some special handling, dependent on whether in a scrollable
+  // container or not. If so, use the scrollable container's to determine
+  // whether the style is overriden instead of the resizer. This allows a
+  // non-native transparent resizer to be used instead. Otherwise, we just
+  // fall through and return false.
   if (aWidgetType == NS_THEME_RESIZER) {
     nsIFrame* parentFrame = aFrame->GetParent();
     if (parentFrame && parentFrame->GetType() == nsGkAtoms::scrollFrame) {
-      
-      
+      // if the parent is a scrollframe, the resizer should be native themed
+      // only if the scrollable area doesn't override the widget style.
       parentFrame = parentFrame->GetParent();
       if (parentFrame) {
         return IsWidgetStyled(aPresContext, parentFrame,
@@ -291,10 +291,10 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
     }
   }
 
-  
-
-
-
+  /**
+   * Progress bar appearance should be the same for the bar and the container
+   * frame. nsProgressFrame owns the logic and will tell us what we should do.
+   */
   if (aWidgetType == NS_THEME_PROGRESSBAR_CHUNK ||
       aWidgetType == NS_THEME_PROGRESSBAR) {
     nsProgressFrame* progressFrame = do_QueryFrame(aWidgetType == NS_THEME_PROGRESSBAR_CHUNK
@@ -304,10 +304,10 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
     }
   }
 
-  
-
-
-
+  /**
+   * Meter bar appearance should be the same for the bar and the container
+   * frame. nsMeterFrame owns the logic and will tell us what we should do.
+   */
   if (aWidgetType == NS_THEME_METERBAR_CHUNK ||
       aWidgetType == NS_THEME_METERBAR) {
     nsMeterFrame* meterFrame = do_QueryFrame(aWidgetType == NS_THEME_METERBAR_CHUNK
@@ -317,11 +317,11 @@ nsNativeTheme::IsWidgetStyled(nsPresContext* aPresContext, nsIFrame* aFrame,
     }
   }
 
-  
-
-
-
-
+  /**
+   * An nsRangeFrame and its children are treated atomically when it
+   * comes to native theming (either all parts, or no parts, are themed).
+   * nsRangeFrame owns the logic and will tell us what we should do.
+   */
   if (aWidgetType == NS_THEME_RANGE ||
       aWidgetType == NS_THEME_RANGE_THUMB) {
     nsRangeFrame* rangeFrame =
@@ -369,9 +369,9 @@ nsNativeTheme::IsDisabled(nsIFrame* aFrame, EventStates aEventStates)
     return aEventStates.HasState(NS_EVENT_STATE_DISABLED);
   }
 
-  
-  
-  
+  // For XML/XUL elements, an attribute must be equal to the literal
+  // string "true" to be counted as true.  An empty string should _not_
+  // be counted as true.
   return content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
                               NS_LITERAL_STRING("true"), eCaseMatters);
 }
@@ -397,7 +397,7 @@ nsNativeTheme::IsHTMLContent(nsIFrame *aFrame)
 }
 
 
-
+// scrollbar button:
 int32_t
 nsNativeTheme::GetScrollbarButtonType(nsIFrame* aFrame)
 {
@@ -421,7 +421,7 @@ nsNativeTheme::GetScrollbarButtonType(nsIFrame* aFrame)
   return 0;
 }
 
-
+// treeheadercell:
 nsNativeTheme::TreeSortDirection
 nsNativeTheme::GetTreeSortDirection(nsIFrame* aFrame)
 {
@@ -446,17 +446,17 @@ nsNativeTheme::IsLastTreeHeaderCell(nsIFrame* aFrame)
   if (!aFrame)
     return false;
 
-  
+  // A tree column picker is always the last header cell.
   if (aFrame->GetContent()->IsXULElement(nsGkAtoms::treecolpicker))
     return true;
 
-  
+  // Find the parent tree.
   nsIContent* parent = aFrame->GetContent()->GetParent();
   while (parent && !parent->IsXULElement(nsGkAtoms::tree)) {
     parent = parent->GetParent();
   }
 
-  
+  // If the column picker is visible, this can't be the last column.
   if (parent && !parent->AttrValueIs(kNameSpaceID_None, nsGkAtoms::hidecolumnpicker,
                                      NS_LITERAL_STRING("true"), eCaseMatters))
     return false;
@@ -468,7 +468,7 @@ nsNativeTheme::IsLastTreeHeaderCell(nsIFrame* aFrame)
   return true;
 }
 
-
+// tab:
 bool
 nsNativeTheme::IsBottomTab(nsIFrame* aFrame)
 {
@@ -486,7 +486,7 @@ nsNativeTheme::IsFirstTab(nsIFrame* aFrame)
   if (!aFrame)
     return false;
 
-  nsIFrame* first = aFrame->GetParent()->GetFirstPrincipalChild();
+  nsIFrame* first = aFrame->GetParent()->PrincipalChildList().FirstChild();
   while (first) {
     if (first->GetRect().width > 0 &&
         first->GetContent()->IsXULElement(nsGkAtoms::tab))
@@ -518,7 +518,7 @@ nsNativeTheme::IsNextToSelectedTab(nsIFrame* aFrame, int32_t aOffset)
 
   int32_t thisTabIndex = -1, selectedTabIndex = -1;
 
-  nsIFrame* currentTab = aFrame->GetParent()->GetFirstPrincipalChild();
+  nsIFrame* currentTab = aFrame->GetParent()->PrincipalChildList().FirstChild();
   for (int32_t i = 0; currentTab; currentTab = currentTab->GetNextSibling()) {
     if (currentTab->GetRect().width == 0)
       continue;
@@ -535,7 +535,7 @@ nsNativeTheme::IsNextToSelectedTab(nsIFrame* aFrame, int32_t aOffset)
   return (thisTabIndex - selectedTabIndex == aOffset);
 }
 
-
+// progressbar:
 bool
 nsNativeTheme::IsIndeterminateProgress(nsIFrame* aFrame,
                                        EventStates aEventStates)
@@ -579,7 +579,7 @@ nsNativeTheme::IsVerticalMeter(nsIFrame* aFrame)
   return false;
 }
 
-
+// menupopup:
 bool
 nsNativeTheme::IsSubmenu(nsIFrame* aFrame, bool* aLeftOfParent)
 {
@@ -668,8 +668,8 @@ nsNativeTheme::Notify(nsITimer* aTimer)
 {
   NS_ASSERTION(aTimer == mAnimatedContentTimer, "Wrong timer!");
 
-  
-  
+  // XXX Assumes that calling nsIFrame::Invalidate won't reenter
+  //     QueueAnimatedContentForRefresh.
 
   uint32_t count = mAnimatedContentList.Length();
   for (uint32_t index = 0; index < count; index++) {
@@ -691,13 +691,13 @@ nsNativeTheme::GetAdjacentSiblingFrameWithSameAppearance(nsIFrame* aFrame,
   if (!aFrame)
     return nullptr;
 
-  
+  // Find the next visible sibling.
   nsIFrame* sibling = aFrame;
   do {
     sibling = aNextSibling ? sibling->GetNextSibling() : sibling->GetPrevSibling();
   } while (sibling && sibling->GetRect().width == 0);
 
-  
+  // Check same appearance and adjacency.
   if (!sibling ||
       sibling->StyleDisplay()->mAppearance != aFrame->StyleDisplay()->mAppearance ||
       (sibling->GetRect().XMost() != aFrame->GetRect().x &&
@@ -711,14 +711,14 @@ nsNativeTheme::IsRangeHorizontal(nsIFrame* aFrame)
 {
   nsIFrame* rangeFrame = aFrame;
   if (rangeFrame->GetType() != nsGkAtoms::rangeFrame) {
-    
+    // If the thumb's frame is passed in, get its range parent:
     rangeFrame = aFrame->GetParent();
   }
   if (rangeFrame->GetType() == nsGkAtoms::rangeFrame) {
     return static_cast<nsRangeFrame*>(rangeFrame)->IsHorizontal();
   }
-  
-  
+  // Not actually a range frame - just use the ratio of the frame's size to
+  // decide:
   return aFrame->GetSize().width >= aFrame->GetSize().height;
 }
 
@@ -750,10 +750,10 @@ nsNativeTheme::IsDarkBackground(nsIFrame* aFrame)
 
   nsIFrame* frame = scrollFrame->GetScrolledFrame();
   if (nsCSSRendering::IsCanvasFrame(frame)) {
-    
-    
-    
-    
+    // For canvas frames, prefer to look at the body first, because the body
+    // background color is most likely what will be visible as the background
+    // color of the page, even if the html element has a different background
+    // color which prevents that of the body frame to propagate to the viewport.
     nsIFrame* bodyFrame = GetBodyFrame(frame);
     if (bodyFrame) {
       frame = bodyFrame;
@@ -767,9 +767,9 @@ nsNativeTheme::IsDarkBackground(nsIFrame* aFrame)
   }
   if (bgSC) {
     nscolor bgColor = bgSC->StyleBackground()->mBackgroundColor;
-    
-    
-    
+    // Consider the background color dark if the sum of the r, g and b values is
+    // less than 384 in a semi-transparent document.  This heuristic matches what
+    // WebKit does, and we can improve it later if needed.
     return NS_GET_A(bgColor) > 127 &&
            NS_GET_R(bgColor) + NS_GET_G(bgColor) + NS_GET_B(bgColor) < 384;
   }

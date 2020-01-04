@@ -2917,7 +2917,7 @@ HTMLInputElement::Focus(ErrorResult& aError)
   
   nsIFrame* frame = GetPrimaryFrame();
   if (frame) {
-    for (nsIFrame* childFrame = frame->GetFirstPrincipalChild();
+    for (nsIFrame* childFrame = frame->PrincipalChildList().FirstChild();
          childFrame;
          childFrame = childFrame->GetNextSibling()) {
       

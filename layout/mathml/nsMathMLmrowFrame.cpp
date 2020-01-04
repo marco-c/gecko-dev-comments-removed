@@ -43,7 +43,7 @@ nsMathMLmrowFrame::AttributeChanged(int32_t  aNameSpaceID,
   
   if (mContent->IsMathMLElement(nsGkAtoms::mtable_)) {
     nsIFrame* frame = mFrames.FirstChild();
-    for ( ; frame; frame = frame->GetFirstPrincipalChild()) {
+    for ( ; frame; frame = frame->PrincipalChildList().FirstChild()) {
       
       if (frame->GetType() == nsGkAtoms::tableOuterFrame)
         return frame->AttributeChanged(aNameSpaceID, aAttribute, aModType);

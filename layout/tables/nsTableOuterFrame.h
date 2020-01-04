@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #ifndef nsTableOuterFrame_h__
 #define nsTableOuterFrame_h__
 
@@ -12,11 +12,11 @@
 #include "nsCellMap.h"
 #include "nsTableFrame.h"
 
-
-
-
-
-
+/**
+ * Primary frame for a table element,
+ * the nsTableOuterFrame contains 0 or one caption frame, and a nsTableFrame
+ * pseudo-frame (referred to as the "inner frame').
+ */
 class nsTableOuterFrame : public nsContainerFrame
 {
 public:
@@ -25,15 +25,15 @@ public:
 
   NS_DECL_QUERYFRAME_TARGET(nsTableOuterFrame)
 
-  
-
-
-
-
+  /** instantiate a new instance of nsTableRowFrame.
+    * @param aPresShell the pres shell for this frame
+    *
+    * @return           the frame that was created
+    */
   friend nsTableOuterFrame* NS_NewTableOuterFrame(nsIPresShell* aPresShell,
                                                   nsStyleContext* aContext);
   
-  
+  // nsIFrame overrides - see there for a description
 
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
 
@@ -51,7 +51,7 @@ public:
                            nsIFrame*       aOldFrame) override;
 
   virtual nsContainerFrame* GetContentInsertionFrame() override {
-    return GetFirstPrincipalChild()->GetContentInsertionFrame();
+    return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
 #ifdef ACCESSIBILITY
@@ -81,19 +81,19 @@ public:
                   const mozilla::LogicalSize& aPadding,
                   bool aShrinkWrap) override;
 
-  
-
-
+  /** process a reflow command for the table.
+    * This involves reflowing the caption and the inner table.
+    * @see nsIFrame::Reflow */
   virtual void Reflow(nsPresContext*           aPresContext,
                       nsHTMLReflowMetrics&     aDesiredSize,
                       const nsHTMLReflowState& aReflowState,
                       nsReflowStatus&          aStatus) override;
 
-  
-
-
-
-
+  /**
+   * Get the "type" of the frame
+   *
+   * @see nsGkAtoms::tableOuterFrame
+   */
   virtual nsIAtom* GetType() const override;
 
 #ifdef DEBUG_FRAME_DUMP
@@ -102,30 +102,30 @@ public:
 
   virtual nsStyleContext* GetParentStyleContext(nsIFrame** aProviderFrame) const override;
 
-  
-
-
+  /**
+   * Return the content for the cell at the given row and column.
+   */
   nsIContent* GetCellAt(uint32_t aRowIdx, uint32_t aColIdx) const;
 
-  
-
-
+  /**
+   * Return the number of rows in the table.
+   */
   int32_t GetRowCount() const
   {
     return InnerTableFrame()->GetRowCount();
   }
 
-  
-
-
+  /**
+   * Return the number of columns in the table.
+   */
   int32_t GetColCount() const
   {
     return InnerTableFrame()->GetColCount();
   }
 
-  
-
-
+  /**
+   * Return the index of the cell at the given row and column.
+   */
   int32_t GetIndexByRowAndColumn(int32_t aRowIdx, int32_t aColIdx) const
   {
     nsTableCellMap* cellMap = InnerTableFrame()->GetCellMap();
@@ -135,9 +135,9 @@ public:
     return cellMap->GetIndexByRowAndColumn(aRowIdx, aColIdx);
   }
 
-  
-
-
+  /**
+   * Get the row and column indices for the cell at the given index.
+   */
   void GetRowAndColumnByIndex(int32_t aCellIdx, int32_t* aRowIdx,
                               int32_t* aColIdx) const
   {
@@ -148,9 +148,9 @@ public:
     }
   }
 
-  
-
-
+  /**
+   * return the frame for the cell at the given row and column.
+   */
   nsTableCellFrame* GetCellFrameAt(uint32_t aRowIdx, uint32_t aColIdx) const
   {
     nsTableCellMap* map = InnerTableFrame()->GetCellMap();
@@ -161,18 +161,18 @@ public:
     return map->GetCellInfoAt(aRowIdx, aColIdx);
   }
 
-  
-
-
+  /**
+   * Return the col span of the cell at the given row and column indices.
+   */
   uint32_t GetEffectiveColSpanAt(uint32_t aRowIdx, uint32_t aColIdx) const
   {
     nsTableCellMap* map = InnerTableFrame()->GetCellMap();
     return map->GetEffectiveColSpan(aRowIdx, aColIdx);
   }
 
-  
-
-
+  /**
+   * Return the effective row span of the cell at the given row and column.
+   */
   uint32_t GetEffectiveRowSpanAt(uint32_t aRowIdx, uint32_t aColIdx) const
   {
     nsTableCellMap* map = InnerTableFrame()->GetCellMap();
@@ -188,9 +188,9 @@ protected:
   void InitChildReflowState(nsPresContext&    aPresContext,                     
                             nsHTMLReflowState& aReflowState);
 
-  
-  
-  
+  // Get a NS_STYLE_CAPTION_SIDE_* value, or NO_SIDE if no caption is present.
+  // (Remember that caption-side values are interpreted logically, despite
+  // having "physical" names.)
   uint8_t GetCaptionSide();
 
   bool HasSideCaption() {
@@ -228,7 +228,7 @@ protected:
                             mozilla::LogicalPoint&         aOrigin,
                             mozilla::WritingMode           aWM);
   
-  
+  // reflow the child (caption or innertable frame)
   void OuterBeginReflowChild(nsPresContext*                     aPresContext,
                              nsIFrame*                          aChildFrame,
                              const nsHTMLReflowState&           aOuterRS,
@@ -241,10 +241,10 @@ protected:
                           nsHTMLReflowMetrics&     aMetrics,
                           nsReflowStatus&          aStatus);
 
-  
+  // Set the overflow areas in our reflow metrics
   void UpdateOverflowAreas(nsHTMLReflowMetrics& aMet);
 
-  
+  // Get the margin.
   void GetChildMargin(nsPresContext*           aPresContext,
                       const nsHTMLReflowState& aOuterRS,
                       nsIFrame*                aChildFrame,

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/BoxObject.h"
 #include "nsCOMPtr.h"
@@ -27,19 +27,19 @@
 #include "nsComponentManagerUtils.h"
 #include "mozilla/dom/BoxObjectBinding.h"
 
-
+// Implementation /////////////////////////////////////////////////////////////////
 
 namespace mozilla {
 namespace dom {
 
+// Static member variable initialization
 
-
-
+// Implement our nsISupports methods
 NS_IMPL_CYCLE_COLLECTION_CLASS(BoxObject)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(BoxObject)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(BoxObject)
 
-
+// QueryInterface implementation for BoxObject
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BoxObject)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsIBoxObject)
@@ -48,7 +48,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(BoxObject)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BoxObject)
-  
+  // XXX jmorton: why aren't we unlinking mPropertyTable?
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -63,7 +63,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_WRAPPERCACHE(BoxObject)
 
-
+// Constructors/Destructors
 BoxObject::BoxObject()
   : mContent(nullptr)
 {
@@ -84,7 +84,7 @@ BoxObject::GetElement(nsIDOMElement** aResult)
   return NS_OK;
 }
 
-
+// nsPIBoxObject //////////////////////////////////////////////////////////////////////////
 
 nsresult
 BoxObject::Init(nsIContent* aContent)
@@ -113,14 +113,14 @@ BoxObject::GetFrame(bool aFlushLayout)
     return nullptr;
 
   if (!aFlushLayout) {
-    
-    
-    
-    
+    // If we didn't flush layout when getting the presshell, we should at least
+    // flush to make sure our frame model is up to date.
+    // XXXbz should flush on document, no?  Except people call this from
+    // frame code, maybe?
     shell->FlushPendingNotifications(Flush_Frames);
   }
 
-  
+  // The flush might have killed mContent.
   if (!mContent) {
     return nullptr;
   }
@@ -155,17 +155,17 @@ BoxObject::GetOffsetRect(nsIntRect& aRect)
   if (!mContent)
     return NS_ERROR_NOT_INITIALIZED;
 
-  
+  // Get the Frame for our content
   nsIFrame* frame = GetFrame(true);
   if (frame) {
-    
+    // Get its origin
     nsPoint origin = frame->GetPositionIgnoringScrolling();
 
-    
+    // Find the frame parent whose content is the document element.
     Element* docElement = mContent->GetComposedDoc()->GetRootElement();
     nsIFrame* parent = frame->GetParent();
     for (;;) {
-      
+      // If we've hit the document element, break here
       if (parent->GetContent() == docElement) {
         break;
       }
@@ -177,18 +177,18 @@ BoxObject::GetOffsetRect(nsIntRect& aRect)
         break;
       }
 
-      
-      
+      // Add the parent's origin to our own to get to the
+      // right coordinate system
       origin += next->GetPositionOfChildIgnoringScrolling(parent);
       parent = next;
     }
 
-    
+    // For the origin, add in the border for the frame
     const nsStyleBorder* border = frame->StyleBorder();
     origin.x += border->GetComputedBorderWidth(NS_SIDE_LEFT);
     origin.y += border->GetComputedBorderWidth(NS_SIDE_TOP);
 
-    
+    // And subtract out the border for the parent
     const nsStyleBorder* parentBorder = parent->StyleBorder();
     origin.x -= parentBorder->GetComputedBorderWidth(NS_SIDE_LEFT);
     origin.y -= parentBorder->GetComputedBorderWidth(NS_SIDE_TOP);
@@ -196,10 +196,10 @@ BoxObject::GetOffsetRect(nsIntRect& aRect)
     aRect.x = nsPresContext::AppUnitsToIntCSSPixels(origin.x);
     aRect.y = nsPresContext::AppUnitsToIntCSSPixels(origin.y);
 
-    
-    
-    
-    
+    // Get the union of all rectangles in this and continuation frames.
+    // It doesn't really matter what we use as aRelativeTo here, since
+    // we only care about the size. Using 'parent' might make things
+    // a bit faster by speeding up the internal GetOffsetTo operations.
     nsRect rcFrame = nsLayoutUtils::GetAllInFlowRectsUnion(frame, parent);
     aRect.width = nsPresContext::AppUnitsToIntCSSPixels(rcFrame.width);
     aRect.height = nsPresContext::AppUnitsToIntCSSPixels(rcFrame.height);
@@ -291,7 +291,7 @@ BoxObject::GetPropertyAsSupports(const char16_t* aPropertyName, nsISupports** aR
     return NS_OK;
   }
   nsDependentString propertyName(aPropertyName);
-  mPropertyTable->Get(propertyName, aResult); 
+  mPropertyTable->Get(propertyName, aResult); // Addref here.
   return NS_OK;
 }
 
@@ -382,9 +382,9 @@ BoxObject::GetFirstChild(nsIDOMElement * *aFirstVisibleChild)
   *aFirstVisibleChild = nullptr;
   nsIFrame* frame = GetFrame(false);
   if (!frame) return NS_OK;
-  nsIFrame* firstFrame = frame->GetFirstPrincipalChild();
+  nsIFrame* firstFrame = frame->PrincipalChildList().FirstChild();
   if (!firstFrame) return NS_OK;
-  
+  // get the content for the box and query to a dom element
   nsCOMPtr<nsIDOMElement> el = do_QueryInterface(firstFrame->GetContent());
   el.swap(*aFirstVisibleChild);
   return NS_OK;
@@ -407,7 +407,7 @@ BoxObject::GetNextSibling(nsIDOMElement **aNextOrdinalSibling)
   if (!frame) return NS_OK;
   nsIFrame* nextFrame = frame->GetNextSibling();
   if (!nextFrame) return NS_OK;
-  
+  // get the content for the box and query to a dom element
   nsCOMPtr<nsIDOMElement> el = do_QueryInterface(nextFrame->GetContent());
   el.swap(*aNextOrdinalSibling);
   return NS_OK;
@@ -429,7 +429,7 @@ BoxObject::GetPreviousSibling(nsIFrame* aParentFrame, nsIFrame* aFrame,
                               nsIDOMElement** aResult)
 {
   *aResult = nullptr;
-  nsIFrame* nextFrame = aParentFrame->GetFirstPrincipalChild();
+  nsIFrame* nextFrame = aParentFrame->PrincipalChildList().FirstChild();
   nsIFrame* prevFrame = nullptr;
   while (nextFrame) {
     if (nextFrame == aFrame)
@@ -439,7 +439,7 @@ BoxObject::GetPreviousSibling(nsIFrame* aParentFrame, nsIFrame* aFrame,
   }
 
   if (!prevFrame) return NS_OK;
-  
+  // get the content for the box and query to a dom element
   nsCOMPtr<nsIDOMElement> el = do_QueryInterface(prevFrame->GetContent());
   el.swap(*aResult);
   return NS_OK;
@@ -599,10 +599,10 @@ BoxObject::GetPreviousSibling()
   return ret.forget();
 }
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
 
-
+// Creation Routine ///////////////////////////////////////////////////////////////////////
 
 using namespace mozilla::dom;
 

@@ -223,13 +223,13 @@ GetFrameForChildrenOnlyTransformHint(nsIFrame *aFrame)
     
     
     
-    aFrame = aFrame->GetFirstPrincipalChild();
+    aFrame = aFrame->PrincipalChildList().FirstChild();
   }
   
   
   aFrame = aFrame->GetContent()->GetPrimaryFrame();
   if (aFrame->GetType() == nsGkAtoms::svgOuterSVGFrame) {
-    aFrame = aFrame->GetFirstPrincipalChild();
+    aFrame = aFrame->PrincipalChildList().FirstChild();
     MOZ_ASSERT(aFrame->GetType() == nsGkAtoms::svgOuterSVGAnonChildFrame,
                "Where is the nsSVGOuterSVGFrame's anon child??");
   }
@@ -327,7 +327,7 @@ DoApplyRenderingChangeToTree(nsIFrame* aFrame,
     if (aChange & nsChangeHint_ChildrenOnlyTransform) {
       needInvalidatingPaint = true;
       nsIFrame* childFrame =
-        GetFrameForChildrenOnlyTransformHint(aFrame)->GetFirstPrincipalChild();
+        GetFrameForChildrenOnlyTransformHint(aFrame)->PrincipalChildList().FirstChild();
       for ( ; childFrame; childFrame = childFrame->GetNextSibling()) {
         ActiveLayerTracker::NotifyRestyle(childFrame, eCSSProperty_transform);
       }
@@ -902,7 +902,7 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         if (hint & nsChangeHint_ChildrenOnlyTransform) {
           
           nsIFrame* hintFrame = GetFrameForChildrenOnlyTransformHint(frame);
-          nsIFrame* childFrame = hintFrame->GetFirstPrincipalChild();
+          nsIFrame* childFrame = hintFrame->PrincipalChildList().FirstChild();
           NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame),
                        "SVG frames should not have continuations "
                        "or ib-split siblings");

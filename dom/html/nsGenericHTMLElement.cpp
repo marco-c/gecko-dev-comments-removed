@@ -1111,7 +1111,7 @@ nsGenericHTMLElement::GetFormControlFrame(bool aFlushFrames)
 
     
     
-    for (frame = frame->GetFirstPrincipalChild();
+    for (frame = frame->PrincipalChildList().FirstChild();
          frame;
          frame = frame->GetNextSibling()) {
       form_frame = do_QueryFrame(frame);

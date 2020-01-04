@@ -197,7 +197,7 @@ DisplayRows(nsDisplayListBuilder* aBuilder, nsFrame* aFrame,
 
   
   nsTableRowGroupFrame::FrameCursorData* cursor = f->SetupRowCursor();
-  kid = f->GetFirstPrincipalChild();
+  kid = f->PrincipalChildList().FirstChild();
   while (kid) {
     f->BuildDisplayListForChild(aBuilder, kid, aDirtyRect, aLists);
 
@@ -1365,7 +1365,7 @@ nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  if (GetNextInFlow() && GetNextInFlow()->GetFirstPrincipalChild()) {
+  if (GetNextInFlow() && GetNextInFlow()->PrincipalChildList().FirstChild()) {
     NS_FRAME_SET_INCOMPLETE(aStatus);
   }
 
