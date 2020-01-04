@@ -977,12 +977,14 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
 
       
       nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-      nsIPrincipal *principal = d->NodePrincipal();
-      os->NotifyObservers(d,
-                          nsContentUtils::IsSystemPrincipal(principal) ?
-                          "chrome-document-loaded" :
-                          "content-document-loaded",
-                          nullptr);
+      if (os) {
+        nsIPrincipal *principal = d->NodePrincipal();
+        os->NotifyObservers(d,
+                            nsContentUtils::IsSystemPrincipal(principal) ?
+                            "chrome-document-loaded" :
+                            "content-document-loaded",
+                            nullptr);
+      }
 
       
       RefPtr<TimelineConsumers> timelines = TimelineConsumers::Get();

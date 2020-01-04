@@ -5163,12 +5163,14 @@ nsDocument::DispatchContentLoadedEvents()
 
   
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  nsIPrincipal *principal = GetPrincipal();
-  os->NotifyObservers(static_cast<nsIDocument*>(this),
-                      nsContentUtils::IsSystemPrincipal(principal) ?
-                        "chrome-document-interactive" :
-                        "content-document-interactive",
-                      nullptr);
+  if (os) {
+    nsIPrincipal *principal = GetPrincipal();
+    os->NotifyObservers(static_cast<nsIDocument*>(this),
+                        nsContentUtils::IsSystemPrincipal(principal) ?
+                          "chrome-document-interactive" :
+                          "content-document-interactive",
+                        nullptr);
+  }
 
   
   
@@ -9298,15 +9300,17 @@ nsDocument::OnPageShow(bool aPersisted,
 
   
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  nsIPrincipal *principal = GetPrincipal();
-  os->NotifyObservers(static_cast<nsIDocument*>(this),
-                      nsContentUtils::IsSystemPrincipal(principal) ?
-                        "chrome-page-shown" :
-                        "content-page-shown",
-                      nullptr);
-  if (!mObservingAppThemeChanged) {
-    os->AddObserver(this, "app-theme-changed",  false);
-    mObservingAppThemeChanged = true;
+  if (os) {
+    nsIPrincipal *principal = GetPrincipal();
+    os->NotifyObservers(static_cast<nsIDocument*>(this),
+                        nsContentUtils::IsSystemPrincipal(principal) ?
+                          "chrome-page-shown" :
+                          "content-page-shown",
+                        nullptr);
+    if (!mObservingAppThemeChanged) {
+      os->AddObserver(this, "app-theme-changed",  false);
+      mObservingAppThemeChanged = true;
+    }
   }
 
   DispatchPageTransition(target, NS_LITERAL_STRING("pageshow"), aPersisted);
