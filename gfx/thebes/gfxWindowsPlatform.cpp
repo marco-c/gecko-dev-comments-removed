@@ -1748,7 +1748,6 @@ public:
       {
         mVsyncThread = new base::Thread("WindowsVsyncThread");
         const double rate = 1000 / 60.0;
-        mSoftwareVsyncRate = TimeDuration::FromMilliseconds(rate);
         MOZ_RELEASE_ASSERT(mVsyncThread->Start(), "GFX: Could not start Windows vsync thread");
         SetVsyncRate();
       }
@@ -1827,7 +1826,7 @@ public:
         MOZ_ASSERT(IsInVsyncThread());
         NS_WARNING("DwmComposition dynamically disabled, falling back to software timers");
 
-        TimeStamp nextVsync = aVsyncTimestamp + mSoftwareVsyncRate;
+        TimeStamp nextVsync = aVsyncTimestamp + mVsyncRate;
         TimeDuration delay = nextVsync - TimeStamp::Now();
         if (delay.ToMilliseconds() < 0) {
           delay = mozilla::TimeDuration::FromMilliseconds(0);
@@ -1838,16 +1837,30 @@ public:
             delay.ToMilliseconds());
       }
 
-      TimeStamp GetAdjustedVsyncTimeStamp(LARGE_INTEGER& aFrequency,
-                                          QPC_TIME& aQpcVblankTime)
+      
+      TimeStamp GetVBlankTime()
       {
         TimeStamp vsync = TimeStamp::Now();
+        TimeStamp now = vsync;
+
+        DWM_TIMING_INFO vblankTime;
+        
+        
+        vblankTime.cbSize = sizeof(DWM_TIMING_INFO);
+        HRESULT hr = WinUtils::dwmGetCompositionTimingInfoPtr(0, &vblankTime);
+        if (!SUCCEEDED(hr)) {
+            return vsync;
+        }
+
+        LARGE_INTEGER frequency;
+        QueryPerformanceFrequency(&frequency);
+
         LARGE_INTEGER qpcNow;
         QueryPerformanceCounter(&qpcNow);
 
         const int microseconds = 1000000;
-        int64_t adjust = qpcNow.QuadPart - aQpcVblankTime;
-        int64_t usAdjust = (adjust * microseconds) / aFrequency.QuadPart;
+        int64_t adjust = qpcNow.QuadPart - vblankTime.qpcVBlank;
+        int64_t usAdjust = (adjust * microseconds) / frequency.QuadPart;
         vsync -= TimeDuration::FromMicroseconds((double) usAdjust);
 
         if (IsWin10OrLater()) {
@@ -1863,24 +1876,17 @@ public:
           
           
           
-          
-          TimeStamp upcomingVsync = vsync;
-          if (upcomingVsync < mPrevVsync) {
-            
-            
-            upcomingVsync = TimeStamp::Now() + TimeDuration::FromMilliseconds(1);
+          if (vsync >= now) {
+            vsync = vsync - mVsyncRate;
+            return vsync <= now ? vsync : now;
           }
-
-          vsync = mPrevVsync;
-          mPrevVsync = upcomingVsync;
         }
-        
-        
 
         
         
-        if (vsync >= TimeStamp::Now()) {
-          vsync = TimeStamp::Now();
+        
+        if (vsync >= now) {
+            vsync = now;
         }
         return vsync;
       }
@@ -1890,18 +1896,10 @@ public:
         MOZ_ASSERT(IsInVsyncThread());
         MOZ_ASSERT(sizeof(int64_t) == sizeof(QPC_TIME));
 
-        DWM_TIMING_INFO vblankTime;
-        
-        vblankTime.cbSize = sizeof(DWM_TIMING_INFO);
-
-        LARGE_INTEGER frequency;
-        QueryPerformanceFrequency(&frequency);
         TimeStamp vsync = TimeStamp::Now();
-        
-        
-        
-        
-        mPrevVsync = vsync + mSoftwareVsyncRate;
+        mPrevVsync = TimeStamp();
+        TimeStamp flushTime = TimeStamp::Now();
+        TimeDuration longVBlank = mVsyncRate * 2;
 
         for (;;) {
           { 
@@ -1928,16 +1926,35 @@ public:
           HRESULT hr = WinUtils::dwmFlushProcPtr();
           if (!SUCCEEDED(hr)) {
             
-            
-            
             ScheduleSoftwareVsync(TimeStamp::Now());
             return;
           }
 
-          hr = WinUtils::dwmGetCompositionTimingInfoPtr(0, &vblankTime);
-          vsync = SUCCEEDED(hr) ?
-                    GetAdjustedVsyncTimeStamp(frequency, vblankTime.qpcVBlank) :
-                    TimeStamp::Now();
+          TimeStamp now = TimeStamp::Now();
+          TimeDuration flushDiff = now - flushTime;
+          flushTime = now;
+          if ((flushDiff > longVBlank) || mPrevVsync.IsNull()) {
+            
+            vsync = GetVBlankTime();
+            mPrevVsync = vsync;
+          } else {
+            
+            
+            
+            
+            
+            vsync = mPrevVsync + mVsyncRate;
+            if (vsync > now) {
+              
+              vsync = GetVBlankTime();
+            }
+
+            if (vsync <= mPrevVsync) {
+              vsync = TimeStamp::Now();
+            }
+
+            mPrevVsync = vsync;
+          }
         } 
       }
 
@@ -1952,8 +1969,7 @@ public:
         return mVsyncThread->thread_id() == PlatformThread::CurrentId();
       }
 
-      TimeDuration mSoftwareVsyncRate;
-      TimeStamp mPrevVsync; 
+      TimeStamp mPrevVsync;
       Monitor mVsyncEnabledLock;
       base::Thread* mVsyncThread;
       TimeDuration mVsyncRate;
