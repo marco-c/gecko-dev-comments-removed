@@ -88,7 +88,7 @@ nsDiskCacheBinding::~nsDiskCacheBinding()
     
     
     
-    nsCacheServiceAutoLock lock(LOCK_TELEM(NSDISKCACHEBINDING_DESTRUCTOR));
+    nsCacheServiceAutoLock lock;
 
     NS_ASSERTION(PR_CLIST_IS_EMPTY(this), "binding deleted while still on list");
     if (!PR_CLIST_IS_EMPTY(this))
