@@ -1048,7 +1048,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   
   if (XRE_IsContentProcess()) {
       NS_WARNING("Exiting child process early!");
-      exit(0);
+      _exit(0);
   }
 #endif
 
