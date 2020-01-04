@@ -494,6 +494,7 @@ protected:
   
   
   bool mOnStartRequestCalled;
+  bool mOnStopRequestCalled;
 
   uint64_t mTransferSize;
   uint64_t mDecodedBodySize;
