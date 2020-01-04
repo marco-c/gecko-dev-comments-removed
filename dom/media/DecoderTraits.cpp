@@ -344,6 +344,14 @@ IsWAVSupportedType(const nsACString& aType,
 
 bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType)
 {
+  if (IsWaveType(nsDependentCString(aMIMEType))) {
+    
+    
+    
+    
+    
+    return false;
+  }
   return CanHandleMediaType(aMIMEType, false, EmptyString()) != CANPLAY_NO;
 }
 
@@ -686,7 +694,6 @@ bool DecoderTraits::IsSupportedInVideoDocument(const nsACString& aType)
 #endif
     IsMP3SupportedType(aType) ||
     IsAACSupportedType(aType) ||
-    IsWAVSupportedType(aType) ||
 #ifdef MOZ_DIRECTSHOW
     IsDirectShowSupportedType(aType) ||
 #endif
