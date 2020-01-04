@@ -51,10 +51,6 @@ const WINDOW_HIDEABLE_FEATURES = [
 const MESSAGES = [
   
   
-  "SessionStore:setupSyncHandler",
-
-  
-  
   "SessionStore:update",
 
   
@@ -84,9 +80,6 @@ const MESSAGES = [
 
 const NOTAB_MESSAGES = new Set([
   
-  "SessionStore:setupSyncHandler",
-
-  
   "SessionStore:crashedTabRevived",
 
   
@@ -99,9 +92,6 @@ const NOTAB_MESSAGES = new Set([
 
 
 const NOEPOCH_MESSAGES = new Set([
-  
-  "SessionStore:setupSyncHandler",
-
   
   "SessionStore:crashedTabRevived",
 
@@ -701,9 +691,6 @@ var SessionStoreInternal = {
     }
 
     switch (aMessage.name) {
-      case "SessionStore:setupSyncHandler":
-        TabState.setSyncHandler(browser, aMessage.objects.handler);
-        break;
       case "SessionStore:update":
         
         
