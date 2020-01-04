@@ -280,19 +280,19 @@ IsWrapper(JSObject* obj)
 
 
 JS_FRIEND_API(JSObject*)
-UncheckedUnwrap(JSObject* obj, bool stopAtOuter = true, unsigned* flagsp = nullptr);
+UncheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true, unsigned* flagsp = nullptr);
 
 
 
 
 
 JS_FRIEND_API(JSObject*)
-CheckedUnwrap(JSObject* obj, bool stopAtOuter = true);
+CheckedUnwrap(JSObject* obj, bool stopAtWindowProxy = true);
 
 
 
 JS_FRIEND_API(JSObject*)
-UnwrapOneChecked(JSObject* obj, bool stopAtOuter = true);
+UnwrapOneChecked(JSObject* obj, bool stopAtWindowProxy = true);
 
 JS_FRIEND_API(bool)
 IsCrossCompartmentWrapper(JSObject* obj);

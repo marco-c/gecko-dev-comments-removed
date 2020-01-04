@@ -2078,7 +2078,8 @@ InterfaceHasInstance(JSContext* cx, JS::Handle<JSObject*> obj,
   const DOMIfaceAndProtoJSClass* clasp =
     DOMIfaceAndProtoJSClass::FromJSClass(js::GetObjectClass(obj));
 
-  const DOMJSClass* domClass = GetDOMClass(js::UncheckedUnwrap(instance,  false));
+  const DOMJSClass* domClass =
+    GetDOMClass(js::UncheckedUnwrap(instance,  false));
 
   MOZ_ASSERT(!domClass || clasp->mPrototypeID != prototypes::id::_ID_Count,
              "Why do we have a hasInstance hook if we don't have a prototype "
