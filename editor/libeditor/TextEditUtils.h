@@ -26,20 +26,21 @@ public:
   static bool HasMozAttr(nsIDOMNode* aNode);
 };
 
-} 
 
 
 
 
-
-class nsAutoEditInitRulesTrigger
+class AutoEditInitRulesTrigger final
 {
 private:
-  nsPlaintextEditor* mEd;
-  nsresult& mRes;
+  nsPlaintextEditor* mTextEditor;
+  nsresult& mResult;
+
 public:
-  nsAutoEditInitRulesTrigger(nsPlaintextEditor* aEd, nsresult& aRes);
-  ~nsAutoEditInitRulesTrigger();
+  AutoEditInitRulesTrigger(nsPlaintextEditor* aTextEditor, nsresult& aResult);
+  ~AutoEditInitRulesTrigger();
 };
+
+} 
 
 #endif 

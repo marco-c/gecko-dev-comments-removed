@@ -267,7 +267,7 @@ nsHTMLEditor::Init(nsIDOMDocument *aDoc,
   if (1)
   {
     
-    nsAutoEditInitRulesTrigger rulesTrigger(static_cast<nsPlaintextEditor*>(this), rulesRes);
+    AutoEditInitRulesTrigger rulesTrigger(this, rulesRes);
 
     
     result = nsPlaintextEditor::Init(aDoc, aRoot, nullptr, aFlags, aInitialValue);

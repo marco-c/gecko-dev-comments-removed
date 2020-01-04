@@ -130,7 +130,7 @@ NS_IMETHODIMP nsPlaintextEditor::Init(nsIDOMDocument *aDoc,
 
   {
     
-    nsAutoEditInitRulesTrigger rulesTrigger(this, rulesRes);
+    AutoEditInitRulesTrigger rulesTrigger(this, rulesRes);
 
     
     res = nsEditor::Init(aDoc, aRoot, aSelCon, aFlags, aInitialValue);
