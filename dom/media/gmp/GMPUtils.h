@@ -8,9 +8,11 @@
 
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
+#include "nsCOMPtr.h"
 
 class nsIFile;
 class nsCString;
+class nsISimpleEnumerator;
 
 namespace mozilla {
 
@@ -39,6 +41,24 @@ ToBase64(const nsTArray<uint8_t>& aBytes);
 
 bool
 FileExists(nsIFile* aFile);
+
+
+class DirectoryEnumerator {
+public:
+
+  enum Mode {
+    DirsOnly, 
+    FilesAndDirs 
+  };
+
+  DirectoryEnumerator(nsIFile* aPath, Mode aMode);
+
+  already_AddRefed<nsIFile> Next();
+
+private:
+  Mode mMode;
+  nsCOMPtr<nsISimpleEnumerator> mIter;
+};
 
 } 
 
