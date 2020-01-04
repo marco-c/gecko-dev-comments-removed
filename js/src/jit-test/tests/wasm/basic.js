@@ -134,57 +134,6 @@ try {
     assertEq(String(e).indexOf("out of memory") != -1, true);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var buf = wasmEvalText('(module (memory 1) (export "memory" memory))').memory;
 assertEq(buf instanceof ArrayBuffer, true);
 assertEq(buf.byteLength, 65536);
