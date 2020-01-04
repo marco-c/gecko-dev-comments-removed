@@ -211,6 +211,10 @@ using namespace mozilla::tasktracer;
 #define ANCHOR_SCROLL_FLAGS \
   (nsIPresShell::SCROLL_OVERFLOW_HIDDEN | nsIPresShell::SCROLL_NO_PARENT_FRAMES)
 
+  
+  
+#define RELATIVE_SCALEFACTOR 0.0925f
+
 using std::initializer_list;
 
 using namespace mozilla;
@@ -5097,28 +5101,52 @@ PresShell::PaintRangePaintInfo(const nsTArray<UniquePtr<RangePaintInfo>>& aItems
   nsIntRect pixelArea = aArea.ToOutsidePixels(pc->AppUnitsPerDevPixel());
 
   
-  float scale = 0.0;
+  float scale = 1.0;
   nsIntRect rootScreenRect =
     GetRootFrame()->GetScreenRectInAppUnits().ToNearestPixels(
       pc->AppUnitsPerDevPixel());
 
-  
-  
   nsRect maxSize;
   pc->DeviceContext()->GetClientRect(maxSize);
-  nscoord maxWidth = pc->AppUnitsToDevPixels(maxSize.width >> 1);
-  nscoord maxHeight = pc->AppUnitsToDevPixels(maxSize.height >> 1);
-  bool resize = (aFlags & RENDER_AUTO_SCALE) &&
-                (pixelArea.width > maxWidth || pixelArea.height > maxHeight);
+
+  
+  bool resize = aFlags & RENDER_AUTO_SCALE;
+
   if (resize) {
-    scale = 1.0;
     
-    
-    
-    if (pixelArea.width > maxWidth)
-      scale = std::min(scale, float(maxWidth) / pixelArea.width);
-    if (pixelArea.height > maxHeight)
-      scale = std::min(scale, float(maxHeight) / pixelArea.height);
+    if (aFlags & RENDER_IS_IMAGE) {
+      
+      nscoord maxWidth = pc->AppUnitsToDevPixels(maxSize.width);
+      nscoord maxHeight = pc->AppUnitsToDevPixels(maxSize.height);
+      
+      
+      float bestHeight = float(maxHeight)*RELATIVE_SCALEFACTOR;
+      float bestWidth = float(maxWidth)*RELATIVE_SCALEFACTOR;
+      
+      scale = bestWidth / float(pixelArea.width);
+      
+      float worstHeight = float(pixelArea.height)*scale;
+      
+      float difference = bestHeight - worstHeight;
+      
+      
+      scale = (worstHeight + difference / 2) / float(pixelArea.height);
+    } else {
+      
+      nscoord maxWidth = pc->AppUnitsToDevPixels(maxSize.width >> 1);
+      nscoord maxHeight = pc->AppUnitsToDevPixels(maxSize.height >> 1);
+      if (pixelArea.width > maxWidth || pixelArea.height > maxHeight) {
+        scale = 1.0;
+        
+        
+        
+        if (pixelArea.width > maxWidth)
+          scale = std::min(scale, float(maxWidth) / pixelArea.width);
+        if (pixelArea.height > maxHeight)
+          scale = std::min(scale, float(maxHeight) / pixelArea.height);
+      }
+    }
+
 
     pixelArea.width = NSToIntFloor(float(pixelArea.width) * scale);
     pixelArea.height = NSToIntFloor(float(pixelArea.height) * scale);

@@ -595,7 +595,7 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
   if (mSelection) {
     nsIntPoint pnt(aScreenDragRect->x, aScreenDragRect->y);
     *aSurface = presShell->RenderSelection(mSelection, pnt, aScreenDragRect,
-                                           mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE);
+        mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE);
     return NS_OK;
   }
 
@@ -631,14 +631,40 @@ nsBaseDragService::DrawDrag(nsIDOMNode* aDOMNode,
   if (!mDragPopup) {
     
     nsIntRegion clipRegion;
+    uint32_t renderFlags = mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE;
     if (aRegion) {
       aRegion->GetRegion(&clipRegion);
     }
 
+    if (renderFlags) {
+      nsCOMPtr<nsIDOMNode> child;
+      nsCOMPtr<nsIDOMNodeList> childList;
+      uint32_t length;
+      uint32_t count = 0;
+      nsAutoString childNodeName;
+
+      if (NS_SUCCEEDED(dragNode->GetChildNodes(getter_AddRefs(childList))) &&
+          NS_SUCCEEDED(childList->GetLength(&length))) {
+        
+        while (count < length) {
+          if (NS_FAILED(childList->Item(count, getter_AddRefs(child))) ||
+              NS_FAILED(child->GetNodeName(childNodeName))) {
+            break;
+          }
+          
+          if (childNodeName.LowerCaseEqualsLiteral("img")) {
+            
+            renderFlags = renderFlags | nsIPresShell::RENDER_IS_IMAGE;
+            break;
+          }
+          count++;
+        }
+      }
+    }
     nsIntPoint pnt(aScreenDragRect->x, aScreenDragRect->y);
     *aSurface = presShell->RenderNode(dragNode, aRegion ? &clipRegion : nullptr,
-                                      pnt, aScreenDragRect,
-                                      mImage ? 0 : nsIPresShell::RENDER_AUTO_SCALE);
+                                    pnt, aScreenDragRect,
+                                    renderFlags);
   }
 
   
