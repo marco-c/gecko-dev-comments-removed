@@ -13,6 +13,7 @@
 #include "mozilla/layers/GonkNativeHandle.h"
 #endif
 
+#include "Units.h"
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/TypedEnumBits.h"
 #include "nsRegion.h"
@@ -283,6 +284,22 @@ enum TextureDumpMode {
   Compress,      
   DoNotCompress  
 };
+
+
+typedef gfx::Matrix4x4Typed<LayerPixel, CSSTransformedLayerPixel> CSSTransformMatrix;
+
+
+
+
+
+
+
+
+
+
+
+typedef gfx::Matrix4x4Typed<ParentLayerPixel, ParentLayerPixel> AsyncTransformComponentMatrix;
+typedef gfx::Matrix4x4Typed<CSSTransformedLayerPixel, ParentLayerPixel> AsyncTransformMatrix;
 
 } 
 } 
