@@ -16,6 +16,9 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "BrowserUtils",
+  "resource://gre/modules/BrowserUtils.jsm");
+
 this.PageThumbUtils = {
   
   THUMBNAIL_BG_COLOR: "#fff",
@@ -263,6 +266,10 @@ this.PageThumbUtils = {
   },
 
   shouldStoreContentThumbnail: function (aDocument, aDocShell) {
+    if (BrowserUtils.isToolbarVisible(aDocShell, "findbar")) {
+      return false;
+    }
+
     
     
     if (aDocument instanceof Ci.nsIDOMXMLDocument) {
