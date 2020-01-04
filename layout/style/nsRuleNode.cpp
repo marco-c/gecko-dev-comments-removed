@@ -2180,6 +2180,12 @@ nsRuleNode::ResolveVariableReferences(const nsStyleStructID aSID,
       &aContext->StyleVariables()->mVariables;
     nsCSSValueTokenStream* tokenStream = value->GetTokenStreamValue();
 
+    MOZ_ASSERT(tokenStream->mLevel != nsStyleSet::eSheetTypeCount,
+               "Token stream should have a defined level");
+
+    AutoRestore<uint16_t> saveLevel(aRuleData->mLevel);
+    aRuleData->mLevel = tokenStream->mLevel;
+
     
     
     

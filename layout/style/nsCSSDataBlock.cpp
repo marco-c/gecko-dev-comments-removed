@@ -262,6 +262,15 @@ nsCSSCompressedDataBlock::MapRuleInfoInto(nsRuleData *aRuleData) const
             nsCSSValue* target = aRuleData->ValueFor(iProp);
             if (target->GetUnit() == eCSSUnit_Null) {
                 const nsCSSValue *val = ValueAtIndex(i);
+                
+                
+                
+                
+                
+                
+                if (val->GetUnit() == eCSSUnit_TokenStream) {
+                  val->GetTokenStreamValue()->mLevel = aRuleData->mLevel;
+                }
                 MapSinglePropertyInto(iProp, val, target, aRuleData);
             }
         }

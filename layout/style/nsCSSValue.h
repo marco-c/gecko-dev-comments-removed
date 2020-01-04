@@ -1541,6 +1541,7 @@ public:
   
   uint32_t mLineNumber;
   uint32_t mLineOffset;
+  uint16_t mLevel; 
 
 private:
   nsCSSValueTokenStream(const nsCSSValueTokenStream& aOther) = delete;
