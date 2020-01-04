@@ -740,10 +740,11 @@ IMEContentObserver::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
   mIsHandlingQueryContentEvent = true;
   ContentEventHandler handler(GetPresContext());
   nsresult rv = handler.HandleQueryContentEvent(aEvent);
-  if (aEvent->mSucceeded) {
+
+  if (!IsInitializedWithPlugin() &&
+      NS_WARN_IF(aEvent->mReply.mContentsRoot != mRootContent)) {
     
-    
-    aEvent->mReply.mContentsRoot = mRootContent;
+    aEvent->mSucceeded = false;
   }
   return rv;
 }
@@ -1261,7 +1262,8 @@ IMEContentObserver::UpdateSelectionCache()
   WidgetQueryContentEvent selection(true, eQuerySelectedText, mWidget);
   ContentEventHandler handler(GetPresContext());
   handler.OnQuerySelectedText(&selection);
-  if (NS_WARN_IF(!selection.mSucceeded)) {
+  if (NS_WARN_IF(!selection.mSucceeded) ||
+      NS_WARN_IF(selection.mReply.mContentsRoot != mRootContent)) {
     return false;
   }
 
