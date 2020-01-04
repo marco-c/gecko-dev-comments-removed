@@ -1763,7 +1763,7 @@ TSFTextStore::FlushPendingActions()
         MOZ_LOG(sTextStoreLog, LogLevel::Debug,
                ("TSF: 0x%p   TSFTextStore::FlushPendingActions(), "
                 "dispatching compositionchange event...", this));
-        WidgetCompositionEvent compositionChange(true, NS_COMPOSITION_CHANGE,
+        WidgetCompositionEvent compositionChange(true, eCompositionChange,
                                                  mWidget);
         mWidget->InitEvent(compositionChange);
         compositionChange.mData = action.mData;

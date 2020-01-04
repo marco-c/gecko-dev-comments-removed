@@ -672,7 +672,7 @@ NON_IDL_EVENT(speakerforcedchange,
  
  
 NON_IDL_EVENT(text,
-              NS_COMPOSITION_CHANGE,
+              eCompositionChange,
               EventNameType_XUL,
               eCompositionEventClass)
 NON_IDL_EVENT(compositionstart,

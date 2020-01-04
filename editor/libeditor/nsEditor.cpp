@@ -5162,7 +5162,7 @@ nsEditor::IsAcceptableInputEvent(nsIDOMEvent* aEvent)
     case eCompositionStart:
     case eCompositionEnd:
     case eCompositionUpdate:
-    case NS_COMPOSITION_CHANGE:
+    case eCompositionChange:
     case eCompositionCommitAsIs:
       
       

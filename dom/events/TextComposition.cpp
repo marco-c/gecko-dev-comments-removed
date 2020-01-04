@@ -285,7 +285,7 @@ TextComposition::DispatchCompositionEvent(
     nsString* committingData = nullptr;
     switch (aCompositionEvent->mMessage) {
       case eCompositionEnd:
-      case NS_COMPOSITION_CHANGE:
+      case eCompositionChange:
       case eCompositionCommitAsIs:
       case NS_COMPOSITION_COMMIT:
         committingData = &aCompositionEvent->mData;
@@ -313,7 +313,7 @@ TextComposition::DispatchCompositionEvent(
   
   
   if (dispatchDOMTextEvent &&
-      aCompositionEvent->mMessage != NS_COMPOSITION_CHANGE &&
+      aCompositionEvent->mMessage != eCompositionChange &&
       !mIsComposing && mLastData == aCompositionEvent->mData) {
     dispatchEvent = dispatchDOMTextEvent = false;
   }
@@ -322,7 +322,7 @@ TextComposition::DispatchCompositionEvent(
   
   
   if (dispatchDOMTextEvent &&
-      aCompositionEvent->mMessage == NS_COMPOSITION_CHANGE &&
+      aCompositionEvent->mMessage == eCompositionChange &&
       mLastData == aCompositionEvent->mData &&
       mRanges && aCompositionEvent->mRanges &&
       mRanges->Equals(*aCompositionEvent->mRanges)) {
@@ -341,9 +341,9 @@ TextComposition::DispatchCompositionEvent(
     
     
     if (dispatchDOMTextEvent &&
-        aCompositionEvent->mMessage != NS_COMPOSITION_CHANGE) {
+        aCompositionEvent->mMessage != eCompositionChange) {
       aCompositionEvent->mFlags =
-        CloneAndDispatchAs(aCompositionEvent, NS_COMPOSITION_CHANGE,
+        CloneAndDispatchAs(aCompositionEvent, eCompositionChange,
                            aStatus, aCallBack);
     } else {
       EventDispatcher::Dispatch(mNode, mPresContext,
@@ -625,7 +625,7 @@ TextComposition::CompositionEventDispatcher::Run()
                                                 mIsSynthesizedEvent);
       break;
     }
-    case NS_COMPOSITION_CHANGE:
+    case eCompositionChange:
     case eCompositionCommitAsIs:
     case NS_COMPOSITION_COMMIT: {
       WidgetCompositionEvent compEvent(true, mEventMessage, widget);

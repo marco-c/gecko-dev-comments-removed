@@ -160,7 +160,7 @@ NS_EVENT_MESSAGE(eCompositionUpdate,     eCompositionEventFirst + 2)
 
 
 
-NS_EVENT_MESSAGE(NS_COMPOSITION_CHANGE,  eCompositionEventFirst + 3)
+NS_EVENT_MESSAGE(eCompositionChange,     eCompositionEventFirst + 3)
 
 
 

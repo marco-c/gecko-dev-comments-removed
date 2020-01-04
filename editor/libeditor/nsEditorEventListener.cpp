@@ -460,7 +460,7 @@ nsEditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
     case eBlur:
       return Blur(aEvent);
     
-    case NS_COMPOSITION_CHANGE:
+    case eCompositionChange:
       return HandleText(aEvent);
     
     case eCompositionStart:
