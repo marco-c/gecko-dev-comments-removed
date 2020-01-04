@@ -2470,24 +2470,6 @@ Navigator::HasUserMediaSupport(JSContext* ,
 
 
 bool
-Navigator::HasInputMethodSupport(JSContext* ,
-                                 JSObject* aGlobal)
-{
-  nsCOMPtr<nsPIDOMWindow> win = GetWindowFromGlobal(aGlobal);
-  if (!win || !Preferences::GetBool("dom.mozInputMethod.enabled", false)) {
-    return false;
-  }
-
-  if (Preferences::GetBool("dom.mozInputMethod.testing", false)) {
-    return true;
-  }
-
-  return CheckPermission(win, "input") ||
-         CheckPermission(win, "input-manage");
-}
-
-
-bool
 Navigator::HasDataStoreSupport(nsIPrincipal* aPrincipal)
 {
   workers::AssertIsOnMainThread();

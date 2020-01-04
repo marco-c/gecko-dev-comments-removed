@@ -323,8 +323,6 @@ public:
                                   JSObject* );
 #endif 
 
-  static bool HasInputMethodSupport(JSContext* , JSObject* aGlobal);
-
   static bool HasDataStoreSupport(nsIPrincipal* aPrincipal);
 
   static bool HasDataStoreSupport(JSContext* cx, JSObject* aGlobal);
