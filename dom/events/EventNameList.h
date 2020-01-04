@@ -588,6 +588,13 @@ WINDOW_ONLY_EVENT(devicelight,
                   EventNameType_None,
                   eBasicEventClass)
 
+
+WINDOW_ONLY_EVENT(install,
+                  eInstall,
+                  EventNameType_None,
+                  eBasicEventClass)
+
+
 #ifdef MOZ_B2G
 WINDOW_ONLY_EVENT(moztimechange,
                   eTimeChange,

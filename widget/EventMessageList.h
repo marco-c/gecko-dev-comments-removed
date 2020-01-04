@@ -62,6 +62,9 @@ NS_EVENT_MESSAGE(eResize)
 NS_EVENT_MESSAGE(eScroll)
 
 
+NS_EVENT_MESSAGE(eInstall)
+
+
 
 
 
