@@ -53,12 +53,7 @@ void
 JS::WeakMapPtr<K, V>::destroy()
 {
     MOZ_ASSERT(initialized());
-    auto map = Utils<K, V>::cast(ptr);
-    
-    
-    if (map->isInList())
-        WeakMapBase::removeWeakMapFromList(map);
-    js_delete(map);
+    js_delete(Utils<K, V>::cast(ptr));
     ptr = nullptr;
 }
 
