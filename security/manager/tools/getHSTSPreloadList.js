@@ -9,22 +9,10 @@
 
 
 
-
-
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Cu = Components.utils;
 var Cr = Components.results;
-
-
-var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-var resHandler = ios.getProtocolHandler("resource")
-                 .QueryInterface(Ci.nsIResProtocolHandler);
-var mozDir = Cc["@mozilla.org/file/directory_service;1"]
-             .getService(Ci.nsIProperties)
-             .get("CurProcD", Ci.nsILocalFile);
-var mozDirURI = ios.newFileURI(mozDir);
-resHandler.setSubstitution("app", mozDirURI);
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
