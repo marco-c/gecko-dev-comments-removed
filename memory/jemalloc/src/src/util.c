@@ -1,3 +1,7 @@
+
+
+
+
 #define	assert(e) do {							\
 	if (config_debug && !(e)) {					\
 		malloc_write("<jemalloc>: Failed assertion\n");		\
@@ -648,3 +652,12 @@ malloc_printf(const char *format, ...)
 	malloc_vcprintf(NULL, NULL, format, ap);
 	va_end(ap);
 }
+
+
+
+
+
+#undef assert
+#undef not_reached
+#undef not_implemented
+#include "jemalloc/internal/assert.h"

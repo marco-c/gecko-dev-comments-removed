@@ -79,6 +79,15 @@ struct {								\
     (a_node)->a_field.rbn_right_red = (a_type *) (((intptr_t)		\
       (a_node)->a_field.rbn_right_red) & ((ssize_t)-2));		\
 } while (0)
+
+
+#define	rbt_node_new(a_type, a_field, a_rbt, a_node) do {		\
+    /* Bookkeeping bit cannot be used by node pointer. */		\
+    assert(((uintptr_t)(a_node) & 0x1) == 0);				\
+    rbtn_left_set(a_type, a_field, (a_node), &(a_rbt)->rbt_nil);	\
+    rbtn_right_set(a_type, a_field, (a_node), &(a_rbt)->rbt_nil);	\
+    rbtn_red_set(a_type, a_field, (a_node));				\
+} while (0)
 #else
 
 #define	rbtn_right_get(a_type, a_field, a_node)				\
@@ -99,7 +108,6 @@ struct {								\
 #define	rbtn_black_set(a_type, a_field, a_node) do {			\
     (a_node)->a_field.rbn_red = false;					\
 } while (0)
-#endif
 
 
 #define	rbt_node_new(a_type, a_field, a_rbt, a_node) do {		\
@@ -107,6 +115,7 @@ struct {								\
     rbtn_right_set(a_type, a_field, (a_node), &(a_rbt)->rbt_nil);	\
     rbtn_red_set(a_type, a_field, (a_node));				\
 } while (0)
+#endif
 
 
 #define	rb_new(a_type, a_field, a_rbt) do {				\
@@ -169,11 +178,11 @@ a_prefix##next(a_rbt_type *rbtree, a_type *node);			\
 a_attr a_type *								\
 a_prefix##prev(a_rbt_type *rbtree, a_type *node);			\
 a_attr a_type *								\
-a_prefix##search(a_rbt_type *rbtree, a_type *key);			\
+a_prefix##search(a_rbt_type *rbtree, const a_type *key);		\
 a_attr a_type *								\
-a_prefix##nsearch(a_rbt_type *rbtree, a_type *key);			\
+a_prefix##nsearch(a_rbt_type *rbtree, const a_type *key);		\
 a_attr a_type *								\
-a_prefix##psearch(a_rbt_type *rbtree, a_type *key);			\
+a_prefix##psearch(a_rbt_type *rbtree, const a_type *key);		\
 a_attr void								\
 a_prefix##insert(a_rbt_type *rbtree, a_type *node);			\
 a_attr void								\
@@ -183,7 +192,24 @@ a_prefix##iter(a_rbt_type *rbtree, a_type *start, a_type *(*cb)(	\
   a_rbt_type *, a_type *, void *), void *arg);				\
 a_attr a_type *								\
 a_prefix##reverse_iter(a_rbt_type *rbtree, a_type *start,		\
-  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg);
+  a_type *(*cb)(a_rbt_type *, a_type *, void *), void *arg);		\
+a_attr void								\
+a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, void *),	\
+  void *arg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -397,7 +423,7 @@ a_prefix##prev(a_rbt_type *rbtree, a_type *node) {			\
     return (ret);							\
 }									\
 a_attr a_type *								\
-a_prefix##search(a_rbt_type *rbtree, a_type *key) {			\
+a_prefix##search(a_rbt_type *rbtree, const a_type *key) {		\
     a_type *ret;							\
     int cmp;								\
     ret = rbtree->rbt_root;						\
@@ -415,7 +441,7 @@ a_prefix##search(a_rbt_type *rbtree, a_type *key) {			\
     return (ret);							\
 }									\
 a_attr a_type *								\
-a_prefix##nsearch(a_rbt_type *rbtree, a_type *key) {			\
+a_prefix##nsearch(a_rbt_type *rbtree, const a_type *key) {		\
     a_type *ret;							\
     a_type *tnode = rbtree->rbt_root;					\
     ret = &rbtree->rbt_nil;						\
@@ -437,7 +463,7 @@ a_prefix##nsearch(a_rbt_type *rbtree, a_type *key) {			\
     return (ret);							\
 }									\
 a_attr a_type *								\
-a_prefix##psearch(a_rbt_type *rbtree, a_type *key) {			\
+a_prefix##psearch(a_rbt_type *rbtree, const a_type *key) {		\
     a_type *ret;							\
     a_type *tnode = rbtree->rbt_root;					\
     ret = &rbtree->rbt_nil;						\
@@ -976,6 +1002,28 @@ a_prefix##reverse_iter(a_rbt_type *rbtree, a_type *start,		\
 	ret = NULL;							\
     }									\
     return (ret);							\
+}									\
+a_attr void								\
+a_prefix##destroy_recurse(a_rbt_type *rbtree, a_type *node, void (*cb)(	\
+  a_type *, void *), void *arg) {					\
+    if (node == &rbtree->rbt_nil) {					\
+	return;								\
+    }									\
+    a_prefix##destroy_recurse(rbtree, rbtn_left_get(a_type, a_field,	\
+      node), cb, arg);							\
+    rbtn_left_set(a_type, a_field, (node), &rbtree->rbt_nil);		\
+    a_prefix##destroy_recurse(rbtree, rbtn_right_get(a_type, a_field,	\
+      node), cb, arg);							\
+    rbtn_right_set(a_type, a_field, (node), &rbtree->rbt_nil);		\
+    if (cb) {								\
+	cb(node, arg);							\
+    }									\
+}									\
+a_attr void								\
+a_prefix##destroy(a_rbt_type *rbtree, void (*cb)(a_type *, void *),	\
+  void *arg) {								\
+    a_prefix##destroy_recurse(rbtree, rbtree->rbt_root, cb, arg);	\
+    rbtree->rbt_root = &rbtree->rbt_nil;				\
 }
 
 #endif 
