@@ -502,6 +502,13 @@ class Node : public ::google::protobuf::Message {
   inline void set_allocated_jsobjectclassname(::std::string* jsobjectclassname);
 
   
+  inline bool has_coarsetype() const;
+  inline void clear_coarsetype();
+  static const int kCoarseTypeFieldNumber = 7;
+  inline ::google::protobuf::uint32 coarsetype() const;
+  inline void set_coarsetype(::google::protobuf::uint32 value);
+
+  
  private:
   inline void set_has_id();
   inline void clear_has_id();
@@ -513,6 +520,8 @@ class Node : public ::google::protobuf::Message {
   inline void clear_has_allocationstack();
   inline void set_has_jsobjectclassname();
   inline void clear_has_jsobjectclassname();
+  inline void set_has_coarsetype();
+  inline void clear_has_coarsetype();
 
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
 
@@ -524,6 +533,7 @@ class Node : public ::google::protobuf::Message {
   ::google::protobuf::RepeatedPtrField< ::mozilla::devtools::protobuf::Edge > edges_;
   ::mozilla::devtools::protobuf::StackFrame* allocationstack_;
   ::std::string* jsobjectclassname_;
+  ::google::protobuf::uint32 coarsetype_;
   friend void  protobuf_AddDesc_CoreDump_2eproto();
   friend void protobuf_AssignDesc_CoreDump_2eproto();
   friend void protobuf_ShutdownFile_CoreDump_2eproto();
@@ -1328,6 +1338,30 @@ inline void Node::set_allocated_jsobjectclassname(::std::string* jsobjectclassna
     clear_has_jsobjectclassname();
     jsobjectclassname_ = const_cast< ::std::string*>(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   }
+  
+}
+
+
+inline bool Node::has_coarsetype() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
+}
+inline void Node::set_has_coarsetype() {
+  _has_bits_[0] |= 0x00000040u;
+}
+inline void Node::clear_has_coarsetype() {
+  _has_bits_[0] &= ~0x00000040u;
+}
+inline void Node::clear_coarsetype() {
+  coarsetype_ = 3u;
+  clear_has_coarsetype();
+}
+inline ::google::protobuf::uint32 Node::coarsetype() const {
+  
+  return coarsetype_;
+}
+inline void Node::set_coarsetype(::google::protobuf::uint32 value) {
+  set_has_coarsetype();
+  coarsetype_ = value;
   
 }
 
