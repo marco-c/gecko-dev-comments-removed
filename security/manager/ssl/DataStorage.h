@@ -9,20 +9,14 @@
 
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/StaticPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDataHashtable.h"
 #include "nsIObserver.h"
 #include "nsIThread.h"
 #include "nsITimer.h"
-#include "nsRefPtrHashtable.h"
 #include "nsString.h"
 
 namespace mozilla {
-
-namespace dom {
-class DataStorageItem;
-}
 
 
 
@@ -87,16 +81,13 @@ enum DataStorageType {
 
 class DataStorage : public nsIObserver
 {
-  typedef dom::DataStorageItem DataStorageItem;
-
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
   
   
-  static already_AddRefed<DataStorage> Get(const nsString& aFilename);
-  static already_AddRefed<DataStorage> GetIfExists(const nsString& aFilename);
+  explicit DataStorage(const nsString& aFilename);
 
   
   
@@ -116,11 +107,7 @@ public:
   
   nsresult Clear();
 
-  
-  void GetAll(InfallibleTArray<DataStorageItem>* aItems);
-
 private:
-  explicit DataStorage(const nsString& aFilename);
   virtual ~DataStorage();
 
   class Writer;
@@ -146,7 +133,6 @@ private:
   };
 
   typedef nsDataHashtable<nsCStringHashKey, Entry> DataStorageTable;
-  typedef nsRefPtrHashtable<nsStringHashKey, DataStorage> DataStorages;
 
   void WaitForReady();
   nsresult AsyncWriteData(const MutexAutoLock& aProofOfLock);
@@ -172,10 +158,6 @@ private:
   DataStorageTable& GetTableForType(DataStorageType aType,
                                     const MutexAutoLock& aProofOfLock);
 
-  void ReadAllFromTable(DataStorageType aType,
-                        InfallibleTArray<DataStorageItem>* aItems,
-                        const MutexAutoLock& aProofOfLock);
-
   Mutex mMutex; 
   DataStorageTable  mPersistentDataTable;
   DataStorageTable  mTemporaryDataTable;
@@ -186,15 +168,12 @@ private:
   uint32_t mTimerDelay; 
   bool mPendingWrite; 
   bool mShuttingDown;
-  bool mInitCalled; 
   
 
   Monitor mReadyMonitor; 
   bool mReady; 
 
   const nsString mFilename;
-
-  static StaticAutoPtr<DataStorages> sDataStorages;
 };
 
 } 
