@@ -179,14 +179,18 @@ InvalidSessionIdError.prototype = Object.create(WebDriverError.prototype);
 
 
 
-this.JavaScriptError = function(err, fnName, file, line, script) {
+this.JavaScriptError = function(
+    err, fnName = null, file = null, line = null, script = null) {
   let msg = String(err);
   let trace = "";
 
-  if (fnName && line) {
-    trace += `${fnName} @${file}`;
-    if (line) {
-      trace += `, line ${line}`;
+  if (fnName) {
+    trace += fnName;
+    if (file) {
+      trace += `@${file}`;
+      if (line) {
+        trace += `, line ${line}`;
+      }
     }
   }
 
