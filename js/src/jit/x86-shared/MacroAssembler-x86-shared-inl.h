@@ -117,7 +117,9 @@ MacroAssembler::popcnt32(Register input, Register output, Register tmp)
 
     
 
-    movl(input, output);
+    movl(input, tmp);
+    if (input != output)
+        movl(input, output);
     shrl(Imm32(1), output);
     andl(Imm32(0x55555555), output);
     subl(output, tmp);
