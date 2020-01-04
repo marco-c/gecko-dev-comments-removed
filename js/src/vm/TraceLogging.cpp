@@ -552,14 +552,37 @@ TraceLoggerThread::log(uint32_t id)
         return;
 
     MOZ_ASSERT(traceLoggerState);
-    if (!events.ensureSpaceBeforeAdd()) {
+    if (!events.hasSpaceForAdd()) {
         uint64_t start = rdtsc() - traceLoggerState->startupTime;
 
-        if (graph.get())
-            graph->log(events);
+        if (!events.ensureSpaceBeforeAdd()) {
+            if (graph.get())
+                graph->log(events);
 
-        iteration_++;
-        events.clear();
+            iteration_++;
+            events.clear();
+
+            
+            
+            for (PointerHashMap::Enum e(pointerMap); !e.empty(); e.popFront()) {
+                if (e.front().value()->uses() != 0)
+                    continue;
+
+                TextIdHashMap::Ptr p = textIdPayloads.lookup(e.front().value()->textId());
+                MOZ_ASSERT(p);
+                textIdPayloads.remove(p);
+
+                e.removeFront();
+            }
+
+            
+            for (TextIdHashMap::Enum e(textIdPayloads); !e.empty(); e.popFront()) {
+                if (e.front().value()->uses() == 0) {
+                    js_delete(e.front().value());
+                    e.removeFront();
+                }
+            }
+        }
 
         
         
@@ -574,26 +597,6 @@ TraceLoggerThread::log(uint32_t id)
             entryStop.textId = TraceLogger_Stop;
         }
 
-        
-        
-        for (PointerHashMap::Enum e(pointerMap); !e.empty(); e.popFront()) {
-            if (e.front().value()->uses() != 0)
-                continue;
-
-            TextIdHashMap::Ptr p = textIdPayloads.lookup(e.front().value()->textId());
-            MOZ_ASSERT(p);
-            textIdPayloads.remove(p);
-
-            e.removeFront();
-        }
-
-        
-        for (TextIdHashMap::Enum e(textIdPayloads); !e.empty(); e.popFront()) {
-            if (e.front().value()->uses() == 0) {
-                js_delete(e.front().value());
-                e.removeFront();
-            }
-        }
     }
 
     uint64_t time = rdtsc() - traceLoggerState->startupTime;
