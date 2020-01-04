@@ -1,4 +1,11 @@
 function testScript(script) {
+
+  
+  
+  
+  
+  SimpleTest.requestLongerTimeout(2);
+
   
   if (!("isSWPresent" in window)) {
     window.isSWPresent = false;
