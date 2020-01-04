@@ -697,6 +697,8 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
 
   const nsStyleSVGReset *svgReset = firstFrame->StyleSVGReset();
   nsTArray<nsSVGMaskFrame *> maskFrames = effectProperties.GetMaskFrames();
+
+#ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
   
   
   
@@ -708,6 +710,13 @@ nsSVGIntegrationUtils::PaintFramesWithEffects(const PaintFramesParams& aParams)
   bool shouldGenerateMaskLayer = hasSVGLayout
                                  ? maskFrames.Length() == 1 && maskFrames[0]
                                  : maskFrames.Length() > 0;
+#else
+  
+  
+  
+  
+  bool shouldGenerateMaskLayer = maskFrames.Length() == 1 && maskFrames[0];
+#endif
 
   
   RefPtr<gfxContext> target = &aParams.ctx;
