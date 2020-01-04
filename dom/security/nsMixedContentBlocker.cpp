@@ -500,6 +500,17 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       break;
   }
 
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> innerContentLocation = NS_GetInnermostURI(aContentLocation);
+  if (!innerContentLocation) {
+    NS_ERROR("Can't get innerURI from aContentLocation");
+    *aDecision = REJECT_REQUEST;
+    return NS_OK;
+  }
+
  
 
 
@@ -521,10 +532,10 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   bool schemeNoReturnData = false;
   bool schemeInherits = false;
   bool schemeSecure = false;
-  if (NS_FAILED(NS_URIChainHasFlags(aContentLocation, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE , &schemeLocal))  ||
-      NS_FAILED(NS_URIChainHasFlags(aContentLocation, nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA, &schemeNoReturnData)) ||
-      NS_FAILED(NS_URIChainHasFlags(aContentLocation, nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT, &schemeInherits)) ||
-      NS_FAILED(NS_URIChainHasFlags(aContentLocation, nsIProtocolHandler::URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT, &schemeSecure))) {
+  if (NS_FAILED(NS_URIChainHasFlags(innerContentLocation, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE , &schemeLocal))  ||
+      NS_FAILED(NS_URIChainHasFlags(innerContentLocation, nsIProtocolHandler::URI_DOES_NOT_RETURN_DATA, &schemeNoReturnData)) ||
+      NS_FAILED(NS_URIChainHasFlags(innerContentLocation, nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT, &schemeInherits)) ||
+      NS_FAILED(NS_URIChainHasFlags(innerContentLocation, nsIProtocolHandler::URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT, &schemeSecure))) {
     *aDecision = REJECT_REQUEST;
     return NS_ERROR_FAILURE;
   }
@@ -614,14 +625,14 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   bool parentIsHttps;
-  nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(requestingLocation);
-  if (!innerURI) {
+  nsCOMPtr<nsIURI> innerRequestingLocation = NS_GetInnermostURI(requestingLocation);
+  if (!innerRequestingLocation) {
     NS_ERROR("Can't get innerURI from requestingLocation");
     *aDecision = REJECT_REQUEST;
     return NS_OK;
   }
 
-  nsresult rv = innerURI->SchemeIs("https", &parentIsHttps);
+  nsresult rv = innerRequestingLocation->SchemeIs("https", &parentIsHttps);
   if (NS_FAILED(rv)) {
     NS_ERROR("requestingLocation->SchemeIs failed");
     *aDecision = REJECT_REQUEST;
@@ -670,7 +681,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     
 #ifdef DEBUG
     bool isHttpsScheme = false;
-    rv = aContentLocation->SchemeIs("https", &isHttpsScheme);
+    rv = innerContentLocation->SchemeIs("https", &isHttpsScheme);
     NS_ENSURE_SUCCESS(rv, rv);
     MOZ_ASSERT(!isHttpsScheme);
 #endif
@@ -690,7 +701,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   bool isHttpScheme = false;
-  rv = aContentLocation->SchemeIs("http", &isHttpScheme);
+  rv = innerContentLocation->SchemeIs("http", &isHttpScheme);
   NS_ENSURE_SUCCESS(rv, rv);
   if (isHttpScheme && docShell->GetDocument()->GetUpgradeInsecureRequests(isPreload)) {
     *aDecision = ACCEPT;
@@ -787,13 +798,13 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   bool active = (classification == eMixedScript);
   if (!aHadInsecureImageRedirect) {
     if (XRE_IsParentProcess()) {
-      AccumulateMixedContentHSTS(aContentLocation, active);
+      AccumulateMixedContentHSTS(innerContentLocation, active);
     } else {
       
       mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
       if (cc) {
         mozilla::ipc::URIParams uri;
-        SerializeURI(aContentLocation, uri);
+        SerializeURI(innerContentLocation, uri);
         cc->SendAccumulateMixedContentHSTS(uri, active);
       }
     }
