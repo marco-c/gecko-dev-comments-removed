@@ -7,6 +7,7 @@
 #include "nsTransitionManager.h"
 #include "mozilla/dom/CSSAnimationBinding.h"
 
+#include "mozilla/EffectCompositor.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/dom/DocumentTimeline.h"
@@ -930,46 +931,9 @@ nsAnimationManager::UpdateCascadeResults(
 
 
 
-  
-  
-  nsAutoTArray<nsCSSProperty, 2> propertiesToTrack;
-
-  {
-    nsCSSPropertySet propertiesToTrackAsSet;
-
-    for (size_t animIdx = aElementAnimations->mAnimations.Length();
-         animIdx-- != 0; ) {
-      const Animation* anim = aElementAnimations->mAnimations[animIdx];
-      const KeyframeEffectReadOnly* effect = anim->GetEffect();
-      if (!effect) {
-        continue;
-      }
-
-      for (size_t propIdx = 0, propEnd = effect->Properties().Length();
-           propIdx != propEnd; ++propIdx) {
-        const AnimationProperty& prop = effect->Properties()[propIdx];
-        
-        
-        if (nsCSSProps::PropHasFlags(prop.mProperty,
-                                     CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR)) {
-          if (!propertiesToTrackAsSet.HasProperty(prop.mProperty)) {
-            propertiesToTrack.AppendElement(prop.mProperty);
-            propertiesToTrackAsSet.AddProperty(prop.mProperty);
-          }
-        }
-      }
-    }
-  }
-
-  
-
-
-
-
   nsCSSPropertySet propertiesOverridden;
-  nsRuleNode::ComputePropertiesOverridingAnimation(propertiesToTrack,
-                                                   aStyleContext,
-                                                   propertiesOverridden);
+  EffectCompositor::GetOverriddenProperties(aStyleContext,
+                                            propertiesOverridden);
 
   
 
