@@ -150,9 +150,12 @@ class ProcessHandlerMixin(object):
                         try:
                             os.killpg(self.pid, sig)
                         except BaseException as e:
+                            
+                            
+                            
                             if getattr(e, "errno", None) != 3:
-                                
-                                print >> sys.stdout, "Could not kill process, could not find pid: %s, assuming it's already dead" % self.pid
+                                print >> sys.stderr, "Could not terminate process: %s" % self.pid
+                                raise
                     else:
                         os.kill(self.pid, sig)
 
