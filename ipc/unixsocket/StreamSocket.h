@@ -34,7 +34,7 @@ public:
 
 
 
-  void ReceiveSocketData(nsAutoPtr<UnixSocketBuffer>& aBuffer);
+  void ReceiveSocketData(UniquePtr<UnixSocketBuffer>& aBuffer);
 
   
 

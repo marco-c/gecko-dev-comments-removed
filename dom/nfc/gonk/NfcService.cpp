@@ -6,12 +6,12 @@
 
 #include "NfcService.h"
 #include <binder/Parcel.h>
+#include <cutils/properties.h>
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/NfcOptionsBinding.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/Endian.h"
-#include "mozilla/Hal.h"
 #include "mozilla/ipc/ListenSocket.h"
 #include "mozilla/ipc/ListenSocketConsumer.h"
 #include "mozilla/ipc/NfcConnector.h"
@@ -32,7 +32,6 @@
 using namespace android;
 using namespace mozilla::dom;
 using namespace mozilla::ipc;
-using namespace mozilla::hal;
 
 namespace mozilla {
 
@@ -65,7 +64,7 @@ public:
   
 
   void ReceiveSocketData(
-    int aIndex, nsAutoPtr<mozilla::ipc::UnixSocketBuffer>& aBuffer) override;
+    int aIndex, UniquePtr<mozilla::ipc::UnixSocketBuffer>& aBuffer) override;
 
   void OnConnectSuccess(int aIndex) override;
   void OnConnectError(int aIndex) override;
@@ -110,7 +109,7 @@ NfcConsumer::Start()
   
   
   
-  StopSystemService("nfcd");
+  Unused << NS_WARN_IF(property_set("ctl.stop", "nfcd") < 0);
 
   mHandler = new NfcMessageHandler();
 
@@ -363,12 +362,12 @@ NfcConsumer::IsNfcServiceThread() const
 
 void
 NfcConsumer::ReceiveSocketData(
-  int aIndex, nsAutoPtr<mozilla::ipc::UnixSocketBuffer>& aBuffer)
+  int aIndex, UniquePtr<mozilla::ipc::UnixSocketBuffer>& aBuffer)
 {
   MOZ_ASSERT(IsNfcServiceThread());
   MOZ_ASSERT(aIndex == STREAM_SOCKET);
 
-  Receive(aBuffer);
+  Receive(aBuffer.get());
 }
 
 void
@@ -378,10 +377,9 @@ NfcConsumer::OnConnectSuccess(int aIndex)
 
   switch (aIndex) {
     case LISTEN_SOCKET: {
-      nsCString args("-S -a ");
-      args.Append(mListenSocketName);
-      nsresult rv = StartSystemService("nfcd", args.get());
-      if (NS_FAILED(rv)) {
+      nsCString value("nfcd:-S -a ");
+      value.Append(mListenSocketName);
+      if (NS_WARN_IF(property_set("ctl.start", value.get()) < 0)) {
         OnConnectError(STREAM_SOCKET);
       }
       break;
