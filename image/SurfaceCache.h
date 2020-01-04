@@ -205,7 +205,6 @@ struct SurfaceCache
 
 
 
-
   static LookupResult LookupBestMatch(const ImageKey    aImageKey,
                                       const SurfaceKey& aSurfaceKey);
 

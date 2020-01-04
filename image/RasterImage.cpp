@@ -355,18 +355,29 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
     return DrawableFrameRef();
   }
 
-  if (result.DrawableRef()->GetCompositingFailed()) {
+  
+  
+  
+  DrawableFrameRef drawableRef = result.Provider()->DrawableRef();
+  if (!drawableRef) {
+    
+    
+    
+    RecoverFromInvalidFrames(aSize, aFlags);
     return DrawableFrameRef();
   }
 
-  MOZ_ASSERT(!result.DrawableRef()->GetIsPaletted(),
-             "Should not have a paletted frame");
+  if (drawableRef->GetCompositingFailed()) {
+    return DrawableFrameRef();
+  }
+
+  MOZ_ASSERT(!drawableRef->GetIsPaletted(), "Should not have a paletted frame");
 
   
   
   
   if (mHasSourceData && (aFlags & FLAG_SYNC_DECODE)) {
-    result.DrawableRef()->WaitUntilFinished();
+    drawableRef->WaitUntilFinished();
   }
 
   
@@ -374,11 +385,11 @@ RasterImage::LookupFrame(uint32_t aFrameNum,
   
   
   if (aFlags & (FLAG_SYNC_DECODE | FLAG_SYNC_DECODE_IF_FAST) &&
-    result.DrawableRef()->IsAborted()) {
+      drawableRef->IsAborted()) {
     return DrawableFrameRef();
   }
 
-  return Move(result.DrawableRef());
+  return Move(drawableRef);
 }
 
 uint32_t

@@ -859,34 +859,55 @@ VectorImage::Draw(gfxContext* aContext,
   SVGDrawingParameters params(aContext, aSize, aRegion, aSamplingFilter,
                               svgContext, animTime, aFlags);
 
-  if (aFlags & FLAG_BYPASS_SURFACE_CACHE) {
-    CreateSurfaceAndShow(params);
+  
+  
+  RefPtr<gfxDrawable> svgDrawable = LookupCachedSurface(params);
+  if (svgDrawable) {
+    Show(svgDrawable, params);
     return DrawResult::SUCCESS;
+  }
+
+  
+  CreateSurfaceAndShow(params);
+  return DrawResult::SUCCESS;
+}
+
+already_AddRefed<gfxDrawable>
+VectorImage::LookupCachedSurface(const SVGDrawingParameters& aParams)
+{
+  
+  if (aParams.flags & FLAG_BYPASS_SURFACE_CACHE) {
+    return nullptr;
   }
 
   LookupResult result =
     SurfaceCache::Lookup(ImageKey(this),
-                         VectorSurfaceKey(params.size,
-                                          params.svgContext,
-                                          params.animationTime));
-
-  
-  if (result) {
-    RefPtr<SourceSurface> surface = result.DrawableRef()->GetSurface();
-    if (surface) {
-      RefPtr<gfxDrawable> svgDrawable =
-        new gfxSurfaceDrawable(surface, result.DrawableRef()->GetSize());
-      Show(svgDrawable, params);
-      return DrawResult::SUCCESS;
-    }
-
-    
-    RecoverFromLossOfSurfaces();
+                         VectorSurfaceKey(aParams.size,
+                                          aParams.svgContext,
+                                          aParams.animationTime));
+  if (!result) {
+    return nullptr;  
   }
 
-  CreateSurfaceAndShow(params);
+  DrawableFrameRef drawableRef = result.Provider()->DrawableRef();
+  if (!drawableRef) {
+    
+    
+    RecoverFromLossOfSurfaces();
+    return nullptr;
+  }
 
-  return DrawResult::SUCCESS;
+  RefPtr<SourceSurface> surface = drawableRef->GetSurface();
+  if (!surface) {
+    
+    
+    RecoverFromLossOfSurfaces();
+    return nullptr;
+  }
+
+  RefPtr<gfxDrawable> svgDrawable =
+    new gfxSurfaceDrawable(surface, drawableRef->GetSize());
+  return svgDrawable.forget();
 }
 
 void
