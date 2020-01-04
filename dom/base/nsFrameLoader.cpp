@@ -182,9 +182,30 @@ nsFrameLoader::Create(Element* aOwner, bool aNetworkCreated)
 {
   NS_ENSURE_TRUE(aOwner, nullptr);
   nsIDocument* doc = aOwner->OwnerDoc();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   NS_ENSURE_TRUE(!doc->IsResourceDoc() &&
-                 ((!doc->IsLoadedAsData() && aOwner->GetComposedDoc()) ||
-                   doc->IsStaticDocument()),
+                 ((!doc->IsLoadedAsData() && aOwner->IsInComposedDoc()) ||
+                  doc->IsStaticDocument()),
                  nullptr);
 
   return new nsFrameLoader(aOwner, aNetworkCreated);

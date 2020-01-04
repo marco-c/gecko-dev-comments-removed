@@ -2066,9 +2066,21 @@ public:
 
 
 
+
+
+
+
+
   bool IsStaticDocument() { return mIsStaticDocument; }
 
   
+
+
+
+
+
+
+
 
 
 
