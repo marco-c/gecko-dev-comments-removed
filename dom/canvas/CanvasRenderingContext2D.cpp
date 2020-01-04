@@ -1685,7 +1685,11 @@ CanvasRenderingContext2D::GetHeight() const
 NS_IMETHODIMP
 CanvasRenderingContext2D::SetDimensions(int32_t aWidth, int32_t aHeight)
 {
-  ClearTarget();
+  bool retainBuffer = false;
+  if (aWidth == mWidth && aHeight == mHeight) {
+    retainBuffer = true;
+  }
+  ClearTarget(retainBuffer);
 
   
   mZero = false;
@@ -1704,9 +1708,22 @@ CanvasRenderingContext2D::SetDimensions(int32_t aWidth, int32_t aHeight)
 }
 
 void
-CanvasRenderingContext2D::ClearTarget()
+CanvasRenderingContext2D::ClearTarget(bool aRetainBuffer)
 {
+  RefPtr<PersistentBufferProvider> provider = mBufferProvider;
+  if (aRetainBuffer && provider) {
+    
+    if (mTarget) {
+      mTarget->SetTransform(Matrix());
+    }
+    ClearRect(0, 0, mWidth, mHeight);
+  }
+
   Reset();
+
+  if (aRetainBuffer) {
+    mBufferProvider = provider;
+  }
 
   mResetLayer = true;
 

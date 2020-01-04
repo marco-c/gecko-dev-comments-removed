@@ -657,7 +657,7 @@ protected:
   
 
 
-  void ClearTarget();
+  void ClearTarget(bool aRetainBuffer = false);
 
   
 
