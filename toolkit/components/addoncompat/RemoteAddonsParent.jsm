@@ -260,12 +260,33 @@ var AboutProtocolParent = {
     }
 
     let uri = BrowserUtils.makeURI(msg.data.uri);
-    let contractID = msg.data.contractID;
-    let loadingPrincipal = msg.data.loadingPrincipal;
-    let securityFlags = msg.data.securityFlags;
-    let contentPolicyType = msg.data.contentPolicyType;
+    let channelParams;
+    if (msg.data.contentPolicyType === Ci.nsIContentPolicy.TYPE_DOCUMENT) {
+      
+      
+      
+      
+      channelParams = {
+        uri,
+        contractID: msg.data.contractID,
+        loadingPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+        securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+        contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER
+      };
+    } else {
+      
+      
+      channelParams = {
+        uri,
+        contractID: msg.data.contractID,
+        loadingPrincipal: msg.data.loadingPrincipal,
+        securityFlags: msg.data.securityFlags,
+        contentPolicyType: msg.data.contentPolicyType
+      };
+    }
+
     try {
-      let channel = NetUtil.newChannel({uri, loadingPrincipal, securityFlags, contentPolicyType});
+      let channel = NetUtil.newChannel(channelParams);
 
       
       
