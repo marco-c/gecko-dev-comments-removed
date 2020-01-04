@@ -338,13 +338,12 @@ const CustomizableWidgets = [
       this._tabsList = doc.getElementById("PanelUI-remotetabs-tabslist");
       Services.obs.addObserver(this, SyncedTabs.TOPIC_TABS_CHANGED, false);
 
-      let deck = doc.getElementById("PanelUI-remotetabs-deck");
       if (SyncedTabs.isConfiguredToSyncTabs) {
         if (SyncedTabs.hasSyncedThisSession) {
-          deck.selectedIndex = this.deckIndices.DECKINDEX_TABS;
+          this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
         } else {
           
-          deck.selectedIndex = this.deckIndices.DECKINDEX_FETCHING;
+          this.setDeckIndex(this.deckIndices.DECKINDEX_FETCHING);
         }
         
         SyncedTabs.syncTabs().catch(ex => {
@@ -354,7 +353,7 @@ const CustomizableWidgets = [
         this._showTabs();
       } else {
         
-        deck.selectedIndex = this.deckIndices.DECKINDEX_TABSDISABLED;
+        this.setDeckIndex(this.deckIndices.DECKINDEX_TABSDISABLED);
       }
     },
     onViewHiding() {
@@ -371,6 +370,14 @@ const CustomizableWidgets = [
           break;
       }
     },
+    setDeckIndex(index) {
+      let deck = this._tabsList.ownerDocument.getElementById("PanelUI-remotetabs-deck");
+      
+      
+      
+      deck.setAttribute("selectedIndex", index);
+    },
+
     _showTabsPromise: Promise.resolve(),
     
     _showTabs() {
@@ -381,7 +388,6 @@ const CustomizableWidgets = [
     
     __showTabs() {
       let doc = this._tabsList.ownerDocument;
-      let deck = doc.getElementById("PanelUI-remotetabs-deck");
       return SyncedTabs.getTabClients().then(clients => {
         
         if (!this._tabsList) {
@@ -394,11 +400,11 @@ const CustomizableWidgets = [
         }
 
         if (clients.length === 0) {
-          deck.selectedIndex = this.deckIndices.DECKINDEX_NOCLIENTS;
+          this.setDeckIndex(this.deckIndices.DECKINDEX_NOCLIENTS);
           return;
         }
 
-        deck.selectedIndex = this.deckIndices.DECKINDEX_TABS;
+        this.setDeckIndex(this.deckIndices.DECKINDEX_TABS);
         this._clearTabList();
         this._sortFilterClientsAndTabs(clients);
         let fragment = doc.createDocumentFragment();
