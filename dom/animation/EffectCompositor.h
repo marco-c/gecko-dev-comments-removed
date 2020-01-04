@@ -72,6 +72,7 @@ public:
   static Maybe<Pair<dom::Element*, nsCSSPseudoElements::Type>>
   GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
 
+private:
   
   
   
@@ -79,7 +80,6 @@ public:
   GetOverriddenProperties(nsStyleContext* aStyleContext,
                           nsCSSPropertySet& aPropertiesOverridden);
 
-private:
   static void
   UpdateCascadeResults(EffectSet& aEffectSet,
                        dom::Element* aElement,

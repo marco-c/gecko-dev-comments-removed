@@ -155,13 +155,6 @@ public:
   
   bool IsTiedToMarkup() const { return mOwningElement.IsSet(); }
 
-  
-  
-  
-  
-  
-  bool mInEffectForCascadeResults;
-
 protected:
   virtual ~CSSAnimation()
   {
@@ -291,8 +284,6 @@ public:
   NS_DECL_CYCLE_COLLECTION_CLASS(nsAnimationManager)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
-  void MaybeUpdateCascadeResults(mozilla::AnimationCollection* aCollection);
-
   
   virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const MOZ_MUST_OVERRIDE override;
@@ -371,9 +362,6 @@ private:
                     mozilla::css::Declaration* aFromDeclaration,
                     float aToKey, nsStyleContext* aToContext);
 
-  static void UpdateCascadeResults(nsStyleContext* aStyleContext,
-                                   mozilla::AnimationCollection*
-                                     aElementAnimations);
   static void CopyIsRunningOnCompositor(
     mozilla::dom::KeyframeEffectReadOnly& aSourceEffect,
     mozilla::dom::KeyframeEffectReadOnly& aDestEffect);

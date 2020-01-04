@@ -335,42 +335,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsAnimationManager)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIStyleRuleProcessor)
 NS_INTERFACE_MAP_END
 
-void
-nsAnimationManager::MaybeUpdateCascadeResults(AnimationCollection* aCollection)
-{
-  for (size_t animIdx = aCollection->mAnimations.Length(); animIdx-- != 0; ) {
-    CSSAnimation* anim = aCollection->mAnimations[animIdx]->AsCSSAnimation();
-    if (anim->IsInEffect() != anim->mInEffectForCascadeResults) {
-      
-      mozilla::dom::Element* element = aCollection->GetElementToRestyle();
-      bool updatedCascadeResults = false;
-      if (element) {
-        nsIFrame* frame = element->GetPrimaryFrame();
-        if (frame) {
-          UpdateCascadeResults(frame->StyleContext(), aCollection);
-          updatedCascadeResults = true;
-        }
-      }
-
-      if (!updatedCascadeResults) {
-        
-        
-        
-        
-        
-        
-        anim->mInEffectForCascadeResults = anim->IsInEffect();
-      }
-
-      
-      mPresContext->TransitionManager()->
-        UpdateCascadeResultsWithAnimations(aCollection);
-
-      return;
-    }
-  }
-}
-
  size_t
 nsAnimationManager::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
@@ -917,74 +881,4 @@ nsAnimationManager::BuildSegment(InfallibleTArray<AnimationPropertySegment>&
   segment.mTimingFunction.Init(*tf);
 
   return true;
-}
-
- void
-nsAnimationManager::UpdateCascadeResults(
-                      nsStyleContext* aStyleContext,
-                      AnimationCollection* aElementAnimations)
-{
-  
-
-
-
-  nsCSSPropertySet propertiesOverridden;
-  EffectCompositor::GetOverriddenProperties(aStyleContext,
-                                            propertiesOverridden);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool changed = false;
-  for (size_t animIdx = aElementAnimations->mAnimations.Length();
-       animIdx-- != 0; ) {
-    CSSAnimation* anim =
-      aElementAnimations->mAnimations[animIdx]->AsCSSAnimation();
-    KeyframeEffectReadOnly* effect = anim->GetEffect();
-
-    anim->mInEffectForCascadeResults = anim->IsInEffect();
-
-    if (!effect) {
-      continue;
-    }
-
-    for (size_t propIdx = 0, propEnd = effect->Properties().Length();
-         propIdx != propEnd; ++propIdx) {
-      AnimationProperty& prop = effect->Properties()[propIdx];
-      
-      
-      if (nsCSSProps::PropHasFlags(prop.mProperty,
-                                   CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR)) {
-        bool newWinsInCascade =
-          !propertiesOverridden.HasProperty(prop.mProperty);
-        if (newWinsInCascade != prop.mWinsInCascade) {
-          changed = true;
-        }
-        prop.mWinsInCascade = newWinsInCascade;
-
-        if (prop.mWinsInCascade && anim->mInEffectForCascadeResults) {
-          
-          
-          
-          
-          propertiesOverridden.AddProperty(prop.mProperty);
-        }
-      }
-    }
-  }
-
-  
-  
-  if (changed) {
-    aElementAnimations->RequestRestyle(AnimationCollection::RestyleType::Layer);
-  }
 }
