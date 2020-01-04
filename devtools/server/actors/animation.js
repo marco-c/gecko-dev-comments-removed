@@ -31,7 +31,10 @@ const {Task} = require("devtools/shared/task");
 const protocol = require("devtools/shared/protocol");
 const {ActorClass, Actor, FrontClass, Front,
        Arg, method, RetVal, types} = protocol;
-const {animationPlayerSpec, animationsSpec} = require("devtools/shared/specs/animation");
+
+const {NodeActor} = require("devtools/server/actors/inspector");
+const {AnimationPlayerFront} = require("devtools/shared/fronts/animation");
+const {animationPlayerSpec} = require("devtools/shared/specs/animation");
 const events = require("sdk/event/core");
 
 
@@ -431,11 +434,31 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 exports.AnimationPlayerActor = AnimationPlayerActor;
 
+ 
 
 
 
-var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
-  initialize: function(conn, tabActor) {
+types.addDictType("animationMutationChange", {
+  
+  type: "string",
+  
+  player: "animationplayer"
+});
+
+
+
+
+var AnimationsActor = exports.AnimationsActor = ActorClass({
+  typeName: "animations",
+
+  events: {
+    "mutations": {
+      type: "mutations",
+      changes: Arg(0, "array:animationMutationChange")
+    }
+  },
+
+  initialize: function (conn, tabActor) {
     Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
 
@@ -473,9 +496,14 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
 
 
 
-  setWalkerActor: function (walker) {
+  setWalkerActor: method(function (walker) {
     this.walker = walker;
-  },
+  }, {
+    request: {
+      walker: Arg(0, "domwalker")
+    },
+    response: {}
+  }),
 
   
 
@@ -487,7 +515,7 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
 
 
 
-  getAnimationPlayersForNode: function (nodeActor) {
+  getAnimationPlayersForNode: method(function (nodeActor) {
     let animations = nodeActor.rawNode.getAnimations({subtree: true});
 
     
@@ -514,7 +542,14 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
     });
 
     return this.actors;
-  },
+  }, {
+    request: {
+      actorID: Arg(0, "domnode")
+    },
+    response: {
+      players: RetVal("array:animationplayer")
+    }
+  }),
 
   onAnimationMutation: function (mutations) {
     let eventData = [];
@@ -594,11 +629,14 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
 
 
 
-  stopAnimationPlayerUpdates: function () {
+  stopAnimationPlayerUpdates: method(function () {
     if (this.observer && !Cu.isDeadWrapper(this.observer)) {
       this.observer.disconnect();
     }
-  },
+  }, {
+    request: {},
+    response: {}
+  }),
 
   
 
@@ -636,7 +674,7 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
   
 
 
-  pauseAll: function () {
+  pauseAll: method(function () {
     let readyPromises = [];
     
     
@@ -647,13 +685,16 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
     }
     this.allAnimationsPaused = true;
     return promise.all(readyPromises);
-  },
+  }, {
+    request: {},
+    response: {}
+  }),
 
   
 
 
 
-  playAll: function () {
+  playAll: method(function () {
     let readyPromises = [];
     
     
@@ -664,14 +705,20 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
     }
     this.allAnimationsPaused = false;
     return promise.all(readyPromises);
-  },
+  }, {
+    request: {},
+    response: {}
+  }),
 
-  toggleAll: function () {
+  toggleAll: method(function () {
     if (this.allAnimationsPaused) {
       return this.playAll();
     }
     return this.pauseAll();
-  },
+  }, {
+    request: {},
+    response: {}
+  }),
 
   
 
@@ -679,11 +726,17 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
 
 
 
-  toggleSeveral: function (players, shouldPause) {
+  toggleSeveral: method(function (players, shouldPause) {
     return promise.all(players.map(player => {
       return shouldPause ? player.pause() : player.play();
     }));
-  },
+  }, {
+    request: {
+      players: Arg(0, "array:animationplayer"),
+      shouldPause: Arg(1, "boolean")
+    },
+    response: {}
+  }),
 
   
 
@@ -691,21 +744,45 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
 
 
 
-  setCurrentTimes: function (players, time, shouldPause) {
+  setCurrentTimes: method(function (players, time, shouldPause) {
     return promise.all(players.map(player => {
       let pause = shouldPause ? player.pause() : promise.resolve();
       return pause.then(() => player.setCurrentTime(time));
     }));
-  },
+  }, {
+    request: {
+      players: Arg(0, "array:animationplayer"),
+      time: Arg(1, "number"),
+      shouldPause: Arg(2, "boolean")
+    },
+    response: {}
+  }),
 
   
 
 
 
 
-  setPlaybackRates: function (players, rate) {
+  setPlaybackRates: method(function (players, rate) {
     for (let player of players) {
       player.setPlaybackRate(rate);
     }
+  }, {
+    request: {
+      players: Arg(0, "array:animationplayer"),
+      rate: Arg(1, "number")
+    },
+    response: {}
+  })
+});
+
+var AnimationsFront = exports.AnimationsFront = FrontClass(AnimationsActor, {
+  initialize: function (client, {animationsActor}) {
+    Front.prototype.initialize.call(this, client, {actor: animationsActor});
+    this.manage(this);
+  },
+
+  destroy: function () {
+    Front.prototype.destroy.call(this);
   }
 });
