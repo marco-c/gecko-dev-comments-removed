@@ -176,10 +176,6 @@ static const char* GetOmxLibraryName()
   if (version >= 17) {
     return "libomxpluginkk.so";
   }
-  else if (version < 14) {
-    
-    return nullptr;
-  }
 
   
   return "libomxplugin.so";

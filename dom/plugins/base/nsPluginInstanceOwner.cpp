@@ -212,11 +212,6 @@ nsPluginInstanceOwner::GetImageContainer()
   RefPtr<ImageContainer> container;
 
 #if MOZ_WIDGET_ANDROID
-  
-  
-  if (AndroidBridge::Bridge()->GetAPIVersion() < 11)
-    return nullptr;
-
   LayoutDeviceRect r = GetPluginRect();
 
   
