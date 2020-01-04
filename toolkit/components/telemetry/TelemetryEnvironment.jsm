@@ -1260,7 +1260,8 @@ EnvironmentCache.prototype = {
         
         
         let ubr = WindowsRegistry.readRegKey(Ci.nsIWindowsRegKey.ROOT_KEY_LOCAL_MACHINE,
-                                             WINDOWS_UBR_KEY_PATH, "UBR");
+                                             WINDOWS_UBR_KEY_PATH, "UBR",
+                                             Ci.nsIWindowsRegKey.WOW64_64);
         data.windowsUBR = (ubr !== undefined) ? ubr : null;
       }
       data.installYear = getSysinfoProperty("installYear", null);

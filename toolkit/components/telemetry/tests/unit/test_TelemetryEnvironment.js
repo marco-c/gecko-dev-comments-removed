@@ -518,8 +518,8 @@ function checkSystemSection(data) {
     }
     if ("windowsUBR" in osData) {
       
-      Assert.ok(Number.isFinite(osData["windowsUBR"]),
-                "windowsUBR must be a number.");
+      Assert.ok((osData["windowsUBR"] === null) || Number.isFinite(osData["windowsUBR"]),
+                "windowsUBR must be null or a number.");
     }
   } else if (gIsAndroid || gIsGonk) {
     Assert.ok(checkNullOrString(osData.kernelVersion));
