@@ -17,8 +17,14 @@ namespace mozilla {
 
 struct WebMTimeDataOffset
 {
-  WebMTimeDataOffset(int64_t aEndOffset, uint64_t aTimecode, int64_t aSyncOffset)
-    : mEndOffset(aEndOffset), mSyncOffset(aSyncOffset), mTimecode(aTimecode)
+  WebMTimeDataOffset(int64_t aEndOffset, uint64_t aTimecode,
+                     int64_t aInitOffset, int64_t aSyncOffset,
+                     int64_t aClusterEndOffset)
+    : mEndOffset(aEndOffset)
+    , mInitOffset(aInitOffset)
+    , mSyncOffset(aSyncOffset)
+    , mClusterEndOffset(aClusterEndOffset)
+    , mTimecode(aTimecode)
   {}
 
   bool operator==(int64_t aEndOffset) const {
@@ -34,7 +40,9 @@ struct WebMTimeDataOffset
   }
 
   int64_t mEndOffset;
+  int64_t mInitOffset;
   int64_t mSyncOffset;
+  int64_t mClusterEndOffset;
   uint64_t mTimecode;
 };
 
@@ -53,7 +61,9 @@ struct WebMBufferedParser
     , mBlockEndOffset(-1)
     , mState(READ_ELEMENT_ID)
     , mVIntRaw(false)
+    , mLastInitStartOffset(-1)
     , mClusterSyncPos(0)
+    , mClusterEndOffset(-1)
     , mTimecodeScale(1000000)
     , mGotTimecodeScale(false)
   {
@@ -88,6 +98,11 @@ struct WebMBufferedParser
   bool operator<(int64_t aOffset) const {
     return mCurrentOffset < aOffset;
   }
+
+  
+  
+  
+  int64_t EndSegmentOffset(int64_t aOffset);
 
   
   
@@ -187,6 +202,10 @@ private:
 
   
   
+  int64_t mLastInitStartOffset;
+
+  
+  
   uint32_t mClusterSyncPos;
 
   
@@ -204,6 +223,9 @@ private:
   
   
   int64_t mClusterOffset;
+
+  
+  int64_t mClusterEndOffset;
 
   
   
