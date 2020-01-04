@@ -1206,6 +1206,11 @@ struct JSRuntime : public JS::shadow::Runtime,
     bool handlingInitFailure;
 #endif
 
+#if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
+    
+    bool runningOOMTest;
+#endif
+
     
 
 
