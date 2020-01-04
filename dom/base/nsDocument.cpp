@@ -11733,7 +11733,14 @@ nsDocument::RequestFullScreen(UniquePtr<FullscreenRequest>&& aRequest)
   
   
   
-  if (static_cast<nsGlobalWindow*>(rootWin.get())->FullScreen() ||
+  
+  
+  
+  
+  if ((static_cast<nsGlobalWindow*>(rootWin.get())->FullScreen() &&
+       
+       
+       PendingFullscreenRequestList::Iterator(this).AtEnd()) ||
       nsContentUtils::GetRootDocument(this)->IsFullScreenDoc()) {
     ApplyFullscreen(*aRequest);
     return;
