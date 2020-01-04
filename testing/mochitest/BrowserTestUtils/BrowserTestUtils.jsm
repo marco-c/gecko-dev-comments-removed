@@ -1045,4 +1045,24 @@ this.BrowserTestUtils = {
       });
     });
   },
+
+  
+
+
+
+
+
+
+
+
+  contentPainted(browser) {
+    return ContentTask.spawn(browser, null, function*() {
+      return new Promise((resolve) => {
+        addEventListener("MozAfterPaint", function onPaint() {
+          removeEventListener("MozAfterPaint", onPaint);
+          resolve();
+        })
+      });
+    });
+  },
 };
