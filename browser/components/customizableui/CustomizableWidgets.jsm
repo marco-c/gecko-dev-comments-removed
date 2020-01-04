@@ -484,7 +484,7 @@ const CustomizableWidgets = [
       
       
       
-      const maxTabs = 15;
+      const maxTabs = 50;
       for (let client of clients) {
         let tabs = client.tabs;
         tabs.sort((a, b) => b.lastUsed - a.lastUsed);
