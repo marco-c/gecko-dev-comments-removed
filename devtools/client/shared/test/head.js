@@ -122,44 +122,6 @@ Task.async(function* (type = "bottom", src = "data:text/html;charset=utf-8,") {
 
 
 
-
-
-function loadTelemetryAndRecordLogs() {
-  info("Mock the Telemetry log function to record logged information");
-
-  let Telemetry = require("devtools/client/shared/telemetry");
-  Telemetry.prototype.telemetryInfo = {};
-  Telemetry.prototype._oldlog = Telemetry.prototype.log;
-  Telemetry.prototype.log = function (histogramId, value) {
-    if (!this.telemetryInfo) {
-      
-      return;
-    }
-    if (histogramId) {
-      if (!this.telemetryInfo[histogramId]) {
-        this.telemetryInfo[histogramId] = [];
-      }
-
-      this.telemetryInfo[histogramId].push(value);
-    }
-  };
-
-  return Telemetry;
-}
-
-
-
-
-function stopRecordingTelemetryLogs(Telemetry) {
-  Telemetry.prototype.log = Telemetry.prototype._oldlog;
-  delete Telemetry.prototype._oldlog;
-  delete Telemetry.prototype.telemetryInfo;
-}
-
-
-
-
-
 function checkTelemetryResults(Telemetry) {
   let result = Telemetry.prototype.telemetryInfo;
 

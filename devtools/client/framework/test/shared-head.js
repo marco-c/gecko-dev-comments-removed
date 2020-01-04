@@ -504,3 +504,50 @@ var closeToolbox = Task.async(function* () {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
   yield gDevTools.closeToolbox(target);
 });
+
+
+
+
+
+
+
+
+function loadTelemetryAndRecordLogs() {
+  info("Mock the Telemetry log function to record logged information");
+
+  let Telemetry = require("devtools/client/shared/telemetry");
+  Telemetry.prototype.telemetryInfo = {};
+  Telemetry.prototype._oldlog = Telemetry.prototype.log;
+  Telemetry.prototype.log = function (histogramId, value) {
+    if (!this.telemetryInfo) {
+      
+      return;
+    }
+    if (histogramId) {
+      if (!this.telemetryInfo[histogramId]) {
+        this.telemetryInfo[histogramId] = [];
+      }
+      this.telemetryInfo[histogramId].push(value);
+    }
+  };
+  Telemetry.prototype._oldlogKeyed = Telemetry.prototype.logKeyed;
+  Telemetry.prototype.logKeyed = function (histogramId, key, value) {
+    this.log(`${histogramId}|${key}`, value);
+  };
+
+  return Telemetry;
+}
+
+
+
+
+
+
+function stopRecordingTelemetryLogs(Telemetry) {
+  info("Stopping Telemetry");
+  Telemetry.prototype.log = Telemetry.prototype._oldlog;
+  Telemetry.prototype.logKeyed = Telemetry.prototype._oldlogKeyed;
+  delete Telemetry.prototype._oldlog;
+  delete Telemetry.prototype._oldlogKeyed;
+  delete Telemetry.prototype.telemetryInfo;
+}
