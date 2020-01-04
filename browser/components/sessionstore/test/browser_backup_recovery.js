@@ -30,6 +30,7 @@ add_task(function* init() {
 });
 
 add_task(function* test_creation() {
+  
   let OLD_BACKUP = Path.join(Constants.Path.profileDir, "sessionstore.bak");
   let OLD_UPGRADE_BACKUP = Path.join(Constants.Path.profileDir, "sessionstore.bak-0000000");
 
@@ -38,12 +39,15 @@ add_task(function* test_creation() {
 
   yield SessionFile.wipe();
   yield SessionFile.read(); 
+
+  
   for (let k of Paths.loadOrder) {
     ok(!(yield File.exists(Paths[k])), "After wipe " + k + " sessionstore file doesn't exist");
   }
   ok(!(yield File.exists(OLD_BACKUP)), "After wipe, old backup doesn't exist");
   ok(!(yield File.exists(OLD_UPGRADE_BACKUP)), "After wipe, old upgrade backup doesn't exist");
 
+  
   let URL_BASE = "http://example.com/?atomic_backup_test_creation=" + Math.random();
   let URL = URL_BASE + "?first_write";
   let tab = gBrowser.addTab(URL);
@@ -58,6 +62,7 @@ add_task(function* test_creation() {
   ok((yield promiseRead(Paths.recovery)).indexOf(URL) != -1, "Recovery sessionstore file contains the required tab");
   ok(!(yield File.exists(Paths.clean)), "After first write, clean shutdown sessionstore doesn't exist, since we haven't shutdown yet");
 
+  
   info("Testing situation after a second write");
   let URL2 = URL_BASE + "?second_write";
   tab.linkedBrowser.loadURI(URL2);
@@ -99,10 +104,12 @@ var promiseSource = Task.async(function*(name) {
 });
 
 add_task(function* test_recovery() {
+  
   yield SessionFile.wipe();
   info("Attempting to recover from the recovery file");
-  let SOURCE = yield promiseSource("Paths.recovery");
+
   
+  let SOURCE = yield promiseSource("Paths.recovery");
   yield File.makeDir(Paths.backups);
   yield File.writeAtomic(Paths.recovery, SOURCE);
   is((yield SessionFile.read()).source, SOURCE, "Recovered the correct source from the recovery file");
@@ -146,7 +153,54 @@ add_task(function* test_clean() {
   is((yield promiseRead(Paths.cleanBackup)), SOURCE, "After first read/write, clean shutdown file has been moved to cleanBackup");
 });
 
+
+
+
+
+add_task(function* test_version() {
+  info("Preparing sessionstore");
+  let SOURCE = yield promiseSource("Paths.clean");
+
+  
+  is(JSON.parse(SOURCE).version[0], "sessionrestore", "Found sessionstore format version");
+
+  
+  yield File.makeDir(Paths.backups);
+  yield File.writeAtomic(Paths.clean, SOURCE);
+
+  info("Attempting to recover from the clean file");
+  
+  is((yield SessionFile.read()).source, SOURCE, "Recovered the correct source from the clean file");
+});
+
+
+
+
+add_task(function* test_version_fallback() {
+  info("Preparing data, making sure that it has a version number");
+  let SOURCE = yield promiseSource("Paths.clean");
+  let BACKUP_SOURCE = yield promiseSource("Paths.cleanBackup");
+
+  is(JSON.parse(SOURCE).version[0], "sessionrestore", "Found sessionstore format version");
+  is(JSON.parse(BACKUP_SOURCE).version[0], "sessionrestore", "Found backup sessionstore format version");
+
+  yield File.makeDir(Paths.backups);
+
+  info("Modifying format version number to something incorrect, to make sure that we disregard the file.");
+  let parsedSource = JSON.parse(SOURCE);
+  parsedSource.version[0] = "bookmarks";
+  yield File.writeAtomic(Paths.clean, JSON.stringify(parsedSource));
+  yield File.writeAtomic(Paths.cleanBackup, BACKUP_SOURCE);
+  is((yield SessionFile.read()).source, BACKUP_SOURCE, "Recovered the correct source from the backup recovery file");
+
+  info("Modifying format version number to a future version, to make sure that we disregard the file.");
+  parsedSource = JSON.parse(SOURCE);
+  parsedSource.version[1] = Number.MAX_SAFE_INTEGER;
+  yield File.writeAtomic(Paths.clean, JSON.stringify(parsedSource));
+  yield File.writeAtomic(Paths.cleanBackup, BACKUP_SOURCE);
+  is((yield SessionFile.read()).source, BACKUP_SOURCE, "Recovered the correct source from the backup recovery file");
+});
+
 add_task(function* cleanup() {
   yield SessionFile.wipe();
 });
-
