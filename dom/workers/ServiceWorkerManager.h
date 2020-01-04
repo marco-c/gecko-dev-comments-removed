@@ -642,14 +642,6 @@ private:
   MaybeRemoveRegistration(ServiceWorkerRegistrationInfo* aRegistration);
 
   
-  
-  
-  
-  
-  void
-  RemoveRegistrationInternal(ServiceWorkerRegistrationInfo* aRegistration);
-
-  
   void
   RemoveAllRegistrations(OriginAttributesPattern* aPattern);
 
