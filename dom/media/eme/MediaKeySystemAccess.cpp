@@ -577,12 +577,6 @@ MediaKeySystemAccess::NotifyObservers(nsPIDOMWindowInner* aWindow,
                                       const nsAString& aKeySystem,
                                       MediaKeySystemStatus aStatus)
 {
-  if (aStatus == MediaKeySystemStatus::Cdm_not_supported) {
-    
-    
-    
-    return;
-  }
   RequestMediaKeySystemAccessNotification data;
   data.mKeySystem = aKeySystem;
   data.mStatus = aStatus;
