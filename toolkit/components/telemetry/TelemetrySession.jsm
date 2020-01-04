@@ -1838,7 +1838,7 @@ var Impl = {
       
       Services.obs.removeObserver(this, "content-child-shutdown");
       this.uninstall();
-
+      Telemetry.flushBatchedChildTelemetry();
       this.sendContentProcessPing(REASON_SAVED_SESSION);
       break;
     case TOPIC_CYCLE_COLLECTOR_BEGIN:

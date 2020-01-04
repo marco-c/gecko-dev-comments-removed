@@ -2598,6 +2598,9 @@ TelemetryHistogram::GetHistogramSizesofIncludingThis(mozilla::MallocSizeOf
 
 
 
+
+
+
 void
 TelemetryHistogram::IPCTimerFired(nsITimer* aTimer, void* aClosure)
 {
