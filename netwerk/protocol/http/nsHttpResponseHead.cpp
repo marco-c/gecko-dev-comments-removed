@@ -443,6 +443,14 @@ nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t *result) const
     }
 
     
+    if ((mStatus == 300) || (mStatus == 410) || nsHttp::IsPermanentRedirect(mStatus)) {
+        LOG(("nsHttpResponseHead::ComputeFreshnessLifetime [this = %p] "
+             "Assign an infinite heuristic lifetime\n", this));
+        *result = uint32_t(-1);
+        return NS_OK;
+    }
+
+    
     if (NS_SUCCEEDED(GetLastModifiedValue(&date2))) {
         LOG(("using last-modified to determine freshness-lifetime\n"));
         LOG(("last-modified = %u, date = %u\n", date2, date));
@@ -453,13 +461,7 @@ nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t *result) const
         }
     }
 
-    
-    if ((mStatus == 300) || nsHttp::IsPermanentRedirect(mStatus)) {
-        *result = uint32_t(-1);
-        return NS_OK;
-    }
-
-    LOG(("nsHttpResponseHead::ComputeFreshnessLifetime [this = %x] "
+    LOG(("nsHttpResponseHead::ComputeFreshnessLifetime [this = %p] "
          "Insufficient information to compute a non-zero freshness "
          "lifetime!\n", this));
 
@@ -485,6 +487,8 @@ nsHttpResponseHead::MustValidate() const
     case 304:
     case 307:
     case 308:
+        
+    case 410:
         break;
         
     case 303:
