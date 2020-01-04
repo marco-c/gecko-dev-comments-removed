@@ -147,13 +147,7 @@ function RegExpMatch(string) {
     }
 }
 
-
-
-
-
-
-
-function IsRegExpMethodOptimizable(rx) {
+function IsRegExpReplaceOptimizable(rx) {
     var RegExpProto = GetBuiltinPrototype("RegExp");
     
     
@@ -192,7 +186,7 @@ function RegExpReplace(string, replaceValue) {
     var global = !!rx.global;
 
     
-    if (!functionalReplace && firstDollarIndex === -1 && IsRegExpMethodOptimizable(rx)) {
+    if (!functionalReplace && firstDollarIndex === -1 && IsRegExpReplaceOptimizable(rx)) {
         if (global) {
             if (lengthS < 0x7fff)
                 return RegExpGlobalReplaceShortOpt(rx, S, lengthS, replaceValue);
@@ -531,21 +525,6 @@ function RegExpSearch(string) {
     
     var S = ToString(string);
 
-    var result;
-    if (IsRegExpMethodOptimizable(rx) && S.length < 0x7fff) {
-        var sticky = !!rx.sticky;
-
-        
-        result = RegExpSearcher(rx, S, 0, sticky);
-
-        
-        if (result === -1)
-            return -1;
-
-        
-        return result & 0x7fff;
-    }
-
     
     var previousLastIndex = rx.lastIndex;
 
@@ -553,7 +532,7 @@ function RegExpSearch(string) {
     rx.lastIndex = 0;
 
     
-    result = RegExpExec(rx, S, false);
+    var result = RegExpExec(rx, S, false);
 
     
     rx.lastIndex = previousLastIndex;
