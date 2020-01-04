@@ -1,5 +1,18 @@
 load(libdir + "wasm.js");
-load(scriptdir + "spec/list.js");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if (typeof assert === 'undefined') {
     var assert = function(c, msg) {
@@ -295,7 +308,7 @@ function exec(e) {
     }
 }
 
-var args = scriptArgs;
+var args = typeof importedArgs !== 'undefined' ? importedArgs : scriptArgs;
 
 
 var softFail = false;
@@ -331,16 +344,13 @@ for (let arg of args) {
     }
 }
 
-if (targets.length)
-    specTests = targets;
-
 top_loop:
-for (var test of specTests) {
+for (var test of targets) {
     module = null;
 
     debug(`Running test ${test}...`);
 
-    let source = read(scriptdir + "spec/" + test);
+    let source = read(scriptdir + test);
 
     let root = new parseSExpression(source);
 
