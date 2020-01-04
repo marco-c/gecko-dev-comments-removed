@@ -4,7 +4,10 @@
 
 
 
+#include "mozilla/Preferences.h"
 #include "MediaDecoderStateMachine.h"
+#include "MediaFormatReader.h"
+#include "OggDemuxer.h"
 #include "OggReader.h"
 #include "OggDecoder.h"
 
@@ -12,7 +15,12 @@ namespace mozilla {
 
 MediaDecoderStateMachine* OggDecoder::CreateStateMachine()
 {
-  return new MediaDecoderStateMachine(this, new OggReader(this));
+  bool useFormatDecoder =
+    Preferences::GetBool("media.format-reader.ogg", true);
+  RefPtr<MediaDecoderReader> reader = useFormatDecoder ?
+      static_cast<MediaDecoderReader*>(new MediaFormatReader(this, new OggDemuxer(GetResource()), GetVideoFrameContainer())) :
+      new OggReader(this);
+  return new MediaDecoderStateMachine(this, reader);
 }
 
 } 

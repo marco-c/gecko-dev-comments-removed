@@ -543,6 +543,9 @@ pref("media.mediasource.webm.enabled", true);
 #endif
 pref("media.mediasource.webm.audio.enabled", true);
 
+
+pref("media.format-reader.ogg", false);
+
 pref("media.benchmark.vp9.threshold", 150);
 pref("media.benchmark.frames", 300);
 pref("media.benchmark.timeout", 1000);
@@ -4591,7 +4594,7 @@ pref("layers.d3d11.disable-warp", true);
 #endif
 
 
-pref("layers.shared-buffer-provider.enabled", true);
+pref("layers.shared-buffer-provider.enabled", false);
 
 
 pref("layers.force-active", false);
