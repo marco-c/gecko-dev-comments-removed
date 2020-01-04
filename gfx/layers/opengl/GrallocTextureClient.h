@@ -38,7 +38,7 @@ namespace layers {
 
 
 
-class GrallocTextureClientOGL : public BufferTextureClient
+class GrallocTextureClientOGL : public TextureClient
 {
 public:
   GrallocTextureClientOGL(ISurfaceAllocator* aAllocator,
@@ -82,8 +82,6 @@ public:
     return mGraphicBuffer->getPixelFormat();
   }
 
-  virtual uint8_t* GetBuffer() const override;
-
   virtual gfx::DrawTarget* BorrowDrawTarget() override;
 
   virtual void UpdateFromSurface(gfx::SourceSurface* aSurface) override;
@@ -93,17 +91,13 @@ public:
 
   virtual bool AllocateForYCbCr(gfx::IntSize aYSize,
                                 gfx::IntSize aCbCrSize,
-                                StereoMode aStereoMode) override;
+                                StereoMode aStereoMode);
 
   bool AllocateForGLRendering(gfx::IntSize aSize);
 
   bool AllocateGralloc(gfx::IntSize aYSize, uint32_t aAndroidFormat, uint32_t aUsage);
 
   void SetIsOpaque(bool aIsOpaque) { mIsOpaque = aIsOpaque; }
-
-  virtual bool Allocate(uint32_t aSize) override;
-
-  virtual size_t GetBufferSize() const override;
 
   
 
@@ -128,6 +122,11 @@ public:
                                                        TextureFlags flags);
 
 protected:
+  gfx::SurfaceFormat mFormat;
+  gfx::IntSize mSize;
+  gfx::BackendType mBackend;
+  OpenMode mOpenMode;
+
   
 
 
@@ -148,6 +147,7 @@ protected:
   android::MediaBuffer* mMediaBuffer;
 
   bool mIsOpaque;
+  bool mLocked;
 };
 
 } 
