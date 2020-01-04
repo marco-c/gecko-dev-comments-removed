@@ -212,11 +212,17 @@ LoadAliasesStore(MDefinition* load, MDefinition* store)
         return false;
 
     
-    MDefinition::AliasType type = load->mightAlias(store);
-    if (type != MDefinition::AliasType::NoAlias)
-        return true;
+    
+    MDefinition::AliasType mightAlias = AliasAnalysisShared::genericMightAlias(load, store);
+    if (mightAlias == MDefinition::AliasType::NoAlias)
+        return false;
 
-    return false;
+    
+    mightAlias = load->mightAlias(store);
+    if (mightAlias == MDefinition::AliasType::NoAlias)
+        return false;
+
+    return true;
 }
 
 #ifdef JS_JITSPEW
