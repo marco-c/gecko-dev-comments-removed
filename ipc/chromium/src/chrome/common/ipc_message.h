@@ -38,18 +38,6 @@ class Message : public Pickle {
  public:
   typedef uint32_t msgid_t;
 
-  
-  class Sender {
-   public:
-    virtual ~Sender() {}
-
-    
-    
-    
-    
-    virtual bool Send(Message* msg) = 0;
-  };
-
   enum PriorityValue {
     PRIORITY_NORMAL = 1,
     PRIORITY_HIGH = 2,

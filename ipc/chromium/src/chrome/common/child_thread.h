@@ -15,15 +15,11 @@ class ResourceDispatcher;
 
 
 class ChildThread : public IPC::Channel::Listener,
-                    public IPC::Message::Sender,
                     public base::Thread {
  public:
   
   explicit ChildThread(Thread::Options options);
   virtual ~ChildThread();
-
-  
-  virtual bool Send(IPC::Message* msg);
 
   
   void AddRoute(int32_t routing_id, IPC::Channel::Listener* listener);

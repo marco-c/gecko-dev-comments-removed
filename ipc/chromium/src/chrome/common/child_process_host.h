@@ -25,14 +25,10 @@ class FileDescriptor;
 
 
 class ChildProcessHost :
-                         public IPC::Message::Sender,
                          public ChildProcessInfo,
                          public IPC::Channel::Listener {
  public:
   virtual ~ChildProcessHost();
-
-  
-  virtual bool Send(IPC::Message* msg);
 
  protected:
   explicit ChildProcessHost(ProcessType type);

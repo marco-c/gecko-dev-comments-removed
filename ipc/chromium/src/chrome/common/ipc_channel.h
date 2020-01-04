@@ -16,7 +16,7 @@ namespace IPC {
 
 
 
-class Channel : public Message::Sender {
+class Channel {
   
   friend class ChannelTest;
 
@@ -105,7 +105,7 @@ class Channel : public Message::Sender {
   
   
   
-  virtual bool Send(Message* message) override;
+  bool Send(Message* message);
 
   
   
