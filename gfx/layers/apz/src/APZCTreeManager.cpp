@@ -1220,14 +1220,16 @@ APZCTreeManager::UpdateZoomConstraints(const ScrollableLayerGuid& aGuid,
   }
   if (node && aConstraints) {
     ForEachNode(node.get(),
-        [&aConstraints, this](HitTestingTreeNode* aNode)
+        [&aConstraints, &node, this](HitTestingTreeNode* aNode)
         {
-          if (AsyncPanZoomController* childApzc = aNode->GetApzc()) {
-            
-            
-            if (childApzc->HasNoParentWithSameLayersId() ||
-                this->mZoomConstraints.find(childApzc->GetGuid()) != this->mZoomConstraints.end()) {
-              return TraversalFlag::Skip;
+          if (aNode != node) {
+            if (AsyncPanZoomController* childApzc = aNode->GetApzc()) {
+              
+              
+              if (childApzc->HasNoParentWithSameLayersId() ||
+                  this->mZoomConstraints.find(childApzc->GetGuid()) != this->mZoomConstraints.end()) {
+                return TraversalFlag::Skip;
+              }
             }
           }
           if (aNode->IsPrimaryHolder()) {
