@@ -3287,18 +3287,6 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
   }
 
   
-  for (OutputMediaStream& out : mOutputStreams) {
-    if (aInfo->HasAudio()) {
-      TrackID audioTrackId = aInfo->mAudio.mTrackId;
-      out.mStream->CreateOwnDOMTrack(audioTrackId, MediaSegment::AUDIO);
-    }
-    if (aInfo->HasVideo()) {
-      TrackID videoTrackId = aInfo->mVideo.mTrackId;
-      out.mStream->CreateOwnDOMTrack(videoTrackId, MediaSegment::VIDEO);
-    }
-  }
-
-  
   
   
   
