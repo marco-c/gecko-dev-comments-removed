@@ -137,8 +137,7 @@ nsInlineFrame::IsSelfEmpty()
     
     
     if ((GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
-        StyleBorder()->mBoxDecorationBreak ==
-          NS_STYLE_BOX_DECORATION_BREAK_SLICE) {
+        StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Slice) {
       
       
       if (!wm.IsBidiLTR()) {
@@ -585,7 +584,7 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   nscoord startEdge = 0;
   const bool boxDecorationBreakClone =
     MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
-                   NS_STYLE_BOX_DECORATION_BREAK_CLONE);
+                   StyleBoxDecorationBreak::Clone);
   
   
   
@@ -944,7 +943,7 @@ nsIFrame::LogicalSides
 nsInlineFrame::GetLogicalSkipSides(const ReflowInput* aReflowInput) const
 {
   if (MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
-                     NS_STYLE_BOX_DECORATION_BREAK_CLONE)) {
+                     StyleBoxDecorationBreak::Clone)) {
     return LogicalSides();
   }
 

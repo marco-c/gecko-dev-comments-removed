@@ -1188,7 +1188,7 @@ nsLineLayout::AllowForStartMargin(PerFrameData* pfd,
   if ((pfd->mFrame->GetPrevContinuation() ||
        pfd->mFrame->FrameIsNonFirstInIBSplit()) &&
       aReflowInput.mStyleBorder->mBoxDecorationBreak ==
-        NS_STYLE_BOX_DECORATION_BREAK_SLICE) {
+        StyleBoxDecorationBreak::Slice) {
     
     
     pfd->mMargin.IStart(lineWM) = 0;
@@ -1302,7 +1302,7 @@ nsLineLayout::CanPlaceFrame(PerFrameData* pfd,
        pfd->mFrame->FrameIsNonLastInIBSplit()) &&
       !pfd->mIsLetterFrame &&
       pfd->mFrame->StyleBorder()->mBoxDecorationBreak ==
-        NS_STYLE_BOX_DECORATION_BREAK_SLICE) {
+        StyleBoxDecorationBreak::Slice) {
     pfd->mMargin.IEnd(lineWM) = 0;
   }
 

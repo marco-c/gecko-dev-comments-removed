@@ -1335,7 +1335,7 @@ public:
   uint8_t        mBorderImageRepeatH; 
   uint8_t        mBorderImageRepeatV; 
   mozilla::StyleFloatEdge mFloatEdge; 
-  uint8_t        mBoxDecorationBreak; 
+  mozilla::StyleBoxDecorationBreak mBoxDecorationBreak; 
 
 protected:
   

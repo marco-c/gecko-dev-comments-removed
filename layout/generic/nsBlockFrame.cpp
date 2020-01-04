@@ -3083,7 +3083,7 @@ nsBlockFrame::ShouldApplyBStartMargin(BlockReflowInput& aState,
 
   if (!aState.IsAdjacentWithTop() ||
       aChildFrame->StyleBorder()->mBoxDecorationBreak ==
-        NS_STYLE_BOX_DECORATION_BREAK_CLONE) {
+        StyleBoxDecorationBreak::Clone) {
     
     
     
@@ -3149,7 +3149,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
   
   
   bool applyBStartMargin = (frame->StyleBorder()->mBoxDecorationBreak ==
-                              NS_STYLE_BOX_DECORATION_BREAK_CLONE ||
+                              StyleBoxDecorationBreak::Clone ||
                             !frame->GetPrevInFlow()) &&
                            ShouldApplyBStartMargin(aState, aLine, frame);
   if (applyBStartMargin) {
