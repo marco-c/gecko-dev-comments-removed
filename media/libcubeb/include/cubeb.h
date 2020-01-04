@@ -284,8 +284,8 @@ typedef struct {
   unsigned int max_rate;      
   unsigned int min_rate;      
 
-  unsigned int latency_lo_ms; 
-  unsigned int latency_hi_ms; 
+  unsigned int latency_lo; 
+  unsigned int latency_hi; 
 } cubeb_device_info;
 
 
@@ -373,9 +373,10 @@ int cubeb_get_max_channel_count(cubeb * context, uint32_t * max_channels);
 
 
 
+
 int cubeb_get_min_latency(cubeb * context,
                           cubeb_stream_params params,
-                          uint32_t * latency_ms);
+                          uint32_t * latency_frames);
 
 
 
@@ -422,7 +423,7 @@ int cubeb_stream_init(cubeb * context,
                       cubeb_stream_params * input_stream_params,
                       cubeb_devid output_device,
                       cubeb_stream_params * output_stream_params,
-                      unsigned int latency,
+                      unsigned int latency_frames,
                       cubeb_data_callback data_callback,
                       cubeb_state_callback state_callback,
                       void * user_ptr);

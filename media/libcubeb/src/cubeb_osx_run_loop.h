@@ -11,4 +11,12 @@
 
 
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 void cubeb_set_coreaudio_notification_runloop();
+
+#if defined(__cplusplus)
+}
+#endif
