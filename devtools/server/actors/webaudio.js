@@ -17,6 +17,14 @@ const { createValueGrip } = require("devtools/server/actors/object");
 const AutomationTimeline = require("./utils/automation-timeline");
 const { on, once, off, emit } = events;
 const { types, method, Arg, Option, RetVal, preEvent } = protocol;
+const {
+  audionodeSpec,
+  webAudioSpec,
+  AUTOMATION_METHODS,
+  NODE_CREATION_METHODS,
+  NODE_ROUTING_METHODS,
+} = require("devtools/shared/specs/webaudio");
+const { WebAudioFront } = require("devtools/shared/fronts/webaudio");
 const AUDIO_NODE_DEFINITION = require("devtools/server/actors/utils/audionodes.json");
 const ENABLE_AUTOMATION = false;
 const AUTOMATION_GRANULARITY = 2000;
@@ -26,31 +34,11 @@ const AUDIO_GLOBALS = [
   "AudioContext", "AudioNode", "AudioParam"
 ];
 
-const NODE_CREATION_METHODS = [
-  "createBufferSource", "createMediaElementSource", "createMediaStreamSource",
-  "createMediaStreamDestination", "createScriptProcessor", "createAnalyser",
-  "createGain", "createDelay", "createBiquadFilter", "createWaveShaper",
-  "createPanner", "createConvolver", "createChannelSplitter", "createChannelMerger",
-  "createDynamicsCompressor", "createOscillator", "createStereoPanner"
-];
-
-const AUTOMATION_METHODS = [
-  "setValueAtTime", "linearRampToValueAtTime", "exponentialRampToValueAtTime",
-  "setTargetAtTime", "setValueCurveAtTime", "cancelScheduledValues"
-];
-
-const NODE_ROUTING_METHODS = [
-  "connect", "disconnect"
-];
 
 
 
 
-
-types.addActorType("audionode");
-var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
-  typeName: "audionode",
-
+var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClassWithSpec(audionodeSpec, {
   form: function (detail) {
     if (detail === "actorid") {
       return this.actorID;
@@ -106,9 +94,9 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  getType: method(function () {
+  getType: function () {
     return this.type;
-  }, { response: { type: RetVal("string") }}),
+  },
 
   
 
@@ -116,7 +104,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  isBypassed: method(function () {
+  isBypassed: function () {
     let node = this.node.get();
     if (node === null) {
       return false;
@@ -125,9 +113,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     
     
     return !!node.passThrough;
-  }, {
-    response: { bypassed: RetVal("boolean") }
-  }),
+  },
 
   
 
@@ -139,7 +125,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  bypass: method(function (enable) {
+  bypass: function (enable) {
     let node = this.node.get();
 
     if (node === null) {
@@ -151,10 +137,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     }
 
     return this.isBypassed();
-  }, {
-    request: { enable: Arg(0, "boolean") },
-    response: { bypassed: RetVal("boolean") }
-  }),
+  },
 
   
 
@@ -165,7 +148,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  setParam: method(function (param, value) {
+  setParam: function (param, value) {
     let node = this.node.get();
 
     if (node === null) {
@@ -184,13 +167,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     } catch (e) {
       return constructError(e);
     }
-  }, {
-    request: {
-      param: Arg(0, "string"),
-      value: Arg(1, "nullable:primitive")
-    },
-    response: { error: RetVal("nullable:json") }
-  }),
+  },
 
   
 
@@ -198,7 +175,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  getParam: method(function (param) {
+  getParam: function (param) {
     let node = this.node.get();
 
     if (node === null) {
@@ -217,12 +194,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     let grip = createValueGrip(value, null, createObjectGrip);
 
     return grip;
-  }, {
-    request: {
-      param: Arg(0, "string")
-    },
-    response: { text: RetVal("nullable:primitive") }
-  }),
+  },
 
   
 
@@ -232,29 +204,24 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  getParamFlags: method(function (param) {
+  getParamFlags: function (param) {
     return ((AUDIO_NODE_DEFINITION[this.type] || {}).properties || {})[param];
-  }, {
-    request: { param: Arg(0, "string") },
-    response: { flags: RetVal("nullable:primitive") }
-  }),
+  },
 
   
 
 
 
-  getParams: method(function (param) {
+  getParams: function (param) {
     let props = Object.keys(AUDIO_NODE_DEFINITION[this.type].properties || {});
     return props.map(prop =>
       ({ param: prop, value: this.getParam(prop), flags: this.getParamFlags(prop) }));
-  }, {
-    response: { params: RetVal("json") }
-  }),
+  },
 
   
 
 
-  connectParam: method(function (destActor, paramName, output) {
+  connectParam: function (destActor, paramName, output) {
     let srcNode = this.node.get();
     let destNode = destActor.node.get();
 
@@ -272,19 +239,12 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     } catch (e) {
       return constructError(e);
     }
-  }, {
-    request: {
-      destActor: Arg(0, "audionode"),
-      paramName: Arg(1, "string"),
-      output: Arg(2, "nullable:number")
-    },
-    response: { error: RetVal("nullable:json") }
-  }),
+  },
 
   
 
 
-  connectNode: method(function (destActor, output, input) {
+  connectNode: function (destActor, output, input) {
     let srcNode = this.node.get();
     let destNode = destActor.node.get();
 
@@ -302,19 +262,12 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     } catch (e) {
       return constructError(e);
     }
-  }, {
-    request: {
-      destActor: Arg(0, "audionode"),
-      output: Arg(1, "nullable:number"),
-      input: Arg(2, "nullable:number")
-    },
-    response: { error: RetVal("nullable:json") }
-  }),
+  },
 
   
 
 
-  disconnect: method(function (destActor, output) {
+  disconnect: function (destActor, output) {
     let node = this.node.get();
 
     if (node === null) {
@@ -328,12 +281,9 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     } catch (e) {
       return constructError(e);
     }
-  }, {
-    request: { output: Arg(0, "nullable:number") },
-    response: { error: RetVal("nullable:json") }
-  }),
+  },
 
-  getAutomationData: method(function (paramName) {
+  getAutomationData: function (paramName) {
     let timeline = this.automation[paramName];
     if (!timeline) {
       return null;
@@ -373,10 +323,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     }
 
     return { events, values };
-  }, {
-    request: { paramName: Arg(0, "string") },
-    response: { values: RetVal("nullable:json") }
-  }),
+  },
 
   
 
@@ -389,7 +336,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-  addAutomationEvent: method(function (paramName, eventName, args = []) {
+  addAutomationEvent: function (paramName, eventName, args = []) {
     let node = this.node.get();
     let timeline = this.automation[paramName];
 
@@ -431,14 +378,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
     } catch (e) {
       return constructError(e);
     }
-  }, {
-    request: {
-      paramName: Arg(0, "string"),
-      eventName: Arg(1, "string"),
-      args: Arg(2, "nullable:json")
-    },
-    response: { error: RetVal("nullable:json") }
-  }),
+  },
 
   
 
@@ -464,43 +404,7 @@ var AudioNodeActor = exports.AudioNodeActor = protocol.ActorClass({
 
 
 
-
-
-
-
-
-
-
-var AudioNodeFront = protocol.FrontClass(AudioNodeActor, {
-  form: function (form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-
-    this.actorID = form.actor;
-    this.type = form.type;
-    this.source = form.source;
-    this.bypassable = form.bypassable;
-  },
-
-  initialize: function (client, form) {
-    protocol.Front.prototype.initialize.call(this, client, form);
-    
-    
-    if (form) {
-      this.manage(this);
-    }
-  }
-});
-
-
-
-
-
-
-var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
-  typeName: "webaudio",
+var WebAudioActor = exports.WebAudioActor = protocol.ActorClassWithSpec(webAudioSpec, {
   initialize: function (conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this.tabActor = tabActor;
@@ -526,11 +430,9 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
 
 
 
-  getDefinition: method(function () {
+  getDefinition: function () {
     return AUDIO_NODE_DEFINITION;
-  }, {
-    response: { definition: RetVal("json") }
-  }),
+  },
 
   
 
@@ -539,7 +441,7 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
 
 
 
-  setup: method(function ({ reload }) {
+  setup: function ({ reload }) {
     
     
     this._firstNodeCreated = false;
@@ -569,10 +471,7 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
     
     
     on(this.tabActor, "window-destroyed", this._onGlobalDestroyed);
-  }, {
-    request: { reload: Option(0, "boolean") },
-    oneway: true
-  }),
+  },
 
   
 
@@ -655,7 +554,7 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
 
 
 
-  finalize: method(function () {
+  finalize: function () {
     if (!this._initialized) {
       return;
     }
@@ -669,53 +568,6 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
     this._callWatcher.eraseRecording();
     this._callWatcher.finalize();
     this._callWatcher = null;
-  }, {
-    oneway: true
-  }),
-
-  
-
-
-  events: {
-    "start-context": {
-      type: "startContext"
-    },
-    "connect-node": {
-      type: "connectNode",
-      source: Option(0, "audionode"),
-      dest: Option(0, "audionode")
-    },
-    "disconnect-node": {
-      type: "disconnectNode",
-      source: Arg(0, "audionode")
-    },
-    "connect-param": {
-      type: "connectParam",
-      source: Option(0, "audionode"),
-      dest: Option(0, "audionode"),
-      param: Option(0, "string")
-    },
-    "change-param": {
-      type: "changeParam",
-      source: Option(0, "audionode"),
-      param: Option(0, "string"),
-      value: Option(0, "string")
-    },
-    "create-node": {
-      type: "createNode",
-      source: Arg(0, "audionode")
-    },
-    "destroy-node": {
-      type: "destroyNode",
-      source: Arg(0, "audionode")
-    },
-    "automation-event": {
-      type: "automationEvent",
-      node: Option(0, "audionode"),
-      paramName: Option(0, "string"),
-      eventName: Option(0, "string"),
-      args: Option(0, "json")
-    }
   },
 
   
@@ -883,35 +735,6 @@ var WebAudioActor = exports.WebAudioActor = protocol.ActorClass({
     systemOff("webaudio-node-demise", this._onDestroyNode);
   }
 });
-
-
-
-
-var WebAudioFront = exports.WebAudioFront = protocol.FrontClass(WebAudioActor, {
-  initialize: function (client, { webaudioActor }) {
-    protocol.Front.prototype.initialize.call(this, client, { actor: webaudioActor });
-    this.manage(this);
-  },
-
-  
-
-
-
-
-  _onCreateNode: preEvent("create-node", function (audionode) {
-    if (!audionode.type) {
-      return audionode.getType().then(type => {
-        audionode.type = type;
-        audionode.source = !!AUDIO_NODE_DEFINITION[type].source;
-        audionode.bypassable = !AUDIO_NODE_DEFINITION[type].unbypassable;
-      });
-    }
-  }),
-});
-
-WebAudioFront.AUTOMATION_METHODS = new Set(AUTOMATION_METHODS);
-WebAudioFront.NODE_CREATION_METHODS = new Set(NODE_CREATION_METHODS);
-WebAudioFront.NODE_ROUTING_METHODS = new Set(NODE_ROUTING_METHODS);
 
 
 
