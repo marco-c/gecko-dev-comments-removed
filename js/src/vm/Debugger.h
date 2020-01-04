@@ -183,6 +183,8 @@ class DebuggerWeakMap : private WeakMap<RelocatablePtr<UnbarrieredKey>, Relocata
     }
 };
 
+class LeaveDebuggeeNoExecute;
+
 
 
 
@@ -613,6 +615,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     JSObject* getHook(Hook hook) const;
     bool hasAnyLiveHooks() const;
 
+    static bool slowPathCheckNoExecute(JSContext* cx);
     static JSTrapStatus slowPathOnEnterFrame(JSContext* cx, AbstractFramePtr frame);
     static bool slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame, bool ok);
     static JSTrapStatus slowPathOnDebuggerStatement(JSContext* cx, AbstractFramePtr frame);
@@ -720,6 +723,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static void sweepAll(FreeOp* fop);
     static void detachAllDebuggersFromGlobal(FreeOp* fop, GlobalObject* global);
     static void findZoneEdges(JS::Zone* v, gc::ComponentFinder<JS::Zone>& finder);
+
+    
+    static inline bool checkNoExecute(JSContext* cx);
 
     
 

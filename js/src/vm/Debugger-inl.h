@@ -33,6 +33,14 @@ js::Debugger::fromJSObject(const JSObject* obj)
     return (Debugger*) obj->as<NativeObject>().getPrivate();
 }
 
+ inline bool
+js::Debugger::checkNoExecute(JSContext* cx)
+{
+    if (!cx->compartment()->isDebuggee() || !cx->runtime()->noExecuteDebuggerTop)
+        return true;
+    return slowPathCheckNoExecute(cx);
+}
+
  JSTrapStatus
 js::Debugger::onEnterFrame(JSContext* cx, AbstractFramePtr frame)
 {

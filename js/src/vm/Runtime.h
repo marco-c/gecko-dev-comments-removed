@@ -58,6 +58,7 @@ namespace js {
 class PerThreadData;
 class ExclusiveContext;
 class AutoKeepAtoms;
+class EnterDebuggeeNoExecute;
 #ifdef JS_TRACE_LOGGING
 class TraceLoggerThread;
 #endif
@@ -718,6 +719,15 @@ struct JSRuntime : public JS::shadow::Runtime,
 
     
     JS::dbg::AutoEntryMonitor* entryMonitor;
+
+    
+
+
+
+
+
+
+    js::EnterDebuggeeNoExecute* noExecuteDebuggerTop;
 
     js::Activation* const* addressOfActivation() const {
         return &activation_;
