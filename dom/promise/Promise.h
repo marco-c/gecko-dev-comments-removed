@@ -166,6 +166,10 @@ public:
   
   static bool PerformMicroTaskCheckpoint();
 
+  static void PerformWorkerMicroTaskCheckpoint();
+
+  static void PerformWorkerDebuggerMicroTaskCheckpoint();
+
   
 
   nsIGlobalObject* GetParentObject() const
@@ -287,10 +291,6 @@ public:
   
   uint64_t GetID();
 #endif 
-
-  
-  static void
-  DispatchToMicroTask(nsIRunnable* aRunnable);
 
 #ifndef SPIDERMONKEY_PROMISE
   enum JSCallbackSlots {

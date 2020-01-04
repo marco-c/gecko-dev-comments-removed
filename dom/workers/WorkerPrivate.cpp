@@ -4532,6 +4532,9 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       static_cast<nsIRunnable*>(runnable)->Run();
       runnable->Release();
 
+      
+      Promise::PerformWorkerDebuggerMicroTaskCheckpoint();
+
       if (debuggerRunnablesPending) {
         WorkerDebuggerGlobalScope* globalScope = DebuggerGlobalScope();
         MOZ_ASSERT(globalScope);
@@ -5584,6 +5587,9 @@ WorkerPrivate::EnterDebuggerEventLoop()
       runnable->Release();
 
       
+      Promise::PerformWorkerDebuggerMicroTaskCheckpoint();
+
+      
       if (JS::CurrentGlobalOrNull(cx)) {
         JS_MaybeGC(cx);
       }
@@ -6077,7 +6083,7 @@ WorkerPrivate::RunExpiredTimeouts(JSContext* aCx)
 
     
     
-    Promise::PerformMicroTaskCheckpoint();
+    Promise::PerformWorkerMicroTaskCheckpoint();
 
     NS_ASSERTION(mRunningExpiredTimeouts, "Someone changed this!");
   }

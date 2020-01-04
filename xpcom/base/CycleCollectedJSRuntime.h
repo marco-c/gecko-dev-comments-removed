@@ -158,6 +158,9 @@ protected:
     return true; 
   }
 
+  std::queue<nsCOMPtr<nsIRunnable>> mPromiseMicroTaskQueue;
+  std::queue<nsCOMPtr<nsIRunnable>> mDebuggerPromiseMicroTaskQueue;
+
 private:
   void
   DescribeGCThing(bool aIsMarked, JS::GCCellPtr aThing,
@@ -285,6 +288,7 @@ public:
   void SetPendingException(nsIException* aException);
 
   std::queue<nsCOMPtr<nsIRunnable>>& GetPromiseMicroTaskQueue();
+  std::queue<nsCOMPtr<nsIRunnable>>& GetDebuggerPromiseMicroTaskQueue();
 
   nsCycleCollectionParticipant* GCThingParticipant();
   nsCycleCollectionParticipant* ZoneParticipant();
@@ -349,6 +353,9 @@ public:
   void PrepareWaitingZonesForGC();
 
   
+  virtual void DispatchToMicroTask(nsIRunnable* aRunnable);
+
+  
   
   
   
@@ -377,8 +384,6 @@ private:
 
   nsCOMPtr<nsIException> mPendingException;
   nsThread* mOwningThread; 
-
-  std::queue<nsCOMPtr<nsIRunnable>> mPromiseMicroTaskQueue;
 
   struct RunInMetastableStateData
   {

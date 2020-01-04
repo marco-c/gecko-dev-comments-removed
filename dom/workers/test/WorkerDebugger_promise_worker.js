@@ -1,0 +1,25 @@
+"use strict";
+
+self.onmessage = function (event) {
+  if (event.data !== "resolve") {
+    return;
+  }
+  
+  
+  Promise.resolve().then(function () {
+    self.onmessage = function (event) {
+      if (event.data !== "pause") {
+        return;
+      }
+      
+      
+      
+      
+      Promise.resolve().then(function () {
+        postMessage("resumed");
+      });
+      debugger;
+    }
+    postMessage("resolved");
+  });
+};
