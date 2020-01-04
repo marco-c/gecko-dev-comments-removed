@@ -15,10 +15,10 @@
 }
 
 :root[devtoolstheme="dark"] {
-  --gcli-background-color: #343c45; 
-  --gcli-input-focused-background: #252c33; 
+  --gcli-background-color: #272b35; 
+  --gcli-input-focused-background: #272b35; 
   --gcli-input-color: #b6babf; 
-  --gcli-border-color: black; 
+  --gcli-border-color: #454d5d; 
 }
 
 .gcli-body {
