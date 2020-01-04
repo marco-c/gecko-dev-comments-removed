@@ -4226,7 +4226,6 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption)
             return false;
         next = binding->pn_next;
 
-        ParseNode* initializer;
         if (binding->isKind(PNK_ARRAY) || binding->isKind(PNK_OBJECT)) {
             
             
@@ -4277,100 +4276,102 @@ BytecodeEmitter::emitVariables(ParseNode* pn, VarEmitOption emitOption)
 
 
             if (binding->pn_left->isKind(PNK_NAME)) {
-                initializer = binding->pn_right;
-                binding = binding->pn_left;
-                goto do_name;
-            }
-
-            initializer = binding->pn_left;
-            if (!emitDestructuringDecls(pn->getOp(), initializer))
-                return false;
-
-            if (!emitTree(binding->pn_right))
-                return false;
-
-            if (!emitDestructuringOpsHelper(initializer, emitOption))
-                return false;
-
-            if (emitOption == InitializeVars) {
-                if (!emit1(JSOP_POP))
+                if (!emitSingleVariable(pn, binding->pn_left, binding->pn_right, emitOption))
                     return false;
+            } else {
+                ParseNode* initializer = binding->pn_left;
+                if (!emitDestructuringDecls(pn->getOp(), initializer))
+                    return false;
+
+                if (!emitTree(binding->pn_right))
+                    return false;
+
+                if (!emitDestructuringOpsHelper(initializer, emitOption))
+                    return false;
+
+                if (emitOption == InitializeVars) {
+                    if (!emit1(JSOP_POP))
+                        return false;
+                }
             }
         } else {
-            
-
-
-
-
-
-            initializer = binding->maybeExpr();
-
-         do_name:
-            MOZ_ASSERT(binding->isKind(PNK_NAME));
-            if (!bindNameToSlot(binding))
+            if (!emitSingleVariable(pn, binding, binding->maybeExpr(), emitOption))
                 return false;
-
-            JSOp op;
-            op = binding->getOp();
-            MOZ_ASSERT(op != JSOP_CALLEE);
-            MOZ_ASSERT(!binding->pn_scopecoord.isFree() || !pn->isOp(JSOP_NOP));
-
-            jsatomid atomIndex;
-            if (!maybeEmitVarDecl(pn->getOp(), binding, &atomIndex))
-                return false;
-
-            if (initializer) {
-                MOZ_ASSERT(emitOption != DefineVars);
-                if (op == JSOP_SETNAME ||
-                    op == JSOP_STRICTSETNAME ||
-                    op == JSOP_SETGNAME ||
-                    op == JSOP_STRICTSETGNAME ||
-                    op == JSOP_SETINTRINSIC)
-                {
-                    MOZ_ASSERT(emitOption != PushInitialValues);
-                    JSOp bindOp;
-                    if (op == JSOP_SETNAME || op == JSOP_STRICTSETNAME)
-                        bindOp = JSOP_BINDNAME;
-                    else if (op == JSOP_SETGNAME || op == JSOP_STRICTSETGNAME)
-                        bindOp = JSOP_BINDGNAME;
-                    else
-                        bindOp = JSOP_BINDINTRINSIC;
-                    if (!emitIndex32(bindOp, atomIndex))
-                        return false;
-                }
-
-                bool oldEmittingForInit = emittingForInit;
-                emittingForInit = false;
-                if (!emitTree(initializer))
-                    return false;
-                emittingForInit = oldEmittingForInit;
-            } else if (op == JSOP_INITLEXICAL ||
-                       op == JSOP_INITGLEXICAL ||
-                       emitOption == PushInitialValues)
-            {
-                
-                
-                MOZ_ASSERT(emitOption != DefineVars);
-                if (!emit1(JSOP_UNDEFINED))
-                    return false;
-            }
-
-            
-            
-            if (emitOption == InitializeVars) {
-                MOZ_ASSERT_IF(binding->isDefn(), initializer == binding->pn_expr);
-                if (!binding->pn_scopecoord.isFree()) {
-                    if (!emitVarOp(binding, op))
-                        return false;
-                } else {
-                    if (!emitIndexOp(op, atomIndex))
-                        return false;
-                }
-                if (!emit1(JSOP_POP))
-                    return false;
-            }
         }
     }
+    return true;
+}
+
+bool
+BytecodeEmitter::emitSingleVariable(ParseNode* pn, ParseNode* binding, ParseNode* initializer,
+                                    VarEmitOption emitOption)
+{
+    
+    
+    
+    MOZ_ASSERT(binding->isKind(PNK_NAME));
+    if (!bindNameToSlot(binding))
+        return false;
+
+    JSOp op = binding->getOp();
+    MOZ_ASSERT(op != JSOP_CALLEE);
+    MOZ_ASSERT(!binding->pn_scopecoord.isFree() || !pn->isOp(JSOP_NOP));
+
+    jsatomid atomIndex;
+    if (!maybeEmitVarDecl(pn->getOp(), binding, &atomIndex))
+        return false;
+
+    if (initializer) {
+        MOZ_ASSERT(emitOption != DefineVars);
+        if (op == JSOP_SETNAME ||
+            op == JSOP_STRICTSETNAME ||
+            op == JSOP_SETGNAME ||
+            op == JSOP_STRICTSETGNAME ||
+            op == JSOP_SETINTRINSIC)
+        {
+            MOZ_ASSERT(emitOption != PushInitialValues);
+            JSOp bindOp;
+            if (op == JSOP_SETNAME || op == JSOP_STRICTSETNAME)
+                bindOp = JSOP_BINDNAME;
+            else if (op == JSOP_SETGNAME || op == JSOP_STRICTSETGNAME)
+                bindOp = JSOP_BINDGNAME;
+            else
+                bindOp = JSOP_BINDINTRINSIC;
+            if (!emitIndex32(bindOp, atomIndex))
+                return false;
+        }
+
+        bool oldEmittingForInit = emittingForInit;
+        emittingForInit = false;
+        if (!emitTree(initializer))
+            return false;
+        emittingForInit = oldEmittingForInit;
+    } else if (op == JSOP_INITLEXICAL ||
+               op == JSOP_INITGLEXICAL ||
+               emitOption == PushInitialValues)
+    {
+        
+        
+        MOZ_ASSERT(emitOption != DefineVars);
+        if (!emit1(JSOP_UNDEFINED))
+            return false;
+    }
+
+    
+    
+    if (emitOption == InitializeVars) {
+        MOZ_ASSERT_IF(binding->isDefn(), initializer == binding->pn_expr);
+        if (!binding->pn_scopecoord.isFree()) {
+            if (!emitVarOp(binding, op))
+                return false;
+        } else {
+            if (!emitIndexOp(op, atomIndex))
+                return false;
+        }
+        if (!emit1(JSOP_POP))
+            return false;
+    }
+
     return true;
 }
 
