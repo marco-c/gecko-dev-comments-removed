@@ -474,13 +474,14 @@ void
 Shutdown(void)
 {
   OffTheBooksMutexAutoLock lock(CamerasSingleton::Mutex());
-  if (!CamerasSingleton::Child()) {
+  CamerasChild* child = CamerasSingleton::Child();
+  if (!child) {
     
     
     LOG(("Shutdown when already shut down"));
     return;
   }
-  GetCamerasChild()->Shutdown();
+  child->ShutdownAll();
 }
 
 class ShutdownRunnable : public nsRunnable {
@@ -505,14 +506,22 @@ private:
 };
 
 void
-CamerasChild::Shutdown()
+CamerasChild::ShutdownAll()
 {
+  
+  ShutdownParent();
+  ShutdownChild();
+}
+
+void
+CamerasChild::ShutdownParent()
+{
+  
   {
     MonitorAutoLock monitor(mReplyMonitor);
     mIPCIsAlive = false;
     monitor.NotifyAll();
   }
-
   if (CamerasSingleton::Thread()) {
     LOG(("Dispatching actor deletion"));
     
@@ -524,6 +533,16 @@ CamerasChild::Shutdown()
         return NS_OK;
       });
     CamerasSingleton::Thread()->Dispatch(deleteRunnable, NS_DISPATCH_NORMAL);
+  } else {
+    LOG(("ShutdownParent called without PBackground thread"));
+  }
+}
+
+void
+CamerasChild::ShutdownChild()
+{
+  
+  if (CamerasSingleton::Thread()) {
     LOG(("PBackground thread exists, dispatching close"));
     
     
@@ -607,7 +626,11 @@ CamerasChild::~CamerasChild()
 
   {
     OffTheBooksMutexAutoLock lock(CamerasSingleton::Mutex());
-    Shutdown();
+    
+    
+    
+    
+    ShutdownChild();
   }
 
   MOZ_COUNT_DTOR(CamerasChild);
