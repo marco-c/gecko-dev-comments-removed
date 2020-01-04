@@ -69,6 +69,7 @@
 #include "nsStyleStruct.h"              
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
+#include "nsViewportInfo.h"             
 #include "prsystem.h"                   
 #include "SharedMemoryBasic.h"          
 #include "ScrollSnap.h"                 
@@ -402,16 +403,6 @@ static bool IsHighMemSystem()
 
 
 
-static const CSSToParentLayerScale MAX_ZOOM(8.0f);
-
-
-
-
-static const CSSToParentLayerScale MIN_ZOOM(0.125f);
-
-
-
-
 
 
 static bool IsCloseToHorizontal(float aAngle, float aThreshold)
@@ -702,7 +693,9 @@ AsyncPanZoomController::AsyncPanZoomController(uint64_t aLayersId,
      mX(this),
      mY(this),
      mPanDirRestricted(false),
-     mZoomConstraints(false, false, MIN_ZOOM, MAX_ZOOM),
+     mZoomConstraints(false, false,
+        mFrameMetrics.GetDevPixelsPerCSSPixel() * kViewportMinScale / ParentLayerToScreenScale(1),
+        mFrameMetrics.GetDevPixelsPerCSSPixel() * kViewportMaxScale / ParentLayerToScreenScale(1)),
      mLastSampleTime(GetFrameTime()),
      mLastCheckerboardReport(GetFrameTime()),
      mOverscrollEffect(MakeUnique<OverscrollEffect>(*this)),
@@ -3675,11 +3668,17 @@ void AsyncPanZoomController::UpdateZoomConstraints(const ZoomConstraints& aConst
     NS_WARNING("APZC received zoom constraints with NaN values; dropping...");
     return;
   }
+
+  CSSToParentLayerScale min = mFrameMetrics.GetDevPixelsPerCSSPixel()
+    * kViewportMinScale / ParentLayerToScreenScale(1);
+  CSSToParentLayerScale max = mFrameMetrics.GetDevPixelsPerCSSPixel()
+    * kViewportMaxScale / ParentLayerToScreenScale(1);
+
   
   mZoomConstraints.mAllowZoom = aConstraints.mAllowZoom;
   mZoomConstraints.mAllowDoubleTapZoom = aConstraints.mAllowDoubleTapZoom;
-  mZoomConstraints.mMinZoom = (MIN_ZOOM > aConstraints.mMinZoom ? MIN_ZOOM : aConstraints.mMinZoom);
-  mZoomConstraints.mMaxZoom = (MAX_ZOOM > aConstraints.mMaxZoom ? aConstraints.mMaxZoom : MAX_ZOOM);
+  mZoomConstraints.mMinZoom = (min > aConstraints.mMinZoom ? min : aConstraints.mMinZoom);
+  mZoomConstraints.mMaxZoom = (max > aConstraints.mMaxZoom ? aConstraints.mMaxZoom : max);
   if (mZoomConstraints.mMaxZoom < mZoomConstraints.mMinZoom) {
     mZoomConstraints.mMaxZoom = mZoomConstraints.mMinZoom;
   }
