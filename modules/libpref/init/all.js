@@ -1231,6 +1231,13 @@ pref("network.allow-experiments", true);
 pref("network.notify.changed", true);
 
 
+#if defined(XP_WIN)
+pref("network.notify.IPv6", false);
+else
+pref("network.notify.IPv6", true);
+#endif
+
+
 
 pref("network.tickle-wifi.enabled", false);
 pref("network.tickle-wifi.duration", 400);
