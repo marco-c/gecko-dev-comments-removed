@@ -1781,6 +1781,7 @@ nsContextMenu.prototype = {
 
     
     
+    
     if (selectedText.length > 15) {
       let truncLength = 15;
       let truncChar = selectedText[15].charCodeAt(0);
