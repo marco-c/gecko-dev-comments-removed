@@ -5,8 +5,8 @@
 
 
 
-#ifndef nsBlockReflowState_h__
-#define nsBlockReflowState_h__
+#ifndef nsBlockReflowState_h
+#define nsBlockReflowState_h
 
 #include "nsFloatManager.h"
 #include "nsLineBox.h"
@@ -70,6 +70,8 @@ class nsOverflowContinuationTracker;
 
 #define BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED 0x00000400
 #define BRS_LASTFLAG              BRS_FLOAT_FRAGMENTS_INSIDE_COLUMN_ENABLED
+
+namespace mozilla {
 
 
 
@@ -377,5 +379,7 @@ private:
 
   void RecoverFloats(nsLineList::iterator aLine, nscoord aDeltaBCoord);
 };
+
+}; 
 
 #endif 
