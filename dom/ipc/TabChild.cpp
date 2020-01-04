@@ -1562,15 +1562,23 @@ TabChild::MaybeRequestPreinitCamera()
       return;
     }
 
-    nsCOMPtr<mozIApplication> app;
-    nsresult rv = appsService->GetAppByLocalId(OwnAppId(), getter_AddRefs(app));
-    if (NS_WARN_IF(NS_FAILED(rv)) || !app) {
+    nsString manifestUrl = EmptyString();
+    appsService->GetManifestURLByLocalId(OwnAppId(), manifestUrl);
+    nsIScriptSecurityManager* secMan = nsContentUtils::GetSecurityManager();
+    if (NS_WARN_IF(!secMan)) {
+      return;
+    }
+
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = NS_NewURI(getter_AddRefs(uri), manifestUrl);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
 
     nsCOMPtr<nsIPrincipal> principal;
-    app->GetPrincipal(getter_AddRefs(principal));
-    if (NS_WARN_IF(!principal)) {
+    rv = secMan->GetAppCodebasePrincipal(uri, OwnAppId(), false,
+                                         getter_AddRefs(principal));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
 
@@ -1844,6 +1852,12 @@ TabChild::RecvMouseEvent(const nsString& aType,
 
 bool
 TabChild::RecvRealMouseMoveEvent(const WidgetMouseEvent& event)
+{
+  return RecvRealMouseButtonEvent(event);
+}
+
+bool
+TabChild::RecvSynthMouseMoveEvent(const WidgetMouseEvent& event)
 {
   return RecvRealMouseButtonEvent(event);
 }
