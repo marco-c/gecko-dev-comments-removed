@@ -2124,7 +2124,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
         *answer = true;
         return true;
 
-      case PNK_DEFAULT:
       case PNK_COLON:
       case PNK_CASE:
         MOZ_ASSERT(pn->isArity(PN_BINARY));
@@ -3055,6 +3054,7 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
 
         stmtInfo.type = StmtType::SWITCH;
         stmtInfo.update = top = offset();
+
         
         cases = cases->expr();
     } else {
@@ -3075,9 +3075,10 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
     uint32_t tableLength = 0;
     int32_t low, high;
     bool hasDefault = false;
+    CaseClause* firstCase = cases->pn_head ? &cases->pn_head->as<CaseClause>() : nullptr;
     if (caseCount == 0 ||
-        (caseCount == 1 &&
-         (hasDefault = cases->pn_head->isKind(PNK_DEFAULT)))) {
+        (caseCount == 1 && (hasDefault = firstCase->isDefault())))
+    {
         caseCount = 0;
         low = 0;
         high = -1;
@@ -3088,20 +3089,19 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         low  = JSVAL_INT_MAX;
         high = JSVAL_INT_MIN;
 
-        for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
-            if (caseNode->isKind(PNK_DEFAULT)) {
+        for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
+            if (caseNode->isDefault()) {
                 hasDefault = true;
-                caseCount--;    
+                caseCount--;  
                 continue;
             }
 
-            MOZ_ASSERT(caseNode->isKind(PNK_CASE));
             if (switchOp == JSOP_CONDSWITCH)
                 continue;
 
             MOZ_ASSERT(switchOp == JSOP_TABLESWITCH);
 
-            ParseNode* caseValue = caseNode->pn_left;
+            ParseNode* caseValue = caseNode->caseExpression();
 
             if (caseValue->getKind() != PNK_NUMBER) {
                 switchOp = JSOP_CONDSWITCH;
@@ -3124,10 +3124,8 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
                 high = i;
 
             
-
-
-
-
+            
+            
             if (i < 0)
                 i += JS_BIT(16);
             if (i >= intmapBitLength) {
@@ -3144,9 +3142,7 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         }
 
         
-
-
-
+        
         if (switchOp == JSOP_TABLESWITCH) {
             tableLength = uint32_t(high - low + 1);
             if (tableLength >= JS_BIT(16) || tableLength > 2 * caseCount)
@@ -3155,9 +3151,7 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
     }
 
     
-
-
-
+    
     unsigned noteIndex;
     size_t switchSize;
     if (switchOp == JSOP_CONDSWITCH) {
@@ -3169,7 +3163,7 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         MOZ_ASSERT(switchOp == JSOP_TABLESWITCH);
 
         
-        switchSize = (size_t)(JUMP_OFFSET_LEN * (3 + tableLength));
+        switchSize = size_t(JUMP_OFFSET_LEN * (3 + tableLength));
         if (!newSrcNote2(SRC_TABLESWITCH, 0, &noteIndex))
             return false;
     }
@@ -3178,7 +3172,7 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
     if (!emitN(switchOp, switchSize))
         return false;
 
-    Vector<ParseNode*, 32, SystemAllocPolicy> table;
+    Vector<CaseClause*, 32, SystemAllocPolicy> table;
 
     ptrdiff_t condSwitchDefaultOff = -1;
     if (switchOp == JSOP_CONDSWITCH) {
@@ -3187,28 +3181,35 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         ptrdiff_t prevCaseOffset;
 
         
-        for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
-            ParseNode* caseValue = caseNode->pn_left;
+        for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
+            ParseNode* caseValue = caseNode->caseExpression();
+
             
             
-            if (caseValue &&
-                !emitTree(caseValue, caseValue->isLiteral() ? SUPPRESS_LINENOTE :
-                          EMIT_LINENOTE))
-                return false;
+            if (caseValue) {
+                if (!emitTree(caseValue,
+                              caseValue->isLiteral() ? SUPPRESS_LINENOTE : EMIT_LINENOTE))
+                {
+                    return false;
+                }
+            }
+
             if (!beforeCases) {
                 
                 if (!setSrcNoteOffset(caseNoteIndex, 0, offset() - prevCaseOffset))
                     return false;
             }
             if (!caseValue) {
-                MOZ_ASSERT(caseNode->isKind(PNK_DEFAULT));
+                
                 continue;
             }
+
             if (!newSrcNote2(SRC_NEXTCASE, 0, &caseNoteIndex))
                 return false;
             if (!emitJump(JSOP_CASE, 0, &prevCaseOffset))
                 return false;
-            caseNode->pn_offset = prevCaseOffset;
+            caseNode->setOffset(prevCaseOffset);
+
             if (beforeCases) {
                 
                 unsigned noteCount = notes().length();
@@ -3222,11 +3223,9 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         }
 
         
-
-
-
-
-
+        
+        
+        
         if (!hasDefault &&
             !beforeCases &&
             !setSrcNoteOffset(caseNoteIndex, 0, offset() - prevCaseOffset))
@@ -3251,22 +3250,18 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
             if (!table.growBy(tableLength))
                 return false;
 
-            for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
-                if (caseNode->isKind(PNK_DEFAULT))
-                    continue;
+            for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
+                if (ParseNode* caseValue = caseNode->caseExpression()) {
+                    MOZ_ASSERT(caseValue->isKind(PNK_NUMBER));
 
-                MOZ_ASSERT(caseNode->isKind(PNK_CASE));
+                    int32_t i = int32_t(caseValue->pn_dval);
+                    MOZ_ASSERT(double(i) == caseValue->pn_dval);
 
-                ParseNode* caseValue = caseNode->pn_left;
-                MOZ_ASSERT(caseValue->isKind(PNK_NUMBER));
-
-                int32_t i = int32_t(caseValue->pn_dval);
-                MOZ_ASSERT(double(i) == caseValue->pn_dval);
-
-                i -= low;
-                MOZ_ASSERT(uint32_t(i) < tableLength);
-                MOZ_ASSERT(!table[i]);
-                table[i] = caseNode;
+                    i -= low;
+                    MOZ_ASSERT(uint32_t(i) < tableLength);
+                    MOZ_ASSERT(!table[i]);
+                    table[i] = caseNode;
+                }
             }
         }
     }
@@ -3274,20 +3269,20 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
     ptrdiff_t defaultOffset = -1;
 
     
-    for (ParseNode* caseNode = cases->pn_head; caseNode; caseNode = caseNode->pn_next) {
-        if (switchOp == JSOP_CONDSWITCH && !caseNode->isKind(PNK_DEFAULT))
-            setJumpOffsetAt(caseNode->pn_offset);
+    for (CaseClause* caseNode = firstCase; caseNode; caseNode = caseNode->next()) {
+        if (switchOp == JSOP_CONDSWITCH && !caseNode->isDefault())
+            setJumpOffsetAt(caseNode->offset());
 
         
         
         
         
         ptrdiff_t here = offset();
-        caseNode->pn_offset = here;
-        if (caseNode->isKind(PNK_DEFAULT))
+        caseNode->setOffset(here);
+        if (caseNode->isDefault())
             defaultOffset = here - top;
 
-        if (!emitTree(caseNode->pn_right))
+        if (!emitTree(caseNode->statementList()))
             return false;
     }
 
@@ -3295,8 +3290,6 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
         
         defaultOffset = offset() - top;
     }
-
-    
     MOZ_ASSERT(defaultOffset != -1);
 
     
@@ -3320,8 +3313,8 @@ BytecodeEmitter::emitSwitch(ParseNode* pn)
 
         
         for (uint32_t i = 0; i < tableLength; i++) {
-            ParseNode* caseNode = table[i];
-            ptrdiff_t off = caseNode ? caseNode->pn_offset - top : 0;
+            CaseClause* caseNode = table[i];
+            ptrdiff_t off = caseNode ? caseNode->offset() - top : 0;
             SET_JUMP_OFFSET(pc, off);
             pc += JUMP_OFFSET_LEN;
         }
@@ -5788,7 +5781,7 @@ bool
 BytecodeEmitter::emitFor(ParseNode* pn)
 {
     if (pn->pn_left->isKind(PNK_FORHEAD))
-        return emitCStyleFor(pn, top);
+        return emitCStyleFor(pn);
 
     if (!updateLineNumberNotes(pn->pn_pos.begin))
         return false;

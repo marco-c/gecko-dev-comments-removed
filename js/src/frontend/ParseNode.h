@@ -123,7 +123,6 @@ class PackedScopeCoordinate
     F(IF) \
     F(SWITCH) \
     F(CASE) \
-    F(DEFAULT) \
     F(WHILE) \
     F(DOWHILE) \
     F(FOR) \
@@ -485,8 +484,6 @@ IsDeleteKind(ParseNodeKind kind)
 
 
 
-
-
 enum ParseNodeArity
 {
     PN_NULLARY,                         
@@ -501,7 +498,6 @@ enum ParseNodeArity
 
 struct Definition;
 
-class LabeledStatement;
 class LoopControlStatement;
 class BreakStatement;
 class ContinueStatement;
@@ -523,7 +519,7 @@ class ParseNode
   public:
     ParseNode(ParseNodeKind kind, JSOp op, ParseNodeArity arity)
       : pn_type(kind), pn_op(op), pn_arity(arity), pn_parens(0), pn_used(0), pn_defn(0),
-        pn_pos(0, 0), pn_offset(0), pn_next(nullptr), pn_link(nullptr)
+        pn_pos(0, 0), pn_next(nullptr), pn_link(nullptr)
     {
         MOZ_ASSERT(kind < PNK_LIMIT);
         memset(&pn_u, 0, sizeof pn_u);
@@ -531,7 +527,7 @@ class ParseNode
 
     ParseNode(ParseNodeKind kind, JSOp op, ParseNodeArity arity, const TokenPos& pos)
       : pn_type(kind), pn_op(op), pn_arity(arity), pn_parens(0), pn_used(0), pn_defn(0),
-        pn_pos(pos), pn_offset(0), pn_next(nullptr), pn_link(nullptr)
+        pn_pos(pos), pn_next(nullptr), pn_link(nullptr)
     {
         MOZ_ASSERT(kind < PNK_LIMIT);
         memset(&pn_u, 0, sizeof pn_u);
@@ -583,7 +579,6 @@ class ParseNode
                   "This is supposed to fit in a single uint32_t");
 
     TokenPos            pn_pos;         
-    int32_t             pn_offset;      
     ParseNode*          pn_next;        
 
     
@@ -621,6 +616,7 @@ class ParseNode
                 unsigned iflags;        
                 ObjectBox* objbox;      
                 bool isStatic;          
+                uint32_t offset;        
             };
         } binary;
         struct {                        
@@ -1147,6 +1143,34 @@ class LabeledStatement : public ParseNode
     static bool test(const ParseNode& node) {
         bool match = node.isKind(PNK_LABEL);
         MOZ_ASSERT_IF(match, node.isArity(PN_NAME));
+        MOZ_ASSERT_IF(match, node.isOp(JSOP_NOP));
+        return match;
+    }
+};
+
+
+
+
+class CaseClause : public BinaryNode
+{
+  public:
+    CaseClause(ParseNode* expr, ParseNode* stmts, uint32_t begin)
+      : BinaryNode(PNK_CASE, JSOP_NOP, TokenPos(begin, stmts->pn_pos.end), expr, stmts) {}
+
+    ParseNode* caseExpression() const { return pn_left; }
+    bool isDefault() const { return !caseExpression(); }
+    ParseNode* statementList() const { return pn_right; }
+
+    
+    CaseClause* next() const { return pn_next ? &pn_next->as<CaseClause>() : nullptr; }
+
+    
+    uint32_t offset() const { return pn_u.binary.offset; }
+    void setOffset(uint32_t u) { pn_u.binary.offset = u; }
+
+    static bool test(const ParseNode& node) {
+        bool match = node.isKind(PNK_CASE);
+        MOZ_ASSERT_IF(match, node.isArity(PN_BINARY));
         MOZ_ASSERT_IF(match, node.isOp(JSOP_NOP));
         return match;
     }

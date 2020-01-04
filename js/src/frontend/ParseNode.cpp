@@ -273,7 +273,6 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       case PNK_IMPORT_SPEC:
       case PNK_EXPORT_SPEC:
       case PNK_COLON:
-      case PNK_CASE:
       case PNK_SHORTHAND:
       case PNK_DOWHILE:
       case PNK_WHILE:
@@ -289,6 +288,9 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       }
 
       
+      
+      
+      case PNK_CASE:
       case PNK_CLASSNAMES: {
         MOZ_ASSERT(pn->isArity(PN_BINARY));
         if (pn->pn_left)
@@ -304,16 +306,6 @@ PushNodeChildren(ParseNode* pn, NodeStack* stack)
       case PNK_WITH: {
         MOZ_ASSERT(pn->isArity(PN_BINARY_OBJ));
         stack->push(pn->pn_left);
-        stack->push(pn->pn_right);
-        return PushResult::Recyclable;
-      }
-
-      
-      
-      
-      case PNK_DEFAULT: {
-        MOZ_ASSERT(pn->isArity(PN_BINARY));
-        MOZ_ASSERT(pn->pn_left == nullptr);
         stack->push(pn->pn_right);
         return PushResult::Recyclable;
       }
