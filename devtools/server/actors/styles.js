@@ -10,7 +10,7 @@ const protocol = require("devtools/shared/protocol");
 const {Arg, Option, method, RetVal, types} = protocol;
 const events = require("sdk/event/core");
 const {Class} = require("sdk/core/heritage");
-const {PageStyleFront} = require("devtools/client/fronts/styles");
+const {PageStyleFront, StyleRuleFront} = require("devtools/client/fronts/styles");
 const {LongStringActor} = require("devtools/server/actors/string");
 const {
   getDefinedGeometryProperties
@@ -19,7 +19,7 @@ const {
 
 const {UPDATE_PRESERVING_RULES, UPDATE_GENERAL} =
       require("devtools/server/actors/stylesheets");
-const {pageStyleSpec} = require("devtools/shared/specs/styles");
+const {pageStyleSpec, styleRuleSpec} = require("devtools/shared/specs/styles");
 
 loader.lazyRequireGetter(this, "CSS", "CSS");
 
@@ -28,10 +28,6 @@ loader.lazyGetter(this, "CssLogic", () => {
 });
 loader.lazyGetter(this, "DOMUtils", () => {
   return Cc["@mozilla.org/inspector/dom-utils;1"].getService(Ci.inIDOMUtils);
-});
-
-loader.lazyGetter(this, "RuleRewriter", () => {
-  return require("devtools/client/shared/css-parsing-utils").RuleRewriter;
 });
 
 
@@ -935,17 +931,7 @@ exports.PageStyleActor = PageStyleActor;
 
 
 
-var StyleRuleActor = protocol.ActorClass({
-  typeName: "domstylerule",
-
-  events: {
-    "location-changed": {
-      type: "locationChanged",
-      line: Arg(0, "number"),
-      column: Arg(1, "number")
-    },
-  },
-
+var StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
   initialize: function(pageStyle, item) {
     protocol.Actor.prototype.initialize.call(this, null);
     this.pageStyle = pageStyle;
@@ -1252,7 +1238,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  setRuleText: method(Task.async(function* (newText) {
+  setRuleText: Task.async(function* (newText) {
     if (!this.canSetRuleText ||
         (this.type !== Ci.nsIDOMCSSRule.STYLE_RULE &&
          this.type !== Ci.nsIDOMCSSRule.KEYFRAME_RULE)) {
@@ -1270,9 +1256,6 @@ var StyleRuleActor = protocol.ActorClass({
     yield parentStyleSheet.update(cssText, false, UPDATE_PRESERVING_RULES);
 
     return this;
-  }), {
-    request: { modification: Arg(0, "string") },
-    response: { rule: RetVal("domstylerule") }
   }),
 
   
@@ -1291,7 +1274,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  modifyProperties: method(function(modifications) {
+  modifyProperties: function(modifications) {
     
     
     
@@ -1322,10 +1305,7 @@ var StyleRuleActor = protocol.ActorClass({
     }
 
     return this;
-  }, {
-    request: { modifications: Arg(0, "array:json") },
-    response: { rule: RetVal("domstylerule") }
-  }),
+  },
 
   
 
@@ -1402,7 +1382,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  modifySelector: method(Task.async(function* (value) {
+  modifySelector: Task.async(function* (value) {
     if (this.type === ELEMENT_STYLE) {
       return false;
     }
@@ -1425,9 +1405,6 @@ var StyleRuleActor = protocol.ActorClass({
       return true;
     }
     return false;
-  }), {
-    request: { selector: Arg(0, "string") },
-    response: { isModified: RetVal("boolean") },
   }),
 
   
@@ -1453,7 +1430,7 @@ var StyleRuleActor = protocol.ActorClass({
 
 
 
-  modifySelector2: method(function(node, value, editAuthored = false) {
+  modifySelector2: function(node, value, editAuthored = false) {
     if (this.type === ELEMENT_STYLE ||
         this.rawRule.selectorText === value) {
       return { ruleProps: null, isMatching: true };
@@ -1490,337 +1467,7 @@ var StyleRuleActor = protocol.ActorClass({
 
       return { ruleProps, isMatching };
     });
-  }, {
-    request: {
-      node: Arg(0, "domnode"),
-      value: Arg(1, "string"),
-      editAuthored: Arg(2, "boolean")
-    },
-    response: RetVal("modifiedStylesReturn")
-  })
-});
-
-
-
-
-protocol.FrontClass(StyleRuleActor, {
-  initialize: function(client, form, ctx, detail) {
-    protocol.Front.prototype.initialize.call(this, client, form, ctx, detail);
-  },
-
-  destroy: function() {
-    protocol.Front.prototype.destroy.call(this);
-  },
-
-  form: function(form, detail) {
-    if (detail === "actorid") {
-      this.actorID = form;
-      return;
-    }
-    this.actorID = form.actor;
-    this._form = form;
-    if (this._mediaText) {
-      this._mediaText = null;
-    }
-  },
-
-  
-
-
-  _locationChangedPre: protocol.preEvent("location-changed", function(line,
-                                                                      column) {
-    this._clearOriginalLocation();
-    this._form.line = line;
-    this._form.column = column;
-  }),
-
-  
-
-
-
-
-
-  startModifyingProperties: function() {
-    if (this.canSetRuleText) {
-      return new RuleRewriter(this, this.authoredText);
-    }
-    return new RuleModificationList(this);
-  },
-
-  get type() {
-    return this._form.type;
-  },
-  get line() {
-    return this._form.line || -1;
-  },
-  get column() {
-    return this._form.column || -1;
-  },
-  get cssText() {
-    return this._form.cssText;
-  },
-  get authoredText() {
-    return this._form.authoredText || this._form.cssText;
-  },
-  get keyText() {
-    return this._form.keyText;
-  },
-  get name() {
-    return this._form.name;
-  },
-  get selectors() {
-    return this._form.selectors;
-  },
-  get media() {
-    return this._form.media;
-  },
-  get mediaText() {
-    if (!this._form.media) {
-      return null;
-    }
-    if (this._mediaText) {
-      return this._mediaText;
-    }
-    this._mediaText = this.media.join(", ");
-    return this._mediaText;
-  },
-
-  get parentRule() {
-    return this.conn.getActor(this._form.parentRule);
-  },
-
-  get parentStyleSheet() {
-    return this.conn.getActor(this._form.parentStyleSheet);
-  },
-
-  get element() {
-    return this.conn.getActor(this._form.element);
-  },
-
-  get href() {
-    if (this._form.href) {
-      return this._form.href;
-    }
-    let sheet = this.parentStyleSheet;
-    return sheet ? sheet.href : "";
-  },
-
-  get nodeHref() {
-    let sheet = this.parentStyleSheet;
-    return sheet ? sheet.nodeHref : "";
-  },
-
-  get supportsModifySelectorUnmatched() {
-    return this._form.traits && this._form.traits.modifySelectorUnmatched;
-  },
-
-  get canSetRuleText() {
-    return this._form.traits && this._form.traits.canSetRuleText;
-  },
-
-  get location() {
-    return {
-      source: this.parentStyleSheet,
-      href: this.href,
-      line: this.line,
-      column: this.column
-    };
-  },
-
-  _clearOriginalLocation: function() {
-    this._originalLocation = null;
-  },
-
-  getOriginalLocation: function() {
-    if (this._originalLocation) {
-      return promise.resolve(this._originalLocation);
-    }
-    let parentSheet = this.parentStyleSheet;
-    if (!parentSheet) {
-      
-      
-      return promise.resolve(this.location);
-    }
-    return parentSheet.getOriginalLocation(this.line, this.column)
-      .then(({ fromSourceMap, source, line, column }) => {
-        let location = {
-          href: source,
-          line: line,
-          column: column,
-          mediaText: this.mediaText
-        };
-        if (fromSourceMap === false) {
-          location.source = this.parentStyleSheet;
-        }
-        if (!source) {
-          location.href = this.href;
-        }
-        this._originalLocation = location;
-        return location;
-      });
-  },
-
-  modifySelector: protocol.custom(Task.async(function* (node, value) {
-    let response;
-    if (this.supportsModifySelectorUnmatched) {
-      
-      if (this.canSetRuleText) {
-        response = yield this.modifySelector2(node, value, true);
-      } else {
-        response = yield this.modifySelector2(node, value);
-      }
-    } else {
-      response = yield this._modifySelector(value);
-    }
-
-    if (response.ruleProps) {
-      response.ruleProps = response.ruleProps.entries[0];
-    }
-    return response;
-  }), {
-    impl: "_modifySelector"
-  }),
-
-  setRuleText: protocol.custom(function(newText) {
-    this._form.authoredText = newText;
-    return this._setRuleText(newText);
-  }, {
-    impl: "_setRuleText"
-  })
-});
-
-
-
-
-
-
-
-
-
-
-
-
-var RuleModificationList = Class({
-  
-
-
-
-  initialize: function(rule) {
-    this.rule = rule;
-    this.modifications = [];
-  },
-
-  
-
-
-
-
-
-  apply: function() {
-    return this.rule.modifyProperties(this.modifications);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  setProperty: function(index, name, value, priority) {
-    this.modifications.push({
-      type: "set",
-      name: name,
-      value: value,
-      priority: priority
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  removeProperty: function(index, name) {
-    this.modifications.push({
-      type: "remove",
-      name: name
-    });
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  renameProperty: function(index, name) {
-    this.removeProperty(index, name);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  setPropertyEnabled: function(index, name, isEnabled) {
-    if (!isEnabled) {
-      this.removeProperty(index, name);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  createProperty: function() {
-    
-  },
+  }
 });
 
 
