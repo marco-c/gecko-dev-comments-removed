@@ -4543,9 +4543,12 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
 
   nscoord size;
   if (aType == nsLayoutUtils::MIN_ISIZE &&
-      (aStyleSize.HasPercent() ||
-       aStyleMaxSize.HasPercent()) &&
-      aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) {
+      (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
+        aFrame->IsFrameOfType(nsIFrame::eReplacedSizing)) ||
+       (aStyleSize.HasPercent() &&
+        aFrame->GetType() == nsGkAtoms::textInputFrame))) {
+    
+    
     
     
     
