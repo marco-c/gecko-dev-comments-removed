@@ -15,14 +15,14 @@ XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
 
 this.UserContextUI = {
   getUserContextLabel(userContextId) {
-    switch (userContextId) {
+    switch (parseInt(userContextId)) {
       
       case 0: return "";
 
       case 1: return gBrowserBundle.GetStringFromName("usercontext.personal.label");
       case 2: return gBrowserBundle.GetStringFromName("usercontext.work.label");
-      case 3: return gBrowserBundle.GetStringFromName("usercontext.shopping.label");
-      case 4: return gBrowserBundle.GetStringFromName("usercontext.banking.label");
+      case 3: return gBrowserBundle.GetStringFromName("usercontext.banking.label");
+      case 4: return gBrowserBundle.GetStringFromName("usercontext.shopping.label");
 
       
       
