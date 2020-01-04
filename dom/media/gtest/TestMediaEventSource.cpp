@@ -125,6 +125,20 @@ TEST(MediaEventSource, DisconnectBeforeNotification)
 
 
 
+
+TEST(MediaEventSource, DisconnectAndConnect)
+{
+  RefPtr<TaskQueue> queue;
+  MediaEventProducerExc<int> source;
+  MediaEventListener listener = source.Connect(queue, [](){});
+  listener.Disconnect();
+  listener = source.Connect(queue, [](){});
+  listener.Disconnect();
+}
+
+
+
+
 TEST(MediaEventSource, VoidEventType)
 {
   RefPtr<TaskQueue> queue = new TaskQueue(
