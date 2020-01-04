@@ -217,6 +217,13 @@ struct UsesNativeCallProxy
     }
 };
 
+namespace detail {
+
+template<class Traits, class Impl, class Args, bool IsStatic, bool IsVoid>
+class NativeStubImpl;
+
+}
+
 namespace {
 
 
@@ -266,7 +273,7 @@ template<class Impl, class Owner, bool IsStatic,
 class ProxyNativeCall
 {
     template<class T, class I, class A, bool S, bool V>
-    friend class NativeStubImpl;
+    friend class detail::NativeStubImpl;
 
     
     
@@ -424,9 +431,6 @@ namespace detail {
 
 
 
-
-template<class Traits, class Impl, class Args, bool IsStatic, bool IsVoid>
-class NativeStubImpl;
 
 
 #ifdef __i386__
