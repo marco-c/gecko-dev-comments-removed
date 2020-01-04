@@ -734,6 +734,10 @@ public:
 
   uint32_t GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const;
 
+  
+  
+  bool CanMainSizeInfluenceCrossSize(const FlexboxAxisTracker& aAxisTracker) const;
+
 protected:
   
   void CheckForMinSizeAuto(const nsHTMLReflowState& aFlexItemReflowState,
@@ -1876,6 +1880,38 @@ FlexItem::GetNumAutoMarginsInAxis(AxisOrientationType aAxis) const
              "should only have examined 2 margins");
 
   return numAutoMargins;
+}
+
+bool
+FlexItem::CanMainSizeInfluenceCrossSize(
+  const FlexboxAxisTracker& aAxisTracker) const
+{
+  if (mIsStretched) {
+    
+    
+    return false;
+  }
+
+  if (mIsStrut) {
+    
+    
+    return false;
+  }
+
+  if (aAxisTracker.IsCrossAxisHorizontal()) {
+    
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  
+  
+  return true;
 }
 
 
@@ -3903,23 +3939,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     for (FlexItem* item = line->GetFirstItem(); item; item = item->getNext()) {
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!item->IsStretched() && 
-          !item->IsStrut() &&     
-          !aAxisTracker.IsCrossAxisHorizontal()) { 
+      if (item->CanMainSizeInfluenceCrossSize(aAxisTracker)) {
         WritingMode wm = item->Frame()->GetWritingMode();
         LogicalSize availSize = aReflowState.ComputedSize(wm);
         availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
