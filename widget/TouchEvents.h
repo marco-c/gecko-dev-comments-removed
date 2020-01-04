@@ -100,8 +100,8 @@ public:
                            eSimpleGestureEventClass)
     , allowedDirections(0)
     , direction(0)
-    , delta(0.0)
     , clickCount(0)
+    , delta(0.0)
   {
   }
 
@@ -110,8 +110,8 @@ public:
                            aOther.mWidget, eSimpleGestureEventClass)
     , allowedDirections(aOther.allowedDirections)
     , direction(aOther.direction)
-    , delta(aOther.delta)
     , clickCount(0)
+    , delta(aOther.delta)
   {
   }
 
@@ -132,9 +132,9 @@ public:
   
   uint32_t direction;
   
-  double delta;
-  
   uint32_t clickCount;
+  
+  double delta;
 
   
   void AssignSimpleGestureEventData(const WidgetSimpleGestureEvent& aEvent,
