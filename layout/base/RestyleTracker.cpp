@@ -168,7 +168,8 @@ RestyleTracker::DoProcessRestyles()
         AutoTArray<RefPtr<Element>, RESTYLE_ARRAY_STACKSIZE> laterSiblingArr;
         for (auto iter = mPendingRestyles.Iter(); !iter.Done(); iter.Next()) {
           auto element = static_cast<dom::Element*>(iter.Key());
-          MOZ_ASSERT(!element->IsStyledByServo(), "Should not have Servo-styled elements here");
+          MOZ_ASSERT(!element->IsStyledByServo(),
+                     "Should not have Servo-styled elements here");
           
           
           

@@ -118,6 +118,21 @@ protected:
   ProcessRestyledFrames(nsStyleChangeList& aChangeList,
                         nsPresContext& aPresContext,
                         OverflowChangedTracker& aOverflowChangedTracker);
+
+  
+
+
+
+
+
+
+
+
+
+  static nsIFrame*
+  GetNextContinuationWithSameStyle(nsIFrame* aFrame,
+                                   nsStyleContext* aOldStyleContext,
+                                   bool* aHaveMoreContinuations = nullptr);
 };
 
 } 

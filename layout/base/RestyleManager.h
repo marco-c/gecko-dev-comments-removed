@@ -488,11 +488,6 @@ private:
   void StartRebuildAllStyleData(RestyleTracker& aRestyleTracker);
   void FinishRebuildAllStyleData();
 
-  void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint);
-
-  
-  void AddSubtreeToOverflowTracker(nsIFrame* aFrame);
-
   bool ShouldStartRebuildAllFor(RestyleTracker& aRestyleTracker) {
     
     
