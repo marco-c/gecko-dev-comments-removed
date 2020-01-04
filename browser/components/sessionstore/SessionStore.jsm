@@ -2923,12 +2923,26 @@ var SessionStoreInternal = {
     let numVisibleTabs = 0;
 
     for (var t = 0; t < newTabCount; t++) {
-      tabs.push(t < openTabCount ?
-                tabbrowser.tabs[t] :
-                tabbrowser.addTab("about:blank", {
-                  skipAnimation: true,
-                  forceNotRemote: true,
-                }));
+      
+      
+      let userContextId = winData.tabs[t].userContextId;
+      let reuseExisting = t < openTabCount &&
+                          (tabbrowser.tabs[t].getAttribute("usercontextid") == (userContextId || ""));
+      let tab = reuseExisting ? tabbrowser.tabs[t] :
+                                tabbrowser.addTab("about:blank",
+                                                  {skipAnimation: true,
+                                                   forceNotRemote: true,
+                                                   userContextId});
+
+      
+      
+      
+      if (!reuseExisting && t < openTabCount) {
+        tabbrowser.removeTab(tabbrowser.tabs[t]);
+        tabbrowser.moveTabTo(tab, t);
+      }
+
+      tabs.push(tab);
 
       if (winData.tabs[t].pinned)
         tabbrowser.pinTab(tabs[t]);
