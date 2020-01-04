@@ -9,12 +9,14 @@
 
 #include <stdint.h>
 #include "nsCOMPtr.h"
-#include "nsStringFwd.h"
 
 class nsContentList;
 class nsIAtom;
 class nsIContent;
 class nsINode;
+
+class nsString;
+class nsAString;
 
 
 
@@ -38,6 +40,7 @@ typedef void (*nsContentListDestroyFunc)(void* aData);
 
 typedef void* (*nsFuncStringContentListDataAllocator)(nsINode* aRootNode,
                                                       const nsString* aString);
+
 
 
 

@@ -3,7 +3,7 @@
 <head>
 <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>http://www.w3.org/2001/DOM-Test-Suite/level2/core/setAttributeNS05</title>
+<title>http://www.w3.org/2001/DOM-Test-Suite/level2/core/nodehasattributes03</title>
 <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css">
 <script type="text/javascript" src="/tests/SimpleTest/SimpleTest.js"></script>
 <script type="text/javascript" src="DOMTestCase.js"></script>
@@ -12,7 +12,7 @@
 // expose test function names
 function exposeTestFunctionNames()
 {
-return ['setAttributeNS05'];
+return ['nodehasattributes03'];
 }
 
 var docsLoaded = -1000000;
@@ -68,38 +68,26 @@ function loadComplete() {
   }
 }
 
-var docName = 'setAttributeNS05';
+var docName = 'nodehasattributes03';
 
 
 /**
 * 
-    The "setAttributeNS(namespaceURI,qualifiedName,value)" method adds a new attribute.
-   If an attribute with the same local name and namespace URI is already present
-   on the element, its prefix is changed to be the prefix part of the "qualifiedName",
-   and its vale is changed to be the "value" paramter.
-   null value if no previously existing Attr node with the
-   same name was replaced.
-   
-   Add a new attribute to the "emp:address" element.
-   Check to see if the new attribute has been successfully added to the document.
-   The new attribute "<newValue>" contains markup and therefore is escaped
-   by the implementation.
+	The method hasAttributes returns whether this node (if it is an element) has any attributes.
 
-* @author NIST
-* @author Mary Brady
-* @see http://www.w3.org/TR/DOM-Level-2-Core/core#ID-ElGetAttrNS
+	Retreive an element node with a default attributes.  Verify if hasAttributes returns true.
+
+* @author IBM
+* @author Neil Delima
+* @see http://www.w3.org/TR/DOM-Level-2-Core/core#ID-NodeHasAttrs
 */
-function setAttributeNS05() {
+function nodehasattributes03() {
    var success;
-    if(checkInitialization(builder, "setAttributeNS05") != null) return;
-    var localName = "newAttr";
-      var namespaceURI = "http://www.newattr.com";
-      var qualifiedName = "emp:newAttr";
-      var doc;
+    if(checkInitialization(builder, "nodehasattributes03") != null) return;
+    var doc;
+      var element;
       var elementList;
-      var testAddr;
-      var addrAttr;
-      var resultAttr;
+      var hasAttributes;
       
       var docRef = null;
       if (typeof(this.doc) != 'undefined') {
@@ -107,19 +95,18 @@ function setAttributeNS05() {
       }
       doc = load(docRef, "doc", "staffNS");
       // Changed for bug 492933.
-      elementList = doc.getElementsByTagName("address");
-      testAddr = elementList.item(0);
-      assertNotNull("empAddrNotNull",testAddr);
-testAddr.setAttributeNS(namespaceURI,qualifiedName,"<newValue>");
-      resultAttr = testAddr.getAttributeNS(namespaceURI,localName);
-      assertEquals("throw_Equals","<newValue>",resultAttr);
-       
+      elementList = doc.getElementsByTagName("employee");
+      element = elementList.item(0);
+      assertNotNull("empEmployeeNotNull",element);
+hasAttributes = element.hasAttributes();
+      assertTrue("hasAttributes",hasAttributes);
+
 }
 
 </script>
 </head>
 <body>
-<h2>Test http://www.w3.org/2001/DOM-Test-Suite/level2/core/setAttributeNS05</h2>
+<h2>Test http://www.w3.org/2001/DOM-Test-Suite/level2/core/nodehasattributes03</h2>
 <p></p>
 <p>
 Copyright (c) 2001-2004 World Wide Web Consortium, 
