@@ -541,20 +541,6 @@ Sanitizer.prototype = {
         try {
           
           
-          
-          
-          
-          let hosts = Services.logins.getAllDisabledHosts();
-          for (let host of hosts) {
-            Services.logins.setLoginSavingEnabled(host, true);
-          }
-        } catch (ex) {
-          seenException = ex;
-        }
-
-        try {
-          
-          
           let sss = Cc["@mozilla.org/ssservice;1"]
                       .getService(Ci.nsISiteSecurityService);
           sss.clearAll();

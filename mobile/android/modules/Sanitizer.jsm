@@ -96,13 +96,6 @@ Sanitizer.prototype = {
           .removeAllDomains(null);
 
         
-        
-        var hosts = Services.logins.getAllDisabledHosts({})
-        for (var host of hosts) {
-          Services.logins.setLoginSavingEnabled(host, true);
-        }
-
-        
         var sss = Cc["@mozilla.org/ssservice;1"]
                     .getService(Ci.nsISiteSecurityService);
         sss.clearAll();
