@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_FONT_H
 #define GFX_FONT_H
 
@@ -992,6 +993,20 @@ protected:
     
     DetailedGlyph *AllocateDetailedGlyphs(uint32_t aCharIndex,
                                           uint32_t aCount);
+
+    
+    
+    void EnsureComplexGlyph(uint32_t aIndex, CompressedGlyph& aGlyph)
+    {
+        MOZ_ASSERT(GetCharacterGlyphs() + aIndex == &aGlyph);
+        if (aGlyph.IsSimpleGlyph()) {
+            DetailedGlyph *details = AllocateDetailedGlyphs(aIndex, 1);
+            details->mGlyphID = aGlyph.GetSimpleGlyph();
+            details->mAdvance = aGlyph.GetSimpleAdvance();
+            details->mXOffset = details->mYOffset = 0;
+            SetGlyphs(aIndex, CompressedGlyph().SetComplex(true, true, 1), details);
+        }
+    }
 
     
     

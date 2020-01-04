@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef GFX_TEXTRUN_H
 #define GFX_TEXTRUN_H
 
@@ -510,26 +511,10 @@ public:
     
     
     void SetIsTab(uint32_t aIndex) {
-        CompressedGlyph *g = &mCharacterGlyphs[aIndex];
-        if (g->IsSimpleGlyph()) {
-            DetailedGlyph *details = AllocateDetailedGlyphs(aIndex, 1);
-            details->mGlyphID = g->GetSimpleGlyph();
-            details->mAdvance = g->GetSimpleAdvance();
-            details->mXOffset = details->mYOffset = 0;
-            SetGlyphs(aIndex, CompressedGlyph().SetComplex(true, true, 1), details);
-        }
-        g->SetIsTab();
+        EnsureComplexGlyph(aIndex).SetIsTab();
     }
     void SetIsNewline(uint32_t aIndex) {
-        CompressedGlyph *g = &mCharacterGlyphs[aIndex];
-        if (g->IsSimpleGlyph()) {
-            DetailedGlyph *details = AllocateDetailedGlyphs(aIndex, 1);
-            details->mGlyphID = g->GetSimpleGlyph();
-            details->mAdvance = g->GetSimpleAdvance();
-            details->mXOffset = details->mYOffset = 0;
-            SetGlyphs(aIndex, CompressedGlyph().SetComplex(true, true, 1), details);
-        }
-        g->SetIsNewline();
+        EnsureComplexGlyph(aIndex).SetIsNewline();
     }
 
     
@@ -676,6 +661,12 @@ private:
                                    PropertyProvider *aProvider,
                                    uint32_t aSpacingStart, uint32_t aSpacingEnd,
                                    nsTArray<PropertyProvider::Spacing> *aSpacing);
+
+    CompressedGlyph& EnsureComplexGlyph(uint32_t aIndex)
+    {
+        gfxShapedText::EnsureComplexGlyph(aIndex, mCharacterGlyphs[aIndex]);
+        return mCharacterGlyphs[aIndex];
+    }
 
     
     
