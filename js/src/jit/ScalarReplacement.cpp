@@ -349,11 +349,15 @@ ObjectMemoryView::initStartingState(BlockState** pState)
     startBlock_->insertBefore(obj_, undefinedVal_);
 
     
-    BlockState* state = BlockState::New(alloc_, obj_, undefinedVal_);
+    BlockState* state = BlockState::New(alloc_, obj_);
     if (!state)
         return false;
 
     startBlock_->insertAfter(obj_, state);
+
+    
+    if (!state->initFromTemplateObject(alloc_, undefinedVal_))
+        return false;
 
     
     state->setInWorklist();
