@@ -73,6 +73,8 @@ public:
   RefPtr<ServiceWorkerInfo> mWaitingWorker;
   RefPtr<ServiceWorkerInfo> mInstallingWorker;
 
+  uint64_t mLastUpdateCheckTime;
+
   
   
   
@@ -132,6 +134,11 @@ public:
   void
   FinishActivate(bool aSuccess);
 
+  void
+  RefreshLastUpdateCheckTime();
+
+  bool
+  IsLastUpdateCheckTimeOverOneDay() const;
 };
 
 class ServiceWorkerUpdateFinishCallback

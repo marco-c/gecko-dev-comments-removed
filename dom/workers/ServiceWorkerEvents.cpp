@@ -442,9 +442,15 @@ FetchEvent::RespondWith(Promise& aArg, ErrorResult& aRv)
     return;
   }
 
-  if (!mPromise) {
-    mPromise = &aArg;
+  
+  
+  
+  if (mPromise) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
   }
+  mPromise = &aArg;
+
   RefPtr<InternalRequest> ir = mRequest->GetInternalRequest();
   StopImmediatePropagation();
   mWaitToRespond = true;
