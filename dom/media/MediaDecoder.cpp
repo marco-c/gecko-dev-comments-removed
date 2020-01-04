@@ -41,14 +41,6 @@ namespace mozilla {
 
 
 
-
-
-static const int64_t CAN_PLAY_THROUGH_MARGIN = 1;
-
-
-
-
-
 static const uint64_t ESTIMATED_DURATION_FUZZ_FACTOR_USECS = USECS_PER_S / 2;
 
 
@@ -821,10 +813,10 @@ void MediaDecoder::PlaybackEnded()
   }
 }
 
-MediaDecoder::Statistics
+MediaStatistics
 MediaDecoder::GetStatistics()
 {
-  Statistics result;
+  MediaStatistics result;
 
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   if (mResource) {
@@ -1372,40 +1364,11 @@ void MediaDecoder::UnpinForSeek()
   resource->Unpin();
 }
 
-bool MediaDecoder::CanPlayThrough()
+bool
+MediaDecoder::CanPlayThrough()
 {
-  Statistics stats = GetStatistics();
   NS_ENSURE_TRUE(mDecoderStateMachine, false);
-
-  if (mDecoderStateMachine->IsRealTime() ||
-      (stats.mTotalBytes < 0 && stats.mDownloadRateReliable) ||
-      (stats.mTotalBytes >= 0 && stats.mTotalBytes == stats.mDownloadPosition)) {
-    return true;
-  }
-  if (!stats.mDownloadRateReliable || !stats.mPlaybackRateReliable) {
-    return false;
-  }
-  int64_t bytesToDownload = stats.mTotalBytes - stats.mDownloadPosition;
-  int64_t bytesToPlayback = stats.mTotalBytes - stats.mPlaybackPosition;
-  double timeToDownload = bytesToDownload / stats.mDownloadRate;
-  double timeToPlay = bytesToPlayback / stats.mPlaybackRate;
-
-  if (timeToDownload > timeToPlay) {
-    
-    
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  int64_t readAheadMargin =
-    static_cast<int64_t>(stats.mPlaybackRate * CAN_PLAY_THROUGH_MARGIN);
-  return stats.mDownloadPosition > stats.mPlaybackPosition + readAheadMargin;
+  return mDecoderStateMachine->IsRealTime() || GetStatistics().CanPlayThrough();
 }
 
 #ifdef MOZ_EME

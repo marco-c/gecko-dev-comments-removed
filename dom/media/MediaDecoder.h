@@ -207,6 +207,7 @@
 #include "MediaEventSource.h"
 #include "MediaMetadataManager.h"
 #include "MediaResource.h"
+#include "MediaStatistics.h"
 #include "MediaStreamGraph.h"
 #include "TimeUnits.h"
 
@@ -716,37 +717,11 @@ public:
   static bool IsAppleMP3Enabled();
 #endif
 
-  struct Statistics {
-    
-    double mPlaybackRate;
-    
-    
-    double mDownloadRate;
-    
-    int64_t mTotalBytes;
-    
-    
-    int64_t mDownloadPosition;
-    
-    
-    int64_t mDecoderPosition;
-    
-    int64_t mPlaybackPosition;
-    
-    
-    
-    bool mDownloadRateReliable;
-    
-    
-    
-    bool mPlaybackRateReliable;
-  };
-
   
   
   
   
-  virtual Statistics GetStatistics();
+  MediaStatistics GetStatistics();
 
   
   
