@@ -960,6 +960,15 @@ public:
 
 
 
+
+  virtual bool Draw3DTransformedSurface(SourceSurface* aSurface,
+                                        const Matrix4x4& aMatrix);
+
+  
+
+
+
+
   virtual void PushClip(const Path *aPath) = 0;
 
   
