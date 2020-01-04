@@ -151,6 +151,9 @@ private:
 #endif
 };
 
+
+uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength);
+
 } 
 
 } 
