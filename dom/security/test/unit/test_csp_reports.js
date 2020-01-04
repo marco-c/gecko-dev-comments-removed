@@ -101,21 +101,14 @@ function run_test() {
   
   makeTest(0, {"blocked-uri": "self"}, false,
       function(csp) {
-        let inlineOK = true, oReportViolation = {'value': false};
-        inlineOK = csp.getAllowsInlineScript(oReportViolation);
+        let inlineOK = true;
+        inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
+                                       "", 
+                                       "", 
+                                       0); 
 
         
         do_check_false(inlineOK);
-        
-        do_check_true(oReportViolation.value);
-
-        if (oReportViolation.value) {
-          
-          csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
-                                  selfuri.asciiSpec,
-                                  "script sample",
-                                  0);
-        }
       });
 
   
@@ -149,22 +142,14 @@ function run_test() {
   
   makeTest(3, {"blocked-uri": "self"}, true,
       function(csp) {
-        let inlineOK = true, oReportViolation = {'value': false};
-        inlineOK = csp.getAllowsInlineScript(oReportViolation);
+        let inlineOK = true;
+        inlineOK = csp.getAllowsInline(Ci.nsIContentPolicy.TYPE_SCRIPT,
+                                       "", 
+                                       "", 
+                                       0); 
 
         
         do_check_true(inlineOK);
-
-        
-        do_check_true(oReportViolation.value);
-
-        if (oReportViolation.value) {
-          
-          csp.logViolationDetails(Ci.nsIContentSecurityPolicy.VIOLATION_TYPE_INLINE_SCRIPT,
-                                  selfuri.asciiSpec,
-                                  "script sample",
-                                  3);
-        }
       });
 
   
