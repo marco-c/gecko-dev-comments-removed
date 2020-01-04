@@ -402,11 +402,10 @@ protected:
 
 
   
-  
-  bool HasLowUndecodedData();
+  bool HasLowBufferedData();
 
   
-  bool HasLowUndecodedData(int64_t aUsecs);
+  bool HasLowBufferedData(int64_t aUsecs);
 
   
   
