@@ -115,34 +115,30 @@ public:
     if (downscale) {
       if (removeFrameRect) {
         if (deinterlace) {
-          pipe = MakePipe(aFrameRect.Size(), deinterlacingConfig,
-                          removeFrameRectConfig, downscalingConfig,
-                          surfaceConfig);
-        } else {  
-          pipe = MakePipe(aFrameRect.Size(), removeFrameRectConfig,
+          pipe = MakePipe(deinterlacingConfig, removeFrameRectConfig,
                           downscalingConfig, surfaceConfig);
+        } else {  
+          pipe = MakePipe(removeFrameRectConfig, downscalingConfig, surfaceConfig);
         }
       } else {  
         if (deinterlace) {
-          pipe = MakePipe(aInputSize, deinterlacingConfig,
-                          downscalingConfig, surfaceConfig);
+          pipe = MakePipe(deinterlacingConfig, downscalingConfig, surfaceConfig);
         } else {  
-          pipe = MakePipe(aInputSize, downscalingConfig, surfaceConfig);
+          pipe = MakePipe(downscalingConfig, surfaceConfig);
         }
       }
     } else {  
       if (removeFrameRect) {
         if (deinterlace) {
-          pipe = MakePipe(aFrameRect.Size(), deinterlacingConfig,
-                          removeFrameRectConfig, surfaceConfig);
+          pipe = MakePipe(deinterlacingConfig, removeFrameRectConfig, surfaceConfig);
         } else {  
-          pipe = MakePipe(aFrameRect.Size(), removeFrameRectConfig, surfaceConfig);
+          pipe = MakePipe(removeFrameRectConfig, surfaceConfig);
         }
       } else {  
         if (deinterlace) {
-          pipe = MakePipe(aInputSize, deinterlacingConfig, surfaceConfig);
+          pipe = MakePipe(deinterlacingConfig, surfaceConfig);
         } else {  
-          pipe = MakePipe(aInputSize, surfaceConfig);
+          pipe = MakePipe(surfaceConfig);
         }
       }
     }
@@ -195,10 +191,9 @@ public:
     Maybe<SurfacePipe> pipe;
 
     if (deinterlace) {
-      pipe = MakePipe(aFrameRect.Size(), deinterlacingConfig,
-                      palettedSurfaceConfig);
+      pipe = MakePipe(deinterlacingConfig, palettedSurfaceConfig);
     } else {
-      pipe = MakePipe(aFrameRect.Size(), palettedSurfaceConfig);
+      pipe = MakePipe(palettedSurfaceConfig);
     }
 
     return pipe;
@@ -207,7 +202,7 @@ public:
 private:
   template <typename... Configs>
   static Maybe<SurfacePipe>
-  MakePipe(const nsIntSize& aInputSize, Configs... aConfigs)
+  MakePipe(Configs... aConfigs)
   {
     auto pipe = MakeUnique<typename detail::FilterPipeline<Configs...>::Type>();
     nsresult rv = pipe->Configure(aConfigs...);
