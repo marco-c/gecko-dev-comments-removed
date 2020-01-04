@@ -13,8 +13,8 @@
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ProcessedStack.h"
-#include "mozilla/Scoped.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "nsPrintfCString.h"
 #include "mozilla/StackWalk.h"
 #include "nsTraceRefcnt.h"
@@ -181,7 +181,7 @@ IsValidWrite(int aFd, const void* aWbuf, size_t aCount)
   
   
   
-  ScopedFreePtr<void> wbuf2(malloc(aCount));
+  auto wbuf2 = MakeUniqueFallible<char[]>(aCount);
   if (!wbuf2) {
     return true;
   }
@@ -189,11 +189,11 @@ IsValidWrite(int aFd, const void* aWbuf, size_t aCount)
   if (pos == -1) {
     return true;
   }
-  ssize_t r = read(aFd, wbuf2, aCount);
+  ssize_t r = read(aFd, wbuf2.get(), aCount);
   if (r < 0 || (size_t)r != aCount) {
     return true;
   }
-  int cmp = memcmp(aWbuf, wbuf2, aCount);
+  int cmp = memcmp(aWbuf, wbuf2.get(), aCount);
   if (cmp != 0) {
     return true;
   }
