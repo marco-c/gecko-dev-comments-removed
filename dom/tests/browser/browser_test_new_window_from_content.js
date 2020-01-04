@@ -48,7 +48,7 @@ const kNewTab = "new tab";
 
 SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunload", false]]});
 
-requestLongerTimeout(2);
+requestLongerTimeout(3);
 
 
 
