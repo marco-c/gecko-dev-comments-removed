@@ -929,7 +929,9 @@ nsAtomicFileOutputStream::DoOpen()
         tempResult->SetFollowLinks(true);
 
         
-        tempResult->Normalize();
+        if (mTargetFileExists) {
+            tempResult->Normalize();
+        }
     }
 
     if (NS_SUCCEEDED(rv) && mTargetFileExists) {
