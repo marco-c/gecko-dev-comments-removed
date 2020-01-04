@@ -4835,6 +4835,7 @@ MultiprocessBlockPolicy() {
   }
 #endif 
 
+#if defined(MOZ_WIDGET_GTK)
   
 
 
@@ -4851,6 +4852,7 @@ MultiprocessBlockPolicy() {
     gMultiprocessBlockPolicy = kE10sDisabledForBidi;
     return gMultiprocessBlockPolicy;
   }
+#endif 
 
   
 
