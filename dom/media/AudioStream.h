@@ -10,9 +10,10 @@
 #include "nsAutoPtr.h"
 #include "nsCOMPtr.h"
 #include "nsThreadUtils.h"
-#include "Latency.h"
 #include "mozilla/dom/AudioChannelBinding.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "CubebUtils.h"
 #include "soundtouch/SoundTouchFactory.h"
@@ -133,32 +134,11 @@ public:
     mStart %= mCapacity;
   }
 
-  
-  
-  uint32_t ContractTo(uint32_t aSize) {
-    MOZ_ASSERT(mBuffer && mCapacity, "Buffer not initialized.");
-    if (aSize >= mCount) {
-      return mCount;
-    }
-    mStart += (mCount - aSize);
-    mCount = aSize;
-    mStart %= mCapacity;
-    return mCount;
-  }
-
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
     size_t amount = 0;
     amount += mBuffer.SizeOfExcludingThis(aMallocSizeOf);
     return amount;
-  }
-
-  void Reset()
-  {
-    mBuffer = nullptr;
-    mCapacity = 0;
-    mStart = 0;
-    mCount = 0;
   }
 
 private:
@@ -167,8 +147,6 @@ private:
   uint32_t mStart;
   uint32_t mCount;
 };
-
-class AudioInitTask;
 
 
 
@@ -182,17 +160,11 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AudioStream)
   AudioStream();
 
-  enum LatencyRequest {
-    HighLatency,
-    LowLatency
-  };
-
   
   
   
   nsresult Init(int32_t aNumChannels, int32_t aRate,
-                const dom::AudioChannel aAudioStreamChannel,
-                LatencyRequest aLatencyRequest);
+                const dom::AudioChannel aAudioStreamChannel);
 
   
   void Shutdown();
@@ -203,8 +175,7 @@ public:
   
   
   
-  
-  nsresult Write(const AudioDataValue* aBuf, uint32_t aFrames, TimeStamp* aTime = nullptr);
+  nsresult Write(const AudioDataValue* aBuf, uint32_t aFrames);
 
   
   uint32_t Available();
@@ -212,12 +183,6 @@ public:
   
   
   void SetVolume(double aVolume);
-
-  
-  
-  void SetMicrophoneActive(bool aActive);
-  void PanOutputIfNeeded(bool aMicrophoneActive);
-  void ResetStreamIfNeeded();
 
   
   void Drain();
@@ -271,14 +236,7 @@ protected:
   int64_t GetPositionInFramesUnlocked();
 
 private:
-  friend class AudioInitTask;
-
-  
-  nsresult OpenCubeb(cubeb_stream_params &aParams,
-                     LatencyRequest aLatencyRequest);
-  void AudioInitTaskFinished();
-
-  void CheckForStart();
+  nsresult OpenCubeb(cubeb_stream_params &aParams);
 
   static long DataCallback_S(cubeb_stream*, void* aThis, void* aBuffer, long aFrames)
   {
@@ -291,23 +249,13 @@ private:
   }
 
 
-  static void DeviceChangedCallback_s(void * aThis) {
-    static_cast<AudioStream*>(aThis)->DeviceChangedCallback();
-  }
-
   long DataCallback(void* aBuffer, long aFrames);
   void StateCallback(cubeb_state aState);
-  void DeviceChangedCallback();
 
   nsresult EnsureTimeStretcherInitializedUnlocked();
 
-  
-  long GetUnprocessed(void* aBuffer, long aFrames, int64_t &aTime);
-  long GetTimeStretched(void* aBuffer, long aFrames, int64_t &aTime);
-  long GetUnprocessedWithSilencePadding(void* aBuffer, long aFrames, int64_t &aTime);
-
-  int64_t GetLatencyInFrames();
-  void GetBufferInsertTime(int64_t &aTimeMs);
+  long GetUnprocessed(void* aBuffer, long aFrames);
+  long GetTimeStretched(void* aBuffer, long aFrames);
 
   void StartUnlocked();
 
@@ -330,22 +278,9 @@ private:
   int64_t mWritten;
   AudioClock mAudioClock;
   soundtouch::SoundTouch* mTimeStretcher;
-  nsRefPtr<AsyncLatencyLogger> mLatencyLog;
 
   
   TimeStamp mStartTime;
-  
-  LatencyRequest mLatencyRequest;
-  
-  int64_t mReadPoint;
-  
-  
-  
-  struct Inserts {
-    int64_t mTimeMs;
-    int64_t mFrames;
-  };
-  nsAutoTArray<Inserts, 8> mInserts;
 
   
   FILE* mDumpFile;
@@ -386,55 +321,10 @@ private:
   };
 
   StreamState mState;
-  bool mNeedsStart; 
   bool mIsFirst;
-  
-  bool mMicrophoneActive;
-  
-  
-  
-  bool mShouldDropFrames;
-  
-  
-  bool mPendingAudioInitTask;
   
   
   uint64_t mLastGoodPosition;
-};
-
-class AudioInitTask : public nsRunnable
-{
-public:
-  AudioInitTask(AudioStream *aStream,
-                AudioStream::LatencyRequest aLatencyRequest,
-                const cubeb_stream_params &aParams)
-    : mAudioStream(aStream)
-    , mLatencyRequest(aLatencyRequest)
-    , mParams(aParams)
-  {}
-
-  nsresult Dispatch()
-  {
-    
-    nsresult rv = NS_NewNamedThread("CubebInit", getter_AddRefs(mThread));
-    if (NS_SUCCEEDED(rv)) {
-      
-      rv = mThread->Dispatch(this, NS_DISPATCH_NORMAL);
-    }
-    return rv;
-  }
-
-protected:
-  virtual ~AudioInitTask() {};
-
-private:
-  NS_IMETHOD Run() override final;
-
-  RefPtr<AudioStream> mAudioStream;
-  AudioStream::LatencyRequest mLatencyRequest;
-  cubeb_stream_params mParams;
-
-  nsCOMPtr<nsIThread> mThread;
 };
 
 } 
