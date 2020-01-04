@@ -726,7 +726,21 @@ public:
   
   
   
-  operator T*() const { return get(); }
+  operator T*() const
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+  &
+#endif
+  { return get(); }
+
+#ifdef MOZ_HAVE_REF_QUALIFIERS
+  
+  
+  
+  operator T*() const && = delete;
+
+  
+  explicit operator bool() const { return !!mRawPtr; }
+#endif
 
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN
   {
