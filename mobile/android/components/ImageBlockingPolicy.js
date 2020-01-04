@@ -26,35 +26,34 @@ ImageBlockingPolicy.prototype = {
 
   
   shouldLoad: function(contentType, contentLocation, requestOrigin, node, mimeTypeGuess, extra) {
-    if (!getEnabled()) {
-      return Ci.nsIContentPolicy.ACCEPT;
-    }
-
-    if (contentType === Ci.nsIContentPolicy.TYPE_IMAGE || contentType === Ci.nsIContentPolicy.TYPE_IMAGESET) {
-      
-      if (!contentLocation.schemeIs("http") && !contentLocation.schemeIs("https")) {
-        return Ci.nsIContentPolicy.ACCEPT;
-      }
-
-      if (node instanceof Ci.nsIDOMHTMLImageElement) {
+    
+    if (this._enabled() == 1 || (this._enabled() == 2 && this._usingCellular())) {
+      if (contentType === Ci.nsIContentPolicy.TYPE_IMAGE || contentType === Ci.nsIContentPolicy.TYPE_IMAGESET) {
         
-        if (node.getAttribute("data-ctv-show") == "true") {
+        if (!contentLocation.schemeIs("http") && !contentLocation.schemeIs("https")) {
           return Ci.nsIContentPolicy.ACCEPT;
         }
 
-        setTimeout(() => {
+        if (node instanceof Ci.nsIDOMHTMLImageElement) {
           
-          node.setAttribute("data-ctv-src", contentLocation.spec);
-          node.setAttribute("src", PLACEHOLDER_IMG);
+          if (node.getAttribute("data-ctv-show") == "true") {
+            return Ci.nsIContentPolicy.ACCEPT;
+          }
 
-          
-          
-          node.removeAttribute("srcset");
-        }, 0);
+          setTimeout(() => {
+            
+            node.setAttribute("data-ctv-src", contentLocation.spec);
+            node.setAttribute("src", PLACEHOLDER_IMG);
+
+            
+            
+            node.removeAttribute("srcset");
+          }, 0);
+        }
+
+        
+        return Ci.nsIContentPolicy.REJECT;
       }
-
-      
-      return Ci.nsIContentPolicy.REJECT;
     }
 
     
@@ -65,10 +64,18 @@ ImageBlockingPolicy.prototype = {
     return Ci.nsIContentPolicy.ACCEPT;
   },
 
-};
+  _usingCellular: function() {
+    let network = Cc["@mozilla.org/network/network-link-service;1"].getService(Ci.nsINetworkLinkService);
+    return !(network.linkType == Ci.nsINetworkLinkService.LINK_TYPE_UNKNOWN ||
+        network.linkType == Ci.nsINetworkLinkService.LINK_TYPE_ETHERNET ||
+        network.linkType == Ci.nsINetworkLinkService.LINK_TYPE_USB  ||
+        network.linkType == Ci.nsINetworkLinkService.LINK_TYPE_WIFI);
+  },
 
-function getEnabled() {
-  return Services.prefs.getBoolPref("browser.image_blocking.enabled");
-}
+  _enabled: function() {
+    return Services.prefs.getIntPref("browser.image_blocking");
+  },
+
+};
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([ImageBlockingPolicy]);

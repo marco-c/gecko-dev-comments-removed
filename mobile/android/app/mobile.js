@@ -351,7 +351,8 @@ pref("browser.link.open_newwindow", 3);
 pref("browser.link.open_newwindow.restriction", 0);
 
 
-pref("browser.image_blocking.enabled", false);
+
+pref("browser.image_blocking", 0);
 
 
 pref("privacy.item.cache", true);
@@ -955,7 +956,7 @@ pref("identity.fxaccounts.remote.webchannel.uri", "https://accounts.firefox.com"
 pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox.com/v1");
 
 
-pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com/v1"); 
+pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com/v1");
 
 
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
