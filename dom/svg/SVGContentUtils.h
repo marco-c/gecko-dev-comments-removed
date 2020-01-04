@@ -163,6 +163,12 @@ public:
     eAllStrokeOptions,
     eIgnoreStrokeDashing
   };
+  
+
+
+
+
+
   static void GetStrokeOptions(AutoStrokeOptions* aStrokeOptions,
                                nsSVGElement* aElement,
                                nsStyleContext* aStyleContext,
