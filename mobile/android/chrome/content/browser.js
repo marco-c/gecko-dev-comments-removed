@@ -2680,12 +2680,6 @@ var NativeWindow = {
 
       
       
-      if (event.defaultPrevented) {
-        return;
-      }
-
-      
-      
       this._target = BrowserEventHandler._highlightElement || event.target;
       if (!this._target) {
         return;
@@ -3454,6 +3448,8 @@ Tab.prototype = {
     this.browser = document.createElement("browser");
     this.browser.setAttribute("type", "content-targetable");
     this.browser.setAttribute("messagemanagergroup", "browsers");
+
+    this.browser.permanentKey = {};
 
     
     
