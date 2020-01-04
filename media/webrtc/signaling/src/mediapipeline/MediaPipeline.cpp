@@ -995,6 +995,16 @@ void MediaPipeline::RtcpPacketReceived(TransportLayer *layer,
   }
 
   
+  
+  
+  if (filter_ && direction_ == RECEIVE) {
+    if (!filter_->FilterSenderReport(data, len)) {
+      MOZ_MTLOG(ML_NOTICE, "Dropping incoming RTCP packet; filtered out");
+      return;
+    }
+  }
+
+  
   auto inner_data = MakeUnique<unsigned char[]>(len);
   memcpy(inner_data.get(), data, len);
   int out_len;
@@ -1006,15 +1016,6 @@ void MediaPipeline::RtcpPacketReceived(TransportLayer *layer,
 
   if (!NS_SUCCEEDED(res))
     return;
-
-  
-  
-  if (filter_ && direction_ == RECEIVE) {
-    if (!filter_->FilterSenderReport(inner_data.get(), out_len)) {
-      MOZ_MTLOG(ML_NOTICE, "Dropping rtcp packet");
-      return;
-    }
-  }
 
   MOZ_MTLOG(ML_DEBUG, description_ << " received RTCP packet.");
   increment_rtcp_packets_received();
