@@ -17,6 +17,11 @@ namespace webrtc {
 namespace VideoProcessing {
 
 int32_t ColorEnhancement(I420VideoFrame* frame) {
+  
+  
+  assert(false);
+  return VPM_GENERAL_ERROR;
+#if 0
   assert(frame);
   
   uint8_t* ptr_u;
@@ -44,6 +49,7 @@ int32_t ColorEnhancement(I420VideoFrame* frame) {
     ptr_v++;
   }
   return VPM_OK;
+#endif
 }
 
 }  
