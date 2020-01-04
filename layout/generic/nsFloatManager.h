@@ -271,14 +271,14 @@ public:
     
     DONT_CLEAR_PUSHED_FLOATS = (1<<0)
   };
-  nscoord ClearFloats(nscoord aBCoord, uint8_t aBreakType,
+  nscoord ClearFloats(nscoord aBCoord, mozilla::StyleClear aBreakType,
                       uint32_t aFlags = 0) const;
 
   
 
 
 
-  bool ClearContinues(uint8_t aBreakType) const;
+  bool ClearContinues(mozilla::StyleClear aBreakType) const;
 
   void AssertStateMatches(SavedState *aState) const
   {

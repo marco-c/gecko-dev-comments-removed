@@ -576,7 +576,7 @@ protected:
 
   
 
-  uint8_t FindTrailingClear();
+  mozilla::StyleClear FindTrailingClear();
 
   
 

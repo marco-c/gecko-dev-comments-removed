@@ -2840,7 +2840,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   
   mozilla::StyleFloat mOriginalFloat;
 
-  uint8_t mBreakType;           
+  mozilla::StyleClear mBreakType;  
   uint8_t mBreakInside;         
   bool mBreakBefore;    
   bool mBreakAfter;     
@@ -3094,7 +3094,7 @@ public:
   
   
   inline mozilla::StyleFloat PhysicalFloats(mozilla::WritingMode aWM) const;
-  inline uint8_t PhysicalBreakType(mozilla::WritingMode aWM) const;
+  inline mozilla::StyleClear PhysicalBreakType(mozilla::WritingMode aWM) const;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable

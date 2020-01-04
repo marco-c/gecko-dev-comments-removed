@@ -2442,8 +2442,7 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
   if (usingSVGEffects) {
     MOZ_ASSERT(StyleEffects()->HasFilters() ||
-               nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this),
-               "Beside filter & mask/clip-path, what else effect do we have?");
+               nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this));
 
     if (clipCapturedBy == ContainerItemType::eSVGEffects) {
       clipState.ExitStackingContextContents(&containerItemScrollClip);
@@ -2452,27 +2451,16 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
     buildingDisplayList.SetDirtyRect(dirtyRectOutsideSVGEffects);
 
     
-    bool createFilter =
-      StyleEffects()->HasFilters() && !aBuilder->IsForGenerateGlyphMask();
-    bool createMask = nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this);
-
-    if (createFilter) {
-      
-      
-      
-      bool handleOpacity = !createMask && !useOpacity;
-
+    if (StyleEffects()->HasFilters() && !aBuilder->IsForGenerateGlyphMask()) {
       
       resultList.AppendNewToTop(
-        new (aBuilder) nsDisplayFilter(aBuilder, this, &resultList,
-                                       handleOpacity));
+          new (aBuilder) nsDisplayFilter(aBuilder, this, &resultList, useOpacity));
     }
 
-    if (createMask) {
+    if (nsSVGIntegrationUtils::UsingMaskOrClipPathForFrame(this)) {
       
       resultList.AppendNewToTop(
-          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList,
-                                       !useOpacity));
+          new (aBuilder) nsDisplayMask(aBuilder, this, &resultList, useOpacity));
     }
 
     
@@ -4503,19 +4491,19 @@ nsIFrame::InlinePrefISizeData::ForceBreak()
     for (uint32_t i = 0, i_end = mFloats.Length(); i != i_end; ++i) {
       const FloatInfo& floatInfo = mFloats[i];
       const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-      uint8_t breakType = floatDisp->PhysicalBreakType(mLineContainerWM);
-      if (breakType == NS_STYLE_CLEAR_LEFT ||
-          breakType == NS_STYLE_CLEAR_RIGHT ||
-          breakType == NS_STYLE_CLEAR_BOTH) {
+      StyleClear breakType = floatDisp->PhysicalBreakType(mLineContainerWM);
+      if (breakType == StyleClear::Left ||
+          breakType == StyleClear::Right ||
+          breakType == StyleClear::Both) {
         nscoord floats_cur = NSCoordSaturatingAdd(floats_cur_left,
                                                   floats_cur_right);
         if (floats_cur > floats_done) {
           floats_done = floats_cur;
         }
-        if (breakType != NS_STYLE_CLEAR_RIGHT) {
+        if (breakType != StyleClear::Right) {
           floats_cur_left = 0;
         }
-        if (breakType != NS_STYLE_CLEAR_LEFT) {
+        if (breakType != StyleClear::Left) {
           floats_cur_right = 0;
         }
       }

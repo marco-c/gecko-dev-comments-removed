@@ -1549,7 +1549,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     nscoord floatHeight =
-      aState.ClearFloats(blockEndEdgeOfChildren, NS_STYLE_CLEAR_BOTH,
+      aState.ClearFloats(blockEndEdgeOfChildren, StyleClear::Both,
                          nullptr, nsFloatManager::DONT_CLEAR_PUSHED_FLOATS);
     blockEndEdgeOfChildren = std::max(blockEndEdgeOfChildren, floatHeight);
   }
@@ -1919,14 +1919,15 @@ nsBlockFrame::PrepareResizeReflow(BlockReflowInput& aState)
 #ifdef DEBUG
       if (gNoisyReflow && !line->IsDirty()) {
         IndentBy(stdout, gNoiseIndent + 1);
-        printf("skipped: line=%p next=%p %s %s%s%s breakTypeBefore/After=%d/%d xmost=%d\n",
+        printf("skipped: line=%p next=%p %s %s%s%s breakTypeBefore/After=%s/%s xmost=%d\n",
            static_cast<void*>(line.get()),
            static_cast<void*>((line.next() != end_lines() ? line.next().get() : nullptr)),
            line->IsBlock() ? "block" : "inline",
            line->HasBreakAfter() ? "has-break-after " : "",
            line->HasFloats() ? "has-floats " : "",
            line->IsImpactedByFloat() ? "impacted " : "",
-           line->GetBreakTypeBefore(), line->GetBreakTypeAfter(),
+           line->BreakTypeToString(line->GetBreakTypeBefore()),
+           line->BreakTypeToString(line->GetBreakTypeAfter()),
            line->IEnd());
       }
 #endif
@@ -2029,7 +2030,7 @@ nsBlockFrame::PropagateFloatDamage(BlockReflowInput& aState,
 
 static bool LineHasClear(nsLineBox* aLine) {
   return aLine->IsBlock()
-    ? (aLine->GetBreakTypeBefore() ||
+    ? (aLine->GetBreakTypeBefore() != StyleClear::None_ ||
        (aLine->mFirstChild->GetStateBits() & NS_BLOCK_HAS_CLEAR_CHILDREN) ||
        !nsBlockFrame::BlockCanIntersectFloats(aLine->mFirstChild))
     : aLine->HasFloatBreakAfter();
@@ -2080,7 +2081,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
 {
   bool keepGoing = true;
   bool repositionViews = false; 
-  bool foundAnyClears = aState.mFloatBreakType != NS_STYLE_CLEAR_NONE;
+  bool foundAnyClears = aState.mFloatBreakType != StyleClear::None_;
   bool willReflowAgain = false;
 
 #ifdef DEBUG
@@ -2121,7 +2122,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
     (mFloats.FirstChild()->GetStateBits() & NS_FRAME_IS_PUSHED_FLOAT);
   bool lastLineMovedUp = false;
   
-  uint8_t inlineFloatBreakType = aState.mFloatBreakType;
+  StyleClear inlineFloatBreakType = aState.mFloatBreakType;
 
   line_iterator line = begin_lines(), line_end = end_lines();
 
@@ -2152,12 +2153,12 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
     
     
     if (!line->IsDirty() &&
-        (line->GetBreakTypeBefore() != NS_STYLE_CLEAR_NONE ||
+        (line->GetBreakTypeBefore() != StyleClear::None_ ||
          replacedBlock)) {
       nscoord curBCoord = aState.mBCoord;
       
       
-      if (inlineFloatBreakType != NS_STYLE_CLEAR_NONE) {
+      if (inlineFloatBreakType != StyleClear::None_) {
         curBCoord = aState.ClearFloats(curBCoord, inlineFloatBreakType);
       }
 
@@ -2183,14 +2184,14 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
     }
 
     
-    if (inlineFloatBreakType != NS_STYLE_CLEAR_NONE) {
+    if (inlineFloatBreakType != StyleClear::None_) {
       aState.mBCoord = aState.ClearFloats(aState.mBCoord, inlineFloatBreakType);
       if (aState.mBCoord != line->BStart() + deltaBCoord) {
         
         
         line->MarkDirty();
       }
-      inlineFloatBreakType = NS_STYLE_CLEAR_NONE;
+      inlineFloatBreakType = StyleClear::None_;
     }
 
     bool previousMarginWasDirty = line->IsPreviousMarginDirty();
@@ -2443,7 +2444,7 @@ nsBlockFrame::ReflowDirtyLines(BlockReflowInput& aState)
   }
 
   
-  if (inlineFloatBreakType != NS_STYLE_CLEAR_NONE) {
+  if (inlineFloatBreakType != StyleClear::None_) {
     aState.mBCoord = aState.ClearFloats(aState.mBCoord, inlineFloatBreakType);
   }
 
@@ -3126,12 +3127,12 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
   
   nsBlockReflowContext brc(aState.mPresContext, aState.mReflowInput);
 
-  uint8_t breakType = frame->StyleDisplay()->
+  StyleClear breakType = frame->StyleDisplay()->
     PhysicalBreakType(aState.mReflowInput.GetWritingMode());
-  if (NS_STYLE_CLEAR_NONE != aState.mFloatBreakType) {
+  if (StyleClear::None_ != aState.mFloatBreakType) {
     breakType = nsLayoutUtils::CombineBreakType(breakType,
                                                 aState.mFloatBreakType);
-    aState.mFloatBreakType = NS_STYLE_CLEAR_NONE;
+    aState.mFloatBreakType = StyleClear::None_;
   }
 
   
@@ -3154,7 +3155,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
   }
   bool treatWithClearance = aLine->HasClearance();
 
-  bool mightClearFloats = breakType != NS_STYLE_CLEAR_NONE;
+  bool mightClearFloats = breakType != StyleClear::None_;
   nsIFrame *replacedBlock = nullptr;
   if (!nsBlockFrame::BlockCanIntersectFloats(frame)) {
     mightClearFloats = true;
@@ -3433,7 +3434,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
         }
         
         aState.mBCoord =
-          aState.ClearFloats(newBCoord, NS_STYLE_CLEAR_NONE, replacedBlock);
+          aState.ClearFloats(newBCoord, StyleClear::None_, replacedBlock);
         
         floatAvailableSpace =
           aState.GetFloatAvailableSpaceWithState(aState.mBCoord,
@@ -4111,18 +4112,17 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
   
   
   
-  aLine->SetBreakTypeAfter(NS_STYLE_CLEAR_NONE);
-  if (NS_INLINE_IS_BREAK(frameReflowStatus) || 
-      (NS_STYLE_CLEAR_NONE != aState.mFloatBreakType)) {
+  aLine->SetBreakTypeAfter(StyleClear::None_);
+  if (NS_INLINE_IS_BREAK(frameReflowStatus) ||
+      StyleClear::None_ != aState.mFloatBreakType) {
     
     
     *aLineReflowStatus = LINE_REFLOW_STOP;
 
     
-    uint8_t breakType = NS_INLINE_GET_BREAK_TYPE(frameReflowStatus);
-    NS_ASSERTION((NS_STYLE_CLEAR_NONE != breakType) || 
-                 (NS_STYLE_CLEAR_NONE != aState.mFloatBreakType), "bad break type");
-    NS_ASSERTION(NS_STYLE_CLEAR_MAX >= breakType, "invalid break type");
+    StyleClear breakType = NS_INLINE_GET_BREAK_TYPE(frameReflowStatus);
+    NS_ASSERTION(StyleClear::None_ != breakType ||
+                 StyleClear::None_ != aState.mFloatBreakType, "bad break type");
 
     if (NS_INLINE_IS_BREAK_BEFORE(frameReflowStatus)) {
       
@@ -4150,15 +4150,15 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
       
       
       
-      if (NS_STYLE_CLEAR_NONE != aState.mFloatBreakType) {
+      if (StyleClear::None_ != aState.mFloatBreakType) {
         breakType = nsLayoutUtils::CombineBreakType(breakType,
                                                     aState.mFloatBreakType);
-        aState.mFloatBreakType = NS_STYLE_CLEAR_NONE;
+        aState.mFloatBreakType = StyleClear::None_;
       }
       
-      if (breakType == NS_STYLE_CLEAR_LINE) {
+      if (breakType == StyleClear::Line) {
         if (!aLineLayout.GetLineEndsInBR()) {
-          breakType = NS_STYLE_CLEAR_NONE;
+          breakType = StyleClear::None_;
         }
       }
       aLine->SetBreakTypeAfter(breakType);
@@ -6226,7 +6226,7 @@ nsBlockFrame::ReflowFloat(BlockReflowInput& aState,
 #endif
 }
 
-uint8_t
+StyleClear
 nsBlockFrame::FindTrailingClear()
 {
   
@@ -6238,7 +6238,7 @@ nsBlockFrame::FindTrailingClear()
       return endLine->GetBreakTypeAfter();
     }
   }
-  return NS_STYLE_CLEAR_NONE;
+  return StyleClear::None_;
 }
 
 void
@@ -6307,7 +6307,7 @@ nsBlockFrame::ReflowPushedFloats(BlockReflowInput& aState,
   }
 
   
-  if (0 != aState.ClearFloats(0, NS_STYLE_CLEAR_BOTH)) {
+  if (0 != aState.ClearFloats(0, StyleClear::Both)) {
     nsBlockFrame* prevBlock = static_cast<nsBlockFrame*>(GetPrevInFlow());
     if (prevBlock) {
       aState.mFloatBreakType = prevBlock->FindTrailingClear();

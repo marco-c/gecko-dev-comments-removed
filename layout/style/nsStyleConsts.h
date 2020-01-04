@@ -109,6 +109,20 @@ enum class StyleBoxShadowType : uint8_t {
 };
 
 
+enum class StyleClear : uint8_t {
+  None_ = 0,
+  Left,
+  Right,
+  InlineStart,
+  InlineEnd,
+  Both,
+  
+  
+  Line = 8,
+  Max = 13  
+};
+
+
 enum class StyleClipPathGeometryBox : uint8_t {
   NoBox,
   Content,
@@ -402,18 +416,6 @@ enum class FillMode : uint32_t;
 
 #define NS_STYLE_BORDER_IMAGE_SLICE_NOFILL      0
 #define NS_STYLE_BORDER_IMAGE_SLICE_FILL        1
-
-
-#define NS_STYLE_CLEAR_NONE                     0
-#define NS_STYLE_CLEAR_LEFT                     1
-#define NS_STYLE_CLEAR_RIGHT                    2
-#define NS_STYLE_CLEAR_INLINE_START             3
-#define NS_STYLE_CLEAR_INLINE_END               4
-#define NS_STYLE_CLEAR_BOTH                     5
-#define NS_STYLE_CLEAR_LINE                     8
-
-
-#define NS_STYLE_CLEAR_MAX (NS_STYLE_CLEAR_LINE | NS_STYLE_CLEAR_BOTH)
 
 
 #define NS_STYLE_CONTENT_OPEN_QUOTE             0

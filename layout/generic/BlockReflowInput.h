@@ -149,7 +149,7 @@ public:
   
   
   
-  nscoord ClearFloats(nscoord aBCoord, uint8_t aBreakType,
+  nscoord ClearFloats(nscoord aBCoord, mozilla::StyleClear aBreakType,
                       nsIFrame *aReplacedBlock = nullptr,
                       uint32_t aFlags = 0);
 
@@ -371,7 +371,7 @@ public:
 
   Flags mFlags;
 
-  uint8_t mFloatBreakType;
+  StyleClear mFloatBreakType;
 
   
   nscoord mConsumedBSize;
