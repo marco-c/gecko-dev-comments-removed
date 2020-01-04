@@ -111,8 +111,8 @@ var FullZoom = {
 
   
 
-  onContentPrefSet: function FullZoom_onContentPrefSet(aGroup, aName, aValue) {
-    this._onContentPrefChanged(aGroup, aValue);
+  onContentPrefSet: function FullZoom_onContentPrefSet(aGroup, aName, aValue, aIsPrivate) {
+    this._onContentPrefChanged(aGroup, aValue, aIsPrivate);
   },
 
   onContentPrefRemoved: function FullZoom_onContentPrefRemoved(aGroup, aName) {
@@ -127,7 +127,7 @@ var FullZoom = {
 
 
 
-  _onContentPrefChanged: function FullZoom__onContentPrefChanged(aGroup, aValue) {
+  _onContentPrefChanged: function FullZoom__onContentPrefChanged(aGroup, aValue, aIsPrivate) {
     if (this._isNextContentPrefChangeInternal) {
       
       
@@ -140,9 +140,10 @@ var FullZoom = {
     if (!browser.currentURI)
       return;
 
+    let ctxt = this._loadContextFromBrowser(browser);
     let domain = this._cps2.extractDomain(browser.currentURI.spec);
     if (aGroup) {
-      if (aGroup == domain)
+      if (aGroup == domain && ctxt.usePrivateBrowsing == aIsPrivate)
         this._applyPrefToZoom(aValue, browser);
       return;
     }
@@ -154,7 +155,6 @@ var FullZoom = {
     
     
     let hasPref = false;
-    let ctxt = this._loadContextFromBrowser(browser);
     let token = this._getBrowserToken(browser);
     this._cps2.getByDomainAndName(browser.currentURI.spec, this.name, ctxt, {
       handleResult: function () { hasPref = true; },
