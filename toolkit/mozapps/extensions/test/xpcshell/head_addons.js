@@ -2116,3 +2116,36 @@ var promiseConsoleOutput = Task.async(function*(aTask) {
     Services.console.unregisterListener(listener);
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+function writeProxyFileToDir(aDir, aAddon, aId) {
+  let dir = aDir.clone();
+
+  if (!dir.exists())
+    dir.create(AM_Ci.nsIFile.DIRECTORY_TYPE, FileUtils.PERMS_DIRECTORY);
+
+  let file = dir.clone();
+  file.append(aId);
+
+  let addonPath = aAddon.path;
+
+  let fos = AM_Cc["@mozilla.org/network/file-output-stream;1"].
+            createInstance(AM_Ci.nsIFileOutputStream);
+  fos.init(file,
+           FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE | FileUtils.MODE_TRUNCATE,
+           FileUtils.PERMS_FILE, 0);
+  fos.write(addonPath, addonPath.length);
+  fos.close();
+
+  return file;
+}
