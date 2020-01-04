@@ -102,6 +102,10 @@ registerCleanupFunction(function* cleanup() {
   while (gBrowser.tabs.length > 1) {
     yield closeTabAndToolbox(gBrowser.selectedTab);
   }
+
+  
+  Cu.forceGC();
+  Cu.forceCC();
 });
 
 
@@ -113,7 +117,7 @@ var addTab = Task.async(function* (url) {
   info("Adding a new tab with URL: " + url);
 
   let tab = gBrowser.selectedTab = gBrowser.addTab(url);
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  yield once(gBrowser.selectedBrowser, "load", true);
 
   info("Tab added and finished loading");
 
@@ -142,7 +146,7 @@ var removeTab = Task.async(function* (tab) {
 
 var refreshTab = Task.async(function*(tab) {
   info("Refreshing tab.");
-  const finished = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  const finished = once(gBrowser.selectedBrowser, "load", true);
   gBrowser.reloadTab(gBrowser.selectedTab);
   yield finished;
   info("Tab finished refreshing.");
@@ -291,7 +295,9 @@ function waitForTick() {
 
 
 function wait(ms) {
-  return new promise(resolve => setTimeout(resolve, ms));
+  let def = defer();
+  content.setTimeout(def.resolve, ms);
+  return def.promise;
 }
 
 
