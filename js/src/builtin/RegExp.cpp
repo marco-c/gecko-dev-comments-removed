@@ -290,11 +290,11 @@ js::IsRegExp(JSContext* cx, HandleValue value, bool* result)
     }
 
     
-    ESClassValue cls;
+    ESClass cls;
     if (!GetClassOfValue(cx, value, &cls))
         return false;
 
-    *result = cls == ESClass_RegExp;
+    *result = cls == ESClass::RegExp;
     return true;
 }
 
@@ -308,10 +308,10 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
 
     
     RootedValue patternValue(cx, args.get(0));
-    ESClassValue cls;
+    ESClass cls;
     if (!GetClassOfValue(cx, patternValue, &cls))
         return false;
-    if (cls == ESClass_RegExp) {
+    if (cls == ESClass::RegExp) {
         
         if (args.hasDefined(1)) {
             JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_NEWREGEXP_FLAGGED);
@@ -405,10 +405,10 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
     RootedValue patternValue(cx, args.get(0));
 
     
-    ESClassValue cls;
+    ESClass cls;
     if (!GetClassOfValue(cx, patternValue, &cls))
         return false;
-    if (cls == ESClass_RegExp) {
+    if (cls == ESClass::RegExp) {
         
         
         

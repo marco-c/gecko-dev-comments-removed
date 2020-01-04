@@ -814,15 +814,15 @@ GuessArrayGCKind(size_t numElements)
 
 
 inline bool
-GetClassOfValue(JSContext* cx, HandleValue v, ESClassValue* classValue)
+GetClassOfValue(JSContext* cx, HandleValue v, ESClass* cls)
 {
     if (!v.isObject()) {
-        *classValue = ESClass_Other;
+        *cls = ESClass::Other;
         return true;
     }
 
     RootedObject obj(cx, &v.toObject());
-    return GetBuiltinClass(cx, obj, classValue);
+    return GetBuiltinClass(cx, obj, cls);
 }
 
 extern NativeObject*

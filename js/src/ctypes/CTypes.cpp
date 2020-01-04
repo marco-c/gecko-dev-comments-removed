@@ -3649,11 +3649,11 @@ ImplicitConvert(JSContext* cx,
                          arrObj, arrIndex);
       }
     } else {
-      ESClassValue cls;
+      ESClass cls;
       if (!GetClassOfValue(cx, val, &cls))
         return false;
 
-      if (cls == ESClass_Array) {
+      if (cls == ESClass::Array) {
         
         uint32_t sourceLength;
         if (!JS_GetArrayLength(cx, valObj, &sourceLength) ||
@@ -3684,10 +3684,10 @@ ImplicitConvert(JSContext* cx,
         }
 
         memcpy(buffer, intermediate.get(), arraySize);
-      } else if (cls == ESClass_ArrayBuffer || cls == ESClass_SharedArrayBuffer) {
+      } else if (cls == ESClass::ArrayBuffer || cls == ESClass::SharedArrayBuffer) {
         
         
-        const bool bufferShared = cls == ESClass_SharedArrayBuffer;
+        const bool bufferShared = cls == ESClass::SharedArrayBuffer;
         uint32_t sourceLength = bufferShared ? JS_GetSharedArrayBufferByteLength(valObj)
             : JS_GetArrayBufferByteLength(valObj);
         size_t elementSize = CType::GetSize(baseType);
