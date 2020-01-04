@@ -300,45 +300,68 @@ nsDOMAttributeMap::SetNamedItemInternal(Attr& aAttr,
   }
 
   
-  nsAutoString name;
-  nsRefPtr<mozilla::dom::NodeInfo> ni;
+  nsRefPtr<NodeInfo> oldNi;
+
+  if (!aWithNS) {
+    nsAutoString name;
+    aAttr.GetName(name);
+    oldNi = mContent->GetExistingAttrNameFromQName(name);
+  } else {
+    uint32_t i, count = mContent->GetAttrCount();
+    for (i = 0; i < count; ++i) {
+      const nsAttrName* name = mContent->GetAttrNameAt(i);
+      int32_t attrNS = name->NamespaceID();
+      nsIAtom* nameAtom = name->LocalName();
+
+      
+      if (aAttr.NodeInfo()->Equals(nameAtom, attrNS)) {
+        oldNi = mContent->NodeInfo()->NodeInfoManager()->
+          GetNodeInfo(nameAtom, name->GetPrefix(), aAttr.NodeInfo()->NamespaceID(),
+                      nsIDOMNode::ATTRIBUTE_NODE);
+        break;
+      }
+    }
+  }
 
   nsRefPtr<Attr> attr;
-  
-  if (aWithNS) {
-    
-    ni = aAttr.NodeInfo();
 
-    if (mContent->HasAttr(ni->NamespaceID(), ni->NameAtom())) {
-      attr = RemoveAttribute(ni);
+  if (oldNi) {
+    nsRefPtr<Attr> oldAttr = GetAttribute(oldNi, true);
+
+    if (oldAttr == &aAttr) {
+      return oldAttr.forget();
     }
-  } else { 
-    aAttr.GetName(name);
 
-    
-    ni = mContent->GetExistingAttrNameFromQName(name);
-    if (ni) {
-      attr = RemoveAttribute(ni);
-    }
-    else {
-      if (mContent->IsInHTMLDocument() &&
-          mContent->IsHTMLElement()) {
-        nsContentUtils::ASCIIToLower(name);
-      }
+    if (oldAttr) {
+      attr = RemoveNamedItem(oldNi, aError);
+      NS_ASSERTION(attr->NodeInfo()->NameAndNamespaceEquals(oldNi),
+        "RemoveNamedItem() called, attr->NodeInfo() should be equal to oldNi!");
 
-      rv = mContent->NodeInfo()->NodeInfoManager()->
-        GetNodeInfo(name, nullptr, kNameSpaceID_None,
-                    nsIDOMNode::ATTRIBUTE_NODE, getter_AddRefs(ni));
-      if (NS_FAILED(rv)) {
-        aError.Throw(rv);
+      
+      
+      nsDOMAttributeMap* newOwner = aAttr.GetMap();
+      if (newOwner) {
+        if (newOwner == this) {
+          
+          return attr.forget();
+        }
+
+        
+        
+        aError.Throw(NS_ERROR_DOM_INUSE_ATTRIBUTE_ERR);
+        return nullptr;
+      } else if (mContent->OwnerDoc() != aAttr.OwnerDoc()) {
+        
+        aError.Throw(NS_ERROR_DOM_HIERARCHY_REQUEST_ERR);
         return nullptr;
       }
-      
     }
   }
 
   nsAutoString value;
   aAttr.GetValue(value);
+
+  nsRefPtr<NodeInfo> ni = aAttr.NodeInfo();
 
   
   
@@ -354,6 +377,15 @@ nsDOMAttributeMap::SetNamedItemInternal(Attr& aAttr,
   }
 
   return attr.forget();
+}
+
+already_AddRefed<Attr>
+nsDOMAttributeMap::RemoveNamedItem(NodeInfo* aNodeInfo, ErrorResult& aError)
+{
+  nsRefPtr<Attr> attribute = GetAttribute(aNodeInfo, true);
+  
+  aError = mContent->UnsetAttr(aNodeInfo->NamespaceID(), aNodeInfo->NameAtom(), true);
+  return attribute.forget();
 }
 
 NS_IMETHODIMP
@@ -381,11 +413,7 @@ nsDOMAttributeMap::RemoveNamedItem(const nsAString& aName, ErrorResult& aError)
     return nullptr;
   }
 
-  nsRefPtr<Attr> attribute = GetAttribute(ni, true);
-
-  
-  aError = mContent->UnsetAttr(ni->NamespaceID(), ni->NameAtom(), true);
-  return attribute.forget();
+  return RemoveNamedItem(ni, aError);
 }
 
 
@@ -483,6 +511,7 @@ nsDOMAttributeMap::GetAttrNodeInfo(const nsAString& aNamespaceURI,
     int32_t attrNS = name->NamespaceID();
     nsIAtom* nameAtom = name->LocalName();
 
+    
     if (nameSpaceID == attrNS &&
         nameAtom->Equals(aLocalName)) {
       nsRefPtr<mozilla::dom::NodeInfo> ni;
@@ -519,11 +548,7 @@ nsDOMAttributeMap::RemoveNamedItemNS(const nsAString& aNamespaceURI,
     return nullptr;
   }
 
-  nsRefPtr<Attr> attr = RemoveAttribute(ni);
-  mozilla::dom::NodeInfo* attrNi = attr->NodeInfo();
-  mContent->UnsetAttr(attrNi->NamespaceID(), attrNi->NameAtom(), true);
-
-  return attr.forget();
+  return RemoveNamedItem(ni, aError);
 }
 
 uint32_t
