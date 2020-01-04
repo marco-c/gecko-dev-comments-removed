@@ -227,12 +227,6 @@ html, body, #app, #memory-tool {
 
   flex: 1;
   background-color: var(--theme-toolbar-background);
-
-  
-
-
-
-  min-width: 0;
 }
 
 #heap-view > .heap-view-panel {
@@ -248,12 +242,6 @@ html, body, #app, #memory-tool {
 
 
   flex: 1;
-
-  
-
-
-
-  min-width: 0;
 }
 
 #heap-view > .heap-view-panel > .snapshot-status,
