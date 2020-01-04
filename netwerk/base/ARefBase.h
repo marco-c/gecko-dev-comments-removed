@@ -1,0 +1,30 @@
+
+
+
+
+
+
+#ifndef mozilla_net_ARefBase_h
+#define mozilla_net_ARefBase_h
+
+namespace mozilla { namespace net {
+
+
+
+
+
+
+class ARefBase
+{
+public:
+  ARefBase() {}
+  virtual ~ARefBase() {}
+
+  NS_IMETHOD_ (MozExternalRefCountType) AddRef() = 0;
+  NS_IMETHOD_ (MozExternalRefCountType) Release() = 0;
+};
+
+} 
+} 
+
+#endif
