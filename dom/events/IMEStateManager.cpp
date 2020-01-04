@@ -512,6 +512,10 @@ IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
 
   
   
+  
+  if (newState.mEnabled == IMEState::PLUGIN) {
+    CreateIMEContentObserver(nullptr);
+  }
 
   return NS_OK;
 }
@@ -1515,7 +1519,7 @@ IMEStateManager::GetRootEditableNode(nsPresContext* aPresContext,
 bool
 IMEStateManager::IsIMEObserverNeeded(const IMEState& aState)
 {
-  return aState.IsEditable();
+  return aState.MaybeEditable();
 }
 
 
