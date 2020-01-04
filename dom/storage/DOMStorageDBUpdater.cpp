@@ -337,6 +337,16 @@ nsresult Update(mozIStorageConnection *aWorkerConnection)
 
     
     
+    
+    
+    rv = aWorkerConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+          "DROP INDEX IF EXISTS webappsstore2.origin_key_index"));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = aWorkerConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
+          "DROP INDEX IF EXISTS webappsstore2.scope_key_index"));
+    NS_ENSURE_SUCCESS(rv, rv);
+
     rv = aWorkerConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
           "ALTER TABLE webappsstore2 RENAME TO webappsstore2_old"));
     NS_ENSURE_SUCCESS(rv, rv);
