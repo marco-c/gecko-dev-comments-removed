@@ -40,10 +40,18 @@ function attachThread(toolbox) {
 
   let target = toolbox.target;
   let { form: { chromeDebugger, actor } } = target;
-  let threadOptions = {
-    useSourceMaps: Services.prefs.getBoolPref("devtools.debugger.source-maps-enabled"),
-    autoBlackBox: Services.prefs.getBoolPref("devtools.debugger.auto-black-box")
-  };
+
+  
+  
+  
+  
+  let useSourceMaps = false;
+  let autoBlackBox = false;
+  if(!Services.prefs.getBoolPref("devtools.debugger.new-debugger-frontend")) {
+    useSourceMaps = Services.prefs.getBoolPref("devtools.debugger.source-maps-enabled");
+    autoBlackBox = Services.prefs.getBoolPref("devtools.debugger.auto-black-box");
+  }
+  let threadOptions = { useSourceMaps, autoBlackBox };
 
   let handleResponse = (res, threadClient) => {
     if (res.error) {
