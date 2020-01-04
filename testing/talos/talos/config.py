@@ -6,6 +6,8 @@ import sys
 import os
 import copy
 
+from mozlog.commandline import setup_logging
+
 from talos import utils, test
 from talos.cmdline import parse_args
 
@@ -449,11 +451,11 @@ def get_config(argv=None):
         argv += ['-a', ':'.join(suite_conf['tests'])]
         argv += suite_conf.get('talos_options', [])
         
-        cli_opts = parse_args(argv=argv)
     elif not cli_opts.activeTests:
         raise ConfigurationError('--activeTests or --suite required!')
 
     cli_opts = parse_args(argv=argv)
+    setup_logging("talos", cli_opts, {"tbpl": sys.stdout})
     config = copy.deepcopy(DEFAULTS)
     config.update(cli_opts.__dict__)
     for validate in CONF_VALIDATORS:
