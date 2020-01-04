@@ -596,7 +596,7 @@ AudioManager::Observe(nsISupports* aSubject,
   
   
   else if (!strcmp(aTopic, MOZ_SETTINGS_CHANGE_ID)) {
-    RootedDictionary<dom::SettingChangeNotification> setting(nsContentUtils::RootingCxForThread());
+    RootedDictionary<dom::SettingChangeNotification> setting(nsContentUtils::RootingCx());
     if (!WrappedJSToDictionary(aSubject, setting)) {
       return NS_OK;
     }

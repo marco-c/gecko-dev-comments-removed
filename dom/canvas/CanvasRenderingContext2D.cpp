@@ -5539,7 +5539,7 @@ void
 CanvasRenderingContext2D::PutImageData(ImageData& aImageData, double aDx,
                                        double aDy, ErrorResult& aError)
 {
-  RootedTypedArray<Uint8ClampedArray> arr(nsContentUtils::RootingCxForThread());
+  RootedTypedArray<Uint8ClampedArray> arr(nsContentUtils::RootingCx());
   DebugOnly<bool> inited = arr.Init(aImageData.GetDataObject());
   MOZ_ASSERT(inited);
 
@@ -5555,7 +5555,7 @@ CanvasRenderingContext2D::PutImageData(ImageData& aImageData, double aDx,
                                        double aDirtyHeight,
                                        ErrorResult& aError)
 {
-  RootedTypedArray<Uint8ClampedArray> arr(nsContentUtils::RootingCxForThread());
+  RootedTypedArray<Uint8ClampedArray> arr(nsContentUtils::RootingCx());
   DebugOnly<bool> inited = arr.Init(aImageData.GetDataObject());
   MOZ_ASSERT(inited);
 
@@ -5811,14 +5811,8 @@ CanvasRenderingContext2D::GetBufferProvider(LayerManager* aManager)
 already_AddRefed<Layer>
 CanvasRenderingContext2D::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
                                          Layer *aOldLayer,
-                                         LayerManager *aManager,
-                                         bool aMirror )
+                                         LayerManager *aManager)
 {
-  if (aMirror) {
-    
-    return nullptr;
-  }
-
   if (mOpaque || mIsSkiaGL) {
     
     

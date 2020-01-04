@@ -247,7 +247,7 @@ AutoMounterSetting::Observe(nsISupports* aSubject,
   
   
 
-  RootedDictionary<SettingChangeNotification> setting(nsContentUtils::RootingCxForThread());
+  RootedDictionary<SettingChangeNotification> setting(nsContentUtils::RootingCx());
   if (!WrappedJSToDictionary(aSubject, setting)) {
     return NS_OK;
   }
