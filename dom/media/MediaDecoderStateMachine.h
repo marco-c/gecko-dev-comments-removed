@@ -1122,10 +1122,6 @@ private:
   bool mDropVideoUntilNextDiscontinuity;
 
   
-  
-  bool mDecodeToSeekTarget;
-
-  
   MozPromiseRequestHolder<MediaDecoderReader::SeekPromise> mSeekRequest;
 
   
