@@ -5,7 +5,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["Chat"];
+this.EXPORTED_SYMBOLS = ["Chat", "kDefaultButtonSet"];
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
@@ -14,6 +14,11 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
+
+const kNSXUL = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+const kDefaultButtonSet = new Set(["minimize", "swap", "close"]);
+const kHiddenDefaultButtons = new Set(["minimize", "close"]);
+let gCustomButtons = new Map();
 
 
 function isWindowChromeless(win) {
@@ -205,4 +210,100 @@ var Chat = {
     }
     return topMost;
   },
-}
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  registerButton: function(button) {
+    if (gCustomButtons.has(button.id))
+      return;
+    gCustomButtons.set(button.id, button);
+  },
+
+  
+
+
+
+
+
+
+
+  loadButtonSet: function(chatbox, buttonSet = kDefaultButtonSet) {
+    if (!buttonSet)
+      return;
+
+    
+    if (typeof buttonSet == "string") {
+      buttonSet = [for (button of buttonSet.split(",")) button.trim()];
+    }
+
+    
+    chatbox.setAttribute("buttonSet", [...buttonSet].join(","));
+
+    let isUndocked = !chatbox.chatbar;
+    let document = chatbox.ownerDocument;
+    let titlebarNode = document.getAnonymousElementByAttribute(chatbox, "class",
+      "chat-titlebar");
+    let buttonsSeen = new Set();
+
+    for (let buttonId of buttonSet) {
+      buttonId = buttonId.trim();
+      buttonsSeen.add(buttonId);
+      let nodes, node;
+      if (kDefaultButtonSet.has(buttonId)) {
+        node = document.getAnonymousElementByAttribute(chatbox, "anonid", buttonId);
+        if (!node)
+          continue;
+
+        node.hidden = isUndocked && kHiddenDefaultButtons.has(buttonId) ? true : false;
+      } else if (gCustomButtons.has(buttonId)) {
+        let button = gCustomButtons.get(buttonId);
+        let buttonClass = "chat-" + buttonId;
+        
+        
+        nodes = titlebarNode.getElementsByClassName(buttonClass);
+        node = nodes && nodes.length ? nodes[0] : null;
+        if (!node) {
+          
+          if (button.onBuild) {
+            node = button.onBuild(chatbox);
+          } else {
+            
+            node = document.createElementNS(kNSXUL, "toolbarbutton");
+            node.classList.add(buttonClass);
+            node.classList.add("chat-toolbarbutton");
+          }
+
+          if (button.onCommand) {
+            node.addEventListener("command", e => {
+              button.onCommand(e, chatbox);
+            });
+          }
+          titlebarNode.appendChild(node);
+        }
+
+        
+        
+        node.hidden = isUndocked && !button.visibleWhenUndocked;
+      } else {
+        Cu.reportError("Chatbox button '" + buttonId + "' could not be found!\n");
+      }
+    }
+
+    
+    for (let button of kDefaultButtonSet) {
+      if (!buttonsSeen.has(button))
+        document.getAnonymousElementByAttribute(chatbox, "anonid", button).hidden = true;
+    }
+  }
+};

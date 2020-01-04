@@ -88,6 +88,16 @@ const ROOM_CONTEXT_ADD = {
 
 const PREF_LOG_LEVEL = "loop.debug.loglevel";
 
+const kChatboxHangupButton = {
+  id: "loop-hangup",
+  visibleWhenUndocked: false,
+  onCommand: function(e, chatbox) {
+    let window = chatbox.content.contentWindow;
+    let event = new window.CustomEvent("LoopHangupNow");
+    window.dispatchEvent(event);
+  }
+};
+
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Promise.jsm");
@@ -905,6 +915,8 @@ var MozLoopServiceInternal = {
 
     let url = this.getChatURL(windowId);
 
+    Chat.registerButton(kChatboxHangupButton);
+
     let callback = chatbox => {
       
       
@@ -1016,9 +1028,9 @@ var MozLoopServiceInternal = {
     } else if (chatboxInstance.setAttribute) {
       
       
-      chatboxInstance.setAttribute("dark", true);
       chatboxInstance.setAttribute("customSize", "loopDefault");
       chatboxInstance.parentNode.setAttribute("customSize", "loopDefault");
+      Chat.loadButtonSet(chatboxInstance, "minimize,swap," + kChatboxHangupButton.id);
     }
     return windowId;
   },

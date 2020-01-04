@@ -17,7 +17,11 @@ loop.store.ConversationAppStore = (function() {
 
 
 
+
   var ConversationAppStore = function(options) {
+    if (!options.activeRoomStore) {
+      throw new Error("Missing option activeRoomStore");
+    }
     if (!options.dispatcher) {
       throw new Error("Missing option dispatcher");
     }
@@ -25,9 +29,20 @@ loop.store.ConversationAppStore = (function() {
       throw new Error("Missing option mozLoop");
     }
 
+    this._activeRoomStore = options.activeRoomStore;
     this._dispatcher = options.dispatcher;
     this._mozLoop = options.mozLoop;
+    this._rootObj = ("rootObject" in options) ? options.rootObject : window;
     this._storeState = this.getInitialStoreState();
+
+    
+    this._eventHandlers = {};
+    ["unload", "LoopHangupNow", "socialFrameAttached", "socialFrameDetached"]
+      .forEach(function(eventName) {
+        var handlerName = eventName + "Handler";
+        this._eventHandlers[eventName] = this[handlerName].bind(this);
+        this._rootObj.addEventListener(eventName, this._eventHandlers[eventName]);
+      }.bind(this));
 
     this._dispatcher.register(this, [
       "getWindowData",
@@ -38,6 +53,7 @@ loop.store.ConversationAppStore = (function() {
   ConversationAppStore.prototype = _.extend({
     getInitialStoreState: function() {
       return {
+        chatWindowDetached: false,
         
         feedbackPeriod: this._mozLoop.getLoopPref("feedback.periodSec") * 1000,
         
@@ -62,7 +78,7 @@ loop.store.ConversationAppStore = (function() {
 
 
     setStoreState: function(state) {
-      this._storeState = state;
+      this._storeState = _.extend({}, this._storeState, state);
       this.trigger("change");
     },
 
@@ -99,6 +115,64 @@ loop.store.ConversationAppStore = (function() {
 
       this._dispatcher.dispatch(new loop.shared.actions.SetupWindowData(_.extend({
         windowId: actionData.windowId}, windowData)));
+    },
+
+    
+
+
+
+
+
+    unloadHandler: function() {
+      this._dispatcher.dispatch(new loop.shared.actions.WindowUnload());
+
+      
+      var eventNames = Object.getOwnPropertyNames(this._eventHandlers);
+      eventNames.forEach(function(eventName) {
+        this._rootObj.removeEventListener(eventName, this._eventHandlers[eventName]);
+      }.bind(this));
+      this._eventHandlers = null;
+    },
+
+    
+
+
+
+
+
+    LoopHangupNowHandler: function() {
+      switch (this.getStoreState().windowType) {
+        case "incoming":
+        case "outgoing":
+          this._dispatcher.dispatch(new loop.shared.actions.HangupCall());
+          break;
+        case "room":
+          if (this._activeRoomStore.getStoreState().used) {
+            this._dispatcher.dispatch(new loop.shared.actions.LeaveRoom());
+          } else {
+            loop.shared.mixins.WindowCloseMixin.closeWindow();
+          }
+          break;
+        default:
+          loop.shared.mixins.WindowCloseMixin.closeWindow();
+          break;
+      }
+    },
+
+    
+
+
+
+    socialFrameAttachedHandler: function() {
+      this.setStoreState({ chatWindowDetached: false });
+    },
+
+    
+
+
+
+    socialFrameDetachedHandler: function() {
+      this.setStoreState({ chatWindowDetached: true });
     }
   }, Backbone.Events);
 
