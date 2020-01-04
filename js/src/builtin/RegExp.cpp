@@ -171,6 +171,15 @@ js::ExecuteRegExpLegacy(JSContext* cx, RegExpStatics* res, RegExpObject& reobj,
     return CreateRegExpMatchResult(cx, input, matches, rval);
 }
 
+static bool
+CheckPatternSyntax(JSContext* cx, HandleAtom pattern, RegExpFlag flags)
+{
+    CompileOptions options(cx);
+    frontend::TokenStream dummyTokenStream(cx, options, nullptr, 0, nullptr);
+    return irregexp::ParsePatternSyntax(dummyTokenStream, cx->tempLifoAlloc(), pattern,
+                                        flags & UnicodeFlag);
+}
+
 enum RegExpSharedUse {
     UseRegExpShared,
     DontUseRegExpShared
@@ -222,13 +231,8 @@ RegExpInitializeIgnoringLastIndex(JSContext* cx, Handle<RegExpObject*> obj,
         obj->setShared(*re);
     } else {
         
-        CompileOptions options(cx);
-        frontend::TokenStream dummyTokenStream(cx, options, nullptr, 0, nullptr);
-        if (!irregexp::ParsePatternSyntax(dummyTokenStream, cx->tempLifoAlloc(), pattern,
-                                          flags & UnicodeFlag))
-        {
+        if (!CheckPatternSyntax(cx, pattern, flags))
             return false;
-        }
 
         
         obj->initIgnoringLastIndex(pattern, flags);
@@ -419,10 +423,9 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
                 return false;
             sourceAtom = g->getSource();
 
-            if (!args.hasDefined(1)) {
-                
-                flags = g->getFlags();
-            }
+            
+            
+            flags = g->getFlags();
         }
 
         
@@ -437,12 +440,22 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
         
         if (args.hasDefined(1)) {
             
-            flags = RegExpFlag(0);
+            RegExpFlag flagsArg = RegExpFlag(0);
             RootedString flagStr(cx, ToString<CanGC>(cx, args[1]));
             if (!flagStr)
                 return false;
-            if (!ParseRegExpFlags(cx, flagStr, &flags))
+            if (!ParseRegExpFlags(cx, flagStr, &flagsArg))
                 return false;
+
+            if (!(flags & UnicodeFlag) && flagsArg & UnicodeFlag) {
+                
+
+                
+                
+                if (!CheckPatternSyntax(cx, sourceAtom, flagsArg))
+                    return false;
+            }
+            flags = flagsArg;
         }
 
         regexp->initAndZeroLastIndex(sourceAtom, flags, cx);
