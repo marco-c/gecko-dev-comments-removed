@@ -1,0 +1,43 @@
+
+
+
+
+
+
+#ifndef mozilla_net_WebSocketEventListenerParent_h
+#define mozilla_net_WebSocketEventListenerParent_h
+
+#include "mozilla/net/PWebSocketEventListenerParent.h"
+#include "nsIWebSocketEventService.h"
+
+namespace mozilla {
+namespace net {
+
+class WebSocketEventService;
+
+class WebSocketEventListenerParent final : public PWebSocketEventListenerParent
+                                         , public nsIWebSocketEventListener
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIWEBSOCKETEVENTLISTENER
+
+  explicit WebSocketEventListenerParent(uint64_t aInnerWindowID);
+
+private:
+  ~WebSocketEventListenerParent();
+
+  virtual bool RecvClose() override;
+
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  void UnregisterListener();
+
+  RefPtr<WebSocketEventService> mService;
+  uint64_t mInnerWindowID;
+};
+
+} 
+} 
+
+#endif 
