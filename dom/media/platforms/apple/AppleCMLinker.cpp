@@ -7,7 +7,6 @@
 #include <dlfcn.h>
 
 #include "AppleCMLinker.h"
-#include "MainThreadUtils.h"
 #include "mozilla/ArrayUtils.h"
 #include "nsDebug.h"
 
@@ -24,7 +23,6 @@ AppleCMLinker::LinkStatus
 AppleCMLinker::sLinkStatus = LinkStatus_INIT;
 
 void* AppleCMLinker::sLink = nullptr;
-nsrefcnt AppleCMLinker::sRefCount = 0;
 CFStringRef AppleCMLinker::skPropExtensionAtoms = nullptr;
 CFStringRef AppleCMLinker::skPropFullRangeVideo = nullptr;
 
@@ -35,12 +33,6 @@ CFStringRef AppleCMLinker::skPropFullRangeVideo = nullptr;
  bool
 AppleCMLinker::Link()
 {
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  ++sRefCount;
-
   if (sLinkStatus) {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
@@ -116,10 +108,7 @@ fail:
  void
 AppleCMLinker::Unlink()
 {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(sRefCount > 0, "Unbalanced Unlink()");
-  --sRefCount;
-  if (sLink && sRefCount < 1) {
+  if (sLink) {
     LOG("Unlinking CoreMedia framework.");
     dlclose(sLink);
     sLink = nullptr;

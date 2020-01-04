@@ -7,7 +7,6 @@
 #include <dlfcn.h>
 
 #include "AppleVDALinker.h"
-#include "MainThreadUtils.h"
 #include "nsDebug.h"
 
 extern mozilla::LogModule* GetPDMLog();
@@ -19,7 +18,6 @@ AppleVDALinker::LinkStatus
 AppleVDALinker::sLinkStatus = LinkStatus_INIT;
 
 void* AppleVDALinker::sLink = nullptr;
-nsrefcnt AppleVDALinker::sRefCount = 0;
 CFStringRef AppleVDALinker::skPropWidth = nullptr;
 CFStringRef AppleVDALinker::skPropHeight = nullptr;
 CFStringRef AppleVDALinker::skPropSourceFormat = nullptr;
@@ -32,12 +30,6 @@ CFStringRef AppleVDALinker::skPropAVCCData = nullptr;
  bool
 AppleVDALinker::Link()
 {
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  ++sRefCount;
-
   if (sLinkStatus) {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
@@ -82,14 +74,7 @@ fail:
  void
 AppleVDALinker::Unlink()
 {
-  
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(sRefCount > 0, "Unbalanced Unlink()");
-  --sRefCount;
-  if (sLink && sRefCount < 1) {
+  if (sLink) {
     LOG("Unlinking VideoDecodeAcceleration framework.");
 #define LINK_FUNC(func)                                                   \
     func = nullptr;

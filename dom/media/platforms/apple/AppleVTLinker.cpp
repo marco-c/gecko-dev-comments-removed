@@ -7,7 +7,6 @@
 #include <dlfcn.h>
 
 #include "AppleVTLinker.h"
-#include "MainThreadUtils.h"
 #include "mozilla/ArrayUtils.h"
 #include "nsDebug.h"
 
@@ -20,7 +19,6 @@ AppleVTLinker::LinkStatus
 AppleVTLinker::sLinkStatus = LinkStatus_INIT;
 
 void* AppleVTLinker::sLink = nullptr;
-nsrefcnt AppleVTLinker::sRefCount = 0;
 CFStringRef AppleVTLinker::skPropEnableHWAccel = nullptr;
 CFStringRef AppleVTLinker::skPropUsingHWAccel = nullptr;
 
@@ -31,12 +29,6 @@ CFStringRef AppleVTLinker::skPropUsingHWAccel = nullptr;
  bool
 AppleVTLinker::Link()
 {
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  ++sRefCount;
-
   if (sLinkStatus) {
     return sLinkStatus == LinkStatus_SUCCEEDED;
   }
@@ -85,14 +77,7 @@ fail:
  void
 AppleVTLinker::Unlink()
 {
-  
-  
-  
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(sRefCount > 0, "Unbalanced Unlink()");
-  --sRefCount;
-  if (sLink && sRefCount < 1) {
+  if (sLink) {
     LOG("Unlinking VideoToolbox framework.");
 #define LINK_FUNC(func)                                                   \
     func = nullptr;
