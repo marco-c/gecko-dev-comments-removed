@@ -2,33 +2,29 @@
 
 
 
-__version__ = '3.0.0'
-
-from .marionette_test import (
-    CommonTestCase,
+from marionette.marionette_test import (
     expectedFailure,
-    MarionetteJSTestCase,
-    MarionetteTestCase,
     skip,
     skip_if_desktop,
     SkipTest,
     skip_unless_protocol,
 )
-from .runner import (
-    BaseMarionetteArguments,
-    BaseMarionetteTestRunner,
-    BrowserMobProxyTestCaseMixin,
-    EnduranceArguments,
-    EnduranceTestCaseMixin,
-    HTMLReportingArguments,
-    HTMLReportingTestResultMixin,
-    HTMLReportingTestRunnerMixin,
-    Marionette,
-    MarionetteTest,
-    MarionetteTestResult,
-    MarionetteTextTestRunner,
-    MemoryEnduranceTestCaseMixin,
+
+from marionette.runner import (
     TestManifest,
     TestResult,
     TestResultCollection,
+)
+
+from .session_test import (
+    SessionJSTestCase,
+    SessionTestCase,
+)
+
+from .runner import (
+    BaseSessionArguments,
+    BaseSessionTestRunner,
+    SessionTest,
+    SessionTestResult,
+    SessionTextTestRunner,
 )
