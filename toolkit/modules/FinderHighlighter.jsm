@@ -13,13 +13,14 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Color", "resource://gre/modules/Color.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Rect", "resource://gre/modules/Geometry.jsm");
 XPCOMUtils.defineLazyGetter(this, "kDebug", () => {
   const kDebugPref = "findbar.modalHighlight.debug";
   return Services.prefs.getPrefType(kDebugPref) && Services.prefs.getBoolPref(kDebugPref);
 });
 
 const kContentChangeThresholdPx = 5;
-const kModalHighlightRepaintFreqMs = 100;
+const kModalHighlightRepaintFreqMs = 200;
 const kHighlightAllPref = "findbar.highlightAll";
 const kModalHighlightPref = "findbar.modalHighlight";
 const kFontPropsCSS = ["color", "font-family", "font-kerning", "font-size",
@@ -144,6 +145,8 @@ function mockAnonymousContentNode(domNode) {
   };
 }
 
+let gWindows = new Map();
+
 
 
 
@@ -151,12 +154,9 @@ function mockAnonymousContentNode(domNode) {
 
 
 function FinderHighlighter(finder) {
-  this._currentFoundRange = null;
-  this._modal = Services.prefs.getBoolPref(kModalHighlightPref);
   this._highlightAll = Services.prefs.getBoolPref(kHighlightAllPref);
-  this._lastIteratorParams = null;
+  this._modal = Services.prefs.getBoolPref(kModalHighlightPref);
   this.finder = finder;
-  this.visible = false;
 }
 
 FinderHighlighter.prototype = {
@@ -188,6 +188,34 @@ FinderHighlighter.prototype = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+  getForWindow(window, propName = null) {
+    if (!gWindows.has(window)) {
+      gWindows.set(window, {
+        dynamicRangesSet: new Set(),
+        frames: new Map(),
+        installedSheet: false,
+        modalHighlightRectsMap: new Map()
+      });
+    }
+    return gWindows.get(window);
+  },
+
+  
+
+
+
+
   notifyFinished(highlight) {
     for (let l of this.finder._listeners) {
       try {
@@ -207,6 +235,7 @@ FinderHighlighter.prototype = {
 
   highlight: Task.async(function* (highlight, word, linksOnly) {
     let window = this.finder._getWindow();
+    let dict = this.getForWindow(window);
     let controller = this.finder._getSelectionController(window);
     let doc = window.document;
     this._found = false;
@@ -227,7 +256,7 @@ FinderHighlighter.prototype = {
         listener: this,
         useCache: true
       };
-      if (this.iterator._areParamsEqual(params, this._lastIteratorParams))
+      if (this.iterator._areParamsEqual(params, dict.lastIteratorParams))
         return this._found;
       if (params) {
         yield this.iterator.start(params);
@@ -252,17 +281,19 @@ FinderHighlighter.prototype = {
   },
 
   onIteratorReset() {
-    this.clear();
+    this.clear(this.finder._getWindow());
   },
 
   onIteratorRestart() {},
 
   onIteratorStart(params) {
+    let window = this.finder._getWindow();
+    let dict = this.getForWindow(window);
     
-    this._lastIteratorParams = params;
-    this.clear();
+    dict.lastIteratorParams = params;
+    this.clear(window);
     if (!this._modal)
-      this.hide(this.finder._getWindow(), this.finder._fastFind.getFoundRange());
+      this.hide(window, this.finder._fastFind.getFoundRange());
   },
 
   
@@ -302,11 +333,13 @@ FinderHighlighter.prototype = {
 
 
   show(window = null) {
-    if (!this._modal || this.visible)
+    window = (window || this.finder._getWindow()).top;
+    let dict = this.getForWindow(window);
+    if (!this._modal || dict.visible)
       return;
 
-    this.visible = true;
-    window = window || this.finder._getWindow();
+    dict.visible = true;
+
     this._maybeCreateModalHighlightNodes(window);
     this._addModalHighlightListeners(window);
   },
@@ -327,14 +360,17 @@ FinderHighlighter.prototype = {
     if (event && event.type == "click" && event.button !== 0)
       return;
 
-    window = window || this.finder._getWindow();
+    window = (window || this.finder._getWindow()).top;
+    let dict = this.getForWindow(window);
 
-    let doc = window.document;
     this._clearSelection(this.finder._getSelectionController(window), skipRange);
+    for (let frame of dict.frames)
+      this._clearSelection(this.finder._getSelectionController(frame), skipRange);
 
     
     
     if (this._editors) {
+      let doc = window.document;
       for (let x = this._editors.length - 1; x >= 0; --x) {
         if (this._editors[x].document == doc) {
           this._clearSelection(this._editors[x].selectionController, skipRange);
@@ -344,20 +380,20 @@ FinderHighlighter.prototype = {
       }
     }
 
-    if (this._modalRepaintScheduler) {
-      window.clearTimeout(this._modalRepaintScheduler);
-      this._modalRepaintScheduler = null;
+    if (dict.modalRepaintScheduler) {
+      window.clearTimeout(dict.modalRepaintScheduler);
+      dict.modalRepaintScheduler = null;
     }
-    this._lastWindowDimensions = null;
+    dict.lastWindowDimensions = null;
 
-    if (this._modalHighlightOutline)
-      this._modalHighlightOutline.setAttributeForElement(kModalOutlineId, "hidden", "true");
+    if (dict.modalHighlightOutline)
+      dict.modalHighlightOutline.setAttributeForElement(kModalOutlineId, "hidden", "true");
 
     this._removeHighlightAllMask(window);
     this._removeModalHighlightListeners(window);
-    delete this._brightText;
+    delete dict.brightText;
 
-    this.visible = false;
+    dict.visible = false;
   },
 
   
@@ -383,12 +419,13 @@ FinderHighlighter.prototype = {
 
   update(data) {
     let window = this.finder._getWindow();
+    let dict = this.getForWindow(window);
     let foundRange = this.finder._fastFind.getFoundRange();
     if (!this._modal) {
       if (this._highlightAll) {
-        this._currentFoundRange = foundRange;
+        dict.currentFoundRange = foundRange;
         let params = this.iterator.params;
-        if (this.iterator._areParamsEqual(params, this._lastIteratorParams))
+        if (this.iterator._areParamsEqual(params, dict.lastIteratorParams))
           return;
         if (params)
           this.highlight(true, params.word, params.linksOnly);
@@ -403,8 +440,8 @@ FinderHighlighter.prototype = {
     }
 
     let outlineNode;
-    if (foundRange !== this._currentFoundRange || data.findAgain) {
-      this._currentFoundRange = foundRange;
+    if (foundRange !== dict.currentFoundRange || data.findAgain) {
+      dict.currentFoundRange = foundRange;
 
       let textContent = this._getRangeContentArray(foundRange);
       if (!textContent.length) {
@@ -412,36 +449,20 @@ FinderHighlighter.prototype = {
         return;
       }
 
-      let rect = foundRange.getClientRects()[0];
       let fontStyle = this._getRangeFontStyle(foundRange);
-      if (typeof this._brightText == "undefined") {
-        this._brightText = this._isColorBright(fontStyle.color);
+      if (typeof dict.brightText == "undefined") {
+        dict.brightText = this._isColorBright(fontStyle.color);
       }
 
-      
-      delete fontStyle.color;
-
-      if (!this.visible)
+      if (!dict.visible)
         this.show(window);
       else
         this._maybeCreateModalHighlightNodes(window);
 
-      outlineNode = this._modalHighlightOutline;
-      outlineNode.setTextContentForElement(kModalOutlineId + "-text", textContent.join(" "));
-      
-      fontStyle.lineHeight = rect.height + "px";
-      outlineNode.setAttributeForElement(kModalOutlineId + "-text", "style",
-        this._getHTMLFontStyle(fontStyle));
-
-      if (typeof outlineNode.getAttributeForElement(kModalOutlineId, "hidden") == "string")
-        outlineNode.removeAttributeForElement(kModalOutlineId, "hidden");
-      let { scrollX, scrollY } = this._getScrollPosition(window);
-      outlineNode.setAttributeForElement(kModalOutlineId, "style",
-        `top: ${scrollY + rect.top}px; left: ${scrollX + rect.left}px;
-        height: ${rect.height}px; width: ${rect.width}px;`);
+      this._updateRangeOutline(dict, textContent, fontStyle);
     }
 
-    outlineNode = this._modalHighlightOutline;
+    outlineNode = dict.modalHighlightOutline;
     try {
       outlineNode.removeAttributeForElement(kModalOutlineId, "grow");
     } catch (ex) {}
@@ -454,12 +475,18 @@ FinderHighlighter.prototype = {
 
 
 
-  clear() {
-    this._currentFoundRange = null;
+  clear(window = null) {
+    if (!window) {
+      
+      gWindows.clear();
+      return;
+    }
 
-    
-    if (this._modalHighlightRectsMap)
-      this._modalHighlightRectsMap.clear();
+    let dict = this.getForWindow(window.top);
+    dict.currentFoundRange = null;
+    dict.dynamicRangesSet.clear();
+    dict.frames.clear();
+    dict.modalHighlightRectsMap.clear();
   },
 
   
@@ -469,21 +496,22 @@ FinderHighlighter.prototype = {
 
 
   onLocationChange() {
-    this.clear();
+    let window = this.finder._getWindow();
+    let dict = this.getForWindow(window);
+    this.clear(window);
 
-    if (!this._modalHighlightOutline)
+    if (!dict.modalHighlightOutline)
       return;
 
     if (kDebug) {
-      this._modalHighlightOutline.remove();
+      dict.modalHighlightOutline.remove();
     } else {
       try {
-        this.finder._getWindow().document
-            .removeAnonymousContent(this._modalHighlightOutline);
+        window.document.removeAnonymousContent(dict.modalHighlightOutline);
       } catch (ex) {}
     }
 
-    this._modalHighlightOutline = null;
+    dict.modalHighlightOutline = null;
   },
 
   
@@ -523,6 +551,8 @@ FinderHighlighter.prototype = {
 
 
   _clearSelection(controller, restoreRange = null) {
+    if (!controller)
+      return;
     let sel = controller.getSelection(Ci.nsISelectionController.SELECTION_FIND);
     sel.removeAllRanges();
     if (restoreRange) {
@@ -551,14 +581,36 @@ FinderHighlighter.prototype = {
 
 
 
-  _getScrollPosition(window = null) {
+
+
+
+  _getRootBounds(window) {
+    let dwu = this._getDWU(window);
+    let cssPageRect = Rect.fromRect(dwu.getRootBounds());
+
     let scrollX = {};
     let scrollY = {};
-    this._getDWU(window).getScrollXY(false, scrollX, scrollY);
-    return {
-      scrollX: scrollX.value,
-      scrollY: scrollY.value
-    };
+    dwu.getScrollXY(false, scrollX, scrollY);
+    cssPageRect.translate(scrollX.value, scrollY.value);
+
+    
+    let currWin = window;
+    while (currWin != window.top) {
+      
+      
+      let el = this._getDWU(currWin).containerElement;
+      currWin = window.parent;
+      dwu = this._getDWU(currWin);
+      let parentRect = Rect.fromRect(dwu.getBoundsWithoutFlushing(el));
+
+      
+      dwu.getScrollXY(false, scrollX, scrollY);
+      parentRect.translate(scrollX.value, scrollY.value);
+
+      cssPageRect.translate(parentRect.left, parentRect.top);
+    }
+
+    return cssPageRect;
   },
 
   
@@ -572,7 +624,7 @@ FinderHighlighter.prototype = {
   _getWindowDimensions(window) {
     
     let dwu = this._getDWU(window);
-    let {width, height} = dwu.getBoundsWithoutFlushing(window.document.body);
+    let { width, height } = dwu.getRootBounds();
 
     if (!width || !height) {
       
@@ -665,13 +717,59 @@ FinderHighlighter.prototype = {
 
 
 
-  _modalHighlight(range, controller, window) {
-    if (!this._getRangeContentArray(range).length)
-      return;
+
+
+  _isInDynamicContainer(range) {
+    const kFixed = new Set(["fixed", "sticky"]);
+    let node = range.startContainer;
+    while (node.nodeType != 1)
+      node = node.parentNode;
+    let document = node.ownerDocument;
+    let window = document.defaultView;
+    let dict = this.getForWindow(window.top);
+
+    
+    if (window != window.top) {
+      if (!dict.frames.has(window))
+        dict.frames.set(window, null);
+      return true;
+    }
+
+    do {
+      if (kFixed.has(window.getComputedStyle(node, null).position))
+        return true;
+      node = node.parentNode;
+    } while (node && node != document.documentElement)
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  _updateRangeRects(range, checkIfDynamic = true, dict = null) {
+    let window = range.startContainer.ownerDocument.defaultView;
+    let bounds;
+    
+    if (dict && dict.frames.has(window)) {
+      bounds = dict.frames.get(window);
+      if (!bounds) {
+        bounds = this._getRootBounds(window);
+        dict.frames.set(window, bounds);
+      }
+    } else
+      bounds = this._getRootBounds(window);
 
     let rects = new Set();
-    
-    let { scrollX, scrollY } = this._getScrollPosition(window);
     
     
     
@@ -679,14 +777,86 @@ FinderHighlighter.prototype = {
       rects.add({
         height: dims.bottom - dims.top,
         width: dims.right - dims.left,
-        y: dims.top + scrollY,
-        x: dims.left + scrollX
+        y: dims.top + bounds.top,
+        x: dims.left + bounds.left
       });
     }
 
-    if (!this._modalHighlightRectsMap)
-      this._modalHighlightRectsMap = new Map();
-    this._modalHighlightRectsMap.set(range, rects);
+    dict = dict || this.getForWindow(window.top);
+    dict.modalHighlightRectsMap.set(range, rects);
+    if (checkIfDynamic && this._isInDynamicContainer(range))
+      dict.dynamicRangesSet.add(range);
+  },
+
+  
+
+
+
+
+
+
+  _updateFixedRangesRects(dict) {
+    for (let range of dict.dynamicRangesSet)
+      this._updateRangeRects(range, false, dict);
+    
+    for (let frame of dict.frames.keys())
+      dict.frames.set(frame, null);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _updateRangeOutline(dict, textContent = [], fontStyle = null) {
+    let outlineNode = dict.modalHighlightOutline;
+    let range = dict.currentFoundRange;
+    if (!outlineNode || !range)
+      return;
+    let rect = range.getClientRects()[0];
+    if (!rect)
+      return;
+
+    if (!fontStyle)
+      fontStyle = this._getRangeFontStyle(range);
+    
+    delete fontStyle.color;
+
+    if (textContent.length)
+      outlineNode.setTextContentForElement(kModalOutlineId + "-text", textContent.join(" "));
+    
+    fontStyle.lineHeight = rect.height + "px";
+    outlineNode.setAttributeForElement(kModalOutlineId + "-text", "style",
+      this._getHTMLFontStyle(fontStyle));
+
+    if (typeof outlineNode.getAttributeForElement(kModalOutlineId, "hidden") == "string")
+      outlineNode.removeAttributeForElement(kModalOutlineId, "hidden");
+
+    let window = range.startContainer.ownerDocument.defaultView;
+    let { left, top } = this._getRootBounds(window);
+    outlineNode.setAttributeForElement(kModalOutlineId, "style",
+      `top: ${top + rect.top}px; left: ${left + rect.left}px;
+      height: ${rect.height}px; width: ${rect.width}px;`);
+  },
+
+  
+
+
+
+
+
+
+  _modalHighlight(range, controller, window) {
+    if (!this._getRangeContentArray(range).length)
+      return;
+
+    this._updateRangeRects(range);
 
     this.show(window);
     
@@ -701,8 +871,10 @@ FinderHighlighter.prototype = {
 
 
   _maybeCreateModalHighlightNodes(window) {
-    if (this._modalHighlightOutline) {
-      if (!this._modalHighlightAllMask) {
+    window = window.top;
+    let dict = this.getForWindow(window);
+    if (dict.modalHighlightOutline) {
+      if (!dict.modalHighlightAllMask) {
         
         this._repaintHighlightAllMask(window, false);
         this._scheduleRepaintOfMask(window);
@@ -738,7 +910,7 @@ FinderHighlighter.prototype = {
     outlineBox.appendChild(outlineBoxText);
 
     container.appendChild(outlineBox);
-    this._modalHighlightOutline = kDebug ?
+    dict.modalHighlightOutline = kDebug ?
       mockAnonymousContentNode(document.body.appendChild(container.firstChild)) :
       document.insertAnonymousContent(container);
 
@@ -755,6 +927,8 @@ FinderHighlighter.prototype = {
 
 
   _repaintHighlightAllMask(window, paintContent = true) {
+    window = window.top;
+    let dict = this.getForWindow(window);
     let document = window.document;
 
     const kMaskId = kModalIdPrefix + "-findbar-modalHighlight-outlineMask";
@@ -762,23 +936,23 @@ FinderHighlighter.prototype = {
 
     
     let {width, height} = this._getWindowDimensions(window);
-    this._lastWindowDimensions = { width, height };
+    dict.lastWindowDimensions = { width, height };
     maskNode.setAttribute("id", kMaskId);
     maskNode.setAttribute("class", kMaskId + (kDebug ? ` ${kModalIdPrefix}-findbar-debug` : ""));
     maskNode.setAttribute("style", `width: ${width}px; height: ${height}px;`);
-    if (this._brightText)
+    if (dict.brightText)
       maskNode.setAttribute("brighttext", "true");
 
-    if (paintContent || this._modalHighlightAllMask) {
+    if (paintContent || dict.modalHighlightAllMask) {
+      this._updateRangeOutline(dict);
+      this._updateFixedRangesRects(dict);
       
       let maskContent = [];
       const kRectClassName = kModalIdPrefix + "-findbar-modalHighlight-rect";
-      if (this._modalHighlightRectsMap) {
-        for (let [range, rects] of this._modalHighlightRectsMap) {
-          for (let rect of rects) {
-            maskContent.push(`<div class="${kRectClassName}" style="top: ${rect.y}px;
-              left: ${rect.x}px; height: ${rect.height}px; width: ${rect.width}px;"></div>`);
-          }
+      for (let [range, rects] of dict.modalHighlightRectsMap) {
+        for (let rect of rects) {
+          maskContent.push(`<div class="${kRectClassName}" style="top: ${rect.y}px;
+            left: ${rect.x}px; height: ${rect.height}px; width: ${rect.width}px;"></div>`);
         }
       }
       maskNode.innerHTML = maskContent.join("");
@@ -788,7 +962,7 @@ FinderHighlighter.prototype = {
     
     this._removeHighlightAllMask(window);
 
-    this._modalHighlightAllMask = kDebug ?
+    dict.modalHighlightAllMask = kDebug ?
       mockAnonymousContentNode(document.body.appendChild(maskNode)) :
       document.insertAnonymousContent(maskNode);
   },
@@ -799,19 +973,21 @@ FinderHighlighter.prototype = {
 
 
   _removeHighlightAllMask(window) {
-    if (!this._modalHighlightAllMask)
+    window = window.top;
+    let dict = this.getForWindow(window);
+    if (!dict.modalHighlightAllMask)
       return;
 
     
     
     if (kDebug) {
-      this._modalHighlightAllMask.remove();
+      dict.modalHighlightAllMask.remove();
     } else {
       try {
-        window.document.removeAnonymousContent(this._modalHighlightAllMask);
+        window.document.removeAnonymousContent(dict.modalHighlightAllMask);
       } catch (ex) {}
     }
-    this._modalHighlightAllMask = null;
+    dict.modalHighlightAllMask = null;
   },
 
   
@@ -824,33 +1000,42 @@ FinderHighlighter.prototype = {
 
 
 
-  _scheduleRepaintOfMask(window, contentChanged = false) {
-    if (this._modalRepaintScheduler) {
-      window.clearTimeout(this._modalRepaintScheduler);
-      this._modalRepaintScheduler = null;
-    }
+
+
+
+
+
+  _scheduleRepaintOfMask(window, { contentChanged, scrollOnly } = { contentChanged: false, scrollOnly: false }) {
+    window = window.top;
+    let dict = this.getForWindow(window);
+    let repaintFixedNodes = (scrollOnly && !!dict.dynamicRangesSet.size);
 
     
     
-    if (!this._unconditionalRepaintRequested)
-      this._unconditionalRepaintRequested = !contentChanged;
+    if (!dict.unconditionalRepaintRequested)
+      dict.unconditionalRepaintRequested = !contentChanged || repaintFixedNodes;
 
-    this._modalRepaintScheduler = window.setTimeout(() => {
-      if (this._unconditionalRepaintRequested) {
-        this._unconditionalRepaintRequested = false;
+    if (dict.modalRepaintScheduler)
+      return;
+
+    dict.modalRepaintScheduler = window.setTimeout(() => {
+      dict.modalRepaintScheduler = null;
+
+      if (dict.unconditionalRepaintRequested) {
+        dict.unconditionalRepaintRequested = false;
         this._repaintHighlightAllMask(window);
         return;
       }
 
       let { width, height } = this._getWindowDimensions(window);
-      if (!this._modalHighlightRectsMap ||
-          (Math.abs(this._lastWindowDimensions.width - width) < kContentChangeThresholdPx &&
-           Math.abs(this._lastWindowDimensions.height - height) < kContentChangeThresholdPx)) {
+      if (!dict.modalHighlightRectsMap.size ||
+          (Math.abs(dict.lastWindowDimensions.width - width) < kContentChangeThresholdPx &&
+           Math.abs(dict.lastWindowDimensions.height - height) < kContentChangeThresholdPx)) {
         return;
       }
 
       this.iterator.restart(this.finder);
-      this._lastWindowDimensions = { width, height };
+      dict.lastWindowDimensions = { width, height };
       this._repaintHighlightAllMask(window);
     }, kModalHighlightRepaintFreqMs);
   },
@@ -864,12 +1049,9 @@ FinderHighlighter.prototype = {
 
 
   _maybeInstallStyleSheet(window) {
-    let document = window.document;
-    
-    
-    if (!this._modalInstalledSheets)
-      this._modalInstalledSheets = new WeakMap();
-    if (this._modalInstalledSheets.has(document))
+    window = window.top;
+    let dict = this.getForWindow(window);
+    if (dict.installedSheet)
       return;
 
     let dwu = this._getDWU(window);
@@ -877,7 +1059,7 @@ FinderHighlighter.prototype = {
     try {
       dwu.loadSheetUsingURIString(uri, dwu.AGENT_SHEET);
     } catch (e) {}
-    this._modalInstalledSheets.set(document, uri);
+    dict.installedSheet = true;
   },
 
   
@@ -887,16 +1069,22 @@ FinderHighlighter.prototype = {
 
 
   _addModalHighlightListeners(window) {
-    if (this._highlightListeners)
+    window = window.top;
+    let dict = this.getForWindow(window);
+    if (dict.highlightListeners)
       return;
 
-    this._highlightListeners = [
-      this._scheduleRepaintOfMask.bind(this, window, true),
+    window = window.top;
+    dict.highlightListeners = [
+      this._scheduleRepaintOfMask.bind(this, window, { contentChanged: true }),
+      this._scheduleRepaintOfMask.bind(this, window, { scrollOnly: true }),
       this.hide.bind(this, window, null)
     ];
     let target = this.iterator._getDocShell(window).chromeEventHandler;
-    target.addEventListener("MozAfterPaint", this._highlightListeners[0]);
-    window.addEventListener("click", this._highlightListeners[1]);
+    target.addEventListener("MozAfterPaint", dict.highlightListeners[0]);
+    target.addEventListener("DOMMouseScroll", dict.highlightListeners[1]);
+    target.addEventListener("mousewheel", dict.highlightListeners[1]);
+    target.addEventListener("click", dict.highlightListeners[2]);
   },
 
   
@@ -905,14 +1093,18 @@ FinderHighlighter.prototype = {
 
 
   _removeModalHighlightListeners(window) {
-    if (!this._highlightListeners)
+    window = window.top;
+    let dict = this.getForWindow(window);
+    if (!dict.highlightListeners)
       return;
 
     let target = this.iterator._getDocShell(window).chromeEventHandler;
-    target.removeEventListener("MozAfterPaint", this._highlightListeners[0]);
-    window.removeEventListener("click", this._highlightListeners[1]);
+    target.removeEventListener("MozAfterPaint", dict.highlightListeners[0]);
+    target.removeEventListener("DOMMouseScroll", dict.highlightListeners[1]);
+    target.removeEventListener("mousewheel", dict.highlightListeners[1]);
+    target.removeEventListener("click", dict.highlightListeners[2]);
 
-    this._highlightListeners = null;
+    dict.highlightListeners = null;
   },
 
   
