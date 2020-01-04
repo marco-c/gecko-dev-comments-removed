@@ -213,29 +213,22 @@ private:
   nsTArray<uint8_t> mInitData;
   nsString mInitDataType;
 };
+
+void
+MediaFormatReader::SetCDMProxy(CDMProxy* aProxy)
+{
+  nsRefPtr<CDMProxy> proxy = aProxy;
+  nsRefPtr<MediaFormatReader> self = this;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+    self->mCDMProxy = proxy;
+  });
+  OwnerThread()->DispatchDirectTask(r.forget());
+}
 #endif 
 
 bool MediaFormatReader::IsWaitingOnCDMResource() {
 #ifdef MOZ_EME
-  nsRefPtr<CDMProxy> proxy;
-  {
-    if (!IsEncrypted()) {
-      
-      return false;
-    }
-    ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-    proxy = mDecoder->GetCDMProxy();
-    if (!proxy) {
-      
-      return true;
-    }
-  }
-  
-  {
-    CDMCaps::AutoLock caps(proxy->Capabilites());
-    LOG("capsKnown=%d", caps.AreCapsKnown());
-    return !caps.AreCapsKnown();
-  }
+  return IsEncrypted() && !mCDMProxy;
 #else
   return false;
 #endif
@@ -392,18 +385,14 @@ MediaFormatReader::EnsureDecodersCreated()
       
       
       
-      nsRefPtr<CDMProxy> proxy;
       {
-        ReentrantMonitorAutoEnter mon(mDecoder->GetReentrantMonitor());
-        proxy = mDecoder->GetCDMProxy();
-        MOZ_ASSERT(proxy);
-
-        CDMCaps::AutoLock caps(proxy->Capabilites());
+        MOZ_ASSERT(mCDMProxy);
+        CDMCaps::AutoLock caps(mCDMProxy->Capabilites());
         mInfo.mVideo.mIsRenderedExternally = caps.CanRenderVideo();
         mInfo.mAudio.mIsRenderedExternally = caps.CanRenderAudio();
       }
 
-      mPlatform = PlatformDecoderModule::CreateCDMWrapper(proxy);
+      mPlatform = PlatformDecoderModule::CreateCDMWrapper(mCDMProxy);
       NS_ENSURE_TRUE(mPlatform, false);
 #else
       

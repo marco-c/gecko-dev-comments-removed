@@ -20,6 +20,7 @@
 
 namespace mozilla {
 
+class CDMProxy;
 class MediaDecoderReader;
 
 struct WaitForDataRejectValue
@@ -194,6 +195,10 @@ public:
   
   
   virtual void SetIdle() { }
+
+#ifdef MOZ_EME
+  virtual void SetCDMProxy(CDMProxy* aProxy) {}
+#endif
 
   
   
