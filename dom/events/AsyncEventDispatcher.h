@@ -25,7 +25,7 @@ namespace mozilla {
 
 
 
-class AsyncEventDispatcher : public nsCancelableRunnable
+class AsyncEventDispatcher : public CancelableRunnable
 {
 public:
   

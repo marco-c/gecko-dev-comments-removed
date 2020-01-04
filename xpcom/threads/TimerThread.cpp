@@ -134,7 +134,7 @@ public:
 
 
 
-class nsTimerEvent : public nsCancelableRunnable
+class nsTimerEvent : public CancelableRunnable
 {
 public:
   NS_IMETHOD Run() override;

@@ -15,7 +15,7 @@
 namespace mozilla {
 
 
-class DebuggerOnGCRunnable : public nsCancelableRunnable
+class DebuggerOnGCRunnable : public CancelableRunnable
 {
   JS::dbg::GarbageCollectionEvent::Ptr mGCData;
 
