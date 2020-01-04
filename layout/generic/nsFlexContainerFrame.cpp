@@ -963,6 +963,29 @@ BuildStrutInfoFromCollapsedItems(const FlexLine* aFirstLine,
 }
 
 
+
+
+static int32_t
+GetOrderOrBoxOrdinalGroup(nsIFrame* aFlexItem, bool aIsLegacyBox)
+{
+  if (aIsLegacyBox) {
+    
+    
+    
+    
+    
+    
+    
+    uint32_t clampedBoxOrdinal = std::min(aFlexItem->StyleXUL()->mBoxOrdinal,
+                                          static_cast<uint32_t>(INT32_MAX));
+    return static_cast<int32_t>(clampedBoxOrdinal);
+  }
+
+  
+  return aFlexItem->StylePosition()->mOrder;
+}
+
+
 static nsIFrame*
 GetFirstNonAnonBoxDescendant(nsIFrame* aFrame)
 {
@@ -1026,6 +1049,11 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
 {
   MOZ_ASSERT(aFrame1->IsFlexItem() && aFrame2->IsFlexItem(),
              "this method only intended for comparing flex items");
+  MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
+             "this method only intended for comparing siblings");
+  nsStyleContext* parentFrameSC = aFrame1->GetParent()->StyleContext();
+  bool isInLegacyBox = IsLegacyBox(parentFrameSC->StyleDisplay(),
+                                   parentFrameSC);
 
   if (aFrame1 == aFrame2) {
     
@@ -1039,8 +1067,8 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
     nsIFrame* aRealFrame1 = nsPlaceholderFrame::GetRealFrameFor(aFrame1);
     nsIFrame* aRealFrame2 = nsPlaceholderFrame::GetRealFrameFor(aFrame2);
 
-    int32_t order1 = aRealFrame1->StylePosition()->mOrder;
-    int32_t order2 = aRealFrame2->StylePosition()->mOrder;
+    int32_t order1 = GetOrderOrBoxOrdinalGroup(aRealFrame1, isInLegacyBox);
+    int32_t order2 = GetOrderOrBoxOrdinalGroup(aRealFrame2, isInLegacyBox);
 
     if (order1 != order2) {
       return order1 < order2;
@@ -1107,13 +1135,18 @@ IsOrderLEQ(nsIFrame* aFrame1,
 {
   MOZ_ASSERT(aFrame1->IsFlexItem() && aFrame2->IsFlexItem(),
              "this method only intended for comparing flex items");
+  MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
+             "this method only intended for comparing siblings");
+  nsStyleContext* parentFrameSC = aFrame1->GetParent()->StyleContext();
+  bool isInLegacyBox = IsLegacyBox(parentFrameSC->StyleDisplay(),
+                                   parentFrameSC);
 
   
   nsIFrame* aRealFrame1 = nsPlaceholderFrame::GetRealFrameFor(aFrame1);
   nsIFrame* aRealFrame2 = nsPlaceholderFrame::GetRealFrameFor(aFrame2);
 
-  int32_t order1 = aRealFrame1->StylePosition()->mOrder;
-  int32_t order2 = aRealFrame2->StylePosition()->mOrder;
+  int32_t order1 = GetOrderOrBoxOrdinalGroup(aRealFrame1, isInLegacyBox);
+  int32_t order2 = GetOrderOrBoxOrdinalGroup(aRealFrame2, isInLegacyBox);
 
   return order1 <= order2;
 }
