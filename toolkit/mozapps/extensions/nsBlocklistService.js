@@ -1383,8 +1383,15 @@ Blocklist.prototype = {
 
         
         
-        if (!addon.isActive)
+        if (!addon.isActive) {
+          
+          
+          
+          
+          if (state == Ci.nsIBlocklistService.STATE_SOFTBLOCKED && !addon.userDisabled)
+            addon.softDisabled = true;
           continue;
+        }
 
         addonList.push({
           name: addon.name,
