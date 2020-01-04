@@ -473,18 +473,18 @@ NewArrayOperation(JSContext* cx, HandleScript script, jsbytecode* pc, uint32_t l
 JSObject*
 NewArrayOperationWithTemplate(JSContext* cx, HandleObject templateObject);
 
-inline bool
-SetConstOperation(JSContext* cx, HandleObject varobj, HandlePropertyName name, HandleValue rval)
-{
-    return DefineProperty(cx, varobj, name, rval, nullptr, nullptr,
-                          JSPROP_ENUMERATE | JSPROP_PERMANENT | JSPROP_READONLY);
-}
-
 void
 ReportUninitializedLexical(JSContext* cx, HandlePropertyName name);
 
 void
 ReportUninitializedLexical(JSContext* cx, HandleScript script, jsbytecode* pc);
+
+
+
+
+void
+ReportRuntimeRedeclaration(JSContext* cx, HandlePropertyName name,
+                           frontend::Definition::Kind declKind);
 
 }  
 

@@ -179,7 +179,14 @@ AssertDynamicScopeMatchesStaticScope(JSContext* cx, JSScript* script, JSObject* 
         }
     }
 
-    MOZ_ASSERT(scope->is<GlobalObject>() || scope->is<DebugScopeObject>());
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(scope->is<GlobalObject>() || IsGlobalLexicalScope(scope) ||
+               scope->is<DebugScopeObject>());
 #endif
 }
 

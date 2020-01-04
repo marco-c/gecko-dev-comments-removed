@@ -1666,6 +1666,10 @@ class DebugScopeProxy : public BaseProxyHandler
             if (!shape)
                 return true;
 
+            
+            if (IsGlobalLexicalScope(block))
+                return true;
+
             unsigned i = block->staticBlock().shapeToIndex(*shape);
             if (block->staticBlock().isAliased(i))
                 return true;
