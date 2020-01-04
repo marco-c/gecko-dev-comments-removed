@@ -1267,8 +1267,7 @@ MSimdConvert::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition
         
         MInstruction* c16 = MConstant::New(alloc, Int32Value(16));
         addTo->add(c16);
-        MInstruction* hi = MSimdShift::New(alloc, obj, c16, MSimdShift::ursh);
-        addTo->add(hi);
+        MInstruction* hi = MSimdShift::AddLegalized(alloc, addTo, obj, c16, MSimdShift::ursh);
 
         
         MInstruction* m16 =
@@ -1363,6 +1362,94 @@ MSimdBinaryComp::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinit
 
     
     MInstruction* result = MSimdBinaryComp::New(alloc, left, right, op, sign);
+    addTo->add(result);
+    return result;
+}
+
+MInstruction*
+MSimdShift::AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition* left,
+                         MDefinition* right, Operation op)
+{
+    MIRType opType = left->type();
+    MOZ_ASSERT(IsIntegerSimdType(opType));
+
+    
+    if (opType == MIRType::Int8x16) {
+        
+        
+        
+        
+        
+        
+        
+        
+        MInstruction* wide = MSimdReinterpretCast::New(alloc, left, MIRType::Int16x8);
+        addTo->add(wide);
+
+        
+
+        MInstruction* shiftMask = MConstant::New(alloc, Int32Value(7));
+        addTo->add(shiftMask);
+        MBinaryBitwiseInstruction* shiftBy = MBitAnd::New(alloc, right, shiftMask);
+        shiftBy->setInt32Specialization();
+        addTo->add(shiftBy);
+
+        
+        MInstruction* eight = MConstant::New(alloc, Int32Value(8));
+        addTo->add(eight);
+        MInstruction* even = MSimdShift::AddLegalized(alloc, addTo, wide, eight, lsh);
+
+        
+        MInstruction* odd = wide;
+
+        
+        
+
+        MInstruction* mask =
+          MSimdConstant::New(alloc, SimdConstant::SplatX8(int16_t(0xff00)), MIRType::Int16x8);
+        addTo->add(mask);
+
+        
+        if (op == lsh) {
+            odd = MSimdBinaryBitwise::New(alloc, odd, mask, MSimdBinaryBitwise::and_);
+            addTo->add(odd);
+            
+        }
+
+        
+        
+        even = MSimdShift::AddLegalized(alloc, addTo, even, shiftBy, op);
+        odd = MSimdShift::AddLegalized(alloc, addTo, odd, shiftBy, op);
+
+        
+        
+
+        
+        if (op != lsh) {
+            odd = MSimdBinaryBitwise::New(alloc, odd, mask, MSimdBinaryBitwise::and_);
+            addTo->add(odd);
+            
+        }
+
+        
+        even = MSimdShift::AddLegalized(alloc, addTo, even, eight, ursh);
+
+        
+        
+        
+        
+        
+        
+        
+        MInstruction* result = MSimdBinaryBitwise::New(alloc, even, odd, MSimdBinaryBitwise::or_);
+        addTo->add(result);
+        result = MSimdReinterpretCast::New(alloc, result, opType);
+        addTo->add(result);
+        return result;
+    }
+
+    
+    MInstruction* result = MSimdShift::New(alloc, left, right, op);
     addTo->add(result);
     return result;
 }

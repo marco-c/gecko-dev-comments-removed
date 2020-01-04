@@ -2492,6 +2492,13 @@ class MSimdShift
     }
 
     
+    
+    
+    
+    static MInstruction* AddLegalized(TempAllocator& alloc, MBasicBlock* addTo, MDefinition* left,
+                                      MDefinition* right, Operation op);
+
+    
     static Operation rshForSign(SimdSign sign) {
         return sign == SimdSign::Unsigned ? ursh : rsh;
     }
