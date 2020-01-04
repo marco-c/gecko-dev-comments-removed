@@ -10,6 +10,7 @@
 #include "stdint.h"
 #include "nsColor.h"
 #include "nsStyleStruct.h"
+#include "nsStyleCoord.h"
 #include "mozilla/css/SheetParsingMode.h"
 #include "nsProxyRelease.h"
 
@@ -194,6 +195,14 @@ void Gecko_InitializeImageLayer(nsStyleImageLayers::Layer* layer,
                                 nsStyleImageLayers::LayerType layer_type);
 
 
+void Gecko_ResetStyleCoord(nsStyleUnit* unit, nsStyleUnion* value);
+
+
+void Gecko_SetStyleCoordCalcValue(nsStyleUnit* unit, nsStyleUnion* value, nsStyleCoord::CalcValue calc);
+
+NS_DECL_THREADSAFE_FFI_REFCOUNTING(nsStyleCoord::Calc, Calc);
+
+
 
 
 
@@ -217,17 +226,13 @@ void Servo_DropStyleSet(RawServoStyleSet* set);
 
 
 ServoDeclarationBlock* Servo_ParseStyleAttribute(const uint8_t* bytes,
-                                                 uint32_t length,
+                                                 uint8_t length,
                                                  nsHTMLCSSStyleSheet* cache);
 void Servo_DropDeclarationBlock(ServoDeclarationBlock* declarations);
 nsHTMLCSSStyleSheet* Servo_GetDeclarationBlockCache(
     ServoDeclarationBlock* declarations);
 void Servo_SetDeclarationBlockImmutable(ServoDeclarationBlock* declarations);
 void Servo_ClearDeclarationBlockCachePointer(ServoDeclarationBlock* declarations);
-
-
-bool Servo_CSSSupports(const uint8_t* name, uint32_t name_length,
-                       const uint8_t* value, uint32_t value_length);
 
 
 ServoComputedValues* Servo_GetComputedValues(RawGeckoNode* node);

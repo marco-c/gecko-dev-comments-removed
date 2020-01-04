@@ -104,7 +104,7 @@ public:
   
   
   struct Calc final : public CalcValue {
-    NS_INLINE_DECL_REFCOUNTING(Calc)
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Calc)
     Calc() {}
 
   private:
