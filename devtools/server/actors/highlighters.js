@@ -10,12 +10,14 @@ const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const EventEmitter = require("devtools/shared/event-emitter");
 const events = require("sdk/event/core");
 const protocol = require("devtools/shared/protocol");
+const Services = require("Services");
 const { isWindowIncluded } = require("devtools/shared/layout/utils");
 const { highlighterSpec, customHighlighterSpec } = require("devtools/shared/specs/highlighters");
 const { isXUL, isNodeValid } = require("./highlighters/utils/markup");
 const { SimpleOutlineHighlighter } = require("./highlighters/simple-outline");
 
 const HIGHLIGHTER_PICKED_TIMER = 1000;
+const IS_OSX = Services.appinfo.OS === "Darwin";
 
 
 
@@ -332,7 +334,13 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
           this.cancelPick();
           events.emit(this._walker, "picker-node-canceled");
           return;
-
+        case Ci.nsIDOMKeyEvent.DOM_VK_C:
+          if ((IS_OSX && event.metaKey && event.altKey) ||
+            (!IS_OSX && event.ctrlKey && event.shiftKey)) {
+            this.cancelPick();
+            events.emit(this._walker, "picker-node-canceled");
+            return;
+          }
         default: return;
       }
 
