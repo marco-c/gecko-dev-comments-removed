@@ -405,6 +405,31 @@ NegativeLookahead(LifoAlloc* alloc, char16_t from, char16_t to)
     return alloc->newInfallible<RegExpLookahead>(RangeAtom(alloc, from, to), false, 0, 0);
 }
 
+static bool
+IsSyntaxCharacter(widechar c)
+{
+  switch (c) {
+    case '^':
+    case '$':
+    case '\\':
+    case '.':
+    case '*':
+    case '+':
+    case '?':
+    case '(':
+    case ')':
+    case '[':
+    case ']':
+    case '{':
+    case '}':
+    case '|':
+    case '/':
+      return true;
+    default:
+      return false;
+  }
+}
+
 #ifdef DEBUG
 
 static bool
@@ -460,14 +485,21 @@ RegExpParser<CharT>::ParseClassCharacterEscape(widechar* code)
         widechar letter = controlLetter & ~('A' ^ 'a');
         
         
-        if ((controlLetter >= '0' && controlLetter <= '9') ||
-            controlLetter == '_' ||
-            (letter >= 'A' && letter <= 'Z')) {
+        
+        if ((!unicode_ &&
+             ((controlLetter >= '0' && controlLetter <= '9') ||
+              controlLetter == '_')) ||
+            (letter >= 'A' && letter <= 'Z'))
+        {
             Advance(2);
             
             
             *code = controlLetter & 0x1f;
             return true;
+        }
+        if (unicode_) {
+            ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
+            return false;
         }
         
         
@@ -476,6 +508,15 @@ RegExpParser<CharT>::ParseClassCharacterEscape(widechar* code)
       }
       case '0': case '1': case '2': case '3': case '4': case '5':
       case '6': case '7':
+        if (unicode_) {
+            if (current() == '0') {
+                *code = 0;
+                return true;
+            }
+            ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
+            return false;
+        }
+        
         
         
         
@@ -487,6 +528,10 @@ RegExpParser<CharT>::ParseClassCharacterEscape(widechar* code)
         if (ParseHexEscape(2, &value)) {
             *code = value;
             return true;
+        }
+        if (unicode_) {
+            ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
+            return false;
         }
         
         
@@ -531,6 +576,10 @@ RegExpParser<CharT>::ParseClassCharacterEscape(widechar* code)
         
         
         widechar result = current();
+        if (unicode_ && result != '-' && !IsSyntaxCharacter(result)) {
+            ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
+            return false;
+        }
         Advance();
         *code = result;
         return true;
@@ -1388,6 +1437,8 @@ RegExpParser<CharT>::ParseDisjunction()
                                                    capture_index);
             }
             builder->AddAtom(body);
+            if (unicode_ && (group_type == POSITIVE_LOOKAHEAD || group_type == NEGATIVE_LOOKAHEAD))
+                continue;
             
             
             break;
@@ -1527,6 +1578,8 @@ RegExpParser<CharT>::ParseDisjunction()
                     builder->AddAtom(atom);
                     break;
                 }
+                if (unicode_)
+                    return ReportError(JSMSG_BACK_REF_OUT_OF_RANGE);
                 widechar first_digit = Next();
                 if (first_digit == '8' || first_digit == '9') {
                     
@@ -1537,6 +1590,14 @@ RegExpParser<CharT>::ParseDisjunction()
               }
                 
               case '0': {
+                if (unicode_) {
+                    Advance(2);
+                    if (IsDecimalDigit(current()))
+                        return ReportError(JSMSG_INVALID_DECIMAL_ESCAPE);
+                    builder->AddCharacter(0);
+                    break;
+                }
+
                 Advance();
                 size_t octal = ParseOctalLiteral();
                 builder->AddCharacter(octal);
@@ -1571,6 +1632,8 @@ RegExpParser<CharT>::ParseDisjunction()
                 
                 widechar letter = controlLetter & ~('a' ^ 'A');
                 if (letter < 'A' || 'Z' < letter) {
+                    if (unicode_)
+                        return ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
                     
                     
                     
@@ -1588,6 +1651,8 @@ RegExpParser<CharT>::ParseDisjunction()
                 if (ParseHexEscape(2, &value)) {
                     builder->AddCharacter(value);
                 } else {
+                    if (unicode_)
+                        return ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
                     builder->AddCharacter('x');
                 }
                 break;
@@ -1639,12 +1704,16 @@ RegExpParser<CharT>::ParseDisjunction()
               }
               default:
                 
+                if (unicode_ && !IsSyntaxCharacter(Next()))
+                    return ReportError(JSMSG_INVALID_IDENTITY_ESCAPE);
                 builder->AddCharacter(Next());
                 Advance(2);
                 break;
             }
             break;
           case '{': {
+            if (unicode_)
+                return ReportError(JSMSG_RAW_BRACE_IN_REGEP);
             int dummy;
             if (ParseIntervalQuantifier(&dummy, &dummy))
                 return ReportError(JSMSG_NOTHING_TO_REPEAT);
@@ -1661,6 +1730,10 @@ RegExpParser<CharT>::ParseDisjunction()
                         builder->AddAtom(LeadSurrogateAtom(alloc, c));
                     else if (unicode::IsTrailSurrogate(c))
                         builder->AddAtom(TrailSurrogateAtom(alloc, c));
+                    else if (c == ']')
+                        return ReportError(JSMSG_RAW_BRACKET_IN_REGEP);
+                    else if (c == '}')
+                        return ReportError(JSMSG_RAW_BRACE_IN_REGEP);
                     else
                         builder->AddCharacter(c);
                     Advance();
