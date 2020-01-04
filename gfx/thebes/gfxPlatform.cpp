@@ -2055,7 +2055,6 @@ gfxPlatform::OptimalFormatForContent(gfxContentType aContent)
 
 
 
-static bool sLayersSupportsD3D9 = false;
 bool gANGLESupportsD3D11 = false;
 static bool sLayersSupportsHardwareVideoDecoding = false;
 static bool sLayersHardwareVideoDecodingFailed = false;
@@ -2086,15 +2085,7 @@ gfxPlatform::InitAcceleration()
   nsCString discardFailureId;
   int32_t status;
 #ifdef XP_WIN
-  if (gfxConfig::IsForcedOnByUser(Feature::HW_COMPOSITING)) {
-    sLayersSupportsD3D9 = true;
-  } else if (!gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly() && gfxInfo) {
-    if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_9_LAYERS, discardFailureId, &status))) {
-      if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
-        MOZ_ASSERT(!sPrefBrowserTabsRemoteAutostart || IsVistaOrLater());
-        sLayersSupportsD3D9 = true;
-      }
-    }
+  if (!gfxPrefs::LayersAccelerationDisabledDoNotUseDirectly() && gfxInfo) {
     if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_DIRECT3D_11_ANGLE, discardFailureId, &status))) {
       if (status == nsIGfxInfo::FEATURE_STATUS_OK) {
         gANGLESupportsD3D11 = true;
@@ -2153,15 +2144,6 @@ gfxPlatform::InitCompositorAccelerationPrefs()
   if (InSafeMode()) {
     feature.ForceDisable(FeatureStatus::Blocked, "Acceleration blocked by safe-mode");
   }
-}
-
-bool
-gfxPlatform::CanUseDirect3D9()
-{
-  
-  
-  MOZ_ASSERT(sLayersAccelerationPrefsInitialized);
-  return sLayersSupportsD3D9;
 }
 
 bool
