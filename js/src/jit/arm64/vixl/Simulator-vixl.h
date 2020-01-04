@@ -2668,9 +2668,6 @@ class Simulator : public DecoderVisitor {
  protected:
   
   js::Mutex lock_;
-#ifdef DEBUG
-  PRThread* lockOwner_;
-#endif
   Redirection* redirection_;
   mozilla::Vector<int64_t, 0, js::SystemAllocPolicy> spStack_;
 };
