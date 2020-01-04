@@ -34,10 +34,24 @@ private:
   explicit nsGIFDecoder2(RasterImage* aImage);
 
   
-  
   void      BeginGIF();
-  nsresult  BeginImageFrame(uint16_t aDepth);
+
+  
+
+
+
+
+
+
+
+  nsresult  BeginImageFrame(const gfx::IntRect& aFrameRect,
+                            uint16_t aDepth,
+                            bool aIsInterlaced);
+
+  
   void      EndImageFrame();
+
+  
   void      FlushImageData();
 
   nsresult  GifWrite(const uint8_t* buf, uint32_t numbytes);

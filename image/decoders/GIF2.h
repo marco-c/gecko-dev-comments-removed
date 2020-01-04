@@ -29,7 +29,6 @@ typedef enum {
     gif_global_colormap,
     gif_image_start,
     gif_image_header,
-    gif_image_header_continue,
     gif_image_colormap,
     gif_lzw_start,
     gif_lzw,
@@ -70,10 +69,6 @@ typedef struct gif_struct {
     int64_t pixels_remaining;  
 
     
-    unsigned x_offset, y_offset; 
-    unsigned height, width;
-    unsigned clamped_height;    
-    unsigned clamped_width;     
     int tpixel;                 
     int32_t disposal_method;    
     uint32_t* local_colormap;   
@@ -83,15 +78,14 @@ typedef struct gif_struct {
 
     
     int version;                
-    unsigned screen_width;      
-    unsigned screen_height;
+    int32_t screen_width;       
+    int32_t screen_height;
     uint32_t global_colormap_depth; 
     int images_decoded;         
     int loop_count;             
                                 
                                 
 
-    bool interlaced;            
     bool is_transparent;        
 
     uint16_t  prefix[MAX_BITS];            

@@ -185,21 +185,20 @@ nsGIFDecoder2::ClampToImageRect(const IntRect& aRect)
 
 
 nsresult
-nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
+nsGIFDecoder2::BeginImageFrame(const IntRect& aFrameRect,
+                               uint16_t aDepth,
+                               bool aIsInterlaced)
 {
   MOZ_ASSERT(HasSize());
 
-  IntRect frameRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
-                    mGIFStruct.width, mGIFStruct.height);
-
-  bool hasTransparency = CheckForTransparency(frameRect);
+  bool hasTransparency = CheckForTransparency(aFrameRect);
   gfx::SurfaceFormat format = hasTransparency ? SurfaceFormat::B8G8R8A8
                                               : SurfaceFormat::B8G8R8X8;
 
   
   MOZ_ASSERT_IF(mDownscaler, !GetImageMetadata().HasAnimation());
 
-  SurfacePipeFlags pipeFlags = mGIFStruct.interlaced
+  SurfacePipeFlags pipeFlags = aIsInterlaced
                              ? SurfacePipeFlags::DEINTERLACE
                              : SurfacePipeFlags();
 
@@ -210,7 +209,7 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
     IntSize targetSize = mDownscaler ? mDownscaler->TargetSize()
                                      : GetSize();
     IntRect targetFrameRect = mDownscaler ? IntRect(IntPoint(), targetSize)
-                                          : frameRect;
+                                          : aFrameRect;
 
     
     pipeFlags |= SurfacePipeFlags::PROGRESSIVE_DISPLAY;
@@ -226,7 +225,7 @@ nsGIFDecoder2::BeginImageFrame(uint16_t aDepth)
     MOZ_ASSERT(!mDownscaler);
     pipe =
       SurfacePipeFactory::CreatePalettedSurfacePipe(this, mGIFStruct.images_decoded,
-                                                    GetSize(), frameRect, format,
+                                                    GetSize(), aFrameRect, format,
                                                     aDepth, pipeFlags);
   }
 
@@ -249,25 +248,9 @@ nsGIFDecoder2::EndImageFrame()
   Opacity opacity = Opacity::SOME_TRANSPARENCY;
 
   
-  if (!mGIFStruct.images_decoded) {
+  if (mGIFStruct.images_decoded == 0) {
     
     FlushImageData();
-
-    
-    
-    
-    const uint32_t realFrameHeight = mGIFStruct.height + mGIFStruct.y_offset;
-    if (realFrameHeight < mGIFStruct.screen_height) {
-      if (mDownscaler) {
-        IntRect targetRect = IntRect(IntPoint(), mDownscaler->TargetSize());
-        PostInvalidation(IntRect(IntPoint(), GetSize()), Some(targetRect));
-      } else {
-        nsIntRect r(0, realFrameHeight,
-                    mGIFStruct.screen_width,
-                    mGIFStruct.screen_height - realFrameHeight);
-        PostInvalidation(r);
-      }
-    }
 
     
     
@@ -872,25 +855,26 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
         }
       }
 
-      
-      mGIFStruct.x_offset = GETINT16(q);
-      mGIFStruct.y_offset = GETINT16(q + 2);
+      IntRect frameRect;
 
       
-      mGIFStruct.width  = GETINT16(q + 4);
-      mGIFStruct.height = GETINT16(q + 6);
+      frameRect.x = GETINT16(q);
+      frameRect.y = GETINT16(q + 2);
+
+      
+      frameRect.width  = GETINT16(q + 4);
+      frameRect.height = GETINT16(q + 6);
 
       if (!mGIFStruct.images_decoded) {
         
         
         
-        if ((mGIFStruct.screen_height < mGIFStruct.height) ||
-            (mGIFStruct.screen_width < mGIFStruct.width) ||
+        if ((mGIFStruct.screen_height < frameRect.height) ||
+            (mGIFStruct.screen_width < frameRect.width) ||
             (mGIFStruct.version == 87)) {
-          mGIFStruct.screen_height = mGIFStruct.height;
-          mGIFStruct.screen_width = mGIFStruct.width;
-          mGIFStruct.x_offset = 0;
-          mGIFStruct.y_offset = 0;
+          mGIFStruct.screen_height = frameRect.height;
+          mGIFStruct.screen_width = frameRect.width;
+          frameRect.MoveTo(0, 0);
         }
         
         BeginGIF();
@@ -902,37 +886,20 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
 
         
         if (IsMetadataDecode()) {
-          IntRect frameRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
-                            mGIFStruct.width, mGIFStruct.height);
           CheckForTransparency(frameRect);
           return;
         }
       }
 
       
-      if (!mGIFStruct.height || !mGIFStruct.width) {
-        mGIFStruct.height = mGIFStruct.screen_height;
-        mGIFStruct.width = mGIFStruct.screen_width;
-        if (!mGIFStruct.height || !mGIFStruct.width) {
+      if (!frameRect.height || !frameRect.width) {
+        frameRect.height = mGIFStruct.screen_height;
+        frameRect.width = mGIFStruct.screen_width;
+        if (!frameRect.height || !frameRect.width) {
           mGIFStruct.state = gif_error;
           break;
         }
       }
-
-      
-      IntRect clampedRect =
-        ClampToImageRect(IntRect(mGIFStruct.x_offset, mGIFStruct.y_offset,
-                                 mGIFStruct.width, mGIFStruct.height));
-      if (clampedRect.IsEmpty()) {
-        
-        mGIFStruct.state = gif_error;
-        break;
-      }
-      mGIFStruct.clamped_width = clampedRect.width;
-      mGIFStruct.clamped_height = clampedRect.height;
-
-      MOZ_ASSERT(mGIFStruct.clamped_width <= mGIFStruct.width);
-      MOZ_ASSERT(mGIFStruct.clamped_height <= mGIFStruct.height);
 
       
       
@@ -945,17 +912,18 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
       while (mGIFStruct.tpixel >= (1 << realDepth) && (realDepth < 8)) {
         realDepth++;
       }
+
       
       mColorMask = 0xFF >> (8 - realDepth);
 
-      if (NS_FAILED(BeginImageFrame(realDepth))) {
+      
+      const bool isInterlaced = q[8] & 0x40;
+
+      if (NS_FAILED(BeginImageFrame(frameRect, realDepth, isInterlaced))) {
         mGIFStruct.state = gif_error;
         return;
       }
-      MOZ_FALLTHROUGH; 
-    }
 
-    case gif_image_header_continue: {
       
       
       
@@ -964,37 +932,9 @@ nsGIFDecoder2::WriteInternal(const char* aBuffer, uint32_t aCount)
         memset(mColormap, 0, mColormapSize);
       }
 
-      if (!mGIFStruct.images_decoded) {
-        
-        
-        
-        if (mGIFStruct.y_offset > 0) {
-          if (mDownscaler) {
-            IntRect targetRect = IntRect(IntPoint(), mDownscaler->TargetSize());
-            PostInvalidation(IntRect(IntPoint(), GetSize()), Some(targetRect));
-          } else {
-            nsIntRect r(0, 0, mGIFStruct.screen_width, mGIFStruct.y_offset);
-            PostInvalidation(r);
-          }
-        }
-      }
+      
+      mGIFStruct.pixels_remaining = frameRect.width * frameRect.height;
 
-      mGIFStruct.interlaced = bool(q[8] & 0x40);
-
-      
-      mGIFStruct.pixels_remaining = mGIFStruct.width * mGIFStruct.height;
-
-      
-      
-      
-      uint32_t depth = mGIFStruct.global_colormap_depth;
-      if (q[8] & 0x80) {
-        depth = (q[8]&0x07) + 1;
-      }
-      uint32_t realDepth = depth;
-      while (mGIFStruct.tpixel >= (1 << realDepth) && (realDepth < 8)) {
-        realDepth++;
-      }
       
       if (q[8] & 0x80) {
         mGIFStruct.local_colormap_size = 1 << depth;
