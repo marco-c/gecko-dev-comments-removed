@@ -41,6 +41,7 @@ class nsIScrollableFrame;
 class nsIDOMEvent;
 class nsRegion;
 class nsDisplayListBuilder;
+enum class nsDisplayListBuilderMode : uint8_t;
 class nsDisplayItem;
 class nsFontMetrics;
 class nsFontFaceList;
@@ -1079,9 +1080,12 @@ public:
 
 
 
+
   static nsresult PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFrame,
                              const nsRegion& aDirtyRegion, nscolor aBackstop,
-                             uint32_t aFlags = 0);
+                             nsDisplayListBuilderMode aBuilderMode,
+                             uint32_t aFlags = 0
+                             );
 
   
 
