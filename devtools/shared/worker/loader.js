@@ -503,11 +503,9 @@ this.worker = new WorkerDebuggerLoader({
     
     "devtools": "resource://devtools",
     
-    "devtools/client": "resource://devtools/client",
-    
     "promise": "resource://gre/modules/Promise-backend.js",
     
-    "source-map": "resource://devtools/sourcemap/source-map.js",
+    "source-map": "resource://devtools/shared/sourcemap/source-map.js",
     
     "xpcshell-test": "resource://test"
     

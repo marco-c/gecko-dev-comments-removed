@@ -95,7 +95,7 @@ BuiltinProvider.prototype = {
         
         "acorn/util/walk": "resource://devtools/acorn/walk.js",
         
-        "source-map": "resource://devtools/sourcemap/source-map.js",
+        "source-map": "resource://devtools/shared/sourcemap/source-map.js",
         
         
         "xpcshell-test": "resource://test"
