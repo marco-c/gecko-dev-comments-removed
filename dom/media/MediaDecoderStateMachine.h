@@ -324,9 +324,7 @@ public:
   }
 
   
-  
-  void SendStreamData();
-  void FinishStreamData();
+  void DiscardStreamData();
   bool HaveEnoughDecodedAudio(int64_t aAmpleAudioUSecs);
   bool HaveEnoughDecodedVideo();
 

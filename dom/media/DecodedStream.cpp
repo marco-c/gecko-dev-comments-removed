@@ -380,6 +380,7 @@ DecodedStream::StartPlayback(int64_t aStartTime, const MediaInfo& aInfo)
 
   mStartTime.emplace(aStartTime);
   mInfo = aInfo;
+  ConnectListener();
 
   class R : public nsRunnable {
     typedef MozPromiseHolder<GenericPromise> Promise;
@@ -417,7 +418,9 @@ void DecodedStream::StopPlayback()
   if (mStartTime.isNothing()) {
     return;
   }
+
   mStartTime.reset();
+  DisconnectListener();
 
   
   
@@ -455,6 +458,19 @@ DecodedStream::CreateData(MozPromiseHolder<GenericPromise>&& aPromise)
   auto source = mOutputStreamManager.Graph()->CreateSourceStream(nullptr);
   mData.reset(new DecodedStreamData(source, mPlaying, Move(aPromise)));
   mOutputStreamManager.Connect(mData->mStream);
+
+  
+  nsRefPtr<DecodedStream> self = this;
+  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([=] () {
+    ReentrantMonitorAutoEnter mon(self->GetReentrantMonitor());
+    
+    if (self->mStartTime.isSome()) {
+      self->SendData();
+    }
+  });
+  
+  
+  mOwnerThread->Dispatch(r.forget(), AbstractThread::DontAssertDispatchSuccess);
 }
 
 bool
@@ -822,6 +838,34 @@ DecodedStream::IsFinished() const
   AssertOwnerThread();
   ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
   return mData && mData->IsFinished();
+}
+
+void
+DecodedStream::ConnectListener()
+{
+  AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+
+  mAudioPushListener = mAudioQueue.PushEvent().Connect(
+    mOwnerThread, this, &DecodedStream::SendData);
+  mAudioFinishListener = mAudioQueue.FinishEvent().Connect(
+    mOwnerThread, this, &DecodedStream::SendData);
+  mVideoPushListener = mVideoQueue.PushEvent().Connect(
+    mOwnerThread, this, &DecodedStream::SendData);
+  mVideoFinishListener = mVideoQueue.FinishEvent().Connect(
+    mOwnerThread, this, &DecodedStream::SendData);
+}
+
+void
+DecodedStream::DisconnectListener()
+{
+  AssertOwnerThread();
+  ReentrantMonitorAutoEnter mon(GetReentrantMonitor());
+
+  mAudioPushListener.Disconnect();
+  mVideoPushListener.Disconnect();
+  mAudioFinishListener.Disconnect();
+  mVideoFinishListener.Disconnect();
 }
 
 } 
