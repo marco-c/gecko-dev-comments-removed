@@ -40,8 +40,11 @@ var Pocket = {
         window.pktUI.tryToSaveCurrentPage();
       }
 
+      
+      
       if (iframe.contentDocument &&
-          iframe.contentDocument.readyState == "complete") {
+          iframe.contentDocument.readyState == "complete" &&
+          iframe.contentDocument.documentURI != "about:blank") {
         window.pktUI.pocketPanelDidShow();
       } else {
         
