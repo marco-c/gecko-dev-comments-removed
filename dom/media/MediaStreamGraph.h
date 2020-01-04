@@ -758,6 +758,11 @@ public:
 
   bool HasCurrentData() { return mHasCurrentData; }
 
+  
+
+
+  StreamBuffer::Track* FindTrack(TrackID aID);
+
   StreamBuffer::Track* EnsureTrack(TrackID aTrack);
 
   virtual void ApplyTrackDisabling(TrackID aTrackID, MediaSegment* aSegment, MediaSegment* aRawSegment = nullptr);
@@ -999,11 +1004,6 @@ public:
 
 
   void FinishAddTracks();
-
-  
-
-
-  StreamBuffer::Track* FindTrack(TrackID aID);
 
   
 
