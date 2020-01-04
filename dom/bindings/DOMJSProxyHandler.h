@@ -59,6 +59,10 @@ public:
   virtual bool ownPropertyKeys(JSContext* cx, JS::Handle<JSObject*> proxy,
                                JS::AutoIdVector &props) const override;
 
+  virtual bool getPrototypeIfOrdinary(JSContext* cx, JS::Handle<JSObject*> proxy,
+                                      bool* isOrdinary,
+                                      JS::MutableHandle<JSObject*> proto) const override;
+
   
   
   

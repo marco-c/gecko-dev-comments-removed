@@ -272,7 +272,7 @@ class JS_FRIEND_API(BaseProxyHandler)
 
     
     virtual bool getPrototypeIfOrdinary(JSContext* cx, HandleObject proxy, bool* isOrdinary,
-                                        MutableHandleObject protop) const;
+                                        MutableHandleObject protop) const = 0;
     virtual bool setImmutablePrototype(JSContext* cx, HandleObject proxy, bool* succeeded) const;
 
     virtual bool preventExtensions(JSContext* cx, HandleObject proxy,
