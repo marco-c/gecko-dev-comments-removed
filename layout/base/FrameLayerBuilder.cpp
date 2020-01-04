@@ -173,8 +173,11 @@ FrameLayerBuilder::DisplayItemData::EndUpdate(nsAutoPtr<nsDisplayItemGeometry> a
 {
   MOZ_RELEASE_ASSERT(mLayer);
   MOZ_ASSERT(mItem);
+  MOZ_ASSERT(mGeometry || aGeometry);
 
-  mGeometry = aGeometry;
+  if (aGeometry) {
+    mGeometry = aGeometry;
+  }
   mClip = mItem->GetClip();
   mFrameListChanges.Clear();
 
@@ -4323,7 +4326,7 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
 
   PaintedLayerItemsEntry* entry = mPaintedLayerItems.GetEntry(paintedLayer);
 
-  nsAutoPtr<nsDisplayItemGeometry> geometry(item->AllocateGeometry(mDisplayListBuilder));
+  nsAutoPtr<nsDisplayItemGeometry> geometry;
 
   PaintedDisplayItemLayerUserData* layerData =
     static_cast<PaintedDisplayItemLayerUserData*>(aData->mLayer->GetUserData(&gPaintedDisplayItemLayerUserData));
@@ -4339,7 +4342,7 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
   bool notifyRenderingChanged = true;
   if (!aData->mGeometry) {
     
-    
+    geometry = item->AllocateGeometry(mDisplayListBuilder);
     combined = clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion());
 #ifdef MOZ_DUMP_PAINTING
     if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
@@ -4348,6 +4351,7 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
 #endif
   } else if (aData->mIsInvalid || (item->IsInvalid(invalid) && invalid.IsEmpty())) {
     
+    geometry = item->AllocateGeometry(mDisplayListBuilder);
     combined = aData->mClip.ApplyNonRoundedIntersection(aData->mGeometry->ComputeInvalidationRegion());
     combined.MoveBy(shift);
     combined.Or(combined, clip.ApplyNonRoundedIntersection(geometry->ComputeInvalidationRegion()));
@@ -4361,26 +4365,28 @@ FrameLayerBuilder::ComputeGeometryChangeForItem(DisplayItemData* aData)
     
 
     const nsTArray<nsIFrame*>& changedFrames = aData->GetFrameListChanges();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (aData->mGeometry->ComputeInvalidationRegion() == geometry->ComputeInvalidationRegion() &&
-        aData->mClip == clip && invalid.IsEmpty() && changedFrames.Length() == 0) {
-      notifyRenderingChanged = false;
-    }
-
     aData->mGeometry->MoveBy(shift);
     item->ComputeInvalidationRegion(mDisplayListBuilder, aData->mGeometry, &combined);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!combined.IsEmpty()) {
+      geometry = item->AllocateGeometry(mDisplayListBuilder);
+    } else if (aData->mClip == clip && invalid.IsEmpty() && changedFrames.Length() == 0) {
+      notifyRenderingChanged = false;
+    }
     aData->mClip.AddOffsetAndComputeDifference(entry->mCommonClipCount,
                                                shift, aData->mGeometry->ComputeInvalidationRegion(),
-                                               clip, entry->mLastCommonClipCount, geometry->ComputeInvalidationRegion(),
+                                               clip, entry->mLastCommonClipCount,
+                                               geometry ? geometry->ComputeInvalidationRegion() :
+                                                          aData->mGeometry->ComputeInvalidationRegion(),
                                                &combined);
 
     
