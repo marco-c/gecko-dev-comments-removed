@@ -10,15 +10,13 @@
 #include "nsTArray.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
+#include "MediaSink.h"
 
 #include "mozilla/AbstractThread.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/nsRefPtr.h"
-#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/gfx/Point.h"
 
 namespace mozilla {
 
@@ -31,7 +29,7 @@ class MediaStreamGraph;
 class OutputStreamListener;
 class OutputStreamManager;
 class ProcessedMediaStream;
-class ReentrantMonitor;
+class TimeStamp;
 
 template <class T> class MediaQueue;
 
@@ -99,34 +97,41 @@ private:
   nsTArray<OutputStreamData> mStreams;
 };
 
-class DecodedStream {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecodedStream);
+class DecodedStream : public media::MediaSink {
+  using media::MediaSink::PlaybackParams;
+
 public:
   DecodedStream(AbstractThread* aOwnerThread,
                 MediaQueue<MediaData>& aAudioQueue,
                 MediaQueue<MediaData>& aVideoQueue);
 
-  void Shutdown();
+  
+  const PlaybackParams& GetPlaybackParams() const override;
+  void SetPlaybackParams(const PlaybackParams& aParams) override;
+
+  nsRefPtr<GenericPromise> OnEnded(TrackType aType) override;
+  int64_t GetEndTime(TrackType aType) const override;
+  int64_t GetPosition(TimeStamp* aTimeStamp = nullptr) const override;
+  bool HasUnplayedFrames(TrackType aType) const override
+  {
+    
+    return false;
+  }
+
+  void SetVolume(double aVolume) override;
+  void SetPlaybackRate(double aPlaybackRate) override;
+  void SetPreservesPitch(bool aPreservesPitch) override;
+  void SetPlaying(bool aPlaying) override;
+
+  void Start(int64_t aStartTime, const MediaInfo& aInfo) override;
+  void Stop() override;
+  bool IsStarted() const override;
 
   
-  
-  
-  
-  
-  nsRefPtr<GenericPromise> StartPlayback(int64_t aStartTime,
-                                         const MediaInfo& aInfo);
-  
-  void StopPlayback();
-
+  void BeginShutdown();
   void AddOutput(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
   void RemoveOutput(MediaStream* aStream);
-
-  void SetPlaying(bool aPlaying);
-  void SetVolume(double aVolume);
   void SetSameOrigin(bool aSameOrigin);
-
-  int64_t AudioEndTime() const;
-  int64_t GetPosition() const;
   bool IsFinished() const;
   bool HasConsumers() const;
 
@@ -164,10 +169,11 @@ private:
 
 
   UniquePtr<DecodedStreamData> mData;
+  nsRefPtr<GenericPromise> mFinishPromise;
 
   bool mPlaying;
-  double mVolume;
   bool mSameOrigin;
+  PlaybackParams mParams;
 
   Maybe<int64_t> mStartTime;
   MediaInfo mInfo;
