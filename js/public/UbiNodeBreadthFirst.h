@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_UbiNodeTraverse_h
-#define js_UbiNodeTraverse_h
+#ifndef js_UbiNodeBreadthFirst_h
+#define js_UbiNodeBreadthFirst_h
 
 #include "js/UbiNode.h"
 #include "js/Utility.h"

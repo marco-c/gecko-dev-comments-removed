@@ -12,7 +12,7 @@
 #include "jsapi.h"
 
 #include "js/UbiNode.h"
-#include "js/UbiNodeTraverse.h"
+#include "js/UbiNodeBreadthFirst.h"
 
 
 
