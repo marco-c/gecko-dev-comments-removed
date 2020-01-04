@@ -1199,6 +1199,41 @@ AccessibleWrap::GetNativeInterface(void** aOutAccessible)
   NS_ADDREF_THIS();
 }
 
+void
+AccessibleWrap::FireWinEvent(Accessible* aTarget, uint32_t aEventType)
+{
+  static_assert(sizeof(gWinEventMap)/sizeof(gWinEventMap[0]) == nsIAccessibleEvent::EVENT_LAST_ENTRY,
+                "MSAA event map skewed");
+
+  NS_ASSERTION(aEventType > 0 && aEventType < ArrayLength(gWinEventMap), "invalid event type");
+
+  uint32_t winEvent = gWinEventMap[aEventType];
+  if (!winEvent)
+    return;
+
+  int32_t childID = GetChildIDFor(aTarget);
+  if (!childID)
+    return; 
+
+  HWND hwnd = GetHWNDFor(aTarget);
+  if (!hwnd) {
+    return;
+  }
+
+  
+  ::NotifyWinEvent(winEvent, hwnd, OBJID_CLIENT, childID);
+
+  
+  if (aEventType == nsIAccessibleEvent::EVENT_SELECTION &&
+      Compatibility::IsJAWS()) {
+    roles::Role role = aTarget->IsProxy() ? aTarget->Proxy()->Role() :
+      aTarget->Role();
+    if (role == roles::COMBOBOX_OPTION) {
+      ::NotifyWinEvent(EVENT_OBJECT_FOCUS, hwnd, OBJID_CLIENT, childID);
+    }
+  }
+}
+
 
 
 
@@ -1214,15 +1249,6 @@ AccessibleWrap::HandleAccEvent(AccEvent* aEvent)
 
   uint32_t eventType = aEvent->GetEventType();
 
-  static_assert(sizeof(gWinEventMap)/sizeof(gWinEventMap[0]) == nsIAccessibleEvent::EVENT_LAST_ENTRY,
-                "MSAA event map skewed");
-
-  NS_ENSURE_TRUE(eventType > 0 && eventType < ArrayLength(gWinEventMap), NS_ERROR_FAILURE);
-
-  uint32_t winEvent = gWinEventMap[eventType];
-  if (!winEvent)
-    return NS_OK;
-
   
   NS_ENSURE_TRUE(!IsDefunct(), NS_ERROR_FAILURE);
 
@@ -1235,23 +1261,7 @@ AccessibleWrap::HandleAccEvent(AccEvent* aEvent)
     UpdateSystemCaretFor(accessible);
   }
 
-  int32_t childID = GetChildIDFor(accessible); 
-  if (!childID)
-    return NS_OK; 
-
-  HWND hWnd = GetHWNDFor(accessible);
-  NS_ENSURE_TRUE(hWnd, NS_ERROR_FAILURE);
-
-  
-  ::NotifyWinEvent(winEvent, hWnd, OBJID_CLIENT, childID);
-
-  
-  if (Compatibility::IsJAWS()) {
-    if (eventType == nsIAccessibleEvent::EVENT_SELECTION &&
-      accessible->Role() == roles::COMBOBOX_OPTION) {
-      ::NotifyWinEvent(EVENT_OBJECT_FOCUS, hWnd, OBJID_CLIENT, childID);
-    }
-  }
+  FireWinEvent(accessible, eventType);
 
   return NS_OK;
 }

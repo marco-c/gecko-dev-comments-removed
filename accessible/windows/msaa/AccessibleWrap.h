@@ -159,6 +159,8 @@ public:
   static int32_t GetChildIDFor(Accessible* aAccessible);
   static HWND GetHWNDFor(Accessible* aAccessible);
 
+  static void FireWinEvent(Accessible* aTarget, uint32_t aEventType);
+
   
 
 
