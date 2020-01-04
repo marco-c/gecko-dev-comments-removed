@@ -1207,10 +1207,21 @@ intrinsic_ConstructorForTypedArray(JSContext* cx, unsigned argc, Value* vp)
     RootedObject object(cx, &args[0].toObject());
     JSProtoKey protoKey = StandardProtoKeyOrNull(object);
     MOZ_ASSERT(protoKey);
-    RootedValue ctor(cx, cx->global()->getConstructor(protoKey));
-    MOZ_ASSERT(ctor.isObject());
 
-    args.rval().set(ctor);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RootedObject ctor(cx);
+    if (!GetBuiltinConstructor(cx, protoKey, &ctor))
+        return false;
+
+    args.rval().setObject(*ctor);
     return true;
 }
 
