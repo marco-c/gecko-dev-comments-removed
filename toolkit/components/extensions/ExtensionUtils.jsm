@@ -130,22 +130,27 @@ function extend(obj, ...args) {
 
 
 
-
-
-class DefaultWeakMap extends WeakMap {
-  constructor(defaultConstructor, init) {
-    super(init);
-    this.defaultConstructor = defaultConstructor;
-  }
-
-  get(key) {
-    if (!this.has(key)) {
-      this.set(key, this.defaultConstructor());
-    }
-
-    return super.get(key);
-  }
+function DefaultWeakMap(defaultValue) {
+  this.defaultValue = defaultValue;
+  this.weakmap = new WeakMap();
 }
+
+DefaultWeakMap.prototype = {
+  get(key) {
+    if (this.weakmap.has(key)) {
+      return this.weakmap.get(key);
+    }
+    return this.defaultValue;
+  },
+
+  set(key, value) {
+    if (key) {
+      this.weakmap.set(key, value);
+    } else {
+      this.defaultValue = value;
+    }
+  },
+};
 
 class SpreadArgs extends Array {
   constructor(args) {
