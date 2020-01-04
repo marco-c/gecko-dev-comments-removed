@@ -375,13 +375,11 @@ ResponsiveUI.prototype = {
     this.swap = null;
 
     
-    let clientClosed = new Promise((resolve, reject) => {
-      this.client.close(resolve);
-      this.client = this.emulationFront = null;
-    });
+    let clientClosed = this.client.close();
     if (!isTabClosing) {
       yield clientClosed;
     }
+    this.client = this.emulationFront = null;
 
     
     swap.stop();

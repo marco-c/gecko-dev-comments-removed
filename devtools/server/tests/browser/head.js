@@ -87,15 +87,6 @@ function connectDebuggerClient(client) {
 
 
 
-function closeDebuggerClient(client) {
-  return new Promise(resolve => client.close(resolve));
-}
-
-
-
-
-
-
 
 
 

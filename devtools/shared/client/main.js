@@ -356,7 +356,15 @@ DebuggerClient.prototype = {
 
 
 
+
+
+
   close: function (aOnClosed) {
+    let deferred = promise.defer();
+    if (aOnClosed) {
+      deferred.promise.then(aOnClosed);
+    }
+
     
     
     this._eventsEnabled = false;
@@ -371,17 +379,11 @@ DebuggerClient.prototype = {
     
     if (this._closed) {
       cleanup();
-      if (aOnClosed) {
-        aOnClosed();
-      }
-      return;
+      deferred.resolve();
+      return deferred.promise;
     }
 
-    if (aOnClosed) {
-      this.addOneTimeListener("closed", function (aEvent) {
-        aOnClosed();
-      });
-    }
+    this.addOneTimeListener("closed", deferred.resolve);
 
     
     
@@ -402,6 +404,8 @@ DebuggerClient.prototype = {
       detachClients();
     };
     detachClients();
+
+    return deferred.promise;
   },
 
   

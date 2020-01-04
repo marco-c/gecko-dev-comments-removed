@@ -58,7 +58,7 @@ function test_second_child_skip_breakpoint()
         
         bpClient.remove(function (aResponse) {
           gThreadClient.resume(function () {
-            gClient.close(gCallback);
+            gClient.close().then(gCallback);
           });
         });
       });

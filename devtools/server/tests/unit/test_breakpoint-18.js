@@ -78,5 +78,5 @@ function testDbgStatement(event, { why }) {
   
   
   do_check_neq(why.type, "breakpoint");
-  gClient.close(gCallback);
+  gClient.close().then(gCallback);
 }

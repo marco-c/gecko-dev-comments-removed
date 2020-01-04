@@ -32,7 +32,7 @@ function test() {
 
             
             actorFront.unregister().then(() => {
-              gClient.close(() => {
+              gClient.close().then(() => {
                 DebuggerServer.destroy();
                 gClient = null;
                 finish();

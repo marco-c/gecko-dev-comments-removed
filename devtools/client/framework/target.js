@@ -586,7 +586,7 @@ TabTarget.prototype = {
       if (this.isLocalTab) {
         
         
-        this._client.close(cleanupAndResolve);
+        this._client.close().then(cleanupAndResolve);
       } else if (this.activeTab) {
         
         

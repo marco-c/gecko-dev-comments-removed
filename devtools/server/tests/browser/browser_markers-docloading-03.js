@@ -34,6 +34,6 @@ add_task(function* () {
   
   yield DevToolsUtils.waitForTime(1000);
 
-  yield closeDebuggerClient(client);
+  yield client.close();
   gBrowser.removeCurrentTab();
 });
