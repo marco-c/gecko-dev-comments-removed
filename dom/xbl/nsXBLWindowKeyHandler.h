@@ -104,6 +104,12 @@ protected:
                             mozilla::dom::Element** aElementForHandler);
 
   
+
+
+
+  bool IsExecutableElement(mozilla::dom::Element* aElement) const;
+
+  
   nsWeakPtr              mWeakPtrForElement;
   mozilla::dom::EventTarget* mTarget; 
 
