@@ -524,20 +524,34 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 
   nsTArray<AnimationProperty> properties;
   if (mTarget) {
+    
+    
+    
+    
+    
+    
+    
+    auto keyframesCopy(mKeyframes);
+
     nsTArray<ComputedKeyframeValues> computedValues =
-      KeyframeUtils::GetComputedKeyframeValues(mKeyframes, mTarget->mElement,
+      KeyframeUtils::GetComputedKeyframeValues(keyframesCopy,
+                                               mTarget->mElement,
                                                aStyleContext);
 
     if (mEffectOptions.mSpacingMode == SpacingMode::paced) {
-      KeyframeUtils::ApplySpacing(mKeyframes, SpacingMode::paced,
+      KeyframeUtils::ApplySpacing(keyframesCopy, SpacingMode::paced,
                                   mEffectOptions.mPacedProperty,
                                   computedValues);
     }
 
     properties =
-      KeyframeUtils::GetAnimationPropertiesFromKeyframes(mKeyframes,
+      KeyframeUtils::GetAnimationPropertiesFromKeyframes(keyframesCopy,
                                                          computedValues,
                                                          aStyleContext);
+
+    MOZ_ASSERT(keyframesCopy == mKeyframes,
+               "Keyframes should not be modified while we are iterating"
+               " over them");
   }
 
   if (mProperties == properties) {
