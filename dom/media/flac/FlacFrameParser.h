@@ -11,6 +11,7 @@
 #include "nsAutoPtr.h"
 #include "MediaDecoder.h" 
 #include "MediaInfo.h"
+#include "MediaResource.h"
 
 namespace mozilla
 {
@@ -27,6 +28,10 @@ public:
   FlacFrameParser();
 
   bool IsHeaderBlock(const uint8_t* aPacket, size_t aLength) const;
+  
+  
+  
+  uint32_t HeaderBlockLength(const uint8_t* aPacket) const;
   bool DecodeHeaderBlock(const uint8_t* aPacket, size_t aLength);
   bool HasFullMetadata() const { return mFullMetadata; }
   
