@@ -232,16 +232,20 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
   mat.Invert();
 
   if (aExtraMask) {
-    MOZ_ASSERT(!aExtraMasksTransform.HasNonTranslation());
-
+    
+    
     RefPtr<SourceSurface> currentMask = maskDT->Snapshot();
+    Matrix transform = maskDT->GetTransform();
     maskDT->SetTransform(Matrix());
     maskDT->ClearRect(Rect(0, 0,
                            devSpaceClipExtents.width,
                            devSpaceClipExtents.height));
-    maskDT->MaskSurface(SurfacePattern(currentMask, ExtendMode::CLAMP),
+    maskDT->SetTransform(aExtraMasksTransform * transform);
+    
+    
+    maskDT->MaskSurface(SurfacePattern(currentMask, ExtendMode::CLAMP, aExtraMasksTransform.Inverse() * ToMatrix(mat)),
                         aExtraMask,
-                        Point(aExtraMasksTransform._31, aExtraMasksTransform._32));
+                        Point(0, 0));
   }
 
   *aMaskTransform = ToMatrix(mat);
