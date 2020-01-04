@@ -25,6 +25,8 @@
 
 struct JSContext;
 class nsCSSPropertySet;
+class nsIContent;
+class nsIFrame;
 
 namespace mozilla {
 
@@ -276,6 +278,12 @@ public:
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSProperty aProperty, bool aIsRunning);
 
+  
+  
+  
+  
+  static bool CanAnimateTransformOnCompositor(const nsIFrame* aFrame,
+                                              const nsIContent* aContent);
 protected:
   virtual ~KeyframeEffectReadOnly();
   void ResetIsRunningOnCompositor();
