@@ -5,7 +5,7 @@
 
 
 
-#include "nsHTMLReflowState.h"
+#include "mozilla/ReflowInput.h"
 
 #include "LayoutLogging.h"
 #include "nsStyleConsts.h"
