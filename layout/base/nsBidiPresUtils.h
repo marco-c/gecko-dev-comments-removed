@@ -528,16 +528,10 @@ private:
 
 
 
-
-
-
-
-
   static void RemoveBidiContinuation(BidiParagraphData* aBpd,
                                      nsIFrame*          aFrame,
                                      int32_t            aFirstIndex,
-                                     int32_t            aLastIndex,
-                                     int32_t&           aOffset);
+                                     int32_t            aLastIndex);
   static void CalculateCharType(nsBidi*          aBidiEngine,
                                 const char16_t* aText,
                                 int32_t&         aOffset,

@@ -727,7 +727,6 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
   NS_ENSURE_SUCCESS(rv, rv);
 
   int32_t     runLength      = 0;   
-  int32_t     lineOffset     = 0;   
   int32_t     logicalLimit   = 0;   
   int32_t     numRun         = -1;
   int32_t     fragmentLength = 0;   
@@ -843,7 +842,7 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
       if (++numRun >= runCount) {
         break;
       }
-      lineOffset = logicalLimit;
+      int32_t lineOffset = logicalLimit;
       if (NS_FAILED(aBpd->GetLogicalRun(
               lineOffset, &logicalLimit, &embeddingLevel) ) ) {
         break;
@@ -858,7 +857,6 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
       
       
       precedingControl = std::min(precedingControl, embeddingLevel);
-      ++lineOffset;
     }
     else {
       storeBidiDataToFrame();
@@ -890,8 +888,7 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
             int32_t newIndex = aBpd->GetLastFrameForContent(content);
             if (newIndex > frameIndex) {
               currentLine->MarkDirty();
-              RemoveBidiContinuation(aBpd, frame,
-                                     frameIndex, newIndex, lineOffset);
+              RemoveBidiContinuation(aBpd, frame, frameIndex, newIndex);
               frameIndex = newIndex;
               frame = aBpd->FrameAt(frameIndex);
             }
@@ -908,8 +905,7 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
                      aBpd->FrameAt(newIndex) == NS_BIDI_CONTROL_FRAME);
             if (newIndex < frameCount) {
               currentLine->MarkDirty();
-              RemoveBidiContinuation(aBpd, frame,
-                                     frameIndex, newIndex, lineOffset);
+              RemoveBidiContinuation(aBpd, frame, frameIndex, newIndex);
             }
           } else if (runLength == fragmentLength) {
             
@@ -926,9 +922,6 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
           frame->AdjustOffsetsForBidi(contentOffset, contentOffset + fragmentLength);
         }
       } 
-      else {
-        ++lineOffset;
-      }
     } 
     int32_t temp = runLength;
     runLength -= fragmentLength;
@@ -1760,17 +1753,13 @@ void
 nsBidiPresUtils::RemoveBidiContinuation(BidiParagraphData *aBpd,
                                         nsIFrame*       aFrame,
                                         int32_t         aFirstIndex,
-                                        int32_t         aLastIndex,
-                                        int32_t&        aOffset)
+                                        int32_t         aLastIndex)
 {
   FrameBidiData bidiData = nsBidi::GetBidiData(aFrame);
   bidiData.precedingControl = kBidiLevelNone;
   for (int32_t index = aFirstIndex + 1; index <= aLastIndex; index++) {
     nsIFrame* frame = aBpd->FrameAt(index);
-    if (frame == NS_BIDI_CONTROL_FRAME) {
-      ++aOffset;
-    }
-    else {
+    if (frame != NS_BIDI_CONTROL_FRAME) {
       
       
       frame->Properties().Set(nsBidi::BidiDataProperty(), bidiData);
