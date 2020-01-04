@@ -8,6 +8,7 @@
 
 const {Cc, Ci, Cu, components} = require("chrome");
 const Services = require("Services");
+const {LocalizationHelper} = require("devtools/client/shared/l10n");
 
 
 
@@ -335,19 +336,10 @@ exports.Utils = WebConsoleUtils;
 
 
 WebConsoleUtils.L10n = function (bundleURI) {
-  this._bundleUri = bundleURI;
+  this._helper = new LocalizationHelper(bundleURI);
 };
 
 WebConsoleUtils.L10n.prototype = {
-  _stringBundle: null,
-
-  get stringBundle() {
-    if (!this._stringBundle) {
-      this._stringBundle = Services.strings.createBundle(this._bundleUri);
-    }
-    return this._stringBundle;
-  },
-
   
 
 
@@ -375,14 +367,12 @@ WebConsoleUtils.L10n.prototype = {
 
 
   getStr: function (name) {
-    let result;
     try {
-      result = this.stringBundle.GetStringFromName(name);
+      return this._helper.getStr(name);
     } catch (ex) {
       console.error("Failed to get string: " + name);
       throw ex;
     }
-    return result;
   },
 
   
@@ -397,14 +387,11 @@ WebConsoleUtils.L10n.prototype = {
 
 
   getFormatStr: function (name, array) {
-    let result;
     try {
-      result = this.stringBundle.formatStringFromName(name, array,
-                                                      array.length);
+      return this._helper.getFormatStr(name, ...array);
     } catch (ex) {
       console.error("Failed to format string: " + name);
       throw ex;
     }
-    return result;
   },
 };
