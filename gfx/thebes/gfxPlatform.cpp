@@ -9,7 +9,6 @@
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/SharedBufferManagerChild.h"
 #include "mozilla/layers/ISurfaceAllocator.h"     
-#include "mozilla/layers/LayerManagerComposite.h"
 
 #include "mozilla/Logging.h"
 #include "mozilla/Services.h"
@@ -53,7 +52,6 @@
 #include "gfxGraphiteShaper.h"
 #include "gfx2DGlue.h"
 #include "gfxGradientCache.h"
-#include "gfxUtils.h" 
 
 #include "nsUnicodeRange.h"
 #include "nsServiceManagerUtils.h"
@@ -388,7 +386,6 @@ gfxPlatform::gfxPlatform()
   , mAzureCanvasBackendCollector(this, &gfxPlatform::GetAzureBackendInfo)
   , mApzSupportCollector(this, &gfxPlatform::GetApzSupportInfo)
   , mCompositorBackend(layers::LayersBackend::LAYERS_NONE)
-  , mScreenDepth(0)
 {
     mAllowDownloadableFonts = UNINITIALIZED_VALUE;
     mFallbackUsesCmaps = UNINITIALIZED_VALUE;
@@ -509,7 +506,6 @@ gfxPlatform::Init()
     InitLayersAccelerationPrefs();
     InitLayersIPC();
 
-    gPlatform->PopulateScreenInfo();
     gPlatform->ComputeTileSize();
 
     nsresult rv;
@@ -1016,45 +1012,43 @@ gfxPlatform::ComputeTileSize()
   int32_t w = gfxPrefs::LayersTileWidth();
   int32_t h = gfxPrefs::LayersTileHeight();
 
+  
   if (gfxPrefs::LayersTilesAdjust()) {
-    gfx::IntSize screenSize = GetScreenSize();
-    if (screenSize.width > 0) {
-      w = h = std::max(std::min(NextPowerOfTwo(screenSize.width) / 2, 1024), 256);
-    }
-
 #ifdef MOZ_WIDGET_GONK
+    int32_t format = android::PIXEL_FORMAT_RGBA_8888;
     android::sp<android::GraphicBuffer> alloc =
-          new android::GraphicBuffer(w, h, android::PIXEL_FORMAT_RGBA_8888,
-                                     android::GraphicBuffer::USAGE_SW_READ_OFTEN |
-                                     android::GraphicBuffer::USAGE_SW_WRITE_OFTEN |
-                                     android::GraphicBuffer::USAGE_HW_TEXTURE);
+      new android::GraphicBuffer(gfxPrefs::LayersTileWidth(), gfxPrefs::LayersTileHeight(),
+                                 format,
+                                 android::GraphicBuffer::USAGE_SW_READ_OFTEN |
+                                 android::GraphicBuffer::USAGE_SW_WRITE_OFTEN |
+                                 android::GraphicBuffer::USAGE_HW_TEXTURE);
 
     if (alloc.get()) {
       w = alloc->getStride(); 
+      
     }
 #endif
   }
 
-  SetTileSize(w, h);
-}
-
-void
-gfxPlatform::PopulateScreenInfo()
-{
-  nsCOMPtr<nsIScreenManager> manager = do_GetService("@mozilla.org/gfx/screenmanager;1");
-  MOZ_ASSERT(manager, "failed to get nsIScreenManager");
-
-  nsCOMPtr<nsIScreen> screen;
-  manager->GetPrimaryScreen(getter_AddRefs(screen));
-  if (!screen) {
-    
-    return;
+#ifdef XP_MACOSX
+  
+  nsCOMPtr<nsIScreenManager> screenManager =
+    do_GetService("@mozilla.org/gfx/screenmanager;1");
+  if (screenManager) {
+    nsCOMPtr<nsIScreen> primaryScreen;
+    screenManager->GetPrimaryScreen(getter_AddRefs(primaryScreen));
+    double scaleFactor = 1.0;
+    if (primaryScreen) {
+      primaryScreen->GetContentsScaleFactor(&scaleFactor);
+    }
+    if (scaleFactor > 1.0) {
+      w *= 2;
+      h *= 2;
+    }
   }
+#endif
 
-  screen->GetColorDepth(&mScreenDepth);
-
-  int left, top;
-  screen->GetRect(&left, &top, &mScreenSize.width, &mScreenSize.height);
+  SetTileSize(w, h);
 }
 
 bool
@@ -2087,6 +2081,13 @@ gfxPlatform::GetLog(eGfxLog aWhichLog)
     return nullptr;
 }
 
+int
+gfxPlatform::GetScreenDepth() const
+{
+    NS_WARNING("GetScreenDepth not implemented on this platform -- returning 0!");
+    return 0;
+}
+
 mozilla::gfx::SurfaceFormat
 gfxPlatform::Optimal2DFormatForContent(gfxContentType aContent)
 {
@@ -2289,33 +2290,6 @@ gfxPlatform::DisableBufferRotation()
 
   sBufferRotationCheckPref = false;
 }
-
-bool
-gfxPlatform::CanUseDoubleBufferedContent(LayersBackend aBackend) const
-{
-  bool useDoubleBuffering = false;
-
-#ifdef XP_WIN
-  if (aBackend == LayersBackend::LAYERS_D3D11) {
-    useDoubleBuffering = !!gfxWindowsPlatform::GetPlatform()->GetD3D10Device();
-  } else
-#endif
-#ifdef MOZ_WIDGET_GTK
-  
-  
-  
-  if (!gfxPlatformGtk::GetPlatform()->UseImageOffscreenSurfaces() ||
-      !gfxPlatformGtk::GetPlatform()->UseXRender())
-#endif
-  {
-    useDoubleBuffering = (LayerManagerComposite::SupportsDirectTexturing() &&
-                         aBackend != LayersBackend::LAYERS_D3D9) ||
-                         aBackend == LayersBackend::LAYERS_BASIC;
-  }
-
-  return useDoubleBuffering || PR_GetEnv("MOZ_FORCE_DOUBLE_BUFFERING");
-}
-
 
 already_AddRefed<ScaledFont>
 gfxPlatform::GetScaledFontForFontWithCairoSkia(DrawTarget* aTarget, gfxFont* aFont)

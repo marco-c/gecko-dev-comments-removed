@@ -69,7 +69,27 @@ ContentClient::CreateContentClient(CompositableForwarder* aForwarder)
     return nullptr;
   }
 
-  if (gfxPlatform::GetPlatform()->CanUseDoubleBufferedContent(backend)) {
+  bool useDoubleBuffering = false;
+
+#ifdef XP_WIN
+  if (backend == LayersBackend::LAYERS_D3D11) {
+    useDoubleBuffering = !!gfxWindowsPlatform::GetPlatform()->GetD3D10Device();
+  } else
+#endif
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  
+  if (!gfxPlatformGtk::GetPlatform()->UseImageOffscreenSurfaces() ||
+      !gfxPlatformGtk::GetPlatform()->UseXRender())
+#endif
+  {
+    useDoubleBuffering = (LayerManagerComposite::SupportsDirectTexturing() &&
+                         backend != LayersBackend::LAYERS_D3D9) ||
+                         backend == LayersBackend::LAYERS_BASIC;
+  }
+
+  if (useDoubleBuffering || PR_GetEnv("MOZ_FORCE_DOUBLE_BUFFERING")) {
     return MakeAndAddRef<ContentClientDoubleBuffered>(aForwarder);
   }
   return MakeAndAddRef<ContentClientSingleBuffered>(aForwarder);

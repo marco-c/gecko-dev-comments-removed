@@ -99,11 +99,6 @@ nsScreenManagerGtk :: EnsureInit()
     return NS_OK;
 
   mRootWindow = gdk_get_default_root_window();
-  if (!mRootWindow) {
-    
-    return NS_OK;
-  }
-
   g_object_ref(mRootWindow);
 
   
