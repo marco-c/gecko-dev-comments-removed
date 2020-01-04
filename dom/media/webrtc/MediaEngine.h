@@ -112,6 +112,11 @@ public:
   virtual nsresult Stop(SourceMediaStream *aSource, TrackID aID) = 0;
 
   
+  virtual nsresult Restart(const dom::MediaTrackConstraints& aConstraints,
+                           const MediaEnginePrefs &aPrefs,
+                           const nsString& aDeviceId) = 0;
+
+  
   virtual nsresult Config(bool aEchoOn, uint32_t aEcho,
                           bool aAgcOn, uint32_t aAGC,
                           bool aNoiseOn, uint32_t aNoise,
