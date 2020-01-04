@@ -26,14 +26,14 @@ const PropTypes = React.PropTypes;
 
 
 var DomTree = React.createClass({
+  displayName: "DomTree",
+
   propTypes: {
     object: PropTypes.any,
     filter: PropTypes.string,
     dispatch: PropTypes.func.isRequired,
     grips: PropTypes.object,
   },
-
-  displayName: "DomTree",
 
   
 

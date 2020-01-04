@@ -21,11 +21,11 @@ const PropTypes = React.PropTypes;
 
 
 var SearchBox = React.createClass({
+  displayName: "SearchBox",
+
   propTypes: {
     onSearch: PropTypes.func,
   },
-
-  displayName: "SearchBox",
 
   componentWillUnmount: function () {
     

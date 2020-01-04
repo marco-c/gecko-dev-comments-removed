@@ -17,11 +17,11 @@ define(function (require, exports, module) {
 
 
   let Headers = createClass({
+    displayName: "Headers",
+
     propTypes: {
       data: PropTypes.object,
     },
-
-    displayName: "Headers",
 
     getInitialState: function () {
       return {};
@@ -58,14 +58,14 @@ define(function (require, exports, module) {
 
 
   let HeaderList = createFactory(createClass({
+    displayName: "HeaderList",
+
     propTypes: {
       headers: PropTypes.arrayOf(PropTypes.shape({
         name: PropTypes.string,
         value: PropTypes.string
       }))
     },
-
-    displayName: "HeaderList",
 
     getInitialState: function () {
       return {

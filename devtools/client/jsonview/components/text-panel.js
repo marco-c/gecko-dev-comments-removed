@@ -17,12 +17,12 @@ define(function (require, exports, module) {
 
 
   let TextPanel = createClass({
+    displayName: "TextPanel",
+
     propTypes: {
       actions: PropTypes.object,
       data: PropTypes.string
     },
-
-    displayName: "TextPanel",
 
     getInitialState: function () {
       return {};
@@ -47,11 +47,11 @@ define(function (require, exports, module) {
 
 
   let TextToolbar = createFactory(createClass({
+    displayName: "TextToolbar",
+
     propTypes: {
       actions: PropTypes.object,
     },
-
-    displayName: "TextToolbar",
 
     
 

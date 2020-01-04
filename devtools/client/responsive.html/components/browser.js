@@ -22,13 +22,13 @@ module.exports = createClass({
 
 
 
+  displayName: "Browser",
+
   propTypes: {
     location: Types.location.isRequired,
     onBrowserMounted: PropTypes.func.isRequired,
     onContentResize: PropTypes.func.isRequired,
   },
-
-  displayName: "Browser",
 
   mixins: [ addons.PureRenderMixin ],
 

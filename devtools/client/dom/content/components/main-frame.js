@@ -22,13 +22,13 @@ const PropTypes = React.PropTypes;
 
 
 var MainFrame = React.createClass({
+  displayName: "MainFrame",
+
   propTypes: {
     object: PropTypes.any,
     filter: PropTypes.string,
     dispatch: PropTypes.func.isRequired,
   },
-
-  displayName: "MainFrame",
 
   
 

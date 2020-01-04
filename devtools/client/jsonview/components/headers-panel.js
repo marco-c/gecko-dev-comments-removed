@@ -19,12 +19,12 @@ define(function (require, exports, module) {
 
 
   let HeadersPanel = createClass({
+    displayName: "HeadersPanel",
+
     propTypes: {
       actions: PropTypes.object,
       data: PropTypes.object,
     },
-
-    displayName: "HeadersPanel",
 
     getInitialState: function () {
       return {
@@ -51,11 +51,11 @@ define(function (require, exports, module) {
 
 
   let HeadersToolbar = createFactory(createClass({
+    displayName: "HeadersToolbar",
+
     propTypes: {
       actions: PropTypes.object,
     },
-
-    displayName: "HeadersToolbar",
 
     
 
