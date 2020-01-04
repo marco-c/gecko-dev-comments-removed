@@ -660,7 +660,8 @@ nsHTMLEditRules::WillDoAction(Selection* aSelection,
       return WillMakeDefListItem(aSelection, info->blockType, info->entireList,
                                  aCancel, aHandled);
     case EditAction::insertElement:
-      return WillInsert(aSelection, aCancel);
+      WillInsert(*aSelection, aCancel);
+      return NS_OK;
     case EditAction::decreaseZIndex:
       return WillRelativeChangeZIndex(aSelection, -1, aCancel, aHandled);
     case EditAction::increaseZIndex:
@@ -1206,54 +1207,46 @@ nsHTMLEditRules::GetFormatString(nsIDOMNode *aNode, nsAString &outFormat)
 
 
 
-nsresult
-nsHTMLEditRules::WillInsert(Selection* aSelection, bool* aCancel)
+void
+nsHTMLEditRules::WillInsert(Selection& aSelection, bool* aCancel)
 {
-  nsresult res = nsTextEditRules::WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  MOZ_ASSERT(aCancel);
+
+  nsTextEditRules::WillInsert(aSelection, aCancel);
+
+  NS_ENSURE_TRUE_VOID(mHTMLEditor);
+  nsCOMPtr<nsIEditor> kungFuDeathGrip(mHTMLEditor);
 
   
   
   
   
-  
-  if (!aSelection->Collapsed()) {
-    return NS_OK;
+  if (!aSelection.Collapsed()) {
+    return;
   }
 
   
   
-  nsCOMPtr<nsIDOMNode> selNode, priorNode;
-  int32_t selOffset;
+  NS_ENSURE_TRUE_VOID(aSelection.GetRangeAt(0) &&
+                      aSelection.GetRangeAt(0)->GetStartParent());
+  OwningNonNull<nsINode> selNode = *aSelection.GetRangeAt(0)->GetStartParent();
+  int32_t selOffset = aSelection.GetRangeAt(0)->StartOffset();
+
   
-  NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->GetStartNodeAndOffset(aSelection, getter_AddRefs(selNode),
-                                           &selOffset);
-  NS_ENSURE_SUCCESS(res, res);
-  
-  NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->GetPriorHTMLNode(selNode, selOffset,
-                                      address_of(priorNode));
-  if (NS_SUCCEEDED(res) && priorNode && nsTextEditUtils::IsMozBR(priorNode))
-  {
-    nsCOMPtr<nsIDOMNode> block1, block2;
-    if (IsBlockNode(selNode)) {
-      block1 = selNode;
-    }
-    else {
-      NS_ENSURE_STATE(mHTMLEditor);
-      block1 = mHTMLEditor->GetBlockNodeParent(selNode);
-    }
-    NS_ENSURE_STATE(mHTMLEditor);
-    block2 = mHTMLEditor->GetBlockNodeParent(priorNode);
+  nsCOMPtr<nsIContent> priorNode = mHTMLEditor->GetPriorHTMLNode(selNode,
+                                                                 selOffset);
+  if (priorNode && nsTextEditUtils::IsMozBR(priorNode)) {
+    nsCOMPtr<Element> block1 = mHTMLEditor->GetBlock(selNode);
+    nsCOMPtr<Element> block2 = mHTMLEditor->GetBlockNodeParent(priorNode);
 
     if (block1 && block1 == block2) {
       
       
       
-      selNode = nsEditor::GetNodeLocation(priorNode, &selOffset);
-      res = aSelection->Collapse(selNode,selOffset);
-      NS_ENSURE_SUCCESS(res, res);
+      selNode = priorNode->GetParentNode();
+      selOffset = selNode->IndexOf(priorNode);
+      nsresult res = aSelection.Collapse(selNode, selOffset);
+      NS_ENSURE_SUCCESS_VOID(res);
     }
   }
 
@@ -1261,16 +1254,14 @@ nsHTMLEditRules::WillInsert(Selection* aSelection, bool* aCancel)
       (mTheAction == EditAction::insertText ||
        mTheAction == EditAction::insertIMEText ||
        mTheAction == EditAction::deleteSelection)) {
-    res = ReapplyCachedStyles();
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult res = ReapplyCachedStyles();
+    NS_ENSURE_SUCCESS_VOID(res);
   }
   
   
   if (!IsStyleCachePreservingAction(mTheAction)) {
     ClearCachedStyles();
   }
-
-  return NS_OK;
 }
 
 nsresult
@@ -1307,8 +1298,7 @@ nsHTMLEditRules::WillInsertText(EditAction aAction,
     NS_ENSURE_SUCCESS(res, res);
   }
 
-  res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
   
   
   *aCancel = false;
@@ -1543,8 +1533,7 @@ nsHTMLEditRules::WillInsertBreak(Selection* aSelection,
     NS_ENSURE_SUCCESS(res, res);
   }
 
-  res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
@@ -3026,8 +3015,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
   }
   OwningNonNull<nsIAtom> listType = NS_Atomize(*aListType);
 
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
@@ -3052,7 +3040,7 @@ nsHTMLEditRules::WillMakeList(Selection* aSelection,
 
   *aHandled = true;
 
-  res = NormalizeSelection(aSelection);
+  nsresult res = NormalizeSelection(aSelection);
   NS_ENSURE_SUCCESS(res, res);
   NS_ENSURE_STATE(mHTMLEditor);
   nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
@@ -3406,12 +3394,11 @@ nsHTMLEditRules::WillMakeBasicBlock(Selection* aSelection,
   *aCancel = false;
   *aHandled = false;
 
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
   
   
   *aCancel = false;
-  res = NormalizeSelection(aSelection);
+  nsresult res = NormalizeSelection(aSelection);
   NS_ENSURE_SUCCESS(res, res);
   NS_ENSURE_STATE(mHTMLEditor);
   nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
@@ -3585,15 +3572,14 @@ nsHTMLEditRules::WillCSSIndent(Selection* aSelection,
 {
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
 
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
   *aCancel = false;
   *aHandled = true;
 
-  res = NormalizeSelection(aSelection);
+  nsresult res = NormalizeSelection(aSelection);
   NS_ENSURE_SUCCESS(res, res);
   NS_ENSURE_STATE(mHTMLEditor);
   nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
@@ -3789,15 +3775,14 @@ nsHTMLEditRules::WillHTMLIndent(Selection* aSelection,
                                 bool* aCancel, bool* aHandled)
 {
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
   *aCancel = false;
   *aHandled = true;
 
-  res = NormalizeSelection(aSelection);
+  nsresult res = NormalizeSelection(aSelection);
   NS_ENSURE_SUCCESS(res, res);
   NS_ENSURE_STATE(mHTMLEditor);
   nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
@@ -4626,15 +4611,14 @@ nsHTMLEditRules::WillAlign(Selection* aSelection,
 {
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
 
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
   *aCancel = false;
   *aHandled = false;
 
-  res = NormalizeSelection(aSelection);
+  nsresult res = NormalizeSelection(aSelection);
   NS_ENSURE_SUCCESS(res, res);
   nsAutoSelectionReset selectionResetter(aSelection, mHTMLEditor);
 
@@ -8782,8 +8766,7 @@ nsHTMLEditRules::WillAbsolutePosition(Selection* aSelection,
                                       bool* aCancel, bool* aHandled)
 {
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
@@ -8792,7 +8775,8 @@ nsHTMLEditRules::WillAbsolutePosition(Selection* aSelection,
 
   nsCOMPtr<nsIDOMElement> focusElement;
   NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->GetSelectionContainer(getter_AddRefs(focusElement));
+  nsresult res =
+    mHTMLEditor->GetSelectionContainer(getter_AddRefs(focusElement));
   if (focusElement) {
     nsCOMPtr<nsIDOMNode> node = do_QueryInterface(focusElement);
     if (nsHTMLEditUtils::IsImage(node)) {
@@ -9011,8 +8995,7 @@ nsresult
 nsHTMLEditRules::WillRemoveAbsolutePosition(Selection* aSelection,
                                             bool* aCancel, bool* aHandled) {
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
@@ -9021,7 +9004,8 @@ nsHTMLEditRules::WillRemoveAbsolutePosition(Selection* aSelection,
 
   nsCOMPtr<nsIDOMElement>  elt;
   NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(elt));
+  nsresult res =
+    mHTMLEditor->GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(elt));
   NS_ENSURE_SUCCESS(res, res);
 
   NS_ENSURE_STATE(mHTMLEditor);
@@ -9039,8 +9023,7 @@ nsHTMLEditRules::WillRelativeChangeZIndex(Selection* aSelection,
                                           bool * aHandled)
 {
   if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
-  nsresult res = WillInsert(aSelection, aCancel);
-  NS_ENSURE_SUCCESS(res, res);
+  WillInsert(*aSelection, aCancel);
 
   
   
@@ -9049,7 +9032,8 @@ nsHTMLEditRules::WillRelativeChangeZIndex(Selection* aSelection,
 
   nsCOMPtr<nsIDOMElement>  elt;
   NS_ENSURE_STATE(mHTMLEditor);
-  res = mHTMLEditor->GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(elt));
+  nsresult res =
+    mHTMLEditor->GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(elt));
   NS_ENSURE_SUCCESS(res, res);
 
   NS_ENSURE_STATE(mHTMLEditor);
