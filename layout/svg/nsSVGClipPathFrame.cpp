@@ -90,10 +90,11 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
 
   DrawTarget& aReferenceDT = *aReferenceContext.GetDrawTarget();
 
-  AutoReferenceLoopDetector loopDetector;
-  if (!loopDetector.MarkAsInUse(this)) {
-    
-    return nullptr;
+  
+  
+  AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
+  if (!refLoopDetector.Reference()) {
+    return nullptr; 
   }
 
   IntRect devSpaceClipExtents;
@@ -238,11 +239,11 @@ bool
 nsSVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
                                           const gfxPoint &aPoint)
 {
-  AutoReferenceLoopDetector loopDetector;
-  if (!loopDetector.MarkAsInUse(this)) {
-    
-    
-    return true;
+  
+  
+  AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
+  if (!refLoopDetector.Reference()) {
+    return true; 
   }
 
   gfxMatrix matrix = GetClipPathTransform(aClippedFrame);
@@ -322,8 +323,10 @@ nsSVGClipPathFrame::IsTrivial(nsISVGChildFrame **aSingleChild)
 bool
 nsSVGClipPathFrame::IsValid()
 {
-  AutoReferenceLoopDetector loopDetector;
-  if (!loopDetector.MarkAsInUse(this)) {
+  
+  
+  AutoReferenceLimiter refLoopDetector(&mReferencing, 1);
+  if (!refLoopDetector.Reference()) {
     return false; 
   }
 

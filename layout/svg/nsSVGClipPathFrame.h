@@ -6,8 +6,9 @@
 #ifndef __NS_SVGCLIPPATHFRAME_H__
 #define __NS_SVGCLIPPATHFRAME_H__
 
-#include "mozilla/Attributes.h"
+#include "AutoReferenceLimiter.h"
 #include "gfxMatrix.h"
+#include "mozilla/Attributes.h"
 #include "nsSVGContainerFrame.h"
 #include "nsSVGUtils.h"
 
@@ -27,7 +28,7 @@ class nsSVGClipPathFrame : public nsSVGClipPathFrameBase
 protected:
   explicit nsSVGClipPathFrame(nsStyleContext* aContext)
     : nsSVGClipPathFrameBase(aContext)
-    , mInUse(false)
+    , mReferencing(mozilla::AutoReferenceLimiter::notReferencing)
   {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
@@ -136,60 +137,6 @@ private:
   virtual gfxMatrix GetCanvasTM() override;
 
   
-
-
-
-
-
-
-
-  class MOZ_RAII AutoReferenceLoopDetector
-  {
-  public:
-    explicit AutoReferenceLoopDetector()
-       : mFrame(nullptr)
-#ifdef DEBUG
-       , mMarkAsInUseCalled(false)
-#endif
-    {}
-
-    ~AutoReferenceLoopDetector() {
-      MOZ_ASSERT(mMarkAsInUseCalled,
-                 "Instances of this class are useless if MarkAsInUse() is "
-                 "not called on them");
-      if (mFrame) {
-        mFrame->mInUse = false;
-      }
-    }
-
-    
-
-
-
-    MOZ_WARN_UNUSED_RESULT bool MarkAsInUse(nsSVGClipPathFrame* aFrame) {
-#ifdef DEBUG
-      MOZ_ASSERT(!mMarkAsInUseCalled, "Must only be called once");
-      mMarkAsInUseCalled = true;
-#endif
-      if (aFrame->mInUse) {
-        
-        
-        NS_WARNING("clipPath reference loop!");
-        return false;
-      }
-      aFrame->mInUse = true;
-      mFrame = aFrame;
-      return true;
-    }
-
-  private:
-    nsSVGClipPathFrame* mFrame;
-#ifdef DEBUG
-    bool mMarkAsInUseCalled;
-#endif
-  };
-
-  
   
   
   
@@ -205,7 +152,8 @@ private:
   gfxMatrix mMatrixForChildren;
 
   
-  bool mInUse;
+  
+  int16_t mReferencing;
 };
 
 #endif
