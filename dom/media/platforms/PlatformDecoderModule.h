@@ -112,6 +112,11 @@ protected:
                      DecoderDoctorDiagnostics* aDiagnostics) = 0;
 };
 
+enum MediaDataDecoderError {
+  FATAL_ERROR,
+  DECODE_ERROR
+};
+
 
 
 
@@ -124,7 +129,7 @@ public:
 
   
   
-  virtual void Error() = 0;
+  virtual void Error(MediaDataDecoderError aError) = 0;
 
   
   
