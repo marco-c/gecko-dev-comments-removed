@@ -217,6 +217,10 @@ NS_IMETHODIMP nsUnicodeToGBK::ConvertNoBuffNoErr(const char16_t * aSrc,
         aDest += 2;	
         iDestLength +=2;
       } else {
+        
+        if (unicode == 0xE7C7) {
+          unicode = 0x1E3F;
+        }
         int32_t aOutLen = 2;
         
         

@@ -104,8 +104,13 @@ NS_IMETHODIMP nsGB18030ToUnicode::ConvertNoBuff(const char* aSrc,
            if ( ! FIRST_BYTE_IS_SURROGATE(aSrc[0])) 
            {
              
-             if(! Try4BytesDecoder(aSrc, aDest))
+             if (!Try4BytesDecoder(aSrc, aDest)) {
                *aDest = UCS2_NO_MAPPING;
+             }
+             
+             if (*aDest == 0x1E3F) {
+               *aDest = 0xE7C7;
+             }
            } else {
               
              if ( (iDestlen+1) < (*aDestLength) )
