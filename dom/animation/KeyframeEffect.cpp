@@ -1215,9 +1215,6 @@ KeyframeEffectReadOnly::SetAnimation(Animation* aAnimation)
   mAnimation = aAnimation;
 
   
-  RequestRestyle(EffectCompositor::RestyleType::Layer);
-
-  
   
   
   
