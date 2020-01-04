@@ -3,7 +3,7 @@
 
 
 (function() {
-  const DEVTOOLS_SKIN_URL = "chrome://browser/skin/devtools/";
+  const DEVTOOLS_SKIN_URL = "chrome://devtools/skin/themes/";
   let documentElement = document.documentElement;
 
   function forceStyle() {
