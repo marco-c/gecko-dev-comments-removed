@@ -935,7 +935,7 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   }
 
   
-  NS_IF_RELEASE(nsDirectoryService::gService);
+  nsDirectoryService::gService = nullptr;
 
   free(gGREBinPath);
   gGREBinPath = nullptr;
