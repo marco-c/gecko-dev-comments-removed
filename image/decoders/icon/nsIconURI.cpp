@@ -455,15 +455,6 @@ nsMozIconURI::CloneIgnoringRef(nsIURI** result)
 }
 
 NS_IMETHODIMP
-nsMozIconURI::CloneWithNewRef(const nsACString& newRef, nsIURI** result)
-{
-  
-  
-  return Clone(result);
-}
-
-
-NS_IMETHODIMP
 nsMozIconURI::Resolve(const nsACString& relativePath, nsACString& result)
 {
   return NS_ERROR_NOT_IMPLEMENTED;

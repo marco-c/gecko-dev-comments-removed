@@ -67,8 +67,7 @@ protected:
     
     enum RefHandlingEnum {
         eIgnoreRef,
-        eHonorRef,
-        eReplaceRef
+        eHonorRef
     };
 
     
@@ -79,10 +78,6 @@ protected:
     
     nsresult CloneWithJARFileInternal(nsIURI *jarFile,
                                       RefHandlingEnum refHandlingMode,
-                                      nsIJARURI **result);
-    nsresult CloneWithJARFileInternal(nsIURI *jarFile,
-                                      RefHandlingEnum refHandlingMode,
-                                      const nsACString& newRef,
                                       nsIJARURI **result);
     nsCOMPtr<nsIURI> mJARFile;
     

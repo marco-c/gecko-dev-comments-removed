@@ -1362,8 +1362,7 @@ nsJSURI::Deserialize(const mozilla::ipc::URIParams& aParams)
 
 
  mozilla::net::nsSimpleURI*
-nsJSURI::StartClone(mozilla::net::nsSimpleURI::RefHandlingEnum refHandlingMode,
-                    const nsACString& newRef)
+nsJSURI::StartClone(mozilla::net::nsSimpleURI::RefHandlingEnum )
 {
     nsCOMPtr<nsIURI> baseClone;
     if (mBaseURI) {
@@ -1374,9 +1373,7 @@ nsJSURI::StartClone(mozilla::net::nsSimpleURI::RefHandlingEnum refHandlingMode,
       }
     }
 
-    nsJSURI* url = new nsJSURI(baseClone);
-    SetRefOnClone(url, refHandlingMode, newRef);
-    return url;
+    return new nsJSURI(baseClone);
 }
 
  nsresult
