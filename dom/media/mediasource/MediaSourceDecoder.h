@@ -83,6 +83,7 @@ public:
 
 private:
   void DoSetMediaSourceDuration(double aDuration);
+  media::TimeInterval ClampIntervalToEnd(const media::TimeInterval& aInterval);
 
   
   
