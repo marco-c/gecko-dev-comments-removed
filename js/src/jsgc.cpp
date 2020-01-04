@@ -6864,6 +6864,10 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
         script->setTypesGeneration(target->zone()->types.generation);
 
         
+        if (!script->code())
+            continue;
+
+        
         
         
         if (JSObject* enclosing = script->enclosingStaticScope()) {
