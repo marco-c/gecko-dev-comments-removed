@@ -1421,6 +1421,9 @@ pref("devtools.debugger.ui.variables-only-enum-visible", false);
 pref("devtools.debugger.ui.variables-searchbox-visible", false);
 
 
+pref("devtools.memory.enabled", false);
+
+
 pref("devtools.performance.enabled", true);
 
 
