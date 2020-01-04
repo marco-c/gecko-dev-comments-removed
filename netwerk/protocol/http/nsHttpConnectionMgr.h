@@ -369,15 +369,15 @@ private:
         
         
         
-        bool mUsingSpdy;
+        bool mUsingSpdy : 1;
 
         
         
         
         
-        bool mTestedSpdy;
+        bool mTestedSpdy : 1;
 
-        bool mInPreferredHash;
+        bool mInPreferredHash : 1;
 
         
         
@@ -387,6 +387,9 @@ private:
         
         
         bool mPreferIPv6 : 1;
+
+        
+        bool mUsedForConnection : 1;
 
         
         void RecordIPFamilyPreference(uint16_t family);
