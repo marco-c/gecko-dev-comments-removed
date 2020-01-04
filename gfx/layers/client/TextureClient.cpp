@@ -693,7 +693,8 @@ TextureClient::CreateForDrawing(CompositableForwarder* aAllocator,
                                 TextureFlags aTextureFlags,
                                 TextureAllocationFlags aAllocFlags)
 {
-  MOZ_ASSERT(aAllocator->IPCOpen());
+  
+  MOZ_ASSERT(aAllocator && aAllocator->IPCOpen());
   if (!aAllocator || !aAllocator->IPCOpen()) {
     return nullptr;
   }
