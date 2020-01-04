@@ -36,15 +36,6 @@ add_task(function* test_add_interesting_window() {
     content.location = PAGE;
   });
 
-  
-  
-  
-  
-  if (gMultiProcessBrowser) {
-    yield BrowserTestUtils.waitForEvent(newWin.gBrowser.selectedTab,
-                                        "TabRemotenessChange");
-  }
-
   yield promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");
 
   
