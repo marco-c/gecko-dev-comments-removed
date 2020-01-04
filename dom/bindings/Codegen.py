@@ -1121,10 +1121,7 @@ class CGHeaders(CGWrapper):
         
         
         for desc in descriptors:
-            
-            
-            
-            if desc.interface.isExternal() or desc.interface.isIteratorInterface():
+            if desc.interface.isExternal():
                 continue
 
             def addHeaderForFunc(func):
@@ -1151,15 +1148,16 @@ class CGHeaders(CGWrapper):
             if funcList is not None:
                 addHeaderForFunc(funcList[0])
 
-            if desc.interface.maplikeOrSetlikeOrIterable:
+        for desc in descriptors:
+            if desc.interface.maplikeOrSetlike:
                 
                 bindingHeaders.add("mozilla/dom/ToJSValue.h")
                 
                 
-                addHeadersForType((desc.interface.maplikeOrSetlikeOrIterable.keyType,
+                addHeadersForType((desc.interface.maplikeOrSetlike.keyType,
                                    desc, None))
-                if desc.interface.maplikeOrSetlikeOrIterable.valueType:
-                    addHeadersForType((desc.interface.maplikeOrSetlikeOrIterable.valueType,
+                if desc.interface.maplikeOrSetlike.valueType:
+                    addHeadersForType((desc.interface.maplikeOrSetlike.valueType,
                                        desc, None))
 
         for d in dictionaries:
@@ -2199,18 +2197,13 @@ class MethodDefiner(PropertyDefiner):
                 })
                 continue
 
-            
-            
-            isMaplikeOrSetlikeMethod = (m.isMaplikeOrSetlikeOrIterableMethod() and
-                                        (m.maplikeOrSetlikeOrIterable.isMaplike() or
-                                         m.maplikeOrSetlikeOrIterable.isSetlike()))
             method = {
                 "name": m.identifier.name,
                 "methodInfo": not m.isStatic(),
                 "length": methodLength(m),
                 
                 
-                "flags": "JSPROP_ENUMERATE" if not isMaplikeOrSetlikeMethod else "0",
+                "flags": "JSPROP_ENUMERATE" if not m.isMaplikeOrSetlikeMethod() else "0",
                 "condition": PropertyDefiner.getControllingCondition(m, descriptor),
                 "allowCrossOriginThis": m.getExtendedAttribute("CrossOriginCallable"),
                 "returnsPromise": m.returnsPromise(),
@@ -2254,23 +2247,19 @@ class MethodDefiner(PropertyDefiner):
 
         
         
-        if descriptor.interface.maplikeOrSetlikeOrIterable:
+        if descriptor.interface.maplikeOrSetlike:
             if hasIterator(methods, self.regular):
-                raise TypeError("Cannot have maplike/setlike/iterable interface with "
+                raise TypeError("Cannot have maplike/setlike interface with "
                                 "other members that generate @@iterator "
                                 "on interface %s, such as indexed getters "
                                 "or aliased functions." %
                                 self.descriptor.interface.identifier.name)
             for m in methods:
-                if (m.isMaplikeOrSetlikeOrIterableMethod() and
-                    (((m.maplikeOrSetlikeOrIterable.isMaplike() or
-                       (m.maplikeOrSetlikeOrIterable.isIterable() and
-                        m.maplikeOrSetlikeOrIterable.hasValueType())) and
-                       m.identifier.name == "entries") or
-                    (((m.maplikeOrSetlikeOrIterable.isSetlike() or
-                       (m.maplikeOrSetlikeOrIterable.isIterable() and
-                        not m.maplikeOrSetlikeOrIterable.hasValueType()))) and
-                       m.identifier.name == "values"))):
+                if (m.isMaplikeOrSetlikeMethod() and
+                    ((m.maplikeOrSetlike.isMaplike() and
+                      m.identifier.name == "entries") or
+                     (m.maplikeOrSetlike.isSetlike() and
+                      m.identifier.name == "values"))):
                     self.regular.append({
                         "name": "@@iterator",
                         "methodName": m.identifier.name,
@@ -5822,9 +5811,7 @@ class CGArgumentConverter(CGThing):
         
         
         
-        
-        
-        if member.isMethod() and member.isMaplikeOrSetlikeOrIterableMethod():
+        if member.isMethod() and member.isMaplikeOrSetlikeMethod():
             self.replacementVariables["val"] = string.Template(
                 "args.get(${index})").substitute(replacer)
         else:
@@ -7124,16 +7111,10 @@ class CGPerSignatureCall(CGThing):
         
         
         
-        if idlNode.isMethod() and idlNode.isMaplikeOrSetlikeOrIterableMethod():
-            if (idlNode.maplikeOrSetlikeOrIterable.isMaplike() or
-                idlNode.maplikeOrSetlikeOrIterable.isSetlike()):
-                cgThings.append(CGMaplikeOrSetlikeMethodGenerator(descriptor,
-                                                                  idlNode.maplikeOrSetlikeOrIterable,
-                                                                  idlNode.identifier.name))
-            else:
-                cgThings.append(CGIterableMethodGenerator(descriptor,
-                                                          idlNode.maplikeOrSetlikeOrIterable,
-                                                          idlNode.identifier.name))
+        if idlNode.isMethod() and idlNode.isMaplikeOrSetlikeMethod():
+            cgThings.append(CGMaplikeOrSetlikeMethodGenerator(descriptor,
+                                                              idlNode.maplikeOrSetlike,
+                                                              idlNode.identifier.name))
         else:
             cgThings.append(CGCallGenerator(
                 self.getErrorReport() if self.isFallible() else None,
@@ -7368,7 +7349,7 @@ class CGMethodCall(CGThing):
             
             
             
-            if requiredArgs > 0 and not method.isMaplikeOrSetlikeOrIterableMethod():
+            if requiredArgs > 0 and not method.isMaplikeOrSetlikeMethod():
                 code = fill(
                     """
                     if (MOZ_UNLIKELY(args.length() < ${requiredArgs})) {
@@ -12798,10 +12779,6 @@ class CGForwardDeclarations(CGWrapper):
 
         
         for d in descriptors:
-            
-            
-            if d.interface.isIteratorInterface():
-                continue
             builder.add(d.nativeType)
             
             
@@ -12809,23 +12786,17 @@ class CGForwardDeclarations(CGWrapper):
             
             
             
-            if d.interface.maplikeOrSetlikeOrIterable:
-                builder.forwardDeclareForType(d.interface.maplikeOrSetlikeOrIterable.keyType,
+            if d.interface.maplikeOrSetlike:
+                builder.forwardDeclareForType(d.interface.maplikeOrSetlike.keyType,
                                               config)
-                if d.interface.maplikeOrSetlikeOrIterable.hasValueType():
-                    builder.forwardDeclareForType(d.interface.maplikeOrSetlikeOrIterable.valueType,
-                                                  config)
+                builder.forwardDeclareForType(d.interface.maplikeOrSetlike.valueType,
+                                              config)
 
         
         builder.addInMozillaDom("NativePropertyHooks", isStruct=True)
         builder.addInMozillaDom("ProtoAndIfaceCache")
         
         for d in descriptors:
-            
-            
-            
-            if d.interface.isIteratorInterface():
-                continue
             builder.add(d.nativeType + "Atoms", isStruct=True)
 
         for callback in mainCallbacks:
@@ -12888,8 +12859,6 @@ class CGBindingRoot(CGThing):
 
         bindingDeclareHeaders["mozilla/dom/UnionMember.h"] = len(unionStructs) > 0
         bindingDeclareHeaders["mozilla/dom/BindingUtils.h"] = len(unionStructs) > 0
-        bindingDeclareHeaders["mozilla/dom/IterableIterator.h"] = any(d.interface.isIteratorInterface() or
-                                                                      d.interface.isIterable() for d in descriptors)
 
         def descriptorHasCrossOriginProperties(desc):
             def hasCrossOriginProperty(m):
@@ -12952,6 +12921,14 @@ class CGBindingRoot(CGThing):
         bindingDeclareHeaders["nsWeakReference.h"] = jsImplemented
         bindingHeaders["nsIGlobalObject.h"] = jsImplemented
         bindingHeaders["AtomList.h"] = hasNonEmptyDictionaries or jsImplemented or callbackDescriptors
+
+        def addHeaderBasedOnTypes(header, typeChecker):
+            bindingHeaders[header] = (
+                bindingHeaders.get(header, False) or
+                any(map(typeChecker,
+                        getAllTypes(descriptors + callbackDescriptors,
+                                    dictionaries,
+                                    mainCallbacks + workerCallbacks))))
 
         
         provider = config.getDescriptorProvider(False)
@@ -14989,7 +14966,7 @@ def getMaplikeOrSetlikeBackingObject(descriptor, maplikeOrSetlike, helperImpl=No
     Generate code to get/create a JS backing object for a maplike/setlike
     declaration from the declaration slot.
     """
-    func_prefix = maplikeOrSetlike.maplikeOrSetlikeOrIterableType.title()
+    func_prefix = maplikeOrSetlike.maplikeOrSetlikeType.title()
     ret = fill(
         """
         JS::Rooted<JSObject*> backingObj(cx);
@@ -15426,11 +15403,8 @@ class CGMaplikeOrSetlikeHelperGenerator(CGNamespace):
     """
     def __init__(self, descriptor, maplikeOrSetlike):
         self.descriptor = descriptor
-        
-        
-        assert maplikeOrSetlike.isMaplike() or maplikeOrSetlike.isSetlike()
         self.maplikeOrSetlike = maplikeOrSetlike
-        self.namespace = "%sHelpers" % (self.maplikeOrSetlike.maplikeOrSetlikeOrIterableType.title())
+        self.namespace = "%sHelpers" % (self.maplikeOrSetlike.maplikeOrSetlikeType.title())
         self.helpers = [
             CGMaplikeOrSetlikeHelperFunctionGenerator(descriptor,
                                                       maplikeOrSetlike,
@@ -15460,26 +15434,6 @@ class CGMaplikeOrSetlikeHelperGenerator(CGNamespace):
                                                           "Add",
                                                           needsKeyArg=True))
         CGNamespace.__init__(self, self.namespace, CGList(self.helpers))
-
-
-class CGIterableMethodGenerator(CGGeneric):
-    """
-    Creates methods for iterable interfaces. Unwrapping/wrapping
-    will be taken care of by the usual method generation machinery in
-    CGMethodCall/CGPerSignatureCall. Functionality is filled in here instead of
-    using CGCallGenerator.
-    """
-    def __init__(self, descriptor, iterable, methodName):
-        CGGeneric.__init__(self, fill(
-            """
-            typedef IterableIterator<${nativeType}> itrType;
-            nsRefPtr<itrType> result(new itrType(self,
-                                                 itrType::IterableIteratorType::${itrMethod},
-                                                 &${ifaceName}IteratorBinding::Wrap));
-            """,
-            nativeType=descriptor.nativeType,
-            ifaceName=descriptor.interface.identifier.name,
-            itrMethod=methodName.title()))
 
 
 class GlobalGenRoots():
