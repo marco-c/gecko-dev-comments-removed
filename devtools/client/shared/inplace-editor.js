@@ -1326,7 +1326,8 @@ InplaceEditor.prototype = {
       if (finalList.length > 1) {
         
         let indent = this.input.selectionStart - query.length;
-        let offset = indent * this.inputCharWidth;
+        let offset = indent * this.inputCharDimensions.width;
+        offset = this._isSingleLine() ? offset : 0;
 
         
         let selectedIndex = autoInsert ? mostRelevantIndex : -1;
@@ -1341,6 +1342,16 @@ InplaceEditor.prototype = {
       this.emit("after-suggest");
       this._doValidation();
     }, 0);
+  },
+
+  
+
+
+
+
+  _isSingleLine: function() {
+    let inputRect = this.input.getBoundingClientRect();
+    return inputRect.height < 2 * this.inputCharDimensions.height;
   },
 };
 
