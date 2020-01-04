@@ -186,7 +186,11 @@ WebrtcGmpVideoEncoder::InitEncode(const webrtc::VideoCodec* aCodecSettings,
   codecParams.mMaxBitrate = aCodecSettings->maxBitrate;
   codecParams.mMaxFramerate = aCodecSettings->maxFramerate;
   mMaxPayloadSize = aMaxPayloadSize;
-  if (aCodecSettings->codecSpecific.H264.packetizationMode == 1) {
+
+  memset(&mCodecSpecificInfo, 0, sizeof(webrtc::CodecSpecificInfo));
+  mCodecSpecificInfo.codecType = webrtc::kVideoCodecH264;
+  mCodecSpecificInfo.codecSpecific.H264.packetizationMode = aCodecSettings->codecSpecific.H264.packetizationMode;
+  if (mCodecSpecificInfo.codecSpecific.H264.packetizationMode == 1) {
     mMaxPayloadSize = 0; 
   }
 
@@ -642,7 +646,12 @@ WebrtcGmpVideoEncoder::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
       unit._timeStamp = timestamp;
       unit._completeFrame = true;
 
-      mCallback->Encoded(unit, nullptr, &fragmentation);
+      
+      
+      
+      
+      
+      mCallback->Encoded(unit, &mCodecSpecificInfo, &fragmentation);
     }
   }
 }

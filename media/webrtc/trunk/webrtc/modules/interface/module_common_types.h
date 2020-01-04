@@ -224,6 +224,7 @@ struct RTPVideoHeaderH264 {
 #else
 
 struct RTPVideoHeaderH264 {
+  bool packetization_mode;
   bool stap_a;
   bool single_nalu;
 };
