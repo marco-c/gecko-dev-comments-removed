@@ -1644,6 +1644,10 @@ class JSScript : public js::gc::TenuredCell
         return enclosingStaticScope_;
     }
 
+    
+    
+    void fixEnclosingStaticGlobalLexicalScope();
+
   private:
     bool makeTypes(JSContext* cx);
 
@@ -2186,6 +2190,11 @@ class LazyScript : public gc::TenuredCell
     JSObject* enclosingScope() const {
         return enclosingScope_;
     }
+
+    
+    
+    void fixEnclosingStaticGlobalLexicalScope();
+
     ScriptSourceObject* sourceObject() const;
     ScriptSource* scriptSource() const {
         return sourceObject()->source();
