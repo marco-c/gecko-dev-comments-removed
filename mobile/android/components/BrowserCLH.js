@@ -14,26 +14,6 @@ function dump(a) {
   Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService).logStringMessage(a);
 }
 
-function openWindow(aParent, aURL, aTarget, aFeatures, aArgs) {
-  let argsArray = Cc["@mozilla.org/supports-array;1"].createInstance(Ci.nsISupportsArray);
-  let urlString = null;
-  let widthInt = Cc["@mozilla.org/supports-PRInt32;1"].createInstance(Ci.nsISupportsPRInt32);
-  let heightInt = Cc["@mozilla.org/supports-PRInt32;1"].createInstance(Ci.nsISupportsPRInt32);
-
-  if ("url" in aArgs) {
-    urlString = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
-    urlString.data = aArgs.url;
-  }
-  widthInt.data = "width" in aArgs ? aArgs.width : 1;
-  heightInt.data = "height" in aArgs ? aArgs.height : 1;
-
-  argsArray.AppendElement(urlString, false);
-  argsArray.AppendElement(widthInt, false);
-  argsArray.AppendElement(heightInt, false);
-  return Services.ww.openWindow(aParent, aURL, aTarget, aFeatures, argsArray);
-}
-
-
 function resolveURIInternal(aCmdLine, aArgument) {
   let uri = aCmdLine.resolveURI(aArgument);
   if (uri)
@@ -56,21 +36,18 @@ BrowserCLH.prototype = {
     let openURL = "about:home";
     let pinned = false;
 
-    let width = 1;
-    let height = 1;
-
     try {
       openURL = aCmdLine.handleFlagWithParam("url", false);
     } catch (e) {  }
-    try {
-      pinned = aCmdLine.handleFlag("bookmark", false);
-    } catch (e) {  }
+
+    if (!openURL) {
+      
+      
+      return;
+    }
 
     try {
-      width = aCmdLine.handleFlagWithParam("width", false);
-    } catch (e) {  }
-    try {
-      height = aCmdLine.handleFlagWithParam("height", false);
+      pinned = aCmdLine.handleFlag("bookmark", false);
     } catch (e) {  }
 
     try {
@@ -82,19 +59,6 @@ BrowserCLH.prototype = {
       if (browserWin) {
         let whereFlags = pinned ? Ci.nsIBrowserDOMWindow.OPEN_SWITCHTAB : Ci.nsIBrowserDOMWindow.OPEN_NEWTAB;
         browserWin.browserDOMWindow.openURI(uri, null, whereFlags, Ci.nsIBrowserDOMWindow.OPEN_EXTERNAL);
-      } else {
-        let args = {
-          url: openURL,
-          width: width,
-          height: height,
-        };
-
-        let flags = "chrome,dialog=no,all";
-        let chromeURL = "chrome://browser/content/browser.xul";
-        try {
-          chromeURL = Services.prefs.getCharPref("toolkit.defaultChromeURI");
-        } catch(e) {}
-        browserWin = openWindow(null, chromeURL, "_blank", flags, args);
       }
 
       aCmdLine.preventDefault = true;
