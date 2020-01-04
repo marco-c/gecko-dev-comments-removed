@@ -269,6 +269,13 @@ public:
 
   bool HandleAppCommandMessage() const;
 
+  
+
+
+
+  void WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyboardEvent,
+                                 uint32_t aIndex);
+
 private:
   RefPtr<nsWindowBase> mWidget;
   RefPtr<TextEventDispatcher> mDispatcher;
@@ -479,7 +486,8 @@ private:
 
 
 
-  bool DispatchKeyPressEventsWithKeyboardLayout() const;
+
+  bool DispatchKeyPressEventsWithoutCharMessage() const;
 
   
 

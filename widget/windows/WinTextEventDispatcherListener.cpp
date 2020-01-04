@@ -3,6 +3,7 @@
 
 
 
+#include "KeyboardLayout.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/widget/IMEData.h"
 #include "nsWindow.h"
@@ -68,7 +69,8 @@ WinTextEventDispatcherListener::WillDispatchKeyboardEvent(
                                   uint32_t aIndexOfKeypress,
                                   void* aData)
 {
-  
+  static_cast<NativeKey*>(aData)->
+    WillDispatchKeyboardEvent(aKeyboardEvent, aIndexOfKeypress);
 }
 
 } 
