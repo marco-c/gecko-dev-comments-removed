@@ -941,6 +941,11 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     bool                hadOutOfMemory;
 
+#ifdef DEBUG
+    
+    bool handlingInitFailure;
+#endif
+
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
     
     bool runningOOMTest;
@@ -1724,32 +1729,64 @@ class MOZ_RAII AutoEnterIonCompilation
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 template <typename T>
-struct GCManagedDeletePolicy
+class MOZ_STACK_CLASS AutoInitGCManagedObject
 {
-    void operator()(const T* ptr) {
-        if (ptr) {
-            JSRuntime* rt = TlsPerThreadData.get()->runtimeIfOnOwnerThread();
-            if (rt)
-                rt->gc.callAfterMinorGC(deletePtr, const_cast<T*>(ptr));
-            else
-                js_delete(const_cast<T*>(ptr));
+    typedef UniquePtr<T> UniquePtrT;
+
+    UniquePtrT ptr_;
+
+  public:
+    explicit AutoInitGCManagedObject(UniquePtrT&& ptr)
+      : ptr_(mozilla::Move(ptr))
+    {}
+
+    ~AutoInitGCManagedObject() {
+#ifdef DEBUG
+        if (ptr_) {
+            JSRuntime* rt = TlsPerThreadData.get()->runtimeFromMainThread();
+            MOZ_ASSERT(!rt->handlingInitFailure);
+            rt->handlingInitFailure = true;
+            ptr_.reset(nullptr);
+            rt->handlingInitFailure = false;
         }
+#endif
     }
 
-  private:
-    static void deletePtr(void* data) {
-        js_delete(reinterpret_cast<T*>(data));
+    T& operator*() const {
+        return *get();
     }
+
+    T* operator->() const {
+        return get();
+    }
+
+    explicit operator bool() const {
+        return get() != nullptr;
+    }
+
+    T* get() const {
+        return ptr_.get();
+    }
+
+    T* release() {
+        return ptr_.release();
+    }
+
+    AutoInitGCManagedObject(const AutoInitGCManagedObject<T>& other) = delete;
+    AutoInitGCManagedObject& operator=(const AutoInitGCManagedObject<T>& other) = delete;
 };
-
-} 
-
-namespace JS {
-
-template <typename T>
-struct DeletePolicy<js::GCPtr<T>> : public js::GCManagedDeletePolicy<js::GCPtr<T>>
-{};
 
 } 
 

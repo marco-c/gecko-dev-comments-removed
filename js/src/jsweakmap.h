@@ -412,12 +412,4 @@ class ObjectWeakMap
 
 } 
 
-namespace JS {
-
-template <>
-struct DeletePolicy<js::ObjectValueMap> : public js::GCManagedDeletePolicy<js::ObjectValueMap>
-{};
-
-} 
-
 #endif 

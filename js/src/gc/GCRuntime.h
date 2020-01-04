@@ -878,11 +878,6 @@ class GCRuntime
     void freeAllLifoBlocksAfterMinorGC(LifoAlloc* lifo);
 
     
-    void callAfterMinorGC(void (*thunk)(void* data), void* data) {
-        nursery.queueSweepAction(thunk, data);
-    }
-
-    
     void releaseArena(Arena* arena, const AutoLockGC& lock);
 
     void releaseHeldRelocatedArenas();
@@ -1456,7 +1451,6 @@ inline bool GCRuntime::needZealousGC() { return false; }
 #endif
 
 } 
-
 } 
 
 #endif

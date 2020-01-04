@@ -9,34 +9,6 @@
 
 #include "js/RootingAPI.h"
 #include "jsapi-tests/tests.h"
-#include "vm/Runtime.h"
-
-template <typename T>
-static T* CreateGCThing(JSContext* cx)
-{
-    MOZ_CRASH();
-    return nullptr;
-}
-
-template <>
-JSObject* CreateGCThing(JSContext* cx)
-{
-    JS::RootedObject obj(cx, JS_NewPlainObject(cx));
-    if (!obj)
-        return nullptr;
-    JS_DefineProperty(cx, obj, "x", 42, 0);
-    return obj;
-}
-
-template <>
-JSFunction* CreateGCThing(JSContext* cx)
-{
-    
-
-
-
-    return static_cast<JSFunction*>(CreateGCThing<JSObject>(cx));
-}
 
 BEGIN_TEST(testGCHeapPostBarriers)
 {
@@ -46,15 +18,15 @@ BEGIN_TEST(testGCHeapPostBarriers)
 
     
     JS_GC(cx);
-    JS::RootedObject obj(cx, CreateGCThing<JSObject>(cx));
+    JS::RootedObject obj(cx, NurseryObject());
     CHECK(js::gc::IsInsideNursery(obj.get()));
     JS_GC(cx);
     CHECK(!js::gc::IsInsideNursery(obj.get()));
     JS::RootedObject tenuredObject(cx, obj);
 
     
-    CHECK(TestHeapPostBarriersForType<JSObject>());
-    CHECK(TestHeapPostBarriersForType<JSFunction>());
+    CHECK(TestHeapPostBarriers(NurseryObject()));
+    CHECK(TestHeapPostBarriers(NurseryFunction()));
 
     return true;
 }
@@ -66,95 +38,54 @@ Passthrough(bool value)
     return value;
 }
 
-bool
-CanAccessObject(JSObject* obj)
-{
-    JS::RootedObject rootedObj(cx, obj);
-    JS::RootedValue value(cx);
-    CHECK(JS_GetProperty(cx, rootedObj, "x", &value));
-    CHECK(value.isInt32());
-    CHECK(value.toInt32() == 42);
-    return true;
-}
-
 template <typename T>
 bool
-TestHeapPostBarriersForType()
+TestHeapPostBarriers(T initialObj)
 {
-    CHECK((TestHeapPostBarriersForWrapper<T, JS::Heap<T*>>()));
-    CHECK((TestHeapPostBarriersForWrapper<T, js::GCPtr<T*>>()));
-    CHECK((TestHeapPostBarriersForWrapper<T, js::HeapPtr<T*>>()));
-    return true;
-}
-
-template <typename T, typename W>
-bool
-TestHeapPostBarriersForWrapper()
-{
-    CHECK((TestHeapPostBarrierUpdate<T, W>()));
-    CHECK((TestHeapPostBarrierInitFailure<T, W>()));
-    return true;
-}
-
-template <typename T, typename W>
-bool
-TestHeapPostBarrierUpdate()
-{
-    
-    
-
-    T* initialObj = CreateGCThing<T>(cx);
     CHECK(initialObj != nullptr);
     CHECK(js::gc::IsInsideNursery(initialObj));
+
+    
+    auto heapDataStorage = mozilla::MakeUnique<char[]>(sizeof(JS::Heap<T>));
+    auto* heapData = new (heapDataStorage.get()) JS::Heap<T>();
+    CHECK(heapData);
+    CHECK(Passthrough(*heapData == nullptr));
+    *heapData = initialObj;
+
+    
     uintptr_t initialObjAsInt = uintptr_t(initialObj);
 
-    W* ptr = nullptr;
-
-    {
-        auto heapPtr = cx->make_unique<W>();
-        CHECK(heapPtr);
-
-        W& wrapper = *heapPtr;
-        CHECK(Passthrough(wrapper.get() == nullptr));
-        wrapper = initialObj;
-        CHECK(Passthrough(wrapper == initialObj));
-
-        ptr = heapPtr.release();
-    }
-
+    
     cx->minorGC(JS::gcreason::API);
+    CHECK(uintptr_t(heapData) != initialObjAsInt);
+    CHECK(!js::gc::IsInsideNursery(*heapData));
 
-    CHECK(uintptr_t(ptr->get()) != initialObjAsInt);
-    CHECK(!js::gc::IsInsideNursery(ptr->get()));
-    CHECK(CanAccessObject(ptr->get()));
+    
+    JS::Rooted<T> obj(cx, *heapData);
+    JS::RootedValue value(cx);
+    CHECK(JS_GetProperty(cx, obj, "x", &value));
+    CHECK(value.isInt32());
+    CHECK(value.toInt32() == 42);
 
     return true;
 }
 
-template <typename T, typename W>
-bool
-TestHeapPostBarrierInitFailure()
+JSObject* NurseryObject()
+{
+    JS::RootedObject obj(cx, JS_NewPlainObject(cx));
+    if (!obj)
+        return nullptr;
+    JS_DefineProperty(cx, obj, "x", 42, 0);
+    return obj;
+}
+
+JSFunction* NurseryFunction()
 {
     
-    
 
-    T* initialObj = CreateGCThing<T>(cx);
-    CHECK(initialObj != nullptr);
-    CHECK(js::gc::IsInsideNursery(initialObj));
 
-    {
-        auto heapPtr = cx->make_unique<W>();
-        CHECK(heapPtr);
 
-        W& wrapper = *heapPtr;
-        CHECK(Passthrough(wrapper.get() == nullptr));
-        wrapper = initialObj;
-        CHECK(Passthrough(wrapper == initialObj));
-    }
-
-    cx->minorGC(JS::gcreason::API);
-
-    return true;
+    return static_cast<JSFunction*>(NurseryObject());
 }
 
 END_TEST(testGCHeapPostBarriers)
