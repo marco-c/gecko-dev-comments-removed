@@ -79,6 +79,7 @@ public:
   virtual void OnScrolling();
 
   
+  
   virtual void OnScrollPositionChanged();
 
   
@@ -108,11 +109,20 @@ protected:
   };
   CaretMode GetCaretMode() const;
 
-  void UpdateCarets();
+  enum class UpdateCaretsHint : uint8_t {
+    
+    Default,
+
+    
+    
+    
+    RespectOldAppearance
+  };
+  void UpdateCarets(UpdateCaretsHint aHint = UpdateCaretsHint::Default);
   void HideCarets();
 
-  void UpdateCaretsForCursorMode();
-  void UpdateCaretsForSelectionMode();
+  void UpdateCaretsForCursorMode(UpdateCaretsHint aHint);
+  void UpdateCaretsForSelectionMode(UpdateCaretsHint aHint);
   void UpdateCaretsForTilt();
 
   

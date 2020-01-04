@@ -7,6 +7,7 @@ from marionette_driver.by import By
 from marionette_driver.marionette import Actions
 from marionette_driver.selection import SelectionManager
 from marionette import MarionetteTestCase
+import string
 
 
 class CommonCaretTestCase(object):
@@ -206,6 +207,31 @@ class CommonCaretTestCase(object):
         el.send_keys(content_to_add)
         assertFunc(non_target_content, sel.content)
 
+    def _test_caret_not_appear_when_typing_in_scrollable_content(self, el, assertFunc):
+        sel = SelectionManager(el)
+
+        content_to_add = '!'
+        target_content = sel.content + string.ascii_letters + content_to_add
+
+        el.tap()
+        sel.move_caret_to_end()
+
+        
+        
+        el.send_keys(string.ascii_letters)
+
+        
+        
+        
+        src_x, src_y = sel.touch_caret_location()
+        dest_x, dest_y = 0, 0
+        self.actions.flick(el, src_x, src_y, dest_x, dest_y).perform()
+
+        
+        el.send_keys(content_to_add)
+
+        assertFunc(target_content, sel.content)
+
     
     
     
@@ -220,6 +246,10 @@ class CommonCaretTestCase(object):
     def test_input_move_caret_to_front_by_dragging_touch_caret_to_top_left_corner(self):
         self.open_test_html()
         self._test_move_caret_to_front_by_dragging_touch_caret_to_front_of_content(self._input, self.assertEqual)
+
+    def test_input_caret_not_appear_when_typing_in_scrollable_content(self):
+        self.open_test_html()
+        self._test_caret_not_appear_when_typing_in_scrollable_content(self._input, self.assertEqual)
 
     def test_input_touch_caret_timeout(self):
         self.open_test_html(timeout_ms=1000)
