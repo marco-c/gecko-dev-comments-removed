@@ -8,6 +8,7 @@
 
 #include "HashStore.h"
 #include "nsICryptoHMAC.h"
+#include "safebrowsing.pb.h"
 
 namespace mozilla {
 namespace safebrowsing {
@@ -23,7 +24,7 @@ public:
   };
 
   ProtocolParser();
-  ~ProtocolParser();
+  virtual ~ProtocolParser();
 
   nsresult Status() const { return mUpdateStatus; }
 
@@ -32,7 +33,11 @@ public:
   void SetCurrentTable(const nsACString& aTable);
 
   nsresult Begin();
-  nsresult AppendStream(const nsACString& aData);
+  virtual nsresult AppendStream(const nsACString& aData);
+
+  
+  
+  virtual void End();
 
   
   
@@ -73,6 +78,11 @@ private:
 
   void CleanupUpdates();
 
+protected:
+  nsCString mPending;
+  nsresult mUpdateStatus;
+
+private:
   enum ParserState {
     PROTOCOL_STATE_CONTROL,
     PROTOCOL_STATE_CHUNK
@@ -100,9 +110,6 @@ private:
 
   nsCOMPtr<nsICryptoHash> mCryptoHash;
 
-  nsresult mUpdateStatus;
-  nsCString mPending;
-
   uint32_t mUpdateWait;
   bool mResetRequested;
 
@@ -111,6 +118,29 @@ private:
   nsTArray<TableUpdate*> mTableUpdates;
   
   TableUpdate *mTableUpdate;
+};
+
+
+class ProtocolParserProtobuf final : public ProtocolParser {
+public:
+  typedef FetchThreatListUpdatesResponse_ListUpdateResponse ListUpdateResponse;
+  typedef google::protobuf::RepeatedPtrField<ThreatEntrySet> ThreatEntrySetList;
+
+public:
+  ProtocolParserProtobuf();
+
+  virtual nsresult AppendStream(const nsACString& aData) override;
+  virtual void End() override;
+
+private:
+  virtual ~ProtocolParserProtobuf();
+
+  
+  nsresult ProcessOneResponse(const ListUpdateResponse& aResponse);
+  nsresult ProcessAdditionOrRemoval(const ThreatEntrySetList& aUpdate,
+                                    bool aIsAddition);
+  nsresult ProcessRawAddition(const ThreatEntrySet& aAddition);
+  nsresult ProcessRawRemoval(const ThreatEntrySet& aRemoval);
 };
 
 } 
