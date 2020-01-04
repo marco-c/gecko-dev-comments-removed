@@ -7810,15 +7810,6 @@ UpdateCompositionBoundsForRCDRSF(ParentLayerRect& aCompBounds,
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
 #ifdef MOZ_WIDGET_ANDROID
   nsIWidget* widget = rootFrame->GetNearestWidget();
 #else
@@ -7831,15 +7822,6 @@ UpdateCompositionBoundsForRCDRSF(ParentLayerRect& aCompBounds,
     widget->GetBounds(widgetBounds);
     widgetBounds.MoveTo(0, 0);
     aCompBounds = ParentLayerRect(ViewAs<ParentLayerPixel>(widgetBounds));
-#ifdef MOZ_WIDGET_ANDROID
-    ParentLayerRect frameBounds =
-          LayoutDeviceRect::FromAppUnits(aFrameBounds, aPresContext->AppUnitsPerDevPixel())
-        * aCumulativeResolution
-        * LayerToParentLayerScale(1.0);
-    if (frameBounds.height < aCompBounds.height) {
-      aCompBounds.height = frameBounds.height;
-    }
-#endif
     return true;
   }
 
