@@ -1000,6 +1000,14 @@ ProxyAccessible::IndexOfEmbeddedChild(const ProxyAccessible* aChild)
 ProxyAccessible*
 ProxyAccessible::EmbeddedChildAt(size_t aChildIdx)
 {
+  
+  
+  
+  
+  if (mOuterDoc) {
+    return ChildAt(aChildIdx);
+  }
+
   uint64_t childID;
   unused << mDoc->SendEmbeddedChildAt(mID, aChildIdx, &childID);
   return mDoc->GetAccessible(childID);
