@@ -105,7 +105,7 @@ class TempAllocator;
 
 static const int NULL_ID = -1;
 
-#ifdef DEBUG
+#ifdef JS_JITSPEW
 
 
 class GraphSpewer
@@ -263,7 +263,7 @@ class AutoDisableSpew
 
     ~AutoDisableSpew()
     {
-#ifdef DEBUG
+#ifdef JS_JITSPEW
         if (enabled_)
             EnableChannel(Channel);
 #endif
