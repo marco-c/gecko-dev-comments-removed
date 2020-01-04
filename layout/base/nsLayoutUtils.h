@@ -1070,6 +1070,8 @@ public:
 
 
 
+
+
   static nsresult PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFrame,
                              const nsRegion& aDirtyRegion, nscolor aBackstop,
                              uint32_t aFlags = 0);
