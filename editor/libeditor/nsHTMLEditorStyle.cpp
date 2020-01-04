@@ -586,7 +586,7 @@ nsHTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
         
         (aProperty == nsGkAtoms::href && nsHTMLEditUtils::IsLink(node)) ||
         
-        (!aProperty && NodeIsProperty(node)) ||
+        (!aProperty && NodeIsProperty(GetAsDOMNode(node))) ||
         
         isSet) {
       
@@ -684,11 +684,16 @@ nsHTMLEditor::ClearStyle(nsCOMPtr<nsINode>* aNode, int32_t* aOffset,
   return NS_OK;
 }
 
-bool
-nsHTMLEditor::NodeIsProperty(nsINode& aNode)
+bool nsHTMLEditor::NodeIsProperty(nsIDOMNode *aNode)
 {
-  return IsContainer(&aNode) && IsEditable(&aNode) && !IsBlockNode(&aNode) &&
-         !aNode.IsHTMLElement(nsGkAtoms::a);
+  NS_ENSURE_TRUE(aNode, false);
+  if (!IsContainer(aNode))  return false;
+  if (!IsEditable(aNode))   return false;
+  if (IsBlockNode(aNode))   return false;
+  if (NodeIsType(aNode, nsGkAtoms::a)) {
+    return false;
+  }
+  return true;
 }
 
 nsresult nsHTMLEditor::ApplyDefaultProperties()
@@ -735,7 +740,7 @@ nsHTMLEditor::RemoveStyleInside(nsIContent& aNode,
       
       (aProperty == nsGkAtoms::name && nsHTMLEditUtils::IsNamedAnchor(&aNode)) ||
       
-      (!aProperty && NodeIsProperty(aNode))
+      (!aProperty && NodeIsProperty(aNode.AsDOMNode()))
     )
   ) {
     nsresult res;
