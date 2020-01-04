@@ -24,10 +24,6 @@ public:
 
   
   
-  virtual already_AddRefed<MFTDecoder> Init() = 0;
-
-  
-  
   
   virtual HRESULT Input(MediaRawData* aSample) = 0;
 
@@ -40,6 +36,15 @@ public:
   virtual HRESULT Output(int64_t aStreamOffset,
                          nsRefPtr<MediaData>& aOutput) = 0;
 
+  void Flush() { mDecoder->Flush(); }
+
+  void Drain()
+  {
+    if (FAILED(mDecoder->SendMFTMessage(MFT_MESSAGE_COMMAND_DRAIN, 0))) {
+      NS_WARNING("Failed to send DRAIN command to MFT");
+    }
+  }
+
   
   virtual void Shutdown() = 0;
 
@@ -47,6 +52,9 @@ public:
 
   virtual TrackInfo::TrackType GetType() = 0;
 
+protected:
+  
+  RefPtr<MFTDecoder> mDecoder;
 };
 
 
@@ -57,7 +65,6 @@ public:
 class WMFMediaDataDecoder : public MediaDataDecoder {
 public:
   WMFMediaDataDecoder(MFTManager* aOutputSource,
-                      MFTDecoder* aDecoder,
                       FlushableTaskQueue* aAudioTaskQueue,
                       MediaDataDecoderCallback* aCallback);
   ~WMFMediaDataDecoder();
@@ -97,7 +104,6 @@ private:
   RefPtr<FlushableTaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
 
-  RefPtr<MFTDecoder> mDecoder;
   nsAutoPtr<MFTManager> mMFTManager;
 
   

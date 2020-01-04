@@ -18,12 +18,10 @@ PRLogModuleInfo* GetDemuxerLog();
 namespace mozilla {
 
 WMFMediaDataDecoder::WMFMediaDataDecoder(MFTManager* aMFTManager,
-                                         MFTDecoder* aDecoder,
                                          FlushableTaskQueue* aTaskQueue,
                                          MediaDataDecoderCallback* aCallback)
   : mTaskQueue(aTaskQueue)
   , mCallback(aCallback)
-  , mDecoder(aDecoder)
   , mMFTManager(aMFTManager)
   , mMonitor("WMFMediaDataDecoder")
   , mIsFlushing(false)
@@ -39,10 +37,7 @@ nsRefPtr<MediaDataDecoder::InitPromise>
 WMFMediaDataDecoder::Init()
 {
   MOZ_ASSERT(!mIsShutDown);
-
-  return mDecoder ?
-           InitPromise::CreateAndResolve(mMFTManager->GetType(), __func__) :
-           InitPromise::CreateAndReject(MediaDataDecoder::DecoderFailureReason::INIT_ERROR, __func__);
+  return InitPromise::CreateAndResolve(mMFTManager->GetType(), __func__);
 }
 
 
@@ -104,7 +99,6 @@ WMFMediaDataDecoder::ProcessShutdown()
       SendTelemetry(S_OK);
     }
   }
-  mDecoder = nullptr;
 }
 
 
@@ -177,8 +171,8 @@ WMFMediaDataDecoder::ProcessOutput()
 void
 WMFMediaDataDecoder::ProcessFlush()
 {
-  if (mDecoder) {
-    mDecoder->Flush();
+  if (mMFTManager) {
+    mMFTManager->Flush();
   }
   MonitorAutoLock mon(mMonitor);
   mIsFlushing = false;
@@ -210,11 +204,9 @@ WMFMediaDataDecoder::ProcessDrain()
     MonitorAutoLock mon(mMonitor);
     isFlushing = mIsFlushing;
   }
-  if (!isFlushing && mDecoder) {
+  if (!isFlushing && mMFTManager) {
     
-    if (FAILED(mDecoder->SendMFTMessage(MFT_MESSAGE_COMMAND_DRAIN, 0))) {
-      NS_WARNING("Failed to send DRAIN command to MFT");
-    }
+    mMFTManager->Drain();
     
     ProcessOutput();
   }
