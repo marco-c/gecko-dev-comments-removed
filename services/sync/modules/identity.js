@@ -13,6 +13,7 @@ Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-sync/util.js");
+Cu.import("resource://services-common/async.js");
 
 
 for (let symbol of ["BulkKeyBundle", "SyncKeyBundle"]) {
@@ -457,7 +458,7 @@ IdentityManager.prototype = {
     
     try {
       service.recordManager.get(service.storageURL + "meta/fxa_credentials");
-    } catch (ex) {
+    } catch (ex if !Async.isShutdownException(ex)) {
       this._log.warn("Failed to pre-fetch the migration sentinel", ex);
     }
   },

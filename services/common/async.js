@@ -123,11 +123,22 @@ this.Async = {
     Services.obs.addObserver(function onQuitApplication() {
       Services.obs.removeObserver(onQuitApplication, "quit-application");
       Async.checkAppReady = function() {
-        throw Components.Exception("App. Quitting", Cr.NS_ERROR_ABORT);
+        let exception = Components.Exception("App. Quitting", Cr.NS_ERROR_ABORT);
+        exception.appIsShuttingDown = true;
+        throw exception;
       };
     }, "quit-application", false);
     
     return (Async.checkAppReady = function() { return true; })();
+  },
+
+  
+
+
+
+
+  isShutdownException(exception) {
+    return exception && exception.appIsShuttingDown === true;
   },
 
   
