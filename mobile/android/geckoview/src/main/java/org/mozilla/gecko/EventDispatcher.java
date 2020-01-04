@@ -235,11 +235,7 @@ public final class EventDispatcher {
         
         
         
-        if (dispatchToThread(type, message, callback,
-                             mUiThreadListeners, ThreadUtils.getUiHandler()) ||
-            dispatchToThread(type, message, callback,
-                             mBackgroundThreadListeners, ThreadUtils.getBackgroundHandler())) {
-
+        if (dispatchToThreads(type, message,  null, callback)) {
             
             
             return;
@@ -255,8 +251,96 @@ public final class EventDispatcher {
         }
     }
 
+    
+
+
+
+
+    public void dispatch(final Bundle message) {
+        dispatch(message,  null);
+    }
+
+    
+
+
+
+
+
+    public void dispatch(final Bundle message, final EventCallback callback) {
+        if (message == null) {
+            throw new IllegalArgumentException("Null message");
+        }
+
+        final String type = message.getCharSequence("type").toString();
+        if (type == null) {
+            Log.e(LOGTAG, "Bundle message must have a type property");
+            return;
+        }
+        dispatchToThreads(type,  null, message,  callback);
+    }
+
+    
+
+
+
+
+
+    public void dispatch(final String type, final Bundle message) {
+        dispatch(type, message,  null);
+    }
+
+    
+
+
+
+
+
+
+    public void dispatch(final String type, final Bundle message, final EventCallback callback) {
+        dispatchToThreads(type,  null, message,  callback);
+    }
+
+    private boolean dispatchToThreads(final String type,
+                                      final NativeJSObject jsMessage,
+                                      final Bundle bundleMessage,
+                                      final EventCallback callback) {
+        if (dispatchToThread(type, jsMessage, bundleMessage, callback,
+                             mUiThreadListeners, ThreadUtils.getUiHandler())) {
+            return true;
+        }
+
+        if (dispatchToThread(type, jsMessage, bundleMessage, callback,
+                             mBackgroundThreadListeners, ThreadUtils.getBackgroundHandler())) {
+            return true;
+        }
+
+        if (jsMessage == null) {
+            Log.w(LOGTAG, "No listeners for " + type);
+        }
+
+        if (!AppConstants.RELEASE_BUILD && jsMessage == null) {
+            
+            
+            
+            boolean hasGeckoListener = false;
+            synchronized (mGeckoThreadNativeListeners) {
+                hasGeckoListener |= mGeckoThreadNativeListeners.containsKey(type);
+            }
+            synchronized (mGeckoThreadJSONListeners) {
+                hasGeckoListener |= mGeckoThreadJSONListeners.containsKey(type);
+            }
+            if (hasGeckoListener) {
+                throw new IllegalStateException(
+                        "Dispatching Bundle message to Gecko listener " + type);
+            }
+        }
+
+        return false;
+    }
+
     private boolean dispatchToThread(final String type,
-                                     final NativeJSObject message,
+                                     final NativeJSObject jsMessage,
+                                     final Bundle bundleMessage,
                                      final EventCallback callback,
                                      final Map<String, List<BundleEventListener>> listenersMap,
                                      final Handler thread) {
@@ -283,7 +367,7 @@ public final class EventDispatcher {
 
             final Bundle messageAsBundle;
             try {
-                messageAsBundle = message.toBundle();
+                messageAsBundle = jsMessage != null ? jsMessage.toBundle() : bundleMessage;
             } catch (final NativeJSObject.InvalidPropertyException e) {
                 Log.e(LOGTAG, "Exception occurred while handling " + type, e);
                 return true;
