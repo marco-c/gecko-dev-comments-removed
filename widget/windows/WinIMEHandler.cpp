@@ -959,5 +959,16 @@ IMEHandler::SetCandidateWindow(nsWindow* aWindow, CANDIDATEFORM* aForm)
   IMMHandler::SetCandidateWindow(aWindow, aForm);
 }
 
+
+void
+IMEHandler::DefaultProcOfPluginEvent(nsWindow* aWindow,
+                                     const NPEvent* aPluginEvent)
+{
+  if (!sPluginHasFocus) {
+    return;
+  }
+  IMMHandler::DefaultProcOfPluginEvent(aWindow, aPluginEvent);
+}
+
 } 
 } 

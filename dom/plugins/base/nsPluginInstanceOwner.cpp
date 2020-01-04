@@ -62,6 +62,7 @@ using mozilla::DefaultXDisplay;
 #include "nsPIWindowRoot.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/TextComposition.h"
+#include "mozilla/AutoRestore.h"
 
 #include "nsContentCID.h"
 #include "nsWidgetsCID.h"
@@ -367,6 +368,11 @@ nsPluginInstanceOwner::nsPluginInstanceOwner()
 #ifdef MOZ_WIDGET_ANDROID
   mFullScreen = false;
   mJavaView = nullptr;
+#endif
+
+#ifdef XP_WIN
+  mGotCompositionData = false;
+  mSentStartComposition = false;
 #endif
 }
 
@@ -799,6 +805,9 @@ nsPluginInstanceOwner::GetCompositionString(uint32_t aType,
                                             nsTArray<uint8_t>* aDist,
                                             int32_t* aLength)
 {
+  
+  mGotCompositionData = true;
+
   RefPtr<TextComposition> composition = GetTextComposition();
   if (NS_WARN_IF(!composition)) {
     return false;
@@ -1660,10 +1669,10 @@ nsresult nsPluginInstanceOwner::DispatchFocusToPlugin(nsIDOMEvent* aFocusEvent)
   if (theEvent) {
     WidgetGUIEvent focusEvent(theEvent->mFlags.mIsTrusted, theEvent->mMessage,
                               nullptr);
-    nsEventStatus rv = ProcessEvent(focusEvent);
-    if (nsEventStatus_eConsumeNoDefault == rv) {
+    nsEventStatus status = ProcessEvent(focusEvent);
+    if (nsEventStatus_eConsumeNoDefault == status) {
       aFocusEvent->PreventDefault();
-      aFocusEvent->StopPropagation();
+      aFocusEvent->StopImmediatePropagation();
     }
   }
 
@@ -1775,6 +1784,28 @@ nsresult nsPluginInstanceOwner::DispatchMouseToPlugin(nsIDOMEvent* aMouseEvent,
 }
 
 #ifdef XP_WIN
+void
+nsPluginInstanceOwner::CallDefaultProc(const WidgetGUIEvent* aEvent)
+{
+  nsCOMPtr<nsIWidget> widget = GetContainingWidgetIfOffset();
+  if (!widget) {
+    widget = GetRootWidgetForPluginFrame(mPluginFrame);
+    if (NS_WARN_IF(!widget)) {
+      return;
+    }
+  }
+
+  const NPEvent* npEvent =
+    static_cast<const NPEvent*>(aEvent->mPluginEvent);
+  if (NS_WARN_IF(!npEvent)) {
+    return;
+  }
+
+  WidgetPluginEvent pluginEvent(true, ePluginInputEvent, widget);
+  pluginEvent.mPluginEvent.Copy(*npEvent);
+  widget->DefaultProcOfPluginEvent(pluginEvent);
+}
+
 already_AddRefed<TextComposition>
 nsPluginInstanceOwner::GetTextComposition()
 {
@@ -1824,13 +1855,79 @@ nsPluginInstanceOwner::DispatchCompositionToPlugin(nsIDOMEvent* aEvent)
       compositionChangeEventHandlingMarker(composition, compositionEvent);
   }
 
+  
+  
+  
+  
+  AutoRestore<bool> restore(mGotCompositionData);
+  mGotCompositionData = false;
+
   nsEventStatus rv = ProcessEvent(*compositionEvent);
+  aEvent->StopImmediatePropagation();
+
   
-  
-  if (nsEventStatus_eConsumeNoDefault == rv) {
-    aEvent->StopImmediatePropagation();
+  const NPEvent* pPluginEvent =
+    static_cast<const NPEvent*>(compositionEvent->mPluginEvent);
+  if (NS_WARN_IF(!pPluginEvent)) {
+    return NS_OK;
   }
-#endif
+
+  if (pPluginEvent->event == WM_IME_STARTCOMPOSITION) {
+    
+    
+    
+    if (nsEventStatus_eConsumeNoDefault != rv)  {
+      CallDefaultProc(compositionEvent);
+      mSentStartComposition = true;
+    } else {
+      mSentStartComposition = false;
+    }
+    return NS_OK;
+  }
+
+  if (pPluginEvent->event == WM_IME_ENDCOMPOSITION) {
+    
+    
+    
+    CallDefaultProc(compositionEvent);
+    return NS_OK;
+  }
+
+  if (pPluginEvent->event == WM_IME_COMPOSITION && !mGotCompositionData) {
+    nsCOMPtr<nsIWidget> widget = GetContainingWidgetIfOffset();
+    if (!widget) {
+      widget = GetRootWidgetForPluginFrame(mPluginFrame);
+    }
+
+    if (pPluginEvent->lParam & GCS_RESULTSTR) {
+      
+      for (size_t i = 0; i < compositionEvent->mData.Length(); i++) {
+        WidgetPluginEvent charEvent(true, ePluginInputEvent, widget);
+        NPEvent event;
+        event.event = WM_CHAR;
+        event.wParam = compositionEvent->mData[i];
+        event.lParam = 0;
+        charEvent.mPluginEvent.Copy(event);
+        ProcessEvent(charEvent);
+      }
+      return NS_OK;
+    }
+    if (!mSentStartComposition) {
+      
+      
+      WidgetPluginEvent event(true, ePluginInputEvent, widget);
+      NPEvent npevent;
+      npevent.event = WM_IME_STARTCOMPOSITION;
+      npevent.wParam = 0;
+      npevent.lParam = 0;
+      event.mPluginEvent.Copy(npevent);
+      CallDefaultProc(&event);
+      mSentStartComposition = true;
+    }
+
+    CallDefaultProc(compositionEvent);
+  }
+#endif 
   return NS_OK;
 }
 
