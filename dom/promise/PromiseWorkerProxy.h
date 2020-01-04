@@ -110,7 +110,6 @@ class WorkerPrivate;
 
 
 class PromiseWorkerProxy : public PromiseNativeHandler
-                         , public workers::WorkerHolder
                          , public StructuredCloneHolderBase
 {
   friend class PromiseWorkerProxyRunnable;
@@ -185,8 +184,6 @@ protected:
   virtual void RejectedCallback(JSContext* aCx,
                                 JS::Handle<JS::Value> aValue) override;
 
-  virtual bool Notify(workers::Status aStatus) override;
-
 private:
   PromiseWorkerProxy(workers::WorkerPrivate* aWorkerPrivate,
                      Promise* aWorkerPromise,
@@ -227,10 +224,7 @@ private:
   
   Mutex mCleanUpLock;
 
-#ifdef DEBUG
-  
-  bool mWorkerHolderAdded;
-#endif
+  UniquePtr<workers::WorkerHolder> mWorkerHolder;
 };
 } 
 } 
