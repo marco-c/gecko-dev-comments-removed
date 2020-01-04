@@ -1315,7 +1315,8 @@ TSFTextStore::TSFTextStore()
   , mRequestedAttrValues(false)
   , mIsRecordingActionsWithoutLock(false)
   , mPendingOnSelectionChange(false)
-  , mPendingOnLayoutChange(false)
+  , mHasReturnedNoLayoutError(false)
+  , mWaitingQueryLayout(false)
   , mPendingDestroy(false)
   , mDeferClearingLockedContent(false)
   , mNativeCaretIsCreated(false)
@@ -1670,7 +1671,7 @@ TSFTextStore::DidLockGranted()
   
   if (!mWidget || mWidget->Destroyed()) {
     mPendingOnSelectionChange = false;
-    mPendingOnLayoutChange = false;
+    mHasReturnedNoLayoutError = false;
   }
 }
 
@@ -1695,7 +1696,7 @@ TSFTextStore::FlushPendingActions()
     mPendingActions.Clear();
     mLockedContent.Clear();
     mPendingOnSelectionChange = false;
-    mPendingOnLayoutChange = false;
+    mHasReturnedNoLayoutError = false;
     return;
   }
 
@@ -1901,11 +1902,11 @@ TSFTextStore::MaybeFlushPendingNotifications()
             "mLockedContent is cleared", this));
   }
 
-  if (mPendingOnLayoutChange) {
+  if (mHasReturnedNoLayoutError) {
     MOZ_LOG(sTextStoreLog, LogLevel::Info,
            ("TSF: 0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
             "calling TSFTextStore::NotifyTSFOfLayoutChange()...", this));
-    NotifyTSFOfLayoutChange(true);
+    NotifyTSFOfLayoutChange();
   }
 
   if (mPendingOnSelectionChange) {
@@ -3339,10 +3340,11 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView,
 {
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
          ("TSF: 0x%p TSFTextStore::GetACPFromPoint(pvcView=%d, pt=%p (x=%d, "
-          "y=%d), dwFlags=%s, pacp=%p, mDeferNotifyingTSF=%s",
+          "y=%d), dwFlags=%s, pacp=%p, mDeferNotifyingTSF=%s, "
+          "mWaitingQueryLayout=%s",
           this, vcView, pt, pt ? pt->x : 0, pt ? pt->y : 0,
           GetACPFromPointFlagName(dwFlags).get(), pacp,
-          GetBoolName(mDeferNotifyingTSF)));
+          GetBoolName(mDeferNotifyingTSF), GetBoolName(mWaitingQueryLayout)));
 
   if (!IsReadLocked()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3372,11 +3374,13 @@ TSFTextStore::GetACPFromPoint(TsViewCookie vcView,
     return E_INVALIDARG;
   }
 
+  mWaitingQueryLayout = false;
+
   if (mLockedContent.IsLayoutChanged()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
-           ("TSF: 0x%p   TSFTextStore::GetACPFromPoint() FAILED due to "
-            "layout not recomputed", this));
-    mPendingOnLayoutChange = true;
+           ("TSF: 0x%p   TSFTextStore::GetACPFromPoint() returned "
+            "TS_E_NOLAYOUT", this));
+    mHasReturnedNoLayoutError = true;
     return TS_E_NOLAYOUT;
   }
 
@@ -3492,9 +3496,9 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
          ("TSF: 0x%p TSFTextStore::GetTextExt(vcView=%ld, "
           "acpStart=%ld, acpEnd=%ld, prc=0x%p, pfClipped=0x%p), "
-          "mDeferNotifyingTSF=%s",
+          "mDeferNotifyingTSF=%s, mWaitingQueryLayout=%s",
           this, vcView, acpStart, acpEnd, prc, pfClipped,
-          GetBoolName(mDeferNotifyingTSF)));
+          GetBoolName(mDeferNotifyingTSF), GetBoolName(mWaitingQueryLayout)));
 
   if (!IsReadLocked()) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
@@ -3523,6 +3527,8 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
             "invalid position", this));
     return TS_E_INVALIDPOS;
   }
+
+  mWaitingQueryLayout = false;
 
   
   
@@ -3611,9 +3617,9 @@ TSFTextStore::GetTextExt(TsViewCookie vcView,
 
   if (mLockedContent.IsLayoutChangedAfter(acpEnd)) {
     MOZ_LOG(sTextStoreLog, LogLevel::Error,
-           ("TSF: 0x%p   TSFTextStore::GetTextExt() FAILED due to "
-            "layout not recomputed at %d", this, acpEnd));
-    mPendingOnLayoutChange = true;
+           ("TSF: 0x%p   TSFTextStore::GetTextExt() returned TS_E_NOLAYOUT "
+            "(acpEnd=%d)", this, acpEnd));
+    mHasReturnedNoLayoutError = true;
     return TS_E_NOLAYOUT;
   }
 
@@ -4768,7 +4774,7 @@ TSFTextStore::OnLayoutChangeInternal()
   MOZ_LOG(sTextStoreLog, LogLevel::Info,
          ("TSF: 0x%p   TSFTextStore::OnLayoutChangeInternal(), calling "
           "NotifyTSFOfLayoutChange()...", this));
-  if (NS_WARN_IF(!NotifyTSFOfLayoutChange(mPendingOnLayoutChange))) {
+  if (NS_WARN_IF(!NotifyTSFOfLayoutChange())) {
     rv = NS_ERROR_FAILURE;
   }
 
@@ -4781,9 +4787,16 @@ TSFTextStore::OnLayoutChangeInternal()
 }
 
 bool
-TSFTextStore::NotifyTSFOfLayoutChange(bool aFlush)
+TSFTextStore::NotifyTSFOfLayoutChange()
 {
-  mPendingOnLayoutChange = false;
+  bool returnedNoLayoutError = mHasReturnedNoLayoutError;
+
+  
+  mWaitingQueryLayout = returnedNoLayoutError;
+
+  
+  
+  mHasReturnedNoLayoutError = false;
 
   
   
@@ -4796,7 +4809,7 @@ TSFTextStore::NotifyTSFOfLayoutChange(bool aFlush)
   MaybeDestroyNativeCaret();
 
   
-  bool ret = false;
+  bool ret = true;
 
   if (mSink) {
     MOZ_LOG(sTextStoreLog, LogLevel::Info,
@@ -4804,12 +4817,16 @@ TSFTextStore::NotifyTSFOfLayoutChange(bool aFlush)
             "calling ITextStoreACPSink::OnLayoutChange()...",
             this));
     HRESULT hr = mSink->OnLayoutChange(TS_LC_CHANGE, TEXTSTORE_DEFAULT_VIEW);
+    MOZ_LOG(sTextStoreLog, LogLevel::Info,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
+            "called ITextStoreACPSink::OnLayoutChange()",
+            this));
     ret = SUCCEEDED(hr);
   }
 
   
   
-  if (aFlush && mContext) {
+  if (returnedNoLayoutError && mContext) {
     RefPtr<ITfContextOwnerServices> service;
     mContext->QueryInterface(IID_ITfContextOwnerServices,
                              getter_AddRefs(service));
@@ -4819,11 +4836,66 @@ TSFTextStore::NotifyTSFOfLayoutChange(bool aFlush)
               "calling ITfContextOwnerServices::OnLayoutChange()...",
               this));
       HRESULT hr = service->OnLayoutChange();
-      ret = SUCCEEDED(hr);
+      ret = ret && SUCCEEDED(hr);
+      MOZ_LOG(sTextStoreLog, LogLevel::Info,
+             ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
+              "called ITfContextOwnerServices::OnLayoutChange()",
+              this));
     }
   }
 
-  return ret;
+  if (!mWidget || mWidget->Destroyed()) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Info,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
+            "the widget is destroyed during calling OnLayoutChange()",
+            this));
+    return ret;
+  }
+
+  if (mDestroyed) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Info,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
+            "the TSFTextStore instance is destroyed during calling "
+            "OnLayoutChange()",
+            this));
+    return ret;
+  }
+
+  if (!mWaitingQueryLayout) {
+    MOZ_LOG(sTextStoreLog, LogLevel::Info,
+           ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChange(), "
+            "succeeded notifying TIP of our layout change",
+            this));
+    return ret;
+  }
+
+  
+  
+  
+  mHasReturnedNoLayoutError = returnedNoLayoutError;
+  ::PostMessage(mWidget->GetWindowHandle(),
+                MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE,
+                reinterpret_cast<WPARAM>(this), 0);
+
+  return true;
+}
+
+void
+TSFTextStore::NotifyTSFOfLayoutChangeAgain()
+{
+  
+  
+  if (!mWaitingQueryLayout) {
+    return;
+  }
+
+  MOZ_LOG(sTextStoreLog, LogLevel::Info,
+         ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChangeAgain(), "
+          "calling NotifyTSFOfLayoutChange()...", this));
+  NotifyTSFOfLayoutChange();
+  MOZ_LOG(sTextStoreLog, LogLevel::Info,
+         ("TSF: 0x%p   TSFTextStore::NotifyTSFOfLayoutChangeAgain(), "
+          "called NotifyTSFOfLayoutChange()", this));
 }
 
 nsresult
@@ -5462,6 +5534,13 @@ TSFTextStore::ProcessMessage(nsWindowBase* aWindow,
       }
       CommitComposition(false);
       break;
+    case MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE: {
+      TSFTextStore* textStore = reinterpret_cast<TSFTextStore*>(aWParam);
+      if (textStore == sEnabledTextStore) {
+        textStore->NotifyTSFOfLayoutChangeAgain();
+      }
+      break;
+    }
   }
 }
 

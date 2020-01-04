@@ -296,7 +296,8 @@ protected:
 
   void     NotifyTSFOfTextChange(const TS_TEXTCHANGE& aTextChange);
   void     NotifyTSFOfSelectionChange();
-  bool     NotifyTSFOfLayoutChange(bool aFlush);
+  bool     NotifyTSFOfLayoutChange();
+  void     NotifyTSFOfLayoutChangeAgain();
 
   HRESULT  HandleRequestAttrs(DWORD aFlags,
                               ULONG aFilterCount,
@@ -830,9 +831,12 @@ protected:
   
   
   
+  bool                         mHasReturnedNoLayoutError;
   
   
-  bool                         mPendingOnLayoutChange;
+  
+  
+  bool                         mWaitingQueryLayout;
   
   
   bool                         mPendingDestroy;

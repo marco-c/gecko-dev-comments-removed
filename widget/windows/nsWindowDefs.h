@@ -38,6 +38,8 @@
 #define MOZ_WM_REACTIVATE                 (WM_APP+0x0314)
 
 
+#define MOZ_WM_NOTIY_TSF_OF_LAYOUT_CHANGE (WM_APP+0x0315)
+
 
 #define MOZ_WM_ENSUREVISIBLE              (WM_APP+0x374F)
 
