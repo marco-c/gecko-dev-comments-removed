@@ -67,7 +67,7 @@ public abstract class NotificationClient {
 
             mHandler.update(mNotificationID, progress, progressMax, alertText);
         }
-    };
+    }
 
     
 
@@ -114,7 +114,7 @@ public abstract class NotificationClient {
 
 
     public void update(final int notificationID, final long aProgress, final long aProgressMax,
-            final String aAlertText) {
+                       final String aAlertText) {
         UpdateRunnable runnable = mUpdatesMap.get(notificationID);
 
         if (runnable == null) {
