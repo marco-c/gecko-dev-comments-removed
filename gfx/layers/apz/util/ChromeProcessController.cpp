@@ -147,6 +147,7 @@ ChromeProcessController::HandleDoubleTap(const mozilla::CSSPoint& aPoint,
   }
 
   CSSPoint point = APZCCallbackHelper::ApplyCallbackTransform(aPoint, aGuid);
+#if defined(MOZ_SINGLE_PROCESS_APZ)
   
   
   
@@ -155,6 +156,7 @@ ChromeProcessController::HandleDoubleTap(const mozilla::CSSPoint& aPoint,
   const float resolution = presShell->ScaleToResolution() ? presShell->GetResolution () : 1.0f;
   point.x = point.x / resolution;
   point.y = point.y / resolution;
+#endif 
   CSSRect zoomToRect = CalculateRectToZoomTo(document, point);
 
   uint32_t presShellId;
