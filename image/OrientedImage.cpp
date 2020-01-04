@@ -344,7 +344,7 @@ OrientedImage::GetImageSpaceInvalidationRect(const nsIntRect& aRect)
   }
 
   
-  gfxMatrix matrix(OrientationMatrix(innerSize,  true));
+  gfxMatrix matrix(OrientationMatrix(innerSize));
   gfxRect invalidRect(matrix.TransformBounds(gfxRect(rect.x, rect.y,
                                                      rect.width, rect.height)));
   invalidRect.RoundOut();
