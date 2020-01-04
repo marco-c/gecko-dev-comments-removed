@@ -609,13 +609,13 @@ nsNumberControlFrame::GetSpinButtonForPointerEvent(WidgetGUIEvent* aEvent) const
     
     return eSpinButtonNone;
   }
-  if (aEvent->originalTarget == mSpinUp) {
+  if (aEvent->mOriginalTarget == mSpinUp) {
     return eSpinButtonUp;
   }
-  if (aEvent->originalTarget == mSpinDown) {
+  if (aEvent->mOriginalTarget == mSpinDown) {
     return eSpinButtonDown;
   }
-  if (aEvent->originalTarget == mSpinBox) {
+  if (aEvent->mOriginalTarget == mSpinBox) {
     
     
     
@@ -678,7 +678,7 @@ nsNumberControlFrame::IsFocused() const
 void
 nsNumberControlFrame::HandleFocusEvent(WidgetEvent* aEvent)
 {
-  if (aEvent->originalTarget != mTextField) {
+  if (aEvent->mOriginalTarget != mTextField) {
     
     HTMLInputElement::FromContent(mTextField)->Focus();
   }

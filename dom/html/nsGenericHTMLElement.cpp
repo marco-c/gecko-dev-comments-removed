@@ -2277,7 +2277,7 @@ nsGenericHTMLFormElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
         
         nsIFormControlFrame* formControlFrame = GetFormControlFrame(true);
         if (formControlFrame &&
-            aVisitor.mEvent->originalTarget == static_cast<nsINode*>(this))
+            aVisitor.mEvent->mOriginalTarget == static_cast<nsINode*>(this))
           formControlFrame->SetFocus(true, true);
         break;
       }

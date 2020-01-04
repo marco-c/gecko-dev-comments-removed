@@ -3123,7 +3123,7 @@ nsGlobalWindow::PreHandleEvent(EventChainPreVisitor& aVisitor)
     
     
     nsCOMPtr<nsPIDOMWindowInner> window =
-      do_QueryInterface(aVisitor.mEvent->originalTarget);
+      do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     if (window) {
       mIsHandlingResizeEvent = true;
     }

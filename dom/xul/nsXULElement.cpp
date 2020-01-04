@@ -1289,7 +1289,7 @@ nsXULElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
     }
     if (aVisitor.mEvent->mMessage == eXULCommand &&
         aVisitor.mEvent->mClass == eInputEventClass &&
-        aVisitor.mEvent->originalTarget == static_cast<nsIContent*>(this) &&
+        aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
         !IsXULElement(nsGkAtoms::command)) {
         
         

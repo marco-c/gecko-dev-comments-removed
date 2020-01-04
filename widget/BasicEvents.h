@@ -348,7 +348,7 @@ public:
   
   nsCOMPtr<dom::EventTarget> mTarget;
   nsCOMPtr<dom::EventTarget> mCurrentTarget;
-  nsCOMPtr<dom::EventTarget> originalTarget;
+  nsCOMPtr<dom::EventTarget> mOriginalTarget;
 
   void AssignEventData(const WidgetEvent& aEvent, bool aCopyTargets)
   {
@@ -362,7 +362,7 @@ public:
     
     mTarget = aCopyTargets ? aEvent.mTarget : nullptr;
     mCurrentTarget = aCopyTargets ? aEvent.mCurrentTarget : nullptr;
-    originalTarget = aCopyTargets ? aEvent.originalTarget : nullptr;
+    mOriginalTarget = aCopyTargets ? aEvent.mOriginalTarget : nullptr;
   }
 
   

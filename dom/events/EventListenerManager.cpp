@@ -1225,7 +1225,7 @@ EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
           if (!*aDOMEvent) {
             
             nsCOMPtr<EventTarget> et =
-              do_QueryInterface(aEvent->originalTarget);
+              do_QueryInterface(aEvent->mOriginalTarget);
             RefPtr<Event> event = EventDispatcher::CreateEvent(et, aPresContext,
                                                                aEvent,
                                                                EmptyString());

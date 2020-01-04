@@ -3429,7 +3429,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
   
   if (mType == NS_FORM_INPUT_NUMBER &&
       aVisitor.mEvent->IsTrusted()  &&
-      aVisitor.mEvent->originalTarget != this) {
+      aVisitor.mEvent->mOriginalTarget != this) {
     
     
     
@@ -3439,7 +3439,7 @@ HTMLInputElement::PreHandleEvent(EventChainPreVisitor& aVisitor)
     if (numberControlFrame) {
       textControl = numberControlFrame->GetAnonTextControl();
     }
-    if (textControl && aVisitor.mEvent->originalTarget == textControl) {
+    if (textControl && aVisitor.mEvent->mOriginalTarget == textControl) {
       if (aVisitor.mEvent->mMessage == eEditorInput) {
         
         nsAutoString value;
@@ -3715,7 +3715,7 @@ HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor)
     
     FilePickerType type = FILE_PICKER_FILE;
     nsCOMPtr<nsIContent> target =
-      do_QueryInterface(aVisitor.mEvent->originalTarget);
+      do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     if (target &&
         target->GetParent() == this &&
         target->IsRootOfNativeAnonymousSubtree() &&
@@ -3782,7 +3782,7 @@ HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor)
       mType != NS_FORM_INPUT_NUMBER) {
     WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
     if (mouseEvent && mouseEvent->IsLeftClickEvent() &&
-        !ShouldPreventDOMActivateDispatch(aVisitor.mEvent->originalTarget)) {
+        !ShouldPreventDOMActivateDispatch(aVisitor.mEvent->mOriginalTarget)) {
       
       
       InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);

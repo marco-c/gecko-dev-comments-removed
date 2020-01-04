@@ -692,7 +692,7 @@ nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
       
       
       
-      ((this == aVisitor.mEvent->originalTarget &&
+      ((this == aVisitor.mEvent->mOriginalTarget &&
         !ChromeOnlyAccess()) || isAnonForEvents || GetShadowRoot())) {
      nsCOMPtr<nsIContent> relatedTarget =
        do_QueryInterface(aVisitor.mEvent->AsMouseEvent()->relatedTarget);
@@ -717,7 +717,7 @@ nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
       
       
       if (isAnonForEvents || aVisitor.mRelatedTargetIsInAnon ||
-          (aVisitor.mEvent->originalTarget == this &&
+          (aVisitor.mEvent->mOriginalTarget == this &&
            (aVisitor.mRelatedTargetIsInAnon =
             relatedTarget->ChromeOnlyAccess()))) {
         nsIContent* anonOwner = FindChromeAccessOnlySubtreeOwner(this);
@@ -736,7 +736,7 @@ nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
             if (anonOwner == anonOwnerRelated) {
 #ifdef DEBUG_smaug
               nsCOMPtr<nsIContent> originalTarget =
-                do_QueryInterface(aVisitor.mEvent->originalTarget);
+                do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
               nsAutoString ot, ct, rt;
               if (originalTarget) {
                 originalTarget->NodeInfo()->NameAtom()->ToString(ot);
@@ -875,7 +875,8 @@ nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
 #ifdef DEBUG
     
     
-    nsCOMPtr<nsIContent> t = do_QueryInterface(aVisitor.mEvent->originalTarget);
+    nsCOMPtr<nsIContent> t =
+      do_QueryInterface(aVisitor.mEvent->mOriginalTarget);
     NS_ASSERTION(!t || !t->ChromeOnlyAccess() ||
                  aVisitor.mEvent->mClass != eMutationEventClass ||
                  aVisitor.mDOMEvent,
