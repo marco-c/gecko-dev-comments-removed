@@ -340,6 +340,12 @@ ImageDocument::ShrinkToFit()
   }
 
   
+  nsCOMPtr<nsIContent> imageContent = mImageContent;
+  nsCOMPtr<nsIDOMHTMLImageElement> image = do_QueryInterface(mImageContent);
+  image->SetWidth(std::max(1, NSToCoordFloor(GetRatio() * mImageWidth)));
+  image->SetHeight(std::max(1, NSToCoordFloor(GetRatio() * mImageHeight)));
+  
+  
   
   ScrollImageTo(0, 0, false);
 

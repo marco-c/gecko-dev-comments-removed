@@ -114,9 +114,6 @@ protected:
 
   float                         mVisibleWidth;
   float                         mVisibleHeight;
-  
-  
-  
   int32_t                       mImageWidth;
   int32_t                       mImageHeight;
 
