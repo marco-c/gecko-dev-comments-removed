@@ -287,7 +287,6 @@ SaveToEnv(const char *putenv)
   if (expr)
     PR_SetEnv(expr);
   
-  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(expr);
 }
 
 
@@ -4986,5 +4985,7 @@ OverrideDefaultLocaleIfNeeded() {
 
 void
 XRE_EnableSameExecutableForContentProc() {
-  mozilla::ipc::GeckoChildProcessHost::EnableSameExecutableForContentProc();
+  if (!PR_GetEnv("MOZ_SEPARATE_CHILD_PROCESS")) {
+    mozilla::ipc::GeckoChildProcessHost::EnableSameExecutableForContentProc();
+  }
 }
