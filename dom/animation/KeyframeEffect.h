@@ -69,6 +69,7 @@ struct ComputedTiming
   
   
   double              mIterations = 1.0;
+  double              mIterationStart = 0.0;
   StickyTimeDuration  mDuration;
 
   

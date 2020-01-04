@@ -36,6 +36,7 @@ GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
   aRetVal.mDelay = aTiming.mDelay.ToMilliseconds();
   aRetVal.mFill = aComputedTiming.mFill;
   aRetVal.mIterations = aComputedTiming.mIterations;
+  aRetVal.mIterationStart = aComputedTiming.mIterationStart;
   aRetVal.mDuration.SetAsUnrestrictedDouble() =
     aComputedTiming.mDuration.ToMilliseconds();
   aRetVal.mDirection = aTiming.mDirection;
@@ -45,6 +46,7 @@ GetComputedTimingDictionary(const ComputedTiming& aComputedTiming,
   aRetVal.mEndTime = aComputedTiming.mEndTime.ToMilliseconds();
   aRetVal.mLocalTime = AnimationUtils::TimeDurationToDouble(aLocalTime);
   aRetVal.mProgress = aComputedTiming.mProgress;
+
   if (!aRetVal.mProgress.IsNull()) {
     
     
@@ -244,6 +246,8 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
   result.mIterations = IsNaN(aTiming.mIterations) || aTiming.mIterations < 0.0f ?
                        1.0f :
                        aTiming.mIterations;
+  result.mIterationStart = std::max(aTiming.mIterationStart, 0.0);
+
   result.mActiveDuration = ActiveDuration(result.mDuration, result.mIterations);
   
   result.mEndTime = aTiming.mDelay + result.mActiveDuration;
@@ -273,10 +277,11 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
       return result;
     }
     activeTime = result.mActiveDuration;
-    
-    
+    double finiteProgress =
+      (IsInfinite(result.mIterations) ? 0.0 : result.mIterations)
+      + result.mIterationStart;
     isEndOfFinalIteration = result.mIterations != 0.0 &&
-                            result.mIterations == floor(result.mIterations);
+                            fmod(finiteProgress, 1.0) == 0;
   } else if (localTime < aTiming.mDelay) {
     result.mPhase = ComputedTiming::AnimationPhase::Before;
     if (!result.FillsBackwards()) {
@@ -293,48 +298,65 @@ KeyframeEffectReadOnly::GetComputedTimingAt(
   }
 
   
-  StickyTimeDuration iterationTime;
-  if (result.mDuration != zeroDuration) {
-    iterationTime = isEndOfFinalIteration
-                    ? result.mDuration
-                    : activeTime % result.mDuration;
-  } 
+  
+  
+  StickyTimeDuration startOffset =
+    result.mIterationStart == 0.0
+    ? StickyTimeDuration(0)
+    : result.mDuration.MultDouble(result.mIterationStart);
+  StickyTimeDuration scaledActiveTime = activeTime + startOffset;
 
   
-  if (isEndOfFinalIteration) {
+  StickyTimeDuration iterationTime;
+  if (result.mDuration != zeroDuration &&
+      scaledActiveTime != StickyTimeDuration::Forever()) {
+    iterationTime = isEndOfFinalIteration
+                    ? result.mDuration
+      : scaledActiveTime % result.mDuration;
+  } 
+
+
+
+
+  
+  if (result.mPhase == ComputedTiming::AnimationPhase::Before ||
+      result.mIterations == 0) {
+    result.mCurrentIteration = static_cast<uint64_t>(result.mIterationStart);
+  } else if (result.mPhase == ComputedTiming::AnimationPhase::After) {
     result.mCurrentIteration =
-      IsInfinite(result.mIterations) 
+      IsInfinite(result.mIterations)
       ? UINT64_MAX 
                    
-      : static_cast<uint64_t>(result.mIterations) - 1;
-  } else if (activeTime == zeroDuration) {
-    
-    
-    
-    
-    result.mCurrentIteration =
-      result.mPhase == ComputedTiming::AnimationPhase::After
-      ? static_cast<uint64_t>(result.mIterations) 
-      : 0;
+      : static_cast<uint64_t>(ceil(result.mIterations +
+                              result.mIterationStart)) - 1;
+  } else if (result.mDuration == StickyTimeDuration::Forever()) {
+    result.mCurrentIteration = static_cast<uint64_t>(result.mIterationStart);
   } else {
     result.mCurrentIteration =
-      static_cast<uint64_t>(activeTime / result.mDuration); 
+      static_cast<uint64_t>(scaledActiveTime / result.mDuration); 
   }
 
   
-  if (result.mPhase == ComputedTiming::AnimationPhase::Before) {
-    result.mProgress.SetValue(0.0);
+  if (result.mPhase == ComputedTiming::AnimationPhase::Before ||
+      result.mIterations == 0) {
+    double progress = fmod(result.mIterationStart, 1.0);
+    result.mProgress.SetValue(progress);
   } else if (result.mPhase == ComputedTiming::AnimationPhase::After) {
-    double progress = isEndOfFinalIteration
-                      ? 1.0
-                      : fmod(result.mIterations, 1.0);
+    double progress;
+    if (isEndOfFinalIteration) {
+      progress = 1.0;
+    } else if (IsInfinite(result.mIterations)) {
+      progress = fmod(result.mIterationStart, 1.0);
+    } else {
+      progress = fmod(result.mIterations + result.mIterationStart, 1.0);
+    }
     result.mProgress.SetValue(progress);
   } else {
     
     MOZ_ASSERT(result.mDuration != zeroDuration,
                "In the active phase of a zero-duration animation?");
     double progress = result.mDuration == StickyTimeDuration::Forever()
-                      ? 0.0
+                      ? fmod(result.mIterationStart, 1.0)
                       : iterationTime / result.mDuration;
     result.mProgress.SetValue(progress);
   }

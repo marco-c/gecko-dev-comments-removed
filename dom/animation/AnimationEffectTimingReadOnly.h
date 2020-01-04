@@ -51,6 +51,7 @@ struct TimingParams
   dom::OwningUnrestrictedDoubleOrString mDuration;
   TimeDuration mDelay;      
   double mIterations = 1.0; 
+  double mIterationStart = 0.0;
   dom::PlaybackDirection mDirection = dom::PlaybackDirection::Normal;
   dom::FillMode mFill = dom::FillMode::Auto;
   Maybe<ComputedTimingFunction> mFunction;
@@ -85,7 +86,7 @@ public:
   double Delay() const { return mTiming.mDelay.ToMilliseconds(); }
   double EndDelay() const { return 0.0; }
   FillMode Fill() const { return mTiming.mFill; }
-  double IterationStart() const { return 0.0; }
+  double IterationStart() const { return mTiming.mIterationStart; }
   double Iterations() const { return mTiming.mIterations; }
   void GetDuration(OwningUnrestrictedDoubleOrString& aRetVal) const
   {
