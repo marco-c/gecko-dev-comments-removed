@@ -31,13 +31,11 @@ class SVGRadialGradientElement;
 } 
 } 
 
-typedef nsSVGPaintServerFrame nsSVGGradientFrameBase;
 
 
 
 
-
-class nsSVGGradientFrame : public nsSVGGradientFrameBase
+class nsSVGGradientFrame : public nsSVGPaintServerFrame
 {
   typedef mozilla::gfx::ExtendMode ExtendMode;
 
