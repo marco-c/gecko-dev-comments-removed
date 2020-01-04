@@ -1306,6 +1306,10 @@ XMLHttpRequestMainThread::DispatchProgressEvent(DOMEventTargetHelper* aTarget,
     return;
   }
 
+  if (aType == ProgressEventType::progress) {
+    mInLoadProgressEvent = true;
+  }
+
   ProgressEventInit init;
   init.mBubbles = false;
   init.mCancelable = false;
@@ -1319,6 +1323,19 @@ XMLHttpRequestMainThread::DispatchProgressEvent(DOMEventTargetHelper* aTarget,
   event->SetTrusted(true);
 
   aTarget->DispatchDOMEvent(nullptr, event, nullptr, nullptr);
+
+  if (aType == ProgressEventType::progress) {
+    mInLoadProgressEvent = false;
+
+    
+    if (mResponseType == XMLHttpRequestResponseType::Moz_chunked_text ||
+        mResponseType == XMLHttpRequestResponseType::Moz_chunked_arraybuffer) {
+      mResponseBody.Truncate();
+      mResponseText.Truncate();
+      mResultArrayBuffer = nullptr;
+      mArrayBufferBuilder.reset();
+    }
+  }
 
   
   
@@ -1347,6 +1364,13 @@ bool
 XMLHttpRequestMainThread::IsSystemXHR() const
 {
   return mIsSystem || nsContentUtils::IsSystemPrincipal(mPrincipal);
+}
+ 
+bool
+XMLHttpRequestMainThread::InUploadPhase() const
+{
+  
+  return mState == State::opened;
 }
 
 NS_IMETHODIMP
@@ -1680,7 +1704,9 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest *request,
 
   ChangeState(State::loading);
 
-  MaybeDispatchProgressEvents(false);
+  if (!mFlagSynchronous && !mProgressTimerIsActive) {
+    StartProgressEventTimer();
+  }
 
   return NS_OK;
 }
@@ -1727,17 +1753,20 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   request->GetStatus(&status);
   mErrorLoad = mErrorLoad || NS_FAILED(status);
 
+  
+  
   if (mUpload && !mUploadComplete && !mErrorLoad && !mFlagSynchronous) {
-    if (mProgressTimerIsActive) {
-      mProgressTimerIsActive = false;
-      mProgressNotifier->Cancel();
+    StopProgressEventTimer();
+
+    mUploadTransferred = mUploadTotal;
+
+    if (mProgressSinceLastProgressEvent) {
+      DispatchProgressEvent(mUpload, ProgressEventType::progress,
+                            mUploadLengthComputable, mUploadTransferred,
+                            mUploadTotal);
+      mProgressSinceLastProgressEvent = false;
     }
-    if (mUploadTransferred < mUploadTotal) {
-      mUploadTransferred = mUploadTotal;
-      mProgressSinceLastProgressEvent = true;
-      mUploadLengthComputable = true;
-      MaybeDispatchProgressEvents(true);
-    }
+
     mUploadComplete = true;
     DispatchProgressEvent(mUpload, ProgressEventType::load,
                           true, mUploadTotal, mUploadTotal);
@@ -1925,9 +1954,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
   }
 
   
-  
-  if (NS_SUCCEEDED(rv) && !mFlagSynchronous &&
-      HasListenersFor(nsGkAtoms::onprogress)) {
+  if (NS_SUCCEEDED(rv) && HasListenersFor(nsGkAtoms::onprogress)) {
     StartProgressEventTimer();
   }
 
@@ -1969,13 +1996,6 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
 
   mXMLParserStreamListener = nullptr;
   mContext = nullptr;
-
-  
-  
-  
-  if (!mIsHtml) {
-    MaybeDispatchProgressEvents(true);
-  }
 
   if (NS_SUCCEEDED(status) &&
       (mResponseType == XMLHttpRequestResponseType::Blob ||
@@ -2073,10 +2093,18 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
 void
 XMLHttpRequestMainThread::ChangeStateToDone()
 {
-  if (mIsHtml) {
-    
-    
-    MaybeDispatchProgressEvents(true);
+  StopProgressEventTimer();
+
+  MOZ_ASSERT(!mFlagParseBody,
+             "ChangeStateToDone() called before async HTML parsing is done.");
+
+  
+  if (mProgressSinceLastProgressEvent && !mErrorLoad && !mFlagSynchronous) {
+    mLoadTotal = mLoadTransferred;
+    DispatchProgressEvent(this, ProgressEventType::progress,
+                          mLoadLengthComputable, mLoadTransferred,
+                          mLoadTotal);
+    mProgressSinceLastProgressEvent = false;
   }
 
   ChangeState(State::done, true);
@@ -2810,10 +2838,7 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
       }
     }
 
-    if (mProgressNotifier) {
-      mProgressTimerIsActive = false;
-      mProgressNotifier->Cancel();
-    }
+    StopProgressEventTimer();
 
     {
       nsAutoSyncOperation sync(suspendedDoc);
@@ -2839,11 +2864,9 @@ XMLHttpRequestMainThread::SendInternal(const RequestBodyBase* aBody)
     
     
     
-    if (mProgressNotifier) {
-      mProgressTimerIsActive = false;
-      mProgressNotifier->Cancel();
-    }
+    StopProgressEventTimer();
 
+    
     if (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress)) {
       StartProgressEventTimer();
     }
@@ -3121,10 +3144,8 @@ XMLHttpRequestMainThread::ChangeState(State aState, bool aBroadcast)
   mState = aState;
   nsresult rv = NS_OK;
 
-  if (mProgressNotifier &&
-      aState != State::headers_received && aState != State::loading) {
-    mProgressTimerIsActive = false;
-    mProgressNotifier->Cancel();
+  if (aState != State::headers_received && aState != State::loading) {
+    StopProgressEventTimer();
   }
 
 
@@ -3225,62 +3246,13 @@ XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
 
 
 
-void
-XMLHttpRequestMainThread::MaybeDispatchProgressEvents(bool aFinalProgress)
-{
-  if (aFinalProgress && mProgressTimerIsActive) {
-    mProgressTimerIsActive = false;
-    mProgressNotifier->Cancel();
-  }
-
-  if (mProgressTimerIsActive ||
-      !mProgressSinceLastProgressEvent ||
-      mErrorLoad ||
-      mFlagSynchronous) {
-    return;
-  }
-
-  if (!aFinalProgress) {
-    StartProgressEventTimer();
-  }
-
-  
-  if (mState == State::opened) {
-    if (mUpload && !mUploadComplete) {
-      DispatchProgressEvent(mUpload, ProgressEventType::progress,
-                            mUploadLengthComputable, mUploadTransferred,
-                            mUploadTotal);
-    }
-  } else {
-    if (aFinalProgress) {
-      mLoadTotal = mLoadTransferred;
-    }
-    mInLoadProgressEvent = true;
-    DispatchProgressEvent(this, ProgressEventType::progress,
-                          mLoadLengthComputable, mLoadTransferred,
-                          mLoadTotal);
-    mInLoadProgressEvent = false;
-    if (mResponseType == XMLHttpRequestResponseType::Moz_chunked_text ||
-        mResponseType == XMLHttpRequestResponseType::Moz_chunked_arraybuffer) {
-      mResponseBody.Truncate();
-      mResponseText.Truncate();
-      mResultArrayBuffer = nullptr;
-      mArrayBufferBuilder.reset();
-    }
-  }
-
-  mProgressSinceLastProgressEvent = false;
-}
-
 NS_IMETHODIMP
 XMLHttpRequestMainThread::OnProgress(nsIRequest *aRequest, nsISupports *aContext, int64_t aProgress, int64_t aProgressMax)
 {
   
-  bool upload = mState == State::opened;
-  
   
   bool lengthComputable = (aProgressMax != -1);
-  if (upload) {
+  if (InUploadPhase()) {
     int64_t loaded = aProgress;
     if (lengthComputable) {
       int64_t headerSize = aProgressMax - mUploadTotal;
@@ -3290,7 +3262,9 @@ XMLHttpRequestMainThread::OnProgress(nsIRequest *aRequest, nsISupports *aContext
     mUploadTransferred = loaded;
     mProgressSinceLastProgressEvent = true;
 
-    MaybeDispatchProgressEvents((mUploadTransferred == mUploadTotal));
+    if (!mFlagSynchronous && !mProgressTimerIsActive) {
+      StartProgressEventTimer();
+    }
   } else {
     mLoadLengthComputable = lengthComputable;
     mLoadTotal = lengthComputable ? aProgressMax : 0;
@@ -3490,7 +3464,35 @@ void
 XMLHttpRequestMainThread::HandleProgressTimerCallback()
 {
   mProgressTimerIsActive = false;
-  MaybeDispatchProgressEvents(false);
+
+  if (!mProgressSinceLastProgressEvent || mErrorLoad) {
+    return;
+  }
+
+  if (InUploadPhase()) {
+    if (mUpload && !mUploadComplete) {
+      DispatchProgressEvent(mUpload, ProgressEventType::progress,
+                            mUploadLengthComputable, mUploadTransferred,
+                            mUploadTotal);
+    }
+  } else {
+    DispatchProgressEvent(this, ProgressEventType::progress,
+                          mLoadLengthComputable, mLoadTransferred,
+                          mLoadTotal);
+  }
+
+  mProgressSinceLastProgressEvent = false;
+
+  StartProgressEventTimer();
+}
+
+void
+XMLHttpRequestMainThread::StopProgressEventTimer()
+{
+  if (mProgressNotifier) {
+    mProgressTimerIsActive = false;
+    mProgressNotifier->Cancel();
+  }
 }
 
 void
