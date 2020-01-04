@@ -396,7 +396,9 @@ this.ContentSearch = {
     if (methodName in this) {
       yield this._initService();
       yield this[methodName](msg, msg.data.data);
-      msg.target.removeEventListener("SwapDocShells", msg, true);
+      if (!Cu.isDeadWrapper(msg.target)) {
+        msg.target.removeEventListener("SwapDocShells", msg, true);
+      }
     }
   }),
 
@@ -489,7 +491,7 @@ this.ContentSearch = {
   _reply: function (msg, type, data) {
     
     
-    if (msg.target.messageManager) {
+    if (!Cu.isDeadWrapper(msg.target) && msg.target.messageManager) {
       msg.target.messageManager.sendAsyncMessage(...this._msgArgs(type, data));
     }
   },
