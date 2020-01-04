@@ -2975,7 +2975,10 @@ bool AsyncPanZoomController::UpdateAnimation(const TimeStamp& aSampleTime,
       mAnimation = nullptr;
       SetState(NOTHING);
     }
-    if (wantsRepaints) {
+    
+    
+    
+    if (!continueAnimation || wantsRepaints) {
       RequestContentRepaint();
     }
     UpdateSharedCompositorFrameMetrics();
