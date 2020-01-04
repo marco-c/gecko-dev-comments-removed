@@ -183,6 +183,10 @@ private:
   void SaveNetworkStats(bool aEnforce);
 #endif
 
+  
+  nsresult FireDataEvent(JSContext* aCx, const nsAString& aType,
+                         JS::Handle<JS::Value> aData);
+
   TCPReadyState mReadyState;
   
   bool mUseArrayBuffers;
