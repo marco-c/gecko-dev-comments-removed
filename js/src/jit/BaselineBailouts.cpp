@@ -645,12 +645,6 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         return false;
     BufferPointer<BaselineFrame> blFrame = builder.pointerAtStackOffset<BaselineFrame>(0);
 
-    
-    uint32_t frameSize = BaselineFrame::Size() + BaselineFrame::FramePointerOffset +
-                         (sizeof(Value) * (script->nfixed() + exprStackSlots));
-    JitSpew(JitSpew_BaselineBailouts, "      FrameSize=%d", (int) frameSize);
-    blFrame->setFrameSize(frameSize);
-
     uint32_t flags = 0;
 
     
@@ -930,7 +924,15 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             return false;
     }
 
-    size_t endOfBaselineJSFrameStack = builder.framePushed();
+    
+    
+    uint32_t frameSize = builder.framePushed();
+    blFrame->setFrameSize(frameSize);
+    JitSpew(JitSpew_BaselineBailouts, "      FrameSize=%u", frameSize);
+
+    
+    MOZ_ASSERT(blFrame->numValueSlots() >= script->nfixed());
+    MOZ_ASSERT(blFrame->numValueSlots() <= script->nslots());
 
     
     
@@ -1226,6 +1228,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
     
     MOZ_ASSERT(IsIonInlinablePC(pc));
     unsigned actualArgc;
+    Value callee;
     if (needToSaveArgs) {
         
         
@@ -1233,6 +1236,7 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
             actualArgc = blFrame->numActualArgs();
         else
             actualArgc = IsSetPropPC(pc);
+        callee = savedCallerArgs[0];
 
         
         size_t afterFrameSize = (actualArgc + 1) * sizeof(Value) + JitFrameLayout::Size();
@@ -1260,12 +1264,16 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         if (!builder.maybeWritePadding(JitStackAlignment, afterFrameSize, "Padding"))
             return false;
 
-        MOZ_ASSERT(actualArgc + 2 + pushedNewTarget <= exprStackSlots);
-        for (unsigned i = 0; i < actualArgc + 1 + pushedNewTarget; i++) {
-            size_t argSlot = (script->nfixed() + exprStackSlots) - (i + 1);
-            if (!builder.writeValue(*blFrame->valueSlot(argSlot), "ArgVal"))
+        
+        size_t valueSlot = blFrame->numValueSlots() - 1;
+        size_t calleeSlot = valueSlot - actualArgc - 1 - pushedNewTarget;
+
+        for (size_t i = valueSlot; i > calleeSlot; i--) {
+            if (!builder.writeValue(*blFrame->valueSlot(i), "ArgVal"))
                 return false;
         }
+
+        callee = *blFrame->valueSlot(calleeSlot);
     }
 
     
@@ -1283,20 +1291,8 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
         return false;
 
     
-    Value callee;
-    if (needToSaveArgs) {
-        
-        
-        callee = savedCallerArgs[0];
-    } else {
-        uint32_t calleeStackSlot = exprStackSlots - uint32_t(actualArgc + 2 + pushedNewTarget);
-        size_t calleeOffset = (builder.framePushed() - endOfBaselineJSFrameStack)
-            + ((exprStackSlots - (calleeStackSlot + 1)) * sizeof(Value));
-        callee = *builder.valuePointerAtStackOffset(calleeOffset);
-        JitSpew(JitSpew_BaselineBailouts, "      CalleeStackSlot=%d", (int) calleeStackSlot);
-    }
-    JitSpew(JitSpew_BaselineBailouts, "      Callee = %016llx", *((uint64_t*) &callee));
-    MOZ_ASSERT(callee.isObject() && callee.toObject().is<JSFunction>());
+    JitSpew(JitSpew_BaselineBailouts, "      Callee = %016llx", callee.asRawBits());
+
     JSFunction* calleeFun = &callee.toObject().as<JSFunction>();
     if (!builder.writePtr(CalleeToToken(calleeFun, JSOp(*pc) == JSOP_NEW), "CalleeToken"))
         return false;
