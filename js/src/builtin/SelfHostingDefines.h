@@ -20,12 +20,6 @@
   callFunction(std_Function_apply, FUN, RECEIVER, ARGS)
 
 
-#define ARRAY_PUSH(ARRAY, ELEMENT) \
-  callFunction(std_Array_push, ARRAY, ELEMENT);
-#define ARRAY_SLICE(ARRAY, ELEMENT) \
-  callFunction(std_Array_slice, ARRAY, ELEMENT);
-
-
 #define ATTR_ENUMERABLE         0x01
 #define ATTR_CONFIGURABLE       0x02
 #define ATTR_WRITABLE           0x04
