@@ -94,6 +94,15 @@ SecurityWrapper<Base>::objectClassIs(HandleObject obj, ESClassValue classValue, 
 
 template <class Base>
 bool
+SecurityWrapper<Base>::isArray(JSContext* cx, HandleObject obj, JS::IsArrayAnswer* answer) const
+{
+    
+    *answer = JS::IsArrayAnswer::NotArray;
+    return true;
+}
+
+template <class Base>
+bool
 SecurityWrapper<Base>::regexp_toShared(JSContext* cx, HandleObject obj, RegExpGuard* g) const
 {
     return Base::regexp_toShared(cx, obj, g);

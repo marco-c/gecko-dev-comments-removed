@@ -8,6 +8,7 @@
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Range.h"
+#include "mozilla/ScopeExit.h"
 
 #include "jsarray.h"
 #include "jsatom.h"
@@ -531,14 +532,13 @@ Str(JSContext* cx, const Value& v, StringifyContext* scx)
     RootedObject obj(cx, &v.toObject());
 
     scx->depth++;
-    bool ok;
-    if (IsArray(obj, cx))
-        ok = JA(cx, obj, scx);
-    else
-        ok = JO(cx, obj, scx);
-    scx->depth--;
+    auto dec = mozilla::MakeScopeExit([&] { scx->depth--; });
 
-    return ok;
+    bool isArray;
+    if (!IsArray(cx, obj, &isArray))
+        return false;
+
+    return isArray ? JA(cx, obj, scx) : JO(cx, obj, scx);
 }
 
 
@@ -552,9 +552,12 @@ js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, Value s
     
     AutoIdVector propertyList(cx);
     if (replacer) {
+        bool isArray;
         if (replacer->isCallable()) {
             
-        } else if (IsArray(replacer, cx)) {
+        } else if (!IsArray(cx, replacer, &isArray)) {
+            return false;
+        } else if (isArray) {
             
 
 
@@ -721,7 +724,11 @@ Walk(JSContext* cx, HandleObject holder, HandleId name, HandleValue reviver, Mut
     if (val.isObject()) {
         RootedObject obj(cx, &val.toObject());
 
-        if (IsArray(obj, cx)) {
+        bool isArray;
+        if (!IsArray(cx, obj, &isArray))
+            return false;
+
+        if (isArray) {
             
             uint32_t length;
             if (!GetLengthProperty(cx, obj, &length))

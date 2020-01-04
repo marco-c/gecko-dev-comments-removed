@@ -1,30 +1,67 @@
-assertEq(Array.isArray([]), true);
 
-var proxy = new Proxy([], {});
-assertEq(Array.isArray(proxy), true);
 
-for (var i = 0; i < 10; i++) {
-    proxy = new Proxy(proxy, {});
+
+var global = this;
+var otherGlobal = newGlobal();
+
+var thisGlobal = () => global;
+var alternateGlobals = (function(i) {
+    return () => (i++ % 2) === 0 ? global : otherGlobal;
+})(0);
+
+function performTests(pickGlobal)
+{
+    
+    assertEq(Array.isArray([]), true);
+
+    
+    var proxy = new (pickGlobal()).Proxy([], {});
     assertEq(Array.isArray(proxy), true);
+
+    
+    for (var i = 0; i < 10; i++) {
+        proxy = new (pickGlobal()).Proxy(proxy, {});
+        assertEq(Array.isArray(proxy), true);
+    }
+
+    
+    var revocable = (pickGlobal()).Proxy.revocable([], {});
+    proxy = revocable.proxy;
+    assertEq(Array.isArray(proxy), true);
+
+    
+    for (var i = 0; i < 10; i++) {
+        proxy = new (pickGlobal()).Proxy(proxy, {});
+        assertEq(Array.isArray(proxy), true);
+    }
+
+    
+    revocable.revoke();
+    assertThrowsInstanceOf(() => Array.isArray(revocable.proxy), TypeError);
+
+    
+    assertThrowsInstanceOf(() => Array.isArray(proxy), TypeError);
+
 }
 
-var revocable = Proxy.revocable([], {});
-proxy = revocable.proxy;
-assertEq(Array.isArray(proxy), true);
+performTests(thisGlobal);
+performTests(alternateGlobals);
 
-for (var i = 0; i < 10; i++) {
-    proxy = new Proxy(proxy, {});
-    assertEq(Array.isArray(proxy), true);
+function crossGlobalTest()
+{
+    var array = new otherGlobal.Array();
+
+    
+    assertEq(Array.isArray(array), true);
+
+    
+    assertEq(Array.isArray(new Proxy(array, {})), true);
+
+    
+    assertEq(Array.isArray(new otherGlobal.Proxy(array, {})), true);
 }
 
-revocable.revoke();
-assertEq(Array.isArray(revocable.proxy), false);
-assertEq(Array.isArray(proxy), false);
+crossGlobalTest();
 
-var global = newGlobal();
-var array = global.Array();
-assertEq(Array.isArray(array), true);
-assertEq(Array.isArray(new Proxy(array, {})), true);
-assertEq(Array.isArray(new global.Proxy(array, {})), true);
-
-reportCompare(true, true);
+if (typeof reportCompare === "function")
+    reportCompare(true, true);

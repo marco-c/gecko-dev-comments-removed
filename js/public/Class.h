@@ -48,6 +48,37 @@ typedef AutoVectorRooter<jsid> AutoIdVector;
 
 
 
+enum class IsArrayAnswer
+{
+    Array,
+    NotArray,
+    RevokedProxy
+};
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+IsArray(JSContext* cx, HandleObject obj, bool* isArray);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(bool)
+IsArray(JSContext* cx, HandleObject obj, IsArrayAnswer* answer);
+
+
+
 
 
 
@@ -800,11 +831,7 @@ Valueify(const JSClass* c)
 enum ESClassValue {
     ESClass_Object, ESClass_Array, ESClass_Number, ESClass_String,
     ESClass_Boolean, ESClass_RegExp, ESClass_ArrayBuffer, ESClass_SharedArrayBuffer,
-    ESClass_Date, ESClass_Set, ESClass_Map,
-
-    
-    
-    ESClass_IsArray
+    ESClass_Date, ESClass_Set, ESClass_Map
 };
 
 

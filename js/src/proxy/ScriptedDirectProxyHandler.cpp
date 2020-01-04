@@ -11,6 +11,8 @@
 #include "jsobjinlines.h"
 
 using namespace js;
+
+using JS::IsArrayAnswer;
 using mozilla::ArrayLength;
 
 static inline bool
@@ -1103,20 +1105,19 @@ bool
 ScriptedDirectProxyHandler::objectClassIs(HandleObject proxy, ESClassValue classValue,
                                           JSContext* cx) const
 {
-    
-    
-    if (classValue != ESClass_IsArray)
-        return false;
+    return false;
+}
 
-    
-    
-    
-    
+bool
+ScriptedDirectProxyHandler::isArray(JSContext* cx, HandleObject proxy,
+                                    IsArrayAnswer* answer) const
+{
     RootedObject target(cx, proxy->as<ProxyObject>().target());
-    if (!target)
-        return false;
+    if (target)
+        return JS::IsArray(cx, target, answer);
 
-    return IsArray(target, cx);
+    *answer = IsArrayAnswer::RevokedProxy;
+    return true;
 }
 
 const char*
