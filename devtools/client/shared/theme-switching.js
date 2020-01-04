@@ -3,8 +3,9 @@
 
 
 (function() {
-  const DEVTOOLS_SKIN_URL = "chrome://devtools/skin/";
+  const SCROLLBARS_URL = "chrome://devtools/skin/floating-scrollbars-light.css";
   let documentElement = document.documentElement;
+  let devtoolsStyleSheets = new WeakMap();
 
   function forceStyle() {
     let computedStyle = window.getComputedStyle(documentElement);
@@ -19,6 +20,45 @@
     documentElement.style.display = display; 
   }
 
+  
+
+
+
+
+  function appendStyleSheet(url) {
+    let styleSheetAttr = `href="${url}" type="text/css"`;
+    let styleSheet = document.createProcessingInstruction(
+      "xml-stylesheet", styleSheetAttr);
+    let loadPromise = new Promise((resolve, reject) => {
+      function onload() {
+        styleSheet.removeEventListener("load", onload);
+        styleSheet.removeEventListener("error", onerror);
+        resolve();
+      }
+      function onerror() {
+        styleSheet.removeEventListener("load", onload);
+        styleSheet.removeEventListener("error", onerror);
+        reject("Failed to load theme file " + url);
+      }
+
+      styleSheet.addEventListener("load", onload);
+      styleSheet.addEventListener("error", onerror);
+    });
+    document.insertBefore(styleSheet, documentElement);
+    return {styleSheet, loadPromise};
+  }
+
+  
+
+
+  function notifyWindow() {
+    window.dispatchEvent(new CustomEvent("theme-switch-complete", {}));
+  }
+
+  
+
+
+
   function switchTheme(newTheme, oldTheme) {
     if (newTheme === oldTheme) {
       return;
@@ -28,8 +68,8 @@
 
     
     if (oldThemeDef) {
-      for (let url of oldThemeDef.stylesheets) {
-        StylesheetUtils.removeSheet(window, url, "author");
+      for (let sheet of devtoolsStyleSheets.get(oldThemeDef) || []) {
+        sheet.remove();
       }
     }
 
@@ -42,8 +82,17 @@
       newThemeDef = gDevTools.getThemeDefinition("light");
     }
 
+    
+    
+    
+    
+    devtoolsStyleSheets.set(newThemeDef, []);
+
+    let loadEvents = [];
     for (let url of newThemeDef.stylesheets) {
-      StylesheetUtils.loadSheet(window, url, "author");
+      let {styleSheet,loadPromise} = appendStyleSheet(url);
+      devtoolsStyleSheets.get(newThemeDef).push(styleSheet);
+      loadEvents.push(loadPromise);
     }
 
     
@@ -53,21 +102,10 @@
 
     
     if (!hiddenDOMWindow.matchMedia("(-moz-overlay-scrollbars)").matches) {
-      let scrollbarsUrl = Services.io.newURI(
-        DEVTOOLS_SKIN_URL + "floating-scrollbars-light.css", null, null);
-
       if (newTheme == "dark") {
-        StylesheetUtils.loadSheet(
-          window,
-          scrollbarsUrl,
-          "agent"
-        );
+        StylesheetUtils.loadSheet(window, SCROLLBARS_URL, "agent");
       } else if (oldTheme == "dark") {
-        StylesheetUtils.removeSheet(
-          window,
-          scrollbarsUrl,
-          "agent"
-        );
+        StylesheetUtils.removeSheet(window, SCROLLBARS_URL, "agent");
       }
       forceStyle();
     }
@@ -92,6 +130,8 @@
 
     
     gDevTools.emit("theme-switched", window, newTheme, oldTheme);
+
+    Promise.all(loadEvents).then(notifyWindow, console.error.bind(console));
   }
 
   function handlePrefChange(event, data) {
@@ -101,7 +141,6 @@
   }
 
   const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
-
   Cu.import("resource://gre/modules/Services.jsm");
   Cu.import("resource://devtools/client/framework/gDevTools.jsm");
   const {require} = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
