@@ -973,13 +973,158 @@ class CompareCodecPriority {
     std::string mPreferredCodec;
 };
 
+#if !defined(MOZILLA_XPCOMRT_API)
+class ConfigureCodec {
+  public:
+    explicit ConfigureCodec(nsCOMPtr<nsIPrefBranch>& branch) :
+      mHardwareH264Enabled(false),
+      mHardwareH264Supported(false),
+      mSoftwareH264Enabled(false),
+      mH264Enabled(false),
+      mVP9Enabled(false),
+      mH264Level(13), 
+      mH264MaxBr(0), 
+      mH264MaxMbps(0), 
+      mVP8MaxFs(0),
+      mVP8MaxFr(0),
+      mUseTmmbr(false)
+    {
+#ifdef MOZ_WEBRTC_OMX
+      
+      
+
+      
+      
+      
+
+      
+      branch->GetBoolPref("media.peerconnection.video.h264_enabled",
+          &mHardwareH264Enabled);
+
+      if (mHardwareH264Enabled) {
+        
+        android::sp<android::OMXCodecReservation> encode = new android::OMXCodecReservation(true);
+        android::sp<android::OMXCodecReservation> decode = new android::OMXCodecReservation(false);
+
+        
+        
+        
+        if (encode->ReserveOMXCodec() && decode->ReserveOMXCodec()) {
+          CSFLogDebug( logTag, "%s: H264 hardware codec available", __FUNCTION__);
+          mHardwareH264Supported = true;
+        }
+      }
+
+#endif 
+
+#if !defined(MOZILLA_EXTERNAL_LINKAGE)
+      mSoftwareH264Enabled = PeerConnectionCtx::GetInstance()->gmpHasH264();
+#else
+      
+      mSoftwareH264Enabled = true;
+#endif
+
+      mH264Enabled = mHardwareH264Supported || mSoftwareH264Enabled;
+
+      branch->GetIntPref("media.navigator.video.h264.level", &mH264Level);
+      mH264Level &= 0xFF;
+
+      branch->GetIntPref("media.navigator.video.h264.max_br", &mH264MaxBr);
+
+#ifdef MOZ_WEBRTC_OMX
+      
+      mH264MaxMbps = 11880;
+#endif
+
+      branch->GetIntPref("media.navigator.video.h264.max_mbps", &mH264MaxMbps);
+
+      branch->GetBoolPref("media.peerconnection.video.vp9_enabled",
+          &mVP9Enabled);
+
+      branch->GetIntPref("media.navigator.video.max_fs", &mVP8MaxFs);
+      if (mVP8MaxFs <= 0) {
+        mVP8MaxFs = 12288; 
+      }
+
+      branch->GetIntPref("media.navigator.video.max_fr", &mVP8MaxFr);
+      if (mVP8MaxFr <= 0) {
+        mVP8MaxFr = 60; 
+      }
+
+      
+      branch->GetBoolPref("media.navigator.video.use_tmmbr", &mUseTmmbr);
+    }
+
+    void operator()(JsepCodecDescription* codec) const
+    {
+      switch (codec->mType) {
+        case SdpMediaSection::kAudio:
+          
+          break;
+        case SdpMediaSection::kVideo:
+          {
+            JsepVideoCodecDescription& videoCodec =
+              static_cast<JsepVideoCodecDescription&>(*codec);
+
+            if (videoCodec.mName == "H264") {
+              
+              videoCodec.mProfileLevelId &= 0xFFFF00;
+              videoCodec.mProfileLevelId |= mH264Level;
+
+              videoCodec.mConstraints.maxBr = mH264MaxBr;
+
+              videoCodec.mConstraints.maxMbps = mH264MaxMbps;
+
+              
+              videoCodec.mEnabled = mH264Enabled;
+
+              if (videoCodec.mPacketizationMode == 0 && !mSoftwareH264Enabled) {
+                
+                
+                videoCodec.mEnabled = false;
+              }
+
+              if (mHardwareH264Supported) {
+                videoCodec.mStronglyPreferred = true;
+              }
+            } else if (videoCodec.mName == "VP8" || videoCodec.mName == "VP9") {
+              if (videoCodec.mName == "VP9" && !mVP9Enabled) {
+                videoCodec.mEnabled = false;
+                break;
+              }
+              videoCodec.mConstraints.maxFs = mVP8MaxFs;
+              videoCodec.mConstraints.maxFps = mVP8MaxFr;
+            }
+
+            if (mUseTmmbr) {
+              videoCodec.EnableTmmbr();
+            }
+          }
+          break;
+        case SdpMediaSection::kText:
+        case SdpMediaSection::kApplication:
+        case SdpMediaSection::kMessage:
+          {} 
+      }
+    }
+
+  private:
+    bool mHardwareH264Enabled;
+    bool mHardwareH264Supported;
+    bool mSoftwareH264Enabled;
+    bool mH264Enabled;
+    bool mVP9Enabled;
+    int32_t mH264Level;
+    int32_t mH264MaxBr;
+    int32_t mH264MaxMbps;
+    int32_t mVP8MaxFs;
+    int32_t mVP8MaxFr;
+    bool mUseTmmbr;
+};
+#endif 
+
 nsresult
 PeerConnectionImpl::ConfigureJsepSessionCodecs() {
-  if (mHaveConfiguredCodecs) {
-    return NS_OK;
-  }
-  mHaveConfiguredCodecs = true;
-
 #if !defined(MOZILLA_XPCOMRT_API)
   nsresult res;
   nsCOMPtr<nsIPrefService> prefs =
@@ -987,8 +1132,8 @@ PeerConnectionImpl::ConfigureJsepSessionCodecs() {
 
   if (NS_FAILED(res)) {
     CSFLogError(logTag, "%s: Couldn't get prefs service, res=%u",
-                        __FUNCTION__,
-                        static_cast<unsigned>(res));
+        __FUNCTION__,
+        static_cast<unsigned>(res));
     return res;
   }
 
@@ -998,137 +1143,11 @@ PeerConnectionImpl::ConfigureJsepSessionCodecs() {
     return NS_ERROR_FAILURE;
   }
 
-
-  bool hardwareH264Supported = false;
-
-#ifdef MOZ_WEBRTC_OMX
-  bool hardwareH264Enabled = false;
-
-  
-  
-
-  
-  
-  
-
-  
-  branch->GetBoolPref("media.peerconnection.video.h264_enabled",
-                      &hardwareH264Enabled);
-
-  if (hardwareH264Enabled) {
-    
-    android::sp<android::OMXCodecReservation> encode = new android::OMXCodecReservation(true);
-    android::sp<android::OMXCodecReservation> decode = new android::OMXCodecReservation(false);
-
-    
-    
-    
-    if (encode->ReserveOMXCodec() && decode->ReserveOMXCodec()) {
-      CSFLogDebug( logTag, "%s: H264 hardware codec available", __FUNCTION__);
-      hardwareH264Supported = true;
-    }
-  }
-
-#endif 
-
-#if !defined(MOZILLA_EXTERNAL_LINKAGE)
-  bool softwareH264Enabled = PeerConnectionCtx::GetInstance()->gmpHasH264();
-#else
-  
-  bool softwareH264Enabled = true;
-#endif
-
-  bool h264Enabled = hardwareH264Supported || softwareH264Enabled;
-
-  bool vp9Enabled = false;
-  branch->GetBoolPref("media.peerconnection.video.vp9_enabled",
-                      &vp9Enabled);
-
-  auto& codecs = mJsepSession->Codecs();
+  ConfigureCodec configurer(branch);
+  mJsepSession->ForEachCodec(configurer);
 
   
   CompareCodecPriority comparator;
-
-  
-  for (auto i = codecs.begin(); i != codecs.end(); ++i) {
-    auto &codec = **i;
-    switch (codec.mType) {
-      case SdpMediaSection::kAudio:
-        
-        break;
-      case SdpMediaSection::kVideo:
-        {
-          JsepVideoCodecDescription& videoCodec =
-            static_cast<JsepVideoCodecDescription&>(codec);
-
-          if (videoCodec.mName == "H264") {
-            int32_t level = 13; 
-            branch->GetIntPref("media.navigator.video.h264.level", &level);
-            level &= 0xFF;
-            
-            videoCodec.mProfileLevelId &= 0xFFFF00;
-            videoCodec.mProfileLevelId |= level;
-
-            int32_t maxBr = 0; 
-            branch->GetIntPref("media.navigator.video.h264.max_br", &maxBr);
-            videoCodec.mConstraints.maxBr = maxBr;
-
-            int32_t maxMbps = 0; 
-#ifdef MOZ_WEBRTC_OMX
-            
-            maxMbps = 11880;
-#endif
-            branch->GetIntPref("media.navigator.video.h264.max_mbps", &maxMbps);
-            videoCodec.mConstraints.maxMbps = maxMbps;
-
-            
-            videoCodec.mEnabled = h264Enabled;
-
-            if (videoCodec.mPacketizationMode == 0 && !softwareH264Enabled) {
-              
-              
-              videoCodec.mEnabled = false;
-            }
-
-            if (hardwareH264Supported) {
-              videoCodec.mStronglyPreferred = true;
-            }
-          } else if (codec.mName == "VP8" || codec.mName == "VP9") {
-            if (videoCodec.mName == "VP9" && !vp9Enabled) {
-              videoCodec.mEnabled = false;
-              break;
-            }
-            int32_t maxFs = 0;
-            branch->GetIntPref("media.navigator.video.max_fs", &maxFs);
-            if (maxFs <= 0) {
-              maxFs = 12288; 
-            }
-            videoCodec.mConstraints.maxFs = maxFs;
-
-            int32_t maxFr = 0;
-            branch->GetIntPref("media.navigator.video.max_fr", &maxFr);
-            if (maxFr <= 0) {
-              maxFr = 60; 
-            }
-            videoCodec.mConstraints.maxFps = maxFr;
-
-          }
-
-          
-          bool useTmmbr = false;
-          branch->GetBoolPref("media.navigator.video.use_tmmbr",
-            &useTmmbr);
-          if (useTmmbr) {
-            videoCodec.EnableTmmbr();
-          }
-        }
-        break;
-      case SdpMediaSection::kText:
-      case SdpMediaSection::kApplication:
-      case SdpMediaSection::kMessage:
-        {} 
-    }
-  }
 
   
   int32_t preferredCodec = 0;
@@ -1139,7 +1158,7 @@ PeerConnectionImpl::ConfigureJsepSessionCodecs() {
     comparator.SetPreferredCodec(preferredCodec);
   }
 
-  std::stable_sort(codecs.begin(), codecs.end(), comparator);
+  mJsepSession->SortCodecs(comparator);
 #endif 
   return NS_OK;
 }
@@ -1260,17 +1279,6 @@ PeerConnectionImpl::AddTrackToJsepSession(SdpMediaSection::MediaType type,
                                           const std::string& streamId,
                                           const std::string& trackId)
 {
-  if (!PeerConnectionCtx::GetInstance()->isReady()) {
-    
-    PeerConnectionCtx::GetInstance()->queueJSEPOperation(
-        WrapRunnableNM(DeferredAddTrackToJsepSession,
-                       mHandle,
-                       type,
-                       streamId,
-                       trackId));
-    return NS_OK;
-  }
-
   nsresult res = ConfigureJsepSessionCodecs();
   if (NS_FAILED(res)) {
     CSFLogError(logTag, "Failed to configure codecs");
