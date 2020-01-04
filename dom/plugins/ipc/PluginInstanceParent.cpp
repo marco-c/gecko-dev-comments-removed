@@ -61,7 +61,6 @@
 #include "nsIWidget.h"
 #include "nsPluginNativeWindow.h"
 #include "PluginQuirks.h"
-#include "nsWindowsHelpers.h"
 extern const wchar_t* kFlashFullscreenClass;
 #elif defined(MOZ_WIDGET_GTK)
 #include "mozilla/dom/ContentChild.h"
@@ -73,13 +72,6 @@ extern const wchar_t* kFlashFullscreenClass;
 using namespace mozilla::plugins;
 using namespace mozilla::layers;
 using namespace mozilla::gl;
-
-#if defined(XP_WIN)
-
-const int kScrollCaptureDelayMs = 100;
-const int kInitScrollCaptureDelayMs = 1000;
-const uint32_t kScrollCaptureFillColor = 0xFFa0a0a0; 
-#endif
 
 void
 StreamNotifyParent::ActorDestroy(ActorDestroyReason aWhy)
@@ -143,10 +135,6 @@ PluginInstanceParent::PluginInstanceParent(PluginModuleParent* parent,
     , mShHeight(0)
     , mShColorSpace(nullptr)
 #endif
-#if defined(XP_WIN)
-    , mValidFirstCapture(false)
-    , mIsScrolling(false)
-#endif
 {
 #if defined(OS_WIN)
     if (!sPluginInstanceList) {
@@ -170,9 +158,6 @@ PluginInstanceParent::~PluginInstanceParent()
     }
     if (mShColorSpace)
         ::CGColorSpaceRelease(mShColorSpace);
-#endif
-#if defined(XP_WIN)
-    CancelScheduledScrollCapture();
 #endif
 }
 
@@ -448,12 +433,6 @@ PluginInstanceParent::AnswerNPN_SetValue_NPPVpluginWindow(
     
     *result = mNPNIface->setvalue(mNPP, NPPVpluginWindowBool,
                                   (void*)(intptr_t)windowed);
-
-#if defined(XP_WIN)
-    if (windowed) {
-        ScheduleScrollCapture(kScrollCaptureDelayMs);
-    }
-#endif
     return true;
 }
 
@@ -1207,171 +1186,6 @@ PluginInstanceParent::EndUpdateBackground(const nsIntRect& aRect)
 }
 
 #if defined(XP_WIN)
-
-#define CAPTURE_LOG(...)
-
-void
-PluginInstanceParent::ScheduleScrollCapture(int aTimeout)
-{
-    if (mCaptureRefreshTask) {
-        return;
-    }
-    CAPTURE_LOG("delayed scroll capture requested.");
-    mCaptureRefreshTask =
-        NewNonOwningCancelableRunnableMethod(this, &PluginInstanceParent::ScheduledUpdateScrollCaptureCallback);
-    RefPtr<Runnable> addrefedTask = mCaptureRefreshTask;
-    MessageLoop::current()->PostDelayedTask(addrefedTask.forget(),
-                                            kScrollCaptureDelayMs);
-}
-
-void
-PluginInstanceParent::ScheduledUpdateScrollCaptureCallback()
-{
-    CAPTURE_LOG("taking delayed scrollcapture.");
-    mCaptureRefreshTask = nullptr;
-    bool retrigger = false;
-    UpdateScrollCapture(retrigger);
-    if (retrigger) {
-        
-        ScheduleScrollCapture(kScrollCaptureDelayMs);
-    }
-}
-
-void
-PluginInstanceParent::CancelScheduledScrollCapture()
-{
-    CAPTURE_LOG("delayed scroll capture cancelled.");
-    if (mCaptureRefreshTask) {
-        mCaptureRefreshTask->Cancel();
-        mCaptureRefreshTask = nullptr;
-    }
-}
-
-bool
-PluginInstanceParent::UpdateScrollCapture(bool& aRequestNewCapture)
-{
-    aRequestNewCapture = false;
-    if (!::IsWindow(mChildPluginHWND)) {
-        CAPTURE_LOG("invalid window");
-        aRequestNewCapture = true;
-        return false;
-    }
-
-    nsAutoHDC windowDC(::GetDC(mChildPluginHWND));
-    if (!windowDC) {
-        CAPTURE_LOG("no windowdc");
-        aRequestNewCapture = true;
-        return false;
-    }
-
-    RECT bounds = {0};
-    ::GetWindowRect(mChildPluginHWND, &bounds);
-    if ((bounds.left == bounds.right && bounds.top == bounds.bottom) ||
-        mWindowSize.IsEmpty()) {
-        CAPTURE_LOG("empty bounds");
-        
-        return false;
-    }
-
-    
-    
-    if (!mScrollCapture || mScrollCapture->GetSize() != mWindowSize) {
-        mValidFirstCapture = false;
-        mScrollCapture =
-            gfxPlatform::GetPlatform()->CreateOffscreenSurface(mWindowSize,
-                                                               SurfaceFormat::X8R8G8B8_UINT32);
-    }
-
-    
-    
-    RECT clip = {0};
-    int rgnType = ::GetWindowRgnBox(mPluginHWND, &clip);
-    bool clipCorrect = !clip.left && !clip.top &&
-                       clip.right == mWindowSize.width &&
-                       clip.bottom == mWindowSize.height;
-
-    bool isVisible = ::IsWindowVisible(mChildPluginHWND);
-
-    CAPTURE_LOG("validcap=%d visible=%d region=%d clip=%d:%dx%dx%dx%d",
-                mValidFirstCapture, isVisible, rgnType, clipCorrect,
-                clip.left, clip.top, clip.right, clip.bottom);
-
-    
-    
-    
-    if (mValidFirstCapture && (!isVisible || !clipCorrect)) {
-        return true;
-    }
-
-    
-    RefPtr<gfxWindowsSurface> nativeScrollCapture;
-
-    
-    
-    if (isVisible && clipCorrect) {
-        CAPTURE_LOG("capturing window");
-        nativeScrollCapture =
-            new gfxWindowsSurface(mWindowSize, SurfaceFormat::X8R8G8B8_UINT32);
-        if (!::BitBlt(nativeScrollCapture->GetDC(), 0, 0, mWindowSize.width,
-                      mWindowSize.height, windowDC, 0, 0, SRCCOPY)) {
-            CAPTURE_LOG("blt failure??");
-            return false;
-        }
-        ::GdiFlush();
-        mValidFirstCapture = true;
-    }
-
-    IntSize targetSize = mScrollCapture->GetSize();
-
-    if (targetSize.IsEmpty()) {
-        return false;
-    }
-
-    RefPtr<gfx::DrawTarget> dt =
-        gfxPlatform::GetPlatform()->CreateDrawTargetForSurface(mScrollCapture,
-                                                               targetSize);
-
-    if (nativeScrollCapture) {
-        
-        RefPtr<gfx::SourceSurface> sourceSurface =
-            gfxPlatform::GetPlatform()->GetSourceSurfaceForSurface(nullptr,
-                                                                   nativeScrollCapture);
-        dt->CopySurface(sourceSurface,
-                        IntRect(0, 0, targetSize.width, targetSize.height),
-                        IntPoint());
-    } else {
-        CAPTURE_LOG("using fill color");
-        dt->FillRect(gfx::Rect(0, 0, targetSize.width, targetSize.height),
-                     gfx::ColorPattern(gfx::Color::FromABGR(kScrollCaptureFillColor)),
-                     gfx::DrawOptions(1.f, CompositionOp::OP_SOURCE));
-        aRequestNewCapture = true;
-    }
-    dt->Flush();
-
-    
-    RefPtr<gfx::SourceSurface> cachedSource =
-        gfxPlatform::GetPlatform()->GetSourceSurfaceForSurface(dt,
-                                                               mScrollCapture);
-    RefPtr<SourceSurfaceImage> image =
-        new SourceSurfaceImage(cachedSource->GetSize(), cachedSource);
-
-    ImageContainer::NonOwningImage holder(image);
-    holder.mFrameID = ++mFrameID;
-
-    AutoTArray<ImageContainer::NonOwningImage,1> imageList;
-    imageList.AppendElement(holder);
-
-    
-    ImageContainer *container = GetImageContainer();
-    container->SetCurrentImages(imageList);
-
-    
-    NPRect nprect = {0, 0, targetSize.width, targetSize.height};
-    RecvNPN_InvalidateRect(nprect);
-
-    return true;
-}
-
 nsresult
 PluginInstanceParent::SetScrollCaptureId(uint64_t aScrollCaptureId)
 {
@@ -1399,17 +1213,6 @@ PluginInstanceParent::GetScrollCaptureContainer(ImageContainer** aContainer)
 nsresult
 PluginInstanceParent::UpdateScrollState(bool aIsScrolling)
 {
-  bool scrollStateChanged = (mIsScrolling != aIsScrolling);
-  mIsScrolling = aIsScrolling;
-  if (scrollStateChanged && !aIsScrolling) {
-      
-      
-      
-      
-      
-      
-      ScheduleScrollCapture(kScrollCaptureDelayMs);
-  }
   return NS_OK;
 }
 #endif 
@@ -1566,9 +1369,6 @@ PluginInstanceParent::NPP_SetWindow(const NPWindow* aWindow)
     window.type = aWindow->type;
 #endif
 
-    mWindowSize.width = window.width;
-    mWindowSize.height = window.height;
-
 #if defined(XP_MACOSX)
     double floatScaleFactor = 1.0;
     mNPNIface->getvalue(mNPP, NPNVcontentsScaleFactor, &floatScaleFactor);
@@ -1613,12 +1413,6 @@ PluginInstanceParent::NPP_SetWindow(const NPWindow* aWindow)
     }
 
     RecordDrawingModel();
-
-#if defined(XP_WIN)
-    if (!mCaptureRefreshTask) {
-        ScheduleScrollCapture(kScrollCaptureDelayMs);
-    }
-#endif
     return NPERR_NO_ERROR;
 }
 
