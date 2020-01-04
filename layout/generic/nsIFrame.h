@@ -2887,11 +2887,9 @@ public:
 
 
 
-
-  bool GetClipPropClipRect(const nsStyleDisplay* aDisp,
-                           const nsStyleEffects* aEffects,
-                           nsRect* aRect,
-                           const nsSize& aSize) const;
+  Maybe<nsRect> GetClipPropClipRect(const nsStyleDisplay* aDisp,
+                                    const nsStyleEffects* aEffects,
+                                    const nsSize& aSize) const;
 
   
 

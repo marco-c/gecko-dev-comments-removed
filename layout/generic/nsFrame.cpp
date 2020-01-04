@@ -1185,9 +1185,8 @@ nsIFrame::Extend3DContext() const
   }
 
   const nsStyleEffects* effects = StyleEffects();
-  nsRect temp;
   return !nsFrame::ShouldApplyOverflowClipping(this, disp) &&
-         !GetClipPropClipRect(disp, effects, &temp, GetSize()) &&
+         !GetClipPropClipRect(disp, effects, GetSize()) &&
          !nsSVGIntegrationUtils::UsingEffectsForFrame(this);
 }
 
@@ -1935,20 +1934,17 @@ inline static bool IsSVGContentWithCSSClip(const nsIFrame *aFrame)
                                                    nsGkAtoms::foreignObject);
 }
 
-bool
+Maybe<nsRect>
 nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
                               const nsStyleEffects* aEffects,
-                              nsRect* aRect,
                               const nsSize& aSize) const
 {
-  NS_PRECONDITION(aRect, "Must have aRect out parameter");
-
   if (!(aEffects->mClipFlags & NS_STYLE_CLIP_RECT) ||
       !(aDisp->IsAbsolutelyPositioned(this) || IsSVGContentWithCSSClip(this))) {
-    return false;
+    return Nothing();
   }
 
-  *aRect = aEffects->mClip;
+  nsRect rect = aEffects->mClip;
   if (MOZ_LIKELY(StyleBorder()->mBoxDecorationBreak ==
                    StyleBoxDecorationBreak::Slice)) {
     
@@ -1957,38 +1953,16 @@ nsIFrame::GetClipPropClipRect(const nsStyleDisplay* aDisp,
     for (nsIFrame* f = GetPrevContinuation(); f; f = f->GetPrevContinuation()) {
       y += f->GetRect().height;
     }
-    aRect->MoveBy(nsPoint(0, -y));
+    rect.MoveBy(nsPoint(0, -y));
   }
 
   if (NS_STYLE_CLIP_RIGHT_AUTO & aEffects->mClipFlags) {
-    aRect->width = aSize.width - aRect->x;
+    rect.width = aSize.width - rect.x;
   }
   if (NS_STYLE_CLIP_BOTTOM_AUTO & aEffects->mClipFlags) {
-    aRect->height = aSize.height - aRect->y;
+    rect.height = aSize.height - rect.y;
   }
-  return true;
-}
-
-
-
-
-
-
-
-static bool
-ApplyClipPropClipping(nsDisplayListBuilder* aBuilder,
-                      const nsIFrame* aFrame,
-                      const nsStyleDisplay* aDisp,
-                      const nsStyleEffects* aEffects,
-                      nsRect* aRect,
-                      DisplayListClipState::AutoSaveRestore& aClipState)
-{
-  if (!aFrame->GetClipPropClipRect(aDisp, aEffects, aRect, aFrame->GetSize()))
-    return false;
-
-  nsRect clipRect = *aRect + aBuilder->ToReferenceFrame(aFrame);
-  aClipState.ClipContentDescendants(clipRect);
-  return true;
+  return Some(rect);
 }
 
 
@@ -2344,10 +2318,11 @@ nsIFrame::BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
 
     CheckForApzAwareEventHandlers(aBuilder, this);
 
-    nsRect clipPropClip;
-    if (ApplyClipPropClipping(aBuilder, this, disp, effects, &clipPropClip,
-                              nestedClipState)) {
-      dirtyRect.IntersectRect(dirtyRect, clipPropClip);
+    Maybe<nsRect> clipPropClip = GetClipPropClipRect(disp, effects, GetSize());
+    if (clipPropClip) {
+      dirtyRect.IntersectRect(dirtyRect, *clipPropClip);
+      nestedClipState.ClipContentDescendants(
+        *clipPropClip + aBuilder->ToReferenceFrame(this));
     }
 
     
@@ -2867,12 +2842,12 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     child->BuildDisplayListForStackingContext(aBuilder, dirty, &list);
     aBuilder->DisplayCaret(child, dirty, &list);
   } else {
-    nsRect clipRect;
-    if (ApplyClipPropClipping(aBuilder, child, disp, effects, &clipRect,
-                              clipState)) {
-      
-      
-      dirty.IntersectRect(dirty, clipRect);
+    Maybe<nsRect> clipPropClip =
+      child->GetClipPropClipRect(disp, effects, child->GetSize());
+    if (clipPropClip) {
+      dirty.IntersectRect(dirty, *clipPropClip);
+      clipState.ClipContentDescendants(
+        *clipPropClip + aBuilder->ToReferenceFrame(child));
     }
 
     child->MarkAbsoluteFramesForDisplayList(aBuilder, dirty);
@@ -7937,10 +7912,8 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
   }
 
   const nsStyleEffects* effects = aFrame->StyleEffects();
-  nsRect clipPropClipRect;
-  bool hasClipPropClip =
-    aFrame->GetClipPropClipRect(disp, effects, &clipPropClipRect,
-                                bounds.Size());
+  Maybe<nsRect> clipPropClipRect =
+    aFrame->GetClipPropClipRect(disp, effects, bounds.Size());
 
   
   const nsIFrame::ChildListIDs skip(nsIFrame::kPopupList |
@@ -7971,9 +7944,9 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
         continue;
       }
 
-      if (hasClipPropClip) {
+      if (clipPropClipRect) {
         
-        childRect.IntersectRect(childRect, clipPropClipRect);
+        childRect.IntersectRect(childRect, *clipPropClipRect);
       }
 
       
@@ -8193,13 +8166,12 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
 
   
   const nsStyleEffects* effects = StyleEffects();
-  nsRect clipPropClipRect;
-  bool hasClipPropClip =
-    GetClipPropClipRect(disp, effects, &clipPropClipRect, aNewSize);
-  if (hasClipPropClip) {
+  Maybe<nsRect> clipPropClipRect =
+    GetClipPropClipRect(disp, effects, aNewSize);
+  if (clipPropClipRect) {
     NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
       nsRect& o = aOverflowAreas.Overflow(otype);
-      o.IntersectRect(o, clipPropClipRect);
+      o.IntersectRect(o, *clipPropClipRect);
     }
   }
 
