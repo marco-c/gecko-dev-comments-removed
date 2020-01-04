@@ -66,7 +66,7 @@ var gDownloadsRowNonImportable;
 
 
 function promiseEmptyDatabaseConnection({aPath, aSchemaVersion}) {
-  return Task.spawn(function () {
+  return Task.spawn(function* () {
     let connection = yield Sqlite.openConnection({ path: aPath });
 
     yield connection.execute("CREATE TABLE moz_downloads ("
@@ -90,7 +90,7 @@ function promiseEmptyDatabaseConnection({aPath, aSchemaVersion}) {
 
     yield connection.setSchemaVersion(aSchemaVersion);
 
-    throw new Task.Result(connection);
+    return connection;
   });
 }
 
@@ -265,7 +265,7 @@ function getStartTime(aOffset) {
 
 
 function checkDownload(aDownload, aDownloadRow) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     do_check_eq(aDownload.source.url, aDownloadRow.source);
     do_check_eq(aDownload.source.referrer, aDownloadRow.referrer);
 
@@ -329,7 +329,7 @@ function checkDownload(aDownload, aDownloadRow) {
 
 
 
-add_task(function prepareDownloadsToImport() {
+add_task(function* prepareDownloadsToImport() {
 
   let sourceUrl = httpUrl("source.txt");
   let sourceEntityId = yield promiseEntityID(sourceUrl);
@@ -535,7 +535,7 @@ add_task(function prepareDownloadsToImport() {
 
 
 
-add_task(function prepareNonImportableDownloads()
+add_task(function* prepareNonImportableDownloads()
 {
   gDownloadsRowNonImportable = [
     
@@ -660,7 +660,7 @@ add_task(function prepareNonImportableDownloads()
 
 
 
-add_task(function test_downloadImport()
+add_task(function* test_downloadImport()
 {
   let connection = null;
   let downloadsSqlite = getTempFile("downloads.sqlite").path;

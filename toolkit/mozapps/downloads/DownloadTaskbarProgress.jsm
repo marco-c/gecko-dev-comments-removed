@@ -17,6 +17,7 @@ const Cu = Components.utils;
 const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
@@ -179,33 +180,33 @@ var DownloadTaskbarProgressUpdater =
 
   _setActiveWindow: function DTPU_setActiveWindow(aWindow, aIsDownloadWindow)
   {
-#ifdef XP_WIN
-    
-    
-    this._clearTaskbar();
+    if (AppConstants.platform == "win") {
+      
+      
+      this._clearTaskbar();
 
-    this._activeWindowIsDownloadWindow = aIsDownloadWindow;
-    if (aWindow) {
-      
-      let docShell = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
-                       getInterface(Ci.nsIWebNavigation).
-                       QueryInterface(Ci.nsIDocShellTreeItem).treeOwner.
-                       QueryInterface(Ci.nsIInterfaceRequestor).
-                       getInterface(Ci.nsIXULWindow).docShell;
-      let taskbarProgress = this._taskbar.getTaskbarProgress(docShell);
-      this._activeTaskbarProgress = taskbarProgress;
+      this._activeWindowIsDownloadWindow = aIsDownloadWindow;
+      if (aWindow) {
+        
+        let docShell = aWindow.QueryInterface(Ci.nsIInterfaceRequestor).
+                         getInterface(Ci.nsIWebNavigation).
+                         QueryInterface(Ci.nsIDocShellTreeItem).treeOwner.
+                         QueryInterface(Ci.nsIInterfaceRequestor).
+                         getInterface(Ci.nsIXULWindow).docShell;
+        let taskbarProgress = this._taskbar.getTaskbarProgress(docShell);
+        this._activeTaskbarProgress = taskbarProgress;
 
-      this._updateTaskbar();
-      
-      
-      aWindow.addEventListener("unload", function () {
-        DownloadTaskbarProgressUpdater._onActiveWindowUnload(taskbarProgress);
-      }, false);
+        this._updateTaskbar();
+        
+        
+        aWindow.addEventListener("unload", function () {
+          DownloadTaskbarProgressUpdater._onActiveWindowUnload(taskbarProgress);
+        }, false);
+      }
+      else {
+        this._activeTaskbarProgress = null;
+      }
     }
-    else {
-      this._activeTaskbarProgress = null;
-    }
-#endif
   },
 
   
@@ -215,15 +216,14 @@ var DownloadTaskbarProgressUpdater =
 
   _shouldSetState: function DTPU_shouldSetState()
   {
-#ifdef XP_WIN
-    
-    
-    return this._activeWindowIsDownloadWindow ||
-           (this._taskbarState == Ci.nsITaskbarProgress.STATE_NORMAL ||
-            this._taskbarState == Ci.nsITaskbarProgress.STATE_INDETERMINATE);
-#else
+    if (AppConstants.platform == "win") {
+      
+      
+      return this._activeWindowIsDownloadWindow ||
+             (this._taskbarState == Ci.nsITaskbarProgress.STATE_NORMAL ||
+              this._taskbarState == Ci.nsITaskbarProgress.STATE_INDETERMINATE);
+    }
     return true;
-#endif
   },
 
   

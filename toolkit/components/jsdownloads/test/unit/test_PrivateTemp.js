@@ -9,7 +9,7 @@
 
 
 
-add_task(function test_private_temp() {
+add_task(function* test_private_temp() {
 
   let download = yield promiseStartExternalHelperAppServiceDownload(
                                                          httpUrl("empty.txt"));

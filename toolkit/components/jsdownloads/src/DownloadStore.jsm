@@ -103,11 +103,14 @@ this.DownloadStore.prototype = {
 
   load: function DS_load()
   {
-    return Task.spawn(function task_DS_load() {
+    return Task.spawn(function* task_DS_load() {
       let bytes;
       try {
         bytes = yield OS.File.read(this.path);
-      } catch (ex if ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
+      } catch (ex) {
+        if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
+          throw ex;
+        }
         
         return;
       }
@@ -153,7 +156,7 @@ this.DownloadStore.prototype = {
 
   save: function DS_save()
   {
-    return Task.spawn(function task_DS_save() {
+    return Task.spawn(function* task_DS_save() {
       let downloads = yield this.list.getAll();
 
       
@@ -188,8 +191,11 @@ this.DownloadStore.prototype = {
         
         try {
           yield OS.File.remove(this.path);
-        } catch (ex if ex instanceof OS.File.Error &&
-                 (ex.becauseNoSuchFile || ex.becauseAccessDenied)) {
+        } catch (ex) {
+          if (!(ex instanceof OS.File.Error) ||
+              !(ex.becauseNoSuchFile || ex.becauseAccessDenied)) {
+            throw ex;
+          }
           
           
         }

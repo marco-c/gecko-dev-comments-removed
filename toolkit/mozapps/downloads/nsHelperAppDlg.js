@@ -2,12 +2,9 @@
 
 
 
-
-
-
-
 const {utils: Cu, interfaces: Ci, classes: Cc, results: Cr} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "EnableDelayHelper",
                                   "resource://gre/modules/SharedPromptUtils.jsm");
@@ -410,22 +407,22 @@ nsUnknownContentTypeDialog.prototype = {
     
     var createdFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
 
-#ifdef XP_WIN
-    let ext;
-    try {
-      
-      ext = "." + this.mLauncher.MIMEInfo.primaryExtension;
-    } catch (e) { }
+    if (AppConstants.platform == "win") {
+      let ext;
+      try {
+        
+        ext = "." + this.mLauncher.MIMEInfo.primaryExtension;
+      } catch (e) { }
 
-    
-    
-    let leaf = createdFile.leafName;
-    if (ext && leaf.slice(-ext.length) != ext && createdFile.isExecutable()) {
-      createdFile.remove(false);
-      aLocalFolder.leafName = leaf + ext;
-      createdFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+      
+      
+      let leaf = createdFile.leafName;
+      if (ext && leaf.slice(-ext.length) != ext && createdFile.isExecutable()) {
+        createdFile.remove(false);
+        aLocalFolder.leafName = leaf + ext;
+        createdFile = DownloadPaths.createNiceUniqueFile(aLocalFolder);
+      }
     }
-#endif
 
     return createdFile;
   },
@@ -502,7 +499,6 @@ nsUnknownContentTypeDialog.prototype = {
       
       var rememberChoice = this.dialogElement("rememberChoice");
 
-#if 0
       
       
       
@@ -522,7 +518,6 @@ nsUnknownContentTypeDialog.prototype = {
       
 
       
-#endif
       if (shouldntRememberChoice) {
         rememberChoice.checked = false;
         rememberChoice.disabled = true;
@@ -643,22 +638,21 @@ nsUnknownContentTypeDialog.prototype = {
   
   openWithDefaultOK: function() {
     
-#ifdef XP_WIN
-    
-    
-    
-    
-    
-    
+    if (AppConstants.platform == "win") {
+      
+      
+      
+      
+      
+      
 
-    
-    return !this.mLauncher.targetFileIsExecutable;
-#else
+      
+      return !this.mLauncher.targetFileIsExecutable;
+    }
     
     
     
     return this.mLauncher.MIMEInfo.hasDefaultHandler;
-#endif
   },
 
   
@@ -679,11 +673,10 @@ nsUnknownContentTypeDialog.prototype = {
 
   
   getPath: function (aFile) {
-#ifdef XP_MACOSX
-    return aFile.leafName || aFile.path;
-#else
+    if (AppConstants.platform == "macosx") {
+      return aFile.leafName || aFile.path;
+    }
     return aFile.path;
-#endif
   },
 
   
@@ -918,20 +911,20 @@ nsUnknownContentTypeDialog.prototype = {
         
         
 
-#if 0
-        var prefs = Components.classes["@mozilla.org/preferences-service;1"].getService(Components.interfaces.nsIPrefBranch);
-        var targetFile = null;
-        try {
-          targetFile = prefs.getComplexValue("browser.download.defaultFolder",
-                                             Components.interfaces.nsILocalFile);
-          var leafName = this.dialogElement("location").getAttribute("realname");
-          
-          targetFile = this.validateLeafName(targetFile, leafName, null);
-        }
-        catch(e) { }
+        
 
-        this.mLauncher.saveToDisk(targetFile, false);
-#endif
+
+
+
+
+
+
+
+
+
+
+
+
 
         
         
@@ -985,20 +978,19 @@ nsUnknownContentTypeDialog.prototype = {
   
   getFileDisplayName: function getFileDisplayName(file)
   {
-#ifdef XP_WIN
-    if (file instanceof Components.interfaces.nsILocalFileWin) {
-      try {
-        return file.getVersionInfoField("FileDescription");
-      } catch (e) {}
+    if (AppConstants.platform == "win") {
+      if (file instanceof Components.interfaces.nsILocalFileWin) {
+        try {
+          return file.getVersionInfoField("FileDescription");
+        } catch (e) {}
+      }
+    } else if (AppConstants.platform == "macosx") {
+      if (file instanceof Components.interfaces.nsILocalFileMac) {
+        try {
+          return file.bundleDisplayName;
+        } catch (e) {}
+      }
     }
-#endif
-#ifdef XP_MACOSX
-    if (file instanceof Components.interfaces.nsILocalFileMac) {
-      try {
-        return file.bundleDisplayName;
-      } catch (e) {}
-    }
-#endif
     return file.leafName;
   },
 
@@ -1012,11 +1004,10 @@ nsUnknownContentTypeDialog.prototype = {
       var otherHandler = this.dialogElement("otherHandler");
       otherHandler.removeAttribute("hidden");
       otherHandler.setAttribute("path", this.getPath(this.chosenApp.executable));
-#ifdef XP_WIN
-      otherHandler.label = this.getFileDisplayName(this.chosenApp.executable);
-#else
-      otherHandler.label = this.chosenApp.name;
-#endif
+      if (AppConstants.platform == "win")
+        otherHandler.label = this.getFileDisplayName(this.chosenApp.executable);
+      else
+        otherHandler.label = this.chosenApp.name;
       this.dialogElement("openHandler").selectedIndex = 1;
       this.dialogElement("openHandler").setAttribute("lastSelectedItemID", "otherHandler");
 
@@ -1032,85 +1023,85 @@ nsUnknownContentTypeDialog.prototype = {
   },
   
   chooseApp: function() {
-#ifdef XP_WIN
-    
-    var fileExtension = "";
-    try {
-      fileExtension = this.mLauncher.MIMEInfo.primaryExtension;
-    } catch(ex) {
-    }
-
-    
-    var typeString = this.mLauncher.MIMEInfo.description;
-
-    if (!typeString) {
+    if (AppConstants.platform == "win") {
       
+      var fileExtension = "";
+      try {
+        fileExtension = this.mLauncher.MIMEInfo.primaryExtension;
+      } catch(ex) {
+      }
+
       
-      if (fileExtension) {
-        typeString =
-          this.dialogElement("strings").
-          getFormattedString("fileType", [fileExtension.toUpperCase()]);
-      } else {
+      var typeString = this.mLauncher.MIMEInfo.description;
+
+      if (!typeString) {
         
-        typeString = this.mLauncher.MIMEInfo.MIMEType;
+        
+        if (fileExtension) {
+          typeString =
+            this.dialogElement("strings").
+            getFormattedString("fileType", [fileExtension.toUpperCase()]);
+        } else {
+          
+          typeString = this.mLauncher.MIMEInfo.MIMEType;
+        }
+      }
+
+      var params = {};
+      params.title =
+        this.dialogElement("strings").getString("chooseAppFilePickerTitle");
+      params.description = typeString;
+      params.filename    = this.mLauncher.suggestedFileName;
+      params.mimeInfo    = this.mLauncher.MIMEInfo;
+      params.handlerApp  = null;
+
+      this.mDialog.openDialog("chrome://global/content/appPicker.xul", null,
+                              "chrome,modal,centerscreen,titlebar,dialog=yes",
+                              params);
+
+      if (params.handlerApp &&
+          params.handlerApp.executable &&
+          params.handlerApp.executable.isFile()) {
+        
+        this.chosenApp = params.handlerApp;
       }
     }
-
-    var params = {};
-    params.title =
-      this.dialogElement("strings").getString("chooseAppFilePickerTitle");
-    params.description = typeString;
-    params.filename    = this.mLauncher.suggestedFileName;
-    params.mimeInfo    = this.mLauncher.MIMEInfo;
-    params.handlerApp  = null;
-
-    this.mDialog.openDialog("chrome://global/content/appPicker.xul", null,
-                            "chrome,modal,centerscreen,titlebar,dialog=yes",
-                            params);
-
-    if (params.handlerApp &&
-        params.handlerApp.executable &&
-        params.handlerApp.executable.isFile()) {
-      
-      this.chosenApp = params.handlerApp;
-    }
-#else
+    else {
 #if MOZ_WIDGET_GTK == 3
-    var nsIApplicationChooser = Components.interfaces.nsIApplicationChooser;
-    var appChooser = Components.classes["@mozilla.org/applicationchooser;1"]
-                               .createInstance(nsIApplicationChooser);
-    appChooser.init(this.mDialog, this.dialogElement("strings").getString("chooseAppFilePickerTitle"));
-    var contentTypeDialogObj = this;
-    let appChooserCallback = function appChooserCallback_done(aResult) {
-      if (aResult) {
-         contentTypeDialogObj.chosenApp = aResult.QueryInterface(Components.interfaces.nsILocalHandlerApp);
-      }
-      contentTypeDialogObj.finishChooseApp();
-    };
-    appChooser.open(this.mLauncher.MIMEInfo.MIMEType, appChooserCallback);
-    
-    return;
-#else
-    var nsIFilePicker = Components.interfaces.nsIFilePicker;
-    var fp = Components.classes["@mozilla.org/filepicker;1"]
-                       .createInstance(nsIFilePicker);
-    fp.init(this.mDialog,
-            this.dialogElement("strings").getString("chooseAppFilePickerTitle"),
-            nsIFilePicker.modeOpen);
-
-    fp.appendFilters(nsIFilePicker.filterApps);
-
-    if (fp.show() == nsIFilePicker.returnOK && fp.file) {
+      var nsIApplicationChooser = Components.interfaces.nsIApplicationChooser;
+      var appChooser = Components.classes["@mozilla.org/applicationchooser;1"]
+                                 .createInstance(nsIApplicationChooser);
+      appChooser.init(this.mDialog, this.dialogElement("strings").getString("chooseAppFilePickerTitle"));
+      var contentTypeDialogObj = this;
+      let appChooserCallback = function appChooserCallback_done(aResult) {
+        if (aResult) {
+           contentTypeDialogObj.chosenApp = aResult.QueryInterface(Components.interfaces.nsILocalHandlerApp);
+        }
+        contentTypeDialogObj.finishChooseApp();
+      };
+      appChooser.open(this.mLauncher.MIMEInfo.MIMEType, appChooserCallback);
       
-      var localHandlerApp =
-        Components.classes["@mozilla.org/uriloader/local-handler-app;1"].
-                   createInstance(Components.interfaces.nsILocalHandlerApp);
-      localHandlerApp.executable = fp.file;
-      this.chosenApp = localHandlerApp;
-    }
-#endif // MOZ_WIDGET_GTK3
+      return;
+#else
+      var nsIFilePicker = Components.interfaces.nsIFilePicker;
+      var fp = Components.classes["@mozilla.org/filepicker;1"]
+                         .createInstance(nsIFilePicker);
+      fp.init(this.mDialog,
+              this.dialogElement("strings").getString("chooseAppFilePickerTitle"),
+              nsIFilePicker.modeOpen);
 
-#endif // XP_WIN
+      fp.appendFilters(nsIFilePicker.filterApps);
+
+      if (fp.show() == nsIFilePicker.returnOK && fp.file) {
+        
+        var localHandlerApp =
+          Components.classes["@mozilla.org/uriloader/local-handler-app;1"].
+                     createInstance(Components.interfaces.nsILocalHandlerApp);
+        localHandlerApp.executable = fp.file;
+        this.chosenApp = localHandlerApp;
+      }
+#endif // MOZ_WIDGET_GTK3
+    }
     this.finishChooseApp();
   },
 

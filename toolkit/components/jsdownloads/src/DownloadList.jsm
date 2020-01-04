@@ -233,7 +233,7 @@ this.DownloadList.prototype = {
 
 
   removeFinished: function DL_removeFinished(aFilterFn) {
-    Task.spawn(function() {
+    Task.spawn(function* () {
       let list = yield this.getAll();
       for (let download of list) {
         

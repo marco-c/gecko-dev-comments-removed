@@ -68,7 +68,7 @@ XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
 
 
 
-add_task(function test_getSystemDownloadsDirectory()
+add_task(function* test_getSystemDownloadsDirectory()
 {
   
   
@@ -118,7 +118,7 @@ add_task(function test_getSystemDownloadsDirectory()
 
 
 
-add_task(function test_getPreferredDownloadsDirectory()
+add_task(function* test_getPreferredDownloadsDirectory()
 {
   let folderListPrefName = "browser.download.folderList";
   let dirPrefName = "browser.download.dir";
@@ -181,7 +181,7 @@ add_task(function test_getPreferredDownloadsDirectory()
 
 
 
-add_task(function test_getTemporaryDownloadsDirectory()
+add_task(function* test_getTemporaryDownloadsDirectory()
 {
   let downloadDir = yield DownloadIntegration.getTemporaryDownloadsDirectory();
   do_check_neq(downloadDir, "");
@@ -202,7 +202,7 @@ add_task(function test_getTemporaryDownloadsDirectory()
 
 
 
-add_task(function test_notifications()
+add_task(function* test_notifications()
 {
   enableObserversTestMode();
 
@@ -242,7 +242,7 @@ add_task(function test_notifications()
 
 
 
-add_task(function test_no_notifications()
+add_task(function* test_no_notifications()
 {
   enableObserversTestMode();
 
@@ -272,7 +272,7 @@ add_task(function test_no_notifications()
 
 
 
-add_task(function test_mix_notifications()
+add_task(function* test_mix_notifications()
 {
   enableObserversTestMode();
   mustInterruptResponses();
@@ -304,7 +304,7 @@ add_task(function test_mix_notifications()
 
 
 
-add_task(function test_suspend_resume()
+add_task(function* test_suspend_resume()
 {
   enableObserversTestMode();
 
@@ -314,11 +314,11 @@ add_task(function test_suspend_resume()
 
   let addDownload = function(list)
   {
-    return Task.spawn(function () {
+    return Task.spawn(function* () {
       let download = yield promiseNewDownload(httpUrl("interruptible.txt"));
       download.start();
       list.add(download);
-      throw new Task.Result(download);
+      return download;
     });
   }
 
@@ -385,7 +385,7 @@ add_task(function test_suspend_resume()
 
 
 
-add_task(function test_exit_private_browsing()
+add_task(function* test_exit_private_browsing()
 {
   enableObserversTestMode();
   mustInterruptResponses();
