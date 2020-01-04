@@ -687,7 +687,7 @@ public:
                            bool aFirstPass);
   void ReflowContents(ScrollReflowInput* aState,
                       const ReflowOutput& aDesiredSize);
-  void PlaceScrollArea(ScrollReflowInput& aState,
+  void PlaceScrollArea(const ScrollReflowInput& aState,
                        const nsPoint& aScrollPosition);
   nscoord GetIntrinsicVScrollbarWidth(nsRenderingContext *aRenderingContext);
 
@@ -709,11 +709,6 @@ public:
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override {
     return mHelper.ComputeCustomOverflow(aOverflowAreas);
   }
-
-  
-  
-  
-  void AdjustForPerspective(nsRect& aScrollableOverflow);
 
   
   

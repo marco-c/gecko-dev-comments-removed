@@ -727,19 +727,12 @@ nsHTMLScrollFrame::ReflowContents(ScrollReflowInput* aState,
 }
 
 void
-nsHTMLScrollFrame::PlaceScrollArea(ScrollReflowInput& aState,
+nsHTMLScrollFrame::PlaceScrollArea(const ScrollReflowInput& aState,
                                    const nsPoint& aScrollPosition)
 {
   nsIFrame *scrolledFrame = mHelper.mScrolledFrame;
   
   scrolledFrame->SetPosition(mHelper.mScrollPort.TopLeft() - aScrollPosition);
-
-  
-  
-  
-  
-  
-  AdjustForPerspective(aState.mContentsOverflowAreas.ScrollableOverflow());
 
   nsRect scrolledArea;
   
@@ -841,137 +834,6 @@ GetBrowserRoot(nsIContent* aContent)
   }
 
   return nullptr;
-}
-
-
-
-
-
-
-
-
-
-
-
-void
-GetScrollableOverflowForPerspective(nsIFrame* aScrolledFrame,
-                                    nsIFrame* aCurrentFrame,
-                                    const nsRect aScrollPort,
-                                    nsPoint aOffset,
-                                    nsRect& aScrolledFrameOverflowArea)
-{
-  
-  FrameChildListIDs skip = nsIFrame::kSelectPopupList | nsIFrame::kPopupList;
-  for (nsIFrame::ChildListIterator childLists(aCurrentFrame);
-       !childLists.IsDone(); childLists.Next()) {
-    if (skip.Contains(childLists.CurrentID())) {
-      continue;
-    }
-
-    for (nsIFrame* child : childLists.CurrentList()) {
-      nsPoint offset = aOffset;
-
-      
-      
-      
-      
-      
-      if (aScrolledFrame == aCurrentFrame) {
-        offset = child->GetPosition();
-      }
-
-      if (child->Extend3DContext()) {
-        
-        
-        
-        GetScrollableOverflowForPerspective(aScrolledFrame, child, aScrollPort,
-                                            offset, aScrolledFrameOverflowArea);
-      }
-
-      
-      
-      
-      
-      
-      
-      if (child->IsTransformed()) {
-        
-        
-        nsPoint scrollPos = aScrolledFrame->GetPosition();
-        nsRect preScroll = nsDisplayTransform::TransformRect(
-          child->GetScrollableOverflowRectRelativeToSelf(), child);
-
-        
-        
-        
-        
-        aScrolledFrame->SetPosition(scrollPos + nsPoint(600, 600));
-        nsRect postScroll = nsDisplayTransform::TransformRect(
-          child->GetScrollableOverflowRectRelativeToSelf(), child);
-        aScrolledFrame->SetPosition(scrollPos);
-
-        
-        
-        double rightDelta =
-          (postScroll.XMost() - preScroll.XMost() + 600.0) / 600.0;
-        double bottomDelta =
-          (postScroll.YMost() - preScroll.YMost() + 600.0) / 600.0;
-
-        
-        MOZ_ASSERT(rightDelta >= 1.0f && bottomDelta >= 1.0f);
-
-        
-        preScroll += offset + scrollPos;
-
-        
-        
-        
-        
-        nsMargin overhang(std::max(0, aScrollPort.Y() - preScroll.Y()),
-                          std::max(0, preScroll.XMost() - aScrollPort.XMost()),
-                          std::max(0, preScroll.YMost() - aScrollPort.YMost()),
-                          std::max(0, aScrollPort.X() - preScroll.X()));
-
-        
-        
-        overhang.top /= bottomDelta;
-        overhang.right /= rightDelta;
-        overhang.bottom /= bottomDelta;
-        overhang.left /= rightDelta;
-
-        
-        nsRect overflow(0, 0, aScrollPort.width, aScrollPort.height);
-
-        
-        
-        overflow.Inflate(overhang);
-
-        
-        aScrolledFrameOverflowArea.UnionRect(aScrolledFrameOverflowArea,
-                                             overflow);
-      } else if (aCurrentFrame == aScrolledFrame) {
-        aScrolledFrameOverflowArea.UnionRect(
-          aScrolledFrameOverflowArea,
-          child->GetScrollableOverflowRectRelativeToParent());
-      }
-    }
-  }
-}
-
-void
-nsHTMLScrollFrame::AdjustForPerspective(nsRect& aScrollableOverflow)
-{
-  
-  
-  
-  if (!ChildrenHavePerspective()) {
-    return;
-  }
-  aScrollableOverflow.SetEmpty();
-  GetScrollableOverflowForPerspective(mHelper.mScrolledFrame,
-                                      mHelper.mScrolledFrame,
-                                      mHelper.mScrollPort,
-                                      nsPoint(), aScrollableOverflow);
 }
 
 void
@@ -2882,18 +2744,7 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
   if (mOuter->ChildrenHavePerspective()) {
     
     
-
-    
-    
-    
     mOuter->RecomputePerspectiveChildrenOverflow(mOuter);
-
-    
-    
-    mScrolledFrame->UpdateOverflow();
-
-    
-    mOuter->UpdateOverflow();
   }
 
   ScheduleSyntheticMouseMove();
@@ -4849,10 +4700,6 @@ nsXULScrollFrame::LayoutScrollArea(nsBoxLayoutState& aState,
 
   if (minSize.width > childRect.width)
     childRect.width = minSize.width;
-
-  
-  
-  
 
   aState.SetLayoutFlags(flags);
   ClampAndSetBounds(aState, childRect, aScrollPosition);
