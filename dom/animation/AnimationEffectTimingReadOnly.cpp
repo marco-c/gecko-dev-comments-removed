@@ -9,6 +9,7 @@
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/dom/AnimatableBinding.h"
 #include "mozilla/dom/AnimationEffectTimingReadOnlyBinding.h"
+#include "mozilla/dom/CSSPseudoElement.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
 
 namespace mozilla {
@@ -62,11 +63,20 @@ TimingParamsFromOptionsUnion(
   } else {
     
     
-    MOZ_ASSERT(aTarget.IsNull() ||
-               (!aTarget.IsNull() && aTarget.Value().IsElement()),
-               "CSSPseudoElement is not supported here");
-    return TimingParams(GetTimingProperties(aOptions),
-                        &aTarget.Value().GetAsElement());
+    
+    
+    RefPtr<dom::Element> targetElement;
+    if (!aTarget.IsNull()) {
+      const dom::ElementOrCSSPseudoElement& target = aTarget.Value();
+      MOZ_ASSERT(target.IsElement() || target.IsCSSPseudoElement(),
+                 "Uninitialized target");
+      if (target.IsElement()) {
+        targetElement = &target.GetAsElement();
+      } else {
+        targetElement = target.GetAsCSSPseudoElement().ParentElement();
+      }
+    }
+    return TimingParams(GetTimingProperties(aOptions), targetElement);
   }
 }
 
