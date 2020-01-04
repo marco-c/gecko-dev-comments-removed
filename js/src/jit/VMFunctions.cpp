@@ -78,8 +78,13 @@ InvokeFunction(JSContext* cx, HandleObject obj, bool constructing, uint32_t argc
         RootedValue newTarget(cx, argvWithoutThis[argc]);
 
         
-        if (thisv.isMagic(JS_IS_CONSTRUCTING))
+        
+        
+        if (thisv.isMagic()) {
+            MOZ_ASSERT(thisv.whyMagic() == JS_IS_CONSTRUCTING ||
+                       thisv.whyMagic() == JS_UNINITIALIZED_LEXICAL);
             return Construct(cx, fval, cargs, newTarget, rval);
+        }
 
         
         

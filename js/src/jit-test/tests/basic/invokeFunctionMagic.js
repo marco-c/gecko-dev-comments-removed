@@ -1,0 +1,14 @@
+
+var g = newGlobal();
+do {
+  new g.String(); 
+} while (!inIon());
+
+
+class B {};
+class D extends B {
+  constructor() { super(); }
+};
+do {
+  new D(); 
+} while (!inIon());
