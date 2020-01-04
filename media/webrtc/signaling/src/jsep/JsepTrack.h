@@ -236,12 +236,9 @@ private:
   
   
   
-  
-  
   virtual void NegotiateCodecs(
       const SdpMediaSection& remote,
       std::vector<JsepCodecDescription*>* codecs,
-      const SdpMediaSection* answer = nullptr,
       std::map<std::string, std::string>* formatChanges = nullptr) const;
 
   JsConstraints* FindConstraints(
