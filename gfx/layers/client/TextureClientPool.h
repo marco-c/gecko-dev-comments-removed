@@ -34,7 +34,7 @@ public:
 
 
 
-  virtual void ReturnTextureClientDeferred(TextureClient *aClient, TextureReadLock* aLock) = 0;
+  virtual void ReturnTextureClientDeferred(TextureClient *aClient) = 0;
 
   virtual void ReportClientLost() = 0;
 };
@@ -72,7 +72,7 @@ public:
 
 
 
-  void ReturnTextureClientDeferred(TextureClient *aClient, TextureReadLock* aLock) override;
+  void ReturnTextureClientDeferred(TextureClient *aClient) override;
 
   
 
@@ -141,21 +141,12 @@ private:
   
   uint32_t mOutstandingClients;
 
-  struct TextureClientHolder {
-    RefPtr<TextureClient> mTextureClient;
-    RefPtr<TextureReadLock> mLock;
-
-    TextureClientHolder(TextureClient* aTextureClient, TextureReadLock* aLock)
-      : mTextureClient(aTextureClient), mLock(aLock)
-    {}
-  };
-
   
   
   
   std::stack<RefPtr<TextureClient> > mTextureClients;
 
-  std::list<TextureClientHolder> mTextureClientsDeferred;
+  std::list<RefPtr<TextureClient>> mTextureClientsDeferred;
   RefPtr<nsITimer> mTimer;
   RefPtr<CompositableForwarder> mSurfaceAllocator;
 };
