@@ -3469,7 +3469,7 @@ const BrowserSearch = {
     else {
       browser.engines = engines;
       if (browser == gBrowser.selectedBrowser)
-        this.updateSearchButton();
+        this.updateOpenSearchBadge();
     }
   },
 
@@ -3478,13 +3478,13 @@ const BrowserSearch = {
 
 
 
-  updateSearchButton: function() {
+  updateOpenSearchBadge: function() {
     var searchBar = this.searchBar;
 
     
     
     
-    if (!searchBar || !searchBar.searchButton)
+    if (!searchBar || !searchBar.textbox)
       return;
 
     var engines = gBrowser.selectedBrowser.engines;
@@ -4445,7 +4445,7 @@ var XULBrowserWindow = {
 
   asyncUpdateUI: function () {
     FeedHandler.updateFeeds();
-    BrowserSearch.updateSearchButton();
+    BrowserSearch.updateOpenSearchBadge();
   },
 
   

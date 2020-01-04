@@ -102,14 +102,6 @@
   text-shadow: none !important;
 }
 
-
-:root[devtoolstheme="dark"] .searchbar-dropmarker-image {
-  
-  -moz-image-region: auto !important;
-  
-  -moz-margin-start: 2px;
-}
-
 :root[devtoolstheme="dark"] .findbar-closebutton,
 
 

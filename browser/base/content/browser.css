@@ -380,8 +380,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 @media (resolution: 2dppx) {
-  .searchbar-engine-image,
-  .searchbar-engine-menuitem > .menu-iconic-left > .menu-iconic-icon {
+  .searchbar-engine-image {
     image-rendering: -moz-crisp-edges;
   }
 }
