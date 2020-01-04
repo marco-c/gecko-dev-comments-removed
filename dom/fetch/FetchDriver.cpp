@@ -131,6 +131,15 @@ FetchDriver::HttpFetch()
   }
 
   
+  if (IsBlobURI(uri)) {
+    nsAutoCString method;
+    mRequest->GetMethod(method);
+    if (!method.EqualsLiteral("GET")) {
+      return NS_ERROR_DOM_NETWORK_ERR;
+    }
+  }
+
+  
   
   
   
