@@ -211,7 +211,7 @@ WorkerRunnable::PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
 #endif
 
   if (mBehavior == WorkerThreadModifyBusyCount) {
-    aWorkerPrivate->ModifyBusyCountFromWorker(aCx, false);
+    aWorkerPrivate->ModifyBusyCountFromWorker(false);
   }
 
   if (!aRunResult) {
@@ -672,7 +672,7 @@ WorkerSameThreadRunnable::PostDispatch(JSContext* aCx,
   
   aWorkerPrivate->AssertIsOnWorkerThread();
   if (aDispatchResult) {
-    DebugOnly<bool> willIncrement = aWorkerPrivate->ModifyBusyCountFromWorker(aCx, true);
+    DebugOnly<bool> willIncrement = aWorkerPrivate->ModifyBusyCountFromWorker(true);
     
     
     MOZ_ASSERT(willIncrement);
