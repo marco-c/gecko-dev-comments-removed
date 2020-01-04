@@ -31,6 +31,20 @@ var gEMEHandler = {
     }
     browser.reload();
   },
+  isKeySystemVisible: function(keySystem) {
+    if (!keySystem) {
+      return false;
+    }
+    if (keySystem.startsWith("com.adobe") &&
+        Services.prefs.getPrefType("media.gmp-eme-adobe.visible")) {
+      return Services.prefs.getBoolPref("media.gmp-eme-adobe.visible");
+    }
+    if (keySystem == "com.widevine.alpha" &&
+        Services.prefs.getPrefType("media.gmp-widevinecdm.visible")) {
+      return Services.prefs.getBoolPref("media.gmp-widevinecdm.visible");
+    }
+    return true;
+  },
   getLearnMoreLink: function(msgId) {
     let text = gNavigatorBundle.getString("emeNotifications." + msgId + ".learnMoreLabel");
     let baseURL = Services.urlFormatter.formatURLPref("app.support.baseURL");
@@ -47,7 +61,7 @@ var gEMEHandler = {
     }
     let {status: status, keySystem: keySystem} = parsedData;
     
-    if (!this.uiEnabled) {
+    if (!this.uiEnabled || !this.isKeySystemVisible(keySystem)) {
       return;
     }
 
