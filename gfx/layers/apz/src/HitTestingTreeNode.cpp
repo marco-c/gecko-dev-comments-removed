@@ -12,6 +12,7 @@
 #include "mozilla/layers/APZThreadUtils.h"              
 #include "mozilla/layers/APZUtils.h"                    
 #include "mozilla/layers/AsyncCompositionManager.h"     
+#include "mozilla/layers/AsyncDragMetrics.h"            
 #include "nsPrintfCString.h"                            
 #include "UnitTransforms.h"                             
 

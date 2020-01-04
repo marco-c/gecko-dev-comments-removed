@@ -9,9 +9,11 @@
 
 #include "InputData.h"                      
 #include "mozilla/gfx/Matrix.h"             
+#include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/AsyncDragMetrics.h"
 #include "nsAutoPtr.h"                      
 #include "nsTArray.h"                       
+#include "TouchCounter.h"
 
 namespace mozilla {
 namespace layers {

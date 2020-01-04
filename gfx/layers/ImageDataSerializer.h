@@ -13,6 +13,7 @@
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
+#include "mozilla/layers/LayersSurfaces.h"  
 
 namespace mozilla {
 namespace gfx {

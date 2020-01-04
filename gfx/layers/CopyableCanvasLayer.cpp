@@ -18,6 +18,7 @@
 #include "mozilla/gfx/BaseSize.h"       
 #include "mozilla/gfx/Tools.h"
 #include "mozilla/gfx/Point.h"          
+#include "mozilla/layers/AsyncCanvasRenderer.h"
 #include "mozilla/layers/PersistentBufferProvider.h"
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            

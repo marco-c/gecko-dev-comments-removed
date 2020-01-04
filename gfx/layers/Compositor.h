@@ -9,6 +9,7 @@
 #include "Units.h"                      
 #include "mozilla/Assertions.h"         
 #include "mozilla/RefPtr.h"             
+#include "mozilla/gfx/2D.h"             
 #include "mozilla/gfx/MatrixFwd.h"      
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
