@@ -2344,18 +2344,6 @@ BytecodeEmitter::checkSideEffects(ParseNode* pn, bool* answer)
 
       case PNK_ANNEXB_FUNCTION:
         MOZ_ASSERT(pn->isArity(PN_BINARY));
-
-        
-        
-        
-        
-        
-        
-        if (pn->pn_left->isKind(PNK_NOP)) {
-            *answer = false;
-            return true;
-        }
-
         return checkSideEffects(pn->pn_left, answer);
 
       case PNK_ARGSBODY:
@@ -8555,19 +8543,7 @@ BytecodeEmitter::emitTree(ParseNode* pn, EmitLineNumberNote emitLineNote)
 
     switch (pn->getKind()) {
       case PNK_FUNCTION:
-        if (!emitFunction(pn))
-            return false;
-        break;
-
       case PNK_ANNEXB_FUNCTION:
-        
-        
-        
-        
-        
-        
-        if (pn->pn_left->isKind(PNK_NOP))
-            break;
         if (!emitFunction(pn))
             return false;
         break;

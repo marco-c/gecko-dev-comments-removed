@@ -2415,14 +2415,6 @@ ASTSerializer::statement(ParseNode* pn, MutableHandleValue dst)
         return declaration(pn, dst);
 
       case PNK_ANNEXB_FUNCTION:
-        
-        
-        
-        
-        
-        
-        if (pn->pn_left->isKind(PNK_NOP))
-            return builder.emptyStatement(&pn->pn_pos, dst);
         return declaration(pn->pn_left, dst);
 
       case PNK_LETBLOCK:

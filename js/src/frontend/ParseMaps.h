@@ -442,18 +442,6 @@ class AtomDecls
     }
 
     
-    DefinitionNode lookupLast(JSAtom* atom) const {
-        MOZ_ASSERT(map);
-        DefinitionList::Range range = lookupMulti(atom);
-        DefinitionNode dn = ParseHandler::nullDefinition();
-        while (!range.empty()) {
-            dn = range.front<ParseHandler>();
-            range.popFront();
-        }
-        return dn;
-    }
-
-    
     DefinitionList::Range lookupMulti(JSAtom* atom) const {
         MOZ_ASSERT(map);
         if (AtomDefnListPtr p = map->lookup(atom))
