@@ -763,6 +763,8 @@ js::intl_Collator(JSContext* cx, unsigned argc, Value* vp)
 static void
 collator_finalize(FreeOp* fop, JSObject* obj)
 {
+    MOZ_ASSERT(fop->onMainThread());
+
     
     
     
@@ -1254,6 +1256,8 @@ js::intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp)
 static void
 numberFormat_finalize(FreeOp* fop, JSObject* obj)
 {
+    MOZ_ASSERT(fop->onMainThread());
+
     
     
     
@@ -1719,6 +1723,8 @@ js::intl_DateTimeFormat(JSContext* cx, unsigned argc, Value* vp)
 static void
 dateTimeFormat_finalize(FreeOp* fop, JSObject* obj)
 {
+    MOZ_ASSERT(fop->onMainThread());
+
     
     
     

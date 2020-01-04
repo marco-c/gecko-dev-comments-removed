@@ -135,6 +135,12 @@ class FreeOp : public JSFreeOp
         return runtime_ != nullptr;
     }
 
+    bool maybeOffMainThread() const {
+        
+        
+        return !runtime_;
+    }
+
     bool isDefaultFreeOp() const;
 
     inline void free_(void* p);
