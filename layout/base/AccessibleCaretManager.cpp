@@ -538,9 +538,9 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   }
 
   
-  nsIFrame* ptFrame = nsLayoutUtils::GetFrameForPoint(rootFrame, aPoint,
+  nsWeakFrame ptFrame = nsLayoutUtils::GetFrameForPoint(rootFrame, aPoint,
     nsLayoutUtils::IGNORE_PAINT_SUPPRESSION | nsLayoutUtils::IGNORE_CROSS_DOC);
-  if (!ptFrame) {
+  if (!ptFrame.IsAlive()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -552,6 +552,14 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   AC_LOG("%s: Found %s focusable", __FUNCTION__,
          focusableFrame ? focusableFrame->ListTag().get() : "no frame");
 #endif
+
+  
+  
+  
+  
+  
+  nsPoint ptInFrame = aPoint;
+  nsLayoutUtils::TransformPoint(rootFrame, ptFrame, ptInFrame);
 
   
   Element* newFocusEditingHost = GetEditingHostForFrame(ptFrame);
@@ -585,9 +593,17 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   
   IMEStateManager::NotifyIME(widget::REQUEST_TO_COMMIT_COMPOSITION,
                              mPresShell->GetPresContext());
+  if (!ptFrame.IsAlive()) {
+    
+    return NS_ERROR_FAILURE;
+  }
 
   
   ChangeFocusToOrClearOldFocus(focusableFrame);
+  if (!ptFrame.IsAlive()) {
+    
+    return NS_ERROR_FAILURE;
+  }
 
   if (GetCaretMode() == CaretMode::Selection &&
       !mFirstCaret->IsLogicallyVisible() && !mSecondCaret->IsLogicallyVisible()) {
@@ -600,9 +616,6 @@ AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint)
   }
 
   
-  nsPoint ptInFrame = aPoint;
-  nsLayoutUtils::TransformPoint(rootFrame, ptFrame, ptInFrame);
-
   nsresult rv = SelectWord(ptFrame, ptInFrame);
   UpdateCaretsWithHapticFeedback();
 
