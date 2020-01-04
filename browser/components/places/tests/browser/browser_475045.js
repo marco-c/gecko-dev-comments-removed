@@ -2,10 +2,10 @@
 
 
 
-var ChromeUtils = {};
+var EventUtils = {};
 this._scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
                      getService(Ci.mozIJSSubScriptLoader);
-this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js", ChromeUtils);
+this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 
 add_task(function* test() {
   
@@ -37,7 +37,7 @@ add_task(function* test() {
   let simulateDragDrop = function(aEffect, aMimeType) {
     const uriSpec = "http://www.mozilla.org/D1995729-A152-4e30-8329-469B01F30AA7";
     let uri = makeURI(uriSpec);
-    ChromeUtils.synthesizeDrop(placesItems.childNodes[0],
+    EventUtils.synthesizeDrop(placesItems.childNodes[0],
                               placesItems,
                               [[{type: aMimeType,
                                 data: uriSpec}]],

@@ -15,10 +15,6 @@
 Services.scriptloader.loadSubScript(getRootDirectory(gTestPath) +
                                     "loader_common.js", this);
 
-var ChromeUtils = {};
-Services.scriptloader.loadSubScript(
-  "chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js", ChromeUtils);
-
 
 var Output = {
   print: info,

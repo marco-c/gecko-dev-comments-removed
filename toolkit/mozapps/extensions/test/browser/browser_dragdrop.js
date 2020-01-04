@@ -11,10 +11,10 @@
 
 
 var gManagerWindow;
-var ChromeUtils = {};
+var EventUtils = {};
 this._scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
                      getService(Ci.mozIJSSubScriptLoader);
-this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js", ChromeUtils);
+this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 
 
 
@@ -137,7 +137,7 @@ add_test(function() {
   });
 
   var viewContainer = gManagerWindow.document.getElementById("view-port");
-  var effect = ChromeUtils.synthesizeDrop(viewContainer, viewContainer,
+  var effect = EventUtils.synthesizeDrop(viewContainer, viewContainer,
                [[{type: "text/x-moz-url", data: url}]],
                "copy", gManagerWindow);
   is(effect, "copy", "Drag should be accepted");
@@ -158,7 +158,7 @@ add_test(function() {
   });
 
   var viewContainer = gManagerWindow.document.getElementById("view-port");
-  var effect = ChromeUtils.synthesizeDrop(viewContainer, viewContainer,
+  var effect = EventUtils.synthesizeDrop(viewContainer, viewContainer,
                [[{type: "application/x-moz-file", data: fileurl.file}]],
                "copy", gManagerWindow);
   is(effect, "copy", "Drag should be accepted");
@@ -180,7 +180,7 @@ add_test(function() {
   });
 
   var viewContainer = gManagerWindow.document.getElementById("view-port");
-  var effect = ChromeUtils.synthesizeDrop(viewContainer, viewContainer,
+  var effect = EventUtils.synthesizeDrop(viewContainer, viewContainer,
                [[{type: "text/x-moz-url", data: url1}],
                 [{type: "text/x-moz-url", data: url2}]],
                "copy", gManagerWindow);
@@ -203,7 +203,7 @@ add_test(function() {
   });
 
   var viewContainer = gManagerWindow.document.getElementById("view-port");
-  var effect = ChromeUtils.synthesizeDrop(viewContainer, viewContainer,
+  var effect = EventUtils.synthesizeDrop(viewContainer, viewContainer,
                [[{type: "application/x-moz-file", data: fileurl1.file}],
                 [{type: "application/x-moz-file", data: fileurl2.file}]],
                "copy", gManagerWindow);
@@ -226,7 +226,7 @@ add_test(function() {
   });
 
   var viewContainer = gManagerWindow.document.getElementById("view-port");
-  var effect = ChromeUtils.synthesizeDrop(viewContainer, viewContainer,
+  var effect = EventUtils.synthesizeDrop(viewContainer, viewContainer,
                [[{type: "text/x-moz-url", data: url}],
                 [{type: "application/x-moz-file", data: fileurl.file}]],
                "copy", gManagerWindow);

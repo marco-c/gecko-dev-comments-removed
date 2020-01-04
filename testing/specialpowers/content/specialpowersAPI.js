@@ -627,8 +627,10 @@ SpecialPowersAPI.prototype = {
 
 
   getFullComponents: function() {
-    return typeof this.Components.classes == 'object' ? this.Components
-                                                      : Components;
+    if (this.Components && typeof this.Components.classes == 'object') {
+      return this.Components;
+    }
+    return Components;
   },
 
   
@@ -637,7 +639,8 @@ SpecialPowersAPI.prototype = {
 
 
   get Cc() { return wrapPrivileged(this.getFullComponents().classes); },
-  get Ci() { return this.Components.interfaces; },
+  get Ci() { return this.Components ? this.Components.interfaces
+                                    : Components.interfaces; },
   get Cu() { return wrapPrivileged(this.getFullComponents().utils); },
   get Cr() { return wrapPrivileged(this.Components.results); },
 

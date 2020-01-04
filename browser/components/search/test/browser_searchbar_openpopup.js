@@ -3,10 +3,10 @@
 
 
 
-var ChromeUtils = {};
+var EventUtils = {};
 this._scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
                      getService(Ci.mozIJSSubScriptLoader);
-this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/ChromeUtils.js", ChromeUtils);
+this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 
 const searchbar = document.getElementById("searchbar");
 const searchIcon = document.getAnonymousElementByAttribute(searchbar, "anonid", "searchbar-search-button");
@@ -447,7 +447,7 @@ add_task(function* dont_consume_clicks() {
 
 add_task(function* drop_opens_popup() {
   let promise = promiseEvent(searchPopup, "popupshown");
-  ChromeUtils.synthesizeDrop(searchIcon, textbox.inputField, [[ {type: "text/plain", data: "foo" } ]], "move", window);
+  EventUtils.synthesizeDrop(searchIcon, textbox.inputField, [[ {type: "text/plain", data: "foo" } ]], "move", window);
   yield promise;
 
   isnot(searchPopup.getAttribute("showonlysettings"), "true", "Should show the full popup");
