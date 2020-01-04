@@ -415,6 +415,10 @@ module.exports = {
       
       
       return fileName;
+    } else if (path.basename(fileName) == fileName) {
+      
+      
+      return path.join(cwd, fileName);
     } else {
       
       
