@@ -605,6 +605,25 @@ TEST_F(APZCGestureDetectorTester, LongPressInterruptedByWheel) {
   Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, -10), mcc->Time(), &wheelBlockId);
   EXPECT_NE(touchBlockId, wheelBlockId);
   mcc->AdvanceByMillis(1000);
+}
 
+TEST_F(APZCGestureDetectorTester, TapTimeoutInterruptedByWheel) {
+  
+  
+  
+  EXPECT_CALL(*mcc, HandleSingleTap(CSSPoint(10, 10), 0, apzc->GetGuid())).Times(1);
 
+  
+  
+  
+  MakeApzcZoomable();
+
+  uint64_t touchBlockId = 0;
+  uint64_t wheelBlockId = 0;
+  Tap(apzc, ScreenIntPoint(10, 10), mcc, TimeDuration::FromMilliseconds(100),
+      nullptr, &touchBlockId);
+  mcc->AdvanceByMillis(10);
+  Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, -10), mcc->Time(), &wheelBlockId);
+  EXPECT_NE(touchBlockId, wheelBlockId);
+  while (mcc->RunThroughDelayedTasks());
 }
