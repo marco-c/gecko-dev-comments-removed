@@ -94,6 +94,9 @@ public:
 
   void SetExpiration(double aExpiry);
 
+  mozilla::dom::EventHandlerNonNull* GetOnkeystatuseschange();
+  void SetOnkeystatuseschange(mozilla::dom::EventHandlerNonNull* aCallback);
+
   
   uint32_t Token() const;
 
