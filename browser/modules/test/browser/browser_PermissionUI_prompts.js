@@ -20,6 +20,11 @@ add_task(function* test_desktop_notification_permission_prompt() {
   yield testPrompt(PermissionUI.DesktopNotificationPermissionPrompt);
 });
 
+
+add_task(function* test_persistent_storage_permission_prompt() {
+  yield testPrompt(PermissionUI.PersistentStoragePermissionPrompt);
+});
+
 function* testPrompt(Prompt) {
   yield BrowserTestUtils.withNewTab({
     gBrowser,

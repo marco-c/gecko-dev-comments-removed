@@ -614,8 +614,16 @@ var gPermissionObject = {
     exactHostMatch: true,
     states: [ SitePermissions.UNKNOWN, SitePermissions.ALLOW ],
   },
+  "persistent-storage": {
+    exactHostMatch: true
+  }
 };
+
+
+
+if (!Services.prefs.getBoolPref("browser.storageManager.enabled")) {
+  delete gPermissionObject["persistent-storage"];
+}
 
 XPCOMUtils.defineLazyPreferenceGetter(SitePermissions, "temporaryPermissionExpireTime",
                                       "privacy.temporary_permission_expire_time_ms", 3600 * 1000);
-
