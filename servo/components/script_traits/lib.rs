@@ -188,7 +188,7 @@ pub enum CompositorEvent {
     
     MouseUpEvent(MouseButton, Point2D<f32>),
     
-    MouseMoveEvent(Point2D<f32>),
+    MouseMoveEvent(Option<Point2D<f32>>),
     
     TouchEvent(TouchEventType, TouchId, Point2D<f32>),
     
