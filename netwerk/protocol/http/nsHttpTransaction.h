@@ -201,6 +201,14 @@ private:
     void DisableSpdy() override;
     void ReuseConnectionOnRestartOK(bool reuseOk) override { mReuseOnRestart = reuseOk; }
 
+    
+    
+    
+    
+    
+    void CheckForStickyAuthScheme();
+    void CheckForStickyAuthSchemeAt(nsHttpAtom const& header);
+
 private:
     class UpdateSecurityCallbacks : public Runnable
     {
