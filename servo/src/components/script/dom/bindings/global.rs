@@ -72,6 +72,8 @@ impl<'a> GlobalRef<'a> {
         }
     }
 
+    
+    
     pub fn script_chan<'b>(&'b self) -> &'b ScriptChan {
         match *self {
             Window(ref window) => &window.script_chan,
