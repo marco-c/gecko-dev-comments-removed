@@ -727,7 +727,6 @@ Animation::ElapsedTimeToTimeStamp(
 }
 
 
-
 void
 Animation::SilentlySetCurrentTime(const TimeDuration& aSeekTime)
 {

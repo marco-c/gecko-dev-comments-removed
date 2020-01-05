@@ -85,6 +85,14 @@ public:
   virtual void SetAnimation(Animation* aAnimation) = 0;
   Animation* GetAnimation() const { return mAnimation; };
 
+  
+
+
+
+
+
+  virtual bool AffectsGeometry() const = 0;
+
 protected:
   virtual ~AnimationEffectReadOnly();
 
