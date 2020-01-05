@@ -1374,6 +1374,9 @@ public:
 
 
 
+
+
+
   enum class IntrinsicISizeType { MIN_ISIZE, PREF_ISIZE };
   static const auto MIN_ISIZE = IntrinsicISizeType::MIN_ISIZE;
   static const auto PREF_ISIZE = IntrinsicISizeType::PREF_ISIZE;
@@ -1383,11 +1386,13 @@ public:
     MIN_INTRINSIC_ISIZE = 0x04, 
     ADD_PERCENTS = 0x08, 
   };
-  static nscoord IntrinsicForAxis(mozilla::PhysicalAxis aAxis,
-                                  nsRenderingContext*   aRenderingContext,
-                                  nsIFrame*             aFrame,
-                                  IntrinsicISizeType    aType,
-                                  uint32_t              aFlags = 0);
+  static nscoord
+  IntrinsicForAxis(mozilla::PhysicalAxis aAxis,
+                   nsRenderingContext*   aRenderingContext,
+                   nsIFrame*             aFrame,
+                   IntrinsicISizeType    aType,
+                   uint32_t              aFlags = 0,
+                   nscoord               aMarginBoxMinSizeClamp = NS_MAXSIZE);
   
 
 
