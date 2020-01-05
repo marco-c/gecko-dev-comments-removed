@@ -214,6 +214,8 @@ pub enum DevtoolScriptControlMsg {
     
     
     RequestAnimationFrame(PipelineId, String),
+    
+    Reload(PipelineId),
 }
 
 #[derive(Deserialize, Serialize)]
@@ -292,7 +294,10 @@ pub struct HttpRequest {
     pub headers: Headers,
     pub body: Option<Vec<u8>>,
     pub pipeline_id: PipelineId,
-    pub startedDateTime: Tm
+    pub startedDateTime: Tm,
+    pub timeStamp: i64,
+    pub connect_time: u64,
+    pub send_time: u64,
 }
 
 #[derive(Debug, PartialEq)]
