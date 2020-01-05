@@ -24,10 +24,10 @@ const uint32_t kMagicInt = 0xc001feed;
 
 
 
-const uint16_t kMajorRevision = 4;
+const uint16_t kMajorRevision = 5;
 
 
-const uint16_t kMinorRevision = 1;
+const uint16_t kMinorRevision = 0;
 
 struct ReferencePtr
 {
@@ -141,6 +141,7 @@ struct SurfacePatternStorage
   SamplingFilter mSamplingFilter;
   ReferencePtr mSurface;
   Matrix mMatrix;
+  IntRect mSamplingRect;
 };
 
 struct PatternStorage
