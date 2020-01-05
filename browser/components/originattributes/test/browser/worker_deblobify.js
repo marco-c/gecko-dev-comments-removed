@@ -2,6 +2,8 @@
 
 
 
+
+
 var postStringInBlob = function(blobObject) {
   var fileReader = new FileReaderSync();
   var result = fileReader.readAsText(blobObject);

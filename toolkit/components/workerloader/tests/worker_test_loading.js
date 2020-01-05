@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 importScripts("utils_worker.js"); 
@@ -116,6 +118,3 @@ self.onmessage = function(message) {
   }
   finish();
 };
-
-
-

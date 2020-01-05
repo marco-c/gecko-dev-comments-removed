@@ -6,6 +6,8 @@
 
 
 
+
+
 exports.enteredC = true;
 
 var D = require("chrome://mochitests/content/chrome/toolkit/components/workerloader/tests/moduleD-circular.js");
