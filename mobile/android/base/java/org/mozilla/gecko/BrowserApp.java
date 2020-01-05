@@ -918,6 +918,11 @@ public class BrowserApp extends GeckoApp
 
 
     private void checkFirstrun(Context context, SafeIntent intent) {
+        if (getProfile().inGuestMode()) {
+            
+            return;
+        }
+
         if (intent.getBooleanExtra(EXTRA_SKIP_STARTPANE, false)) {
             
             
