@@ -42,7 +42,6 @@ public:
     typedef mozilla::gfx::SourceSurface SourceSurface;
     typedef mozilla::gfx::SurfaceFormat SurfaceFormat;
     typedef mozilla::image::ImageRegion ImageRegion;
-    typedef mozilla::YUVColorSpace YUVColorSpace;
 
     
 
@@ -136,12 +135,8 @@ public:
 
     static void ClearThebesSurface(gfxASurface* aSurface);
 
-    
-
-
-    static float* Get4x3YuvColorMatrix(YUVColorSpace aYUVColorSpace);
-
-    static float* Get3x3YuvColorMatrix(YUVColorSpace aYUVColorSpace);
+    static const float* YuvToRgbMatrix4x3RowMajor(mozilla::YUVColorSpace aYUVColorSpace);
+    static const float* YuvToRgbMatrix3x3ColumnMajor(mozilla::YUVColorSpace aYUVColorSpace);
 
     
 

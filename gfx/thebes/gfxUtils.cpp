@@ -1169,40 +1169,60 @@ gfxUtils::EncodeSourceSurface(SourceSurface* aSurface,
 
 
 
- float*
-gfxUtils::Get4x3YuvColorMatrix(YUVColorSpace aYUVColorSpace)
+static const float kRec601[9] = {
+  1.16438f, 0.00000f, 1.59603f,
+  1.16438f,-0.39176f,-0.81297f,
+  1.16438f, 2.01723f, 0.00000f,
+};
+static const float kRec709[9] = {
+  1.16438f, 0.00000f, 1.79274f,
+  1.16438f,-0.21325f,-0.53291f,
+  1.16438f, 2.11240f, 0.00000f,
+};
+
+ const float*
+gfxUtils::YuvToRgbMatrix4x3RowMajor(YUVColorSpace aYUVColorSpace)
 {
-  static const float yuv_to_rgb_rec601[12] = { 1.16438f,  0.0f,      1.59603f, 0.0f,
-                                               1.16438f, -0.39176f, -0.81297f, 0.0f,
-                                               1.16438f,  2.01723f,  0.0f,     0.0f,
-                                             };
+  #define X(x) { x[0], x[1], x[2], 0.0f, \
+                 x[3], x[4], x[5], 0.0f, \
+                 x[6], x[7], x[8], 0.0f }
 
-  static const float yuv_to_rgb_rec709[12] = { 1.16438f,  0.0f,      1.79274f, 0.0f,
-                                               1.16438f, -0.21325f, -0.53291f, 0.0f,
-                                               1.16438f,  2.11240f,  0.0f,     0.0f,
-                                             };
+  static const float rec601[12] = X(kRec601);
+  static const float rec709[12] = X(kRec709);
 
-  if (aYUVColorSpace == YUVColorSpace::BT709) {
-    return const_cast<float*>(yuv_to_rgb_rec709);
-  } else {
-    return const_cast<float*>(yuv_to_rgb_rec601);
+  #undef X
+
+  switch (aYUVColorSpace) {
+  case YUVColorSpace::BT601:
+    return rec601;
+  case YUVColorSpace::BT709:
+    return rec709;
+  default: 
+    MOZ_ASSERT(false, "unknown aYUVColorSpace");
+    return rec601;
   }
 }
 
- float*
-gfxUtils::Get3x3YuvColorMatrix(YUVColorSpace aYUVColorSpace)
+ const float*
+gfxUtils::YuvToRgbMatrix3x3ColumnMajor(YUVColorSpace aYUVColorSpace)
 {
-  static const float yuv_to_rgb_rec601[9] = {
-    1.16438f, 1.16438f, 1.16438f, 0.0f, -0.39176f, 2.01723f, 1.59603f, -0.81297f, 0.0f,
-  };
-  static const float yuv_to_rgb_rec709[9] = {
-    1.16438f, 1.16438f, 1.16438f, 0.0f, -0.21325f, 2.11240f, 1.79274f, -0.53291f, 0.0f,
-  };
+  #define X(x) { x[0], x[3], x[6], \
+                 x[1], x[4], x[7], \
+                 x[2], x[5], x[8] }
 
-  if (aYUVColorSpace == YUVColorSpace::BT709) {
-    return const_cast<float*>(yuv_to_rgb_rec709);
-  } else {
-    return const_cast<float*>(yuv_to_rgb_rec601);
+  static const float rec601[9] = X(kRec601);
+  static const float rec709[9] = X(kRec709);
+
+  #undef X
+
+  switch (aYUVColorSpace) {
+  case YUVColorSpace::BT601:
+    return rec601;
+  case YUVColorSpace::BT709:
+    return rec709;
+  default: 
+    MOZ_ASSERT(false, "unknown aYUVColorSpace");
+    return rec601;
   }
 }
 
