@@ -2806,7 +2806,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                 
                                 
                                 
-  nsTArray<nsString> mWillChange;
+  nsCOMArray<nsIAtom> mWillChange;
 
   uint8_t mTouchAction;         
   uint8_t mScrollBehavior;      
