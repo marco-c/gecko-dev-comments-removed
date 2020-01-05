@@ -57,14 +57,12 @@ use selectors::matching::matches;
 use selectors::parser::Selector;
 use selectors::parser::parse_author_origin_selector_list_from_str;
 use std::borrow::ToOwned;
-use std::cell::{Cell, Ref, RefCell, RefMut};
+use std::cell::Cell;
 use std::cmp::max;
 use std::default::Default;
 use std::iter::{self, FilterMap, Peekable};
 use std::mem;
-use std::sync::Arc;
 use string_cache::{Atom, Namespace, QualName};
-use style::properties::ComputedValues;
 use util::str::DOMString;
 use util::task_state;
 use uuid::Uuid;
@@ -119,7 +117,7 @@ pub struct Node {
     
     
     
-    layout_data: LayoutDataRef,
+    style_and_layout_data: Cell<Option<OpaqueStyleAndLayoutData>>,
 
     unique_id: DOMRefCell<Option<Box<Uuid>>>,
 }
@@ -164,7 +162,7 @@ impl NodeFlags {
 impl Drop for Node {
     #[allow(unsafe_code)]
     fn drop(&mut self) {
-        self.layout_data.dispose(self);
+        self.style_and_layout_data.get().map(|d| d.dispose(self));
     }
 }
 
@@ -177,74 +175,27 @@ enum SuppressObserver {
     Unsuppressed
 }
 
-
-#[derive(HeapSizeOf)]
-pub struct SharedLayoutData {
-    
-    pub style: Option<Arc<ComputedValues>>,
-}
-
-
-#[derive(HeapSizeOf)]
-pub struct LayoutData {
-    _shared_data: SharedLayoutData,
-    #[ignore_heap_size_of = "TODO(#6910) Box value that should be counted but the type lives in layout"]
-    _data: NonZero<*const ()>,
+#[derive(Copy, Clone, HeapSizeOf)]
+pub struct OpaqueStyleAndLayoutData {
+    #[ignore_heap_size_of = "TODO(#6910) Box value that should be counted but \
+                             the type lives in layout"]
+    pub ptr: NonZero<*mut ()>
 }
 
 #[allow(unsafe_code)]
-unsafe impl Send for LayoutData {}
+unsafe impl Send for OpaqueStyleAndLayoutData {}
 
-#[derive(HeapSizeOf)]
-pub struct LayoutDataRef {
-    data_cell: RefCell<Option<LayoutData>>,
-}
+no_jsmanaged_fields!(OpaqueStyleAndLayoutData);
 
-no_jsmanaged_fields!(LayoutDataRef);
 
-impl LayoutDataRef {
-    pub fn new() -> LayoutDataRef {
-        LayoutDataRef {
-            data_cell: RefCell::new(None),
-        }
-    }
-
+impl OpaqueStyleAndLayoutData {
     
-    pub fn dispose(&self, node: &Node) {
+    pub fn dispose(self, node: &Node) {
         debug_assert!(task_state::get().is_script());
-        if let Some(layout_data) = mem::replace(&mut *self.data_cell.borrow_mut(), None) {
-            let win = window_from_node(node);
-            let LayoutChan(chan) = win.layout_chan();
-            chan.send(Msg::ReapLayoutData(layout_data)).unwrap()
-        }
-    }
-
-    
-    
-    
-    #[inline]
-    #[allow(unsafe_code)]
-    pub unsafe fn borrow_unchecked(&self) -> *const Option<LayoutData> {
-        debug_assert!(task_state::get().is_layout());
-        self.data_cell.as_unsafe_cell().get() as *const _
-    }
-
-    
-    #[inline]
-    pub fn borrow(&self) -> Ref<Option<LayoutData>> {
-        debug_assert!(task_state::get().is_layout());
-        self.data_cell.borrow()
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn borrow_mut(&self) -> RefMut<Option<LayoutData>> {
-        debug_assert!(task_state::get().is_layout());
-        self.data_cell.borrow_mut()
+        let win = window_from_node(node);
+        let LayoutChan(chan) = win.layout_chan();
+        node.style_and_layout_data.set(None);
+        chan.send(Msg::ReapStyleAndLayoutData(self)).unwrap();
     }
 }
 
@@ -334,7 +285,7 @@ impl Node {
         for node in child.traverse_preorder() {
             node.set_flag(IS_IN_DOC, false);
             vtable_for(&&*node).unbind_from_tree(&context);
-            node.layout_data.dispose(&node);
+            node.style_and_layout_data.get().map(|d| d.dispose(&node));
         }
 
         self.owner_doc().content_and_heritage_changed(self, NodeDamage::OtherNodeDamage);
@@ -378,7 +329,7 @@ impl<'a> Iterator for QuerySelectorIterator {
 
 impl Node {
     pub fn teardown(&self) {
-        self.layout_data.dispose(self);
+        self.style_and_layout_data.get().map(|d| d.dispose(self));
         for kid in self.children() {
             kid.teardown();
         }
@@ -966,9 +917,8 @@ pub trait LayoutNodeHelpers {
 
     unsafe fn children_count(&self) -> u32;
 
-    unsafe fn layout_data(&self) -> Ref<Option<LayoutData>>;
-    unsafe fn layout_data_mut(&self) -> RefMut<Option<LayoutData>>;
-    unsafe fn layout_data_unchecked(&self) -> *const Option<LayoutData>;
+    unsafe fn get_style_and_layout_data(&self) -> Option<OpaqueStyleAndLayoutData>;
+    unsafe fn init_style_and_layout_data(&self, OpaqueStyleAndLayoutData);
 }
 
 impl LayoutNodeHelpers for LayoutJS<Node> {
@@ -1049,20 +999,15 @@ impl LayoutNodeHelpers for LayoutJS<Node> {
 
     #[inline]
     #[allow(unsafe_code)]
-    unsafe fn layout_data(&self) -> Ref<Option<LayoutData>> {
-        (*self.unsafe_get()).layout_data.borrow()
+    unsafe fn get_style_and_layout_data(&self) -> Option<OpaqueStyleAndLayoutData> {
+        (*self.unsafe_get()).style_and_layout_data.get()
     }
 
     #[inline]
     #[allow(unsafe_code)]
-    unsafe fn layout_data_mut(&self) -> RefMut<Option<LayoutData>> {
-        (*self.unsafe_get()).layout_data.borrow_mut()
-    }
-
-    #[inline]
-    #[allow(unsafe_code)]
-    unsafe fn layout_data_unchecked(&self) -> *const Option<LayoutData> {
-        (*self.unsafe_get()).layout_data.borrow_unchecked()
+    unsafe fn init_style_and_layout_data(&self, val: OpaqueStyleAndLayoutData) {
+        debug_assert!((*self.unsafe_get()).style_and_layout_data.get().is_none());
+        (*self.unsafe_get()).style_and_layout_data.set(Some(val));
     }
 }
 
@@ -1322,7 +1267,7 @@ impl Node {
             inclusive_descendants_version: Cell::new(0),
             ranges: WeakRangeVec::new(),
 
-            layout_data: LayoutDataRef::new(),
+            style_and_layout_data: Cell::new(None),
 
             unique_id: DOMRefCell::new(None),
         }

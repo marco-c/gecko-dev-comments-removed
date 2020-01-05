@@ -47,6 +47,7 @@ bitflags! {
     }
 }
 
+
 impl RestyleDamage {
     
     

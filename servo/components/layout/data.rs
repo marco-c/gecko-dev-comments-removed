@@ -4,18 +4,15 @@
 
 use construct::ConstructionResult;
 use incremental::RestyleDamage;
-use parallel::DomParallelInfo;
-use script::dom::node::SharedLayoutData;
-use std::sync::Arc;
-use style::properties::ComputedValues;
+use style::data::PrivateStyleData;
 
 
 pub struct PrivateLayoutData {
     
-    pub before_style: Option<Arc<ComputedValues>>,
-
     
-    pub after_style: Option<Arc<ComputedValues>>,
+    
+    
+    pub style_data: PrivateStyleData,
 
     
     pub restyle_damage: RestyleDamage,
@@ -29,9 +26,6 @@ pub struct PrivateLayoutData {
     pub after_flow_construction_result: ConstructionResult,
 
     
-    pub parallel: DomParallelInfo,
-
-    
     pub flags: LayoutDataFlags,
 }
 
@@ -39,13 +33,11 @@ impl PrivateLayoutData {
     
     pub fn new() -> PrivateLayoutData {
         PrivateLayoutData {
-            before_style: None,
-            after_style: None,
+            style_data: PrivateStyleData::new(),
             restyle_damage: RestyleDamage::empty(),
             flow_construction_result: ConstructionResult::None,
             before_flow_construction_result: ConstructionResult::None,
             after_flow_construction_result: ConstructionResult::None,
-            parallel: DomParallelInfo::new(),
             flags: LayoutDataFlags::empty(),
         }
     }
@@ -55,18 +47,5 @@ bitflags! {
     flags LayoutDataFlags: u8 {
         #[doc = "Whether a flow has been newly constructed."]
         const HAS_NEWLY_CONSTRUCTED_FLOW = 0x01
-    }
-}
-
-pub struct LayoutDataWrapper {
-    pub shared_data: SharedLayoutData,
-    pub data: Box<PrivateLayoutData>,
-}
-
-#[allow(dead_code, unsafe_code)]
-fn static_assertion(x: Option<LayoutDataWrapper>) {
-    unsafe {
-        let _: Option<::script::dom::node::LayoutData> =
-            ::std::intrinsics::transmute(x);
     }
 }

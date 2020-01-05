@@ -22,7 +22,6 @@ use euclid::approxeq::ApproxEq;
 use euclid::num::Zero;
 use euclid::{Matrix2D, Matrix4, Point2D, Rect, SideOffsets2D, Size2D};
 use gfx_traits::{color, LayerId, LayerKind, ScrollPolicy};
-use libc::uintptr_t;
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::Image;
 use paint_context::PaintContext;
@@ -49,6 +48,8 @@ use util::opts;
 use util::print_tree::PrintTree;
 use util::range::Range;
 
+pub use style::dom::OpaqueNode;
+
 
 
 pub use azure::azure_hl::GradientStop;
@@ -58,24 +59,6 @@ pub mod optimizer;
 
 
 pub static BLUR_INFLATION_FACTOR: i32 = 3;
-
-
-
-
-
-
-
-#[derive(Clone, PartialEq, Copy, Debug, HeapSizeOf, Hash, Eq, Deserialize, Serialize)]
-pub struct OpaqueNode(pub uintptr_t);
-
-impl OpaqueNode {
-    
-    #[inline]
-    pub fn id(&self) -> uintptr_t {
-        let OpaqueNode(pointer) = *self;
-        pointer
-    }
-}
 
 
 

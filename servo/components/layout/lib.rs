@@ -2,11 +2,13 @@
 
 
 
+#![feature(as_unsafe_cell)]
 #![feature(box_syntax)]
 #![feature(cell_extras)]
 #![feature(custom_derive)]
 #![feature(hashmap_hasher)]
 #![feature(mpsc_select)]
+#![feature(nonzero)]
 #![feature(plugin)]
 #![feature(raw)]
 #![feature(step_by)]
@@ -22,6 +24,7 @@ extern crate azure;
 #[macro_use]
 extern crate bitflags;
 extern crate canvas_traits;
+extern crate core;
 extern crate cssparser;
 extern crate encoding;
 extern crate euclid;

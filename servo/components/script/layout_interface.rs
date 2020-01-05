@@ -7,7 +7,7 @@
 
 
 use app_units::Au;
-use dom::node::LayoutData;
+use dom::node::OpaqueStyleAndLayoutData;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use gfx_traits::LayerId;
@@ -59,7 +59,7 @@ pub enum Msg {
     
     
     
-    ReapLayoutData(LayoutData),
+    ReapStyleAndLayoutData(OpaqueStyleAndLayoutData),
 
     
     

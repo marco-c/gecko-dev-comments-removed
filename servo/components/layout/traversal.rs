@@ -15,10 +15,10 @@ use script::layout_interface::ReflowGoal;
 use selectors::bloom::BloomFilter;
 use std::cell::RefCell;
 use std::mem;
+use style::dom::UnsafeNode;
 use util::opts;
 use util::tid::tid;
-use wrapper::{LayoutNode, UnsafeLayoutNode};
-use wrapper::{ThreadSafeLayoutNode};
+use wrapper::{LayoutNode, ThreadSafeLayoutNode};
 
 
 
@@ -45,7 +45,7 @@ type Generation = u32;
 
 
 thread_local!(
-    static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeLayoutNode, Generation)>> = RefCell::new(None));
+    static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeNode, Generation)>> = RefCell::new(None));
 
 
 
@@ -88,7 +88,7 @@ fn take_task_local_bloom_filter<'ln, N>(parent_node: Option<N>,
 }
 
 fn put_task_local_bloom_filter(bf: Box<BloomFilter>,
-                               unsafe_node: &UnsafeLayoutNode,
+                               unsafe_node: &UnsafeNode,
                                layout_context: &LayoutContext) {
     STYLE_BLOOM.with(move |style_bloom| {
         assert!(style_bloom.borrow().is_none(),
@@ -153,7 +153,7 @@ impl<'a, 'ln, ConcreteLayoutNode> PreorderDomTraversal<'ln, ConcreteLayoutNode>
         
         
         
-        node.initialize_layout_data();
+        node.initialize_data();
 
         
         let parent_opt = node.layout_parent_node(self.root);

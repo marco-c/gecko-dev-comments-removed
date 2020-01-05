@@ -3,11 +3,11 @@
 
 
 use cssparser::{Parser, SourcePosition};
+use dom::TElement;
 use log;
 use media_queries::{Device, MediaType};
 use msg::ParseErrorReporter;
 use msg::constellation_msg::PipelineId;
-use node::TElementAttributes;
 use properties::{PropertyDeclaration, PropertyDeclarationBlock};
 use restyle_hints::{ElementSnapshot, RestyleHint, DependencySet};
 use selectors::Element;
@@ -270,7 +270,7 @@ impl Stylist {
     
     
     
-    pub fn push_applicable_declarations<E, V>(
+    pub fn push_applicable_declarations<'le, E, V>(
                                         &self,
                                         element: &E,
                                         parent_bf: Option<&BloomFilter>,
@@ -278,7 +278,7 @@ impl Stylist {
                                         pseudo_element: Option<PseudoElement>,
                                         applicable_declarations: &mut V)
                                         -> bool
-                                        where E: Element + TElementAttributes,
+                                        where E: Element + TElement<'le>,
                                               V: VecLike<DeclarationBlock> {
         assert!(!self.is_device_dirty);
         assert!(style_attribute.is_none() || pseudo_element.is_none(),
