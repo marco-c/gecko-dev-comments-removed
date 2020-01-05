@@ -74,15 +74,15 @@ public:
 
 
 
-    mozilla::StyleSheet* GetStyleSheet(nsIURI* aURI) {
-        return mStyleSheetTable.GetWeak(aURI);
-    }
+    mozilla::StyleSheet* GetStyleSheet(nsIURI* aURI,
+                                       mozilla::StyleBackendType aType);
 
     
 
 
 
-    nsresult PutStyleSheet(mozilla::StyleSheet* aStyleSheet);
+    nsresult PutStyleSheet(mozilla::StyleSheet* aStyleSheet,
+                           mozilla::StyleBackendType aType);
 
     
 
@@ -122,8 +122,15 @@ protected:
 
     void FlushSkinFiles();
 
+    typedef nsRefPtrHashtable<nsURIHashKey, mozilla::StyleSheet> StyleSheetTable;
+    StyleSheetTable& TableForBackendType(mozilla::StyleBackendType aType) {
+      return aType == mozilla::StyleBackendType::Gecko ? mGeckoStyleSheetTable
+                                                       : mServoStyleSheetTable;
+    }
+
     nsRefPtrHashtable<nsURIHashKey,nsXULPrototypeDocument>   mPrototypeTable; 
-    nsRefPtrHashtable<nsURIHashKey,mozilla::StyleSheet>      mStyleSheetTable;
+    StyleSheetTable                                          mGeckoStyleSheetTable;
+    StyleSheetTable                                          mServoStyleSheetTable;
     nsJSThingHashtable<nsURIHashKey, JSScript*>              mScriptTable;
     nsRefPtrHashtable<nsURIHashKey,nsXBLDocumentInfo>        mXBLDocTable;
 
