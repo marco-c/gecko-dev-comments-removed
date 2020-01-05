@@ -25,14 +25,23 @@ pub fn resources_dir_path() -> PathBuf {
             
             let mut path = env::current_exe().ok().expect("can't get exe path");
             path.pop();
-            path.pop();
-            path.pop();
-            path.pop();
             path.push("resources");
-            if !path.is_dir() {  
+            if !path.is_dir() {   
+                path.pop();
+                path.pop();
                 path.pop();
                 path.pop();
                 path.push("resources");
+                if !path.is_dir() {  
+                    path.pop();
+                    path.pop();
+                    path.push("resources");
+                    if !path.is_dir() { 
+                        path.pop();
+                        path.pop();
+                        path.push("resources");
+                    }
+                }
             }
             path
         }
