@@ -281,7 +281,7 @@ public:
 
 
   static nsIFrame* GetBeforeFrameForContent(nsIFrame* aGenConParentFrame,
-                                            nsIContent* aContent);
+                                            const nsIContent* aContent);
 
   
 
@@ -304,7 +304,7 @@ public:
 
 
   static nsIFrame* GetAfterFrameForContent(nsIFrame* aGenConParentFrame,
-                                           nsIContent* aContent);
+                                           const nsIContent* aContent);
 
   
 

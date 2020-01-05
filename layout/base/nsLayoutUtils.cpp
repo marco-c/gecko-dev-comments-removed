@@ -1477,7 +1477,7 @@ nsLayoutUtils::GetChildListNameFor(nsIFrame* aChildFrame)
 
  nsIFrame*
 nsLayoutUtils::GetBeforeFrameForContent(nsIFrame* aFrame,
-                                        nsIContent* aContent)
+                                        const nsIContent* aContent)
 {
   
   
@@ -1516,7 +1516,7 @@ nsLayoutUtils::GetBeforeFrame(nsIFrame* aFrame)
 
  nsIFrame*
 nsLayoutUtils::GetAfterFrameForContent(nsIFrame* aFrame,
-                                       nsIContent* aContent)
+                                       const nsIContent* aContent)
 {
   
   

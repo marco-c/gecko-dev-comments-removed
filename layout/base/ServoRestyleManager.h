@@ -93,7 +93,7 @@ public:
 
 
 
-  static nsIFrame* FrameForPseudoElement(nsIContent* aContent,
+  static nsIFrame* FrameForPseudoElement(const nsIContent* aContent,
                                          nsIAtom* aPseudoTagOrNull);
 
 protected:

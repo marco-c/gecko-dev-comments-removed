@@ -116,7 +116,7 @@ public:
   
 
 
-  static bool IsLink(mozilla::dom::Element* aElement);
+  static bool IsLink(const mozilla::dom::Element* aElement);
 
   
 
