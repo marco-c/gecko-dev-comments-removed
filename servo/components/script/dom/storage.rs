@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use dom::bindings::codegen::Bindings::StorageBinding;
 use dom::bindings::codegen::Bindings::StorageBinding::StorageMethods;
@@ -131,10 +131,6 @@ impl StorageMethods for Storage {
         self.SetItem(name, value);
     }
 
-    fn NamedCreator(&self, name: DOMString, value: DOMString) {
-        self.SetItem(name, value);
-    }
-
     fn NamedDeleter(&self, name: DOMString) {
         self.RemoveItem(name);
     }
@@ -195,8 +191,8 @@ impl MainThreadRunnable for StorageEventRunnable {
             let it_window_root = it_page.window();
             let it_window = it_window_root.r();
             assert!(UrlHelper::SameOrigin(&ev_url, &it_window.get_url()));
-            
-            
+            // TODO: Such a Document object is not necessarily fully active, but events fired on such
+            // objects are ignored by the event loop until the Document becomes fully active again.
             if ev_window.pipeline() != it_window.pipeline() {
                 let target = EventTargetCast::from_ref(it_window);
                 event.fire(target);

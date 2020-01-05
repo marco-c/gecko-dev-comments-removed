@@ -36,11 +36,6 @@ impl DOMStringMap {
 
 impl DOMStringMapMethods for DOMStringMap {
     
-    fn NamedCreator(&self, name: DOMString, value: DOMString) -> ErrorResult {
-        self.NamedSetter(name, value)
-    }
-
-    
     fn NamedDeleter(&self, name: DOMString) {
         let element = self.element.root();
         element.r().delete_custom_attr(name)
