@@ -124,7 +124,6 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     uint32_t numFuncImports() const;
     uint32_t numFuncDefs() const;
-    uint32_t numFuncs() const;
 
     
     MOZ_MUST_USE bool startFuncDefs();

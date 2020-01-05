@@ -662,6 +662,12 @@ struct ModuleEnvironment
         minMemoryLength(0)
     {}
 
+    size_t numTables() const {
+        return tables.length();
+    }
+    size_t numSigs() const {
+        return sigs.length();
+    }
     size_t numFuncs() const {
         
         

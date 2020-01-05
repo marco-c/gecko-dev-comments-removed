@@ -811,18 +811,6 @@ ModuleGenerator::numFuncDefs() const
     return env_->funcSigs.length() - numFuncImports();
 }
 
-uint32_t
-ModuleGenerator::numFuncs() const
-{
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!isAsmJS());
-    return env_->funcSigs.length();
-}
-
 const SigWithId&
 ModuleGenerator::funcSig(uint32_t funcIndex) const
 {
@@ -988,7 +976,7 @@ ModuleGenerator::finishFuncDefs()
             MOZ_ASSERT(funcCodeRange(i).funcIndex() == i);
     } else {
         MOZ_ASSERT(numFinishedFuncDefs_ == numFuncDefs());
-        for (uint32_t i = 0; i < numFuncs(); i++)
+        for (uint32_t i = 0; i < env_->numFuncs(); i++)
             MOZ_ASSERT(funcCodeRange(i).funcIndex() == i);
     }
 #endif
