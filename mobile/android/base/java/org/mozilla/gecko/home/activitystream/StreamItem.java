@@ -270,9 +270,6 @@ public abstract class StreamItem extends RecyclerView.ViewHolder {
                     vSourceIconView.setImageResource(0);
                     break;
             }
-
-            
-            
         }
 
         private void updatePage(final String url) {
