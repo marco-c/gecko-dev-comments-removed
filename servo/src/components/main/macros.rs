@@ -10,3 +10,15 @@ macro_rules! special_stream(
         }
     );
 )
+
+
+
+
+
+
+
+macro_rules! spawn_with(
+    ($task:expr, [ $($var:ident),+ ], $body:block) => (
+        do ($task).spawn_with(( $($var),+ , () )) |( $($var),+ , () )| $body
+    )
+)
