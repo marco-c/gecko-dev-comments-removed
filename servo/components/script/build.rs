@@ -2,12 +2,17 @@
 
 
 
+use std::env;
 use std::process::Command;
+use std::time::Instant;
 
 fn main() {
+    let start = Instant::now();
+    let num_jobs = env::var("NUM_JOBS").unwrap();
     assert!(Command::new("make")
-        .args(&["-f", "makefile.cargo"])
+        .args(&["-f", "makefile.cargo", "-j", &num_jobs])
         .status()
         .unwrap()
         .success());
+    println!("Binding generation completed in {}s", start.elapsed().as_secs());
 }
