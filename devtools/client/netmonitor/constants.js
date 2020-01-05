@@ -30,4 +30,21 @@ const actionTypes = {
   WATERFALL_RESIZE: "WATERFALL_RESIZE",
 };
 
-module.exports = Object.assign({}, general, actionTypes);
+
+const ACTIVITY_TYPE = {
+  
+  NONE: 0,
+
+  
+  RELOAD: {
+    WITH_CACHE_ENABLED: 1,
+    WITH_CACHE_DISABLED: 2,
+    WITH_CACHE_DEFAULT: 3
+  },
+
+  
+  ENABLE_CACHE: 3,
+  DISABLE_CACHE: 4
+};
+
+module.exports = Object.assign({ ACTIVITY_TYPE }, general, actionTypes);
