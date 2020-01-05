@@ -34,8 +34,6 @@
 const { classes: Cc, interfaces: Ci, manager: Cm, results: Cr,
         utils: Cu } = Components;
 
-const URL_HTTP_UPDATE_SJS = "http://test_details/";
-
 
 
 
