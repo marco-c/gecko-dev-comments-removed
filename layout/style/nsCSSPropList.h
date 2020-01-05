@@ -434,7 +434,7 @@ CSS_PROP_DISPLAY(
     "",
     
     
-    VARIANT_NONE | VARIANT_IDENTIFIER_NO_INHERIT, 
+    VARIANT_NONE | VARIANT_IDENTIFIER_NO_INHERIT | VARIANT_STRING, 
     nullptr,
     CSS_PROP_NO_OFFSET,
     eStyleAnimType_None)
@@ -3194,7 +3194,7 @@ CSS_PROP_OUTLINE(
     VARIANT_HKL | VARIANT_CALC,
     kBorderWidthKTable,
     offsetof(nsStyleOutline, mOutlineWidth),
-    eStyleAnimType_nscoord)
+    eStyleAnimType_Coord)
 CSS_PROP_SHORTHAND(
     overflow,
     overflow,

@@ -18,7 +18,6 @@
 #include "mozilla/dom/AnimationEffectReadOnlyBinding.h" 
 #include "mozilla/Likely.h"
 #include "mozilla/LookAndFeel.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/Unused.h"
 
@@ -1154,46 +1153,6 @@ SetComplexColor(const nsCSSValue& aValue,
       return;
     }
     aResult.mForegroundRatio = 0;
-  }
-}
-
-template<UnsetAction UnsetTo>
-static Maybe<nscoord>
-ComputeLineWidthValue(const nsCSSValue& aValue,
-                      const nscoord aParentCoord,
-                      const nscoord aInitialCoord,
-                      nsStyleContext* aStyleContext,
-                      nsPresContext* aPresContext,
-                      RuleNodeCacheConditions& aConditions)
-{
-  nsCSSUnit unit = aValue.GetUnit();
-  if (unit == eCSSUnit_Initial ||
-      (UnsetTo == eUnsetInitial && unit == eCSSUnit_Unset)) {
-    return Some(aInitialCoord);
-  } else if (unit == eCSSUnit_Inherit ||
-             (UnsetTo == eUnsetInherit && unit == eCSSUnit_Unset)) {
-    aConditions.SetUncacheable();
-    return Some(aParentCoord);
-  } else if (unit == eCSSUnit_Enumerated) {
-    NS_ASSERTION(aValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_THIN ||
-                 aValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_MEDIUM ||
-                 aValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_THICK,
-                 "Unexpected line-width keyword!");
-    return Some(nsPresContext::GetBorderWidthForKeyword(aValue.GetIntValue()));
-  } else if (aValue.IsLengthUnit() ||
-             aValue.IsCalcUnit()) {
-    nscoord len =
-      CalcLength(aValue, aStyleContext, aPresContext, aConditions);
-    if (len < 0) {
-      NS_ASSERTION(aValue.IsCalcUnit(),
-                   "Parser should have rejected negative length!");
-      len = 0;
-    }
-    return Some(len);
-  } else {
-    NS_ASSERTION(unit == eCSSUnit_Null,
-                 "Missing case handling for line-width computing!");
-    return Maybe<nscoord>(Nothing());
   }
 }
 
@@ -4965,13 +4924,22 @@ nsRuleNode::ComputeTextData(void* aStartStruct,
                   &nsStyleText::mWebkitTextStrokeColor);
 
   
-  Maybe<nscoord> coord =
-    ComputeLineWidthValue<eUnsetInherit>(
-      *aRuleData->ValueForWebkitTextStrokeWidth(),
-      parentText->mWebkitTextStrokeWidth, 0,
-      aContext, mPresContext, conditions);
-  if (coord.isSome()) {
-    text->mWebkitTextStrokeWidth = *coord;
+  const nsCSSValue*
+    webkitTextStrokeWidthValue = aRuleData->ValueForWebkitTextStrokeWidth();
+  if (webkitTextStrokeWidthValue->GetUnit() == eCSSUnit_Enumerated) {
+    NS_ASSERTION(webkitTextStrokeWidthValue->GetIntValue() == NS_STYLE_BORDER_WIDTH_THIN ||
+                 webkitTextStrokeWidthValue->GetIntValue() == NS_STYLE_BORDER_WIDTH_MEDIUM ||
+                 webkitTextStrokeWidthValue->GetIntValue() == NS_STYLE_BORDER_WIDTH_THICK,
+                 "Unexpected enum value");
+    text->mWebkitTextStrokeWidth.SetCoordValue(
+      nsPresContext::GetBorderWidthForKeyword(webkitTextStrokeWidthValue->GetIntValue()));
+  } else {
+    SetCoord(*webkitTextStrokeWidthValue, text->mWebkitTextStrokeWidth,
+             parentText->mWebkitTextStrokeWidth,
+             SETCOORD_LH | SETCOORD_CALC_LENGTH_ONLY |
+               SETCOORD_CALC_CLAMP_NONNEGATIVE |
+               SETCOORD_INITIAL_ZERO | SETCOORD_UNSET_INHERIT,
+             aContext, mPresContext, conditions);
   }
 
   
@@ -5741,6 +5709,7 @@ nsRuleNode::ComputeDisplayData(void* aStartStruct,
       animation->SetName(EmptyString());
     } else if (animName.list) {
       switch (animName.list->mValue.GetUnit()) {
+        case eCSSUnit_String:
         case eCSSUnit_Ident: {
           nsDependentString
             nameStr(animName.list->mValue.GetStringBufferValue());
@@ -7563,13 +7532,35 @@ nsRuleNode::ComputeBorderData(void* aStartStruct,
                    "method, the "
                    "nsLineLayout::IsPercentageAwareReplacedElement method "
                    "and probably some other places");
-      Maybe<nscoord> coord =
-        ComputeLineWidthValue<eUnsetInitial>(
-          value, parentBorder->GetComputedBorder().Side(side),
-          nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM),
-          aContext, mPresContext, conditions);
-      if (coord.isSome()) {
-        border->SetBorderWidth(side, *coord);
+      if (eCSSUnit_Enumerated == value.GetUnit()) {
+        NS_ASSERTION(value.GetIntValue() == NS_STYLE_BORDER_WIDTH_THIN ||
+                     value.GetIntValue() == NS_STYLE_BORDER_WIDTH_MEDIUM ||
+                     value.GetIntValue() == NS_STYLE_BORDER_WIDTH_THICK,
+                     "Unexpected enum value");
+        border->SetBorderWidth(side,
+          nsPresContext::GetBorderWidthForKeyword(value.GetIntValue()));
+      }
+      
+      else if (SetCoord(value, coord, nsStyleCoord(),
+                        SETCOORD_LENGTH | SETCOORD_CALC_LENGTH_ONLY,
+                        aContext, mPresContext, conditions)) {
+        NS_ASSERTION(coord.GetUnit() == eStyleUnit_Coord, "unexpected unit");
+        
+        border->SetBorderWidth(side, std::max(coord.GetCoordValue(), 0));
+      }
+      else if (eCSSUnit_Inherit == value.GetUnit()) {
+        conditions.SetUncacheable();
+        border->SetBorderWidth(side,
+                               parentBorder->GetComputedBorder().Side(side));
+      }
+      else if (eCSSUnit_Initial == value.GetUnit() ||
+               eCSSUnit_Unset == value.GetUnit()) {
+        border->SetBorderWidth(side,
+          nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM));
+      }
+      else {
+        NS_ASSERTION(eCSSUnit_Null == value.GetUnit(),
+                     "missing case handling border width");
       }
     }
   }
@@ -7829,13 +7820,17 @@ nsRuleNode::ComputeOutlineData(void* aStartStruct,
   COMPUTE_START_RESET(Outline, outline, parentOutline)
 
   
-  Maybe<nscoord> coord =
-    ComputeLineWidthValue<eUnsetInitial>(
-      *aRuleData->ValueForOutlineWidth(), parentOutline->mOutlineWidth,
-      nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM),
-      aContext, mPresContext, conditions);
-  if (coord.isSome()) {
-    outline->mOutlineWidth = *coord;
+  const nsCSSValue* outlineWidthValue = aRuleData->ValueForOutlineWidth();
+  if (eCSSUnit_Initial == outlineWidthValue->GetUnit() ||
+      eCSSUnit_Unset == outlineWidthValue->GetUnit()) {
+    outline->mOutlineWidth =
+      nsStyleCoord(NS_STYLE_BORDER_WIDTH_MEDIUM, eStyleUnit_Enumerated);
+  }
+  else {
+    SetCoord(*outlineWidthValue, outline->mOutlineWidth,
+             parentOutline->mOutlineWidth,
+             SETCOORD_LEH | SETCOORD_CALC_LENGTH_ONLY, aContext,
+             mPresContext, conditions);
   }
 
   
@@ -9163,14 +9158,36 @@ nsRuleNode::ComputeColumnData(void* aStartStruct,
   }
 
   
-  Maybe<nscoord> coord =
-    ComputeLineWidthValue<eUnsetInitial>(
-      *aRuleData->ValueForColumnRuleWidth(),
-      parent->GetComputedColumnRuleWidth(),
-      nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM),
-      aContext, mPresContext, conditions);
-  if (coord.isSome()) {
-    column->SetColumnRuleWidth(*coord);
+  const nsCSSValue& widthValue = *aRuleData->ValueForColumnRuleWidth();
+  if (eCSSUnit_Initial == widthValue.GetUnit() ||
+      eCSSUnit_Unset == widthValue.GetUnit()) {
+    column->SetColumnRuleWidth(
+        nsPresContext::GetBorderWidthForKeyword(NS_STYLE_BORDER_WIDTH_MEDIUM));
+  }
+  else if (eCSSUnit_Enumerated == widthValue.GetUnit()) {
+    NS_ASSERTION(widthValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_THIN ||
+                 widthValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_MEDIUM ||
+                 widthValue.GetIntValue() == NS_STYLE_BORDER_WIDTH_THICK,
+                 "Unexpected enum value");
+    column->SetColumnRuleWidth(
+        nsPresContext::GetBorderWidthForKeyword(widthValue.GetIntValue()));
+  }
+  else if (eCSSUnit_Inherit == widthValue.GetUnit()) {
+    column->SetColumnRuleWidth(parent->GetComputedColumnRuleWidth());
+    conditions.SetUncacheable();
+  }
+  else if (widthValue.IsLengthUnit() || widthValue.IsCalcUnit()) {
+    nscoord len =
+      CalcLength(widthValue, aContext, mPresContext, conditions);
+    if (len < 0) {
+      
+      
+      
+      NS_ASSERTION(widthValue.IsCalcUnit(),
+                   "parser should have rejected negative length");
+      len = 0;
+    }
+    column->SetColumnRuleWidth(len);
   }
 
   
