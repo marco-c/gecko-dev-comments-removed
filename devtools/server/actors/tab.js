@@ -192,6 +192,8 @@ function getInnerId(window) {
 
 
 
+
+
 function TabActor(connection) {
   this.conn = connection;
   this._tabActorPool = null;
