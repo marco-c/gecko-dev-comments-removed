@@ -704,6 +704,11 @@ function expectSymbol(lexer, symbol) {
   return true;
 }
 
+const COLOR_COMPONENT_TYPE = {
+  "integer": "integer",
+  "number": "number",
+  "percentage": "percentage",
+};
 
 
 
@@ -717,23 +722,36 @@ function expectSymbol(lexer, symbol) {
 
 
 
-function parseColorComponent(lexer, isPercentage, separator, colorArray) {
+
+function parseColorComponent(lexer, type, separator, colorArray) {
   let token = getToken(lexer);
 
   if (!token) {
     return false;
   }
 
-  if (isPercentage) {
-    if (token.tokenType !== "percentage") {
-      return false;
-    }
-  } else if (token.tokenType !== "number") {
-    return false;
+  switch (type) {
+    case COLOR_COMPONENT_TYPE.integer:
+      if (token.tokenType !== "number" || !token.isInteger) {
+        return false;
+      }
+      break;
+    case COLOR_COMPONENT_TYPE.number:
+      if (token.tokenType !== "number") {
+        return false;
+      }
+      break;
+    case COLOR_COMPONENT_TYPE.percentage:
+      if (token.tokenType !== "percentage") {
+        return false;
+      }
+      break;
+    default:
+      throw new Error("Invalid color component type.");
   }
 
   let colorComponent = 0;
-  if (isPercentage) {
+  if (type === COLOR_COMPONENT_TYPE.percentage) {
     colorComponent = clamp(token.number, 0, 1);
   } else {
     colorComponent = clamp(token.number, 0, 255);
@@ -855,10 +873,64 @@ function parseHsl(lexer) {
   
   
   let separatorBeforeAlpha = hasComma ? commaSeparator : "/";
-  if (parseColorComponent(lexer, true, hasComma ? commaSeparator : "", hsl) &&
-      parseColorComponent(lexer, true, "", hsl) &&
+  if (parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage,
+                          hasComma ? commaSeparator : "", hsl) &&
+      parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage, "", hsl) &&
       parseColorOpacityAndCloseParen(lexer, separatorBeforeAlpha, a)) {
     return [...hslToRGB(hsl), ...a];
+  }
+
+  return null;
+}
+
+
+
+
+
+
+
+
+
+function parseOldStyleHsl(lexer, hasAlpha) {
+  
+  
+  
+  
+  
+
+  const commaSeparator = ",";
+  const closeParen = ")";
+  let hsl = [];
+  let a = [];
+
+  
+  let token = getToken(lexer);
+  if (!token || token.tokenType !== "number") {
+    return null;
+  }
+  if (!expectSymbol(lexer, commaSeparator)) {
+    return null;
+  }
+  let val = token.number / 360.0;
+  hsl.push(val - Math.floor(val));
+
+  
+  
+  
+  if (hasAlpha) {
+    if (parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage,
+                            commaSeparator, hsl) &&
+        parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage,
+                            commaSeparator, hsl) &&
+        parseColorComponent(lexer, COLOR_COMPONENT_TYPE.number,
+                            closeParen, a)) {
+      return [...hslToRGB(hsl), ...a];
+    }
+  } else if (parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage,
+                                 commaSeparator, hsl) &&
+             parseColorComponent(lexer, COLOR_COMPONENT_TYPE.percentage,
+                                 closeParen, hsl)) {
+    return [...hslToRGB(hsl), 1];
   }
 
   return null;
@@ -888,10 +960,12 @@ function parseRgb(lexer) {
     return null;
   }
   unGetToken(lexer);
-  let isPercentage = token.tokenType === "percentage";
+  let type = (token.tokenType === "percentage") ?
+             COLOR_COMPONENT_TYPE.percentage :
+             COLOR_COMPONENT_TYPE.number;
 
   
-  if (!parseColorComponent(lexer, isPercentage, "", rgba)) {
+  if (!parseColorComponent(lexer, type, "", rgba)) {
     return null;
   }
   let hasComma = expectSymbol(lexer, commaSeparator);
@@ -900,10 +974,10 @@ function parseRgb(lexer) {
   
   
   let separatorBeforeAlpha = hasComma ? commaSeparator : "/";
-  if (parseColorComponent(lexer, isPercentage, hasComma ? commaSeparator : "", rgba) &&
-      parseColorComponent(lexer, isPercentage, "", rgba) &&
+  if (parseColorComponent(lexer, type, hasComma ? commaSeparator : "", rgba) &&
+      parseColorComponent(lexer, type, "", rgba) &&
       parseColorOpacityAndCloseParen(lexer, separatorBeforeAlpha, rgba)) {
-    if (isPercentage) {
+    if (type === COLOR_COMPONENT_TYPE.percentage) {
       rgba[0] = Math.round(255 * rgba[0]);
       rgba[1] = Math.round(255 * rgba[1]);
       rgba[2] = Math.round(255 * rgba[2]);
@@ -922,7 +996,65 @@ function parseRgb(lexer) {
 
 
 
-function colorToRGBA(name) {
+function parseOldStyleRgb(lexer, hasAlpha) {
+  
+  
+  
+  
+  
+
+  const commaSeparator = ",";
+  const closeParen = ")";
+  let rgba = [];
+
+  let token = getToken(lexer);
+  if (token.tokenType !== "percentage" &&
+      (token.tokenType !== "number" || !token.isInteger)) {
+    return null;
+  }
+  unGetToken(lexer);
+  let type = (token.tokenType === "percentage") ?
+             COLOR_COMPONENT_TYPE.percentage :
+             COLOR_COMPONENT_TYPE.integer;
+
+  
+  if (hasAlpha) {
+    if (!parseColorComponent(lexer, type, commaSeparator, rgba) ||
+        !parseColorComponent(lexer, type, commaSeparator, rgba) ||
+        !parseColorComponent(lexer, type, commaSeparator, rgba) ||
+        !parseColorComponent(lexer, COLOR_COMPONENT_TYPE.number,
+                             closeParen, rgba)) {
+      return null;
+    }
+  } else if (!parseColorComponent(lexer, type, commaSeparator, rgba) ||
+             !parseColorComponent(lexer, type, commaSeparator, rgba) ||
+             !parseColorComponent(lexer, type, closeParen, rgba)) {
+    return null;
+  }
+
+  if (type === COLOR_COMPONENT_TYPE.percentage) {
+    rgba[0] = Math.round(255 * rgba[0]);
+    rgba[1] = Math.round(255 * rgba[1]);
+    rgba[2] = Math.round(255 * rgba[2]);
+  }
+  if (!hasAlpha) {
+    rgba.push(1);
+  }
+
+  return rgba;
+}
+
+
+
+
+
+
+
+
+
+
+
+function colorToRGBA(name, oldColorFunctionSyntax = true) {
   name = name.trim().toLowerCase();
 
   if (name in cssColors) {
@@ -956,7 +1088,14 @@ function colorToRGBA(name) {
 
   let hsl = func.text === "hsl" || func.text === "hsla";
 
-  let vals = hsl ? parseHsl(lexer) : parseRgb(lexer);
+  let vals;
+  if (oldColorFunctionSyntax) {
+    let hasAlpha = (func.text === "rgba" || func.text === "hsla");
+    vals = hsl ? parseOldStyleHsl(lexer, hasAlpha) : parseOldStyleRgb(lexer, hasAlpha);
+  } else {
+    vals = hsl ? parseHsl(lexer) : parseRgb(lexer);
+  }
+
   if (!vals) {
     return null;
   }
