@@ -912,7 +912,8 @@ EventStateManager::HandleQueryContentEvent(WidgetQueryContentEvent* aEvent)
   
   
   if (mIMEContentObserver) {
-    mIMEContentObserver->HandleQueryContentEvent(aEvent);
+    RefPtr<IMEContentObserver> contentObserver = mIMEContentObserver;
+    contentObserver->HandleQueryContentEvent(aEvent);
     return;
   }
 
