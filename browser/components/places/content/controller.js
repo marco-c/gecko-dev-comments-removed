@@ -888,7 +888,7 @@ PlacesController.prototype = {
                PlacesUtils.asQuery(node.parent).queryOptions.queryType ==
                  Ci.nsINavHistoryQueryOptions.QUERY_TYPE_HISTORY) {
         
-        PlacesUtils.history.removePage(node.uri).catch(Components.utils.reportError);
+        PlacesUtils.history.remove(node.uri).catch(Components.utils.reportError);
         
       } else if (node.itemId == -1 &&
                PlacesUtils.nodeIsQuery(node) &&
