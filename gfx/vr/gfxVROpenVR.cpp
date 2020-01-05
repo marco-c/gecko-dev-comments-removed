@@ -713,38 +713,51 @@ VRControllerManagerOpenVR::GetControllers(nsTArray<RefPtr<VRControllerHost>>& aC
 void
 VRControllerManagerOpenVR::ScanForDevices()
 {
-  
-  for (uint32_t i = 0; i < mOpenVRController.Length(); ++i) {
-    RemoveGamepad(mOpenVRController[i]->GetIndex());
-  }
-  mControllerCount = 0;
-  mOpenVRController.Clear();
-
   if (!mVRSystem)
     return;
 
+  vr::TrackedDeviceIndex_t trackedIndexArray[vr::k_unMaxTrackedDeviceCount];
+  uint32_t newControllerCount = 0;
   
-  for ( vr::TrackedDeviceIndex_t trackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1;
-        trackedDevice < vr::k_unMaxTrackedDeviceCount; ++trackedDevice ) {
+  
+  for (vr::TrackedDeviceIndex_t trackedDevice = vr::k_unTrackedDeviceIndex_Hmd + 1;
+       trackedDevice < vr::k_unMaxTrackedDeviceCount; ++trackedDevice) {
+
     if (!mVRSystem->IsTrackedDeviceConnected(trackedDevice)) {
       continue;
     }
-
-    if (mVRSystem->GetTrackedDeviceClass(trackedDevice) != vr::TrackedDeviceClass_Controller) {
+    if (mVRSystem->GetTrackedDeviceClass(trackedDevice)
+        != vr::TrackedDeviceClass_Controller) {
       continue;
     }
 
-    RefPtr<VRControllerOpenVR> openVRController = new VRControllerOpenVR();
-    openVRController->SetIndex(mControllerCount);
-    openVRController->SetTrackedIndex(trackedDevice);
-    mOpenVRController.AppendElement(openVRController);
+    trackedIndexArray[newControllerCount] = trackedDevice;
+    ++newControllerCount;
+  }
 
-
-#ifdef MOZ_GAMEPAD
+  if (newControllerCount != mControllerCount) {
     
-    AddGamepad("OpenVR Gamepad", static_cast<uint32_t>(GamepadMappingType::_empty),
-               gNumOpenVRButtonMask, gNumOpenVRAxis);
-    ++mControllerCount;
-#endif
+    for (uint32_t i = 0; i < mOpenVRController.Length(); ++i) {
+      RemoveGamepad(mOpenVRController[i]->GetIndex());
+    }
+    mControllerCount = 0;
+    mOpenVRController.Clear();
+
+    
+    for (vr::TrackedDeviceIndex_t i = 0; i < newControllerCount; ++i) {
+      vr::TrackedDeviceIndex_t trackedDevice = trackedIndexArray[i];
+      RefPtr<VRControllerOpenVR> openVRController = new VRControllerOpenVR();
+      openVRController->SetIndex(mControllerCount);
+      openVRController->SetTrackedIndex(trackedDevice);
+      mOpenVRController.AppendElement(openVRController);
+
+  
+  #ifdef MOZ_GAMEPAD
+      
+      AddGamepad("OpenVR Gamepad", static_cast<uint32_t>(GamepadMappingType::_empty),
+                 gNumOpenVRButtonMask, gNumOpenVRAxis);
+      ++mControllerCount;
+  #endif
+    }
   }
 }
