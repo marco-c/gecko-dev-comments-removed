@@ -236,31 +236,9 @@ nsFilterInstance::ComputeTargetBBoxInFilterSpace()
 {
   gfxRect targetBBoxInFilterSpace = UserSpaceToFilterSpace(mTargetBBox);
   targetBBoxInFilterSpace.RoundOut();
-  if (!gfxUtils::GfxRectToIntRect(targetBBoxInFilterSpace,
-                                  &mTargetBBoxInFilterSpace)) {
-    
-    return false;
-  }
 
-  if (!mTargetFrame || !mTargetFrame->IsFrameOfType(nsIFrame::eSVG)) {
-    return true;
-  }
-
-  
-  
-  
-  
-  MOZ_ASSERT(mTargetFrame->IsFrameOfType(nsIFrame::eSVG));
-  nsIFrame* svgFrame = nsSVGUtils::GetNearestSVGViewport(mTargetFrame);
-  if (svgFrame) {
-    nscoord A2D = svgFrame->PresContext()->AppUnitsPerCSSPixel();
-    nsIntRect bounds =
-      svgFrame->GetVisualOverflowRect().ToOutsidePixels(A2D);
-
-    mTargetBBoxInFilterSpace = mTargetBBoxInFilterSpace.Intersect(bounds);
-  }
-
-  return true;
+  return gfxUtils::GfxRectToIntRect(targetBBoxInFilterSpace,
+                                    &mTargetBBoxInFilterSpace);
 }
 
 bool
