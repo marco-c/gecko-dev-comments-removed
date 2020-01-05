@@ -1,22 +1,21 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsPrintingPromptService.h"
 
 #include "nsCOMPtr.h"
 #include "nsServiceManagerUtils.h"
-#include "nsObjCExceptions.h"
 
 #include "nsIPrintingPromptService.h"
 #include "nsIFactory.h"
 #include "nsIPrintDialogService.h"
 #include "nsPIDOMWindow.h"
 
-//*****************************************************************************
-// nsPrintingPromptService
-//*****************************************************************************   
+
+
+
 
 NS_IMPL_ISUPPORTS(nsPrintingPromptService, nsIPrintingPromptService, nsIWebProgressListener)
 
@@ -31,15 +30,13 @@ nsresult nsPrintingPromptService::Init()
     return NS_OK;
 }
 
-//*****************************************************************************
-// nsPrintingPromptService::nsIPrintingPromptService
-//*****************************************************************************   
+
+
+
 
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy *parent, nsIWebBrowserPrint *webBrowserPrint, nsIPrintSettings *printSettings)
 {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
-
   nsCOMPtr<nsIPrintDialogService> dlgPrint(do_GetService(
                                            NS_PRINTDIALOGSERVICE_CONTRACTID));
   if (dlgPrint) {
@@ -48,15 +45,13 @@ nsPrintingPromptService::ShowPrintDialog(mozIDOMWindowProxy *parent, nsIWebBrows
   }
 
   return NS_ERROR_FAILURE;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowProgress(mozIDOMWindowProxy*      parent,
-                                      nsIWebBrowserPrint*      webBrowserPrint,    // ok to be null
-                                      nsIPrintSettings*        printSettings,      // ok to be null
-                                      nsIObserver*             openDialogObserver, // ok to be null
+                                      nsIWebBrowserPrint*      webBrowserPrint,    
+                                      nsIPrintSettings*        printSettings,      
+                                      nsIObserver*             openDialogObserver, 
                                       bool                     isForPrinting,
                                       nsIWebProgressListener** webProgressListener,
                                       nsIPrintProgressParams** printProgressParams,
@@ -68,7 +63,6 @@ nsPrintingPromptService::ShowProgress(mozIDOMWindowProxy*      parent,
 NS_IMETHODIMP 
 nsPrintingPromptService::ShowPageSetup(mozIDOMWindowProxy *parent, nsIPrintSettings *printSettings, nsIObserver *aObs)
 {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
   nsCOMPtr<nsIPrintDialogService> dlgPrint(do_GetService(
                                            NS_PRINTDIALOGSERVICE_CONTRACTID));
   if (dlgPrint) {
@@ -76,8 +70,6 @@ nsPrintingPromptService::ShowPageSetup(mozIDOMWindowProxy *parent, nsIPrintSetti
   }
 
   return NS_ERROR_FAILURE;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
 NS_IMETHODIMP 
@@ -87,9 +79,9 @@ nsPrintingPromptService::ShowPrinterProperties(mozIDOMWindowProxy *parent, const
 }
 
 
-//*****************************************************************************
-// nsPrintingPromptService::nsIWebProgressListener
-//*****************************************************************************   
+
+
+
 
 NS_IMETHODIMP 
 nsPrintingPromptService::OnStateChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t aStateFlags, nsresult aStatus)
@@ -97,28 +89,28 @@ nsPrintingPromptService::OnStateChange(nsIWebProgress *aWebProgress, nsIRequest 
     return NS_OK;
 }
 
-/* void onProgressChange (in nsIWebProgress aWebProgress, in nsIRequest aRequest, in long aCurSelfProgress, in long aMaxSelfProgress, in long aCurTotalProgress, in long aMaxTotalProgress); */
+
 NS_IMETHODIMP 
 nsPrintingPromptService::OnProgressChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, int32_t aCurSelfProgress, int32_t aMaxSelfProgress, int32_t aCurTotalProgress, int32_t aMaxTotalProgress)
 {
     return NS_OK;
 }
 
-/* void onLocationChange (in nsIWebProgress aWebProgress, in nsIRequest aRequest, in nsIURI location, in unsigned long aFlags); */
+
 NS_IMETHODIMP 
 nsPrintingPromptService::OnLocationChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, nsIURI *location, uint32_t aFlags)
 {
     return NS_OK;
 }
 
-/* void onStatusChange (in nsIWebProgress aWebProgress, in nsIRequest aRequest, in nsresult aStatus, in wstring aMessage); */
+
 NS_IMETHODIMP 
 nsPrintingPromptService::OnStatusChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, nsresult aStatus, const char16_t *aMessage)
 {
     return NS_OK;
 }
 
-/* void onSecurityChange (in nsIWebProgress aWebProgress, in nsIRequest aRequest, in unsigned long state); */
+
 NS_IMETHODIMP 
 nsPrintingPromptService::OnSecurityChange(nsIWebProgress *aWebProgress, nsIRequest *aRequest, uint32_t state)
 {
