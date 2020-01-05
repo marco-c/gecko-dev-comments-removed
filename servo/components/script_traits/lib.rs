@@ -72,6 +72,8 @@ pub enum ConstellationControlMsg {
     Thaw(PipelineId),
     
     Navigate(PipelineId, SubpageId, LoadData),
+    
+    MozBrowserEvent(PipelineId, SubpageId, String, Option<String>),
 }
 
 unsafe impl Send for ConstellationControlMsg {
@@ -99,6 +101,7 @@ pub struct ScriptControlChan(pub Sender<ConstellationControlMsg>);
 pub trait ScriptTaskFactory {
     fn create<C>(_phantom: Option<&mut Self>,
                  id: PipelineId,
+                 parent_info: Option<(PipelineId, SubpageId)>,
                  compositor: C,
                  layout_chan: &OpaqueScriptLayoutChannel,
                  control_chan: ScriptControlChan,

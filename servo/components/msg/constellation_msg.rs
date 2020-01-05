@@ -212,6 +212,8 @@ pub enum Msg {
     GetPipelineTitle(PipelineId),
     
     SetCursor(Cursor),
+    
+    MozBrowserEvent(PipelineId, SubpageId, String, Option<String>),
 }
 
 
