@@ -1227,6 +1227,9 @@ protected:
   
   void MaybeDoLoad();
 
+  
+  void UpdateCustomPolicyAfterPlayed();
+
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
   
