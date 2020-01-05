@@ -15,13 +15,15 @@ add_task(function() {
   try {
     
     info("Setting up public tab");
-    tab1 = yield BrowserTestUtils.openNewForegroundTab(gBrowser, URL_PUBLIC);
+    tab1 = gBrowser.addTab(URL_PUBLIC);
+    yield promiseBrowserLoaded(tab1.linkedBrowser);
 
     info("Setting up private tab");
-    tab2 = yield BrowserTestUtils.openNewForegroundTab(gBrowser);
+    tab2 = gBrowser.addTab();
+    yield promiseBrowserLoaded(tab2.linkedBrowser);
     yield setUsePrivateBrowsing(tab2.linkedBrowser, true);
     tab2.linkedBrowser.loadURI(URL_PRIVATE);
-    yield BrowserTestUtils.browserLoaded(tab2.linkedBrowser, false, URL_PRIVATE);
+    yield promiseBrowserLoaded(tab2.linkedBrowser);
 
     info("Flush to make sure chrome received all data.");
     yield TabStateFlusher.flush(tab1.linkedBrowser);
@@ -30,15 +32,16 @@ add_task(function() {
     info("Checking out state");
     let state = yield promiseRecoveryFileContents();
 
+    info("State: " + state);
     
     ok(state.indexOf(URL_PUBLIC) != -1, "State contains public tab");
     ok(state.indexOf(URL_PRIVATE) == -1, "State does not contain private tab");
 
     
-    yield BrowserTestUtils.removeTab(tab2);
+    gBrowser.removeTab(tab2);
     tab2 = null;
 
-    yield BrowserTestUtils.removeTab(tab1);
+    gBrowser.removeTab(tab1);
     tab1 = null;
 
     tab1 = ss.undoCloseTab(window, 0);
@@ -48,10 +51,10 @@ add_task(function() {
 
   } finally {
     if (tab1) {
-      yield BrowserTestUtils.removeTab(tab1);
+      gBrowser.removeTab(tab1);
     }
     if (tab2) {
-      yield BrowserTestUtils.removeTab(tab2);
+      gBrowser.removeTab(tab2);
     }
   }
 });
@@ -64,13 +67,14 @@ add_task(function () {
   forgetClosedWindows();
 
   
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
+  let win = yield promiseNewWindowLoaded();
   let mm = win.getGroupMessageManager("browsers");
   mm.loadFrameScript(FRAME_SCRIPT, true);
 
   
-  let tab = yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:mozilla");
+  let tab = win.gBrowser.addTab("about:mozilla");
   let browser = tab.linkedBrowser;
+  yield promiseBrowserLoaded(browser);
   yield TabStateFlusher.flush(browser);
 
   
@@ -78,12 +82,13 @@ add_task(function () {
   ok(state.isPrivate, "tab considered private");
 
   
-  yield BrowserTestUtils.removeTab(tab);
+  win.gBrowser.removeTab(tab);
   is(ss.getClosedTabCount(win), 0, "no tabs to restore");
 
   
-  tab = yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:mozilla");
+  tab = win.gBrowser.addTab("about:mozilla");
   browser = tab.linkedBrowser;
+  yield promiseBrowserLoaded(browser);
   yield TabStateFlusher.flush(browser);
 
   
@@ -101,11 +106,12 @@ add_task(function () {
   forgetClosedWindows();
 
   
-  let win = yield BrowserTestUtils.openNewBrowserWindow({private: true});
+  let win = yield promiseNewWindowLoaded({private: true});
 
   
-  let tab = yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:mozilla");
+  let tab = win.gBrowser.addTab("about:mozilla");
   let browser = tab.linkedBrowser;
+  yield promiseBrowserLoaded(browser);
   yield TabStateFlusher.flush(browser);
 
   
@@ -113,7 +119,7 @@ add_task(function () {
   ok(state.isPrivate, "tab considered private");
 
   
-  yield BrowserTestUtils.removeTab(tab);
+  win.gBrowser.removeTab(tab);
   is(ss.getClosedTabCount(win), 1, "there is a single tab to restore");
 
   

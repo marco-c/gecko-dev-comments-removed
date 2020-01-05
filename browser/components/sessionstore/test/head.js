@@ -23,10 +23,6 @@ registerCleanupFunction(() => {
   for (let script of FRAME_SCRIPTS) {
     mm.removeDelayedFrameScript(script, true);
   }
-
-  
-  
-  window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils).garbageCollect();
 });
 
 const {Promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
