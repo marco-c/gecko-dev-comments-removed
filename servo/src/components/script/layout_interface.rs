@@ -6,7 +6,8 @@
 
 
 
-use dom::node::LayoutDataRef;
+use dom::bindings::js::JS;
+use dom::node::{Node, LayoutDataRef};
 
 use geom::point::Point2D;
 use geom::rect::Rect;
@@ -18,6 +19,8 @@ use std::comm::{channel, Receiver, Sender};
 use std::libc::c_void;
 use style::Stylesheet;
 use url::Url;
+
+use serialize::{Encodable, Encoder};
 
 
 
@@ -62,7 +65,17 @@ pub enum LayoutQuery {
 
 
 
-pub type TrustedNodeAddress = *c_void;
+pub struct TrustedNodeAddress(*c_void);
+
+impl<S: Encoder> Encodable<S> for TrustedNodeAddress {
+    fn encode(&self, s: &mut S) {
+        let TrustedNodeAddress(addr) = *self;
+        let node = addr as *Node as *mut Node;
+        unsafe {
+            JS::from_raw(node).encode(s)
+        }
+    }
+}
 
 
 
@@ -74,7 +87,7 @@ pub struct HitTestResponse(UntrustedNodeAddress);
 pub struct MouseOverResponse(~[UntrustedNodeAddress]);
 
 
-#[deriving(Eq, Ord, TotalEq, TotalOrd)]
+#[deriving(Eq, Ord, TotalEq, TotalOrd, Encodable)]
 pub enum DocumentDamageLevel {
     
     ReflowDocumentDamage,
@@ -94,6 +107,7 @@ impl DocumentDamageLevel {
 
 
 
+#[deriving(Encodable)]
 pub struct DocumentDamage {
     
     root: TrustedNodeAddress,

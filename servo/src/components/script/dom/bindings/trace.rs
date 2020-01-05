@@ -8,6 +8,7 @@ use dom::bindings::utils::{Reflectable, Reflector};
 use js::jsapi::{JSTracer, JS_CallTracer, JSTRACE_OBJECT};
 
 use std::cast;
+use std::cell::RefCell;
 use std::libc;
 use std::ptr;
 use std::ptr::null;
@@ -30,7 +31,7 @@ impl<S: Encoder> Encodable<S> for Reflector {
     }
 }
 
-pub trait Traceable {
+pub trait JSTraceable {
     fn trace(&self, trc: *mut JSTracer);
 }
 
@@ -44,5 +45,71 @@ pub fn trace_reflector(tracer: *mut JSTracer, description: &str, reflector: &Ref
             JS_CallTracer(tracer as *JSTracer, reflector.get_jsobject(),
                           JSTRACE_OBJECT as u32);
         });
+    }
+}
+
+
+
+
+
+pub struct Untraceable<T> {
+    priv inner: T,
+}
+
+impl<T> Untraceable<T> {
+    pub fn new(val: T) -> Untraceable<T> {
+        Untraceable {
+            inner: val
+        }
+    }
+}
+
+impl<S: Encoder, T> Encodable<S> for Untraceable<T> {
+    fn encode(&self, _s: &mut S) {
+    }
+}
+
+impl<T> Deref<T> for Untraceable<T> {
+    fn deref<'a>(&'a self) -> &'a T {
+        &self.inner
+    }
+}
+
+impl<T> DerefMut<T> for Untraceable<T> {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
+        &mut self.inner
+    }
+}
+
+
+
+
+pub struct Traceable<T> {
+    priv inner: T
+}
+
+impl<T> Traceable<T> {
+    pub fn new(val: T) -> Traceable<T> {
+        Traceable {
+            inner: val
+        }
+    }
+}
+
+impl<T> Deref<T> for Traceable<T> {
+    fn deref<'a>(&'a self) -> &'a T {
+        &self.inner
+    }
+}
+
+impl<T> DerefMut<T> for Traceable<T> {
+    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
+        &mut self.inner
+    }
+}
+
+impl<S: Encoder, T: Encodable<S>> Encodable<S> for Traceable<RefCell<T>> {
+    fn encode(&self, s: &mut S) {
+        self.borrow().encode(s)
     }
 }
