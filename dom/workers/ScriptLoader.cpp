@@ -1129,9 +1129,6 @@ private:
       
       mWorkerPrivate->InitChannelInfo(channel);
 
-      rv = mWorkerPrivate->SetPrincipalFromChannel(channel);
-      NS_ENSURE_SUCCESS(rv, rv);
-
       
       
       if (!mWorkerPrivate->GetCSP() && CSPService::sCSPEnabled) {
@@ -1784,10 +1781,12 @@ public:
                                                    
                                                    true,
                                                    getter_AddRefs(channel));
-    if (NS_SUCCEEDED(mResult)) {
-      mLoadInfo.mChannel = channel.forget();
-    }
+    NS_ENSURE_SUCCESS(mResult, true);
 
+    mResult = mLoadInfo.SetPrincipalFromChannel(channel);
+    NS_ENSURE_SUCCESS(mResult, true);
+
+    mLoadInfo.mChannel = channel.forget();
     return true;
   }
 
