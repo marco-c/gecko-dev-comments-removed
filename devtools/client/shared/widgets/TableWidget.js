@@ -125,6 +125,8 @@ function TableWidget(node, options = {}) {
 TableWidget.prototype = {
 
   items: null,
+  editBookmark: null,
+  scrollIntoViewOnUpdate: null,
 
   
 
@@ -1179,9 +1181,27 @@ Column.prototype = {
 
 
 
+
+
   onRowUpdated: function (event, id) {
     this._updateItems();
+
     if (this.highlightUpdated && this.items[id] != null) {
+      if (this.table.scrollIntoViewOnUpdate) {
+        let cell = this.cells[this.items[id]];
+
+        
+        
+        
+        
+        
+        if (cell.label.clientHeight > 0) {
+          cell.scrollIntoView();
+
+          this.table.scrollIntoViewOnUpdate = null;
+        }
+      }
+
       if (this.table.editBookmark) {
         
         
@@ -1193,6 +1213,7 @@ Column.prototype = {
 
       this.cells[this.items[id]].flash();
     }
+
     this.updateZebra();
   },
 
@@ -1605,6 +1626,10 @@ Cell.prototype = {
 
   focus: function () {
     this.label.focus();
+  },
+
+  scrollIntoView: function () {
+    this.label.scrollIntoView(false);
   },
 
   destroy: function () {

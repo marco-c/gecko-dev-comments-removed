@@ -160,10 +160,18 @@ function StorageUI(front, target, panelWin, toolbox) {
   this._tablePopup = this._panelDoc.getElementById("storage-table-popup");
   this._tablePopup.addEventListener("popupshowing", this.onTablePopupShowing);
 
+  this.onAddItem = this.onAddItem.bind(this);
   this.onRemoveItem = this.onRemoveItem.bind(this);
   this.onRemoveAllFrom = this.onRemoveAllFrom.bind(this);
   this.onRemoveAll = this.onRemoveAll.bind(this);
   this.onRemoveTreeItem = this.onRemoveTreeItem.bind(this);
+
+  this._addButton = this._panelDoc.getElementById("add-button");
+  this._addButton.addEventListener("command", this.onAddItem);
+
+  this._tablePopupAddItem = this._panelDoc.getElementById(
+    "storage-table-popup-add");
+  this._tablePopupAddItem.addEventListener("command", this.onAddItem);
 
   this._tablePopupDelete = this._panelDoc.getElementById(
     "storage-table-popup-delete");
@@ -214,6 +222,8 @@ StorageUI.prototype = {
     this.sidebarToggleBtn = null;
 
     this._treePopup.removeEventListener("popupshowing", this.onTreePopupShowing);
+    this._addButton.removeEventListener("command", this.onAddItem);
+    this._tablePopupAddItem.removeEventListener("command", this.onAddItem);
     this._treePopupDeleteAll.removeEventListener("command", this.onRemoveAll);
     this._treePopupDelete.removeEventListener("command", this.onRemoveTreeItem);
 
@@ -268,7 +278,7 @@ StorageUI.prototype = {
     this.updateSidebarToggleButton();
   },
 
-  getCurrentActor: function () {
+  getCurrentFront: function () {
     let type = this.table.datatype;
 
     return this.storageTypes[type];
@@ -289,9 +299,9 @@ StorageUI.prototype = {
   },
 
   editItem: function (eventType, data) {
-    let actor = this.getCurrentActor();
+    let front = this.getCurrentFront();
 
-    actor.editItem(data);
+    front.editItem(data);
   },
 
   
@@ -545,7 +555,7 @@ StorageUI.prototype = {
         
         
         
-        if (type == "indexedDB" && names) {
+        if (type === "indexedDB" && names) {
           let [ dbName, objectStoreName ] = JSON.parse(names[0]);
           if (dbName) {
             subType = "database";
@@ -554,6 +564,13 @@ StorageUI.prototype = {
             subType = "object store";
           }
         }
+
+        this.actorSupportsAddItem = yield this._target.actorHasMethod(type, "addItem");
+        this.actorSupportsRemoveItem =
+          yield this._target.actorHasMethod(type, "removeItem");
+        this.actorSupportsRemoveAll =
+          yield this._target.actorHasMethod(type, "removeAll");
+
         yield this.resetColumns(type, host, subType);
       }
 
@@ -561,9 +578,31 @@ StorageUI.prototype = {
       if (data.length) {
         this.populateTable(data, reason);
       }
+      yield this.updateToolbar();
       this.emit("store-objects-updated");
     } catch (ex) {
       console.error(ex);
+    }
+  }),
+
+  
+
+
+  updateToolbar: Task.async(function* () {
+    let item = this.tree.selectedItem;
+    let howManyNodesIn = item ? item.length : 0;
+
+    
+    
+    let canAdd = this.actorSupportsAddItem && howManyNodesIn > 1;
+
+    if (canAdd) {
+      this._addButton.hidden = false;
+      this._addButton.setAttribute("tooltiptext",
+        L10N.getFormatStr("storage.popupMenu.addItemLabel"));
+    } else {
+      this._addButton.hidden = true;
+      this._addButton.removeAttribute("tooltiptext");
     }
   }),
 
@@ -812,6 +851,11 @@ StorageUI.prototype = {
     this.searchBox.value = "";
 
     let [type, host] = item;
+    this.table.host = host;
+    this.table.datatype = type;
+
+    this.updateToolbar();
+
     let names = null;
     if (!host) {
       return;
@@ -844,7 +888,7 @@ StorageUI.prototype = {
     let editableFields = [];
     let hiddenFields = [];
     let privateFields = [];
-    let fields = yield this.getCurrentActor().getFields(subtype);
+    let fields = yield this.getCurrentFront().getFields(subtype);
 
     fields.forEach(f => {
       if (!uniqueKey) {
@@ -987,23 +1031,37 @@ StorageUI.prototype = {
   onTablePopupShowing: function (event) {
     let selectedItem = this.tree.selectedItem;
     let type = selectedItem[0];
-    let actor = this.getCurrentActor();
 
     
-    if (!actor.removeItem || (type === "indexedDB" && selectedItem.length !== 4)) {
+    if ((!this.actorSupportsAddItem && !this.actorSupportsRemoveItem &&
+         type !== "cookies") ||
+        (type === "indexedDB" && selectedItem.length !== 4)) {
       event.preventDefault();
       return;
     }
 
     let rowId = this.table.contextMenuRowId;
     let data = this.table.items.get(rowId);
-    let name = data[this.table.uniqueId];
 
-    let separatorRegex = new RegExp(SEPARATOR_GUID, "g");
-    let label = addEllipsis((name + "").replace(separatorRegex, "-"));
+    if (this.actorSupportsRemoveItem) {
+      let name = data[this.table.uniqueId];
+      let separatorRegex = new RegExp(SEPARATOR_GUID, "g");
+      let label = addEllipsis((name + "").replace(separatorRegex, "-"));
 
-    this._tablePopupDelete.setAttribute("label",
-      L10N.getFormatStr("storage.popupMenu.deleteLabel", label));
+      this._tablePopupDelete.hidden = false;
+      this._tablePopupDelete.setAttribute("label",
+        L10N.getFormatStr("storage.popupMenu.deleteLabel", label));
+    } else {
+      this._tablePopupDelete.hidden = true;
+    }
+
+    if (this.actorSupportsAddItem) {
+      this._tablePopupAddItem.hidden = false;
+      this._tablePopupAddItem.setAttribute("label",
+        L10N.getFormatStr("storage.popupMenu.addItemLabel"));
+    } else {
+      this._tablePopupAddItem.hidden = true;
+    }
 
     if (type === "cookies") {
       let host = addEllipsis(data.host);
@@ -1022,13 +1080,12 @@ StorageUI.prototype = {
 
     if (selectedItem) {
       let type = selectedItem[0];
-      let actor = this.storageTypes[type];
 
       
       
       
       let showDeleteAll = false;
-      if (actor.removeAll) {
+      if (this.actorSupportsRemoveAll) {
         let level;
         if (type == "indexedDB") {
           level = 4;
@@ -1068,16 +1125,28 @@ StorageUI.prototype = {
   
 
 
+  onAddItem: function () {
+    let front = this.getCurrentFront();
+
+    
+    this.table.scrollIntoViewOnUpdate = true;
+    this.table.editBookmark = createGUID();
+    front.addItem(this.table.editBookmark);
+  },
+
+  
+
+
   onRemoveItem: function () {
     let [, host, ...path] = this.tree.selectedItem;
-    let actor = this.getCurrentActor();
+    let front = this.getCurrentFront();
     let rowId = this.table.contextMenuRowId;
     let data = this.table.items.get(rowId);
     let name = data[this.table.uniqueId];
     if (path.length > 0) {
       name = JSON.stringify([...path, name]);
     }
-    actor.removeItem(host, name);
+    front.removeItem(host, name);
   },
 
   
@@ -1087,10 +1156,10 @@ StorageUI.prototype = {
     
     
     
-    let [type, host, ...path] = this.tree.selectedItem;
-    let actor = this.storageTypes[type];
+    let [, host, ...path] = this.tree.selectedItem;
+    let front = this.getCurrentFront();
     let name = path.length > 0 ? JSON.stringify(path) : undefined;
-    actor.removeAll(host, name);
+    front.removeAll(host, name);
   },
 
   
@@ -1099,11 +1168,11 @@ StorageUI.prototype = {
 
   onRemoveAllFrom: function () {
     let [, host] = this.tree.selectedItem;
-    let actor = this.getCurrentActor();
+    let front = this.getCurrentFront();
     let rowId = this.table.contextMenuRowId;
     let data = this.table.items.get(rowId);
 
-    actor.removeAll(host, data.host);
+    front.removeAll(host, data.host);
   },
 
   onRemoveTreeItem: function () {
@@ -1117,9 +1186,9 @@ StorageUI.prototype = {
   },
 
   removeDatabase: function (host, dbName) {
-    let actor = this.storageTypes.indexedDB;
+    let front = this.getCurrentFront();
 
-    actor.removeDatabase(host, dbName).then(result => {
+    front.removeDatabase(host, dbName).then(result => {
       if (result.blocked) {
         let notificationBox = this._toolbox.getNotificationBox();
         notificationBox.appendNotification(
@@ -1139,8 +1208,17 @@ StorageUI.prototype = {
   },
 
   removeCache: function (host, cacheName) {
-    let actor = this.storageTypes.Cache;
+    let front = this.getCurrentFront();
 
-    actor.removeItem(host, JSON.stringify([ cacheName ]));
+    front.removeItem(host, JSON.stringify([ cacheName ]));
   },
 };
+
+
+
+function createGUID() {
+  return "{cccccccc-cccc-4ccc-yccc-cccccccccccc}".replace(/[cy]/g, c => {
+    let r = Math.random() * 16 | 0, v = c == "c" ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
