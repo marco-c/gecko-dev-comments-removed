@@ -468,7 +468,8 @@ ChromiumCDMChild::RecvInitializeVideoDecoder(
   config.profile =
     static_cast<cdm::VideoDecoderConfig::VideoCodecProfile>(aConfig.mProfile());
   config.format = static_cast<cdm::VideoFormat>(aConfig.mFormat());
-  config.coded_size = { aConfig.mImageWidth(), aConfig.mImageHeight() };
+  config.coded_size =
+    mCodedSize = { aConfig.mImageWidth(), aConfig.mImageHeight() };
   nsTArray<uint8_t> extraData(aConfig.mExtraData());
   config.extra_data = extraData.Elements();
   config.extra_data_size = extraData.Length();
@@ -528,12 +529,27 @@ ChromiumCDMChild::RecvDecryptAndDecodeFrame(const CDMInputBuffer& aBuffer)
           input.timestamp,
           rv);
 
-  if (rv == cdm::kSuccess) {
-    ReturnOutput(frame);
-  } else if (rv == cdm::kNeedMoreData) {
-    Unused << SendDecoded(gmp::CDMVideoFrame());
-  } else {
-    Unused << SendDecodeFailed(rv);
+  switch (rv) {
+    case cdm::kNoKey:
+      GMP_LOG("NoKey for sample at time=%" PRId64 "!", input.timestamp);
+      
+      
+      
+      
+      
+      
+      
+      frame.InitToBlack(mCodedSize.width, mCodedSize.height, input.timestamp);
+      MOZ_FALLTHROUGH;
+    case cdm::kSuccess:
+      ReturnOutput(frame);
+      break;
+    case cdm::kNeedMoreData:
+      Unused << SendDecoded(gmp::CDMVideoFrame());
+      break;
+    default:
+      Unused << SendDecodeFailed(rv);
+      break;
   }
 
   return IPC_OK();
