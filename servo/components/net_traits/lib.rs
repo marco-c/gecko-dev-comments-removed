@@ -438,8 +438,8 @@ pub enum ConstellationMsg {
 #[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub enum NetworkError {
     
-    
     Internal(String),
+    LoadCancelled,
     
     SslValidation(Url),
 }
