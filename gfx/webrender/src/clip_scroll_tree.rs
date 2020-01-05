@@ -23,7 +23,7 @@ pub struct ClipScrollTree {
     
     
     
-    current_reference_frame_id: usize,
+    current_reference_frame_id: u64,
 
     
     

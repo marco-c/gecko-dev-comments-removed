@@ -8,21 +8,40 @@ use prim_store::{CLIP_DATA_GPU_SIZE, MASK_DATA_GPU_SIZE};
 use renderer::VertexDataStore;
 use util::{MatrixHelpers, TransformedRect};
 use webrender_traits::{AuxiliaryLists, BorderRadius, ClipRegion, ComplexClipRegion, ImageMask};
-use webrender_traits::{DeviceIntRect, DeviceIntSize, LayerRect, LayerToWorldTransform};
+use webrender_traits::{DeviceIntRect, LayerToWorldTransform};
+use webrender_traits::{LayerRect, LayerPoint, LayerSize};
+
+const MAX_CLIP: f32 = 1000000.0;
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ClipMode {
+    Clip,           
+    ClipOut,        
+}
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum RegionMode {
+    IncludeRect,
+    ExcludeRect,
+}
 
 #[derive(Clone, Debug)]
 pub enum ClipSource {
-    NoClip,
-    Complex(LayerRect, f32),
-    Region(ClipRegion),
+    Complex(LayerRect, f32, ClipMode),
+    
+    
+    
+    
+    Region(ClipRegion, RegionMode),
 }
 
 impl ClipSource {
     pub fn image_mask(&self) -> Option<ImageMask> {
         match self {
-            &ClipSource::NoClip => None,
             &ClipSource::Complex(..) => None,
-            &ClipSource::Region(ref region) => region.image_mask,
+            &ClipSource::Region(ref region, _) => region.image_mask,
         }
     }
 }
@@ -30,136 +49,230 @@ impl ClipSource {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct ClipAddressRange {
     pub start: GpuStoreAddress,
-    item_count: u32,
+    item_count: usize,
+}
+
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Geometry {
+    pub local_rect: LayerRect,
+    pub bounding_rect: DeviceIntRect,
+}
+
+impl Geometry {
+    fn new(local_rect: LayerRect) -> Geometry {
+        Geometry {
+            local_rect: local_rect,
+            bounding_rect: DeviceIntRect::zero(),
+        }
+    }
+
+    fn update(&mut self,
+              transform: &LayerToWorldTransform,
+              device_pixel_ratio: f32) {
+        let transformed = TransformedRect::new(&self.local_rect,
+                                               &transform,
+                                               device_pixel_ratio);
+        self.bounding_rect = transformed.bounding_rect;
+    }
+}
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum MaskBounds {
+    
+    
+    OuterInner(Geometry, Geometry),
+    
+    Outer(Geometry),
+    
+    
+    
+    None,
 }
 
 #[derive(Clone, Debug)]
 pub struct MaskCacheInfo {
     pub clip_range: ClipAddressRange,
-    pub effective_clip_count: u32,
+    pub effective_clip_count: usize,
     pub image: Option<(ImageMask, GpuStoreAddress)>,
-    pub local_rect: Option<LayerRect>,
-    pub local_inner: Option<LayerRect>,
-    pub inner_rect: DeviceIntRect,
-    pub outer_rect: DeviceIntRect,
+    pub bounds: Option<MaskBounds>,
     pub is_aligned: bool,
 }
 
 impl MaskCacheInfo {
     
     
-    pub fn new(source: &ClipSource,
-               extra_clip: bool,
+    pub fn new(clips: &[ClipSource],
                clip_store: &mut VertexDataStore<GpuBlock32>)
                -> Option<MaskCacheInfo> {
-        let (image, clip_range) = match source {
-            &ClipSource::NoClip => return None,
-            &ClipSource::Complex(..) => {
-                (None,
-                ClipAddressRange {
-                    start: clip_store.alloc(CLIP_DATA_GPU_SIZE),
-                    item_count: 1,
-                })
+        if clips.is_empty() {
+            return None;
+        }
+
+        let mut image = None;
+        let mut clip_count = 0;
+
+        
+        
+        for clip in clips {
+            match clip {
+                &ClipSource::Complex(..) => {
+                    clip_count += 1;
+                },
+                &ClipSource::Region(ref region, region_mode) => {
+                    if let Some(info) = region.image_mask {
+                        debug_assert!(image.is_none());     
+                        image = Some((info, clip_store.alloc(MASK_DATA_GPU_SIZE)));
+                    }
+
+                    clip_count += region.complex.length;
+                    if region_mode == RegionMode::IncludeRect {
+                        clip_count += 1;
+                    }
+                },
+            }
+        }
+
+        let clip_range = ClipAddressRange {
+            start: if clip_count > 0 {
+                clip_store.alloc(CLIP_DATA_GPU_SIZE * clip_count)
+            } else {
+                GpuStoreAddress(0)
             },
-            &ClipSource::Region(ref region) => {
-                let count = region.complex.length + if extra_clip {1} else {0};
-                (region.image_mask.map(|info|
-                    (info, clip_store.alloc(MASK_DATA_GPU_SIZE))),
-                ClipAddressRange {
-                    start: if count > 0 {
-                        clip_store.alloc(CLIP_DATA_GPU_SIZE * count)
-                    } else {
-                        GpuStoreAddress(0)
-                    },
-                    item_count: count as u32,
-                })
-            },
+            item_count: clip_count,
         };
 
         Some(MaskCacheInfo {
             clip_range: clip_range,
             effective_clip_count: clip_range.item_count,
             image: image,
-            local_rect: None,
-            local_inner: None,
-            inner_rect: DeviceIntRect::zero(),
-            outer_rect: DeviceIntRect::zero(),
+            bounds: None,
             is_aligned: true,
         })
     }
 
     pub fn update(&mut self,
-                  source: &ClipSource,
+                  sources: &[ClipSource],
                   transform: &LayerToWorldTransform,
                   clip_store: &mut VertexDataStore<GpuBlock32>,
                   device_pixel_ratio: f32,
                   aux_lists: &AuxiliaryLists) {
+        let is_aligned = transform.can_losslessly_transform_and_perspective_project_a_2d_rect();
 
-        self.is_aligned = transform.can_losslessly_transform_and_perspective_project_a_2d_rect();
+        
+        
+        if self.bounds.is_none() || self.is_aligned != is_aligned {
+            let mut local_rect = Some(LayerRect::new(LayerPoint::new(-MAX_CLIP, -MAX_CLIP),
+                                                     LayerSize::new(2.0 * MAX_CLIP, 2.0 * MAX_CLIP)));
+            let mut local_inner: Option<LayerRect> = None;
+            let mut has_clip_out = false;
 
-        if self.local_rect.is_none() {
-            let mut local_rect;
-            let mut local_inner: Option<LayerRect>;
-            match source {
-                &ClipSource::NoClip => unreachable!(),
-                &ClipSource::Complex(rect, radius) => {
-                    let slice = clip_store.get_slice_mut(self.clip_range.start, CLIP_DATA_GPU_SIZE);
-                    let data = ClipData::uniform(rect, radius);
-                    PrimitiveStore::populate_clip_data(slice, data);
-                    debug_assert_eq!(self.clip_range.item_count, 1);
-                    local_rect = Some(rect);
-                    local_inner = ComplexClipRegion::new(rect, BorderRadius::uniform(radius))
-                                                    .get_inner_rect();
-                }
-                &ClipSource::Region(ref region) => {
-                    local_rect = Some(region.main);
-                    local_inner = match region.image_mask {
-                        Some(ref mask) if !mask.repeat => {
-                            local_rect = local_rect.and_then(|r| r.intersection(&mask.rect));
-                            None
-                        },
-                        Some(_) => None,
-                        None => local_rect,
-                    };
+            self.effective_clip_count = 0;
+            self.is_aligned = is_aligned;
 
-                    let clips = aux_lists.complex_clip_regions(&region.complex);
-                    self.effective_clip_count = if !self.is_aligned && self.clip_range.item_count > clips.len() as u32 {
+            for source in sources {
+                match source {
+                    &ClipSource::Complex(rect, radius, mode) => {
                         
-                        assert_eq!(self.clip_range.item_count, clips.len() as u32 + 1);
-                        let address = GpuStoreAddress(self.clip_range.start.0 + (CLIP_DATA_GPU_SIZE * clips.len()) as i32);
-                        let slice = clip_store.get_slice_mut(address, CLIP_DATA_GPU_SIZE);
-                        PrimitiveStore::populate_clip_data(slice, ClipData::uniform(region.main, 0.0));
-                        self.clip_range.item_count
-                    } else {
-                        clips.len() as u32
-                    };
+                        
+                        if mode == ClipMode::ClipOut {
+                            has_clip_out = true;
+                        }
+                        debug_assert!(self.effective_clip_count < self.clip_range.item_count);
+                        let address = self.clip_range.start + self.effective_clip_count * CLIP_DATA_GPU_SIZE;
+                        self.effective_clip_count += 1;
 
-                    let slice = clip_store.get_slice_mut(self.clip_range.start, CLIP_DATA_GPU_SIZE * clips.len());
-                    for (clip, chunk) in clips.iter().zip(slice.chunks_mut(CLIP_DATA_GPU_SIZE)) {
-                        let data = ClipData::from_clip_region(clip);
-                        PrimitiveStore::populate_clip_data(chunk, data);
-                        local_rect = local_rect.and_then(|r| r.intersection(&clip.rect));
-                        local_inner = local_inner.and_then(|r| clip.get_inner_rect()
-                                                                   .and_then(|ref inner| r.intersection(&inner)));
+                        let slice = clip_store.get_slice_mut(address, CLIP_DATA_GPU_SIZE);
+                        let data = ClipData::uniform(rect, radius, mode);
+                        PrimitiveStore::populate_clip_data(slice, data);
+                        local_rect = local_rect.and_then(|r| r.intersection(&rect));
+                        local_inner = ComplexClipRegion::new(rect, BorderRadius::uniform(radius))
+                                                        .get_inner_rect();
+                    }
+                    &ClipSource::Region(ref region, region_mode) => {
+                        local_rect = local_rect.and_then(|r| r.intersection(&region.main));
+                        local_inner = match region.image_mask {
+                            Some(ref mask) if !mask.repeat => {
+                                local_rect = local_rect.and_then(|r| r.intersection(&mask.rect));
+                                None
+                            },
+                            Some(_) => None,
+                            None => local_rect,
+                        };
+
+                        let clips = aux_lists.complex_clip_regions(&region.complex);
+                        if !self.is_aligned && region_mode == RegionMode::IncludeRect {
+                            
+                            debug_assert!(self.effective_clip_count < self.clip_range.item_count);
+                            let address = self.clip_range.start + self.effective_clip_count * CLIP_DATA_GPU_SIZE;
+                            self.effective_clip_count += 1;
+
+                            let slice = clip_store.get_slice_mut(address, CLIP_DATA_GPU_SIZE);
+                            PrimitiveStore::populate_clip_data(slice, ClipData::uniform(region.main, 0.0, ClipMode::Clip));
+                        }
+
+                        debug_assert!(self.effective_clip_count + clips.len() <= self.clip_range.item_count);
+                        let address = self.clip_range.start + self.effective_clip_count * CLIP_DATA_GPU_SIZE;
+                        self.effective_clip_count += clips.len();
+
+                        let slice = clip_store.get_slice_mut(address, CLIP_DATA_GPU_SIZE * clips.len());
+                        for (clip, chunk) in clips.iter().zip(slice.chunks_mut(CLIP_DATA_GPU_SIZE)) {
+                            let data = ClipData::from_clip_region(clip);
+                            PrimitiveStore::populate_clip_data(chunk, data);
+                            local_rect = local_rect.and_then(|r| r.intersection(&clip.rect));
+                            local_inner = local_inner.and_then(|r| clip.get_inner_rect()
+                                                                       .and_then(|ref inner| r.intersection(&inner)));
+                        }
                     }
                 }
-            };
-            self.local_rect = Some(local_rect.unwrap_or(LayerRect::zero()));
-            self.local_inner = local_inner;
+            }
+
+            
+            
+            if has_clip_out {
+                
+                self.bounds = Some(MaskBounds::None);
+            } else {
+                
+                
+                
+                if sources.len() > 1 {
+                    local_inner = None;
+                }
+
+                let local_rect = local_rect.unwrap_or(LayerRect::zero());
+
+                self.bounds = match local_inner {
+                    Some(local_inner) => {
+                        Some(MaskBounds::OuterInner(Geometry::new(local_rect),
+                                                    Geometry::new(local_inner)))
+                    }
+                    None => {
+                        Some(MaskBounds::Outer(Geometry::new(local_rect)))
+                    }
+                };
+            }
         }
 
-        let transformed = TransformedRect::new(self.local_rect.as_ref().unwrap(),
-                                               &transform,
-                                               device_pixel_ratio);
-        self.outer_rect = transformed.bounding_rect;
-
-        self.inner_rect = if let Some(ref inner_rect) = self.local_inner {
-            let transformed = TransformedRect::new(inner_rect,
-                                                   &transform,
-                                                   device_pixel_ratio);
-            transformed.inner_rect
-        } else {
-            DeviceIntRect::new(self.outer_rect.origin, DeviceIntSize::zero())
+        
+        
+        match self.bounds.as_mut().unwrap() {
+            &mut MaskBounds::None => {}
+            &mut MaskBounds::Outer(ref mut outer) => {
+                outer.update(transform, device_pixel_ratio);
+            }
+            &mut MaskBounds::OuterInner(ref mut outer, ref mut inner) => {
+                outer.update(transform, device_pixel_ratio);
+                inner.update(transform, device_pixel_ratio);
+            }
         }
     }
 

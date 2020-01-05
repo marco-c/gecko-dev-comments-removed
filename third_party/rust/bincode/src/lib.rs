@@ -44,12 +44,15 @@ pub mod refbox;
 mod serde;
 
 pub mod endian_choice {
-    pub use super::serde::{serialize, serialize_into, deserialize, deserialize_from};
+    pub use super::serde::{Deserializer, Serializer, serialize, serialize_into, deserialize, deserialize_from};
 }
 
 use std::io::{Read, Write};
 
-pub use serde::{Deserializer, Serializer, ErrorKind, Error, Result, serialized_size, serialized_size_bounded};
+pub use serde::{ErrorKind, Error, Result, serialized_size, serialized_size_bounded};
+
+pub type Deserializer<W, S> = serde::Deserializer<W, S, byteorder::LittleEndian>;
+pub type Serializer<W> = serde::Serializer<W, byteorder::LittleEndian>;
 
 
 
@@ -70,11 +73,10 @@ pub fn deserialize<T>(bytes: &[u8]) -> serde::Result<T>
 
 
 
-pub fn deserialize_from<R: ?Sized, T>(reader: &mut R, size_limit: SizeLimit) -> serde::Result<T>
-    where R: Read,
-          T: serde_crate::Deserialize,
+pub fn deserialize_from<R: ?Sized, T, S>(reader: &mut R, size_limit: S) -> serde::Result<T>
+    where R: Read, T: serde_crate::Deserialize, S: SizeLimit
 {
-    serde::deserialize_from::<_, _, byteorder::LittleEndian>(reader, size_limit)
+    serde::deserialize_from::<_, _, _, byteorder::LittleEndian>(reader, size_limit)
 }
 
 
@@ -85,20 +87,20 @@ pub fn deserialize_from<R: ?Sized, T>(reader: &mut R, size_limit: SizeLimit) -> 
 
 
 
-pub fn serialize_into<W: ?Sized, T: ?Sized>(writer: &mut W, value: &T, size_limit: SizeLimit) -> serde::Result<()>
-    where W: Write, T: serde_crate::Serialize
+pub fn serialize_into<W: ?Sized, T: ?Sized, S>(writer: &mut W, value: &T, size_limit: S) -> serde::Result<()>
+    where W: Write, T: serde_crate::Serialize, S: SizeLimit
 {
-    serde::serialize_into::<_, _, byteorder::LittleEndian>(writer, value, size_limit)
+    serde::serialize_into::<_, _, _, byteorder::LittleEndian>(writer, value, size_limit)
 }
 
 
 
 
 
-pub fn serialize<T: ?Sized>(value: &T, size_limit: SizeLimit) -> serde::Result<Vec<u8>>
-    where T: serde_crate::Serialize
+pub fn serialize<T: ?Sized, S>(value: &T, size_limit: S) -> serde::Result<Vec<u8>>
+    where T: serde_crate::Serialize, S: SizeLimit
 {
-    serde::serialize::<_, byteorder::LittleEndian>(value, size_limit)
+    serde::serialize::<_, _, byteorder::LittleEndian>(value, size_limit)
 }
 
 
@@ -119,8 +121,34 @@ pub fn serialize<T: ?Sized>(value: &T, size_limit: SizeLimit) -> serde::Result<V
 
 
 
-#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub enum SizeLimit {
-    Infinite,
-    Bounded(u64)
+pub trait SizeLimit {
+    fn add(&mut self, n: u64) -> Result<()>;
+    fn limit(&self) -> Option<u64>;
+}
+
+#[derive(Copy, Clone)]
+pub struct Bounded(pub u64);
+
+#[derive(Copy, Clone)]
+pub struct Infinite;
+
+impl SizeLimit for Bounded {
+    #[inline(always)]
+    fn add(&mut self, n: u64) -> Result<()> {
+        if self.0 >= n {
+            self.0 -= n;
+            Ok(())
+        } else {
+            Err(Box::new(ErrorKind::SizeLimit))
+        }
+    }
+    #[inline(always)]
+    fn limit(&self) -> Option<u64> { Some(self.0) }
+}
+
+impl SizeLimit for Infinite {
+    #[inline(always)]
+    fn add(&mut self, _: u64) -> Result<()> { Ok (()) }
+    #[inline(always)]
+    fn limit(&self) -> Option<u64> { None }
 }

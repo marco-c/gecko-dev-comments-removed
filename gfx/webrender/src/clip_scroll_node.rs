@@ -4,7 +4,7 @@
 
 use euclid::Point3D;
 use geometry::ray_intersects_rect;
-use mask_cache::{ClipSource, MaskCacheInfo};
+use mask_cache::{ClipSource, MaskCacheInfo, RegionMode};
 use prim_store::GpuBlock32;
 use renderer::VertexDataStore;
 use spring::{DAMPING, STIFFNESS, Spring};
@@ -24,7 +24,7 @@ const CAN_OVERSCROLL: bool = false;
 #[derive(Clone, Debug)]
 pub struct ClipInfo {
     
-    pub clip_source: ClipSource,
+    pub clip_sources: Vec<ClipSource>,
 
     
     
@@ -47,10 +47,10 @@ impl ClipInfo {
                -> ClipInfo {
         
         
-        let clip_source = ClipSource::Region(clip_region.clone());
+        let clip_sources = vec![ClipSource::Region(clip_region.clone(), RegionMode::IncludeRect)];
         ClipInfo {
-            mask_cache_info: MaskCacheInfo::new(&clip_source, true, clip_store),
-            clip_source: clip_source,
+            mask_cache_info: MaskCacheInfo::new(&clip_sources, clip_store),
+            clip_sources: clip_sources,
             packed_layer_index: packed_layer_index,
             xf_rect: None,
         }
