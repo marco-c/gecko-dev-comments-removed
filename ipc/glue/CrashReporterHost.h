@@ -31,15 +31,15 @@ public:
                     CrashReporter::ThreadId aThreadId);
 
 #ifdef MOZ_CRASHREPORTER
-  bool GenerateCrashReport(base::ProcessId aPid,
-                           nsString* aOutMinidumpID = nullptr)
-  {
-    RefPtr<nsIFile> crashDump;
-    if (!XRE_TakeMinidumpForChild(aPid, getter_AddRefs(crashDump), nullptr)) {
-      return false;
-    }
-    return GenerateCrashReport(crashDump, aOutMinidumpID);
-  }
+  
+  
+  
+  bool GenerateCrashReport(base::ProcessId aPid);
+
+  
+  
+  
+  bool FinalizeCrashReport();
 
   
   
@@ -52,10 +52,17 @@ public:
     const AnnotationTable* aNotes);
 
   void AddNote(const nsCString& aKey, const nsCString& aValue);
+
+  bool HasMinidump() const {
+    return !mDumpID.IsEmpty();
+  }
+  const nsString& MinidumpID() const {
+    MOZ_ASSERT(HasMinidump());
+    return mDumpID;
+  }
 #endif
 
 private:
-  bool GenerateCrashReport(RefPtr<nsIFile> aCrashDump, nsString* aOutMinidumpID);
   static void AsyncAddCrash(int32_t aProcessType, int32_t aCrashType,
                             const nsString& aChildDumpID);
 
@@ -65,6 +72,8 @@ private:
   CrashReporter::ThreadId mThreadId;
   time_t mStartTime;
   AnnotationTable mExtraNotes;
+  nsString mDumpID;
+  bool mFinalized;
 };
 
 } 
