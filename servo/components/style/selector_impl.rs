@@ -65,7 +65,7 @@ pub trait ElementExt: Element {
 
 
 
-pub trait SelectorImplExt : SelectorImpl + Clone + Debug + Sized {
+pub trait SelectorImplExt : SelectorImpl + Clone + Debug + Sized + 'static {
     type ComputedValues: properties::ComputedValues;
 
     fn pseudo_element_cascade_type(pseudo: &Self::PseudoElement) -> PseudoElementCascadeType;

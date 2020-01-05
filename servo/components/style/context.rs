@@ -10,13 +10,25 @@ use dom::OpaqueNode;
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
-use properties::ComputedValues;
 use selector_impl::SelectorImplExt;
 use selector_matching::Stylist;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, RwLock};
+
+
+pub struct LocalStyleContextCreationInfo<Impl: SelectorImplExt> {
+    new_animations_sender: Sender<Animation<Impl>>,
+}
+
+impl<Impl: SelectorImplExt> LocalStyleContextCreationInfo<Impl> {
+    pub fn new(animations_sender: Sender<Animation<Impl>>) -> Self {
+        LocalStyleContextCreationInfo {
+            new_animations_sender: animations_sender,
+        }
+    }
+}
 
 pub struct SharedStyleContext<Impl: SelectorImplExt> {
     
@@ -33,10 +45,6 @@ pub struct SharedStyleContext<Impl: SelectorImplExt> {
     pub generation: u32,
 
     
-    
-    pub new_animations_sender: Mutex<Sender<Animation<Impl>>>,
-
-    
     pub goal: ReflowGoal,
 
     
@@ -47,16 +55,32 @@ pub struct SharedStyleContext<Impl: SelectorImplExt> {
 
     
     pub error_reporter: Box<ParseErrorReporter + Sync>,
+
+    
+    pub local_context_creation_data: Mutex<LocalStyleContextCreationInfo<Impl>>,
 }
 
-pub struct LocalStyleContext<C: ComputedValues> {
-    pub applicable_declarations_cache: RefCell<ApplicableDeclarationsCache<C>>,
-    pub style_sharing_candidate_cache: RefCell<StyleSharingCandidateCache<C>>,
+pub struct LocalStyleContext<Impl: SelectorImplExt> {
+    pub applicable_declarations_cache: RefCell<ApplicableDeclarationsCache<Impl::ComputedValues>>,
+    pub style_sharing_candidate_cache: RefCell<StyleSharingCandidateCache<Impl::ComputedValues>>,
+    
+    
+    pub new_animations_sender: Sender<Animation<Impl>>,
+}
+
+impl<Impl: SelectorImplExt> LocalStyleContext<Impl> {
+    pub fn new(local_context_creation_data: &LocalStyleContextCreationInfo<Impl>) -> Self {
+        LocalStyleContext {
+            applicable_declarations_cache: RefCell::new(ApplicableDeclarationsCache::new()),
+            style_sharing_candidate_cache: RefCell::new(StyleSharingCandidateCache::new()),
+            new_animations_sender: local_context_creation_data.new_animations_sender.clone(),
+        }
+    }
 }
 
 pub trait StyleContext<'a, Impl: SelectorImplExt> {
     fn shared_context(&self) -> &'a SharedStyleContext<Impl>;
-    fn local_context(&self) -> &LocalStyleContext<Impl::ComputedValues>;
+    fn local_context(&self) -> &LocalStyleContext<Impl>;
 }
 
 

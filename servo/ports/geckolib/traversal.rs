@@ -2,65 +2,12 @@
 
 
 
-use properties::GeckoComputedValues;
-use selector_impl::{GeckoSelectorImpl, SharedStyleContext};
-use std::cell::RefCell;
+use context::StandaloneStyleContext;
+use selector_impl::SharedStyleContext;
 use std::mem;
-use std::rc::Rc;
-use style::context::{LocalStyleContext, StyleContext};
 use style::dom::OpaqueNode;
-use style::matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
 use style::traversal::{DomTraversalContext, recalc_style_at};
 use wrapper::GeckoNode;
-
-thread_local!(static LOCAL_CONTEXT_KEY:
-                RefCell<Option<Rc<LocalStyleContext<GeckoComputedValues>>>> = RefCell::new(None));
-
-
-fn create_or_get_local_context(shared: &SharedStyleContext)
-                               -> Rc<LocalStyleContext<GeckoComputedValues>> {
-    LOCAL_CONTEXT_KEY.with(|r| {
-        let mut r = r.borrow_mut();
-        if let Some(context) = r.clone() {
-            if shared.screen_size_changed {
-                context.applicable_declarations_cache.borrow_mut().evict_all();
-            }
-            context
-        } else {
-            let context = Rc::new(LocalStyleContext {
-                applicable_declarations_cache: RefCell::new(ApplicableDeclarationsCache::new()),
-                style_sharing_candidate_cache: RefCell::new(StyleSharingCandidateCache::new()),
-            });
-            *r = Some(context.clone());
-            context
-        }
-    })
-}
-
-pub struct StandaloneStyleContext<'a> {
-    pub shared: &'a SharedStyleContext,
-    cached_local_context: Rc<LocalStyleContext<GeckoComputedValues>>,
-}
-
-impl<'a> StandaloneStyleContext<'a> {
-    pub fn new(shared: &'a SharedStyleContext) -> Self {
-        let local_context = create_or_get_local_context(shared);
-        StandaloneStyleContext {
-            shared: shared,
-            cached_local_context: local_context,
-        }
-    }
-}
-
-impl<'a> StyleContext<'a, GeckoSelectorImpl> for StandaloneStyleContext<'a> {
-    fn shared_context(&self) -> &'a SharedStyleContext {
-        &self.shared
-    }
-
-    fn local_context(&self) -> &LocalStyleContext<GeckoComputedValues> {
-        &self.cached_local_context
-    }
-}
 
 pub struct RecalcStyleOnly<'lc> {
     context: StandaloneStyleContext<'lc>,
@@ -73,7 +20,7 @@ impl<'lc, 'ln> DomTraversalContext<GeckoNode<'ln>> for RecalcStyleOnly<'lc> {
     fn new<'a>(shared: &'a Self::SharedContext, root: OpaqueNode) -> Self {
         
         
-        let shared_lc: &'lc SharedStyleContext = unsafe { mem::transmute(shared) };
+        let shared_lc: &'lc Self::SharedContext = unsafe { mem::transmute(shared) };
         RecalcStyleOnly {
             context: StandaloneStyleContext::new(shared_lc),
             root: root,
@@ -90,4 +37,3 @@ impl<'lc, 'ln> DomTraversalContext<GeckoNode<'ln>> for RecalcStyleOnly<'lc> {
 
     fn process_postorder(&self, _: GeckoNode<'ln>) {}
 }
-
