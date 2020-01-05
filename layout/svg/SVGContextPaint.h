@@ -33,7 +33,16 @@ namespace mozilla {
 
 
 
-class SVGContextPaint
+
+
+
+
+
+
+
+
+
+class SVGContextPaint : public RefCounted<SVGContextPaint>
 {
 protected:
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -41,6 +50,8 @@ protected:
   SVGContextPaint() {}
 
 public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(SVGContextPaint)
+
   virtual ~SVGContextPaint() {}
 
   virtual already_AddRefed<gfxPattern> GetFillPattern(const DrawTarget* aDrawTarget,
