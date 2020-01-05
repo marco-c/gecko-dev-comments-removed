@@ -150,6 +150,16 @@ function DeveloperToolbar(chromeWindow) {
   
   this.target = null;
 
+  
+  
+  
+  
+  this._showPromise = null;
+  
+  
+  
+  this._hidePromise = null;
+
   this._doc = chromeWindow.document;
 
   this._telemetry = new Telemetry();
@@ -290,11 +300,33 @@ DeveloperToolbar.prototype.toggle = function () {
 
 
 
+
+
 DeveloperToolbar.prototype.focus = function () {
   if (this.visible) {
-    this._input.focus();
-    return promise.resolve();
+    
+    
+    let waitForBinding = defer();
+
+    let checkBinding = () => {
+      
+      if (!this._input) {
+        waitForBinding.reject();
+        return;
+      }
+      
+      if (typeof this._input.mInputField != "undefined") {
+        this._input.focus();
+        waitForBinding.resolve();
+      } else {
+        this._input.ownerDocument.defaultView.setTimeout(checkBinding, 50);
+      }
+    };
+    checkBinding();
+
+    return waitForBinding.promise;
   }
+
   return this.show(true);
 };
 
@@ -330,7 +362,12 @@ DeveloperToolbar.introShownThisSession = false;
 
 
 DeveloperToolbar.prototype.show = function (focus) {
-  if (this._showPromise != null) {
+  
+  
+  if (this._showPromise !== null) {
+    if (focus) {
+      return this.focus();
+    }
     return this._showPromise;
   }
 
@@ -430,25 +467,9 @@ DeveloperToolbar.prototype.show = function (focus) {
     this._element.hidden = false;
 
     if (focus) {
-      
-      
-      let waitForBinding = () => {
-        
-        if (!this._input) {
-          return;
-        }
-        
-        if (typeof this._input.mInputField != "undefined") {
-          this._input.focus();
-          this._notify(NOTIFICATIONS.SHOW);
-        } else {
-          this._input.ownerDocument.defaultView.setTimeout(waitForBinding, 50);
-        }
-      };
-      waitForBinding();
-    } else {
-      this._notify(NOTIFICATIONS.SHOW);
+      yield this.focus();
     }
+    this._notify(NOTIFICATIONS.SHOW);
 
     if (!DeveloperToolbar.introShownThisSession) {
       let intro = require("gcli/ui/intro");
@@ -457,8 +478,6 @@ DeveloperToolbar.prototype.show = function (focus) {
                            this.outputPanel);
       DeveloperToolbar.introShownThisSession = true;
     }
-
-    this._showPromise = null;
   }).bind(this));
 
   return this._showPromise;
@@ -469,14 +488,18 @@ DeveloperToolbar.prototype.show = function (focus) {
 
 DeveloperToolbar.prototype.hide = function () {
   
-  if (this._hidePromise != null) {
+  if (this._hidePromise !== null) {
     return this._hidePromise;
   }
 
   
-  let waitPromise = this._showPromise || promise.resolve();
+  
+  if (this._showPromise === null) {
+    return promise.resolve();
+  }
 
-  this._hidePromise = waitPromise.then(() => {
+  
+  this._hidePromise = this._showPromise.then(() => {
     this._element.hidden = true;
 
     Services.prefs.setBoolPref("devtools.toolbar.visible", false);
@@ -487,6 +510,9 @@ DeveloperToolbar.prototype.hide = function () {
     this._telemetry.toolClosed("developertoolbar");
     this._notify(NOTIFICATIONS.HIDE);
 
+    
+    
+    this._showPromise = null;
     this._hidePromise = null;
   });
 
