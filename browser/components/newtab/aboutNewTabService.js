@@ -11,9 +11,7 @@ const {utils: Cu, interfaces: Ci} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
-                                  "resource:///modules/NewTabPrefsProvider.jsm");
+Cu.import("resource://gre/modules/Preferences.jsm");
 
 const LOCAL_NEWTAB_URL = "chrome://browser/content/newtab/newTab.xhtml";
 
@@ -25,7 +23,7 @@ const ABOUT_URL = "about:newtab";
 const PREF_ACTIVITY_STREAM_ENABLED = "browser.newtabpage.activity-stream.enabled";
 
 function AboutNewTabService() {
-  NewTabPrefsProvider.prefs.on(PREF_ACTIVITY_STREAM_ENABLED, this._handleToggleEvent.bind(this));
+  Preferences.observe(PREF_ACTIVITY_STREAM_ENABLED, this._handleToggleEvent.bind(this));
   this.toggleActivityStream(Services.prefs.getBoolPref(PREF_ACTIVITY_STREAM_ENABLED));
 }
 
@@ -75,8 +73,8 @@ AboutNewTabService.prototype = {
     service: true
   }],
 
-  _handleToggleEvent(prefName, stateEnabled, forceState) { 
-    if (this.toggleActivityStream(stateEnabled, forceState)) {
+  _handleToggleEvent(stateEnabled) {
+    if (this.toggleActivityStream(stateEnabled)) {
       Services.obs.notifyObservers(null, "newtab-url-changed", ABOUT_URL);
     }
   },
@@ -95,7 +93,7 @@ AboutNewTabService.prototype = {
 
 
 
-  toggleActivityStream(stateEnabled, forceState) {
+  toggleActivityStream(stateEnabled, forceState = false) {
 
     if (!forceState && (this.overridden || stateEnabled === this.activityStreamEnabled)) {
       

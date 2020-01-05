@@ -9,8 +9,6 @@ const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource:///modules/NewTabURL.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
-                                  "resource:///modules/NewTabPrefsProvider.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
@@ -34,11 +32,9 @@ add_task(function*() {
   Assert.equal(NewTabURL.get(), defaultURL, "Newtab URL should be the default");
 
   
-  NewTabPrefsProvider.prefs.init();
   Services.prefs.setBoolPref("browser.newtabpage.activity-stream.enabled", true);
   Assert.equal(NewTabURL.get(), "about:newtab", `Newtab URL should be about:newtab`);
   Assert.ok(!NewTabURL.overridden, "Newtab URL should not be overridden");
-  NewTabPrefsProvider.prefs.uninit();
 });
 
 function promiseNewtabURLNotification(aNewURL) {

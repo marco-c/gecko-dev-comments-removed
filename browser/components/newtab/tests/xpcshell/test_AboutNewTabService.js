@@ -11,9 +11,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "NewTabPrefsProvider",
-                                  "resource:///modules/NewTabPrefsProvider.jsm");
-
 XPCOMUtils.defineLazyServiceGetter(this, "aboutNewTabService",
                                    "@mozilla.org/browser/aboutnewtab-service;1",
                                    "nsIAboutNewTabService");
@@ -25,7 +22,6 @@ const DOWNLOADS_URL = "chrome://browser/content/downloads/contentAreaDownloadsVi
 function cleanup() {
   Services.prefs.setBoolPref("browser.newtabpage.activity-stream.enabled", false);
   aboutNewTabService.resetNewTabURL();
-  NewTabPrefsProvider.prefs.uninit();
 }
 
 do_register_cleanup(cleanup);
@@ -34,7 +30,6 @@ do_register_cleanup(cleanup);
 
 
 add_task(function* test_override_activity_stream_disabled() {
-  NewTabPrefsProvider.prefs.init();
   let notificationPromise;
   Services.prefs.setBoolPref("browser.newtabpage.activity-stream.enabled", false);
 
@@ -69,7 +64,6 @@ add_task(function* test_override_activity_stream_disabled() {
 });
 
 add_task(function* test_override_activity_stream_enabled() {
-  NewTabPrefsProvider.prefs.init();
   let notificationPromise;
   
   notificationPromise = nextChangeNotificationPromise("about:newtab");
@@ -105,7 +99,6 @@ add_task(function* test_updates() {
   Preferences.set("browser.newtabpage.activity-stream.enabled", true);
   aboutNewTabService.resetNewTabURL(); 
   let notificationPromise;
-  NewTabPrefsProvider.prefs.init();
 
   
   let testURL = "https://example.com/";
