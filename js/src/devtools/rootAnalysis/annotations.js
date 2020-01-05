@@ -223,6 +223,10 @@ var ignoreFunctions = {
     "EntryType* nsTHashtable<EntryType>::GetEntry(nsTHashtable<EntryType>::KeyType) const [with EntryType = nsBaseHashtableET<nsPtrHashKey<const mozilla::BlockingResourceBase>, nsAutoPtr<mozilla::DeadlockDetector<mozilla::BlockingResourceBase>::OrderingEntry> >; nsTHashtable<EntryType>::KeyType = const mozilla::BlockingResourceBase*]" : true,
 
     
+    "iJIT_IsProfilingActive" : true,
+    "iJIT_NotifyEvent": true,
+
+    
     "PR_GetCurrentThread" : true,
     "calloc" : true,
 };

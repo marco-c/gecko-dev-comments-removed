@@ -4,15 +4,54 @@
 
 
 
-#ifndef vtunewrapper_h
-#define vtunewrapper_h
+#ifndef vtune_vtunewrapper_h
+#define vtune_vtunewrapper_h
+
+#ifdef MOZ_VTUNE
 
 #include "vtune/jitprofiling.h"
 
+#include "jsgc.h"
+#include "jsscript.h"
+
+#include "jit/IonCode.h"
+#include "wasm/WasmCode.h"
+
+namespace js {
+namespace vtune {
+
+
+
+
 inline bool
-IsVTuneProfilingActive()
+IsProfilingActive()
 {
     return iJIT_IsProfilingActive() == iJIT_SAMPLING_ON;
 }
+
+
+uint32_t GenerateUniqueMethodID();
+
+void MarkStub(const js::jit::JitCode* code, const char* name);
+
+void MarkRegExp(const js::jit::JitCode* code, bool match_only);
+
+void MarkScript(const js::jit::JitCode* code,
+                const JSScript* script,
+                const char* module);
+
+void MarkWasm(const js::wasm::CodeSegment& cs,
+              const char* name,
+              void* start,
+              uintptr_t size);
+
+void UnmarkCode(const js::jit::JitCode* code);
+
+void UnmarkBytes(void* bytes, unsigned size);
+
+} 
+} 
+
+#endif 
 
 #endif 

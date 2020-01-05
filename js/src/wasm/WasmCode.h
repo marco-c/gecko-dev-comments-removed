@@ -60,6 +60,12 @@ class CodeSegment
     
     bool profilingEnabled_;
 
+  public:
+#ifdef MOZ_VTUNE
+    unsigned vtune_method_id_; 
+#endif
+
+  protected:
     CodeSegment() { PodZero(this); }
     template <class> friend struct js::MallocProvider;
 

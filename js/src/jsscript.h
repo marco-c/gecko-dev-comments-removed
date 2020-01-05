@@ -890,6 +890,14 @@ class JSScript : public js::gc::TenuredCell
     uint32_t        sourceStart_;
     uint32_t        sourceEnd_;
 
+#ifdef MOZ_VTUNE
+    
+    
+    uint32_t        vtuneMethodId_;
+    
+    uint32_t        __vtune_unused_padding_;
+#endif
+
     
     
     
@@ -1555,6 +1563,10 @@ class JSScript : public js::gc::TenuredCell
     bool mutedErrors() const { return scriptSource()->mutedErrors(); }
     const char* filename() const { return scriptSource()->filename(); }
     const char* maybeForwardedFilename() const { return maybeForwardedScriptSource()->filename(); }
+
+#ifdef MOZ_VTUNE
+    uint32_t vtuneMethodID() const { return vtuneMethodId_; }
+#endif
 
   public:
 

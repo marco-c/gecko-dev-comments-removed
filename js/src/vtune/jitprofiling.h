@@ -222,9 +222,6 @@
 
 
 
-
-
-
 typedef enum iJIT_jvm_event
 {
     iJVM_EVENT_TYPE_SHUTDOWN = 2,               
@@ -242,8 +239,8 @@ typedef enum iJIT_jvm_event
 
 
 
-
     iJVM_EVENT_TYPE_METHOD_UPDATE,   
+
 
 
 
@@ -264,32 +261,21 @@ typedef enum iJIT_jvm_event
 
 
 
-    
-    iJVM_EVENT_TYPE_ENTER_NIDS = 19,
-    iJVM_EVENT_TYPE_LEAVE_NIDS,
+    iJVM_EVENT_TYPE_METHOD_UPDATE_V2,
 
 
-    iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2  
+    iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V2 = 21, 
 
+
+
+
+
+    iJVM_EVENT_TYPE_METHOD_LOAD_FINISHED_V3       
 
 
 
 
 } iJIT_JVM_EVENT;
-
-
-
-typedef enum _iJIT_ModeFlags
-{
-    iJIT_NO_NOTIFICATIONS          = 0x0000,
-    iJIT_BE_NOTIFY_ON_LOAD         = 0x0001,
-    iJIT_BE_NOTIFY_ON_UNLOAD       = 0x0002,
-    iJIT_BE_NOTIFY_ON_METHOD_ENTRY = 0x0004,
-    iJIT_BE_NOTIFY_ON_METHOD_EXIT  = 0x0008
-
-} iJIT_ModeFlags;
-
-
 
 
 
@@ -301,54 +287,7 @@ typedef enum _iJIT_IsProfilingActiveFlags
 
     iJIT_SAMPLING_ON               = 0x0001,    
 
-
-
-    
-    iJIT_CALLGRAPH_ON              = 0x0002
-
-
 } iJIT_IsProfilingActiveFlags;
-
-
-
-typedef enum _iJDEnvironmentType
-{
-    iJDE_JittingAPI = 2
-
-} iJDEnvironmentType;
-
-typedef struct _iJIT_Method_Id
-{
-    unsigned int method_id;
-
-} *piJIT_Method_Id, iJIT_Method_Id;
-
-typedef struct _iJIT_Method_NIDS
-{
-    unsigned int method_id;     
-    unsigned int stack_id;      
-
-    char*  method_name;         
-
-} *piJIT_Method_NIDS, iJIT_Method_NIDS;
-
-
-typedef enum _iJIT_CodeType
-{
-    iJIT_CT_UNKNOWN = 0,
-    iJIT_CT_CODE,             
-    iJIT_CT_DATA,             
-    iJIT_CT_EOF
-} iJIT_CodeType;
-
-typedef struct _iJIT_Method_Update
-{
-    unsigned int method_id;
-    void* load_address;
-    unsigned int size;
-    iJIT_CodeType type;
-
-} *piJIT_Method_Update, iJIT_Method_Update;
 
 
 
@@ -385,10 +324,27 @@ typedef struct _LineNumberInfo
 
 
 
+typedef enum _iJIT_CodeArchitecture
+{
+    iJIT_CA_NATIVE = 0, 
+
+    iJIT_CA_32,         
+
+    iJIT_CA_64          
+
+} iJIT_CodeArchitecture;
+
+#pragma pack(push, 8)
+
+
+
+
+
+
+
 typedef struct _iJIT_Method_Load
 {
     unsigned int method_id; 
-
 
 
 
@@ -425,15 +381,7 @@ typedef struct _iJIT_Method_Load
 
     char* source_file_name; 
 
-    void* user_data; 
-
-    unsigned int user_data_size; 
-
-    iJDEnvironmentType  env; 
-
 } *piJIT_Method_Load, iJIT_Method_Load;
-
-#pragma pack(push, 8)
 
 
 
@@ -444,7 +392,6 @@ typedef struct _iJIT_Method_Load
 typedef struct _iJIT_Method_Load_V2
 {
     unsigned int method_id; 
-
 
 
 
@@ -485,7 +432,74 @@ typedef struct _iJIT_Method_Load_V2
 
 
 } *piJIT_Method_Load_V2, iJIT_Method_Load_V2;
-#pragma pack(pop)
+
+
+
+
+
+
+
+
+
+typedef struct _iJIT_Method_Load_V3
+{
+    unsigned int method_id; 
+
+
+
+
+
+
+
+
+    char* method_name; 
+
+
+
+    void* method_load_address; 
+
+
+
+    unsigned int method_size; 
+
+
+
+    unsigned int line_number_size; 
+
+
+    pLineNumberInfo line_number_table; 
+
+
+
+
+
+
+    char* class_file_name; 
+
+    char* source_file_name; 
+
+    char* module_name; 
+
+
+
+
+    iJIT_CodeArchitecture module_arch; 
+
+
+
+
+
+
+
+
+
+
+
+
+} *piJIT_Method_Load_V3, iJIT_Method_Load_V3;
+
+
+
 
 
 
@@ -493,7 +507,6 @@ typedef struct _iJIT_Method_Load_V2
 typedef struct _iJIT_Method_Inline_Load
 {
     unsigned int method_id; 
-
 
 
 
@@ -535,23 +548,105 @@ typedef struct _iJIT_Method_Inline_Load
 } *piJIT_Method_Inline_Load, iJIT_Method_Inline_Load;
 
 
+
+
+
+
+
+
+typedef enum _iJIT_SegmentType
+{
+    iJIT_CT_UNKNOWN = 0,
+
+    iJIT_CT_CODE,           
+
+    iJIT_CT_DATA,           
+
+
+
+
+    iJIT_CT_KEEP,           
+
+
+
+
+    iJIT_CT_EOF
+} iJIT_SegmentType;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _iJIT_Method_Update
+{
+    void* load_address;         
+
+    unsigned int size;          
+
+    iJIT_SegmentType type;      
+
+    const char* data_format;    
+
+
+
+
+} *piJIT_Method_Update, iJIT_Method_Update;
+
+
+
+#pragma pack(pop)
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef CDECL
+#ifndef JITAPI_CDECL
 #  if defined WIN32 || defined _WIN32
-#    define CDECL __cdecl
+#    define JITAPI_CDECL __cdecl
 #  else 
-#    if defined _M_X64 || defined _M_AMD64 || defined __x86_64__
-#      define CDECL
+#    if defined _M_IX86 || defined __i386__
+#      define JITAPI_CDECL __attribute__ ((cdecl))
 #    else  
-#      define CDECL __attribute__ ((cdecl))
+#      define JITAPI_CDECL
 #    endif 
 #  endif 
 #endif 
 
-#define JITAPI CDECL
+#define JITAPI JITAPI_CDECL
 
 
 
@@ -587,18 +682,7 @@ iJIT_IsProfilingActiveFlags JITAPI iJIT_IsProfilingActive(void);
 
 
 
-int JITAPI iJIT_NotifyEvent(iJIT_JVM_EVENT event_type, void* EventSpecificData);
-
-
-
-
-
-
-typedef void (*iJIT_ModeChangedEx)(void* UserData, iJIT_ModeFlags Flags);
-void JITAPI iJIT_RegisterCallbackEx(void* userdata,
-                                    iJIT_ModeChangedEx NewModeCallBackFuncEx);
-void JITAPI FinalizeThread(void);
-void JITAPI FinalizeProcess(void);
+int JITAPI iJIT_NotifyEvent(iJIT_JVM_EVENT event_type, void *EventSpecificData);
 
 #ifdef __cplusplus
 }
