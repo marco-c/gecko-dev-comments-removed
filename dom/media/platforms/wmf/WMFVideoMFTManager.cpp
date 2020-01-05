@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <winsdkver.h>
+#include <psapi.h>
 #include "WMFVideoMFTManager.h"
 #include "MediaDecoderReader.h"
 #include "gfxPrefs.h"
@@ -196,6 +197,17 @@ FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingC
   
   aDLLBlacklistingCache->mBlacklistPref = aBlacklist;
 
+  HANDLE hProcess = GetCurrentProcess();
+  mozilla::UniquePtr<HMODULE[]> hMods;
+  unsigned int modulesNum = 0;
+  if (hProcess != NULL) {
+    DWORD modulesSize;
+    EnumProcessModules(hProcess, nullptr, 0, &modulesSize);
+    modulesNum = modulesSize / sizeof(HMODULE);
+    hMods = mozilla::MakeUnique<HMODULE[]>(modulesNum);
+    EnumProcessModules(hProcess, hMods.get(), modulesNum * sizeof(HMODULE), &modulesSize);
+  }
+
   
   
   nsTArray<nsCString> dlls;
@@ -211,67 +223,91 @@ FindDXVABlacklistedDLL(StaticAutoPtr<D3DDLLBlacklistingCache>& aDLLBlacklistingC
 
     nameAndVersions[0].CompressWhitespace();
     NS_ConvertUTF8toUTF16 name(nameAndVersions[0]);
-    WCHAR systemPath[MAX_PATH + 1];
-    if (!ConstructSystem32Path(name.get(), systemPath, MAX_PATH + 1)) {
-      
-      continue;
-    }
 
-    DWORD zero;
-    DWORD infoSize = GetFileVersionInfoSizeW(systemPath, &zero);
-    if (infoSize == 0) {
-      
-      continue;
-    }
-    
-    auto infoData = MakeUnique<unsigned char[]>(infoSize);
-    VS_FIXEDFILEINFO *vInfo;
-    UINT vInfoLen;
-    if (!GetFileVersionInfoW(systemPath, 0, infoSize, infoData.get())
-        || !VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen)
-        || !vInfo) {
-      
-      continue;
-    }
+    for (unsigned int i = 0; i <= modulesNum; i++) {
+      WCHAR dllPath[MAX_PATH + 1];
 
-    nsTArray<nsCString> versions;
-    SplitAt(",", nameAndVersions[1], versions);
-    for (const auto& version : versions) {
-      nsTArray<nsCString> numberStrings;
-      SplitAt(".", version, numberStrings);
-      if (numberStrings.Length() != 4) {
-        NS_WARNING(nsPrintfCString("Skipping incorrect '%s' a.b.c.d version format",
-                                   aDLLBlacklistPrefName).get());
-        continue;
-      }
-      DWORD numbers[4];
-      nsresult errorCode = NS_OK;
-      for (int i = 0; i < 4; ++i) {
-        numberStrings[i].CompressWhitespace();
-        numbers[i] = DWORD(numberStrings[i].ToInteger(&errorCode));
-        if (NS_FAILED(errorCode)) {
-          break;
+      if (i < modulesNum) {
+        if (!GetModuleFileNameEx(hProcess, hMods[i], dllPath, sizeof(dllPath) / sizeof(WCHAR))) {
+          continue;
         }
-        if (numbers[i] > UINT16_MAX) {
-          errorCode = NS_ERROR_FAILURE;
-          break;
+
+        nsCOMPtr<nsIFile> file;
+        if (NS_WARN_IF(NS_FAILED(NS_NewLocalFile(nsDependentString(dllPath), false, getter_AddRefs(file))))) {
+          continue;
+        }
+
+        nsAutoString leafName;
+        if (NS_WARN_IF(NS_FAILED(file->GetLeafName(leafName)))) {
+          continue;
+        }
+
+        if (_wcsicmp(leafName.get(), name.get())) {
+          continue;
+        }
+      } else {
+        if (!ConstructSystem32Path(name.get(), dllPath, MAX_PATH + 1)) {
+          
+          continue;
         }
       }
 
-      if (NS_FAILED(errorCode)) {
-        NS_WARNING(nsPrintfCString("Skipping incorrect '%s' a.b.c.d version format",
-                                   aDLLBlacklistPrefName).get());
-        continue;
-      }
-
-      if (vInfo->dwFileVersionMS == ((numbers[0] << 16) | numbers[1])
-          && vInfo->dwFileVersionLS == ((numbers[2] << 16) | numbers[3])) {
+      DWORD zero;
+      DWORD infoSize = GetFileVersionInfoSizeW(dllPath, &zero);
+      if (infoSize == 0) {
         
-        aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
-        aDLLBlacklistingCache->mBlacklistedDLL.AppendPrintf(
-          "%s (%lu.%lu.%lu.%lu)",
-          nameAndVersions[0].get(), numbers[0], numbers[1], numbers[2], numbers[3]);
-        return aDLLBlacklistingCache->mBlacklistedDLL;
+        continue;
+      }
+      
+      auto infoData = MakeUnique<unsigned char[]>(infoSize);
+      VS_FIXEDFILEINFO *vInfo;
+      UINT vInfoLen;
+      if (!GetFileVersionInfoW(dllPath, 0, infoSize, infoData.get())
+          || !VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen)
+          || !vInfo) {
+        
+        continue;
+      }
+
+      nsTArray<nsCString> versions;
+      SplitAt(",", nameAndVersions[1], versions);
+      for (const auto& version : versions) {
+        nsTArray<nsCString> numberStrings;
+        SplitAt(".", version, numberStrings);
+        if (numberStrings.Length() != 4) {
+          NS_WARNING(nsPrintfCString("Skipping incorrect '%s' a.b.c.d version format",
+                                     aDLLBlacklistPrefName).get());
+          continue;
+        }
+        DWORD numbers[4];
+        nsresult errorCode = NS_OK;
+        for (int i = 0; i < 4; ++i) {
+          numberStrings[i].CompressWhitespace();
+          numbers[i] = DWORD(numberStrings[i].ToInteger(&errorCode));
+          if (NS_FAILED(errorCode)) {
+            break;
+          }
+          if (numbers[i] > UINT16_MAX) {
+            errorCode = NS_ERROR_FAILURE;
+            break;
+          }
+        }
+
+        if (NS_FAILED(errorCode)) {
+          NS_WARNING(nsPrintfCString("Skipping incorrect '%s' a.b.c.d version format",
+                                     aDLLBlacklistPrefName).get());
+          continue;
+        }
+
+        if (vInfo->dwFileVersionMS == ((numbers[0] << 16) | numbers[1])
+            && vInfo->dwFileVersionLS == ((numbers[2] << 16) | numbers[3])) {
+          
+          aDLLBlacklistingCache->mBlacklistedDLL.SetLength(0);
+          aDLLBlacklistingCache->mBlacklistedDLL.AppendPrintf(
+            "%s (%lu.%lu.%lu.%lu)",
+            nameAndVersions[0].get(), numbers[0], numbers[1], numbers[2], numbers[3]);
+          return aDLLBlacklistingCache->mBlacklistedDLL;
+        }
       }
     }
   }
