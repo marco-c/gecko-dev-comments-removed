@@ -458,16 +458,8 @@ class MOZ_STACK_CLASS TokenStream
     void addModifierException(ModifierException modifierException) {
 #ifdef DEBUG
         const Token& next = nextToken();
-
-        
-        
-        
-        
-        
-        if (next.modifierException == modifierException)
-            return;
-
-        if (next.modifierException == NoneIsOperand) {
+        if (next.modifierException == NoneIsOperand)
+        {
             
             
             MOZ_ASSERT(modifierException == OperandIsNone);
@@ -695,13 +687,6 @@ class MOZ_STACK_CLASS TokenStream
         if (!peekToken(&tt))
             return false;
         *endsExpr = isExprEnding[tt];
-        if (*endsExpr) {
-            
-            
-            
-            
-            addModifierException(OperandIsNone);
-        }
         return true;
     }
 

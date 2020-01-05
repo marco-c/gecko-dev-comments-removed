@@ -2596,12 +2596,17 @@ Parser<ParseHandler>::newFunction(HandleAtom atom, FunctionSyntaxKind kind,
     return fun;
 }
 
+
+
+
+
+
 template <typename ParseHandler>
 bool
-Parser<ParseHandler>::matchOrInsertSemicolon()
+Parser<ParseHandler>::matchOrInsertSemicolonHelper(TokenStream::Modifier modifier)
 {
     TokenKind tt = TOK_EOF;
-    if (!tokenStream.peekTokenSameLine(&tt, TokenStream::Operand))
+    if (!tokenStream.peekTokenSameLine(&tt, modifier))
         return false;
     if (tt != TOK_EOF && tt != TOK_EOL && tt != TOK_SEMI && tt != TOK_RC) {
         
@@ -2625,13 +2630,30 @@ Parser<ParseHandler>::matchOrInsertSemicolon()
         }
 
         
-        tokenStream.consumeKnownToken(tt, TokenStream::Operand);
+        tokenStream.consumeKnownToken(tt, modifier);
         error(JSMSG_SEMI_BEFORE_STMNT);
         return false;
     }
-
     bool matched;
-    return tokenStream.matchToken(&matched, TOK_SEMI, TokenStream::Operand);
+    if (!tokenStream.matchToken(&matched, TOK_SEMI, modifier))
+        return false;
+    if (!matched && modifier == TokenStream::None)
+        tokenStream.addModifierException(TokenStream::OperandIsNone);
+    return true;
+}
+
+template <typename ParseHandler>
+bool
+Parser<ParseHandler>::matchOrInsertSemicolonAfterExpression()
+{
+    return matchOrInsertSemicolonHelper(TokenStream::None);
+}
+
+template <typename ParseHandler>
+bool
+Parser<ParseHandler>::matchOrInsertSemicolonAfterNonExpression()
+{
+    return matchOrInsertSemicolonHelper(TokenStream::Operand);
 }
 
 template <typename ParseHandler>
@@ -2994,7 +3016,7 @@ Parser<FullParseHandler>::skipLazyInnerFunction(ParseNode* pn, FunctionSyntaxKin
     
     
     if (kind == Statement && funbox->isExprBody()) {
-        if (!matchOrInsertSemicolon())
+        if (!matchOrInsertSemicolonAfterExpression())
             return false;
     }
 #endif
@@ -3419,8 +3441,7 @@ Parser<ParseHandler>::functionFormalParametersAndBody(InHandling inHandling,
     if (tt != TOK_LC) {
         if ((funbox->isStarGenerator() && !funbox->isAsync()) || kind == Method ||
             kind == GetterNoExpressionClosure || kind == SetterNoExpressionClosure ||
-            IsConstructorKind(kind))
-        {
+            IsConstructorKind(kind)) {
             error(JSMSG_CURLY_BEFORE_BODY);
             return false;
         }
@@ -3473,7 +3494,7 @@ Parser<ParseHandler>::functionFormalParametersAndBody(InHandling inHandling,
         if (tokenStream.hadError())
             return false;
         funbox->bufEnd = pos().end;
-        if (kind == Statement && !matchOrInsertSemicolon())
+        if (kind == Statement && !matchOrInsertSemicolonAfterExpression())
             return false;
     }
 
@@ -4311,7 +4332,7 @@ Parser<ParseHandler>::declarationPattern(Node decl, DeclarationKind declKind, To
         }
     }
 
-    MUST_MATCH_TOKEN_MOD(TOK_ASSIGN, TokenStream::Operand, JSMSG_BAD_DESTRUCT_DECL);
+    MUST_MATCH_TOKEN(TOK_ASSIGN, JSMSG_BAD_DESTRUCT_DECL);
 
     Node init = assignExpr(forHeadKind ? InProhibited : InAllowed,
                            yieldHandling, TripledotProhibited);
@@ -4319,6 +4340,15 @@ Parser<ParseHandler>::declarationPattern(Node decl, DeclarationKind declKind, To
         return null();
 
     handler.checkAndSetIsDirectRHSAnonFunction(init);
+
+    if (forHeadKind) {
+        
+        
+        
+        
+        
+        tokenStream.addModifierException(TokenStream::OperandIsNone);
+    }
 
     return handler.newBinary(PNK_ASSIGN, pattern, init);
 }
@@ -4346,39 +4376,64 @@ Parser<ParseHandler>::initializerInNameDeclaration(Node decl, Node binding,
 
     handler.checkAndSetIsDirectRHSAnonFunction(initializer);
 
-    if (forHeadKind && initialDeclaration) {
-        bool isForIn, isForOf;
-        if (!matchInOrOf(&isForIn, &isForOf))
-            return false;
+    if (forHeadKind) {
+        if (initialDeclaration) {
+            bool isForIn, isForOf;
+            if (!matchInOrOf(&isForIn, &isForOf))
+                return false;
 
-        
-        
-        
-        if (isForOf) {
-            errorAt(initializerOffset, JSMSG_OF_AFTER_FOR_LOOP_DECL);
-            return false;
-        }
-
-        if (isForIn) {
             
             
             
-            if (DeclarationKindIsLexical(declKind)) {
-                errorAt(initializerOffset, JSMSG_IN_AFTER_LEXICAL_FOR_DECL);
+            if (isForOf) {
+                errorAt(initializerOffset, JSMSG_OF_AFTER_FOR_LOOP_DECL);
                 return false;
             }
 
-            
-            
-            *forHeadKind = PNK_FORIN;
-            if (!strictModeErrorAt(initializerOffset, JSMSG_INVALID_FOR_IN_DECL_WITH_INIT))
-                return false;
+            if (isForIn) {
+                
+                
+                
+                if (DeclarationKindIsLexical(declKind)) {
+                    errorAt(initializerOffset, JSMSG_IN_AFTER_LEXICAL_FOR_DECL);
+                    return false;
+                }
 
-            *forInOrOfExpression = expressionAfterForInOrOf(PNK_FORIN, yieldHandling);
-            if (!*forInOrOfExpression)
-                return false;
+                
+                
+                *forHeadKind = PNK_FORIN;
+                if (!strictModeErrorAt(initializerOffset, JSMSG_INVALID_FOR_IN_DECL_WITH_INIT))
+                    return false;
+
+                *forInOrOfExpression = expressionAfterForInOrOf(PNK_FORIN, yieldHandling);
+                if (!*forInOrOfExpression)
+                    return false;
+            } else {
+                *forHeadKind = PNK_FORHEAD;
+            }
         } else {
-            *forHeadKind = PNK_FORHEAD;
+            MOZ_ASSERT(*forHeadKind == PNK_FORHEAD);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TokenKind ignored;
+            if (!tokenStream.peekToken(&ignored))
+                return false;
+        }
+
+        if (*forHeadKind == PNK_FORHEAD) {
+            
+            
+            
+            
+            tokenStream.addModifierException(TokenStream::OperandIsNone);
         }
     }
 
@@ -4425,6 +4480,8 @@ Parser<ParseHandler>::declarationName(Node decl, DeclarationKind declKind, Token
             return null();
         }
     } else {
+        tokenStream.addModifierException(TokenStream::NoneIsOperand);
+
         if (initialDeclaration && forHeadKind) {
             bool isForIn, isForOf;
             if (!matchInOrOf(&isForIn, &isForOf))
@@ -4522,7 +4579,7 @@ Parser<ParseHandler>::declarationList(YieldHandling yieldHandling,
 
         initialDeclaration = false;
 
-        if (!tokenStream.matchToken(&matched, TOK_COMMA, TokenStream::Operand))
+        if (!tokenStream.matchToken(&matched, TOK_COMMA))
             return null();
     } while (matched);
 
@@ -4545,7 +4602,7 @@ Parser<ParseHandler>::lexicalDeclaration(YieldHandling yieldHandling, bool isCon
 
 
     Node decl = declarationList(yieldHandling, isConst ? PNK_CONST : PNK_LET);
-    if (!decl || !matchOrInsertSemicolon())
+    if (!decl || !matchOrInsertSemicolonAfterExpression())
         return null();
 
     return decl;
@@ -4786,7 +4843,7 @@ Parser<FullParseHandler>::importDeclaration()
     if (!moduleSpec)
         return null();
 
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterNonExpression())
         return null();
 
     ParseNode* node =
@@ -4945,7 +5002,7 @@ Parser<FullParseHandler>::exportDeclaration()
             if (!moduleSpec)
                 return null();
 
-            if (!matchOrInsertSemicolon())
+            if (!matchOrInsertSemicolonAfterNonExpression())
                 return null();
 
             ParseNode* node = handler.newExportFromDeclaration(begin, kid, moduleSpec);
@@ -4957,7 +5014,7 @@ Parser<FullParseHandler>::exportDeclaration()
 
         tokenStream.ungetToken();
 
-        if (!matchOrInsertSemicolon())
+        if (!matchOrInsertSemicolonAfterNonExpression())
             return null();
         break;
       }
@@ -4991,7 +5048,7 @@ Parser<FullParseHandler>::exportDeclaration()
         if (!moduleSpec)
             return null();
 
-        if (!matchOrInsertSemicolon())
+        if (!matchOrInsertSemicolonAfterNonExpression())
             return null();
 
         ParseNode* node = handler.newExportFromDeclaration(begin, kid, moduleSpec);
@@ -5027,7 +5084,7 @@ Parser<FullParseHandler>::exportDeclaration()
         kid = declarationList(YieldIsName, PNK_VAR);
         if (!kid)
             return null();
-        if (!matchOrInsertSemicolon())
+        if (!matchOrInsertSemicolonAfterExpression())
             return null();
         if (!checkExportedNamesForDeclaration(kid))
             return null();
@@ -5080,7 +5137,7 @@ Parser<FullParseHandler>::exportDeclaration()
             kid = assignExpr(InAllowed, YieldIsKeyword, TripledotProhibited);
             if (!kid)
                 return null();
-            if (!matchOrInsertSemicolon())
+            if (!matchOrInsertSemicolonAfterExpression())
                 return null();
             break;
           }
@@ -5145,7 +5202,7 @@ Parser<ParseHandler>::expressionStatement(YieldHandling yieldHandling, InvokedPr
                         nullptr, invoked);
     if (!pnexpr)
         return null();
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterExpression())
         return null();
     return handler.newExprStatement(pnexpr, pos().end);
 }
@@ -5336,7 +5393,7 @@ bool
 Parser<ParseHandler>::matchInOrOf(bool* isForInp, bool* isForOfp)
 {
     TokenKind tt;
-    if (!tokenStream.getToken(&tt, TokenStream::Operand))
+    if (!tokenStream.getToken(&tt))
         return false;
 
     *isForInp = tt == TOK_IN;
@@ -5450,11 +5507,13 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
 
     
     
+    
+    
     if (!isForIn && !isForOf) {
         if (!possibleError.checkForExpressionError())
             return false;
-
         *forHeadKind = PNK_FORHEAD;
+        tokenStream.addModifierException(TokenStream::OperandIsNone);
         return true;
     }
 
@@ -5835,7 +5894,7 @@ Parser<ParseHandler>::continueStatement(YieldHandling yieldHandling)
         return null();
     }
 
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterNonExpression())
         return null();
 
     return handler.newContinueStatement(label, TokenPos(begin, pos().end));
@@ -5875,7 +5934,7 @@ Parser<ParseHandler>::breakStatement(YieldHandling yieldHandling)
         }
     }
 
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterNonExpression())
         return null();
 
     return handler.newBreakStatement(label, TokenPos(begin, pos().end));
@@ -5915,10 +5974,10 @@ Parser<ParseHandler>::returnStatement(YieldHandling yieldHandling)
     }
 
     if (exprNode) {
-        if (!matchOrInsertSemicolon())
+        if (!matchOrInsertSemicolonAfterExpression())
             return null();
     } else {
-        if (!matchOrInsertSemicolon())
+        if (!matchOrInsertSemicolonAfterNonExpression())
             return null();
     }
 
@@ -6216,7 +6275,7 @@ Parser<ParseHandler>::throwStatement(YieldHandling yieldHandling)
     if (!throwExpr)
         return null();
 
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterExpression())
         return null();
 
     return handler.newThrowStatement(throwExpr, TokenPos(begin, pos().end));
@@ -6443,7 +6502,7 @@ Parser<ParseHandler>::debuggerStatement()
 {
     TokenPos p;
     p.begin = pos().begin;
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterNonExpression())
         return null();
     p.end = pos().end;
 
@@ -6750,7 +6809,7 @@ Parser<ParseHandler>::variableStatement(YieldHandling yieldHandling)
     Node vars = declarationList(yieldHandling, PNK_VAR);
     if (!vars)
         return null();
-    if (!matchOrInsertSemicolon())
+    if (!matchOrInsertSemicolonAfterExpression())
         return null();
     return vars;
 }
@@ -7155,7 +7214,7 @@ Parser<ParseHandler>::expr(InHandling inHandling, YieldHandling yieldHandling,
         return null();
 
     bool matched;
-    if (!tokenStream.matchToken(&matched, TOK_COMMA, TokenStream::Operand))
+    if (!tokenStream.matchToken(&matched, TOK_COMMA))
         return null();
     if (!matched)
         return pn;
@@ -7210,12 +7269,11 @@ Parser<ParseHandler>::expr(InHandling inHandling, YieldHandling yieldHandling,
 
         handler.addList(seq, pn);
 
-        if (!tokenStream.matchToken(&matched, TOK_COMMA, TokenStream::Operand))
+        if (!tokenStream.matchToken(&matched, TOK_COMMA))
             return null();
         if (!matched)
             break;
     }
-
     return seq;
 }
 
@@ -7305,10 +7363,10 @@ Precedence(ParseNodeKind pnk) {
 
 template <typename ParseHandler>
 MOZ_ALWAYS_INLINE typename ParseHandler::Node
-Parser<ParseHandler>::orExpr(InHandling inHandling, YieldHandling yieldHandling,
-                             TripledotHandling tripledotHandling,
-                             PossibleError* possibleError,
-                             InvokedPrediction invoked )
+Parser<ParseHandler>::orExpr1(InHandling inHandling, YieldHandling yieldHandling,
+                              TripledotHandling tripledotHandling,
+                              PossibleError* possibleError,
+                              InvokedPrediction invoked )
 {
     
     
@@ -7322,12 +7380,12 @@ Parser<ParseHandler>::orExpr(InHandling inHandling, YieldHandling yieldHandling,
     for (;;) {
         pn = unaryExpr(yieldHandling, tripledotHandling, possibleError, invoked);
         if (!pn)
-            return null();
+            return pn;
 
         
         
         TokenKind tok;
-        if (!tokenStream.getToken(&tok, TokenStream::None))
+        if (!tokenStream.getToken(&tok))
             return null();
 
         ParseNodeKind pnk;
@@ -7363,7 +7421,7 @@ Parser<ParseHandler>::orExpr(InHandling inHandling, YieldHandling yieldHandling,
             JSOp combiningOp = BinaryOpParseNodeKindToJSOp(combiningPnk);
             pn = handler.appendOrCreateList(combiningPnk, nodeStack[depth], pn, pc, combiningOp);
             if (!pn)
-                return null();
+                return pn;
         }
 
         if (pnk == PNK_LIMIT)
@@ -7375,45 +7433,36 @@ Parser<ParseHandler>::orExpr(InHandling inHandling, YieldHandling yieldHandling,
         MOZ_ASSERT(depth <= PRECEDENCE_CLASSES);
     }
 
-    
-    
-    
-    tokenStream.ungetToken();
-    tokenStream.addModifierException(TokenStream::OperandIsNone);
-
     MOZ_ASSERT(depth == 0);
     return pn;
 }
 
 template <typename ParseHandler>
 MOZ_ALWAYS_INLINE typename ParseHandler::Node
-Parser<ParseHandler>::condExpr(InHandling inHandling, YieldHandling yieldHandling,
-                               TripledotHandling tripledotHandling,
-                               PossibleError* possibleError,
-                               InvokedPrediction invoked )
+Parser<ParseHandler>::condExpr1(InHandling inHandling, YieldHandling yieldHandling,
+                                TripledotHandling tripledotHandling,
+                                PossibleError* possibleError,
+                                InvokedPrediction invoked )
 {
-    Node condition = orExpr(inHandling, yieldHandling, tripledotHandling, possibleError, invoked);
-    if (!condition)
-        return null();
+    Node condition = orExpr1(inHandling, yieldHandling, tripledotHandling, possibleError, invoked);
 
-    TokenKind next;
-    if (!tokenStream.peekToken(&next, TokenStream::Operand))
-        return null();
-    if (next != TOK_HOOK)
+    if (!condition || !tokenStream.isCurrentTokenType(TOK_HOOK))
         return condition;
-
-    tokenStream.consumeKnownToken(TOK_HOOK, TokenStream::Operand);
 
     Node thenExpr = assignExpr(InAllowed, yieldHandling, TripledotProhibited);
     if (!thenExpr)
         return null();
 
-    MUST_MATCH_TOKEN_MOD(TOK_COLON, TokenStream::Operand, JSMSG_COLON_IN_COND);
+    MUST_MATCH_TOKEN(TOK_COLON, JSMSG_COLON_IN_COND);
 
     Node elseExpr = assignExpr(inHandling, yieldHandling, TripledotProhibited);
     if (!elseExpr)
         return null();
 
+    
+    TokenKind ignored;
+    if (!tokenStream.getToken(&ignored))
+        return null();
     return handler.newConditional(condition, thenExpr, elseExpr);
 }
 
@@ -7521,6 +7570,7 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
         MOZ_ASSERT(tokenStream.currentName() == context->names().async);
         MOZ_ASSERT(!tokenStream.currentToken().nameContainsEscape());
 
+        TokenKind tt;
         if (!tokenStream.getToken(&tt))
             return null();
         MOZ_ASSERT(tt == TOK_NAME || tt == TOK_YIELD);
@@ -7530,7 +7580,7 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
         if (!name)
             return null();
 
-        if (!tokenStream.getToken(&tt, TokenStream::Operand))
+        if (!tokenStream.getToken(&tt))
             return null();
         if (tt != TOK_ARROW) {
             error(JSMSG_UNEXPECTED_TOKEN, "'=>' after argument list", TokenKindToDesc(tt));
@@ -7538,17 +7588,15 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
             return null();
         }
     } else {
-        lhs = condExpr(inHandling, yieldHandling, tripledotHandling, &possibleErrorInner, invoked);
-        if (!lhs)
+        lhs = condExpr1(inHandling, yieldHandling, tripledotHandling, &possibleErrorInner, invoked);
+        if (!lhs) {
             return null();
-
-        if (!tokenStream.getToken(&tt, TokenStream::Operand))
-            return null();
+        }
     }
 
     ParseNodeKind kind;
     JSOp op;
-    switch (tt) {
+    switch (tokenStream.currentToken().type) {
       case TOK_ASSIGN:       kind = PNK_ASSIGN;       op = JSOP_NOP;    break;
       case TOK_ADDASSIGN:    kind = PNK_ADDASSIGN;    op = JSOP_ADD;    break;
       case TOK_SUBASSIGN:    kind = PNK_SUBASSIGN;    op = JSOP_SUB;    break;
@@ -7564,10 +7612,11 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
       case TOK_POWASSIGN:    kind = PNK_POWASSIGN;    op = JSOP_POW;    break;
 
       case TOK_ARROW: {
+
         
         tokenStream.ungetToken();
         TokenKind next;
-        if (!tokenStream.peekTokenSameLine(&next, TokenStream::Operand))
+        if (!tokenStream.peekTokenSameLine(&next))
             return null();
         MOZ_ASSERT(next == TOK_ARROW || next == TOK_EOL);
 
@@ -7575,6 +7624,13 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
             error(JSMSG_LINE_BREAK_BEFORE_ARROW);
             return null();
         }
+        tokenStream.consumeKnownToken(TOK_ARROW);
+
+        bool isBlock = false;
+        if (!tokenStream.peekToken(&next, TokenStream::Operand))
+            return null();
+        if (next == TOK_LC)
+            isBlock = true;
 
         tokenStream.seek(start);
 
@@ -7609,8 +7665,42 @@ Parser<ParseHandler>::assignExpr(InHandling inHandling, YieldHandling yieldHandl
         if (!pn)
             return null();
 
-        return functionDefinition(pn, inHandling, yieldHandling, nullptr, Arrow, generatorKind,
-                                  asyncKind);
+        Node arrowFunc = functionDefinition(pn, inHandling, yieldHandling, nullptr,
+                                            Arrow, generatorKind, asyncKind);
+        if (!arrowFunc)
+            return null();
+
+        if (isBlock) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TokenKind ignored;
+            if (!tokenStream.peekToken(&ignored, TokenStream::Operand))
+                return null();
+            tokenStream.addModifierException(TokenStream::NoneIsOperand);
+        }
+        return arrowFunc;
       }
 
       default:
@@ -7929,7 +8019,7 @@ Parser<ParseHandler>::generatorComprehensionLambda(unsigned begin)
     if (!comp)
         return null();
 
-    MUST_MATCH_TOKEN_MOD(TOK_RP, TokenStream::Operand, JSMSG_PAREN_IN_PAREN);
+    MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_IN_PAREN);
 
     handler.setBeginPosition(comp, begin);
     handler.setEndPosition(comp, pos().end);
@@ -7994,7 +8084,7 @@ Parser<ParseHandler>::comprehensionFor(GeneratorKind comprehensionKind)
     if (!rhs)
         return null();
 
-    MUST_MATCH_TOKEN_MOD(TOK_RP, TokenStream::Operand, JSMSG_PAREN_AFTER_FOR_OF_ITERABLE);
+    MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_AFTER_FOR_OF_ITERABLE);
 
     TokenPos headPos(begin, pos().end);
 
@@ -8043,7 +8133,7 @@ Parser<ParseHandler>::comprehensionIf(GeneratorKind comprehensionKind)
     Node cond = assignExpr(InAllowed, YieldIsKeyword, TripledotProhibited);
     if (!cond)
         return null();
-    MUST_MATCH_TOKEN_MOD(TOK_RP, TokenStream::Operand, JSMSG_PAREN_AFTER_COND);
+    MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_AFTER_COND);
 
     
     if (handler.isUnparenthesizedAssignment(cond)) {
@@ -8123,7 +8213,7 @@ Parser<ParseHandler>::arrayComprehension(uint32_t begin)
     if (!inner)
         return null();
 
-    MUST_MATCH_TOKEN_MOD(TOK_RB, TokenStream::Operand, JSMSG_BRACKET_AFTER_ARRAY_COMPREHENSION);
+    MUST_MATCH_TOKEN(TOK_RB, JSMSG_BRACKET_AFTER_ARRAY_COMPREHENSION);
 
     Node comp = handler.newList(PNK_ARRAYCOMP, inner);
     if (!comp)
@@ -8679,7 +8769,9 @@ Parser<ParseHandler>::arrayInitializer(YieldHandling yieldHandling, PossibleErro
     } else {
         tokenStream.ungetToken();
 
-        for (uint32_t index = 0; ; index++) {
+        uint32_t index = 0;
+        TokenStream::Modifier modifier = TokenStream::Operand;
+        for (; ; index++) {
             if (index >= NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
                 error(JSMSG_ARRAY_INIT_TOO_BIG);
                 return null();
@@ -8695,10 +8787,7 @@ Parser<ParseHandler>::arrayInitializer(YieldHandling yieldHandling, PossibleErro
                 tokenStream.consumeKnownToken(TOK_COMMA, TokenStream::Operand);
                 if (!handler.addElision(literal, pos()))
                     return null();
-                continue;
-            }
-
-            if (tt == TOK_TRIPLEDOT) {
+            } else if (tt == TOK_TRIPLEDOT) {
                 tokenStream.consumeKnownToken(TOK_TRIPLEDOT, TokenStream::Operand);
                 uint32_t begin = pos().begin;
                 Node inner = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
@@ -8717,19 +8806,22 @@ Parser<ParseHandler>::arrayInitializer(YieldHandling yieldHandling, PossibleErro
                 handler.addArrayElement(literal, element);
             }
 
-            bool matched;
-            if (!tokenStream.matchToken(&matched, TOK_COMMA, TokenStream::Operand))
-                return null();
-            if (!matched)
-                break;
-
-            if (tt == TOK_TRIPLEDOT && possibleError)
-                possibleError->setPendingDestructuringErrorAt(pos(), JSMSG_REST_WITH_COMMA);
+            if (tt != TOK_COMMA) {
+                
+                bool matched;
+                if (!tokenStream.matchToken(&matched, TOK_COMMA))
+                    return null();
+                if (!matched) {
+                    modifier = TokenStream::None;
+                    break;
+                }
+                if (tt == TOK_TRIPLEDOT && possibleError)
+                    possibleError->setPendingDestructuringErrorAt(pos(), JSMSG_REST_WITH_COMMA);
+            }
         }
 
-        MUST_MATCH_TOKEN_MOD(TOK_RB, TokenStream::Operand, JSMSG_BRACKET_AFTER_LIST);
+        MUST_MATCH_TOKEN_MOD(TOK_RB, modifier, JSMSG_BRACKET_AFTER_LIST);
     }
-
     handler.setEndPosition(literal, pos().end);
     return literal;
 }
@@ -9293,7 +9385,7 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
         if (next == TOK_RP) {
             
             
-            tokenStream.consumeKnownToken(TOK_RP, TokenStream::Operand);
+            tokenStream.consumeKnownToken(next, TokenStream::Operand);
 
             if (!tokenStream.peekToken(&next))
                 return null();
@@ -9318,7 +9410,7 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
         Node expr = exprInParens(InAllowed, yieldHandling, TripledotAllowed, possibleError);
         if (!expr)
             return null();
-        MUST_MATCH_TOKEN_MOD(TOK_RP, TokenStream::Operand, JSMSG_PAREN_IN_PAREN);
+        MUST_MATCH_TOKEN(TOK_RP, JSMSG_PAREN_IN_PAREN);
         handler.setEndPosition(expr, pos().end);
         return handler.parenthesize(expr);
       }
