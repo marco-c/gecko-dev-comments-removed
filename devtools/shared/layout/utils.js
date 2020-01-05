@@ -732,9 +732,9 @@ function getWindowFor(node) {
 
 
 
-function loadSheet(window, url, type = "author") {
+function loadSheet(window, url, type = "agent") {
   if (!(type in SHEET_TYPE)) {
-    type = "author";
+    type = "agent";
   }
 
   let windowUtils = utilsFor(window);
@@ -754,9 +754,9 @@ exports.loadSheet = loadSheet;
 
 
 
-function removeSheet(window, url, type = "author") {
+function removeSheet(window, url, type = "agent") {
   if (!(type in SHEET_TYPE)) {
-    type = "author";
+    type = "agent";
   }
 
   let windowUtils = utilsFor(window);

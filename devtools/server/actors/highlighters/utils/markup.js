@@ -104,20 +104,6 @@ exports.isXUL = isXUL;
 
 
 
-var installedHelperSheets = new WeakSet();
-
-function installHelperSheet(win, url = STYLESHEET_URI, type = "agent") {
-  if (installedHelperSheets.has(win.document)) {
-    return;
-  }
-  loadSheet(win, url, type);
-  installedHelperSheets.add(win.document);
-}
-exports.installHelperSheet = installHelperSheet;
-
-
-
-
 
 
 
@@ -275,7 +261,7 @@ CanvasFrameAnonymousContentHelper.prototype = {
     
     
     
-    installHelperSheet(this.highlighterEnv.window);
+    loadSheet(this.highlighterEnv.window, STYLESHEET_URI);
 
     let node = this.nodeBuilder();
 
