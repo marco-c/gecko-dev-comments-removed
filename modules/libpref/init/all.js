@@ -2577,9 +2577,6 @@ pref("layout.css.convertFromNode.enabled", true);
 pref("layout.css.text-align-unsafe-value.enabled", false);
 
 
-pref("layout.css.text-justify.enabled", false);
-
-
 
 #if defined(MOZ_B2G) || !defined(RELEASE_OR_BETA)
 pref("layout.css.float-logical-values.enabled", true);
@@ -4493,6 +4490,10 @@ pref("image.mem.discardable", true);
 
 
 
+pref("image.mem.animated.discardable", false);
+
+
+
 pref("image.mem.shared", false);
 
 
@@ -4791,8 +4792,6 @@ pref("extensions.webextensions.keepStorageOnUninstall", false);
 pref("extensions.webextensions.keepUuidOnUninstall", false);
 
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
-
-pref("extensions.webextensions.themes.enabled", false);
 pref("extensions.webextensions.remote", false);
 
 
