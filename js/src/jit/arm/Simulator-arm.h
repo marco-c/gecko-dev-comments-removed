@@ -116,29 +116,6 @@ class Simulator
         return Simulator::Current()->stackLimit();
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static void disassemble(SimInstruction* instr, size_t n);
-
-    
-    
-    void disasm(SimInstruction* instr);
-
-    
-    
-    void disasm(SimInstruction* instr, size_t n);
-
-    
-    
-    void disasm(SimInstruction* instr, size_t m, size_t n);
-
     uintptr_t* addressOfStackLimit();
 
     
