@@ -25,10 +25,7 @@ function clickStepOut(dbg) {
 
 
 add_task(function* () {
-  const dbg = yield initDebugger(
-    "doc-debugger-statements.html",
-    "debugger-statements.html"
-  );
+  const dbg = yield initDebugger("doc-debugger-statements.html");
 
   yield reload(dbg);
   yield waitForPaused(dbg);
