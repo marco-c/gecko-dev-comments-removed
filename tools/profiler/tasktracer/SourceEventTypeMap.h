@@ -2,6 +2,10 @@
 
 
 
+#ifndef GECKO_TASK_TRACER_H
+#error "Don't include this file directly"
+#endif
+
 SOURCE_EVENT_NAME(Unknown)
 SOURCE_EVENT_NAME(Touch)
 SOURCE_EVENT_NAME(Mouse)
