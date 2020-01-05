@@ -51,6 +51,12 @@ impl HTMLTableCellElementMethods for HTMLTableCellElement {
     make_uint_setter!(SetColSpan, "colspan", DEFAULT_COLSPAN);
 
     
+    make_getter!(BgColor);
+
+    
+    make_legacy_color_setter!(SetBgColor, "bgcolor");
+
+    
     fn CellIndex(&self) -> i32 {
         let self_node = self.upcast::<Node>();
 
