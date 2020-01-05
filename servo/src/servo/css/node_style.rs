@@ -10,11 +10,11 @@ use newcss::complete::CompleteStyle;
 
 
 pub trait StyledNode {
-    fn style(&self) -> CompleteStyle<'self>;
+    fn style<'a>(&'a self) -> CompleteStyle<'a>;
 }
 
 impl StyledNode for AbstractNode {
-    fn style(&self) -> CompleteStyle<'self> {
+    fn style<'a>(&'a self) -> CompleteStyle<'a> {
         assert!(self.is_element()); 
         let results = self.get_css_select_results();
         results.computed_style()
