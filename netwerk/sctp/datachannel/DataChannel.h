@@ -255,7 +255,7 @@ private:
 #endif
 
   
-  static void ReleaseTransportFlow(RefPtr<TransportFlow> aFlow) {}
+  static void ReleaseTransportFlow(const RefPtr<TransportFlow>& aFlow) {}
 
   
   
