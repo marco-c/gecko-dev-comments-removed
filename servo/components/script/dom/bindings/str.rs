@@ -157,3 +157,7 @@ impl FromStr for ByteString {
         Ok(ByteString::new(s.to_owned().into_bytes()))
     }
 }
+
+
+
+pub struct USVString(pub String);

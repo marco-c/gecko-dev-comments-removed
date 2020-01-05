@@ -2,7 +2,8 @@
 
 
 
-use util::str::DOMString;
+use dom::bindings::str::USVString;
+
 use url::Url;
 
 use std::borrow::ToOwned;
@@ -10,24 +11,24 @@ use std::borrow::ToOwned;
 pub struct UrlHelper;
 
 impl UrlHelper {
-    pub fn Href(url: &Url) -> DOMString {
-        url.serialize()
+    pub fn Href(url: &Url) -> USVString {
+        USVString(url.serialize())
     }
 
-    pub fn Search(url: &Url) -> DOMString {
-        match url.query {
+    pub fn Search(url: &Url) -> USVString {
+        USVString(match url.query {
             None => "".to_owned(),
             Some(ref query) if query.as_slice() == "" => "".to_owned(),
             Some(ref query) => format!("?{}", query)
-        }
+        })
     }
 
-    pub fn Hash(url: &Url) -> DOMString {
-        match url.fragment {
+    pub fn Hash(url: &Url) -> USVString {
+        USVString(match url.fragment {
             None => "".to_owned(),
             Some(ref hash) if hash.as_slice() == "" => "".to_owned(),
             Some(ref hash) => format!("#{}", hash)
-        }
+        })
     }
 
     
