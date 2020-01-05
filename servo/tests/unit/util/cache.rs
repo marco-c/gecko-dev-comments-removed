@@ -26,7 +26,7 @@ fn test_lru_cache() {
     let four = Cell::new("four");
 
     
-    let mut cache: LRUCache<usize,Cell<&str>> = LRUCache::new(2); 
+    let mut cache: LRUCache<usize, Cell<&str>> = LRUCache::new(2); 
     cache.insert(1, one);    
     cache.insert(2, two);    
     cache.insert(3, three);  

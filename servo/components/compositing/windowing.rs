@@ -75,7 +75,7 @@ pub enum WindowEvent {
 }
 
 impl Debug for WindowEvent {
-    fn fmt(&self, f: &mut Formatter) -> Result<(),Error> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match *self {
             WindowEvent::Idle => write!(f, "Idle"),
             WindowEvent::Refresh => write!(f, "Refresh"),
@@ -130,7 +130,7 @@ pub trait WindowMethods {
     
     
     fn create_compositor_channel(_: &Option<Rc<Self>>)
-                                 -> (Box<CompositorProxy+Send>, Box<CompositorReceiver>);
+                                 -> (Box<CompositorProxy + Send>, Box<CompositorReceiver>);
 
     
     

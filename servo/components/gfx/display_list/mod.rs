@@ -471,11 +471,11 @@ impl StackingContext {
                     mut point: Point2D<Au>,
                     result: &mut Vec<DisplayItemMetadata>,
                     topmost_only: bool) {
-        fn hit_test_in_list<'a,I>(point: Point2D<Au>,
-                                  result: &mut Vec<DisplayItemMetadata>,
-                                  topmost_only: bool,
-                                  iterator: I)
-                                  where I: Iterator<Item=&'a DisplayItem> {
+        fn hit_test_in_list<'a, I>(point: Point2D<Au>,
+                                   result: &mut Vec<DisplayItemMetadata>,
+                                   topmost_only: bool,
+                                   iterator: I)
+                                   where I: Iterator<Item=&'a DisplayItem> {
             for item in iterator {
                 
                 
@@ -1016,7 +1016,7 @@ pub enum BoxShadowClipMode {
 
 pub enum DisplayItemIterator<'a> {
     Empty,
-    Parent(linked_list::Iter<'a,DisplayItem>),
+    Parent(linked_list::Iter<'a, DisplayItem>),
 }
 
 impl<'a> Iterator for DisplayItemIterator<'a> {

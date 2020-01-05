@@ -32,14 +32,14 @@ pub trait PresentationalHintSynthesis {
     
     
     
-    fn synthesize_presentational_hints_for_legacy_attributes<E,V>(
+    fn synthesize_presentational_hints_for_legacy_attributes<E, V>(
         &self, element: &E, matching_rules_list: &mut V, shareable: &mut bool)
             where E: Element + TElementAttributes,
                   V: VecLike<DeclarationBlock<Vec<PropertyDeclaration>>>;
 }
 
 impl PresentationalHintSynthesis for Stylist {
-    fn synthesize_presentational_hints_for_legacy_attributes<E,V>(
+    fn synthesize_presentational_hints_for_legacy_attributes<E, V>(
         &self, element: &E, matching_rules_list: &mut V, shareable: &mut bool)
              where E: Element + TElementAttributes,
                    V: VecLike<DeclarationBlock<Vec<PropertyDeclaration>>> {

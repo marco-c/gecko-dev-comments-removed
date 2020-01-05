@@ -2,7 +2,7 @@
 
 
 
-pub static PUB_DOMAINS : [&'static str; 5953] =  [
+pub static PUB_DOMAINS: [&'static str; 5953] =  [
 "com.ac",
 "edu.ac",
 "gov.ac",

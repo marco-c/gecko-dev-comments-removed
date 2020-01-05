@@ -1446,7 +1446,7 @@ impl Fragment {
 
     
     
-    fn calculate_split_position_using_breaking_strategy<'a,I>(
+    fn calculate_split_position_using_breaking_strategy<'a, I>(
             &self,
             slice_iterator: I,
             max_inline_size: Au,

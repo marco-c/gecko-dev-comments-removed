@@ -3,8 +3,8 @@
 
 
 use euclid::{Size2D, Point2D, SideOffsets2D, Rect};
-use util::logical_geometry::{WritingMode, LogicalSize, LogicalPoint, LogicalMargin, LogicalRect,
-                             FLAG_RTL, FLAG_VERTICAL, FLAG_VERTICAL_LR, FLAG_SIDEWAYS_LEFT};
+use util::logical_geometry::{WritingMode, LogicalSize, LogicalPoint, LogicalMargin, LogicalRect};
+use util::logical_geometry::{FLAG_RTL, FLAG_VERTICAL, FLAG_VERTICAL_LR, FLAG_SIDEWAYS_LEFT};
 
 #[cfg(test)]
 fn modes() -> [WritingMode; 10] {

@@ -86,8 +86,8 @@ impl Actor + Send {
 
 
 pub struct ActorRegistry {
-    actors: HashMap<String, Box<Actor+Send>>,
-    new_actors: RefCell<Vec<Box<Actor+Send>>>,
+    actors: HashMap<String, Box<Actor + Send>>,
+    new_actors: RefCell<Vec<Box<Actor + Send>>>,
     old_actors: RefCell<Vec<String>>,
     script_actors: RefCell<HashMap<String, String>>,
     shareable: Option<Arc<Mutex<ActorRegistry>>>,
@@ -167,11 +167,11 @@ impl ActorRegistry {
     }
 
     
-    pub fn register(&mut self, actor: Box<Actor+Send>) {
+    pub fn register(&mut self, actor: Box<Actor + Send>) {
         self.actors.insert(actor.name().to_string(), actor);
     }
 
-    pub fn register_later(&self, actor: Box<Actor+Send>) {
+    pub fn register_later(&self, actor: Box<Actor + Send>) {
         let mut actors = self.new_actors.borrow_mut();
         actors.push(actor);
     }

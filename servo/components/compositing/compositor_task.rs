@@ -37,7 +37,7 @@ pub trait CompositorProxy : 'static + Send {
     
     fn send(&self, msg: Msg);
     
-    fn clone_compositor_proxy(&self) -> Box<CompositorProxy+'static+Send>;
+    fn clone_compositor_proxy(&self) -> Box<CompositorProxy + 'static + Send>;
 }
 
 
@@ -88,7 +88,7 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
 }
 
 
-impl PaintListener for Box<CompositorProxy+'static+Send> {
+impl PaintListener for Box<CompositorProxy + 'static + Send> {
     fn native_display(&mut self) -> Option<NativeDisplay> {
         let (chan, port) = channel();
         self.send(Msg::GetNativeDisplay(chan));
@@ -204,7 +204,7 @@ pub enum Msg {
 }
 
 impl Debug for Msg {
-    fn fmt(&self, f: &mut Formatter) -> Result<(),Error> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         match *self {
             Msg::Exit(..) => write!(f, "Exit"),
             Msg::ShutdownComplete(..) => write!(f, "ShutdownComplete"),
@@ -240,7 +240,7 @@ pub struct CompositorTask;
 
 impl CompositorTask {
     pub fn create<Window>(window: Option<Rc<Window>>,
-                          sender: Box<CompositorProxy+Send>,
+                          sender: Box<CompositorProxy + Send>,
                           receiver: Box<CompositorReceiver>,
                           constellation_chan: ConstellationChan,
                           time_profiler_chan: time::ProfilerChan,

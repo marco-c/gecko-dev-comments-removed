@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 
 pub struct NetworkListener<T: AsyncResponseListener + PreInvoke + Send + 'static> {
     pub context: Arc<Mutex<T>>,
-    pub script_chan: Box<ScriptChan+Send>,
+    pub script_chan: Box<ScriptChan + Send>,
 }
 
 impl<T: AsyncResponseListener + PreInvoke + Send + 'static> NetworkListener<T> {

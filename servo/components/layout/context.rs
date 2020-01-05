@@ -124,7 +124,7 @@ pub struct SharedLayoutContext {
     pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, DefaultState<FnvHasher>>>,
 
     
-    pub running_animations: Arc<HashMap<OpaqueNode,Vec<Animation>>>,
+    pub running_animations: Arc<HashMap<OpaqueNode, Vec<Animation>>>,
 
     
     pub goal: ReflowGoal,

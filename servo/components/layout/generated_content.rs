@@ -101,7 +101,7 @@ pub struct ResolveGeneratedContent<'a> {
     
     list_item: Counter,
     
-    counters: HashMap<String,Counter>,
+    counters: HashMap<String, Counter>,
     
     quote: u32,
 }

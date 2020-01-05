@@ -200,7 +200,7 @@ impl Stylist {
     
     
     
-    pub fn push_applicable_declarations<E,V>(
+    pub fn push_applicable_declarations<E, V>(
                                         &self,
                                         element: &E,
                                         parent_bf: Option<&BloomFilter>,

@@ -137,7 +137,7 @@ pub fn iterate_through_flow_tree_fragment_border_boxes(root: &mut FlowRef,
                 };
 
             
-            doit(kid, level+1, iterator, &stacking_context_position);
+            doit(kid, level + 1, iterator, &stacking_context_position);
         }
     }
 

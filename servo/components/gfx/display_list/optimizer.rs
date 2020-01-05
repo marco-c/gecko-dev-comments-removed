@@ -45,10 +45,10 @@ impl DisplayListOptimizer {
     }
 
     
-    fn add_in_bounds_display_items<'a,I>(&self,
-                                         result_list: &mut LinkedList<DisplayItem>,
-                                         display_items: I)
-                                         where I: Iterator<Item=&'a DisplayItem> {
+    fn add_in_bounds_display_items<'a, I>(&self,
+                                          result_list: &mut LinkedList<DisplayItem>,
+                                          display_items: I)
+                                          where I: Iterator<Item=&'a DisplayItem> {
         for display_item in display_items {
             if self.visible_rect.intersects(&display_item.base().bounds) &&
                     display_item.base().clip.might_intersect_rect(&self.visible_rect) {
@@ -58,10 +58,10 @@ impl DisplayListOptimizer {
     }
 
     
-    fn add_in_bounds_stacking_contexts<'a,I>(&self,
-                                             result_list: &mut LinkedList<Arc<StackingContext>>,
-                                             stacking_contexts: I)
-                                             where I: Iterator<Item=&'a Arc<StackingContext>> {
+    fn add_in_bounds_stacking_contexts<'a, I>(&self,
+                                              result_list: &mut LinkedList<Arc<StackingContext>>,
+                                              stacking_contexts: I)
+                                              where I: Iterator<Item=&'a Arc<StackingContext>> {
         for stacking_context in stacking_contexts {
             if stacking_context.layer.is_none() {
                 

@@ -309,11 +309,11 @@ impl LineBreaker {
     }
 
     
-    fn reflow_fragments<'a,I>(&mut self,
-                              mut old_fragment_iter: I,
-                              flow: &'a InlineFlow,
-                              layout_context: &LayoutContext)
-                              where I: Iterator<Item=Fragment> {
+    fn reflow_fragments<'a, I>(&mut self,
+                               mut old_fragment_iter: I,
+                               flow: &'a InlineFlow,
+                               layout_context: &LayoutContext)
+                               where I: Iterator<Item=Fragment> {
         loop {
             
             

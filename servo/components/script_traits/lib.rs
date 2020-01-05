@@ -135,7 +135,7 @@ pub enum ConstellationControlMsg {
     
     TickAllAnimations(PipelineId),
     
-    StylesheetLoadComplete(PipelineId, Url, Box<StylesheetLoadResponder+Send>),
+    StylesheetLoadComplete(PipelineId, Url, Box<StylesheetLoadResponder + Send>),
     
     GetCurrentState(Sender<ScriptState>, PipelineId),
 }
@@ -169,7 +169,7 @@ pub enum CompositorEvent {
 
 
 
-pub struct OpaqueScriptLayoutChannel(pub (Box<Any+Send>, Box<Any+Send>));
+pub struct OpaqueScriptLayoutChannel(pub (Box<Any + Send>, Box<Any + Send>));
 
 
 
@@ -195,5 +195,5 @@ pub trait ScriptTaskFactory {
     fn create_layout_channel(_phantom: Option<&mut Self>) -> OpaqueScriptLayoutChannel;
     
     fn clone_layout_channel(_phantom: Option<&mut Self>, pair: &OpaqueScriptLayoutChannel)
-                            -> Box<Any+Send>;
+                            -> Box<Any + Send>;
 }

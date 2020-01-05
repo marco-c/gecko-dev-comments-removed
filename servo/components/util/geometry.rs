@@ -279,7 +279,7 @@ pub fn px_to_pt(px: f64) -> f64 {
 
 
 
-pub fn rect_contains_point<T:PartialOrd + Add<T, Output=T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
+pub fn rect_contains_point<T: PartialOrd + Add<T, Output=T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
     point.x >= rect.origin.x && point.x < rect.origin.x + rect.size.width &&
         point.y >= rect.origin.y && point.y < rect.origin.y + rect.size.height
 }
