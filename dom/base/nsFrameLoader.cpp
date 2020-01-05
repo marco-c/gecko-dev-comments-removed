@@ -1348,6 +1348,15 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
+  
+  const nsAString& currentRemoteType =
+    mRemoteBrowser->Manager()->AsContentParent()->GetRemoteType();
+  const nsAString& newRemoteType =
+    aOther->mRemoteBrowser->Manager()->AsContentParent()->GetRemoteType();
+  if (!currentRemoteType.Equals(newRemoteType)) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
   if (mRemoteBrowser->IsIsolatedMozBrowserElement() !=
       aOther->mRemoteBrowser->IsIsolatedMozBrowserElement()) {
     return NS_ERROR_NOT_IMPLEMENTED;
