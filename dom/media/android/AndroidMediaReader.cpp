@@ -142,7 +142,7 @@ bool AndroidMediaReader::DecodeVideoFrame(bool& aKeyframeSkip,
         int64_t durationUs;
         mPlugin->GetDuration(mPlugin, &durationUs);
         durationUs = std::max<int64_t>(durationUs - mLastVideoFrame->mTime, 0);
-        mLastVideoFrame->UpdateDuration(durationUs);
+        mLastVideoFrame->UpdateDuration(TimeUnit::FromMicroseconds(durationUs));
         mVideoQueue.Push(mLastVideoFrame);
         mLastVideoFrame = nullptr;
       }
@@ -248,7 +248,7 @@ bool AndroidMediaReader::DecodeVideoFrame(bool& aKeyframeSkip,
     
     
     int64_t duration = v->mTime - mLastVideoFrame->mTime;
-    mLastVideoFrame->UpdateDuration(duration);
+    mLastVideoFrame->UpdateDuration(TimeUnit::FromMicroseconds(duration));
 
     
     
