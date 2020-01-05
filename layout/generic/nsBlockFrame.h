@@ -83,10 +83,10 @@ public:
   NS_DECL_QUERYFRAME_TARGET(nsBlockFrame)
   NS_DECL_FRAMEARENA_HELPERS
 
-  typedef nsLineList::iterator                  line_iterator;
-  typedef nsLineList::const_iterator            const_line_iterator;
-  typedef nsLineList::reverse_iterator          reverse_line_iterator;
-  typedef nsLineList::const_reverse_iterator    const_reverse_line_iterator;
+  typedef nsLineList::iterator line_iterator;
+  typedef nsLineList::const_iterator const_line_iterator;
+  typedef nsLineList::reverse_iterator reverse_line_iterator;
+  typedef nsLineList::const_reverse_iterator const_reverse_line_iterator;
 
   line_iterator begin_lines() { return mLines.begin(); }
   line_iterator end_lines() { return mLines.end(); }
@@ -106,18 +106,18 @@ public:
   NS_DECL_QUERYFRAME
 
   
-  virtual void Init(nsIContent*       aContent,
+  virtual void Init(nsIContent* aContent,
                     nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
-  virtual void SetInitialChildList(ChildListID     aListID,
-                                   nsFrameList&    aChildList) override;
-  virtual void AppendFrames(ChildListID     aListID,
-                            nsFrameList&    aFrameList) override;
-  virtual void InsertFrames(ChildListID     aListID,
-                            nsIFrame*       aPrevFrame,
-                            nsFrameList&    aFrameList) override;
-  virtual void RemoveFrame(ChildListID     aListID,
-                           nsIFrame*       aOldFrame) override;
+                    nsIFrame* aPrevInFlow) override;
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override;
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override;
+  virtual void InsertFrames(ChildListID aListID,
+                            nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override;
+  virtual void RemoveFrame(ChildListID aListID,
+                           nsIFrame* aOldFrame) override;
   virtual const nsFrameList& GetChildList(ChildListID aListID) const override;
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
   virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const override;
@@ -125,8 +125,8 @@ public:
   virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
   virtual nsSplittableType GetSplittableType() const override;
   virtual bool IsFloatContainingBlock() const override;
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                const nsRect& aDirtyRect,
                                 const nsDisplayListSet& aLists) override;
   virtual nsIAtom* GetType() const override;
   virtual bool IsFrameOfType(uint32_t aFlags) const override
@@ -289,21 +289,21 @@ public:
 
 
 
-  void ComputeFinalBSize(const ReflowInput&      aReflowInput,
-                         nsReflowStatus*               aStatus,
-                         nscoord                       aContentBSize,
+  void ComputeFinalBSize(const ReflowInput& aReflowInput,
+                         nsReflowStatus* aStatus,
+                         nscoord aContentBSize,
                          const mozilla::LogicalMargin& aBorderPadding,
-                         mozilla::LogicalSize&         aFinalSize,
-                         nscoord                       aConsumed);
+                         mozilla::LogicalSize& aFinalSize,
+                         nscoord aConsumed);
 
-  virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext,
+                      ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
-  virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
-                                    nsIAtom*        aAttribute,
-                                    int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID,
+                                    nsIAtom* aAttribute,
+                                    int32_t aModType) override;
 
   
 
@@ -314,7 +314,7 @@ public:
   virtual nsresult StealFrame(nsIFrame* aChild) override;
 
   virtual void DeleteNextInFlowChild(nsIFrame* aNextInFlow,
-                                     bool      aDeletingEmptyFrames) override;
+                                     bool aDeletingEmptyFrames) override;
 
   
 
@@ -369,17 +369,16 @@ public:
 
 
 
-
   nsresult SplitFloat(BlockReflowInput& aState,
-                      nsIFrame*           aFloat,
-                      nsReflowStatus      aFloatStatus);
+                      nsIFrame* aFloat,
+                      nsReflowStatus aFloatStatus);
 
   
 
 
 
   static nsBlockFrame* GetNearestAncestorBlock(nsIFrame* aCandidate);
-  
+
   struct FrameLines {
     nsLineList mLines;
     nsFrameList mFrames;
@@ -428,7 +427,7 @@ protected:
   void TryAllLines(nsLineList::iterator* aIterator,
                    nsLineList::iterator* aStartIterator,
                    nsLineList::iterator* aEndIterator,
-                   bool*        aInOverflowLines,
+                   bool* aInOverflowLines,
                    FrameLines** aOverflowLines);
 
   
@@ -444,14 +443,14 @@ protected:
   void MoveChildFramesOfLine(nsLineBox* aLine, nscoord aDeltaBCoord);
 
   void ComputeFinalSize(const ReflowInput& aReflowInput,
-                        BlockReflowInput&      aState,
-                        ReflowOutput&     aMetrics,
-                        nscoord*                 aBottomEdgeOfChildren);
+                        BlockReflowInput& aState,
+                        ReflowOutput& aMetrics,
+                        nscoord* aBottomEdgeOfChildren);
 
-  void ComputeOverflowAreas(const nsRect&         aBounds,
+  void ComputeOverflowAreas(const nsRect& aBounds,
                             const nsStyleDisplay* aDisplay,
-                            nscoord               aBottomEdgeOfChildren,
-                            nsOverflowAreas&      aOverflowAreas);
+                            nscoord aBottomEdgeOfChildren,
+                            nsOverflowAreas& aOverflowAreas);
 
   
 
@@ -500,7 +499,7 @@ public:
 
   enum {
     REMOVE_FIXED_CONTINUATIONS = 0x02,
-    FRAMES_ARE_EMPTY           = 0x04
+    FRAMES_ARE_EMPTY = 0x04
   };
   void DoRemoveFrame(nsIFrame* aDeletedFrame, uint32_t aFlags);
 
@@ -516,10 +515,10 @@ public:
 
 
 
-  static void RecoverFloatsFor(nsIFrame*            aFrame,
-                               nsFloatManager&      aFloatManager,
+  static void RecoverFloatsFor(nsIFrame* aFrame,
+                               nsFloatManager& aFloatManager,
                                mozilla::WritingMode aWM,
-                               const nsSize&        aContainerSize);
+                               const nsSize& aContainerSize);
 
   
 
@@ -593,15 +592,15 @@ protected:
   
 
 
-  void RecoverFloats(nsFloatManager&      aFloatManager,
+  void RecoverFloats(nsFloatManager& aFloatManager,
                      mozilla::WritingMode aWM,
-                     const nsSize&        aContainerSize);
+                     const nsSize& aContainerSize);
 
   
 
   void ReflowPushedFloats(BlockReflowInput& aState,
-                          nsOverflowAreas&    aOverflowAreas,
-                          nsReflowStatus&     aStatus);
+                          nsOverflowAreas& aOverflowAreas,
+                          nsReflowStatus& aStatus);
 
   
 
@@ -655,13 +654,13 @@ protected:
   
   
   
-  bool PlaceLine(BlockReflowInput&           aState,
-                   nsLineLayout&               aLineLayout,
-                   line_iterator               aLine,
-                   nsFloatManager::SavedState* aFloatStateBeforeLine,
-                   mozilla::LogicalRect&       aFloatAvailableSpace, 
-                   nscoord&                    aAvailableSpaceHeight, 
-                   bool*                       aKeepReflowGoing);
+  bool PlaceLine(BlockReflowInput& aState,
+                 nsLineLayout& aLineLayout,
+                 line_iterator aLine,
+                 nsFloatManager::SavedState* aFloatStateBeforeLine,
+                 mozilla::LogicalRect& aFloatAvailableSpace, 
+                 nscoord& aAvailableSpaceHeight, 
+                 bool* aKeepReflowGoing);
 
   
 
@@ -721,27 +720,27 @@ protected:
 
   
   mozilla::LogicalRect AdjustFloatAvailableSpace(
-                         BlockReflowInput&         aState,
+                         BlockReflowInput& aState,
                          const mozilla::LogicalRect& aFloatAvailableSpace,
-                         nsIFrame*                   aFloatFrame);
+                         nsIFrame* aFloatFrame);
   
-  nscoord ComputeFloatISize(BlockReflowInput&         aState,
+  nscoord ComputeFloatISize(BlockReflowInput& aState,
                             const mozilla::LogicalRect& aFloatAvailableSpace,
-                            nsIFrame*                   aFloat);
+                            nsIFrame* aFloat);
   
   
   
   
-  void ReflowFloat(BlockReflowInput&         aState,
+  void ReflowFloat(BlockReflowInput& aState,
                    const mozilla::LogicalRect& aAdjustedAvailableSpace,
-                   nsIFrame*                   aFloat,
-                   mozilla::LogicalMargin&     aFloatMargin,
-                   mozilla::LogicalMargin&     aFloatOffsets,
+                   nsIFrame* aFloat,
+                   mozilla::LogicalMargin& aFloatMargin,
+                   mozilla::LogicalMargin& aFloatOffsets,
                    
                    
                    
-                   bool                        aFloatPushedDown,
-                   nsReflowStatus&             aReflowStatus);
+                   bool aFloatPushedDown,
+                   nsReflowStatus& aReflowStatus);
 
   
   
@@ -755,8 +754,8 @@ protected:
 
 
   bool CreateContinuationFor(BlockReflowInput& aState,
-                             nsLineBox*          aLine,
-                             nsIFrame*           aFrame);
+                             nsLineBox* aLine,
+                             nsIFrame* aFrame);
 
   
 
@@ -764,8 +763,8 @@ protected:
 
 
   void PushTruncatedLine(BlockReflowInput& aState,
-                         line_iterator       aLine,
-                         bool*               aKeepReflowGoing);
+                         line_iterator aLine,
+                         bool* aKeepReflowGoing);
 
   void SplitLine(BlockReflowInput& aState,
                  nsLineLayout& aLineLayout,
@@ -779,7 +778,7 @@ protected:
 
 
   nsIFrame* PullFrame(BlockReflowInput& aState,
-                      line_iterator       aLine);
+                      line_iterator aLine);
 
   
 
@@ -793,8 +792,8 @@ protected:
 
 
 
-  nsIFrame* PullFrameFrom(nsLineBox*           aLine,
-                          nsBlockFrame*        aFromContainer,
+  nsIFrame* PullFrameFrom(nsLineBox* aLine,
+                          nsBlockFrame* aFromContainer,
                           nsLineList::iterator aFromLine);
 
   
@@ -1013,7 +1012,7 @@ private:
 
   nsBlockFrame* mFrame;
   line_iterator mLine;
-  nsLineList*   mLineList;  
+  nsLineList* mLineList;  
 
   
 
