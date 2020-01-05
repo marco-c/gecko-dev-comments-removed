@@ -208,8 +208,17 @@ struct ImageValue final : public URLValueData
              nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal,
              nsIDocument* aDocument);
 
+  
+  
+  ImageValue(nsStringBuffer* aString,
+             already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
+             already_AddRefed<PtrHolder<nsIURI>> aReferrer,
+             already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
+
   ImageValue(const ImageValue&) = delete;
   ImageValue& operator=(const ImageValue&) = delete;
+
+  void Initialize(nsIDocument* aDocument);
 
   
 
@@ -220,6 +229,11 @@ public:
   
 
   nsRefPtrHashtable<nsPtrHashKey<nsIDocument>, imgRequestProxy> mRequests;
+
+private:
+#ifdef DEBUG
+  bool mInitialized = false;
+#endif
 };
 
 struct GridNamedArea {
