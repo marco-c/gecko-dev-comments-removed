@@ -93,8 +93,6 @@ class BaseFirefoxTestCase(unittest.TestCase, Puppeteer):
         self.marionette.set_context('chrome')
 
         try:
-            self.prefs.restore_all_prefs()
-
             
             
             

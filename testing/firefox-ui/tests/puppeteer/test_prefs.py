@@ -2,8 +2,6 @@
 
 
 
-from marionette_driver.errors import MarionetteException
-
 from firefox_ui_harness.testcases import FirefoxTestCase
 
 
@@ -17,18 +15,19 @@ class testPreferences(FirefoxTestCase):
 
         self.bool_pref = 'browser.tabs.loadBookmarksInBackground'
         self.int_pref = 'browser.tabs.maxOpenBeforeWarn'
-        self.string_pref = 'browser.newtab.url'
-
-    def test_reset_pref(self):
-        self.prefs.set_pref(self.new_pref, 'unittest')
-        self.assertEqual(self.prefs.get_pref(self.new_pref), 'unittest')
-
         
-        self.assertTrue(self.prefs.reset_pref(self.new_pref))
-        self.assertEqual(self.prefs.get_pref(self.new_pref), None)
-
         
-        self.assertFalse(self.prefs.reset_pref(self.new_pref))
+        self.string_pref = 'browser.startup.homepage'
+
+    def tearDown(self):
+        try:
+            self.marionette.clear_pref('marionette.unittest.set_pref')
+            self.marionette.clear_pref('marionette.unittest.unknown')
+            self.marionette.clear_pref('browser.tabs.loadBookmarksInBackground')
+            self.marionette.clear_pref('browser.tabs.maxOpenBeforeWarn')
+            self.marionette.clear_pref('browser.startup.homepage')
+        finally:
+            FirefoxTestCase.tearDown(self)
 
     def test_get_pref(self):
         
@@ -57,76 +56,52 @@ class testPreferences(FirefoxTestCase):
                                     interface='nsIPrefLocalizedString')
         self.assertNotEqual(value, properties_file)
 
-    def test_restore_pref(self):
-        
-        self.prefs.set_pref(self.new_pref, True)
-        self.assertTrue(self.prefs.get_pref(self.new_pref))
-        self.prefs.restore_pref(self.new_pref)
-
-        orig_value = self.prefs.get_pref(self.string_pref)
-
-        
-        self.prefs.set_pref(self.string_pref, 'unittest')
-        self.assertEqual(self.prefs.get_pref(self.string_pref), 'unittest')
-        self.prefs.restore_pref(self.string_pref)
-        self.assertEqual(self.prefs.get_pref(self.string_pref), orig_value)
-
-        
-        self.prefs.set_pref(self.string_pref, 'unittest1')
-        self.prefs.set_pref(self.string_pref, 'unittest2')
-        self.assertEqual(self.prefs.get_pref(self.string_pref), 'unittest2')
-        self.prefs.restore_pref(self.string_pref)
-        self.assertEqual(self.prefs.get_pref(self.string_pref), orig_value)
-
-        
-        self.prefs.set_pref(self.string_pref, 'unittest3')
-        self.prefs.restore_pref(self.string_pref)
-        self.assertRaises(MarionetteException,
-                          self.prefs.restore_pref, self.string_pref)
-
-        
-        self.assertRaises(MarionetteException,
-                          self.prefs.restore_pref, self.unknown_pref)
-
-    def test_restore_all_prefs(self):
-        orig_bool = self.prefs.get_pref(self.bool_pref)
-        orig_int = self.prefs.get_pref(self.int_pref)
-        orig_string = self.prefs.get_pref(self.string_pref)
-
-        self.prefs.set_pref(self.bool_pref, not orig_bool)
-        self.prefs.set_pref(self.int_pref, 99999)
-        self.prefs.set_pref(self.string_pref, 'unittest')
-
-        self.prefs.restore_all_prefs()
-        self.assertEqual(self.prefs.get_pref(self.bool_pref), orig_bool)
-        self.assertEqual(self.prefs.get_pref(self.int_pref), orig_int)
-        self.assertEqual(self.prefs.get_pref(self.string_pref), orig_string)
-
     def test_set_pref_casted_values(self):
         
         self.prefs.set_pref(self.bool_pref, '')
         self.assertFalse(self.prefs.get_pref(self.bool_pref))
+        
+        
+        self.marionette.clear_pref(self.bool_pref)
 
         self.prefs.set_pref(self.bool_pref, 'unittest')
         self.assertTrue(self.prefs.get_pref(self.bool_pref))
+        
+        
+        self.marionette.clear_pref(self.bool_pref)
 
         
         self.prefs.set_pref(self.bool_pref, 0)
         self.assertFalse(self.prefs.get_pref(self.bool_pref))
+        
+        
+        self.marionette.clear_pref(self.bool_pref)
 
         self.prefs.set_pref(self.bool_pref, 5)
         self.assertTrue(self.prefs.get_pref(self.bool_pref))
+        
+        
+        self.marionette.clear_pref(self.bool_pref)
 
         
         self.prefs.set_pref(self.int_pref, False)
         self.assertEqual(self.prefs.get_pref(self.int_pref), 0)
+        
+        
+        self.marionette.clear_pref(self.int_pref)
 
         self.prefs.set_pref(self.int_pref, True)
         self.assertEqual(self.prefs.get_pref(self.int_pref), 1)
+        
+        
+        self.marionette.clear_pref(self.int_pref)
 
         
         self.prefs.set_pref(self.string_pref, 54)
         self.assertEqual(self.prefs.get_pref(self.string_pref), '54')
+        
+        
+        self.marionette.clear_pref(self.string_pref)
 
     def test_set_pref_invalid(self):
         self.assertRaises(AssertionError,
@@ -135,22 +110,37 @@ class testPreferences(FirefoxTestCase):
     def test_set_pref_new_preference(self):
         self.prefs.set_pref(self.new_pref, True)
         self.assertTrue(self.prefs.get_pref(self.new_pref))
-        self.prefs.restore_pref(self.new_pref)
+        
+        
+        self.marionette.clear_pref(self.new_pref)
 
         self.prefs.set_pref(self.new_pref, 5)
         self.assertEqual(self.prefs.get_pref(self.new_pref), 5)
-        self.prefs.restore_pref(self.new_pref)
+        
+        
+        self.marionette.clear_pref(self.new_pref)
 
         self.prefs.set_pref(self.new_pref, 'test')
         self.assertEqual(self.prefs.get_pref(self.new_pref), 'test')
-        self.prefs.restore_pref(self.new_pref)
+        
+        
+        self.marionette.clear_pref(self.new_pref)
 
     def test_set_pref_new_values(self):
         self.prefs.set_pref(self.bool_pref, True)
         self.assertTrue(self.prefs.get_pref(self.bool_pref))
+        
+        
+        self.marionette.clear_pref(self.bool_pref)
 
         self.prefs.set_pref(self.int_pref, 99999)
         self.assertEqual(self.prefs.get_pref(self.int_pref), 99999)
+        
+        
+        self.marionette.clear_pref(self.int_pref)
 
         self.prefs.set_pref(self.string_pref, 'test_string')
         self.assertEqual(self.prefs.get_pref(self.string_pref), 'test_string')
+        
+        
+        self.marionette.clear_pref(self.string_pref)
