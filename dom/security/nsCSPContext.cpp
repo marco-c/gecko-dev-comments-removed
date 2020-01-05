@@ -169,8 +169,9 @@ nsCSPContext::ShouldLoad(nsContentPolicyType aContentType,
   }
 
   
-  bool wasRedirected = (aExtra != nullptr);
+  
   nsCOMPtr<nsIURI> originalURI = do_QueryInterface(aExtra);
+  bool wasRedirected = originalURI;
 
   bool permitted = permitsInternal(dir,
                                    aContentLocation,

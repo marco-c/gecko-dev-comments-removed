@@ -139,6 +139,7 @@
 #include "nsISiteSecurityService.h"
 #include "nsStructuredCloneContainer.h"
 #include "nsIStructuredCloneContainer.h"
+#include "nsISupportsPrimitives.h"
 #ifdef MOZ_PLACES
 #include "nsIFaviconService.h"
 #include "mozIPlacesPendingOperation.h"
@@ -9883,13 +9884,24 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 #endif
     }
 
+    
+    
+    
+    
+    nsCOMPtr<nsISupportsString> extraStr =
+      do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+    NS_NAMED_LITERAL_STRING(msg, "conPolCheckFromDocShell");
+    rv = extraStr->SetData(msg);
+    NS_ENSURE_SUCCESS(rv, rv);
+
     int16_t shouldLoad = nsIContentPolicy::ACCEPT;
     rv = NS_CheckContentLoadPolicy(contentType,
                                    aURI,
                                    aTriggeringPrincipal,
                                    requestingContext,
                                    EmptyCString(),  
-                                   nullptr,  
+                                   extraStr,  
                                    &shouldLoad);
   
     if (NS_FAILED(rv) || NS_CP_REJECTED(shouldLoad)) {
