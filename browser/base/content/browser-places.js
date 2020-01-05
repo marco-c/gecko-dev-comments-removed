@@ -9,6 +9,10 @@ var StarUI = {
   _isNewBookmark: false,
   _isComposing: false,
   _autoCloseTimer: 0,
+  
+  
+  
+  _autoCloseTimerEnabled: true,
 
   _element(aID) {
     return document.getElementById(aID);
@@ -22,6 +26,7 @@ var StarUI = {
     
     element.hidden = false;
     element.addEventListener("keypress", this);
+    element.addEventListener("mousedown", this);
     element.addEventListener("mouseout", this);
     element.addEventListener("mousemove", this);
     element.addEventListener("compositionstart", this);
@@ -66,6 +71,8 @@ var StarUI = {
     switch (aEvent.type) {
       case "mousemove":
         clearTimeout(this._autoCloseTimer);
+        
+        
         break;
       case "popuphidden":
         clearTimeout(this._autoCloseTimer);
@@ -109,6 +116,7 @@ var StarUI = {
         break;
       case "keypress":
         clearTimeout(this._autoCloseTimer);
+        this._autoCloseTimerEnabled = false;
 
         if (aEvent.defaultPrevented) {
           
@@ -139,26 +147,32 @@ var StarUI = {
             break;
         }
         break;
-      case "compositionstart":
-        if (aEvent.defaultPrevented) {
-          
-          break;
-        }
-        
-        clearTimeout(this._autoCloseTimer);
-        this._isComposing = true;
-        break;
       case "compositionend":
         
         
         this._isComposing = false;
         break;
+      case "compositionstart":
+        if (aEvent.defaultPrevented) {
+          
+          break;
+        }
+        this._isComposing = true;
+        
+        
       case "input":
         
         
+      case "mousedown":
         clearTimeout(this._autoCloseTimer);
+        this._autoCloseTimerEnabled = false;
         break;
       case "mouseout":
+        if (!this._autoCloseTimerEnabled) {
+          
+          
+          break;
+        }
         
       case "popupshown":
         
@@ -179,6 +193,7 @@ var StarUI = {
               this.panel.hidePopup();
             }
           }, delay);
+          this._autoCloseTimerEnabled = true;
         }
         break;
     }
