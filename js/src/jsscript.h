@@ -958,10 +958,17 @@ class JSScript : public js::gc::TenuredCell
     
     
     
+    
+    
+    
+    
+    
+    
+    
     uint32_t        sourceStart_;
     uint32_t        sourceEnd_;
-    uint32_t        preludeStart_;
-    uint32_t        postludeEnd_;
+    uint32_t        toStringStart_;
+    uint32_t        toStringEnd_;
 
 #ifdef MOZ_VTUNE
     
@@ -1143,7 +1150,7 @@ class JSScript : public js::gc::TenuredCell
                             const JS::ReadOnlyCompileOptions& options,
                             js::HandleObject sourceObject,
                             uint32_t sourceStart, uint32_t sourceEnd,
-                            uint32_t preludeStart, uint32_t postludeEnd);
+                            uint32_t toStringStart, uint32_t toStringEnd);
 
     void initCompartment(JSContext* cx);
 
@@ -1294,12 +1301,12 @@ class JSScript : public js::gc::TenuredCell
         return sourceEnd_;
     }
 
-    uint32_t preludeStart() const {
-        return preludeStart_;
+    uint32_t toStringStart() const {
+        return toStringStart_;
     }
 
-    uint32_t postludeEnd() const {
-        return postludeEnd_;
+    uint32_t toStringEnd() const {
+        return toStringEnd_;
     }
 
     bool noScriptRval() const {
@@ -2124,15 +2131,15 @@ class LazyScript : public gc::TenuredCell
     
     uint32_t begin_;
     uint32_t end_;
-    uint32_t preludeStart_;
-    uint32_t postludeEnd_;
+    uint32_t toStringStart_;
+    uint32_t toStringEnd_;
     
     
     uint32_t lineno_;
     uint32_t column_;
 
     LazyScript(JSFunction* fun, void* table, uint64_t packedFields,
-               uint32_t begin, uint32_t end, uint32_t preludeStart,
+               uint32_t begin, uint32_t end, uint32_t toStringStart,
                uint32_t lineno, uint32_t column);
 
     
@@ -2140,7 +2147,7 @@ class LazyScript : public gc::TenuredCell
     
     static LazyScript* CreateRaw(JSContext* cx, HandleFunction fun,
                                  uint64_t packedData, uint32_t begin, uint32_t end,
-                                 uint32_t preludeStart, uint32_t lineno, uint32_t column);
+                                 uint32_t toStringStart, uint32_t lineno, uint32_t column);
 
   public:
     static const uint32_t NumClosedOverBindingsLimit = 1 << NumClosedOverBindingsBits;
@@ -2152,7 +2159,7 @@ class LazyScript : public gc::TenuredCell
                               const frontend::AtomVector& closedOverBindings,
                               Handle<GCVector<JSFunction*, 8>> innerFunctions,
                               JSVersion version, uint32_t begin, uint32_t end,
-                              uint32_t preludeStart, uint32_t lineno, uint32_t column);
+                              uint32_t toStringStart, uint32_t lineno, uint32_t column);
 
     
     
@@ -2167,7 +2174,7 @@ class LazyScript : public gc::TenuredCell
                               HandleScript script, HandleScope enclosingScope,
                               HandleScriptSource sourceObject,
                               uint64_t packedData, uint32_t begin, uint32_t end,
-                              uint32_t preludeStart, uint32_t lineno, uint32_t column);
+                              uint32_t toStringStart, uint32_t lineno, uint32_t column);
 
     void initRuntimeFields(uint64_t packedFields);
 
@@ -2348,11 +2355,11 @@ class LazyScript : public gc::TenuredCell
     uint32_t end() const {
         return end_;
     }
-    uint32_t preludeStart() const {
-        return preludeStart_;
+    uint32_t toStringStart() const {
+        return toStringStart_;
     }
-    uint32_t postludeEnd() const {
-        return postludeEnd_;
+    uint32_t toStringEnd() const {
+        return toStringEnd_;
     }
     uint32_t lineno() const {
         return lineno_;
@@ -2361,9 +2368,10 @@ class LazyScript : public gc::TenuredCell
         return column_;
     }
 
-    void setPostludeEnd(uint32_t postludeEnd) {
-        MOZ_ASSERT(postludeEnd_ >= end_);
-        postludeEnd_ = postludeEnd;
+    void setToStringEnd(uint32_t toStringEnd) {
+        MOZ_ASSERT(toStringStart_ <= toStringEnd);
+        MOZ_ASSERT(toStringEnd_ >= end_);
+        toStringEnd_ = toStringEnd;
     }
 
     bool hasUncompiledEnclosingScript() const;
