@@ -31,25 +31,20 @@ public:
   
   CompositorOptions()
     : mUseAPZ(false)
-    , mUseWebRender(false)
   {
   }
 
-  explicit CompositorOptions(bool aUseAPZ,
-                             bool aUseWebRender)
+  explicit CompositorOptions(bool aUseAPZ)
     : mUseAPZ(aUseAPZ)
-    , mUseWebRender(aUseWebRender)
   {
   }
 
   bool UseAPZ() const { return mUseAPZ; }
-  bool UseWebRender() const { return mUseWebRender; }
 
   friend struct IPC::ParamTraits<CompositorOptions>;
 
 private:
   bool mUseAPZ;
-  bool mUseWebRender;
 
   
 };
