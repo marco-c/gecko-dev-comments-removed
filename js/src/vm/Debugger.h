@@ -7,6 +7,7 @@
 #ifndef vm_Debugger_h
 #define vm_Debugger_h
 
+#include "mozilla/DoublyLinkedList.h"
 #include "mozilla/GuardObjects.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Range.h"
@@ -385,7 +386,27 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     
     bool collectCoverageInfo;
 
-    JSCList breakpoints;                
+    template<typename T>
+    struct DebuggerSiblingAccess {
+      static T* GetNext(T* elm) {
+        return elm->debuggerLink.mNext;
+      }
+      static void SetNext(T* elm, T* next) {
+        elm->debuggerLink.mNext = next;
+      }
+      static T* GetPrev(T* elm) {
+        return elm->debuggerLink.mPrev;
+      }
+      static void SetPrev(T* elm, T* prev) {
+        elm->debuggerLink.mPrev = prev;
+      }
+    };
+
+    
+    using BreakpointList =
+        mozilla::DoublyLinkedList<js::Breakpoint,
+                                  DebuggerSiblingAccess<js::Breakpoint>>;
+    BreakpointList breakpoints;
 
     
     
@@ -1562,7 +1583,27 @@ class BreakpointSite {
   private:
     Type type_;
 
-    JSCList breakpoints;  
+    template<typename T>
+    struct SiteSiblingAccess {
+      static T* GetNext(T* elm) {
+        return elm->siteLink.mNext;
+      }
+      static void SetNext(T* elm, T* next) {
+        elm->siteLink.mNext = next;
+      }
+      static T* GetPrev(T* elm) {
+        return elm->siteLink.mPrev;
+      }
+      static void SetPrev(T* elm, T* prev) {
+        elm->siteLink.mPrev = prev;
+      }
+    };
+
+    
+    using BreakpointList =
+        mozilla::DoublyLinkedList<js::Breakpoint,
+                                  SiteSiblingAccess<js::Breakpoint>>;
+    BreakpointList breakpoints;
     size_t enabledCount;  
 
   protected:
@@ -1606,6 +1647,7 @@ class BreakpointSite {
 class Breakpoint {
     friend struct ::JSCompartment;
     friend class Debugger;
+    friend class BreakpointSite;
 
   public:
     Debugger * const debugger;
@@ -1613,12 +1655,14 @@ class Breakpoint {
   private:
     
     js::PreBarrieredObject handler;
-    JSCList debuggerLinks;
-    JSCList siteLinks;
+
+    
+
+
+    mozilla::DoublyLinkedListElement<Breakpoint> debuggerLink;
+    mozilla::DoublyLinkedListElement<Breakpoint> siteLink;
 
   public:
-    static Breakpoint* fromDebuggerLinks(JSCList* links);
-    static Breakpoint* fromSiteLinks(JSCList* links);
     Breakpoint(Debugger* debugger, BreakpointSite* site, JSObject* handler);
     void destroy(FreeOp* fop);
     Breakpoint* nextInDebugger();
@@ -1696,9 +1740,9 @@ Breakpoint::asWasm()
 Breakpoint*
 Debugger::firstBreakpoint() const
 {
-    if (JS_CLIST_IS_EMPTY(&breakpoints))
+    if (breakpoints.isEmpty())
         return nullptr;
-    return Breakpoint::fromDebuggerLinks(JS_NEXT_LINK(&breakpoints));
+    return &(*breakpoints.begin());
 }
 
  Debugger*
