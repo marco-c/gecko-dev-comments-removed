@@ -762,7 +762,7 @@ GMPCDMProxy::DecryptJob::PostResult(DecryptStatus aResult,
             aDecryptedData.Elements(),
             std::min<size_t>(aDecryptedData.Length(), mSample->Size()));
   } else if (aResult == NoKeyErr) {
-    NS_WARNING("CDM returned NoKeyErr");
+    EME_LOG("CDM returned NoKeyErr");
     
     
   } else {
