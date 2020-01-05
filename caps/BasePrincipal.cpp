@@ -55,7 +55,7 @@ BasePrincipal::GetOriginNoSuffix(nsACString& aOrigin)
   if (mOriginNoSuffix) {
     return mOriginNoSuffix->ToUTF8String(aOrigin);
   }
-  return GetOriginNoSuffixInternal(aOrigin);
+  return GetOriginInternal(aOrigin);
 }
 
 bool
@@ -465,7 +465,7 @@ BasePrincipal::FinishInit()
 
   
   nsAutoCString originNoSuffix;
-  nsresult rv = GetOriginNoSuffixInternal(originNoSuffix);
+  nsresult rv = GetOriginInternal(originNoSuffix);
   if (NS_FAILED(rv)) {
     
     

@@ -104,7 +104,7 @@ public:
 protected:
   virtual ~BasePrincipal();
 
-  virtual nsresult GetOriginNoSuffixInternal(nsACString& aOrigin) = 0;
+  virtual nsresult GetOriginInternal(nsACString& aOrigin) = 0;
   
   
   virtual bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsider) = 0;
