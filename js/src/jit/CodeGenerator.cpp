@@ -3732,12 +3732,16 @@ CodeGenerator::visitCallNative(LCallNative* call)
 
     markSafepointAt(safepointOffset, call);
 
+    emitTracelogStartEvent(TraceLogger_Call);
+
     
     masm.setupUnalignedABICall(tempReg);
     masm.passABIArg(argContextReg);
     masm.passABIArg(argUintNReg);
     masm.passABIArg(argVpReg);
     masm.callWithABI(JS_FUNC_TO_DATA_PTR(void*, target->native()));
+
+    emitTracelogStopEvent(TraceLogger_Call);
 
     
     masm.branchIfFalseBool(ReturnReg, masm.failureLabel());
