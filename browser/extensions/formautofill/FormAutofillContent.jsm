@@ -233,20 +233,9 @@ let ProfileAutocomplete = {
     }
 
     let profile = JSON.parse(this._lastAutoCompleteResult.getCommentAt(selectedIndex));
+    let formHandler = FormAutofillContent.getFormHandler(focusedInput);
 
-    
-    
-    for (let inputInfo of formDetails) {
-      
-      
-      if (inputInfo.element === focusedInput) {
-        continue;
-      }
-      let value = profile[inputInfo.fieldName];
-      if (value) {
-        inputInfo.element.setUserInput(value);
-      }
-    }
+    formHandler.autofillFormFields(profile, focusedInput);
   },
 };
 
@@ -304,10 +293,23 @@ var FormAutofillContent = {
 
 
 
-  getFormDetails(element) {
+  getFormHandler(element) {
     let rootElement = FormLikeFactory.findRootForField(element);
-    let formDetails = this._formsDetails.get(rootElement);
-    return formDetails ? formDetails.fieldDetails : null;
+    return this._formsDetails.get(rootElement);
+  },
+
+  
+
+
+
+
+
+
+
+
+  getFormDetails(element) {
+    let formHandler = this.getFormHandler(element);
+    return formHandler ? formHandler.fieldDetails : null;
   },
 
   getAllFieldNames(element) {

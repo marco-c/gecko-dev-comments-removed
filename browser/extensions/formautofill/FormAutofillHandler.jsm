@@ -110,38 +110,23 @@ FormAutofillHandler.prototype = {
 
 
 
-
-
-
-
-
-
-
-  autofillFormFields(autofillResult) {
-    log.debug("autofillFormFields:", autofillResult);
-    for (let field of autofillResult) {
+  autofillFormFields(profile, focusedInput) {
+    log.debug("profile in autofillFormFields:", profile);
+    for (let fieldDetail of this.fieldDetails) {
+      
+      
       
       
 
-      
-      let fieldDetail = this.fieldDetails[field.index];
-
-      
-      if (!fieldDetail || !field.value) {
+      if (fieldDetail.element === focusedInput ||
+          fieldDetail.element.value) {
         continue;
       }
 
-      let info = FormAutofillHeuristics.getInfo(fieldDetail.element);
-      if (!info ||
-          field.section != info.section ||
-          field.addressType != info.addressType ||
-          field.contactType != info.contactType ||
-          field.fieldName != info.fieldName) {
-        Cu.reportError("Autocomplete tokens mismatched");
-        continue;
+      let value = profile[fieldDetail.fieldName];
+      if (value) {
+        fieldDetail.element.setUserInput(value);
       }
-
-      fieldDetail.element.setUserInput(field.value);
     }
   },
 };
