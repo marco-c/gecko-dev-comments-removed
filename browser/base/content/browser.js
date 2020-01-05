@@ -709,7 +709,7 @@ function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
   
   
   
-  if (isIPv4Address(asciiHost) || /^\d+$/.test(asciiHost))
+  if (isIPv4Address(asciiHost) || /^(?:\d+|0x[a-f0-9]+)$/i.test(asciiHost))
     return;
 
   let onLookupComplete = (request, record, status) => {
