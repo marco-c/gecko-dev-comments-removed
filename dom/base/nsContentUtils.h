@@ -504,6 +504,9 @@ public:
   static bool CanCallerAccess(nsPIDOMWindowInner* aWindow);
 
   
+  static bool PrincipalHasPermission(nsIPrincipal* aPrincipal, const nsAString& aPerm);
+
+  
   static bool CallerHasPermission(JSContext* aCx, const nsAString& aPerm);
 
   
