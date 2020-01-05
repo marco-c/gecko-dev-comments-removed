@@ -236,6 +236,7 @@ add_task(function* test_archiveCleanup() {
 
   
   let date = fakeNow(2010, 1, 1, 1, 0, 0);
+  let firstDate = date;
   let pingId = yield TelemetryController.submitExternalPing(PING_TYPE, {}, {});
   expectedPrunedInfo.push({ id: pingId, creationDate: date });
 
@@ -262,7 +263,7 @@ add_task(function* test_archiveCleanup() {
   Telemetry.getHistogramById("TELEMETRY_ARCHIVE_OLDEST_DIRECTORY_AGE").clear();
 
   
-  let now = fakeNow(2010, 7, 1, 1, 0, 0);
+  let now = fakeNow(futureDate(firstDate, 60 * MILLISECONDS_PER_DAY));
   
   yield TelemetryController.testReset();
   
@@ -283,7 +284,7 @@ add_task(function* test_archiveCleanup() {
   h = Telemetry.getHistogramById("TELEMETRY_ARCHIVE_DIRECTORIES_COUNT").snapshot();
   Assert.equal(h.sum, 3, "Telemetry must correctly report the remaining archive directories.");
   
-  const oldestAgeInMonths = 5;
+  const oldestAgeInMonths = 1;
   h = Telemetry.getHistogramById("TELEMETRY_ARCHIVE_OLDEST_DIRECTORY_AGE").snapshot();
   Assert.equal(h.sum, oldestAgeInMonths,
                "Telemetry must correctly report age of the oldest directory in the archive.");
@@ -295,7 +296,7 @@ add_task(function* test_archiveCleanup() {
   Telemetry.getHistogramById("TELEMETRY_ARCHIVE_EVICTING_OVER_QUOTA_MS").clear();
 
   
-  fakeNow(2010, 8, 1, 1, 0, 0);
+  fakeNow(futureDate(oldestDirectoryDate, 60 * MILLISECONDS_PER_DAY));
   
   yield TelemetryController.testReset();
   
