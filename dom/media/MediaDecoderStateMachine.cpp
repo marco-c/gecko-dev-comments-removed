@@ -988,6 +988,9 @@ public:
 
   void Enter()
   {
+    
+    Reader()->ReleaseResources();
+
     mMaster->ScheduleStateMachine();
   }
 
