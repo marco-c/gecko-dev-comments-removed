@@ -12,7 +12,6 @@ class SpliceableJSONWriter;
 class ThreadInfo;
 class UniqueStacks;
 
-
 class ProfilerBacktrace
 {
 public:
