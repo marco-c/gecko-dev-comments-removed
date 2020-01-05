@@ -1705,7 +1705,9 @@ function invokerChecker(aEventType, aTargetOrFunc, aTargetFuncArg, aIsAsync)
 
 function orderChecker()
 {
-  this.__proto__ = new invokerChecker(null, null, null, false);
+  
+  
+  
 }
 
 
