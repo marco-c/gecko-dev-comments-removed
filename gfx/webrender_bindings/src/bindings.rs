@@ -456,9 +456,6 @@ fn wait_for_epoch(window: &mut WrWindowState) {
                     continue 'outer;
                 }
             }
-            else {
-                panic!("Could not get an epoch from the renderer");
-            }
 
             
             while !*finished {
