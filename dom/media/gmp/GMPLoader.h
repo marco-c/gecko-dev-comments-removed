@@ -47,7 +47,6 @@ public:
                            void** aPluginAPI,
                            uint32_t aDecryptorId) = 0;
   virtual void GMPShutdown() = 0;
-  virtual void GMPSetNodeId(const char* aNodeId, uint32_t aLength) = 0;
 };
 
 
@@ -73,7 +72,6 @@ class GMPLoader {
 public:
   virtual ~GMPLoader() {}
 
-  
   
   
   
