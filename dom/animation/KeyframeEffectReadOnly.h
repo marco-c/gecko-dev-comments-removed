@@ -477,6 +477,9 @@ private:
   static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
+
+  
+  bool mIsComposingStyle = false;
 };
 
 } 
