@@ -74,13 +74,14 @@ protected:
     virtual const Metrics& GetHorizontalMetrics() override;
 
     
-    virtual bool ShapeText(DrawTarget     *aDrawTarget,
-                           const char16_t *aText,
-                           uint32_t        aOffset,
-                           uint32_t        aLength,
-                           Script          aScript,
-                           bool            aVertical,
-                           gfxShapedText  *aShapedText) override;
+    bool ShapeText(DrawTarget     *aDrawTarget,
+                   const char16_t *aText,
+                   uint32_t        aOffset,
+                   uint32_t        aLength,
+                   Script          aScript,
+                   bool            aVertical,
+                   RoundingFlags   aRounding,
+                   gfxShapedText  *aShapedText) override;
 
     void Initialize(); 
 

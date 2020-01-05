@@ -25,6 +25,7 @@
 #include "nsIObserver.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/TypedEnumBits.h"
 #include "MainThreadUtils.h"
 #include <algorithm>
 #include "DrawMode.h"
@@ -620,6 +621,11 @@ public:
     typedef mozilla::gfx::DrawTarget DrawTarget;
     typedef mozilla::unicode::Script Script;
 
+    enum class RoundingFlags : uint8_t {
+        kRoundX = 0x01,
+        kRoundY = 0x02
+    };
+
     explicit gfxFontShaper(gfxFont *aFont)
         : mFont(aFont)
     {
@@ -637,6 +643,7 @@ public:
                            uint32_t        aLength,
                            Script          aScript,
                            bool            aVertical,
+                           RoundingFlags   aRounding,
                            gfxShapedText  *aShapedText) = 0;
 
     gfxFont *GetFont() const { return mFont; }
@@ -653,15 +660,12 @@ public:
 
 protected:
     
-    static void GetRoundOffsetsToPixels(DrawTarget* aDrawTarget,
-                                        bool* aRoundX, bool* aRoundY);
-
-    
     
     
     gfxFont* MOZ_NON_OWNING_REF mFont;
 };
 
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontShaper::RoundingFlags)
 
 
 
@@ -1339,6 +1343,8 @@ protected:
     typedef mozilla::unicode::Script Script;
     typedef mozilla::SVGContextPaint SVGContextPaint;
 
+    typedef gfxFontShaper::RoundingFlags RoundingFlags;
+
 public:
     nsrefcnt AddRef(void) {
         NS_PRECONDITION(int32_t(mRefCnt) >= 0, "illegal refcnt");
@@ -1513,6 +1519,10 @@ public:
     { return nullptr; }
 
     gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
+
+    
+    
+    RoundingFlags GetRoundOffsetsToPixels(DrawTarget* aDrawTarget);
 
     
     struct Metrics {
@@ -1763,6 +1773,7 @@ public:
                                  bool aVertical,
                                  int32_t aAppUnitsPerDevUnit,
                                  uint32_t aFlags,
+                                 RoundingFlags aRounding,
                                  gfxTextPerfMetrics *aTextPerf);
 
     
@@ -1942,6 +1953,7 @@ protected:
                    uint32_t       aLength,
                    Script         aScript,
                    bool           aVertical,
+                   RoundingFlags  aRounding,
                    gfxShapedText *aShapedText); 
 
     
@@ -1952,6 +1964,7 @@ protected:
                            uint32_t         aLength,
                            Script           aScript,
                            bool             aVertical,
+                           RoundingFlags    aRounding,
                            gfxShapedText   *aShapedText);
 
     
@@ -1978,6 +1991,7 @@ protected:
                                    uint32_t    aLength,
                                    Script      aScript,
                                    bool        aVertical,
+                                   RoundingFlags aRounding,
                                    gfxTextRun *aTextRun);
 
     
@@ -1992,6 +2006,7 @@ protected:
                                        uint32_t    aLength,
                                        Script      aScript,
                                        bool        aVertical,
+                                       RoundingFlags aRounding,
                                        gfxTextRun *aTextRun);
 
     void CheckForFeaturesInvolvingSpace();
