@@ -58,7 +58,7 @@ function openBoxModelView() {
     return {
       toolbox: data.toolbox,
       inspector: data.inspector,
-      view: data.inspector.computedview,
+      view: data.inspector.computedview.boxModelView,
       testActor: data.testActor
     };
   });
@@ -85,14 +85,3 @@ function setStyle(testActor, selector, propertyName, value) {
                     .style.${propertyName} = "${value}";
   `);
 }
-
-
-
-
-
-
-var _selectNode = selectNode;
-selectNode = function* (node, inspector, reason) {
-  yield _selectNode(node, inspector, reason);
-  yield waitForUpdate(inspector);
-};
