@@ -10,8 +10,8 @@
 
 
 
-var name = Symbol('method');
-var method = { *[name]() {} }[name];
+var m = Symbol('method');
+var method = { *[m]() {} }[m];
 
 assert.sameValue(method.name, '[method]');
 verifyNotEnumerable(method, 'name');

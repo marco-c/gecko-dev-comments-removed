@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "log1p");
+verifyWritable(Math, "log1p");
+verifyConfigurable(Math, "log1p");
+
+reportCompare(0, 0);

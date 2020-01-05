@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "cosh");
+verifyWritable(Math, "cosh");
+verifyConfigurable(Math, "cosh");
+
+reportCompare(0, 0);

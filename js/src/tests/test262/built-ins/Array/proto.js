@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(Array), Function.prototype);
+
+reportCompare(0, 0);

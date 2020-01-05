@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "asin");
+verifyWritable(Math, "asin");
+verifyConfigurable(Math, "asin");
+
+reportCompare(0, 0);

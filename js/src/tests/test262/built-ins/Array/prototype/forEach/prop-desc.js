@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.forEach, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "forEach");
+verifyWritable(Array.prototype, "forEach");
+verifyConfigurable(Array.prototype, "forEach");
+
+reportCompare(0, 0);

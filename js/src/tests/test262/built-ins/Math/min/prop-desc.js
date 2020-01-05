@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "min");
+verifyWritable(Math, "min");
+verifyConfigurable(Math, "min");
+
+reportCompare(0, 0);

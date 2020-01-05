@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "hypot");
+verifyWritable(Math, "hypot");
+verifyConfigurable(Math, "hypot");
+
+reportCompare(0, 0);

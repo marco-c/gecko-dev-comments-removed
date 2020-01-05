@@ -17,7 +17,9 @@
 
 
 var x = null;
-var length;
+
+
+let length;
 
 var result;
 var vals = [ , ];

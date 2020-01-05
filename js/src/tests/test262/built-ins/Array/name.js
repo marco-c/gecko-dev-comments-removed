@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.name, 'Array');
+
+verifyNotEnumerable(Array, 'name');
+verifyNotWritable(Array, 'name');
+verifyConfigurable(Array, 'name');
+
+reportCompare(0, 0);

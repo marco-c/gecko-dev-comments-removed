@@ -21,16 +21,16 @@
 
 
 
-var name = 'outside';
-var probeBefore = function() { return name; };
+var n = 'outside';
+var probeBefore = function() { return n; };
 var probeInside;
 
 
 
 
-var func = function name() {
-  let name = 'inside';
-  probeInside = function() { return name; };
+var func = function n() {
+  let n = 'inside';
+  probeInside = function() { return n; };
 };
 
 func();

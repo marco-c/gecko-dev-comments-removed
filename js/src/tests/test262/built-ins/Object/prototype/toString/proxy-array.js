@@ -1,0 +1,42 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var objectProxy = new Proxy({}, {});
+var arrayProxy = new Proxy([], {});
+var arrayProxyProxy = new Proxy(arrayProxy, {});
+
+assert.sameValue(
+  Object.prototype.toString.call(objectProxy), '[object Object]'
+);
+assert.sameValue(
+  Object.prototype.toString.call(arrayProxy), '[object Array]', 'array proxy'
+);
+assert.sameValue(
+  Object.prototype.toString.call(arrayProxyProxy),
+  '[object Array]',
+  'proxy for array proxy'
+);
+
+reportCompare(0, 0);

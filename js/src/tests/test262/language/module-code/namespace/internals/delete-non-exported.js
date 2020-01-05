@@ -14,6 +14,8 @@
 
 
 
+
+
 import * as ns from './delete-non-exported.js';
 var sym = Symbol('test262');
 
@@ -25,9 +27,9 @@ assert(
   Reflect.deleteProperty(ns, 'default'), 'Reflect.deleteProperty: default'
 );
 
-assert(delete ns[Symbol.toStringTag], 'delete: Symbol.toStringTag');
-assert(
-  Reflect.deleteProperty(ns, Symbol.toStringTag),
+assert.throws(TypeError, function() { delete ns[Symbol.toStringTag]; }, 'delete: Symbol.toStringTag');
+assert.sameValue(
+  Reflect.deleteProperty(ns, Symbol.toStringTag), false,
   'Reflect.deleteProperty: Symbol.toStringTag'
 );
 

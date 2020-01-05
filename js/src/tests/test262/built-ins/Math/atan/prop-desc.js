@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "atan");
+verifyWritable(Math, "atan");
+verifyConfigurable(Math, "atan");
+
+reportCompare(0, 0);

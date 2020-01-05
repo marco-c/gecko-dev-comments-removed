@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "sqrt");
+verifyWritable(Math, "sqrt");
+verifyConfigurable(Math, "sqrt");
+
+reportCompare(0, 0);

@@ -29,7 +29,7 @@ var item;
 
 var callCount = 0;
 
-class C { *gen() {
+var C = class {*gen() {
     callCount += 1;
     yield [...yield yield];
 }}

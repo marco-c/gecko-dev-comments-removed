@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue("abcdbc".match(/(?<=([abc]+)).\1/), null);
+
+reportCompare(0, 0);

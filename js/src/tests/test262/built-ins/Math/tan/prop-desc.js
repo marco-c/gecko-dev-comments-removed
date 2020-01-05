@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "tan");
+verifyWritable(Math, "tan");
+verifyConfigurable(Math, "tan");
+
+reportCompare(0, 0);

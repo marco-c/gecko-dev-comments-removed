@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, 'PI');
+verifyNotWritable(Math, 'PI');
+verifyNotConfigurable(Math, 'PI');
+
+reportCompare(0, 0);

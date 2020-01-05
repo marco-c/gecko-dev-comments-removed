@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "sign");
+verifyWritable(Math, "sign");
+verifyConfigurable(Math, "sign");
+
+reportCompare(0, 0);

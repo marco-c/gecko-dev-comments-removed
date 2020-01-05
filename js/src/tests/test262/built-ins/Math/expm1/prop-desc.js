@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "expm1");
+verifyWritable(Math, "expm1");
+verifyConfigurable(Math, "expm1");
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(async function* arguments() { });

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "exp");
+verifyWritable(Math, "exp");
+verifyConfigurable(Math, "exp");
+
+reportCompare(0, 0);

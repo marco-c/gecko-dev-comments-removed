@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "trunc");
+verifyWritable(Math, "trunc");
+verifyConfigurable(Math, "trunc");
+
+reportCompare(0, 0);

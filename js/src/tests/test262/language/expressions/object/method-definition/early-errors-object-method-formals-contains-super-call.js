@@ -10,6 +10,6 @@
 
 
 
-!{
+({
   async foo(foo = super()) { }
-}
+})

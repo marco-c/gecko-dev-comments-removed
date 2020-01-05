@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, 'SQRT1_2');
+verifyNotWritable(Math, 'SQRT1_2');
+verifyNotConfigurable(Math, 'SQRT1_2');
+
+reportCompare(0, 0);

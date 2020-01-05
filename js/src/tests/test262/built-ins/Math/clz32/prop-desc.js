@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "clz32");
+verifyWritable(Math, "clz32");
+verifyConfigurable(Math, "clz32");
+
+reportCompare(0, 0);

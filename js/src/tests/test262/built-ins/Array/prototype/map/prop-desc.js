@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.map, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "map");
+verifyWritable(Array.prototype, "map");
+verifyConfigurable(Array.prototype, "map");
+
+reportCompare(0, 0);

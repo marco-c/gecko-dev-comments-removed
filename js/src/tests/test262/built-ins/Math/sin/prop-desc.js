@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "sin");
+verifyWritable(Math, "sin");
+verifyConfigurable(Math, "sin");
+
+reportCompare(0, 0);

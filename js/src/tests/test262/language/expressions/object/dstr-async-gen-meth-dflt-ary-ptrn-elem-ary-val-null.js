@@ -1,0 +1,54 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {
+  async *method([[x]] = [null]) {
+    
+  }
+};
+
+assert.throws(TypeError, function() {
+  obj.method();
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "ceil");
+verifyWritable(Math, "ceil");
+verifyConfigurable(Math, "ceil");
+
+reportCompare(0, 0);

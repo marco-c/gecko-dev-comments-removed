@@ -16,7 +16,6 @@
 
 
 
-
 var o = Object.create({ x: 1, y: 2 });
 o.z = 3;
 

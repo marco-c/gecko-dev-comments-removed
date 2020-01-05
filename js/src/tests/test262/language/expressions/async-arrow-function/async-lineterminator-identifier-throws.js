@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  async
+  identifier => {}
+});
+
+reportCompare(0, 0);

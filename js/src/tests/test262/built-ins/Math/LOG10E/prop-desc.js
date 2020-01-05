@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, 'LOG10E');
+verifyNotWritable(Math, 'LOG10E');
+verifyNotConfigurable(Math, 'LOG10E');
+
+reportCompare(0, 0);

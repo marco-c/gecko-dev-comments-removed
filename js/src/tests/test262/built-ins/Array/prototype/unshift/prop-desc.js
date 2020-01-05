@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.unshift, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "unshift");
+verifyWritable(Array.prototype, "unshift");
+verifyConfigurable(Array.prototype, "unshift");
+
+reportCompare(0, 0);

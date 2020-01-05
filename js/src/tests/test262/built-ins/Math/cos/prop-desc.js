@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "cos");
+verifyWritable(Math, "cos");
+verifyConfigurable(Math, "cos");
+
+reportCompare(0, 0);

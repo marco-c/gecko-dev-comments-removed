@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  init = f;
+
+  {
+    function f() {}
+  }
+
+  if (true) function f() {  } else function _f() {}
+
+  
+}());
+
+assert.sameValue(init, undefined);
+
+reportCompare(0, 0);

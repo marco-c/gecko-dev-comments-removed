@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(RegExp.prototype, 'unicode');
+
+assert.sameValue(desc.set, undefined);
+assert.sameValue(typeof desc.get, 'function');
+
+reportCompare(0, 0);

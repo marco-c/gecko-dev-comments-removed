@@ -16,39 +16,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 var log = [];
-var iter = {
+var obj = {
   get [Symbol.iterator]() {
     log.push({ name: "get [Symbol.iterator]" });
   },
@@ -156,26 +125,35 @@ var iter = {
     };
   }
 };
-var asyncIterator = (async function*() {
+
+
+
+var callCount = 0;
+
+async function *gen() {
+  callCount += 1;
   log.push({ name: "before yield*" });
-  var v = yield* iter;
-  log.push({
-    name: "after yield*",
-    value: v
-  });
-  return "return-value";
-})();
+    var v = yield* obj;
+    log.push({
+      name: "after yield*",
+      value: v
+    });
+    return "return-value";
+
+}
+
+var iter = gen();
 
 assert.sameValue(log.length, 0, "log.length");
 
-asyncIterator.next("next-arg-1").then(v => {
+iter.next("next-arg-1").then(v => {
   assert.sameValue(log[0].name, "before yield*");
 
   assert.sameValue(log[1].name, "get [Symbol.asyncIterator]");
-  assert.sameValue(log[1].thisValue, iter, "get [Symbol.asyncIterator] thisValue");
+  assert.sameValue(log[1].thisValue, obj, "get [Symbol.asyncIterator] thisValue");
 
   assert.sameValue(log[2].name, "call [Symbol.asyncIterator]");
-  assert.sameValue(log[2].thisValue, iter, "[Symbol.asyncIterator] thisValue");
+  assert.sameValue(log[2].thisValue, obj, "[Symbol.asyncIterator] thisValue");
   assert.sameValue(log[2].args.length, 0, "[Symbol.asyncIterator] args.length");
 
   assert.sameValue(log[3].name, "get next");
@@ -201,44 +179,43 @@ asyncIterator.next("next-arg-1").then(v => {
   assert.sameValue(log[8].name, "get next value (1)");
   assert.sameValue(log[8].thisValue.name, "next-result-1", "get next value thisValue");
 
-  assert.sameValue(log[9].name, "get next done (1)");
-  assert.sameValue(log[9].thisValue.name, "next-result-1", "get next done thisValue");
-
   assert.sameValue(v.value, "next-value-1");
   assert.sameValue(v.done, false);
 
-  assert.sameValue(log.length, 10, "log.length");
+  assert.sameValue(log.length, 9, "log.length");
 
-  asyncIterator.next("next-arg-2").then(v => {
-    assert.sameValue(log[10].name, "get next");
-    assert.sameValue(log[10].thisValue.name, "asyncIterator", "get next thisValue");
+  iter.next("next-arg-2").then(v => {
+    assert.sameValue(log[9].name, "get next");
+    assert.sameValue(log[9].thisValue.name, "asyncIterator", "get next thisValue");
 
-    assert.sameValue(log[11].name, "call next");
-    assert.sameValue(log[11].thisValue.name, "asyncIterator", "next thisValue");
-    assert.sameValue(log[11].args.length, 1, "next args.length");
-    assert.sameValue(log[11].args[0], "next-arg-2", "next args[0]");
+    assert.sameValue(log[10].name, "call next");
+    assert.sameValue(log[10].thisValue.name, "asyncIterator", "next thisValue");
+    assert.sameValue(log[10].args.length, 1, "next args.length");
+    assert.sameValue(log[10].args[0], "next-arg-2", "next args[0]");
 
-    assert.sameValue(log[12].name, "get next then (2)");
-    assert.sameValue(log[12].thisValue.name, "next-promise-2", "get next then thisValue");
+    assert.sameValue(log[11].name, "get next then (2)");
+    assert.sameValue(log[11].thisValue.name, "next-promise-2", "get next then thisValue");
 
-    assert.sameValue(log[13].name, "call next then (2)");
-    assert.sameValue(log[13].thisValue.name, "next-promise-2", "next then thisValue");
-    assert.sameValue(log[13].args.length, 2, "next then args.length");
-    assert.sameValue(typeof log[13].args[0], "function", "next then args[0]");
-    assert.sameValue(typeof log[13].args[1], "function", "next then args[1]");
+    assert.sameValue(log[12].name, "call next then (2)");
+    assert.sameValue(log[12].thisValue.name, "next-promise-2", "next then thisValue");
+    assert.sameValue(log[12].args.length, 2, "next then args.length");
+    assert.sameValue(typeof log[12].args[0], "function", "next then args[0]");
+    assert.sameValue(typeof log[12].args[1], "function", "next then args[1]");
 
-    assert.sameValue(log[14].name, "get next done (2)");
-    assert.sameValue(log[14].thisValue.name, "next-result-2", "get next done thisValue");
+    assert.sameValue(log[13].name, "get next done (2)");
+    assert.sameValue(log[13].thisValue.name, "next-result-2", "get next done thisValue");
 
-    assert.sameValue(log[15].name, "get next value (2)");
-    assert.sameValue(log[15].thisValue.name, "next-result-2", "get next value thisValue");
+    assert.sameValue(log[14].name, "get next value (2)");
+    assert.sameValue(log[14].thisValue.name, "next-result-2", "get next value thisValue");
 
-    assert.sameValue(log[16].name, "after yield*");
-    assert.sameValue(log[16].value, "next-value-2");
+    assert.sameValue(log[15].name, "after yield*");
+    assert.sameValue(log[15].value, "next-value-2");
 
     assert.sameValue(v.value, "return-value");
     assert.sameValue(v.done, true);
 
-    assert.sameValue(log.length, 17, "log.length");
+    assert.sameValue(log.length, 16, "log.length");
   }).then($DONE, $DONE);
 }).catch($DONE);
+
+assert.sameValue(callCount, 1);

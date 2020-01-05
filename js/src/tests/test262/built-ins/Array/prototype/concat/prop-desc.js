@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.concat, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "concat");
+verifyWritable(Array.prototype, "concat");
+verifyConfigurable(Array.prototype, "concat");
+
+reportCompare(0, 0);

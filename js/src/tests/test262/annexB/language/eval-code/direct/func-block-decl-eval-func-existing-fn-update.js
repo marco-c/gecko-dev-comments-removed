@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var after;
+
+(function() {
+  eval(
+    '{ function f() { return "inner declaration"; } }after = f;\
+    \
+    function f() {\
+      return "outer declaration";\
+    }'
+  );
+}());
+
+assert.sameValue(typeof after, 'function');
+assert.sameValue(after(), 'inner declaration');
+
+reportCompare(0, 0);

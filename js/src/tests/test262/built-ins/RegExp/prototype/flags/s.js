@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var flags;
+
+flags = /./s.flags;
+assert.sameValue(flags, 's');
+
+let re = /./;
+Object.defineProperty(re, 'dotAll', {value: true});
+assert.sameValue(re.flags, 's');
+
+reportCompare(0, 0);

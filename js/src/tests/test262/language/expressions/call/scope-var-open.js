@@ -20,19 +20,19 @@
 
 
 
-var name = 'outside';
-var probeBefore = function() { return name; };
+var n = 'outside';
+var probeBefore = function() { return n; };
 var probeBody;
 
 
 
 
-var func = function name() {
+var func = function n() {
   
   
   
-  var name;
-  probeBody = function() { return name; };
+  var n;
+  probeBody = function() { return n; };
 };
 
 func();

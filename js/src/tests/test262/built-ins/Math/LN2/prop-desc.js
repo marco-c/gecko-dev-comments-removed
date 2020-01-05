@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, 'LN2');
+verifyNotWritable(Math, 'LN2');
+verifyNotConfigurable(Math, 'LN2');
+
+reportCompare(0, 0);

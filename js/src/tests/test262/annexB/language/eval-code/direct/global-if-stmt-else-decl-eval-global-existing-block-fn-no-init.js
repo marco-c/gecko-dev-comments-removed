@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+eval(
+  'assert.sameValue(f, undefined);\
+  \
+  {\
+    function f() {}\
+  }if (false) ; else function f() {  }'
+);
+
+reportCompare(0, 0);

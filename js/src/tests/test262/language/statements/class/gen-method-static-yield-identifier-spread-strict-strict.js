@@ -1,0 +1,52 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var callCount = 0;
+
+class C {static *gen() {
+    callCount += 1;
+    return {
+         ...(function() {
+            var yield;
+            throw new Test262Error();
+         }()),
+      }
+}}
+
+var gen = C.gen;
+
+var iter = gen();
+
+
+
+assert.sameValue(callCount, 1);

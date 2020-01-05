@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.splice.length, 2);
+
+verifyNotEnumerable(Array.prototype.splice, 'length');
+verifyNotWritable(Array.prototype.splice, 'length');
+verifyConfigurable(Array.prototype.splice, 'length');
+
+reportCompare(0, 0);

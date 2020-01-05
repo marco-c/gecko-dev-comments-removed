@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "acos");
+verifyWritable(Math, "acos");
+verifyConfigurable(Math, "acos");
+
+reportCompare(0, 0);

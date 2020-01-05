@@ -27,15 +27,9 @@ if (delete MyFunction !== false) {
 }
 
 
-function MyFunction(){};
 var MyObject = new MyFunction();
 if (delete MyObject !== false) {
   $ERROR('#4: function MyFunction(){}; var MyObject = new MyFunction(); delete MyObject === false');
-}
-
-
-if (delete MyObject !== false) {
-  $ERROR('#5: function MyFunction(){}; var MyObject = new MyFunction(); delete MyObject === false');
 }
 
 reportCompare(0, 0);

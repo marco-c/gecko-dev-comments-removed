@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Array, 'prototype');
+verifyNotWritable(Array, 'prototype');
+verifyNotConfigurable(Array, 'prototype');
+
+reportCompare(0, 0);

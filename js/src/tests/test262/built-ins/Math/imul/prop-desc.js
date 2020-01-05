@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "imul");
+verifyWritable(Math, "imul");
+verifyConfigurable(Math, "imul");
+
+reportCompare(0, 0);

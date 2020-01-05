@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "pow");
+verifyWritable(Math, "pow");
+verifyConfigurable(Math, "pow");
+
+reportCompare(0, 0);

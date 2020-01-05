@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Function().name, 'anonymous');
+verifyNotEnumerable(Function(), 'name');
+verifyNotWritable(Function(), 'name');
+verifyConfigurable(Function(), 'name');
+
+reportCompare(0, 0);

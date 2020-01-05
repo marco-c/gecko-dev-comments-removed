@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.constructor, Array);
+
+verifyNotEnumerable(Array.prototype, 'constructor');
+verifyWritable(Array.prototype, 'constructor');
+verifyConfigurable(Array.prototype, 'constructor');
+
+reportCompare(0, 0);

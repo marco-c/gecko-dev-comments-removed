@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "max");
+verifyWritable(Math, "max");
+verifyConfigurable(Math, "max");
+
+reportCompare(0, 0);

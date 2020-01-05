@@ -10,7 +10,7 @@
 
 
 
-!{
+({
   async foo (x = await) {  }
-}
+})
 

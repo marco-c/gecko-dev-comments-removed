@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "cbrt");
+verifyWritable(Math, "cbrt");
+verifyConfigurable(Math, "cbrt");
+
+reportCompare(0, 0);

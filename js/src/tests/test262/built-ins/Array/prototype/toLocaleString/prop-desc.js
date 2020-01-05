@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.toLocaleString, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "toLocaleString");
+verifyWritable(Array.prototype, "toLocaleString");
+verifyConfigurable(Array.prototype, "toLocaleString");
+
+reportCompare(0, 0);

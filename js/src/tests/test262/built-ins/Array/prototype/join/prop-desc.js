@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.join, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "join");
+verifyWritable(Array.prototype, "join");
+verifyConfigurable(Array.prototype, "join");
+
+reportCompare(0, 0);

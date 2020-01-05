@@ -1,0 +1,61 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  async *method({} = undefined) {
+    
+  }
+};
+
+var method = C.prototype.method;
+
+assert.throws(TypeError, function() {
+  method();
+});
+
+reportCompare(0, 0);

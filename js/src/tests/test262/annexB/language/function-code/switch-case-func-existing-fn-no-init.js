@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  init = f;
+
+  switch (1) {
+    case 1:
+      function f() { return 'inner declaration'; }
+  }
+
+  function f() {
+    return 'outer declaration';
+  }
+}());
+
+assert.sameValue(init(), 'outer declaration');
+
+reportCompare(0, 0);

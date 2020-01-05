@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.join.length, 1);
+
+verifyNotEnumerable(Array.prototype.join, 'length');
+verifyNotWritable(Array.prototype.join, 'length');
+verifyConfigurable(Array.prototype.join, 'length');
+
+reportCompare(0, 0);

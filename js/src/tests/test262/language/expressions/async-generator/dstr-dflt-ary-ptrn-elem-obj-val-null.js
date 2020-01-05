@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var f = async function*([{ x }] = [null]) {
+  
+};
+
+assert.throws(TypeError, function() {
+  f();
+});
+
+reportCompare(0, 0);

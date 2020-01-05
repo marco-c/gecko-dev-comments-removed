@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Array.prototype.myproperty = 42;
+var x = Array();
+assert.sameValue(x.myproperty, 42);
+
+assert.sameValue(Object.prototype.hasOwnProperty.call(x, 'myproperty'), false);
+
+reportCompare(0, 0);

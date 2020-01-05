@@ -11,9 +11,8 @@
 
 
 
-if (typeof Intl.PluralRules.prototype.select(0) !== "string") {
-    $ERROR("Intl.PluralRules's prototype is not an object that has been " +
-        "initialized as an Intl.PluralRules");
-}
+assert.throws(TypeError, function() {
+    Intl.PluralRules.prototype.select(0);
+}, "Intl.PluralRules.prototype is not an object that has been initialized as an Intl.PluralRules");
 
 reportCompare(0, 0);

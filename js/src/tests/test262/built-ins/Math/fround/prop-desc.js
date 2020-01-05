@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "fround");
+verifyWritable(Math, "fround");
+verifyConfigurable(Math, "fround");
+
+reportCompare(0, 0);

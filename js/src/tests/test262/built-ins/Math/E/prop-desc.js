@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, 'E');
+verifyNotWritable(Math, 'E');
+verifyNotConfigurable(Math, 'E');
+
+reportCompare(0, 0);

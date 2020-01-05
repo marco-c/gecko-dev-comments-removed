@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  new Array.prototype.concat();
+});
+
+assert.throws(TypeError, function() {
+  new [].concat();
+});
+
+reportCompare(0, 0);

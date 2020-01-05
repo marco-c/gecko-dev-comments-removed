@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "atanh");
+verifyWritable(Math, "atanh");
+verifyConfigurable(Math, "atanh");
+
+reportCompare(0, 0);

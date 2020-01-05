@@ -12,6 +12,6 @@
 
 
 
-!{
+({
   async foo (arguments) { }
-}
+})

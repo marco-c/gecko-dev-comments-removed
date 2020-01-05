@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.reverse, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "reverse");
+verifyWritable(Array.prototype, "reverse");
+verifyConfigurable(Array.prototype, "reverse");
+
+reportCompare(0, 0);

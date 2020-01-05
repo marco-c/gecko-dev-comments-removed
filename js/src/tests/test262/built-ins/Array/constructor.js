@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array, 'function');
+
+reportCompare(0, 0);

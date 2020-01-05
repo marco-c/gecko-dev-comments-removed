@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "random");
+verifyWritable(Math, "random");
+verifyConfigurable(Math, "random");
+
+reportCompare(0, 0);

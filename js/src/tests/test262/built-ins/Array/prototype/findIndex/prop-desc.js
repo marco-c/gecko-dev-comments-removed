@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Array.prototype.findIndex,
+  'function',
+  '`typeof Array.prototype.findIndex` is `function`'
+);
+
+verifyNotEnumerable(Array.prototype, 'findIndex');
+verifyWritable(Array.prototype, 'findIndex');
+verifyConfigurable(Array.prototype, 'findIndex');
+
+reportCompare(0, 0);

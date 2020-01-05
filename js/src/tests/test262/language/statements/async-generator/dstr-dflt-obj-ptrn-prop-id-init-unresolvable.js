@@ -1,0 +1,45 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function* f({ x: y = unresolvableReference } = {}) {
+  
+};
+
+assert.throws(ReferenceError, function() {
+  f();
+});
+
+reportCompare(0, 0);

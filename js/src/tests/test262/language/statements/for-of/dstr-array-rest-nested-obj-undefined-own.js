@@ -26,7 +26,9 @@
 
 
 var x = null;
-var length;
+
+
+let length;
 
 var counter = 0;
 

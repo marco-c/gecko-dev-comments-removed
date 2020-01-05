@@ -1,0 +1,48 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var f;
+f = async function*([{ x }]) {
+  
+};
+
+assert.throws(TypeError, function() {
+  f([]);
+});
+
+reportCompare(0, 0);

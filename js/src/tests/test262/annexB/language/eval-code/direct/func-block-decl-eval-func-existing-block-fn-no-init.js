@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var init;
+
+(function() {
+  eval(
+    'init = f;\
+    \
+    {\
+      function f() {}\
+    }{ function f() {  } }'
+  );
+}());
+
+assert.sameValue(init, undefined);
+
+reportCompare(0, 0);

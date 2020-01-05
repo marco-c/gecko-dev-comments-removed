@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(ReferenceError, function() {
+  (function() {}({...unresolvableReference}));
+});
+
+reportCompare(0, 0);

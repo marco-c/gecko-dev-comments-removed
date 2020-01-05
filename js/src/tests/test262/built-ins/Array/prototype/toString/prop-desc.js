@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.toString, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "toString");
+verifyWritable(Array.prototype, "toString");
+verifyConfigurable(Array.prototype, "toString");
+
+reportCompare(0, 0);

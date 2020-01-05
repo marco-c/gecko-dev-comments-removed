@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+  var a =[];
+  a.length = 4294967295 ;
+
+assert.sameValue(a.length, 4294967295, 'a.length');
+
+reportCompare(0, 0);

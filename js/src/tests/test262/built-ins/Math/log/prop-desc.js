@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Math, "log");
+verifyWritable(Math, "log");
+verifyConfigurable(Math, "log");
+
+reportCompare(0, 0);

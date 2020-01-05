@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Array.prototype.filter, 'function', 'typeof');
+
+verifyNotEnumerable(Array.prototype, "filter");
+verifyWritable(Array.prototype, "filter");
+verifyConfigurable(Array.prototype, "filter");
+
+reportCompare(0, 0);

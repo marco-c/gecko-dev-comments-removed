@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Array.prototype.lastIndexOf.length, 1);
+
+verifyNotEnumerable(Array.prototype.lastIndexOf, 'length');
+verifyNotWritable(Array.prototype.lastIndexOf, 'length');
+verifyConfigurable(Array.prototype.lastIndexOf, 'length');
+
+reportCompare(0, 0);
