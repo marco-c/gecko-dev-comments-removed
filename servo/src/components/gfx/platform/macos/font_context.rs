@@ -2,12 +2,6 @@
 
 
 
-use font::UsedFontStyle;
-use font_context::FontContextHandleMethods;
-use platform::macos::font::FontHandle;
-
-use core_text;
-
 #[deriving(Clone)]
 pub struct FontContextHandle {
     ctx: ()
@@ -18,21 +12,5 @@ impl FontContextHandle {
     
     pub fn new() -> FontContextHandle {
         FontContextHandle { ctx: () }
-    }
-}
-
-impl FontContextHandleMethods for FontContextHandle {
-    fn create_font_from_identifier(&self,
-                                   name: &str,
-                                   style: Option<&UsedFontStyle>)
-                                -> Result<FontHandle, ()> {
-        let pt_size = match style {
-            Some(style) => style.pt_size,
-            None => 0.0,
-        };
-        let ctfont_result = core_text::font::new_from_name(name.as_slice(), pt_size);
-        ctfont_result.and_then(|ctfont| {
-            FontHandle::new_from_CTFont(self, ctfont)
-        })
     }
 }
