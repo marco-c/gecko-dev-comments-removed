@@ -92,6 +92,8 @@ pub enum ScriptMsg {
     
     TraverseHistory(Option<PipelineId>, TraversalDirection),
     
+    JointSessionHistoryLength(PipelineId, IpcSender<u32>),
+    
     NewFavicon(Url),
     
     NodeStatus(Option<String>),
