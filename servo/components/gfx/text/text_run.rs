@@ -16,6 +16,7 @@ use text::glyph::{CharIndex, GlyphStore};
 
 #[derive(Clone)]
 pub struct TextRun {
+    
     pub text: Arc<String>,
     pub font_template: Arc<FontTemplateData>,
     pub actual_pt_size: Au,
@@ -310,7 +311,8 @@ impl<'a> TextRun {
                         self.font_metrics.descent)
     }
 
-    pub fn metrics_for_slice(&self, glyphs: &GlyphStore, slice_range: &Range<CharIndex>) -> RunMetrics {
+    pub fn metrics_for_slice(&self, glyphs: &GlyphStore, slice_range: &Range<CharIndex>)
+                             -> RunMetrics {
         RunMetrics::new(glyphs.advance_for_char_range(slice_range),
                         self.font_metrics.ascent,
                         self.font_metrics.descent)

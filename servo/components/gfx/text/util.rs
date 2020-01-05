@@ -2,8 +2,6 @@
 
 
 
-use text::glyph::CharIndex;
-
 #[derive(PartialEq, Eq, Copy)]
 pub enum CompressionMode {
     CompressNone,
@@ -25,12 +23,10 @@ pub enum CompressionMode {
 pub fn transform_text(text: &str,
                       mode: CompressionMode,
                       incoming_whitespace: bool,
-                      output_text: &mut String,
-                      new_line_pos: &mut Vec<CharIndex>)
+                      output_text: &mut String)
                       -> bool {
     let out_whitespace = match mode {
         CompressionMode::CompressNone | CompressionMode::DiscardNewline => {
-            let mut new_line_index = CharIndex(0);
             for ch in text.chars() {
                 if is_discardable_char(ch, mode) {
                     
@@ -38,15 +34,6 @@ pub fn transform_text(text: &str,
                     
                     if ch == '\t' {
                         
-                    } else if ch == '\n' {
-                        
-                        
-                        new_line_pos.push(new_line_index);
-                        new_line_index = CharIndex(0);
-                    }
-
-                    if ch != '\n' {
-                        new_line_index = new_line_index + CharIndex(1);
                     }
                     output_text.push(ch);
                 }
@@ -124,6 +111,6 @@ pub fn fixed_to_rounded_int(before: isize, f: i32) -> isize {
     if f > 0i32 {
         ((half + f) >> before) as isize
     } else {
-       -((half - f) >> before) as isize
+       -((half - f) >> before as usize) as isize
     }
 }
