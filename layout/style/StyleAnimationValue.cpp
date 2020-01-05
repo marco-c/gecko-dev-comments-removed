@@ -784,11 +784,17 @@ ComputeShapeDistance(nsCSSPropertyID aProperty,
       }
       break;
     }
-    case eCSSKeyword_polygon:
+    case eCSSKeyword_polygon: {
       
-      MOZ_ASSERT(false);
+      
+      const nsCSSValuePairList* list = func->Item(2).GetPairListValue();
+      do {
+        squareDistance += pixelCalcDistance(ExtractCalcValue(list->mXValue)) +
+                          pixelCalcDistance(ExtractCalcValue(list->mYValue));
+        list = list->mNext;
+      } while (list);
       break;
-
+    }
     case eCSSKeyword_inset:
       
       MOZ_ASSERT(false);
