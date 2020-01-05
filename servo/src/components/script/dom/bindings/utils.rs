@@ -223,10 +223,22 @@ pub struct ConstantSpec {
 }
 
 
+pub struct NativePropertyHooks {
+    
+    pub native_properties: &'static NativeProperties,
+
+    
+    pub proto_hooks: Option<&'static NativePropertyHooks>,
+}
+
+
 pub struct DOMClass {
     
     
-    pub interface_chain: [PrototypeList::id::ID, ..MAX_PROTO_CHAIN_LENGTH]
+    pub interface_chain: [PrototypeList::id::ID, ..MAX_PROTO_CHAIN_LENGTH],
+
+    /// The NativePropertyHooks for the interface associated with this class.
+    pub native_hooks: &'static NativePropertyHooks,
 }
 
 /// The JSClass used for DOM object reflectors.
