@@ -50,7 +50,7 @@ ServoStyleSheet::SetOwningDocument(nsIDocument* aDocument)
   mDocument = aDocument;
 }
 
-StyleSheetHandle
+ServoStyleSheet*
 ServoStyleSheet::GetParentSheet() const
 {
   
@@ -60,7 +60,7 @@ ServoStyleSheet::GetParentSheet() const
 }
 
 void
-ServoStyleSheet::AppendStyleSheet(StyleSheetHandle aSheet)
+ServoStyleSheet::AppendStyleSheet(ServoStyleSheet* aSheet)
 {
   
   
