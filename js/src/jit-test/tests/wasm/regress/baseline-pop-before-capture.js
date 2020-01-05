@@ -1,7 +1,5 @@
 
 
-load(libdir + "wasm.js");
-
 var src =
 `(module
   (func (result i32)

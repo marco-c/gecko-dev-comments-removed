@@ -1,5 +1,3 @@
-load(libdir + "wasm.js");
-
 
 assertEq(wasmEvalText(`(module
     (func

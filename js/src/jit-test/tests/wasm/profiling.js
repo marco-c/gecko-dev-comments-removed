@@ -1,5 +1,3 @@
-load(libdir + "wasm.js");
-
 
 if (!getBuildConfiguration()["arm-simulator"])
     quit();

@@ -7,8 +7,6 @@
 
 
 
-load(libdir + "wasm.js");
-
 
 
 

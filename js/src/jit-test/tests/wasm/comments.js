@@ -1,5 +1,3 @@
-load(libdir + "wasm.js");
-
 
 assertErrorMessage(() => wasmEvalText(''), SyntaxError, /parsing wasm text/);
 

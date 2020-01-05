@@ -1,5 +1,3 @@
-load(libdir + "wasm.js");
-
 
 
 var expr = '(get_local 0)';

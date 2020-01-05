@@ -1,7 +1,5 @@
 
 
-load(libdir + "wasm.js");
-
 
 
 

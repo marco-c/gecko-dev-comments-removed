@@ -1,5 +1,3 @@
-load(libdir + "wasm.js");
-
 
 wasmFullPass(` (module
    (memory 1)
