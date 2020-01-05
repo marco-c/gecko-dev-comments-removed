@@ -212,6 +212,8 @@ public:
   virtual bool Resume() override;
 
   GLContext* gl() const { return mGLContext; }
+  GLContext* GetGLContext() const override { return mGLContext; }
+
   
 
 
