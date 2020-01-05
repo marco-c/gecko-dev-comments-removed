@@ -154,10 +154,8 @@ public:
 
 
   static nsresult Resolve(nsBlockFrame* aBlockFrame);
-  static nsresult ResolveParagraph(nsBlockFrame* aBlockFrame,
-                                   BidiParagraphData* aBpd);
-  static void ResolveParagraphWithinBlock(nsBlockFrame* aBlockFrame,
-                                          BidiParagraphData* aBpd);
+  static nsresult ResolveParagraph(BidiParagraphData* aBpd);
+  static void ResolveParagraphWithinBlock(BidiParagraphData* aBpd);
 
   
 
@@ -397,8 +395,7 @@ private:
 
 
 
-  static void TraverseFrames(nsBlockFrame*              aBlockFrame,
-                             nsBlockInFlowLineIterator* aLineIter,
+  static void TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
                              nsIFrame*                  aCurrentFrame,
                              BidiParagraphData*         aBpd);
 
