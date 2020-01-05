@@ -5,6 +5,7 @@
 
 
 #include "mozilla/CDMProxy.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
@@ -15,6 +16,7 @@
 #include "MediaData.h"
 #include "MediaInfo.h"
 #include "MediaFormatReader.h"
+#include "MediaPrefs.h"
 #include "MediaResource.h"
 #include "mozilla/SharedThreadPool.h"
 #include "VideoUtils.h"
@@ -22,6 +24,7 @@
 #include "mozilla/layers/ShadowLayers.h"
 
 #include <algorithm>
+#include <queue>
 
 using namespace mozilla::media;
 
@@ -36,6 +39,129 @@ mozilla::LazyLogModule gMediaDemuxerLog("MediaDemuxer");
 #define LOGV(arg, ...) MOZ_LOG(sFormatDecoderLog, mozilla::LogLevel::Verbose, ("MediaFormatReader(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
 namespace mozilla {
+
+
+
+
+
+
+
+
+
+class DecoderAllocPolicy
+{
+  using TrackType = TrackInfo::TrackType;
+
+public:
+  class Token
+  {
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Token)
+  protected:
+    virtual ~Token() {}
+  };
+
+  using Promise = MozPromise<RefPtr<Token>, bool, true>;
+
+  
+  auto Alloc(TrackType aTrack) -> RefPtr<Promise>;
+
+  
+  void operator=(decltype(nullptr));
+
+  
+  static DecoderAllocPolicy& Instance();
+
+private:
+  class AutoDeallocToken;
+  using PromisePrivate = Promise::Private;
+  DecoderAllocPolicy();
+  ~DecoderAllocPolicy();
+  
+  void Dealloc();
+  
+  void ResolvePromise(ReentrantMonitorAutoEnter& aProofOfLock);
+
+  ReentrantMonitor mMonitor;
+  
+  int mDecoderLimit;
+  
+  std::queue<RefPtr<PromisePrivate>> mPromises;
+};
+
+class DecoderAllocPolicy::AutoDeallocToken : public Token
+{
+private:
+  ~AutoDeallocToken() { DecoderAllocPolicy::Instance().Dealloc(); }
+};
+
+DecoderAllocPolicy::DecoderAllocPolicy()
+  : mMonitor("DecoderAllocPolicy::mMonitor")
+  , mDecoderLimit(MediaPrefs::MediaDecoderLimit())
+{
+  AbstractThread::MainThread()->Dispatch(NS_NewRunnableFunction([this] () {
+    ClearOnShutdown(this, ShutdownPhase::ShutdownThreads);
+  }));
+}
+
+DecoderAllocPolicy::~DecoderAllocPolicy()
+{
+  while (!mPromises.empty()) {
+    RefPtr<PromisePrivate> p = mPromises.front().forget();
+    mPromises.pop();
+    p->Reject(true, __func__);
+  }
+}
+
+DecoderAllocPolicy&
+DecoderAllocPolicy::Instance()
+{
+  
+  
+  static auto sPolicy = new DecoderAllocPolicy();
+  return *sPolicy;
+}
+
+auto
+DecoderAllocPolicy::Alloc(TrackType aTrack) -> RefPtr<Promise>
+{
+  
+  if (aTrack == TrackInfo::kAudioTrack || mDecoderLimit < 0) {
+    return Promise::CreateAndResolve(new Token(), __func__);
+  }
+
+  ReentrantMonitorAutoEnter mon(mMonitor);
+  RefPtr<PromisePrivate> p = new PromisePrivate(__func__);
+  mPromises.push(p);
+  ResolvePromise(mon);
+  return p.forget();
+}
+
+void
+DecoderAllocPolicy::Dealloc()
+{
+  ReentrantMonitorAutoEnter mon(mMonitor);
+  ++mDecoderLimit;
+  ResolvePromise(mon);
+}
+
+void
+DecoderAllocPolicy::ResolvePromise(ReentrantMonitorAutoEnter& aProofOfLock)
+{
+  MOZ_ASSERT(mDecoderLimit >= 0);
+
+  if (mDecoderLimit > 0 && !mPromises.empty()) {
+    --mDecoderLimit;
+    RefPtr<PromisePrivate> p = mPromises.front().forget();
+    mPromises.pop();
+    p->Resolve(new AutoDeallocToken(), __func__);
+  }
+}
+
+void
+DecoderAllocPolicy::operator=(std::nullptr_t)
+{
+  delete this;
+}
 
 class MediaFormatReader::DecoderFactory
 {
