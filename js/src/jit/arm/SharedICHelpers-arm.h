@@ -200,20 +200,6 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
 }
 
 inline void
-EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
-{
-    MOZ_ASSERT(ICTailCallReg == lr);
-
-    
-    
-    
-    
-    masm.push(ICTailCallReg);
-
-    masm.Push(ICStubReg);
-}
-
-inline void
 EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
 {
     ScratchRegisterScope scratch(masm);
@@ -238,13 +224,6 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
 
     
     masm.Pop(scratch);
-}
-
-inline void
-EmitIonLeaveStubFrame(MacroAssembler& masm)
-{
-    masm.Pop(ICStubReg);
-    masm.pop(ICTailCallReg); 
 }
 
 inline void

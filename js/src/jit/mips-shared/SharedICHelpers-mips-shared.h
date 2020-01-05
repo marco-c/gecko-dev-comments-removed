@@ -203,20 +203,6 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
 }
 
 inline void
-EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
-{
-    MOZ_ASSERT(ICTailCallReg == ra);
-
-    
-    
-    
-    
-    masm.push(ICTailCallReg);
-
-    masm.Push(ICStubReg);
-}
-
-inline void
 EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
 {
     
@@ -243,13 +229,6 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     
     masm.loadPtr(Address(StackPointer, offsetof(BaselineStubFrame, descriptor)), ScratchRegister);
     masm.addPtr(Imm32(STUB_FRAME_SIZE), StackPointer);
-}
-
-inline void
-EmitIonLeaveStubFrame(MacroAssembler& masm)
-{
-    masm.Pop(ICStubReg);
-    masm.pop(ICTailCallReg); 
 }
 
 inline void

@@ -162,13 +162,23 @@ static const uint32_t STUB_FRAME_SAVED_STUB_OFFSET = sizeof(void*);
 inline void
 EmitBaselineEnterStubFrame(MacroAssembler& masm, Register)
 {
-    EmitRestoreTailCallReg(masm);
-
     ScratchRegisterScope scratch(masm);
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    static_assert(BaselineFrame::FramePointerOffset == sizeof(void*),
+                  "FramePointerOffset must be the same as the return address size");
+
     masm.movq(BaselineFrameReg, scratch);
-    masm.addq(Imm32(BaselineFrame::FramePointerOffset), scratch);
     masm.subq(BaselineStackReg, scratch);
 
     masm.store32(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
@@ -177,21 +187,16 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register)
     
 
     
+    masm.Push(Operand(BaselineStackReg, 0));
+
+    
     masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS, BaselineStubFrameLayout::Size());
-    masm.Push(scratch);
-    masm.Push(ICTailCallReg);
+    masm.storePtr(scratch, Address(BaselineStackReg, sizeof(uintptr_t)));
 
     
     masm.Push(ICStubReg);
     masm.Push(BaselineFrameReg);
     masm.mov(BaselineStackReg, BaselineFrameReg);
-}
-
-inline void
-EmitIonEnterStubFrame(MacroAssembler& masm, Register)
-{
-    masm.loadPtr(Address(masm.getStackPointer(), 0), ICTailCallReg);
-    masm.Push(ICStubReg);
 }
 
 inline void
@@ -214,17 +219,10 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     masm.Pop(ICStubReg);
 
     
-    masm.Pop(ICTailCallReg);
-
     
     
-    masm.storePtr(ICTailCallReg, Address(BaselineStackReg, 0));
-}
-
-inline void
-EmitIonLeaveStubFrame(MacroAssembler& masm)
-{
-    masm.Pop(ICStubReg);
+    
+    masm.Pop(Operand(BaselineStackReg, 0));
 }
 
 inline void

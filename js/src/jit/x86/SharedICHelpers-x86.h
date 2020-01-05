@@ -160,13 +160,21 @@ static const uint32_t STUB_FRAME_SAVED_STUB_OFFSET = sizeof(void*);
 inline void
 EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
 {
-    MOZ_ASSERT(scratch != ICTailCallReg);
-
-    EmitRestoreTailCallReg(masm);
-
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    static_assert(BaselineFrame::FramePointerOffset == sizeof(void*),
+                  "FramePointerOffset must be the same as the return address size");
+
     masm.movl(BaselineFrameReg, scratch);
-    masm.addl(Imm32(BaselineFrame::FramePointerOffset), scratch);
     masm.subl(BaselineStackReg, scratch);
 
     masm.store32(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
@@ -175,23 +183,16 @@ EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
     
 
     
+    masm.Push(Operand(BaselineStackReg, 0));
+
+    
     masm.makeFrameDescriptor(scratch, JitFrame_BaselineJS, BaselineStubFrameLayout::Size());
-    masm.Push(scratch);
-    masm.Push(ICTailCallReg);
+    masm.storePtr(scratch, Address(BaselineStackReg, sizeof(uintptr_t)));
 
     
     masm.Push(ICStubReg);
     masm.Push(BaselineFrameReg);
     masm.mov(BaselineStackReg, BaselineFrameReg);
-}
-
-inline void
-EmitIonEnterStubFrame(MacroAssembler& masm, Register scratch)
-{
-    MOZ_ASSERT(scratch != ICTailCallReg);
-
-    masm.loadPtr(Address(masm.getStackPointer(), 0), ICTailCallReg);
-    masm.Push(ICStubReg);
 }
 
 inline void
@@ -202,7 +203,7 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     
     
     if (calledIntoIon) {
-        Register scratch = ICTailCallReg;
+        Register scratch = ICStubReg;
         masm.Pop(scratch);
         masm.shrl(Imm32(FRAMESIZE_SHIFT), scratch);
         masm.addl(scratch, BaselineStackReg);
@@ -214,17 +215,10 @@ EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
     masm.Pop(ICStubReg);
 
     
-    masm.Pop(ICTailCallReg);
-
     
     
-    masm.storePtr(ICTailCallReg, Address(BaselineStackReg, 0));
-}
-
-inline void
-EmitIonLeaveStubFrame(MacroAssembler& masm)
-{
-    masm.Pop(ICStubReg);
+    
+    masm.Pop(Operand(BaselineStackReg, 0));
 }
 
 inline void
