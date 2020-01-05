@@ -8077,16 +8077,20 @@ HTMLEditRules::ConfirmSelectionInBody()
 {
   
   NS_ENSURE_STATE(mHTMLEditor);
-  nsCOMPtr<nsIDOMElement> rootElement = do_QueryInterface(mHTMLEditor->GetRoot());
-  NS_ENSURE_TRUE(rootElement, NS_ERROR_UNEXPECTED);
+  RefPtr<Element> rootElement = mHTMLEditor->GetRoot();
+  if (NS_WARN_IF(!rootElement)) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   
   NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<Selection> selection = mHTMLEditor->GetSelection();
-  NS_ENSURE_STATE(selection);
+  if (NS_WARN_IF(!selection)) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   
-  nsCOMPtr<nsIDOMNode> selNode, temp, parent;
+  nsCOMPtr<nsINode> selNode;
   int32_t selOffset;
   nsresult rv =
     EditorBase::GetStartNodeAndOffset(selection,
@@ -8095,12 +8099,11 @@ HTMLEditRules::ConfirmSelectionInBody()
     return rv;
   }
 
-  temp = selNode;
+  nsINode* temp = selNode;
 
   
-  while (temp && !TextEditUtils::IsBody(temp)) {
-    temp->GetParentNode(getter_AddRefs(parent));
-    temp = parent;
+  while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
+    temp = temp->GetParentNode();
   }
 
   
@@ -8108,6 +8111,7 @@ HTMLEditRules::ConfirmSelectionInBody()
 
 
     selection->Collapse(rootElement, 0);
+    return NS_OK;
   }
 
   
@@ -8117,9 +8121,8 @@ HTMLEditRules::ConfirmSelectionInBody()
   temp = selNode;
 
   
-  while (temp && !TextEditUtils::IsBody(temp)) {
-    rv = temp->GetParentNode(getter_AddRefs(parent));
-    temp = parent;
+  while (temp && !temp->IsHTMLElement(nsGkAtoms::body)) {
+    temp = temp->GetParentNode();
   }
 
   
@@ -8129,9 +8132,7 @@ HTMLEditRules::ConfirmSelectionInBody()
     selection->Collapse(rootElement, 0);
   }
 
-  
-  
-  return rv;
+  return NS_OK;
 }
 
 nsresult
