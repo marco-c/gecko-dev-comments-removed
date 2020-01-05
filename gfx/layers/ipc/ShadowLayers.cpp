@@ -29,7 +29,6 @@
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/LayerTransactionChild.h"
-#include "mozilla/layers/PCompositableChild.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "ShadowLayerUtils.h"
 #include "mozilla/layers/TextureClient.h"  
