@@ -793,6 +793,20 @@ public:
 
   bool IsVisualMode() const { return mIsVisual; }
 
+  enum class InteractionType : uint32_t {
+    eClickInteraction,
+    eKeyInteraction,
+    eMouseMoveInteraction,
+    eScrollInteraction
+  };
+
+  void RecordInteractionTime(InteractionType aType);
+
+  void DisableInteractionTimeRecording()
+  {
+    mInteractionTimeEnabled = false;
+  }
+
 
 
   
@@ -1344,6 +1358,15 @@ protected:
   uint64_t              mFramesReflowed;
 
   mozilla::TimeStamp    mReflowStartTime;
+
+  
+  
+  mozilla::TimeStamp    mFirstPaintTime;
+  mozilla::TimeStamp    mFirstClickTime;
+  mozilla::TimeStamp    mFirstKeyTime;
+  mozilla::TimeStamp    mFirstMouseMoveTime;
+  mozilla::TimeStamp    mFirstScrollTime;
+  bool                  mInteractionTimeEnabled;
 
   
   mozilla::TimeStamp    mLastStyleUpdateForAllAnimations;

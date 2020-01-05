@@ -260,6 +260,8 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
 
   mCounterStylesDirty = true;
 
+  mInteractionTimeEnabled = true;
+
   
   if (MOZ_LOG_TEST(gfxPlatform::GetLog(eGfxLog_textperf), LogLevel::Warning)) {
     mTextPerf = new gfxTextPerfMetrics();
@@ -1599,6 +1601,58 @@ nsPresContext::IsTopLevelWindowInactive()
   return domWindow && !domWindow->IsActive();
 }
 
+void
+nsPresContext::RecordInteractionTime(InteractionType aType)
+{
+  if (!mInteractionTimeEnabled) {
+    return;
+  }
+
+  
+  
+  TimeStamp nsPresContext::*interactionTimes[] = {
+    &nsPresContext::mFirstClickTime,
+    &nsPresContext::mFirstKeyTime,
+    &nsPresContext::mFirstMouseMoveTime,
+    &nsPresContext::mFirstScrollTime
+  };
+
+  TimeStamp& interactionTime = this->*(
+    interactionTimes[static_cast<uint32_t>(aType)]);
+  if (!interactionTime.IsNull()) {
+    
+    return;
+  }
+
+  
+  
+  nsPresContext* topContentPresContext =
+    GetToplevelContentDocumentPresContext();
+
+  if (!topContentPresContext) {
+    
+    
+    
+    interactionTime = TimeStamp::Now();
+    return;
+  }
+
+  if (topContentPresContext->mFirstPaintTime.IsNull()) {
+    
+    
+    return;
+  }
+
+  interactionTime = TimeStamp::Now();
+  
+  
+  if (this == topContentPresContext) {
+    
+  } else {
+    topContentPresContext->RecordInteractionTime(aType);
+  }
+}
+
 nsITheme*
 nsPresContext::GetTheme()
 {
@@ -2487,6 +2541,10 @@ nsPresContext::NotifyDidPaintForSubtree(uint32_t aFlags, uint64_t aTransactionId
       new DelayedFireDOMPaintEvent(this, &mUndeliveredInvalidateRequestsBeforeLastPaint,
                                    aTransactionId);
     nsContentUtils::AddScriptRunner(ev);
+
+    if (mFirstPaintTime.IsNull()) {
+      mFirstPaintTime = TimeStamp::Now();
+    }
   }
 
   NotifyDidPaintSubdocumentCallbackClosure closure = { aFlags, aTransactionId, false };
