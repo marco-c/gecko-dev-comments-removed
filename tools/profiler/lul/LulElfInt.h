@@ -55,7 +55,7 @@
 
 
 
-#if defined(SPS_OS_android)
+#if defined(GP_OS_android)
 
 
 

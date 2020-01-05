@@ -3,8 +3,8 @@
 
 
 
-#ifndef SPS_PLATFORM_MACROS_H
-#define SPS_PLATFORM_MACROS_H
+#ifndef PLATFORM_MACROS_H
+#define PLATFORM_MACROS_H
 
 
 
@@ -12,71 +12,72 @@
 
 
 
-#undef SPS_PLAT_x86_android
-#undef SPS_PLAT_arm_android
-#undef SPS_PLAT_x86_linux
-#undef SPS_PLAT_amd64_linux
-#undef SPS_PLAT_x86_darwin
-#undef SPS_PLAT_amd64_darwin
-#undef SPS_PLAT_x86_windows
-#undef SPS_PLAT_amd64_windows
 
-#undef SPS_ARCH_x86
-#undef SPS_ARCH_amd64
-#undef SPS_ARCH_arm
+#undef GP_PLAT_x86_android
+#undef GP_PLAT_arm_android
+#undef GP_PLAT_x86_linux
+#undef GP_PLAT_amd64_linux
+#undef GP_PLAT_x86_darwin
+#undef GP_PLAT_amd64_darwin
+#undef GP_PLAT_x86_windows
+#undef GP_PLAT_amd64_windows
 
-#undef SPS_OS_android
-#undef SPS_OS_linux
-#undef SPS_OS_darwin
-#undef SPS_OS_windows
+#undef GP_ARCH_x86
+#undef GP_ARCH_amd64
+#undef GP_ARCH_arm
+
+#undef GP_OS_android
+#undef GP_OS_linux
+#undef GP_OS_darwin
+#undef GP_OS_windows
 
 
 
 
 #if defined(__ANDROID__) && defined(__i386__)
-#  define SPS_PLAT_x86_android 1
-#  define SPS_ARCH_x86 1
-#  define SPS_OS_android 1
+# define GP_PLAT_x86_android 1
+# define GP_ARCH_x86 1
+# define GP_OS_android 1
 
 #elif defined(__ANDROID__) && defined(__arm__)
-#  define SPS_PLAT_arm_android 1
-#  define SPS_ARCH_arm 1
-#  define SPS_OS_android 1
+# define GP_PLAT_arm_android 1
+# define GP_ARCH_arm 1
+# define GP_OS_android 1
 
 #elif defined(__linux__) && defined(__i386__)
-#  define SPS_PLAT_x86_linux 1
-#  define SPS_ARCH_x86 1
-#  define SPS_OS_linux 1
+# define GP_PLAT_x86_linux 1
+# define GP_ARCH_x86 1
+# define GP_OS_linux 1
 
 #elif defined(__linux__) && defined(__x86_64__)
-#  define SPS_PLAT_amd64_linux 1
-#  define SPS_ARCH_amd64 1
-#  define SPS_OS_linux 1
+# define GP_PLAT_amd64_linux 1
+# define GP_ARCH_amd64 1
+# define GP_OS_linux 1
 
 #elif defined(__APPLE__) && defined(__i386__)
-#  define SPS_PLAT_x86_darwin 1
-#  define SPS_ARCH_x86 1
-#  define SPS_OS_darwin 1
+# define GP_PLAT_x86_darwin 1
+# define GP_ARCH_x86 1
+# define GP_OS_darwin 1
 
 #elif defined(__APPLE__) && defined(__x86_64__)
-#  define SPS_PLAT_amd64_darwin 1
-#  define SPS_ARCH_amd64 1
-#  define SPS_OS_darwin 1
+# define GP_PLAT_amd64_darwin 1
+# define GP_ARCH_amd64 1
+# define GP_OS_darwin 1
 
 #elif (defined(_MSC_VER) || defined(__MINGW32__)) && \
       (defined(_M_IX86) || defined(__i386__))
-#  define SPS_PLAT_x86_windows 1
-#  define SPS_ARCH_x86 1
-#  define SPS_OS_windows 1
+# define GP_PLAT_x86_windows 1
+# define GP_ARCH_x86 1
+# define GP_OS_windows 1
 
 #elif (defined(_MSC_VER) || defined(__MINGW32__)) && \
       (defined(_M_X64) || defined(__x86_64__))
-#  define SPS_PLAT_amd64_windows 1
-#  define SPS_ARCH_amd64 1
-#  define SPS_OS_windows 1
+# define GP_PLAT_amd64_windows 1
+# define GP_ARCH_amd64 1
+# define GP_OS_windows 1
 
 #else
-#  error "Unsupported platform"
+# error "Unsupported platform"
 #endif
 
 #endif 

@@ -107,7 +107,7 @@ private:
   mozilla::UniquePtr<mozilla::Mutex> mMutex;
   ThreadResponsiveness mRespInfo;
 
-#if defined(SPS_OS_linux) || defined(SPS_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
   
   
   
