@@ -134,6 +134,7 @@ ThreadStackHelper::ThreadStackHelper()
     | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION
 #endif
     , FALSE, 0);
+  mStackTop = profiler_get_stack_top();
   MOZ_ASSERT(mInitialized);
 #elif defined(XP_MACOSX)
   mThreadID = mach_thread_self();
@@ -205,9 +206,14 @@ ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
     return;
   }
 
+  
+  
+  
+#ifndef MOZ_THREADSTACKHELPER_X64
   if (aAppendNativeStack) {
     aStack.EnsureNativeFrameCapacity(Telemetry::HangStack::sMaxNativeFrames);
   }
+#endif
 
   if (::SuspendThread(mThreadID) == DWORD(-1)) {
     MOZ_ASSERT(false);
@@ -218,22 +224,48 @@ ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
   
   
   CONTEXT context;
+  memset(&context, 0, sizeof(context));
   context.ContextFlags = CONTEXT_CONTROL;
   if (::GetThreadContext(mThreadID, &context)) {
     FillStackBuffer();
   }
 
+#ifndef MOZ_THREADSTACKHELPER_X64
   if (aAppendNativeStack) {
     auto callback = [](uint32_t, void* aPC, void*, void* aClosure) {
       Stack* stack = static_cast<Stack*>(aClosure);
       stack->AppendNativeFrame(reinterpret_cast<uintptr_t>(aPC));
     };
 
-    MozStackWalk(callback,  0,
-                  Telemetry::HangStack::sMaxNativeFrames,
-                 reinterpret_cast<void*>(&aStack),
-                 reinterpret_cast<uintptr_t>(mThreadID), nullptr);
+    
+    
+    
+    void** framePointer = reinterpret_cast<void**>(context.Ebp);
+    void** stackPointer = reinterpret_cast<void**>(context.Esp);
+
+    MOZ_ASSERT(mStackTop, "The thread should be registered by the profiler");
+
+    
+    
+    if (mStackTop && framePointer >= stackPointer && framePointer < mStackTop) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      FramePointerStackWalk(callback,  0,
+                             Telemetry::HangStack::sMaxNativeFrames,
+                            reinterpret_cast<void*>(&aStack), framePointer,
+                            mStackTop);
+    }
   }
+#endif
 
   MOZ_ALWAYS_TRUE(::ResumeThread(mThreadID) != DWORD(-1));
 

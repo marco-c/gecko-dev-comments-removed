@@ -317,6 +317,12 @@ PROFILER_FUNC_VOID(profiler_log(const char *str))
 
 
 
+
+
+PROFILER_FUNC(void* profiler_get_stack_top(), nullptr)
+
+
+
 #if defined(MOZ_GECKO_PROFILER)
 
 #include <stdlib.h>
