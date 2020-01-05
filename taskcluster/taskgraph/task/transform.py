@@ -87,6 +87,8 @@ class TransformTask(base.Task):
         return [(label, name) for name, label in self.dependencies.items()]
 
     def optimize(self, params):
+        bbb_task = False
+
         if self.index_paths:
             optimized, taskId = super(TransformTask, self).optimize(params)
             if optimized:
@@ -101,11 +103,17 @@ class TransformTask(base.Task):
                 return True, None
 
         
+        if self.task.get('provisionerId') == 'buildbot-bridge':
+            self.label = self.task.get('payload').get('buildername')
+            bbb_task = True
+
+        
         
         if is_low_value_task(self.label,
                              params.get('project'),
                              params.get('pushlog_id'),
-                             params.get('pushdate')):
+                             params.get('pushdate'),
+                             bbb_task):
             
             return True, None
         else:
