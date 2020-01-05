@@ -641,6 +641,37 @@ AllCodecsOfType(const nsTArray<GMPCodecString>& aCodecs, const CodecType aCodecT
   return true;
 }
 
+static bool
+IsParameterUnrecognized(const nsAString& aContentType)
+{
+  nsAutoString contentType(aContentType);
+  contentType.StripWhitespace();
+
+  nsTArray<nsString> params;
+  nsAString::const_iterator start, end, semicolon, equalSign;
+  contentType.BeginReading(start);
+  contentType.EndReading(end);
+  semicolon = start;
+  
+  while (semicolon != end) {
+    if (FindCharInReadable(';', semicolon, end)) {
+      equalSign = ++semicolon;
+      if (FindCharInReadable('=', equalSign, end)) {
+        params.AppendElement(Substring(semicolon, equalSign));
+        semicolon = equalSign;
+      }
+    }
+  }
+
+  for (auto param : params) {
+    if (!param.LowerCaseEqualsLiteral("codecs") &&
+        !param.LowerCaseEqualsLiteral("profiles")) {
+      return true;
+    }
+  }
+  return false;
+}
+
 
 static Sequence<MediaKeySystemMediaCapability>
 GetSupportedCapabilities(const CodecType aCodecType,
@@ -749,6 +780,10 @@ GetSupportedCapabilities(const CodecType aCodecType,
     
     
     
+    if (IsParameterUnrecognized(contentType)) {
+      continue;
+    }
+
     
     
     
