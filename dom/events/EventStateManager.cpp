@@ -3438,6 +3438,12 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
      
      
     GenerateDragDropEnterExit(presContext, aEvent->AsDragEvent());
+    if (ContentChild* child = ContentChild::GetSingleton()) {
+      
+      
+      child->SendUpdateDropEffect(nsIDragService::DRAGDROP_ACTION_NONE,
+                                  nsIDragService::DRAGDROP_ACTION_NONE);
+    }
     break;
 
   case eKeyUp:
@@ -4413,6 +4419,19 @@ EventStateManager::GenerateDragDropEnterExit(nsPresContext* aPresContext,
           FireDragEnterOrExit(sLastDragOverFrame->PresContext(),
                               aDragEvent, eDragExit,
                               targetContent, lastContent, sLastDragOverFrame);
+          nsIContent* target = sLastDragOverFrame ? sLastDragOverFrame.GetFrame()->GetContent() : nullptr;
+          if (IsRemoteTarget(target)) {
+            
+            
+            
+            
+            
+            WidgetDragEvent remoteEvent(aDragEvent->IsTrusted(), eDragExit,
+                                        aDragEvent->mWidget);
+            remoteEvent.AssignDragEventData(*aDragEvent, true);
+            nsEventStatus remoteStatus = nsEventStatus_eIgnore;
+            HandleCrossProcessEvent(&remoteEvent, &remoteStatus);
+          }
         }
 
         FireDragEnterOrExit(aPresContext, aDragEvent, eDragEnter,
