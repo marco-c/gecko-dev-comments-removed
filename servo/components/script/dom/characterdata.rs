@@ -8,6 +8,7 @@ use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::CharacterDataBinding::CharacterDataMethods;
 use dom::bindings::codegen::InheritTypes::{CharacterDataDerived, ElementCast};
 use dom::bindings::codegen::InheritTypes::NodeCast;
+use dom::bindings::codegen::UnionTypes::NodeOrString;
 use dom::bindings::error::{Fallible, ErrorResult};
 use dom::bindings::error::Error::IndexSize;
 use dom::bindings::js::{JSRef, LayoutJS, Temporary};
@@ -116,6 +117,21 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
         *self.data.borrow_mut() = data;
         
         Ok(())
+    }
+
+    
+    fn Before(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+        NodeCast::from_ref(self).before(nodes)
+    }
+
+    
+    fn After(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+        NodeCast::from_ref(self).after(nodes)
+    }
+
+    
+    fn ReplaceWith(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+        NodeCast::from_ref(self).replace_with(nodes)
     }
 
     
