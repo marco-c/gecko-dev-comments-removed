@@ -86,6 +86,7 @@ class nsIJSID;
 class nsIScriptContext;
 class nsIScriptTimeoutHandler;
 class nsIWebBrowserChrome;
+class mozIDOMWindowProxy;
 
 class nsDOMWindowList;
 class nsScreen;
@@ -106,6 +107,7 @@ struct ChannelPixelLayout;
 class Console;
 class Crypto;
 class CustomElementRegistry;
+class DocGroup;
 class External;
 class Function;
 class Gamepad;
@@ -121,6 +123,7 @@ struct RequestInit;
 class RequestOrUSVString;
 class Selection;
 class SpeechSynthesis;
+class TabGroup;
 class U2F;
 class VRDisplay;
 class VREventObserver;
@@ -920,6 +923,9 @@ protected:
   
   void InitWasOffline();
 public:
+  nsPIDOMWindowOuter*
+  GetSanitizedOpener(nsPIDOMWindowOuter* aOpener);
+
   nsPIDOMWindowOuter* GetOpenerWindow(mozilla::ErrorResult& aError);
   void GetOpener(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval,
                  mozilla::ErrorResult& aError);
@@ -1739,9 +1745,12 @@ private:
   
   bool ComputeIsSecureContext(nsIDocument* aDocument);
 
-public:
+  mozilla::dom::TabGroup* TabGroupInner();
+  mozilla::dom::TabGroup* TabGroupOuter();
 
-  void GetConstellation(nsACString& aConstellation);
+public:
+  mozilla::dom::TabGroup* TabGroup();
+  mozilla::dom::DocGroup* GetDocGroup();
 
 protected:
   
@@ -1946,6 +1955,13 @@ protected:
   RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
 #endif
 
+  RefPtr<mozilla::dom::TabGroup> mTabGroup; 
+#ifdef DEBUG
+  
+  
+  bool mIsValidatingTabGroup;
+#endif
+
   
   uint32_t mCanSkipCCGeneration;
 
@@ -1953,9 +1969,6 @@ protected:
   nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
 
   nsAutoPtr<mozilla::dom::VREventObserver> mVREventObserver;
-
-  uint64_t mStaticConstellation; 
-  nsCString mConstellation; 
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
@@ -2053,6 +2066,7 @@ public:
   
   
   nsWeakPtr mFullscreenPresShell;
+  nsCOMPtr<mozIDOMWindowProxy> mOpenerForInitialContentBrowser;
 };
 
 

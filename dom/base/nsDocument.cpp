@@ -252,6 +252,8 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/SVGSVGElement.h"
+#include "mozilla/dom/DocGroup.h"
+
 #include "mozilla/DocLoadingTimelineMarker.h"
 
 #include "nsISpeculativeConnect.h"
@@ -1360,6 +1362,10 @@ nsIDocument::~nsIDocument()
 
   if (mNodeInfoManager) {
     mNodeInfoManager->DropDocumentReference();
+  }
+
+  if (mDocGroup) {
+    mDocGroup->RemoveDocument(this);
   }
 
   UnlinkOriginalDocumentIfStatic();
@@ -2848,6 +2854,36 @@ nsDocument::SetPrincipal(nsIPrincipal *aNewPrincipal)
     }
   }
   mNodeInfoManager->SetDocumentPrincipal(aNewPrincipal);
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aNewPrincipal) {
+    GetDocGroup();
+  }
+#endif
+}
+
+mozilla::dom::DocGroup*
+nsIDocument::GetDocGroup()
+{
+#ifdef DEBUG
+  
+  if (mDocGroup) {
+    nsAutoCString docGroupKey;
+    mozilla::dom::DocGroup::GetKey(NodePrincipal(), docGroupKey);
+    MOZ_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+    
+  }
+#endif
+
+  return mDocGroup;
 }
 
 NS_IMETHODIMP
@@ -4254,6 +4290,23 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
   mScopeObject = do_GetWeakReference(aGlobal);
   if (aGlobal) {
     mHasHadScriptHandlingObject = true;
+
+    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+    if (window) {
+      
+      
+      mozilla::dom::TabGroup* tabgroup = nsGlobalWindow::Cast(window)->TabGroup();
+      
+      
+      nsAutoCString docGroupKey;
+      mozilla::dom::DocGroup::GetKey(NodePrincipal(), docGroupKey);
+      if (mDocGroup) {
+        MOZ_RELEASE_ASSERT(mDocGroup->MatchesKey(docGroupKey));
+      } else {
+        mDocGroup = tabgroup->AddDocument(docGroupKey, this);
+        MOZ_ASSERT(mDocGroup);
+      }
+    }
   }
 }
 
@@ -4442,11 +4495,10 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
   mScriptGlobalObject = aScriptGlobalObject;
 
   if (aScriptGlobalObject) {
-    mHasHadScriptHandlingObject = true;
-    mHasHadDefaultView = true;
     
     mLayoutHistoryState = nullptr;
-    mScopeObject = do_GetWeakReference(aScriptGlobalObject);
+    SetScopeObject(aScriptGlobalObject);
+    mHasHadDefaultView = true;
 #ifdef DEBUG
     if (!mWillReparent) {
       
@@ -4583,8 +4635,7 @@ nsDocument::SetScriptHandlingObject(nsIScriptGlobalObject* aScriptObject)
                mScriptGlobalObject == aScriptObject,
                "Wrong script object!");
   if (aScriptObject) {
-    mScopeObject = do_GetWeakReference(aScriptObject);
-    mHasHadScriptHandlingObject = true;
+    SetScopeObject(aScriptObject);
     mHasHadDefaultView = false;
   }
 }

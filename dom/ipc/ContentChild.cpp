@@ -828,6 +828,17 @@ ContentChild::ProvideWindowCommon(TabChild* aTabOpener,
 
   
   
+  
+  
+  nsCOMPtr<mozIDOMWindowProxy> windowProxy = do_GetInterface(newChild->WebNavigation());
+  if (windowProxy && aParent) {
+    nsPIDOMWindowOuter* outer = nsPIDOMWindowOuter::From(windowProxy);
+    nsPIDOMWindowOuter* parent = nsPIDOMWindowOuter::From(aParent);
+    outer->SetOpenerWindow(parent, *aWindowIsNew);
+  }
+
+  
+  
   newChild->DoFakeShow(textureFactoryIdentifier, layersId, renderFrame,
                        showInfo);
 

@@ -803,13 +803,16 @@ txMozillaXMLOutput::createResultDocument(const nsSubstring& aName, int32_t aNsID
     nsIScriptGlobalObject* sgo =
       source->GetScriptHandlingObject(hasHadScriptObject);
     NS_ENSURE_STATE(sgo || !hasHadScriptObject);
-    mDocument->SetScriptHandlingObject(sgo);
 
     mCurrentNode = mDocument;
     mNodeInfoManager = mDocument->NodeInfoManager();
 
     
     URIUtils::ResetWithSource(mDocument, aSourceDocument);
+
+    
+    
+    mDocument->SetScriptHandlingObject(sgo);
 
     
     if (!mOutputFormat.mEncoding.IsEmpty()) {

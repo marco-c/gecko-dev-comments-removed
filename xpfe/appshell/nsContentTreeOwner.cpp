@@ -994,6 +994,9 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
 
     
     
+    
+    
+    
     return browserDOMWin->OpenURI(nullptr, aParent, openLocation,
                                   nsIBrowserDOMWindow::OPEN_NEW, aReturn);
   }
