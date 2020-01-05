@@ -63,7 +63,6 @@ SECKEYPrivateKey* ReadPrivateKey(const std::string& file) {
   PK11_FreeSlot(slot);
   SECITEM_FreeItem(&item, PR_FALSE);
   if (rv != SECSuccess) {
-    
     std::cerr << "Couldn't import key " << PORT_ErrorToString(PORT_GetError())
               << "\n";
     return nullptr;

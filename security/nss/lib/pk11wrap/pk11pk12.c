@@ -67,6 +67,19 @@ typedef struct SECKEYDHPrivateKeyStr SECKEYDHPrivateKey;
 
 
 
+
+struct SECKEYECPrivateKeyStr {
+    PLArenaPool *arena;
+    SECItem version;
+    SECItem curveOID;    
+    SECItem publicValue; 
+    SECItem privateValue;
+};
+typedef struct SECKEYECPrivateKeyStr SECKEYECPrivateKey;
+
+
+
+
 struct SECKEYRawPrivateKeyStr {
     PLArenaPool *arena;
     KeyType keyType;
@@ -74,6 +87,7 @@ struct SECKEYRawPrivateKeyStr {
         SECKEYRSAPrivateKey rsa;
         SECKEYDSAPrivateKey dsa;
         SECKEYDHPrivateKey dh;
+        SECKEYECPrivateKey ec;
     } u;
 };
 typedef struct SECKEYRawPrivateKeyStr SECKEYRawPrivateKey;
@@ -139,6 +153,33 @@ const SEC_ASN1Template SECKEY_DHPrivateKeyExportTemplate[] = {
     { SEC_ASN1_INTEGER, offsetof(SECKEYRawPrivateKey, u.dh.prime) },
 };
 
+#ifndef NSS_DISABLE_ECC
+SEC_ASN1_MKSUB(SEC_BitStringTemplate)
+SEC_ASN1_MKSUB(SEC_ObjectIDTemplate)
+
+const SEC_ASN1Template SECKEY_ECPrivateKeyExportTemplate[] = {
+    { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SECKEYRawPrivateKey) },
+    { SEC_ASN1_INTEGER, offsetof(SECKEYRawPrivateKey, u.ec.version) },
+    { SEC_ASN1_OCTET_STRING,
+      offsetof(SECKEYRawPrivateKey, u.ec.privateValue) },
+    
+
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED |
+          SEC_ASN1_EXPLICIT | SEC_ASN1_CONTEXT_SPECIFIC |
+          SEC_ASN1_XTRN | 0,
+      offsetof(SECKEYRawPrivateKey, u.ec.curveOID),
+      SEC_ASN1_SUB(SEC_ObjectIDTemplate) },
+    
+
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED |
+          SEC_ASN1_EXPLICIT | SEC_ASN1_CONTEXT_SPECIFIC |
+          SEC_ASN1_XTRN | 1,
+      offsetof(SECKEYRawPrivateKey, u.ec.publicValue),
+      SEC_ASN1_SUB(SEC_BitStringTemplate) },
+    { 0 }
+};
+#endif 
+
 const SEC_ASN1Template SECKEY_EncryptedPrivateKeyInfoTemplate[] = {
     { SEC_ASN1_SEQUENCE,
       0, NULL, sizeof(SECKEYEncryptedPrivateKeyInfo) },
@@ -196,6 +237,15 @@ prepare_dh_priv_key_export_for_asn1(SECKEYRawPrivateKey *key)
     key->u.dh.privateValue.type = siUnsignedInteger;
     key->u.dh.prime.type = siUnsignedInteger;
     key->u.dh.base.type = siUnsignedInteger;
+}
+
+static void
+prepare_ec_priv_key_export_for_asn1(SECKEYRawPrivateKey *key)
+{
+    key->u.ec.version.type = siUnsignedInteger;
+    key->u.ec.curveOID.type = siUnsignedInteger;
+    key->u.ec.privateValue.type = siUnsignedInteger;
+    key->u.ec.publicValue.type = siUnsignedInteger;
 }
 
 SECStatus
@@ -432,7 +482,50 @@ PK11_ImportAndReturnPrivateKey(PK11SlotInfo *slot, SECKEYRawPrivateKey *lpk,
                           lpk->u.dh.privateValue.len);
             attrs++;
             break;
-        
+#ifndef NSS_DISABLE_ECC
+        case ecKey:
+            keyType = CKK_EC;
+            if (lpk->u.ec.publicValue.len == 0) {
+                goto loser;
+            }
+            if (PK11_IsInternal(slot)) {
+                PK11_SETATTRS(attrs, CKA_NETSCAPE_DB,
+                              lpk->u.ec.publicValue.data,
+                              lpk->u.ec.publicValue.len);
+                attrs++;
+            }
+            PK11_SETATTRS(attrs, CKA_SIGN, (keyUsage & KU_DIGITAL_SIGNATURE) ? &cktrue
+                                                                             : &ckfalse,
+                          sizeof(CK_BBOOL));
+            attrs++;
+            PK11_SETATTRS(attrs, CKA_SIGN_RECOVER,
+                          (keyUsage & KU_DIGITAL_SIGNATURE) ? &cktrue
+                                                            : &ckfalse,
+                          sizeof(CK_BBOOL));
+            attrs++;
+            PK11_SETATTRS(attrs, CKA_DERIVE, (keyUsage & KU_KEY_AGREEMENT) ? &cktrue
+                                                                           : &ckfalse,
+                          sizeof(CK_BBOOL));
+            attrs++;
+            ck_id = PK11_MakeIDFromPubKey(&lpk->u.ec.publicValue);
+            if (ck_id == NULL) {
+                goto loser;
+            }
+            PK11_SETATTRS(attrs, CKA_ID, ck_id->data, ck_id->len);
+            attrs++;
+            signedattr = attrs;
+            
+            PK11_SETATTRS(attrs, CKA_EC_PARAMS, lpk->u.ec.curveOID.data,
+                          lpk->u.ec.curveOID.len);
+            attrs++;
+            PK11_SETATTRS(attrs, CKA_VALUE, lpk->u.ec.privateValue.data,
+                          lpk->u.ec.privateValue.len);
+            attrs++;
+            PK11_SETATTRS(attrs, CKA_EC_POINT, lpk->u.ec.publicValue.data,
+                          lpk->u.ec.publicValue.len);
+            attrs++;
+            break;
+#endif 
         default:
             PORT_SetError(SEC_ERROR_BAD_KEY);
             goto loser;
@@ -513,6 +606,15 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
             paramDest = NULL;
             lpk->keyType = dhKey;
             break;
+#ifndef NSS_DISABLE_ECC
+        case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
+            prepare_ec_priv_key_export_for_asn1(lpk);
+            keyTemplate = SECKEY_ECPrivateKeyExportTemplate;
+            paramTemplate = NULL;
+            paramDest = NULL;
+            lpk->keyType = ecKey;
+            break;
+#endif 
 
         default:
             keyTemplate = NULL;
@@ -526,10 +628,25 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
     }
 
     
-    rv = SEC_ASN1DecodeItem(arena, lpk, keyTemplate, &pki->privateKey);
+    rv = SEC_QuickDERDecodeItem(arena, lpk, keyTemplate, &pki->privateKey);
     if (rv != SECSuccess) {
         goto loser;
     }
+
+#ifndef NSS_DISABLE_ECC
+    if (lpk->keyType == ecKey) {
+        
+        lpk->u.ec.publicValue.len >>= 3;
+
+        
+        rv = SECITEM_CopyItem(arena, &lpk->u.ec.curveOID,
+                              &pki->algorithm.parameters);
+        if (rv != SECSuccess) {
+            goto loser;
+        }
+    }
+#endif 
+
     if (paramDest && paramTemplate) {
         rv = SEC_ASN1DecodeItem(arena, paramDest, paramTemplate,
                                 &(pki->algorithm.parameters));
