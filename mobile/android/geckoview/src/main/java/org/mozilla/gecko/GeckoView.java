@@ -146,7 +146,6 @@ public class GeckoView extends LayerView
             view.mNativeQueue.setState(mNativeQueue.getState());
             mNativeQueue = view.mNativeQueue;
         }
-
     }
 
     
@@ -1064,6 +1063,16 @@ public class GeckoView extends LayerView
 
 
         void onTitleChange(GeckoView view, String title);
+
+        
+
+
+
+
+
+
+
+        void onFullScreen(GeckoView view, boolean fullScreen);
     }
 
     public interface NavigationListener {
