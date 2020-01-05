@@ -283,6 +283,14 @@ BrowserTabList.prototype.getList = function () {
             
             actor.selected = selected;
             return actor;
+          }, e => {
+            if (e.error === "tabDestroyed") {
+              
+              return null;
+            }
+
+            
+            throw e;
           })
     );
   }
@@ -294,7 +302,10 @@ BrowserTabList.prototype.getList = function () {
   this._mustNotify = true;
   this._checkListening();
 
-  return promise.all(actorPromises);
+  return promise.all(actorPromises).then(values => {
+    
+    return values.filter(value => value != null);
+  });
 };
 
 BrowserTabList.prototype._getActorForBrowser = function (browser) {
@@ -694,6 +705,13 @@ function BrowserTabActor(connection, browser) {
 BrowserTabActor.prototype = {
   connect() {
     let onDestroy = () => {
+      if (this._deferredUpdate) {
+        
+        this._deferredUpdate.reject({
+          error: "tabDestroyed",
+          message: "Tab destroyed while performing a BrowserTabActor update"
+        });
+      }
       this._form = null;
     };
     let connect = DebuggerServer.connectToChild(this._conn, this._browser, onDestroy);
@@ -722,7 +740,7 @@ BrowserTabActor.prototype = {
     
     
     if (this._form) {
-      let deferred = promise.defer();
+      this._deferredUpdate = promise.defer();
       let onFormUpdate = msg => {
         
         if (this._form.actor != msg.json.actor) {
@@ -730,11 +748,11 @@ BrowserTabActor.prototype = {
         }
         this._mm.removeMessageListener("debug:form", onFormUpdate);
         this._form = msg.json;
-        deferred.resolve(this);
+        this._deferredUpdate.resolve(this);
       };
       this._mm.addMessageListener("debug:form", onFormUpdate);
       this._mm.sendAsyncMessage("debug:form");
-      return deferred.promise;
+      return this._deferredUpdate.promise;
     }
 
     return this.connect();
