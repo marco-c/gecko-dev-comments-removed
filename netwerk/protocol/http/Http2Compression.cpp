@@ -17,6 +17,7 @@
 #include "Http2HuffmanIncoming.h"
 #include "Http2HuffmanOutgoing.h"
 #include "mozilla/StaticPtr.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsHttpHandler.h"
 
 namespace mozilla {
@@ -452,6 +453,12 @@ Http2Decompressor::DecodeHeaderBlock(const uint8_t *data, uint32_t datalen,
       
       softfail_rv = rv;
       rv = NS_OK;
+    } else if (rv == NS_ERROR_NET_RESET) {
+      
+      
+      
+      softfail_rv = rv;
+      rv = NS_OK;
     }
   }
 
@@ -516,6 +523,23 @@ Http2Decompressor::DecodeInteger(uint32_t prefixLen, uint32_t &accum)
     factor = factor * 128;
   }
   return NS_OK;
+}
+
+static bool
+HasConnectionBasedAuth(const nsACString& headerValue)
+{
+  nsCCharSeparatedTokenizer t(headerValue, '\n');
+  while (t.hasMoreTokens()) {
+    const nsDependentCSubstring& authMethod = t.nextToken();
+    if (authMethod.LowerCaseEqualsLiteral("ntlm")) {
+      return true;
+    }
+    if (authMethod.LowerCaseEqualsLiteral("negotiate")) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 nsresult
@@ -613,6 +637,20 @@ Http2Decompressor::OutputHeader(const nsACString &name, const nsACString &value)
   mOutput->AppendLiteral(": ");
   mOutput->Append(value);
   mOutput->AppendLiteral("\r\n");
+
+  
+  
+  
+  
+  
+  if (name.EqualsLiteral("www-authenticate") ||
+      name.EqualsLiteral("proxy-authenticate")) {
+    if (HasConnectionBasedAuth(value)) {
+      LOG3(("Http2Decompressor %p connection-based auth found in %s", this,
+            name.BeginReading()));
+      return NS_ERROR_NET_RESET;
+    }
+  }
   return NS_OK;
 }
 
@@ -957,7 +995,9 @@ Http2Decompressor::DoLiteralWithIncremental()
   if (NS_SUCCEEDED(rv)) {
     rv = OutputHeader(name, value);
   }
-  if (NS_FAILED(rv)) {
+  
+  
+  if (NS_FAILED(rv) && rv != NS_ERROR_NET_RESET) {
     return rv;
   }
 
@@ -968,7 +1008,7 @@ Http2Decompressor::DoLiteralWithIncremental()
          room, name.get(), value.get()));
     LOG(("Decompressor state after ClearHeaderTable"));
     DumpState();
-    return NS_OK;
+    return rv;
   }
 
   MakeRoom(room, "decompressor");
@@ -989,7 +1029,7 @@ Http2Decompressor::DoLiteralWithIncremental()
   LOG(("HTTP decompressor literal with index 0 %s %s\n",
        name.get(), value.get()));
 
-  return NS_OK;
+  return rv;
 }
 
 nsresult
