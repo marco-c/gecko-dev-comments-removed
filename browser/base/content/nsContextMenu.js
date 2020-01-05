@@ -1,8 +1,8 @@
 
 
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
 
 Components.utils.import("resource://gre/modules/ContextualIdentityService.jsm");
 Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
@@ -261,12 +261,14 @@ nsContextMenu.prototype = {
     
     
     var haveSetDesktopBackground = false;
-#ifdef HAVE_SHELL_SERVICE
-    
-    var shell = getShellService();
-    if (shell)
-      haveSetDesktopBackground = shell.canSetDesktopBackground;
-#endif
+
+    if (AppConstants.HAVE_SHELL_SERVICE) {
+      
+      var shell = getShellService();
+      if (shell)
+        haveSetDesktopBackground = shell.canSetDesktopBackground;
+    }
+
     this.showItem("context-setDesktopBackground",
                   haveSetDesktopBackground && this.onLoadedImage);
 
@@ -447,10 +449,11 @@ nsContextMenu.prototype = {
     this.showItem("context-sep-copylink", this.onLink &&
                   (this.onImage || this.onVideo || this.onAudio));
 
-#ifdef CONTEXT_COPY_IMAGE_CONTENTS
+    
+    
     
     this.showItem("context-copyimage-contents", this.onImage);
-#endif
+
     
     this.showItem("context-copyimage", this.onImage);
     this.showItem("context-copyvideourl", this.onVideo);
@@ -1213,27 +1216,28 @@ nsContextMenu.prototype = {
       
       const kDesktopBackgroundURL =
                     "chrome://browser/content/setDesktopBackground.xul";
-#ifdef XP_MACOSX
-      
-      
-      const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
-                 getService(Ci.nsIWindowMediator);
-      let dbWin = wm.getMostRecentWindow("Shell:SetDesktopBackground");
-      if (dbWin) {
-        dbWin.gSetBackground.init(image);
-        dbWin.focus();
-      }
-      else {
+
+      if (AppConstants.platform == "macosx") {
+        
+        
+        const wm = Cc["@mozilla.org/appshell/window-mediator;1"].
+                   getService(Ci.nsIWindowMediator);
+        let dbWin = wm.getMostRecentWindow("Shell:SetDesktopBackground");
+        if (dbWin) {
+          dbWin.gSetBackground.init(image);
+          dbWin.focus();
+        }
+        else {
+          openDialog(kDesktopBackgroundURL, "",
+                     "centerscreen,chrome,dialog=no,dependent,resizable=no",
+                     image);
+        }
+      } else {
+        
         openDialog(kDesktopBackgroundURL, "",
-                   "centerscreen,chrome,dialog=no,dependent,resizable=no",
+                   "centerscreen,chrome,dialog,modal,dependent",
                    image);
       }
-#else
-      
-      openDialog(kDesktopBackgroundURL, "",
-                 "centerscreen,chrome,dialog,modal,dependent",
-                 image);
-#endif
     };
 
     mm.addMessageListener("ContextMenu:SetAsDesktopBackground:Result", onMessage);
@@ -1514,6 +1518,13 @@ nsContextMenu.prototype = {
   
 
   
+
+
+
+
+
+
+
   showItem: function(aItemOrId, aShow) {
     var item = aItemOrId.constructor == String ?
       document.getElementById(aItemOrId) : aItemOrId;
