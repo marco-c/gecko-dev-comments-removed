@@ -1391,7 +1391,7 @@ var tagItem = Task.async(function(item, tags) {
   }
 
   
-  let newTags = tags.map(tag => tag.trim()).filter(Boolean);
+  let newTags = tags ? tags.map(tag => tag.trim()).filter(Boolean) : [];
 
   
   
