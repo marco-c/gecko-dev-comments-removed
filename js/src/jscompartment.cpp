@@ -418,8 +418,6 @@ JSCompartment::getNonWrapperObjectForCurrentCompartment(JSContext* cx, MutableHa
 bool
 JSCompartment::getOrCreateWrapper(JSContext* cx, HandleObject existing, MutableHandleObject obj)
 {
-    MOZ_ASSERT(JS::ObjectIsNotGray(obj));
-
     
     RootedValue key(cx, ObjectValue(*obj));
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
