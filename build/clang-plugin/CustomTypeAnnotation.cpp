@@ -3,6 +3,7 @@
 
 
 #include "CustomTypeAnnotation.h"
+#include "Utils.h"
 
 CustomTypeAnnotation StackClass =
     CustomTypeAnnotation("moz_stack_class", "stack");
