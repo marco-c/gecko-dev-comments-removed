@@ -13,12 +13,12 @@ do_get_profile();
 
 
 let window = {
-    document: {},
-    location: {},
-    setTimeout,
-    setInterval,
-    clearTimeout,
-    clearinterval: clearInterval
+  document: {},
+  location: {},
+  setTimeout,
+  setInterval,
+  clearTimeout,
+  clearInterval,
 };
 let self = window;
 

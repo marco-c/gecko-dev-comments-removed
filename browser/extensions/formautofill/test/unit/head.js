@@ -18,6 +18,14 @@ XPCOMUtils.defineLazyModuleGetter(this, "DownloadPaths",
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
 
+do_get_profile();
+
+
+Cu.import("resource://gre/modules/Timer.jsm");
+let self = {}; 
+var sinon;
+Services.scriptloader.loadSubScript("resource://testing-common/sinon-1.16.1.js");
+
 
 const EXTENSION_ID = "formautofill@mozilla.org";
 let extensionDir = Services.dirsvc.get("GreD", Ci.nsIFile);
@@ -85,12 +93,12 @@ function getTempFile(leafName) {
   return file;
 }
 
-add_task(function* test_common_initialize() {
+add_task(function* head_initialize() {
   Services.prefs.setBoolPref("browser.formautofill.experimental", true);
   Services.prefs.setBoolPref("dom.forms.autocomplete.experimental", true);
 
   
-  do_register_cleanup(() => {
+  do_register_cleanup(function head_cleanup() {
     Services.prefs.clearUserPref("browser.formautofill.experimental");
     Services.prefs.clearUserPref("dom.forms.autocomplete.experimental");
   });
