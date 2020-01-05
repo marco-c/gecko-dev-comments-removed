@@ -1539,12 +1539,11 @@ nsSocketTransport::InitiateSocket()
           
           
           mFastOpenCallback->FastOpenNotSupported();
-          mFastOpenCallback = nullptr;
+          
+          
+          
+          
           connectCalled = true;
-          {
-              MutexAutoLock lock(mLock);
-              mFDFastOpenInProgress = false;
-          }
         }
     } else {
         mFastOpenCallback = nullptr;
