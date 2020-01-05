@@ -424,29 +424,6 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   max-width: none;
 }
 
-#urlbar-container {
-  min-width: 50ch;
-}
-
-#search-container {
-  min-width: 25ch;
-}
-
-
-@media (resolution: 2dppx) {
-  .searchbar-engine-image {
-    image-rendering: -moz-crisp-edges;
-  }
-}
-
-#urlbar,
-.searchbar-textbox {
-  
-
-  width: 1px;
-  min-width: 1px;
-}
-
 #main-window:-moz-lwtheme {
   background-repeat: no-repeat;
   background-position: top right;
@@ -475,8 +452,39 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 }
 
 
+
+#urlbar-container {
+  min-width: 50ch;
+}
+
+#search-container {
+  min-width: 25ch;
+}
+
+#urlbar,
+.searchbar-textbox {
+  
+
+  width: 1px;
+  min-width: 1px;
+}
+
 #urlbar {
   -moz-binding: url(chrome://browser/content/urlbarBindings.xml#urlbar);
+}
+
+
+html|input.urlbar-input[textoverflow]:not([focused]) {
+  
+
+  mask-image: linear-gradient(to left, transparent, black 3em);
+}
+
+
+@media (resolution: 2dppx) {
+  .searchbar-engine-image {
+    image-rendering: -moz-crisp-edges;
+  }
 }
 
 
@@ -504,14 +512,8 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
   list-style-image: none;
 }
 
-#urlbar:not([actiontype="switchtab"]):not([actiontype="extension"]) > #urlbar-display-box {
-  display: none;
-}
-
-#urlbar:not([actiontype="switchtab"]) > #urlbar-display-box > #switchtab {
-  display: none;
-}
-
+#urlbar:not([actiontype="switchtab"]):not([actiontype="extension"]) > #urlbar-display-box,
+#urlbar:not([actiontype="switchtab"]) > #urlbar-display-box > #switchtab,
 #urlbar:not([actiontype="extension"]) > #urlbar-display-box > #extension {
   display: none;
 }
