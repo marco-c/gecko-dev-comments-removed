@@ -94,8 +94,11 @@ def target_tasks_ash(full_task_graph, parameters):
         if platform == 'linux64-asan' and task.attributes['build_type'] == 'debug':
             return False
         
-        if task.attributes.get('unittest_suite') or task.attributes.get('talos_suite'):
+        if task.attributes.get('unittest_suite'):
             if not task.attributes.get('e10s'):
+                return False
+            
+            if task.attributes.get('unittest_suite') == 'talos':
                 return False
         
         if task.attributes['kind'] == 'upload-symbols':
