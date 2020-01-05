@@ -439,8 +439,7 @@ function checkForMiddleClick(node, event) {
 
 
 
-
-function createUserContextMenu(event, addCommandAttribute = true, excludeUserContextId = 0) {
+function createUserContextMenu(event, isContextMenu = false, excludeUserContextId = 0) {
   while (event.target.hasChildNodes()) {
     event.target.removeChild(event.target.firstChild);
   }
@@ -481,7 +480,7 @@ function createUserContextMenu(event, addCommandAttribute = true, excludeUserCon
     menuitem.classList.add("menuitem-iconic");
     menuitem.setAttribute("data-identity-color", identity.color);
 
-    if (addCommandAttribute) {
+    if (!isContextMenu) {
       menuitem.setAttribute("command", "Browser:NewUserContextTab");
     }
 
@@ -489,6 +488,18 @@ function createUserContextMenu(event, addCommandAttribute = true, excludeUserCon
 
     docfrag.appendChild(menuitem);
   });
+
+  if (!isContextMenu) {
+    docfrag.appendChild(document.createElement("menuseparator"));
+
+    let menuitem = document.createElement("menuitem");
+    menuitem.setAttribute("label",
+                          bundle.getString("userContext.aboutPage.label"));
+    menuitem.setAttribute("accesskey",
+                          bundle.getString("userContext.aboutPage.accesskey"));
+    menuitem.setAttribute("command", "Browser:OpenAboutContainers");
+    docfrag.appendChild(menuitem);
+  }
 
   event.target.appendChild(docfrag);
   return true;
