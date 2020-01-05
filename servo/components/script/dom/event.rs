@@ -180,9 +180,7 @@ impl<'a> EventMethods for &'a Event {
 
     
     fn Type(self) -> DOMString {
-        
-        let type_ = self.type_.borrow();
-        type_.clone()
+        self.type_.borrow().clone()
     }
 
     

@@ -45,15 +45,11 @@ impl URLSearchParams {
         match init {
             Some(eString(init)) => {
                 
-                let query = query.r();
-                *query.list.borrow_mut() = parse(init.as_bytes());
+                *query.r().list.borrow_mut() = parse(init.as_bytes());
             },
             Some(eURLSearchParams(init)) => {
                 
-                
-                let query = query.r();
-                let init = init.r();
-                *query.list.borrow_mut() = init.list.borrow().clone();
+                *query.r().list.borrow_mut() = init.r().list.borrow().clone();
             },
             None => {}
         }
