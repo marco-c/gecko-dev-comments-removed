@@ -114,9 +114,6 @@ private:
   void NotifyDemuxer();
   void ReturnOutput(MediaData* aData, TrackType aTrack);
 
-  MediaResult EnsureDecoderCreated(TrackType aTrack);
-  bool EnsureDecoderInitialized(TrackType aTrack);
-
   
   
   void ScheduleUpdate(TrackType aTrack);
@@ -238,7 +235,6 @@ private:
       , mWaitingForData(false)
       , mWaitingForKey(false)
       , mReceivedNewData(false)
-      , mDecoderInitialized(false)
       , mOutputRequested(false)
       , mDecodePending(false)
       , mNeedDraining(false)
@@ -273,7 +269,6 @@ private:
     const char* mDescription;
     void ShutdownDecoder()
     {
-      mInitPromise.DisconnectIfExists();
       MonitorAutoLock mon(mMonitor);
       if (mDecoder) {
         mDecoder->Shutdown();
@@ -310,10 +305,6 @@ private:
     }
 
     
-    
-    MozPromiseRequestHolder<MediaDataDecoder::InitPromise> mInitPromise;
-    
-    bool mDecoderInitialized;
     bool mOutputRequested;
     
     
@@ -581,6 +572,9 @@ private:
   RefPtr<GMPCrashHelper> mCrashHelper;
 
   void SetBlankDecode(TrackType aTrack, bool aIsBlankDecode);
+
+  class DecoderFactory;
+  UniquePtr<DecoderFactory> mDecoderFactory;
 };
 
 } 
