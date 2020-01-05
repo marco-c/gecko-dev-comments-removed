@@ -6,23 +6,15 @@
 
 use construct::{ConstructionItem, ConstructionResult};
 use incremental::RestyleDamage;
-use parallel::DomParallelInfo;
-use wrapper::{LayoutNode, TLayoutNode, ThreadSafeLayoutNode};
-
-use azure::azure_hl::Color;
-use gfx::display_list::OpaqueNode;
-use gfx;
-use libc::{c_void, uintptr_t};
 use msg::constellation_msg::ConstellationChan;
-use script::dom::bindings::js::LayoutJS;
-use script::dom::node::{Node, SharedLayoutData};
-use script::layout_interface::{LayoutChan, TrustedNodeAddress};
-use script_traits::UntrustedNodeAddress;
-use std::mem;
+use parallel::DomParallelInfo;
+use script::dom::node::SharedLayoutData;
+use script::layout_interface::LayoutChan;
 use std::cell::{Ref, RefMut};
-use style::properties::ComputedValues;
-use style;
+use std::mem;
 use std::sync::Arc;
+use style::properties::ComputedValues;
+use wrapper::{LayoutNode, TLayoutNode};
 
 
 pub struct PrivateLayoutData {
@@ -139,67 +131,5 @@ impl<'ln> LayoutDataAccess for LayoutNode<'ln> {
         unsafe {
             mem::transmute(self.get().layout_data_mut())
         }
-    }
-}
-
-pub trait OpaqueNodeMethods {
-    
-    fn from_layout_node(node: &LayoutNode) -> Self;
-
-    
-    fn from_thread_safe_layout_node(node: &ThreadSafeLayoutNode) -> Self;
-
-    
-    fn from_script_node(node: TrustedNodeAddress) -> Self;
-
-    
-    fn from_jsmanaged(node: &LayoutJS<Node>) -> Self;
-
-    
-    
-    fn to_untrusted_node_address(&self) -> UntrustedNodeAddress;
-}
-
-impl OpaqueNodeMethods for OpaqueNode {
-    fn from_layout_node(node: &LayoutNode) -> OpaqueNode {
-        unsafe {
-            OpaqueNodeMethods::from_jsmanaged(node.get_jsmanaged())
-        }
-    }
-
-    fn from_thread_safe_layout_node(node: &ThreadSafeLayoutNode) -> OpaqueNode {
-        unsafe {
-            OpaqueNodeMethods::from_jsmanaged(node.get_jsmanaged())
-        }
-    }
-
-    fn from_script_node(node: TrustedNodeAddress) -> OpaqueNode {
-        unsafe {
-            OpaqueNodeMethods::from_jsmanaged(&LayoutJS::from_trusted_node_address(node))
-        }
-    }
-
-    fn from_jsmanaged(node: &LayoutJS<Node>) -> OpaqueNode {
-        unsafe {
-            let ptr: uintptr_t = node.get_jsobject() as uintptr_t;
-            OpaqueNode(ptr)
-        }
-    }
-
-    fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
-        let OpaqueNode(addr) = *self;
-        UntrustedNodeAddress(addr as *const c_void)
-    }
-}
-
-
-pub trait ToGfxColor {
-    
-    fn to_gfx_color(&self) -> Color;
-}
-
-impl ToGfxColor for style::values::RGBA {
-    fn to_gfx_color(&self) -> Color {
-        gfx::color::rgba(self.red, self.green, self.blue, self.alpha)
     }
 }
