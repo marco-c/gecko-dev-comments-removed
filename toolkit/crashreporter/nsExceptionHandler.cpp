@@ -551,10 +551,12 @@ CreatePathFromFile(nsIFile* file)
 #endif
 
 static XP_CHAR*
-Concat(XP_CHAR* str, const XP_CHAR* toAppend, int* size)
+Concat(XP_CHAR* str, const XP_CHAR* toAppend, size_t* size)
 {
-  int appendLen = XP_STRLEN(toAppend);
-  if (appendLen >= *size) appendLen = *size - 1;
+  size_t appendLen = XP_STRLEN(toAppend);
+  if (appendLen >= *size) {
+    appendLen = *size - 1;
+  }
 
   memcpy(str, toAppend, appendLen * sizeof(XP_CHAR));
   str += appendLen;
@@ -774,7 +776,7 @@ OpenAPIData(PlatformWriter& aWriter,
            )
 {
   static XP_CHAR extraDataPath[XP_PATH_MAX];
-  int size = XP_PATH_MAX;
+  size_t size = XP_PATH_MAX;
   XP_CHAR* p;
   if (minidump_id) {
     p = Concat(extraDataPath, dump_path, &size);
@@ -825,6 +827,136 @@ WriteGlobalMemoryStatus(PlatformWriter* apiData, PlatformWriter* eventFile)
 }
 #endif
 
+#if !defined(MOZ_WIDGET_ANDROID)
+
+
+
+
+
+
+
+
+
+static bool
+LaunchProgram(XP_CHAR* aProgramPath, XP_CHAR* aMinidumpPath)
+{
+#ifdef XP_WIN
+  XP_CHAR cmdLine[CMDLINE_SIZE];
+  XP_CHAR* p;
+
+  size_t size = CMDLINE_SIZE;
+  p = Concat(cmdLine, L"\"", &size);
+  p = Concat(p, aProgramPath, &size);
+  p = Concat(p, L"\" \"", &size);
+  p = Concat(p, aMinidumpPath, &size);
+  Concat(p, L"\"", &size);
+
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+  
+  if (CreateProcess(nullptr, (LPWSTR)cmdLine, nullptr, nullptr, FALSE,
+                    NORMAL_PRIORITY_CLASS | CREATE_NO_WINDOW,
+                    nullptr, nullptr, &si, &pi)) {
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+  }
+#elif defined(XP_UNIX)
+#ifdef XP_MACOSX
+  pid_t pid = 0;
+  char* const my_argv[] = {
+    aProgramPath,
+    aMinidumpPath,
+    nullptr
+  };
+
+  char **env = nullptr;
+  char ***nsEnv = _NSGetEnviron();
+  if (nsEnv)
+    env = *nsEnv;
+
+  int rv = posix_spawnp(&pid, my_argv[0], nullptr, &spawnattr, my_argv, env);
+
+  if (rv != 0) {
+    return false;
+  }
+
+#else 
+  pid_t pid = sys_fork();
+
+  if (pid == -1) {
+    return false;
+  } else if (pid == 0) {
+    
+    
+    unsetenv("LD_LIBRARY_PATH");
+    Unused << execl(aProgramPath,
+                    aProgramPath, aMinidumpPath, (char*)0);
+    _exit(1);
+  }
+#endif 
+#endif 
+
+  return true;
+}
+
+#else
+
+
+
+
+
+
+
+
+
+static bool
+LaunchCrashReporterActivity(XP_CHAR* aProgramPath, XP_CHAR* aMinidumpPath,
+                            bool aSucceeded)
+{
+  pid_t pid = sys_fork();
+
+  if (pid == -1)
+    return false;
+  else if (pid == 0) {
+    
+    if (androidUserSerial) {
+      Unused << execlp("/system/bin/am",
+                       "/system/bin/am",
+                       "start",
+                       "--user", androidUserSerial,
+                       "-a", "org.mozilla.gecko.reportCrash",
+                       "-n", aProgramPath,
+                       "--es", "minidumpPath", aMinidumpPath,
+                       "--ez", "minidumpSuccess", aSucceeded ? "true" : "false",
+                       (char*)0);
+    } else {
+      Unused << execlp("/system/bin/am",
+                       "/system/bin/am",
+                       "start",
+                       "-a", "org.mozilla.gecko.reportCrash",
+                       "-n", aProgramPath,
+                       "--es", "minidumpPath", aMinidumpPath,
+                       "--ez", "minidumpSuccess", aSucceeded ? "true" : "false",
+                       (char*)0);
+    }
+    _exit(1);
+
+  } else {
+    
+    
+    int status;
+    Unused << HANDLE_EINTR(sys_waitpid(pid, &status, __WALL));
+  }
+
+  return true;
+}
+
+#endif
+
 bool MinidumpCallback(
 #ifdef XP_LINUX
                       const MinidumpDescriptor& descriptor,
@@ -842,7 +974,7 @@ bool MinidumpCallback(
   bool returnValue = showOSCrashReporter ? false : succeeded;
 
   static XP_CHAR minidumpPath[XP_PATH_MAX];
-  int size = XP_PATH_MAX;
+  size_t size = XP_PATH_MAX;
   XP_CHAR* p;
 #ifndef XP_LINUX
   p = Concat(minidumpPath, dump_path, &size);
@@ -964,7 +1096,7 @@ bool MinidumpCallback(
 
     if (eventsDirectory) {
       static XP_CHAR crashEventPath[XP_PATH_MAX];
-      int size = XP_PATH_MAX;
+      size_t size = XP_PATH_MAX;
       XP_CHAR* p;
       p = Concat(crashEventPath, eventsDirectory, &size);
       p = Concat(p, XP_PATH_SEPARATOR, &size);
@@ -1010,10 +1142,8 @@ bool MinidumpCallback(
                       timeSinceLastCrashString);
     }
     if (isGarbageCollecting) {
-      WriteAnnotation(apiData, "IsGarbageCollecting",
-                      isGarbageCollecting ? "1" : "0");
-      WriteAnnotation(eventFile, "IsGarbageCollecting",
-                      isGarbageCollecting ? "1" : "0");
+      WriteAnnotation(apiData, "IsGarbageCollecting", "1");
+      WriteAnnotation(eventFile, "IsGarbageCollecting", "1");
     }
 
     char buffer[128];
@@ -1079,106 +1209,20 @@ bool MinidumpCallback(
     }
   }
 
+  if (!doReport) {
 #ifdef XP_WIN
-  if (!doReport) {
     TerminateProcess(GetCurrentProcess(), 1);
+#endif 
     return returnValue;
   }
 
-  XP_CHAR cmdLine[CMDLINE_SIZE];
-  size = CMDLINE_SIZE;
-  p = Concat(cmdLine, L"\"", &size);
-  p = Concat(p, crashReporterPath, &size);
-  p = Concat(p, L"\" \"", &size);
-  p = Concat(p, minidumpPath, &size);
-  Concat(p, L"\"", &size);
-
-  STARTUPINFO si;
-  PROCESS_INFORMATION pi;
-
-  ZeroMemory(&si, sizeof(si));
-  si.cb = sizeof(si);
-  si.dwFlags = STARTF_USESHOWWINDOW;
-  si.wShowWindow = SW_SHOWNORMAL;
-  ZeroMemory(&pi, sizeof(pi));
-
-  if (CreateProcess(nullptr, (LPWSTR)cmdLine, nullptr, nullptr, FALSE, 0,
-                    nullptr, nullptr, &si, &pi)) {
-    CloseHandle( pi.hProcess );
-    CloseHandle( pi.hThread );
-  }
-  
-  TerminateProcess(GetCurrentProcess(), 1);
-#elif defined(XP_UNIX)
-  if (!doReport) {
-    return returnValue;
-  }
-
-#ifdef XP_MACOSX
-  char* const my_argv[] = {
-    crashReporterPath,
-    minidumpPath,
-    nullptr
-  };
-
-  char **env = nullptr;
-  char ***nsEnv = _NSGetEnviron();
-  if (nsEnv)
-    env = *nsEnv;
-  int result = posix_spawnp(nullptr,
-                            my_argv[0],
-                            nullptr,
-                            &spawnattr,
-                            my_argv,
-                            env);
-
-  if (result != 0)
-    return false;
-
+#if defined(MOZ_WIDGET_ANDROID) 
+  returnValue = LaunchCrashReporterActivity(crashReporterPath, minidumpPath,
+                                            succeeded);
 #else 
-  pid_t pid = sys_fork();
-
-  if (pid == -1)
-    return false;
-  else if (pid == 0) {
-#if !defined(MOZ_WIDGET_ANDROID)
-    
-    
-    unsetenv("LD_LIBRARY_PATH");
-    Unused << execl(crashReporterPath,
-                    crashReporterPath, minidumpPath, (char*)0);
-#else
-    
-    if (androidUserSerial) {
-      Unused << execlp("/system/bin/am",
-                       "/system/bin/am",
-                       "start",
-                       "--user", androidUserSerial,
-                       "-a", "org.mozilla.gecko.reportCrash",
-                       "-n", crashReporterPath,
-                       "--es", "minidumpPath", minidumpPath,
-                       "--ez", "minidumpSuccess", succeeded ? "true" : "false",
-                       (char*)0);
-    } else {
-      Unused << execlp("/system/bin/am",
-                       "/system/bin/am",
-                       "start",
-                       "-a", "org.mozilla.gecko.reportCrash",
-                       "-n", crashReporterPath,
-                       "--es", "minidumpPath", minidumpPath,
-                       "--ez", "minidumpSuccess", succeeded ? "true" : "false",
-                       (char*)0);
-    }
-#endif
-    _exit(1);
-#ifdef MOZ_WIDGET_ANDROID
-  } else {
-    
-    
-    int status;
-    Unused << HANDLE_EINTR(sys_waitpid(pid, &status, __WALL));
-#endif
-  }
+  returnValue = LaunchProgram(crashReporterPath, minidumpPath);
+#ifdef XP_WIN
+  TerminateProcess(GetCurrentProcess(), 1);
 #endif
 #endif
 
@@ -1255,7 +1299,7 @@ BuildTempPath(char* aBuf, size_t aBufLen)
   if (!tempenv) {
     return false;
   }
-  int size = (int)aBufLen;
+  size_t size = aBufLen;
   Concat(aBuf, tempenv, &size);
   return EnsureTrailingSlash(aBuf, aBufLen);
 }
@@ -1270,7 +1314,7 @@ BuildTempPath(char* aBuf, size_t aBufLen)
   if (!tempenv) {
     tempenv = tmpPath;
   }
-  int size = (int)aBufLen;
+  size_t size = aBufLen;
   Concat(aBuf, tempenv, &size);
   return EnsureTrailingSlash(aBuf, aBufLen);
 }
@@ -1307,7 +1351,7 @@ PrepareChildExceptionTimeAnnotations()
   static XP_CHAR tempPath[XP_PATH_MAX] = {0};
 
   
-  int charsAvailable = XP_PATH_MAX;
+  size_t charsAvailable = XP_PATH_MAX;
   XP_CHAR* p = tempPath;
 #if (defined(XP_MACOSX) || defined(XP_WIN))
   if (!childProcessTmpDir || childProcessTmpDir->empty()) {
