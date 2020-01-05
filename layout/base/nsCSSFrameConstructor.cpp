@@ -4582,6 +4582,7 @@ nsCSSFrameConstructor::BeginBuildingScrollFrame(nsFrameConstructorState& aState,
   }
 
   aNewFrame = gfxScrollFrame;
+  gfxScrollFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
   StyleSetHandle styleSet = mPresShell->StyleSet();
