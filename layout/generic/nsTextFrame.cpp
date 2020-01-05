@@ -4823,7 +4823,7 @@ public:
     mDisableSubpixelAA = true;
   }
 
-  void RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder);
+  void RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder, bool aIsRecording = false);
 
   bool CanApplyOpacity() const override
   {
@@ -4995,7 +4995,7 @@ nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder, nsTextFrame* aFrame
     RefPtr<gfxContext> captureCtx = gfxContext::CreateOrNull(capture);
 
     
-    RenderToContext(captureCtx, aBuilder);
+    RenderToContext(captureCtx, aBuilder, true);
 
     
     
@@ -5068,7 +5068,7 @@ nsDisplayText::BuildLayer(nsDisplayListBuilder* aBuilder,
 }
 
 void
-nsDisplayText::RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder)
+nsDisplayText::RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder, bool aIsRecording)
 {
   nsTextFrame* f = static_cast<nsTextFrame*>(mFrame);
 
@@ -5088,7 +5088,8 @@ nsDisplayText::RenderToContext(gfxContext* aCtx, nsDisplayListBuilder* aBuilder)
   pixelVisible.RoundOut();
 
   if (!aBuilder->IsForGenerateGlyphMask() &&
-      !aBuilder->IsForPaintingSelectionBG()) {
+      !aBuilder->IsForPaintingSelectionBG() &&
+      !aIsRecording) {
     aCtx->NewPath();
     aCtx->Rectangle(pixelVisible);
     aCtx->Clip();
