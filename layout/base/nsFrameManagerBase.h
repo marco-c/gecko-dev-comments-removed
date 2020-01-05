@@ -45,8 +45,6 @@ public:
     mRootFrame = aRootFrame;
   }
 
-  static uint32_t GetGlobalGenerationNumber() { return sGlobalGenerationNumber; }
-
 protected:
   class UndisplayedMap;
 
@@ -57,16 +55,6 @@ protected:
   UndisplayedMap*                 mUndisplayedMap;
   UndisplayedMap*                 mDisplayContentsMap;
   bool                            mIsDestroyingFrames;  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static uint32_t                 sGlobalGenerationNumber;
 };
 
 #endif
