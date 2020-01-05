@@ -60,6 +60,13 @@ public:
   bool TextureSharingWorks();
   bool IsWARP();
 
+  
+  
+  
+  
+  
+  bool CanInitializeKeyedMutexTextures();
+
   bool CreateCompositorDevices();
   void CreateContentDevices();
 
