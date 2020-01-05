@@ -629,6 +629,15 @@ public:
     mIsInitialDocumentInWindow = aIsInitialDocument;
   }
 
+  
+
+
+
+
+  void IgnoreDocGroupMismatches()
+  {
+    mIgnoreDocGroupMismatches = true;
+  }
 
   
 
@@ -876,6 +885,9 @@ public:
   void SetParentDocument(nsIDocument* aParent)
   {
     mParentDocument = aParent;
+    if (aParent) {
+      mIgnoreDocGroupMismatches = aParent->mIgnoreDocGroupMismatches;
+    }
   }
 
   
@@ -3048,6 +3060,8 @@ protected:
   
   
   bool mIsInitialDocumentInWindow : 1;
+
+  bool mIgnoreDocGroupMismatches : 1;
 
   
   

@@ -7990,6 +7990,15 @@ nsDocShell::EnsureContentViewer()
                  "succeeded!");
 
     doc->SetIsInitialDocument(true);
+
+    
+    
+    
+    
+    
+    
+    
+    doc->IgnoreDocGroupMismatches();
   }
 
   return rv;
@@ -9058,6 +9067,12 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
                                 nsIStreamListener** aContentHandler)
 {
   *aContentHandler = nullptr;
+
+  if (!mTreeOwner) {
+    
+    
+    return NS_ERROR_DOCSHELL_DYING;
+  }
 
   
   
