@@ -430,7 +430,6 @@ impl Parse for Angle {
     fn parse(_context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
         match try!(input.next()) {
             Token::Dimension(ref value, ref unit) => Angle::parse_dimension(value.value, unit),
-            Token::Number(ref value) if value.value == 0. => Ok(Angle::zero()),
             Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {
                 input.parse_nested_block(CalcLengthOrPercentage::parse_angle)
             },
@@ -450,6 +449,22 @@ impl Angle {
              _ => return Err(())
         };
         Ok(angle)
+    }
+    
+    
+    
+    
+    
+    
+    pub fn parse_with_unitless(_context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
+        match try!(input.next()) {
+            Token::Dimension(ref value, ref unit) => Angle::parse_dimension(value.value, unit),
+            Token::Number(ref value) if value.value == 0. => Ok(Angle::zero()),
+            Token::Function(ref name) if name.eq_ignore_ascii_case("calc") => {
+                input.parse_nested_block(CalcLengthOrPercentage::parse_angle)
+            },
+            _ => Err(())
+        }
     }
 }
 
