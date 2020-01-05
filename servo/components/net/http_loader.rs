@@ -513,14 +513,14 @@ fn request_must_be_secured(url: &Url, hsts_list: &Arc<RwLock<HSTSList>>) -> bool
 }
 
 pub fn modify_request_headers(headers: &mut Headers,
-                              doc_url: &Url,
+                              url: &Url,
                               user_agent: &str,
                               cookie_jar: &Arc<RwLock<CookieStorage>>,
                               load_data: &LoadData) {
     
     let host = Host {
-        hostname: doc_url.serialize_host().unwrap(),
-        port: doc_url.port_or_default()
+        hostname: url.serialize_host().unwrap(),
+        port: url.port_or_default()
     };
     headers.set(host);
 
@@ -538,11 +538,11 @@ pub fn modify_request_headers(headers: &mut Headers,
     set_default_accept_encoding(headers);
     
     if load_data.credentials_flag {
-        set_request_cookies(doc_url.clone(), headers, cookie_jar);
+        set_request_cookies(url.clone(), headers, cookie_jar);
 
         
         if !headers.has::<Authorization<Basic>>() {
-            if let Some(auth) = auth_from_url(doc_url) {
+            if let Some(auth) = auth_from_url(url) {
                 headers.set(auth);
             }
         }
@@ -563,7 +563,6 @@ fn auth_from_url(doc_url: &Url) -> Option<Authorization<Basic>> {
 
 pub fn process_response_headers(response: &HttpResponse,
                                 url: &Url,
-                                doc_url: &Url,
                                 cookie_jar: &Arc<RwLock<CookieStorage>>,
                                 hsts_list: &Arc<RwLock<HSTSList>>,
                                 load_data: &LoadData) {
@@ -576,7 +575,7 @@ pub fn process_response_headers(response: &HttpResponse,
 
     
     if load_data.credentials_flag {
-        set_cookies_from_response(doc_url.clone(), response, cookie_jar);
+        set_cookies_from_response(url.clone(), response, cookie_jar);
     }
     update_sts_list_from_response(url, response, hsts_list);
 }
@@ -595,17 +594,18 @@ pub fn obtain_response<A>(request_factory: &HttpRequestFactory<R=A>,
                           -> Result<A::R, LoadError> where A: HttpRequest + 'static  {
 
     let response;
+    let connection_url = replace_hosts(&url);
 
     
     
     
     
     loop {
-        let mut req = try!(request_factory.create(url.clone(), method.clone()));
+        let mut req = try!(request_factory.create(connection_url.clone(), method.clone()));
         *req.headers_mut() = request_headers.clone();
 
         if cancel_listener.is_cancelled() {
-            return Err(LoadError::Cancelled(url.clone(), "load cancelled".to_owned()));
+            return Err(LoadError::Cancelled(connection_url.clone(), "load cancelled".to_owned()));
         }
 
         if log_enabled!(log::LogLevel::Info) {
@@ -677,48 +677,44 @@ pub fn load<A>(load_data: LoadData,
     let mut iters = 0;
     
     let mut doc_url = load_data.url.clone();
-    
-    
-    let mut url = replace_hosts(&load_data.url);
     let mut redirected_to = HashSet::new();
     let mut method = load_data.method.clone();
 
     if cancel_listener.is_cancelled() {
-        return Err(LoadError::Cancelled(url, "load cancelled".to_owned()));
+        return Err(LoadError::Cancelled(doc_url, "load cancelled".to_owned()));
     }
 
     
     
     
     
-    let viewing_source = url.scheme == "view-source";
+    let viewing_source = doc_url.scheme == "view-source";
     if viewing_source {
-        url = inner_url(&load_data.url);
-        doc_url = url.clone();
+        doc_url = inner_url(&load_data.url);
     }
 
     
     loop {
         iters = iters + 1;
 
-        if &*url.scheme == "http" && request_must_be_secured(&url, &hsts_list) {
-            info!("{} is in the strict transport security list, requesting secure host", url);
-            url = secure_url(&url);
+        if &*doc_url.scheme == "http" && request_must_be_secured(&doc_url, &hsts_list) {
+            info!("{} is in the strict transport security list, requesting secure host", doc_url);
+            doc_url = secure_url(&doc_url);
         }
 
         if iters > max_redirects {
-            return Err(LoadError::MaxRedirects(url));
+            return Err(LoadError::MaxRedirects(doc_url));
         }
 
-        if &*url.scheme != "http" && &*url.scheme != "https" {
-            return Err(LoadError::UnsupportedScheme(url));
+        if &*doc_url.scheme != "http" && &*doc_url.scheme != "https" {
+            return Err(LoadError::UnsupportedScheme(doc_url));
         }
 
         if cancel_listener.is_cancelled() {
-            return Err(LoadError::Cancelled(url, "load cancelled".to_owned()));
+            return Err(LoadError::Cancelled(doc_url, "load cancelled".to_owned()));
         }
 
-        info!("requesting {}", url.serialize());
+        info!("requesting {}", doc_url.serialize());
 
         
         
@@ -736,11 +732,11 @@ pub fn load<A>(load_data: LoadData,
 
         modify_request_headers(&mut request_headers, &doc_url, &user_agent, &cookie_jar, &load_data);
 
-        let response = try!(obtain_response(request_factory, &url, &method, &request_headers,
+        let response = try!(obtain_response(request_factory, &doc_url, &method, &request_headers,
                                             &cancel_listener, &load_data.data, &load_data.method,
                                             &load_data.pipeline_id, iters, &devtools_chan, &request_id));
 
-        process_response_headers(&response, &url, &doc_url, &cookie_jar, &hsts_list, &load_data);
+        process_response_headers(&response, &doc_url, &cookie_jar, &hsts_list, &load_data);
 
         
         if response.status().class() == StatusClass::Redirection {
@@ -750,7 +746,7 @@ pub fn load<A>(load_data: LoadData,
                     if c.preflight {
                         return Err(
                             LoadError::Cors(
-                                url,
+                                doc_url,
                                 "Preflight fetch inconsistent with main fetch".to_owned()));
                     } else {
                         
@@ -765,10 +761,6 @@ pub fn load<A>(load_data: LoadData,
                     }
                 };
 
-                info!("redirecting to {}", new_doc_url);
-                url = replace_hosts(&new_doc_url);
-                doc_url = new_doc_url;
-
                 
                 
                 if method == Method::Post &&
@@ -777,9 +769,12 @@ pub fn load<A>(load_data: LoadData,
                     method = Method::Get;
                 }
 
-                if redirected_to.contains(&url) {
+                if redirected_to.contains(&new_doc_url) {
                     return Err(LoadError::InvalidRedirect(doc_url, "redirect loop".to_owned()));
                 }
+
+                info!("redirecting to {}", new_doc_url);
+                doc_url = new_doc_url;
 
                 redirected_to.insert(doc_url.clone());
                 continue;
