@@ -243,8 +243,7 @@ void nsDisplayButtonForeground::Paint(nsDisplayListBuilder* aBuilder,
 
     
     DrawResult result =
-      mBFR->PaintOutlineAndFocusBorders(aBuilder, presContext, *aCtx,
-                                        mVisibleRect, r);
+      mBFR->PaintInnerFocusBorder(aBuilder, presContext, *aCtx, mVisibleRect, r);
 
     nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, result);
   }
@@ -278,18 +277,27 @@ nsButtonFrameRenderer::DisplayButton(nsDisplayListBuilder* aBuilder,
   return NS_OK;
 }
 
+void
+nsButtonFrameRenderer::GetButtonInnerFocusRect(const nsRect& aRect, nsRect& aResult)
+{
+  GetButtonRect(aRect, aResult);
+  aResult.Deflate(mFrame->GetUsedBorderAndPadding());
+
+  nsMargin innerFocusPadding(0,0,0,0);
+  if (mInnerFocusStyle) {
+    mInnerFocusStyle->StylePadding()->GetPadding(innerFocusPadding);
+  }
+  aResult.Inflate(innerFocusPadding);
+}
+
 DrawResult
-nsButtonFrameRenderer::PaintOutlineAndFocusBorders(
+nsButtonFrameRenderer::PaintInnerFocusBorder(
   nsDisplayListBuilder* aBuilder,
   nsPresContext* aPresContext,
   nsRenderingContext& aRenderingContext,
   const nsRect& aDirtyRect,
   const nsRect& aRect)
 {
-  
-  
-  
-  
   
   
 
@@ -347,57 +355,6 @@ nsButtonFrameRenderer::GetButtonRect(const nsRect& aRect, nsRect& r)
   r = aRect;
 }
 
-
-void
-nsButtonFrameRenderer::GetButtonInnerFocusRect(const nsRect& aRect, nsRect& focusRect)
-{
-  GetButtonRect(aRect, focusRect);
-  focusRect.Deflate(GetButtonBorderAndPadding());
-  focusRect.Deflate(GetButtonInnerFocusMargin());
-}
-
-
-nsMargin
-nsButtonFrameRenderer::GetButtonBorderAndPadding()
-{
-  return mFrame->GetUsedBorderAndPadding();
-}
-
-
-
-
-nsMargin
-nsButtonFrameRenderer::GetButtonInnerFocusMargin()
-{
-  nsMargin innerFocusMargin(0,0,0,0);
-
-  if (mInnerFocusStyle) {
-    const nsStyleMargin* margin = mInnerFocusStyle->StyleMargin();
-    margin->GetMargin(innerFocusMargin);
-  }
-
-  return innerFocusMargin;
-}
-
-nsMargin
-nsButtonFrameRenderer::GetButtonInnerFocusBorderAndPadding()
-{
-  nsMargin result(0,0,0,0);
-
-  if (mInnerFocusStyle) {
-    mInnerFocusStyle->StylePadding()->GetPadding(result);
-    result += mInnerFocusStyle->StyleBorder()->GetComputedBorder();
-  }
-
-  return result;
-}
-
-
-nsMargin
-nsButtonFrameRenderer::GetAddedButtonBorderAndPadding()
-{
-  return GetButtonInnerFocusMargin() + GetButtonInnerFocusBorderAndPadding();
-}
 
 
 
