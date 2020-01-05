@@ -32,6 +32,7 @@
 #include "D3D11ShareHandleImage.h"
 
 #include <VersionHelpers.h> 
+#include <winsdkver.h>
 
 namespace mozilla {
 
@@ -491,7 +492,10 @@ CompositorD3D11::Initialize(nsCString* const out_failureReason)
     RefPtr<IDXGIFactory2> dxgiFactory2;
     hr = dxgiFactory->QueryInterface((IDXGIFactory2**)getter_AddRefs(dxgiFactory2));
 
+#if (_WIN32_WINDOWS_MAXVER >= 0x0A00)
     if (gfxPrefs::Direct3D11UseDoubleBuffering() && SUCCEEDED(hr) && dxgiFactory2 && IsWindows10OrGreater()) {
+      
+      
       
       
       
@@ -527,7 +531,9 @@ CompositorD3D11::Initialize(nsCString* const out_failureReason)
       swapChain->SetBackgroundColor(&color);
 
       mSwapChain = swapChain;
-    } else {
+    } else
+#endif
+    {
       DXGI_SWAP_CHAIN_DESC swapDesc;
       ::ZeroMemory(&swapDesc, sizeof(swapDesc));
       swapDesc.BufferDesc.Width = 0;
