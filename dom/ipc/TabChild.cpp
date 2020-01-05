@@ -1840,7 +1840,7 @@ TabChild::RecvPluginEvent(const WidgetPluginEvent& aEvent)
 
 void
 TabChild::RequestNativeKeyBindings(AutoCacheNativeKeyCommands* aAutoCache,
-                                   const WidgetKeyboardEvent* aEvent)
+                                   WidgetKeyboardEvent* aEvent)
 {
   MaybeNativeKeyBinding maybeBindings;
   if (!SendRequestNativeKeyBindings(*aEvent, &maybeBindings)) {
@@ -2449,6 +2449,7 @@ TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
         root->SchedulePaint();
       }
 
+      Telemetry::AutoTimer<Telemetry::TABCHILD_PAINT_TIME> timer;
       
       
       
