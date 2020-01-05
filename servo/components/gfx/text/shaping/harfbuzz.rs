@@ -35,7 +35,7 @@ use harfbuzz::{hb_position_t, hb_tag_t};
 use libc::{c_char, c_int, c_uint, c_void};
 use platform::font::FontTable;
 use std::{char, cmp, ptr};
-use text::glyph::{CharIndex, GlyphData, GlyphId, GlyphStore};
+use text::glyph::{ByteIndex, GlyphData, GlyphId, GlyphStore};
 use text::shaping::ShaperMethods;
 use text::util::{fixed_to_float, float_to_fixed, is_bidi_control};
 
@@ -45,8 +45,7 @@ macro_rules! hb_tag {
     );
 }
 
-static NO_GLYPH: i32 = -1;
-static CONTINUATION_BYTE: i32 = -2;
+const NO_GLYPH: i32 = -1;
 
 static KERN: u32 = hb_tag!('k', 'e', 'r', 'n');
 static LIGA: u32 = hb_tag!('l', 'i', 'g', 'a');
@@ -258,44 +257,18 @@ impl Shaper {
         let glyph_data = ShapedGlyphData::new(buffer);
         let glyph_count = glyph_data.len();
         let byte_max = text.len();
-        let char_max = text.chars().count();
 
-        
-        
-        let (mut char_idx, char_step) = if options.flags.contains(RTL_FLAG) {
-            (CharIndex(char_max as isize - 1), CharIndex(-1))
-        } else {
-            (CharIndex(0), CharIndex(1))
-        };
-
-        debug!("Shaped text[char count={}], got back {} glyph info records.",
-               char_max,
+        debug!("Shaped text[byte count={}], got back {} glyph info records.",
+               byte_max,
                glyph_count);
 
-        if char_max != glyph_count {
-            debug!("NOTE: Since these are not equal, we probably have been given some complex \
-                    glyphs.");
-        }
-
         
-        let mut byte_to_glyph: Vec<i32>;
-
-        
-        if byte_max == char_max {
-            byte_to_glyph = vec![NO_GLYPH; byte_max];
-        } else {
-            byte_to_glyph = vec![CONTINUATION_BYTE; byte_max];
-            for (i, _) in text.char_indices() {
-                byte_to_glyph[i] = NO_GLYPH;
-            }
-        }
+        let mut byte_to_glyph = vec![NO_GLYPH; byte_max];
 
         debug!("(glyph idx) -> (text byte offset)");
         for i in 0..glyph_data.len() {
-            
             let loc = glyph_data.byte_offset_of_glyph(i) as usize;
             if loc < byte_max {
-                assert!(byte_to_glyph[loc] != CONTINUATION_BYTE);
                 byte_to_glyph[loc] = i as i32;
             } else {
                 debug!("ERROR: tried to set out of range byte_to_glyph: idx={}, glyph idx={}",
@@ -312,10 +285,7 @@ impl Shaper {
         }
 
         let mut glyph_span = 0..0;
-
-        
-        
-        let mut char_byte_span;
+        let mut byte_range = 0..0;
 
         let mut y_pos = Au(0);
 
@@ -323,48 +293,28 @@ impl Shaper {
         
         
         while glyph_span.start < glyph_count {
-            
-            glyph_span.end += 1;
             debug!("Processing glyph at idx={}", glyph_span.start);
+            glyph_span.end = glyph_span.start;
+            byte_range.end = glyph_data.byte_offset_of_glyph(glyph_span.start) as usize;
 
-            let char_byte_start = glyph_data.byte_offset_of_glyph(glyph_span.start) as usize;
-            char_byte_span = char_byte_start..char_byte_start;
-            let mut glyph_spans_multiple_characters = false;
-
-            
-            
-            while char_byte_span.end < byte_max {
-                let ch = text[char_byte_span.end..].chars().next().unwrap();
-                char_byte_span.end += ch.len_utf8();
-
-                debug!("Processing char byte span: off={}, len={} for glyph idx={}",
-                       char_byte_span.start, char_byte_span.len(), glyph_span.start);
-
-                while char_byte_span.end != byte_max &&
-                        byte_to_glyph[char_byte_span.end] == NO_GLYPH {
-                    debug!("Extending char byte span to include byte offset={} with no associated \
-                            glyph", char_byte_span.end);
-                    let ch = text[char_byte_span.end..].chars().next().unwrap();
-                    char_byte_span.end += ch.len_utf8();
-                    glyph_spans_multiple_characters = true;
+            while byte_range.end < byte_max {
+                byte_range.end += 1;
+                
+                while byte_range.end < byte_max && byte_to_glyph[byte_range.end] == NO_GLYPH {
+                    byte_range.end += 1;
                 }
 
-                
                 
                 let mut max_glyph_idx = glyph_span.end;
-                for i in char_byte_span.clone() {
-                    if byte_to_glyph[i] > NO_GLYPH {
-                        max_glyph_idx = cmp::max(byte_to_glyph[i] as usize + 1, max_glyph_idx);
+                for glyph_idx in &byte_to_glyph[byte_range.clone()] {
+                    if *glyph_idx != NO_GLYPH {
+                        max_glyph_idx = cmp::max(*glyph_idx as usize + 1, max_glyph_idx);
                     }
                 }
-
                 if max_glyph_idx > glyph_span.end {
                     glyph_span.end = max_glyph_idx;
-                    debug!("Extended glyph span (off={}, len={}) to cover char byte span's max \
-                            glyph index",
-                           glyph_span.start, glyph_span.len());
+                    debug!("Extended glyph span to {:?}", glyph_span);
                 }
-
 
                 
                 if glyph_span.len() == 1 { break; }
@@ -372,60 +322,33 @@ impl Shaper {
                 
                 if glyph_span.len() == 0 { continue; }
 
-                debug!("Complex (multi-glyph to multi-char) association found. This case \
-                        probably doesn't work.");
-
+                
+                
                 let mut all_glyphs_are_within_cluster: bool = true;
                 for j in glyph_span.clone() {
                     let loc = glyph_data.byte_offset_of_glyph(j);
-                    if !char_byte_span.contains(loc as usize) {
+                    if !byte_range.contains(loc as usize) {
                         all_glyphs_are_within_cluster = false;
                         break
                     }
                 }
-
-                debug!("All glyphs within char_byte_span cluster?: {}",
-                       all_glyphs_are_within_cluster);
-
-                
                 if all_glyphs_are_within_cluster {
                     break
                 }
+
+                
+                
+                
             }
 
-            
-            assert!(char_byte_span.len() > 0);
-            
+            assert!(byte_range.len() > 0);
             assert!(glyph_span.len() > 0);
 
             
             
-            
+            let byte_idx = ByteIndex(byte_range.start as isize);
 
-            
-            
-            
-            
-            
-            
-            
-
-            let mut covered_byte_span = char_byte_span.clone();
-            
-            while covered_byte_span.end < byte_max &&
-                    byte_to_glyph[covered_byte_span.end] == NO_GLYPH {
-                let ch = text[covered_byte_span.end..].chars().next().unwrap();
-                covered_byte_span.end += ch.len_utf8();
-            }
-
-            if covered_byte_span.start >= byte_max {
-                
-                glyph_span.start = glyph_span.end;
-                char_byte_span.start = char_byte_span.end;
-            }
-
-            
-            if glyph_span.len() == 1 && !glyph_spans_multiple_characters {
+            if glyph_span.len() == 1 {
                 
                 
                 
@@ -434,9 +357,11 @@ impl Shaper {
                 
                 
                 
-                let character = text[char_byte_span.clone()].chars().next().unwrap();
+                
+                
+                let character = text[byte_range.clone()].chars().next().unwrap();
                 if is_bidi_control(character) {
-                    glyphs.add_nonglyph_for_char_index(char_idx, false, false);
+                    
                 } else if character == '\t' {
                     
                     
@@ -450,7 +375,7 @@ impl Shaper {
                                               Default::default(),
                                               true,
                                               true);
-                    glyphs.add_glyph_for_char_index(char_idx, character, &data);
+                    glyphs.add_glyph_for_byte_index(byte_idx, character, &data);
                 } else {
                     let shape = glyph_data.entry_for_glyph(glyph_span.start, &mut y_pos);
                     let advance = self.advance_for_shaped_glyph(shape.advance, character, options);
@@ -459,7 +384,7 @@ impl Shaper {
                                               shape.offset,
                                               true,
                                               true);
-                    glyphs.add_glyph_for_char_index(char_idx, character, &data);
+                    glyphs.add_glyph_for_byte_index(byte_idx, character, &data);
                 }
             } else {
                 
@@ -474,21 +399,12 @@ impl Shaper {
                                               glyph_i > glyph_span.start));
                                               
                 }
-
                 
-                glyphs.add_glyphs_for_char_index(char_idx, &datas);
-
-                
-                for _ in text[covered_byte_span].chars().skip(1) {
-                    char_idx = char_idx + char_step;
-                    glyphs.add_nonglyph_for_char_index(char_idx, false, false);
-                }
+                glyphs.add_glyphs_for_byte_index(byte_idx, &datas);
             }
 
-            
             glyph_span.start = glyph_span.end;
-            char_byte_span.start = char_byte_span.end;
-            char_idx = char_idx + char_step;
+            byte_range.start = byte_range.end;
         }
 
         
