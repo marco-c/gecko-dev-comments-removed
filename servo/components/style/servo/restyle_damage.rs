@@ -2,15 +2,15 @@
 
 
 
+use computed_values::display;
+use dom::TRestyleDamage;
+use properties::ServoComputedValues;
 use std::fmt;
 use std::sync::Arc;
-use style::computed_values::display;
-use style::dom::TRestyleDamage;
-use style::properties::ServoComputedValues;
 
 bitflags! {
     #[doc = "Individual layout actions that may be necessary after restyling."]
-    pub flags RestyleDamage: u8 {
+    pub flags ServoRestyleDamage: u8 {
         #[doc = "Repaint the node itself."]
         #[doc = "Currently unused; need to decide how this propagates."]
         const REPAINT = 0x01,
@@ -48,16 +48,16 @@ bitflags! {
     }
 }
 
-impl TRestyleDamage for RestyleDamage {
+impl TRestyleDamage for ServoRestyleDamage {
     
     type PreExistingComputedValues = Arc<ServoComputedValues>;
 
     fn empty() -> Self {
-        RestyleDamage::empty()
+        ServoRestyleDamage::empty()
     }
 
     fn compute(old: &Arc<ServoComputedValues>,
-               new: &Arc<ServoComputedValues>) -> RestyleDamage {
+               new: &Arc<ServoComputedValues>) -> ServoRestyleDamage {
         compute_damage(old, new)
     }
 
@@ -67,16 +67,16 @@ impl TRestyleDamage for RestyleDamage {
     
     
     
-    fn rebuild_and_reflow() -> RestyleDamage {
+    fn rebuild_and_reflow() -> ServoRestyleDamage {
         REPAINT | REPOSITION | STORE_OVERFLOW | BUBBLE_ISIZES | REFLOW_OUT_OF_FLOW | REFLOW |
             RECONSTRUCT_FLOW
     }
 }
 
-impl RestyleDamage {
+impl ServoRestyleDamage {
     
     
-    pub fn damage_for_parent(self, child_is_absolutely_positioned: bool) -> RestyleDamage {
+    pub fn damage_for_parent(self, child_is_absolutely_positioned: bool) -> ServoRestyleDamage {
         if child_is_absolutely_positioned {
             self & (REPAINT | REPOSITION | STORE_OVERFLOW | REFLOW_OUT_OF_FLOW |
                     RESOLVE_GENERATED_CONTENT)
@@ -91,7 +91,7 @@ impl RestyleDamage {
     pub fn damage_for_child(self,
                             parent_is_absolutely_positioned: bool,
                             child_is_absolutely_positioned: bool)
-                            -> RestyleDamage {
+                            -> ServoRestyleDamage {
         match (parent_is_absolutely_positioned, child_is_absolutely_positioned) {
             (false, true) => {
                 
@@ -116,7 +116,7 @@ impl RestyleDamage {
     }
 }
 
-impl fmt::Display for RestyleDamage {
+impl fmt::Display for ServoRestyleDamage {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let mut first_elem = true;
 
@@ -162,8 +162,8 @@ macro_rules! add_if_not_equal(
     })
 );
 
-fn compute_damage(old: &ServoComputedValues, new: &ServoComputedValues) -> RestyleDamage {
-    let mut damage = RestyleDamage::empty();
+fn compute_damage(old: &ServoComputedValues, new: &ServoComputedValues) -> ServoRestyleDamage {
+    let mut damage = ServoRestyleDamage::empty();
 
     
     
@@ -260,7 +260,7 @@ fn compute_damage(old: &ServoComputedValues, new: &ServoComputedValues) -> Resty
     
     
     if old.transform_requires_layer() != new.transform_requires_layer() {
-        damage.insert(RestyleDamage::rebuild_and_reflow());
+        damage.insert(ServoRestyleDamage::rebuild_and_reflow());
     }
 
     damage
