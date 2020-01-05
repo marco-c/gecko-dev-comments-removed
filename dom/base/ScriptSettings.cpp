@@ -655,6 +655,9 @@ AutoEntryScript::AutoEntryScript(nsIGlobalObject* aGlobalObject,
                                  bool aIsMainThread)
   : AutoJSAPI(aGlobalObject, aIsMainThread, eEntryScript)
   , mWebIDLCallerPrincipal(nullptr)
+  
+  
+  , mCallerOverride(cx())
 {
   MOZ_ASSERT(aGlobalObject);
 
