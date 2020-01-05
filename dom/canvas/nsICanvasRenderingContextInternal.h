@@ -119,7 +119,8 @@ public:
   
   
   
-  virtual already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(bool* premultAlpha = nullptr) = 0;
+  virtual already_AddRefed<mozilla::gfx::SourceSurface>
+  GetSurfaceSnapshot(gfxAlphaType* out_alphaType = nullptr) = 0;
 
   
   

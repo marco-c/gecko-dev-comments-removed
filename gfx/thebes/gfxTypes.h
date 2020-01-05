@@ -79,4 +79,10 @@ enum class gfxContentType {
   SENTINEL    = 0xffff
 };
 
+enum class gfxAlphaType {
+  Opaque,
+  Premult,
+  NonPremult,
+};
+
 #endif 

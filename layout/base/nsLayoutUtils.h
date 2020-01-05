@@ -2084,7 +2084,6 @@ public:
     SFE_NO_COLORSPACE_CONVERSION = 1 << 2,
     
 
-
     SFE_PREFER_NO_PREMULTIPLY_ALPHA = 1 << 3,
     
 
@@ -2142,8 +2141,8 @@ public:
     bool mHasSize;
     
     bool mCORSUsed;
-    
-    bool mIsPremultiplied;
+
+    gfxAlphaType mAlphaType;
 
     
 
