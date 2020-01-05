@@ -2040,7 +2040,7 @@ var BrowserApp = {
       
       
       chosen = defaultAccept.split(",")
-                            .map(String.trim)
+                            .map((x) => x.trim())
                             .filter((x) => (x != appLocale && x != osLocale));
     } else {
       chosen = [];
