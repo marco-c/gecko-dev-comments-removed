@@ -69,7 +69,7 @@ pub struct ParserContext {
     
     parser: Option<Trusted<ServoHTMLParser>>,
     
-    is_image_document: bool,
+    is_synthesized_document: bool,
     
     id: PipelineId,
     
@@ -85,7 +85,7 @@ impl ParserContext {
                url: Url) -> ParserContext {
         ParserContext {
             parser: None,
-            is_image_document: false,
+            is_synthesized_document: false,
             id: id,
             subpage: subpage,
             script_chan: script_chan,
@@ -111,12 +111,12 @@ impl AsyncResponseListener for ParserContext {
 
         match content_type {
             Some(ContentType(Mime(TopLevel::Image, _, _))) => {
-                self.is_image_document = true;
+                self.is_synthesized_document = true;
                 let page = format!("<html><body><img src='{}' /></body></html>",
                                    self.url.serialize());
                 parser.pending_input.borrow_mut().push(page);
                 parser.parse_sync();
-            }
+            },
             Some(ContentType(Mime(TopLevel::Text, SubLevel::Plain, _))) => {
                 
                 
@@ -130,12 +130,29 @@ impl AsyncResponseListener for ParserContext {
                 parser.pending_input.borrow_mut().push(page);
                 parser.parse_sync();
             },
-            _ => {}
+            Some(ContentType(Mime(TopLevel::Text, SubLevel::Html, _))) => {}, 
+            Some(ContentType(Mime(toplevel, sublevel, _))) => {
+                if toplevel.as_str() == "application" && sublevel.as_str() == "xhtml+xml" {
+                    
+                    return;
+                }
+
+                
+                let page = format!("<html><body><p>Unknown content type ({}/{}).</p></body></html>",
+                    toplevel.as_str(), sublevel.as_str());
+                self.is_synthesized_document = true;
+                parser.pending_input.borrow_mut().push(page);
+                parser.parse_sync();
+            },
+            None => {
+                
+                
+            }
         }
     }
 
     fn data_available(&mut self, payload: Vec<u8>) {
-        if !self.is_image_document {
+        if !self.is_synthesized_document {
             
             let data = UTF_8.decode(&payload, DecoderTrap::Replace).unwrap();
             let parser = match self.parser.as_ref() {
