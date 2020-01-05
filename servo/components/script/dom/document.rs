@@ -18,7 +18,7 @@ use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::Bindings::NodeFilterBinding::NodeFilter;
 use dom::bindings::codegen::Bindings::PerformanceBinding::PerformanceMethods;
 use dom::bindings::codegen::Bindings::TouchBinding::TouchMethods;
-use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
+use dom::bindings::codegen::Bindings::WindowBinding::{ScrollBehavior, WindowMethods};
 use dom::bindings::codegen::UnionTypes::NodeOrString;
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::inheritance::{Castable, ElementTypeId, HTMLElementTypeId, NodeTypeId};
@@ -192,7 +192,7 @@ pub struct Document {
     last_modified: Option<String>,
     encoding: Cell<EncodingRef>,
     is_html_document: bool,
-    url: ServoUrl,
+    url: DOMRefCell<ServoUrl>,
     quirks_mode: Cell<QuirksMode>,
     
     id_map: DOMRefCell<HashMap<Atom, Vec<JS<Element>>>>,
@@ -398,8 +398,12 @@ impl Document {
     }
 
     
-    pub fn url(&self) -> &ServoUrl {
-        &self.url
+    pub fn url(&self) -> ServoUrl {
+        self.url.borrow().clone()
+    }
+
+    pub fn set_url(&self, url: ServoUrl) {
+        *self.url.borrow_mut() = url;
     }
 
     
@@ -407,7 +411,7 @@ impl Document {
         
         
         
-        self.url().clone()
+        self.url()
     }
 
     
@@ -587,12 +591,51 @@ impl Document {
                 
                 .or_else(|| self.get_anchor_by_name(fragid))
                 
-                .or_else(|| if fragid.to_lowercase() == "top" {
+                .or_else(|| if fragid.eq_ignore_ascii_case("top") {
                     self.GetDocumentElement()
                 } else {
                     
                     None
                 })
+        }
+    }
+
+    
+    pub fn check_and_scroll_fragment(&self, fragment: &str) {
+        let target = self.find_fragment_node(fragment);
+
+        
+        self.set_target_element(target.r());
+
+        let point = if fragment.is_empty() || fragment.eq_ignore_ascii_case("top") {
+            
+            
+            Some((0.0, 0.0))
+        } else {
+            target.r().map(|element| {
+                
+                
+                
+                
+                let rect = element.upcast::<Node>().bounding_content_box();
+
+                
+                
+                
+                
+                
+                
+                
+                
+                (rect.origin.x.to_nearest_px() as f32,
+                 rect.origin.y.to_nearest_px() as f32)
+            })
+        };
+
+        if let Some((x, y)) = point {
+            
+            self.window.perform_a_scroll(x, y, ScrollBehavior::Instant,
+                                         target.r());
         }
     }
 
@@ -1709,7 +1752,7 @@ impl Document {
 
     
     pub fn is_cookie_averse(&self) -> bool {
-        self.browsing_context.is_none() || !url_has_network_scheme(&self.url)
+        self.browsing_context.is_none() || !url_has_network_scheme(&self.url())
     }
 
     pub fn nodes_from_point(&self, client_point: &Point2D<f32>) -> Vec<UntrustedNodeAddress> {
@@ -1814,7 +1857,7 @@ impl Document {
                 }),
             },
             last_modified: last_modified,
-            url: url,
+            url: DOMRefCell::new(url),
             
             quirks_mode: Cell::new(NoQuirks),
             
@@ -2787,7 +2830,7 @@ impl DocumentMethods for Document {
         let _ = self.window
             .upcast::<GlobalScope>()
             .resource_threads()
-            .send(GetCookiesForUrl((*url).clone(), tx, NonHTTP));
+            .send(GetCookiesForUrl(url, tx, NonHTTP));
         let cookies = rx.recv().unwrap();
         Ok(cookies.map_or(DOMString::new(), DOMString::from))
     }
@@ -2806,7 +2849,7 @@ impl DocumentMethods for Document {
         let _ = self.window
                     .upcast::<GlobalScope>()
                     .resource_threads()
-                    .send(SetCookiesForUrl((*url).clone(), String::from(cookie), NonHTTP));
+                    .send(SetCookiesForUrl(url, String::from(cookie), NonHTTP));
         Ok(())
     }
 
