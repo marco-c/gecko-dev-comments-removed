@@ -1254,7 +1254,7 @@ pref("privacy.trackingprotection.lower_network_priority",  false);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
-#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA) || defined(XP_MACOSX) && !defined(RELEASE_OR_BETA)
+#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA) || defined(XP_MACOSX) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_ANDROID) && !defined(RELEASE_OR_BETA)
 pref("dom.event.highrestimestamp.enabled",  true);
 #else
 pref("dom.event.highrestimestamp.enabled",  false);
@@ -2915,8 +2915,6 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 #else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
-
-pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
@@ -2924,9 +2922,6 @@ pref("dom.ipc.processCount", 2);
 #else
 pref("dom.ipc.processCount", 1);
 #endif
-
-
-pref("dom.ipc.processCount.extension", 1);
 
 
 pref("svg.disabled", false);
