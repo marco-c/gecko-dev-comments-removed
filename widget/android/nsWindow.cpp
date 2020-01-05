@@ -2588,7 +2588,7 @@ nsWindow::GetIMEComposition()
 
 
 void
-nsWindow::RemoveIMEComposition()
+nsWindow::RemoveIMEComposition(RemoveIMECompositionFlag aFlag)
 {
     
     const RefPtr<mozilla::TextComposition> composition(GetIMEComposition());
@@ -2598,13 +2598,11 @@ nsWindow::RemoveIMEComposition()
 
     RefPtr<nsWindow> kungFuDeathGrip(this);
 
-    
-    
-    
-    
     WidgetCompositionEvent compositionCommitEvent(
             true, eCompositionCommit, this);
-    compositionCommitEvent.mData = composition->String();
+    if (aFlag == COMMIT_IME_COMPOSITION) {
+        compositionCommitEvent.mMessage = eCompositionCommitAsIs;
+    }
     InitEvent(compositionCommitEvent, nullptr);
     DispatchEvent(&compositionCommitEvent);
 }
@@ -2914,16 +2912,8 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
 
         case REQUEST_TO_CANCEL_COMPOSITION: {
             ALOGIME("IME: REQUEST_TO_CANCEL_COMPOSITION");
-            RefPtr<nsWindow> kungFuDeathGrip(&window);
 
-            
-            if (window.GetIMEComposition()) {
-                WidgetCompositionEvent compositionCommitEvent(
-                        true, eCompositionCommit, &window);
-                window.InitEvent(compositionCommitEvent, nullptr);
-                
-                window.DispatchEvent(&compositionCommitEvent);
-            }
+            window.RemoveIMEComposition(CANCEL_IME_COMPOSITION);
 
             AsyncNotifyIME(GeckoEditableListener::
                            NOTIFY_IME_TO_CANCEL_COMPOSITION);
