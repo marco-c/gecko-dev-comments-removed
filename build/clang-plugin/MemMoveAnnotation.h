@@ -17,7 +17,7 @@ public:
   virtual ~MemMoveAnnotation() {}
 
 protected:
-  bool hasFakeAnnotation(const TagDecl *D) const override {
+  std::string getImplicitReason(const TagDecl *D) const override {
     
     
     if (getDeclarationNamespace(D) == "std") {
@@ -48,11 +48,11 @@ protected:
           Name == "_Atomic_llong" ||
           Name == "_Atomic_ullong" ||
           Name == "_Atomic_address") {
-        return false;
+        return "";
       }
-      return true;
+      return "it is an stl-provided type not guaranteed to be memmove-able";
     }
-    return false;
+    return "";
   }
 };
 
