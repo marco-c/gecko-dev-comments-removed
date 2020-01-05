@@ -110,12 +110,8 @@ FireImageDOMEvent(nsIContent* aContent, EventMessage aMessage)
                "invalid message");
 
   nsCOMPtr<nsIRunnable> event = new nsImageBoxFrameEvent(aContent, aMessage);
-  nsresult rv = aContent->OwnerDoc()->Dispatch("nsImageBoxFrameEvent",
-                                               TaskCategory::Other,
-                                               event.forget());
-  if (NS_FAILED(rv)) {
+  if (NS_FAILED(NS_DispatchToCurrentThread(event)))
     NS_WARNING("failed to dispatch image event");
-  }
 }
 
 
@@ -410,11 +406,7 @@ nsImageBoxFrame::PaintImage(nsRenderingContext& aRenderingContext,
   }
 
   Maybe<SVGImageContext> svgContext;
-  if (imgCon->GetType() == imgIContainer::TYPE_VECTOR) {
-    
-    svgContext.emplace();
-    svgContext->MaybeStoreContextPaint(this);
-  }
+  SVGImageContext::MaybeInitAndStoreContextPaint(svgContext, this, imgCon);
 
   return nsLayoutUtils::DrawSingleImage(
            *aRenderingContext.ThebesContext(),

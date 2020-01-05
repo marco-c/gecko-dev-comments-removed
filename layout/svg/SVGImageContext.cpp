@@ -15,11 +15,15 @@
 
 namespace mozilla {
 
-bool
-SVGImageContext::MaybeStoreContextPaint(nsIFrame* aFromFrame)
+ void
+SVGImageContext::MaybeInitAndStoreContextPaint(Maybe<SVGImageContext>& aContext,
+                                               nsIFrame* aFromFrame,
+                                               imgIContainer* aImgContainer)
 {
   static bool sEnabledForContent = false;
   static bool sEnabledForContentCached = false;
+
+  MOZ_ASSERT(!aContext, "The emplace() call below with overwrite this object");
 
   if (!sEnabledForContentCached) {
     Preferences::AddBoolVarCache(&sEnabledForContent,
@@ -30,7 +34,12 @@ SVGImageContext::MaybeStoreContextPaint(nsIFrame* aFromFrame)
   if (!sEnabledForContent &&
       !aFromFrame->PresContext()->IsChrome()) {
     
-    return false;
+    return;
+  }
+
+  if (aImgContainer->GetType() != imgIContainer::TYPE_VECTOR) {
+    
+    return;
   }
 
   
@@ -53,10 +62,9 @@ SVGImageContext::MaybeStoreContextPaint(nsIFrame* aFromFrame)
   }
 
   if (haveContextPaint) {
-    mContextPaint = contextPaint.forget();
+    aContext.emplace();
+    aContext->mContextPaint = contextPaint.forget();
   }
-
-  return mContextPaint != nullptr;
 }
 
 } 
