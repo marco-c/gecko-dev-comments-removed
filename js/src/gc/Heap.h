@@ -109,7 +109,6 @@ enum class AllocKind {
     SYMBOL,
     JITCODE,
     SCOPE,
-    REGEXP_SHARED,
     LIMIT,
     LAST = LIMIT - 1
 };
@@ -118,38 +117,37 @@ enum class AllocKind {
 
 #define FOR_EACH_OBJECT_ALLOCKIND(D)
  \
-    D(FUNCTION,            Object,        JSObject,          JSFunction) \
-    D(FUNCTION_EXTENDED,   Object,        JSObject,          FunctionExtended) \
-    D(OBJECT0,             Object,        JSObject,          JSObject_Slots0) \
-    D(OBJECT0_BACKGROUND,  Object,        JSObject,          JSObject_Slots0) \
-    D(OBJECT2,             Object,        JSObject,          JSObject_Slots2) \
-    D(OBJECT2_BACKGROUND,  Object,        JSObject,          JSObject_Slots2) \
-    D(OBJECT4,             Object,        JSObject,          JSObject_Slots4) \
-    D(OBJECT4_BACKGROUND,  Object,        JSObject,          JSObject_Slots4) \
-    D(OBJECT8,             Object,        JSObject,          JSObject_Slots8) \
-    D(OBJECT8_BACKGROUND,  Object,        JSObject,          JSObject_Slots8) \
-    D(OBJECT12,            Object,        JSObject,          JSObject_Slots12) \
-    D(OBJECT12_BACKGROUND, Object,        JSObject,          JSObject_Slots12) \
-    D(OBJECT16,            Object,        JSObject,          JSObject_Slots16) \
-    D(OBJECT16_BACKGROUND, Object,        JSObject,          JSObject_Slots16)
+    D(FUNCTION,            Object,      JSObject,          JSFunction) \
+    D(FUNCTION_EXTENDED,   Object,      JSObject,          FunctionExtended) \
+    D(OBJECT0,             Object,      JSObject,          JSObject_Slots0) \
+    D(OBJECT0_BACKGROUND,  Object,      JSObject,          JSObject_Slots0) \
+    D(OBJECT2,             Object,      JSObject,          JSObject_Slots2) \
+    D(OBJECT2_BACKGROUND,  Object,      JSObject,          JSObject_Slots2) \
+    D(OBJECT4,             Object,      JSObject,          JSObject_Slots4) \
+    D(OBJECT4_BACKGROUND,  Object,      JSObject,          JSObject_Slots4) \
+    D(OBJECT8,             Object,      JSObject,          JSObject_Slots8) \
+    D(OBJECT8_BACKGROUND,  Object,      JSObject,          JSObject_Slots8) \
+    D(OBJECT12,            Object,      JSObject,          JSObject_Slots12) \
+    D(OBJECT12_BACKGROUND, Object,      JSObject,          JSObject_Slots12) \
+    D(OBJECT16,            Object,      JSObject,          JSObject_Slots16) \
+    D(OBJECT16_BACKGROUND, Object,      JSObject,          JSObject_Slots16)
 
 #define FOR_EACH_NONOBJECT_ALLOCKIND(D)
  \
-    D(SCRIPT,              Script,        JSScript,          JSScript) \
-    D(LAZY_SCRIPT,         LazyScript,    js::LazyScript,    js::LazyScript) \
-    D(SHAPE,               Shape,         js::Shape,         js::Shape) \
-    D(ACCESSOR_SHAPE,      Shape,         js::AccessorShape, js::AccessorShape) \
-    D(BASE_SHAPE,          BaseShape,     js::BaseShape,     js::BaseShape) \
-    D(OBJECT_GROUP,        ObjectGroup,   js::ObjectGroup,   js::ObjectGroup) \
-    D(FAT_INLINE_STRING,   String,        JSFatInlineString, JSFatInlineString) \
-    D(STRING,              String,        JSString,          JSString) \
-    D(EXTERNAL_STRING,     String,        JSExternalString,  JSExternalString) \
-    D(FAT_INLINE_ATOM,     String,        js::FatInlineAtom, js::FatInlineAtom) \
-    D(ATOM,                String,        js::NormalAtom,    js::NormalAtom) \
-    D(SYMBOL,              Symbol,        JS::Symbol,        JS::Symbol) \
-    D(JITCODE,             JitCode,       js::jit::JitCode,  js::jit::JitCode) \
-    D(SCOPE,               Scope,         js::Scope,         js::Scope) \
-    D(REGEXP_SHARED,       RegExpShared,  js::RegExpShared,  js::RegExpShared)
+    D(SCRIPT,              Script,      JSScript,          JSScript) \
+    D(LAZY_SCRIPT,         LazyScript,  js::LazyScript,    js::LazyScript) \
+    D(SHAPE,               Shape,       js::Shape,         js::Shape) \
+    D(ACCESSOR_SHAPE,      Shape,       js::AccessorShape, js::AccessorShape) \
+    D(BASE_SHAPE,          BaseShape,   js::BaseShape,     js::BaseShape) \
+    D(OBJECT_GROUP,        ObjectGroup, js::ObjectGroup,   js::ObjectGroup) \
+    D(FAT_INLINE_STRING,   String,      JSFatInlineString, JSFatInlineString) \
+    D(STRING,              String,      JSString,          JSString) \
+    D(EXTERNAL_STRING,     String,      JSExternalString,  JSExternalString) \
+    D(FAT_INLINE_ATOM,     String,      js::FatInlineAtom, js::FatInlineAtom) \
+    D(ATOM,                String,      js::NormalAtom,    js::NormalAtom) \
+    D(SYMBOL,              Symbol,      JS::Symbol,        JS::Symbol) \
+    D(JITCODE,             JitCode,     js::jit::JitCode,  js::jit::JitCode) \
+    D(SCOPE,               Scope,       js::Scope,         js::Scope)
 
 #define FOR_EACH_ALLOCKIND(D) \
     FOR_EACH_OBJECT_ALLOCKIND(D) \
@@ -314,9 +312,6 @@ class TenuredCell : public Cell
 
     static MOZ_ALWAYS_INLINE void writeBarrierPost(void* cellp, TenuredCell* prior,
                                                    TenuredCell* next);
-
-    
-    void finalize(FreeOp* fop) {}
 
     
     void fixupAfterMovingGC() {}
