@@ -4,6 +4,9 @@
 
 
 function* runTests() {
+  yield SpecialPowers.pushPrefEnv({
+    set: [["privacy.usercontext.about_newtab_segregation.enabled", true]]
+  });
   let url = bgTestPageURL({
     setRedCookie: true,
     iframe: bgTestPageURL({ setRedCookie: true}),

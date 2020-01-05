@@ -139,6 +139,14 @@ const BackgroundPageThumbs = {
 
 
 
+  renewThumbnailBrowser: function() {
+    this._renewThumbBrowser = true;
+  },
+
+  
+
+
+
 
 
 
@@ -190,8 +198,11 @@ const BackgroundPageThumbs = {
 
 
   _ensureBrowser: function () {
-    if (this._thumbBrowser)
+    if (this._thumbBrowser && !this._renewThumbBrowser)
       return;
+
+    this._destroyBrowser();
+    this._renewThumbBrowser = false;
 
     let browser = this._parentWin.document.createElementNS(XUL_NS, "browser");
     browser.setAttribute("type", "content");
@@ -306,6 +317,14 @@ const BackgroundPageThumbs = {
 
   _destroyBrowserTimeout: DESTROY_BROWSER_TIMEOUT,
 };
+
+Services.prefs.addObserver(ABOUT_NEWTAB_SEGREGATION_PREF,
+  function(aSubject, aTopic, aData) {
+    if (aTopic == "nsPref:changed" && aData == ABOUT_NEWTAB_SEGREGATION_PREF) {
+      BackgroundPageThumbs.renewThumbnailBrowser();
+    }
+  },
+  false);
 
 Object.defineProperty(this, "BackgroundPageThumbs", {
   value: BackgroundPageThumbs,
