@@ -81,6 +81,7 @@ impl Browser {
         
         let opts = opts::get();
 
+        script::init();
         
         
         RegisterBindings::RegisterProxyHandlers();

@@ -22,11 +22,12 @@
 
 
 
-use dom::bindings::js::{Temporary, JSRef, Unrooted};
+use dom::bindings::js::Root;
 use dom::bindings::utils::{Reflector, Reflectable};
+use dom::bindings::trace::trace_reflector;
 use script_task::{ScriptMsg, ScriptChan};
 
-use js::jsapi::{JS_AddObjectRoot, JS_RemoveObjectRoot, JSContext};
+use js::jsapi::{JSContext, JSTracer};
 
 use libc;
 use std::cell::RefCell;
@@ -35,6 +36,7 @@ use std::collections::hash_map::Entry::{Vacant, Occupied};
 use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
+use core::nonzero::NonZero;
 
 thread_local!(pub static LIVE_REFERENCES: Rc<RefCell<Option<LiveDOMReferences>>> = Rc::new(RefCell::new(None)));
 
@@ -63,7 +65,7 @@ impl<T: Reflectable> Trusted<T> {
     
     
     
-    pub fn new(cx: *mut JSContext, ptr: JSRef<T>, script_chan: Box<ScriptChan + Send>) -> Trusted<T> {
+    pub fn new(cx: *mut JSContext, ptr: &T, script_chan: Box<ScriptChan + Send>) -> Trusted<T> {
         LIVE_REFERENCES.with(|ref r| {
             let r = r.borrow();
             let live_references = r.as_ref().unwrap();
@@ -81,14 +83,14 @@ impl<T: Reflectable> Trusted<T> {
     
     
     
-    pub fn to_temporary(&self) -> Temporary<T> {
+    pub fn root(&self) -> Root<T> {
         assert!(LIVE_REFERENCES.with(|ref r| {
             let r = r.borrow();
             let live_references = r.as_ref().unwrap();
             self.owner_thread == (&*live_references) as *const _ as *const libc::c_void
         }));
         unsafe {
-            Temporary::from_unrooted(Unrooted::from_raw(self.ptr as *const T))
+            Root::new(NonZero::new(self.ptr as *const T))
         }
     }
 }
@@ -151,10 +153,6 @@ impl LiveDOMReferences {
                 refcount.clone()
             }
             Vacant(entry) => {
-                unsafe {
-                    let rootable = (*ptr).reflector().rootable();
-                    JS_AddObjectRoot(cx, rootable);
-                }
                 let refcount = Arc::new(Mutex::new(1));
                 entry.insert(refcount.clone());
                 refcount
@@ -168,7 +166,6 @@ impl LiveDOMReferences {
         LIVE_REFERENCES.with(|ref r| {
             let r = r.borrow();
             let live_references = r.as_ref().unwrap();
-            let reflectable = raw_reflectable as *const Reflector;
             let mut table = live_references.table.borrow_mut();
             match table.entry(raw_reflectable) {
                 Occupied(entry) => {
@@ -178,9 +175,6 @@ impl LiveDOMReferences {
                         return;
                     }
 
-                    unsafe {
-                        JS_RemoveObjectRoot(cx, (*reflectable).rootable());
-                    }
                     let _ = entry.remove();
                 }
                 Vacant(_) => {
@@ -193,4 +187,17 @@ impl LiveDOMReferences {
             }
         })
     }
+}
+
+
+pub unsafe extern fn trace_refcounted_objects(tracer: *mut JSTracer, _data: *mut libc::c_void) {
+    LIVE_REFERENCES.with(|ref r| {
+        let r = r.borrow();
+        let live_references = r.as_ref().unwrap();
+        let table = live_references.table.borrow();
+        for obj in table.keys() {
+            let reflectable = &*(*obj as *const Reflector);
+            trace_reflector(tracer, "LIVE_REFERENCES", reflectable);
+        }
+    });
 }

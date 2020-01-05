@@ -23,165 +23,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use dom::bindings::trace::JSTraceable;
-use dom::bindings::trace::RootedVec;
+use dom::bindings::trace::trace_reflector;
 use dom::bindings::utils::{Reflector, Reflectable};
 use dom::node::Node;
-use js::jsapi::JSObject;
-use js::jsval::JSVal;
+use js::jsapi::{JSObject, Heap, JSTracer};
+use js::jsval::{JSVal, UndefinedValue};
 use layout_interface::TrustedNodeAddress;
 use script_task::STACK_ROOTS;
 
 use core::nonzero::NonZero;
-use libc;
 use std::cell::{Cell, UnsafeCell};
 use std::default::Default;
-use std::intrinsics::return_address;
-use std::marker::PhantomData;
 use std::ops::Deref;
-
-
-
-
-#[must_root]
-pub struct Unrooted<T> {
-    ptr: NonZero<*const T>
-}
-
-impl<T: Reflectable> Unrooted<T> {
-    
-    pub unsafe fn from_raw(raw: *const T) -> Unrooted<T> {
-        assert!(!raw.is_null());
-        Unrooted {
-            ptr: NonZero::new(raw)
-        }
-    }
-
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_js(ptr: JS<T>) -> Unrooted<T> {
-        Unrooted {
-            ptr: ptr.ptr
-        }
-    }
-
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_temporary(ptr: Temporary<T>) -> Unrooted<T> {
-        Unrooted::from_js(ptr.inner)
-    }
-
-    
-    pub fn reflector<'a>(&'a self) -> &'a Reflector {
-        unsafe {
-            (**self.ptr).reflector()
-        }
-    }
-
-    
-    pub unsafe fn unsafe_get(&self) -> *const T {
-        *self.ptr
-    }
-}
-
-impl<T: Reflectable> Rootable<T> for Unrooted<T> {
-    
-    fn root(&self) -> Root<T> {
-        STACK_ROOTS.with(|ref collection| {
-            let RootCollectionPtr(collection) = collection.get().unwrap();
-            unsafe {
-                Root::new(&*collection, self.ptr)
-            }
-        })
-    }
-}
-
-impl<T> Copy for Unrooted<T> {}
-impl<T> Clone for Unrooted<T> {
-    fn clone(&self) -> Unrooted<T> { *self }
-}
-
-
-
-
-
-
-#[allow(unrooted_must_root)]
-pub struct Temporary<T> {
-    inner: JS<T>,
-    
-    _js_ptr: *mut JSObject,
-}
-
-impl<T> Clone for Temporary<T> {
-    fn clone(&self) -> Temporary<T> {
-        Temporary {
-            inner: self.inner,
-            _js_ptr: self._js_ptr,
-        }
-    }
-}
-
-impl<T> PartialEq for Temporary<T> {
-    fn eq(&self, other: &Temporary<T>) -> bool {
-        self.inner == other.inner
-    }
-}
-
-impl<T: Reflectable> Temporary<T> {
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_unrooted(unrooted: Unrooted<T>) -> Temporary<T> {
-        Temporary {
-            inner: JS { ptr: unrooted.ptr },
-            _js_ptr: unrooted.reflector().get_jsobject(),
-        }
-    }
-
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_rooted<U: Assignable<T>>(root: U) -> Temporary<T> {
-        let inner = JS::from_rooted(root);
-        Temporary {
-            inner: inner,
-            _js_ptr: inner.reflector().get_jsobject(),
-        }
-    }
-}
-
-impl<T: Reflectable> Rootable<T> for Temporary<T> {
-    
-    fn root(&self) -> Root<T> {
-        self.inner.root()
-    }
-}
 
 
 
@@ -198,6 +52,32 @@ impl<T> JS<T> {
         }
     }
 }
+impl<T: Reflectable> JS<T> {
+    
+    pub fn root(&self) -> Root<T> {
+        Root::new(self.ptr)
+    }
+    
+    
+    pub fn from_rooted(root: &Root<T>) -> JS<T> {
+        JS {
+            ptr: unsafe { NonZero::new(&**root) }
+        }
+    }
+    
+    pub fn from_ref(obj: &T) -> JS<T> {
+        JS {
+            ptr: unsafe { NonZero::new(&*obj) }
+        }
+    }
+    
+    
+    
+    
+    pub fn assign(&mut self, val: Root<T>) {
+        self.ptr = val.ptr.clone();
+    }
+}
 
 
 
@@ -208,7 +88,7 @@ pub struct LayoutJS<T> {
 impl<T: Reflectable> LayoutJS<T> {
     
     pub unsafe fn get_jsobject(&self) -> *mut JSObject {
-        (**self.ptr).reflector().get_jsobject()
+        (**self.ptr).reflector().get_jsobject().get()
     }
 }
 
@@ -217,14 +97,12 @@ impl<T> Copy for JS<T> {}
 impl<T> Copy for LayoutJS<T> {}
 
 impl<T> PartialEq for JS<T> {
-    #[allow(unrooted_must_root)]
     fn eq(&self, other: &JS<T>) -> bool {
         self.ptr == other.ptr
     }
 }
 
 impl<T> PartialEq for LayoutJS<T> {
-    #[allow(unrooted_must_root)]
     fn eq(&self, other: &LayoutJS<T>) -> bool {
         self.ptr == other.ptr
     }
@@ -260,29 +138,6 @@ impl LayoutJS<Node> {
     }
 }
 
-impl<T: Reflectable> Rootable<T> for JS<T> {
-    
-    fn root(&self) -> Root<T> {
-        STACK_ROOTS.with(|ref collection| {
-            let RootCollectionPtr(collection) = collection.get().unwrap();
-            unsafe {
-                Root::new(&*collection, self.ptr)
-            }
-        })
-    }
-}
-
-impl<U: Reflectable> JS<U> {
-    
-    pub fn from_rooted<T: Assignable<U>>(root: T) -> JS<U> {
-        unsafe {
-            root.get_js()
-        }
-    }
-}
-
-
-
 impl<T: Reflectable> Reflectable for JS<T> {
     fn reflector<'a>(&'a self) -> &'a Reflector {
         unsafe {
@@ -298,13 +153,44 @@ impl<T: Reflectable> Reflectable for JS<T> {
 pub trait HeapGCValue: JSTraceable {
 }
 
-impl HeapGCValue for JSVal {
+impl HeapGCValue for Heap<JSVal> {
 }
 
 impl<T: Reflectable> HeapGCValue for JS<T> {
 }
 
 
+
+
+
+#[must_root]
+#[jstraceable]
+pub struct MutHeapJSVal {
+    val: UnsafeCell<Heap<JSVal>>,
+}
+
+impl MutHeapJSVal {
+    
+    pub fn new() -> MutHeapJSVal {
+        MutHeapJSVal {
+            val: UnsafeCell::new(Heap::default()),
+        }
+    }
+
+    
+    
+    pub fn set(&self, val: JSVal) {
+        unsafe {
+            let cell = self.val.get();
+            (*cell).set(val);
+        }
+    }
+
+    
+    pub fn get(&self) -> JSVal {
+        unsafe { (*self.val.get()).get() }
+    }
+}
 
 
 
@@ -323,7 +209,6 @@ impl<T: HeapGCValue+Copy> MutHeap<T> {
         }
     }
 
-    
     
     pub fn set(&self, val: T) {
         self.val.set(val)
@@ -354,7 +239,6 @@ impl<T: HeapGCValue+Copy> MutNullableHeap<T> {
     }
 
     
-    
     pub fn set(&self, val: Option<T>) {
         self.ptr.set(val);
     }
@@ -368,14 +252,14 @@ impl<T: HeapGCValue+Copy> MutNullableHeap<T> {
 impl<T: Reflectable> MutNullableHeap<JS<T>> {
     
     
-    pub fn or_init<F>(&self, cb: F) -> Temporary<T>
-        where F: FnOnce() -> Temporary<T>
+    pub fn or_init<F>(&self, cb: F) -> Root<T>
+        where F: FnOnce() -> Root<T>
     {
         match self.get() {
-            Some(inner) => Temporary::from_rooted(inner),
+            Some(inner) => Root::from_rooted(inner),
             None => {
                 let inner = cb();
-                self.set(Some(JS::from_rooted(inner.clone())));
+                self.set(Some(JS::from_rooted(&inner)));
                 inner
             },
         }
@@ -396,16 +280,6 @@ impl<T: HeapGCValue+Copy> Default for MutNullableHeap<T> {
     }
 }
 
-impl<T: Reflectable> JS<T> {
-    
-    
-    
-    
-    pub fn assign(&mut self, val: Temporary<T>) {
-        *self = val.inner.clone();
-    }
-}
-
 impl<T: Reflectable> LayoutJS<T> {
     
     
@@ -419,11 +293,11 @@ impl<T: Reflectable> LayoutJS<T> {
 pub trait RootedReference<T> {
     
     
-    fn r<'a>(&'a self) -> Option<JSRef<'a, T>>;
+    fn r<'a>(&'a self) -> Option<&'a T>;
 }
 
 impl<T: Reflectable> RootedReference<T> for Option<Root<T>> {
-    fn r<'a>(&'a self) -> Option<JSRef<'a, T>> {
+    fn r<'a>(&'a self) -> Option<&'a T> {
         self.as_ref().map(|root| root.r())
     }
 }
@@ -432,105 +306,12 @@ impl<T: Reflectable> RootedReference<T> for Option<Root<T>> {
 pub trait OptionalRootedReference<T> {
     
     
-    fn r<'a>(&'a self) -> Option<Option<JSRef<'a, T>>>;
+    fn r<'a>(&'a self) -> Option<Option<&'a T>>;
 }
 
 impl<T: Reflectable> OptionalRootedReference<T> for Option<Option<Root<T>>> {
-    fn r<'a>(&'a self) -> Option<Option<JSRef<'a, T>>> {
+    fn r<'a>(&'a self) -> Option<Option<&'a T>> {
         self.as_ref().map(|inner| inner.r())
-    }
-}
-
-
-
-
-pub trait Assignable<T> {
-    
-    unsafe fn get_js(&self) -> JS<T>;
-}
-
-impl<T> Assignable<T> for JS<T> {
-    unsafe fn get_js(&self) -> JS<T> {
-        self.clone()
-    }
-}
-
-impl<'a, T: Reflectable> Assignable<T> for JSRef<'a, T> {
-    unsafe fn get_js(&self) -> JS<T> {
-        JS {
-            ptr: self.ptr
-        }
-    }
-}
-
-impl<T: Reflectable> Assignable<T> for Temporary<T> {
-    unsafe fn get_js(&self) -> JS<T> {
-        self.inner.clone()
-    }
-}
-
-
-
-pub trait OptionalRootable<T> {
-    
-    fn root(&self) -> Option<Root<T>>;
-}
-
-impl<T: Reflectable, U: Rootable<T>> OptionalRootable<T> for Option<U> {
-    fn root(&self) -> Option<Root<T>> {
-        self.as_ref().map(|inner| inner.root())
-    }
-}
-
-
-pub trait OptionalOptionalRootable<T> {
-    
-    fn root(&self) -> Option<Option<Root<T>>>;
-}
-
-impl<T: Reflectable, U: OptionalRootable<T>> OptionalOptionalRootable<T> for Option<U> {
-    fn root(&self) -> Option<Option<Root<T>>> {
-        self.as_ref().map(|inner| inner.root())
-    }
-}
-
-
-pub trait ResultRootable<T,U> {
-    
-    fn root(self) -> Result<Root<T>, U>;
-}
-
-impl<T: Reflectable, U, V: Rootable<T>> ResultRootable<T, U> for Result<V, U> {
-    fn root(self) -> Result<Root<T>, U> {
-        self.map(|inner| inner.root())
-    }
-}
-
-
-pub trait Rootable<T> {
-    
-    fn root(&self) -> Root<T>;
-}
-
-
-
-
-
-
-pub trait TemporaryPushable<T> {
-    
-    fn push_unrooted(&mut self, val: &T);
-    
-    fn insert_unrooted(&mut self, index: usize, val: &T);
-}
-
-impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
-    fn push_unrooted(&mut self, val: &T) {
-        self.push(unsafe { val.get_js() });
-    }
-
-    fn insert_unrooted(&mut self, index: usize, val: &T) {
-        self.insert(index, unsafe { val.get_js() });
     }
 }
 
@@ -541,7 +322,7 @@ impl<T: Assignable<U>, U: Reflectable> TemporaryPushable<T> for Vec<JS<U>> {
 
 #[no_move]
 pub struct RootCollection {
-    roots: UnsafeCell<RootedVec<*mut JSObject>>,
+    roots: UnsafeCell<Vec<*const Reflector>>,
 }
 
 
@@ -555,34 +336,44 @@ impl Clone for RootCollectionPtr {
 impl RootCollection {
     
     pub fn new() -> RootCollection {
-        let addr = unsafe {
-            return_address() as *const libc::c_void
-        };
-
         RootCollection {
-            roots: UnsafeCell::new(RootedVec::new_with_destination_address(addr)),
+            roots: UnsafeCell::new(vec!()),
         }
     }
 
     
-    fn root<'b>(&self, untracked_js_ptr: *mut JSObject) {
+    fn root<'b>(&self, untracked_reflector: *const Reflector) {
         unsafe {
-            let roots = self.roots.get();
-            (*roots).push(untracked_js_ptr);
-            debug!("  rooting {:?}", untracked_js_ptr);
+            let mut roots = &mut *self.roots.get();
+            roots.push(untracked_reflector);
+            assert!(!(*untracked_reflector).get_jsobject().is_null())
         }
     }
 
-    
     
     fn unroot<'b, T: Reflectable>(&self, rooted: &Root<T>) {
         unsafe {
-            let roots = self.roots.get();
-            let unrooted = (*roots).pop().unwrap();
-            debug!("unrooted {:?} (expecting {:?}", unrooted, rooted.js_ptr);
-            assert!(unrooted == rooted.js_ptr);
+            let mut roots = &mut *self.roots.get();
+            let old_reflector = &*rooted.r().reflector();
+            match roots.iter().rposition(|r| *r == old_reflector) {
+                Some(idx) => {
+                    roots.remove(idx);
+                },
+                None => panic!("Can't remove a root that was never rooted!")
+            }
         }
     }
+}
+
+
+pub unsafe fn trace_roots(tracer: *mut JSTracer) {
+    STACK_ROOTS.with(|ref collection| {
+        let RootCollectionPtr(collection) = collection.get().unwrap();
+        let collection = &*(*collection).roots.get();
+        for root in collection.iter() {
+            trace_reflector(tracer, "reflector", &**root);
+        }
+    });
 }
 
 
@@ -591,106 +382,68 @@ impl RootCollection {
 
 
 
-
-#[no_move]
 pub struct Root<T: Reflectable> {
-    
-    root_list: &'static RootCollection,
     
     ptr: NonZero<*const T>,
     
-    js_ptr: *mut JSObject,
+    root_list: *const RootCollection,
 }
 
 impl<T: Reflectable> Root<T> {
     
     
     
-    #[inline]
-    fn new(roots: &'static RootCollection, unrooted: NonZero<*const T>)
-           -> Root<T> {
-        let js_ptr = unsafe {
-            (**unrooted).reflector().get_jsobject()
-        };
-        roots.root(js_ptr);
-        Root {
-            root_list: roots,
-            ptr: unrooted,
-            js_ptr: js_ptr,
-        }
+    pub fn new(unrooted: NonZero<*const T>)
+               -> Root<T> {
+        STACK_ROOTS.with(|ref collection| {
+            let RootCollectionPtr(collection) = collection.get().unwrap();
+            unsafe { (*collection).root(&*(**unrooted).reflector()) }
+            Root {
+                ptr: unrooted,
+                root_list: collection,
+            }
+        })
+    }
+
+    
+    pub fn from_ref(unrooted: &T) -> Root<T> {
+        Root::new(unsafe { NonZero::new(&*unrooted) })
     }
 
     
     
-    pub fn r<'b>(&'b self) -> JSRef<'b, T> {
-        JSRef {
-            ptr: self.ptr,
-            chain: PhantomData,
-        }
+    pub fn r<'a>(&'a self) -> &'a T {
+        &**self
     }
 
     
+    pub fn get_unsound_ref_forever<'a, 'b>(&'a self) -> &'b T {
+        unsafe { &**self.ptr }
+    }
+
     
-    
-    
-    pub fn get_unsound_ref_forever<'b>(&self) -> JSRef<'b, T> {
-        JSRef {
-            ptr: self.ptr,
-            chain: PhantomData,
-        }
+    #[allow(unrooted_must_root)]
+    pub fn from_rooted(js: JS<T>) -> Root<T> {
+        js.root()
+    }
+}
+
+impl<T: Reflectable> Deref for Root<T> {
+    type Target = T;
+    fn deref<'a>(&'a self) -> &'a T {
+        unsafe { &**self.ptr.deref() }
+    }
+}
+
+impl<T: Reflectable> PartialEq for Root<T> {
+    fn eq(&self, other: &Root<T>) -> bool {
+        self.ptr == other.ptr
     }
 }
 
 impl<T: Reflectable> Drop for Root<T> {
     fn drop(&mut self) {
-        self.root_list.unroot(self);
+        unsafe { (*self.root_list).unroot(self); }
     }
 }
 
-impl<'a, T: Reflectable> Deref for JSRef<'a, T> {
-    type Target = T;
-    fn deref<'b>(&'b self) -> &'b T {
-        unsafe {
-            &**self.ptr
-        }
-    }
-}
-
-
-
-pub struct JSRef<'a, T> {
-    ptr: NonZero<*const T>,
-    chain: PhantomData<&'a ()>,
-}
-
-impl<'a, T> Copy for JSRef<'a, T> {}
-
-impl<'a, T> Clone for JSRef<'a, T> {
-    fn clone(&self) -> JSRef<'a, T> {
-        JSRef {
-            ptr: self.ptr.clone(),
-            chain: self.chain,
-        }
-    }
-}
-
-impl<'a, 'b, T> PartialEq<JSRef<'b, T>> for JSRef<'a, T> {
-    fn eq(&self, other: &JSRef<T>) -> bool {
-        self.ptr == other.ptr
-    }
-}
-
-impl<'a, T: Reflectable> JSRef<'a, T> {
-    
-    pub fn extended_deref(self) -> &'a T {
-        unsafe {
-            &**self.ptr
-        }
-    }
-}
-
-impl<'a, T: Reflectable> Reflectable for JSRef<'a, T> {
-    fn reflector<'b>(&'b self) -> &'b Reflector {
-        (**self).reflector()
-    }
-}
