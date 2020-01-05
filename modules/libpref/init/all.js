@@ -795,6 +795,7 @@ pref("gfx.canvas.skiagl.dynamic-cache", true);
 pref("gfx.text.disable-aa", false);
 
 pref("gfx.work-around-driver-bugs", true);
+pref("gfx.prefer-mesa-llvmpipe", false);
 
 pref("gfx.draw-color-bars", false);
 
@@ -5230,10 +5231,6 @@ pref("dom.caches.enabled", true);
 
 pref("camera.control.low_memory_thresholdMB", 404);
 #endif
-
-
-pref("dom.system_update.enabled", false);
-pref("dom.system_update.debug", false);
 
 
 pref("dom.udpsocket.enabled", false);

@@ -500,9 +500,6 @@ pref("app.update.socket.maxErrors", 20);
 
 
 pref("app.update.log", true);
-
-
-pref("dom.system_update.active", "@mozilla.org/updates/update-prompt;1");
 #else
 
 
@@ -938,9 +935,6 @@ pref("identity.fxaccounts.skipDeviceRegistration", true);
 
 
 pref("dom.mapped_arraybuffer.enabled", true);
-
-
-pref("dom.system_update.enabled", true);
 
 
 pref("dom.udpsocket.enabled", true);
