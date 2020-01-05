@@ -146,7 +146,7 @@ struct AnimationProperty
   }
 };
 
-struct ServoComputedStyleValues
+struct ServoComputedValuesWithParent
 {
   const ServoComputedValues* mCurrentStyle;
   const ServoComputedValues* mParentStyle;
@@ -218,7 +218,7 @@ public:
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     nsStyleContext* aStyleContext);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
-                    const ServoComputedStyleValues& aServoValues);
+                    const ServoComputedValuesWithParent& aServoValues);
 
   
   
@@ -247,7 +247,7 @@ public:
   
   void UpdateProperties(nsStyleContext* aStyleContext);
   
-  void UpdateProperties(const ServoComputedStyleValues& aServoValues);
+  void UpdateProperties(const ServoComputedValuesWithParent& aServoValues);
 
   
   
@@ -309,7 +309,7 @@ public:
   
   void CalculateCumulativeChangeHint(nsStyleContext* aStyleContext);
   void CalculateCumulativeChangeHint(
-    const ServoComputedStyleValues& aServoValues)
+    const ServoComputedValuesWithParent& aServoValues)
   {
   }
 
@@ -411,7 +411,7 @@ protected:
   
   void EnsureBaseStyles(nsStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
-  void EnsureBaseStyles(const ServoComputedStyleValues& aServoValues,
+  void EnsureBaseStyles(const ServoComputedValuesWithParent& aServoValues,
                         const nsTArray<AnimationProperty>& aProperties)
   {
     

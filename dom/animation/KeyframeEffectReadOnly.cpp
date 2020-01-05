@@ -196,7 +196,7 @@ KeyframeEffectReadOnly::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
 void
 KeyframeEffectReadOnly::SetKeyframes(
   nsTArray<Keyframe>&& aKeyframes,
-  const ServoComputedStyleValues& aServoValues)
+  const ServoComputedValuesWithParent& aServoValues)
 {
   DoSetKeyframes(Move(aKeyframes), aServoValues);
 }
@@ -207,9 +207,9 @@ KeyframeEffectReadOnly::DoSetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                                        StyleType&& aStyle)
 {
   static_assert(IsSame<StyleType, nsStyleContext*>::value ||
-                IsSame<StyleType, const ServoComputedStyleValues&>::value,
+                IsSame<StyleType, const ServoComputedValuesWithParent&>::value,
                 "StyleType should be nsStyleContext* or "
-                "const ServoComputedStyleValues&");
+                "const ServoComputedValuesWithParent&");
 
   if (KeyframesEqualIgnoringComputedOffsets(aKeyframes, mKeyframes)) {
     return;
@@ -311,13 +311,13 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
       ? aStyleContext->GetParent()->StyleSource().AsServoComputedValues()
       : nullptr;
 
-  const ServoComputedStyleValues servoValues = { currentStyle, parentStyle };
+  const ServoComputedValuesWithParent servoValues = { currentStyle, parentStyle };
   DoUpdateProperties(servoValues);
 }
 
 void
 KeyframeEffectReadOnly::UpdateProperties(
-  const ServoComputedStyleValues& aServoValues)
+  const ServoComputedValuesWithParent& aServoValues)
 {
   DoUpdateProperties(aServoValues);
 }
@@ -922,9 +922,9 @@ nsTArray<AnimationProperty>
 KeyframeEffectReadOnly::BuildProperties(StyleType&& aStyle)
 {
   static_assert(IsSame<StyleType, nsStyleContext*>::value ||
-                IsSame<StyleType, const ServoComputedStyleValues&>::value,
+                IsSame<StyleType, const ServoComputedValuesWithParent&>::value,
                 "StyleType should be nsStyleContext* or "
-                "const ServoComputedStyleValues&");
+                "const ServoComputedValuesWithParent&");
 
   MOZ_ASSERT(aStyle);
 
