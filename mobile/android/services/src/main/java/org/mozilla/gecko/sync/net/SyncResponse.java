@@ -4,6 +4,8 @@
 
 package org.mozilla.gecko.sync.net;
 
+import android.support.annotation.Nullable;
+
 import org.mozilla.gecko.sync.Utils;
 
 import ch.boye.httpclientandroidlib.HttpResponse;
@@ -16,6 +18,7 @@ public class SyncResponse extends MozResponse {
   public static final String X_WEAVE_RECORDS = "x-weave-records";
   public static final String X_WEAVE_QUOTA_REMAINING = "x-weave-quota-remaining";
   public static final String X_WEAVE_ALERT = "x-weave-alert";
+  public static final String X_WEAVE_NEXT_OFFSET = "x-weave-next-offset";
 
   public SyncResponse(HttpResponse res) {
     super(res);
@@ -120,9 +123,35 @@ public class SyncResponse extends MozResponse {
   }
 
   public String weaveAlert() {
-    if (this.hasHeader(X_WEAVE_ALERT)) {
-      return this.response.getFirstHeader(X_WEAVE_ALERT).getValue();
-    }
-    return null;
+    return this.getNonMissingHeader(X_WEAVE_ALERT);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  public String weaveOffset() {
+    return this.getNonMissingHeader(X_WEAVE_NEXT_OFFSET);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  @Nullable
+  public String lastModified() {
+    return this.getNonMissingHeader(X_LAST_MODIFIED);
   }
 }

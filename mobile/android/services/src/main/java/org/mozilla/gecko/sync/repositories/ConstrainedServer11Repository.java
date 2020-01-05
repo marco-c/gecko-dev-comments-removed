@@ -18,22 +18,34 @@ import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 
 public class ConstrainedServer11Repository extends Server11Repository {
 
-  private String sort = null;
-  private long limit  = -1;
+  private final String sort;
+  private final long batchLimit;
+  private final long totalLimit;
 
-  public ConstrainedServer11Repository(String collection, String storageURL, AuthHeaderProvider authHeaderProvider, InfoCollections infoCollections, InfoConfiguration infoConfiguration, long limit, String sort) throws URISyntaxException {
+  public ConstrainedServer11Repository(String collection, String storageURL,
+                                       AuthHeaderProvider authHeaderProvider,
+                                       InfoCollections infoCollections,
+                                       InfoConfiguration infoConfiguration,
+                                       long batchLimit, long totalLimit, String sort)
+          throws URISyntaxException {
     super(collection, storageURL, authHeaderProvider, infoCollections, infoConfiguration);
-    this.limit = limit;
+    this.batchLimit = batchLimit;
+    this.totalLimit = totalLimit;
     this.sort  = sort;
   }
 
   @Override
-  protected String getDefaultSort() {
+  public String getDefaultSort() {
     return sort;
   }
 
   @Override
-  protected long getDefaultFetchLimit() {
-    return limit;
+  public long getDefaultBatchLimit() {
+    return batchLimit;
+  }
+
+  @Override
+  public long getDefaultTotalLimit() {
+    return totalLimit;
   }
 }

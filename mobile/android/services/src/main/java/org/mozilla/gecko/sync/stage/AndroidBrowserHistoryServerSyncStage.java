@@ -20,7 +20,10 @@ public class AndroidBrowserHistoryServerSyncStage extends ServerSyncStage {
   
   
   private static final String HISTORY_SORT          = "index";
-  private static final long   HISTORY_REQUEST_LIMIT = 250;
+  
+  
+  private static final long HISTORY_BATCH_LIMIT = 250;
+  private static final long HISTORY_TOTAL_LIMIT = 250;
 
   @Override
   protected String getCollection() {
@@ -51,7 +54,8 @@ public class AndroidBrowserHistoryServerSyncStage extends ServerSyncStage {
                                              session.getAuthHeaderProvider(),
                                              session.config.infoCollections,
                                              session.config.infoConfiguration,
-                                             HISTORY_REQUEST_LIMIT,
+                                             HISTORY_BATCH_LIMIT,
+                                             HISTORY_TOTAL_LIMIT,
                                              HISTORY_SORT);
   }
 

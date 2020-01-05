@@ -21,7 +21,10 @@ public class AndroidBrowserBookmarksServerSyncStage extends ServerSyncStage {
   
   
   private static final String BOOKMARKS_SORT          = "index";
-  private static final long   BOOKMARKS_REQUEST_LIMIT = 5000;         
+  
+  
+  private static final long BOOKMARKS_BATCH_LIMIT = 5000;
+  private static final long BOOKMARKS_TOTAL_LIMIT = 5000;
 
   @Override
   protected String getCollection() {
@@ -51,7 +54,8 @@ public class AndroidBrowserBookmarksServerSyncStage extends ServerSyncStage {
         session.getAuthHeaderProvider(),
         session.config.infoCollections,
         session.config.infoConfiguration,
-        BOOKMARKS_REQUEST_LIMIT,
+        BOOKMARKS_BATCH_LIMIT,
+        BOOKMARKS_TOTAL_LIMIT,
         BOOKMARKS_SORT,
         countsFetcher);
   }

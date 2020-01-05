@@ -68,7 +68,7 @@ public class Server11Repository extends Repository {
     return this.collectionURI;
   }
 
-  public URI collectionURI(boolean full, long newer, long limit, String sort, String ids) throws URISyntaxException {
+  public URI collectionURI(boolean full, long newer, long limit, String sort, String ids, String offset) throws URISyntaxException {
     ArrayList<String> params = new ArrayList<String>();
     if (full) {
       params.add("full=1");
@@ -87,7 +87,10 @@ public class Server11Repository extends Repository {
     if (ids != null) {
       params.add("ids=" + ids);         
     }
-
+    if (offset != null) {
+      
+      params.add("offset=" + offset);
+    }
     if (params.size() == 0) {
       return this.collectionURI;
     }
@@ -109,13 +112,17 @@ public class Server11Repository extends Repository {
 
   
   @SuppressWarnings("static-method")
-  protected long getDefaultFetchLimit() {
+  public long getDefaultBatchLimit() {
     return -1;
   }
 
   @SuppressWarnings("static-method")
-  protected String getDefaultSort() {
+  public String getDefaultSort() {
     return null;
+  }
+
+  public long getDefaultTotalLimit() {
+    return -1;
   }
 
   public AuthHeaderProvider getAuthHeaderProvider() {

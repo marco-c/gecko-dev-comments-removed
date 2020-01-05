@@ -4,152 +4,26 @@
 
 package org.mozilla.gecko.sync.repositories;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import org.mozilla.gecko.background.common.log.Logger;
-import org.mozilla.gecko.sync.CryptoRecord;
-import org.mozilla.gecko.sync.DelayedWorkTracker;
-import org.mozilla.gecko.sync.HTTPFailureException;
-import org.mozilla.gecko.sync.crypto.KeyBundle;
-import org.mozilla.gecko.sync.net.AuthHeaderProvider;
-import org.mozilla.gecko.sync.net.SyncResponse;
-import org.mozilla.gecko.sync.net.SyncStorageCollectionRequest;
-import org.mozilla.gecko.sync.net.SyncStorageResponse;
-import org.mozilla.gecko.sync.net.WBOCollectionRequestDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionFetchRecordsDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionGuidsSinceDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDelegate;
 import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionWipeDelegate;
 import org.mozilla.gecko.sync.repositories.domain.Record;
+import org.mozilla.gecko.sync.repositories.downloaders.BatchingDownloader;
 import org.mozilla.gecko.sync.repositories.uploaders.BatchingUploader;
 
 public class Server11RepositorySession extends RepositorySession {
   public static final String LOG_TAG = "Server11Session";
 
-  
-
-
-  private final Set<SyncStorageCollectionRequest> pending = Collections.synchronizedSet(new HashSet<SyncStorageCollectionRequest>());
-
-  @Override
-  public void abort() {
-    super.abort();
-    for (SyncStorageCollectionRequest request : pending) {
-      request.abort();
-    }
-    pending.clear();
-  }
-
-  
-
-
-
-
-
-
-  public class RequestFetchDelegateAdapter extends WBOCollectionRequestDelegate {
-    RepositorySessionFetchRecordsDelegate delegate;
-    private final DelayedWorkTracker workTracker = new DelayedWorkTracker();
-
-    
-    private SyncStorageCollectionRequest request;
-
-    public void setRequest(SyncStorageCollectionRequest request) {
-      this.request = request;
-    }
-    private void removeRequestFromPending() {
-      if (this.request == null) {
-        return;
-      }
-      pending.remove(this.request);
-      this.request = null;
-    }
-
-    public RequestFetchDelegateAdapter(RepositorySessionFetchRecordsDelegate delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override
-    public AuthHeaderProvider getAuthHeaderProvider() {
-      return serverRepository.getAuthHeaderProvider();
-    }
-
-    @Override
-    public String ifUnmodifiedSince() {
-      return null;
-    }
-
-    @Override
-    public void handleRequestSuccess(SyncStorageResponse response) {
-      Logger.debug(LOG_TAG, "Fetch done.");
-      removeRequestFromPending();
-
-      
-      final long normalizedTimestamp = response.normalizedTimestampForHeader(SyncResponse.X_WEAVE_TIMESTAMP);
-      Logger.debug(LOG_TAG, "Fetch completed. Timestamp is " + normalizedTimestamp);
-
-      
-      workTracker.delayWorkItem(new Runnable() {
-        @Override
-        public void run() {
-          Logger.debug(LOG_TAG, "Delayed onFetchCompleted running.");
-          
-          delegate.onFetchCompleted(normalizedTimestamp);
-        }
-      });
-    }
-
-    @Override
-    public void handleRequestFailure(SyncStorageResponse response) {
-      
-      this.handleRequestError(new HTTPFailureException(response));
-    }
-
-    @Override
-    public void handleRequestError(final Exception ex) {
-      removeRequestFromPending();
-      Logger.warn(LOG_TAG, "Got request error.", ex);
-      
-      workTracker.delayWorkItem(new Runnable() {
-        @Override
-        public void run() {
-          Logger.debug(LOG_TAG, "Running onFetchFailed.");
-          delegate.onFetchFailed(ex, null);
-        }
-      });
-    }
-
-    @Override
-    public void handleWBO(CryptoRecord record) {
-      workTracker.incrementOutstanding();
-      try {
-        delegate.onFetchedRecord(record);
-      } catch (Exception ex) {
-        Logger.warn(LOG_TAG, "Got exception calling onFetchedRecord with WBO.", ex);
-        
-        throw new RuntimeException(ex);
-      } finally {
-        workTracker.decrementOutstanding();
-      }
-    }
-
-    
-    @Override
-    public KeyBundle keyBundle() {
-      return null;
-    }
-  }
-
   Server11Repository serverRepository;
   private BatchingUploader uploader;
+  private final BatchingDownloader downloader;
 
   public Server11RepositorySession(Repository repository) {
     super(repository);
     serverRepository = (Server11Repository) repository;
+    this.downloader = new BatchingDownloader(serverRepository, this);
   }
 
   public Server11Repository getServerRepository() {
@@ -164,23 +38,6 @@ public class Server11RepositorySession extends RepositorySession {
     this.uploader = new BatchingUploader(this, storeWorkQueue, delegate);
   }
 
-  private String flattenIDs(String[] guids) {
-    
-    
-    if (guids.length == 0) {
-      return "";
-    }
-    if (guids.length == 1) {
-      return guids[0];
-    }
-    StringBuilder b = new StringBuilder();
-    for (String guid : guids) {
-      b.append(guid);
-      b.append(",");
-    }
-    return b.substring(0, b.length() - 1);
-  }
-
   @Override
   public void guidsSince(long timestamp,
                          RepositorySessionGuidsSinceDelegate delegate) {
@@ -188,42 +45,10 @@ public class Server11RepositorySession extends RepositorySession {
 
   }
 
-  protected void fetchWithParameters(long newer,
-                                     long limit,
-                                     boolean full,
-                                     String sort,
-                                     String ids,
-                                     RequestFetchDelegateAdapter delegate)
-                                         throws URISyntaxException {
-
-    URI collectionURI = serverRepository.collectionURI(full, newer, limit, sort, ids);
-    SyncStorageCollectionRequest request = new SyncStorageCollectionRequest(collectionURI);
-    request.delegate = delegate;
-
-    
-    delegate.setRequest(request);
-    pending.add(request);
-    request.get();
-  }
-
-  public void fetchSince(long timestamp, long limit, String sort, RepositorySessionFetchRecordsDelegate delegate) {
-    try {
-      this.fetchWithParameters(timestamp, limit, true, sort, null, new RequestFetchDelegateAdapter(delegate));
-    } catch (URISyntaxException e) {
-      delegate.onFetchFailed(e, null);
-    }
-  }
-
   @Override
   public void fetchSince(long timestamp,
                          RepositorySessionFetchRecordsDelegate delegate) {
-    try {
-      long limit = serverRepository.getDefaultFetchLimit();
-      String sort = serverRepository.getDefaultSort();
-      this.fetchWithParameters(timestamp, limit, true, sort, null, new RequestFetchDelegateAdapter(delegate));
-    } catch (URISyntaxException e) {
-      delegate.onFetchFailed(e, null);
-    }
+    this.downloader.fetchSince(timestamp, delegate);
   }
 
   @Override
@@ -234,13 +59,7 @@ public class Server11RepositorySession extends RepositorySession {
   @Override
   public void fetch(String[] guids,
                     RepositorySessionFetchRecordsDelegate delegate) {
-    
-    try {
-      String ids = flattenIDs(guids);
-      this.fetchWithParameters(-1, -1, true, "index", ids, new RequestFetchDelegateAdapter(delegate));
-    } catch (URISyntaxException e) {
-      delegate.onFetchFailed(e, null);
-    }
+    this.downloader.fetch(guids, delegate);
   }
 
   @Override
