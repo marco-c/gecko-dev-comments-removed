@@ -31,8 +31,6 @@ class ServiceWorkerRegistrationInfo final
   
   PRTime mLastUpdateTime;
 
-  uint64_t mLastUpdateCheckTime;
-
   nsLoadFlags mLoadFlags;
 
   RefPtr<ServiceWorkerInfo> mEvaluatingWorker;
