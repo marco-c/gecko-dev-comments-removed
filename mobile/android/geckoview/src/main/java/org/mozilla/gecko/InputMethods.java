@@ -60,16 +60,4 @@ final public class InputMethods {
     public static boolean shouldCommitCharAsKey(String inputMethod) {
         return METHOD_HTC_TOUCH_INPUT.equals(inputMethod);
     }
-
-    public static boolean isGestureKeyboard(Context context) {
-        
-        
-        String inputMethod = getCurrentInputMethod(context);
-        return (Build.VERSION.SDK_INT >= 17 &&
-                (METHOD_ANDROID_LATINIME.equals(inputMethod) ||
-                 METHOD_GOOGLE_LATINIME.equals(inputMethod))) ||
-               METHOD_SWYPE.equals(inputMethod) ||
-               METHOD_SWYPE_BETA.equals(inputMethod) ||
-               METHOD_TOUCHPAL_KEYBOARD.equals(inputMethod);
-    }
 }
