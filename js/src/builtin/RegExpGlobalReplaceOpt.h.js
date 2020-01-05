@@ -34,6 +34,12 @@ function FUNC_NAME(rx, S, lengthS, replaceValue
     var lastIndex = 0;
     rx.lastIndex = 0;
 
+#if defined(FUNCTIONAL) || defined(SUBSTITUTION)
+    
+    
+    rx = regexp_clone(rx);
+#endif
+
     
     var accumulatedResult = "";
 
