@@ -246,9 +246,6 @@ QueryProgramInfo(WebGLProgram* prog, gl::GLContext* gl)
             mappedName.EqualsIgnoreCase("gl_", 3))
         {
             
-            
-            MOZ_ASSERT(gl->IsANGLE() == (loc != -1));
-
             loc = -1;
         }
 #ifdef DUMP_SHADERVAR_MAPPINGS
