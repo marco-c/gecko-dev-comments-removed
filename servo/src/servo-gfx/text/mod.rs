@@ -15,6 +15,5 @@ pub mod shaper;
 
 
 pub mod harfbuzz {
-    #[path = "harfbuzz/shaper.rs"]
     pub mod shaper;
 }

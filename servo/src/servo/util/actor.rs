@@ -3,6 +3,7 @@
 
 
 use pipes::{Port, Chan, SharedChan, stream};
+use core::task;
 
 
 
