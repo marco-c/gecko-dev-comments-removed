@@ -9,10 +9,10 @@
 define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
   const { createFactories } = require("./rep-utils");
-
   const { span } = React.DOM;
 
   
+
 
 
 
@@ -21,21 +21,38 @@ define(function (require, exports, module) {
 
     propTypes: {
       
-      name: React.PropTypes.string,
+      name: React.PropTypes.oneOfType([
+        React.PropTypes.string,
+        React.PropTypes.object,
+      ]).isRequired,
       
       equal: React.PropTypes.string,
       
       delim: React.PropTypes.string,
+      mode: React.PropTypes.string,
     },
 
     render: function () {
+      const { Grip } = require("./grip");
       let { Rep } = createFactories(require("./rep"));
+
+      let key;
+      
+      
+      if (typeof this.props.name === "string") {
+        key = span({"className": "nodeName"}, this.props.name);
+      } else {
+        key = Rep({
+          object: this.props.name,
+          mode: this.props.mode || "tiny",
+          defaultRep: Grip,
+          objectLink: this.props.objectLink,
+        });
+      }
 
       return (
         span({},
-          span({
-            "className": "nodeName"},
-            this.props.name),
+          key,
           span({
             "className": "objectEqual"
           }, this.props.equal),
