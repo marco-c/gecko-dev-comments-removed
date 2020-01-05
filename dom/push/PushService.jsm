@@ -12,12 +12,14 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-const {PushCrypto} = Cu.import("resource://gre/modules/PushCrypto.jsm");
+const {
+  PushCrypto,
+  getCryptoParams,
+} = Cu.import("resource://gre/modules/PushCrypto.jsm");
 const {PushDB} = Cu.import("resource://gre/modules/PushDB.jsm");
 
 const CONNECTION_PROTOCOLS = (function() {
@@ -762,14 +764,11 @@ this.PushService = {
 
 
 
-  receivedPushMessage(keyID, messageID, data, cryptoParams, updateFunc) {
+  receivedPushMessage(keyID, messageID, headers, data, updateFunc) {
     console.debug("receivedPushMessage()");
     Services.telemetry.getHistogramById("PUSH_API_NOTIFICATION_RECEIVED").add();
 
     return this._updateRecordAfterPush(keyID, updateFunc).then(record => {
-      if (!record) {
-        throw new Error("Ignoring update for key ID " + keyID);
-      }
       if (record.quotaApplies()) {
         
         
@@ -782,7 +781,7 @@ this.PushService = {
           }, prefs.get("quotaUpdateDelay"));
         this._updateQuotaTimeouts.add(timeoutID);
       }
-      return this._decryptAndNotifyApp(record, messageID, data, cryptoParams);
+      return this._decryptAndNotifyApp(record, messageID, headers, data);
     }).catch(error => {
       console.error("receivedPushMessage: Error notifying app", error);
       return Ci.nsIPushErrorReporter.ACK_NOT_DELIVERED;
@@ -832,10 +831,11 @@ this.PushService = {
         });
       });
     }).then(record => {
-      if (record) {
-        gPushNotifier.notifySubscriptionModified(record.scope,
-                                                 record.principal);
+      if (!record) {
+        throw new Error("Ignoring update for key ID " + keyID);
       }
+      gPushNotifier.notifySubscriptionModified(record.scope,
+                                               record.principal);
       return record;
     });
   },
@@ -848,20 +848,24 @@ this.PushService = {
 
 
 
-  _decryptMessage(data, record, cryptoParams) {
-    if (!cryptoParams) {
-      return Promise.resolve(null);
-    }
-    return PushCrypto.decodeMsg(
-      data,
-      record.p256dhPrivateKey,
-      record.p256dhPublicKey,
-      cryptoParams.dh,
-      cryptoParams.salt,
-      cryptoParams.rs,
-      record.authenticationSecret,
-      cryptoParams.padSize
-    );
+
+  _decryptMessage(record, headers, data) {
+    return Promise.resolve().then(_ => {
+      let cryptoParams = getCryptoParams(headers);
+      if (!cryptoParams) {
+        return null;
+      }
+      return PushCrypto.decodeMsg(
+        data,
+        record.p256dhPrivateKey,
+        record.p256dhPublicKey,
+        cryptoParams.dh,
+        cryptoParams.salt,
+        cryptoParams.rs,
+        record.authenticationSecret,
+        cryptoParams.padSize
+      );
+    });
   },
 
   
@@ -873,8 +877,8 @@ this.PushService = {
 
 
 
-  _decryptAndNotifyApp(record, messageID, data, cryptoParams) {
-    return this._decryptMessage(data, record, cryptoParams)
+  _decryptAndNotifyApp(record, messageID, headers, data) {
+    return this._decryptMessage(record, headers, data)
       .then(
         message => this._notifyApp(record, messageID, message),
         error => {
