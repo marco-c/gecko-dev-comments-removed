@@ -912,21 +912,12 @@ CompositorBridgeChild::HoldUntilCompositableRefReleasedIfNecessary(TextureClient
     return;
   }
 
-  if (!(aClient->GetFlags() & TextureFlags::RECYCLE) &&
-     !aClient->NeedsFenceHandle()) {
+  if (!(aClient->GetFlags() & TextureFlags::RECYCLE)) {
     return;
   }
 
-  if (aClient->GetFlags() & TextureFlags::RECYCLE) {
-    aClient->SetLastFwdTransactionId(GetFwdTransactionId());
-    mTexturesWaitingRecycled.Put(aClient->GetSerial(), aClient);
-    return;
-  }
-  MOZ_ASSERT(!(aClient->GetFlags() & TextureFlags::RECYCLE));
-  MOZ_ASSERT(aClient->NeedsFenceHandle());
-  
-  
-  ImageBridgeChild::GetSingleton()->HoldUntilFenceHandleDelivery(aClient, GetFwdTransactionId());
+  aClient->SetLastFwdTransactionId(GetFwdTransactionId());
+  mTexturesWaitingRecycled.Put(aClient->GetSerial(), aClient);
 }
 
 void
