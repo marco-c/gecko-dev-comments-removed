@@ -1116,7 +1116,10 @@ Loader::CreateSheet(nsIURI* aURI,
 
     
 #ifdef MOZ_XUL
-    if (IsChromeURI(aURI)) {
+    
+    
+    if (IsChromeURI(aURI) &&
+        GetStyleBackendType() == StyleBackendType::Gecko) {
       nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
       if (cache) {
         if (cache->IsEnabled()) {
@@ -1960,7 +1963,8 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
         data = data->mNext;
       }
 #ifdef MOZ_XUL
-      if (IsChromeURI(aLoadData->mURI)) {
+      if (IsChromeURI(aLoadData->mURI) &&
+          GetStyleBackendType() == StyleBackendType::Gecko) {
         nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
         if (cache && cache->IsEnabled()) {
           if (!cache->GetStyleSheet(aLoadData->mURI)) {
