@@ -60,26 +60,9 @@ public:
 
 
 
+
+
   void GetAppLocales(nsTArray<nsCString>& aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void GetAppLocale(nsACString& aRetVal);
 
   
 
