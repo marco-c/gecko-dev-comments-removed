@@ -1235,6 +1235,16 @@ nsHttpChannelAuthProvider::PromptForIdentity(uint32_t            level,
     if (!proxyAuth)
         mSuppressDefensiveAuth = true;
 
+    if (mConnectionBased) {
+        
+        
+        
+        
+        
+        
+        mAuthChannel->CloseStickyConnection();
+    }
+
     return rv;
 }
 
