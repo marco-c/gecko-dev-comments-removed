@@ -844,10 +844,6 @@ pref("media.webspeech.synth.enabled", true);
 pref("media.webspeech.recognition.enable", true);
 
 
-pref("dom.mozDownloads.enabled", true);
-pref("dom.downloads.max_retention_days", 7);
-
-
 
 
 
