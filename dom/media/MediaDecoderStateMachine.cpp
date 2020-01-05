@@ -791,12 +791,7 @@ public:
       mMaster->StopPlayback();
     }
 
-    
-    
-    
-    
-    mMaster->UpdatePlaybackPositionInternal(
-      mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
+    mMaster->UpdatePlaybackPositionInternal(mSeekJob.mTarget.GetTime().ToMicroseconds());
 
     if (mVisibility == EventVisibility::Observable) {
       mMaster->mOnPlaybackEvent.Notify(MediaEventType::SeekStarted);
