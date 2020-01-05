@@ -4,19 +4,7 @@
 
 
 
-
-{
-
-const ArrayPrototypeJoin = Array.prototype.join;
-const MapPrototypeGet = Map.prototype.get;
-const MapPrototypeHas = Map.prototype.has;
-const MapPrototypeSet = Map.prototype.set;
-const ObjectDefineProperty = Object.defineProperty;
-const ReflectApply = Reflect.apply;
-const StringPrototypeIndexOf = String.prototype.indexOf;
-const StringPrototypeSubstring = String.prototype.substring;
-
-const ReflectLoader = new class {
+Reflect.Loader = new class {
     constructor() {
         this.registry = new Map();
         this.loadPath = getModuleLoadPath();
@@ -29,101 +17,17 @@ const ReflectLoader = new class {
         return os.path.join(this.loadPath, name);
     }
 
-    normalize(path) {
-#ifdef XP_WIN
-        
-        
-        
-        
-        
-        let newPath = "";
-        let lastSlash = 0;
-        while (true) {
-            let i = ReflectApply(StringPrototypeIndexOf, path, ["/", lastSlash]);
-            if (i < 0) {
-                newPath += ReflectApply(StringPrototypeSubstring, path, [lastSlash]);
-                break;
-            }
-            newPath += ReflectApply(StringPrototypeSubstring, path, [lastSlash, i]) + "\\";
-            lastSlash = i + 1;
-        }
-        path = newPath;
-
-        
-        let isalpha = c => ("A" <= c && c <= "Z") || ("a" <= c && c <= "z");
-        let drive = "";
-        if (path.length > 2 && isalpha(path[0]) && path[1] === ":" && path[2] === "\\") {
-            drive = ReflectApply(StringPrototypeSubstring, path, [0, 2]);
-            path = ReflectApply(StringPrototypeSubstring, path, [2]);
-        }
-#endif
-
-        const pathsep =
-#ifdef XP_WIN
-        "\\";
-#else
-        "/";
-#endif
-
-        let n = 0;
-        let components = [];
-
-        
-        
-        let lastSep = 0;
-        while (lastSep < path.length) {
-            let i = ReflectApply(StringPrototypeIndexOf, path, [pathsep, lastSep]);
-            if (i < 0)
-                i = path.length;
-            let part = ReflectApply(StringPrototypeSubstring, path, [lastSep, i]);
-            lastSep = i + 1;
-
-            
-            if (part === "." && n > 0)
-                continue;
-
-            if (part === ".." && n > 0) {
-                
-                if (components[n - 1] === ".") {
-                    components[n - 1] = "..";
-                    continue;
-                }
-
-                
-                
-                
-                if (components[n - 1] !== "" && components[n - 1] !== "..") {
-                    components.length = --n;
-                    continue;
-                }
-            }
-
-            ObjectDefineProperty(components, n++, {
-                __proto__: null,
-                value: part,
-                writable: true, enumerable: true, configurable: true
-            });
-        }
-
-        let normalized = ReflectApply(ArrayPrototypeJoin, components, [pathsep]);
-    #ifdef XP_WIN
-        normalized = drive + normalized;
-    #endif
-        return normalized;
-    }
-
     fetch(path) {
         return os.file.readFile(path);
     }
 
     loadAndParse(path) {
-        let normalized = this.normalize(path);
-        if (ReflectApply(MapPrototypeHas, this.registry, [normalized]))
-            return ReflectApply(MapPrototypeGet, this.registry, [normalized]);
+        if (this.registry.has(path))
+            return this.registry.get(path);
 
         let source = this.fetch(path);
         let module = parseModule(source, path);
-        ReflectApply(MapPrototypeSet, this.registry, [normalized, module]);
+        this.registry.set(path, module);
         return module;
     }
 
@@ -144,9 +48,6 @@ const ReflectLoader = new class {
 };
 
 setModuleResolveHook((module, requestName) => {
-    let path = ReflectLoader.resolve(requestName);
-    return ReflectLoader.loadAndParse(path)
+    let path = Reflect.Loader.resolve(requestName);
+    return Reflect.Loader.loadAndParse(path)
 });
-
-Reflect.Loader = ReflectLoader;
-}
