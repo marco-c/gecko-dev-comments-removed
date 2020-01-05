@@ -38,7 +38,7 @@ public:
   bool AllocShmem(size_t aSize,
                   mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
                   mozilla::ipc::Shmem* aShmem) override;
-  void DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
+  bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
   PTextureChild* CreateTexture(const SurfaceDescriptor& aSharedData,

@@ -13,6 +13,7 @@ namespace mozilla {
 namespace dom {
 
 class VideoDecoderManagerChild final : public PVideoDecoderManagerChild
+                                     , public mozilla::ipc::IShmemAllocator
 {
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoDecoderManagerChild)
@@ -27,6 +28,23 @@ public:
   
   
   void DeallocateSurfaceDescriptorGPUVideo(const SurfaceDescriptorGPUVideo& aSD);
+
+  bool AllocShmem(size_t aSize,
+                  mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
+                  mozilla::ipc::Shmem* aShmem) override
+  {
+    return PVideoDecoderManagerChild::AllocShmem(aSize, aShmType, aShmem);
+  }
+  bool AllocUnsafeShmem(size_t aSize,
+                        mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
+                        mozilla::ipc::Shmem* aShmem) override
+  {
+    return PVideoDecoderManagerChild::AllocUnsafeShmem(aSize, aShmType, aShmem);
+  }
+
+  
+  
+  bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
   static void Initialize();
