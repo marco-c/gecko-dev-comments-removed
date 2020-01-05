@@ -42,17 +42,17 @@ let extData = {
   },
 };
 
-add_task(function* sidebar_initial_install() {
+add_task(async function sidebar_initial_install() {
   ok(document.getElementById("sidebar-box").hidden, "sidebar box is not visible");
   let extension = ExtensionTestUtils.loadExtension(extData);
-  yield extension.startup();
+  await extension.startup();
   
-  yield extension.awaitMessage("sidebar");
+  await extension.awaitMessage("sidebar");
   ok(!document.getElementById("sidebar-box").hidden, "sidebar box is visible");
   
   ok(document.getElementById("sidebar-button"), "sidebar button is in UI");
 
-  yield extension.unload();
+  await extension.unload();
   
   ok(document.getElementById("sidebar-box").hidden, "sidebar box is not visible");
 
@@ -62,41 +62,41 @@ add_task(function* sidebar_initial_install() {
 });
 
 
-add_task(function* sidebar_two_sidebar_addons() {
+add_task(async function sidebar_two_sidebar_addons() {
   let extension2 = ExtensionTestUtils.loadExtension(extData);
-  yield extension2.startup();
+  await extension2.startup();
   
-  yield extension2.awaitMessage("sidebar");
+  await extension2.awaitMessage("sidebar");
   ok(!document.getElementById("sidebar-box").hidden, "sidebar box is visible");
   
   ok(!document.getElementById("sidebar-button"), "sidebar button is not in UI");
 
   
   let extension3 = ExtensionTestUtils.loadExtension(extData);
-  yield extension3.startup();
+  await extension3.startup();
   
-  yield extension3.awaitMessage("sidebar");
+  await extension3.awaitMessage("sidebar");
   ok(!document.getElementById("sidebar-box").hidden, "sidebar box is visible");
-  yield extension3.unload();
+  await extension3.unload();
 
   
   ok(document.getElementById("sidebar-box").hidden, "sidebar box is not visible");
 
-  yield extension2.unload();
+  await extension2.unload();
 });
 
-add_task(function* sidebar_empty_panel() {
+add_task(async function sidebar_empty_panel() {
   let extension = ExtensionTestUtils.loadExtension(extData);
-  yield extension.startup();
+  await extension.startup();
   
-  yield extension.awaitMessage("sidebar");
+  await extension.awaitMessage("sidebar");
   ok(!document.getElementById("sidebar-box").hidden, "sidebar box is visible in first window");
   extension.sendMessage("set-panel");
-  yield extension.awaitFinish();
-  yield extension.unload();
+  await extension.awaitFinish();
+  await extension.unload();
 });
 
-add_task(function* cleanup() {
+add_task(async function cleanup() {
   
   Services.prefs.clearUserPref("extensions.sidebar-button.shown");
 });

@@ -7,11 +7,11 @@ const TAB_STATE = {
   index: 1,
 };
 
-add_task(function* () {
+add_task(async function() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   Services.prefs.setBoolPref("browser.sessionstore.restore_on_demand", true);
@@ -20,10 +20,10 @@ add_task(function* () {
   let promise = promiseTabRestoring(tab);
   ss.setTabState(tab, JSON.stringify(TAB_STATE));
   ok(tab.hasAttribute("pending"), "tab is pending");
-  yield promise;
+  await promise;
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   let tabState = TabState.collect(tab);

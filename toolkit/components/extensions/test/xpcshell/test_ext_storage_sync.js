@@ -447,15 +447,15 @@ function assertPostedUpdatedRecord(post, since) {
 
 
 
-const assertPostedEncryptedKeys = Task.async(function* (fxaService, post) {
+const assertPostedEncryptedKeys = async function(fxaService, post) {
   equal(post.path, collectionRecordsPath("storage-sync-crypto") + "/keys");
 
-  let body = yield new KeyRingEncryptionRemoteTransformer(fxaService).decode(post.body.data);
+  let body = await new KeyRingEncryptionRemoteTransformer(fxaService).decode(post.body.data);
   ok(body.keys, `keys object should be present in decoded body`);
   ok(body.keys.default, `keys object should have a default key`);
   ok(body.salts, `salts object should be present in decoded body`);
   return body;
-});
+};
 
 
 function assertKeyRingKey(keyRing, extensionId, expectedKey, message) {
@@ -469,19 +469,19 @@ function assertKeyRingKey(keyRing, extensionId, expectedKey, message) {
 }
 
 
-const assertExtensionRecord = Task.async(function* (fxaService, post, extension, key) {
+const assertExtensionRecord = async function(fxaService, post, extension, key) {
   const extensionId = extension.id;
   const cryptoCollection = new CryptoCollection(fxaService);
-  const hashedId = "id-" + (yield cryptoCollection.hashWithExtensionSalt(keyToId(key), extensionId));
-  const collectionId = yield cryptoCollection.extensionIdToCollectionId(extensionId);
+  const hashedId = "id-" + (await cryptoCollection.hashWithExtensionSalt(keyToId(key), extensionId));
+  const collectionId = await cryptoCollection.extensionIdToCollectionId(extensionId);
   const transformer = new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extensionId);
   equal(post.path, `${collectionRecordsPath(collectionId)}/${hashedId}`,
         "decrypted data should be posted to path corresponding to its key");
-  let decoded = yield transformer.decode(post.body.data);
+  let decoded = await transformer.decode(post.body.data);
   equal(decoded.key, key,
         "decrypted data should have a key attribute corresponding to the extension data key");
   return decoded;
-});
+};
 
 
 const defaultExtensionId = "{13bdde76-4dc7-11e6-9bdc-54ee758d6342}";
@@ -503,7 +503,7 @@ function uuid() {
   return uuidgen.generateUUID().toString();
 }
 
-add_task(function* test_key_to_id() {
+add_task(async function test_key_to_id() {
   equal(keyToId("foo"), "key-foo");
   equal(keyToId("my-new-key"), "key-my_2D_new_2D_key");
   equal(keyToId(""), "key-");
@@ -528,12 +528,12 @@ add_task(function* test_key_to_id() {
   equal(idToKey("key-_2D_"), "-");
 });
 
-add_task(function* test_extension_id_to_collection_id() {
+add_task(async function test_extension_id_to_collection_id() {
   const extensionId = "{9419cce6-5435-11e6-84bf-54ee758d6342}";
   
   
   
-  yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
+  await withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
     
     const salt = "Scgx8RJ8Y0rxMGFYArUiKeawlW+0zJyFmtTDvro9qPo=";
     const cryptoCollection = new CryptoCollection(fxaService);
@@ -544,9 +544,9 @@ add_task(function* test_extension_id_to_collection_id() {
   });
 });
 
-add_task(function* ensureCanSync_posts_new_keys() {
+add_task(async function ensureCanSync_posts_new_keys() {
   const extensionId = uuid();
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       server.installCollection("storage-sync-crypto");
       server.etag = 1000;
@@ -592,7 +592,7 @@ add_task(function* ensureCanSync_posts_new_keys() {
   });
 });
 
-add_task(function* ensureCanSync_pulls_key() {
+add_task(async function ensureCanSync_pulls_key() {
   
   
   
@@ -607,7 +607,7 @@ add_task(function* ensureCanSync_pulls_key() {
   DEFAULT_KEY.generateRandom();
   const RANDOM_KEY = new BulkKeyBundle(extensionId);
   RANDOM_KEY.generateRandom();
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       
       const cryptoCollection = new CryptoCollection(fxaService);
@@ -695,7 +695,7 @@ add_task(function* ensureCanSync_pulls_key() {
   });
 });
 
-add_task(function* ensureCanSync_handles_conflicts() {
+add_task(async function ensureCanSync_handles_conflicts() {
   
   
   
@@ -706,7 +706,7 @@ add_task(function* ensureCanSync_handles_conflicts() {
   DEFAULT_KEY.generateRandom();
   const RANDOM_KEY = new BulkKeyBundle(extensionId);
   RANDOM_KEY.generateRandom();
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       
       const cryptoCollection = new CryptoCollection(fxaService);
@@ -744,12 +744,12 @@ add_task(function* ensureCanSync_handles_conflicts() {
   });
 });
 
-add_task(function* ensureCanSync_handles_deleted_conflicts() {
+add_task(async function ensureCanSync_handles_deleted_conflicts() {
   
   
   const extensionId = uuid();
   const extensionId2 = uuid();
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     server.installCollection("storage-sync-crypto");
     server.installDeleteBucket();
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
@@ -796,12 +796,12 @@ add_task(function* ensureCanSync_handles_deleted_conflicts() {
   });
 });
 
-add_task(function* checkSyncKeyRing_reuploads_keys() {
+add_task(async function checkSyncKeyRing_reuploads_keys() {
   
   
   const extensionId = uuid();
   let extensionKey, extensionSalt;
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       server.installCollection("storage-sync-crypto");
       server.etag = 765;
@@ -855,13 +855,13 @@ add_task(function* checkSyncKeyRing_reuploads_keys() {
   });
 });
 
-add_task(function* checkSyncKeyRing_overwrites_on_conflict() {
+add_task(async function checkSyncKeyRing_overwrites_on_conflict() {
   
   
   
   const extensionId = uuid();
   let extensionKey;
-  yield* withSyncContext(function* (context) {
+  await withSyncContext(function* (context) {
     yield* withServer(function* (server) {
       
       
@@ -920,13 +920,13 @@ add_task(function* checkSyncKeyRing_overwrites_on_conflict() {
   });
 });
 
-add_task(function* checkSyncKeyRing_flushes_on_uuid_change() {
+add_task(async function checkSyncKeyRing_flushes_on_uuid_change() {
   
   
   
   const extensionId = uuid();
   const extension = {id: extensionId};
-  yield* withSyncContext(function* (context) {
+  await withSyncContext(function* (context) {
     yield* withServer(function* (server) {
       server.installCollection("storage-sync-crypto");
       server.installDeleteBucket();
@@ -1023,10 +1023,10 @@ add_task(function* checkSyncKeyRing_flushes_on_uuid_change() {
   });
 });
 
-add_task(function* test_storage_sync_pulls_changes() {
+add_task(async function test_storage_sync_pulls_changes() {
   const extensionId = defaultExtensionId;
   const extension = defaultExtension;
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       const cryptoCollection = new CryptoCollection(fxaService);
       let transformer = new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extensionId);
@@ -1090,12 +1090,12 @@ add_task(function* test_storage_sync_pulls_changes() {
   });
 });
 
-add_task(function* test_storage_sync_pushes_changes() {
+add_task(async function test_storage_sync_pushes_changes() {
   
   
   const extension = defaultExtension;
   const extensionId = defaultExtensionId;
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       const cryptoCollection = new CryptoCollection(fxaService);
       const collectionId = yield cryptoCollection.extensionIdToCollectionId(extensionId);
@@ -1166,10 +1166,10 @@ add_task(function* test_storage_sync_pushes_changes() {
   });
 });
 
-add_task(function* test_storage_sync_pulls_conflicts() {
+add_task(async function test_storage_sync_pulls_conflicts() {
   const extensionId = uuid();
   const extension = {id: extensionId};
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       const cryptoCollection = new CryptoCollection(fxaService);
       let transformer = new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extensionId);
@@ -1235,9 +1235,9 @@ add_task(function* test_storage_sync_pulls_conflicts() {
   });
 });
 
-add_task(function* test_storage_sync_pulls_deletes() {
+add_task(async function test_storage_sync_pulls_deletes() {
   const extension = defaultExtension;
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       const cryptoCollection = new CryptoCollection(fxaService);
       const collectionId = yield cryptoCollection.extensionIdToCollectionId(defaultExtensionId);
@@ -1285,10 +1285,10 @@ add_task(function* test_storage_sync_pulls_deletes() {
   });
 });
 
-add_task(function* test_storage_sync_pushes_deletes() {
+add_task(async function test_storage_sync_pushes_deletes() {
   const extensionId = uuid();
   const extension = {id: extensionId};
-  yield* withContextAndServer(function* (context, server) {
+  await withContextAndServer(function* (context, server) {
     yield* withSignedInUser(loggedInUser, function* (extensionStorageSync, fxaService) {
       const cryptoCollection = new CryptoCollection(fxaService);
       yield cryptoCollection._clear();

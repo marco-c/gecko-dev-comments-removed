@@ -50,34 +50,34 @@ add_UITour_task(function* test_checkSyncCounts() {
 });
 
 
-add_UITour_task(function* test_firefoxAccountsNoParams() {
-  yield gContentAPI.showFirefoxAccounts();
-  yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
+add_UITour_task(async function test_firefoxAccountsNoParams() {
+  await gContentAPI.showFirefoxAccounts();
+  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
                                        "about:accounts?action=signup&entrypoint=uitour");
 });
 
-add_UITour_task(function* test_firefoxAccountsValidParams() {
-  yield gContentAPI.showFirefoxAccounts({ utm_foo: "foo", utm_bar: "bar" });
-  yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
+add_UITour_task(async function test_firefoxAccountsValidParams() {
+  await gContentAPI.showFirefoxAccounts({ utm_foo: "foo", utm_bar: "bar" });
+  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
                                        "about:accounts?action=signup&entrypoint=uitour&utm_foo=foo&utm_bar=bar");
 });
 
-add_UITour_task(function* test_firefoxAccountsNonAlphaValue() {
+add_UITour_task(async function test_firefoxAccountsNonAlphaValue() {
   
   
   
   let value = "foo& /=?:\\\xa9";
   
   let expected = encodeURIComponent(value).replace(/%20/g, "+");
-  yield gContentAPI.showFirefoxAccounts({ utm_foo: value });
-  yield BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
+  await gContentAPI.showFirefoxAccounts({ utm_foo: value });
+  await BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser, false,
                                        "about:accounts?action=signup&entrypoint=uitour&utm_foo=" + expected);
 });
 
 
-function* checkAboutAccountsNotLoaded() {
+async function checkAboutAccountsNotLoaded() {
   try {
-    yield waitForConditionPromise(() => {
+    await waitForConditionPromise(() => {
       return gBrowser.selectedBrowser.currentURI.spec.startsWith("about:accounts");
     }, "Check if about:accounts opened");
     ok(false, "No about:accounts tab should have opened");

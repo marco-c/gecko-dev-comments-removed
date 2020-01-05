@@ -13,8 +13,8 @@ const PAGE_2 = "data:text/html,<html><body>Another%20regular,%20everyday,%20norm
 
 
 
-add_task(function* test_initialize() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function test_initialize() {
+  await SpecialPowers.pushPrefEnv({
     set: [
       [ "toolkit.cosmeticAnimations.enabled", false]
   ] });
@@ -127,19 +127,19 @@ function promiseTabCrashedReady(browser) {
 
 
 
-add_task(function* test_crash_page_not_in_history() {
+add_task(async function test_crash_page_not_in_history() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
-  yield TabStateFlusher.flush(browser);
+  await promiseBrowserLoaded(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   
   
@@ -156,27 +156,27 @@ add_task(function* test_crash_page_not_in_history() {
 
 
 
-add_task(function* test_revived_history_from_remote() {
+add_task(async function test_revived_history_from_remote() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
-  yield TabStateFlusher.flush(browser);
+  await promiseBrowserLoaded(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   
   
   browser.loadURI(PAGE_2);
-  yield promiseTabRestored(newTab);
+  await promiseTabRestored(newTab);
   ok(!newTab.hasAttribute("crashed"), "Tab shouldn't be marked as crashed anymore.");
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   
@@ -195,27 +195,27 @@ add_task(function* test_revived_history_from_remote() {
 
 
 
-add_task(function* test_revived_history_from_non_remote() {
+add_task(async function test_revived_history_from_non_remote() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
-  yield TabStateFlusher.flush(browser);
+  await promiseBrowserLoaded(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   
   
   browser.loadURI("about:mozilla");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
   ok(!newTab.hasAttribute("crashed"), "Tab shouldn't be marked as crashed anymore.");
   ok(!browser.isRemoteBrowser, "Should not be a remote browser");
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   
@@ -233,31 +233,31 @@ add_task(function* test_revived_history_from_non_remote() {
 
 
 
-add_task(function* test_revive_tab_from_session_store() {
+add_task(async function test_revive_tab_from_session_store() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   let newTab2 = gBrowser.addTab("about:blank", { sameProcessAsFrameLoader: browser.frameLoader });
   let browser2 = newTab2.linkedBrowser;
   ok(browser2.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser2);
+  await promiseBrowserLoaded(browser2);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_2);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
   
   
   ok(!newTab2.hasAttribute("crashed"), "Second tab should not be crashed.");
@@ -265,7 +265,7 @@ add_task(function* test_revive_tab_from_session_store() {
 
   
   clickButton(browser, "restoreTab");
-  yield promiseTabRestored(newTab);
+  await promiseTabRestored(newTab);
   ok(!newTab.hasAttribute("crashed"), "Tab shouldn't be marked as crashed anymore.");
   ok(newTab2.hasAttribute("pending"), "Second tab should still be pending.");
 
@@ -273,10 +273,10 @@ add_task(function* test_revive_tab_from_session_store() {
   
   
   
-  yield promiseContentDocumentURIEquals(browser, PAGE_2);
+  await promiseContentDocumentURIEquals(browser, PAGE_2);
 
   
-  yield promiseHistoryLength(browser, 2);
+  await promiseHistoryLength(browser, 2);
 
   gBrowser.removeTab(newTab);
   gBrowser.removeTab(newTab2);
@@ -286,44 +286,44 @@ add_task(function* test_revive_tab_from_session_store() {
 
 
 
-add_task(function* test_revive_all_tabs_from_session_store() {
+add_task(async function test_revive_all_tabs_from_session_store() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   
   
-  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  let win2 = await BrowserTestUtils.openNewBrowserWindow();
   let newTab2 = win2.gBrowser.addTab(PAGE_1, { sameProcessAsFrameLoader: browser.frameLoader });
   win2.gBrowser.selectedTab = newTab2;
   let browser2 = newTab2.linkedBrowser;
   ok(browser2.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser2);
+  await promiseBrowserLoaded(browser2);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_2);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
-  yield TabStateFlusher.flush(browser);
-  yield TabStateFlusher.flush(browser2);
+  await TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser2);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
   
   is(newTab.getAttribute("crashed"), "true", "First tab should be crashed");
   is(newTab2.getAttribute("crashed"), "true", "Second window tab should be crashed");
 
   
   clickButton(browser, "restoreAll");
-  yield promiseTabRestored(newTab);
+  await promiseTabRestored(newTab);
   ok(!newTab.hasAttribute("crashed"), "Tab shouldn't be marked as crashed anymore.");
   ok(!newTab.hasAttribute("pending"), "Tab shouldn't be pending.");
   ok(!newTab2.hasAttribute("crashed"), "Second tab shouldn't be marked as crashed anymore.");
@@ -333,39 +333,39 @@ add_task(function* test_revive_all_tabs_from_session_store() {
   
   
   
-  yield promiseContentDocumentURIEquals(browser, PAGE_2);
-  yield promiseContentDocumentURIEquals(browser2, PAGE_1);
+  await promiseContentDocumentURIEquals(browser, PAGE_2);
+  await promiseContentDocumentURIEquals(browser2, PAGE_1);
 
   
-  yield promiseHistoryLength(browser, 2);
+  await promiseHistoryLength(browser, 2);
 
-  yield BrowserTestUtils.closeWindow(win2);
+  await BrowserTestUtils.closeWindow(win2);
   gBrowser.removeTab(newTab);
 });
 
 
 
 
-add_task(function* test_close_tab_after_crash() {
+add_task(async function test_close_tab_after_crash() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   let promise = promiseEvent(gBrowser.tabContainer, "TabClose");
 
   
   clickButton(browser, "closeTab");
-  yield promise;
+  await promise;
 
   is(gBrowser.tabs.length, 1, "Should have closed the tab");
 });
@@ -375,20 +375,20 @@ add_task(function* test_close_tab_after_crash() {
 
 
 
-add_task(function* test_hide_restore_all_button() {
+add_task(async function test_hide_restore_all_button() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   let doc = browser.contentDocument;
   let restoreAllButton = doc.getElementById("restoreAll");
@@ -402,23 +402,23 @@ add_task(function* test_hide_restore_all_button() {
   gBrowser.selectedTab = newTab;
 
   browser.loadURI(PAGE_2);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   
-  let win2 = yield BrowserTestUtils.openNewBrowserWindow();
+  let win2 = await BrowserTestUtils.openNewBrowserWindow();
   let newTab3 = win2.gBrowser.addTab(PAGE_2, { sameProcessAsFrameLoader: browser.frameLoader });
   win2.gBrowser.selectedTab = newTab3;
   let otherWinBrowser = newTab3.linkedBrowser;
-  yield promiseBrowserLoaded(otherWinBrowser);
+  await promiseBrowserLoaded(otherWinBrowser);
   
   
   
   let otherBrowserReady = promiseTabCrashedReady(otherWinBrowser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
-  yield otherBrowserReady;
+  await BrowserTestUtils.crashBrowser(browser);
+  await otherBrowserReady;
 
   doc = browser.contentDocument;
   restoreAllButton = doc.getElementById("restoreAll");
@@ -428,34 +428,34 @@ add_task(function* test_hide_restore_all_button() {
   isnot(restoreAllStyles.display, "none", "Restore All button should not be hidden");
   ok(!(restoreOneButton.classList.contains("primary")), "Restore Tab button should not have the primary class");
 
-  yield BrowserTestUtils.closeWindow(win2);
+  await BrowserTestUtils.closeWindow(win2);
   gBrowser.removeTab(newTab);
   gBrowser.removeTab(newTab2);
 });
 
-add_task(function* test_aboutcrashedtabzoom() {
+add_task(async function test_aboutcrashedtabzoom() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
   ok(browser.isRemoteBrowser, "Should be a remote browser");
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   browser.loadURI(PAGE_1);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   FullZoom.enlarge();
   let zoomLevel = ZoomManager.getZoomForBrowser(browser);
   ok(zoomLevel !== 1, "should have enlarged");
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
-  yield BrowserTestUtils.crashBrowser(browser);
+  await BrowserTestUtils.crashBrowser(browser);
 
   ok(ZoomManager.getZoomForBrowser(browser) === 1, "zoom should have reset on crash");
 
   clickButton(browser, "restoreTab");
-  yield promiseTabRestored(newTab);
+  await promiseTabRestored(newTab);
 
   ok(ZoomManager.getZoomForBrowser(browser) === zoomLevel, "zoom should have gone back to enlarged");
   FullZoom.reset();

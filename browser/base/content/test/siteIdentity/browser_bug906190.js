@@ -18,24 +18,24 @@ const HTTPS_TEST_ROOT_2 = getRootDirectory(gTestPath).replace("chrome://mochites
 
 
 
-function* doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefresh) {
-  yield BrowserTestUtils.withNewTab({
+async function doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefresh) {
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: parentTabSpec,
-  }, function* (browser) {
+  }, async function(browser) {
     
-    yield assertMixedContentBlockingState(gBrowser, {
+    await assertMixedContentBlockingState(gBrowser, {
       activeLoaded: false, activeBlocked: true, passiveLoaded: false,
     });
 
     
     let promiseReloaded = BrowserTestUtils.browserLoaded(browser);
     gIdentityHandler.disableMixedContentProtection();
-    yield promiseReloaded;
+    await promiseReloaded;
 
     
     let testDiv = content.document.getElementById("mctestdiv");
-    yield BrowserTestUtils.waitForCondition(
+    await BrowserTestUtils.waitForCondition(
       () => testDiv.innerHTML == "Mixed Content Blocker disabled");
 
     
@@ -48,14 +48,14 @@ function* doTest(parentTabSpec, childTabSpec, testTaskFn, waitForMetaRefresh) {
     for (let openFn of [simulateCtrlClick, simulateContextMenuOpenInTab]) {
       let promiseTabLoaded = waitForSomeTabToLoad();
       openFn(browser);
-      yield promiseTabLoaded;
+      await promiseTabLoaded;
       gBrowser.selectTabAtIndex(2);
 
       if (waitForMetaRefresh) {
-        yield waitForSomeTabToLoad();
+        await waitForSomeTabToLoad();
       }
 
-      yield testTaskFn();
+      await testTaskFn();
 
       gBrowser.removeCurrentTab();
     }
@@ -98,8 +98,8 @@ function waitForSomeTabToLoad() {
 
 
 
-add_task(function* test_initialize() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function test_initialize() {
+  await SpecialPowers.pushPrefEnv({
     "set": [["security.mixed_content.block_active_content", true]],
   });
 });
@@ -110,8 +110,8 @@ add_task(function* test_initialize() {
 
 
 
-add_task(function* test_same_origin() {
-  yield doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
+add_task(async function test_same_origin() {
+  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
                HTTPS_TEST_ROOT_1 + "file_bug906190_2.html", function* () {
     
     
@@ -131,8 +131,8 @@ add_task(function* test_same_origin() {
 
 
 
-add_task(function* test_different_origin() {
-  yield doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
+add_task(async function test_different_origin() {
+  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_2.html",
                HTTPS_TEST_ROOT_2 + "file_bug906190_2.html", function* () {
     
     
@@ -153,9 +153,9 @@ add_task(function* test_different_origin() {
 
 
 
-add_task(function* test_same_origin_metarefresh_same_origin() {
+add_task(async function test_same_origin_metarefresh_same_origin() {
   
-  yield doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
+  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
                HTTPS_TEST_ROOT_1 + "file_bug906190_3_4.html", function* () {
     
     yield assertMixedContentBlockingState(gBrowser, {
@@ -174,8 +174,8 @@ add_task(function* test_same_origin_metarefresh_same_origin() {
 
 
 
-add_task(function* test_same_origin_metarefresh_different_origin() {
-  yield doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
+add_task(async function test_same_origin_metarefresh_different_origin() {
+  await doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
                HTTPS_TEST_ROOT_2 + "file_bug906190_3_4.html", function* () {
     
     yield assertMixedContentBlockingState(gBrowser, {
@@ -193,10 +193,10 @@ add_task(function* test_same_origin_metarefresh_different_origin() {
 
 
 
-add_task(function* test_same_origin_302redirect_same_origin() {
+add_task(async function test_same_origin_302redirect_same_origin() {
   
-  yield doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_1 + "file_bug906190.sjs", function* () {
+  await doTest(HTTPS_TEST_ROOT_1 + "file_bug906190_1.html",
+               HTTPS_TEST_ROOT_1 + "file_bug906190.sjs", function() {
     
     
     ok(!gIdentityHandler._identityBox.classList.contains("mixedActiveBlocked"),
@@ -213,9 +213,9 @@ add_task(function* test_same_origin_302redirect_same_origin() {
 
 
 
-add_task(function* test_same_origin_302redirect_different_origin() {
+add_task(async function test_same_origin_302redirect_different_origin() {
   
-  yield doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
+  await doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
                HTTPS_TEST_ROOT_2 + "file_bug906190.sjs", function* () {
     
     yield assertMixedContentBlockingState(gBrowser, {
@@ -230,10 +230,10 @@ add_task(function* test_same_origin_302redirect_different_origin() {
 
 
 
-add_task(function* test_bad_redirection() {
+add_task(async function test_bad_redirection() {
   
-  yield doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
-               HTTPS_TEST_ROOT_2 + "file_bug906190.sjs?bad-redirection=1", function* () {
+  await doTest(HTTPS_TEST_ROOT_2 + "file_bug906190_1.html",
+               HTTPS_TEST_ROOT_2 + "file_bug906190.sjs?bad-redirection=1", function() {
     
     ok(true, "Nothing to do");
   });

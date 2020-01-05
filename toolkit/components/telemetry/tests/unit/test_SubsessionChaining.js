@@ -83,19 +83,19 @@ var promiseValidateArchivedPings = async function(aExpectedReasons) {
   }
 };
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   do_test_pending();
 
   
   do_get_profile();
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
 
   Preferences.set(PREF_TELEMETRY_ENABLED, true);
 });
 
-add_task(function* test_subsessionsChaining() {
+add_task(async function test_subsessionsChaining() {
   if (gIsAndroid) {
     
     return;
@@ -123,8 +123,8 @@ add_task(function* test_subsessionsChaining() {
 
   
   
-  yield TelemetryController.testSetup();
-  yield TelemetryController.testShutdown();
+  await TelemetryController.testSetup();
+  await TelemetryController.testShutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
@@ -132,7 +132,7 @@ add_task(function* test_subsessionsChaining() {
   
   moveClockForward(30);
   TelemetryController.testReset();
-  yield TelemetryController.testShutdown();
+  await TelemetryController.testShutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
@@ -140,20 +140,20 @@ add_task(function* test_subsessionsChaining() {
   
   let schedulerTickCallback = null;
   fakeSchedulerTimer(callback => schedulerTickCallback = callback, () => {});
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   moveClockForward(6);
   
   
   
   Assert.ok(!!schedulerTickCallback);
-  yield schedulerTickCallback();
+  await schedulerTickCallback();
   expectedReasons.push(REASON_ABORTED_SESSION);
 
   
   
   
   moveClockForward(30);
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
   Preferences.set(PREF_TEST, 1);
@@ -162,19 +162,19 @@ add_task(function* test_subsessionsChaining() {
   
   
   moveClockForward(30);
-  yield TelemetryController.testShutdown();
+  await TelemetryController.testShutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
   
   
   moveClockForward(30);
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
 
   
   now = fakeNow(futureDate(now, MS_IN_ONE_DAY));
   
-  yield schedulerTickCallback();
+  await schedulerTickCallback();
   expectedReasons.push(REASON_DAILY);
 
   
@@ -186,11 +186,11 @@ add_task(function* test_subsessionsChaining() {
 
   
   moveClockForward(30);
-  yield TelemetryController.testShutdown();
+  await TelemetryController.testShutdown();
   expectedReasons.push(REASON_SHUTDOWN);
 
   
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   TelemetryEnvironment.testWatchPreferences(PREFS_TO_WATCH);
   moveClockForward(30);
   Preferences.set(PREF_TEST, 1);
@@ -199,17 +199,17 @@ add_task(function* test_subsessionsChaining() {
   
   moveClockForward(6);
   
-  yield schedulerTickCallback();
+  await schedulerTickCallback();
   expectedReasons.push(REASON_ABORTED_SESSION);
 
   
   moveClockForward(30);
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   
   now = futureDate(now, MS_IN_ONE_DAY);
   fakeNow(now);
   
-  yield schedulerTickCallback();
+  await schedulerTickCallback();
   expectedReasons.push(REASON_DAILY);
 
   
@@ -220,16 +220,16 @@ add_task(function* test_subsessionsChaining() {
   
   moveClockForward(6);
   
-  yield schedulerTickCallback();
+  await schedulerTickCallback();
   expectedReasons.push(REASON_ABORTED_SESSION);
 
   
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
 
-  yield promiseValidateArchivedPings(expectedReasons);
+  await promiseValidateArchivedPings(expectedReasons);
 });
 
-add_task(function* () {
-  yield TelemetryController.testShutdown();
+add_task(async function() {
+  await TelemetryController.testShutdown();
   do_test_finished();
 });

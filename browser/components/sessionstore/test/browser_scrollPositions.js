@@ -23,87 +23,87 @@ requestLongerTimeout(2);
 
 
 
-add_task(function* test_scroll() {
+add_task(async function test_scroll() {
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y});
-  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y});
+  await checkScroll(tab, {scroll: SCROLL_STR}, "scroll is fine");
 
   
   let tab2 = ss.duplicateTab(window, tab);
   let browser2 = tab2.linkedBrowser;
-  yield promiseTabRestored(tab2);
+  await promiseTabRestored(tab2);
 
-  let scroll = yield sendMessage(browser2, "ss-test:getScrollPosition");
+  let scroll = await sendMessage(browser2, "ss-test:getScrollPosition");
   is(JSON.stringify(scroll), JSON.stringify({x: SCROLL_X, y: SCROLL_Y}),
     "scroll position has been duplicated correctly");
 
   
   browser2.reload();
-  yield promiseBrowserLoaded(browser2);
-  yield checkScroll(tab2, {scroll: SCROLL_STR}, "reloading retains scroll positions");
+  await promiseBrowserLoaded(browser2);
+  await checkScroll(tab2, {scroll: SCROLL_STR}, "reloading retains scroll positions");
 
   
   browser2.reloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
-  yield promiseBrowserLoaded(browser2);
-  yield checkScroll(tab2, null, "force-reload resets scroll positions");
+  await promiseBrowserLoaded(browser2);
+  await checkScroll(tab2, null, "force-reload resets scroll positions");
 
   
   
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: 0});
-  yield checkScroll(tab, null, "no scroll stored");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: 0});
+  await checkScroll(tab, null, "no scroll stored");
 
   
-  yield promiseRemoveTab(tab);
-  yield promiseRemoveTab(tab2);
+  await promiseRemoveTab(tab);
+  await promiseRemoveTab(tab2);
 });
 
 
 
 
 
-add_task(function* test_scroll_nested() {
+add_task(async function test_scroll_nested() {
   let tab = gBrowser.addTab(URL_FRAMESET);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y, frame: 0});
-  yield checkScroll(tab, {children: [{scroll: SCROLL_STR}]}, "scroll is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y, frame: 0});
+  await checkScroll(tab, {children: [{scroll: SCROLL_STR}]}, "scroll is fine");
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL2_X, y: SCROLL2_Y, frame: 1});
-  yield checkScroll(tab, {children: [{scroll: SCROLL_STR}, {scroll: SCROLL2_STR}]}, "scroll is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL2_X, y: SCROLL2_Y, frame: 1});
+  await checkScroll(tab, {children: [{scroll: SCROLL_STR}, {scroll: SCROLL2_STR}]}, "scroll is fine");
 
   
   let tab2 = ss.duplicateTab(window, tab);
   let browser2 = tab2.linkedBrowser;
-  yield promiseTabRestored(tab2);
+  await promiseTabRestored(tab2);
 
-  let scroll = yield sendMessage(browser2, "ss-test:getScrollPosition", {frame: 0});
+  let scroll = await sendMessage(browser2, "ss-test:getScrollPosition", {frame: 0});
   is(JSON.stringify(scroll), JSON.stringify({x: SCROLL_X, y: SCROLL_Y}),
     "scroll position #1 has been duplicated correctly");
 
-  scroll = yield sendMessage(browser2, "ss-test:getScrollPosition", {frame: 1});
+  scroll = await sendMessage(browser2, "ss-test:getScrollPosition", {frame: 1});
   is(JSON.stringify(scroll), JSON.stringify({x: SCROLL2_X, y: SCROLL2_Y}),
     "scroll position #2 has been duplicated correctly");
 
   
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: 0, frame: 0});
-  yield checkScroll(tab, {children: [null, {scroll: SCROLL2_STR}]}, "scroll is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: 0, frame: 0});
+  await checkScroll(tab, {children: [null, {scroll: SCROLL2_STR}]}, "scroll is fine");
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: 0, frame: 1});
-  yield checkScroll(tab, null, "no scroll stored");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: 0, frame: 1});
+  await checkScroll(tab, null, "no scroll stored");
 
   
-  yield promiseRemoveTab(tab);
-  yield promiseRemoveTab(tab2);
+  await promiseRemoveTab(tab);
+  await promiseRemoveTab(tab2);
 });
 
 
@@ -112,36 +112,36 @@ add_task(function* test_scroll_nested() {
 
 
 
-add_task(function* test_scroll_background_tabs() {
+add_task(async function test_scroll_background_tabs() {
   pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
-  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let tab = newWin.gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y});
-  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll on first page is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y});
+  await checkScroll(tab, {scroll: SCROLL_STR}, "scroll on first page is fine");
 
   
   browser.loadURI(URL2);
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL2_X, y: SCROLL2_Y});
-  yield checkScroll(tab, {scroll: SCROLL2_STR}, "scroll on second page is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL2_X, y: SCROLL2_Y});
+  await checkScroll(tab, {scroll: SCROLL2_STR}, "scroll on second page is fine");
 
   
-  yield BrowserTestUtils.closeWindow(newWin);
+  await BrowserTestUtils.closeWindow(newWin);
 
-  yield forceSaveState();
+  await forceSaveState();
 
   
   newWin = ss.undoCloseWindow(0);
 
   
-  yield BrowserTestUtils.waitForEvent(newWin, "SSWindowStateReady");
+  await BrowserTestUtils.waitForEvent(newWin, "SSWindowStateReady");
 
   is(newWin.gBrowser.tabs.length, 2, "There should be two tabs");
 
@@ -152,24 +152,24 @@ add_task(function* test_scroll_background_tabs() {
   browser = tab.linkedBrowser;
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   
   newWin.gBrowser.selectedTab = tab;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
-  yield checkScroll(tab, {scroll: SCROLL2_STR}, "scroll is still fine");
+  await checkScroll(tab, {scroll: SCROLL2_STR}, "scroll is still fine");
 
   
   
   is(browser.canGoBack, true, "can go back");
   browser.goBack();
 
-  yield BrowserTestUtils.browserLoaded(browser);
-  yield TabStateFlusher.flush(browser);
+  await BrowserTestUtils.browserLoaded(browser);
+  await TabStateFlusher.flush(browser);
 
-  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is still fine after navigating back");
+  await checkScroll(tab, {scroll: SCROLL_STR}, "scroll is still fine after navigating back");
 
-  yield BrowserTestUtils.closeWindow(newWin);
+  await BrowserTestUtils.closeWindow(newWin);
 });

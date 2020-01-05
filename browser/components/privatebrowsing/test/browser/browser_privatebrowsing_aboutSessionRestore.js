@@ -4,17 +4,17 @@
 
 
 
-add_task(function* testNoSessionRestoreButton() {
+add_task(async function testNoSessionRestoreButton() {
   
-  (yield BrowserTestUtils.openNewBrowserWindow({private: true})).close();
+  (await BrowserTestUtils.openNewBrowserWindow({private: true})).close();
 
-  let win = yield BrowserTestUtils.openNewBrowserWindow({private: true});
+  let win = await BrowserTestUtils.openNewBrowserWindow({private: true});
   let tab = win.gBrowser.addTab("about:sessionrestore");
   let browser = tab.linkedBrowser;
 
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
 
-  yield ContentTask.spawn(browser, null, function* () {
+  await ContentTask.spawn(browser, null, async function() {
     Assert.ok(content.document.getElementById("errorTryAgain").disabled,
       "The Restore about:sessionrestore button should be disabled");
   });

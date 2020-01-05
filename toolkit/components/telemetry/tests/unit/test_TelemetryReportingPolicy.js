@@ -56,13 +56,13 @@ function setMinimumPolicyVersion(aNewPolicyVersion) {
   Preferences.set(PREF_MINIMUM_POLICY_VERSION, aNewPolicyVersion);
 }
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   
   do_get_profile(true);
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
 
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   
@@ -71,7 +71,7 @@ add_task(function* test_setup() {
   TelemetryReportingPolicy.setup();
 });
 
-add_task(function* test_firstRun() {
+add_task(async function test_firstRun() {
   const PREF_FIRST_RUN = "toolkit.telemetry.reportingpolicy.firstRun";
   const FIRST_RUN_TIMEOUT_MSEC = 60 * 1000; 
   const OTHER_RUNS_TIMEOUT_MSEC = 10 * 1000; 
@@ -93,7 +93,7 @@ add_task(function* test_firstRun() {
                "The infobar display timeout should be 10s on other runs.");
 });
 
-add_task(function* test_prefs() {
+add_task(async function test_prefs() {
   TelemetryReportingPolicy.reset();
 
   let now = fakeNow(2009, 11, 18);
@@ -157,7 +157,7 @@ add_task(function* test_prefs() {
             "Accepting the policy again should let us upload data.");
 });
 
-add_task(function* test_migratePrefs() {
+add_task(async function test_migratePrefs() {
   const DEPRECATED_FHR_PREFS = {
     "datareporting.policy.dataSubmissionPolicyAccepted": true,
     "datareporting.policy.dataSubmissionPolicyBypassAcceptance": true,
@@ -177,7 +177,7 @@ add_task(function* test_migratePrefs() {
   }
 });
 
-add_task(function* test_userNotifiedOfCurrentPolicy() {
+add_task(async function test_userNotifiedOfCurrentPolicy() {
   fakeResetAcceptedPolicy();
   TelemetryReportingPolicy.reset();
 
@@ -212,13 +212,13 @@ add_task(function* test_userNotifiedOfCurrentPolicy() {
             "A previous version of the policy should fail.");
 });
 
-add_task(function* test_canSend() {
+add_task(async function test_canSend() {
   const TEST_PING_TYPE = "test-ping";
 
   PingServer.start();
   Preferences.set(PREF_SERVER, "http://localhost:" + PingServer.port);
 
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   TelemetryReportingPolicy.reset();
 
   
@@ -227,42 +227,42 @@ add_task(function* test_canSend() {
 
   
   PingServer.registerPingHandler(() => Assert.ok(false, "Should not have received any pings now"));
-  yield TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
+  await TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
 
   
   PingServer.resetPingHandler();
 
   
   TelemetryReportingPolicy.testInfobarShown();
-  let ping = yield PingServer.promiseNextPings(1);
+  let ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
   Assert.equal(ping[0].type, TEST_PING_TYPE,
                "We should have received the previous ping.");
 
   
-  yield TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
+  await TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
 
   
-  ping = yield PingServer.promiseNextPings(1);
+  ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
   Assert.equal(ping[0].type, TEST_PING_TYPE, "We should have received the new ping.");
 
   
-  yield TelemetryController.addPendingPing(TEST_PING_TYPE, {});
-  yield TelemetryController.testReset();
+  await TelemetryController.addPendingPing(TEST_PING_TYPE, {});
+  await TelemetryController.testReset();
 
   
-  ping = yield PingServer.promiseNextPings(1);
+  ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
   Assert.equal(ping[0].type, TEST_PING_TYPE, "We should have received the pending ping.");
 
   
-  yield TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
+  await TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
 
   
-  ping = yield PingServer.promiseNextPings(1);
+  ping = await PingServer.promiseNextPings(1);
   Assert.equal(ping.length, 1, "We should have received one ping.");
   Assert.equal(ping[0].type, TEST_PING_TYPE, "We should have received the new ping.");
 
-  yield PingServer.stop();
+  await PingServer.stop();
 });

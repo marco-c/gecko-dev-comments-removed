@@ -47,9 +47,9 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_onlyBookmarked() {
+add_task(async function test_onlyBookmarked() {
   
-  yield task_populateDB(testData);
+  await task_populateDB(testData);
 
   
   var query = PlacesUtils.history.getNewQuery();
@@ -89,7 +89,7 @@ add_task(function* test_onlyBookmarked() {
       isInQuery: false }
   ];
 
-  yield task_populateDB(liveUpdateTestData); 
+  await task_populateDB(liveUpdateTestData); 
 
   
   testData.push(liveUpdateTestData[0]);

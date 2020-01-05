@@ -123,15 +123,15 @@ const SESSION_DATA_OA = JSON.stringify(
   global: {}
 });
 
-add_task(function* run_test() {
+add_task(async function run_test() {
   
-  yield SessionStore.promiseInitialized;
+  await SessionStore.promiseInitialized;
 
   
   Services.cookies.removeAll();
 
   
-  let win = yield promiseNewWindowLoaded();
+  let win = await promiseNewWindowLoaded();
 
   
   ss.setWindowState(win, SESSION_DATA, true);
@@ -170,5 +170,5 @@ add_task(function* run_test() {
   is(cookie.path, COOKIE.path, "cookie path successfully restored");
 
   
-  yield BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(win);
 });

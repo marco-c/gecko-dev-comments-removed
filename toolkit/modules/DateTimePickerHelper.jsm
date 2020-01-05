@@ -21,7 +21,6 @@ this.EXPORTED_SYMBOLS = [
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 
 
@@ -106,7 +105,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  showPicker: Task.async(function* (aBrowser, aData) {
+  async showPicker(aBrowser, aData) {
     let rect = aData.rect;
     let type = aData.type;
     let detail = aData.detail;
@@ -144,14 +143,14 @@ this.DateTimePickerHelper = {
                                      resolve, {once: true});
       });
       this.picker.setAttribute("active", true);
-      yield bindingPromise;
+      await bindingPromise;
     }
     
     
     this.picker.openPicker(type, this._anchor, detail);
 
     this.addPickerListeners();
-  }),
+  },
 
   
   close() {

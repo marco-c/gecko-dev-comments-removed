@@ -1,4 +1,4 @@
-add_task(function* () {
+add_task(async function() {
   const kPrefName_AutoScroll = "general.autoScroll";
   Services.prefs.setBoolPref(kPrefName_AutoScroll, false);
 
@@ -8,12 +8,12 @@ add_task(function* () {
 
   let loadedPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   gBrowser.loadURI(dataUri);
-  yield loadedPromise;
+  await loadedPromise;
 
-  yield BrowserTestUtils.synthesizeMouse("#i", 50, 50, { button: 1 },
+  await BrowserTestUtils.synthesizeMouse("#i", 50, 50, { button: 1 },
                                          gBrowser.selectedBrowser);
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, { }, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, { }, async function() {
     var iframe = content.document.getElementById("iframe");
 
     if (iframe) {
@@ -26,15 +26,15 @@ add_task(function* () {
     }
   });
 
-  yield BrowserTestUtils.synthesizeMouse("#i", 100, 100,
+  await BrowserTestUtils.synthesizeMouse("#i", 100, 100,
                                          { type: "mousemove", clickCount: "0" },
                                          gBrowser.selectedBrowser);
 
   
   
-  yield new Promise(resolve => window.requestAnimationFrame(resolve));
+  await new Promise(resolve => window.requestAnimationFrame(resolve));
 
-  let msg = yield ContentTask.spawn(gBrowser.selectedBrowser, { }, function* () {
+  let msg = await ContentTask.spawn(gBrowser.selectedBrowser, { }, async function() {
     
     
     return new Promise(resolve => {
@@ -62,5 +62,5 @@ add_task(function* () {
     Services.prefs.clearUserPref(kPrefName_AutoScroll);
 
   
-  yield SimpleTest.promiseFocus();
+  await SimpleTest.promiseFocus();
 });

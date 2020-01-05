@@ -13,7 +13,7 @@ const kShowUIPref = "browser.translation.ui.show";
 const {Promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 const {Translation} = Cu.import("resource:///modules/translation/Translation.jsm", {});
 
-add_task(function* setup() {
+add_task(async function setup() {
   Services.prefs.setCharPref(kEnginePref, "yandex");
   Services.prefs.setCharPref(kApiKeyPref, "yandexValidKey");
   Services.prefs.setBoolPref(kShowUIPref, true);
@@ -29,23 +29,23 @@ add_task(function* setup() {
 
 
 
-add_task(function* test_yandex_translation() {
+add_task(async function test_yandex_translation() {
 
   
   let url = constructFixtureURL("bug1022725-fr.html");
-  let tab = yield promiseTestPageLoad(url);
+  let tab = await promiseTestPageLoad(url);
 
   
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
 
-  yield ContentTask.spawn(browser, null, function*() {
+  await ContentTask.spawn(browser, null, async function() {
     Cu.import("resource:///modules/translation/TranslationDocument.jsm");
     Cu.import("resource:///modules/translation/YandexTranslator.jsm");
 
     let client = new YandexTranslator(
       new TranslationDocument(content.document), "fr", "en");
-    let result = yield client.translate();
+    let result = await client.translate();
 
     Assert.ok(result, "There should be a result.");
   });
@@ -56,10 +56,10 @@ add_task(function* test_yandex_translation() {
 
 
 
-add_task(function* test_yandex_attribution() {
+add_task(async function test_yandex_attribution() {
   
   let url = constructFixtureURL("bug1022725-fr.html");
-  let tab = yield promiseTestPageLoad(url);
+  let tab = await promiseTestPageLoad(url);
 
   info("Show an info bar saying the current page is in French");
   let notif = showTranslationUI(tab, "fr");
@@ -70,10 +70,10 @@ add_task(function* test_yandex_attribution() {
 });
 
 
-add_task(function* test_preference_attribution() {
+add_task(async function test_preference_attribution() {
 
     let prefUrl = "about:preferences#general";
-    let tab = yield promiseTestPageLoad(prefUrl);
+    let tab = await promiseTestPageLoad(prefUrl);
 
     let browser = gBrowser.getBrowserForTab(tab);
     let win = browser.contentWindow;

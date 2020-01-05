@@ -4,7 +4,6 @@
 
 
 
-Cu.import("resource://gre/modules/Task.jsm");
 
 const ENGINE_NO_LOGO = {
   name: "searchEngineNoLogo.xml",
@@ -53,15 +52,15 @@ let gExpectedSearchEventResolver = null;
 
 let gNewEngines = [];
 
-add_task(function* () {
+add_task(async function() {
   let oldCurrentEngine = Services.search.currentEngine;
 
-  yield* addNewTabPageTab();
+  await addNewTabPageTab();
 
   
   
   info("Adding search event listener");
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     const SERVICE_EVENT_NAME = "ContentSearchService";
     content.addEventListener(SERVICE_EVENT_NAME, function(event) {
       sendAsyncMessage("test:search-event", { eventType: event.detail.type });
@@ -84,46 +83,46 @@ add_task(function* () {
   });
 
   
-  let noLogoEngine = yield promiseNewSearchEngine(ENGINE_NO_LOGO);
+  let noLogoEngine = await promiseNewSearchEngine(ENGINE_NO_LOGO);
   let searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = noLogoEngine;
-  yield searchEventsPromise;
-  yield* checkCurrentEngine(ENGINE_NO_LOGO);
+  await searchEventsPromise;
+  await checkCurrentEngine(ENGINE_NO_LOGO);
 
   
-  let faviconEngine = yield promiseNewSearchEngine(ENGINE_FAVICON);
+  let faviconEngine = await promiseNewSearchEngine(ENGINE_FAVICON);
   searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = faviconEngine;
-  yield searchEventsPromise;
-  yield* checkCurrentEngine(ENGINE_FAVICON);
+  await searchEventsPromise;
+  await checkCurrentEngine(ENGINE_FAVICON);
 
   
-  let logo1xEngine = yield promiseNewSearchEngine(ENGINE_1X_LOGO);
+  let logo1xEngine = await promiseNewSearchEngine(ENGINE_1X_LOGO);
   searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = logo1xEngine;
-  yield searchEventsPromise;
-  yield* checkCurrentEngine(ENGINE_1X_LOGO);
+  await searchEventsPromise;
+  await checkCurrentEngine(ENGINE_1X_LOGO);
 
   
-  let logo2xEngine = yield promiseNewSearchEngine(ENGINE_2X_LOGO);
+  let logo2xEngine = await promiseNewSearchEngine(ENGINE_2X_LOGO);
   searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = logo2xEngine;
-  yield searchEventsPromise;
-  yield* checkCurrentEngine(ENGINE_2X_LOGO);
+  await searchEventsPromise;
+  await checkCurrentEngine(ENGINE_2X_LOGO);
 
   
-  let logo1x2xEngine = yield promiseNewSearchEngine(ENGINE_1X_2X_LOGO);
+  let logo1x2xEngine = await promiseNewSearchEngine(ENGINE_1X_2X_LOGO);
   searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = logo1x2xEngine;
-  yield searchEventsPromise;
-  yield* checkCurrentEngine(ENGINE_1X_2X_LOGO);
+  await searchEventsPromise;
+  await checkCurrentEngine(ENGINE_1X_2X_LOGO);
 
   
-  let suggestionEngine = yield promiseNewSearchEngine(ENGINE_SUGGESTIONS);
+  let suggestionEngine = await promiseNewSearchEngine(ENGINE_SUGGESTIONS);
   searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = suggestionEngine;
-  yield searchEventsPromise;
-  yield* checkCurrentEngine(ENGINE_SUGGESTIONS);
+  await searchEventsPromise;
+  await checkCurrentEngine(ENGINE_SUGGESTIONS);
 
   
   
@@ -135,7 +134,7 @@ add_task(function* () {
     });
   });
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     let table = content.document.getElementById("searchSuggestionTable");
 
     let input = content.document.getElementById("newtab-search-text");
@@ -161,14 +160,14 @@ add_task(function* () {
 
   
   
-  yield suggestionsOpenPromise;
-  yield suggestionsPromise;
+  await suggestionsOpenPromise;
+  await suggestionsPromise;
 
   
   EventUtils.synthesizeKey("a", { accelKey: true });
   EventUtils.synthesizeKey("VK_DELETE", {});
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     Assert.ok(content.document.getElementById("searchSuggestionTable").hidden,
       "Search suggestion table hidden");
   });
@@ -176,7 +175,7 @@ add_task(function* () {
   
   searchEventsPromise = promiseSearchEvents(["CurrentEngine"]);
   Services.search.currentEngine = oldCurrentEngine;
-  yield searchEventsPromise;
+  await searchEventsPromise;
 
   let events = Array(gNewEngines.length).fill("CurrentState", 0, gNewEngines.length);
   searchEventsPromise = promiseSearchEvents(events);
@@ -184,7 +183,7 @@ add_task(function* () {
   for (let engine of gNewEngines) {
     Services.search.removeEngine(engine);
   }
-  yield searchEventsPromise;
+  await searchEventsPromise;
 });
 
 function promiseSearchEvents(events) {
@@ -228,13 +227,13 @@ function promiseNewSearchEngine({name: basename, numLogos}) {
   });
 }
 
-function* checkCurrentEngine(engineInfo) {
+async function checkCurrentEngine(engineInfo) {
   let engine = Services.search.currentEngine;
   ok(engine.name.includes(engineInfo.name),
      "Sanity check: current engine: engine.name=" + engine.name +
      " basename=" + engineInfo.name);
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, { name: engine.name }, function* (args) {
+  await ContentTask.spawn(gBrowser.selectedBrowser, { name: engine.name }, async function(args) {
     Assert.equal(content.gSearch._contentSearchController.defaultEngine.name,
       args.name, "currentEngineName: " + args.name);
   });

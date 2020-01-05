@@ -32,19 +32,19 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute() {
+add_task(async function test_execute() {
   
   for (let i = 0; i < TOTAL_SITES; i++) {
     let site = "http://www.test-" + i + ".com/";
     let testURI = uri(site);
     let when = Date.now() * 1000 + (i * TOTAL_SITES);
-    yield PlacesTestUtils.addVisits({ uri: testURI, visitDate: when });
+    await PlacesTestUtils.addVisits({ uri: testURI, visitDate: when });
   }
   for (let i = 0; i < TOTAL_SITES; i++) {
     let site = "http://www.test.com/" + i + "/";
     let testURI = uri(site);
     let when = Date.now() * 1000 + (i * TOTAL_SITES);
-    yield PlacesTestUtils.addVisits({ uri: testURI, visitDate: when });
+    await PlacesTestUtils.addVisits({ uri: testURI, visitDate: when });
   }
 
   

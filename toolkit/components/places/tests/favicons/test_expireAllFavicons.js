@@ -7,31 +7,31 @@
 const TEST_PAGE_URI = NetUtil.newURI("http://example.com/");
 const BOOKMARKED_PAGE_URI = NetUtil.newURI("http://example.com/bookmarked");
 
-add_task(function* test_expireAllFavicons() {
+add_task(async function test_expireAllFavicons() {
   
-  yield PlacesTestUtils.addVisits({ uri: TEST_PAGE_URI, transition: TRANSITION_TYPED });
+  await PlacesTestUtils.addVisits({ uri: TEST_PAGE_URI, transition: TRANSITION_TYPED });
 
   
-  yield setFaviconForPage(TEST_PAGE_URI, SMALLPNG_DATA_URI);
+  await setFaviconForPage(TEST_PAGE_URI, SMALLPNG_DATA_URI);
 
   
-  yield PlacesUtils.bookmarks.insert({
+  await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     url: BOOKMARKED_PAGE_URI,
     title: "Test bookmark"
   });
 
   
-  yield setFaviconForPage(BOOKMARKED_PAGE_URI, SMALLPNG_DATA_URI);
+  await setFaviconForPage(BOOKMARKED_PAGE_URI, SMALLPNG_DATA_URI);
 
   
   let promise = promiseTopicObserved(PlacesUtils.TOPIC_FAVICONS_EXPIRED);
   PlacesUtils.favicons.expireAllFavicons();
-  yield promise;
+  await promise;
 
   
-  yield promiseFaviconMissingForPage(TEST_PAGE_URI);
-  yield promiseFaviconMissingForPage(BOOKMARKED_PAGE_URI);
+  await promiseFaviconMissingForPage(TEST_PAGE_URI);
+  await promiseFaviconMissingForPage(BOOKMARKED_PAGE_URI);
 });
 
 function run_test() {

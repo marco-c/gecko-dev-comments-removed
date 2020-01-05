@@ -54,30 +54,30 @@ function check_empty_state() {
 
 
 
-add_task(function* first_run() {
+add_task(async function first_run() {
   startupManager();
   check_empty_state();
-  yield true;
+  await true;
 });
 
 
-function* trigger_db_load() {
+async function trigger_db_load() {
   let addonDefer = Promise.defer();
   AddonManager.getAddonsByTypes(["extension"], addonDefer.resolve);
-  let addonList = yield addonDefer.promise;
+  let addonList = await addonDefer.promise;
 
   do_check_eq(addonList.length, 0);
   check_empty_state();
 
-  yield true;
+  await true;
 }
 add_task(trigger_db_load);
 
 
-add_task(function* restart_and_recheck() {
+add_task(async function restart_and_recheck() {
   restartManager();
   check_empty_state();
-  yield true;
+  await true;
 });
 
 

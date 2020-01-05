@@ -6,7 +6,7 @@ var gTestRoot = getRootDirectory(gTestPath).replace("chrome://mochitests/content
 var gTestBrowser = null;
 var config = {};
 
-add_task(function* () {
+add_task(async function() {
   
   
   
@@ -25,7 +25,7 @@ add_task(function* () {
   
   Services.prefs.setIntPref("dom.ipc.plugins.timeoutSecs", 0);
 
-  registerCleanupFunction(Task.async(function*() {
+  registerCleanupFunction(async function() {
     Services.prefs.clearUserPref("dom.ipc.plugins.timeoutSecs");
     env.set("MOZ_CRASHREPORTER_NO_REPORT", noReport);
     env.set("MOZ_CRASHREPORTER_URL", serverUrl);
@@ -34,10 +34,10 @@ add_task(function* () {
     gTestBrowser = null;
     gBrowser.removeCurrentTab();
     window.focus();
-  }));
+  });
 });
 
-add_task(function* () {
+add_task(async function() {
   config = {
     shouldSubmissionUIBeVisible: true,
     comment: "",
@@ -48,18 +48,18 @@ add_task(function* () {
 
   let pluginCrashed = promisePluginCrashed();
 
-  yield promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html");
+  await promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html");
 
   
-  yield promiseUpdatePluginBindings(gTestBrowser);
+  await promiseUpdatePluginBindings(gTestBrowser);
 
   
-  yield pluginCrashed;
+  await pluginCrashed;
 
   let crashReportStatus = TestUtils.topicObserved("crash-report-status", onSubmitStatus);
 
   
-  yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+  await ContentTask.spawn(gTestBrowser, config, async function(aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
@@ -71,10 +71,10 @@ add_task(function* () {
       aConfig.shouldSubmissionUIBeVisible, "The crash UI should be visible");
   });
 
-  yield crashReportStatus;
+  await crashReportStatus;
 });
 
-add_task(function* () {
+add_task(async function() {
   config = {
     shouldSubmissionUIBeVisible: true,
     comment: "a test comment",
@@ -85,18 +85,18 @@ add_task(function* () {
 
   let pluginCrashed = promisePluginCrashed();
 
-  yield promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html");
+  await promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html");
 
   
-  yield promiseUpdatePluginBindings(gTestBrowser);
+  await promiseUpdatePluginBindings(gTestBrowser);
 
   
-  yield pluginCrashed;
+  await pluginCrashed;
 
   let crashReportStatus = TestUtils.topicObserved("crash-report-status", onSubmitStatus);
 
   
-  yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+  await ContentTask.spawn(gTestBrowser, config, async function(aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
@@ -109,10 +109,10 @@ add_task(function* () {
       aConfig.shouldSubmissionUIBeVisible, "The crash UI should be visible");
   });
 
-  yield crashReportStatus;
+  await crashReportStatus;
 });
 
-add_task(function* () {
+add_task(async function() {
   config = {
     shouldSubmissionUIBeVisible: false,
     comment: "",
@@ -124,17 +124,17 @@ add_task(function* () {
   let pluginCrashed = promisePluginCrashed();
 
   
-  yield promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html?" +
+  await promiseTabLoadEvent(gBrowser.selectedTab, gTestRoot + "plugin_crashCommentAndURL.html?" +
                             encodeURIComponent(JSON.stringify({width: 300, height: 300})));
 
   
-  yield promiseUpdatePluginBindings(gTestBrowser);
+  await promiseUpdatePluginBindings(gTestBrowser);
 
   
-  yield pluginCrashed;
+  await pluginCrashed;
 
   
-  yield ContentTask.spawn(gTestBrowser, config, function* (aConfig) {
+  await ContentTask.spawn(gTestBrowser, config, async function(aConfig) {
     let doc = content.document;
     let plugin = doc.getElementById("plugin");
     let pleaseSubmit = doc.getAnonymousElementByAttribute(plugin, "anonid", "pleaseSubmit");
@@ -144,8 +144,8 @@ add_task(function* () {
 });
 
 function promisePluginCrashed() {
-  return new ContentTask.spawn(gTestBrowser, {}, function* () {
-    yield new Promise((resolve) => {
+  return new ContentTask.spawn(gTestBrowser, {}, async function() {
+    await new Promise((resolve) => {
       addEventListener("PluginCrashReporterDisplayed", function onPluginCrashed() {
         removeEventListener("PluginCrashReporterDisplayed", onPluginCrashed);
         resolve();

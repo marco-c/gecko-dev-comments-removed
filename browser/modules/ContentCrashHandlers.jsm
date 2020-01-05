@@ -24,8 +24,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "RemotePages",
   "resource://gre/modules/RemotePageManager.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionStore",
   "resource:///modules/sessionstore/SessionStore.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "RecentWindow",
   "resource:///modules/RecentWindow.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
@@ -644,13 +642,13 @@ this.UnsubmittedCrashHandler = {
 
 
 
-  checkForUnsubmittedCrashReports: Task.async(function*() {
+  async checkForUnsubmittedCrashReports() {
     let dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - PENDING_CRASH_REPORT_DAYS);
 
     let reportIDs = [];
     try {
-      reportIDs = yield CrashSubmit.pendingIDsAsync(dateLimit);
+      reportIDs = await CrashSubmit.pendingIDsAsync(dateLimit);
     } catch (e) {
       Cu.reportError(e);
       return null;
@@ -664,7 +662,7 @@ this.UnsubmittedCrashHandler = {
       }
     }
     return null;
-  }),
+  },
 
   
 

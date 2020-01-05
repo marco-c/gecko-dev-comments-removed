@@ -35,7 +35,7 @@ function run_test() {
 
 
 
-add_task(function* test_buildTestDatabase() {
+add_task(async function test_buildTestDatabase() {
   
   
   let testURI = uri("http://www.foo.com");
@@ -60,7 +60,7 @@ add_task(function* test_buildTestDatabase() {
     });
   }
 
-  yield PlacesTestUtils.addVisits(places);
+  await PlacesTestUtils.addVisits(places);
 
   PlacesUtils.annotations.setPageAnnotation(testURI, testAnnoName,
                                             testAnnoVal, 0, 0);

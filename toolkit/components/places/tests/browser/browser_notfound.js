@@ -2,7 +2,7 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   const TEST_URL = "http://mochi.test:8888/notFoundPage.html";
 
   
@@ -39,8 +39,8 @@ add_task(function* () {
   });
 
   let newTabPromise = BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
-  yield Promise.all([visitedPromise, newTabPromise]);
+  await Promise.all([visitedPromise, newTabPromise]);
 
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
   gBrowser.removeCurrentTab();
 });

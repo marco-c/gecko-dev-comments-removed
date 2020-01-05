@@ -43,28 +43,28 @@ let invalidAttrCodes = [
   "source%3Dgoogle.com%26medium%3Dorganic%26%3Dgeneticallymodified"
 ];
 
-function* writeAttributionFile(data) {
+async function writeAttributionFile(data) {
   let appDir = Services.dirsvc.get("LocalAppData", Ci.nsIFile);
   let file = appDir.clone();
   file.append(Services.appinfo.vendor || "mozilla");
   file.append(AppConstants.MOZ_APP_NAME);
 
-  yield OS.File.makeDir(file.path,
+  await OS.File.makeDir(file.path,
     {from: appDir.path, ignoreExisting: true});
 
   file.append("postSigningData");
-  yield OS.File.writeAtomic(file.path, data);
+  await OS.File.writeAtomic(file.path, data);
 }
 
 
 
 
 
-add_task(function* testValidAttrCodes() {
+add_task(async function testValidAttrCodes() {
   for (let entry of validAttrCodes) {
     AttributionCode._clearCache();
-    yield writeAttributionFile(entry.code);
-    let result = yield AttributionCode.getAttrDataAsync();
+    await writeAttributionFile(entry.code);
+    let result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(result, entry.parsed,
       "Parsed code should match expected value, code was: " + entry.code);
   }
@@ -74,11 +74,11 @@ add_task(function* testValidAttrCodes() {
 
 
 
-add_task(function* testInvalidAttrCodes() {
+add_task(async function testInvalidAttrCodes() {
   for (let code of invalidAttrCodes) {
     AttributionCode._clearCache();
-    yield writeAttributionFile(code);
-    let result = yield AttributionCode.getAttrDataAsync();
+    await writeAttributionFile(code);
+    let result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(result, {},
       "Code should have failed to parse: " + code);
   }
@@ -89,22 +89,22 @@ add_task(function* testInvalidAttrCodes() {
 
 
 
-add_task(function* testDeletedFile() {
+add_task(async function testDeletedFile() {
   
-  yield writeAttributionFile(validAttrCodes[0].code);
-  let result = yield AttributionCode.getAttrDataAsync();
+  await writeAttributionFile(validAttrCodes[0].code);
+  let result = await AttributionCode.getAttrDataAsync();
   Assert.deepEqual(result, validAttrCodes[0].parsed,
     "The code should be readable directly from the file");
 
   
-  yield AttributionCode.deleteFileAsync();
-  result = yield AttributionCode.getAttrDataAsync();
+  await AttributionCode.deleteFileAsync();
+  result = await AttributionCode.getAttrDataAsync();
   Assert.deepEqual(result, validAttrCodes[0].parsed,
     "The code should be readable from the cache");
 
   
   AttributionCode._clearCache();
-  result = yield AttributionCode.getAttrDataAsync();
+  result = await AttributionCode.getAttrDataAsync();
   Assert.deepEqual(result, {},
     "Shouldn't be able to get a code after file is deleted and cache is cleared");
 });

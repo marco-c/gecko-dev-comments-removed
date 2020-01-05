@@ -15,7 +15,7 @@ function run_test() {
 
 
 
-add_task(function* test_watching_non_existing() {
+add_task(async function test_watching_non_existing() {
   let notExistingDir =
     OS.Path.join(OS.Constants.Path.profileDir, "absolutelyNotExisting");
 
@@ -27,6 +27,6 @@ add_task(function* test_watching_non_existing() {
   watcher.addPath(notExistingDir, deferred.reject, deferred.resolve);
 
   
-  let error = yield deferred.promise;
+  let error = await deferred.promise;
   do_check_eq(error, Components.results.NS_ERROR_FILE_NOT_FOUND);
 });

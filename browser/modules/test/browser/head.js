@@ -68,14 +68,14 @@ function checkKeyedScalar(scalars, scalarName, key, expectedValue) {
 
 
 
-let typeInSearchField = Task.async(function* (browser, text, fieldName) {
-  yield ContentTask.spawn(browser, [fieldName, text], function* ([contentFieldName, contentText]) {
+let typeInSearchField = async function(browser, text, fieldName) {
+  await ContentTask.spawn(browser, [fieldName, text], async function([contentFieldName, contentText]) {
     
     let searchInput = content.document.getElementById(contentFieldName);
     searchInput.focus();
     searchInput.value = contentText;
   });
-});
+};
 
 
 
@@ -196,21 +196,21 @@ function clickSecondaryAction(actionIndex) {
     return removePromise;
   }
 
-  return Task.spawn(function* () {
+  return (async function() {
     
     let dropdownPromise =
       BrowserTestUtils.waitForEvent(popupNotification.menupopup, "popupshown");
-    yield EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
-    yield dropdownPromise;
+    await EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
+    await dropdownPromise;
 
     
     
     
     
     let actionMenuItem = popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
-    yield EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
-    yield removePromise;
-  });
+    await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+    await removePromise;
+  })();
 }
 
 

@@ -2,7 +2,7 @@
 
 
 
-    add_task(function* () {
+    add_task(async function() {
       let testURL = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
       let tabSelected = false;
 
@@ -10,7 +10,7 @@
       let baseTab = gBrowser.addTab(testURL);
 
       
-      yield promiseTabLoaded(baseTab);
+      await promiseTabLoaded(baseTab);
       if (baseTab.linkedBrowser.currentURI.spec == "about:blank")
         return;
       baseTab.linkedBrowser.removeEventListener("load", arguments.callee, true);

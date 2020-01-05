@@ -8,10 +8,10 @@ Cu.import("resource:///modules/SitePermissions.jsm", this);
 
 
 
-function* checkPermissionCombinations(combinations) {
+async function checkPermissionCombinations(combinations) {
   let uri = Services.io.newURI("https://example.com");
 
-  yield BrowserTestUtils.withNewTab(uri.spec, function(browser) {
+  await BrowserTestUtils.withNewTab(uri.spec, function(browser) {
     let id = "geo";
     for (let {reverse, states, result} of combinations) {
       let loop = () => {
@@ -33,8 +33,8 @@ function* checkPermissionCombinations(combinations) {
 }
 
 
-add_task(function* testDefaultScope() {
-  yield checkPermissionCombinations([{
+add_task(async function testDefaultScope() {
+  await checkPermissionCombinations([{
     states: [
       [SitePermissions.ALLOW, null],
     ],
@@ -46,8 +46,8 @@ add_task(function* testDefaultScope() {
 });
 
 
-add_task(function* testScopeOverrides() {
-  yield checkPermissionCombinations([
+add_task(async function testScopeOverrides() {
+  await checkPermissionCombinations([
     {
       
       
@@ -95,8 +95,8 @@ add_task(function* testScopeOverrides() {
 
 
 
-add_task(function* testClearTempPermission() {
-  yield checkPermissionCombinations([{
+add_task(async function testClearTempPermission() {
+  await checkPermissionCombinations([{
     states: [
       [SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY],
       [SitePermissions.ALLOW, SitePermissions.SCOPE_PERSISTENT],
@@ -110,8 +110,8 @@ add_task(function* testClearTempPermission() {
 });
 
 
-add_task(function* testStateOverride() {
-  yield checkPermissionCombinations([
+add_task(async function testStateOverride() {
+  await checkPermissionCombinations([
     {
       states: [
         [SitePermissions.ALLOW, SitePermissions.SCOPE_PERSISTENT],

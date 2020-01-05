@@ -11,7 +11,7 @@ const OPENER_PAGE = "http://" + FIRST_PARTY_OPENER + "/browser/browser/component
 const TARGET_PAGE = "http://" + FIRST_PARTY_TARGET + "/browser/browser/components/" +
                     "originattributes/test/browser/file_windowOpenerRestrictionTarget.html";
 
-function* testPref(aIsPrefEnabled) {
+async function testPref(aIsPrefEnabled) {
   
   let cookieStr = "key" + Math.random().toString() + "=" + Math.random().toString();
 
@@ -23,11 +23,11 @@ function* testPref(aIsPrefEnabled) {
   tab.ownerGlobal.focus();
 
   let browser = gBrowser.getBrowserForTab(tab);
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
 
-  yield ContentTask.spawn(browser, {cookieStr,
+  await ContentTask.spawn(browser, {cookieStr,
                                     page: TARGET_PAGE,
-                                    isPrefEnabled: aIsPrefEnabled}, function* (obj) {
+                                    isPrefEnabled: aIsPrefEnabled}, async function(obj) {
     
     let childFrame = content.document.getElementById("child");
 
@@ -49,50 +49,50 @@ function* testPref(aIsPrefEnabled) {
 
   
   let targetBrowser = gBrowser.getBrowserForTab(gBrowser.selectedTab);
-  yield BrowserTestUtils.browserLoaded(targetBrowser);
+  await BrowserTestUtils.browserLoaded(targetBrowser);
 
   
   is(targetBrowser.contentTitle, "pass", "The behavior of window.opener is correct.");
 
   
-  yield ContentTask.spawn(browser, null, function* () {
+  await ContentTask.spawn(browser, null, async function() {
     this.openedWindow.close();
   });
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 
   
   Services.cookies.removeAll();
 }
 
-add_task(function* runTests() {
+add_task(async function runTests() {
   let tests = [true, false];
 
   
-  yield SpecialPowers.pushPrefEnv({"set":
+  await SpecialPowers.pushPrefEnv({"set":
     [["privacy.firstparty.isolate", true]]
   });
 
   for (let enabled of tests) {
-    yield SpecialPowers.pushPrefEnv({"set":
+    await SpecialPowers.pushPrefEnv({"set":
       [["privacy.firstparty.isolate.restrict_opener_access", enabled]]
     });
 
-    yield testPref(enabled);
+    await testPref(enabled);
   }
 
   
-  yield SpecialPowers.pushPrefEnv({"set":
+  await SpecialPowers.pushPrefEnv({"set":
     [["privacy.firstparty.isolate", false]]
   });
 
   for (let enabled of tests) {
-    yield SpecialPowers.pushPrefEnv({"set":
+    await SpecialPowers.pushPrefEnv({"set":
       [["privacy.firstparty.isolate.restrict_opener_access", enabled]]
     });
 
     
     
     
-    yield testPref(false);
+    await testPref(false);
   }
 });

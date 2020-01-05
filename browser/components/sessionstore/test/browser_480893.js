@@ -4,8 +4,8 @@
 
 
 
-add_task(function*() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({
     "set": [
       ["browser.startup.page", 0],
     ]
@@ -14,19 +14,19 @@ add_task(function*() {
   let tab = gBrowser.addTab("about:sessionrestore");
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
-  yield BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
+  await BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
 
   let doc = browser.contentDocument;
 
   
   doc.getElementById("errorCancel").click();
 
-  yield BrowserTestUtils.browserLoaded(browser, false, "about:blank");
+  await BrowserTestUtils.browserLoaded(browser, false, "about:blank");
 
   
   
   let homepage = "http://mochi.test:8888/";
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     "set": [
       ["browser.startup.homepage", homepage],
       ["browser.startup.page", 1],
@@ -34,14 +34,14 @@ add_task(function*() {
   });
 
   browser.loadURI("about:sessionrestore");
-  yield BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
+  await BrowserTestUtils.browserLoaded(browser, false, "about:sessionrestore");
   doc = browser.contentDocument;
 
   
   doc.getElementById("errorCancel").click();
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
 
   is(browser.currentURI.spec, homepage, "loaded page is the homepage");
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });

@@ -16,12 +16,12 @@ function run_test() {
 
 
 
-add_task(function* test_fill_notification_buffer() {
+add_task(async function test_fill_notification_buffer() {
 
   
   
   let watchedDir = OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground");
-  yield OS.File.makeDir(watchedDir);
+  await OS.File.makeDir(watchedDir);
 
   
   let numberOfFiles = 100;
@@ -54,20 +54,20 @@ add_task(function* test_fill_notification_buffer() {
 
   
   
-  yield promiseAddPath(watcher, watchedDir, changeCallback, deferred.reject);
+  await promiseAddPath(watcher, watchedDir, changeCallback, deferred.reject);
 
   
   for (let i = 0; i < numberOfFiles; i++) {
     let tmpFilePath = OS.Path.join(watchedDir, fileNameBase + i);
-    yield OS.File.writeAtomic(tmpFilePath, "test content");
-    yield OS.File.remove(tmpFilePath);
+    await OS.File.writeAtomic(tmpFilePath, "test content");
+    await OS.File.remove(tmpFilePath);
   }
 
   
   
-  yield deferred.promise;
+  await deferred.promise;
 
   
   
-  yield promiseRemovePath(watcher, watchedDir, changeCallback, deferred.reject);
+  await promiseRemovePath(watcher, watchedDir, changeCallback, deferred.reject);
 });

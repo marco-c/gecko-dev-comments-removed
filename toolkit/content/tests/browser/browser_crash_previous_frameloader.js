@@ -42,7 +42,7 @@ function cleanUpMinidump(id) {
 
 
 
-add_task(function* test_crash_in_previous_frameloader() {
+add_task(async function test_crash_in_previous_frameloader() {
   
   
   
@@ -53,10 +53,10 @@ add_task(function* test_crash_in_previous_frameloader() {
     return;
   }
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: "http://example.com",
-  }, function*(browser) {
+  }, async function(browser) {
     
     Assert.ok(browser.isRemoteBrowser,
               "This browser needs to be remote if this test is going to " +
@@ -79,7 +79,7 @@ add_task(function* test_crash_in_previous_frameloader() {
 
     
     
-    yield ContentTask.spawn(browser, null, function() {
+    await ContentTask.spawn(browser, null, function() {
       const Cu = Components.utils;
       Cu.import("resource://gre/modules/ctypes.jsm");
       Cu.import("resource://gre/modules/Timer.jsm");
@@ -102,7 +102,7 @@ add_task(function* test_crash_in_previous_frameloader() {
 
     gBrowser.updateBrowserRemoteness(browser, false);
     info("Waiting for content process to go away.");
-    let [subject ] = yield contentProcessGone;
+    let [subject ] = await contentProcessGone;
 
     
     
@@ -110,7 +110,7 @@ add_task(function* test_crash_in_previous_frameloader() {
 
     Assert.ok(dumpID, "There should be a dumpID");
     if (dumpID) {
-      yield Services.crashmanager.ensureCrashIsPresent(dumpID);
+      await Services.crashmanager.ensureCrashIsPresent(dumpID);
       cleanUpMinidump(dumpID);
     }
 

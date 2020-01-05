@@ -2,7 +2,7 @@ const gTestRoot = getRootDirectory(gTestPath);
 const gHttpTestRoot = gTestRoot.replace("chrome://mochitests/content/",
                                         "http://127.0.0.1:8888/");
 
-add_task(function* () {
+add_task(async function() {
   registerCleanupFunction(function() {
     clearAllPluginPermissions();
     setTestPluginEnabledState(Ci.nsIPluginTag.STATE_ENABLED, "Test Plug-in");
@@ -24,23 +24,23 @@ add_task(function* () {
 
 
 
-add_task(function* () {
+add_task(async function() {
   gBrowser.selectedTab = gBrowser.addTab();
 
   
   let notificationPromise = waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);
-  yield promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small.html");
-  yield promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-  yield notificationPromise;
+  await promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small.html");
+  await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
+  await notificationPromise;
 
   
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     let plugin = content.document.getElementById("test");
     plugin.remove();
   });
 
-  yield promiseTabLoadEvent(gBrowser.selectedTab, "about:mozilla");
+  await promiseTabLoadEvent(gBrowser.selectedTab, "about:mozilla");
 
   
   let notificationBox = gBrowser.getNotificationBox(gBrowser.selectedBrowser);
@@ -53,24 +53,24 @@ add_task(function* () {
 
 
 
-add_task(function* () {
+add_task(async function() {
   
   let notificationPromise = waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);
-  yield promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small.html");
-  yield promiseUpdatePluginBindings(gBrowser.selectedBrowser);
-  yield notificationPromise;
+  await promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small.html");
+  await promiseUpdatePluginBindings(gBrowser.selectedBrowser);
+  await notificationPromise;
 
   
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     let plugin = content.document.getElementById("test");
     plugin.remove();
   });
 });
 
-add_task(function* () {
-  yield promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small_2.html");
-  let notification = yield waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);
+add_task(async function() {
+  await promiseTabLoadEvent(gBrowser.selectedTab, gHttpTestRoot + "plugin_small_2.html");
+  let notification = await waitForNotificationBar("plugin-hidden", gBrowser.selectedBrowser);
   ok(notification, "There should be a notification shown for the new page.");
   
   

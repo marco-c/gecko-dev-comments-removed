@@ -95,7 +95,7 @@ const PINNED_STATE = {
 
 
 
-function* runScenarios(scenarios) {
+async function runScenarios(scenarios) {
   for (let [scenarioIndex, scenario] of scenarios.entries()) {
     info("Running scenario " + scenarioIndex);
     Assert.ok(scenario.initialSelectedTab > 0,
@@ -103,7 +103,7 @@ function* runScenarios(scenarios) {
 
     
     
-    let win = yield BrowserTestUtils.openNewBrowserWindow();
+    let win = await BrowserTestUtils.openNewBrowserWindow();
     let tabbrowser = win.gBrowser;
     Assert.ok(tabbrowser.selectedBrowser.isRemoteBrowser,
               "The initial browser should be remote.");
@@ -114,7 +114,7 @@ function* runScenarios(scenarios) {
         
         
         info("Opening a new tab");
-        tab = yield BrowserTestUtils.openNewForegroundTab(tabbrowser)
+        tab = await BrowserTestUtils.openNewForegroundTab(tabbrowser)
       } else {
         info("Using the selected tab");
         tab = tabbrowser.selectedTab;
@@ -127,7 +127,7 @@ function* runScenarios(scenarios) {
     
     let tabToSelect = tabbrowser.tabs[scenario.initialSelectedTab - 1];
     if (tabbrowser.selectedTab != tabToSelect) {
-      yield BrowserTestUtils.switchTab(tabbrowser, tabToSelect);
+      await BrowserTestUtils.switchTab(tabbrowser, tabToSelect);
     }
 
     
@@ -145,7 +145,7 @@ function* runScenarios(scenarios) {
                    `for the tab at index ${i}`);
     }
 
-    yield BrowserTestUtils.closeWindow(win);
+    await BrowserTestUtils.closeWindow(win);
   }
 }
 
@@ -154,13 +154,13 @@ function* runScenarios(scenarios) {
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   
   requestLongerTimeout(5);
 
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     "set": [["browser.sessionstore.restore_on_demand", true]],
   });
 
@@ -246,5 +246,5 @@ add_task(function*() {
     },
   ];
 
-  yield* runScenarios(TEST_SCENARIOS);
+  await runScenarios(TEST_SCENARIOS);
 });

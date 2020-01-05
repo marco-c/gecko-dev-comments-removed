@@ -27,7 +27,7 @@ async function closeWindow(win) {
   await new Promise(resolve => setTimeout(resolve, 20));
 }
 
-add_task(function* test_undoCloseById() {
+add_task(async function test_undoCloseById() {
   
   forgetClosedWindows();
   while (SessionStore.getClosedTabCount(window)) {
@@ -35,27 +35,27 @@ add_task(function* test_undoCloseById() {
   }
 
   
-  let win = yield openWindow("about:robots");
+  let win = await openWindow("about:robots");
 
   
-  yield openAndCloseTab(win, "about:mozilla");
+  await openAndCloseTab(win, "about:mozilla");
   is(SessionStore.lastClosedObjectType, "tab", "The last closed object is a tab");
 
   
   let initialClosedId = SessionStore.getClosedTabData(win, false)[0].closedId;
 
   
-  let win2 = yield openWindow("about:mozilla");
-  yield closeWindow(win2);  
+  let win2 = await openWindow("about:mozilla");
+  await closeWindow(win2);  
   is(SessionStore.lastClosedObjectType, "window", "The last closed object is a window");
 
   
-  yield openAndCloseTab(win, "about:robots");  
+  await openAndCloseTab(win, "about:robots");  
   is(SessionStore.lastClosedObjectType, "tab", "The last closed object is a tab");
 
   
   let tab = SessionStore.undoCloseById(initialClosedId + 2);
-  yield promiseBrowserLoaded(tab.linkedBrowser);
+  await promiseBrowserLoaded(tab.linkedBrowser);
   is(tab.linkedBrowser.currentURI.spec, "about:robots", "The expected tab was re-opened");
 
   let notTab = SessionStore.undoCloseById(initialClosedId + 2);
@@ -66,30 +66,30 @@ add_task(function* test_undoCloseById() {
 
   
   let tab2 = SessionStore.undoCloseById(initialClosedId);
-  yield promiseBrowserLoaded(tab2.linkedBrowser);
+  await promiseBrowserLoaded(tab2.linkedBrowser);
   is(tab2.linkedBrowser.currentURI.spec, "about:mozilla", "The expected tab was re-opened");
 
   
-  yield promiseRemoveTab(tab); 
+  await promiseRemoveTab(tab); 
   is(SessionStore.lastClosedObjectType, "tab", "The last closed object is a tab");
-  yield promiseRemoveTab(tab2); 
+  await promiseRemoveTab(tab2); 
   is(SessionStore.lastClosedObjectType, "tab", "The last closed object is a tab");
 
   
-  let win3 = yield openWindow("about:mozilla");
+  let win3 = await openWindow("about:mozilla");
 
   
-  yield closeWindow(win); 
+  await closeWindow(win); 
   is(SessionStore.lastClosedObjectType, "window", "The last closed object is a window");
-  yield closeWindow(win3); 
+  await closeWindow(win3); 
   is(SessionStore.lastClosedObjectType, "window", "The last closed object is a window");
 
   
   win = SessionStore.undoCloseById(initialClosedId + 6);
-  yield BrowserTestUtils.waitForEvent(win, "load");
+  await BrowserTestUtils.waitForEvent(win, "load");
 
   
-  yield BrowserTestUtils.waitForEvent(win.gBrowser.tabContainer,
+  await BrowserTestUtils.waitForEvent(win.gBrowser.tabContainer,
                                       "SSTabRestored");
 
   is(win.gBrowser.selectedBrowser.currentURI.spec, "about:mozilla", "The expected window was re-opened");
@@ -98,21 +98,21 @@ add_task(function* test_undoCloseById() {
   is(notWin, undefined, "Re-opened window cannot be unClosed again by closedId");
 
   
-  yield closeWindow(win);
+  await closeWindow(win);
   is(SessionStore.lastClosedObjectType, "window", "The last closed object is a window");
 
   
   win = SessionStore.undoCloseById(initialClosedId + 5);
 
-  yield BrowserTestUtils.waitForEvent(win, "load");
+  await BrowserTestUtils.waitForEvent(win, "load");
 
   
-  yield BrowserTestUtils.waitForEvent(win.gBrowser.tabContainer,
+  await BrowserTestUtils.waitForEvent(win.gBrowser.tabContainer,
                                       "SSTabRestored");
 
   is(win.gBrowser.selectedBrowser.currentURI.spec, "about:robots", "The expected window was re-opened");
 
   
-  yield closeWindow(win);
+  await closeWindow(win);
   is(SessionStore.lastClosedObjectType, "window", "The last closed object is a window");
 });

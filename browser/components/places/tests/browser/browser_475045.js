@@ -7,13 +7,13 @@ this._scriptLoader = Cc["@mozilla.org/moz/jssubscript-loader;1"].
                      getService(Ci.mozIJSSubScriptLoader);
 this._scriptLoader.loadSubScript("chrome://mochikit/content/tests/SimpleTest/EventUtils.js", EventUtils);
 
-add_task(function* test() {
+add_task(async function test() {
   
   let toolbar = document.getElementById("PersonalToolbar");
   ok(toolbar, "PersonalToolbar should not be null");
 
   if (toolbar.collapsed) {
-    yield promiseSetToolbarVisibility(toolbar, true);
+    await promiseSetToolbarVisibility(toolbar, true);
     registerCleanupFunction(function() {
       return promiseSetToolbarVisibility(toolbar, false);
     });

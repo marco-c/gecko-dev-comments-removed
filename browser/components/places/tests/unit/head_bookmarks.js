@@ -56,18 +56,18 @@ function checkItemHasAnnotation(guid, name) {
   });
 }
 
-var createCorruptDB = Task.async(function* () {
+var createCorruptDB = async function() {
   let dbPath = OS.Path.join(OS.Constants.Path.profileDir, "places.sqlite");
-  yield OS.File.remove(dbPath);
+  await OS.File.remove(dbPath);
 
   
-  let dir = yield OS.File.getCurrentDirectory();
+  let dir = await OS.File.getCurrentDirectory();
   let src = OS.Path.join(dir, "corruptDB.sqlite");
-  yield OS.File.copy(src, dbPath);
+  await OS.File.copy(src, dbPath);
 
   
-  Assert.ok((yield OS.File.exists(dbPath)), "should have a DB now");
-});
+  Assert.ok((await OS.File.exists(dbPath)), "should have a DB now");
+};
 
 
 
@@ -121,14 +121,14 @@ const NUMBER_OF_TRIES = 30;
 
 
 
-var waitForResolvedPromise = Task.async(function* (promiseFn, timeoutMsg, tryCount = NUMBER_OF_TRIES) {
+var waitForResolvedPromise = async function(promiseFn, timeoutMsg, tryCount = NUMBER_OF_TRIES) {
   let tries = 0;
   do {
     try {
-      let value = yield promiseFn();
+      let value = await promiseFn();
       return value;
     } catch (ex) {}
-    yield new Promise(resolve => do_timeout(SINGLE_TRY_TIMEOUT, resolve));
+    await new Promise(resolve => do_timeout(SINGLE_TRY_TIMEOUT, resolve));
   } while (++tries <= tryCount);
   throw new Error(timeoutMsg);
-});
+};

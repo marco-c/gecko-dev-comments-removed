@@ -67,7 +67,7 @@ var observer = {
 };
 PlacesUtils.bookmarks.addObserver(observer);
 
-add_task(function* test_add_visit() {
+add_task(async function test_add_visit() {
   let observerPromise = observer.setupCompletionPromise();
 
   
@@ -89,34 +89,34 @@ add_task(function* test_add_visit() {
   });
 
   
-  yield deferUpdatePlaces.promise;
-  yield observerPromise;
+  await deferUpdatePlaces.promise;
+  await observerPromise;
 
   
   do_check_eq(observer.observedVisitId, visitId);
 });
 
-add_task(function* test_add_icon() {
+add_task(async function test_add_icon() {
   let observerPromise = observer.setupCompletionPromise();
   PlacesUtils.favicons.setAndFetchFaviconForPage(NetUtil.newURI("http://book.ma.rk/"),
                                                  SMALLPNG_DATA_URI, true,
                                                  PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
                                                  null,
                                                  Services.scriptSecurityManager.getSystemPrincipal());
-  yield observerPromise;
+  await observerPromise;
 });
 
-add_task(function* test_remove_page() {
+add_task(async function test_remove_page() {
   let observerPromise = observer.setupCompletionPromise();
-  yield PlacesUtils.history.remove("http://book.ma.rk/");
-  yield observerPromise;
+  await PlacesUtils.history.remove("http://book.ma.rk/");
+  await observerPromise;
 });
 
 add_task(function cleanup() {
   PlacesUtils.bookmarks.removeObserver(observer, false);
 });
 
-add_task(function* shutdown() {
+add_task(async function shutdown() {
   
   
   
@@ -144,7 +144,7 @@ add_task(function* shutdown() {
   }, "places-will-close-connection");
   shutdownPlaces();
 
-  yield deferred.promise;
+  await deferred.promise;
 });
 
 function run_test() {

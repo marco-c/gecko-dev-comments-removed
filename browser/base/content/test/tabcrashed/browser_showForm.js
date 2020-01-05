@@ -11,20 +11,20 @@ requestLongerTimeout(2);
 
 
 
-add_task(function* test_show_form() {
+add_task(async function test_show_form() {
   return BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
-  }, function*(browser) {
+  }, async function(browser) {
     
     
     let pref = TabCrashHandler.prefs.root + "sendReport";
-    yield SpecialPowers.pushPrefEnv({
+    await SpecialPowers.pushPrefEnv({
       set: [[pref, true]]
     });
 
     
-    yield BrowserTestUtils.crashBrowser(browser);
+    await BrowserTestUtils.crashBrowser(browser);
 
     let doc = browser.contentDocument;
 

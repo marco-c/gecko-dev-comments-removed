@@ -9,7 +9,7 @@ requestLongerTimeout(2);
 
 
 
-add_task(function* test_formdata() {
+add_task(async function test_formdata() {
   const URL = "http://mochi.test:8888/browser/browser/components/" +
               "sessionstore/test/browser_formdata_sample.html";
 
@@ -18,21 +18,21 @@ add_task(function* test_formdata() {
 
   
   
-  function* createAndRemoveTab() {
+  async function createAndRemoveTab() {
     
     let tab = gBrowser.addTab(URL);
     let browser = tab.linkedBrowser;
-    yield promiseBrowserLoaded(browser);
+    await promiseBrowserLoaded(browser);
 
     
-    yield setInputValue(browser, {id: "txt", value: OUTER_VALUE});
-    yield setInputValue(browser, {id: "txt", value: INNER_VALUE, frame: 0});
+    await setInputValue(browser, {id: "txt", value: OUTER_VALUE});
+    await setInputValue(browser, {id: "txt", value: INNER_VALUE, frame: 0});
 
     
-    yield promiseRemoveTab(tab);
+    await promiseRemoveTab(tab);
   }
 
-  yield* createAndRemoveTab();
+  await createAndRemoveTab();
   let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   is(formdata.id.txt, OUTER_VALUE, "outer value is correct");
   is(formdata.children[0].id.txt, INNER_VALUE, "inner value is correct");
@@ -40,7 +40,7 @@ add_task(function* test_formdata() {
   
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 1);
 
-  yield* createAndRemoveTab();
+  await createAndRemoveTab();
   [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   is(formdata.id.txt, OUTER_VALUE, "outer value is correct");
   ok(!formdata.children, "inner value was *not* stored");
@@ -48,7 +48,7 @@ add_task(function* test_formdata() {
   
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 2);
 
-  yield* createAndRemoveTab();
+  await createAndRemoveTab();
   [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   ok(!formdata, "form data has *not* been stored");
 
@@ -61,14 +61,14 @@ add_task(function* test_formdata() {
 
 
 
-add_task(function* test_url_check() {
+add_task(async function test_url_check() {
   const URL = "data:text/html;charset=utf-8,<input%20id=input>";
   const VALUE = "value-" + Math.random();
 
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   function restoreStateWithURL(url) {
@@ -82,11 +82,11 @@ add_task(function* test_url_check() {
   }
 
   
-  is((yield restoreStateWithURL(URL)), VALUE, "form data restored");
+  is((await restoreStateWithURL(URL)), VALUE, "form data restored");
 
   
-  is((yield restoreStateWithURL(URL + "?")), "", "form data not restored");
-  is((yield restoreStateWithURL()), "", "form data not restored");
+  is((await restoreStateWithURL(URL + "?")), "", "form data not restored");
+  is((await restoreStateWithURL()), "", "form data not restored");
 
   
   gBrowser.removeTab(tab);
@@ -96,7 +96,7 @@ add_task(function* test_url_check() {
 
 
 
-add_task(function* test_nested() {
+add_task(async function test_nested() {
   const URL = "data:text/html;charset=utf-8," +
               "<iframe src='data:text/html;charset=utf-8," +
               "<input autofocus=true>'/>";
@@ -111,13 +111,13 @@ add_task(function* test_nested() {
   
   let tab = gBrowser.selectedTab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:sendKeyEvent", {key: "m", frame: 0});
+  await sendMessage(browser, "ss-test:sendKeyEvent", {key: "m", frame: 0});
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   is(JSON.stringify(formdata), JSON.stringify(FORM_DATA),
     "formdata for iframe stored correctly");
@@ -125,10 +125,10 @@ add_task(function* test_nested() {
   
   tab = ss.undoCloseTab(window, 0);
   browser = tab.linkedBrowser;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   ({formdata} = JSON.parse(ss.getTabState(tab)));
   is(JSON.stringify(formdata), JSON.stringify(FORM_DATA),
     "formdata for iframe restored correctly");
@@ -141,37 +141,37 @@ add_task(function* test_nested() {
 
 
 
-add_task(function* test_design_mode() {
+add_task(async function test_design_mode() {
   const URL = "data:text/html;charset=utf-8,<h1>mozilla</h1>" +
               "<script>document.designMode='on'</script>";
 
   
   let tab = gBrowser.selectedTab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:sendKeyEvent", {key: "m"});
+  await sendMessage(browser, "ss-test:sendKeyEvent", {key: "m"});
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   tab = ss.undoCloseTab(window, 0);
   browser = tab.linkedBrowser;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
   
-  let html = yield getInnerHTML(browser);
+  let html = await getInnerHTML(browser);
   let expected = "<h1>Mmozilla</h1><script>document.designMode='on'</script>";
   is(html, expected, "editable document has been restored correctly");
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   tab = ss.undoCloseTab(window, 0);
   browser = tab.linkedBrowser;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
   
-  html = yield getInnerHTML(browser);
+  html = await getInnerHTML(browser);
   expected = "<h1>Mmozilla</h1><script>document.designMode='on'</script>";
   is(html, expected, "editable document has been restored correctly");
 

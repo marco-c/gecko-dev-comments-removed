@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* testExecuteScript() {
+add_task(async function testExecuteScript() {
   let {ExtensionManagement} = Cu.import("resource://gre/modules/ExtensionManagement.jsm", {});
   let {MessageChannel} = Cu.import("resource://gre/modules/MessageChannel.jsm", {});
 
@@ -35,7 +35,7 @@ add_task(function* testExecuteScript() {
 
   const BASE = "http://mochi.test:8888/browser/browser/components/extensions/test/browser/";
   const URL = BASE + "file_iframe_document.html";
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, URL, true);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL, true);
 
   async function background() {
     try {
@@ -246,13 +246,13 @@ add_task(function* testExecuteScript() {
     },
   });
 
-  yield extension.startup();
+  await extension.startup();
 
-  yield extension.awaitFinish("executeScript");
+  await extension.awaitFinish("executeScript");
 
-  yield extension.unload();
+  await extension.unload();
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 
   
   

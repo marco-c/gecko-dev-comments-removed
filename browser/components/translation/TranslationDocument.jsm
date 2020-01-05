@@ -13,7 +13,6 @@ const SHOW_TEXT = Ci.nsIDOMNodeFilter.SHOW_TEXT;
 const TEXT_NODE = Ci.nsIDOMNode.TEXT_NODE;
 
 Cu.import("resource://services-common/utils.js");
-Cu.import("resource://gre/modules/Task.jsm");
 
 
 
@@ -209,7 +208,7 @@ this.TranslationDocument.prototype = {
 
 
   _swapDocumentContent(target) {
-    Task.spawn(function *() {
+    (async function() {
       
       
       const YIELD_INTERVAL = 100;
@@ -219,10 +218,10 @@ this.TranslationDocument.prototype = {
         root.swapText(target);
         if (count-- == 0) {
           count = YIELD_INTERVAL;
-          yield CommonUtils.laterTickResolvingPromise();
+          await CommonUtils.laterTickResolvingPromise();
         }
       }
-    }.bind(this));
+    }.bind(this))();
   }
 };
 

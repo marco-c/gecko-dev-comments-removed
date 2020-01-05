@@ -38,7 +38,7 @@ function waitForPingDeletion(pingId) {
   return new Promise((resolve, reject) => checkFn(resolve, reject));
 }
 
-add_task(function* setup() {
+add_task(async function setup() {
   
   do_get_profile(true);
 
@@ -49,7 +49,7 @@ add_task(function* setup() {
   PingServer.start();
 });
 
-add_task(function* test_pingSender() {
+add_task(async function test_pingSender() {
   
   const data = {
     type: "test-pingsender-type",
@@ -60,7 +60,7 @@ add_task(function* test_pingSender() {
       dummy: "stuff"
     }
   };
-  yield TelemetryStorage.savePing(data, true);
+  await TelemetryStorage.savePing(data, true);
 
   
   const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
@@ -89,15 +89,15 @@ add_task(function* test_pingSender() {
 
   
   
-  yield deferred404Hit.promise;
-  Assert.ok((yield OS.File.exists(pingPath)),
+  await deferred404Hit.promise;
+  Assert.ok((await OS.File.exists(pingPath)),
             "The pending ping must not be deleted if we fail to send using the PingSender");
 
   
   const url = "http://localhost:" + PingServer.port + "/submit/telemetry/";
   TelemetrySend.testRunPingSender(url, pingPath);
 
-  let req = yield PingServer.promiseNextRequest();
+  let req = await PingServer.promiseNextRequest();
   let ping = decodeRequestPayload(req);
 
   Assert.equal(req.getHeader("User-Agent"), "pingsender/1.0",
@@ -114,13 +114,13 @@ add_task(function* test_pingSender() {
                    "Should have received the correct payload.");
 
   
-  yield waitForPingDeletion(data.id);
+  await waitForPingDeletion(data.id);
 
   
   
-  yield new Promise(r => failingServer.stop(r));
+  await new Promise(r => failingServer.stop(r));
 });
 
-add_task(function* cleanup() {
-  yield PingServer.stop();
+add_task(async function cleanup() {
+  await PingServer.stop();
 });

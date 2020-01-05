@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* testWindowCreate() {
+add_task(async function testWindowCreate() {
   async function background() {
     let promiseTabAttached = () => {
       return new Promise(resolve => {
@@ -134,7 +134,7 @@ add_task(function* testWindowCreate() {
     background,
   });
 
-  yield extension.startup();
-  yield extension.awaitFinish("window-create");
-  yield extension.unload();
+  await extension.startup();
+  await extension.awaitFinish("window-create");
+  await extension.unload();
 });

@@ -18,8 +18,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "FormAutofill",
                                   "resource://gre/modules/FormAutofill.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 
 
@@ -60,13 +58,13 @@ FormHandler.prototype = {
   
 
 
-  handleRequestAutocomplete: Task.async(function* () {
+  async handleRequestAutocomplete() {
     
     
     
     let reason = "";
     try {
-      reason = yield this.promiseRequestAutocomplete();
+      reason = await this.promiseRequestAutocomplete();
     } catch (ex) {
       Cu.reportError(ex);
     }
@@ -77,9 +75,9 @@ FormHandler.prototype = {
                 : new this.window.AutocompleteErrorEvent("autocompleteerror",
                                                          { bubbles: true,
                                                            reason });
-    yield this.waitForTick();
+    await this.waitForTick();
     this.form.dispatchEvent(event);
-  }),
+  },
 
   
 
@@ -89,7 +87,7 @@ FormHandler.prototype = {
 
 
 
-  promiseRequestAutocomplete: Task.async(function* () {
+  async promiseRequestAutocomplete() {
     let data = this.collectFormFields();
     if (!data) {
       return "disabled";
@@ -125,7 +123,7 @@ FormHandler.prototype = {
     
     
     frameMM.sendAsyncMessage("FormAutofill:RequestAutocomplete", data);
-    let result = yield promiseRequestAutocompleteResult;
+    let result = await promiseRequestAutocompleteResult;
     if (result.canceled) {
       return "cancel";
     }
@@ -133,7 +131,7 @@ FormHandler.prototype = {
     this.autofillFormFields(result);
 
     return "success";
-  }),
+  },
 
   
 

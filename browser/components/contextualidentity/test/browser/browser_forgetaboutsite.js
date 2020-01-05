@@ -54,7 +54,7 @@ function loadImagePageHandler(metadata, response) {
   response.bodyOutputStream.write(body, body.length);
 }
 
-function* openTabInUserContext(uri, userContextId) {
+async function openTabInUserContext(uri, userContextId) {
   
   let tab = gBrowser.addTab(uri, {userContextId});
 
@@ -63,7 +63,7 @@ function* openTabInUserContext(uri, userContextId) {
   tab.ownerGlobal.focus();
 
   let browser = gBrowser.getBrowserForTab(tab);
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
   return {tab, browser};
 }
 
@@ -125,7 +125,7 @@ function OpenCacheEntry(key, where, flags, lci) {
 
 
 
-function* test_cookie_cleared() {
+async function test_cookie_cleared() {
   let tabs = [];
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -134,10 +134,10 @@ function* test_cookie_cleared() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    tabs[userContextId] = yield* openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
+    tabs[userContextId] = await openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
 
     
-    yield BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -150,7 +150,7 @@ function* test_cookie_cleared() {
   }
 
   
-  yield ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  await ForgetAboutSite.removeDataFromDomain(TEST_HOST);
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -198,14 +198,14 @@ function* test_cache_cleared() {
 }
 
 
-function* test_image_cache_cleared() {
+async function test_image_cache_cleared() {
   let tabs = [];
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    tabs[userContextId] = yield* openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
+    tabs[userContextId] = await openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
                                                       userContextId);
-    yield BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   let expectedHits = USER_CONTEXTS.length;
@@ -217,14 +217,14 @@ function* test_image_cache_cleared() {
   gHits = 0;
 
   
-  yield ForgetAboutSite.removeDataFromDomain("localhost:" + gHttpServer.identity.primaryPort + "/");
+  await ForgetAboutSite.removeDataFromDomain("localhost:" + gHttpServer.identity.primaryPort + "/");
 
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    tabs[userContextId] = yield* openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
+    tabs[userContextId] = await openTabInUserContext("http://localhost:" + gHttpServer.identity.primaryPort + "/loadImage.html",
                                                       userContextId);
-    yield BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   
@@ -232,17 +232,17 @@ function* test_image_cache_cleared() {
 }
 
 
-function* test_storage_cleared() {
+async function test_storage_cleared() {
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
     
     let value = USER_CONTEXTS[userContextId];
 
     
-    let tabInfo = yield* openTabInUserContext(TEST_URL + "file_set_storages.html?" + value, userContextId);
+    let tabInfo = await openTabInUserContext(TEST_URL + "file_set_storages.html?" + value, userContextId);
 
     
-    yield ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, function* (arg) {
+    await ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, async function(arg) {
       
       Assert.equal(content.localStorage.getItem("userContext"), arg.userContext, "Check the local storage value");
 
@@ -252,7 +252,7 @@ function* test_storage_cleared() {
       
       let request = content.indexedDB.open("idb", 1);
 
-      let db = yield new Promise(done => {
+      let db = await new Promise(done => {
         request.onsuccess = event => {
           done(event.target.result);
         };
@@ -262,7 +262,7 @@ function* test_storage_cleared() {
       let store = transaction.objectStore("obj");
       let storeRequest = store.get(1);
 
-      yield new Promise(done => {
+      await new Promise(done => {
         storeRequest.onsuccess = event => {
           let res = storeRequest.result;
           Assert.equal(res.userContext, arg.userContext, "Check the indexedDB value");
@@ -272,20 +272,20 @@ function* test_storage_cleared() {
     });
 
     
-    yield BrowserTestUtils.removeTab(tabInfo.tab);
+    await BrowserTestUtils.removeTab(tabInfo.tab);
   }
 
   
-  yield ForgetAboutSite.removeDataFromDomain(TEST_HOST);
+  await ForgetAboutSite.removeDataFromDomain(TEST_HOST);
 
   
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    let tabInfo = yield* openTabInUserContext(TEST_URL + "file_set_storages.html", userContextId);
+    let tabInfo = await openTabInUserContext(TEST_URL + "file_set_storages.html", userContextId);
 
     
-    yield ContentTask.spawn(tabInfo.browser, null, function* () {
+    await ContentTask.spawn(tabInfo.browser, null, async function() {
       
       Assert.ok(!content.localStorage.getItem("userContext"), "The local storage has been cleared");
 
@@ -295,7 +295,7 @@ function* test_storage_cleared() {
       
       let request = content.indexedDB.open("idb", 1);
 
-      let db = yield new Promise(done => {
+      let db = await new Promise(done => {
         request.onsuccess = event => {
           done(event.target.result);
         };
@@ -309,13 +309,13 @@ function* test_storage_cleared() {
     });
 
     
-    yield BrowserTestUtils.removeTab(tabInfo.tab);
+    await BrowserTestUtils.removeTab(tabInfo.tab);
   }
 }
 
-add_task(function* setup() {
+add_task(async function setup() {
   
-  yield SpecialPowers.pushPrefEnv({"set": [
+  await SpecialPowers.pushPrefEnv({"set": [
     ["privacy.userContext.enabled", true]
   ]});
 
@@ -335,7 +335,7 @@ let tests = [
   test_storage_cleared,
 ];
 
-add_task(function* test() {
+add_task(async function test() {
   for (let i = 0; i < tests.length; i++)
     add_task(tests[i]);
 });

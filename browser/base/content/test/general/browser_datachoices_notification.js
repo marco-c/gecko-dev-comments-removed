@@ -77,7 +77,7 @@ function triggerInfoBar(expectedTimeoutMs) {
   showInfobarCallback();
 }
 
-var checkInfobarButton = Task.async(function* (aNotification) {
+var checkInfobarButton = async function(aNotification) {
   
   let buttons = aNotification.getElementsByTagName("button");
   Assert.equal(buttons.length, 1, "There is 1 button in the data reporting notification.");
@@ -91,11 +91,11 @@ var checkInfobarButton = Task.async(function* (aNotification) {
   button.click();
 
   
-  yield paneLoadedPromise;
-  yield promiseNextTick();
-});
+  await paneLoadedPromise;
+  await promiseNextTick();
+};
 
-add_task(function* setup() {
+add_task(async function setup() {
   const bypassNotification = Preferences.get(PREF_BYPASS_NOTIFICATION, true);
   const currentPolicyVersion = Preferences.get(PREF_CURRENT_POLICY_VERSION, 1);
 
@@ -119,11 +119,11 @@ function clearAcceptedPolicy() {
   Preferences.reset(PREF_ACCEPTED_POLICY_DATE);
 }
 
-add_task(function* test_single_window() {
+add_task(async function test_single_window() {
   clearAcceptedPolicy();
 
   
-  yield closeAllNotifications();
+  await closeAllNotifications();
 
   let notificationBox = document.getElementById("global-notificationbox");
 
@@ -141,15 +141,15 @@ add_task(function* test_single_window() {
 
   
   triggerInfoBar(10 * 1000);
-  yield alertShownPromise;
+  await alertShownPromise;
 
   Assert.equal(notificationBox.allNotifications.length, 1, "Notification Displayed.");
   Assert.ok(TelemetryReportingPolicy.canUpload(), "User should be allowed to upload now.");
 
-  yield promiseNextTick();
+  await promiseNextTick();
   let promiseClosed = promiseWaitForNotificationClose(notificationBox.currentNotification);
-  yield checkInfobarButton(notificationBox.currentNotification);
-  yield promiseClosed;
+  await checkInfobarButton(notificationBox.currentNotification);
+  await promiseClosed;
 
   Assert.equal(notificationBox.allNotifications.length, 0, "No notifications remain.");
 
@@ -163,15 +163,15 @@ add_task(function* test_single_window() {
                  "Date pref set.");
 });
 
-add_task(function* test_multiple_windows() {
+add_task(async function test_multiple_windows() {
   clearAcceptedPolicy();
 
   
-  yield closeAllNotifications();
+  await closeAllNotifications();
 
   
   
-  let otherWindow = yield BrowserTestUtils.openNewBrowserWindow();
+  let otherWindow = await BrowserTestUtils.openNewBrowserWindow();
 
   
   let notificationBoxes = [
@@ -196,7 +196,7 @@ add_task(function* test_multiple_windows() {
 
   
   triggerInfoBar(10 * 1000);
-  yield Promise.all(showAlertPromises);
+  await Promise.all(showAlertPromises);
 
   
   let closeAlertPromises = [
@@ -204,10 +204,10 @@ add_task(function* test_multiple_windows() {
     promiseWaitForNotificationClose(notificationBoxes[1].currentNotification)
   ];
   notificationBoxes[0].currentNotification.close();
-  yield Promise.all(closeAlertPromises);
+  await Promise.all(closeAlertPromises);
 
   
-  yield BrowserTestUtils.closeWindow(otherWindow);
+  await BrowserTestUtils.closeWindow(otherWindow);
 
   
   Assert.ok(TelemetryReportingPolicy.canUpload(), "User should be allowed to upload now.");

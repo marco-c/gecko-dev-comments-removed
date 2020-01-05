@@ -5,7 +5,7 @@
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   
   let windowsToClose = [];
   let windowsToReset = [];
@@ -55,10 +55,10 @@ add_task(function* test() {
     });
   }
 
-  yield testOnWindow({}).then(win => promiseTestReady(true, win));
-  yield testOnWindow({private: true}).then(win => promiseTestReady(false, win));
+  await testOnWindow({}).then(win => promiseTestReady(true, win));
+  await testOnWindow({private: true}).then(win => promiseTestReady(false, win));
 
   
   windowsToReset.forEach((win) => win.FullZoom.reset());
-  yield Promise.all(windowsToClose.map(win => BrowserTestUtils.closeWindow(win)));
+  await Promise.all(windowsToClose.map(win => BrowserTestUtils.closeWindow(win)));
 });

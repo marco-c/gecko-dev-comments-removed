@@ -20,7 +20,7 @@ function run_test() {
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   do_get_profile();
@@ -28,10 +28,10 @@ add_task(function*() {
   let dir = OS.Constants.Path.profileDir;
 
   
-  do_check_true((yield OS.File.exists(dir)));
+  do_check_true((await OS.File.exists(dir)));
 
   
-  let availableBytes = yield OS.File.getAvailableFreeSpace(dir);
+  let availableBytes = await OS.File.getAvailableFreeSpace(dir);
 
   do_check_true(!!availableBytes);
   do_check_true(availableBytes > 0);

@@ -47,7 +47,7 @@ do_register_cleanup(function() {
   Assert.ok(!iniFile.exists());
 });
 
-add_task(function* () {
+add_task(async function() {
   
   Services.prefs.setIntPref(PREF_SMART_BOOKMARKS_VERSION, -1);
 
@@ -61,40 +61,40 @@ add_task(function* () {
   glue.observe(null, TOPIC_BROWSERGLUE_TEST, TOPICDATA_DISTRIBUTION_CUSTOMIZATION);
 
   
-  yield promiseTopicObserved(TOPIC_CUSTOMIZATION_COMPLETE);
+  await promiseTopicObserved(TOPIC_CUSTOMIZATION_COMPLETE);
 
   
-  let menuItem = yield PlacesUtils.bookmarks.fetch({
+  let menuItem = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.menuGuid,
     index: 0
   });
   Assert.equal(menuItem.title, "Menu Link Before");
 
-  menuItem = yield PlacesUtils.bookmarks.fetch({
+  menuItem = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.menuGuid,
     index: 1 + DEFAULT_BOOKMARKS_ON_MENU
   });
   Assert.equal(menuItem.title, "Menu Link After");
 
   
-  yield Assert.rejects(waitForResolvedPromise(() => {
+  await Assert.rejects(waitForResolvedPromise(() => {
     return PlacesUtils.promiseFaviconData(menuItem.url.href);
   }, "Favicon not found", 10), /Favicon\snot\sfound/, "Favicon not found");
 
-  let keywordItem = yield PlacesUtils.keywords.fetch({
+  let keywordItem = await PlacesUtils.keywords.fetch({
     url: menuItem.url.href
   });
   Assert.strictEqual(keywordItem, null);
 
   
-  let toolbarItem = yield PlacesUtils.bookmarks.fetch({
+  let toolbarItem = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: 0
   });
   Assert.equal(toolbarItem.title, "Toolbar Link Before");
 
   
-  let faviconItem = yield waitForResolvedPromise(() => {
+  let faviconItem = await waitForResolvedPromise(() => {
     return PlacesUtils.promiseFaviconData(toolbarItem.url.href);
   }, "Favicon not found", 10);
   Assert.equal(faviconItem.uri.spec, "https://example.org/favicon.png");
@@ -105,13 +105,13 @@ add_task(function* () {
       base64EncodeString(String.fromCharCode.apply(String, faviconItem.data));
   Assert.equal(base64Icon, SMALLPNG_DATA_URI.spec);
 
-  keywordItem = yield PlacesUtils.keywords.fetch({
+  keywordItem = await PlacesUtils.keywords.fetch({
     url: toolbarItem.url.href
   });
   Assert.notStrictEqual(keywordItem, null);
   Assert.equal(keywordItem.keyword, "e:t:b");
 
-  toolbarItem = yield PlacesUtils.bookmarks.fetch({
+  toolbarItem = await PlacesUtils.bookmarks.fetch({
     parentGuid: PlacesUtils.bookmarks.toolbarGuid,
     index: 1 + DEFAULT_BOOKMARKS_ON_TOOLBAR
   });

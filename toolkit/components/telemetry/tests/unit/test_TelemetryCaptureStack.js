@@ -87,7 +87,7 @@ add_task({
 
 add_task({
   skip_if: () => !ENABLE_TESTS
-}, function* test_CaptureStacksIncreasesNumberOfCapturedStacks() {
+}, function test_CaptureStacksIncreasesNumberOfCapturedStacks() {
   
   let key = TEST_STACK_KEYS[0] + "-UNIQUE-KEY-1";
 
@@ -115,7 +115,7 @@ add_task({
 
  add_task({
    skip_if: () => !ENABLE_TESTS
- }, function* test_CaptureStacksGroupsDuplicateStacks() {
+ }, function test_CaptureStacksGroupsDuplicateStacks() {
   
   let stacks = captureStacks(TEST_STACK_KEYS[0], false);
   let original = {
@@ -146,7 +146,7 @@ add_task({
 
 add_task({
   skip_if: () => !ENABLE_TESTS
-}, function* test_CaptureStacksSeparatesInformationByKeys() {
+}, function test_CaptureStacksSeparatesInformationByKeys() {
   
   let stacks = captureStacks(TEST_STACK_KEYS[0], false);
   let original = {
@@ -173,7 +173,7 @@ add_task({
 
 add_task({
   skip_if: () => !ENABLE_TESTS
-}, function* test_CaptureStacksDoesNotAllowBadKey() {
+}, function test_CaptureStacksDoesNotAllowBadKey() {
   for (let badKey of [null, "KEY-!@\"#$%^&*()_"]) {
     let stacks = captureStacks(badKey);
     let captureData = stacks.captures.find(capture => capture[0] === badKey)

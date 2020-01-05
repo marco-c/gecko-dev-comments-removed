@@ -1,13 +1,13 @@
 
 
 
-add_task(function* () {
-  yield setLinks("0,1,2,3,4,5,6,7,8");
+add_task(async function() {
+  await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  yield* addNewTabPageTab();
+  await addNewTabPageTab();
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     let grid = content.gGrid;
     let cell = grid.cells[0];
     let site = cell.site.node;

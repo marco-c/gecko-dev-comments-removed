@@ -10,26 +10,26 @@
 
 var gNow = getExpirablePRTime(60);
 
-add_task(function* test_expire_orphans() {
+add_task(async function test_expire_orphans() {
   
-  yield PlacesTestUtils.addVisits({
+  await PlacesTestUtils.addVisits({
     uri: uri("http://page1.mozilla.org/"),
     visitDate: gNow++
   });
-  yield PlacesTestUtils.addVisits({
+  await PlacesTestUtils.addVisits({
     uri: uri("http://page2.mozilla.org/"),
     visitDate: gNow++
   });
   
-  let bm = yield PlacesUtils.bookmarks.insert({
+  let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://page3.mozilla.org/",
     title: ""
   });
-  yield PlacesUtils.bookmarks.remove(bm);
+  await PlacesUtils.bookmarks.remove(bm);
 
   
-  yield promiseForceExpirationStep(0);
+  await promiseForceExpirationStep(0);
 
   
   do_check_eq(visits_in_database("http://page1.mozilla.org/"), 1);
@@ -37,29 +37,29 @@ add_task(function* test_expire_orphans() {
   do_check_false(page_in_database("http://page3.mozilla.org/"));
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
-add_task(function* test_expire_orphans_optionalarg() {
+add_task(async function test_expire_orphans_optionalarg() {
   
-  yield PlacesTestUtils.addVisits({
+  await PlacesTestUtils.addVisits({
     uri: uri("http://page1.mozilla.org/"),
     visitDate: gNow++
   });
-  yield PlacesTestUtils.addVisits({
+  await PlacesTestUtils.addVisits({
     uri: uri("http://page2.mozilla.org/"),
     visitDate: gNow++
   });
   
-  let bm = yield PlacesUtils.bookmarks.insert({
+  let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     url: "http://page3.mozilla.org/",
     title: ""
   });
-  yield PlacesUtils.bookmarks.remove(bm);
+  await PlacesUtils.bookmarks.remove(bm);
 
   
-  yield promiseForceExpirationStep();
+  await promiseForceExpirationStep();
 
   
   do_check_eq(visits_in_database("http://page1.mozilla.org/"), 1);
@@ -67,11 +67,11 @@ add_task(function* test_expire_orphans_optionalarg() {
   do_check_false(page_in_database("http://page3.mozilla.org/"));
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
-add_task(function* test_expire_limited() {
-  yield PlacesTestUtils.addVisits([
+add_task(async function test_expire_limited() {
+  await PlacesTestUtils.addVisits([
     { 
       uri: "http://old.mozilla.org/",
       visitDate: gNow++
@@ -83,7 +83,7 @@ add_task(function* test_expire_limited() {
   ]);
 
   
-  yield promiseForceExpirationStep(1);
+  await promiseForceExpirationStep(1);
 
   
   do_check_eq(visits_in_database("http://new.mozilla.org/"), 1);
@@ -91,12 +91,12 @@ add_task(function* test_expire_limited() {
   do_check_false(page_in_database("http://old.mozilla.org/"));
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
-add_task(function* test_expire_limited_longurl() {
+add_task(async function test_expire_limited_longurl() {
   let longurl = "http://long.mozilla.org/" + "a".repeat(232);
-  yield PlacesTestUtils.addVisits([
+  await PlacesTestUtils.addVisits([
     { 
       uri: "http://old.mozilla.org/",
       visitDate: gNow++
@@ -111,7 +111,7 @@ add_task(function* test_expire_limited_longurl() {
     }
   ]);
 
-  yield promiseForceExpirationStep(1);
+  await promiseForceExpirationStep(1);
 
   
   do_check_eq(visits_in_database(longurl), 1);
@@ -119,11 +119,11 @@ add_task(function* test_expire_limited_longurl() {
   do_check_false(page_in_database("http://old.mozilla.org/"));
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
-add_task(function* test_expire_limited_exoticurl() {
-  yield PlacesTestUtils.addVisits([
+add_task(async function test_expire_limited_exoticurl() {
+  await PlacesTestUtils.addVisits([
     { 
       uri: "http://old.mozilla.org/",
       visitDate: gNow++
@@ -140,7 +140,7 @@ add_task(function* test_expire_limited_exoticurl() {
     }
   ]);
 
-  yield promiseForceExpirationStep(1);
+  await promiseForceExpirationStep(1);
 
   
   do_check_eq(visits_in_database("http://nonexpirable-download.mozilla.org/"), 1);
@@ -152,12 +152,12 @@ add_task(function* test_expire_limited_exoticurl() {
   do_check_false(page_in_database("http://old.mozilla.org/"));
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
-add_task(function* test_expire_unlimited() {
+add_task(async function test_expire_unlimited() {
   let longurl = "http://long.mozilla.org/" + "a".repeat(232);
-  yield PlacesTestUtils.addVisits([
+  await PlacesTestUtils.addVisits([
     {
       uri: "http://old.mozilla.org/",
       visitDate: gNow++
@@ -193,7 +193,7 @@ add_task(function* test_expire_unlimited() {
     }
   ]);
 
-  yield promiseForceExpirationStep(-1);
+  await promiseForceExpirationStep(-1);
 
   
   do_check_eq(visits_in_database("http://nonexpirable.mozilla.org/"), 1);
@@ -205,7 +205,7 @@ add_task(function* test_expire_unlimited() {
   do_check_false(page_in_database("http://new.mozilla.org/"));
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
 function run_test() {

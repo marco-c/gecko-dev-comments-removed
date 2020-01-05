@@ -13,7 +13,7 @@ const IFRAME_PAGE_PATH = "/browser/toolkit/components/passwordmgr/test/browser/f
 
 
 
-add_task(function* test_initialize() {
+add_task(async function test_initialize() {
   Services.prefs.setBoolPref("signon.autofillForms", false);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("signon.autofillForms");
@@ -27,12 +27,12 @@ add_task(function* test_initialize() {
 
 
 
-add_task(function* test_context_menu_iframe_fill() {
+add_task(async function test_context_menu_iframe_fill() {
   Services.prefs.setBoolPref("signon.schemeUpgrades", true);
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + IFRAME_PAGE_PATH
-  }, function* (browser) {
+  }, async function(browser) {
     function getPasswordInput() {
       let frame = content.document.getElementById("test-iframe");
       return frame.contentDocument.getElementById("form-basic-password");
@@ -44,13 +44,13 @@ add_task(function* test_context_menu_iframe_fill() {
     
     
     BrowserTestUtils.synthesizeMouseAtCenter(getPasswordInput, eventDetails, browser);
-    yield contextMenuShownPromise;
+    await contextMenuShownPromise;
 
     
     let popupHeader = document.getElementById("fill-login");
     let popupShownPromise = BrowserTestUtils.waitForEvent(popupHeader, "popupshown");
     EventUtils.synthesizeMouseAtCenter(popupHeader, {});
-    yield popupShownPromise;
+    await popupShownPromise;
 
     let popupMenu = document.getElementById("fill-login-popup");
 
@@ -62,26 +62,26 @@ add_task(function* test_context_menu_iframe_fill() {
         return input.value;
       });
     }
-    let usernameOriginalValue = yield promiseFrameInputValue("form-basic-username");
+    let usernameOriginalValue = await promiseFrameInputValue("form-basic-username");
 
     
-    let passwordChangedPromise = ContentTask.spawn(browser, null, function* () {
+    let passwordChangedPromise = ContentTask.spawn(browser, null, async function() {
       let frame = content.document.getElementById("test-iframe");
       let passwordInput = frame.contentDocument.getElementById("form-basic-password");
-      yield ContentTaskUtils.waitForEvent(passwordInput, "input");
+      await ContentTaskUtils.waitForEvent(passwordInput, "input");
     });
 
     let firstLoginItem = popupMenu.getElementsByClassName("context-login-item")[0];
     firstLoginItem.doCommand();
 
-    yield passwordChangedPromise;
+    await passwordChangedPromise;
 
     
     let login = getLoginFromUsername(firstLoginItem.label);
-    let passwordValue = yield promiseFrameInputValue("form-basic-password");
+    let passwordValue = await promiseFrameInputValue("form-basic-password");
     is(login.password, passwordValue, "Password filled and correct.");
 
-    let usernameNewValue = yield promiseFrameInputValue("form-basic-username");
+    let usernameNewValue = await promiseFrameInputValue("form-basic-username");
     is(usernameOriginalValue,
        usernameNewValue,
        "Username value was not changed.");

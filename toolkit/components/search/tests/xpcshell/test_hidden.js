@@ -24,9 +24,9 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* async_init() {
+add_task(async function async_init() {
   let commitPromise = promiseAfterCache()
-  yield asyncInit();
+  await asyncInit();
 
   let engines = Services.search.getEngines();
   do_check_eq(engines.length, 1);
@@ -41,13 +41,13 @@ add_task(function* async_init() {
 
   
   
-  yield commitPromise;
+  await commitPromise;
 });
 
-add_task(function* sync_init() {
+add_task(async function sync_init() {
   let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
-  yield unInitPromise;
+  await unInitPromise;
   do_check_false(Services.search.isInitialized);
 
   
@@ -65,12 +65,12 @@ add_task(function* sync_init() {
   engine = Services.search.getEngineByName("hidden");
   do_check_neq(engine, null);
 
-  yield reInitPromise;
+  await reInitPromise;
 });
 
-add_task(function* invalid_engine() {
+add_task(async function invalid_engine() {
   
-  yield forceExpiration();
+  await forceExpiration();
 
   
   
@@ -78,7 +78,7 @@ add_task(function* invalid_engine() {
   let url = "data:application/json,{\"interval\": 31536000, \"settings\": {\"searchDefault\": \"hidden\", \"visibleDefaultEngines\": [\"hidden\", \"bogus\"]}}";
   Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF).setCharPref(kUrlPref, url);
 
-  yield asyncReInit();
+  await asyncReInit();
 
   let engines = Services.search.getEngines();
   do_check_eq(engines.length, 1);

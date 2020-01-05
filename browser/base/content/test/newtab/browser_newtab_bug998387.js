@@ -1,15 +1,15 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   
-  yield pushPrefs(["browser.newtabpage.rows", 1]);
-  yield setLinks("0");
-  yield* addNewTabPageTab();
+  await pushPrefs(["browser.newtabpage.rows", 1]);
+  await setLinks("0");
+  await addNewTabPageTab();
   
-  yield* addNewTabPageTab();
+  await addNewTabPageTab();
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {index: 0}, function* (args) {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {index: 0}, async function(args) {
     let {site} = content.wrappedJSObject.gGrid.cells[args.index];
 
     let origOnClick = site.onClick;
@@ -28,12 +28,12 @@ add_task(function* () {
   });
 
   
-  yield BrowserTestUtils.synthesizeMouseAtCenter(".newtab-control-block",
+  await BrowserTestUtils.synthesizeMouseAtCenter(".newtab-control-block",
                                                  {button: 1}, gBrowser.selectedBrowser);
 
-  yield messagePromise;
+  await messagePromise;
   ok(true, "middle click triggered click listener");
 
   
-  yield* checkGrid("0");
+  await checkGrid("0");
 });

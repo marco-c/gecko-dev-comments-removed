@@ -142,13 +142,13 @@ function pingHandler(aRequest) {
   gSeenPings++;
 }
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   PingServer.start();
   PingServer.registerPingHandler(pingHandler);
   do_get_profile();
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   Services.prefs.setCharPref(TelemetryController.Constants.PREF_SERVER,
@@ -159,36 +159,36 @@ add_task(function* test_setup() {
 
 
 
-add_task(function* setupEnvironment() {
+add_task(async function setupEnvironment() {
   
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD, true);
 
-  yield TelemetryController.testSetup();
+  await TelemetryController.testSetup();
 
   let directory = TelemetryStorage.pingDirectoryPath;
-  yield File.makeDir(directory, { ignoreExisting: true, unixMode: OS.Constants.S_IRWXU });
+  await File.makeDir(directory, { ignoreExisting: true, unixMode: OS.Constants.S_IRWXU });
 
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
 });
 
 
 
 
-add_task(function* test_recent_pings_sent() {
+add_task(async function test_recent_pings_sent() {
   let pingTypes = [{ num: RECENT_PINGS }];
-  yield createSavedPings(pingTypes);
+  await createSavedPings(pingTypes);
 
-  yield TelemetryController.testReset();
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetryController.testReset();
+  await TelemetrySend.testWaitOnOutgoingPings();
   assertReceivedPings(RECENT_PINGS);
 
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
 });
 
 
 
 
-add_task(function* test_overdue_old_format() {
+add_task(async function test_overdue_old_format() {
   
   const PING_OLD_FORMAT = {
     slug: "1234567abcd",
@@ -234,38 +234,38 @@ add_task(function* test_overdue_old_format() {
   ];
 
   
-  yield TelemetryStorage.savePing(PING_OLD_FORMAT, true);
-  yield TelemetryStorage.savePing(PING_NO_INFO, true);
-  yield TelemetryStorage.savePing(PING_NO_PAYLOAD, true);
-  yield TelemetryStorage.savePingToFile(PING_NO_SLUG, PING_FILES_PATHS[3], true);
+  await TelemetryStorage.savePing(PING_OLD_FORMAT, true);
+  await TelemetryStorage.savePing(PING_NO_INFO, true);
+  await TelemetryStorage.savePing(PING_NO_PAYLOAD, true);
+  await TelemetryStorage.savePingToFile(PING_NO_SLUG, PING_FILES_PATHS[3], true);
 
   for (let f in PING_FILES_PATHS) {
-    yield File.setDates(PING_FILES_PATHS[f], null, Date.now() - OVERDUE_PING_FILE_AGE);
+    await File.setDates(PING_FILES_PATHS[f], null, Date.now() - OVERDUE_PING_FILE_AGE);
   }
 
   gSeenPings = 0;
-  yield TelemetryController.testReset();
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetryController.testReset();
+  await TelemetrySend.testWaitOnOutgoingPings();
   assertReceivedPings(OLD_FORMAT_PINGS);
 
   
   
-  yield OS.File.remove(PING_FILES_PATHS[3]);
+  await OS.File.remove(PING_FILES_PATHS[3]);
 
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
 });
 
-add_task(function* test_corrupted_pending_pings() {
+add_task(async function test_corrupted_pending_pings() {
   const TEST_TYPE = "test_corrupted";
 
   Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").clear();
   Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_PARSE").clear();
 
   
-  let pendingPingId = yield TelemetryController.addPendingPing(TEST_TYPE, {}, {});
+  let pendingPingId = await TelemetryController.addPendingPing(TEST_TYPE, {}, {});
 
   
-  yield TelemetryStorage.loadPendingPing(pendingPingId);
+  await TelemetryStorage.loadPendingPing(pendingPingId);
 
   let h = Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").snapshot();
   Assert.equal(h.sum, 0, "Telemetry must not report a pending ping load failure");
@@ -274,10 +274,10 @@ add_task(function* test_corrupted_pending_pings() {
 
   
   
-  yield OS.File.remove(getSavePathForPingId(pendingPingId));
+  await OS.File.remove(getSavePathForPingId(pendingPingId));
 
   
-  yield Assert.rejects(TelemetryStorage.loadPendingPing(pendingPingId),
+  await Assert.rejects(TelemetryStorage.loadPendingPing(pendingPingId),
                        "Telemetry must fail loading a ping which isn't there");
 
   h = Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").snapshot();
@@ -286,13 +286,13 @@ add_task(function* test_corrupted_pending_pings() {
   Assert.equal(h.sum, 0, "Telemetry must not report a pending ping parse failure");
 
   
-  pendingPingId = yield TelemetryController.addPendingPing(TEST_TYPE, {}, {});
+  pendingPingId = await TelemetryController.addPendingPing(TEST_TYPE, {}, {});
   
   const INVALID_JSON = "{ invalid,JSON { {1}";
-  yield OS.File.writeAtomic(getSavePathForPingId(pendingPingId), INVALID_JSON, { encoding: "utf-8" });
+  await OS.File.writeAtomic(getSavePathForPingId(pendingPingId), INVALID_JSON, { encoding: "utf-8" });
 
   
-  yield Assert.rejects(TelemetryStorage.loadPendingPing(pendingPingId),
+  await Assert.rejects(TelemetryStorage.loadPendingPing(pendingPingId),
                        "Telemetry must fail loading a corrupted ping");
 
   h = Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_READ").snapshot();
@@ -300,42 +300,42 @@ add_task(function* test_corrupted_pending_pings() {
   h = Telemetry.getHistogramById("TELEMETRY_PENDING_LOAD_FAILURE_PARSE").snapshot();
   Assert.equal(h.sum, 1, "Telemetry must report a pending ping parse failure");
 
-  let exists = yield OS.File.exists(getSavePathForPingId(pendingPingId));
+  let exists = await OS.File.exists(getSavePathForPingId(pendingPingId));
   Assert.ok(!exists, "The unparseable ping should have been removed");
 
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
 });
 
 
 
 
-add_task(function* test_overdue_pings_trigger_send() {
+add_task(async function test_overdue_pings_trigger_send() {
   let pingTypes = [
     { num: RECENT_PINGS },
     { num: OVERDUE_PINGS, age: OVERDUE_PING_FILE_AGE },
   ];
-  let pings = yield createSavedPings(pingTypes);
+  let pings = await createSavedPings(pingTypes);
   let recentPings = pings.slice(0, RECENT_PINGS);
   let overduePings = pings.slice(-OVERDUE_PINGS);
 
-  yield TelemetryController.testReset();
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetryController.testReset();
+  await TelemetrySend.testWaitOnOutgoingPings();
   assertReceivedPings(TOTAL_EXPECTED_PINGS);
 
-  yield assertNotSaved(recentPings);
-  yield assertNotSaved(overduePings);
+  await assertNotSaved(recentPings);
+  await assertNotSaved(overduePings);
 
   Assert.equal(TelemetrySend.overduePingsCount, overduePings.length,
                "Should have tracked the correct amount of overdue pings");
 
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
 });
 
 
 
 
 
-add_task(function* test_overdue_old_format() {
+add_task(async function test_overdue_old_format() {
   
   const PING_OLD_FORMAT = {
     slug: "1234567abcd",
@@ -358,8 +358,8 @@ add_task(function* test_overdue_old_format() {
     Path.join(Constants.Path.profileDir, PING_SAVE_FOLDER, PING_OLD_FORMAT.slug);
 
   
-  yield TelemetryStorage.savePing(PING_OLD_FORMAT, true);
-  yield File.setDates(filePath, null, Date.now() - OVERDUE_PING_FILE_AGE);
+  await TelemetryStorage.savePing(PING_OLD_FORMAT, true);
+  await File.setDates(filePath, null, Date.now() - OVERDUE_PING_FILE_AGE);
 
   let receivedPings = 0;
   
@@ -374,15 +374,15 @@ add_task(function* test_overdue_old_format() {
     receivedPings++;
   });
 
-  yield TelemetryController.testReset();
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetryController.testReset();
+  await TelemetrySend.testWaitOnOutgoingPings();
   Assert.equal(receivedPings, 1, "We must receive a ping in the old format.");
 
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
   PingServer.resetPingHandler();
 });
 
-add_task(function* test_pendingPingsQuota() {
+add_task(async function test_pendingPingsQuota() {
   const PING_TYPE = "foo";
 
   
@@ -390,13 +390,13 @@ add_task(function* test_pendingPingsQuota() {
 
   
   
-  yield TelemetryStorage.testClearPendingPings();
-  yield TelemetryController.testReset();
-  yield TelemetrySend.testWaitOnOutgoingPings();
-  yield TelemetryStorage.testPendingQuotaTaskPromise();
+  await TelemetryStorage.testClearPendingPings();
+  await TelemetryController.testReset();
+  await TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetryStorage.testPendingQuotaTaskPromise();
 
   
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryStorage.testClearPendingPings();
 
   let expectedPrunedPings = [];
   let expectedNotPrunedPings = [];
@@ -423,16 +423,16 @@ add_task(function* test_pendingPingsQuota() {
   
   for (let days = 1; days < 11; days++) {
     const date = fakeNow(2010, 1, days, 1, 1, 0);
-    const pingId = yield TelemetryController.addPendingPing(PING_TYPE, {}, {});
+    const pingId = await TelemetryController.addPendingPing(PING_TYPE, {}, {});
 
     
     const pingFilePath = getSavePathForPingId(pingId);
-    const pingSize = (yield OS.File.stat(pingFilePath)).size;
+    const pingSize = (await OS.File.stat(pingFilePath)).size;
     
     pendingPingsInfo.unshift({id: pingId, size: pingSize, timestamp: date.getTime() });
 
     
-    yield OS.File.setDates(pingFilePath, null, date.getTime());
+    await OS.File.setDates(pingFilePath, null, date.getTime());
 
     
     pingsSizeInBytes += pingSize;
@@ -444,8 +444,8 @@ add_task(function* test_pendingPingsQuota() {
   Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_EVICTED_OVER_QUOTA").clear();
   Telemetry.getHistogramById("TELEMETRY_PENDING_EVICTING_OVER_QUOTA_MS").clear();
 
-  yield TelemetryController.testReset();
-  yield TelemetryStorage.testPendingQuotaTaskPromise();
+  await TelemetryController.testReset();
+  await TelemetryStorage.testPendingQuotaTaskPromise();
 
   
   let h = Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_SIZE_MB").snapshot();
@@ -480,9 +480,9 @@ add_task(function* test_pendingPingsQuota() {
   expectedPrunedPings = pingsOutsideQuota;
 
   
-  yield TelemetryController.testReset();
-  yield TelemetryStorage.testPendingQuotaTaskPromise();
-  yield checkPendingPings();
+  await TelemetryController.testReset();
+  await TelemetryStorage.testPendingQuotaTaskPromise();
+  await checkPendingPings();
 
   h = Telemetry.getHistogramById("TELEMETRY_PENDING_PINGS_EVICTED_OVER_QUOTA").snapshot();
   Assert.equal(h.sum, pingsOutsideQuota.length,
@@ -491,9 +491,9 @@ add_task(function* test_pendingPingsQuota() {
   Assert.equal(h.sum, 17, "Pending pings quota was hit, a special size must be reported.");
 
   
-  yield TelemetryController.testReset();
-  yield TelemetryStorage.testPendingQuotaTaskPromise();
-  yield checkPendingPings();
+  await TelemetryController.testReset();
+  await TelemetryStorage.testPendingQuotaTaskPromise();
+  await checkPendingPings();
 
   const OVERSIZED_PING_ID = "9b21ec8f-f762-4d28-a2c1-44e1c4694f24";
   
@@ -504,16 +504,16 @@ add_task(function* test_pendingPingsQuota() {
     
     payload: generateRandomString(2 * 1024 * 1024),
   };
-  yield TelemetryStorage.savePendingPing(OVERSIZED_PING);
+  await TelemetryStorage.savePendingPing(OVERSIZED_PING);
 
   
   Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_PENDING").clear();
   Telemetry.getHistogramById("TELEMETRY_DISCARDED_PENDING_PINGS_SIZE_MB").clear();
 
   
-  yield Assert.rejects(TelemetryStorage.loadPendingPing(OVERSIZED_PING_ID),
+  await Assert.rejects(TelemetryStorage.loadPendingPing(OVERSIZED_PING_ID),
                        "The oversized ping should have been pruned.");
-  Assert.ok(!(yield OS.File.exists(getSavePathForPingId(OVERSIZED_PING_ID))),
+  Assert.ok(!(await OS.File.exists(getSavePathForPingId(OVERSIZED_PING_ID))),
             "The ping should not be on the disk anymore.");
 
   
@@ -523,13 +523,13 @@ add_task(function* test_pendingPingsQuota() {
   Assert.equal(h.counts[2], 1, "Telemetry must report a 2MB, oversized, ping.");
 
   
-  yield TelemetryStorage.savePendingPing(OVERSIZED_PING);
+  await TelemetryStorage.savePendingPing(OVERSIZED_PING);
   expectedPrunedPings.push(OVERSIZED_PING_ID);
 
   
-  yield TelemetryController.testReset();
-  yield TelemetryStorage.testPendingQuotaTaskPromise();
-  yield checkPendingPings();
+  await TelemetryController.testReset();
+  await TelemetryStorage.testPendingQuotaTaskPromise();
+  await checkPendingPings();
 
   
   h = Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_PENDING").snapshot();
@@ -540,6 +540,6 @@ add_task(function* test_pendingPingsQuota() {
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD, true);
 });
 
-add_task(function* teardown() {
-  yield PingServer.stop();
+add_task(async function teardown() {
+  await PingServer.stop();
 });

@@ -2,7 +2,7 @@
 
 
 
-let checkState = Task.async(function*(browser) {
+let checkState = async function(browser) {
   
   
   
@@ -66,17 +66,17 @@ let checkState = Task.async(function*(browser) {
 
   
   
-  yield ContentTask.spawn(browser, null, function() {
+  await ContentTask.spawn(browser, null, function() {
     content.testState = "foo";
   });
 
   
   browser.goBack();
 
-  yield deferred.promise;
-});
+  await deferred.promise;
+};
 
-add_task(function* test() {
+add_task(async function test() {
   
   
 
@@ -84,9 +84,9 @@ add_task(function* test() {
   
   
   let state;
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
+  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, async function(browser) {
     BrowserTestUtils.loadURI(browser, "http://example.com");
-    yield BrowserTestUtils.browserLoaded(browser);
+    await BrowserTestUtils.browserLoaded(browser);
 
     
     
@@ -99,22 +99,22 @@ add_task(function* test() {
       history.pushState({obj2: 2}, "title-obj2", "?page2");
       history.replaceState({obj3: /^a$/}, "title-obj3");
     }
-    yield ContentTask.spawn(browser, null, contentTest);
-    yield TabStateFlusher.flush(browser);
+    await ContentTask.spawn(browser, null, contentTest);
+    await TabStateFlusher.flush(browser);
 
     state = ss.getTabState(gBrowser.getTabForBrowser(browser));
   });
 
   
   
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
+  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, async function(browser) {
     let tab2 = gBrowser.getTabForBrowser(browser);
 
     let tabRestoredPromise = promiseTabRestored(tab2);
     ss.setTabState(tab2, state, true);
 
     
-    yield tabRestoredPromise;
-    yield checkState(browser);
+    await tabRestoredPromise;
+    await checkState(browser);
   });
 });

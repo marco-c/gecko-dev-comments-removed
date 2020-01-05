@@ -243,7 +243,7 @@ function chromeFileExists(aURI) {
   return available > 0;
 }
 
-add_task(function* checkAllTheCSS() {
+add_task(async function checkAllTheCSS() {
   
   
   Services.console.reset();
@@ -252,19 +252,19 @@ add_task(function* checkAllTheCSS() {
   
   
   
-  let uris = yield generateURIsFromDirTree(appDir, [".css", ".manifest"]);
+  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest"]);
 
   
   
   let testFile = getRootDirectory(gTestPath) + "dummy_page.html";
   let HiddenFrame = Cu.import("resource://gre/modules/HiddenFrame.jsm", {}).HiddenFrame;
   let hiddenFrame = new HiddenFrame();
-  let win = yield hiddenFrame.get();
+  let win = await hiddenFrame.get();
   let iframe = win.document.createElementNS("http://www.w3.org/1999/xhtml", "html:iframe");
   win.document.documentElement.appendChild(iframe);
   let iframeLoaded = BrowserTestUtils.waitForEvent(iframe, "load", true);
   iframe.contentWindow.location = testFile;
-  yield iframeLoaded;
+  await iframeLoaded;
   let doc = iframe.contentWindow.document;
 
   
@@ -279,7 +279,7 @@ add_task(function* checkAllTheCSS() {
     return true;
   });
   
-  yield Promise.all(manifestPromises);
+  await Promise.all(manifestPromises);
 
   
   
@@ -316,7 +316,7 @@ add_task(function* checkAllTheCSS() {
   }
 
   
-  yield Promise.all(allPromises);
+  await Promise.all(allPromises);
 
   
   for (let [image, references] of imageURIsToReferencesMap) {

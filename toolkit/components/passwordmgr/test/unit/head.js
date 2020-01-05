@@ -96,16 +96,16 @@ const RecipeHelpers = {
 
 
 
-add_task(function* test_common_initialize()
+add_task(async function test_common_initialize()
 {
   
   
   
-  yield OS.File.copy(do_get_file("data/key3.db").path,
+  await OS.File.copy(do_get_file("data/key3.db").path,
                      OS.Path.join(OS.Constants.Path.profileDir, "key3.db"));
 
   
-  yield Services.logins.initializationPromise;
+  await Services.logins.initializationPromise;
 
   
   LoginTestUtils.clearData();

@@ -273,9 +273,9 @@ add_task(function test_searchLogins_metainfo()
 
 
 
-add_task(function* test_storage_metainfo()
+add_task(async function test_storage_metainfo()
 {
-  yield* LoginTestUtils.reloadData();
+  await LoginTestUtils.reloadData();
   LoginTestUtils.checkLogins([gLoginInfo1, gLoginInfo2, gLoginInfo3]);
 
   assertMetaInfoEqual(retrieveLoginMatching(gLoginInfo1), gLoginMetaInfo1);

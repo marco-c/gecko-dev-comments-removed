@@ -5,10 +5,10 @@
 
 
 
-add_task(function* test() {
-  let win = (yield BrowserTestUtils.openNewBrowserWindow({ private: true }));
-  let tabAbout = (yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:"));
-  let tabMozilla = (yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:"));
+add_task(async function test() {
+  let win = (await BrowserTestUtils.openNewBrowserWindow({ private: true }));
+  let tabAbout = (await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:"));
+  let tabMozilla = (await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:"));
 
   let mozillaZoom = win.ZoomManager.zoom;
 
@@ -19,10 +19,10 @@ add_task(function* test() {
   mozillaZoom = win.ZoomManager.zoom;
 
   
-  yield BrowserTestUtils.switchTab(win.gBrowser, tabAbout);
+  await BrowserTestUtils.switchTab(win.gBrowser, tabAbout);
 
   
-  yield BrowserTestUtils.switchTab(win.gBrowser, tabMozilla);
+  await BrowserTestUtils.switchTab(win.gBrowser, tabMozilla);
 
   
   is(win.ZoomManager.zoom, mozillaZoom,
@@ -30,8 +30,8 @@ add_task(function* test() {
 
   
   win.FullZoom.reset();
-  yield Promise.all([ BrowserTestUtils.removeTab(tabMozilla),
+  await Promise.all([ BrowserTestUtils.removeTab(tabMozilla),
                       BrowserTestUtils.removeTab(tabAbout) ]);
 
-  yield BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(win);
 });

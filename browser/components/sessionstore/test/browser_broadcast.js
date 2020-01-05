@@ -9,12 +9,12 @@ const INITIAL_VALUE = "browser_broadcast.js-initial-value-" + Date.now();
 
 
 
-add_task(function* flush_on_tabclose() {
-  let tab = yield createTabWithStorageData(["http://example.com"]);
+add_task(async function flush_on_tabclose() {
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
-  yield modifySessionStorage(browser, {test: "on-tab-close"});
-  yield promiseRemoveTab(tab);
+  await modifySessionStorage(browser, {test: "on-tab-close"});
+  await promiseRemoveTab(tab);
 
   let [{state: {storage}}] = JSON.parse(ss.getClosedTabData(window));
   is(storage["http://example.com"].test, "on-tab-close",
@@ -25,15 +25,15 @@ add_task(function* flush_on_tabclose() {
 
 
 
-add_task(function* flush_on_duplicate() {
-  let tab = yield createTabWithStorageData(["http://example.com"]);
+add_task(async function flush_on_duplicate() {
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
-  yield modifySessionStorage(browser, {test: "on-duplicate"});
+  await modifySessionStorage(browser, {test: "on-duplicate"});
   let tab2 = ss.duplicateTab(window, tab);
-  yield promiseTabRestored(tab2);
+  await promiseTabRestored(tab2);
 
-  yield promiseRemoveTab(tab2);
+  await promiseRemoveTab(tab2);
   let [{state: {storage}}] = JSON.parse(ss.getClosedTabData(window));
   is(storage["http://example.com"].test, "on-duplicate",
     "sessionStorage data has been flushed when duplicating tabs");
@@ -45,13 +45,13 @@ add_task(function* flush_on_duplicate() {
 
 
 
-add_task(function* flush_on_windowclose() {
-  let win = yield promiseNewWindow();
-  let tab = yield createTabWithStorageData(["http://example.com"], win);
+add_task(async function flush_on_windowclose() {
+  let win = await promiseNewWindow();
+  let tab = await createTabWithStorageData(["http://example.com"], win);
   let browser = tab.linkedBrowser;
 
-  yield modifySessionStorage(browser, {test: "on-window-close"});
-  yield BrowserTestUtils.closeWindow(win);
+  await modifySessionStorage(browser, {test: "on-window-close"});
+  await BrowserTestUtils.closeWindow(win);
 
   let [{tabs: [, {storage}]}] = JSON.parse(ss.getClosedWindowData());
   is(storage["http://example.com"].test, "on-window-close",
@@ -62,21 +62,21 @@ add_task(function* flush_on_windowclose() {
 
 
 
-add_task(function* flush_on_settabstate() {
-  let tab = yield createTabWithStorageData(["http://example.com"]);
+add_task(async function flush_on_settabstate() {
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   let state = ss.getTabState(tab);
-  yield modifySessionStorage(browser, {test: "on-set-tab-state"});
+  await modifySessionStorage(browser, {test: "on-set-tab-state"});
 
   
   
   TabStateFlusher.flush(browser);
 
-  yield promiseTabState(tab, state);
+  await promiseTabState(tab, state);
 
   let {storage} = JSON.parse(ss.getTabState(tab));
   is(storage["http://example.com"].test, INITIAL_VALUE,
@@ -90,19 +90,19 @@ add_task(function* flush_on_settabstate() {
 
 
 
-add_task(function* flush_on_tabclose_racy() {
-  let tab = yield createTabWithStorageData(["http://example.com"]);
+add_task(async function flush_on_tabclose_racy() {
+  let tab = await createTabWithStorageData(["http://example.com"]);
   let browser = tab.linkedBrowser;
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
-  yield modifySessionStorage(browser, {test: "on-tab-close-racy"});
+  await modifySessionStorage(browser, {test: "on-tab-close-racy"});
 
   
   
   TabStateFlusher.flush(browser);
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 
   let [{state: {storage}}] = JSON.parse(ss.getClosedTabData(window));
   is(storage["http://example.com"].test, "on-tab-close-racy",

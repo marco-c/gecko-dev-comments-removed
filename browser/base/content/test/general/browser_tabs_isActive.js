@@ -18,7 +18,7 @@ function getParentTabState(aTab) {
 }
 
 function getChildTabState(aTab) {
-  return ContentTask.spawn(aTab.linkedBrowser, {}, function* () {
+  return ContentTask.spawn(aTab.linkedBrowser, {}, async function() {
     return docShell.isActive;
   });
 }
@@ -37,7 +37,7 @@ function waitForMs(aMs) {
   });
 }
 
-add_task(function *() {
+add_task(async function() {
   let url = kTestPage;
   let originalTab = gBrowser.selectedTab; 
   let newTab = gBrowser.addTab(url, {skipAnimation: true});
@@ -45,16 +45,16 @@ add_task(function *() {
 
   
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, false, "newly added " + url + " tab is not active");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, true, "original tab is active initially");
 
   
   let tabSwitchedPromise = promiseNewTabSwitched();
   gBrowser.selectedTab = newTab;
-  yield tabSwitchedPromise;
+  await tabSwitchedPromise;
 
   if (Services.appinfo.browserTabsRemoteAutostart) {
     ok(newTab.linkedBrowser.isRemoteBrowser, "for testing we need a remote tab");
@@ -62,89 +62,89 @@ add_task(function *() {
 
   
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, true, "newly added " + url + " tab is active after selection");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, false, "original tab is not active while unselected");
 
   
   tabSwitchedPromise = promiseNewTabSwitched();
   gBrowser.selectedTab = originalTab;
-  yield tabSwitchedPromise;
+  await tabSwitchedPromise;
 
   
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, false, "newly added " + url + " tab is not active after switch back");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, true, "original tab is active again after switch back");
 
   
   tabSwitchedPromise = promiseNewTabSwitched();
   gBrowser.selectedTab = newTab;
-  yield tabSwitchedPromise;
+  await tabSwitchedPromise;
 
   
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, true, "newly added " + url + " tab is not active after switch back");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, false, "original tab is active again after switch back");
 
   gBrowser.removeTab(newTab);
 });
 
-add_task(function *() {
+add_task(async function() {
   let url = "about:about";
   let originalTab = gBrowser.selectedTab; 
   let newTab = gBrowser.addTab(url, {skipAnimation: true});
   let parentSide, childSide;
 
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, false, "newly added " + url + " tab is not active");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, true, "original tab is active initially");
 
   let tabSwitchedPromise = promiseNewTabSwitched();
   gBrowser.selectedTab = newTab;
-  yield tabSwitchedPromise;
+  await tabSwitchedPromise;
 
   if (Services.appinfo.browserTabsRemoteAutostart) {
     ok(!newTab.linkedBrowser.isRemoteBrowser, "for testing we need a local tab");
   }
 
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, true, "newly added " + url + " tab is active after selection");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, false, "original tab is not active while unselected");
 
   tabSwitchedPromise = promiseNewTabSwitched();
   gBrowser.selectedTab = originalTab;
-  yield tabSwitchedPromise;
+  await tabSwitchedPromise;
 
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, false, "newly added " + url + " tab is not active after switch back");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, true, "original tab is active again after switch back");
 
   tabSwitchedPromise = promiseNewTabSwitched();
   gBrowser.selectedTab = newTab;
-  yield tabSwitchedPromise;
+  await tabSwitchedPromise;
 
   parentSide = getParentTabState(newTab);
-  childSide = yield getChildTabState(newTab);
+  childSide = await getChildTabState(newTab);
   checkState(parentSide, childSide, true, "newly added " + url + " tab is not active after switch back");
   parentSide = getParentTabState(originalTab);
-  childSide = yield getChildTabState(originalTab);
+  childSide = await getChildTabState(originalTab);
   checkState(parentSide, childSide, false, "original tab is active again after switch back");
 
   gBrowser.removeTab(newTab);

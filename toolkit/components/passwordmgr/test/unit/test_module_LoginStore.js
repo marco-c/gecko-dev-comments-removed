@@ -21,12 +21,12 @@ const TEST_STORE_FILE_NAME = "test-logins.json";
 
 
 
-add_task(function* test_save_reload()
+add_task(async function test_save_reload()
 {
   let storeForSave = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   
-  yield storeForSave.load();
+  await storeForSave.load();
 
   let rawLoginData = {
     id:                  storeForSave.data.nextId++,
@@ -48,11 +48,11 @@ add_task(function* test_save_reload()
 
   storeForSave.data.disabledHosts.push("http://www.example.org");
 
-  yield storeForSave._save();
+  await storeForSave._save();
 
   
   let storeForLoad = new LoginStore(storeForSave.path);
-  yield storeForLoad.load();
+  await storeForLoad.load();
 
   do_check_eq(storeForLoad.data.logins.length, 1);
   do_check_matches(storeForLoad.data.logins[0], rawLoginData);
@@ -72,15 +72,15 @@ add_task(function* test_save_reload()
 
 
 
-add_task(function* test_load_empty()
+add_task(async function test_load_empty()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
-  do_check_false(yield OS.File.exists(store.path));
+  do_check_false(await OS.File.exists(store.path));
 
-  yield store.load();
+  await store.load();
 
-  do_check_false(yield OS.File.exists(store.path));
+  do_check_false(await OS.File.exists(store.path));
 
   do_check_eq(store.data.logins.length, 0);
   do_check_eq(store.data.disabledHosts.length, 0);
@@ -89,25 +89,25 @@ add_task(function* test_load_empty()
 
 
 
-add_task(function* test_save_empty()
+add_task(async function test_save_empty()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
-  yield store.load();
+  await store.load();
 
-  let createdFile = yield OS.File.open(store.path, { create: true });
-  yield createdFile.close();
+  let createdFile = await OS.File.open(store.path, { create: true });
+  await createdFile.close();
 
-  yield store._save();
+  await store._save();
 
-  do_check_true(yield OS.File.exists(store.path));
+  do_check_true(await OS.File.exists(store.path));
 });
 
 
 
 
 
-add_task(function* test_load_string_predefined()
+add_task(async function test_load_string_predefined()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
@@ -128,11 +128,11 @@ add_task(function* test_load_string_predefined()
                 "\"timesUsed\":1}],\"disabledHosts\":[" +
                 "\"http://www.example.org\"]}";
 
-  yield OS.File.writeAtomic(store.path,
+  await OS.File.writeAtomic(store.path,
                             new TextEncoder().encode(string),
                             { tmpPath: store.path + ".tmp" });
 
-  yield store.load();
+  await store.load();
 
   do_check_eq(store.data.logins.length, 1);
   do_check_matches(store.data.logins[0], {
@@ -159,21 +159,21 @@ add_task(function* test_load_string_predefined()
 
 
 
-add_task(function* test_load_string_malformed()
+add_task(async function test_load_string_malformed()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   let string = "{\"logins\":[{\"hostname\":\"http://www.example.com\"," +
                 "\"id\":1,";
 
-  yield OS.File.writeAtomic(store.path, new TextEncoder().encode(string),
+  await OS.File.writeAtomic(store.path, new TextEncoder().encode(string),
                             { tmpPath: store.path + ".tmp" });
 
-  yield store.load();
+  await store.load();
 
   
-  do_check_true(yield OS.File.exists(store.path + ".corrupt"));
-  yield OS.File.remove(store.path + ".corrupt");
+  do_check_true(await OS.File.exists(store.path + ".corrupt"));
+  await OS.File.remove(store.path + ".corrupt");
 
   
   do_check_eq(store.data.logins.length, 0);
@@ -184,21 +184,21 @@ add_task(function* test_load_string_malformed()
 
 
 
-add_task(function* test_load_string_malformed_sync()
+add_task(async function test_load_string_malformed_sync()
 {
   let store = new LoginStore(getTempFile(TEST_STORE_FILE_NAME).path);
 
   let string = "{\"logins\":[{\"hostname\":\"http://www.example.com\"," +
                 "\"id\":1,";
 
-  yield OS.File.writeAtomic(store.path, new TextEncoder().encode(string),
+  await OS.File.writeAtomic(store.path, new TextEncoder().encode(string),
                             { tmpPath: store.path + ".tmp" });
 
   store.ensureDataReady();
 
   
-  do_check_true(yield OS.File.exists(store.path + ".corrupt"));
-  yield OS.File.remove(store.path + ".corrupt");
+  do_check_true(await OS.File.exists(store.path + ".corrupt"));
+  await OS.File.remove(store.path + ".corrupt");
 
   
   do_check_eq(store.data.logins.length, 0);

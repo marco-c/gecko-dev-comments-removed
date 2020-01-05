@@ -46,7 +46,7 @@ add_task(function() {
   ok(noError, "Shouldn't throw an exception for a widget that was added to a not-yet-constructed area");
 });
 
-add_task(function* asyncCleanup() {
+add_task(async function asyncCleanup() {
   let lazyArea = document.getElementById(kLazyAreaId);
   if (lazyArea) {
     lazyArea.remove();
@@ -54,7 +54,7 @@ add_task(function* asyncCleanup() {
   try {
     CustomizableUI.unregisterArea(kLazyAreaId);
   } catch (ex) {} 
-  yield resetCustomization();
+  await resetCustomization();
 });
 
 function setupArea() {

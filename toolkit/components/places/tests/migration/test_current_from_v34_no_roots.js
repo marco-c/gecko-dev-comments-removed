@@ -1,21 +1,21 @@
 
 
 
-add_task(function* setup() {
-  yield setupPlacesDatabase("places_v34.sqlite");
+add_task(async function setup() {
+  await setupPlacesDatabase("places_v34.sqlite");
   
   let path = OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);
-  let db = yield Sqlite.openConnection({ path });
+  let db = await Sqlite.openConnection({ path });
   
-  yield db.execute("DELETE FROM moz_bookmarks");
-  yield db.close();
+  await db.execute("DELETE FROM moz_bookmarks");
+  await db.close();
 });
 
-add_task(function* database_is_valid() {
+add_task(async function database_is_valid() {
   
   Assert.equal(PlacesUtils.history.databaseStatus,
                PlacesUtils.history.DATABASE_STATUS_UPGRADED);
 
-  let db = yield PlacesUtils.promiseDBConnection();
-  Assert.equal((yield db.getSchemaVersion()), CURRENT_SCHEMA_VERSION);
+  let db = await PlacesUtils.promiseDBConnection();
+  Assert.equal((await db.getSchemaVersion()), CURRENT_SCHEMA_VERSION);
 });

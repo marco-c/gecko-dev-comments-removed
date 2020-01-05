@@ -34,8 +34,8 @@ function countNonLazyTabs(win) {
 
 
 
-add_task(function* test() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({
     "set": [
       ["browser.sessionstore.restore_on_demand", true],
       ["browser.sessionstore.restore_tabs_lazily", true],
@@ -44,12 +44,12 @@ add_task(function* test() {
 
   let backupState = SessionStore.getBrowserState();
 
-  yield promiseBrowserState(TEST_STATE);
+  await promiseBrowserState(TEST_STATE);
 
   info("Check that no lazy browsers get unnecessarily inserted after session restore");
   is(countNonLazyTabs(), 1, "Window has only 1 non-lazy tab");
 
-  yield TestUtils.topicObserved("sessionstore-state-write-complete");
+  await TestUtils.topicObserved("sessionstore-state-write-complete");
 
   
   
@@ -62,11 +62,11 @@ add_task(function* test() {
   is(countNonLazyTabs(), 2, "Window now has 2 non-lazy tabs");
 
   
-  let newWindow = yield promiseNewWindowLoaded();
+  let newWindow = await promiseNewWindowLoaded();
 
   SessionStore.setWindowState(newWindow, JSON.stringify(TEST_STATE));
 
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     newWindow.addEventListener("unload", () => {
       info("Check that no lazy browsers get inserted when window closes");
       is(countNonLazyTabs(newWindow), 1, "Window has only 1 non-lazy tab");
@@ -83,6 +83,6 @@ add_task(function* test() {
   });
 
   
-  yield promiseBrowserState(backupState);
+  await promiseBrowserState(backupState);
 });
 

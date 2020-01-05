@@ -7,23 +7,23 @@
 const TEST_URI = NetUtil.newURI("http://mozilla.com/");
 const TEST_SUBDOMAIN_URI = NetUtil.newURI("http://foobar.mozilla.com/");
 
-add_task(function* test_addPage() {
-  yield PlacesTestUtils.addVisits(TEST_URI);
+add_task(async function test_addPage() {
+  await PlacesTestUtils.addVisits(TEST_URI);
   do_check_eq(1, PlacesUtils.history.hasHistoryEntries);
 });
 
-add_task(function* test_removePage() {
-  yield PlacesUtils.history.remove(TEST_URI);
+add_task(async function test_removePage() {
+  await PlacesUtils.history.remove(TEST_URI);
   do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
 });
 
-add_task(function* test_removePages() {
+add_task(async function test_removePages() {
   let pages = [];
   for (let i = 0; i < 8; i++) {
     pages.push(NetUtil.newURI(TEST_URI.spec + i));
   }
 
-  yield PlacesTestUtils.addVisits(pages.map(uri => ({ uri })));
+  await PlacesTestUtils.addVisits(pages.map(uri => ({ uri })));
   
   const ANNO_INDEX = 1;
   const ANNO_NAME = "testAnno";
@@ -40,7 +40,7 @@ add_task(function* test_removePages() {
                                             ANNO_NAME, ANNO_VALUE, 0,
                                             Ci.nsIAnnotationService.EXPIRE_NEVER);
 
-  yield PlacesUtils.history.remove(pages);
+  await PlacesUtils.history.remove(pages);
   do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
 
   
@@ -56,10 +56,10 @@ add_task(function* test_removePages() {
 
   
   PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.unfiledBookmarksFolderId);
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });
 
-add_task(function* test_removePagesByTimeframe() {
+add_task(async function test_removePagesByTimeframe() {
   let visits = [];
   let startDate = (Date.now() - 10000) * 1000;
   for (let i = 0; i < 10; i++) {
@@ -69,7 +69,7 @@ add_task(function* test_removePagesByTimeframe() {
     });
   }
 
-  yield PlacesTestUtils.addVisits(visits);
+  await PlacesTestUtils.addVisits(visits);
 
   
   PlacesUtils.bhistory.removePagesByTimeframe(startDate + 1000, startDate + 8000);
@@ -85,26 +85,26 @@ add_task(function* test_removePagesByTimeframe() {
   do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
 });
 
-add_task(function* test_removePagesFromHost() {
-  yield PlacesTestUtils.addVisits(TEST_URI);
+add_task(async function test_removePagesFromHost() {
+  await PlacesTestUtils.addVisits(TEST_URI);
   PlacesUtils.bhistory.removePagesFromHost("mozilla.com", true);
   do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
 });
 
-add_task(function* test_removePagesFromHost_keepSubdomains() {
-  yield PlacesTestUtils.addVisits([{ uri: TEST_URI }, { uri: TEST_SUBDOMAIN_URI }]);
+add_task(async function test_removePagesFromHost_keepSubdomains() {
+  await PlacesTestUtils.addVisits([{ uri: TEST_URI }, { uri: TEST_SUBDOMAIN_URI }]);
   PlacesUtils.bhistory.removePagesFromHost("mozilla.com", false);
   do_check_eq(1, PlacesUtils.history.hasHistoryEntries);
 });
 
-add_task(function* test_history_clear() {
-  yield PlacesTestUtils.clearHistory();
+add_task(async function test_history_clear() {
+  await PlacesTestUtils.clearHistory();
   do_check_eq(0, PlacesUtils.history.hasHistoryEntries);
 });
 
-add_task(function* test_getObservers() {
+add_task(async function test_getObservers() {
   
-  yield PlacesTestUtils.addVisits(TEST_URI);
+  await PlacesTestUtils.addVisits(TEST_URI);
   do_check_eq(1, PlacesUtils.history.hasHistoryEntries);
   
   return new Promise((resolve, reject) => {

@@ -28,10 +28,10 @@ const TestIntegration = {
     return "method" + argument;
   },
 
-  asyncMethod: Task.async(function* (argument) {
+  async asyncMethod(argument) {
     this.asyncMethodArgument = argument;
     return "asyncMethod" + argument;
-  }),
+  },
 };
 
 let overrideFn = base => ({
@@ -49,9 +49,9 @@ let overrideFn = base => ({
     return "overridden-" + base.method.apply(this, arguments);
   },
 
-  asyncMethod: Task.async(function* () {
-    return "overridden-" + (yield base.asyncMethod.apply(this, arguments));
-  }),
+  async asyncMethod() {
+    return "overridden-" + (await base.asyncMethod.apply(this, arguments));
+  },
 });
 
 let superOverrideFn = base => ({
@@ -71,10 +71,10 @@ let superOverrideFn = base => ({
     return "overridden-" + super.method(...arguments);
   },
 
-  asyncMethod: Task.async(function* () {
+  async asyncMethod() {
     
-    return "overridden-" + (yield base.asyncMethod.apply(this, arguments));
-  }),
+    return "overridden-" + (await base.asyncMethod.apply(this, arguments));
+  },
 });
 
 
@@ -124,62 +124,62 @@ function* assertCurrentCombinedResults(overridesCount) {
 
 
 
-add_task(function* test_base() {
-  yield assertCurrentCombinedResults(0);
+add_task(async function test_base() {
+  await assertCurrentCombinedResults(0);
 });
 
 
 
 
-add_task(function* test_override() {
+add_task(async function test_override() {
   Integration.testModule.register(overrideFn);
-  yield assertCurrentCombinedResults(1);
+  await assertCurrentCombinedResults(1);
 
   
   Integration.testModule.register(overrideFn);
-  yield assertCurrentCombinedResults(1);
+  await assertCurrentCombinedResults(1);
 
   Integration.testModule.unregister(overrideFn);
-  yield assertCurrentCombinedResults(0);
+  await assertCurrentCombinedResults(0);
 });
 
 
 
 
 
-add_task(function* test_override_super_multiple() {
+add_task(async function test_override_super_multiple() {
   Integration.testModule.register(overrideFn);
   Integration.testModule.register(superOverrideFn);
-  yield assertCurrentCombinedResults(2);
+  await assertCurrentCombinedResults(2);
 
   Integration.testModule.unregister(overrideFn);
-  yield assertCurrentCombinedResults(1);
+  await assertCurrentCombinedResults(1);
 
   Integration.testModule.unregister(superOverrideFn);
-  yield assertCurrentCombinedResults(0);
+  await assertCurrentCombinedResults(0);
 });
 
 
 
 
 
-add_task(function* test_override_error() {
+add_task(async function test_override_error() {
   let errorOverrideFn = base => { throw "Expected error." };
 
   Integration.testModule.register(errorOverrideFn);
   Integration.testModule.register(overrideFn);
-  yield assertCurrentCombinedResults(1);
+  await assertCurrentCombinedResults(1);
 
   Integration.testModule.unregister(errorOverrideFn);
   Integration.testModule.unregister(overrideFn);
-  yield assertCurrentCombinedResults(0);
+  await assertCurrentCombinedResults(0);
 });
 
 
 
 
 
-add_task(function* test_state_preserved() {
+add_task(async function test_state_preserved() {
   let valueObject = { toString: () => "toString" };
 
   let combined = Integration.testModule.getCombined(TestIntegration);
@@ -201,7 +201,7 @@ add_task(function* test_state_preserved() {
 
 
 
-add_task(function* test_xpcom_throws() {
+add_task(async function test_xpcom_throws() {
   let combined = Integration.testModule.getCombined(TestIntegration);
 
   
@@ -213,7 +213,7 @@ add_task(function* test_xpcom_throws() {
 
 
 
-add_task(function* test_defineModuleGetter() {
+add_task(async function test_defineModuleGetter() {
   let objectForGetters = {};
 
   
@@ -224,10 +224,10 @@ add_task(function* test_defineModuleGetter() {
     "TestIntegration");
 
   Integration.testModule.register(overrideFn);
-  yield assertCombinedResults(objectForGetters.integration, 1);
-  yield assertCombinedResults(objectForGetters.TestIntegration, 1);
+  await assertCombinedResults(objectForGetters.integration, 1);
+  await assertCombinedResults(objectForGetters.TestIntegration, 1);
 
   Integration.testModule.unregister(overrideFn);
-  yield assertCombinedResults(objectForGetters.integration, 0);
-  yield assertCombinedResults(objectForGetters.TestIntegration, 0);
+  await assertCombinedResults(objectForGetters.integration, 0);
+  await assertCombinedResults(objectForGetters.TestIntegration, 0);
 });

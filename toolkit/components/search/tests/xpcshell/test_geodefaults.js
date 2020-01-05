@@ -61,18 +61,18 @@ function checkRequest(cohort = "") {
   do_check_eq(req._queryString, cohort ? "/" + cohort : "");
 }
 
-add_task(function* no_request_if_prefed_off() {
+add_task(async function no_request_if_prefed_off() {
   
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", false);
-  yield asyncInit();
+  await asyncInit();
   checkNoRequest();
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   do_check_eq(typeof metadata.searchDefaultExpir, "undefined");
   do_check_eq(typeof metadata.searchDefault, "undefined");
   do_check_eq(typeof metadata.searchDefaultHash, "undefined");
@@ -80,19 +80,19 @@ add_task(function* no_request_if_prefed_off() {
   Services.prefs.setBoolPref("browser.search.geoSpecificDefaults", true);
 });
 
-add_task(function* should_get_geo_defaults_only_once() {
+add_task(async function should_get_geo_defaults_only_once() {
   
   
   
   do_check_true(Services.prefs.prefHasUserValue("browser.search.countryCode"));
   do_check_eq(Services.prefs.getCharPref("browser.search.countryCode"), "FR");
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   do_check_eq(typeof metadata.searchDefaultExpir, "number");
   do_check_true(metadata.searchDefaultExpir > Date.now());
   do_check_eq(typeof metadata.searchDefault, "string");
@@ -101,50 +101,50 @@ add_task(function* should_get_geo_defaults_only_once() {
   do_check_eq(metadata.searchDefaultHash.length, 44);
 
   
-  yield asyncReInit();
+  await asyncReInit();
   checkNoRequest();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
 });
 
-add_task(function* should_request_when_countryCode_not_set() {
+add_task(async function should_request_when_countryCode_not_set() {
   Services.prefs.clearUserPref("browser.search.countryCode");
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest();
-  yield promiseAfterCache();
+  await promiseAfterCache();
 });
 
-add_task(function* should_recheck_if_interval_expired() {
-  yield forceExpiration();
+add_task(async function should_recheck_if_interval_expired() {
+  await forceExpiration();
 
   let date = Date.now();
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest();
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   do_check_eq(typeof metadata.searchDefaultExpir, "number");
   do_check_true(metadata.searchDefaultExpir >= date + kYearInSeconds * 1000);
   do_check_true(metadata.searchDefaultExpir < date + (kYearInSeconds + 3600) * 1000);
 });
 
-add_task(function* should_recheck_when_broken_hash() {
+add_task(async function should_recheck_when_broken_hash() {
   
   
   
   
 
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
 
   
   let hash = metadata.searchDefaultHash;
   metadata.searchDefaultHash = "broken";
-  yield promiseSaveGlobalMetadata(metadata);
+  await promiseSaveGlobalMetadata(metadata);
 
   let commitPromise = promiseAfterCache();
   let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
-  yield unInitPromise;
+  await unInitPromise;
 
   
   
@@ -152,20 +152,20 @@ add_task(function* should_recheck_when_broken_hash() {
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName(false));
   do_check_true(Services.search.isInitialized)
 
-  yield reInitPromise;
+  await reInitPromise;
   checkRequest();
-  yield commitPromise;
+  await commitPromise;
 
   
-  metadata = yield promiseGlobalMetadata();
+  metadata = await promiseGlobalMetadata();
   do_check_eq(typeof metadata.searchDefaultHash, "string");
   if (metadata.searchDefaultHash == "broken") {
     
     
     
     do_print("waiting for the cache to be saved a second time");
-    yield promiseAfterCache();
-    metadata = yield promiseGlobalMetadata();
+    await promiseAfterCache();
+    metadata = await promiseGlobalMetadata();
   }
   do_check_eq(metadata.searchDefaultHash, hash);
 
@@ -174,12 +174,12 @@ add_task(function* should_recheck_when_broken_hash() {
 
   
   
-  yield asyncReInit();
+  await asyncReInit();
   checkNoRequest();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
 });
 
-add_task(function* should_remember_cohort_id() {
+add_task(async function should_remember_cohort_id() {
   
   const cohortPref = "browser.search.cohort";
   do_check_eq(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
@@ -188,11 +188,11 @@ add_task(function* should_remember_cohort_id() {
   let cohort = gServerCohort = "xpcshell";
 
   
-  yield forceExpiration();
+  await forceExpiration();
   let commitPromise = promiseAfterCache();
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest();
-  yield commitPromise;
+  await commitPromise;
 
   
   do_check_eq(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_STRING);
@@ -203,50 +203,50 @@ add_task(function* should_remember_cohort_id() {
 
   
   
-  yield forceExpiration();
+  await forceExpiration();
   commitPromise = promiseAfterCache();
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest(cohort);
-  yield commitPromise;
+  await commitPromise;
   do_check_eq(Services.prefs.getPrefType(cohortPref), Services.prefs.PREF_INVALID);
 });
 
-add_task(function* should_retry_after_failure() {
+add_task(async function should_retry_after_failure() {
   let defaultBranch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
   let originalUrl = defaultBranch.getCharPref(kUrlPref);
   defaultBranch.setCharPref(kUrlPref, originalUrl.replace("defaults", "fail"));
 
   
-  yield forceExpiration();
-  yield asyncReInit();
+  await forceExpiration();
+  await asyncReInit();
   checkRequest();
 
   
   
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest();
 });
 
-add_task(function* should_honor_retry_after_header() {
+add_task(async function should_honor_retry_after_header() {
   let defaultBranch = Services.prefs.getDefaultBranch(BROWSER_SEARCH_PREF);
   let originalUrl = defaultBranch.getCharPref(kUrlPref);
   defaultBranch.setCharPref(kUrlPref, originalUrl.replace("fail", "unavailable"));
 
   
-  yield forceExpiration();
+  await forceExpiration();
   let date = Date.now();
   let commitPromise = promiseAfterCache();
-  yield asyncReInit();
+  await asyncReInit();
   checkRequest();
-  yield commitPromise;
+  await commitPromise;
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   do_check_eq(typeof metadata.searchDefaultExpir, "number");
   do_check_true(metadata.searchDefaultExpir >= date + kDayInSeconds * 1000);
   do_check_true(metadata.searchDefaultExpir < date + (kDayInSeconds + 3600) * 1000);
 
   
-  yield asyncReInit();
+  await asyncReInit();
   checkNoRequest();
 });

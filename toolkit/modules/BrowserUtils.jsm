@@ -11,7 +11,6 @@ const {interfaces: Ci, utils: Cu, classes: Cc} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
 
@@ -528,7 +527,7 @@ this.BrowserUtils = {
 
 
 
-  parseUrlAndPostData: Task.async(function* (url, postData, param) {
+  async parseUrlAndPostData(url, postData, param) {
     let hasGETParam = /%s/i.test(url)
     let decodedPostData = postData ? unescape(postData) : "";
     let hasPOSTParam = /%s/i.test(decodedPostData);
@@ -551,7 +550,7 @@ this.BrowserUtils = {
       
       try {
         
-        charset = yield PlacesUtils.getCharsetForURI(this.makeURI(url));
+        charset = await PlacesUtils.getCharsetForURI(this.makeURI(url));
       } catch (ex) {
         
         Cu.reportError(ex);
@@ -585,5 +584,5 @@ this.BrowserUtils = {
                                 .replace(/%S/g, param);
     }
     return [url, postData];
-  }),
+  },
 };

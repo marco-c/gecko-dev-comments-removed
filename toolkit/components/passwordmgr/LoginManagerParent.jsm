@@ -9,7 +9,6 @@ const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 Cu.importGlobalProperties(["URL"]);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AutoCompletePopup",
                                   "resource://gre/modules/AutoCompletePopup.jsm");
@@ -139,13 +138,13 @@ var LoginManagerParent = {
 
 
 
-  fillForm: Task.async(function* ({ browser, loginFormOrigin, login, inputElement }) {
+  async fillForm({ browser, loginFormOrigin, login, inputElement }) {
     let recipes = [];
     if (loginFormOrigin) {
       let formHost;
       try {
         formHost = (new URL(loginFormOrigin)).host;
-        let recipeManager = yield this.recipeParentPromise;
+        let recipeManager = await this.recipeParentPromise;
         recipes = recipeManager.getRecipesForHost(formHost);
       } catch (ex) {
         
@@ -162,19 +161,19 @@ var LoginManagerParent = {
       logins: jsLogins,
       recipes,
     }, objects);
-  }),
+  },
 
   
 
 
-  sendLoginDataToChild: Task.async(function*(showMasterPassword, formOrigin, actionOrigin,
+  async sendLoginDataToChild(showMasterPassword, formOrigin, actionOrigin,
                                              requestId, target) {
     let recipes = [];
     if (formOrigin) {
       let formHost;
       try {
         formHost = (new URL(formOrigin)).host;
-        let recipeManager = yield this.recipeParentPromise;
+        let recipeManager = await this.recipeParentPromise;
         recipes = recipeManager.getRecipesForHost(formHost);
       } catch (ex) {
         
@@ -243,7 +242,7 @@ var LoginManagerParent = {
       logins: jsLogins,
       recipes,
     });
-  }),
+  },
 
   doAutocompleteSearch({ formOrigin, actionOrigin,
                          searchString, previousResult,

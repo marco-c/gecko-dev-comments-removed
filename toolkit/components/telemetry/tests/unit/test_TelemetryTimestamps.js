@@ -21,21 +21,21 @@ function getSimpleMeasurementsFromTelemetryController() {
   return TelemetrySession.getPayload().simpleMeasurements;
 }
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   
   loadAddonManager();
   
   do_get_profile();
 
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
 
-  yield new Promise(resolve =>
+  await new Promise(resolve =>
     Services.telemetry.asyncFetchTelemetryData(resolve));
 });
 
-add_task(function* actualTest() {
-  yield TelemetryController.testSetup();
+add_task(async function actualTest() {
+  await TelemetryController.testSetup();
 
   
   let tmp = {};
@@ -73,5 +73,5 @@ add_task(function* actualTest() {
   do_check_true(simpleMeasurements.bar > 1); 
   do_check_eq(undefined, simpleMeasurements.baz); 
 
-  yield TelemetryController.testShutdown();
+  await TelemetryController.testShutdown();
 });

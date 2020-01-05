@@ -147,19 +147,19 @@ function run_test() {
 }
 
 
-add_task(function* test_basic_save_succeeds() {
+add_task(async function test_basic_save_succeeds() {
   setQuickMockTimer();
   let tester = DeferredSaveTester();
   let data = "Test 1 Data";
 
-  yield tester.save(data);
+  await tester.save(data);
   do_check_eq(tester.writtenData, data);
   do_check_eq(1, tester.saver.totalSaves);
 });
 
 
 
-add_task(function* test_two_saves() {
+add_task(async function test_two_saves() {
   setQuickMockTimer();
   let tester = DeferredSaveTester();
   let firstCallback_happened = false;
@@ -174,7 +174,7 @@ add_task(function* test_two_saves() {
     firstCallback_happened = true;
   }, do_report_unexpected_exception);
 
-  yield tester.save(secondData);
+  await tester.save(secondData);
   do_check_true(firstCallback_happened);
   do_check_eq(secondData, tester.writtenData);
   do_check_eq(1, tester.saver.totalSaves);
@@ -182,7 +182,7 @@ add_task(function* test_two_saves() {
 
 
 
-add_task(function* test_two_saves_delay() {
+add_task(async function test_two_saves_delay() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstCallback_happened = false;
@@ -200,16 +200,16 @@ add_task(function* test_two_saves_delay() {
 
   
   
-  yield delay(2);
+  await delay(2);
   delayDone = true;
   
   let saving = tester.save(secondData);
   
-  let activeTimer = yield timerPromise;
+  let activeTimer = await timerPromise;
   
   activeTimer.callback();
   
-  yield saving;
+  await saving;
   do_check_true(firstCallback_happened);
   do_check_eq(secondData, tester.writtenData);
   do_check_eq(1, tester.saver.totalSaves);
@@ -219,7 +219,7 @@ add_task(function* test_two_saves_delay() {
 
 
 
-add_task(function* test_error_immediate() {
+add_task(async function test_error_immediate() {
   let tester = DeferredSaveTester();
   let testError = new Error("Forced failure");
   function writeFail(aTester) {
@@ -227,14 +227,14 @@ add_task(function* test_error_immediate() {
   }
 
   setQuickMockTimer();
-  yield tester.save("test_error_immediate", writeFail).then(
+  await tester.save("test_error_immediate", writeFail).then(
     count => do_throw("Did not get expected error"),
     error => do_check_eq(testError.message, error.message)
     );
   do_check_eq(testError, tester.lastError);
 
   
-  yield tester.save("test_error_immediate succeeds");
+  await tester.save("test_error_immediate succeeds");
   do_check_eq(null, tester.lastError);
   
   do_check_eq(2, tester.saver.totalSaves);
@@ -243,7 +243,7 @@ add_task(function* test_error_immediate() {
 
 
 
-add_task(function* dirty_while_writing() {
+add_task(async function dirty_while_writing() {
   let tester = DeferredSaveTester();
   let firstData = "First data";
   let secondData = "Second data";
@@ -267,13 +267,13 @@ add_task(function* dirty_while_writing() {
     }, do_report_unexpected_exception);
 
   do_print("waiting for writer");
-  let writer = yield writeStarted.promise;
+  let writer = await writeStarted.promise;
   do_print("Write started");
 
   
   
   
-  yield delay(1);
+  await delay(1);
 
   tester.save(secondData).then(
     count => {
@@ -284,15 +284,15 @@ add_task(function* dirty_while_writing() {
     }, do_report_unexpected_exception);
 
   
-  yield delay(1);
+  await delay(1);
   let thirdWrite = tester.save(thirdData);
 
   
-  yield delay(1);
+  await delay(1);
   writer.resolve(firstData.length);
 
   
-  yield thirdWrite;
+  await thirdWrite;
   do_check_true(firstCallback_happened);
   do_check_true(secondCallback_happened);
   do_check_eq(tester.writtenData, thirdData);
@@ -316,18 +316,18 @@ function write_then_disable(aTester) {
 
 
 
-add_task(function* flush_after_save() {
+add_task(async function flush_after_save() {
   setQuickMockTimer();
   let tester = DeferredSaveTester();
   let dataToSave = "Flush after save";
 
-  yield tester.save(dataToSave);
-  yield tester.flush(disabled_write_callback);
+  await tester.save(dataToSave);
+  await tester.flush(disabled_write_callback);
   do_check_eq(1, tester.saver.totalSaves);
 });
 
 
-add_task(function* flush_during_write() {
+add_task(async function flush_during_write() {
   let tester = DeferredSaveTester();
   let dataToSave = "Flush during write";
   let firstCallback_happened = false;
@@ -344,15 +344,15 @@ add_task(function* flush_during_write() {
       firstCallback_happened = true;
     }, do_report_unexpected_exception);
 
-  let writer = yield writeStarted.promise;
+  let writer = await writeStarted.promise;
 
   
   let flushing = tester.flush(disabled_write_callback);
-  yield delay(2);
+  await delay(2);
   writer.resolve(dataToSave.length);
 
   
-  yield flushing;
+  await flushing;
   do_check_true(firstCallback_happened);
   do_check_eq(1, tester.saver.totalSaves);
 });
@@ -360,7 +360,7 @@ add_task(function* flush_during_write() {
 
 
 
-add_task(function* flush_while_dirty() {
+add_task(async function flush_while_dirty() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstData = "Flush while dirty, valid data";
@@ -374,7 +374,7 @@ add_task(function* flush_while_dirty() {
     }, do_report_unexpected_exception);
 
   
-  let activeTimer = yield timerPromise;
+  let activeTimer = await timerPromise;
 
   let flushing = tester.flush();
 
@@ -385,7 +385,7 @@ add_task(function* flush_while_dirty() {
   
   tester.dataToSave = "Flush while dirty, invalid data";
 
-  yield flushing;
+  await flushing;
   do_check_true(firstCallback_happened);
   do_check_eq(tester.writtenData, firstData);
   do_check_eq(1, tester.saver.totalSaves);
@@ -396,7 +396,7 @@ add_task(function* flush_while_dirty() {
 
 
 
-add_task(function* flush_writing_dirty() {
+add_task(async function flush_writing_dirty() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstData = "Flush first pass data";
@@ -417,9 +417,9 @@ add_task(function* flush_writing_dirty() {
     }, do_report_unexpected_exception);
 
   
-  let activeTimer = yield timerPromise;
+  let activeTimer = await timerPromise;
   activeTimer.callback();
-  let writer = yield writeStarted.promise;
+  let writer = await writeStarted.promise;
   
 
   
@@ -439,7 +439,7 @@ add_task(function* flush_writing_dirty() {
   
   writer.resolve(firstData.length);
   
-  yield flushing;
+  await flushing;
   do_check_true(firstCallback_happened);
   do_check_true(secondCallback_happened);
   do_check_eq(tester.writtenData, secondData);
@@ -462,17 +462,17 @@ function badDataProvider() {
 
 
 
-add_task(function* data_throw() {
+add_task(async function data_throw() {
   setQuickMockTimer();
   badDataError = expectedDataError;
   let tester = DeferredSaveTester(badDataProvider);
-  yield tester.save("data_throw").then(
+  await tester.save("data_throw").then(
     count => do_throw("Expected serialization failure"),
     error => do_check_eq(error.message, expectedDataError));
 });
 
 
-add_task(function* data_throw_during_flush() {
+add_task(async function data_throw_during_flush() {
   badDataError = expectedDataError;
   let tester = DeferredSaveTester(badDataProvider);
   let firstCallback_happened = false;
@@ -488,7 +488,7 @@ add_task(function* data_throw_during_flush() {
     });
 
   
-  yield tester.flush(disabled_write_callback).then(
+  await tester.flush(disabled_write_callback).then(
     count => do_throw("Expected serialization failure"),
     error => do_check_eq(error.message, expectedDataError)
     );
@@ -507,7 +507,7 @@ add_task(function* data_throw_during_flush() {
 
 
 
-add_task(function* delay_flush_race() {
+add_task(async function delay_flush_race() {
   let timerPromise = setPromiseMockTimer();
   let tester = DeferredSaveTester();
   let firstData = "First save";
@@ -521,9 +521,9 @@ add_task(function* delay_flush_race() {
 
   
   let firstSave = tester.save(firstData, writeCallback);
-  (yield timerPromise).callback();
+  (await timerPromise).callback();
 
-  let writer = yield writeStarted.promise;
+  let writer = await writeStarted.promise;
   
 
   
@@ -531,16 +531,16 @@ add_task(function* delay_flush_race() {
 
   
   writer.resolve(firstData.length);
-  yield firstSave;
+  await firstSave;
   do_check_eq(tester.writtenData, firstData);
 
   tester.save(thirdData);
   let flushing = tester.flush();
 
-  yield secondSave;
+  await secondSave;
   do_check_eq(tester.writtenData, thirdData);
 
-  yield flushing;
+  await flushing;
   do_check_eq(tester.writtenData, thirdData);
 
   

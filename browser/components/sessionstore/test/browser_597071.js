@@ -5,7 +5,7 @@
 
 
 
-add_task(function* test_close_last_nonpopup_window() {
+add_task(async function test_close_last_nonpopup_window() {
   
   forgetClosedWindows();
 
@@ -19,16 +19,16 @@ add_task(function* test_close_last_nonpopup_window() {
   ss.setWindowState(window, JSON.stringify(popupState), true);
 
   
-  let win = yield BrowserTestUtils.openNewBrowserWindow({private: false});
+  let win = await BrowserTestUtils.openNewBrowserWindow({private: false});
   let tab = win.gBrowser.addTab("http://example.com/");
-  yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
   let state = JSON.parse(ss.getBrowserState());
   is(state.windows.length, 2, "sessionstore knows about this window");
 
   
-  yield BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(win);
   is(ss.getClosedWindowCount(), 1, "correct closed window count");
 
   

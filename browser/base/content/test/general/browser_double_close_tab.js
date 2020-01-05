@@ -36,15 +36,15 @@ function waitForDialogDestroyed(node, callback) {
   }
 }
 
-add_task(function*() {
+add_task(async function() {
   testTab = gBrowser.selectedTab = gBrowser.addTab();
-  yield promiseTabLoadEvent(testTab, TEST_PAGE);
+  await promiseTabLoadEvent(testTab, TEST_PAGE);
   
   
   
   
   
-  yield new Promise(resolveOuter => {
+  await new Promise(resolveOuter => {
     waitForDialog(dialogNode => {
       waitForDialogDestroyed(dialogNode, () => {
         let doCompletion = () => setTimeout(resolveOuter, 0);
@@ -65,7 +65,7 @@ add_task(function*() {
     
     document.getAnonymousElementByAttribute(testTab, "anonid", "close-button").click();
   });
-  yield promiseWaitForCondition(() => !testTab.parentNode);
+  await promiseWaitForCondition(() => !testTab.parentNode);
   ok(!testTab.parentNode, "Tab should be closed completely");
 });
 

@@ -121,10 +121,10 @@ add_test(function test_savedsearches_bookmarks() {
   run_next_test();
 });
 
-add_task(function* test_savedsearches_history() {
+add_task(async function test_savedsearches_history() {
   
   var testURI = uri("http://" + searchTerm + ".com");
-  yield PlacesTestUtils.addVisits({ uri: testURI, title: searchTerm });
+  await PlacesTestUtils.addVisits({ uri: testURI, title: searchTerm });
 
   
   var searchId = PlacesUtils.bookmarks.insertBookmark(testRoot,
@@ -164,14 +164,14 @@ add_task(function* test_savedsearches_history() {
       do_check_eq(item.uri, testURI.spec); 
 
       
-      yield PlacesTestUtils.addVisits({
+      await PlacesTestUtils.addVisits({
         uri: uri("http://foo.com"),
         title: searchTerm + "blah"
       });
       do_check_eq(node.childCount, 2);
 
       
-      yield PlacesUtils.history.remove("http://foo.com");
+      await PlacesUtils.history.remove("http://foo.com");
       do_check_eq(node.childCount, 1);
       node.containerOpen = false;
     }

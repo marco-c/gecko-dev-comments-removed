@@ -55,7 +55,7 @@ function* waitForContentEvents() {
   });
 }
 
-add_task(function*() {
+add_task(async function() {
   if (!runningInParent) {
     TelemetryController.testSetupContent();
     run_child_test();
@@ -67,9 +67,9 @@ add_task(function*() {
   do_get_profile(true);
   loadAddonManager(APP_ID, APP_NAME, APP_VERSION, PLATFORM_VERSION);
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
-  yield TelemetryController.testSetup();
+  await TelemetryController.testSetup();
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
   
   Telemetry.setEventRecordingEnabled("telemetry.test", true);
 
@@ -77,12 +77,12 @@ add_task(function*() {
   
   const timestampBeforeChildEvents = Telemetry.msSinceProcessStart();
   run_test_in_child("test_ChildEvents.js");
-  yield do_await_remote_message(MESSAGE_CHILD_TEST_DONE);
+  await do_await_remote_message(MESSAGE_CHILD_TEST_DONE);
 
   
   
   
-  yield waitForContentEvents();
+  await waitForContentEvents();
   const timestampAfterChildEvents = Telemetry.msSinceProcessStart();
 
   

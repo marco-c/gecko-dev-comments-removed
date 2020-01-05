@@ -15,7 +15,7 @@ function countPermissions() {
   return result;
 }
 
-add_task(function* test() {
+add_task(async function test() {
   
   
   let s = new Sanitizer();
@@ -45,7 +45,7 @@ add_task(function* test() {
   ok(pm.enumerator.hasMoreElements(), "Permission manager should have elements, since we just added one");
 
   
-  yield s.sanitize();
+  await s.sanitize();
 
   
   is(numAtStart, countPermissions(), "Permission manager should have the same count it started with");

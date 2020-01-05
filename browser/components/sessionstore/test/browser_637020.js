@@ -28,7 +28,7 @@ const TEST_STATE = {
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   
   let promiseWindow = new Promise(resolve => {
     Services.obs.addObserver(function onOpened(subject) {
@@ -41,7 +41,7 @@ add_task(function* test() {
   
   let backupState = SessionStore.getBrowserState();
   SessionStore.setBrowserState(JSON.stringify(TEST_STATE));
-  let win = yield promiseWindow;
+  let win = await promiseWindow;
 
   
   
@@ -50,13 +50,13 @@ add_task(function* test() {
 
   
   
-  yield new Promise(resolve => whenDelayedStartupFinished(win, resolve));
+  await new Promise(resolve => whenDelayedStartupFinished(win, resolve));
   info("the delayed startup has finished");
   checkWindows();
 
   
-  yield BrowserTestUtils.closeWindow(win);
-  yield promiseBrowserState(backupState);
+  await BrowserTestUtils.closeWindow(win);
+  await promiseBrowserState(backupState);
 });
 
 function checkWindows() {

@@ -37,8 +37,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 
 
@@ -228,8 +226,8 @@ this.DownloadList.prototype = {
 
 
   removeFinished: function DL_removeFinished(aFilterFn) {
-    Task.spawn(function* () {
-      let list = yield this.getAll();
+    (async function() {
+      let list = await this.getAll();
       for (let download of list) {
         
         
@@ -238,7 +236,7 @@ this.DownloadList.prototype = {
             (!aFilterFn || aFilterFn(download))) {
           
           
-          yield this.remove(download);
+          await this.remove(download);
           
           
           
@@ -246,7 +244,7 @@ this.DownloadList.prototype = {
           download.finalize(true).then(null, Cu.reportError);
         }
       }
-    }.bind(this)).then(null, Cu.reportError);
+    }.bind(this))().then(null, Cu.reportError);
   },
 };
 

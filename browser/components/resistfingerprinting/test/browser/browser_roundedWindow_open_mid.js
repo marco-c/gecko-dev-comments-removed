@@ -22,41 +22,41 @@ const TESTCASES = [
   { settingWidth: 401, settingHeight: 501, targetWidth: 600, targetHeight: 600 },
 ];
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({"set":
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({"set":
     [["privacy.resistFingerprinting", true]]
   });
 
   
-  let popUpChromeUISize = yield calcPopUpWindowChromeUISize();
+  let popUpChromeUISize = await calcPopUpWindowChromeUISize();
 
   gPopupChromeUIWidth = popUpChromeUISize.chromeWidth;
   gPopupChromeUIHeight = popUpChromeUISize.chromeHeight;
 
   
-  let maxAvailSize = yield calcMaximumAvailSize(gPopupChromeUIWidth,
+  let maxAvailSize = await calcMaximumAvailSize(gPopupChromeUIWidth,
                                                 gPopupChromeUIHeight);
 
   gMaxAvailWidth = maxAvailSize.maxAvailWidth;
   gMaxAvailHeight = maxAvailSize.maxAvailHeight;
 });
 
-add_task(function* test_window_open() {
+add_task(async function test_window_open() {
   
-  let tab = yield BrowserTestUtils.openNewForegroundTab(
+  let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser, TEST_PATH + "file_dummy.html");
 
   for (let test of TESTCASES) {
     
-    yield testWindowOpen(tab.linkedBrowser, test.settingWidth, test.settingHeight,
+    await testWindowOpen(tab.linkedBrowser, test.settingWidth, test.settingHeight,
                          test.targetWidth, test.targetHeight, false, gMaxAvailWidth,
                          gMaxAvailHeight, gPopupChromeUIWidth, gPopupChromeUIHeight);
 
     
-    yield testWindowOpen(tab.linkedBrowser, test.settingWidth, test.settingHeight,
+    await testWindowOpen(tab.linkedBrowser, test.settingWidth, test.settingHeight,
                          test.targetWidth, test.targetHeight, true, gMaxAvailWidth,
                          gMaxAvailHeight, gPopupChromeUIWidth, gPopupChromeUIHeight);
   }
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });

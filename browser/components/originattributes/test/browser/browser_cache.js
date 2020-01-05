@@ -138,14 +138,14 @@ function* doInit(aMode) {
 
 
 
-function* doTest(aBrowser) {
+async function doTest(aBrowser) {
 
   let argObj = {
     randomSuffix,
     urlPrefix: TEST_DOMAIN + TEST_PATH,
   };
 
-  yield ContentTask.spawn(aBrowser, argObj, function* (arg) {
+  await ContentTask.spawn(aBrowser, argObj, async function(arg) {
     let videoURL = arg.urlPrefix + "file_thirdPartyChild.video.ogv";
     let audioURL = arg.urlPrefix + "file_thirdPartyChild.audio.ogg";
     let trackURL = arg.urlPrefix + "file_thirdPartyChild.track.vtt";
@@ -158,7 +158,7 @@ function* doTest(aBrowser) {
     let audioTrack = content.document.createElement("track");
 
     
-    yield new Promise(resolve => {
+    await new Promise(resolve => {
       let audioLoaded = false;
       let trackLoaded = false;
 
@@ -198,7 +198,7 @@ function* doTest(aBrowser) {
     });
 
     
-    yield new Promise(resolve => {
+    await new Promise(resolve => {
       let listener = () => {
         video.removeEventListener("canplaythrough", listener);
         resolve();

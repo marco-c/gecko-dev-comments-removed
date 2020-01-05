@@ -14,7 +14,7 @@ function waitForDialog() {
 
 
 
-add_task(function* test_mpAutocompleteTimeout() {
+add_task(async function test_mpAutocompleteTimeout() {
   let login = LoginTestUtils.testData.formLogin({
     hostname: "https://example.com",
     formSubmitURL: "https://example.com",
@@ -31,29 +31,29 @@ add_task(function* test_mpAutocompleteTimeout() {
 
   
   
-  yield SpecialPowers.pushPrefEnv({set: [[TIMEOUT_PREF, 3000]]});
+  await SpecialPowers.pushPrefEnv({set: [[TIMEOUT_PREF, 3000]]});
 
   
   let dialogShown = waitForDialog();
 
-  yield BrowserTestUtils.withNewTab(URL, function*(browser) {
-    yield dialogShown;
+  await BrowserTestUtils.withNewTab(URL, async function(browser) {
+    await dialogShown;
 
-    yield ContentTask.spawn(browser, null, function*() {
+    await ContentTask.spawn(browser, null, async function() {
       
       content.document.getElementById("form-basic-password").focus();
     });
 
     
     
-    yield new Promise((c) => setTimeout(c, 4000));
+    await new Promise((c) => setTimeout(c, 4000));
 
     dialogShown = waitForDialog();
-    yield ContentTask.spawn(browser, null, function*() {
+    await ContentTask.spawn(browser, null, async function() {
       
       content.document.getElementById("form-basic-username").focus();
       content.document.getElementById("form-basic-password").focus();
     });
-    yield dialogShown;
+    await dialogShown;
   });
 });

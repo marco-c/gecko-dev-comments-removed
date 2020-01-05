@@ -14,7 +14,7 @@
 
 const TEST_URI = "http://www.mozilla.org/";
 
-add_task(function* () {
+add_task(async function() {
   
   ok(PlacesUtils, "PlacesUtils is running in chrome context");
   ok(PlacesUIUtils, "PlacesUIUtils is running in chrome context");
@@ -37,14 +37,14 @@ add_task(function* () {
   }
 
   
-  let folder = yield PlacesUtils.bookmarks.insert({
+  let folder = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.rootGuid,
     index: PlacesUtils.bookmarks.DEFAULT_INDEX,
     type: PlacesUtils.bookmarks.TYPE_FOLDER,
     title: ""
   });
 
-  let folderId = yield PlacesUtils.promiseItemId(folder.guid);
+  let folderId = await PlacesUtils.promiseItemId(folder.guid);
   PlacesUtils.annotations.setItemAnnotation(folderId,
                                             PlacesUIUtils.ORGANIZER_FOLDER_ANNO,
                                             PlacesUIUtils.ORGANIZER_LEFTPANE_VERSION - 1,
@@ -63,7 +63,7 @@ add_task(function* () {
   is(version, PlacesUIUtils.ORGANIZER_LEFTPANE_VERSION - 1, "Left pane version correctly set");
 
   
-  let organizer = yield promiseLibrary();
+  let organizer = await promiseLibrary();
 
   
   ok(PlacesUIUtils.leftPaneFolderId > 0, "Left pane folder correctly created");
@@ -86,5 +86,5 @@ add_task(function* () {
      PlacesUIUtils.leftPaneQueries["History"],
      "Library left pane is populated and working");
 
-  yield promiseLibraryClosed(organizer);
+  await promiseLibraryClosed(organizer);
 });

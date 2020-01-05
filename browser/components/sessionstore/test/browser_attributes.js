@@ -9,13 +9,13 @@
 
 const PREF = "browser.sessionstore.restore_on_demand";
 
-add_task(function* test() {
+add_task(async function test() {
   Services.prefs.setBoolPref(PREF, true)
   registerCleanupFunction(() => Services.prefs.clearUserPref(PREF));
 
   
   let tab = gBrowser.addTab("about:robots");
-  yield promiseBrowserLoaded(tab.linkedBrowser);
+  await promiseBrowserLoaded(tab.linkedBrowser);
 
   
   ok(tab.hasAttribute("image"), "tab.image exists");
@@ -52,7 +52,7 @@ add_task(function* test() {
   
   let promise = promiseTabRestoring(tab);
   ss.setTabState(tab, JSON.stringify(state));
-  yield promise;
+  await promise;
 
   ok(tab.hasAttribute("pending"), "tab is pending");
   is(gBrowser.getIcon(tab), state.image, "tab has correct icon");
@@ -60,7 +60,7 @@ add_task(function* test() {
 
   
   gBrowser.selectedTab = tab;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
   
   ({attributes} = JSON.parse(ss.getTabState(tab)));

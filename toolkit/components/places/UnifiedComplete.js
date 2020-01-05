@@ -267,8 +267,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSearchHandler",
                                   "resource://gre/modules/ExtensionSearchHandler.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesSearchAutocompleteProvider",
                                   "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesRemoteTabsAutocompleteProvider",
@@ -297,11 +295,11 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
   _conn: null,
   
   _queue: new Map(),
-  initDatabase: Task.async(function* (conn) {
+  async initDatabase(conn) {
     
     
     
-    yield conn.execute(
+    await conn.execute(
       `CREATE TEMP TABLE moz_openpages_temp (
          url TEXT,
          userContextId INTEGER,
@@ -311,7 +309,7 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
 
     
     
-    yield conn.execute(
+    await conn.execute(
       `CREATE TEMPORARY TRIGGER moz_openpages_temp_afterupdate_trigger
        AFTER UPDATE OF open_count ON moz_openpages_temp FOR EACH ROW
        WHEN NEW.open_count = 0
@@ -332,7 +330,7 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
 
     
     this._queue.clear();
-  }),
+  },
 
   add(uri, userContextId) {
     if (!this._conn) {
@@ -910,7 +908,7 @@ Search.prototype = {
 
 
 
-  execute: Task.async(function* (conn) {
+  async execute(conn) {
     
     if (!this.pending)
       return;
@@ -921,7 +919,7 @@ Search.prototype = {
 
     
     
-    yield PlacesSearchAutocompleteProvider.ensureInitialized();
+    await PlacesSearchAutocompleteProvider.ensureInitialized();
     if (!this.pending)
       return;
 
@@ -959,13 +957,13 @@ Search.prototype = {
     queries.push(this._searchQuery);
 
     
-    yield this._checkPreloadedSitesExpiry();
+    await this._checkPreloadedSitesExpiry();
 
     
     
     
     this._addingHeuristicFirstMatch = true;
-    let hasHeuristic = yield this._matchFirstHeuristicResult(conn);
+    let hasHeuristic = await this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
     if (!this.pending)
       return;
@@ -976,25 +974,25 @@ Search.prototype = {
     
     
     if (hasHeuristic) {
-      yield this._sleep(Prefs.delay);
+      await this._sleep(Prefs.delay);
       if (!this.pending)
         return;
     }
 
     if (this._enableActions && this._searchTokens.length > 0) {
-      yield this._matchSearchSuggestions();
+      await this._matchSearchSuggestions();
       if (!this.pending)
         return;
     }
 
     for (let [query, params] of queries) {
-      yield conn.executeCached(query, params, this._onResultRow.bind(this));
+      await conn.executeCached(query, params, this._onResultRow.bind(this));
       if (!this.pending)
         return;
     }
 
     if (this._enableActions && this.hasBehavior("openpage")) {
-      yield this._matchRemoteTabs();
+      await this._matchRemoteTabs();
       if (!this.pending)
         return;
     }
@@ -1007,7 +1005,7 @@ Search.prototype = {
       this._matchBehavior = MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
                                     this._searchQuery ]) {
-        yield conn.executeCached(query, params, this._onResultRow.bind(this));
+        await conn.executeCached(query, params, this._onResultRow.bind(this));
         if (!this.pending)
           return;
       }
@@ -1017,7 +1015,7 @@ Search.prototype = {
     
     if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
         this._originalSearchString.length > this._searchTokens[0].length) {
-      yield this._matchExtensionSuggestions();
+      await this._matchExtensionSuggestions();
       if (!this.pending)
         return;
     } else if (ExtensionSearchHandler.hasActiveInputSession()) {
@@ -1028,14 +1026,14 @@ Search.prototype = {
 
     
     
-    yield Promise.all(this._remoteMatchesPromises);
-  }),
+    await Promise.all(this._remoteMatchesPromises);
+  },
 
 
-  *_checkPreloadedSitesExpiry() {
+  async _checkPreloadedSitesExpiry() {
     if (!Prefs.preloadedSitesEnabled)
       return;
-    let profileCreationDate = yield ProfileAgeCreatedPromise;
+    let profileCreationDate = await ProfileAgeCreatedPromise;
     let daysSinceProfileCreation = (Date.now() - profileCreationDate) / MS_PER_DAY;
     if (daysSinceProfileCreation > Prefs.preloadedSitesExpireDays)
       Services.prefs.setBoolPref("browser.urlbar.usepreloadedtopurls.enabled", false);
@@ -1235,7 +1233,7 @@ Search.prototype = {
     return false;
   },
 
-  *_matchSearchSuggestions() {
+  async _matchSearchSuggestions() {
     
     let searchString = this._searchTokens.join(" ")
                            .substr(0, Prefs.maxCharsForSearchSuggestions);
@@ -1277,7 +1275,7 @@ Search.prototype = {
 
     if (this.hasBehavior("restrict")) {
       
-      yield promise;
+      await promise;
       this.stop();
     } else {
       this._remoteMatchesPromises.push(promise);
@@ -1336,7 +1334,7 @@ Search.prototype = {
     return gotResult;
   },
 
-  *_matchExtensionHeuristicResult() {
+  _matchExtensionHeuristicResult() {
     if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
         this._originalSearchString.length > this._searchTokens[0].length) {
       let description = ExtensionSearchHandler.getDescription(this._searchTokens[0]);
@@ -1509,7 +1507,7 @@ Search.prototype = {
     });
   },
 
-  *_matchExtensionSuggestions() {
+  _matchExtensionSuggestions() {
     let promise = ExtensionSearchHandler.handleSearch(this._searchTokens[0], this._originalSearchString,
       suggestions => {
         suggestions.forEach(suggestion => {
@@ -1550,7 +1548,7 @@ Search.prototype = {
 
   
   
-  *_matchUnknownUrl() {
+  _matchUnknownUrl() {
     let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
                 Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
     let fixupInfo = null;
@@ -2156,21 +2154,21 @@ UnifiedComplete.prototype = {
 
   getDatabaseHandle() {
     if (Prefs.enabled && !this._promiseDatabase) {
-      this._promiseDatabase = Task.spawn(function* () {
-        let conn = yield Sqlite.cloneStorageConnection({
+      this._promiseDatabase = (async function() {
+        let conn = await Sqlite.cloneStorageConnection({
           connection: PlacesUtils.history.DBConnection,
           readOnly: true
         });
 
         try {
            Sqlite.shutdown.addBlocker("Places UnifiedComplete.js clone closing",
-                                      Task.async(function* () {
+                                      async function() {
                                         SwitchToTabStorage.shutdown();
-                                        yield conn.close();
-                                      }));
+                                        await conn.close();
+                                      });
         } catch (ex) {
           
-          yield conn.close();
+          await conn.close();
           throw ex;
         }
 
@@ -2178,12 +2176,12 @@ UnifiedComplete.prototype = {
         
         
         
-        yield conn.execute("PRAGMA cache_size = -6144"); 
+        await conn.execute("PRAGMA cache_size = -6144"); 
 
-        yield SwitchToTabStorage.initDatabase(conn);
+        await SwitchToTabStorage.initDatabase(conn);
 
         return conn;
-      }).then(null, ex => {
+      })().then(null, ex => {
         dump("Couldn't get database handle: " + ex + "\n");
         Cu.reportError(ex);
       });

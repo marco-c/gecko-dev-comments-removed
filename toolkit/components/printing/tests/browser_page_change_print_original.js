@@ -6,7 +6,7 @@
 
 
 
-add_task(function* pp_after_orientation_change() {
+add_task(async function pp_after_orientation_change() {
   const DATA_URI = `data:text/html,<script>window.onafterprint = function() { setTimeout("window.location = 'data:text/plain,REPLACED PAGE!'", 0); }</script><pre>INITIAL PAGE</pre>`;
   
   if (AppConstants.platform != "win" && AppConstants.platform != "linux") {
@@ -15,7 +15,7 @@ add_task(function* pp_after_orientation_change() {
   }
 
   
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, DATA_URI, false, true);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, DATA_URI, false, true);
   let browserToPrint = tab.linkedBrowser;
   let ppBrowser = PrintPreviewListener.getPrintPreviewBrowser();
 
@@ -25,14 +25,14 @@ add_task(function* pp_after_orientation_change() {
   
   let printPreviewEntered = BrowserTestUtils.waitForMessage(ppBrowser.messageManager, "Printing:Preview:Entered");
   document.getElementById("cmd_printPreview").doCommand();
-  yield printPreviewEntered;
+  await printPreviewEntered;
 
   
-  yield ContentTask.spawn(ppBrowser, null, function* () {
+  await ContentTask.spawn(ppBrowser, null, async function() {
     is(content.document.body.textContent, "INITIAL PAGE", "Should have initial page print previewed.");
   });
 
-  yield originalTabNavigated;
+  await originalTabNavigated;
 
   
   let orient = PrintUtils.getPrintSettings().orientation;
@@ -42,19 +42,19 @@ add_task(function* pp_after_orientation_change() {
 
   printPreviewEntered = BrowserTestUtils.waitForMessage(ppBrowser.messageManager, "Printing:Preview:Entered");
   printPreviewToolbar.orient(orientToSwitchTo);
-  yield printPreviewEntered;
+  await printPreviewEntered;
 
   
-  yield ContentTask.spawn(ppBrowser, null, function* () {
+  await ContentTask.spawn(ppBrowser, null, async function() {
     is(content.document.body.textContent, "INITIAL PAGE", "Should still have initial page print previewed.");
   });
 
   
-  yield ContentTask.spawn(browserToPrint, null, function* () {
+  await ContentTask.spawn(browserToPrint, null, async function() {
     is(content.document.body.textContent, "REPLACED PAGE!", "Original page should have changed.");
   });
 
   PrintUtils.exitPrintPreview();
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });

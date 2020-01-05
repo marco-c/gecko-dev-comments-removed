@@ -4,13 +4,13 @@
 
 
 
-add_task(function* testMainActionCalled() {
+add_task(async function testMainActionCalled() {
   let options = {
     gBrowser: window.gBrowser,
     url: "about:blank"
   };
 
-  yield BrowserTestUtils.withNewTab(options, function*(browser) {
+  await BrowserTestUtils.withNewTab(options, function(browser) {
     let doc = browser.ownerDocument;
 
     is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
@@ -40,16 +40,16 @@ add_task(function* testMainActionCalled() {
 
 
 
-add_task(function* testDoesNotShowDoorhangerForBackgroundWindow() {
+add_task(async function testDoesNotShowDoorhangerForBackgroundWindow() {
   let options = {
     gBrowser: window.gBrowser,
     url: "about:blank"
   };
 
-  yield BrowserTestUtils.withNewTab(options, function*(browser) {
+  await BrowserTestUtils.withNewTab(options, async function(browser) {
     let doc = browser.ownerDocument;
 
-    let win = yield BrowserTestUtils.openNewBrowserWindow();
+    let win = await BrowserTestUtils.openNewBrowserWindow();
     let mainActionCalled = false;
     let mainAction = {
       callback: () => { mainActionCalled = true; }
@@ -58,8 +58,8 @@ add_task(function* testDoesNotShowDoorhangerForBackgroundWindow() {
     is(PanelUI.notificationPanel.state, "closed", "The background window's doorhanger is closed.");
     is(PanelUI.menuButton.hasAttribute("badge-status"), true, "The background window has a badge.");
 
-    yield BrowserTestUtils.closeWindow(win);
-    yield SimpleTest.promiseFocus(window);
+    await BrowserTestUtils.closeWindow(win);
+    await SimpleTest.promiseFocus(window);
     isnot(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is showing.");
     let notifications = [...PanelUI.notificationPanel.children].filter(n => !n.hidden);
     is(notifications.length, 1, "PanelUI doorhanger is only displaying one notification.");
@@ -80,14 +80,14 @@ add_task(function* testDoesNotShowDoorhangerForBackgroundWindow() {
 
 
 
-add_task(function* testBackgroundWindowNotificationsAreRemovedByForeground() {
+add_task(async function testBackgroundWindowNotificationsAreRemovedByForeground() {
   let options = {
     gBrowser: window.gBrowser,
     url: "about:blank"
   };
 
-  yield BrowserTestUtils.withNewTab(options, function*(browser) {
-    let win = yield BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.withNewTab(options, async function(browser) {
+    let win = await BrowserTestUtils.openNewBrowserWindow();
     PanelUI.showNotification("update-manual", {callback() {}});
     win.PanelUI.showNotification("update-manual", {callback() {}});
     let doc = win.gBrowser.ownerDocument;
@@ -96,8 +96,8 @@ add_task(function* testBackgroundWindowNotificationsAreRemovedByForeground() {
     let button = doc.getAnonymousElementByAttribute(doorhanger, "anonid", "button");
     button.click();
 
-    yield BrowserTestUtils.closeWindow(win);
-    yield SimpleTest.promiseFocus(window);
+    await BrowserTestUtils.closeWindow(win);
+    await SimpleTest.promiseFocus(window);
 
     is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
     is(PanelUI.menuButton.hasAttribute("badge-status"), false, "Should not have a badge status");
@@ -110,14 +110,14 @@ add_task(function* testBackgroundWindowNotificationsAreRemovedByForeground() {
 
 
 
-add_task(function* testBackgroundWindowNotificationsAreDismissedByForeground() {
+add_task(async function testBackgroundWindowNotificationsAreDismissedByForeground() {
   let options = {
     gBrowser: window.gBrowser,
     url: "about:blank"
   };
 
-  yield BrowserTestUtils.withNewTab(options, function*(browser) {
-    let win = yield BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.withNewTab(options, async function(browser) {
+    let win = await BrowserTestUtils.openNewBrowserWindow();
     PanelUI.showNotification("update-manual", {callback() {}});
     win.PanelUI.showNotification("update-manual", {callback() {}});
     let doc = win.gBrowser.ownerDocument;
@@ -126,8 +126,8 @@ add_task(function* testBackgroundWindowNotificationsAreDismissedByForeground() {
     let button = doc.getAnonymousElementByAttribute(doorhanger, "anonid", "secondarybutton");
     button.click();
 
-    yield BrowserTestUtils.closeWindow(win);
-    yield SimpleTest.promiseFocus(window);
+    await BrowserTestUtils.closeWindow(win);
+    await SimpleTest.promiseFocus(window);
 
     is(PanelUI.notificationPanel.state, "closed", "The background window's doorhanger is closed.");
     is(PanelUI.menuButton.hasAttribute("badge-status"), true,
@@ -143,13 +143,13 @@ add_task(function* testBackgroundWindowNotificationsAreDismissedByForeground() {
 
 
 
-add_task(function* testSecondaryActionWorkflow() {
+add_task(async function testSecondaryActionWorkflow() {
   let options = {
     gBrowser: window.gBrowser,
     url: "about:blank"
   };
 
-  yield BrowserTestUtils.withNewTab(options, function*(browser) {
+  await BrowserTestUtils.withNewTab(options, function*(browser) {
     let doc = browser.ownerDocument;
 
     is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
@@ -196,8 +196,8 @@ add_task(function* testSecondaryActionWorkflow() {
 
 
 
-add_task(function* testInteractionWithBadges() {
-  yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {
+add_task(async function testInteractionWithBadges() {
+  await BrowserTestUtils.withNewTab("about:blank", function*(browser) {
     let doc = browser.ownerDocument;
 
     PanelUI.showBadgeOnlyNotification("fxa-needs-authentication");
@@ -242,8 +242,8 @@ add_task(function* testInteractionWithBadges() {
 
 
 
-add_task(function* testAddingBadgeWhileDoorhangerIsShowing() {
-  yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {
+add_task(async function testAddingBadgeWhileDoorhangerIsShowing() {
+  await BrowserTestUtils.withNewTab("about:blank", function(browser) {
     let doc = browser.ownerDocument;
 
     is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
@@ -275,8 +275,8 @@ add_task(function* testAddingBadgeWhileDoorhangerIsShowing() {
 
 
 
-add_task(function* testMultipleBadges() {
-  yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {
+add_task(async function testMultipleBadges() {
+  await BrowserTestUtils.withNewTab("about:blank", function*(browser) {
     let doc = browser.ownerDocument;
     let menuButton = doc.getElementById("PanelUI-menu-button");
 
@@ -321,8 +321,8 @@ add_task(function* testMultipleBadges() {
 
 
 
-add_task(function* testMultipleNonBadges() {
-  yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {
+add_task(async function testMultipleNonBadges() {
+  await BrowserTestUtils.withNewTab("about:blank", function*(browser) {
     let doc = browser.ownerDocument;
 
     is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
@@ -383,7 +383,7 @@ add_task(function* testMultipleNonBadges() {
   });
 });
 
-add_task(function* testFullscreen() {
+add_task(async function testFullscreen() {
   let doc = document;
 
   is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
@@ -401,8 +401,8 @@ add_task(function* testFullscreen() {
 
   let popuphiddenPromise = BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popuphidden");
   EventUtils.synthesizeKey("VK_F11", {});
-  yield popuphiddenPromise;
-  yield new Promise(executeSoon);
+  await popuphiddenPromise;
+  await new Promise(executeSoon);
   is(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is closed.");
 
   window.FullScreen.showNavToolbox();
@@ -410,8 +410,8 @@ add_task(function* testFullscreen() {
 
   let popupshownPromise = BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popupshown");
   EventUtils.synthesizeKey("VK_F11", {});
-  yield popupshownPromise;
-  yield new Promise(executeSoon);
+  await popupshownPromise;
+  await new Promise(executeSoon);
   isnot(PanelUI.notificationPanel.state, "closed", "update-manual doorhanger is showing.");
   isnot(PanelUI.menuButton.getAttribute("badge-status"), "update-manual", "Badge is not displaying on PanelUI button.");
 

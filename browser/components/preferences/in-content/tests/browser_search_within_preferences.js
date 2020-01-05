@@ -5,29 +5,29 @@
 
 
 
-add_task(function*() {
-  yield SpecialPowers.pushPrefEnv({"set": [["browser.preferences.search", false]]});
-  yield openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [["browser.preferences.search", false]]});
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   let searchInput = gBrowser.contentDocument.querySelectorAll("#searchInput");
   is(searchInput.length, 1, "There should only be one element name searchInput querySelectorAll");
   is_element_hidden(searchInput[0], "Search box should be hidden");
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  yield SpecialPowers.popPrefEnv();
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SpecialPowers.popPrefEnv();
 });
 
 
-add_task(function*() {
-  yield SpecialPowers.pushPrefEnv({"set": [["browser.preferences.search", true]]});
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [["browser.preferences.search", true]]});
 });
 
 
 
 
-add_task(function*() {
-  yield openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
   is_element_visible(searchInput, "Search box should be shown");
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
@@ -35,8 +35,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
   
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
@@ -68,14 +68,14 @@ add_task(function*() {
     }
   }
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 
 
-add_task(function*() {
-  yield openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
   
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
@@ -117,14 +117,14 @@ add_task(function*() {
     }
   }
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 
 
-add_task(function*() {
-  yield openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
 
   let noResultsEl = gBrowser.contentDocument.querySelector(".no-results-message");
 
@@ -144,14 +144,14 @@ add_task(function*() {
 
   is_element_hidden(noResultsEl, "Should not be in search results");
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 
 
-add_task(function*() {
-  yield openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});
   let generalPane = gBrowser.contentDocument.getElementById("header-general");
 
   is_element_hidden(generalPane, "Should not be in general");
@@ -169,16 +169,16 @@ add_task(function*() {
   
   is_element_visible(generalPane, "Should be in generalPane");
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 
 
 
-add_task(function*() {
-  yield SpecialPowers.pushPrefEnv({"set": [["browser.storageManager.enabled", false]]});
-  yield openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({"set": [["browser.storageManager.enabled", false]]});
+  await openPreferencesViaOpenPreferencesAPI("privacy", {leaveOpen: true});
   let generalPane = gBrowser.contentDocument.getElementById("header-general");
 
   is_element_hidden(generalPane, "Should not be in general");
@@ -201,14 +201,14 @@ add_task(function*() {
   
   is_element_visible(generalPane, "Should be in generalPane");
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
 
 
-add_task(function*() {
-  yield openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
+add_task(async function() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {leaveOpen: true});
   let searchInput = gBrowser.contentDocument.getElementById("searchInput");
   let searchResultsCategory = gBrowser.contentDocument.getElementById("category-search-results");
   searchInput.focus();
@@ -231,5 +231,5 @@ add_task(function*() {
     }
   }
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

@@ -66,8 +66,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "require",
                                   "resource://devtools/shared/Loader.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 Cu.import("resource://gre/modules/ExtensionManagement.jsm");
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
@@ -319,7 +317,7 @@ this.ExtensionData = class {
   }
 
   readDirectory(path) {
-    return Task.spawn(function* () {
+    return (async function() {
       if (this.rootURI instanceof Ci.nsIFileURL) {
         let uri = NetUtil.newURI(this.rootURI.resolve("./" + path));
         let fullPath = uri.QueryInterface(Ci.nsIFileURL).file.path;
@@ -328,7 +326,7 @@ this.ExtensionData = class {
         let results = [];
 
         try {
-          yield iter.forEach(entry => {
+          await iter.forEach(entry => {
             results.push(entry);
           });
         } catch (e) {
@@ -380,7 +378,7 @@ this.ExtensionData = class {
       } finally {
         zipReader.close();
       }
-    }.bind(this));
+    }.bind(this))();
   }
 
   readJSON(path) {
@@ -572,19 +570,19 @@ this.ExtensionData = class {
   
   
   readLocaleFile(locale) {
-    return Task.spawn(function* () {
-      let locales = yield this.promiseLocales();
+    return (async function() {
+      let locales = await this.promiseLocales();
       let dir = locales.get(locale) || locale;
       let file = `_locales/${dir}/messages.json`;
 
       try {
-        let messages = yield this.readJSON(file);
+        let messages = await this.readJSON(file);
         return this.localeData.addLocale(locale, messages, this);
       } catch (e) {
         this.packagingError(`Loading locale file ${file}: ${e}`);
         return new Map();
       }
-    }.bind(this));
+    }.bind(this))();
   }
 
   
@@ -595,10 +593,10 @@ this.ExtensionData = class {
   
   promiseLocales() {
     if (!this._promiseLocales) {
-      this._promiseLocales = Task.spawn(function* () {
+      this._promiseLocales = (async function() {
         let locales = new Map();
 
-        let entries = yield this.readDirectory("_locales");
+        let entries = await this.readDirectory("_locales");
         for (let file of entries) {
           if (file.isDir) {
             let locale = this.normalizeLocaleCode(file.name);
@@ -613,7 +611,7 @@ this.ExtensionData = class {
         });
 
         return locales;
-      }.bind(this));
+      }.bind(this))();
     }
 
     return this._promiseLocales;
@@ -624,10 +622,10 @@ this.ExtensionData = class {
   
   
   initAllLocales() {
-    return Task.spawn(function* () {
-      let locales = yield this.promiseLocales();
+    return (async function() {
+      let locales = await this.promiseLocales();
 
-      yield Promise.all(Array.from(locales.keys(),
+      await Promise.all(Array.from(locales.keys(),
                                    locale => this.readLocaleFile(locale)));
 
       let defaultLocale = this.defaultLocale;
@@ -643,7 +641,7 @@ this.ExtensionData = class {
       }
 
       return this.localeData.messages;
-    }.bind(this));
+    }.bind(this))();
   }
 
   
@@ -655,7 +653,7 @@ this.ExtensionData = class {
   
   
   initLocale(locale = this.defaultLocale) {
-    return Task.spawn(function* () {
+    return (async function() {
       if (locale == null) {
         return null;
       }
@@ -667,11 +665,11 @@ this.ExtensionData = class {
         promises.push(this.readLocaleFile(defaultLocale));
       }
 
-      let results = yield Promise.all(promises);
+      let results = await Promise.all(promises);
 
       this.localeData.selectedLocale = locale;
       return results[0];
-    }.bind(this));
+    }.bind(this))();
   }
 };
 

@@ -19,7 +19,7 @@ var tests = [
      "https://untrusted.example.com/somepage.html"]
 ];
 
-add_task(function* () {
+add_task(async function() {
     gBrowser.selectedTab = gBrowser.addTab();
     let browser = gBrowser.selectedBrowser;
     browser.stop(); 
@@ -30,8 +30,8 @@ add_task(function* () {
 
         let promiseLoaded = promisePageLoaded(browser);
         BrowserTestUtils.loadURI(browser, uri);
-        yield promiseLoaded;
-        yield checkBookmark(uri, title);
+        await promiseLoaded;
+        await checkBookmark(uri, title);
     }
 
     
@@ -54,27 +54,27 @@ add_task(function* () {
 
     let promiseLoaded = promisePageLoaded(browser);
     BrowserTestUtils.loadURI(browser, uri);
-    yield promiseLoaded;
+    await promiseLoaded;
 
     
-    yield ContentTask.spawn(browser, null, function() {
+    await ContentTask.spawn(browser, null, function() {
       is(content.document.documentURI.substring(0, 14), "about:neterror",
           "Offline mode successfully simulated network outage.");
     });
-    yield checkBookmark(uri, title);
+    await checkBookmark(uri, title);
 
     gBrowser.removeCurrentTab();
 });
 
 
 
-function* checkBookmark(uri, expected_title) {
+async function checkBookmark(uri, expected_title) {
     is(gBrowser.selectedBrowser.currentURI.spec, uri,
        "Trying to bookmark the expected uri");
 
     let promiseBookmark = promiseOnBookmarkItemAdded(gBrowser.selectedBrowser.currentURI);
     PlacesCommandHook.bookmarkCurrentPage(false);
-    yield promiseBookmark;
+    await promiseBookmark;
 
     let id = PlacesUtils.getMostRecentBookmarkForURI(PlacesUtils._uri(uri));
     ok(id > 0, "Found the expected bookmark");
@@ -87,8 +87,8 @@ function* checkBookmark(uri, expected_title) {
 
 
 function promisePageLoaded(browser) {
-  return ContentTask.spawn(browser, null, function* () {
-    yield ContentTaskUtils.waitForEvent(this, "DOMContentLoaded", true,
+  return ContentTask.spawn(browser, null, async function() {
+    await ContentTaskUtils.waitForEvent(this, "DOMContentLoaded", true,
         (event) => {
           return event.originalTarget === content.document &&
                  event.target.location.href !== "about:blank"

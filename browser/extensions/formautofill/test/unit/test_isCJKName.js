@@ -4,7 +4,6 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://formautofill/FormAutofillNameUtils.jsm");
 
 
@@ -67,7 +66,7 @@ const TESTCASES = [
   },
 ];
 
-add_task(function* test_isCJKName() {
+add_task(async function test_isCJKName() {
   TESTCASES.forEach(testcase => {
     do_print("Starting testcase: " + testcase.fullName);
     let result = FormAutofillNameUtils._isCJKName(testcase.fullName);

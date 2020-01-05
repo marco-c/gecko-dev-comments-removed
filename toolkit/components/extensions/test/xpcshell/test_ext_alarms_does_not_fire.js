@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* test_cleared_alarm_does_not_fire() {
+add_task(async function test_cleared_alarm_does_not_fire() {
   async function backgroundScript() {
     let ALARM_NAME = "test_ext_alarms";
 
@@ -27,7 +27,7 @@ add_task(function* test_cleared_alarm_does_not_fire() {
     },
   });
 
-  yield extension.startup();
-  yield extension.awaitFinish("alarm-cleared");
-  yield extension.unload();
+  await extension.startup();
+  await extension.awaitFinish("alarm-cleared");
+  await extension.unload();
 });

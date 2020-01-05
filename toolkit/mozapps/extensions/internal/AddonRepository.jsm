@@ -28,8 +28,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ServiceRequest",
                                   "resource://gre/modules/ServiceRequest.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 
 this.EXPORTED_SYMBOLS = [ "AddonRepository" ];
@@ -552,7 +550,7 @@ this.AddonRepository = {
 
 
 
-  getCachedAddonByID: Task.async(function*(aId, aCallback) {
+  async getCachedAddonByID(aId, aCallback) {
     if (!aId || !this.cacheEnabled) {
       aCallback(null);
       return;
@@ -572,7 +570,7 @@ this.AddonRepository = {
     }
 
     getAddon(this._addons);
-  }),
+  },
 
   
 
@@ -599,8 +597,8 @@ this.AddonRepository = {
       AddonManagerPrivate.updateAddonRepositoryData());
   },
 
-  _repopulateCacheInternal: Task.async(function*(aSendPerformance, aTimeout) {
-    let allAddons = yield AddonManager.getAllAddons();
+  async _repopulateCacheInternal(aSendPerformance, aTimeout) {
+    let allAddons = await AddonManager.getAllAddons();
 
     
     allAddons = allAddons.filter(a => a.id != AddonManager.hotfixID);
@@ -608,23 +606,23 @@ this.AddonRepository = {
     
     if (!this.cacheEnabled) {
       logger.debug("Clearing cache because it is disabled");
-      yield this._clearCache();
+      await this._clearCache();
       return;
     }
 
     let ids = allAddons.map(a => a.id);
     logger.debug("Repopulate add-on cache with " + ids.toSource());
 
-    let addonsToCache = yield getAddonsToCache(ids);
+    let addonsToCache = await getAddonsToCache(ids);
 
     
     if (addonsToCache.length == 0) {
       logger.debug("Clearing cache because 0 add-ons were requested");
-      yield this._clearCache();
+      await this._clearCache();
       return;
     }
 
-    yield new Promise((resolve, reject) =>
+    await new Promise((resolve, reject) =>
       this._beginGetAddons(addonsToCache, {
         searchSucceeded: aAddons => {
           this._addons = new Map();
@@ -640,8 +638,8 @@ this.AddonRepository = {
       }, aSendPerformance, aTimeout));
 
     
-    yield AddonManagerPrivate.updateAddonRepositoryData();
-  }),
+    await AddonManagerPrivate.updateAddonRepositoryData();
+  },
 
   
 
@@ -1550,13 +1548,13 @@ var AddonDatabase = {
 
   openConnection() {
     if (!this.connectionPromise) {
-     this.connectionPromise = Task.spawn(function*() {
+     this.connectionPromise = (async function() {
        this.DB = BLANK_DB();
 
        let inputDB, schema;
 
        try {
-         let data = yield OS.File.read(this.jsonFile, { encoding: "utf-8"})
+         let data = await OS.File.read(this.jsonFile, { encoding: "utf-8"})
          inputDB = JSON.parse(data);
 
          if (!inputDB.hasOwnProperty("addons") ||
@@ -1587,12 +1585,12 @@ var AddonDatabase = {
          let dbSchema = Services.prefs.getIntPref(PREF_GETADDONS_DB_SCHEMA, 0);
 
          if (dbSchema < DB_MIN_JSON_SCHEMA) {
-           let results = yield new Promise((resolve, reject) => {
+           let results = await new Promise((resolve, reject) => {
              AddonRepository_SQLiteMigrator.migrate(resolve);
            });
 
            if (results.length) {
-             yield this._insertAddons(results);
+             await this._insertAddons(results);
            }
 
          }
@@ -1611,7 +1609,7 @@ var AddonDatabase = {
        }
 
        return this.DB;
-     }.bind(this));
+     }.bind(this))();
     }
 
     return this.connectionPromise;
@@ -1747,19 +1745,19 @@ var AddonDatabase = {
 
 
 
-  insertAddons: Task.async(function*(aAddons, aCallback) {
-    yield this.openConnection();
-    yield this._insertAddons(aAddons, aCallback);
-  }),
+  async insertAddons(aAddons, aCallback) {
+    await this.openConnection();
+    await this._insertAddons(aAddons, aCallback);
+  },
 
-  _insertAddons: Task.async(function*(aAddons, aCallback) {
+  async _insertAddons(aAddons, aCallback) {
     for (let addon of aAddons) {
       this._insertAddon(addon);
     }
 
-    yield this._saveDBToDisk();
+    await this._saveDBToDisk();
     aCallback && aCallback();
-  }),
+  },
 
   
 

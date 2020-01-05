@@ -4,46 +4,46 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   let input = "i-definitely-dont-exist.example.com";
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
   
   
-  yield BrowserTestUtils.waitForCondition(() => !tab.linkedBrowser.contentDocument.hidden)
+  await BrowserTestUtils.waitForCondition(() => !tab.linkedBrowser.contentDocument.hidden)
   let errorPageLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
   gURLBar.value = input;
   gURLBar.select();
   EventUtils.sendKey("return");
-  yield errorPageLoaded;
+  await errorPageLoaded;
   is(gURLBar.textValue, input, "Text is still in URL bar");
-  yield BrowserTestUtils.switchTab(gBrowser, tab.previousSibling);
-  yield BrowserTestUtils.switchTab(gBrowser, tab);
+  await BrowserTestUtils.switchTab(gBrowser, tab.previousSibling);
+  await BrowserTestUtils.switchTab(gBrowser, tab);
   is(gURLBar.textValue, input, "Text is still in URL bar after tab switch");
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });
 
 
 
 
 
-add_task(function* () {
+add_task(async function() {
   let input = "To be or not to be-that is the question";
-  yield SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
+  await SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
   
   
-  yield BrowserTestUtils.waitForCondition(() => !tab.linkedBrowser.contentDocument.hidden)
+  await BrowserTestUtils.waitForCondition(() => !tab.linkedBrowser.contentDocument.hidden)
   let errorPageLoaded = BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
   gURLBar.value = input;
   gURLBar.select();
   EventUtils.sendKey("return");
-  yield errorPageLoaded;
+  await errorPageLoaded;
   is(gURLBar.textValue, input, "Text is still in URL bar");
   is(tab.linkedBrowser.userTypedValue, input, "Text still stored on browser");
-  yield BrowserTestUtils.switchTab(gBrowser, tab.previousSibling);
-  yield BrowserTestUtils.switchTab(gBrowser, tab);
+  await BrowserTestUtils.switchTab(gBrowser, tab.previousSibling);
+  await BrowserTestUtils.switchTab(gBrowser, tab);
   is(gURLBar.textValue, input, "Text is still in URL bar after tab switch");
   is(tab.linkedBrowser.userTypedValue, input, "Text still stored on browser");
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });
 

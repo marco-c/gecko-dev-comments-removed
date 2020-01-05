@@ -32,8 +32,8 @@ function getBadgeStatus() {
 }
 
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({set: [
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],
@@ -42,20 +42,20 @@ add_task(function* setup() {
   
   
   gBrowser.selectedBrowser.loadURI("about:robots");
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-  registerCleanupFunction(function*() {
+  registerCleanupFunction(async function() {
     
     gBrowser.selectedBrowser.loadURI("about:blank");
-    yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   });
 });
 
 hookExtensionsTelemetry();
 
 
-function* backgroundUpdateTest(url, id, checkIconFn) {
-  yield SpecialPowers.pushPrefEnv({set: [
+async function backgroundUpdateTest(url, id, checkIconFn) {
+  await SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.update.enabled", true],
 
@@ -64,7 +64,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   ]});
 
   
-  let addon = yield promiseInstallAddon(url);
+  let addon = await promiseInstallAddon(url);
 
   ok(addon, "Addon was installed");
   is(getBadgeStatus(), "", "Should not start out with an addon alert badge");
@@ -74,12 +74,12 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   let updatePromise = promiseInstallEvent(addon, "onDownloadEnded");
 
   AddonManagerPrivate.backgroundUpdateCheck();
-  yield updatePromise;
+  await updatePromise;
 
   is(getBadgeStatus(), "addon-alert", "Should have addon alert badge");
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
 
   let addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 1, "Have a menu entry for the update");
@@ -90,17 +90,17 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   addons.children[0].click();
 
   
-  let tab = yield tabPromise;
+  let tab = await tabPromise;
   is(tab.linkedBrowser.currentURI.spec, "about:addons", "Browser is at about:addons");
 
   const VIEW = "addons://list/extension";
-  yield promiseViewLoaded(tab, VIEW);
+  await promiseViewLoaded(tab, VIEW);
   let win = tab.linkedBrowser.contentWindow;
   ok(!win.gViewController.isLoading, "about:addons view is fully loaded");
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
 
   
-  let panel = yield popupPromise;
+  let panel = await popupPromise;
   checkIconFn(panel.getAttribute("icon"));
 
   
@@ -112,28 +112,28 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   
   panel.secondaryButton.click();
 
-  addon = yield AddonManager.getAddonByID(id);
+  addon = await AddonManager.getAddonByID(id);
   is(addon.version, "1.0", "Should still be running the old version");
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 
   
   is(getBadgeStatus(), "", "Addon alert badge should be gone");
 
-  yield PanelUI.show();
+  await PanelUI.show();
   addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 0, "Update menu entries should be gone");
-  yield PanelUI.hide();
+  await PanelUI.hide();
 
   
   updatePromise = promiseInstallEvent(addon, "onDownloadEnded");
-  yield AddonManagerPrivate.backgroundUpdateCheck();
-  yield updatePromise;
+  await AddonManagerPrivate.backgroundUpdateCheck();
+  await updatePromise;
 
   is(getBadgeStatus(), "addon-alert", "Should have addon alert badge");
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
 
   addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 1, "Have a menu entry for the update");
@@ -144,23 +144,23 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   addons.children[0].click();
 
   
-  tab = yield tabPromise;
+  tab = await tabPromise;
   is(tab.linkedBrowser.currentURI.spec, "about:addons");
 
-  yield promiseViewLoaded(tab, VIEW);
+  await promiseViewLoaded(tab, VIEW);
   win = tab.linkedBrowser.contentWindow;
   ok(!win.gViewController.isLoading, "about:addons view is fully loaded");
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
 
   
   updatePromise = waitForUpdate(addon);
-  panel = yield popupPromise;
+  panel = await popupPromise;
   panel.button.click();
 
-  addon = yield updatePromise;
+  addon = await updatePromise;
   is(addon.version, "2.0", "Should have upgraded to the new version");
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 
   is(getBadgeStatus(), "", "Addon alert badge should be gone");
 
@@ -168,7 +168,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   expectTelemetry(["updateRejected", "updateAccepted"]);
 
   addon.uninstall();
-  yield SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
 }
 
 function checkDefaultIcon(icon) {

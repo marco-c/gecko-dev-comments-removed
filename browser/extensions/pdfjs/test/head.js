@@ -1,7 +1,7 @@
 function waitForPdfJS(browser, url) {
   
-  return ContentTask.spawn(browser, url, function* (contentUrl) {
-    yield new Promise((resolve) => {
+  return ContentTask.spawn(browser, url, async function(contentUrl) {
+    await new Promise((resolve) => {
       
       
       addEventListener("documentload", function listener() {

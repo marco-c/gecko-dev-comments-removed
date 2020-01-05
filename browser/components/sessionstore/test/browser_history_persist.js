@@ -7,25 +7,25 @@
 
 
 
-add_task(function* check_history_not_persisted() {
+add_task(async function check_history_not_persisted() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   let state = JSON.parse(ss.getTabState(tab));
   ok(!state.entries[0].persist, "Should have collected the persistence state");
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   browser = null;
 
   
   tab = gBrowser.addTab("about:blank");
   browser = tab.linkedBrowser;
-  yield promiseTabState(tab, state);
+  await promiseTabState(tab, state);
 
-  yield ContentTask.spawn(browser, null, function() {
+  await ContentTask.spawn(browser, null, function() {
     let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsISHistory);
 
@@ -35,8 +35,8 @@ add_task(function* check_history_not_persisted() {
 
   
   browser.loadURI("about:robots");
-  yield promiseBrowserLoaded(browser);
-  yield ContentTask.spawn(browser, null, function() {
+  await promiseBrowserLoaded(browser);
+  await ContentTask.spawn(browser, null, function() {
     let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsISHistory);
     is(sessionHistory.count, 1, "Should be a single history entry");
@@ -44,31 +44,31 @@ add_task(function* check_history_not_persisted() {
   });
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 });
 
 
 
 
 
-add_task(function* check_history_default_persisted() {
+add_task(async function check_history_default_persisted() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   let state = JSON.parse(ss.getTabState(tab));
   delete state.entries[0].persist;
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   browser = null;
 
   
   tab = gBrowser.addTab("about:blank");
   browser = tab.linkedBrowser;
-  yield promiseTabState(tab, state);
-  yield ContentTask.spawn(browser, null, function() {
+  await promiseTabState(tab, state);
+  await ContentTask.spawn(browser, null, function() {
     let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsISHistory);
 
@@ -78,8 +78,8 @@ add_task(function* check_history_default_persisted() {
 
   
   browser.loadURI("about:robots");
-  yield promiseBrowserLoaded(browser);
-  yield ContentTask.spawn(browser, null, function() {
+  await promiseBrowserLoaded(browser);
+  await ContentTask.spawn(browser, null, function() {
     let sessionHistory = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                  .getInterface(Ci.nsISHistory);
     is(sessionHistory.count, 2, "Should be two history entries");
@@ -88,5 +88,5 @@ add_task(function* check_history_default_persisted() {
   });
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 });

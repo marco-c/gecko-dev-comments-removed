@@ -37,9 +37,9 @@ function promiseNewChannelResponse(uri) {
   });
 }
 
-add_task(function*() {
+add_task(async function() {
   
-  let got = yield promiseNewChannelResponse(TEST_URI_GOOD);
+  let got = await promiseNewChannelResponse(TEST_URI_GOOD);
   
   Assert.ok(got.message.errno === 2, "should have failed with errno 2, no such channel");
 
@@ -52,7 +52,7 @@ add_task(function*() {
   });
 
   
-  got = yield promiseNewChannelResponse(TEST_URI_GOOD);
+  got = await promiseNewChannelResponse(TEST_URI_GOOD);
 
   
   Assert.ok(got.message.extensions, "should have extensions");
@@ -80,7 +80,7 @@ add_task(function*() {
   Assert.ok(!got.message.crashes, "should not have crash info");
 
   
-  got = yield promiseNewChannelResponse(TEST_URI_BAD);
+  got = await promiseNewChannelResponse(TEST_URI_BAD);
   Assert.ok(got.message.errno === 2, "should have failed with errno 2, no such channel");
 
   
@@ -91,6 +91,6 @@ add_task(function*() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(webchannelWhitelistPref);
   });
-  got = yield promiseNewChannelResponse(TEST_URI_GOOD_OBJECT);
+  got = await promiseNewChannelResponse(TEST_URI_GOOD_OBJECT);
   Assert.ok(got.message, "should have gotten some data back");
 });

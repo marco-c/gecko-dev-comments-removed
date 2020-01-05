@@ -22,7 +22,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_annos_expire_never() {
+add_task(async function test_annos_expire_never() {
   
   setInterval(3600); 
 
@@ -33,7 +33,7 @@ add_task(function* test_annos_expire_never() {
   let now = getExpirablePRTime();
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://page_anno." + i + ".mozilla.org/");
-    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
+    await PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
     as.setPageAnnotation(pageURI, "page_expire1", "test", 0, as.EXPIRE_NEVER);
     as.setPageAnnotation(pageURI, "page_expire2", "test", 0, as.EXPIRE_NEVER);
   }
@@ -47,13 +47,13 @@ add_task(function* test_annos_expire_never() {
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://item_anno." + i + ".mozilla.org/");
     
-    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
-    let bm = yield PlacesUtils.bookmarks.insert({
+    await PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
+    let bm = await PlacesUtils.bookmarks.insert({
       parentGuid: PlacesUtils.bookmarks.unfiledGuid,
       url: pageURI,
       title: null
     });
-    let id = yield PlacesUtils.promiseItemId(bm.guid);
+    let id = await PlacesUtils.promiseItemId(bm.guid);
     as.setItemAnnotation(id, "item_persist1", "test", 0, as.EXPIRE_NEVER);
     as.setItemAnnotation(id, "item_persist2", "test", 0, as.EXPIRE_NEVER);
   }
@@ -67,7 +67,7 @@ add_task(function* test_annos_expire_never() {
   
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://persist_page_anno." + i + ".mozilla.org/");
-    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
+    await PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
     as.setPageAnnotation(pageURI, "page_persist1", "test", 0, as.EXPIRE_NEVER);
     as.setPageAnnotation(pageURI, "page_persist2", "test", 0, as.EXPIRE_NEVER);
   }
@@ -78,7 +78,7 @@ add_task(function* test_annos_expire_never() {
   do_check_eq(pages.length, 5);
 
   
-  yield promiseForceExpirationStep(10);
+  await promiseForceExpirationStep(10);
 
   pages = as.getPagesWithAnnotation("page_expire1");
   do_check_eq(pages.length, 0);

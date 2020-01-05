@@ -155,7 +155,6 @@ const RESTORE_TAB_CONTENT_REASON = {
 Cu.import("resource://gre/modules/PrivateBrowsingUtils.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/TelemetryStopwatch.jsm", this);
 Cu.import("resource://gre/modules/TelemetryTimestamps.jsm", this);
 Cu.import("resource://gre/modules/Timer.jsm", this);
@@ -1633,7 +1632,7 @@ var SessionStoreInternal = {
 
 
 
-  flushAllWindowsAsync: Task.async(function*(progress = {}) {
+  async flushAllWindowsAsync(progress = {}) {
     let windowPromises = new Map();
     
     
@@ -1658,7 +1657,7 @@ var SessionStoreInternal = {
     
     
     for (let [win, promise] of windowPromises) {
-      yield promise;
+      await promise;
       this._collectWindowData(win);
       progress.current++;
     }
@@ -1669,7 +1668,7 @@ var SessionStoreInternal = {
     if (activeWindow)
       this.activeWindowSSiCache = activeWindow.__SSi || "";
     DirtyWindows.clear();
-  }),
+  },
 
   
 

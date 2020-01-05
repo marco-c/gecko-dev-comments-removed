@@ -8,7 +8,6 @@ this.EXPORTED_SYMBOLS = ["SessionMigration"];
 
 const Cu = Components.utils;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
 
 XPCOMUtils.defineLazyModuleGetter(this, "Utils",
@@ -72,12 +71,12 @@ var SessionMigrationInternal = {
 
 
   readState(aPath) {
-    return Task.spawn(function*() {
-      let bytes = yield OS.File.read(aPath);
+    return (async function() {
+      let bytes = await OS.File.read(aPath);
       let text = gDecoder.decode(bytes);
       let state = JSON.parse(text);
       return state;
-    });
+    })();
   },
   
 
@@ -93,14 +92,14 @@ var SessionMigration = {
 
 
   migrate(aFromPath, aToPath) {
-    return Task.spawn(function*() {
-      let inState = yield SessionMigrationInternal.readState(aFromPath);
+    return (async function() {
+      let inState = await SessionMigrationInternal.readState(aFromPath);
       let outState = SessionMigrationInternal.convertState(inState);
       
       
       
       
-      yield SessionMigrationInternal.writeState(aToPath, outState);
-    });
+      await SessionMigrationInternal.writeState(aToPath, outState);
+    })();
   }
 };

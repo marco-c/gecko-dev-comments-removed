@@ -3,7 +3,7 @@ function run_test() {
 }
 
 let profileDir;
-add_task(function* setup() {
+add_task(async function setup() {
   profileDir = gProfD.clone();
   profileDir.append("extensions");
 
@@ -14,7 +14,7 @@ add_task(function* setup() {
 
 
 
-add_task(function* test_bad_unpacked_path() {
+add_task(async function test_bad_unpacked_path() {
   let MANIFEST_ID = "webext_bad_path@tests.mozilla.org";
 
   let manifest = {
@@ -37,18 +37,18 @@ add_task(function* test_bad_unpacked_path() {
 
   for (let dir of directories) {
     try {
-      yield promiseWriteWebManifestForExtension(manifest, profileDir, dir);
+      await promiseWriteWebManifestForExtension(manifest, profileDir, dir);
     } catch (ex) {
       
       
       
       continue;
     }
-    yield promiseRestartManager();
+    await promiseRestartManager();
 
-    let addon = yield promiseAddonByID(dir);
+    let addon = await promiseAddonByID(dir);
     do_check_eq(addon, null);
-    addon = yield promiseAddonByID(MANIFEST_ID);
+    addon = await promiseAddonByID(MANIFEST_ID);
     do_check_eq(addon, null);
   }
 });

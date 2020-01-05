@@ -104,7 +104,6 @@ Components.utils.import("resource://gre/modules/DownloadPaths.jsm");
 Components.utils.import("resource://gre/modules/DownloadUtils.jsm");
 Components.utils.import("resource://gre/modules/Downloads.jsm");
 Components.utils.import("resource://gre/modules/FileUtils.jsm");
-Components.utils.import("resource://gre/modules/Task.jsm");
 
 
 
@@ -249,7 +248,7 @@ nsUnknownContentTypeDialog.prototype = {
       }
     }
 
-    Task.spawn(function*() {
+    (async function() {
       if (!aForcePrompt) {
         
         
@@ -257,7 +256,7 @@ nsUnknownContentTypeDialog.prototype = {
 
         if (autodownload) {
           
-          let preferredDir = yield Downloads.getPreferredDownloadsDirectory();
+          let preferredDir = await Downloads.getPreferredDownloadsDirectory();
           let defaultFolder = new FileUtils.File(preferredDir);
 
           try {
@@ -306,7 +305,7 @@ nsUnknownContentTypeDialog.prototype = {
       
       
       
-      let preferredDir = yield Downloads.getPreferredDownloadsDirectory();
+      let preferredDir = await Downloads.getPreferredDownloadsDirectory();
       picker.displayDirectory = new FileUtils.File(preferredDir);
 
       gDownloadLastDir.getFileAsync(aLauncher.source, lastDir => {
@@ -363,7 +362,7 @@ nsUnknownContentTypeDialog.prototype = {
           aLauncher.saveDestinationAvailable(result);
         });
       });
-    }.bind(this)).then(null, Components.utils.reportError);
+    }.bind(this))().then(null, Components.utils.reportError);
   },
 
   getFinalLeafName: function (aLeafName, aFileExt)

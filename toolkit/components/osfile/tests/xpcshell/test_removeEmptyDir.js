@@ -20,7 +20,7 @@ function run_test() {
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   do_get_profile();
@@ -28,18 +28,18 @@ add_task(function*() {
   let dir = OS.Path.join(OS.Constants.Path.profileDir, "directory");
 
   
-  do_check_false((yield OS.File.exists(dir)));
+  do_check_false((await OS.File.exists(dir)));
 
   
-  yield OS.File.removeEmptyDir(dir);
+  await OS.File.removeEmptyDir(dir);
 
   
-  yield OS.File.removeEmptyDir(dir, {ignoreAbsent: true});
+  await OS.File.removeEmptyDir(dir, {ignoreAbsent: true});
 
   
   let exception = null;
   try {
-    yield OS.File.removeEmptyDir(dir, {ignoreAbsent: false});
+    await OS.File.removeEmptyDir(dir, {ignoreAbsent: false});
   } catch (ex) {
     exception = ex;
   }
@@ -49,7 +49,7 @@ add_task(function*() {
   do_check_true(exception.becauseNoSuchFile);
 
   
-  yield OS.File.makeDir(dir);
-  yield OS.File.removeEmptyDir(dir);
-  do_check_false((yield OS.File.exists(dir)));
+  await OS.File.makeDir(dir);
+  await OS.File.removeEmptyDir(dir);
+  do_check_false((await OS.File.exists(dir)));
 });

@@ -15,7 +15,6 @@ const kMainKey = "Software\\Microsoft\\Internet Explorer\\Main";
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/osfile.jsm"); 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource:///modules/MigrationUtils.jsm"); 
 Cu.import("resource:///modules/MSMigrationUtils.jsm");

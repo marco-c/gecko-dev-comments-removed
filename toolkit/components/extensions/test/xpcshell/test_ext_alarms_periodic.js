@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* test_periodic_alarm_fires() {
+add_task(async function test_periodic_alarm_fires() {
   function backgroundScript() {
     const ALARM_NAME = "test_ext_alarms";
     let count = 0;
@@ -38,7 +38,7 @@ add_task(function* test_periodic_alarm_fires() {
     },
   });
 
-  yield extension.startup();
-  yield extension.awaitFinish("alarm-periodic");
-  yield extension.unload();
+  await extension.startup();
+  await extension.awaitFinish("alarm-periodic");
+  await extension.unload();
 });

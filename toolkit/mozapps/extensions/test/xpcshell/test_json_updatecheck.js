@@ -72,12 +72,12 @@ function checkUpdates(aData) {
 }
 
 
-add_task(function* test_default_values() {
+add_task(async function test_default_values() {
   
 
   startupManager();
 
-  let updates = yield checkUpdates({
+  let updates = await checkUpdates({
     id: "updatecheck-defaults@tests.mozilla.org",
     version: "0.1",
     updates: [{
@@ -105,7 +105,7 @@ add_task(function* test_default_values() {
   
   
   
-  updates = yield checkUpdates({
+  updates = await checkUpdates({
     id: "updatecheck-defaults@tests.mozilla.org",
     version: "0.1",
     updates: [{
@@ -117,7 +117,7 @@ add_task(function* test_default_values() {
   equal(updates.length, 0);
 
   
-  updates = yield checkUpdates({
+  updates = await checkUpdates({
     id: "updatecheck-defaults@tests.mozilla.org",
     version: "0.1",
   });
@@ -126,11 +126,11 @@ add_task(function* test_default_values() {
 });
 
 
-add_task(function* test_explicit_values() {
+add_task(async function test_explicit_values() {
   
   
 
-  let updates = yield checkUpdates({
+  let updates = await checkUpdates({
     id: "updatecheck-explicit@tests.mozilla.org",
     version: "0.1",
     updates: [{
@@ -167,7 +167,7 @@ add_task(function* test_explicit_values() {
 });
 
 
-add_task(function* test_secure_hashes() {
+add_task(async function test_secure_hashes() {
   
   
 
@@ -184,7 +184,7 @@ add_task(function* test_secure_hashes() {
     update_hash: `${hash}:08ac852190ecd81f40a514ea9299fe9143d9ab5e296b97e73fb2a314de49648a`,
   }));
 
-  let { messages, result: updates } = yield promiseConsoleOutput(() => {
+  let { messages, result: updates } = await promiseConsoleOutput(() => {
     return checkUpdates({
       id: "updatecheck-hashes@tests.mozilla.org",
       version: "0.1",
@@ -208,13 +208,13 @@ add_task(function* test_secure_hashes() {
 });
 
 
-add_task(function* test_strict_compat() {
+add_task(async function test_strict_compat() {
   
   
   
   
 
-  let { messages, result: updates } = yield promiseConsoleOutput(() => {
+  let { messages, result: updates } = await promiseConsoleOutput(() => {
     return checkUpdates({
       id: "updatecheck-strict@tests.mozilla.org",
       version: "0.1",
@@ -251,10 +251,10 @@ add_task(function* test_strict_compat() {
 });
 
 
-add_task(function* test_update_url_security() {
+add_task(async function test_update_url_security() {
   
 
-  let { messages, result: updates } = yield promiseConsoleOutput(() => {
+  let { messages, result: updates } = await promiseConsoleOutput(() => {
     return checkUpdates({
       id: "updatecheck-security@tests.mozilla.org",
       version: "0.1",
@@ -278,10 +278,10 @@ add_task(function* test_update_url_security() {
 });
 
 
-add_task(function* test_no_update_key() {
+add_task(async function test_no_update_key() {
   
 
-  let { messages } = yield promiseConsoleOutput(function* () {
+  let { messages } = await promiseConsoleOutput(function* () {
     yield Assert.rejects(
       checkUpdates({
         id: "updatecheck-updatekey@tests.mozilla.org",
@@ -300,7 +300,7 @@ add_task(function* test_no_update_key() {
 });
 
 
-add_task(function* test_type_detection() {
+add_task(async function test_type_detection() {
   
   
 
@@ -338,7 +338,7 @@ add_task(function* test_type_detection() {
   ];
 
   for (let [i, test] of tests.entries()) {
-    let { messages } = yield promiseConsoleOutput(function *() {
+    let { messages } = await promiseConsoleOutput(function *() {
       let id = `updatecheck-typedetection-${i}@tests.mozilla.org`;
       let updates;
       try {

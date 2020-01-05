@@ -4,8 +4,8 @@
 
 
 
-add_task(function* () {
-  yield pushPrefs(["accessibility.tabfocus", 7]);
+add_task(async function() {
+  await pushPrefs(["accessibility.tabfocus", 7]);
 
   
   
@@ -14,10 +14,10 @@ add_task(function* () {
   let FOCUS_COUNT = 30;
 
   
-  yield setLinks("0,1,2,3,4,5,6,7,8");
+  await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  yield* addNewTabPageTab();
+  await addNewTabPageTab();
   gURLBar.focus();
 
   

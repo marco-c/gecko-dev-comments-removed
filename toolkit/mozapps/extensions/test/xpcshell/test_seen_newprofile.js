@@ -23,12 +23,12 @@ Services.prefs.setIntPref("extensions.autoDisableScopes", AddonManager.SCOPE_SYS
 
 
 
-add_task(function*() {
+add_task(async function() {
   manuallyInstall(do_get_addon("test_bootstrap1_1"), globalDir, ID);
 
   startupManager();
 
-  let addon = yield promiseAddonByID(ID);
+  let addon = await promiseAddonByID(ID);
   do_check_true(addon.foreignInstall);
   do_check_true(addon.seen);
   do_check_true(addon.userDisabled);
@@ -37,5 +37,5 @@ add_task(function*() {
   BootstrapMonitor.checkAddonInstalled(ID);
   BootstrapMonitor.checkAddonNotStarted(ID);
 
-  yield promiseShutdownManager();
+  await promiseShutdownManager();
 });

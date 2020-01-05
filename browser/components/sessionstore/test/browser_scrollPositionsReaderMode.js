@@ -17,31 +17,31 @@ requestLongerTimeout(2);
 
 
 
-add_task(function* test_scroll_background_about_reader_tabs() {
+add_task(async function test_scroll_background_about_reader_tabs() {
   pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
-  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let tab = newWin.gBrowser.addTab(READER_MODE_URL);
   let browser = tab.linkedBrowser;
-  yield Promise.all([
+  await Promise.all([
     BrowserTestUtils.browserLoaded(browser),
     BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady")
   ]);
 
   
-  yield sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: SCROLL_READER_MODE_Y});
-  yield checkScroll(tab, {scroll: SCROLL_READER_MODE_STR}, "scroll is fine");
+  await sendMessage(browser, "ss-test:setScrollPosition", {x: 0, y: SCROLL_READER_MODE_Y});
+  await checkScroll(tab, {scroll: SCROLL_READER_MODE_STR}, "scroll is fine");
 
   
-  yield BrowserTestUtils.closeWindow(newWin);
+  await BrowserTestUtils.closeWindow(newWin);
 
-  yield forceSaveState();
+  await forceSaveState();
 
   
   newWin = ss.undoCloseWindow(0);
 
   
-  yield BrowserTestUtils.waitForEvent(newWin, "SSWindowStateReady");
+  await BrowserTestUtils.waitForEvent(newWin, "SSWindowStateReady");
 
   is(newWin.gBrowser.tabs.length, 2, "There should be two tabs");
 
@@ -52,17 +52,17 @@ add_task(function* test_scroll_background_about_reader_tabs() {
   browser = tab.linkedBrowser;
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   
   newWin.gBrowser.selectedTab = tab;
-  yield Promise.all([
+  await Promise.all([
     promiseTabRestored(tab),
     BrowserTestUtils.waitForContentEvent(tab.linkedBrowser, "AboutReaderContentReady")
   ]);
 
-  yield checkScroll(tab, {scroll: SCROLL_READER_MODE_STR}, "scroll is still fine");
+  await checkScroll(tab, {scroll: SCROLL_READER_MODE_STR}, "scroll is still fine");
 
-  yield BrowserTestUtils.closeWindow(newWin);
+  await BrowserTestUtils.closeWindow(newWin);
 });

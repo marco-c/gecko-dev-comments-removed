@@ -16,7 +16,7 @@ function run_test() {
 
 
 
-add_task(function* test_watch_with_shared_callback() {
+add_task(async function test_watch_with_shared_callback() {
 
   
   
@@ -26,8 +26,8 @@ add_task(function* test_watch_with_shared_callback() {
       OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground2")
     ];
 
-  yield OS.File.makeDir(watchedDirs[0]);
-  yield OS.File.makeDir(watchedDirs[1]);
+  await OS.File.makeDir(watchedDirs[0]);
+  await OS.File.makeDir(watchedDirs[1]);
 
   let tempFileName = "test_filecreation.tmp";
 
@@ -36,8 +36,8 @@ add_task(function* test_watch_with_shared_callback() {
   let deferred = Promise.defer();
 
   
-  yield promiseAddPath(watcher, watchedDirs[0], deferred.resolve, deferred.reject);
-  yield promiseAddPath(watcher, watchedDirs[1], deferred.resolve, deferred.reject);
+  await promiseAddPath(watcher, watchedDirs[0], deferred.resolve, deferred.reject);
+  await promiseAddPath(watcher, watchedDirs[1], deferred.resolve, deferred.reject);
 
   
   
@@ -46,10 +46,10 @@ add_task(function* test_watch_with_shared_callback() {
 
   
   let tmpFilePath = OS.Path.join(watchedDirs[1], tempFileName);
-  yield OS.File.writeAtomic(tmpFilePath, "some data");
+  await OS.File.writeAtomic(tmpFilePath, "some data");
 
   
-  let changed = yield deferred.promise;
+  let changed = await deferred.promise;
   do_check_eq(changed, tmpFilePath);
 
   
@@ -57,6 +57,6 @@ add_task(function* test_watch_with_shared_callback() {
   watcher.removePath(watchedDirs[1], deferred.resolve, deferred.reject);
 
   
-  yield OS.File.removeDir(watchedDirs[0]);
-  yield OS.File.removeDir(watchedDirs[1]);
+  await OS.File.removeDir(watchedDirs[0]);
+  await OS.File.removeDir(watchedDirs[1]);
 });

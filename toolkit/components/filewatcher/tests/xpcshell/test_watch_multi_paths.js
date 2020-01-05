@@ -20,7 +20,7 @@ function run_test() {
 
 
 
-add_task(function* test_watch_multi_paths() {
+add_task(async function test_watch_multi_paths() {
 
   
   
@@ -86,22 +86,22 @@ add_task(function* test_watch_multi_paths() {
   for (let i = 0; i < resourcesToWatch; i++) {
     let tmpSubDirPath = OS.Path.join(watchedDir, tempDirNameBase + i);
     do_print("Creating the " + tmpSubDirPath + " directory.");
-    yield OS.File.makeDir(tmpSubDirPath);
+    await OS.File.makeDir(tmpSubDirPath);
     watcher.addPath(tmpSubDirPath, changeCallback, deferredChanges.reject, watchSuccessCallback);
   }
 
   
   
-  yield deferredSuccesses.promise;
+  await deferredSuccesses.promise;
 
   
   for (let i = 0; i < resourcesToWatch; i++) {
     let tmpFilePath = OS.Path.join(watchedDir, tempDirNameBase + i, tempFileName);
-    yield OS.File.writeAtomic(tmpFilePath, "test content");
+    await OS.File.writeAtomic(tmpFilePath, "test content");
   }
 
   
-  yield deferredChanges.promise;
+  await deferredChanges.promise;
 
   
   for (let i = 0; i < resourcesToWatch; i++) {
@@ -110,5 +110,5 @@ add_task(function* test_watch_multi_paths() {
   }
 
   
-  yield deferredShutdown.promise;
+  await deferredShutdown.promise;
 });

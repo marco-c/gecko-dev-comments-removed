@@ -11,9 +11,9 @@ registerCleanupFunction(function*() {
 
 
 
-add_task(function* test_overflow_anchor() {
+add_task(async function test_overflow_anchor() {
   
-  yield task_resetState();
+  await task_resetState();
 
   
   
@@ -34,11 +34,11 @@ add_task(function* test_overflow_anchor() {
   
   
   window.resizeTo(oldWidth / 2, window.outerHeight);
-  yield waitForOverflowed(button, true);
+  await waitForOverflowed(button, true);
 
   let promise = promisePanelOpened();
   button.node.doCommand();
-  yield promise;
+  await promise;
 
   let panel = DownloadsPanel.panel;
   let chevron = document.getElementById("nav-bar-overflow-button");
@@ -53,12 +53,12 @@ add_task(function* test_overflow_anchor() {
   window.resizeTo(oldWidth, window.outerHeight);
 
   
-  yield waitForOverflowed(button, false);
+  await waitForOverflowed(button, false);
 
   
   promise = promisePanelOpened();
   button.node.doCommand();
-  yield promise;
+  await promise;
 
   is(panel.anchorNode.id, "downloads-indicator-anchor");
 

@@ -5,20 +5,20 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   
-  yield setLinks("0,1,2,3,4,5,6,7,8");
+  await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks(",99");
 
-  yield* addNewTabPageTab();
-  yield* checkGrid("0,99p,1,2,3,4,5,6,7");
+  await addNewTabPageTab();
+  await checkGrid("0,99p,1,2,3,4,5,6,7");
 
   
-  yield unpinCell(1);
-  yield* checkGrid("0,1,2,3,4,5,6,7,8");
+  await unpinCell(1);
+  await checkGrid("0,1,2,3,4,5,6,7,8");
 
   
   NewTabUtils.pinnedLinks.resetCache();
   NewTabUtils.allPages.update();
-  yield* checkGrid("0,1,2,3,4,5,6,7,8");
+  await checkGrid("0,1,2,3,4,5,6,7,8");
 });

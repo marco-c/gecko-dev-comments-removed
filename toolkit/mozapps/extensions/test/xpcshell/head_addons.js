@@ -43,7 +43,6 @@ Components.utils.import("resource://gre/modules/FileUtils.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 Components.utils.import("resource://gre/modules/NetUtil.jsm");
 Components.utils.import("resource://gre/modules/Promise.jsm");
-Components.utils.import("resource://gre/modules/Task.jsm");
 const { OS } = Components.utils.import("resource://gre/modules/osfile.jsm", {});
 Components.utils.import("resource://gre/modules/AsyncShutdown.jsm");
 
@@ -1348,7 +1347,7 @@ function* updateAllSystemAddons(xml, testserver) {
 }
 
 
-function* buildSystemAddonUpdates(addons, root) {
+function buildSystemAddonUpdates(addons, root) {
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n\n<updates>\n`;
   if (addons) {
     xml += `  <addons>\n`;
@@ -1438,11 +1437,11 @@ function buildPrefilledUpdatesDir() {
 
 
 
-function* checkInstalledSystemAddons(conditions, distroDir) {
+async function checkInstalledSystemAddons(conditions, distroDir) {
   for (let i = 0; i < conditions.length; i++) {
     let condition = conditions[i];
     let id = "system" + (i + 1) + "@tests.mozilla.org";
-    let addon = yield promiseAddonByID(id);
+    let addon = await promiseAddonByID(id);
 
     if (!("isUpgrade" in condition) || !("version" in condition)) {
       throw Error("condition must contain isUpgrade and version");
@@ -1500,13 +1499,13 @@ function* checkInstalledSystemAddons(conditions, distroDir) {
 
 
 
-function* getSystemAddonDirectories() {
+async function getSystemAddonDirectories() {
   const updatesDir = FileUtils.getDir("ProfD", ["features"], false);
   let subdirs = [];
 
-  if (yield OS.File.exists(updatesDir.path)) {
+  if (await OS.File.exists(updatesDir.path)) {
     let iterator = new OS.File.DirectoryIterator(updatesDir.path);
-    yield iterator.forEach(entry => {
+    await iterator.forEach(entry => {
       if (entry.isDir) {
         subdirs.push(entry);
       }
@@ -1525,21 +1524,21 @@ function* getSystemAddonDirectories() {
 
 
 
-function* setupSystemAddonConditions(setup, distroDir) {
+async function setupSystemAddonConditions(setup, distroDir) {
   do_print("Clearing existing database.");
   Services.prefs.clearUserPref(PREF_SYSTEM_ADDON_SET);
   distroDir.leafName = "empty";
   startupManager(false);
-  yield promiseShutdownManager();
+  await promiseShutdownManager();
 
   do_print("Setting up conditions.");
-  yield setup.setup();
+  await setup.setup();
 
   startupManager(false);
 
   
   do_print("Checking initial state.");
-  yield checkInstalledSystemAddons(setup.initialState, distroDir);
+  await checkInstalledSystemAddons(setup.initialState, distroDir);
 }
 
 
@@ -1550,7 +1549,7 @@ function* setupSystemAddonConditions(setup, distroDir) {
 
 
 
-function* verifySystemAddonState(initialState, finalState = undefined, alreadyUpgraded = false, distroDir) {
+async function verifySystemAddonState(initialState, finalState = undefined, alreadyUpgraded = false, distroDir) {
   let expectedDirs = 0;
 
   
@@ -1574,14 +1573,14 @@ function* verifySystemAddonState(initialState, finalState = undefined, alreadyUp
 
   do_print("Checking final state.");
 
-  let dirs = yield getSystemAddonDirectories();
+  let dirs = await getSystemAddonDirectories();
   do_check_eq(dirs.length, expectedDirs);
 
-  yield checkInstalledSystemAddons(...finalState, distroDir);
+  await checkInstalledSystemAddons(...finalState, distroDir);
 
   
-  yield promiseRestartManager();
-  yield checkInstalledSystemAddons(finalState, distroDir);
+  await promiseRestartManager();
+  await checkInstalledSystemAddons(finalState, distroDir);
 }
 
 
@@ -1606,14 +1605,14 @@ function* verifySystemAddonState(initialState, finalState = undefined, alreadyUp
 
 
 
-function* execSystemAddonTest(setupName, setup, test, distroDir, root, testserver) {
-  yield setupSystemAddonConditions(setup, distroDir);
+async function execSystemAddonTest(setupName, setup, test, distroDir, root, testserver) {
+  await setupSystemAddonConditions(setup, distroDir);
 
   try {
     if ("test" in test) {
-      yield test.test();
+      await test.test();
     } else {
-      yield installSystemAddons(yield buildSystemAddonUpdates(test.updateList, root), testserver);
+      await installSystemAddons(await buildSystemAddonUpdates(test.updateList, root), testserver);
     }
 
     if (test.fails) {
@@ -1628,10 +1627,10 @@ function* execSystemAddonTest(setupName, setup, test, distroDir, root, testserve
   
   
   if (test.finalState && setupName in test.finalState) {
-    yield verifySystemAddonState(setup.initialState, test.finalState[setupName], false, distroDir);
+    await verifySystemAddonState(setup.initialState, test.finalState[setupName], false, distroDir);
   } else {
-    yield verifySystemAddonState(setup.initialState, undefined, false, distroDir);
+    await verifySystemAddonState(setup.initialState, undefined, false, distroDir);
   }
 
-  yield promiseShutdownManager();
+  await promiseShutdownManager();
 }

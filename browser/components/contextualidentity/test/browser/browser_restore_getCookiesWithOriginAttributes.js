@@ -20,7 +20,7 @@ const COOKIE_NAME = "userContextId";
 
 
 
-function* openTabInUserContext(uri, userContextId) {
+async function openTabInUserContext(uri, userContextId) {
   
   let tab = gBrowser.addTab(uri, {userContextId});
 
@@ -29,7 +29,7 @@ function* openTabInUserContext(uri, userContextId) {
   tab.ownerGlobal.focus();
 
   let browser = gBrowser.getBrowserForTab(tab);
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
   return {tab, browser};
 }
 
@@ -41,9 +41,9 @@ function getCookiesForOA(host, userContextId) {
 
 
 
-add_task(function* setup() {
+add_task(async function setup() {
   
-  yield SpecialPowers.pushPrefEnv({"set": [
+  await SpecialPowers.pushPrefEnv({"set": [
       [ "privacy.userContext.enabled", true ],
   ]});
 });
@@ -74,7 +74,7 @@ function deleteCookies(onlyContext = null) {
   }
 }
 
-add_task(function* test_cookie_getCookiesWithOriginAttributes() {
+add_task(async function test_cookie_getCookiesWithOriginAttributes() {
   let tabs = [];
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
@@ -83,10 +83,10 @@ add_task(function* test_cookie_getCookiesWithOriginAttributes() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    tabs[userContextId] = yield* openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
+    tabs[userContextId] = await openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
 
     
-    yield BrowserTestUtils.removeTab(tabs[userContextId].tab);
+    await BrowserTestUtils.removeTab(tabs[userContextId].tab);
   }
 
   

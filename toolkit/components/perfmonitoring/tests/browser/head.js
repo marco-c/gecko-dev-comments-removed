@@ -31,12 +31,12 @@ CPUBurner.prototype = {
   
 
 
-  run: Task.async(function*(burner, max, listener) {
+  async run(burner, max, listener) {
     listener.reset();
     for (let i = 0; i < max; ++i) {
-      yield new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 50));
       try {
-        yield this[burner]();
+        await this[burner]();
       } catch (ex) {
         return false;
       }
@@ -45,7 +45,7 @@ CPUBurner.prototype = {
       }
     }
     return false;
-  }),
+  },
   dispose() {
     info(`CPUBurner: Closing tab for ${this.url}\n`);
     gBrowser.removeTab(this.tab);
@@ -196,19 +196,19 @@ AddonBurner.prototype.burnCPU = function() {
 
 
 
-AddonBurner.prototype.promiseBurnCPOW = Task.async(function*() {
-  yield this._promiseCPOWBurner;
+AddonBurner.prototype.promiseBurnCPOW = async function() {
+  await this._promiseCPOWBurner;
   ok(this._CPOWBurner, "Got the CPOW burner");
   let burner = this._CPOWBurner;
   info("Parent: Preparing to burn CPOW");
   try {
-    yield burner(this._addonId);
+    await burner(this._addonId);
     info("Parent: Done burning CPOW");
   } catch (ex) {
     info(`Parent: Error burning CPOW: ${ex}\n`);
     info(ex.stack + "\n");
   }
-});
+};
 
 
 

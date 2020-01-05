@@ -21,8 +21,8 @@ const WINDOW_BODY = `data:text/html,
                        First click this.
                      </a>`;
 
-add_task(function* test_private_popup_window_opens_private_tabs() {
-  let privWin = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
+add_task(async function test_private_popup_window_opens_private_tabs() {
+  let privWin = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
   
   ok(PrivateBrowsingUtils.isWindowPrivate(privWin),
@@ -31,15 +31,15 @@ add_task(function* test_private_popup_window_opens_private_tabs() {
   
   
   let privBrowser = privWin.gBrowser.selectedBrowser;
-  yield BrowserTestUtils.loadURI(privBrowser, WINDOW_BODY);
-  yield BrowserTestUtils.browserLoaded(privBrowser);
+  await BrowserTestUtils.loadURI(privBrowser, WINDOW_BODY);
+  await BrowserTestUtils.browserLoaded(privBrowser);
 
   
   
   let openedPromise = BrowserTestUtils.waitForNewWindow(true, POPUP_LINK);
 
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#first", {}, privBrowser);
-  let popupWin = yield openedPromise;
+  await BrowserTestUtils.synthesizeMouseAtCenter("#first", {}, privBrowser);
+  let popupWin = await openedPromise;
   ok(PrivateBrowsingUtils.isWindowPrivate(popupWin),
      "Popup window was private.");
 
@@ -47,15 +47,15 @@ add_task(function* test_private_popup_window_opens_private_tabs() {
   
   let newTabPromise = BrowserTestUtils.waitForNewTab(privWin.gBrowser);
   let popupBrowser = popupWin.gBrowser.selectedBrowser;
-  yield BrowserTestUtils.synthesizeMouseAtCenter("#second", {}, popupBrowser);
-  let newPrivTab = yield newTabPromise;
+  await BrowserTestUtils.synthesizeMouseAtCenter("#second", {}, popupBrowser);
+  let newPrivTab = await newTabPromise;
 
   
   ok(PrivateBrowsingUtils.isBrowserPrivate(newPrivTab.linkedBrowser),
      "Newly opened tab should be private.");
 
   
-  yield BrowserTestUtils.removeTab(newPrivTab);
-  yield BrowserTestUtils.closeWindow(popupWin);
-  yield BrowserTestUtils.closeWindow(privWin);
+  await BrowserTestUtils.removeTab(newPrivTab);
+  await BrowserTestUtils.closeWindow(popupWin);
+  await BrowserTestUtils.closeWindow(privWin);
 });

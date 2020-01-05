@@ -24,44 +24,44 @@ function cookieExists(host, name, value) {
 }
 
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   registerCleanupFunction(() => {
     Services.cookies.removeAll();
   });
 });
 
 
-add_task(function* test_run() {
+add_task(async function test_run() {
   Services.cookies.removeAll();
 
   
   gBrowser.selectedTab = gBrowser.addTab("http://example.com/");
-  yield promiseBrowserLoaded(gBrowser.selectedBrowser);
+  await promiseBrowserLoaded(gBrowser.selectedBrowser);
 
   
-  yield promiseSetCookie("foo=bar");
+  await promiseSetCookie("foo=bar");
   ok(cookieExists("example.com", "foo", "bar"), "cookie was added");
 
   
-  yield promiseSetCookie("foo=baz");
+  await promiseSetCookie("foo=baz");
   ok(cookieExists("example.com", "foo", "baz"), "cookie was modified");
 
   
   let expiry = new Date();
   expiry.setDate(expiry.getDate() + 2);
-  yield promiseSetCookie(`foo=baz; Expires=${expiry.toUTCString()}`);
+  await promiseSetCookie(`foo=baz; Expires=${expiry.toUTCString()}`);
   ok(!cookieExists("example.com", "foo", "baz"), "no longer a session cookie");
 
   
-  yield promiseSetCookie("foo=bar");
+  await promiseSetCookie("foo=bar");
   ok(cookieExists("example.com", "foo", "bar"), "again a session cookie");
 
   
-  yield promiseSetCookie("foo=; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
+  await promiseSetCookie("foo=; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
   ok(!cookieExists("example.com", "foo", ""), "cookie was removed");
 
   
-  yield promiseSetCookie("foo=bar");
+  await promiseSetCookie("foo=bar");
   ok(cookieExists("example.com", "foo", "bar"), "cookie was added");
 
   
@@ -69,5 +69,5 @@ add_task(function* test_run() {
   ok(!cookieExists("example.com", "foo", "bar"), "cookies were cleared");
 
   
-  yield promiseRemoveTab(gBrowser.selectedTab);
+  await promiseRemoveTab(gBrowser.selectedTab);
 });

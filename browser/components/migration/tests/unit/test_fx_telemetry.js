@@ -103,16 +103,16 @@ function promiseTelemetryMigrator(srcDir, targetDir) {
   return promiseMigrator("telemetry", srcDir, targetDir);
 }
 
-add_task(function* test_empty() {
+add_task(async function test_empty() {
   let [srcDir, targetDir] = getTestDirs();
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true with empty directories");
   
   checkDirectoryContains(srcDir, {});
   checkDirectoryContains(targetDir, {});
 });
 
-add_task(function* test_migrate_files() {
+add_task(async function test_migrate_files() {
   let [srcDir, targetDir] = getTestDirs();
 
   
@@ -136,7 +136,7 @@ add_task(function* test_migrate_files() {
   writeToFile(subDir, "other.file", "do not copy");
 
   
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true with important telemetry files copied");
 
   checkDirectoryContains(targetDir, {
@@ -147,7 +147,7 @@ add_task(function* test_migrate_files() {
   });
 });
 
-add_task(function* test_fallback_fhr_state() {
+add_task(async function test_fallback_fhr_state() {
   let [srcDir, targetDir] = getTestDirs();
 
   
@@ -159,7 +159,7 @@ add_task(function* test_fallback_fhr_state() {
   writeToFile(subDir, "state.json", stateContent);
 
   
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   checkDirectoryContains(targetDir, {
@@ -170,23 +170,23 @@ add_task(function* test_fallback_fhr_state() {
 });
 
 
-add_task(function* test_datareporting_not_dir() {
+add_task(async function test_datareporting_not_dir() {
   let [srcDir, targetDir] = getTestDirs();
 
   writeToFile(srcDir, "datareporting", "I'm a file but should be a directory");
 
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true even though the directory was a file");
 
   checkDirectoryContains(targetDir, {});
 });
 
-add_task(function* test_datareporting_empty() {
+add_task(async function test_datareporting_empty() {
   let [srcDir, targetDir] = getTestDirs();
 
   
   createSubDir(srcDir, "datareporting");
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   
@@ -195,19 +195,19 @@ add_task(function* test_datareporting_empty() {
   });
 });
 
-add_task(function* test_healthreport_empty() {
+add_task(async function test_healthreport_empty() {
   let [srcDir, targetDir] = getTestDirs();
 
   
   createSubDir(srcDir, "healthreport");
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   
   checkDirectoryContains(targetDir, {});
 });
 
-add_task(function* test_datareporting_many() {
+add_task(async function test_datareporting_many() {
   let [srcDir, targetDir] = getTestDirs();
 
   
@@ -218,7 +218,7 @@ add_task(function* test_datareporting_many() {
   writeToFile(subDir, "something.else", "should not");
   createSubDir(subDir, "emptyDir");
 
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   checkDirectoryContains(targetDir, {
@@ -229,7 +229,7 @@ add_task(function* test_datareporting_many() {
   });
 });
 
-add_task(function* test_no_session_state() {
+add_task(async function test_no_session_state() {
   let [srcDir, targetDir] = getTestDirs();
 
   
@@ -237,7 +237,7 @@ add_task(function* test_no_session_state() {
   let stateContent = "abcd984";
   writeToFile(subDir, "state.json", stateContent);
 
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   checkDirectoryContains(targetDir, {
@@ -247,7 +247,7 @@ add_task(function* test_no_session_state() {
   });
 });
 
-add_task(function* test_no_state() {
+add_task(async function test_no_state() {
   let [srcDir, targetDir] = getTestDirs();
 
   
@@ -255,7 +255,7 @@ add_task(function* test_no_state() {
   let sessionStateContent = "abcd512";
   writeToFile(subDir, "session-state.json", sessionStateContent);
 
-  let ok = yield promiseTelemetryMigrator(srcDir, targetDir);
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
 
   checkDirectoryContains(targetDir, {
@@ -265,7 +265,7 @@ add_task(function* test_no_state() {
   });
 });
 
-add_task(function* test_times_migration() {
+add_task(async function test_times_migration() {
   let [srcDir, targetDir] = getTestDirs();
 
   
@@ -273,7 +273,7 @@ add_task(function* test_times_migration() {
   writeToFile(srcDir, "times.json", contents);
 
   let earliest = Date.now();
-  let ok = yield promiseMigrator("times", srcDir, targetDir);
+  let ok = await promiseMigrator("times", srcDir, targetDir);
   Assert.ok(ok, "callback should have been true");
   let latest = Date.now();
 

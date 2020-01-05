@@ -4,7 +4,7 @@ const BASE_PROBE_NAME = "browser.engagement.navigation.";
 const SCALAR_CONTEXT_MENU = BASE_PROBE_NAME + "contextmenu";
 const SCALAR_ABOUT_NEWTAB = BASE_PROBE_NAME + "about_newtab";
 
-add_task(function* setup() {
+add_task(async function setup() {
   
   
   
@@ -23,7 +23,7 @@ add_task(function* setup() {
   let engineOneOff = Services.search.getEngineByName("MozSearch2");
   Services.search.moveEngine(engineOneOff, 0);
 
-  yield SpecialPowers.pushPrefEnv({"set": [
+  await SpecialPowers.pushPrefEnv({"set": [
     ["dom.select_events.enabled", true], 
     ["toolkit.telemetry.enabled", true]  
   ]});
@@ -32,16 +32,16 @@ add_task(function* setup() {
   Services.telemetry.setEventRecordingEnabled("navigation", true);
 
   
-  registerCleanupFunction(function* () {
+  registerCleanupFunction(async function() {
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engineDefault);
     Services.search.removeEngine(engineOneOff);
-    yield PlacesTestUtils.clearHistory();
+    await PlacesTestUtils.clearHistory();
     Services.telemetry.setEventRecordingEnabled("navigation", false);
   });
 });
 
-add_task(function* test_context_menu() {
+add_task(async function test_context_menu() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
@@ -49,10 +49,10 @@ add_task(function* test_context_menu() {
 
   
   let tab =
-    yield BrowserTestUtils.openNewForegroundTab(gBrowser, "data:text/plain;charset=utf8,test%20search");
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "data:text/plain;charset=utf8,test%20search");
 
   info("Select all the text in the page.");
-  yield ContentTask.spawn(tab.linkedBrowser, "", function*() {
+  await ContentTask.spawn(tab.linkedBrowser, "", async function() {
     return new Promise(resolve => {
       content.document.addEventListener("selectionchange", () => resolve(), { once: true });
       content.document.getSelection().selectAllChildren(content.document.body);
@@ -64,7 +64,7 @@ add_task(function* test_context_menu() {
   let popupPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   BrowserTestUtils.synthesizeMouseAtCenter("body", { type: "contextmenu", button: 2 },
                                            gBrowser.selectedBrowser);
-  yield popupPromise;
+  await popupPromise;
 
   info("Click on search.");
   let searchItem = contextMenu.getElementsByAttribute("id", "context-searchselect")[0];
@@ -85,26 +85,26 @@ add_task(function* test_context_menu() {
   checkEvents(events, [["navigation", "search", "contextmenu", null, {engine: "other-MozSearch"}]]);
 
   contextMenu.hidePopup();
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(tab);
 });
 
-add_task(function* test_about_newtab() {
+add_task(async function test_about_newtab() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
   let search_hist = getSearchCountsHistogram();
 
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
-  yield ContentTask.spawn(tab.linkedBrowser, null, function* () {
-    yield ContentTaskUtils.waitForCondition(() => !content.document.hidden);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
+  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
+    await ContentTaskUtils.waitForCondition(() => !content.document.hidden);
   });
 
   info("Trigger a simple serch, just text + enter.");
   let p = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  yield typeInSearchField(tab.linkedBrowser, "test query", "newtab-search-text");
-  yield BrowserTestUtils.synthesizeKey("VK_RETURN", {}, tab.linkedBrowser);
-  yield p;
+  await typeInSearchField(tab.linkedBrowser, "test query", "newtab-search-text");
+  await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, tab.linkedBrowser);
+  await p;
 
   
   const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, true, false);
@@ -120,5 +120,5 @@ add_task(function* test_about_newtab() {
   events = (events.default || []).filter(e => e[1] == "navigation" && e[2] == "search");
   checkEvents(events, [["navigation", "search", "about_newtab", "enter", {engine: "other-MozSearch"}]]);
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });

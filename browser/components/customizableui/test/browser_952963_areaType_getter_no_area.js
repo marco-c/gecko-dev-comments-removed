@@ -19,7 +19,7 @@ function checkAreaType(widget) {
 }
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   let toolbarNode = createToolbarWithPlacements(kToolbarName, [kUnregisterAreaTestWidget]);
@@ -46,7 +46,7 @@ add_task(function*() {
   gAddedToolbars.delete(kToolbarName);
 });
 
-add_task(function* asyncCleanup() {
-  yield resetCustomization();
+add_task(async function asyncCleanup() {
+  await resetCustomization();
 });
 

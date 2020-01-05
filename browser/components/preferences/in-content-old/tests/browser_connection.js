@@ -4,7 +4,6 @@
 
 
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/Task.jsm");
 
 function test() {
   waitForExplicitFinish();
@@ -25,16 +24,16 @@ function test() {
 
 
 
-  open_preferences(Task.async(function* tabOpened(aContentWindow) {
+  open_preferences(async function tabOpened(aContentWindow) {
     is(gBrowser.currentURI.spec, "about:preferences", "about:preferences loaded");
-    let dialog = yield openAndLoadSubDialog(connectionURL);
+    let dialog = await openAndLoadSubDialog(connectionURL);
     let dialogClosingPromise = waitForEvent(dialog.document.documentElement, "dialogclosing");
 
     ok(dialog, "connection window opened");
     runConnectionTests(dialog);
     dialog.document.documentElement.acceptDialog();
 
-    let dialogClosingEvent = yield dialogClosingPromise;
+    let dialogClosingEvent = await dialogClosingPromise;
     ok(dialogClosingEvent, "connection window closed");
     
     
@@ -42,7 +41,7 @@ function test() {
        ".a.com,.b.com,.c.com", "no_proxies_on pref has correct value");
     gBrowser.removeCurrentTab();
     finish();
-  }));
+  });
 }
 
 

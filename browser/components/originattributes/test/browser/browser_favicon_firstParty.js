@@ -160,7 +160,7 @@ function waitOnFaviconLoaded(aFaviconURL) {
   });
 }
 
-function* openTab(aURL) {
+async function openTab(aURL) {
   let tab = gBrowser.addTab(aURL);
 
   
@@ -168,21 +168,21 @@ function* openTab(aURL) {
   tab.ownerGlobal.focus();
 
   let browser = gBrowser.getBrowserForTab(tab);
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
   return {tab, browser};
 }
 
-function* assignCookiesUnderFirstParty(aURL, aFirstParty, aCookieValue) {
+async function assignCookiesUnderFirstParty(aURL, aFirstParty, aCookieValue) {
   
   
-  let tabInfo = yield openTabInFirstParty(aURL, aFirstParty);
+  let tabInfo = await openTabInFirstParty(aURL, aFirstParty);
 
   
-  yield ContentTask.spawn(tabInfo.browser, aCookieValue, function* (value) {
+  await ContentTask.spawn(tabInfo.browser, aCookieValue, async function(value) {
     content.document.cookie = value;
   });
 
-  yield BrowserTestUtils.removeTab(tabInfo.tab);
+  await BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
 function* generateCookies(aThirdParty) {
@@ -210,7 +210,7 @@ function* generateCookies(aThirdParty) {
   return cookies;
 }
 
-function* doTest(aTestPage, aExpectedCookies, aFaviconURL) {
+async function doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   let firstPageURI = makeURI(TEST_SITE_ONE + aTestPage);
   let secondPageURI = makeURI(TEST_SITE_TWO + aTestPage);
 
@@ -221,32 +221,32 @@ function* doTest(aTestPage, aExpectedCookies, aFaviconURL) {
   let promiseObserveFavicon = observeFavicon(FIRST_PARTY_ONE, aExpectedCookies[0], firstPageURI);
 
   
-  let tabInfo = yield openTab(TEST_SITE_ONE + aTestPage);
+  let tabInfo = await openTab(TEST_SITE_ONE + aTestPage);
 
   
-  yield promiseObserveFavicon;
+  await promiseObserveFavicon;
 
   
-  yield promiseFaviconLoaded;
+  await promiseFaviconLoaded;
 
   
-  yield BrowserTestUtils.removeTab(tabInfo.tab);
+  await BrowserTestUtils.removeTab(tabInfo.tab);
 
   
   promiseObserveFavicon = observeFavicon(FIRST_PARTY_TWO, aExpectedCookies[1], secondPageURI);
 
   
-  tabInfo = yield openTab(TEST_SITE_TWO + aTestPage);
+  tabInfo = await openTab(TEST_SITE_TWO + aTestPage);
 
   
-  yield promiseObserveFavicon;
+  await promiseObserveFavicon;
 
-  yield BrowserTestUtils.removeTab(tabInfo.tab);
+  await BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
-add_task(function* setup() {
+add_task(async function setup() {
   
-  yield SpecialPowers.pushPrefEnv({"set": [
+  await SpecialPowers.pushPrefEnv({"set": [
       ["privacy.firstparty.isolate", true]
   ]});
 });
@@ -266,7 +266,7 @@ registerCleanupFunction(() => {
   networkCache.clear();
 });
 
-add_task(function* test_favicon_firstParty() {
+add_task(async function test_favicon_firstParty() {
   for (let testThirdParty of [false, true]) {
     
     clearAllImageCaches();
@@ -276,19 +276,19 @@ add_task(function* test_favicon_firstParty() {
     networkCache.clear();
 
     
-    yield clearAllPlacesFavicons();
+    await clearAllPlacesFavicons();
 
-    let cookies = yield generateCookies(testThirdParty);
+    let cookies = await generateCookies(testThirdParty);
 
     if (testThirdParty) {
-      yield doTest(TEST_THIRD_PARTY_PAGE, cookies, THIRD_PARTY_SITE + FAVICON_URI);
+      await doTest(TEST_THIRD_PARTY_PAGE, cookies, THIRD_PARTY_SITE + FAVICON_URI);
     } else {
-      yield doTest(TEST_PAGE, cookies, TEST_SITE_ONE + FAVICON_URI);
+      await doTest(TEST_PAGE, cookies, TEST_SITE_ONE + FAVICON_URI);
     }
   }
 });
 
-add_task(function* test_favicon_cache_firstParty() {
+add_task(async function test_favicon_cache_firstParty() {
   
   clearAllImageCaches();
 
@@ -303,20 +303,20 @@ add_task(function* test_favicon_cache_firstParty() {
   let responsePromise = waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
 
   
-  let tabInfoA = yield openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
+  let tabInfoA = await openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
 
   
-  let response = yield responsePromise;
+  let response = await responsePromise;
 
   
   is(response.topic, "http-on-examine-response", "The favicon image should be loaded through network.");
   is(response.firstPartyDomain, FIRST_PARTY_ONE, "We should only observe the network response for the first first party.");
 
   
-  yield promiseForFaviconLoaded;
+  await promiseForFaviconLoaded;
 
   
-  let tabInfoB = yield openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
+  let tabInfoB = await openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
 
   
   
@@ -325,19 +325,19 @@ add_task(function* test_favicon_cache_firstParty() {
   let promiseForFaviconResponse = waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
 
   
-  let tabInfoC = yield openTab(TEST_SITE_TWO + TEST_CACHE_PAGE);
+  let tabInfoC = await openTab(TEST_SITE_TWO + TEST_CACHE_PAGE);
 
   
   
   
-  response = yield promiseForFaviconResponse;
+  response = await promiseForFaviconResponse;
 
   
   
   is(response.topic, "http-on-examine-response", "The favicon image should be loaded through network again.");
   is(response.firstPartyDomain, FIRST_PARTY_TWO, "We should only observe the network response for the second first party.");
 
-  yield BrowserTestUtils.removeTab(tabInfoA.tab);
-  yield BrowserTestUtils.removeTab(tabInfoB.tab);
-  yield BrowserTestUtils.removeTab(tabInfoC.tab);
+  await BrowserTestUtils.removeTab(tabInfoA.tab);
+  await BrowserTestUtils.removeTab(tabInfoB.tab);
+  await BrowserTestUtils.removeTab(tabInfoC.tab);
 });

@@ -38,50 +38,50 @@ const FIELDS = {
   "//input[@type='file'][2]":   [FILE1, FILE2]
 };
 
-add_task(function* test_form_data_restoration() {
+add_task(async function test_form_data_restoration() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   for (let xpath of Object.keys(FIELDS)) {
-    yield setFormValue(browser, xpath);
+    await setFormValue(browser, xpath);
   }
 
   
   let tab2 = gBrowser.duplicateTab(tab);
   let browser2 = tab2.linkedBrowser;
-  yield promiseTabRestored(tab2);
+  await promiseTabRestored(tab2);
 
   
   for (let xpath of Object.keys(FIELDS)) {
     let expected = JSON.stringify(FIELDS[xpath]);
-    let actual = JSON.stringify(yield getFormValue(browser2, xpath));
+    let actual = JSON.stringify(await getFormValue(browser2, xpath));
     is(actual, expected, "The value for \"" + xpath + "\" was correctly restored");
   }
 
   
-  yield promiseRemoveTab(tab2);
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab2);
+  await promiseRemoveTab(tab);
 
   
   tab = ss.undoCloseTab(window, 0);
   browser = tab.linkedBrowser;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
   
   
   for (let xpath of Object.keys(FIELDS)) {
     let expected = FIELDS[xpath];
     if (expected) {
-      let actual = yield getFormValue(browser, xpath, expected);
+      let actual = await getFormValue(browser, xpath, expected);
       isnot(actual, expected, "The value for \"" + xpath + "\" was correctly discarded");
     }
   }
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 });
 
 function createFilePath(leaf) {

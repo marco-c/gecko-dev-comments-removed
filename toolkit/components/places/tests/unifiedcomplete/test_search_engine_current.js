@@ -2,28 +2,28 @@
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   Services.search.addEngineWithDetails("AliasedMozSearch", "", "doit", "",
                                        "GET", "http://s.example.com/search");
 
   do_print("search engine");
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "mozilla",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("mozilla", { heuristic: true }) ]
   });
 
   do_print("search engine, uri-like input");
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "http:///",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("http:///", { heuristic: true }) ]
   });
 
   do_print("search engine, multiple words");
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "mozzarella cheese",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("mozzarella cheese", { heuristic: true }) ]
@@ -35,11 +35,11 @@ add_task(function*() {
   let engine = Services.search.getEngineByName("MozSearch2");
   notEqual(Services.search.currentEngine, engine, "New engine shouldn't be the current engine yet");
   Services.search.currentEngine = engine;
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "mozilla",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("mozilla", { engineName: "MozSearch2", heuristic: true }) ]
   });
 
-  yield cleanup();
+  await cleanup();
 });

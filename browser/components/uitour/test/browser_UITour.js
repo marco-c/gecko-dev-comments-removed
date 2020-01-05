@@ -370,14 +370,14 @@ var tests = [
       });
     });
   },
-  taskify(function* test_treatment_tag() {
+  taskify(async function test_treatment_tag() {
     let ac = new TelemetryArchiveTesting.Checker();
-    yield ac.promiseInit();
-    yield gContentAPI.setTreatmentTag("foobar", "baz");
+    await ac.promiseInit();
+    await gContentAPI.setTreatmentTag("foobar", "baz");
     
-    yield BrowserTestUtils.waitForContentEvent(gTestTab.linkedBrowser, "mozUITourNotification", false,
+    await BrowserTestUtils.waitForContentEvent(gTestTab.linkedBrowser, "mozUITourNotification", false,
                                                event => event.detail.event === "TreatmentTag:TelemetrySent");
-    yield new Promise((resolve) => {
+    await new Promise((resolve) => {
       gContentAPI.getTreatmentTag("foobar", (data) => {
         is(data.value, "baz", "set and retrieved treatmentTag");
         ac.promiseFindPing("uitour-tag", [
@@ -395,9 +395,9 @@ var tests = [
   }),
 
   
-  taskify(function* cleanupMenus() {
+  taskify(async function cleanupMenus() {
     let shownPromise = promisePanelShown(window);
     gContentAPI.showMenu("appMenu");
-    yield shownPromise;
+    await shownPromise;
   }),
 ];

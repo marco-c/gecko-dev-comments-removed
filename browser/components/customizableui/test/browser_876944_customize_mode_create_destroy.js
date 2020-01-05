@@ -8,9 +8,9 @@ const kTestWidget1 = "test-customize-mode-create-destroy1";
 const kTestWidget2 = "test-customize-mode-create-destroy2";
 
 
-add_task(function* testWrapUnwrap() {
-  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
-  yield startCustomizing();
+add_task(async function testWrapUnwrap() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
+  await startCustomizing();
   CustomizableUI.createWidget({id: kTestWidget1, label: "Pretty label", tooltiptext: "Pretty tooltip"});
   let elem = document.getElementById(kTestWidget1);
   let wrapper = document.getElementById("wrapper-" + kTestWidget1);
@@ -26,7 +26,7 @@ add_task(function* testWrapUnwrap() {
 });
 
 
-add_task(function* testPanelPlaceholders() {
+add_task(async function testPanelPlaceholders() {
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
   
   
@@ -52,16 +52,16 @@ add_task(function* testPanelPlaceholders() {
   ok(!wrapper, "There should be a wrapper");
   let item = document.getElementById(kTestWidget2);
   ok(!item, "There should no longer be an item");
-  yield endCustomizing();
+  await endCustomizing();
 });
 
-add_task(function* asyncCleanup() {
-  yield endCustomizing();
+add_task(async function asyncCleanup() {
+  await endCustomizing();
   try {
     CustomizableUI.destroyWidget(kTestWidget1);
   } catch (ex) {}
   try {
     CustomizableUI.destroyWidget(kTestWidget2);
   } catch (ex) {}
-  yield resetCustomization();
+  await resetCustomization();
 });

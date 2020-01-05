@@ -50,7 +50,7 @@ function destroyHiddenBrowser(aFrame, aBrowser) {
 
 
 
-add_task(function* test_windowless_UITour() {
+add_task(async function test_windowless_UITour() {
   
   let pageURL = getRootDirectory(gTestPath) + "uitour.html";
 
@@ -98,5 +98,5 @@ add_task(function* test_windowless_UITour() {
   });
 
   
-  yield deferredPing.promise;
+  await deferredPing.promise;
 });

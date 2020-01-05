@@ -1,12 +1,12 @@
 "use strict";
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processCount", 1]]
   });
 })
 
-add_task(function* () {
+add_task(async function() {
   
 
   function test(aLambda) {
@@ -61,7 +61,7 @@ add_task(function* () {
   ok(test(() => ss.deleteTabValue(tab, key)), "delete non-existent tab value");
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 
   
 
@@ -76,14 +76,14 @@ add_task(function* () {
   
   let testURL = "about:";
   tab = gBrowser.addTab(testURL);
-  yield promiseBrowserLoaded(tab.linkedBrowser);
+  await promiseBrowserLoaded(tab.linkedBrowser);
 
   
   gPrefService.setIntPref("browser.sessionstore.max_tabs_undo", max_tabs_undo + 1);
   registerCleanupFunction(() => gPrefService.clearUserPref("browser.sessionstore.max_tabs_undo"));
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 
   
   let newcount = ss.getClosedTabCount(window);
@@ -93,7 +93,7 @@ add_task(function* () {
   tab = test(() => ss.undoCloseTab(window, 0));
   ok(tab, "undoCloseTab doesn't throw")
 
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
   is(tab.linkedBrowser.currentURI.spec, testURL, "correct tab was reopened");
 
   

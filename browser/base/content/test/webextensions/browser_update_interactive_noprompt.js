@@ -1,7 +1,7 @@
 
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({set: [
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],

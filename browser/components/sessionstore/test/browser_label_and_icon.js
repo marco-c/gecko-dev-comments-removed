@@ -20,22 +20,22 @@ add_task(function setup() {
 
 
 
-add_task(function* test_label_and_icon() {
+add_task(async function test_label_and_icon() {
   
   let tab = gBrowser.addTab("about:robots");
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   let state = ss.getTabState(tab);
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   browser = null;
 
   
   tab = gBrowser.addTab("about:blank");
   ss.setTabState(tab, state);
-  yield promiseTabRestoring(tab);
+  await promiseTabRestoring(tab);
 
   
   ok(gBrowser.getIcon(tab).startsWith("data:image/png;"), "icon is set");
@@ -49,5 +49,5 @@ add_task(function* test_label_and_icon() {
   is(iconLoadingPrincipal.origin, "about:robots", "correct loadingPrincipal used");
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 });

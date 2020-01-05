@@ -11,8 +11,8 @@ registerCleanupFunction(function() {
   Services.prefs.clearUserPref(kPrefName);
 });
 
-add_task(function* () {
-  let aTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, kEmptyURI);
+add_task(async function() {
+  let aTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, kEmptyURI);
   ok(!gFindBarInitialized, "findbar isn't initialized yet");
 
   
@@ -71,5 +71,5 @@ add_task(function* () {
   
   
   findBar._findField.value = "";
-  yield BrowserTestUtils.removeTab(aTab);
+  await BrowserTestUtils.removeTab(aTab);
 });

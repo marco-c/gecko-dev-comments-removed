@@ -8,18 +8,18 @@ const URL = ROOT + "browser_456342_sample.xhtml";
 
 
 
-add_task(function* test_restore_nonstandard_input_values() {
+add_task(async function test_restore_nonstandard_input_values() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   let expectedValue = Math.random();
-  yield setFormElementValues(browser, {value: expectedValue});
+  await setFormElementValues(browser, {value: expectedValue});
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   let undoItems = JSON.parse(ss.getClosedTabData(window));
   let savedFormData = undoItems[0].state.formdata;
 

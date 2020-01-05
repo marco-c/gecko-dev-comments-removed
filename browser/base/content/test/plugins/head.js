@@ -1,7 +1,5 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
@@ -16,7 +14,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 
 
 function promiseInitContentBlocklistSvc(aBrowser) {
-  return ContentTask.spawn(aBrowser, {}, function* () {
+  return ContentTask.spawn(aBrowser, {}, async function() {
     try {
       Cc["@mozilla.org/extensions/blocklist;1"]
         .getService(Ci.nsIBlocklistService);
@@ -168,7 +166,7 @@ function getTestPluginEnabledState(pluginName) {
 
 function promiseForPluginInfo(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, function* (contentId) {
+  return ContentTask.spawn(browser, aId, async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     if (!(plugin instanceof Ci.nsIObjectLoadingContent))
       throw new Error("no plugin found");
@@ -185,7 +183,7 @@ function promiseForPluginInfo(aId, aBrowser) {
 
 function promisePlayObject(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, function* (contentId) {
+  return ContentTask.spawn(browser, aId, async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     let objLoadingContent = plugin.QueryInterface(Ci.nsIObjectLoadingContent);
     objLoadingContent.playPlugin();
@@ -194,7 +192,7 @@ function promisePlayObject(aId, aBrowser) {
 
 function promiseCrashObject(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, function* (contentId) {
+  return ContentTask.spawn(browser, aId, async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     Components.utils.waiveXrays(plugin).crash();
   });
@@ -203,7 +201,7 @@ function promiseCrashObject(aId, aBrowser) {
 
 function promiseObjectValueResult(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, function* (contentId) {
+  return ContentTask.spawn(browser, aId, async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     return Components.utils.waiveXrays(plugin).getObjectValue();
   });
@@ -212,7 +210,7 @@ function promiseObjectValueResult(aId, aBrowser) {
 
 function promiseReloadPlugin(aId, aBrowser) {
   let browser = aBrowser || gTestBrowser;
-  return ContentTask.spawn(browser, aId, function* (contentId) {
+  return ContentTask.spawn(browser, aId, async function(contentId) {
     let plugin = content.document.getElementById(contentId);
     plugin.src = plugin.src;
   });
@@ -253,7 +251,7 @@ function setAndUpdateBlocklist(aURL, aCallback) {
 
 
 
-function* asyncSetAndUpdateBlocklist(aURL, aBrowser) {
+async function asyncSetAndUpdateBlocklist(aURL, aBrowser) {
   info("*** loading new blocklist: " + aURL);
   let doTestRemote = aBrowser ? aBrowser.isRemoteBrowser : false;
   if (!_originalTestBlocklistURL) {
@@ -269,10 +267,10 @@ function* asyncSetAndUpdateBlocklist(aURL, aBrowser) {
                             .getService(Ci.nsITimerCallback);
   blocklistNotifier.notify(null);
   info("*** waiting on local load");
-  yield localPromise;
+  await localPromise;
   if (doTestRemote) {
     info("*** waiting on remote load");
-    yield remotePromise;
+    await remotePromise;
   }
   info("*** blocklist loaded.");
 }
@@ -385,7 +383,7 @@ function promiseForNotificationShown(notification) {
 
 
 function promiseUpdatePluginBindings(browser) {
-  return ContentTask.spawn(browser, {}, function* () {
+  return ContentTask.spawn(browser, {}, async function() {
     let doc = content.document;
     let elems = doc.getElementsByTagName("embed");
     if (!elems || elems.length < 1) {

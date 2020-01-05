@@ -9,57 +9,57 @@ requestLongerTimeout(2);
 
 
 
-add_task(function* () {
+add_task(async function() {
   
   
-  yield setLinks("0,1,2,3,4,5,6,7,8,9");
+  await setLinks("0,1,2,3,4,5,6,7,8,9");
   setPinnedLinks("");
 
-  yield* addNewTabPageTab();
-  yield customizeNewTabPage("enhanced"); 
-  yield* checkGrid("0,1,2,3,4,5,6,7,8");
+  await addNewTabPageTab();
+  await customizeNewTabPage("enhanced"); 
+  await checkGrid("0,1,2,3,4,5,6,7,8");
 
-  yield blockCell(4);
-  yield* checkGrid("0,1,2,3,5,6,7,8,9");
+  await blockCell(4);
+  await checkGrid("0,1,2,3,5,6,7,8,9");
 
-  yield blockCell(4);
-  yield* checkGrid("0,1,2,3,6,7,8,9,");
+  await blockCell(4);
+  await checkGrid("0,1,2,3,6,7,8,9,");
 
-  yield blockCell(4);
-  yield* checkGrid("0,1,2,3,7,8,9,,");
+  await blockCell(4);
+  await checkGrid("0,1,2,3,7,8,9,,");
 
   
-  yield restore();
-  yield setLinks("0,1,2,3,4,5,6,7,8");
+  await restore();
+  await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks(",1");
 
-  yield* addNewTabPageTab();
-  yield* checkGrid("0,1p,2,3,4,5,6,7,8");
+  await addNewTabPageTab();
+  await checkGrid("0,1p,2,3,4,5,6,7,8");
 
-  yield blockCell(1);
-  yield* checkGrid("0,2,3,4,5,6,7,8,");
+  await blockCell(1);
+  await checkGrid("0,2,3,4,5,6,7,8,");
 
   
   
-  yield restore();
-  yield setLinks("0,1,2,3,4,5,6,7,8,9");
+  await restore();
+  await setLinks("0,1,2,3,4,5,6,7,8,9");
   setPinnedLinks(",,,,,,,,8");
 
-  yield* addNewTabPageTab();
-  yield* checkGrid("0,1,2,3,4,5,6,7,8p");
+  await addNewTabPageTab();
+  await checkGrid("0,1,2,3,4,5,6,7,8p");
 
-  yield blockCell(8);
-  yield* checkGrid("0,1,2,3,4,5,6,7,9");
+  await blockCell(8);
+  await checkGrid("0,1,2,3,4,5,6,7,9");
 
   
   
-  yield restore();
-  yield setLinks("0,1,2,3,4,5,6,7,8,9");
+  await restore();
+  await setLinks("0,1,2,3,4,5,6,7,8,9");
   setPinnedLinks(",,,,,,,,8");
 
-  yield* addNewTabPageTab();
-  yield* checkGrid("0,1,2,3,4,5,6,7,8p");
+  await addNewTabPageTab();
+  await checkGrid("0,1,2,3,4,5,6,7,8p");
 
-  yield blockCell(0);
-  yield* checkGrid("1,2,3,4,5,6,7,9,8p");
+  await blockCell(0);
+  await checkGrid("1,2,3,4,5,6,7,9,8p");
 });

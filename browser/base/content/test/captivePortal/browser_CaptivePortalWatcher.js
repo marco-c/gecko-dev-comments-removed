@@ -34,13 +34,13 @@ let testCasesForBothSuccessAndAbort = [
 
 
 
-  function* test_detectedWithNoBrowserWindow_Focused(aSuccess) {
-    let win1 = yield openWindowAndWaitForFocus();
-    let win2 = yield openWindowAndWaitForFocus();
+  async function test_detectedWithNoBrowserWindow_Focused(aSuccess) {
+    let win1 = await openWindowAndWaitForFocus();
+    let win2 = await openWindowAndWaitForFocus();
     
-    yield SimpleTest.promiseFocus(window);
+    await SimpleTest.promiseFocus(window);
 
-    yield portalDetected();
+    await portalDetected();
 
     
     ensurePortalNotification(win1);
@@ -48,18 +48,18 @@ let testCasesForBothSuccessAndAbort = [
     ensurePortalNotification(win2);
     ensureNoPortalTab(win2);
 
-    yield focusWindowAndWaitForPortalUI(false, win2);
+    await focusWindowAndWaitForPortalUI(false, win2);
 
-    yield freePortal(aSuccess);
+    await freePortal(aSuccess);
 
     ensureNoPortalNotification(win1);
     ensureNoPortalTab(win2);
     ensureNoPortalNotification(win2);
 
-    yield closeWindowAndWaitForXulWindowVisible(win2);
+    await closeWindowAndWaitForXulWindowVisible(win2);
     
     
-    yield BrowserTestUtils.closeWindow(win1);
+    await BrowserTestUtils.closeWindow(win1);
   },
 
   
@@ -84,17 +84,17 @@ let testCasesForBothSuccessAndAbort = [
 
 
 
-  function* test_detectedWithNoBrowserWindow_GoneBeforeOpen(aSuccess) {
-    yield portalDetected();
-    yield freePortal(aSuccess);
-    let win = yield openWindowAndWaitForFocus();
+  async function test_detectedWithNoBrowserWindow_GoneBeforeOpen(aSuccess) {
+    await portalDetected();
+    await freePortal(aSuccess);
+    let win = await openWindowAndWaitForFocus();
     
-    yield new Promise(resolve => {
+    await new Promise(resolve => {
       setTimeout(resolve, 1000);
     });
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
-    yield closeWindowAndWaitForXulWindowVisible(win);
+    await closeWindowAndWaitForXulWindowVisible(win);
   },
 
   

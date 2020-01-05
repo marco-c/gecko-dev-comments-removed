@@ -42,11 +42,11 @@ function promiseDownloadRemoved(list) {
   return deferred.promise;
 }
 
-add_task(function* test() {
-  yield setupDownloads();
-  yield setupFormHistory();
-  yield setupHistory();
-  yield onHistoryReady();
+add_task(async function test() {
+  await setupDownloads();
+  await setupFormHistory();
+  await setupHistory();
+  await onHistoryReady();
 });
 
 function countEntries(name, message, check) {
@@ -73,7 +73,7 @@ function countEntries(name, message, check) {
   return deferred.promise;
 }
 
-function* onHistoryReady() {
+async function onHistoryReady() {
   var hoursSinceMidnight = new Date().getHours();
   var minutesSinceMidnight = hoursSinceMidnight * 60 + new Date().getMinutes();
 
@@ -94,302 +94,302 @@ function* onHistoryReady() {
   itemPrefs.setBoolPref("sessions", false);
   itemPrefs.setBoolPref("siteSettings", false);
 
-  let publicList = yield Downloads.getList(Downloads.PUBLIC);
+  let publicList = await Downloads.getList(Downloads.PUBLIC);
   let downloadPromise = promiseDownloadRemoved(publicList);
   let formHistoryPromise = promiseFormHistoryRemoved();
 
   
   s.range = [now_uSec - 10 * 60 * 1000000, now_uSec];
-  yield s.sanitize();
+  await s.sanitize();
   s.range = null;
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://10minutes.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://10minutes.com"))),
      "Pretend visit to 10minutes.com should now be deleted");
-  ok((yield promiseIsURIVisited(makeURI("http://1hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://1hour.com"))),
      "Pretend visit to 1hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://1hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://1hour10minutes.com"))),
      "Pretend visit to 1hour10minutes.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour.com"))),
      "Pretend visit to 2hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
      "Pretend visit to 2hour10minutes.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour.com"))),
      "Pretend visit to 4hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should should still exist");
   if (minutesSinceMidnight > 10) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
   let checkZero = function(num, message) { is(num, 0, message); }
   let checkOne = function(num, message) { is(num, 1, message); }
 
-  yield countEntries("10minutes", "10minutes form entry should be deleted", checkZero);
-  yield countEntries("1hour", "1hour form entry should still exist", checkOne);
-  yield countEntries("1hour10minutes", "1hour10minutes form entry should still exist", checkOne);
-  yield countEntries("2hour", "2hour form entry should still exist", checkOne);
-  yield countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
-  yield countEntries("4hour", "4hour form entry should still exist", checkOne);
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
+  await countEntries("10minutes", "10minutes form entry should be deleted", checkZero);
+  await countEntries("1hour", "1hour form entry should still exist", checkOne);
+  await countEntries("1hour10minutes", "1hour10minutes form entry should still exist", checkOne);
+  await countEntries("2hour", "2hour form entry should still exist", checkOne);
+  await countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
+  await countEntries("4hour", "4hour form entry should still exist", checkOne);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
   if (minutesSinceMidnight > 10)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-10-minutes")), "10 minute download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-1-hour")), "<1 hour download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-1-hour-10-minutes")), "1 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-10-minutes")), "10 minute download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-1-hour")), "<1 hour download should still be present");
+  ok((await downloadExists(publicList, "fakefile-1-hour-10-minutes")), "1 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
 
   if (minutesSinceMidnight > 10)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   Sanitizer.prefs.setIntPref("timeSpan", 1);
-  yield s.sanitize();
+  await s.sanitize();
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://1hour.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://1hour.com"))),
      "Pretend visit to 1hour.com should now be deleted");
-  ok((yield promiseIsURIVisited(makeURI("http://1hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://1hour10minutes.com"))),
      "Pretend visit to 1hour10minutes.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour.com"))),
      "Pretend visit to 2hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
      "Pretend visit to 2hour10minutes.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour.com"))),
      "Pretend visit to 4hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should should still exist");
   if (hoursSinceMidnight > 1) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
-  yield countEntries("1hour", "1hour form entry should be deleted", checkZero);
-  yield countEntries("1hour10minutes", "1hour10minutes form entry should still exist", checkOne);
-  yield countEntries("2hour", "2hour form entry should still exist", checkOne);
-  yield countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
-  yield countEntries("4hour", "4hour form entry should still exist", checkOne);
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
+  await countEntries("1hour", "1hour form entry should be deleted", checkZero);
+  await countEntries("1hour10minutes", "1hour10minutes form entry should still exist", checkOne);
+  await countEntries("2hour", "2hour form entry should still exist", checkOne);
+  await countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
+  await countEntries("4hour", "4hour form entry should still exist", checkOne);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
   if (hoursSinceMidnight > 1)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-1-hour")), "<1 hour download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-1-hour-10-minutes")), "1 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-1-hour")), "<1 hour download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-1-hour-10-minutes")), "1 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
 
   if (hoursSinceMidnight > 1)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   s.range = [now_uSec - 70 * 60 * 1000000, now_uSec];
-  yield s.sanitize();
+  await s.sanitize();
   s.range = null;
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://1hour10minutes.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://1hour10minutes.com"))),
      "Pretend visit to 1hour10minutes.com should now be deleted");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour.com"))),
      "Pretend visit to 2hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
      "Pretend visit to 2hour10minutes.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour.com"))),
      "Pretend visit to 4hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should should still exist");
   if (minutesSinceMidnight > 70) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
-  yield countEntries("1hour10minutes", "1hour10minutes form entry should be deleted", checkZero);
-  yield countEntries("2hour", "2hour form entry should still exist", checkOne);
-  yield countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
-  yield countEntries("4hour", "4hour form entry should still exist", checkOne);
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
+  await countEntries("1hour10minutes", "1hour10minutes form entry should be deleted", checkZero);
+  await countEntries("2hour", "2hour form entry should still exist", checkOne);
+  await countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
+  await countEntries("4hour", "4hour form entry should still exist", checkOne);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
   if (minutesSinceMidnight > 70)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-1-hour-10-minutes")), "1 hour 10 minute old download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-1-hour-10-minutes")), "1 hour 10 minute old download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
   if (minutesSinceMidnight > 70)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   Sanitizer.prefs.setIntPref("timeSpan", 2);
-  yield s.sanitize();
+  await s.sanitize();
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://2hour.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://2hour.com"))),
      "Pretend visit to 2hour.com should now be deleted");
-  ok((yield promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
      "Pretend visit to 2hour10minutes.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour.com"))),
      "Pretend visit to 4hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should should still exist");
   if (hoursSinceMidnight > 2) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
-  yield countEntries("2hour", "2hour form entry should be deleted", checkZero);
-  yield countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
-  yield countEntries("4hour", "4hour form entry should still exist", checkOne);
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
+  await countEntries("2hour", "2hour form entry should be deleted", checkZero);
+  await countEntries("2hour10minutes", "2hour10minutes form entry should still exist", checkOne);
+  await countEntries("4hour", "4hour form entry should still exist", checkOne);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
   if (hoursSinceMidnight > 2)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-2-hour")), "<2 hour old download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
   if (hoursSinceMidnight > 2)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   s.range = [now_uSec - 130 * 60 * 1000000, now_uSec];
-  yield s.sanitize();
+  await s.sanitize();
   s.range = null;
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://2hour10minutes.com"))),
      "Pretend visit to 2hour10minutes.com should now be deleted");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour.com"))),
      "Pretend visit to 4hour.com should should still exist");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should should still exist");
   if (minutesSinceMidnight > 130) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
-  yield countEntries("2hour10minutes", "2hour10minutes form entry should be deleted", checkZero);
-  yield countEntries("4hour", "4hour form entry should still exist", checkOne);
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
+  await countEntries("2hour10minutes", "2hour10minutes form entry should be deleted", checkZero);
+  await countEntries("4hour", "4hour form entry should still exist", checkOne);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
   if (minutesSinceMidnight > 130)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute old download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-2-hour-10-minutes")), "2 hour 10 minute old download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should still be present");
+  ok((await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
   if (minutesSinceMidnight > 130)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   Sanitizer.prefs.setIntPref("timeSpan", 3);
-  yield s.sanitize();
+  await s.sanitize();
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://4hour.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://4hour.com"))),
      "Pretend visit to 4hour.com should now be deleted");
-  ok((yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should should still exist");
   if (hoursSinceMidnight > 4) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
-  yield countEntries("4hour", "4hour form entry should be deleted", checkZero);
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
+  await countEntries("4hour", "4hour form entry should be deleted", checkZero);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should still exist", checkOne);
   if (hoursSinceMidnight > 4)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-4-hour")), "<4 hour old download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should still be present");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
   if (hoursSinceMidnight > 4)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   s.range = [now_uSec - 250 * 60 * 1000000, now_uSec];
-  yield s.sanitize();
+  await s.sanitize();
   s.range = null;
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://4hour10minutes.com"))),
      "Pretend visit to 4hour10minutes.com should now be deleted");
   if (minutesSinceMidnight > 250) {
-    ok((yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok((await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should still exist");
   }
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
     "Pretend visit to before-today.com should still exist");
 
-  yield countEntries("4hour10minutes", "4hour10minutes form entry should be deleted", checkZero);
+  await countEntries("4hour10minutes", "4hour10minutes form entry should be deleted", checkZero);
   if (minutesSinceMidnight > 250)
-    yield countEntries("today", "today form entry should still exist", checkOne);
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
+    await countEntries("today", "today form entry should still exist", checkOne);
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
 
-  ok(!(yield downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should now be deleted");
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  ok(!(await downloadExists(publicList, "fakefile-4-hour-10-minutes")), "4 hour 10 minute download should now be deleted");
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
   if (minutesSinceMidnight > 250)
-    ok((yield downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
+    ok((await downloadExists(publicList, "fakefile-today")), "'Today' download should still be present");
 
   
   
@@ -402,10 +402,10 @@ function* onHistoryReady() {
 
   
   Sanitizer.prefs.setIntPref("timeSpan", 4);
-  yield s.sanitize();
+  await s.sanitize();
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
   
   
@@ -414,34 +414,34 @@ function* onHistoryReady() {
   
   var today = isToday(new Date(now_mSec));
   if (today) {
-    ok(!(yield promiseIsURIVisited(makeURI("http://today.com"))),
+    ok(!(await promiseIsURIVisited(makeURI("http://today.com"))),
        "Pretend visit to today.com should now be deleted");
 
-    yield countEntries("today", "today form entry should be deleted", checkZero);
-    ok(!(yield downloadExists(publicList, "fakefile-today")), "'Today' download should now be deleted");
+    await countEntries("today", "today form entry should be deleted", checkZero);
+    ok(!(await downloadExists(publicList, "fakefile-today")), "'Today' download should now be deleted");
   }
 
-  ok((yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok((await promiseIsURIVisited(makeURI("http://before-today.com"))),
      "Pretend visit to before-today.com should still exist");
-  yield countEntries("b4today", "b4today form entry should still exist", checkOne);
-  ok((yield downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
+  await countEntries("b4today", "b4today form entry should still exist", checkOne);
+  ok((await downloadExists(publicList, "fakefile-old")), "Year old download should still be present");
 
   downloadPromise = promiseDownloadRemoved(publicList);
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
   Sanitizer.prefs.setIntPref("timeSpan", 0);
-  yield s.sanitize();
+  await s.sanitize();
 
-  yield formHistoryPromise;
-  yield downloadPromise;
+  await formHistoryPromise;
+  await downloadPromise;
 
-  ok(!(yield promiseIsURIVisited(makeURI("http://before-today.com"))),
+  ok(!(await promiseIsURIVisited(makeURI("http://before-today.com"))),
      "Pretend visit to before-today.com should now be deleted");
 
-  yield countEntries("b4today", "b4today form entry should be deleted", checkZero);
+  await countEntries("b4today", "b4today form entry should be deleted", checkZero);
 
-  ok(!(yield downloadExists(publicList, "fakefile-old")), "Year old download should now be deleted");
+  ok(!(await downloadExists(publicList, "fakefile-old")), "Year old download should now be deleted");
 }
 
 function setupHistory() {
@@ -722,10 +722,10 @@ function* setupDownloads() {
 
 
 
-let downloadExists = Task.async(function* (list, path) {
-  let listArray = yield list.getAll();
+let downloadExists = async function(list, path) {
+  let listArray = await list.getAll();
   return listArray.some(i => i.target.path == path);
-});
+};
 
 function isToday(aDate) {
   return aDate.getDate() == new Date().getDate();

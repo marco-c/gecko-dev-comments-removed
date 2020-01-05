@@ -54,7 +54,7 @@ function findInStatus(aStatus, aName) {
 
 
 
-add_task(function* blockRepoShutdown() {
+add_task(async function blockRepoShutdown() {
   
   
   let mockRepo = mockAddonProvider("Mock repo");
@@ -71,7 +71,7 @@ add_task(function* blockRepoShutdown() {
   let managerDown = promiseShutdownManager();
 
   
-  yield mockProvider.shutdownPromise;
+  await mockProvider.shutdownPromise;
   
   let status = MockAsyncShutdown.status();
   equal(findInStatus(status[0], "Mock provider"), "(none)");
@@ -81,7 +81,7 @@ add_task(function* blockRepoShutdown() {
   mockProvider.doneResolve();
 
   
-  yield mockRepo.shutdownPromise;
+  await mockRepo.shutdownPromise;
   
   status = MockAsyncShutdown.status();
   equal(status[0].name, "AddonManager: Waiting for providers to shut down.");
@@ -91,7 +91,7 @@ add_task(function* blockRepoShutdown() {
 
   
   mockRepo.doneResolve();
-  yield managerDown;
+  await managerDown;
 
   
   status = MockAsyncShutdown.status();

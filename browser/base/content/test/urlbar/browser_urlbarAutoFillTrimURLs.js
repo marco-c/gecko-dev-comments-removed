@@ -1,21 +1,21 @@
 
 
 
-add_task(function* setup() {
+add_task(async function setup() {
   const PREF_TRIMURL = "browser.urlbar.trimURLs";
   const PREF_AUTOFILL = "browser.urlbar.autoFill";
 
-  registerCleanupFunction(function* () {
+  registerCleanupFunction(async function() {
     Services.prefs.clearUserPref(PREF_TRIMURL);
     Services.prefs.clearUserPref(PREF_AUTOFILL);
-    yield PlacesTestUtils.clearHistory();
+    await PlacesTestUtils.clearHistory();
     gURLBar.handleRevert();
   });
   Services.prefs.setBoolPref(PREF_TRIMURL, true);
   Services.prefs.setBoolPref(PREF_AUTOFILL, true);
 
   
-  yield PlacesTestUtils.addVisits([{
+  await PlacesTestUtils.addVisits([{
     uri: "http://www.autofilltrimurl.com/whatever",
     transition: Ci.nsINavHistoryService.TRANSITION_TYPED,
   }, {
@@ -24,17 +24,17 @@ add_task(function* setup() {
   }]);
 });
 
-function* promiseSearch(searchtext) {
+async function promiseSearch(searchtext) {
   gURLBar.focus();
   gURLBar.inputField.value = searchtext.substr(0, searchtext.length - 1);
   EventUtils.synthesizeKey(searchtext.substr(-1, 1), {});
-  yield promiseSearchComplete();
+  await promiseSearchComplete();
 }
 
-function* promiseTestResult(test) {
+async function promiseTestResult(test) {
   info("Searching for '${test.search}'");
 
-  yield promiseSearch(test.search);
+  await promiseSearch(test.search);
 
   is(gURLBar.inputField.value, test.autofilledValue,
      `Autofilled value is as expected for search '${test.search}'`);
@@ -99,14 +99,14 @@ const tests = [{
   },
 ];
 
-add_task(function* autofill_tests() {
+add_task(async function autofill_tests() {
   for (let test of tests) {
-    yield promiseTestResult(test);
+    await promiseTestResult(test);
   }
 });
 
-add_task(function* autofill_complete_domain() {
-  yield promiseSearch("http://www.autofilltrimurl.com");
+add_task(async function autofill_complete_domain() {
+  await promiseSearch("http://www.autofilltrimurl.com");
   is(gURLBar.inputField.value, "http://www.autofilltrimurl.com/", "Autofilled value is as expected");
 
   

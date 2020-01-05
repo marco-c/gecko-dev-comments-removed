@@ -71,7 +71,7 @@ var successfulPinningPageListener = {
 
 
 function errorPageLoaded() {
-  ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+  ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     let textElement = content.document.getElementById("errorShortDescText");
     let text = textElement.innerHTML;
     ok(text.indexOf("MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE") > 0,

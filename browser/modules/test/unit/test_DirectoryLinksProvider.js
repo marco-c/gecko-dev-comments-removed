@@ -14,7 +14,6 @@ Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Http.jsm");
 Cu.import("resource://testing-common/httpd.js");
 Cu.import("resource://gre/modules/osfile.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 
@@ -136,23 +135,23 @@ function promiseDirectoryDownloadOnPrefChange(pref, newValue) {
 }
 
 function promiseSetupDirectoryLinksProvider(options = {}) {
-  return Task.spawn(function*() {
+  return (async function() {
     let linksURL = options.linksURL || kTestURL;
-    yield DirectoryLinksProvider.init();
+    await DirectoryLinksProvider.init();
     Services.locale.setRequestedLocales([options.locale || "en-US"]);
-    yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, linksURL);
+    await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, linksURL);
     do_check_eq(DirectoryLinksProvider._linksURL, linksURL);
     DirectoryLinksProvider._lastDownloadMS = options.lastDownloadMS || 0;
-  });
+  })();
 }
 
 function promiseCleanDirectoryLinksProvider() {
-  return Task.spawn(function*() {
+  return (async function() {
     Services.locale.setRequestedLocales(["en-US"]);
-    yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kTestURL);
+    await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kTestURL);
     DirectoryLinksProvider._lastDownloadMS  = 0;
     DirectoryLinksProvider.reset();
-  });
+  })();
 }
 
 function run_test() {
@@ -189,86 +188,86 @@ function setTimeout(fun, timeout) {
   return timer;
 }
 
-add_task(function* test_fetchAndCacheLinks_local() {
-  yield DirectoryLinksProvider.init();
-  yield cleanJsonFile();
+add_task(async function test_fetchAndCacheLinks_local() {
+  await DirectoryLinksProvider.init();
+  await cleanJsonFile();
   
-  yield DirectoryLinksProvider._fetchAndCacheLinks(kTestURL);
-  let data = yield readJsonFile();
+  await DirectoryLinksProvider._fetchAndCacheLinks(kTestURL);
+  let data = await readJsonFile();
   isIdentical(data, kURLData);
 });
 
-add_task(function* test_fetchAndCacheLinks_remote() {
-  yield DirectoryLinksProvider.init();
-  yield cleanJsonFile();
+add_task(async function test_fetchAndCacheLinks_remote() {
+  await DirectoryLinksProvider.init();
+  await cleanJsonFile();
   
-  yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kExampleURL + "%LOCALE%");
+  await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kExampleURL + "%LOCALE%");
   do_check_eq(gLastRequestPath, kExamplePath + "en-US");
-  let data = yield readJsonFile();
+  let data = await readJsonFile();
   isIdentical(data, kHttpHandlerData[kExamplePath]);
 });
 
-add_task(function* test_fetchAndCacheLinks_malformedURI() {
-  yield DirectoryLinksProvider.init();
-  yield cleanJsonFile();
+add_task(async function test_fetchAndCacheLinks_malformedURI() {
+  await DirectoryLinksProvider.init();
+  await cleanJsonFile();
   let someJunk = "some junk";
   try {
-    yield DirectoryLinksProvider._fetchAndCacheLinks(someJunk);
+    await DirectoryLinksProvider._fetchAndCacheLinks(someJunk);
     do_throw("Malformed URIs should fail")
   } catch (e) {
     do_check_eq(e, "Error fetching " + someJunk)
   }
 
   
-  let data = yield readJsonFile();
+  let data = await readJsonFile();
   isIdentical(data, "");
 });
 
-add_task(function* test_fetchAndCacheLinks_unknownHost() {
-  yield DirectoryLinksProvider.init();
-  yield cleanJsonFile();
+add_task(async function test_fetchAndCacheLinks_unknownHost() {
+  await DirectoryLinksProvider.init();
+  await cleanJsonFile();
   let nonExistentServer = "http://localhost:56789/";
   try {
-    yield DirectoryLinksProvider._fetchAndCacheLinks(nonExistentServer);
+    await DirectoryLinksProvider._fetchAndCacheLinks(nonExistentServer);
     do_throw("BAD URIs should fail");
   } catch (e) {
     do_check_true(e.startsWith("Fetching " + nonExistentServer + " results in error code: "))
   }
 
   
-  let data = yield readJsonFile();
+  let data = await readJsonFile();
   isIdentical(data, "");
 });
 
-add_task(function* test_fetchAndCacheLinks_non200Status() {
-  yield DirectoryLinksProvider.init();
-  yield cleanJsonFile();
-  yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kFailURL);
+add_task(async function test_fetchAndCacheLinks_non200Status() {
+  await DirectoryLinksProvider.init();
+  await cleanJsonFile();
+  await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kFailURL);
   do_check_eq(gLastRequestPath, kFailPath);
-  let data = yield readJsonFile();
+  let data = await readJsonFile();
   isIdentical(data, {});
 });
 
 
-add_task(function* test_DirectoryLinksProvider__linkObservers() {
-  yield DirectoryLinksProvider.init();
+add_task(async function test_DirectoryLinksProvider__linkObservers() {
+  await DirectoryLinksProvider.init();
 
   let testObserver = new LinksChangeObserver();
   DirectoryLinksProvider.addObserver(testObserver);
   do_check_eq(DirectoryLinksProvider._observers.size, 1);
   DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
 
-  yield testObserver.deferred.promise;
+  await testObserver.deferred.promise;
   DirectoryLinksProvider._removeObservers();
   do_check_eq(DirectoryLinksProvider._observers.size, 0);
 
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider__prefObserver_url() {
-  yield promiseSetupDirectoryLinksProvider({linksURL: kTestURL});
+add_task(async function test_DirectoryLinksProvider__prefObserver_url() {
+  await promiseSetupDirectoryLinksProvider({linksURL: kTestURL});
 
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 1);
   let expectedData =  [{url: "http://example.com", title: "LocalSource", frecency: DIRECTORY_FRECENCY, lastVisitDate: 1}];
   isIdentical(links, expectedData);
@@ -277,48 +276,48 @@ add_task(function* test_DirectoryLinksProvider__prefObserver_url() {
   
   
   let exampleUrl = "http://localhost:56789/bad";
-  yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, exampleUrl);
+  await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, exampleUrl);
   do_check_eq(DirectoryLinksProvider._linksURL, exampleUrl);
 
   
-  let newLinks = yield fetchData();
+  let newLinks = await fetchData();
   isIdentical(newLinks, expectedData);
 
   
-  yield cleanJsonFile();
-  yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, exampleUrl + " ");
+  await cleanJsonFile();
+  await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, exampleUrl + " ");
   
-  newLinks = yield fetchData();
+  newLinks = await fetchData();
   isIdentical(newLinks, []);
 
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider_getLinks_noDirectoryData() {
+add_task(async function test_DirectoryLinksProvider_getLinks_noDirectoryData() {
   let data = {
     "directory": [],
   };
   let dataURI = "data:application/json," + JSON.stringify(data);
-  yield promiseSetupDirectoryLinksProvider({linksURL: dataURI});
+  await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 0);
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider_getLinks_badData() {
+add_task(async function test_DirectoryLinksProvider_getLinks_badData() {
   let data = {
     "en-US": {
       "en-US": [{url: "http://example.com", title: "US"}],
     },
   };
   let dataURI = "data:application/json," + JSON.stringify(data);
-  yield promiseSetupDirectoryLinksProvider({linksURL: dataURI});
+  await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
   
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 0);
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
 add_task(function test_DirectoryLinksProvider_needsDownload() {
@@ -332,36 +331,36 @@ add_task(function test_DirectoryLinksProvider_needsDownload() {
   DirectoryLinksProvider._lastDownloadMS = 0;
 });
 
-add_task(function* test_DirectoryLinksProvider_fetchAndCacheLinksIfNecessary() {
-  yield DirectoryLinksProvider.init();
-  yield cleanJsonFile();
+add_task(async function test_DirectoryLinksProvider_fetchAndCacheLinksIfNecessary() {
+  await DirectoryLinksProvider.init();
+  await cleanJsonFile();
   
-  yield promiseSetupDirectoryLinksProvider({linksURL: kTestURL + " "});
-  yield DirectoryLinksProvider._fetchAndCacheLinksIfNecessary();
+  await promiseSetupDirectoryLinksProvider({linksURL: kTestURL + " "});
+  await DirectoryLinksProvider._fetchAndCacheLinksIfNecessary();
 
   
   let lastDownloadMS = DirectoryLinksProvider._lastDownloadMS;
   do_check_true((Date.now() - lastDownloadMS) < 5000);
 
   
-  let data = yield readJsonFile();
+  let data = await readJsonFile();
   isIdentical(data, kURLData);
 
   
-  yield DirectoryLinksProvider._fetchAndCacheLinksIfNecessary();
+  await DirectoryLinksProvider._fetchAndCacheLinksIfNecessary();
   do_check_eq(DirectoryLinksProvider._lastDownloadMS, lastDownloadMS);
 
   
-  yield cleanJsonFile();
-  yield DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
-  data = yield readJsonFile();
+  await cleanJsonFile();
+  await DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
+  data = await readJsonFile();
   isIdentical(data, kURLData);
 
   
   lastDownloadMS = DirectoryLinksProvider._lastDownloadMS;
-  yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, "http://");
-  yield DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
-  data = yield readJsonFile();
+  await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, "http://");
+  await DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
+  data = await readJsonFile();
   isIdentical(data, kURLData);
   do_check_eq(DirectoryLinksProvider._lastDownloadMS, lastDownloadMS);
 
@@ -369,59 +368,59 @@ add_task(function* test_DirectoryLinksProvider_fetchAndCacheLinksIfNecessary() {
   let downloadPromise = DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
   let anotherPromise = DirectoryLinksProvider._fetchAndCacheLinksIfNecessary(true);
   do_check_true(downloadPromise === anotherPromise);
-  yield downloadPromise;
+  await downloadPromise;
 
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider_fetchDirectoryOnPrefChange() {
-  yield DirectoryLinksProvider.init();
+add_task(async function test_DirectoryLinksProvider_fetchDirectoryOnPrefChange() {
+  await DirectoryLinksProvider.init();
 
   let testObserver = new LinksChangeObserver();
   DirectoryLinksProvider.addObserver(testObserver);
 
-  yield cleanJsonFile();
+  await cleanJsonFile();
   
   do_check_false(DirectoryLinksProvider._needsDownload);
 
   
-  yield promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kExampleURL);
+  await promiseDirectoryDownloadOnPrefChange(kSourceUrlPref, kExampleURL);
   
-  yield testObserver.deferred.promise;
+  await testObserver.deferred.promise;
   do_check_eq(gLastRequestPath, kExamplePath);
-  let data = yield readJsonFile();
+  let data = await readJsonFile();
   isIdentical(data, kHttpHandlerData[kExamplePath]);
 
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider_fetchDirectoryOnInit() {
+add_task(async function test_DirectoryLinksProvider_fetchDirectoryOnInit() {
   
-  yield promiseSetupDirectoryLinksProvider();
+  await promiseSetupDirectoryLinksProvider();
   
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 
-  yield cleanJsonFile();
-  yield DirectoryLinksProvider.init();
-  let data = yield readJsonFile();
+  await cleanJsonFile();
+  await DirectoryLinksProvider.init();
+  let data = await readJsonFile();
   isIdentical(data, kURLData);
 
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider_getLinksFromCorruptedFile() {
-  yield promiseSetupDirectoryLinksProvider();
+add_task(async function test_DirectoryLinksProvider_getLinksFromCorruptedFile() {
+  await promiseSetupDirectoryLinksProvider();
 
   
   let directoryLinksFilePath = OS.Path.join(OS.Constants.Path.profileDir, DIRECTORY_LINKS_FILE);
-  yield OS.File.writeAtomic(directoryLinksFilePath, '{"en-US":');
-  let data = yield fetchData();
+  await OS.File.writeAtomic(directoryLinksFilePath, '{"en-US":');
+  let data = await fetchData();
   isIdentical(data, []);
 
-  yield promiseCleanDirectoryLinksProvider();
+  await promiseCleanDirectoryLinksProvider();
 });
 
-add_task(function* test_DirectoryLinksProvider_getAllowedLinks() {
+add_task(async function test_DirectoryLinksProvider_getAllowedLinks() {
   let data = {"directory": [
     {url: "ftp://example.com"},
     {url: "http://example.net"},
@@ -432,9 +431,9 @@ add_task(function* test_DirectoryLinksProvider_getAllowedLinks() {
     {url: "http/bork:eh"},
   ]};
   let dataURI = "data:application/json," + JSON.stringify(data);
-  yield promiseSetupDirectoryLinksProvider({linksURL: dataURI});
+  await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 2);
 
   
@@ -442,7 +441,7 @@ add_task(function* test_DirectoryLinksProvider_getAllowedLinks() {
   do_check_eq(links[1].url, data["directory"][3].url);
 });
 
-add_task(function* test_DirectoryLinksProvider_getAllowedImages() {
+add_task(async function test_DirectoryLinksProvider_getAllowedImages() {
   let data = {"directory": [
     {url: "http://example.com", imageURI: "ftp://example.com"},
     {url: "http://example.com", imageURI: "http://example.net"},
@@ -453,9 +452,9 @@ add_task(function* test_DirectoryLinksProvider_getAllowedImages() {
     {url: "http://example.com", imageURI: "http/bork:eh"},
   ]};
   let dataURI = "data:application/json," + JSON.stringify(data);
-  yield promiseSetupDirectoryLinksProvider({linksURL: dataURI});
+  await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 2);
 
   
@@ -463,7 +462,7 @@ add_task(function* test_DirectoryLinksProvider_getAllowedImages() {
   do_check_eq(links[1].imageURI, data["directory"][5].imageURI);
 });
 
-add_task(function* test_DirectoryLinksProvider_getAllowedImages_base() {
+add_task(async function test_DirectoryLinksProvider_getAllowedImages_base() {
   let data = {"directory": [
     {url: "http://example1.com", imageURI: "https://example.com"},
     {url: "http://example2.com", imageURI: "https://tiles.cdn.mozilla.net"},
@@ -472,12 +471,12 @@ add_task(function* test_DirectoryLinksProvider_getAllowedImages_base() {
     {url: "http://example5.com", imageURI: "data:text/plain,hi"},
   ]};
   let dataURI = "data:application/json," + JSON.stringify(data);
-  yield promiseSetupDirectoryLinksProvider({linksURL: dataURI});
+  await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
   
   DirectoryLinksProvider.__linksURLModified = false;
 
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 4);
 
   
@@ -487,7 +486,7 @@ add_task(function* test_DirectoryLinksProvider_getAllowedImages_base() {
   do_check_eq(links[3].url, data["directory"][4].url);
 });
 
-add_task(function* test_DirectoryLinksProvider_getAllowedEnhancedImages() {
+add_task(async function test_DirectoryLinksProvider_getAllowedEnhancedImages() {
   let data = {"directory": [
     {url: "http://example.com", enhancedImageURI: "ftp://example.com"},
     {url: "http://example.com", enhancedImageURI: "http://example.net"},
@@ -498,9 +497,9 @@ add_task(function* test_DirectoryLinksProvider_getAllowedEnhancedImages() {
     {url: "http://example.com", enhancedImageURI: "http/bork:eh"},
   ]};
   let dataURI = "data:application/json," + JSON.stringify(data);
-  yield promiseSetupDirectoryLinksProvider({linksURL: dataURI});
+  await promiseSetupDirectoryLinksProvider({linksURL: dataURI});
 
-  let links = yield fetchData();
+  let links = await fetchData();
   do_check_eq(links.length, 2);
 
   

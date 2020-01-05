@@ -14,7 +14,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* () {
+add_task(async function() {
   
   let dateObj = new Date();
   let dates = [];
@@ -30,7 +30,7 @@ add_task(function* () {
   dates.sort();
 
   
-  let backupFolderPath = yield PlacesBackups.getBackupFolder();
+  let backupFolderPath = await PlacesBackups.getBackupFolder();
   let bookmarksBackupDir = new FileUtils.File(backupFolderPath);
 
   
@@ -46,7 +46,7 @@ add_task(function* () {
       do_throw("Unable to create fake backup " + backupFile.leafName);
   }
 
-  yield PlacesBackups.create(NUMBER_OF_BACKUPS);
+  await PlacesBackups.create(NUMBER_OF_BACKUPS);
   
   dates.push(dateObj.getTime());
 

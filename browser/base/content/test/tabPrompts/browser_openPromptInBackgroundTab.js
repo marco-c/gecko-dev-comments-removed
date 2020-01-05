@@ -14,21 +14,21 @@ registerCleanupFunction(function() {
 
 
 
-add_task(function*() {
+add_task(async function() {
   let firstTab = gBrowser.selectedTab;
   
-  let openedTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageWithAlert, true);
+  let openedTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, pageWithAlert, true);
   let openedTabGotAttentionPromise = BrowserTestUtils.waitForAttribute("attention", openedTab, "true");
   
-  yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+  await BrowserTestUtils.switchTab(gBrowser, firstTab);
   
-  yield openedTabGotAttentionPromise;
+  await openedTabGotAttentionPromise;
   
   is(openedTab.getAttribute("attention"), "true", "Tab with alert should have 'attention' attribute.");
   ok(!openedTab.selected, "Tab with alert should not be selected");
 
   
-  yield BrowserTestUtils.switchTab(gBrowser, openedTab);
+  await BrowserTestUtils.switchTab(gBrowser, openedTab);
   
   let prompts = openedTab.linkedBrowser.parentNode.querySelectorAll("tabmodalprompt");
   is(prompts.length, 1, "There should be 1 prompt");
@@ -42,7 +42,7 @@ add_task(function*() {
   checkbox.checked = true;
   ourPrompt.onButtonClick(0);
   
-  yield new Promise(function(resolve) {
+  await new Promise(function(resolve) {
     Services.tm.dispatchToMainThread(resolve);
   });
   
@@ -53,7 +53,7 @@ add_task(function*() {
   
   let shown = BrowserTestUtils.waitForEvent(gIdentityHandler._identityPopup, "popupshown");
   gIdentityHandler._identityBox.click();
-  yield shown;
+  await shown;
   let labelText = SitePermissions.getPermissionLabel("focus-tab-by-prompt");
   let permissionsList = document.getElementById("identity-popup-permission-list");
   let label = permissionsList.querySelector(".identity-popup-permission-label");
@@ -66,14 +66,14 @@ add_task(function*() {
 
   let openedTabSelectedPromise = BrowserTestUtils.waitForAttribute("selected", openedTab, "true");
   
-  yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+  await BrowserTestUtils.switchTab(gBrowser, firstTab);
 
   
   
   
-  yield openedTabSelectedPromise;
+  await openedTabSelectedPromise;
   
   ok(openedTab.selected, "Ta-dah, the other tab should now be selected again!");
 
-  yield BrowserTestUtils.removeTab(openedTab);
+  await BrowserTestUtils.removeTab(openedTab);
 });

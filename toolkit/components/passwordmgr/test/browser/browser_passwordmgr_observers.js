@@ -1,8 +1,8 @@
 
 
 
-add_task(function* test() {
-  yield new Promise(resolve => {
+add_task(async function test() {
+  await new Promise(resolve => {
 
   const LOGIN_HOST = "http://example.com";
   const LOGIN_COUNT = 5;

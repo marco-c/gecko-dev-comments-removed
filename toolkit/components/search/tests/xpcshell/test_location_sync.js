@@ -41,7 +41,7 @@ function run_test() {
 
 
 
-add_task(function* test_simple() {
+add_task(async function test_simple() {
   deepEqual(getCountryCodePref(), undefined, "no countryCode pref");
   deepEqual(getIsUSPref(), undefined, "no isUS pref");
 
@@ -59,11 +59,11 @@ add_task(function* test_simple() {
   ok(Services.search.isInitialized);
 
   
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     do_timeout(500, resolve);
   });
 
-  let msg = yield promiseTzMessage;
+  let msg = await promiseTzMessage;
   print("Timezone message:", msg.message);
   ok(msg.message.endsWith(isUSTimezone().toString()), "fell back to timezone and it matches our timezone");
 

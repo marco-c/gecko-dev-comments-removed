@@ -5,33 +5,33 @@ const TEST_FILE = "dummy_page.html";
 const TEST_HTTP = "http://example.org/";
 
 
-add_task(function* () {
+add_task(async function() {
   
   let dir = getChromeDir(getResolvedURI(gTestPath));
   dir.append(TEST_FILE);
   const uriString = Services.io.newFileURI(dir).spec;
-  yield BrowserTestUtils.withNewTab(uriString, function*(fileBrowser) {
+  await BrowserTestUtils.withNewTab(uriString, async function(fileBrowser) {
     
     
-    yield SpecialPowers.pushPrefEnv(
+    await SpecialPowers.pushPrefEnv(
       {set: [["browser.tabs.remote.separateFileUriProcess", true],
              ["browser.tabs.remote.allowLinkedWebInFileUriProcess", true]]});
 
     
     let promiseTabOpened = BrowserTestUtils.waitForNewTab(gBrowser, TEST_HTTP);
-    yield ContentTask.spawn(fileBrowser, TEST_HTTP, uri => {
+    await ContentTask.spawn(fileBrowser, TEST_HTTP, uri => {
       content.open(uri, "_blank");
     });
-    let httpTab = yield promiseTabOpened;
-    registerCleanupFunction(function* () {
-      yield BrowserTestUtils.removeTab(httpTab);
+    let httpTab = await promiseTabOpened;
+    registerCleanupFunction(async function() {
+      await BrowserTestUtils.removeTab(httpTab);
     });
 
     
-    let filePid = yield ContentTask.spawn(fileBrowser, null, () => {
+    let filePid = await ContentTask.spawn(fileBrowser, null, () => {
       return Services.appinfo.processID;
     });
-    yield ContentTask.spawn(httpTab.linkedBrowser, filePid, (expectedPid) => {
+    await ContentTask.spawn(httpTab.linkedBrowser, filePid, (expectedPid) => {
       is(Services.appinfo.processID, expectedPid,
          "Check that new http page opened from file loaded in file content process.");
     });

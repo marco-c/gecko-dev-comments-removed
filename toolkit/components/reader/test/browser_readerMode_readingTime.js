@@ -10,13 +10,13 @@ const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/conte
 
 
 
-add_task(function* () {
-  yield BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticle.html", function* (browser) {
+add_task(async function() {
+  await BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticle.html", async function(browser) {
     let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
     let readerButton = document.getElementById("reader-mode-button");
     readerButton.click();
-    yield pageShownPromise;
-    yield ContentTask.spawn(browser, null, function* () {
+    await pageShownPromise;
+    await ContentTask.spawn(browser, null, async function() {
       
       let readingTimeElement = content.document.getElementById("reader-estimated-time");
       ok(readingTimeElement, "Reading time element should be in document");
@@ -29,13 +29,13 @@ add_task(function* () {
 
 
 
-add_task(function* () {
-  yield BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleShort.html", function* (browser) {
+add_task(async function() {
+  await BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleShort.html", async function(browser) {
     let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
     let readerButton = document.getElementById("reader-mode-button");
     readerButton.click();
-    yield pageShownPromise;
-    yield ContentTask.spawn(browser, null, function* () {
+    await pageShownPromise;
+    await ContentTask.spawn(browser, null, async function() {
       
       let readingTimeElement = content.document.getElementById("reader-estimated-time");
       ok(readingTimeElement, "Reading time element should be in document");
@@ -49,13 +49,13 @@ add_task(function* () {
 
 
 
-add_task(function* () {
-  yield BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleMedium.html", function* (browser) {
+add_task(async function() {
+  await BrowserTestUtils.withNewTab(TEST_PATH + "readerModeArticleMedium.html", async function(browser) {
     let pageShownPromise = BrowserTestUtils.waitForContentEvent(browser, "AboutReaderContentReady");
     let readerButton = document.getElementById("reader-mode-button");
     readerButton.click();
-    yield pageShownPromise;
-    yield ContentTask.spawn(browser, null, function* () {
+    await pageShownPromise;
+    await ContentTask.spawn(browser, null, async function() {
       
       let readingTimeElement = content.document.getElementById("reader-estimated-time");
       ok(readingTimeElement, "Reading time element should be in document");

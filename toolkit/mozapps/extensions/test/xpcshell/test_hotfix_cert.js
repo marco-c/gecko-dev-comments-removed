@@ -78,7 +78,7 @@ function promiseFailedInstall() {
     });
 }
 
-var tryInstallHotfix = Task.async(function*(id, file, installListener) {
+var tryInstallHotfix = async function(id, file, installListener) {
   Services.prefs.setCharPref(PREF_EM_HOTFIX_ID, id);
 
   testserver.registerPathHandler("/hotfix.rdf", function(request, response) {
@@ -95,65 +95,65 @@ var tryInstallHotfix = Task.async(function*(id, file, installListener) {
     }));
   });
 
-  yield Promise.all([
+  await Promise.all([
     installListener,
     AddonManagerPrivate.backgroundUpdateCheck()
   ]);
 
   testserver.registerPathHandler("/hotfix.rdf", null);
   Services.prefs.clearUserPref(PREF_EM_HOTFIX_ID);
-});
+};
 
 
-add_task(function* amo_signed_hotfix() {
+add_task(async function amo_signed_hotfix() {
   Services.prefs.setCharPref(PREF_EM_HOTFIX_CERTS + "1.sha1Fingerprint", BAD_FINGERPRINT);
 
-  yield tryInstallHotfix("firefox-hotfix@mozilla.org",
+  await tryInstallHotfix("firefox-hotfix@mozilla.org",
                          "hotfix_good.xpi",
                          promiseFailedInstall());
 });
 
 
-add_task(function* amo_signed_hotfix() {
+add_task(async function amo_signed_hotfix() {
   Services.prefs.setCharPref(PREF_EM_HOTFIX_CERTS + "1.sha1Fingerprint", GOOD_FINGERPRINT);
 
-  yield tryInstallHotfix("firefox-hotfix@mozilla.org",
+  await tryInstallHotfix("firefox-hotfix@mozilla.org",
                          "hotfix_good.xpi",
                          promiseSuccessfulInstall());
 });
 
 
-add_task(function* amo_broken_hotfix() {
-  yield tryInstallHotfix("firefox-hotfix@mozilla.org",
+add_task(async function amo_broken_hotfix() {
+  await tryInstallHotfix("firefox-hotfix@mozilla.org",
                          "hotfix_broken.xpi",
                          promiseFailedInstall());
 });
 
 
-add_task(function* amo_wrongID_rightcert() {
-  yield tryInstallHotfix("test@tests.mozilla.org",
+add_task(async function amo_wrongID_rightcert() {
+  await tryInstallHotfix("test@tests.mozilla.org",
                          "hotfix_badid.xpi",
                          promiseFailedInstall());
 });
 
 
 
-add_task(function* amo_wrongID_rightcert2() {
-  yield tryInstallHotfix("firefox-hotfix@mozilla.org",
+add_task(async function amo_wrongID_rightcert2() {
+  await tryInstallHotfix("firefox-hotfix@mozilla.org",
                          "hotfix_badid.xpi",
                          promiseFailedInstall());
 });
 
 
-add_task(function* amo_signed_addon() {
-  yield tryInstallHotfix("test@tests.mozilla.org",
+add_task(async function amo_signed_addon() {
+  await tryInstallHotfix("test@tests.mozilla.org",
                          "signed_bootstrap_1.xpi",
                          promiseFailedInstall());
 });
 
 
-add_task(function* unsigned() {
-  yield tryInstallHotfix("test@tests.mozilla.org",
+add_task(async function unsigned() {
+  await tryInstallHotfix("test@tests.mozilla.org",
                          "unsigned_bootstrap_2.xpi",
                          promiseFailedInstall());
 });

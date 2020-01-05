@@ -2,7 +2,7 @@
 
 
 
-add_task(function* test_protocol_trimming() {
+add_task(async function test_protocol_trimming() {
   for (let prot of ["http", "https", "ftp"]) {
     let visit = {
       
@@ -10,7 +10,7 @@ add_task(function* test_protocol_trimming() {
       title: "Test title",
       transition: TRANSITION_TYPED
     };
-    yield PlacesTestUtils.addVisits(visit);
+    await PlacesTestUtils.addVisits(visit);
     let matches = [{uri: visit.uri, title: visit.title}];
 
     let inputs = [
@@ -29,13 +29,13 @@ add_task(function* test_protocol_trimming() {
     ];
     for (let input of inputs) {
       do_print("Searching for: " + input);
-      yield check_autocomplete({
+      await check_autocomplete({
         search: input,
         matches
       });
     }
 
-    yield cleanup();
+    await cleanup();
   }
 });
 

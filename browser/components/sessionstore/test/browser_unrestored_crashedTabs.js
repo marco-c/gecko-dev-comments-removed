@@ -13,14 +13,14 @@
 const PREF = "browser.sessionstore.restore_on_demand";
 const PAGE = "data:text/html,<html><body>A%20regular,%20everyday,%20normal%20page.";
 
-add_task(function* test() {
-  yield pushPrefs([PREF, true]);
+add_task(async function test() {
+  await pushPrefs([PREF, true]);
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
-  }, function*(browser) {
-    yield TabStateFlusher.flush(browser);
+  }, async function(browser) {
+    await TabStateFlusher.flush(browser);
 
     
     
@@ -41,14 +41,14 @@ add_task(function* test() {
     ok(unrestoredTab.hasAttribute("pending"), "tab is pending");
 
     
-    yield BrowserTestUtils.crashBrowser(browser);
+    await BrowserTestUtils.crashBrowser(browser);
 
     ok(!unrestoredTab.hasAttribute("crashed"), "tab is still not crashed");
     ok(unrestoredTab.hasAttribute("pending"), "tab is still pending");
 
     
     gBrowser.selectedTab = unrestoredTab;
-    yield promiseTabRestored(unrestoredTab);
+    await promiseTabRestored(unrestoredTab);
 
     ok(!unrestoredTab.hasAttribute("crashed"), "tab is still not crashed");
     ok(!unrestoredTab.hasAttribute("pending"), "tab is no longer pending");
@@ -61,9 +61,9 @@ add_task(function* test() {
     
     gBrowser.selectedTab = originalTab;
     SessionStore.reviveCrashedTab(originalTab);
-    yield promiseTabRestored(originalTab);
+    await promiseTabRestored(originalTab);
 
     
-    yield BrowserTestUtils.removeTab(unrestoredTab);
+    await BrowserTestUtils.removeTab(unrestoredTab);
   });
 });

@@ -19,7 +19,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/AppConstants.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/ClientID.jsm");
 Cu.import("resource://gre/modules/Log.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
@@ -861,7 +860,7 @@ var TelemetrySendImpl = {
   
 
 
-  clearCurrentPings: Task.async(function*() {
+  async clearCurrentPings() {
     if (this._shutdown) {
       this._log.trace("clearCurrentPings - in shutdown, bailing out");
       return;
@@ -869,7 +868,7 @@ var TelemetrySendImpl = {
 
     
     
-    yield SendScheduler.shutdown();
+    await SendScheduler.shutdown();
 
     
     this._cancelOutgoingRequests();
@@ -888,7 +887,7 @@ var TelemetrySendImpl = {
     
     SendScheduler.start();
     SendScheduler.triggerSendingPings(true);
-  }),
+  },
 
   _cancelOutgoingRequests() {
     
@@ -908,17 +907,17 @@ var TelemetrySendImpl = {
 
     for (let current of currentPings) {
       let ping = current;
-      let p = Task.spawn(function*() {
+      let p = (async function() {
         try {
-          yield this._doPing(ping, ping.id, false);
+          await this._doPing(ping, ping.id, false);
         } catch (ex) {
           this._log.info("sendPings - ping " + ping.id + " not sent, saving to disk", ex);
           
-          yield savePing(ping);
+          await savePing(ping);
         } finally {
           this._currentPings.delete(ping.id);
         }
-      }.bind(this));
+      }.bind(this))();
 
       this._trackPendingPingTask(p);
       pingSends.push(p);

@@ -919,7 +919,7 @@ class WindowBase {
 
 
 
-  * getTabs() {
+  getTabs() {
     throw new Error("Not implemented");
   }
   
@@ -1815,7 +1815,7 @@ class WindowManagerBase {
 
 
 
-  * getAll() {
+  getAll() {
     throw new Error("Not implemented");
   }
 

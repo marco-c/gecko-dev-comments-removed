@@ -111,7 +111,7 @@ function promiseInstallDeferred(addonID1, addonID2) {
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
@@ -125,11 +125,11 @@ add_task(function*() {
   ];
 
   let postponed = promiseInstallPostponed(IGNORE_ID, NORMAL_ID);
-  yield installSystemAddons(yield buildSystemAddonUpdates(updateList, root), testserver);
-  yield postponed;
+  await installSystemAddons(await buildSystemAddonUpdates(updateList, root), testserver);
+  await postponed;
 
   
-  let addon_postponed = yield promiseAddonByID(IGNORE_ID);
+  let addon_postponed = await promiseAddonByID(IGNORE_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Test Delay Update Ignore");
@@ -140,7 +140,7 @@ add_task(function*() {
   do_check_true(Services.prefs.getBoolPref(TEST_IGNORE_PREF));
 
   
-  addon_postponed = yield promiseAddonByID(NORMAL_ID);
+  addon_postponed = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Add-on 1");
@@ -150,9 +150,9 @@ add_task(function*() {
   do_check_eq(addon_postponed.type, "extension");
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(IGNORE_ID);
+  let addon_upgraded = await promiseAddonByID(IGNORE_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Test Delay Update Ignore");
@@ -161,7 +161,7 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  addon_upgraded = yield promiseAddonByID(NORMAL_ID);
+  addon_upgraded = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Add-on 1");
@@ -170,11 +170,11 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });
 
 
-add_task(function*() {
+add_task(async function() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
@@ -189,7 +189,7 @@ add_task(function*() {
   ];
 
   
-  let addon_allowed = yield promiseAddonByID(COMPLETE_ID);
+  let addon_allowed = await promiseAddonByID(COMPLETE_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "1.0");
   do_check_eq(addon_allowed.name, "System Test Delay Update Complete");
@@ -198,7 +198,7 @@ add_task(function*() {
   do_check_true(addon_allowed.isActive);
   do_check_eq(addon_allowed.type, "extension");
 
-  addon_allowed = yield promiseAddonByID(NORMAL_ID);
+  addon_allowed = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "1.0");
   do_check_eq(addon_allowed.name, "System Add-on 1");
@@ -208,13 +208,13 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   let resumed = promiseInstallResumed(COMPLETE_ID, NORMAL_ID);
-  yield installSystemAddons(yield buildSystemAddonUpdates(updateList, root), testserver);
+  await installSystemAddons(await buildSystemAddonUpdates(updateList, root), testserver);
 
   
-  yield resumed;
+  await resumed;
 
   
-  addon_allowed = yield promiseAddonByID(COMPLETE_ID);
+  addon_allowed = await promiseAddonByID(COMPLETE_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "System Test Delay Update Complete");
@@ -224,7 +224,7 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  addon_allowed = yield promiseAddonByID(NORMAL_ID);
+  addon_allowed = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "System Add-on 1");
@@ -234,9 +234,9 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(COMPLETE_ID);
+  let addon_upgraded = await promiseAddonByID(COMPLETE_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Test Delay Update Complete");
@@ -245,7 +245,7 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  addon_upgraded = yield promiseAddonByID(NORMAL_ID);
+  addon_upgraded = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Add-on 1");
@@ -254,11 +254,11 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });
 
 
-add_task(function*() {
+add_task(async function() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
@@ -273,11 +273,11 @@ add_task(function*() {
   ];
 
   let postponed = promiseInstallPostponed(DEFER_ID, NORMAL_ID);
-  yield installSystemAddons(yield buildSystemAddonUpdates(updateList, root), testserver);
-  yield postponed;
+  await installSystemAddons(await buildSystemAddonUpdates(updateList, root), testserver);
+  await postponed;
 
   
-  let addon_postponed = yield promiseAddonByID(DEFER_ID);
+  let addon_postponed = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Test Delay Update Defer");
@@ -287,7 +287,7 @@ add_task(function*() {
   do_check_eq(addon_postponed.type, "extension");
 
   
-  addon_postponed = yield promiseAddonByID(NORMAL_ID);
+  addon_postponed = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Add-on 1");
@@ -300,10 +300,10 @@ add_task(function*() {
   
   AddonManagerPrivate.callAddonListeners("onFakeEvent");
 
-  yield deferred;
+  await deferred;
 
   
-  let addon_allowed = yield promiseAddonByID(DEFER_ID);
+  let addon_allowed = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "System Test Delay Update Defer");
@@ -313,7 +313,7 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  addon_allowed = yield promiseAddonByID(NORMAL_ID);
+  addon_allowed = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "System Add-on 1");
@@ -323,9 +323,9 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(DEFER_ID);
+  let addon_upgraded = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Test Delay Update Defer");
@@ -334,7 +334,7 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  addon_upgraded = yield promiseAddonByID(NORMAL_ID);
+  addon_upgraded = await promiseAddonByID(NORMAL_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Add-on 1");
@@ -343,11 +343,11 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });
 
 
-add_task(function*() {
+add_task(async function() {
   
   Services.prefs.setCharPref(PREF_SYSTEM_ADDON_SET, "");
 
@@ -362,11 +362,11 @@ add_task(function*() {
   ];
 
   let postponed = promiseInstallPostponed(DEFER_ID, DEFER_ALSO_ID);
-  yield installSystemAddons(yield buildSystemAddonUpdates(updateList, root), testserver);
-  yield postponed;
+  await installSystemAddons(await buildSystemAddonUpdates(updateList, root), testserver);
+  await postponed;
 
   
-  let addon_postponed = yield promiseAddonByID(DEFER_ID);
+  let addon_postponed = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Test Delay Update Defer");
@@ -376,7 +376,7 @@ add_task(function*() {
   do_check_eq(addon_postponed.type, "extension");
 
   
-  addon_postponed = yield promiseAddonByID(DEFER_ALSO_ID);
+  addon_postponed = await promiseAddonByID(DEFER_ALSO_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Test Delay Update Defer Also");
@@ -390,7 +390,7 @@ add_task(function*() {
   AddonManagerPrivate.callAddonListeners("onFakeEvent");
 
   
-  addon_postponed = yield promiseAddonByID(DEFER_ID);
+  addon_postponed = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Test Delay Update Defer");
@@ -399,7 +399,7 @@ add_task(function*() {
   do_check_true(addon_postponed.isActive);
   do_check_eq(addon_postponed.type, "extension");
 
-  addon_postponed = yield promiseAddonByID(DEFER_ALSO_ID);
+  addon_postponed = await promiseAddonByID(DEFER_ALSO_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "System Test Delay Update Defer Also");
@@ -410,10 +410,10 @@ add_task(function*() {
 
   AddonManagerPrivate.callAddonListeners("onOtherFakeEvent");
 
-  yield deferred;
+  await deferred;
 
   
-  let addon_allowed = yield promiseAddonByID(DEFER_ID);
+  let addon_allowed = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "System Test Delay Update Defer");
@@ -423,7 +423,7 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  addon_allowed = yield promiseAddonByID(DEFER_ALSO_ID);
+  addon_allowed = await promiseAddonByID(DEFER_ALSO_ID);
   do_check_neq(addon_allowed, null);
   
   do_check_eq(addon_allowed.name, "System Test Delay Update Defer Also");
@@ -433,9 +433,9 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(DEFER_ID);
+  let addon_upgraded = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Test Delay Update Defer");
@@ -444,7 +444,7 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  addon_upgraded = yield promiseAddonByID(DEFER_ALSO_ID);
+  addon_upgraded = await promiseAddonByID(DEFER_ALSO_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "System Test Delay Update Defer Also");
@@ -453,5 +453,5 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });

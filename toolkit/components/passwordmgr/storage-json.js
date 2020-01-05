@@ -12,7 +12,6 @@ const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
                                   "resource://gre/modules/LoginHelper.jsm");
@@ -52,10 +51,10 @@ this.LoginManagerStorage_json.prototype = {
                                   "logins.json");
       this._store = new LoginStore(jsonPath);
 
-      return Task.spawn(function* () {
+      return (async function() {
         
         this.log("Opening database at", this._store.path);
-        yield this._store.load();
+        await this._store.load();
 
         
         
@@ -72,19 +71,19 @@ this.LoginManagerStorage_json.prototype = {
         
         let sqlitePath = OS.Path.join(OS.Constants.Path.profileDir,
                                       "signons.sqlite");
-        if (yield OS.File.exists(sqlitePath)) {
+        if (await OS.File.exists(sqlitePath)) {
           let loginImport = new LoginImport(this._store, sqlitePath);
           
           
           
           
-          yield loginImport.import().catch(Cu.reportError);
+          await loginImport.import().catch(Cu.reportError);
           this._store.saveSoon();
         }
 
         
         Services.prefs.setBoolPref("signon.importedFromSqlite", true);
-      }.bind(this)).catch(Cu.reportError);
+      }.bind(this))().catch(Cu.reportError);
     } catch (e) {
       this.log("Initialization failed:", e);
       throw new Error("Initialization failed");

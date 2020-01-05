@@ -4,11 +4,11 @@
 "use strict";
 
 
-add_task(function* testTempPermissionOnReload() {
+add_task(async function testTempPermissionOnReload() {
   let uri = NetUtil.newURI("https://example.com");
   let id = "geo";
 
-  yield BrowserTestUtils.withNewTab(uri.spec, function*(browser) {
+  await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
     let reloadButton = document.getElementById("reload-button");
 
     SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
@@ -21,10 +21,10 @@ add_task(function* testTempPermissionOnReload() {
     });
 
     
-    yield ContentTask.spawn(browser, {}, () => content.document.location.reload());
+    await ContentTask.spawn(browser, {}, () => content.document.location.reload());
 
-    yield reloaded;
-    yield BrowserTestUtils.waitForCondition(() => {
+    await reloaded;
+    await BrowserTestUtils.waitForCondition(() => {
       return reloadButton.disabled == false;
     });
 
@@ -38,7 +38,7 @@ add_task(function* testTempPermissionOnReload() {
     
     EventUtils.synthesizeMouseAtCenter(reloadButton, {});
 
-    yield reloaded;
+    await reloaded;
 
     Assert.deepEqual(SitePermissions.get(uri, id, browser), {
       state: SitePermissions.UNKNOWN,
@@ -52,7 +52,7 @@ add_task(function* testTempPermissionOnReload() {
     let contextMenu = document.getElementById("tabContextMenu");
     let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
-    yield popupShownPromise;
+    await popupShownPromise;
 
     let reloadMenuItem = document.getElementById("context_reloadTab");
 
@@ -61,7 +61,7 @@ add_task(function* testTempPermissionOnReload() {
     
     EventUtils.synthesizeMouseAtCenter(reloadMenuItem, {});
 
-    yield reloaded;
+    await reloaded;
 
     Assert.deepEqual(SitePermissions.get(uri, id, browser), {
       state: SitePermissions.UNKNOWN,
@@ -73,25 +73,25 @@ add_task(function* testTempPermissionOnReload() {
 });
 
 
-add_task(function* testTempPermissionOnReloadAllTabs() {
+add_task(async function testTempPermissionOnReloadAllTabs() {
   let uri = NetUtil.newURI("https://example.com");
   let id = "geo";
 
-  yield BrowserTestUtils.withNewTab(uri.spec, function*(browser) {
+  await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
     SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
 
     
     let contextMenu = document.getElementById("tabContextMenu");
     let popupShownPromise = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
     EventUtils.synthesizeMouseAtCenter(gBrowser.selectedTab, {type: "contextmenu", button: 2});
-    yield popupShownPromise;
+    await popupShownPromise;
 
     let reloadMenuItem = document.getElementById("context_reloadAllTabs");
 
     let reloaded = Promise.all(gBrowser.visibleTabs.map(
       tab => BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab))));
     EventUtils.synthesizeMouseAtCenter(reloadMenuItem, {});
-    yield reloaded;
+    await reloaded;
 
     Assert.deepEqual(SitePermissions.get(uri, id, browser), {
       state: SitePermissions.BLOCK,
@@ -103,11 +103,11 @@ add_task(function* testTempPermissionOnReloadAllTabs() {
 });
 
 
-add_task(function* testTempPermissionOnNavigation() {
+add_task(async function testTempPermissionOnNavigation() {
   let uri = NetUtil.newURI("https://example.com/");
   let id = "geo";
 
-  yield BrowserTestUtils.withNewTab(uri.spec, function*(browser) {
+  await BrowserTestUtils.withNewTab(uri.spec, async function(browser) {
     SitePermissions.set(uri, id, SitePermissions.BLOCK, SitePermissions.SCOPE_TEMPORARY, browser);
 
     Assert.deepEqual(SitePermissions.get(uri, id, browser), {
@@ -118,9 +118,9 @@ add_task(function* testTempPermissionOnNavigation() {
     let loaded = BrowserTestUtils.browserLoaded(browser, false, "https://example.org/");
 
     
-    yield ContentTask.spawn(browser, {}, () => content.document.location = "https://example.org/");
+    await ContentTask.spawn(browser, {}, () => content.document.location = "https://example.org/");
 
-    yield loaded;
+    await loaded;
 
     
     Assert.deepEqual(SitePermissions.get(browser.currentURI, id, browser), {
@@ -131,9 +131,9 @@ add_task(function* testTempPermissionOnNavigation() {
     loaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
 
     
-    yield ContentTask.spawn(browser, {}, () => content.document.location = "https://example.com/");
+    await ContentTask.spawn(browser, {}, () => content.document.location = "https://example.com/");
 
-    yield loaded;
+    await loaded;
 
     
     Assert.deepEqual(SitePermissions.get(browser.currentURI, id, browser), {

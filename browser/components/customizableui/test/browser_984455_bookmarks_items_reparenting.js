@@ -38,21 +38,21 @@ function bookmarksMenuPanelShown() {
 
 
 function checkPlacesContextMenu(aItemWithContextMenu) {
-  return Task.spawn(function* () {
+  return (async function() {
     let contextMenu = document.getElementById("placesContext");
     let newBookmarkItem = document.getElementById("placesContext_new:bookmark");
     info("Waiting for context menu on " + aItemWithContextMenu.id);
     let shownPromise = popupShown(contextMenu);
     EventUtils.synthesizeMouseAtCenter(aItemWithContextMenu,
                                        {type: "contextmenu", button: 2});
-    yield shownPromise;
+    await shownPromise;
 
     ok(!newBookmarkItem.hasAttribute("disabled"),
        "New bookmark item shouldn't be disabled");
 
     info("Closing context menu");
-    yield closePopup(contextMenu);
-  });
+    await closePopup(contextMenu);
+  })();
 }
 
 
@@ -61,7 +61,7 @@ function checkPlacesContextMenu(aItemWithContextMenu) {
 
 
 function checkSpecialContextMenus() {
-  return Task.spawn(function* () {
+  return (async function() {
     let bookmarksMenuButton = document.getElementById(kBookmarksButton);
     let bookmarksMenuPopup = document.getElementById("BMB_bookmarksPopup");
 
@@ -77,7 +77,7 @@ function checkSpecialContextMenus() {
                                                              "anonid", "dropmarker");
     EventUtils.synthesizeMouseAtCenter(dropmarker, {});
     info("Waiting for bookmarks menu popup to show after clicking dropmarker.")
-    yield shownPromise;
+    await shownPromise;
 
     for (let menuID in kSpecialItemIDs) {
       let menuItem = document.getElementById(menuID);
@@ -85,16 +85,16 @@ function checkSpecialContextMenus() {
       info("Waiting to open menu for " + menuID);
       shownPromise = popupShown(menuPopup);
       menuPopup.openPopup(menuItem, null, 0, 0, false, false, null);
-      yield shownPromise;
+      await shownPromise;
 
-      yield checkPlacesContextMenu(menuPopup);
+      await checkPlacesContextMenu(menuPopup);
       info("Closing menu for " + menuID);
-      yield closePopup(menuPopup);
+      await closePopup(menuPopup);
     }
 
     info("Closing bookmarks menu");
-    yield closePopup(bookmarksMenuPopup);
-  });
+    await closePopup(bookmarksMenuPopup);
+  })();
 }
 
 
@@ -115,24 +115,24 @@ function closePopup(aPopup) {
 
 
 function checkBookmarksItemsChevronContextMenu() {
-  return Task.spawn(function*() {
+  return (async function() {
     let chevronPopup = document.getElementById("PlacesChevronPopup");
     let shownPromise = popupShown(chevronPopup);
     let chevron = document.getElementById("PlacesChevron");
     EventUtils.synthesizeMouseAtCenter(chevron, {});
     info("Waiting for bookmark toolbar item chevron popup to show");
-    yield shownPromise;
-    yield waitForCondition(() => {
+    await shownPromise;
+    await waitForCondition(() => {
       for (let child of chevronPopup.children) {
         if (child.style.visibility != "hidden")
           return true;
       }
       return false;
     });
-    yield checkPlacesContextMenu(chevronPopup);
+    await checkPlacesContextMenu(chevronPopup);
     info("Waiting for bookmark toolbar item chevron popup to close");
-    yield closePopup(chevronPopup);
-  });
+    await closePopup(chevronPopup);
+  })();
 }
 
 
@@ -189,52 +189,52 @@ function checkNotOverflowing(aID) {
 
 
 
-add_task(function* testOverflowingBookmarksButtonContextMenu() {
-  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
+add_task(async function testOverflowingBookmarksButtonContextMenu() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   ok(!gNavBar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
 
   
   
-  yield checkSpecialContextMenus();
+  await checkSpecialContextMenus();
 
-  yield overflowEverything();
+  await overflowEverything();
   checkOverflowing(kBookmarksButton);
 
-  yield stopOverflowing();
+  await stopOverflowing();
   checkNotOverflowing(kBookmarksButton);
 
-  yield checkSpecialContextMenus();
+  await checkSpecialContextMenus();
 });
 
 
 
 
 
-add_task(function* testOverflowingBookmarksItemsContextMenu() {
+add_task(async function testOverflowingBookmarksItemsContextMenu() {
   info("Ensuring panel is ready.");
-  yield PanelUI.ensureReady();
+  await PanelUI.ensureReady();
 
   let bookmarksToolbarItems = document.getElementById(kBookmarksItems);
   gCustomizeMode.addToToolbar(bookmarksToolbarItems);
-  yield checkPlacesContextMenu(bookmarksToolbarItems);
+  await checkPlacesContextMenu(bookmarksToolbarItems);
 
-  yield overflowEverything();
+  await overflowEverything();
   checkOverflowing(kBookmarksItems)
 
   gCustomizeMode.addToPanel(bookmarksToolbarItems);
 
-  yield stopOverflowing();
+  await stopOverflowing();
 
   gCustomizeMode.addToToolbar(bookmarksToolbarItems);
-  yield checkPlacesContextMenu(bookmarksToolbarItems);
+  await checkPlacesContextMenu(bookmarksToolbarItems);
 });
 
 
 
 
 
-add_task(function* testOverflowingBookmarksItemsChevronContextMenu() {
+add_task(async function testOverflowingBookmarksItemsChevronContextMenu() {
   
   
   let bookmarksToolbarItems = document.getElementById(kBookmarksItems);
@@ -247,22 +247,22 @@ add_task(function* testOverflowingBookmarksItemsChevronContextMenu() {
   let placesChevron = document.getElementById("PlacesChevron");
   placesToolbarItems.style.maxWidth = "10px";
   info("Waiting for chevron to no longer be collapsed");
-  yield waitForCondition(() => !placesChevron.collapsed);
+  await waitForCondition(() => !placesChevron.collapsed);
 
-  yield checkBookmarksItemsChevronContextMenu();
+  await checkBookmarksItemsChevronContextMenu();
 
-  yield overflowEverything();
+  await overflowEverything();
   checkOverflowing(kBookmarksItems);
 
-  yield stopOverflowing();
+  await stopOverflowing();
   checkNotOverflowing(kBookmarksItems);
 
-  yield checkBookmarksItemsChevronContextMenu();
+  await checkBookmarksItemsChevronContextMenu();
 
   placesToolbarItems.style.removeProperty("max-width");
 });
 
-add_task(function* asyncCleanup() {
+add_task(async function asyncCleanup() {
   window.resizeTo(kOriginalWindowWidth, window.outerHeight);
-  yield resetCustomization();
+  await resetCustomization();
 });

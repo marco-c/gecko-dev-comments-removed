@@ -7,7 +7,7 @@
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   
@@ -22,9 +22,9 @@ add_task(function*() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   let {entries} = JSON.parse(ss.getTabState(tab));
 
   
@@ -45,7 +45,7 @@ add_task(function*() {
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   
@@ -59,9 +59,9 @@ add_task(function*() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   let {entries} = JSON.parse(ss.getTabState(tab));
 
   
@@ -70,9 +70,9 @@ add_task(function*() {
 
   
   browser.messageManager.sendAsyncMessage("ss-test:click", {id: "lnk"});
-  yield promiseBrowserLoaded(browser, false );
+  await promiseBrowserLoaded(browser, false );
 
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
   ({entries} = JSON.parse(ss.getTabState(tab)));
 
   

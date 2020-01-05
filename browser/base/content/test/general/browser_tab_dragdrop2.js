@@ -7,13 +7,13 @@ const URI = ROOT + "browser_tab_dragdrop2_frame1.xul";
 
 
 
-add_task(function* () {
+add_task(async function() {
   
   let args = "chrome,all,dialog=no";
   let win = window.openDialog(getBrowserURL(), "_blank", args, URI);
 
   
-  yield promiseTestsDone(win);
+  await promiseTestsDone(win);
   ok(true, "tests succeeded");
 
   
@@ -31,7 +31,7 @@ add_task(function* () {
   win2.addEventListener("TestsDone", onTestsDone);
 
   
-  yield Promise.all([tabClosed, promiseDelayedStartupFinished(win2)]);
+  await Promise.all([tabClosed, promiseDelayedStartupFinished(win2)]);
 
   
   
@@ -40,12 +40,12 @@ add_task(function* () {
   
   let promise = promiseTestsDone(win2);
   win2.content.test_panels();
-  yield promise;
+  await promise;
   ok(true, "tests succeeded a second time");
 
   
-  yield promiseWindowClosed(win2);
-  yield promiseWindowClosed(win);
+  await promiseWindowClosed(win2);
+  await promiseWindowClosed(win);
 });
 
 function promiseTestsDone(win) {

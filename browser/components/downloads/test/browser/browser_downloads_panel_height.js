@@ -8,22 +8,22 @@
 
 
 
-add_task(function* test_height_reduced_after_removal() {
-  yield task_addDownloads([
+add_task(async function test_height_reduced_after_removal() {
+  await task_addDownloads([
     { state: DownloadsCommon.DOWNLOAD_FINISHED },
   ]);
 
-  yield task_openPanel();
+  await task_openPanel();
   let panel = document.getElementById("downloadsPanel");
   let heightBeforeRemoval = panel.getBoundingClientRect().height;
 
   
   DownloadsPanel.hidePanel();
-  yield task_resetState();
+  await task_resetState();
 
-  yield task_openPanel();
+  await task_openPanel();
   let heightAfterRemoval = panel.getBoundingClientRect().height;
   Assert.greater(heightBeforeRemoval, heightAfterRemoval);
 
-  yield task_resetState();
+  await task_resetState();
 });

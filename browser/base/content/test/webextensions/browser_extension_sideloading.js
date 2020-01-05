@@ -80,7 +80,7 @@ function promiseSetDisabled(addon) {
 
 let cleanup;
 
-add_task(function* () {
+add_task(async function() {
   
   
   
@@ -159,12 +159,12 @@ add_task(function* () {
   
   
   gBrowser.selectedBrowser.loadURI("about:robots");
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-  registerCleanupFunction(function*() {
+  registerCleanupFunction(async function() {
     
     gBrowser.selectedBrowser.loadURI("about:blank");
-    yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   });
 
   hookExtensionsTelemetry();
@@ -176,14 +176,14 @@ add_task(function* () {
     });
   });
   ExtensionsUI._checkForSideloaded();
-  yield changePromise;
+  await changePromise;
 
   
   let menuButton = document.getElementById("PanelUI-menu-button");
   is(menuButton.getAttribute("badge-status"), "addon-alert", "Should have addon alert badge");
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
 
   let addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 4, "Have 4 menu entries for sideloaded extensions");
@@ -194,7 +194,7 @@ add_task(function* () {
 
   
   
-  let panel = yield popupPromise;
+  let panel = await popupPromise;
   is(gBrowser.currentURI.spec, "about:addons", "Foreground tab is at about:addons");
 
   const VIEW = "addons://list/extension";
@@ -211,20 +211,20 @@ add_task(function* () {
   let disablePromise = promiseSetDisabled(mock1);
   panel.secondaryButton.click();
 
-  let value = yield disablePromise;
+  let value = await disablePromise;
   is(value, true, "Addon should remain disabled");
 
-  let [addon1, addon2, addon3, addon4] = yield AddonManager.getAddonsByIDs([ID1, ID2, ID3, ID4]);
+  let [addon1, addon2, addon3, addon4] = await AddonManager.getAddonsByIDs([ID1, ID2, ID3, ID4]);
   ok(addon1.seen, "Addon should be marked as seen");
   is(addon1.userDisabled, true, "Addon 1 should still be disabled");
   is(addon2.userDisabled, true, "Addon 2 should still be disabled");
   is(addon3.userDisabled, true, "Addon 3 should still be disabled");
   is(addon4.userDisabled, true, "Addon 4 should still be disabled");
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
 
   addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 3, "Have 3 menu entries for sideloaded extensions");
@@ -232,7 +232,7 @@ add_task(function* () {
   
   popupPromise = promisePopupNotificationShown("addon-webext-permissions");
   addons.children[0].click();
-  panel = yield popupPromise;
+  panel = await popupPromise;
 
   
   is(gBrowser.currentURI.spec, "about:addons", "Foreground tab is at about:addons");
@@ -248,25 +248,25 @@ add_task(function* () {
   disablePromise = promiseSetDisabled(mock2);
   panel.button.click();
 
-  value = yield disablePromise;
+  value = await disablePromise;
   is(value, false, "Addon should be set to enabled");
 
-  [addon1, addon2, addon3, addon4] = yield AddonManager.getAddonsByIDs([ID1, ID2, ID3, ID4]);
+  [addon1, addon2, addon3, addon4] = await AddonManager.getAddonsByIDs([ID1, ID2, ID3, ID4]);
   is(addon1.userDisabled, true, "Addon 1 should still be disabled");
   is(addon2.userDisabled, false, "Addon 2 should now be enabled");
   is(addon3.userDisabled, true, "Addon 3 should still be disabled");
   is(addon4.userDisabled, true, "Addon 4 should still be disabled");
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
 
   addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 2, "Have 2 menu entries for sideloaded extensions");
 
   
-  yield PanelUI.hide();
+  await PanelUI.hide();
 
-  win = yield BrowserOpenAddonsMgr(VIEW);
+  win = await BrowserOpenAddonsMgr(VIEW);
 
   let list = win.document.getElementById("addon-list");
 
@@ -284,44 +284,44 @@ add_task(function* () {
   popupPromise = promisePopupNotificationShown("addon-webext-permissions");
   BrowserTestUtils.synthesizeMouseAtCenter(item._enableBtn, {},
                                            gBrowser.selectedBrowser);
-  panel = yield popupPromise;
+  panel = await popupPromise;
   checkNotification(panel, DEFAULT_ICON_URL, [["webextPerms.hostDescription.allUrls"]]);
 
   
   disablePromise = promiseSetDisabled(mock3);
   panel.button.click();
-  value = yield disablePromise;
+  value = await disablePromise;
   is(value, false, "userDisabled should be set on addon 3");
 
-  addon3 = yield AddonManager.getAddonByID(ID3);
+  addon3 = await AddonManager.getAddonByID(ID3);
   is(addon3.userDisabled, false, "Addon 3 should be enabled");
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
 
   addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 1, "Have 1 menu entry for sideloaded extensions");
 
   
-  yield PanelUI.hide();
+  await PanelUI.hide();
 
-  win = yield BrowserOpenAddonsMgr(`addons://detail/${encodeURIComponent(ID4)}`);
+  win = await BrowserOpenAddonsMgr(`addons://detail/${encodeURIComponent(ID4)}`);
   let button = win.document.getElementById("detail-enable-btn");
 
   
   popupPromise = promisePopupNotificationShown("addon-webext-permissions");
   BrowserTestUtils.synthesizeMouseAtCenter(button, {},
                                            gBrowser.selectedBrowser);
-  panel = yield popupPromise;
+  panel = await popupPromise;
   checkNotification(panel, DEFAULT_ICON_URL, [["webextPerms.hostDescription.allUrls"]]);
 
   
   disablePromise = promiseSetDisabled(mock4);
   panel.button.click();
-  value = yield disablePromise;
+  value = await disablePromise;
   is(value, false, "userDisabled should be set on addon 4");
 
-  addon4 = yield AddonManager.getAddonByID(ID4);
+  addon4 = await AddonManager.getAddonByID(ID4);
   is(addon4.userDisabled, false, "Addon 4 should be enabled");
 
   
@@ -329,5 +329,5 @@ add_task(function* () {
 
   isnot(menuButton.getAttribute("badge-status"), "addon-alert", "Should no longer have addon alert badge");
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

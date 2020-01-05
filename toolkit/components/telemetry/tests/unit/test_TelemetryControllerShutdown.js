@@ -25,12 +25,12 @@ function contentHandler(metadata, response) {
   response.setHeader("Content-Type", "text/plain");
 }
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   
   do_get_profile();
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
@@ -41,7 +41,7 @@ add_task(function* test_setup() {
 
 
 
-add_task(function* test_sendTelemetryShutsDownWithinReasonableTimeout() {
+add_task(async function test_sendTelemetryShutsDownWithinReasonableTimeout() {
   const CRASH_TIMEOUT_MS = 5 * 1000;
   
   
@@ -54,7 +54,7 @@ add_task(function* test_sendTelemetryShutsDownWithinReasonableTimeout() {
   httpServer.registerPrefixHandler("/", contentHandler);
   httpServer.start(-1);
 
-  yield TelemetryController.testSetup();
+  await TelemetryController.testSetup();
   TelemetrySend.setServer("http://localhost:" + httpServer.identity.primaryPort);
   let submissionPromise = TelemetryController.submitExternalPing("test-ping-type", {});
 
@@ -62,7 +62,7 @@ add_task(function* test_sendTelemetryShutsDownWithinReasonableTimeout() {
   AsyncShutdown.profileBeforeChange._trigger();
   AsyncShutdown.sendTelemetry._trigger();
   
-  yield submissionPromise;
+  await submissionPromise;
 
   
   Assert.ok(true, "Didn't time out on shutdown.");

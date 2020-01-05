@@ -7,9 +7,9 @@
 requestLongerTimeout(5);
 
 
-add_task(function*() {
-  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
-  yield startCustomizing();
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
+  await startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let printButton = document.getElementById("print-button");
   let placementsAfterMove = ["edit-controls",
@@ -37,8 +37,8 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let savePageButton = document.getElementById("save-page-button");
   let placementsAfterMove = ["edit-controls",
@@ -64,8 +64,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let newWindowButton = document.getElementById("new-window-button");
   let placementsAfterMove = ["edit-controls",
@@ -90,8 +90,8 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let historyPanelMenu = document.getElementById("history-panelmenu");
   let placementsAfterMove = ["edit-controls",
@@ -120,8 +120,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let preferencesButton = document.getElementById("preferences-button");
   let placementsAfterMove = ["edit-controls",
@@ -149,8 +149,8 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let openFileButton = document.getElementById("open-file-button");
   let zoomControls = document.getElementById("zoom-controls");
   let placementsAfterInsert = ["edit-controls",
@@ -191,8 +191,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let openFileButton = document.getElementById("open-file-button");
   let editControls = document.getElementById("edit-controls");
   let placementsAfterInsert = ["open-file-button",
@@ -231,8 +231,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let zoomControls = document.getElementById("zoom-controls");
   let placementsAfterMove = ["edit-controls",
@@ -258,8 +258,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let newWindowButton = document.getElementById("new-window-button");
   let placementsAfterMove = ["zoom-controls",
@@ -288,8 +288,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let privateBrowsingButton = document.getElementById("privatebrowsing-button");
   let placementsAfterMove = ["zoom-controls",
@@ -318,8 +318,8 @@ add_task(function*() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let savePageButton = document.getElementById("save-page-button");
   let placementsAfterMove = ["zoom-controls",
@@ -347,8 +347,8 @@ add_task(function*() {
 
 
 
-add_task(function* editControlsToPanelEmptySpace() {
-  yield startCustomizing();
+add_task(async function editControlsToPanelEmptySpace() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
   let placementsAfterMove = ["zoom-controls",
@@ -381,8 +381,8 @@ add_task(function* editControlsToPanelEmptySpace() {
 
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let palette = document.getElementById("customization-palette");
   let placementsAfterMove = ["zoom-controls",
@@ -418,8 +418,8 @@ add_task(function*() {
 
 
 
-add_task(function* editControlsToPanelPlaceholders() {
-  yield startCustomizing();
+add_task(async function editControlsToPanelPlaceholders() {
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
   let numPlaceholders = 2;
@@ -458,8 +458,8 @@ add_task(function* editControlsToPanelPlaceholders() {
 });
 
 
-add_task(function*() {
-  yield startCustomizing();
+add_task(async function() {
+  await startCustomizing();
   let openFileButton = document.getElementById("open-file-button");
   is(openFileButton.parentNode.tagName, "toolbarpaletteitem",
      "open-file-button should be wrapped by a toolbarpaletteitem");
@@ -473,13 +473,13 @@ add_task(function*() {
 });
 
 
-add_task(function*() {
+add_task(async function() {
   
   
   
   
   removeNonOriginalButtons();
-  yield startCustomizing();
+  await startCustomizing();
   let editControls = document.getElementById("edit-controls");
   let panel = document.getElementById(CustomizableUI.AREA_PANEL);
   let target = panel.getElementsByClassName("panel-customization-placeholder")[0];
@@ -514,7 +514,7 @@ add_task(function*() {
   ok(CustomizableUI.inDefaultState, "Should be in default state again.");
 });
 
-add_task(function* asyncCleanup() {
-  yield endCustomizing();
-  yield resetCustomization();
+add_task(async function asyncCleanup() {
+  await endCustomizing();
+  await resetCustomization();
 });

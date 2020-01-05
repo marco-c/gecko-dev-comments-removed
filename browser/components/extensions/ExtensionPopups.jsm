@@ -16,8 +16,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "E10SUtils",
                                   "resource:///modules/E10SUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionParent",
                                   "resource://gre/modules/ExtensionParent.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
                                   "resource://gre/modules/Timer.jsm");
 
@@ -449,7 +447,7 @@ class ViewPopup extends BasePopup {
 
 
   attach(viewNode) {
-    return Task.spawn(function* () {
+    return (async function() {
       this.viewNode = viewNode;
       this.viewNode.addEventListener(this.DESTROY_EVENT, this);
 
@@ -458,7 +456,7 @@ class ViewPopup extends BasePopup {
       
       
       
-      yield Promise.all([
+      await Promise.all([
         this.browserReady,
         Promise.race([
           
@@ -502,7 +500,7 @@ class ViewPopup extends BasePopup {
 
       
       let browser = this.browser;
-      yield this.createBrowser(this.viewNode);
+      await this.createBrowser(this.viewNode);
 
       this.ignoreResizes = false;
 
@@ -531,7 +529,7 @@ class ViewPopup extends BasePopup {
       this.browser.dispatchEvent(event);
 
       return true;
-    }.bind(this));
+    }.bind(this))();
   }
 
   destroy() {

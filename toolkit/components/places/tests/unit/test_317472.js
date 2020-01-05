@@ -14,10 +14,10 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute() {
+add_task(async function test_execute() {
   
-  yield PlacesTestUtils.addVisits(TEST_URI);
-  yield PlacesTestUtils.addVisits(TEST_BOOKMARKED_URI);
+  await PlacesTestUtils.addVisits(TEST_URI);
+  await PlacesTestUtils.addVisits(TEST_BOOKMARKED_URI);
 
   
   PlacesUtils.bookmarks.insertBookmark(
@@ -30,23 +30,23 @@ add_task(function* test_execute() {
               TEST_BOOKMARKED_URI.spec);
 
   
-  yield PlacesUtils.setCharsetForURI(TEST_URI, charset);
+  await PlacesUtils.setCharsetForURI(TEST_URI, charset);
   
-  yield PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, charset);
+  await PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, charset);
 
   
   do_check_eq(PlacesUtils.annotations.getPageAnnotation(TEST_URI, CHARSET_ANNO), charset);
 
   
-  do_check_eq((yield PlacesUtils.getCharsetForURI(TEST_URI)), charset);
+  do_check_eq((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
 
   
-  do_check_eq((yield PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  do_check_eq((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 
   
-  do_check_neq((yield PlacesUtils.getCharsetForURI(TEST_URI)), charset);
+  do_check_neq((await PlacesUtils.getCharsetForURI(TEST_URI)), charset);
 
   
   try {
@@ -55,9 +55,9 @@ add_task(function* test_execute() {
   } catch (e) {}
 
   
-  do_check_eq((yield PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  do_check_eq((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 
   
-  yield PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, "");
-  do_check_neq((yield PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
+  await PlacesUtils.setCharsetForURI(TEST_BOOKMARKED_URI, "");
+  do_check_neq((await PlacesUtils.getCharsetForURI(TEST_BOOKMARKED_URI)), charset);
 });

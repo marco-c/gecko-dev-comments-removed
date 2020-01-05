@@ -20,14 +20,14 @@ function promiseBrowserStateRestored() {
   });
 }
 
-add_task(function* test_privateMode() {
+add_task(async function test_privateMode() {
   
   Services.telemetry.clearScalars();
 
   
-  let privateWin = yield BrowserTestUtils.openNewBrowserWindow({private: true});
-  yield BrowserTestUtils.loadURI(privateWin.gBrowser.selectedBrowser, "http://example.com/");
-  yield BrowserTestUtils.browserLoaded(privateWin.gBrowser.selectedBrowser);
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({private: true});
+  await BrowserTestUtils.loadURI(privateWin.gBrowser.selectedBrowser, "http://example.com/");
+  await BrowserTestUtils.browserLoaded(privateWin.gBrowser.selectedBrowser);
 
   
   const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
@@ -41,10 +41,10 @@ add_task(function* test_privateMode() {
   is(scalars[MAX_CONCURRENT_WINDOWS], 2, "The maximum window count must match the expected value.");
 
   
-  yield BrowserTestUtils.closeWindow(privateWin);
+  await BrowserTestUtils.closeWindow(privateWin);
 });
 
-add_task(function* test_sessionRestore() {
+add_task(async function test_sessionRestore() {
   const PREF_RESTORE_ON_DEMAND = "browser.sessionstore.restore_on_demand";
   Services.prefs.setBoolPref(PREF_RESTORE_ON_DEMAND, false);
   registerCleanupFunction(() => {
@@ -76,7 +76,7 @@ add_task(function* test_sessionRestore() {
   
   let tabRestored = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "SSTabRestored");
   SessionStore.setBrowserState(JSON.stringify(state));
-  yield tabRestored;
+  await tabRestored;
 
   
   const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
@@ -88,5 +88,5 @@ add_task(function* test_sessionRestore() {
   
   let sessionRestored = promiseBrowserStateRestored();
   SessionStore.setBrowserState(JSON.stringify(state));
-  yield sessionRestored;
+  await sessionRestored;
 });

@@ -6,19 +6,19 @@ Components.utils.import("resource://gre/modules/osfile.jsm");
 const kSelectedEnginePref = "browser.search.selectedEngine";
 
 
-add_task(function* test_defaultEngine() {
-  yield asyncInit();
+add_task(async function test_defaultEngine() {
+  await asyncInit();
 
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName());
 });
 
 
-add_task(function* test_selectedEngine() {
+add_task(async function test_selectedEngine() {
   let defaultEngineName = getDefaultEngineName();
   
   Services.prefs.setCharPref(kSelectedEnginePref, kTestEngineName);
 
-  yield asyncReInit();
+  await asyncReInit();
   do_check_eq(Services.search.currentEngine.name, defaultEngineName);
 
   Services.prefs.clearUserPref(kSelectedEnginePref);
@@ -26,25 +26,25 @@ add_task(function* test_selectedEngine() {
   
   Services.prefs.setCharPref(kDefaultenginenamePref, kTestEngineName);
 
-  yield asyncReInit();
+  await asyncReInit();
   do_check_eq(Services.search.currentEngine.name, defaultEngineName);
 
   Services.prefs.clearUserPref(kDefaultenginenamePref);
 });
 
 
-add_task(function* test_persistAcrossRestarts() {
+add_task(async function test_persistAcrossRestarts() {
   
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   do_check_eq(metadata.hash.length, 44);
 
   
-  yield asyncReInit();
+  await asyncReInit();
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
 
   
@@ -53,58 +53,58 @@ add_task(function* test_persistAcrossRestarts() {
 });
 
 
-add_task(function* test_ignoreInvalidHash() {
+add_task(async function test_ignoreInvalidHash() {
   
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   metadata.hash = "invalid";
-  yield promiseSaveGlobalMetadata(metadata);
+  await promiseSaveGlobalMetadata(metadata);
 
   
-  yield asyncReInit();
+  await asyncReInit();
   do_check_eq(Services.search.currentEngine.name, getDefaultEngineName());
 });
 
 
-add_task(function* test_settingToDefault() {
+add_task(async function test_settingToDefault() {
   
   Services.search.currentEngine = Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  let metadata = yield promiseGlobalMetadata();
+  let metadata = await promiseGlobalMetadata();
   do_check_eq(metadata.current, kTestEngineName);
 
   
   Services.search.currentEngine =
     Services.search.getEngineByName(getDefaultEngineName());
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  metadata = yield promiseGlobalMetadata();
+  metadata = await promiseGlobalMetadata();
   do_check_eq(metadata.current, "");
 });
 
-add_task(function* test_resetToOriginalDefaultEngine() {
+add_task(async function test_resetToOriginalDefaultEngine() {
   let defaultName = getDefaultEngineName();
   do_check_eq(Services.search.currentEngine.name, defaultName);
 
   Services.search.currentEngine =
     Services.search.getEngineByName(kTestEngineName);
   do_check_eq(Services.search.currentEngine.name, kTestEngineName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   Services.search.resetToOriginalDefaultEngine();
   do_check_eq(Services.search.currentEngine.name, defaultName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 });
 
-add_task(function* test_fallback_kept_after_restart() {
+add_task(async function test_fallback_kept_after_restart() {
   
   let builtInEngines = Services.search.getDefaultEngines();
   let defaultName = getDefaultEngineName();
@@ -117,7 +117,7 @@ add_task(function* test_fallback_kept_after_restart() {
   }
   Services.search.currentEngine = nonDefaultBuiltInEngine;
   do_check_eq(Services.search.currentEngine.name, nonDefaultBuiltInEngine.name);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
   Services.search.removeEngine(nonDefaultBuiltInEngine);
@@ -134,10 +134,10 @@ add_task(function* test_fallback_kept_after_restart() {
   Services.search.restoreDefaultEngines();
   do_check_false(nonDefaultBuiltInEngine.hidden);
   do_check_eq(Services.search.currentEngine.name, defaultName);
-  yield promiseAfterCache();
+  await promiseAfterCache();
 
   
-  yield asyncReInit();
+  await asyncReInit();
   do_check_eq(Services.search.currentEngine.name, defaultName);
 });
 

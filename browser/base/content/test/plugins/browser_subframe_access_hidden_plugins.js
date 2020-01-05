@@ -12,7 +12,7 @@ const DOMAIN_2 = "http://mochi.test:8888";
 
 
 
-add_task(function* setup() {
+add_task(async function setup() {
   
   let originalPluginState = getTestPluginEnabledState();
   setTestPluginEnabledState(Ci.nsIPluginTag.STATE_CLICKTOPLAY);
@@ -22,12 +22,12 @@ add_task(function* setup() {
   });
 
   
-  yield SpecialPowers.pushPrefEnv({
+  await SpecialPowers.pushPrefEnv({
     set: [[HIDDEN_CTP_PLUGIN_PREF, TEST_PLUGIN_NAME]],
   });
 });
 
-add_task(function* test_plugin_accessible_in_subframe() {
+add_task(async function test_plugin_accessible_in_subframe() {
   
   
   
@@ -41,12 +41,12 @@ add_task(function* test_plugin_accessible_in_subframe() {
                                   Ci.nsIPermissionManager.EXPIRE_NEVER,
                                   0 );
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: DOMAIN_1
-  }, function*(browser) {
-    yield ContentTask.spawn(browser, [TEST_PLUGIN_NAME, DOMAIN_2],
-                            function*([pluginName, domain2]) {
+  }, async function(browser) {
+    await ContentTask.spawn(browser, [TEST_PLUGIN_NAME, DOMAIN_2],
+                            async function([pluginName, domain2]) {
       Assert.ok(content.navigator.plugins[pluginName],
                 "Top-level document should find Test Plugin");
 
@@ -55,7 +55,7 @@ add_task(function* test_plugin_accessible_in_subframe() {
       subframe.src = domain2;
       let loadedPromise = ContentTaskUtils.waitForEvent(subframe, "load");
       content.document.body.appendChild(subframe);
-      yield loadedPromise;
+      await loadedPromise;
 
       
       

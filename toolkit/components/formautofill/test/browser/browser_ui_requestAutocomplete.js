@@ -7,8 +7,8 @@
 
 "use strict";
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processCount", 1]]
   });
 });
@@ -17,16 +17,16 @@ add_task(function* setup() {
 
 
 
-add_task(function* test_select_profile() {
+add_task(async function test_select_profile() {
   
-  let { uiWindow, promiseResult } = yield FormAutofillTest.showUI(
+  let { uiWindow, promiseResult } = await FormAutofillTest.showUI(
                                           TestData.requestEmailOnly);
 
   
   let acceptButton = uiWindow.document.getElementById("accept");
   EventUtils.synthesizeMouseAtCenter(acceptButton, {}, uiWindow);
 
-  let result = yield promiseResult;
+  let result = await promiseResult;
   Assert.equal(result.fields.length, 1);
   Assert.equal(result.fields[0].section, "");
   Assert.equal(result.fields[0].addressType, "");
@@ -38,16 +38,16 @@ add_task(function* test_select_profile() {
 
 
 
-add_task(function* test_cancel() {
+add_task(async function test_cancel() {
   
-  let { uiWindow, promiseResult } = yield FormAutofillTest.showUI(
+  let { uiWindow, promiseResult } = await FormAutofillTest.showUI(
                                           TestData.requestEmailOnly);
 
   
   let acceptButton = uiWindow.document.getElementById("cancel");
   EventUtils.synthesizeMouseAtCenter(acceptButton, {}, uiWindow);
 
-  let result = yield promiseResult;
+  let result = await promiseResult;
   Assert.ok(result.canceled);
 });
 

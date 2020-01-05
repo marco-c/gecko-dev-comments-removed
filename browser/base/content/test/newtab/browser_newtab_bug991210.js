@@ -1,9 +1,9 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   
-  yield pushPrefs(["browser.newtab.preload", false]);
+  await pushPrefs(["browser.newtab.preload", false]);
 
   
   let afterLoadProvider = {
@@ -15,11 +15,11 @@ add_task(function* () {
   NewTabUtils.links.addProvider(afterLoadProvider);
 
   
-  yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
 
   afterLoadProvider.callback([]);
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     let {_cellHeight, _cellWidth, node} = content.gGrid;
     Assert.notEqual(_cellHeight, null, "grid has a computed cell height");
     Assert.notEqual(_cellWidth, null, "grid has a computed cell width");

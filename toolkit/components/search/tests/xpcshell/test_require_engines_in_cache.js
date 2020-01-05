@@ -13,43 +13,43 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* ignore_cache_files_without_engines() {
+add_task(async function ignore_cache_files_without_engines() {
   let commitPromise = promiseAfterCache()
-  yield asyncInit();
+  await asyncInit();
 
   let engineCount = Services.search.getEngines().length;
   do_check_eq(engineCount, 1);
 
   
-  yield commitPromise;
+  await commitPromise;
 
   
-  let cache = yield promiseCacheData();
+  let cache = await promiseCacheData();
   cache.engines = [];
-  yield promiseSaveCacheData(cache);
+  await promiseSaveCacheData(cache);
 
   
   commitPromise = promiseAfterCache()
-  yield asyncReInit();
+  await asyncReInit();
   do_check_eq(engineCount, Services.search.getEngines().length);
-  yield commitPromise;
+  await commitPromise;
 
   
-  yield promiseSaveCacheData(cache);
+  await promiseSaveCacheData(cache);
   let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
-  yield unInitPromise;
+  await unInitPromise;
   do_check_false(Services.search.isInitialized);
   
   do_check_eq(engineCount, Services.search.getEngines().length);
   do_check_true(Services.search.isInitialized);
-  yield reInitPromise;
+  await reInitPromise;
 });
 
-add_task(function* skip_writing_cache_without_engines() {
+add_task(async function skip_writing_cache_without_engines() {
   let unInitPromise = waitForSearchNotification("uninit-complete");
   let reInitPromise = asyncReInit();
-  yield unInitPromise;
+  await unInitPromise;
 
   
   do_check_true(removeCacheFile());
@@ -59,16 +59,16 @@ add_task(function* skip_writing_cache_without_engines() {
                           Services.io.newURI("about:blank"));
 
   
-  yield reInitPromise;
+  await reInitPromise;
   do_check_eq(0, Services.search.getEngines().length);
 
   
   unInitPromise = waitForSearchNotification("uninit-complete");
   reInitPromise = asyncReInit();
-  yield unInitPromise;
+  await unInitPromise;
 
   
   do_check_false(removeCacheFile());
 
-  yield reInitPromise;
+  await reInitPromise;
 });

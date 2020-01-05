@@ -11,7 +11,7 @@ const BASIC_FORM_PAGE_PATH = DIRECTORY_PATH + "form_basic.html";
 
 
 
-add_task(function* test_initialize() {
+add_task(async function test_initialize() {
   let autocompletePopup = document.getElementById("PopupAutoComplete");
   Services.prefs.setBoolPref("signon.autofillForms", false);
   registerCleanupFunction(() => {
@@ -24,8 +24,8 @@ add_task(function* test_initialize() {
   autocompletePopup.addEventListener("popupshowing", autocompleteUnexpectedPopupShowing);
 });
 
-add_task(function* test_context_menu_username() {
-  yield BrowserTestUtils.withNewTab({
+add_task(async function test_context_menu_username() {
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + BASIC_FORM_PAGE_PATH,
   }, function* (browser) {
@@ -37,8 +37,8 @@ add_task(function* test_context_menu_username() {
   });
 });
 
-add_task(function* test_context_menu_password() {
-  yield BrowserTestUtils.withNewTab({
+add_task(async function test_context_menu_password() {
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_HOSTNAME + BASIC_FORM_PAGE_PATH,
   }, function* (browser) {
@@ -59,19 +59,19 @@ function autocompleteUnexpectedPopupShowing(event) {
 
 
 
-function* openContextMenu(browser, loginInput) {
+async function openContextMenu(browser, loginInput) {
   
   let eventDetails1 = {type: "mousedown", button: 2};
-  yield BrowserTestUtils.synthesizeMouseAtCenter(loginInput, eventDetails1, browser);
+  await BrowserTestUtils.synthesizeMouseAtCenter(loginInput, eventDetails1, browser);
 
   
   let contextMenuShownPromise = BrowserTestUtils.waitForEvent(window, "popupshown");
   let eventDetails = {type: "contextmenu", button: 2};
-  yield BrowserTestUtils.synthesizeMouseAtCenter(loginInput, eventDetails, browser);
-  yield contextMenuShownPromise;
+  await BrowserTestUtils.synthesizeMouseAtCenter(loginInput, eventDetails, browser);
+  await contextMenuShownPromise;
 
   
-  yield new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
 function loginList() {

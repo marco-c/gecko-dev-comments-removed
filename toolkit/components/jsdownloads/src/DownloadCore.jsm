@@ -70,8 +70,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
                                   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
@@ -430,14 +428,14 @@ this.Download.prototype = {
 
     
     
-    deferAttempt.resolve(Task.spawn(function* task_D_start() {
+    deferAttempt.resolve((async function task_D_start() {
       
       if (this._promiseCanceled) {
-        yield this._promiseCanceled;
+        await this._promiseCanceled;
       }
       if (this._promiseRemovePartialData) {
         try {
-          yield this._promiseRemovePartialData;
+          await this._promiseRemovePartialData;
         } catch (ex) {
           
           
@@ -453,13 +451,13 @@ this.Download.prototype = {
 
       try {
         
-        if (yield DownloadIntegration.shouldBlockForParentalControls(this)) {
+        if (await DownloadIntegration.shouldBlockForParentalControls(this)) {
           throw new DownloadError({ becauseBlockedByParentalControls: true });
         }
 
         
         
-        if (yield DownloadIntegration.shouldBlockForRuntimePermissions()) {
+        if (await DownloadIntegration.shouldBlockForRuntimePermissions()) {
           throw new DownloadError({ becauseBlockedByRuntimePermissions: true });
         }
 
@@ -473,12 +471,12 @@ this.Download.prototype = {
 
         
         this._saverExecuting = true;
-        yield this.saver.execute(DS_setProgressBytes.bind(this),
+        await this.saver.execute(DS_setProgressBytes.bind(this),
                                  DS_setProperties.bind(this));
 
         
         
-        yield this.target.refresh();
+        await this.target.refresh();
 
         
         
@@ -486,7 +484,7 @@ this.Download.prototype = {
         
         if (this._promiseCanceled) {
           try {
-            yield OS.File.remove(this.target.path);
+            await OS.File.remove(this.target.path);
           } catch (ex) {
             Cu.reportError(ex);
           }
@@ -552,11 +550,11 @@ this.Download.prototype = {
           this.speed = 0;
           this._notifyChange();
           if (this.succeeded) {
-            yield this._succeed();
+            await this._succeed();
           }
         }
       }
-    }.bind(this)));
+    }.bind(this))());
 
     
     this._notifyChange();
@@ -570,8 +568,8 @@ this.Download.prototype = {
 
 
 
-  _succeed: Task.async(function* () {
-    yield DownloadIntegration.downloadDone(this);
+  async _succeed() {
+    await DownloadIntegration.downloadDone(this);
 
     this._deferSucceeded.resolve();
 
@@ -589,7 +587,7 @@ this.Download.prototype = {
                              new FileUtils.File(this.target.path));
       }
     }
-  }),
+  },
 
   
 
@@ -631,12 +629,12 @@ this.Download.prototype = {
         "unblock may only be called on Downloads with blocked data."));
     }
 
-    this._promiseUnblock = Task.spawn(function* () {
+    this._promiseUnblock = (async function() {
       try {
-        yield OS.File.move(this.target.partFilePath, this.target.path);
-        yield this.target.refresh();
+        await OS.File.move(this.target.partFilePath, this.target.path);
+        await this.target.refresh();
       } catch (ex) {
-        yield this.refresh();
+        await this.refresh();
         this._promiseUnblock = null;
         throw ex;
       }
@@ -644,8 +642,8 @@ this.Download.prototype = {
       this.succeeded = true;
       this.hasBlockedData = false;
       this._notifyChange();
-      yield this._succeed();
-    }.bind(this));
+      await this._succeed();
+    }.bind(this))();
 
     return this._promiseUnblock;
   },
@@ -675,18 +673,18 @@ this.Download.prototype = {
         "confirmBlock may only be called on Downloads with blocked data."));
     }
 
-    this._promiseConfirmBlock = Task.spawn(function* () {
+    this._promiseConfirmBlock = (async function() {
       try {
-        yield OS.File.remove(this.target.partFilePath);
+        await OS.File.remove(this.target.partFilePath);
       } catch (ex) {
-        yield this.refresh();
+        await this.refresh();
         this._promiseConfirmBlock = null;
         throw ex;
       }
 
       this.hasBlockedData = false;
       this._notifyChange();
-    }.bind(this));
+    }.bind(this))();
 
     return this._promiseConfirmBlock;
   },
@@ -851,14 +849,14 @@ this.Download.prototype = {
       this._promiseRemovePartialData = promiseRemovePartialData;
 
       deferRemovePartialData.resolve(
-        Task.spawn(function* task_D_removePartialData() {
+        (async function task_D_removePartialData() {
           try {
             
             if (this._promiseCanceled) {
-              yield this._promiseCanceled;
+              await this._promiseCanceled;
             }
             
-            yield this.saver.removePartialData();
+            await this.saver.removePartialData();
             
             if (this.currentBytes != 0 || this.hasPartialData) {
               this.currentBytes = 0;
@@ -868,7 +866,7 @@ this.Download.prototype = {
           } finally {
             this._promiseRemovePartialData = null;
           }
-        }.bind(this)));
+        }.bind(this))());
     }
 
     return promiseRemovePartialData;
@@ -912,7 +910,7 @@ this.Download.prototype = {
 
 
   refresh() {
-    return Task.spawn(function* () {
+    return (async function() {
       if (!this.stopped || this._finalized) {
         return;
       }
@@ -920,7 +918,7 @@ this.Download.prototype = {
       if (this.succeeded) {
         let oldExists = this.target.exists;
         let oldSize = this.target.size;
-        yield this.target.refresh();
+        await this.target.refresh();
         if (oldExists != this.target.exists || oldSize != this.target.size) {
           this._notifyChange();
         }
@@ -932,7 +930,7 @@ this.Download.prototype = {
           this.target.partFilePath) {
 
         try {
-          let stat = yield OS.File.stat(this.target.partFilePath);
+          let stat = await OS.File.stat(this.target.partFilePath);
 
           
           if (!this.stopped || this._finalized) {
@@ -961,7 +959,7 @@ this.Download.prototype = {
 
         this._notifyChange();
       }
-    }.bind(this)).then(null, Cu.reportError);
+    }.bind(this))().then(null, Cu.reportError);
   },
 
   
@@ -1419,9 +1417,9 @@ this.DownloadTarget.prototype = {
 
 
 
-  refresh: Task.async(function* () {
+  async refresh() {
     try {
-      this.size = (yield OS.File.stat(this.path)).size;
+      this.size = (await OS.File.stat(this.path)).size;
       this.exists = true;
     } catch (ex) {
       
@@ -1431,7 +1429,7 @@ this.DownloadTarget.prototype = {
       }
       this.exists = false;
     }
-  }),
+  },
 
   
 
@@ -1894,7 +1892,7 @@ this.DownloadCopySaver.prototype = {
     let partFilePath = download.target.partFilePath;
     let keepPartialData = download.tryToKeepPartialData;
 
-    return Task.spawn(function* task_DCS_execute() {
+    return (async function task_DCS_execute() {
       
       
       
@@ -1912,8 +1910,8 @@ this.DownloadCopySaver.prototype = {
       
       try {
         
-        let file = yield OS.File.open(targetPath, { write: true });
-        yield file.close();
+        let file = await OS.File.open(targetPath, { write: true });
+        await file.close();
       } catch (ex) {
         if (!(ex instanceof OS.File.Error)) {
           throw ex;
@@ -1989,7 +1987,7 @@ this.DownloadCopySaver.prototype = {
           if (channel instanceof Ci.nsIResumableChannel && this.entityID &&
               partFilePath && keepPartialData) {
             try {
-              let stat = yield OS.File.stat(partFilePath);
+              let stat = await OS.File.stat(partFilePath);
               channel.resumeAt(stat.size, this.entityID);
               resumeAttempted = true;
               resumeFromBytes = stat.size;
@@ -2016,7 +2014,7 @@ this.DownloadCopySaver.prototype = {
 
           
           if (download.source.adjustChannel) {
-            yield download.source.adjustChannel(channel);
+            await download.source.adjustChannel(channel);
           }
 
           
@@ -2146,15 +2144,15 @@ this.DownloadCopySaver.prototype = {
 
         
         
-        yield deferSaveComplete.promise;
+        await deferSaveComplete.promise;
 
-        yield this._checkReputationAndMove(aSetPropertiesFn);
+        await this._checkReputationAndMove(aSetPropertiesFn);
       } catch (ex) {
         
         
         
         try {
-          yield OS.File.remove(targetPath);
+          await OS.File.remove(targetPath);
         } catch (e2) {
           
           
@@ -2167,7 +2165,7 @@ this.DownloadCopySaver.prototype = {
         }
         throw ex;
       }
-    }.bind(this));
+    }.bind(this))();
   },
 
   
@@ -2183,13 +2181,13 @@ this.DownloadCopySaver.prototype = {
 
 
 
-  _checkReputationAndMove: Task.async(function* (aSetPropertiesFn) {
+  async _checkReputationAndMove(aSetPropertiesFn) {
     let download = this.download;
     let targetPath = this.download.target.path;
     let partFilePath = this.download.target.partFilePath;
 
     let { shouldBlock, verdict } =
-        yield DownloadIntegration.shouldBlockForReputationCheck(download);
+        await DownloadIntegration.shouldBlockForReputationCheck(download);
     if (shouldBlock) {
       let newProperties = { progress: 100, hasPartialData: false };
 
@@ -2199,7 +2197,7 @@ this.DownloadCopySaver.prototype = {
       
       if (!DownloadIntegration.shouldKeepBlockedData() || !partFilePath) {
         try {
-          yield OS.File.remove(partFilePath || targetPath);
+          await OS.File.remove(partFilePath || targetPath);
         } catch (ex) {
           Cu.reportError(ex);
         }
@@ -2216,9 +2214,9 @@ this.DownloadCopySaver.prototype = {
     }
 
     if (partFilePath) {
-      yield OS.File.move(partFilePath, targetPath);
+      await OS.File.move(partFilePath, targetPath);
     }
-  }),
+  },
 
   
 
@@ -2235,17 +2233,17 @@ this.DownloadCopySaver.prototype = {
 
 
   removePartialData() {
-    return Task.spawn(function* task_DCS_removePartialData() {
+    return (async function task_DCS_removePartialData() {
       if (this.download.target.partFilePath) {
         try {
-          yield OS.File.remove(this.download.target.partFilePath);
+          await OS.File.remove(this.download.target.partFilePath);
         } catch (ex) {
           if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
             throw ex;
           }
         }
       }
-    }.bind(this));
+    }.bind(this))();
   },
 
   
@@ -2498,10 +2496,10 @@ this.DownloadLegacySaver.prototype = {
       this.onProgressBytes(this.currentBytes, this.totalBytes);
     }
 
-    return Task.spawn(function* task_DLS_execute() {
+    return (async function task_DLS_execute() {
       try {
         
-        yield this.deferExecuted.promise;
+        await this.deferExecuted.promise;
 
         
         
@@ -2525,9 +2523,9 @@ this.DownloadLegacySaver.prototype = {
         if (!this.download.target.partFilePath) {
           try {
             
-            let file = yield OS.File.open(this.download.target.path,
+            let file = await OS.File.open(this.download.target.path,
                                           { create: true });
-            yield file.close();
+            await file.close();
           } catch (ex) {
             if (!(ex instanceof OS.File.Error) || !ex.becauseExists) {
               throw ex;
@@ -2535,14 +2533,14 @@ this.DownloadLegacySaver.prototype = {
           }
         }
 
-        yield this._checkReputationAndMove(aSetPropertiesFn);
+        await this._checkReputationAndMove(aSetPropertiesFn);
 
       } catch (ex) {
         
         
         
         try {
-          yield OS.File.remove(this.download.target.path);
+          await OS.File.remove(this.download.target.path);
         } catch (e2) {
           
           
@@ -2566,7 +2564,7 @@ this.DownloadLegacySaver.prototype = {
         
         this.firstExecutionFinished = true;
       }
-    }.bind(this));
+    }.bind(this))();
   },
 
   _checkReputationAndMove() {
@@ -2704,7 +2702,7 @@ this.DownloadPDFSaver.prototype = {
 
 
   execute(aSetProgressBytesFn, aSetPropertiesFn) {
-    return Task.spawn(function* task_DCS_execute() {
+    return (async function task_DCS_execute() {
       if (!this.download.source.windowRef) {
         throw new DownloadError({
           message: "PDF saver must be passed an open window, and cannot be restarted.",
@@ -2729,8 +2727,8 @@ this.DownloadPDFSaver.prototype = {
       let targetPath = this.download.target.path;
 
       
-      let file = yield OS.File.open(targetPath, { truncate: true });
-      yield file.close();
+      let file = await OS.File.open(targetPath, { truncate: true });
+      await file.close();
 
       let printSettings = gPrintSettingsService.newPrintSettings;
 
@@ -2755,7 +2753,7 @@ this.DownloadPDFSaver.prototype = {
                                  .getInterface(Ci.nsIWebBrowserPrint);
 
       try {
-        yield new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
           this._webBrowserPrint.print(printSettings, {
             onStateChange(webProgress, request, stateFlags, status) {
               if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
@@ -2782,9 +2780,9 @@ this.DownloadPDFSaver.prototype = {
         this._webBrowserPrint = null;
       }
 
-      let fileInfo = yield OS.File.stat(targetPath);
+      let fileInfo = await OS.File.stat(targetPath);
       aSetProgressBytesFn(fileInfo.size, fileInfo.size, false);
-    }.bind(this));
+    }.bind(this))();
   },
 
   

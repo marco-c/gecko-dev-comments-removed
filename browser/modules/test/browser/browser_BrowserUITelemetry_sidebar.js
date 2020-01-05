@@ -3,19 +3,19 @@
 
 const { BrowserUITelemetry: BUIT } = Cu.import("resource:///modules/BrowserUITelemetry.jsm", {});
 
-add_task(function* testSidebarOpenClose() {
+add_task(async function testSidebarOpenClose() {
   
   BUIT._countableEvents = {};
 
-  yield SidebarUI.show("viewTabsSidebar");
+  await SidebarUI.show("viewTabsSidebar");
 
   let counts = BUIT._countableEvents[BUIT.currentBucket];
 
   Assert.deepEqual(counts, { sidebar: { viewTabsSidebar: { show: 1 } } });
-  yield SidebarUI.hide();
+  await SidebarUI.hide();
   Assert.deepEqual(counts, { sidebar: { viewTabsSidebar: { show: 1, hide: 1 } } });
 
-  yield SidebarUI.show("viewBookmarksSidebar");
+  await SidebarUI.show("viewBookmarksSidebar");
   Assert.deepEqual(counts, {
     sidebar: {
       viewTabsSidebar: { show: 1, hide: 1 },
@@ -24,14 +24,14 @@ add_task(function* testSidebarOpenClose() {
   });
   
   
-  yield SidebarUI.show("viewTabsSidebar");
+  await SidebarUI.show("viewTabsSidebar");
   Assert.deepEqual(counts, {
     sidebar: {
       viewTabsSidebar: { show: 2, hide: 1 },
       viewBookmarksSidebar: { show: 1, hide: 1 },
     }
   });
-  yield SidebarUI.hide();
+  await SidebarUI.hide();
   Assert.deepEqual(counts, {
     sidebar: {
       viewTabsSidebar: { show: 2, hide: 2 },
@@ -39,14 +39,14 @@ add_task(function* testSidebarOpenClose() {
     }
   });
   
-  yield SidebarUI.toggle("viewTabsSidebar");
+  await SidebarUI.toggle("viewTabsSidebar");
   Assert.deepEqual(counts, {
     sidebar: {
       viewTabsSidebar: { show: 3, hide: 2 },
       viewBookmarksSidebar: { show: 1, hide: 1 },
     }
   });
-  yield SidebarUI.toggle("viewTabsSidebar");
+  await SidebarUI.toggle("viewTabsSidebar");
   Assert.deepEqual(counts, {
     sidebar: {
       viewTabsSidebar: { show: 3, hide: 3 },

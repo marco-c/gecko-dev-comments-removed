@@ -2,19 +2,19 @@
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   const URL = "data:text/html,<iframe width='700' height='700'></iframe>";
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: URL }, function* (browser) {
-    yield ContentTask.spawn(browser,
+  await BrowserTestUtils.withNewTab({ gBrowser, url: URL }, async function(browser) {
+    await ContentTask.spawn(browser,
                             { is_element_hidden_: is_element_hidden.toSource(),
                               is_hidden_: is_hidden.toSource() },
-    function* ({ is_element_hidden_, is_hidden_ }) {
+    async function({ is_element_hidden_, is_hidden_ }) {
       let loadError =
         ContentTaskUtils.waitForEvent(this, "AboutNetErrorLoad", false, null, true);
       let iframe = content.document.querySelector("iframe");
       iframe.src = "https://expired.example.com/";
 
-      yield loadError;
+      await loadError;
 
       
       let is_hidden = eval(`(() => ${is_hidden_})()`);

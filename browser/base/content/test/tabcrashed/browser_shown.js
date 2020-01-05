@@ -9,7 +9,7 @@ const EMAIL = "foo@privacy.com";
 
 
 
-add_task(function* setup() {
+add_task(async function setup() {
   
   
   
@@ -69,7 +69,7 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
   return BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
-  }, function*(browser) {
+  }, async function(browser) {
     let prefs = TabCrashHandler.prefs;
     let originalSendReport = prefs.getBoolPref("sendReport");
     let originalEmailMe = prefs.getBoolPref("emailMe");
@@ -77,7 +77,7 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
     let originalEmail = prefs.getCharPref("email");
 
     let tab = gBrowser.getTabForBrowser(browser);
-    yield BrowserTestUtils.crashBrowser(browser);
+    await BrowserTestUtils.crashBrowser(browser);
     let doc = browser.contentDocument;
 
     
@@ -106,8 +106,8 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
     let crashReport = promiseCrashReport(expectedExtra);
     let restoreTab = browser.contentDocument.getElementById("restoreTab");
     restoreTab.click();
-    yield BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
-    yield crashReport;
+    await BrowserTestUtils.waitForEvent(tab, "SSTabRestored");
+    await crashReport;
 
     
     
@@ -123,8 +123,8 @@ function crashTabTestHelper(fieldValues, expectedExtra) {
 
 
 
-add_task(function* test_default() {
-  yield crashTabTestHelper({}, {
+add_task(async function test_default() {
+  await crashTabTestHelper({}, {
     "Comments": null,
     "URL": "",
     "Email": null,
@@ -134,8 +134,8 @@ add_task(function* test_default() {
 
 
 
-add_task(function* test_just_a_comment() {
-  yield crashTabTestHelper({
+add_task(async function test_just_a_comment() {
+  await crashTabTestHelper({
     comments: COMMENTS,
   }, {
     "Comments": COMMENTS,
@@ -147,8 +147,8 @@ add_task(function* test_just_a_comment() {
 
 
 
-add_task(function* test_no_email() {
-  yield crashTabTestHelper({
+add_task(async function test_no_email() {
+  await crashTabTestHelper({
     email: EMAIL,
     emailMe: false,
   }, {
@@ -161,8 +161,8 @@ add_task(function* test_no_email() {
 
 
 
-add_task(function* test_yes_email() {
-  yield crashTabTestHelper({
+add_task(async function test_yes_email() {
+  await crashTabTestHelper({
     email: EMAIL,
     emailMe: true,
   }, {
@@ -175,8 +175,8 @@ add_task(function* test_yes_email() {
 
 
 
-add_task(function* test_send_URL() {
-  yield crashTabTestHelper({
+add_task(async function test_send_URL() {
+  await crashTabTestHelper({
     includeURL: true,
   }, {
     "Comments": null,
@@ -188,8 +188,8 @@ add_task(function* test_send_URL() {
 
 
 
-add_task(function* test_send_all() {
-  yield crashTabTestHelper({
+add_task(async function test_send_all() {
+  await crashTabTestHelper({
     includeURL: true,
     emailMe: true,
     email: EMAIL,

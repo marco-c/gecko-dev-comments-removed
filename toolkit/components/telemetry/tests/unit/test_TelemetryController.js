@@ -17,7 +17,6 @@ Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryArchive.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
 
@@ -96,42 +95,42 @@ function checkPingFormat(aPing, aType, aHasClientId, aHasEnvironment) {
   Assert.equal("environment" in aPing, aHasEnvironment);
 }
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   
   do_get_profile();
   loadAddonManager("xpcshell@tests.mozilla.org", "XPCShell", "1", "1.9.2");
   
-  yield setEmptyPrefWatchlist();
+  await setEmptyPrefWatchlist();
 
   Services.prefs.setBoolPref(PREF_ENABLED, true);
   Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
 
-  yield new Promise(resolve =>
+  await new Promise(resolve =>
     Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve)));
 });
 
-add_task(function* asyncSetup() {
-  yield TelemetryController.testSetup();
+add_task(async function asyncSetup() {
+  await TelemetryController.testSetup();
 });
 
 
-add_task(function* test_overwritePing() {
+add_task(async function test_overwritePing() {
   let ping = {id: "foo"};
-  yield TelemetryStorage.savePing(ping, true);
-  yield TelemetryStorage.savePing(ping, false);
-  yield TelemetryStorage.cleanupPingFile(ping);
+  await TelemetryStorage.savePing(ping, true);
+  await TelemetryStorage.savePing(ping, false);
+  await TelemetryStorage.cleanupPingFile(ping);
 });
 
 
-add_task(function* test_simplePing() {
+add_task(async function test_simplePing() {
   PingServer.start();
   
   
   
   Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
 
-  yield sendPing(false, false);
-  let request = yield PingServer.promiseNextRequest();
+  await sendPing(false, false);
+  let request = await PingServer.promiseNextRequest();
 
   
   Assert.notEqual(request.queryString, "");
@@ -144,7 +143,7 @@ add_task(function* test_simplePing() {
   checkPingFormat(ping, TEST_PING_TYPE, false, false);
 });
 
-add_task(function* test_disableDataUpload() {
+add_task(async function test_disableDataUpload() {
   const isUnified = Preferences.get(PREF_UNIFIED, false);
   if (!isUnified) {
     
@@ -155,16 +154,16 @@ add_task(function* test_disableDataUpload() {
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
 
-  let ping = yield PingServer.promiseNextPing();
+  let ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
   
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetrySend.testWaitOnOutgoingPings();
 
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
 
   
-  yield PingServer.stop();
+  await PingServer.stop();
 
   
   TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
@@ -173,15 +172,15 @@ add_task(function* test_disableDataUpload() {
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
 
   
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetrySend.testWaitOnOutgoingPings();
   
   
-  yield TelemetryStorage.shutdown();
+  await TelemetryStorage.shutdown();
   
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
 
   
-  let pendingPings = yield TelemetryStorage.loadPendingPingList();
+  let pendingPings = await TelemetryStorage.loadPendingPingList();
   Assert.equal(pendingPings.length, 1,
                "All the pending pings but the deletion ping should have been deleted");
 
@@ -192,10 +191,10 @@ add_task(function* test_disableDataUpload() {
   Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
 
   
-  yield TelemetrySend.shutdown();
+  await TelemetrySend.shutdown();
   
-  yield TelemetryController.testReset();
-  ping = yield PingServer.promiseNextPing();
+  await TelemetryController.testReset();
+  ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
 
   
@@ -203,56 +202,56 @@ add_task(function* test_disableDataUpload() {
   
   
   
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetrySend.testWaitOnOutgoingPings();
   
   Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
 });
 
-add_task(function* test_pingHasClientId() {
+add_task(async function test_pingHasClientId() {
   const PREF_CACHED_CLIENTID = "toolkit.telemetry.cachedClientID";
 
   
   
   Preferences.reset(PREF_CACHED_CLIENTID);
-  yield TelemetryController.testShutdown();
-  yield ClientID._reset();
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryController.testShutdown();
+  await ClientID._reset();
+  await TelemetryStorage.testClearPendingPings();
   
   let h = Telemetry.getHistogramById("TELEMETRY_PING_SUBMISSION_WAITING_CLIENTID");
   h.clear();
 
   
   let promisePingSetup = TelemetryController.testReset();
-  yield sendPing(true, false);
+  await sendPing(true, false);
   Assert.equal(h.snapshot().sum, 1,
                "We must have a ping waiting for the clientId early during startup.");
   
   
-  yield promisePingSetup;
+  await promisePingSetup;
 
-  let ping = yield PingServer.promiseNextPing();
+  let ping = await PingServer.promiseNextPing();
   
   
   
-  gClientID = yield ClientID.getClientID();
+  gClientID = await ClientID.getClientID();
 
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
 
   
-  yield TelemetryController.testShutdown();
-  yield TelemetryStorage.testClearPendingPings();
+  await TelemetryController.testShutdown();
+  await TelemetryStorage.testClearPendingPings();
 
   
   
   h.clear();
   promisePingSetup = TelemetryController.testReset();
-  yield sendPing(true, false);
-  yield promisePingSetup;
+  await sendPing(true, false);
+  await promisePingSetup;
 
   
   Assert.equal(h.snapshot().sum, 0, "We must have used the cached clientId.");
-  ping = yield PingServer.promiseNextPing();
+  ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   Assert.equal(ping.clientId, gClientID,
                "Telemetry should report the correct cached clientId.");
@@ -260,30 +259,30 @@ add_task(function* test_pingHasClientId() {
   
   
   Preferences.reset(PREF_CACHED_CLIENTID);
-  yield TelemetryController.testShutdown();
-  yield TelemetryStorage.testClearPendingPings();
-  yield TelemetryController.testReset();
-  yield sendPing(true, false);
-  ping = yield PingServer.promiseNextPing();
+  await TelemetryController.testShutdown();
+  await TelemetryStorage.testClearPendingPings();
+  await TelemetryController.testReset();
+  await sendPing(true, false);
+  ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, false);
   Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
   Assert.equal(h.snapshot().sum, 0, "No ping should have been waiting for a clientId.");
 });
 
-add_task(function* test_pingHasEnvironment() {
+add_task(async function test_pingHasEnvironment() {
   
-  yield sendPing(false, true);
-  let ping = yield PingServer.promiseNextPing();
+  await sendPing(false, true);
+  let ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, false, true);
 
   
   Assert.equal(ping.application.buildId, ping.environment.build.buildId);
 });
 
-add_task(function* test_pingHasEnvironmentAndClientId() {
+add_task(async function test_pingHasEnvironmentAndClientId() {
   
-  yield sendPing(true, true);
-  let ping = yield PingServer.promiseNextPing();
+  await sendPing(true, true);
+  let ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, true);
 
   
@@ -292,7 +291,7 @@ add_task(function* test_pingHasEnvironmentAndClientId() {
   Assert.equal(ping.clientId, gClientID, "The correct clientId must be reported.");
 });
 
-add_task(function* test_archivePings() {
+add_task(async function test_archivePings() {
   let now = new Date(2009, 10, 18, 12, 0, 0);
   fakeNow(now);
 
@@ -306,25 +305,25 @@ add_task(function* test_archivePings() {
   
   
   if (isUnified) {
-    let ping = yield PingServer.promiseNextPing();
+    let ping = await PingServer.promiseNextPing();
     checkPingFormat(ping, DELETION_PING_TYPE, true, false);
   }
 
   
   PingServer.registerPingHandler(() => Assert.ok(false, "Telemetry must not send pings if not allowed to."));
-  let pingId = yield sendPing(true, true);
+  let pingId = await sendPing(true, true);
 
   
-  let ping = yield TelemetryArchive.promiseArchivedPingById(pingId);
+  let ping = await TelemetryArchive.promiseArchivedPingById(pingId);
   Assert.equal(ping.id, pingId, "TelemetryController should still archive pings.");
 
   
   now = new Date(2010, 10, 18, 12, 0, 0);
   fakeNow(now);
   Preferences.set(PREF_ARCHIVE_ENABLED, false);
-  pingId = yield sendPing(true, true);
+  pingId = await sendPing(true, true);
   let promise = TelemetryArchive.promiseArchivedPingById(pingId);
-  Assert.ok((yield promiseRejects(promise)),
+  Assert.ok((await promiseRejects(promise)),
     "TelemetryController should not archive pings if the archive pref is disabled.");
 
   
@@ -335,18 +334,18 @@ add_task(function* test_archivePings() {
   fakeNow(now);
   
   PingServer.resetPingHandler();
-  pingId = yield sendPing(true, true);
+  pingId = await sendPing(true, true);
 
   
-  yield PingServer.promiseNextPing();
-  ping = yield TelemetryArchive.promiseArchivedPingById(pingId);
+  await PingServer.promiseNextPing();
+  ping = await TelemetryArchive.promiseArchivedPingById(pingId);
   Assert.equal(ping.id, pingId,
     "TelemetryController should still archive pings if ping upload is enabled.");
 });
 
 
 
-add_task(function* test_midnightPingSendFuzzing() {
+add_task(async function test_midnightPingSendFuzzing() {
   const fuzzingDelay = 60 * 60 * 1000;
   fakeMidnightPingFuzzingDelay(fuzzingDelay);
   let now = new Date(2030, 5, 1, 11, 0, 0);
@@ -359,7 +358,7 @@ add_task(function* test_midnightPingSendFuzzing() {
   });
 
   PingServer.clearRequests();
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
 
   
   now = new Date(2030, 5, 2, 0, 40, 0);
@@ -368,8 +367,8 @@ add_task(function* test_midnightPingSendFuzzing() {
     Assert.ok(false, "No ping should be received yet.");
   });
   let timerPromise = waitForTimer();
-  yield sendPing(true, true);
-  let [timerCallback, timerTimeout] = yield timerPromise;
+  await sendPing(true, true);
+  let [timerCallback, timerTimeout] = await timerPromise;
   Assert.ok(!!timerCallback);
   Assert.deepEqual(futureDate(now, timerTimeout), new Date(2030, 5, 2, 1, 0, 0));
 
@@ -377,8 +376,8 @@ add_task(function* test_midnightPingSendFuzzing() {
   now = new Date(2030, 5, 2, 0, 59, 59);
   fakeNow(now);
   timerPromise = waitForTimer();
-  yield sendPing(true, true);
-  [timerCallback, timerTimeout] = yield timerPromise;
+  await sendPing(true, true);
+  [timerCallback, timerTimeout] = await timerPromise;
   Assert.deepEqual(timerTimeout, 1 * 1000);
 
   
@@ -388,33 +387,33 @@ add_task(function* test_midnightPingSendFuzzing() {
   
   now = futureDate(now, timerTimeout);
   fakeNow(now);
-  yield timerCallback();
-  const pings = yield PingServer.promiseNextPings(2);
+  await timerCallback();
+  const pings = await PingServer.promiseNextPings(2);
   for (let ping of pings) {
     checkPingFormat(ping, TEST_PING_TYPE, true, true);
   }
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetrySend.testWaitOnOutgoingPings();
 
   
   now = futureDate(now, 5 * 60 * 1000);
-  yield sendPing(true, true);
-  let ping = yield PingServer.promiseNextPing();
+  await sendPing(true, true);
+  let ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, true);
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetrySend.testWaitOnOutgoingPings();
 
   
   now = fakeNow(2030, 5, 3, 23, 59, 0);
-  yield sendPing(true, true);
-  ping = yield PingServer.promiseNextPing();
+  await sendPing(true, true);
+  ping = await PingServer.promiseNextPing();
   checkPingFormat(ping, TEST_PING_TYPE, true, true);
-  yield TelemetrySend.testWaitOnOutgoingPings();
+  await TelemetrySend.testWaitOnOutgoingPings();
 
   
   fakeMidnightPingFuzzingDelay(0);
   fakePingSendTimer(() => {}, () => {});
 });
 
-add_task(function* test_changePingAfterSubmission() {
+add_task(async function test_changePingAfterSubmission() {
   
   let payload = { canary: "test" };
   let pingPromise = TelemetryController.submitExternalPing(TEST_PING_TYPE, payload);
@@ -423,15 +422,15 @@ add_task(function* test_changePingAfterSubmission() {
   payload.canary = "changed";
 
   
-  const pingId = yield pingPromise;
+  const pingId = await pingPromise;
 
   
-  let archivedCopy = yield TelemetryArchive.promiseArchivedPingById(pingId);
+  let archivedCopy = await TelemetryArchive.promiseArchivedPingById(pingId);
   Assert.equal(archivedCopy.payload.canary, "test",
                "The payload must not be changed after being submitted.");
 });
 
-add_task(function* test_telemetryEnabledUnexpectedValue() {
+add_task(async function test_telemetryEnabledUnexpectedValue() {
   
   
   let defaultPrefBranch = Services.prefs.getDefaultBranch(null);
@@ -440,7 +439,7 @@ add_task(function* test_telemetryEnabledUnexpectedValue() {
   
   Preferences.set(PREF_ENABLED, "false");
   
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   Assert.equal(Telemetry.canRecordExtended, false,
                "Invalid values must not enable Telemetry recording.");
 
@@ -449,13 +448,13 @@ add_task(function* test_telemetryEnabledUnexpectedValue() {
 
   
   Preferences.set(PREF_ENABLED, true);
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   Assert.equal(Telemetry.canRecordExtended, true,
                "True must enable Telemetry recording.");
 
   
   Preferences.set(PREF_ENABLED, false);
-  yield TelemetryController.testReset();
+  await TelemetryController.testReset();
   Assert.equal(Telemetry.canRecordExtended, false,
                "False must disable Telemetry recording.");
 
@@ -463,7 +462,7 @@ add_task(function* test_telemetryEnabledUnexpectedValue() {
   Preferences.set(PREF_ENABLED, true);
 });
 
-add_task(function* test_telemetryCleanFHRDatabase() {
+add_task(async function test_telemetryCleanFHRDatabase() {
   const FHR_DBNAME_PREF = "datareporting.healthreport.dbName";
   const CUSTOM_DB_NAME = "unlikely.to.be.used.sqlite";
   const DEFAULT_DB_NAME = "healthreport.sqlite";
@@ -478,17 +477,17 @@ add_task(function* test_telemetryCleanFHRDatabase() {
 
   
   for (let dbFilePath of CUSTOM_DB_PATHS) {
-    yield OS.File.writeAtomic(dbFilePath, "some data");
+    await OS.File.writeAtomic(dbFilePath, "some data");
   }
 
   
-  yield TelemetryStorage.removeFHRDatabase();
+  await TelemetryStorage.removeFHRDatabase();
   for (let dbFilePath of CUSTOM_DB_PATHS) {
-    Assert.ok(!(yield OS.File.exists(dbFilePath)), "The DB must not be on the disk anymore: " + dbFilePath);
+    Assert.ok(!(await OS.File.exists(dbFilePath)), "The DB must not be on the disk anymore: " + dbFilePath);
   }
 
   
-  yield TelemetryStorage.removeFHRDatabase();
+  await TelemetryStorage.removeFHRDatabase();
 
   
   Preferences.reset(FHR_DBNAME_PREF);
@@ -501,17 +500,17 @@ add_task(function* test_telemetryCleanFHRDatabase() {
 
   
   for (let dbFilePath of DEFAULT_DB_PATHS) {
-    yield OS.File.writeAtomic(dbFilePath, "some data");
+    await OS.File.writeAtomic(dbFilePath, "some data");
   }
 
   
-  yield TelemetryStorage.removeFHRDatabase();
+  await TelemetryStorage.removeFHRDatabase();
   for (let dbFilePath of DEFAULT_DB_PATHS) {
-    Assert.ok(!(yield OS.File.exists(dbFilePath)), "The DB must not be on the disk anymore: " + dbFilePath);
+    Assert.ok(!(await OS.File.exists(dbFilePath)), "The DB must not be on the disk anymore: " + dbFilePath);
   }
 });
 
-add_task(function* test_sendNewProfile() {
+add_task(async function test_sendNewProfile() {
   if (gIsAndroid ||
       (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)) {
     
@@ -532,18 +531,18 @@ add_task(function* test_sendNewProfile() {
     await TelemetryStorage.testClearPendingPings();
     PingServer.clearRequests();
   };
-  yield resetTest();
+  await resetTest();
 
   
   const stateFilePath = OS.Path.join(DATAREPORTING_PATH, "session-state.json");
-  yield OS.File.remove(stateFilePath, { ignoreAbsent: true });
+  await OS.File.remove(stateFilePath, { ignoreAbsent: true });
   Preferences.set(PREF_NEWPROFILE_DELAY, 1);
   Preferences.set(PREF_NEWPROFILE_ENABLED, true);
 
   
   let nextReq = PingServer.promiseNextRequest();
-  yield TelemetryController.testReset();
-  let req = yield nextReq;
+  await TelemetryController.testReset();
+  let req = await nextReq;
   let ping = decodeRequestPayload(req);
   checkPingFormat(ping, NEWPROFILE_PING_TYPE, true, true);
   Assert.equal(ping.payload.reason, "startup",
@@ -554,14 +553,14 @@ add_task(function* test_sendNewProfile() {
                 "Should not have used the pingsender.");
 
   
-  yield resetTest();
-  yield OS.File.remove(stateFilePath, { ignoreAbsent: true });
+  await resetTest();
+  await OS.File.remove(stateFilePath, { ignoreAbsent: true });
   Preferences.reset(PREF_NEWPROFILE_DELAY);
 
   nextReq = PingServer.promiseNextRequest();
-  yield TelemetryController.testReset();
-  yield TelemetryController.testShutdown();
-  req = yield nextReq;
+  await TelemetryController.testReset();
+  await TelemetryController.testShutdown();
+  req = await nextReq;
   ping = decodeRequestPayload(req);
   checkPingFormat(ping, NEWPROFILE_PING_TYPE, true, true);
   Assert.equal(ping.payload.reason, "shutdown",
@@ -575,24 +574,24 @@ add_task(function* test_sendNewProfile() {
 
   
   
-  yield resetTest();
+  await resetTest();
   PingServer.registerPingHandler(
     () => Assert.ok(false, "The new-profile ping must be sent only on new profiles."));
-  yield TelemetryController.testReset();
-  yield TelemetryController.testShutdown();
+  await TelemetryController.testReset();
+  await TelemetryController.testShutdown();
 
   
   
-  yield resetTest();
-  yield OS.File.remove(stateFilePath, { ignoreAbsent: true });
+  await resetTest();
+  await OS.File.remove(stateFilePath, { ignoreAbsent: true });
   const sessionState = {
     sessionId: null,
     subsessionId: null,
     profileSubsessionCounter: 3785,
   };
-  yield CommonUtils.writeJSON(sessionState, stateFilePath);
-  yield TelemetryController.testReset();
-  yield TelemetryController.testShutdown();
+  await CommonUtils.writeJSON(sessionState, stateFilePath);
+  await TelemetryController.testReset();
+  await TelemetryController.testShutdown();
 
   
   Preferences.reset(PREF_NEWPROFILE_ENABLED);
@@ -600,14 +599,14 @@ add_task(function* test_sendNewProfile() {
 });
 
 
-add_task(function* test_pingRejection() {
-  yield TelemetryController.testReset();
-  yield TelemetryController.testShutdown();
-  yield sendPing(false, false)
+add_task(async function test_pingRejection() {
+  await TelemetryController.testReset();
+  await TelemetryController.testShutdown();
+  await sendPing(false, false)
     .then(() => Assert.ok(false, "Pings submitted after shutdown must be rejected."),
           () => Assert.ok(true, "Ping submitted after shutdown correctly rejected."));
 });
 
-add_task(function* stopServer() {
-  yield PingServer.stop();
+add_task(async function stopServer() {
+  await PingServer.stop();
 });

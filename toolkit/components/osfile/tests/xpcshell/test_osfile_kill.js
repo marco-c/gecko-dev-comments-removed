@@ -54,12 +54,12 @@ var Scheduler = AsyncFrontGlobal.Scheduler;
 
 
 
-add_task(function* test_kill_race() {
+add_task(async function test_kill_race() {
   
   
   
   
-  yield OS.File.exists('foo.foo');
+  await OS.File.exists('foo.foo');
 
   do_print('issuing first request');
   let firstRequest = OS.File.exists('foo.bar');
@@ -84,12 +84,12 @@ add_task(function* test_kill_race() {
 
   
   
-  yield killRequest;
+  await killRequest;
   
   
   
   
-  yield OS.File.exists('foo.goz');
+  await OS.File.exists('foo.goz');
 
   ok(secondResolved,
      'The second request was resolved so we avoided the bug. Victory!');

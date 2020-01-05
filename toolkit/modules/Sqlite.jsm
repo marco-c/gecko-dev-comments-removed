@@ -26,8 +26,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Log",
                                   "resource://gre/modules/Log.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyServiceGetter(this, "FinalizationWitnessService",
                                    "@mozilla.org/toolkit/finalizationwitness;1",
                                    "nsIFinalizationWitnessService");
@@ -155,8 +153,8 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
 
 
   AsyncShutdown.profileBeforeChange.addBlocker("Sqlite.jsm shutdown blocker",
-    Task.async(function* () {
-      yield Barriers.shutdown.wait();
+    async function() {
+      await Barriers.shutdown.wait();
       
       
       
@@ -165,11 +163,11 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
       isClosed = true;
 
       
-      yield Barriers.connections.wait();
+      await Barriers.connections.wait();
 
       
       Services.obs.removeObserver(finalizationObserver, "sqlite-finalization-witness");
-    }),
+    },
 
     function status() {
       if (isClosed) {
@@ -381,13 +379,13 @@ ConnectionData.prototype = Object.freeze({
       fetchState: () => status
     });
 
-    return Task.spawn(function*() {
+    return (async function() {
       try {
-        return (yield promiseResult);
+        return (await promiseResult);
       } finally {
         this._barrier.client.removeBlocker(key, promiseComplete)
       }
-    }.bind(this));
+    }.bind(this))();
   },
   close() {
     this._closeRequested = true;
@@ -560,7 +558,7 @@ ConnectionData.prototype = Object.freeze({
         throw new Error("Transaction canceled due to a closed connection.");
       }
 
-      let transactionPromise = Task.spawn(function* () {
+      let transactionPromise = (async function() {
         
         
         if (this._hasInProgressTransaction) {
@@ -570,7 +568,7 @@ ConnectionData.prototype = Object.freeze({
         try {
           
           try {
-            yield this.execute("BEGIN " + type + " TRANSACTION");
+            await this.execute("BEGIN " + type + " TRANSACTION");
           } catch (ex) {
             
             
@@ -590,7 +588,7 @@ ConnectionData.prototype = Object.freeze({
 
           let result;
           try {
-            result = yield Task.spawn(func);
+            result = await (func)();
           } catch (ex) {
             
             
@@ -601,7 +599,7 @@ ConnectionData.prototype = Object.freeze({
               
               if (this._hasInProgressTransaction) {
                 try {
-                  yield this.execute("ROLLBACK TRANSACTION");
+                  await this.execute("ROLLBACK TRANSACTION");
                 } catch (inner) {
                   this._log.warn("Could not roll back transaction", inner);
                 }
@@ -620,7 +618,7 @@ ConnectionData.prototype = Object.freeze({
           
           if (this._hasInProgressTransaction) {
             try {
-              yield this.execute("COMMIT TRANSACTION");
+              await this.execute("COMMIT TRANSACTION");
             } catch (ex) {
               this._log.warn("Error committing transaction", ex);
               throw ex;
@@ -631,7 +629,7 @@ ConnectionData.prototype = Object.freeze({
         } finally {
           this._hasInProgressTransaction = false;
         }
-      }.bind(this));
+      }.bind(this))();
 
       
       

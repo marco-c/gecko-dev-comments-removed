@@ -34,13 +34,13 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute() {
+add_task(async function test_execute() {
   
   do_check_eq(histsvc.databaseStatus, histsvc.DATABASE_STATUS_CREATE);
 
   
   var testURI = uri("http://mozilla.com");
-  yield PlacesTestUtils.addVisits(testURI);
+  await PlacesTestUtils.addVisits(testURI);
 
   
   
@@ -67,8 +67,8 @@ add_task(function* test_execute() {
 
   
   var testURI2 = uri("http://google.com/");
-  yield PlacesTestUtils.addVisits(testURI);
-  yield PlacesTestUtils.addVisits(testURI2);
+  await PlacesTestUtils.addVisits(testURI);
+  await PlacesTestUtils.addVisits(testURI2);
 
   options.maxResults = 5;
   options.resultType = options.RESULTS_AS_URI;
@@ -147,8 +147,8 @@ add_task(function* test_execute() {
   do_check_true(!histsvc.historyDisabled);
 
   
-  yield PlacesTestUtils.addVisits({ uri: uri("http://example.com"), title: "title" });
-  let placeInfo = yield PlacesUtils.promisePlaceInfo(uri("http://example.com"));
+  await PlacesTestUtils.addVisits({ uri: uri("http://example.com"), title: "title" });
+  let placeInfo = await PlacesUtils.promisePlaceInfo(uri("http://example.com"));
   do_check_eq(placeInfo.title, "title");
 
   
@@ -168,7 +168,7 @@ add_task(function* test_execute() {
   }
 
   
-  yield PlacesTestUtils.addVisits(uri("http://mozilla.com"));
+  await PlacesTestUtils.addVisits(uri("http://mozilla.com"));
   options = histsvc.getNewQueryOptions();
   
   query = histsvc.getNewQuery();

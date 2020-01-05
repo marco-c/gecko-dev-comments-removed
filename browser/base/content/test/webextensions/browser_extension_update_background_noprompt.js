@@ -9,8 +9,8 @@ function getBadgeStatus() {
 }
 
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({set: [
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],
@@ -19,12 +19,12 @@ add_task(function* setup() {
   
   
   gBrowser.selectedBrowser.loadURI("about:robots");
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-  registerCleanupFunction(function*() {
+  registerCleanupFunction(async function() {
     
     gBrowser.selectedBrowser.loadURI("about:blank");
-    yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   });
 });
 

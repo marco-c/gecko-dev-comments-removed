@@ -52,8 +52,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 
@@ -194,9 +192,9 @@ this.DownloadIntegration = {
 
 
 
-  initializePublicDownloadList: Task.async(function* (list) {
+  async initializePublicDownloadList(list) {
     try {
-      yield this.loadPublicDownloadListFromStore(list);
+      await this.loadPublicDownloadListFromStore(list);
     } catch (ex) {
       Cu.reportError(ex);
     }
@@ -205,7 +203,7 @@ this.DownloadIntegration = {
     
     
     new DownloadHistoryObserver(list);
-  }),
+  },
 
   
 
@@ -221,7 +219,7 @@ this.DownloadIntegration = {
 
 
 
-  loadPublicDownloadListFromStore: Task.async(function* (list) {
+  async loadPublicDownloadListFromStore(list) {
     if (this._store) {
       throw new Error("Initialization may be performed only once.");
     }
@@ -233,19 +231,19 @@ this.DownloadIntegration = {
 
     try {
       if (this._importedFromSqlite) {
-        yield this._store.load();
+        await this._store.load();
       } else {
         let sqliteDBpath = OS.Path.join(OS.Constants.Path.profileDir,
                                         "downloads.sqlite");
 
-        if (yield OS.File.exists(sqliteDBpath)) {
+        if (await OS.File.exists(sqliteDBpath)) {
           let sqliteImport = new DownloadImport(list, sqliteDBpath);
-          yield sqliteImport.import();
+          await sqliteImport.import();
 
-          let importCount = (yield list.getAll()).length;
+          let importCount = (await list.getAll()).length;
           if (importCount > 0) {
             try {
-              yield this._store.save();
+              await this._store.save();
             } catch (ex) { }
           }
 
@@ -270,8 +268,8 @@ this.DownloadIntegration = {
     
     
     
-    yield new DownloadAutoSaveView(list, this._store).initialize();
-  }),
+    await new DownloadAutoSaveView(list, this._store).initialize();
+  },
 
   
 
@@ -319,7 +317,7 @@ this.DownloadIntegration = {
 
 
 
-  getSystemDownloadsDirectory: Task.async(function* () {
+  async getSystemDownloadsDirectory() {
     if (this._downloadsDirectory) {
       return this._downloadsDirectory;
     }
@@ -332,7 +330,7 @@ this.DownloadIntegration = {
     
     let version = parseFloat(Services.sysinfo.getProperty("version"));
     if (version < 6) {
-      directoryPath = yield this._createDownloadsDirectory("Pers");
+      directoryPath = await this._createDownloadsDirectory("Pers");
     } else {
       directoryPath = this._getDirectory("DfltDwnld");
     }
@@ -351,16 +349,16 @@ this.DownloadIntegration = {
     try {
       directoryPath = this._getDirectory("DfltDwnld");
     } catch(e) {
-      directoryPath = yield this._createDownloadsDirectory("Home");
+      directoryPath = await this._createDownloadsDirectory("Home");
     }
 #endif
 #else
-    directoryPath = yield this._createDownloadsDirectory("Home");
+    directoryPath = await this._createDownloadsDirectory("Home");
 #endif
 
     this._downloadsDirectory = directoryPath;
     return this._downloadsDirectory;
-  }),
+  },
   _downloadsDirectory: null,
 
   
@@ -369,7 +367,7 @@ this.DownloadIntegration = {
 
 
 
-  getPreferredDownloadsDirectory: Task.async(function* () {
+  async getPreferredDownloadsDirectory() {
     let directoryPath = null;
     let prefValue = Services.prefs.getIntPref("browser.download.folderList", 1);
 
@@ -378,24 +376,24 @@ this.DownloadIntegration = {
         directoryPath = this._getDirectory("Desk");
         break;
       case 1: 
-        directoryPath = yield this.getSystemDownloadsDirectory();
+        directoryPath = await this.getSystemDownloadsDirectory();
         break;
       case 2: 
         try {
           let directory = Services.prefs.getComplexValue("browser.download.dir",
                                                          Ci.nsIFile);
           directoryPath = directory.path;
-          yield OS.File.makeDir(directoryPath, { ignoreExisting: true });
+          await OS.File.makeDir(directoryPath, { ignoreExisting: true });
         } catch(ex) {
           
-          directoryPath = yield this.getSystemDownloadsDirectory();
+          directoryPath = await this.getSystemDownloadsDirectory();
         }
         break;
       default:
-        directoryPath = yield this.getSystemDownloadsDirectory();
+        directoryPath = await this.getSystemDownloadsDirectory();
     }
     return directoryPath;
-  }),
+  },
 
   
 
@@ -403,19 +401,19 @@ this.DownloadIntegration = {
 
 
 
-  getTemporaryDownloadsDirectory: Task.async(function* () {
+  async getTemporaryDownloadsDirectory() {
     let directoryPath = null;
 #ifdef XP_MACOSX
-    directoryPath = yield this.getPreferredDownloadsDirectory();
+    directoryPath = await this.getPreferredDownloadsDirectory();
 #elifdef MOZ_WIDGET_ANDROID
-    directoryPath = yield this.getSystemDownloadsDirectory();
+    directoryPath = await this.getSystemDownloadsDirectory();
 #elifdef MOZ_WIDGET_GONK
-    directoryPath = yield this.getSystemDownloadsDirectory();
+    directoryPath = await this.getSystemDownloadsDirectory();
 #else
     directoryPath = this._getDirectory("TmpD");
 #endif
     return directoryPath;
-  }),
+  },
 
   
 
@@ -552,7 +550,7 @@ this.DownloadIntegration = {
 
 
 
-  downloadDone: Task.async(function* (aDownload) {
+  async downloadDone(aDownload) {
 #ifdef XP_WIN
     
     
@@ -576,15 +574,15 @@ this.DownloadIntegration = {
         
         if (zone >= Ci.mozIDownloadPlatform.ZONE_INTERNET) {
           let streamPath = aDownload.target.path + ":Zone.Identifier";
-          let stream = yield OS.File.open(
+          let stream = await OS.File.open(
             streamPath,
             { create: true },
             { winAllowLengthBeyondMaxPathWithCaveats: true }
           );
           try {
-            yield stream.write(new TextEncoder().encode("[ZoneTransfer]\r\nZoneId=" + zone + "\r\n"));
+            await stream.write(new TextEncoder().encode("[ZoneTransfer]\r\nZoneId=" + zone + "\r\n"));
           } finally {
-            yield stream.close();
+            await stream.close();
           }
         }
       } catch (ex) {
@@ -623,7 +621,7 @@ this.DownloadIntegration = {
         options.unixMode = 0o666;
       }
       
-      yield OS.File.setPermissions(aDownload.target.path, options);
+      await OS.File.setPermissions(aDownload.target.path, options);
     } catch (ex) {
       
       
@@ -646,7 +644,7 @@ this.DownloadIntegration = {
                                    new FileUtils.File(aDownload.target.path),
                                    aDownload.contentType,
                                    aDownload.source.isPrivate);
-  }),
+  },
 
   
 
@@ -668,7 +666,7 @@ this.DownloadIntegration = {
 
 
 
-  launchDownload: Task.async(function* (aDownload) {
+  async launchDownload(aDownload) {
     let file = new FileUtils.File(aDownload.target.path);
 
 #ifndef XP_WIN
@@ -680,7 +678,7 @@ this.DownloadIntegration = {
     
     
     if (file.isExecutable() &&
-        !(yield this.confirmLaunchExecutable(file.path))) {
+        !(await this.confirmLaunchExecutable(file.path))) {
       return;
     }
 #endif
@@ -744,19 +742,19 @@ this.DownloadIntegration = {
     
     
     gExternalProtocolService.loadUrl(NetUtil.newURI(file));
-  }),
+  },
 
   
 
 
 
-  confirmLaunchExecutable: Task.async(function* (path) {
+  async confirmLaunchExecutable(path) {
     
     
     
     
-    return yield DownloadUIHelper.getPrompter().confirmLaunchExecutable(path);
-  }),
+    return await DownloadUIHelper.getPrompter().confirmLaunchExecutable(path);
+  },
 
   
 
@@ -783,7 +781,7 @@ this.DownloadIntegration = {
 
 
 
-  showContainingDirectory: Task.async(function* (aFilePath) {
+  async showContainingDirectory(aFilePath) {
     let file = new FileUtils.File(aFilePath);
 
     try {
@@ -809,7 +807,7 @@ this.DownloadIntegration = {
     
     
     gExternalProtocolService.loadUrl(NetUtil.newURI(parent));
-  }),
+  },
 
   
 
@@ -1028,16 +1026,16 @@ this.DownloadObserver = {
                                      p.ON_LEAVE_PRIVATE_BROWSING);
         break;
       case "last-pb-context-exited":
-        let promise = Task.spawn(function*() {
-          let list = yield Downloads.getList(Downloads.PRIVATE);
-          let downloads = yield list.getAll();
+        let promise = (async function() {
+          let list = await Downloads.getList(Downloads.PRIVATE);
+          let downloads = await list.getAll();
 
           
           for (let download of downloads) {
             list.remove(download).then(null, Cu.reportError);
             download.finalize(true).then(null, Cu.reportError);
           }
-        });
+        })();
         
         if (gCombinedDownloadIntegration._testResolveClearPrivateList) {
           gCombinedDownloadIntegration._testResolveClearPrivateList(promise);

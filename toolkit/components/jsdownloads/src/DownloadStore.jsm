@@ -47,8 +47,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Downloads",
                                   "resource://gre/modules/Downloads.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm")
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
   return new TextDecoder();
@@ -99,10 +97,10 @@ this.DownloadStore.prototype = {
 
 
   load: function DS_load() {
-    return Task.spawn(function* task_DS_load() {
+    return (async function task_DS_load() {
       let bytes;
       try {
-        bytes = yield OS.File.read(this.path);
+        bytes = await OS.File.read(this.path);
       } catch (ex) {
         if (!(ex instanceof OS.File.Error) || !ex.becauseNoSuchFile) {
           throw ex;
@@ -116,7 +114,7 @@ this.DownloadStore.prototype = {
       
       for (let downloadData of storeData.list) {
         try {
-          let download = yield Downloads.createDownload(downloadData);
+          let download = await Downloads.createDownload(downloadData);
           try {
             if (!download.succeeded && !download.canceled && !download.error) {
               
@@ -126,19 +124,19 @@ this.DownloadStore.prototype = {
               
               
               
-              yield download.refresh();
+              await download.refresh();
             }
           } finally {
             
             
-            yield this.list.add(download);
+            await this.list.add(download);
           }
         } catch (ex) {
           
           Cu.reportError(ex);
         }
       }
-    }.bind(this));
+    }.bind(this))();
   },
 
   
@@ -151,8 +149,8 @@ this.DownloadStore.prototype = {
 
 
   save: function DS_save() {
-    return Task.spawn(function* task_DS_save() {
-      let downloads = yield this.list.getAll();
+    return (async function task_DS_save() {
+      let downloads = await this.list.getAll();
 
       
       let storeData = { list: [] };
@@ -180,12 +178,12 @@ this.DownloadStore.prototype = {
       if (atLeastOneDownload) {
         
         let bytes = gTextEncoder.encode(JSON.stringify(storeData));
-        yield OS.File.writeAtomic(this.path, bytes,
+        await OS.File.writeAtomic(this.path, bytes,
                                   { tmpPath: this.path + ".tmp" });
       } else {
         
         try {
-          yield OS.File.remove(this.path);
+          await OS.File.remove(this.path);
         } catch (ex) {
           if (!(ex instanceof OS.File.Error) ||
               !(ex.becauseNoSuchFile || ex.becauseAccessDenied)) {
@@ -195,6 +193,6 @@ this.DownloadStore.prototype = {
           
         }
       }
-    }.bind(this));
+    }.bind(this))();
   },
 };

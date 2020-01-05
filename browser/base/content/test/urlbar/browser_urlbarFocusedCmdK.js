@@ -1,14 +1,14 @@
 
 
 
-add_task(function*() {
+add_task(async function() {
   
   CustomizableUI.removeWidgetFromArea("search-container");
 
   
   let focusPromise = BrowserTestUtils.waitForEvent(gURLBar, "focus");
   EventUtils.synthesizeKey("k", { accelKey: true });
-  yield focusPromise;
+  await focusPromise;
   Assert.equal(document.activeElement, gURLBar.inputField, "URL Bar should be focused");
 
   

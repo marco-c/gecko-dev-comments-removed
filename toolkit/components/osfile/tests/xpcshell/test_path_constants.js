@@ -29,7 +29,7 @@ function compare_paths(ospath, key) {
 
 
 
-add_task(function* test_before_after_profile() {
+add_task(async function test_before_after_profile() {
   do_check_null(OS.Constants.Path.profileDir);
   do_check_null(OS.Constants.Path.localProfileDir);
   do_check_null(OS.Constants.Path.userApplicationDataDir);
@@ -43,21 +43,21 @@ add_task(function* test_before_after_profile() {
   
   do_check_null(OS.Constants.Path.userApplicationDataDir);
 
-  yield makeFakeAppDir();
+  await makeFakeAppDir();
   do_check_true(!!OS.Constants.Path.userApplicationDataDir);
 
   
 });
 
 
-add_task(function* test_simple_paths() {
+add_task(async function test_simple_paths() {
   do_check_true(!!OS.Constants.Path.tmpDir);
   compare_paths(OS.Constants.Path.tmpDir, "TmpD");
 
 });
 
 
-add_task(function* test_desktop_paths() {
+add_task(async function test_desktop_paths() {
   if (OS.Constants.Sys.Name == "Android" || OS.Constants.Sys.Name == "Gonk") {
     return;
   }
@@ -77,7 +77,7 @@ add_task(function* test_desktop_paths() {
 });
 
 
-add_task(function* test_libxul() {
+add_task(async function test_libxul() {
   ctypes.open(OS.Constants.Path.libxul);
   do_print("Linked to libxul");
 });

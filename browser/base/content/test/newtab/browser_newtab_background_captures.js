@@ -8,12 +8,12 @@
 
 const CAPTURE_PREF = "browser.pagethumbnails.capturing_disabled";
 
-add_task(function* () {
+add_task(async function() {
   let imports = {};
   Cu.import("resource://gre/modules/PageThumbs.jsm", imports);
 
   
-  yield pushPrefs([CAPTURE_PREF, false]);
+  await pushPrefs([CAPTURE_PREF, false]);
 
   
   let url = "http://example.com/";
@@ -25,7 +25,7 @@ add_task(function* () {
   } catch (err) {}
 
   
-  yield setLinks("-1");
+  await setLinks("-1");
 
   
   
@@ -33,7 +33,7 @@ add_task(function* () {
 
   
   if (gBrowser._preloadedBrowser.contentDocument.readyState != "complete") {
-    yield BrowserTestUtils.waitForEvent(gBrowser._preloadedBrowser, "load", true);
+    await BrowserTestUtils.waitForEvent(gBrowser._preloadedBrowser, "load", true);
   }
 
   
@@ -53,9 +53,9 @@ add_task(function* () {
   });
 
   
-  yield pushPrefs([CAPTURE_PREF, false]);
+  await pushPrefs([CAPTURE_PREF, false]);
 
-  yield thumbnailCreatedPromise;
+  await thumbnailCreatedPromise;
 
   
   gBrowser.removeTab(tab);

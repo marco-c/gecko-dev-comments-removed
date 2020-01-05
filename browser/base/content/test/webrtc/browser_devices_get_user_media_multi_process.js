@@ -6,7 +6,7 @@ var gTests = [
 
 {
   desc: "getUserMedia audio in a first process + video in a second process",
-  run: function* checkMultiProcess() {
+  run: async function checkMultiProcess() {
     
     
     
@@ -14,23 +14,23 @@ var gTests = [
 
     
     let promise = promisePopupNotificationShown("webRTC-shareDevices");
-    yield promiseRequestDevice(true);
-    yield promise;
-    yield expectObserverCalled("getUserMedia:request");
+    await promiseRequestDevice(true);
+    await promise;
+    await expectObserverCalled("getUserMedia:request");
 
     checkDeviceSelectors(true);
 
     let indicator = promiseIndicatorWindow();
-    yield promiseMessage("ok", () => {
+    await promiseMessage("ok", () => {
       PopupNotifications.panel.firstChild.button.click();
     });
-    yield expectObserverCalled("getUserMedia:response:allow");
-    yield expectObserverCalled("recording-device-events");
-    Assert.deepEqual((yield getMediaCaptureState()), {audio: true},
+    await expectObserverCalled("getUserMedia:response:allow");
+    await expectObserverCalled("recording-device-events");
+    Assert.deepEqual((await getMediaCaptureState()), {audio: true},
                      "expected microphone to be shared");
 
-    yield indicator;
-    yield checkSharingUI({audio: true});
+    await indicator;
+    await checkSharingUI({audio: true});
 
     ok(webrtcUI.showGlobalIndicator, "webrtcUI wants the global indicator shown");
     ok(!webrtcUI.showCameraIndicator, "webrtcUI wants the camera indicator hidden");
@@ -38,7 +38,7 @@ var gTests = [
     is(webrtcUI.getActiveStreams(false, true).length, 1, "1 active audio stream");
     is(webrtcUI.getActiveStreams(true, true, true).length, 1, "1 active stream");
 
-    yield expectNoObserverCalled();
+    await expectNoObserverCalled();
 
     
     
@@ -52,31 +52,31 @@ var gTests = [
     
     
     if (maxContentProcess > 1 && childCount == maxContentProcess + 1) {
-      yield SpecialPowers.pushPrefEnv({"set": [["dom.ipc.processCount",
+      await SpecialPowers.pushPrefEnv({"set": [["dom.ipc.processCount",
                                                 childCount]]});
     }
 
     
     let url = gBrowser.currentURI.spec.replace("https://example.com/",
                                                "http://127.0.0.1:8888/");
-    let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
     tab.linkedBrowser.messageManager.loadFrameScript(CONTENT_SCRIPT_HELPER, true);
 
     
     promise = promisePopupNotificationShown("webRTC-shareDevices");
-    yield promiseRequestDevice(false, true);
-    yield promise;
-    yield expectObserverCalled("getUserMedia:request");
+    await promiseRequestDevice(false, true);
+    await promise;
+    await expectObserverCalled("getUserMedia:request");
 
     checkDeviceSelectors(false, true);
 
-    yield promiseMessage("ok", () => {
+    await promiseMessage("ok", () => {
       PopupNotifications.panel.firstChild.button.click();
     });
-    yield expectObserverCalled("getUserMedia:response:allow");
-    yield expectObserverCalled("recording-device-events");
+    await expectObserverCalled("getUserMedia:response:allow");
+    await expectObserverCalled("recording-device-events");
 
-    yield checkSharingUI({video: true}, window, {audio: true, video: true});
+    await checkSharingUI({video: true}, window, {audio: true, video: true});
 
     ok(webrtcUI.showGlobalIndicator, "webrtcUI wants the global indicator shown");
     ok(webrtcUI.showCameraIndicator, "webrtcUI wants the camera indicator shown");
@@ -86,26 +86,26 @@ var gTests = [
     is(webrtcUI.getActiveStreams(true, true, true).length, 2, "2 active streams");
 
     info("removing the second tab");
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.removeTab(tab);
 
     
-    yield promiseWaitForCondition(() => !webrtcUI.showCameraIndicator);
+    await promiseWaitForCondition(() => !webrtcUI.showCameraIndicator);
     ok(webrtcUI.showGlobalIndicator, "webrtcUI wants the global indicator shown");
     ok(!webrtcUI.showCameraIndicator, "webrtcUI wants the camera indicator hidden");
     ok(webrtcUI.showMicrophoneIndicator, "webrtcUI wants the mic indicator shown");
     is(webrtcUI.getActiveStreams(false, true).length, 1, "1 active audio stream");
     is(webrtcUI.getActiveStreams(true, true, true).length, 1, "1 active stream");
 
-    yield checkSharingUI({audio: true});
+    await checkSharingUI({audio: true});
 
     
     
     
     
-    yield ignoreObserversCalled();
+    await ignoreObserversCalled();
 
     
-    yield closeStream();
+    await closeStream();
 
     ok(!webrtcUI.showGlobalIndicator, "webrtcUI wants the global indicator hidden");
     is(webrtcUI.getActiveStreams(true, true, true).length, 0, "0 active streams");

@@ -7,7 +7,7 @@
 Cu.import("resource:///modules/SitePermissions.jsm", this);
 
 
-add_task(function* testTemporaryPermissionTabURLs() {
+add_task(async function testTemporaryPermissionTabURLs() {
 
   
   SpecialPowers.pushPrefEnv({set: [
@@ -23,7 +23,7 @@ add_task(function* testTemporaryPermissionTabURLs() {
 
   let id = "microphone";
 
-  yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {
+  await BrowserTestUtils.withNewTab("about:blank", function*(browser) {
     for (let uri of same) {
         let loaded = BrowserTestUtils.browserLoaded(browser, false, uri.spec);
         browser.loadURI(uri.spec);

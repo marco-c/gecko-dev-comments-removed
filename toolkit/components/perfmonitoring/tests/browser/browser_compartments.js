@@ -133,13 +133,13 @@ function monotinicity_tester(source, testName) {
     }
   };
   let iteration = 0;
-  let frameCheck = Task.async(function*() {
+  let frameCheck = async function() {
     if (isShuttingDown) {
       window.clearInterval(interval);
       return;
     }
     let name = `${testName}: ${iteration++}`;
-    let result = yield source();
+    let result = await source();
     if (!result) {
       
       
@@ -191,18 +191,18 @@ function monotinicity_tester(source, testName) {
       sanityCheck(previous.componentsMap.get(key), item);
       previous.componentsMap.set(key, item);
     }
-  });
+  };
   let interval = window.setInterval(frameCheck, 300);
   registerCleanupFunction(() => {
     window.clearInterval(interval);
   });
 }
 
-add_task(function* test() {
+add_task(async function test() {
   let monitor = PerformanceStats.getMonitor(["jank", "cpow", "ticks"]);
 
   info("Extracting initial state");
-  let stats0 = yield monitor.promiseSnapshot();
+  let stats0 = await monitor.promiseSnapshot();
   Assert.notEqual(stats0.componentsData.length, 0, "There is more than one component");
   Assert.ok(!stats0.componentsData.find(stat => stat.name.indexOf(URL) != -1),
     "The url doesn't appear yet");
@@ -211,7 +211,7 @@ add_task(function* test() {
   let browser = newTab.linkedBrowser;
   
   info("Setting up monitoring in the tab");
-  yield ContentTask.spawn(newTab.linkedBrowser, null, frameScript);
+  await ContentTask.spawn(newTab.linkedBrowser, null, frameScript);
 
   info("Opening URL");
   newTab.linkedBrowser.loadURI(URL);
@@ -228,19 +228,19 @@ add_task(function* test() {
 
 
   while (true) {
-    yield new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     
     
     
     info("Setting titles");
-    yield promiseContentResponse(browser, "compartments-test:setTitles", {
+    await promiseContentResponse(browser, "compartments-test:setTitles", {
       parent: PARENT_TITLE,
       frames: FRAME_TITLE
     });
     info("Titles set");
 
-    let {snapshot: stats} = (yield promiseContentResponse(browser, "compartments-test:getStatistics", null));
+    let {snapshot: stats} = (await promiseContentResponse(browser, "compartments-test:getStatistics", null));
 
     
     let titles = [];

@@ -44,41 +44,41 @@ function expectCommandUpdate(count, testWindow = window) {
   });
 }
 
-add_task(function* test_init() {
+add_task(async function test_init() {
   
   let clipboardHelper = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper);
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     SimpleTest.waitForClipboard("Sample", function() { clipboardHelper.copyString("Sample"); }, resolve);
   });
 
   
-  yield PanelUI.show();
+  await PanelUI.show();
   let hiddenPromise = promisePanelHidden(window);
   PanelUI.hide();
-  yield hiddenPromise;
+  await hiddenPromise;
 });
 
 
 
-add_task(function* test_panelui_opened() {
+add_task(async function test_panelui_opened() {
   gURLBar.focus();
   gURLBar.value = "test";
 
-  yield PanelUI.show();
+  await PanelUI.show();
 
   checkState(false, "Update when edit-controls is on panel and visible");
 
   let overridePromise = expectCommandUpdate(1);
   gURLBar.select();
-  yield overridePromise;
+  await overridePromise;
 
   checkState(true, "Update when edit-controls is on panel and selection changed");
 
   overridePromise = expectCommandUpdate(0);
   let hiddenPromise = promisePanelHidden(window);
   PanelUI.hide();
-  yield hiddenPromise;
-  yield overridePromise;
+  await hiddenPromise;
+  await overridePromise;
 
   
   checkState(true, "Update when edit-controls is on panel and hidden");
@@ -87,16 +87,16 @@ add_task(function* test_panelui_opened() {
   
   overridePromise = expectCommandUpdate(isMac ? 1 : 0);
   gURLBar.select();
-  yield overridePromise;
+  await overridePromise;
   checkState(true, "Update when edit-controls is on panel, hidden and selection changed");
 });
 
 
-add_task(function* test_panelui_customize_to_toolbar() {
-  yield startCustomizing();
+add_task(async function test_panelui_customize_to_toolbar() {
+  await startCustomizing();
   let navbar = document.getElementById("nav-bar").customizationTarget;
   simulateItemDrag(document.getElementById("edit-controls"), navbar);
-  yield endCustomizing();
+  await endCustomizing();
 
   
   updateEditUIVisibility();
@@ -105,21 +105,21 @@ add_task(function* test_panelui_customize_to_toolbar() {
   gURLBar.select();
   gURLBar.focus();
   gURLBar.value = "other";
-  yield overridePromise;
+  await overridePromise;
   checkState(false, "Update when edit-controls on toolbar and focused");
 
   overridePromise = expectCommandUpdate(1);
   gURLBar.select();
-  yield overridePromise;
+  await overridePromise;
   checkState(true, "Update when edit-controls on toolbar and selection changed");
 });
 
 
-add_task(function* test_panelui_customize_to_palette() {
-  yield startCustomizing();
+add_task(async function test_panelui_customize_to_palette() {
+  await startCustomizing();
   let palette = document.getElementById("customization-palette");
   simulateItemDrag(document.getElementById("edit-controls"), palette);
-  yield endCustomizing();
+  await endCustomizing();
 
   
   updateEditUIVisibility();
@@ -128,35 +128,35 @@ add_task(function* test_panelui_customize_to_palette() {
   gURLBar.focus();
   gURLBar.value = "other";
   gURLBar.select();
-  yield overridePromise;
+  await overridePromise;
 
   
   checkState(true, "Update when edit-controls is on palette, hidden and selection changed");
 });
 
-add_task(function* finish() {
-  yield resetCustomization();
+add_task(async function finish() {
+  await resetCustomization();
 });
 
 
 
 
-add_task(function* test_initial_state() {
-  let testWindow = yield BrowserTestUtils.openNewBrowserWindow();
-  yield SimpleTest.promiseFocus(testWindow);
+add_task(async function test_initial_state() {
+  let testWindow = await BrowserTestUtils.openNewBrowserWindow();
+  await SimpleTest.promiseFocus(testWindow);
 
   let overridePromise = expectCommandUpdate(isMac, testWindow);
 
   testWindow.gURLBar.focus();
   testWindow.gURLBar.value = "test";
 
-  yield overridePromise;
+  await overridePromise;
 
   
   
   
   checkState(!isMac, "No update when edit-controls is on panel and not visible", testWindow);
 
-  yield BrowserTestUtils.closeWindow(testWindow);
-  yield SimpleTest.promiseFocus(window);
+  await BrowserTestUtils.closeWindow(testWindow);
+  await SimpleTest.promiseFocus(window);
 });

@@ -345,7 +345,7 @@ tests.push({
 tests.push({
   _sortingMode: Ci.nsINavHistoryQueryOptions.SORT_BY_VISITCOUNT_ASCENDING,
 
-  *setup() {
+  async setup() {
     do_print("Sorting test 5: SORT BY VISITCOUNT");
 
     var timeInMicroseconds = Date.now() * 1000;
@@ -402,9 +402,9 @@ tests.push({
     ];
 
     
-    yield task_populateDB(this._unsortedData);
+    await task_populateDB(this._unsortedData);
     
-    yield PlacesTestUtils.addVisits([
+    await PlacesTestUtils.addVisits([
       { uri: uri("http://example.com/a"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
       { uri: uri("http://example.com/b1"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
       { uri: uri("http://example.com/b1"), transition: TRANSITION_TYPED, visitDate: timeInMicroseconds },
@@ -1249,15 +1249,15 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_sorting() {
+add_task(async function test_sorting() {
   for (let test of tests) {
-    yield test.setup();
-    yield PlacesTestUtils.promiseAsyncUpdates();
+    await test.setup();
+    await PlacesTestUtils.promiseAsyncUpdates();
     test.check();
     
     test.check_reverse();
     
-    yield PlacesUtils.bookmarks.eraseEverything();
-    yield PlacesTestUtils.clearHistory();
+    await PlacesUtils.bookmarks.eraseEverything();
+    await PlacesTestUtils.clearHistory();
   }
 });

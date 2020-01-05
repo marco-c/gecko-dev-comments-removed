@@ -9,7 +9,6 @@ this.EXPORTED_SYMBOLS = ["WindowSize"];
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://testing-common/BrowserTestUtils.jsm");
 
@@ -21,41 +20,41 @@ this.WindowSize = {
 
   configurations: {
     maximized: {
-      applyConfig: Task.async(function*() {
+      async applyConfig() {
         let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-        yield toggleFullScreen(browserWindow, false);
+        await toggleFullScreen(browserWindow, false);
 
         
         
-        yield new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
           setTimeout(function waitToLeaveFS() {
             browserWindow.maximize();
             resolve();
           }, 5000);
         });
-      }),
+      },
     },
 
     normal: {
-      applyConfig: Task.async(function*() {
+      async applyConfig() {
         let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-        yield toggleFullScreen(browserWindow, false);
+        await toggleFullScreen(browserWindow, false);
         browserWindow.restore();
-        yield new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
           setTimeout(resolve, 5000);
         });
-      }),
+      },
     },
 
     fullScreen: {
-      applyConfig: Task.async(function*() {
+      async applyConfig() {
         let browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
-        yield toggleFullScreen(browserWindow, true);
+        await toggleFullScreen(browserWindow, true);
         
-        yield new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
           setTimeout(resolve, 5000);
         });
-      }),
+      },
     },
   },
 };

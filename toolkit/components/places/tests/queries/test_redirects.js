@@ -184,8 +184,8 @@ function run_test() {
 
 
 
-add_task(function* test_add_visits_to_database() {
-  yield PlacesUtils.bookmarks.eraseEverything();
+add_task(async function test_add_visits_to_database() {
+  await PlacesUtils.bookmarks.eraseEverything();
 
   
   let timeInMicroseconds = Date.now() * 1000;
@@ -280,12 +280,12 @@ add_task(function* test_add_visits_to_database() {
     isInQuery: false });
 
   
-  yield task_populateDB(visits);
+  await task_populateDB(visits);
 });
 
-add_task(function* test_redirects() {
+add_task(async function test_redirects() {
   
-  yield PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesTestUtils.promiseAsyncUpdates();
 
   
   
@@ -300,7 +300,7 @@ add_task(function* test_redirects() {
   cartProd([includeHidden_options, maxResults_options, sorting_options],
            check_results_callback);
 
-  yield PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.bookmarks.eraseEverything();
 
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
 });

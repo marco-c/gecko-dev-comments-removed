@@ -53,14 +53,14 @@ function promiseStartDownload(aSourceUrl) {
 
 
 function promiseStartDownload_tryToKeepPartialData() {
-  return Task.spawn(function* () {
+  return (async function() {
     mustInterruptResponses();
 
     
     let download;
     if (!gUseLegacySaver) {
       let targetFilePath = getTempFile(TEST_TARGET_FILE_NAME).path;
-      download = yield Downloads.createDownload({
+      download = await Downloads.createDownload({
         source: httpUrl("interruptible_resumable.txt"),
         target: { path: targetFilePath,
                   partFilePath: targetFilePath + ".part" },
@@ -70,14 +70,14 @@ function promiseStartDownload_tryToKeepPartialData() {
     } else {
       
       
-      download = yield promiseStartExternalHelperAppServiceDownload();
+      download = await promiseStartExternalHelperAppServiceDownload();
     }
 
-    yield promiseDownloadMidway(download);
-    yield promisePartFileReady(download);
+    await promiseDownloadMidway(download);
+    await promisePartFileReady(download);
 
     return download;
-  });
+  })();
 }
 
 
@@ -90,15 +90,15 @@ function promiseStartDownload_tryToKeepPartialData() {
 
 
 function promisePartFileReady(aDownload) {
-  return Task.spawn(function* () {
+  return (async function() {
     
     
     
     
     try {
       do {
-        yield promiseTimeout(50);
-      } while (!(yield OS.File.exists(aDownload.target.partFilePath)));
+        await promiseTimeout(50);
+      } while (!(await OS.File.exists(aDownload.target.partFilePath)));
     } catch (ex) {
       if (!(ex instanceof OS.File.Error)) {
         throw ex;
@@ -107,9 +107,9 @@ function promisePartFileReady(aDownload) {
       
       do_print("Expected exception while checking existence: " + ex.toString());
       
-      yield promiseTimeout(100);
+      await promiseTimeout(100);
     }
-  });
+  })();
 }
 
 
@@ -125,12 +125,12 @@ function promisePartFileReady(aDownload) {
 
 
 
-var promiseVerifyTarget = Task.async(function* (downloadTarget,
+var promiseVerifyTarget = async function(downloadTarget,
                                                 expectedContents) {
-  yield promiseVerifyContents(downloadTarget.path, expectedContents);
+  await promiseVerifyContents(downloadTarget.path, expectedContents);
   do_check_true(downloadTarget.exists);
   do_check_eq(downloadTarget.size, expectedContents.length);
-});
+};
 
 
 
@@ -178,14 +178,14 @@ function waitForDirectoryShown() {
 
 
 
-add_task(function* test_basic() {
+add_task(async function test_basic() {
   let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
 
   let download;
   if (!gUseLegacySaver) {
     
     
-    download = yield Downloads.createDownload({
+    download = await Downloads.createDownload({
       source: { url: httpUrl("source.txt") },
       target: { path: targetFile.path },
       saver: { type: "copy" },
@@ -194,23 +194,23 @@ add_task(function* test_basic() {
     do_check_eq(download.source.url, httpUrl("source.txt"));
     do_check_eq(download.target.path, targetFile.path);
 
-    yield download.start();
+    await download.start();
   } else {
     
     
-    download = yield promiseStartLegacyDownload(null,
+    download = await promiseStartLegacyDownload(null,
                                                 { targetFile });
 
     do_check_eq(download.source.url, httpUrl("source.txt"));
     do_check_eq(download.target.path, targetFile.path);
 
-    yield promiseDownloadStopped(download);
+    await promiseDownloadStopped(download);
   }
 
   
   do_check_true(download.source.referrer === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 });
 
 
@@ -218,14 +218,14 @@ add_task(function* test_basic() {
 
 
 
-add_task(function* test_basic_tryToKeepPartialData() {
-  let download = yield promiseStartDownload_tryToKeepPartialData();
+add_task(async function test_basic_tryToKeepPartialData() {
+  let download = await promiseStartDownload_tryToKeepPartialData();
   continueResponses();
-  yield promiseDownloadStopped(download);
+  await promiseDownloadStopped(download);
 
   
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  do_check_false(await OS.File.exists(download.target.partFilePath));
   do_check_eq(32, download.saver.getSha256Hash().length);
 });
 
@@ -233,12 +233,12 @@ add_task(function* test_basic_tryToKeepPartialData() {
 
 
 
-add_task(function* test_channelIsForDownload_classFlags() {
+add_task(async function test_channelIsForDownload_classFlags() {
   let downloadChannel = null;
 
   
   if (!gUseLegacySaver) {
-    let download = yield Downloads.createDownload({
+    let download = await Downloads.createDownload({
       source: {
         url: httpUrl("interruptible_resumable.txt"),
         async adjustChannel(channel) {
@@ -247,15 +247,15 @@ add_task(function* test_channelIsForDownload_classFlags() {
       },
       target: getTempFile(TEST_TARGET_FILE_NAME).path,
     });
-    yield download.start();
+    await download.start();
   } else {
     
     
     mustInterruptResponses();
-    let download = yield promiseStartExternalHelperAppServiceDownload();
+    let download = await promiseStartExternalHelperAppServiceDownload();
     downloadChannel = download.saver.request;
     continueResponses();
-    yield promiseDownloadStopped(download);
+    await promiseDownloadStopped(download);
   }
 
   do_check_true(downloadChannel.QueryInterface(Ci.nsIHttpChannelInternal)
@@ -269,7 +269,7 @@ add_task(function* test_channelIsForDownload_classFlags() {
 
 
 
-add_task(function* test_unix_permissions() {
+add_task(async function test_unix_permissions() {
   
   if (Services.appinfo.OS != "Darwin" && Services.appinfo.OS != "Linux" &&
       Services.appinfo.OS != "WINNT") {
@@ -290,24 +290,24 @@ add_task(function* test_unix_permissions() {
 
         let download;
         if (!gUseLegacySaver) {
-          download = yield Downloads.createDownload({
+          download = await Downloads.createDownload({
             source: { url: httpUrl("source.txt"), isPrivate },
             target: getTempFile(TEST_TARGET_FILE_NAME).path,
             launchWhenSucceeded,
             launcherPath,
           });
-          yield download.start();
+          await download.start();
         } else {
-          download = yield promiseStartLegacyDownload(httpUrl("source.txt"), {
+          download = await promiseStartLegacyDownload(httpUrl("source.txt"), {
             isPrivate,
             launchWhenSucceeded,
             launcherPath: launchWhenSucceeded && launcherPath,
           });
-          yield promiseDownloadStopped(download);
+          await promiseDownloadStopped(download);
         }
 
         let isTemporary = launchWhenSucceeded && (autoDelete || isPrivate);
-        let stat = yield OS.File.stat(download.target.path);
+        let stat = await OS.File.stat(download.target.path);
         if (Services.appinfo.OS == "WINNT") {
           
           
@@ -331,7 +331,7 @@ add_task(function* test_unix_permissions() {
 
 
 
-add_task(function* test_referrer() {
+add_task(async function test_referrer() {
   let sourcePath = "/test_referrer.txt";
   let sourceUrl = httpUrl("test_referrer.txt");
   let targetPath = getTempFile(TEST_TARGET_FILE_NAME).path;
@@ -347,29 +347,29 @@ add_task(function* test_referrer() {
     do_check_true(aRequest.hasHeader("Referer"));
     do_check_eq(aRequest.getHeader("Referer"), TEST_REFERRER_URL);
   });
-  let download = yield Downloads.createDownload({
+  let download = await Downloads.createDownload({
     source: { url: sourceUrl, referrer: TEST_REFERRER_URL },
     target: targetPath,
   });
   do_check_eq(download.source.referrer, TEST_REFERRER_URL);
-  yield download.start();
+  await download.start();
 
-  download = yield Downloads.createDownload({
+  download = await Downloads.createDownload({
     source: { url: sourceUrl, referrer: TEST_REFERRER_URL,
               isPrivate: true },
     target: targetPath,
   });
   do_check_eq(download.source.referrer, TEST_REFERRER_URL);
-  yield download.start();
+  await download.start();
 
   
   sourceUrl = "data:text/html,<html><body></body></html>";
-  download = yield Downloads.createDownload({
+  download = await Downloads.createDownload({
     source: { url: sourceUrl, referrer: TEST_REFERRER_URL },
     target: targetPath,
   });
   do_check_eq(download.source.referrer, TEST_REFERRER_URL);
-  yield download.start();
+  await download.start();
 
   cleanup();
 });
@@ -377,7 +377,7 @@ add_task(function* test_referrer() {
 
 
 
-add_task(function* test_adjustChannel() {
+add_task(async function test_adjustChannel() {
   const sourcePath = "/test_post.txt";
   const sourceUrl = httpUrl("test_post.txt");
   const targetPath = getTempFile(TEST_TARGET_FILE_NAME).path;
@@ -414,13 +414,13 @@ add_task(function* test_adjustChannel() {
     return Promise.resolve();
   }
 
-  const download = yield Downloads.createDownload({
+  const download = await Downloads.createDownload({
     source: { url: sourceUrl, adjustChannel },
     target: targetPath,
   });
   do_check_eq(download.source.adjustChannel, adjustChannel);
   do_check_eq(download.toSerializable(), null);
-  yield download.start();
+  await download.start();
 
   cleanup();
 });
@@ -428,12 +428,12 @@ add_task(function* test_adjustChannel() {
 
 
 
-add_task(function* test_initial_final_state() {
+add_task(async function test_initial_final_state() {
   let download;
   if (!gUseLegacySaver) {
     
     
-    download = yield promiseNewDownload();
+    download = await promiseNewDownload();
 
     do_check_true(download.stopped);
     do_check_false(download.succeeded);
@@ -444,12 +444,12 @@ add_task(function* test_initial_final_state() {
     do_check_false(download.target.exists);
     do_check_eq(download.target.size, 0);
 
-    yield download.start();
+    await download.start();
   } else {
     
     
-    download = yield promiseStartLegacyDownload();
-    yield promiseDownloadStopped(download);
+    download = await promiseStartLegacyDownload();
+    await promiseDownloadStopped(download);
   }
 
   do_check_true(download.stopped);
@@ -465,10 +465,10 @@ add_task(function* test_initial_final_state() {
 
 
 
-add_task(function* test_final_state_notified() {
+add_task(async function test_final_state_notified() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
   let onchangeNotified = false;
   let lastNotifiedStopped;
@@ -482,7 +482,7 @@ add_task(function* test_final_state_notified() {
   
   let promiseAttempt = download.start();
   continueResponses();
-  yield promiseAttempt;
+  await promiseAttempt;
 
   
   do_check_true(onchangeNotified);
@@ -493,12 +493,12 @@ add_task(function* test_final_state_notified() {
 
 
 
-add_task(function* test_intermediate_progress() {
+add_task(async function test_intermediate_progress() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
-  yield promiseDownloadMidway(download);
+  await promiseDownloadMidway(download);
 
   do_check_true(download.hasProgress);
   do_check_eq(download.currentBytes, TEST_DATA_SHORT.length);
@@ -510,20 +510,20 @@ add_task(function* test_intermediate_progress() {
 
   
   continueResponses();
-  yield promiseDownloadStopped(download);
+  await promiseDownloadStopped(download);
 
   do_check_true(download.stopped);
   do_check_eq(download.progress, 100);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_empty_progress() {
-  let download = yield promiseStartDownload(httpUrl("empty.txt"));
-  yield promiseDownloadStopped(download);
+add_task(async function test_empty_progress() {
+  let download = await promiseStartDownload(httpUrl("empty.txt"));
+  await promiseDownloadStopped(download);
 
   do_check_true(download.stopped);
   do_check_true(download.hasProgress);
@@ -534,7 +534,7 @@ add_task(function* test_empty_progress() {
   
   do_check_eq(download.contentType, "text/plain");
 
-  do_check_eq((yield OS.File.stat(download.target.path)).size, 0);
+  do_check_eq((await OS.File.stat(download.target.path)).size, 0);
   do_check_true(download.target.exists);
   do_check_eq(download.target.size, 0);
 });
@@ -543,12 +543,12 @@ add_task(function* test_empty_progress() {
 
 
 
-add_task(function* test_empty_progress_tryToKeepPartialData() {
+add_task(async function test_empty_progress_tryToKeepPartialData() {
   
   let download;
   if (!gUseLegacySaver) {
     let targetFilePath = getTempFile(TEST_TARGET_FILE_NAME).path;
-    download = yield Downloads.createDownload({
+    download = await Downloads.createDownload({
       source: httpUrl("empty.txt"),
       target: { path: targetFilePath,
                 partFilePath: targetFilePath + ".part" },
@@ -558,24 +558,24 @@ add_task(function* test_empty_progress_tryToKeepPartialData() {
   } else {
     
     
-    download = yield promiseStartExternalHelperAppServiceDownload(
+    download = await promiseStartExternalHelperAppServiceDownload(
                                                          httpUrl("empty.txt"));
   }
-  yield promiseDownloadStopped(download);
+  await promiseDownloadStopped(download);
 
   
-  do_check_eq((yield OS.File.stat(download.target.path)).size, 0);
+  do_check_eq((await OS.File.stat(download.target.path)).size, 0);
   do_check_true(download.target.exists);
   do_check_eq(download.target.size, 0);
 
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
   do_check_eq(32, download.saver.getSha256Hash().length);
 });
 
 
 
 
-add_task(function* test_empty_noprogress() {
+add_task(async function test_empty_noprogress() {
   let sourcePath = "/test_empty_noprogress.txt";
   let sourceUrl = httpUrl("test_empty_noprogress.txt");
   let deferRequestReceived = Promise.defer();
@@ -599,7 +599,7 @@ add_task(function* test_empty_noprogress() {
     
     
     
-    download = yield promiseNewDownload(sourceUrl);
+    download = await promiseNewDownload(sourceUrl);
 
     download.onchange = function() {
       if (!download.stopped) {
@@ -614,14 +614,14 @@ add_task(function* test_empty_noprogress() {
     
     
     
-    download = yield promiseStartLegacyDownload(sourceUrl);
+    download = await promiseStartLegacyDownload(sourceUrl);
   }
 
   
   
   
-  yield deferRequestReceived.promise;
-  yield promiseExecuteSoon();
+  await deferRequestReceived.promise;
+  await promiseExecuteSoon();
 
   
   do_check_false(download.stopped);
@@ -631,7 +631,7 @@ add_task(function* test_empty_noprogress() {
 
   
   continueResponses();
-  yield promiseDownloadStopped(download);
+  await promiseDownloadStopped(download);
 
   
   do_check_eq(download.contentType, "text/plain");
@@ -645,24 +645,24 @@ add_task(function* test_empty_noprogress() {
   do_check_true(download.target.exists);
   do_check_eq(download.target.size, 0);
 
-  do_check_eq((yield OS.File.stat(download.target.path)).size, 0);
+  do_check_eq((await OS.File.stat(download.target.path)).size, 0);
 });
 
 
 
 
-add_task(function* test_start_twice() {
+add_task(async function test_start_twice() {
   mustInterruptResponses();
 
   let download;
   if (!gUseLegacySaver) {
     
     
-    download = yield promiseNewDownload(httpUrl("interruptible.txt"));
+    download = await promiseNewDownload(httpUrl("interruptible.txt"));
   } else {
     
     
-    download = yield promiseStartLegacyDownload(httpUrl("interruptible.txt"));
+    download = await promiseStartLegacyDownload(httpUrl("interruptible.txt"));
   }
 
   
@@ -673,21 +673,21 @@ add_task(function* test_start_twice() {
   continueResponses();
 
   
-  yield promiseAttempt1;
-  yield promiseAttempt2;
+  await promiseAttempt1;
+  await promiseAttempt2;
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.canceled);
   do_check_true(download.error === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_cancel_midway() {
+add_task(async function test_cancel_midway() {
   mustInterruptResponses();
 
   
@@ -695,9 +695,9 @@ add_task(function* test_cancel_midway() {
   let download;
   let options = {};
   if (!gUseLegacySaver) {
-    download = yield promiseNewDownload(httpUrl("interruptible.txt"));
+    download = await promiseNewDownload(httpUrl("interruptible.txt"));
   } else {
-    download = yield promiseStartLegacyDownload(httpUrl("interruptible.txt"),
+    download = await promiseStartLegacyDownload(httpUrl("interruptible.txt"),
                                                 options);
   }
 
@@ -727,7 +727,7 @@ add_task(function* test_cancel_midway() {
 
   
   
-  yield deferCancel.promise;
+  await deferCancel.promise;
 
   if (gUseLegacySaver) {
     
@@ -740,7 +740,7 @@ add_task(function* test_cancel_midway() {
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 
   
   do_check_eq(download.progress, 50);
@@ -750,7 +750,7 @@ add_task(function* test_cancel_midway() {
   if (!gUseLegacySaver) {
     
     try {
-      yield promiseAttempt;
+      await promiseAttempt;
       do_throw("The download should have been canceled.");
     } catch (ex) {
       if (!(ex instanceof Downloads.Error)) {
@@ -766,30 +766,30 @@ add_task(function* test_cancel_midway() {
 
 
 
-add_task(function* test_cancel_midway_tryToKeepPartialData() {
-  let download = yield promiseStartDownload_tryToKeepPartialData();
+add_task(async function test_cancel_midway_tryToKeepPartialData() {
+  let download = await promiseStartDownload_tryToKeepPartialData();
 
-  do_check_true(yield OS.File.exists(download.target.path));
-  do_check_true(yield OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.path));
+  do_check_true(await OS.File.exists(download.target.partFilePath));
 
-  yield download.cancel();
-  yield download.removePartialData();
+  await download.cancel();
+  await download.removePartialData();
 
   do_check_true(download.stopped);
   do_check_true(download.canceled);
   do_check_true(download.error === null);
 
-  do_check_false(yield OS.File.exists(download.target.path));
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 });
 
 
 
 
-add_task(function* test_cancel_immediately() {
+add_task(async function test_cancel_immediately() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
   let promiseAttempt = download.start();
   do_check_false(download.stopped);
@@ -801,7 +801,7 @@ add_task(function* test_cancel_immediately() {
   
   
   try {
-    yield promiseAttempt;
+    await promiseAttempt;
     do_throw("The download should have been canceled.");
   } catch (ex) {
     if (!(ex instanceof Downloads.Error)) {
@@ -815,23 +815,23 @@ add_task(function* test_cancel_immediately() {
   do_check_true(download.canceled);
   do_check_true(download.error === null);
 
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 
   
-  yield promiseCancel;
+  await promiseCancel;
 });
 
 
 
 
-add_task(function* test_cancel_midway_restart() {
+add_task(async function test_cancel_midway_restart() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
   
-  yield promiseDownloadMidway(download);
-  yield download.cancel();
+  await promiseDownloadMidway(download);
+  await download.cancel();
 
   do_check_true(download.stopped);
 
@@ -852,29 +852,29 @@ add_task(function* test_cancel_midway_restart() {
   do_check_eq(download.totalBytes, 0);
   do_check_eq(download.currentBytes, 0);
 
-  yield promiseAttempt;
+  await promiseAttempt;
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.canceled);
   do_check_true(download.error === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_cancel_midway_restart_tryToKeepPartialData() {
-  let download = yield promiseStartDownload_tryToKeepPartialData();
-  yield download.cancel();
+add_task(async function test_cancel_midway_restart_tryToKeepPartialData() {
+  let download = await promiseStartDownload_tryToKeepPartialData();
+  await download.cancel();
 
   do_check_true(download.stopped);
   do_check_true(download.hasPartialData);
 
   
-  do_check_false(yield OS.File.exists(download.target.path));
-  yield promiseVerifyContents(download.target.partFilePath, TEST_DATA_SHORT);
+  do_check_false(await OS.File.exists(download.target.path));
+  await promiseVerifyContents(download.target.partFilePath, TEST_DATA_SHORT);
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 
@@ -899,51 +899,51 @@ add_task(function* test_cancel_midway_restart_tryToKeepPartialData() {
   
   
   
-  yield deferMidway.promise;
+  await deferMidway.promise;
   do_check_true(download.progress > 72 && download.progress < 78);
 
   
   continueResponses();
-  yield promiseAttempt;
+  await promiseAttempt;
 
   
   do_check_eq(gMostRecentFirstBytePos, TEST_DATA_SHORT.length);
 
   
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 });
 
 
 
 
 
-add_task(function* test_cancel_midway_restart_removePartialData() {
-  let download = yield promiseStartDownload_tryToKeepPartialData();
-  yield download.cancel();
+add_task(async function test_cancel_midway_restart_removePartialData() {
+  let download = await promiseStartDownload_tryToKeepPartialData();
+  await download.cancel();
 
   do_check_true(download.hasPartialData);
-  yield promiseVerifyContents(download.target.partFilePath, TEST_DATA_SHORT);
+  await promiseVerifyContents(download.target.partFilePath, TEST_DATA_SHORT);
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 
-  yield download.removePartialData();
+  await download.removePartialData();
 
   do_check_false(download.hasPartialData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 
   
   continueResponses();
-  yield download.start();
+  await download.start();
 
   
   do_check_eq(gMostRecentFirstBytePos, 0);
 
   
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 });
 
 
@@ -951,62 +951,62 @@ add_task(function* test_cancel_midway_restart_removePartialData() {
 
 
 
-add_task(function* test_cancel_midway_restart_tryToKeepPartialData_false() {
-  let download = yield promiseStartDownload_tryToKeepPartialData();
-  yield download.cancel();
+add_task(async function test_cancel_midway_restart_tryToKeepPartialData_false() {
+  let download = await promiseStartDownload_tryToKeepPartialData();
+  await download.cancel();
 
   download.tryToKeepPartialData = false;
 
   
   do_check_true(download.hasPartialData);
-  yield promiseVerifyContents(download.target.partFilePath, TEST_DATA_SHORT);
+  await promiseVerifyContents(download.target.partFilePath, TEST_DATA_SHORT);
 
-  yield download.removePartialData();
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  await download.removePartialData();
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 
   
   mustInterruptResponses();
   download.start().catch(() => {});
 
-  yield promiseDownloadMidway(download);
-  yield promisePartFileReady(download);
+  await promiseDownloadMidway(download);
+  await promisePartFileReady(download);
 
   
   do_check_false(download.hasPartialData);
-  do_check_true(yield OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.partFilePath));
 
   
   
   if (Services.appinfo.OS == "Darwin" || Services.appinfo.OS == "Linux") {
-    do_check_eq((yield OS.File.stat(download.target.partFilePath)).unixMode,
+    do_check_eq((await OS.File.stat(download.target.partFilePath)).unixMode,
                 0o600);
   }
 
-  yield download.cancel();
+  await download.cancel();
 
   
   do_check_false(download.hasPartialData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 
   
   continueResponses();
-  yield download.start();
+  await download.start();
 
   
   do_check_eq(gMostRecentFirstBytePos, 0);
 
   
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 });
 
 
 
 
-add_task(function* test_cancel_immediately_restart_immediately() {
+add_task(async function test_cancel_immediately_restart_immediately() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
   let promiseAttempt = download.start();
 
   do_check_false(download.stopped);
@@ -1031,7 +1031,7 @@ add_task(function* test_cancel_immediately_restart_immediately() {
   
   continueResponses();
   try {
-    yield promiseAttempt;
+    await promiseAttempt;
     
     
     
@@ -1044,27 +1044,27 @@ add_task(function* test_cancel_immediately_restart_immediately() {
     do_check_false(ex.becauseTargetFailed);
   }
 
-  yield promiseRestarted;
+  await promiseRestarted;
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.canceled);
   do_check_true(download.error === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_cancel_midway_restart_immediately() {
+add_task(async function test_cancel_midway_restart_immediately() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
   let promiseAttempt = download.start();
 
   
-  yield promiseDownloadMidway(download);
+  await promiseDownloadMidway(download);
   download.cancel();
   do_check_true(download.canceled);
 
@@ -1084,7 +1084,7 @@ add_task(function* test_cancel_midway_restart_immediately() {
   
   continueResponses();
   try {
-    yield promiseAttempt;
+    await promiseAttempt;
     do_throw("The download should have been canceled.");
   } catch (ex) {
     if (!(ex instanceof Downloads.Error)) {
@@ -1094,41 +1094,41 @@ add_task(function* test_cancel_midway_restart_immediately() {
     do_check_false(ex.becauseTargetFailed);
   }
 
-  yield promiseRestarted;
+  await promiseRestarted;
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.canceled);
   do_check_true(download.error === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_cancel_successful() {
-  let download = yield promiseStartDownload();
-  yield promiseDownloadStopped(download);
+add_task(async function test_cancel_successful() {
+  let download = await promiseStartDownload();
+  await promiseDownloadStopped(download);
 
   
-  yield download.cancel();
+  await download.cancel();
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.canceled);
   do_check_true(download.error === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_cancel_twice() {
+add_task(async function test_cancel_twice() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
   let promiseAttempt = download.start();
   do_check_false(download.stopped);
@@ -1138,7 +1138,7 @@ add_task(function* test_cancel_twice() {
   let promiseCancel2 = download.cancel();
 
   try {
-    yield promiseAttempt;
+    await promiseAttempt;
     do_throw("The download should have been canceled.");
   } catch (ex) {
     if (!(ex instanceof Downloads.Error)) {
@@ -1149,92 +1149,92 @@ add_task(function* test_cancel_twice() {
   }
 
   
-  yield promiseCancel1;
-  yield promiseCancel2;
+  await promiseCancel1;
+  await promiseCancel2;
 
   do_check_true(download.stopped);
   do_check_false(download.succeeded);
   do_check_true(download.canceled);
   do_check_true(download.error === null);
 
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 });
 
 
 
 
-add_task(function* test_refresh_succeeded() {
-  let download = yield promiseStartDownload();
-  yield promiseDownloadStopped(download);
+add_task(async function test_refresh_succeeded() {
+  let download = await promiseStartDownload();
+  await promiseDownloadStopped(download);
 
   
-  yield download.refresh();
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await download.refresh();
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 
   
   
-  yield OS.File.move(download.target.path, download.target.path + ".old");
-  yield download.refresh();
+  await OS.File.move(download.target.path, download.target.path + ".old");
+  await download.refresh();
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, TEST_DATA_SHORT.length);
 
   
-  yield OS.File.move(download.target.path + ".old", download.target.path);
-  yield download.refresh();
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await OS.File.move(download.target.path + ".old", download.target.path);
+  await download.refresh();
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_finalize() {
+add_task(async function test_finalize() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
   let promiseFinalized = download.finalize();
 
   try {
-    yield download.start();
+    await download.start();
     do_throw("It should not be possible to restart after finalization.");
   } catch (ex) { }
 
-  yield promiseFinalized;
+  await promiseFinalized;
 
   do_check_true(download.stopped);
   do_check_false(download.succeeded);
   do_check_true(download.canceled);
   do_check_true(download.error === null);
 
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 });
 
 
 
 
-add_task(function* test_finalize_tryToKeepPartialData() {
+add_task(async function test_finalize_tryToKeepPartialData() {
   
-  let download = yield promiseStartDownload_tryToKeepPartialData();
-  yield download.finalize();
+  let download = await promiseStartDownload_tryToKeepPartialData();
+  await download.finalize();
 
   do_check_true(download.hasPartialData);
-  do_check_true(yield OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.partFilePath));
 
   
-  yield download.removePartialData();
+  await download.removePartialData();
 
   
-  download = yield promiseStartDownload_tryToKeepPartialData();
-  yield download.finalize(true);
+  download = await promiseStartDownload_tryToKeepPartialData();
+  await download.finalize(true);
 
   do_check_false(download.hasPartialData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
 });
 
 
 
 
-add_task(function* test_whenSucceeded_after_restart() {
+add_task(async function test_whenSucceeded_after_restart() {
   mustInterruptResponses();
 
   let promiseSucceeded;
@@ -1243,38 +1243,38 @@ add_task(function* test_whenSucceeded_after_restart() {
   if (!gUseLegacySaver) {
     
     
-    download = yield promiseNewDownload(httpUrl("interruptible.txt"));
+    download = await promiseNewDownload(httpUrl("interruptible.txt"));
     promiseSucceeded = download.whenSucceeded();
     download.start().catch(() => {});
   } else {
     
     
-    download = yield promiseStartLegacyDownload(httpUrl("interruptible.txt"));
+    download = await promiseStartLegacyDownload(httpUrl("interruptible.txt"));
     promiseSucceeded = download.whenSucceeded();
   }
 
   
-  yield download.cancel();
+  await download.cancel();
 
   
   continueResponses();
   download.start().catch(() => {});
 
   
-  yield promiseSucceeded;
+  await promiseSucceeded;
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.canceled);
   do_check_true(download.error === null);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_error_source() {
+add_task(async function test_error_source() {
   let serverSocket = startFakeServer();
   try {
     let sourceUrl = "http://localhost:" + serverSocket.port + "/source.txt";
@@ -1284,18 +1284,18 @@ add_task(function* test_error_source() {
       if (!gUseLegacySaver) {
         
         
-        download = yield promiseNewDownload(sourceUrl);
+        download = await promiseNewDownload(sourceUrl);
 
         do_check_true(download.error === null);
 
-        yield download.start();
+        await download.start();
       } else {
         
         
         
         
-        download = yield promiseStartLegacyDownload(sourceUrl);
-        yield promiseDownloadStopped(download);
+        download = await promiseStartLegacyDownload(sourceUrl);
+        await promiseDownloadStopped(download);
       }
       do_throw("The download should have failed.");
     } catch (ex) {
@@ -1312,7 +1312,7 @@ add_task(function* test_error_source() {
     do_check_true(download.error.becauseSourceFailed);
     do_check_false(download.error.becauseTargetFailed);
 
-    do_check_false(yield OS.File.exists(download.target.path));
+    do_check_false(await OS.File.exists(download.target.path));
     do_check_false(download.target.exists);
     do_check_eq(download.target.size, 0);
   } finally {
@@ -1324,7 +1324,7 @@ add_task(function* test_error_source() {
 
 
 
-add_task(function* test_error_source_partial() {
+add_task(async function test_error_source_partial() {
   let sourceUrl = httpUrl("shorter-than-content-length-http-1-1.txt");
 
   let enforcePref = Services.prefs.getBoolPref("network.http.enforce-framing.http1");
@@ -1340,18 +1340,18 @@ add_task(function* test_error_source_partial() {
     if (!gUseLegacySaver) {
       
       
-      download = yield promiseNewDownload(sourceUrl);
+      download = await promiseNewDownload(sourceUrl);
 
       do_check_true(download.error === null);
 
-      yield download.start();
+      await download.start();
     } else {
       
       
       
       
-      download = yield promiseStartLegacyDownload(sourceUrl);
-      yield promiseDownloadStopped(download);
+      download = await promiseStartLegacyDownload(sourceUrl);
+      await promiseDownloadStopped(download);
     }
     do_throw("The download should have failed.");
   } catch (ex) {
@@ -1369,7 +1369,7 @@ add_task(function* test_error_source_partial() {
   do_check_false(download.error.becauseTargetFailed);
   do_check_eq(download.error.result, Cr.NS_ERROR_NET_PARTIAL_TRANSFER);
 
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 });
@@ -1377,7 +1377,7 @@ add_task(function* test_error_source_partial() {
 
 
 
-add_task(function* test_error_target() {
+add_task(async function test_error_target() {
   
   let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
   targetFile.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0);
@@ -1387,19 +1387,19 @@ add_task(function* test_error_target() {
       if (!gUseLegacySaver) {
         
         
-        download = yield Downloads.createDownload({
+        download = await Downloads.createDownload({
           source: httpUrl("source.txt"),
           target: targetFile,
         });
-        yield download.start();
+        await download.start();
       } else {
         
         
         
         
-        download = yield promiseStartLegacyDownload(null,
+        download = await promiseStartLegacyDownload(null,
                                                     { targetFile });
-        yield promiseDownloadStopped(download);
+        await promiseDownloadStopped(download);
       }
       do_throw("The download should have failed.");
     } catch (ex) {
@@ -1427,7 +1427,7 @@ add_task(function* test_error_target() {
 
 
 
-add_task(function* test_error_restart() {
+add_task(async function test_error_restart() {
   let download;
 
   
@@ -1437,16 +1437,16 @@ add_task(function* test_error_restart() {
     
     
     if (!gUseLegacySaver) {
-      download = yield Downloads.createDownload({
+      download = await Downloads.createDownload({
         source: httpUrl("source.txt"),
         target: targetFile,
       });
       download.start().catch(() => {});
     } else {
-      download = yield promiseStartLegacyDownload(null,
+      download = await promiseStartLegacyDownload(null,
                                                   { targetFile });
     }
-    yield promiseDownloadStopped(download);
+    await promiseDownloadStopped(download);
     do_throw("The download should have failed.");
   } catch (ex) {
     if (!(ex instanceof Downloads.Error) || !ex.becauseTargetFailed) {
@@ -1467,7 +1467,7 @@ add_task(function* test_error_restart() {
   }
 
   
-  yield download.start();
+  await download.start();
 
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
@@ -1475,13 +1475,13 @@ add_task(function* test_error_restart() {
   do_check_true(download.error === null);
   do_check_eq(download.progress, 100);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_public_and_private() {
+add_task(async function test_public_and_private() {
   let sourcePath = "/test_public_and_private.txt";
   let sourceUrl = httpUrl("test_public_and_private.txt");
   let testCount = 0;
@@ -1516,19 +1516,19 @@ add_task(function* test_public_and_private() {
   });
 
   let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
-  yield Downloads.fetch(sourceUrl, targetFile);
-  yield Downloads.fetch(sourceUrl, targetFile);
+  await Downloads.fetch(sourceUrl, targetFile);
+  await Downloads.fetch(sourceUrl, targetFile);
 
   if (!gUseLegacySaver) {
-    let download = yield Downloads.createDownload({
+    let download = await Downloads.createDownload({
       source: { url: sourceUrl, isPrivate: true },
       target: targetFile,
     });
-    yield download.start();
+    await download.start();
   } else {
-    let download = yield promiseStartLegacyDownload(sourceUrl,
+    let download = await promiseStartLegacyDownload(sourceUrl,
                                                     { isPrivate: true });
-    yield promiseDownloadStopped(download);
+    await promiseDownloadStopped(download);
   }
 
   cleanup();
@@ -1537,26 +1537,26 @@ add_task(function* test_public_and_private() {
 
 
 
-add_task(function* test_cancel_immediately_restart_and_check_startTime() {
-  let download = yield promiseStartDownload();
+add_task(async function test_cancel_immediately_restart_and_check_startTime() {
+  let download = await promiseStartDownload();
 
   let startTime = download.startTime;
   do_check_true(isValidDate(download.startTime));
 
-  yield download.cancel();
+  await download.cancel();
   do_check_eq(download.startTime.getTime(), startTime.getTime());
 
   
-  yield promiseTimeout(10);
+  await promiseTimeout(10);
 
-  yield download.start();
+  await download.start();
   do_check_true(download.startTime.getTime() > startTime.getTime());
 });
 
 
 
 
-add_task(function* test_with_content_encoding() {
+add_task(async function test_with_content_encoding() {
   let sourcePath = "/test_with_content_encoding.txt";
   let sourceUrl = httpUrl("test_with_content_encoding.txt");
 
@@ -1576,14 +1576,14 @@ add_task(function* test_with_content_encoding() {
                        TEST_DATA_SHORT_GZIP_ENCODED.length);
   });
 
-  let download = yield promiseStartDownload(sourceUrl);
-  yield promiseDownloadStopped(download);
+  let download = await promiseStartDownload(sourceUrl);
+  await promiseDownloadStopped(download);
 
   do_check_eq(download.progress, 100);
   do_check_eq(download.totalBytes, TEST_DATA_SHORT_GZIP_ENCODED.length);
 
   
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 
   cleanup();
 });
@@ -1591,7 +1591,7 @@ add_task(function* test_with_content_encoding() {
 
 
 
-add_task(function* test_with_content_encoding_ignore_extension() {
+add_task(async function test_with_content_encoding_ignore_extension() {
   let sourcePath = "/test_with_content_encoding_ignore_extension.gz";
   let sourceUrl = httpUrl("test_with_content_encoding_ignore_extension.gz");
 
@@ -1611,8 +1611,8 @@ add_task(function* test_with_content_encoding_ignore_extension() {
                        TEST_DATA_SHORT_GZIP_ENCODED.length);
   });
 
-  let download = yield promiseStartDownload(sourceUrl);
-  yield promiseDownloadStopped(download);
+  let download = await promiseStartDownload(sourceUrl);
+  await promiseDownloadStopped(download);
 
   do_check_eq(download.progress, 100);
   do_check_eq(download.totalBytes, TEST_DATA_SHORT_GZIP_ENCODED.length);
@@ -1620,7 +1620,7 @@ add_task(function* test_with_content_encoding_ignore_extension() {
 
   
   
-  yield promiseVerifyTarget(download.target,
+  await promiseVerifyTarget(download.target,
         String.fromCharCode.apply(String, TEST_DATA_SHORT_GZIP_ENCODED));
 
   cleanup();
@@ -1629,10 +1629,10 @@ add_task(function* test_with_content_encoding_ignore_extension() {
 
 
 
-add_task(function* test_cancel_midway_restart_with_content_encoding() {
+add_task(async function test_cancel_midway_restart_with_content_encoding() {
   mustInterruptResponses();
 
-  let download = yield promiseStartDownload(httpUrl("interruptible_gzip.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible_gzip.txt"));
 
   
   let deferCancel = Promise.defer();
@@ -1648,25 +1648,25 @@ add_task(function* test_cancel_midway_restart_with_content_encoding() {
   download.onchange = onchange;
   onchange();
 
-  yield deferCancel.promise;
+  await deferCancel.promise;
 
   do_check_true(download.stopped);
 
   
   continueResponses();
   download.onchange = null;
-  yield download.start();
+  await download.start();
 
   do_check_eq(download.progress, 100);
   do_check_eq(download.totalBytes, TEST_DATA_SHORT_GZIP_ENCODED.length);
 
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT);
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT);
 });
 
 
 
 
-add_task(function* test_blocked_parental_controls() {
+add_task(async function test_blocked_parental_controls() {
   let blockFn = base => ({
     shouldBlockForParentalControls: () => Promise.resolve(true),
   });
@@ -1682,15 +1682,15 @@ add_task(function* test_blocked_parental_controls() {
     if (!gUseLegacySaver) {
       
       
-      download = yield promiseNewDownload();
-      yield download.start();
+      download = await promiseNewDownload();
+      await download.start();
     } else {
       
       
       
       
-      download = yield promiseStartLegacyDownload();
-      yield promiseDownloadStopped(download);
+      download = await promiseStartLegacyDownload();
+      await promiseDownloadStopped(download);
     }
     do_throw("The download should have blocked.");
   } catch (ex) {
@@ -1702,7 +1702,7 @@ add_task(function* test_blocked_parental_controls() {
   }
 
   
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 
   cleanup();
 });
@@ -1711,15 +1711,15 @@ add_task(function* test_blocked_parental_controls() {
 
 
 
-add_task(function* test_blocked_parental_controls_httpstatus450() {
+add_task(async function test_blocked_parental_controls_httpstatus450() {
   let download;
   try {
     if (!gUseLegacySaver) {
-      download = yield promiseNewDownload(httpUrl("parentalblocked.zip"));
-      yield download.start();
+      download = await promiseNewDownload(httpUrl("parentalblocked.zip"));
+      await download.start();
     } else {
-      download = yield promiseStartLegacyDownload(httpUrl("parentalblocked.zip"));
-      yield promiseDownloadStopped(download);
+      download = await promiseStartLegacyDownload(httpUrl("parentalblocked.zip"));
+      await promiseDownloadStopped(download);
     }
     do_throw("The download should have blocked.");
   } catch (ex) {
@@ -1731,13 +1731,13 @@ add_task(function* test_blocked_parental_controls_httpstatus450() {
     do_check_true(download.stopped);
   }
 
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 });
 
 
 
 
-add_task(function* test_blocked_runtime_permissions() {
+add_task(async function test_blocked_runtime_permissions() {
   let blockFn = base => ({
     shouldBlockForRuntimePermissions: () => Promise.resolve(true),
   });
@@ -1753,15 +1753,15 @@ add_task(function* test_blocked_runtime_permissions() {
     if (!gUseLegacySaver) {
       
       
-      download = yield promiseNewDownload();
-      yield download.start();
+      download = await promiseNewDownload();
+      await download.start();
     } else {
       
       
       
       
-      download = yield promiseStartLegacyDownload();
-      yield promiseDownloadStopped(download);
+      download = await promiseStartLegacyDownload();
+      await promiseDownloadStopped(download);
     }
     do_throw("The download should have blocked.");
   } catch (ex) {
@@ -1773,7 +1773,7 @@ add_task(function* test_blocked_runtime_permissions() {
   }
 
   
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 
   cleanup();
 });
@@ -1783,10 +1783,10 @@ add_task(function* test_blocked_runtime_permissions() {
 
 
 
-add_task(function* test_getSha256Hash() {
+add_task(async function test_getSha256Hash() {
   if (!gUseLegacySaver) {
-    let download = yield promiseStartDownload(httpUrl("source.txt"));
-    yield promiseDownloadStopped(download);
+    let download = await promiseStartDownload(httpUrl("source.txt"));
+    await promiseDownloadStopped(download);
     do_check_true(download.stopped);
     do_check_eq(32, download.saver.getSha256Hash().length);
   }
@@ -1804,7 +1804,7 @@ add_task(function* test_getSha256Hash() {
 
 
 
-var promiseBlockedDownload = Task.async(function* (options) {
+var promiseBlockedDownload = async function(options) {
   let blockFn = base => ({
     shouldBlockForReputationCheck: () => Promise.resolve({
       shouldBlock: true,
@@ -1823,17 +1823,17 @@ var promiseBlockedDownload = Task.async(function* (options) {
 
   try {
     if (options.keepPartialData) {
-      download = yield promiseStartDownload_tryToKeepPartialData();
+      download = await promiseStartDownload_tryToKeepPartialData();
       continueResponses();
     } else if (gUseLegacySaver) {
-      download = yield promiseStartLegacyDownload();
+      download = await promiseStartLegacyDownload();
     } else {
-      download = yield promiseNewDownload();
-      yield download.start();
+      download = await promiseNewDownload();
+      await download.start();
       do_throw("The download should have blocked.");
     }
 
-    yield promiseDownloadStopped(download);
+    await promiseDownloadStopped(download);
     do_throw("The download should have blocked.");
   } catch (ex) {
     if (!(ex instanceof Downloads.Error) || !ex.becauseBlocked) {
@@ -1849,24 +1849,24 @@ var promiseBlockedDownload = Task.async(function* (options) {
 
   do_check_true(download.stopped);
   do_check_false(download.succeeded);
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
 
   cleanup();
   return download;
-});
+};
 
 
 
 
 
-add_task(function* test_blocked_applicationReputation() {
-  let download = yield promiseBlockedDownload({
+add_task(async function test_blocked_applicationReputation() {
+  let download = await promiseBlockedDownload({
     keepPartialData: false,
     keepBlockedData: false,
   });
 
   
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.path));
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 
@@ -1878,7 +1878,7 @@ add_task(function* test_blocked_applicationReputation() {
 
 
 
-add_task(function* test_blocked_applicationReputation_race() {
+add_task(async function test_blocked_applicationReputation_race() {
   let isFirstShouldBlockCall = true;
 
   let blockFn = base => ({
@@ -1921,13 +1921,13 @@ add_task(function* test_blocked_applicationReputation_race() {
   try {
     
     
-    download = yield promiseStartDownload_tryToKeepPartialData();
+    download = await promiseStartDownload_tryToKeepPartialData();
     let firstAttempt = promiseDownloadStopped(download);
     continueResponses();
 
     
     
-    yield firstAttempt;
+    await firstAttempt;
 
     do_throw("The first attempt should have been canceled.");
   } catch (ex) {
@@ -1938,7 +1938,7 @@ add_task(function* test_blocked_applicationReputation_race() {
   }
 
   
-  yield promiseDownloadStopped(download);
+  await promiseDownloadStopped(download);
 
   
   do_check_false(download.hasBlockedData);
@@ -1950,24 +1950,24 @@ add_task(function* test_blocked_applicationReputation_race() {
 
 
 
-add_task(function* test_blocked_applicationReputation_confirmBlock() {
-  let download = yield promiseBlockedDownload({
+add_task(async function test_blocked_applicationReputation_confirmBlock() {
+  let download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
   });
 
   do_check_true(download.hasBlockedData);
-  do_check_true(yield OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.partFilePath));
 
-  yield download.confirmBlock();
+  await download.confirmBlock();
 
   
   
   do_check_true(download.stopped);
   do_check_false(download.succeeded);
   do_check_false(download.hasBlockedData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.path));
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 });
@@ -1976,24 +1976,24 @@ add_task(function* test_blocked_applicationReputation_confirmBlock() {
 
 
 
-add_task(function* test_blocked_applicationReputation_unblock() {
-  let download = yield promiseBlockedDownload({
+add_task(async function test_blocked_applicationReputation_unblock() {
+  let download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
   });
 
   do_check_true(download.hasBlockedData);
-  do_check_true(yield OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.partFilePath));
 
-  yield download.unblock();
+  await download.unblock();
 
   
   
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.hasBlockedData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
-  yield promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
+  do_check_false(await OS.File.exists(download.target.partFilePath));
+  await promiseVerifyTarget(download.target, TEST_DATA_SHORT + TEST_DATA_SHORT);
 
   
   
@@ -2005,14 +2005,14 @@ add_task(function* test_blocked_applicationReputation_unblock() {
 
 
 
-add_task(function* test_blocked_applicationReputation_cancel() {
-  let download = yield promiseBlockedDownload({
+add_task(async function test_blocked_applicationReputation_cancel() {
+  let download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
   });
 
   
-  yield download.cancel();
+  await download.cancel();
 
   
   
@@ -2025,8 +2025,8 @@ add_task(function* test_blocked_applicationReputation_cancel() {
 
 
 
-add_task(function* test_blocked_applicationReputation_decisionRace() {
-  let download = yield promiseBlockedDownload({
+add_task(async function test_blocked_applicationReputation_decisionRace() {
+  let download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
   });
@@ -2034,21 +2034,21 @@ add_task(function* test_blocked_applicationReputation_decisionRace() {
   let unblockPromise = download.unblock();
   let confirmBlockPromise = download.confirmBlock();
 
-  yield confirmBlockPromise.then(() => {
+  await confirmBlockPromise.then(() => {
     do_throw("confirmBlock should have failed.");
   }, () => {});
 
-  yield unblockPromise;
+  await unblockPromise;
 
   
   
   do_check_true(download.stopped);
   do_check_true(download.succeeded);
   do_check_false(download.hasBlockedData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
-  do_check_true(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.path));
 
-  download = yield promiseBlockedDownload({
+  download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
   });
@@ -2056,19 +2056,19 @@ add_task(function* test_blocked_applicationReputation_decisionRace() {
   confirmBlockPromise = download.confirmBlock();
   unblockPromise = download.unblock();
 
-  yield unblockPromise.then(() => {
+  await unblockPromise.then(() => {
     do_throw("unblock should have failed.");
   }, () => {});
 
-  yield confirmBlockPromise;
+  await confirmBlockPromise;
 
   
   
   do_check_true(download.stopped);
   do_check_false(download.succeeded);
   do_check_false(download.hasBlockedData);
-  do_check_false(yield OS.File.exists(download.target.partFilePath));
-  do_check_false(yield OS.File.exists(download.target.path));
+  do_check_false(await OS.File.exists(download.target.partFilePath));
+  do_check_false(await OS.File.exists(download.target.path));
   do_check_false(download.target.exists);
   do_check_eq(download.target.size, 0);
 });
@@ -2077,20 +2077,20 @@ add_task(function* test_blocked_applicationReputation_decisionRace() {
 
 
 
-add_task(function* test_blocked_applicationReputation_unblock() {
-  let download = yield promiseBlockedDownload({
+add_task(async function test_blocked_applicationReputation_unblock() {
+  let download = await promiseBlockedDownload({
     keepPartialData: true,
     keepBlockedData: true,
   });
 
   do_check_true(download.hasBlockedData);
-  do_check_true(yield OS.File.exists(download.target.partFilePath));
+  do_check_true(await OS.File.exists(download.target.partFilePath));
 
   
-  yield OS.File.remove(download.target.partFilePath);
+  await OS.File.remove(download.target.partFilePath);
 
   let unblockPromise = download.unblock();
-  yield unblockPromise.then(() => {
+  await unblockPromise.then(() => {
     do_throw("unblock should have failed.");
   }, () => {});
 
@@ -2106,17 +2106,17 @@ add_task(function* test_blocked_applicationReputation_unblock() {
 
 
 
-add_task(function* test_showContainingDirectory() {
+add_task(async function test_showContainingDirectory() {
   let targetPath = getTempFile(TEST_TARGET_FILE_NAME).path;
 
-  let download = yield Downloads.createDownload({
+  let download = await Downloads.createDownload({
     source: { url: httpUrl("source.txt") },
     target: ""
   });
 
   let promiseDirectoryShown = waitForDirectoryShown();
-  yield download.showContainingDirectory();
-  let path = yield promiseDirectoryShown;
+  await download.showContainingDirectory();
+  let path = await promiseDirectoryShown;
   try {
     new FileUtils.File(path);
     do_throw("Should have failed because of an invalid path.");
@@ -2131,20 +2131,20 @@ add_task(function* test_showContainingDirectory() {
     do_check_true(validResult);
   }
 
-  download = yield Downloads.createDownload({
+  download = await Downloads.createDownload({
     source: { url: httpUrl("source.txt") },
     target: targetPath
   });
 
   promiseDirectoryShown = waitForDirectoryShown();
   download.showContainingDirectory();
-  yield promiseDirectoryShown;
+  await promiseDirectoryShown;
 });
 
 
 
 
-add_task(function* test_launch() {
+add_task(async function test_launch() {
   let customLauncher = getTempFile("app-launcher");
 
   
@@ -2153,7 +2153,7 @@ add_task(function* test_launch() {
     if (!gUseLegacySaver) {
       
       
-      download = yield Downloads.createDownload({
+      download = await Downloads.createDownload({
         source: httpUrl("source.txt"),
         target: getTempFile(TEST_TARGET_FILE_NAME).path,
         launcherPath,
@@ -2161,29 +2161,29 @@ add_task(function* test_launch() {
       });
 
       try {
-        yield download.launch();
+        await download.launch();
         do_throw("Can't launch download file as it has not completed yet");
       } catch (ex) {
         do_check_eq(ex.message,
                     "launch can only be called if the download succeeded");
       }
 
-      yield download.start();
+      await download.start();
     } else {
       
       
-      download = yield promiseStartLegacyDownload(
+      download = await promiseStartLegacyDownload(
                                          httpUrl("source.txt"),
                                          { launcherPath,
                                            launchWhenSucceeded: true });
-      yield promiseDownloadStopped(download);
+      await promiseDownloadStopped(download);
     }
 
     do_check_true(download.launchWhenSucceeded);
 
     let promiseFileLaunched = waitForFileLaunched();
     download.launch();
-    let result = yield promiseFileLaunched;
+    let result = await promiseFileLaunched;
 
     
     if (!launcherPath) {
@@ -2202,8 +2202,8 @@ add_task(function* test_launch() {
 
 
 
-add_task(function* test_launcherPath_invalid() {
-  let download = yield Downloads.createDownload({
+add_task(async function test_launcherPath_invalid() {
+  let download = await Downloads.createDownload({
     source: { url: httpUrl("source.txt") },
     target: { path: getTempFile(TEST_TARGET_FILE_NAME).path },
     launcherPath: " "
@@ -2222,10 +2222,10 @@ add_task(function* test_launcherPath_invalid() {
     Integration.downloads.register(waitFn);
   });
 
-  yield download.start();
+  await download.start();
   try {
     download.launch();
-    yield promiseDownloadLaunched;
+    await promiseDownloadLaunched;
     do_throw("Can't launch file with invalid custom launcher")
   } catch (ex) {
     if (!(ex instanceof Components.Exception)) {
@@ -2243,7 +2243,7 @@ add_task(function* test_launcherPath_invalid() {
 
 
 
-add_task(function* test_launchWhenSucceeded() {
+add_task(async function test_launchWhenSucceeded() {
   let customLauncher = getTempFile("app-launcher");
 
   
@@ -2251,22 +2251,22 @@ add_task(function* test_launchWhenSucceeded() {
     let promiseFileLaunched = waitForFileLaunched();
 
     if (!gUseLegacySaver) {
-      let download = yield Downloads.createDownload({
+      let download = await Downloads.createDownload({
         source: httpUrl("source.txt"),
         target: getTempFile(TEST_TARGET_FILE_NAME).path,
         launchWhenSucceeded: true,
         launcherPath,
       });
-      yield download.start();
+      await download.start();
     } else {
-      let download = yield promiseStartLegacyDownload(
+      let download = await promiseStartLegacyDownload(
                                              httpUrl("source.txt"),
                                              { launcherPath,
                                                launchWhenSucceeded: true });
-      yield promiseDownloadStopped(download);
+      await promiseDownloadStopped(download);
     }
 
-    let result = yield promiseFileLaunched;
+    let result = await promiseFileLaunched;
 
     
     if (!launcherPath) {
@@ -2285,9 +2285,9 @@ add_task(function* test_launchWhenSucceeded() {
 
 
 
-add_task(function* test_contentType() {
-  let download = yield promiseStartDownload(httpUrl("source.txt"));
-  yield promiseDownloadStopped(download);
+add_task(async function test_contentType() {
+  let download = await promiseStartDownload(httpUrl("source.txt"));
+  await promiseDownloadStopped(download);
 
   do_check_eq("text/plain", download.contentType);
 });
@@ -2296,14 +2296,14 @@ add_task(function* test_contentType() {
 
 
 
-add_task(function* test_toSerializable_startTime() {
-  let download1 = yield promiseStartDownload(httpUrl("source.txt"));
-  yield promiseDownloadStopped(download1);
+add_task(async function test_toSerializable_startTime() {
+  let download1 = await promiseStartDownload(httpUrl("source.txt"));
+  await promiseDownloadStopped(download1);
 
   let serializable = download1.toSerializable();
   let reserialized = JSON.parse(JSON.stringify(serializable));
 
-  let download2 = yield Downloads.createDownload(reserialized);
+  let download2 = await Downloads.createDownload(reserialized);
 
   do_check_eq(download1.startTime.constructor.name, "Date");
   do_check_eq(download2.startTime.constructor.name, "Date");
@@ -2313,47 +2313,47 @@ add_task(function* test_toSerializable_startTime() {
 
 
 
-add_task(function* test_history() {
+add_task(async function test_history() {
   mustInterruptResponses();
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
   let promiseVisit = promiseWaitForVisit(httpUrl("interruptible.txt"));
 
   
-  let download = yield promiseStartDownload(httpUrl("interruptible.txt"));
+  let download = await promiseStartDownload(httpUrl("interruptible.txt"));
 
   
-  let [time, transitionType] = yield promiseVisit;
+  let [time, transitionType] = await promiseVisit;
   do_check_eq(time, download.startTime.getTime() * 1000);
   do_check_eq(transitionType, Ci.nsINavHistoryService.TRANSITION_DOWNLOAD);
 
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
   download.cancel();
   continueResponses();
-  yield download.start();
+  await download.start();
 
   
-  do_check_false(yield promiseIsURIVisited(httpUrl("interruptible.txt")));
+  do_check_false(await promiseIsURIVisited(httpUrl("interruptible.txt")));
 });
 
 
 
 
 
-add_task(function* test_history_tryToKeepPartialData() {
+add_task(async function test_history_tryToKeepPartialData() {
   
-  yield PlacesTestUtils.clearHistory();
+  await PlacesTestUtils.clearHistory();
   let promiseVisit =
       promiseWaitForVisit(httpUrl("interruptible_resumable.txt"));
 
   
   let beforeStartTimeMs = Date.now();
-  let download = yield promiseStartDownload_tryToKeepPartialData();
+  let download = await promiseStartDownload_tryToKeepPartialData();
 
   
-  let [time, transitionType] = yield promiseVisit;
+  let [time, transitionType] = await promiseVisit;
   do_check_eq(transitionType, Ci.nsINavHistoryService.TRANSITION_DOWNLOAD);
 
   
@@ -2363,59 +2363,59 @@ add_task(function* test_history_tryToKeepPartialData() {
 
   
   continueResponses();
-  yield promiseDownloadStopped(download);
+  await promiseDownloadStopped(download);
 });
 
 
 
 
 
-add_task(function* test_launchWhenSucceeded_deleteTempFileOnExit() {
+add_task(async function test_launchWhenSucceeded_deleteTempFileOnExit() {
   let customLauncherPath = getTempFile("app-launcher").path;
   let autoDeleteTargetPathOne = getTempFile(TEST_TARGET_FILE_NAME).path;
   let autoDeleteTargetPathTwo = getTempFile(TEST_TARGET_FILE_NAME).path;
   let noAutoDeleteTargetPath = getTempFile(TEST_TARGET_FILE_NAME).path;
 
-  let autoDeleteDownloadOne = yield Downloads.createDownload({
+  let autoDeleteDownloadOne = await Downloads.createDownload({
     source: { url: httpUrl("source.txt"), isPrivate: true },
     target: autoDeleteTargetPathOne,
     launchWhenSucceeded: true,
     launcherPath: customLauncherPath,
   });
-  yield autoDeleteDownloadOne.start();
+  await autoDeleteDownloadOne.start();
 
   Services.prefs.setBoolPref(kDeleteTempFileOnExit, true);
-  let autoDeleteDownloadTwo = yield Downloads.createDownload({
+  let autoDeleteDownloadTwo = await Downloads.createDownload({
     source: httpUrl("source.txt"),
     target: autoDeleteTargetPathTwo,
     launchWhenSucceeded: true,
     launcherPath: customLauncherPath,
   });
-  yield autoDeleteDownloadTwo.start();
+  await autoDeleteDownloadTwo.start();
 
   Services.prefs.setBoolPref(kDeleteTempFileOnExit, false);
-  let noAutoDeleteDownload = yield Downloads.createDownload({
+  let noAutoDeleteDownload = await Downloads.createDownload({
     source: httpUrl("source.txt"),
     target: noAutoDeleteTargetPath,
     launchWhenSucceeded: true,
     launcherPath: customLauncherPath,
   });
-  yield noAutoDeleteDownload.start();
+  await noAutoDeleteDownload.start();
 
   Services.prefs.clearUserPref(kDeleteTempFileOnExit);
 
-  do_check_true(yield OS.File.exists(autoDeleteTargetPathOne));
-  do_check_true(yield OS.File.exists(autoDeleteTargetPathTwo));
-  do_check_true(yield OS.File.exists(noAutoDeleteTargetPath));
+  do_check_true(await OS.File.exists(autoDeleteTargetPathOne));
+  do_check_true(await OS.File.exists(autoDeleteTargetPathTwo));
+  do_check_true(await OS.File.exists(noAutoDeleteTargetPath));
 
   
   Services.obs.notifyObservers(null, "last-pb-context-exited");
-  do_check_false(yield OS.File.exists(autoDeleteTargetPathOne));
+  do_check_false(await OS.File.exists(autoDeleteTargetPathOne));
 
   
   let expire = Cc["@mozilla.org/uriloader/external-helper-app-service;1"]
                  .getService(Ci.nsIObserver);
   expire.observe(null, "profile-before-change", null);
-  do_check_false(yield OS.File.exists(autoDeleteTargetPathTwo));
-  do_check_true(yield OS.File.exists(noAutoDeleteTargetPath));
+  do_check_false(await OS.File.exists(autoDeleteTargetPathTwo));
+  do_check_true(await OS.File.exists(noAutoDeleteTargetPath));
 });

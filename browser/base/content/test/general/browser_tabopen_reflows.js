@@ -52,7 +52,7 @@ const PREF_NEWTAB_DIRECTORYSOURCE = "browser.newtabpage.directory.source";
 
 
 
-add_task(function*() {
+add_task(async function() {
   let DirectoryLinksProvider = Cu.import("resource:///modules/DirectoryLinksProvider.jsm", {}).DirectoryLinksProvider;
   let NewTabUtils = Cu.import("resource://gre/modules/NewTabUtils.jsm", {}).NewTabUtils;
   let Promise = Cu.import("resource://gre/modules/Promise.jsm", {}).Promise;
@@ -86,7 +86,7 @@ add_task(function*() {
   Services.prefs.setCharPref(PREF_NEWTAB_DIRECTORYSOURCE, 'data:application/json,{"test":1}');
 
   
-  yield watchLinksChangeOnce();
+  await watchLinksChangeOnce();
 
   
   
@@ -105,7 +105,7 @@ add_task(function*() {
   BrowserOpenTab();
 
   
-  yield waitForTransitionEnd();
+  await waitForTransitionEnd();
 
   
   docShell.removeWeakReflowObserver(observer);

@@ -1,18 +1,18 @@
 "use strict";
 
-add_task(function* mainTest() {
-  yield task_resetState();
+add_task(async function mainTest() {
+  await task_resetState();
 
   let verdicts = [
     Downloads.Error.BLOCK_VERDICT_UNCOMMON,
     Downloads.Error.BLOCK_VERDICT_MALWARE,
     Downloads.Error.BLOCK_VERDICT_POTENTIALLY_UNWANTED,
   ];
-  yield task_addDownloads(verdicts.map(v => makeDownload(v)));
+  await task_addDownloads(verdicts.map(v => makeDownload(v)));
 
   
   for (let i = 0; i < verdicts.length; i++) {
-    yield openPanel();
+    await openPanel();
 
     
     
@@ -20,7 +20,7 @@ add_task(function* mainTest() {
 
     
     EventUtils.sendMouseEvent({ type: "click" }, item);
-    yield promiseSubviewShown(true);
+    await promiseSubviewShown(true);
 
     
     
@@ -30,11 +30,11 @@ add_task(function* mainTest() {
     
     
     EventUtils.synthesizeMouse(DownloadsPanel.panel, 10, 10, {}, window);
-    yield promiseSubviewShown(false);
+    await promiseSubviewShown(false);
 
     
     EventUtils.sendMouseEvent({ type: "click" }, item);
-    yield promiseSubviewShown(true);
+    await promiseSubviewShown(true);
 
     
     
@@ -43,34 +43,34 @@ add_task(function* mainTest() {
     let hidePromise = promisePanelHidden();
     EventUtils.synthesizeMouse(DownloadsBlockedSubview.elements.openButton,
                                10, 10, {}, window);
-    yield unblockOpenPromise;
-    yield hidePromise;
+    await unblockOpenPromise;
+    await hidePromise;
 
     window.focus();
-    yield SimpleTest.promiseFocus(window);
+    await SimpleTest.promiseFocus(window);
 
     
-    yield openPanel();
+    await openPanel();
 
     EventUtils.sendMouseEvent({ type: "click" }, item);
-    yield promiseSubviewShown(true);
+    await promiseSubviewShown(true);
 
     
     
     EventUtils.synthesizeMouse(DownloadsBlockedSubview.elements.deleteButton,
                                10, 10, {}, window);
-    yield promisePanelHidden();
-    yield openPanel();
+    await promisePanelHidden();
+    await openPanel();
 
     Assert.ok(!item.parentNode);
     DownloadsPanel.hidePanel();
-    yield promisePanelHidden();
+    await promisePanelHidden();
   }
 
-  yield task_resetState();
+  await task_resetState();
 });
 
-function* openPanel() {
+async function openPanel() {
   
   
   
@@ -95,8 +95,8 @@ function* openPanel() {
   
   
 
-  yield promiseFocus();
-  yield new Promise(resolve => {
+  await promiseFocus();
+  await new Promise(resolve => {
     let verifyCount = 5;
     let backoff = 0;
     let iBackoff = 0;

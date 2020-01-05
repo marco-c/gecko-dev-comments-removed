@@ -10,7 +10,7 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_saveBookmarksToJSONFile_and_create() {
+add_task(async function test_saveBookmarksToJSONFile_and_create() {
   
   let uri = NetUtil.newURI("http://getfirefox.com/");
   let bookmarkId =
@@ -22,27 +22,27 @@ add_task(function* test_saveBookmarksToJSONFile_and_create() {
   let backupFile = FileUtils.getFile("TmpD", ["bookmarks.json"]);
   backupFile.create(Ci.nsILocalFile.NORMAL_FILE_TYPE, parseInt("0600", 8));
 
-  let nodeCount = yield PlacesBackups.saveBookmarksToJSONFile(backupFile, true);
+  let nodeCount = await PlacesBackups.saveBookmarksToJSONFile(backupFile, true);
   do_check_true(nodeCount > 0);
   do_check_true(backupFile.exists());
   do_check_eq(backupFile.leafName, "bookmarks.json");
 
   
   
-  let recentBackup = yield PlacesBackups.getMostRecentBackup();
+  let recentBackup = await PlacesBackups.getMostRecentBackup();
   let matches = OS.Path.basename(recentBackup).match(PlacesBackups.filenamesRegex);
   do_check_eq(matches[2], nodeCount);
   do_check_eq(matches[3].length, 24);
 
   
-  yield PlacesBackups.create(0);
-  do_check_eq((yield PlacesBackups.getBackupFiles()).length, 0);
+  await PlacesBackups.create(0);
+  do_check_eq((await PlacesBackups.getBackupFiles()).length, 0);
 
   
-  yield PlacesBackups.create();
-  do_check_eq((yield PlacesBackups.getBackupFiles()).length, 1);
+  await PlacesBackups.create();
+  do_check_eq((await PlacesBackups.getBackupFiles()).length, 1);
 
-  let mostRecentBackupFile = yield PlacesBackups.getMostRecentBackup();
+  let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
   do_check_neq(mostRecentBackupFile, null);
   matches = OS.Path.basename(recentBackup).match(PlacesBackups.filenamesRegex);
   do_check_eq(matches[2], nodeCount);
@@ -50,6 +50,6 @@ add_task(function* test_saveBookmarksToJSONFile_and_create() {
 
   
   backupFile.remove(false);
-  yield PlacesBackups.create(0);
+  await PlacesBackups.create(0);
   PlacesUtils.bookmarks.removeItem(bookmarkId);
 });

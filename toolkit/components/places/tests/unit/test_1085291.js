@@ -1,4 +1,4 @@
-add_task(function* () {
+add_task(async function() {
   
   
 
@@ -14,24 +14,24 @@ add_task(function* () {
   }
 
   
-  yield insertAndTest({ parentGuid: root.bookmarkGuid
+  await insertAndTest({ parentGuid: root.bookmarkGuid
                       , type: PlacesUtils.bookmarks.TYPE_BOOKMARK
                       , title: "Test Bookmark"
                       , url: "http://test.url.tld" });
 
   
-  yield insertAndTest({ parentGuid: root.bookmarkGuid
+  await insertAndTest({ parentGuid: root.bookmarkGuid
                       , type: PlacesUtils.bookmarks.TYPE_BOOKMARK
                       , title: "Test Query"
                       , url: "place:folder=BOOKMARKS_MENU" });
 
   
-  yield insertAndTest({ parentGuid: root.bookmarkGuid
+  await insertAndTest({ parentGuid: root.bookmarkGuid
                       , type: PlacesUtils.bookmarks.TYPE_FOLDER
                       , title: "Test Folder" });
 
   
-  yield insertAndTest({ parentGuid: root.bookmarkGuid
+  await insertAndTest({ parentGuid: root.bookmarkGuid
                       , type: PlacesUtils.bookmarks.TYPE_SEPARATOR });
 
   root.containerOpen = false;

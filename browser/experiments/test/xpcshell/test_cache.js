@@ -23,9 +23,9 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_setup() {
+add_task(async function test_setup() {
   loadAddonManager();
-  yield removeCacheFile();
+  await removeCacheFile();
 
   gHttpServer = new HttpServer();
   gHttpServer.start(-1);
@@ -88,7 +88,7 @@ function validateCache(cachedExperiments, experimentIds) {
 
 
 
-add_task(function* test_cache() {
+add_task(async function test_cache() {
   
 
   gManifestObject = {
@@ -156,16 +156,16 @@ add_task(function* test_cache() {
   defineNow(gPolicy, now);
 
   let experiments = new Experiments.Experiments(gPolicy);
-  yield experiments.updateManifest();
-  let list = yield experiments.getExperiments();
+  await experiments.updateManifest();
+  let list = await experiments.getExperiments();
   Assert.equal(list.length, 0, "Experiment list should be empty.");
   checkExperimentSerializations(experiments._experiments.values());
 
-  yield promiseRestartManager();
+  await promiseRestartManager();
   experiments = new Experiments.Experiments(gPolicy);
 
-  yield experiments._run();
-  list = yield experiments.getExperiments();
+  await experiments._run();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 0, "Experiment list should be empty.");
   checkExperimentSerializations(experiments._experiments.values());
 
@@ -174,11 +174,11 @@ add_task(function* test_cache() {
   now = futureDate(startDates[0], 5 * MS_IN_ONE_DAY);
   defineNow(gPolicy, now);
 
-  yield promiseRestartManager();
+  await promiseRestartManager();
   experiments = new Experiments.Experiments(gPolicy);
-  yield experiments._run();
+  await experiments._run();
 
-  list = yield experiments.getExperiments();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 1, "Experiment list should have 1 entry now.");
 
   experimentListData[1].active = true;
@@ -186,11 +186,11 @@ add_task(function* test_cache() {
   checkExperimentListsEqual(experimentListData.slice(1), list);
   checkExperimentSerializations(experiments._experiments.values());
 
-  let branch = yield experiments.getExperimentBranch(EXPERIMENT1_ID);
+  let branch = await experiments.getExperimentBranch(EXPERIMENT1_ID);
   Assert.strictEqual(branch, null);
 
-  yield experiments.setExperimentBranch(EXPERIMENT1_ID, "testbranch");
-  branch = yield experiments.getExperimentBranch(EXPERIMENT1_ID);
+  await experiments.setExperimentBranch(EXPERIMENT1_ID, "testbranch");
+  branch = await experiments.getExperimentBranch(EXPERIMENT1_ID);
   Assert.strictEqual(branch, "testbranch");
 
   
@@ -198,11 +198,11 @@ add_task(function* test_cache() {
   now = futureDate(now, 20 * MS_IN_ONE_DAY);
   defineNow(gPolicy, now);
 
-  yield promiseRestartManager();
+  await promiseRestartManager();
   experiments = new Experiments.Experiments(gPolicy);
-  yield experiments._run();
+  await experiments._run();
 
-  list = yield experiments.getExperiments();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 1, "Experiment list should have 1 entry.");
 
   experimentListData[1].active = false;
@@ -210,7 +210,7 @@ add_task(function* test_cache() {
   checkExperimentListsEqual(experimentListData.slice(1), list);
   checkExperimentSerializations(experiments._experiments.values());
 
-  branch = yield experiments.getExperimentBranch(EXPERIMENT1_ID);
+  branch = await experiments.getExperimentBranch(EXPERIMENT1_ID);
   Assert.strictEqual(branch, "testbranch");
 
   
@@ -218,11 +218,11 @@ add_task(function* test_cache() {
   now = futureDate(startDates[1], 20 * MS_IN_ONE_DAY);
   defineNow(gPolicy, now);
 
-  yield promiseRestartManager();
+  await promiseRestartManager();
   experiments = new Experiments.Experiments(gPolicy);
-  yield experiments._run();
+  await experiments._run();
 
-  list = yield experiments.getExperiments();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 2, "Experiment list should have 2 entries.");
 
   experimentListData[0].active = true;
@@ -235,11 +235,11 @@ add_task(function* test_cache() {
   now = futureDate(now, 20 * MS_IN_ONE_DAY);
   defineNow(gPolicy, now);
 
-  yield promiseRestartManager();
+  await promiseRestartManager();
   experiments = new Experiments.Experiments(gPolicy);
-  yield experiments._run();
+  await experiments._run();
 
-  list = yield experiments.getExperiments();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 2, "Experiment list should have 2 entries.");
 
   experimentListData[0].active = false;
@@ -249,12 +249,12 @@ add_task(function* test_cache() {
 
   
 
-  yield experiments._toggleExperimentsEnabled(false);
-  yield promiseRestartManager();
-  yield removeCacheFile();
+  await experiments._toggleExperimentsEnabled(false);
+  await promiseRestartManager();
+  await removeCacheFile();
 });
 
-add_task(function* test_expiration() {
+add_task(async function test_expiration() {
   
   gManifestObject = {
     "version": 1,
@@ -319,35 +319,35 @@ add_task(function* test_expiration() {
   let now = null;
   let experiments = null;
 
-  let setDateAndRestartExperiments = Task.async(function* (newDate) {
+  let setDateAndRestartExperiments = async function(newDate) {
     now = newDate;
     defineNow(gPolicy, now);
 
-    yield promiseRestartManager();
+    await promiseRestartManager();
     experiments = new Experiments.Experiments(gPolicy);
-    yield experiments._run();
-  });
+    await experiments._run();
+  };
 
   
   now = baseDate;
   defineNow(gPolicy, now);
 
   experiments = new Experiments.Experiments(gPolicy);
-  yield experiments.updateManifest();
-  let list = yield experiments.getExperiments();
+  await experiments.updateManifest();
+  let list = await experiments.getExperiments();
   Assert.equal(list.length, 0, "Experiment list should be empty.");
 
   
-  yield setDateAndRestartExperiments(startDates[0]);
-  list = yield experiments.getExperiments();
+  await setDateAndRestartExperiments(startDates[0]);
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 1, "The first experiment should have started.");
 
   
-  yield setDateAndRestartExperiments(endDates[0]);
+  await setDateAndRestartExperiments(endDates[0]);
 
   
   
-  list = yield experiments.getExperiments();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 1, "Experiment list should have 1 entry.");
 
   experimentListData[1].active = false;
@@ -356,11 +356,11 @@ add_task(function* test_expiration() {
   validateCache([...experiments._experiments.keys()], [EXPERIMENT1_ID, EXPERIMENT2_ID, EXPERIMENT3_ID]);
 
   
-  yield setDateAndRestartExperiments(startDates[1]);
+  await setDateAndRestartExperiments(startDates[1]);
 
   
   
-  list = yield experiments.getExperiments();
+  list = await experiments.getExperiments();
   Assert.equal(list.length, 2, "Experiment list should have 2 entries.");
 
   experimentListData[0].active = true;
@@ -369,31 +369,31 @@ add_task(function* test_expiration() {
 
   
   
-  yield setDateAndRestartExperiments(futureDate(startDates[1], 31 * MS_IN_ONE_DAY));
+  await setDateAndRestartExperiments(futureDate(startDates[1], 31 * MS_IN_ONE_DAY));
   validateCache([...experiments._experiments.keys()], [EXPERIMENT2_ID, EXPERIMENT3_ID]);
 
   
-  let history = yield experiments.getExperiments();
+  let history = await experiments.getExperiments();
   Assert.equal(history.length, 1, "Experiments older than 180 days must be removed from the cache.");
 
   
-  yield setDateAndRestartExperiments(now);
+  await setDateAndRestartExperiments(now);
   validateCache([...experiments._experiments.keys()], [EXPERIMENT2_ID, EXPERIMENT3_ID]);
 
   
   
-  history = yield experiments.getExperiments();
+  history = await experiments.getExperiments();
   Assert.equal(history.length, 1, "Expired experiments must not be saved to cache.");
   checkExperimentListsEqual(experimentListData.slice(0, 1), history);
 
   
   
   gManifestObject["experiments"] = gManifestObject["experiments"].slice(1, 1);
-  yield experiments.updateManifest();
+  await experiments.updateManifest();
   validateCache([...experiments._experiments.keys()], [EXPERIMENT2_ID]);
 
   
-  yield experiments._toggleExperimentsEnabled(false);
-  yield promiseRestartManager();
-  yield removeCacheFile();
+  await experiments._toggleExperimentsEnabled(false);
+  await promiseRestartManager();
+  await removeCacheFile();
 });

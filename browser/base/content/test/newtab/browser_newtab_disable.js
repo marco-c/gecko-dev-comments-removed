@@ -5,44 +5,44 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   
-  yield setLinks("0,1,2,3,4,5,6,7,8");
+  await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  let firstTab = yield* addNewTabPageTab();
+  let firstTab = await addNewTabPageTab();
 
   function isGridDisabled(browser = gBrowser.selectedBrowser) {
-    return ContentTask.spawn(browser, {}, function*() {
+    return ContentTask.spawn(browser, {}, async function() {
       return content.gGrid.node.hasAttribute("page-disabled");
     });
   }
 
-  let isDisabled = yield isGridDisabled();
+  let isDisabled = await isGridDisabled();
   ok(!isDisabled, "page is not disabled");
 
   NewTabUtils.allPages.enabled = false;
 
-  isDisabled = yield isGridDisabled();
+  isDisabled = await isGridDisabled();
   ok(isDisabled, "page is disabled");
 
   
   
-  yield* addNewTabPageTab();
-  isDisabled = yield isGridDisabled(firstTab.linkedBrowser);
+  await addNewTabPageTab();
+  isDisabled = await isGridDisabled(firstTab.linkedBrowser);
   ok(isDisabled, "page is disabled");
 
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, {}, function*() {
+  await ContentTask.spawn(gBrowser.selectedBrowser, {}, async function() {
     Assert.equal(content.document.querySelectorAll(".site").length, 0,
       "no sites have been rendered");
   });
 
   NewTabUtils.allPages.enabled = true;
 
-  isDisabled = yield isGridDisabled();
+  isDisabled = await isGridDisabled();
   ok(!isDisabled, "page is not disabled");
 
-  isDisabled = yield isGridDisabled(firstTab.linkedBrowser);
+  isDisabled = await isGridDisabled(firstTab.linkedBrowser);
   ok(!isDisabled, "old page is not disabled");
 });

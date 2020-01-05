@@ -31,7 +31,7 @@ mapFile("/data/test_delay_updates_ignore.rdf", testserver);
 mapFile("/data/test_delay_updates_defer.rdf", testserver);
 testserver.registerDirectory("/addons/", do_get_file("addons"));
 
-function* createIgnoreAddon() {
+function createIgnoreAddon() {
   writeInstallRDFToDir({
     id: IGNORE_ID,
     version: "1.0",
@@ -52,7 +52,7 @@ function* createIgnoreAddon() {
     .copyTo(unpacked_addon, "bootstrap.js");
 }
 
-function* createCompleteAddon() {
+function createCompleteAddon() {
   writeInstallRDFToDir({
     id: COMPLETE_ID,
     version: "1.0",
@@ -73,7 +73,7 @@ function* createCompleteAddon() {
     .copyTo(unpacked_addon, "bootstrap.js");
 }
 
-function* createDeferAddon() {
+function createDeferAddon() {
   writeInstallRDFToDir({
     id: DEFER_ID,
     version: "1.0",
@@ -95,13 +95,13 @@ function* createDeferAddon() {
 }
 
 
-add_task(function*() {
+add_task(async function() {
 
-  yield createIgnoreAddon();
+  await createIgnoreAddon();
 
   startupManager();
 
-  let addon = yield promiseAddonByID(IGNORE_ID);
+  let addon = await promiseAddonByID(IGNORE_ID);
   do_check_neq(addon, null);
   do_check_eq(addon.version, "1.0");
   do_check_eq(addon.name, "Test Delay Update Ignore");
@@ -110,15 +110,15 @@ add_task(function*() {
   do_check_true(addon.isActive);
   do_check_eq(addon.type, "extension");
 
-  let update = yield promiseFindAddonUpdates(addon);
+  let update = await promiseFindAddonUpdates(addon);
   let install = update.updateAvailable;
 
-  yield promiseCompleteAllInstalls([install]);
+  await promiseCompleteAllInstalls([install]);
 
   do_check_eq(install.state, AddonManager.STATE_POSTPONED);
 
   
-  let addon_postponed = yield promiseAddonByID(IGNORE_ID);
+  let addon_postponed = await promiseAddonByID(IGNORE_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "Test Delay Update Ignore");
@@ -129,9 +129,9 @@ add_task(function*() {
   do_check_true(Services.prefs.getBoolPref(TEST_IGNORE_PREF));
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(IGNORE_ID);
+  let addon_upgraded = await promiseAddonByID(IGNORE_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "Test Delay Update Ignore");
@@ -140,17 +140,17 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });
 
 
-add_task(function*() {
+add_task(async function() {
 
-  yield createCompleteAddon();
+  await createCompleteAddon();
 
   startupManager();
 
-  let addon = yield promiseAddonByID(COMPLETE_ID);
+  let addon = await promiseAddonByID(COMPLETE_ID);
   do_check_neq(addon, null);
   do_check_eq(addon.version, "1.0");
   do_check_eq(addon.name, "Test Delay Update Complete");
@@ -159,13 +159,13 @@ add_task(function*() {
   do_check_true(addon.isActive);
   do_check_eq(addon.type, "extension");
 
-  let update = yield promiseFindAddonUpdates(addon);
+  let update = await promiseFindAddonUpdates(addon);
   let install = update.updateAvailable;
 
-  yield promiseCompleteAllInstalls([install]);
+  await promiseCompleteAllInstalls([install]);
 
   
-  let addon_postponed = yield promiseAddonByID(COMPLETE_ID);
+  let addon_postponed = await promiseAddonByID(COMPLETE_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "Test Delay Update Complete");
@@ -175,7 +175,7 @@ add_task(function*() {
   do_check_eq(addon_postponed.type, "extension");
 
   
-  let [addon_allowed] = yield promiseAddonEvent("onInstalled");
+  let [addon_allowed] = await promiseAddonEvent("onInstalled");
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "Test Delay Update Complete");
@@ -185,9 +185,9 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(COMPLETE_ID);
+  let addon_upgraded = await promiseAddonByID(COMPLETE_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "Test Delay Update Complete");
@@ -196,17 +196,17 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });
 
 
-add_task(function*() {
+add_task(async function() {
 
-  yield createDeferAddon();
+  await createDeferAddon();
 
   startupManager();
 
-  let addon = yield promiseAddonByID(DEFER_ID);
+  let addon = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon, null);
   do_check_eq(addon.version, "1.0");
   do_check_eq(addon.name, "Test Delay Update Defer");
@@ -215,13 +215,13 @@ add_task(function*() {
   do_check_true(addon.isActive);
   do_check_eq(addon.type, "extension");
 
-  let update = yield promiseFindAddonUpdates(addon);
+  let update = await promiseFindAddonUpdates(addon);
   let install = update.updateAvailable;
 
-  yield promiseCompleteAllInstalls([install]);
+  await promiseCompleteAllInstalls([install]);
 
   
-  let addon_postponed = yield promiseAddonByID(DEFER_ID);
+  let addon_postponed = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_postponed, null);
   do_check_eq(addon_postponed.version, "1.0");
   do_check_eq(addon_postponed.name, "Test Delay Update Defer");
@@ -234,7 +234,7 @@ add_task(function*() {
   AddonManagerPrivate.callAddonListeners("onFakeEvent");
 
   
-  let [addon_allowed] = yield promiseAddonEvent("onInstalled");
+  let [addon_allowed] = await promiseAddonEvent("onInstalled");
   do_check_neq(addon_allowed, null);
   do_check_eq(addon_allowed.version, "2.0");
   do_check_eq(addon_allowed.name, "Test Delay Update Defer");
@@ -244,9 +244,9 @@ add_task(function*() {
   do_check_eq(addon_allowed.type, "extension");
 
   
-  yield promiseRestartManager();
+  await promiseRestartManager();
 
-  let addon_upgraded = yield promiseAddonByID(DEFER_ID);
+  let addon_upgraded = await promiseAddonByID(DEFER_ID);
   do_check_neq(addon_upgraded, null);
   do_check_eq(addon_upgraded.version, "2.0");
   do_check_eq(addon_upgraded.name, "Test Delay Update Defer");
@@ -255,5 +255,5 @@ add_task(function*() {
   do_check_true(addon_upgraded.isActive);
   do_check_eq(addon_upgraded.type, "extension");
 
-  yield shutdownManager();
+  await shutdownManager();
 });

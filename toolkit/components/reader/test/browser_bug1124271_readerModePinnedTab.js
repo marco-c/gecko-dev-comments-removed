@@ -10,7 +10,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/conte
 
 var readerButton = document.getElementById("reader-mode-button");
 
-add_task(function* () {
+add_task(async function() {
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref(PREF);
     while (gBrowser.tabs.length > 1) {
@@ -28,18 +28,18 @@ add_task(function* () {
 
   
   let url = TEST_PATH + "readerModeArticle.html";
-  yield promiseTabLoadEvent(tab, url);
-  yield promiseWaitForCondition(() => !readerButton.hidden);
+  await promiseTabLoadEvent(tab, url);
+  await promiseWaitForCondition(() => !readerButton.hidden);
 
   readerButton.click();
-  yield promiseTabLoadEvent(tab);
+  await promiseTabLoadEvent(tab);
 
   
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");
 
   let pageShownPromise = BrowserTestUtils.waitForContentEvent(tab.linkedBrowser, "pageshow");
   readerButton.click();
-  yield pageShownPromise;
+  await pageShownPromise;
   
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");
 

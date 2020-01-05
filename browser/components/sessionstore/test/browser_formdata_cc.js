@@ -10,7 +10,7 @@ requestLongerTimeout(3);
 
 
 
-add_task(function* () {
+add_task(async function() {
   const validCCNumbers = [
     
     "930771457288760", "474915027480942",
@@ -43,29 +43,29 @@ add_task(function* () {
 
   
   
-  function* createAndRemoveTab(formValue) {
+  async function createAndRemoveTab(formValue) {
     
     let tab = gBrowser.addTab(URL);
     let browser = tab.linkedBrowser;
-    yield promiseBrowserLoaded(browser);
+    await promiseBrowserLoaded(browser);
 
     
-    yield setInputValue(browser, formValue);
+    await setInputValue(browser, formValue);
 
     
-    yield promiseRemoveTab(tab);
+    await promiseRemoveTab(tab);
   }
 
   
   for (let number of validCCNumbers) {
-    yield createAndRemoveTab(number);
+    await createAndRemoveTab(number);
     let [{state}] = JSON.parse(ss.getClosedTabData(window));
     ok(!("formdata" in state), "valid CC numbers are not collected");
   }
 
   
   for (let number of invalidCCNumbers) {
-    yield createAndRemoveTab(number);
+    await createAndRemoveTab(number);
     let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
     is(formdata.id.txt, number,
        "numbers that are not valid CC numbers are still collected");
@@ -73,7 +73,7 @@ add_task(function* () {
 });
 
 function setInputValue(browser, formValue) {
-  return ContentTask.spawn(browser, formValue, function* (newValue) {
+  return ContentTask.spawn(browser, formValue, async function(newValue) {
     content.document.getElementById("txt").setUserInput(newValue);
   });
 }

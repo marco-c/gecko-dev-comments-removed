@@ -9,35 +9,35 @@ const PASS = "pwd-" + Math.random();
 
 
 
-add_task(function* test_dont_save_passwords() {
+add_task(async function test_dont_save_passwords() {
   
   Services.prefs.clearUserPref("browser.sessionstore.privacy_level");
 
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   let usernameValue = "User " + Math.random();
-  yield setInputValue(browser, {id: "username", value: usernameValue});
-  yield setInputValue(browser, {id: "passwd", value: PASS});
+  await setInputValue(browser, {id: "username", value: usernameValue});
+  await setInputValue(browser, {id: "passwd", value: PASS});
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
   tab = ss.undoCloseTab(window, 0);
   browser = tab.linkedBrowser;
-  yield promiseTabRestored(tab);
+  await promiseTabRestored(tab);
 
   
-  let username = yield getInputValue(browser, {id: "username"});
+  let username = await getInputValue(browser, {id: "username"});
   is(username, usernameValue, "username was saved/restored");
-  let passwd = yield getInputValue(browser, {id: "passwd"});
+  let passwd = await getInputValue(browser, {id: "passwd"});
   is(passwd, "", "password wasn't saved/restored");
 
   
-  yield forceSaveState();
-  yield promiseForEachSessionRestoreFile((state, key) =>
+  await forceSaveState();
+  await promiseForEachSessionRestoreFile((state, key) =>
     
     ok(!state.includes(PASS), "password has not been written to file " + key)
   );

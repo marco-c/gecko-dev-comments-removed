@@ -1,7 +1,7 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   is(gBrowser.tabs.length, 1, "one tab is open initially");
 
   
@@ -12,21 +12,21 @@ add_task(function* () {
     return BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   }
 
-  yield addTab("http://mochi.test:8888/#0");
-  yield addTab("http://mochi.test:8888/#1");
-  yield addTab("http://mochi.test:8888/#2");
-  yield addTab("http://mochi.test:8888/#3");
+  await addTab("http://mochi.test:8888/#0");
+  await addTab("http://mochi.test:8888/#1");
+  await addTab("http://mochi.test:8888/#2");
+  await addTab("http://mochi.test:8888/#3");
 
   
-  yield setLinks("-1");
-  yield* addNewTabPageTab();
+  await setLinks("-1");
+  await addNewTabPageTab();
   gBrowser.moveTabTo(gBrowser.selectedTab, 1);
 
   
-  yield BrowserTestUtils.synthesizeMouseAtCenter(".newtab-cell",
+  await BrowserTestUtils.synthesizeMouseAtCenter(".newtab-cell",
                                                  {button: 1}, gBrowser.selectedBrowser);
 
-  yield BrowserTestUtils.browserLoaded(gBrowser.getBrowserAtIndex(2));
+  await BrowserTestUtils.browserLoaded(gBrowser.getBrowserAtIndex(2));
   is(gBrowser.getBrowserAtIndex(2).currentURI.spec, "http://example.com/",
      "Middle click opens site in a new tab immediately to the right.");
 });

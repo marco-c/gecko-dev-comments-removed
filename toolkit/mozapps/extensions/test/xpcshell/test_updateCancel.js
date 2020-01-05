@@ -74,22 +74,22 @@ writeInstallRDFForExtension({
   name: "Test Addon 1",
 }, profileDir);
 
-add_task(function* cancel_during_check() {
+add_task(async function cancel_during_check() {
   startupManager();
 
-  let a1 = yield promiseAddonByID("addon1@tests.mozilla.org");
+  let a1 = await promiseAddonByID("addon1@tests.mozilla.org");
   do_check_neq(a1, null);
 
   let listener = makeCancelListener();
   a1.findUpdates(listener, AddonManager.UPDATE_WHEN_USER_REQUESTED);
 
   
-  let [, response] = yield httpReceived.promise;
+  let [, response] = await httpReceived.promise;
 
   
   do_check_true(a1.cancelUpdate());
 
-  let updateResult = yield listener.promise;
+  let updateResult = await listener.promise;
   do_check_eq(AddonManager.UPDATE_STATUS_CANCELLED, updateResult);
 
   
@@ -103,27 +103,27 @@ add_task(function* cancel_during_check() {
   
   do_check_false(a1.cancelUpdate());
 
-  yield true;
+  await true;
 });
 
 
 
-add_task(function* shutdown_during_check() {
+add_task(async function shutdown_during_check() {
   
   httpReceived = Promise.defer();
 
-  let a1 = yield promiseAddonByID("addon1@tests.mozilla.org");
+  let a1 = await promiseAddonByID("addon1@tests.mozilla.org");
   do_check_neq(a1, null);
 
   let listener = makeCancelListener();
   a1.findUpdates(listener, AddonManager.UPDATE_WHEN_USER_REQUESTED);
 
   
-  let [, response] = yield httpReceived.promise;
+  let [, response] = await httpReceived.promise;
 
   shutdownManager();
 
-  let updateResult = yield listener.promise;
+  let updateResult = await listener.promise;
   do_check_eq(AddonManager.UPDATE_STATUS_CANCELLED, updateResult);
 
   
@@ -134,5 +134,5 @@ add_task(function* shutdown_during_check() {
   response.write(data);
   response.finish();
 
-  yield testserver.stop(Promise.defer().resolve);
+  await testserver.stop(Promise.defer().resolve);
 });

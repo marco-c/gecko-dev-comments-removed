@@ -83,7 +83,7 @@ let checkScalars = (countsObject) => {
               "The unfiltered URI count must match the expected value.");
 };
 
-add_task(function* test_tabsAndWindows() {
+add_task(async function test_tabsAndWindows() {
   
   Services.telemetry.clearScalars();
 
@@ -94,7 +94,7 @@ add_task(function* test_tabsAndWindows() {
   let expectedMaxWins = 0;
 
   
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   expectedTabOpenCount = 1;
   expectedMaxTabs = 2;
   
@@ -104,8 +104,8 @@ add_task(function* test_tabsAndWindows() {
                 totalUnfilteredURIs: 0});
 
   
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   expectedTabOpenCount += 2;
   expectedMaxTabs += 2;
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
@@ -113,10 +113,10 @@ add_task(function* test_tabsAndWindows() {
                 totalUnfilteredURIs: 0});
 
   
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank"));
   
   expectedTabOpenCount += 4;
   expectedWinOpenCount += 1;
@@ -124,16 +124,16 @@ add_task(function* test_tabsAndWindows() {
   expectedMaxTabs += 4;
 
   
-  yield BrowserTestUtils.removeTab(openedTabs.pop());
+  await BrowserTestUtils.removeTab(openedTabs.pop());
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
                 windowsOpenCount: expectedWinOpenCount, totalURIs: 0, domainCount: 0,
                 totalUnfilteredURIs: 0});
 
   
   for (let tab of openedTabs) {
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.removeTab(tab);
   }
-  yield BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(win);
 
   
   checkScalars({maxTabs: expectedMaxTabs, tabOpenCount: expectedTabOpenCount, maxWindows: expectedMaxWins,
@@ -141,16 +141,16 @@ add_task(function* test_tabsAndWindows() {
                 totalUnfilteredURIs: 0});
 });
 
-add_task(function* test_subsessionSplit() {
+add_task(async function test_subsessionSplit() {
   
   Services.telemetry.clearScalars();
 
   
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
+  let win = await BrowserTestUtils.openNewBrowserWindow();
   let openedTabs = [];
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:mozilla"));
-  openedTabs.push(yield BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://www.example.com"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:mozilla"));
+  openedTabs.push(await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "http://www.example.com"));
 
   
   
@@ -159,7 +159,7 @@ add_task(function* test_subsessionSplit() {
                 totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 2});
 
   
-  yield BrowserTestUtils.removeTab(openedTabs.pop());
+  await BrowserTestUtils.removeTab(openedTabs.pop());
 
   
   
@@ -175,12 +175,12 @@ add_task(function* test_subsessionSplit() {
 
   
   for (let tab of openedTabs) {
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.removeTab(tab);
   }
-  yield BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(win);
 });
 
-add_task(function* test_URIAndDomainCounts() {
+add_task(async function test_URIAndDomainCounts() {
   
   Services.telemetry.clearScalars();
 
@@ -196,29 +196,29 @@ add_task(function* test_URIAndDomainCounts() {
   };
 
   
-  let firstTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+  let firstTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
   checkCounts({totalURIs: 0, domainCount: 0, totalUnfilteredURIs: 0});
 
   
-  yield BrowserTestUtils.loadURI(firstTab.linkedBrowser, "http://example.com/");
-  yield BrowserTestUtils.browserLoaded(firstTab.linkedBrowser);
+  await BrowserTestUtils.loadURI(firstTab.linkedBrowser, "http://example.com/");
+  await BrowserTestUtils.browserLoaded(firstTab.linkedBrowser);
   checkCounts({totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 1});
 
   
-  let secondTab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
-  yield BrowserTestUtils.switchTab(gBrowser, firstTab);
+  let secondTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
+  await BrowserTestUtils.switchTab(gBrowser, firstTab);
   checkCounts({totalURIs: 1, domainCount: 1, totalUnfilteredURIs: 1});
-  yield BrowserTestUtils.removeTab(secondTab);
+  await BrowserTestUtils.removeTab(secondTab);
 
   
-  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
-  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/");
-  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
+  await BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/");
+  await BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
   checkCounts({totalURIs: 2, domainCount: 1, totalUnfilteredURIs: 2});
 
   
   const XHR_URL = "http://example.com/r";
-  yield ContentTask.spawn(newWin.gBrowser.selectedBrowser, XHR_URL, function(url) {
+  await ContentTask.spawn(newWin.gBrowser.selectedBrowser, XHR_URL, function(url) {
     return new Promise(resolve => {
       var xhr = new content.window.XMLHttpRequest();
       xhr.open("GET", url);
@@ -230,40 +230,40 @@ add_task(function* test_URIAndDomainCounts() {
 
   
   let loadingStopped = browserLocationChanged(newWin.gBrowser.selectedBrowser);
-  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/#2");
-  yield loadingStopped;
+  await BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://example.com/#2");
+  await loadingStopped;
   checkCounts({totalURIs: 3, domainCount: 1, totalUnfilteredURIs: 3});
 
   
-  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://test1.example.com/");
-  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  await BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "http://test1.example.com/");
+  await BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
   checkCounts({totalURIs: 4, domainCount: 1, totalUnfilteredURIs: 4});
 
   
-  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "https://example.org/");
-  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  await BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, "https://example.org/");
+  await BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
   checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 5});
 
   
   
-  yield ContentTask.spawn(newWin.gBrowser.selectedBrowser, null, function* () {
+  await ContentTask.spawn(newWin.gBrowser.selectedBrowser, null, async function() {
     let doc = content.document;
     let iframe = doc.createElement("iframe");
     let promiseIframeLoaded = ContentTaskUtils.waitForEvent(iframe, "load", false);
     iframe.src = "https://example.org/test";
     doc.body.insertBefore(iframe, doc.body.firstChild);
-    yield promiseIframeLoaded;
+    await promiseIframeLoaded;
   });
   checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 5});
 
   
   const TEST_PAGE =
     "data:text/html,<a id='target' href='%23par1'>Click me</a><a name='par1'>The paragraph.</a>";
-  yield BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, TEST_PAGE);
-  yield BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
+  await BrowserTestUtils.loadURI(newWin.gBrowser.selectedBrowser, TEST_PAGE);
+  await BrowserTestUtils.browserLoaded(newWin.gBrowser.selectedBrowser);
   checkCounts({totalURIs: 5, domainCount: 2, totalUnfilteredURIs: 6});
 
   
-  yield BrowserTestUtils.removeTab(firstTab);
-  yield BrowserTestUtils.closeWindow(newWin);
+  await BrowserTestUtils.removeTab(firstTab);
+  await BrowserTestUtils.closeWindow(newWin);
 });

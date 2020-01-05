@@ -14,8 +14,8 @@ Services.scriptloader.loadSubScript(
 
 let originalEngine = Services.search.currentEngine;
 
-add_task(function* setup() {
-  yield promiseNewEngine("testEngine.xml", {
+add_task(async function setup() {
+  await promiseNewEngine("testEngine.xml", {
     setAsCurrent: true,
     testPath: "chrome://mochitests/content/browser/browser/components/search/test/",
   });
@@ -25,20 +25,20 @@ add_task(function* setup() {
   });
 });
 
-add_task(function* GetState() {
-  yield addTab();
+add_task(async function GetState() {
+  await addTab();
   gMsgMan.sendAsyncMessage(TEST_MSG, {
     type: "GetState",
   });
-  let msg = yield waitForTestMsg("State");
+  let msg = await waitForTestMsg("State");
   checkMsg(msg, {
     type: "State",
-    data: yield currentStateObj(),
+    data: await currentStateObj(),
   });
 });
 
-add_task(function* SetCurrentEngine() {
-  yield addTab();
+add_task(async function SetCurrentEngine() {
+  await addTab();
   let newCurrentEngine = null;
   let oldCurrentEngine = Services.search.currentEngine;
   let engines = Services.search.getVisibleEngines();
@@ -68,41 +68,41 @@ add_task(function* SetCurrentEngine() {
   }, "browser-search-engine-modified");
   let searchPromise = waitForTestMsg("CurrentEngine");
   info("Waiting for test to observe engine-current...");
-  yield deferred.promise;
-  let msg = yield searchPromise;
+  await deferred.promise;
+  let msg = await searchPromise;
   checkMsg(msg, {
     type: "CurrentEngine",
-    data: yield currentEngineObj(newCurrentEngine),
+    data: await currentEngineObj(newCurrentEngine),
   });
 
   Services.search.currentEngine = oldCurrentEngine;
-  msg = yield waitForTestMsg("CurrentEngine");
+  msg = await waitForTestMsg("CurrentEngine");
   checkMsg(msg, {
     type: "CurrentEngine",
-    data: yield currentEngineObj(oldCurrentEngine),
+    data: await currentEngineObj(oldCurrentEngine),
   });
 });
 
-add_task(function* modifyEngine() {
-  yield addTab();
+add_task(async function modifyEngine() {
+  await addTab();
   let engine = Services.search.currentEngine;
   let oldAlias = engine.alias;
   engine.alias = "ContentSearchTest";
-  let msg = yield waitForTestMsg("CurrentState");
+  let msg = await waitForTestMsg("CurrentState");
   checkMsg(msg, {
     type: "CurrentState",
-    data: yield currentStateObj(),
+    data: await currentStateObj(),
   });
   engine.alias = oldAlias;
-  msg = yield waitForTestMsg("CurrentState");
+  msg = await waitForTestMsg("CurrentState");
   checkMsg(msg, {
     type: "CurrentState",
-    data: yield currentStateObj(),
+    data: await currentStateObj(),
   });
 });
 
-add_task(function* search() {
-  yield addTab();
+add_task(async function search() {
+  await addTab();
   let engine = Services.search.currentEngine;
   let data = {
     engineName: engine.name,
@@ -117,16 +117,16 @@ add_task(function* search() {
     data,
     expectedURL: submissionURL,
   });
-  let msg = yield waitForTestMsg("loadStopped");
+  let msg = await waitForTestMsg("loadStopped");
   Assert.equal(msg.data.url, submissionURL, "Correct search page loaded");
 });
 
-add_task(function* searchInBackgroundTab() {
+add_task(async function searchInBackgroundTab() {
   
   
   
   
-  yield addTab();
+  await addTab();
   let engine = Services.search.currentEngine;
   let data = {
     engineName: engine.name,
@@ -146,19 +146,19 @@ add_task(function* searchInBackgroundTab() {
   gBrowser.selectedTab = newTab;
   registerCleanupFunction(() => gBrowser.removeTab(newTab));
 
-  let msg = yield waitForTestMsg("loadStopped");
+  let msg = await waitForTestMsg("loadStopped");
   Assert.equal(msg.data.url, submissionURL, "Correct search page loaded");
 });
 
-add_task(function* badImage() {
-  yield addTab();
+add_task(async function badImage() {
+  await addTab();
   
   
   
-  let vals = yield waitForNewEngine("contentSearchBadImage.xml", 1);
+  let vals = await waitForNewEngine("contentSearchBadImage.xml", 1);
   let engine = vals[0];
   let finalCurrentStateMsg = vals[vals.length - 1];
-  let expectedCurrentState = yield currentStateObj();
+  let expectedCurrentState = await currentStateObj();
   let expectedEngine =
     expectedCurrentState.engines.find(e => e.name == engine.name);
   ok(!!expectedEngine, "Sanity check: engine should be in expected state");
@@ -172,14 +172,14 @@ add_task(function* badImage() {
   
   
   Services.search.removeEngine(engine);
-  yield waitForTestMsg("CurrentState");
+  await waitForTestMsg("CurrentState");
 });
 
-add_task(function* GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
-  yield addTab();
+add_task(async function GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
+  await addTab();
 
   
-  let vals = yield waitForNewEngine("contentSearchSuggestions.xml", 0);
+  let vals = await waitForNewEngine("contentSearchSuggestions.xml", 0);
   let engine = vals[0];
 
   let searchStr = "browser_ContentSearch.js-suggestions-";
@@ -196,7 +196,7 @@ add_task(function* GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
       executeSoon(() => deferred.resolve());
     }
   }, "satchel-storage-changed");
-  yield deferred.promise;
+  await deferred.promise;
 
   
   
@@ -209,7 +209,7 @@ add_task(function* GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
   });
 
   
-  let msg = yield waitForTestMsg("Suggestions");
+  let msg = await waitForTestMsg("Suggestions");
   checkMsg(msg, {
     type: "Suggestions",
     data: {
@@ -232,7 +232,7 @@ add_task(function* GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
       executeSoon(() => deferred.resolve());
     }
   }, "satchel-storage-changed");
-  yield deferred.promise;
+  await deferred.promise;
 
   
   gMsgMan.sendAsyncMessage(TEST_MSG, {
@@ -244,7 +244,7 @@ add_task(function* GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
   });
 
   
-  msg = yield waitForTestMsg("Suggestions");
+  msg = await waitForTestMsg("Suggestions");
   checkMsg(msg, {
     type: "Suggestions",
     data: {
@@ -257,7 +257,7 @@ add_task(function* GetSuggestions_AddFormHistoryEntry_RemoveFormHistoryEntry() {
 
   
   Services.search.removeEngine(engine);
-  yield waitForTestMsg("CurrentState");
+  await waitForTestMsg("CurrentState");
 });
 
 function buffersEqual(actualArrayBuffer, expectedArrayBuffer) {
@@ -365,32 +365,32 @@ function addTab() {
   return deferred.promise;
 }
 
-var currentStateObj = Task.async(function* () {
+var currentStateObj = async function() {
   let state = {
     engines: [],
-    currentEngine: yield currentEngineObj(),
+    currentEngine: await currentEngineObj(),
   };
   for (let engine of Services.search.getVisibleEngines()) {
     let uri = engine.getIconURLBySize(16, 16);
     state.engines.push({
       name: engine.name,
-      iconBuffer: yield arrayBufferFromDataURI(uri),
+      iconBuffer: await arrayBufferFromDataURI(uri),
       hidden: false,
     });
   }
   return state;
-});
+};
 
-var currentEngineObj = Task.async(function* () {
+var currentEngineObj = async function() {
   let engine = Services.search.currentEngine;
   let uriFavicon = engine.getIconURLBySize(16, 16);
   let bundle = Services.strings.createBundle("chrome://global/locale/autocomplete.properties");
   return {
     name: engine.name,
     placeholder: bundle.formatStringFromName("searchWithEngine", [engine.name], 1),
-    iconBuffer: yield arrayBufferFromDataURI(uriFavicon),
+    iconBuffer: await arrayBufferFromDataURI(uriFavicon),
   };
-});
+};
 
 function arrayBufferFromDataURI(uri) {
   if (!uri) {

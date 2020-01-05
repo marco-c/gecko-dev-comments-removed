@@ -1,35 +1,35 @@
 "use strict";
 
-add_task(function*() {
+add_task(async function() {
   for (let page of gInitialPages) {
     if (page == "about:newtab") {
       
       continue;
     }
-    let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, page);
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, page);
     ok(!gURLBar.value, "The URL bar should be empty if we load a plain " + page + " page.");
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.removeTab(tab);
   }
 });
 
-add_task(function*() {
+add_task(async function() {
   const URI = "http://www.example.com/browser/browser/base/content/test/urlbar/file_blank_but_not_blank.html";
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, URI);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URI);
   is(gURLBar.value, URI, "The URL bar should match the URI");
   let browserLoaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   ContentTask.spawn(tab.linkedBrowser, null, function() {
     content.document.querySelector("a").click();
   });
-  yield browserLoaded;
+  await browserLoaded;
   ok(gURLBar.value.startsWith("javascript"), "The URL bar should have the JS URI");
   
   
   SimpleTest.expectUncaughtException(true);
-  yield ContentTask.spawn(tab.linkedBrowser, null, function*() {
+  await ContentTask.spawn(tab.linkedBrowser, null, async function() {
     
     content.location.reload();
   });
   ok(!!gURLBar.value, "URL bar should not be blank.");
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
   SimpleTest.expectUncaughtException(false);
 });

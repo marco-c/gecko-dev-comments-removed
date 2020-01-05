@@ -11,8 +11,8 @@ const url = "http://example.org/tests/dom/manifest/test/resource.sjs";
 
 
 
-add_task(function* () {
-  yield BrowserTestUtils.withNewTab({gBrowser, url}, testPromiseMessageAPI)
+add_task(async function() {
+  await BrowserTestUtils.withNewTab({gBrowser, url}, testPromiseMessageAPI)
 });
 
 function* testPromiseMessageAPI(aBrowser) {

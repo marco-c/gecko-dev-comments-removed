@@ -2,9 +2,9 @@
 
 
 
-add_task(function* test() {
-  yield SpecialPowers.pushPrefEnv({set: [["toolkit.telemetry.enabled", true]]});
-  let engine = yield promiseNewEngine("testEngine.xml");
+add_task(async function test() {
+  await SpecialPowers.pushPrefEnv({set: [["toolkit.telemetry.enabled", true]]});
+  let engine = await promiseNewEngine("testEngine.xml");
   let histogramKey = "other-" + engine.name + ".contextmenu";
   let numSearchesBefore = 0;
 
@@ -38,7 +38,7 @@ add_task(function* test() {
   BrowserSearch.loadSearchFromContext("firefox");
 
   
-  yield tabsLoadedDeferred.promise;
+  await tabsLoadedDeferred.promise;
 
   is(tabs[0], gBrowser.tabs[3], "blank tab has been pushed to the end");
   is(tabs[1], gBrowser.tabs[1], "first search tab opens next to the current tab");

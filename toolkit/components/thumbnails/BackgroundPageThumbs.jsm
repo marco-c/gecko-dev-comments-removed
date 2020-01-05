@@ -22,7 +22,6 @@ const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/PageThumbs.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 
 const TEL_CAPTURE_DONE_OK = 0;
@@ -94,11 +93,11 @@ const BackgroundPageThumbs = {
 
 
 
-  captureIfMissing: Task.async(function* (url, options = {}) {
+  async captureIfMissing(url, options = {}) {
     
     
     
-    let exists = yield PageThumbsStorage.fileExistsForURL(url);
+    let exists = await PageThumbsStorage.fileExistsForURL(url);
     if (exists) {
       if (options.onDone) {
         options.onDone(url);
@@ -125,7 +124,7 @@ const BackgroundPageThumbs = {
     });
     try {
       this.capture(url, options);
-      yield thumbPromise;
+      await thumbPromise;
     } catch (err) {
       if (options.onDone) {
         options.onDone(url);
@@ -133,7 +132,7 @@ const BackgroundPageThumbs = {
       throw err;
     }
     return url;
-  }),
+  },
 
   
 

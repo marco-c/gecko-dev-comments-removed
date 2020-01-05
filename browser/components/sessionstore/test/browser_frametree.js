@@ -13,7 +13,7 @@ const URL_FRAMESET = HTTPROOT + "browser_frametree_sample_frameset.html";
 
 
 
-add_task(function* test_frametree() {
+add_task(async function test_frametree() {
   const FRAME_TREE_SINGLE = { href: URL };
   const FRAME_TREE_FRAMESET = {
     href: URL_FRAMESET,
@@ -23,37 +23,37 @@ add_task(function* test_frametree() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
-  yield promiseNewFrameTree(browser);
-  yield checkFrameTree(browser, FRAME_TREE_SINGLE,
+  await promiseNewFrameTree(browser);
+  await checkFrameTree(browser, FRAME_TREE_SINGLE,
     "loading a page resets and creates the frame tree correctly");
 
   
   
-  yield sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
+  await sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
   browser.loadURI(URL_FRAMESET);
-  yield promiseNewFrameTree(browser);
-  yield checkFrameTree(browser, FRAME_TREE_FRAMESET,
+  await promiseNewFrameTree(browser);
+  await checkFrameTree(browser, FRAME_TREE_FRAMESET,
     "dynamic frames created on or after the load event are ignored");
 
   
   
   
   browser.goBack();
-  yield promiseNewFrameTree(browser);
-  yield checkFrameTree(browser, FRAME_TREE_SINGLE,
+  await promiseNewFrameTree(browser);
+  await checkFrameTree(browser, FRAME_TREE_SINGLE,
     "loading from bfache resets and creates the frame tree correctly");
 
   
   
   browser.loadURI(URL_FRAMESET);
   executeSoon(() => browser.stop());
-  yield promiseNewFrameTree(browser);
+  await promiseNewFrameTree(browser);
 
   
-  yield sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
+  await sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
   browser.loadURI(URL_FRAMESET);
-  yield promiseNewFrameTree(browser);
-  yield checkFrameTree(browser, FRAME_TREE_FRAMESET,
+  await promiseNewFrameTree(browser);
+  await checkFrameTree(browser, FRAME_TREE_FRAMESET,
     "reloading a page resets and creates the frame tree correctly");
 
   
@@ -65,7 +65,7 @@ add_task(function* test_frametree() {
 
 
 
-add_task(function* test_frametree_dynamic() {
+add_task(async function test_frametree_dynamic() {
   
   
   const FRAME_TREE = {
@@ -80,29 +80,29 @@ add_task(function* test_frametree_dynamic() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
+  await sendMessage(browser, "ss-test:createDynamicFrames", {id: "frames", url: URL});
   browser.loadURI(URL_FRAMESET);
-  yield promiseNewFrameTree(browser);
+  await promiseNewFrameTree(browser);
 
   
   
   
-  yield checkFrameTree(browser, FRAME_TREE,
+  await checkFrameTree(browser, FRAME_TREE,
     "frame tree contains first four frames");
 
   
-  yield sendMessage(browser, "ss-test:removeLastFrame", {id: "frames"});
+  await sendMessage(browser, "ss-test:removeLastFrame", {id: "frames"});
   
-  yield checkFrameTree(browser, FRAME_TREE,
+  await checkFrameTree(browser, FRAME_TREE,
     "frame tree contains first four frames");
 
   
-  yield sendMessage(browser, "ss-test:removeLastFrame", {id: "frames"});
+  await sendMessage(browser, "ss-test:removeLastFrame", {id: "frames"});
   
-  yield checkFrameTree(browser, FRAME_TREE_REMOVED,
+  await checkFrameTree(browser, FRAME_TREE_REMOVED,
     "frame tree contains first three frames");
 
   

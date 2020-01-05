@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* testTabEvents() {
+add_task(async function testTabEvents() {
   async function background() {
     
     let tabIds = [];
@@ -175,7 +175,7 @@ add_task(function* testTabEvents() {
     background,
   });
 
-  yield extension.startup();
-  yield extension.awaitFinish("tabs.highlight");
-  yield extension.unload();
+  await extension.startup();
+  await extension.awaitFinish("tabs.highlight");
+  await extension.unload();
 });

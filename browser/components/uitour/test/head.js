@@ -4,7 +4,6 @@
 
 
 Cu.import("resource://gre/modules/Promise.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UITour",
                                   "resource:///modules/UITour.jsm");
 
@@ -49,7 +48,7 @@ function taskify(fun) {
   return (doneFn) => {
     
     info("\t" + fun.name);
-    return Task.spawn(fun).then(doneFn, (reason) => {
+    return (fun)().then(doneFn, (reason) => {
       ok(false, reason);
       doneFn();
     });
@@ -182,9 +181,9 @@ function showMenuPromise(name) {
 }
 
 function waitForCallbackResultPromise() {
-  return ContentTask.spawn(gTestTab.linkedBrowser, null, function*() {
+  return ContentTask.spawn(gTestTab.linkedBrowser, null, async function() {
     let contentWin = Components.utils.waiveXrays(content);
-    yield ContentTaskUtils.waitForCondition(() => {
+    await ContentTaskUtils.waitForCondition(() => {
       return contentWin.callbackResult;
     }, "callback should be called");
     return {
@@ -310,7 +309,7 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
               args,
               fnIndices,
             };
-            return ContentTask.spawn(browser, taskArgs, function*(contentArgs) {
+            return ContentTask.spawn(browser, taskArgs, async function(contentArgs) {
               let contentWin = Components.utils.waiveXrays(content);
               let callbacksCalled = 0;
               let resolveCallbackPromise;
@@ -330,7 +329,7 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
               let rv = contentWin.Mozilla.UITour[contentArgs.methodName].apply(contentWin.Mozilla.UITour,
                                                                         argumentsWithFunctions);
               if (contentArgs.fnIndices.length) {
-                yield allCallbacksCalledPromise;
+                await allCallbacksCalledPromise;
               }
               return rv;
             });
@@ -348,7 +347,7 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
 }
 
 
-function* setup_UITourTest() {
+function setup_UITourTest() {
   return UITourTest(true);
 }
 
@@ -432,11 +431,11 @@ function nextTest() {
 
 
 function add_UITour_task(func) {
-  let genFun = function*() {
-    yield new Promise((resolve) => {
+  let genFun = async function() {
+    await new Promise((resolve) => {
       waitForFocus(function() {
         loadUITourTestPage(function() {
-          let funcPromise = Task.spawn(func)
+          let funcPromise = (func)()
                                 .then(() => done(true),
                                       (reason) => {
                                         ok(false, reason);

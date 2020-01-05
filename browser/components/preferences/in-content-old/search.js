@@ -7,8 +7,6 @@
 Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 const ENGINE_FLAVOR = "text/x-moz-search-engine";
 
@@ -257,14 +255,14 @@ var gSearchPane = {
     document.getElementById("engineList").focus();
   },
 
-  editKeyword: Task.async(function* (aEngine, aNewKeyword) {
+  async editKeyword(aEngine, aNewKeyword) {
     let keyword = aNewKeyword.trim();
     if (keyword) {
       let eduplicate = false;
       let dupName = "";
 
       
-      let bduplicate = !!(yield PlacesUtils.keywords.fetch(keyword));
+      let bduplicate = !!(await PlacesUtils.keywords.fetch(keyword));
 
       
       let engines = gEngineView._engineStore.engines;
@@ -292,7 +290,7 @@ var gSearchPane = {
     gEngineView._engineStore.changeEngine(aEngine, "alias", keyword);
     gEngineView.invalidate();
     return true;
-  }),
+  },
 
   saveOneClickEnginesList() {
     let hiddenList = [];

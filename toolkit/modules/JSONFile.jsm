@@ -37,7 +37,6 @@ this.EXPORTED_SYMBOLS = [
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
@@ -172,11 +171,11 @@ JSONFile.prototype = {
 
 
 
-  load: Task.async(function* () {
+  async load() {
     let data = {};
 
     try {
-      let bytes = yield OS.File.read(this.path);
+      let bytes = await OS.File.read(this.path);
 
       
       if (this.dataReady) {
@@ -194,10 +193,10 @@ JSONFile.prototype = {
 
         
         try {
-          let openInfo = yield OS.File.openUnique(this.path + ".corrupt",
+          let openInfo = await OS.File.openUnique(this.path + ".corrupt",
                                                   { humanReadable: true });
-          yield openInfo.file.close();
-          yield OS.File.move(this.path, openInfo.path);
+          await openInfo.file.close();
+          await OS.File.move(this.path, openInfo.path);
         } catch (e2) {
           Cu.reportError(e2);
         }
@@ -213,7 +212,7 @@ JSONFile.prototype = {
     }
 
     this._processLoadedData(data);
-  }),
+  },
 
   
 
@@ -279,15 +278,15 @@ JSONFile.prototype = {
 
 
 
-  _save: Task.async(function* () {
+  async _save() {
     
     let bytes = gTextEncoder.encode(JSON.stringify(this._data));
     if (this._beforeSave) {
-      yield Promise.resolve(this._beforeSave());
+      await Promise.resolve(this._beforeSave());
     }
-    yield OS.File.writeAtomic(this.path, bytes,
+    await OS.File.writeAtomic(this.path, bytes,
                               { tmpPath: this.path + ".tmp" });
-  }),
+  },
 
   
 
@@ -313,11 +312,11 @@ JSONFile.prototype = {
       
       return this._finalizePromise;
     }
-    this._finalizePromise = Task.spawn(function* () {
-      yield this._saver.finalize();
+    this._finalizePromise = (async function() {
+      await this._saver.finalize();
       this._data = null;
       this.dataReady = false;
-    }.bind(this));
+    }.bind(this))();
     return this._finalizePromise;
   },
 
@@ -326,12 +325,12 @@ JSONFile.prototype = {
 
 
 
-  finalize: Task.async(function* () {
+  async finalize() {
     if (this._finalizePromise) {
       throw new Error(`The file ${this.path} has already been finalized`);
     }
     
-    yield this._finalizeInternal();
+    await this._finalizeInternal();
     this._finalizeAt.removeBlocker(this._finalizeInternalBound);
-  }),
+  },
 };

@@ -64,7 +64,7 @@ function parsePromise(uri) {
   return promise;
 }
 
-add_task(function* checkAllTheJS() {
+add_task(async function checkAllTheJS() {
   
   
   
@@ -96,7 +96,7 @@ add_task(function* checkAllTheJS() {
     
     let startTimeMs = Date.now();
     info("Collecting URIs");
-    uris = yield generateURIsFromDirTree(appDir, [".js", ".jsm"]);
+    uris = await generateURIsFromDirTree(appDir, [".js", ".jsm"]);
     info("Collected URIs in " + (Date.now() - startTimeMs) + "ms");
 
     
@@ -122,6 +122,6 @@ add_task(function* checkAllTheJS() {
     allPromises.push(parsePromise(uri.spec));
   }
 
-  let promiseResults = yield Promise.all(allPromises);
+  let promiseResults = await Promise.all(allPromises);
   is(promiseResults.filter((x) => !x).length, 0, "There should be 0 parsing errors");
 });

@@ -37,30 +37,30 @@ registerCleanupFunction(() => {
 
 
 
-add_task(function* test_new_tab() {
-  let normalWindow = yield BrowserTestUtils.openNewBrowserWindow({
+add_task(async function test_new_tab() {
+  let normalWindow = await BrowserTestUtils.openNewBrowserWindow({
     remote: true,
   });
-  let privateWindow = yield BrowserTestUtils.openNewBrowserWindow({
+  let privateWindow = await BrowserTestUtils.openNewBrowserWindow({
     remote: true,
     private: true,
   });
 
   for (let testWindow of [normalWindow, privateWindow]) {
-    yield promiseWaitForFocus(testWindow);
+    await promiseWaitForFocus(testWindow);
     let testBrowser = testWindow.gBrowser.selectedBrowser;
     info("Preparing non-remote browser");
-    yield prepareNonRemoteBrowser(testWindow, testBrowser);
+    await prepareNonRemoteBrowser(testWindow, testBrowser);
     info("Non-remote browser prepared - sending frame script");
 
     
     let mm = testBrowser.messageManager;
     mm.loadFrameScript("data:,(" + frame_script.toString() + ")();", true);
 
-    let tabOpenEvent = yield waitForNewTabEvent(testWindow.gBrowser);
+    let tabOpenEvent = await waitForNewTabEvent(testWindow.gBrowser);
     let newTab = tabOpenEvent.target;
 
-    yield promiseTabLoadEvent(newTab);
+    await promiseTabLoadEvent(newTab);
 
     
     
@@ -79,11 +79,11 @@ add_task(function* test_new_tab() {
 
 
 
-add_task(function* test_new_window() {
-  let normalWindow = yield BrowserTestUtils.openNewBrowserWindow({
+add_task(async function test_new_window() {
+  let normalWindow = await BrowserTestUtils.openNewBrowserWindow({
     remote: true
   }, true);
-  let privateWindow = yield BrowserTestUtils.openNewBrowserWindow({
+  let privateWindow = await BrowserTestUtils.openNewBrowserWindow({
     remote: true,
     private: true,
   }, true);
@@ -94,9 +94,9 @@ add_task(function* test_new_window() {
                             Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW);
 
   for (let testWindow of [normalWindow, privateWindow]) {
-    yield promiseWaitForFocus(testWindow);
+    await promiseWaitForFocus(testWindow);
     let testBrowser = testWindow.gBrowser.selectedBrowser;
-    yield prepareNonRemoteBrowser(testWindow, testBrowser);
+    await prepareNonRemoteBrowser(testWindow, testBrowser);
 
     
     let mm = testBrowser.messageManager;
@@ -104,7 +104,7 @@ add_task(function* test_new_window() {
 
     
     let {subject: newWindow} =
-      yield promiseTopicObserved("browser-delayed-startup-finished");
+      await promiseTopicObserved("browser-delayed-startup-finished");
 
     is(PrivateBrowsingUtils.isWindowPrivate(testWindow),
        PrivateBrowsingUtils.isWindowPrivate(newWindow),
@@ -112,7 +112,7 @@ add_task(function* test_new_window() {
 
     let newTab = newWindow.gBrowser.selectedTab;
 
-    yield promiseTabLoadEvent(newTab);
+    await promiseTabLoadEvent(newTab);
 
     
     

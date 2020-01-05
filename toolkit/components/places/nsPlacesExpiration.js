@@ -26,7 +26,6 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
@@ -799,7 +798,7 @@ nsPlacesExpiration.prototype = {
     return this._expireOnIdle;
   },
 
-  _loadPrefs: Task.async(function* () {
+  async _loadPrefs() {
     
     this._urisLimit = this._prefBranch.getIntPref(PREF_MAX_URIS,
                                                   PREF_MAX_URIS_NOTSET);
@@ -841,7 +840,7 @@ nsPlacesExpiration.prototype = {
       
       let db;
       try {
-        db = yield PlacesUtils.promiseDBConnection();
+        db = await PlacesUtils.promiseDBConnection();
       } catch (ex) {
         
         
@@ -850,11 +849,11 @@ nsPlacesExpiration.prototype = {
         
       }
       if (db) {
-        let pageSize = (yield db.execute(`PRAGMA page_size`))[0].getResultByIndex(0);
-        let pageCount = (yield db.execute(`PRAGMA page_count`))[0].getResultByIndex(0);
-        let freelistCount = (yield db.execute(`PRAGMA freelist_count`))[0].getResultByIndex(0);
+        let pageSize = (await db.execute(`PRAGMA page_size`))[0].getResultByIndex(0);
+        let pageCount = (await db.execute(`PRAGMA page_count`))[0].getResultByIndex(0);
+        let freelistCount = (await db.execute(`PRAGMA freelist_count`))[0].getResultByIndex(0);
         let dbSize = (pageCount - freelistCount) * pageSize;
-        let uriCount = (yield db.execute(`SELECT count(*) FROM moz_places`))[0].getResultByIndex(0);
+        let uriCount = (await db.execute(`SELECT count(*) FROM moz_places`))[0].getResultByIndex(0);
         let avgURISize = Math.ceil(dbSize / uriCount);
         
         
@@ -875,7 +874,7 @@ nsPlacesExpiration.prototype = {
     if (this._interval <= 0) {
       this._interval = PREF_INTERVAL_SECONDS_NOTSET;
     }
-  }),
+  },
 
   
 
@@ -923,13 +922,13 @@ nsPlacesExpiration.prototype = {
 
   _expireWithActionAndLimit:
   function PEX__expireWithActionAndLimit(aAction, aLimit) {
-    Task.spawn(function*() {
+    (async function() {
       
       
       
       
       if (!this._shuttingDown)
-        yield this._loadPrefsPromise;
+        await this._loadPrefsPromise;
 
       
       if (this._inBatchMode)
@@ -948,7 +947,7 @@ nsPlacesExpiration.prototype = {
 
       
       this._db.executeAsync(boundStatements, boundStatements.length, this);
-    }.bind(this)).catch(Cu.reportError);
+    }.bind(this))().catch(Cu.reportError);
   },
 
   

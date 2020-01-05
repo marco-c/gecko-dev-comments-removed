@@ -8,8 +8,8 @@
 
 
 
-add_task(function* docshell_capabilities() {
-  let tab = yield createTab();
+add_task(async function docshell_capabilities() {
+  let tab = await createTab();
   let browser = tab.linkedBrowser;
   let docShell = browser.docShell;
 
@@ -28,10 +28,10 @@ add_task(function* docshell_capabilities() {
   
   
   browser.reload();
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   let disallowedState = JSON.parse(ss.getTabState(tab));
@@ -41,10 +41,10 @@ add_task(function* docshell_capabilities() {
   is(disallow.size, 2, "two capabilities disallowed");
 
   
-  yield promiseTabState(tab, {entries: [{url: "about:robots", triggeringPrincipal_base64}]});
+  await promiseTabState(tab, {entries: [{url: "about:robots", triggeringPrincipal_base64}]});
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   
   state = JSON.parse(ss.getTabState(tab));
@@ -52,7 +52,7 @@ add_task(function* docshell_capabilities() {
   ok(flags.every(f => docShell[f]), "all flags set to true");
 
   
-  yield promiseTabState(tab, disallowedState);
+  await promiseTabState(tab, disallowedState);
 
   
   ok(!docShell.allowImages, "images not allowed");

@@ -2,8 +2,8 @@
 
 
 
-add_task(function* test() {
-  yield new Promise(resolve => {
+add_task(async function test() {
+  await new Promise(resolve => {
     Services.logins.removeAllLogins();
 
     

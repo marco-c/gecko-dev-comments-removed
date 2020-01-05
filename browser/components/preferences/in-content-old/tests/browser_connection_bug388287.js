@@ -3,7 +3,6 @@
 
 
 Components.utils.import("resource://gre/modules/Services.jsm");
-Components.utils.import("resource://gre/modules/Task.jsm");
 
 function test() {
   waitForExplicitFinish();
@@ -33,14 +32,14 @@ function test() {
 
 
 
-  open_preferences(Task.async(function* tabOpened(aContentWindow) {
+  open_preferences(async function tabOpened(aContentWindow) {
     let dialog, dialogClosingPromise;
     let doc, proxyTypePref, sharePref, httpPref, httpPortPref, ftpPref, ftpPortPref;
 
     
-    function* setDoc() {
+    async function setDoc() {
       if (closeable) {
-        let dialogClosingEvent = yield dialogClosingPromise;
+        let dialogClosingEvent = await dialogClosingPromise;
         ok(dialogClosingEvent, "Connection dialog closed");
       }
 
@@ -50,7 +49,7 @@ function test() {
         return;
       }
 
-      dialog = yield openAndLoadSubDialog(connectionURL);
+      dialog = await openAndLoadSubDialog(connectionURL);
       dialogClosingPromise = waitForEvent(dialog.document.documentElement, "dialogclosing");
 
       doc = dialog.document;
@@ -63,7 +62,7 @@ function test() {
     }
 
     
-    yield setDoc();
+    await setDoc();
 
     
     proxyTypePref.value = 1;
@@ -93,7 +92,7 @@ function test() {
     doc.documentElement.acceptDialog();
 
     
-    yield setDoc();
+    await setDoc();
     proxyTypePref.value = 1;
     sharePref.value = true;
     ftpPref.value = "localhost";
@@ -103,7 +102,7 @@ function test() {
     doc.documentElement.acceptDialog();
 
     
-    yield setDoc();
+    await setDoc();
     proxyTypePref.value = 1;
     sharePref.value = true;
     httpPref.value = "";
@@ -111,7 +110,7 @@ function test() {
     doc.documentElement.acceptDialog();
 
     
-    yield setDoc();
+    await setDoc();
     proxyTypePref.value = 0;
     sharePref.value = true;
     httpPref.value = "localhost";
@@ -120,6 +119,6 @@ function test() {
     
     finalTest = true;
     doc.documentElement.acceptDialog();
-    yield setDoc();
-  }));
+    await setDoc();
+  });
 }

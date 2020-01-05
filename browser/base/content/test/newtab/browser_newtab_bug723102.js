@@ -1,21 +1,21 @@
 
 
 
-add_task(function* () {
+add_task(async function() {
   
-  yield setLinks("0,1,2,3,4,5,6,7,8");
+  await setLinks("0,1,2,3,4,5,6,7,8");
   setPinnedLinks("");
 
-  yield* addNewTabPageTab();
+  await addNewTabPageTab();
   let firstTab = gBrowser.selectedTab;
 
-  yield* addNewTabPageTab();
-  yield BrowserTestUtils.removeTab(firstTab);
+  await addNewTabPageTab();
+  await BrowserTestUtils.removeTab(firstTab);
 
   ok(NewTabUtils.allPages.enabled, "page is enabled");
   NewTabUtils.allPages.enabled = false;
 
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
+  await ContentTask.spawn(gBrowser.selectedBrowser, null, async function() {
     Assert.ok(content.gGrid.node.hasAttribute("page-disabled"), "page is disabled");
   });
 

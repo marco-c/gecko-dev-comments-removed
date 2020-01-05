@@ -109,32 +109,32 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function*() {
+add_task(async function() {
   
   let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
 
   
   test.populate();
 
-  yield BookmarkJSONUtils.exportToFile(jsonFile);
+  await BookmarkJSONUtils.exportToFile(jsonFile);
 
   
-  yield BookmarkJSONUtils.importFromFile(jsonFile, true);
+  await BookmarkJSONUtils.importFromFile(jsonFile, true);
 
   
   
   test.validate(false);
 
   
-  yield PlacesUtils.bookmarks.eraseEverything();
+  await PlacesUtils.bookmarks.eraseEverything();
   
   PlacesUtils.bookmarks.removeItem(test._excludeRootId);
   
-  yield BookmarkJSONUtils.importFromFile(jsonFile, true);
+  await BookmarkJSONUtils.importFromFile(jsonFile, true);
 
   
   test.validate(true);
 
   
-  yield OS.File.remove(jsonFile);
+  await OS.File.remove(jsonFile);
 });

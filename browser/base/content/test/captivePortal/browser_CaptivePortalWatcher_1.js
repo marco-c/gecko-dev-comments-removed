@@ -10,18 +10,18 @@ let testcases = [
 
 
 
-  function* test_detectedWithNoBrowserWindow_Redirect() {
-    yield portalDetected();
-    let win = yield focusWindowAndWaitForPortalUI();
+  async function test_detectedWithNoBrowserWindow_Redirect() {
+    await portalDetected();
+    let win = await focusWindowAndWaitForPortalUI();
     let browser = win.gBrowser.selectedTab.linkedBrowser;
     let loadPromise =
       BrowserTestUtils.browserLoaded(browser, false, CANONICAL_URL_REDIRECTED);
     BrowserTestUtils.loadURI(browser, CANONICAL_URL_REDIRECTED);
-    yield loadPromise;
-    yield freePortal(true);
+    await loadPromise;
+    await freePortal(true);
     ensurePortalTab(win);
     ensureNoPortalNotification(win);
-    yield closeWindowAndWaitForXulWindowVisible(win);
+    await closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
@@ -30,9 +30,9 @@ let testcases = [
 
 
 
-  function* test_showLoginPageButton() {
-    let win = yield openWindowAndWaitForFocus();
-    yield portalDetected();
+  async function test_showLoginPageButton() {
+    let win = await openWindowAndWaitForFocus();
+    await portalDetected();
     let notification = ensurePortalNotification(win);
     testShowLoginPageButtonVisibility(notification, "visible");
 
@@ -52,37 +52,37 @@ let testcases = [
 
     
     
-    let tab = yield clickButtonAndExpectNewPortalTab();
+    let tab = await clickButtonAndExpectNewPortalTab();
     testPortalTabSelectedAndButtonNotVisible();
 
     
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.removeTab(tab);
     ensureNoPortalTab(win);
     testShowLoginPageButtonVisibility(notification, "visible");
 
     
     
-    tab = yield clickButtonAndExpectNewPortalTab();
+    tab = await clickButtonAndExpectNewPortalTab();
 
     
     
-    let anotherTab = yield BrowserTestUtils.openNewForegroundTab(win.gBrowser);
+    let anotherTab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
     testShowLoginPageButtonVisibility(notification, "visible");
     button.click();
     is(win.gBrowser.selectedTab, tab, "The captive portal tab should be selected.");
 
     
     
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.removeTab(tab);
     win.gBrowser.selectedTab = anotherTab;
     testShowLoginPageButtonVisibility(notification, "visible");
-    tab = yield clickButtonAndExpectNewPortalTab();
+    tab = await clickButtonAndExpectNewPortalTab();
 
-    yield BrowserTestUtils.removeTab(anotherTab);
-    yield freePortal(true);
+    await BrowserTestUtils.removeTab(anotherTab);
+    await freePortal(true);
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
-    yield closeWindowAndWaitForXulWindowVisible(win);
+    await closeWindowAndWaitForXulWindowVisible(win);
   },
 ];
 

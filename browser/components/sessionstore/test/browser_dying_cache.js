@@ -6,20 +6,20 @@
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   
-  let win = yield promiseNewWindowLoaded();
+  let win = await promiseNewWindowLoaded();
 
   
   let flags = Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
   win.gBrowser.selectedBrowser.loadURIWithFlags("about:robots", flags);
-  yield promiseBrowserLoaded(win.gBrowser.selectedBrowser);
+  await promiseBrowserLoaded(win.gBrowser.selectedBrowser);
 
   
   let tab = win.gBrowser.addTab("about:mozilla");
-  yield promiseBrowserLoaded(tab.linkedBrowser);
-  yield TabStateFlusher.flush(tab.linkedBrowser);
-  yield promiseRemoveTab(win.gBrowser.tabs[0]);
+  await promiseBrowserLoaded(tab.linkedBrowser);
+  await TabStateFlusher.flush(tab.linkedBrowser);
+  await promiseRemoveTab(win.gBrowser.tabs[0]);
 
   
   
@@ -28,7 +28,7 @@ add_task(function* test() {
   checkWindowState(win);
 
   
-  yield BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(win);
 
   
   

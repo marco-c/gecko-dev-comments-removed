@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* () {
+add_task(async function() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "page_action": {
@@ -46,15 +46,15 @@ add_task(function* () {
     }]);
   });
 
-  yield extension.startup();
-  yield extension.awaitMessage("page-action-shown");
+  await extension.startup();
+  await extension.awaitMessage("page-action-shown");
 
   clickPageAction(extension);
 
-  yield extension.awaitMessage("popup");
+  await extension.awaitMessage("popup");
 
-  yield extension.unload();
+  await extension.unload();
 
   SimpleTest.endMonitorConsole();
-  yield waitForConsole;
+  await waitForConsole;
 });

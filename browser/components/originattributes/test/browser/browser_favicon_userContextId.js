@@ -141,32 +141,32 @@ function waitOnFaviconLoaded(aFaviconURL) {
   });
 }
 
-function* generateCookies(aHost) {
+async function generateCookies(aHost) {
   
   let cookies = [];
   cookies.push(Math.random().toString());
   cookies.push(Math.random().toString());
 
   
-  let tabInfoA = yield openTabInUserContext(aHost, USER_CONTEXT_ID_PERSONAL);
-  let tabInfoB = yield openTabInUserContext(aHost, USER_CONTEXT_ID_WORK);
+  let tabInfoA = await openTabInUserContext(aHost, USER_CONTEXT_ID_PERSONAL);
+  let tabInfoB = await openTabInUserContext(aHost, USER_CONTEXT_ID_WORK);
 
-  yield ContentTask.spawn(tabInfoA.browser, cookies[0], function* (value) {
+  await ContentTask.spawn(tabInfoA.browser, cookies[0], async function(value) {
     content.document.cookie = value;
   });
 
-  yield ContentTask.spawn(tabInfoB.browser, cookies[1], function* (value) {
+  await ContentTask.spawn(tabInfoB.browser, cookies[1], async function(value) {
     content.document.cookie = value;
   });
 
-  yield BrowserTestUtils.removeTab(tabInfoA.tab);
-  yield BrowserTestUtils.removeTab(tabInfoB.tab);
+  await BrowserTestUtils.removeTab(tabInfoA.tab);
+  await BrowserTestUtils.removeTab(tabInfoB.tab);
 
   return cookies;
 }
 
-function* doTest(aTestPage, aFaviconHost, aFaviconURL) {
-  let cookies = yield generateCookies(aFaviconHost);
+async function doTest(aTestPage, aFaviconHost, aFaviconURL) {
+  let cookies = await generateCookies(aFaviconHost);
   let pageURI = makeURI(aTestPage);
 
   
@@ -179,31 +179,31 @@ function* doTest(aTestPage, aFaviconHost, aFaviconURL) {
   Services.obs.addObserver(observer, "http-on-modify-request");
 
   
-  let tabInfo = yield openTabInUserContext(aTestPage, USER_CONTEXT_ID_PERSONAL);
+  let tabInfo = await openTabInUserContext(aTestPage, USER_CONTEXT_ID_PERSONAL);
 
   
-  yield observer.promise;
+  await observer.promise;
   
-  yield promiseWaitOnFaviconLoaded;
+  await promiseWaitOnFaviconLoaded;
 
   
-  yield BrowserTestUtils.removeTab(tabInfo.tab);
+  await BrowserTestUtils.removeTab(tabInfo.tab);
 
   
   observer.reset(USER_CONTEXT_ID_WORK, cookies[1], pageURI, aFaviconURL);
-  tabInfo = yield openTabInUserContext(aTestPage, USER_CONTEXT_ID_WORK);
+  tabInfo = await openTabInUserContext(aTestPage, USER_CONTEXT_ID_WORK);
 
   
-  yield observer.promise;
+  await observer.promise;
 
   Services.obs.removeObserver(observer, "http-on-modify-request");
 
-  yield BrowserTestUtils.removeTab(tabInfo.tab);
+  await BrowserTestUtils.removeTab(tabInfo.tab);
 }
 
-add_task(function* setup() {
+add_task(async function setup() {
   
-  yield SpecialPowers.pushPrefEnv({"set": [
+  await SpecialPowers.pushPrefEnv({"set": [
       ["privacy.userContext.enabled", true]
   ]});
 });
@@ -226,7 +226,7 @@ registerCleanupFunction(() => {
   clearAllPlacesFavicons();
 });
 
-add_task(function* test_favicon_userContextId() {
+add_task(async function test_favicon_userContextId() {
   
   clearAllImageCaches();
 
@@ -236,12 +236,12 @@ add_task(function* test_favicon_userContextId() {
   networkCache.clear();
 
   
-  yield clearAllPlacesFavicons();
+  await clearAllPlacesFavicons();
 
-  yield doTest(TEST_PAGE, TEST_SITE, FAVICON_URI);
+  await doTest(TEST_PAGE, TEST_SITE, FAVICON_URI);
 });
 
-add_task(function* test_thirdPartyFavicon_userContextId() {
+add_task(async function test_thirdPartyFavicon_userContextId() {
   
   clearAllImageCaches();
 
@@ -251,7 +251,7 @@ add_task(function* test_thirdPartyFavicon_userContextId() {
   networkCache.clear();
 
   
-  yield clearAllPlacesFavicons();
+  await clearAllPlacesFavicons();
 
-  yield doTest(TEST_THIRD_PARTY_PAGE, TEST_THIRD_PARTY_SITE, THIRD_PARTY_FAVICON_URI);
+  await doTest(TEST_THIRD_PARTY_PAGE, TEST_THIRD_PARTY_SITE, THIRD_PARTY_FAVICON_URI);
 });

@@ -38,9 +38,9 @@ function addEngineWithParams(engine) {
 }
 
 
-add_task(function* test_hasEngineWithURL() {
+add_task(async function test_hasEngineWithURL() {
   
-  yield asyncInit();
+  await asyncInit();
 
   
   let UNSORTED_ENGINE = {

@@ -4,17 +4,17 @@
 
 
 
-add_task(function* test_no_sessionrestore_button() {
+add_task(async function test_no_sessionrestore_button() {
   
-  (yield BrowserTestUtils.openNewBrowserWindow({private: true})).close();
+  (await BrowserTestUtils.openNewBrowserWindow({private: true})).close();
 
-  let win = yield BrowserTestUtils.openNewBrowserWindow({private: true});
+  let win = await BrowserTestUtils.openNewBrowserWindow({private: true});
   let tab = win.gBrowser.addTab("about:home");
   let browser = tab.linkedBrowser;
 
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
 
-  yield ContentTask.spawn(browser, null, function* () {
+  await ContentTask.spawn(browser, null, async function() {
     let button = content.document.getElementById("restorePreviousSession");
     Assert.equal(content.getComputedStyle(button).display, "none",
       "The Session Restore about:home button should be disabled");

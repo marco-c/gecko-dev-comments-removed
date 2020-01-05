@@ -37,13 +37,13 @@ function getTransferableFromClipboard(asHTML) {
   return trans;
 }
 
-function* cutCurrentSelection(elementQueryString, property, browser) {
+async function cutCurrentSelection(elementQueryString, property, browser) {
   
-  yield BrowserTestUtils.synthesizeKey("x", {accelKey: true}, browser);
+  await BrowserTestUtils.synthesizeKey("x", {accelKey: true}, browser);
 
   
-  yield ContentTask.spawn(browser, [elementQueryString, property],
-    function* ([contentElementQueryString, contentProperty]) {
+  await ContentTask.spawn(browser, [elementQueryString, property],
+    async function([contentElementQueryString, contentProperty]) {
       let element = content.document.querySelector(contentElementQueryString);
       is(element[contentProperty], "",
         `${contentElementQueryString} should be empty after cut (superkey + x)`);
@@ -52,23 +52,23 @@ function* cutCurrentSelection(elementQueryString, property, browser) {
 
 
 
-add_task(function* test_paste_transferable_plain_text() {
+add_task(async function test_paste_transferable_plain_text() {
   let testPage =
     "data:text/html," +
     '<textarea id="textarea">Write something here</textarea>';
 
-  yield BrowserTestUtils.withNewTab(testPage, function* (browser) {
+  await BrowserTestUtils.withNewTab(testPage, async function(browser) {
     
-    yield BrowserTestUtils.synthesizeMouse("#textarea", 0, 0, {}, browser);
-    yield BrowserTestUtils.synthesizeKey("a", {accelKey: true}, browser);
+    await BrowserTestUtils.synthesizeMouse("#textarea", 0, 0, {}, browser);
+    await BrowserTestUtils.synthesizeKey("a", {accelKey: true}, browser);
 
-    yield* cutCurrentSelection("#textarea", "value", browser);
+    await cutCurrentSelection("#textarea", "value", browser);
 
     let trans = getTransferableFromClipboard(false);
     let DOMWindowUtils = EventUtils._getDOMWindowUtils(window);
     DOMWindowUtils.sendContentCommandEvent("pasteTransferable", trans);
 
-    yield ContentTask.spawn(browser, null, function* () {
+    await ContentTask.spawn(browser, null, async function() {
       let textArea = content.document.querySelector("#textarea");
       is(textArea.value, "Write something here",
          "Send content command pasteTransferable successful");
@@ -83,27 +83,27 @@ add_task(function* test_paste_transferable_plain_text() {
 
 
 
-add_task(function* test_paste_transferable_html() {
+add_task(async function test_paste_transferable_html() {
   let testPage =
     "data:text/html," +
     '<div contenteditable="true"><b>Bold Text</b><i>italics</i></div>';
 
-  yield BrowserTestUtils.withNewTab(testPage, function* (browser) {
+  await BrowserTestUtils.withNewTab(testPage, async function(browser) {
     
-    yield BrowserTestUtils.synthesizeMouse("div", 0, 0, {}, browser);
-    yield ContentTask.spawn(browser, {}, function* () {
+    await BrowserTestUtils.synthesizeMouse("div", 0, 0, {}, browser);
+    await ContentTask.spawn(browser, {}, async function() {
       let element = content.document.querySelector("div");
       let selection = content.window.getSelection();
       selection.selectAllChildren(element);
     });
 
-    yield* cutCurrentSelection("div", "textContent", browser);
+    await cutCurrentSelection("div", "textContent", browser);
 
     let trans = getTransferableFromClipboard(true);
     let DOMWindowUtils = EventUtils._getDOMWindowUtils(window);
     DOMWindowUtils.sendContentCommandEvent("pasteTransferable", trans);
 
-    yield ContentTask.spawn(browser, null, function* () {
+    await ContentTask.spawn(browser, null, async function() {
       let textArea = content.document.querySelector("div");
       is(textArea.innerHTML, "<b>Bold Text</b><i>italics</i>",
          "Send content command pasteTransferable successful");

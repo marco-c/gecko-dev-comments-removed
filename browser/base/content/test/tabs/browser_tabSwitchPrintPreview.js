@@ -5,19 +5,19 @@ const kURL2 = "data:text/html,I shouldn't be here!";
 
 
 
-add_task(function* () {
-  yield BrowserTestUtils.withNewTab(kURL1, function* (browser) {
+add_task(async function() {
+  await BrowserTestUtils.withNewTab(kURL1, async function(browser) {
     let tab = gBrowser.addTab(kURL2);
     document.getElementById("cmd_printPreview").doCommand();
     gBrowser.selectedTab = tab;
-    yield BrowserTestUtils.waitForCondition(() => gInPrintPreviewMode, "should be in print preview mode");
+    await BrowserTestUtils.waitForCondition(() => gInPrintPreviewMode, "should be in print preview mode");
     isnot(gBrowser.selectedTab, tab, "Selected tab should not be the tab we added");
     is(gBrowser.selectedTab, PrintPreviewListener._printPreviewTab, "Selected tab should be the print preview tab");
     gBrowser.selectedTab = tab;
     isnot(gBrowser.selectedTab, tab, "Selected tab should still not be the tab we added");
     is(gBrowser.selectedTab, PrintPreviewListener._printPreviewTab, "Selected tab should still be the print preview tab");
     PrintUtils.exitPrintPreview();
-    yield BrowserTestUtils.waitForCondition(() => !gInPrintPreviewMode, "should be in print preview mode");
-    yield BrowserTestUtils.removeTab(tab);
+    await BrowserTestUtils.waitForCondition(() => !gInPrintPreviewMode, "should be in print preview mode");
+    await BrowserTestUtils.removeTab(tab);
   });
 });

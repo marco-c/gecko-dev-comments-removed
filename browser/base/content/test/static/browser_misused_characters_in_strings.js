@@ -162,11 +162,11 @@ function* getAllTheFiles(extension) {
   return Array.from(new Set(urisGreD.concat(appDirXCurProcD)));
 }
 
-add_task(function* checkAllTheProperties() {
+add_task(async function checkAllTheProperties() {
   
   
   
-  let uris = yield getAllTheFiles(".properties");
+  let uris = await getAllTheFiles(".properties");
   ok(uris.length, `Found ${uris.length} .properties files to scan for misused characters`);
 
   for (let uri of uris) {
@@ -180,8 +180,8 @@ add_task(function* checkAllTheProperties() {
   }
 });
 
-var checkDTD = Task.async(function* (aURISpec) {
-  let rawContents = yield fetchFile(aURISpec);
+var checkDTD = async function(aURISpec) {
+  let rawContents = await fetchFile(aURISpec);
   
   
   let entities = rawContents.match(/<!ENTITY\s+([\w\.]*)\s+("[^"]*"|'[^']*')\s*>/g);
@@ -196,21 +196,21 @@ var checkDTD = Task.async(function* (aURISpec) {
     str = str.slice(1, -1);
     testForErrors(aURISpec, key, str);
   }
-});
+};
 
-add_task(function* checkAllTheDTDs() {
-  let uris = yield getAllTheFiles(".dtd");
+add_task(async function checkAllTheDTDs() {
+  let uris = await getAllTheFiles(".dtd");
   ok(uris.length, `Found ${uris.length} .dtd files to scan for misused characters`);
   for (let uri of uris) {
-    yield checkDTD(uri.spec);
+    await checkDTD(uri.spec);
   }
 
   
   
   let dtdLocation = gTestPath.replace(/\/[^\/]*$/i, "/bug1262648_string_with_newlines.dtd");
-  yield checkDTD(dtdLocation);
+  await checkDTD(dtdLocation);
 });
 
-add_task(function* ensureWhiteListIsEmpty() {
+add_task(async function ensureWhiteListIsEmpty() {
   is(gWhitelist.length, 0, "No remaining whitelist entries exist");
 });

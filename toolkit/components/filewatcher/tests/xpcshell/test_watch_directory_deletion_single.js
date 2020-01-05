@@ -16,7 +16,7 @@ function run_test() {
 
 
 
-add_task(function* test_watch_single_path_directory_deletion() {
+add_task(async function test_watch_single_path_directory_deletion() {
 
   let watchedDir = OS.Constants.Path.profileDir;
   let tempDirName = "test";
@@ -27,20 +27,20 @@ add_task(function* test_watch_single_path_directory_deletion() {
   let deferred = Promise.defer();
 
   
-  yield OS.File.makeDir(tmpDirPath);
+  await OS.File.makeDir(tmpDirPath);
 
   
   
-  yield promiseAddPath(watcher, watchedDir, deferred.resolve, deferred.reject);
+  await promiseAddPath(watcher, watchedDir, deferred.resolve, deferred.reject);
 
   
   OS.File.removeDir(tmpDirPath);
 
   
-  let changed = yield deferred.promise;
+  let changed = await deferred.promise;
   do_check_eq(changed, tmpDirPath);
 
   
   
-  yield promiseRemovePath(watcher, watchedDir, deferred.resolve, deferred.reject);
+  await promiseRemovePath(watcher, watchedDir, deferred.resolve, deferred.reject);
 });

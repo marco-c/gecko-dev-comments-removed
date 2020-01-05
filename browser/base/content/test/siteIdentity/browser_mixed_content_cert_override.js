@@ -26,22 +26,22 @@ function checkIdentityPopup(icon) {
   ok(getPopupContentVerifier().textContent.includes("security exception"), "Text shows overridden certificate warning.");
 }
 
-add_task(function* () {
-  yield BrowserTestUtils.openNewForegroundTab(gBrowser);
+add_task(async function() {
+  await BrowserTestUtils.openNewForegroundTab(gBrowser);
 
   
-  yield loadBadCertPage(MIXED_CONTENT_URL);
+  await loadBadCertPage(MIXED_CONTENT_URL);
   checkIdentityPopup("connection-mixed-passive-loaded.svg#icon");
 
   
   gIdentityHandler.disableMixedContentProtection();
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   checkIdentityPopup("connection-mixed-active-loaded.svg#icon");
 
   
-  yield BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://self-signed.example.com");
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://self-signed.example.com");
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   checkIdentityPopup("connection-mixed-passive-loaded.svg#icon");
 
   
@@ -49,6 +49,6 @@ add_task(function* () {
                               .getService(Ci.nsICertOverrideService);
   certOverrideService.clearValidityOverride("self-signed.example.com", -1);
 
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 

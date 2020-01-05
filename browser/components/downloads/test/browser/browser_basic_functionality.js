@@ -11,7 +11,7 @@ registerCleanupFunction(function*() {
 
 
 
-add_task(function* test_basic_functionality() {
+add_task(async function test_basic_functionality() {
   
   const DownloadData = [
     { state: DownloadsCommon.DOWNLOAD_NOTSTARTED },
@@ -22,10 +22,10 @@ add_task(function* test_basic_functionality() {
   ];
 
   
-  yield promiseFocus();
+  await promiseFocus();
 
   
-  yield task_resetState();
+  await task_resetState();
 
   
   var originalCountLimit = DownloadsView.kItemCountLimit;
@@ -35,10 +35,10 @@ add_task(function* test_basic_functionality() {
   });
 
   
-  yield task_addDownloads(DownloadData);
+  await task_addDownloads(DownloadData);
 
   
-  yield task_openPanel();
+  await task_openPanel();
 
   
   let richlistbox = document.getElementById("downloadsListBox");

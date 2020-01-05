@@ -25,15 +25,15 @@ function openTabInUserContext(uri, userContextId) {
   return tab;
 }
 
-add_task(function* setup() {
+add_task(async function setup() {
   
-  yield SpecialPowers.pushPrefEnv({"set": [
+  await SpecialPowers.pushPrefEnv({"set": [
     ["privacy.userContext.enabled", true],
     ["dom.ipc.processCount", 1]
   ]});
 });
 
-add_task(function* test() {
+add_task(async function test() {
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
     
@@ -43,7 +43,7 @@ add_task(function* test() {
     let tab = openTabInUserContext(BASE_URI + "?" + cookie, userContextId);
 
     
-    yield BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab));
+    await BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab));
 
     
     gBrowser.removeTab(tab);
@@ -54,7 +54,7 @@ add_task(function* test() {
     
     
     let tab = openTabInUserContext(BASE_URI + "?foo", 9999);
-    yield BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab));
+    await BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab));
     gBrowser.removeTab(tab);
   }
 
@@ -66,7 +66,7 @@ add_task(function* test() {
 
     
     let browser = gBrowser.getBrowserForTab(tab);
-    yield BrowserTestUtils.browserLoaded(browser);
+    await BrowserTestUtils.browserLoaded(browser);
 
     
     let title = browser.contentDocument.title.trim().split("|");

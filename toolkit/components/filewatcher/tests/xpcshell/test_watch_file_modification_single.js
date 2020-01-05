@@ -16,12 +16,12 @@ function run_test() {
 
 
 
-add_task(function* test_watch_single_path_file_modification() {
+add_task(async function test_watch_single_path_file_modification() {
 
   
   
   let watchedDir = OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground");
-  yield OS.File.makeDir(watchedDir);
+  await OS.File.makeDir(watchedDir);
 
   let tempFileName = "test_filemodification.tmp";
 
@@ -32,23 +32,23 @@ add_task(function* test_watch_single_path_file_modification() {
   
   
   let tmpFilePath = OS.Path.join(watchedDir, tempFileName);
-  yield OS.File.writeAtomic(tmpFilePath, "some data");
+  await OS.File.writeAtomic(tmpFilePath, "some data");
 
   
   
-  yield promiseAddPath(watcher, watchedDir, deferred.resolve, deferred.reject);
+  await promiseAddPath(watcher, watchedDir, deferred.resolve, deferred.reject);
 
   
-  yield OS.File.writeAtomic(tmpFilePath, "some new data");
+  await OS.File.writeAtomic(tmpFilePath, "some new data");
 
   
-  let changed = yield deferred.promise;
+  let changed = await deferred.promise;
   do_check_eq(changed, tmpFilePath);
 
   
   
-  yield promiseRemovePath(watcher, watchedDir, deferred.resolve, deferred.reject);
+  await promiseRemovePath(watcher, watchedDir, deferred.resolve, deferred.reject);
 
   
-  yield OS.File.removeDir(watchedDir);
+  await OS.File.removeDir(watchedDir);
 });

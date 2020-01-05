@@ -85,39 +85,39 @@ function checkStateMenuDetail(locked) {
   });
 }
 
-add_task(function* initializeState() {
+add_task(async function initializeState() {
   Services.prefs.setIntPref(getTestPluginPref(), Ci.nsIPluginTag.STATE_ENABLED);
   Services.prefs.unlockPref(getTestPluginPref());
-  gManagerWindow = yield open_manager();
+  gManagerWindow = await open_manager();
   gCategoryUtilities = new CategoryUtilities(gManagerWindow);
-  yield gCategoryUtilities.openType("plugin");
+  await gCategoryUtilities.openType("plugin");
 
-  let plugins = yield getPlugins();
+  let plugins = await getPlugins();
   gPluginElement = getTestPlugin(plugins);
 });
 
 
-add_task(function* taskCheckStateMenuIsEnabled() {
+add_task(async function taskCheckStateMenuIsEnabled() {
   checkStateMenu(false);
-  yield checkStateMenuDetail(false);
+  await checkStateMenuDetail(false);
 });
 
 
-add_task(function* reinitializeState() {
+add_task(async function reinitializeState() {
   
   Services.prefs.lockPref(getTestPluginPref());
-  yield gCategoryUtilities.openType("plugin");
+  await gCategoryUtilities.openType("plugin");
   
-  let plugins = yield getPlugins();
+  let plugins = await getPlugins();
   gPluginElement = getTestPlugin(plugins);
 });
 
 
-add_task(function* taskCheckStateMenuIsDisabled() {
+add_task(async function taskCheckStateMenuIsDisabled() {
   checkStateMenu(true);
-  yield checkStateMenuDetail(true);
+  await checkStateMenuDetail(true);
 });
 
-add_task(function* testCleanup() {
-  yield close_manager(gManagerWindow);
+add_task(async function testCleanup() {
+  await close_manager(gManagerWindow);
 });

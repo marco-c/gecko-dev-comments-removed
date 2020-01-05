@@ -6,40 +6,40 @@
 const TEST_VALUE = "example.com/\xF7?\xF7";
 const START_VALUE = "example.com/%C3%B7?%C3%B7";
 
-add_task(function* () {
+add_task(async function() {
   info("Simple return keypress");
   let tab = gBrowser.selectedTab = gBrowser.addTab(START_VALUE);
 
   gURLBar.focus();
   EventUtils.synthesizeKey("VK_RETURN", {});
-  yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   
   is(gURLBar.textValue, TEST_VALUE, "Urlbar should preserve the value on return keypress");
   is(gBrowser.selectedTab, tab, "New URL was loaded in the current tab");
 
   
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(function* () {
+add_task(async function() {
   info("Alt+Return keypress");
   
   
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, START_VALUE);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, START_VALUE);
 
   let tabOpenPromise = BrowserTestUtils.waitForEvent(gBrowser.tabContainer, "TabOpen");
   gURLBar.focus();
   EventUtils.synthesizeKey("VK_RETURN", {altKey: true});
 
   
-  yield tabOpenPromise;
+  await tabOpenPromise;
 
   
   is(gURLBar.textValue, TEST_VALUE, "Urlbar should preserve the value on return keypress");
   isnot(gBrowser.selectedTab, tab, "New URL was loaded in a new tab");
 
   
-  yield BrowserTestUtils.removeTab(tab);
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

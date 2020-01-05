@@ -71,8 +71,6 @@
 
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 var gTerminationTasks = [];
 
@@ -84,10 +82,10 @@ var gTerminationTasks = [];
 
 
 
-function* terminationTaskFn() {
+async function terminationTaskFn() {
   for (let taskFn of gTerminationTasks) {
     try {
-      yield Task.spawn(taskFn);
+      await (taskFn)();
     } catch (ex) {
       Output.print(ex);
       Assert.ok(false);

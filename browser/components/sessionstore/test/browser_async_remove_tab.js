@@ -1,16 +1,16 @@
 "use strict";
 
-function* createTabWithRandomValue(url) {
+async function createTabWithRandomValue(url) {
   let tab = gBrowser.addTab(url);
   let browser = tab.linkedBrowser;
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
   let r = `rand-${Math.random()}`;
   ss.setTabValue(tab, "foobar", r);
 
   
-  yield TabStateFlusher.flush(browser);
+  await TabStateFlusher.flush(browser);
 
   return {tab, r};
 }
@@ -33,7 +33,7 @@ function restoreClosedTabWithValue(rval) {
 }
 
 function promiseNewLocationAndHistoryEntryReplaced(browser, snippet) {
-  return ContentTask.spawn(browser, snippet, function* (codeSnippet) {
+  return ContentTask.spawn(browser, snippet, async function(codeSnippet) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let shistory = webNavigation.sessionHistory;
 
@@ -90,22 +90,22 @@ function promiseHistoryEntryReplacedNonRemote(browser) {
 }
 promiseHistoryEntryReplacedNonRemote.listeners = new WeakMap();
 
-add_task(function* dont_save_empty_tabs() {
-  let {tab, r} = yield createTabWithRandomValue("about:blank");
+add_task(async function dont_save_empty_tabs() {
+  let {tab, r} = await createTabWithRandomValue("about:blank");
 
   
   let promise = promiseRemoveTab(tab);
 
   
   ok(!isValueInClosedData(r), "closed tab not saved");
-  yield promise;
+  await promise;
 
   
   ok(!isValueInClosedData(r), "closed tab not saved");
 });
 
-add_task(function* save_worthy_tabs_remote() {
-  let {tab, r} = yield createTabWithRandomValue("https://example.com/");
+add_task(async function save_worthy_tabs_remote() {
+  let {tab, r} = await createTabWithRandomValue("https://example.com/");
   ok(tab.linkedBrowser.isRemoteBrowser, "browser is remote");
 
   
@@ -113,14 +113,14 @@ add_task(function* save_worthy_tabs_remote() {
 
   
   ok(isValueInClosedData(r), "closed tab saved");
-  yield promise;
+  await promise;
 
   
   ok(isValueInClosedData(r), "closed tab saved");
 });
 
-add_task(function* save_worthy_tabs_nonremote() {
-  let {tab, r} = yield createTabWithRandomValue("about:robots");
+add_task(async function save_worthy_tabs_nonremote() {
+  let {tab, r} = await createTabWithRandomValue("about:robots");
   ok(!tab.linkedBrowser.isRemoteBrowser, "browser is not remote");
 
   
@@ -128,14 +128,14 @@ add_task(function* save_worthy_tabs_nonremote() {
 
   
   ok(isValueInClosedData(r), "closed tab saved");
-  yield promise;
+  await promise;
 
   
   ok(isValueInClosedData(r), "closed tab saved");
 });
 
-add_task(function* save_worthy_tabs_remote_final() {
-  let {tab, r} = yield createTabWithRandomValue("about:blank");
+add_task(async function save_worthy_tabs_remote_final() {
+  let {tab, r} = await createTabWithRandomValue("about:blank");
   let browser = tab.linkedBrowser;
   ok(browser.isRemoteBrowser, "browser is remote");
 
@@ -143,7 +143,7 @@ add_task(function* save_worthy_tabs_remote_final() {
   let snippet = 'webNavigation.loadURI("https://example.com/",\
                                        null, null, null, null,\
                                        Services.scriptSecurityManager.getSystemPrincipal())';
-  yield promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
+  await promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
   
   ok(browser.isRemoteBrowser, "browser is still remote");
@@ -153,56 +153,56 @@ add_task(function* save_worthy_tabs_remote_final() {
 
   
   ok(!isValueInClosedData(r), "closed tab not saved");
-  yield promise;
+  await promise;
 
   
   ok(isValueInClosedData(r), "closed tab saved");
 });
 
-add_task(function* save_worthy_tabs_nonremote_final() {
-  let {tab, r} = yield createTabWithRandomValue("about:blank");
+add_task(async function save_worthy_tabs_nonremote_final() {
+  let {tab, r} = await createTabWithRandomValue("about:blank");
   let browser = tab.linkedBrowser;
   ok(browser.isRemoteBrowser, "browser is remote");
 
   
-  yield BrowserTestUtils.loadURI(browser, "about:robots");
+  await BrowserTestUtils.loadURI(browser, "about:robots");
   ok(!browser.isRemoteBrowser, "browser is not remote anymore");
 
   
-  yield promiseHistoryEntryReplacedNonRemote(browser);
+  await promiseHistoryEntryReplacedNonRemote(browser);
 
   
   let promise = promiseRemoveTab(tab);
 
   
   ok(!isValueInClosedData(r), "closed tab not saved");
-  yield promise;
+  await promise;
 
   
   ok(isValueInClosedData(r), "closed tab saved");
 });
 
-add_task(function* dont_save_empty_tabs_final() {
-  let {tab, r} = yield createTabWithRandomValue("https://example.com/");
+add_task(async function dont_save_empty_tabs_final() {
+  let {tab, r} = await createTabWithRandomValue("https://example.com/");
   let browser = tab.linkedBrowser;
 
   
   let snippet = 'content.location.replace("about:blank")';
-  yield promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
+  await promiseNewLocationAndHistoryEntryReplaced(browser, snippet);
 
   
   let promise = promiseRemoveTab(tab);
 
   
   ok(isValueInClosedData(r), "closed tab saved");
-  yield promise;
+  await promise;
 
   
   ok(!isValueInClosedData(r), "closed tab not saved");
 });
 
-add_task(function* undo_worthy_tabs() {
-  let {tab, r} = yield createTabWithRandomValue("https://example.com/");
+add_task(async function undo_worthy_tabs() {
+  let {tab, r} = await createTabWithRandomValue("https://example.com/");
   ok(tab.linkedBrowser.isRemoteBrowser, "browser is remote");
 
   
@@ -215,17 +215,17 @@ add_task(function* undo_worthy_tabs() {
   tab = restoreClosedTabWithValue(r);
 
   
-  yield promise;
+  await promise;
 
   
   ok(!isValueInClosedData(r), "tab no longer closed");
 
   
-  yield promiseRemoveTab(tab);
+  await promiseRemoveTab(tab);
 });
 
-add_task(function* forget_worthy_tabs_remote() {
-  let {tab, r} = yield createTabWithRandomValue("https://example.com/");
+add_task(async function forget_worthy_tabs_remote() {
+  let {tab, r} = await createTabWithRandomValue("https://example.com/");
   ok(tab.linkedBrowser.isRemoteBrowser, "browser is remote");
 
   
@@ -238,7 +238,7 @@ add_task(function* forget_worthy_tabs_remote() {
   ss.forgetClosedTab(window, 0);
 
   
-  yield promise;
+  await promise;
 
   
   ok(!isValueInClosedData(r), "we forgot about the tab");

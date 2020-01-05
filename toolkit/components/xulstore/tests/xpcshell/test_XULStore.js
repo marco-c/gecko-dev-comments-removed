@@ -86,18 +86,18 @@ function checkOldStore() {
   checkValue(aboutURI, "lockCol", "ordinal", "3");
 }
 
-add_task(function* testImport() {
+add_task(async function testImport() {
   let src = "localstore.rdf";
   let dst = OS.Path.join(OS.Constants.Path.profileDir, src);
 
-  yield OS.File.copy(src, dst);
+  await OS.File.copy(src, dst);
 
   
   XULStore = Cc["@mozilla.org/xul/xulstore;1"].getService(Ci.nsIXULStore);
   checkOldStore();
 });
 
-add_task(function* testTruncation() {
+add_task(async function testTruncation() {
   let dos = Array(8192).join("~");
   
   Assert.throws(() => XULStore.setValue(browserURI, dos, "foo", "foo"), /NS_ERROR_ILLEGAL_VALUE/);
@@ -112,7 +112,7 @@ add_task(function* testTruncation() {
   XULStore.removeValue(browserURI, "dos", "dos")
 });
 
-add_task(function* testGetValue() {
+add_task(async function testGetValue() {
   
   checkValue(browserURI, "side-window", "height", "");
 
@@ -120,7 +120,7 @@ add_task(function* testGetValue() {
   checkValue(browserURI, "main-window", "width", "994");
 });
 
-add_task(function* testHasValue() {
+add_task(async function testHasValue() {
   
   checkValueExists(browserURI, "side-window", "height", false);
 
@@ -128,7 +128,7 @@ add_task(function* testHasValue() {
   checkValueExists(browserURI, "main-window", "width", true);
 });
 
-add_task(function* testSetValue() {
+add_task(async function testSetValue() {
   
   checkValue(browserURI, "side-bar", "width", "");
   XULStore.setValue(browserURI, "side-bar", "width", "1000");
@@ -151,7 +151,7 @@ add_task(function* testSetValue() {
   checkArrays(["width", "height"], getAttributes(browserURI, "side-bar"));
 });
 
-add_task(function* testRemoveValue() {
+add_task(async function testRemoveValue() {
   
   checkValue(browserURI, "side-bar", "width", "1024");
   XULStore.removeValue(browserURI, "side-bar", "width");

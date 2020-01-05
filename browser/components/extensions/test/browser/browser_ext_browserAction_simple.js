@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_task(function* () {
+add_task(async function() {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "browser_action": {
@@ -41,19 +41,19 @@ add_task(function* () {
     }]);
   });
 
-  yield extension.startup();
+  await extension.startup();
 
   
   for (let i = 0; i < 3; i++) {
     clickBrowserAction(extension);
 
-    yield extension.awaitMessage("popup");
+    await extension.awaitMessage("popup");
 
     closeBrowserAction(extension);
   }
 
-  yield extension.unload();
+  await extension.unload();
 
   SimpleTest.endMonitorConsole();
-  yield waitForConsole;
+  await waitForConsole;
 });

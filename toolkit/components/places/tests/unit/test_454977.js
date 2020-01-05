@@ -87,33 +87,33 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute() {
+add_task(async function test_execute() {
   const TEST_URI = uri("http://test.mozilla.org/");
 
   
-  yield task_add_visit(TEST_URI, TRANSITION_EMBED);
+  await task_add_visit(TEST_URI, TRANSITION_EMBED);
   check_results(0, 0);
 
-  let placeId = yield task_add_visit(TEST_URI, TRANSITION_FRAMED_LINK);
+  let placeId = await task_add_visit(TEST_URI, TRANSITION_FRAMED_LINK);
   check_results(0, 1);
 
   
   
   
-  do_check_eq((yield task_add_visit(TEST_URI, TRANSITION_TYPED)), placeId);
+  do_check_eq((await task_add_visit(TEST_URI, TRANSITION_TYPED)), placeId);
   check_results(1, 1);
 
   
-  do_check_eq((yield task_add_visit(TEST_URI, TRANSITION_RELOAD)), placeId);
+  do_check_eq((await task_add_visit(TEST_URI, TRANSITION_RELOAD)), placeId);
   check_results(1, 1);
 
   
-  do_check_eq((yield task_add_visit(TEST_URI, TRANSITION_DOWNLOAD)), placeId);
+  do_check_eq((await task_add_visit(TEST_URI, TRANSITION_DOWNLOAD)), placeId);
   check_results(1, 1);
 
   
   
   
-  yield task_add_visit(TEST_URI, TRANSITION_EMBED);
+  await task_add_visit(TEST_URI, TRANSITION_EMBED);
   check_results(1, 1);
 });

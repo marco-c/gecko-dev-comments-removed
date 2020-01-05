@@ -13,7 +13,7 @@ const {BingTranslator} = Cu.import("resource:///modules/translation/BingTranslat
 const {TranslationDocument} = Cu.import("resource:///modules/translation/TranslationDocument.jsm", {});
 const {Promise} = Cu.import("resource://gre/modules/Promise.jsm", {});
 
-add_task(function* setup() {
+add_task(async function setup() {
   Services.prefs.setCharPref(kClientIdPref, "testClient");
   Services.prefs.setCharPref(kClientSecretPref, "testSecret");
 
@@ -26,26 +26,26 @@ add_task(function* setup() {
 
 
 
-add_task(function* test_bing_translation() {
+add_task(async function test_bing_translation() {
 
   
   Services.prefs.setCharPref(kClientIdPref, "testClient");
 
   
   let url = constructFixtureURL("bug1022725-fr.html");
-  let tab = yield promiseTestPageLoad(url);
+  let tab = await promiseTestPageLoad(url);
 
   
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
 
-  yield ContentTask.spawn(browser, null, function*() {
+  await ContentTask.spawn(browser, null, async function() {
     Cu.import("resource:///modules/translation/BingTranslator.jsm");
     Cu.import("resource:///modules/translation/TranslationDocument.jsm");
 
     let client = new BingTranslator(
       new TranslationDocument(content.document), "fr", "en");
-    let result = yield client.translate();
+    let result = await client.translate();
 
     
     Assert.ok(result, "There should be a result");
@@ -61,20 +61,20 @@ add_task(function* test_bing_translation() {
 
 
 
-add_task(function* test_handling_out_of_valid_key_error() {
+add_task(async function test_handling_out_of_valid_key_error() {
 
   
   Services.prefs.setCharPref(kClientIdPref, "testInactive");
 
   
   let url = constructFixtureURL("bug1022725-fr.html");
-  let tab = yield promiseTestPageLoad(url);
+  let tab = await promiseTestPageLoad(url);
 
   
   gBrowser.selectedTab = tab;
   let browser = tab.linkedBrowser;
 
-  yield ContentTask.spawn(browser, null, function*() {
+  await ContentTask.spawn(browser, null, async function() {
     Cu.import("resource:///modules/translation/BingTranslator.jsm");
     Cu.import("resource:///modules/translation/TranslationDocument.jsm");
 
@@ -82,7 +82,7 @@ add_task(function* test_handling_out_of_valid_key_error() {
       new TranslationDocument(content.document), "fr", "en");
     client._resetToken();
     try {
-      yield client.translate();
+      await client.translate();
     } catch (ex) {
       
     }

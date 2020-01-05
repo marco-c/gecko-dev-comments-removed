@@ -59,7 +59,7 @@ function makeRemoteTabMatch(url, deviceName, extra = {}) {
 }
 
 
-add_task(function* test_nomatch() {
+add_task(async function test_nomatch() {
   
   configureEngine({
     guid_desktop: {
@@ -71,14 +71,14 @@ add_task(function* test_nomatch() {
   });
 
   
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("ex", { heuristic: true }) ],
   });
 });
 
-add_task(function* test_minimal() {
+add_task(async function test_minimal() {
   
   configureEngine({
     guid_desktop: {
@@ -89,7 +89,7 @@ add_task(function* test_minimal() {
     }
   });
 
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("ex", { heuristic: true }),
@@ -97,7 +97,7 @@ add_task(function* test_minimal() {
   });
 });
 
-add_task(function* test_maximal() {
+add_task(async function test_maximal() {
   
   configureEngine({
     guid_mobile: {
@@ -110,7 +110,7 @@ add_task(function* test_maximal() {
     }
   });
 
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("ex", { heuristic: true }),
@@ -122,7 +122,7 @@ add_task(function* test_maximal() {
   });
 });
 
-add_task(function* test_noShowIcons() {
+add_task(async function test_noShowIcons() {
   Services.prefs.setBoolPref("services.sync.syncedTabs.showRemoteIcons", false);
   configureEngine({
     guid_mobile: {
@@ -135,7 +135,7 @@ add_task(function* test_noShowIcons() {
     }
   });
 
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("ex", { heuristic: true }),
@@ -149,7 +149,7 @@ add_task(function* test_noShowIcons() {
   Services.prefs.clearUserPref("services.sync.syncedTabs.showRemoteIcons");
 });
 
-add_task(function* test_matches_title() {
+add_task(async function test_matches_title() {
   
   configureEngine({
     guid_mobile: {
@@ -161,7 +161,7 @@ add_task(function* test_matches_title() {
     }
   });
 
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("ex", { heuristic: true }),
@@ -171,7 +171,7 @@ add_task(function* test_matches_title() {
   });
 });
 
-add_task(function* test_localtab_matches_override() {
+add_task(async function test_localtab_matches_override() {
   
   
 
@@ -188,12 +188,12 @@ add_task(function* test_localtab_matches_override() {
 
   
   let uri = NetUtil.newURI("http://foo.com/");
-  yield PlacesTestUtils.addVisits([
+  await PlacesTestUtils.addVisits([
     { uri, title: "An Example" },
   ]);
   addOpenPages(uri, 1);
 
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ex",
     searchParam: "enable-actions",
     matches: [ makeSearchMatch("ex", { heuristic: true }),

@@ -4,14 +4,14 @@
 
 
 
-add_task(function* () {
-  yield SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
-  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
+  await BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, async function(browser) {
     gURLBar.value = "example";
     gURLBar.select();
     let loadPromise = BrowserTestUtils.browserLoaded(browser, false, url => url == "http://www.example.com/");
     EventUtils.sendKey("return");
-    yield loadPromise;
+    await loadPromise;
     is(gURLBar.textValue, "www.example.com");
   });
 });

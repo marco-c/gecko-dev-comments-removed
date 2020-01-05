@@ -29,16 +29,16 @@ var isWindows = ("@mozilla.org/windows-registry-key;1" in Cc);
 
 
 
-function* checkFaviconDataConversion(aFileName, aFileMimeType, aFileLength,
+async function checkFaviconDataConversion(aFileName, aFileMimeType, aFileLength,
                                     aExpectConversion, aVaryOnWindows) {
   let pageURI = NetUtil.newURI("http://places.test/page/" + aFileName);
-  yield PlacesTestUtils.addVisits({ uri: pageURI, transition: TRANSITION_TYPED });
+  await PlacesTestUtils.addVisits({ uri: pageURI, transition: TRANSITION_TYPED });
   let faviconURI = NetUtil.newURI("http://places.test/icon/" + aFileName);
   let fileData = readFileOfLength(aFileName, aFileLength);
 
   PlacesUtils.favicons.replaceFaviconData(faviconURI, fileData, fileData.length,
                                           aFileMimeType);
-  yield new Promise(resolve => {
+  await new Promise(resolve => {
     PlacesUtils.favicons.setAndFetchFaviconForPage(pageURI, faviconURI, true,
       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
       (aURI, aDataLen, aData, aMimeType) => {
@@ -58,67 +58,67 @@ function* checkFaviconDataConversion(aFileName, aFileMimeType, aFileLength,
 }
 
 
-add_task(function* test_storing_a_normal_16x16_icon() {
+add_task(async function test_storing_a_normal_16x16_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-normal16.png", "image/png", 286,
+  await checkFaviconDataConversion("favicon-normal16.png", "image/png", 286,
                                    false, false);
 });
 
-add_task(function* test_storing_a_normal_32x32_icon() {
+add_task(async function test_storing_a_normal_32x32_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-normal32.png", "image/png", 344,
+  await checkFaviconDataConversion("favicon-normal32.png", "image/png", 344,
                                    false, false);
 });
 
-add_task(function* test_storing_a_big_16x16_icon() {
+add_task(async function test_storing_a_big_16x16_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-big16.ico", "image/x-icon", 1406,
+  await checkFaviconDataConversion("favicon-big16.ico", "image/x-icon", 1406,
                                    true, false);
 });
 
-add_task(function* test_storing_an_oversize_4x4_icon() {
+add_task(async function test_storing_an_oversize_4x4_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-big4.jpg", "image/jpeg", 4751,
+  await checkFaviconDataConversion("favicon-big4.jpg", "image/jpeg", 4751,
                                    true, false);
 });
 
-add_task(function* test_storing_an_oversize_32x32_icon() {
+add_task(async function test_storing_an_oversize_32x32_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-big32.jpg", "image/jpeg", 3494,
+  await checkFaviconDataConversion("favicon-big32.jpg", "image/jpeg", 3494,
                                    true, true);
 });
 
-add_task(function* test_storing_an_oversize_48x48_icon() {
+add_task(async function test_storing_an_oversize_48x48_icon() {
   
   
   
   
-  yield checkFaviconDataConversion("favicon-big48.ico", "image/x-icon", 56646,
+  await checkFaviconDataConversion("favicon-big48.ico", "image/x-icon", 56646,
                                    true, false);
 });
 
-add_task(function* test_storing_an_oversize_64x64_icon() {
+add_task(async function test_storing_an_oversize_64x64_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-big64.png", "image/png", 10698,
+  await checkFaviconDataConversion("favicon-big64.png", "image/png", 10698,
                                    true, false);
 });
 
-add_task(function* test_scaling_an_oversize_160x3_icon() {
+add_task(async function test_scaling_an_oversize_160x3_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-scale160x3.jpg", "image/jpeg", 5095,
+  await checkFaviconDataConversion("favicon-scale160x3.jpg", "image/jpeg", 5095,
                                    true, false);
 });
 
-add_task(function* test_scaling_an_oversize_3x160_icon() {
+add_task(async function test_scaling_an_oversize_3x160_icon() {
   
   
-  yield checkFaviconDataConversion("favicon-scale3x160.jpg", "image/jpeg", 5059,
+  await checkFaviconDataConversion("favicon-scale3x160.jpg", "image/jpeg", 5059,
                                    true, false);
 });

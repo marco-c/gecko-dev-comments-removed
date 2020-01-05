@@ -7,7 +7,7 @@ const uuidGenerator =
 const DUMMY_FILE = "dummy_page.html";
 
 
-add_task(function* () {
+add_task(async function() {
   
   let dummyPage = getChromeDir(getResolvedURI(gTestPath));
   dummyPage.append(DUMMY_FILE);
@@ -18,17 +18,17 @@ add_task(function* () {
 
   
   const uriString = Services.io.newFileURI(disappearingPage).spec;
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, uriString);
-  registerCleanupFunction(function* () {
-    yield BrowserTestUtils.removeTab(tab);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, uriString);
+  registerCleanupFunction(async function() {
+    await BrowserTestUtils.removeTab(tab);
   });
 
   
   
   disappearingPage.remove(false);
   document.getElementById("reload-button").doCommand();
-  yield BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
-  yield ContentTask.spawn(tab.linkedBrowser, null, function() {
+  await BrowserTestUtils.waitForErrorPage(tab.linkedBrowser);
+  await ContentTask.spawn(tab.linkedBrowser, null, function() {
     ok(content.document.documentURI.startsWith("about:neterror"),
        "Check that a neterror page was loaded.");
   });

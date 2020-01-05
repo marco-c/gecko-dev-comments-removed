@@ -9,7 +9,7 @@ const kToolbarName = "test-specials-toolbar";
 registerCleanupFunction(removeCustomToolbars);
 
 
-add_task(function* addToolbarWith2SpringsAndDownloadsButton() {
+add_task(async function addToolbarWith2SpringsAndDownloadsButton() {
   
   createToolbarWithPlacements(kToolbarName, ["spring"]);
   ok(document.getElementById(kToolbarName), "Toolbar should be created.");
@@ -29,11 +29,11 @@ add_task(function* addToolbarWith2SpringsAndDownloadsButton() {
   
   CustomizableUI.addWidgetToArea("downloads-button", kToolbarName, 1);
   assertAreaPlacements(kToolbarName, [springId, "downloads-button", spring2Id]);
-  yield removeCustomToolbars();
+  await removeCustomToolbars();
 });
 
 
-add_task(function* addSeparatorsAroundDownloadsButton() {
+add_task(async function addSeparatorsAroundDownloadsButton() {
   createToolbarWithPlacements(kToolbarName, ["separator"]);
   ok(document.getElementById(kToolbarName), "Toolbar should be created.");
 
@@ -50,11 +50,11 @@ add_task(function* addSeparatorsAroundDownloadsButton() {
 
   CustomizableUI.addWidgetToArea("downloads-button", kToolbarName, 1);
   assertAreaPlacements(kToolbarName, [separatorId, "downloads-button", separator2Id]);
-  yield removeCustomToolbars();
+  await removeCustomToolbars();
 });
 
 
-add_task(function* addSpacersAroundDownloadsButton() {
+add_task(async function addSpacersAroundDownloadsButton() {
   createToolbarWithPlacements(kToolbarName, ["spacer"]);
   ok(document.getElementById(kToolbarName), "Toolbar should be created.");
 
@@ -71,9 +71,9 @@ add_task(function* addSpacersAroundDownloadsButton() {
 
   CustomizableUI.addWidgetToArea("downloads-button", kToolbarName, 1);
   assertAreaPlacements(kToolbarName, [spacerId, "downloads-button", spacer2Id]);
-  yield removeCustomToolbars();
+  await removeCustomToolbars();
 });
 
-add_task(function* asyncCleanup() {
-  yield resetCustomization();
+add_task(async function asyncCleanup() {
+  await resetCustomization();
 });

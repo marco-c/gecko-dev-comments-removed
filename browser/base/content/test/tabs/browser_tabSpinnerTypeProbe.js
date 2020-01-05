@@ -8,8 +8,8 @@ const CATEGORIES = [
   "unseenNew",
 ];
 
-add_task(function* setup() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function setup() {
+  await SpecialPowers.pushPrefEnv({
     set: [
       
       
@@ -35,7 +35,7 @@ add_task(function* setup() {
 
 
 function hangContentProcess(browser, aMs) {
-  return ContentTask.spawn(browser, aMs, function*(ms) {
+  return ContentTask.spawn(browser, aMs, async function(ms) {
     let then = Date.now();
     while (Date.now() - then < ms) {
       
@@ -76,23 +76,23 @@ let gHistogram = Services.telemetry
 
 
 
-add_task(function* test_seen_spinner_type_probe() {
+add_task(async function test_seen_spinner_type_probe() {
   let originalTab = gBrowser.selectedTab;
 
-  yield BrowserTestUtils.withNewTab({
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: "http://example.com",
-  }, function*(browser) {
+  }, async function(browser) {
     
     
     let testTab = gBrowser.selectedTab;
-    yield BrowserTestUtils.switchTab(gBrowser, originalTab);
+    await BrowserTestUtils.switchTab(gBrowser, originalTab);
     gHistogram.clear();
 
     let tabHangPromise = hangContentProcess(browser, 1000);
     let hangTabSwitch = BrowserTestUtils.switchTab(gBrowser, testTab);
-    yield tabHangPromise;
-    yield hangTabSwitch;
+    await tabHangPromise;
+    await hangTabSwitch;
 
     
     let snapshot = gHistogram.snapshot();
@@ -108,11 +108,11 @@ add_task(function* test_seen_spinner_type_probe() {
 
 
 
-add_task(function* test_unseenOld_spinner_type_probe() {
-  yield BrowserTestUtils.withNewTab({
+add_task(async function test_unseenOld_spinner_type_probe() {
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: "http://example.com",
-  }, function*(browser) {
+  }, async function(browser) {
     const NEWNESS_THRESHOLD = gBrowser._getSwitcher().NEWNESS_THRESHOLD;
 
     
@@ -122,7 +122,7 @@ add_task(function* test_unseenOld_spinner_type_probe() {
       inBackground: true,
     });
 
-    yield BrowserTestUtils.browserLoaded(bgTab.linkedBrowser);
+    await BrowserTestUtils.browserLoaded(bgTab.linkedBrowser);
 
     
     
@@ -134,14 +134,14 @@ add_task(function* test_unseenOld_spinner_type_probe() {
     gHistogram.clear();
     let tabHangPromise = hangContentProcess(browser, 1000);
     let hangTabSwitch = BrowserTestUtils.switchTab(gBrowser, bgTab);
-    yield tabHangPromise;
-    yield hangTabSwitch;
+    await tabHangPromise;
+    await hangTabSwitch;
 
     
     let snapshot = gHistogram.snapshot();
     assertOnlyOneTypeSet(snapshot, "unseenOld");
 
-    yield BrowserTestUtils.removeTab(bgTab);
+    await BrowserTestUtils.removeTab(bgTab);
   });
 });
 
@@ -152,11 +152,11 @@ add_task(function* test_unseenOld_spinner_type_probe() {
 
 
 
-add_task(function* test_unseenNew_spinner_type_probe() {
-  yield BrowserTestUtils.withNewTab({
+add_task(async function test_unseenNew_spinner_type_probe() {
+  await BrowserTestUtils.withNewTab({
     gBrowser,
     url: "http://example.com",
-  }, function*(browser) {
+  }, async function(browser) {
     
     
     let bgTab = gBrowser.addTab("about:blank", {
@@ -164,7 +164,7 @@ add_task(function* test_unseenNew_spinner_type_probe() {
       inBackground: true,
     });
 
-    yield BrowserTestUtils.browserLoaded(bgTab.linkedBrowser);
+    await BrowserTestUtils.browserLoaded(bgTab.linkedBrowser);
 
     
     
@@ -175,13 +175,13 @@ add_task(function* test_unseenNew_spinner_type_probe() {
     gHistogram.clear();
     let tabHangPromise = hangContentProcess(browser, 1000);
     let hangTabSwitch = BrowserTestUtils.switchTab(gBrowser, bgTab);
-    yield tabHangPromise;
-    yield hangTabSwitch;
+    await tabHangPromise;
+    await hangTabSwitch;
 
     
     let snapshot = gHistogram.snapshot();
     assertOnlyOneTypeSet(snapshot, "unseenNew");
 
-    yield BrowserTestUtils.removeTab(bgTab);
+    await BrowserTestUtils.removeTab(bgTab);
   });
 });

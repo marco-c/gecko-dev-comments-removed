@@ -22,7 +22,7 @@ function StringStream(string) {
 
 
 
-add_task(function* init() {
+add_task(async function init() {
   const aps = Cc["@mozilla.org/addons/policy-service;1"]
     .getService(Ci.nsIAddonPolicyService).wrappedJSObject;
 
@@ -45,7 +45,7 @@ add_task(function* init() {
 
 
 
-add_task(function* testSynchronousConvert() {
+add_task(async function testSynchronousConvert() {
   let stream = StringStream("Foo __MSG_xxx__ bar __MSG_yyy__ baz");
 
   let resultStream = convService.convert(stream, FROM_TYPE, TO_TYPE, URI);
@@ -59,7 +59,7 @@ add_task(function* testSynchronousConvert() {
 
 
 
-add_task(function* testAsyncConvert() {
+add_task(async function testAsyncConvert() {
   let listener;
   let awaitResult = new Promise((resolve, reject) => {
     listener = {
@@ -96,14 +96,14 @@ add_task(function* testAsyncConvert() {
   converter.onStopRequest(null, null, Cr.NS_OK);
 
 
-  let result = yield awaitResult;
+  let result = await awaitResult;
   equal(result, "Foo <localized-xxx> bar <localized-yyy> baz");
 });
 
 
 
 
-add_task(function* testInvalidUUID() {
+add_task(async function testInvalidUUID() {
   let uri = NetUtil.newURI("moz-extension://eb4f3be8-41c9-4970-aa6d-b84d1ecc02b2/file.css");
   let stream = StringStream("Foo __MSG_xxx__ bar __MSG_yyy__ baz");
 
@@ -126,7 +126,7 @@ add_task(function* testInvalidUUID() {
 
 
 
-add_task(function* testEmptyStream() {
+add_task(async function testEmptyStream() {
   let stream = StringStream("");
   let resultStream = convService.convert(stream, FROM_TYPE, TO_TYPE, URI);
   equal(resultStream.data, "");

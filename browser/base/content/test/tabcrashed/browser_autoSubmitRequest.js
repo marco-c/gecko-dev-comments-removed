@@ -16,21 +16,21 @@ requestLongerTimeout(2);
 
 
 
-add_task(function* test_show_form() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function test_show_form() {
+  await SpecialPowers.pushPrefEnv({
     set: [[AUTOSUBMIT_PREF, false]],
   })
 
   return BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
-  }, function*(browser) {
+  }, async function(browser) {
     
     
-    yield TabStateFlusher.flush(browser);
+    await TabStateFlusher.flush(browser);
 
     
-    yield BrowserTestUtils.crashBrowser(browser);
+    await BrowserTestUtils.crashBrowser(browser);
 
     let doc = browser.contentDocument;
 
@@ -51,7 +51,7 @@ add_task(function* test_show_form() {
     let restoreButton = doc.getElementById("restoreTab");
     restoreButton.click();
 
-    yield BrowserTestUtils.browserLoaded(browser, false, PAGE);
+    await BrowserTestUtils.browserLoaded(browser, false, PAGE);
 
     
     Assert.ok(Services.prefs.getBoolPref(AUTOSUBMIT_PREF),
@@ -63,18 +63,18 @@ add_task(function* test_show_form() {
 
 
 
-add_task(function* test_show_form() {
-  yield SpecialPowers.pushPrefEnv({
+add_task(async function test_show_form() {
+  await SpecialPowers.pushPrefEnv({
     set: [[AUTOSUBMIT_PREF, true]],
   })
 
   return BrowserTestUtils.withNewTab({
     gBrowser,
     url: PAGE,
-  }, function*(browser) {
-    yield TabStateFlusher.flush(browser);
+  }, async function(browser) {
+    await TabStateFlusher.flush(browser);
     
-    yield BrowserTestUtils.crashBrowser(browser);
+    await BrowserTestUtils.crashBrowser(browser);
 
     let doc = browser.contentDocument;
 
@@ -88,7 +88,7 @@ add_task(function* test_show_form() {
     let restoreButton = doc.getElementById("restoreTab");
     restoreButton.click();
 
-    yield BrowserTestUtils.browserLoaded(browser, false, PAGE);
+    await BrowserTestUtils.browserLoaded(browser, false, PAGE);
 
     
     Assert.ok(Services.prefs.getBoolPref(AUTOSUBMIT_PREF),

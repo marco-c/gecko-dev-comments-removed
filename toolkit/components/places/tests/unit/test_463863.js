@@ -44,10 +44,10 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute() {
+add_task(async function test_execute() {
   
   for (let transition of transitions) {
-    yield PlacesTestUtils.addVisits({
+    await PlacesTestUtils.addVisits({
       uri: uri("http://" + transition + ".mozilla.org/"),
       transition
     });

@@ -15,7 +15,6 @@ this.EXPORTED_SYMBOLS = [
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/Integration.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 
 
@@ -66,10 +65,10 @@ this.FormAutofill = {
 
 
 
-  processRequestAutocomplete: Task.async(function* (aData) {
-    let ui = yield FormAutofill.integration.createRequestAutocompleteUI(aData);
-    return yield ui.show();
-  }),
+  async processRequestAutocomplete(aData) {
+    let ui = await FormAutofill.integration.createRequestAutocompleteUI(aData);
+    return await ui.show();
+  },
 };
 
 

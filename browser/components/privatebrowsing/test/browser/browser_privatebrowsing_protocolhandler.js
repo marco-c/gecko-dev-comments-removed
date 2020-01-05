@@ -5,14 +5,14 @@
 
 
 
-add_task(function* test() {
+add_task(async function test() {
   let notificationValue = "Protocol Registration: testprotocol";
   let testURI = "http://example.com/browser/" +
     "browser/components/privatebrowsing/test/browser/browser_privatebrowsing_protocolhandler_page.html";
 
-  let doTest = Task.async(function* (aIsPrivateMode, aWindow) {
+  let doTest = async function(aIsPrivateMode, aWindow) {
     let tab = aWindow.gBrowser.selectedTab = aWindow.gBrowser.addTab(testURI);
-    yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
     let promiseFinished = PromiseUtils.defer();
     setTimeout(function() {
@@ -30,18 +30,18 @@ add_task(function* test() {
       promiseFinished.resolve();
     }, 100); 
 
-    yield promiseFinished.promise;
-  });
+    await promiseFinished.promise;
+  };
 
   
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
-  yield doTest(false, win);
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  await doTest(false, win);
 
   
-  let privateWin = yield BrowserTestUtils.openNewBrowserWindow({private: true});
-  yield doTest(true, privateWin);
+  let privateWin = await BrowserTestUtils.openNewBrowserWindow({private: true});
+  await doTest(true, privateWin);
 
   
-  yield BrowserTestUtils.closeWindow(win);
-  yield BrowserTestUtils.closeWindow(privateWin);
+  await BrowserTestUtils.closeWindow(win);
+  await BrowserTestUtils.closeWindow(privateWin);
 });

@@ -1,6 +1,6 @@
-add_task(function* test_remotetab_opens() {
+add_task(async function test_remotetab_opens() {
   const url = "http://example.org/browser/browser/base/content/test/urlbar/dummy_page.html";
-  yield BrowserTestUtils.withNewTab({url: "about:robots", gBrowser}, function* () {
+  await BrowserTestUtils.withNewTab({url: "about:robots", gBrowser}, async function() {
     
     gURLBar.value = "moz-action:remotetab," + JSON.stringify({ url });
     
@@ -9,7 +9,7 @@ add_task(function* test_remotetab_opens() {
     
     let promiseTabLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
     EventUtils.synthesizeKey("VK_RETURN", {});
-    yield promiseTabLoaded;
+    await promiseTabLoaded;
 
     Assert.equal(gBrowser.selectedTab.linkedBrowser.currentURI.spec, url, "correct URL loaded");
   });

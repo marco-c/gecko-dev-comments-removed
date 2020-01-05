@@ -16,7 +16,7 @@ function run_test() {
 
 
 
-add_task(function* test_error_with_no_error_callback() {
+add_task(async function test_error_with_no_error_callback() {
 
   let watcher = makeWatcher();
   let testPath = "someInvalidPath";
@@ -36,12 +36,12 @@ add_task(function* test_error_with_no_error_callback() {
 
 
 
-add_task(function* test_watch_single_path_file_creation_no_error_cb() {
+add_task(async function test_watch_single_path_file_creation_no_error_cb() {
 
   
   
   let watchedDir = OS.Path.join(OS.Constants.Path.profileDir, "filewatcher_playground");
-  yield OS.File.makeDir(watchedDir);
+  await OS.File.makeDir(watchedDir);
 
   let tempFileName = "test_filecreation.tmp";
 
@@ -50,14 +50,14 @@ add_task(function* test_watch_single_path_file_creation_no_error_cb() {
   let deferred = Promise.defer();
 
   
-  yield promiseAddPath(watcher, watchedDir, deferred.resolve);
+  await promiseAddPath(watcher, watchedDir, deferred.resolve);
 
   
   let tmpFilePath = OS.Path.join(watchedDir, tempFileName);
-  yield OS.File.writeAtomic(tmpFilePath, "some data");
+  await OS.File.writeAtomic(tmpFilePath, "some data");
 
   
-  let changed = yield deferred.promise;
+  let changed = await deferred.promise;
   do_check_eq(changed, tmpFilePath);
 
   
@@ -65,5 +65,5 @@ add_task(function* test_watch_single_path_file_creation_no_error_cb() {
   watcher.removePath(watchedDir, deferred.resolve);
 
   
-  yield OS.File.removeDir(watchedDir);
+  await OS.File.removeDir(watchedDir);
 });

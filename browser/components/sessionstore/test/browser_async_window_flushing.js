@@ -7,10 +7,10 @@ const PAGE = "http://example.com/";
 
 
 
-add_task(function* test_add_interesting_window() {
+add_task(async function test_add_interesting_window() {
   
   
-  yield pushPrefs(["browser.sessionstore.debug.no_auto_updates", true]);
+  await pushPrefs(["browser.sessionstore.debug.no_auto_updates", true]);
 
   
   
@@ -18,25 +18,25 @@ add_task(function* test_add_interesting_window() {
   let initialClosedWindows = ss.getClosedWindowCount();
 
   
-  yield pushPrefs(["browser.sessionstore.max_windows_undo",
+  await pushPrefs(["browser.sessionstore.max_windows_undo",
                    initialClosedWindows + 1]);
 
   
   
   
   
-  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
 
   let browser = newWin.gBrowser.selectedBrowser;
 
   
   
   
-  yield ContentTask.spawn(browser, PAGE, function*(newPage) {
+  await ContentTask.spawn(browser, PAGE, async function(newPage) {
     content.location = newPage;
   });
 
-  yield promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");
+  await promiseContentMessage(browser, "ss-test:OnHistoryReplaceEntry");
 
   
   
@@ -55,13 +55,13 @@ add_task(function* test_add_interesting_window() {
   
   newWin.close();
 
-  yield domWindowClosed;
+  await domWindowClosed;
   
   let currentClosedWindows = ss.getClosedWindowCount();
   is(currentClosedWindows, initialClosedWindows,
      "We should not have added the window to the closed windows array");
 
-  yield windowClosed;
+  await windowClosed;
   
   currentClosedWindows = ss.getClosedWindowCount();
   is(currentClosedWindows,
@@ -75,10 +75,10 @@ add_task(function* test_add_interesting_window() {
 
 
 
-add_task(function* test_remove_uninteresting_window() {
+add_task(async function test_remove_uninteresting_window() {
   
   
-  yield pushPrefs(["browser.sessionstore.debug.no_auto_updates", true]);
+  await pushPrefs(["browser.sessionstore.debug.no_auto_updates", true]);
 
   
   
@@ -86,10 +86,10 @@ add_task(function* test_remove_uninteresting_window() {
   let initialClosedWindows = ss.getClosedWindowCount();
 
   
-  yield pushPrefs(["browser.sessionstore.max_windows_undo",
+  await pushPrefs(["browser.sessionstore.max_windows_undo",
                    initialClosedWindows + 1]);
 
-  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
 
   
   
@@ -97,12 +97,12 @@ add_task(function* test_remove_uninteresting_window() {
   let browser = tab.linkedBrowser;
   browser.loadURI(PAGE);
 
-  yield BrowserTestUtils.browserLoaded(browser, false, PAGE);
-  yield TabStateFlusher.flush(browser);
+  await BrowserTestUtils.browserLoaded(browser, false, PAGE);
+  await TabStateFlusher.flush(browser);
 
   
   
-  yield ContentTask.spawn(browser, null, function*() {
+  await ContentTask.spawn(browser, null, async function() {
     
     docShell.setCurrentURI(Services.io.newURI("about:blank"));
 
@@ -123,13 +123,13 @@ add_task(function* test_remove_uninteresting_window() {
   
   newWin.close();
 
-  yield domWindowClosed;
+  await domWindowClosed;
   
   let currentClosedWindows = ss.getClosedWindowCount();
   is(currentClosedWindows, initialClosedWindows + 1,
      "We should have added the window to the closed windows array");
 
-  yield windowClosed;
+  await windowClosed;
   
   currentClosedWindows = ss.getClosedWindowCount();
   is(currentClosedWindows,
@@ -141,7 +141,7 @@ add_task(function* test_remove_uninteresting_window() {
 
 
 
-add_task(function* test_synchronously_remove_window_state() {
+add_task(async function test_synchronously_remove_window_state() {
   
   
   
@@ -151,11 +151,11 @@ add_task(function* test_synchronously_remove_window_state() {
 
   
   
-  let newWin = yield BrowserTestUtils.openNewBrowserWindow();
+  let newWin = await BrowserTestUtils.openNewBrowserWindow();
   let browser = newWin.gBrowser.selectedBrowser;
   browser.loadURI(PAGE);
-  yield BrowserTestUtils.browserLoaded(browser, false, PAGE);
-  yield TabStateFlusher.flush(browser);
+  await BrowserTestUtils.browserLoaded(browser, false, PAGE);
+  await TabStateFlusher.flush(browser);
 
   state = JSON.parse(ss.getBrowserState());
   is(state.windows.length, initialWindows + 1,
@@ -173,5 +173,5 @@ add_task(function* test_synchronously_remove_window_state() {
      "The new window should have been removed from the state");
 
   
-  yield windowClosed;
+  await windowClosed;
 });

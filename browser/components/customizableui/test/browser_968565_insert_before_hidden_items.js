@@ -12,7 +12,7 @@ var navbar = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
 
 
-add_task(function*() {
+add_task(async function() {
   ok(CustomizableUI.inDefaultState, "Should be in the default state");
 
   
@@ -43,14 +43,14 @@ add_task(function*() {
 
   
   
-  yield startCustomizing();
+  await startCustomizing();
   let downloadsButton = document.getElementById("downloads-button");
   simulateItemDrag(downloadsButton, navbar.customizationTarget);
 
-  yield endCustomizing();
+  await endCustomizing();
 
   is(downloadsButton.previousSibling.id, lastVisible.id,
      "The downloads button should be placed after the last visible item.");
 
-  yield resetCustomization();
+  await resetCustomization();
 });

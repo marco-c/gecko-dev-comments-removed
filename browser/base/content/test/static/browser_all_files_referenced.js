@@ -531,11 +531,11 @@ function findChromeUrlsFromArray(array, prefix) {
   }
 }
 
-add_task(function* checkAllTheFiles() {
+add_task(async function checkAllTheFiles() {
   let libxulPath = OS.Constants.Path.libxul;
   if (AppConstants.platform != "macosx")
     libxulPath = OS.Constants.Path.libDir + "/" + libxulPath;
-  let libxul = yield OS.File.read(libxulPath);
+  let libxul = await OS.File.read(libxulPath);
   findChromeUrlsFromArray(libxul, "chrome://");
   findChromeUrlsFromArray(libxul, "resource://");
   
@@ -549,7 +549,7 @@ add_task(function* checkAllTheFiles() {
   
   
   
-  let uris = yield generateURIsFromDirTree(appDir, [".css", ".manifest", ".json", ".jpg", ".png", ".gif", ".svg",  ".dtd", ".properties"].concat(kCodeExtensions));
+  let uris = await generateURIsFromDirTree(appDir, [".css", ".manifest", ".json", ".jpg", ".png", ".gif", ".svg",  ".dtd", ".properties"].concat(kCodeExtensions));
 
   
   
@@ -566,7 +566,7 @@ add_task(function* checkAllTheFiles() {
   });
 
   
-  yield Promise.all(manifestPromises);
+  await Promise.all(manifestPromises);
 
   
   
@@ -581,7 +581,7 @@ add_task(function* checkAllTheFiles() {
   }
 
   
-  yield Promise.all(allPromises);
+  await Promise.all(allPromises);
 
   
   

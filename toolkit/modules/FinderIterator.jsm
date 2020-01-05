@@ -9,7 +9,6 @@ this.EXPORTED_SYMBOLS = ["FinderIterator"];
 const { interfaces: Ci, classes: Cc, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -354,7 +353,7 @@ this.FinderIterator = {
 
 
 
-  *_yieldResult(listener, rangeSource, window, withPause = true) {
+  async _yieldResult(listener, rangeSource, window, withPause = true) {
     
     
     let iterCount = 0;
@@ -372,14 +371,14 @@ this.FinderIterator = {
       
       
       listener.onIteratorRangeFound(range, !this.running);
-      yield range;
+      await range;
 
       if (withPause && ++iterCount >= kIterationSizeMax) {
         iterCount = 0;
         
         this._listeners.set(listener, { limit, onEnd });
         
-        yield new Promise(resolve => window.setTimeout(resolve, 0));
+        await new Promise(resolve => window.setTimeout(resolve, 0));
         
         ranges = rangeSource.slice(0, limit > -1 ? limit : undefined);
       }
@@ -406,15 +405,15 @@ this.FinderIterator = {
 
 
 
-  _yieldPreviousResult: Task.async(function* (listener, window) {
+  async _yieldPreviousResult(listener, window) {
     this._notifyListeners("start", this.params, [listener]);
     this._catchingUp.add(listener);
-    yield* this._yieldResult(listener, this._previousRanges, window);
+    await this._yieldResult(listener, this._previousRanges, window);
     this._catchingUp.delete(listener);
     let { onEnd } = this._listeners.get(listener);
     if (onEnd)
       onEnd();
-  }),
+  },
 
   
 
@@ -426,12 +425,12 @@ this.FinderIterator = {
 
 
 
-  _yieldIntermediateResult: Task.async(function* (listener, window) {
+  async _yieldIntermediateResult(listener, window) {
     this._notifyListeners("start", this.params, [listener]);
     this._catchingUp.add(listener);
-    yield* this._yieldResult(listener, this.ranges, window, false);
+    await this._yieldResult(listener, this.ranges, window, false);
     this._catchingUp.delete(listener);
-  }),
+  },
 
   
 
@@ -442,7 +441,7 @@ this.FinderIterator = {
 
 
 
-  _findAllRanges: Task.async(function* (finder, spawnId) {
+  async _findAllRanges(finder, spawnId) {
     if (this._timeout) {
       if (this._timer)
         clearTimeout(this._timer);
@@ -457,7 +456,7 @@ this.FinderIterator = {
         timeout *= 4;
       else if (searchTerm.length == 2)
         timeout *= 2;
-      yield new Promise(resolve => {
+      await new Promise(resolve => {
         this._runningFindResolver = resolve;
         this._timer = setTimeout(resolve, timeout);
       });
@@ -506,12 +505,12 @@ this.FinderIterator = {
           this._listeners.set(listener, { limit, onEnd });
         }
 
-        yield range;
+        await range;
 
         if (++iterCount >= kIterationSizeMax) {
           iterCount = 0;
           
-          yield new Promise(resolve => window.setTimeout(resolve, 0));
+          await new Promise(resolve => window.setTimeout(resolve, 0));
         }
       }
     }
@@ -519,7 +518,7 @@ this.FinderIterator = {
     
     
     this.stop(true);
-  }),
+  },
 
   
 

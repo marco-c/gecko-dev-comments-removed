@@ -13,7 +13,7 @@ const PAGE = "http://example.com/browser/browser/base/content/test/general/page_
 
 
 function promiseStylesheetsUpdated(browser) {
-  return ContentTask.spawn(browser, { PAGE }, function*(args) {
+  return ContentTask.spawn(browser, { PAGE }, async function(args) {
     return new Promise((resolve) => {
       addEventListener("pageshow", function onPageShow(e) {
         if (e.target.location == args.PAGE) {
@@ -29,12 +29,12 @@ function promiseStylesheetsUpdated(browser) {
 
 
 
-add_task(function*() {
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank", false);
+add_task(async function() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank", false);
   let browser = tab.linkedBrowser;
 
-  yield BrowserTestUtils.loadURI(browser, PAGE);
-  yield promiseStylesheetsUpdated(browser);
+  await BrowserTestUtils.loadURI(browser, PAGE);
+  await promiseStylesheetsUpdated(browser);
 
   let menupopup = document.getElementById("pageStyleMenu").menupopup;
   gPageStyleMenu.fillPopup(menupopup);
@@ -53,7 +53,7 @@ add_task(function*() {
   
   
   
-  yield ContentTask.spawn(browser, {}, function*() {
+  await ContentTask.spawn(browser, {}, async function() {
     dump("\nJust wasting some time.\n");
   });
 
@@ -63,5 +63,5 @@ add_task(function*() {
   selected = menupopup.querySelector("menuitem[checked='true']");
   is(selected.getAttribute("label"), "1", "Should now have stylesheet 1 selected");
 
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });

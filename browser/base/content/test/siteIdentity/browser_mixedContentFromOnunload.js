@@ -13,10 +13,10 @@ const HTTPS_TEST_ROOT_1 = getRootDirectory(gTestPath).replace("chrome://mochites
 const HTTP_TEST_ROOT_2 = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.net");
 const HTTPS_TEST_ROOT_2 = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "https://test2.example.com");
 
-add_task(function *() {
+add_task(async function() {
   let url = HTTP_TEST_ROOT_1 + "file_mixedContentFromOnunload.html";
-  yield BrowserTestUtils.withNewTab(url, function*(browser) {
-    yield SpecialPowers.pushPrefEnv({
+  await BrowserTestUtils.withNewTab(url, async function(browser) {
+    await SpecialPowers.pushPrefEnv({
       "set": [
         ["security.mixed_content.block_active_content", true],
         ["security.mixed_content.block_display_content", false]
@@ -25,8 +25,8 @@ add_task(function *() {
     
     
     url = HTTPS_TEST_ROOT_1 + "file_mixedContentFromOnunload_test1.html";
-    yield BrowserTestUtils.loadURI(browser, url);
-    yield BrowserTestUtils.browserLoaded(browser);
+    await BrowserTestUtils.loadURI(browser, url);
+    await BrowserTestUtils.browserLoaded(browser);
     
     
     isSecurityState(browser, "secure");
@@ -34,11 +34,11 @@ add_task(function *() {
     
     
     url = HTTP_TEST_ROOT_2 + "file_mixedContentFromOnunload.html";
-    yield BrowserTestUtils.loadURI(browser, url);
-    yield BrowserTestUtils.browserLoaded(browser);
+    await BrowserTestUtils.loadURI(browser, url);
+    await BrowserTestUtils.browserLoaded(browser);
     url = HTTPS_TEST_ROOT_2 + "file_mixedContentFromOnunload_test2.html";
-    yield BrowserTestUtils.loadURI(browser, url);
-    yield BrowserTestUtils.browserLoaded(browser);
+    await BrowserTestUtils.loadURI(browser, url);
+    await BrowserTestUtils.browserLoaded(browser);
     isSecurityState(browser, "broken");
     assertMixedContentBlockingState(browser, {activeLoaded: false, activeBlocked: false, passiveLoaded: true});
   });

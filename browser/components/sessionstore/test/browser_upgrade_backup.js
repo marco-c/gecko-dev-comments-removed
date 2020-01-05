@@ -3,7 +3,6 @@
 
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
-Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm", this);
 
 const Paths = SessionFile.Paths;
@@ -15,7 +14,7 @@ const PREF_MAX_UPGRADE_BACKUPS = "browser.sessionstore.upgradeBackup.maxUpgradeB
 
 
 
-var prepareTest = Task.async(function* () {
+var prepareTest = async function() {
   let result = {};
 
   result.buildID = Services.appinfo.platformBuildID;
@@ -23,12 +22,12 @@ var prepareTest = Task.async(function* () {
   result.contents = JSON.stringify({"browser_upgrade_backup.js": Math.random()});
 
   return result;
-});
+};
 
 
 
 
-var getUpgradeBackups = Task.async(function* () {
+var getUpgradeBackups = async function() {
   let iterator;
   let backups = [];
 
@@ -36,7 +35,7 @@ var getUpgradeBackups = Task.async(function* () {
     iterator = new OS.File.DirectoryIterator(Paths.backups);
 
     
-    yield iterator.forEach(function(file) {
+    await iterator.forEach(function(file) {
       
       if (file.path.startsWith(Paths.upgradeBackupPrefix)) {
         
@@ -51,69 +50,69 @@ var getUpgradeBackups = Task.async(function* () {
 
   
   return backups;
-});
+};
 
-add_task(function* init() {
+add_task(async function init() {
   
-  yield SessionStore.promiseInitialized;
-  yield SessionFile.wipe();
+  await SessionStore.promiseInitialized;
+  await SessionFile.wipe();
 });
 
-add_task(function* test_upgrade_backup() {
-  let test = yield prepareTest();
+add_task(async function test_upgrade_backup() {
+  let test = await prepareTest();
   info("Let's check if we create an upgrade backup");
-  yield OS.File.writeAtomic(Paths.clean, test.contents);
-  yield SessionFile.read(); 
-  yield SessionFile.write(""); 
+  await OS.File.writeAtomic(Paths.clean, test.contents);
+  await SessionFile.read(); 
+  await SessionFile.write(""); 
 
   is(Services.prefs.getCharPref(PREF_UPGRADE), test.buildID, "upgrade backup should be set");
 
-  is((yield OS.File.exists(Paths.upgradeBackup)), true, "upgrade backup file has been created");
+  is((await OS.File.exists(Paths.upgradeBackup)), true, "upgrade backup file has been created");
 
-  let data = yield OS.File.read(Paths.upgradeBackup);
+  let data = await OS.File.read(Paths.upgradeBackup);
   is(test.contents, (new TextDecoder()).decode(data), "upgrade backup contains the expected contents");
 
   info("Let's check that we don't overwrite this upgrade backup");
   let newContents = JSON.stringify({"something else entirely": Math.random()});
-  yield OS.File.writeAtomic(Paths.clean, newContents);
-  yield SessionFile.read(); 
-  yield SessionFile.write(""); 
-  data = yield OS.File.read(Paths.upgradeBackup);
+  await OS.File.writeAtomic(Paths.clean, newContents);
+  await SessionFile.read(); 
+  await SessionFile.write(""); 
+  data = await OS.File.read(Paths.upgradeBackup);
   is(test.contents, (new TextDecoder()).decode(data), "upgrade backup hasn't changed");
 });
 
-add_task(function* test_upgrade_backup_removal() {
-  let test = yield prepareTest();
+add_task(async function test_upgrade_backup_removal() {
+  let test = await prepareTest();
   let maxUpgradeBackups = Preferences.get(PREF_MAX_UPGRADE_BACKUPS, 3);
   info("Let's see if we remove backups if there are too many");
-  yield OS.File.writeAtomic(Paths.clean, test.contents);
+  await OS.File.writeAtomic(Paths.clean, test.contents);
 
   
   if (OS.File.exists(Paths.nextUpgradeBackup)) {
-    yield OS.File.remove(Paths.nextUpgradeBackup);
+    await OS.File.remove(Paths.nextUpgradeBackup);
   }
 
   
-  yield OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20080101010101", "");
-  yield OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20090101010101", "");
-  yield OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20100101010101", "");
-  yield OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20110101010101", "");
-  yield OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20120101010101", "");
-  yield OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20130101010101", "");
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20080101010101", "");
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20090101010101", "");
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20100101010101", "");
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20110101010101", "");
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20120101010101", "");
+  await OS.File.writeAtomic(Paths.upgradeBackupPrefix + "20130101010101", "");
 
   
-  let backups = yield getUpgradeBackups();
+  let backups = await getUpgradeBackups();
 
   
-  yield SessionFile.read(); 
-  yield SessionFile.write(""); 
+  await SessionFile.read(); 
+  await SessionFile.write(""); 
 
   
   is(Services.prefs.getCharPref(PREF_UPGRADE), test.buildID, "upgrade backup should be set");
-  is((yield OS.File.exists(Paths.upgradeBackup)), true, "upgrade backup file has been created");
+  is((await OS.File.exists(Paths.upgradeBackup)), true, "upgrade backup file has been created");
 
   
-  let newBackups = yield getUpgradeBackups();
+  let newBackups = await getUpgradeBackups();
   is(newBackups.length, maxUpgradeBackups, "expected number of backups are present after removing old backups");
 
   
@@ -125,8 +124,8 @@ add_task(function* test_upgrade_backup_removal() {
   
   is(newBackups.length, 1, "one new backup was created that was not removed");
 
-  yield SessionFile.write(""); 
+  await SessionFile.write(""); 
 
-  backups = yield getUpgradeBackups();
+  backups = await getUpgradeBackups();
   is(backups.length, maxUpgradeBackups, "second call to SessionFile.write() didn't create or remove more backups");
 });

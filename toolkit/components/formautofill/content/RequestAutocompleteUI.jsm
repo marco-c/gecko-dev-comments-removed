@@ -19,8 +19,6 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Promise",
                                   "resource://gre/modules/Promise.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Task",
-                                  "resource://gre/modules/Task.jsm");
 
 
 
@@ -32,7 +30,7 @@ this.RequestAutocompleteUI = function(aAutofillData) {
 this.RequestAutocompleteUI.prototype = {
   _autofillData: null,
 
-  show: Task.async(function* () {
+  async show() {
     
     
     let resolveFn;
@@ -53,6 +51,6 @@ this.RequestAutocompleteUI.prototype = {
                            args);
 
     
-    return yield uiPromise;
-  }),
+    return await uiPromise;
+  },
 };

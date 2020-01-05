@@ -42,7 +42,7 @@ var _expectedWindow = null;
 
 var currentPromiseResolver = null;
 
-function* getFocusedElementForBrowser(browser, dontCheckExtraFocus = false) {
+function getFocusedElementForBrowser(browser, dontCheckExtraFocus = false) {
   if (gMultiProcessBrowser) {
     return new Promise((resolve, reject) => {
       window.messageManager.addMessageListener("Browser:GetCurrentFocus", function getCurrentFocus(message) {
@@ -126,22 +126,22 @@ function focusElementInChild(elementid, type) {
   }
 }
 
-add_task(function*() {
+add_task(async function() {
   tab1 = gBrowser.addTab();
   browser1 = gBrowser.getBrowserForTab(tab1);
 
   tab2 = gBrowser.addTab();
   browser2 = gBrowser.getBrowserForTab(tab2);
 
-  yield promiseTabLoadEvent(tab1, "data:text/html," + escape(testPage1));
-  yield promiseTabLoadEvent(tab2, "data:text/html," + escape(testPage2));
+  await promiseTabLoadEvent(tab1, "data:text/html," + escape(testPage1));
+  await promiseTabLoadEvent(tab2, "data:text/html," + escape(testPage2));
 
   var childFocusScript = "data:,(" + focusInChild.toString() + ")();";
   browser1.messageManager.loadFrameScript(childFocusScript, true);
   browser2.messageManager.loadFrameScript(childFocusScript, true);
 
   gURLBar.focus();
-  yield SimpleTest.promiseFocus();
+  await SimpleTest.promiseFocus();
 
   if (gMultiProcessBrowser) {
     window.messageManager.addMessageListener("Browser:FocusChanged", message => {
@@ -159,68 +159,68 @@ add_task(function*() {
   
   var focusedWindow = {};
 
-  let focused = yield getFocusedElementForBrowser(browser1);
+  let focused = await getFocusedElementForBrowser(browser1);
   is(focused, "Focus is <none>", "initial focus in tab 1");
 
-  focused = yield getFocusedElementForBrowser(browser2);
+  focused = await getFocusedElementForBrowser(browser2);
   is(focused, "Focus is <none>", "initial focus in tab 2");
 
   is(document.activeElement, gURLBar.inputField, "focus after loading two tabs");
 
-  yield* expectFocusShiftAfterTabSwitch(tab2, "window2", null, true,
+  await expectFocusShiftAfterTabSwitch(tab2, "window2", null, true,
                                         "after tab change, focus in new tab");
 
-  focused = yield getFocusedElementForBrowser(browser2);
+  focused = await getFocusedElementForBrowser(browser2);
   is(focused, "Focus is <none>", "focusedElement after tab change, focus in new tab");
 
   
   
-  yield* expectFocusShiftAfterTabSwitch(tab1, "window1", null, true,
+  await expectFocusShiftAfterTabSwitch(tab1, "window1", null, true,
                                         "after tab change, focus in original tab");
 
-  focused = yield getFocusedElementForBrowser(browser1);
+  focused = await getFocusedElementForBrowser(browser1);
   is(focused, "Focus is <none>", "focusedElement after tab change, focus in original tab");
 
   
-  yield expectFocusShift(() => focusElementInChild("button1", "focus"),
+  await expectFocusShift(() => focusElementInChild("button1", "focus"),
                          "window1", "button1", true,
                          "after button focused");
 
-  focused = yield getFocusedElementForBrowser(browser1);
+  focused = await getFocusedElementForBrowser(browser1);
   is(focused, "Focus is button1", "focusedElement in first browser after button focused");
 
   
   
   
-  yield expectFocusShift(() => focusElementInChild("button2", "focus"),
+  await expectFocusShift(() => focusElementInChild("button2", "focus"),
                          "window1", "button1", false,
                          "after button focus in unfocused tab");
 
-  focused = yield getFocusedElementForBrowser(browser1, false);
+  focused = await getFocusedElementForBrowser(browser1, false);
   is(focused, "Focus is button1", "focusedElement in first browser after button focus in unfocused tab");
-  focused = yield getFocusedElementForBrowser(browser2, true);
+  focused = await getFocusedElementForBrowser(browser2, true);
   is(focused, "Focus is button2", "focusedElement in second browser after button focus in unfocused tab");
 
   
-  yield* expectFocusShiftAfterTabSwitch(tab2, "window2", "button2", true,
+  await expectFocusShiftAfterTabSwitch(tab2, "window2", "button2", true,
                                         "after tab change with button focused");
 
   
   
-  yield expectFocusShift(() => focusElementInChild("button1", "blur"),
+  await expectFocusShift(() => focusElementInChild("button1", "blur"),
                          "window2", "button2", false,
                          "focusedWindow after blur in unfocused tab");
 
-  focused = yield getFocusedElementForBrowser(browser1, true);
+  focused = await getFocusedElementForBrowser(browser1, true);
   is(focused, "Focus is <none>", "focusedElement in first browser after focus in unfocused tab");
-  focused = yield getFocusedElementForBrowser(browser2, false);
+  focused = await getFocusedElementForBrowser(browser2, false);
   is(focused, "Focus is button2", "focusedElement in second browser after focus in unfocused tab");
 
   
-  yield expectFocusShift(() => gBrowser.selectedTab.focus(),
+  await expectFocusShift(() => gBrowser.selectedTab.focus(),
                          "main-window", "tab2", true,
                          "focusing tab element");
-  yield* expectFocusShiftAfterTabSwitch(tab1, "main-window", "tab1", true,
+  await expectFocusShiftAfterTabSwitch(tab1, "main-window", "tab1", true,
                                         "tab change when selected tab element was focused");
 
   let switchWaiter;
@@ -232,7 +232,7 @@ add_task(function*() {
     });
   }
 
-  yield* expectFocusShiftAfterTabSwitch(tab2, "main-window", "tab2", true,
+  await expectFocusShiftAfterTabSwitch(tab2, "main-window", "tab2", true,
                                         "another tab change when selected tab element was focused");
 
   
@@ -240,10 +240,10 @@ add_task(function*() {
   
   
   if (gMultiProcessBrowser) {
-    yield switchWaiter;
+    await switchWaiter;
   }
 
-  yield expectFocusShift(() => gBrowser.selectedTab.blur(),
+  await expectFocusShift(() => gBrowser.selectedTab.blur(),
                          "main-window", null, true,
                          "blurring tab element");
 
@@ -251,40 +251,40 @@ add_task(function*() {
   
   focusElementInChild("button1", "focus");
 
-  yield expectFocusShift(() => gURLBar.focus(),
+  await expectFocusShift(() => gURLBar.focus(),
                          "main-window", "urlbar", true,
                          "focusedWindow after url field focused");
-  focused = yield getFocusedElementForBrowser(browser1, true);
+  focused = await getFocusedElementForBrowser(browser1, true);
   is(focused, "Focus is button1", "focusedElement after url field focused, first browser");
-  focused = yield getFocusedElementForBrowser(browser2, true);
+  focused = await getFocusedElementForBrowser(browser2, true);
   is(focused, "Focus is button2", "focusedElement after url field focused, second browser");
 
-  yield expectFocusShift(() => gURLBar.blur(),
+  await expectFocusShift(() => gURLBar.blur(),
                          "main-window", null, true,
                          "blurring url field");
 
   
   
-  yield* expectFocusShiftAfterTabSwitch(tab1, "window1", "button1", true,
+  await expectFocusShiftAfterTabSwitch(tab1, "window1", "button1", true,
                                         "after tab change, focus in url field, button focused in new tab");
 
-  focused = yield getFocusedElementForBrowser(browser1, false);
+  focused = await getFocusedElementForBrowser(browser1, false);
   is(focused, "Focus is button1", "after switch tab, focus in unfocused tab, first browser");
-  focused = yield getFocusedElementForBrowser(browser2, true);
+  focused = await getFocusedElementForBrowser(browser2, true);
   is(focused, "Focus is button2", "after switch tab, focus in unfocused tab, second browser");
 
   
-  yield expectFocusShift(() => focusElementInChild("button1", "blur"),
+  await expectFocusShift(() => focusElementInChild("button1", "blur"),
                          "window1", null, true,
                          "after blur in focused tab");
 
-  focused = yield getFocusedElementForBrowser(browser1, false);
+  focused = await getFocusedElementForBrowser(browser1, false);
   is(focused, "Focus is <none>", "focusedWindow after blur in focused tab, child");
   focusedWindow = {};
   is(fm.getFocusedElementForWindow(window, false, focusedWindow), browser1, "focusedElement after blur in focused tab, parent");
 
   
-  yield expectFocusShift(() => gURLBar.blur(),
+  await expectFocusShift(() => gURLBar.blur(),
                          "window1", null, false,
                          "after blur in unfocused url field");
 
@@ -292,14 +292,14 @@ add_task(function*() {
   is(fm.getFocusedElementForWindow(window, false, focusedWindow), browser1, "focusedElement after blur in unfocused url field");
 
   
-  yield* expectFocusShiftAfterTabSwitch(tab2, "window2", "button2", true,
+  await expectFocusShiftAfterTabSwitch(tab2, "window2", "button2", true,
                                         "after switch from unfocused to focused tab");
-  focused = yield getFocusedElementForBrowser(browser2, true);
+  focused = await getFocusedElementForBrowser(browser2, true);
   is(focused, "Focus is button2", "focusedElement after switch from unfocused to focused tab");
 
   
   
-  yield expectFocusShift(() => fm.clearFocus(window),
+  await expectFocusShift(() => fm.clearFocus(window),
                          "main-window", null, true,
                          "after switch to chrome with no focused element");
 
@@ -307,26 +307,26 @@ add_task(function*() {
   is(fm.getFocusedElementForWindow(window, false, focusedWindow), null, "focusedElement after switch to chrome with no focused element");
 
   
-  yield* expectFocusShiftAfterTabSwitch(tab1, "window1", null, true,
+  await expectFocusShiftAfterTabSwitch(tab1, "window1", null, true,
                                         "focusedWindow after tab switch from no focus to no focus");
 
-  focused = yield getFocusedElementForBrowser(browser1, false);
+  focused = await getFocusedElementForBrowser(browser1, false);
   is(focused, "Focus is <none>", "after tab switch from no focus to no focus, first browser");
-  focused = yield getFocusedElementForBrowser(browser2, true);
+  focused = await getFocusedElementForBrowser(browser2, true);
   is(focused, "Focus is button2", "after tab switch from no focus to no focus, second browser");
 
   
   
-  yield expectFocusShift(() => focusElementInChild("button1", "focus"),
+  await expectFocusShift(() => focusElementInChild("button1", "focus"),
                          "window1", "button1", true,
                          "focus button");
 
-  yield promiseTabLoadEvent(tab1, "data:text/html," + escape(testPage3));
+  await promiseTabLoadEvent(tab1, "data:text/html," + escape(testPage3));
 
   
   gURLBar.focus();
 
-  yield new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     window.addEventListener("pageshow", function(event) {
       resolve();
     }, {capture: true, once: true});
@@ -342,7 +342,7 @@ add_task(function*() {
     _lastfocus = "urlbar";
     _lastfocuswindow = "main-window";
 
-    yield expectFocusShift(() => EventUtils.synthesizeKey("VK_F6", { }),
+    await expectFocusShift(() => EventUtils.synthesizeKey("VK_F6", { }),
                            "window1", "html1",
                            true, "switch document forward with f6");
 
@@ -464,14 +464,14 @@ function compareFocusResults() {
   });
 }
 
-function* expectFocusShiftAfterTabSwitch(tab, expectedWindow, expectedElement, focusChanged, testid) {
+async function expectFocusShiftAfterTabSwitch(tab, expectedWindow, expectedElement, focusChanged, testid) {
   let tabSwitchPromise = null;
-  yield expectFocusShift(() => { tabSwitchPromise = BrowserTestUtils.switchTab(gBrowser, tab) },
+  await expectFocusShift(() => { tabSwitchPromise = BrowserTestUtils.switchTab(gBrowser, tab) },
                          expectedWindow, expectedElement, focusChanged, testid)
-  yield tabSwitchPromise;
+  await tabSwitchPromise;
 }
 
-function* expectFocusShift(callback, expectedWindow, expectedElement, focusChanged, testid) {
+function expectFocusShift(callback, expectedWindow, expectedElement, focusChanged, testid) {
   currentPromiseResolver = null;
   currentTestName = testid;
 

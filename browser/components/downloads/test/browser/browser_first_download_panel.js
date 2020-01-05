@@ -8,7 +8,7 @@
 
 
 
-add_task(function* test_first_download_panel() {
+add_task(async function test_first_download_panel() {
   
   
   let oldPrefValue = Services.prefs.getBoolPref("browser.download.panel.shown");
@@ -25,7 +25,7 @@ add_task(function* test_first_download_panel() {
   });
 
   
-  yield task_resetState();
+  await task_resetState();
 
   
   
@@ -33,7 +33,7 @@ add_task(function* test_first_download_panel() {
 
   let promise = promisePanelOpened();
   DownloadsCommon.getData(window)._notifyDownloadEvent("start");
-  yield promise;
+  await promise;
 
   
   DownloadsPanel.hidePanel();
@@ -52,6 +52,6 @@ add_task(function* test_first_download_panel() {
   DownloadsCommon.getData(window)._notifyDownloadEvent("start");
 
   
-  yield new Promise(resolve => setTimeout(resolve, 2000));
+  await new Promise(resolve => setTimeout(resolve, 2000));
   DownloadsPanel.onPopupShown = originalOnPopupShown;
 });

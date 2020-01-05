@@ -1,19 +1,19 @@
-add_task(function* test() {
+add_task(async function test() {
   const TEST_URL = "http://mochi.test:8888/notFoundPage.html";
   
   
   Services.prefs.setCharPref("places.frecency.decayRate", "1.0");
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser);
-  registerCleanupFunction(function*() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  registerCleanupFunction(async function() {
     Services.prefs.clearUserPref("places.frecency.decayRate");
-    yield BrowserTestUtils.removeTab(tab);
-    yield PlacesTestUtils.clearHistory();
+    await BrowserTestUtils.removeTab(tab);
+    await PlacesTestUtils.clearHistory();
   });
 
   
   
-  yield PlacesTestUtils.addVisits({ uri: TEST_URL });
-  let frecency = yield PlacesTestUtils.fieldInDB(TEST_URL, "frecency");
+  await PlacesTestUtils.addVisits({ uri: TEST_URL });
+  let frecency = await PlacesTestUtils.fieldInDB(TEST_URL, "frecency");
   is(frecency, 100, "Check initial frecency");
 
   
@@ -31,9 +31,9 @@ add_task(function* test() {
     PlacesUtils.history.addObserver(historyObserver);
   });
   gBrowser.selectedBrowser.loadURI(TEST_URL);
-  yield promiseVisit;
+  await promiseVisit;
 
-  is(yield PlacesTestUtils.fieldInDB(TEST_URL, "frecency"), frecency, "Frecency should be unchanged");
-  is(yield PlacesTestUtils.fieldInDB(TEST_URL, "hidden"), 0, "Page should not be hidden");
-  is(yield PlacesTestUtils.fieldInDB(TEST_URL, "typed"), 0, "page should not be marked as typed");
+  is(await PlacesTestUtils.fieldInDB(TEST_URL, "frecency"), frecency, "Frecency should be unchanged");
+  is(await PlacesTestUtils.fieldInDB(TEST_URL, "hidden"), 0, "Page should not be hidden");
+  is(await PlacesTestUtils.fieldInDB(TEST_URL, "typed"), 0, "page should not be marked as typed");
 });

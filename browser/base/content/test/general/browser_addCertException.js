@@ -9,14 +9,14 @@
 
 
 
-add_task(function* () {
-  yield BrowserTestUtils.openNewForegroundTab(gBrowser);
-  yield loadBadCertPage("https://expired.example.com");
+add_task(async function() {
+  await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  await loadBadCertPage("https://expired.example.com");
   checkControlPanelIcons();
   let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
                               .getService(Ci.nsICertOverrideService);
   certOverrideService.clearValidityOverride("expired.example.com", -1);
-  yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 

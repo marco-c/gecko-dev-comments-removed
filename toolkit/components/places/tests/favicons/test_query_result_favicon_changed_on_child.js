@@ -7,9 +7,9 @@
 
 const PAGE_URI = NetUtil.newURI("http://example.com/test_query_result");
 
-add_task(function* test_query_result_favicon_changed_on_child() {
+add_task(async function test_query_result_favicon_changed_on_child() {
   
-  yield PlacesUtils.bookmarks.insert({
+  await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.menuGuid,
     title: "test_bookmark",
     url: PAGE_URI
@@ -56,13 +56,13 @@ add_task(function* test_query_result_favicon_changed_on_child() {
   
   let promise = promiseFaviconChanged(PAGE_URI, SMALLPNG_DATA_URI);
   result.root.containerOpen = true;
-  yield promise;
+  await promise;
 
   
   
   
   
-  yield PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesTestUtils.promiseAsyncUpdates();
   result.removeObserver(resultObserver);
 
   

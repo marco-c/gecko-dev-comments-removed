@@ -23,7 +23,7 @@ var ps = Cc["@mozilla.org/preferences-service;1"].
 
 
 
-function* task_add_normalized_visit(aURI, aTime, aDayOffset) {
+async function task_add_normalized_visit(aURI, aTime, aDayOffset) {
   var dateObj = new Date(aTime);
   
   dateObj.setHours(0);
@@ -38,7 +38,7 @@ function* task_add_normalized_visit(aURI, aTime, aDayOffset) {
   var PRTimeWithOffset = (previousDateObj.getTime() - DSTCorrection) * 1000;
   var timeInMs = new Date(PRTimeWithOffset / 1000);
   print("Adding visit to " + aURI.spec + " at " + timeInMs);
-  yield PlacesTestUtils.addVisits({
+  await PlacesTestUtils.addVisits({
     uri: aURI,
     visitDate: PRTimeWithOffset
   });
@@ -423,19 +423,19 @@ function run_test() {
   run_next_test();
 }
 
-add_task(function* test_history_sidebar() {
+add_task(async function test_history_sidebar() {
   
   if (nowObj.getHours() == 23 && nowObj.getMinutes() >= 50) {
     return;
   }
 
-  yield task_fill_history();
+  await task_fill_history();
   test_RESULTS_AS_DATE_SITE_QUERY();
   test_RESULTS_AS_DATE_QUERY();
   test_RESULTS_AS_SITE_QUERY();
 
-  yield task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY);
-  yield task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY);
+  await task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_SITE_QUERY);
+  await task_test_date_liveupdate(Ci.nsINavHistoryQueryOptions.RESULTS_AS_DATE_QUERY);
 
   
   

@@ -8,7 +8,6 @@
 
 
 const {XPCOMUtils} = Cu.import("resource://gre/modules/XPCOMUtils.jsm", {});
-const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 const {SessionWorker} = Cu.import("resource:///modules/sessionstore/SessionWorker.jsm", {});
 
 const profd = do_get_profile();
@@ -30,12 +29,12 @@ updateAppInfo({
   platformVersion: "",
 });
 
-add_task(function* setup() {
+add_task(async function setup() {
   let source = do_get_file("data/sessionstore_valid.js");
   source.copyTo(profd, "sessionstore.js");
 
   
-  yield SessionFile.read();
+  await SessionFile.read();
 
   
   do_register_cleanup(() => {
@@ -66,60 +65,60 @@ function* writeAndParse(state, path, options = {}) {
   return JSON.parse(yield File.read(path, {encoding: "utf-8"}));
 }
 
-add_task(function* test_shistory_cap_none() {
+add_task(async function test_shistory_cap_none() {
   let state = createSessionState(5);
 
   
-  yield setMaxBackForward(-1, -1);
+  await setMaxBackForward(-1, -1);
 
   
-  let diskState = yield writeAndParse(state, Paths.clean, {isFinalWrite: true});
+  let diskState = await writeAndParse(state, Paths.clean, {isFinalWrite: true});
   Assert.deepEqual(state, diskState, "no cap applied");
 });
 
-add_task(function* test_shistory_cap_middle() {
+add_task(async function test_shistory_cap_middle() {
   let state = createSessionState(5);
-  yield setMaxBackForward(2, 3);
+  await setMaxBackForward(2, 3);
 
   
-  let diskState = yield writeAndParse(state, Paths.recovery);
+  let diskState = await writeAndParse(state, Paths.recovery);
   Assert.deepEqual(state, diskState, "no cap applied");
 
   
   
-  diskState = yield writeAndParse(state, Paths.clean, {isFinalWrite: true});
+  diskState = await writeAndParse(state, Paths.clean, {isFinalWrite: true});
   let tabState = state.windows[0].tabs[0];
   tabState.entries = tabState.entries.slice(2, 8);
   tabState.index = 3;
   Assert.deepEqual(state, diskState, "cap applied");
 });
 
-add_task(function* test_shistory_cap_lower_bound() {
+add_task(async function test_shistory_cap_lower_bound() {
   let state = createSessionState(1);
-  yield setMaxBackForward(5, 5);
+  await setMaxBackForward(5, 5);
 
   
-  let diskState = yield writeAndParse(state, Paths.recovery);
+  let diskState = await writeAndParse(state, Paths.recovery);
   Assert.deepEqual(state, diskState, "no cap applied");
 
   
-  diskState = yield writeAndParse(state, Paths.clean, {isFinalWrite: true});
+  diskState = await writeAndParse(state, Paths.clean, {isFinalWrite: true});
   let tabState = state.windows[0].tabs[0];
   tabState.entries = tabState.entries.slice(0, 6);
   Assert.deepEqual(state, diskState, "cap applied");
 });
 
-add_task(function* test_shistory_cap_upper_bound() {
+add_task(async function test_shistory_cap_upper_bound() {
   let state = createSessionState(MAX_ENTRIES);
-  yield setMaxBackForward(5, 5);
+  await setMaxBackForward(5, 5);
 
   
-  let diskState = yield writeAndParse(state, Paths.recovery);
+  let diskState = await writeAndParse(state, Paths.recovery);
   Assert.deepEqual(state, diskState, "no cap applied");
 
   
   
-  diskState = yield writeAndParse(state, Paths.clean, {isFinalWrite: true});
+  diskState = await writeAndParse(state, Paths.clean, {isFinalWrite: true});
   let tabState = state.windows[0].tabs[0];
   tabState.entries = tabState.entries.slice(3);
   tabState.index = 6;

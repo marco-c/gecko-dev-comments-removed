@@ -35,7 +35,7 @@ const CONTENT_SCRIPT_BASENAME = "urlbarAddonIframeContentScript.js";
 
 let gMsgMan;
 
-add_task(function* () {
+add_task(async function() {
   let rootDirURL = getRootDirectory(gTestPath);
   let jsmURL = rootDirURL + PANEL_JSM_BASENAME;
   let iframeURL = rootDirURL + IFRAME_BASENAME;
@@ -55,45 +55,45 @@ add_task(function* () {
     iframe.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader.messageManager;
   gMsgMan.loadFrameScript(contentScriptURL, false);
 
-  yield promiseIframeLoad();
+  await promiseIframeLoad();
 
   
   let value = "this value set by the test";
   gURLBar.value = value;
-  let readValue = yield promiseUrlbarFunctionCall("getValue");
+  let readValue = await promiseUrlbarFunctionCall("getValue");
   Assert.equal(readValue, value, "value");
 
   
   value = "this value set by the iframe";
-  yield promiseUrlbarFunctionCall("setValue", value);
+  await promiseUrlbarFunctionCall("setValue", value);
   Assert.equal(gURLBar.value, value, "setValue");
 
   
   let maxResults = gURLBar.popup.maxResults;
   Assert.equal(typeof(maxResults), "number", "Sanity check");
-  let readMaxResults = yield promiseUrlbarFunctionCall("getMaxResults");
+  let readMaxResults = await promiseUrlbarFunctionCall("getMaxResults");
   Assert.equal(readMaxResults, maxResults, "getMaxResults");
 
   
   let newMaxResults = maxResults + 10;
-  yield promiseUrlbarFunctionCall("setMaxResults", newMaxResults);
+  await promiseUrlbarFunctionCall("setMaxResults", newMaxResults);
   Assert.equal(gURLBar.popup.maxResults, newMaxResults, "setMaxResults");
   gURLBar.popup.maxResults = maxResults;
 
   
   value = "http://mochi.test:8888/";
-  yield promiseUrlbarFunctionCall("setValue", value);
+  await promiseUrlbarFunctionCall("setValue", value);
   Assert.equal(gURLBar.value, value, "setValue");
-  yield promiseUrlbarFunctionCall("enter");
+  await promiseUrlbarFunctionCall("enter");
   let browser = gBrowser.selectedBrowser;
-  yield BrowserTestUtils.browserLoaded(browser);
+  await BrowserTestUtils.browserLoaded(browser);
   Assert.equal(browser.currentURI.spec, value,
                "enter should have loaded the URL");
 
   
   
   value = "test";
-  let promiseValues = yield Promise.all([
+  let promiseValues = await Promise.all([
     promiseEvent("input")[1],
     promiseEvent("reset")[1],
     promiseEvent("result")[1],
@@ -120,22 +120,22 @@ add_task(function* () {
   
   
   let keydownPromises = promiseEvent("keydown");
-  yield keydownPromises[0];
+  await keydownPromises[0];
   EventUtils.synthesizeKey("KEY_ArrowDown", {
     type: "keydown",
     code: "ArrowDown",
   });
-  yield keydownPromises[1];
+  await keydownPromises[1];
 
   
   let height = iframe.getBoundingClientRect().height;
-  let readHeight = yield promiseUrlbarFunctionCall("getPanelHeight");
+  let readHeight = await promiseUrlbarFunctionCall("getPanelHeight");
   Assert.equal(readHeight, height, "getPanelHeight");
 
   
   let newHeight = height + 100;
-  yield promiseUrlbarFunctionCall("setPanelHeight", newHeight);
-  yield new Promise(resolve => {
+  await promiseUrlbarFunctionCall("setPanelHeight", newHeight);
+  await new Promise(resolve => {
     
     
     setTimeout(resolve, 1000);

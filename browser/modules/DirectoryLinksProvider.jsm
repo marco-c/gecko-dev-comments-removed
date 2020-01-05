@@ -11,7 +11,6 @@ Cu.importGlobalProperties(["XMLHttpRequest"]);
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
   "resource://gre/modules/osfile.jsm")
@@ -331,16 +330,16 @@ var DirectoryLinksProvider = {
     this._directoryFilePath = OS.Path.join(OS.Constants.Path.localProfileDir, DIRECTORY_LINKS_FILE);
     this._lastDownloadMS = 0;
 
-    return Task.spawn(function*() {
+    return (async function() {
       
-      let doesFileExists = yield OS.File.exists(this._directoryFilePath);
+      let doesFileExists = await OS.File.exists(this._directoryFilePath);
       if (doesFileExists) {
-        let fileInfo = yield OS.File.stat(this._directoryFilePath);
+        let fileInfo = await OS.File.stat(this._directoryFilePath);
         this._lastDownloadMS = Date.parse(fileInfo.lastModificationDate);
       }
       
-      yield this._fetchAndCacheLinksIfNecessary();
-    }.bind(this));
+      await this._fetchAndCacheLinksIfNecessary();
+    }.bind(this))();
   },
 
   

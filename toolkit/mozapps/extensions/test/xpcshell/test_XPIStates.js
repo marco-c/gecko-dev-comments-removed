@@ -104,9 +104,9 @@ function getXS() {
   return XPI.XPIStates;
 }
 
-add_task(function* detect_touches() {
+add_task(async function detect_touches() {
   startupManager();
-  let [, pd, , ud] = yield promiseAddonsByIDs([
+  let [, pd, , ud] = await promiseAddonsByIDs([
          "packed-enabled@tests.mozilla.org",
          "packed-disabled@tests.mozilla.org",
          "unpacked-enabled@tests.mozilla.org",
@@ -180,8 +180,8 @@ add_task(function* detect_touches() {
 
 
 
-add_task(function* uninstall_bootstrap() {
-  let [pe, ] = yield promiseAddonsByIDs([
+add_task(async function uninstall_bootstrap() {
+  let [pe, ] = await promiseAddonsByIDs([
          "packed-enabled@tests.mozilla.org",
          "packed-disabled@tests.mozilla.org",
          "unpacked-enabled@tests.mozilla.org",
@@ -195,10 +195,10 @@ add_task(function* uninstall_bootstrap() {
 
 
 
-add_task(function* install_bootstrap() {
+add_task(async function install_bootstrap() {
   let XS = getXS();
 
-  let installer = yield promiseInstallFile(
+  let installer = await promiseInstallFile(
     do_get_addon("test_bootstrap1_1"));
 
   let newAddon = installer.addon;
@@ -216,10 +216,10 @@ add_task(function* install_bootstrap() {
 
 
 
-add_task(function* install_restart() {
+add_task(async function install_restart() {
   let XS = getXS();
 
-  let installer = yield promiseInstallFile(
+  let installer = await promiseInstallFile(
     do_get_addon("test_bootstrap1_4"));
 
   let newAddon = installer.addon;
@@ -231,10 +231,10 @@ add_task(function* install_restart() {
   
   XS = null;
   newAddon = null;
-  yield promiseRestartManager();
+  await promiseRestartManager();
   XS = getXS();
 
-  newAddon = yield promiseAddonByID(newID);
+  newAddon = await promiseAddonByID(newID);
   xState = XS.getAddon("app-profile", newID);
   do_check_true(xState);
   do_check_true(xState.enabled);
@@ -246,18 +246,18 @@ add_task(function* install_restart() {
   do_check_false(xState.enabled);
   XS = null;
   newAddon = null;
-  yield promiseRestartManager();
+  await promiseRestartManager();
   XS = getXS();
   xState = XS.getAddon("app-profile", newID);
   do_check_true(xState);
   do_check_false(xState.enabled);
 
-  newAddon = yield promiseAddonByID(newID);
+  newAddon = await promiseAddonByID(newID);
   newAddon.userDisabled = false;
   do_check_true(xState.enabled);
   XS = null;
   newAddon = null;
-  yield promiseRestartManager();
+  await promiseRestartManager();
   XS = getXS();
   xState = XS.getAddon("app-profile", newID);
   do_check_true(xState);
@@ -265,7 +265,7 @@ add_task(function* install_restart() {
 
   
   
-  newAddon = yield promiseAddonByID(newID);
+  newAddon = await promiseAddonByID(newID);
   newAddon.uninstall();
   xState = XS.getAddon("app-profile", newID);
   do_check_true(xState);
@@ -274,7 +274,7 @@ add_task(function* install_restart() {
   
   XS = null;
   newAddon = null;
-  yield promiseRestartManager();
+  await promiseRestartManager();
   XS = getXS();
   xState = XS.getAddon("app-profile", newID);
   do_check_false(xState);

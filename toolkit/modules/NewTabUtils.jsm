@@ -12,7 +12,6 @@ const Cu = Components.utils;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.importGlobalProperties(["btoa"]);
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
@@ -868,13 +867,13 @@ var ActivityStreamProvider = {
 
 
 
-  _addFavicons: Task.async(function*(aLinks) {
+  async _addFavicons(aLinks) {
     if (aLinks.length) {
       
       
       
       
-      yield Promise.all(aLinks.map(link => new Promise(resolve => {
+      await Promise.all(aLinks.map(link => new Promise(resolve => {
         return PlacesUtils.favicons.getFaviconDataForPage(
             Services.io.newURI(link.url),
             (iconuri, len, data, mime) => {
@@ -904,7 +903,7 @@ var ActivityStreamProvider = {
       ));
     }
     return aLinks;
-  }),
+  },
 
   
 
@@ -933,7 +932,7 @@ var ActivityStreamProvider = {
 
 
 
-  getTopFrecentSites: Task.async(function*(aOptions = {}) {
+  async getTopFrecentSites(aOptions = {}) {
     let {ignoreBlocked} = aOptions;
 
     
@@ -968,7 +967,7 @@ var ActivityStreamProvider = {
                     ORDER BY frecency DESC, lastVisitDate DESC, url
                     LIMIT ${limit}`;
 
-    let links = yield this.executePlacesQuery(sqlQuery, {
+    let links = await this.executePlacesQuery(sqlQuery, {
       columns: [
         "bookmarkGuid",
         "frecency",
@@ -984,9 +983,9 @@ var ActivityStreamProvider = {
       links = links.filter(link => !BlockedLinks.isBlocked(link));
     }
     links = links.slice(0, TOP_SITES_LIMIT);
-    links = yield this._addFavicons(links);
+    links = await this._addFavicons(links);
     return this._processLinks(links);
-  }),
+  },
 
   
 
@@ -994,8 +993,8 @@ var ActivityStreamProvider = {
 
 
 
-  getBookmark: Task.async(function*(aGuid) {
-    let bookmark = yield PlacesUtils.bookmarks.fetch(aGuid);
+  async getBookmark(aGuid) {
+    let bookmark = await PlacesUtils.bookmarks.fetch(aGuid);
     if (!bookmark) {
       return null;
     }
@@ -1005,32 +1004,32 @@ var ActivityStreamProvider = {
     result.lastModified = bookmark.lastModified.getTime();
     result.url = bookmark.url.href;
     return result;
-  }),
+  },
 
   
 
 
 
 
-  getHistorySize: Task.async(function*() {
+  async getHistorySize() {
     let sqlQuery = `SELECT count(*) FROM moz_places
                     WHERE hidden = 0 AND last_visit_date NOT NULL`;
 
-    let result = yield this.executePlacesQuery(sqlQuery);
+    let result = await this.executePlacesQuery(sqlQuery);
     return result;
-  }),
+  },
 
   
 
 
 
 
-  getBookmarksSize: Task.async(function*() {
+  async getBookmarksSize() {
     let sqlQuery = `SELECT count(*) FROM moz_bookmarks WHERE type = :type`;
 
-    let result = yield this.executePlacesQuery(sqlQuery, {params: {type: PlacesUtils.bookmarks.TYPE_BOOKMARK}});
+    let result = await this.executePlacesQuery(sqlQuery, {params: {type: PlacesUtils.bookmarks.TYPE_BOOKMARK}});
     return result;
-  }),
+  },
 
   
 
@@ -1045,12 +1044,12 @@ var ActivityStreamProvider = {
 
 
 
-  executePlacesQuery: Task.async(function*(aQuery, aOptions = {}) {
+  async executePlacesQuery(aQuery, aOptions = {}) {
     let {columns, params} = aOptions;
     let items = [];
     let queryError = null;
-    let conn = yield PlacesUtils.promiseDBConnection();
-    yield conn.executeCached(aQuery, params, aRow => {
+    let conn = await PlacesUtils.promiseDBConnection();
+    await conn.executeCached(aQuery, params, aRow => {
       try {
         let item = null;
         
@@ -1076,7 +1075,7 @@ var ActivityStreamProvider = {
       throw new Error(queryError);
     }
     return items;
-  })
+  }
 };
 
 
@@ -1142,9 +1141,9 @@ var ActivityStreamLinks = {
 
 
 
-  getTopSites: Task.async(function*(aOptions = {}) {
+  async getTopSites(aOptions = {}) {
     return ActivityStreamProvider.getTopFrecentSites(aOptions);
-  })
+  }
 };
 
 

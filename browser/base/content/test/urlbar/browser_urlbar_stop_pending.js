@@ -10,8 +10,8 @@ const SLOW_PAGE2 = "http://mochi.test:8888/browser/browser/base/content/test/url
 
 
 
-add_task(function*() {
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com", true, true);
+add_task(async function() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com", true, true);
 
   let expectedURLBarChange = SLOW_PAGE;
   let sawChange = false;
@@ -27,16 +27,16 @@ add_task(function*() {
   gURLBar.handleCommand();
 
   
-  yield new Promise(resolve => setTimeout(resolve, 200));
+  await new Promise(resolve => setTimeout(resolve, 200));
   expectedURLBarChange = SLOW_PAGE2;
   let pageLoadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   gURLBar.value = expectedURLBarChange;
   gURLBar.handleCommand();
   is(gURLBar.value, expectedURLBarChange, "Should not have changed URL bar value synchronously.");
-  yield pageLoadPromise;
+  await pageLoadPromise;
   ok(sawChange, "The URL bar change handler should have been called by the time the page was loaded");
   obs.disconnect();
   obs = null;
-  yield BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.removeTab(tab);
 });
 

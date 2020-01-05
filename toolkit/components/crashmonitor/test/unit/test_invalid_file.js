@@ -6,17 +6,17 @@
 
 
 
-add_task(function* test_invalid_file() {
+add_task(async function test_invalid_file() {
   
   let data = "1234";
-  yield OS.File.writeAtomic(sessionCheckpointsPath, data,
+  await OS.File.writeAtomic(sessionCheckpointsPath, data,
                             {tmpPath: sessionCheckpointsPath + ".tmp"});
 
   
-  let status = yield CrashMonitor.init();
+  let status = await CrashMonitor.init();
   do_check_true(status === null ? true : false);
 
   
-  let checkpoints = yield CrashMonitor.previousCheckpoints;
+  let checkpoints = await CrashMonitor.previousCheckpoints;
   do_check_true(checkpoints === null ? true : false);
 });
