@@ -310,7 +310,7 @@ GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind
     
     
     AutoLockHelperThreadState lock;
-    while (rt->isHeapBusy()) {
+    while (rt->isHeapCollecting()) {
         HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
         HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
     }

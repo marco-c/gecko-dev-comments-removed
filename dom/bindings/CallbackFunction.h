@@ -45,6 +45,11 @@ public:
     return Callback();
   }
 
+  JS::Handle<JSObject*> CallablePreserveColor() const
+  {
+    return CallbackPreserveColor();
+  }
+
   bool HasGrayCallable() const
   {
     

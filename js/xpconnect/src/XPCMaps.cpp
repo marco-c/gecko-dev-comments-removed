@@ -76,7 +76,7 @@ JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(XPCJSContext* context)
         }
 
         
-        JSObject* obj = e.front().key();
+        JSObject* obj = e.front().key().unbarrieredGet();
         JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
         if (!obj)
             e.removeFront();

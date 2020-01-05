@@ -130,6 +130,7 @@ class StoreBuffer;
 
 namespace JS {
 
+class JS_PUBLIC_API(AutoEnterCycleCollection);
 struct PropertyDescriptor;
 
 typedef void (*OffThreadCompileCallback)(void* token, void* callbackData);
@@ -138,7 +139,8 @@ enum class HeapState {
     Idle,             
     Tracing,          
     MajorCollecting,  
-    MinorCollecting   
+    MinorCollecting,  
+    CycleCollecting   
 };
 
 namespace shadow {
@@ -148,6 +150,7 @@ struct Runtime
   protected:
     
     friend class js::gc::AutoTraceSession;
+    friend class JS::AutoEnterCycleCollection;
     JS::HeapState heapState_;
 
     js::gc::StoreBuffer* gcStoreBufferPtr_;
@@ -162,6 +165,9 @@ struct Runtime
     bool isHeapMajorCollecting() const { return heapState_ == JS::HeapState::MajorCollecting; }
     bool isHeapMinorCollecting() const { return heapState_ == JS::HeapState::MinorCollecting; }
     bool isHeapCollecting() const { return isHeapMinorCollecting() || isHeapMajorCollecting(); }
+    bool isCycleCollecting() const {
+        return heapState_ == JS::HeapState::CycleCollecting;
+    }
 
     js::gc::StoreBuffer* gcStoreBufferPtr() { return gcStoreBufferPtr_; }
 
@@ -176,6 +182,23 @@ struct Runtime
 };
 
 } 
+
+
+
+class MOZ_STACK_CLASS JS_PUBLIC_API(AutoEnterCycleCollection)
+{
+#ifdef DEBUG
+    shadow::Runtime* runtime;
+
+  public:
+    explicit AutoEnterCycleCollection(JSContext* cx);
+    ~AutoEnterCycleCollection();
+#else
+  public:
+    explicit AutoEnterCycleCollection(JSContext* cx) {}
+    ~AutoEnterCycleCollection() {}
+#endif
+};
 
 class JS_PUBLIC_API(AutoGCRooter)
 {
