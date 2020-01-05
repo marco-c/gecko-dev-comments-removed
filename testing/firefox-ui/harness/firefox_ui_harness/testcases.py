@@ -22,7 +22,7 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
 
     TIMEOUT_UPDATE_APPLY = 300
     TIMEOUT_UPDATE_CHECK = 30
-    TIMEOUT_UPDATE_DOWNLOAD = 360
+    TIMEOUT_UPDATE_DOWNLOAD = 720
 
     
     
