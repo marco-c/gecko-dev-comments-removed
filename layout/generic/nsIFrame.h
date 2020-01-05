@@ -1271,9 +1271,9 @@ public:
 
 
 
-  inline nscoord GetBaseline(mozilla::WritingMode aWM,
-                             BaselineSharingGroup aBaselineGroup,
-                             AlignmentContext     aAlignmentContext) const;
+  inline nscoord BaselineBOffset(mozilla::WritingMode aWM,
+                                 BaselineSharingGroup aBaselineGroup,
+                                 AlignmentContext     aAlignmentContext) const;
 
   
 
