@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 const StreamUtils = require("devtools/shared/transport/stream-utils");
 

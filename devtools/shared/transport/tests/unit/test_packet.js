@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 const { JSONPacket, BulkPacket } =
   require("devtools/shared/transport/packets");

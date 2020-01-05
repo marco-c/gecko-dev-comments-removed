@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 const { RootActor } = require("devtools/server/actors/root");
 const { DebuggerServer } = require("devtools/server/main");
@@ -7,8 +8,8 @@ const { DebuggerServer } = require("devtools/server/main");
 
 
 
-function createRootActor(aConnection) {
-  let root = new RootActor(aConnection, {
+function createRootActor(connection) {
+  let root = new RootActor(connection, {
     globalActorFactories: DebuggerServer.globalActorFactories
   });
   root.applicationType = "xpcshell-tests";
