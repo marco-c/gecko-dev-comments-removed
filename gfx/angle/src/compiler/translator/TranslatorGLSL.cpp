@@ -257,20 +257,14 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root)
     }
 
     
-    if (getOutputType() != SH_ESSL_OUTPUT && getOutputType() < SH_GLSL_400_CORE_OUTPUT)
+    if (getOutputType() != SH_ESSL_OUTPUT && getOutputType() < SH_GLSL_400_CORE_OUTPUT  &&
+        getShaderVersion() == 100)
     {
-        sink << "#extension GL_ARB_gpu_shader5 : ";
-
         
         
-        if (getShaderVersion() >= 300)
-        {
-            sink << "require\n";
-        }
-        else
-        {
-            sink << "enable\n";
-        }
+        
+        
+        sink << "#extension GL_ARB_gpu_shader5 : enable\n";
     }
 
     TExtensionGLSL extensionGLSL(getOutputType());
