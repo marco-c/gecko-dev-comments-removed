@@ -408,9 +408,9 @@ class MessageChannel : HasResultCodes
         return mDispatchingAsyncMessage;
     }
 
-    int DispatchingAsyncMessageNestedLevel() const {
+    int DispatchingAsyncMessagePriority() const {
         AssertWorkerThread();
-        return mDispatchingAsyncMessageNestedLevel;
+        return mDispatchingAsyncMessagePriority;
     }
 
     bool Connected() const;
@@ -626,7 +626,7 @@ class MessageChannel : HasResultCodes
     };
 
     bool mDispatchingAsyncMessage;
-    int mDispatchingAsyncMessageNestedLevel;
+    int mDispatchingAsyncMessagePriority;
 
     
     
@@ -649,13 +649,13 @@ class MessageChannel : HasResultCodes
     friend class AutoEnterTransaction;
     AutoEnterTransaction *mTransactionStack;
 
-    int32_t CurrentNestedInsideSyncTransaction() const;
+    int32_t CurrentHighPriorityTransaction() const;
 
     bool AwaitingSyncReply() const;
-    int AwaitingSyncReplyNestedLevel() const;
+    int AwaitingSyncReplyPriority() const;
 
     bool DispatchingSyncMessage() const;
-    int DispatchingSyncMessageNestedLevel() const;
+    int DispatchingSyncMessagePriority() const;
 
     
     
@@ -671,7 +671,7 @@ class MessageChannel : HasResultCodes
     
     
     int32_t mTimedOutMessageSeqno;
-    int mTimedOutMessageNestedLevel;
+    int mTimedOutMessagePriority;
 
     
     
