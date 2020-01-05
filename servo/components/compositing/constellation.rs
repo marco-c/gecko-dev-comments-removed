@@ -990,11 +990,12 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             
             let source_url = &source_pipeline.url;
 
+            
+            
             let same_script = source_url.host() == new_url.host() &&
                               source_url.port() == new_url.port() &&
                               load_info.sandbox == IFrameSandboxState::IFrameUnsandboxed;
 
-            
             
             let script_chan = if same_script {
                 debug!("Constellation: loading same-origin iframe, \
