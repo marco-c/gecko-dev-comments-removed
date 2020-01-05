@@ -155,10 +155,8 @@ class MessageLogger(object):
                           'chrome://mochitests/content/browser/',
                           'chrome://mochitests/content/chrome/']
 
-    def __init__(self, logger, buffering=True, structured=True):
+    def __init__(self, logger, buffering=True):
         self.logger = logger
-        self.structured = structured
-        self.gecko_id = 'GECKO'
 
         
         
@@ -172,12 +170,11 @@ class MessageLogger(object):
         
         self.errors = []
 
-    def validate(self, obj):
-        """Tests whether the given object is a valid structured message
+    def valid_message(self, obj):
+        """True if the given object is a valid structured message
         (only does a superficial validation)"""
-        if not (isinstance(obj, dict) and 'action' in obj and obj[
-                'action'] in MessageLogger.VALID_ACTIONS):
-            raise ValueError
+        return isinstance(obj, dict) and 'action' in obj and obj[
+            'action'] in MessageLogger.VALID_ACTIONS
 
     def _fix_test_name(self, message):
         """Normalize a logged test path to match the relative path from the sourcedir.
@@ -207,21 +204,18 @@ class MessageLogger(object):
                 continue
             try:
                 message = json.loads(fragment)
-                self.validate(message)
-            except ValueError:
-                if self.structured:
-                    message = dict(
-                        action='process_output',
-                        process=self.gecko_id,
-                        data=fragment,
-                    )
-                else:
+                if not self.valid_message(message):
                     message = dict(
                         action='log',
                         level='info',
                         message=fragment,
-                    )
-
+                        unstructured=True)
+            except ValueError:
+                message = dict(
+                    action='log',
+                    level='info',
+                    message=fragment,
+                    unstructured=True)
             self._fix_test_name(message)
             self._fix_message_format(message)
             messages.append(message)
@@ -237,6 +231,11 @@ class MessageLogger(object):
         if message['action'] == 'buffering_off':
             self.buffering = False
             return
+
+        unstructured = False
+        if 'unstructured' in message:
+            unstructured = True
+            message.pop('unstructured')
 
         
         
@@ -260,11 +259,14 @@ class MessageLogger(object):
             
             self.logger.log_raw(message)
         
-        elif self.buffering and self.structured and message['action'] in self.BUFFERED_ACTIONS:
-            self.buffered_messages.append(message)
         
-        else:
+        elif any([not self.buffering,
+                  unstructured,
+                  message['action'] not in self.BUFFERED_ACTIONS]):
             self.logger.log_raw(message)
+        else:
+            
+            self.buffered_messages.append(message)
 
         
         if message['action'] == 'test_end':
@@ -791,9 +793,8 @@ class MochitestDesktop(object):
     
     test_name = 'automation.py'
 
-    def __init__(self, flavor, logger_options, quiet=False):
+    def __init__(self, logger_options, quiet=False):
         self.update_mozinfo()
-        self.flavor = flavor
         self.server = None
         self.wsserver = None
         self.websocketProcessBridge = None
@@ -819,12 +820,7 @@ class MochitestDesktop(object):
                                                  })
             MochitestDesktop.log = self.log
 
-        
-        
-        structured = not self.flavor.startswith('jetpack')
-        self.message_logger = MessageLogger(
-                logger=self.log, buffering=quiet, structured=structured)
-
+        self.message_logger = MessageLogger(logger=self.log, buffering=quiet)
         
         
         
@@ -2081,10 +2077,7 @@ toolbar#nav-bar {
                          outputTimeout=timeout)
             proc = runner.process_handler
             self.log.info("runtests.py | Application pid: %d" % proc.pid)
-
-            gecko_id = "GECKO(%d)" % proc.pid
-            self.log.process_start(gecko_id)
-            self.message_logger.gecko_id = gecko_id
+            self.log.process_start("Main app process")
 
             
             marionette_args = marionette_args or {}
@@ -2750,7 +2743,7 @@ def run_test_harness(parser, options):
         key: value for key, value in vars(options).iteritems()
         if key.startswith('log') or key == 'valgrind'}
 
-    runner = MochitestDesktop(options.flavor, logger_options, quiet=options.quiet)
+    runner = MochitestDesktop(logger_options, quiet=options.quiet)
 
     options.runByDir = False
 
