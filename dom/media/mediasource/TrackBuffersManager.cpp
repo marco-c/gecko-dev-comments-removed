@@ -1075,7 +1075,6 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
     
     
     info.mCrypto.mInitDatas.Clear();
-    mEncrypted = true;
   }
 
   {
