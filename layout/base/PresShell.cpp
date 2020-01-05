@@ -6241,11 +6241,17 @@ PresShell::Paint(nsView*        aViewToPaint,
     js::ProfileEntry::Category::GRAPHICS);
 
   Maybe<js::AutoAssertNoContentJS> nojs;
+
+  
+  
+  
+#if !defined(MOZ_WIDGET_ANDROID)
   if (!(aFlags & nsIPresShell::PAINT_COMPOSITE)) {
     
     
     nojs.emplace(dom::danger::GetJSContext());
   }
+#endif
 
   NS_ASSERTION(!mIsDestroying, "painting a destroyed PresShell");
   NS_ASSERTION(aViewToPaint, "null view");
