@@ -196,7 +196,7 @@ KeyframeEffectReadOnly::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
 void
 KeyframeEffectReadOnly::SetKeyframes(
   nsTArray<Keyframe>&& aKeyframes,
-  const ServoComputedValuesWithParent& aServoValues)
+  const ServoComputedStyleValues& aServoValues)
 {
   DoSetKeyframes(Move(aKeyframes), aServoValues);
 }
@@ -207,9 +207,9 @@ KeyframeEffectReadOnly::DoSetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                                        StyleType&& aStyle)
 {
   static_assert(IsSame<StyleType, nsStyleContext*>::value ||
-                IsSame<StyleType, const ServoComputedValuesWithParent&>::value,
+                IsSame<StyleType, const ServoComputedStyleValues&>::value,
                 "StyleType should be nsStyleContext* or "
-                "const ServoComputedValuesWithParent&");
+                "const ServoComputedStyleValues&");
 
   if (KeyframesEqualIgnoringComputedOffsets(aKeyframes, mKeyframes)) {
     return;
@@ -311,13 +311,13 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
       ? aStyleContext->GetParent()->StyleSource().AsServoComputedValues()
       : nullptr;
 
-  const ServoComputedValuesWithParent servoValues = { currentStyle, parentStyle };
+  const ServoComputedStyleValues servoValues = { currentStyle, parentStyle };
   DoUpdateProperties(servoValues);
 }
 
 void
 KeyframeEffectReadOnly::UpdateProperties(
-  const ServoComputedValuesWithParent& aServoValues)
+  const ServoComputedStyleValues& aServoValues)
 {
   DoUpdateProperties(aServoValues);
 }
@@ -922,9 +922,9 @@ nsTArray<AnimationProperty>
 KeyframeEffectReadOnly::BuildProperties(StyleType&& aStyle)
 {
   static_assert(IsSame<StyleType, nsStyleContext*>::value ||
-                IsSame<StyleType, const ServoComputedValuesWithParent&>::value,
+                IsSame<StyleType, const ServoComputedStyleValues&>::value,
                 "StyleType should be nsStyleContext* or "
-                "const ServoComputedValuesWithParent&");
+                "const ServoComputedStyleValues&");
 
   MOZ_ASSERT(aStyle);
 
@@ -1670,7 +1670,6 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
       uint32_t samePointerStructs = 0;
       nsChangeHint changeHint =
         fromContext->CalcStyleDifference(toContext,
-                                         nsChangeHint(0),
                                          &equalStructs,
                                          &samePointerStructs);
 

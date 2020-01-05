@@ -308,15 +308,10 @@ Gecko_CalcStyleDifference(nsStyleContext* aOldStyleContext,
 
   
   
-  nsChangeHint forDescendants = nsChangeHint_Hints_NotHandledForDescendants;
-
-  
-  
   
   uint32_t equalStructs, samePointerStructs;
   nsChangeHint result =
     aOldStyleContext->CalcStyleDifference(aComputedValues,
-                                          forDescendants,
                                           &equalStructs,
                                           &samePointerStructs);
 

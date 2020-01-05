@@ -400,13 +400,7 @@ public:
 
 
 
-
-
-
-
-
   nsChangeHint CalcStyleDifference(nsStyleContext* aNewContext,
-                                   nsChangeHint aParentHintsNotHandledForDescendants,
                                    uint32_t* aEqualStructs,
                                    uint32_t* aSamePointerStructs);
 
@@ -415,14 +409,12 @@ public:
 
 
   nsChangeHint CalcStyleDifference(const ServoComputedValues* aNewComputedValues,
-                                   nsChangeHint aParentHintsNotHandledForDescendants,
                                    uint32_t* aEqualStructs,
                                    uint32_t* aSamePointerStructs);
 
 private:
   template<class StyleContextLike>
   nsChangeHint CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
-                                           nsChangeHint aParentHintsNotHandledForDescendants,
                                            uint32_t* aEqualStructs,
                                            uint32_t* aSamePointerStructs);
 
@@ -506,7 +498,6 @@ public:
 
 #ifdef DEBUG
   void List(FILE* out, int32_t aIndent, bool aListDescendants = true);
-  static void AssertStyleStructMaxDifferenceValid();
   static const char* StructName(nsStyleStructID aSID);
   static bool LookupStruct(const nsACString& aName, nsStyleStructID& aResult);
 #endif

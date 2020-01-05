@@ -7705,9 +7705,6 @@ nsTableFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
   uint32_t equalStructs, samePointerStructs; 
   nsChangeHint wrapperHint = wrapper->StyleContext()->CalcStyleDifference(
     newContext,
-    
-    
-    nsChangeHint_Hints_NotHandledForDescendants,
     &equalStructs,
     &samePointerStructs);
   if (wrapperHint) {

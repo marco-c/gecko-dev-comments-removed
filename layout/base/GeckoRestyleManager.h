@@ -725,9 +725,6 @@ private:
   
   
   nsChangeHint mHintsHandledBySelf;
-  
-  nsChangeHint mParentFrameHintsNotHandledForDescendants;
-  nsChangeHint mHintsNotHandledForDescendants;
   RestyleTracker& mRestyleTracker;
   nsTArray<nsCSSSelector*>& mSelectorsForDescendants;
   TreeMatchContext& mTreeMatchContext;

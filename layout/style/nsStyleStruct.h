@@ -164,17 +164,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont
   void FinishStyle(nsPresContext* aPresContext) {}
 
   nsChangeHint CalcDifference(const nsStyleFont& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return NS_STYLE_HINT_REFLOW |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   
 
@@ -581,14 +570,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColor
   }
 
   nsChangeHint CalcDifference(const nsStyleColor& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_RepaintFrame;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
-  }
 
   void* operator new(size_t sz, nsStyleColor* aSelf) { return aSelf; }
   void* operator new(size_t sz, nsPresContext* aContext) {
@@ -880,17 +861,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleBackground& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateEffects |
-           nsChangeHint_RepaintFrame |
-           nsChangeHint_UpdateBackgroundPosition |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
-  }
 
   
   nscolor BackgroundColor(const nsIFrame* aFrame) const;
@@ -938,16 +908,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleMargin
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleMargin& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
-  }
 
   bool GetMargin(nsMargin& aMargin) const
   {
@@ -986,20 +946,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePadding
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStylePadding& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return NS_STYLE_HINT_REFLOW & ~nsChangeHint_ClearDescendantIntrinsics;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    
-    
-    
-    
-    
-    
-    return nsChangeHint(0);
-  }
 
   nsStyleSides  mPadding;         
 
@@ -1196,19 +1142,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleBorder& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return NS_STYLE_HINT_REFLOW |
-           nsChangeHint_UpdateOverflow |
-           nsChangeHint_BorderStyleNoneChange |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   void EnsureBorderColors() {
     if (!mBorderColors) {
@@ -1441,17 +1374,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
 
   void RecalcData();
   nsChangeHint CalcDifference(const nsStyleOutline& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateOverflow |
-           nsChangeHint_SchedulePaint |
-           nsChangeHint_RepaintFrame |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
-  }
 
   nsStyleCorners  mOutlineRadius; 
 
@@ -1515,17 +1437,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleList
   }
 
   nsChangeHint CalcDifference(const nsStyleList& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   static void Shutdown() {
     sInitialQuotes = nullptr;
@@ -1743,19 +1654,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
   nsChangeHint CalcDifference(const nsStylePosition& aNewData,
                               const nsStyleVisibility* aOldStyleVisibility) const;
-  static nsChangeHint MaxDifference() {
-    return NS_STYLE_HINT_REFLOW |
-           nsChangeHint_NeutralChange |
-           nsChangeHint_RecomputePosition |
-           nsChangeHint_UpdateParentOverflow |
-           nsChangeHint_UpdateComputedBSize;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    
-    return nsChangeHint(0);
-  }
 
   
 
@@ -1986,18 +1884,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset
   }
 
   nsChangeHint CalcDifference(const nsStyleTextReset& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint(
-        NS_STYLE_HINT_REFLOW |
-        nsChangeHint_UpdateSubtreeOverflow);
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   nsStyleTextOverflow mTextOverflow;    
 
@@ -2028,19 +1914,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   }
 
   nsChangeHint CalcDifference(const nsStyleText& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW |
-           nsChangeHint_UpdateSubtreeOverflow |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   uint8_t mTextAlign;                   
   uint8_t mTextAlignLast;               
@@ -2248,18 +2121,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility
   }
 
   nsChangeHint CalcDifference(const nsStyleVisibility& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   nsStyleImageOrientation mImageOrientation;  
   uint8_t mDirection;                  
@@ -2770,23 +2631,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   }
 
   nsChangeHint CalcDifference(const nsStyleDisplay& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    
-    return nsChangeHint(nsChangeHint_ReconstructFrame |
-                        NS_STYLE_HINT_REFLOW |
-                        nsChangeHint_UpdateTransformLayer |
-                        nsChangeHint_UpdateOverflow |
-                        nsChangeHint_UpdatePostTransformOverflow |
-                        nsChangeHint_UpdateContainingBlock |
-                        nsChangeHint_AddOrRemoveTransform |
-                        nsChangeHint_NeutralChange);
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    
-    return nsChangeHint(0);
-  }
 
   
   
@@ -3084,14 +2928,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTable
   }
 
   nsChangeHint CalcDifference(const nsStyleTable& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
-  }
 
   uint8_t       mLayoutStrategy;
   int32_t       mSpan;          
@@ -3116,17 +2952,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTableBorder
   }
 
   nsChangeHint CalcDifference(const nsStyleTableBorder& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   nscoord       mBorderSpacingCol;
   nscoord       mBorderSpacingRow;
@@ -3284,17 +3109,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleContent
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleContent& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   uint32_t ContentCount() const { return mContents.Length(); } 
 
@@ -3369,18 +3183,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset
   }
 
   nsChangeHint CalcDifference(const nsStyleUIReset& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   mozilla::StyleUserSelect     mUserSelect;     
   uint8_t mForceBrokenImageIcon; 
@@ -3431,19 +3233,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
   }
 
   nsChangeHint CalcDifference(const nsStyleUserInterface& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           nsChangeHint_NeedReflow |
-           nsChangeHint_NeedDirtyReflow |
-           NS_STYLE_HINT_VISUAL |
-           nsChangeHint_UpdateCursor |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow;
-  }
 
   mozilla::StyleUserInput   mUserInput;       
   mozilla::StyleUserModify  mUserModify;      
@@ -3476,17 +3265,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleXUL
   }
 
   nsChangeHint CalcDifference(const nsStyleXUL& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   float         mBoxFlex;               
   uint32_t      mBoxOrdinal;            
@@ -3516,18 +3294,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
   }
 
   nsChangeHint CalcDifference(const nsStyleColumn& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_ReconstructFrame |
-           NS_STYLE_HINT_REFLOW |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   
 
@@ -3642,18 +3408,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   }
 
   nsChangeHint CalcDifference(const nsStyleSVG& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateEffects |
-           nsChangeHint_NeedReflow |
-           nsChangeHint_NeedDirtyReflow | 
-           nsChangeHint_RepaintFrame;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    
-    return nsChangeHint_NeedReflow;
-  }
 
   nsStyleSVGPaint  mFill;             
   nsStyleSVGPaint  mStroke;           
@@ -3833,21 +3587,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVGReset
   void Destroy(nsPresContext* aContext);
 
   nsChangeHint CalcDifference(const nsStyleSVGReset& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_UpdateEffects |
-           nsChangeHint_UpdateOverflow |
-           nsChangeHint_NeutralChange |
-           nsChangeHint_RepaintFrame |
-           nsChangeHint_UpdateBackgroundPosition |
-           NS_STYLE_HINT_REFLOW;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   bool HasClipPath() const {
     return mClipPath.GetType() != mozilla::StyleShapeSourceType::None;
@@ -3891,14 +3630,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVariables
   }
 
   nsChangeHint CalcDifference(const nsStyleVariables& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint(0);
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint(0);
-  }
 
   mozilla::CSSVariableValues mVariables;
 };
@@ -3922,24 +3653,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleEffects
   }
 
   nsChangeHint CalcDifference(const nsStyleEffects& aNewData) const;
-  static nsChangeHint MaxDifference() {
-    return nsChangeHint_AllReflowHints |
-           nsChangeHint_UpdateOverflow |
-           nsChangeHint_SchedulePaint |
-           nsChangeHint_RepaintFrame |
-           nsChangeHint_UpdateOpacityLayer |
-           nsChangeHint_UpdateUsesOpacity |
-           nsChangeHint_UpdateContainingBlock |
-           nsChangeHint_UpdateEffects |
-           nsChangeHint_NeutralChange;
-  }
-  static nsChangeHint DifferenceAlwaysHandledForDescendants() {
-    
-    
-    return nsChangeHint_NeedReflow |
-           nsChangeHint_ReflowChangesSizeOrPosition |
-           nsChangeHint_ClearAncestorIntrinsics;
-  }
 
   bool HasFilters() const {
     return !mFilters.IsEmpty();
