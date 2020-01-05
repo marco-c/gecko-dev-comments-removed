@@ -121,6 +121,13 @@ public:
 
 
 
+  uint32_t
+  GetTabParentCountByProcessId(const ContentParentId& aChildCpId);
+
+  
+
+
+
 
 
   already_AddRefed<TabParent>
