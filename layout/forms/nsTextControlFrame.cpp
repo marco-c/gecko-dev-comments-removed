@@ -476,12 +476,23 @@ nsTextControlFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
 {
   float inflation = nsLayoutUtils::FontSizeInflationFor(this);
   LogicalSize autoSize = CalcIntrinsicSize(aRenderingContext, aWM, inflation);
-#ifdef DEBUG
+
   
-  {
-    const nsStyleCoord& inlineStyleCoord =
-      aWM.IsVertical() ? StylePosition()->mHeight : StylePosition()->mWidth;
-    if (inlineStyleCoord.GetUnit() == eStyleUnit_Auto) {
+  
+  const nsStyleCoord& iSizeCoord = StylePosition()->ISize(aWM);
+  if (iSizeCoord.GetUnit() == eStyleUnit_Auto) {
+    if (aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) {
+      
+      
+      
+      autoSize.ISize(aWM) =
+        nsContainerFrame::ComputeAutoSize(aRenderingContext, aWM,
+                                          aCBSize, aAvailableISize,
+                                          aMargin, aBorder,
+                                          aPadding, aFlags).ISize(aWM);
+    }
+#ifdef DEBUG
+    else {
       LogicalSize ancestorAutoSize =
         nsContainerFrame::ComputeAutoSize(aRenderingContext, aWM,
                                           aCBSize, aAvailableISize,
@@ -492,9 +503,8 @@ nsTextControlFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
                  ancestorAutoSize.ISize(aWM) == autoSize.ISize(aWM),
                  "Incorrect size computed by ComputeAutoSize?");
     }
-  }
 #endif
-
+  }
   return autoSize;
 }
 
