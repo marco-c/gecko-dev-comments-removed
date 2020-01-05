@@ -1370,7 +1370,6 @@ var gBrowserInit = {
     
     FullZoom.init();
     PanelUI.init();
-    LightweightThemeListener.init();
 
     UpdateUrlbarSearchSplitterState();
 
@@ -1707,7 +1706,6 @@ var gBrowserInit = {
 
       BrowserOffline.uninit();
       IndexedDBPromptHelper.uninit();
-      LightweightThemeListener.uninit();
       PanelUI.uninit();
       AutoShowBookmarksToolbar.uninit();
     }
