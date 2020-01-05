@@ -253,6 +253,16 @@ pub fn each_char_index(range: &Range<LineIndices>) -> EachIndex<int, CharIndex> 
     range::each_index(range.begin().char_index, range.end().char_index)
 }
 
+
+
+#[deriving(PartialEq, Eq)]
+enum WrapMode {
+    
+    WrapNormally,
+    
+    NoWrap,
+}
+
 struct LineBreaker {
     pub floats: Floats,
     pub new_fragments: Vec<Fragment>,
@@ -323,8 +333,13 @@ impl LineBreaker {
                 };
 
                 let fragment_was_appended = match cur_fragment.white_space() {
-                    white_space::normal => self.try_append_to_line(cur_fragment, flow, layout_context),
+                    white_space::normal => {
+                        self.try_append_to_line(cur_fragment, flow, layout_context, WrapNormally)
+                    }
                     white_space::pre => self.try_append_to_line_by_new_line(cur_fragment),
+                    white_space::nowrap => {
+                        self.try_append_to_line(cur_fragment, flow, layout_context, NoWrap)
+                    }
                 };
 
                 if !fragment_was_appended {
@@ -508,7 +523,14 @@ impl LineBreaker {
 
     
     
-    fn try_append_to_line(&mut self, in_fragment: Fragment, flow: &InlineFlow, layout_context: &LayoutContext) -> bool {
+    
+    
+    fn try_append_to_line(&mut self,
+                          in_fragment: Fragment,
+                          flow: &InlineFlow,
+                          layout_context: &LayoutContext,
+                          wrap_mode: WrapMode)
+                          -> bool {
         let line_is_empty = self.pending_line.range.length() == num::zero();
         if line_is_empty {
             let (line_bounds, _) = self.initial_line_placement(&in_fragment, self.cur_b, flow);
@@ -546,15 +568,13 @@ impl LineBreaker {
             return true
         }
 
-        if !in_fragment.can_split() {
+        if (!in_fragment.can_split() && line_is_empty) || wrap_mode == NoWrap {
             
-            if line_is_empty {
-                debug!("LineBreaker: case=fragment can't split and line {:u} is empty, so \
-                        overflowing.",
-                        self.lines.len());
-                self.push_fragment_to_line(in_fragment);
-                return true
-            }
+            debug!("LineBreaker: case=fragment can't split and line {:u} is empty, so \
+                    overflowing.",
+                    self.lines.len());
+            self.push_fragment_to_line(in_fragment);
+            return true
         }
 
         let available_inline_size = green_zone.inline - self.pending_line.bounds.size.inline;
