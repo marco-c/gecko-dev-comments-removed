@@ -665,48 +665,6 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
                                                inDocWithShell);
 }
 
-
-
-already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::GetStyleContextNoFlush(Element* aElement,
-                                           nsIAtom* aPseudo,
-                                           nsIPresShell* aPresShell,
-                                           StyleType aStyleType)
-{
-  return DoGetStyleContextNoFlush(aElement,
-                                  aPseudo,
-                                  aPresShell,
-                                  aStyleType,
-                                  eWithAnimation);
-}
-
-
-already_AddRefed<nsStyleContext>
-nsComputedDOMStyle::GetStyleContextWithoutAnimation(Element* aElement,
-                                                    nsIAtom* aPseudo,
-                                                    nsIPresShell* aPresShell)
-{
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPresShell> presShell = GetPresShellForContent(aElement);
-  if (!presShell) {
-    presShell = aPresShell;
-    if (!presShell)
-      return nullptr;
-  }
-
-  presShell->FlushPendingNotifications(FlushType::Style);
-
-  return DoGetStyleContextNoFlush(aElement,
-                                  aPseudo,
-                                  presShell,
-                                  eAll,
-                                  eWithoutAnimation);
-}
-
 nsMargin
 nsComputedDOMStyle::GetAdjustedValuesForBoxSizing()
 {
