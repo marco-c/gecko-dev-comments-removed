@@ -101,12 +101,10 @@ TestStackHooksChild::AnswerStackFrame()
 
     if (mNumAnswerStackFrame == 1) {
         
-        MOZ_ASSERT(PTestStackHooks::TEST4_3 == state());
         if (!SendAsync())
             fail("sending Async()");
     } else if (mNumAnswerStackFrame == 2) {
         
-        MOZ_ASSERT(PTestStackHooks::TEST5_3 == state());
         if (!SendSync())
             fail("sending Sync()");
     } else {

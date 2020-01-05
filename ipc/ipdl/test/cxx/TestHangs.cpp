@@ -90,7 +90,6 @@ TestHangsParent::AnswerStackFrame()
     ++mNumAnswerStackFrame;
 
     
-    MOZ_ASSERT((PTestHangs::HANG != state()) == (mNumAnswerStackFrame == 1));
 
     if (mNumAnswerStackFrame == 1) {
         if (CallStackFrame()) {
