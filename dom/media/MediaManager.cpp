@@ -1230,10 +1230,10 @@ public:
     
     mOnFailure = nullptr;
 
-    if (!MediaManager::IsPrivateBrowsing(window)) {
+    if (!OriginAttributes::IsPrivateBrowsing(mOrigin)) {
       
       
-      RefPtr<Pledge<nsCString>> p = media::GetOriginKey(mOrigin, false, true);
+      RefPtr<Pledge<nsCString>> p = media::GetOriginKey(mOrigin, true);
     }
     return NS_OK;
   }
@@ -1934,13 +1934,6 @@ MediaManager::NotifyRecordingStatusChange(nsPIDOMWindowInner* aWindow,
   return NS_OK;
 }
 
-bool MediaManager::IsPrivateBrowsing(nsPIDOMWindowInner* window)
-{
-  nsCOMPtr<nsIDocument> doc = window->GetDoc();
-  nsCOMPtr<nsILoadContext> loadContext = doc->GetLoadContext();
-  return loadContext && loadContext->UsePrivateBrowsing();
-}
-
 int MediaManager::AddDeviceChangeCallback(DeviceChangeCallback* aCallback)
 {
   bool fakeDeviceChangeEventOn = mPrefs.mFakeDeviceChangeEventOn;
@@ -2497,7 +2490,6 @@ MediaManager::EnumerateDevicesImpl(uint64_t aWindowId,
   
   
 
-  bool privateBrowsing = IsPrivateBrowsing(window);
   nsCOMPtr<nsIPrincipal> principal =
     nsGlobalWindow::Cast(window)->GetPrincipal();
   MOZ_ASSERT(principal);
@@ -2512,8 +2504,7 @@ MediaManager::EnumerateDevicesImpl(uint64_t aWindowId,
   
   
 
-  RefPtr<Pledge<nsCString>> p = media::GetOriginKey(origin, privateBrowsing,
-                                                      persist);
+  RefPtr<Pledge<nsCString>> p = media::GetOriginKey(origin, persist);
   p->Then([id, aWindowId, aVideoType, aAudioType,
            aFake](const nsCString& aOriginKey) mutable {
     MOZ_ASSERT(NS_IsMainThread());

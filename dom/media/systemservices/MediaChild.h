@@ -25,7 +25,7 @@ namespace media {
 
 
 already_AddRefed<Pledge<nsCString>>
-GetOriginKey(const nsCString& aOrigin, bool aPrivateBrowsing, bool aPersist);
+GetOriginKey(const nsCString& aOrigin, bool aPersist);
 
 void
 SanitizeOriginKeys(const uint64_t& aSinceWhen, bool aOnlyPrivateBrowsing);

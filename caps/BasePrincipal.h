@@ -68,6 +68,10 @@ public:
   
   static bool IsFirstPartyEnabled();
 
+  
+  
+  static bool IsPrivateBrowsing(const nsACString& aOrigin);
+
 protected:
   OriginAttributes() {}
   explicit OriginAttributes(const OriginAttributesDictionary& aOther)
