@@ -102,8 +102,8 @@ public:
 
 
 
-  bool AddChildDoc(DocAccessibleParent* aChildDoc, uint64_t aParentID,
-                   bool aCreating = true);
+  ipc::IPCResult AddChildDoc(DocAccessibleParent* aChildDoc,
+                             uint64_t aParentID, bool aCreating = true);
 
   
 
