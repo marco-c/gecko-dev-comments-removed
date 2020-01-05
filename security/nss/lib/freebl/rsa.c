@@ -395,6 +395,104 @@ rsa_is_prime(mp_int *p)
 
 
 
+static mp_err
+rsa_factorize_n_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
+                               mp_int *n)
+{
+    
+    
+    mp_int klambda;
+    mp_int t, onetwentyeight;
+    unsigned long s = 0;
+    unsigned long i;
+
+    
+    mp_int a;
+    mp_int cand;
+    mp_int next_cand;
+
+    mp_int n_minus_one;
+    mp_err err = MP_OKAY;
+
+    MP_DIGITS(&klambda) = 0;
+    MP_DIGITS(&t) = 0;
+    MP_DIGITS(&a) = 0;
+    MP_DIGITS(&cand) = 0;
+    MP_DIGITS(&n_minus_one) = 0;
+    MP_DIGITS(&next_cand) = 0;
+    MP_DIGITS(&onetwentyeight) = 0;
+    CHECK_MPI_OK(mp_init(&klambda));
+    CHECK_MPI_OK(mp_init(&t));
+    CHECK_MPI_OK(mp_init(&a));
+    CHECK_MPI_OK(mp_init(&cand));
+    CHECK_MPI_OK(mp_init(&n_minus_one));
+    CHECK_MPI_OK(mp_init(&next_cand));
+    CHECK_MPI_OK(mp_init(&onetwentyeight));
+
+    mp_set_int(&onetwentyeight, 128);
+
+    
+    CHECK_MPI_OK(mp_mul(e, d, &klambda));
+    CHECK_MPI_OK(mp_sub_d(&klambda, 1, &klambda));
+
+    
+    CHECK_MPI_OK(mp_copy(&klambda, &t));
+    while (mpp_divis_d(&t, 2) == MP_YES) {
+        CHECK_MPI_OK(mp_div_2(&t, &t));
+        s += 1;
+    }
+
+    
+    CHECK_MPI_OK(mp_copy(n, &n_minus_one));
+    CHECK_MPI_OK(mp_sub_d(&n_minus_one, 1, &n_minus_one));
+
+    
+    CHECK_MPI_OK(mp_set_int(&a, 2));
+    
+    while (mp_cmp(&a, &onetwentyeight) <= 0) {
+        
+        CHECK_MPI_OK(mp_exptmod(&a, &t, n, &cand));
+
+        for (i = 0; i < s; i++) {
+            
+            if (mp_cmp(&cand, &n_minus_one) == 0 || mp_cmp_d(&cand, 1) == 0) {
+                break;
+            }
+
+            
+            CHECK_MPI_OK(mp_exptmod_d(&cand, 2, n, &next_cand));
+
+            
+            if (mp_cmp_d(&next_cand, 1) == 0) {
+                
+                CHECK_MPI_OK(mp_sub_d(&cand, 1, &cand));
+                CHECK_MPI_OK(mp_gcd(&cand, n, p));
+                if (mp_cmp_d(p, 1) == 0) {
+                    CHECK_MPI_OK(mp_add_d(&cand, 1, &cand));
+                    break;
+                }
+                CHECK_MPI_OK(mp_div(n, p, q, NULL));
+                goto cleanup;
+            }
+            CHECK_MPI_OK(mp_copy(&next_cand, &cand));
+        }
+
+        CHECK_MPI_OK(mp_add_d(&a, 2, &a));
+    }
+
+    
+    err = MP_RANGE;
+
+cleanup:
+    mp_clear(&klambda);
+    mp_clear(&t);
+    mp_clear(&a);
+    mp_clear(&cand);
+    mp_clear(&n_minus_one);
+    mp_clear(&next_cand);
+    mp_clear(&onetwentyeight);
+    return err;
+}
 
 
 
@@ -430,34 +528,27 @@ rsa_is_prime(mp_int *p)
 
 
 static mp_err
-rsa_get_primes_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
-                              mp_int *n, PRBool hasModulus,
-                              unsigned int keySizeInBits)
+rsa_get_prime_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
+                             mp_int *n, unsigned int keySizeInBits)
 {
     mp_int kphi; 
     mp_int k;    
     mp_int phi;  
-    mp_int s;    
     mp_int r;    
     mp_int tmp;  
-    mp_int sqrt; 
     mp_err err = MP_OKAY;
     unsigned int order_k;
 
     MP_DIGITS(&kphi) = 0;
     MP_DIGITS(&phi) = 0;
-    MP_DIGITS(&s) = 0;
     MP_DIGITS(&k) = 0;
     MP_DIGITS(&r) = 0;
     MP_DIGITS(&tmp) = 0;
-    MP_DIGITS(&sqrt) = 0;
     CHECK_MPI_OK(mp_init(&kphi));
     CHECK_MPI_OK(mp_init(&phi));
-    CHECK_MPI_OK(mp_init(&s));
     CHECK_MPI_OK(mp_init(&k));
     CHECK_MPI_OK(mp_init(&r));
     CHECK_MPI_OK(mp_init(&tmp));
-    CHECK_MPI_OK(mp_init(&sqrt));
 
     
 
@@ -507,24 +598,20 @@ rsa_get_primes_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
     
 
     
-    
-    if (hasModulus) {
-        CHECK_MPI_OK(mp_add_d(n, 1, &tmp));
-    } else {
-        CHECK_MPI_OK(mp_sub_d(p, 1, &tmp));
-        CHECK_MPI_OK(mp_div(&kphi, &tmp, &kphi, &r));
-        if (mp_cmp_z(&r) != 0) {
-            
-            err = MP_RANGE;
-            goto cleanup;
-        }
-        mp_zero(q);
+    CHECK_MPI_OK(mp_sub_d(p, 1, &tmp));
+    CHECK_MPI_OK(mp_div(&kphi, &tmp, &kphi, &r));
+    if (mp_cmp_z(&r) != 0) {
         
+        err = MP_RANGE;
+        goto cleanup;
     }
+    mp_zero(q);
+    
 
     
     for (; (err == MP_OKAY) && (mpl_significant_bits(&k) >= order_k);
          err = mp_sub_d(&k, 1, &k)) {
+        CHECK_MPI_OK(err);
         
         CHECK_MPI_OK(mp_div(&kphi, &k, &phi, &r));
         if (mp_cmp_z(&r) != 0) {
@@ -532,93 +619,28 @@ rsa_get_primes_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
             continue;
         }
         
-        if (!hasModulus) {
-            if ((unsigned)mpl_significant_bits(&phi) != keySizeInBits / 2) {
-                
-                continue;
-            }
-            
-
-            if (mpp_divis_d(&phi, 2) == MP_NO) {
-                
-                continue;
-            }
-            
-            CHECK_MPI_OK(mp_add_d(&phi, 1, &tmp));
-
-            
-            err = rsa_is_prime(&tmp);
-            if (err != MP_OKAY) {
-                if (err == MP_NO) {
-                    
-                    continue;
-                }
-                goto cleanup;
-            }
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            if (mp_cmp_z(q) != 0) {
-                
-
-                err = MP_RANGE;
-                break;
-            }
-            
-
-            CHECK_MPI_OK(mp_copy(&tmp, q));
-            continue;
-        }
-        
-        
-        if ((unsigned)mpl_significant_bits(&phi) != keySizeInBits) {
+        if ((unsigned)mpl_significant_bits(&phi) != keySizeInBits / 2) {
             
             continue;
         }
         
 
-        if (mpp_divis_d(&phi, 4) == MP_NO) {
+        if (mpp_divis_d(&phi, 2) == MP_NO) {
             
             continue;
         }
         
-        CHECK_MPI_OK(mp_sub(&tmp, &phi, &s));
-        CHECK_MPI_OK(mp_div_2(&s, &s));
+        CHECK_MPI_OK(mp_add_d(&phi, 1, &tmp));
 
         
-        CHECK_MPI_OK(mp_sqr(&s, &sqrt));
-        CHECK_MPI_OK(mp_sub(&sqrt, n, &r)); 
-        CHECK_MPI_OK(mp_sqrt(&r, &sqrt));
-        
-        
-        
-        CHECK_MPI_OK(mp_sqr(&sqrt, q)); 
-        if (mp_cmp(&r, q) != 0) {
-            
-            CHECK_MPI_OK(mp_add_d(&sqrt, 1, &sqrt));
-            CHECK_MPI_OK(mp_sqr(&sqrt, q));
-            if (mp_cmp(&r, q) != 0) {
+        err = rsa_is_prime(&tmp);
+        if (err != MP_OKAY) {
+            if (err == MP_NO) {
                 
                 continue;
             }
+            goto cleanup;
         }
-
         
 
 
@@ -630,14 +652,27 @@ rsa_get_primes_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
 
 
 
+
+
+
+
+
+
+
+
+        if (mp_cmp_z(q) != 0) {
+            
+
+            err = MP_RANGE;
+            break;
+        }
         
-        
-        CHECK_MPI_OK(mp_add(&s, &sqrt, p));
-        CHECK_MPI_OK(mp_sub(&s, &sqrt, q));
-        break;
+
+        CHECK_MPI_OK(mp_copy(&tmp, q));
+        continue;
     }
     if ((unsigned)mpl_significant_bits(&k) < order_k) {
-        if (hasModulus || (mp_cmp_z(q) == 0)) {
+        if (mp_cmp_z(q) == 0) {
             
 
             err = MP_RANGE;
@@ -646,17 +681,11 @@ rsa_get_primes_from_exponents(mp_int *e, mp_int *d, mp_int *p, mp_int *q,
 cleanup:
     mp_clear(&kphi);
     mp_clear(&phi);
-    mp_clear(&s);
     mp_clear(&k);
     mp_clear(&r);
     mp_clear(&tmp);
-    mp_clear(&sqrt);
     return err;
 }
-
-
-
-
 
 
 
@@ -804,9 +833,11 @@ RSA_PopulatePrivateKey(RSAPrivateKey *key)
         
 
         if (!needPublicExponent && !needPrivateExponent &&
-            ((prime_count > 0) || hasModulus)) {
-            CHECK_MPI_OK(rsa_get_primes_from_exponents(&e, &d, &p, &q,
-                                                       &n, hasModulus, keySizeInBits));
+            (prime_count > 0)) {
+            CHECK_MPI_OK(rsa_get_prime_from_exponents(&e, &d, &p, &q, &n,
+                                                      keySizeInBits));
+        } else if (!needPublicExponent && !needPrivateExponent && hasModulus) {
+            CHECK_MPI_OK(rsa_factorize_n_from_exponents(&e, &d, &p, &q, &n));
         } else {
             
             err = MP_BADARG;
