@@ -166,7 +166,7 @@ class GeckoProfiler
     
     bool enabled() { MOZ_ASSERT_IF(enabled_, installed()); return enabled_; }
     bool installed() { return stack_ != nullptr && size_ != nullptr; }
-    void enable(bool enabled);
+    MOZ_MUST_USE bool enable(bool enabled);
     void enableSlowAssertions(bool enabled) { slowAssertions = enabled; }
     bool slowAssertionsEnabled() { return slowAssertions; }
 
