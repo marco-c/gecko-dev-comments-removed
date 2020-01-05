@@ -629,16 +629,9 @@ nsFloatManager::CircleShapeInfo::CircleShapeInfo(
     aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
   nsPoint physicalCenter =
     ShapeUtils::ComputeCircleOrEllipseCenter(aBasicShape, physicalShapeBoxRect);
-  mRadius =
-    ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
-                                    physicalShapeBoxRect);
-
-  
-  
-  
-  LogicalPoint logicalCenter(aWM, physicalCenter, aContainerSize);
-  mCenter = nsPoint(logicalCenter.LineRelative(aWM, aContainerSize),
-                    logicalCenter.B(aWM));
+  mRadius = ShapeUtils::ComputeCircleRadius(aBasicShape, physicalCenter,
+                                            physicalShapeBoxRect);
+  mCenter = ConvertPhysicalToLogical(aWM, physicalCenter, aContainerSize);
 }
 
 nscoord
@@ -663,6 +656,56 @@ nsFloatManager::CircleShapeInfo::LineRight(WritingMode aWM,
                                     mRadius, mRadius, mRadius, mRadius,
                                     aBStart, aBEnd);
   return mCenter.x + mRadius - lineRightDiff;
+}
+
+
+
+
+nsFloatManager::EllipseShapeInfo::EllipseShapeInfo(
+  StyleBasicShape* const aBasicShape,
+  const LogicalRect& aShapeBoxRect,
+  WritingMode aWM,
+  const nsSize& aContainerSize)
+{
+  
+  
+  
+  nsRect physicalShapeBoxRect =
+    aShapeBoxRect.GetPhysicalRect(aWM, aContainerSize);
+  nsPoint physicalCenter =
+    ShapeUtils::ComputeCircleOrEllipseCenter(aBasicShape, physicalShapeBoxRect);
+  nsSize physicalRadii =
+    ShapeUtils::ComputeEllipseRadii(aBasicShape, physicalCenter,
+                                    physicalShapeBoxRect);
+  LogicalSize logicalRadii(aWM, physicalRadii);
+  mRadii = nsSize(logicalRadii.ISize(aWM), logicalRadii.BSize(aWM));
+  mCenter = ConvertPhysicalToLogical(aWM, physicalCenter, aContainerSize);
+}
+
+nscoord
+nsFloatManager::EllipseShapeInfo::LineLeft(WritingMode aWM,
+                                           const nscoord aBStart,
+                                           const nscoord aBEnd) const
+{
+  nscoord lineLeftDiff =
+    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
+                                    mRadii.width, mRadii.height,
+                                    mRadii.width, mRadii.height,
+                                    aBStart, aBEnd);
+  return mCenter.x - mRadii.width + lineLeftDiff;
+}
+
+nscoord
+nsFloatManager::EllipseShapeInfo::LineRight(WritingMode aWM,
+                                            const nscoord aBStart,
+                                            const nscoord aBEnd) const
+{
+  nscoord lineRightDiff =
+    ComputeEllipseLineInterceptDiff(BStart(), BEnd(),
+                                    mRadii.width, mRadii.height,
+                                    mRadii.width, mRadii.height,
+                                    aBStart, aBEnd);
+  return mCenter.x + mRadii.width - lineRightDiff;
 }
 
 
@@ -723,9 +766,23 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
   } else if (shapeOutside.GetType() == StyleShapeSourceType::Shape) {
     StyleBasicShape* const basicShape = shapeOutside.GetBasicShape();
 
-    if (basicShape->GetShapeType() == StyleBasicShapeType::Circle) {
-      mShapeInfo =
-        MakeUnique<CircleShapeInfo>(basicShape, rect, aWM, aContainerSize);
+    switch (basicShape->GetShapeType()) {
+      case StyleBasicShapeType::Polygon:
+        
+        
+        break;
+      case StyleBasicShapeType::Circle:
+        mShapeInfo =
+          MakeUnique<CircleShapeInfo>(basicShape, rect, aWM, aContainerSize);
+        break;
+      case StyleBasicShapeType::Ellipse:
+        mShapeInfo =
+          MakeUnique<EllipseShapeInfo>(basicShape, rect, aWM, aContainerSize);
+        break;
+      case StyleBasicShapeType::Inset:
+        
+        
+        break;
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
@@ -835,6 +892,9 @@ nsFloatManager::FloatInfo::IsEmpty(ShapeType aShapeType) const
   return mShapeInfo->IsEmpty();
 }
 
+
+
+
  nscoord
 nsFloatManager::ShapeInfo::ComputeEllipseLineInterceptDiff(
   const nscoord aShapeBoxBStart, const nscoord aShapeBoxBEnd,
@@ -913,6 +973,17 @@ nsFloatManager::ShapeInfo::XInterceptAtY(const nscoord aY,
   
   MOZ_ASSERT(aRadiusY > 0);
   return aRadiusX * std::sqrt(1 - (aY * aY) / double(aRadiusY * aRadiusY));
+}
+
+ nsPoint
+nsFloatManager::ShapeInfo::ConvertPhysicalToLogical(
+  WritingMode aWM,
+  const nsPoint& aPoint,
+  const nsSize& aContainerSize)
+{
+  LogicalPoint logicalPoint(aWM, aPoint, aContainerSize);
+  return nsPoint(logicalPoint.LineRelative(aWM, aContainerSize),
+                 logicalPoint.B(aWM));
 }
 
 

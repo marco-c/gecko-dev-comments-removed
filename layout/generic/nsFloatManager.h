@@ -372,6 +372,12 @@ private:
 
     static nscoord XInterceptAtY(const nscoord aY, const nscoord aRadiusX,
                                  const nscoord aRadiusY);
+
+    
+    
+    static nsPoint ConvertPhysicalToLogical(mozilla::WritingMode aWM,
+                                            const nsPoint& aPoint,
+                                            const nsSize& aContainerSize);
   };
 
   
@@ -438,6 +444,39 @@ private:
     nsPoint mCenter;
     
     nscoord mRadius;
+  };
+
+  
+  class EllipseShapeInfo final : public ShapeInfo
+  {
+  public:
+    EllipseShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
+                     const mozilla::LogicalRect& aShapeBoxRect,
+                     mozilla::WritingMode aWM,
+                     const nsSize& aContainerSize);
+
+    nscoord LineLeft(mozilla::WritingMode aWM,
+                     const nscoord aBStart,
+                     const nscoord aBEnd) const override;
+    nscoord LineRight(mozilla::WritingMode aWM,
+                      const nscoord aBStart,
+                      const nscoord aBEnd) const override;
+    nscoord BStart() const override { return mCenter.y - mRadii.height; }
+    nscoord BEnd() const override { return mCenter.y + mRadii.height; }
+    bool IsEmpty() const override { return mRadii.IsEmpty(); };
+
+    void Translate(nscoord aLineLeft, nscoord aBlockStart) override
+    {
+      mCenter.MoveBy(aLineLeft, aBlockStart);
+    }
+
+  private:
+    
+    
+    nsPoint mCenter;
+    
+    
+    nsSize mRadii;
   };
 
   struct FloatInfo {
