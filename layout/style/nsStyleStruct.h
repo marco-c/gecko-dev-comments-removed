@@ -1263,7 +1263,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
     }
   }
 
-  void ClearBorderColors(mozilla::css::Side aSide) {
+  void ClearBorderColors(mozilla::Side aSide) {
     if (mBorderColors && mBorderColors[aSide]) {
       delete mBorderColors[aSide];
       mBorderColors[aSide] = nullptr;
@@ -1275,13 +1275,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   
   
   
-  bool HasVisibleStyle(mozilla::css::Side aSide) const
+  bool HasVisibleStyle(mozilla::Side aSide) const
   {
     return IsVisibleBorderStyle(mBorderStyle[aSide]);
   }
 
   
-  void SetBorderWidth(mozilla::css::Side aSide, nscoord aBorderWidth)
+  void SetBorderWidth(mozilla::Side aSide, nscoord aBorderWidth)
   {
     nscoord roundedWidth =
       NS_ROUND_BORDER_TO_PIXELS(aBorderWidth, mTwipsPerPixel);
@@ -1308,18 +1308,18 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   
   
   
-  nscoord GetComputedBorderWidth(mozilla::css::Side aSide) const
+  nscoord GetComputedBorderWidth(mozilla::Side aSide) const
   {
     return GetComputedBorder().Side(aSide);
   }
 
-  uint8_t GetBorderStyle(mozilla::css::Side aSide) const
+  uint8_t GetBorderStyle(mozilla::Side aSide) const
   {
     NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
     return mBorderStyle[aSide];
   }
 
-  void SetBorderStyle(mozilla::css::Side aSide, uint8_t aStyle)
+  void SetBorderStyle(mozilla::Side aSide, uint8_t aStyle)
   {
     NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
     mBorderStyle[aSide] = aStyle;
@@ -1892,7 +1892,7 @@ public:
   bool MaxHeightDependsOnContainer() const
     { return HeightCoordDependsOnContainer(mMaxHeight); }
 
-  bool OffsetHasPercent(mozilla::css::Side aSide) const
+  bool OffsetHasPercent(mozilla::Side aSide) const
   {
     return mOffset.Get(aSide).HasPercent();
   }

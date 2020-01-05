@@ -324,7 +324,7 @@ public:
     
     
     
-    static const mozilla::css::Side kLogicalBlockSides[][2] = {
+    static const mozilla::Side kLogicalBlockSides[][2] = {
       { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
       { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
       { NS_SIDE_BOTTOM, NS_SIDE_TOP    },  
@@ -352,7 +352,7 @@ public:
     
     
     
-    static const mozilla::css::Side kLogicalInlineSides[][2] = {
+    static const mozilla::Side kLogicalInlineSides[][2] = {
       { NS_SIDE_LEFT,   NS_SIDE_RIGHT  },  
       { NS_SIDE_TOP,    NS_SIDE_BOTTOM },  
       { NS_SIDE_RIGHT,  NS_SIDE_LEFT   },  
@@ -404,7 +404,7 @@ public:
 
 
 
-  LogicalSide LogicalSideForPhysicalSide(mozilla::css::Side aSide) const
+  LogicalSide LogicalSideForPhysicalSide(mozilla::Side aSide) const
   {
     
     

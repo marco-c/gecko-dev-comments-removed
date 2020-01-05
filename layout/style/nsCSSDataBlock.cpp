@@ -241,7 +241,7 @@ EnsurePhysicalProperty(nsCSSPropertyID& aProperty, nsRuleData* aRuleData)
     
     
     
-    mozilla::css::Side side;
+    mozilla::Side side;
     if (isBlock) {
       uint8_t wm = aRuleData->mStyleContext->StyleVisibility()->mWritingMode;
       side = WritingMode::PhysicalSideForBlockAxis(wm, edge);

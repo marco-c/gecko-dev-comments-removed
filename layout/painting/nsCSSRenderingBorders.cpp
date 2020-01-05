@@ -64,8 +64,8 @@ static void ComputeBorderCornerDimensions(const Float* aBorderWidths,
                                           RectCornerRadii *aDimsResult);
 
 
-#define NEXT_SIDE(_s) mozilla::css::Side(((_s) + 1) & 3)
-#define PREV_SIDE(_s) mozilla::css::Side(((_s) + 3) & 3)
+#define NEXT_SIDE(_s) mozilla::Side(((_s) + 1) & 3)
+#define PREV_SIDE(_s) mozilla::Side(((_s) + 3) & 3)
 
 
 #define NEXT_CORNER(_s) mozilla::css::Corner(((_s) + 1) & 3)
@@ -114,26 +114,26 @@ AllCornersZeroSize(const RectCornerRadii& corners) {
     IsZeroSize(corners[NS_CORNER_BOTTOM_LEFT]);
 }
 
-static mozilla::css::Side
+static mozilla::Side
 GetHorizontalSide(mozilla::css::Corner aCorner)
 {
   return (aCorner == C_TL || aCorner == C_TR) ? NS_SIDE_TOP : NS_SIDE_BOTTOM;
 }
 
-static mozilla::css::Side
+static mozilla::Side
 GetVerticalSide(mozilla::css::Corner aCorner)
 {
   return (aCorner == C_TL || aCorner == C_BL) ? NS_SIDE_LEFT : NS_SIDE_RIGHT;
 }
 
 static mozilla::css::Corner
-GetCWCorner(mozilla::css::Side aSide)
+GetCWCorner(mozilla::Side aSide)
 {
   return mozilla::css::Corner(NEXT_SIDE(aSide));
 }
 
 static mozilla::css::Corner
-GetCCWCorner(mozilla::css::Side aSide)
+GetCCWCorner(mozilla::Side aSide)
 {
   return mozilla::css::Corner(aSide);
 }
@@ -146,7 +146,7 @@ IsSingleSide(int aSides)
 }
 
 static bool
-IsHorizontalSide(mozilla::css::Side aSide)
+IsHorizontalSide(mozilla::Side aSide)
 {
   return aSide == NS_SIDE_TOP || aSide == NS_SIDE_BOTTOM;
 }
@@ -386,8 +386,8 @@ nsCSSBorderRenderer::IsCornerMergeable(mozilla::css::Corner aCorner)
   
   
   
-  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::css::Side sideV(GetVerticalSide(aCorner));
+  mozilla::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::Side sideV(GetVerticalSide(aCorner));
   uint8_t styleH = mBorderStyles[sideH];
   uint8_t styleV = mBorderStyles[sideV];
   if (styleH != styleV || styleH != NS_STYLE_BORDER_STYLE_DOTTED) {
@@ -450,7 +450,7 @@ nsCSSBorderRenderer::GetCornerRect(mozilla::css::Corner aCorner)
 }
 
 Rect
-nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::css::Side aSide)
+nsCSSBorderRenderer::GetSideClipWithoutCornersRect(mozilla::Side aSide)
 {
   Point offset(0.f, 0.f);
 
@@ -584,7 +584,7 @@ MaybeMoveToMidPoint(Point& aP0, Point& aP1, const Point& aMidPoint)
 }
 
 already_AddRefed<Path>
-nsCSSBorderRenderer::GetSideClipSubPath(mozilla::css::Side aSide)
+nsCSSBorderRenderer::GetSideClipSubPath(mozilla::Side aSide)
 {
   
   
@@ -674,7 +674,7 @@ nsCSSBorderRenderer::GetSideClipSubPath(mozilla::css::Side aSide)
 }
 
 Point
-nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::css::Side aSide,
+nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::Side aSide,
                                             mozilla::css::Corner aCorner,
                                             bool* aIsUnfilled)
 {
@@ -725,7 +725,7 @@ nsCSSBorderRenderer::GetStraightBorderPoint(mozilla::css::Side aSide,
   
   
   
-  mozilla::css::Side otherSide = ((uint8_t)aSide == (uint8_t)aCorner)
+  mozilla::Side otherSide = ((uint8_t)aSide == (uint8_t)aCorner)
                                  ? PREV_SIDE(aSide)
                                  : NEXT_SIDE(aSide);
   uint8_t otherStyle = mBorderStyles[otherSide];
@@ -1081,8 +1081,8 @@ nsCSSBorderRenderer::GetOuterAndInnerBezier(Bezier* aOuterBezier,
   
   
 
-  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::css::Side sideV(GetVerticalSide(aCorner));
+  mozilla::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::Side sideV(GetVerticalSide(aCorner));
 
   Size outerCornerSize(ceil(mBorderRadii[aCorner].width),
                        ceil(mBorderRadii[aCorner].height));
@@ -1617,7 +1617,7 @@ nsCSSBorderRenderer::DrawBorderSides(int aSides)
 void
 nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
                                         Float aDash[2],
-                                        mozilla::css::Side aSide,
+                                        mozilla::Side aSide,
                                         Float aBorderLength, bool isCorner)
 {
   uint8_t style = mBorderStyles[aSide];
@@ -1792,7 +1792,7 @@ nsCSSBorderRenderer::SetupDashedOptions(StrokeOptions* aStrokeOptions,
 }
 
 static Float
-GetBorderLength(mozilla::css::Side aSide,
+GetBorderLength(mozilla::Side aSide,
                 const Point& aStart, const Point& aEnd)
 {
   if (aSide == NS_SIDE_TOP) {
@@ -1808,7 +1808,7 @@ GetBorderLength(mozilla::css::Side aSide,
 }
 
 void
-nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::css::Side aSide)
+nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::Side aSide)
 {
   
   
@@ -1878,7 +1878,7 @@ nsCSSBorderRenderer::DrawDashedOrDottedSide(mozilla::css::Side aSide)
 }
 
 void
-nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::css::Side aSide)
+nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide)
 {
   
   
@@ -2258,7 +2258,7 @@ nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::css::Side aSide)
 }
 
 void
-nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::css::Side aSide,
+nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::Side aSide,
                                               mozilla::css::Corner aCorner)
 {
   
@@ -2296,8 +2296,8 @@ nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::css::Side aSide,
      return;
    }
 
-  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::css::Side sideV(GetVerticalSide(aCorner));
+  mozilla::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::Side sideV(GetVerticalSide(aCorner));
   Float borderWidthH = mBorderWidths[sideH];
   Float borderWidthV = mBorderWidths[sideV];
   if (borderWidthH == 0.0f && borderWidthV == 0.0f) {
@@ -2364,14 +2364,14 @@ nsCSSBorderRenderer::DrawDashedOrDottedCorner(mozilla::css::Side aSide,
 }
 
 void
-nsCSSBorderRenderer::DrawDottedCornerSlow(mozilla::css::Side aSide,
+nsCSSBorderRenderer::DrawDottedCornerSlow(mozilla::Side aSide,
                                           mozilla::css::Corner aCorner)
 {
   NS_ASSERTION(mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DOTTED,
                "Style should be dotted.");
 
-  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::css::Side sideV(GetVerticalSide(aCorner));
+  mozilla::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::Side sideV(GetVerticalSide(aCorner));
   Float R0 = mBorderWidths[sideH] / 2.0f;
   Float Rn = mBorderWidths[sideV] / 2.0f;
   if (R0 == 0.0f && Rn == 0.0f) {
@@ -2441,14 +2441,14 @@ DashedPathOverlapsRect(Rect& pathRect,
 }
 
 void
-nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::css::Side aSide,
+nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::Side aSide,
                                           mozilla::css::Corner aCorner)
 {
   NS_ASSERTION(mBorderStyles[aSide] == NS_STYLE_BORDER_STYLE_DASHED,
                "Style should be dashed.");
 
-  mozilla::css::Side sideH(GetHorizontalSide(aCorner));
-  mozilla::css::Side sideV(GetVerticalSide(aCorner));
+  mozilla::Side sideH(GetHorizontalSide(aCorner));
+  mozilla::Side sideV(GetVerticalSide(aCorner));
   Float borderWidthH = mBorderWidths[sideH];
   Float borderWidthV = mBorderWidths[sideV];
   if (borderWidthH == 0.0f && borderWidthV == 0.0f) {
@@ -2557,7 +2557,7 @@ nsCSSBorderRenderer::DrawDashedCornerSlow(mozilla::css::Side aSide,
 }
 
 void
-nsCSSBorderRenderer::DrawFallbackSolidCorner(mozilla::css::Side aSide,
+nsCSSBorderRenderer::DrawFallbackSolidCorner(mozilla::Side aSide,
                                              mozilla::css::Corner aCorner)
 {
   
@@ -3357,7 +3357,7 @@ nsCSSBorderRenderer::DrawBorders()
 
 
     NS_FOR_CSS_CORNERS(corner) {
-      const mozilla::css::Side sides[2] = { mozilla::css::Side(corner), PREV_SIDE(corner) };
+      const mozilla::Side sides[2] = { mozilla::Side(corner), PREV_SIDE(corner) };
 
       if (!IsZeroSize(mBorderRadii[corner]))
         continue;
@@ -3418,7 +3418,7 @@ nsCSSBorderRenderer::DrawBorders()
         
 
         for (int cornerSide = 0; cornerSide < 2; cornerSide++) {
-          mozilla::css::Side side = mozilla::css::Side(sides[cornerSide]);
+          mozilla::Side side = mozilla::Side(sides[cornerSide]);
           uint8_t style = mBorderStyles[side];
 
           PrintAsFormatString("corner: %d cornerSide: %d side: %d style: %d\n", corner, cornerSide, side, style);

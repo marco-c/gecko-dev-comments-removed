@@ -158,7 +158,7 @@ private:
   
   Rect GetCornerRect(mozilla::css::Corner aCorner);
   
-  Rect GetSideClipWithoutCornersRect(mozilla::css::Side aSide);
+  Rect GetSideClipWithoutCornersRect(mozilla::Side aSide);
 
   
   
@@ -168,10 +168,10 @@ private:
   
   
   
-  already_AddRefed<Path> GetSideClipSubPath(mozilla::css::Side aSide);
+  already_AddRefed<Path> GetSideClipSubPath(mozilla::Side aSide);
 
   
-  Point GetStraightBorderPoint(mozilla::css::Side aSide,
+  Point GetStraightBorderPoint(mozilla::Side aSide,
                                mozilla::css::Corner aCorner,
                                bool* aIsUnfilled);
 
@@ -213,29 +213,29 @@ private:
 
   
   void SetupDashedOptions(StrokeOptions* aStrokeOptions,
-                          Float aDash[2], mozilla::css::Side aSide,
+                          Float aDash[2], mozilla::Side aSide,
                           Float aBorderLength, bool isCorner);
 
   
-  void DrawDashedOrDottedSide(mozilla::css::Side aSide);
+  void DrawDashedOrDottedSide(mozilla::Side aSide);
 
   
-  void DrawDottedSideSlow(mozilla::css::Side aSide);
+  void DrawDottedSideSlow(mozilla::Side aSide);
 
   
-  void DrawDashedOrDottedCorner(mozilla::css::Side aSide,
+  void DrawDashedOrDottedCorner(mozilla::Side aSide,
                                 mozilla::css::Corner aCorner);
 
   
-  void DrawDottedCornerSlow(mozilla::css::Side aSide,
+  void DrawDottedCornerSlow(mozilla::Side aSide,
                             mozilla::css::Corner aCorner);
 
   
-  void DrawDashedCornerSlow(mozilla::css::Side aSide,
+  void DrawDashedCornerSlow(mozilla::Side aSide,
                             mozilla::css::Corner aCorner);
 
   
-  void DrawFallbackSolidCorner(mozilla::css::Side aSide,
+  void DrawFallbackSolidCorner(mozilla::Side aSide,
                                mozilla::css::Corner aCorner);
 
   

@@ -1938,7 +1938,7 @@ public:
 
 
   static bool HasNonZeroCornerOnSide(const nsStyleCorners& aCorners,
-                                       mozilla::css::Side aSide);
+                                       mozilla::Side aSide);
 
   
 
