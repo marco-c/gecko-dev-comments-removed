@@ -291,6 +291,7 @@ bool nsContentUtils::sIsResourceTimingEnabled = false;
 bool nsContentUtils::sIsUserTimingLoggingEnabled = false;
 bool nsContentUtils::sIsExperimentalAutocompleteEnabled = false;
 bool nsContentUtils::sIsWebComponentsEnabled = false;
+bool nsContentUtils::sIsCustomElementsEnabled = false;
 bool nsContentUtils::sPrivacyResistFingerprinting = false;
 bool nsContentUtils::sSendPerformanceTimingNotifications = false;
 bool nsContentUtils::sUseActivityCursor = false;
@@ -595,6 +596,9 @@ nsContentUtils::Init()
 
   Preferences::AddBoolVarCache(&sIsWebComponentsEnabled,
                                "dom.webcomponents.enabled", false);
+
+  Preferences::AddBoolVarCache(&sIsCustomElementsEnabled,
+                               "dom.webcomponents.customelements.enabled", false);
 
   Preferences::AddBoolVarCache(&sPrivacyResistFingerprinting,
                                "privacy.resistFingerprinting", false);
@@ -10222,7 +10226,7 @@ nsContentUtils::HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
 }
 
  already_AddRefed<nsIEventTarget>
-nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aCategory)
+  nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aCategory)
 {
   if (NS_WARN_IF(!aLoadInfo)) {
     return nullptr;
@@ -10254,20 +10258,4 @@ nsContentUtils::GetEventTargetByLoadInfo(nsILoadInfo* aLoadInfo, TaskCategory aC
   }
 
   return target.forget();
-}
-
- bool
-nsContentUtils::IsLocalRefURL(const nsString& aString)
-{
-  
-  const char16_t* current = aString.get();
-  for (; *current != '\0'; current++) {
-    if (*current > 0x20) {
-      
-      
-      return *current == '#';
-    }
-  }
-
-  return false;
 }
