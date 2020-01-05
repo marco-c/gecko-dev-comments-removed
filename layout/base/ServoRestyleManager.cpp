@@ -368,6 +368,15 @@ ServoRestyleManager::ProcessPendingRestyles()
 
       
       
+      
+      
+      
+      if (!element->IsInComposedDoc()) {
+        continue;
+      }
+
+      
+      
       nsRestyleHint hint = styleSet->ComputeRestyleHint(element, snapshot);
       hint |= snapshot->ExplicitRestyleHint();
 
