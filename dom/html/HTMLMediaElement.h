@@ -960,6 +960,7 @@ protected:
 
 
 
+
   void NoSupportedMediaSourceError(const nsACString& aErrorDetails = nsCString());
 
   
