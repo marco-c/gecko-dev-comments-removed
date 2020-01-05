@@ -642,12 +642,16 @@ class TestManifest(ContextDerived):
         'manifest_obj_relpath',
 
         
+        'source_relpaths',
+
+        
         
         'dupe_manifest',
     )
 
     def __init__(self, context, path, manifest, flavor=None,
-            install_prefix=None, relpath=None, dupe_manifest=False):
+            install_prefix=None, relpath=None, sources=(),
+            dupe_manifest=False):
         ContextDerived.__init__(self, context)
 
         assert flavor in all_test_flavors()
@@ -659,6 +663,7 @@ class TestManifest(ContextDerived):
         self.install_prefix = install_prefix
         self.manifest_relpath = relpath
         self.manifest_obj_relpath = relpath
+        self.source_relpaths = sources
         self.dupe_manifest = dupe_manifest
         self.installs = {}
         self.pattern_installs = []

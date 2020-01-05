@@ -1045,8 +1045,9 @@ class RecursiveMakeBackend(CommonBackend):
 
     def _process_test_manifest(self, obj, backend_file):
         
-        self.backend_input_files.add(mozpath.join(obj.topsrcdir,
-            obj.manifest_relpath))
+        for source in obj.source_relpaths:
+            self.backend_input_files.add(mozpath.join(obj.topsrcdir,
+                source))
 
         
         

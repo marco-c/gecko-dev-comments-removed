@@ -120,6 +120,19 @@ ALLOWED_XPCOM_GLUE = {
     ('TestCookie', 'netwerk/test'),
     ('TestUDPSocket', 'netwerk/test'),
     ('xpcshell', 'js/xpconnect/shell'),
+    ('test_AsXXX_helpers', 'storage/test'),
+    ('test_async_callbacks_with_spun_event_loops', 'storage/test'),
+    ('test_asyncStatementExecution_transaction', 'storage/test'),
+    ('test_binding_params', 'storage/test'),
+    ('test_deadlock_detector', 'storage/test'),
+    ('test_file_perms', 'storage/test'),
+    ('test_mutex', 'storage/test'),
+    ('test_service_init_background_thread', 'storage/test'),
+    ('test_statement_scoper', 'storage/test'),
+    ('test_StatementCache', 'storage/test'),
+    ('test_transaction_helper', 'storage/test'),
+    ('test_true_async', 'storage/test'),
+    ('test_unlock_notify', 'storage/test'),
     ('testcrasher', 'toolkit/crashreporter/test'),
     ('mediaconduit_unittests', 'media/webrtc/signaling/test'),
     ('mediapipeline_unittest', 'media/webrtc/signaling/test'),
@@ -1253,6 +1266,8 @@ class TreeMetadataEmitter(LoggingMixin):
         manifest_dir = mozpath.dirname(path)
         manifest_reldir = mozpath.dirname(mozpath.relpath(path,
             context.config.topsrcdir))
+        manifest_sources = [mozpath.relpath(pth, context.config.topsrcdir)
+                            for pth in mpmanifest.source_files]
         install_prefix = mozpath.join(install_root, install_subdir)
 
         try:
@@ -1264,6 +1279,7 @@ class TreeMetadataEmitter(LoggingMixin):
             obj = TestManifest(context, path, mpmanifest, flavor=flavor,
                 install_prefix=install_prefix,
                 relpath=mozpath.join(manifest_reldir, mozpath.basename(path)),
+                sources=manifest_sources,
                 dupe_manifest='dupe-manifest' in defaults)
 
             filtered = mpmanifest.tests
