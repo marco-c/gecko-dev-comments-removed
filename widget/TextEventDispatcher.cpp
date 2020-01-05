@@ -322,6 +322,8 @@ TextEventDispatcher::CommitComposition(nsEventStatus& aStatus,
     
     compositionCommitEvent.mData.ReplaceSubstring(NS_LITERAL_STRING("\r\n"),
                                                   NS_LITERAL_STRING("\n"));
+    compositionCommitEvent.mData.ReplaceSubstring(NS_LITERAL_STRING("\r"),
+                                                  NS_LITERAL_STRING("\n"));
   }
   rv = DispatchEvent(widget, compositionCommitEvent, aStatus);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -710,6 +712,7 @@ TextEventDispatcher::PendingComposition::ReplaceNativeLineBreakers()
   nsAutoString nativeString(mString);
   
   mString.ReplaceSubstring(NS_LITERAL_STRING("\r\n"), NS_LITERAL_STRING("\n"));
+  mString.ReplaceSubstring(NS_LITERAL_STRING("\r"), NS_LITERAL_STRING("\n"));
 
   
   
