@@ -8,6 +8,7 @@
 #include "ecl.h"
 #include "mpi.h"
 #include "mplogic.h"
+#include "../blapii.h"
 
 
 

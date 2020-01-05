@@ -383,12 +383,15 @@ class BeforeFinished13 : public PacketFilter {
   size_t records_;
 };
 
+static SECStatus AuthCompleteBlock(TlsAgent*, PRBool, PRBool) {
+  return SECWouldBlock;
+}
+
 
 
 
 TEST_F(TlsConnectDatagram13, AuthCompleteBeforeFinished) {
-  client_->SetAuthCertificateCallback(
-      [](TlsAgent*, PRBool, PRBool) -> SECStatus { return SECWouldBlock; });
+  client_->SetAuthCertificateCallback(AuthCompleteBlock);
   server_->SetPacketFilter(new BeforeFinished13(client_, server_, [this]() {
     EXPECT_EQ(SECSuccess, SSL_AuthCertificateComplete(client_->ssl_fd(), 0));
   }));
@@ -434,8 +437,7 @@ TEST_P(TlsConnectGenericPre13, ClientWriteBetweenCCSAndFinishedWithFalseStart) {
 
 TEST_P(TlsConnectGenericPre13, AuthCompleteBeforeFinishedWithFalseStart) {
   client_->EnableFalseStart();
-  client_->SetAuthCertificateCallback(
-      [](TlsAgent*, PRBool, PRBool) -> SECStatus { return SECWouldBlock; });
+  client_->SetAuthCertificateCallback(AuthCompleteBlock);
   server_->SetPacketFilter(new BeforeFinished(
       client_, server_,
       []() {
@@ -453,6 +455,74 @@ TEST_P(TlsConnectGenericPre13, AuthCompleteBeforeFinishedWithFalseStart) {
   Connect();
   server_->SendData(10);
   Receive(10);
+}
+
+class EnforceNoActivity : public PacketFilter {
+ protected:
+  PacketFilter::Action Filter(const DataBuffer& input,
+                              DataBuffer* output) override {
+    std::cerr << "Unexpected packet: " << input << std::endl;
+    EXPECT_TRUE(false) << "should not send anything";
+    return KEEP;
+  }
+};
+
+
+
+
+
+
+TEST_P(TlsConnectGenericPre13, AuthCompleteDelayed) {
+  client_->SetAuthCertificateCallback(AuthCompleteBlock);
+
+  server_->StartConnect();
+  client_->StartConnect();
+  client_->Handshake();  
+  server_->Handshake();  
+  client_->Handshake();  
+  server_->Handshake();  
+  
+  EXPECT_EQ(TlsAgent::STATE_CONNECTED, server_->state());
+
+  
+  client_->SetPacketFilter(new EnforceNoActivity());
+  client_->Handshake();
+  EXPECT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
+
+  
+  EXPECT_EQ(SECSuccess, SSL_AuthCertificateComplete(client_->ssl_fd(), 0));
+  client_->Handshake();  
+  EXPECT_EQ(TlsAgent::STATE_CONNECTED, client_->state());
+  EXPECT_EQ(TlsAgent::STATE_CONNECTED, server_->state());
+
+  
+  client_->SetPacketFilter(nullptr);
+}
+
+
+
+TEST_P(TlsConnectTls13, AuthCompleteDelayed) {
+  client_->SetAuthCertificateCallback(AuthCompleteBlock);
+
+  server_->StartConnect();
+  client_->StartConnect();
+  client_->Handshake();  
+  server_->Handshake();  
+  EXPECT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
+  EXPECT_EQ(TlsAgent::STATE_CONNECTING, server_->state());
+
+  
+  client_->SetPacketFilter(new EnforceNoActivity());
+  client_->Handshake();
+  EXPECT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
+
+  
+  client_->SetPacketFilter(nullptr);
+  EXPECT_EQ(SECSuccess, SSL_AuthCertificateComplete(client_->ssl_fd(), 0));
+  client_->Handshake();  
+  server_->Handshake();  
+  EXPECT_EQ(TlsAgent::STATE_CONNECTED, client_->state());
+  EXPECT_EQ(TlsAgent::STATE_CONNECTED, server_->state());
 }
 
 static const SSLExtraServerCertData ServerCertDataRsaPkcs1Decrypt = {

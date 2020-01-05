@@ -894,7 +894,7 @@ ssl_SendSupportedGroupsXtn(sslSocket *ss, PRBool append, PRUint32 maxBytes)
 
     
 
-    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+    if (ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_3) {
         ec = ssl_IsECCEnabled(ss);
         if (ss->opt.requireDHENamedGroups) {
             ff = ssl_IsDHEEnabled(ss);

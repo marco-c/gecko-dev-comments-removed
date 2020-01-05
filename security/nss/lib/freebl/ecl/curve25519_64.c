@@ -199,7 +199,7 @@ fsquare(felem *output, const felem *in)
 }
 
 
-static void
+static void NO_SANITIZE_ALIGNMENT
 fexpand(felem *output, const u8 *in)
 {
     output[0] = *((const uint64_t *)(in)) & MASK51;

@@ -999,7 +999,7 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
 {
     int errCode = SSL_ERROR_RX_MALFORMED_HELLO_VERIFY_REQUEST;
     SECStatus rv;
-    PRInt32 temp;
+    SSL3ProtocolVersion temp;
     SSL3AlertDescription desc = illegal_parameter;
 
     SSL_TRC(3, ("%d: SSL3[%d]: handle hello_verify_request handshake",
@@ -1014,14 +1014,21 @@ dtls_HandleHelloVerifyRequest(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
     }
 
     
-    temp = ssl3_ConsumeHandshakeNumber(ss, 2, &b, &length);
-    if (temp < 0) {
-        goto loser; 
-    }
 
-    if (temp != SSL_LIBRARY_VERSION_DTLS_1_0_WIRE &&
-        temp != SSL_LIBRARY_VERSION_DTLS_1_2_WIRE) {
-        goto alert_loser;
+
+
+
+
+
+
+
+
+
+
+
+    rv = ssl_ClientReadVersion(ss, &b, &length, &temp);
+    if (rv != SECSuccess) {
+        goto loser; 
     }
 
     

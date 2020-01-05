@@ -233,15 +233,21 @@ PK11_ImportDERPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot, SECItem *derPKI,
 
     rv = SEC_ASN1DecodeItem(pki->arena, pki, SECKEY_PrivateKeyInfoTemplate,
 		derPKI);
-    if (rv != SECSuccess || pki->privateKey.data == NULL) {
+    if (rv != SECSuccess) {
         
-
-
-
 
 
         PORT_FreeArena(temparena, PR_TRUE);
         return rv;
+    }
+    if (pki->privateKey.data == NULL) {
+        
+
+
+
+        PORT_FreeArena(temparena, PR_TRUE);
+        PORT_SetError(SEC_ERROR_BAD_KEY);
+        return SECFailure;
     }
 
     rv = PK11_ImportPrivateKeyInfoAndReturnKey(slot, pki, nickname,

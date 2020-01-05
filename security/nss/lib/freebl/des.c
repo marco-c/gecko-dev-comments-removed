@@ -10,15 +10,9 @@
 
 
 #include "des.h"
+#include "blapii.h"
 #include <stddef.h> 
 
-
-
-
-
-#if defined(NSS_X86_OR_X64)
-#define HAVE_UNALIGNED_ACCESS 1
-#endif
 
 
 
@@ -561,7 +555,7 @@ DES_MakeSchedule(HALF *ks, const BYTE *key, DESDirection direction)
     right ^= temp = ((left >> 4) ^ right) & 0x0f0f0f0f;  \
     left ^= temp << 4;
 
-void
+void NO_SANITIZE_ALIGNMENT
 DES_Do1Block(HALF *ks, const BYTE *inbuf, BYTE *outbuf)
 {
     register HALF left, right;
