@@ -74,7 +74,7 @@ nsPrincipal::nsPrincipal()
 { }
 
 nsPrincipal::~nsPrincipal()
-{ 
+{
   
   if (mCSP) {
     static_cast<nsCSPContext*>(mCSP.get())->clearLoadingPrincipal();
@@ -161,19 +161,30 @@ nsPrincipal::GetOriginInternal(nsACString& aOrigin)
     NS_ENSURE_SUCCESS(rv, rv);
     aOrigin.AppendLiteral("://");
     aOrigin.Append(hostPort);
+    return NS_OK;
   }
-  else {
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIStandardURL> standardURL = do_QueryInterface(origin);
-    NS_ENSURE_TRUE(standardURL, NS_ERROR_FAILURE);
-    rv = origin->GetAsciiSpec(aOrigin);
-    NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  nsCOMPtr<nsIURIWithPrincipal> uriWithPrincipal = do_QueryInterface(origin);
+  if (uriWithPrincipal) {
+    nsCOMPtr<nsIPrincipal> uriPrincipal;
+    if (uriWithPrincipal) {
+      return uriPrincipal->GetOriginNoSuffix(aOrigin);
+    }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIStandardURL> standardURL = do_QueryInterface(origin);
+  NS_ENSURE_TRUE(standardURL, NS_ERROR_FAILURE);
+  rv = origin->GetAsciiSpec(aOrigin);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }
