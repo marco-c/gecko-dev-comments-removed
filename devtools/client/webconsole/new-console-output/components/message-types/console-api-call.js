@@ -119,7 +119,8 @@ function formatReps(parameters, userProvidedStyles, serviceContainer) {
         grip,
         key,
         userProvidedStyle: userProvidedStyles ? userProvidedStyles[key] : null,
-        serviceContainer
+        serviceContainer,
+        useQuotes: false,
       }))
       
       .reduce((arr, v, i) => {
