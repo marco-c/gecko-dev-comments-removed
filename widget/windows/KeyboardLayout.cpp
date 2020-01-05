@@ -951,6 +951,15 @@ UniCharsAndModifiers::UniCharsCaseInsensitiveEqual(
   return !comp(mChars, aOther.mChars, mLength, aOther.mLength);
 }
 
+bool
+UniCharsAndModifiers::BeginsWith(const UniCharsAndModifiers& aOther) const
+{
+  if (mLength < aOther.mLength) {
+    return false;
+  }
+  return !memcmp(mChars, aOther.mChars, aOther.mLength * sizeof(char16_t));
+}
+
 UniCharsAndModifiers&
 UniCharsAndModifiers::operator+=(const UniCharsAndModifiers& aOther)
 {
@@ -1470,6 +1479,15 @@ NativeKey::InitWithKeyChar()
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if ((mMsg.message == WM_KEYDOWN || mMsg.message == WM_SYSKEYDOWN) &&
       !IsReservedBySystem()) {
     MSG charMsg;
@@ -1487,7 +1505,6 @@ NativeKey::InitWithKeyChar()
     }
   }
 
-
   keyboardLayout->InitNativeKey(*this, mModKeyState);
 
   mIsDeadKey =
@@ -1504,34 +1521,33 @@ NativeKey::InitWithKeyChar()
     
     if (NeedsToHandleWithoutFollowingCharMessages()) {
       ComputeInputtingStringWithKeyboardLayout();
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      mCommittedCharsAndModifiers.Clear();
-      Modifiers modifiers =
-        mModKeyState.GetModifiers() & ~(MODIFIER_ALT | MODIFIER_CONTROL);
-      for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
-        
-        if (!IsPrintableCharMessage(mFollowingCharMsgs[i])) {
-          continue;
-        }
-        char16_t ch = static_cast<char16_t>(mFollowingCharMsgs[i].wParam);
-        mCommittedCharsAndModifiers.Append(ch, modifiers);
-      }
     }
     
     RemoveFollowingOddCharMessages();
+  }
+}
+
+void
+NativeKey::InitCommittedCharsAndModifiersWithFollowingCharMessages(
+             const ModifierKeyState& aModKeyState)
+{
+  mCommittedCharsAndModifiers.Clear();
+  
+  
+  
+  Modifiers modifiers = aModKeyState.GetModifiers();
+  if (IsFollowedByPrintableCharMessage()) {
+    modifiers &= ~(MODIFIER_ALT | MODIFIER_CONTROL);
+  }
+  
+  
+  for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
+    
+    if (!IsPrintableCharOrSysCharMessage(mFollowingCharMsgs[i])) {
+      continue;
+    }
+    char16_t ch = static_cast<char16_t>(mFollowingCharMsgs[i].wParam);
+    mCommittedCharsAndModifiers.Append(ch, modifiers);
   }
 }
 
@@ -1665,6 +1681,17 @@ NativeKey::IsFollowedByPrintableCharMessage() const
 {
   for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
     if (IsPrintableCharMessage(mFollowingCharMsgs[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool
+NativeKey::IsFollowedByPrintableCharOrSysCharMessage() const
+{
+  for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
+    if (IsPrintableCharOrSysCharMessage(mFollowingCharMsgs[i])) {
       return true;
     }
   }
@@ -3571,6 +3598,40 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
   
   
   
+  if (aNativeKey.IsFollowedByPrintableCharOrSysCharMessage()) {
+    MOZ_ASSERT(!aNativeKey.IsCharMessage(aNativeKey.mMsg));
+    
+    aNativeKey.
+      InitCommittedCharsAndModifiersWithFollowingCharMessages(aModKeyState);
+    MOZ_ASSERT(!aNativeKey.mCommittedCharsAndModifiers.IsEmpty());
+    aNativeKey.mKeyNameIndex = KEY_NAME_INDEX_USE_STRING;
+
+    
+    if (!IsInDeadKeySequence()) {
+      return;
+    }
+
+    
+    
+    
+    UniCharsAndModifiers deadChars =
+      GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
+    if (aNativeKey.mCommittedCharsAndModifiers.BeginsWith(deadChars)) {
+      for (uint32_t i = 0; i < deadChars.mLength; ++i) {
+        aNativeKey.mCommittedCharsAndModifiers.mModifiers[i] =
+          deadChars.mModifiers[i];
+      }
+    }
+    
+    DeactivateDeadKeyState();
+    return;
+  }
+
+  
+  
+  
+  
+  
   if (!IsPrintableCharKey(aNativeKey.mOriginalVirtualKeyCode)) {
     return;
   }
@@ -3663,6 +3724,11 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
       GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
     return true;
   }
+
+  
+  
+  
+  
 
   if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey))) {
 #if defined(DEBUG) || defined(MOZ_CRASHREPORTER)

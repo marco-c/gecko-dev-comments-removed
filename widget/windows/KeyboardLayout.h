@@ -79,6 +79,7 @@ struct UniCharsAndModifiers
 
   bool UniCharsEqual(const UniCharsAndModifiers& aOther) const;
   bool UniCharsCaseInsensitiveEqual(const UniCharsAndModifiers& aOther) const;
+  bool BeginsWith(const UniCharsAndModifiers& aOther) const;
 
   nsString ToString() const { return nsString(mChars, mLength); }
 };
@@ -371,6 +372,15 @@ private:
   
 
 
+
+
+
+  void InitCommittedCharsAndModifiersWithFollowingCharMessages(
+         const ModifierKeyState& aModKeyState);
+
+  
+
+
   bool IsRepeat() const
   {
     switch (mMsg.message) {
@@ -466,6 +476,7 @@ private:
   }
   bool MayBeSameCharMessage(const MSG& aCharMsg1, const MSG& aCharMsg2) const;
   bool IsFollowedByPrintableCharMessage() const;
+  bool IsFollowedByPrintableCharOrSysCharMessage() const;
   bool IsFollowedByDeadCharMessage() const;
   bool IsKeyMessageOnPlugin() const
   {
@@ -475,6 +486,11 @@ private:
   bool IsPrintableCharMessage(const MSG& aMSG) const
   {
     return aMSG.message == WM_CHAR &&
+           !IsControlChar(static_cast<char16_t>(aMSG.wParam));
+  }
+  bool IsPrintableCharOrSysCharMessage(const MSG& aMSG) const
+  {
+    return IsCharOrSysCharMessage(aMSG) &&
            !IsControlChar(static_cast<char16_t>(aMSG.wParam));
   }
   bool IsControlCharMessage(const MSG& aMSG) const
