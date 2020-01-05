@@ -297,13 +297,16 @@ add_task(function* test_favicon_cache_firstParty() {
   networkCache.clear();
 
   
-  let tabInfoA = yield openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
-
-  
   let promiseForFaviconLoaded = waitOnFaviconLoaded(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
 
   
-  let response = yield waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
+  let responsePromise = waitOnFaviconResponse(THIRD_PARTY_SITE + TEST_FAVICON_CACHE_URI);
+
+  
+  let tabInfoA = yield openTab(TEST_SITE_ONE + TEST_CACHE_PAGE);
+
+  
+  let response = yield responsePromise;
 
   
   is(response.topic, "http-on-examine-response", "The favicon image should be loaded through network.");
