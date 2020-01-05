@@ -90,6 +90,21 @@ console.log(
 `});
 
 
+const cssMessage = new Map();
+
+cssMessage.set("Unknown property", `
+p {
+  such-unknown-property: wow;
+}
+`);
+
+cssMessage.set("Invalid property value", `
+p {
+  padding-top: invalid value;
+}
+`);
+
+
 const evaluationResultCommands = [
   "new Date(0)",
   "asdf()",
@@ -142,6 +157,7 @@ pageError.set("Reference Error", `
 
 module.exports = {
   consoleApi,
+  cssMessage,
   evaluationResult,
   networkEvent,
   pageError,
