@@ -199,6 +199,24 @@ public:
     return mPropertiesForAnimationsLevel;
   }
 
+  StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty) const
+  {
+    StyleAnimationValue result;
+    DebugOnly<bool> hasProperty = mBaseStyleValues.Get(aProperty, &result);
+    MOZ_ASSERT(hasProperty || result.IsNull());
+    return result;
+  }
+
+  void PutBaseStyle(nsCSSPropertyID aProperty,
+                    const StyleAnimationValue& aValue)
+  {
+    return mBaseStyleValues.Put(aProperty, aValue);
+  }
+  void ClearBaseStyles()
+  {
+    return mBaseStyleValues.Clear();
+  }
+
 private:
   static nsIAtom* GetEffectSetPropertyAtom(CSSPseudoElementType aPseudoType);
 
@@ -246,6 +264,11 @@ private:
   
   
   nsCSSPropertyIDSet mPropertiesForAnimationsLevel;
+
+  
+  
+  
+  nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mBaseStyleValues;
 
 #ifdef DEBUG
   

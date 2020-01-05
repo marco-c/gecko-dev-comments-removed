@@ -30,6 +30,7 @@ class EffectSet;
 class RestyleTracker;
 class StyleAnimationValue;
 struct AnimationPerformanceWarning;
+struct AnimationProperty;
 struct NonOwningAnimationTarget;
 
 namespace dom {
@@ -217,9 +218,18 @@ public:
     const AnimationPerformanceWarning& aWarning);
 
   
+  
+  
+  
   static StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty,
                                           nsStyleContext* aStyleContext,
-                                          dom::Element& aElement);
+                                          dom::Element& aElement,
+                                          CSSPseudoElementType aPseudoType);
+
+  
+  static void ClearBaseStyles(dom::Element& aElement,
+                              CSSPseudoElementType aPseudoType);
+
 private:
   ~EffectCompositor() = default;
 

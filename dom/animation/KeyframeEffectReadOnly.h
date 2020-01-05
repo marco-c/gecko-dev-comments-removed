@@ -9,6 +9,7 @@
 
 #include "nsChangeHint.h"
 #include "nsCSSPropertyID.h"
+#include "nsCSSPropertyIDSet.h"
 #include "nsCSSValue.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
@@ -19,7 +20,6 @@
 #include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/KeyframeEffectParams.h"
-#include "mozilla/LayerAnimationInfo.h" 
 #include "mozilla/ServoBindingTypes.h" 
                                        
 #include "mozilla/StyleAnimationValue.h"
@@ -28,7 +28,6 @@
 
 struct JSContext;
 class JSObject;
-class nsCSSPropertyIDSet;
 class nsIContent;
 class nsIDocument;
 class nsIFrame;
@@ -330,6 +329,10 @@ public:
   
   bool CanIgnoreIfNotVisible() const;
 
+  
+  
+  bool NeedsBaseStyle(nsCSSPropertyID aProperty) const;
+
 protected:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
                          const Maybe<OwningAnimationTarget>& aTarget,
@@ -404,6 +407,10 @@ protected:
     const StyleAnimationValue& aValueToComposite,
     CompositeOperation aCompositeOperation);
 
+  
+  
+  void SetNeedsBaseStyle(nsCSSPropertyID aProperty);
+
   Maybe<OwningAnimationTarget> mTarget;
 
   KeyframeEffectParams mEffectOptions;
@@ -427,6 +434,11 @@ protected:
   
   
   bool mInEffectOnLastAnimationTimingUpdate;
+
+  
+  
+  
+  nsCSSPropertyIDSet mNeedsBaseStyleSet;
 
 private:
   nsChangeHint mCumulativeChangeHint;
