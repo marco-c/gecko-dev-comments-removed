@@ -489,7 +489,6 @@ GetGCNumber();
 
 class JS_PUBLIC_API(AutoAssertOnGC)
 {
-#ifdef DEBUG
     js::gc::GCRuntime* gc;
     size_t gcNumber;
 
@@ -497,16 +496,6 @@ class JS_PUBLIC_API(AutoAssertOnGC)
     AutoAssertOnGC();
     explicit AutoAssertOnGC(JSContext* cx);
     ~AutoAssertOnGC();
-
-    static void VerifyIsSafeToGC(JSRuntime* rt);
-#else
-  public:
-    AutoAssertOnGC() {}
-    explicit AutoAssertOnGC(JSContext* cx) {}
-    ~AutoAssertOnGC() {}
-
-    static void VerifyIsSafeToGC(JSRuntime* rt) {}
-#endif
 };
 
 
@@ -576,12 +565,23 @@ class JS_PUBLIC_API(AutoAssertGCCallback) : public AutoSuppressGCAnalysis
 
 
 
+
+
+#ifdef DEBUG
 class JS_PUBLIC_API(AutoCheckCannotGC) : public AutoAssertOnGC
 {
   public:
     AutoCheckCannotGC() : AutoAssertOnGC() {}
     explicit AutoCheckCannotGC(JSContext* cx) : AutoAssertOnGC(cx) {}
 } JS_HAZ_GC_INVALIDATED;
+#else
+class JS_PUBLIC_API(AutoCheckCannotGC)
+{
+  public:
+    AutoCheckCannotGC() {}
+    explicit AutoCheckCannotGC(JSContext* cx) {}
+} JS_HAZ_GC_INVALIDATED;
+#endif
 
 
 
