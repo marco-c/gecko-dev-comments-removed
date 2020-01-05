@@ -2081,7 +2081,7 @@ function LongStringActor(string) {
 LongStringActor.prototype = {
   actorPrefix: "longString",
 
-  disconnect: function () {
+  destroy: function () {
     
     
     

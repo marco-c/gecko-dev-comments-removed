@@ -256,11 +256,15 @@ ActorPool.prototype = {
   
 
 
-
-  removeActor: function AP_remove(aActor) {
-    delete this._actors[aActor.actorID];
-    if (aActor.disconnect) {
-      aActor.disconnect();
+  removeActor(actor) {
+    delete this._actors[actor.actorID];
+    if (actor.destroy) {
+      actor.destroy();
+      return;
+    }
+    
+    if (actor.disconnect) {
+      actor.disconnect();
     }
   },
 

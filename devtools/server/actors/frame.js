@@ -44,7 +44,7 @@ let FrameActor = ActorClassWithSpec(frameSpec, {
 
 
 
-  disconnect: function () {
+  destroy: function () {
     this.conn.removeActorPool(this._frameLifetimePool);
     this._frameLifetimePool = null;
   },

@@ -208,7 +208,7 @@ RootActor.prototype = {
   
 
 
-  disconnect: function () {
+  destroy: function () {
     
     if (this._parameters.tabList) {
       this._parameters.tabList.onListChanged = null;

@@ -25,10 +25,6 @@ const GcliActor = ActorClassWithSpec(gcliSpec, {
     this._requisitionPromise = undefined; 
   },
 
-  disconnect: function () {
-    return this.destroy();
-  },
-
   destroy: function () {
     Actor.prototype.destroy.call(this);
 

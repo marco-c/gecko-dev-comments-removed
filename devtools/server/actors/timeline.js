@@ -42,15 +42,6 @@ var TimelineActor = exports.TimelineActor = protocol.ActorClassWithSpec(timeline
   
 
 
-
-
-  disconnect: function () {
-    this.destroy();
-  },
-
-  
-
-
   destroy: function () {
     events.off(this.bridge, "*", this._onTimelineEvent);
     this.bridge.destroy();

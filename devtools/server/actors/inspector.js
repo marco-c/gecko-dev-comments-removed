@@ -2641,12 +2641,6 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
     this.tabActor = null;
   },
 
-  
-  
-  disconnect: function () {
-    this.destroy();
-  },
-
   get window() {
     return this.tabActor.window;
   },

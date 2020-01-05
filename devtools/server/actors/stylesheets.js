@@ -258,14 +258,6 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     }
   },
 
-  
-
-
-
-  disconnect: function () {
-    this.destroy();
-  },
-
   initialize: function (aStyleSheet, aParentActor, aWindow) {
     protocol.Actor.prototype.initialize.call(this, null);
 

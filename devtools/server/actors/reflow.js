@@ -46,15 +46,6 @@ var ReflowActor = exports.ReflowActor = protocol.ActorClassWithSpec(reflowSpec, 
     this._isStarted = false;
   },
 
-  
-
-
-
-
-  disconnect: function () {
-    this.destroy();
-  },
-
   destroy: function () {
     this.stop();
     releaseLayoutChangesObserver(this.tabActor);

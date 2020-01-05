@@ -561,8 +561,8 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     });
   },
 
-  disconnect: function () {
-    dumpn("in ThreadActor.prototype.disconnect");
+  destroy: function () {
+    dumpn("in ThreadActor.prototype.destroy");
     if (this._state == "paused") {
       this.onResume();
     }
@@ -595,7 +595,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   exit: function () {
-    this.disconnect();
+    this.destroy();
     this._state = "exited";
   },
 
@@ -654,7 +654,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   onDetach: function (aRequest) {
-    this.disconnect();
+    this.destroy();
     this._state = "detached";
     this._debuggerSourcesSeen = null;
 

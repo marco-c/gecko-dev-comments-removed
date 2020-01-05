@@ -501,14 +501,6 @@ var AnimationsActor = exports.AnimationsActor = protocol.ActorClassWithSpec(anim
 
 
 
-  disconnect: function () {
-    this.destroy();
-  },
-
-  
-
-
-
 
 
 

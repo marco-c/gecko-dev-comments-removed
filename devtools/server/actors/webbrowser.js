@@ -486,7 +486,6 @@ BrowserTabList.prototype._handleActorClose = function (actor, browser) {
 
 
 
-
 BrowserTabList.prototype._checkListening = function () {
   
 
@@ -1137,7 +1136,7 @@ TabActor.prototype = {
   
 
 
-  disconnect() {
+  destroy() {
     this.exit();
   },
 
