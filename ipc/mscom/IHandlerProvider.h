@@ -1,0 +1,36 @@
+
+
+
+
+
+
+#ifndef mozilla_mscom_IHandlerProvider_h
+#define mozilla_mscom_IHandlerProvider_h
+
+#include "mozilla/mscom/Ptr.h"
+
+#include <objidl.h>
+
+namespace mozilla {
+namespace mscom {
+
+struct HandlerProvider
+{
+  virtual STDMETHODIMP GetHandler(CLSID* aHandlerClsid) = 0;
+  virtual STDMETHODIMP GetHandlerPayloadSize(DWORD* aOutPayloadSize) = 0;
+  virtual STDMETHODIMP WriteHandlerPayload(IStream* aStream) = 0;
+  virtual STDMETHODIMP_(REFIID) MarshalAs(REFIID aIid) = 0;
+};
+
+struct IHandlerProvider : public IUnknown
+                        , public HandlerProvider
+{
+  virtual STDMETHODIMP NewInstance(REFIID aIid,
+                                   InterceptorTargetPtr<IUnknown> aTarget,
+                                   IHandlerProvider** aOutNewPayload) = 0;
+};
+
+} 
+} 
+
+#endif 
