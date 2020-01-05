@@ -94,8 +94,7 @@ MapGIOResult(GError *result)
 {
   if (!result)
     return NS_OK;
-  else 
-    return MapGIOResult(result->code);
+  return MapGIOResult(result->code);
 }
 
 
@@ -237,17 +236,16 @@ nsGIOInputStream::MountVolume() {
                                 mount_enclosing_volume_finished,
                                 this);
   mozilla::MonitorAutoLock mon(mMonitorMountInProgress);
-    
+  
   while (mMountRes == MOUNT_OPERATION_IN_PROGRESS)
     mon.Wait();
-  
+
   g_object_unref(mount_op);
 
   if (mMountRes == MOUNT_OPERATION_FAILED) {
     return MapGIOResult(mMountErrorCode);
-  } else {
-    return NS_OK;
   }
+  return NS_OK;
 }
 
 
@@ -446,7 +444,7 @@ nsGIOInputStream::DoRead(char *aBuf, uint32_t aCount, uint32_t *aCountRead)
     mBytesRemaining -= *aCountRead;
     return NS_OK;
   }
-  else if (mDirOpen) {
+  if (mDirOpen) {
     
     while (aCount && rv != NS_BASE_STREAM_CLOSED)
     {
