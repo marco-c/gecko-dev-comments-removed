@@ -47,7 +47,7 @@ this.RequestAutocompleteUI.prototype = {
 
     
     Services.ww.openWindow(null,
-                           "chrome://formautofill/content/requestAutocomplete.xhtml",
+                           "chrome://requestautocomplete/content/requestAutocomplete.xhtml",
                            "Toolkit:RequestAutocomplete",
                            "chrome,dialog=no,resizable",
                            args);
