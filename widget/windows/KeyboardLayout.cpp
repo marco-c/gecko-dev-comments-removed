@@ -2528,8 +2528,30 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   
   
   
+  if (IsControlCharMessage(aCharMsg)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
+      ("%p   NativeKey::HandleCharMessage(), doesn't dispatch keypress "
+       "event because received a control character input without WM_KEYDOWN",
+       this));
+    return false;
+  }
 
-  static const char16_t U_EQUAL = 0x3D;
+  
+  
+  
+  
 
   
   if ((!mModKeyState.IsAlt() && !mModKeyState.IsControl()) ||
@@ -2537,11 +2559,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
       (mOriginalVirtualKeyCode &&
        !KeyboardLayout::IsPrintableCharKey(mOriginalVirtualKeyCode))) {
     WidgetKeyboardEvent keypressEvent(true, eKeyPress, mWidget);
-    if (!IsControlChar(static_cast<char16_t>(aCharMsg.wParam))) {
-      keypressEvent.mCharCode = static_cast<uint32_t>(aCharMsg.wParam);
-    } else {
-      keypressEvent.mKeyCode = mDOMKeyCode;
-    }
+    keypressEvent.mCharCode = static_cast<uint32_t>(aCharMsg.wParam);
     nsresult rv = mDispatcher->BeginNativeInputTransaction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
@@ -2589,43 +2607,7 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   
   
   
-
-  char16_t uniChar;
-  
-  if (mModKeyState.IsControl() &&
-      IsControlChar(static_cast<char16_t>(aCharMsg.wParam))) {
-    
-    uniChar = aCharMsg.wParam - 1 + (mModKeyState.IsShift() ? 'A' : 'a');
-    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-      ("%p   NativeKey::HandleCharMessage(), computing charCode for ASCII "
-       "control characters which are inputted with Ctrl key, uniChar=%s",
-       this, GetCharacterCodeName(uniChar).get()));
-  } else if (mModKeyState.IsControl() && aCharMsg.wParam <= 0x1F) {
-    
-    
-    
-    
-    
-    
-    uniChar = aCharMsg.wParam - 1 + 'A';
-    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-      ("%p   NativeKey::HandleCharMessage(), computing charCode for ASCII "
-       "control characters which are inputted with Ctrl key, uniChar=%s",
-       this, GetCharacterCodeName(uniChar).get()));
-  } else if (IsControlChar(static_cast<char16_t>(aCharMsg.wParam)) ||
-             (aCharMsg.wParam == U_EQUAL && mModKeyState.IsControl())) {
-    uniChar = 0;
-    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-      ("%p   NativeKey::HandleCharMessage(), setting charCode to 0 because "
-       "the character is a control character without Ctrl key or Ctrl+=",
-       this));
-  } else {
-    uniChar = aCharMsg.wParam;
-    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-      ("%p   NativeKey::HandleCharMessage(), deciding to use given charCode, "
-       "uniChar=%s",
-       this, GetCharacterCodeName(uniChar).get()));
-  }
+  char16_t uniChar = static_cast<char16_t>(aCharMsg.wParam);
 
   
   
