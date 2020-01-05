@@ -15,7 +15,6 @@ use script_traits::UntrustedNodeAddress;
 use servo_msg::constellation_msg::ConstellationChan;
 use servo_net::local_image_cache::LocalImageCache;
 use servo_util::geometry::Au;
-use servo_util::opts::Opts;
 use sync::{Arc, Mutex};
 use std::mem;
 use style::Stylist;
@@ -74,9 +73,6 @@ pub struct SharedLayoutContext {
 
     
     pub url: Url,
-
-    
-    pub opts: Opts,
 
     
     pub dirty: Rect<Au>,
