@@ -171,10 +171,16 @@ ServoStyleSet::GetContext(already_AddRefed<ServoComputedValues> aComputedValues,
     
     
     
-    
-    
-    mPresContext->AnimationManager()->UpdateAnimations(result,
-                                                       aElementForAnimation);
+    const ServoComputedValues* currentStyle =
+      result->StyleSource().AsServoComputedValues();
+    const ServoComputedValues* parentStyle =
+      result->GetParent()
+        ? result->GetParent()->StyleSource().AsServoComputedValues()
+        : nullptr;
+    mPresContext->AnimationManager()->UpdateAnimations(aElementForAnimation,
+                                                       aPseudoTag,
+                                                       currentStyle,
+                                                       parentStyle);
   }
 
   return result.forget();
