@@ -1,5 +1,4 @@
-use au = geometry;
-use au::Au;
+use geometry::Au;
 use servo_gfx_util::range::Range;
 use servo_gfx_util::vec::*;
 
@@ -11,27 +10,27 @@ use geom::point::Point2D;
 use std::sort;
 
 
-// GlyphEntry is a port of Gecko's CompressedGlyph scheme for storing
-// glyph data compactly.
-//
-// In the common case (reasonable glyph advances, no offsets from the
-// font em-box, and one glyph per character), we pack glyph advance,
-// glyph id, and some flags into a single u32.
-//
-// In the uncommon case (multiple glyphs per unicode character, large
-// glyph index/advance, or glyph offsets), we pack the glyph count
-// into GlyphEntry, and store the other glyph information in
-// DetailedGlyphStore.
+
+
+
+
+
+
+
+
+
+
+
 struct GlyphEntry {
     value : u32
 }
 
 pure fn GlyphEntry(value: u32) -> GlyphEntry { GlyphEntry { value: value } }
 
-/// The index of a particular glyph within a font
+
 pub type GlyphIndex = u32;
 
-// TODO: unify with bit flags?
+
 pub enum BreakType {
     BreakTypeNone,
     BreakTypeNormal,
@@ -443,7 +442,7 @@ pub pure fn GlyphData(index: GlyphIndex,
                    ligature_start: bool) -> GlyphData {
     
     let _offset = match offset {
-        None => au::zero_point(),
+        None => geometry::zero_point(),
         Some(o) => o
     };
 
@@ -532,7 +531,7 @@ pub impl GlyphStore {
         pure fn glyph_is_compressible(data: &GlyphData) -> bool {
             is_simple_glyph_id(data.index)
                 && is_simple_advance(data.advance)
-                && data.offset == au::zero_point()
+                && data.offset == geometry::zero_point()
                 && data.cluster_start  // others are stored in detail buffer
         }
 

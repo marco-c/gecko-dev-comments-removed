@@ -1,7 +1,5 @@
 export DisplayListBuilder;
 
-use au = gfx::geometry;
-use au::Au;
 use newcss::values::Specified;
 use newcss::values::{CSSBackgroundColorColor, CSSBackgroundColorTransparent};
 use dom::node::{Text, NodeScope};
@@ -19,14 +17,15 @@ use util::tree;
 use vec::push;
 
 use gfx::display_list::DisplayList;
+use gfx::geometry::Au;
 
-/** A builder object that manages display list builder should mainly
- hold information about the initial request and desired result---for
- example, whether the DisplayList to be used for painting or hit
- testing. This can affect which boxes are created.
 
- Right now, the builder isn't used for much, but it  establishes the
- pattern we'll need once we support DL-based hit testing &c.  */
+
+
+
+
+
+
 pub struct DisplayListBuilder {
     ctx:  &LayoutContext,
 }
@@ -42,7 +41,7 @@ trait FlowDisplayListBuilderMethods {
 impl FlowContext: FlowDisplayListBuilderMethods {
     fn build_display_list(@self, builder: &DisplayListBuilder, dirty: &Rect<Au>,
                           list: &mut DisplayList) {
-        let zero = au::zero_point();
+        let zero = gfx::geometry::zero_point();
         self.build_display_list_recurse(builder, dirty, &zero, list);
     }
 
