@@ -15,7 +15,7 @@ add_task(function* test() {
   let { RequestsMenu } = NetMonitorView;
   RequestsMenu.lazyUpdate = true;
 
-  let onEvents = waitForNetworkEvents(monitor, 8);
+  let onEvents = waitForNetworkEvents(monitor, CONTENT_TYPE_WITHOUT_CACHE_REQUESTS);
   let onThumbnail = monitor.panelWin.once(EVENTS.RESPONSE_IMAGE_THUMBNAIL_DISPLAYED);
 
   yield performRequests();
@@ -26,7 +26,7 @@ add_task(function* test() {
   yield showTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.items[5]);
 
   
-  onEvents = waitForNetworkEvents(monitor, 8);
+  onEvents = waitForNetworkEvents(monitor, CONTENT_TYPE_WITHOUT_CACHE_REQUESTS + 1);
   onThumbnail = monitor.panelWin.once(EVENTS.RESPONSE_IMAGE_THUMBNAIL_DISPLAYED);
 
   info("Reloading the debuggee and performing all requests again...");
