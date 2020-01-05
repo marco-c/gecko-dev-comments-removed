@@ -130,7 +130,7 @@ interaction.clickElement = function*(el, strict = false, specCompat = false) {
     interactable = element.isVisible(visibilityCheckEl);
   }
   if (!interactable) {
-    throw new ElementNotVisibleError();
+    throw new ElementNotInteractableError();
   }
 
   if (!atom.isElementEnabled(el)) {

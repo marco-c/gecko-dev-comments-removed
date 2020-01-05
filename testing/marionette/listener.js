@@ -643,7 +643,7 @@ function singleTap(id, corx, cory) {
   
   let visible = element.isVisible(el, corx, cory);
   if (!visible) {
-    throw new ElementNotVisibleError("Element is not currently visible and may not be manipulated");
+    throw new ElementNotInteractableError("Element is not currently visible and may not be manipulated");
   }
 
   let a11y = accessibility.get(capabilities.get("moz:accessibilityChecks"));
