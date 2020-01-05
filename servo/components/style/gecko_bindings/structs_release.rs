@@ -5229,11 +5229,21 @@ pub mod root {
 
 
 
+
+
+
+
+
+
+
+
+
             #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
             pub enum SheetParsingMode {
                 eAuthorSheetFeatures = 0,
                 eUserSheetFeatures = 1,
                 eAgentSheetFeatures = 2,
+                eSafeAgentSheetFeatures = 3,
             }
             #[repr(C)]
             #[derive(Debug, Copy, Clone)]
