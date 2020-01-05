@@ -56,7 +56,11 @@ NS_IMETHODIMP
 BasePrincipal::GetOriginNoSuffix(nsACString& aOrigin)
 {
   MOZ_ASSERT(mInitialized);
-  return mOriginNoSuffix->ToUTF8String(aOrigin);
+
+  if (mOriginNoSuffix) {
+    return mOriginNoSuffix->ToUTF8String(aOrigin);
+  }
+  return GetOriginNoSuffixInternal(aOrigin);
 }
 
 bool
@@ -457,8 +461,7 @@ BasePrincipal::AddonAllowsLoad(nsIURI* aURI, bool aExplicit )
 }
 
 void
-BasePrincipal::FinishInit(const nsACString& aOriginNoSuffix,
-                          const OriginAttributes& aOriginAttributes)
+BasePrincipal::FinishInit(const OriginAttributes& aOriginAttributes)
 {
   mInitialized = true;
   mOriginAttributes = aOriginAttributes;
@@ -468,8 +471,17 @@ BasePrincipal::FinishInit(const nsACString& aOriginNoSuffix,
   mOriginAttributes.CreateSuffix(originSuffix);
   mOriginSuffix = NS_Atomize(originSuffix);
 
-  MOZ_ASSERT(!aOriginNoSuffix.IsEmpty());
-  mOriginNoSuffix = NS_Atomize(aOriginNoSuffix);
+  
+  nsAutoCString originNoSuffix;
+  nsresult rv = GetOriginNoSuffixInternal(originNoSuffix);
+  if (NS_FAILED(rv)) {
+    
+    
+    
+    mOriginNoSuffix = nullptr;
+    return;
+  }
+  mOriginNoSuffix = NS_Atomize(originNoSuffix);
 }
 
 } 

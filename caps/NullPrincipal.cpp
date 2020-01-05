@@ -84,11 +84,7 @@ NullPrincipal::Init(const OriginAttributes& aOriginAttributes, nsIURI* aURI)
     NS_ENSURE_TRUE(mURI, NS_ERROR_NOT_AVAILABLE);
   }
 
-  nsAutoCString originNoSuffix;
-  nsresult rv = mURI->GetSpec(originNoSuffix);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-  FinishInit(originNoSuffix, aOriginAttributes);
+  FinishInit(aOriginAttributes);
 
   return NS_OK;
 }
@@ -143,6 +139,12 @@ NullPrincipal::SetDomain(nsIURI* aDomain)
   
   
   return NS_ERROR_NOT_AVAILABLE;
+}
+
+nsresult
+NullPrincipal::GetOriginNoSuffixInternal(nsACString& aOrigin)
+{
+  return mURI->GetSpec(aOrigin);
 }
 
 bool
