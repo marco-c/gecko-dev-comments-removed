@@ -166,7 +166,7 @@ var WebrtcUI = {
           let perms = Services.perms;
           
           
-          perms.add(aUri, "camera", perms.ALLOW_ACTION, perms.EXPIRE_SESSION);
+          perms.add(aUri, "MediaManagerVideo", perms.ALLOW_ACTION, perms.EXPIRE_SESSION);
         }
 
         Services.obs.notifyObservers(allowedDevices, "getUserMedia:response:allow", aCallID);
