@@ -1,6 +1,5 @@
 
 
-const PREF_SYSTEM_ADDON_SET = "extensions.systemAddonSet";
 
 BootstrapMonitor.init();
 
