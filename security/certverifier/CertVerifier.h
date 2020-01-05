@@ -97,23 +97,24 @@ public:
 
   
   
-  SECStatus VerifyCert(CERTCertificate* cert,
-                       SECCertificateUsage usage,
-                       mozilla::pkix::Time time,
-                       void* pinArg,
-                       const char* hostname,
-                UniqueCERTCertList& builtChain,
-                       Flags flags = 0,
-        const SECItem* stapledOCSPResponse = nullptr,
-        const SECItem* sctsFromTLS = nullptr,
-       SECOidTag* evOidPolicy = nullptr,
-       OCSPStaplingStatus* ocspStaplingStatus = nullptr,
-       KeySizeStatus* keySizeStatus = nullptr,
-       SHA1ModeResult* sha1ModeResult = nullptr,
-       PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
-       CertificateTransparencyInfo* ctInfo = nullptr);
+  mozilla::pkix::Result VerifyCert(
+                    CERTCertificate* cert,
+                    SECCertificateUsage usage,
+                    mozilla::pkix::Time time,
+                    void* pinArg,
+                    const char* hostname,
+             UniqueCERTCertList& builtChain,
+                    Flags flags = 0,
+     const SECItem* stapledOCSPResponse = nullptr,
+     const SECItem* sctsFromTLS = nullptr,
+    SECOidTag* evOidPolicy = nullptr,
+    OCSPStaplingStatus* ocspStaplingStatus = nullptr,
+    KeySizeStatus* keySizeStatus = nullptr,
+    SHA1ModeResult* sha1ModeResult = nullptr,
+    PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
+    CertificateTransparencyInfo* ctInfo = nullptr);
 
-  SECStatus VerifySSLServerCert(
+  mozilla::pkix::Result VerifySSLServerCert(
                     const UniqueCERTCertificate& peerCert,
         const SECItem* stapledOCSPResponse,
         const SECItem* sctsFromTLS,

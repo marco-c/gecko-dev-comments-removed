@@ -745,7 +745,7 @@ nsSiteSecurityService::ProcessPKPHeader(nsIURI* aSourceURI,
                                         certList,
                                         false, 
                                         flags)
-      != SECSuccess) {
+        != mozilla::pkix::Success) {
     return NS_ERROR_FAILURE;
   }
 
