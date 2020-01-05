@@ -66,7 +66,8 @@ impl Stylesheet {
                              Arc::new(shared_lock.wrap(media)),
                              shared_lock,
                              stylesheet_loader,
-                             error_reporter)
+                             error_reporter,
+                             0u64)
     }
 
     

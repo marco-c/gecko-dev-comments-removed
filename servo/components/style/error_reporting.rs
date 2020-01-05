@@ -20,7 +20,8 @@ pub trait ParseErrorReporter : Sync + Send {
                     input: &mut Parser,
                     position: SourcePosition,
                     message: &str,
-                    url: &UrlExtraData);
+                    url: &UrlExtraData,
+                    line_number_offset: u64);
 }
 
 
@@ -32,10 +33,12 @@ impl ParseErrorReporter for StdoutErrorReporter {
                     input: &mut Parser,
                     position: SourcePosition,
                     message: &str,
-                    url: &UrlExtraData) {
+                    url: &UrlExtraData,
+                    line_number_offset: u64) {
         if log_enabled!(log::LogLevel::Info) {
             let location = input.source_location(position);
-            info!("Url:\t{}\n{}:{} {}", url.as_str(), location.line, location.column, message)
+            let line_offset = location.line + line_number_offset as usize;
+            info!("Url:\t{}\n{}:{} {}", url.as_str(), line_offset, location.column, message)
         }
     }
 }
