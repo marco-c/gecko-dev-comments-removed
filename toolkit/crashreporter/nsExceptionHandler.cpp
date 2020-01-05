@@ -183,34 +183,6 @@ static const XP_CHAR extraFileExtension[] = XP_TEXT(".extra");
 static const XP_CHAR memoryReportExtension[] = XP_TEXT(".memory.json.gz");
 static xpstring *defaultMemoryReportPath = nullptr;
 
-
-
-static char const * const kCrashEventAnnotations[] = {
-  "AsyncShutdownTimeout",
-  "BuildID",
-  "ProductID",
-  "ProductName",
-  "ReleaseChannel",
-  "SecondsSinceLastCrash",
-  "ShutdownProgress",
-  "StartupCrash",
-  "TelemetryEnvironment",
-  "Version",
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-};
-
 static const char kCrashMainID[] = "crash.main.2\n";
 
 static google_breakpad::ExceptionHandler* gExceptionHandler = nullptr;
@@ -2163,17 +2135,6 @@ static void ReplaceChar(nsCString& str, const nsACString& character,
   }
 }
 
-static bool
-IsInWhitelist(const nsACString& key)
-{
-  for (size_t i = 0; i < ArrayLength(kCrashEventAnnotations); ++i) {
-    if (key.EqualsASCII(kCrashEventAnnotations[i])) {
-      return true;
-    }
-  }
-  return false;
-}
-
 
 #ifdef _MSC_VER
 #pragma optimize("", off)
@@ -2310,9 +2271,7 @@ nsresult AnnotateCrashReport(const nsACString& key, const nsACString& data)
       nsAutoCString line = key + kEquals + entry + kNewline;
 
       crashReporterAPIData->Append(line);
-      if (IsInWhitelist(key)) {
-        crashEventAPIData->Append(line);
-      }
+      crashEventAPIData->Append(line);
     }
   }
 
