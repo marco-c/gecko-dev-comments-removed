@@ -89,7 +89,8 @@ def read_ini(fp, variables=None, default='DEFAULT', defaults_only=False,
 
         
         if not section_names:
-            raise Exception('No sections found')
+            raise Exception("Error parsing manifest file '%s', line %s: No sections found" %
+                            (getattr(fp, 'name', 'unknown'), linenum))
 
         
         for separator in separators:
@@ -113,12 +114,8 @@ def read_ini(fp, variables=None, default='DEFAULT', defaults_only=False,
                 current_section[key] = value
             else:
                 
-                if hasattr(fp, 'name'):
-                    filename = fp.name
-                else:
-                    filename = 'unknown'
                 raise Exception("Error parsing manifest file '%s', line %s" %
-                                (filename, linenum))
+                                (getattr(fp, 'name', 'unknown'), linenum))
 
     
     
