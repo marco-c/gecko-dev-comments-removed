@@ -245,7 +245,7 @@ struct Statistics
     void reset(gc::AbortReason reason) {
         MOZ_ASSERT(reason != gc::AbortReason::None);
         if (!aborted)
-            slices_.back().resetReason = reason;
+            slices.back().resetReason = reason;
     }
 
     void nonincremental(gc::AbortReason reason) {
@@ -274,7 +274,7 @@ struct Statistics
 
     UniqueChars formatCompactSliceMessage() const;
     UniqueChars formatCompactSummaryMessage() const;
-    UniqueChars formatJsonMessage(uint64_t timestamp, bool includeSlices = true) const;
+    UniqueChars formatJsonMessage(uint64_t timestamp) const;
     UniqueChars formatDetailedMessage() const;
 
     JS::GCSliceCallback setSliceCallback(JS::GCSliceCallback callback);
@@ -319,18 +319,10 @@ struct Statistics
     };
 
     typedef Vector<SliceData, 8, SystemAllocPolicy> SliceDataVector;
+    typedef SliceDataVector::ConstRange SliceRange;
 
-    const SliceDataVector& slices() const { return slices_; }
-
-    TimeStamp start() const {
-        MOZ_ASSERT(phaseStartTimes[PHASE_GC_BEGIN]);
-        return slices_[0].start;
-    }
-
-    TimeStamp end() const {
-        MOZ_ASSERT(phaseStartTimes[PHASE_GC_BEGIN]);
-        return slices_.back().end;
-    }
+    SliceRange sliceRange() const { return slices.all(); }
+    size_t slicesLength() const { return slices.length(); }
 
     
     void maybePrintProfileHeaders();
@@ -340,9 +332,6 @@ struct Statistics
 
     
     void printTotalProfileTimes();
-
-    
-    UniqueChars formatJsonSlice(size_t sliceNum) const;
 
   private:
     JSRuntime* runtime;
@@ -356,7 +345,7 @@ struct Statistics
 
     gc::AbortReason nonincrementalReason_;
 
-    SliceDataVector slices_;
+    SliceDataVector slices;
 
     
     EnumeratedArray<Phase, PHASE_LIMIT, TimeStamp> phaseStartTimes;

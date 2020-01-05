@@ -11739,21 +11739,21 @@ GarbageCollectionEvent::Create(JSRuntime* rt, ::js::gcstats::Statistics& stats, 
 
     data->nonincrementalReason = stats.nonincrementalReason();
 
-    for (auto& slice : stats.slices()) {
+    for (auto range = stats.sliceRange(); !range.empty(); range.popFront()) {
         if (!data->reason) {
             
             
             
             
-            data->reason = gcreason::ExplainReason(slice.reason);
+            data->reason = gcreason::ExplainReason(range.front().reason);
             MOZ_ASSERT(data->reason);
         }
 
         if (!data->collections.growBy(1))
             return nullptr;
 
-        data->collections.back().startTimestamp = slice.start;
-        data->collections.back().endTimestamp = slice.end;
+        data->collections.back().startTimestamp = range.front().start;
+        data->collections.back().endTimestamp = range.front().end;
     }
 
     return data;
