@@ -816,8 +816,12 @@ Database::ForceCrashAndReplaceDatabase(const nsCString& aReason)
 {
   Preferences::SetBool(PREF_FORCE_DATABASE_REPLACEMENT, true);
   
-  
-  MOZ_CRASH_UNSAFE_OOL(aReason.get());
+  nsIPrefService* prefService = Preferences::GetService();
+  if (prefService && NS_SUCCEEDED(prefService->SavePrefFile(nullptr))) {
+    
+    
+    MOZ_CRASH_UNSAFE_OOL(aReason.get());
+  }
   return NS_ERROR_FAILURE;
 }
 
