@@ -14,3 +14,7 @@ pref("marionette.forcelocal", true);
 
 
 pref("marionette.log.level", "info");
+
+
+
+pref("marionette.prefs.recommended", true);
