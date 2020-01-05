@@ -27,10 +27,15 @@ class CSSOrderAwareFrameIteratorT
 public:
   enum OrderState { eUnknownOrder, eKnownOrdered, eKnownUnordered };
   enum ChildFilter { eSkipPlaceholders, eIncludeAll };
+  enum OrderingProperty {
+    eUseOrder,          
+    eUseBoxOrdinalGroup 
+  };
   CSSOrderAwareFrameIteratorT(nsIFrame* aContainer,
                               nsIFrame::ChildListID aListID,
                               ChildFilter aFilter = eSkipPlaceholders,
-                              OrderState aState = eUnknownOrder)
+                              OrderState aState = eUnknownOrder,
+                              OrderingProperty aOrderProp = eUseOrder)
     : mChildren(aContainer->GetChildList(aListID))
     , mArrayIndex(0)
     , mItemIndex(0)
@@ -46,7 +51,23 @@ public:
       auto maxOrder = std::numeric_limits<int32_t>::min();
       for (auto child : mChildren) {
         ++count;
-        int32_t order = child->StylePosition()->mOrder;
+
+        int32_t order;
+        if (aOrderProp == eUseBoxOrdinalGroup) {
+          
+          
+          
+          
+          
+          
+          uint32_t clampedBoxOrdinal =
+            std::min(child->StyleXUL()->mBoxOrdinal,
+                     static_cast<uint32_t>(INT32_MAX));
+          order = static_cast<int32_t>(clampedBoxOrdinal);
+        } else {
+          order = child->StylePosition()->mOrder;
+        }
+
         if (order < maxOrder) {
           isOrdered = false;
           break;
@@ -63,8 +84,12 @@ public:
       for (Iterator i(begin(mChildren)), iEnd(end(mChildren)); i != iEnd; ++i) {
         mArray->AppendElement(*i);
       }
+      auto comparator = (aOrderProp == eUseBoxOrdinalGroup)
+        ? CSSBoxOrdinalGroupComparator
+        : CSSOrderComparator;
+
       
-      std::stable_sort(mArray->begin(), mArray->end(), CSSOrderComparator);
+      std::stable_sort(mArray->begin(), mArray->end(), comparator);
     }
 
     if (mSkipPlaceholders) {
@@ -198,6 +223,7 @@ public:
   bool ItemsAreAlreadyInOrder() const { return mIter.isSome(); }
 
   static bool CSSOrderComparator(nsIFrame* const& a, nsIFrame* const& b);
+  static bool CSSBoxOrdinalGroupComparator(nsIFrame* const& a, nsIFrame* const& b);
 private:
   nsFrameList mChildren;
   
