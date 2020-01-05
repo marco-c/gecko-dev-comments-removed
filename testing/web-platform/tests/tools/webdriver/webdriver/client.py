@@ -135,8 +135,9 @@ class ActionSequence(object):
         :param origin: Origin of coordinates, either "viewport", "pointer" or
                        an Element. If None, remote end defaults to "viewport".
         """
+        
         action = {
-            "type": "pointerMove",
+            "type": "move",
             "x": x,
             "y": y
         }
