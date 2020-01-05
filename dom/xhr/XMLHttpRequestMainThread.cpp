@@ -742,6 +742,15 @@ XMLHttpRequestMainThread::SetResponseType(XMLHttpRequestResponseType aResponseTy
   }
 
   
+  if (aResponseType == XMLHttpRequestResponseType::Moz_blob) {
+    Telemetry::Accumulate(Telemetry::MOZ_BLOB_IN_XHR, 1);
+  } else if (aResponseType == XMLHttpRequestResponseType::Moz_Chunked_Text) {
+    Telemetry::Accumulate(Telemetry::MOZ_CHUNKED_TEXT_IN_XHR, 1);
+  } else if (aResponseType == XMLHttpRequestResponseType::Moz_Chunked_Arraybuffer) {
+    Telemetry::Accumulate(Telemetry::MOZ_CHUNKED_ARRAYBUFFER_IN_XHR, 1);
+  }
+
+  
   mResponseType = aResponseType;
 }
 
