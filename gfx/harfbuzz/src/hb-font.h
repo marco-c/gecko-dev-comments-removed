@@ -604,6 +604,11 @@ hb_font_get_ppem (hb_font_t *font,
 		  unsigned int *y_ppem);
 
 
+HB_EXTERN void
+hb_font_set_var_coords_normalized (hb_font_t *font,
+				   int *coords, 
+				   unsigned int coords_length);
+
 HB_END_DECLS
 
 #endif 

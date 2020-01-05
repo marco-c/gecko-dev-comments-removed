@@ -521,6 +521,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar_old =
   NULL, 
   NULL, 
   NULL, 
+  NULL, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_LATE,
   true, 
 };
@@ -538,6 +539,7 @@ const hb_ot_complex_shaper_t _hb_ot_complex_shaper_myanmar =
   NULL, 
   NULL, 
   setup_masks_myanmar,
+  NULL, 
   HB_OT_SHAPE_ZERO_WIDTH_MARKS_BY_GDEF_EARLY,
   false, 
 };
