@@ -85,7 +85,8 @@ template <typename WriteFunc> void
 CheckIterativeWrite(Decoder* aDecoder,
                     SurfaceSink* aSink,
                     const IntRect& aOutputRect,
-                    WriteFunc aWriteFunc)
+                    WriteFunc aWriteFunc,
+                    bool aPartial = false)
 {
   
   auto writeFunc = [&](uint32_t) {
@@ -93,7 +94,7 @@ CheckIterativeWrite(Decoder* aDecoder,
   };
 
   DoCheckIterativeWrite(aSink, writeFunc, [&]{
-    CheckGeneratedImage(aDecoder, aOutputRect);
+    CheckGeneratedImage(aDecoder, aOutputRect, 0, aPartial);
   });
 }
 
@@ -191,6 +192,7 @@ TEST(ImageSurfaceSink, SurfaceSinkInitialization)
     
     
     
+    aSink->ZeroOutRestOfSurface();
     CheckGeneratedImage(aDecoder, IntRect(0, 0, 0, 0));
   });
 }
@@ -253,7 +255,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsEarlyExit)
 
     EXPECT_EQ(aState, result);
     EXPECT_EQ(50u, count);
-    CheckGeneratedImage(aDecoder, IntRect(0, 0, 50, 1));
+    CheckGeneratedImage(aDecoder, IntRect(0, 0, 50, 1), 0, true);
 
     if (aState != WriteState::FINISHED) {
       
@@ -272,7 +274,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsEarlyExit)
       EXPECT_EQ(WriteState::NEED_MORE_DATA, result);
       EXPECT_EQ(50u, count);
       EXPECT_FALSE(aSink->IsSurfaceFinished());
-      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 1));
+      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 1), 0, true);
 
       return;
     }
@@ -332,7 +334,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRow)
       EXPECT_EQ(IntRect(0, row, 100, 1), invalidRect->mInputSpaceRect);
       EXPECT_EQ(IntRect(0, row, 100, 1), invalidRect->mOutputSpaceRect);
 
-      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, row + 1));
+      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, row + 1), 0, true);
     }
 
     
@@ -388,7 +390,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRowEarlyExit)
 
     EXPECT_EQ(aState, result);
     EXPECT_EQ(50u, count);
-    CheckGeneratedImage(aDecoder, IntRect(0, 0, 50, 1));
+    CheckGeneratedImage(aDecoder, IntRect(0, 0, 50, 1), 0, true);
 
     if (aState != WriteState::FINISHED) {
       
@@ -404,7 +406,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWritePixelsToRowEarlyExit)
       EXPECT_EQ(WriteState::NEED_MORE_DATA, result);
       EXPECT_EQ(50u, count);
       EXPECT_FALSE(aSink->IsSurfaceFinished());
-      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 1));
+      CheckGeneratedImage(aDecoder, IntRect(0, 0, 100, 1), 0, true);
 
       return;
     }
@@ -568,6 +570,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteBufferFromNullSource)
     EXPECT_TRUE(invalidRect.isNothing());
 
     
+    aSink->ZeroOutRestOfSurface();
     CheckGeneratedImage(aDecoder, IntRect(0, 0, 0, 0));
   });
 }
@@ -663,7 +666,7 @@ TEST(ImageSurfaceSink, SurfaceSinkWriteUnsafeComputedRow)
         EXPECT_EQ(100u, aLength );
         memcpy(aRow + 50, buffer, 50 * sizeof(uint32_t));
       });
-    });
+    }, true);
   });
 }
 
