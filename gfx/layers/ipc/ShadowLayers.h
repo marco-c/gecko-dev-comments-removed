@@ -218,7 +218,9 @@ public:
 
 
 
+
   void Mutated(ShadowableLayer* aMutant);
+  void MutatedSimple(ShadowableLayer* aMutant);
 
   void SetRoot(ShadowableLayer* aRoot);
   
