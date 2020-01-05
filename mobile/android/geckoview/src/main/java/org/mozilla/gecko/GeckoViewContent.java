@@ -11,9 +11,24 @@ public class GeckoViewContent implements GeckoView.ContentDelegate {
 
 
 
+    @Override
+    public void onPageStart(GeckoView view, String url) {}
+
+    
+
+
+
 
     @Override
-    public void onPageStart(GeckoView view, GeckoView.Browser browser, String url) {}
+    public void onPageStop(GeckoView view, boolean success) {}
+
+    
+
+
+
+
+    @Override
+    public void onPageShow(GeckoView view) {}
 
     
 
@@ -22,16 +37,7 @@ public class GeckoViewContent implements GeckoView.ContentDelegate {
 
 
     @Override
-    public void onPageStop(GeckoView view, GeckoView.Browser browser, boolean success) {}
-
-    
-
-
-
-
-
-    @Override
-    public void onPageShow(GeckoView view, GeckoView.Browser browser) {}
+    public void onReceivedTitle(GeckoView view, String title) {}
 
     
 
@@ -41,16 +47,5 @@ public class GeckoViewContent implements GeckoView.ContentDelegate {
 
 
     @Override
-    public void onReceivedTitle(GeckoView view, GeckoView.Browser browser, String title) {}
-
-    
-
-
-
-
-
-
-
-    @Override
-    public void onReceivedFavicon(GeckoView view, GeckoView.Browser browser, String url, int size) {}
+    public void onReceivedFavicon(GeckoView view, String url, int size) {}
 }

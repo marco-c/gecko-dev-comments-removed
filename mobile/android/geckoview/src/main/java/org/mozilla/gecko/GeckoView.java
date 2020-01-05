@@ -373,43 +373,6 @@ public class GeckoView extends LayerView
 
 
 
-    public class Browser {
-        private final int mId;
-        private Browser(int Id) {
-            mId = Id;
-        }
-
-        
-
-
-
-
-        private int getId() {
-            return mId;
-        }
-
-        
-
-
-
-        public void loadUrl(String url) {
-            JSONObject args = new JSONObject();
-            try {
-                args.put("url", url);
-                args.put("parentId", -1);
-                args.put("newTab", false);
-                args.put("tabID", mId);
-            } catch (Exception e) {
-                Log.w(LOGTAG, "Error building JSON arguments for loadUrl.", e);
-            }
-            GeckoAppShell.notifyObservers("Tab:Load", args.toString());
-        }
-    }
-
-    
-
-
-
     public class PromptResult {
         private final int RESULT_OK = 0;
         private final int RESULT_CANCEL = 1;
@@ -465,8 +428,16 @@ public class GeckoView extends LayerView
 
 
 
+        public void onAlert(GeckoView view, String message, GeckoView.PromptResult result);
 
-        public void onAlert(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result);
+        
+
+
+
+
+
+
+        public void onConfirm(GeckoView view, String message, GeckoView.PromptResult result);
 
         
 
@@ -476,18 +447,7 @@ public class GeckoView extends LayerView
 
 
 
-        public void onConfirm(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result);
-
-        
-
-
-
-
-
-
-
-
-        public void onPrompt(GeckoView view, GeckoView.Browser browser, String message, String defaultValue, GeckoView.PromptResult result);
+        public void onPrompt(GeckoView view, String message, String defaultValue, GeckoView.PromptResult result);
 
         
 
@@ -504,8 +464,21 @@ public class GeckoView extends LayerView
 
 
 
+        public void onPageStart(GeckoView view, String url);
 
-        public void onPageStart(GeckoView view, GeckoView.Browser browser, String url);
+        
+
+
+
+
+        public void onPageStop(GeckoView view, boolean success);
+
+        
+
+
+
+
+        public void onPageShow(GeckoView view);
 
         
 
@@ -513,15 +486,7 @@ public class GeckoView extends LayerView
 
 
 
-        public void onPageStop(GeckoView view, GeckoView.Browser browser, boolean success);
-
-        
-
-
-
-
-
-        public void onPageShow(GeckoView view, GeckoView.Browser browser);
+        public void onReceivedTitle(GeckoView view, String title);
 
         
 
@@ -530,16 +495,6 @@ public class GeckoView extends LayerView
 
 
 
-        public void onReceivedTitle(GeckoView view, GeckoView.Browser browser, String title);
-
-        
-
-
-
-
-
-
-
-        public void onReceivedFavicon(GeckoView view, GeckoView.Browser browser, String url, int size);
+        public void onReceivedFavicon(GeckoView view, String url, int size);
     }
 }

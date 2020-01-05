@@ -15,9 +15,20 @@ public class GeckoViewChrome implements GeckoView.ChromeDelegate {
 
 
 
+    @Override
+    public void onAlert(GeckoView view, String message, GeckoView.PromptResult result) {
+        result.cancel();
+    }
+
+    
+
+
+
+
+
 
     @Override
-    public void onAlert(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result) {
+    public void onConfirm(GeckoView view, String message, GeckoView.PromptResult result) {
         result.cancel();
     }
 
@@ -30,21 +41,7 @@ public class GeckoViewChrome implements GeckoView.ChromeDelegate {
 
 
     @Override
-    public void onConfirm(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result) {
-        result.cancel();
-    }
-
-    
-
-
-
-
-
-
-
-
-    @Override
-    public void onPrompt(GeckoView view, GeckoView.Browser browser, String message, String defaultValue, GeckoView.PromptResult result) {
+    public void onPrompt(GeckoView view, String message, String defaultValue, GeckoView.PromptResult result) {
         result.cancel();
     }
 
