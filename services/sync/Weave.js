@@ -159,6 +159,7 @@ AboutWeaveLog.prototype = {
     let channel = Services.io.newChannelFromURIWithLoadInfo(uri, aLoadInfo);
 
     channel.originalURI = aURI;
+    aLoadInfo.resultPrincipalURI = aURI;
 
     
     

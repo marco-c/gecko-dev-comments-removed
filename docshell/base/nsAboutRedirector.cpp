@@ -185,18 +185,14 @@ nsAboutRedirector::NewChannel(nsIURI* aURI,
 
       bool isAboutBlank = NS_IsAboutBlank(tempURI);
 
-      nsLoadFlags loadFlags = isUIResource || isAboutBlank
-                    ? static_cast<nsLoadFlags>(nsIChannel::LOAD_NORMAL)
-                    : static_cast<nsLoadFlags>(nsIChannel::LOAD_REPLACE);
-
       rv = NS_NewChannelInternal(getter_AddRefs(tempChannel),
                                  tempURI,
-                                 aLoadInfo,
-                                 nullptr, 
-                                 nullptr, 
-                                 loadFlags);
+                                 aLoadInfo);
       NS_ENSURE_SUCCESS(rv, rv);
 
+      if (isUIResource || isAboutBlank) {
+        aLoadInfo->SetResultPrincipalURI(aURI);
+      }
       tempChannel->SetOriginalURI(aURI);
 
       tempChannel.forget(aResult);

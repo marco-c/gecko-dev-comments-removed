@@ -233,9 +233,6 @@ function test_load_replace() {
     var chan = new_file_channel(file);
 
     
-    do_check_eq(chan.loadFlags & chan.LOAD_REPLACE, chan.LOAD_REPLACE);
-
-    
     do_check_neq(chan.URI.path, chan.originalURI.path);
 
     
