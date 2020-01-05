@@ -112,7 +112,10 @@ protected:
                            already_AddRefed<nsIRunnable>&& aRunnable);
 
   void CreateEventTargets(bool aNeedValidation);
-  void Shutdown();
+
+  
+  
+  void Shutdown(bool aXPCOMShutdown);
 
   enum ValidationType {
     StartValidation,

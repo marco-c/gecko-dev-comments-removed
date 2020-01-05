@@ -167,7 +167,7 @@ TabGroup::Leave(nsPIDOMWindowOuter* aWindow)
   
   if (!mIsChrome && mWindows.IsEmpty()) {
     mLastWindowLeft = true;
-    Shutdown();
+    Shutdown(false);
   }
 }
 
