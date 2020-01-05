@@ -6,7 +6,7 @@ use canvas_traits::CanvasMsg;
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use ipc_channel::ipc::IpcSender;
-use msg::constellation_msg::{AnimationState, IframeLoadInfo, NavigationDirection};
+use msg::constellation_msg::{AnimationState, DocumentState, IframeLoadInfo, NavigationDirection};
 use msg::constellation_msg::{Failure, MozBrowserEvent, PipelineId};
 use msg::constellation_msg::{LoadData, SubpageId};
 use msg::constellation_msg::{MouseButton, MouseEventType};
@@ -66,4 +66,8 @@ pub enum ScriptMsg {
     SetCursor(Cursor),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
+    
+    ActivateDocument(PipelineId),
+    
+    SetDocumentState(PipelineId, DocumentState),
 }

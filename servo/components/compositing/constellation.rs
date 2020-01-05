@@ -29,7 +29,7 @@ use msg::compositor_msg::Epoch;
 use msg::constellation_msg::AnimationState;
 use msg::constellation_msg::PaintMsg as FromPaintMsg;
 use msg::constellation_msg::WebDriverCommandMsg;
-use msg::constellation_msg::{FrameId, PipelineId};
+use msg::constellation_msg::{DocumentState, FrameId, PipelineId};
 use msg::constellation_msg::{IframeLoadInfo, IFrameSandboxState, MozBrowserEvent, NavigationDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{PipelineNamespace, PipelineNamespaceId};
@@ -45,7 +45,7 @@ use profile_traits::mem;
 use profile_traits::time;
 use sandboxing;
 use script_traits::{CompositorEvent, ConstellationControlMsg, LayoutControlMsg};
-use script_traits::{ScriptMsg as FromScriptMsg, ScriptState, ScriptTaskFactory};
+use script_traits::{ScriptMsg as FromScriptMsg, ScriptTaskFactory};
 use script_traits::{TimerEventRequest};
 use std::borrow::ToOwned;
 use std::collections::HashMap;
@@ -66,6 +66,7 @@ use util::{opts, prefs};
 #[derive(Debug, PartialEq)]
 enum ReadyToSave {
     NoRootFrame,
+    PendingFrames,
     WebFontNotLoaded,
     DocumentLoading,
     EpochMismatch,
@@ -170,6 +171,9 @@ pub struct Constellation<LTF, STF> {
 
     
     child_processes: Vec<ChildProcess>,
+
+    
+    document_states: HashMap<PipelineId, DocumentState>,
 }
 
 
@@ -225,7 +229,7 @@ impl Frame {
 struct FrameChange {
     old_pipeline_id: Option<PipelineId>,
     new_pipeline_id: PipelineId,
-    painter_ready: bool,
+    document_ready: bool,
 }
 
 
@@ -330,6 +334,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 webgl_paint_tasks: Vec::new(),
                 scheduler_chan: TimerScheduler::start(),
                 child_processes: Vec::new(),
+                document_states: HashMap::new(),
             };
             let namespace_id = constellation.next_pipeline_namespace_id();
             PipelineNamespace::install(namespace_id);
@@ -428,7 +433,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         self.pending_frames.push(FrameChange {
             old_pipeline_id: old_pipeline_id,
             new_pipeline_id: new_pipeline_id,
-            painter_ready: false,
+            document_ready: false,
         });
     }
 
@@ -600,6 +605,11 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 debug!("constellation got navigation message from script");
                 self.handle_navigate_msg(pipeline_info, direction);
             }
+            
+            Request::Script(FromScriptMsg::ActivateDocument(pipeline_id)) => {
+                debug!("constellation got activate document message");
+                self.handle_activate_document_msg(pipeline_id);
+            }
             Request::Script(FromScriptMsg::MozBrowserEvent(pipeline_id,
                                               subpage_id,
                                               event)) => {
@@ -670,16 +680,16 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 debug!("constellation got NodeStatus message");
                 self.compositor_proxy.send(ToCompositorMsg::Status(message));
             }
-
-
-            
-
-
-            
-            Request::Paint(FromPaintMsg::Ready(pipeline_id)) => {
-                debug!("constellation got painter ready message");
-                self.handle_painter_ready_msg(pipeline_id);
+            Request::Script(FromScriptMsg::SetDocumentState(pipeline_id, state)) => {
+                debug!("constellation got SetDocumentState message");
+                self.document_states.insert(pipeline_id, state);
             }
+
+
+            
+
+
+            
             Request::Paint(FromPaintMsg::Failure(Failure { pipeline_id, parent_info })) => {
                 debug!("handling paint failure message from pipeline {:?}, {:?}", pipeline_id, parent_info);
                 self.handle_failure_msg(pipeline_id, parent_info);
@@ -1257,11 +1267,8 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         }
     }
 
-    fn handle_painter_ready_msg(&mut self, pipeline_id: PipelineId) {
-        debug!("Painter {:?} ready to send paint msg", pipeline_id);
-        
-        
-        
+    fn handle_activate_document_msg(&mut self, pipeline_id: PipelineId) {
+        debug!("Document ready to activate {:?}", pipeline_id);
 
         
         
@@ -1275,7 +1282,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             frame_change.new_pipeline_id == pipeline_id
         });
         if let Some(pending_index) = pending_index {
-            self.pending_frames[pending_index].painter_ready = true;
+            self.pending_frames[pending_index].document_ready = true;
         }
 
         
@@ -1291,7 +1298,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             let waiting_on_dependency = frame_change.old_pipeline_id.map_or(false, |old_pipeline_id| {
                 self.pipeline_to_frame_map.get(&old_pipeline_id).is_none()
             });
-            frame_change.painter_ready && !waiting_on_dependency
+            frame_change.document_ready && !waiting_on_dependency
         }) {
             let frame_change = self.pending_frames.swap_remove(valid_frame_change);
             self.add_or_replace_pipeline_in_frame_tree(frame_change);
@@ -1349,6 +1356,11 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         }
 
         
+        if self.pending_frames.len() > 0 {
+            return ReadyToSave::PendingFrames;
+        }
+
+        
         
         
         
@@ -1372,13 +1384,11 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             }
 
             
-            
-            let (sender, receiver) = ipc::channel().unwrap();
-            let msg = ConstellationControlMsg::GetCurrentState(sender, frame.current);
-            pipeline.script_chan.send(msg).unwrap();
-            let result = receiver.recv().unwrap();
-            if result == ScriptState::DocumentLoading {
-                return ReadyToSave::DocumentLoading;
+            match self.document_states.get(&frame.current) {
+                Some(&DocumentState::Idle) => {}
+                Some(&DocumentState::Pending) | None => {
+                    return ReadyToSave::DocumentLoading;
+                }
             }
 
             

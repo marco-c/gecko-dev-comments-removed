@@ -98,15 +98,6 @@ pub struct NewLayoutInfo {
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
-pub enum ScriptState {
-    
-    DocumentLoaded,
-    
-    DocumentLoading,
-}
-
-
 #[derive(Deserialize, Serialize)]
 pub enum ConstellationControlMsg {
     
@@ -142,8 +133,6 @@ pub enum ConstellationControlMsg {
     
     
     WebFontLoaded(PipelineId),
-    
-    GetCurrentState(IpcSender<ScriptState>, PipelineId),
     
     DispatchFrameLoadEvent {
         

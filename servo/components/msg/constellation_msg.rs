@@ -244,7 +244,6 @@ pub enum MouseButton {
 
 #[derive(Deserialize, Serialize)]
 pub enum PaintMsg {
-    Ready(PipelineId),
     Failure(Failure),
 }
 
@@ -254,6 +253,15 @@ pub enum AnimationState {
     AnimationCallbacksPresent,
     NoAnimationsPresent,
     NoAnimationCallbacksPresent,
+}
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum DocumentState {
+    
+    Idle,
+    
+    Pending,
 }
 
 
