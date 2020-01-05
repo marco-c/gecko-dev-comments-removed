@@ -486,6 +486,22 @@ JS_DestroyContext(JSContext* cx)
     DestroyContext(cx);
 }
 
+static JS_CurrentEmbedderTimeFunction currentEmbedderTimeFunction;
+
+JS_PUBLIC_API(void)
+JS_SetCurrentEmbedderTimeFunction(JS_CurrentEmbedderTimeFunction timeFn)
+{
+    currentEmbedderTimeFunction = timeFn;
+}
+
+JS_PUBLIC_API(double)
+JS_GetCurrentEmbedderTime()
+{
+    if (currentEmbedderTimeFunction)
+        return currentEmbedderTimeFunction();
+    return PRMJ_Now() / static_cast<double>(PRMJ_USEC_PER_MSEC);
+}
+
 JS_PUBLIC_API(void*)
 JS_GetContextPrivate(JSContext* cx)
 {
@@ -6407,6 +6423,11 @@ JS_SetGlobalJitCompilerOption(JSContext* cx, JSJitCompilerOption opt, uint32_t v
       case JSJITCOMPILER_ION_INTERRUPT_WITHOUT_SIGNAL:
         jit::JitOptions.ionInterruptWithoutSignals = !!value;
         break;
+#ifdef DEBUG
+      case JSJITCOMPILER_FULL_DEBUG_CHECKS:
+        jit::JitOptions.fullDebugChecks = !!value;
+        break;
+#endif
       default:
         break;
     }
@@ -6454,6 +6475,11 @@ JS_GetGlobalJitCompilerOption(JSContext* cx, JSJitCompilerOption opt, uint32_t* 
       case JSJITCOMPILER_ION_INTERRUPT_WITHOUT_SIGNAL:
         *valueOut = jit::JitOptions.ionInterruptWithoutSignals ? 1 : 0;
         break;
+#ifdef DEBUG
+      case JSJITCOMPILER_FULL_DEBUG_CHECKS:
+        *valueOut = jit::JitOptions.fullDebugChecks ? 1 : 0;
+        break;
+#endif
       default:
         return false;
     }

@@ -1004,6 +1004,25 @@ JS_NewContext(uint32_t maxbytes,
 extern JS_PUBLIC_API(void)
 JS_DestroyContext(JSContext* cx);
 
+typedef double (*JS_CurrentEmbedderTimeFunction)();
+
+
+
+
+
+
+
+
+JS_PUBLIC_API(void)
+JS_SetCurrentEmbedderTimeFunction(JS_CurrentEmbedderTimeFunction timeFn);
+
+
+
+
+
+JS_PUBLIC_API(double)
+JS_GetCurrentEmbedderTime();
+
 JS_PUBLIC_API(void*)
 JS_GetContextPrivate(JSContext* cx);
 
@@ -5828,6 +5847,7 @@ JS_SetOffthreadIonCompilationEnabled(JSContext* cx, bool enabled);
     Register(ION_CHECK_RANGE_ANALYSIS, "ion.check-range-analysis")         \
     Register(BASELINE_ENABLE, "baseline.enable")                           \
     Register(OFFTHREAD_COMPILATION_ENABLE, "offthread-compilation.enable") \
+    Register(FULL_DEBUG_CHECKS, "jit.full-debug-checks")                   \
     Register(JUMP_THRESHOLD, "jump-threshold")                             \
     Register(ASMJS_ATOMICS_ENABLE, "asmjs.atomics.enable")                 \
     Register(WASM_TEST_MODE, "wasm.test-mode")                             \
