@@ -75,6 +75,7 @@ class FrameIterator
     Instance* instance() const;
     bool debugEnabled() const;
     DebugFrame* debugFrame() const;
+    const CallSite* debugTrapCallsite() const;
 };
 
 
@@ -85,7 +86,8 @@ enum class ExitReason : uint32_t
     ImportJit,     
     ImportInterp,  
     Native,        
-    Trap           
+    Trap,          
+    DebugTrap      
 };
 
 

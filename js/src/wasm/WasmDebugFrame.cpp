@@ -50,7 +50,7 @@ DebugFrame::observeFrame(JSContext* cx)
    if (observing_)
        return;
 
-   
+   instance()->code().adjustEnterAndLeaveFrameTrapsState(cx,  true);
    observing_ = true;
 }
 
@@ -60,6 +60,6 @@ DebugFrame::leaveFrame(JSContext* cx)
    if (!observing_)
        return;
 
-   
+   instance()->code().adjustEnterAndLeaveFrameTrapsState(cx,  false);
    observing_ = false;
 }

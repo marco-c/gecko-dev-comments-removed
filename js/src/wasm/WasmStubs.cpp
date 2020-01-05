@@ -946,6 +946,10 @@ static const LiveRegisterSet AllRegsExceptSP(
     GeneralRegisterSet(Registers::AllMask & ~(uint32_t(1) << Registers::StackPointer)),
     FloatRegisterSet(FloatRegisters::AllMask));
 
+static const LiveRegisterSet AllAllocatableRegs = LiveRegisterSet(
+    GeneralRegisterSet(Registers::AllocatableMask),
+    FloatRegisterSet(FloatRegisters::AllMask));
+
 
 
 
@@ -1127,6 +1131,11 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
     Offsets offsets;
     offsets.begin = masm.currentOffset();
 
+    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
+    if (ShadowStackSpace)
+        masm.subFromStackPtr(Imm32(ShadowStackSpace));
+    masm.call(SymbolicAddress::HandleDebugThrow);
+
     
     
     
@@ -1142,6 +1151,53 @@ wasm::GenerateThrowStub(MacroAssembler& masm, Label* throwLabel)
 
     masm.mov(ImmWord(0), ReturnReg);
     masm.ret();
+
+    offsets.end = masm.currentOffset();
+    return offsets;
+}
+
+
+
+
+Offsets
+wasm::GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel)
+{
+    masm.haltingAlign(CodeAlignment);
+
+    masm.setFramePushed(0);
+
+    ProfilingOffsets offsets;
+    GenerateExitPrologue(masm, 0, ExitReason::DebugTrap, &offsets);
+
+    
+    masm.PushRegsInMask(AllAllocatableRegs);
+
+    uint32_t framePushed = masm.framePushed();
+
+    
+    
+    Register scratch = ABINonArgReturnReg0;
+    masm.moveStackPtrTo(scratch);
+    masm.subFromStackPtr(Imm32(sizeof(intptr_t)));
+    masm.andToStackPtr(Imm32(~(ABIStackAlignment - 1)));
+    masm.storePtr(scratch, Address(masm.getStackPointer(), 0));
+
+    if (ShadowStackSpace)
+        masm.subFromStackPtr(Imm32(ShadowStackSpace));
+    masm.assertStackAlignment(ABIStackAlignment);
+    masm.call(SymbolicAddress::HandleDebugTrap);
+
+    masm.branchIfFalseBool(ReturnReg, throwLabel);
+
+    if (ShadowStackSpace)
+        masm.addToStackPtr(Imm32(ShadowStackSpace));
+    masm.Pop(scratch);
+    masm.moveToStackPtr(scratch);
+
+    masm.setFramePushed(framePushed);
+    masm.PopRegsInMask(AllAllocatableRegs);
+
+    GenerateExitEpilogue(masm, 0, ExitReason::DebugTrap, &offsets);
 
     offsets.end = masm.currentOffset();
     return offsets;

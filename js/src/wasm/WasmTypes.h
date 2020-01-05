@@ -890,14 +890,16 @@ struct TrapOffset
 
 class CallSiteDesc
 {
-    uint32_t lineOrBytecode_ : 30;
-    uint32_t kind_ : 2;
+    uint32_t lineOrBytecode_ : 29;
+    uint32_t kind_ : 3;
   public:
     enum Kind {
         Func,      
         Dynamic,   
         Symbolic,  
-        TrapExit   
+        TrapExit,   
+        EnterFrame, 
+        LeaveFrame  
     };
     CallSiteDesc() {}
     explicit CallSiteDesc(Kind kind)
@@ -1014,6 +1016,8 @@ enum class SymbolicAddress
     InterruptUint32,
     ReportOverRecursed,
     HandleExecutionInterrupt,
+    HandleDebugTrap,
+    HandleDebugThrow,
     ReportTrap,
     ReportOutOfBounds,
     ReportUnalignedAccess,

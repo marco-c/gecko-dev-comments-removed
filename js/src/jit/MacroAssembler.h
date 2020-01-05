@@ -529,6 +529,12 @@ class MacroAssembler : public MacroAssemblerSpecific
     static void patchNopToNearJump(uint8_t* jump, uint8_t* target) PER_SHARED_ARCH;
     static void patchNearJumpToNop(uint8_t* jump) PER_SHARED_ARCH;
 
+    
+    
+    CodeOffset nopPatchableToCall(const wasm::CallSiteDesc& desc) PER_SHARED_ARCH;
+    static void patchNopToCall(uint8_t* callsite, uint8_t* target) PER_SHARED_ARCH;
+    static void patchCallToNop(uint8_t* callsite) PER_SHARED_ARCH;
+
   public:
     
     

@@ -19,16 +19,19 @@
 #ifndef wasm_code_h
 #define wasm_code_h
 
+#include "js/HashTable.h"
 #include "wasm/WasmTypes.h"
 
 namespace js {
 
 struct AsmJSMetadata;
+class WasmActivation;
 
 namespace wasm {
 
 struct LinkData;
 struct Metadata;
+class FrameIterator;
 
 
 
@@ -240,6 +243,8 @@ class CodeRange
         ImportJitExit,     
         ImportInterpExit,  
         TrapExit,          
+        DebugTrap,         
+                           
         FarJumpIsland,     
         Inline             
                            
@@ -469,6 +474,7 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
 
     
     bool                  debugEnabled;
+    Uint32Vector          debugTrapFarJumpOffsets;
 
     bool usesMemory() const { return UsesMemory(memoryUsage); }
     bool hasSharedMemory() const { return memoryUsage == MemoryUsage::Shared; }
@@ -574,7 +580,10 @@ class Code
     const SharedBytes        maybeBytecode_;
     UniqueGeneratedSourceMap maybeSourceMap_;
     CacheableCharsVector     funcLabels_;
+    uint32_t                 enterAndLeaveFrameTrapsCounter_;
     bool                     profilingEnabled_;
+
+    void toggleDebugTrap(uint32_t offset, bool enabled);
 
   public:
     Code(UniqueCodeSegment segment,
@@ -613,6 +622,12 @@ class Code
     MOZ_MUST_USE bool ensureProfilingState(JSRuntime* rt, bool enabled);
     bool profilingEnabled() const { return profilingEnabled_; }
     const char* profilingLabel(uint32_t funcIndex) const { return funcLabels_[funcIndex].get(); }
+
+    
+    
+    
+
+    void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, bool enabled);
 
     
 
