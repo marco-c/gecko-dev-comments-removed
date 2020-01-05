@@ -68,7 +68,7 @@ private:
 
   
   
-  uint64_t mDocShellID;
+  nsID mDocShellID;
   nsCOMArray<nsIDocShellTreeItem> mChildShells;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPrincipal> mPrincipalToInherit;
