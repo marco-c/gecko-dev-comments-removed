@@ -18,7 +18,7 @@ use util::geometry::{PagePx, ViewportPx};
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Sender, Receiver};
 use style::viewport::ViewportConstraints;
-use webdriver_traits::WebDriverScriptCommand;
+use webdriver_traits::{WebDriverScriptCommand, LoadComplete};
 use url::Url;
 
 #[derive(Clone)]
@@ -237,11 +237,9 @@ pub enum Msg {
     
     GetClipboardContents(Sender<String>),
     
-    WebDriverCommand(PipelineId, WebDriverScriptCommand),
+    WebDriverCommand(WebDriverCommandMsg),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
-    
-    CompositePng(Sender<Option<png::Image>>),
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
     
@@ -319,6 +317,11 @@ impl MozBrowserEvent {
     }
 }
 
+pub enum WebDriverCommandMsg {
+    LoadUrl(PipelineId, LoadData, Sender<LoadComplete>),
+    ScriptCommand(PipelineId, WebDriverScriptCommand),
+    TakeScreenshot(Sender<Option<png::Image>>)
+}
 
 
 

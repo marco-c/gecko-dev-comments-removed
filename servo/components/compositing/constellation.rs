@@ -29,6 +29,7 @@ use msg::constellation_msg::{IFrameSandboxState, MozBrowserEvent, NavigationDire
 use msg::constellation_msg::{Key, KeyState, KeyModifiers, LoadData};
 use msg::constellation_msg::{SubpageId, WindowSizeData};
 use msg::constellation_msg::{self, ConstellationChan, Failure};
+use msg::constellation_msg::{WebDriverCommandMsg};
 use net_traits::{self, ResourceTask};
 use net_traits::image_cache_task::ImageCacheTask;
 use net_traits::storage_task::{StorageTask, StorageTaskMsg};
@@ -49,7 +50,7 @@ use util::geometry::PagePx;
 use util::opts;
 use util::task::spawn_named;
 use clipboard::ClipboardContext;
-use webdriver_traits::WebDriverScriptCommand;
+use webdriver_traits;
 
 
 
@@ -122,6 +123,9 @@ pub struct Constellation<LTF, STF> {
 
     
     clipboard_ctx: ClipboardContext,
+
+    
+    webdriver: WebDriverData
 }
 
 
@@ -185,6 +189,18 @@ pub struct SendableFrameTree {
     pub children: Vec<SendableFrameTree>,
 }
 
+struct WebDriverData {
+    load_channel: Option<Sender<webdriver_traits::LoadComplete>>
+}
+
+impl WebDriverData {
+    pub fn new() -> WebDriverData {
+        WebDriverData {
+            load_channel: None
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum ExitPipelineMode {
     Normal,
@@ -233,6 +249,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 },
                 phantom: PhantomData,
                 clipboard_ctx: ClipboardContext::new().unwrap(),
+                webdriver: WebDriverData::new()
             };
             constellation.run();
         });
@@ -376,7 +393,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             
             ConstellationMsg::LoadComplete => {
                 debug!("constellation got load complete message");
-                self.compositor_proxy.send(CompositorMsg::LoadComplete);
+                self.handle_load_complete_msg()
             }
             
             ConstellationMsg::Navigate(pipeline_info, direction) => {
@@ -426,14 +443,9 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 };
                 sender.send(result).unwrap();
             }
-            ConstellationMsg::CompositePng(reply) => {
-                self.compositor_proxy.send(CompositorMsg::CreatePng(reply));
-            }
-            ConstellationMsg::WebDriverCommand(pipeline_id,
-                                               command) => {
+            ConstellationMsg::WebDriverCommand(command) => {
                 debug!("constellation got webdriver command message");
-                self.handle_webdriver_command_msg(pipeline_id,
-                                                  command);
+                self.handle_webdriver_msg(command);
             }
             ConstellationMsg::ViewportConstrained(pipeline_id, constraints) => {
                 debug!("constellation got viewport-constrained event message");
@@ -649,6 +661,14 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         }
     }
 
+    fn handle_load_complete_msg(&mut self) {
+        self.compositor_proxy.send(CompositorMsg::LoadComplete);
+        if let Some(ref reply_chan) = self.webdriver.load_channel {
+            reply_chan.send(webdriver_traits::LoadComplete).unwrap();
+        }
+        self.webdriver.load_channel = None;
+    }
+
     fn handle_navigate_msg(&mut self,
                            pipeline_info: Option<(PipelineId, SubpageId)>,
                            direction: constellation_msg::NavigationDirection) {
@@ -814,15 +834,24 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         }
     }
 
-    fn handle_webdriver_command_msg(&mut self,
-                                    pipeline_id: PipelineId,
-                                    msg: WebDriverScriptCommand) {
+    fn handle_webdriver_msg(&mut self, msg: WebDriverCommandMsg) {
         
         
-        let pipeline = self.pipeline(pipeline_id);
-        let control_msg = ConstellationControlMsg::WebDriverCommand(pipeline_id, msg);
-        let ScriptControlChan(ref script_channel) = pipeline.script_chan;
-        script_channel.send(control_msg).unwrap();
+        match msg {
+            WebDriverCommandMsg::LoadUrl(pipeline_id, load_data, reply) => {
+                self.handle_load_url_msg(pipeline_id, load_data);
+                self.webdriver.load_channel = Some(reply);
+            },
+            WebDriverCommandMsg::ScriptCommand(pipeline_id, cmd) => {
+                let pipeline = self.pipeline(pipeline_id);
+                let control_msg = ConstellationControlMsg::WebDriverScriptCommand(pipeline_id, cmd);
+                let ScriptControlChan(ref script_channel) = pipeline.script_chan;
+                script_channel.send(control_msg).unwrap();
+            },
+            WebDriverCommandMsg::TakeScreenshot(reply) => {
+                self.compositor_proxy.send(CompositorMsg::CreatePng(reply));
+            },
+        }
     }
 
     fn add_or_replace_pipeline_in_frame_tree(&mut self, frame_change: FrameChange) {

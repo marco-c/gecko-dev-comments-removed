@@ -98,7 +98,7 @@ pub enum ConstellationControlMsg {
     
     FocusIFrame(PipelineId, SubpageId),
     
-    WebDriverCommand(PipelineId, WebDriverScriptCommand),
+    WebDriverScriptCommand(PipelineId, WebDriverScriptCommand),
     
     TickAllAnimations(PipelineId),
     
