@@ -139,6 +139,9 @@ public:
   
   
   bool mIsSuppressedOrDelayed : 1;
+  
+  
+  bool mIsPositionless : 1;
 
   
   inline bool InTargetPhase() const
