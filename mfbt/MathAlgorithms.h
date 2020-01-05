@@ -515,7 +515,7 @@ RotateRight(const T aValue, uint_fast8_t aShift)
 
 
 template<typename T>
-inline bool
+constexpr bool
 IsPowerOfTwo(T x)
 {
     static_assert(IsUnsigned<T>::value,

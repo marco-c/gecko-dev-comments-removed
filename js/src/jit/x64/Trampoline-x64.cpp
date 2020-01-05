@@ -19,6 +19,8 @@
 using namespace js;
 using namespace js::jit;
 
+using mozilla::IsPowerOfTwo;
+
 
 
 static const LiveRegisterSet AllRegs =
@@ -431,8 +433,9 @@ JitRuntime::generateArgumentsRectifier(JSContext* cx, void** returnAddrOut)
       "No need to consider the JitFrameLayout for aligning the stack");
     static_assert(JitStackAlignment % sizeof(Value) == 0,
       "Ensure that we can pad the stack by pushing extra UndefinedValue");
+    static_assert(IsPowerOfTwo(JitStackValueAlignment),
+                  "must have power of two for masm.andl to do its job");
 
-    MOZ_ASSERT(IsPowerOfTwo(JitStackValueAlignment));
     masm.addl(Imm32(JitStackValueAlignment - 1  + 1 ), rcx);
     masm.addl(rdx, rcx);
     masm.andl(Imm32(~(JitStackValueAlignment - 1)), rcx);
