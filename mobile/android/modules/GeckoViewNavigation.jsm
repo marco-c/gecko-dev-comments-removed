@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "EventDispatcher",
 var dump = Cu.import("resource://gre/modules/AndroidLog.jsm", {})
            .AndroidLog.d.bind(null, "ViewNavigation");
 
-function debug(msg) {
+function debug(aMsg) {
   
 }
 
@@ -47,10 +47,10 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  onEvent(event, data, callback) {
-    debug("onEvent: event=" + event + ", data=" + JSON.stringify(data));
+  onEvent(aEvent, aData, aCallback) {
+    debug("onEvent: aEvent=" + aEvent + ", aData=" + JSON.stringify(aData));
 
-    switch (event) {
+    switch (aEvent) {
       case "GeckoViewNavigation:Active":
         this.registerProgressListener();
         break;
@@ -70,15 +70,15 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  receiveMessage(msg) {
-    debug("receiveMessage " + msg.name);
+  receiveMessage(aMsg) {
+    debug("receiveMessage " + aMsg.name);
   }
 
   
-  openURI(uri, opener, where, flags) {
-    debug("openURI: uri.spec=" + uri.spec);
+  openURI(aUri, aOpener, aWhere, aFlags) {
+    debug("openURI: aUri.spec=" + aUri.spec);
     
-    this.browser.loadURI(uri.spec, null, null, null);
+    this.browser.loadURI(aUri.spec, null, null, null);
   }
 
   
@@ -107,13 +107,13 @@ class GeckoViewNavigation extends GeckoViewModule {
   }
 
   
-  onLocationChange(webProgress, request, locationURI, flags) {
+  onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {
     debug("onLocationChange");
 
-    let fixedURI = locationURI;
+    let fixedURI = aLocationURI;
 
     try {
-      fixedURI = URIFixup.createExposableURI(locationURI);
+      fixedURI = URIFixup.createExposableURI(aLocationURI);
     } catch (ex) { }
 
     let message = {
