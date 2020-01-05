@@ -341,17 +341,6 @@ class ParseContext : public Nestable<ParseContext>
     Directives* newDirectives;
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    mozilla::Maybe<DeclarationKind> inDestructuringDecl;
-
-    
     bool funHasReturnExpr;
 
     
@@ -1518,15 +1507,17 @@ class Parser final : public ParserBase, private JS::AutoGCRooter
 
     Node finishLexicalScope(ParseContext::Scope& scope, Node body);
 
-    Node propertyName(YieldHandling yieldHandling, Node propList,
+    Node propertyName(YieldHandling yieldHandling,
+                      const mozilla::Maybe<DeclarationKind>& maybeDecl, Node propList,
                       PropertyType* propType, MutableHandleAtom propAtom);
-    Node computedPropertyName(YieldHandling yieldHandling, Node literal);
+    Node computedPropertyName(YieldHandling yieldHandling,
+                              const mozilla::Maybe<DeclarationKind>& maybeDecl, Node literal);
     Node arrayInitializer(YieldHandling yieldHandling, PossibleError* possibleError);
     Node newRegExp();
 
     Node objectLiteral(YieldHandling yieldHandling, PossibleError* possibleError);
 
-    Node bindingInitializer(Node lhs, YieldHandling yieldHandling);
+    Node bindingInitializer(Node lhs, DeclarationKind kind, YieldHandling yieldHandling);
     Node bindingIdentifier(DeclarationKind kind, YieldHandling yieldHandling);
     Node bindingIdentifierOrPattern(DeclarationKind kind, YieldHandling yieldHandling,
                                     TokenKind tt);
