@@ -1874,6 +1874,8 @@ impl fmt::Debug for InlineFragmentNodeInfo {
 
 #[derive(Clone)]
 pub struct InlineFragmentContext {
+    
+    
     pub nodes: Vec<InlineFragmentNodeInfo>,
 }
 
