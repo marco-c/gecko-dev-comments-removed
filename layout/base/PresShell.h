@@ -18,8 +18,8 @@
 
 
 
-#ifndef nsPresShell_h_
-#define nsPresShell_h_
+#ifndef mozilla_PresShell_h
+#define mozilla_PresShell_h
 
 #include "nsIPresShell.h"
 #include "nsStubDocumentObserver.h"
