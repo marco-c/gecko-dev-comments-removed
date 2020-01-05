@@ -93,8 +93,13 @@ function Toolbox(target, selectedTool, hostType, contentWindow, frameId) {
 
   this._toolPanels = new Map();
   this._telemetry = new Telemetry();
+
+  
+  
+  
+  
   if (Services.prefs.getBoolPref("devtools.source-map.locations.enabled")) {
-    this._sourceMapService = new SourceMapService(this._target);
+    this._deprecatedServerSourceMapService = new SourceMapService(this._target);
   }
 
   this._initInspector = null;
@@ -2260,9 +2265,10 @@ Toolbox.prototype = {
                                   this._applyServiceWorkersTestingSettings);
 
     this._lastFocusedElement = null;
-    if (this._sourceMapService) {
-      this._sourceMapService.destroy();
-      this._sourceMapService = null;
+
+    if (this._deprecatedServerSourceMapService) {
+      this._deprecatedServerSourceMapService.destroy();
+      this._deprecatedServerSourceMapService = null;
     }
 
     if (this.webconsolePanel) {
