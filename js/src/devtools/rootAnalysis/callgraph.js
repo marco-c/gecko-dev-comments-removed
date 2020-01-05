@@ -163,7 +163,7 @@ function getCallees(edge)
             
             
             callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
-                          'suppressed': true, isVirtual: true});
+                          'suppressed': true, 'isVirtual': true});
         }
     } else {
         functions = new Set([null]); 
