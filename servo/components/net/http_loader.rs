@@ -523,7 +523,16 @@ pub fn modify_request_headers(headers: &mut Headers,
         port: doc_url.port_or_default()
     };
     headers.set(host);
-    headers.set(UserAgent(user_agent.to_owned()));
+
+    
+    
+    
+    
+    
+    
+    if !headers.has::<UserAgent>() {
+        headers.set(UserAgent(user_agent.to_owned()));
+    }
 
     set_default_accept(headers);
     set_default_accept_encoding(headers);
