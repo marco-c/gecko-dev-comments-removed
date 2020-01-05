@@ -208,7 +208,6 @@ const PREF_SEARCH_COHORT = "browser.search.cohort";
 const PREF_E10S_COHORT = "e10s.rollout.cohort";
 
 const COMPOSITOR_CREATED_TOPIC = "compositor:created";
-const COMPOSITOR_PROCESS_ABORTED_TOPIC = "compositor:process-aborted";
 const DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC = "distribution-customization-complete";
 const EXPERIMENTS_CHANGED_TOPIC = "experiments-changed";
 const GFX_FEATURES_READY_TOPIC = "gfx-features-ready";
@@ -943,7 +942,6 @@ EnvironmentCache.prototype = {
   _addObservers: function () {
     
     Services.obs.addObserver(this, COMPOSITOR_CREATED_TOPIC, false);
-    Services.obs.addObserver(this, COMPOSITOR_PROCESS_ABORTED_TOPIC, false);
     Services.obs.addObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC, false);
     Services.obs.addObserver(this, GFX_FEATURES_READY_TOPIC, false);
     Services.obs.addObserver(this, SEARCH_ENGINE_MODIFIED_TOPIC, false);
@@ -952,7 +950,6 @@ EnvironmentCache.prototype = {
 
   _removeObservers: function () {
     Services.obs.removeObserver(this, COMPOSITOR_CREATED_TOPIC);
-    Services.obs.removeObserver(this, COMPOSITOR_PROCESS_ABORTED_TOPIC);
     try {
       Services.obs.removeObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
     } catch (ex) {}
@@ -984,11 +981,6 @@ EnvironmentCache.prototype = {
         
         
         this._updateGraphicsFeatures();
-        break;
-      case COMPOSITOR_PROCESS_ABORTED_TOPIC:
-        
-        
-        this._onCompositorProcessAborted();
         break;
       case DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC:
         
@@ -1060,20 +1052,6 @@ EnvironmentCache.prototype = {
     let oldEnvironment = Cu.cloneInto(this._currentEnvironment, myScope);
     this._updateSearchEngine();
     this._onEnvironmentChange("search-engine-changed", oldEnvironment);
-  },
-
-  
-
-
-
-
-  _onCompositorProcessAborted: function () {
-    this._log.trace("_onCompositorProcessAborted");
-
-    
-    let oldEnvironment = Cu.cloneInto(this._currentEnvironment, myScope);
-    this._updateGraphicsFeatures();
-    this._onEnvironmentChange("gfx-features-changed", oldEnvironment);
   },
 
   
