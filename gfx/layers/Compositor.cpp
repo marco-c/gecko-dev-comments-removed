@@ -302,8 +302,6 @@ GenerateTexturedTriangles(const gfx::Polygon& aPolygon,
       
       
       gfx::TexturedTriangle t(triangle);
-      t.width = rect.width;
-      t.height = rect.height;
       UpdateTextureCoordinates(t, rect, intersection, texRect);
       texturedTriangles.AppendElement(Move(t));
     }
