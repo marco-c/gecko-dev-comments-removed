@@ -10,11 +10,6 @@
 
 
 
-
-
-#define PL_ARENA_CONST_ALIGN_MASK  (sizeof(void*)-1)
-#include "plarena.h"
-
 #define READTYPE  int32_t
 #include "zlib.h"
 #include "nsISupportsUtils.h"
@@ -357,9 +352,6 @@ nsresult nsZipArchive::OpenArchive(nsZipHandle *aZipHandle, PRFileDesc *aFd)
   mFd = aZipHandle;
 
   
-  PL_INIT_ARENA_POOL(&mArena, "ZipArena", ZIP_ARENABLOCKSIZE);
-
-  
   nsresult rv = BuildFileList(aFd);
   if (NS_SUCCEEDED(rv)) {
     if (aZipHandle->mFile)
@@ -427,7 +419,7 @@ nsresult nsZipArchive::Test(const char *aEntryName)
 nsresult nsZipArchive::CloseArchive()
 {
   if (mFd) {
-    PL_FinishArenaPool(&mArena);
+    mArena.Clear();
     mFd = nullptr;
   }
 
@@ -667,9 +659,7 @@ static nsresult ResolveSymlink(const char *path)
 nsZipItem* nsZipArchive::CreateZipItem()
 {
   
-  void *mem;
-  PL_ARENA_ALLOCATE(mem, &mArena, sizeof(nsZipItem));
-  return (nsZipItem*)mem;
+  return (nsZipItem*)mArena.Allocate(sizeof(nsZipItem));
 }
 
 
