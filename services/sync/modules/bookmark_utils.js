@@ -35,64 +35,27 @@ XPCOMUtils.defineLazyGetter(this, "SpecialGUIDToPlacesGUID", () => {
     "tags": PlacesUtils.bookmarks.tagsGuid,
     "toolbar": PlacesUtils.bookmarks.toolbarGuid,
     "unfiled": PlacesUtils.bookmarks.unfiledGuid,
-
-    get mobile() {
-      let mobileRootId = BookmarkSpecialIds.findMobileRoot(true);
-      return Async.promiseSpinningly(PlacesUtils.promiseItemGuid(mobileRootId));
-    },
+    "mobile": PlacesUtils.bookmarks.mobileGuid,
   };
 });
 
 let BookmarkSpecialIds = {
 
   
-  
-  
   guids: ["menu", "places", "tags", "toolbar", "unfiled", "mobile"],
-
-  
-  createMobileRoot: function createMobileRoot() {
-    let root = PlacesUtils.placesRootId;
-    let mRoot = PlacesUtils.bookmarks.createFolder(root, "mobile", -1,
-       null, PlacesUtils.bookmarks.SOURCE_SYNC);
-    PlacesUtils.annotations.setItemAnnotation(
-      mRoot, BookmarkAnnos.MOBILEROOT_ANNO, 1, 0,
-      PlacesUtils.annotations.EXPIRE_NEVER, PlacesUtils.bookmarks.SOURCE_SYNC);
-    PlacesUtils.annotations.setItemAnnotation(
-      mRoot, BookmarkAnnos.EXCLUDEBACKUP_ANNO, 1, 0,
-      PlacesUtils.annotations.EXPIRE_NEVER, PlacesUtils.bookmarks.SOURCE_SYNC);
-    return mRoot;
-  },
-
-  findMobileRoot: function findMobileRoot(create) {
-    
-    let root = PlacesUtils.annotations.getItemsWithAnnotation(
-      BookmarkAnnos.MOBILEROOT_ANNO, {});
-    if (root.length != 0)
-      return root[0];
-
-    if (create)
-      return this.createMobileRoot();
-
-    return null;
-  },
 
   
   isSpecialGUID: function isSpecialGUID(g) {
     return this.guids.indexOf(g) != -1;
   },
 
-  specialIdForGUID: function specialIdForGUID(guid, create) {
-    if (guid == "mobile") {
-      return this.findMobileRoot(create);
-    }
+  specialIdForGUID: function specialIdForGUID(guid) {
     return this[guid];
   },
 
-  
   specialGUIDForId: function specialGUIDForId(id) {
     for (let guid of this.guids)
-      if (this.specialIdForGUID(guid, false) == id)
+      if (this.specialIdForGUID(guid) == id)
         return guid;
     return null;
   },
@@ -117,6 +80,6 @@ let BookmarkSpecialIds = {
     return PlacesUtils.unfiledBookmarksFolderId;
   },
   get mobile() {
-    return this.findMobileRoot(true);
+    return PlacesUtils.mobileFolderId;
   },
 };
