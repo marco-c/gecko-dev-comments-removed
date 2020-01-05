@@ -36,7 +36,7 @@ addCertFromFile(certdb, "test_pinning_dynamic/pinningroot.pem", "CTu,CTu,CTu");
 
 var sss = Cc["@mozilla.org/ssservice;1"]
             .getService(Ci.nsISiteSecurityService);
-var uri = Services.io.newURI("https://a.pinning2.example.com", null, null);
+var uri = Services.io.newURI("https://a.pinning2.example.com");
 
 
 

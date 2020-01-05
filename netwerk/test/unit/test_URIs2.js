@@ -654,19 +654,17 @@ function run_test()
 {
   
   
-  let base = gIoService.newURI("http://example.org/xenia?", null, null);
+  let base = gIoService.newURI("http://example.org/xenia?");
   let resolved = gIoService.newURI("?x", null, base);
-  let expected = gIoService.newURI("http://example.org/xenia?x",
-                                  null, null);
+  let expected = gIoService.newURI("http://example.org/xenia?x");
   do_info("Bug 662981: ACSII - comparing " + resolved.spec + " and " + expected.spec);
   do_check_true(resolved.equals(expected));
 
   
   
-  base = gIoService.newURI("http://example.org/xènia?", null, null);
+  base = gIoService.newURI("http://example.org/xènia?");
   resolved = gIoService.newURI("?x", null, base);
-  expected = gIoService.newURI("http://example.org/xènia?x",
-                              null, null);
+  expected = gIoService.newURI("http://example.org/xènia?x");
   do_info("Bug 662981: UTF8 - comparing " + resolved.spec + " and " + expected.spec);
   do_check_true(resolved.equals(expected));
 

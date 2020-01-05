@@ -20,12 +20,12 @@ BrowserCLH.prototype = {
   setResourceSubstitutions: function () {
     let registry = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci["nsIChromeRegistry"]);
     
-    let url = registry.convertChromeURL(Services.io.newURI("chrome://browser/content/aboutHome.xhtml", null, null)).spec;
+    let url = registry.convertChromeURL(Services.io.newURI("chrome://browser/content/aboutHome.xhtml")).spec;
     
     url = url.substring(4, url.indexOf("!/") + 2);
 
     let protocolHandler = Services.io.getProtocolHandler("resource").QueryInterface(Ci.nsIResProtocolHandler);
-    protocolHandler.setSubstitution("android", Services.io.newURI(url, null, null));
+    protocolHandler.setSubstitution("android", Services.io.newURI(url));
   },
 
   observe: function (subject, topic, data) {

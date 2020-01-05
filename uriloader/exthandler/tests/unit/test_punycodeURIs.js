@@ -112,7 +112,7 @@ function run_test() {
   
   envSvc.set("WRITE_ARGUMENT_FILE", outFile.path);
 
-  var uri = ioService.newURI(kTestURI, null, null);
+  var uri = ioService.newURI(kTestURI);
 
   
   

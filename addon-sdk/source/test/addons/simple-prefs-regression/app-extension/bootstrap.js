@@ -106,7 +106,7 @@ function startup(data, reasonCode) {
       replace(uuidRe, '$1');
 
     let prefixURI = 'resource://' + domain + '/';
-    let resourcesURI = ioService.newURI(rootURI + '/resources/', null, null);
+    let resourcesURI = ioService.newURI(rootURI + '/resources/');
     resourceHandler.setSubstitution(domain, resourcesURI);
 
     
@@ -169,7 +169,7 @@ function startup(data, reasonCode) {
 
       
       
-      let resourcesURI = ioService.newURI(fileURI, null, null);
+      let resourcesURI = ioService.newURI(fileURI);
       let resName = 'extensions.modules.' + domain + '.commonjs.path' + name;
       resourceHandler.setSubstitution(resName, resourcesURI);
 

@@ -83,7 +83,7 @@ this.RESTRequest = function RESTRequest(uri) {
   
   
   if (!(uri instanceof Ci.nsIURI)) {
-    uri = Services.io.newURI(uri, null, null);
+    uri = Services.io.newURI(uri);
   }
   this.uri = uri;
 

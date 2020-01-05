@@ -101,7 +101,7 @@ function run_test() {
 
 
   
-  var uri = NetUtil.newURI("http://" + host, "", null)
+  var uri = NetUtil.newURI("http://" + host, "")
   var chan = NetUtil.newChannel({
     uri: uri,
     loadUsingSystemPrincipal: true
@@ -202,7 +202,7 @@ function run_test() {
     info.password = "";
 
     
-    var uri2 = NetUtil.newURI("ftp://" + host, "", null);
+    var uri2 = NetUtil.newURI("ftp://" + host, "");
     var ftpchan = NetUtil.newChannel({
       uri: uri2,
       loadUsingSystemPrincipal: true 

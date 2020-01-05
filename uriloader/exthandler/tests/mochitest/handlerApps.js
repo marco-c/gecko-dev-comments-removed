@@ -20,7 +20,7 @@ function test() {
   
   var ioService = Cc["@mozilla.org/network/io-service;1"].
     getService(SpecialPowers.Ci.nsIIOService);
-  var uri = ioService.newURI(testURI, null, null);
+  var uri = ioService.newURI(testURI);
 
   
   var newWindow = window.open("", "handlerWindow", "height=300,width=300");
@@ -83,7 +83,7 @@ function test() {
   }
 
   localHandler.executable = exe;
-  localHandler.launchWithURI(ioService.newURI(testURI, null, null));
+  localHandler.launchWithURI(ioService.newURI(testURI));
 
   
   ok(true, "localHandler launchWithURI test");

@@ -62,7 +62,7 @@ function run_test() {
 
   
   
-  let uri = Services.io.newURI("https://" + unlikelyHost, null, null);
+  let uri = Services.io.newURI("https://" + unlikelyHost);
   SSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                           "max-age=0", sslStatus, 0);
 

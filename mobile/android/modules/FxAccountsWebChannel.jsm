@@ -149,7 +149,7 @@ this.FxAccountsWebChannel.prototype = {
   _setupChannel() {
     
     try {
-      this._webChannelOrigin = Services.io.newURI(this._contentUri, null, null);
+      this._webChannelOrigin = Services.io.newURI(this._contentUri);
       this._registerChannel();
     } catch (e) {
       log.e(e.toString());

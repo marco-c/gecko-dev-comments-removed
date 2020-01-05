@@ -74,7 +74,7 @@ function run_test()
   
   
   
-  var postRedirectURI = ioService.newURI(postRedirectURL, "", null);
+  var postRedirectURI = ioService.newURI(postRedirectURL, "");
   Cc["@mozilla.org/cookieService;1"].getService(Ci.nsICookieService).
     setCookieString(postRedirectURI, null, sentCookieVal, chan);
 

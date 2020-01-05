@@ -61,7 +61,7 @@
    
    var baseURI = null;
    if (global.window)
-     baseURI = ios.newURI(global.location.href, null, null);
+     baseURI = ios.newURI(global.location.href);
    exports.baseURI = baseURI;
 
    
@@ -313,7 +313,7 @@
        if (!base)
          baseURI = this._rootURI;
        else
-         baseURI = ios.newURI(base, null, null);
+         baseURI = ios.newURI(base);
        var newURI = ios.newURI(path, null, baseURI);
        var channel = NetUtil.newChannel({
           uri: newURI,

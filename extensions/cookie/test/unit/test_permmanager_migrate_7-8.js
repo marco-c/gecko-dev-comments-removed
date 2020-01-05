@@ -187,10 +187,10 @@ add_task(function test() {
   let found = expected.map((it) => 0);
 
   
-  yield PlacesTestUtils.addVisits(Services.io.newURI("https://foo.com/some/other/subdirectory", null, null));
-  yield PlacesTestUtils.addVisits(Services.io.newURI("ftp://some.subdomain.of.foo.com:8000/some/subdirectory", null, null));
-  yield PlacesTestUtils.addVisits(Services.io.newURI("ftp://127.0.0.1:8080", null, null));
-  yield PlacesTestUtils.addVisits(Services.io.newURI("https://localhost:8080", null, null));
+  yield PlacesTestUtils.addVisits(Services.io.newURI("https://foo.com/some/other/subdirectory"));
+  yield PlacesTestUtils.addVisits(Services.io.newURI("ftp://some.subdomain.of.foo.com:8000/some/subdirectory"));
+  yield PlacesTestUtils.addVisits(Services.io.newURI("ftp://127.0.0.1:8080"));
+  yield PlacesTestUtils.addVisits(Services.io.newURI("https://localhost:8080"));
 
   
   let enumerator = Services.perms.enumerator;

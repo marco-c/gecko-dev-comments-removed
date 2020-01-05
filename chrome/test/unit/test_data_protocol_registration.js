@@ -45,7 +45,7 @@ function run_test()
   try {
     let ios = Cc["@mozilla.org/network/io-service;1"].
               getService(Ci.nsIIOService);
-    sourceURI = ios.newURI(sourceURI, null, null);
+    sourceURI = ios.newURI(sourceURI);
     
     let uri = cr.convertChromeURL(sourceURI).spec;
 

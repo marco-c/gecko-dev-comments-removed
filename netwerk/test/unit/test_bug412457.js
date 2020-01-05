@@ -3,7 +3,7 @@ function run_test() {
     getService(Ci.nsIIOService);
 
   
-  var newURI = ios.newURI("http://\u5341%2ecom/", null, null);
+  var newURI = ios.newURI("http://\u5341%2ecom/");
   do_check_eq(newURI.asciiHost, "xn--kkr.com");
 
   

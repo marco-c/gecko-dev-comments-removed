@@ -9,7 +9,7 @@ function run_test() {
   
   prefs.setBoolPref("network.prefetch-next", true);
   for (var i = 0; i < 5; i++) {
-    var uri = ios.newURI("http://localhost/" + i, null, null);
+    var uri = ios.newURI("http://localhost/" + i);
     prefetch.prefetchURI(uri, uri, null, true);
   }
 
@@ -23,7 +23,7 @@ function run_test() {
   
   prefs.setBoolPref("network.prefetch-next", true);
   for (var i = 0; i < 5; i++) {
-    var uri = ios.newURI("http://localhost/" + i, null, null);
+    var uri = ios.newURI("http://localhost/" + i);
     prefetch.prefetchURI(uri, uri, null, true);
   }
   do_check_true(prefetch.hasMoreElements());

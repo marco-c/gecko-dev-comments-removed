@@ -14,7 +14,7 @@ function run_test()
 {
   var ios = Cc["@mozilla.org/network/io-service;1"].createInstance(Ci.nsIIOService);
 
-  var baseURI = ios.newURI("http://example.com/", "UTF-8", null);
+  var baseURI = ios.newURI("http://example.com/", "UTF-8");
 
   
   

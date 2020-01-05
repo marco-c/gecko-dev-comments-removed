@@ -178,7 +178,7 @@ SettingsDB.prototype = {
     
     if (typeof aValue == "string" && aValue.startsWith("data:")) {
       try {
-        let uri = Services.io.newURI(aValue, null, null);
+        let uri = Services.io.newURI(aValue);
         
         
         let mimeType = "application/octet-stream";

@@ -109,7 +109,7 @@ ContentAreaDropListener.prototype =
     try {
       
       
-      uri = ioService.newURI(uriString, null, null);
+      uri = ioService.newURI(uriString);
     } catch (ex) { }
     if (!uri)
       return uriString;
@@ -124,7 +124,7 @@ ContentAreaDropListener.prototype =
 
     
     let principal = sourceNode ? sourceNode.nodePrincipal
-                               : secMan.createCodebasePrincipal(ioService.newURI("file:///", null, null), {});
+                               : secMan.createCodebasePrincipal(ioService.newURI("file:///"), {});
 
     secMan.checkLoadURIStrWithPrincipal(principal, uriString, flags);
 

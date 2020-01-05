@@ -1772,14 +1772,14 @@ SpecialPowersAPI.prototype = {
 
     if (typeof(arg) == "string") {
       
-      let uri = Services.io.newURI(arg, null, null);
+      let uri = Services.io.newURI(arg);
       principal = secMan.createCodebasePrincipal(uri, {});
     } else if (arg.nodePrincipal) {
       
       
       principal = unwrapIfWrapped(arg).nodePrincipal;
     } else {
-      let uri = Services.io.newURI(arg.url, null, null);
+      let uri = Services.io.newURI(arg.url);
       let attrs = arg.originAttributes || {};
       principal = secMan.createCodebasePrincipal(uri, attrs);
     }

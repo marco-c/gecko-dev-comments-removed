@@ -151,7 +151,7 @@ this.AboutServiceWorkers = {
 
         let principal = Services.scriptSecurityManager.createCodebasePrincipal(
           
-          Services.io.newURI(message.principal.origin, null, null),
+          Services.io.newURI(message.principal.origin),
           message.principal.originAttributes);
 
         if (!message.scope) {

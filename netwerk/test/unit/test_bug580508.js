@@ -5,7 +5,7 @@ var resProt = ioService.getProtocolHandler("resource")
 
 function run_test() {
     
-    let greModulesURI = ioService.newURI("resource://gre/modules/", null, null);
+    let greModulesURI = ioService.newURI("resource://gre/modules/");
     resProt.setSubstitution("my-gre-modules", greModulesURI);
 
     
@@ -17,10 +17,8 @@ function run_test() {
 
     
     
-    let greNetUtilURI = ioService.newURI("resource://gre/modules/NetUtil.jsm",
-                                         null, null);
-    let myNetUtilURI = ioService.newURI("resource://my-gre-modules/NetUtil.jsm",
-                                        null, null);
+    let greNetUtilURI = ioService.newURI("resource://gre/modules/NetUtil.jsm");
+    let myNetUtilURI = ioService.newURI("resource://my-gre-modules/NetUtil.jsm");
     do_check_eq(resProt.resolveURI(greNetUtilURI),
                 resProt.resolveURI(myNetUtilURI));
 }
