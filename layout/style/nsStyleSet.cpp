@@ -2445,7 +2445,10 @@ nsStyleSet::ReparentStyleContext(nsStyleContext* aStyleContext,
     flags |= eDoAnimation;
   }
 
-  if (aElement && aElement->IsRootOfAnonymousSubtree()) {
+  if ((aElement && aElement->IsRootOfAnonymousSubtree()) ||
+      (aStyleContext->IsAnonBox() &&
+       nsCSSAnonBoxes::AnonBoxSkipsParentDisplayBasedStyleFixup(
+         aStyleContext->GetPseudo()))) {
     
     
     
