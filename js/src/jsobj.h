@@ -1319,9 +1319,6 @@ template<XDRMode mode>
 bool
 XDRObjectLiteral(XDRState<mode>* xdr, MutableHandleObject obj);
 
-extern bool
-ReportGetterOnlyAssignment(JSContext* cx, bool strict);
-
 
 
 

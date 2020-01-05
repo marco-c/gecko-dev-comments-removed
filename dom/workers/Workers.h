@@ -401,14 +401,6 @@ IsDebuggerGlobal(JSObject* global);
 bool
 IsDebuggerSandbox(JSObject* object);
 
-
-
-
-
-
-extern bool
-GetterOnlyJSNative(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
-
 END_WORKERS_NAMESPACE
 
 #endif 
