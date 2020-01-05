@@ -1,7 +1,9 @@
 import gfx::geom::*;
+import image::base::image;
 
 enum item_type {
     display_item_solid_color(u8, u8, u8),
+    display_item_image(~image),
     
     padding(u8, u8, u8, u8)
 }
