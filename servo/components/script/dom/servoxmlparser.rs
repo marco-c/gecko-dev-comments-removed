@@ -1,0 +1,16 @@
+
+
+
+
+use dom::bindings::reflector::Reflector;
+
+#[must_root]
+#[dom_struct]
+pub struct ServoXMLParser {
+    reflector_: Reflector,
+}
+
+impl ServoXMLParser {
+    pub fn new() {
+    }
+}

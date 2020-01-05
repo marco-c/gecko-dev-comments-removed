@@ -3,6 +3,7 @@
 
 
 pub mod html;
+pub mod xml;
 
 pub trait Parser {
     fn parse_chunk(self, input: String);
