@@ -3366,6 +3366,16 @@ MMinMax::foldsTo(TempAllocator& alloc)
             return toDouble;
         }
     }
+
+    if (operand->isArrayLength() && constant->type() == MIRType::Int32) {
+        MOZ_ASSERT(operand->type() == MIRType::Int32);
+
+        
+        
+        if (isMax() && constant->toInt32() <= 0)
+            return operand;
+    }
+
     return this;
 }
 

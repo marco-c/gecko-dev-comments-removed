@@ -100,11 +100,15 @@ function RequireObjectCoercible(v) {
 
 
 function ToLength(v) {
+    
     v = ToInteger(v);
 
-    if (v <= 0)
-        return 0;
+    
+    
+    
+    v = std_Math_max(v, 0);
 
+    
     
     return std_Math_min(v, 0x1fffffffffffff);
 }
