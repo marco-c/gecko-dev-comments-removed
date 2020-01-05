@@ -2,7 +2,7 @@
 
 
 
-use net_traits::{LoadData, Metadata};
+use net_traits::{LoadData, Metadata, ResponseSenders};
 use net_traits::ProgressMsg::{Payload, Done};
 use mime_classifier::MIMEClassifier;
 use resource_task::start_sending;
@@ -13,16 +13,15 @@ use hyper::mime::Mime;
 use std::sync::Arc;
 use url::{percent_decode, SchemeData};
 
-pub fn factory(load_data: LoadData, _classifier: Arc<MIMEClassifier>) {
+pub fn factory(load_data: LoadData, senders: ResponseSenders, _classifier: Arc<MIMEClassifier>) {
     
     
     
     
-    load(load_data)
+    load(load_data, senders)
 }
 
-pub fn load(load_data: LoadData) {
-    let start_chan = load_data.consumer;
+pub fn load(load_data: LoadData, start_chan: ResponseSenders) {
     let url = load_data.url;
     assert!(&*url.scheme == "data");
 

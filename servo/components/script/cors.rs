@@ -9,7 +9,14 @@
 
 
 
+use network_listener::{NetworkListener, PreInvoke};
+use script_task::ScriptChan;
+use net_traits::{AsyncResponseTarget, AsyncResponseListener, ResponseAction, Metadata};
+
 use std::ascii::AsciiExt;
+use std::borrow::ToOwned;
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 use time;
 use time::{now, Timespec};
 
@@ -24,6 +31,13 @@ use hyper::method::Method;
 use hyper::status::StatusClass::Success;
 
 use url::{SchemeData, Url};
+use util::task::spawn_named;
+
+
+
+pub trait AsyncCORSResponseListener {
+    fn response_available(&self, response: CORSResponse);
+}
 
 #[derive(Clone)]
 pub struct CORSRequest {
@@ -86,6 +100,51 @@ impl CORSRequest {
             headers: headers,
             preflight_flag: false
         }
+    }
+
+    pub fn http_fetch_async(&self,
+                            listener: Box<AsyncCORSResponseListener+Send>,
+                            script_chan: Box<ScriptChan+Send>) {
+        struct CORSContext {
+            listener: Box<AsyncCORSResponseListener+Send>,
+            response: RefCell<Option<CORSResponse>>,
+        }
+
+        
+        
+        impl AsyncResponseListener for CORSContext {
+            fn headers_available(&self, _metadata: Metadata) {
+            }
+
+            fn data_available(&self, _payload: Vec<u8>) {
+            }
+
+            fn response_complete(&self, _status: Result<(), String>) {
+                let response = self.response.borrow_mut().take().unwrap();
+                self.listener.response_available(response);
+            }
+        }
+        impl PreInvoke for CORSContext {}
+
+        let context = CORSContext {
+            listener: listener,
+            response: RefCell::new(None),
+        };
+        let listener = NetworkListener {
+            context: Arc::new(Mutex::new(context)),
+            script_chan: script_chan,
+        };
+
+        
+        
+        let req = self.clone();
+        spawn_named("cors".to_owned(), move || {
+            let response = req.http_fetch();
+            let mut context = listener.context.lock();
+            let context = context.as_mut().unwrap();
+            *context.response.borrow_mut() = Some(response);
+            listener.invoke_with_listener(ResponseAction::ResponseComplete(Ok(())));
+        });
     }
 
     

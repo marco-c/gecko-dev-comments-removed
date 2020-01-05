@@ -29,7 +29,7 @@ use dom::storage::Storage;
 use layout_interface::{ReflowGoal, ReflowQueryType, LayoutRPC, LayoutChan, Reflow, Msg};
 use layout_interface::{ContentBoxResponse, ContentBoxesResponse, ScriptReflow};
 use page::Page;
-use script_task::{TimerSource, ScriptChan};
+use script_task::{TimerSource, ScriptChan, ScriptPort, NonWorkerScriptChan};
 use script_task::ScriptMsg;
 use script_traits::ScriptControlChan;
 use timers::{IsInterval, TimerId, TimerManager, TimerCallback};
@@ -198,6 +198,11 @@ impl Window {
         self.parent_info
     }
 
+    pub fn new_script_pair(&self) -> (Box<ScriptChan+Send>, Box<ScriptPort+Send>) {
+        let (tx, rx) = channel();
+        (box NonWorkerScriptChan(tx), box rx)
+    }
+
     pub fn control_chan<'a>(&'a self) -> &'a ScriptControlChan {
         &self.control_chan
     }
@@ -223,32 +228,32 @@ impl Window {
     }
 }
 
-
+// https://www.whatwg.org/html/#atob
 pub fn base64_btoa(input: DOMString) -> Fallible<DOMString> {
-    
-    
-    
+    // "The btoa() method must throw an InvalidCharacterError exception if
+    //  the method's first argument contains any character whose code point
+    //  is greater than U+00FF."
     if input.chars().any(|c: char| c > '\u{FF}') {
         Err(InvalidCharacter)
     } else {
-        
-        
-        
-        
+        // "Otherwise, the user agent must convert that argument to a
+        //  sequence of octets whose nth octet is the eight-bit
+        //  representation of the code point of the nth character of
+        //  the argument,"
         let octets = input.chars().map(|c: char| c as u8).collect::<Vec<u8>>();
 
-        
-        
+        // "and then must apply the base64 algorithm to that sequence of
+        //  octets, and return the result. [RFC4648]"
         Ok(octets.as_slice().to_base64(STANDARD))
     }
 }
 
-
+// https://www.whatwg.org/html/#atob
 pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
-    
-    
-    
-    
+    // "Remove all space characters from input."
+    // serialize::base64::from_base64 ignores \r and \n,
+    // but it treats the other space characters as
+    // invalid input.
     fn is_html_space(c: char) -> bool {
         HTML_SPACE_CHARACTERS.iter().any(|&m| m == c)
     }
@@ -257,9 +262,9 @@ pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
         .collect::<String>();
     let mut input = without_spaces.as_slice();
 
-    
-    
-    
+    // "If the length of input divides by 4 leaving no remainder, then:
+    //  if input ends with one or two U+003D EQUALS SIGN (=) characters,
+    //  remove them from input."
     if input.len() % 4 == 0 {
         if input.ends_with("==") {
             input = &input[..input.len() - 2]
@@ -268,19 +273,19 @@ pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
         }
     }
 
-    
-    
+    // "If the length of input divides by 4 leaving a remainder of 1,
+    //  throw an InvalidCharacterError exception and abort these steps."
     if input.len() % 4 == 1 {
         return Err(InvalidCharacter)
     }
 
-    
-    
-    
-    
-    
-    
-    
+    // "If input contains a character that is not in the following list of
+    //  characters and character ranges, throw an InvalidCharacterError
+    //  exception and abort these steps:
+    //
+    //  U+002B PLUS SIGN (+)
+    //  U+002F SOLIDUS (/)
+    //  Alphanumeric ASCII characters"
     if input.chars().any(|c| c != '+' && c != '/' && !c.is_alphanumeric()) {
         return Err(InvalidCharacter)
     }
@@ -292,9 +297,9 @@ pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
 }
 
 impl<'a> WindowMethods for JSRef<'a, Window> {
-    
+    // https://html.spec.whatwg.org/#dom-alert
     fn Alert(self, s: DOMString) {
-        
+        // Right now, just print to the console
         println!("ALERT: {}", s);
     }
 
@@ -303,22 +308,22 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
     }
 
     fn Document(self) -> Temporary<Document> {
-        
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
         let context = self.browser_context();
         context.as_ref().unwrap().active_document()
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-location
     fn Location(self) -> Temporary<Location> {
         self.Document().root().r().Location()
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-sessionstorage
     fn SessionStorage(self) -> Temporary<Storage> {
         self.session_storage.or_init(|| Storage::new(&GlobalRef::Window(self), StorageType::Session))
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-localstorage
     fn LocalStorage(self) -> Temporary<Storage> {
         self.local_storage.or_init(|| Storage::new(&GlobalRef::Window(self), StorageType::Local))
     }
@@ -327,19 +332,19 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         self.console.or_init(|| Console::new(GlobalRef::Window(self)))
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-frameelement
     fn GetFrameElement(self) -> Option<Temporary<Element>> {
-        
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
         let context = self.browser_context();
         context.as_ref().unwrap().frame_element()
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-navigator
     fn Navigator(self) -> Temporary<Navigator> {
         self.navigator.or_init(|| Navigator::new(self))
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-windowtimers-settimeout
     fn SetTimeout(self, _cx: *mut JSContext, callback: Function, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::FunctionTimerCallback(callback),
                                             args,
@@ -349,7 +354,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-windowtimers-settimeout
     fn SetTimeout_(self, _cx: *mut JSContext, callback: DOMString, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::StringTimerCallback(callback),
                                             args,
@@ -359,12 +364,12 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-windowtimers-cleartimeout
     fn ClearTimeout(self, handle: i32) {
         self.timers.clear_timeout_or_interval(handle);
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-windowtimers-setinterval
     fn SetInterval(self, _cx: *mut JSContext, callback: Function, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::FunctionTimerCallback(callback),
                                             args,
@@ -374,7 +379,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-windowtimers-setinterval
     fn SetInterval_(self, _cx: *mut JSContext, callback: DOMString, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::StringTimerCallback(callback),
                                             args,
@@ -384,7 +389,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
-    
+    // https://html.spec.whatwg.org/#dom-windowtimers-clearinterval
     fn ClearInterval(self, handle: i32) {
         self.ClearTimeout(handle);
     }
@@ -397,12 +402,12 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         self.Window()
     }
 
-    
+    // https://www.whatwg.org/html/#dom-frames
     fn Frames(self) -> Temporary<Window> {
         self.Window()
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/#dom-parent
     fn Parent(self) -> Temporary<Window> {
         let browser_context = self.browser_context();
         let browser_context = browser_context.as_ref().unwrap();
@@ -410,7 +415,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         browser_context.frame_element().map_or(self.Window(), |fe| {
             let frame_element = fe.root();
             let window = window_from_node(frame_element.r()).root();
-            
+            // FIXME(https://github.com/rust-lang/rust/issues/23338)
             let r = window.r();
             let context = r.browser_context();
             context.as_ref().unwrap().active_window()
@@ -531,11 +536,11 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
         *self.browser_context.borrow_mut() = None;
     }
 
-    
-    
-    
-    
-    
+    /// Reflows the page if it's possible to do so and the page is dirty. This method will wait
+    /// for the layout thread to complete (but see the `TODO` below). If there is no window size
+    /// yet, the page is presumed invisible and no reflow is performed.
+    ///
+    /// TODO(pcwalton): Only wait for style recalc, since we have off-main-thread layout.
     fn reflow(self, goal: ReflowGoal, query_type: ReflowQueryType, reason: ReflowReason) {
         let document = self.Document().root();
         let root = document.r().GetDocumentElement().root();
@@ -562,7 +567,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
             self.emit_timeline_marker(marker);
         }
 
-        
+        // Layout will let us know when it's done.
         let (join_chan, join_port) = channel();
 
         {
@@ -573,12 +578,12 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
         let last_reflow_id = &self.last_reflow_id;
         last_reflow_id.set(last_reflow_id.get() + 1);
 
-        
+        // On debug mode, print the reflow event information.
         if opts::get().relayout_event {
             debug_reflow_events(&goal, &query_type, &reason);
         }
 
-        
+        // Send new document and relevant styles to layout.
         let reflow = box ScriptReflow {
             reflow_info: Reflow {
                 goal: goal,
@@ -605,12 +610,12 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
         }
     }
 
-    
-    
-    
+    // FIXME(cgaebel): join_layout is racey. What if the compositor triggers a
+    // reflow between the "join complete" message and returning from this
+    // function?
 
-    
-    
+    /// Sends a ping to layout and waits for the response. The response will arrive when the
+    /// layout task has finished any pending request messages.
     fn join_layout(self) {
         let mut layout_join_port = self.layout_join_port.borrow_mut();
         if let Some(join_port) = mem::replace(&mut *layout_join_port, None) {
@@ -635,14 +640,14 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
 
     fn content_box_query(self, content_box_request: TrustedNodeAddress) -> Rect<Au> {
         self.reflow(ReflowGoal::ForScriptQuery, ReflowQueryType::ContentBoxQuery(content_box_request), ReflowReason::Query);
-        self.join_layout(); 
+        self.join_layout(); //FIXME: is this necessary, or is layout_rpc's mutex good enough?
         let ContentBoxResponse(rect) = self.layout_rpc.content_box();
         rect
     }
 
     fn content_boxes_query(self, content_boxes_request: TrustedNodeAddress) -> Vec<Rect<Au>> {
         self.reflow(ReflowGoal::ForScriptQuery, ReflowQueryType::ContentBoxesQuery(content_boxes_request), ReflowReason::Query);
-        self.join_layout(); 
+        self.join_layout(); //FIXME: is this necessary, or is layout_rpc's mutex good enough?
         let ContentBoxesResponse(rects) = self.layout_rpc.content_boxes();
         rects
     }
@@ -662,12 +667,12 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
         *self.browser_context.borrow_mut() = Some(BrowserContext::new(doc, frame_element));
     }
 
-    
+    /// Commence a new URL load which will either replace this window or scroll to a fragment.
     fn load_url(self, href: DOMString) {
         let base_url = self.get_url();
         debug!("current page url is {}", base_url);
         let url = UrlParser::new().base_url(&base_url).parse(&href);
-        
+        // FIXME: handle URL parse errors more gracefully.
         let url = url.unwrap();
         match url.fragment {
             Some(fragment) => {
@@ -689,7 +694,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
     }
 
     fn steal_fragment_name(self) -> Option<String> {
-        
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
         let mut name = self.fragment_name.borrow_mut();
         name.take()
     }
@@ -735,7 +740,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
     }
 
     fn layout_is_idle(self) -> bool {
-        
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
         let port = self.layout_join_port.borrow();
         port.is_none()
     }
@@ -751,10 +756,10 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
     }
 
     fn set_page_clip_rect_with_new_viewport(self, viewport: Rect<f32>) -> bool {
-        
-        
-        
-        static VIEWPORT_EXPANSION: f32 = 2.0; 
+        // We use a clipping rectangle that is five times the size of the of the viewport,
+        // so that we don't collect display list items for areas too far outside the viewport,
+        // but also don't trigger reflows every time the viewport changes.
+        static VIEWPORT_EXPANSION: f32 = 2.0; // 2 lengths on each side plus original length is 5 total.
        let proposed_clip_rect = geometry::f32_rect_to_au_rect(
            viewport.inflate(viewport.size.width * VIEWPORT_EXPANSION,
            viewport.size.height * VIEWPORT_EXPANSION));
@@ -770,8 +775,8 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
 
        self.page_clip_rect.set(proposed_clip_rect);
 
-       
-       
+       // If we didn't have a clip rect, the previous display doesn't need rebuilding
+       // because it was built for infinite clip (MAX_RECT).
        had_clip_rect
    }
 
@@ -779,7 +784,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
        self.devtools_wants_updates.set(value);
    }
 
-    
+    // https://html.spec.whatwg.org/multipage/#accessing-other-browsing-contexts
     fn IndexedGetter(self, _index: u32, _found: &mut bool) -> Option<Temporary<Window>> {
         None
     }
@@ -787,8 +792,8 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
     fn thaw(self) {
         self.timers.resume();
 
-        
-        
+        // Push the document title to the compositor since we are
+        // activating this document due to a navigation.
         let document = self.Document().root();
         document.r().title_changed();
     }
@@ -893,9 +898,9 @@ fn should_move_clip_rect(clip_rect: Rect<Au>, new_viewport: Rect<f32>) -> bool{
                          Size2D(geometry::to_frac_px(clip_rect.size.width) as f32,
                                 geometry::to_frac_px(clip_rect.size.height) as f32));
 
-    
-    
-    
+    // We only need to move the clip rect if the viewport is getting near the edge of
+    // our preexisting clip rect. We use half of the size of the viewport as a heuristic
+    // for "close."
     static VIEWPORT_SCROLL_MARGIN_SIZE: f32 = 0.5;
     let viewport_scroll_margin = new_viewport.size * VIEWPORT_SCROLL_MARGIN_SIZE;
 

@@ -51,11 +51,10 @@ pub struct LoadData {
     pub preserved_headers: Headers,
     pub data: Option<Vec<u8>>,
     pub cors: Option<ResourceCORSData>,
-    pub consumer: Sender<LoadResponse>,
 }
 
 impl LoadData {
-    pub fn new(url: Url, consumer: Sender<LoadResponse>) -> LoadData {
+    pub fn new(url: Url) -> LoadData {
         LoadData {
             url: url,
             method: Method::Get,
@@ -63,9 +62,54 @@ impl LoadData {
             preserved_headers: Headers::new(),
             data: None,
             cors: None,
-            consumer: consumer,
         }
     }
+}
+
+
+pub trait AsyncResponseListener {
+    
+    fn headers_available(&self, metadata: Metadata);
+    
+    
+    fn data_available(&self, payload: Vec<u8>);
+    
+    
+    fn response_complete(&self, status: Result<(), String>);
+}
+
+
+
+pub enum ResponseAction {
+    
+    HeadersAvailable(Metadata),
+    
+    DataAvailable(Vec<u8>),
+    
+    ResponseComplete(Result<(), String>)
+}
+
+impl ResponseAction {
+    
+    pub fn process(self, listener: &AsyncResponseListener) {
+        match self {
+            ResponseAction::HeadersAvailable(m) => listener.headers_available(m),
+            ResponseAction::DataAvailable(d) => listener.data_available(d),
+            ResponseAction::ResponseComplete(r) => listener.response_complete(r),
+        }
+    }
+}
+
+
+
+pub trait AsyncResponseTarget {
+    fn invoke_with_listener(&self, action: ResponseAction);
+}
+
+
+pub enum LoadConsumer {
+    Channel(Sender<LoadResponse>),
+    Listener(Box<AsyncResponseTarget + Send>),
 }
 
 
@@ -73,7 +117,7 @@ pub type ResourceTask = Sender<ControlMsg>;
 
 pub enum ControlMsg {
     
-    Load(LoadData),
+    Load(LoadData, LoadConsumer),
     
     SetCookiesForUrl(Url, String, CookieSource),
     
@@ -159,6 +203,20 @@ pub enum CookieSource {
     NonHTTP,
 }
 
+pub enum ResponseSenders {
+    Channel(Sender<LoadResponse>),
+    Listener(Box<AsyncResponseTarget+ Send>),
+}
+
+impl ResponseSenders {
+    pub fn from_consumer(consumer: LoadConsumer) -> ResponseSenders {
+        match consumer {
+            LoadConsumer::Channel(c) => ResponseSenders::Channel(c),
+            LoadConsumer::Listener(l) => ResponseSenders::Listener(l),
+        }
+    }
+}
+
 
 #[derive(PartialEq,Debug)]
 pub enum ProgressMsg {
@@ -172,7 +230,7 @@ pub enum ProgressMsg {
 pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
         -> Result<(Metadata, Vec<u8>), String> {
     let (start_chan, start_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url, start_chan))).unwrap();
+    resource_task.send(ControlMsg::Load(LoadData::new(url), LoadConsumer::Channel(start_chan))).unwrap();
     let response = start_port.recv().unwrap();
 
     let mut buf = vec!();
@@ -188,7 +246,7 @@ pub fn load_whole_resource(resource_task: &ResourceTask, url: Url)
 
 pub fn load_bytes_iter(resource_task: &ResourceTask, url: Url) -> (Metadata, ProgressMsgPortIterator) {
     let (input_chan, input_port) = channel();
-    resource_task.send(ControlMsg::Load(LoadData::new(url, input_chan))).unwrap();
+    resource_task.send(ControlMsg::Load(LoadData::new(url), LoadConsumer::Channel(input_chan))).unwrap();
 
     let response = input_port.recv().unwrap();
     let iter = ProgressMsgPortIterator { progress_port: response.progress_port };

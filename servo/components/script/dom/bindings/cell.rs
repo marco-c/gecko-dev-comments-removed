@@ -16,6 +16,7 @@ use std::cell::{BorrowState, RefCell, Ref, RefMut};
 
 
 
+#[derive(Clone)]
 pub struct DOMRefCell<T> {
     value: RefCell<T>,
 }
