@@ -352,6 +352,10 @@ ParseTask::trace(JSTracer* trc)
 {
     if (parseGlobal->runtimeFromAnyThread() != trc->runtime())
         return;
+    if (parseGlobal->zoneFromAnyThread()->usedByHelperThread()) {
+        MOZ_ASSERT(!parseGlobal->zoneFromAnyThread()->isCollecting());
+        return;
+    }
 
     TraceManuallyBarrieredEdge(trc, &parseGlobal, "ParseTask::parseGlobal");
     if (script)
