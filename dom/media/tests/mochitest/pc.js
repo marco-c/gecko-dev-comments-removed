@@ -758,6 +758,12 @@ function PeerConnectionWrapper(label, configuration) {
 
   this.disableRtpCountChecking = false;
 
+  this.iceConnectedResolve;
+  this.iceConnectedReject;
+  this.iceConnected = new Promise((resolve, reject) => {
+    this.iceConnectedResolve = resolve;
+    this.iceConnectedReject = reject;
+  });
   this.iceCheckingRestartExpected = false;
   this.iceCheckingIceRollbackExpected = false;
 
@@ -773,10 +779,16 @@ function PeerConnectionWrapper(label, configuration) {
   this._pc.oniceconnectionstatechange = e => {
     isnot(typeof this._pc.iceConnectionState, "undefined",
           "iceConnectionState should not be undefined");
-    info(this + ": oniceconnectionstatechange fired, new state is: " + this._pc.iceConnectionState);
+    var iceState = this._pc.iceConnectionState;
+    info(this + ": oniceconnectionstatechange fired, new state is: " + iceState);
     Object.keys(this.ice_connection_callbacks).forEach(name => {
       this.ice_connection_callbacks[name]();
     });
+    if (iceState === "connected") {
+      this.iceConnectedResolve();
+    } else if (iceState === "failed") {
+      this.iceConnectedReject();
+    }
   };
 
   createOneShotEventWrapper(this, this._pc, 'datachannel');
@@ -1205,45 +1217,6 @@ PeerConnectionWrapper.prototype = {
 
 
 
-
-  isIceConnected : function() {
-    info(this + ": iceConnectionState = " + this.iceConnectionState);
-    return this.iceConnectionState === "connected";
-  },
-
-  
-
-
-
-
-  isIceChecking : function() {
-    return this.iceConnectionState === "checking";
-  },
-
-  
-
-
-
-
-  isIceNew : function() {
-    return this.iceConnectionState === "new";
-  },
-
-  
-
-
-
-
-
-
-  isIceConnectionPending : function() {
-    return (this.isIceChecking() || this.isIceNew());
-  },
-
-  
-
-
-
   logIceConnectionState: function() {
     this.iceConnectionLog = [this._pc.iceConnectionState];
     this.ice_connection_callbacks.logIceStatus = () => {
@@ -1274,21 +1247,22 @@ PeerConnectionWrapper.prototype = {
 
 
 
+  expectIceChecking : function() {
+    this.iceCheckingRestartExpected = true;
+    this.iceConnected = new Promise((resolve, reject) => {
+      this.iceConnectedResolve = resolve;
+      this.iceConnectedReject = reject;
+    });
+  },
+
+  
+
 
 
 
 
   waitForIceConnected : function() {
-    return new Promise((resolve, reject) =>
-        this.ice_connection_callbacks.waitForIceConnected = () => {
-      if (this.isIceConnected()) {
-        delete this.ice_connection_callbacks.waitForIceConnected;
-        resolve();
-      } else if (!this.isIceConnectionPending()) {
-        delete this.ice_connection_callbacks.waitForIceConnected;
-        reject(new Error('ICE failed'));
-      }
-    });
+    return this.iceConnected;
   },
 
   
