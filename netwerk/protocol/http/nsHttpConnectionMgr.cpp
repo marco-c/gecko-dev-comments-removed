@@ -14,7 +14,6 @@
 
 #include "nsHttpConnectionMgr.h"
 #include "nsHttpConnection.h"
-#include "nsHttpPipeline.h"
 #include "nsHttpHandler.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsNetCID.h"
@@ -123,9 +122,7 @@ nsresult
 nsHttpConnectionMgr::Init(uint16_t maxConns,
                           uint16_t maxPersistConnsPerHost,
                           uint16_t maxPersistConnsPerProxy,
-                          uint16_t maxRequestDelay,
-                          uint16_t maxPipelinedRequests,
-                          uint16_t maxOptimisticPipelinedRequests)
+                          uint16_t maxRequestDelay)
 {
     LOG(("nsHttpConnectionMgr::Init\n"));
 
@@ -136,8 +133,6 @@ nsHttpConnectionMgr::Init(uint16_t maxConns,
         mMaxPersistConnsPerHost = maxPersistConnsPerHost;
         mMaxPersistConnsPerProxy = maxPersistConnsPerProxy;
         mMaxRequestDelay = maxRequestDelay;
-        mMaxPipelinedRequests = maxPipelinedRequests;
-        mMaxOptimisticPipelinedRequests = maxOptimisticPipelinedRequests;
 
         mIsShuttingDown = false;
     }
@@ -938,113 +933,6 @@ nsHttpConnectionMgr::ProcessPendingQForEntry(nsHttpConnectionInfo *ci)
     return false;
 }
 
-bool
-nsHttpConnectionMgr::SupportsPipelining(nsHttpConnectionInfo *ci)
-{
-    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-
-    nsConnectionEntry *ent = mCT.Get(ci->HashKey());
-    if (ent)
-        return ent->SupportsPipelining();
-    return false;
-}
-
-
-
-class nsHttpPipelineFeedback : public ARefBase
-{
-public:
-    nsHttpPipelineFeedback(nsHttpConnectionInfo *ci,
-                           nsHttpConnectionMgr::PipelineFeedbackInfoType info,
-                           nsHttpConnection *conn, uint32_t data)
-        : mConnInfo(ci)
-        , mConn(conn)
-        , mInfo(info)
-        , mData(data)
-        {
-        }
-
-
-    RefPtr<nsHttpConnectionInfo> mConnInfo;
-    RefPtr<nsHttpConnection> mConn;
-    nsHttpConnectionMgr::PipelineFeedbackInfoType mInfo;
-    uint32_t mData;
-private:
-    ~nsHttpPipelineFeedback() {}
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpPipelineFeedback)
-};
-
-void
-nsHttpConnectionMgr::PipelineFeedbackInfo(nsHttpConnectionInfo *ci,
-                                          PipelineFeedbackInfoType info,
-                                          nsHttpConnection *conn,
-                                          uint32_t data)
-{
-    if (!ci)
-        return;
-
-    
-    if (PR_GetCurrentThread() != gSocketThread) {
-        RefPtr<nsHttpPipelineFeedback> fb =
-            new nsHttpPipelineFeedback(ci, info, conn, data);
-        PostEvent(&nsHttpConnectionMgr::OnMsgProcessFeedback, 0, fb);
-        return;
-    }
-
-    nsConnectionEntry *ent = mCT.Get(ci->HashKey());
-    if (ent)
-        ent->OnPipelineFeedbackInfo(info, conn, data);
-}
-
-void
-nsHttpConnectionMgr::ReportFailedToProcess(nsIURI *uri)
-{
-    MOZ_ASSERT(uri);
-
-    nsAutoCString host;
-    int32_t port = -1;
-    nsAutoCString username;
-    bool usingSSL = false;
-    bool isHttp = false;
-
-    nsresult rv = uri->SchemeIs("https", &usingSSL);
-    if (NS_SUCCEEDED(rv) && usingSSL)
-        isHttp = true;
-    if (NS_SUCCEEDED(rv) && !isHttp)
-        rv = uri->SchemeIs("http", &isHttp);
-    if (NS_SUCCEEDED(rv))
-        rv = uri->GetAsciiHost(host);
-    if (NS_SUCCEEDED(rv))
-        rv = uri->GetPort(&port);
-    if (NS_SUCCEEDED(rv))
-        uri->GetUsername(username);
-    if (NS_FAILED(rv) || !isHttp || host.IsEmpty())
-        return;
-
-    
-    
-    RefPtr<nsHttpConnectionInfo> ci =
-        new nsHttpConnectionInfo(host, port, EmptyCString(), username, nullptr,
-                                 OriginAttributes(), usingSSL);
-    ci->SetAnonymous(false);
-    ci->SetPrivate(false);
-    PipelineFeedbackInfo(ci, RedCorruptedContent, nullptr, 0);
-
-    ci = ci->Clone();
-    ci->SetAnonymous(false);
-    ci->SetPrivate(true);
-    PipelineFeedbackInfo(ci, RedCorruptedContent, nullptr, 0);
-
-    ci = ci->Clone();
-    ci->SetAnonymous(true);
-    ci->SetPrivate(false);
-    PipelineFeedbackInfo(ci, RedCorruptedContent, nullptr, 0);
-
-    ci = ci->Clone();
-    ci->SetAnonymous(true);
-    ci->SetPrivate(true);
-    PipelineFeedbackInfo(ci, RedCorruptedContent, nullptr, 0);
-}
 
 
 
@@ -1307,140 +1195,6 @@ nsHttpConnectionMgr::MakeNewConnection(nsConnectionEntry *ent,
     return NS_OK;
 }
 
-bool
-nsHttpConnectionMgr::AddToShortestPipeline(nsConnectionEntry *ent,
-                                           nsHttpTransaction *trans,
-                                           nsHttpTransaction::Classifier classification,
-                                           uint16_t depthLimit)
-{
-    if (classification == nsAHttpTransaction::CLASS_SOLO)
-        return false;
-
-    uint32_t maxdepth = ent->MaxPipelineDepth(classification);
-    if (maxdepth == 0) {
-        ent->CreditPenalty();
-        maxdepth = ent->MaxPipelineDepth(classification);
-    }
-
-    if (ent->PipelineState() == PS_RED)
-        return false;
-
-    if (ent->PipelineState() == PS_YELLOW && ent->mYellowConnection)
-        return false;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    maxdepth = std::min<uint32_t>(maxdepth, depthLimit);
-
-    if (maxdepth < 2)
-        return false;
-
-    nsAHttpTransaction *activeTrans;
-
-    nsHttpConnection *bestConn = nullptr;
-    uint32_t activeCount = ent->mActiveConns.Length();
-    uint32_t bestConnLength = 0;
-    uint32_t connLength;
-
-    for (uint32_t i = 0; i < activeCount; ++i) {
-        nsHttpConnection *conn = ent->mActiveConns[i];
-        if (!conn->SupportsPipelining())
-            continue;
-
-        if (conn->Classification() != classification)
-            continue;
-
-        activeTrans = conn->Transaction();
-        if (!activeTrans ||
-            activeTrans->IsDone() ||
-            NS_FAILED(activeTrans->Status()))
-            continue;
-
-        connLength = activeTrans->PipelineDepth();
-
-        if (maxdepth <= connLength)
-            continue;
-
-        if (!bestConn || (connLength < bestConnLength)) {
-            bestConn = conn;
-            bestConnLength = connLength;
-        }
-    }
-
-    if (!bestConn)
-        return false;
-
-    activeTrans = bestConn->Transaction();
-    nsresult rv = activeTrans->AddTransaction(trans);
-    if (NS_FAILED(rv))
-        return false;
-
-    LOG(("   scheduling trans %p on pipeline at position %d\n",
-         trans, trans->PipelinePosition()));
-
-    if ((ent->PipelineState() == PS_YELLOW) && (trans->PipelinePosition() > 1))
-        ent->SetYellowConnection(bestConn);
-
-    if (!trans->GetPendingTime().IsNull()) {
-        if (trans->UsesPipelining())
-            AccumulateTimeDelta(
-                Telemetry::TRANSACTION_WAIT_TIME_HTTP_PIPELINES,
-                trans->GetPendingTime(), TimeStamp::Now());
-        else
-            AccumulateTimeDelta(
-                Telemetry::TRANSACTION_WAIT_TIME_HTTP,
-                trans->GetPendingTime(), TimeStamp::Now());
-        trans->SetPendingTime(false);
-    }
-    return true;
-}
-
-bool
-nsHttpConnectionMgr::IsUnderPressure(nsConnectionEntry *ent,
-                                   nsHttpTransaction::Classifier classification)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    int32_t currentConns = ent->mActiveConns.Length();
-    int32_t maxConns =
-        (ent->mConnInfo->UsingHttpProxy() && !ent->mConnInfo->UsingConnect()) ?
-        mMaxPersistConnsPerProxy : mMaxPersistConnsPerHost;
-
-    
-    
-    if (currentConns >= (maxConns - 2))
-        return true;                           
-
-    int32_t sameClass = 0;
-    for (int32_t i = 0; i < currentConns; ++i)
-        if (classification == ent->mActiveConns[i]->Classification())
-            if (++sameClass == 3)
-                return true;                   
-
-    return false;                              
-}
-
 
 
 
@@ -1461,14 +1215,9 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
          onlyReusedConnection, ent->mActiveConns.Length(),
          ent->mIdleConns.Length()));
 
-    nsHttpTransaction::Classifier classification = trans->Classification();
     uint32_t caps = trans->Caps();
 
     
-    if (!(caps & NS_HTTP_ALLOW_KEEPALIVE))
-        caps = caps & ~NS_HTTP_ALLOW_PIPELINING;
-
-    
     
     
     
@@ -1482,7 +1231,6 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
     
     
 
-    bool attemptedOptimisticPipeline = !(caps & NS_HTTP_ALLOW_PIPELINING);
     RefPtr<nsHttpConnection> unusedSpdyPersistentConnection;
 
     
@@ -1528,15 +1276,7 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
 
     
     
-    if (IsUnderPressure(ent, classification) && !attemptedOptimisticPipeline) {
-        attemptedOptimisticPipeline = true;
-        if (AddToShortestPipeline(ent, trans,
-                                  classification,
-                                  mMaxOptimisticPipelinedRequests)) {
-            LOG(("   dispatched step 1 trans=%p\n", trans));
-            return NS_OK;
-        }
-    }
+    
 
     
     
@@ -1600,18 +1340,7 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
 
     
     
-    if (!attemptedOptimisticPipeline &&
-        (classification == nsHttpTransaction::CLASS_REVALIDATION ||
-         classification == nsHttpTransaction::CLASS_SCRIPT)) {
-        
-        attemptedOptimisticPipeline = true;
-        if (AddToShortestPipeline(ent, trans,
-                                  classification,
-                                  mMaxOptimisticPipelinedRequests)) {
-            LOG(("   dispatched step 3 (pipeline) trans=%p\n", trans));
-            return NS_OK;
-        }
-    }
+    
 
     
     if (!onlyReusedConnection) {
@@ -1636,14 +1365,7 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
     }
 
     
-    if (caps & NS_HTTP_ALLOW_PIPELINING) {
-        if (AddToShortestPipeline(ent, trans,
-                                  classification,
-                                  mMaxPipelinedRequests)) {
-            LOG(("   dispatched step 5 trans=%p\n", trans));
-            return NS_OK;
-        }
-    }
+    
 
     
     if (unusedSpdyPersistentConnection) {
@@ -1693,20 +1415,11 @@ nsHttpConnectionMgr::DispatchTransaction(nsConnectionEntry *ent,
     MOZ_ASSERT(conn && !conn->Transaction(),
                "DispatchTranaction() on non spdy active connection");
 
-    if (!(caps & NS_HTTP_ALLOW_PIPELINING))
-        conn->Classify(nsAHttpTransaction::CLASS_SOLO);
-    else
-        conn->Classify(trans->Classification());
-
     rv = DispatchAbstractTransaction(ent, trans, caps, conn, priority);
 
     if (NS_SUCCEEDED(rv) && !trans->GetPendingTime().IsNull()) {
-        if (trans->UsesPipelining())
-            AccumulateTimeDelta(Telemetry::TRANSACTION_WAIT_TIME_HTTP_PIPELINES,
-                trans->GetPendingTime(), TimeStamp::Now());
-        else
-            AccumulateTimeDelta(Telemetry::TRANSACTION_WAIT_TIME_HTTP,
-                trans->GetPendingTime(), TimeStamp::Now());
+        AccumulateTimeDelta(Telemetry::TRANSACTION_WAIT_TIME_HTTP,
+                            trans->GetPendingTime(), TimeStamp::Now());
         trans->SetPendingTime(false);
     }
     return rv;
@@ -1761,33 +1474,14 @@ nsHttpConnectionMgr::DispatchAbstractTransaction(nsConnectionEntry *ent,
                                                  nsHttpConnection *conn,
                                                  int32_t priority)
 {
+    nsresult rv;
     MOZ_ASSERT(!conn->UsingSpdy(),
                "Spdy Must Not Use DispatchAbstractTransaction");
     LOG(("nsHttpConnectionMgr::DispatchAbstractTransaction "
          "[ci=%s trans=%p caps=%x conn=%p]\n",
          ent->mConnInfo->HashKey().get(), aTrans, caps, conn));
 
-    
-
-
-
-
-
-    RefPtr<nsAHttpTransaction> transaction;
-    nsresult rv;
-    if (conn->Classification() != nsAHttpTransaction::CLASS_SOLO) {
-        LOG(("   using pipeline datastructure.\n"));
-        RefPtr<nsHttpPipeline> pipeline;
-        rv = BuildPipeline(ent, aTrans, getter_AddRefs(pipeline));
-        if (!NS_SUCCEEDED(rv))
-            return rv;
-        transaction = pipeline;
-    }
-    else {
-        LOG(("   not using pipeline datastructure due to class solo.\n"));
-        transaction = aTrans;
-    }
-
+    RefPtr<nsAHttpTransaction> transaction(aTrans);
     RefPtr<ConnectionHandle> handle = new ConnectionHandle(conn);
 
     
@@ -1797,8 +1491,6 @@ nsHttpConnectionMgr::DispatchAbstractTransaction(nsConnectionEntry *ent,
     if (NS_FAILED(rv)) {
       LOG(("  conn->Activate failed [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
         ent->mActiveConns.RemoveElement(conn);
-        if (conn == ent->mYellowConnection)
-            ent->OnYellowComplete();
         DecrementActiveConnCount(conn);
         ConditionallyStopTimeoutTick();
 
@@ -1808,31 +1500,7 @@ nsHttpConnectionMgr::DispatchAbstractTransaction(nsConnectionEntry *ent,
         handle->Reset(); 
     }
 
-    
-    
-    
-    
-
     return rv;
-}
-
-nsresult
-nsHttpConnectionMgr::BuildPipeline(nsConnectionEntry *ent,
-                                   nsAHttpTransaction *firstTrans,
-                                   nsHttpPipeline **result)
-{
-    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-
-    
-
-
-    
-
-
-    RefPtr<nsHttpPipeline> pipeline = new nsHttpPipeline();
-    pipeline->AddTransaction(firstTrans);
-    pipeline.forget(result);
-    return NS_OK;
 }
 
 void
@@ -2445,9 +2113,7 @@ nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase *)
 
             
             
-            
-            if (ent->PipelineState()       != PS_RED &&
-                mCT.Count()                >  125 &&
+            if (mCT.Count()                >  125 &&
                 ent->mIdleConns.Length()   == 0 &&
                 ent->mActiveConns.Length() == 0 &&
                 ent->mHalfOpens.Length()   == 0 &&
@@ -2611,9 +2277,6 @@ nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase *param)
     }
 
     if (ent->mActiveConns.RemoveElement(conn)) {
-        if (conn == ent->mYellowConnection) {
-            ent->OnYellowComplete();
-        }
         DecrementActiveConnCount(conn);
         ConditionallyStopTimeoutTick();
     }
@@ -2696,12 +2359,6 @@ nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase *)
     case MAX_REQUEST_DELAY:
         mMaxRequestDelay = value;
         break;
-    case MAX_PIPELINED_REQUESTS:
-        mMaxPipelinedRequests = value;
-        break;
-    case MAX_OPTIMISTIC_PIPELINED_REQUESTS:
-        mMaxOptimisticPipelinedRequests = value;
-        break;
     default:
         NS_NOTREACHED("unexpected parameter name");
     }
@@ -2712,14 +2369,6 @@ nsHttpConnectionMgr::nsConnectionEntry::~nsConnectionEntry()
 {
     MOZ_COUNT_DTOR(nsConnectionEntry);
     gHttpHandler->ConnMgr()->RemovePreferredHash(this);
-}
-
-void
-nsHttpConnectionMgr::OnMsgProcessFeedback(int32_t, ARefBase *param)
-{
-    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-    nsHttpPipelineFeedback *fb = static_cast<nsHttpPipelineFeedback *>(param);
-    PipelineFeedbackInfo(fb->mConnInfo, fb->mInfo, fb->mConn, fb->mData);
 }
 
 
@@ -3410,12 +3059,10 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
                 trans = mTransaction;
             } else {
                 trans = new NullHttpTransaction(mEnt->mConnInfo,
-                                                callbacks,
-                                                mCaps & ~NS_HTTP_ALLOW_PIPELINING);
+                                                callbacks, mCaps);
             }
 
             gHttpHandler->ConnMgr()->AddActiveConn(conn, mEnt);
-            conn->Classify(nsAHttpTransaction::CLASS_SOLO);
             rv = gHttpHandler->ConnMgr()->
                 DispatchAbstractTransaction(mEnt, trans, mCaps, conn, 0);
         } else {
@@ -3545,35 +3192,12 @@ ConnectionHandle::TakeHttpConnection()
     return mConn.forget();
 }
 
-uint32_t
-ConnectionHandle::CancelPipeline(nsresult reason)
-{
-    
-    return 0;
-}
-
-nsAHttpTransaction::Classifier
-ConnectionHandle::Classification()
-{
-    if (mConn)
-        return mConn->Classification();
-
-    LOG(("ConnectionHandle::Classification this=%p "
-         "has null mConn using CLASS_SOLO default", this));
-    return nsAHttpTransaction::CLASS_SOLO;
-}
 
 
 
 nsHttpConnectionMgr::
 nsConnectionEntry::nsConnectionEntry(nsHttpConnectionInfo *ci)
     : mConnInfo(ci)
-    , mPipelineState(PS_YELLOW)
-    , mYellowGoodEvents(0)
-    , mYellowBadEvents(0)
-    , mYellowConnection(nullptr)
-    , mGreenDepth(kPipelineOpen)
-    , mPipeliningPenalty(0)
     , mUsingSpdy(false)
     , mInPreferredHash(false)
     , mPreferIPv4(false)
@@ -3581,12 +3205,6 @@ nsConnectionEntry::nsConnectionEntry(nsHttpConnectionInfo *ci)
     , mUsedForConnection(false)
 {
     MOZ_COUNT_CTOR(nsConnectionEntry);
-    if (gHttpHandler->GetPipelineAggressive()) {
-        mGreenDepth = kPipelineUnlimited;
-        mPipelineState = PS_GREEN;
-    }
-    mInitialGreenDepth = mGreenDepth;
-    memset(mPipeliningClassPenalty, 0, sizeof(int16_t) * nsAHttpTransaction::CLASS_MAX);
 }
 
 bool
@@ -3598,238 +3216,6 @@ nsHttpConnectionMgr::nsConnectionEntry::AvailableForDispatchNow()
 
     return gHttpHandler->ConnMgr()->
         GetSpdyPreferredConn(this) ? true : false;
-}
-
-bool
-nsHttpConnectionMgr::nsConnectionEntry::SupportsPipelining()
-{
-    return mPipelineState != nsHttpConnectionMgr::PS_RED;
-}
-
-nsHttpConnectionMgr::PipeliningState
-nsHttpConnectionMgr::nsConnectionEntry::PipelineState()
-{
-    return mPipelineState;
-}
-
-void
-nsHttpConnectionMgr::
-nsConnectionEntry::OnPipelineFeedbackInfo(
-    nsHttpConnectionMgr::PipelineFeedbackInfoType info,
-    nsHttpConnection *conn,
-    uint32_t data)
-{
-    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-
-    if (mPipelineState == PS_YELLOW) {
-        if (info & kPipelineInfoTypeBad)
-            mYellowBadEvents++;
-        else if (info & (kPipelineInfoTypeNeutral | kPipelineInfoTypeGood))
-            mYellowGoodEvents++;
-    }
-
-    if (mPipelineState == PS_GREEN && info == GoodCompletedOK) {
-        int32_t depth = data;
-        LOG(("Transaction completed at pipeline depth of %d. Host = %s\n",
-             depth, mConnInfo->Origin()));
-
-        if (depth >= 3)
-            mGreenDepth = kPipelineUnlimited;
-    }
-
-    nsAHttpTransaction::Classifier classification;
-    if (conn)
-        classification = conn->Classification();
-    else if (info == BadInsufficientFraming ||
-             info == BadUnexpectedLarge)
-        classification = (nsAHttpTransaction::Classifier) data;
-    else
-        classification = nsAHttpTransaction::CLASS_SOLO;
-
-    if (gHttpHandler->GetPipelineAggressive() &&
-        info & kPipelineInfoTypeBad &&
-        info != BadExplicitClose &&
-        info != RedVersionTooLow &&
-        info != RedBannedServer &&
-        info != RedCorruptedContent &&
-        info != BadInsufficientFraming) {
-        LOG(("minor negative feedback ignored "
-             "because of pipeline aggressive mode"));
-    }
-    else if (info & kPipelineInfoTypeBad) {
-        if ((info & kPipelineInfoTypeRed) && (mPipelineState != PS_RED)) {
-            LOG(("transition to red from %d. Host = %s.\n",
-                 mPipelineState, mConnInfo->Origin()));
-            mPipelineState = PS_RED;
-            mPipeliningPenalty = 0;
-        }
-
-        if (mLastCreditTime.IsNull())
-            mLastCreditTime = TimeStamp::Now();
-
-        
-        
-
-        
-        
-        
-        
-
-        switch (info) {
-        case RedVersionTooLow:
-            mPipeliningPenalty += 1000;
-            break;
-        case RedBannedServer:
-            mPipeliningPenalty += 7000;
-            break;
-        case RedCorruptedContent:
-            mPipeliningPenalty += 7000;
-            break;
-        case RedCanceledPipeline:
-            mPipeliningPenalty += 60;
-            break;
-        case BadExplicitClose:
-            mPipeliningClassPenalty[classification] += 250;
-            break;
-        case BadSlowReadMinor:
-            mPipeliningClassPenalty[classification] += 5;
-            break;
-        case BadSlowReadMajor:
-            mPipeliningClassPenalty[classification] += 25;
-            break;
-        case BadInsufficientFraming:
-            mPipeliningClassPenalty[classification] += 7000;
-            break;
-        case BadUnexpectedLarge:
-            mPipeliningClassPenalty[classification] += 120;
-            break;
-
-        default:
-            MOZ_ASSERT(false, "Unknown Bad/Red Pipeline Feedback Event");
-        }
-
-        const int16_t kPenalty = 25000;
-        mPipeliningPenalty = std::min(mPipeliningPenalty, kPenalty);
-        mPipeliningClassPenalty[classification] =
-          std::min(mPipeliningClassPenalty[classification], kPenalty);
-
-        LOG(("Assessing red penalty to %s class %d for event %d. "
-             "Penalty now %d, throttle[%d] = %d\n", mConnInfo->Origin(),
-             classification, info, mPipeliningPenalty, classification,
-             mPipeliningClassPenalty[classification]));
-    }
-    else {
-        
-        
-
-        mPipeliningPenalty = std::max(mPipeliningPenalty - 1, 0);
-        mPipeliningClassPenalty[classification] = std::max(mPipeliningClassPenalty[classification] - 1, 0);
-    }
-
-    if (mPipelineState == PS_RED && !mPipeliningPenalty)
-    {
-        LOG(("transition %s to yellow\n", mConnInfo->Origin()));
-        mPipelineState = PS_YELLOW;
-        mYellowConnection = nullptr;
-    }
-}
-
-void
-nsHttpConnectionMgr::
-nsConnectionEntry::SetYellowConnection(nsHttpConnection *conn)
-{
-    MOZ_ASSERT(!mYellowConnection && mPipelineState == PS_YELLOW,
-               "yellow connection already set or state is not yellow");
-    mYellowConnection = conn;
-    mYellowGoodEvents = mYellowBadEvents = 0;
-}
-
-void
-nsHttpConnectionMgr::
-nsConnectionEntry::OnYellowComplete()
-{
-    if (mPipelineState == PS_YELLOW) {
-        if (mYellowGoodEvents && !mYellowBadEvents) {
-            LOG(("transition %s to green\n", mConnInfo->Origin()));
-            mPipelineState = PS_GREEN;
-            mGreenDepth = mInitialGreenDepth;
-        }
-        else {
-            
-            
-            
-            
-            LOG(("transition %s to red from yellow return\n",
-                 mConnInfo->Origin()));
-            mPipelineState = PS_RED;
-        }
-    }
-
-    mYellowConnection = nullptr;
-}
-
-void
-nsHttpConnectionMgr::
-nsConnectionEntry::CreditPenalty()
-{
-    if (mLastCreditTime.IsNull())
-        return;
-
-    
-    
-
-    TimeStamp now = TimeStamp::Now();
-    TimeDuration elapsedTime = now - mLastCreditTime;
-    uint32_t creditsEarned =
-        static_cast<uint32_t>(elapsedTime.ToSeconds()) >> 4;
-
-    bool failed = false;
-    if (creditsEarned > 0) {
-        mPipeliningPenalty =
-            std::max(int32_t(mPipeliningPenalty - creditsEarned), 0);
-        if (mPipeliningPenalty > 0)
-            failed = true;
-
-        for (int32_t i = 0; i < nsAHttpTransaction::CLASS_MAX; ++i) {
-            mPipeliningClassPenalty[i]  =
-                std::max(int32_t(mPipeliningClassPenalty[i] - creditsEarned), 0);
-            failed = failed || (mPipeliningClassPenalty[i] > 0);
-        }
-
-        
-        mLastCreditTime += TimeDuration::FromSeconds(creditsEarned << 4);
-    }
-    else {
-        failed = true;                         
-    }
-
-    
-    
-    if (!failed)
-        mLastCreditTime = TimeStamp();    
-
-    if (mPipelineState == PS_RED && !mPipeliningPenalty)
-    {
-        LOG(("transition %s to yellow based on time credit\n",
-             mConnInfo->Origin()));
-        mPipelineState = PS_YELLOW;
-        mYellowConnection = nullptr;
-    }
-}
-
-uint32_t
-nsHttpConnectionMgr::
-nsConnectionEntry::MaxPipelineDepth(nsAHttpTransaction::Classifier aClass)
-{
-    
-
-    if ((mPipelineState == PS_RED) || (mPipeliningClassPenalty[aClass] > 0))
-        return 0;
-
-    if (mPipelineState == PS_YELLOW)
-        return kPipelineRestricted;
-
-    return mGreenDepth;
 }
 
 bool

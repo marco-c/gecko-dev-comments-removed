@@ -22,7 +22,6 @@
 #include "mozilla/Telemetry.h"
 #include "nsHttpConnection.h"
 #include "nsHttpHandler.h"
-#include "nsHttpPipeline.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpResponseHead.h"
 #include "nsIOService.h"
@@ -59,7 +58,6 @@ nsHttpConnection::nsHttpConnection()
     , mKeepAlive(true) 
     , mKeepAliveMask(true)
     , mDontReuse(false)
-    , mSupportsPipelining(false) 
     , mIsReused(false)
     , mCompletedProxyConnect(false)
     , mLastTransactionExpectedNoContent(false)
@@ -71,7 +69,6 @@ nsHttpConnection::nsHttpConnection()
     , mTrafficStamp(false)
     , mHttp1xTransactionCount(0)
     , mRemainingConnectionUses(0xffffffff)
-    , mClassification(nsAHttpTransaction::CLASS_GENERAL)
     , mNPNComplete(false)
     , mSetupSSLCalled(false)
     , mUsingSpdyVersion(0)
@@ -141,8 +138,6 @@ nsHttpConnection::Init(nsHttpConnectionInfo *info,
     mConnectedTransport = connectedTransport;
     mConnInfo = info;
     mLastWriteTime = mLastReadTime = PR_IntervalNow();
-    mSupportsPipelining =
-        gHttpHandler->ConnMgr()->SupportsPipelining(mConnInfo);
     mRtt = rtt;
     mMaxHangTime = PR_SecondsToInterval(maxHangTime);
 
@@ -325,7 +320,6 @@ nsHttpConnection::StartSpdy(uint8_t spdyVersion)
              "rv[0x%" PRIx32 "]", this, static_cast<uint32_t>(rv)));
     }
 
-    mSupportsPipelining = false; 
     mIdleTimeout = gHttpHandler->SpdyTimeout();
 
     if (!mTLSFilter) {
@@ -870,38 +864,24 @@ nsHttpConnection::DontReuse()
         mSpdySession->DontReuse();
 }
 
-
-bool
-nsHttpConnection::SupportsPipelining()
-{
-    if (mTransaction &&
-        mTransaction->PipelineDepth() >= mRemainingConnectionUses) {
-        LOG(("nsHttpConnection::SupportsPipelining this=%p deny pipeline "
-             "because current depth %d exceeds max remaining uses %d\n",
-             this, mTransaction->PipelineDepth(), mRemainingConnectionUses));
-        return false;
-    }
-    return mSupportsPipelining && IsKeepAlive() && !mDontReuse;
-}
-
 bool
 nsHttpConnection::CanReuse()
 {
-    if (mDontReuse)
+    if (mDontReuse || !mRemainingConnectionUses) {
         return false;
+    }
 
-    if ((mTransaction ? mTransaction->PipelineDepth() : 0) >=
+    if ((mTransaction ? (mTransaction->IsDone() ? 0 : 1) : 0) >=
         mRemainingConnectionUses) {
         return false;
     }
 
     bool canReuse;
-
-    if (mSpdySession)
+    if (mSpdySession) {
         canReuse = mSpdySession->CanReuse();
-    else
+    } else {
         canReuse = IsKeepAlive();
-
+    }
     canReuse = canReuse && (IdleTime() < mIdleTimeout) && IsAlive();
 
     
@@ -980,64 +960,6 @@ nsHttpConnection::IsAlive()
     return alive;
 }
 
-bool
-nsHttpConnection::SupportsPipelining(nsHttpResponseHead *responseHead)
-{
-    
-    if (mUsingSpdyVersion)
-        return false;
-
-    
-    if (mConnInfo->UsingHttpProxy() && !mConnInfo->UsingConnect()) {
-        
-        return true;
-    }
-
-    
-    nsAutoCString val;
-    responseHead->GetHeader(nsHttp::Server, val);
-
-    
-    
-    if (val.IsEmpty())
-        return true;
-
-    
-    
-    
-
-    static const char *bad_servers[26][6] = {
-        { nullptr }, { nullptr }, { nullptr }, { nullptr },                 
-        { "EFAServer/", nullptr },                                       
-        { nullptr }, { nullptr }, { nullptr }, { nullptr },                 
-        { nullptr }, { nullptr }, { nullptr },                             
-        { "Microsoft-IIS/4.", "Microsoft-IIS/5.", nullptr },             
-        { "Netscape-Enterprise/3.", "Netscape-Enterprise/4.",
-          "Netscape-Enterprise/5.", "Netscape-Enterprise/6.", nullptr }, 
-        { nullptr }, { nullptr }, { nullptr }, { nullptr },                 
-        { nullptr }, { nullptr }, { nullptr }, { nullptr },                 
-        { "WebLogic 3.", "WebLogic 4.","WebLogic 5.", "WebLogic 6.",
-          "Winstone Servlet Engine v0.", nullptr },                      
-        { nullptr }, { nullptr }, { nullptr }                              
-    };
-
-    int index = val.get()[0] - 'A'; 
-    if ((index >= 0) && (index <= 25))
-    {
-        for (int i = 0; bad_servers[index][i] != nullptr; i++) {
-            if (val.Equals(bad_servers[index][i])) {
-                LOG(("looks like this server does not support pipelining"));
-                gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
-                    mConnInfo, nsHttpConnectionMgr::RedBannedServer, this , 0);
-                return false;
-            }
-        }
-    }
-
-    
-    return true;
-}
-
 
 
 
@@ -1095,9 +1017,6 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
         explicitKeepAlive = false;
     }
 
-    
-    mSupportsPipelining = false;
-
     if ((responseHead->Version() < NS_HTTP_VERSION_1_1) ||
         (requestHead->Version() < NS_HTTP_VERSION_1_1)) {
         
@@ -1105,61 +1024,12 @@ nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction *trans,
             mKeepAlive = true;
         else
             mKeepAlive = false;
-
-        
-        gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
-            mConnInfo, nsHttpConnectionMgr::RedVersionTooLow, this, 0);
     }
     else {
         
-        if (explicitClose) {
-            mKeepAlive = false;
-
-            
-            
-            
-            if (mRemainingConnectionUses > 1)
-                gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
-                    mConnInfo, nsHttpConnectionMgr::BadExplicitClose, this, 0);
-        }
-        else {
-            mKeepAlive = true;
-
-            
-            
-            
-            
-            
-            if (!mProxyConnectStream)
-              mSupportsPipelining = SupportsPipelining(responseHead);
-        }
+        mKeepAlive = !explicitClose;
     }
     mKeepAliveMask = mKeepAlive;
-
-    
-    
-    
-    
-    if (mSupportsPipelining) {
-        
-        
-        
-
-        gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
-            mConnInfo, nsHttpConnectionMgr::NeutralExpectedOK, this, 0);
-
-        mSupportsPipelining =
-            gHttpHandler->ConnMgr()->SupportsPipelining(mConnInfo);
-    }
-
-    
-    
-    
-    
-    if (mClassification == nsAHttpTransaction::CLASS_REVALIDATION &&
-        responseStatus != 304) {
-        mClassification = nsAHttpTransaction::CLASS_GENERAL;
-    }
 
     
     
@@ -1386,67 +1256,7 @@ nsHttpConnection::ReadTimeoutTick(PRIntervalTime now)
         nextTickAfter = std::max(nextTickAfter, 1U);
     }
 
-    if (!gHttpHandler->GetPipelineRescheduleOnTimeout())
-        return nextTickAfter;
-
-    PRIntervalTime delta = now - mLastReadTime;
-
-    
-    
-    
-    
-    
-    
-    
-    
-
-    uint32_t pipelineDepth = mTransaction->PipelineDepth();
-    if (pipelineDepth > 1) {
-        
-        
-        nextTickAfter = 1;
-    }
-
-    if (delta >= gHttpHandler->GetPipelineRescheduleTimeout() &&
-        pipelineDepth > 1) {
-
-        
-        
-        LOG(("cancelling pipeline due to a %ums stall - depth %d\n",
-             PR_IntervalToMilliseconds(delta), pipelineDepth));
-
-        nsHttpPipeline *pipeline = mTransaction->QueryPipeline();
-        MOZ_ASSERT(pipeline, "pipelinedepth > 1 without pipeline");
-        
-        
-        
-        if (pipeline) {
-            pipeline->CancelPipeline(NS_ERROR_NET_TIMEOUT);
-            LOG(("Rescheduling the head of line blocked members of a pipeline "
-                 "because reschedule-timeout idle interval exceeded"));
-        }
-    }
-
-    if (delta < gHttpHandler->GetPipelineTimeout())
-        return nextTickAfter;
-
-    if (pipelineDepth <= 1 && !mTransaction->PipelinePosition())
-        return nextTickAfter;
-
-    
-    
-    
-    
-    
-
-    LOG(("canceling transaction stalled for %ums on a pipeline "
-         "of depth %d and scheduled originally at pos %d\n",
-         PR_IntervalToMilliseconds(delta),
-         pipelineDepth, mTransaction->PipelinePosition()));
-
-    
-    CloseTransaction(mTransaction, NS_ERROR_NET_TIMEOUT);
-    return UINT32_MAX;
+    return nextTickAfter;
 }
 
 void
@@ -1938,47 +1748,6 @@ nsHttpConnection::OnSocketReadable()
 
     
     
-    
-    
-
-    
-    
-
-    if (delta > mRtt)
-        delta -= mRtt;
-    else
-        delta = 0;
-
-    static const PRIntervalTime k400ms  = PR_MillisecondsToInterval(400);
-
-    if (delta >= (mRtt + gHttpHandler->GetPipelineRescheduleTimeout())) {
-        LOG(("Read delta ms of %u causing slow read major "
-             "event and pipeline cancellation",
-             PR_IntervalToMilliseconds(delta)));
-
-        gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
-            mConnInfo, nsHttpConnectionMgr::BadSlowReadMajor, this, 0);
-
-        if (gHttpHandler->GetPipelineRescheduleOnTimeout() &&
-            mTransaction->PipelineDepth() > 1) {
-            nsHttpPipeline *pipeline = mTransaction->QueryPipeline();
-            MOZ_ASSERT(pipeline, "pipelinedepth > 1 without pipeline");
-            
-            
-            
-            if (pipeline) {
-                pipeline->CancelPipeline(NS_ERROR_NET_TIMEOUT);
-                LOG(("Rescheduling the head of line blocked members of a "
-                     "pipeline because reschedule-timeout idle interval "
-                     "exceeded"));
-            }
-        }
-    }
-    else if (delta > k400ms) {
-        gHttpHandler->ConnMgr()->PipelineFeedbackInfo(
-            mConnInfo, nsHttpConnectionMgr::BadSlowReadMinor, this, 0);
-    }
-
     mLastReadTime = now;
 
     nsresult rv;
