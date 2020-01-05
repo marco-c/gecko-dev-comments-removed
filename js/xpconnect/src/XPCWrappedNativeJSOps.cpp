@@ -200,7 +200,7 @@ XPC_WN_DoubleWrappedGetter(JSContext* cx, unsigned argc, Value* vp)
 
     
     
-    if (MOZ_UNLIKELY(!nsContentUtils::IsCallerChrome())) {
+    if (MOZ_UNLIKELY(!nsContentUtils::IsSystemCaller(cx))) {
         JS_ReportErrorASCII(cx, "Attempt to use .wrappedJSObject in untrusted code");
         return false;
     }

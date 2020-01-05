@@ -1134,7 +1134,7 @@ ReadScriptOrFunction(nsIObjectInputStream* stream, JSContext* cx,
     
     
     
-    MOZ_RELEASE_ASSERT(nsContentUtils::IsCallerChrome() ||
+    MOZ_RELEASE_ASSERT(nsContentUtils::IsSystemCaller(cx) ||
                        CurrentGlobalOrNull(cx) == xpc::CompilationScope());
 
     uint32_t size;
