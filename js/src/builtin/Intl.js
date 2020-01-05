@@ -1601,41 +1601,14 @@ var collatorInternalProperties = {
         addSpecialMissingLanguageTags(locales);
         return (this._availableLocales = locales);
     },
-    relevantExtensionKeys: ["co", "kn", "kf"]
+    relevantExtensionKeys: ["co", "kn"]
 };
-
-
-
-
-
-
-
-function collatorCaseFirst(locale, usage) {
-    assert(typeof locale === "string", "locale should be string");
-    assert(usage === "sort" || usage === "search", "invalid usage option");
-
-    if (usage === "sort") {
-        
-        
-        
-        var availableLocales = callFunction(collatorInternalProperties.availableLocales,
-                                            collatorInternalProperties);
-        var actualLocale = BestAvailableLocaleIgnoringDefault(availableLocales, locale);
-
-        if (intl_isUpperCaseFirst(actualLocale))
-            return ["upper", "false", "lower"];
-    }
-
-    
-    return ["false", "lower", "upper"];
-}
 
 
 function collatorSortLocaleData(locale) {
     return {
         co: intl_availableCollations(locale),
-        kn: ["false", "true"],
-        kf: collatorCaseFirst(locale, "sort"),
+        kn: ["false", "true"]
     };
 }
 
@@ -1644,7 +1617,6 @@ function collatorSearchLocaleData(locale) {
     return {
         co: [null],
         kn: ["false", "true"],
-        kf: collatorCaseFirst(locale, "search"),
         
         
         sensitivity: "variant"

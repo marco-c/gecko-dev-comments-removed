@@ -50,28 +50,6 @@ InitIntlClass(JSContext* cx, HandleObject obj);
 
 class SharedIntlData
 {
-    struct LinearStringLookup
-    {
-        union {
-            const JS::Latin1Char* latin1Chars;
-            const char16_t* twoByteChars;
-        };
-        bool isLatin1;
-        size_t length;
-        JS::AutoCheckCannotGC nogc;
-        HashNumber hash = 0;
-
-        explicit LinearStringLookup(JSLinearString* string)
-          : isLatin1(string->hasLatin1Chars()), length(string->length())
-        {
-            if (isLatin1)
-                latin1Chars = string->latin1Chars(nogc);
-            else
-                twoByteChars = string->twoByteChars(nogc);
-        }
-    };
-
-  private:
     
 
 
@@ -101,8 +79,17 @@ class SharedIntlData
 
     struct TimeZoneHasher
     {
-        struct Lookup : LinearStringLookup
+        struct Lookup
         {
+            union {
+                const JS::Latin1Char* latin1Chars;
+                const char16_t* twoByteChars;
+            };
+            bool isLatin1;
+            size_t length;
+            JS::AutoCheckCannotGC nogc;
+            HashNumber hash;
+
             explicit Lookup(JSLinearString* timeZone);
         };
 
@@ -182,57 +169,6 @@ class SharedIntlData
     bool tryCanonicalizeTimeZoneConsistentWithIANA(JSContext* cx, JS::HandleString timeZone,
                                                    JS::MutableHandleString result);
 
-  private:
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    using Locale = JSAtom*;
-
-    struct LocaleHasher
-    {
-        struct Lookup : LinearStringLookup
-        {
-            explicit Lookup(JSLinearString* locale);
-        };
-
-        static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
-        static bool match(Locale key, const Lookup& lookup);
-    };
-
-    using LocaleSet = js::GCHashSet<Locale,
-                                    LocaleHasher,
-                                    js::SystemAllocPolicy>;
-
-    LocaleSet upperCaseFirstLocales;
-
-    bool upperCaseFirstInitialized = false;
-
-    
-
-
-    bool ensureUpperCaseFirstLocales(JSContext* cx);
-
-  public:
-    
-
-
-
-    bool isUpperCaseFirst(JSContext* cx, JS::HandleString locale, bool* isUpperFirst);
-
-  public:
     void destroyInstance();
 
     void trace(JSTracer* trc);
@@ -309,15 +245,6 @@ intl_availableCollations(JSContext* cx, unsigned argc, Value* vp);
 
 extern MOZ_MUST_USE bool
 intl_CompareStrings(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool
-intl_isUpperCaseFirst(JSContext* cx, unsigned argc, Value* vp);
 
 
 
