@@ -340,6 +340,15 @@ IsFlexOrGridContainer(const nsIFrame* aFrame)
          t == nsGkAtoms::gridContainerFrame;
 }
 
+
+static inline bool
+IsWebkitBox(const nsIFrame* aFrame)
+{
+  auto containerDisplay = aFrame->StyleDisplay()->mDisplay;
+  return containerDisplay == StyleDisplay::WebkitBox ||
+    containerDisplay == StyleDisplay::WebkitInlineBox;
+}
+
 #if DEBUG
 static void
 AssertAnonymousFlexOrGridItemParent(const nsIFrame* aChild,
@@ -9867,7 +9876,7 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
   }
 
   nsIAtom* containerType = aParentFrame->GetType();
-  const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aParentFrame);
+  const bool isWebkitBox = IsWebkitBox(aParentFrame);
 
   FCItemIterator iter(aItems);
   do {
@@ -12173,7 +12182,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIAtom* containerType = aFrame->GetType();
-    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aFrame);
+    bool isWebkitBox = IsWebkitBox(aFrame);
     if (aPrevSibling && IsAnonymousFlexOrGridItem(aPrevSibling) &&
         iter.item().NeedsAnonFlexOrGridItem(aState, containerType,
                                             isWebkitBox)) {
@@ -12215,10 +12224,9 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIFrame* containerFrame = aFrame->GetParent();
-    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(containerFrame);
     if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState,
                                                   containerFrame->GetType(),
-                                                  isWebkitBox)) {
+                                                  IsWebkitBox(containerFrame))) {
       
       
       RecreateFramesForContent(containerFrame->GetContent(), true,
@@ -12805,11 +12813,7 @@ Iterator::AppendItemsToList(const Iterator& aEnd,
   }
 
   
-  
-  
-  aTargetList.mItems.~LinkedList<FrameConstructionItem>();
-  new (&aTargetList.mItems) LinkedList<FrameConstructionItem>(
-    Move(mList.mItems));
+  aTargetList.mItems = Move(mList.mItems);
 
   
   aTargetList.mInlineCount = mList.mInlineCount;
