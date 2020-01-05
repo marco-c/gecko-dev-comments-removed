@@ -1,8 +1,8 @@
-
-
-
-
-
+# -*- Mode: python; c-basic-offset: 4; indent-tabs-mode: nil; tab-width: 40 -*-
+# vim: set filetype=python:
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
 import os
@@ -70,24 +70,24 @@ def eslint_setup():
 
     module_path = get_eslint_module_path()
 
-    
-    
+    # npm sometimes fails to respect cwd when it is run using check_call so
+    # we manually switch folders here instead.
     os.chdir(get_project_root())
 
     npm_path = get_node_or_npm_path("npm")
     if not npm_path:
         return 1
 
-    extra_parameters = ["--loglevel=error"]
+    extra_parameters = [ "--loglevel=error" ]
 
-    
+    # Install ESLint and external plugins
     cmd = [npm_path, "install"]
     cmd.extend(extra_parameters)
     print("Installing eslint for mach using \"%s\"..." % (" ".join(cmd)))
     if not call_process("eslint", cmd):
         return 1
 
-    
+    # Install in-tree ESLint plugin mozilla.
     cmd = [npm_path, "install",
            os.path.join(module_path, "eslint-plugin-mozilla")]
     cmd.extend(extra_parameters)
@@ -95,7 +95,7 @@ def eslint_setup():
     if not call_process("eslint-plugin-mozilla", cmd):
         return 1
 
-    
+    # Install in-tree ESLint plugin spidermonkey.
     cmd = [npm_path, "install",
            os.path.join(module_path, "eslint-plugin-spidermonkey-js")]
     cmd.extend(extra_parameters)
@@ -127,18 +127,18 @@ def call_process(name, cmd, cwd=None):
 
 
 def expected_eslint_modules():
-    
+    # Read the expected version of ESLint and external modules
     expected_modules_path = os.path.join(get_project_root(), "package.json")
     with open(expected_modules_path, "r") as f:
         expected_modules = json.load(f)["dependencies"]
 
-    
+    # Also read the in-tree ESLint plugin mozilla version
     mozilla_json_path = os.path.join(get_eslint_module_path(),
                                      "eslint-plugin-mozilla", "package.json")
     with open(mozilla_json_path, "r") as f:
         expected_modules["eslint-plugin-mozilla"] = json.load(f)["version"]
 
-    
+    # Also read the in-tree ESLint plugin spidermonkey version
     mozilla_json_path = os.path.join(get_eslint_module_path(),
                                      "eslint-plugin-spidermonkey-js", "package.json")
     with open(mozilla_json_path, "r") as f:
@@ -181,9 +181,9 @@ def version_in_range(version, version_range):
         raise RuntimeError("mach eslint doesn't understand module version %s" % version)
     version = LooseVersion(version)
 
-    
-    
-    
+    # Caret ranges as specified by npm allow changes that do not modify the left-most non-zero
+    # digit in the [major, minor, patch] tuple.  The code below assumes the major digit is
+    # non-zero.
     range_match = CARET_VERSION_RANGE_RE.match(version_range)
     if range_match:
         range_version = range_match.group(1)
@@ -232,7 +232,7 @@ def get_node_or_npm_path(filename, minversion=None):
                 return node_or_npm_path
         except which.WhichError:
             if filename == "node":
-                
+                # Retry it with "nodejs" as Linux tends to prefer nodejs rather than node.
                 return get_node_or_npm_path("nodejs", minversion)
 
     if filename in ('node', 'nodejs'):
@@ -258,7 +258,7 @@ def is_valid(path, minversion=None):
         version_str = subprocess.check_output([path, "--version"],
                                               stderr=subprocess.STDOUT)
         if minversion:
-            
+            # nodejs prefixes its version strings with "v"
             version = LooseVersion(version_str.lstrip('v'))
             return version >= minversion
         return True
@@ -282,7 +282,7 @@ def lint(paths, binary=None, fix=None, setup=None, **lintargs):
 
     module_path = get_project_root()
 
-    
+    # eslint requires at least node 6.9.1
     node_path = get_node_or_npm_path("node", LooseVersion("6.9.1"))
     if not node_path:
         return 1
@@ -297,14 +297,14 @@ def lint(paths, binary=None, fix=None, setup=None, **lintargs):
     if eslint_module_has_issues():
         eslint_setup()
 
-    
-    
-    
-    
-    
-    
-    
-    
+    # Valid binaries are:
+    #  - Any provided by the binary argument.
+    #  - Any pointed at by the ESLINT environmental variable.
+    #  - Those provided by mach eslint --setup.
+    #
+    #  eslint --setup installs some mozilla specific plugins and installs
+    #  all node modules locally. This is the preferred method of
+    #  installation.
 
     if not binary:
         binary = os.environ.get('ESLINT', None)
@@ -320,23 +320,23 @@ def lint(paths, binary=None, fix=None, setup=None, **lintargs):
 
     extra_args = lintargs.get('extra_args') or []
     cmd_args = [binary,
-                
-                
-                
-                
+                # Enable the HTML plugin.
+                # We can't currently enable this in the global config file
+                # because it has bad interactions with the SublimeText
+                # ESLint plugin (bug 1229874).
                 '--plugin', 'html',
-                
+                # This keeps ext as a single argument.
                 '--ext', '[{}]'.format(','.join(EXTENSIONS)),
                 '--format', 'json',
                 ] + extra_args + paths
 
-    
+    # eslint requires that --fix be set before the --ext argument.
     if fix:
         cmd_args.insert(1, '--fix')
 
     shell = False
     if os.environ.get('MSYSTEM') in ('MINGW32', 'MINGW64'):
-        
+        # The eslint binary needs to be run from a shell with msys
         shell = True
 
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -351,7 +351,7 @@ def lint(paths, binary=None, fix=None, setup=None, **lintargs):
         return []
 
     if not proc.output:
-        return []  
+        return []  # no output means success
 
     try:
         jsonresult = json.loads(proc.output[0])
@@ -379,7 +379,7 @@ def lint(paths, binary=None, fix=None, setup=None, **lintargs):
 LINTER = {
     'name': "eslint",
     'description': "JavaScript linter",
-    
+    # ESLint infra handles its own path filtering, so just include cwd
     'include': ['.'],
     'exclude': [],
     'extensions': EXTENSIONS,
