@@ -70,9 +70,9 @@ public:
   explicit ServoElementSnapshot(const Element* aElement);
   ~ServoElementSnapshot();
 
-  bool HasAttrs() { return HasAny(Flags::Attributes); }
+  bool HasAttrs() const { return HasAny(Flags::Attributes); }
 
-  bool HasState() { return HasAny(Flags::State); }
+  bool HasState() const { return HasAny(Flags::State); }
 
   
 
@@ -95,6 +95,7 @@ public:
 
   BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const
   {
+    MOZ_ASSERT(HasAttrs());
     if (aIndex >= mAttrs.Length()) {
       return BorrowedAttrInfo(nullptr, nullptr);
     }
@@ -109,6 +110,7 @@ public:
   const nsAttrValue* GetParsedAttr(nsIAtom* aLocalName,
                                    int32_t aNamespaceID) const
   {
+    MOZ_ASSERT(HasAttrs());
     uint32_t i, len = mAttrs.Length();
     if (aNamespaceID == kNameSpaceID_None) {
       
@@ -135,7 +137,7 @@ public:
     return mIsInChromeDocument;
   }
 
-  bool HasAny(Flags aFlags) { return bool(mContains & aFlags); }
+  bool HasAny(Flags aFlags) const { return bool(mContains & aFlags); }
 
 private:
   
