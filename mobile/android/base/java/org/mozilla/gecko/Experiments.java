@@ -54,6 +54,9 @@ public class Experiments {
     public static final String URLBAR_SHOW_EV_CERT_OWNER = "urlbar-show-ev-cert-owner";
 
     
+    public static final String HLS_VIDEO_PLAYBACK = "hls-video-playback";
+
+    
 
 
 
