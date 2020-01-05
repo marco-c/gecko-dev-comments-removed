@@ -257,10 +257,9 @@ GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy)
   
   
   if (mEncodedThread) {
-    
     NS_DispatchToMainThread(
-      WrapRunnableNM<decltype(&ShutdownEncodedThread),
-                     nsCOMPtr<nsIThread> >(&ShutdownEncodedThread, mEncodedThread));
+      WrapRunnableNM(&ShutdownEncodedThread, nsCOMPtr<nsIThread>(mEncodedThread))
+    );
     mEncodedThread = nullptr;
   }
   if (mPlugin) {

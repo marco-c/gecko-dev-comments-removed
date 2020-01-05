@@ -21,6 +21,7 @@
 #include "mediasink/OutputStreamManager.h"
 #include "mediasink/VideoSink.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/IndexSequence.h"
 #include "mozilla/Logging.h"
 #include "mozilla/mozalloc.h"
 #include "mozilla/MathAlgorithms.h"
@@ -29,6 +30,7 @@
 #include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/Tuple.h"
 
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
@@ -284,17 +286,35 @@ protected:
   MediaQueue<MediaData>& AudioQueue() const { return mMaster->mAudioQueue; }
   MediaQueue<MediaData>& VideoQueue() const { return mMaster->mVideoQueue; }
 
+  template <class S, typename... Args, size_t... Indexes>
+  auto
+  CallEnterMemberFunction(S* aS,
+                          Tuple<Args...>& aTuple,
+                          IndexSequence<Indexes...>)
+    -> decltype(ReturnTypeHelper(&S::Enter))
+  {
+    return aS->Enter(Move(Get<Indexes>(aTuple))...);
+  }
+
   
   
   template <class S, typename... Ts>
-  auto SetState(Ts... aArgs)
+  auto SetState(Ts&&... aArgs)
     -> decltype(ReturnTypeHelper(&S::Enter))
   {
     
     
+    
+    
+    
+    
+    auto copiedArgs = MakeTuple(Forward<Ts>(aArgs)...);
+
+    
+    
     auto master = mMaster;
 
-    auto s = new S(master);
+    auto* s = new S(master);
 
     MOZ_ASSERT(GetState() != s->GetState()
                || GetState() == DECODER_STATE_SEEKING);
@@ -304,7 +324,8 @@ protected:
     Exit();
 
     master->mStateObj.reset(s);
-    return s->Enter(Move(aArgs)...);
+    return CallEnterMemberFunction(s, copiedArgs,
+                                   typename IndexSequenceFor<Ts...>::Type());
   }
 
   RefPtr<MediaDecoder::SeekPromise>
@@ -904,7 +925,7 @@ class MediaDecoderStateMachine::SeekingState
 public:
   explicit SeekingState(Master* aPtr) : StateObject(aPtr) { }
 
-  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob aSeekJob,
+  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aSeekJob,
                                           EventVisibility aVisibility)
   {
     mSeekJob = Move(aSeekJob);
@@ -982,7 +1003,7 @@ public:
   {
   }
 
-  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob aSeekJob,
+  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aSeekJob,
                                           EventVisibility aVisibility)
   {
     MOZ_ASSERT(aSeekJob.mTarget->IsAccurate() || aSeekJob.mTarget->IsFast());
@@ -1441,7 +1462,7 @@ public:
   {
   }
 
-  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob aSeekJob,
+  RefPtr<MediaDecoder::SeekPromise> Enter(SeekJob&& aSeekJob,
                                           EventVisibility aVisibility)
   {
     MOZ_ASSERT(aSeekJob.mTarget->IsNextFrame());
