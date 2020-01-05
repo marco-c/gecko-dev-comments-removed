@@ -72,7 +72,14 @@ private:
   bool                       mDone;
 
   static const uint32_t WATCH_DOG_INTERVAL  = 1000;
-  static const uint32_t WATCH_DOG_MAX_COUNT = 10;
+  static const uint32_t WATCH_DOG_MAX_COUNT =
+#ifdef DEBUG
+    
+                                              30
+#else
+                                              10
+#endif
+  ;
 };
 
 
