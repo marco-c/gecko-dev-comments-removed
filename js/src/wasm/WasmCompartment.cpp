@@ -28,13 +28,11 @@ using namespace js;
 using namespace wasm;
 
 Compartment::Compartment(Zone* zone)
-  : mutatingInstances_(false),
-    interruptedCount_(0)
+  : mutatingInstances_(false)
 {}
 
 Compartment::~Compartment()
 {
-    MOZ_ASSERT(interruptedCount_ == 0);
     MOZ_ASSERT(instances_.empty());
     MOZ_ASSERT(!mutatingInstances_);
 }
@@ -57,23 +55,6 @@ struct InstanceComparator
         return target.codeBase() < instance->codeBase() ? -1 : 1;
     }
 };
-
-void
-Compartment::trace(JSTracer* trc)
-{
-    
-    
-    
-    
-    
-    
-    
-
-    if (interruptedCount_) {
-        for (Instance* i : instances_)
-            i->trace(trc);
-    }
-}
 
 bool
 Compartment::registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj)
@@ -143,17 +124,6 @@ Compartment::lookupCode(const void* pc) const
         return nullptr;
 
     return &instances_[index]->code();
-}
-
-void
-Compartment::setInterrupted(bool interrupted)
-{
-    if (interrupted) {
-        interruptedCount_++;
-    } else {
-        MOZ_ASSERT(interruptedCount_ > 0);
-        interruptedCount_--;
-    }
 }
 
 void

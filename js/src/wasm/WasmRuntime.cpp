@@ -58,22 +58,22 @@ static void*
 WasmHandleExecutionInterrupt()
 {
     WasmActivation* activation = JSContext::innermostWasmActivation();
+    MOZ_ASSERT(activation->interrupted());
 
-    
-    
-    
-    activation->compartment()->wasm.setInterrupted(true);
-    bool success = CheckForInterrupt(activation->cx());
-    activation->compartment()->wasm.setInterrupted(false);
+    if (!CheckForInterrupt(activation->cx())) {
+        
+        
+        
+        
+        
+        return nullptr;
+    }
 
     
     
     void* resumePC = activation->resumePC();
-    activation->setResumePC(nullptr);
-
-    
-    
-    return success ? resumePC : nullptr;
+    activation->finishInterrupt();
+    return resumePC;
 }
 
 static bool
@@ -156,8 +156,10 @@ WasmHandleThrow()
     
     
     FrameIterator iter(activation, FrameIterator::Unwind::True);
-    if (iter.done())
+    if (iter.done()) {
+        MOZ_ASSERT(!activation->interrupted());
         return activation;
+    }
 
     
     
@@ -198,6 +200,7 @@ WasmHandleThrow()
         frame->leave(cx);
      }
 
+    MOZ_ASSERT(!activation->interrupted(), "unwinding clears the interrupt");
     return activation;
 }
 

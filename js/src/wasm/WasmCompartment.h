@@ -39,7 +39,6 @@ class Compartment
 {
     InstanceVector instances_;
     volatile bool  mutatingInstances_;
-    size_t         interruptedCount_;
 
     friend class js::WasmActivation;
 
@@ -58,7 +57,6 @@ class Compartment
   public:
     explicit Compartment(Zone* zone);
     ~Compartment();
-    void trace(JSTracer* trc);
 
     
     
@@ -80,11 +78,6 @@ class Compartment
     
 
     Code* lookupCode(const void* pc) const;
-
-    
-    
-
-    void setInterrupted(bool interrupted);
 
     
 

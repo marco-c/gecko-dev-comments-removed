@@ -1124,7 +1124,7 @@ Simulator::Simulator(JSContext* cx)
     stackLimit_ = 0;
     pc_modified_ = false;
     icount_ = 0L;
-    resume_pc_ = 0;
+    wasm_interrupt_ = false;
     break_pc_ = nullptr;
     break_instr_ = 0;
     single_stepping_ = false;
@@ -1552,6 +1552,30 @@ Simulator::exclusiveMonitorClear()
 
 
 
+void
+Simulator::handleWasmInterrupt()
+{
+    void* pc = (void*)get_pc();
+    uint8_t* fp = (uint8_t*)get_register(r11);
+
+    WasmActivation* activation = JSContext::innermostWasmActivation();
+    const wasm::Code* code = activation->compartment()->wasm.lookupCode(pc);
+    if (!code || !code->segment().containsFunctionPC(pc))
+        return;
+
+    
+    if (!fp)
+        return;
+
+    activation->startInterrupt(pc, fp);
+    set_pc(int32_t(code->segment().interruptCode()));
+}
+
+
+
+
+
+
 
 bool
 Simulator::handleWasmFault(int32_t addr, unsigned numBytes)
@@ -1561,13 +1585,14 @@ Simulator::handleWasmFault(int32_t addr, unsigned numBytes)
         return false;
 
     void* pc = reinterpret_cast<void*>(get_pc());
-    void* fp = reinterpret_cast<void*>(get_register(r11));
+    uint8_t* fp = reinterpret_cast<uint8_t*>(get_register(r11));
     wasm::Instance* instance = wasm::LookupFaultingInstance(act, pc, fp);
     if (!instance || !instance->memoryAccessInGuardRegion((uint8_t*)addr, numBytes))
         return false;
 
     const wasm::MemoryAccess* memoryAccess = instance->code().lookupMemoryAccess(pc);
     if (!memoryAccess) {
+        act->startInterrupt(pc, fp);
         set_pc(int32_t(instance->codeSegment().outOfBoundsCode()));
         return true;
     }
@@ -4776,12 +4801,9 @@ Simulator::execute()
             instructionDecode(instr);
             icount_++;
 
-            int32_t rpc = resume_pc_;
-            if (MOZ_UNLIKELY(rpc != 0)) {
-                
-                JSContext::innermostWasmActivation()->setResumePC((void*)get_pc());
-                set_pc(rpc);
-                resume_pc_ = 0;
+            if (MOZ_UNLIKELY(wasm_interrupt_)) {
+                handleWasmInterrupt();
+                wasm_interrupt_ = false;
             }
         }
         program_counter = get_pc();

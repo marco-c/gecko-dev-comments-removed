@@ -1761,8 +1761,12 @@ class WasmActivation : public Activation
     static unsigned offsetOfExitReason() { return offsetof(WasmActivation, exitReason_); }
 
     
-    void setResumePC(void* pc) { resumePC_ = pc; }
-    void* resumePC() const { return resumePC_; }
+    
+    
+    void startInterrupt(void* pc, uint8_t* fp);
+    void finishInterrupt();
+    bool interrupted() const { return !!resumePC_; }
+    void* resumePC() const { MOZ_ASSERT(interrupted()); return resumePC_; }
 
     
     void unwindExitFP(uint8_t* exitFP);

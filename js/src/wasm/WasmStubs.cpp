@@ -1060,7 +1060,6 @@ static const LiveRegisterSet AllRegsExceptSP(
 
 
 
-
 Offsets
 wasm::GenerateInterruptExit(MacroAssembler& masm, Label* throwLabel)
 {

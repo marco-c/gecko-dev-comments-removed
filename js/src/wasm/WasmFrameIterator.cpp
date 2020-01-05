@@ -56,8 +56,7 @@ FrameIterator::FrameIterator()
     callsite_(nullptr),
     codeRange_(nullptr),
     fp_(nullptr),
-    unwind_(Unwind::False),
-    missingFrameMessage_(false)
+    unwind_(Unwind::False)
 {
     MOZ_ASSERT(done());
 }
@@ -67,64 +66,73 @@ FrameIterator::FrameIterator(WasmActivation* activation, Unwind unwind)
     code_(nullptr),
     callsite_(nullptr),
     codeRange_(nullptr),
-    fp_(nullptr),
-    unwind_(unwind),
-    missingFrameMessage_(false)
+    fp_(activation->exitFP()),
+    unwind_(unwind)
 {
+    MOZ_ASSERT(fp_);
+
     
     
     
     
-    if (void* resumePC = activation->resumePC()) {
-        code_ = activation->compartment()->wasm.lookupCode(resumePC);
-        codeRange_ = code_->lookupRange(resumePC);
-        if (codeRange_->kind() != CodeRange::Function) {
-            
-            
-            codeRange_ = nullptr;
-            missingFrameMessage_ = true;
-        }
+
+    if (!activation->interrupted()) {
+        popFrame();
         MOZ_ASSERT(!done());
         return;
     }
 
-    fp_ = activation->exitFP();
+    
+    
+    
+    
+    
+    
 
-    if (!fp_) {
-        MOZ_ASSERT(done());
-        return;
-    }
+    code_ = activation_->compartment()->wasm.lookupCode(activation->resumePC());
+    MOZ_ASSERT(code_);
 
-    settle();
+    codeRange_ = code_->lookupRange(activation->resumePC());
+    MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
+
+    MOZ_ASSERT(!done());
 }
 
 bool
 FrameIterator::done() const
 {
-    return !codeRange_ && !missingFrameMessage_;
+    MOZ_ASSERT(!!fp_ == !!code_);
+    MOZ_ASSERT(!!fp_ == !!codeRange_);
+    return !fp_;
 }
 
 void
 FrameIterator::operator++()
 {
     MOZ_ASSERT(!done());
-    if (fp_) {
-        settle();
-    } else if (codeRange_) {
-        codeRange_ = nullptr;
-        missingFrameMessage_ = true;
-    } else {
-        MOZ_ASSERT(missingFrameMessage_);
-        missingFrameMessage_ = false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    if (unwind_ == Unwind::True) {
+        if (activation_->interrupted())
+            activation_->finishInterrupt();
+        activation_->unwindExitFP(fp_);
     }
+
+    popFrame();
 }
 
 void
-FrameIterator::settle()
+FrameIterator::popFrame()
 {
-    if (unwind_ == Unwind::True)
-        activation_->unwindExitFP(fp_);
-
     void* returnAddress = ReturnAddressFromFP(fp_);
 
     fp_ = CallerFPFromFP(fp_);
@@ -180,20 +188,6 @@ FrameIterator::functionDisplayAtom() const
     MOZ_ASSERT(!done());
 
     JSContext* cx = activation_->cx();
-
-    if (missingFrameMessage_) {
-        const char* msg = "asm.js/wasm frames may be missing below this one";
-        JSAtom* atom = Atomize(cx, msg, strlen(msg));
-        if (!atom) {
-            cx->clearPendingException();
-            return cx->names().empty;
-        }
-
-        return atom;
-    }
-
-    MOZ_ASSERT(codeRange_);
-
     JSAtom* atom = code_->getFuncAtom(cx, codeRange_->funcIndex());
     if (!atom) {
         cx->clearPendingException();
@@ -207,51 +201,43 @@ unsigned
 FrameIterator::lineOrBytecode() const
 {
     MOZ_ASSERT(!done());
-    return callsite_ ? callsite_->lineOrBytecode()
-                     : (codeRange_ ? codeRange_->funcLineOrBytecode() : 0);
-}
-
-bool
-FrameIterator::hasInstance() const
-{
-    MOZ_ASSERT(!done());
-    return !!fp_;
+    MOZ_ASSERT_IF(!callsite_, activation_->interrupted());
+    return callsite_ ? callsite_->lineOrBytecode() : codeRange_->funcLineOrBytecode();
 }
 
 Instance*
 FrameIterator::instance() const
 {
     MOZ_ASSERT(!done());
-    MOZ_ASSERT(hasInstance());
     return FrameToDebugFrame(fp_)->instance();
 }
 
 bool
 FrameIterator::debugEnabled() const
 {
-    MOZ_ASSERT(!done() && code_);
-    MOZ_ASSERT_IF(!missingFrameMessage_, codeRange_->kind() == CodeRange::Function);
-    MOZ_ASSERT_IF(missingFrameMessage_, !codeRange_ && !fp_);
+    MOZ_ASSERT(!done());
+
     
     return code_->metadata().debugEnabled &&
-           fp_ &&
-           !missingFrameMessage_ &&
            codeRange_->funcIndex() >= code_->metadata().funcImports.length();
 }
 
 DebugFrame*
 FrameIterator::debugFrame() const
 {
-    MOZ_ASSERT(!done() && debugEnabled());
-    MOZ_ASSERT(fp_);
+    MOZ_ASSERT(!done());
+    MOZ_ASSERT(debugEnabled());
     return FrameToDebugFrame(fp_);
 }
 
 const CallSite*
 FrameIterator::debugTrapCallsite() const
 {
-    MOZ_ASSERT(!done() && debugEnabled());
-    MOZ_ASSERT(callsite_->kind() == CallSite::EnterFrame || callsite_->kind() == CallSite::LeaveFrame ||
+    MOZ_ASSERT(!done());
+    MOZ_ASSERT(callsite_);
+    MOZ_ASSERT(debugEnabled());
+    MOZ_ASSERT(callsite_->kind() == CallSite::EnterFrame ||
+               callsite_->kind() == CallSite::LeaveFrame ||
                callsite_->kind() == CallSite::Breakpoint);
     return callsite_;
 }
@@ -524,16 +510,9 @@ void
 ProfilingFrameIterator::initFromExitFP()
 {
     uint8_t* fp = activation_->exitFP();
-    stackAddress_ = fp;
-
-    
-    
-    if (!fp) {
-        MOZ_ASSERT(done());
-        return;
-    }
-
     void* pc = ReturnAddressFromFP(fp);
+
+    stackAddress_ = fp;
 
     code_ = activation_->compartment()->wasm.lookupCode(pc);
     MOZ_ASSERT(code_);
@@ -598,8 +577,6 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         return;
     }
 
-    
-    
     code_ = activation_->compartment()->wasm.lookupCode(state.pc);
 
     const CodeRange* codeRange = nullptr;
@@ -612,6 +589,8 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
             codeRange = &thunk->codeRange;
             codeBase = (uint8_t*) thunk->base;
         } else {
+            
+            
             MOZ_ASSERT(done());
             return;
         }
@@ -947,10 +926,8 @@ wasm::TraceActivations(JSContext* cx, const CooperatingContext& target, JSTracer
 {
     for (ActivationIterator iter(cx, target); !iter.done(); ++iter) {
         if (iter.activation()->isWasm()) {
-            for (FrameIterator fi(iter.activation()->asWasm()); !fi.done(); ++fi) {
-                if (fi.hasInstance())
-                    fi.instance()->trace(trc);
-            }
+            for (FrameIterator fi(iter.activation()->asWasm()); !fi.done(); ++fi)
+                fi.instance()->trace(trc);
         }
     }
 }
