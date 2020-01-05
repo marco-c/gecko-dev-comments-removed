@@ -1385,6 +1385,14 @@ public abstract class GeckoApp
                                     
                                     Log.e(LOGTAG, "An error occurred during restore", ex);
                                     mShouldRestore = false;
+
+                                    if (!getSharedPreferencesForProfile().
+                                            getBoolean(PREFS_IS_FIRST_RUN, true)) {
+                                        
+                                        
+                                        
+                                        Telemetry.addToHistogram("FENNEC_SESSIONSTORE_ALL_FILES_DAMAGED", 1);
+                                    }
                                 }
                             }
                         }
