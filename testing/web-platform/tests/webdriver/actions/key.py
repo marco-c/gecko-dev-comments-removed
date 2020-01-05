@@ -1,9 +1,7 @@
-
-
 import pytest
 
 from support.keys import Keys
-from support.refine import get_keys, filter_dict, get_events
+from support.refine import filter_dict, get_keys, get_events
 
 
 def test_lone_keyup_sends_no_events(session, key_reporter, key_chain):
@@ -13,31 +11,6 @@ def test_lone_keyup_sends_no_events(session, key_reporter, key_chain):
     session.actions.release()
     assert len(get_keys(key_reporter)) == 0
     assert len(get_events(session)) == 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 @pytest.mark.parametrize("value,code", [
