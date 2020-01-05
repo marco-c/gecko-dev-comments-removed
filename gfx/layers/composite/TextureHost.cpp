@@ -364,14 +364,12 @@ TextureHost::NotifyNotUsed()
   
   
   if (!compositor ||
-      compositor->IsDestroyed() ||
-      compositor->AsBasicCompositor() ||
-      HasIntermediateBuffer()) {
+      HasIntermediateBuffer() ||
+      !compositor->NotifyNotUsedAfterComposition(this))
+  {
     static_cast<TextureParent*>(mActor)->NotifyNotUsed(mFwdTransactionId);
     return;
   }
-
-  compositor->NotifyNotUsedAfterComposition(this);
 }
 
 void

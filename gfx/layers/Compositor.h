@@ -18,6 +18,7 @@
 #include "mozilla/gfx/Triangle.h"       
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"            
 #include "nsRegion.h"
@@ -132,7 +133,6 @@ class LayerManagerComposite;
 class CompositorOGL;
 class CompositorD3D11;
 class BasicCompositor;
-class TextureHost;
 class TextureReadLock;
 
 enum SurfaceInitMode
@@ -179,39 +179,20 @@ enum SurfaceInitMode
 
 
 
-class Compositor
+class Compositor : public TextureSourceProvider
 {
 protected:
   virtual ~Compositor();
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(Compositor)
-
   explicit Compositor(widget::CompositorWidget* aWidget,
                       CompositorBridgeParent* aParent = nullptr);
 
-  virtual already_AddRefed<DataTextureSource> CreateDataTextureSource(TextureFlags aFlags = TextureFlags::NO_FLAGS) = 0;
-
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSourceAround(gfx::DataSourceSurface* aSurface) { return nullptr; }
-
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSourceAroundYCbCr(TextureHost* aTexture) { return nullptr; }
-
   virtual bool Initialize(nsCString* const out_failureReason) = 0;
-  virtual void Destroy();
+  virtual void Destroy() override;
   bool IsDestroyed() const { return mIsDestroyed; }
 
   virtual void DetachWidget() { mWidget = nullptr; }
-
-  
-
-
-
-
-
-
-  virtual bool SupportsEffect(EffectTypes aEffect) { return true; }
 
   
 
@@ -224,7 +205,6 @@ public:
 
 
   virtual bool CanUseCanvasLayerForSize(const gfx::IntSize& aSize) = 0;
-  virtual int32_t GetMaxTextureSize() const = 0;
 
   
 
@@ -472,6 +452,16 @@ public:
   virtual CompositorD3D11* AsCompositorD3D11() { return nullptr; }
   virtual BasicCompositor* AsBasicCompositor() { return nullptr; }
 
+  virtual Compositor* AsCompositor() override {
+    return this;
+  }
+
+  TimeStamp GetLastCompositionEndTime() const override {
+    return mLastCompositionEndTime;
+  }
+
+  bool NotifyNotUsedAfterComposition(TextureHost* aTextureHost) override;
+
   
 
 
@@ -548,24 +538,6 @@ public:
     return mParent;
   }
 
-  
-  
-  
-  
-  
-  
-  void UnlockAfterComposition(TextureHost* aTexture);
-
-  
-  
-  
-  
-  
-  
-  void NotifyNotUsedAfterComposition(TextureHost* aTextureHost);
-
-  void FlushPendingNotifyNotUsed();
-
 protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,
                                const gfx::Rect& aVisibleRect,
@@ -574,9 +546,6 @@ protected:
                                uint32_t aFlashCounter);
 
   bool ShouldDrawDiagnostics(DiagnosticFlags);
-
-  
-  void ReadUnlockTextures();
 
   
 
@@ -613,16 +582,6 @@ protected:
                            gfx::Float aOpacity,
                            const gfx::Matrix4x4& aTransform,
                            const gfx::Rect& aVisibleRect);
-
-  
-
-
-  nsTArray<RefPtr<TextureHost>> mUnlockAfterComposition;
-
-  
-
-
-  nsTArray<RefPtr<TextureHost>> mNotifyNotUsedAfterComposition;
 
   
 
