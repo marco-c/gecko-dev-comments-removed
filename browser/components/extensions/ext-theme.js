@@ -1,9 +1,13 @@
+
+
 "use strict";
 
 Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
+
+let themeExtensions = new WeakSet();
 
 
 extensions.on("manifest_theme", (type, directive, extension, manifest) => {
@@ -50,6 +54,7 @@ extensions.on("manifest_theme", (type, directive, extension, manifest) => {
   if (lwtStyles.headerURL &&
       lwtStyles.accentcolor &&
       lwtStyles.textcolor) {
+    themeExtensions.add(extension);
     Services.obs.notifyObservers(null,
       "lightweight-theme-styling-update",
       JSON.stringify(lwtStyles));
@@ -57,6 +62,8 @@ extensions.on("manifest_theme", (type, directive, extension, manifest) => {
 });
 
 extensions.on("shutdown", (type, extension) => {
-  Services.obs.notifyObservers(null, "lightweight-theme-styling-update", null);
+  if (themeExtensions.has(extension)) {
+    Services.obs.notifyObservers(null, "lightweight-theme-styling-update", null);
+  }
 });
 
