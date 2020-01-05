@@ -7,15 +7,14 @@
 
 "use strict";
 
-const TEST_URI = "http://example.com/browser/devtools/client/webconsole/" +
-                 "test/test-console-output-regexp.html";
+const TEST_URI = "data:text/html;charset=utf8,<p>test regexp output";
 
 var inputTests = [
   
   {
     input: "/foo/igym",
     output: "/foo/gimy",
-    printOutput: "Error: source called",
+    printOutput: "/foo/gimy",
     inspectable: true,
   },
 ];

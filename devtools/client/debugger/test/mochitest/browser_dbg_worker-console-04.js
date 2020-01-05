@@ -15,6 +15,11 @@ add_task(function* testPausedByConsole() {
   ok(executed.textContent.includes("1970-01-01T00:00:00.000Z"),
       "Text for message appeared correct");
 
+  info("Check RegExp objects can be used in the console");
+  executed = yield jsterm.execute("new RegExp('.*')");
+  ok(executed.textContent.includes("/.*/"),
+      "Text for message appeared correct");
+
   terminateWorkerInTab(tab, WORKER_URL);
   yield waitForWorkerClose(workerClient);
   yield gDevTools.closeToolbox(TargetFactory.forWorker(workerClient));
