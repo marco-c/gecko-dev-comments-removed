@@ -1535,8 +1535,9 @@ pref("browser.migrate.automigrate.enabled", false);
 pref("browser.migrate.automigrate.daysToOfferUndo", 4);
 pref("browser.migrate.automigrate.ui.enabled", true);
 
-pref("browser.migrate.chrome.history.limit", 0);
-pref("browser.migrate.chrome.history.maxAgeInDays", 0);
+
+pref("browser.migrate.chrome.history.limit", 2000);
+pref("browser.migrate.chrome.history.maxAgeInDays", 180);
 
 
 pref("dom.mozBrowserFramesEnabled", true);
