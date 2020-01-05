@@ -42,20 +42,6 @@ public:
   void HandleNotWaited(const WaitForDataRejectValue& aRejection) override;
 
   ~AccurateSeekTask();
-
-  
-
-
-  const media::TimeUnit mCurrentTimeBeforeSeek;
-  const uint32_t mAudioRate;  
-  bool mDoneAudioSeeking;
-  bool mDoneVideoSeeking;
-
-  
-  
-  
-  
-  RefPtr<MediaData> mFirstVideoFrameAfterSeek;
 };
 
 } 
