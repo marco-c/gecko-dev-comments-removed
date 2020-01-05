@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Log.jsm");
 
@@ -609,117 +609,6 @@ element.isWebElementReference = function (ref) {
 element.generateUUID = function() {
   let uuid = uuidGen.generateUUID().toString();
   return uuid.substring(1, uuid.length - 1);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-element.fromJson = function (
-    obj, seenEls, win, shadowRoot = undefined) {
-  switch (typeof obj) {
-    case "boolean":
-    case "number":
-    case "string":
-      return obj;
-
-    case "object":
-      if (obj === null) {
-        return obj;
-      }
-
-      
-      else if (Array.isArray(obj)) {
-        return obj.map(e => element.fromJson(e, seenEls, win, shadowRoot));
-      }
-
-      
-      else if (Object.keys(obj).includes(element.Key) ||
-          Object.keys(obj).includes(element.LegacyKey)) {
-        let uuid = obj[element.Key] || obj[element.LegacyKey];
-        let el = seenEls.get(uuid, {frame: win, shadowRoot: shadowRoot});
-        if (!el) {
-          throw new WebDriverError(`Unknown element: ${uuid}`);
-        }
-        return el;
-      }
-
-      
-      else {
-        let rv = {};
-        for (let prop in obj) {
-          rv[prop] = element.fromJson(obj[prop], seenEls, win, shadowRoot);
-        }
-        return rv;
-      }
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-element.toJson = function (obj, seenEls) {
-  let t = Object.prototype.toString.call(obj);
-
-  
-  if (t == "[object Undefined]" || t == "[object Null]") {
-    return null;
-  }
-
-  
-  else if (t == "[object Boolean]" || t == "[object Number]" || t == "[object String]") {
-    return obj;
-  }
-
-  
-  else if (element.isCollection(obj)) {
-    return [...obj].map(el => element.toJson(el, seenEls));
-  }
-
-  
-  else if ("nodeType" in obj && obj.nodeType == 1) {
-    let uuid = seenEls.add(obj);
-    return element.makeWebElement(uuid);
-  }
-
-  
-  else {
-    let rv = {};
-    for (let prop in obj) {
-      try {
-        rv[prop] = element.toJson(obj[prop], seenEls);
-      } catch (e if (e.result == Cr.NS_ERROR_NOT_IMPLEMENTED)) {
-        logger.debug(`Skipping ${prop}: ${e.message}`);
-      }
-    }
-    return rv;
-  }
 };
 
 
