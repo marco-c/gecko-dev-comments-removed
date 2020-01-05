@@ -16,6 +16,7 @@ from mozunit import main
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+
 class Entry():
     """Stub replacement for pkg_resources.EntryPoint"""
     def __init__(self, providers):
@@ -25,6 +26,7 @@ class Entry():
         def _providers():
             return self.providers
         return _providers
+
 
 class TestEntryPoints(TestBase):
     """Test integrating with setuptools entry points"""
@@ -41,20 +43,19 @@ class TestEntryPoints(TestBase):
             mod = imp.new_module(b'mach.commands')
             sys.modules[b'mach.commands'] = mod
 
-        mock.return_value = [Entry(['providers'])]
+        mock.return_value = [Entry([self.provider_dir])]
         
         with self.assertRaises(MachError):
             self._run_mach()
 
     @patch('pkg_resources.iter_entry_points')
     def test_load_entry_point_from_file(self, mock):
-        mock.return_value = [Entry([os.path.join('providers', 'basic.py')])]
+        mock.return_value = [Entry([os.path.join(self.provider_dir, 'basic.py')])]
 
         result, stdout, stderr = self._run_mach()
         self.assertIsNone(result)
         self.assertIn('cmd_foo', stdout)
 
 
-
-
-
+if __name__ == '__main__':
+    main()
