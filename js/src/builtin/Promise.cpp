@@ -31,10 +31,12 @@ MillisecondsSinceStartup()
     return (now - mozilla::TimeStamp::ProcessCreation(ignored)).ToMilliseconds();
 }
 
-#define PROMISE_HANDLER_IDENTITY 0
-#define PROMISE_HANDLER_THROWER  1
-#define PROMISE_HANDLER_AWAIT_FULFILLED 2
-#define PROMISE_HANDLER_AWAIT_REJECTED 3
+enum PromiseHandler {
+    PromiseHandlerIdentity = 0,
+    PromiseHandlerThrower,
+    PromiseHandlerAwaitFulfilled,
+    PromiseHandlerAwaitRejected,
+};
 
 enum ResolutionMode {
     ResolveMode,
@@ -47,9 +49,8 @@ enum ResolveFunctionSlots {
 };
 
 enum RejectFunctionSlots {
-    RejectFunctionSlot_Promise = ResolveFunctionSlot_Promise,
+    RejectFunctionSlot_Promise = 0,
     RejectFunctionSlot_ResolveFunction,
-    RejectFunctionSlot_PromiseAllData = RejectFunctionSlot_ResolveFunction,
 };
 
 enum PromiseAllResolveElementFunctionSlots {
@@ -86,7 +87,7 @@ class PromiseAllDataHolder : public NativeObject
     static const Class class_;
     JSObject* promiseObj() { return &getFixedSlot(PromiseAllDataHolderSlot_Promise).toObject(); }
     JSObject* resolveObj() {
-        return getFixedSlot(PromiseAllDataHolderSlot_ResolveFunction).toObjectOrNull();
+        return &getFixedSlot(PromiseAllDataHolderSlot_ResolveFunction).toObject();
     }
     Value valuesArray() { return getFixedSlot(PromiseAllDataHolderSlot_ValuesArray); }
     int32_t remainingCount() {
@@ -126,7 +127,7 @@ NewPromiseAllDataHolder(JSContext* cx, HandleObject resultPromise, HandleValue v
     dataHolder->setFixedSlot(PromiseAllDataHolderSlot_Promise, ObjectValue(*resultPromise));
     dataHolder->setFixedSlot(PromiseAllDataHolderSlot_RemainingElements, Int32Value(1));
     dataHolder->setFixedSlot(PromiseAllDataHolderSlot_ValuesArray, valuesArray);
-    dataHolder->setFixedSlot(PromiseAllDataHolderSlot_ResolveFunction, ObjectOrNullValue(resolve));
+    dataHolder->setFixedSlot(PromiseAllDataHolderSlot_ResolveFunction, ObjectValue(*resolve));
     return dataHolder;
 }
 
@@ -267,12 +268,6 @@ CreateResolvingFunctions(JSContext* cx, HandleValue promise,
     if (!reject)
         return false;
 
-    
-    
-    
-    resolve->setFlags(resolve->flags() | JSFunction::SELF_HOSTED);
-    reject->setFlags(reject->flags() | JSFunction::SELF_HOSTED);
-
     resolve->setExtendedSlot(ResolveFunctionSlot_Promise, promise);
     resolve->setExtendedSlot(ResolveFunctionSlot_RejectFunction, ObjectValue(*reject));
 
@@ -394,8 +389,7 @@ ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp)
     
     
     
-    
-    if (!resolve->getExtendedSlot(ResolveFunctionSlot_RejectFunction).isObject()) {
+    if (promiseVal.isUndefined()) {
         args.rval().setUndefined();
         return true;
     }
@@ -830,12 +824,12 @@ AwaitPromiseReactionJob(JSContext* cx, Handle<PromiseReactionRecord*> reaction,
     RootedValue generatorVal(cx, resultPromise->getFixedSlot(PromiseSlot_AwaitGenerator));
 
     int32_t handlerNum = int32_t(handlerVal.toNumber());
-    MOZ_ASSERT(handlerNum == PROMISE_HANDLER_AWAIT_FULFILLED
-               || handlerNum == PROMISE_HANDLER_AWAIT_REJECTED);
+    MOZ_ASSERT(handlerNum == PromiseHandlerAwaitFulfilled
+               || handlerNum == PromiseHandlerAwaitRejected);
 
     
     
-    if (handlerNum == PROMISE_HANDLER_AWAIT_FULFILLED) {
+    if (handlerNum == PromiseHandlerAwaitFulfilled) {
         if (!AsyncFunctionAwaitedFulfilled(cx, resultPromise, generatorVal, argument))
             return false;
     } else {
@@ -899,11 +893,11 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
         int32_t handlerNum = int32_t(handlerVal.toNumber());
 
         
-        if (handlerNum == PROMISE_HANDLER_IDENTITY) {
+        if (handlerNum == PromiseHandlerIdentity) {
             handlerResult = argument;
         } else {
             
-            MOZ_ASSERT(handlerNum == PROMISE_HANDLER_THROWER);
+            MOZ_ASSERT(handlerNum == PromiseHandlerThrower);
             resolutionMode = RejectMode;
             handlerResult = argument;
         }
@@ -1082,11 +1076,17 @@ GetResolveFunctionFromReject(JSFunction* reject)
 {
     MOZ_ASSERT(reject->maybeNative() == RejectPromiseFunction);
     Value resolveFunVal = reject->getExtendedSlot(RejectFunctionSlot_ResolveFunction);
-    if (IsNativeFunction(resolveFunVal, ResolvePromiseFunction))
-        return &resolveFunVal.toObject().as<JSFunction>();
+    MOZ_ASSERT(IsNativeFunction(resolveFunVal, ResolvePromiseFunction));
+    return &resolveFunVal.toObject().as<JSFunction>();
+}
 
-    PromiseAllDataHolder* resolveFunObj = &resolveFunVal.toObject().as<PromiseAllDataHolder>();
-    return &resolveFunObj->resolveObj()->as<JSFunction>();
+static JSFunction*
+GetRejectFunctionFromResolve(JSFunction* resolve)
+{
+    MOZ_ASSERT(resolve->maybeNative() == ResolvePromiseFunction);
+    Value rejectFunVal = resolve->getExtendedSlot(ResolveFunctionSlot_RejectFunction);
+    MOZ_ASSERT(IsNativeFunction(rejectFunVal, RejectPromiseFunction));
+    return &rejectFunVal.toObject().as<JSFunction>();
 }
 
 static JSFunction*
@@ -1122,8 +1122,7 @@ ClearResolutionFunctionSlots(JSFunction* resolutionFun)
     JSFunction* reject;
     if (resolutionFun->maybeNative() == ResolvePromiseFunction) {
         resolve = resolutionFun;
-        reject = &resolutionFun->getExtendedSlot(ResolveFunctionSlot_RejectFunction)
-                  .toObject().as<JSFunction>();
+        reject = GetRejectFunctionFromResolve(resolutionFun);
     } else {
         resolve = GetResolveFunctionFromReject(resolutionFun);
         reject = resolutionFun;
@@ -1569,7 +1568,6 @@ RunResolutionFunction(JSContext *cx, HandleObject resolutionFun, HandleValue res
     if (promise->state() != JS::PromiseState::Pending)
         return true;
 
-
     if (mode == ResolveMode) {
         if (!PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_RESOLVE_FUNCTION))
             return true;
@@ -1579,7 +1577,6 @@ RunResolutionFunction(JSContext *cx, HandleObject resolutionFun, HandleValue res
     if (!PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_REJECT_FUNCTION))
         return true;
     return RejectMaybeWrappedPromise(cx, promiseObj, result);
-
 }
 
 
@@ -1653,7 +1650,7 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     
     RootedValue nextValue(cx);
     RootedId indexId(cx);
-    RootedValue rejectFunVal(cx, ObjectOrNullValue(reject));
+    RootedValue rejectFunVal(cx, ObjectValue(*reject));
 
     while (true) {
         
@@ -1674,11 +1671,8 @@ PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
 
             
             if (remainingCount == 0) {
-                if (resolve) {
-                    return RunResolutionFunction(cx, resolve, valuesArrayVal, ResolveMode,
-                                                 promiseObj);
-                }
-                return ResolvePromiseInternal(cx, promiseObj, valuesArrayVal);
+                return RunResolutionFunction(cx, resolve, valuesArrayVal, ResolveMode,
+                                             promiseObj);
             }
 
             
@@ -1801,13 +1795,8 @@ PromiseAllResolveElementFunction(JSContext* cx, unsigned argc, Value* vp)
         
         RootedObject resolveAllFun(cx, data->resolveObj());
         RootedObject promiseObj(cx, data->promiseObj());
-        if (!resolveAllFun) {
-            if (!FulfillMaybeWrappedPromise(cx, promiseObj, valuesVal))
-                return false;
-        } else {
-            if (!RunResolutionFunction(cx, resolveAllFun, valuesVal, ResolveMode, promiseObj))
-                return false;
-        }
+        if (!RunResolutionFunction(cx, resolveAllFun, valuesVal, ResolveMode, promiseObj))
+            return false;
     }
 
     
@@ -1888,8 +1877,8 @@ PerformPromiseRace(JSContext *cx, JS::ForOfIterator& iterator, HandleObject C,
     RootedValue CVal(cx, ObjectValue(*C));
 
     RootedValue nextValue(cx);
-    RootedValue resolveFunVal(cx, ObjectOrNullValue(resolve));
-    RootedValue rejectFunVal(cx, ObjectOrNullValue(reject));
+    RootedValue resolveFunVal(cx, ObjectValue(*resolve));
+    RootedValue rejectFunVal(cx, ObjectValue(*reject));
 
     while (true) {
         
@@ -2178,8 +2167,8 @@ js::AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, Hand
         return false;
 
     
-    RootedValue onFulfilled(cx, Int32Value(PROMISE_HANDLER_AWAIT_FULFILLED));
-    RootedValue onRejected(cx, Int32Value(PROMISE_HANDLER_AWAIT_REJECTED));
+    RootedValue onFulfilled(cx, Int32Value(PromiseHandlerAwaitFulfilled));
+    RootedValue onRejected(cx, Int32Value(PromiseHandlerAwaitRejected));
 
     RootedObject incumbentGlobal(cx);
     if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobal))
@@ -2258,12 +2247,12 @@ PerformPromiseThen(JSContext* cx, Handle<PromiseObject*> promise, HandleValue on
     
     RootedValue onFulfilled(cx, onFulfilled_);
     if (!IsCallable(onFulfilled))
-        onFulfilled = Int32Value(PROMISE_HANDLER_IDENTITY);
+        onFulfilled = Int32Value(PromiseHandlerIdentity);
 
     
     RootedValue onRejected(cx, onRejected_);
     if (!IsCallable(onRejected))
-        onRejected = Int32Value(PROMISE_HANDLER_THROWER);
+        onRejected = Int32Value(PromiseHandlerThrower);
 
     RootedObject incumbentGlobal(cx);
     if (!GetObjectFromIncumbentGlobal(cx, &incumbentGlobal))
