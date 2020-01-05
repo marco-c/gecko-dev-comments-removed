@@ -115,38 +115,6 @@ var LISTENED_SYSTEM_EVENTS = [
 
 var global = this;
 
-function BrowserElementProxyForwarder() {
-}
-
-BrowserElementProxyForwarder.prototype = {
-  init: function() {
-    Services.obs.addObserver(this, "browser-element-api:proxy-call", false);
-    addMessageListener("browser-element-api:proxy", this);
-  },
-
-  uninit: function() {
-    Services.obs.removeObserver(this, "browser-element-api:proxy-call", false);
-    removeMessageListener("browser-element-api:proxy", this);
-  },
-
-  
-  observe: function(subject, topic, stringifedData) {
-    if (subject !== content) {
-      return;
-    }
-
-    
-    sendAsyncMessage(topic, JSON.parse(stringifedData));
-  },
-
-  
-  receiveMessage: function(mmMsg) {
-    
-    Services.obs.notifyObservers(
-      content, mmMsg.name, JSON.stringify(mmMsg.json));
-  }
-};
-
 function BrowserElementChild() {
   
   this._windowIDDict = {};
@@ -164,8 +132,6 @@ function BrowserElementChild() {
 
   this._isContentWindowCreated = false;
   this._pendingSetInputMethodActive = [];
-
-  this.forwarder = new BrowserElementProxyForwarder();
 
   this._init();
 };
@@ -225,8 +191,6 @@ BrowserElementChild.prototype = {
     OBSERVED_EVENTS.forEach((aTopic) => {
       Services.obs.addObserver(this, aTopic, false);
     });
-
-    this.forwarder.init();
   },
 
   
@@ -261,9 +225,6 @@ BrowserElementChild.prototype = {
     OBSERVED_EVENTS.forEach((aTopic) => {
       Services.obs.removeObserver(this, aTopic);
     });
-
-    this.forwarder.uninit();
-    this.forwarder = null;
   },
 
   handleEvent: function(event) {
