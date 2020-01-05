@@ -101,13 +101,40 @@ Post(const string& url, const string& payload)
     return false;
   }
 
+  
+  std::string headers = GenerateDateHeader() + "\r\n";
+  headers += kCustomVersionHeader;
+  headers += "\r\n";
+  headers += kContentEncodingHeader;
+
   bool rv = HttpSendRequest(request.get(),
-                             nullptr,
-                             0,
+                            headers.c_str(),
+                            -1L,
                             (LPVOID)payload.c_str(),
                             payload.size());
   if (!rv) {
     PINGSENDER_LOG("ERROR: Could not execute HTTP POST request\n");
+    return false;
+  }
+
+  
+  
+  
+  DWORD statusCode = 0;
+  DWORD bufferLength = sizeof(DWORD);
+  rv = HttpQueryInfo(request.get(),
+                      HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
+                      &statusCode,
+                      &bufferLength,
+                      NULL);
+  if (!rv) {
+    PINGSENDER_LOG("ERROR: Could not get the HTTP status code\n");
+    return false;
+  }
+
+  if (statusCode != 200) {
+    PINGSENDER_LOG("ERROR: Error submitting the HTTP request: code %u\n", statusCode);
+    return false;
   }
 
   return rv;
