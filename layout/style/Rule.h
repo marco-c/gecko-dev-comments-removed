@@ -12,7 +12,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "nsISupports.h"
 #include "nsIDOMCSSRule.h"
-#include "nsWrapperCache.h"
 
 class nsIDocument;
 struct nsRuleData;
@@ -23,9 +22,15 @@ namespace mozilla {
 namespace css {
 class GroupRule;
 
-class Rule : public nsIDOMCSSRule
-           , public nsWrapperCache
-{
+#define DECL_STYLE_RULE_INHERIT_NO_DOMRULE
+
+
+#define DECL_STYLE_RULE_INHERIT                            \
+  DECL_STYLE_RULE_INHERIT_NO_DOMRULE                       \
+  virtual nsIDOMCSSRule* GetDOMRule() override;        \
+  virtual nsIDOMCSSRule* GetExistingDOMRule() override;
+
+class Rule : public nsISupports {
 protected:
   Rule(uint32_t aLineNumber, uint32_t aColumnNumber)
     : mSheet(nullptr),
@@ -46,12 +51,6 @@ protected:
   virtual ~Rule() {}
 
 public:
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Rule)
-
-  
-  NS_DECL_NSIDOMCSSRULE
 
 #ifdef DEBUG
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
@@ -109,17 +108,20 @@ public:
 
   
   
-  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
-    const MOZ_MUST_OVERRIDE = 0;
+  virtual nsIDOMCSSRule* GetDOMRule() = 0;
 
   
-  virtual uint16_t Type() const = 0;
-  virtual void GetCssTextImpl(nsAString& aCssText) const = 0;
+  virtual nsIDOMCSSRule* GetExistingDOMRule() = 0;
+
+  
+  nsresult GetParentRule(nsIDOMCSSRule** aParentRule);
+  nsresult GetParentStyleSheet(nsIDOMCSSStyleSheet** aSheet);
+  Rule* GetCSSRule();
+
   
   
-  Rule* GetParentRule() const;
-  StyleSheet* GetParentStyleSheet() const { return GetStyleSheet(); }
-  nsIDocument* GetParentObject() const { return GetDocument(); }
+  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
+    const MOZ_MUST_OVERRIDE = 0;
 
 protected:
   

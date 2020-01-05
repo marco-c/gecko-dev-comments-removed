@@ -33,10 +33,6 @@ class CSSRuleList;
 class SRIMetadata;
 } 
 
-namespace css {
-class Rule;
-}
-
 
 
 
@@ -152,7 +148,7 @@ public:
   
 
   
-  virtual css::Rule* GetDOMOwnerRule() const = 0;
+  virtual nsIDOMCSSRule* GetDOMOwnerRule() const = 0;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
