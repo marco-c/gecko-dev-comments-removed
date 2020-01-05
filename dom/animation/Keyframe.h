@@ -32,8 +32,6 @@ struct PropertyValuePair
   nsCSSValue mValue;
 
   
-  
-  
   RefPtr<RawServoDeclarationBlock> mServoDeclarationBlock;
 
   bool operator==(const PropertyValuePair&) const;

@@ -1032,8 +1032,8 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
 
     if (servoDeclarationBlock) {
       result.mServoDeclarationBlock = servoDeclarationBlock.forget();
-      return result;
     }
+    return result;
   }
 
   nsCSSValue value;
@@ -1067,13 +1067,6 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
                "The shorthand property of a token stream should be initialized"
                " to unknown");
     value.SetTokenStreamValue(tokenStream);
-  } else {
-    
-    
-    
-    NS_WARNING_ASSERTION(aDocument->GetStyleBackendType() !=
-                           StyleBackendType::Servo,
-                         "Gecko succeeded in parsing where Servo failed");
   }
 
   result.mValue = value;
