@@ -67,12 +67,14 @@ public:
     return sheet ? sheet->AsGecko() : nullptr;
   }
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<Rule> Clone() const override;
   virtual nsIDOMCSSRule* GetDOMRule() override
   {
     return this;
   }
+
+  
+  NS_DECL_NSIDOMCSSRULE
 
   
   NS_DECL_NSIDOMCSSGROUPINGRULE
@@ -89,10 +91,6 @@ public:
 
   
   nsresult SetMedia(nsMediaList* aMedia);
-
-  
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
   
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const override MOZ_MUST_OVERRIDE;
@@ -101,7 +99,7 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
 protected:
-  void AppendConditionText(nsAString& aOutput) const;
+  void AppendConditionText(nsAString& aOutput);
 
   RefPtr<nsMediaList> mMedia;
 };
@@ -123,12 +121,14 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<Rule> Clone() const override;
   virtual nsIDOMCSSRule* GetDOMRule() override
   {
     return this;
   }
+
+  
+  NS_DECL_NSIDOMCSSRULE
 
   
   NS_DECL_NSIDOMCSSGROUPINGRULE
@@ -169,10 +169,6 @@ public:
 
   void SetURLs(URL *aURLs) { mURLs = aURLs; }
 
-  
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
-
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
     const override MOZ_MUST_OVERRIDE;
 
@@ -180,7 +176,7 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 
 protected:
-  void AppendConditionText(nsAString& aOutput) const;
+  void AppendConditionText(nsAString& aOutput);
 
   nsAutoPtr<URL> mURLs; 
 };
@@ -233,9 +229,6 @@ protected:
 
   mozilla::CSSFontFaceDescriptors mDescriptors;
 
-  
-  void GetCssTextImpl(nsAString& aCssText) const;
-
 private:
   
   
@@ -271,18 +264,16 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
+
+  
+  NS_DECL_NSIDOMCSSRULE
 
   
   NS_DECL_NSIDOMCSSFONTFACERULE
 
   void SetDesc(nsCSSFontDesc aDescID, nsCSSValue const & aValue);
   void GetDesc(nsCSSFontDesc aDescID, nsCSSValue & aValue);
-
-  
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
@@ -348,15 +339,13 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
   
-  NS_DECL_NSIDOMCSSFONTFEATUREVALUESRULE
+  NS_DECL_NSIDOMCSSRULE
 
   
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
+  NS_DECL_NSIDOMCSSFONTFEATUREVALUESRULE
 
   const mozilla::FontFamilyList& GetFamilyList() { return mFamilyList; }
   void SetFamilyList(const mozilla::FontFamilyList& aFamilyList);
@@ -438,15 +427,13 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
   
-  NS_DECL_NSIDOMCSSKEYFRAMERULE
+  NS_DECL_NSIDOMCSSRULE
 
   
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
+  NS_DECL_NSIDOMCSSKEYFRAMERULE
 
   const nsTArray<float>& GetKeys() const     { return mKeys; }
   mozilla::css::Declaration* Declaration()   { return mDeclaration; }
@@ -489,7 +476,6 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
   virtual nsIDOMCSSRule* GetDOMRule() override
   {
@@ -497,11 +483,10 @@ public:
   }
 
   
-  NS_DECL_NSIDOMCSSKEYFRAMESRULE
+  NS_DECL_NSIDOMCSSRULE
 
   
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
+  NS_DECL_NSIDOMCSSKEYFRAMESRULE
 
   
   virtual bool UseForPresentation(nsPresContext* aPresContext,
@@ -574,15 +559,13 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
   
-  NS_DECL_NSIDOMCSSPAGERULE
+  NS_DECL_NSIDOMCSSRULE
 
   
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
+  NS_DECL_NSIDOMCSSPAGERULE
 
   mozilla::css::Declaration* Declaration()   { return mDeclaration; }
 
@@ -614,7 +597,6 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
   virtual bool UseForPresentation(nsPresContext* aPresContext,
                                   nsMediaQueryResultCacheKey& aKey) override;
@@ -626,6 +608,9 @@ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
+  NS_DECL_NSIDOMCSSRULE
+
+  
   NS_DECL_NSIDOMCSSGROUPINGRULE
 
   
@@ -633,10 +618,6 @@ public:
 
   
   NS_DECL_NSIDOMCSSSUPPORTSRULE
-
-  
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
 
   virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
@@ -679,15 +660,13 @@ public:
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
   virtual int32_t GetType() const override;
-  using Rule::GetType;
   virtual already_AddRefed<mozilla::css::Rule> Clone() const override;
 
   
-  NS_DECL_NSIDOMCSSCOUNTERSTYLERULE
+  NS_DECL_NSIDOMCSSRULE
 
   
-  uint16_t Type() const override;
-  void GetCssTextImpl(nsAString& aCssText) const override;
+  NS_DECL_NSIDOMCSSCOUNTERSTYLERULE
 
   
   
