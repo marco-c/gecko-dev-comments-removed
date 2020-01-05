@@ -10,19 +10,18 @@ onactivate = function(e) {
     
     result.match_count_before = matched.length;
   }).then(function() {
-    var claimPromise = self.clients.claim().then(function(ret) {
-      result.resolve_value = ret;
-    });
-
-    return claimPromise.then(self.clients.matchAll().then(function(matched) {
-      
-      result.match_count_after = matched.length;
-      for (i = 0; i < matched.length; i++) {
-        matched[i].postMessage(result);
-      }
-      if (result.match_count_after !== 2) {
-        dump("ERROR: claim_worker_1 failed to capture clients.\n");
-      }
-    }));
+    return self.clients.claim();
+  }).then(function(ret) {
+    result.resolve_value = ret;
+    return self.clients.matchAll();
+  }).then(function(matched) {
+    
+    result.match_count_after = matched.length;
+    for (i = 0; i < matched.length; i++) {
+      matched[i].postMessage(result);
+    }
+    if (result.match_count_after !== 2) {
+      dump("ERROR: claim_worker_1 failed to capture clients.\n");
+    }
   });
 }
