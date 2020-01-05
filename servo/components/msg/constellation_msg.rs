@@ -229,6 +229,8 @@ pub enum Msg {
     GetRootPipeline(Sender<Option<PipelineId>>),
     
     FocusMsg(PipelineId),
+    
+    GetClipboardContents(Sender<String>),
 }
 
 
