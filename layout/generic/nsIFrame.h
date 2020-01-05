@@ -3829,7 +3829,7 @@ public:
 
 
 class WeakFrame;
-class AutoWeakFrame
+class MOZ_NONHEAP_CLASS AutoWeakFrame
 {
 public:
   explicit AutoWeakFrame()
@@ -3905,7 +3905,7 @@ private:
 
 
 
-class WeakFrame
+class MOZ_HEAP_CLASS WeakFrame
 {
 public:
   WeakFrame() : mFrame(nullptr) {}
