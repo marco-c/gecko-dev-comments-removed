@@ -72,7 +72,7 @@ add_task(async function testMigrationUnlinks() {
   });
 
   
-  let [engine, server] = configureLegacySync();
+  configureLegacySync();
 
   
   

@@ -134,7 +134,6 @@ this.CryptoUtils = {
 
 
   hkdf: function hkdf(ikm, xts, info, len) {
-    const BLOCKSIZE = 256 / 8;
     if (typeof xts === undefined)
       xts = String.fromCharCode(0, 0, 0, 0, 0, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0, 0,

@@ -273,8 +273,6 @@ add_test(function test_login_error_logOnError_true() {
 add_test(function test_errorLog_dumpAddons() {
   Svc.Prefs.set("log.appender.file.logOnError", true);
 
-  let log = Log.repository.getLogger("Sync.Test.FileLog");
-
   
   
   Svc.Obs.add("services-tests:common:log-manager:cleanup-logs", function onCleanupLogs() {

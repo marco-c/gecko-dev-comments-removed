@@ -64,7 +64,7 @@ add_task(function* test_something() {
   server.registerPathHandler(recordsPath, handleResponse);
 
   
-  let result = yield OneCRLBlocklistClient.maybeSync(2000, Date.now());
+  yield OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
   
   

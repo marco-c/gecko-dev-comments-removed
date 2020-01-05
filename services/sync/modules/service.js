@@ -616,7 +616,7 @@ Sync11Service.prototype = {
             let cryptoResp = cryptoKeys.fetch(this.resource(this.cryptoKeysURL)).response;
 
             if (cryptoResp.success) {
-              let keysChanged = this.handleFetchedKeys(syncKeyBundle, cryptoKeys);
+              this.handleFetchedKeys(syncKeyBundle, cryptoKeys);
               return true;
             } else if (cryptoResp.status == 404) {
               
@@ -1092,8 +1092,6 @@ Sync11Service.prototype = {
   
   
   _remoteSetup: function _remoteSetup(infoResponse) {
-    let reset = false;
-
     if (!this._fetchServerConfiguration()) {
       return false;
     }
@@ -1317,7 +1315,7 @@ Sync11Service.prototype = {
       synchronizer.sync(engineNamesToSync);
       
       
-      let result = cb.wait();
+      cb.wait();
 
       histogram = Services.telemetry.getHistogramById("WEAVE_COMPLETE_SUCCESS_COUNT");
       histogram.add(1);
@@ -1505,7 +1503,7 @@ Sync11Service.prototype = {
     this.upgradeSyncKey(this.syncID);
 
     
-    let wipeTimestamp = this.wipeServer();
+    this.wipeServer();
 
     
     let meta = new WBORecord("meta", "global");
@@ -1521,8 +1519,6 @@ Sync11Service.prototype = {
     this.uploadMetaGlobal(meta);
 
     
-    let engines = [this.clientsEngine].concat(this.engineManager.getAll());
-    let collections = engines.map(engine => engine.name);
     
 
     
