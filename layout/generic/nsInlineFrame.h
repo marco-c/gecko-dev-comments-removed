@@ -116,6 +116,13 @@ public:
              : (!GetNextInFlow());
   }
 
+  
+  
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(
+    mozilla::ServoStyleSet& aStyleSet,
+    nsStyleChangeList& aChangeList,
+    nsChangeHint aHintForThisFrame) override;
+
 protected:
   
   struct InlineReflowInput {

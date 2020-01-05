@@ -19,8 +19,10 @@
 #include "nsDisplayList.h"
 #include "mozilla/Likely.h"
 #include "SVGTextFrame.h"
+#include "nsStyleChangeList.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
+#include "mozilla/ServoStyleSet.h"
 
 #ifdef DEBUG
 #undef NOISY_PUSHING
@@ -1020,6 +1022,65 @@ nsInlineFrame::AccessibleType()
   return a11y::eNoType;
 }
 #endif
+
+void
+nsInlineFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
+                                             nsStyleChangeList& aChangeList,
+                                             nsChangeHint aHintForThisFrame)
+{
+  MOZ_ASSERT(GetStateBits() & NS_FRAME_OWNS_ANON_BOXES,
+             "Why did we get called?");
+  MOZ_ASSERT(GetStateBits() & NS_FRAME_PART_OF_IBSPLIT,
+             "Why did we have the NS_FRAME_OWNS_ANON_BOXES bit set?");
+  
+  
+  MOZ_ASSERT(nsLayoutUtils::FirstContinuationOrIBSplitSibling(this) == this,
+             "Only the primary frame of the inline in a block-inside-inline "
+             "split should have NS_FRAME_OWNS_ANON_BOXES");
+  MOZ_ASSERT(mContent->GetPrimaryFrame() == this,
+             "We should be the primary frame for our element");
+
+  nsPresContext* presContext = PresContext();
+  
+  
+  
+  
+  FramePropertyTable* propTable = presContext->PropertyTable();
+  nsIFrame* blockFrame = propTable->Get(this, nsIFrame::IBSplitSibling());
+  MOZ_ASSERT(blockFrame, "Why did we have an IB split?");
+
+  nsIAtom* pseudo = blockFrame->StyleContext()->GetPseudo();
+  MOZ_ASSERT(pseudo == nsCSSAnonBoxes::mozAnonymousBlock ||
+             pseudo == nsCSSAnonBoxes::mozAnonymousPositionedBlock,
+             "Unexpected kind of style context");
+
+  
+  
+  RefPtr<nsStyleContext> newContext =
+    aStyleSet.ResolveAnonymousBoxStyle(pseudo, StyleContext());
+
+  
+  
+  
+  
+  
+
+  while (blockFrame) {
+    MOZ_ASSERT(!blockFrame->GetPrevContinuation(),
+               "Must be first continuation");
+    
+    
+    
+    
+    for (nsIFrame* cont = blockFrame; cont; cont = cont->GetNextContinuation()) {
+      cont->SetStyleContext(newContext);
+    }
+
+    nsIFrame* nextInline = propTable->Get(blockFrame, nsIFrame::IBSplitSibling());
+    MOZ_ASSERT(nextInline, "There is always a trailing inline in an IB split");
+    blockFrame = propTable->Get(nextInline, nsIFrame::IBSplitSibling());
+  }
+}
 
 
 
