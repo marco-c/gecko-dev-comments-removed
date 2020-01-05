@@ -169,11 +169,11 @@ this.PlacesTestUtils = Object.freeze({
 
 
 
-  frecencyInDB: Task.async(function* (aURI) {
+  fieldInDB: Task.async(function* (aURI, field) {
     let url = aURI instanceof Ci.nsIURI ? new URL(aURI.spec) : new URL(aURI);
     let db = yield PlacesUtils.promiseDBConnection();
     let rows = yield db.executeCached(
-      `SELECT frecency FROM moz_places
+      `SELECT ${field} FROM moz_places
        WHERE url_hash = hash(:url) AND url = :url`,
       { url: url.href });
     return rows[0].getResultByIndex(0);
