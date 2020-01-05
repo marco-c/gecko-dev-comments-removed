@@ -54,6 +54,16 @@ enum class TraversalRootBehavior {
 };
 
 
+
+
+
+
+enum class TraversalRestyleBehavior {
+  Normal,
+  ForReconstruct,
+};
+
+
 enum class UpdateAnimationsTasks : uint8_t {
   CSSAnimations    = 1 << 0,
   CSSTransitions   = 1 << 1,
