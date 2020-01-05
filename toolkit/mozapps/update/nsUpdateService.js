@@ -396,92 +396,53 @@ function getElevationRequired() {
 
 
 function getCanApplyUpdates() {
-  let useService = false;
-  if (shouldUseService()) {
-    
-    
-    LOG("getCanApplyUpdates - bypass the write checks because we'll use the service");
-    useService = true;
+  if (AppConstants.platform == "macosx") {
+    LOG("getCanApplyUpdates - bypass the write since elevation can be used " +
+        "on Mac OS X");
+    return true;
   }
 
-  if (!useService && AppConstants.platform != "macosx") {
-    try {
-      let updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
-      LOG("getCanApplyUpdates - testing write access " + updateTestFile.path);
-      testWriteAccess(updateTestFile, false);
-      if (AppConstants.platform == "win") {
+  if (shouldUseService()) {
+    LOG("getCanApplyUpdates - bypass the write checks because the Windows " +
+        "Maintenance Service can be used");
+    return true;
+  }
+
+  try {
+    
+    
+    
+    
+    
+    
+    let updateTestFile = getUpdateFile([FILE_UPDATE_TEST]);
+    LOG("getCanApplyUpdates - testing write access " + updateTestFile.path);
+    testWriteAccess(updateTestFile, false);
+    if (AppConstants.platform == "win") {
+      
+      
+      
+      
+      
+      let userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper).
+                           userCanElevate;
+      if (!userCanElevate) {
         
-        let windowsVersion = Services.sysinfo.getProperty("version");
-        LOG("getCanApplyUpdates - windowsVersion = " + windowsVersion);
-
-        
-
-
-
-
-
-
-
-
-
-
-        let userCanElevate = false;
-
-        if (parseFloat(windowsVersion) >= 6) {
-          try {
-            
-            
-            Services.dirsvc.get(KEY_UPDROOT, Ci.nsIFile);
-            
-            userCanElevate = Services.appinfo.QueryInterface(Ci.nsIWinAppHelper).
-                             userCanElevate;
-            LOG("getCanApplyUpdates - on Vista, userCanElevate: " + userCanElevate);
-          } catch (ex) {
-            
-            
-            
-            LOG("getCanApplyUpdates - on Vista, appDir is not under Program Files");
-          }
-        }
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        if (!userCanElevate) {
-          
-          let appDirTestFile = getAppBaseDir();
-          appDirTestFile.append(FILE_UPDATE_TEST);
-          LOG("getCanApplyUpdates - testing write access " + appDirTestFile.path);
-          if (appDirTestFile.exists()) {
-            appDirTestFile.remove(false);
-          }
-          appDirTestFile.create(Ci.nsILocalFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+        let appDirTestFile = getAppBaseDir();
+        appDirTestFile.append(FILE_UPDATE_TEST);
+        LOG("getCanApplyUpdates - testing write access " + appDirTestFile.path);
+        if (appDirTestFile.exists()) {
           appDirTestFile.remove(false);
         }
+        appDirTestFile.create(Ci.nsILocalFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+        appDirTestFile.remove(false);
       }
-    } catch (e) {
-      LOG("getCanApplyUpdates - unable to apply updates. Exception: " + e);
-      
-      return false;
     }
-  } 
+  } catch (e) {
+    LOG("getCanApplyUpdates - unable to apply updates. Exception: " + e);
+    
+    return false;
+  }
 
   LOG("getCanApplyUpdates - able to apply updates");
   return true;
@@ -790,81 +751,14 @@ function shouldUseService() {
   
   
   
-  
-  
-  
-  
   if (!AppConstants.MOZ_MAINTENANCE_SERVICE || !isServiceInstalled() ||
-      !getPref("getBoolPref", PREF_APP_UPDATE_SERVICE_ENABLED, false) ||
-      !AppConstants.isPlatformAndVersionAtLeast("win", "5.1") ) {
+      !getPref("getBoolPref", PREF_APP_UPDATE_SERVICE_ENABLED, false)) {
+    LOG("shouldUseService - returning false");
     return false;
   }
 
-  
-  if (Services.sysinfo.getProperty("version") != "5.1") {
-    return true;
-  }
-
-  
-  
-  
-  const BYTE = ctypes.uint8_t;
-  const WORD = ctypes.uint16_t;
-  const DWORD = ctypes.uint32_t;
-  const WCHAR = ctypes.char16_t;
-  const BOOL = ctypes.int;
-  
-  
-  const SZCSDVERSIONLENGTH = 128;
-  const OSVERSIONINFOEXW = new ctypes.StructType("OSVERSIONINFOEXW",
-    [
-      {dwOSVersionInfoSize: DWORD},
-      {dwMajorVersion: DWORD},
-      {dwMinorVersion: DWORD},
-      {dwBuildNumber: DWORD},
-      {dwPlatformId: DWORD},
-      {szCSDVersion: ctypes.ArrayType(WCHAR, SZCSDVERSIONLENGTH)},
-      {wServicePackMajor: WORD},
-      {wServicePackMinor: WORD},
-      {wSuiteMask: WORD},
-      {wProductType: BYTE},
-      {wReserved: BYTE}
-    ]);
-
-  let kernel32 = false;
-  try {
-    kernel32 = ctypes.open("Kernel32");
-  } catch (e) {
-    Cu.reportError("Unable to open kernel32! " + e);
-    return false;
-  }
-
-  if (kernel32) {
-    try {
-      try {
-        let GetVersionEx = kernel32.declare("GetVersionExW",
-                                            ctypes.winapi_abi,
-                                            BOOL,
-                                            OSVERSIONINFOEXW.ptr);
-        let winVer = OSVERSIONINFOEXW();
-        winVer.dwOSVersionInfoSize = OSVERSIONINFOEXW.size;
-
-        if (0 !== GetVersionEx(winVer.address())) {
-          return winVer.wServicePackMajor >= 3;
-        }
-        Cu.reportError("Unknown failure in GetVersionEX (returned 0)");
-        return false;
-      } catch (e) {
-        Cu.reportError("Error getting service pack information. Exception: " + e);
-        return false;
-      }
-    } finally {
-      kernel32.close();
-    }
-  }
-
-  
-  return false;
+  LOG("shouldUseService - returning true");
+  return true;
 }
 
 
@@ -873,23 +767,25 @@ function shouldUseService() {
 
 
 function isServiceInstalled() {
-  if (AppConstants.MOZ_MAINTENANCE_SERVICE && AppConstants.platform == "win") {
-    let installed = 0;
-    try {
-      let wrk = Cc["@mozilla.org/windows-registry-key;1"].
-                createInstance(Ci.nsIWindowsRegKey);
-      wrk.open(wrk.ROOT_KEY_LOCAL_MACHINE,
-               "SOFTWARE\\Mozilla\\MaintenanceService",
-               wrk.ACCESS_READ | wrk.WOW64_64);
-      installed = wrk.readIntValue("Installed");
-      wrk.close();
-    } catch (e) {
-    }
-    installed = installed == 1;  
-    LOG("isServiceInstalled = " + installed);
-    return installed;
+  if (!AppConstants.MOZ_MAINTENANCE_SERVICE || AppConstants.platform != "win") {
+    LOG("isServiceInstalled - returning false");
+    return false;
   }
-  return false;
+
+  let installed = 0;
+  try {
+    let wrk = Cc["@mozilla.org/windows-registry-key;1"].
+              createInstance(Ci.nsIWindowsRegKey);
+    wrk.open(wrk.ROOT_KEY_LOCAL_MACHINE,
+             "SOFTWARE\\Mozilla\\MaintenanceService",
+             wrk.ACCESS_READ | wrk.WOW64_64);
+    installed = wrk.readIntValue("Installed");
+    wrk.close();
+  } catch (e) {
+  }
+  installed = installed == 1;  
+  LOG("isServiceInstalled - returning " + installed);
+  return installed;
 }
 
 
