@@ -20,13 +20,13 @@ class TestSession(MarionetteTestCase):
 
         
         self.assertIn("browserName", caps)
+        self.assertIn("browserVersion", caps)
         self.assertIn("platformName", caps)
         self.assertIn("platformVersion", caps)
 
         
         self.assertIn("rotatable", caps)
         self.assertIn("takesScreenshot", caps)
-        self.assertIn("version", caps)
 
     def test_we_can_get_the_session_id(self):
         
