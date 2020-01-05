@@ -581,7 +581,7 @@ unsafe impl JSTraceable for RwLock<MediaList> {
 }
 
 
-pub struct RootedTraceableSet {
+struct RootedTraceableSet {
     set: Vec<*const JSTraceable>,
 }
 
