@@ -2140,7 +2140,7 @@ ASTSerializer::exportDeclaration(ParseNode* pn, MutableHandleValue dst)
     MOZ_ASSERT(pn->isKind(PNK_EXPORT) ||
                pn->isKind(PNK_EXPORT_FROM) ||
                pn->isKind(PNK_EXPORT_DEFAULT));
-    MOZ_ASSERT(pn->getArity() == pn->isKind(PNK_EXPORT) ? PN_UNARY : PN_BINARY);
+    MOZ_ASSERT(pn->getArity() == (pn->isKind(PNK_EXPORT) ? PN_UNARY : PN_BINARY));
     MOZ_ASSERT_IF(pn->isKind(PNK_EXPORT_FROM), pn->pn_right->isKind(PNK_STRING));
 
     RootedValue decl(cx, NullValue());
@@ -3407,7 +3407,12 @@ ASTSerializer::function(ParseNode* pn, ASTType type, MutableHandleValue dst)
         : GeneratorStyle::None;
 
     bool isAsync = pn->pn_funbox->isAsync();
-    bool isExpression = pn->pn_funbox->isExprBody();
+    bool isExpression =
+#if JS_HAS_EXPR_CLOSURES
+        func->isExprBody();
+#else
+        false;
+#endif
 
     RootedValue id(cx);
     RootedAtom funcAtom(cx, func->name());
