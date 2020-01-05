@@ -117,10 +117,9 @@ TimingParams::ParseEasing(const nsAString& aEasing,
   if (aDocument->IsStyledByServo()) {
     nsTimingFunction timingFunction;
     
-    RefPtr<css::URLExtraData> data =
-      new css::URLExtraData(aDocument->GetDocumentURI(),
-                            aDocument->GetDocumentURI(),
-                            aDocument->NodePrincipal());
+    RefPtr<URLExtraData> data = new URLExtraData(aDocument->GetDocumentURI(),
+                                                 aDocument->GetDocumentURI(),
+                                                 aDocument->NodePrincipal());
     if (!Servo_ParseEasing(&aEasing, data, &timingFunction)) {
       aRv.ThrowTypeError<dom::MSG_INVALID_EASING_ERROR>(aEasing);
       return Nothing();

@@ -1234,8 +1234,8 @@ MappedAttrParser::ParseMappedAttrValue(nsIAtom* aMappedAttrName,
     } else {
       NS_ConvertUTF16toUTF8 value(aMappedAttrValue);
       
-      RefPtr<css::URLExtraData> data =
-        new css::URLExtraData(mBaseURI, mDocURI, mElement->NodePrincipal());
+      RefPtr<URLExtraData> data = new URLExtraData(mBaseURI, mDocURI,
+                                                   mElement->NodePrincipal());
       
       changed = Servo_DeclarationBlock_SetPropertyById(mDecl->AsServo()->Raw(), propertyID,
                                                        &value, false, data);

@@ -1019,10 +1019,9 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
     NS_ConvertUTF16toUTF8 value(aStringValue);
 
     
-    RefPtr<css::URLExtraData> data =
-      new css::URLExtraData(aDocument->GetDocumentURI(),
-                            aDocument->GetDocumentURI(),
-                            aDocument->NodePrincipal());
+    RefPtr<URLExtraData> data = new URLExtraData(aDocument->GetDocumentURI(),
+                                                 aDocument->GetDocumentURI(),
+                                                 aDocument->NodePrincipal());
 
     RefPtr<RawServoDeclarationBlock> servoDeclarationBlock =
       Servo_ParseProperty(&name, &value, data).Consume();

@@ -13,7 +13,7 @@ namespace mozilla {
 
  already_AddRefed<ServoDeclarationBlock>
 ServoDeclarationBlock::FromCssText(const nsAString& aCssText,
-                                   css::URLExtraData* aExtraData)
+                                   URLExtraData* aExtraData)
 {
   NS_ConvertUTF16toUTF8 value(aCssText);
   
