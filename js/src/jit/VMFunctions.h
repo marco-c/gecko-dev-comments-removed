@@ -664,7 +664,9 @@ void PostWriteBarrier(JSRuntime* rt, JSObject* obj);
 void PostWriteElementBarrier(JSRuntime* rt, JSObject* obj, int32_t index);
 void PostGlobalWriteBarrier(JSRuntime* rt, JSObject* obj);
 
-uint32_t GetIndexFromString(JSString* str);
+
+
+int32_t GetIndexFromString(JSString* str);
 
 MOZ_MUST_USE bool
 DebugPrologue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool* mustReturn);
