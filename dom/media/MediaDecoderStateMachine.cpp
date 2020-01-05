@@ -331,7 +331,7 @@ class MediaDecoderStateMachine::WaitForCDMState
 public:
   explicit WaitForCDMState(Master* aPtr) : StateObject(aPtr) {}
 
-  void Enter() {}
+  void Enter(bool aPendingDormant) { mPendingDormant = aPendingDormant; }
 
   State GetState() const override
   {
@@ -349,6 +349,9 @@ public:
     mMaster->mQueuedSeek.mTarget = aTarget;
     return mMaster->mQueuedSeek.mPromise.Ensure(__func__);
   }
+
+private:
+  bool mPendingDormant = false;
 };
 
 class MediaDecoderStateMachine::DormantState
@@ -976,30 +979,26 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
     mMaster->EnqueueLoadedMetadataEvent();
   }
 
-  if (mPendingDormant) {
-    
-    SetState<DormantState>();
-    return;
-  }
-
   if (waitingForCDM) {
     
     
-    SetState<WaitForCDMState>();
-    return;
-  }
 
-  SetState<DecodingFirstFrameState>();
+    
+    
+    bool pendingDormant = mPendingDormant;
+    SetState<WaitForCDMState>(pendingDormant);
+  } else if (mPendingDormant) {
+    SetState<DormantState>();
+  } else {
+    SetState<DecodingFirstFrameState>();
+  }
 }
 
 bool
 MediaDecoderStateMachine::
 WaitForCDMState::HandleDormant(bool aDormant)
 {
-  if (aDormant) {
-    
-    SetState<DormantState>();
-  }
+  mPendingDormant = aDormant;
   return true;
 }
 
@@ -1008,12 +1007,8 @@ MediaDecoderStateMachine::
 DormantState::HandleDormant(bool aDormant)
 {
   if (!aDormant) {
-    
-    if (Info().IsEncrypted() && !mMaster->mCDMProxy) {
-      SetState<WaitForCDMState>();
-    } else {
-      SetState<DecodingFirstFrameState>();
-    }
+    MOZ_ASSERT(!Info().IsEncrypted() || mMaster->mCDMProxy);
+    SetState<DecodingFirstFrameState>();
   }
   return true;
 }
@@ -1022,7 +1017,11 @@ bool
 MediaDecoderStateMachine::
 WaitForCDMState::HandleCDMProxyReady()
 {
-  SetState<DecodingFirstFrameState>();
+  if (mPendingDormant) {
+    SetState<DormantState>();
+  } else {
+    SetState<DecodingFirstFrameState>();
+  }
   return true;
 }
 
