@@ -1,12 +1,14 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::CSSStyleDeclarationMethods;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::Bindings::ElementBinding::ElementMethods;
 use dom::bindings::codegen::Bindings::HTMLElementBinding::HTMLElementMethods;
 use dom::bindings::codegen::Bindings::HTMLIFrameElementBinding::HTMLIFrameElementMethods;
+use dom::bindings::codegen::Bindings::HTMLInputElementBinding::HTMLInputElementMethods;
+use dom::bindings::codegen::Bindings::HTMLOptionElementBinding::HTMLOptionElementMethods;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::Bindings::NodeListBinding::NodeListMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
@@ -16,13 +18,15 @@ use dom::bindings::js::Root;
 use dom::element::Element;
 use dom::htmlelement::HTMLElement;
 use dom::htmliframeelement::HTMLIFrameElement;
+use dom::htmlinputelement::HTMLInputElement;
+use dom::htmloptionelement::HTMLOptionElement;
 use dom::node::Node;
 use dom::window::ScriptHelpers;
 use ipc_channel::ipc::IpcSender;
 use js::jsapi::JSContext;
 use js::jsapi::{HandleValue, RootedValue};
 use js::jsval::UndefinedValue;
-use msg::constellation_msg::PipelineId;
+use msg::constellation_msg::{PipelineId, WindowSizeData};
 use msg::webdriver_msg::{WebDriverFrameId, WebDriverJSError, WebDriverJSResult, WebDriverJSValue};
 use page::Page;
 use script_task::get_page;
@@ -53,7 +57,7 @@ pub unsafe fn jsval_to_webdriver(cx: *mut JSContext, val: HandleValue) -> WebDri
     } else if val.get().is_double() || val.get().is_int32() {
         Ok(WebDriverJSValue::Number(FromJSValConvertible::from_jsval(cx, val, ()).unwrap()))
     } else if val.get().is_string() {
-        
+        //FIXME: use jsstring_to_str when jsval grows to_jsstring
         let string: DOMString = FromJSValConvertible::from_jsval(cx, val, StringificationBehavior::Default).unwrap();
         Ok(WebDriverJSValue::String(String::from(string)))
     } else if val.get().is_null() {
@@ -97,7 +101,7 @@ pub fn handle_get_frame_id(page: &Rc<Page>,
                            reply: IpcSender<Result<Option<PipelineId>, ()>>) {
     let window = match webdriver_frame_id {
         WebDriverFrameId::Short(_) => {
-            
+            // This isn't supported yet
             Ok(None)
         },
         WebDriverFrameId::Element(x) => {
@@ -159,7 +163,7 @@ pub fn handle_focus_element(page: &Rc<Page>,
         Some(ref node) => {
             match node.downcast::<HTMLElement>() {
                 Some(ref elem) => {
-                    
+                    // Need a way to find if this actually succeeded
                     elem.Focus();
                     Ok(())
                 }
@@ -241,4 +245,50 @@ pub fn handle_get_url(page: &Rc<Page>,
     let document = page.document();
     let url = document.url();
     reply.send((*url).clone()).unwrap();
+}
+
+pub fn handle_get_window_size(page: &Rc<Page>,
+                              _pipeline: PipelineId,
+                              reply: IpcSender<Option<WindowSizeData>>) {
+    let window = page.window();
+    let size = window.window_size();
+    reply.send(size).unwrap();
+}
+
+pub fn handle_is_enabled(page: &Rc<Page>,
+                         pipeline: PipelineId,
+                         element_id: String,
+                         reply: IpcSender<Result<bool, ()>>) {
+    reply.send(match find_node_by_unique_id(page, pipeline, element_id) {
+        Some(ref node) => {
+            match node.downcast::<Element>() {
+                Some(elem) => Ok(elem.get_enabled_state()),
+                None => Err(())
+            }
+        },
+        None => Err(())
+    }).unwrap();
+}
+
+pub fn handle_is_selected(page: &Rc<Page>,
+                          pipeline: PipelineId,
+                          element_id: String,
+                          reply: IpcSender<Result<bool, ()>>) {
+    reply.send(match find_node_by_unique_id(page, pipeline, element_id) {
+        Some(ref node) => {
+            if let Some(input_element) = node.downcast::<HTMLInputElement>() {
+                Ok(input_element.Checked())
+            }
+            else if let Some(option_element) = node.downcast::<HTMLOptionElement>() {
+                Ok(option_element.Selected())
+            }
+            else if let Some(_) = node.downcast::<HTMLElement>() {
+                Ok(false) // regular elements are not selectable
+            }
+            else {
+                Err(())
+            }
+        },
+        None => Err(())
+    }).unwrap();
 }
