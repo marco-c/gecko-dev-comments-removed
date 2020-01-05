@@ -20,8 +20,7 @@
 #include "nsError.h"
 #include "nsIConverterInputStream.h"
 #include "nsIInputStream.h"
-#include "nsIMultiplexInputStream.h"
-#include "nsStringStream.h"
+#include "nsISeekableStream.h"
 #include "nsISupportsImpl.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
@@ -134,23 +133,17 @@ FileReaderSync::ReadAsText(Blob& aBlob,
   }
 
   nsAutoCString encoding;
-
-  nsAutoCString sniffBuf;
-  if (!sniffBuf.SetLength(3, fallible)) {
-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  uint32_t numRead = 0;
-  aRv = stream->Read(sniffBuf.BeginWriting(), sniffBuf.Length(), &numRead);
+  unsigned char sniffBuf[3] = { 0, 0, 0 };
+  uint32_t numRead;
+  aRv = stream->Read(reinterpret_cast<char*>(sniffBuf),
+                     sizeof(sniffBuf), &numRead);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
   
   
-  if (!nsContentUtils::CheckForBOM((const unsigned char*)sniffBuf.BeginReading(),
-                                   numRead, encoding)) {
+  if (!nsContentUtils::CheckForBOM(sniffBuf, numRead, encoding)) {
     
     if (!aEncoding.WasPassed() ||
         !EncodingUtils::FindEncodingForLabel(aEncoding.Value(),
@@ -174,35 +167,20 @@ FileReaderSync::ReadAsText(Blob& aBlob,
     }
   }
 
-  
-  
-  
-  
-
-  nsCOMPtr<nsIInputStream> stringStream;
-  aRv = NS_NewCStringInputStream(getter_AddRefs(stringStream), sniffBuf);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  nsCOMPtr<nsIMultiplexInputStream> multiplexStream =
-    do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1");
-  if (NS_WARN_IF(!multiplexStream)) {
+  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(stream);
+  if (!seekable) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
-  aRv = multiplexStream->AppendStream(stringStream);
+  
+  
+  aRv = seekable->Seek(nsISeekableStream::NS_SEEK_SET, 0);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
-  aRv = multiplexStream->AppendStream(stream);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  aRv = ConvertStream(multiplexStream, encoding.get(), aResult);
+  aRv = ConvertStream(stream, encoding.get(), aResult);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
