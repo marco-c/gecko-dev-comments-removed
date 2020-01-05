@@ -831,7 +831,7 @@ class CodeRange
         Entry,             
         ImportJitExit,     
         ImportInterpExit,  
-        BuiltinNativeExit, 
+        BuiltinThunk,      
         TrapExit,          
         DebugTrap,         
         FarJumpIsland,     
@@ -875,7 +875,7 @@ class CodeRange
         return kind() == Function;
     }
     bool isImportExit() const {
-        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == BuiltinNativeExit;
+        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == BuiltinThunk;
     }
     bool isTrapExit() const {
         return kind() == TrapExit;
@@ -918,10 +918,11 @@ class CodeRange
     }
 
     
+    
 
-    struct PC {
+    struct OffsetInCode {
         size_t offset;
-        explicit PC(size_t offset) : offset(offset) {}
+        explicit OffsetInCode(size_t offset) : offset(offset) {}
         bool operator==(const CodeRange& rhs) const {
             return offset >= rhs.begin() && offset < rhs.end();
         }
@@ -932,6 +933,9 @@ class CodeRange
 };
 
 WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
+
+extern const CodeRange*
+LookupInSorted(const CodeRangeVector& codeRanges, CodeRange::OffsetInCode target);
 
 
 

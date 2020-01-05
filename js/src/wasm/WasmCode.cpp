@@ -95,7 +95,7 @@ AllocateCodeSegment(JSContext* cx, uint32_t codeLength)
 }
 
 static bool
-StaticallyLink(JSContext* cx, CodeSegment& cs, const LinkData& linkData)
+StaticallyLink(CodeSegment& cs, const LinkData& linkData)
 {
     for (LinkData::InternalLink link : linkData.internalLinks) {
         uint8_t* patchAt = cs.base() + link.patchAtOffset;
@@ -106,15 +106,15 @@ StaticallyLink(JSContext* cx, CodeSegment& cs, const LinkData& linkData)
             Assembler::PatchInstructionImmediate(patchAt, PatchedImmPtr(target));
     }
 
+    if (!EnsureBuiltinThunksInitialized())
+        return false;
+
     for (auto imm : MakeEnumeratedRange(SymbolicAddress::Limit)) {
         const Uint32Vector& offsets = linkData.symbolicLinks[imm];
         if (offsets.empty())
             continue;
 
-        void* target = nullptr;
-        if (!cx->runtime()->wasm().getBuiltinThunk(cx, imm, &target))
-            return false;
-
+        void* target = SymbolicAddressTarget(imm);
         for (uint32_t offset : offsets) {
             uint8_t* patchAt = cs.base() + offset;
             Assembler::PatchDataWithValueCheck(CodeLocationLabel(patchAt),
@@ -211,7 +211,7 @@ CodeSegment::create(JSContext* cx,
         AutoFlushICache::setRange(uintptr_t(codeBase), cs->length());
 
         memcpy(codeBase, bytecode.begin(), bytecode.length());
-        if (!StaticallyLink(cx, *cs, linkData))
+        if (!StaticallyLink(*cs, linkData))
             return nullptr;
     }
 
@@ -363,8 +363,7 @@ Metadata::serializedSize() const
            SerializedPodVectorSize(callSites) +
            SerializedPodVectorSize(funcNames) +
            SerializedPodVectorSize(customSections) +
-           filename.serializedSize() +
-           sizeof(hash);
+           filename.serializedSize();
 }
 
 uint8_t*
@@ -385,7 +384,6 @@ Metadata::serialize(uint8_t* cursor) const
     cursor = SerializePodVector(cursor, funcNames);
     cursor = SerializePodVector(cursor, customSections);
     cursor = filename.serialize(cursor);
-    cursor = WriteBytes(cursor, hash, sizeof(hash));
     return cursor;
 }
 
@@ -403,8 +401,7 @@ Metadata::deserialize(const uint8_t* cursor)
     (cursor = DeserializePodVector(cursor, &callSites)) &&
     (cursor = DeserializePodVector(cursor, &funcNames)) &&
     (cursor = DeserializePodVector(cursor, &customSections)) &&
-    (cursor = filename.deserialize(cursor)) &&
-    (cursor = ReadBytes(cursor, hash, sizeof(hash)));
+    (cursor = filename.deserialize(cursor));
     debugEnabled = false;
     debugTrapFarJumpOffsets.clear();
     debugFuncToCodeRange.clear();
@@ -556,15 +553,8 @@ Code::lookupCallSite(void* returnAddress) const
 const CodeRange*
 Code::lookupRange(void* pc) const
 {
-    CodeRange::PC target((uint8_t*)pc - segment_->base());
-    size_t lowerBound = 0;
-    size_t upperBound = metadata_->codeRanges.length();
-
-    size_t match;
-    if (!BinarySearch(metadata_->codeRanges, lowerBound, upperBound, target, &match))
-        return nullptr;
-
-    return &metadata_->codeRanges[match];
+    CodeRange::OffsetInCode target((uint8_t*)pc - segment_->base());
+    return LookupInSorted(metadata_->codeRanges, target);
 }
 
 struct MemoryAccessOffset
@@ -1066,41 +1056,6 @@ Code::debugGetResultType(uint32_t funcIndex)
 {
     MOZ_ASSERT(metadata_->debugEnabled);
     return metadata_->debugFuncReturnTypes[funcIndex];
-}
-
-JSString*
-Code::debugDisplayURL(JSContext* cx) const
-{
-    
-    
-    
-    
-    js::StringBuffer result(cx);
-    if (!result.append("wasm:"))
-        return nullptr;
-    if (const char* filename = metadata_->filename.get()) {
-        js::StringBuffer filenamePrefix(cx);
-        
-        
-        if (!EncodeURI(cx, filenamePrefix, filename, strlen(filename))) {
-            if (!cx->isExceptionPending())
-                return nullptr;
-            cx->clearPendingException(); 
-        } else if (!result.append(filenamePrefix.finishString()) || !result.append(":")) {
-            return nullptr;
-        }
-    }
-
-    const ModuleHash& hash = metadata().hash;
-    for (size_t i = 0; i < sizeof(ModuleHash); i++) {
-        char digit1 = hash[i] / 16, digit2 = hash[i] % 16;
-        if (!result.append((char)(digit1 < 10 ? digit1 + '0' : digit1 + 'a' - 10)))
-            return nullptr;
-        if (!result.append((char)(digit2 < 10 ? digit2 + '0' : digit2 + 'a' - 10)))
-            return nullptr;
-    }
-    return result.finishString();
-
 }
 
 void
