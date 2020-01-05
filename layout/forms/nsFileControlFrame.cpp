@@ -380,7 +380,7 @@ nsFileControlFrame::DnDListener::IsValidDropData(nsIDOMDataTransfer* aDOMDataTra
 
   
   nsTArray<nsString> types;
-  dataTransfer->GetTypes(types, *nsContentUtils::GetSystemPrincipal());
+  dataTransfer->GetTypes(types, CallerType::System);
 
   return types.Contains(NS_LITERAL_STRING("Files"));
 }

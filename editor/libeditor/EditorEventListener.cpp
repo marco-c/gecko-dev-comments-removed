@@ -935,7 +935,7 @@ EditorEventListener::CanDrop(nsIDOMDragEvent* aEvent)
   NS_ENSURE_TRUE(dataTransfer, false);
 
   nsTArray<nsString> types;
-  dataTransfer->GetTypes(types, *nsContentUtils::GetSystemPrincipal());
+  dataTransfer->GetTypes(types, CallerType::System);
 
   
   
