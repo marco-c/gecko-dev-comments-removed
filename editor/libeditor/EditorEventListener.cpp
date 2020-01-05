@@ -406,22 +406,23 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       return KeyPress(internalEvent->AsKeyboardEvent());
     
     case eMouseDown: {
+      
+      
+      
+      
+      
+      
+      
+      mMouseDownOrUpConsumedByIME =
+        NotifyIMEOfMouseButtonEvent(internalEvent->AsMouseEvent());
+      if (mMouseDownOrUpConsumedByIME) {
+        return NS_OK;
+      }
       nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
-      NS_ENSURE_TRUE(mouseEvent, NS_OK);
-      
-      
-      
-      
-      
-      
-      
-      mMouseDownOrUpConsumedByIME = NotifyIMEOfMouseButtonEvent(mouseEvent);
-      return mMouseDownOrUpConsumedByIME ? NS_OK : MouseDown(mouseEvent);
+      return NS_WARN_IF(!mouseEvent) ? NS_OK : MouseDown(mouseEvent);
     }
     
     case eMouseUp: {
-      nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
-      NS_ENSURE_TRUE(mouseEvent, NS_OK);
       
       
       
@@ -432,10 +433,14 @@ EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
       
       
       
-      if (NotifyIMEOfMouseButtonEvent(mouseEvent)) {
+      if (NotifyIMEOfMouseButtonEvent(internalEvent->AsMouseEvent())) {
         mMouseDownOrUpConsumedByIME = true;
       }
-      return mMouseDownOrUpConsumedByIME ? NS_OK : MouseUp(mouseEvent);
+      if (mMouseDownOrUpConsumedByIME) {
+        return NS_OK;
+      }
+      nsCOMPtr<nsIDOMMouseEvent> mouseEvent = do_QueryInterface(aEvent);
+      return NS_WARN_IF(!mouseEvent) ? NS_OK : MouseUp(mouseEvent);
     }
     
     case eMouseClick: {
@@ -741,7 +746,7 @@ EditorEventListener::HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent)
 
 bool
 EditorEventListener::NotifyIMEOfMouseButtonEvent(
-                       nsIDOMMouseEvent* aMouseEvent)
+                       WidgetMouseEvent* aMouseEvent)
 {
   MOZ_ASSERT(aMouseEvent);
 
@@ -751,11 +756,9 @@ EditorEventListener::NotifyIMEOfMouseButtonEvent(
 
   nsPresContext* presContext = GetPresContext();
   NS_ENSURE_TRUE(presContext, false);
-  WidgetMouseEvent* mouseEvent =
-    aMouseEvent->AsEvent()->WidgetEventPtr()->AsMouseEvent();
   return IMEStateManager::OnMouseButtonEventInEditor(presContext,
                                                      GetFocusedRootContent(),
-                                                     mouseEvent);
+                                                     aMouseEvent);
 }
 
 nsresult

@@ -80,7 +80,7 @@ protected:
   nsPresContext* GetPresContext();
   nsIContent* GetFocusedRootContent();
   
-  bool NotifyIMEOfMouseButtonEvent(nsIDOMMouseEvent* aMouseEvent);
+  bool NotifyIMEOfMouseButtonEvent(WidgetMouseEvent* aMouseEvent);
   bool EditorHasFocus();
   bool IsFileControlTextBox();
   bool ShouldHandleNativeKeyBindings(WidgetKeyboardEvent* aKeyboardEvent);
