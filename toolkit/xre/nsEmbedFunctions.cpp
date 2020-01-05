@@ -86,6 +86,11 @@
 #include "mozilla/Preferences.h"
 #endif
 
+#if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
+#include "mozilla/Sandbox.h"
+#include "mozilla/SandboxInfo.h"
+#endif
+
 #ifdef MOZ_IPDL_TESTS
 #include "mozilla/_ipdltest/IPDLUnitTests.h"
 #include "mozilla/_ipdltest/IPDLUnitTestProcessChild.h"
@@ -323,6 +328,29 @@ AddContentSandboxLevelAnnotation()
 #endif 
 #endif 
 
+#if defined (XP_LINUX) && defined(MOZ_GMP_SANDBOX)
+namespace {
+class LinuxSandboxStarter : public mozilla::gmp::SandboxStarter {
+  LinuxSandboxStarter() { }
+public:
+  static SandboxStarter* Make() {
+    if (mozilla::SandboxInfo::Get().CanSandboxMedia()) {
+      return new LinuxSandboxStarter();
+    } else {
+      
+      
+      return nullptr;
+    }
+    return nullptr;
+  }
+  virtual bool Start(const char *aLibPath) override {
+    mozilla::SetMediaPluginSandbox(aLibPath);
+    return true;
+  }
+};
+} 
+#endif 
+
 nsresult
 XRE_InitChildProcess(int aArgc,
                      char* aArgv[],
@@ -338,16 +366,24 @@ XRE_InitChildProcess(int aArgc,
   setupProfilingStuff();
 #endif
 
-#if !defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_WIDGET_GONK)
+#ifdef XP_LINUX
   
   
-  GMPProcessChild::SetGMPLoader(aChildData->gmpLoader.get());
+  
+  
+  
+  
+  
+  mozilla::gmp::SandboxStarter* starter = nullptr;
+#ifdef MOZ_GMP_SANDBOX
+  starter = LinuxSandboxStarter::Make();
+#endif
+  UniquePtr<GMPLoader> loader = CreateGMPLoader(starter);
+  GMPProcessChild::SetGMPLoader(loader.get());
 #else
   
   
-  
-  UniquePtr<GMPLoader> loader = CreateGMPLoader(nullptr);
-  GMPProcessChild::SetGMPLoader(loader.get());
+  GMPProcessChild::SetGMPLoader(aChildData->gmpLoader.get());
 #endif
 
 #if defined(XP_WIN)
