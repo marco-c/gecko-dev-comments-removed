@@ -921,20 +921,7 @@ endif
 rustflags_override = RUSTFLAGS='$(rustflags)'
 endif
 
-ifdef MOZ_MSVCBITS
-# If we are building a MozillaBuild shell, we want to clear out the
-# vcvars.bat environment variables for cargo builds. This is because
-# a 32-bit MozillaBuild shell on a 64-bit machine will try to use
-# the 32-bit compiler/linker for everything, while cargo/rustc wants
-# to use the 64-bit linker for build.rs scripts. This conflict results
-# in a build failure (see bug 1350001). Clearing out *just* the changes
-# from vcvars.bat is hard, so we just clear out the whole environment.
-environment_cleaner = -i
-else
-environment_cleaner =
-endif
-
-CARGO_BUILD = env $(environment_cleaner) $(rustflags_override) \
+CARGO_BUILD = env $(rustflags_override) \
 	CARGO_TARGET_DIR=$(CARGO_TARGET_DIR) \
 	RUSTC=$(RUSTC) \
 	MOZ_DIST=$(ABS_DIST) \
@@ -942,6 +929,7 @@ CARGO_BUILD = env $(environment_cleaner) $(rustflags_override) \
 	CLANG_PATH=$(MOZ_CLANG_PATH) \
 	PKG_CONFIG_ALLOW_CROSS=1 \
 	RUST_BACKTRACE=1 \
+	MOZ_OBJDIR=$(topobjdir) \
 	$(CARGO) build $(cargo_build_flags)
 
 ifdef RUST_LIBRARY_FILE
