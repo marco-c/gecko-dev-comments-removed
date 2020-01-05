@@ -66,6 +66,11 @@ DriverCrashGuard::InitializeIfNeeded()
 static inline bool
 AreCrashGuardsEnabled()
 {
+  
+  
+  if (XRE_IsGPUProcess()) {
+    return false;
+  }
 #ifdef NIGHTLY_BUILD
   
   
