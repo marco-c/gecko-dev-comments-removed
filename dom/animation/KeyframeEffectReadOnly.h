@@ -203,6 +203,8 @@ public:
                     ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     nsStyleContext* aStyleContext);
+  void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
+                    const ServoComputedStyleValues& aServoValues);
 
   
   
@@ -432,6 +434,9 @@ protected:
 
 private:
   nsChangeHint mCumulativeChangeHint;
+
+  template<typename StyleType>
+  void DoSetKeyframes(nsTArray<Keyframe>&& aKeyframes, StyleType&& aStyle);
 
   template<typename StyleType>
   void DoUpdateProperties(StyleType&& aStyle);
