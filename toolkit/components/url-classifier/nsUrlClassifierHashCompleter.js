@@ -13,6 +13,9 @@ const Cu = Components.utils;
 const COMPLETE_LENGTH = 32;
 const PARTIAL_LENGTH = 4;
 
+
+const MIN_WAIT_DURATION_MAX_VALUE = 24 * 60 * 60 * 1000;
+
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
@@ -165,6 +168,9 @@ function HashCompleter() {
   
   this._shuttingDown = false;
 
+  
+  this._nextGethashTimeMs = {};
+
   Services.obs.addObserver(this, "quit-application", false);
 
 }
@@ -210,6 +216,11 @@ HashCompleter.prototype = {
         10 ,
         0  );
     }
+
+    if (!this._nextGethashTimeMs[aGethashUrl]) {
+      this._nextGethashTimeMs[aGethashUrl] = 0;
+    }
+
     
     
     Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
@@ -223,6 +234,8 @@ HashCompleter.prototype = {
     if (this._shuttingDown) {
       this._currentRequest = null;
       this._pendingRequests = null;
+      this._nextGethashTimeMs = null;
+
       for (var url in this._backoffs) {
         this._backoffs[url] = null;
       }
@@ -256,7 +269,8 @@ HashCompleter.prototype = {
 
   
   canMakeRequest: function(aGethashUrl) {
-    return this._backoffs[aGethashUrl].canMakeRequest();
+    return this._backoffs[aGethashUrl].canMakeRequest() &&
+           Date.now() >= this._nextGethashTimeMs[aGethashUrl];
   },
 
   
@@ -556,6 +570,17 @@ HashCompleterRequest.prototype = {
             "MinWaitDuration(" + aMinWaitDuration + "), " +
             "NegativeCacheDuration(" + aNegCacheDuration + ")");
 
+        let minWaitDuration = aMinWaitDuration;
+
+        if (aMinWaitDuration > MIN_WAIT_DURATION_MAX_VALUE) {
+          minWaitDuration = MIN_WAIT_DURATION_MAX_VALUE;
+        } else if (aMinWaitDuration < 0) {
+          minWaitDuration = 0;
+        }
+
+        this._completer._nextGethashTimeMs[this.gethashUrl] =
+          Date.now() + minWaitDuration;
+
         
       },
     };
@@ -651,6 +676,7 @@ HashCompleterRequest.prototype = {
   onStartRequest: function HCR_onStartRequest(aRequest, aContext) {
     
     
+    this._completer._nextGethashTimeMs[this.gethashUrl] = 0;
   },
 
   onStopRequest: function HCR_onStopRequest(aRequest, aContext, aStatusCode) {
