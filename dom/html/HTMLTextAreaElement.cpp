@@ -327,8 +327,11 @@ HTMLTextAreaElement::SetValueInternal(const nsAString& aValue,
   
   
   
-  SetValueChanged(true);
-  aFlags |= nsTextEditorState::eSetValue_Notify;
+  
+  if (aFlags & nsTextEditorState::eSetValue_Notify) {
+    SetValueChanged(true);
+  }
+
   if (!mState.SetValue(aValue, aFlags)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -350,7 +353,8 @@ HTMLTextAreaElement::SetValue(const nsAString& aValue)
   GetValueInternal(currentValue, true);
 
   nsresult rv =
-    SetValueInternal(aValue, nsTextEditorState::eSetValue_ByContent);
+    SetValueInternal(aValue, nsTextEditorState::eSetValue_ByContent |
+                             nsTextEditorState::eSetValue_Notify);
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mFocusedValue.Equals(currentValue)) {
@@ -363,7 +367,9 @@ HTMLTextAreaElement::SetValue(const nsAString& aValue)
 NS_IMETHODIMP 
 HTMLTextAreaElement::SetUserInput(const nsAString& aValue)
 {
-  return SetValueInternal(aValue, nsTextEditorState::eSetValue_BySetUserInput);
+  return SetValueInternal(aValue,
+                          nsTextEditorState::eSetValue_BySetUserInput |
+                          nsTextEditorState::eSetValue_Notify);
 }
 
 NS_IMETHODIMP
@@ -1043,10 +1049,11 @@ HTMLTextAreaElement::Reset()
   NS_ENSURE_SUCCESS(rv, rv);
   nsAutoString resetVal;
   GetDefaultValue(resetVal);
-  rv = SetValue(resetVal);
+  SetValueChanged(false);
+
+  rv = SetValueInternal(resetVal, nsTextEditorState::eSetValue_Internal);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  SetValueChanged(false);
   return NS_OK;
 }
 
