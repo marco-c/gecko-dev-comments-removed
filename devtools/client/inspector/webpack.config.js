@@ -130,7 +130,7 @@ module.exports = envConfig => {
   ];
 
   
-  webpackConfig.babelExcludes = /(devtools\/|addon-sdk\/|modules\/)/;
+  webpackConfig.babelExcludes = /(devtools(\/|\\)|addon-sdk(\/|\\)|modules(\/|\\))/;
 
   return toolboxConfig(webpackConfig, envConfig);
 };
