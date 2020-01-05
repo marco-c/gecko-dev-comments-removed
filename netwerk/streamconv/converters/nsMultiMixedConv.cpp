@@ -801,9 +801,14 @@ nsMultiMixedConv::SwitchToControlParsing()
 nsMultiMixedConv::nsMultiMixedConv() :
     mCurrentPartID(0),
     mInOnDataAvailable(false),
-    mTokenizer([this](Token const& token, mozilla::IncrementalTokenizer&) -> nsresult {
-        return this->ConsumeToken(token);
-    })
+    
+    
+    
+    
+    
+    
+    
+    mTokenizer(std::bind(&nsMultiMixedConv::ConsumeToken, this, std::placeholders::_1))
 {
     mContentLength      = UINT64_MAX;
     mByteRangeStart     = 0;
