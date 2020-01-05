@@ -8,37 +8,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.support.annotation.NonNull;
-import android.support.design.widget.BottomSheetBehavior;
-import android.support.design.widget.BottomSheetDialog;
 import android.support.design.widget.NavigationView;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.IntentHelper;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
-import org.mozilla.gecko.activitystream.ActivityStream;
+import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.home.HomePager;
-import org.mozilla.gecko.icons.IconCallback;
-import org.mozilla.gecko.icons.IconResponse;
-import org.mozilla.gecko.icons.Icons;
 import org.mozilla.gecko.util.Clipboard;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.UIAsyncTask;
-import org.mozilla.gecko.widget.FaviconView;
 
 import java.util.EnumSet;
 
-import static org.mozilla.gecko.activitystream.ActivityStream.extractLabel;
-
-public class ActivityStreamContextMenu
-    extends BottomSheetDialog
+@RobocopTarget
+public abstract class ActivityStreamContextMenu
         implements NavigationView.OnNavigationItemSelectedListener {
 
     public enum MenuMode {
@@ -54,66 +43,48 @@ public class ActivityStreamContextMenu
     final HomePager.OnUrlOpenListener onUrlOpenListener;
     final HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener;
 
-    boolean isAlreadyBookmarked = false;
+    boolean isAlreadyBookmarked; 
 
-    private ActivityStreamContextMenu(final Context context,
-                                      final MenuMode mode,
-                                      final String title, @NonNull final String url,
-                                      HomePager.OnUrlOpenListener onUrlOpenListener,
-                                      HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener,
-                                      final int tilesWidth, final int tilesHeight) {
-        super(context);
+    public abstract MenuItem getItemByID(int id);
 
+    public abstract void show();
+
+    public abstract void dismiss();
+
+    final MenuMode mode;
+
+     ActivityStreamContextMenu(final Context context,
+                                                    final MenuMode mode,
+                                                    final String title, @NonNull final String url,
+                                                    HomePager.OnUrlOpenListener onUrlOpenListener,
+                                                    HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener) {
         this.context = context;
+
+        this.mode = mode;
 
         this.title = title;
         this.url = url;
         this.onUrlOpenListener = onUrlOpenListener;
         this.onUrlOpenInBackgroundListener = onUrlOpenInBackgroundListener;
+    }
+    
+    
 
-        final LayoutInflater inflater = LayoutInflater.from(context);
 
-        final View content = inflater.inflate(R.layout.activity_stream_contextmenu_layout, null);
-        setContentView(content);
 
-        ((TextView) findViewById(R.id.title)).setText(title);
-        extractLabel(context, url, false, new ActivityStream.LabelCallback() {
-                public void onLabelExtracted(String label) {
-                    ((TextView) findViewById(R.id.url)).setText(label);
-                }
-        });
 
-        
-        final FaviconView faviconView = (FaviconView) findViewById(R.id.icon);
-        ViewGroup.LayoutParams layoutParams = faviconView.getLayoutParams();
-        layoutParams.width = tilesWidth;
-        layoutParams.height = tilesHeight;
-        faviconView.setLayoutParams(layoutParams);
 
-        Icons.with(context)
-                .pageUrl(url)
-                .skipNetwork()
-                .build()
-                .execute(new IconCallback() {
-                    @Override
-                    public void onIconResponse(IconResponse response) {
-                        faviconView.updateImage(response);
-                    }
-                });
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.menu);
-        navigationView.setNavigationItemSelectedListener(this);
-
+    protected void postInit() {
         
         
         
         if (mode == MenuMode.TOPSITE) {
-            final MenuItem dismissItem = navigationView.getMenu().findItem(R.id.dismiss);
+            final MenuItem dismissItem = getItemByID(R.id.dismiss);
             dismissItem.setVisible(false);
         }
 
         
-        final MenuItem bookmarkItem = navigationView.getMenu().findItem(R.id.bookmark);
+        final MenuItem bookmarkItem = getItemByID(R.id.bookmark);
         bookmarkItem.setEnabled(false);
 
         (new UIAsyncTask.WithoutParams<Void>(ThreadUtils.getBackgroundHandler()) {
@@ -134,9 +105,8 @@ public class ActivityStreamContextMenu
         }).execute();
 
         
-        final MenuItem deleteHistoryItem = navigationView.getMenu().findItem(R.id.delete);
+        final MenuItem deleteHistoryItem = getItemByID(R.id.delete);
         deleteHistoryItem.setVisible(false);
-
 
         (new UIAsyncTask.WithoutParams<Void>(ThreadUtils.getBackgroundHandler()) {
             boolean hasHistory;
@@ -164,26 +134,8 @@ public class ActivityStreamContextMenu
                 }
             }
         }).execute();
-
-        BottomSheetBehavior<View> bsBehaviour = BottomSheetBehavior.from((View) content.getParent());
-        bsBehaviour.setPeekHeight(context.getResources().getDimensionPixelSize(R.dimen.activity_stream_contextmenu_peek_height));
     }
 
-    public static ActivityStreamContextMenu show(Context context,
-                            final MenuMode menuMode,
-                            final String title, @NonNull  final String url,
-                            HomePager.OnUrlOpenListener onUrlOpenListener,
-                            HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener,
-                            final int tilesWidth, final int tilesHeight) {
-        final ActivityStreamContextMenu menu = new ActivityStreamContextMenu(context,
-                menuMode,
-                title, url,
-                onUrlOpenListener, onUrlOpenInBackgroundListener,
-                tilesWidth, tilesHeight);
-        menu.show();
-
-        return menu;
-    }
 
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -253,5 +205,26 @@ public class ActivityStreamContextMenu
 
         dismiss();
         return true;
+    }
+
+
+    @RobocopTarget
+    public static ActivityStreamContextMenu show(Context context,
+                                                      View anchor,
+                                                      final MenuMode menuMode,
+                                                      final String title, @NonNull final String url,
+                                                      HomePager.OnUrlOpenListener onUrlOpenListener,
+                                                      HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener,
+                                                      final int tilesWidth, final int tilesHeight) {
+        final ActivityStreamContextMenu menu;
+
+        menu = new BottomSheetContextMenu(context,
+                menuMode,
+                title, url,
+                onUrlOpenListener, onUrlOpenInBackgroundListener,
+                tilesWidth, tilesHeight);
+
+        menu.show();
+        return menu;
     }
 }
