@@ -1057,7 +1057,7 @@ nsInlineFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
   
   
   RefPtr<nsStyleContext> newContext =
-    aStyleSet.ResolveAnonymousBoxStyle(pseudo, StyleContext());
+    aStyleSet.ResolveInheritingAnonymousBoxStyle(pseudo, StyleContext());
 
   
   
@@ -1115,7 +1115,8 @@ nsFirstLineFrame::Init(nsIContent*       aContent,
     
     nsStyleContext* parentContext = aParent->StyleContext();
     RefPtr<nsStyleContext> newSC = PresContext()->StyleSet()->
-      ResolveAnonymousBoxStyle(nsCSSAnonBoxes::mozLineFrame, parentContext);
+      ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::mozLineFrame,
+                                         parentContext);
     SetStyleContext(newSC);
   } else {
     MOZ_ASSERT(FirstInFlow() != aPrevInFlow);

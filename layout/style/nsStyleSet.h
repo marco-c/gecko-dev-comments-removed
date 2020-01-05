@@ -282,8 +282,9 @@ class nsStyleSet final
   
   
   already_AddRefed<nsStyleContext>
-  ResolveAnonymousBoxStyle(nsIAtom* aPseudoTag, nsStyleContext* aParentContext,
-                           uint32_t aFlags = eNoFlags);
+  ResolveInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag,
+                                     nsStyleContext* aParentContext,
+                                     uint32_t aFlags = eNoFlags);
 
   
   
