@@ -560,7 +560,7 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvClassifyLocal(const URIParams& aURI,
                     const nsCString& aTables,
-                    nsCString* aResults) override;
+                    nsTArray<nsCString>* aResults) override;
 
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
