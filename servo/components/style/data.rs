@@ -5,6 +5,7 @@
 
 
 use properties::ComputedValues;
+use rule_tree::StrongRuleNode;
 use selector_impl::PseudoElement;
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
@@ -12,7 +13,7 @@ use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
-type PseudoStylesInner = HashMap<PseudoElement, Arc<ComputedValues>,
+type PseudoStylesInner = HashMap<PseudoElement, (Arc<ComputedValues>, StrongRuleNode),
                                  BuildHasherDefault<::fnv::FnvHasher>>;
 #[derive(Clone, Debug)]
 pub struct PseudoStyles(PseudoStylesInner);
@@ -40,13 +41,17 @@ pub struct ElementStyles {
     pub primary: Arc<ComputedValues>,
 
     
+    pub rule_node: StrongRuleNode,
+
+    
     pub pseudos: PseudoStyles,
 }
 
 impl ElementStyles {
-    pub fn new(primary: Arc<ComputedValues>) -> Self {
+    pub fn new(primary: Arc<ComputedValues>, rule_node: StrongRuleNode) -> Self {
         ElementStyles {
             primary: primary,
+            rule_node: rule_node,
             pseudos: PseudoStyles::empty(),
         }
     }
@@ -183,11 +188,6 @@ impl ElementData {
         if self.restyle_data.is_none() {
             self.restyle_data = Some(RestyleData::new());
         }
-    }
-
-    pub fn style_text_node(&mut self, style: Arc<ComputedValues>) {
-        self.styles = ElementDataStyles::Current(ElementStyles::new(style));
-        self.restyle_data = None;
     }
 
     pub fn finish_styling(&mut self, styles: ElementStyles) {
