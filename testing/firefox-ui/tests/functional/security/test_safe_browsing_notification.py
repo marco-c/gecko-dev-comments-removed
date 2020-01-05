@@ -37,8 +37,8 @@ class TestSafeBrowsingNotificationBar(PuppeteerMixin, MarionetteTestCase):
             }
         ]
 
-        self.puppeteer.prefs.set_pref('browser.safebrowsing.phishing.enabled', True)
-        self.puppeteer.prefs.set_pref('browser.safebrowsing.malware.enabled', True)
+        self.marionette.set_pref('browser.safebrowsing.phishing.enabled', True)
+        self.marionette.set_pref('browser.safebrowsing.malware.enabled', True)
 
         
         

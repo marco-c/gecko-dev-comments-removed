@@ -22,8 +22,8 @@ class TestSSLDisabledErrorPage(PuppeteerMixin, MarionetteTestCase):
         
         
         
-        self.puppeteer.prefs.set_pref('security.tls.version.min', 3)
-        self.puppeteer.prefs.set_pref('security.tls.version.max', 3)
+        self.marionette.set_pref('security.tls.version.min', 3)
+        self.marionette.set_pref('security.tls.version.max', 3)
 
     def tearDown(self):
         try:

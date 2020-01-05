@@ -16,8 +16,8 @@ class TestFaviconInAutocomplete(PuppeteerMixin, MarionetteTestCase):
         super(TestFaviconInAutocomplete, self).setUp()
 
         
-        self.puppeteer.prefs.set_pref(self.PREF_SUGGEST_SEARCHES, False)
-        self.puppeteer.prefs.set_pref(self.PREF_SUGGEST_BOOKMARK, False)
+        self.marionette.set_pref(self.PREF_SUGGEST_SEARCHES, False)
+        self.marionette.set_pref(self.PREF_SUGGEST_BOOKMARK, False)
 
         self.puppeteer.places.remove_all_history()
 
