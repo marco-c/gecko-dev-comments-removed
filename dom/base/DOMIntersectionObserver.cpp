@@ -307,8 +307,25 @@ DOMIntersectionObserver::Update(nsIDocument* aDocument, DOMHighResTimeStamp time
     nsRect targetRect;
     Maybe<nsRect> intersectionRect;
 
-    if (rootFrame && targetFrame &&
-       (!mRoot || nsLayoutUtils::IsAncestorFrameCrossDoc(rootFrame, targetFrame))) {
+    if (rootFrame && targetFrame) {
+      
+      
+      if (mRoot) {
+        
+        
+        
+        if (target->GetComposedDoc() != root->GetComposedDoc()) {
+          continue;
+        }
+        
+        
+        
+        
+        if (!nsLayoutUtils::IsAncestorFrameCrossDoc(rootFrame, targetFrame)) {
+          continue;
+        }
+      }
+
       targetRect = nsLayoutUtils::GetAllInFlowRectsUnion(
         targetFrame,
         nsLayoutUtils::GetContainingBlockForClientRect(targetFrame),
