@@ -147,6 +147,8 @@ class ActionModeCompatView extends LinearLayout implements GeckoMenu.ActionItemB
         if (mActionButtonsWidth + w < maxWidth) {
             
             mActionButtonsWidth += w;
+            
+            actionItem.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
             mActionButtonBar.addView(actionItem);
             return true;
         }
