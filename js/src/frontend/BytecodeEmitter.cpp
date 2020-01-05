@@ -5837,18 +5837,25 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
     if (!emitRequireObjectCoercible())                            
         return false;
 
-    for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
-        if (member->isKind(PNK_SPREAD)) {
-            
-            continue;
-        }
+    bool needsRestPropertyExcludedSet = pattern->pn_count > 1 &&
+                                        pattern->last()->isKind(PNK_SPREAD);
+    if (needsRestPropertyExcludedSet) {
+        if (!emitDestructuringObjRestExclusionSet(pattern))       
+            return false;
 
+        if (!emit1(JSOP_SWAP))                                    
+            return false;
+    }
+
+    for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
         ParseNode* subpattern;
-        if (member->isKind(PNK_MUTATEPROTO))
+        if (member->isKind(PNK_MUTATEPROTO) || member->isKind(PNK_SPREAD))
             subpattern = member->pn_kid;
         else
             subpattern = member->pn_right;
+
         ParseNode* lhs = subpattern;
+        MOZ_ASSERT_IF(member->isKind(PNK_SPREAD), !lhs->isKind(PNK_ASSIGN));
         if (lhs->isKind(PNK_ASSIGN))
             lhs = lhs->pn_left;
 
@@ -5863,6 +5870,36 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
         } else {
             if (!emit1(JSOP_DUP))                                 
                 return false;
+        }
+
+        if (member->isKind(PNK_SPREAD)) {
+            if (!updateSourceCoordNotes(member->pn_pos.begin))
+                return false;
+
+            if (!emitNewInit(JSProto_Object))                     
+                return false;
+            if (!emit1(JSOP_DUP))                                 
+                return false;
+            if (!emit2(JSOP_PICK, 2))                             
+                return false;
+
+            if (needsRestPropertyExcludedSet) {
+                if (!emit2(JSOP_PICK, emitted + 4))               
+                    return false;
+            }
+
+            CopyOption option = needsRestPropertyExcludedSet
+                                ? CopyOption::Filtered
+                                : CopyOption::Unfiltered;
+            if (!emitCopyDataProperties(option))                  
+                return false;
+
+            
+            if (!emitSetOrInitializeDestructuring(lhs, flav))     
+                return false;
+
+            MOZ_ASSERT(member == pattern->last(), "Rest property is always last");
+            break;
         }
 
         
@@ -5899,6 +5936,20 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
             } else {
                 if (!emitComputedPropertyName(key))               
                     return false;
+
+                
+                if (needsRestPropertyExcludedSet) {
+                    if (!emitDupAt(emitted + 3))                  
+                        return false;
+                    if (!emitDupAt(1))                            
+                        return false;
+                    if (!emit1(JSOP_UNDEFINED))                   
+                        return false;
+                    if (!emit1(JSOP_INITELEM))                    
+                        return false;
+                    if (!emit1(JSOP_POP))                         
+                        return false;
+                }
             }
         }
 
@@ -5913,6 +5964,104 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
 
         
         if (!emitSetOrInitializeDestructuring(subpattern, flav))  
+            return false;
+    }
+
+    return true;
+}
+
+bool
+BytecodeEmitter::emitDestructuringObjRestExclusionSet(ParseNode* pattern)
+{
+    MOZ_ASSERT(pattern->isKind(PNK_OBJECT));
+    MOZ_ASSERT(pattern->isArity(PN_LIST));
+    MOZ_ASSERT(pattern->last()->isKind(PNK_SPREAD));
+
+    ptrdiff_t offset = this->offset();
+    if (!emitNewInit(JSProto_Object))
+        return false;
+
+    
+    
+    
+    
+    
+
+    
+    
+    gc::AllocKind kind = gc::GetGCObjectKind(pattern->pn_count - 1);
+    RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx, kind, TenuredObject));
+    if (!obj)
+        return false;
+
+    RootedAtom pnatom(cx);
+    for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
+        if (member->isKind(PNK_SPREAD))
+            break;
+
+        bool isIndex = false;
+        if (member->isKind(PNK_MUTATEPROTO)) {
+            pnatom.set(cx->names().proto);
+        } else {
+            ParseNode* key = member->pn_left;
+            if (key->isKind(PNK_NUMBER)) {
+                if (!emitNumberOp(key->pn_dval))
+                    return false;
+                isIndex = true;
+            } else if (key->isKind(PNK_OBJECT_PROPERTY_NAME) || key->isKind(PNK_STRING)) {
+                
+                
+                
+                jsid id = NameToId(key->pn_atom->asPropertyName());
+                if (id != IdToTypeId(id)) {
+                    if (!emitTree(key))
+                        return false;
+                    isIndex = true;
+                } else {
+                    pnatom.set(key->pn_atom);
+                }
+            } else {
+                
+                
+                obj.set(nullptr);
+                continue;
+            }
+        }
+
+        
+        if (!emit1(JSOP_UNDEFINED))
+            return false;
+
+        if (isIndex) {
+            obj.set(nullptr);
+            if (!emit1(JSOP_INITELEM))
+                return false;
+        } else {
+            uint32_t index;
+            if (!makeAtomIndex(pnatom, &index))
+                return false;
+
+            if (obj) {
+                MOZ_ASSERT(!obj->inDictionaryMode());
+                Rooted<jsid> id(cx, AtomToId(pnatom));
+                if (!NativeDefineProperty(cx, obj, id, UndefinedHandleValue, nullptr, nullptr,
+                                          JSPROP_ENUMERATE))
+                {
+                    return false;
+                }
+                if (obj->inDictionaryMode())
+                    obj.set(nullptr);
+            }
+
+            if (!emitIndex32(JSOP_INITPROP, index))
+                return false;
+        }
+    }
+
+    if (obj) {
+        
+        
+        if (!replaceNewInitWithNewObject(obj, offset))
             return false;
     }
 
@@ -6779,6 +6928,53 @@ BytecodeEmitter::emitRequireObjectCoercible()
         return false;
 
     MOZ_ASSERT(depth == this->stackDepth);
+    return true;
+}
+
+bool
+BytecodeEmitter::emitCopyDataProperties(CopyOption option)
+{
+    DebugOnly<int32_t> depth = this->stackDepth;
+
+    uint32_t argc;
+    if (option == CopyOption::Filtered) {
+        MOZ_ASSERT(depth > 2);                 
+        argc = 3;
+
+        if (!emitAtomOp(cx->names().CopyDataProperties,
+                        JSOP_GETINTRINSIC))    
+        {
+            return false;
+        }
+    } else {
+        MOZ_ASSERT(depth > 1);                 
+        argc = 2;
+
+        if (!emitAtomOp(cx->names().CopyDataPropertiesUnfiltered,
+                        JSOP_GETINTRINSIC))    
+        {
+            return false;
+        }
+    }
+
+    if (!emit1(JSOP_UNDEFINED))                
+        return false;
+    if (!emit2(JSOP_PICK, argc + 1))           
+        return false;
+    if (!emit2(JSOP_PICK, argc + 1))           
+        return false;
+    if (option == CopyOption::Filtered) {
+        if (!emit2(JSOP_PICK, argc + 1))       
+            return false;
+    }
+    if (!emitCall(JSOP_CALL_IGNORES_RV, argc)) 
+        return false;
+    checkTypeSet(JSOP_CALL_IGNORES_RV);
+
+    if (!emit1(JSOP_POP))                      
+        return false;
+
+    MOZ_ASSERT(depth - int(argc) == this->stackDepth);
     return true;
 }
 
@@ -9673,8 +9869,17 @@ BytecodeEmitter::emitPropertyList(ParseNode* pn, MutableHandlePlainObject objp, 
 
         if (propdef->isKind(PNK_SPREAD)) {
             MOZ_ASSERT(type == ObjectLiteral);
+
+            if (!emit1(JSOP_DUP))
+                return false;
+
+            if (!emitTree(propdef->pn_kid))
+                return false;
+
+            if (!emitCopyDataProperties(CopyOption::Unfiltered))
+                return false;
+
             objp.set(nullptr);
-            
             continue;
         }
 
@@ -9791,8 +9996,7 @@ BytecodeEmitter::emitPropertyList(ParseNode* pn, MutableHandlePlainObject objp, 
                 MOZ_ASSERT(!IsHiddenInitOp(op));
                 MOZ_ASSERT(!objp->inDictionaryMode());
                 Rooted<jsid> id(cx, AtomToId(key->pn_atom));
-                RootedValue undefinedValue(cx, UndefinedValue());
-                if (!NativeDefineProperty(cx, objp, id, undefinedValue, nullptr, nullptr,
+                if (!NativeDefineProperty(cx, objp, id, UndefinedHandleValue, nullptr, nullptr,
                                           JSPROP_ENUMERATE))
                 {
                     return false;
@@ -9836,14 +10040,15 @@ BytecodeEmitter::emitObject(ParseNode* pn)
         return false;
 
     
+    
+    
+    
+    
 
-
-
-    RootedPlainObject obj(cx);
     
     
     gc::AllocKind kind = gc::GetGCObjectKind(pn->pn_count);
-    obj = NewBuiltinClassInstance<PlainObject>(cx, kind, TenuredObject);
+    RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx, kind, TenuredObject));
     if (!obj)
         return false;
 
@@ -9852,24 +10057,33 @@ BytecodeEmitter::emitObject(ParseNode* pn)
 
     if (obj) {
         
-
-
-
-        ObjectBox* objbox = parser->newObjectBox(obj);
-        if (!objbox)
+        
+        if (!replaceNewInitWithNewObject(obj, offset))
             return false;
-
-        static_assert(JSOP_NEWINIT_LENGTH == JSOP_NEWOBJECT_LENGTH,
-                      "newinit and newobject must have equal length to edit in-place");
-
-        uint32_t index = objectList.add(objbox);
-        jsbytecode* code = this->code(offset);
-        code[0] = JSOP_NEWOBJECT;
-        code[1] = jsbytecode(index >> 24);
-        code[2] = jsbytecode(index >> 16);
-        code[3] = jsbytecode(index >> 8);
-        code[4] = jsbytecode(index);
     }
+
+    return true;
+}
+
+bool
+BytecodeEmitter::replaceNewInitWithNewObject(JSObject* obj, ptrdiff_t offset)
+{
+    ObjectBox* objbox = parser->newObjectBox(obj);
+    if (!objbox)
+        return false;
+
+    static_assert(JSOP_NEWINIT_LENGTH == JSOP_NEWOBJECT_LENGTH,
+                  "newinit and newobject must have equal length to edit in-place");
+
+    uint32_t index = objectList.add(objbox);
+    jsbytecode* code = this->code(offset);
+
+    MOZ_ASSERT(code[0] == JSOP_NEWINIT);
+    code[0] = JSOP_NEWOBJECT;
+    code[1] = jsbytecode(index >> 24);
+    code[2] = jsbytecode(index >> 16);
+    code[3] = jsbytecode(index >> 8);
+    code[4] = jsbytecode(index);
 
     return true;
 }
