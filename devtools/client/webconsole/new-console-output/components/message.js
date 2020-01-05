@@ -51,7 +51,7 @@ const Message = createClass({
       
       
       if (this.props.serviceContainer) {
-        this.props.serviceContainer.emitNewMessage(this.messageNode);
+        this.props.serviceContainer.emitNewMessage(this.messageNode, this.props.messageId);
       }
     }
   },
