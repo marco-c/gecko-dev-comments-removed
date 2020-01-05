@@ -160,20 +160,15 @@ function loadJSONAsync(file, options) {
 
 
 function addonInstallForURL(url, hash) {
-  let deferred = Promise.defer();
-  AddonManager.getInstallForURL(url, install => deferred.resolve(install),
-                                "application/x-xpinstall", hash);
-  return deferred.promise;
+  return AddonManager.getInstallForURL(url, null, "application/x-xpinstall", hash);
 }
 
 
 
 function installedExperimentAddons() {
-  let deferred = Promise.defer();
-  AddonManager.getAddonsByTypes(["experiment"], (addons) => {
-    deferred.resolve(addons.filter(a => !a.appDisabled));
+  return AddonManager.getAddonsByTypes(["experiment"]).then(addons => {
+    return addons.filter(a => !a.appDisabled);
   });
-  return deferred.promise;
 }
 
 
@@ -2025,18 +2020,14 @@ Experiments.ExperimentEntry.prototype = {
       return Promise.resolve(null);
     }
 
-    let deferred = Promise.defer();
-
-    AddonManager.getAddonByID(this._addonId, (addon) => {
+    return AddonManager.getAddonByID(this._addonId).then(addon => {
       if (addon && addon.appDisabled) {
         
-        addon = null;
+        return null;
       }
 
-      deferred.resolve(addon);
+      return addon;
     });
-
-    return deferred.promise;
   },
 
   _logTermination: function(terminationKind, terminationReason) {

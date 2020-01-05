@@ -257,17 +257,6 @@ function getSystemLocale() {
 
 
 
-function promiseGetAddonsByTypes(aTypes) {
-  return new Promise((resolve) =>
-                     AddonManager.getAddonsByTypes(aTypes, (addons) => resolve(addons)));
-}
-
-
-
-
-
-
-
 
 
 function getSysinfoProperty(aPropertyName, aDefault) {
@@ -567,7 +556,7 @@ EnvironmentAddonBuilder.prototype = {
 
   _getActiveAddons: Task.async(function* () {
     
-    let allAddons = yield promiseGetAddonsByTypes(["extension", "service"]);
+    let allAddons = yield AddonManager.getAddonsByTypes(["extension", "service"]);
 
     let activeAddons = {};
     for (let addon of allAddons) {
@@ -618,7 +607,7 @@ EnvironmentAddonBuilder.prototype = {
 
   _getActiveTheme: Task.async(function* () {
     
-    let themes = yield promiseGetAddonsByTypes(["theme"]);
+    let themes = yield AddonManager.getAddonsByTypes(["theme"]);
 
     let activeTheme = {};
     
@@ -694,7 +683,7 @@ EnvironmentAddonBuilder.prototype = {
 
   _getActiveGMPlugins: Task.async(function* () {
     
-    let allPlugins = yield promiseGetAddonsByTypes(["plugin"]);
+    let allPlugins = yield AddonManager.getAddonsByTypes(["plugin"]);
 
     let activeGMPlugins = {};
     for (let plugin of allPlugins) {
