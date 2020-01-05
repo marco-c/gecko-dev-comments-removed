@@ -748,7 +748,7 @@ mod shorthand_serialization {
                 background-repeat: repeat-x, repeat-y; \
                 background-attachment: scroll, scroll; \
                 background-size: 70px 50px, 20px 30px; \
-                background-position: 7px 4px; \
+                background-position: 7px 4px, 5px 6px; \
                 background-origin: border-box; \
                 background-clip: padding-box, padding-box;";
             let block = parse_declaration_block(block_text);
@@ -904,6 +904,14 @@ mod shorthand_serialization {
                 "mask: url(\"http://servo/test.png\") luminance 7px 4px / 70px 50px \
                 repeat-x padding-box subtract;"
             );
+        }
+
+        #[test]
+        fn serialize_mask_position_with_multiple_values() {
+            let block_text = "mask-position: 1px 2px, 4px 3px;";
+            let block = parse_declaration_block(block_text);
+            let serialization = block.to_css_string();
+            assert_eq!(serialization, block_text);
         }
     }
 
