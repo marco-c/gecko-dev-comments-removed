@@ -3231,6 +3231,39 @@ FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(INSTANTIATE_ALL_VALID_HEAP_TRACE_FUNCTION
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef DEBUG
 struct AssertNonGrayTracer : public JS::CallbackTracer {
     explicit AssertNonGrayTracer(JSRuntime* rt) : JS::CallbackTracer(rt) {}
@@ -3241,77 +3274,36 @@ struct AssertNonGrayTracer : public JS::CallbackTracer {
 };
 #endif
 
-struct UnmarkGrayTracer : public JS::CallbackTracer
+class UnmarkGrayTracer : public JS::CallbackTracer
 {
+  public:
     
-
-
-
-    explicit UnmarkGrayTracer(JSRuntime *rt, bool tracingShape = false)
+    
+    explicit UnmarkGrayTracer(JSRuntime *rt)
       : JS::CallbackTracer(rt, DoNotTraceWeakMaps)
-      , tracingShape(tracingShape)
-      , previousShape(nullptr)
       , unmarkedAny(false)
+      , oom(false)
+      , stack(rt->gc.unmarkGrayStack)
     {}
 
-    void onChild(const JS::GCCellPtr& thing) override;
-
-    
-    bool tracingShape;
-
-    
-    Shape* previousShape;
+    void unmark(JS::GCCellPtr cell);
 
     
     bool unmarkedAny;
+
+    
+    bool oom;
+
+  private:
+    
+    Vector<JS::GCCellPtr, 0, SystemAllocPolicy>& stack;
+
+    void onChild(const JS::GCCellPtr& thing) override;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void
 UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing)
 {
-    int stackDummy;
-    JSContext* cx = TlsContext.get();
-    if (!JS_CHECK_STACK_SIZE(cx->nativeStackLimit[JS::StackForSystemCode], &stackDummy)) {
-        
-
-
-
-        runtime()->gc.setGrayBitsInvalid();
-        return;
-    }
-
     Cell* cell = thing.asCell();
 
     
@@ -3325,41 +3317,33 @@ UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing)
     }
 
     TenuredCell& tenured = cell->asTenured();
-    if (!tenured.isMarked(js::gc::GRAY))
+    if (!tenured.isMarked(GRAY))
         return;
-    tenured.unmark(js::gc::GRAY);
 
+    tenured.unmark(GRAY);
     unmarkedAny = true;
 
-    
-    
-    
-    
-    
-    UnmarkGrayTracer childTracer(runtime(), thing.kind() == JS::TraceKind::Shape);
+    if (!stack.append(thing))
+        oom = true;
+}
 
-    if (thing.kind() != JS::TraceKind::Shape) {
-        TraceChildren(&childTracer, &tenured, thing.kind());
-        MOZ_ASSERT(!childTracer.previousShape);
-        unmarkedAny |= childTracer.unmarkedAny;
+void
+UnmarkGrayTracer::unmark(JS::GCCellPtr cell)
+{
+    MOZ_ASSERT(stack.empty());
+
+    onChild(cell);
+
+    while (!stack.empty() && !oom)
+        TraceChildren(this, stack.popCopy());
+
+    if (oom) {
+         
+         
+        stack.clear();
+        runtime()->gc.setGrayBitsInvalid();
         return;
     }
-
-    MOZ_ASSERT(thing.kind() == JS::TraceKind::Shape);
-    Shape* shape = static_cast<Shape*>(&tenured);
-    if (tracingShape) {
-        MOZ_ASSERT(!previousShape);
-        previousShape = shape;
-        return;
-    }
-
-    do {
-        MOZ_ASSERT(!shape->isMarked(js::gc::GRAY));
-        shape->traceChildren(&childTracer);
-        shape = childTracer.previousShape;
-        childTracer.previousShape = nullptr;
-    } while (shape);
-    unmarkedAny |= childTracer.unmarkedAny;
 }
 
 template <typename T>
@@ -3372,21 +3356,11 @@ TypedUnmarkGrayCellRecursively(T* t)
     MOZ_ASSERT(!JS::CurrentThreadIsHeapCollecting());
     MOZ_ASSERT(!JS::CurrentThreadIsHeapCycleCollecting());
 
-    bool unmarkedArg = false;
-    if (t->isTenured()) {
-        if (!t->asTenured().isMarked(GRAY))
-            return false;
-
-        t->asTenured().unmark(GRAY);
-        unmarkedArg = true;
-    }
-
-    UnmarkGrayTracer trc(rt);
+    UnmarkGrayTracer unmarker(rt);
     gcstats::AutoPhase outerPhase(rt->gc.stats(), gcstats::PHASE_BARRIER);
     gcstats::AutoPhase innerPhase(rt->gc.stats(), gcstats::PHASE_UNMARK_GRAY);
-    t->traceChildren(&trc);
-
-    return unmarkedArg || trc.unmarkedAny;
+    unmarker.unmark(JS::GCCellPtr(t, MapTypeToTraceKind<T>::kind));
+    return unmarker.unmarkedAny;
 }
 
 struct UnmarkGrayCellRecursivelyFunctor {

@@ -1046,6 +1046,8 @@ class GCRuntime
 
     GCMarker marker;
 
+    Vector<JS::GCCellPtr, 0, SystemAllocPolicy> unmarkGrayStack;
+
     
     HeapUsage usage;
 
