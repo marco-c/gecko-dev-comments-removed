@@ -12,6 +12,7 @@
 #include "nsPrintfCString.h"
 #include "safebrowsing.pb.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/Mutex.h"
 
 #define DEFAULT_PROTOCOL_VERSION "2.2"
 
@@ -145,7 +146,9 @@ CreateClientInfo()
 } 
 } 
 
-nsUrlClassifierUtils::nsUrlClassifierUtils() : mEscapeCharmap(nullptr)
+nsUrlClassifierUtils::nsUrlClassifierUtils()
+  : mEscapeCharmap(nullptr)
+  , mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock")
 {
 }
 
@@ -157,10 +160,31 @@ nsUrlClassifierUtils::Init()
                                0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
   if (!mEscapeCharmap)
     return NS_ERROR_OUT_OF_MEMORY;
+
+  
+  
+  
+  
+  
+  
+  nsresult rv = ReadProvidersFromPrefs(mProviderDict);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (!observerService)
+    return NS_ERROR_FAILURE;
+
+  observerService->AddObserver(this, "xpcom-shutdown-threads", false);
+  Preferences::AddStrongObserver(this, "browser.safebrowsing");
+
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(nsUrlClassifierUtils, nsIUrlClassifierUtils)
+NS_IMPL_ISUPPORTS(nsUrlClassifierUtils,
+                  nsIUrlClassifierUtils,
+                  nsIObserver)
 
 
 
@@ -250,6 +274,20 @@ nsUrlClassifierUtils::ConvertListNameToThreatType(const nsACString& aListName,
 }
 
 NS_IMETHODIMP
+nsUrlClassifierUtils::GetProvider(const nsACString& aTableName,
+                                  nsACString& aProvider)
+{
+  MutexAutoLock lock(mProviderDictLock);
+  nsCString* provider = nullptr;
+  if (mProviderDict.Get(aTableName, &provider)) {
+    aProvider = provider ? *provider : EmptyCString();
+  } else {
+    aProvider = EmptyCString();
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsUrlClassifierUtils::GetProtocolVersion(const nsACString& aProvider,
                                          nsACString& aVersion)
 {
@@ -308,6 +346,88 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(const char** aListNames,
 
 
 
+
+NS_IMETHODIMP
+nsUrlClassifierUtils::Observe(nsISupports *aSubject, const char *aTopic,
+                              const char16_t *aData)
+{
+  if (0 == strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
+    MutexAutoLock lock(mProviderDictLock);
+    return ReadProvidersFromPrefs(mProviderDict);
+  }
+
+  if (0 == strcmp(aTopic, "xpcom-shutdown-threads")) {
+    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+    NS_ENSURE_TRUE(prefs, NS_ERROR_FAILURE);
+    return prefs->RemoveObserver("browser.safebrowsing", this);
+  }
+
+  return NS_ERROR_UNEXPECTED;
+}
+
+
+
+
+nsresult
+nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict)
+{
+  MOZ_ASSERT(NS_IsMainThread(), "ReadProvidersFromPrefs must be on main thread");
+
+  nsCOMPtr<nsIPrefService> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  NS_ENSURE_TRUE(prefs, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIPrefBranch> prefBranch;
+  nsresult rv = prefs->GetBranch("browser.safebrowsing.provider.",
+                                  getter_AddRefs(prefBranch));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  uint32_t childCount;
+  char** childArray;
+  rv = prefBranch->GetChildList("", &childCount, &childArray);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsTHashtable<nsCStringHashKey> providers;
+  for (uint32_t i = 0; i < childCount; i++) {
+    nsCString child(childArray[i]);
+    auto dotPos = child.FindChar('.');
+    if (dotPos < 0) {
+      continue;
+    }
+
+    nsDependentCSubstring provider = Substring(child, 0, dotPos);
+
+    providers.PutEntry(provider);
+  }
+  NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(childCount, childArray);
+
+  
+  
+  
+  for (auto itr = providers.Iter(); !itr.Done(); itr.Next()) {
+    auto entry = itr.Get();
+    nsCString provider(entry->GetKey());
+    nsPrintfCString owninListsPref("%s.lists", provider.get());
+
+    nsXPIDLCString owningLists;
+    nsresult rv = prefBranch->GetCharPref(owninListsPref.get(),
+                                          getter_Copies(owningLists));
+    if (NS_FAILED(rv)) {
+      continue;
+    }
+
+    
+    
+    nsTArray<nsCString> tables;
+    Classifier::SplitTables(owningLists, tables);
+    for (auto tableName : tables) {
+      aDict.Put(tableName, new nsCString(provider));
+    }
+  }
+
+  return NS_OK;
+}
 
 nsresult
 nsUrlClassifierUtils::CanonicalizeHostname(const nsACString & hostname,

@@ -21,6 +21,7 @@
 #include "mozilla/Base64.h"
 #include "mozilla/Unused.h"
 #include "mozilla/TypedEnumBits.h"
+#include "nsIUrlClassifierUtils.h"
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
@@ -85,96 +86,10 @@ Classifier::SplitTables(const nsACString& str, nsTArray<nsCString>& tables)
   }
 }
 
-static nsresult
-DeriveProviderFromPref(const nsACString& aTableName, nsCString& aProviderName)
-{
-  
-  
-
-  nsCOMPtr<nsIPrefService> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  NS_ENSURE_TRUE(prefs, NS_ERROR_FAILURE);
-  nsCOMPtr<nsIPrefBranch> prefBranch;
-  nsresult rv = prefs->GetBranch("browser.safebrowsing.provider.",
-                                  getter_AddRefs(prefBranch));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  uint32_t childCount;
-  char** childArray;
-  rv = prefBranch->GetChildList("", &childCount, &childArray);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  nsTHashtable<nsCStringHashKey> providers;
-  for (uint32_t i = 0; i < childCount; i++) {
-    nsCString child(childArray[i]);
-    auto dotPos = child.FindChar('.');
-    if (dotPos < 0) {
-      continue;
-    }
-
-    nsDependentCSubstring provider = Substring(child, 0, dotPos);
-
-    providers.PutEntry(provider);
-  }
-  NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(childCount, childArray);
-
-  
-  
-  
-  for (auto itr = providers.Iter(); !itr.Done(); itr.Next()) {
-    auto entry = itr.Get();
-    nsCString provider(entry->GetKey());
-    nsPrintfCString owninListsPref("%s.lists", provider.get());
-
-    nsXPIDLCString owningLists;
-    nsresult rv = prefBranch->GetCharPref(owninListsPref.get(),
-                                          getter_Copies(owningLists));
-    if (NS_FAILED(rv)) {
-      continue;
-    }
-
-    
-    
-    nsTArray<nsCString> tables;
-    Classifier::SplitTables(owningLists, tables);
-    if (tables.Contains(aTableName)) {
-      aProviderName = provider;
-      return NS_OK;
-    }
-  }
-
-  return NS_ERROR_FAILURE;
-}
-
-
-
-
-static nsCString
-GetProviderByTableName(const nsACString& aTableName)
-{
-  MOZ_ASSERT(!NS_IsMainThread(), "GetProviderByTableName MUST be called "
-                                 "on non-main thread.");
-  nsCString providerName;
-
-  nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([&aTableName,
-                                                    &providerName] () -> void {
-    nsresult rv = DeriveProviderFromPref(aTableName, providerName);
-    if (NS_FAILED(rv)) {
-      LOG(("No provider found for %s", nsCString(aTableName).get()));
-    }
-  });
-
-  nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
-  SyncRunnable::DispatchToThread(mainThread, r);
-
-  return providerName;
-}
-
 nsresult
 Classifier::GetPrivateStoreDirectory(nsIFile* aRootStoreDirectory,
                                      const nsACString& aTableName,
+                                     const nsACString& aProvider,
                                      nsIFile** aPrivateStoreDirectory)
 {
   NS_ENSURE_ARG_POINTER(aPrivateStoreDirectory);
@@ -186,8 +101,7 @@ Classifier::GetPrivateStoreDirectory(nsIFile* aRootStoreDirectory,
     return NS_OK;
   }
 
-  nsCString providerName = GetProviderByTableName(aTableName);
-  if (providerName.IsEmpty()) {
+  if (aProvider.IsEmpty()) {
     
     nsCOMPtr<nsIFile>(aRootStoreDirectory).forget(aPrivateStoreDirectory);
     return NS_OK;
@@ -200,7 +114,7 @@ Classifier::GetPrivateStoreDirectory(nsIFile* aRootStoreDirectory,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  rv = providerDirectory->AppendNative(providerName);
+  rv = providerDirectory->AppendNative(aProvider);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -438,7 +352,7 @@ Classifier::TableRequest(nsACString& aResult)
   nsTArray<nsCString> tables;
   ActiveTables(tables);
   for (uint32_t i = 0; i < tables.Length(); i++) {
-    HashStore store(tables[i], mRootStoreDirectory);
+    HashStore store(tables[i], GetProvider(tables[i]), mRootStoreDirectory);
 
     nsresult rv = store.Open();
     if (NS_FAILED(rv))
@@ -713,7 +627,7 @@ Classifier::RegenActiveTables()
 
   for (uint32_t i = 0; i < foundTables.Length(); i++) {
     nsCString table(foundTables[i]);
-    HashStore store(table, mRootStoreDirectory);
+    HashStore store(table, GetProvider(table), mRootStoreDirectory);
 
     nsresult rv = store.Open();
     if (NS_FAILED(rv))
@@ -980,6 +894,18 @@ Classifier::CheckValidUpdate(nsTArray<TableUpdate*>* aUpdates,
   return true;
 }
 
+nsCString
+Classifier::GetProvider(const nsACString& aTableName)
+{
+  nsCOMPtr<nsIUrlClassifierUtils> urlUtil =
+    do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
+
+  nsCString provider;
+  nsresult rv = urlUtil->GetProvider(aTableName, provider);
+
+  return NS_SUCCEEDED(rv) ? provider : EmptyCString();
+}
+
 
 
 
@@ -989,7 +915,7 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
 {
   LOG(("Classifier::UpdateHashStore(%s)", PromiseFlatCString(aTable).get()));
 
-  HashStore store(aTable, mRootStoreDirectory);
+  HashStore store(aTable, GetProvider(aTable), mRootStoreDirectory);
 
   if (!CheckValidUpdate(aUpdates, store.TableName())) {
     return NS_OK;
@@ -1208,10 +1134,11 @@ Classifier::GetLookupCache(const nsACString& aTable)
   
   
   UniquePtr<LookupCache> cache;
+  nsCString provider = GetProvider(aTable);
   if (StringEndsWith(aTable, NS_LITERAL_CSTRING("-proto"))) {
-    cache = MakeUnique<LookupCacheV4>(aTable, mRootStoreDirectory);
+    cache = MakeUnique<LookupCacheV4>(aTable, provider, mRootStoreDirectory);
   } else {
-    cache = MakeUnique<LookupCacheV2>(aTable, mRootStoreDirectory);
+    cache = MakeUnique<LookupCacheV2>(aTable, provider, mRootStoreDirectory);
   }
 
   nsresult rv = cache->Init();

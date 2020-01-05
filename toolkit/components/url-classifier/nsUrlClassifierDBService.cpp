@@ -1268,10 +1268,20 @@ nsUrlClassifierDBService::Init()
     CONFIRM_AGE_DEFAULT_SEC);
   ReadTablesFromPrefs();
 
-  
   nsresult rv;
-  nsCOMPtr<nsICryptoHash> dummy = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+
+  {
+    
+    nsCOMPtr<nsICryptoHash> dummy = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  {
+    
+    nsCOMPtr<nsIUrlClassifierUtils> dummy =
+      do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   
   nsCOMPtr<nsIFile> cacheDir;

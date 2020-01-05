@@ -190,7 +190,9 @@ private:
 
 class HashStore {
 public:
-  HashStore(const nsACString& aTableName, nsIFile* aRootStoreFile);
+  HashStore(const nsACString& aTableName,
+            const nsACString& aProvider,
+            nsIFile* aRootStoreFile);
   ~HashStore();
 
   const nsCString& TableName() const { return mTableName; }
