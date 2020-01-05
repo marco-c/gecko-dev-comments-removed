@@ -10,7 +10,7 @@ const { render } = require("enzyme");
 const { createFactory } = require("devtools/client/shared/vendor/react");
 
 
-const ConsoleApiCall = createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/console-api-call").ConsoleApiCall);
+const ConsoleApiCall = createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/console-api-call"));
 
 
 const { stubPreparedMessages } = require("devtools/client/webconsole/new-console-output/test/fixtures/stubs/index");

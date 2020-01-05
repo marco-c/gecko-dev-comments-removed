@@ -10,7 +10,7 @@ const { render } = require("enzyme");
 const { createFactory } = require("devtools/client/shared/vendor/react");
 
 
-const EvaluationResult = createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/evaluation-result").EvaluationResult);
+const EvaluationResult = createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/evaluation-result"));
 
 
 const { stubPreparedMessages } = require("devtools/client/webconsole/new-console-output/test/fixtures/stubs/index");

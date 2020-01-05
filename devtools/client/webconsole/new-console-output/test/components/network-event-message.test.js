@@ -10,7 +10,7 @@ const { render } = require("enzyme");
 const { createFactory } = require("devtools/client/shared/vendor/react");
 
 
-const NetworkEventMessage = createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/network-event-message").NetworkEventMessage);
+const NetworkEventMessage = createFactory(require("devtools/client/webconsole/new-console-output/components/message-types/network-event-message"));
 
 
 const { stubPreparedMessages } = require("devtools/client/webconsole/new-console-output/test/fixtures/stubs/index");
