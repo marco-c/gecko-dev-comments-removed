@@ -45,6 +45,7 @@ impl FontTableMethods for FontTable {
     }
 }
 
+#[derive(Debug)]
 pub struct FontHandle {
     
     

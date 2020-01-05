@@ -70,7 +70,7 @@ pub type UserPtr = *mut User;
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FreeTypeLibraryHandle {
     pub ctx: FT_Library,
     mem: FT_Memory,
@@ -98,7 +98,7 @@ impl HeapSizeOf for FreeTypeLibraryHandle {
     }
 }
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Clone, HeapSizeOf, Debug)]
 pub struct FontContextHandle {
     
     

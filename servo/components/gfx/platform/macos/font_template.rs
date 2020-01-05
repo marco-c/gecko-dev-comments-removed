@@ -17,7 +17,7 @@ use string_cache::Atom;
 
 
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct FontTemplateData {
     
     
@@ -64,6 +64,7 @@ impl FontTemplateData {
     }
 }
 
+#[derive(Debug)]
 pub struct CachedCTFont(Mutex<Option<CTFont>>);
 
 impl Deref for CachedCTFont {

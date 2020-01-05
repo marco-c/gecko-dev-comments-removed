@@ -89,6 +89,7 @@ pub struct FontMetrics {
 
 pub type SpecifiedFontStyle = FontStyle;
 
+#[derive(Debug)]
 pub struct Font {
     pub handle: FontHandle,
     pub metrics: FontMetrics,
@@ -115,7 +116,7 @@ bitflags! {
 }
 
 
-#[derive(Clone, Eq, PartialEq, Hash, Copy)]
+#[derive(Clone, Eq, PartialEq, Hash, Copy, Debug)]
 pub struct ShapingOptions {
     
     
@@ -129,7 +130,7 @@ pub struct ShapingOptions {
 }
 
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub struct ShapeCacheEntry {
     text: String,
     options: ShapingOptions,
@@ -217,6 +218,7 @@ impl Font {
     }
 }
 
+#[derive(Debug)]
 pub struct FontGroup {
     pub fonts: SmallVec<[Rc<RefCell<Font>>; 8]>,
 }
