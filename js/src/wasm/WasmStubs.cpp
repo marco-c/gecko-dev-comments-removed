@@ -71,151 +71,6 @@ StackDecrementForCall(MacroAssembler& masm, uint32_t alignment, const VectorT& a
     return StackDecrementForCall(masm, alignment, StackArgBytes(args) + extraBytes);
 }
 
-static void
-SetupABIArguments(MacroAssembler& masm, const FuncExport& fe, Register argv, Register scratch)
-{
-    
-    
-    for (ABIArgValTypeIter iter(fe.sig().args()); !iter.done(); iter++) {
-        unsigned argOffset = iter.index() * sizeof(ExportArg);
-        Address src(argv, argOffset);
-        MIRType type = iter.mirType();
-        switch (iter->kind()) {
-          case ABIArg::GPR:
-            if (type == MIRType::Int32)
-                masm.load32(src, iter->gpr());
-            else if (type == MIRType::Int64)
-                masm.load64(src, iter->gpr64());
-            break;
-#ifdef JS_CODEGEN_REGISTER_PAIR
-          case ABIArg::GPR_PAIR:
-            if (type == MIRType::Int64)
-                masm.load64(src, iter->gpr64());
-            else
-                MOZ_CRASH("wasm uses hardfp for function calls.");
-            break;
-#endif
-          case ABIArg::FPU: {
-            static_assert(sizeof(ExportArg) >= jit::Simd128DataSize,
-                          "ExportArg must be big enough to store SIMD values");
-            switch (type) {
-              case MIRType::Int8x16:
-              case MIRType::Int16x8:
-              case MIRType::Int32x4:
-              case MIRType::Bool8x16:
-              case MIRType::Bool16x8:
-              case MIRType::Bool32x4:
-                masm.loadUnalignedSimd128Int(src, iter->fpu());
-                break;
-              case MIRType::Float32x4:
-                masm.loadUnalignedSimd128Float(src, iter->fpu());
-                break;
-              case MIRType::Double:
-                masm.loadDouble(src, iter->fpu());
-                break;
-              case MIRType::Float32:
-                masm.loadFloat32(src, iter->fpu());
-                break;
-              default:
-                MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("unexpected FPU type");
-                break;
-            }
-            break;
-          }
-          case ABIArg::Stack:
-            switch (type) {
-              case MIRType::Int32:
-                masm.load32(src, scratch);
-                masm.storePtr(scratch, Address(masm.getStackPointer(), iter->offsetFromArgBase()));
-                break;
-              case MIRType::Int64: {
-                Register sp = masm.getStackPointer();
-#if JS_BITS_PER_WORD == 32
-                masm.load32(Address(src.base, src.offset + INT64LOW_OFFSET), scratch);
-                masm.store32(scratch, Address(sp, iter->offsetFromArgBase() + INT64LOW_OFFSET));
-                masm.load32(Address(src.base, src.offset + INT64HIGH_OFFSET), scratch);
-                masm.store32(scratch, Address(sp, iter->offsetFromArgBase() + INT64HIGH_OFFSET));
-#else
-                Register64 scratch64(scratch);
-                masm.load64(src, scratch64);
-                masm.store64(scratch64, Address(sp, iter->offsetFromArgBase()));
-#endif
-                break;
-              }
-              case MIRType::Double:
-                masm.loadDouble(src, ScratchDoubleReg);
-                masm.storeDouble(ScratchDoubleReg,
-                                 Address(masm.getStackPointer(), iter->offsetFromArgBase()));
-                break;
-              case MIRType::Float32:
-                masm.loadFloat32(src, ScratchFloat32Reg);
-                masm.storeFloat32(ScratchFloat32Reg,
-                                  Address(masm.getStackPointer(), iter->offsetFromArgBase()));
-                break;
-              case MIRType::Int8x16:
-              case MIRType::Int16x8:
-              case MIRType::Int32x4:
-              case MIRType::Bool8x16:
-              case MIRType::Bool16x8:
-              case MIRType::Bool32x4:
-                masm.loadUnalignedSimd128Int(src, ScratchSimd128Reg);
-                masm.storeAlignedSimd128Int(
-                  ScratchSimd128Reg, Address(masm.getStackPointer(), iter->offsetFromArgBase()));
-                break;
-              case MIRType::Float32x4:
-                masm.loadUnalignedSimd128Float(src, ScratchSimd128Reg);
-                masm.storeAlignedSimd128Float(
-                  ScratchSimd128Reg, Address(masm.getStackPointer(), iter->offsetFromArgBase()));
-                break;
-              default:
-                MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("unexpected stack arg type");
-            }
-            break;
-        }
-    }
-}
-
-static void
-StoreABIReturn(MacroAssembler& masm, const FuncExport& fe, Register argv)
-{
-    
-    switch (fe.sig().ret()) {
-      case ExprType::Void:
-        break;
-      case ExprType::I32:
-        masm.store32(ReturnReg, Address(argv, 0));
-        break;
-      case ExprType::I64:
-        masm.store64(ReturnReg64, Address(argv, 0));
-        break;
-      case ExprType::F32:
-        if (!JitOptions.wasmTestMode)
-            masm.canonicalizeFloat(ReturnFloat32Reg);
-        masm.storeFloat32(ReturnFloat32Reg, Address(argv, 0));
-        break;
-      case ExprType::F64:
-        if (!JitOptions.wasmTestMode)
-            masm.canonicalizeDouble(ReturnDoubleReg);
-        masm.storeDouble(ReturnDoubleReg, Address(argv, 0));
-        break;
-      case ExprType::I8x16:
-      case ExprType::I16x8:
-      case ExprType::I32x4:
-      case ExprType::B8x16:
-      case ExprType::B16x8:
-      case ExprType::B32x4:
-        
-        masm.storeUnalignedSimd128Int(ReturnSimd128Reg, Address(argv, 0));
-        break;
-      case ExprType::F32x4:
-        
-        masm.storeUnalignedSimd128Float(ReturnSimd128Reg, Address(argv, 0));
-        break;
-      case ExprType::Limit:
-        MOZ_CRASH("Limit");
-    }
-}
-
 #if defined(JS_CODEGEN_ARM)
 
 
@@ -317,7 +172,104 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
     masm.reserveStack(AlignBytes(StackArgBytes(fe.sig().args()), WasmStackAlignment));
 
     
-    SetupABIArguments(masm, fe, argv, scratch);
+    
+    for (ABIArgValTypeIter iter(fe.sig().args()); !iter.done(); iter++) {
+        unsigned argOffset = iter.index() * sizeof(ExportArg);
+        Address src(argv, argOffset);
+        MIRType type = iter.mirType();
+        switch (iter->kind()) {
+          case ABIArg::GPR:
+            if (type == MIRType::Int32)
+                masm.load32(src, iter->gpr());
+            else if (type == MIRType::Int64)
+                masm.load64(src, iter->gpr64());
+            break;
+#ifdef JS_CODEGEN_REGISTER_PAIR
+          case ABIArg::GPR_PAIR:
+            if (type == MIRType::Int64)
+                masm.load64(src, iter->gpr64());
+            else
+                MOZ_CRASH("wasm uses hardfp for function calls.");
+            break;
+#endif
+          case ABIArg::FPU: {
+            static_assert(sizeof(ExportArg) >= jit::Simd128DataSize,
+                          "ExportArg must be big enough to store SIMD values");
+            switch (type) {
+              case MIRType::Int8x16:
+              case MIRType::Int16x8:
+              case MIRType::Int32x4:
+              case MIRType::Bool8x16:
+              case MIRType::Bool16x8:
+              case MIRType::Bool32x4:
+                masm.loadUnalignedSimd128Int(src, iter->fpu());
+                break;
+              case MIRType::Float32x4:
+                masm.loadUnalignedSimd128Float(src, iter->fpu());
+                break;
+              case MIRType::Double:
+                masm.loadDouble(src, iter->fpu());
+                break;
+              case MIRType::Float32:
+                masm.loadFloat32(src, iter->fpu());
+                break;
+              default:
+                MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("unexpected FPU type");
+                break;
+            }
+            break;
+          }
+          case ABIArg::Stack:
+            switch (type) {
+              case MIRType::Int32:
+                masm.load32(src, scratch);
+                masm.storePtr(scratch, Address(masm.getStackPointer(), iter->offsetFromArgBase()));
+                break;
+              case MIRType::Int64: {
+                Register sp = masm.getStackPointer();
+#if JS_BITS_PER_WORD == 32
+                masm.load32(Address(src.base, src.offset + INT64LOW_OFFSET), scratch);
+                masm.store32(scratch, Address(sp, iter->offsetFromArgBase() + INT64LOW_OFFSET));
+                masm.load32(Address(src.base, src.offset + INT64HIGH_OFFSET), scratch);
+                masm.store32(scratch, Address(sp, iter->offsetFromArgBase() + INT64HIGH_OFFSET));
+#else
+                Register64 scratch64(scratch);
+                masm.load64(src, scratch64);
+                masm.store64(scratch64, Address(sp, iter->offsetFromArgBase()));
+#endif
+                break;
+              }
+              case MIRType::Double:
+                masm.loadDouble(src, ScratchDoubleReg);
+                masm.storeDouble(ScratchDoubleReg,
+                                 Address(masm.getStackPointer(), iter->offsetFromArgBase()));
+                break;
+              case MIRType::Float32:
+                masm.loadFloat32(src, ScratchFloat32Reg);
+                masm.storeFloat32(ScratchFloat32Reg,
+                                  Address(masm.getStackPointer(), iter->offsetFromArgBase()));
+                break;
+              case MIRType::Int8x16:
+              case MIRType::Int16x8:
+              case MIRType::Int32x4:
+              case MIRType::Bool8x16:
+              case MIRType::Bool16x8:
+              case MIRType::Bool32x4:
+                masm.loadUnalignedSimd128Int(src, ScratchSimd128Reg);
+                masm.storeAlignedSimd128Int(
+                  ScratchSimd128Reg, Address(masm.getStackPointer(), iter->offsetFromArgBase()));
+                break;
+              case MIRType::Float32x4:
+                masm.loadUnalignedSimd128Float(src, ScratchSimd128Reg);
+                masm.storeAlignedSimd128Float(
+                  ScratchSimd128Reg, Address(masm.getStackPointer(), iter->offsetFromArgBase()));
+                break;
+              default:
+                MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("unexpected stack arg type");
+            }
+            break;
+        }
+    }
 
     
     masm.movePtr(ImmWord(0), FramePointer);
@@ -345,7 +297,41 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
     masm.Pop(argv);
 
     
-    StoreABIReturn(masm, fe, argv);
+    switch (fe.sig().ret()) {
+      case ExprType::Void:
+        break;
+      case ExprType::I32:
+        masm.store32(ReturnReg, Address(argv, 0));
+        break;
+      case ExprType::I64:
+        masm.store64(ReturnReg64, Address(argv, 0));
+        break;
+      case ExprType::F32:
+        if (!JitOptions.wasmTestMode)
+            masm.canonicalizeFloat(ReturnFloat32Reg);
+        masm.storeFloat32(ReturnFloat32Reg, Address(argv, 0));
+        break;
+      case ExprType::F64:
+        if (!JitOptions.wasmTestMode)
+            masm.canonicalizeDouble(ReturnDoubleReg);
+        masm.storeDouble(ReturnDoubleReg, Address(argv, 0));
+        break;
+      case ExprType::I8x16:
+      case ExprType::I16x8:
+      case ExprType::I32x4:
+      case ExprType::B8x16:
+      case ExprType::B16x8:
+      case ExprType::B32x4:
+        
+        masm.storeUnalignedSimd128Int(ReturnSimd128Reg, Address(argv, 0));
+        break;
+      case ExprType::F32x4:
+        
+        masm.storeUnalignedSimd128Float(ReturnSimd128Reg, Address(argv, 0));
+        break;
+      case ExprType::Limit:
+        MOZ_CRASH("Limit");
+    }
 
     
     masm.PopRegsInMask(NonVolatileRegs);
