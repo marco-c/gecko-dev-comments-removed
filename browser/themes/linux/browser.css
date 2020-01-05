@@ -989,7 +989,7 @@ html|span.ac-emphasize-text-url {
 .ac-type-icon[type=keyword],
 .ac-site-icon[type=searchengine] {
   list-style-image: url(chrome://global/skin/icons/autocomplete-search.svg);
-  
+  -moz-context-properties: fill;
   fill: GrayText;
 }
 
