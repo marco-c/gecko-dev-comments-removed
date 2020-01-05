@@ -1067,14 +1067,7 @@ public:
             return; 
         }
 
-        const auto& layerClient = GeckoLayerClient::Ref::From(aClient);
-
-        
-        
-        
-        
-        const bool resetting = !!mLayerClient;
-        mLayerClient = layerClient;
+        mLayerClient = GeckoLayerClient::Ref::From(aClient);
 
         MOZ_ASSERT(aNPZC);
         auto npzc = NativePanZoomController::LocalRef(
@@ -1082,15 +1075,12 @@ public:
                 NativePanZoomController::Ref::From(aNPZC));
         mWindow->mNPZCSupport.Attach(npzc, mWindow, npzc);
 
-        layerClient->OnGeckoReady();
+        mLayerClient->OnGeckoReady();
 
-        if (resetting) {
-            
-            
-            
-            if (RefPtr<CompositorBridgeParent> bridge = mWindow->GetCompositorBridgeParent()) {
-                bridge->ForceIsFirstPaint();
-            }
+        
+        
+        if (RefPtr<CompositorBridgeParent> bridge = mWindow->GetCompositorBridgeParent()) {
+            bridge->ForceIsFirstPaint();
         }
     }
 
