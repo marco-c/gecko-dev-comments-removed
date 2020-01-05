@@ -176,54 +176,6 @@ GetNextSubDomainForHost(const nsACString& aHost)
   return subDomain;
 }
 
-
-
-
-already_AddRefed<nsIPrincipal>
-GetNextSubDomainPrincipal(nsIPrincipal* aPrincipal)
-{
-  nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  nsAutoCString host;
-  rv = uri->GetHost(host);
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  nsCString domain = GetNextSubDomainForHost(host);
-  if (domain.IsEmpty()) {
-    return nullptr;
-  }
-
-  
-  nsCOMPtr<nsIURI> newURI;
-  rv = uri->Clone(getter_AddRefs(newURI));
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  rv = newURI->SetHost(domain);
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  
-  mozilla::OriginAttributes attrs = aPrincipal->OriginAttributesRef();
-
-  
-  attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID |
-                        mozilla::OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
-
-  nsCOMPtr<nsIPrincipal> principal =
-    mozilla::BasePrincipal::CreateCodebasePrincipal(newURI, attrs);
-
-  return principal.forget();
-}
-
 class ClearOriginDataObserver final : public nsIObserver {
   ~ClearOriginDataObserver() {}
 
@@ -2233,11 +2185,46 @@ nsPermissionManager::GetPermissionHashKey(nsIPrincipal* aPrincipal,
 
   
   if (!aExactHostMatch) {
-    nsCOMPtr<nsIPrincipal> principal =
-      GetNextSubDomainPrincipal(aPrincipal);
-    if (principal) {
-      return GetPermissionHashKey(principal, aType, aExactHostMatch);
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+    if (NS_FAILED(rv)) {
+      return nullptr;
     }
+
+    nsAutoCString host;
+    rv = uri->GetHost(host);
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+
+    nsCString domain = GetNextSubDomainForHost(host);
+    if (domain.IsEmpty()) {
+      return nullptr;
+    }
+
+    
+    nsCOMPtr<nsIURI> newURI;
+    rv = uri->Clone(getter_AddRefs(newURI));
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+
+    rv = newURI->SetHost(domain);
+    if (NS_FAILED(rv)) {
+      return nullptr;
+    }
+
+    
+    mozilla::OriginAttributes attrs = aPrincipal->OriginAttributesRef();
+
+    
+    attrs.StripAttributes(mozilla::OriginAttributes::STRIP_USER_CONTEXT_ID |
+                          mozilla::OriginAttributes::STRIP_FIRST_PARTY_DOMAIN);
+
+    nsCOMPtr<nsIPrincipal> principal =
+      mozilla::BasePrincipal::CreateCodebasePrincipal(newURI, attrs);
+
+    return GetPermissionHashKey(principal, aType, aExactHostMatch);
   }
 
   
@@ -3027,6 +3014,7 @@ nsPermissionManager::SetPermissionsWithKey(const nsACString& aPermissionKey,
   return NS_OK;
 }
 
+
  void
 nsPermissionManager::GetKeyForPrincipal(nsIPrincipal* aPrincipal, nsACString& aKey)
 {
@@ -3039,51 +3027,31 @@ nsPermissionManager::GetKeyForPrincipal(nsIPrincipal* aPrincipal, nsACString& aK
     
     
     
-    aKey.Truncate();
     return;
   }
 
+  
+  
   nsAutoCString scheme;
-  rv = uri->GetScheme(scheme);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    aKey.Truncate();
+  uri->GetScheme(scheme);
+  if (!scheme.EqualsLiteral("http") &&
+      !scheme.EqualsLiteral("https") &&
+      !scheme.EqualsLiteral("ftp")) {
     return;
   }
 
   
   
-  if (scheme.EqualsLiteral("http") ||
-      scheme.EqualsLiteral("https") ||
-      scheme.EqualsLiteral("ftp")) {
-    rv = GetOriginFromPrincipal(aPrincipal, aKey);
-    if (NS_SUCCEEDED(rv)) {
-      return;
-    }
+  nsCOMPtr<nsIEffectiveTLDService> etldService =
+    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  rv = etldService->GetBaseDomain(uri, 0, aKey);
+  if (NS_FAILED(rv)) {
+    rv = uri->GetHost(aKey);
   }
-
-  
-  aKey.Truncate();
-  return;
-}
-
- nsTArray<nsCString>
-nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal)
-{
-  MOZ_ASSERT(aPrincipal);
-
-  nsTArray<nsCString> keys;
-  nsCOMPtr<nsIPrincipal> prin = aPrincipal;
-  while (prin) {
-    
-    nsCString* key = keys.AppendElement();
-    GetKeyForPrincipal(prin, *key);
-
-    
-    prin = GetNextSubDomainPrincipal(prin);
+  if (NS_FAILED(rv)) {
+    rv = uri->GetSpec(aKey);
   }
-
-  MOZ_ASSERT(keys.Length() >= 1,
-             "Every principal should have at least one key.");
-  return keys;
+  if (NS_FAILED(rv)) {
+    aKey.Truncate();
+  }
 }

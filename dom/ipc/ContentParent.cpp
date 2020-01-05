@@ -5030,12 +5030,9 @@ ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsTArray<nsCString> keys =
-    nsPermissionManager::GetAllKeysForPrincipal(principal);
-  MOZ_ASSERT(keys.Length() >= 1);
-  for (auto& key : keys) {
-    EnsurePermissionsByKey(key);
-  }
+  nsAutoCString key;
+  nsPermissionManager::GetKeyForPrincipal(principal, key);
+  EnsurePermissionsByKey(key);
 #endif
 
   return NS_OK;

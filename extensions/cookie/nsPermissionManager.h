@@ -223,23 +223,6 @@ public:
 
   static void GetKeyForPrincipal(nsIPrincipal* aPrincipal, nsACString& aPermissionKey);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsTArray<nsCString> GetAllKeysForPrincipal(nsIPrincipal* aPrincipal);
-
 private:
   virtual ~nsPermissionManager();
 
