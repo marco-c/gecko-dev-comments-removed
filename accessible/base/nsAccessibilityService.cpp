@@ -318,15 +318,12 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges)
       DocAccessible* document = GetExistingDocAccessible(ownerDoc);
 
       
-      if (document) {
-        if (nsCoreUtils::HasClickListener(node)) {
-          if (!document->GetAccessible(node)) {
-            document->RecreateAccessible(node);
-          }
-        } else {
-          if (document->GetAccessible(node)) {
-            document->RecreateAccessible(node);
-          }
+      
+      if (document && !document->HasAccessible(node) &&
+          nsCoreUtils::HasClickListener(node)) {
+        nsIContent* parentEl = node->GetFlattenedTreeParent();
+        if (parentEl) {
+          document->ContentInserted(parentEl, node, node->GetNextSibling());
         }
         break;
       }
