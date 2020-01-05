@@ -155,6 +155,17 @@ CacheOpChild::Recv__delete__(const ErrorResult& aRv,
     {
       auto actor = static_cast<CacheChild*>(
         aResult.get_StorageOpenResult().actorChild());
+
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(actor);
+      if (!actor) {
+        ErrorResult status;
+        status.ThrowTypeError<MSG_CACHE_OPEN_FAILED>();
+        mPromise->MaybeReject(status);
+        break;
+      }
+
       actor->SetWorkerHolder(GetWorkerHolder());
       RefPtr<Cache> cache = new Cache(mGlobal, actor);
       mPromise->MaybeResolve(cache);
