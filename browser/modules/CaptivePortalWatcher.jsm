@@ -97,7 +97,7 @@ this.CaptivePortalWatcher = {
     
     
     
-    if (!win || !win.document.hasFocus()) {
+    if (!win || win != Services.ww.activeWindow) {
       this._waitingToAddTab = true;
       Services.obs.addObserver(this, "xul-window-visible", false);
       return;

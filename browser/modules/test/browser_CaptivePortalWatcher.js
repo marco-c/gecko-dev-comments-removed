@@ -28,10 +28,25 @@ function* portalDetectedNoBrowserWindow() {
 
 function* openWindowAndWaitForPortalTabAndNotification() {
   let win = yield BrowserTestUtils.openNewBrowserWindow();
-  let [notification, tab] = yield Promise.all([
-    BrowserTestUtils.waitForGlobalNotificationBar(win, PORTAL_NOTIFICATION_VALUE),
-    BrowserTestUtils.waitForNewTab(win.gBrowser, CANONICAL_URL)
-  ]);
+  
+  
+  
+  let notification = win.document.getElementById("high-priority-global-notificationbox")
+                        .getNotificationWithValue(PORTAL_NOTIFICATION_VALUE);
+  if (!notification) {
+    notification =
+      yield BrowserTestUtils.waitForGlobalNotificationBar(win, PORTAL_NOTIFICATION_VALUE);
+  }
+  
+  let tab = win.gBrowser.tabs[1];
+  if (!tab || tab.linkedBrowser.currentURI.spec != CANONICAL_URL) {
+    
+    
+    yield BrowserTestUtils.waitForLocationChange(win.gBrowser, CANONICAL_URL);
+    
+    
+    tab = win.gBrowser.tabs[1];
+  }
   is(win.gBrowser.selectedTab, tab,
     "The captive portal tab should be open and selected in the new window.");
   testShowLoginPageButtonVisibility(notification, "hidden");
