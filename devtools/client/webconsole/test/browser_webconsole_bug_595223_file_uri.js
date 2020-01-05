@@ -23,7 +23,7 @@ add_task(function* () {
 
   
   
-  let { browser } = yield loadTab("about:blank", "file");
+  let { browser } = yield loadTab("about:blank", E10SUtils.FILE_REMOTE_TYPE);
 
   hud = yield openConsole();
   hud.jsterm.clearOutput();

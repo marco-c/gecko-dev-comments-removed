@@ -2867,6 +2867,17 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 pref("dom.ipc.processCount", 1);
 
 
+pref("dom.ipc.processCount.webLargeAllocation", 2);
+
+
+
+#if defined(NIGHTLY_BUILD)
+pref("browser.tabs.remote.separateFileUriProcess", true);
+#else
+pref("browser.tabs.remote.separateFileUriProcess", false);
+#endif
+
+
 pref("svg.path-caching.enabled", true);
 
 

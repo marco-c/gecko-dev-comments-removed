@@ -36,6 +36,10 @@
 
 
 #define DEFAULT_REMOTE_TYPE "web"
+#define FILE_REMOTE_TYPE "file"
+
+
+#define LARGE_ALLOCATION_REMOTE_TYPE "webLargeAllocation"
 
 class nsConsoleService;
 class nsICycleCollectorLogSink;
@@ -572,8 +576,7 @@ protected:
   void OnCompositorUnexpectedShutdown() override;
 
 private:
-  static nsTArray<ContentParent*>* sBrowserContentParents;
-  static nsTArray<ContentParent*>* sLargeAllocationContentParents;
+  static nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>* sBrowserContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
 
@@ -645,6 +648,12 @@ private:
   
   
   bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
+
+  
+
+
+
+  bool ShouldKeepProcessAlive() const;
 
   
 
@@ -1159,7 +1168,6 @@ private:
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelper> mGetFilesPendingRequests;
 
   nsTArray<nsCString> mBlobURLs;
-  bool mLargeAllocationProcess;
 };
 
 } 
