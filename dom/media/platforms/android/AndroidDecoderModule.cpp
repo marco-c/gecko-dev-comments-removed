@@ -12,6 +12,9 @@
 #include "VPXDecoder.h"
 
 #include "MediaPrefs.h"
+#include "OpusDecoder.h"
+#include "VorbisDecoder.h"
+
 #include "nsPromiseFlatString.h"
 #include "nsIGfxInfo.h"
 
@@ -158,7 +161,8 @@ AndroidDecoderModule::SupportsMimeType(const nsACString& aMimeType,
 
   
   
-  if (aMimeType.EqualsLiteral("audio/opus")) {
+  if (OpusDataDecoder::IsOpus(aMimeType) ||
+      VorbisDataDecoder::IsVorbis(aMimeType)) {
     LOG("Rejecting audio of type %s", aMimeType.Data());
     return false;
   }
