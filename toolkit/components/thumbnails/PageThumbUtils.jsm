@@ -35,7 +35,7 @@ this.PageThumbUtils = {
 
 
 
-  createCanvas: function(aWindow, aWidth = 0, aHeight = 0) {
+  createCanvas(aWindow, aWidth = 0, aHeight = 0) {
     let doc = (aWindow || Services.appShell.hiddenDOMWindow).document;
     let canvas = doc.createElementNS(this.HTML_NAMESPACE, "canvas");
     canvas.mozOpaque = true;
@@ -54,7 +54,7 @@ this.PageThumbUtils = {
 
 
 
-  getThumbnailSize: function(aWindow = null) {
+  getThumbnailSize(aWindow = null) {
     if (!this._thumbnailWidth || !this._thumbnailHeight) {
       let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"]
                             .getService(Ci.nsIScreenManager);
@@ -105,7 +105,7 @@ this.PageThumbUtils = {
 
 
 
-  getContentSize: function(aWindow) {
+  getContentSize(aWindow) {
     let utils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDOMWindowUtils);
     
@@ -148,7 +148,7 @@ this.PageThumbUtils = {
 
 
 
-  createSnapshotThumbnail: function(aWindow, aDestCanvas, aArgs) {
+  createSnapshotThumbnail(aWindow, aDestCanvas, aArgs) {
     if (Cu.isCrossProcessWrapper(aWindow)) {
       throw new Error('Do not pass cpows here.');
     }
@@ -229,7 +229,7 @@ this.PageThumbUtils = {
 
 
 
-  determineCropSize: function(aWindow, aCanvas) {
+  determineCropSize(aWindow, aCanvas) {
     if (Cu.isCrossProcessWrapper(aWindow)) {
       throw new Error('Do not pass cpows here.');
     }
@@ -265,7 +265,7 @@ this.PageThumbUtils = {
     return [width, height, scale];
   },
 
-  shouldStoreContentThumbnail: function(aDocument, aDocShell) {
+  shouldStoreContentThumbnail(aDocument, aDocShell) {
     if (BrowserUtils.isToolbarVisible(aDocShell, "findbar")) {
       return false;
     }
@@ -337,7 +337,7 @@ this.PageThumbUtils = {
 
 
 
-  isChannelErrorResponse: function(channel) {
+  isChannelErrorResponse(channel) {
     
     if (!channel)
       return true;

@@ -57,7 +57,7 @@ this.Deprecated = {
 
 
 
-  warning: function(aText, aUrl, aStack) {
+  warning(aText, aUrl, aStack) {
     if (!logWarnings) {
       return;
     }

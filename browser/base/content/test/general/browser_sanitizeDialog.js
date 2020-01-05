@@ -572,7 +572,7 @@ add_task(function* test_offline_cache() {
     
     var size = -1;
     var visitor = {
-      onCacheStorageInfo: function(aEntryCount, aConsumption, aCapacity, aDiskDirectory)
+      onCacheStorageInfo(aEntryCount, aConsumption, aCapacity, aDiskDirectory)
       {
         size = aConsumption;
       }
@@ -583,8 +583,8 @@ add_task(function* test_offline_cache() {
   };
 
   var cacheListener = {
-    onCacheEntryCheck: function() { return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED; },
-    onCacheEntryAvailable: function(entry, isnew, unused, status) {
+    onCacheEntryCheck() { return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED; },
+    onCacheEntryAvailable(entry, isnew, unused, status) {
       is(status, Cr.NS_OK);
       var stream = entry.openOutputStream(0);
       var content = "content";
@@ -648,7 +648,7 @@ WindowHelper.prototype = {
   
 
 
-  acceptDialog: function() {
+  acceptDialog() {
     is(this.win.document.documentElement.getButton("accept").disabled, false,
        "Dialog's OK button should not be disabled");
     this.win.document.documentElement.acceptDialog();
@@ -657,7 +657,7 @@ WindowHelper.prototype = {
   
 
 
-  cancelDialog: function() {
+  cancelDialog() {
     this.win.document.documentElement.cancelDialog();
   },
 
@@ -669,7 +669,7 @@ WindowHelper.prototype = {
 
 
 
-  checkDetails: function(aShouldBeShown) {
+  checkDetails(aShouldBeShown) {
     let button = this.getDetailsButton();
     let list = this.getItemList();
     let hidden = list.hidden || list.collapsed;
@@ -700,7 +700,7 @@ WindowHelper.prototype = {
 
 
 
-  checkPrefCheckbox: function(aPrefName, aCheckState) {
+  checkPrefCheckbox(aPrefName, aCheckState) {
     var pref = "privacy.cpd." + aPrefName;
     var cb = this.win.document.querySelectorAll(
                "#itemList > [preference='" + pref + "']");
@@ -712,7 +712,7 @@ WindowHelper.prototype = {
   
 
 
-  _checkAllCheckboxesCustom: function(check) {
+  _checkAllCheckboxesCustom(check) {
     var cb = this.win.document.querySelectorAll("#itemList > [preference]");
     ok(cb.length > 1, "found checkboxes for preferences");
     for (var i = 0; i < cb.length; ++i) {
@@ -722,39 +722,39 @@ WindowHelper.prototype = {
     }
   },
 
-  checkAllCheckboxes: function() {
+  checkAllCheckboxes() {
     this._checkAllCheckboxesCustom(true);
   },
 
-  uncheckAllCheckboxes: function() {
+  uncheckAllCheckboxes() {
     this._checkAllCheckboxesCustom(false);
   },
 
   
 
 
-  getDetailsButton: function() {
+  getDetailsButton() {
     return this.win.document.getElementById("detailsExpander");
   },
 
   
 
 
-  getDurationDropdown: function() {
+  getDurationDropdown() {
     return this.win.document.getElementById("sanitizeDurationChoice");
   },
 
   
 
 
-  getItemList: function() {
+  getItemList() {
     return this.win.document.getElementById("itemList");
   },
 
   
 
 
-  getWarningPanel: function() {
+  getWarningPanel() {
     return this.win.document.getElementById("sanitizeEverythingWarningBox");
   },
 
@@ -762,7 +762,7 @@ WindowHelper.prototype = {
 
 
 
-  isWarningPanelVisible: function() {
+  isWarningPanelVisible() {
     return !this.getWarningPanel().hidden;
   },
 
@@ -774,7 +774,7 @@ WindowHelper.prototype = {
 
 
 
-  open: function() {
+  open() {
     let wh = this;
 
     function windowObserver(aSubject, aTopic, aData) {
@@ -835,7 +835,7 @@ WindowHelper.prototype = {
 
 
 
-  selectDuration: function(aDurVal) {
+  selectDuration(aDurVal) {
     this.getDurationDropdown().value = aDurVal;
     if (aDurVal === Sanitizer.TIMESPAN_EVERYTHING) {
       is(this.isWarningPanelVisible(), true,
@@ -850,7 +850,7 @@ WindowHelper.prototype = {
   
 
 
-  toggleDetails: function() {
+  toggleDetails() {
     this.getDetailsButton().click();
   }
 };
@@ -898,11 +898,11 @@ function promiseAddFormEntryWithMinutesAgo(aMinutesAgo) {
 
   return new Promise((resolve, reject) =>
     FormHistory.update({ op: "add", fieldname: name, value: "dummy", firstUsed: timestamp },
-                       { handleError: function(error) {
+                       { handleError(error) {
                            reject();
                            throw new Error("Error occurred updating form history: " + error);
                          },
-                         handleCompletion: function(reason) {
+                         handleCompletion(reason) {
                            resolve(name);
                          }
                        })
@@ -918,11 +918,11 @@ function formNameExists(name)
     let count = 0;
     FormHistory.count({ fieldname: name },
                       { handleResult: result => count = result,
-                        handleError: function(error) {
+                        handleError(error) {
                           reject(error);
                           throw new Error("Error occurred searching form history: " + error);
                         },
-                        handleCompletion: function(reason) {
+                        handleCompletion(reason) {
                           if (!reason) {
                             resolve(count);
                           }

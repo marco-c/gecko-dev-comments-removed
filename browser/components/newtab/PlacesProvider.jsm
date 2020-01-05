@@ -248,6 +248,6 @@ Links.prototype = {
 const gLinks = new Links(); 
 
 let PlacesProvider = {
-  LinkChecker: LinkChecker,
+  LinkChecker,
   links: gLinks,
 };

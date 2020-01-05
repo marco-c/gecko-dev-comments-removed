@@ -20,7 +20,7 @@ PageMenu.prototype = {
   _browser: null,
 
   
-  getContextMenu: function(aTarget) {
+  getContextMenu(aTarget) {
     let target = aTarget;
     while (target) {
       let contextMenu = target.contextMenu;
@@ -35,7 +35,7 @@ PageMenu.prototype = {
 
   
   
-  maybeBuild: function(aTarget) {
+  maybeBuild(aTarget) {
     let pageMenu = this.getContextMenu(aTarget);
     if (!pageMenu) {
       return null;
@@ -62,7 +62,7 @@ PageMenu.prototype = {
   },
 
   
-  buildAndAttachMenuWithObject: function(aMenu, aBrowser, aPopup) {
+  buildAndAttachMenuWithObject(aMenu, aBrowser, aPopup) {
     if (!aMenu) {
       return false;
     }
@@ -95,7 +95,7 @@ PageMenu.prototype = {
   },
 
   
-  buildXULMenu: function(aNode, aElementForAppending) {
+  buildXULMenu(aNode, aElementForAppending) {
     let document = aElementForAppending.ownerDocument;
 
     let children = aNode.children;
@@ -151,7 +151,7 @@ PageMenu.prototype = {
   },
 
   
-  handleEvent: function(event) {
+  handleEvent(event) {
     let type = event.type;
     let target = event.target;
     if (type == "command" && target.hasAttribute(this.GENERATEDITEMID_ATTR)) {
@@ -183,7 +183,7 @@ PageMenu.prototype = {
   },
 
   
-  getImmediateChild: function(element, tag) {
+  getImmediateChild(element, tag) {
     let child = element.firstChild;
     while (child) {
       if (child.localName == tag) {
@@ -197,7 +197,7 @@ PageMenu.prototype = {
   
   
   
-  getInsertionPoint: function(aPopup) {
+  getInsertionPoint(aPopup) {
     if (aPopup.hasAttribute(this.PAGEMENU_ATTR))
       return aPopup;
 
@@ -219,7 +219,7 @@ PageMenu.prototype = {
   },
 
   
-  removeGeneratedContent: function(aPopup) {
+  removeGeneratedContent(aPopup) {
     let ungenerated = [];
     ungenerated.push(aPopup);
 
@@ -256,7 +256,7 @@ PageMenuParent.prototype = {
 
 
 
-  buildAndAddToPopup: function(aTarget, aPopup) {
+  buildAndAddToPopup(aTarget, aPopup) {
     let menuObject = this.maybeBuild(aTarget);
     if (!menuObject) {
       return false;
@@ -273,7 +273,7 @@ PageMenuParent.prototype = {
 
 
 
-  addToPopup: function(aMenu, aBrowser, aPopup) {
+  addToPopup(aMenu, aBrowser, aPopup) {
     return this.buildAndAttachMenuWithObject(aMenu, aBrowser, aPopup);
   }
 }
@@ -300,7 +300,7 @@ PageMenuChild.prototype = {
 
 
 
-  build: function(aTarget) {
+  build(aTarget) {
     return this.maybeBuild(aTarget);
   },
 
@@ -309,7 +309,7 @@ PageMenuChild.prototype = {
 
 
 
-  executeMenu: function(aId) {
+  executeMenu(aId) {
     if (this._builder) {
       this._builder.click(aId);
       this._builder = null;

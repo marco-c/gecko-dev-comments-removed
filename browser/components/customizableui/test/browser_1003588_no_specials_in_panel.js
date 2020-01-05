@@ -12,7 +12,7 @@ function simulateItemDragAndEnd(aToDrag, aTarget) {
     var [result, dataTransfer] = EventUtils.synthesizeDragOver(aToDrag.parentNode, aTarget);
     EventUtils.synthesizeDropAfterDragOver(result, dataTransfer, aTarget);
     
-    EventUtils.sendDragEvent({ type: "dragend", dataTransfer: dataTransfer },
+    EventUtils.sendDragEvent({ type: "dragend", dataTransfer },
                              aToDrag.parentNode);
   } finally {
     ds.endDragSession(true);

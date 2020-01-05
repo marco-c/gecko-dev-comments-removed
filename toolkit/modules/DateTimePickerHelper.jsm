@@ -38,20 +38,20 @@ this.DateTimePickerHelper = {
     "FormDateTime:UpdatePicker"
   ],
 
-  init: function() {
+  init() {
     for (let msg of this.MESSAGES) {
       Services.mm.addMessageListener(msg, this);
     }
   },
 
-  uninit: function() {
+  uninit() {
     for (let msg of this.MESSAGES) {
       Services.mm.removeMessageListener(msg, this);
     }
   },
 
   
-  receiveMessage: function(aMessage) {
+  receiveMessage(aMessage) {
     debug("receiveMessage: " + aMessage.name);
     switch (aMessage.name) {
       case "FormDateTime:OpenPicker": {
@@ -75,7 +75,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  handleEvent: function(aEvent) {
+  handleEvent(aEvent) {
     debug("handleEvent: " + aEvent.type);
     switch (aEvent.type) {
       case "DateTimePickerValueChanged": {
@@ -96,7 +96,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  updateInputBoxValue: function(aEvent) {
+  updateInputBoxValue(aEvent) {
     
     const { hour, minute } = aEvent.detail;
     debug("hour: " + hour + ", minute: " + minute);
@@ -108,7 +108,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  showPicker: function(aBrowser, aData) {
+  showPicker(aBrowser, aData) {
     let rect = aData.rect;
     let type = aData.type;
     let detail = aData.detail;
@@ -146,7 +146,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  close: function() {
+  close() {
     this.removePickerListeners();
     this.picker = null;
     this.weakBrowser = null;
@@ -154,7 +154,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  addPickerListeners: function() {
+  addPickerListeners() {
     if (!this.picker) {
       return;
     }
@@ -163,7 +163,7 @@ this.DateTimePickerHelper = {
   },
 
   
-  removePickerListeners: function() {
+  removePickerListeners() {
     if (!this.picker) {
       return;
     }

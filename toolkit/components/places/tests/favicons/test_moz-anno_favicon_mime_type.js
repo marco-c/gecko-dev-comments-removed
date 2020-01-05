@@ -23,7 +23,7 @@ function streamListener(aExpectedContentType)
 }
 streamListener.prototype =
 {
-  onStartRequest: function(aRequest, aContext)
+  onStartRequest(aRequest, aContext)
   {
     
     
@@ -35,12 +35,12 @@ streamListener.prototype =
     
     this._checked = true;
   },
-  onStopRequest: function()
+  onStopRequest()
   {
     do_check_true(this._checked);
     do_test_finished();
   },
-  onDataAvailable: function(aRequest, aContext, aInputStream, aOffset, aCount)
+  onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount)
   {
     aRequest.cancel(Cr.NS_ERROR_ABORT);
   }

@@ -1,15 +1,15 @@
-/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * Customization handler prepares this browser window for entering and exiting
- * customization mode by handling customizationstarting and customizationending
- * events.
- */
+
+
+
+
+
+
+
+
+
 var CustomizationHandler = {
-  handleEvent: function(aEvent) {
+  handleEvent(aEvent) {
     switch (aEvent.type) {
       case "customizationstarting":
         this._customizationStarting();
@@ -23,12 +23,12 @@ var CustomizationHandler = {
     }
   },
 
-  isCustomizing: function() {
+  isCustomizing() {
     return document.documentElement.hasAttribute("customizing");
   },
 
-  _customizationStarting: function() {
-    // Disable the toolbar context menu items
+  _customizationStarting() {
+    
     let menubar = document.getElementById("main-menubar");
     for (let childNode of menubar.childNodes)
       childNode.setAttribute("disabled", true);
@@ -42,8 +42,8 @@ var CustomizationHandler = {
     PlacesToolbarHelper.customizeStart();
     DownloadsButton.customizeStart();
 
-    // The additional padding on the sides of the browser
-    // can cause the customize tab to get clipped.
+    
+    
     let tabContainer = gBrowser.tabContainer;
     if (tabContainer.getAttribute("overflow") == "true") {
       let tabstrip = tabContainer.mTabstrip;
@@ -51,12 +51,12 @@ var CustomizationHandler = {
     }
   },
 
-  _customizationChange: function() {
+  _customizationChange() {
     PlacesToolbarHelper.customizeChange();
   },
 
-  _customizationEnding: function(aDetails) {
-    // Update global UI elements that may have been added or removed
+  _customizationEnding(aDetails) {
+    
     if (aDetails.changed) {
       gURLBar = document.getElementById("urlbar");
 
@@ -66,9 +66,9 @@ var CustomizationHandler = {
       if (AppConstants.platform != "macosx")
         updateEditUIVisibility();
 
-      // Hacky: update the PopupNotifications' object's reference to the iconBox,
-      // if it already exists, since it may have changed if the URL bar was
-      // added/removed.
+      
+      
+      
       if (!window.__lookupGetter__("PopupNotifications")) {
         PopupNotifications.iconBox =
           document.getElementById("notification-popup-box");
@@ -79,16 +79,16 @@ var CustomizationHandler = {
     PlacesToolbarHelper.customizeDone();
     DownloadsButton.customizeDone();
 
-    // The url bar splitter state is dependent on whether stop/reload
-    // and the location bar are combined, so we need this ordering
+    
+    
     CombinedStopReload.init();
     UpdateUrlbarSearchSplitterState();
 
-    // Update the urlbar
+    
     URLBarSetURI();
     XULBrowserWindow.asyncUpdateUI();
 
-    // Re-enable parts of the UI we disabled during the dialog
+    
     let menubar = document.getElementById("main-menubar");
     for (let childNode of menubar.childNodes)
       childNode.setAttribute("disabled", false);

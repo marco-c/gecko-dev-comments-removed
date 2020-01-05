@@ -55,7 +55,7 @@ this.ClientID = Object.freeze({
 
 
 
-  getClientID: function() {
+  getClientID() {
     return ClientIDImpl.getClientID();
   },
 
@@ -66,7 +66,7 @@ this.ClientID = Object.freeze({
 
 
 
-  getCachedClientID: function() {
+  getCachedClientID() {
     return ClientIDImpl.getCachedClientID();
   },
 
@@ -74,7 +74,7 @@ this.ClientID = Object.freeze({
 
 
 
-  _reset: function() {
+  _reset() {
     return ClientIDImpl._reset();
   },
 });
@@ -85,7 +85,7 @@ var ClientIDImpl = {
   _saveClientIdTask: null,
   _logger: null,
 
-  _loadClientID: function() {
+  _loadClientID() {
     if (this._loadClientIdTask) {
       return this._loadClientIdTask;
     }
@@ -156,7 +156,7 @@ var ClientIDImpl = {
 
 
 
-  getClientID: function() {
+  getClientID() {
     if (!this._clientID) {
       return this._loadClientID();
     }
@@ -171,7 +171,7 @@ var ClientIDImpl = {
 
 
 
-  getCachedClientID: function() {
+  getCachedClientID() {
     if (this._clientID) {
       
       return this._clientID;
@@ -207,7 +207,7 @@ var ClientIDImpl = {
 
 
 
-  updateClientID: function(id) {
+  updateClientID(id) {
     if (!isValidClientID(id)) {
       this._log.error("updateClientID - invalid client ID", id);
       return false;

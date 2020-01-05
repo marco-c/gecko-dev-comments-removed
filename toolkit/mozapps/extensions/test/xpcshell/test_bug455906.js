@@ -119,12 +119,12 @@ var gTestCheck = null;
 
 
 var PluginHost = {
-  getPluginTags: function(countRef) {
+  getPluginTags(countRef) {
     countRef.value = PLUGINS.length;
     return PLUGINS;
   },
 
-  QueryInterface: function(iid) {
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIPluginHost)
      || iid.equals(Ci.nsISupports))
       return this;
@@ -136,7 +136,7 @@ var PluginHost = {
 
 
 var WindowWatcher = {
-  openWindow: function(parent, url, name, features, windowArguments) {
+  openWindow(parent, url, name, features, windowArguments) {
     
     do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
 
@@ -152,7 +152,7 @@ var WindowWatcher = {
     do_timeout(0, gTestCheck);
   },
 
-  QueryInterface: function(iid) {
+  QueryInterface(iid) {
     if (iid.equals(Ci.nsIWindowWatcher)
      || iid.equals(Ci.nsISupports))
       return this;

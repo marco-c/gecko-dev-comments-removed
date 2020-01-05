@@ -92,7 +92,7 @@ FormAutoCompleteResult.prototype = {
     return this._values.length;
   },
 
-  _checkIndexBounds : function(index) {
+  _checkIndexBounds(index) {
     if (index < 0 || index >= this._values.length) {
       throw Components.Exception("Index out of range.", Cr.NS_ERROR_ILLEGAL_VALUE);
     }
@@ -103,12 +103,12 @@ FormAutoCompleteResult.prototype = {
 
 
 
-  getValueAt: function(index) {
+  getValueAt(index) {
     this._checkIndexBounds(index);
     return this._values[index];
   },
 
-  getLabelAt: function(index) {
+  getLabelAt(index) {
     this._checkIndexBounds(index);
     return this._labels[index] || this._values[index];
   },
@@ -118,7 +118,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
-  getCommentAt: function(index) {
+  getCommentAt(index) {
     this._checkIndexBounds(index);
     return this._comments[index];
   },
@@ -128,7 +128,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
-  getStyleAt: function(index) {
+  getStyleAt(index) {
     this._checkIndexBounds(index);
 
     if (this._formHistResult && index < this._formHistResult.matchCount) {
@@ -149,7 +149,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
-  getImageAt: function(index) {
+  getImageAt(index) {
     this._checkIndexBounds(index);
     return "";
   },
@@ -159,7 +159,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
-  getFinalCompleteValueAt: function(index) {
+  getFinalCompleteValueAt(index) {
     return this.getValueAt(index);
   },
 
@@ -167,7 +167,7 @@ FormAutoCompleteResult.prototype = {
 
 
 
-  removeValueAt: function(index, removeFromDatabase) {
+  removeValueAt(index, removeFromDatabase) {
     this._checkIndexBounds(index);
     
     

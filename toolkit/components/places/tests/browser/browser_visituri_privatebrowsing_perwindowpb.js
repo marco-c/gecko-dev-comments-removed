@@ -17,7 +17,7 @@ function test() {
 
   function doTest(aIsPrivateMode, aWindow, aTestURI, aCallback) {
     observer = {
-      observe: function(aSubject, aTopic, aData) {
+      observe(aSubject, aTopic, aData) {
         
         if (aTopic == "uri-visit-saved") {
           

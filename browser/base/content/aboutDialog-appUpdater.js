@@ -168,7 +168,7 @@ appUpdater.prototype =
 
 
 
-  selectPanel: function(aChildID) {
+  selectPanel(aChildID) {
     let panel = document.getElementById(aChildID);
 
     let button = panel.querySelector("button");
@@ -191,7 +191,7 @@ appUpdater.prototype =
   
 
 
-  checkForUpdates: function() {
+  checkForUpdates() {
     
     if (Services.prefs.prefHasUserValue(PREF_APP_UPDATE_CANCELATIONS_OSX)) {
       Services.prefs.clearUserPref(PREF_APP_UPDATE_CANCELATIONS_OSX);
@@ -209,7 +209,7 @@ appUpdater.prototype =
 
 
 
-  buttonRestartAfterDownload: function() {
+  buttonRestartAfterDownload() {
     if (!this.isPending && !this.isApplied) {
       return;
     }
@@ -249,7 +249,7 @@ appUpdater.prototype =
     
 
 
-    onCheckComplete: function(aRequest, aUpdates, aUpdateCount) {
+    onCheckComplete(aRequest, aUpdates, aUpdateCount) {
       gAppUpdater.isChecking = false;
       gAppUpdater.update = gAppUpdater.aus.
                            selectUpdate(aUpdates, aUpdates.length);
@@ -281,7 +281,7 @@ appUpdater.prototype =
     
 
 
-    onError: function(aRequest, aUpdate) {
+    onError(aRequest, aUpdate) {
       
       
       
@@ -292,7 +292,7 @@ appUpdater.prototype =
     
 
 
-    QueryInterface: function(aIID) {
+    QueryInterface(aIID) {
       if (!aIID.equals(Components.interfaces.nsIUpdateCheckListener) &&
           !aIID.equals(Components.interfaces.nsISupports))
         throw Components.results.NS_ERROR_NO_INTERFACE;
@@ -303,7 +303,7 @@ appUpdater.prototype =
   
 
 
-  startDownload: function() {
+  startDownload() {
     if (!this.update)
       this.update = this.um.activeUpdate;
     this.update.QueryInterface(Components.interfaces.nsIWritablePropertyBag);
@@ -322,7 +322,7 @@ appUpdater.prototype =
   
 
 
-  setupDownloadingUI: function() {
+  setupDownloadingUI() {
     this.downloadStatus = document.getElementById("downloadStatus");
     this.downloadStatus.value =
       DownloadUtils.getTransferTotal(0, this.update.selectedPatch.size);
@@ -330,7 +330,7 @@ appUpdater.prototype =
     this.aus.addDownloadListener(this);
   },
 
-  removeDownloadListener: function() {
+  removeDownloadListener() {
     if (this.aus) {
       this.aus.removeDownloadListener(this);
     }
@@ -339,13 +339,13 @@ appUpdater.prototype =
   
 
 
-  onStartRequest: function(aRequest, aContext) {
+  onStartRequest(aRequest, aContext) {
   },
 
   
 
 
-  onStopRequest: function(aRequest, aContext, aStatusCode) {
+  onStopRequest(aRequest, aContext, aStatusCode) {
     switch (aStatusCode) {
     case Components.results.NS_ERROR_UNEXPECTED:
       if (this.update.selectedPatch.state == "download-failed" &&
@@ -404,13 +404,13 @@ appUpdater.prototype =
   
 
 
-  onStatus: function(aRequest, aContext, aStatus, aStatusArg) {
+  onStatus(aRequest, aContext, aStatus, aStatusArg) {
   },
 
   
 
 
-  onProgress: function(aRequest, aContext, aProgress, aProgressMax) {
+  onProgress(aRequest, aContext, aProgress, aProgressMax) {
     this.downloadStatus.value =
       DownloadUtils.getTransferTotal(aProgress, aProgressMax);
   },
@@ -418,7 +418,7 @@ appUpdater.prototype =
   
 
 
-  QueryInterface: function(aIID) {
+  QueryInterface(aIID) {
     if (!aIID.equals(Components.interfaces.nsIProgressEventSink) &&
         !aIID.equals(Components.interfaces.nsIRequestObserver) &&
         !aIID.equals(Components.interfaces.nsISupports))

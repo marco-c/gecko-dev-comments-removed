@@ -130,7 +130,7 @@ this.History = Object.freeze({
 
 
 
-  fetch: function(guidOrURI) {
+  fetch(guidOrURI) {
     throw new Error("Method not implemented");
   },
 
@@ -175,7 +175,7 @@ this.History = Object.freeze({
 
 
 
-  insert: function(pageInfo) {
+  insert(pageInfo) {
     if (typeof pageInfo != "object" || !pageInfo) {
       throw new TypeError("pageInfo must be an object");
     }
@@ -231,7 +231,7 @@ this.History = Object.freeze({
 
 
 
-  insertMany: function(pageInfos, onResult, onError) {
+  insertMany(pageInfos, onResult, onError) {
     let infos = [];
 
     if (!Array.isArray(pageInfos)) {
@@ -281,7 +281,7 @@ this.History = Object.freeze({
 
 
 
-  remove: function(pages, onResult = null) {
+  remove(pages, onResult = null) {
     
     if (Array.isArray(pages)) {
       if (pages.length == 0) {
@@ -303,7 +303,7 @@ this.History = Object.freeze({
         urls.push(normalized.href);
       }
     }
-    let normalizedPages = {guids: guids, urls: urls};
+    let normalizedPages = {guids, urls};
 
     
     
@@ -348,7 +348,7 @@ this.History = Object.freeze({
 
 
 
-  removeVisitsByFilter: function(filter, onResult = null) {
+  removeVisitsByFilter(filter, onResult = null) {
     if (!filter || typeof filter != "object") {
       throw new TypeError("Expected a filter");
     }
@@ -407,7 +407,7 @@ this.History = Object.freeze({
 
 
 
-  hasVisits: function(page, onResult) {
+  hasVisits(page, onResult) {
     throw new Error("Method not implemented");
   },
 
@@ -927,7 +927,7 @@ var remove = Task.async(function*(db, {guids, urls}, onResult = null) {
     pages.push(page);
     if (onResult) {
       onResultData.push({
-        guid: guid,
+        guid,
         title: row.getResultByName("title"),
         frecency: row.getResultByName("frecency"),
         url: new URL(url)

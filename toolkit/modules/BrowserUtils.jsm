@@ -22,7 +22,7 @@ this.BrowserUtils = {
   
 
 
-  dumpLn: function(...args) {
+  dumpLn(...args) {
     for (let a of args)
       dump(a + " ");
     dump("\n");
@@ -32,7 +32,7 @@ this.BrowserUtils = {
 
 
 
-  restartApplication: function() {
+  restartApplication() {
     let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"]
                        .getService(Ci.nsIAppStartup);
     let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"]
@@ -65,7 +65,7 @@ this.BrowserUtils = {
 
 
 
-  urlSecurityCheck: function(aURL, aPrincipal, aFlags) {
+  urlSecurityCheck(aURL, aPrincipal, aFlags) {
     var secMan = Services.scriptSecurityManager;
     if (aFlags === undefined) {
       aFlags = secMan.STANDARD;
@@ -130,15 +130,15 @@ this.BrowserUtils = {
 
 
 
-  makeURI: function(aURL, aOriginCharset, aBaseURI) {
+  makeURI(aURL, aOriginCharset, aBaseURI) {
     return Services.io.newURI(aURL, aOriginCharset, aBaseURI);
   },
 
-  makeFileURI: function(aFile) {
+  makeFileURI(aFile) {
     return Services.io.newFileURI(aFile);
   },
 
-  makeURIFromCPOW: function(aCPOWURI) {
+  makeURIFromCPOW(aCPOWURI) {
     return Services.io.newURI(aCPOWURI.spec, aCPOWURI.originCharset, null);
   },
 
@@ -148,7 +148,7 @@ this.BrowserUtils = {
 
 
 
-  getElementBoundingScreenRect: function(aElement) {
+  getElementBoundingScreenRect(aElement) {
     return this.getElementBoundingRect(aElement, true);
   },
 
@@ -158,7 +158,7 @@ this.BrowserUtils = {
 
 
 
-  getElementBoundingRect: function(aElement, aInScreenCoords) {
+  getElementBoundingRect(aElement, aInScreenCoords) {
     let rect = aElement.getBoundingClientRect();
     let win = aElement.ownerDocument.defaultView;
 
@@ -194,7 +194,7 @@ this.BrowserUtils = {
     return rect;
   },
 
-  onBeforeLinkTraversal: function(originalTarget, linkURI, linkNode, isAppTab) {
+  onBeforeLinkTraversal(originalTarget, linkURI, linkNode, isAppTab) {
     
     
     if (originalTarget != "" || !isAppTab)
@@ -231,7 +231,7 @@ this.BrowserUtils = {
 
 
 
-  makeNicePluginName: function(aName) {
+  makeNicePluginName(aName) {
     if (aName == "Shockwave Flash")
       return "Adobe Flash";
     
@@ -256,7 +256,7 @@ this.BrowserUtils = {
 
 
 
-  linkHasNoReferrer: function(linkNode) {
+  linkHasNoReferrer(linkNode) {
     
     
     
@@ -279,7 +279,7 @@ this.BrowserUtils = {
 
 
 
-  mimeTypeIsTextBased: function(mimeType) {
+  mimeTypeIsTextBased(mimeType) {
     return mimeType.startsWith("text/") ||
            mimeType.endsWith("+xml") ||
            mimeType == "application/x-javascript" ||
@@ -298,7 +298,7 @@ this.BrowserUtils = {
 
 
 
-  shouldFastFind: function(elt, win) {
+  shouldFastFind(elt, win) {
     if (elt) {
       if (elt instanceof win.HTMLInputElement && elt.mozIsTextField(false))
         return false;
@@ -323,7 +323,7 @@ this.BrowserUtils = {
 
 
 
-  canFastFind: function(win) {
+  canFastFind(win) {
     if (!win)
       return false;
 
@@ -400,7 +400,7 @@ this.BrowserUtils = {
       .getInterface(Ci.nsIDOMWindow);
   },
 
-  getSelectionDetails: function(topWindow, aCharLen) {
+  getSelectionDetails(topWindow, aCharLen) {
     
     const kMaxSelectionLen = 150;
     const charLen = Math.min(aCharLen || kMaxSelectionLen, kMaxSelectionLen);

@@ -121,7 +121,7 @@ FormHistory.prototype = {
             let query = "UPDATE moz_formhistory SET timesUsed = timesUsed + 1, lastUsed = :lastUsed WHERE id = :id";
             let params = {
                             lastUsed : now,
-                            id       : id
+                            id
                          };
 
             try {
@@ -145,11 +145,11 @@ FormHistory.prototype = {
                             "VALUES (:fieldname, :value, :timesUsed, :firstUsed, :lastUsed, :guid)";
             let params = {
                             fieldname : name,
-                            value     : value,
+                            value,
                             timesUsed : 1,
                             firstUsed : now,
                             lastUsed  : now,
-                            guid      : guid
+                            guid
                         };
 
             try {
@@ -176,7 +176,7 @@ FormHistory.prototype = {
 
         let stmt;
         let query = "DELETE FROM moz_formhistory WHERE id = :id";
-        let params = { id : id };
+        let params = { id };
         let existingTransactionInProgress;
 
         try {
@@ -185,7 +185,7 @@ FormHistory.prototype = {
             if (!existingTransactionInProgress)
                 this.dbConnection.beginTransaction();
             this.moveToDeletedTable("VALUES (:guid, :timeDeleted)", {
-              guid: guid,
+              guid,
               timeDeleted: Date.now()
             });
 
@@ -316,8 +316,8 @@ FormHistory.prototype = {
         let stmt;
         let query = "DELETE FROM moz_formhistory WHERE firstUsed >= :beginTime AND firstUsed <= :endTime";
         let params = {
-                        beginTime : beginTime,
-                        endTime   : endTime
+                        beginTime,
+                        endTime
                      };
         let existingTransactionInProgress;
 
@@ -329,8 +329,8 @@ FormHistory.prototype = {
             this.moveToDeletedTable(
                   "SELECT guid, :timeDeleted FROM moz_formhistory " +
                   "WHERE firstUsed >= :beginTime AND firstUsed <= :endTime", {
-              beginTime: beginTime,
-              endTime: endTime
+              beginTime,
+              endTime
             });
 
             stmt = this.dbCreateStatement(query, params);
@@ -425,7 +425,7 @@ FormHistory.prototype = {
     
 
 
-    generateGUID : function() {
+    generateGUID() {
         
         let uuid = this.uuidService.generateUUID().toString();
         let raw = ""; 
@@ -442,7 +442,7 @@ FormHistory.prototype = {
     },
 
 
-    sendStringNotification : function(changeType, str1, str2, str3) {
+    sendStringNotification(changeType, str1, str2, str3) {
         function wrapit(str) {
             let wrapper = Cc["@mozilla.org/supports-string;1"].
                           createInstance(Ci.nsISupportsString);
@@ -466,7 +466,7 @@ FormHistory.prototype = {
     },
 
 
-    sendIntNotification : function(changeType, int1, int2) {
+    sendIntNotification(changeType, int1, int2) {
         function wrapit(int) {
             let wrapper = Cc["@mozilla.org/supports-PRInt64;1"].
                           createInstance(Ci.nsISupportsPRInt64);
@@ -489,18 +489,18 @@ FormHistory.prototype = {
     },
 
 
-    sendNotification : function(changeType, data) {
+    sendNotification(changeType, data) {
         Services.obs.notifyObservers(data, "satchel-storage-changed", changeType);
     },
 
 
-    getExistingEntryID : function(name, value) {
+    getExistingEntryID(name, value) {
         let id = -1, guid = null;
         let stmt;
         let query = "SELECT id, guid FROM moz_formhistory WHERE fieldname = :fieldname AND value = :value";
         let params = {
                         fieldname : name,
-                        value     : value
+                        value
                      };
         try {
             stmt = this.dbCreateStatement(query, params);
@@ -521,7 +521,7 @@ FormHistory.prototype = {
     },
 
 
-    countAllEntries : function() {
+    countAllEntries() {
         let query = "SELECT COUNT(1) AS numEntries FROM moz_formhistory";
 
         let stmt, numEntries;
@@ -543,7 +543,7 @@ FormHistory.prototype = {
     },
 
 
-    updatePrefs : function() {
+    updatePrefs() {
         this.debug          = Services.prefs.getBoolPref("browser.formfill.debug");
         this.enabled        = Services.prefs.getBoolPref("browser.formfill.enable");
     },
@@ -556,7 +556,7 @@ FormHistory.prototype = {
 
 
 
-    dbCreateStatement : function(query, params) {
+    dbCreateStatement(query, params) {
         let stmt = this.dbStmts[query];
         
         if (!stmt) {
@@ -578,7 +578,7 @@ FormHistory.prototype = {
 
 
 
-    dbOpen : function() {
+    dbOpen() {
         this.log("Open Database");
 
         let storage = Cc["@mozilla.org/storage/service;1"].
@@ -592,7 +592,7 @@ FormHistory.prototype = {
 
 
 
-    dbInit : function() {
+    dbInit() {
         this.log("Initializing Database");
 
         let version = this.dbConnection.schemaVersion;
@@ -606,7 +606,7 @@ FormHistory.prototype = {
     },
 
 
-    dbCreate: function() {
+    dbCreate() {
         this.log("Creating DB -- tables");
         for (let name in this.dbSchema.tables) {
             let table = this.dbSchema.tables[name];
@@ -624,13 +624,13 @@ FormHistory.prototype = {
         this.dbConnection.schemaVersion = DB_VERSION;
     },
 
-    dbCreateTable: function(name, table) {
+    dbCreateTable(name, table) {
         let tSQL = Object.keys(table).map(col => [col, table[col]].join(" ")).join(", ");
         this.log("Creating table " + name + " with " + tSQL);
         this.dbConnection.createTable(name, tSQL);
     },
 
-    dbMigrate : function(oldVersion) {
+    dbMigrate(oldVersion) {
         this.log("Attempting to migrate from version " + oldVersion);
 
         if (oldVersion > DB_VERSION) {
@@ -680,7 +680,7 @@ FormHistory.prototype = {
 
 
 
-    dbMigrateToVersion1 : function() {
+    dbMigrateToVersion1() {
         
         
         let query;
@@ -722,7 +722,7 @@ FormHistory.prototype = {
 
 
 
-    dbMigrateToVersion2 : function() {
+    dbMigrateToVersion2() {
         let query = "DROP TABLE IF EXISTS moz_dummy_table";
         this.dbConnection.executeSimpleSQL(query);
 
@@ -737,7 +737,7 @@ FormHistory.prototype = {
 
 
 
-    dbMigrateToVersion3 : function() {
+    dbMigrateToVersion3() {
         
         let query;
         if (!this.dbColumnExists("guid")) {
@@ -769,7 +769,7 @@ FormHistory.prototype = {
         query = "UPDATE moz_formhistory SET guid = :guid WHERE id = :id";
         for (let id of ids) {
             let params = {
-                id   : id,
+                id,
                 guid : this.generateGUID()
             };
 
@@ -787,7 +787,7 @@ FormHistory.prototype = {
         }
     },
 
-    dbMigrateToVersion4 : function() {
+    dbMigrateToVersion4() {
         if (!this.dbConnection.tableExists("moz_deleted_formhistory")) {
             this.dbCreateTable("moz_deleted_formhistory", this.dbSchema.tables.moz_deleted_formhistory);
         }
@@ -799,7 +799,7 @@ FormHistory.prototype = {
 
 
 
-    dbAreExpectedColumnsPresent : function() {
+    dbAreExpectedColumnsPresent() {
         for (let name in this.dbSchema.tables) {
             let table = this.dbSchema.tables[name];
             let query = "SELECT " +
@@ -824,7 +824,7 @@ FormHistory.prototype = {
 
 
 
-    dbColumnExists : function(columnName) {
+    dbColumnExists(columnName) {
         let query = "SELECT " + columnName + " FROM moz_formhistory";
         try {
             let stmt = this.dbConnection.createStatement(query);
@@ -876,7 +876,7 @@ FormHistory.prototype = {
 
 
 
-    dbCleanup : function() {
+    dbCleanup() {
         this.log("Cleaning up DB file - close & remove & backup")
 
         

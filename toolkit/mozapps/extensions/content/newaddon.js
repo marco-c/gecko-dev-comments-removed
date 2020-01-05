@@ -15,7 +15,7 @@ var gAddon = null;
 
 
 var EnableListener = {
-  onEnabling: function(aAddon) {
+  onEnabling(aAddon) {
     if (aAddon.id == gAddon.id)
       window.close();
   }

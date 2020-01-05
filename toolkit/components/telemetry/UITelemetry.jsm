@@ -45,7 +45,7 @@ this.UITelemetry = {
     return this._enabled;
   },
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic == "profile-before-change") {
       Services.obs.removeObserver(this, "profile-before-change");
       Services.prefs.removeObserver(PREF_ENABLED, this);
@@ -89,7 +89,7 @@ this.UITelemetry = {
 
 
 
-  uptimeMillis: function() {
+  uptimeMillis() {
     return Date.now() - Services.startup.getStartupInfo().process;
   },
 
@@ -102,7 +102,7 @@ this.UITelemetry = {
 
 
 
-  addEvent: function(aAction, aMethod, aTimestamp, aExtras) {
+  addEvent(aAction, aMethod, aTimestamp, aExtras) {
     if (!this.enabled) {
       return;
     }
@@ -112,7 +112,7 @@ this.UITelemetry = {
       type: "event",
       action: aAction,
       method: aMethod,
-      sessions: sessions,
+      sessions,
       timestamp: (aTimestamp == undefined) ? this.uptimeMillis() : aTimestamp,
     };
 
@@ -126,7 +126,7 @@ this.UITelemetry = {
   
 
 
-  startSession: function(aName, aTimestamp) {
+  startSession(aName, aTimestamp) {
     if (!this.enabled) {
       return;
     }
@@ -141,7 +141,7 @@ this.UITelemetry = {
   
 
 
-  stopSession: function(aName, aReason, aTimestamp) {
+  stopSession(aName, aReason, aTimestamp) {
     if (!this.enabled) {
       return;
     }
@@ -164,7 +164,7 @@ this.UITelemetry = {
     this._recordEvent(aEvent);
   },
 
-  _recordEvent: function(aEvent) {
+  _recordEvent(aEvent) {
     this._measurements.push(aEvent);
   },
 
@@ -174,7 +174,7 @@ this.UITelemetry = {
 
 
 
-  getSimpleMeasures: function() {
+  getSimpleMeasures() {
     if (!this.enabled) {
       return {};
     }
@@ -195,7 +195,7 @@ this.UITelemetry = {
 
 
 
-  addSimpleMeasureFunction: function(aName, aFunction) {
+  addSimpleMeasureFunction(aName, aFunction) {
     if (!this.enabled) {
       return;
     }
@@ -211,7 +211,7 @@ this.UITelemetry = {
     this._simpleMeasureFunctions[aName] = aFunction;
   },
 
-  removeSimpleMeasureFunction: function(aName) {
+  removeSimpleMeasureFunction(aName) {
     delete this._simpleMeasureFunctions[aName];
   },
 
@@ -221,7 +221,7 @@ this.UITelemetry = {
 
 
 
-  getUIMeasurements: function(aClear) {
+  getUIMeasurements(aClear) {
     if (!this.enabled) {
       return [];
     }

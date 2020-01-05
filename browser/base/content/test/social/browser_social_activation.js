@@ -186,7 +186,7 @@ function test() {
 }
 
 var tests = {
-  testActivationWrongOrigin: function(next) {
+  testActivationWrongOrigin(next) {
     
     Services.prefs.setBoolPref("social.remote-install.enabled", false);
     activateProvider(gTestDomains[0], function() {
@@ -199,7 +199,7 @@ var tests = {
     });
   },
 
-  testIFrameActivation: function(next) {
+  testIFrameActivation(next) {
     activateIFrameProvider(gTestDomains[0], function() {
       is(SocialUI.enabled, false, "SocialUI is not enabled");
       let panel = document.getElementById("servicesInstall-notification");
@@ -209,7 +209,7 @@ var tests = {
     });
   },
 
-  testActivationFirstProvider: function(next) {
+  testActivationFirstProvider(next) {
     
     activateOneProvider(gProviders[0], false, function() {
       
@@ -218,7 +218,7 @@ var tests = {
     });
   },
 
-  testActivationMultipleProvider: function(next) {
+  testActivationMultipleProvider(next) {
     
     
     
@@ -237,7 +237,7 @@ var tests = {
     });
   },
 
-  testAddonManagerDoubleInstall: function(next) {
+  testAddonManagerDoubleInstall(next) {
     
     let addonsTab = gBrowser.addTab();
     gBrowser.selectedTab = addonsTab;

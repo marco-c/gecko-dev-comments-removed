@@ -131,50 +131,50 @@ this.EXPORTED_SYMBOLS = ["TelemetryController"];
 
 this.TelemetryController = Object.freeze({
   Constants: Object.freeze({
-    PREF_LOG_LEVEL: PREF_LOG_LEVEL,
-    PREF_LOG_DUMP: PREF_LOG_DUMP,
-    PREF_SERVER: PREF_SERVER,
+    PREF_LOG_LEVEL,
+    PREF_LOG_DUMP,
+    PREF_SERVER,
   }),
 
   
 
 
-  testInitLogging: function() {
+  testInitLogging() {
     configureLogging();
   },
 
   
 
 
-  testReset: function() {
+  testReset() {
     return Impl.reset();
   },
 
   
 
 
-  testSetup: function() {
+  testSetup() {
     return Impl.setupTelemetry(true);
   },
 
   
 
 
-  testShutdown: function() {
+  testShutdown() {
     return Impl.shutdown();
   },
 
   
 
 
-  testSetupContent: function() {
+  testSetupContent() {
     return Impl.setupContentTelemetry(true);
   },
 
   
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
   },
 
@@ -199,7 +199,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  submitExternalPing: function(aType, aPayload, aOptions = {}) {
+  submitExternalPing(aType, aPayload, aOptions = {}) {
     aOptions.addClientId = aOptions.addClientId || false;
     aOptions.addEnvironment = aOptions.addEnvironment || false;
 
@@ -212,7 +212,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  getCurrentPingData: function(aSubsession = false) {
+  getCurrentPingData(aSubsession = false) {
     return Impl.getCurrentPingData(aSubsession);
   },
 
@@ -233,7 +233,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  addPendingPing: function(aType, aPayload, aOptions = {}) {
+  addPendingPing(aType, aPayload, aOptions = {}) {
     let options = aOptions;
     options.addClientId = aOptions.addClientId || false;
     options.addEnvironment = aOptions.addEnvironment || false;
@@ -248,7 +248,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  checkAbortedSessionPing: function() {
+  checkAbortedSessionPing() {
     return Impl.checkAbortedSessionPing();
   },
 
@@ -258,7 +258,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  saveAbortedSessionPing: function(aPayload) {
+  saveAbortedSessionPing(aPayload) {
     return Impl.saveAbortedSessionPing(aPayload);
   },
 
@@ -267,7 +267,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  removeAbortedSessionPing: function() {
+  removeAbortedSessionPing() {
     return Impl.removeAbortedSessionPing();
   },
 
@@ -290,7 +290,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  savePing: function(aType, aPayload, aFilePath, aOptions = {}) {
+  savePing(aType, aPayload, aFilePath, aOptions = {}) {
     let options = aOptions;
     options.addClientId = aOptions.addClientId || false;
     options.addEnvironment = aOptions.addEnvironment || false;
@@ -303,7 +303,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  getSessionRecorder: function() {
+  getSessionRecorder() {
     return Impl._sessionRecorder;
   },
 
@@ -312,7 +312,7 @@ this.TelemetryController = Object.freeze({
 
 
 
-  promiseInitialized: function() {
+  promiseInitialized() {
     return Impl.promiseInitialized();
   },
 });
@@ -353,7 +353,7 @@ var Impl = {
   
 
 
-  _getApplicationSection: function() {
+  _getApplicationSection() {
     
     
     let arch = null;
@@ -412,7 +412,7 @@ var Impl = {
       creationDate: (Policy.now()).toISOString(),
       version: PING_FORMAT_VERSION,
       application: this._getApplicationSection(),
-      payload: payload,
+      payload,
     };
 
     if (aOptions.addClientId) {
@@ -430,7 +430,7 @@ var Impl = {
 
 
 
-  _trackPendingPingTask: function(aPromise) {
+  _trackPendingPingTask(aPromise) {
     this._connectionsBarrier.client.addBlocker("Waiting for ping task", aPromise);
   },
 
@@ -602,14 +602,14 @@ var Impl = {
 
 
 
-  saveAbortedSessionPing: function(aPayload) {
+  saveAbortedSessionPing(aPayload) {
     this._log.trace("saveAbortedSessionPing");
     const options = {addClientId: true, addEnvironment: true};
     const pingData = this.assemblePing(PING_TYPE_MAIN, aPayload, options);
     return TelemetryStorage.saveAbortedSessionPing(pingData);
   },
 
-  removeAbortedSessionPing: function() {
+  removeAbortedSessionPing() {
     return TelemetryStorage.removeAbortedSessionPing();
   },
 
@@ -745,7 +745,7 @@ var Impl = {
 
 
 
-  setupContentTelemetry: function(testing = false) {
+  setupContentTelemetry(testing = false) {
     this._testMode = testing;
 
     
@@ -792,7 +792,7 @@ var Impl = {
     }
   }),
 
-  shutdown: function() {
+  shutdown() {
     this._log.trace("shutdown");
 
     
@@ -820,7 +820,7 @@ var Impl = {
   
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     
     if (aTopic == "profile-after-change" || aTopic == "app-startup") {
       
@@ -844,7 +844,7 @@ var Impl = {
   
 
 
-  _getState: function() {
+  _getState() {
     return {
       initialized: this._initialized,
       initStarted: this._initStarted,
@@ -859,7 +859,7 @@ var Impl = {
 
 
 
-  _onUploadPrefChange: function() {
+  _onUploadPrefChange() {
     const uploadEnabled = Preferences.get(PREF_FHR_UPLOAD_ENABLED, false);
     if (uploadEnabled) {
       
@@ -886,7 +886,7 @@ var Impl = {
       "TelemetryController: removing pending pings after data upload was disabled", p);
   },
 
-  _attachObservers: function() {
+  _attachObservers() {
     if (IS_UNIFIED_TELEMETRY) {
       
       Preferences.observe(PREF_FHR_UPLOAD_ENABLED, this._onUploadPrefChange, this);
@@ -896,7 +896,7 @@ var Impl = {
   
 
 
-  _detachObservers: function() {
+  _detachObservers() {
     if (IS_UNIFIED_TELEMETRY) {
       Preferences.ignore(PREF_FHR_UPLOAD_ENABLED, this._onUploadPrefChange, this);
     }
@@ -907,11 +907,11 @@ var Impl = {
 
 
 
-  promiseInitialized: function() {
+  promiseInitialized() {
     return this._delayedInitTaskDeferred.promise;
   },
 
-  getCurrentPingData: function(aSubsession) {
+  getCurrentPingData(aSubsession) {
     this._log.trace("getCurrentPingData - subsession: " + aSubsession)
 
     

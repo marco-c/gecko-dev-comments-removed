@@ -348,7 +348,7 @@ function loadLazyObjects() {
 
 LAZY_OBJECTS.forEach(name => {
   Object.defineProperty(gGlobalScope, name, {
-    get: function() {
+    get() {
       let objs = loadLazyObjects();
       return objs[name];
     },
@@ -458,7 +458,7 @@ SafeInstallOperation.prototype = {
   _installedFiles: null,
   _createdDirs: null,
 
-  _installFile: function(aFile, aTargetDirectory, aCopy) {
+  _installFile(aFile, aTargetDirectory, aCopy) {
     let oldFile = aCopy ? null : aFile.clone();
     let newFile = aFile.clone();
     try {
@@ -480,10 +480,10 @@ SafeInstallOperation.prototype = {
             " to " + aTargetDirectory.path, e);
       throw e;
     }
-    this._installedFiles.push({ oldFile: oldFile, newFile: newFile });
+    this._installedFiles.push({ oldFile, newFile });
   },
 
-  _installDirectory: function(aDirectory, aTargetDirectory, aCopy) {
+  _installDirectory(aDirectory, aTargetDirectory, aCopy) {
     if (aDirectory.contains(aTargetDirectory)) {
       let err = new Error(`Not installing ${aDirectory} into its own descendent ${aTargetDirectory}`);
       logger.error(err);
@@ -537,7 +537,7 @@ SafeInstallOperation.prototype = {
     this._installedFiles.push({ oldFile: aDirectory, newFile: newDir });
   },
 
-  _installDirEntry: function(aDirEntry, aTargetDirectory, aCopy) {
+  _installDirEntry(aDirEntry, aTargetDirectory, aCopy) {
     let isDir = null;
 
     try {
@@ -578,7 +578,7 @@ SafeInstallOperation.prototype = {
 
 
 
-  moveUnder: function(aFile, aTargetDirectory) {
+  moveUnder(aFile, aTargetDirectory) {
     try {
       this._installDirEntry(aFile, aTargetDirectory, false);
     }
@@ -597,11 +597,11 @@ SafeInstallOperation.prototype = {
 
 
 
-  moveTo: function(aOldLocation, aNewLocation) {
+  moveTo(aOldLocation, aNewLocation) {
     try {
       let oldFile = aOldLocation.clone(), newFile = aNewLocation.clone();
       oldFile.moveTo(newFile.parent, newFile.leafName);
-      this._installedFiles.push({ oldFile: oldFile, newFile: newFile, isMoveTo: true});
+      this._installedFiles.push({ oldFile, newFile, isMoveTo: true});
     }
     catch (e) {
       this.rollback();
@@ -619,7 +619,7 @@ SafeInstallOperation.prototype = {
 
 
 
-  copy: function(aFile, aTargetDirectory) {
+  copy(aFile, aTargetDirectory) {
     try {
       this._installDirEntry(aFile, aTargetDirectory, true);
     }
@@ -634,7 +634,7 @@ SafeInstallOperation.prototype = {
 
 
 
-  rollback: function() {
+  rollback() {
     while (this._installedFiles.length > 0) {
       let move = this._installedFiles.pop();
       if (move.isMoveTo) {
@@ -1833,7 +1833,7 @@ function verifyZipSignedState(aFile, aAddon) {
 
   return new Promise(resolve => {
     let callback = {
-      openSignedAppFileFinished: function(aRv, aZipReader, aCert) {
+      openSignedAppFileFinished(aRv, aZipReader, aCert) {
         if (aZipReader)
           aZipReader.close();
         resolve({
@@ -1875,7 +1875,7 @@ function verifyDirSignedState(aDir, aAddon) {
 
   return new Promise(resolve => {
     let callback = {
-      verifySignedDirectoryFinished: function(aRv, aCert) {
+      verifySignedDirectoryFinished(aRv, aCert) {
         resolve({
           signedState: getSignedStatus(aRv, aCert, aAddon.id),
           cert: null,
@@ -2195,7 +2195,7 @@ XPIState.prototype = {
           this.scanTime = dtime;
         }
       } catch (e) {
-        logger.warn("Can't get modified time of ${file}: ${e}", {file: aFile.path, e: e});
+        logger.warn("Can't get modified time of ${file}: ${e}", {file: aFile.path, e});
         changed = true;
         this.scanTime = 0;
       }
@@ -2312,7 +2312,7 @@ this.XPIStates = {
 
       for (let [id, file] of addons) {
         if (!(id in locState)) {
-          logger.debug("New add-on ${id} in ${location}", {id: id, location: location.name});
+          logger.debug("New add-on ${id} in ${location}", {id, location: location.name});
           let xpiState = new XPIState({d: file.persistentDescriptor});
           changed = xpiState.getModTime(file, id) || changed;
           foundAddons.set(id, xpiState);
@@ -2328,10 +2328,10 @@ this.XPIStates = {
             changed = true;
           }
           if (changed) {
-            logger.debug("Changed add-on ${id} in ${location}", {id: id, location: location.name});
+            logger.debug("Changed add-on ${id} in ${location}", {id, location: location.name});
           }
           else {
-            logger.debug("Existing add-on ${id} in ${location}", {id: id, location: location.name});
+            logger.debug("Existing add-on ${id} in ${location}", {id, location: location.name});
           }
           foundAddons.set(id, xpiState);
         }
@@ -2506,7 +2506,7 @@ this.XPIProvider = {
 
 
 
-  sortBootstrappedAddons: function() {
+  sortBootstrappedAddons() {
     let addons = {};
 
     
@@ -2537,7 +2537,7 @@ this.XPIProvider = {
   
 
 
-  setTelemetry: function(aId, aName, aValue) {
+  setTelemetry(aId, aName, aValue) {
     if (!this._telemetryDetails[aId])
       this._telemetryDetails[aId] = {};
     this._telemetryDetails[aId][aName] = aValue;
@@ -2546,11 +2546,11 @@ this.XPIProvider = {
   
   _inProgress: [],
 
-  doing: function(aCancellable) {
+  doing(aCancellable) {
     this._inProgress.push(aCancellable);
   },
 
-  done: function(aCancellable) {
+  done(aCancellable) {
     let i = this._inProgress.indexOf(aCancellable);
     if (i != -1) {
       this._inProgress.splice(i, 1);
@@ -2559,7 +2559,7 @@ this.XPIProvider = {
     return false;
   },
 
-  cancelAll: function() {
+  cancelAll() {
     
     while (this._inProgress.length > 0) {
       let c = this._inProgress.shift();
@@ -2579,7 +2579,7 @@ this.XPIProvider = {
 
 
 
-  _addURIMapping: function(aID, aFile) {
+  _addURIMapping(aID, aFile) {
     logger.info("Mapping " + aID + " to " + aFile.path);
     this._addonFileMap.set(aID, aFile.path);
 
@@ -2596,7 +2596,7 @@ this.XPIProvider = {
 
 
 
-  _resolveURIToFile: function(aURI) {
+  _resolveURIToFile(aURI) {
     switch (aURI.scheme) {
       case "jar":
       case "file":
@@ -2664,7 +2664,7 @@ this.XPIProvider = {
 
 
 
-  startup: function(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
+  startup(aAppChanged, aOldAppVersion, aOldPlatformVersion) {
     function addDirectoryInstallLocation(aName, aKey, aPaths, aScope, aLocked) {
       try {
         var dir = FileUtils.getDir(aKey, aPaths);
@@ -2901,7 +2901,7 @@ this.XPIProvider = {
       
       
       Services.obs.addObserver({
-        observe: function(aSubject, aTopic, aData) {
+        observe(aSubject, aTopic, aData) {
           XPIProvider._closing = true;
           for (let addon of XPIProvider.sortBootstrappedAddons().reverse()) {
             
@@ -2932,7 +2932,7 @@ this.XPIProvider = {
 
       
       Services.obs.addObserver({
-        observe: function(aSubject, aTopic, aData) {
+        observe(aSubject, aTopic, aData) {
           AddonManagerPrivate.recordTimestamp("XPI_finalUIStartup");
           XPIProvider.runPhase = XPI_AFTER_UI_STARTUP;
           Services.obs.removeObserver(this, "final-ui-startup");
@@ -2962,7 +2962,7 @@ this.XPIProvider = {
 
 
 
-  shutdown: function() {
+  shutdown() {
     logger.debug("shutdown");
 
     
@@ -3013,7 +3013,7 @@ this.XPIProvider = {
   
 
 
-  applyThemeChange: function() {
+  applyThemeChange() {
     if (!Preferences.get(PREF_DSS_SWITCHPENDING, false))
       return;
 
@@ -3041,7 +3041,7 @@ this.XPIProvider = {
 
 
 
-  shouldForceUpdateCheck: function(aAppChanged) {
+  shouldForceUpdateCheck(aAppChanged) {
     AddonManagerPrivate.recordSimpleMeasure("XPIDB_metadata_age", AddonRepository.metadataAge());
 
     let startupChanges = AddonManager.getStartupChanges(AddonManager.STARTUP_CHANGE_DISABLED);
@@ -3079,7 +3079,7 @@ this.XPIProvider = {
 
 
 
-  showUpgradeUI: function(aAddonIDs) {
+  showUpgradeUI(aAddonIDs) {
     logger.debug("XPI_showUpgradeUI: " + aAddonIDs.toSource());
     Services.telemetry.getHistogramById("ADDON_MANAGER_UPGRADE_UI_SHOWN").add(1);
 
@@ -3239,7 +3239,7 @@ this.XPIProvider = {
   
 
 
-  verifySignatures: function() {
+  verifySignatures() {
     XPIDatabase.getAddonList(a => true, (addons) => {
       Task.spawn(function*() {
         let changes = {
@@ -3278,7 +3278,7 @@ this.XPIProvider = {
   
 
 
-  persistBootstrappedAddons: function() {
+  persistBootstrappedAddons() {
     
     let filtered = {};
     for (let id in this.bootstrappedAddons) {
@@ -3297,7 +3297,7 @@ this.XPIProvider = {
   
 
 
-  addAddonsToCrashReporter: function() {
+  addAddonsToCrashReporter() {
     if (!("nsICrashReporter" in Ci) ||
         !(Services.appinfo instanceof Ci.nsICrashReporter))
       return;
@@ -3332,7 +3332,7 @@ this.XPIProvider = {
 
 
 
-  processPendingFileChanges: function(aManifests) {
+  processPendingFileChanges(aManifests) {
     let changed = false;
     for (let location of this.installLocations) {
       aManifests[location.name] = {};
@@ -3509,7 +3509,7 @@ this.XPIProvider = {
 
               this.callBootstrapMethod(createAddonDetails(existingAddonID, oldBootstrap),
                                        existingAddon, "uninstall", uninstallReason,
-                                       { newVersion: newVersion });
+                                       { newVersion });
               this.unloadBootstrapScope(existingAddonID);
               flushChromeCaches();
             }
@@ -3569,7 +3569,7 @@ this.XPIProvider = {
 
 
 
-  installDistributionAddons: function(aManifests, aAppChanged) {
+  installDistributionAddons(aManifests, aAppChanged) {
     let distroDir;
     try {
       distroDir = FileUtils.getDir(KEY_APP_DISTRIBUTION, [DIR_EXTENSIONS]);
@@ -3690,12 +3690,12 @@ this.XPIProvider = {
 
 
 
-  importPermissions: function() {
+  importPermissions() {
     PermissionsUtils.importFromPrefs(PREF_XPI_PERMISSIONS_BRANCH,
                                      XPI_PERMISSION);
   },
 
-  getDependentAddons: function(aAddon) {
+  getDependentAddons(aAddon) {
     return Array.from(XPIDatabase.getAddons())
                 .filter(addon => addon.dependencies.includes(aAddon.id));
   },
@@ -3718,7 +3718,7 @@ this.XPIProvider = {
 
 
 
-  checkForChanges: function(aAppChanged, aOldAppVersion,
+  checkForChanges(aAppChanged, aOldAppVersion,
                                                 aOldPlatformVersion) {
     logger.debug("checkForChanges");
 
@@ -3894,7 +3894,7 @@ this.XPIProvider = {
 
 
 
-  supportsMimetype: function(aMimetype) {
+  supportsMimetype(aMimetype) {
     return aMimetype == "application/x-xpinstall";
   },
 
@@ -3903,7 +3903,7 @@ this.XPIProvider = {
 
 
 
-  isInstallEnabled: function() {
+  isInstallEnabled() {
     
     return Preferences.get(PREF_XPI_ENABLED, true);
   },
@@ -3914,7 +3914,7 @@ this.XPIProvider = {
 
 
 
-  isDirectRequestWhitelisted: function() {
+  isDirectRequestWhitelisted() {
     
     return Preferences.get(PREF_XPI_DIRECT_WHITELISTED, true);
   },
@@ -3925,7 +3925,7 @@ this.XPIProvider = {
 
 
 
-  isFileRequestWhitelisted: function() {
+  isFileRequestWhitelisted() {
     
     return Preferences.get(PREF_XPI_FILE_WHITELISTED, true);
   },
@@ -3937,7 +3937,7 @@ this.XPIProvider = {
 
 
 
-  isInstallAllowed: function(aInstallingPrincipal) {
+  isInstallAllowed(aInstallingPrincipal) {
     if (!this.isInstallEnabled())
       return false;
 
@@ -3971,7 +3971,7 @@ this.XPIProvider = {
   },
 
   
-  isTemporaryInstallID: function(id) {
+  isTemporaryInstallID(id) {
     return id.endsWith(TEMPORARY_ADDON_SUFFIX);
   },
 
@@ -3993,7 +3993,7 @@ this.XPIProvider = {
 
 
 
-  getInstallForURL: function(aUrl, aHash, aName, aIcons, aVersion, aBrowser,
+  getInstallForURL(aUrl, aHash, aName, aIcons, aVersion, aBrowser,
                              aCallback) {
     let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
     let url = NetUtil.newURI(aUrl);
@@ -4023,7 +4023,7 @@ this.XPIProvider = {
 
 
 
-  getInstallForFile: function(aFile, aCallback) {
+  getInstallForFile(aFile, aCallback) {
     createLocalInstall(aFile).then(install => {
       aCallback(install ? install.wrapper : null);
     });
@@ -4039,7 +4039,7 @@ this.XPIProvider = {
 
 
 
-  installTemporaryAddon: function(aFile) {
+  installTemporaryAddon(aFile) {
     return this.installAddonFromLocation(aFile, TemporaryInstallLocation);
   },
 
@@ -4176,7 +4176,7 @@ this.XPIProvider = {
 
 
 
-   getAddonByInstanceID: function(aInstanceID) {
+   getAddonByInstanceID(aInstanceID) {
      if (!aInstanceID || typeof aInstanceID != "symbol")
        throw Components.Exception("aInstanceID must be a Symbol()",
                                   Cr.NS_ERROR_INVALID_ARG);
@@ -4205,7 +4205,7 @@ this.XPIProvider = {
 
 
 
-  removeActiveInstall: function(aInstall) {
+  removeActiveInstall(aInstall) {
     this.installs.delete(aInstall);
   },
 
@@ -4217,7 +4217,7 @@ this.XPIProvider = {
 
 
 
-  getAddonByID: function(aId, aCallback) {
+  getAddonByID(aId, aCallback) {
     XPIDatabase.getVisibleAddonForID(aId, function(aAddon) {
       aCallback(aAddon ? aAddon.wrapper : null);
     });
@@ -4231,7 +4231,7 @@ this.XPIProvider = {
 
 
 
-  getAddonsByTypes: function(aTypes, aCallback) {
+  getAddonsByTypes(aTypes, aCallback) {
     let typesToGet = getAllAliasesForTypes(aTypes);
 
     XPIDatabase.getVisibleAddons(typesToGet, function(aAddons) {
@@ -4247,7 +4247,7 @@ this.XPIProvider = {
 
 
 
-  getAddonBySyncGUID: function(aGUID, aCallback) {
+  getAddonBySyncGUID(aGUID, aCallback) {
     XPIDatabase.getAddonBySyncGUID(aGUID, function(aAddon) {
       aCallback(aAddon ? aAddon.wrapper : null);
     });
@@ -4261,7 +4261,7 @@ this.XPIProvider = {
 
 
 
-  getAddonsWithOperationsByTypes: function(aTypes, aCallback) {
+  getAddonsWithOperationsByTypes(aTypes, aCallback) {
     let typesToGet = getAllAliasesForTypes(aTypes);
 
     XPIDatabase.getVisibleAddonsWithPendingOperations(typesToGet, function(aAddons) {
@@ -4284,7 +4284,7 @@ this.XPIProvider = {
 
 
 
-  getInstallsByTypes: function(aTypes, aCallback) {
+  getInstallsByTypes(aTypes, aCallback) {
     let results = [...this.installs];
     if (aTypes) {
       results = results.filter(install => {
@@ -4308,7 +4308,7 @@ this.XPIProvider = {
 
 
 
-  mapURIToAddonID: function(aURI) {
+  mapURIToAddonID(aURI) {
     
     return AddonPathService.mapURIToAddonId(aURI) || null;
   },
@@ -4325,7 +4325,7 @@ this.XPIProvider = {
 
 
 
-  addonChanged: function(aId, aType, aPendingRestart) {
+  addonChanged(aId, aType, aPendingRestart) {
     
     if (aType != "theme")
       return;
@@ -4383,7 +4383,7 @@ this.XPIProvider = {
   
 
 
-  updateAddonAppDisabledStates: function() {
+  updateAddonAppDisabledStates() {
     let addons = XPIDatabase.getAddons();
     for (let addon of addons) {
       this.updateAddonDisabledState(addon);
@@ -4396,7 +4396,7 @@ this.XPIProvider = {
 
 
 
-  updateAddonRepositoryData: function(aCallback) {
+  updateAddonRepositoryData(aCallback) {
     XPIDatabase.getVisibleAddons(null, aAddons => {
       let pending = aAddons.length;
       logger.debug("updateAddonRepositoryData found " + pending + " visible add-ons");
@@ -4429,7 +4429,7 @@ this.XPIProvider = {
 
 
 
-  enableDefaultTheme: function() {
+  enableDefaultTheme() {
     logger.debug("Activating default theme");
     let addon = XPIDatabase.getVisibleAddonForInternalName(this.defaultSkin);
     if (addon) {
@@ -4455,7 +4455,7 @@ this.XPIProvider = {
     }
   },
 
-  onDebugConnectionChange: function(aEvent, aWhat, aConnection) {
+  onDebugConnectionChange(aEvent, aWhat, aConnection) {
     if (aWhat != "opened")
       return;
 
@@ -4470,7 +4470,7 @@ this.XPIProvider = {
 
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     if (aTopic == NOTIFICATION_FLUSH_PERMISSIONS) {
       if (!aData || aData == XPI_PERMISSION) {
         this.importPermissions();
@@ -4515,7 +4515,7 @@ this.XPIProvider = {
 
 
 
-  isBlockingE10s: function(aAddon) {
+  isBlockingE10s(aAddon) {
     if (aAddon.type != "extension" &&
         aAddon.type != "webextension" &&
         aAddon.type != "theme")
@@ -4556,7 +4556,7 @@ this.XPIProvider = {
 
 
 
-  e10sBlocksEnabling: function(aAddon) {
+  e10sBlocksEnabling(aAddon) {
     
     if (!Preferences.get(PREF_E10S_BLOCK_ENABLE, false))
       return false;
@@ -4575,7 +4575,7 @@ this.XPIProvider = {
 
 
 
-  enableRequiresRestart: function(aAddon) {
+  enableRequiresRestart(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4615,7 +4615,7 @@ this.XPIProvider = {
 
 
 
-  disableRequiresRestart: function(aAddon) {
+  disableRequiresRestart(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4661,7 +4661,7 @@ this.XPIProvider = {
 
 
 
-  installRequiresRestart: function(aAddon) {
+  installRequiresRestart(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4711,7 +4711,7 @@ this.XPIProvider = {
 
 
 
-  uninstallRequiresRestart: function(aAddon) {
+  uninstallRequiresRestart(aAddon) {
     
     
     if (!this.extensionsActive)
@@ -4751,7 +4751,7 @@ this.XPIProvider = {
 
 
 
-  loadBootstrapScope: function(aId, aFile, aVersion, aType,
+  loadBootstrapScope(aId, aFile, aVersion, aType,
                                aMultiprocessCompatible, aRunInSafeMode,
                                aDependencies, hasEmbeddedWebExtension) {
     
@@ -4861,7 +4861,7 @@ this.XPIProvider = {
 
 
 
-  unloadBootstrapScope: function(aId) {
+  unloadBootstrapScope(aId) {
     
     
     Cu.setAddonInterposition(aId, null);
@@ -4894,7 +4894,7 @@ this.XPIProvider = {
 
 
 
-  callBootstrapMethod: function(aAddon, aFile, aMethod, aReason, aExtraParams) {
+  callBootstrapMethod(aAddon, aFile, aMethod, aReason, aExtraParams) {
     if (!aAddon.id || !aAddon.version || !aAddon.type) {
       throw new Error("aAddon must include an id, version, and type");
     }
@@ -5030,7 +5030,7 @@ this.XPIProvider = {
 
 
 
-  updateAddonDisabledState: function(aAddon, aUserDisabled, aSoftDisabled) {
+  updateAddonDisabledState(aAddon, aUserDisabled, aSoftDisabled) {
     if (!(aAddon.inDatabase))
       throw new Error("Can only update addon states for installed addons.");
     if (aUserDisabled !== undefined && aSoftDisabled !== undefined) {
@@ -5068,7 +5068,7 @@ this.XPIProvider = {
     
     XPIDatabase.setAddonProperties(aAddon, {
       userDisabled: aUserDisabled,
-      appDisabled: appDisabled,
+      appDisabled,
       softDisabled: aSoftDisabled
     });
 
@@ -5174,7 +5174,7 @@ this.XPIProvider = {
 
 
 
-  uninstallAddon: function(aAddon, aForcePending) {
+  uninstallAddon(aAddon, aForcePending) {
     if (!(aAddon.inDatabase))
       throw new Error("Cannot uninstall addon " + aAddon.id + " because it is not installed");
 
@@ -5315,7 +5315,7 @@ this.XPIProvider = {
 
 
 
-  cancelUninstallAddon: function(aAddon) {
+  cancelUninstallAddon(aAddon) {
     if (!(aAddon.inDatabase))
       throw new Error("Can only cancel uninstall for installed addons.");
     if (!aAddon.pendingUninstall)
@@ -6716,19 +6716,19 @@ AddonInstallWrapper.prototype = {
     installFor(this).permHandler = handler;
   },
 
-  install: function() {
+  install() {
     installFor(this).install();
   },
 
-  cancel: function() {
+  cancel() {
     installFor(this).cancel();
   },
 
-  addListener: function(listener) {
+  addListener(listener) {
     installFor(this).addListener(listener);
   },
 
-  removeListener: function(listener) {
+  removeListener(listener) {
     installFor(this).removeListener(listener);
   },
 };
@@ -6736,7 +6736,7 @@ AddonInstallWrapper.prototype = {
 ["name", "version", "icons", "releaseNotesURI", "file", "state", "error",
  "progress", "maxProgress", "certificate", "certName"].forEach(function(aProp) {
   Object.defineProperty(AddonInstallWrapper.prototype, aProp, {
-    get: function() {
+    get() {
       return installFor(this)[aProp];
     },
     enumerable: true,
@@ -6808,7 +6808,7 @@ UpdateChecker.prototype = {
 
 
 
-  callListener: function(aMethod, ...aArgs) {
+  callListener(aMethod, ...aArgs) {
     if (!(aMethod in this.listener))
       return;
 
@@ -6826,7 +6826,7 @@ UpdateChecker.prototype = {
 
 
 
-  onUpdateCheckComplete: function(aUpdates) {
+  onUpdateCheckComplete(aUpdates) {
     XPIProvider.done(this.addon._updateCheck);
     this.addon._updateCheck = null;
     let AUC = AddonUpdateChecker;
@@ -6930,7 +6930,7 @@ UpdateChecker.prototype = {
 
 
 
-  onUpdateCheckError: function(aError) {
+  onUpdateCheckError(aError) {
     XPIProvider.done(this.addon._updateCheck);
     this.addon._updateCheck = null;
     this.callListener("onNoCompatibilityUpdateAvailable", this.addon.wrapper);
@@ -6941,7 +6941,7 @@ UpdateChecker.prototype = {
   
 
 
-  cancel: function() {
+  cancel() {
     let parser = this._parser;
     if (parser) {
       this._parser = null;
@@ -7077,7 +7077,7 @@ AddonInternal.prototype = {
     return matchedOS && !needsABI;
   },
 
-  isCompatibleWith: function(aAppVersion, aPlatformVersion) {
+  isCompatibleWith(aAppVersion, aPlatformVersion) {
     let app = this.matchingTargetApplication;
     if (!app)
       return false;
@@ -7161,7 +7161,7 @@ AddonInternal.prototype = {
     return Blocklist.getAddonBlocklistURL(this.wrapper);
   },
 
-  applyCompatibilityUpdate: function(aUpdate, aSyncCompatibility) {
+  applyCompatibilityUpdate(aUpdate, aSyncCompatibility) {
     for (let targetApp of this.targetApplications) {
       for (let updateTarget of aUpdate.targetApplications) {
         if (targetApp.id == updateTarget.id && (aSyncCompatibility ||
@@ -7181,7 +7181,7 @@ AddonInternal.prototype = {
 
 
 
-  getDataDirectory: function(callback) {
+  getDataDirectory(callback) {
     let parentPath = OS.Path.join(OS.Constants.Path.profileDir, "extension-data");
     let dirPath = OS.Path.join(parentPath, this.id);
 
@@ -7205,7 +7205,7 @@ AddonInternal.prototype = {
 
 
 
-  toJSON: function(aKey) {
+  toJSON(aKey) {
     let obj = {};
     for (let prop in this) {
       
@@ -7242,7 +7242,7 @@ AddonInternal.prototype = {
 
 
 
-  importMetadata: function(aObj) {
+  importMetadata(aObj) {
     for (let prop of PENDING_INSTALL_METADATA) {
       if (!(prop in aObj))
         continue;
@@ -7254,7 +7254,7 @@ AddonInternal.prototype = {
     this.appDisabled = !isUsableAddon(this);
   },
 
-  permissions: function() {
+  permissions() {
     let permissions = 0;
 
     
@@ -7311,7 +7311,7 @@ AddonWrapper.prototype = {
     return addonFor(this).hasEmbeddedWebExtension;
   },
 
-  markAsSeen: function() {
+  markAsSeen() {
     addonFor(this).seen = true;
     XPIDatabase.saveChanges();
   },
@@ -7658,21 +7658,21 @@ AddonWrapper.prototype = {
     return (addon._installLocation.name == KEY_APP_PROFILE);
   },
 
-  isCompatibleWith: function(aAppVersion, aPlatformVersion) {
+  isCompatibleWith(aAppVersion, aPlatformVersion) {
     return addonFor(this).isCompatibleWith(aAppVersion, aPlatformVersion);
   },
 
-  uninstall: function(alwaysAllowUndo) {
+  uninstall(alwaysAllowUndo) {
     let addon = addonFor(this);
     XPIProvider.uninstallAddon(addon, alwaysAllowUndo);
   },
 
-  cancelUninstall: function() {
+  cancelUninstall() {
     let addon = addonFor(this);
     XPIProvider.cancelUninstallAddon(addon);
   },
 
-  findUpdates: function(aListener, aReason, aAppVersion, aPlatformVersion) {
+  findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
     
     
     if (this.type == "experiment") {
@@ -7685,7 +7685,7 @@ AddonWrapper.prototype = {
   },
 
   
-  cancelUpdate: function() {
+  cancelUpdate() {
     let addon = addonFor(this);
     if (addon._updateCheck) {
       addon._updateCheck.cancel();
@@ -7694,7 +7694,7 @@ AddonWrapper.prototype = {
     return false;
   },
 
-  hasResource: function(aPath) {
+  hasResource(aPath) {
     let addon = addonFor(this);
     if (addon._hasResourceCache.has(aPath))
       return addon._hasResourceCache.get(aPath);
@@ -7744,7 +7744,7 @@ AddonWrapper.prototype = {
 
 
 
-  reload: function() {
+  reload() {
     return new Promise((resolve) => {
       const addon = addonFor(this);
 
@@ -7774,7 +7774,7 @@ AddonWrapper.prototype = {
 
 
 
-  getResourceURI: function(aPath) {
+  getResourceURI(aPath) {
     let addon = addonFor(this);
     if (!aPath)
       return NetUtil.newURI(addon._sourceBundle);
@@ -8028,7 +8028,7 @@ DirectoryInstallLocation.prototype = {
 
 
 
-  _readDirectoryFromFile: function(aFile) {
+  _readDirectoryFromFile(aFile) {
     let linkedDirectory;
     if (aFile.isSymlink()) {
       linkedDirectory = aFile.clone();
@@ -8084,7 +8084,7 @@ DirectoryInstallLocation.prototype = {
   
 
 
-  _readAddons: function() {
+  _readAddons() {
     
     
     
@@ -8148,7 +8148,7 @@ DirectoryInstallLocation.prototype = {
   
 
 
-  getAddonLocations: function() {
+  getAddonLocations() {
     let locations = new Map();
     for (let id in this._IDToFileMap) {
       locations.set(id, this._IDToFileMap[id].clone());
@@ -8164,7 +8164,7 @@ DirectoryInstallLocation.prototype = {
 
 
 
-  getLocationForID: function(aId) {
+  getLocationForID(aId) {
     if (aId in this._IDToFileMap)
       return this._IDToFileMap[aId].clone();
     throw new Error("Unknown add-on ID " + aId);
@@ -8177,7 +8177,7 @@ DirectoryInstallLocation.prototype = {
 
 
 
-  isLinkedAddon: function(aId) {
+  isLinkedAddon(aId) {
     return this._linkedAddons.indexOf(aId) != -1;
   }
 };
@@ -8207,13 +8207,13 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  getStagingDir: function() {
+  getStagingDir() {
     let dir = this._directory.clone();
     dir.append(DIR_STAGE);
     return dir;
   },
 
-  requestStagingDir: function() {
+  requestStagingDir() {
     this._stagingDirLock++;
 
     if (this._stagingDirPromise)
@@ -8229,7 +8229,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
     });
   },
 
-  releaseStagingDir: function() {
+  releaseStagingDir() {
     this._stagingDirLock--;
 
     if (this._stagingDirLock == 0) {
@@ -8248,7 +8248,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  cleanStagingDir: function(aLeafNames = []) {
+  cleanStagingDir(aLeafNames = []) {
     let dir = this.getStagingDir();
 
     for (let name of aLeafNames) {
@@ -8287,7 +8287,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  getTrashDir: function() {
+  getTrashDir() {
     let trashDir = this._directory.clone();
     trashDir.append(DIR_TRASH);
     let trashDirExists = trashDir.exists();
@@ -8324,7 +8324,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  installAddon: function({ id, source, existingAddonID, action = "move" }) {
+  installAddon({ id, source, existingAddonID, action = "move" }) {
     let trashDir = this.getTrashDir();
 
     let transaction = new SafeInstallOperation();
@@ -8433,7 +8433,7 @@ Object.assign(MutableDirectoryInstallLocation.prototype, {
 
 
 
-  uninstallAddon: function(aId) {
+  uninstallAddon(aId) {
     let file = this._IDToFileMap[aId];
     if (!file) {
       logger.warn("Attempted to remove " + aId + " from " +
@@ -8531,7 +8531,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-  cleanStagingDir: function(aLeafNames = []) {
+  cleanStagingDir(aLeafNames = []) {
     let dir = this.getStagingDir();
 
     for (let name of aLeafNames) {
@@ -8568,7 +8568,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-  getStagingDir: function() {
+  getStagingDir() {
     this._addonSet = this._loadAddonSet();
     let dir = null;
     if (this._addonSet.directory) {
@@ -8584,7 +8584,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
     return dir;
   },
 
-  requestStagingDir: function() {
+  requestStagingDir() {
     this._stagingDirLock++;
     if (this._stagingDirPromise)
       return this._stagingDirPromise;
@@ -8605,7 +8605,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
     });
   },
 
-  releaseStagingDir: function() {
+  releaseStagingDir() {
     this._stagingDirLock--;
 
     if (this._stagingDirLock == 0) {
@@ -8619,7 +8619,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
   
 
 
-  _loadAddonSet: function() {
+  _loadAddonSet() {
     try {
       let setStr = Preferences.get(PREF_SYSTEM_ADDON_SET, null);
       if (setStr) {
@@ -8641,11 +8641,11 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-  _saveAddonSet: function(aAddonSet) {
+  _saveAddonSet(aAddonSet) {
     Preferences.set(PREF_SYSTEM_ADDON_SET, JSON.stringify(aAddonSet));
   },
 
-  getAddonLocations: function() {
+  getAddonLocations() {
     
     if (Services.appinfo.inSafeMode)
       return new Map();
@@ -8664,11 +8664,11 @@ Object.assign(SystemAddonInstallLocation.prototype, {
   
 
 
-  isActive: function() {
+  isActive() {
     return this._directory != null;
   },
 
-  isValidAddon: function(aAddon) {
+  isValidAddon(aAddon) {
     if (aAddon.appDisabled) {
       logger.warn(`System add-on ${aAddon.id} isn't compatible with the application.`);
       return false;
@@ -8695,7 +8695,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
   
 
 
-  isValid: function(aAddons) {
+  isValid(aAddons) {
     for (let id of Object.keys(this._addonSet.addons)) {
       if (!aAddons.has(id)) {
         logger.warn(`Expected add-on ${id} is missing from the system add-on location.`);
@@ -8718,7 +8718,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
   
 
 
-  resetAddonSet: function() {
+  resetAddonSet() {
 
     if (this._addonSet) {
       logger.info("Removing all system add-on upgrades.");
@@ -8936,7 +8936,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-  getTrashDir: function() {
+  getTrashDir() {
     let trashDir = this._directory.clone();
     trashDir.append(DIR_TRASH);
     let trashDirExists = trashDir.exists();
@@ -8962,7 +8962,7 @@ Object.assign(SystemAddonInstallLocation.prototype, {
 
 
 
-  installAddon: function({id, source}) {
+  installAddon({id, source}) {
     let trashDir = this.getTrashDir();
     let transaction = new SafeInstallOperation();
 
@@ -9085,7 +9085,7 @@ WinRegInstallLocation.prototype = {
 
 
 
-  _readAddons: function(aKey) {
+  _readAddons(aKey) {
     let count = aKey.valueCount;
     for (let i = 0; i < count; ++i) {
       let id = aKey.getValueName(i);
@@ -9119,7 +9119,7 @@ WinRegInstallLocation.prototype = {
   
 
 
-  getAddonLocations: function() {
+  getAddonLocations() {
     let locations = new Map();
     for (let id in this._IDToFileMap) {
       locations.set(id, this._IDToFileMap[id].clone());
@@ -9130,7 +9130,7 @@ WinRegInstallLocation.prototype = {
   
 
 
-  isLinkedAddon: function(aId) {
+  isLinkedAddon(aId) {
     return true;
   }
 };

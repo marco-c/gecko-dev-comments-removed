@@ -83,12 +83,12 @@ var PLUGINS = [{
 
 
 var PluginHost = {
-  getPluginTags: function(countRef) {
+  getPluginTags(countRef) {
     countRef.value = PLUGINS.length;
     return PLUGINS;
   },
 
-  QueryInterface: function(iid) {
+  QueryInterface(iid) {
     if (iid.equals(Components.interfaces.nsIPluginHost)
      || iid.equals(Components.interfaces.nsISupports))
       return this;

@@ -14,7 +14,7 @@ function nsSidebar() {
 }
 
 nsSidebar.prototype = {
-  init: function(window) {
+  init(window) {
     this.window = window;
     try {
       this.mm = window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -27,7 +27,7 @@ nsSidebar.prototype = {
   },
 
   
-  addSearchEngine: function(engineURL, iconURL, suggestedTitle, suggestedCategory) {
+  addSearchEngine(engineURL, iconURL, suggestedTitle, suggestedCategory) {
     if (SHERLOCK_FILE_EXT_REGEXP.test(engineURL)) {
       Cu.reportError("Installing Sherlock search plugins is no longer supported.");
       return;
@@ -39,7 +39,7 @@ nsSidebar.prototype = {
   
   
   
-  AddSearchProvider: function(engineURL) {
+  AddSearchProvider(engineURL) {
     if (!this.mm) {
       Cu.reportError(`Installing a search provider from this context is not currently supported: ${Error().stack}.`);
       return;
@@ -54,7 +54,7 @@ nsSidebar.prototype = {
   
   
   
-  IsSearchProviderInstalled: function(engineURL) {
+  IsSearchProviderInstalled(engineURL) {
     return 0;
   },
 

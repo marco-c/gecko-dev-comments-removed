@@ -756,7 +756,7 @@ function Serializer() {
 
 Serializer.prototype = {
 
-  serialize: function(rootElem) {
+  serialize(rootElem) {
     this._lines = [];
     this._startNewLine();
     this._serializeElement(rootElem);
@@ -775,7 +775,7 @@ Serializer.prototype = {
     return this._lines[this._lines.length - 1] = val;
   },
 
-  _serializeElement: function(elem) {
+  _serializeElement(elem) {
     if (this._ignoreElement(elem))
       return;
 
@@ -817,7 +817,7 @@ Serializer.prototype = {
     }
   },
 
-  _startNewLine: function(lines) {
+  _startNewLine(lines) {
     let currLine = this._currentLine;
     if (currLine) {
       
@@ -829,15 +829,15 @@ Serializer.prototype = {
     this._lines.push("");
   },
 
-  _appendText: function(text, lines) {
+  _appendText(text, lines) {
     this._currentLine += text;
   },
 
-  _isHiddenSubHeading: function(th) {
+  _isHiddenSubHeading(th) {
     return th.parentNode.parentNode.style.display == "none";
   },
 
-  _serializeTable: function(table) {
+  _serializeTable(table) {
     
     
     let colHeadings = {};
@@ -917,11 +917,11 @@ Serializer.prototype = {
     this._startNewLine();
   },
 
-  _ignoreElement: function(elem) {
+  _ignoreElement(elem) {
     return elem.classList.contains("no-copy");
   },
 
-  _nodeText: function(node) {
+  _nodeText(node) {
     return node.textContent.replace(/\s+/g, " ");
   },
 };

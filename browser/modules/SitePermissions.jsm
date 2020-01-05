@@ -27,7 +27,7 @@ this.SitePermissions = {
 
 
 
-  getAllByURI: function(aURI) {
+  getAllByURI(aURI) {
     let result = [];
     if (!this.isSupportedURI(aURI)) {
       return result;
@@ -64,7 +64,7 @@ this.SitePermissions = {
 
 
 
-  getPermissionItem: function(aId, aState) {
+  getPermissionItem(aId, aState) {
     let availableStates = this.getAvailableStates(aId).map(state => {
       return { id: state, label: this.getStateLabel(aId, state) };
     });
@@ -77,7 +77,7 @@ this.SitePermissions = {
   
 
 
-  getPermissionDetailsByURI: function(aURI) {
+  getPermissionDetailsByURI(aURI) {
     let permissions = [];
     for (let {state, id} of this.getAllByURI(aURI)) {
       permissions.push(this.getPermissionItem(id, state));
@@ -90,20 +90,20 @@ this.SitePermissions = {
 
 
 
-  isSupportedURI: function(aURI) {
+  isSupportedURI(aURI) {
     return aURI.schemeIs("http") || aURI.schemeIs("https");
   },
 
   
 
-  listPermissions: function() {
+  listPermissions() {
     return Object.keys(gPermissionObject);
   },
 
   
 
 
-  getAvailableStates: function(aPermissionID) {
+  getAvailableStates(aPermissionID) {
     if (aPermissionID in gPermissionObject &&
         gPermissionObject[aPermissionID].states)
       return gPermissionObject[aPermissionID].states;
@@ -116,7 +116,7 @@ this.SitePermissions = {
 
   
 
-  getDefault: function(aPermissionID) {
+  getDefault(aPermissionID) {
     if (aPermissionID in gPermissionObject &&
         gPermissionObject[aPermissionID].getDefault)
       return gPermissionObject[aPermissionID].getDefault();
@@ -126,7 +126,7 @@ this.SitePermissions = {
 
   
 
-  get: function(aURI, aPermissionID) {
+  get(aURI, aPermissionID) {
     if (!this.isSupportedURI(aURI))
       return this.UNKNOWN;
 
@@ -141,7 +141,7 @@ this.SitePermissions = {
 
   
 
-  set: function(aURI, aPermissionID, aState) {
+  set(aURI, aPermissionID, aState) {
     if (!this.isSupportedURI(aURI))
       return;
 
@@ -155,7 +155,7 @@ this.SitePermissions = {
 
   
 
-  remove: function(aURI, aPermissionID) {
+  remove(aURI, aPermissionID) {
     if (!this.isSupportedURI(aURI))
       return;
 
@@ -165,7 +165,7 @@ this.SitePermissions = {
   
 
 
-  getPermissionLabel: function(aPermissionID) {
+  getPermissionLabel(aPermissionID) {
     let labelID = gPermissionObject[aPermissionID].labelID || aPermissionID;
     return gStringBundle.GetStringFromName("permission." + labelID + ".label");
   },
@@ -173,7 +173,7 @@ this.SitePermissions = {
   
 
 
-  getStateLabel: function(aPermissionID, aState, aInUse = false) {
+  getStateLabel(aPermissionID, aState, aInUse = false) {
     switch (aState) {
       case this.UNKNOWN:
         if (aInUse)
@@ -215,7 +215,7 @@ var gPermissionObject = {
 
 
   "image": {
-    getDefault: function() {
+    getDefault() {
       return Services.prefs.getIntPref("permissions.default.image") == 2 ?
                SitePermissions.BLOCK : SitePermissions.ALLOW;
     }
@@ -223,7 +223,7 @@ var gPermissionObject = {
 
   "cookie": {
     states: [ SitePermissions.ALLOW, SitePermissions.SESSION, SitePermissions.BLOCK ],
-    getDefault: function() {
+    getDefault() {
       if (Services.prefs.getIntPref("network.cookie.cookieBehavior") == 2)
         return SitePermissions.BLOCK;
 
@@ -246,14 +246,14 @@ var gPermissionObject = {
   },
 
   "popup": {
-    getDefault: function() {
+    getDefault() {
       return Services.prefs.getBoolPref("dom.disable_open_during_load") ?
                SitePermissions.BLOCK : SitePermissions.ALLOW;
     }
   },
 
   "install": {
-    getDefault: function() {
+    getDefault() {
       return Services.prefs.getBoolPref("xpinstall.whitelist.required") ?
                SitePermissions.BLOCK : SitePermissions.ALLOW;
     }

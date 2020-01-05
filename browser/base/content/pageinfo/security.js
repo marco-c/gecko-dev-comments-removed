@@ -9,18 +9,18 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginHelper",
                                   "resource://gre/modules/LoginHelper.jsm");
 
 var security = {
-  init: function(uri, windowInfo) {
+  init(uri, windowInfo) {
     this.uri = uri;
     this.windowInfo = windowInfo;
   },
 
   
-  viewCert : function() {
+  viewCert() {
     var cert = security._cert;
     viewCertHelper(window, cert);
   },
 
-  _getSecurityInfo : function() {
+  _getSecurityInfo() {
     const nsISSLStatusProvider = Components.interfaces.nsISSLStatusProvider;
     const nsISSLStatus = Components.interfaces.nsISSLStatus;
 
@@ -54,15 +54,15 @@ var security = {
         this.mapIssuerOrganization(cert.issuerOrganization) || cert.issuerName;
 
       var retval = {
-        hostName : hostName,
+        hostName,
         cAName : issuerName,
         encryptionAlgorithm : undefined,
         encryptionStrength : undefined,
         version: undefined,
-        isBroken : isBroken,
-        isMixed : isMixed,
-        isEV : isEV,
-        cert : cert,
+        isBroken,
+        isMixed,
+        isEV,
+        cert,
         certificateTransparency : undefined
       };
 
@@ -117,21 +117,21 @@ var security = {
       return retval;
     }
     return {
-      hostName : hostName,
+      hostName,
       cAName : "",
       encryptionAlgorithm : "",
       encryptionStrength : 0,
       version: "",
-      isBroken : isBroken,
-      isMixed : isMixed,
-      isEV : isEV,
+      isBroken,
+      isMixed,
+      isEV,
       cert : null,
       certificateTransparency : null
     };
   },
 
   
-  _getSecurityUI : function() {
+  _getSecurityUI() {
     if (window.opener.gBrowser)
       return window.opener.gBrowser.securityUI;
     return null;
@@ -140,7 +140,7 @@ var security = {
   
   
   
-  mapIssuerOrganization: function(name) {
+  mapIssuerOrganization(name) {
     if (!name) return null;
 
     if (name == "RSA Data Security, Inc.") return "Verisign, Inc.";
@@ -152,7 +152,7 @@ var security = {
   
 
 
-  viewCookies : function()
+  viewCookies()
   {
     var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
                        .getService(Components.interfaces.nsIWindowMediator);
@@ -181,7 +181,7 @@ var security = {
   
 
 
-  viewPasswords : function() {
+  viewPasswords() {
     LoginHelper.openPasswordManager(window, this._getSecurityInfo().hostName);
   },
 

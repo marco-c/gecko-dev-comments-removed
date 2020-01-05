@@ -81,7 +81,7 @@ var PrintUtils = {
 
 
 
-  showPageSetup: function() {
+  showPageSetup() {
     try {
       var printSettings = this.getPrintSettings();
       var PRINTPROMPTSVC = Components.classes["@mozilla.org/embedcomp/printingprompt-service;1"]
@@ -108,7 +108,7 @@ var PrintUtils = {
 
 
 
-  printWindow: function(aWindowID, aBrowser)
+  printWindow(aWindowID, aBrowser)
   {
     let mm = aBrowser.messageManager;
     mm.sendAsyncMessage("Printing:Print", {
@@ -123,7 +123,7 @@ var PrintUtils = {
 
 
 
-  print: function()
+  print()
   {
     if (gBrowser) {
       return this.printWindow(gBrowser.selectedBrowser.outerWindowID,
@@ -186,7 +186,7 @@ var PrintUtils = {
 
 
 
-  printPreview: function(aListenerObj)
+  printPreview(aListenerObj)
   {
     
     
@@ -254,7 +254,7 @@ var PrintUtils = {
 
 
 
-  getWebBrowserPrint: function(aWindow)
+  getWebBrowserPrint(aWindow)
   {
     let Deprecated = Components.utils.import("resource://gre/modules/Deprecated.jsm", {}).Deprecated;
     let text = "getWebBrowserPrint is now deprecated, and fully unsupported for " +
@@ -279,7 +279,7 @@ var PrintUtils = {
 
 
 
-  getPrintPreview: function() {
+  getPrintPreview() {
     let Deprecated = Components.utils.import("resource://gre/modules/Deprecated.jsm", {}).Deprecated;
     let text = "getPrintPreview is now deprecated, and fully unsupported for " +
                "multi-process browsers. Please use a frame script to get " +
@@ -430,7 +430,7 @@ var PrintUtils = {
     return undefined;
   },
 
-  setPrinterDefaultsForSelectedPrinter: function(aPSSVC, aPrintSettings)
+  setPrinterDefaultsForSelectedPrinter(aPSSVC, aPrintSettings)
   {
     if (!aPrintSettings.printerName)
       aPrintSettings.printerName = aPSSVC.defaultPrinterName;
@@ -441,7 +441,7 @@ var PrintUtils = {
     aPSSVC.initPrintSettingsFromPrefs(aPrintSettings, true,  aPrintSettings.kInitSaveAll);
   },
 
-  getPrintSettings: function()
+  getPrintSettings()
   {
     var pref = Components.classes["@mozilla.org/preferences-service;1"]
                          .getService(Components.interfaces.nsIPrefBranch);
@@ -469,13 +469,13 @@ var PrintUtils = {
   
   _obsPP:
   {
-    observe: function(aSubject, aTopic, aData)
+    observe(aSubject, aTopic, aData)
     {
       
       setTimeout(function() { PrintUtils.enterPrintPreview(); }, 0);
     },
 
-    QueryInterface : function(iid)
+    QueryInterface(iid)
     {
       if (iid.equals(Components.interfaces.nsIObserver) ||
           iid.equals(Components.interfaces.nsISupportsWeakReference) ||
@@ -485,12 +485,12 @@ var PrintUtils = {
     }
   },
 
-  setSimplifiedMode: function(shouldSimplify)
+  setSimplifiedMode(shouldSimplify)
   {
     this._shouldSimplify = shouldSimplify;
   },
 
-  enterPrintPreview: function()
+  enterPrintPreview()
   {
     
     
@@ -620,7 +620,7 @@ var PrintUtils = {
     mm.addMessageListener("Printing:Preview:Entered", onEntered);
   },
 
-  exitPrintPreview: function()
+  exitPrintPreview()
   {
     let ppBrowser = this._listener.getPrintPreviewBrowser();
     let browserMM = ppBrowser.messageManager;
@@ -649,13 +649,13 @@ var PrintUtils = {
     this._listener.onExit();
   },
 
-  logTelemetry: function(ID)
+  logTelemetry(ID)
   {
     let histogram = Services.telemetry.getHistogramById(ID);
     histogram.add(true);
   },
 
-  onKeyDownPP: function(aEvent)
+  onKeyDownPP(aEvent)
   {
     
     if (aEvent.keyCode == aEvent.DOM_VK_ESCAPE) {
@@ -663,7 +663,7 @@ var PrintUtils = {
     }
   },
 
-  onKeyPressPP: function(aEvent)
+  onKeyPressPP(aEvent)
   {
     var closeKey;
     try {

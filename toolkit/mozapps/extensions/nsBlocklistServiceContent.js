@@ -30,17 +30,17 @@ Blocklist.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
                                          Ci.nsIBlocklistService]),
 
-  init: function() {
+  init() {
     Services.cpmm.addMessageListener("Blocklist:blocklistInvalidated", this);
     Services.obs.addObserver(this, "xpcom-shutdown", false);
   },
 
-  uninit: function() {
+  uninit() {
     Services.cpmm.removeMessageListener("Blocklist:blocklistInvalidated", this);
     Services.obs.removeObserver(this, "xpcom-shutdown", false);
   },
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     switch (aTopic) {
     case "xpcom-shutdown":
       this.uninit();
@@ -49,7 +49,7 @@ Blocklist.prototype = {
   },
 
   
-  receiveMessage: function(aMsg) {
+  receiveMessage(aMsg) {
     switch (aMsg.name) {
       case "Blocklist:blocklistInvalidated":
         Services.obs.notifyObservers(null, "blocklist-updated", null);
@@ -66,7 +66,7 @@ Blocklist.prototype = {
 
 
 
-  flattenObject: function(aTag) {
+  flattenObject(aTag) {
     
     
     let props = ["name", "description", "filename", "version"];
@@ -80,16 +80,16 @@ Blocklist.prototype = {
   
   
 
-  isAddonBlocklisted: function(aAddon, aAppVersion, aToolkitVersion) {
+  isAddonBlocklisted(aAddon, aAppVersion, aToolkitVersion) {
     return true;
   },
 
-  getAddonBlocklistState: function(aAddon, aAppVersion, aToolkitVersion) {
+  getAddonBlocklistState(aAddon, aAppVersion, aToolkitVersion) {
     return Components.interfaces.nsIBlocklistService.STATE_BLOCKED;
   },
 
   
-  getPluginBlocklistState: function(aPluginTag, aAppVersion, aToolkitVersion) {
+  getPluginBlocklistState(aPluginTag, aAppVersion, aToolkitVersion) {
     return Services.cpmm.sendSyncMessage("Blocklist:getPluginBlocklistState", {
       addonData: this.flattenObject(aPluginTag),
       appVersion: aAppVersion,
@@ -97,15 +97,15 @@ Blocklist.prototype = {
     })[0];
   },
 
-  getAddonBlocklistURL: function(aAddon, aAppVersion, aToolkitVersion) {
+  getAddonBlocklistURL(aAddon, aAppVersion, aToolkitVersion) {
     throw new Error(kMissingAPIMessage);
   },
 
-  getPluginBlocklistURL: function(aPluginTag) {
+  getPluginBlocklistURL(aPluginTag) {
     throw new Error(kMissingAPIMessage);
   },
 
-  getPluginInfoURL: function(aPluginTag) {
+  getPluginInfoURL(aPluginTag) {
     throw new Error(kMissingAPIMessage);
   }
 };

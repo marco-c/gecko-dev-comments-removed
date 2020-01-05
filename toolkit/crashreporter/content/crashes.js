@@ -93,12 +93,12 @@ function populateReportList() {
     
     
     dateFormatter = {
-      format: function(date) {
+      format(date) {
         return date.toLocaleDateString();
       }
     }
     timeFormatter = {
-      format: function(date) {
+      format(date) {
         return date.toLocaleTimeString();
       }
     }

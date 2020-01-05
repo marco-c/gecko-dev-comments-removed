@@ -59,7 +59,7 @@ var PluginProvider = {
   
   plugins: null,
 
-  startup: function() {
+  startup() {
     Services.obs.addObserver(this, LIST_UPDATED_TOPIC, false);
     Services.obs.addObserver(this, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED, false);
   },
@@ -68,13 +68,13 @@ var PluginProvider = {
 
 
 
-  shutdown: function() {
+  shutdown() {
     this.plugins = null;
     Services.obs.removeObserver(this, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED);
     Services.obs.removeObserver(this, LIST_UPDATED_TOPIC);
   },
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     switch (aTopic) {
     case AddonManager.OPTIONS_NOTIFICATION_DISPLAYED:
       this.getAddonByID(aData, function(plugin) {
@@ -106,7 +106,7 @@ var PluginProvider = {
   
 
 
-  buildWrapper: function(aPlugin) {
+  buildWrapper(aPlugin) {
     return new PluginWrapper(aPlugin.id,
                              aPlugin.name,
                              aPlugin.description,
@@ -121,7 +121,7 @@ var PluginProvider = {
 
 
 
-  getAddonByID: function(aId, aCallback) {
+  getAddonByID(aId, aCallback) {
     if (!this.plugins)
       this.buildPluginList();
 
@@ -139,7 +139,7 @@ var PluginProvider = {
 
 
 
-  getAddonsByTypes: function(aTypes, aCallback) {
+  getAddonsByTypes(aTypes, aCallback) {
     if (aTypes && aTypes.indexOf("plugin") < 0) {
       aCallback([]);
       return;
@@ -164,7 +164,7 @@ var PluginProvider = {
 
 
 
-  getAddonsWithOperationsByTypes: function(aTypes, aCallback) {
+  getAddonsWithOperationsByTypes(aTypes, aCallback) {
     aCallback([]);
   },
 
@@ -176,7 +176,7 @@ var PluginProvider = {
 
 
 
-  getInstallsByTypes: function(aTypes, aCallback) {
+  getInstallsByTypes(aTypes, aCallback) {
     aCallback([]);
   },
 
@@ -185,7 +185,7 @@ var PluginProvider = {
 
 
 
-  getPluginList: function() {
+  getPluginList() {
     let tags = Cc["@mozilla.org/plugin/host;1"].
                getService(Ci.nsIPluginHost).
                getPluginTags({});
@@ -217,7 +217,7 @@ var PluginProvider = {
   
 
 
-  buildPluginList: function() {
+  buildPluginList() {
     this.plugins = this.getPluginList();
   },
 
@@ -226,7 +226,7 @@ var PluginProvider = {
 
 
 
-  updatePluginList: function() {
+  updatePluginList() {
     let newList = this.getPluginList();
 
     let lostPlugins = Object.keys(this.plugins).filter(id => !(id in newList)).
@@ -580,11 +580,11 @@ PluginWrapper.prototype = {
     return true;
   },
 
-  isCompatibleWith: function(aAppVersion, aPlatformVersion) {
+  isCompatibleWith(aAppVersion, aPlatformVersion) {
     return true;
   },
 
-  findUpdates: function(aListener, aReason, aAppVersion, aPlatformVersion) {
+  findUpdates(aListener, aReason, aAppVersion, aPlatformVersion) {
     if ("onNoCompatibilityUpdateAvailable" in aListener)
       aListener.onNoCompatibilityUpdateAvailable(this);
     if ("onNoUpdateAvailable" in aListener)

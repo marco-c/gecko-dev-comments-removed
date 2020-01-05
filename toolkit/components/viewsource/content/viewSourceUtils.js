@@ -59,7 +59,7 @@ var gViewSourceUtils = {
 
 
 
-  viewSource: function(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber)
+  viewSource(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber)
   {
     var prefs = Components.classes["@mozilla.org/preferences-service;1"]
                           .getService(Components.interfaces.nsIPrefBranch);
@@ -91,7 +91,7 @@ var gViewSourceUtils = {
 
 
 
-  viewSourceInBrowser: function(aArgs) {
+  viewSourceInBrowser(aArgs) {
     Services.telemetry
             .getHistogramById("VIEW_SOURCE_IN_BROWSER_OPENED_BOOLEAN")
             .add(true);
@@ -112,7 +112,7 @@ var gViewSourceUtils = {
 
 
 
-  viewPartialSourceInBrowser: function(aViewSourceInBrowser, aTarget, aGetBrowserFn) {
+  viewPartialSourceInBrowser(aViewSourceInBrowser, aTarget, aGetBrowserFn) {
     let mm = aViewSourceInBrowser.messageManager;
     mm.addMessageListener("ViewSource:GetSelectionDone", function gotSelection(message) {
       mm.removeMessageListener("ViewSource:GetSelectionDone", gotSelection);
@@ -142,7 +142,7 @@ var gViewSourceUtils = {
   },
 
   
-  _openInInternalViewer: function(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber)
+  _openInInternalViewer(aArgsOrURL, aPageDescriptor, aDocument, aLineNumber)
   {
     
     var charset = null;
@@ -171,7 +171,7 @@ var gViewSourceUtils = {
                aArgsOrURL, charset, aPageDescriptor, aLineNumber, isForcedCharset);
   },
 
-  buildEditorArgs: function(aPath, aLineNumber) {
+  buildEditorArgs(aPath, aLineNumber) {
     
     
     
@@ -227,7 +227,7 @@ var gViewSourceUtils = {
 
 
 
-  openInExternalEditor: function(aArgsOrURL, aPageDescriptor, aDocument,
+  openInExternalEditor(aArgsOrURL, aPageDescriptor, aDocument,
                                  aLineNumber, aCallBack) {
     let data;
     if (typeof aArgsOrURL == "string") {
@@ -343,7 +343,7 @@ var gViewSourceUtils = {
   },
 
   
-  internalViewerFallback: function(result, data)
+  internalViewerFallback(result, data)
   {
     if (!result) {
       this._openInInternalViewer(data.url, data.pageDescriptor, data.doc, data.lineNumber);
@@ -351,7 +351,7 @@ var gViewSourceUtils = {
   },
 
   
-  handleCallBack: function(aCallBack, result, data)
+  handleCallBack(aCallBack, result, data)
   {
     Services.telemetry
             .getHistogramById("VIEW_SOURCE_EXTERNAL_RESULT_BOOLEAN")
@@ -365,7 +365,7 @@ var gViewSourceUtils = {
   },
 
   
-  getExternalViewSourceEditor: function()
+  getExternalViewSourceEditor()
   {
     try {
       let viewSourceAppPath =
@@ -390,7 +390,7 @@ var gViewSourceUtils = {
 
     mnsIWebProgressListener: Components.interfaces.nsIWebProgressListener,
 
-    QueryInterface: function(aIID) {
+    QueryInterface(aIID) {
      if (aIID.equals(this.mnsIWebProgressListener) ||
          aIID.equals(Components.interfaces.nsISupportsWeakReference) ||
          aIID.equals(Components.interfaces.nsISupports))
@@ -398,7 +398,7 @@ var gViewSourceUtils = {
      throw Components.results.NS_NOINTERFACE;
     },
 
-    destroy: function() {
+    destroy() {
       if (this.webShell) {
         this.webShell.QueryInterface(Components.interfaces.nsIBaseWindow).destroy();
       }
@@ -412,7 +412,7 @@ var gViewSourceUtils = {
     
     
     
-    onStateChange: function(aProgress, aRequest, aFlag, aStatus) {
+    onStateChange(aProgress, aRequest, aFlag, aStatus) {
       
       if ((aFlag & this.mnsIWebProgressListener.STATE_STOP) && aStatus == 0) {
         if (!this.webShell) {
@@ -433,7 +433,7 @@ var gViewSourceUtils = {
       return 0;
     },
 
-    onContentLoaded: function() {
+    onContentLoaded() {
       
       
       if (this.contentLoaded) {
@@ -490,10 +490,10 @@ var gViewSourceUtils = {
       }
     },
 
-    onLocationChange: function() { return 0; },
-    onProgressChange: function() { return 0; },
-    onStatusChange: function() { return 0; },
-    onSecurityChange: function() { return 0; },
+    onLocationChange() { return 0; },
+    onProgressChange() { return 0; },
+    onStatusChange() { return 0; },
+    onSecurityChange() { return 0; },
 
     webShell: null,
     editor: null,
@@ -503,7 +503,7 @@ var gViewSourceUtils = {
   },
 
   
-  getTemporaryFile: function(aURI, aDocument, aContentType) {
+  getTemporaryFile(aURI, aDocument, aContentType) {
     
     if (!this._caUtils) {
       var scriptLoader = Components.classes["@mozilla.org/moz/jssubscript-loader;1"]

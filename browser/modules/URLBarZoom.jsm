@@ -11,7 +11,7 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 
 var URLBarZoom = {
 
-  init: function(aWindow) {
+  init(aWindow) {
     
     Services.obs.addObserver(updateZoomButton, "browser-fullZoom:zoomChange", false);
     Services.obs.addObserver(updateZoomButton, "browser-fullZoom:zoomReset", false);

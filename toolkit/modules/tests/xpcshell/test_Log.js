@@ -448,9 +448,11 @@ add_task(function* log_message_with_params() {
 
   
   
+  
   let vOf = {a: 1, valueOf: function() {throw "oh noes valueOf"}};
   do_check_eq(formatMessage("Broken valueOf ${}", vOf),
               'Broken valueOf ({a:1, valueOf:(function () {throw "oh noes valueOf"})})');
+  
 
   
   

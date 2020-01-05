@@ -29,7 +29,7 @@ add_task(function* () {
 
   
   let clientID = CommonUtils.generateUUID();
-  yield CommonUtils.writeJSON({clientID: clientID}, fhrPath);
+  yield CommonUtils.writeJSON({clientID}, fhrPath);
   Assert.equal(clientID, yield ClientID.getClientID());
 
   
@@ -60,7 +60,7 @@ add_task(function* () {
   for (let invalidID of invalidIDs) {
     yield ClientID._reset();
     clientID = CommonUtils.generateUUID();
-    yield CommonUtils.writeJSON({clientID: clientID}, fhrPath);
+    yield CommonUtils.writeJSON({clientID}, fhrPath);
     yield CommonUtils.writeJSON({clientID: invalidID}, drsPath);
     Assert.equal(clientID, yield ClientID.getClientID());
   }

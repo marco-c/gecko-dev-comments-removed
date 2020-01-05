@@ -38,7 +38,7 @@ FormSubmitObserver.prototype =
 
 
 
-  init: function(aWindow, aTabChildGlobal)
+  init(aWindow, aTabChildGlobal)
   {
     this._content = aWindow;
     this._tab = aTabChildGlobal;
@@ -57,7 +57,7 @@ FormSubmitObserver.prototype =
     this._tab.addEventListener("unload", this, false);
   },
 
-  uninit: function()
+  uninit()
   {
     Services.obs.removeObserver(this, "invalidformsubmit");
     this._content.removeEventListener("pageshow", this, false);
@@ -72,7 +72,7 @@ FormSubmitObserver.prototype =
 
 
 
-  handleEvent: function(aEvent) {
+  handleEvent(aEvent) {
     switch (aEvent.type) {
       case "pageshow":
         if (this._isRootDocumentEvent(aEvent)) {
@@ -95,7 +95,7 @@ FormSubmitObserver.prototype =
 
 
 
-  notifyInvalidSubmit : function(aFormElement, aInvalidElements)
+  notifyInvalidSubmit(aFormElement, aInvalidElements)
   {
     
     
@@ -149,7 +149,7 @@ FormSubmitObserver.prototype =
 
 
 
-  _onInput: function(aEvent) {
+  _onInput(aEvent) {
     let element = aEvent.originalTarget;
 
     
@@ -170,7 +170,7 @@ FormSubmitObserver.prototype =
 
 
 
-  _onBlur: function(aEvent) {
+  _onBlur(aEvent) {
     aEvent.originalTarget.removeEventListener("input", this, false);
     aEvent.originalTarget.removeEventListener("blur", this, false);
     this._element = null;
@@ -182,7 +182,7 @@ FormSubmitObserver.prototype =
 
 
 
-  _showPopup: function(aElement) {
+  _showPopup(aElement) {
     
     let panelData = {};
 
@@ -214,15 +214,15 @@ FormSubmitObserver.prototype =
     this._mm.sendAsyncMessage("FormValidation:ShowPopup", panelData);
   },
 
-  _hidePopup: function() {
+  _hidePopup() {
     this._mm.sendAsyncMessage("FormValidation:HidePopup", {});
   },
 
-  _getWindowUtils: function() {
+  _getWindowUtils() {
     return this._content.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
   },
 
-  _isRootDocumentEvent: function(aEvent) {
+  _isRootDocumentEvent(aEvent) {
     if (this._content == null) {
       return true;
     }

@@ -218,13 +218,13 @@ var processInfo = {
   _kernel32: null,
   _GetProcessIoCounters: null,
   _GetCurrentProcess: null,
-  getCounters: function() {
+  getCounters() {
     let isWindows = ("@mozilla.org/windows-registry-key;1" in Components.classes);
     if (isWindows)
       return this.getCounters_Windows();
     return null;
   },
-  getCounters_Windows: function() {
+  getCounters_Windows() {
     if (!this._initialized) {
       Cu.import("resource://gre/modules/ctypes.jsm");
       this._IO_COUNTERS = new ctypes.StructType("IO_COUNTERS", [
@@ -282,7 +282,7 @@ var TelemetryScheduler = {
   
 
 
-  init: function() {
+  init() {
     this._log = Log.repository.getLoggerWithMessagePrefix(LOGGER_NAME, "TelemetryScheduler::");
     this._log.trace("init");
     this._shuttingDown = false;
@@ -302,7 +302,7 @@ var TelemetryScheduler = {
   
 
 
-  shutdown: function() {
+  shutdown() {
     if (this._shuttingDown) {
       if (this._log) {
         this._log.error("shutdown - Already shut down");
@@ -324,7 +324,7 @@ var TelemetryScheduler = {
     this._shuttingDown = true;
   },
 
-  _clearTimeout: function() {
+  _clearTimeout() {
     if (this._schedulerTimer) {
       Policy.clearSchedulerTickTimeout(this._schedulerTimer);
     }
@@ -333,7 +333,7 @@ var TelemetryScheduler = {
   
 
 
-  _rescheduleTimeout: function() {
+  _rescheduleTimeout() {
     this._log.trace("_rescheduleTimeout - isUserIdle: " + this._isUserIdle);
     if (this._shuttingDown) {
       this._log.warn("_rescheduleTimeout - already shutdown");
@@ -359,7 +359,7 @@ var TelemetryScheduler = {
       Policy.setSchedulerTickTimeout(() => this._onSchedulerTick(), timeout);
   },
 
-  _sentDailyPingToday: function(nowDate) {
+  _sentDailyPingToday(nowDate) {
     
     const todayDate = Utils.truncateToDays(nowDate);
     
@@ -371,7 +371,7 @@ var TelemetryScheduler = {
 
 
 
-  _isDailyPingDue: function(nowDate) {
+  _isDailyPingDue(nowDate) {
     
     if (this._sentDailyPingToday(nowDate)) {
       this._log.trace("_isDailyPingDue - already sent one today");
@@ -397,7 +397,7 @@ var TelemetryScheduler = {
 
 
 
-  _saveAbortedPing: function(now, competingPayload = null) {
+  _saveAbortedPing(now, competingPayload = null) {
     this._lastSessionCheckpointTime = now;
     return Impl._saveAbortedSessionPing(competingPayload)
                 .catch(e => this._log.error("_saveAbortedPing - Failed", e));
@@ -406,7 +406,7 @@ var TelemetryScheduler = {
   
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     this._log.trace("observe - aTopic: " + aTopic);
     switch (aTopic) {
       case "idle":
@@ -432,7 +432,7 @@ var TelemetryScheduler = {
 
 
 
-  _onSchedulerTick: function() {
+  _onSchedulerTick() {
     
     
     this._clearTimeout();
@@ -460,7 +460,7 @@ var TelemetryScheduler = {
 
 
 
-  _schedulerTickLogic: function() {
+  _schedulerTickLogic() {
     this._log.trace("_schedulerTickLogic");
 
     let nowDate = Policy.now();
@@ -502,7 +502,7 @@ var TelemetryScheduler = {
 
 
 
-  reschedulePings: function(reason, competingPayload = null) {
+  reschedulePings(reason, competingPayload = null) {
     if (this._shuttingDown) {
       this._log.error("reschedulePings - already shutdown");
       return;
@@ -530,12 +530,12 @@ this.EXPORTED_SYMBOLS = ["TelemetrySession"];
 
 this.TelemetrySession = Object.freeze({
   Constants: Object.freeze({
-    PREF_PREVIOUS_BUILDID: PREF_PREVIOUS_BUILDID,
+    PREF_PREVIOUS_BUILDID,
   }),
   
 
 
-  testPing: function() {
+  testPing() {
     return Impl.testPing();
   },
   
@@ -544,7 +544,7 @@ this.TelemetrySession = Object.freeze({
 
 
 
-  getPayload: function(reason, clearSubsession = false) {
+  getPayload(reason, clearSubsession = false) {
     return Impl.getPayload(reason, clearSubsession);
   },
   
@@ -555,20 +555,20 @@ this.TelemetrySession = Object.freeze({
 
 
 
-  getChildThreadHangs: function() {
+  getChildThreadHangs() {
     return Impl.getChildThreadHangs();
   },
   
 
 
 
-  testSavePendingPing: function() {
+  testSavePendingPing() {
     return Impl.testSavePendingPing();
   },
   
 
 
-  gatherStartup: function() {
+  gatherStartup() {
     return Impl.gatherStartup();
   },
   
@@ -576,7 +576,7 @@ this.TelemetrySession = Object.freeze({
 
 
 
-  setAddOns: function(aAddOns) {
+  setAddOns(aAddOns) {
     return Impl.setAddOns(aAddOns);
   },
   
@@ -587,13 +587,13 @@ this.TelemetrySession = Object.freeze({
 
 
 
-  getMetadata: function(reason) {
+  getMetadata(reason) {
     return Impl.getMetadata(reason);
   },
   
 
 
-  testReset: function() {
+  testReset() {
     Impl._sessionId = null;
     Impl._subsessionId = null;
     Impl._previousSessionId = null;
@@ -608,19 +608,19 @@ this.TelemetrySession = Object.freeze({
   
 
 
-  shutdown: function() {
+  shutdown() {
     return Impl.shutdownChromeProcess();
   },
   
 
 
-  setupContent: function(testing = false) {
+  setupContent(testing = false) {
     return Impl.setupContentProcess(testing);
   },
   
 
 
-  testUninstall: function() {
+  testUninstall() {
     try {
       Impl.uninstall();
     } catch (ex) {
@@ -630,7 +630,7 @@ this.TelemetrySession = Object.freeze({
   
 
 
-  earlyInit: function(aTesting = false) {
+  earlyInit(aTesting = false) {
     return Impl.earlyInit(aTesting);
   },
   
@@ -638,13 +638,13 @@ this.TelemetrySession = Object.freeze({
 
 
 
-  delayedInit: function() {
+  delayedInit() {
     return Impl.delayedInit();
   },
   
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
   },
 });
@@ -877,7 +877,7 @@ var Impl = {
 
 
 
-  getDatasetType: function() {
+  getDatasetType() {
     return Telemetry.canRecordExtended ? Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN
                                        : Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTOUT;
   },
@@ -931,7 +931,7 @@ var Impl = {
     return ret;
   },
 
-  getKeyedHistograms: function(subsession, clearSubsession) {
+  getKeyedHistograms(subsession, clearSubsession) {
     this._log.trace("getKeyedHistograms - subsession: " + subsession +
                     ", clearSubsession: " + clearSubsession);
 
@@ -980,7 +980,7 @@ var Impl = {
 
 
 
-  getScalars: function(subsession, clearSubsession, keyed) {
+  getScalars(subsession, clearSubsession, keyed) {
     this._log.trace("getScalars - subsession: " + subsession + ", clearSubsession: " +
                     clearSubsession + ", keyed: " + keyed);
 
@@ -1007,7 +1007,7 @@ var Impl = {
     return ret;
   },
 
-  getEvents: function(isSubsession, clearSubsession) {
+  getEvents(isSubsession, clearSubsession) {
     if (!isSubsession) {
       
       this._log.trace("getEvents - We only support events in subsessions.");
@@ -1053,7 +1053,7 @@ var Impl = {
     const monotonicNow = Policy.monotonicNow();
 
     let ret = {
-      reason: reason,
+      reason,
       revision: AppConstants.SOURCE_REVISION_URL,
       asyncPluginInit: Preferences.get(PREF_ASYNC_PLUGIN_INIT, false),
 
@@ -1070,8 +1070,8 @@ var Impl = {
       subsessionCounter: this._subsessionCounter,
       profileSubsessionCounter: this._profileSubsessionCounter,
 
-      sessionStartDate: sessionStartDate,
-      subsessionStartDate: subsessionStartDate,
+      sessionStartDate,
+      subsessionStartDate,
 
       
       
@@ -1203,7 +1203,7 @@ var Impl = {
     histogram.add(new Date() - startTime);
   },
 
-  handleMemoryReport: function(id, units, amount) {
+  handleMemoryReport(id, units, amount) {
     let val;
     if (units == Ci.nsIMemoryReporter.UNITS_BYTES) {
       val = Math.floor(amount / 1024);
@@ -1253,7 +1253,7 @@ var Impl = {
 
 
 
-  assemblePayloadWithMeasurements: function(simpleMeasurements, info, reason, clearSubsession) {
+  assemblePayloadWithMeasurements(simpleMeasurements, info, reason, clearSubsession) {
     const isSubsession = IS_UNIFIED_TELEMETRY && !this._isClassicReason(reason);
     clearSubsession = IS_UNIFIED_TELEMETRY && clearSubsession;
     this._log.trace("assemblePayloadWithMeasurements - reason: " + reason +
@@ -1273,7 +1273,7 @@ var Impl = {
     
     let payloadObj = {
       ver: PAYLOAD_VERSION,
-      simpleMeasurements: simpleMeasurements,
+      simpleMeasurements,
     };
 
     
@@ -1364,7 +1364,7 @@ var Impl = {
   
 
 
-  startNewSubsession: function() {
+  startNewSubsession() {
     this._subsessionStartDate = Policy.now();
     this._subsessionStartTimeMonotonic = Policy.monotonicNow();
     this._previousSubsessionId = this._subsessionId;
@@ -1450,7 +1450,7 @@ var Impl = {
   
 
 
-  earlyInit: function(testing) {
+  earlyInit(testing) {
     this._log.trace("earlyInit");
 
     this._initStarted = true;
@@ -1508,7 +1508,7 @@ var Impl = {
 
 
 
-  delayedInit:function() {
+  delayedInit() {
     this._log.trace("delayedInit");
 
     this._delayedInitTask = Task.spawn(function* () {
@@ -1614,7 +1614,7 @@ var Impl = {
       delete message.data.childUUID;
 
       this._childTelemetry.push({
-        source: source,
+        source,
         payload: message.data,
       });
 
@@ -1725,7 +1725,7 @@ var Impl = {
 
 
 
-  saveShutdownPings: function() {
+  saveShutdownPings() {
     this._log.trace("saveShutdownPings");
 
     
@@ -1869,7 +1869,7 @@ var Impl = {
   
 
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     
     if (aTopic != TOPIC_CYCLE_COLLECTOR_BEGIN) {
       this._log.trace("observe - " + aTopic + " notified.");
@@ -1953,7 +1953,7 @@ var Impl = {
   
 
 
-  shutdownChromeProcess: function() {
+  shutdownChromeProcess() {
     this._log.trace("shutdownChromeProcess");
 
     let cleanup = () => {
@@ -2004,7 +2004,7 @@ var Impl = {
 
 
 
-  _sendDailyPing: function() {
+  _sendDailyPing() {
     this._log.trace("_sendDailyPing");
     let payload = this.getSessionPayload(REASON_DAILY, true);
 
@@ -2057,7 +2057,7 @@ var Impl = {
   
 
 
-  _getSessionDataObject: function() {
+  _getSessionDataObject() {
     return {
       sessionId: this._sessionId,
       subsessionId: this._subsessionId,
@@ -2065,7 +2065,7 @@ var Impl = {
     };
   },
 
-  _onEnvironmentChange: function(reason, oldEnvironment) {
+  _onEnvironmentChange(reason, oldEnvironment) {
     this._log.trace("_onEnvironmentChange", reason);
 
     let now = Policy.monotonicNow();
@@ -2087,7 +2087,7 @@ var Impl = {
     TelemetryController.submitExternalPing(getPingType(payload), payload, options);
   },
 
-  _isClassicReason: function(reason) {
+  _isClassicReason(reason) {
     const classicReasons = [
       REASON_SAVED_SESSION,
       REASON_GATHER_PAYLOAD,
@@ -2099,7 +2099,7 @@ var Impl = {
   
 
 
-  _getState: function() {
+  _getState() {
     return {
       initialized: this._initialized,
       initStarted: this._initStarted,
@@ -2113,7 +2113,7 @@ var Impl = {
 
 
 
-  _saveAbortedSessionPing: function(aProvidedPayload = null) {
+  _saveAbortedSessionPing(aProvidedPayload = null) {
     this._log.trace("_saveAbortedSessionPing");
 
     let payload = null;

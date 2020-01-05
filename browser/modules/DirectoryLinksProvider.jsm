@@ -268,7 +268,7 @@ var DirectoryLinksProvider = {
     }
   },
 
-  _cacheSuggestedLinks: function(link) {
+  _cacheSuggestedLinks(link) {
     
     if (!link.frecent_sites) {
       return;
@@ -729,7 +729,7 @@ var DirectoryLinksProvider = {
     }.bind(this));
   },
 
-  _handleManyLinksChanged: function() {
+  _handleManyLinksChanged() {
     this._topSitesWithSuggestedLinks.clear();
     this._suggestedLinks.forEach((suggestedLinks, site) => {
       if (NewTabUtils.isTopPlacesSite(site)) {
@@ -744,7 +744,7 @@ var DirectoryLinksProvider = {
 
 
 
-  _handleLinkChanged: function(aLink) {
+  _handleLinkChanged(aLink) {
     let changedLinkSite = NewTabUtils.extractSite(aLink.url);
     let linkStored = this._topSitesWithSuggestedLinks.has(changedLinkSite);
 
@@ -768,13 +768,13 @@ var DirectoryLinksProvider = {
     return false;
   },
 
-  _populatePlacesLinks: function() {
+  _populatePlacesLinks() {
     NewTabUtils.links.populateProviderCache(NewTabUtils.placesProvider, () => {
       this._handleManyLinksChanged();
     });
   },
 
-  onDeleteURI: function(aProvider, aLink) {
+  onDeleteURI(aProvider, aLink) {
     let {url} = aLink;
     
     
@@ -783,14 +783,14 @@ var DirectoryLinksProvider = {
     });
   },
 
-  onClearHistory: function() {
+  onClearHistory() {
     
     this._removeAllTileClicks().then(() => {
       this._callObservers("onClearHistory");
     });
   },
 
-  onLinkChanged: function(aProvider, aLink) {
+  onLinkChanged(aProvider, aLink) {
     
     setTimeout(() => {
       if (this._handleLinkChanged(aLink) || this._shouldUpdateSuggestedTile()) {
@@ -799,14 +799,14 @@ var DirectoryLinksProvider = {
     }, 0);
   },
 
-  onManyLinksChanged: function() {
+  onManyLinksChanged() {
     
     setTimeout(() => {
       this._handleManyLinksChanged();
     }, 0);
   },
 
-  _getCurrentTopSiteCount: function() {
+  _getCurrentTopSiteCount() {
     let visibleTopSiteCount = 0;
     let newTabLinks = NewTabUtils.links.getLinks();
     for (let link of newTabLinks.slice(0, MIN_VISIBLE_HISTORY_TILES)) {
@@ -822,7 +822,7 @@ var DirectoryLinksProvider = {
     return visibleTopSiteCount;
   },
 
-  _shouldUpdateSuggestedTile: function() {
+  _shouldUpdateSuggestedTile() {
     let sortedLinks = NewTabUtils.getProviderLinks(this);
 
     let mostFrecentLink = {};
@@ -850,7 +850,7 @@ var DirectoryLinksProvider = {
 
 
 
-  _updateSuggestedTile: function() {
+  _updateSuggestedTile() {
     let sortedLinks = NewTabUtils.getProviderLinks(this);
 
     if (!sortedLinks) {
@@ -1249,7 +1249,7 @@ var DirectoryLinksProvider = {
     }
   },
 
-  _removeObservers: function() {
+  _removeObservers() {
     this._observers.clear();
   }
 };

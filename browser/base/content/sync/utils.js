@@ -22,7 +22,7 @@ var gSyncUtils = {
   },
 
   
-  _openLink: function(url) {
+  _openLink(url) {
     let thisDocEl = document.documentElement,
         openerDocEl = window.opener && window.opener.document.documentElement;
     if (thisDocEl.id == "accountSetup" && window.opener &&
@@ -58,22 +58,22 @@ var gSyncUtils = {
                                         type, duringSetup);
   },
 
-  changePassword: function() {
+  changePassword() {
     if (Weave.Utils.ensureMPUnlocked())
       this.openChange("ChangePassword");
   },
 
-  resetPassphrase: function(duringSetup) {
+  resetPassphrase(duringSetup) {
     if (Weave.Utils.ensureMPUnlocked())
       this.openChange("ResetPassphrase", duringSetup);
   },
 
-  updatePassphrase: function() {
+  updatePassphrase() {
     if (Weave.Utils.ensureMPUnlocked())
       this.openChange("UpdatePassphrase");
   },
 
-  resetPassword: function() {
+  resetPassword() {
     this._openLink(Weave.Service.pwResetURL);
   },
 
@@ -82,7 +82,7 @@ var gSyncUtils = {
     return  Weave.Svc.Prefs.get(root + "termsURL");
   },
 
-  openToS: function() {
+  openToS() {
     this._openLink(this.tosURL);
   },
 
@@ -91,7 +91,7 @@ var gSyncUtils = {
     return  Weave.Svc.Prefs.get(root + "privacyURL");
   },
 
-  openPrivacyPolicy: function() {
+  openPrivacyPolicy() {
     this._openLink(this.privacyPolicyURL);
   },
 
@@ -102,7 +102,7 @@ var gSyncUtils = {
 
 
 
-  _preparePPiframe: function(elid, callback) {
+  _preparePPiframe(elid, callback) {
     let pp = document.getElementById(elid).value;
 
     
@@ -137,7 +137,7 @@ var gSyncUtils = {
 
 
 
-  passphrasePrint: function(elid) {
+  passphrasePrint(elid) {
     this._preparePPiframe(elid, function(iframe) {
       let webBrowserPrint = iframe.contentWindow
                                   .QueryInterface(Ci.nsIInterfaceRequestor)
@@ -165,7 +165,7 @@ var gSyncUtils = {
 
 
 
-  passphraseSave: function(elid) {
+  passphraseSave(elid) {
     let dialogTitle = this.bundle.GetStringFromName("save.recoverykey.title");
     let defaultSaveName = this.bundle.GetStringFromName("save.recoverykey.defaultfilename");
     this._preparePPiframe(elid, function(iframe) {
@@ -203,7 +203,7 @@ var gSyncUtils = {
 
 
 
-  validatePassword: function(el1, el2) {
+  validatePassword(el1, el2) {
     let valid = false;
     let val1 = el1.value;
     let val2 = el2 ? el2.value : "";

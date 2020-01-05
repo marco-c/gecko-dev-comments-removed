@@ -17,7 +17,7 @@ var gPluginHandler = {
     "PluginContent:LinkClickCallback",
   ],
 
-  init: function() {
+  init() {
     const mm = window.messageManager;
     for (let msg of this.MESSAGES) {
       mm.addMessageListener(msg, this);
@@ -25,7 +25,7 @@ var gPluginHandler = {
     window.addEventListener("unload", this);
   },
 
-  uninit: function() {
+  uninit() {
     const mm = window.messageManager;
     for (let msg of this.MESSAGES) {
       mm.removeMessageListener(msg, this);
@@ -33,13 +33,13 @@ var gPluginHandler = {
     window.removeEventListener("unload", this);
   },
 
-  handleEvent: function(event) {
+  handleEvent(event) {
     if (event.type == "unload") {
       this.uninit();
     }
   },
 
-  receiveMessage: function(msg) {
+  receiveMessage(msg) {
     switch (msg.name) {
       case "PluginContent:ShowClickToPlayNotification":
         this.showClickToPlayNotification(msg.target, msg.data.plugins, msg.data.showNow,
@@ -83,13 +83,13 @@ var gPluginHandler = {
   },
 
   
-  managePlugins: function() {
+  managePlugins() {
     BrowserOpenAddonsMgr("addons://list/plugin");
   },
 
   
   
-  openPluginUpdatePage: function(pluginTag) {
+  openPluginUpdatePage(pluginTag) {
     let url = Services.blocklist.getPluginInfoURL(pluginTag);
     if (!url) {
       url = Services.blocklist.getPluginBlocklistURL(pluginTag);
@@ -106,12 +106,12 @@ var gPluginHandler = {
   },
 
   
-  reloadPage: function(browser) {
+  reloadPage(browser) {
     browser.reload();
   },
 
   
-  openHelpPage: function() {
+  openHelpPage() {
     openHelpLink("plugin-crashed", false);
   },
 
@@ -139,7 +139,7 @@ var gPluginHandler = {
 
 
 
-  _updatePluginPermission: function(aNotification, aPluginInfo, aNewState) {
+  _updatePluginPermission(aNotification, aPluginInfo, aNewState) {
     let permission;
     let expireType;
     let expireTime;
@@ -208,7 +208,7 @@ var gPluginHandler = {
     });
   },
 
-  showClickToPlayNotification: function(browser, plugins, showNow,
+  showClickToPlayNotification(browser, plugins, showNow,
                                         principal, location) {
     
     
@@ -281,8 +281,8 @@ var gPluginHandler = {
       persistent: showNow,
       eventCallback: this._clickToPlayNotificationEventCallback,
       primaryPlugin: primaryPluginPermission,
-      pluginData: pluginData,
-      principal: principal,
+      pluginData,
+      principal,
     };
     PopupNotifications.show(browser, "click-to-play-plugins",
                             "", "plugins-notification-icon",
@@ -290,20 +290,20 @@ var gPluginHandler = {
     browser.messageManager.sendAsyncMessage("BrowserPlugins:NotificationShown");
   },
 
-  removeNotification: function(browser, name) {
+  removeNotification(browser, name) {
     let notification = PopupNotifications.getNotification(name, browser);
     if (notification)
       PopupNotifications.remove(notification);
   },
 
-  hideNotificationBar: function(browser, name) {
+  hideNotificationBar(browser, name) {
     let notificationBox = gBrowser.getNotificationBox(browser);
     let notification = notificationBox.getNotificationWithValue(name);
     if (notification)
       notificationBox.removeNotification(notification, true);
   },
 
-  updateHiddenPluginUI: function(browser, haveInsecure, actions,
+  updateHiddenPluginUI(browser, haveInsecure, actions,
                                  principal, location) {
     let origin = principal.originNoSuffix;
 
@@ -391,7 +391,7 @@ var gPluginHandler = {
         {
           label: gNavigatorBundle.getString("pluginContinueBlocking.label"),
           accessKey: gNavigatorBundle.getString("pluginContinueBlocking.accesskey"),
-          callback: function() {
+          callback() {
             Services.telemetry.getHistogramById("PLUGINS_INFOBAR_BLOCK").
               add(true);
 
@@ -403,7 +403,7 @@ var gPluginHandler = {
         {
           label: gNavigatorBundle.getString("pluginActivateTrigger.label"),
           accessKey: gNavigatorBundle.getString("pluginActivateTrigger.accesskey"),
-          callback: function() {
+          callback() {
             Services.telemetry.getHistogramById("PLUGINS_INFOBAR_ALLOW").
               add(true);
 
@@ -437,14 +437,14 @@ var gPluginHandler = {
     }
   },
 
-  contextMenuCommand: function(browser, plugin, command) {
+  contextMenuCommand(browser, plugin, command) {
     browser.messageManager.sendAsyncMessage("BrowserPlugins:ContextMenuCommand",
-      { command: command }, { plugin: plugin });
+      { command }, { plugin });
   },
 
   
   
-  NPAPIPluginCrashed : function(subject, topic, data) {
+  NPAPIPluginCrashed(subject, topic, data) {
     let propertyBag = subject;
     if (!(propertyBag instanceof Ci.nsIPropertyBag2) ||
         !(propertyBag instanceof Ci.nsIWritablePropertyBag2) ||
@@ -493,7 +493,7 @@ var gPluginHandler = {
 
 
 
-  showPluginCrashedNotification: function(browser, messageString, pluginID) {
+  showPluginCrashedNotification(browser, messageString, pluginID) {
     
     let notificationBox = gBrowser.getNotificationBox(browser);
     let notification = notificationBox.getNotificationWithValue("plugin-crashed");
@@ -511,7 +511,7 @@ var gPluginHandler = {
       label: reloadLabel,
       accessKey: reloadKey,
       popup: null,
-      callback: function() { browser.reload(); },
+      callback() { browser.reload(); },
     }];
 
     if (AppConstants.MOZ_CRASHREPORTER &&

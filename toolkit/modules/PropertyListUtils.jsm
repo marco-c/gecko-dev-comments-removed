@@ -489,7 +489,7 @@ BinaryPropertyListReader.prototype = {
     
     Array.prototype.forEach.call(refs, function(ref, objIndex) {
       Object.defineProperty(array, objIndex, {
-        get: function() {
+        get() {
           delete array[objIndex];
           return array[objIndex] = readObjectBound(ref);
         },
@@ -508,7 +508,7 @@ BinaryPropertyListReader.prototype = {
 
 
 
-  _wrapDictionary: function(aObjectOffset, aNumberOfObjects) {
+  _wrapDictionary(aObjectOffset, aNumberOfObjects) {
     
     
     
@@ -754,7 +754,7 @@ XMLPropertyListReader.prototype = {
     let readObjectBound = this._readObject.bind(this);
     Array.prototype.forEach.call(aDOMElt.children, function(elem, elemIndex) {
       Object.defineProperty(array, elemIndex, {
-        get: function() {
+        get() {
           delete array[elemIndex];
           return array[elemIndex] = readObjectBound(elem);
         },
@@ -788,7 +788,7 @@ XMLPropertyListReader.prototype = {
 function LazyMapProxyHandler() {
   return {
     _lazyGetters: new Set(),
-    get: function(target, name) {
+    get(target, name) {
       switch (name) {
         case "setAsLazyGetter":
           return (key, value) => {

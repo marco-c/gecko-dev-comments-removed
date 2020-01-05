@@ -14,10 +14,10 @@ var gLibrary;
 
 gTests.push({
   desc: "Create and batch remove bookmarks",
-  run: function() {
+  run() {
     let testURI = makeURI(TEST_URL);
     PlacesUtils.history.runInBatchMode({
-      runBatched: function(aUserData) {
+      runBatched(aUserData) {
         
         let folder = PlacesUtils.bookmarks.createFolder(
           PlacesUtils.unfiledBookmarksFolderId, "deleteme",
@@ -67,7 +67,7 @@ gTests.push({
 
 gTests.push({
   desc: "Ensure correct selection and functionality in Library",
-  run: function() {
+  run() {
     let PO = gLibrary.PlacesOrganizer;
     let ContentTree = gLibrary.ContentTree;
     

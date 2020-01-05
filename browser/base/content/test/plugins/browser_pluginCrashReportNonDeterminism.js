@@ -68,7 +68,7 @@ function preparePlugin(browser, pluginFallbackState) {
     
     
     Object.defineProperty(plugin, "pluginFallbackType", {
-      get: function() {
+      get() {
         return contentPluginFallbackState;
       }
     });
@@ -162,7 +162,7 @@ add_task(function* testChromeHearsPluginCrashFirst() {
     
     
     Object.defineProperty(plugin, "pluginFallbackType", {
-      get: function() {
+      get() {
         return Ci.nsIObjectLoadingContent.PLUGIN_CRASHED;
       },
     });

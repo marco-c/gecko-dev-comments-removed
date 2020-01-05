@@ -143,7 +143,7 @@ Notification.prototype = {
     return anchorElement;
   },
 
-  reshow: function() {
+  reshow() {
     this.owner._reshowNotifications(this.anchorElement, this.browser);
   },
 
@@ -510,7 +510,7 @@ PopupNotifications.prototype = {
 
 
 
-  anchorVisibilityChange: function() {
+  anchorVisibilityChange() {
     let notifications =
       this._getNotificationsForBrowser(this.tabbrowser.selectedBrowser);
     this._update(notifications, this._getAnchorsForNotifications(notifications,
@@ -531,7 +531,7 @@ PopupNotifications.prototype = {
     }
   },
 
-  handleEvent: function(aEvent) {
+  handleEvent(aEvent) {
     switch (aEvent.type) {
       case "popuphidden":
         this._onPopupHidden(aEvent);
@@ -630,7 +630,7 @@ PopupNotifications.prototype = {
   
 
 
-  _clearPanel: function() {
+  _clearPanel() {
     let popupnotification;
     while ((popupnotification = this.panel.lastChild)) {
       this.panel.removeChild(popupnotification);
@@ -1099,7 +1099,7 @@ PopupNotifications.prototype = {
     return anchors;
   },
 
-  _isActiveBrowser: function(browser) {
+  _isActiveBrowser(browser) {
     
     
     
@@ -1246,7 +1246,7 @@ PopupNotifications.prototype = {
     this._update();
   },
 
-  _dismissOrRemoveCurrentNotifications: function() {
+  _dismissOrRemoveCurrentNotifications() {
     let browser = this.panel.firstChild &&
                   this.panel.firstChild.notification.browser;
     if (!browser)

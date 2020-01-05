@@ -38,7 +38,7 @@ const SearchAutocompleteProviderInternal = {
 
   defaultMatch: null,
 
-  initialize: function() {
+  initialize() {
     return new Promise((resolve, reject) => {
       Services.search.init(status => {
         if (!Components.isSuccessCode(status)) {
@@ -62,7 +62,7 @@ const SearchAutocompleteProviderInternal = {
 
   initialized: false,
 
-  observe: function(subject, topic, data) {
+  observe(subject, topic, data) {
     switch (data) {
       case "engine-added":
       case "engine-changed":
@@ -72,7 +72,7 @@ const SearchAutocompleteProviderInternal = {
     }
   },
 
-  _refresh: function() {
+  _refresh() {
     this.priorityMatches = [];
     this.aliasMatches = [];
     this.defaultMatch = null;
@@ -91,7 +91,7 @@ const SearchAutocompleteProviderInternal = {
     Services.search.getVisibleEngines().forEach(e => this._addEngine(e));
   },
 
-  _addEngine: function(engine) {
+  _addEngine(engine) {
     if (engine.alias) {
       this.aliasMatches.push({
         alias: engine.alias,
@@ -192,7 +192,7 @@ this.PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
-  ensureInitialized: function() {
+  ensureInitialized() {
     if (!gInitializationPromise) {
       gInitializationPromise = SearchAutocompleteProviderInternal.initialize();
     }
@@ -273,7 +273,7 @@ this.PlacesSearchAutocompleteProvider = Object.freeze({
 
 
 
-  parseSubmissionURL: function(url) {
+  parseSubmissionURL(url) {
     if (!SearchAutocompleteProviderInternal.initialized) {
       throw new Error("The component has not been initialized.");
     }

@@ -16,7 +16,7 @@ const TEST_ROOT = "http://example.com/browser/browser/base/content/test/general/
 
   
   let stubs = {
-    updateAppMenuItem: function() {
+    updateAppMenuItem() {
       return unstubs['updateAppMenuItem'].call(gFxAccounts).then(() => {
         Services.obs.notifyObservers(null, "test:browser_fxaccounts:updateAppMenuItem", null);
       });
@@ -25,7 +25,7 @@ const TEST_ROOT = "http://example.com/browser/browser/base/content/test/general/
     
     
     
-    openPreferences: function() {
+    openPreferences() {
       Services.obs.notifyObservers(null, "test:browser_fxaccounts:openPreferences", null);
     }
   };
@@ -237,7 +237,7 @@ function setSignedInUser(verified) {
     sessionToken: "dead",
     kA: "beef",
     kB: "cafe",
-    verified: verified,
+    verified,
 
     oauthTokens: {
       
