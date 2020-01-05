@@ -715,6 +715,34 @@ nsComputedDOMStyle::SetFrameStyleContext(nsStyleContext* aContext)
   mStyleContext = aContext;
 }
 
+
+
+
+
+
+
+
+
+static bool
+MustReresolveStyle(const nsStyleContext* aContext)
+{
+  MOZ_ASSERT(aContext);
+
+  if (aContext->HasPseudoElementData()) {
+    if (!aContext->GetPseudo() ||
+        aContext->StyleSource().IsServoComputedValues()) {
+      
+      
+      return true;
+    }
+
+    return aContext->GetParent() &&
+           aContext->GetParent()->HasPseudoElementData();
+  }
+
+  return false;
+}
+
 void
 nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
 {
@@ -758,8 +786,21 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
   
   
   
-  if (!mPseudo && !mContent->IsHTMLElement(nsGkAtoms::area)) {
-    mOuterFrame = mContent->GetPrimaryFrame();
+  if (!mContent->IsHTMLElement(nsGkAtoms::area)) {
+    mOuterFrame = nullptr;
+
+    if (!mPseudo) {
+      mOuterFrame = mContent->GetPrimaryFrame();
+    } else if (mPseudo == nsCSSPseudoElements::before ||
+               mPseudo == nsCSSPseudoElements::after) {
+      nsIAtom* property = mPseudo == nsCSSPseudoElements::before
+                            ? nsGkAtoms::beforePseudoProperty
+                            : nsGkAtoms::afterPseudoProperty;
+
+      auto* pseudo = static_cast<Element*>(mContent->GetProperty(property));
+      mOuterFrame = pseudo ? pseudo->GetPrimaryFrame() : nullptr;
+    }
+
     mInnerFrame = mOuterFrame;
     if (mOuterFrame) {
       nsIAtom* type = mOuterFrame->GetType();
@@ -778,7 +819,7 @@ nsComputedDOMStyle::UpdateCurrentStyleSources(bool aNeedsLayoutFlush)
     }
   }
 
-  if (!mStyleContext || mStyleContext->HasPseudoElementData()) {
+  if (!mStyleContext || MustReresolveStyle(mStyleContext)) {
 #ifdef DEBUG
     if (mStyleContext && mStyleContext->StyleSource().IsGeckoRuleNodeOrNull()) {
       

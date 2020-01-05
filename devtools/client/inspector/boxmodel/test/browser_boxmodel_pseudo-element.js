@@ -53,7 +53,7 @@ const res1 = [
   },
   {
     selector: ".boxmodel-margin.boxmodel-left > span",
-    value: "auto"
+    value: 0
   },
   {
     selector: ".boxmodel-margin.boxmodel-bottom > span",
@@ -61,7 +61,7 @@ const res1 = [
   },
   {
     selector: ".boxmodel-margin.boxmodel-right > span",
-    value: "auto"
+    value: 0
   },
   {
     selector: ".boxmodel-padding.boxmodel-top > span",
