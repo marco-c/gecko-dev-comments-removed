@@ -183,25 +183,12 @@ class CppEclipseBackend(CommonBackend):
 
         exe_path = os.path.join(exe_path, self._appname + self._bin_suffix)
 
-        if self.environment.substs['MOZ_WIDGET_TOOLKIT'] != 'gonk':
-            main_gecko_launch = os.path.join(launch_dir, 'gecko.launch')
-            with open(main_gecko_launch, 'wb') as fh:
-                launch = GECKO_LAUNCH_CONFIG_TEMPLATE
-                launch = launch.replace('@LAUNCH_PROGRAM@', exe_path)
-                launch = launch.replace('@LAUNCH_ARGS@', '-P -no-remote')
-                fh.write(launch)
-
-        if self.environment.substs['MOZ_WIDGET_TOOLKIT'] == 'gonk':
-            b2g_flash = os.path.join(launch_dir, 'b2g-flash.launch')
-            with open(b2g_flash, 'wb') as fh:
-                
-                
-                
-                fastxul_path = os.path.join(self.environment.topsrcdir, '..', 'scripts', 'fastxul.sh')
-                launch = B2GFLASH_LAUNCH_CONFIG_TEMPLATE
-                launch = launch.replace('@LAUNCH_PROGRAM@', fastxul_path)
-                launch = launch.replace('@OBJDIR@', self.environment.topobjdir)
-                fh.write(launch)
+        main_gecko_launch = os.path.join(launch_dir, 'gecko.launch')
+        with open(main_gecko_launch, 'wb') as fh:
+            launch = GECKO_LAUNCH_CONFIG_TEMPLATE
+            launch = launch.replace('@LAUNCH_PROGRAM@', exe_path)
+            launch = launch.replace('@LAUNCH_ARGS@', '-P -no-remote')
+            fh.write(launch)
 
         
 
