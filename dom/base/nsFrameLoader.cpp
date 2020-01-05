@@ -50,7 +50,7 @@
 #include "nsIEditor.h"
 #include "nsIMozBrowserFrame.h"
 #include "nsISHistory.h"
-#include "nsNullPrincipal.h"
+#include "NullPrincipal.h"
 #include "nsIScriptError.h"
 #include "nsGlobalWindow.h"
 #include "nsPIWindowRoot.h"

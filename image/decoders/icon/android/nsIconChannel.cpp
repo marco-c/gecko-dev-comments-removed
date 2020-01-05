@@ -13,7 +13,7 @@
 #include "nsIStringStream.h"
 #include "nsNetUtil.h"
 #include "nsComponentManagerUtils.h"
-#include "nsNullPrincipal.h"
+#include "NullPrincipal.h"
 
 NS_IMPL_ISUPPORTS(nsIconChannel,
                   nsIRequest,
@@ -115,7 +115,7 @@ moz_icon_to_channel(nsIURI* aURI, const nsACString& aFileExt,
   
   
   
-  nsCOMPtr<nsIPrincipal> nullPrincipal = nsNullPrincipal::Create();
+  nsCOMPtr<nsIPrincipal> nullPrincipal = NullPrincipal::Create();
   return NS_NewInputStreamChannel(aChannel,
                                   aURI,
                                   stream,

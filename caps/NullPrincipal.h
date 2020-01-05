@@ -9,8 +9,8 @@
 
 
 
-#ifndef nsNullPrincipal_h__
-#define nsNullPrincipal_h__
+#ifndef NullPrincipal_h
+#define NullPrincipal_h
 
 #include "nsIPrincipal.h"
 #include "nsJSPrincipals.h"
@@ -30,13 +30,13 @@ class nsIURI;
 
 #define NS_NULLPRINCIPAL_SCHEME "moz-nullprincipal"
 
-class nsNullPrincipal final : public mozilla::BasePrincipal
+class NullPrincipal final : public mozilla::BasePrincipal
 {
 public:
   
   
   
-  nsNullPrincipal()
+  NullPrincipal()
     : BasePrincipal(eNullPrincipal)
   {
   }
@@ -53,15 +53,16 @@ public:
   NS_IMETHOD GetAddonId(nsAString& aAddonId) override;
   nsresult GetOriginInternal(nsACString& aOrigin) override;
 
-  static already_AddRefed<nsNullPrincipal> CreateWithInheritedAttributes(nsIPrincipal* aInheritFrom);
+  static already_AddRefed<NullPrincipal> CreateWithInheritedAttributes(nsIPrincipal* aInheritFrom);
 
   
   
   
   
-  static already_AddRefed<nsNullPrincipal> CreateWithInheritedAttributes(nsIDocShell* aDocShell, bool aIsFirstParty = false);
+  static already_AddRefed<NullPrincipal>
+  CreateWithInheritedAttributes(nsIDocShell* aDocShell, bool aIsFirstParty = false);
 
-  static already_AddRefed<nsNullPrincipal>
+  static already_AddRefed<NullPrincipal>
   Create(const mozilla::OriginAttributes& aOriginAttributes = mozilla::OriginAttributes(),
          nsIURI* aURI = nullptr);
 
@@ -71,7 +72,7 @@ public:
   virtual nsresult GetScriptLocation(nsACString &aStr) override;
 
  protected:
-  virtual ~nsNullPrincipal() {}
+  virtual ~NullPrincipal() = default;
 
   bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) override
   {

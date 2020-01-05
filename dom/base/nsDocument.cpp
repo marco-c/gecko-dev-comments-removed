@@ -106,7 +106,7 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
-#include "nsNullPrincipal.h"
+#include "NullPrincipal.h"
 
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
@@ -2723,7 +2723,7 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   if (cspSandboxFlags & SANDBOXED_ORIGIN) {
     
     
-    principal = nsNullPrincipal::Create();
+    principal = NullPrincipal::Create();
     SetPrincipal(principal);
   }
 
@@ -9631,8 +9631,8 @@ nsDocument::ForgetImagePreload(nsIURI* aURI)
   }
 }
 
-void
-nsDocument::UpdatePossiblyStaleDocumentState()
+EventStates
+nsDocument::GetDocumentState()
 {
   if (!mGotDocumentState.HasState(NS_DOCUMENT_STATE_RTL_LOCALE)) {
     if (IsDocumentRightToLeft()) {
@@ -9648,19 +9648,7 @@ nsDocument::UpdatePossiblyStaleDocumentState()
     }
     mGotDocumentState |= NS_DOCUMENT_STATE_WINDOW_INACTIVE;
   }
-}
-
-EventStates
-nsDocument::ThreadSafeGetDocumentState() const
-{
   return mDocumentState;
-}
-
-EventStates
-nsDocument::GetDocumentState()
-{
-  UpdatePossiblyStaleDocumentState();
-  return ThreadSafeGetDocumentState();
 }
 
 namespace {

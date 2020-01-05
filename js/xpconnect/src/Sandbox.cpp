@@ -19,7 +19,7 @@
 #include "nsIURI.h"
 #include "nsJSUtils.h"
 #include "nsNetUtil.h"
-#include "nsNullPrincipal.h"
+#include "NullPrincipal.h"
 #include "ExpandedPrincipal.h"
 #include "WrapperFactory.h"
 #include "xpcprivate.h"
@@ -1049,7 +1049,7 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
         if (sop) {
             principal = sop->GetPrincipal();
         } else {
-            RefPtr<nsNullPrincipal> nullPrin = nsNullPrincipal::Create();
+            RefPtr<NullPrincipal> nullPrin = NullPrincipal::Create();
             principal = nullPrin;
         }
     }

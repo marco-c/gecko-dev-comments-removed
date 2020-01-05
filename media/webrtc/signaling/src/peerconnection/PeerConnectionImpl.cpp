@@ -74,7 +74,7 @@
 #include "nsIURLParser.h"
 #include "nsIDOMDataChannel.h"
 #include "nsIDOMLocation.h"
-#include "nsNullPrincipal.h"
+#include "NullPrincipal.h"
 #include "mozilla/PeerIdentity.h"
 #include "mozilla/dom/RTCCertificate.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
@@ -1877,7 +1877,7 @@ PeerConnectionImpl::CreateNewRemoteTracks(RefPtr<PeerConnectionObserver>& aPco)
     } else {
       
       
-      principal =  nsNullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
+      principal =  NullPrincipal::CreateWithInheritedAttributes(doc->NodePrincipal());
     }
 
     
