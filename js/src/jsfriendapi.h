@@ -267,8 +267,9 @@ DumpBacktrace(JSContext* cx);
 namespace JS {
 
 
-extern JS_FRIEND_API(char*)
-FormatStackDump(JSContext* cx, char* buf, bool showArgs, bool showLocals, bool showThisProps);
+extern JS_FRIEND_API(JS::UniqueChars)
+FormatStackDump(JSContext* cx, JS::UniqueChars&& buf, bool showArgs, bool showLocals,
+                bool showThisProps);
 
 
 
