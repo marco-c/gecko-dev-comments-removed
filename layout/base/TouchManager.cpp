@@ -140,7 +140,8 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
           touch->mChanged = true;
         }
         touch->mMessage = aEvent->mMessage;
-        TouchInfo info = { touch, GetNonAnonymousAncestor(touch->mTarget) };
+        TouchInfo info = { touch, GetNonAnonymousAncestor(touch->mTarget),
+                           true };
         sCaptureTouchList->Put(id, info);
       }
       break;
@@ -247,6 +248,26 @@ TouchManager::PreHandleEvent(WidgetEvent* aEvent,
       AppendToTouchList(&touches);
       break;
     }
+    case eTouchPointerCancel: {
+      
+      
+      WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
+      WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
+      for (uint32_t i = 0; i < touches.Length(); ++i) {
+        Touch* touch = touches[i];
+        if (!touch) {
+          continue;
+        }
+        int32_t id = touch->Identifier();
+        TouchInfo info;
+        if (!sCaptureTouchList->Get(id, &info)) {
+          continue;
+        }
+        info.mConvertToPointer = false;
+        sCaptureTouchList->Put(id, info);
+      }
+      break;
+    }
     default:
       break;
   }
@@ -288,6 +309,26 @@ TouchManager::GetCapturedTouch(int32_t aId)
     touch = info.mTouch;
   }
   return touch.forget();
+}
+
+ bool
+TouchManager::ShouldConvertTouchToPointer(const Touch* aTouch,
+                                          const WidgetTouchEvent* aEvent)
+{
+  if (!aTouch || !aTouch->convertToPointer) {
+    return false;
+  }
+  TouchInfo info;
+  if (!sCaptureTouchList->Get(aTouch->Identifier(), &info)) {
+    
+    
+    
+    
+    
+    
+    return aEvent->mMessage == eTouchStart;
+  }
+  return info.mConvertToPointer;
 }
 
 } 

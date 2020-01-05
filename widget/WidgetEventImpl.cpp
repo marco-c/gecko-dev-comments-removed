@@ -439,7 +439,8 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
       return wheelEvent->mDeltaX != 0.0 || wheelEvent->mDeltaY != 0.0 ||
              wheelEvent->mDeltaZ != 0.0;
     }
-
+    case eTouchEventClass:
+      return mMessage != eTouchPointerCancel;
     
     
     case eQueryContentEventClass:
