@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const {
@@ -103,5 +101,3 @@ const Editor = createClass({
 });
 
 module.exports = Editor;
-
-
