@@ -163,6 +163,20 @@ impl<T> Strong<T> {
 
     #[inline]
     
+    
+    
+    
+    
+    pub fn as_arc_opt<U>(&self) -> Option<&Arc<U>> where U: HasArcFFI<FFIType = T> {
+        if self.is_null() {
+            None
+        } else {
+            unsafe { Some(transmute(self)) }
+        }
+    }
+
+    #[inline]
+    
     pub fn null() -> Self {
         unsafe { transmute(ptr::null::<T>()) }
     }
