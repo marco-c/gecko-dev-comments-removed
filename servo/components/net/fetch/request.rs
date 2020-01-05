@@ -2,22 +2,24 @@
 
 
 
-use fetch::cors_cache::{CORSCache, CacheRequestDetails};
+use fetch::cors_cache::{BasicCORSCache, CORSCache, CacheRequestDetails};
 use fetch::response::ResponseMethods;
 use hyper::header::{Accept, IfMatch, IfRange, IfUnmodifiedSince, Location};
-use hyper::header::{AcceptLanguage, ContentLanguage, HeaderView};
+use hyper::header::{AcceptLanguage, ContentLength, ContentLanguage, HeaderView};
+use hyper::header::{Authorization, Basic};
 use hyper::header::{ContentType, Header, Headers, IfModifiedSince, IfNoneMatch};
-use hyper::header::{QualityItem, q, qitem};
+use hyper::header::{QualityItem, q, qitem, Referer as RefererHeader, UserAgent};
 use hyper::method::Method;
 use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use hyper::status::StatusCode;
-use net_traits::{AsyncFetchListener, Response};
+use net_traits::{AsyncFetchListener, CacheState, Response};
 use net_traits::{ResponseType, Metadata};
 use std::ascii::AsciiExt;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::str::FromStr;
-use url::Url;
+use std::thread;
+use url::{Origin, Url, UrlParser};
 use util::task::spawn_named;
 
 
@@ -40,8 +42,9 @@ pub enum ContextFrameType {
 }
 
 
+#[derive(Clone, PartialEq)]
 pub enum Referer {
-    RefererNone,
+    NoReferer,
     Client,
     RefererUrl(Url)
 }
@@ -91,6 +94,7 @@ pub enum ResponseTainting {
 }
 
 
+#[derive(Clone)]
 pub struct Request {
     pub method: Method,
     
@@ -107,6 +111,7 @@ pub struct Request {
     pub context_frame_type: ContextFrameType,
     pub origin: Option<Url>, 
     pub force_origin_header: bool,
+    pub omit_origin_header: bool,
     pub same_origin_data: bool,
     pub referer: Referer,
     pub authentication: bool,
@@ -117,8 +122,7 @@ pub struct Request {
     pub cache_mode: CacheMode,
     pub redirect_mode: RedirectMode,
     pub redirect_count: usize,
-    pub response_tainting: ResponseTainting,
-    pub cache: Option<Box<CORSCache + Send>>
+    pub response_tainting: ResponseTainting
 }
 
 impl Request {
@@ -136,6 +140,7 @@ impl Request {
             context_frame_type: ContextFrameType::ContextNone,
             origin: None,
             force_origin_header: false,
+            omit_origin_header: false,
             same_origin_data: false,
             referer: Referer::Client,
             authentication: false,
@@ -147,7 +152,6 @@ impl Request {
             redirect_mode: RedirectMode::Follow,
             redirect_count: 0,
             response_tainting: ResponseTainting::Basic,
-            cache: None
         }
     }
 
@@ -155,326 +159,594 @@ impl Request {
         self.url_list.last().unwrap().serialize()
     }
 
-    pub fn fetch_async(mut self,
-                       cors_flag: bool,
-                       listener: Box<AsyncFetchListener + Send>) {
-        spawn_named(format!("fetch for {:?}", self.get_last_url_string()), move || {
-            let res = self.fetch(cors_flag);
-            listener.response_available(res);
-        })
+    fn current_url(&self) -> &Url {
+        self.url_list.last().unwrap()
+    }
+}
+
+pub fn fetch_async(request: Request, cors_flag: bool, listener: Box<AsyncFetchListener + Send>) {
+    spawn_named(format!("fetch for {:?}", request.get_last_url_string()), move || {
+        let request = Rc::new(RefCell::new(request));
+        let res = fetch(request, cors_flag);
+        listener.response_available(res);
+    })
+}
+
+
+fn fetch(request: Rc<RefCell<Request>>, cors_flag: bool) -> Response {
+
+    
+    if request.borrow().context != Context::Fetch && !request.borrow().headers.has::<Accept>() {
+
+        
+        let value = match request.borrow().context {
+
+            Context::Favicon | Context::Image | Context::ImageSet
+                => vec![qitem(Mime(TopLevel::Image, SubLevel::Png, vec![])),
+                    // FIXME: This should properly generate a MimeType that has a
+                    // SubLevel of svg+xml (https://github.com/hyperium/mime.rs/issues/22)
+                    qitem(Mime(TopLevel::Image, SubLevel::Ext("svg+xml".to_owned()), vec![])),
+                    QualityItem::new(Mime(TopLevel::Image, SubLevel::Star, vec![]), q(0.8)),
+                    QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.5))],
+
+            Context::Form | Context::Frame | Context::Hyperlink |
+            Context::IFrame | Context::Location | Context::MetaRefresh |
+            Context::PreRender
+                => vec![qitem(Mime(TopLevel::Text, SubLevel::Html, vec![])),
+                    // FIXME: This should properly generate a MimeType that has a
+                    // SubLevel of xhtml+xml (https://github.com/hyperium/mime.rs/issues/22)
+                    qitem(Mime(TopLevel::Application, SubLevel::Ext("xhtml+xml".to_owned()), vec![])),
+                    QualityItem::new(Mime(TopLevel::Application, SubLevel::Xml, vec![]), q(0.9)),
+                    QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.8))],
+
+            Context::Internal if request.borrow().context_frame_type != ContextFrameType::ContextNone
+                => vec![qitem(Mime(TopLevel::Text, SubLevel::Html, vec![])),
+                    // FIXME: This should properly generate a MimeType that has a
+                    // SubLevel of xhtml+xml (https://github.com/hyperium/mime.rs/issues/22)
+                    qitem(Mime(TopLevel::Application, SubLevel::Ext("xhtml+xml".to_owned()), vec![])),
+                    QualityItem::new(Mime(TopLevel::Application, SubLevel::Xml, vec![]), q(0.9)),
+                    QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.8))],
+
+            Context::Style
+                => vec![qitem(Mime(TopLevel::Text, SubLevel::Css, vec![])),
+                    QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.1))],
+            _ => vec![qitem(Mime(TopLevel::Star, SubLevel::Star, vec![]))]
+        };
+
+        
+        request.borrow_mut().headers.set(Accept(value));
     }
 
     
-    pub fn fetch(&mut self, cors_flag: bool) -> Response {
-        
-        if self.context != Context::Fetch && !self.headers.has::<Accept>() {
+    if request.borrow().context != Context::Fetch && !request.borrow().headers.has::<AcceptLanguage>() {
+        request.borrow_mut().headers.set(AcceptLanguage(vec![qitem("en-US".parse().unwrap())]));
+    }
+
+    
+    
+    
+    main_fetch(request, cors_flag)
+}
+
+
+fn main_fetch(request: Rc<RefCell<Request>>, _cors_flag: bool) -> Response {
+    
+    let _ = basic_fetch(request);
+    Response::network_error()
+}
+
+
+fn basic_fetch(request: Rc<RefCell<Request>>) -> Response {
+
+    let req = request.borrow();
+    let url = req.url_list.last().unwrap();
+    let scheme = url.scheme.clone();
+
+    match &*scheme {
+
+        "about" => {
+            match url.non_relative_scheme_data() {
+                Some(s) if &*s == "blank" => {
+                    let mut response = Response::new();
+                    response.headers.set(ContentType(Mime(
+                        TopLevel::Text, SubLevel::Html,
+                        vec![(Attr::Charset, Value::Utf8)])));
+                    response
+                },
+                _ => Response::network_error()
+            }
+        },
+
+        "http" | "https" => {
+            http_fetch(request.clone(), BasicCORSCache::new(), false, false, false)
+        },
+
+        "blob" | "data" | "file" | "ftp" => {
             
-            let value = match self.context {
-                Context::Favicon | Context::Image | Context::ImageSet
-                    => vec![qitem(Mime(TopLevel::Image, SubLevel::Png, vec![])),
-                        // FIXME: This should properly generate a MimeType that has a
-                        // SubLevel of svg+xml (https://github.com/hyperium/mime.rs/issues/22)
-                        qitem(Mime(TopLevel::Image, SubLevel::Ext("svg+xml".to_owned()), vec![])),
-                        QualityItem::new(Mime(TopLevel::Image, SubLevel::Star, vec![]), q(0.8)),
-                        QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.5))],
-                Context::Form | Context::Frame | Context::Hyperlink |
-                Context::IFrame | Context::Location | Context::MetaRefresh |
-                Context::PreRender
-                    => vec![qitem(Mime(TopLevel::Text, SubLevel::Html, vec![])),
-                        // FIXME: This should properly generate a MimeType that has a
-                        // SubLevel of xhtml+xml (https://github.com/hyperium/mime.rs/issues/22)
-                        qitem(Mime(TopLevel::Application, SubLevel::Ext("xhtml+xml".to_owned()), vec![])),
-                        QualityItem::new(Mime(TopLevel::Application, SubLevel::Xml, vec![]), q(0.9)),
-                        QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.8))],
-                Context::Internal if self.context_frame_type != ContextFrameType::ContextNone
-                    => vec![qitem(Mime(TopLevel::Text, SubLevel::Html, vec![])),
-                        // FIXME: This should properly generate a MimeType that has a
-                        // SubLevel of xhtml+xml (https://github.com/hyperium/mime.rs/issues/22)
-                        qitem(Mime(TopLevel::Application, SubLevel::Ext("xhtml+xml".to_owned()), vec![])),
-                        QualityItem::new(Mime(TopLevel::Application, SubLevel::Xml, vec![]), q(0.9)),
-                        QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.8))],
-                Context::Style
-                    => vec![qitem(Mime(TopLevel::Text, SubLevel::Css, vec![])),
-                        QualityItem::new(Mime(TopLevel::Star, SubLevel::Star, vec![]), q(0.1))],
-                _ => vec![qitem(Mime(TopLevel::Star, SubLevel::Star, vec![]))]
+            panic!("Unimplemented scheme for Fetch")
+        },
+
+        _ => Response::network_error()
+    }
+}
+
+fn http_fetch_async(request: Request,
+                    cors_flag: bool,
+                    cors_preflight_flag: bool,
+                    authentication_fetch_flag: bool,
+                    listener: Box<AsyncFetchListener + Send>) {
+
+    spawn_named(format!("http_fetch for {:?}", request.get_last_url_string()), move || {
+        let request = Rc::new(RefCell::new(request));
+        let res = http_fetch(request, BasicCORSCache::new(),
+                             cors_flag, cors_preflight_flag,
+                             authentication_fetch_flag);
+        listener.response_available(res);
+    });
+}
+
+
+fn http_fetch(request: Rc<RefCell<Request>>,
+              mut cache: BasicCORSCache,
+              cors_flag: bool,
+              cors_preflight_flag: bool,
+              authentication_fetch_flag: bool) -> Response {
+
+    
+    let mut response: Option<Rc<RefCell<Response>>> = None;
+
+    
+    let mut actual_response: Option<Rc<RefCell<Response>>> = None;
+
+    
+    if !request.borrow().skip_service_worker && !request.borrow().is_service_worker_global_scope {
+
+        
+        if let Some(ref res) = response {
+            let resp = res.borrow();
+
+            
+            actual_response = match resp.internal_response {
+                Some(ref internal_res) => Some(internal_res.clone()),
+                None => Some(res.clone())
             };
-            
-            self.headers.set(Accept(value));
-        }
-        
-        if self.context != Context::Fetch && !self.headers.has::<AcceptLanguage>() {
-            self.headers.set(AcceptLanguage(vec![qitem("en-US".parse().unwrap())]));
-        }
-        
-        
-        
-        self.main_fetch(cors_flag)
-    }
 
-    
-    pub fn main_fetch(&mut self, _cors_flag: bool) -> Response {
-        
-        Response::network_error()
-    }
-
-    
-    pub fn basic_fetch(&mut self) -> Response {
-        let scheme = self.url_list.last().unwrap().scheme.clone();
-        match &*scheme {
-            "about" => {
-                let url = self.url_list.last().unwrap();
-                match url.non_relative_scheme_data() {
-                    Some(s) if &*s == "blank" => {
-                        let mut response = Response::new();
-                        response.headers.set(ContentType(Mime(
-                            TopLevel::Text, SubLevel::Html,
-                            vec![(Attr::Charset, Value::Utf8)])));
-                        response
-                    },
-                    _ => Response::network_error()
-                }
-            }
-            "http" | "https" => {
-                self.http_fetch(false, false, false)
-            },
-            "blob" | "data" | "file" | "ftp" => {
-                
-                panic!("Unimplemented scheme for Fetch")
-            },
-
-            _ => Response::network_error()
-        }
-    }
-
-    pub fn http_fetch_async(mut self, cors_flag: bool,
-                            cors_preflight_flag: bool,
-                            authentication_fetch_flag: bool,
-                            listener: Box<AsyncFetchListener + Send>) {
-        spawn_named(format!("http_fetch for {:?}", self.get_last_url_string()), move || {
-            let res = self.http_fetch(cors_flag, cors_preflight_flag,
-                                      authentication_fetch_flag);
-            listener.response_available(res);
-        });
-    }
-
-    
-    pub fn http_fetch(&mut self, cors_flag: bool, cors_preflight_flag: bool,
-                      authentication_fetch_flag: bool) -> Response {
-        
-        let mut response: Option<Rc<RefCell<Response>>> = None;
-        
-        let mut actual_response: Option<Rc<RefCell<Response>>> = None;
-        
-        if !self.skip_service_worker && !self.is_service_worker_global_scope {
             
-            if let Some(ref res) = response {
-                let resp = res.borrow();
-                
-                actual_response = match resp.internal_response {
-                    Some(ref internal_res) => Some(internal_res.clone()),
-                    None => Some(res.clone())
-                };
-                
-                if (resp.response_type == ResponseType::Opaque &&
-                    self.mode != RequestMode::NoCORS) ||
-                   (resp.response_type == ResponseType::OpaqueRedirect &&
-                    self.redirect_mode != RedirectMode::Manual) ||
-                   resp.response_type == ResponseType::Error {
-                    return Response::network_error();
-                }
-            }
-            
-            if let Some(ref res) = actual_response {
-                let mut resp = res.borrow_mut();
-                if resp.url_list.is_empty() {
-                    resp.url_list = self.url_list.clone();
-                }
-            }
-            
-            
-        }
-        
-        if response.is_none() {
-            
-            if cors_preflight_flag {
-                let mut method_mismatch = false;
-                let mut header_mismatch = false;
-                if let Some(ref mut cache) = self.cache {
-                    
-                    
-                    let origin = self.origin.clone().unwrap_or(Url::parse("").unwrap());
-                    let url = self.url_list.last().unwrap().clone();
-                    let credentials = self.credentials_mode == CredentialsMode::Include;
-                    let method_cache_match = cache.match_method(CacheRequestDetails {
-                        origin: origin.clone(),
-                        destination: url.clone(),
-                        credentials: credentials
-                    }, self.method.clone());
-                    method_mismatch = !method_cache_match && (!is_simple_method(&self.method) ||
-                        self.mode == RequestMode::ForcedPreflightMode);
-                    header_mismatch = self.headers.iter().any(|view|
-                        !cache.match_header(CacheRequestDetails {
-                            origin: origin.clone(),
-                            destination: url.clone(),
-                            credentials: credentials
-                        }, view.name()) && !is_simple_header(&view)
-                        );
-                }
-                if method_mismatch || header_mismatch {
-                    let preflight_result = self.preflight_fetch();
-                    if preflight_result.response_type == ResponseType::Error {
-                        return Response::network_error();
-                    }
-                    response = Some(Rc::new(RefCell::new(preflight_result)));
-                }
-            }
-            
-            self.skip_service_worker = true;
-            
-            let credentials = match self.credentials_mode {
-                CredentialsMode::Include => true,
-                CredentialsMode::CredentialsSameOrigin if (!cors_flag ||
-                    self.response_tainting == ResponseTainting::Opaque)
-                    => true,
-                _ => false
-            };
-            
-            let fetch_result = self.http_network_or_cache_fetch(credentials, authentication_fetch_flag);
-            
-            if cors_flag && self.cors_check(&fetch_result).is_err() {
+            if (resp.response_type == ResponseType::Opaque &&
+                request.borrow().mode != RequestMode::NoCORS) ||
+               (resp.response_type == ResponseType::OpaqueRedirect &&
+                request.borrow().redirect_mode != RedirectMode::Manual) ||
+               resp.response_type == ResponseType::Error {
                 return Response::network_error();
             }
-            response = Some(Rc::new(RefCell::new(fetch_result)));
-            actual_response = response.clone();
         }
+
         
-        let mut actual_response = Rc::try_unwrap(actual_response.unwrap()).ok().unwrap().into_inner();
-        let mut response = Rc::try_unwrap(response.unwrap()).ok().unwrap();
-        match actual_response.status.unwrap() {
-            
-            StatusCode::MovedPermanently | StatusCode::Found | StatusCode::SeeOther |
-            StatusCode::TemporaryRedirect | StatusCode::PermanentRedirect => {
-                
-                if self.redirect_mode == RedirectMode::Error {
-                    return Response::network_error();
-                }
-                
-                if !actual_response.headers.has::<Location>() {
-                    return actual_response;
-                }
-                let location = match actual_response.headers.get::<Location>() {
-                    Some(&Location(ref location)) => location.clone(),
-                    _ => return Response::network_error(),
-                };
-                
-                let location_url = self.url_list.last().unwrap().join(&*location);
-                
-                let location_url = match location_url {
-                    Ok(ref url) if url.scheme == "data" => { return Response::network_error(); }
-                    Ok(url) => url,
-                    _ => { return Response::network_error(); }
-                };
-                
-                if self.redirect_count == 20 {
-                    return Response::network_error();
-                }
-                
-                self.redirect_count += 1;
-                match self.redirect_mode {
-                    
-                    RedirectMode::Manual => {
-                        *response.borrow_mut() = actual_response.to_filtered(ResponseType::Opaque);
-                    }
-                    
-                    RedirectMode::Follow => {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        if cors_flag && has_credentials(&location_url) {
-                            return Response::network_error();
-                        }
-                        
-                        
-                        
-                        
-                        
-                        
-                        if actual_response.status.unwrap() == StatusCode::SeeOther ||
-                           ((actual_response.status.unwrap() == StatusCode::MovedPermanently ||
-                             actual_response.status.unwrap() == StatusCode::Found) &&
-                            self.method == Method::Post) {
-                            self.method = Method::Get;
-                        }
-                        
-                        self.url_list.push(location_url);
-                        
-                        return self.main_fetch(cors_flag);
-                    }
-                    RedirectMode::Error => { panic!("RedirectMode is Error after step 8") }
-                }
+        if let Some(ref res) = actual_response {
+            let mut resp = res.borrow_mut();
+            if resp.url_list.is_empty() {
+                resp.url_list = request.borrow().url_list.clone();
             }
-            
-            StatusCode::Unauthorized => {
-                
-                
-                if cors_flag {
-                    return response.into_inner();
-                }
-                
-                
-                
-                if !self.use_url_credentials || authentication_fetch_flag {
-                    
-                }
-                
-                return self.http_fetch(cors_flag, cors_preflight_flag, true);
-            }
-            
-            StatusCode::ProxyAuthenticationRequired => {
-                
-                
-                
-                
-                
-                
-                
-                return self.http_fetch(cors_flag, cors_preflight_flag, authentication_fetch_flag);
-            }
-            _ => { }
         }
-        let mut response = response.into_inner();
+
+        
+        
+    }
+
+    
+    if response.is_none() {
+
+        
+        if cors_preflight_flag {
+            let mut method_mismatch = false;
+            let mut header_mismatch = false;
+
+            
+            
+            let origin = request.borrow().origin.clone().unwrap_or(Url::parse("").unwrap());
+            let url = request.borrow().url_list.last().unwrap().clone();
+            let credentials = request.borrow().credentials_mode == CredentialsMode::Include;
+            let method_cache_match = cache.match_method(CacheRequestDetails {
+                origin: origin.clone(),
+                destination: url.clone(),
+                credentials: credentials
+            }, request.borrow().method.clone());
+
+            method_mismatch = !method_cache_match && (!is_simple_method(&request.borrow().method) ||
+                request.borrow().mode == RequestMode::ForcedPreflightMode);
+            header_mismatch = request.borrow().headers.iter().any(|view|
+                !cache.match_header(CacheRequestDetails {
+                    origin: origin.clone(),
+                    destination: url.clone(),
+                    credentials: credentials
+                }, view.name()) && !is_simple_header(&view)
+                );
+
+            if method_mismatch || header_mismatch {
+                let preflight_result = preflight_fetch(request.clone());
+                if preflight_result.response_type == ResponseType::Error {
+                    return Response::network_error();
+                }
+                response = Some(Rc::new(RefCell::new(preflight_result)));
+            }
+        }
+
+        
+        request.borrow_mut().skip_service_worker = true;
+
+        
+        let credentials = match request.borrow().credentials_mode {
+            CredentialsMode::Include => true,
+            CredentialsMode::CredentialsSameOrigin if (!cors_flag ||
+                request.borrow().response_tainting == ResponseTainting::Opaque)
+                => true,
+            _ => false
+        };
+
+        
+        let fetch_result = http_network_or_cache_fetch(request.clone(), credentials, authentication_fetch_flag);
+
+        
+        if cors_flag && cors_check(request.clone(), &fetch_result).is_err() {
+            return Response::network_error();
+        }
+
+        response = Some(Rc::new(RefCell::new(fetch_result)));
+        actual_response = response.clone();
+    }
+
+    
+    let actual_response = Rc::try_unwrap(actual_response.unwrap()).ok().unwrap().into_inner();
+    let response = Rc::try_unwrap(response.unwrap()).ok().unwrap();
+
+    match actual_response.status.unwrap() {
+
+        
+        StatusCode::MovedPermanently | StatusCode::Found | StatusCode::SeeOther |
+        StatusCode::TemporaryRedirect | StatusCode::PermanentRedirect => {
+
+            
+            if request.borrow().redirect_mode == RedirectMode::Error {
+                return Response::network_error();
+            }
+
+            
+            if !actual_response.headers.has::<Location>() {
+                return actual_response;
+            }
+
+            let location = match actual_response.headers.get::<Location>() {
+                Some(&Location(ref location)) => location.clone(),
+                _ => return Response::network_error(),
+            };
+
+            
+            let location_url = UrlParser::new().base_url(request.borrow().url_list.last().unwrap()).parse(&*location);
+
+            
+            let location_url = match location_url {
+                Ok(ref url) if url.scheme == "data" => { return Response::network_error(); }
+                Ok(url) => url,
+                _ => { return Response::network_error(); }
+            };
+
+            
+            if request.borrow().redirect_count == 20 {
+                return Response::network_error();
+            }
+
+            
+            request.borrow_mut().redirect_count += 1;
+
+            match request.borrow().redirect_mode {
+
+                
+                RedirectMode::Manual => {
+                    *response.borrow_mut() = actual_response.to_filtered(ResponseType::Opaque);
+                }
+
+                
+                RedirectMode::Follow => {
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    if cors_flag && has_credentials(&location_url) {
+                        return Response::network_error();
+                    }
+
+                    
+                    
+                    
+                    
+                    
+
+                    
+                    if actual_response.status.unwrap() == StatusCode::SeeOther ||
+                       ((actual_response.status.unwrap() == StatusCode::MovedPermanently ||
+                         actual_response.status.unwrap() == StatusCode::Found) &&
+                        request.borrow().method == Method::Post) {
+                        request.borrow_mut().method = Method::Get;
+                    }
+
+                    
+                    request.borrow_mut().url_list.push(location_url);
+
+                    
+                    return main_fetch(request.clone(), cors_flag);
+                }
+                RedirectMode::Error => { panic!("RedirectMode is Error after step 8") }
+            }
+        }
+
+        
+        StatusCode::Unauthorized => {
+
+            
+            
+            if cors_flag {
+                return response.into_inner();
+            }
+
+            
+            
+
+            
+            if !request.borrow().use_url_credentials || authentication_fetch_flag {
+                
+            }
+
+            
+            return http_fetch(request, BasicCORSCache::new(), cors_flag, cors_preflight_flag, true);
+        }
+
+        
+        StatusCode::ProxyAuthenticationRequired => {
+
+            
+            
+
+            
+            
+
+            
+            
+
+            
+            return http_fetch(request, BasicCORSCache::new(),
+                              cors_flag, cors_preflight_flag,
+                              authentication_fetch_flag);
+        }
+
+        _ => { }
+    }
+
+    let response = response.into_inner();
+
+    
+    if authentication_fetch_flag {
+        
+    }
+
+    
+    response
+}
+
+
+fn http_network_or_cache_fetch(request: Rc<RefCell<Request>>,
+                               credentials_flag: bool,
+                               authentication_fetch_flag: bool) -> Response {
+    
+
+    
+    let request_has_no_window = true;
+
+    
+    let http_request = if request_has_no_window &&
+        request.borrow().redirect_mode != RedirectMode::Follow {
+        request.clone()
+    } else {
+        Rc::new(RefCell::new(request.borrow().clone()))
+    };
+
+    let content_length_value = match http_request.borrow().body {
+        None =>
+            match http_request.borrow().method {
+                
+                Method::Head | Method::Post | Method::Put =>
+                    Some(0),
+                
+                _ => None
+            },
+        
+        Some(ref http_request_body) => Some(http_request_body.len() as u64)
+    };
+
+    
+    if let Some(content_length_value) = content_length_value {
+        http_request.borrow_mut().headers.set(ContentLength(content_length_value));
+    }
+
+    
+    match http_request.borrow().referer {
+        Referer::NoReferer =>
+            http_request.borrow_mut().headers.set(RefererHeader("".to_owned())),
+        Referer::RefererUrl(ref http_request_referer) =>
+            http_request.borrow_mut().headers.set(RefererHeader(http_request_referer.serialize())),
+        Referer::Client =>
+            
+            
+            unreachable!()
+    };
+
+    
+    if http_request.borrow().omit_origin_header == false {
+        
+        if let Some(ref _origin) = http_request.borrow().origin {
+            
+        }
+    }
+
+    
+    if !http_request.borrow().headers.has::<UserAgent>() {
+        http_request.borrow_mut().headers.set(UserAgent(global_user_agent().to_owned()));
+    }
+
+    
+    if http_request.borrow().cache_mode == CacheMode::Default && is_no_store_cache(&http_request.borrow().headers) {
+        http_request.borrow_mut().cache_mode = CacheMode::NoStore;
+    }
+
+    
+    
+
+    
+    
+    if credentials_flag {
+        
+        
+
+        
+        let mut authorization_value = None;
+
+        
+        
+
         
         if authentication_fetch_flag {
+
+            let http_req = http_request.borrow();
+            let current_url = http_req.current_url();
+
+            authorization_value = if includes_credentials(current_url) {
+                Some(Basic {
+                    username: current_url.username().unwrap_or("").to_owned(),
+                    password: current_url.password().map(str::to_owned)
+                })
+
+            } else {
+                None
+            }
+        }
+
+        
+        if let Some(basic) = authorization_value {
+            http_request.borrow_mut().headers.set(Authorization(basic));
+        }
+    }
+
+    
+    
+
+    
+    let mut response: Option<Response> = None;
+
+    
+    
+    let complete_http_response_from_cache: Option<Response> = None;
+    if http_request.borrow().cache_mode != CacheMode::NoStore &&
+        http_request.borrow().cache_mode != CacheMode::Reload &&
+        complete_http_response_from_cache.is_some() {
+
+        
+        if http_request.borrow().cache_mode == CacheMode::ForceCache {
+            
             
         }
+
+        let revalidation_needed = match response {
+            Some(ref response) => response_needs_revalidation(&response),
+            _ => false
+        };
+
         
-        response
+        if !revalidation_needed && http_request.borrow().cache_mode == CacheMode::Default {
+            
+            
+            
+        }
+
+        
+        if revalidation_needed && http_request.borrow().cache_mode == CacheMode::Default ||
+            http_request.borrow_mut().cache_mode == CacheMode::NoCache {
+
+            
+        }
+
+    
+    
+    } else if http_request.borrow().cache_mode == CacheMode::Default ||
+        http_request.borrow().cache_mode == CacheMode::ForceCache {
+        
     }
 
     
-    pub fn http_network_or_cache_fetch(&mut self,
-                                       _credentials_flag: bool,
-                                       _authentication_fetch_flag: bool) -> Response {
-        
-        Response::network_error()
+    if response.is_none() {
+        response = Some(http_network_fetch(request.clone(), http_request.clone(), credentials_flag));
+    }
+    let response = response.unwrap();
+
+    
+    if let Some(status) = response.status {
+        if status == StatusCode::NotModified &&
+            (http_request.borrow().cache_mode == CacheMode::Default ||
+            http_request.borrow().cache_mode == CacheMode::NoCache) {
+
+            
+            
+            let cached_response: Option<Response> = None;
+
+            
+            if cached_response.is_none() {
+                return Response::network_error();
+            }
+
+            
+
+            
+            
+
+            
+            
+            
+        }
     }
 
     
-    pub fn preflight_fetch(&mut self) -> Response {
-        
-        Response::network_error()
-    }
+    response
+}
 
+
+fn http_network_fetch(request: Rc<RefCell<Request>>,
+                      http_request: Rc<RefCell<Request>>,
+                      credentials_flag: bool) -> Response {
     
-    pub fn cors_check(&mut self, response: &Response) -> Result<(), ()> {
-        
-        Err(())
-    }
+    Response::network_error()
+}
+
+
+fn preflight_fetch(request: Rc<RefCell<Request>>) -> Response {
+    
+    Response::network_error()
+}
+
+
+fn cors_check(request: Rc<RefCell<Request>>, response: &Response) -> Result<(), ()> {
+    
+    Err(())
+}
+
+fn global_user_agent() -> String {
+    
+    const USER_AGENT_STRING: &'static str = "Servo";
+    USER_AGENT_STRING.to_owned()
 }
 
 fn has_credentials(url: &Url) -> bool {
@@ -507,3 +779,26 @@ fn is_simple_method(m: &Method) -> bool {
         _ => false
     }
 }
+
+fn includes_credentials(url: &Url) -> bool {
+
+    if url.password().is_some() {
+        return true
+    }
+
+    if let Some(name) = url.username() {
+        return name.len() > 0
+    }
+
+    false
+}
+
+fn response_needs_revalidation(response: &Response) -> bool {
+    
+    false
+}
+
+
+
+
+

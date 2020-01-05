@@ -72,6 +72,15 @@ pub enum ResponseBody {
     Done(Vec<u8>),
 }
 
+
+#[derive(Clone)]
+pub enum CacheState {
+    None,
+    Local,
+    Validated,
+    Partial
+}
+
 pub enum ResponseMsg {
     Chunk(Vec<u8>),
     Finished,
@@ -89,6 +98,7 @@ pub struct Response {
     pub status: Option<StatusCode>,
     pub headers: Headers,
     pub body: ResponseBody,
+    pub cache_state: CacheState,
     
     
     pub internal_response: Option<Rc<RefCell<Response>>>,
@@ -104,6 +114,7 @@ impl Response {
             status: None,
             headers: Headers::new(),
             body: ResponseBody::Empty,
+            cache_state: CacheState::None,
             internal_response: None
         }
     }
