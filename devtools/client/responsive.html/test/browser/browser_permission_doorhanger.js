@@ -6,7 +6,7 @@
 
 const DUMMY_URL = "http://example.com/";
 const TEST_URL = `${URL_ROOT}geolocation.html`;
-const TEST_SURL = TEST_URL.replace('http://example.com', 'https://example.com');
+const TEST_SURL = TEST_URL.replace("http://example.com", "https://example.com");
 
 function waitForGeolocationPrompt(win, browser) {
   return new Promise(resolve => {
