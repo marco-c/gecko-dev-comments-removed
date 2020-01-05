@@ -2210,11 +2210,15 @@ public:
                              nsString())
     , mCapturedTrackSource(aCapturedTrackSource)
   {
+    mCapturedTrackSource->RegisterSink(this);
   }
 
   void Destroy() override
   {
     MOZ_ASSERT(mCapturedTrackSource);
+    if (mCapturedTrackSource) {
+      mCapturedTrackSource->UnregisterSink(this);
+    }
   }
 
   MediaSourceEnum GetMediaSource() const override
@@ -6202,6 +6206,10 @@ void
 HTMLMediaElement::DispatchEncrypted(const nsTArray<uint8_t>& aInitData,
                                     const nsAString& aInitDataType)
 {
+  LOG(LogLevel::Debug,
+      ("%p DispatchEncrypted initDataType='%s'",
+      this, NS_ConvertUTF16toUTF8(aInitDataType).get()));
+
   if (mReadyState == nsIDOMHTMLMediaElement::HAVE_NOTHING) {
     
     
