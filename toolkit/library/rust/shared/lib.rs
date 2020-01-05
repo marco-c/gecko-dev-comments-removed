@@ -20,6 +20,16 @@ use std::os::raw::c_char;
 use std::panic;
 
 
+
+
+thread_local!(static UNUSED_THREAD_LOCAL: () = ());
+#[no_mangle]
+pub extern "C" fn rust_init_please_remove_this_after_updating_rust_1_19() {
+    UNUSED_THREAD_LOCAL.with(|_| ());
+}
+
+
+
 #[no_mangle]
 pub extern "C" fn intentional_panic(message: *const c_char) {
     panic!("{}", unsafe { CStr::from_ptr(message) }.to_string_lossy());
