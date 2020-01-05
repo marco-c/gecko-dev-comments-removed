@@ -1,5 +1,13 @@
 #include "test/jemalloc_test.h"
 
+const char *malloc_conf =
+    
+    "lg_chunk:0"
+    
+    ",lg_dirty_mult:-1"
+    ",decay_time:-1"
+    ;
+
 
 
 
