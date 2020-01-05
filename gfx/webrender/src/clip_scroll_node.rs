@@ -103,6 +103,11 @@ pub struct ClipScrollNode {
     pub world_content_transform: LayerToWorldTransform,
 
     
+    
+    
+    pub reference_frame_relative_scroll_offset: LayerPoint,
+
+    
     pub pipeline_id: PipelineId,
 
     
@@ -133,6 +138,7 @@ impl ClipScrollNode {
             combined_local_viewport_rect: LayerRect::zero(),
             world_viewport_transform: LayerToWorldTransform::identity(),
             world_content_transform: LayerToWorldTransform::identity(),
+            reference_frame_relative_scroll_offset: LayerPoint::zero(),
             parent: Some(parent_id),
             children: Vec::new(),
             pipeline_id: pipeline_id,
@@ -154,6 +160,7 @@ impl ClipScrollNode {
             combined_local_viewport_rect: LayerRect::zero(),
             world_viewport_transform: LayerToWorldTransform::identity(),
             world_content_transform: LayerToWorldTransform::identity(),
+            reference_frame_relative_scroll_offset: LayerPoint::zero(),
             parent: parent_id,
             children: Vec::new(),
             pipeline_id: pipeline_id,
@@ -224,6 +231,11 @@ impl ClipScrollNode {
                             parent_combined_viewport_rect: &ScrollLayerRect,
                             parent_scroll_offset: LayerPoint,
                             parent_accumulated_scroll_offset: LayerPoint) {
+        self.reference_frame_relative_scroll_offset = match self.node_type {
+            NodeType::ReferenceFrame(_) => LayerPoint::zero(),
+            NodeType::Clip(_) => parent_accumulated_scroll_offset,
+        };
+
         let local_transform = match self.node_type {
             NodeType::ReferenceFrame(transform) => transform,
             NodeType::Clip(_) => LayerToScrollTransform::identity(),
@@ -398,6 +410,14 @@ impl ClipScrollNode {
             return false;
         }
         ray_intersects_rect(p0, p1, self.local_viewport_rect.to_untyped())
+    }
+
+    pub fn scroll_offset(&self) -> Option<LayerPoint> {
+        match self.node_type {
+            NodeType::Clip(_) if self.scrollable_width() > 0. || self.scrollable_height() > 0. =>
+                Some(self.scrolling.offset),
+            _ => None,
+        }
     }
 }
 

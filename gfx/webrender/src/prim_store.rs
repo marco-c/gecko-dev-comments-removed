@@ -13,7 +13,7 @@ use resource_cache::{CacheItem, ImageProperties, ResourceCache};
 use std::mem;
 use std::usize;
 use util::{TransformedRect, recycle_vec};
-use webrender_traits::{AuxiliaryLists, ColorF, ImageKey, ImageRendering, YuvColorSpace};
+use webrender_traits::{AuxiliaryLists, ColorF, ImageKey, ImageRendering, YuvColorSpace, YuvFormat};
 use webrender_traits::{ClipRegion, ComplexClipRegion, ItemRange, GlyphKey};
 use webrender_traits::{FontKey, FontRenderMode, WebGLContextId};
 use webrender_traits::{device_length, DeviceIntRect, DeviceIntSize};
@@ -164,7 +164,10 @@ pub struct ImagePrimitiveGpu {
 #[derive(Debug)]
 pub struct YuvImagePrimitiveCpu {
     pub yuv_key: [ImageKey; 3],
+    
     pub yuv_texture_id: [SourceTexture; 3],
+    pub format: YuvFormat,
+    pub color_space: YuvColorSpace,
 
     
     
@@ -175,16 +178,14 @@ pub struct YuvImagePrimitiveCpu {
 #[repr(C)]
 pub struct YuvImagePrimitiveGpu {
     pub size: LayerSize,
-    pub color_space: f32,
-    pub padding: f32,
+    pub padding: [f32; 2],
 }
 
 impl YuvImagePrimitiveGpu {
-    pub fn new(size: LayerSize, color_space: YuvColorSpace) -> Self {
+    pub fn new(size: LayerSize) -> Self {
         YuvImagePrimitiveGpu {
             size: size,
-            color_space: color_space as u32 as f32,
-            padding: 0.0,
+            padding: [0.0; 2],
         }
     }
 }
@@ -1002,7 +1003,9 @@ impl PrimitiveStore {
                     let image_cpu = &mut self.cpu_yuv_images[metadata.cpu_prim_index.0];
 
                     
-                    for channel in 0..3 {
+                    let channel_count = image_cpu.format.get_plane_num();
+                    debug_assert!(channel_count <= 3);
+                    for channel in 0..channel_count {
                         if image_cpu.yuv_texture_id[channel] == SourceTexture::Invalid {
                             
                             
@@ -1248,7 +1251,9 @@ impl PrimitiveStore {
                 let image_cpu = &mut self.cpu_yuv_images[metadata.cpu_prim_index.0];
                 prim_needs_resolve = true;
 
-                for channel in 0..3 {
+                let channel_num = image_cpu.format.get_plane_num();
+                debug_assert!(channel_num <= 3);
+                for channel in 0..channel_num {
                     resource_cache.request_image(image_cpu.yuv_key[channel], ImageRendering::Auto, None);
                 }
 
