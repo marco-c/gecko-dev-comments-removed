@@ -231,4 +231,9 @@ impl FontContext {
         });
         render_font
     }
+
+    
+    pub fn font_cache_task(&self) -> FontCacheTask {
+        self.font_cache_task.clone()
+    }
 }

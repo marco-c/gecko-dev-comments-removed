@@ -61,7 +61,7 @@ impl LayerId {
 }
 
 
-#[deriving(PartialEq)]
+#[deriving(Clone, PartialEq)]
 pub enum ScrollPolicy {
     
     Scrollable,
