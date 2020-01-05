@@ -7,6 +7,7 @@
 #define DXVA2Manager_h_
 
 #include "WMF.h"
+#include "MediaInfo.h"
 #include "nsAutoPtr.h"
 #include "mozilla/Mutex.h"
 #include "nsRect.h"
@@ -24,8 +25,10 @@ public:
 
   
   
-  static DXVA2Manager* CreateD3D9DXVA(layers::KnowsCompositor* aKnowsCompositor, nsACString& aFailureReason);
-  static DXVA2Manager* CreateD3D11DXVA(layers::KnowsCompositor* aKnowsCompositor, nsACString& aFailureReason);
+  static DXVA2Manager* CreateD3D9DXVA(layers::KnowsCompositor* aKnowsCompositor,
+                                      nsACString& aFailureReason);
+  static DXVA2Manager* CreateD3D11DXVA(layers::KnowsCompositor* aKnowsCompositor,
+                                       nsACString& aFailureReason);
 
   
   
@@ -46,9 +49,21 @@ public:
 
   virtual bool SupportsConfig(IMFMediaType* aType, float aFramerate) = 0;
 
+  
+  
+  
+  virtual bool CreateDXVA2Decoder(const VideoInfo& aVideoInfo,
+                                  nsACString& aFailureReason) = 0;
+
 protected:
   Mutex mLock;
   DXVA2Manager();
+
+  bool IsUnsupportedResolution(const uint32_t& aWidth,
+                               const uint32_t& aHeight,
+                               const float& aFramerate) const;
+
+  bool mIsAMDPreUVD4;
 };
 
 } 
