@@ -18,10 +18,15 @@ struct PRLibrary;
 namespace mozilla
 {
 
-struct FFmpegLibWrapper
+struct MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS FFmpegLibWrapper
 {
-  FFmpegLibWrapper();
-  ~FFmpegLibWrapper();
+  
+  FFmpegLibWrapper() = default;
+  
+  
+  
+  
+  ~FFmpegLibWrapper() = default;
 
   enum class LinkResult
   {
