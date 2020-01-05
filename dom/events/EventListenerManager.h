@@ -161,6 +161,7 @@ protected:
   uint16_t mMayHaveCapturingListeners : 1;
   uint16_t mMayHaveSystemGroupListeners : 1;
   uint16_t mMayHaveTouchEventListener : 1;
+  uint16_t mMayHaveMouseMoveEventListener : 1;
   uint16_t mMayHaveMouseEnterLeaveEventListener : 1;
   uint16_t mMayHavePointerEnterLeaveEventListener : 1;
   uint16_t mMayHaveAPZAwareKeyEventListener : 1;
@@ -439,6 +440,8 @@ public:
 
 
   bool MayHaveTouchEventListener() { return mMayHaveTouchEventListener; }
+
+  bool MayHaveMouseMoveEventListener() { return mMayHaveMouseMoveEventListener; }
 
   bool MayHaveMouseEnterLeaveEventListener() { return mMayHaveMouseEnterLeaveEventListener; }
   bool MayHavePointerEnterLeaveEventListener() { return mMayHavePointerEnterLeaveEventListener; }
