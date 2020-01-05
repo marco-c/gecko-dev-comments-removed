@@ -447,7 +447,13 @@ public:
     }
 
     if (mVsyncChild) {
-      mVsyncRate = mVsyncChild->GetVsyncRate();
+      
+      
+      
+      
+      
+      
+      mVsyncRate = mVsyncChild->VsyncRate();
     }
 
     

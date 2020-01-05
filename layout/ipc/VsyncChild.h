@@ -38,7 +38,15 @@ public:
 
   
   void SetVsyncObserver(VsyncObserver* aVsyncObserver);
+  
+  
+  
   TimeDuration GetVsyncRate();
+  
+  
+  
+  
+  TimeDuration VsyncRate();
 
 private:
   VsyncChild();
