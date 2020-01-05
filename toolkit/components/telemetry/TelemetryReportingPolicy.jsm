@@ -148,13 +148,6 @@ this.TelemetryReportingPolicy = {
   
 
 
-  isFirstRun() {
-    return TelemetryReportingPolicyImpl.isFirstRun();
-  },
-
-  
-
-
   reset() {
     return TelemetryReportingPolicyImpl.reset();
   },
@@ -180,9 +173,6 @@ var TelemetryReportingPolicyImpl = {
   _notificationInProgress: false,
   
   _startupNotificationTimerId: null,
-  
-  
-  _isFirstRun: true,
 
   get _log() {
     if (!this._logger) {
@@ -362,10 +352,6 @@ var TelemetryReportingPolicyImpl = {
     return this.isUserNotifiedOfCurrentPolicy || bypassNotification;
   },
 
-  isFirstRun() {
-    return this._isFirstRun;
-  },
-
   
 
 
@@ -485,8 +471,8 @@ var TelemetryReportingPolicyImpl = {
       return;
     }
 
-    this._isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
-    if (this._isFirstRun) {
+    const isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
+    if (isFirstRun) {
       
       Preferences.set(PREF_FIRST_RUN, false);
 
@@ -501,7 +487,7 @@ var TelemetryReportingPolicyImpl = {
 
     
     const delay =
-      this._isFirstRun ? NOTIFICATION_DELAY_FIRST_RUN_MSEC : NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
+      isFirstRun ? NOTIFICATION_DELAY_FIRST_RUN_MSEC : NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
 
     this._startupNotificationTimerId = Policy.setShowInfobarTimeout(
         

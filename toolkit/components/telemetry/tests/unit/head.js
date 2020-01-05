@@ -308,11 +308,6 @@ if (runningInParent) {
   Services.prefs.setBoolPref("datareporting.policy.dataSubmissionPolicyBypassNotification", true);
   
   Services.prefs.setBoolPref("datareporting.healthreport.uploadEnabled", true);
-  
-  
-  
-  Services.prefs.setBoolPref("toolkit.telemetry.shutdownPingSender.enabled", false);
-
 
   fakePingSendTimer((callback, timeout) => {
     Services.tm.mainThread.dispatch(() => callback(), Ci.nsIThread.DISPATCH_NORMAL);
