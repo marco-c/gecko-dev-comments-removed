@@ -93,12 +93,11 @@ var gPlayedTests = [
 
 
 var cloneKey = Math.floor(Math.random()*100000000);
-var gCloneTests = gSmallTests.concat([
-  { name:"bug520908.ogv", type:"video/ogg", duration:0.2 },
+var gCloneTests = [
   
   { name:"dynamic_resource.sjs?key=" + cloneKey + "&res1=320x240.ogv&res2=short-video.ogv",
     type:"video/ogg", duration:0.266 },
-]);
+];
 
 
 
