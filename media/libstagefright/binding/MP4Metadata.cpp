@@ -373,6 +373,7 @@ MP4Metadata::GetTrackInfo(mozilla::TrackInfo::TrackType aType,
       VideoInfo *videoRust = infoRust->GetAsVideoInfo(), *video = info->GetAsVideoInfo();
       MOZ_DIAGNOSTIC_ASSERT(videoRust->mDisplay == video->mDisplay);
       MOZ_DIAGNOSTIC_ASSERT(videoRust->mImage == video->mImage);
+      MOZ_DIAGNOSTIC_ASSERT(videoRust->mRotation == video->mRotation);
       MOZ_DIAGNOSTIC_ASSERT(*videoRust->mExtraData == *video->mExtraData);
       
       
