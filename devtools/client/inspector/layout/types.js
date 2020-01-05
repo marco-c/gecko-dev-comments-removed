@@ -24,3 +24,13 @@ exports.grid = {
   nodeFront: PropTypes.object,
 
 };
+
+
+
+
+exports.highlighterSettings = {
+
+  
+  showInfiniteLines: PropTypes.bool,
+
+ };
