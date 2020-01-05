@@ -2116,18 +2116,10 @@ if (privileged) {
       case MediaSourceEnum::Window:
         
         
-        
         if (!Preferences::GetBool(((videoType == MediaSourceEnum::Browser)?
                                    "media.getusermedia.browser.enabled" :
                                    "media.getusermedia.screensharing.enabled"),
                                   false) ||
-#if defined(XP_WIN)
-            (
-              
-              (videoType != MediaSourceEnum::Browser) &&
-              !Preferences::GetBool("media.getusermedia.screensharing.allow_on_old_platforms",
-                                    false) && !IsVistaOrLater()) ||
-#endif
             (!privileged && !HostIsHttps(*docURI))) {
           RefPtr<MediaStreamError> error =
               new MediaStreamError(aWindow,
