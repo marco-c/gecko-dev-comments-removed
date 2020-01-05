@@ -187,6 +187,8 @@ PopulateRegistrationData(nsIPrincipal* aPrincipal,
     aData.currentWorkerHandlesFetch() = aRegistration->GetActive()->HandlesFetch();
   }
 
+  aData.loadFlags() = aRegistration->GetLoadFlags();
+
   return NS_OK;
 }
 
@@ -1682,12 +1684,16 @@ ServiceWorkerManager::LoadRegistration(
   RefPtr<ServiceWorkerRegistrationInfo> registration =
     GetRegistration(principal, aRegistration.scope());
   if (!registration) {
-    registration = CreateNewRegistration(aRegistration.scope(), principal);
+    registration = CreateNewRegistration(aRegistration.scope(), principal,
+                                         aRegistration.loadFlags());
   } else {
     
     
+    
+    
+    
     if (registration->GetActive() &&
-        registration->GetActive()->ScriptSpec() == aRegistration.currentWorkerURL()) {
+        registration->GetActive()->CacheName() == aRegistration.cacheName()) {
       
       return;
     }
@@ -3073,7 +3079,8 @@ ServiceWorkerManager::GetRegistration(const nsACString& aScopeKey,
 
 ServiceWorkerRegistrationInfo*
 ServiceWorkerManager::CreateNewRegistration(const nsCString& aScope,
-                                            nsIPrincipal* aPrincipal)
+                                            nsIPrincipal* aPrincipal,
+                                            nsLoadFlags aLoadFlags)
 {
 #ifdef DEBUG
   AssertIsOnMainThread();
@@ -3086,7 +3093,8 @@ ServiceWorkerManager::CreateNewRegistration(const nsCString& aScope,
   MOZ_ASSERT(!tmp);
 #endif
 
-  ServiceWorkerRegistrationInfo* registration = new ServiceWorkerRegistrationInfo(aScope, aPrincipal);
+  ServiceWorkerRegistrationInfo* registration =
+    new ServiceWorkerRegistrationInfo(aScope, aPrincipal, aLoadFlags);
   
   
   AddScopeAndRegistration(aScope, registration);
