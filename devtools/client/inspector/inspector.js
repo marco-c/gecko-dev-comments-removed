@@ -608,7 +608,7 @@ Inspector.prototype = {
 
     
     if (this.selection.nodeFront && this.selection.nodeFront.isInHTMLDocument) {
-      this.toolbox.target.actorHasMethod("inspector", "pickColorFromPage").then(value => {
+      this.target.actorHasMethod("inspector", "pickColorFromPage").then(value => {
         if (!value) {
           return;
         }
