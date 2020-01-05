@@ -57,13 +57,13 @@ class MarkStack
 {
     friend class GCMarker;
 
-    ActiveThreadData<uintptr_t*> stack_;
-    ActiveThreadData<uintptr_t*> tos_;
-    ActiveThreadData<uintptr_t*> end_;
+    UnprotectedData<uintptr_t*> stack_;
+    UnprotectedData<uintptr_t*> tos_;
+    UnprotectedData<uintptr_t*> end_;
 
     
-    ActiveThreadData<size_t> baseCapacity_;
-    ActiveThreadData<size_t> maxCapacity_;
+    UnprotectedData<size_t> baseCapacity_;
+    UnprotectedData<size_t> maxCapacity_;
 
   public:
     explicit MarkStack(size_t maxCapacity)
@@ -336,29 +336,29 @@ class GCMarker : public JSTracer
     MarkStack stack;
 
     
-    ActiveThreadData<uint32_t> color;
+    UnprotectedData<uint32_t> color;
 
     
-    ActiveThreadData<js::gc::Arena*> unmarkedArenaStackTop;
+    UnprotectedData<js::gc::Arena*> unmarkedArenaStackTop;
 
     
 
 
 
-    ActiveThreadData<bool> linearWeakMarkingDisabled_;
+    UnprotectedData<bool> linearWeakMarkingDisabled_;
 
 #ifdef DEBUG
     
-    ActiveThreadData<size_t> markLaterArenas;
+    UnprotectedData<size_t> markLaterArenas;
 
     
-    ActiveThreadData<bool> started;
+    UnprotectedData<bool> started;
 
     
 
 
 
-    ActiveThreadData<bool> strictCompartmentChecking;
+    UnprotectedData<bool> strictCompartmentChecking;
 #endif 
 };
 

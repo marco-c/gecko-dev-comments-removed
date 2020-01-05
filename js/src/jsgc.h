@@ -651,7 +651,7 @@ class ArenaLists
     const BackgroundFinalizeState& backgroundFinalizeState(AllocKind i) const { return backgroundFinalizeState_.ref()[i]; }
 
     
-    ActiveThreadOrGCTaskData<AllAllocKindArray<Arena*>> arenaListsToSweep_;
+    UnprotectedData<AllAllocKindArray<Arena*>> arenaListsToSweep_;
     Arena*& arenaListsToSweep(AllocKind i) { return arenaListsToSweep_.ref()[i]; }
     Arena* arenaListsToSweep(AllocKind i) const { return arenaListsToSweep_.ref()[i]; }
 
@@ -877,7 +877,7 @@ class GCHelperState
     js::ConditionVariable done;
 
     
-    ActiveThreadOrGCTaskData<State> state_;
+    UnprotectedData<State> state_;
 
     
     GCLockData<bool> hasThread;
@@ -949,7 +949,7 @@ class GCParallelTask
     UnprotectedData<TaskState> state;
 
     
-    ActiveThreadOrGCTaskData<mozilla::TimeDuration> duration_;
+    UnprotectedData<mozilla::TimeDuration> duration_;
 
     explicit GCParallelTask(const GCParallelTask&) = delete;
 
