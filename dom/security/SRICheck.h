@@ -45,6 +45,20 @@ public:
                                   nsIConsoleReportCollector* aReporter);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class SRICheckDataVerifier final
 {
   public:
@@ -52,15 +66,42 @@ class SRICheckDataVerifier final
                          const nsACString& aSourceFileURI,
                          nsIConsoleReportCollector* aReporter);
 
+    
+    
     nsresult Update(uint32_t aStringLen, const uint8_t* aString);
+
+    
     nsresult Verify(const SRIMetadata& aMetadata, nsIChannel* aChannel,
                     const nsACString& aSourceFileURI,
                     nsIConsoleReportCollector* aReporter);
+
+    bool IsComplete() const {
+      return mComplete;
+    }
+
+    
+    
+    uint32_t DataSummaryLength();
+    static uint32_t EmptyDataSummaryLength();
+
+    
+    nsresult ExportDataSummary(uint32_t aDataLen, uint8_t* aData);
+    static nsresult ExportEmptyDataSummary(uint32_t aDataLen, uint8_t* aData);
+
+    
+    
+    static nsresult DataSummaryLength(uint32_t aDataLen, const uint8_t* aData, uint32_t* length);
+
+    
+    
+    
+    nsresult ImportDataSummary(uint32_t aDataLen, const uint8_t* aData);
 
   private:
     nsCOMPtr<nsICryptoHash> mCryptoHash;
     nsAutoCString           mComputedHash;
     size_t                  mBytesHashed;
+    uint32_t                mHashLength;
     int8_t                  mHashType;
     bool                    mInvalidMetadata;
     bool                    mComplete;
