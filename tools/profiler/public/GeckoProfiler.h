@@ -217,11 +217,6 @@ PROFILER_FUNC(mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime 
 
 
 
-PROFILER_FUNC_VOID(profiler_get_profile_jsobject_async(double aSinceTime = 0,
-                                                       mozilla::dom::Promise* = 0))
-
-
-
 PROFILER_FUNC_VOID(profiler_get_start_params(int* aEntrySize,
                                              double* aInterval,
                                              mozilla::Vector<const char*>* aFeatures,
@@ -384,18 +379,6 @@ profiler_call_exit(void* aHandle)
 
 void profiler_add_marker(const char *aMarker,
                          ProfilerMarkerPayload *aPayload = nullptr);
-
-
-
-MOZ_EXPORT  
-void profiler_save_profile_to_file_async(double aSinceTime,
-                                         const char* aFileName);
-
-
-
-void profiler_will_gather_OOP_profile();
-void profiler_gathered_OOP_profile();
-void profiler_OOP_exit_profile(const nsCString& aProfile);
 
 #define SAMPLER_APPEND_LINE_NUMBER_PASTE(id, line) id ## line
 #define SAMPLER_APPEND_LINE_NUMBER_EXPAND(id, line) SAMPLER_APPEND_LINE_NUMBER_PASTE(id, line)

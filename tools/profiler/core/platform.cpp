@@ -38,9 +38,9 @@
 #include "nsProfilerStartParams.h"
 #include "mozilla/Services.h"
 #include "nsThreadUtils.h"
-#include "ProfileGatherer.h"
 #include "ProfilerMarkers.h"
 #include "shared-libraries.h"
+#include "prtime.h"
 
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
@@ -129,7 +129,8 @@ class ProfilerState
 {
 public:
   
-  typedef ProfilerStateMutex Mutex;
+  class Mutex : public mozilla::StaticMutex {};
+
   typedef mozilla::BaseAutoLock<Mutex> AutoLock;
 
   
@@ -153,7 +154,6 @@ public:
     , mFeatureTaskTracer(false)
     , mFeatureThreads(false)
     , mBuffer(nullptr)
-    , mGatherer(nullptr)
     , mIsPaused(false)
 #if defined(GP_OS_linux) || defined(GP_OS_android)
     , mWasPaused(false)
@@ -195,8 +195,6 @@ public:
   GET_AND_SET(bool, FeatureThreads)
 
   GET_AND_SET(ProfileBuffer*, Buffer)
-
-  GET_AND_SET(ProfileGatherer*, Gatherer)
 
   ThreadVector& Threads(LockRef) { return mThreads; }
 
@@ -268,10 +266,6 @@ private:
   
   
   ProfileBuffer* mBuffer;
-
-  
-  
-  RefPtr<mozilla::ProfileGatherer> mGatherer;
 
   
   ThreadVector mThreads;
@@ -1446,19 +1440,6 @@ StreamJSON(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
   aWriter.End();
 }
 
-UniquePtr<char[]>
-ToJSON(PS::LockRef aLock, double aSinceTime)
-{
-  LOG("ToJSON");
-
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(gPS && gPS->IsActive(aLock));
-
-  SpliceableChunkedJSONWriter b;
-  StreamJSON(aLock, b, aSinceTime);
-  return b.WriteFunc()->CopyData();
-}
-
 
 
 
@@ -1791,7 +1772,6 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
           gPS->Buffer(lock)->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
       }
 
-      
       
       
       
@@ -2144,52 +2124,9 @@ profiler_get_profile(double aSinceTime)
     return nullptr;
   }
 
-  return ToJSON(lock, aSinceTime);
-}
-
-void
-profiler_get_profile_jsobject_async(double aSinceTime,
-                                    mozilla::dom::Promise* aPromise)
-{
-  LOG("profiler_get_profile_jsobject_async");
-
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(gPS);
-
-  PS::AutoLock lock(gPSMutex);
-
-  if (!gPS->IsActive(lock)) {
-    LOG("END   profiler_get_profile_jsobject_async: inactive");
-    return;
-  }
-
-  gPS->Gatherer(lock)->Start(lock, aSinceTime, aPromise);
-}
-
-void
-profiler_save_profile_to_file_async(double aSinceTime, const char* aFileName)
-{
-  LOG("BEGIN profiler_save_profile_to_file_async");
-
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(gPS);
-
-  nsCString filename(aFileName);
-  NS_DispatchToMainThread(NS_NewRunnableFunction([=] () {
-
-    LOG("profiler_save_profile_to_file_async callback");
-
-    PS::AutoLock lock(gPSMutex);
-
-    
-    
-    if (!gPS || !gPS->IsActive(lock)) {
-      LOG("END   profiler_save_profile_to_file_async callback: inactive");
-      return;
-    }
-
-    gPS->Gatherer(lock)->Start(lock, aSinceTime, filename);
-  }));
+  SpliceableChunkedJSONWriter b;
+  StreamJSON(lock, b, aSinceTime);
+  return b.WriteFunc()->CopyData();
 }
 
 void
@@ -2221,61 +2158,6 @@ profiler_get_start_params(int* aEntries, double* aInterval,
   for (uint32_t i = 0; i < threadNameFilters.length(); ++i) {
     (*aFilters)[i] = threadNameFilters[i].c_str();
   }
-}
-
-void
-profiler_will_gather_OOP_profile()
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(gPS);
-
-  
-  
-  
-  
-  
-  gPSMutex.AssertCurrentThreadOwns();
-
-  
-  
-  
-  
-  static PS::Mutex sFakeMutex;
-  PS::AutoLock fakeLock(sFakeMutex);
-
-  MOZ_RELEASE_ASSERT(gPS->IsActive(fakeLock));
-
-  gPS->Gatherer(fakeLock)->WillGatherOOPProfile();
-}
-
-void
-profiler_gathered_OOP_profile()
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(gPS);
-
-  PS::AutoLock lock(gPSMutex);
-
-  if (!gPS->IsActive(lock)) {
-    return;
-  }
-
-  gPS->Gatherer(lock)->GatheredOOPProfile(lock);
-}
-
-void
-profiler_OOP_exit_profile(const nsCString& aProfile)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(gPS);
-
-  PS::AutoLock lock(gPSMutex);
-
-  if (!gPS->IsActive(lock)) {
-    return;
-  }
-
-  gPS->Gatherer(lock)->OOPExitProfile(aProfile);
 }
 
 static void
@@ -2464,8 +2346,6 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
 
   gPS->SetBuffer(aLock, new ProfileBuffer(entries));
 
-  gPS->SetGatherer(aLock, new mozilla::ProfileGatherer());
-
   
   const PS::ThreadVector& threads = gPS->Threads(aLock);
   for (uint32_t i = 0; i < threads.size(); i++) {
@@ -2617,10 +2497,6 @@ locked_profiler_stop(PS::LockRef aLock)
       stack->pollJSSampling();
     }
   }
-
-  
-  gPS->Gatherer(aLock)->Cancel();
-  gPS->SetGatherer(aLock, nullptr);
 
   delete gPS->Buffer(aLock);
   gPS->SetBuffer(aLock, nullptr);

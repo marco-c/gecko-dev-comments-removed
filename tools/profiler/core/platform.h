@@ -114,23 +114,6 @@ public:
 
 
 
-
-
-
-
-
-class ProfilerStateMutex : public mozilla::StaticMutex {};
-
-
-
-
-
-
-typedef const mozilla::BaseAutoLock<ProfilerStateMutex>& PSLockRef;
-
-
-
-
 class PlatformData;
 
 
@@ -142,9 +125,6 @@ struct PlatformDataDestructor {
 typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
   UniquePlatformData;
 UniquePlatformData AllocPlatformData(int aThreadId);
-
-mozilla::UniquePtr<char[]>
-ToJSON(PSLockRef aLock, double aSinceTime);
 
 namespace mozilla {
 class JSONWriter;

@@ -10,6 +10,7 @@
 #include "nsIProfileSaveEvent.h"
 #include "nsISupports.h"
 #include "nsIObserver.h"
+#include "nsProfiler.h"
 #include "ProfilerControllingProcess.h"
 
 namespace mozilla {
@@ -85,7 +86,7 @@ CrossProcessProfilerController::CrossProcessProfilerController(
 CrossProcessProfilerController::~CrossProcessProfilerController()
 {
   if (!mProfile.IsEmpty()) {
-    profiler_OOP_exit_profile(mProfile);
+    nsProfiler::GetOrCreate()->OOPExitProfile(mProfile);
   }
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -124,7 +125,7 @@ CrossProcessProfilerController::Observe(nsISupports* aSubject,
     
     
     
-    profiler_will_gather_OOP_profile();
+    nsProfiler::GetOrCreate()->WillGatherOOPProfile();
     mProcess->SendGatherProfile();
   }
   else if (!strcmp(aTopic, "profiler-subprocess")) {
@@ -169,7 +170,7 @@ CrossProcessProfilerController::RecvProfile(const nsCString& aProfile)
   
   
   
-  profiler_gathered_OOP_profile();
+  nsProfiler::GetOrCreate()->GatheredOOPProfile();
 }
 
 } 
