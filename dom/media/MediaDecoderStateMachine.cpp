@@ -677,11 +677,11 @@ public:
     
     if (mSeekJob.mTarget.IsAccurate() ||
         mSeekJob.mTarget.IsFast()) {
-      mMaster->mSeekTask = new AccurateSeekTask(
+      mSeekTask = new AccurateSeekTask(
         mMaster->mDecoderID, OwnerThread(), Reader(), mSeekJob.mTarget,
         mMaster->mInfo, mMaster->Duration(), mMaster->GetMediaTime());
     } else if (mSeekJob.mTarget.IsNextFrame()) {
-      mMaster->mSeekTask = new NextFrameSeekTask(
+      mSeekTask = new NextFrameSeekTask(
         mMaster->mDecoderID, OwnerThread(), Reader(), mSeekJob.mTarget,
         mMaster->mInfo, mMaster->Duration(),mMaster->GetMediaTime(),
         mMaster->AudioQueue(), mMaster->VideoQueue());
@@ -699,7 +699,7 @@ public:
     
     
     mMaster->UpdatePlaybackPositionInternal(
-      mMaster->mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
+      mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
 
     if (mSeekJob.mTarget.mEventVisibility ==
         MediaDecoderEventVisibility::Observable) {
@@ -707,7 +707,7 @@ public:
     }
 
     
-    if (mMaster->mSeekTask->NeedToResetMDSM()) {
+    if (mSeekTask->NeedToResetMDSM()) {
       if (mSeekJob.mTarget.IsVideoOnly()) {
         mMaster->Reset(TrackInfo::kVideoTrack);
       } else {
@@ -716,7 +716,7 @@ public:
     }
 
     
-    mSeekTaskRequest.Begin(mMaster->mSeekTask->Seek(mMaster->Duration())
+    mSeekTaskRequest.Begin(mSeekTask->Seek(mMaster->Duration())
       ->Then(OwnerThread(), __func__,
              [this] (const SeekTaskResolveValue& aValue) {
                OnSeekTaskResolved(aValue);
@@ -734,10 +734,10 @@ public:
   {
     mSeekTaskRequest.DisconnectIfExists();
 
-    if (mMaster->mSeekTask) {
+    if (mSeekTask) {
       mMaster->mCurrentSeek.RejectIfExists(__func__);
-      mMaster->mSeekTask->Discard();
-      mMaster->mSeekTask = nullptr;
+      mSeekTask->Discard();
+      mSeekTask = nullptr;
 
       
       mMaster->SetMediaDecoderReaderWrapperCallback();
@@ -837,7 +837,7 @@ private:
 
   void SeekCompleted()
   {
-    int64_t seekTime = mMaster->mSeekTask->GetSeekTarget().GetTime().ToMicroseconds();
+    int64_t seekTime = mSeekTask->GetSeekTarget().GetTime().ToMicroseconds();
     int64_t newCurrentTime = seekTime;
 
     
@@ -911,6 +911,7 @@ private:
 
   SeekJob mSeekJob;
   MozPromiseRequestHolder<SeekTask::SeekTaskPromise> mSeekTaskRequest;
+  RefPtr<SeekTask> mSeekTask;
 };
 
 class MediaDecoderStateMachine::BufferingState
@@ -2142,7 +2143,7 @@ void MediaDecoderStateMachine::VisibilityChanged()
 
     
     
-    if (mSeekTask || mQueuedSeek.Exists()) {
+    if (mState == DECODER_STATE_SEEKING || mQueuedSeek.Exists()) {
       return;
     }
 
