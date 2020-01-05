@@ -2363,6 +2363,10 @@ pref("security.cert_pinning.process_headers_from_non_builtin_roots", false);
 pref("security.view-source.reachable-from-inner-protocol", false);
 
 
+
+pref("security.allow_chrome_frames_inside_content", false);
+
+
 pref("services.settings.server", "https://firefox.settings.services.mozilla.com/v1");
 
 
