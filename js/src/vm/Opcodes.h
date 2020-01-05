@@ -2161,7 +2161,17 @@
 
  \
     macro(JSOP_TOASYNCITER,   210, "toasynciter",  NULL,  1,  1,  1,  JOF_BYTE) \
-    macro(JSOP_UNUSED211,     211, "unused211",    NULL,  1,  0,  0,  JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+ \
+    macro(JSOP_HASOWN,        211, "hasown",     NULL,    1,  2,  1, JOF_BYTE) \
     
 
 

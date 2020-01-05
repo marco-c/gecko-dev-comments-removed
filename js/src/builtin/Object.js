@@ -94,6 +94,13 @@ function Object_valueOf() {
 }
 
 
+function Object_hasOwnProperty(V) {
+    
+    
+    return hasOwn(V, this);
+}
+
+
 function ObjectDefineSetter(name, setter) {
     
     var object = ToObject(this);
@@ -160,7 +167,7 @@ function ObjectLookupSetter(name) {
         
         if (desc) {
             
-            if (callFunction(std_Object_hasOwnProperty, desc, "set"))
+            if (hasOwn("set", desc))
                 return desc.set;
 
             
@@ -189,7 +196,7 @@ function ObjectLookupGetter(name) {
         
         if (desc) {
             
-            if (callFunction(std_Object_hasOwnProperty, desc, "get"))
+            if (hasOwn("get", desc))
                 return desc.get;
 
             
