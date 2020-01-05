@@ -4219,6 +4219,15 @@
     "bug_numbers": [1336903],
     "description": "Server response time to update request (ms). Keyed by provider"
   },
+  "URLCLASSIFIER_UPDATE_TIMEOUT": {
+    "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
+    "expires_in_version": "61",
+    "kind": "enumerated",
+    "keyed": true,
+    "n_values": 4,
+    "bug_numbers": [1336904],
+    "description": " Whether or not an update timed out (0 = no timeout, 1 = server respond timeout, 2 = overall timeout). Keyed by provider"
+  },
   "URLCLASSIFIER_COMPLETE_REMOTE_STATUS2": {
     "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
     "expires_in_version": "never",
@@ -4254,7 +4263,6 @@
     "bug_numbers": [1336903],
     "description": "Server response time to getHash request (ms). Keyed by provider"
   },
-
   "URLCLASSIFIER_UPDATE_ERROR": {
     "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
     "expires_in_version": "59",
@@ -10434,20 +10442,6 @@
     "n_values": 100,
     "releaseChannelCollection": "opt-out",
     "description": "Graphics Crash Reason (...)"
-  },
-  "APZ_AWARE_KEY_LISTENERS": {
-    "alert_emails": ["rhunt@mozilla.com"],
-    "bug_numbers": [1352654],
-    "expires_in_version": "58",
-    "kind": "boolean",
-    "description": "The percentage of pages with a non-passive key event on the path to the root scrolling element that would disable APZ key scrolling. This is tracked for non system principal windows, so it applies to toplevel windows and subframes/iframes, but not chrome windows. "
-  },
-  "APZ_AWARE_MOUSEMOVE_LISTENERS": {
-    "alert_emails": ["rhunt@mozilla.com"],
-    "bug_numbers": [1352654],
-    "expires_in_version": "58",
-    "kind": "boolean",
-    "description": "The percentage of pages with a mousemove listener anywhere in the document that would disable APZ key scrolling. This is tracked for non system principal windows, so it applies to toplevel windows and subframes/iframes, but not chrome windows."
   },
   "SCROLL_INPUT_METHODS": {
     "alert_emails": ["botond@mozilla.com"],

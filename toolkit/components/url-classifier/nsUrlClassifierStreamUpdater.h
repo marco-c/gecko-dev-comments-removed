@@ -91,6 +91,12 @@ private:
   
   nsCOMPtr<nsITimer> mFetchNextRequestTimer;
 
+  
+  nsCOMPtr<nsITimer> mResponseTimeoutTimer;
+
+  
+  nsCOMPtr<nsITimer> mTimeoutTimer;
+
   struct PendingRequest {
     nsCString mTables;
     nsCString mRequestPayload;

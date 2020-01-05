@@ -1253,7 +1253,7 @@ pref("dom.input.dirpicker", false);
 
 
 
-pref("dom.input.skip_cursor_move_for_same_value_set", true);
+pref("dom.input.skip_cursor_move_for_same_value_set", false);
 
 
 pref("dom.sysmsg.enabled", false);
@@ -5205,6 +5205,10 @@ pref("urlclassifier.gethashnoise", 4);
 
 
 pref("urlclassifier.gethash.timeout_ms", 5000);
+
+pref("urlclassifier.update.response_timeout_ms", 5000);
+
+pref("urlclassifier.update.timeout_ms", 60000);
 
 
 
