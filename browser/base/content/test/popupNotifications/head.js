@@ -68,6 +68,9 @@ function promiseTabLoadEvent(tab, url) {
 
 const PREF_SECURITY_DELAY_INITIAL = Services.prefs.getIntPref("security.notification_enable_delay");
 
+
+
+
 function setup() {
   BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.com/")
                   .then(goNext);

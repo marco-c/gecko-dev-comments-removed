@@ -118,11 +118,6 @@ function runSocialTestWithProvider(manifest, callback, finishcallback) {
       info("runSocialTestWithProvider: provider added");
 
       
-      if (provider.origin == manifests[0].origin) {
-        firstProvider = provider;
-      }
-
-      
       
       if (providersAdded == manifests.length) {
         registerCleanupFunction(function() {

@@ -302,6 +302,8 @@ module.exports = {
     "dump": true,
     "ImageDocument": false,
     
+    "InstallTrigger": false,
+    
     
     
     "InternalError": true,

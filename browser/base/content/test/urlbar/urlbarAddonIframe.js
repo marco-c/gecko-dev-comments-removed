@@ -1,4 +1,7 @@
 
+
+
+
 addEventListener("TestEvent", event => {
   let type = event.detail.type;
   dump("urlbarAddonIframe.js got TestEvent, type=" + type +
