@@ -808,8 +808,13 @@ public:
   void UpdateDateTimePicker(const DateTimeValue& aValue);
   void CloseDateTimePicker();
 
+  
+
+
+
+  void SetFocusState(bool aIsFocused);
+
   HTMLInputElement* GetOwnerNumberControl();
-  HTMLInputElement* GetOwnerDateTimeControl();
 
   void StartNumberControlSpinnerSpin();
   enum SpinnerStopState {
