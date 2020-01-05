@@ -2,6 +2,11 @@
 
 
 
+
+
+
+#![deny(missing_docs)]
+
 use dom::bindings::error::Fallible;
 use dom::bindings::error::Error::DataClone;
 use dom::bindings::global::GlobalRef;
@@ -15,12 +20,14 @@ use js::jsval::{JSVal, UndefinedValue};
 use libc::size_t;
 use std::ptr;
 
+
 pub struct StructuredCloneData {
     data: *mut u64,
     nbytes: size_t,
 }
 
 impl StructuredCloneData {
+    
     pub fn write(cx: *mut JSContext, message: JSVal)
                  -> Fallible<StructuredCloneData> {
         let mut data = ptr::null_mut();
@@ -39,6 +46,9 @@ impl StructuredCloneData {
         })
     }
 
+    
+    
+    
     pub fn read(self, global: GlobalRef) -> JSVal {
         let mut message = UndefinedValue();
         unsafe {
