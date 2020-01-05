@@ -1004,7 +1004,7 @@ nsMenuFrame::UpdateMenuSpecialState()
   
   
   
-  nsIFrame* firstMenuItem = nsXULPopupManager::GetNextMenuItem(GetParent(), nullptr, true, false);
+  nsIFrame* firstMenuItem = nsXULPopupManager::GetNextMenuItem(GetParent(), nullptr, true);
   nsIFrame* sib = firstMenuItem;
   while (sib) {
     nsMenuFrame* menu = do_QueryFrame(sib);
@@ -1018,7 +1018,7 @@ nsMenuFrame::UpdateMenuSpecialState()
         return;
       }
     }
-    sib = nsXULPopupManager::GetNextMenuItem(GetParent(), menu, true, true);
+    sib = nsXULPopupManager::GetNextMenuItem(GetParent(), menu, true);
     if (sib == firstMenuItem) {
       break;
     }

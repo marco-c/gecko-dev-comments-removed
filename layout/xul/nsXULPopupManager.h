@@ -368,16 +368,12 @@ public:
   
   
   
-  
-  
   static nsMenuFrame* GetPreviousMenuItem(nsContainerFrame* aParent,
                                           nsMenuFrame* aStart,
-                                          bool aIsPopup,
-                                          bool aWrap);
+                                          bool aIsPopup);
   static nsMenuFrame* GetNextMenuItem(nsContainerFrame* aParent,
                                       nsMenuFrame* aStart,
-                                      bool aIsPopup,
-                                      bool aWrap);
+                                      bool aIsPopup);
 
   
   
