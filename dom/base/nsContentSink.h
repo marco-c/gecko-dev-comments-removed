@@ -265,11 +265,6 @@ protected:
     mDeflectedCount = sPerfDeflectCount;
   }
 
-private:
-  
-  
-  void* operator new(size_t sz) CPP_THROW_NEW;  
-
 protected:
 
   nsCOMPtr<nsIDocument>         mDocument;
