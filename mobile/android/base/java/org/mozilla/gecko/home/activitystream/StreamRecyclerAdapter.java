@@ -47,6 +47,8 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> impl
     public int getItemViewType(int position) {
         if (position == 0) {
             return TopPanel.LAYOUT_ID;
+        } else if (position == 1) {
+            return StreamItem.HighlightsTitle.LAYOUT_ID;
         } else {
             return HighlightItem.LAYOUT_ID;
         }
@@ -58,6 +60,8 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> impl
 
         if (type == TopPanel.LAYOUT_ID) {
             return new TopPanel(inflater.inflate(type, parent, false), onUrlOpenListener, onUrlOpenInBackgroundListener);
+        } else if (type == StreamItem.HighlightsTitle.LAYOUT_ID) {
+            return new StreamItem.HighlightsTitle(inflater.inflate(type, parent, false));
         } else if (type == HighlightItem.LAYOUT_ID) {
             return new HighlightItem(inflater.inflate(type, parent, false), onUrlOpenListener, onUrlOpenInBackgroundListener);
         } else {
@@ -71,7 +75,7 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> impl
         }
 
         
-        return position - 1;
+        return position - 2;
     }
 
     @Override
@@ -114,7 +118,7 @@ public class StreamRecyclerAdapter extends RecyclerView.Adapter<StreamItem> impl
             highlightsCount = 0;
         }
 
-        return highlightsCount + 1;
+        return highlightsCount + 2;
     }
 
     public void swapHighlightsCursor(Cursor cursor) {
