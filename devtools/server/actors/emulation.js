@@ -9,23 +9,183 @@ const protocol = require("devtools/shared/protocol");
 const { emulationSpec } = require("devtools/shared/specs/emulation");
 const { SimulatorCore } = require("devtools/shared/touch/simulator-core");
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 let EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
+
   initialize(conn, tabActor) {
     protocol.Actor.prototype.initialize.call(this, conn);
+    this.tabActor = tabActor;
     this.docShell = tabActor.docShell;
     this.simulatorCore = new SimulatorCore(tabActor.chromeEventHandler);
   },
 
+  disconnect() {
+    this.destroy();
+  },
+
+  destroy() {
+    this.clearDPPXOverride();
+    this.clearNetworkThrottling();
+    this.clearTouchEventsOverride();
+    this.clearUserAgentOverride();
+    this.tabActor = null;
+    this.docShell = null;
+    this.simulatorCore = null;
+    protocol.Actor.prototype.destroy.call(this);
+  },
+
   
 
-  _previousTouchEventsOverride: null,
 
-  setTouchEventsOverride(flag) {
-    if (this.docShell.touchEventsOverride == flag) {
+
+
+  get _consoleActor() {
+    if (this.tabActor.exited) {
+      return null;
+    }
+    let form = this.tabActor.form();
+    return this.conn._getOrCreateActor(form.consoleActor);
+  },
+
+  
+
+  _previousDPPXOverride: undefined,
+
+  setDPPXOverride(dppx) {
+    if (this.getDPPXOverride() === dppx) {
       return false;
     }
-    if (this._previousTouchEventsOverride === null) {
-      this._previousTouchEventsOverride = this.docShell.touchEventsOverride;
+
+    if (this._previousDPPXOverride === undefined) {
+      this._previousDPPXOverride = this.getDPPXOverride();
+    }
+
+    this.docShell.contentViewer.overrideDPPX = dppx;
+
+    return true;
+  },
+
+  getDPPXOverride() {
+    return this.docShell.contentViewer.overrideDPPX;
+  },
+
+  clearDPPXOverride() {
+    if (this._previousDPPXOverride !== undefined) {
+      return this.setDPPXOverride(this._previousDPPXOverride);
+    }
+
+    return false;
+  },
+
+  
+
+  _previousNetworkThrottling: undefined,
+
+  
+
+
+  setNetworkThrottling({ downloadThroughput, uploadThroughput, latency }) {
+    let throttleData = {
+      roundTripTimeMean: latency,
+      roundTripTimeMax: latency,
+      downloadBPSMean: downloadThroughput,
+      downloadBPSMax: downloadThroughput,
+      uploadBPSMean: uploadThroughput,
+      uploadBPSMax: uploadThroughput,
+    };
+    return this._setNetworkThrottling(throttleData);
+  },
+
+  _setNetworkThrottling(throttleData) {
+    let current = this._getNetworkThrottling();
+    
+    let match = throttleData == current;
+    
+    if (match && current && throttleData) {
+      match = Object.entries(current).every(([ k, v ]) => {
+        return throttleData[k] === v;
+      });
+    }
+    if (match) {
+      return false;
+    }
+
+    if (this._previousNetworkThrottling === undefined) {
+      this._previousNetworkThrottling = current;
+    }
+
+    let consoleActor = this._consoleActor;
+    if (!consoleActor) {
+      return false;
+    }
+    consoleActor.onStartListeners({
+      listeners: [ "NetworkActivity" ],
+    });
+    consoleActor.onSetPreferences({
+      preferences: {
+        "NetworkMonitor.throttleData": throttleData,
+      }
+    });
+    return true;
+  },
+
+  
+
+
+  getNetworkThrottling() {
+    let throttleData = this._getNetworkThrottling();
+    if (!throttleData) {
+      return null;
+    }
+    let { downloadBPSMax, uploadBPSMax, roundTripTimeMax } = throttleData;
+    return {
+      downloadThroughput: downloadBPSMax,
+      uploadThroughput: uploadBPSMax,
+      latency: roundTripTimeMax,
+    };
+  },
+
+  _getNetworkThrottling() {
+    let consoleActor = this._consoleActor;
+    if (!consoleActor) {
+      return null;
+    }
+    let prefs = consoleActor.onGetPreferences({
+      preferences: [ "NetworkMonitor.throttleData" ],
+    });
+    return prefs.preferences["NetworkMonitor.throttleData"] || null;
+  },
+
+  clearNetworkThrottling() {
+    if (this._previousNetworkThrottling !== undefined) {
+      return this._setNetworkThrottling(this._previousNetworkThrottling);
+    }
+
+    return false;
+  },
+
+  
+
+  _previousTouchEventsOverride: undefined,
+
+  setTouchEventsOverride(flag) {
+    if (this.getTouchEventsOverride() == flag) {
+      return false;
+    }
+    if (this._previousTouchEventsOverride === undefined) {
+      this._previousTouchEventsOverride = this.getTouchEventsOverride();
     }
 
     
@@ -44,7 +204,7 @@ let EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
   },
 
   clearTouchEventsOverride() {
-    if (this._previousTouchEventsOverride !== null) {
+    if (this._previousTouchEventsOverride !== undefined) {
       return this.setTouchEventsOverride(this._previousTouchEventsOverride);
     }
     return false;
@@ -52,14 +212,14 @@ let EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
 
   
 
-  _previousUserAgentOverride: null,
+  _previousUserAgentOverride: undefined,
 
   setUserAgentOverride(userAgent) {
-    if (this.docShell.customUserAgent == userAgent) {
+    if (this.getUserAgentOverride() == userAgent) {
       return false;
     }
-    if (this._previousUserAgentOverride === null) {
-      this._previousUserAgentOverride = this.docShell.customUserAgent;
+    if (this._previousUserAgentOverride === undefined) {
+      this._previousUserAgentOverride = this.getUserAgentOverride();
     }
     this.docShell.customUserAgent = userAgent;
     return true;
@@ -70,56 +230,12 @@ let EmulationActor = protocol.ActorClassWithSpec(emulationSpec, {
   },
 
   clearUserAgentOverride() {
-    if (this._previousUserAgentOverride !== null) {
+    if (this._previousUserAgentOverride !== undefined) {
       return this.setUserAgentOverride(this._previousUserAgentOverride);
     }
     return false;
   },
 
-  
-
-  _previousDPPXOverride: null,
-
-  setDPPXOverride(dppx) {
-    let { contentViewer } = this.docShell;
-
-    if (contentViewer.overrideDPPX === dppx) {
-      return false;
-    }
-
-    if (this._previousDPPXOverride === null) {
-      this._previousDPPXOverride = contentViewer.overrideDPPX;
-    }
-
-    contentViewer.overrideDPPX = dppx;
-
-    return true;
-  },
-
-  getDPPXOverride() {
-    return this.docShell.contentViewer.overrideDPPX;
-  },
-
-  clearDPPXOverride() {
-    if (this._previousDPPXOverride !== null) {
-      return this.setDPPXOverride(this._previousDPPXOverride);
-    }
-
-    return false;
-  },
-
-  disconnect() {
-    this.destroy();
-  },
-
-  destroy() {
-    this.clearTouchEventsOverride();
-    this.clearUserAgentOverride();
-    this.clearDPPXOverride();
-    this.docShell = null;
-    this.simulatorCore = null;
-    protocol.Actor.prototype.destroy.call(this);
-  },
 });
 
 exports.EmulationActor = EmulationActor;

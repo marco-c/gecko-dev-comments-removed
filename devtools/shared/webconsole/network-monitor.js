@@ -645,7 +645,7 @@ function NetworkMonitor(filters, owner) {
   this._httpModifyExaminer =
     DevToolsUtils.makeInfallible(this._httpModifyExaminer).bind(this);
   this._serviceWorkerRequest = this._serviceWorkerRequest.bind(this);
-  this.throttleData = null;
+  this._throttleData = null;
   this._throttler = null;
 }
 
@@ -721,6 +721,16 @@ NetworkMonitor.prototype = {
     
     Services.obs.addObserver(this._serviceWorkerRequest,
                              "service-worker-synthesized-response", false);
+  },
+
+  get throttleData() {
+    return this._throttleData;
+  },
+
+  set throttleData(value) {
+    this._throttleData = value;
+    
+    this._throttler = null;
   },
 
   _getThrottler: function () {
