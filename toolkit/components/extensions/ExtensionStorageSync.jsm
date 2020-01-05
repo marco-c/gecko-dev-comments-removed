@@ -105,6 +105,12 @@ if (AppConstants.platform != "android") {
   _fxaService = fxAccounts;
 }
 
+class ServerKeyringDeleted extends Error {
+  constructor() {
+    super("server keyring appears to have disappeared; we were called to decrypt null");
+  }
+}
+
 
 
 
@@ -315,6 +321,28 @@ class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
   }
 
   async decode(record) {
+    if (record === null) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      throw new ServerKeyringDeleted();
+    }
     try {
       return await super.decode(record);
     } catch (e) {
@@ -881,6 +909,7 @@ class ExtensionStorageSync {
 
 
   async _deleteBucket() {
+    log.error("Deleting default bucket and everything in it");
     return await this._requestWithToken("Clearing server", async function(token) {
       const headers = {Authorization: "Bearer " + token};
       const kintoHttp = new KintoHttpClient(prefStorageSyncServerURL, {
@@ -943,6 +972,7 @@ class ExtensionStorageSync {
       return collectionKeys;
     }
 
+    log.info(`Need to create keys and/or salts for ${JSON.stringify(extIds)}`);
     const kbHash = await getKBHash(this._fxaService);
     const newKeys = await collectionKeys.ensureKeysFor(extIds);
     const newSalts = await this.ensureSaltsFor(keysRecord, extIds);
@@ -1051,11 +1081,13 @@ class ExtensionStorageSync {
       
       return result;
     } catch (e) {
-      if (KeyRingEncryptionRemoteTransformer.isOutdatedKB(e)) {
+      if (KeyRingEncryptionRemoteTransformer.isOutdatedKB(e) ||
+          e instanceof ServerKeyringDeleted) {
         
         
         const isSessionValid = await this._fxaService.sessionStatus();
         if (isSessionValid) {
+          log.error("Couldn't decipher old keyring; deleting the default bucket and resetting sync status");
           await this._deleteBucket();
           await this.cryptoCollection.resetSyncStatus();
 
