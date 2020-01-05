@@ -192,9 +192,9 @@ Hash(const char *buf, nsACString &hash)
 
 
 bool
-nsHttpChannel::WillRedirect(nsHttpResponseHead * response)
+WillRedirect(nsHttpResponseHead * response)
 {
-    return IsRedirectStatus(response->Status()) &&
+    return nsHttpChannel::IsRedirectStatus(response->Status()) &&
            response->HasHeader(nsHttp::Location);
 }
 

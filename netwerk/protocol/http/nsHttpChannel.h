@@ -138,7 +138,6 @@ public:
                                  Http2PushedStream *pushedStream);
 
     static bool IsRedirectStatus(uint32_t status);
-    static bool WillRedirect(nsHttpResponseHead * response);
 
 
     
