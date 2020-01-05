@@ -12737,7 +12737,7 @@ nsDocument::CheckCustomElementName(const ElementCreationOptions& aOptions,
   
   
   if (!aOptions.mIs.WasPassed() ||
-      !Preferences::GetBool("dom.webcomponents.enabled")) {
+      !CustomElementRegistry::IsCustomElementEnabled()) {
       return nullptr;
   }
 
