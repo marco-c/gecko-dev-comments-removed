@@ -738,6 +738,9 @@ private:
   bool mMediaSeekable = true;
 
   
+  bool mMediaSeekableOnlyInBufferedRanges = false;
+
+  
   DelayedScheduler mVideoDecodeSuspendTimer;
 
   
@@ -811,9 +814,6 @@ private:
 
   
   Mirror<int64_t> mDecoderPosition;
-
-  
-  Mirror<bool> mMediaSeekableOnlyInBufferedRanges;
 
   
   Mirror<bool> mIsVisible;
