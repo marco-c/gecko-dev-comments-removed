@@ -1170,7 +1170,7 @@ public:
                          const MediaSourceEnum aSource,
                          const TrackID aTrackID,
                          const PeerIdentity* aPeerIdentity)
-          : MediaStreamTrackSource(aPrincipal, false, aLabel), mListener(aListener),
+          : MediaStreamTrackSource(aPrincipal, aLabel), mListener(aListener),
             mSource(aSource), mTrackID(aTrackID), mPeerIdentity(aPeerIdentity) {}
 
         MediaSourceEnum GetMediaSource() const override
@@ -1919,9 +1919,9 @@ media::Parent<media::NonE10s>*
 MediaManager::GetNonE10sParent()
 {
   if (!mNonE10sParent) {
-    mNonE10sParent = new media::Parent<media::NonE10s>();
+    mNonE10sParent = MakeUnique<media::Parent<media::NonE10s>>(true);
   }
-  return mNonE10sParent;
+  return mNonE10sParent.get();
 }
 
  void

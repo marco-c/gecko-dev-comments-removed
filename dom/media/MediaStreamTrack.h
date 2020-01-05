@@ -61,10 +61,8 @@ public:
   };
 
   MediaStreamTrackSource(nsIPrincipal* aPrincipal,
-                         const bool aIsRemote,
                          const nsString& aLabel)
     : mPrincipal(aPrincipal),
-      mIsRemote(aIsRemote),
       mLabel(aLabel),
       mStopped(false)
   {
@@ -105,12 +103,6 @@ public:
 
 
   virtual const PeerIdentity* GetPeerIdentity() const { return nullptr; }
-
-  
-
-
-
-  virtual bool IsRemote() const { return mIsRemote; }
 
   
 
@@ -164,7 +156,7 @@ public:
   void UnregisterSink(Sink* aSink)
   {
     MOZ_ASSERT(NS_IsMainThread());
-    if (mSinks.RemoveElement(aSink) && mSinks.IsEmpty() && !IsRemote()) {
+    if (mSinks.RemoveElement(aSink) && mSinks.IsEmpty()) {
       Stop();
       mStopped = true;
     }
@@ -194,9 +186,6 @@ protected:
   nsTArray<Sink*> mSinks;
 
   
-  const bool mIsRemote;
-
-  
   const nsString mLabel;
 
   
@@ -213,14 +202,13 @@ public:
   explicit BasicUnstoppableTrackSource(nsIPrincipal* aPrincipal,
                                        const MediaSourceEnum aMediaSource =
                                          MediaSourceEnum::Other)
-    : MediaStreamTrackSource(aPrincipal, true, nsString())
+    : MediaStreamTrackSource(aPrincipal, nsString())
     , mMediaSource(aMediaSource)
   {}
 
   MediaSourceEnum GetMediaSource() const override { return mMediaSource; }
 
-  void
-  GetSettings(dom::MediaTrackSettings& aResult) override {}
+  void GetSettings(dom::MediaTrackSettings& aResult) override {}
 
   void Stop() override {}
 
@@ -485,7 +473,6 @@ protected:
   nsString mID;
   MediaStreamTrackState mReadyState;
   bool mEnabled;
-  const bool mRemote;
   dom::MediaTrackConstraints mConstraints;
 };
 
