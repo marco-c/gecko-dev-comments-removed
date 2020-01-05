@@ -802,9 +802,9 @@ NotificationController::WillRefresh(mozilla::TimeStamp aTime)
   
   mObservingState = eRefreshProcessing;
 
-  RefPtr<DocAccessible> deathGrip(mDocument);
-  mEventTree.Process(deathGrip);
-  deathGrip = nullptr;
+  CoalesceMutationEvents();
+  ProcessMutationEvents();
+  mEventGeneration = 0;
 
   
   RefPtr<AccTreeMutationEvent> mutEvent = Move(mFirstMutationEvent);
