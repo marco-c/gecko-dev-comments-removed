@@ -37,6 +37,7 @@ impl ByteString {
             }
         }).collect())
     }
+
     pub fn is_token(&self) -> bool {
         let ByteString(ref vec) = *self;
         vec.iter().all(|&x| {
@@ -48,6 +49,55 @@ impl ByteString {
                 47 | 91 | 93 | 63 | 61 |
                 123 | 125 | 32  => false, 
                 _ => true
+            }
+        })
+    }
+
+    pub fn is_field_value(&self) -> bool {
+        
+        #[deriving(Eq)]
+        enum PreviousCharacter {
+            Other,
+            CR,
+            LF,
+            SP_HT 
+        }
+        let ByteString(ref vec) = *self;
+        let mut prev = Other; 
+        vec.iter().all(|&x| {
+            
+            match x {
+                13  => { 
+                    if prev == Other || prev == SP_HT {
+                        prev = CR;
+                        true
+                    } else {
+                        false
+                    }
+                },
+                10 => { 
+                    if prev == CR {
+                        prev = LF;
+                        true
+                    } else {
+                        false
+                    }
+                },
+                32 | 9 => { 
+                    if prev == LF || prev == SP_HT {
+                        prev = SP_HT;
+                        true
+                    } else {
+                        false
+                    }
+                },
+                0..31 | 127 => false, 
+                x if x > 127 => false, 
+                _ if prev == Other || prev == SP_HT => {
+                    prev = Other;
+                    true
+                },
+                _ => false 
             }
         })
     }
