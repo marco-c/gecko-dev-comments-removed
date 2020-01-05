@@ -132,6 +132,8 @@ namespace detail {
 
 static const int64_t LOW_DATA_THRESHOLD_USECS = 5000000;
 
+static constexpr auto LOW_BUFFER_THRESHOLD = TimeUnit::FromMicroseconds(LOW_DATA_THRESHOLD_USECS);
+
 
 
 static_assert(LOW_DATA_THRESHOLD_USECS > AMPLE_AUDIO_USECS,
@@ -3316,7 +3318,7 @@ bool MediaDecoderStateMachine::OutOfDecodedAudio()
 bool MediaDecoderStateMachine::HasLowBufferedData()
 {
   MOZ_ASSERT(OnTaskQueue());
-  return HasLowBufferedData(detail::LOW_DATA_THRESHOLD_USECS);
+  return HasLowBufferedData(detail::LOW_BUFFER_THRESHOLD.ToMicroseconds());
 }
 
 bool MediaDecoderStateMachine::HasLowBufferedData(int64_t aUsecs)
