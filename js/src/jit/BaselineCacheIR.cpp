@@ -1917,41 +1917,61 @@ CacheIRWriter::copyStubData(uint8_t* dest) const
 {
     uintptr_t* destWords = reinterpret_cast<uintptr_t*>(dest);
 
-    for (size_t i = 0; i < stubFields_.length(); i++) {
-        StubField::Type type = stubFields_[i].type();
-        switch (type) {
+    for (const StubField& field : stubFields_) {
+        switch (field.type()) {
           case StubField::Type::RawWord:
-            *destWords = stubFields_[i].asWord();
+            *destWords = field.asWord();
             break;
           case StubField::Type::Shape:
-            InitGCPtr<Shape*>(destWords, stubFields_[i].asWord());
+            InitGCPtr<Shape*>(destWords, field.asWord());
             break;
           case StubField::Type::JSObject:
-            InitGCPtr<JSObject*>(destWords, stubFields_[i].asWord());
+            InitGCPtr<JSObject*>(destWords, field.asWord());
             break;
           case StubField::Type::ObjectGroup:
-            InitGCPtr<ObjectGroup*>(destWords, stubFields_[i].asWord());
+            InitGCPtr<ObjectGroup*>(destWords, field.asWord());
             break;
           case StubField::Type::Symbol:
-            InitGCPtr<JS::Symbol*>(destWords, stubFields_[i].asWord());
+            InitGCPtr<JS::Symbol*>(destWords, field.asWord());
             break;
           case StubField::Type::String:
-            InitGCPtr<JSString*>(destWords, stubFields_[i].asWord());
+            InitGCPtr<JSString*>(destWords, field.asWord());
             break;
           case StubField::Type::Id:
-            InitGCPtr<jsid>(destWords, stubFields_[i].asWord());
+            InitGCPtr<jsid>(destWords, field.asWord());
             break;
           case StubField::Type::RawInt64:
-            *reinterpret_cast<uint64_t*>(destWords) = stubFields_[i].asInt64();
+            *reinterpret_cast<uint64_t*>(destWords) = field.asInt64();
             break;
           case StubField::Type::Value:
-            InitGCPtr<JS::Value>(destWords, stubFields_[i].asInt64());
+            InitGCPtr<JS::Value>(destWords, field.asInt64());
             break;
           case StubField::Type::Limit:
             MOZ_CRASH("Invalid type");
         }
-        destWords += StubField::sizeInBytes(type) / sizeof(uintptr_t);
+        destWords += StubField::sizeInBytes(field.type()) / sizeof(uintptr_t);
     }
+}
+
+bool
+CacheIRWriter::stubDataEquals(const uint8_t* stubData) const
+{
+    const uintptr_t* stubDataWords = reinterpret_cast<const uintptr_t*>(stubData);
+
+    for (const StubField& field : stubFields_) {
+        if (field.sizeIsWord()) {
+            if (field.asWord() != *stubDataWords)
+                return false;
+            stubDataWords++;
+            continue;
+        }
+
+        if (field.asInt64() != *reinterpret_cast<const uint64_t*>(stubDataWords))
+            return false;
+        stubDataWords += sizeof(uint64_t) / sizeof(uintptr_t);
+    }
+
+    return true;
 }
 
 HashNumber
@@ -2065,28 +2085,46 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
             return nullptr;
     }
 
-    
-    
-
     MOZ_ASSERT(code);
     MOZ_ASSERT(stubInfo);
     MOZ_ASSERT(stub->isMonitoredFallback());
     MOZ_ASSERT(stubInfo->stubDataSize() == writer.stubDataSize());
 
+    
+    
+    
+    for (ICStubConstIterator iter = stub->beginChainConst(); !iter.atEnd(); iter++) {
+        if (!iter->isCacheIR_Monitored())
+            continue;
+
+        ICCacheIR_Monitored* otherStub = iter->toCacheIR_Monitored();
+        if (otherStub->stubInfo() != stubInfo)
+            continue;
+        if (!writer.stubDataEquals(otherStub->stubDataStart()))
+            continue;
+
+        
+        
+        
+        return nullptr;
+    }
+
+    
+
     size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
 
     ICStubSpace* stubSpace = ICStubCompiler::StubSpaceForStub(stubInfo->makesGCCalls(),
                                                               outerScript, engine);
-    void* newStub = stubSpace->alloc(bytesNeeded);
-    if (!newStub)
+    void* newStubMem = stubSpace->alloc(bytesNeeded);
+    if (!newStubMem)
         return nullptr;
 
     ICStub* monitorStub = stub->toMonitoredFallbackStub()->fallbackMonitorStub()->firstMonitorStub();
-    new(newStub) ICCacheIR_Monitored(code, monitorStub, stubInfo);
+    auto newStub = new(newStubMem) ICCacheIR_Monitored(code, monitorStub, stubInfo);
 
-    writer.copyStubData((uint8_t*)newStub + stubInfo->stubDataOffset());
-    stub->addNewStub((ICStub*)newStub);
-    return (ICStub*)newStub;
+    writer.copyStubData(newStub->stubDataStart());
+    stub->addNewStub(newStub);
+    return newStub;
 }
 
 void
@@ -2196,6 +2234,11 @@ CacheIRStubInfo::copyStubData(ICStub* src, ICStub* dest) const
     }
 }
 
+uint8_t*
+ICCacheIR_Monitored::stubDataStart()
+{
+    return reinterpret_cast<uint8_t*>(this) + stubInfo_->stubDataOffset();
+}
 
  ICCacheIR_Monitored*
 ICCacheIR_Monitored::Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
