@@ -603,7 +603,7 @@ public class BrowserApp extends GeckoApp
         }
 
         final SafeIntent intent = new SafeIntent(getIntent());
-        final boolean isInAutomation = getIsInAutomationFromEnvironment(intent);
+        final boolean isInAutomation = IntentUtils.getIsInAutomationFromEnvironment(intent);
 
         
         
@@ -828,22 +828,6 @@ public class BrowserApp extends GeckoApp
         
         final String installerPackageName = getPackageManager().getInstallerPackageName(getPackageName());
         Telemetry.sendUIEvent(TelemetryContract.Event.LAUNCH, TelemetryContract.Method.SYSTEM, "installer_" + installerPackageName);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    @CheckResult
-    private boolean getIsInAutomationFromEnvironment(final SafeIntent intent) {
-        final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
-        return !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
     }
 
     
