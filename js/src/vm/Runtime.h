@@ -26,6 +26,7 @@
 # include "wasm/WasmSignalHandlers.h"
 #endif
 #include "builtin/AtomicsObject.h"
+#include "builtin/Intl.h"
 #include "builtin/Promise.h"
 #include "ds/FixedSizeHash.h"
 #include "frontend/NameCollections.h"
@@ -809,6 +810,11 @@ struct JSRuntime : public JS::shadow::Runtime,
 
     
     const char* getDefaultLocale();
+
+    
+    js::SharedIntlData sharedIntlData;
+
+    void traceSharedIntlData(JSTracer* trc);
 
     JSVersion defaultVersion() const { return defaultVersion_; }
     void setDefaultVersion(JSVersion v) { defaultVersion_ = v; }

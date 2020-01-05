@@ -350,6 +350,9 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     rt->markSelfHostingGlobal(trc);
 
     
+    rt->traceSharedIntlData(trc);
+
+    
     
     rt->contextFromMainThread()->mark(trc);
 

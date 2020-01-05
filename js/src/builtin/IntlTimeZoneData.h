@@ -1,0 +1,136 @@
+
+
+
+#ifndef builtin_IntlTimeZoneData_h
+#define builtin_IntlTimeZoneData_h
+
+namespace js {
+namespace timezone {
+
+
+
+const char* const ianaZonesTreatedAsLinksByICU[] = {
+    "Africa/Asmara", 
+    "Africa/Timbuktu", 
+    "America/Argentina/Buenos_Aires", 
+    "America/Argentina/Catamarca", 
+    "America/Argentina/ComodRivadavia", 
+    "America/Argentina/Cordoba", 
+    "America/Argentina/Jujuy", 
+    "America/Argentina/Mendoza", 
+    "America/Atikokan", 
+    "America/Ensenada", 
+    "America/Indiana/Indianapolis", 
+    "America/Kentucky/Louisville", 
+    "America/Rosario", 
+    "Asia/Chongqing", 
+    "Asia/Harbin", 
+    "Asia/Ho_Chi_Minh", 
+    "Asia/Kashgar", 
+    "Asia/Kathmandu", 
+    "Asia/Kolkata", 
+    "Asia/Tel_Aviv", 
+    "Asia/Yangon", 
+    "Atlantic/Faroe", 
+    "Atlantic/Jan_Mayen", 
+    "EST", 
+    "Europe/Belfast", 
+    "Europe/Tiraspol", 
+    "HST", 
+    "MST", 
+    "Pacific/Chuuk", 
+    "Pacific/Pohnpei", 
+};
+
+
+
+struct LinkAndTarget
+{
+    const char* const link;
+    const char* const target;
+};
+
+const LinkAndTarget ianaLinksCanonicalizedDifferentlyByICU[] = {
+    { "Africa/Asmera", "Africa/Asmara" }, 
+    { "America/Buenos_Aires", "America/Argentina/Buenos_Aires" }, 
+    { "America/Catamarca", "America/Argentina/Catamarca" }, 
+    { "America/Cordoba", "America/Argentina/Cordoba" }, 
+    { "America/Fort_Wayne", "America/Indiana/Indianapolis" }, 
+    { "America/Indianapolis", "America/Indiana/Indianapolis" }, 
+    { "America/Jujuy", "America/Argentina/Jujuy" }, 
+    { "America/Kralendijk", "America/Curacao" }, 
+    { "America/Louisville", "America/Kentucky/Louisville" }, 
+    { "America/Lower_Princes", "America/Curacao" }, 
+    { "America/Marigot", "America/Port_of_Spain" }, 
+    { "America/Mendoza", "America/Argentina/Mendoza" }, 
+    { "America/Santa_Isabel", "America/Tijuana" }, 
+    { "America/St_Barthelemy", "America/Port_of_Spain" }, 
+    { "America/Virgin", "America/Port_of_Spain" }, 
+    { "Antarctica/South_Pole", "Antarctica/McMurdo" }, 
+    { "Arctic/Longyearbyen", "Europe/Oslo" }, 
+    { "Asia/Calcutta", "Asia/Kolkata" }, 
+    { "Asia/Chungking", "Asia/Chongqing" }, 
+    { "Asia/Katmandu", "Asia/Kathmandu" }, 
+    { "Asia/Rangoon", "Asia/Yangon" }, 
+    { "Asia/Saigon", "Asia/Ho_Chi_Minh" }, 
+    { "Atlantic/Faeroe", "Atlantic/Faroe" }, 
+    { "Europe/Bratislava", "Europe/Prague" }, 
+    { "Europe/Busingen", "Europe/Zurich" }, 
+    { "Europe/Mariehamn", "Europe/Helsinki" }, 
+    { "Europe/Podgorica", "Europe/Belgrade" }, 
+    { "Europe/San_Marino", "Europe/Rome" }, 
+    { "Europe/Vatican", "Europe/Rome" }, 
+    { "Pacific/Ponape", "Pacific/Pohnpei" }, 
+    { "Pacific/Truk", "Pacific/Chuuk" }, 
+    { "Pacific/Yap", "Pacific/Chuuk" }, 
+    { "US/East-Indiana", "America/Indiana/Indianapolis" }, 
+};
+
+
+
+
+const char* const legacyICUTimeZones[] = {
+    "ACT",
+    "AET",
+    "AGT",
+    "ART",
+    "AST",
+    "BET",
+    "BST",
+    "CAT",
+    "CNT",
+    "CST",
+    "CTT",
+    "EAT",
+    "ECT",
+    "IET",
+    "IST",
+    "JST",
+    "MIT",
+    "NET",
+    "NST",
+    "PLT",
+    "PNT",
+    "PRT",
+    "PST",
+    "SST",
+    "VST",
+    "SystemV/AST4",
+    "SystemV/AST4ADT",
+    "SystemV/CST6",
+    "SystemV/CST6CDT",
+    "SystemV/EST5",
+    "SystemV/EST5EDT",
+    "SystemV/HST10",
+    "SystemV/MST7",
+    "SystemV/MST7MDT",
+    "SystemV/PST8",
+    "SystemV/PST8PDT",
+    "SystemV/YST9",
+    "SystemV/YST9YDT",
+};
+
+} 
+} 
+
+#endif 

@@ -7,7 +7,15 @@
 #ifndef builtin_Intl_h
 #define builtin_Intl_h
 
+#include "mozilla/HashFunctions.h"
+#include "mozilla/MemoryReporting.h"
+
+#include "jsalloc.h"
 #include "NamespaceImports.h"
+
+#include "js/GCAPI.h"
+#include "js/GCHashTable.h"
+
 #if ENABLE_INTL_API
 #include "unicode/utypes.h"
 #endif
@@ -25,6 +33,140 @@ namespace js {
 
 extern JSObject*
 InitIntlClass(JSContext* cx, HandleObject obj);
+
+
+
+
+
+
+
+class SharedIntlData
+{
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    using TimeZoneName = JSAtom*;
+
+    struct TimeZoneHasher
+    {
+        struct Lookup
+        {
+            union {
+                const JS::Latin1Char* latin1Chars;
+                const char16_t* twoByteChars;
+            };
+            bool isLatin1;
+            size_t length;
+            JS::AutoCheckCannotGC nogc;
+            HashNumber hash;
+
+            explicit Lookup(JSFlatString* timeZone);
+        };
+
+        static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
+        static bool match(TimeZoneName key, const Lookup& lookup);
+    };
+
+    using TimeZoneSet = js::GCHashSet<TimeZoneName,
+                                      TimeZoneHasher,
+                                      js::SystemAllocPolicy>;
+
+    using TimeZoneMap = js::GCHashMap<TimeZoneName,
+                                      TimeZoneName,
+                                      TimeZoneHasher,
+                                      js::SystemAllocPolicy>;
+
+    
+
+
+
+
+
+
+
+    TimeZoneSet availableTimeZones;
+
+    
+
+
+
+
+
+
+
+
+
+
+    TimeZoneSet ianaZonesTreatedAsLinksByICU;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    TimeZoneMap ianaLinksCanonicalizedDifferentlyByICU;
+
+    bool timeZoneDataInitialized = false;
+
+    
+
+
+
+    bool ensureTimeZones(JSContext* cx);
+
+  public:
+    
+
+
+
+    bool validateTimeZoneName(JSContext* cx, JS::HandleString timeZone,
+                              JS::MutableHandleString result);
+
+    
+
+
+
+
+
+
+    bool tryCanonicalizeTimeZoneConsistentWithIANA(JSContext* cx, JS::HandleString timeZone,
+                                                   JS::MutableHandleString result);
+
+    void destroyInstance();
+
+    void trace(JSTracer* trc);
+
+    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+};
 
 
 
@@ -168,12 +310,8 @@ intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-
-
-
-
 extern MOZ_MUST_USE bool
-intl_availableTimeZones(JSContext* cx, unsigned argc, Value* vp);
+intl_IsValidTimeZoneName(JSContext* cx, unsigned argc, Value* vp);
 
 
 

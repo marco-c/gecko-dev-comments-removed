@@ -628,31 +628,7 @@ function IsWellFormedCurrencyCode(currency) {
 var timeZoneCache = {
     icuDefaultTimeZone: undefined,
     defaultTimeZone: undefined,
-    timeZones: undefined,
 };
-
-
-
-
-
-
-
-
-
-
-function IsValidTimeZoneName(timeZone) {
-    assert(typeof timeZone === "string", "IsValidTimeZoneName");
-
-    var timeZones = timeZoneCache.timeZones;
-    if (timeZones === undefined) {
-        timeZones = intl_availableTimeZones();
-        timeZoneCache.timeZones = timeZones;
-    }
-
-    
-    var tz = timeZones[toASCIIUpperCase(timeZone)];
-    return (tz === undefined || tz in legacyICUTimeZones) ? null : tz;
-}
 
 
 
@@ -667,12 +643,12 @@ function CanonicalizeTimeZoneName(timeZone) {
 
     
     assert(timeZone !== "Etc/Unknown", "Invalid time zone");
-    assert(timeZone === IsValidTimeZoneName(timeZone), "Time zone name not normalized");
+    assert(timeZone === intl_IsValidTimeZoneName(timeZone), "Time zone name not normalized");
 
     
     var ianaTimeZone = intl_canonicalizeTimeZone(timeZone);
     assert(ianaTimeZone !== "Etc/Unknown", "Invalid canonical time zone");
-    assert(ianaTimeZone === IsValidTimeZoneName(ianaTimeZone), "Unsupported canonical time zone");
+    assert(ianaTimeZone === intl_IsValidTimeZoneName(ianaTimeZone), "Unsupported canonical time zone");
 
     
     if (ianaTimeZone === "Etc/UTC" || ianaTimeZone === "Etc/GMT") {
@@ -682,22 +658,6 @@ function CanonicalizeTimeZoneName(timeZone) {
             ianaTimeZone = "Etc/UCT";
         else
             ianaTimeZone = "UTC";
-    } else {
-        
-        
-        if (timeZone in tzLinkNamesNonICU) {
-            
-            
-            
-            
-            if (IsValidTimeZoneName(tzLinkNamesNonICU[timeZone]) !== null) {
-                ianaTimeZone = tzLinkNamesNonICU[timeZone];
-            }
-        } else if (timeZone in tzZoneNamesNonICU) {
-            
-            
-            ianaTimeZone = timeZone;
-        }
     }
 
     
@@ -718,7 +678,7 @@ function DefaultTimeZone() {
         return timeZoneCache.defaultTimeZone;
 
     
-    var timeZone = IsValidTimeZoneName(icuDefaultTimeZone);
+    var timeZone = intl_IsValidTimeZoneName(icuDefaultTimeZone);
     if (timeZone === null) {
         
         
@@ -734,7 +694,7 @@ function DefaultTimeZone() {
             timeZone = "Etc/GMT" + (offsetHours < 0 ? "+" : "-") + std_Math_abs(offsetHours);
 
             
-            timeZone = IsValidTimeZoneName(timeZone);
+            timeZone = intl_IsValidTimeZoneName(timeZone);
         }
 
         
@@ -2398,7 +2358,7 @@ function InitializeDateTimeFormat(dateTimeFormat, locales, options) {
         tz = ToString(tz);
 
         
-        var timeZone = IsValidTimeZoneName(tz);
+        var timeZone = intl_IsValidTimeZoneName(tz);
         if (timeZone === null)
             ThrowRangeError(JSMSG_INVALID_TIME_ZONE, tz);
 
