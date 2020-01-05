@@ -196,6 +196,14 @@ def bootstrap(topdir):
         sys.exit(1)
 
     
+    if os.path.join(os.sep, 'mingw64', 'bin') in sys.executable:
+        print('Cannot run mach with MinGW Python.')
+        print('\nPlease rename following files:')
+        print(' /mingw64/bin/python2.exe   -> /mingw64/bin/python2-mingw64.exe')
+        print(' /mingw64/bin/python2.7.exe -> /mingw64/bin/python2.7-mingw64.exe')
+        sys.exit(1)
+
+    
     
     if not (3, 0) > sys.version_info >= (2, 7):
         print('Python 2.7 or above (but not Python 3) is required to run mach.')
