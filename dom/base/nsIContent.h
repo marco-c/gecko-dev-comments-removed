@@ -975,6 +975,9 @@ protected:
 
   nsIAtom* DoGetID() const;
 
+  
+  inline nsIURI* GetBaseURIWithoutXMLBase() const;
+
 public:
 #ifdef DEBUG
   
