@@ -80,23 +80,32 @@ var SessionHistoryInternal = {
     let ihistory = history.QueryInterface(Ci.nsISHistory);
 
     let data = {entries: [], userContextId: loadContext.originAttributes.userContextId };
+    
+    
+    
+    let skippedCount = 0, entryCount = 0;
 
     if (history && history.count > 0) {
       
       
-      for (let txn = history.rootTransaction; txn; txn = txn.next) {
+      for (let txn = history.rootTransaction; txn; entryCount++, txn = txn.next) {
+        if (entryCount <= aFromIdx) {
+          skippedCount++;
+          continue;
+        }
         let entry = this.serializeEntry(txn.sHEntry);
         entry.persist = txn.persist;
         data.entries.push(entry);
       }
 
       
-      data.index = Math.min(history.index + 1, data.entries.length);
+      data.index = Math.min(history.index + 1, entryCount);
     }
 
     
     
-    if (data.entries.length == 0) {
+    
+    if (data.entries.length == 0 && (skippedCount != entryCount || aFromIdx < 0)) {
       let uri = webNavigation.currentURI.spec;
       let body = webNavigation.document.body;
       
@@ -112,11 +121,6 @@ var SessionHistoryInternal = {
         });
         data.index = 1;
       }
-    }
-
-    
-    if (aFromIdx > -1) {
-      data.entries.splice(0, aFromIdx + 1);
     }
 
     
