@@ -4940,55 +4940,20 @@ BytecodeEmitter::emitDeclarationList(ParseNode* declList)
             return false;
         next = decl->pn_next;
 
-        if (decl->isKind(PNK_ARRAY) || decl->isKind(PNK_OBJECT)) {
-            
-            
-            
-            
-            
-            
-            
-
-            MOZ_ASSERT(declList->pn_count == 1);
-
-            auto emitInitializeToUndefined = [](BytecodeEmitter* bce, ParseNode *pn) {
-                MOZ_ASSERT(bce->lookupName(pn->name()).hasKnownSlot());
-                MOZ_ASSERT(bce->lookupName(pn->name()).isLexical());
-                auto emitUndefined = [](BytecodeEmitter* bce, const NameLocation&, bool) {
-                    return bce->emit1(JSOP_UNDEFINED);
-                };
-                if (!bce->emitInitializeName(pn, emitUndefined))
-                    return false;
-                
-                return bce->emit1(JSOP_POP);
-            };
-
-            if (!emitDestructuringDeclsWithEmitter(decl, emitInitializeToUndefined))
-                return false;
-        } else if (decl->isKind(PNK_ASSIGN)) {
-            
-
-
-
-
-
+        if (decl->isKind(PNK_ASSIGN)) {
             MOZ_ASSERT(decl->isOp(JSOP_NOP));
 
-            if (decl->pn_left->isKind(PNK_NAME)) {
-                if (!emitSingleDeclaration(declList, decl->pn_left, decl->pn_right))
-                    return false;
-            } else {
-                ParseNode* initializer = decl->pn_left;
+            ParseNode* pattern = decl->pn_left;
+            MOZ_ASSERT(pattern->isKind(PNK_ARRAY) || pattern->isKind(PNK_OBJECT));
 
-                if (!emitTree(decl->pn_right))
-                    return false;
+            if (!emitTree(decl->pn_right))
+                return false;
 
-                if (!emitDestructuringOpsHelper(initializer, DestructuringDeclaration))
-                    return false;
+            if (!emitDestructuringOpsHelper(pattern, DestructuringDeclaration))
+                return false;
 
-                if (!emit1(JSOP_POP))
-                    return false;
-            }
+            if (!emit1(JSOP_POP))
+                return false;
         } else {
             if (!emitSingleDeclaration(declList, decl, decl->expr()))
                 return false;
@@ -6082,9 +6047,7 @@ BytecodeEmitter::emitInitializeForInOrOfTarget(ParseNode* forHead)
     }
 
     MOZ_ASSERT(!target->isKind(PNK_ASSIGN),
-               "for-in/of loop declarations can't have initializers; or if "
-               "they do, those initializers are ignored -- see "
-               "Parser::declarationPattern");
+               "for-in/of loop destructuring declarations can't have initializers");
 
     MOZ_ASSERT(target->isKind(PNK_ARRAY) || target->isKind(PNK_OBJECT));
     return emitDestructuringOps(target, DestructuringDeclaration);
