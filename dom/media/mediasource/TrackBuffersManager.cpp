@@ -312,7 +312,7 @@ TrackBuffersManager::Buffered()
   TimeUnit highestEndTime = HighestEndTime();
 
   MonitorAutoLock mon(mMonitor);
-  nsTArray<TimeIntervals*> tracks;
+  nsTArray<const TimeIntervals*> tracks;
   if (HasVideo()) {
     tracks.AppendElement(&mVideoBufferedRanges);
   }
@@ -325,13 +325,16 @@ TrackBuffersManager::Buffered()
 
   
   
-  for (auto trackRanges : tracks) {
+  for (const TimeIntervals* trackRanges : tracks) {
+    
     
     if (mEnded) {
-      trackRanges->Add(TimeInterval(trackRanges->GetEnd(), highestEndTime));
+      TimeIntervals tR = *trackRanges;
+      tR.Add(TimeInterval(tR.GetEnd(), highestEndTime));
+      intersection.Intersection(tR);
+    } else {
+      intersection.Intersection(*trackRanges);
     }
-    
-    intersection.Intersection(*trackRanges);
   }
   return intersection;
 }
