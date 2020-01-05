@@ -1233,10 +1233,11 @@ GeckoDriver.prototype.getChromeWindowHandles = function(cmd, resp) {
 
 
 GeckoDriver.prototype.getWindowPosition = function(cmd, resp) {
-  let win = this.getCurrentWindow();
-  resp.body.x = win.screenX;
-  resp.body.y = win.screenY;
+  return this.curBrowser.position;
 };
+
+
+
 
 
 
@@ -1260,6 +1261,8 @@ GeckoDriver.prototype.setWindowPosition = function(cmd, resp) {
 
   let win = this.getCurrentWindow();
   win.moveTo(x, y);
+
+  return this.curBrowser.position;
 };
 
 

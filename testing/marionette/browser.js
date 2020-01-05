@@ -268,6 +268,16 @@ browser.Context = class {
     }
   }
 
+  
+
+
+  get position() {
+    return {
+      x: this.window.screenX,
+      y: this.window.screenY,
+    };
+  }
+
 };
 
 
