@@ -7,14 +7,13 @@
 
 
 
-var Cu = Components.utils;
-var Ci = Components.interfaces;
-var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var {advanceValidate} = require("devtools/client/inspector/shared/utils");
+const {utils: Cu, interfaces: Ci} = Components;
+const {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+const {advanceValidate} = require("devtools/client/inspector/shared/utils");
 
 
 
-var sampleInput = '\\symbol "string" url(somewhere)';
+const sampleInput = '\\symbol "string" url(somewhere)';
 
 function testInsertion(where, result, testName) {
   do_print(testName);

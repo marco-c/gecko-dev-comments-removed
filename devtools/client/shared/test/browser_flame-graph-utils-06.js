@@ -1,13 +1,15 @@
 
 
 
+"use strict";
 
 
 
-var {FlameGraphUtils} = require("devtools/client/shared/widgets/FlameGraph");
-var {PALLETTE_SIZE} = require("devtools/client/shared/widgets/FlameGraph");
-var MANGLED_FN = "__Z3FooIiEvv";
-var UNMANGLED_FN = "void Foo<int>()";
+
+const {FlameGraphUtils} = require("devtools/client/shared/widgets/FlameGraph");
+const {PALLETTE_SIZE} = require("devtools/client/shared/widgets/FlameGraph");
+const MANGLED_FN = "__Z3FooIiEvv";
+const UNMANGLED_FN = "void Foo<int>()";
 
 add_task(function* () {
   yield addTab("about:blank");

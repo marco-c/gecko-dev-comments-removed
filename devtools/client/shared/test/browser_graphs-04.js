@@ -1,9 +1,11 @@
 
 
 
+"use strict";
 
 
-var LineGraphWidget = require("devtools/client/shared/widgets/LineGraphWidget");
+
+const LineGraphWidget = require("devtools/client/shared/widgets/LineGraphWidget");
 
 add_task(function* () {
   yield addTab("about:blank");
@@ -12,7 +14,7 @@ add_task(function* () {
 });
 
 function* performTest() {
-  let [host, win, doc] = yield createHost();
+  let [host,, doc] = yield createHost();
   let graph = new LineGraphWidget(doc.body, "fps");
   yield graph.once("ready");
 

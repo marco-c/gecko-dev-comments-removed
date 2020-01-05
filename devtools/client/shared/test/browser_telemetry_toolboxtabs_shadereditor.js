@@ -1,22 +1,27 @@
 
 
 
+"use strict";
 
 
 
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("Error: Shader Editor is still waiting for a WebGL context to be created.");
 
-const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_toolboxtabs_shadereditor.js</p>";
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
+  "Error: Shader Editor is still waiting for a WebGL context to be created.");
+
+const TEST_URI = "data:text/html;charset=utf-8," +
+  "<p>browser_telemetry_toolboxtabs_shadereditor.js</p>";
 
 
 
 const TOOL_DELAY = 200;
+const TOOL_PREF = "devtools.shadereditor.enabled";
 
 add_task(function* () {
   info("Active the sharer editor");
-  let originalPref = Services.prefs.getBoolPref("devtools.shadereditor.enabled");
-  Services.prefs.setBoolPref("devtools.shadereditor.enabled", true);
+  let originalPref = Services.prefs.getBoolPref(TOOL_PREF);
+  Services.prefs.setBoolPref(TOOL_PREF, true);
 
   yield addTab(TEST_URI);
   let Telemetry = loadTelemetryAndRecordLogs();
@@ -28,5 +33,5 @@ add_task(function* () {
   gBrowser.removeCurrentTab();
 
   info("De-activate the sharer editor");
-  Services.prefs.setBoolPref("devtools.shadereditor.enabled", originalPref);
+  Services.prefs.setBoolPref(TOOL_PREF, originalPref);
 });

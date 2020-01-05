@@ -1,9 +1,11 @@
 
 
 
+"use strict";
 
 
-var { PrefsHelper } = require("devtools/client/shared/prefs");
+
+const { PrefsHelper } = require("devtools/client/shared/prefs");
 
 function test() {
   let Prefs = new PrefsHelper("devtools.debugger", {

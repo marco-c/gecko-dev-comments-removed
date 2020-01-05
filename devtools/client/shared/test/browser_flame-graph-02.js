@@ -1,9 +1,11 @@
 
 
 
+"use strict";
 
 
-var {FlameGraph} = require("devtools/client/shared/widgets/FlameGraph");
+
+const {FlameGraph} = require("devtools/client/shared/widgets/FlameGraph");
 
 add_task(function* () {
   yield addTab("about:blank");
@@ -12,8 +14,9 @@ add_task(function* () {
 });
 
 function* performTest() {
-  let [host, win, doc] = yield createHost();
-  doc.body.setAttribute("style", "position: fixed; width: 100%; height: 100%; margin: 0;");
+  let [host,, doc] = yield createHost();
+  doc.body.setAttribute("style",
+                        "position: fixed; width: 100%; height: 100%; margin: 0;");
 
   let graph = new FlameGraph(doc.body);
   graph.fixedWidth = 200;

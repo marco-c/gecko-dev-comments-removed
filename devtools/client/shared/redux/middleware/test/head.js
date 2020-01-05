@@ -2,27 +2,26 @@
 
 
 
-var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
-var { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-var flags = require("devtools/shared/flags");
-var promise = require("promise");
-var defer = require("devtools/shared/defer");
+
+
+"use strict";
+
+const { require } = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
+const flags = require("devtools/shared/flags");
 
 flags.testing = true;
 
 function waitUntilState(store, predicate) {
-  let deferred = defer();
-  let unsubscribe = store.subscribe(check);
-
-  function check() {
-    if (predicate(store.getState())) {
-      unsubscribe();
-      deferred.resolve();
+  return new Promise(resolve => {
+    let unsubscribe = store.subscribe(check);
+    function check() {
+      if (predicate(store.getState())) {
+        unsubscribe();
+        resolve();
+      }
     }
-  }
 
-  
-  check();
-
-  return deferred.promise;
+    
+    check();
+  });
 }

@@ -1,11 +1,13 @@
 
 
 
+"use strict";
 
 
 
-var {FlameGraphUtils} = require("devtools/client/shared/widgets/FlameGraph");
-var {PALLETTE_SIZE} = require("devtools/client/shared/widgets/FlameGraph");
+
+const {FlameGraphUtils} = require("devtools/client/shared/widgets/FlameGraph");
+const {PALLETTE_SIZE} = require("devtools/client/shared/widgets/FlameGraph");
 
 add_task(function* () {
   yield addTab("about:blank");

@@ -1,13 +1,17 @@
 
 
 
+"use strict";
 
 
 
 
 
 
-thisTestLeaksUncaughtRejectionsAndShouldBeFixed("Protocol error (unknownError): Error: Got an invalid root window in DocumentWalker");
+
+thisTestLeaksUncaughtRejectionsAndShouldBeFixed(
+  "Protocol error (unknownError): Error: Got an invalid root window in DocumentWalker"
+);
 
 const TEST_URI = "data:text/html;charset=utf-8,<p>Tooltip Tests</p>";
 const PREF_DEVTOOLS_THEME = "devtools.theme";
@@ -75,7 +79,6 @@ add_task(function* testThemes() {
      "light", "Tooltip panel has correct theme");
 });
 
-
 add_task(function* hideToolbar() {
   info("Ending browser_toolbar_tooltip.js");
   yield DeveloperToolbar.inputter.setInput("");
@@ -104,5 +107,5 @@ function observeOnce(topic, ownsWeak = false) {
       resolve(subject);
     };
     Services.obs.addObserver(resolver, topic, ownsWeak);
-  }.bind(this));
+  });
 }

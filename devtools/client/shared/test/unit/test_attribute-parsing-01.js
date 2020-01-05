@@ -1,10 +1,11 @@
 
 
 
+"use strict";
 
 
-var Cu = Components.utils;
-var {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
+
+const {require} = Components.utils.import("resource://devtools/shared/Loader.jsm", {});
 const {splitBy} = require("devtools/client/shared/node-attribute-parser");
 
 const TEST_DATA = [{

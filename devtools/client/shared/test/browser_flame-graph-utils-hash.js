@@ -1,11 +1,13 @@
 
 
 
+"use strict";
 
 
-var {FlameGraphUtils} = require("devtools/client/shared/widgets/FlameGraph");
 
-var test = Task.async(function* () {
+const {FlameGraphUtils} = require("devtools/client/shared/widgets/FlameGraph");
+
+add_task(function* () {
   let hash1 = FlameGraphUtils._getStringHash("abc");
   let hash2 = FlameGraphUtils._getStringHash("acb");
   let hash3 = FlameGraphUtils._getStringHash(Array.from(Array(100000)).join("a"));
@@ -19,6 +21,4 @@ var test = Task.async(function* () {
   ok(Number.isInteger(hash2), "The hashes should be integers, not Infinity or NaN (2).");
   ok(Number.isInteger(hash3), "The hashes should be integers, not Infinity or NaN (3).");
   ok(Number.isInteger(hash4), "The hashes should be integers, not Infinity or NaN (4).");
-
-  finish();
 });

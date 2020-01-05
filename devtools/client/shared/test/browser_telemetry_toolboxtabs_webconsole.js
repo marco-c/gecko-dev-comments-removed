@@ -1,7 +1,10 @@
 
 
 
-const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_toolboxtabs_styleeditor_webconsole.js</p>";
+"use strict";
+
+const TEST_URI = "data:text/html;charset=utf-8," +
+  "<p>browser_telemetry_toolboxtabs_styleeditor_webconsole.js</p>";
 
 
 

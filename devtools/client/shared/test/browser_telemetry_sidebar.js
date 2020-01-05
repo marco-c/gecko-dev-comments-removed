@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 const TEST_URI = "data:text/html;charset=utf-8,<p>browser_telemetry_sidebar.js</p>";
 
 

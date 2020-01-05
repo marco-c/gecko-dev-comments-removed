@@ -1,9 +1,11 @@
 
 
 
+"use strict";
 
 
-var MountainGraphWidget = require("devtools/client/shared/widgets/MountainGraphWidget");
+
+const MountainGraphWidget = require("devtools/client/shared/widgets/MountainGraphWidget");
 
 const TEST_DATA = [
   { delta: 0, values: [0.1, 0.5, 0.3] },
@@ -26,7 +28,7 @@ add_task(function* () {
 });
 
 function* performTest() {
-  let [host, win, doc] = yield createHost();
+  let [host,, doc] = yield createHost();
   let graph = new MountainGraphWidget(doc.body);
   yield graph.once("ready");
 

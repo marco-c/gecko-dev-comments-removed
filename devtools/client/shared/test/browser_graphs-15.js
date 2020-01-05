@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 const FAST_FPS = 60;
@@ -10,17 +12,18 @@ const SLOW_FPS = 10;
 const FRAMES = [FAST_FPS, FAST_FPS, FAST_FPS, SLOW_FPS, FAST_FPS];
 const TEST_DATA = [];
 const INTERVAL = 100;
-const DURATION = 5000; 
+const DURATION = 5000;
 var t = 0;
 for (let frameRate of FRAMES) {
   for (let i = 0; i < frameRate; i++) {
-    let delta = Math.floor(1000 / frameRate); 
+    
+    let delta = Math.floor(1000 / frameRate);
     t += delta;
     TEST_DATA.push(t);
   }
 }
 
-var LineGraphWidget = require("devtools/client/shared/widgets/LineGraphWidget");
+const LineGraphWidget = require("devtools/client/shared/widgets/LineGraphWidget");
 
 add_task(function* () {
   yield addTab("about:blank");
@@ -29,7 +32,7 @@ add_task(function* () {
 });
 
 function* performTest() {
-  let [host, win, doc] = yield createHost();
+  let [host,, doc] = yield createHost();
   let graph = new LineGraphWidget(doc.body, "fps");
 
   yield testGraph(graph);
@@ -39,7 +42,6 @@ function* performTest() {
 }
 
 function* testGraph(graph) {
-
   console.log("test data", TEST_DATA);
   yield graph.setDataFromTimestamps(TEST_DATA, INTERVAL, DURATION);
   is(graph._avgTooltip.querySelector("[text=value]").textContent, "50",

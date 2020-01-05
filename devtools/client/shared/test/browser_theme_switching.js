@@ -2,7 +2,7 @@
 
 
 
-var toolbox;
+"use strict";
 
 add_task(function* () {
   let target = TargetFactory.forTab(gBrowser.selectedTab);
@@ -24,15 +24,19 @@ add_task(function* () {
   let sheetsIterator = doc.evaluate("processing-instruction('xml-stylesheet')",
                        doc, null, XPathResult.ANY_TYPE, null);
   let sheetsInDOM = [];
+
+  
   let sheet;
   while (sheet = sheetsIterator.iterateNext()) {
     sheetsInDOM.push(sheet.data);
   }
+  
 
   let sheetsFromTheme = gDevTools.getThemeDefinition(theme).stylesheets;
   info("Checking for existence of " + sheetsInDOM.length + " sheets");
-  for (let sheet of sheetsFromTheme) {
-    ok(sheetsInDOM.some(s=>s.includes(sheet)), "There is a stylesheet for " + sheet);
+  for (let themeSheet of sheetsFromTheme) {
+    ok(sheetsInDOM.some(s => s.includes(themeSheet)),
+       "There is a stylesheet for " + themeSheet);
   }
 
   yield toolbox.destroy();
@@ -44,7 +48,6 @@ function getPlatform() {
     return "win";
   } else if (OS == "Darwin") {
     return "mac";
-  } else {
-    return "linux";
   }
+  return "linux";
 }

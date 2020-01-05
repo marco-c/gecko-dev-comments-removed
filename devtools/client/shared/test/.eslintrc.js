@@ -2,5 +2,8 @@
 
 module.exports = {
   
-  "extends": "../../../.eslintrc.mochitests.js"
+  "extends": "../../../.eslintrc.mochitests.js",
+  "globals": {
+    "DeveloperToolbar": true
+  }
 };
