@@ -40,6 +40,17 @@ MacroAssemblerMIPSShared::ma_li(Register dest, Imm32 imm)
 }
 
 
+
+
+void
+MacroAssemblerMIPSShared::ma_liPatchable(Register dest, Imm32 imm)
+{
+    m_buffer.ensureSpace(2 * sizeof(uint32_t));
+    as_lui(dest, Imm16::Upper(imm).encode());
+    as_ori(dest, dest, Imm16::Lower(imm).encode());
+}
+
+
 void
 MacroAssemblerMIPSShared::ma_sll(Register rd, Register rt, Imm32 shift)
 {

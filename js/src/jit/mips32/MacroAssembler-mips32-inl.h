@@ -1042,7 +1042,7 @@ MacroAssembler::wasmPatchBoundsCheck(uint8_t* patchAt, uint32_t limit)
     InstImm* i1 = (InstImm*) i0->next();
 
     
-    Assembler::UpdateLuiOriValue(i0, i1, limit);
+    AssemblerMIPSShared::UpdateLuiOriValue(i0, i1, limit);
 }
 
 
