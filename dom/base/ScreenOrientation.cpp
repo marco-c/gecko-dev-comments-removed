@@ -368,8 +368,11 @@ ScreenOrientation::LockDeviceOrientation(ScreenOrientationInternal aOrientation,
   }
 
   
-  if (aIsFullScreen && !mFullScreenListener) {
-    mFullScreenListener = new FullScreenEventListener();
+  if (aIsFullScreen) {
+    if (!mFullScreenListener) {
+      mFullScreenListener = new FullScreenEventListener();
+    }
+
     aRv = target->AddSystemEventListener(NS_LITERAL_STRING("fullscreenchange"),
                                          mFullScreenListener,  true);
     if (NS_WARN_IF(aRv.Failed())) {
