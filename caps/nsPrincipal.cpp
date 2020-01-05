@@ -138,6 +138,14 @@ nsPrincipal::GetOriginInternal(nsACString& aOrigin)
     return NS_ERROR_FAILURE;
   }
 
+  if (!nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
+      NS_URIIsLocalFile(origin)) {
+    
+    
+    aOrigin.AssignLiteral("file://UNIVERSAL_FILE_URI_ORIGIN");
+    return NS_OK;
+  }
+
   nsAutoCString hostPort;
 
   
