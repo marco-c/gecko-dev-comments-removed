@@ -536,6 +536,17 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             Paint(FromPaintMsg)
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         let request = {
             let receiver_from_script = &self.script_receiver;
             let receiver_from_compositor = &self.compositor_receiver;
@@ -543,16 +554,17 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             let receiver_from_paint = &self.painter_receiver;
             select! {
                 msg = receiver_from_script.recv() =>
-                    Request::Script(msg.unwrap()),
+                    Request::Script(msg.expect("Unexpected script failure in constellation")),
                 msg = receiver_from_compositor.recv() =>
-                    Request::Compositor(msg.unwrap()),
+                    Request::Compositor(msg.expect("Unexpected compositor failure in constellation")),
                 msg = receiver_from_layout.recv() =>
-                    Request::Layout(msg.unwrap()),
+                    Request::Layout(msg.expect("Unexpected layout failure in constellation")),
                 msg = receiver_from_paint.recv() =>
-                    Request::Paint(msg.unwrap())
+                    Request::Paint(msg.expect("Unexpected paint failure in constellation"))
             }
         };
 
+        
         match request {
             
 
