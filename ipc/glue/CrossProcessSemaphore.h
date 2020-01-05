@@ -61,7 +61,7 @@ public:
 
 
 
-  bool Wait(Maybe<TimeDuration> aWaitTime = Nothing());
+  bool Wait(const Maybe<TimeDuration>& aWaitTime = Nothing());
 
   
 
