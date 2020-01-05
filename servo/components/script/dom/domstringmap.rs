@@ -67,5 +67,10 @@ impl<'a> DOMStringMapMethods for &'a DOMStringMap {
             }
         }
     }
-}
 
+    
+    fn SupportedPropertyNames(self) -> Vec<DOMString> {
+        
+        vec![]
+    }
+}
