@@ -46,6 +46,22 @@ function test() {
     
     iterable[Symbol.iterator] = makeIterator({
         next: function() {
+            
+            return {};
+        },
+        ret: function() {
+            returnCalled++;
+            return {};
+        }
+    });
+    assertThrowsValue(function() {
+        0, [...{}[throwlhs()]] = iterable;
+    }, "in lhs");
+    assertEq(returnCalled, ++returnCalledExpected);
+
+    
+    iterable[Symbol.iterator] = makeIterator({
+        next: function() {
             throw "in next";
         },
         ret: function() {
