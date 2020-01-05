@@ -1154,5 +1154,10 @@ function SendUpdateCanvasForEvent(event, contentRootElement)
 #if REFTEST_B2G
 OnInitialLoad();
 #else
-addEventListener("load", OnInitialLoad, true);
+if (content.document.readyState == "complete") {
+  
+  OnInitialLoad();
+} else {
+  addEventListener("load", OnInitialLoad, true);
+}
 #endif
