@@ -4,7 +4,7 @@
 
 
 
-use extra::arc::MutexArc;
+use extra::arc::{Arc, MutexArc};
 use green::task::GreenTask;
 use layout::flow::FlowLeafSet;
 use layout::util::OpaqueNode;
@@ -39,13 +39,13 @@ pub struct LayoutContext {
     constellation_chan: ConstellationChan,
 
     
-    dom_leaf_set: MutexArc<DomLeafSet>,
+    dom_leaf_set: Arc<DomLeafSet>,
 
     
     layout_chan: LayoutChan,
 
     
-    flow_leaf_set: MutexArc<FlowLeafSet>,
+    flow_leaf_set: Arc<FlowLeafSet>,
 
     
     font_context_info: FontContextInfo,
