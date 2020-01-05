@@ -280,7 +280,7 @@ MBasicBlock::NewSplitEdge(MIRGraph& graph, const CompileInfo& info, MBasicBlock*
     MBasicBlock* split = nullptr;
     if (!pred->pc()) {
         
-        split = MBasicBlock::NewAsmJS(graph, info, pred, SPLIT_EDGE);
+        split = MBasicBlock::New(graph, info, pred, SPLIT_EDGE);
         if (!split)
             return nullptr;
     } else {
@@ -348,7 +348,7 @@ MBasicBlock::NewSplitEdge(MIRGraph& graph, const CompileInfo& info, MBasicBlock*
 }
 
 MBasicBlock*
-MBasicBlock::NewAsmJS(MIRGraph& graph, const CompileInfo& info, MBasicBlock* pred, Kind kind)
+MBasicBlock::New(MIRGraph& graph, const CompileInfo& info, MBasicBlock* pred, Kind kind)
 {
     BytecodeSite* site = new(graph.alloc()) BytecodeSite();
     MBasicBlock* block = new(graph.alloc()) MBasicBlock(graph, info, site, kind);
@@ -1262,7 +1262,7 @@ MBasicBlock::setBackedge(TempAllocator& alloc, MBasicBlock* pred)
 }
 
 bool
-MBasicBlock::setBackedgeAsmJS(MBasicBlock* pred)
+MBasicBlock::setBackedgeWasm(MBasicBlock* pred)
 {
     
     MOZ_ASSERT(hasLastIns());

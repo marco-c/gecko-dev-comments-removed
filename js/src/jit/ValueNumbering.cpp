@@ -431,8 +431,7 @@ ValueNumberer::fixupOSROnlyLoop(MBasicBlock* block, MBasicBlock* backedge)
     
     
     
-    MBasicBlock* fake = MBasicBlock::NewAsmJS(graph_, block->info(),
-                                              nullptr, MBasicBlock::NORMAL);
+    MBasicBlock* fake = MBasicBlock::New(graph_, block->info(), nullptr, MBasicBlock::NORMAL);
     if (fake == nullptr)
         return false;
 
