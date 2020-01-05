@@ -21,6 +21,7 @@
 #include "vm/GlobalObject.h"
 #include "vm/PIC.h"
 #include "vm/SavedStacks.h"
+#include "vm/TemplateRegistry.h"
 #include "vm/Time.h"
 #include "wasm/WasmCompartment.h"
 
@@ -545,6 +546,7 @@ struct JSCompartment
                                 size_t* savedStacksSet,
                                 size_t* varNamesSet,
                                 size_t* nonSyntacticLexicalScopes,
+                                size_t* templateLiteralMap,
                                 size_t* jitCompartment,
                                 size_t* privateData);
 
@@ -585,6 +587,12 @@ struct JSCompartment
     
     
     js::ObjectWeakMap* nonSyntacticLexicalEnvironments_;
+
+    
+    
+    
+    
+    js::TemplateRegistry templateLiteralMap_;
 
   public:
     
@@ -742,6 +750,13 @@ struct JSCompartment
     bool isInVarNames(JS::Handle<JSAtom*> name) {
         return varNames_.has(name);
     }
+
+    
+    
+    
+    
+    bool getTemplateLiteralObject(JSContext* cx, js::HandleObject rawStrings,
+                                  js::MutableHandleObject templateObj);
 
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
