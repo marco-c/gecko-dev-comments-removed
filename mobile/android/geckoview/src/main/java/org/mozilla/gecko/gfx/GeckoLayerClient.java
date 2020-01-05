@@ -255,27 +255,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     }
 
     
-    private void setPageRect(RectF rect, RectF cssRect) {
-        
-        
-        
-        if (mViewportMetrics.getCssPageRect().equals(cssRect))
-            return;
-
-        mViewportMetrics = mViewportMetrics.setPageRect(rect, cssRect);
-
-        
-        
-
-        mView.post(new Runnable() {
-            @Override
-            public void run() {
-                mView.requestRender();
-            }
-        });
-    }
-
-    
 
 
 
@@ -296,7 +275,6 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     }
 
     
-
 
 
 
@@ -335,27 +313,10 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    @WrapForJNI
-    public void setPageRect(float cssPageLeft, float cssPageTop, float cssPageRight, float cssPageBottom) {
-        synchronized (getLock()) {
-            RectF cssPageRect = new RectF(cssPageLeft, cssPageTop, cssPageRight, cssPageBottom);
-            float ourZoom = getViewportMetrics().zoomFactor;
-            setPageRect(RectUtils.scale(cssPageRect, ourZoom), cssPageRect);
-            
-            
-        }
-    }
-
-    
 
 
 
-
-
-
-
-    @WrapForJNI
-    public ViewTransform syncViewportInfo(int x, int y, int width, int height, float resolution, boolean layersUpdated,
+    private ViewTransform syncViewportInfo(int x, int y, int width, int height, float resolution, boolean layersUpdated,
                                           int paintSyncId) {
         
         

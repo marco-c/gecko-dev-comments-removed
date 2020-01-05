@@ -342,22 +342,6 @@ public:
 
 
 
-
-
-
-  void GetRootScrollableLayers(nsTArray<Layer*>& aArray);
-
-  
-
-
-
-
-  void GetScrollableLayers(nsTArray<Layer*>& aArray);
-
-  
-
-
-
   LayerMetricsWrapper GetRootContentLayer();
 
   
