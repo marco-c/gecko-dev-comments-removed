@@ -267,10 +267,6 @@ DetailsView.prototype = {
           
           populated[tab] = true;
           window.emit(EVENTS.TAB_UPDATED);
-
-          if (NetMonitorController.isConnected()) {
-            NetMonitorView.RequestsMenu.ensureSelectedItemIsVisible();
-          }
         }
       } else if (viewState.dirty[tab]) {
         
@@ -328,7 +324,7 @@ DetailsView.prototype = {
       } else {
         code = data.status;
       }
-      $("#headers-summary-status-circle").setAttribute("code", code);
+      $("#headers-summary-status-circle").setAttribute("data-code", code);
       $("#headers-summary-status-value").setAttribute("value",
         data.status + " " + data.statusText);
       $("#headers-summary-status").removeAttribute("hidden");

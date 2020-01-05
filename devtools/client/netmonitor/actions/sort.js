@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+const { SORT_BY } = require("../constants");
+
+function sortBy(sortType) {
+  return {
+    type: SORT_BY,
+    sortType
+  };
+}
+
+module.exports = {
+  sortBy
+};

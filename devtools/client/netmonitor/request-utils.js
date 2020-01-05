@@ -50,8 +50,8 @@ const getFormDataSections = Task.async(function* (headers, uploadHeaders, postDa
                                                     getString) {
   let formDataSections = [];
 
-  let { headers: requestHeaders } = headers;
-  let { headers: payloadHeaders } = uploadHeaders;
+  let requestHeaders = headers.headers;
+  let payloadHeaders = uploadHeaders ? uploadHeaders.headers : [];
   let allHeaders = [...payloadHeaders, ...requestHeaders];
 
   let contentTypeHeader = allHeaders.find(e => {
@@ -191,6 +191,37 @@ function getUrlHost(url) {
 
 
 
+function getUrlDetails(url) {
+  let baseNameWithQuery = getUrlBaseNameWithQuery(url);
+  let host = getUrlHost(url);
+  let hostname = getUrlHostName(url);
+  let unicodeUrl = decodeUnicodeUrl(url);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let isLocal = hostname.match(/(.+\.)?localhost$/) ||
+                hostname.match(/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}/) ||
+                hostname.match(/\[[0:]+1\]/);
+
+  return {
+    baseNameWithQuery,
+    host,
+    unicodeUrl,
+    isLocal
+  };
+}
+
+
+
+
 
 
 
@@ -253,6 +284,7 @@ module.exports = {
   getUrlBaseNameWithQuery,
   getUrlHostName,
   getUrlHost,
+  getUrlDetails,
   parseQueryString,
   loadCauseString,
 };

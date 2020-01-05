@@ -6,7 +6,7 @@
 
 const {
   OPEN_SIDEBAR,
-  TOGGLE_SIDEBAR,
+  WATERFALL_RESIZE,
 } = require("../constants");
 
 
@@ -25,12 +25,21 @@ function openSidebar(open) {
 
 
 function toggleSidebar() {
+  return (dispatch, getState) => dispatch(openSidebar(!getState().ui.sidebarOpen));
+}
+
+
+
+
+function resizeWaterfall(width) {
   return {
-    type: TOGGLE_SIDEBAR,
+    type: WATERFALL_RESIZE,
+    width
   };
 }
 
 module.exports = {
   openSidebar,
   toggleSidebar,
+  resizeWaterfall,
 };
