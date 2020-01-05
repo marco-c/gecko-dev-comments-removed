@@ -4,7 +4,10 @@
 
 #include "DownloadPlatform.h"
 #include "nsAutoPtr.h"
+#include "nsNetUtil.h"
 #include "nsString.h"
+#include "nsINestedURI.h"
+#include "nsIProtocolHandler.h"
 #include "nsIURI.h"
 #include "nsIFile.h"
 #include "nsIObserverService.h"
@@ -165,6 +168,8 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer, nsIF
                                                  path.Length());
     }
     if (pathCFStr) {
+      bool isFromWeb = IsURLPossiblyFromWeb(aSource);
+
       CFURLRef sourceCFURL = CreateCFURLFromNSIURI(aSource);
       CFURLRef referrerCFURL = CreateCFURLFromNSIURI(aReferrer);
 
@@ -173,7 +178,8 @@ nsresult DownloadPlatform::DownloadDone(nsIURI* aSource, nsIURI* aReferrer, nsIF
                                               referrerCFURL);
       CocoaFileUtils::AddQuarantineMetadataToFile(pathCFStr,
                                                   sourceCFURL,
-                                                  referrerCFURL);
+                                                  referrerCFURL,
+                                                  isFromWeb);
 
       ::CFRelease(pathCFStr);
       if (sourceCFURL) {
@@ -226,4 +232,56 @@ nsresult DownloadPlatform::MapUrlToZone(const nsAString& aURL,
 #else
   return NS_ERROR_NOT_IMPLEMENTED;
 #endif
+}
+
+
+
+
+bool DownloadPlatform::IsURLPossiblyFromWeb(nsIURI* aURI)
+{
+  nsCOMPtr<nsIIOService> ios = do_GetIOService();
+  nsCOMPtr<nsIURI> uri = aURI;
+  if (!ios) {
+    return true;
+  }
+
+  while (uri) {
+    
+    
+    
+    
+    nsAutoCString scheme;
+    nsresult rv = uri->GetScheme(scheme);
+    if (NS_FAILED(rv)) {
+      return true;
+    }
+    nsCOMPtr<nsIProtocolHandler> ph;
+    rv = ios->GetProtocolHandler(scheme.get(), getter_AddRefs(ph));
+    if (NS_FAILED(rv)) {
+      return true;
+    }
+    uint32_t flags;
+    rv = ph->DoGetProtocolFlags(uri, &flags);
+    if (NS_FAILED(rv)) {
+      return true;
+    }
+    
+    
+    if (!(flags & nsIProtocolHandler::URI_DANGEROUS_TO_LOAD) &&
+        !(flags & nsIProtocolHandler::URI_IS_UI_RESOURCE) &&
+        !(flags & nsIProtocolHandler::URI_IS_LOCAL_FILE)) {
+      return true;
+    }
+    
+    
+    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(uri);
+    uri = nullptr;
+    if (nestedURI) {
+      rv = nestedURI->GetInnerURI(getter_AddRefs(uri));
+      if (NS_FAILED(rv)) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
