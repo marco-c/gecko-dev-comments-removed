@@ -6,6 +6,8 @@
 
 
 
+
+
 enum class WrBorderStyle : uint32_t {
   None = 0,
   Solid = 1,
@@ -826,7 +828,7 @@ WR_FUNC;
 
 WR_INLINE void
 wr_state_delete(WrState* state)
-WR_FUNC;
+WR_DESTRUCTOR_SAFE_FUNC;
 
 WR_INLINE WrState*
 wr_state_new(WrPipelineId pipeline_id)
