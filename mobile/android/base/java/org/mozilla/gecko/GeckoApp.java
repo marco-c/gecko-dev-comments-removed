@@ -163,6 +163,10 @@ public abstract class GeckoApp
     public static final String PREFS_CRASHED_COUNT         = "crashedCount";
     public static final String PREFS_CLEANUP_TEMP_FILES    = "cleanupTempFiles";
 
+    
+    
+    public static final String PREFS_IS_FIRST_RUN = "telemetry-isFirstRun";
+
     public static final String SAVED_STATE_IN_BACKGROUND   = "inBackground";
     public static final String SAVED_STATE_PRIVATE_SESSION = "privateSession";
 
@@ -375,6 +379,10 @@ public abstract class GeckoApp
         return GeckoSharedPrefs.forApp(this);
     }
 
+    public SharedPreferences getSharedPreferencesForProfile() {
+        return GeckoSharedPrefs.forProfile(this);
+    }
+
     @Override
     public Activity getActivity() {
         return this;
@@ -563,7 +571,7 @@ public abstract class GeckoApp
             
             GuestSession.hideNotification(this);
 
-            final SharedPreferences prefs = GeckoSharedPrefs.forProfile(this);
+            final SharedPreferences prefs = getSharedPreferencesForProfile();
             final Set<String> clearSet =
                     PrefUtils.getStringSet(prefs, ClearOnShutdownPref.PREF, new HashSet<String>());
 
@@ -1458,7 +1466,7 @@ public abstract class GeckoApp
 
                 
                 
-                BrowserLocaleManager.storeAndNotifyOSLocale(GeckoSharedPrefs.forProfile(GeckoApp.this), osLocale);
+                BrowserLocaleManager.storeAndNotifyOSLocale(getSharedPreferencesForProfile(), osLocale);
             }
         });
 
@@ -1482,6 +1490,18 @@ public abstract class GeckoApp
         
         if (mIsAbortingAppLaunch) {
             return;
+        }
+    }
+
+
+    
+
+
+
+    protected void onAfterStop() {
+        final SharedPreferences sharedPrefs = getSharedPreferencesForProfile();
+        if (sharedPrefs.getBoolean(PREFS_IS_FIRST_RUN, true)) {
+            sharedPrefs.edit().putBoolean(PREFS_IS_FIRST_RUN, false).apply();
         }
     }
 
