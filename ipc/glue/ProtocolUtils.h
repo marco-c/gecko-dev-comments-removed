@@ -176,7 +176,7 @@ class Endpoint;
 
 
 
-class IToplevelProtocol
+class IToplevelProtocol : public IProtocol
 {
     template<class PFooSide> friend class Endpoint;
 
