@@ -224,6 +224,12 @@ StorageDBChild::RecvObserve(const nsCString& aTopic,
 mozilla::ipc::IPCResult
 StorageDBChild::RecvOriginsHavingData(nsTArray<nsCString>&& aOrigins)
 {
+  
+  
+  if (!aOrigins.Length()) {
+    Unused << OriginsHavingData();
+  }
+
   for (uint32_t i = 0; i < aOrigins.Length(); ++i) {
     OriginsHavingData().PutEntry(aOrigins[i]);
   }
