@@ -376,9 +376,9 @@ class RobocopTestRunner(MochitestDesktop):
             for key, value in browserEnv.items():
                 try:
                     value.index(',')
-                    self.log.error("setupRobotiumConfig: browserEnv - Found a ',' "
-                                   "in our value, unable to process value. key=%s,value=%s" %
-                                   (key, value))
+                    self.log.error(
+                        "setupRobotiumConfig: browserEnv - Found a ',' in our value, unable to process value. key=%s,value=%s" %
+                        (key, value))
                     self.log.error("browserEnv=%s" % browserEnv)
                 except ValueError:
                     envstr += "%s%s=%s" % (delim, key, value)
@@ -445,9 +445,9 @@ class RobocopTestRunner(MochitestDesktop):
             
             
             
-            browserArgs = ["start", "-n",
-                           "org.mozilla.roboexample.test/org.mozilla."
-                           "gecko.LaunchFennecWithConfigurationActivity", "&&", "cat"]
+            browserArgs = ["start",
+                           "-n", "org.mozilla.roboexample.test/org.mozilla.gecko.LaunchFennecWithConfigurationActivity",
+                           "&&", "cat"]
             self.dm.default_timeout = sys.maxint  
             self.log.info("")
             self.log.info("Serving mochi.test Robocop root at http://%s:%s/tests/robocop/" %

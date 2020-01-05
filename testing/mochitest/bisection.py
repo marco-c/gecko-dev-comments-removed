@@ -15,8 +15,7 @@ class Bisect(object):
         self.max_failures = 3
 
     def setup(self, tests):
-        """This method is used to initialize various variables that are required
-        for test bisection"""
+        "This method is used to initialize various variables that are required for test bisection"
         status = 0
         self.contents.clear()
         
@@ -26,8 +25,7 @@ class Bisect(object):
         return status
 
     def reset(self, expectedError, result):
-        """This method is used to initialize self.expectedError and self.result
-        for each loop in runtests."""
+        "This method is used to initialize self.expectedError and self.result for each loop in runtests."
         self.expectedError = expectedError
         self.result = result
 
@@ -42,25 +40,21 @@ class Bisect(object):
         return bisectlist
 
     def pre_test(self, options, tests, status):
-        """This method is used to call other methods for setting up variables and
-        getting the list of tests for bisection."""
+        "This method is used to call other methods for setting up variables and getting the list of tests for bisection."
         if options.bisectChunk == "default":
             return tests
         
         
-        elif ('loop' not in self.contents or not self.contents['tests'][-1].endswith(
-                options.bisectChunk)):
+        elif 'loop' not in self.contents or not self.contents['tests'][-1].endswith(options.bisectChunk):
             tests = self.get_tests_for_bisection(options, tests)
             status = self.setup(tests)
 
         return self.next_chunk_binary(options, status)
 
     def post_test(self, options, expectedError, result):
-        """This method is used to call other methods to summarize results and check whether a
-        sanity check is done or not."""
+        "This method is used to call other methods to summarize results and check whether a sanity check is done or not."
         self.reset(expectedError, result)
         status = self.summarize_chunk(options)
-        
         
         
         if status == -1 and options.bisectChunk in self.expectedError:
@@ -219,8 +213,7 @@ class Bisect(object):
                     
                     
                     self.summary.append(
-                        "TEST-UNEXPECTED-FAIL | %s | Bleedthrough detected, this test is the "
-                        "root cause for many of the above failures" %
+                        "TEST-UNEXPECTED-FAIL | %s | Bleedthrough detected, this test is the root cause for many of the above failures" %
                         self.contents['testsToRun'][0])
                     status = -1
             else:
@@ -244,7 +237,6 @@ class Bisect(object):
             else:
                 if self.failcount > 0:
                     
-                    
                     return -1
                 
                 
@@ -263,13 +255,11 @@ class Bisect(object):
             if self.failcount < self.max_failures:
                 if self.repeat == 0:
                     
-                    
                     return -1
                 return 0
             else:
                 self.summary.append(
-                    "TEST-UNEXPECTED-FAIL | %s | Bleedthrough detected, this test is the "
-                    "root cause for many of the above failures" %
+                    "TEST-UNEXPECTED-FAIL | %s | Bleedthrough detected, this test is the root cause for many of the above failures" %
                     self.contents['testsToRun'][0])
                 return -1
 
