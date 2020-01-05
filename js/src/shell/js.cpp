@@ -790,20 +790,25 @@ DrainJobQueue(JSContext* cx)
     
     
     while (true) {
+        AutoLockHelperThreadState lock;
         if (!sc->asyncTasks.lock()->outstanding)
             break;
-        AutoLockHelperThreadState lock;
         HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
     }
 
     
     
+    
+    
+    Vector<JS::AsyncTask*> finished(cx);
     {
         ExclusiveData<ShellAsyncTasks>::Guard asyncTasks = sc->asyncTasks.lock();
-        for (JS::AsyncTask* task : asyncTasks->finished)
-            task->finish(cx);
+        finished = Move(asyncTasks->finished);
         asyncTasks->finished.clear();
     }
+
+    for (JS::AsyncTask* task : finished)
+        task->finish(cx);
 
     
     
