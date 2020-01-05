@@ -28,7 +28,7 @@ const MAX_ORDINAL = 99;
 
 
 
-this.DevTools = function DevTools() {
+function DevTools() {
   this._tools = new Map();     
   this._themes = new Map();    
   this._toolboxes = new Map(); 

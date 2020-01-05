@@ -606,6 +606,14 @@ const Services = {
       };
     },
   },
+
+  
+
+
+  obs: {
+    addObserver: () => {},
+    removeObserver: () => {},
+  },
 };
 
 

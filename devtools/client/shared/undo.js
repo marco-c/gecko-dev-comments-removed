@@ -153,8 +153,14 @@ UndoStack.prototype = {
 
 
   installController: function (controllerWindow) {
+    let controllers = controllerWindow.controllers;
+    
+    if (!controllers || !controllers.appendController) {
+      return;
+    }
+
     this._controllerWindow = controllerWindow;
-    controllerWindow.controllers.appendController(this);
+    controllers.appendController(this);
   },
 
   

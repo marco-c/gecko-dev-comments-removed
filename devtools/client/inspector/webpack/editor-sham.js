@@ -1,0 +1,13 @@
+
+
+
+
+
+
+"use strict";
+
+function Editor() {}
+Editor.modes = {};
+Editor.prototype.appendToLocalElement = () => {};
+
+module.exports = Editor;

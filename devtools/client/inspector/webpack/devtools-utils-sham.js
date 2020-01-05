@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+module.exports = {
+  executeSoon: setImmediate,
+};
