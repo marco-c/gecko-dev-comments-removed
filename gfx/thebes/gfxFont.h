@@ -81,7 +81,7 @@ struct gfxFontStyle {
                  float aSizeAdjust, bool aSystemFont,
                  bool aPrinterFont,
                  bool aWeightSynthesis, bool aStyleSynthesis,
-                 const nsString& aLanguageOverride);
+                 uint32_t aLanguageOverride);
 
     
     
@@ -216,8 +216,6 @@ struct gfxFontStyle {
             (variationSettings == other.variationSettings) &&
             (languageOverride == other.languageOverride);
     }
-
-    static uint32_t ParseFontLanguageOverride(const nsString& aLangTag);
 };
 
 struct gfxTextRange {

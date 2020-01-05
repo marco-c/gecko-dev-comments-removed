@@ -109,7 +109,7 @@ struct nsFont {
   
   
   
-  nsString languageOverride;
+  uint32_t languageOverride = 0;
 
   
   nsFont(const mozilla::FontFamilyList& aFontlist, nscoord aSize);
