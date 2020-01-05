@@ -1142,48 +1142,44 @@ CompositorBridgeParent::ScheduleRotationOnCompositorThread(const TargetConfig& a
 
 void
 CompositorBridgeParent::ShadowLayersUpdated(LayerTransactionParent* aLayerTree,
-                                            const uint64_t& aTransactionId,
-                                            const TargetConfig& aTargetConfig,
-                                            const InfallibleTArray<PluginWindowData>& aUnused,
-                                            bool aIsFirstPaint,
-                                            bool aScheduleComposite,
-                                            uint32_t aPaintSequenceNumber,
-                                            bool aIsRepeatTransaction,
-                                            int32_t aPaintSyncId,
+                                            const TransactionInfo& aInfo,
                                             bool aHitTestUpdate)
 {
-  ScheduleRotationOnCompositorThread(aTargetConfig, aIsFirstPaint);
+  const TargetConfig& targetConfig = aInfo.targetConfig();
+
+  ScheduleRotationOnCompositorThread(targetConfig, aInfo.isFirstPaint());
 
   
   
   
-  mLayerManager->UpdateRenderBounds(aTargetConfig.naturalBounds());
-  mLayerManager->SetRegionToClear(aTargetConfig.clearRegion());
+  mLayerManager->UpdateRenderBounds(targetConfig.naturalBounds());
+  mLayerManager->SetRegionToClear(targetConfig.clearRegion());
   if (mLayerManager->GetCompositor()) {
-    mLayerManager->GetCompositor()->SetScreenRotation(aTargetConfig.rotation());
+    mLayerManager->GetCompositor()->SetScreenRotation(targetConfig.rotation());
   }
 
-  mCompositionManager->Updated(aIsFirstPaint, aTargetConfig, aPaintSyncId);
+  mCompositionManager->Updated(aInfo.isFirstPaint(), targetConfig, aInfo.paintSyncId());
   Layer* root = aLayerTree->GetRoot();
   mLayerManager->SetRoot(root);
 
-  if (mApzcTreeManager && !aIsRepeatTransaction && aHitTestUpdate) {
+  if (mApzcTreeManager && !aInfo.isRepeatTransaction() && aHitTestUpdate) {
     AutoResolveRefLayers resolve(mCompositionManager);
 
-    mApzcTreeManager->UpdateHitTestingTree(mRootLayerTreeID, root, aIsFirstPaint,
-        mRootLayerTreeID, aPaintSequenceNumber);
+    mApzcTreeManager->UpdateHitTestingTree(
+      mRootLayerTreeID, root, aInfo.isFirstPaint(),
+      mRootLayerTreeID, aInfo.paintSequenceNumber());
   }
 
   
   
   
-  MOZ_ASSERT(aTransactionId == 1 || aTransactionId > mPendingTransaction);
-  mPendingTransaction = aTransactionId;
+  MOZ_ASSERT(aInfo.id() == 1 || aInfo.id() > mPendingTransaction);
+  mPendingTransaction = aInfo.id();
 
   if (root) {
     SetShadowProperties(root);
   }
-  if (aScheduleComposite) {
+  if (aInfo.scheduleComposite()) {
     ScheduleComposition();
     if (mPaused) {
       TimeStamp now = TimeStamp::Now();
