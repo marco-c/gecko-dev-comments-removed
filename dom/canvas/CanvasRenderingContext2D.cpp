@@ -1368,22 +1368,36 @@ bool CanvasRenderingContext2D::SwitchRenderingMode(RenderingMode aRenderingMode)
   mResetLayer = true;
 
   
-  RefPtr<SourceSurface> snapshot = oldBufferProvider->BorrowSnapshot();
-
-  
   RenderingMode attemptedMode = EnsureTarget(nullptr, aRenderingMode);
+
   if (!IsTargetValid()) {
-    oldBufferProvider->ReturnSnapshot(snapshot.forget());
     return false;
+  }
+
+  if (oldBufferProvider && mTarget) {
+    CopyBufferProvider(*oldBufferProvider, *mTarget, IntRect(0, 0, mWidth, mHeight));
   }
 
   
   mRenderingMode = attemptedMode;
 
+  return true;
+}
+
+bool
+CanvasRenderingContext2D::CopyBufferProvider(PersistentBufferProvider& aOld,
+                                             DrawTarget& aTarget,
+                                             IntRect aCopyRect)
+{
   
-  
-  mTarget->CopySurface(snapshot, IntRect(0, 0, mWidth, mHeight), IntPoint());
-  oldBufferProvider->ReturnSnapshot(snapshot.forget());
+  RefPtr<SourceSurface> snapshot = aOld.BorrowSnapshot();
+
+  if (!snapshot) {
+    return false;
+  }
+
+  aTarget.CopySurface(snapshot, aCopyRect, IntPoint());
+  aOld.ReturnSnapshot(snapshot.forget());
   return true;
 }
 
@@ -1627,24 +1641,37 @@ CanvasRenderingContext2D::EnsureTarget(const gfx::Rect* aCoveredRect,
   if (mode == RenderingMode::SoftwareBackendMode &&
       !TrySharedTarget(newTarget, newProvider) &&
       !TryBasicTarget(newTarget, newProvider)) {
+    gfxCriticalError() << "Failed borrow shared and basic targets.";
     SetErrorState();
     return mode;
   }
 
+
   MOZ_ASSERT(newTarget);
   MOZ_ASSERT(newProvider);
+
+  bool needsClear = !canDiscardContent;
+  if (newTarget->GetBackendType() == gfx::BackendType::SKIA) {
+    
+    
+    
+    newTarget->ClearRect(canvasRect);
+    needsClear = false;
+  }
+
+  
+  if (!canDiscardContent && mBufferProvider && CopyBufferProvider(*mBufferProvider, *newTarget, persistedRect)) {
+    needsClear = false;
+  }
+
+  if (needsClear) {
+    newTarget->ClearRect(canvasRect);
+  }
 
   mTarget = newTarget.forget();
   mBufferProvider = newProvider.forget();
 
   RegisterAllocation();
-
-  
-  
-  
-  if (!canDiscardContent || mTarget->GetBackendType() == gfx::BackendType::SKIA) {
-    mTarget->ClearRect(canvasRect);
-  }
 
   RestoreClipsAndTransformToTarget();
 
@@ -1781,6 +1808,12 @@ CanvasRenderingContext2D::TrySharedTarget(RefPtr<gfx::DrawTarget>& aOutDT,
   aOutProvider = nullptr;
 
   if (!mCanvasElement || !mCanvasElement->OwnerDoc()) {
+    return false;
+  }
+
+  if (mBufferProvider && mBufferProvider->GetType() == LayersBackend::LAYERS_CLIENT) {
+    
+    
     return false;
   }
 
@@ -5938,7 +5971,7 @@ CanvasRenderingContext2D::GetCanvasLayer(nsDisplayListBuilder* aBuilder,
   
   
   
-  if ((!mBufferProvider && !mTarget) || !IsTargetValid()) {
+  if (!mBufferProvider && !IsTargetValid()) {
     
     
     MarkContextClean();
