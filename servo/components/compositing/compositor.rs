@@ -26,7 +26,7 @@ use layers::rendergl;
 use layers::rendergl::RenderContext;
 use layers::scene::Scene;
 use layout_traits::LayoutControlChan;
-use msg::compositor_msg::{Epoch, FrameTreeId, LayerId, LayerKind};
+use msg::compositor_msg::{Epoch, EventResult, FrameTreeId, LayerId, LayerKind};
 use msg::compositor_msg::{LayerProperties, ScrollPolicy};
 use msg::constellation_msg::Msg as ConstellationMsg;
 use msg::constellation_msg::{AnimationState, Image, PixelFormat};
@@ -35,7 +35,8 @@ use msg::constellation_msg::{NavigationDirection, PipelineId, WindowSizeData};
 use pipeline::CompositionPipeline;
 use profile_traits::mem::{self, ReportKind, Reporter, ReporterRequest};
 use profile_traits::time::{self, ProfilerCategory, profile};
-use script_traits::{ConstellationControlMsg, LayoutControlMsg};
+use script_traits::CompositorEvent::{TouchDownEvent, TouchMoveEvent, TouchUpEvent};
+use script_traits::{ConstellationControlMsg, LayoutControlMsg, MouseButton};
 use scrolling::ScrollingTimerProxy;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::{HashMap, HashSet};
@@ -60,12 +61,32 @@ const MAX_ZOOM: f32 = 8.0;
 const MIN_ZOOM: f32 = 0.1;
 
 
+const TOUCH_PAN_MIN_SCREEN_PX: f32 = 20.0;
+
+
 
 #[derive(Copy, Clone, PartialEq)]
 enum ReadyState {
     Unknown,
     WaitingForConstellationReply,
     ReadyToSaveImage,
+}
+
+
+
+
+
+enum TouchState {
+    
+    Nothing,
+    
+    WaitingForScript,
+    
+    DefaultPrevented,
+    
+    Touching,
+    
+    Panning,
 }
 
 
@@ -155,6 +176,15 @@ pub struct IOCompositor<Window: WindowMethods> {
 
     
     fragment_point: Option<Point2D<f32>>,
+
+    
+    touch_gesture_state: TouchState,
+
+    
+    first_touch_point: Option<TypedPoint2D<DevicePixel, f32>>,
+
+    
+    last_touch_point: Option<TypedPoint2D<DevicePixel, f32>>,
 
     
     pending_scroll_events: Vec<ScrollEvent>,
@@ -295,6 +325,9 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             channel_to_self: state.sender.clone_compositor_proxy(),
             scrolling_timer: ScrollingTimerProxy::new(state.sender),
             composition_request: CompositionRequest::NoCompositingNecessary,
+            touch_gesture_state: TouchState::Nothing,
+            first_touch_point: None,
+            last_touch_point: None,
             pending_scroll_events: Vec::new(),
             composite_target: composite_target,
             shutdown_state: ShutdownState::NotShuttingDown,
@@ -499,6 +532,18 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             (Msg::KeyEvent(key, state, modified), ShutdownState::NotShuttingDown) => {
                 if state == KeyState::Pressed {
                     self.window.handle_key(key, modified);
+                }
+            }
+
+            (Msg::TouchEventProcessed(result), ShutdownState::NotShuttingDown) => {
+                match self.touch_gesture_state {
+                    TouchState::WaitingForScript => {
+                        self.touch_gesture_state = match result {
+                            EventResult::DefaultAllowed => TouchState::Touching,
+                            EventResult::DefaultPrevented => TouchState::DefaultPrevented,
+                        };
+                    }
+                    _ => {}
                 }
             }
 
@@ -1078,7 +1123,16 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         chan.send(msg).unwrap()
     }
 
-    fn on_mouse_window_event_class(&self, mouse_window_event: MouseWindowEvent) {
+    fn on_mouse_window_event_class(&mut self, mouse_window_event: MouseWindowEvent) {
+        if opts::get().convert_mouse_to_touch {
+            match mouse_window_event {
+                MouseWindowEvent::Click(_, _) => {}
+                MouseWindowEvent::MouseDown(_, p) => self.on_touch_down(0, p),
+                MouseWindowEvent::MouseUp(_, p) => self.on_touch_up(0, p),
+            }
+            return
+        }
+
         let point = match mouse_window_event {
             MouseWindowEvent::Click(_, p) => p,
             MouseWindowEvent::MouseDown(_, p) => p,
@@ -1090,9 +1144,117 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    fn on_mouse_window_move_event_class(&self, cursor: TypedPoint2D<DevicePixel, f32>) {
+    fn on_mouse_window_move_event_class(&mut self, cursor: TypedPoint2D<DevicePixel, f32>) {
+        if opts::get().convert_mouse_to_touch {
+            self.on_touch_move(0, cursor);
+            return
+        }
+
         match self.find_topmost_layer_at_point(cursor / self.scene.scale) {
             Some(result) => result.layer.send_mouse_move_event(self, result.point),
+            None => {},
+        }
+    }
+
+    fn on_touch_down(&mut self, identifier: i32, point: TypedPoint2D<DevicePixel, f32>) {
+        match self.touch_gesture_state {
+            TouchState::Nothing => {
+                // TODO: Don't wait for script if we know the page has no touch event listeners.
+                self.first_touch_point = Some(point);
+                self.last_touch_point = Some(point);
+                self.touch_gesture_state = TouchState::WaitingForScript;
+            }
+            TouchState::WaitingForScript => {
+                // TODO: Queue events while waiting for script?
+            }
+            TouchState::DefaultPrevented => {}
+            TouchState::Touching => {}
+            TouchState::Panning => {}
+        }
+        if let Some(result) = self.find_topmost_layer_at_point(point / self.scene.scale) {
+            result.layer.send_event(self, TouchDownEvent(identifier, result.point.to_untyped()));
+        }
+    }
+
+    fn on_touch_move(&mut self, identifier: i32, point: TypedPoint2D<DevicePixel, f32>) {
+        match self.touch_gesture_state {
+            TouchState::Nothing => warn!("Got unexpected touch move event"),
+
+            TouchState::WaitingForScript => {
+                // TODO: Queue events while waiting for script?
+            }
+            TouchState::Touching => {
+                match self.first_touch_point {
+                    Some(p0) => {
+                        let delta = point - p0;
+                        let px: TypedPoint2D<ScreenPx, _> = delta / self.device_pixels_per_screen_px();
+                        let px = px.to_untyped();
+
+                        if px.x.abs() > TOUCH_PAN_MIN_SCREEN_PX ||
+                           px.y.abs() > TOUCH_PAN_MIN_SCREEN_PX
+                        {
+                            self.touch_gesture_state = TouchState::Panning;
+                            self.on_scroll_window_event(delta, point.cast().unwrap());
+                        }
+                    }
+                    None => warn!("first_touch_point not set")
+                }
+            }
+            TouchState::Panning => {
+                match self.last_touch_point {
+                    Some(p0) => {
+                        let delta = point - p0;
+                        self.on_scroll_window_event(delta, point.cast().unwrap());
+                    }
+                    None => warn!("last_touch_point not set")
+                }
+            }
+            TouchState::DefaultPrevented => {
+                // Send the event to script.
+                if let Some(result) = self.find_topmost_layer_at_point(point / self.scene.scale) {
+                    result.layer.send_event(self,
+                                            TouchMoveEvent(identifier, result.point.to_untyped()));
+                }
+            }
+        }
+        self.last_touch_point = Some(point);
+    }
+
+    fn on_touch_up(&mut self, identifier: i32, point: TypedPoint2D<DevicePixel, f32>) {
+        // TODO: Track the number of active touch points, and don't reset stuff until it is zero.
+        self.first_touch_point = None;
+        self.last_touch_point = None;
+
+        // Send the event to script.
+        if let Some(result) = self.find_topmost_layer_at_point(point / self.scene.scale) {
+            result.layer.send_event(self, TouchUpEvent(identifier, result.point.to_untyped()));
+        }
+
+        match self.touch_gesture_state {
+            TouchState::Nothing => warn!("Got unexpected touch up event"),
+
+            TouchState::WaitingForScript => {}
+            TouchState::Touching => {
+                // TODO: If the duration exceeds some threshold, send a contextmenu event instead.
+                // TODO: Don't send a click if preventDefault is called on the touchend event.
+                self.simulate_mouse_click(point);
+            }
+            TouchState::Panning => {}
+            TouchState::DefaultPrevented => {}
+        }
+        self.touch_gesture_state = TouchState::Nothing;
+    }
+
+    /// http://w3c.github.io/touch-events/#mouse-events
+    fn simulate_mouse_click(&self, p: TypedPoint2D<DevicePixel, f32>) {
+        match self.find_topmost_layer_at_point(p / self.scene.scale) {
+            Some(HitTestResult { layer, point }) => {
+                let button = MouseButton::Left;
+                layer.send_mouse_move_event(self, point);
+                layer.send_mouse_event(self, MouseWindowEvent::MouseDown(button, p), point);
+                layer.send_mouse_event(self, MouseWindowEvent::MouseUp(button, p), point);
+                layer.send_mouse_event(self, MouseWindowEvent::Click(button, p), point);
+            }
             None => {},
         }
     }

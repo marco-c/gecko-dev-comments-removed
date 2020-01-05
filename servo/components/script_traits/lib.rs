@@ -150,7 +150,7 @@ pub enum ConstellationControlMsg {
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum MouseButton {
     
     Left,
@@ -172,6 +172,12 @@ pub enum CompositorEvent {
     MouseUpEvent(MouseButton, Point2D<f32>),
     
     MouseMoveEvent(Point2D<f32>),
+    
+    TouchDownEvent(i32, Point2D<f32>),
+    
+    TouchMoveEvent(i32, Point2D<f32>),
+    
+    TouchUpEvent(i32, Point2D<f32>),
     
     KeyEvent(Key, KeyState, KeyModifiers),
 }
