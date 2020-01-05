@@ -89,8 +89,7 @@ MP4Decoder::CanHandleMediaType(const MediaContentType& aType,
   
   
   const bool isMP4Audio = aType.GetMIMEType().EqualsASCII("audio/mp4") ||
-                          aType.GetMIMEType().EqualsASCII("audio/x-m4a") ||
-                          aType.GetMIMEType().EqualsASCII("audio/opus");
+                          aType.GetMIMEType().EqualsASCII("audio/x-m4a");
   const bool isMP4Video =
   
 #ifdef MOZ_GONK_MEDIACODEC
