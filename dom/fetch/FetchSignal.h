@@ -13,10 +13,29 @@ namespace mozilla {
 namespace dom {
 
 class FetchController;
+class FetchSignal;
 
 class FetchSignal final : public DOMEventTargetHelper
 {
 public:
+  
+  class Follower
+  {
+  public:
+    virtual void Aborted() = 0;
+
+  protected:
+    virtual ~Follower();
+
+    void
+    Follow(FetchSignal* aSignal);
+
+    void
+    Unfollow();
+
+    RefPtr<FetchSignal> mFollowingSignal;
+  };
+
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FetchSignal, DOMEventTargetHelper)
 
@@ -33,10 +52,22 @@ public:
 
   IMPL_EVENT_HANDLER(abort);
 
+  void
+  AddFollower(Follower* aFollower);
+
+  void
+  RemoveFollower(Follower* aFollower);
+
+  bool
+  CanAcceptFollower(Follower* aFollower) const;
+
 private:
   ~FetchSignal() = default;
 
   RefPtr<FetchController> mController;
+
+  
+  nsTArray<Follower*> mFollowers;
 
   bool mAborted;
 };
