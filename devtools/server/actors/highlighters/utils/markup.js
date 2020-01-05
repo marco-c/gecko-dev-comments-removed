@@ -242,7 +242,12 @@ function CanvasFrameAnonymousContentHelper(highlighterEnv, nodeBuilder) {
   this.anonymousContentGlobal = Cu.getGlobalForObject(
                                 this.anonymousContentDocument);
 
-  this._insert();
+  
+  
+  let doc = this.highlighterEnv.document;
+  if (doc.documentElement && doc.readyState != "uninitialized") {
+    this._insert();
+  }
 
   this._onNavigate = this._onNavigate.bind(this);
   this.highlighterEnv.on("navigate", this._onNavigate);
