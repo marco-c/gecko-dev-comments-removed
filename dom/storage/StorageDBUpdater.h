@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_StorageDBUpdater_h
+#define mozilla_dom_StorageDBUpdater_h
+
+namespace mozilla {
+namespace dom {
+
+namespace StorageDBUpdater {
+
+nsresult Update(mozIStorageConnection* aWorkerConnection);
+
+} 
+
+} 
+} 
+
+#endif 

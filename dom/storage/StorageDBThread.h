@@ -4,8 +4,8 @@
 
 
 
-#ifndef DOMStorageDBThread_h___
-#define DOMStorageDBThread_h___
+#ifndef mozilla_dom_StorageDBThread_h
+#define mozilla_dom_StorageDBThread_h
 
 #include "prthread.h"
 #include "prinrval.h"
@@ -26,19 +26,19 @@ class mozIStorageConnection;
 namespace mozilla {
 namespace dom {
 
-class DOMStorageCacheBridge;
-class DOMStorageUsageBridge;
-class DOMStorageUsage;
+class StorageCacheBridge;
+class StorageUsageBridge;
+class StorageUsage;
 
 typedef mozilla::storage::StatementCache<mozIStorageStatement> StatementCache;
 
 
 
-class DOMStorageDBBridge
+class StorageDBBridge
 {
 public:
-  DOMStorageDBBridge();
-  virtual ~DOMStorageDBBridge() {}
+  StorageDBBridge();
+  virtual ~StorageDBBridge() {}
 
   
   virtual nsresult Init() = 0;
@@ -50,28 +50,40 @@ public:
   
   
   
-  virtual void AsyncPreload(DOMStorageCacheBridge* aCache, bool aPriority = false) = 0;
+  
+  virtual void AsyncPreload(StorageCacheBridge* aCache, bool aPriority = false) = 0;
 
   
   
-  virtual void AsyncGetUsage(DOMStorageUsageBridge* aUsage) = 0;
+  virtual void AsyncGetUsage(StorageUsageBridge* aUsage) = 0;
 
   
   
-  virtual void SyncPreload(DOMStorageCacheBridge* aCache, bool aForceSync = false) = 0;
+  virtual void SyncPreload(StorageCacheBridge* aCache,
+                           bool aForceSync = false) = 0;
 
   
-  virtual nsresult AsyncAddItem(DOMStorageCacheBridge* aCache, const nsAString& aKey, const nsAString& aValue) = 0;
+  
+  virtual nsresult AsyncAddItem(StorageCacheBridge* aCache,
+                                const nsAString& aKey,
+                                const nsAString& aValue) = 0;
 
   
-  virtual nsresult AsyncUpdateItem(DOMStorageCacheBridge* aCache, const nsAString& aKey, const nsAString& aValue) = 0;
+  
+  virtual nsresult AsyncUpdateItem(StorageCacheBridge* aCache,
+                                   const nsAString& aKey,
+                                   const nsAString& aValue) = 0;
 
   
-  virtual nsresult AsyncRemoveItem(DOMStorageCacheBridge* aCache, const nsAString& aKey) = 0;
+  
+  virtual nsresult AsyncRemoveItem(StorageCacheBridge* aCache,
+                                   const nsAString& aKey) = 0;
 
   
-  virtual nsresult AsyncClear(DOMStorageCacheBridge* aCache) = 0;
+  
+  virtual nsresult AsyncClear(StorageCacheBridge* aCache) = 0;
 
+  
   
   virtual void AsyncClearAll() = 0;
 
@@ -85,6 +97,7 @@ public:
   virtual void AsyncFlush() = 0;
 
   
+  
   virtual bool ShouldPreloadOrigin(const nsACString& aOriginNoSuffix) = 0;
 
   
@@ -96,7 +109,7 @@ public:
 
 
 
-class DOMStorageDBThread final : public DOMStorageDBBridge
+class StorageDBThread final : public StorageDBBridge
 {
 public:
   class PendingOperations;
@@ -125,7 +138,9 @@ public:
       
 
       
+      
       opClearAll,
+      
       
       opClearMatchingOrigin,
       
@@ -133,11 +148,11 @@ public:
     } OperationType;
 
     explicit DBOperation(const OperationType aType,
-                         DOMStorageCacheBridge* aCache = nullptr,
+                         StorageCacheBridge* aCache = nullptr,
                          const nsAString& aKey = EmptyString(),
                          const nsAString& aValue = EmptyString());
     DBOperation(const OperationType aType,
-                DOMStorageUsageBridge* aUsage);
+                StorageUsageBridge* aUsage);
     DBOperation(const OperationType aType,
                 const nsACString& aOriginNoSuffix);
     DBOperation(const OperationType aType,
@@ -145,7 +160,8 @@ public:
     ~DBOperation();
 
     
-    void PerformAndFinalize(DOMStorageDBThread* aThread);
+    
+    void PerformAndFinalize(StorageDBThread* aThread);
 
     
     void Finalize(nsresult aRv);
@@ -167,16 +183,19 @@ public:
     const nsCString Target() const;
 
     
-    const OriginAttributesPattern& OriginPattern() const { return mOriginPattern; }
+    const OriginAttributesPattern& OriginPattern() const
+    {
+      return mOriginPattern;
+    }
 
   private:
     
-    nsresult Perform(DOMStorageDBThread* aThread);
+    nsresult Perform(StorageDBThread* aThread);
 
     friend class PendingOperations;
     OperationType mType;
-    RefPtr<DOMStorageCacheBridge> mCache;
-    RefPtr<DOMStorageUsageBridge> mUsage;
+    RefPtr<StorageCacheBridge> mCache;
+    RefPtr<StorageUsageBridge> mUsage;
     nsString const mKey;
     nsString const mValue;
     nsCString const mOrigin;
@@ -202,8 +221,9 @@ public:
 
     
     
-    nsresult Execute(DOMStorageDBThread* aThread);
+    nsresult Execute(StorageDBThread* aThread);
 
+    
     
     
     bool Finalize(nsresult aRv);
@@ -211,10 +231,12 @@ public:
     
     
     
-    bool IsOriginClearPending(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix) const;
+    bool IsOriginClearPending(const nsACString& aOriginSuffix,
+                              const nsACString& aOriginNoSuffix) const;
 
     
-    bool IsOriginUpdatePending(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix) const;
+    bool IsOriginUpdatePending(const nsACString& aOriginSuffix,
+                               const nsACString& aOriginNoSuffix) const;
 
   private:
     
@@ -243,7 +265,7 @@ public:
 
     ThreadObserver()
       : mHasPendingEvents(false)
-      , mMonitor("DOMStorageThreadMonitor")
+      , mMonitor("StorageThreadMonitor")
     {
     }
 
@@ -265,40 +287,70 @@ public:
   };
 
 public:
-  DOMStorageDBThread();
-  virtual ~DOMStorageDBThread() {}
+  StorageDBThread();
+  virtual ~StorageDBThread() {}
 
   virtual nsresult Init();
   virtual nsresult Shutdown();
 
-  virtual void AsyncPreload(DOMStorageCacheBridge* aCache, bool aPriority = false)
-    { InsertDBOp(new DBOperation(aPriority ? DBOperation::opPreloadUrgent : DBOperation::opPreload, aCache)); }
+  virtual void AsyncPreload(StorageCacheBridge* aCache, bool aPriority = false)
+  {
+    InsertDBOp(new DBOperation(aPriority
+                                 ? DBOperation::opPreloadUrgent
+                                 : DBOperation::opPreload,
+                               aCache));
+  }
 
-  virtual void SyncPreload(DOMStorageCacheBridge* aCache, bool aForce = false);
+  virtual void SyncPreload(StorageCacheBridge* aCache, bool aForce = false);
 
-  virtual void AsyncGetUsage(DOMStorageUsageBridge * aUsage)
-    { InsertDBOp(new DBOperation(DBOperation::opGetUsage, aUsage)); }
+  virtual void AsyncGetUsage(StorageUsageBridge* aUsage)
+  {
+    InsertDBOp(new DBOperation(DBOperation::opGetUsage, aUsage));
+  }
 
-  virtual nsresult AsyncAddItem(DOMStorageCacheBridge* aCache, const nsAString& aKey, const nsAString& aValue)
-    { return InsertDBOp(new DBOperation(DBOperation::opAddItem, aCache, aKey, aValue)); }
+  virtual nsresult AsyncAddItem(StorageCacheBridge* aCache,
+                                const nsAString& aKey,
+                                const nsAString& aValue)
+  {
+    return InsertDBOp(new DBOperation(DBOperation::opAddItem, aCache, aKey,
+                                      aValue));
+  }
 
-  virtual nsresult AsyncUpdateItem(DOMStorageCacheBridge* aCache, const nsAString& aKey, const nsAString& aValue)
-    { return InsertDBOp(new DBOperation(DBOperation::opUpdateItem, aCache, aKey, aValue)); }
+  virtual nsresult AsyncUpdateItem(StorageCacheBridge* aCache,
+                                   const nsAString& aKey,
+                                   const nsAString& aValue)
+  {
+    return InsertDBOp(new DBOperation(DBOperation::opUpdateItem, aCache, aKey,
+                                      aValue));
+  }
 
-  virtual nsresult AsyncRemoveItem(DOMStorageCacheBridge* aCache, const nsAString& aKey)
-    { return InsertDBOp(new DBOperation(DBOperation::opRemoveItem, aCache, aKey)); }
+  virtual nsresult AsyncRemoveItem(StorageCacheBridge* aCache,
+                                   const nsAString& aKey)
+  {
+    return InsertDBOp(new DBOperation(DBOperation::opRemoveItem, aCache, aKey));
+  }
 
-  virtual nsresult AsyncClear(DOMStorageCacheBridge* aCache)
-    { return InsertDBOp(new DBOperation(DBOperation::opClear, aCache)); }
+  virtual nsresult AsyncClear(StorageCacheBridge* aCache)
+  {
+    return InsertDBOp(new DBOperation(DBOperation::opClear, aCache));
+  }
 
   virtual void AsyncClearAll()
-    { InsertDBOp(new DBOperation(DBOperation::opClearAll)); }
+  {
+    InsertDBOp(new DBOperation(DBOperation::opClearAll));
+  }
 
   virtual void AsyncClearMatchingOrigin(const nsACString& aOriginNoSuffix)
-    { InsertDBOp(new DBOperation(DBOperation::opClearMatchingOrigin, aOriginNoSuffix)); }
+  {
+    InsertDBOp(new DBOperation(DBOperation::opClearMatchingOrigin,
+                               aOriginNoSuffix));
+  }
 
   virtual void AsyncClearMatchingOriginAttributes(const OriginAttributesPattern& aPattern)
-    { InsertDBOp(new DBOperation(DBOperation::opClearMatchingOriginAttributes, aPattern)); }
+  {
+    InsertDBOp(new DBOperation(DBOperation::opClearMatchingOriginAttributes,
+                               aPattern));
+  }
 
   virtual void AsyncFlush();
 
@@ -326,6 +378,7 @@ private:
   
   nsresult mStatus;
 
+  
   
   nsTHashtable<nsCStringHashKey> mOriginsHavingData;
 

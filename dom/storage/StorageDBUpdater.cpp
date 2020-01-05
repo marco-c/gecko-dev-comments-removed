@@ -4,7 +4,7 @@
 
 
 
-#include "DOMStorageManager.h"
+#include "StorageManager.h"
 
 #include "mozIStorageBindingParamsArray.h"
 #include "mozIStorageBindingParams.h"
@@ -62,7 +62,8 @@ nsReverseStringSQLFunction::OnFunctionCall(
 class ExtractOriginData : protected mozilla::Tokenizer
 {
 public:
-  ExtractOriginData(const nsACString& scope, nsACString& suffix, nsACString& origin)
+  ExtractOriginData(const nsACString& scope, nsACString& suffix,
+                    nsACString& origin)
     : mozilla::Tokenizer(scope)
   {
     using mozilla::OriginAttributes;
@@ -104,6 +105,7 @@ public:
     
     
 
+    
     
     
     
@@ -197,7 +199,7 @@ GetOriginParticular::OnFunctionCall(
 
 } 
 
-namespace DOMStorageDBUpdater {
+namespace StorageDBUpdater {
 
 nsresult CreateSchema1Tables(mozIStorageConnection *aWorkerConnection)
 {
@@ -264,7 +266,9 @@ nsresult Update(mozIStorageConnection *aWorkerConnection)
                                         &moz_webappsstoreExists);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (!webappsstore2Exists && !webappsstoreExists && !moz_webappsstoreExists) {
+    if (!webappsstore2Exists && !webappsstoreExists &&
+        !moz_webappsstoreExists) {
+      
       
       
 
@@ -297,7 +301,8 @@ nsresult Update(mozIStorageConnection *aWorkerConnection)
     nsCOMPtr<mozIStorageFunction> function1(new nsReverseStringSQLFunction());
     NS_ENSURE_TRUE(function1, NS_ERROR_OUT_OF_MEMORY);
 
-    rv = aWorkerConnection->CreateFunction(NS_LITERAL_CSTRING("REVERSESTRING"), 1, function1);
+    rv = aWorkerConnection->CreateFunction(NS_LITERAL_CSTRING("REVERSESTRING"),
+                                           1, function1);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -353,12 +358,14 @@ nsresult Update(mozIStorageConnection *aWorkerConnection)
 
     nsCOMPtr<mozIStorageFunction> oaSuffixFunc(
       new GetOriginParticular(GetOriginParticular::ORIGIN_ATTRIBUTES_SUFFIX));
-    rv = aWorkerConnection->CreateFunction(NS_LITERAL_CSTRING("GET_ORIGIN_SUFFIX"), 1, oaSuffixFunc);
+    rv = aWorkerConnection->CreateFunction(NS_LITERAL_CSTRING("GET_ORIGIN_SUFFIX"),
+                                           1, oaSuffixFunc);
     NS_ENSURE_SUCCESS(rv, rv);
 
     nsCOMPtr<mozIStorageFunction> originKeyFunc(
       new GetOriginParticular(GetOriginParticular::ORIGIN_KEY));
-    rv = aWorkerConnection->CreateFunction(NS_LITERAL_CSTRING("GET_ORIGIN_KEY"), 1, originKeyFunc);
+    rv = aWorkerConnection->CreateFunction(NS_LITERAL_CSTRING("GET_ORIGIN_KEY"),
+                                           1, originKeyFunc);
     NS_ENSURE_SUCCESS(rv, rv);
 
     

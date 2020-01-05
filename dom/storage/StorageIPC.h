@@ -4,14 +4,14 @@
 
 
 
-#ifndef nsDOMStorageIPC_h___
-#define nsDOMStorageIPC_h___
+#ifndef mozilla_dom_StorageIPC_h
+#define mozilla_dom_StorageIPC_h
 
 #include "mozilla/dom/PStorageChild.h"
 #include "mozilla/dom/PStorageParent.h"
-#include "DOMStorageDBThread.h"
-#include "DOMStorageCache.h"
-#include "DOMStorageObserver.h"
+#include "StorageDBThread.h"
+#include "StorageCache.h"
+#include "StorageObserver.h"
 #include "mozilla/Mutex.h"
 #include "nsAutoPtr.h"
 
@@ -27,13 +27,13 @@ class DOMLocalStorageManager;
 
 
 
-class DOMStorageDBChild final : public DOMStorageDBBridge
-                              , public PStorageChild
+class StorageDBChild final : public StorageDBBridge
+                           , public PStorageChild
 {
-  virtual ~DOMStorageDBChild();
+  virtual ~StorageDBChild();
 
 public:
-  explicit DOMStorageDBChild(DOMLocalStorageManager* aManager);
+  explicit StorageDBChild(DOMLocalStorageManager* aManager);
 
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
   NS_IMETHOD_(MozExternalRefCountType) Release(void);
@@ -44,15 +44,19 @@ public:
   virtual nsresult Init();
   virtual nsresult Shutdown();
 
-  virtual void AsyncPreload(DOMStorageCacheBridge* aCache, bool aPriority = false);
-  virtual void AsyncGetUsage(DOMStorageUsageBridge* aUsage);
+  virtual void AsyncPreload(StorageCacheBridge* aCache, bool aPriority = false);
+  virtual void AsyncGetUsage(StorageUsageBridge* aUsage);
 
-  virtual void SyncPreload(DOMStorageCacheBridge* aCache, bool aForceSync = false);
+  virtual void SyncPreload(StorageCacheBridge* aCache, bool aForceSync = false);
 
-  virtual nsresult AsyncAddItem(DOMStorageCacheBridge* aCache, const nsAString& aKey, const nsAString& aValue);
-  virtual nsresult AsyncUpdateItem(DOMStorageCacheBridge* aCache, const nsAString& aKey, const nsAString& aValue);
-  virtual nsresult AsyncRemoveItem(DOMStorageCacheBridge* aCache, const nsAString& aKey);
-  virtual nsresult AsyncClear(DOMStorageCacheBridge* aCache);
+  virtual nsresult AsyncAddItem(StorageCacheBridge* aCache,
+                                const nsAString& aKey, const nsAString& aValue);
+  virtual nsresult AsyncUpdateItem(StorageCacheBridge* aCache,
+                                   const nsAString& aKey,
+                                   const nsAString& aValue);
+  virtual nsresult AsyncRemoveItem(StorageCacheBridge* aCache,
+                                   const nsAString& aKey);
+  virtual nsresult AsyncClear(StorageCacheBridge* aCache);
 
   virtual void AsyncClearAll()
   {
@@ -103,7 +107,7 @@ private:
 
   
   
-  nsTHashtable<nsRefPtrHashKey<DOMStorageCacheBridge>> mLoadingCaches;
+  nsTHashtable<nsRefPtrHashKey<StorageCacheBridge>> mLoadingCaches;
 
   
   nsresult mStatus;
@@ -117,13 +121,13 @@ private:
 
 
 
-class DOMStorageDBParent final : public PStorageParent
-                               , public DOMStorageObserverSink
+class StorageDBParent final : public PStorageParent
+                            , public StorageObserverSink
 {
-  virtual ~DOMStorageDBParent();
+  virtual ~StorageDBParent();
 
 public:
-  DOMStorageDBParent();
+  StorageDBParent();
 
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
   NS_IMETHOD_(MozExternalRefCountType) Release(void);
@@ -136,9 +140,9 @@ public:
 public:
   
   
-  class CacheParentBridge : public DOMStorageCacheBridge {
+  class CacheParentBridge : public StorageCacheBridge {
   public:
-    CacheParentBridge(DOMStorageDBParent* aParentDB,
+    CacheParentBridge(StorageDBParent* aParentDB,
                       const nsACString& aOriginSuffix,
                       const nsACString& aOriginNoSuffix)
       : mParent(aParentDB)
@@ -162,17 +166,18 @@ public:
     virtual void LoadWait();
 
   private:
-    RefPtr<DOMStorageDBParent> mParent;
+    RefPtr<StorageDBParent> mParent;
     nsCString mOriginSuffix, mOriginNoSuffix;
     bool mLoaded;
     uint32_t mLoadedCount;
   };
 
   
-  class UsageParentBridge : public DOMStorageUsageBridge
+  class UsageParentBridge : public StorageUsageBridge
   {
   public:
-    UsageParentBridge(DOMStorageDBParent* aParentDB, const nsACString& aOriginScope)
+    UsageParentBridge(StorageDBParent* aParentDB,
+                      const nsACString& aOriginScope)
       : mParent(aParentDB), mOriginScope(aOriginScope) {}
     virtual ~UsageParentBridge() {}
 
@@ -181,29 +186,46 @@ public:
     virtual void LoadUsage(const int64_t usage);
 
   private:
-    RefPtr<DOMStorageDBParent> mParent;
+    RefPtr<StorageDBParent> mParent;
     nsCString mOriginScope;
   };
 
 private:
   
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-  mozilla::ipc::IPCResult RecvAsyncPreload(const nsCString& aOriginSuffix, const nsCString& aOriginNoSuffix, const bool& aPriority) override;
-  mozilla::ipc::IPCResult RecvPreload(const nsCString& aOriginSuffix, const nsCString& aOriginNoSuffix, const uint32_t& aAlreadyLoadedCount,
-                                      InfallibleTArray<nsString>* aKeys, InfallibleTArray<nsString>* aValues,
+  mozilla::ipc::IPCResult RecvAsyncPreload(const nsCString& aOriginSuffix,
+                                           const nsCString& aOriginNoSuffix,
+                                           const bool& aPriority) override;
+  mozilla::ipc::IPCResult RecvPreload(const nsCString& aOriginSuffix,
+                                      const nsCString& aOriginNoSuffix,
+                                      const uint32_t& aAlreadyLoadedCount,
+                                      InfallibleTArray<nsString>* aKeys,
+                                      InfallibleTArray<nsString>* aValues,
                                       nsresult* aRv) override;
   mozilla::ipc::IPCResult RecvAsyncGetUsage(const nsCString& aOriginNoSuffix) override;
-  mozilla::ipc::IPCResult RecvAsyncAddItem(const nsCString& aOriginSuffix, const nsCString& aOriginNoSuffix, const nsString& aKey, const nsString& aValue) override;
-  mozilla::ipc::IPCResult RecvAsyncUpdateItem(const nsCString& aOriginSuffix, const nsCString& aOriginNoSuffix, const nsString& aKey, const nsString& aValue) override;
-  mozilla::ipc::IPCResult RecvAsyncRemoveItem(const nsCString& aOriginSuffix, const nsCString& aOriginNoSuffix, const nsString& aKey) override;
-  mozilla::ipc::IPCResult RecvAsyncClear(const nsCString& aOriginSuffix, const nsCString& aOriginNoSuffix) override;
+  mozilla::ipc::IPCResult RecvAsyncAddItem(const nsCString& aOriginSuffix,
+                                           const nsCString& aOriginNoSuffix,
+                                           const nsString& aKey,
+                                           const nsString& aValue) override;
+  mozilla::ipc::IPCResult RecvAsyncUpdateItem(const nsCString& aOriginSuffix,
+                                              const nsCString& aOriginNoSuffix,
+                                              const nsString& aKey,
+                                              const nsString& aValue) override;
+  mozilla::ipc::IPCResult RecvAsyncRemoveItem(const nsCString& aOriginSuffix,
+                                              const nsCString& aOriginNoSuffix,
+                                              const nsString& aKey) override;
+  mozilla::ipc::IPCResult RecvAsyncClear(const nsCString& aOriginSuffix,
+                                         const nsCString& aOriginNoSuffix) override;
   mozilla::ipc::IPCResult RecvAsyncFlush() override;
 
   
-  virtual nsresult Observe(const char* aTopic, const nsAString& aOriginAttrPattern, const nsACString& aOriginScope) override;
+  virtual nsresult Observe(const char* aTopic,
+                           const nsAString& aOriginAttrPattern,
+                           const nsACString& aOriginScope) override;
 
 private:
-  CacheParentBridge* NewCache(const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix);
+  CacheParentBridge* NewCache(const nsACString& aOriginSuffix,
+                              const nsACString& aOriginNoSuffix);
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
@@ -215,4 +237,4 @@ private:
 } 
 } 
 
-#endif
+#endif 

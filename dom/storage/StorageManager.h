@@ -1,0 +1,156 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_StorageManager_h
+#define mozilla_dom_StorageManager_h
+
+#include "nsIDOMStorageManager.h"
+#include "StorageObserver.h"
+
+#include "StorageCache.h"
+#include "mozilla/dom/Storage.h"
+
+#include "nsTHashtable.h"
+#include "nsDataHashtable.h"
+#include "nsClassHashtable.h"
+#include "nsHashKeys.h"
+
+namespace mozilla {
+
+class OriginAttributesPattern;
+
+namespace dom {
+
+const Storage::StorageType SessionStorage = Storage::SessionStorage;
+const Storage::StorageType LocalStorage = Storage::LocalStorage;
+
+class StorageManagerBase : public nsIDOMStorageManager
+                         , public StorageObserverSink
+{
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIDOMSTORAGEMANAGER
+
+public:
+  virtual Storage::StorageType Type() { return mType; }
+
+  
+  static uint32_t GetQuota();
+  
+  StorageCache* GetCache(const nsACString& aOriginSuffix,
+                         const nsACString& aOriginNoSuffix);
+  
+  already_AddRefed<StorageUsage> GetOriginUsage(const nsACString& aOriginNoSuffix);
+
+  static nsCString CreateOrigin(const nsACString& aOriginSuffix,
+                                const nsACString& aOriginNoSuffix);
+
+protected:
+  explicit StorageManagerBase(Storage::StorageType aType);
+  virtual ~StorageManagerBase();
+
+private:
+  
+  virtual nsresult Observe(const char* aTopic,
+                           const nsAString& aOriginAttributesPattern,
+                           const nsACString& aOriginScope) override;
+
+  
+  
+  class StorageCacheHashKey : public nsCStringHashKey
+  {
+  public:
+    explicit StorageCacheHashKey(const nsACString* aKey)
+      : nsCStringHashKey(aKey)
+      , mCache(new StorageCache(aKey))
+    {}
+
+    StorageCacheHashKey(const StorageCacheHashKey& aOther)
+      : nsCStringHashKey(aOther)
+    {
+      NS_ERROR("Shouldn't be called");
+    }
+
+    StorageCache* cache() { return mCache; }
+    
+    void HardRef() { mCacheRef = mCache; }
+
+  private:
+    
+    StorageCache* mCache;
+    
+    RefPtr<StorageCache> mCacheRef;
+  };
+
+  
+  
+  already_AddRefed<StorageCache> PutCache(const nsACString& aOriginSuffix,
+                                          const nsACString& aOriginNoSuffix,
+                                          nsIPrincipal* aPrincipal);
+
+  
+  nsresult GetStorageInternal(bool aCreate,
+                              mozIDOMWindow* aWindow,
+                              nsIPrincipal* aPrincipal,
+                              const nsAString& aDocumentURI,
+                              nsIDOMStorage** aRetval);
+
+  
+  typedef nsTHashtable<StorageCacheHashKey> CacheOriginHashtable;
+  nsClassHashtable<nsCStringHashKey, CacheOriginHashtable> mCaches;
+
+  const Storage::StorageType mType;
+
+  
+  
+  
+  bool mLowDiskSpace;
+  bool IsLowDiskSpace() const { return mLowDiskSpace; };
+
+  void ClearCaches(uint32_t aUnloadFlags,
+                   const OriginAttributesPattern& aPattern,
+                   const nsACString& aKeyPrefix);
+
+protected:
+  
+  nsDataHashtable<nsCStringHashKey, RefPtr<StorageUsage> > mUsages;
+
+  friend class StorageCache;
+  
+  virtual void DropCache(StorageCache* aCache);
+};
+
+
+
+
+
+
+
+class DOMLocalStorageManager final : public StorageManagerBase
+{
+public:
+  DOMLocalStorageManager();
+  virtual ~DOMLocalStorageManager();
+
+  
+  static DOMLocalStorageManager* Self() { return sSelf; }
+
+  
+  static DOMLocalStorageManager* Ensure();
+
+private:
+  static DOMLocalStorageManager* sSelf;
+};
+
+class DOMSessionStorageManager final : public StorageManagerBase
+{
+public:
+  DOMSessionStorageManager();
+};
+
+} 
+} 
+
+#endif 

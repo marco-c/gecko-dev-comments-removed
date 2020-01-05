@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDOMStorageCache_h___
-#define nsDOMStorageCache_h___
+#ifndef mozilla_dom_StorageCache_h
+#define mozilla_dom_StorageCache_h
 
 #include "nsIPrincipal.h"
 #include "nsITimer.h"
@@ -20,14 +20,14 @@
 namespace mozilla {
 namespace dom {
 
-class DOMStorage;
-class DOMStorageUsage;
-class DOMStorageManager;
-class DOMStorageDBBridge;
+class Storage;
+class StorageUsage;
+class StorageManagerBase;
+class StorageDBBridge;
 
 
 
-class DOMStorageCacheBridge
+class StorageCacheBridge
 {
 public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
@@ -63,7 +63,7 @@ public:
   virtual void LoadWait() = 0;
 
 protected:
-  virtual ~DOMStorageCacheBridge() {}
+  virtual ~StorageCacheBridge() {}
 
   ThreadSafeAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
@@ -73,7 +73,7 @@ protected:
 
 
 
-class DOMStorageCache : public DOMStorageCacheBridge
+class StorageCache : public StorageCacheBridge
 {
 public:
   NS_IMETHOD_(void) Release(void);
@@ -81,21 +81,22 @@ public:
   
   
   
-  explicit DOMStorageCache(const nsACString* aOriginNoSuffix);
+  explicit StorageCache(const nsACString* aOriginNoSuffix);
 
 protected:
-  virtual ~DOMStorageCache();
+  virtual ~StorageCache();
 
 public:
-  void Init(DOMStorageManager* aManager, bool aPersistent, nsIPrincipal* aPrincipal,
-            const nsACString& aQuotaOriginScope);
+  void Init(StorageManagerBase* aManager, bool aPersistent,
+            nsIPrincipal* aPrincipal, const nsACString& aQuotaOriginScope);
 
   
-  void CloneFrom(const DOMStorageCache* aThat);
+  void CloneFrom(const StorageCache* aThat);
 
   
   void Preload();
 
+  
   
   void KeepAlive();
 
@@ -103,22 +104,25 @@ public:
   
   
   
-  nsresult GetLength(const DOMStorage* aStorage, uint32_t* aRetval);
-  nsresult GetKey(const DOMStorage* aStorage, uint32_t index, nsAString& aRetval);
-  nsresult GetItem(const DOMStorage* aStorage, const nsAString& aKey, nsAString& aRetval);
-  nsresult SetItem(const DOMStorage* aStorage, const nsAString& aKey, const nsString& aValue, nsString& aOld);
-  nsresult RemoveItem(const DOMStorage* aStorage, const nsAString& aKey, nsString& aOld);
-  nsresult Clear(const DOMStorage* aStorage);
+  nsresult GetLength(const Storage* aStorage, uint32_t* aRetval);
+  nsresult GetKey(const Storage* aStorage, uint32_t index, nsAString& aRetval);
+  nsresult GetItem(const Storage* aStorage, const nsAString& aKey,
+                   nsAString& aRetval);
+  nsresult SetItem(const Storage* aStorage, const nsAString& aKey,
+                   const nsString& aValue, nsString& aOld);
+  nsresult RemoveItem(const Storage* aStorage, const nsAString& aKey,
+                      nsString& aOld);
+  nsresult Clear(const Storage* aStorage);
 
-  void GetKeys(const DOMStorage* aStorage, nsTArray<nsString>& aKeys);
+  void GetKeys(const Storage* aStorage, nsTArray<nsString>& aKeys);
 
   
   bool CheckPrincipal(nsIPrincipal* aPrincipal) const;
   nsIPrincipal* Principal() const { return mPrincipal; }
 
   
-  static DOMStorageDBBridge* StartDatabase();
-  static DOMStorageDBBridge* GetDatabase();
+  static StorageDBBridge* StartDatabase();
+  static StorageDBBridge* GetDatabase();
 
   
   static nsresult StopDatabase();
@@ -152,7 +156,7 @@ public:
 private:
   
   
-  friend class DOMStorageManager;
+  friend class StorageManagerBase;
 
   static const uint32_t kUnloadDefault = 1 << 0;
   static const uint32_t kUnloadPrivate = 1 << 1;
@@ -171,26 +175,26 @@ private:
   void WaitForPreload(mozilla::Telemetry::ID aTelemetryID);
 
   
-  Data& DataSet(const DOMStorage* aStorage);
+  Data& DataSet(const Storage* aStorage);
 
   
-  bool Persist(const DOMStorage* aStorage) const;
+  bool Persist(const Storage* aStorage) const;
 
   
   
   bool ProcessUsageDelta(uint32_t aGetDataSetIndex, const int64_t aDelta);
-  bool ProcessUsageDelta(const DOMStorage* aStorage, const int64_t aDelta);
+  bool ProcessUsageDelta(const Storage* aStorage, const int64_t aDelta);
 
 private:
   
   
   
   
-  RefPtr<DOMStorageManager> mManager;
+  RefPtr<StorageManagerBase> mManager;
 
   
   
-  RefPtr<DOMStorageUsage> mUsage;
+  RefPtr<StorageUsage> mUsage;
 
   
   nsCOMPtr<nsITimer> mKeepAliveTimer;
@@ -242,11 +246,12 @@ private:
   bool mSessionOnlyDataSetActive : 1;
 
   
+  
   bool mPreloadTelemetryRecorded : 1;
 
   
   
-  static DOMStorageDBBridge* sDatabase;
+  static StorageDBBridge* sDatabase;
 
   
   static bool sDatabaseDown;
@@ -254,23 +259,23 @@ private:
 
 
 
-class DOMStorageUsageBridge
+class StorageUsageBridge
 {
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DOMStorageUsageBridge)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(StorageUsageBridge)
 
   virtual const nsCString& OriginScope() = 0;
   virtual void LoadUsage(const int64_t aUsage) = 0;
 
 protected:
   
-  virtual ~DOMStorageUsageBridge() {}
+  virtual ~StorageUsageBridge() {}
 };
 
-class DOMStorageUsage : public DOMStorageUsageBridge
+class StorageUsage : public StorageUsageBridge
 {
 public:
-  explicit DOMStorageUsage(const nsACString& aOriginScope);
+  explicit StorageUsage(const nsACString& aOriginScope);
 
   bool CheckAndSetETLD1UsageDelta(uint32_t aDataSetIndex, int64_t aUsageDelta);
 
@@ -279,10 +284,10 @@ private:
   virtual void LoadUsage(const int64_t aUsage);
 
   nsCString mOriginScope;
-  int64_t mUsage[DOMStorageCache::kDataSetCount];
+  int64_t mUsage[StorageCache::kDataSetCount];
 };
 
 } 
 } 
 
-#endif
+#endif 

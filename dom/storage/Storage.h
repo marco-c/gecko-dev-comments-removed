@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsDOMStorage_h___
-#define nsDOMStorage_h___
+#ifndef mozilla_dom_Storage_h
+#define mozilla_dom_Storage_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
@@ -22,17 +22,17 @@ class nsPIDOMWindowInner;
 namespace mozilla {
 namespace dom {
 
-class DOMStorageManager;
-class DOMStorageCache;
+class StorageManagerBase;
+class StorageCache;
 
-class DOMStorage final
+class Storage final
   : public nsIDOMStorage
   , public nsSupportsWeakReference
   , public nsWrapperCache
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(DOMStorage,
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(Storage,
                                                          nsIDOMStorage)
 
   enum StorageType {
@@ -42,12 +42,12 @@ public:
 
   StorageType GetType() const;
 
-  DOMStorageManager* GetManager() const
+  StorageManagerBase* GetManager() const
   {
     return mManager;
   }
 
-  DOMStorageCache const* GetCache() const
+  StorageCache const* GetCache() const
   {
     return mCache;
   }
@@ -56,14 +56,15 @@ public:
   bool PrincipalEquals(nsIPrincipal* aPrincipal);
   bool CanAccess(nsIPrincipal* aPrincipal);
 
-  DOMStorage(nsPIDOMWindowInner* aWindow,
-             DOMStorageManager* aManager,
-             DOMStorageCache* aCache,
-             const nsAString& aDocumentURI,
-             nsIPrincipal* aPrincipal);
+  Storage(nsPIDOMWindowInner* aWindow,
+          StorageManagerBase* aManager,
+          StorageCache* aCache,
+          const nsAString& aDocumentURI,
+          nsIPrincipal* aPrincipal);
 
   
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   nsPIDOMWindowInner* GetParentObject() const
   {
@@ -121,7 +122,7 @@ public:
   bool IsPrivate() const;
   bool IsSessionOnly() const { return mIsSessionOnly; }
 
-  bool IsForkOf(const DOMStorage* aOther) const
+  bool IsForkOf(const Storage* aOther) const
   {
     MOZ_ASSERT(aOther);
     return mCache == aOther->mCache;
@@ -138,14 +139,14 @@ protected:
   bool CanUseStorage(nsIPrincipal& aSubjectPrincipal);
 
 private:
-  ~DOMStorage();
+  ~Storage();
 
-  friend class DOMStorageManager;
-  friend class DOMStorageCache;
+  friend class StorageManagerBase;
+  friend class StorageCache;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  RefPtr<DOMStorageManager> mManager;
-  RefPtr<DOMStorageCache> mCache;
+  RefPtr<StorageManagerBase> mManager;
+  RefPtr<StorageCache> mCache;
   nsString mDocumentURI;
 
   

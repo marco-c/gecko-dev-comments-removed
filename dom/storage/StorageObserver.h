@@ -4,8 +4,8 @@
 
 
 
-#ifndef nsIDOMStorageObserver_h__
-#define nsIDOMStorageObserver_h__
+#ifndef mozilla_dom_StorageObserver_h
+#define mozilla_dom_StorageObserver_h
 
 #include "nsIObserver.h"
 #include "nsITimer.h"
@@ -16,17 +16,17 @@
 namespace mozilla {
 namespace dom {
 
-class DOMStorageObserver;
+class StorageObserver;
 
 
 
-class DOMStorageObserverSink
+class StorageObserverSink
 {
 public:
-  virtual ~DOMStorageObserverSink() {}
+  virtual ~StorageObserverSink() {}
 
 private:
-  friend class DOMStorageObserver;
+  friend class StorageObserver;
   virtual nsresult Observe(const char* aTopic,
                            const nsAString& aOriginAttributesPattern,
                            const nsACString& aOriginScope) = 0;
@@ -34,8 +34,8 @@ private:
 
 
 
-class DOMStorageObserver : public nsIObserver
-                         , public nsSupportsWeakReference
+class StorageObserver : public nsIObserver
+                      , public nsSupportsWeakReference
 {
 public:
   NS_DECL_ISUPPORTS
@@ -43,27 +43,27 @@ public:
 
   static nsresult Init();
   static nsresult Shutdown();
-  static DOMStorageObserver* Self() { return sSelf; }
+  static StorageObserver* Self() { return sSelf; }
 
-  void AddSink(DOMStorageObserverSink* aObs);
-  void RemoveSink(DOMStorageObserverSink* aObs);
+  void AddSink(StorageObserverSink* aObs);
+  void RemoveSink(StorageObserverSink* aObs);
   void Notify(const char* aTopic,
               const nsAString& aOriginAttributesPattern = EmptyString(),
               const nsACString& aOriginScope = EmptyCString());
 
 private:
-  virtual ~DOMStorageObserver() {}
+  virtual ~StorageObserver() {}
 
   static void TestingPrefChanged(const char* aPrefName, void* aClosure);
 
-  static DOMStorageObserver* sSelf;
+  static StorageObserver* sSelf;
 
   
-  nsTArray<DOMStorageObserverSink*> mSinks;
+  nsTArray<StorageObserverSink*> mSinks;
   nsCOMPtr<nsITimer> mDBThreadStartDelayTimer;
 };
 
 } 
 } 
 
-#endif
+#endif 
