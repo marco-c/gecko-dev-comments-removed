@@ -241,7 +241,19 @@ public:
   
   virtual void CleanupResources() {}
 
-  virtual void BindTextureSource() {}
+  
+  
+  
+  virtual TextureSource* BindTextureSource()
+  {
+    MOZ_RELEASE_ASSERT(true, "No implementation for BindTextureSource()");
+
+    return nullptr;
+  }
+  virtual void UnbindTextureSource()
+  {
+    MOZ_RELEASE_ASSERT(true, "No implementation for UnindTextureSource()");
+  }
 
 protected:
   TextureInfo mTextureInfo;
