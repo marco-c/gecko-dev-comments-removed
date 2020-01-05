@@ -166,18 +166,6 @@ public:
   
   virtual RefPtr<SeekPromise> Seek(SeekTarget aTarget, int64_t aEndTime) = 0;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void SetIdle() {}
-
   virtual void SetCDMProxy(CDMProxy* aProxy) {}
 
   
