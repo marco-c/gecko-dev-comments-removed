@@ -257,10 +257,28 @@ DecommitPages(void* addr, size_t bytes)
 }
 #else 
 static void*
+ComputeRandomAllocationAddress()
+{
+    
+    
+    
+
+    uint64_t rand = js::GenerateRandomSeed();
+# ifdef HAVE_64BIT_BUILD
+    rand >>= 18;
+# endif
+    uintptr_t mask = ~uintptr_t(gc::SystemPageSize() - 1);
+    return (void*) uintptr_t(rand & mask);
+}
+
+static void*
 ReserveProcessExecutableMemory(size_t bytes)
 {
-    void* p = MozTaggedAnonymousMmap(nullptr, bytes, PROT_NONE, MAP_PRIVATE | MAP_ANON, -1, 0,
-                                     "js-executable-memory");
+    
+    
+    void* randomAddr = ComputeRandomAllocationAddress();
+    void* p = MozTaggedAnonymousMmap(randomAddr, bytes, PROT_NONE, MAP_PRIVATE | MAP_ANON,
+                                     -1, 0, "js-executable-memory");
     if (p == MAP_FAILED)
         return nullptr;
     return p;
