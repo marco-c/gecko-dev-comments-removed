@@ -2804,9 +2804,6 @@ pref("dom.max_script_run_time", 10);
 pref("dom.global_stop_script", true);
 
 
-pref("dom.archivereader.enabled", false);
-
-
 pref("dom.idle_period.throttled_length", 10000);
 
 

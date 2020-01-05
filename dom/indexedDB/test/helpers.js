@@ -4,8 +4,6 @@
 
 
 var testGenerator = testSteps();
-var archiveReaderEnabled = false;
-
 
 
 
@@ -75,7 +73,6 @@ function* testHarnessSteps() {
       "set": [
         ["dom.indexedDB.testing", true],
         ["dom.indexedDB.experimental", true],
-        ["dom.archivereader.enabled", true]
       ]
     },
     nextTestHarnessStep
