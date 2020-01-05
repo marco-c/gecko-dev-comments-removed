@@ -1837,7 +1837,9 @@ ParsePattern(frontend::TokenStream& ts, LifoAlloc& alloc, const CharT* chars, si
              bool multiline, bool match_only, bool unicode, bool ignore_case,
              bool global, bool sticky, RegExpCompileData* data)
 {
-    if (match_only) {
+    
+    
+    if (match_only && !global && !sticky) {
         
         
         
@@ -1851,11 +1853,7 @@ ParsePattern(frontend::TokenStream& ts, LifoAlloc& alloc, const CharT* chars, si
         
         
         
-        
-        
-        
         if (length >= 3 && !HasRegExpMetaChars(chars, length - 2) &&
-            !global && !sticky &&
             chars[length - 2] == '.' && chars[length - 1] == '*')
         {
             length -= 2;
