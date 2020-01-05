@@ -525,6 +525,12 @@ gint moz_gtk_splitter_get_metrics(gint orientation, gint* size);
 
 
 
+
+GtkWidget* moz_gtk_get_scrollbar_widget(void);
+
+
+
+
 gint
 moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
 
