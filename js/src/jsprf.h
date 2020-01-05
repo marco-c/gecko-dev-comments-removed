@@ -25,8 +25,6 @@
 
 
 
-
-
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/SizePrintfMacros.h"
 
@@ -39,8 +37,7 @@
 
 
 
-extern JS_PUBLIC_API(char*) JS_smprintf(const char* fmt, ...)
-    MOZ_FORMAT_PRINTF(1, 2);
+extern JS_PUBLIC_API(char*) JS_smprintf(const char* fmt, ...);
 
 
 
@@ -54,8 +51,7 @@ extern JS_PUBLIC_API(void) JS_smprintf_free(char* mem);
 
 
 
-extern JS_PUBLIC_API(char*) JS_sprintf_append(char* last, const char* fmt, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+extern JS_PUBLIC_API(char*) JS_sprintf_append(char* last, const char* fmt, ...);
 
 
 

@@ -5199,16 +5199,13 @@ const uint16_t MaxNumErrorArguments = 10;
 
 
 extern JS_PUBLIC_API(void)
-JS_ReportErrorASCII(JSContext* cx, const char* format, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+JS_ReportErrorASCII(JSContext* cx, const char* format, ...);
 
 extern JS_PUBLIC_API(void)
-JS_ReportErrorLatin1(JSContext* cx, const char* format, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+JS_ReportErrorLatin1(JSContext* cx, const char* format, ...);
 
 extern JS_PUBLIC_API(void)
-JS_ReportErrorUTF8(JSContext* cx, const char* format, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+JS_ReportErrorUTF8(JSContext* cx, const char* format, ...);
 
 
 
@@ -5260,16 +5257,13 @@ JS_ReportErrorNumberUCArray(JSContext* cx, JSErrorCallback errorCallback,
 
 
 extern JS_PUBLIC_API(bool)
-JS_ReportWarningASCII(JSContext* cx, const char* format, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+JS_ReportWarningASCII(JSContext* cx, const char* format, ...);
 
 extern JS_PUBLIC_API(bool)
-JS_ReportWarningLatin1(JSContext* cx, const char* format, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+JS_ReportWarningLatin1(JSContext* cx, const char* format, ...);
 
 extern JS_PUBLIC_API(bool)
-JS_ReportWarningUTF8(JSContext* cx, const char* format, ...)
-    MOZ_FORMAT_PRINTF(2, 3);
+JS_ReportWarningUTF8(JSContext* cx, const char* format, ...);
 
 extern JS_PUBLIC_API(bool)
 JS_ReportErrorFlagsAndNumberASCII(JSContext* cx, unsigned flags,
