@@ -181,78 +181,6 @@ typedef struct AVPixFmtDescriptor {
 
 
 
-
-
-
-
-
-
-
-void av_read_image_line(uint16_t *dst, const uint8_t *data[4],
-                        const int linesize[4], const AVPixFmtDescriptor *desc,
-                        int x, int y, int c, int w, int read_pal_component);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void av_write_image_line(const uint16_t *src, uint8_t *data[4],
-                         const int linesize[4], const AVPixFmtDescriptor *desc,
-                         int x, int y, int c, int w);
-
-
-
-
-
-
-
-
-
-
-
-
-enum AVPixelFormat av_get_pix_fmt(const char *name);
-
-
-
-
-
-
-
-const char *av_get_pix_fmt_name(enum AVPixelFormat pix_fmt);
-
-
-
-
-
-
-
-
-
-
-
-char *av_get_pix_fmt_string(char *buf, int buf_size,
-                            enum AVPixelFormat pix_fmt);
-
-
-
-
-
-
-
-
-
-
 int av_get_bits_per_pixel(const AVPixFmtDescriptor *pixdesc);
 
 
@@ -305,6 +233,103 @@ int av_pix_fmt_get_chroma_sub_sample(enum AVPixelFormat pix_fmt,
 
 
 int av_pix_fmt_count_planes(enum AVPixelFormat pix_fmt);
+
+
+
+
+const char *av_color_range_name(enum AVColorRange range);
+
+
+
+
+const char *av_color_primaries_name(enum AVColorPrimaries primaries);
+
+
+
+
+const char *av_color_transfer_name(enum AVColorTransferCharacteristic transfer);
+
+
+
+
+const char *av_color_space_name(enum AVColorSpace space);
+
+
+
+
+const char *av_chroma_location_name(enum AVChromaLocation location);
+
+
+
+
+
+
+
+
+
+
+
+
+enum AVPixelFormat av_get_pix_fmt(const char *name);
+
+
+
+
+
+
+
+const char *av_get_pix_fmt_name(enum AVPixelFormat pix_fmt);
+
+
+
+
+
+
+
+
+
+
+
+char *av_get_pix_fmt_string(char *buf, int buf_size,
+                            enum AVPixelFormat pix_fmt);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av_read_image_line(uint16_t *dst, const uint8_t *data[4],
+                        const int linesize[4], const AVPixFmtDescriptor *desc,
+                        int x, int y, int c, int w, int read_pal_component);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av_write_image_line(const uint16_t *src, uint8_t *data[4],
+                         const int linesize[4], const AVPixFmtDescriptor *desc,
+                         int x, int y, int c, int w);
 
 
 
@@ -365,30 +390,5 @@ int av_get_pix_fmt_loss(enum AVPixelFormat dst_pix_fmt,
 
 enum AVPixelFormat av_find_best_pix_fmt_of_2(enum AVPixelFormat dst_pix_fmt1, enum AVPixelFormat dst_pix_fmt2,
                                              enum AVPixelFormat src_pix_fmt, int has_alpha, int *loss_ptr);
-
-
-
-
-const char *av_color_range_name(enum AVColorRange range);
-
-
-
-
-const char *av_color_primaries_name(enum AVColorPrimaries primaries);
-
-
-
-
-const char *av_color_transfer_name(enum AVColorTransferCharacteristic transfer);
-
-
-
-
-const char *av_color_space_name(enum AVColorSpace space);
-
-
-
-
-const char *av_chroma_location_name(enum AVChromaLocation location);
 
 #endif 

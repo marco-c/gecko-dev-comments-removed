@@ -77,7 +77,7 @@ enum AVPixelFormat {
 #if FF_API_XVMC
     AV_PIX_FMT_XVMC_MPEG2_MC,
     AV_PIX_FMT_XVMC_MPEG2_IDCT,
-#define AV_PIX_FMT_XVMC AV_PIX_FMT_XVMC_MPEG2_IDCT
+    AV_PIX_FMT_XVMC = AV_PIX_FMT_XVMC_MPEG2_IDCT,
 #endif 
     AV_PIX_FMT_UYVY422,   
     AV_PIX_FMT_UYYVYY411, 
@@ -178,6 +178,7 @@ enum AVPixelFormat {
     AV_PIX_FMT_YUV422P9LE, 
     AV_PIX_FMT_VDA_VLD,    
     AV_PIX_FMT_GBRP,      
+    AV_PIX_FMT_GBR24P = AV_PIX_FMT_GBRP, 
     AV_PIX_FMT_GBRP9BE,   
     AV_PIX_FMT_GBRP9LE,   
     AV_PIX_FMT_GBRP10BE,  
@@ -303,11 +304,10 @@ enum AVPixelFormat {
     AV_PIX_FMT_GBRAP10BE,  
     AV_PIX_FMT_GBRAP10LE,  
 
-    AV_PIX_FMT_NB,        
-};
+    AV_PIX_FMT_MEDIACODEC, 
 
-#define AV_PIX_FMT_Y400A AV_PIX_FMT_GRAY8A
-#define AV_PIX_FMT_GBR24P AV_PIX_FMT_GBRP
+    AV_PIX_FMT_NB         
+};
 
 #if AV_HAVE_BIGENDIAN
 #   define AV_PIX_FMT_NE(be, le) AV_PIX_FMT_##be
@@ -398,8 +398,10 @@ enum AVColorPrimaries {
     AVCOL_PRI_SMPTE240M   = 7,  
     AVCOL_PRI_FILM        = 8,  
     AVCOL_PRI_BT2020      = 9,  
-    AVCOL_PRI_SMPTEST428_1= 10, 
-    AVCOL_PRI_NB,               
+    AVCOL_PRI_SMPTEST428_1 = 10, 
+    AVCOL_PRI_SMPTE431    = 11, 
+    AVCOL_PRI_SMPTE432    = 12, 
+    AVCOL_PRI_NB                
 };
 
 
@@ -425,7 +427,7 @@ enum AVColorTransferCharacteristic {
     AVCOL_TRC_SMPTEST2084  = 16, 
     AVCOL_TRC_SMPTEST428_1 = 17, 
     AVCOL_TRC_ARIB_STD_B67 = 18, 
-    AVCOL_TRC_NB,                
+    AVCOL_TRC_NB                 
 };
 
 
@@ -443,7 +445,8 @@ enum AVColorSpace {
     AVCOL_SPC_YCOCG       = 8,  
     AVCOL_SPC_BT2020_NCL  = 9,  
     AVCOL_SPC_BT2020_CL   = 10, 
-    AVCOL_SPC_NB,               
+    AVCOL_SPC_SMPTE2085   = 11, 
+    AVCOL_SPC_NB                
 };
 #define AVCOL_SPC_YCGCO AVCOL_SPC_YCOCG
 
@@ -455,7 +458,7 @@ enum AVColorRange {
     AVCOL_RANGE_UNSPECIFIED = 0,
     AVCOL_RANGE_MPEG        = 1, 
     AVCOL_RANGE_JPEG        = 2, 
-    AVCOL_RANGE_NB,              
+    AVCOL_RANGE_NB               
 };
 
 
@@ -481,7 +484,7 @@ enum AVChromaLocation {
     AVCHROMA_LOC_TOP         = 4,
     AVCHROMA_LOC_BOTTOMLEFT  = 5,
     AVCHROMA_LOC_BOTTOM      = 6,
-    AVCHROMA_LOC_NB,              
+    AVCHROMA_LOC_NB               
 };
 
 #endif 

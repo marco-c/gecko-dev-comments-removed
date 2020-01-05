@@ -23,6 +23,7 @@
 
 
 
+
 #ifndef AVUTIL_MEM_H
 #define AVUTIL_MEM_H
 
@@ -32,6 +33,53 @@
 #include "attributes.h"
 #include "error.h"
 #include "avutil.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -60,11 +108,46 @@
     #define DECLARE_ASM_CONST(n,t,v)    static const t v
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if AV_GCC_VERSION_AT_LEAST(3,1)
     #define av_malloc_attrib __attribute__((__malloc__))
 #else
     #define av_malloc_attrib
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #if AV_GCC_VERSION_AT_LEAST(4,3)
     #define av_alloc_size(...) __attribute__((alloc_size(__VA_ARGS__)))
@@ -80,7 +163,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void *av_malloc(size_t size) av_malloc_attrib av_alloc_size(1);
+
+
+
+
+
+
+
+
+
+
+void *av_mallocz(size_t size) av_malloc_attrib av_alloc_size(1);
+
+
+
 
 
 
@@ -110,6 +223,35 @@ av_alloc_size(1, 2) static inline void *av_malloc_array(size_t nmemb, size_t siz
 
 
 
+av_alloc_size(1, 2) static inline void *av_mallocz_array(size_t nmemb, size_t size)
+{
+    if (!size || nmemb >= INT_MAX / size)
+        return NULL;
+    return av_mallocz(nmemb * size);
+}
+
+
+
+
+
+
+void *av_calloc(size_t nmemb, size_t size) av_malloc_attrib;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -118,14 +260,6 @@ av_alloc_size(1, 2) static inline void *av_malloc_array(size_t nmemb, size_t siz
 void *av_realloc(void *ptr, size_t size) av_alloc_size(2);
 
 
-
-
-
-
-
-
-
-void *av_realloc_f(void *ptr, size_t nelem, size_t elsize);
 
 
 
@@ -146,6 +280,24 @@ void *av_realloc_f(void *ptr, size_t nelem, size_t elsize);
 
 av_warn_unused_result
 int av_reallocp(void *ptr, size_t size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void *av_realloc_f(void *ptr, size_t nelem, size_t elsize);
+
 
 
 
@@ -193,6 +345,94 @@ av_alloc_size(2, 3) int av_reallocp_array(void *ptr, size_t nmemb, size_t size);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void *av_fast_realloc(void *ptr, unsigned int *size, size_t min_size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av_fast_malloc(void *ptr, unsigned int *size, size_t min_size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av_fast_mallocz(void *ptr, unsigned int *size, size_t min_size);
+
+
+
+
+
+
+
+
+
+
+
+
 void av_free(void *ptr);
 
 
@@ -203,7 +443,6 @@ void av_free(void *ptr);
 
 
 
-void *av_mallocz(size_t size) av_malloc_attrib av_alloc_size(1);
 
 
 
@@ -215,23 +454,11 @@ void *av_mallocz(size_t size) av_malloc_attrib av_alloc_size(1);
 
 
 
-void *av_calloc(size_t nmemb, size_t size) av_malloc_attrib;
 
 
+void av_freep(void *ptr);
 
 
-
-
-
-
-
-
-av_alloc_size(1, 2) static inline void *av_mallocz_array(size_t nmemb, size_t size)
-{
-    if (!size || nmemb >= INT_MAX / size)
-        return NULL;
-    return av_mallocz(nmemb * size);
-}
 
 
 
@@ -249,7 +476,10 @@ char *av_strdup(const char *s) av_malloc_attrib;
 
 
 
+
 char *av_strndup(const char *s, size_t len) av_malloc_attrib;
+
+
 
 
 
@@ -267,7 +497,89 @@ void *av_memdup(const void *p, size_t size);
 
 
 
-void av_freep(void *ptr);
+
+
+
+void av_memcpy_backptr(uint8_t *dst, int back, int cnt);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -291,9 +603,6 @@ void av_freep(void *ptr);
 
 
 void av_dynarray_add(void *tab_ptr, int *nb_ptr, void *elem);
-
-
-
 
 
 
@@ -329,8 +638,25 @@ int av_dynarray_add_nofree(void *tab_ptr, int *nb_ptr, void *elem);
 
 
 
+
+
 void *av_dynarray2_add(void **tab_ptr, int *nb_ptr, size_t elem_size,
                        const uint8_t *elem_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -350,54 +676,18 @@ static inline int av_size_mult(size_t a, size_t b, size_t *r)
 
 
 
+
+
+
+
+
+
+
+
+
+
 void av_max_alloc(size_t max);
 
-
-
-
-
-
-
-
-
-
-void av_memcpy_backptr(uint8_t *dst, int back, int cnt);
-
-
-
-
-
-
-void *av_fast_realloc(void *ptr, unsigned int *size, size_t min_size);
-
-
-
-
-
-
-
-
-
-
-
-
-
-void av_fast_malloc(void *ptr, unsigned int *size, size_t min_size);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void av_fast_mallocz(void *ptr, unsigned int *size, size_t min_size);
 
 
 

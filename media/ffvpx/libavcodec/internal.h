@@ -173,6 +173,7 @@ typedef struct AVCodecInternal {
     int buffer_pkt_valid; 
     AVFrame *buffer_frame;
     int draining_done;
+    int showed_multi_packet_warning;
 } AVCodecInternal;
 
 struct AVCodecDefault {

@@ -18,6 +18,12 @@
 
 
 
+
+
+
+
+
+
 #ifndef AVUTIL_CRC_H
 #define AVUTIL_CRC_H
 
@@ -25,6 +31,12 @@
 #include <stddef.h>
 #include "attributes.h"
 #include "version.h"
+
+
+
+
+
+
 
 
 

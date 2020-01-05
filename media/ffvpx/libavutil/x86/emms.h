@@ -32,6 +32,8 @@ void avpriv_emms_yasm(void);
 
 
 
+
+
 static av_always_inline void emms_c(void)
 {
 

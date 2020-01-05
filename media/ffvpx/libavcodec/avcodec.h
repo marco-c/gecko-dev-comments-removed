@@ -186,6 +186,8 @@
 
 
 
+
+
 enum AVCodecID {
     AV_CODEC_ID_NONE,
 
@@ -443,9 +445,9 @@ enum AVCodecID {
     AV_CODEC_ID_PCM_S24LE_PLANAR,
     AV_CODEC_ID_PCM_S32LE_PLANAR,
     AV_CODEC_ID_PCM_S16BE_PLANAR,
-    
 
-
+    AV_CODEC_ID_PCM_S64LE = 0x10800,
+    AV_CODEC_ID_PCM_S64BE,
 
     
     AV_CODEC_ID_ADPCM_IMA_QT = 0x11000,
@@ -629,6 +631,7 @@ enum AVCodecID {
     AV_CODEC_ID_FIRST_UNKNOWN = 0x18000,           
     AV_CODEC_ID_TTF = 0x18000,
 
+    AV_CODEC_ID_SCTE_35, 
     AV_CODEC_ID_BINTEXT    = 0x18800,
     AV_CODEC_ID_XBIN,
     AV_CODEC_ID_IDF,
@@ -1036,6 +1039,16 @@ typedef struct RcOverride{
 
 
 
+
+
+
+
+
+
+#define AV_CODEC_CAP_AVOID_PROBING       (1 << 17)
+
+
+
 #define AV_CODEC_CAP_INTRA_ONLY       0x40000000
 
 
@@ -1348,6 +1361,14 @@ typedef struct AVCPBProperties {
 
 enum AVPacketSideDataType {
     AV_PKT_DATA_PALETTE,
+
+    
+
+
+
+
+
+
     AV_PKT_DATA_NEW_EXTRADATA,
 
     
@@ -1611,6 +1632,12 @@ typedef struct AVPacket {
 } AVPacket;
 #define AV_PKT_FLAG_KEY     0x0001 ///< The packet contains a keyframe
 #define AV_PKT_FLAG_CORRUPT 0x0002 ///< The packet content is corrupted
+
+
+
+
+
+#define AV_PKT_FLAG_DISCARD   0x0004
 
 enum AVSideDataParamChangeFlags {
     AV_SIDE_DATA_PARAM_CHANGE_CHANNEL_COUNT  = 0x0001,
@@ -2083,22 +2110,23 @@ typedef struct AVCodecContext {
 
 
     int ildct_cmp;
-#define FF_CMP_SAD    0
-#define FF_CMP_SSE    1
-#define FF_CMP_SATD   2
-#define FF_CMP_DCT    3
-#define FF_CMP_PSNR   4
-#define FF_CMP_BIT    5
-#define FF_CMP_RD     6
-#define FF_CMP_ZERO   7
-#define FF_CMP_VSAD   8
-#define FF_CMP_VSSE   9
-#define FF_CMP_NSSE   10
-#define FF_CMP_W53    11
-#define FF_CMP_W97    12
-#define FF_CMP_DCTMAX 13
-#define FF_CMP_DCT264 14
-#define FF_CMP_CHROMA 256
+#define FF_CMP_SAD          0
+#define FF_CMP_SSE          1
+#define FF_CMP_SATD         2
+#define FF_CMP_DCT          3
+#define FF_CMP_PSNR         4
+#define FF_CMP_BIT          5
+#define FF_CMP_RD           6
+#define FF_CMP_ZERO         7
+#define FF_CMP_VSAD         8
+#define FF_CMP_VSSE         9
+#define FF_CMP_NSSE         10
+#define FF_CMP_W53          11
+#define FF_CMP_W97          12
+#define FF_CMP_DCTMAX       13
+#define FF_CMP_DCT264       14
+#define FF_CMP_MEDIAN_SAD   15
+#define FF_CMP_CHROMA       256
 
     
 
@@ -2850,6 +2878,7 @@ typedef struct AVCodecContext {
 #define FF_BUG_DC_CLIP          4096
 #define FF_BUG_MS               8192 ///< Work around various bugs in Microsoft's broken decoders.
 #define FF_BUG_TRUNCATED       16384
+#define FF_BUG_IEDGE           32768
 
     
 
@@ -3165,6 +3194,13 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_MPEG2_AAC_LOW 128
 #define FF_PROFILE_MPEG2_AAC_HE  131
 
+#define FF_PROFILE_DNXHD         0
+#define FF_PROFILE_DNXHR_LB      1
+#define FF_PROFILE_DNXHR_SQ      2
+#define FF_PROFILE_DNXHR_HQ      3
+#define FF_PROFILE_DNXHR_HQX     4
+#define FF_PROFILE_DNXHR_444     5
+
 #define FF_PROFILE_DTS         20
 #define FF_PROFILE_DTS_ES      30
 #define FF_PROFILE_DTS_96_24   40
@@ -3189,8 +3225,10 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_H264_HIGH                 100
 #define FF_PROFILE_H264_HIGH_10              110
 #define FF_PROFILE_H264_HIGH_10_INTRA        (110|FF_PROFILE_H264_INTRA)
+#define FF_PROFILE_H264_MULTIVIEW_HIGH       118
 #define FF_PROFILE_H264_HIGH_422             122
 #define FF_PROFILE_H264_HIGH_422_INTRA       (122|FF_PROFILE_H264_INTRA)
+#define FF_PROFILE_H264_STEREO_HIGH          128
 #define FF_PROFILE_H264_HIGH_444             144
 #define FF_PROFILE_H264_HIGH_444_PREDICTIVE  244
 #define FF_PROFILE_H264_HIGH_444_INTRA       (244|FF_PROFILE_H264_INTRA)
@@ -3492,6 +3530,16 @@ typedef struct AVCodecContext {
 
 
 
+
+
+
+
+
+
+
+
+
+
     AVBufferRef *hw_frames_ctx;
 
     
@@ -3504,6 +3552,17 @@ typedef struct AVCodecContext {
 #if FF_API_ASS_TIMING
 #define FF_SUB_TEXT_FMT_ASS_WITH_TIMINGS 1
 #endif
+
+    
+
+
+
+
+
+
+
+
+    int trailing_padding;
 
 } AVCodecContext;
 
@@ -5135,6 +5194,9 @@ AVCodecParserContext *av_parser_init(int codec_id);
 
 
 
+
+
+
 int av_parser_parse2(AVCodecParserContext *s,
                      AVCodecContext *avctx,
                      uint8_t **poutbuf, int *poutbuf_size,
@@ -5505,15 +5567,8 @@ enum AVPixelFormat avcodec_find_best_pix_fmt_of_2(enum AVPixelFormat dst_pix_fmt
                                             enum AVPixelFormat src_pix_fmt, int has_alpha, int *loss_ptr);
 
 attribute_deprecated
-#if AV_HAVE_INCOMPATIBLE_LIBAV_ABI
-enum AVPixelFormat avcodec_find_best_pix_fmt2(const enum AVPixelFormat *pix_fmt_list,
-                                              enum AVPixelFormat src_pix_fmt,
-                                              int has_alpha, int *loss_ptr);
-#else
 enum AVPixelFormat avcodec_find_best_pix_fmt2(enum AVPixelFormat dst_pix_fmt1, enum AVPixelFormat dst_pix_fmt2,
                                             enum AVPixelFormat src_pix_fmt, int has_alpha, int *loss_ptr);
-#endif
-
 
 enum AVPixelFormat avcodec_default_get_format(struct AVCodecContext *s, const enum AVPixelFormat * fmt);
 
@@ -5889,6 +5944,7 @@ int av_bsf_init(AVBSFContext *ctx);
 
 
 
+
 int av_bsf_send_packet(AVBSFContext *ctx, AVPacket *pkt);
 
 
@@ -5930,6 +5986,91 @@ void av_bsf_free(AVBSFContext **ctx);
 
 
 const AVClass *av_bsf_get_class(void);
+
+
+
+
+
+typedef struct AVBSFList AVBSFList;
+
+
+
+
+
+
+
+
+AVBSFList *av_bsf_list_alloc(void);
+
+
+
+
+
+
+void av_bsf_list_free(AVBSFList **lst);
+
+
+
+
+
+
+
+
+
+int av_bsf_list_append(AVBSFList *lst, AVBSFContext *bsf);
+
+
+
+
+
+
+
+
+
+
+
+int av_bsf_list_append2(AVBSFList *lst, const char * bsf_name, AVDictionary **options);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_bsf_list_finalize(AVBSFList **lst, AVBSFContext **bsf);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_bsf_list_parse_str(const char *str, AVBSFContext **bsf);
+
+
+
+
+
+
+
+
+int av_bsf_get_null_filter(AVBSFContext **bsf);
 
 
 

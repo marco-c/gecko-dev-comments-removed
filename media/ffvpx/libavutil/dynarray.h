@@ -42,7 +42,7 @@
 
 
 
-#define AV_DYNARRAY_ADD(av_size_max, av_elt_size, av_array, av_size, \
+#define FF_DYNARRAY_ADD(av_size_max, av_elt_size, av_array, av_size, \
                         av_success, av_failure) \
     do { \
         size_t av_size_new = (av_size); \

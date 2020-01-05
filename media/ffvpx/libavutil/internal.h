@@ -330,6 +330,16 @@ static av_always_inline av_const int avpriv_mirror(int x, int w)
 
 void ff_check_pixfmt_descriptors(void);
 
+
+
+
+
+
+
+
+
+int avpriv_dict_set_timestamp(AVDictionary **dict, const char *key, int64_t timestamp);
+
 extern const uint8_t ff_reverse[256];
 
 #endif 

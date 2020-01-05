@@ -18,10 +18,31 @@
 
 
 
+
+
+
+
+
+
 #ifndef AVUTIL_VERSION_H
 #define AVUTIL_VERSION_H
 
 #include "macros.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -57,14 +78,8 @@
 
 
 
-
-
-
-
-
-
 #define LIBAVUTIL_VERSION_MAJOR  55
-#define LIBAVUTIL_VERSION_MINOR  28
+#define LIBAVUTIL_VERSION_MINOR  34
 #define LIBAVUTIL_VERSION_MICRO 100
 
 #define LIBAVUTIL_VERSION_INT   AV_VERSION_INT(LIBAVUTIL_VERSION_MAJOR, \
@@ -76,8 +91,6 @@
 #define LIBAVUTIL_BUILD         LIBAVUTIL_VERSION_INT
 
 #define LIBAVUTIL_IDENT         "Lavu" AV_STRINGIFY(LIBAVUTIL_VERSION)
-
-
 
 
 
@@ -119,6 +132,10 @@
 #ifndef FF_API_CRC_BIG_TABLE
 #define FF_API_CRC_BIG_TABLE            (LIBAVUTIL_VERSION_MAJOR < 56)
 #endif
+#ifndef FF_API_PKT_PTS
+#define FF_API_PKT_PTS                  (LIBAVUTIL_VERSION_MAJOR < 56)
+#endif
+
 
 
 

@@ -41,9 +41,9 @@
 
 #define cpuid(index, eax, ebx, ecx, edx)                        \
     __asm__ volatile (                                          \
-        "mov    %%"REG_b", %%"REG_S" \n\t"                      \
+        "mov    %%"FF_REG_b", %%"FF_REG_S" \n\t"                \
         "cpuid                       \n\t"                      \
-        "xchg   %%"REG_b", %%"REG_S                             \
+        "xchg   %%"FF_REG_b", %%"FF_REG_S                       \
         : "=a" (eax), "=S" (ebx), "=c" (ecx), "=d" (edx)        \
         : "0" (index), "2"(0))
 

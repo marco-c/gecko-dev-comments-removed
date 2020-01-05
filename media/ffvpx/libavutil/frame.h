@@ -267,10 +267,14 @@ typedef struct AVFrame {
 
     int64_t pts;
 
+#if FF_API_PKT_PTS
     
 
 
+
+    attribute_deprecated
     int64_t pkt_pts;
+#endif
 
     
 
@@ -393,7 +397,12 @@ typedef struct AVFrame {
 
 
 
+
 #define AV_FRAME_FLAG_CORRUPT       (1 << 0)
+
+
+
+#define AV_FRAME_FLAG_DISCARD   (1 << 2)
 
 
 
