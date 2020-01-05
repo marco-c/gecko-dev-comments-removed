@@ -64,7 +64,7 @@ use dom::window::{Window, WindowHelpers, ReflowReason};
 use layout_interface::{HitTestResponse, MouseOverResponse};
 use msg::compositor_msg::ScriptListener;
 use msg::constellation_msg::Msg as ConstellationMsg;
-use msg::constellation_msg::{ConstellationChan, Key, KeyState, KeyModifiers, MozBrowserEvent};
+use msg::constellation_msg::{ConstellationChan, FocusType, Key, KeyState, KeyModifiers, MozBrowserEvent};
 use msg::constellation_msg::{SUPER, ALT, SHIFT, CONTROL};
 use net_traits::CookieSource::NonHTTP;
 use net_traits::ControlMsg::{SetCookiesForUrl, GetCookiesForUrl};
@@ -216,7 +216,7 @@ pub trait DocumentHelpers<'a> {
     fn is_scripting_enabled(self) -> bool;
     fn begin_focus_transaction(self);
     fn request_focus(self, elem: JSRef<Element>);
-    fn commit_focus_transaction(self);
+    fn commit_focus_transaction(self, focus_type: FocusType);
     fn title_changed(self);
     fn send_title_to_compositor(self);
     fn dirty_all_nodes(self);
@@ -460,7 +460,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
 
     
     
-    fn commit_focus_transaction(self) {
+    fn commit_focus_transaction(self, focus_type: FocusType) {
         
 
         if let Some(ref elem) = self.focused.get().root() {
@@ -473,9 +473,16 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         if let Some(ref elem) = self.focused.get().root() {
             let node: JSRef<Node> = NodeCast::from_ref(elem.r());
             node.set_focus_state(true);
+
+            
+            
+            if focus_type == FocusType::Element {
+                let window = self.window.root();
+                let ConstellationChan(ref chan) = window.r().constellation_chan();
+                let event = ConstellationMsg::FocusMsg(window.r().pipeline());
+                chan.send(event).unwrap();
+            }
         }
-        
-        
     }
 
     
@@ -555,7 +562,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         
         el.r().authentic_click_activation(event);
 
-        self.commit_focus_transaction();
+        self.commit_focus_transaction(FocusType::Element);
         window.r().reflow(ReflowGoal::ForDisplay, ReflowQueryType::NoQuery, ReflowReason::MouseEvent);
     }
 

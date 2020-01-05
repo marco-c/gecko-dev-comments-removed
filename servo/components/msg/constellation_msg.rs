@@ -195,6 +195,13 @@ bitflags! {
 }
 
 
+#[derive(Copy, PartialEq)]
+pub enum FocusType {
+    Element,    
+    Parent,     
+}
+
+
 pub enum Msg {
     Exit,
     Failure(Failure),
@@ -219,7 +226,9 @@ pub enum Msg {
     
     TickAnimation(PipelineId),
     
-    GetRootPipeline(Sender<Option<PipelineId>>)
+    GetRootPipeline(Sender<Option<PipelineId>>),
+    
+    FocusMsg(PipelineId),
 }
 
 
