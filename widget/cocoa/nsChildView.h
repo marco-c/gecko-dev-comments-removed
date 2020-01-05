@@ -105,6 +105,8 @@ class WidgetRenderingContext;
 - (void)setTransparent:(BOOL)transparent; 
                                           
 
+
+- (void)viewDidChangeBackingProperties;
 @end
 
 @interface ChildView : NSView<
