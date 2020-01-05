@@ -49,9 +49,6 @@ private:
                                              const nsRect& aRefBox);
 
 
-  nsRect ComputeHTMLReferenceRect();
-  nsRect ComputeSVGReferenceRect();
-
   
 
 
