@@ -157,14 +157,6 @@ public:
 
   virtual void CancelAnimation(const ScrollableLayerGuid &aGuid) = 0;
 
-  
-
-
-
-
-
-  virtual void AdjustScrollForSurfaceShift(const ScreenPoint& aShift) = 0;
-
   virtual void SetDPI(float aDpiValue) = 0;
 
   
