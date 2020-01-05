@@ -56,7 +56,7 @@
 #endif
 
 
-#if defined(GP_arm_android)
+#if defined(GP_PLAT_arm_android)
 # define USE_EHABI_STACKWALK
 # include "EHABIStackWalk.h"
 #endif
@@ -782,9 +782,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   const mcontext_t* mcontext =
     &reinterpret_cast<ucontext_t*>(aSample->context)->uc_mcontext;
   mcontext_t savedContext;
-  NotNull<PseudoStack*> pseudoStack = aInfo.Stack();
-
-  nativeStack.count = 0;
+  NotNull<PseudoStack*> pseudoStack = aSample->threadInfo->Stack();
 
   
   
@@ -828,12 +826,12 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   nativeStack.count += EHABIStackWalk(*mcontext,
-                                      aInfo.StackTop(),
+                                      aSample->threadInfo->StackTop(),
                                       sp_array + nativeStack.count,
                                       pc_array + nativeStack.count,
                                       nativeStack.size - nativeStack.count);
 
-  MergeStacksIntoProfile(aInfo, aSample, nativeStack);
+  MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 }
 #endif
 
