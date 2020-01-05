@@ -167,6 +167,8 @@ static GdkWindow *get_inner_gdk_window (GdkWindow *aWindow,
                                         gint x, gint y,
                                         gint *retx, gint *rety);
 
+static inline bool is_context_menu_key(const WidgetKeyboardEvent& inKeyEvent);
+
 static int    is_parent_ungrab_enter(GdkEventCrossing *aEvent);
 static int    is_parent_grab_leave(GdkEventCrossing *aEvent);
 
@@ -3063,83 +3065,41 @@ nsWindow::OnKeyPressEvent(GdkEventKey *aEvent)
 
     
     
-    if (MaybeDispatchContextMenuEvent(aEvent)) {
-        return TRUE;
-    }
+    if (is_context_menu_key(keypressEvent)) {
+        WidgetMouseEvent contextMenuEvent(true, eContextMenu, this,
+                                          WidgetMouseEvent::eReal,
+                                          WidgetMouseEvent::eContextMenuKey);
 
-    RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
-    nsresult rv = dispatcher->BeginNativeInputTransaction();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return TRUE;
-    }
-
-    
-    
-    
-    
-    
-    nsEventStatus status = nsEventStatus_eIgnore;
-    if (keypressEvent.mKeyNameIndex != KEY_NAME_INDEX_USE_STRING ||
-        keypressEvent.mKeyValue.Length() == 1) {
-        dispatcher->MaybeDispatchKeypressEvents(keypressEvent,
-                                                status, aEvent);
+        contextMenuEvent.mRefPoint = LayoutDeviceIntPoint(0, 0);
+        contextMenuEvent.AssignEventTime(GetWidgetEventTime(aEvent->time));
+        contextMenuEvent.mClickCount = 1;
+        KeymapWrapper::InitInputEvent(contextMenuEvent, aEvent->state);
+        DispatchInputEvent(&contextMenuEvent);
     } else {
-        WidgetEventTime eventTime = GetWidgetEventTime(aEvent->time);
-        dispatcher->CommitComposition(status, &keypressEvent.mKeyValue,
-                                      &eventTime);
+        RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+        nsresult rv = dispatcher->BeginNativeInputTransaction();
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+            return TRUE;
+        }
+
+        
+        
+        
+        
+        
+        nsEventStatus status = nsEventStatus_eIgnore;
+        if (keypressEvent.mKeyNameIndex != KEY_NAME_INDEX_USE_STRING ||
+            keypressEvent.mKeyValue.Length() == 1) {
+            dispatcher->MaybeDispatchKeypressEvents(keypressEvent,
+                                                    status, aEvent);
+        } else {
+            WidgetEventTime eventTime = GetWidgetEventTime(aEvent->time);
+            dispatcher->CommitComposition(status, &keypressEvent.mKeyValue,
+                                          &eventTime);
+        }
     }
 
     return TRUE;
-}
-
-bool
-nsWindow::MaybeDispatchContextMenuEvent(const GdkEventKey* aEvent)
-{
-    KeyNameIndex keyNameIndex = KeymapWrapper::ComputeDOMKeyNameIndex(aEvent);
-
-    
-    if (keyNameIndex != KEY_NAME_INDEX_F10 &&
-        keyNameIndex != KEY_NAME_INDEX_ContextMenu) {
-      return false;
-    }
-
-    WidgetMouseEvent contextMenuEvent(true, eContextMenu, this,
-                                      WidgetMouseEvent::eReal,
-                                      WidgetMouseEvent::eContextMenuKey);
-
-    contextMenuEvent.mRefPoint = LayoutDeviceIntPoint(0, 0);
-    contextMenuEvent.AssignEventTime(GetWidgetEventTime(aEvent->time));
-    contextMenuEvent.mClickCount = 1;
-    KeymapWrapper::InitInputEvent(contextMenuEvent, aEvent->state);
-
-    if (contextMenuEvent.IsControl() || contextMenuEvent.IsMeta() ||
-        contextMenuEvent.IsAlt()) {
-        return false;
-    }
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    if (keyNameIndex == KEY_NAME_INDEX_F10) {
-        if (!contextMenuEvent.IsShift()) {
-            return false;
-        }
-        contextMenuEvent.mModifiers &= ~MODIFIER_SHIFT;
-    }
-
-    DispatchInputEvent(&contextMenuEvent);
-    return true;
 }
 
 gboolean
@@ -3377,9 +3337,7 @@ nsWindow::DispatchDragEvent(EventMessage aMsg, const LayoutDeviceIntPoint& aRefP
 {
     WidgetDragEvent event(true, aMsg, this);
 
-    if (aMsg == eDragOver) {
-        InitDragEvent(event);
-    }
+    InitDragEvent(event);
 
     event.mRefPoint = aRefPoint;
     event.AssignEventTime(GetWidgetEventTime(aTime));
@@ -6019,6 +5977,17 @@ get_inner_gdk_window (GdkWindow *aWindow,
     *retx = x;
     *rety = y;
     return aWindow;
+}
+
+static inline bool
+is_context_menu_key(const WidgetKeyboardEvent& aKeyEvent)
+{
+    return ((aKeyEvent.mKeyCode == NS_VK_F10 && aKeyEvent.IsShift() &&
+             !aKeyEvent.IsControl() && !aKeyEvent.IsMeta() &&
+             !aKeyEvent.IsAlt()) ||
+            (aKeyEvent.mKeyCode == NS_VK_CONTEXT_MENU && !aKeyEvent.IsShift() &&
+             !aKeyEvent.IsControl() && !aKeyEvent.IsMeta() &&
+             !aKeyEvent.IsAlt()));
 }
 
 static int

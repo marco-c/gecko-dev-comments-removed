@@ -38,6 +38,7 @@
 #include "nsRect.h"
 #include "nsMathUtils.h"
 #include "WinUtils.h"
+#include "KeyboardLayout.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Tools.h"
@@ -369,7 +370,8 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
   
   SetDragEndPoint(LayoutDeviceIntPoint(NSToIntRound(cssPos.x),
                                        NSToIntRound(cssPos.y)));
-  EndDragSession(true);
+  ModifierKeyState modifierKeyState;
+  EndDragSession(true, modifierKeyState.GetModifiers());
 
   mDoingDrag = false;
 
@@ -625,7 +627,7 @@ nsDragService::IsCollectionObject(IDataObject* inDataObj)
 
 
 NS_IMETHODIMP
-nsDragService::EndDragSession(bool aDoneDrag)
+nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
 {
   
   
@@ -634,7 +636,7 @@ nsDragService::EndDragSession(bool aDoneDrag)
     ::ReleaseCapture();
   }
 
-  nsBaseDragService::EndDragSession(aDoneDrag);
+  nsBaseDragService::EndDragSession(aDoneDrag, aKeyModifiers);
   NS_IF_RELEASE(mDataObject);
 
   return NS_OK;

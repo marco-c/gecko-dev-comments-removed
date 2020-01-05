@@ -39,7 +39,7 @@ public:
     
 
 
-    static KeyNameIndex ComputeDOMKeyNameIndex(const GdkEventKey* aGdkKeyEvent);
+    KeyNameIndex ComputeDOMKeyNameIndex(const GdkEventKey* aGdkKeyEvent);
 
     
 
@@ -105,6 +105,18 @@ public:
 
     static bool AreModifiersActive(Modifiers aModifiers,
                                    guint aModifierState);
+
+    
+
+
+
+    static uint32_t ComputeCurrentKeyModifiers();
+
+    
+
+
+
+    static uint32_t ComputeKeyModifiers(guint aModifierState);
 
     
 

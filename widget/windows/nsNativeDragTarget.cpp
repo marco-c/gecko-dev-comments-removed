@@ -351,7 +351,8 @@ nsNativeDragTarget::DragOver(DWORD   grfKeyState,
     GetDropTargetHelper()->DragOver(&pt, *pdwEffect);
   }
 
-  mDragService->FireDragEventAtSource(eDrag);
+  ModifierKeyState modifierKeyState;
+  mDragService->FireDragEventAtSource(eDrag, modifierKeyState.GetModifiers());
   
   ProcessDrag(eDragOver, grfKeyState, ptl, pdwEffect);
 
@@ -387,7 +388,8 @@ nsNativeDragTarget::DragLeave()
       
       
       
-      mDragService->EndDragSession(false);
+      ModifierKeyState modifierKeyState;
+      mDragService->EndDragSession(false, modifierKeyState.GetModifiers());
     }
   }
 
@@ -410,7 +412,8 @@ nsNativeDragTarget::DragCancel()
       GetDropTargetHelper()->DragLeave();
     }
     if (mDragService) {
-      mDragService->EndDragSession(false);
+      ModifierKeyState modifierKeyState;
+      mDragService->EndDragSession(false, modifierKeyState.GetModifiers());
     }
     this->Release(); 
     mTookOwnRef = false;
@@ -471,7 +474,8 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData,
   cpos.x = GET_X_LPARAM(pos);
   cpos.y = GET_Y_LPARAM(pos);
   winDragService->SetDragEndPoint(nsIntPoint(cpos.x, cpos.y));
-  serv->EndDragSession(true);
+  ModifierKeyState modifierKeyState;
+  serv->EndDragSession(true, modifierKeyState.GetModifiers());
 
   
   NS_ASSERTION(mTookOwnRef, "want to release own ref, but not taken!");
