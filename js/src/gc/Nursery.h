@@ -455,6 +455,7 @@ class Nursery
     void minimizeAllocableSpace();
 
     
+    void maybeClearProfileDurations();
     void startProfile(ProfileKey key);
     void endProfile(ProfileKey key);
     void maybeStartProfile(ProfileKey key);
