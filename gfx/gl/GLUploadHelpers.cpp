@@ -161,30 +161,52 @@ TexSubImage2DWithoutUnpackSubimage(GLContext* gl,
     
     
     
-    unsigned char* newPixels = new unsigned char[width*height*pixelsize];
-    unsigned char* rowDest = newPixels;
-    const unsigned char* rowSource = (const unsigned char*)pixels;
-    for (int h = 0; h < height; h++) {
+    unsigned char* newPixels = new (fallible) unsigned char[width*height*pixelsize];
+
+    if (newPixels) {
+        unsigned char* rowDest = newPixels;
+        const unsigned char* rowSource = (const unsigned char*)pixels;
+        for (int h = 0; h < height; h++) {
             memcpy(rowDest, rowSource, width*pixelsize);
             rowDest += width*pixelsize;
             rowSource += stride;
-    }
+        }
 
-    stride = width*pixelsize;
-    gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT,
-                     std::min(GetAddressAlignment((ptrdiff_t)newPixels),
-                              GetAddressAlignment((ptrdiff_t)stride)));
-    gl->fTexSubImage2D(target,
-                       level,
-                       xoffset,
-                       yoffset,
-                       width,
-                       height,
-                       format,
-                       type,
-                       newPixels);
-    delete [] newPixels;
-    gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT, 4);
+        stride = width*pixelsize;
+        gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT,
+                         std::min(GetAddressAlignment((ptrdiff_t)newPixels),
+                                  GetAddressAlignment((ptrdiff_t)stride)));
+        gl->fTexSubImage2D(target,
+                           level,
+                           xoffset,
+                           yoffset,
+                           width,
+                           height,
+                           format,
+                           type,
+                           newPixels);
+        delete [] newPixels;
+        gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT, 4);
+
+    } else {
+        
+        
+        const unsigned char* rowSource = (const unsigned char*)pixels;
+
+        gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT,
+                         std::min(GetAddressAlignment((ptrdiff_t)pixels),
+                                  GetAddressAlignment((ptrdiff_t)stride)));
+
+        for (int i = 0; i < height; i++) {
+            gl->fTexSubImage2D(target, level,
+                               xoffset, yoffset + i,
+                               width, 1,
+                               format, type, rowSource);
+            rowSource += stride;
+        }
+
+        gl->fPixelStorei(LOCAL_GL_UNPACK_ALIGNMENT, 4);
+    }
 }
 
 static void
