@@ -7947,10 +7947,8 @@ nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   } else if (url && NS_SUCCEEDED(aStatus)) {
     
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-    if (loadInfo) {
-      mozilla::net::PredictorLearnRedirect(url, aChannel,
-                                           loadInfo->GetOriginAttributes());
-    }
+    mozilla::net::PredictorLearnRedirect(url, aChannel,
+                                         loadInfo->GetOriginAttributes());
   }
 
   return NS_OK;
@@ -12607,7 +12605,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
   MOZ_ASSERT(triggeringPrincipal,
              "need a valid triggeringPrincipal to load from history");
   if (!triggeringPrincipal) {
-    return NS_ERROR_FAILURE;
+    triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
   }
 
   
