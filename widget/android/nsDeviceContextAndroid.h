@@ -2,6 +2,9 @@
 
 
 
+#ifndef nsDeviceContextAndroid_h__
+#define nsDeviceContextAndroid_h__
+
 #include "nsIDeviceContextSpec.h"
 #include "nsCOMPtr.h"
 
@@ -30,3 +33,4 @@ private:
     nsCOMPtr<nsIPrintSettings> mPrintSettings;
     nsCOMPtr<nsIFile> mTempFile;
 };
+#endif 
