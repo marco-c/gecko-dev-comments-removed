@@ -4,16 +4,20 @@
 
 use fetch::cors_cache::{BasicCORSCache, CORSCache, CacheRequestDetails};
 use fetch::response::ResponseMethods;
+use http_loader::{NetworkHttpRequestFactory, WrappedHttpResponse};
+use http_loader::{create_http_connector, obtain_response};
+use hyper::client::response::Response as HyperResponse;
 use hyper::header::{Accept, IfMatch, IfRange, IfUnmodifiedSince, Location};
 use hyper::header::{AcceptLanguage, ContentLength, ContentLanguage, HeaderView};
-use hyper::header::{Authorization, Basic};
+use hyper::header::{Authorization, Basic, ContentEncoding, Encoding};
 use hyper::header::{ContentType, Header, Headers, IfModifiedSince, IfNoneMatch};
 use hyper::header::{QualityItem, q, qitem, Referer as RefererHeader, UserAgent};
 use hyper::method::Method;
 use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use hyper::status::StatusCode;
-use net_traits::{AsyncFetchListener, CacheState, Response};
-use net_traits::{ResponseType, Metadata};
+use net_traits::{AsyncFetchListener, CacheState, HttpsState, Response};
+use net_traits::{ResponseType, Metadata, TerminationReason};
+use resource_task::CancellationListener;
 use std::ascii::AsciiExt;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -121,7 +125,7 @@ pub struct Request {
     pub use_url_credentials: bool,
     pub cache_mode: CacheMode,
     pub redirect_mode: RedirectMode,
-    pub redirect_count: usize,
+    pub redirect_count: u32,
     pub response_tainting: ResponseTainting
 }
 
@@ -543,7 +547,6 @@ fn http_fetch(request: Rc<RefCell<Request>>,
 fn http_network_or_cache_fetch(request: Rc<RefCell<Request>>,
                                credentials_flag: bool,
                                authentication_fetch_flag: bool) -> Response {
-    
 
     
     let request_has_no_window = true;
@@ -728,7 +731,90 @@ fn http_network_fetch(request: Rc<RefCell<Request>>,
                       http_request: Rc<RefCell<Request>>,
                       credentials_flag: bool) -> Response {
     
-    Response::network_error()
+
+    
+    
+
+    
+    
+    let connection = create_http_connector();
+
+    
+    
+
+    
+    let factory = NetworkHttpRequestFactory {
+        connector: connection,
+    };
+    let req = request.borrow();
+    let url = req.current_url();
+    let cancellation_listener = CancellationListener::new(None);
+
+    let wrapped_response = obtain_response(&factory, &url, &req.method, &mut request.borrow_mut().headers,
+                                           &cancellation_listener, &None, &req.method,
+                                           &None, req.redirect_count, &None, "");
+
+    let mut response = Response::new();
+    match wrapped_response {
+        Ok(res) => {
+            
+            response.url = Some(res.response.url.clone());
+            response.status = Some(res.response.status);
+            response.headers = res.response.headers.clone();
+        },
+        Err(e) =>
+            response.termination_reason = Some(TerminationReason::Fatal)
+    };
+
+        
+        
+
+        
+
+    
+    
+    response.https_state = HttpsState::None;
+
+    
+
+    
+    
+    
+    
+    if let Some(encoding) = response.headers.get::<ContentEncoding>() {
+        if encoding.contains(&Encoding::Gzip) {
+
+        }
+
+        else if encoding.contains(&Encoding::Compress) {
+
+        }
+    };
+
+    
+    response.url_list = request.borrow().url_list.clone();
+
+    
+
+    
+
+    
+        
+        
+        
+        
+
+    
+        
+        
+            
+            
+            
+            
+        
+
+    
+    response
 }
 
 
