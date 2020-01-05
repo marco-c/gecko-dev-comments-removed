@@ -39,7 +39,6 @@
 #include "nsINavHistoryService.h"
 #include "nsToolkitCompsCID.h"
 #include "nsIObserverService.h"
-#include "nsPrintfCString.h"
 
 static nsPermissionManager *gPermissionManager = nullptr;
 
@@ -597,24 +596,6 @@ nsPermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return nullptr;
   }
-
-#ifdef DEBUG
-  
-  
-  
-  if (XRE_IsContentProcess()) {
-    nsAutoCString permissionKey;
-    GetKeyForPrincipal(aPrincipal, permissionKey);
-
-    
-    
-    
-    
-    NS_ASSERTION(gPermissionManager->mAvailablePermissionKeys.Contains(permissionKey),
-                 nsPrintfCString("This content process hasn't received the "
-                                 "permissions for %s yet", permissionKey.get()).get());
-  }
-#endif
 
   return new PermissionKey(origin);
 }
