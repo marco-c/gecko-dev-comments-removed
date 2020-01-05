@@ -1152,10 +1152,16 @@ nsresult CacheEntry::OpenInputStreamInternal(int64_t offset, const char *aAltDat
   if (aAltDataType) {
     rv = mFile->OpenAlternativeInputStream(selfHandle, aAltDataType,
                                            getter_AddRefs(stream));
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      return rv;
+    }
   } else {
     rv = mFile->OpenInputStream(selfHandle, getter_AddRefs(stream));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
-  NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsISeekableStream> seekable =
     do_QueryInterface(stream, &rv);
