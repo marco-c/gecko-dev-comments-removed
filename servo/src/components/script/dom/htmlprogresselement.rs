@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLProgressElementBinding;
 use dom::bindings::utils::{ErrorResult, Fallible};
+use dom::document::AbstractDocument;
+use dom::element::HTMLProgressElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLProgressElement {
     htmlelement: HTMLElement,
+}
+
+impl HTMLProgressElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLProgressElement {
+        HTMLProgressElement {
+            htmlelement: HTMLElement::new(HTMLProgressElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLProgressElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLProgressElementBinding::Wrap)
+    }
 }
 
 impl HTMLProgressElement {

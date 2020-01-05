@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLVideoElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLVideoElementTypeId;
 use dom::htmlmediaelement::HTMLMediaElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLVideoElement {
     htmlmediaelement: HTMLMediaElement
+}
+
+impl HTMLVideoElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLVideoElement {
+        HTMLVideoElement {
+            htmlmediaelement: HTMLMediaElement::new_inherited(HTMLVideoElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLVideoElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLVideoElementBinding::Wrap)
+    }
 }
 
 impl HTMLVideoElement {

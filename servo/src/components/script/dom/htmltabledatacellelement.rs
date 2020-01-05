@@ -2,8 +2,25 @@
 
 
 
+use dom::bindings::codegen::HTMLTableDataCellElementBinding;
+use dom::document::AbstractDocument;
+use dom::element::HTMLTableDataCellElementTypeId;
 use dom::htmltablecellelement::HTMLTableCellElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLTableDataCellElement {
     htmltablecellelement: HTMLTableCellElement,
+}
+
+impl HTMLTableDataCellElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLTableDataCellElement {
+        HTMLTableDataCellElement {
+            htmltablecellelement: HTMLTableCellElement::new_inherited(HTMLTableDataCellElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLTableDataCellElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLTableDataCellElementBinding::Wrap)
+    }
 }

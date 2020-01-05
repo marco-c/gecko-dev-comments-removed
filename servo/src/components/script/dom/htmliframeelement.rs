@@ -2,10 +2,12 @@
 
 
 
+use dom::bindings::codegen::HTMLIFrameElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult, null_str_as_empty};
 use dom::document::AbstractDocument;
+use dom::element::HTMLIframeElementTypeId;
 use dom::htmlelement::HTMLElement;
-use dom::node::{AbstractNode, ScriptView};
+use dom::node::{AbstractNode, Node, ScriptView};
 use dom::windowproxy::WindowProxy;
 use geom::size::Size2D;
 use geom::rect::Rect;
@@ -55,6 +57,22 @@ impl IFrameSize {
 impl HTMLIFrameElement {
     pub fn is_sandboxed(&self) -> bool {
         self.sandbox.is_some()
+    }
+}
+
+impl HTMLIFrameElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLIFrameElement {
+        HTMLIFrameElement {
+            htmlelement: HTMLElement::new(HTMLIframeElementTypeId, localName, document),
+            frame: None,
+            size: None,
+            sandbox: None,
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLIFrameElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLIFrameElementBinding::Wrap)
     }
 }
 

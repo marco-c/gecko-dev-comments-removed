@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLPreElementBinding;
 use dom::bindings::utils::{ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLPreElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLPreElement {
     htmlelement: HTMLElement,
+}
+
+impl HTMLPreElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLPreElement {
+        HTMLPreElement {
+            htmlelement: HTMLElement::new(HTMLPreElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLPreElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLPreElementBinding::Wrap)
+    }
 }
 
 impl HTMLPreElement {

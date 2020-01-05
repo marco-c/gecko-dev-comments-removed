@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLTableRowElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLTableRowElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLTableRowElement {
     htmlelement: HTMLElement,
+}
+
+impl HTMLTableRowElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLTableRowElement {
+        HTMLTableRowElement {
+            htmlelement: HTMLElement::new(HTMLTableRowElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLTableRowElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLTableRowElementBinding::Wrap)
+    }
 }
 
 impl HTMLTableRowElement {

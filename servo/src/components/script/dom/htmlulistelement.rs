@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLUListElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLUListElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLUListElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLUListElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLUListElement {
+        HTMLUListElement {
+            htmlelement: HTMLElement::new(HTMLUListElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLUListElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLUListElementBinding::Wrap)
+    }
 }
 
 impl HTMLUListElement {

@@ -2,9 +2,12 @@
 
 
 
+use dom::bindings::codegen::HTMLImageElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult, null_str_as_empty};
+use dom::document::AbstractDocument;
+use dom::element::HTMLImageElementTypeId;
 use dom::htmlelement::HTMLElement;
-use dom::node::{ScriptView, AbstractNode};
+use dom::node::{AbstractNode, Node, ScriptView};
 use extra::url::Url;
 use servo_util::geometry::to_px;
 use layout_interface::{ContentBoxQuery, ContentBoxResponse};
@@ -19,8 +22,22 @@ pub struct HTMLImageElement {
 }
 
 impl HTMLImageElement {
-    
-    
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLImageElement {
+        HTMLImageElement {
+            htmlelement: HTMLElement::new(HTMLImageElementTypeId, localName, document),
+            image: None,
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLImageElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLImageElementBinding::Wrap)
+    }
+}
+
+impl HTMLImageElement {
+    /// Makes the local `image` member match the status of the `src` attribute and starts
+    /// prefetching the image. This method must be called after `src` is changed.
     pub fn update_image(&mut self, image_cache: ImageCacheTask, url: Option<Url>) {
         let elem = &mut self.htmlelement.element;
         let src_opt = elem.get_attr("src").map(|x| x.to_str());
@@ -30,11 +47,11 @@ impl HTMLImageElement {
                 let img_url = make_url(src, url);
                 self.image = Some(img_url.clone());
 
-                
-                
-                
-                
-                
+                // inform the image cache to load this, but don't store a
+                // handle.
+                //
+                // TODO (Issue #84): don't prefetch if we are within a
+                // <noscript> tag.
                 image_cache.send(image_cache_task::Prefetch(img_url));
             }
         }

@@ -2,13 +2,29 @@
 
 
 
+use dom::bindings::codegen::HTMLSelectElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLSelectElementTypeId;
 use dom::htmlelement::HTMLElement;
-use dom::node::{AbstractNode, ScriptView};
+use dom::node::{AbstractNode, Node, ScriptView};
 use dom::validitystate::ValidityState;
 
 pub struct HTMLSelectElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLSelectElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLSelectElement {
+        HTMLSelectElement {
+            htmlelement: HTMLElement::new(HTMLSelectElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLSelectElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLSelectElementBinding::Wrap)
+    }
 }
 
 impl HTMLSelectElement {
