@@ -612,7 +612,7 @@ public:
 
 
   void Destroy() { DestroyFrom(this); }
- 
+
   
 
   enum FrameSearchResult {
@@ -692,7 +692,7 @@ public:
 
   nsStyleContext* StyleContext() const { return mStyleContext; }
   void SetStyleContext(nsStyleContext* aContext)
-  { 
+  {
     if (aContext != mStyleContext) {
       nsStyleContext* oldStyleContext = mStyleContext;
       mStyleContext = aContext;
@@ -788,14 +788,9 @@ public:
   
 
 
-
-
-
-
-
-
-
-  mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
+  virtual mozilla::WritingMode GetWritingMode() const {
+    return mozilla::WritingMode(StyleContext());
+  }
 
   
 
@@ -1004,7 +999,7 @@ public:
 
   virtual nsPoint GetPositionOfChildIgnoringScrolling(nsIFrame* aChild)
   { return aChild->GetPosition(); }
-  
+
   nsPoint GetPositionIgnoringScrolling();
 
   typedef AutoTArray<nsIContent*, 2> ContentArray;
@@ -1528,7 +1523,7 @@ public:
 
   virtual nscolor GetCaretColorAt(int32_t aOffset);
 
- 
+
   bool IsThemed(nsITheme::Transparency* aTransparencyState = nullptr) const {
     return IsThemed(StyleDisplay(), aTransparencyState);
   }
@@ -1548,7 +1543,7 @@ public:
     }
     return true;
   }
-  
+
   
 
 
@@ -1785,7 +1780,7 @@ public:
   virtual nsresult  GetCharacterRectsInRange(int32_t aInOffset,
                                              int32_t aLength,
                                              nsTArray<nsRect>& aRects) = 0;
-  
+
   
 
 
@@ -1818,7 +1813,7 @@ public:
   {
     return (mState & aBits) == aBits;
   }
-  
+
   
 
 
@@ -2668,7 +2663,7 @@ public:
 
 
   virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0);
-  
+
   
 
 
@@ -2693,7 +2688,7 @@ public:
 
 
 
-  static void* LayerIsPrerenderedDataKey() { 
+  static void* LayerIsPrerenderedDataKey() {
     return &sLayerIsPrerenderedDataKey;
   }
   static uint8_t sLayerIsPrerenderedDataKey;
@@ -2718,7 +2713,7 @@ public:
 
 
   bool IsInvalid(nsRect& aRect);
- 
+
   
 
 
@@ -3074,7 +3069,7 @@ public:
   
 
 
-  
+
   virtual bool IsVisibleInSelection(nsISelection* aSelection);
 
   
@@ -3125,7 +3120,7 @@ public:
 
 
 
-   
+
   bool IsPseudoFrame(const nsIContent* aParentContent) {
     return mContent == aParentContent;
   }
@@ -3214,7 +3209,7 @@ public:
 
 
 
-    
+
   virtual nsSize GetXULMaxSize(nsBoxLayoutState& aBoxLayoutState) = 0;
 
   
@@ -3320,23 +3315,23 @@ public:
   
 
 
-  
-  void ClearPresShellsFromLastPaint() { 
-    PaintedPresShellList()->Clear(); 
+
+  void ClearPresShellsFromLastPaint() {
+    PaintedPresShellList()->Clear();
   }
-  
+
   
 
 
-  
-  void AddPaintedPresShell(nsIPresShell* shell) { 
+
+  void AddPaintedPresShell(nsIPresShell* shell) {
     PaintedPresShellList()->AppendElement(do_GetWeakReference(shell));
   }
-  
+
   
 
 
-  
+
   void UpdatePaintCountForPaintedPresShells() {
     for (nsWeakPtr& item : *PaintedPresShellList()) {
       nsCOMPtr<nsIPresShell> shell = do_QueryReferent(item);
@@ -3344,7 +3339,7 @@ public:
         shell->IncrementPaintCount();
       }
     }
-  }  
+  }
 
   
 
@@ -3581,24 +3576,19 @@ private:
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(PaintedPresShellsProperty,
                                       nsTArray<nsWeakPtr>,
                                       DestroyPaintedPresShellList)
-  
+
   nsTArray<nsWeakPtr>* PaintedPresShellList() {
     nsTArray<nsWeakPtr>* list = Properties().Get(PaintedPresShellsProperty());
-    
+
     if (!list) {
       list = new nsTArray<nsWeakPtr>();
       Properties().Set(PaintedPresShellsProperty(), list);
     }
-    
+
     return list;
   }
 
 protected:
-  
-
-
-  inline void PropagateRootElementWritingMode(mozilla::WritingMode aRootElemWM);
-
   void MarkInReflow() {
 #ifdef DEBUG_dbaron_off
     
@@ -3639,9 +3629,6 @@ protected:
   } mOverflow;
 
   
-  mozilla::WritingMode mWritingMode;
-
-  
   
 
 
@@ -3653,7 +3640,7 @@ protected:
 
 
   virtual FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) = 0;
-  
+
   
 
 
@@ -3669,7 +3656,7 @@ protected:
 
   virtual FrameSearchResult PeekOffsetCharacter(bool aForward, int32_t* aOffset,
                                      bool aRespectClusters = true) = 0;
-  
+
   
 
 
