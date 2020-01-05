@@ -4289,7 +4289,7 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
     if (window) {
       
       
-      mozilla::dom::TabGroup* tabgroup = nsGlobalWindow::Cast(window)->TabGroup();
+      mozilla::dom::TabGroup* tabgroup = window->TabGroup();
       
       
       nsAutoCString docGroupKey;

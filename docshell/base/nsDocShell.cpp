@@ -3775,8 +3775,7 @@ nsDocShell::DoFindItemWithName(const nsAString& aName,
   
   nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
   if (window) {
-    RefPtr<mozilla::dom::TabGroup> tabGroup =
-      nsGlobalWindow::Cast(window)->TabGroup();
+    RefPtr<mozilla::dom::TabGroup> tabGroup = window->TabGroup();
     
     
     if (tabGroup != aRequestor) {

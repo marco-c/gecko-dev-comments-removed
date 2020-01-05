@@ -1745,12 +1745,13 @@ private:
   
   bool ComputeIsSecureContext(nsIDocument* aDocument);
 
+  
+  friend class nsPIDOMWindow<mozIDOMWindowProxy>;
+  friend class nsPIDOMWindow<mozIDOMWindow>;
+  friend class nsPIDOMWindow<nsISupports>;
+
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
-
-public:
-  mozilla::dom::TabGroup* TabGroup();
-  mozilla::dom::DocGroup* GetDocGroup();
 
 protected:
   
@@ -1955,7 +1956,6 @@ protected:
   RefPtr<mozilla::dom::SpeechSynthesis> mSpeechSynthesis;
 #endif
 
-  RefPtr<mozilla::dom::TabGroup> mTabGroup; 
 #ifdef DEBUG
   
   

@@ -43,6 +43,8 @@ typedef uint32_t SuspendTypes;
 namespace mozilla {
 namespace dom {
 class AudioContext;
+class DocGroup;
+class TabGroup;
 class Element;
 class Performance;
 class ServiceWorkerRegistration;
@@ -575,6 +577,10 @@ public:
   virtual nsresult MoveBy(int32_t aXDif, int32_t aYDif) = 0;
   virtual nsresult UpdateCommands(const nsAString& anAction, nsISelection* aSel, int16_t aReason) = 0;
 
+  mozilla::dom::TabGroup* TabGroup();
+
+  mozilla::dom::DocGroup* GetDocGroup();
+
 protected:
   
   
@@ -685,6 +691,9 @@ protected:
 
   
   nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
+
+  
+  RefPtr<mozilla::dom::TabGroup> mTabGroup;
 
   
   
