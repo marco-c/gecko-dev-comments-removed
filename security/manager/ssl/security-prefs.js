@@ -50,6 +50,8 @@ pref("security.enterprise_roots.enabled", false);
 pref("security.OCSP.enabled", 1);
 pref("security.OCSP.require", false);
 pref("security.OCSP.GET.enabled", false);
+pref("security.OCSP.timeoutMilliseconds.soft", 2000);
+pref("security.OCSP.timeoutMilliseconds.hard", 10000);
 
 pref("security.pki.cert_short_lifetime_in_days", 10);
 
