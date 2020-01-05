@@ -94,6 +94,13 @@ bool
 CompileArgs::initFromContext(ExclusiveContext* cx, ScriptedCaller&& scriptedCaller)
 {
     alwaysBaseline = cx->options().wasmAlwaysBaseline();
+
+    
+    
+    
+    
+    debugEnabled = cx->compartment()->debuggerObservesAsmJS();
+
     this->scriptedCaller = Move(scriptedCaller);
     return assumptions.initBuildIdFromContext(cx);
 }
