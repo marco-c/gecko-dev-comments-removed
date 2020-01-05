@@ -78,8 +78,8 @@ AtomMarkingRuntime::registerArena(Arena* arena)
     
 
     
-    if (freeArenaIndexes.length()) {
-        arena->atomBitmapStart() = freeArenaIndexes.popCopy();
+    if (freeArenaIndexes.ref().length()) {
+        arena->atomBitmapStart() = freeArenaIndexes.ref().popCopy();
         return;
     }
 
@@ -94,7 +94,7 @@ AtomMarkingRuntime::unregisterArena(Arena* arena)
     MOZ_ASSERT(arena->zone->isAtomsZone());
 
     
-    mozilla::Unused << freeArenaIndexes.emplaceBack(arena->atomBitmapStart());
+    mozilla::Unused << freeArenaIndexes.ref().emplaceBack(arena->atomBitmapStart());
 }
 
 bool
@@ -127,13 +127,13 @@ AtomMarkingRuntime::updateZoneBitmap(Zone* zone, const Bitmap& bitmap)
 
     
     
-    MOZ_ASSERT(zone->markedAtoms.length() <= bitmap.length());
+    MOZ_ASSERT(zone->markedAtoms().length() <= bitmap.length());
 
     
     
     
-    for (size_t i = 0; i < zone->markedAtoms.length(); i++)
-        zone->markedAtoms[i] &= bitmap[i];
+    for (size_t i = 0; i < zone->markedAtoms().length(); i++)
+        zone->markedAtoms()[i] &= bitmap[i];
 }
 
 
@@ -179,16 +179,16 @@ AtomMarkingRuntime::updateChunkMarkBits(JSRuntime* runtime)
             
             
             if (!zone->isCollectingFromAnyThread()) {
-                MOZ_ASSERT(zone->markedAtoms.length() <= allocatedWords);
-                for (size_t i = 0; i < zone->markedAtoms.length(); i++)
-                    markedUnion[i] |= zone->markedAtoms[i];
+                MOZ_ASSERT(zone->markedAtoms().length() <= allocatedWords);
+                for (size_t i = 0; i < zone->markedAtoms().length(); i++)
+                    markedUnion[i] |= zone->markedAtoms()[i];
             }
         }
         AddBitmapToChunkMarkBits(runtime, markedUnion);
     } else {
         for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
             if (!zone->isCollectingFromAnyThread())
-                AddBitmapToChunkMarkBits(runtime, zone->markedAtoms);
+                AddBitmapToChunkMarkBits(runtime, zone->markedAtoms());
         }
     }
 }
@@ -214,7 +214,7 @@ ThingIsPermanent(TenuredCell* thing)
 }
 
 void
-AtomMarkingRuntime::markAtom(ExclusiveContext* cx, TenuredCell* thing)
+AtomMarkingRuntime::markAtom(JSContext* cx, TenuredCell* thing)
 {
     
     if (!thing || !cx->zone())
@@ -228,13 +228,13 @@ AtomMarkingRuntime::markAtom(ExclusiveContext* cx, TenuredCell* thing)
 
     {
         AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!EnsureBitmapLength(cx->zone()->markedAtoms, allocatedWords))
+        if (!EnsureBitmapLength(cx->zone()->markedAtoms(), allocatedWords))
             oomUnsafe.crash("Atom bitmap OOM");
     }
 
-    SetBit(cx->zone()->markedAtoms.begin(), bit);
+    SetBit(cx->zone()->markedAtoms().begin(), bit);
 
-    if (cx->isJSContext()) {
+    if (!cx->helperThread()) {
         
         
         
@@ -244,14 +244,14 @@ AtomMarkingRuntime::markAtom(ExclusiveContext* cx, TenuredCell* thing)
 }
 
 void
-AtomMarkingRuntime::markId(ExclusiveContext* cx, jsid id)
+AtomMarkingRuntime::markId(JSContext* cx, jsid id)
 {
     if (JSID_IS_GCTHING(id))
         markAtom(cx, &JSID_TO_GCTHING(id).asCell()->asTenured());
 }
 
 void
-AtomMarkingRuntime::markAtomValue(ExclusiveContext* cx, const Value& value)
+AtomMarkingRuntime::markAtomValue(JSContext* cx, const Value& value)
 {
     if (value.isGCThing()) {
         Cell* thing = value.toGCThing();
@@ -265,17 +265,17 @@ AtomMarkingRuntime::adoptMarkedAtoms(Zone* target, Zone* source)
 {
     MOZ_ASSERT(target->runtimeFromAnyThread()->currentThreadHasExclusiveAccess());
 
-    Bitmap* targetBitmap = &target->markedAtoms;
-    Bitmap* sourceBitmap = &source->markedAtoms;
+    Bitmap* targetBitmap = &target->markedAtoms();
+    Bitmap* sourceBitmap = &source->markedAtoms();
     if (targetBitmap->length() < sourceBitmap->length())
         std::swap(targetBitmap, sourceBitmap);
     for (size_t i = 0; i < sourceBitmap->length(); i++)
         (*targetBitmap)[i] |= (*sourceBitmap)[i];
 
-    if (targetBitmap != &target->markedAtoms)
-        target->markedAtoms = Move(source->markedAtoms);
+    if (targetBitmap != &target->markedAtoms())
+        target->markedAtoms() = Move(source->markedAtoms());
     else
-        source->markedAtoms.clear();
+        source->markedAtoms().clear();
 }
 
 #ifdef DEBUG
@@ -301,9 +301,9 @@ AtomMarkingRuntime::atomIsMarked(Zone* zone, Cell* thingArg)
     }
 
     size_t bit = GetAtomBit(thing);
-    if (bit >= zone->markedAtoms.length() * JS_BITS_PER_WORD)
+    if (bit >= zone->markedAtoms().length() * JS_BITS_PER_WORD)
         return false;
-    return GetBit(zone->markedAtoms.begin(), bit);
+    return GetBit(zone->markedAtoms().begin(), bit);
 }
 
 bool

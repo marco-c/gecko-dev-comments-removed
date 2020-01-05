@@ -51,7 +51,7 @@ JS_STATIC_ASSERT(StickyFlag == JSREG_STICKY);
 JS_STATIC_ASSERT(UnicodeFlag == JSREG_UNICODE);
 
 RegExpObject*
-js::RegExpAlloc(ExclusiveContext* cx, HandleObject proto )
+js::RegExpAlloc(JSContext* cx, HandleObject proto )
 {
     
     
@@ -184,7 +184,7 @@ RegExpObject::trace(JSTracer* trc, JSObject* obj)
     
     
     
-    if (trc->runtime()->isHeapCollecting() &&
+    if (JS::CurrentThreadIsHeapCollecting() &&
         trc->isMarkingTracer() &&
         !obj->asTenured().zone()->isPreservingCode())
     {
@@ -241,7 +241,7 @@ const Class RegExpObject::protoClass_ = {
 };
 
 RegExpObject*
-RegExpObject::create(ExclusiveContext* cx, const char16_t* chars, size_t length, RegExpFlag flags,
+RegExpObject::create(JSContext* cx, const char16_t* chars, size_t length, RegExpFlag flags,
                      TokenStream* tokenStream, LifoAlloc& alloc)
 {
     RootedAtom source(cx, AtomizeChars(cx, chars, length));
@@ -252,13 +252,13 @@ RegExpObject::create(ExclusiveContext* cx, const char16_t* chars, size_t length,
 }
 
 RegExpObject*
-RegExpObject::create(ExclusiveContext* cx, HandleAtom source, RegExpFlag flags,
+RegExpObject::create(JSContext* cx, HandleAtom source, RegExpFlag flags,
                      TokenStream* tokenStream, LifoAlloc& alloc)
 {
     Maybe<CompileOptions> dummyOptions;
     Maybe<TokenStream> dummyTokenStream;
     if (!tokenStream) {
-        dummyOptions.emplace(cx->asJSContext());
+        dummyOptions.emplace(cx);
         dummyTokenStream.emplace(cx, *dummyOptions,
                                    (const char16_t*) nullptr, 0,
                                    (frontend::StrictModeGetter*) nullptr);
@@ -291,7 +291,7 @@ RegExpObject::createShared(JSContext* cx, RegExpGuard* g)
 }
 
 Shape*
-RegExpObject::assignInitialShape(ExclusiveContext* cx, Handle<RegExpObject*> self)
+RegExpObject::assignInitialShape(JSContext* cx, Handle<RegExpObject*> self)
 {
     MOZ_ASSERT(self->empty());
 
@@ -314,7 +314,7 @@ RegExpObject::initIgnoringLastIndex(HandleAtom source, RegExpFlag flags)
 }
 
 void
-RegExpObject::initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, ExclusiveContext* cx)
+RegExpObject::initAndZeroLastIndex(HandleAtom source, RegExpFlag flags, JSContext* cx)
 {
     initIgnoringLastIndex(source, flags);
     zeroLastIndex(cx);
@@ -1060,7 +1060,7 @@ RegExpShared::execute(JSContext* cx, HandleLinearString input, size_t start,
     size_t length = input->length();
 
     
-    irregexp::RegExpStackScope stackScope(cx->runtime());
+    irregexp::RegExpStackScope stackScope(cx);
 
     if (canStringMatch) {
         MOZ_ASSERT(pairCount() == 1);
@@ -1283,7 +1283,7 @@ RegExpShared::needsSweep(JSRuntime* rt)
             keep = false;
     }
 
-    MOZ_ASSERT(rt->isHeapMajorCollecting());
+    MOZ_ASSERT(JS::CurrentThreadIsHeapMajorCollecting());
     if (keep || rt->gc.isHeapCompacting()) {
         clearMarked();
         return false;

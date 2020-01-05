@@ -150,7 +150,7 @@ void Simulator::init(Decoder* decoder, FILE* stream) {
 
 
 Simulator* Simulator::Current() {
-  return js::TlsPerThreadData.get()->simulator();
+  return js::TlsContext.get()->simulator();
 }
 
 
@@ -191,7 +191,7 @@ void Simulator::ExecuteInstruction() {
   increment_pc();
 
   if (MOZ_UNLIKELY(rpc)) {
-    JSRuntime::innermostWasmActivation()->setResumePC((void*)pc());
+    JSContext::innermostWasmActivation()->setResumePC((void*)pc());
     set_pc(rpc);
     
     
@@ -693,16 +693,11 @@ Simulator::VisitCallRedirection(const Instruction* instr)
 }  
 
 
-vixl::Simulator* js::PerThreadData::simulator() const {
-  return runtime_->simulator();
-}
-
-
-vixl::Simulator* JSRuntime::simulator() const {
+vixl::Simulator* JSContext::simulator() const {
   return simulator_;
 }
 
 
-uintptr_t* JSRuntime::addressOfSimulatorStackLimit() {
+uintptr_t* JSContext::addressOfSimulatorStackLimit() {
   return simulator_->addressOfStackLimit();
 }

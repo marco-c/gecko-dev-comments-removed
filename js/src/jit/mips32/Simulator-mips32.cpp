@@ -1409,7 +1409,7 @@ Simulator::RedirectNativeFunction(void* nativeFunction, ABIFunctionType type)
 Simulator*
 Simulator::Current()
 {
-    return TlsPerThreadData.get()->simulator();
+    return TlsContext.get()->runtime()->unsafeContextFromAnyThread()->simulator();
 }
 
 
@@ -3360,7 +3360,7 @@ Simulator::execute()
     
     
     int program_counter = get_pc();
-    WasmActivation* activation = TlsPerThreadData.get()->runtimeFromMainThread()->wasmActivationStack();
+    WasmActivation* activation = TlsContext.get()->wasmActivationStack();
 
     while (program_counter != end_sim_pc) {
         if (enableStopSimAt && (icount_ == Simulator::StopSimAt)) {
@@ -3518,19 +3518,13 @@ Simulator::popAddress()
 } 
 
 js::jit::Simulator*
-JSRuntime::simulator() const
+JSContext::simulator() const
 {
     return simulator_;
 }
 
-js::jit::Simulator*
-js::PerThreadData::simulator() const
-{
-    return runtime_->simulator();
-}
-
 uintptr_t*
-JSRuntime::addressOfSimulatorStackLimit()
+JSContext::addressOfSimulatorStackLimit()
 {
     return simulator_->addressOfStackLimit();
 }

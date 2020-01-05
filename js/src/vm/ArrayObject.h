@@ -31,7 +31,7 @@ class ArrayObject : public NativeObject
         return getElementsHeader()->length;
     }
 
-    inline void setLength(ExclusiveContext* cx, uint32_t length);
+    inline void setLength(JSContext* cx, uint32_t length);
 
     
     void setLengthInt32(uint32_t length) {
@@ -42,7 +42,7 @@ class ArrayObject : public NativeObject
 
     
     static inline ArrayObject*
-    createArray(ExclusiveContext* cx,
+    createArray(JSContext* cx,
                 gc::AllocKind kind,
                 gc::InitialHeap heap,
                 HandleShape shape,
@@ -53,14 +53,14 @@ class ArrayObject : public NativeObject
     
     
     static inline ArrayObject*
-    createCopyOnWriteArray(ExclusiveContext* cx,
+    createCopyOnWriteArray(JSContext* cx,
                            gc::InitialHeap heap,
                            HandleArrayObject sharedElementsOwner);
 
   private:
     
     static inline ArrayObject*
-    createArrayInternal(ExclusiveContext* cx,
+    createArrayInternal(JSContext* cx,
                         gc::AllocKind kind,
                         gc::InitialHeap heap,
                         HandleShape shape,

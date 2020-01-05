@@ -6,6 +6,7 @@
 
 
 #include "gc/Barrier.h"
+#include "gc/Zone.h"
 #include "js/RootingAPI.h"
 
 #include "jsapi-tests/tests.h"
@@ -32,7 +33,7 @@ BEGIN_TEST(testGCWeakRef)
     JS::Rooted<MyHeap> heap(cx, MyHeap(obj));
     obj = nullptr;
 
-    cx->gc.minorGC(JS::gcreason::API);
+    cx->zone()->group()->minorGC(JS::gcreason::API);
 
     
     

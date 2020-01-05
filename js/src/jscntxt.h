@@ -16,7 +16,7 @@
 #include "js/Result.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
-#include "vm/Caches.h"
+#include "threading/ProtectedData.h"
 #include "vm/Runtime.h"
 
 #ifdef _MSC_VER
@@ -71,108 +71,43 @@ struct AutoResolving;
 
 namespace frontend { class CompileError; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct HelperThread;
 
-class ExclusiveContext : public ContextFriendFields,
-                         public MallocProvider<ExclusiveContext>
-{
-    friend class gc::ArenaLists;
-    friend class AutoCompartment;
-    friend class AutoLockForExclusiveAccess;
-    friend struct StackBaseShape;
-    friend void JSScript::initCompartment(ExclusiveContext* cx);
-    friend class jit::JitContext;
+void ReportOverRecursed(JSContext* cx, unsigned errorNumber);
 
-    
-    
+
+extern MOZ_THREAD_LOCAL(JSContext*) TlsContext;
+
+} 
+
+
+
+
+
+struct JSContext : public JS::RootingContext,
+                   public js::MallocProvider<JSContext>
+{
+    explicit JSContext(JSRuntime* runtime, const JS::ContextOptions& options);
+    ~JSContext();
+
+    bool init();
+
+  private:
     JSRuntime* const runtime_;
 
     
-    HelperThread* helperThread_;
+    size_t threadNative_;
+
+    
+    js::ThreadLocalData<js::HelperThread*> helperThread_;
+
+    js::ThreadLocalData<JS::ContextOptions> options_;
+
+    js::ThreadLocalData<js::gc::ArenaLists*> arenas_;
 
   public:
-    enum ContextKind {
-        Context_JS,
-        Context_Exclusive
-    };
+    size_t threadNative() const { return threadNative_; }
 
-  private:
-    ContextKind contextKind_;
-
-  protected:
-    
-    
-    JS::ContextOptions options_;
-
-  public:
-    PerThreadData* perThreadData;
-
-    ExclusiveContext(JSRuntime* rt, PerThreadData* pt, ContextKind kind,
-                     const JS::ContextOptions& options);
-
-    bool isJSContext() const {
-        return contextKind_ == Context_JS;
-    }
-
-    JSContext* maybeJSContext() const {
-        if (isJSContext())
-            return (JSContext*) this;
-        return nullptr;
-    }
-
-    JSContext* asJSContext() const {
-        
-        
-        
-        
-        MOZ_ASSERT(isJSContext());
-        return maybeJSContext();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    bool shouldBeJSContext() const {
-        MOZ_ASSERT(isJSContext());
-        return isJSContext();
-    }
-
-    const JS::ContextOptions& options() const {
-        return options_;
-    }
-
-    bool runtimeMatches(JSRuntime* rt) const {
-        return runtime_ == rt;
-    }
-
-  protected:
-    js::gc::ArenaLists* arenas_;
-
-  public:
     inline js::gc::ArenaLists* arenas() const { return arenas_; }
 
     template <typename T>
@@ -186,11 +121,11 @@ class ExclusiveContext : public ContextFriendFields,
     }
 
     void* onOutOfMemory(js::AllocFunction allocFunc, size_t nbytes, void* reallocPtr = nullptr) {
-        if (!isJSContext()) {
+        if (helperThread()) {
             addPendingOutOfMemory();
             return nullptr;
         }
-        return runtime_->onOutOfMemory(allocFunc, nbytes, reallocPtr, asJSContext());
+        return runtime_->onOutOfMemory(allocFunc, nbytes, reallocPtr, this);
     }
 
     
@@ -198,7 +133,7 @@ class ExclusiveContext : public ContextFriendFields,
 
     inline void updateMallocCounter(size_t nbytes) {
         
-        runtime_->updateMallocCounter(zone_, nbytes);
+        runtime()->updateMallocCounter(zone(), nbytes);
     }
 
     void reportAllocationOverflow() {
@@ -207,37 +142,26 @@ class ExclusiveContext : public ContextFriendFields,
 
     
     JSAtomState& names() { return *runtime_->commonNames; }
-    StaticStrings& staticStrings() { return *runtime_->staticStrings; }
-    SharedImmutableStringsCache& sharedImmutableStrings() {
+    js::StaticStrings& staticStrings() { return *runtime_->staticStrings; }
+    js::SharedImmutableStringsCache& sharedImmutableStrings() {
         return runtime_->sharedImmutableStrings();
     }
     bool isPermanentAtomsInitialized() { return !!runtime_->permanentAtoms; }
-    FrozenAtomSet& permanentAtoms() { return *runtime_->permanentAtoms; }
-    WellKnownSymbols& wellKnownSymbols() { return *runtime_->wellKnownSymbols; }
+    js::FrozenAtomSet& permanentAtoms() { return *runtime_->permanentAtoms; }
+    js::WellKnownSymbols& wellKnownSymbols() { return *runtime_->wellKnownSymbols; }
     JS::BuildIdOp buildIdOp() { return runtime_->buildIdOp; }
     const JS::AsmJSCacheOps& asmJSCacheOps() { return runtime_->asmJSCacheOps; }
-    PropertyName* emptyString() { return runtime_->emptyString; }
-    FreeOp* defaultFreeOp() { return runtime_->defaultFreeOp(); }
-    void* contextAddressForJit() { return runtime_->unsafeContextFromAnyThread(); }
-    void* runtimeAddressOfInterruptUint32() { return runtime_->addressOfInterruptUint32(); }
-    void* stackLimitAddress(StackKind kind) { return &nativeStackLimit[kind]; }
-    void* stackLimitAddressForJitCode(StackKind kind);
-    uintptr_t stackLimit(StackKind kind) { return nativeStackLimit[kind]; }
-    uintptr_t stackLimitForJitCode(StackKind kind);
-    size_t gcSystemPageSize() { return gc::SystemPageSize(); }
+    js::PropertyName* emptyString() { return runtime_->emptyString; }
+    js::FreeOp* defaultFreeOp() { return runtime_->defaultFreeOp(); }
+    void* stackLimitAddress(JS::StackKind kind) { return &nativeStackLimit[kind]; }
+    void* stackLimitAddressForJitCode(JS::StackKind kind);
+    uintptr_t stackLimit(JS::StackKind kind) { return nativeStackLimit[kind]; }
+    uintptr_t stackLimitForJitCode(JS::StackKind kind);
+    size_t gcSystemPageSize() { return js::gc::SystemPageSize(); }
     bool jitSupportsFloatingPoint() const { return runtime_->jitSupportsFloatingPoint; }
     bool jitSupportsUnalignedAccesses() const { return runtime_->jitSupportsUnalignedAccesses; }
     bool jitSupportsSimd() const { return runtime_->jitSupportsSimd; }
-    bool lcovEnabled() const { return runtime_->lcovOutput.isEnabled(); }
-
-    
-    DtoaState* dtoaState() {
-        return perThreadData->dtoaState;
-    }
-
-    frontend::NameCollectionPool& frontendCollectionPool() {
-        return perThreadData->frontendCollectionPool;
-    }
+    bool lcovEnabled() const { return runtime_->lcovOutput().isEnabled(); }
 
     
 
@@ -255,7 +179,7 @@ class ExclusiveContext : public ContextFriendFields,
 
 
   protected:
-    unsigned            enterCompartmentDepth_;
+    js::ThreadLocalData<unsigned> enterCompartmentDepth_;
 
     inline void setCompartment(JSCompartment* comp,
                                const js::AutoLockForExclusiveAccess* maybeLock = nullptr);
@@ -277,10 +201,12 @@ class ExclusiveContext : public ContextFriendFields,
     inline void leaveCompartment(JSCompartment* oldCompartment,
                                  const js::AutoLockForExclusiveAccess* maybeLock = nullptr);
 
-    void setHelperThread(HelperThread* helperThread);
-    HelperThread* helperThread() const { return helperThread_; }
+    inline void enterZoneGroup(js::ZoneGroup* group);
+    inline void leaveZoneGroup(js::ZoneGroup* group);
 
-    
+    void setHelperThread(js::HelperThread* helperThread);
+    js::HelperThread* helperThread() const { return helperThread_; }
+
     
     JSCompartment* compartment() const {
         return compartment_;
@@ -292,6 +218,11 @@ class ExclusiveContext : public ContextFriendFields,
     }
 
     
+    static size_t offsetOfZone() {
+        return offsetof(JSContext, zone_);
+    }
+
+    
     inline js::LifoAlloc& typeLifoAlloc();
 
     
@@ -299,37 +230,56 @@ class ExclusiveContext : public ContextFriendFields,
     inline js::Handle<js::GlobalObject*> global() const;
 
     
-    AtomSet& atoms(js::AutoLockForExclusiveAccess& lock) {
+    js::AtomSet& atoms(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->atoms(lock);
     }
     JSCompartment* atomsCompartment(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->atomsCompartment(lock);
     }
-    SymbolRegistry& symbolRegistry(js::AutoLockForExclusiveAccess& lock) {
+    js::SymbolRegistry& symbolRegistry(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->symbolRegistry(lock);
     }
-    ScriptDataTable& scriptDataTable(AutoLockForExclusiveAccess& lock) {
+    js::ScriptDataTable& scriptDataTable(js::AutoLockForExclusiveAccess& lock) {
         return runtime_->scriptDataTable(lock);
     }
 
     
-    gc::AtomMarkingRuntime& atomMarking() {
+    js::gc::AtomMarkingRuntime& atomMarking() {
         return runtime_->gc.atomMarking;
     }
-    void markAtom(gc::TenuredCell* atom) {
+    void markAtom(js::gc::TenuredCell* atom) {
         atomMarking().markAtom(this, atom);
     }
     void markId(jsid id) {
         atomMarking().markId(this, id);
     }
-    void markAtomValue(const Value& value) {
+    void markAtomValue(const js::Value& value) {
         atomMarking().markAtomValue(this, value);
     }
 
     
-    bool addPendingCompileError(frontend::CompileError** err);
+    bool addPendingCompileError(js::frontend::CompileError** err);
     void addPendingOverRecursed();
     void addPendingOutOfMemory();
+
+    JSRuntime* runtime() { return runtime_; }
+
+    static size_t offsetOfActivation() {
+        return offsetof(JSContext, activation_);
+    }
+    static size_t offsetOfWasmActivation() {
+        return offsetof(JSContext, wasmActivationStack_);
+    }
+    static size_t offsetOfProfilingActivation() {
+        return offsetof(JSContext, profilingActivation_);
+     }
+    static size_t offsetOfCompartment() {
+        return offsetof(JSContext, compartment_);
+    }
+
+    friend class JS::AutoSaveExceptionState;
+    friend class js::jit::DebugModeOSRVolatileJitFrameIterator;
+    friend void js::ReportOverRecursed(JSContext*, unsigned errorNumber);
 
   private:
     static JS::Error reportedError;
@@ -354,95 +304,324 @@ class ExclusiveContext : public ContextFriendFields,
 
     mozilla::GenericErrorResult<JS::OOM&> alreadyReportedOOM();
     mozilla::GenericErrorResult<JS::Error&> alreadyReportedError();
-};
-
-void ReportOverRecursed(JSContext* cx, unsigned errorNumber);
-
-} 
-
-struct JSContext : public js::ExclusiveContext,
-                   public JSRuntime
-{
-    explicit JSContext(JSRuntime* parentRuntime);
-    ~JSContext();
-
-    bool init(uint32_t maxBytes, uint32_t maxNurseryBytes);
 
     
+
+
+
+    js::ThreadLocalData<js::jit::JitActivation*> jitActivation;
+
     
-    using ExclusiveContext::atomsCompartment;
-    using ExclusiveContext::buildIdOp;
-    using ExclusiveContext::emptyString;
-    using ExclusiveContext::jitSupportsSimd;
-    using ExclusiveContext::make_pod_array;
-    using ExclusiveContext::make_unique;
-    using ExclusiveContext::new_;
-    using ExclusiveContext::permanentAtoms;
-    using ExclusiveContext::pod_calloc;
-    using ExclusiveContext::pod_malloc;
-    using ExclusiveContext::staticStrings;
-    using ExclusiveContext::updateMallocCounter;
-    using ExclusiveContext::wellKnownSymbols;
-    using ExclusiveContext::atomMarking;
+    js::ThreadLocalData<js::irregexp::RegExpStack> regexpStack;
 
-    JSRuntime* runtime() { return this; }
-    js::PerThreadData& mainThread() { return this->JSRuntime::mainThread; }
+    
 
-    static size_t offsetOfActivation() {
-        return offsetof(JSContext, activation_);
+
+
+    js::ThreadLocalData<js::Activation*> activation_;
+
+    
+
+
+
+    js::Activation* volatile profilingActivation_;
+
+  public:
+    
+    js::WasmActivation* volatile wasmActivationStack_;
+
+    js::WasmActivation* wasmActivationStack() const {
+        return wasmActivationStack_;
     }
-    static size_t offsetOfWasmActivation() {
-        return offsetof(JSContext, wasmActivationStack_);
-    }
-    static size_t offsetOfProfilingActivation() {
-        return offsetof(JSContext, profilingActivation_);
-     }
-    static size_t offsetOfCompartment() {
-        return offsetof(JSContext, compartment_);
+    static js::WasmActivation* innermostWasmActivation() {
+        return js::TlsContext.get()->wasmActivationStack_;
     }
 
-    friend class js::ExclusiveContext;
-    friend class JS::AutoSaveExceptionState;
-    friend class js::jit::DebugModeOSRVolatileJitFrameIterator;
-    friend void js::ReportOverRecursed(JSContext*, unsigned errorNumber);
+    js::Activation* activation() const {
+        return activation_;
+    }
+    js::Activation* profilingActivation() const {
+        return profilingActivation_;
+    }
+    void* addressOfProfilingActivation() {
+        return (void*) &profilingActivation_;
+    }
 
   private:
     
-    bool                throwing;            
-    JS::PersistentRooted<JS::Value> unwrappedException_; 
-
-    
-    
-    bool                overRecursed_;
-
-    
-    
-    bool                propagatingForcedReturn_;
-
-    
-    
-    js::jit::DebugModeOSRVolatileJitFrameIterator* liveVolatileJitFrameIterators_;
+    js::ThreadLocalData<js::InterpreterStack> interpreterStack_;
 
   public:
-    js::ContextCaches caches;
-
-    int32_t             reportGranularity;  
-
-    js::AutoResolving*  resolvingList;
+    js::InterpreterStack& interpreterStack() {
+        return interpreterStack_.ref();
+    }
 
     
-    bool                generatingError;
+    const uintptr_t     nativeStackBase;
 
     
-    js::AutoCycleDetector::Set cycleDetectorSet;
+    js::ThreadLocalData<size_t> nativeStackQuota[JS::StackKindCount];
+
+  public:
+    
+    js::ThreadLocalData<JS::dbg::AutoEntryMonitor*> entryMonitor;
+
+    
+
+
+
+
+
+
+    js::ThreadLocalData<js::EnterDebuggeeNoExecute*> noExecuteDebuggerTop;
+
+    
+    bool handlingSegFault;
+
+    js::ThreadLocalData<js::ActivityCallback> activityCallback;
+    js::ThreadLocalData<void*>                activityCallbackArg;
+    void triggerActivityCallback(bool active);
+
+    
+    js::ThreadLocalData<unsigned> requestDepth;
+
+#ifdef DEBUG
+    js::ThreadLocalData<unsigned> checkRequestDepth;
+#endif
+
+#ifdef JS_SIMULATOR
+  private:
+    js::ThreadLocalData<js::jit::Simulator*> simulator_;
+  public:
+    js::jit::Simulator* simulator() const;
+    uintptr_t* addressOfSimulatorStackLimit();
+#endif
+
+#ifdef JS_TRACE_LOGGING
+    js::ThreadLocalData<js::TraceLoggerThread*> traceLogger;
+#endif
+
+  private:
+    
+    js::ThreadLocalData<js::jit::AutoFlushICache*> autoFlushICache_;
+  public:
+
+    js::jit::AutoFlushICache* autoFlushICache() const;
+    void setAutoFlushICache(js::jit::AutoFlushICache* afc);
+
+    
+    js::ThreadLocalData<DtoaState*> dtoaState;
+
+    
+    js::ThreadLocalData<JS::HeapState> heapState;
+
+    
+
+
+
+
+
+
+
+    js::ThreadLocalData<int32_t> suppressGC;
+
+    
+    
+    js::ThreadLocalData<bool> allowGCBarriers;
+
+#ifdef DEBUG
+    
+    js::ThreadLocalData<bool> ionCompiling;
+
+    
+    
+    
+    js::ThreadLocalData<bool> ionCompilingSafeForMinorGC;
+
+    
+    
+    
+    js::ThreadLocalData<bool> performingGC;
+
+    
+    
+    
+    
+    js::ThreadLocalData<bool> gcSweeping;
+
+    
+    
+    js::ThreadLocalData<bool> gcHelperStateThread;
+
+    js::ThreadLocalData<size_t> noGCOrAllocationCheck;
+    js::ThreadLocalData<size_t> noNurseryAllocationCheck;
+
+    
+
+
+
+
+
+    js::ThreadLocalData<uintptr_t> disableStrictProxyCheckingCount;
+
+    bool isAllocAllowed() { return noGCOrAllocationCheck == 0; }
+    void disallowAlloc() { ++noGCOrAllocationCheck; }
+    void allowAlloc() {
+        MOZ_ASSERT(!isAllocAllowed());
+        --noGCOrAllocationCheck;
+    }
+
+    bool isNurseryAllocAllowed() { return noNurseryAllocationCheck == 0; }
+    void disallowNurseryAlloc() { ++noNurseryAllocationCheck; }
+    void allowNurseryAlloc() {
+        MOZ_ASSERT(!isNurseryAllocAllowed());
+        --noNurseryAllocationCheck;
+    }
+
+    bool isStrictProxyCheckingEnabled() { return disableStrictProxyCheckingCount == 0; }
+    void disableStrictProxyChecking() { ++disableStrictProxyCheckingCount; }
+    void enableStrictProxyChecking() {
+        MOZ_ASSERT(disableStrictProxyCheckingCount > 0);
+        --disableStrictProxyCheckingCount;
+    }
+#endif
+
+#if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
+    
+    js::ThreadLocalData<bool> runningOOMTest;
+#endif
+
+    
+
+
+
+
+
+    js::ThreadLocalData<int> inUnsafeRegion;
+
+    
+    js::ThreadLocalData<unsigned> generationalDisabled;
+
+    
+    
+    js::ThreadLocalData<unsigned> compactingDisabledCount;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    js::ThreadLocalData<unsigned> keepAtoms;
+
+  private:
+    
+    
+    
+    js::ThreadLocalData<js::frontend::NameCollectionPool> frontendCollectionPool_;
+  public:
+
+    js::frontend::NameCollectionPool& frontendCollectionPool() {
+        return frontendCollectionPool_.ref();
+    }
+
+    void verifyIsSafeToGC() {
+        MOZ_DIAGNOSTIC_ASSERT(!inUnsafeRegion,
+                              "[AutoAssertNoGC] possible GC in GC-unsafe region");
+    }
+
+    
+  private:
+    mozilla::Atomic<bool, mozilla::SequentiallyConsistent> suppressProfilerSampling;
+
+  public:
+    bool isProfilerSamplingEnabled() const {
+        return !suppressProfilerSampling;
+    }
+    void disableProfilerSampling() {
+        suppressProfilerSampling = true;
+    }
+    void enableProfilerSampling() {
+        suppressProfilerSampling = false;
+    }
+
+#if defined(XP_DARWIN)
+    js::wasm::MachExceptionHandler wasmMachExceptionHandler;
+#endif
+
+    
+    static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
+  private:
+    js::ThreadLocalData<js::LifoAlloc> tempLifoAlloc_;
+  public:
+    js::LifoAlloc& tempLifoAlloc() { return tempLifoAlloc_.ref(); }
+    const js::LifoAlloc& tempLifoAlloc() const { return tempLifoAlloc_.ref(); }
+
+    js::ThreadLocalData<uint32_t> debuggerMutations;
+
+    
+
+
+
+
+    js::ThreadLocalData<uint32_t> propertyRemovals;
+
+    
+    js::ThreadLocalData<js::jit::PcScriptCache*> ionPcScriptCache;
+
+  private:
+    
+    js::ThreadLocalData<bool> throwing;            
+    js::ThreadLocalData<JS::PersistentRooted<JS::Value>> unwrappedException_; 
+
+    JS::Value& unwrappedException() {
+        if (!unwrappedException_.ref().initialized())
+            unwrappedException_.ref().init(this);
+        return unwrappedException_.ref().get();
+    }
+
+    
+    
+    js::ThreadLocalData<bool> overRecursed_;
+
+    
+    
+    js::ThreadLocalData<bool> propagatingForcedReturn_;
+
+    
+    
+    js::ThreadLocalData<js::jit::DebugModeOSRVolatileJitFrameIterator*> liveVolatileJitFrameIterators_;
+
+  public:
+    js::ThreadLocalData<int32_t> reportGranularity;  
+
+    js::ThreadLocalData<js::AutoResolving*> resolvingList;
+
+#ifdef DEBUG
+    js::ThreadLocalData<js::AutoEnterPolicy*> enteredPolicy;
+#endif
+
+    
+    js::ThreadLocalData<bool> generatingError;
+
+  private:
+    
+    js::ThreadLocalData<js::AutoCycleDetector::Set> cycleDetectorSet_;
+
+  public:
+    js::AutoCycleDetector::Set& cycleDetectorSet() { return cycleDetectorSet_.ref(); }
+    const js::AutoCycleDetector::Set& cycleDetectorSet() const { return cycleDetectorSet_.ref(); }
 
     
     void* data;
 
+    void initJitStackLimit();
     void resetJitStackLimit();
 
   public:
-
     
 
 
@@ -451,24 +630,24 @@ struct JSContext : public js::ExclusiveContext,
 
 
 
-    JSVersion findVersion() const;
-
-    void initJitStackLimit();
+    JSVersion findVersion();
 
     JS::ContextOptions& options() {
-        return options_;
+        return options_.ref();
     }
 
-    js::LifoAlloc& tempLifoAlloc() { return runtime()->tempLifoAlloc; }
+    bool runtimeMatches(JSRuntime* rt) const {
+        return runtime_ == rt;
+    }
 
-    unsigned            outstandingRequests;
+    
+    js::ThreadLocalData<unsigned> outstandingRequests;
 
-
-
-    bool jitIsBroken;
+    js::ThreadLocalData<bool> jitIsBroken;
 
     void updateJITEnabled();
 
+  private:
     
 
 
@@ -478,18 +657,25 @@ struct JSContext : public js::ExclusiveContext,
 
 
 
-    JS::PersistentRooted<js::SavedFrame*> asyncStackForNewActivations;
+    js::ThreadLocalData<JS::PersistentRooted<js::SavedFrame*>> asyncStackForNewActivations_;
+  public:
+
+    js::SavedFrame*& asyncStackForNewActivations() {
+        if (!asyncStackForNewActivations_.ref().initialized())
+            asyncStackForNewActivations_.ref().init(this);
+        return asyncStackForNewActivations_.ref().get();
+    }
 
     
 
 
-    const char* asyncCauseForNewActivations;
+    js::ThreadLocalData<const char*> asyncCauseForNewActivations;
 
     
 
 
 
-    bool asyncCallIsExplicit;
+    js::ThreadLocalData<bool> asyncCallIsExplicit;
 
     bool currentlyRunningInInterpreter() const {
         return activation()->isInterpreter();
@@ -517,14 +703,8 @@ struct JSContext : public js::ExclusiveContext,
     inline JSScript* currentScript(jsbytecode** pc = nullptr,
                                    MaybeAllowCrossCompartment = DONT_ALLOW_CROSS_COMPARTMENT) const;
 
-    
-    inline js::Nursery& nursery() {
-        return gc.nursery;
-    }
-
-    void minorGC(JS::gcreason::Reason reason) {
-        gc.minorGC(reason);
-    }
+    inline js::Nursery& nursery();
+    inline void minorGC(JS::gcreason::Reason reason);
 
   public:
     bool isExceptionPending() const {
@@ -543,7 +723,7 @@ struct JSContext : public js::ExclusiveContext,
     void clearPendingException() {
         throwing = false;
         overRecursed_ = false;
-        unwrappedException_.setUndefined();
+        unwrappedException().setUndefined();
     }
 
     bool isThrowingOverRecursed() const { return throwing && overRecursed_; }
@@ -555,11 +735,13 @@ struct JSContext : public js::ExclusiveContext,
 
 
 
-    inline bool runningWithTrustedPrincipals() const;
+    inline bool runningWithTrustedPrincipals();
 
     JS_FRIEND_API(size_t) sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
     void trace(JSTracer* trc);
+
+    inline js::ZoneGroupCaches& caches();
 
   private:
     
@@ -569,20 +751,132 @@ struct JSContext : public js::ExclusiveContext,
 
 
     JS_FRIEND_API(void) checkMallocGCPressure(void* p);
+
+  public:
+    using InterruptCallbackVector = js::Vector<JSInterruptCallback, 2, js::SystemAllocPolicy>;
+
+  private:
+    js::ThreadLocalData<InterruptCallbackVector> interruptCallbacks_;
+  public:
+    InterruptCallbackVector& interruptCallbacks() { return interruptCallbacks_.ref(); }
+
+    js::ThreadLocalData<bool> interruptCallbackDisabled;
+
+    mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
+
+    enum InterruptMode {
+        RequestInterruptUrgent,
+        RequestInterruptCanWait
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    void requestInterrupt(InterruptMode mode);
+    bool handleInterrupt();
+
+    MOZ_ALWAYS_INLINE bool hasPendingInterrupt() const {
+        static_assert(sizeof(interrupt_) == sizeof(uint32_t), "Assumed by JIT callers");
+        return interrupt_;
+    }
+
+  private:
+    
+    
+    mozilla::Atomic<bool> handlingJitInterrupt_;
+
+  public:
+    bool startHandlingJitInterrupt() {
+        
+        
+        return handlingJitInterrupt_.compareExchange(false, true);
+    }
+    void finishHandlingJitInterrupt() {
+        MOZ_ASSERT(handlingJitInterrupt_);
+        handlingJitInterrupt_ = false;
+    }
+    bool handlingJitInterrupt() const {
+        return handlingJitInterrupt_;
+    }
+
+    
+    js::FutexThread fx;
+
+    
+    
+    js::ThreadLocalData<uint8_t*> osrTempData_;
+
+    uint8_t* allocateOsrTempData(size_t size);
+    void freeOsrTempData();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    js::ThreadLocalData<js::Value> ionReturnOverride_;
+
+    bool hasIonReturnOverride() const {
+        return !ionReturnOverride_.ref().isMagic(JS_ARG_POISON);
+    }
+    js::Value takeIonReturnOverride() {
+        js::Value v = ionReturnOverride_;
+        ionReturnOverride_ = js::MagicValue(JS_ARG_POISON);
+        return v;
+    }
+    void setIonReturnOverride(const js::Value& v) {
+        MOZ_ASSERT(!hasIonReturnOverride());
+        MOZ_ASSERT(!v.isMagic());
+        ionReturnOverride_ = v;
+    }
+
+    
+
+
+
+    js::ThreadLocalData<uint8_t*> jitTop;
+
+    mozilla::Atomic<uintptr_t, mozilla::Relaxed> jitStackLimit;
+
+    
+    js::ThreadLocalData<uintptr_t> jitStackLimitNoInterrupt;
 }; 
 
-namespace js {
-
 inline JS::Result<>
-ExclusiveContext::boolToResult(bool ok)
+JSContext::boolToResult(bool ok)
 {
     if (MOZ_LIKELY(ok)) {
-        MOZ_ASSERT_IF(isJSContext(), !asJSContext()->isExceptionPending());
-        MOZ_ASSERT_IF(isJSContext(), !asJSContext()->isPropagatingForcedReturn());
+        MOZ_ASSERT(!isExceptionPending());
+        MOZ_ASSERT(!isPropagatingForcedReturn());
         return JS::Ok();
     }
     return JS::Result<>(reportedError);
 }
+
+namespace js {
 
 struct MOZ_RAII AutoResolving {
   public:
@@ -663,7 +957,7 @@ ReportErrorNumberUCArray(JSContext* cx, unsigned flags, JSErrorCallback callback
 #endif
 
 extern bool
-ExpandErrorArgumentsVA(ExclusiveContext* cx, JSErrorCallback callback,
+ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
                        void* userRef, const unsigned errorNumber,
                        const char16_t** messageArgs,
                        ErrorArgumentsType argumentsType,
@@ -731,18 +1025,6 @@ ReportValueErrorFlags(JSContext* cx, unsigned flags, const unsigned errorNumber,
 extern const JSErrorFormatString js_ErrorFormatString[JSErr_Limit];
 
 namespace js {
-
-MOZ_ALWAYS_INLINE bool
-CheckForInterrupt(JSContext* cx)
-{
-    MOZ_ASSERT(!cx->isExceptionPending());
-    
-    
-    JSRuntime* rt = cx->runtime();
-    if (MOZ_UNLIKELY(rt->hasPendingInterrupt()))
-        return rt->handleInterrupt(cx);
-    return true;
-}
 
 
 
@@ -843,17 +1125,13 @@ class MOZ_RAII AutoLockForExclusiveAccess
     }
 
   public:
-    explicit AutoLockForExclusiveAccess(ExclusiveContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
+    explicit AutoLockForExclusiveAccess(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-        init(cx->runtime_);
+        init(cx->runtime());
     }
     explicit AutoLockForExclusiveAccess(JSRuntime* rt MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
         init(rt);
-    }
-    explicit AutoLockForExclusiveAccess(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
-        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-        init(cx->runtime());
     }
     ~AutoLockForExclusiveAccess() {
         if (runtime->numExclusiveThreads) {
@@ -869,36 +1147,115 @@ class MOZ_RAII AutoLockForExclusiveAccess
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
+class MOZ_RAII AutoKeepAtoms
+{
+    JSContext* cx;
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+
+  public:
+    explicit AutoKeepAtoms(JSContext* cx
+                           MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : cx(cx)
+    {
+        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+        cx->keepAtoms++;
+    }
+    ~AutoKeepAtoms() {
+        MOZ_ASSERT(cx->keepAtoms);
+        cx->keepAtoms--;
+
+        JSRuntime* rt = cx->runtime();
+        if (!cx->helperThread()) {
+            if (rt->gc.fullGCForAtomsRequested() && !cx->keepAtoms)
+                rt->gc.triggerFullGCForAtoms();
+        }
+    }
+};
 
 
 
+class MOZ_RAII AutoEnterIonCompilation
+{
+  public:
+    explicit AutoEnterIonCompilation(bool safeForMinorGC
+                                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
+        MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
-extern JS::TwoByteCharsZ
-LossyUTF8CharsToNewTwoByteCharsZ(ExclusiveContext* cx, const JS::UTF8Chars utf8, size_t* outlen);
+#ifdef DEBUG
+        JSContext* cx = TlsContext.get();
+        MOZ_ASSERT(!cx->ionCompiling);
+        MOZ_ASSERT(!cx->ionCompilingSafeForMinorGC);
+        cx->ionCompiling = true;
+        cx->ionCompilingSafeForMinorGC = safeForMinorGC;
+#endif
+    }
 
-extern JS::TwoByteCharsZ
-LossyUTF8CharsToNewTwoByteCharsZ(ExclusiveContext* cx, const JS::ConstUTF8CharsZ& utf8, size_t* outlen);
+    ~AutoEnterIonCompilation() {
+#ifdef DEBUG
+        JSContext* cx = TlsContext.get();
+        MOZ_ASSERT(cx->ionCompiling);
+        cx->ionCompiling = false;
+        cx->ionCompilingSafeForMinorGC = false;
+#endif
+    }
 
-extern JS::Latin1CharsZ
-LossyUTF8CharsToNewLatin1CharsZ(ExclusiveContext* cx, const JS::UTF8Chars utf8, size_t* outlen);
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+};
+
+namespace gc {
+
+
+struct MOZ_RAII AutoSetThreadIsPerformingGC
+{
+#ifdef DEBUG
+    AutoSetThreadIsPerformingGC()
+      : cx(TlsContext.get())
+    {
+        MOZ_ASSERT(!cx->performingGC);
+        cx->performingGC = true;
+    }
+
+    ~AutoSetThreadIsPerformingGC() {
+        MOZ_ASSERT(cx->performingGC);
+        cx->performingGC = false;
+    }
+
+  private:
+    JSContext* cx;
+#else
+    AutoSetThreadIsPerformingGC() {}
+#endif
+};
+
+
+struct MOZ_RAII AutoSetThreadIsSweeping
+{
+#ifdef DEBUG
+    AutoSetThreadIsSweeping()
+      : cx(TlsContext.get())
+    {
+        MOZ_ASSERT(!cx->gcSweeping);
+        cx->gcSweeping = true;
+    }
+
+    ~AutoSetThreadIsSweeping() {
+        MOZ_ASSERT(cx->gcSweeping);
+        cx->gcSweeping = false;
+    }
+
+  private:
+    JSContext* cx;
+#else
+    AutoSetThreadIsSweeping() {}
+#endif
+};
+
+} 
 
 } 
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
-inline JSContext*
-JSRuntime::unsafeContextFromAnyThread()
-{
-    return static_cast<JSContext*>(this);
-}
-
-inline JSContext*
-JSRuntime::contextFromMainThread()
-{
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(this));
-    return unsafeContextFromAnyThread();
-}
 
 #endif 

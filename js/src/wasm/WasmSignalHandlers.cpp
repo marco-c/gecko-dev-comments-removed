@@ -48,11 +48,10 @@ extern "C" MFBT_API bool IsSignalHandlingBroken();
 static JSRuntime*
 RuntimeForCurrentThread()
 {
-    PerThreadData* threadData = TlsPerThreadData.get();
-    if (!threadData)
-        return nullptr;
-
-    return threadData->runtimeIfOnOwnerThread();
+    JSContext* cx = TlsContext.get();
+    if (cx && cx->runtime() && CurrentThreadCanAccessRuntime(cx->runtime()))
+        return cx->runtime();
+    return nullptr;
 }
 
 
@@ -68,14 +67,14 @@ class AutoSetHandlingSegFault
     explicit AutoSetHandlingSegFault(JSRuntime* rt)
       : rt(rt)
     {
-        MOZ_ASSERT(!rt->handlingSegFault);
-        rt->handlingSegFault = true;
+        MOZ_ASSERT(!rt->unsafeContextFromAnyThread()->handlingSegFault);
+        rt->unsafeContextFromAnyThread()->handlingSegFault = true;
     }
 
     ~AutoSetHandlingSegFault()
     {
-        MOZ_ASSERT(rt->handlingSegFault);
-        rt->handlingSegFault = false;
+        MOZ_ASSERT(rt->unsafeContextFromAnyThread()->handlingSegFault);
+        rt->unsafeContextFromAnyThread()->handlingSegFault = false;
     }
 };
 
@@ -795,11 +794,11 @@ HandleFault(PEXCEPTION_POINTERS exception)
 
     
     JSRuntime* rt = RuntimeForCurrentThread();
-    if (!rt || rt->handlingSegFault)
+    if (!rt || rt->unsafeContextFromAnyThread()->handlingSegFault)
         return false;
     AutoSetHandlingSegFault handling(rt);
 
-    WasmActivation* activation = rt->wasmActivationStack();
+    WasmActivation* activation = rt->unsafeContextFromAnyThread()->wasmActivationStack();
     if (!activation)
         return false;
 
@@ -893,7 +892,7 @@ static bool
 HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
 {
     
-    if (rt->handlingSegFault)
+    if (rt->unsafeContextFromAnyThread()->handlingSegFault)
         return false;
     AutoSetHandlingSegFault handling(rt);
 
@@ -936,7 +935,7 @@ HandleMachException(JSRuntime* rt, const ExceptionRequest& request)
     if (request.body.exception != EXC_BAD_ACCESS || request.body.codeCnt != 2)
         return false;
 
-    WasmActivation* activation = rt->wasmActivationStack();
+    WasmActivation* activation = rt->unsafeContextFromAnyThread()->wasmActivationStack();
     if (!activation)
         return false;
 
@@ -973,7 +972,7 @@ static const mach_msg_id_t sQuitId = 42;
 static void
 MachExceptionHandlerThread(JSRuntime* rt)
 {
-    mach_port_t port = rt->wasmMachExceptionHandler.port();
+    mach_port_t port = rt->unsafeContextFromAnyThread()->wasmMachExceptionHandler.port();
     kern_return_t kret;
 
     while(true) {
@@ -1139,11 +1138,11 @@ HandleFault(int signum, siginfo_t* info, void* ctx)
 
     
     JSRuntime* rt = RuntimeForCurrentThread();
-    if (!rt || rt->handlingSegFault)
+    if (!rt || rt->unsafeContextFromAnyThread()->handlingSegFault)
         return false;
     AutoSetHandlingSegFault handling(rt);
 
-    WasmActivation* activation = rt->wasmActivationStack();
+    WasmActivation* activation = rt->unsafeContextFromAnyThread()->wasmActivationStack();
     if (!activation)
         return false;
 
@@ -1230,8 +1229,10 @@ RedirectIonBackedgesToInterruptCheck(JSRuntime* rt)
         
         
         
-        if (!jitRuntime->preventBackedgePatching())
-            jitRuntime->patchIonBackedges(rt, jit::JitRuntime::BackedgeInterruptCheck);
+        if (!jitRuntime->preventBackedgePatching()) {
+            jit::JitZoneGroup* jzg = rt->zoneGroupFromAnyThread()->jitZoneGroup;
+            jzg->patchIonBackedges(rt->unsafeContextFromAnyThread(), jit::JitZoneGroup::BackedgeInterruptCheck);
+        }
     }
 }
 
@@ -1242,15 +1243,15 @@ RedirectJitCodeToInterruptCheck(JSRuntime* rt, CONTEXT* context)
 {
     RedirectIonBackedgesToInterruptCheck(rt);
 
-    if (WasmActivation* activation = rt->wasmActivationStack()) {
+    if (WasmActivation* activation = rt->unsafeContextFromAnyThread()->wasmActivationStack()) {
 #ifdef JS_SIMULATOR
         (void)ContextToPC(context);  
 
-        void* pc = rt->simulator()->get_pc_as<void*>();
+        void* pc = rt->unsafeContextFromAnyThread()->simulator()->get_pc_as<void*>();
 
         const Instance* instance = activation->compartment()->wasm.lookupInstanceDeprecated(pc);
         if (instance && instance->codeSegment().containsFunctionPC(pc))
-            rt->simulator()->set_resume_pc(instance->codeSegment().interruptCode());
+            rt->unsafeContextFromAnyThread()->simulator()->set_resume_pc(instance->codeSegment().interruptCode());
 #else
         uint8_t** ppc = ContextToPC(context);
         uint8_t* pc = *ppc;
@@ -1289,10 +1290,10 @@ JitInterruptHandler(int signum, siginfo_t* info, void* context)
 
 #if defined(JS_SIMULATOR_ARM) || defined(JS_SIMULATOR_MIPS32) || defined(JS_SIMULATOR_MIPS64)
         Simulator::ICacheCheckingEnabled = prevICacheCheckingState;
-        rt->simulator()->cacheInvalidatedBySignalHandler_ = true;
+        rt->contextFromMainThread()->simulator()->cacheInvalidatedBySignalHandler_ = true;
 #endif
 
-        rt->finishHandlingJitInterrupt();
+        rt->contextFromMainThread()->finishHandlingJitInterrupt();
     }
 }
 #endif
@@ -1406,7 +1407,8 @@ wasm::EnsureSignalHandlers(JSRuntime* rt)
 
 #if defined(XP_DARWIN)
     
-    if (!rt->wasmMachExceptionHandler.installed() && !rt->wasmMachExceptionHandler.install(rt))
+    JSContext* cx = rt->contextFromMainThread();
+    if (!cx->wasmMachExceptionHandler.installed() && !cx->wasmMachExceptionHandler.install(rt))
         return false;
 #endif
 
@@ -1439,7 +1441,7 @@ js::InterruptRunningJitCode(JSRuntime* rt)
 
     
     
-    if (!rt->startHandlingJitInterrupt())
+    if (!rt->unsafeContextFromAnyThread()->startHandlingJitInterrupt())
         return;
 
     
@@ -1447,7 +1449,7 @@ js::InterruptRunningJitCode(JSRuntime* rt)
     
     if (rt == RuntimeForCurrentThread()) {
         RedirectIonBackedgesToInterruptCheck(rt);
-        rt->finishHandlingJitInterrupt();
+        rt->contextFromMainThread()->finishHandlingJitInterrupt();
         return;
     }
 
@@ -1458,7 +1460,7 @@ js::InterruptRunningJitCode(JSRuntime* rt)
     
     
     
-    HANDLE thread = (HANDLE)rt->ownerThreadNative();
+    HANDLE thread = (HANDLE)rt->unsafeContextFromAnyThread()->threadNative();
     if (SuspendThread(thread) != -1) {
         CONTEXT context;
         context.ContextFlags = CONTEXT_CONTROL;
@@ -1468,12 +1470,12 @@ js::InterruptRunningJitCode(JSRuntime* rt)
         }
         ResumeThread(thread);
     }
-    rt->finishHandlingJitInterrupt();
+    rt->unsafeContextFromAnyThread()->finishHandlingJitInterrupt();
 #else
     
     
     
-    pthread_t thread = (pthread_t)rt->ownerThreadNative();
+    pthread_t thread = (pthread_t)rt->unsafeContextFromAnyThread()->threadNative();
     pthread_kill(thread, sInterruptSignal);
 #endif
 }
@@ -1485,9 +1487,9 @@ js::wasm::IsPCInWasmCode(void *pc)
     if (!rt)
         return false;
 
-    MOZ_RELEASE_ASSERT(!rt->handlingSegFault);
+    MOZ_RELEASE_ASSERT(!rt->contextFromMainThread()->handlingSegFault);
 
-    WasmActivation* activation = rt->wasmActivationStack();
+    WasmActivation* activation = rt->contextFromMainThread()->wasmActivationStack();
     if (!activation)
         return false;
 

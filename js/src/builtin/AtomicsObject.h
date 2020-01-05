@@ -48,7 +48,7 @@ int32_t atomics_xor_asm_callout(wasm::Instance* i, int32_t vt, int32_t offset, i
 int32_t atomics_cmpxchg_asm_callout(wasm::Instance* i, int32_t vt, int32_t offset, int32_t oldval, int32_t newval);
 int32_t atomics_xchg_asm_callout(wasm::Instance* i, int32_t vt, int32_t offset, int32_t value);
 
-class FutexRuntime
+class FutexThread
 {
     friend class AutoLockFutexAPI;
 
@@ -59,7 +59,7 @@ public:
     static void lock();
     static void unlock();
 
-    FutexRuntime();
+    FutexThread();
     MOZ_MUST_USE bool initInstance();
     void destroyInstance();
 
@@ -145,7 +145,7 @@ public:
     static mozilla::Atomic<js::Mutex*> lock_;
 
     
-    bool canWait_;
+    ThreadLocalData<bool> canWait_;
 };
 
 JSObject*

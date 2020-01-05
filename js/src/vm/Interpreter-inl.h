@@ -253,7 +253,7 @@ SetAliasedVarOperation(JSContext* cx, JSScript* script, jsbytecode* pc,
     
     
     PropertyName* name = obj.isSingleton()
-                         ? EnvironmentCoordinateName(cx->caches.envCoordinateNameCache, script, pc)
+                         ? EnvironmentCoordinateName(cx->caches().envCoordinateNameCache, script, pc)
                          : nullptr;
 
     obj.setAliasedBinding(cx, ec, name, val);

@@ -89,7 +89,7 @@ TypedArrayObject::notifyBufferDetached(JSContext* cx, void* newData)
 
     
     
-    Nursery& nursery = cx->runtime()->gc.nursery;
+    Nursery& nursery = cx->nursery();
     if (isTenured() && !hasBuffer() && !hasInlineElements() &&
         !nursery.isInside(elements()))
     {
@@ -123,7 +123,7 @@ TypedArrayObject::ensureHasBuffer(JSContext* cx, Handle<TypedArrayObject*> tarra
 
     
     
-    Nursery& nursery = cx->runtime()->gc.nursery;
+    Nursery& nursery = cx->nursery();
     if (tarray->isTenured() && !tarray->hasInlineElements() &&
         !nursery.isInside(tarray->elements()))
     {
@@ -208,7 +208,7 @@ TypedArrayObject::objectMovedDuringMinorGC(JSTracer* trc, JSObject* obj, const J
     if (oldObj->hasBuffer())
         return 0;
 
-    Nursery& nursery = trc->runtime()->gc.nursery;
+    Nursery& nursery = obj->zone()->group()->nursery();
     void* buf = oldObj->elements();
 
     if (!nursery.isInside(buf)) {
@@ -521,7 +521,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             
             
             auto ptr = buffer->dataPointerEither();
-            if (!IsInsideNursery(obj) && cx->runtime()->gc.nursery.isInside(ptr)) {
+            if (!IsInsideNursery(obj) && cx->nursery().isInside(ptr)) {
                 
                 
                 
@@ -531,7 +531,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
                     MOZ_ASSERT(buffer->byteLength() == 0 &&
                                (uintptr_t(ptr.unwrapValue()) & gc::ChunkMask) == 0);
                 } else {
-                    cx->runtime()->gc.storeBuffer.putWholeCell(obj);
+                    cx->zone()->group()->storeBuffer().putWholeCell(obj);
                 }
             }
         } else {
@@ -650,7 +650,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     {
         if (buf) {
 #ifdef DEBUG
-            Nursery& nursery = cx->runtime()->gc.nursery;
+            Nursery& nursery = cx->nursery();
             MOZ_ASSERT_IF(!nursery.isInside(buf) && !tarray->hasInlineElements(),
                           tarray->isTenured());
 #endif

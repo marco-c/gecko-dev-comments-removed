@@ -2821,7 +2821,7 @@ void
 js::SharedIntlData::trace(JSTracer* trc)
 {
     
-    if (!trc->runtime()->isHeapMinorCollecting()) {
+    if (!JS::CurrentThreadIsHeapMinorCollecting()) {
         availableTimeZones.trace(trc);
         ianaZonesTreatedAsLinksByICU.trace(trc);
         ianaLinksCanonicalizedDifferentlyByICU.trace(trc);
@@ -2843,7 +2843,7 @@ js::intl_IsValidTimeZoneName(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT(args.length() == 1);
     MOZ_ASSERT(args[0].isString());
 
-    SharedIntlData& sharedIntlData = cx->sharedIntlData;
+    SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
 
     RootedString timeZone(cx, args[0].toString());
     RootedString validatedTimeZone(cx);
@@ -2867,7 +2867,7 @@ js::intl_canonicalizeTimeZone(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT(args.length() == 1);
     MOZ_ASSERT(args[0].isString());
 
-    SharedIntlData& sharedIntlData = cx->sharedIntlData;
+    SharedIntlData& sharedIntlData = cx->runtime()->sharedIntlData.ref();
 
     
     

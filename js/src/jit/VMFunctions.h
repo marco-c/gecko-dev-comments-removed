@@ -461,9 +461,6 @@ template <class> struct MatchContext { };
 template <> struct MatchContext<JSContext*> {
     static const bool valid = true;
 };
-template <> struct MatchContext<ExclusiveContext*> {
-    static const bool valid = true;
-};
 
 
 template <typename... ArgTypes>

@@ -405,7 +405,7 @@ js::TransparentObjectWrapper(JSContext* cx, HandleObject existing, HandleObject 
 
 ErrorCopier::~ErrorCopier()
 {
-    JSContext* cx = ac->context()->asJSContext();
+    JSContext* cx = ac->context();
 
     
     

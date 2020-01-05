@@ -52,7 +52,7 @@ struct CompileArgs
     
     
     CompileArgs() = default;
-    bool initFromContext(ExclusiveContext* cx, ScriptedCaller&& scriptedCaller);
+    bool initFromContext(JSContext* cx, ScriptedCaller&& scriptedCaller);
 };
 
 

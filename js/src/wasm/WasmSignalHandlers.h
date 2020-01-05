@@ -26,6 +26,7 @@
 #endif
 #include "threading/Thread.h"
 
+struct JSContext;
 struct JSRuntime;
 
 namespace js {

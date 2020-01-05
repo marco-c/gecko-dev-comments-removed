@@ -9,6 +9,7 @@
 
 #include "NamespaceImports.h"
 #include "gc/Heap.h"
+#include "threading/ProtectedData.h"
 
 namespace js {
 namespace gc {
@@ -18,7 +19,7 @@ namespace gc {
 class AtomMarkingRuntime
 {
     
-    Vector<size_t, 0, SystemAllocPolicy> freeArenaIndexes;
+    js::ExclusiveAccessLockOrGCTaskData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
 
     
     
@@ -51,9 +52,9 @@ class AtomMarkingRuntime
     void updateChunkMarkBits(JSRuntime* runtime);
 
     
-    void markAtom(ExclusiveContext* cx, TenuredCell* thing);
-    void markId(ExclusiveContext* cx, jsid id);
-    void markAtomValue(ExclusiveContext* cx, const Value& value);
+    void markAtom(JSContext* cx, TenuredCell* thing);
+    void markId(JSContext* cx, jsid id);
+    void markAtomValue(JSContext* cx, const Value& value);
 
     
     void adoptMarkedAtoms(Zone* target, Zone* source);

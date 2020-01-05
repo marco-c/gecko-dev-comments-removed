@@ -79,7 +79,7 @@ class UnwinderTypeCache(object):
         commonFrameLayout = gdb.lookup_type('js::jit::CommonFrameLayout')
         self.d['typeCommonFrameLayout'] = commonFrameLayout
         self.d['typeCommonFrameLayoutPointer'] = commonFrameLayout.pointer()
-        self.d['per_tls_data'] = gdb.lookup_global_symbol('js::TlsPerThreadData')
+        self.d['per_tls_context'] = gdb.lookup_global_symbol('js::TlsContext')
 
         self.d['void_starstar'] = gdb.lookup_type('void').pointer().pointer()
         self.d['mod_ExecutableAllocator'] = jsjitExecutableAllocatorCache()
@@ -330,8 +330,8 @@ class UnwinderState(object):
         if self.proc_mappings != None:
             return not self.text_address_claimed(pc)
 
-        ptd = self.get_tls_per_thread_data()
-        runtime = ptd['runtime_']
+        cx = self.get_tls_context()
+        runtime = cx['runtime_']
         if runtime == 0:
             return False
 
@@ -353,8 +353,8 @@ class UnwinderState(object):
         return gdb.selected_thread() is self.thread
 
     
-    def get_tls_per_thread_data(self):
-        return self.typecache.per_tls_data.value()['mValue']
+    def get_tls_context(self):
+        return self.typecache.per_tls_context.value()['mValue']
 
     
     
@@ -434,9 +434,9 @@ class UnwinderState(object):
             
             return None
         elif self.activation is None:
-            ptd = self.get_tls_per_thread_data()
-            self.activation = ptd['runtime_']['jitActivation']
-            jittop = ptd['runtime_']['jitTop']
+            cx = self.get_tls_context()
+            self.activation = cx['jitActivation']
+            jittop = cx['jitTop']
         else:
             jittop = self.activation['prevJitTop_']
             self.activation = self.activation['prevJitActivation_']

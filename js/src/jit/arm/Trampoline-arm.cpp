@@ -314,7 +314,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
         {
             Label skipProfilingInstrumentation;
             Register realFramePtr = numStackValues;
-            AbsoluteAddress addressOfEnabled(cx->runtime()->geckoProfiler.addressOfEnabled());
+            AbsoluteAddress addressOfEnabled(cx->runtime()->geckoProfiler().addressOfEnabled());
             masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
                           &skipProfilingInstrumentation);
             masm.as_add(realFramePtr, framePtr, Imm8(sizeof(void*)));
@@ -376,7 +376,7 @@ JitRuntime::generateEnterJIT(JSContext* cx, EnterJitType type)
     
 
     
-    GenerateReturn(masm, true, &cx->runtime()->geckoProfiler);
+    GenerateReturn(masm, true, &cx->runtime()->geckoProfiler());
 
     Linker linker(masm);
     AutoFlushICache afc("EnterJIT");
@@ -1042,7 +1042,7 @@ JitRuntime::generateDebugTrapHandler(JSContext* cx)
     
     {
         Label skipProfilingInstrumentation;
-        AbsoluteAddress addressOfEnabled(cx->runtime()->geckoProfiler.addressOfEnabled());
+        AbsoluteAddress addressOfEnabled(cx->runtime()->geckoProfiler().addressOfEnabled());
         masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0), &skipProfilingInstrumentation);
         masm.profilerExitFrame();
         masm.bind(&skipProfilingInstrumentation);

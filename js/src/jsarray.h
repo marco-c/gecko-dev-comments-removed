@@ -46,7 +46,7 @@ NewDenseEmptyArray(JSContext* cx, HandleObject proto = nullptr,
 
 
 extern ArrayObject * JS_FASTCALL
-NewDenseUnallocatedArray(ExclusiveContext* cx, uint32_t length, HandleObject proto = nullptr,
+NewDenseUnallocatedArray(JSContext* cx, uint32_t length, HandleObject proto = nullptr,
                          NewObjectKind newKind = GenericObject);
 
 
@@ -54,17 +54,17 @@ NewDenseUnallocatedArray(ExclusiveContext* cx, uint32_t length, HandleObject pro
 
 
 extern ArrayObject * JS_FASTCALL
-NewDensePartlyAllocatedArray(ExclusiveContext* cx, uint32_t length, HandleObject proto = nullptr,
+NewDensePartlyAllocatedArray(JSContext* cx, uint32_t length, HandleObject proto = nullptr,
                              NewObjectKind newKind = GenericObject);
 
 
 extern ArrayObject * JS_FASTCALL
-NewDenseFullyAllocatedArray(ExclusiveContext* cx, uint32_t length, HandleObject proto = nullptr,
+NewDenseFullyAllocatedArray(JSContext* cx, uint32_t length, HandleObject proto = nullptr,
                             NewObjectKind newKind = GenericObject);
 
 
 extern ArrayObject*
-NewDenseCopiedArray(ExclusiveContext* cx, uint32_t length, const Value* values,
+NewDenseCopiedArray(JSContext* cx, uint32_t length, const Value* values,
                     HandleObject proto = nullptr, NewObjectKind newKind = GenericObject);
 
 
@@ -78,11 +78,11 @@ NewDenseCopyOnWriteArray(JSContext* cx, HandleArrayObject templateObject, gc::In
 
 
 extern JSObject*
-NewFullyAllocatedArrayTryUseGroup(ExclusiveContext* cx, HandleObjectGroup group, size_t length,
+NewFullyAllocatedArrayTryUseGroup(JSContext* cx, HandleObjectGroup group, size_t length,
                                   NewObjectKind newKind = GenericObject);
 
 extern JSObject*
-NewPartlyAllocatedArrayTryUseGroup(ExclusiveContext* cx, HandleObjectGroup group, size_t length);
+NewPartlyAllocatedArrayTryUseGroup(JSContext* cx, HandleObjectGroup group, size_t length);
 
 extern JSObject*
 NewFullyAllocatedArrayTryReuseGroup(JSContext* cx, HandleObject obj, size_t length,
@@ -105,11 +105,11 @@ enum class ShouldUpdateTypes
 };
 
 extern bool
-MaybeAnalyzeBeforeCreatingLargeArray(ExclusiveContext* cx, HandleObjectGroup group,
+MaybeAnalyzeBeforeCreatingLargeArray(JSContext* cx, HandleObjectGroup group,
                                      const Value* vp, size_t length);
 
 extern JSObject*
-NewCopiedArrayTryUseGroup(ExclusiveContext* cx, HandleObjectGroup group,
+NewCopiedArrayTryUseGroup(JSContext* cx, HandleObjectGroup group,
                           const Value* vp, size_t length,
                           NewObjectKind newKind = GenericObject,
                           ShouldUpdateTypes updateTypes = ShouldUpdateTypes::Update);

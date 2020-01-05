@@ -5,13 +5,16 @@
 
 
 
+#include "gc/Zone.h"
 #include "jsapi-tests/tests.h"
+
+#include "jscntxtinlines.h"
 
 BEGIN_TEST(testIsInsideNursery)
 {
     
-    CHECK(!cx->gc.nursery.isInside(cx));
-    CHECK(!cx->gc.nursery.isInside((void*)nullptr));
+    CHECK(!cx->nursery().isInside(cx));
+    CHECK(!cx->nursery().isInside((void*)nullptr));
 
     JS_GC(cx);
 

@@ -900,8 +900,8 @@ jit::IonCompilationCanUseNurseryPointers()
     
     
     
-    JSRuntime* rt = TlsPerThreadData.get()->runtimeFromMainThread();
-    return rt->gc.storeBuffer.cancelIonCompilations();
+    JSContext* cx = TlsContext.get();
+    return cx->zone()->group()->storeBuffer().cancelIonCompilations();
 }
 
 #endif 

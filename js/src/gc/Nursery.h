@@ -58,6 +58,7 @@ class ObjectElements;
 class NativeObject;
 class Nursery;
 class HeapSlot;
+class ZoneGroup;
 
 void SetGCZeal(JSRuntime*, uint8_t, uint32_t);
 
@@ -134,7 +135,7 @@ class Nursery
     static const size_t Alignment = gc::ChunkSize;
     static const size_t ChunkShift = gc::ChunkShift;
 
-    explicit Nursery(JSRuntime* rt);
+    explicit Nursery(ZoneGroup* group);
     ~Nursery();
 
     MOZ_MUST_USE bool init(uint32_t maxNurseryBytes, AutoLockGC& lock);
@@ -195,14 +196,14 @@ class Nursery
     static const size_t MaxNurseryBufferSize = 1024;
 
     
-    void collect(JSRuntime* rt, JS::gcreason::Reason reason);
+    void collect(JS::gcreason::Reason reason);
 
     
 
 
 
 
-    MOZ_ALWAYS_INLINE MOZ_MUST_USE bool getForwardedPointer(JSObject** ref) const;
+    MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(JSObject** ref);
 
     
     void forwardBufferPointer(HeapSlot** pSlotsElems);
@@ -264,6 +265,9 @@ class Nursery
     
     void printTotalProfileTimes();
 
+    void* addressOfCurrentEnd() const { return (void*)&currentEnd_; }
+    void* addressOfPosition() const { return (void*)&position_; }
+
   private:
     
     static const size_t NurseryChunkUsableSize = gc::ChunkSize - sizeof(gc::ChunkTrailer);
@@ -282,11 +286,7 @@ class Nursery
                   "Nursery chunk size must match gc::Chunk size.");
 
     
-
-
-
-
-    JSRuntime* runtime_;
+    ZoneGroup* zoneGroup_;
 
     
     Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
@@ -406,19 +406,13 @@ class Nursery
     }
 
     MOZ_ALWAYS_INLINE uintptr_t currentEnd() const {
-        MOZ_ASSERT(runtime_);
         MOZ_ASSERT(currentEnd_ == chunk(currentChunk_).end());
         return currentEnd_;
     }
-    void* addressOfCurrentEnd() const {
-        MOZ_ASSERT(runtime_);
-        return (void*)&currentEnd_;
-    }
 
     uintptr_t position() const { return position_; }
-    void* addressOfPosition() const { return (void*)&position_; }
 
-    JSRuntime* runtime() const { return runtime_; }
+    ZoneGroup* zoneGroup() const { return zoneGroup_; }
 
     
     gc::TenuredCell* allocateFromTenured(JS::Zone* zone, gc::AllocKind thingKind);
@@ -426,7 +420,7 @@ class Nursery
     
     void* allocate(size_t size);
 
-    double doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
+    double doCollection(JS::gcreason::Reason reason,
                         gc::TenureCountCache& tenureCounts);
 
     

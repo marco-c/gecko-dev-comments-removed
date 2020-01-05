@@ -1439,7 +1439,7 @@ OutlineTypedObject::setOwnerAndData(JSObject* owner, uint8_t* data)
     
     
     if (owner && !IsInsideNursery(this) && IsInsideNursery(owner))
-        runtimeFromMainThread()->gc.storeBuffer.putWholeCell(this);
+        zone()->group()->storeBuffer().putWholeCell(this);
 }
 
  OutlineTypedObject*
@@ -1636,7 +1636,8 @@ OutlineTypedObject::obj_trace(JSTracer* trc, JSObject* object)
         newData += reinterpret_cast<uint8_t*>(owner) - reinterpret_cast<uint8_t*>(oldOwner);
         typedObj.setData(newData);
 
-        trc->runtime()->gc.nursery.maybeSetForwardingPointer(trc, oldData, newData,  false);
+        Nursery& nursery = typedObj.zoneFromAnyThread()->group()->nursery();
+        nursery.maybeSetForwardingPointer(trc, oldData, newData,  false);
     }
 
     if (!descr.opaque() || !typedObj.isAttached())
@@ -2141,8 +2142,8 @@ InlineTypedObject::objectMovedDuringMinorGC(JSTracer* trc, JSObject* dst, JSObje
         
         uint8_t* oldData = reinterpret_cast<uint8_t*>(src) + offsetOfDataStart();
         uint8_t* newData = dst->as<InlineTypedObject>().inlineTypedMem();
-        trc->runtime()->gc.nursery.maybeSetForwardingPointer(trc, oldData, newData,
-                                                             descr.size() >= sizeof(uintptr_t));
+        dst->zone()->group()->nursery().maybeSetForwardingPointer(trc, oldData, newData,
+                                                                  descr.size() >= sizeof(uintptr_t));
     }
 }
 
@@ -2189,7 +2190,7 @@ InlineTransparentTypedObject::getOrCreateBuffer(JSContext* cx)
     if (IsInsideNursery(this)) {
         
         
-        cx->runtime()->gc.storeBuffer.putWholeCell(buffer);
+        zone()->group()->storeBuffer().putWholeCell(buffer);
     }
 
     return buffer;
@@ -2679,8 +2680,8 @@ StoreReferenceAny::store(JSContext* cx, GCPtrValue* heap, const Value& v,
     
     
     if (!v.isUndefined()) {
-        if (cx->isJSContext())
-            AddTypePropertyId(cx->asJSContext(), obj, id, v);
+        if (!cx->helperThread())
+            AddTypePropertyId(cx, obj, id, v);
         else if (!HasTypePropertyId(obj, id, v))
             return false;
     }
@@ -2699,8 +2700,8 @@ StoreReferenceObject::store(JSContext* cx, GCPtrObject* heap, const Value& v,
     
     
     if (v.isObject()) {
-        if (cx->isJSContext())
-            AddTypePropertyId(cx->asJSContext(), obj, id, v);
+        if (!cx->helperThread())
+            AddTypePropertyId(cx, obj, id, v);
         else if (!HasTypePropertyId(obj, id, v))
             return false;
     }

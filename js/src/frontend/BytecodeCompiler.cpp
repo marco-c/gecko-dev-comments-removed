@@ -34,7 +34,7 @@ using mozilla::Nothing;
 class MOZ_STACK_CLASS AutoCompilationTraceLogger
 {
   public:
-    AutoCompilationTraceLogger(ExclusiveContext* cx, const TraceLoggerTextId id,
+    AutoCompilationTraceLogger(JSContext* cx, const TraceLoggerTextId id,
                                const ReadOnlyCompileOptions& options);
 
   private:
@@ -50,7 +50,7 @@ class MOZ_STACK_CLASS BytecodeCompiler
 {
   public:
     
-    BytecodeCompiler(ExclusiveContext* cx,
+    BytecodeCompiler(JSContext* cx,
                      LifoAlloc& alloc,
                      const ReadOnlyCompileOptions& options,
                      SourceBufferHolder& sourceBuffer,
@@ -86,7 +86,7 @@ class MOZ_STACK_CLASS BytecodeCompiler
     AutoCompilationTraceLogger traceLogger;
     AutoKeepAtoms keepAtoms;
 
-    ExclusiveContext* cx;
+    JSContext* cx;
     LifoAlloc& alloc;
     const ReadOnlyCompileOptions& options;
     SourceBufferHolder& sourceBuffer;
@@ -109,23 +109,23 @@ class MOZ_STACK_CLASS BytecodeCompiler
     RootedScript script;
 };
 
-AutoCompilationTraceLogger::AutoCompilationTraceLogger(ExclusiveContext* cx,
+AutoCompilationTraceLogger::AutoCompilationTraceLogger(JSContext* cx,
         const TraceLoggerTextId id, const ReadOnlyCompileOptions& options)
-  : logger(cx->isJSContext() ? TraceLoggerForMainThread(cx->asJSContext()->runtime())
-                             : TraceLoggerForCurrentThread()),
+  : logger(!cx->helperThread() ? TraceLoggerForMainThread(cx->runtime())
+                               : TraceLoggerForCurrentThread()),
     event(logger, TraceLogger_AnnotateScripts, options),
     scriptLogger(logger, event),
     typeLogger(logger, id)
 {}
 
-BytecodeCompiler::BytecodeCompiler(ExclusiveContext* cx,
+BytecodeCompiler::BytecodeCompiler(JSContext* cx,
                                    LifoAlloc& alloc,
                                    const ReadOnlyCompileOptions& options,
                                    SourceBufferHolder& sourceBuffer,
                                    HandleScope enclosingScope,
                                    TraceLoggerTextId logId)
   : traceLogger(cx, logId, options),
-    keepAtoms(cx->perThreadData),
+    keepAtoms(cx),
     cx(cx),
     alloc(alloc),
     options(options),
@@ -154,8 +154,8 @@ BytecodeCompiler::checkLength()
     
     
     if (sourceBuffer.length() > UINT32_MAX) {
-        if (cx->isJSContext())
-            JS_ReportErrorNumberASCII(cx->asJSContext(), GetErrorMessage, nullptr,
+        if (!cx->helperThread())
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                       JSMSG_SOURCE_TOO_LONG);
         return false;
     }
@@ -329,12 +329,12 @@ BytecodeCompiler::compileScript(HandleObject environment, SharedContext* sc)
 
         
         if (pn) {
-            if (sc->isEvalContext() && sc->hasDebuggerStatement() && cx->isJSContext()) {
+            if (sc->isEvalContext() && sc->hasDebuggerStatement() && !cx->helperThread()) {
                 
                 
                 
                 
-                if (!deoptimizeArgumentsInEnclosingScripts(cx->asJSContext(), environment))
+                if (!deoptimizeArgumentsInEnclosingScripts(cx, environment))
                     return nullptr;
             }
             if (!emitter->emitScript(pn))
@@ -357,7 +357,7 @@ BytecodeCompiler::compileScript(HandleObject environment, SharedContext* sc)
     if (!maybeCompleteCompressSource())
         return nullptr;
 
-    MOZ_ASSERT_IF(cx->isJSContext(), !cx->asJSContext()->isExceptionPending());
+    MOZ_ASSERT_IF(!cx->helperThread(), !cx->isExceptionPending());
 
     return script;
 }
@@ -421,7 +421,7 @@ BytecodeCompiler::compileModule()
     if (!maybeCompleteCompressSource())
         return nullptr;
 
-    MOZ_ASSERT_IF(cx->isJSContext(), !cx->asJSContext()->isExceptionPending());
+    MOZ_ASSERT_IF(!cx->helperThread(), !cx->isExceptionPending());
     return module;
 }
 
@@ -486,7 +486,7 @@ BytecodeCompiler::sourceObjectPtr() const
 }
 
 ScriptSourceObject*
-frontend::CreateScriptSourceObject(ExclusiveContext* cx, const ReadOnlyCompileOptions& options,
+frontend::CreateScriptSourceObject(JSContext* cx, const ReadOnlyCompileOptions& options,
                                    Maybe<uint32_t> parameterListEnd )
 {
     ScriptSource* ss = cx->new_<ScriptSource>();
@@ -510,8 +510,8 @@ frontend::CreateScriptSourceObject(ExclusiveContext* cx, const ReadOnlyCompileOp
     
     
     
-    if (cx->isJSContext()) {
-        if (!ScriptSourceObject::initFromOptions(cx->asJSContext(), sso, options))
+    if (!cx->helperThread()) {
+        if (!ScriptSourceObject::initFromOptions(cx, sso, options))
             return nullptr;
     }
 
@@ -550,7 +550,7 @@ class MOZ_STACK_CLASS AutoInitializeSourceObject
 };
 
 JSScript*
-frontend::CompileGlobalScript(ExclusiveContext* cx, LifoAlloc& alloc, ScopeKind scopeKind,
+frontend::CompileGlobalScript(JSContext* cx, LifoAlloc& alloc, ScopeKind scopeKind,
                               const ReadOnlyCompileOptions& options,
                               SourceBufferHolder& srcBuf,
                               SourceCompressionTask* extraSct,
@@ -565,7 +565,7 @@ frontend::CompileGlobalScript(ExclusiveContext* cx, LifoAlloc& alloc, ScopeKind 
 }
 
 JSScript*
-frontend::CompileEvalScript(ExclusiveContext* cx, LifoAlloc& alloc,
+frontend::CompileEvalScript(JSContext* cx, LifoAlloc& alloc,
                             HandleObject environment, HandleScope enclosingScope,
                             const ReadOnlyCompileOptions& options,
                             SourceBufferHolder& srcBuf,
@@ -580,7 +580,7 @@ frontend::CompileEvalScript(ExclusiveContext* cx, LifoAlloc& alloc,
 }
 
 ModuleObject*
-frontend::CompileModule(ExclusiveContext* cx, const ReadOnlyCompileOptions& optionsInput,
+frontend::CompileModule(JSContext* cx, const ReadOnlyCompileOptions& optionsInput,
                         SourceBufferHolder& srcBuf, LifoAlloc& alloc,
                         ScriptSourceObject** sourceObjectOut )
 {
@@ -605,14 +605,14 @@ frontend::CompileModule(JSContext* cx, const ReadOnlyCompileOptions& options,
     if (!GlobalObject::ensureModulePrototypesCreated(cx, cx->global()))
         return nullptr;
 
-    LifoAlloc& alloc = cx->asJSContext()->tempLifoAlloc();
+    LifoAlloc& alloc = cx->tempLifoAlloc();
     RootedModuleObject module(cx, CompileModule(cx, options, srcBuf, alloc));
     if (!module)
         return nullptr;
 
     
     
-    if (!ModuleObject::Freeze(cx->asJSContext(), module))
+    if (!ModuleObject::Freeze(cx, module))
         return nullptr;
 
     return module;

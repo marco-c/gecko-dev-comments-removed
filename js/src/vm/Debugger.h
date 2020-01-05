@@ -10,7 +10,6 @@
 #include "mozilla/GuardObjects.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Range.h"
-#include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
 
 #include "jsclist.h"
@@ -204,7 +203,7 @@ class AutoSuppressDebuggeeNoExecuteChecks
 
   public:
     explicit AutoSuppressDebuggeeNoExecuteChecks(JSContext* cx) {
-        stack_ = &cx->runtime()->noExecuteDebuggerTop;
+        stack_ = &cx->noExecuteDebuggerTop.ref();
         prev_ = *stack_;
         *stack_ = nullptr;
     }
@@ -343,7 +342,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
     struct AllocationsLogEntry
     {
-        AllocationsLogEntry(HandleObject frame, mozilla::TimeStamp when, const char* className,
+        AllocationsLogEntry(HandleObject frame, double when, const char* className,
                             HandleAtom ctorName, size_t size, bool inNursery)
             : frame(frame),
               when(when),
@@ -356,7 +355,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
         };
 
         HeapPtr<JSObject*> frame;
-        mozilla::TimeStamp when;
+        double when;
         const char* className;
         HeapPtr<JSAtom*> ctorName;
         size_t size;
@@ -403,7 +402,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static const size_t DEFAULT_MAX_LOG_LENGTH = 5000;
 
     MOZ_MUST_USE bool appendAllocationSite(JSContext* cx, HandleObject obj, HandleSavedFrame frame,
-                                           mozilla::TimeStamp when);
+                                           double when);
 
     
 
@@ -714,8 +713,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static void slowPathOnNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
     static void slowPathOnNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
     static MOZ_MUST_USE bool slowPathOnLogAllocationSite(JSContext* cx, HandleObject obj,
-                                                         HandleSavedFrame frame,
-                                                         mozilla::TimeStamp when,
+                                                         HandleSavedFrame frame, double when,
                                                          GlobalObject::DebuggerVector& dbgs);
     static void slowPathPromiseHook(JSContext* cx, Hook hook, HandleObject promise);
 
@@ -902,7 +900,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static inline void onNewWasmInstance(JSContext* cx, Handle<WasmInstanceObject*> wasmInstance);
     static inline void onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global);
     static inline MOZ_MUST_USE bool onLogAllocationSite(JSContext* cx, JSObject* obj,
-                                                        HandleSavedFrame frame, mozilla::TimeStamp when);
+                                                        HandleSavedFrame frame, double when);
     static JSTrapStatus onTrap(JSContext* cx, MutableHandleValue vp);
     static JSTrapStatus onSingleStep(JSContext* cx, MutableHandleValue vp);
     static MOZ_MUST_USE bool handleBaselineOsr(JSContext* cx, InterpreterFrame* from,
@@ -1757,12 +1755,12 @@ Debugger::onNewGlobalObject(JSContext* cx, Handle<GlobalObject*> global)
 #ifdef DEBUG
     global->compartment()->firedOnNewGlobalObject = true;
 #endif
-    if (!JS_CLIST_IS_EMPTY(&cx->runtime()->onNewGlobalObjectWatchers))
+    if (!JS_CLIST_IS_EMPTY(&cx->runtime()->onNewGlobalObjectWatchers()))
         Debugger::slowPathOnNewGlobalObject(cx, global);
 }
 
  bool
-Debugger::onLogAllocationSite(JSContext* cx, JSObject* obj, HandleSavedFrame frame, mozilla::TimeStamp when)
+Debugger::onLogAllocationSite(JSContext* cx, JSObject* obj, HandleSavedFrame frame, double when)
 {
     GlobalObject::DebuggerVector* dbgs = cx->global()->getDebuggers();
     if (!dbgs || dbgs->empty())

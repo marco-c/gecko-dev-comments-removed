@@ -16,9 +16,10 @@
 
 class JSString;
 
+struct JSContext;
+
 namespace js {
 
-class ExclusiveContext;
 class LifoAlloc;
 
 
@@ -72,7 +73,7 @@ class Sprinter final : public GenericPrinter
         }
     };
 
-    ExclusiveContext*     context;          
+    JSContext*            context;          
 
   private:
     static const size_t   DefaultSize;
@@ -87,7 +88,7 @@ class Sprinter final : public GenericPrinter
     MOZ_MUST_USE bool realloc_(size_t newSize);
 
   public:
-    explicit Sprinter(ExclusiveContext* cx, bool shouldReportOOM = true);
+    explicit Sprinter(JSContext* cx, bool shouldReportOOM = true);
     ~Sprinter();
 
     
@@ -222,7 +223,7 @@ extern const char       js_EscapeMap[];
 
 
 extern JSString*
-QuoteString(ExclusiveContext* cx, JSString* str, char16_t quote);
+QuoteString(JSContext* cx, JSString* str, char16_t quote);
 
 extern char*
 QuoteString(Sprinter* sp, JSString* str, char16_t quote);

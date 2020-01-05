@@ -51,7 +51,7 @@ class RegExpStackScope
     
 
     
-    explicit RegExpStackScope(JSRuntime* rt);
+    explicit RegExpStackScope(JSContext* cx);
 
     
     ~RegExpStackScope();

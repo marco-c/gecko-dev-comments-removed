@@ -41,18 +41,9 @@ class JS_FRIEND_API(OwningCompileOptions);
 class JS_FRIEND_API(TransitiveCompileOptions);
 class JS_PUBLIC_API(CompartmentOptions);
 
-struct RootingContext;
 class Value;
 struct Zone;
 
-namespace shadow {
-struct Runtime;
-} 
-
-} 
-
-namespace js {
-class RootLists;
 } 
 
 
@@ -132,6 +123,9 @@ class AutoTraceSession;
 class StoreBuffer;
 } 
 
+inline JSCompartment* GetContextCompartment(const JSContext* cx);
+inline JS::Zone* GetContextZone(const JSContext* cx);
+
 
 
 JS_FRIEND_API(bool)
@@ -160,76 +154,45 @@ enum class HeapState {
     CycleCollecting   
 };
 
-namespace shadow {
+JS_PUBLIC_API(HeapState)
+CurrentThreadHeapState();
 
-struct Runtime
+static inline bool
+CurrentThreadIsHeapBusy()
 {
-  private:
-    JS::HeapState heapState_;
+    return CurrentThreadHeapState() != HeapState::Idle;
+}
 
-  protected:
-    void setHeapState(JS::HeapState newState) {
-        MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(asRuntime()));
-        MOZ_ASSERT(heapState_ != newState);
-        heapState_ = newState;
-    }
+static inline bool
+CurrentThreadIsHeapTracing()
+{
+    return CurrentThreadHeapState() == HeapState::Tracing;
+}
 
-    JS::HeapState heapState() const {
-        MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(asRuntime()) ||
-                   js::CurrentThreadIsPerformingGC());
-        return heapState_;
-    }
+static inline bool
+CurrentThreadIsHeapMajorCollecting()
+{
+    return CurrentThreadHeapState() == HeapState::MajorCollecting;
+}
 
-    
-    
-    bool allowGCBarriers_;
-    friend class JS::AutoAssertOnBarrier;
+static inline bool
+CurrentThreadIsHeapMinorCollecting()
+{
+    return CurrentThreadHeapState() == HeapState::MinorCollecting;
+}
 
-    js::gc::StoreBuffer* gcStoreBufferPtr_;
+static inline bool
+CurrentThreadIsHeapCollecting()
+{
+    HeapState state = CurrentThreadHeapState();
+    return state == HeapState::MajorCollecting || state == HeapState::MinorCollecting;
+}
 
-    
-    
-    bool gcGrayBitsValid_;
-
-  public:
-    Runtime()
-      : heapState_(JS::HeapState::Idle)
-      , allowGCBarriers_(true)
-      , gcStoreBufferPtr_(nullptr)
-      , gcGrayBitsValid_(false)
-    {}
-
-    bool isHeapBusy() const { return heapState() != JS::HeapState::Idle; }
-    bool isHeapTracing() const { return heapState() == JS::HeapState::Tracing; }
-    bool isHeapMajorCollecting() const { return heapState() == JS::HeapState::MajorCollecting; }
-    bool isHeapMinorCollecting() const { return heapState() == JS::HeapState::MinorCollecting; }
-    bool isHeapCollecting() const { return isHeapMinorCollecting() || isHeapMajorCollecting(); }
-    bool isCycleCollecting() const {
-        return heapState() == JS::HeapState::CycleCollecting;
-    }
-
-    bool allowGCBarriers() const { return allowGCBarriers_; }
-
-    js::gc::StoreBuffer* gcStoreBufferPtr() { return gcStoreBufferPtr_; }
-
-    bool areGCGrayBitsValid() const { return gcGrayBitsValid_; }
-    void setGCGrayBitsValid(bool valid) { gcGrayBitsValid_ = valid; }
-
-    const JSRuntime* asRuntime() const {
-        return reinterpret_cast<const JSRuntime*>(this);
-    }
-
-    static JS::shadow::Runtime* asShadowRuntime(JSRuntime* rt) {
-        return reinterpret_cast<JS::shadow::Runtime*>(rt);
-    }
-
-  protected:
-    void setGCStoreBufferPtr(js::gc::StoreBuffer* storeBuffer) {
-        gcStoreBufferPtr_ = storeBuffer;
-    }
-};
-
-} 
+static inline bool
+CurrentThreadIsHeapCycleCollecting()
+{
+    return CurrentThreadHeapState() == HeapState::CycleCollecting;
+}
 
 
 
@@ -248,11 +211,13 @@ class MOZ_STACK_CLASS JS_PUBLIC_API(AutoEnterCycleCollection)
 #endif
 };
 
+class RootingContext;
+
 class JS_PUBLIC_API(AutoGCRooter)
 {
   public:
     AutoGCRooter(JSContext* cx, ptrdiff_t tag);
-    AutoGCRooter(JS::RootingContext* cx, ptrdiff_t tag);
+    AutoGCRooter(RootingContext* cx, ptrdiff_t tag);
 
     ~AutoGCRooter() {
         MOZ_ASSERT(this == *stackTop);
@@ -307,11 +272,8 @@ struct MapTypeToRootKind<void*> {
     static const RootKind kind = RootKind::Traceable;
 };
 
-} 
-
-namespace js {
-
-class ExclusiveContext;
+using RootedListHeads = mozilla::EnumeratedArray<RootKind, RootKind::Limit,
+                                                 Rooted<void*>*>;
 
 
 
@@ -326,12 +288,9 @@ enum StackKind
     StackKindCount
 };
 
-using RootedListHeads = mozilla::EnumeratedArray<JS::RootKind, JS::RootKind::Limit,
-                                                 JS::Rooted<void*>*>;
 
 
-
-class RootLists
+class RootingContext
 {
     
     RootedListHeads stackRoots_;
@@ -341,83 +300,17 @@ class RootLists
     JS::AutoGCRooter* autoGCRooters_;
     friend class JS::AutoGCRooter;
 
-    
-    mozilla::EnumeratedArray<JS::RootKind, JS::RootKind::Limit,
-                             mozilla::LinkedList<JS::PersistentRooted<void*>>> heapRoots_;
-    template <typename T> friend class JS::PersistentRooted;
-
   public:
-    RootLists() : autoGCRooters_(nullptr) {
-        for (auto& stackRootPtr : stackRoots_)
-            stackRootPtr = nullptr;
-    }
-
-    ~RootLists() {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(heapRoots_[JS::RootKind::Traceable].isEmpty());
-    }
+    RootingContext();
 
     void traceStackRoots(JSTracer* trc);
     void checkNoGCRooters();
 
-    void tracePersistentRoots(JSTracer* trc);
-    void finishPersistentRoots();
-};
-
-} 
-
-namespace JS {
-
-
-
-
-
-
-struct RootingContext
-{
-    js::RootLists roots;
-
-#ifdef DEBUG
-    
-    bool isJSContext;
-#endif
-
-    explicit RootingContext(bool isJSContextArg)
-#ifdef DEBUG
-      : isJSContext(isJSContextArg)
-#endif
-    {}
-
-    static RootingContext* get(JSContext* cx) {
-        return reinterpret_cast<RootingContext*>(cx);
-    }
-};
-
-} 
-
-namespace js {
-
-struct ContextFriendFields : public JS::RootingContext
-{
   protected:
+    
+    
+    
+
     
     JSCompartment*      compartment_;
 
@@ -426,22 +319,23 @@ struct ContextFriendFields : public JS::RootingContext
 
   public:
     
-    uintptr_t nativeStackLimit[js::StackKindCount];
+    uintptr_t nativeStackLimit[StackKindCount];
 
-    explicit ContextFriendFields(bool isJSContext);
-
-    static const ContextFriendFields* get(const JSContext* cx) {
-        return reinterpret_cast<const ContextFriendFields*>(cx);
+    static const RootingContext* get(const JSContext* cx) {
+        return reinterpret_cast<const RootingContext*>(cx);
     }
 
-    static ContextFriendFields* get(JSContext* cx) {
-        return reinterpret_cast<ContextFriendFields*>(cx);
+    static RootingContext* get(JSContext* cx) {
+        return reinterpret_cast<RootingContext*>(cx);
     }
 
-    friend JSCompartment* GetContextCompartment(const JSContext* cx);
-    friend JS::Zone* GetContextZone(const JSContext* cx);
-    template <typename T> friend class JS::Rooted;
+    friend JSCompartment* js::GetContextCompartment(const JSContext* cx);
+    friend JS::Zone* js::GetContextZone(const JSContext* cx);
 };
+
+} 
+
+namespace js {
 
 
 
@@ -456,13 +350,13 @@ struct ContextFriendFields : public JS::RootingContext
 inline JSCompartment*
 GetContextCompartment(const JSContext* cx)
 {
-    return ContextFriendFields::get(cx)->compartment_;
+    return JS::RootingContext::get(cx)->compartment_;
 }
 
 inline JS::Zone*
 GetContextZone(const JSContext* cx)
 {
-    return ContextFriendFields::get(cx)->zone_;
+    return JS::RootingContext::get(cx)->zone_;
 }
 
 } 

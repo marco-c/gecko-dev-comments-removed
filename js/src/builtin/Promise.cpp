@@ -2648,7 +2648,7 @@ js::EnqueuePromiseReactions(JSContext* cx, Handle<PromiseObject*> promise,
 }
 
 PromiseTask::PromiseTask(JSContext* cx, Handle<PromiseObject*> promise)
-  : runtime_(cx),
+  : runtime_(cx->runtime()),
     promise_(cx, promise)
 {}
 
@@ -2660,7 +2660,7 @@ PromiseTask::~PromiseTask()
 void
 PromiseTask::finish(JSContext* cx)
 {
-    MOZ_ASSERT(cx == runtime_);
+    MOZ_ASSERT(cx->runtime() == runtime_);
     {
         
         
@@ -2675,7 +2675,7 @@ PromiseTask::finish(JSContext* cx)
 void
 PromiseTask::cancel(JSContext* cx)
 {
-    MOZ_ASSERT(cx == runtime_);
+    MOZ_ASSERT(cx->runtime() == runtime_);
     js_delete(this);
 }
 

@@ -1042,7 +1042,7 @@ enum class SymbolicAddress
 };
 
 void*
-AddressOf(SymbolicAddress imm, ExclusiveContext* cx);
+AddressOf(SymbolicAddress imm, JSContext* cx);
 
 
 
@@ -1058,7 +1058,7 @@ struct Assumptions
     
     
     Assumptions();
-    bool initBuildIdFromContext(ExclusiveContext* cx);
+    bool initBuildIdFromContext(JSContext* cx);
 
     bool clone(const Assumptions& other);
 

@@ -1064,7 +1064,7 @@ class HeapUsage
 
 
 
-    HeapUsage* parent_;
+    HeapUsage* const parent_;
 
     
 

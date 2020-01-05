@@ -187,7 +187,7 @@ class ArenaCellIter : public ArenaCellIterImpl
     explicit ArenaCellIter(Arena* arena)
       : ArenaCellIterImpl(arena)
     {
-        MOZ_ASSERT(arena->zone->runtimeFromMainThread()->isHeapTracing());
+        MOZ_ASSERT(JS::CurrentThreadIsHeapTracing());
     }
 };
 
@@ -226,7 +226,7 @@ class ZoneCellIter<TenuredCell> {
 
     void init(JS::Zone* zone, AllocKind kind) {
         MOZ_ASSERT_IF(IsNurseryAllocable(kind),
-                      zone->runtimeFromAnyThread()->gc.nursery.isEmpty());
+                      zone->isAtomsZone() || zone->group()->nursery().isEmpty());
         initForTenuredIteration(zone, kind);
     }
 
@@ -235,9 +235,9 @@ class ZoneCellIter<TenuredCell> {
 
         
         
-        if (!rt->isHeapBusy()) {
+        if (!JS::CurrentThreadIsHeapBusy()) {
             
-            nogc.emplace(rt);
+            nogc.emplace();
         }
 
         
@@ -255,10 +255,8 @@ class ZoneCellIter<TenuredCell> {
     ZoneCellIter(JS::Zone* zone, AllocKind kind) {
         
         
-        if (IsNurseryAllocable(kind)) {
-            JSRuntime* rt = zone->runtimeFromMainThread();
-            rt->gc.evictNursery();
-        }
+        if (IsNurseryAllocable(kind))
+            zone->group()->evictNursery();
 
         init(zone, kind);
     }
@@ -384,8 +382,7 @@ class GCZonesIter
 
   public:
     explicit GCZonesIter(JSRuntime* rt, ZoneSelector selector = WithAtoms) : zone(rt, selector) {
-        MOZ_ASSERT((CurrentThreadCanAccessRuntime(rt) && rt->isHeapBusy()) ||
-                   CurrentThreadIsPerformingGC());
+        MOZ_ASSERT(JS::CurrentThreadIsHeapBusy());
         if (!zone->isCollectingFromAnyThread())
             next();
     }

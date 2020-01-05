@@ -515,7 +515,7 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
     CHECK_REQUEST(cx);
     JSRuntime* rt = cx->runtime();
 
-    rt->gc.evictNursery(JS::gcreason::EVICT_NURSERY);
+    rt->zoneGroupFromMainThread()->evictNursery(JS::gcreason::EVICT_NURSERY);
 
     
     
@@ -572,7 +572,7 @@ js::RemapWrapper(JSContext* cx, JSObject* wobjArg, JSObject* newTargetArg)
     Value origv = ObjectValue(*origTarget);
     JSCompartment* wcompartment = wobj->compartment();
 
-    AutoDisableProxyCheck adpc(cx->runtime());
+    AutoDisableProxyCheck adpc;
 
     
     
@@ -655,7 +655,7 @@ js::RecomputeWrappers(JSContext* cx, const CompartmentFilter& sourceFilter,
                       const CompartmentFilter& targetFilter)
 {
     
-    cx->runtime()->gc.evictNursery(JS::gcreason::EVICT_NURSERY);
+    cx->runtime()->zoneGroupFromMainThread()->evictNursery(JS::gcreason::EVICT_NURSERY);
 
     AutoWrapperVector toRecompute(cx);
     for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next()) {

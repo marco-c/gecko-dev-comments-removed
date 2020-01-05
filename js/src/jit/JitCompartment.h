@@ -66,7 +66,7 @@ class JitcodeGlobalTable;
 
 class PatchableBackedge : public InlineListNode<PatchableBackedge>
 {
-    friend class JitRuntime;
+    friend class JitZoneGroup;
 
     CodeLocationJump backedge;
     CodeLocationLabel loopHeader;
@@ -82,111 +82,77 @@ class PatchableBackedge : public InlineListNode<PatchableBackedge>
 
 class JitRuntime
 {
-  public:
-    enum BackedgeTarget {
-        BackedgeLoopHeader,
-        BackedgeInterruptCheck
-    };
-
   private:
     friend class JitCompartment;
 
     
     
-    ExecutableAllocator execAlloc_;
+    UnprotectedData<ExecutableAllocator> execAlloc_;
 
     
-    ExecutableAllocator backedgeExecAlloc_;
+    UnprotectedData<ExecutableAllocator> backedgeExecAlloc_;
 
     
-    JitCode* exceptionTail_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> exceptionTail_;
 
     
-    JitCode* bailoutTail_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> bailoutTail_;
 
     
-    JitCode* profilerExitFrameTail_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> profilerExitFrameTail_;
 
     
-    JitCode* enterJIT_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> enterJIT_;
 
     
-    JitCode* enterBaselineJIT_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> enterBaselineJIT_;
 
     
-    Vector<JitCode*, 4, SystemAllocPolicy> bailoutTables_;
+    typedef Vector<JitCode*, 4, SystemAllocPolicy> BailoutTableVector;
+    ExclusiveAccessLockWriteOnceData<BailoutTableVector> bailoutTables_;
 
     
-    JitCode* bailoutHandler_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> bailoutHandler_;
 
     
     
-    JitCode* argumentsRectifier_;
-    void* argumentsRectifierReturnAddr_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> argumentsRectifier_;
+    ExclusiveAccessLockWriteOnceData<void*> argumentsRectifierReturnAddr_;
 
     
-    JitCode* invalidator_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> invalidator_;
 
     
-    JitCode* valuePreBarrier_;
-    JitCode* stringPreBarrier_;
-    JitCode* objectPreBarrier_;
-    JitCode* shapePreBarrier_;
-    JitCode* objectGroupPreBarrier_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> valuePreBarrier_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> stringPreBarrier_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> objectPreBarrier_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> shapePreBarrier_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> objectGroupPreBarrier_;
 
     
-    JitCode* mallocStub_;
-    JitCode* freeStub_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> mallocStub_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> freeStub_;
 
     
-    JitCode* lazyLinkStub_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> lazyLinkStub_;
 
     
-    JitCode* debugTrapHandler_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> debugTrapHandler_;
 
     
-    JitCode* baselineDebugModeOSRHandler_;
-    void* baselineDebugModeOSRHandlerNoFrameRegPopAddr_;
+    ExclusiveAccessLockWriteOnceData<JitCode*> baselineDebugModeOSRHandler_;
+    ExclusiveAccessLockWriteOnceData<void*> baselineDebugModeOSRHandlerNoFrameRegPopAddr_;
 
     
     using VMWrapperMap = HashMap<const VMFunction*, JitCode*>;
-    VMWrapperMap* functionWrappers_;
-
-    
-    
-    
-    uint8_t* osrTempData_;
+    ExclusiveAccessLockWriteOnceData<VMWrapperMap*> functionWrappers_;
 
     
     
     mozilla::Atomic<bool> preventBackedgePatching_;
 
     
-    
-    BackedgeTarget backedgeTarget_;
-
-    
-    
-    
-    
-    InlineList<PatchableBackedge> backedgeList_;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    js::Value ionReturnOverride_;
-
-    
-    JitcodeGlobalTable* jitcodeGlobalTable_;
+    UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
 
   private:
     JitCode* generateLazyLinkStub(JSContext* cx);
@@ -219,19 +185,16 @@ class JitRuntime
     ~JitRuntime();
     MOZ_MUST_USE bool initialize(JSContext* cx, js::AutoLockForExclusiveAccess& lock);
 
-    uint8_t* allocateOsrTempData(size_t size);
-    void freeOsrTempData();
-
     static void Trace(JSTracer* trc, js::AutoLockForExclusiveAccess& lock);
     static void TraceJitcodeGlobalTable(JSTracer* trc);
     static MOZ_MUST_USE bool MarkJitcodeGlobalTableIteratively(GCMarker* marker);
     static void SweepJitcodeGlobalTable(JSRuntime* rt);
 
     ExecutableAllocator& execAlloc() {
-        return execAlloc_;
+        return execAlloc_.ref();
     }
     ExecutableAllocator& backedgeExecAlloc() {
-        return backedgeExecAlloc_;
+        return backedgeExecAlloc_.ref();
     }
 
     class AutoPreventBackedgePatching
@@ -248,7 +211,6 @@ class JitRuntime
             jrt_(jrt),
             prev_(false)  
         {
-            MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
             if (jrt_) {
                 prev_ = jrt_->preventBackedgePatching_;
                 jrt_->preventBackedgePatching_ = true;
@@ -269,19 +231,6 @@ class JitRuntime
     bool preventBackedgePatching() const {
         return preventBackedgePatching_;
     }
-    BackedgeTarget backedgeTarget() const {
-        return backedgeTarget_;
-    }
-    void addPatchableBackedge(PatchableBackedge* backedge) {
-        MOZ_ASSERT(preventBackedgePatching_);
-        backedgeList_.pushFront(backedge);
-    }
-    void removePatchableBackedge(PatchableBackedge* backedge) {
-        MOZ_ASSERT(preventBackedgePatching_);
-        backedgeList_.remove(backedge);
-    }
-
-    void patchIonBackedges(JSRuntime* rt, BackedgeTarget target);
 
     JitCode* getVMWrapper(const VMFunction& f) const;
     JitCode* debugTrapHandler(JSContext* cx);
@@ -349,20 +298,6 @@ class JitRuntime
         return lazyLinkStub_;
     }
 
-    bool hasIonReturnOverride() const {
-        return !ionReturnOverride_.isMagic(JS_ARG_POISON);
-    }
-    js::Value takeIonReturnOverride() {
-        js::Value v = ionReturnOverride_;
-        ionReturnOverride_ = js::MagicValue(JS_ARG_POISON);
-        return v;
-    }
-    void setIonReturnOverride(const js::Value& v) {
-        MOZ_ASSERT(!hasIonReturnOverride());
-        MOZ_ASSERT(!v.isMagic());
-        ionReturnOverride_ = v;
-    }
-
     bool hasJitcodeGlobalTable() const {
         return jitcodeGlobalTable_ != nullptr;
     }
@@ -373,12 +308,50 @@ class JitRuntime
     }
 
     bool isProfilerInstrumentationEnabled(JSRuntime* rt) {
-        return rt->geckoProfiler.enabled();
+        return rt->geckoProfiler().enabled();
     }
 
-    bool isOptimizationTrackingEnabled(JSRuntime* rt) {
-        return isProfilerInstrumentationEnabled(rt);
+    bool isOptimizationTrackingEnabled(ZoneGroup* group) {
+        return isProfilerInstrumentationEnabled(group->runtime);
     }
+};
+
+class JitZoneGroup
+{
+  public:
+    enum BackedgeTarget {
+        BackedgeLoopHeader,
+        BackedgeInterruptCheck
+    };
+
+  private:
+    
+    
+    ZoneGroupData<BackedgeTarget> backedgeTarget_;
+
+    
+    
+    
+    
+    ZoneGroupData<InlineList<PatchableBackedge>> backedgeList_;
+    InlineList<PatchableBackedge>& backedgeList() { return backedgeList_.ref(); }
+
+  public:
+    explicit JitZoneGroup(ZoneGroup* group);
+
+    BackedgeTarget backedgeTarget() const {
+        return backedgeTarget_;
+    }
+    void addPatchableBackedge(JitRuntime* jrt, PatchableBackedge* backedge) {
+        MOZ_ASSERT(jrt->preventBackedgePatching());
+        backedgeList().pushFront(backedge);
+    }
+    void removePatchableBackedge(JitRuntime* jrt, PatchableBackedge* backedge) {
+        MOZ_ASSERT(jrt->preventBackedgePatching());
+        backedgeList().remove(backedge);
+    }
+
+    void patchIonBackedges(JSContext* cx, BackedgeTarget target);
 };
 
 enum class CacheKind : uint8_t;
@@ -675,7 +648,7 @@ class MOZ_STACK_CLASS AutoWritableJitCode
             MOZ_CRASH();
     }
     AutoWritableJitCode(void* addr, size_t size)
-      : AutoWritableJitCode(TlsPerThreadData.get()->runtimeFromMainThread(), addr, size)
+      : AutoWritableJitCode(TlsContext.get()->runtime(), addr, size)
     {}
     explicit AutoWritableJitCode(JitCode* code)
       : AutoWritableJitCode(code->runtimeFromMainThread(), code->raw(), code->bufferSize())

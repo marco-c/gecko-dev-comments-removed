@@ -603,7 +603,7 @@ js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
     
     if (cx->generatingError)
         return;
-    AutoScopedAssign<bool> asa(&cx->generatingError, true);
+    AutoScopedAssign<bool> asa(&cx->generatingError.ref(), true);
 
     
     RootedString messageStr(cx, reportp->newMessageString(cx));

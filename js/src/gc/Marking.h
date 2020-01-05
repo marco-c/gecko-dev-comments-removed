@@ -19,6 +19,7 @@
 #include "js/HeapAPI.h"
 #include "js/SliceBudget.h"
 #include "js/TracingAPI.h"
+#include "threading/ProtectedData.h"
 #include "vm/TaggedProto.h"
 
 class JSLinearString;
@@ -56,13 +57,13 @@ class MarkStack
 {
     friend class GCMarker;
 
-    uintptr_t* stack_;
-    uintptr_t* tos_;
-    uintptr_t* end_;
+    UnprotectedData<uintptr_t*> stack_;
+    UnprotectedData<uintptr_t*> tos_;
+    UnprotectedData<uintptr_t*> end_;
 
     
-    size_t baseCapacity_;
-    size_t maxCapacity_;
+    UnprotectedData<size_t> baseCapacity_;
+    UnprotectedData<size_t> maxCapacity_;
 
   public:
     explicit MarkStack(size_t maxCapacity)
@@ -335,29 +336,29 @@ class GCMarker : public JSTracer
     MarkStack stack;
 
     
-    uint32_t color;
+    UnprotectedData<uint32_t> color;
 
     
-    js::gc::Arena* unmarkedArenaStackTop;
+    UnprotectedData<js::gc::Arena*> unmarkedArenaStackTop;
 
     
 
 
 
-    bool linearWeakMarkingDisabled_;
+    UnprotectedData<bool> linearWeakMarkingDisabled_;
 
 #ifdef DEBUG
     
-    size_t markLaterArenas;
+    UnprotectedData<size_t> markLaterArenas;
 
     
-    bool started;
+    UnprotectedData<bool> started;
 
     
 
 
 
-    bool strictCompartmentChecking;
+    UnprotectedData<bool> strictCompartmentChecking;
 #endif 
 };
 

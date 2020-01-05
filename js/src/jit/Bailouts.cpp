@@ -29,14 +29,14 @@ using mozilla::IsInRange;
 uint32_t
 jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo)
 {
-    JSContext* cx = GetJSContextFromMainThread();
+    JSContext* cx = TlsContext.get();
     MOZ_ASSERT(bailoutInfo);
 
     
     MOZ_ASSERT(IsInRange(FAKE_JIT_TOP_FOR_BAILOUT, 0, 0x1000) &&
                IsInRange(FAKE_JIT_TOP_FOR_BAILOUT + sizeof(CommonFrameLayout), 0, 0x1000),
                "Fake jitTop pointer should be within the first page.");
-    cx->runtime()->jitTop = FAKE_JIT_TOP_FOR_BAILOUT;
+    cx->jitTop = FAKE_JIT_TOP_FOR_BAILOUT;
 
     JitActivationIterator jitActivations(cx->runtime());
     BailoutFrameInfo bailoutData(jitActivations, sp);
@@ -94,7 +94,7 @@ jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo)
     
     
     if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime()))
-        cx->runtime()->jitActivation->setLastProfilingFrame(currentFramePtr);
+        cx->jitActivation->setLastProfilingFrame(currentFramePtr);
 
     return retval;
 }
@@ -105,10 +105,10 @@ jit::InvalidationBailout(InvalidationBailoutStack* sp, size_t* frameSizeOut,
 {
     sp->checkInvariants();
 
-    JSContext* cx = GetJSContextFromMainThread();
+    JSContext* cx = TlsContext.get();
 
     
-    cx->runtime()->jitTop = FAKE_JIT_TOP_FOR_BAILOUT;
+    cx->jitTop = FAKE_JIT_TOP_FOR_BAILOUT;
 
     JitActivationIterator jitActivations(cx->runtime());
     BailoutFrameInfo bailoutData(jitActivations, sp);
@@ -163,7 +163,7 @@ jit::InvalidationBailout(InvalidationBailoutStack* sp, size_t* frameSizeOut,
 
     
     if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime()))
-        cx->runtime()->jitActivation->setLastProfilingFrame(currentFramePtr);
+        cx->jitActivation->setLastProfilingFrame(currentFramePtr);
 
     return retval;
 }
@@ -192,9 +192,9 @@ jit::ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
     
     MOZ_ASSERT_IF(!excInfo.propagatingIonExceptionForDebugMode(), cx->isExceptionPending());
 
-    uint8_t* prevJitTop = cx->runtime()->jitTop;
-    auto restoreJitTop = mozilla::MakeScopeExit([&]() { cx->runtime()->jitTop = prevJitTop; });
-    cx->runtime()->jitTop = FAKE_JIT_TOP_FOR_BAILOUT;
+    uint8_t* prevJitTop = cx->jitTop;
+    auto restoreJitTop = mozilla::MakeScopeExit([&]() { cx->jitTop = prevJitTop; });
+    cx->jitTop = FAKE_JIT_TOP_FOR_BAILOUT;
 
     gc::AutoSuppressGC suppress(cx);
 
@@ -249,7 +249,7 @@ jit::ExceptionHandlerBailout(JSContext* cx, const InlineFrameIterator& frame,
 
     
     if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(cx->runtime()))
-        cx->runtime()->jitActivation->setLastProfilingFrame(currentFramePtr);
+        cx->jitActivation->setLastProfilingFrame(currentFramePtr);
 
     return retval;
 }

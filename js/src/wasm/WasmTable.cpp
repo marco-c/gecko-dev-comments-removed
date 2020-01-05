@@ -21,6 +21,7 @@
 #include "mozilla/CheckedInt.h"
 
 #include "jscntxt.h"
+#include "jscompartment.h"
 
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmJS.h"
@@ -158,7 +159,7 @@ Table::grow(uint32_t delta, JSContext* cx)
 
     MOZ_ASSERT(movingGrowable());
 
-    JSRuntime* rt = cx;  
+    JSRuntime* rt = cx->runtime();  
 
     
     

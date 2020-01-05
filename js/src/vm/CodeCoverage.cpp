@@ -511,7 +511,7 @@ LCovCompartment::exportInto(GenericPrinter& out, bool* isEmpty) const
 bool
 LCovCompartment::writeCompartmentName(JSCompartment* comp)
 {
-    JSContext* cx = comp->contextFromMainThread();
+    JSContext* cx = TlsContext.get();
 
     
     
@@ -520,12 +520,12 @@ LCovCompartment::writeCompartmentName(JSCompartment* comp)
     
     
     outTN_.put("TN:");
-    if (cx->compartmentNameCallback) {
+    if (cx->runtime()->compartmentNameCallback) {
         char name[1024];
         {
             
             JS::AutoSuppressGCAnalysis nogc;
-            (*cx->compartmentNameCallback)(cx, comp, name, sizeof(name));
+            (*cx->runtime()->compartmentNameCallback)(cx, comp, name, sizeof(name));
         }
         for (char *s = name; s < name + sizeof(name) && *s; s++) {
             if (('a' <= *s && *s <= 'z') ||
