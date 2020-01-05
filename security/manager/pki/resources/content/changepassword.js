@@ -5,9 +5,7 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
-const nsPK11TokenDB = "@mozilla.org/security/pk11tokendb;1";
 const nsIPK11TokenDB = Components.interfaces.nsIPK11TokenDB;
-const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;
 const nsPKCS11ModuleDB = "@mozilla.org/security/pkcs11moduledb;1";
 const nsIPKCS11ModuleDB = Components.interfaces.nsIPKCS11ModuleDB;
 const nsIPKCS11Slot = Components.interfaces.nsIPKCS11Slot;
@@ -29,57 +27,13 @@ function onLoad()
   document.documentElement.getButton("accept").disabled = true;
 
   pw1 = document.getElementById("pw1");
-  try {
-     params = window.arguments[0].QueryInterface(nsIDialogParamBlock);
-     tokenName = params.GetString(1);
-  } catch (e) {
-      
-      
-      
-      
-      
-      
-      tokenName = "";
-  }
+  params = window.arguments[0].QueryInterface(Ci.nsIDialogParamBlock);
+  tokenName = params.GetString(1);
 
-  if (tokenName == "") {
-    let tokenDB = Components.classes[nsPK11TokenDB].getService(nsIPK11TokenDB);
-    let tokenList = tokenDB.listTokens();
-    let i = 0;
-    let menu = document.getElementById("tokenMenu");
-    while (tokenList.hasMoreElements()) {
-      let token = tokenList.getNext().QueryInterface(nsIPK11Token);
-      if (token.needsLogin() || !(token.needsUserInit)) {
-        let menuItemNode = document.createElement("menuitem");
-        menuItemNode.setAttribute("value", token.tokenName);
-        menuItemNode.setAttribute("label", token.tokenName);
-        menu.firstChild.appendChild(menuItemNode);
-        if (i == 0) {
-          menu.selectedItem = menuItemNode;
-          tokenName = token.tokenName;
-        }
-        i++;
-      }
-    }
-  } else {
-    var sel = document.getElementById("tokenMenu");
-    sel.setAttribute("hidden", "true");
-    var tag = document.getElementById("tokenName");
-    tag.setAttribute("value", tokenName);
-  }
+  document.getElementById("tokenName").setAttribute("value", tokenName);
 
   process();
 }
-
-function onMenuChange()
-{
-   
-   var list = document.getElementById("tokenMenu");
-   tokenName = list.value;
-
-   process();
-}
-
 
 function process()
 {

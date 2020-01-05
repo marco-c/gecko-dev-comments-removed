@@ -11,11 +11,11 @@ let gSetPasswordShownCount = 0;
 
 
 const gTokenPasswordDialogs = {
-  setPassword: (ctx, tokenName, canceled) => {
+  setPassword(ctx, tokenName) {
     gSetPasswordShownCount++;
     do_print(`setPassword() called; shown ${gSetPasswordShownCount} times`);
     do_print(`tokenName: ${tokenName}`);
-    canceled.value = false;
+    return false; 
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsITokenPasswordDialogs])
