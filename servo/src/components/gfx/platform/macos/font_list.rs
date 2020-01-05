@@ -3,7 +3,6 @@
 
 
 use font::FontHandleMethods;
-use font_context::FontContextHandleMethods;
 use font_list::{FontEntry, FontFamily, FontFamilyMap};
 use platform::macos::font::FontHandle;
 use platform::macos::font_context::FontContextHandle;
