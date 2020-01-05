@@ -45,7 +45,7 @@ public class testTabStrip extends UITest {
         
         
 
-        mTabStrip.assertTabCount(1);
+        mTabStrip.assertTabCountIs(1);
         mToolbar.assertTitle(normalModeUrl);
     }
 
