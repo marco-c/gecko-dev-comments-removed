@@ -41,7 +41,6 @@
 #include "nsIFrame.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsFocusManager.h"
-#include "nsThreadUtils.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -73,11 +72,11 @@ nsFormFillController::nsFormFillController() :
   
   
   
-  mFocusAfterContextMenuThreshold(400),
+  mFocusAfterRightClickThreshold(400),
   mTimeout(50),
   mMinResultsForPopup(1),
   mMaxRows(0),
-  mLastContextMenuEventTimeStamp(TimeStamp()),
+  mLastRightClickTimeStamp(TimeStamp()),
   mDisableAutoComplete(false),
   mCompleteDefaultIndex(false),
   mCompleteSelectedIndex(false),
@@ -957,9 +956,6 @@ nsFormFillController::HandleEvent(nsIDOMEvent* aEvent)
     return NS_OK;
   }
   if (type.EqualsLiteral("contextmenu")) {
-    
-    
-    mLastContextMenuEventTimeStamp = TimeStamp::Now();
     if (mFocusedPopup)
       mFocusedPopup->ClosePopup();
     return NS_OK;
@@ -1043,33 +1039,6 @@ nsFormFillController::MaybeStartControllingInput(nsIDOMHTMLInputElement* aInput)
   }
 }
 
-void
-nsFormFillController::FocusEventDelayedCallback(nsIFormControl* aFormControl)
-{
-  nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
-
-  if (!formControl || formControl != aFormControl ||
-      formControl->ControlType() != NS_FORM_INPUT_PASSWORD) {
-    return;
-  }
-
-  
-  if (mLastContextMenuEventTimeStamp.IsNull()) {
-   ShowPopup();
-   return;
-  }
-
-  uint64_t timeDiff = fabs((TimeStamp::Now() - mLastContextMenuEventTimeStamp).ToMilliseconds());
-  
-  
-  
-  
-  
-  if (timeDiff > mFocusAfterContextMenuThreshold) {
-   ShowPopup();
-  }
-}
-
 nsresult
 nsFormFillController::Focus(nsIDOMEvent* aEvent)
 {
@@ -1086,8 +1055,28 @@ nsFormFillController::Focus(nsIDOMEvent* aEvent)
   nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
   MOZ_ASSERT(formControl);
 
-  NS_DispatchToMainThread(NewRunnableMethod<nsCOMPtr<nsIFormControl>>(
-      this, &nsFormFillController::FocusEventDelayedCallback, formControl));
+  
+  
+  
+  
+  
+  
+  
+
+  if (formControl->ControlType() != NS_FORM_INPUT_PASSWORD) {
+    return NS_OK;
+  }
+
+  
+  if (mLastRightClickTimeStamp.IsNull()) {
+    ShowPopup();
+    return NS_OK;
+  }
+
+  uint64_t timeDiff = (TimeStamp::Now() - mLastRightClickTimeStamp).ToMilliseconds();
+  if (timeDiff > mFocusAfterRightClickThreshold) {
+    ShowPopup();
+  }
 #endif
 
   return NS_OK;
@@ -1219,6 +1208,15 @@ nsFormFillController::MouseDown(nsIDOMEvent* aEvent)
 
   int16_t button;
   mouseEvent->GetButton(&button);
+
+  
+  
+  
+  if (button == 2) {
+    mLastRightClickTimeStamp = TimeStamp::Now();
+    return NS_OK;
+  }
+
   if (button != 0)
     return NS_OK;
 

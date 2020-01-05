@@ -10,7 +10,7 @@ this.EXPORTED_SYMBOLS = [ "LoginManagerContent",
 
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS = 1;
-const AUTOCOMPLETE_AFTER_CONTEXTMENU_THRESHOLD_MS = 400;
+const AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS = 400;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -41,7 +41,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 var gEnabled, gAutofillForms, gStoreWhenAutocompleteOff;
-var gLastContextMenuEventTimeStamp = Number.NEGATIVE_INFINITY;
+var gLastRightClickTimeStamp = Number.NEGATIVE_INFINITY;
 
 var observer = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
@@ -129,10 +129,13 @@ var observer = {
         break;
       }
 
-      case "contextmenu": {
-        
-        
-        gLastContextMenuEventTimeStamp = Date.now();
+      case "mousedown": {
+        if (aEvent.button == 2) {
+          
+          
+          gLastRightClickTimeStamp = Date.now();
+        }
+
         break;
       }
 
@@ -586,25 +589,16 @@ var LoginManagerContent = {
 
 
 
-    let timestamp = Date.now();
-    setTimeout(function maybeOpenAutocompleteAfterFocus() {
-      
-      
-      
-      let timeDiff = Math.abs(gLastContextMenuEventTimeStamp - timestamp);
-      if (timeDiff < AUTOCOMPLETE_AFTER_CONTEXTMENU_THRESHOLD_MS) {
-        log("Not opening autocomplete after focus since a context menu was opened within",
-            timeDiff, "ms");
-        return;
-      }
 
-      if (this._formFillService.focusedInput == focusedField) {
-        log("maybeOpenAutocompleteAfterFocus: Opening the autocomplete popup");
-        this._formFillService.showPopup();
-      } else {
-        log("maybeOpenAutocompleteAfterFocus: FormFillController has a different focused input");
-      }
-    }.bind(this), 0);
+    let timeDiff = Date.now() - gLastRightClickTimeStamp;
+    if (timeDiff < AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS) {
+      log("Not opening autocomplete after focus since a context menu was opened within",
+          timeDiff, "ms");
+      return;
+    }
+
+    log("maybeOpenAutocompleteAfterFocus: Opening the autocomplete popup");
+    this._formFillService.showPopup();
   },
 
   
@@ -1279,7 +1273,7 @@ var LoginManagerContent = {
       if (usernameField) {
         log("_fillForm: Attaching event listeners to usernameField");
         usernameField.addEventListener("focus", observer);
-        usernameField.addEventListener("contextmenu", observer);
+        usernameField.addEventListener("mousedown", observer);
       }
 
       Services.obs.notifyObservers(form.rootElement, "passwordmgr-processed-form", null);
