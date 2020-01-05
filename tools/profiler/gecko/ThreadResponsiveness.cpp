@@ -21,6 +21,7 @@ public:
     : mLastTracerTime(TimeStamp::Now())
     , mMonitor("CheckResponsivenessTask")
     , mTimer(nullptr)
+    , mHasEverBeenSuccessfullyDispatched(false)
     , mStop(false)
   {
   }
@@ -31,6 +32,23 @@ protected:
   }
 
 public:
+
+  
+  
+  
+  void DoFirstDispatchIfNeeded()
+  {
+    if (mHasEverBeenSuccessfullyDispatched) {
+      return;
+    }
+
+    
+    
+    nsresult rv = NS_DispatchToMainThread(this);
+    if (NS_SUCCEEDED(rv)) {
+      mHasEverBeenSuccessfullyDispatched = true;
+    }
+  }
 
   
   NS_IMETHOD Run() override
@@ -74,6 +92,7 @@ private:
   TimeStamp mLastTracerTime;
   Monitor mMonitor;
   nsCOMPtr<nsITimer> mTimer;
+  bool mHasEverBeenSuccessfullyDispatched; 
   bool mStop;
 };
 
@@ -81,7 +100,7 @@ NS_IMPL_ISUPPORTS_INHERITED(CheckResponsivenessTask, mozilla::Runnable,
                             nsITimerCallback)
 
 ThreadResponsiveness::ThreadResponsiveness()
-  : mActiveTracerEvent(nullptr)
+  : mActiveTracerEvent(new CheckResponsivenessTask())
 {
   MOZ_COUNT_CTOR(ThreadResponsiveness);
 }
@@ -89,19 +108,13 @@ ThreadResponsiveness::ThreadResponsiveness()
 ThreadResponsiveness::~ThreadResponsiveness()
 {
   MOZ_COUNT_DTOR(ThreadResponsiveness);
-  if (mActiveTracerEvent) {
-    mActiveTracerEvent->Terminate();
-  }
+  mActiveTracerEvent->Terminate();
 }
 
 void
 ThreadResponsiveness::Update()
 {
-  if (!mActiveTracerEvent) {
-    mActiveTracerEvent = new CheckResponsivenessTask();
-    NS_DispatchToMainThread(mActiveTracerEvent);
-  }
-
+  mActiveTracerEvent->DoFirstDispatchIfNeeded();
   mLastTracerTime = mActiveTracerEvent->GetLastTracerTime();
 }
 
