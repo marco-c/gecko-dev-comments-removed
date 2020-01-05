@@ -2398,16 +2398,12 @@ GeckoDriver.prototype.clearImportedScripts = function*(cmd, resp) {
 
 
 
-
-
-
 GeckoDriver.prototype.takeScreenshot = function (cmd, resp) {
   let {id, highlights, full, hash} = cmd.parameters;
   highlights = highlights || [];
 
   switch (this.context) {
     case Context.CHROME:
-      let canvas;
       let container = {frame: this.getCurrentWindow()};
       let highlightEls = [];
 
@@ -2416,22 +2412,7 @@ GeckoDriver.prototype.takeScreenshot = function (cmd, resp) {
         highlightEls.push(el);
       }
 
-      
-      if (!id && !full) {
-        canvas = capture.viewport(container.frame, highlightEls);
-
-      
-      } else {
-        let node;
-        if (id) {
-          node = this.curBrowser.seenEls.get(id, container);
-        } else {
-          node = container.frame.document.documentElement;
-        }
-
-        canvas = capture.element(node, highlightEls);
-      }
-
+      let canvas = capture.viewport(this.getCurrentWindow(), highlightEls);
       if (hash) {
         return capture.toHash(canvas);
       } else {
