@@ -313,7 +313,6 @@ GfxInfo::GetFeatureStatusImpl(int32_t aFeature,
     
     if (aFeature == nsIGfxInfo::FEATURE_OPENGL_LAYERS ||
         aFeature == nsIGfxInfo::FEATURE_WEBGL_OPENGL ||
-        aFeature == nsIGfxInfo::FEATURE_WEBGL2 ||
         aFeature == nsIGfxInfo::FEATURE_WEBGL_MSAA) {
 
       
