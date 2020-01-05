@@ -150,6 +150,7 @@ protected:
   void TranslateTouchEvent(MultiTouchInput& aTouchEvent);
   ScreenIntCoord GetFixedLayerMarginsBottom();
   void NotifyControllerSnapshotFailed();
+  void CheckForResetOnNextMove(ScreenIntCoord aCurrentTouch);
 
   
   uint64_t mRootLayerTreeId;
@@ -163,6 +164,9 @@ protected:
   bool    mControllerDragThresholdReached;     
   bool    mControllerCancelTouchTracking;      
   bool    mControllerDragChangedDirection;     
+  bool    mControllerResetOnNextMove;          
+                                               
+                                               
   ScreenIntCoord mControllerStartTouch;        
   ScreenIntCoord mControllerPreviousTouch;     
   ScreenIntCoord mControllerTotalDistance;     
@@ -171,6 +175,7 @@ protected:
   ScreenIntCoord mControllerSurfaceHeight;     
   ScreenIntCoord mControllerCompositionHeight; 
   int32_t mControllerLastDragDirection;        
+  int32_t mControllerTouchCount;               
   uint32_t mControllerLastEventTimeStamp;      
   ControllerThreadState mControllerState;      
 
