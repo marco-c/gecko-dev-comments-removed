@@ -513,6 +513,8 @@ bool CheckEndOfLifed(string version)
   return UIFileExists(reportPath);
 }
 
+#ifndef RELEASE_OR_BETA
+
 static string
 GetMinidumpAnalyzerPath()
 {
@@ -523,6 +525,8 @@ GetMinidumpAnalyzerPath()
 
   return path;
 }
+
+#endif
 
 int main(int argc, char** argv)
 {
@@ -545,8 +549,11 @@ int main(int argc, char** argv)
     
     UIShowDefaultUI();
   } else {
+#ifndef RELEASE_OR_BETA
+    
     
     UIRunMinidumpAnalyzer(GetMinidumpAnalyzerPath(), gReporterDumpFile);
+#endif
 
     
     gExtraFile = GetAdditionalFilename(gReporterDumpFile, kExtraDataExtension);
