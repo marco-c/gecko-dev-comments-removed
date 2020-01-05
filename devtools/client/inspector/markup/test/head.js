@@ -434,37 +434,6 @@ function* waitForMultipleChildrenUpdates(inspector) {
 
 
 
-function createTestHTTPServer() {
-  const {HttpServer} = Cu.import("resource://testing-common/httpd.js", {});
-  let server = new HttpServer();
-
-  registerCleanupFunction(function* cleanup() {
-    let destroyed = defer();
-    server.stop(() => {
-      destroyed.resolve();
-    });
-    yield destroyed.promise;
-  });
-
-  server.start(-1);
-  return server;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
