@@ -315,7 +315,7 @@ AndroidPresenter.prototype.actionInvoked =
 
     
     
-    let text = '';
+    let text = null;
     if (!state.contains(States.CHECKABLE)) {
       text = Utils.localize(UtteranceGenerator.genForAction(aObject,
         aActionName));
