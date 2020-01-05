@@ -2788,6 +2788,22 @@ NativeKey::MayBeSameCharMessage(const MSG& aCharMsg1,
 }
 
 bool
+NativeKey::IsSamePhysicalKeyMessage(const MSG& aKeyOrCharMsg1,
+                                    const MSG& aKeyOrCharMsg2) const
+{
+  if (NS_WARN_IF(aKeyOrCharMsg1.message < WM_KEYFIRST) ||
+      NS_WARN_IF(aKeyOrCharMsg1.message > WM_KEYLAST) ||
+      NS_WARN_IF(aKeyOrCharMsg2.message < WM_KEYFIRST) ||
+      NS_WARN_IF(aKeyOrCharMsg2.message > WM_KEYLAST)) {
+    return false;
+  }
+  return WinUtils::GetScanCode(aKeyOrCharMsg1.lParam) ==
+           WinUtils::GetScanCode(aKeyOrCharMsg2.lParam) &&
+         WinUtils::IsExtendedScanCode(aKeyOrCharMsg1.lParam) ==
+           WinUtils::IsExtendedScanCode(aKeyOrCharMsg2.lParam);
+}
+
+bool
 NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
 {
   MOZ_ASSERT(IsKeyDownMessage());
@@ -3039,63 +3055,79 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
     }
 
     
-    
-    
-    if (!MayBeSameCharMessage(removedMsg, nextKeyMsg)) {
-      MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
-        ("%p   NativeKey::GetFollowingCharMessage(), FAILED, removed message "
-         "is really different from what we have already found, removedMsg=%s, "
-         "nextKeyMsg=%s",
-         this, ToString(removedMsg).get(), ToString(nextKeyMsg).get()));
-#ifdef MOZ_CRASHREPORTER
-      nsPrintfCString info("\nPeekMessage() removed unexpcted char message! "
-                           "\nActive keyboard layout=0x%08X (%s), "
-                           "\nHandling message: %s, InSendMessageEx()=%s, "
-                           "\nFound message: %s, "
-                           "\nRemoved message: %s, ",
-                           KeyboardLayout::GetActiveLayout(),
-                           KeyboardLayout::GetActiveLayoutName().get(),
-                           ToString(mMsg).get(),
-                           GetResultOfInSendMessageEx().get(),
-                           ToString(nextKeyMsg).get(),
-                           ToString(removedMsg).get());
-      CrashReporter::AppendAppNotesToCrashReport(info);
-      
-      MSG nextKeyMsgAfter;
-      if (WinUtils::PeekMessage(&nextKeyMsgAfter, mMsg.hwnd,
-                                WM_KEYFIRST, WM_KEYLAST,
-                                PM_NOREMOVE | PM_NOYIELD)) {
-        nsPrintfCString info("\nNext key message after unexpected char message "
-                             "removed: %s, ",
-                             ToString(nextKeyMsgAfter).get());
-        CrashReporter::AppendAppNotesToCrashReport(info);
-      } else {
-        CrashReporter::AppendAppNotesToCrashReport(
-          NS_LITERAL_CSTRING("\nThere is no key message after unexpected char "
-                             "message removed, "));
-      }
-      
-      MSG nextKeyMsgInAllWindows;
-      if (WinUtils::PeekMessage(&nextKeyMsgInAllWindows, 0,
-                                WM_KEYFIRST, WM_KEYLAST,
-                                PM_NOREMOVE | PM_NOYIELD)) {
-        nsPrintfCString info("\nNext key message in all windows: %s.",
-                             ToString(nextKeyMsgInAllWindows).get());
-        CrashReporter::AppendAppNotesToCrashReport(info);
-      } else {
-        CrashReporter::AppendAppNotesToCrashReport(
-          NS_LITERAL_CSTRING("\nThere is no key message in any windows."));
-      }
-#endif 
-      MOZ_CRASH("PeekMessage() removed unexpected message");
+    if (MayBeSameCharMessage(removedMsg, nextKeyMsg)) {
+      aCharMsg = removedMsg;
+      MOZ_LOG(sNativeKeyLogger, LogLevel::Verbose,
+        ("%p   NativeKey::GetFollowingCharMessage(), succeeded to retrieve "
+         "next char message, aCharMsg=%s",
+         this, ToString(aCharMsg).get()));
+      return true;
     }
 
-    aCharMsg = removedMsg;
-    MOZ_LOG(sNativeKeyLogger, LogLevel::Verbose,
-      ("%p   NativeKey::GetFollowingCharMessage(), succeeded to retrieve next "
-       "char message, aCharMsg=%s",
-       this, ToString(aCharMsg).get()));
-    return true;
+    
+    
+    
+    
+    if (IsCharMessage(removedMsg) &&
+        IsSamePhysicalKeyMessage(removedMsg, nextKeyMsg)) {
+      aCharMsg = removedMsg;
+      MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+        ("%p   NativeKey::GetFollowingCharMessage(), WARNING, succeeded to "
+         "remove a char message, but the removed message was changed from "
+         "the found message except their scancode, aCharMsg=%s, "
+         "nextKeyMsg(the found message)=%s",
+         this, ToString(aCharMsg).get(), ToString(nextKeyMsg).get()));
+      return true;
+    }
+
+    
+    
+    
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
+      ("%p   NativeKey::GetFollowingCharMessage(), FAILED, removed message "
+       "is really different from what we have already found, removedMsg=%s, "
+       "nextKeyMsg=%s",
+       this, ToString(removedMsg).get(), ToString(nextKeyMsg).get()));
+#ifdef MOZ_CRASHREPORTER
+    nsPrintfCString info("\nPeekMessage() removed unexpcted char message! "
+                         "\nActive keyboard layout=0x%08X (%s), "
+                         "\nHandling message: %s, InSendMessageEx()=%s, "
+                         "\nFound message: %s, "
+                         "\nRemoved message: %s, ",
+                         KeyboardLayout::GetActiveLayout(),
+                         KeyboardLayout::GetActiveLayoutName().get(),
+                         ToString(mMsg).get(),
+                         GetResultOfInSendMessageEx().get(),
+                         ToString(nextKeyMsg).get(),
+                         ToString(removedMsg).get());
+    CrashReporter::AppendAppNotesToCrashReport(info);
+    
+    MSG nextKeyMsgAfter;
+    if (WinUtils::PeekMessage(&nextKeyMsgAfter, mMsg.hwnd,
+                              WM_KEYFIRST, WM_KEYLAST,
+                              PM_NOREMOVE | PM_NOYIELD)) {
+      nsPrintfCString info("\nNext key message after unexpected char message "
+                           "removed: %s, ",
+                           ToString(nextKeyMsgAfter).get());
+      CrashReporter::AppendAppNotesToCrashReport(info);
+    } else {
+      CrashReporter::AppendAppNotesToCrashReport(
+        NS_LITERAL_CSTRING("\nThere is no key message after unexpected char "
+                           "message removed, "));
+    }
+    
+    if (WinUtils::PeekMessage(&nextKeyMsgInAllWindows, 0,
+                              WM_KEYFIRST, WM_KEYLAST,
+                              PM_NOREMOVE | PM_NOYIELD)) {
+      nsPrintfCString info("\nNext key message in all windows: %s.",
+                           ToString(nextKeyMsgInAllWindows).get());
+      CrashReporter::AppendAppNotesToCrashReport(info);
+    } else {
+      CrashReporter::AppendAppNotesToCrashReport(
+        NS_LITERAL_CSTRING("\nThere is no key message in any windows."));
+    }
+#endif 
+    MOZ_CRASH("PeekMessage() removed unexpected message");
   }
   MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
     ("%p   NativeKey::GetFollowingCharMessage(), FAILED, removed messages "
