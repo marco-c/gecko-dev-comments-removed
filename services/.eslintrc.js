@@ -10,7 +10,6 @@ module.exports = {
 
     "consistent-return": "warn",
     "no-func-assign": "warn",
-    "no-native-reassign": "warn",
     "no-nested-ternary": "warn",
   }
 };
