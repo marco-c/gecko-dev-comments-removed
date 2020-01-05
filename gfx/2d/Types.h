@@ -469,6 +469,9 @@ static inline HalfCorner operator++(HalfCorner& aHalfCorner) {
   return aHalfCorner;
 }
 
+
+
+
 constexpr bool HalfCornerIsX(HalfCorner aHalfCorner)
 {
   return !(aHalfCorner % 2);
@@ -496,6 +499,19 @@ constexpr bool SideIsVertical(Side aSide)
 constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond)
 {
   return Corner((aSide + aIsSecond) % 4);
+}
+
+
+
+
+
+
+
+
+constexpr HalfCorner SideToHalfCorner(Side aSide, bool aIsSecond,
+                                      bool aIsParallel)
+{
+  return HalfCorner(((aSide + aIsSecond) * 2 + (aSide + !aIsParallel) % 2) % 8);
 }
 
 } 
