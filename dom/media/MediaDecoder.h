@@ -586,7 +586,8 @@ protected:
   
   
   
-  static const int DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED = 250000;
+  static constexpr auto DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED =
+    media::TimeUnit::FromMicroseconds(250000);
 
 private:
   nsCString GetDebugInfo();
