@@ -2,6 +2,7 @@
 
 
 
+import re
 import sys
 import os
 import subprocess
@@ -16,6 +17,35 @@ reference it with absolute paths but with @executable_path instead.
 
 
 DYLIB_NAME='libclang_rt.asan_osx_dynamic.dylib'
+
+def resolve_rpath(filename):
+    otoolOut = subprocess.check_output([substs['OTOOL'], '-l', filename])
+    currentCmd = None
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for line in otoolOut.splitlines():
+        cmdMatch = re.match(r'^\s+cmd ([A-Z_]+)', line)
+        if cmdMatch is not None:
+            currentCmd = cmdMatch.group(1)
+            continue
+
+        if currentCmd == 'LC_RPATH':
+            pathMatch = re.match(r'^\s+path (.*) \(offset \d+\)', line)
+            if pathMatch is not None:
+                path = pathMatch.group(1)
+                if os.path.isdir(path):
+                    return path
+
+    sys.stderr.write('@rpath could not be resolved from %s\n' % filename)
+    exit(1)
 
 def scan_directory(path):
     dylibCopied = False
@@ -43,16 +73,22 @@ def scan_directory(path):
                         continue
 
                     if not dylibCopied:
-                        
-                        
-                        shutil.copy(absDylibPath, path)
+                        if absDylibPath.find('@rpath/') == 0:
+                            rpath = resolve_rpath(filename)
+                            copyDylibPath = absDylibPath.replace('@rpath', rpath)
+                        else:
+                            copyDylibPath = absDylibPath
 
                         
-                        subprocess.check_call(['install_name_tool', '-id', '@executable_path/' + DYLIB_NAME, os.path.join(path, DYLIB_NAME)])
+                        
+                        shutil.copy(copyDylibPath, path)
+
+                        
+                        subprocess.check_call([substs['INSTALL_NAME_TOOL'], '-id', '@executable_path/' + DYLIB_NAME, os.path.join(path, DYLIB_NAME)])
                         dylibCopied = True
 
                     
-                    subprocess.check_call(['install_name_tool', '-change', absDylibPath, '@executable_path/' + DYLIB_NAME, filename])
+                    subprocess.check_call([substs['INSTALL_NAME_TOOL'], '-change', absDylibPath, '@executable_path/' + DYLIB_NAME, filename])
                     break
 
 if __name__ == '__main__':
