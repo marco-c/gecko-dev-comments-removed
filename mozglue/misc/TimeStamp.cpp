@@ -47,9 +47,11 @@ struct TimeStampInitialization
 static TimeStampInitialization sInitOnce;
 
 MFBT_API TimeStamp
-TimeStamp::ProcessCreation(bool& aIsInconsistent)
+TimeStamp::ProcessCreation(bool* aIsInconsistent)
 {
-  aIsInconsistent = false;
+  if (aIsInconsistent) {
+    *aIsInconsistent = false;
+  }
 
   if (sInitOnce.mProcessCreation.IsNull()) {
     char* mozAppRestart = getenv("MOZ_APP_RESTART");
@@ -72,7 +74,9 @@ TimeStamp::ProcessCreation(bool& aIsInconsistent)
         
 
 
-        aIsInconsistent = true;
+        if (aIsInconsistent) {
+          *aIsInconsistent = true;
+        }
         ts = sInitOnce.mFirstTimeStamp;
       }
     }

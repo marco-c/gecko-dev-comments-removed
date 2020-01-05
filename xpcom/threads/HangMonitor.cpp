@@ -183,7 +183,7 @@ GetChromeHangReport(Telemetry::ProcessedStack& aStack,
 
   
   bool error;
-  TimeStamp processCreation = TimeStamp::ProcessCreation(error);
+  TimeStamp processCreation = TimeStamp::ProcessCreation(&error);
   if (!error) {
     TimeDuration td = TimeStamp::Now() - processCreation;
     aFirefoxUptime = (static_cast<int32_t>(td.ToSeconds()) - (gTimeout * 2)) / 60;

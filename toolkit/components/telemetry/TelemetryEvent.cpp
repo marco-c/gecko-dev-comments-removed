@@ -588,8 +588,7 @@ TelemetryEvent::RecordChildEvents(GeckoProcessType aProcessType,
     
     
     
-    bool inconsistent = false;
-    double relativeTimestamp = (e.timestamp - TimeStamp::ProcessCreation(inconsistent)).ToMilliseconds();
+    double relativeTimestamp = (e.timestamp - TimeStamp::ProcessCreation()).ToMilliseconds();
 
     ::RecordEvent(locker, aProcessType, relativeTimestamp, e.category, e.method, e.object, e.value, e.extra);
   }

@@ -1978,8 +1978,7 @@ profiler_init(void* aStackTop)
     
     gPS = new PS();
 
-    bool ignore;
-    gPS->SetProcessStartTime(lock, mozilla::TimeStamp::ProcessCreation(ignore));
+    gPS->SetProcessStartTime(lock, mozilla::TimeStamp::ProcessCreation());
 
     locked_register_thread(lock, kMainThreadName, aStackTop);
 

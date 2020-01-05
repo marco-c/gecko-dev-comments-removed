@@ -479,7 +479,7 @@ public:
 
 
 
-  static MFBT_API TimeStamp ProcessCreation(bool& aIsInconsistent);
+  static MFBT_API TimeStamp ProcessCreation(bool* aIsInconsistent = nullptr);
 
   
 

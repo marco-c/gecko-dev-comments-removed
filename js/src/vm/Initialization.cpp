@@ -88,8 +88,7 @@ JS::detail::InitWithFailureDiagnostic(bool isDebugBuild)
     
     
     
-    bool ignored;
-    mozilla::TimeStamp::ProcessCreation(ignored);
+    mozilla::TimeStamp::ProcessCreation();
 
 #ifdef DEBUG
     CheckMessageParameterCounts();
