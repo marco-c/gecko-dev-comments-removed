@@ -27,6 +27,7 @@ class StyleChildrenIterator;
 class nsCSSValue;
 class nsIDocument;
 class nsINode;
+class nsPresContext;
 
 using mozilla::dom::StyleChildrenIterator;
 using mozilla::ServoElementSnapshot;
@@ -34,6 +35,7 @@ using mozilla::ServoElementSnapshot;
 typedef nsINode RawGeckoNode;
 typedef mozilla::dom::Element RawGeckoElement;
 typedef nsIDocument RawGeckoDocument;
+typedef nsPresContext RawGeckoPresContext;
 
 
 
@@ -100,6 +102,7 @@ DECL_BORROWED_MUT_REF_TYPE_FOR(StyleChildrenIterator)
 DECL_BORROWED_MUT_REF_TYPE_FOR(ServoElementSnapshot)
 DECL_BORROWED_REF_TYPE_FOR(nsCSSValue)
 DECL_BORROWED_MUT_REF_TYPE_FOR(nsCSSValue)
+DECL_BORROWED_REF_TYPE_FOR(RawGeckoPresContext)
 
 #undef DECL_ARC_REF_TYPE_FOR
 #undef DECL_OWNED_REF_TYPE_FOR
