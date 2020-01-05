@@ -3391,6 +3391,11 @@ class IDLValue(IDLObject):
             
             assert self.type.isDOMString()
             return self
+        elif self.type.isString() and type.isByteString():
+            
+            
+            assert self.type.isDOMString()
+            return self
         raise WebIDLError("Cannot coerce type %s to type %s." %
                           (self.type, type), [location])
 
@@ -5758,6 +5763,14 @@ class Parser(Tokenizer):
         location = self.getLocation(p, 1)
         booleanType = BuiltinTypes[IDLBuiltinType.Types.boolean]
         p[0] = IDLValue(location, booleanType, p[1])
+
+    def p_ConstValueByteString(self, p):
+        """
+            ConstValue : BYTESTRING
+        """
+        location = self.getLocation(p, 1)
+        bytestringType = BuiltinTypes[IDLBuiltinType.Types.bytestring]
+        p[0] = IDLValue(location, bytestringType, p[1])
 
     def p_ConstValueInteger(self, p):
         """
