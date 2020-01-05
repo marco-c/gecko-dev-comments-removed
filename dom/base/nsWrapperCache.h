@@ -19,10 +19,25 @@ namespace dom {
 class TabChildGlobal;
 class ProcessGlobal;
 } 
+namespace css {
+class ImportRule;
+class NameSpaceRule;
+class StyleRule;
+class MediaRule;
+class DocumentRule;
+} 
+class ServoStyleRule;
+class CSSSupportsRule;
 } 
 class SandboxPrivate;
 class nsInProcessTabChildGlobal;
 class nsWindowRoot;
+class nsCSSFontFaceRule;
+class nsCSSFontFeatureValuesRule;
+class nsCSSKeyframeRule;
+class nsCSSKeyframesRule;
+class nsCSSPageRule;
+class nsCSSCounterStyleRule;
 
 #define NS_WRAPPERCACHE_IID \
 { 0x6f3179a1, 0x36f7, 0x4a5c, \
@@ -272,11 +287,27 @@ protected:
   }
 
 private:
+  
+  
+  
   friend class mozilla::dom::TabChildGlobal;
   friend class mozilla::dom::ProcessGlobal;
   friend class SandboxPrivate;
   friend class nsInProcessTabChildGlobal;
   friend class nsWindowRoot;
+  friend class mozilla::css::ImportRule;
+  friend class mozilla::css::NameSpaceRule;
+  friend class mozilla::css::StyleRule;
+  friend class mozilla::css::MediaRule;
+  friend class mozilla::css::DocumentRule;
+  friend class mozilla::ServoStyleRule;
+  friend class mozilla::CSSSupportsRule;
+  friend class nsCSSFontFaceRule;
+  friend class nsCSSFontFeatureValuesRule;
+  friend class nsCSSKeyframeRule;
+  friend class nsCSSKeyframesRule;
+  friend class nsCSSPageRule;
+  friend class nsCSSCounterStyleRule;
   void SetIsNotDOMBinding()
   {
     MOZ_ASSERT(!mWrapper && !(GetWrapperFlags() & ~WRAPPER_IS_NOT_DOM_BINDING),
