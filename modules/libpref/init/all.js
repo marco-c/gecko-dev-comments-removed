@@ -5041,6 +5041,14 @@ pref("dom.vr.enabled", true);
 
 
 
+
+
+pref("dom.vr.autoactivate.enabled", false);
+
+
+
+
+
 pref("dom.vr.navigation.timeout", 5000);
 
 pref("dom.vr.oculus.enabled", true);
