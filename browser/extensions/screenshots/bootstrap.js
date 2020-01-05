@@ -4,7 +4,7 @@
 const OLD_ADDON_PREF_NAME = "extensions.jid1-NeEaf3sAHdKHPA@jetpack.deviceIdInfo";
 const OLD_ADDON_ID = "jid1-NeEaf3sAHdKHPA@jetpack";
 const ADDON_ID = "screenshots@mozilla.org";
-const TELEMETRY_ENABLED_PREF = "toolkit.telemetry.enabled";
+const TELEMETRY_ENABLED_PREF = "datareporting.healthreport.uploadEnabled";
 const PREF_BRANCH = "extensions.screenshots.";
 const USER_DISABLE_PREF = "extensions.screenshots.disabled";
 const SYSTEM_DISABLE_PREF = "extensions.screenshots.system-disabled";
@@ -22,21 +22,21 @@ XPCOMUtils.defineLazyModuleGetter(this, "LegacyExtensionsUtils",
 
 let addonResourceURI;
 let appStartupDone;
-const appStartupPromise = new Promise((resolve,reject) => {
+const appStartupPromise = new Promise((resolve, reject) => {
   appStartupDone = resolve;
 });
 
 const prefs = Services.prefs;
 const prefObserver = {
-  register: function() {
-    prefs.addObserver(PREF_BRANCH, this);
+  register() {
+    prefs.addObserver(PREF_BRANCH, this, false); 
   },
 
-  unregister: function() {
-    prefs.removeObserver(PREF_BRANCH, this);
+  unregister() {
+    prefs.removeObserver(PREF_BRANCH, this, false); 
   },
 
-  observe: function(aSubject, aTopic, aData) {
+  observe(aSubject, aTopic, aData) {
     
     
     if (aData == USER_DISABLE_PREF || aData == SYSTEM_DISABLE_PREF) {
@@ -47,15 +47,15 @@ const prefObserver = {
 };
 
 const appStartupObserver = {
-  register: function() {
-    Services.obs.addObserver(this, "sessionstore-windows-restored");
+  register() {
+    Services.obs.addObserver(this, "sessionstore-windows-restored", false); 
   },
 
-  unregister: function() {
-    Services.obs.removeObserver(this, "sessionstore-windows-restored", false);
+  unregister() {
+    Services.obs.removeObserver(this, "sessionstore-windows-restored", false); 
   },
 
-  observe: function() {
+  observe() {
     appStartupDone();
     this.unregister();
   }
@@ -76,6 +76,13 @@ function startup(data, reason) {
 
 function shutdown(data, reason) { 
   prefObserver.unregister();
+  const webExtension = LegacyExtensionsUtils.getEmbeddedExtensionFor({
+    id: ADDON_ID,
+    resourceURI: addonResourceURI
+  });
+  if (webExtension.started) {
+    stop(webExtension);
+  }
 }
 
 function install(data, reason) {} 

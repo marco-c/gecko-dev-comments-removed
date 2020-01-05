@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.shooter = (function () { 
+this.shooter = (function() { 
   let exports = {};
   const { AbstractShot } = window.shot;
 
@@ -12,6 +12,8 @@ this.shooter = (function () {
   let backend;
   let shot;
   let supportsDrawWindow;
+  const callBackground = global.callBackground;
+  const clipboard = global.clipboard;
 
   function regexpEscape(str) {
     
@@ -35,11 +37,11 @@ this.shooter = (function () {
   {
     let canvas = document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
     let ctx = canvas.getContext('2d');
-    supportsDrawWindow = !! ctx.drawWindow;
+    supportsDrawWindow = !!ctx.drawWindow;
   }
 
   function screenshotPage(selectedPos) {
-    if (! supportsDrawWindow) {
+    if (!supportsDrawWindow) {
       return null;
     }
     let height = selectedPos.bottom - selectedPos.top;
@@ -62,10 +64,12 @@ this.shooter = (function () {
 
   let isSaving = null;
 
-  exports.takeShot = function (captureType, selectedPos) {
+  exports.takeShot = function(captureType, selectedPos) {
     
     
     
+    const uicontrol = global.uicontrol;
+    let deactivateAfterFinish = true;
     if (isSaving) {
       return;
     }
@@ -106,17 +110,27 @@ this.shooter = (function () {
       const copied = clipboard.copy(url);
       return callBackground("openShot", { url, copied });
     }, (error) => {
+      if ('popupMessage' in error && (error.popupMessage == "REQUEST_ERROR" || error.popupMessage == 'CONNECTION_ERROR')) {
+        
+        
+        deactivateAfterFinish = false;
+        return;
+      }
       if (error.name != "BackgroundError") {
         
         throw error;
       }
-    }).then(() => uicontrol.deactivate()));
+    }).then(() => {
+      if (deactivateAfterFinish) {
+        uicontrol.deactivate();
+      }
+    }));
   };
 
-  exports.downloadShot = function (selectedPos) {
+  exports.downloadShot = function(selectedPos) {
     let dataUrl = screenshotPage(selectedPos);
     let promise = Promise.resolve(dataUrl);
-    if (! dataUrl) {
+    if (!dataUrl) {
       promise = callBackground(
         "screenshotPage",
         selectedPos.asJson(),
@@ -133,7 +147,7 @@ this.shooter = (function () {
     }));
   };
 
-  exports.sendEvent = function (...args) {
+  exports.sendEvent = function(...args) {
     callBackground("sendEvent", ...args);
   };
 

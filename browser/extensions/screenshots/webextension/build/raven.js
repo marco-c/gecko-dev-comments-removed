@@ -155,7 +155,7 @@ Raven.prototype = {
     
     
     
-    VERSION: '3.14.0',
+    VERSION: '3.14.2',
 
     debug: false,
 
@@ -1414,19 +1414,21 @@ Raven.prototype = {
     _trimBreadcrumbs: function (breadcrumbs) {
         
         
-        var urlprops = {to: 1, from: 1, url: 1},
+        var urlProps = ['to', 'from', 'url'],
+            urlProp,
             crumb,
             data;
 
-        for (var i = 0; i < breadcrumbs.values.length; i++) {
+        for (var i = 0; i < breadcrumbs.values.length; ++i) {
             crumb = breadcrumbs.values[i];
-            if (!crumb.hasOwnProperty('data'))
+            if (!crumb.hasOwnProperty('data') || !isObject(crumb.data))
                 continue;
 
             data = crumb.data;
-            for (var prop in urlprops) {
-                if (data.hasOwnProperty(prop)) {
-                    data[prop] = truncate(data[prop], this._globalOptions.maxUrlLength);
+            for (var j = 0; j < urlProps.length; ++j) {
+                urlProp = urlProps[j];
+                if (data.hasOwnProperty(urlProp)) {
+                    data[urlProp] = truncate(data[urlProp], this._globalOptions.maxUrlLength);
                 }
             }
         }
@@ -2129,18 +2131,20 @@ function isObject(what) {
 
 
 
-function isError(what) {
-    var toString = {}.toString.call(what);
-    return isObject(what) &&
-        toString === '[object Error]' ||
-        toString === '[object Exception]' || 
-        what instanceof Error;
+function isError(value) {
+  switch ({}.toString.call(value)) {
+    case '[object Error]': return true;
+    case '[object Exception]': return true;
+    case '[object DOMException]': return true;
+    default: return value instanceof Error;
+  }
 }
 
 module.exports = {
     isObject: isObject,
     isError: isError
 };
+
 },{}],6:[function(_dereq_,module,exports){
 (function (global){
 'use strict';
@@ -2468,27 +2472,6 @@ TraceKit.report = (function reportModuleWrapper() {
 
 
 TraceKit.computeStackTrace = (function computeStackTraceWrapper() {
-    
-
-
-
-
-
-    function escapeRegExp(text) {
-        return text.replace(/[\-\[\]{}()*+?.,\\\^$|#]/g, '\\$&');
-    }
-
-    
-
-
-
-
-
-
-    function escapeCodeAsRegExpForMatchingInsideHTML(body) {
-        return escapeRegExp(body).replace('<', '(?:<|&lt;)').replace('>', '(?:>|&gt;)').replace('&', '(?:&|&amp;)').replace('"', '(?:"|&quot;)').replace(/\s+/g, '\\s+');
-    }
-
     
     
     
