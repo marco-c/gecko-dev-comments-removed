@@ -182,6 +182,12 @@ private:
     nsAutoPtr<nsHttpResponseHead> mHead;
   };
 
+  
+  
+  
+  
+  void SetEventTarget();
+
   nsresult ContinueAsyncOpen();
 
   void DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext);

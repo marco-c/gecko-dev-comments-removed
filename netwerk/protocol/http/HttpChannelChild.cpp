@@ -12,7 +12,9 @@
 #include "nsICacheEntry.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabChild.h"
+#include "mozilla/dom/TabGroup.h"
 #include "mozilla/ipc/FileDescriptorSetChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/net/NeckoChild.h"
@@ -20,6 +22,7 @@
 
 #include "nsISupportsPrimitives.h"
 #include "nsChannelClassifier.h"
+#include "nsGlobalWindow.h"
 #include "nsStringStream.h"
 #include "nsHttpHandler.h"
 #include "nsNetUtil.h"
@@ -1214,6 +1217,10 @@ HttpChannelChild::RecvFinishInterceptedRedirect()
 
   
   
+  mEventQ->ResetDeliveryTarget();
+
+  
+  
   NS_DispatchToMainThread(NewRunnableMethod(this, &HttpChannelChild::FinishInterceptedRedirect));
 
   return IPC_OK();
@@ -1621,6 +1628,11 @@ HttpChannelChild::ConnectParent(uint32_t registrarId)
   
   AddIPDLReference();
 
+  
+  
+  
+  SetEventTarget();
+
   HttpChannelConnectArgs connectArgs(registrarId, mShouldParentIntercept);
   PBrowserOrId browser = static_cast<ContentChild*>(gNeckoChild->Manager())
                          ->GetBrowserOrId(tabChild);
@@ -2020,6 +2032,55 @@ HttpChannelChild::AsyncOpen2(nsIStreamListener *aListener)
   return AsyncOpen(listener, nullptr);
 }
 
+
+
+void
+HttpChannelChild::SetEventTarget()
+{
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  GetLoadInfo(getter_AddRefs(loadInfo));
+  if (!loadInfo) {
+    return;
+  }
+
+  nsCOMPtr<nsIDOMDocument> domDoc;
+  loadInfo->GetLoadingDocument(getter_AddRefs(domDoc));
+  nsCOMPtr<nsIDocument> doc = do_QueryInterface(domDoc);
+  RefPtr<Dispatcher> dispatcher;
+  if (doc) {
+    dispatcher = doc->GetDocGroup();
+  } else {
+    
+    
+    uint64_t outerWindowId;
+    if (NS_FAILED(loadInfo->GetOuterWindowID(&outerWindowId))) {
+      
+      
+      return;
+    }
+    RefPtr<nsGlobalWindow> window = nsGlobalWindow::GetOuterWindowWithId(outerWindowId);
+    if (!window) {
+      return;
+    }
+
+#ifdef DEBUG
+    
+    bool isMainDocumentChannel;
+    GetIsMainDocumentChannel(&isMainDocumentChannel);
+    MOZ_ASSERT(isMainDocumentChannel);
+#endif
+
+    dispatcher = window->TabGroup();
+  }
+
+  if (dispatcher) {
+    nsCOMPtr<nsIEventTarget> target =
+      dispatcher->EventTargetFor(TaskCategory::Network);
+    gNeckoChild->SetEventTargetForActor(this, target);
+    mEventQ->RetargetDeliveryTo(target);
+  }
+}
+
 nsresult
 HttpChannelChild::ContinueAsyncOpen()
 {
@@ -2169,6 +2230,11 @@ HttpChannelChild::ContinueAsyncOpen()
   if (cc->IsShuttingDown()) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  SetEventTarget();
 
   
   

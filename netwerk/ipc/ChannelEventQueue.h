@@ -77,6 +77,11 @@ class ChannelEventQueue final
   
   nsresult RetargetDeliveryTo(nsIEventTarget* aTargetThread);
 
+  
+  
+  
+  nsresult ResetDeliveryTarget();
+
  private:
   
   ~ChannelEventQueue()
