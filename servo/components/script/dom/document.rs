@@ -148,6 +148,8 @@ pub struct Document {
     loader: DOMRefCell<DocumentLoader>,
     
     current_parser: MutNullableHeap<JS<ServoHTMLParser>>,
+    
+    reflow_timeout: Cell<Option<u64>>,
 }
 
 impl DocumentDerived for EventTarget {
@@ -226,6 +228,9 @@ pub trait DocumentHelpers<'a> {
     fn set_encoding_name(self, name: DOMString);
     fn content_changed(self, node: JSRef<Node>, damage: NodeDamage);
     fn content_and_heritage_changed(self, node: JSRef<Node>, damage: NodeDamage);
+    fn reflow_if_reflow_timer_expired(self);
+    fn set_reflow_timeout(self, timeout: u64);
+    fn disarm_reflow_timeout(self);
     fn unregister_named_element(self, to_unregister: JSRef<Element>, id: Atom);
     fn register_named_element(self, element: JSRef<Element>, id: Atom);
     fn load_anchor_href(self, href: DOMString);
@@ -343,9 +348,40 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
     }
 
     fn content_and_heritage_changed(self, node: JSRef<Node>, damage: NodeDamage) {
-        debug!("content_and_heritage_changed on {}", node.debug_str());
         node.force_dirty_ancestors(damage);
         node.dirty(damage);
+    }
+
+    
+    fn reflow_if_reflow_timer_expired(self) {
+        if let Some(reflow_timeout) = self.reflow_timeout.get() {
+            if time::precise_time_ns() < reflow_timeout {
+                return
+            }
+
+            self.reflow_timeout.set(None);
+            let window = self.window.root();
+            window.r().reflow(ReflowGoal::ForDisplay,
+                              ReflowQueryType::NoQuery,
+                              ReflowReason::RefreshTick);
+        }
+    }
+
+    
+    
+    
+    fn set_reflow_timeout(self, timeout: u64) {
+        if let Some(existing_timeout) = self.reflow_timeout.get() {
+            if existing_timeout < timeout {
+                return
+            }
+        }
+        self.reflow_timeout.set(Some(timeout))
+    }
+
+    
+    fn disarm_reflow_timeout(self) {
+        self.reflow_timeout.set(None)
     }
 
     
@@ -1004,6 +1040,7 @@ impl Document {
             animation_frame_list: RefCell::new(HashMap::new()),
             loader: DOMRefCell::new(doc_loader),
             current_parser: Default::default(),
+            reflow_timeout: Cell::new(None),
         }
     }
 
