@@ -109,7 +109,8 @@ def make_task_description(config, jobs):
         
         
         
-        if dep_job.attributes.get('build_platform') in set(['linux64-devedition-nightly', 'linux-devedition-nightly']):
+        if dep_job.attributes.get('build_platform') in set(
+          ['linux64-devedition-nightly', 'linux-devedition-nightly']):
             signing_cert_scope = get_devedition_signing_cert_scope(config)
         else:
             signing_cert_scope = get_signing_cert_scope(config)
