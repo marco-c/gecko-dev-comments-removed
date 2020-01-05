@@ -55,7 +55,9 @@ function parseAndRemoveField(obj, field, parseAsJson = true) {
 
   if (field in obj) {
     if (!parseAsJson) {
-      value = obj[field];
+      
+      
+      value = obj[field].trim();
     } else {
       try {
         value = JSON.parse(obj[field]);
@@ -638,6 +640,9 @@ this.CrashManager.prototype = Object.freeze({
     let sessionId = parseAndRemoveField(reportMeta, "TelemetrySessionId",
                                          false);
     let stackTraces = parseAndRemoveField(reportMeta, "StackTraces");
+    
+    let pingId = parseAndRemoveField(reportMeta, "CrashPingUUID",
+                                      false);
 
     
     reportMeta = this._filterAnnotations(reportMeta);
@@ -657,6 +662,7 @@ this.CrashManager.prototype = Object.freeze({
         addClientId: true,
         addEnvironment: true,
         overrideEnvironment: crashEnvironment,
+        overridePingId: pingId
       }
     );
   },
