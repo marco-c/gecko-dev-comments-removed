@@ -1281,7 +1281,7 @@ MessageChannel::Send(Message* aMsg, Message* aReply)
 
     
     if (NS_IsMainThread() && latencyMs >= kMinTelemetrySyncIPCLatencyMs) {
-      Telemetry::Accumulate(Telemetry::IPC_SYNC_LATENCY_MS,
+      Telemetry::Accumulate(Telemetry::IPC_SYNC_MAIN_LATENCY_MS,
                             nsDependentCString(msgName), latencyMs);
     }
     return true;
