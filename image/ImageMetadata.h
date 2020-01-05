@@ -11,11 +11,10 @@
 #include "mozilla/Maybe.h"
 #include "nsSize.h"
 #include "Orientation.h"
+#include "FrameTimeout.h"
 
 namespace mozilla {
 namespace image {
-
-class RasterImage;
 
 
 class ImageMetadata
@@ -64,6 +63,13 @@ public:
   nsIntSize GetSize() const { return *mSize; }
   bool HasSize() const { return mSize.isSome(); }
 
+  void AddNativeSize(const nsIntSize& aSize)
+  {
+    mNativeSizes.AppendElement(aSize);
+  }
+
+  const nsTArray<nsIntSize>& GetNativeSizes() const { return mNativeSizes; }
+
   Orientation GetOrientation() const { return *mOrientation; }
   bool HasOrientation() const { return mOrientation.isSome(); }
 
@@ -89,6 +95,9 @@ private:
 
   Maybe<nsIntSize> mSize;
   Maybe<Orientation> mOrientation;
+
+  
+  nsTArray<nsIntSize> mNativeSizes;
 
   bool mHasAnimation : 1;
 };
