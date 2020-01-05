@@ -19,7 +19,6 @@ nsGenConList::Clear()
     delete node;
   }
   mSize = 0;
-  mLastInserted = nullptr;
 }
 
 bool
@@ -41,9 +40,6 @@ nsGenConList::DestroyNodesFor(nsIFrame* aFrame)
     Destroy(node);
     node = nextNode;
   }
-
-  
-  mLastInserted = nullptr;
 
   return true;
 }
@@ -112,11 +108,6 @@ nsGenConList::Insert(nsGenConNode* aNode)
   
   if (mList.isEmpty() || NodeAfter(aNode, mList.getLast())) {
     mList.insertBack(aNode);
-  } else if (mLastInserted && mLastInserted != mList.getLast() &&
-             NodeAfter(aNode, mLastInserted) &&
-             NodeAfter(Next(mLastInserted), aNode)) {
-    
-    mLastInserted->setNext(aNode);
   } else {
     
 
@@ -150,8 +141,6 @@ nsGenConList::Insert(nsGenConNode* aNode)
     curNode->setPrevious(aNode);
   }
   ++mSize;
-
-  mLastInserted = aNode;
 
   
   

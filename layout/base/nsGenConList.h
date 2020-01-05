@@ -86,7 +86,7 @@ protected:
   uint32_t mSize;
 
 public:
-  nsGenConList() : mLastInserted(nullptr), mSize(0) {}
+  nsGenConList() : mSize(0) {}
   ~nsGenConList() { Clear(); }
   void Clear();
   static nsGenConNode* Next(nsGenConNode* aNode) {
@@ -127,10 +127,6 @@ private:
 
   
   nsDataHashtable<nsPtrHashKey<nsIFrame>, nsGenConNode*> mNodes;
-
-  
-  
-  nsGenConNode* mLastInserted;
 };
 
 #endif 
