@@ -126,6 +126,8 @@ uint32_t             nsXULPrototypeAttribute::gNumCacheSets;
 uint32_t             nsXULPrototypeAttribute::gNumCacheFills;
 #endif
 
+#define NS_DISPATCH_XUL_COMMAND     (1 << 0)
+
 class nsXULElementTearoff final : public nsIFrameLoaderOwner
 {
   ~nsXULElementTearoff() {}
@@ -1279,7 +1281,7 @@ nsXULElement::IsEventStoppedFromAnonymousScrollbar(EventMessage aMessage)
 }
 
 nsresult
-nsXULElement::DispatchXULCommand(const EventChainPreVisitor& aVisitor,
+nsXULElement::DispatchXULCommand(const EventChainVisitor& aVisitor,
                                  nsAutoString& aCommand)
 {
     
@@ -1350,11 +1352,27 @@ nsXULElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
             
             aVisitor.mCanHandle = false;
             aVisitor.mAutomaticChromeDispatch = false;
-            return DispatchXULCommand(aVisitor, command);
+            
+            
+            aVisitor.mWantsPreHandleEvent = true;
+            aVisitor.mItemFlags |= NS_DISPATCH_XUL_COMMAND;
+            return NS_OK;
         }
     }
 
     return nsStyledElement::GetEventTargetParent(aVisitor);
+}
+
+nsresult
+nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor)
+{
+    if (aVisitor.mItemFlags & NS_DISPATCH_XUL_COMMAND) {
+        nsAutoString command;
+        GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
+        MOZ_ASSERT(!command.IsEmpty());
+        return DispatchXULCommand(aVisitor, command);
+    }
+    return nsStyledElement::PreHandleEvent(aVisitor);
 }
 
 
