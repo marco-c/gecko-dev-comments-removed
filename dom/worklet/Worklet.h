@@ -13,11 +13,13 @@
 #include "nsCOMPtr.h"
 
 class nsIGlobalObject;
+class nsIPrincipal;
 
 namespace mozilla {
 namespace dom {
 
 class Promise;
+class WorkletGlobalScope;
 
 class Worklet final : public nsISupports
                     , public nsWrapperCache
@@ -26,9 +28,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Worklet)
 
-  explicit Worklet(nsIGlobalObject* aGlobal)
-    : mGlobal(aGlobal)
-  {}
+  Worklet(nsIGlobalObject* aGlobal, nsIPrincipal* aPrincipal);
 
   nsIGlobalObject* GetParentObject() const
   {
@@ -41,11 +41,16 @@ public:
   already_AddRefed<Promise>
   Import(const nsAString& aModuleURL, ErrorResult& aRv);
 
+  WorkletGlobalScope*
+  GetOrCreateGlobalScope(JSContext* aCx);
+
 private:
-  ~Worklet()
-  {}
+  ~Worklet();
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
+  nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  RefPtr<WorkletGlobalScope> mScope;
 };
 
 } 
