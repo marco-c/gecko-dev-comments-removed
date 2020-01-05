@@ -4906,7 +4906,29 @@ processInternalEntity(XML_Parser parser, ENTITY *entity,
     }
     else {
       entity->open = XML_FALSE;
+
+#if 0
       openInternalEntities = openEntity->next;
+#else
+      if (openInternalEntities == openEntity) {
+        openInternalEntities = openEntity->next;
+      }
+      else {
+        
+
+
+
+
+        OPEN_INTERNAL_ENTITY *innerOpenEntity = openInternalEntities;
+        do {
+          if (innerOpenEntity->next == openEntity) {
+            innerOpenEntity->next = openEntity->next;
+            break;
+          }
+        } while ((innerOpenEntity = innerOpenEntity->next));
+      }
+#endif
+
       
       openEntity->next = freeInternalEntities;
       freeInternalEntities = openEntity;
