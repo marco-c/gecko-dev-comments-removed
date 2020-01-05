@@ -591,6 +591,9 @@ extern volatile uint32_t armHwCapFlags;
 
 
 
+#define HWCAP_FIXUP_FAULT (1 << 24)
+
+
 #define HWCAP_UNINITIALIZED (1 << 25)
 
 
@@ -604,10 +607,20 @@ extern volatile uint32_t armHwCapFlags;
 
 
 
+
+
 inline bool HasAlignmentFault()
 {
     MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
     return armHwCapFlags & HWCAP_ALIGNMENT_FAULT;
+}
+
+
+
+inline bool FixupFault()
+{
+    MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
+    return armHwCapFlags & HWCAP_FIXUP_FAULT;
 }
 
 
