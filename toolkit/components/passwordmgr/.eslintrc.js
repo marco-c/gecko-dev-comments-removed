@@ -1,40 +1,15 @@
 "use strict";
 
 module.exports = {
-  "extends": "../../.eslintrc.js",
+
   "rules": {
-    
-    "arrow-spacing": "error",
-
-    
-    "brace-style": ["error", "1tbs", {"allowSingleLine": true}],
-
-    
-    "comma-spacing": ["error", {"before": false, "after": true}],
-
-    
     "comma-style": "error",
-
     
     
     "complexity": ["error", 43],
 
-    
     "no-array-constructor": "error",
-
-    
-    "no-new-object": "error",
-
-    
-    "no-undef": "error",
-
-    
     "no-unused-vars": ["error", {"args": "none", "vars": "local", "varsIgnorePattern": "^(ids|ignored|unused)$"}],
-
-    
     "semi": ["error", "always"],
-
-    
-    "space-infix-ops": "error",
   }
 };
