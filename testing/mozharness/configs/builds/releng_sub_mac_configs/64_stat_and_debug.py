@@ -9,6 +9,7 @@ config = {
         'checkout-sources',
         
         'build',
+        
         'upload-files',
         'sendchange',
         'update',  

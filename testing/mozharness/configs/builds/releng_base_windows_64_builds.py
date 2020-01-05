@@ -15,6 +15,7 @@ config = {
         'checkout-sources',
         
         'build',
+        'generate-build-stats',
         'upload-files',
         'sendchange',
         'check-test',
