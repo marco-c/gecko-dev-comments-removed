@@ -54,9 +54,7 @@ DebuggerPanel.prototype = {
         this._toolbox.on("host-changed", this.handleHostChanged);
         
         
-        let keysToClone = ["resumeKey", "resumeKey2", "stepOverKey",
-                          "stepOverKey2", "stepInKey", "stepInKey2",
-                          "stepOutKey", "stepOutKey2"];
+        let keysToClone = ["resumeKey", "stepOverKey", "stepInKey", "stepOutKey"];
         for (let key of keysToClone) {
           let elm = this.panelWin.document.getElementById(key);
           this._toolbox.useKeyWithSplitConsole(elm, "jsdebugger");
