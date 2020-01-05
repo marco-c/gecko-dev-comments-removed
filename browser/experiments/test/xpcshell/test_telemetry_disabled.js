@@ -13,16 +13,9 @@ add_test(function test_experiments_activation() {
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, false);
 
   let experiments = Experiments.instance();
-
   Assert.ok(!experiments.enabled, "Experiments must be disabled if Telemetry is disabled.");
 
   
-  
-  experiments.updateManifest = () => Promise.resolve();
-
-  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
-
-  Assert.ok(experiments.enabled, "Experiments must be re-enabled if Telemetry is re-enabled");
 
   run_next_test();
 });
