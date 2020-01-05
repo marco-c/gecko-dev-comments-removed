@@ -799,10 +799,6 @@ MediaFormatReader::RequestVideoData(bool aSkipToNextKeyframe,
     return MediaDataPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
 
-  if (IsSuspended()) {
-    return MediaDataPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
-  }
-
   media::TimeUnit timeThreshold{media::TimeUnit::FromMicroseconds(aTimeThreshold)};
   
   
@@ -887,10 +883,6 @@ MediaFormatReader::RequestAudioData()
   if (!HasAudio()) {
     LOG("called with no audio track");
     return MediaDataPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__);
-  }
-
-  if (IsSuspended()) {
-    return MediaDataPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
 
   if (IsSeeking()) {
@@ -1187,14 +1179,6 @@ MediaFormatReader::HandleDemuxedSamples(TrackType aTrack,
                                         AbstractMediaDecoder::AutoNotifyDecoded& aA)
 {
   MOZ_ASSERT(OnTaskQueue());
-
-  
-  
-  if (IsSuspended()) {
-    
-    MOZ_DIAGNOSTIC_ASSERT(!mAudio.mDecoder && !mVideo.mDecoder);
-    return;
-  }
 
   auto& decoder = GetDecoderData(aTrack);
 

@@ -289,22 +289,6 @@ public:
     return mOnMediaNotSeekable;
   }
 
-  bool IsSuspended() const
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return mIsSuspended;
-  }
-
-  void SetIsSuspended(bool aState)
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    mIsSuspended = aState;
-  }
-
-  AbstractCanonical<bool>* CanonicalIsSuspended() {
-    return &mIsSuspended;
-  }
-
   
   
   
@@ -450,8 +434,6 @@ private:
   
   MozPromiseHolder<MediaDataPromise> mBaseAudioPromise;
   MozPromiseHolder<MediaDataPromise> mBaseVideoPromise;
-
-  Canonical<bool> mIsSuspended;
 
   MediaEventListener mDataArrivedListener;
 };

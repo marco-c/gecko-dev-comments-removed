@@ -780,8 +780,6 @@ private:
   
   Mirror<media::TimeIntervals> mBuffered;
 
-  Mirror<bool> mIsReaderSuspended;
-
   
   Mirror<media::NullableTimeUnit> mEstimatedDuration;
 
