@@ -42,6 +42,12 @@ const KNOWN_SEARCH_SOURCES = [
   "urlbar",
 ];
 
+const KNOWN_ONEOFF_SOURCES = [
+  "oneoff-urlbar",
+  "oneoff-searchbar",
+  "unknown", 
+];
+
 function getOpenTabsAndWinsCounts() {
   let tabCount = 0;
   let winCount = 0;
@@ -253,13 +259,103 @@ let BrowserUsageTelemetry = {
 
 
 
-  recordSearch(engine, source) {
-    if (!KNOWN_SEARCH_SOURCES.includes(source)) {
-      throw new Error("Unknown source for search: " + source);
+
+
+
+
+
+
+
+
+
+  recordSearch(engine, source, details={}) {
+    const isOneOff = !!details.isOneOff;
+
+    if (isOneOff) {
+      if (!KNOWN_ONEOFF_SOURCES.includes(source)) {
+        throw new Error("Unknown source for one-off search: " + source);
+      }
+    } else {
+      if (!KNOWN_SEARCH_SOURCES.includes(source)) {
+        throw new Error("Unknown source for search: " + source);
+      }
+      let countId = getSearchEngineId(engine) + "." + source;
+      Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").add(countId);
     }
 
-    let countId = getSearchEngineId(engine) + "." + source;
-    Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").add(countId);
+    
+    this._handleSearchAction(source, details);
+  },
+
+  _handleSearchAction(source, details) {
+    switch (source) {
+      case "urlbar":
+      case "oneoff-urlbar":
+      case "searchbar":
+      case "oneoff-searchbar":
+      case "unknown": 
+        this._handleSearchAndUrlbar(source, details);
+        break;
+      case "abouthome":
+        Services.telemetry.keyedScalarAdd("browser.engagement.navigation.about_home",
+                                          "search_enter", 1);
+        break;
+      case "newtab":
+        Services.telemetry.keyedScalarAdd("browser.engagement.navigation.about_newtab",
+                                          "search_enter", 1);
+        break;
+      case "contextmenu":
+        Services.telemetry.keyedScalarAdd("browser.engagement.navigation.contextmenu",
+                                          "search", 1);
+        break;
+    }
+  },
+
+  
+
+
+
+  _handleSearchAndUrlbar(source, details) {
+    
+    
+
+    
+    
+    const plainSourceName =
+      (source === "unknown") ? "searchbar" : source.replace("oneoff-", "");
+    const scalarName = "browser.engagement.navigation." + plainSourceName;
+
+    const isOneOff = !!details.isOneOff;
+    if (isOneOff) {
+      
+      
+      
+      
+      
+      
+      if (["urlbar", "searchbar", "unknown"].includes(source)) {
+        return;
+      }
+
+      
+      
+      Services.telemetry.keyedScalarAdd(scalarName, "search_oneoff", 1);
+      return;
+    }
+
+    
+    if (details.isSuggestion) {
+      
+      Services.telemetry.keyedScalarAdd(scalarName, "search_suggestion", 1);
+      return;
+    } else if (details.isAlias) {
+      
+      Services.telemetry.keyedScalarAdd(scalarName, "search_alias", 1);
+      return;
+    }
+
+    
+    Services.telemetry.keyedScalarAdd(scalarName, "search_enter", 1);
   },
 
   
