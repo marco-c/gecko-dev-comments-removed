@@ -253,7 +253,7 @@ nsresult
 GenerateRandomPathName(nsCString& aOutSalt, uint32_t aLength);
 
 already_AddRefed<TaskQueue>
-CreateMediaDecodeTaskQueue();
+CreateMediaDecodeTaskQueue(const char* aName);
 
 
 

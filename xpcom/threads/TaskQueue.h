@@ -53,6 +53,10 @@ public:
   explicit TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
                      bool aSupportsTailDispatch = false);
 
+  TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
+            const char* aName,
+            bool aSupportsTailDispatch = false);
+
   TaskDispatcher& TailDispatcher() override;
 
   TaskQueue* AsTaskQueue() override { return this; }
@@ -185,6 +189,9 @@ protected:
   
   bool mIsShutdown;
   MozPromiseHolder<ShutdownPromise> mShutdownPromise;
+
+  
+  const char* const mName;
 
   class Runner : public Runnable {
   public:
