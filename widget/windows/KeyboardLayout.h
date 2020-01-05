@@ -552,11 +552,6 @@ private:
   
 
 
-  bool CanComputeVirtualKeyCodeFromScanCode() const;
-
-  
-
-
   uint8_t ComputeVirtualKeyCodeFromScanCode() const;
 
   

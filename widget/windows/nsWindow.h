@@ -489,7 +489,6 @@ protected:
                                               bool aIntersectWithExisting) override;
   nsIntRegion             GetRegionToPaint(bool aForceFullRepaint,
                                            PAINTSTRUCT ps, HDC aDC);
-  static void             ActivateOtherWindowHelper(HWND aWnd);
   void                    ClearCachedResources();
   nsIWidgetListener*      GetPaintListener();
 
@@ -555,7 +554,7 @@ protected:
   static bool           sJustGotDeactivate;
   static bool           sJustGotActivate;
   static bool           sIsInMouseCapture;
-  static int            sTrimOnMinimize;
+  static bool           sHaveInitializedPrefs;
 
   
   static TriStateBool   sHasBogusPopupsDropShadowOnMultiMonitor;

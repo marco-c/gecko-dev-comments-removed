@@ -339,9 +339,6 @@ WinTaskbar::GetDefaultGroupId(nsAString & aDefaultGroupId) {
 
 bool
 WinTaskbar::RegisterAppUserModelID() {
-  if (!IsWin7OrLater())
-    return false;
-
   SetCurrentProcessExplicitAppUserModelIDPtr funcAppUserModelID = nullptr;
   bool retVal = false;
 
@@ -372,7 +369,7 @@ NS_IMETHODIMP
 WinTaskbar::GetAvailable(bool *aAvailable) {
   
   
-  *aAvailable = IsWin7OrLater() && Initialize();
+  *aAvailable = Initialize();
 
   return NS_OK;
 }

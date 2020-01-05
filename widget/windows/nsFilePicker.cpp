@@ -28,7 +28,6 @@
 #include "nsPIDOMWindow.h"
 #include "GeckoProfiler.h"
 
-using mozilla::IsVistaOrLater;
 using mozilla::IsWin8OrLater;
 using mozilla::MakeUnique;
 using mozilla::mscom::EnsureMTA;
@@ -224,191 +223,6 @@ STDMETHODIMP nsFilePicker::QueryInterface(REFIID refiid, void** ppvResult)
 
 
 
-int CALLBACK
-BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
-{
-  if (uMsg == BFFM_INITIALIZED)
-  {
-    char16_t * filePath = (char16_t *) lpData;
-    if (filePath)
-      ::SendMessageW(hwnd, BFFM_SETSELECTIONW,
-                     TRUE ,
-                     lpData);
-  }
-  return 0;
-}
-
-static void
-EnsureWindowVisible(HWND hwnd) 
-{
-  
-  
-  HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONULL);
-  if (!monitor) {
-    
-    HWND parentHwnd = GetParent(hwnd);
-    RECT parentRect;
-    GetWindowRect(parentHwnd, &parentRect);
-    SetWindowPos(hwnd, nullptr, parentRect.left, parentRect.top, 0, 0,
-                 SWP_NOACTIVATE | SWP_NOSIZE | SWP_NOZORDER);
-  }
-}
-
-
-
-UINT_PTR CALLBACK
-nsFilePicker::FilePickerHook(HWND hwnd,
-                             UINT msg,
-                             WPARAM wParam,
-                             LPARAM lParam) 
-{
-  switch(msg) {
-    case WM_NOTIFY:
-      {
-        LPOFNOTIFYW lpofn = (LPOFNOTIFYW) lParam;
-        if (!lpofn || !lpofn->lpOFN) {
-          return 0;
-        }
-        
-        if (CDN_INITDONE == lpofn->hdr.code) {
-          
-          
-          
-          PostMessage(hwnd, MOZ_WM_ENSUREVISIBLE, 0, 0);
-        }
-      }
-      break;
-    case MOZ_WM_ENSUREVISIBLE:
-      EnsureWindowVisible(GetParent(hwnd));
-      break;
-    case WM_INITDIALOG:
-      {
-        OPENFILENAMEW* pofn = reinterpret_cast<OPENFILENAMEW*>(lParam);
-        SetProp(hwnd, kDialogPtrProp, (HANDLE)pofn->lCustData);
-        nsFilePicker* picker = reinterpret_cast<nsFilePicker*>(pofn->lCustData);
-        if (picker) {
-          picker->SetDialogHandle(hwnd);
-          SetTimer(hwnd, kDialogTimerID, kDialogTimerTimeout, nullptr);
-        }
-      }
-      break;
-    case WM_TIMER:
-      {
-        
-        if (wParam == kDialogTimerID) {
-          nsFilePicker* picker = 
-            reinterpret_cast<nsFilePicker*>(GetProp(hwnd, kDialogPtrProp));
-          if (picker && picker->ClosePickerIfNeeded(true)) {
-            KillTimer(hwnd, kDialogTimerID);
-          }
-        }
-      }
-      break;
-  }
-  return 0;
-}
-
-
-
-
-UINT_PTR CALLBACK
-nsFilePicker::MultiFilePickerHook(HWND hwnd,
-                                  UINT msg,
-                                  WPARAM wParam,
-                                  LPARAM lParam)
-{
-  switch (msg) {
-    case WM_INITDIALOG:
-      {
-        
-        
-        
-        HWND comboBox = FindWindowEx(GetParent(hwnd), nullptr, 
-                                     L"ComboBoxEx32", nullptr );
-        if(comboBox)
-          SendMessage(comboBox, CB_LIMITTEXT, 0, 0);
-        
-        OPENFILENAMEW* pofn = reinterpret_cast<OPENFILENAMEW*>(lParam);
-        SetProp(hwnd, kDialogPtrProp, (HANDLE)pofn->lCustData);
-        nsFilePicker* picker =
-          reinterpret_cast<nsFilePicker*>(pofn->lCustData);
-        if (picker) {
-          picker->SetDialogHandle(hwnd);
-          SetTimer(hwnd, kDialogTimerID, kDialogTimerTimeout, nullptr);
-        }
-      }
-      break;
-    case WM_NOTIFY:
-      {
-        LPOFNOTIFYW lpofn = (LPOFNOTIFYW) lParam;
-        if (!lpofn || !lpofn->lpOFN) {
-          return 0;
-        }
-        
-        
-        if (lpofn->hdr.code == CDN_SELCHANGE) {
-          HWND parentHWND = GetParent(hwnd);
-
-          
-          UINT newBufLength = 0; 
-          int requiredBufLength = CommDlg_OpenSave_GetSpecW(parentHWND, 
-                                                            nullptr, 0);
-          if(requiredBufLength >= 0)
-            newBufLength += requiredBufLength;
-          else
-            newBufLength += MAX_PATH;
-
-          
-          
-          
-          
-          requiredBufLength = CommDlg_OpenSave_GetFolderPathW(parentHWND, 
-                                                              nullptr, 0);
-          if(requiredBufLength >= 0)
-            newBufLength += requiredBufLength;
-          else
-            newBufLength += MAX_PATH;
-
-          
-          if (newBufLength > lpofn->lpOFN->nMaxFile) {
-            if (lpofn->lpOFN->lpstrFile)
-              delete[] lpofn->lpOFN->lpstrFile;
-
-            
-            
-            
-            newBufLength += FILE_BUFFER_SIZE;
-
-            wchar_t* filesBuffer = new wchar_t[newBufLength];
-            ZeroMemory(filesBuffer, newBufLength * sizeof(wchar_t));
-
-            lpofn->lpOFN->lpstrFile = filesBuffer;
-            lpofn->lpOFN->nMaxFile  = newBufLength;
-          }
-        }
-      }
-      break;
-    case WM_TIMER:
-      {
-        
-        if (wParam == kDialogTimerID) {
-          nsFilePicker* picker =
-            reinterpret_cast<nsFilePicker*>(GetProp(hwnd, kDialogPtrProp));
-          if (picker && picker->ClosePickerIfNeeded(true)) {
-            KillTimer(hwnd, kDialogTimerID);
-          }
-        }
-      }
-      break;
-  }
-
-  return FilePickerHook(hwnd, msg, wParam, lParam);
-}
-
-
-
-
-
 HRESULT
 nsFilePicker::OnFileOk(IFileDialog *pfd)
 {
@@ -476,25 +290,18 @@ nsFilePicker::OnOverwrite(IFileDialog *pfd,
 
 
 bool
-nsFilePicker::ClosePickerIfNeeded(bool aIsXPDialog)
+nsFilePicker::ClosePickerIfNeeded()
 {
   if (!mParentWidget || !mDlgWnd)
     return false;
 
   nsWindow *win = static_cast<nsWindow *>(mParentWidget.get());
-  
-  
-  HWND dlgWnd;
-  if (aIsXPDialog)
-    dlgWnd = GetParent(mDlgWnd);
-  else
-    dlgWnd = mDlgWnd;
-  if (IsWindow(dlgWnd) && IsWindowVisible(dlgWnd) && win->DestroyCalled()) {
+  if (IsWindow(mDlgWnd) && IsWindowVisible(mDlgWnd) && win->DestroyCalled()) {
     wchar_t className[64];
     
-    if (GetClassNameW(dlgWnd, className, mozilla::ArrayLength(className)) &&
+    if (GetClassNameW(mDlgWnd, className, mozilla::ArrayLength(className)) &&
         !wcscmp(className, L"#32770") &&
-        DestroyWindow(dlgWnd)) {
+        DestroyWindow(mDlgWnd)) {
       mDlgWnd = nullptr;
       return true;
     }
@@ -506,7 +313,7 @@ void
 nsFilePicker::PickerCallbackTimerFunc(nsITimer *aTimer, void *aCtx)
 {
   nsFilePicker* picker = (nsFilePicker*)aCtx;
-  if (picker->ClosePickerIfNeeded(false)) {
+  if (picker->ClosePickerIfNeeded()) {
     aTimer->Cancel();
   }
 }
@@ -525,60 +332,13 @@ nsFilePicker::SetDialogHandle(HWND aWnd)
 
 
 
-bool
-nsFilePicker::ShowXPFolderPicker(const nsString& aInitialDir)
-{
-  bool result = false;
-
-  auto dirBuffer = MakeUnique<wchar_t[]>(FILE_BUFFER_SIZE);
-  wcsncpy(dirBuffer.get(), aInitialDir.get(), FILE_BUFFER_SIZE);
-  dirBuffer[FILE_BUFFER_SIZE-1] = '\0';
-
-  AutoDestroyTmpWindow adtw((HWND)(mParentWidget.get() ?
-    mParentWidget->GetNativeData(NS_NATIVE_TMP_WINDOW) : nullptr));
-
-  BROWSEINFOW browserInfo = {0};
-  browserInfo.pidlRoot       = nullptr;
-  browserInfo.pszDisplayName = dirBuffer.get();
-  browserInfo.lpszTitle      = mTitle.get();
-  browserInfo.ulFlags        = BIF_USENEWUI | BIF_RETURNONLYFSDIRS;
-  browserInfo.hwndOwner      = adtw.get(); 
-  browserInfo.iImage         = 0;
-  browserInfo.lParam         = reinterpret_cast<LPARAM>(this);
-
-  if (!aInitialDir.IsEmpty()) {
-    
-    
-    browserInfo.lParam = (LPARAM) aInitialDir.get();
-    browserInfo.lpfn   = &BrowseCallbackProc;
-  } else {
-    browserInfo.lParam = 0;
-    browserInfo.lpfn   = nullptr;
-  }
-
-  LPITEMIDLIST list = ::SHBrowseForFolderW(&browserInfo);
-  if (list) {
-    result = ::SHGetPathFromIDListW(list, dirBuffer.get());
-    if (result)
-      mUnicodeFile.Assign(static_cast<const wchar_t*>(dirBuffer.get()));
-    
-    CoTaskMemFree(list);
-  }
-
-  return result;
-}
-
-
-
-
-
 
 
 
 
 
 bool
-nsFilePicker::ShowFolderPicker(const nsString& aInitialDir, bool &aWasInitError)
+nsFilePicker::ShowFolderPicker(const nsString& aInitialDir)
 {
   if (!IsWin8OrLater()) {
     
@@ -593,10 +353,8 @@ nsFilePicker::ShowFolderPicker(const nsString& aInitialDir, bool &aWasInitError)
   if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC,
                               IID_IFileOpenDialog,
                               getter_AddRefs(dialog)))) {
-    aWasInitError = true;
     return false;
   }
-  aWasInitError = false;
 
   
   dialog->Advise(this, &mFDECookie);
@@ -658,224 +416,6 @@ nsFilePicker::ShowFolderPicker(const nsString& aInitialDir, bool &aWasInitError)
 
 
 
- bool
-nsFilePicker::GetFileNameWrapper(OPENFILENAMEW* ofn, PickerType aType)
-{
-  MOZ_SEH_TRY {
-    if (aType == PICKER_TYPE_OPEN)
-      return ::GetOpenFileNameW(ofn);
-    else if (aType == PICKER_TYPE_SAVE)
-      return ::GetSaveFileNameW(ofn);
-  } MOZ_SEH_EXCEPT(true) {
-    NS_ERROR("nsFilePicker GetFileName win32 call generated an exception! This is bad!");
-  }
-  return false;
-}
-
-bool
-nsFilePicker::FilePickerWrapper(OPENFILENAMEW* ofn, PickerType aType)
-{
-  if (!ofn)
-    return false;
-  AutoWidgetPickerState awps(mParentWidget);
-  return GetFileNameWrapper(ofn, aType);
-}
-
-bool
-nsFilePicker::ShowXPFilePicker(const nsString& aInitialDir)
-{
-  OPENFILENAMEW ofn = {0};
-  ofn.lStructSize = sizeof(ofn);
-  nsString filterBuffer = mFilterList;
-                                
-  auto fileBuffer = MakeUnique<wchar_t[]>(FILE_BUFFER_SIZE);
-  wcsncpy(fileBuffer.get(),  mDefaultFilePath.get(), FILE_BUFFER_SIZE);
-  fileBuffer[FILE_BUFFER_SIZE-1] = '\0'; 
-
-  if (!aInitialDir.IsEmpty()) {
-    ofn.lpstrInitialDir = aInitialDir.get();
-  }
-
-  AutoDestroyTmpWindow adtw((HWND) (mParentWidget.get() ?
-    mParentWidget->GetNativeData(NS_NATIVE_TMP_WINDOW) : nullptr));
-
-  ofn.lpstrTitle   = (LPCWSTR)mTitle.get();
-  ofn.lpstrFilter  = (LPCWSTR)filterBuffer.get();
-  ofn.nFilterIndex = mSelectedType;
-  ofn.lpstrFile    = fileBuffer.get();
-  ofn.nMaxFile     = FILE_BUFFER_SIZE;
-  ofn.hwndOwner    = adtw.get();
-  ofn.lCustData    = reinterpret_cast<LPARAM>(this);
-  ofn.Flags = OFN_SHAREAWARE | OFN_LONGNAMES | OFN_OVERWRITEPROMPT |
-              OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_ENABLESIZING | 
-              OFN_EXPLORER;
-
-  
-  
-  
-  
-  if (!IsVistaOrLater()) {
-    ofn.lpfnHook = FilePickerHook;
-    ofn.Flags |= OFN_ENABLEHOOK;
-  }
-
-  
-  if (IsPrivacyModeEnabled() || !mAddToRecentDocs) {
-    ofn.Flags |= OFN_DONTADDTORECENT;
-  }
-
-  NS_NAMED_LITERAL_STRING(htmExt, "html");
-
-  if (!mDefaultExtension.IsEmpty()) {
-    ofn.lpstrDefExt = mDefaultExtension.get();
-  } else if (IsDefaultPathHtml()) {
-    
-    
-    
-    
-    
-    
-    ofn.lpstrDefExt = htmExt.get();
-  }
-
-  
-  
-  
-  
-  
-  
-  AutoRestoreWorkingPath restoreWorkingPath;
-  
-  
-  if (!restoreWorkingPath.HasWorkingPath()) {
-    ofn.Flags |= OFN_NOCHANGEDIR;
-  }
-
-  bool result = false;
-
-  switch(mMode) {
-    case modeOpen:
-      
-      ofn.Flags |= OFN_FILEMUSTEXIST;
-      result = FilePickerWrapper(&ofn, PICKER_TYPE_OPEN);
-      break;
-
-    case modeOpenMultiple:
-      ofn.Flags |= OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!IsVistaOrLater()) {
-        ofn.lpfnHook = MultiFilePickerHook;
-        fileBuffer.release();
-        result = FilePickerWrapper(&ofn, PICKER_TYPE_OPEN);
-        fileBuffer.reset(ofn.lpstrFile);
-      } else {
-        result = FilePickerWrapper(&ofn, PICKER_TYPE_OPEN);
-      }
-      break;
-
-    case modeSave:
-      {
-        ofn.Flags |= OFN_NOREADONLYRETURN;
-
-        
-        
-        if (IsDefaultPathLink())
-          ofn.Flags |= OFN_NODEREFERENCELINKS;
-
-        result = FilePickerWrapper(&ofn, PICKER_TYPE_SAVE);
-        if (!result) {
-          
-          if (GetLastError() == ERROR_INVALID_PARAMETER ||
-              CommDlgExtendedError() == FNERR_INVALIDFILENAME) {
-            
-            
-            ofn.lpstrFile[0] = L'\0';
-            result = FilePickerWrapper(&ofn, PICKER_TYPE_SAVE);
-          }
-        }
-      }
-      break;
-
-    default:
-      NS_NOTREACHED("unsupported file picker mode");
-      return false;
-  }
-
-  if (!result)
-    return false;
-
-  
-  mSelectedType = (int16_t)ofn.nFilterIndex;
-
-  
-  if (mMode != modeOpenMultiple) {
-    GetQualifiedPath(fileBuffer.get(), mUnicodeFile);
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  wchar_t *current = fileBuffer.get();
-  
-  nsAutoString dirName(current);
-  
-  if (current[dirName.Length() - 1] != '\\')
-    dirName.Append((char16_t)'\\');
-  
-  while (current && *current && *(current + wcslen(current) + 1)) {
-    current = current + wcslen(current) + 1;
-    
-    nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1");
-    NS_ENSURE_TRUE(file, false);
-
-    
-    nsAutoString path;
-    if (PathIsRelativeW(current)) {
-      path = dirName + nsDependentString(current);
-    } else {
-      path = current;
-    }
-
-    nsAutoString canonicalizedPath;
-    GetQualifiedPath(path.get(), canonicalizedPath);
-    if (NS_FAILED(file->InitWithPath(canonicalizedPath)) ||
-        !mFiles.AppendObject(file))
-      return false;
-  }
-  
-  
-  
-  
-  if (current && *current && (current == fileBuffer.get())) {
-    nsCOMPtr<nsIFile> file = do_CreateInstance("@mozilla.org/file/local;1");
-    NS_ENSURE_TRUE(file, false);
-    
-    nsAutoString canonicalizedPath;
-    GetQualifiedPath(current, canonicalizedPath);
-    if (NS_FAILED(file->InitWithPath(canonicalizedPath)) ||
-        !mFiles.AppendObject(file))
-      return false;
-  }
-
-  return true;
-}
-
-
-
 
 
 
@@ -884,7 +424,7 @@ nsFilePicker::ShowXPFilePicker(const nsString& aInitialDir)
 
 
 bool
-nsFilePicker::ShowFilePicker(const nsString& aInitialDir, bool &aWasInitError)
+nsFilePicker::ShowFilePicker(const nsString& aInitialDir)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
 
@@ -902,18 +442,15 @@ nsFilePicker::ShowFilePicker(const nsString& aInitialDir, bool &aWasInitError)
     if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC,
                                 IID_IFileOpenDialog,
                                 getter_AddRefs(dialog)))) {
-      aWasInitError = true;
       return false;
     }
   } else {
     if (FAILED(CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC,
                                 IID_IFileSaveDialog,
                                 getter_AddRefs(dialog)))) {
-      aWasInitError = true;
       return false;
     }
   }
-  aWasInitError = false;
 
   
   dialog->Advise(this, &mFDECookie);
@@ -1080,22 +617,11 @@ nsFilePicker::ShowW(int16_t *aReturnVal)
   
   WinUtils::AutoSystemDpiAware dpiAwareness;
 
-  
-  
-  
-  
-  
-  bool result = false, wasInitError = true;
+  bool result = false;
   if (mMode == modeGetFolder) {
-    if (IsVistaOrLater())
-      result = ShowFolderPicker(initialDir, wasInitError);
-    if (!result && wasInitError)
-      result = ShowXPFolderPicker(initialDir);
+    result = ShowFolderPicker(initialDir);
   } else {
-    if (IsVistaOrLater())
-      result = ShowFilePicker(initialDir, wasInitError);
-    if (!result && wasInitError)
-      result = ShowXPFilePicker(initialDir);
+    result = ShowFilePicker(initialDir);
   }
 
   
@@ -1247,48 +773,10 @@ nsFilePicker::InitNative(nsIWidget *aParent,
   mTitle.Assign(aTitle);
 }
 
-void 
-nsFilePicker::GetQualifiedPath(const wchar_t *aInPath, nsString &aOutPath)
-{
-  
-  
-  
-  wchar_t qualifiedFileBuffer[MAX_PATH];
-  if (PathSearchAndQualifyW(aInPath, qualifiedFileBuffer, MAX_PATH)) {
-    aOutPath.Assign(qualifiedFileBuffer);
-  } else {
-    aOutPath.Assign(aInPath);
-  }
-}
-
-void
-nsFilePicker::AppendXPFilter(const nsAString& aTitle, const nsAString& aFilter)
-{
-  mFilterList.Append(aTitle);
-  mFilterList.Append(char16_t('\0'));
-
-  if (aFilter.EqualsLiteral("..apps"))
-    mFilterList.AppendLiteral("*.exe;*.com");
-  else
-  {
-    nsAutoString filter(aFilter);
-    filter.StripWhitespace();
-    if (filter.EqualsLiteral("*"))
-      filter.AppendLiteral(".*");
-    mFilterList.Append(filter);
-  }
-
-  mFilterList.Append(char16_t('\0'));
-}
-
 NS_IMETHODIMP
 nsFilePicker::AppendFilter(const nsAString& aTitle, const nsAString& aFilter)
 {
-  if (IsVistaOrLater()) {
-    mComFilterList.Append(aTitle, aFilter);
-  } else {
-    AppendXPFilter(aTitle, aFilter);
-  }
+  mComFilterList.Append(aTitle, aFilter);
   return NS_OK;
 }
 

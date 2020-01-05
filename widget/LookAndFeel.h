@@ -418,6 +418,7 @@ public:
 
 
   enum OperatingSystemVersion {
+    
     eOperatingSystemVersion_WindowsXP = 0,
     eOperatingSystemVersion_WindowsVista,
     eOperatingSystemVersion_Windows7,

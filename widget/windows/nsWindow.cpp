@@ -268,8 +268,7 @@ LONG            nsWindow::sLastMouseDownTime      = 0L;
 LONG            nsWindow::sLastClickCount         = 0L;
 BYTE            nsWindow::sLastMouseButton        = 0;
 
-
-int             nsWindow::sTrimOnMinimize         = 2;
+bool            nsWindow::sHaveInitializedPrefs   = false;
 
 TriStateBool nsWindow::sHasBogusPopupsDropShadowOnMultiMonitor = TRI_UNKNOWN;
 
@@ -753,7 +752,7 @@ nsWindow::Create(nsIWidget* aParent,
       parent = nullptr;
     }
 
-    if (IsVistaOrLater() && !IsWin8OrLater() &&
+    if (!IsWin8OrLater() &&
         HasBogusPopupsDropShadowOnMultiMonitor()) {
       extendedStyle |= WS_EX_COMPOSITED;
     }
@@ -881,17 +880,10 @@ nsWindow::Create(nsIWidget* aParent,
   
   
   
-  
-  if (sTrimOnMinimize == 2 && mWindowType == eWindowType_invisible) {
-    
-    
-    
-    
-    sTrimOnMinimize =
-      Preferences::GetBool("config.trim_on_minimize",
-        IsVistaOrLater() ? 1 : 0);
+  if (!sHaveInitializedPrefs && mWindowType == eWindowType_invisible) {
     sSwitchKeyboardLayout =
       Preferences::GetBool("intl.keyboard.per_window_layout", false);
+    sHaveInitializedPrefs = true;
   }
 
   
@@ -1620,9 +1612,10 @@ bool nsWindow::IsVisible() const
 
 
 
+
 void nsWindow::ClearThemeRegion()
 {
-  if (IsVistaOrLater() && !HasGlass() &&
+  if (!HasGlass() &&
       (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
        (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
     SetWindowRgn(mWnd, nullptr, false);
@@ -1636,7 +1629,7 @@ void nsWindow::SetThemeRegion()
   
   
   
-  if (IsVistaOrLater() && !HasGlass() &&
+  if (!HasGlass() &&
       (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
        (mPopupType == ePopupTypeTooltip || mPopupType == ePopupTypePanel))) {
     HRGN hRgn = nullptr;
@@ -2053,13 +2046,7 @@ nsWindow::SetSizeMode(nsSizeMode aMode)
         break;
 
       case nsSizeMode_Minimized :
-        
-        
-        
-        
-        
-        
-        mode = sTrimOnMinimize ? SW_MINIMIZE : SW_SHOWMINIMIZED;
+        mode = SW_MINIMIZE;
         break;
 
       default :
@@ -5826,12 +5813,6 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_SYSCOMMAND:
     {
       WPARAM filteredWParam = (wParam &0xFFF0);
-      
-      if (!sTrimOnMinimize && filteredWParam == SC_MINIMIZE) {
-        ::ShowWindow(mWnd, SW_SHOWMINIMIZED);
-        result = true;
-      }
-
       if (mSizeMode == nsSizeMode_Fullscreen &&
           filteredWParam == SC_RESTORE &&
           GetCurrentShowCmd(mWnd) != SW_SHOWMINIMIZED) {
@@ -6449,14 +6430,6 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
     else
       mSizeMode = nsSizeMode_Normal;
 
-    
-    
-    
-    
-    
-    if (!sTrimOnMinimize && nsSizeMode_Minimized == mSizeMode)
-      ActivateOtherWindowHelper(mWnd);
-
 #ifdef WINSTATE_DEBUG_OUTPUT
     switch (mSizeMode) {
       case nsSizeMode_Normal:
@@ -6574,31 +6547,6 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp)
     
     
     OnResize(rect);
-  }
-}
-
-
-void nsWindow::ActivateOtherWindowHelper(HWND aWnd)
-{
-  
-  HWND hwndBelow = ::GetNextWindow(aWnd, GW_HWNDNEXT);
-  while (hwndBelow && (!::IsWindowEnabled(hwndBelow) || !::IsWindowVisible(hwndBelow) ||
-                       ::IsIconic(hwndBelow))) {
-    hwndBelow = ::GetNextWindow(hwndBelow, GW_HWNDNEXT);
-  }
-
-  
-  
-  ::SetWindowPos(aWnd, HWND_BOTTOM, 0, 0, 0, 0,
-                 SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
-  if (hwndBelow)
-    ::SetForegroundWindow(hwndBelow);
-
-  
-  
-  nsCOMPtr<nsISound> sound(do_CreateInstance("@mozilla.org/sound;1"));
-  if (sound) {
-    sound->PlaySystemSound(NS_LITERAL_STRING("Minimize"));
   }
 }
 

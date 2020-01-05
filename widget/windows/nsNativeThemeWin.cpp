@@ -39,7 +39,6 @@
 #include "nsUXThemeConstants.h"
 #include <algorithm>
 
-using mozilla::IsVistaOrLater;
 using namespace mozilla;
 using namespace mozilla::widget;
 
@@ -313,18 +312,9 @@ DrawThemeBGRTLAware(HANDLE aTheme, HDC aHdc, int aPart, int aState,
 
 
 
-
-
-
-
-
-
-
-
 enum CaptionDesktopTheme {
   CAPTION_CLASSIC = 0,
   CAPTION_BASIC,
-  CAPTION_XPTHEME,
 };
 
 enum CaptionButton {
@@ -358,8 +348,6 @@ AddPaddingRect(LayoutDeviceIntSize* aSize, CaptionButton button) {
   RECT offset;
   if (!IsAppThemed())
     offset = buttonData[CAPTION_CLASSIC].hotPadding[button];
-  else if (!IsVistaOrLater())
-    offset = buttonData[CAPTION_XPTHEME].hotPadding[button];
   else
     offset = buttonData[CAPTION_BASIC].hotPadding[button];
   aSize->width += offset.left + offset.right;
@@ -373,8 +361,6 @@ OffsetBackgroundRect(RECT& rect, CaptionButton button) {
   RECT offset;
   if (!IsAppThemed())
     offset = buttonData[CAPTION_CLASSIC].hotPadding[button];
-  else if (!IsVistaOrLater())
-    offset = buttonData[CAPTION_XPTHEME].hotPadding[button];
   else
     offset = buttonData[CAPTION_BASIC].hotPadding[button];
   rect.left += offset.left;
@@ -419,9 +405,7 @@ OffsetBackgroundRect(RECT& rect, CaptionButton button) {
 static const double kProgressDeterminateTimeSpan = 3.0;
 static const double kProgressIndeterminateTimeSpan = 5.0;
 
-static const int32_t kProgressHorizontalVistaOverlaySize = 120;
-
-static const int32_t kProgressHorizontalXPOverlaySize = 55;
+static const int32_t kProgressHorizontalOverlaySize = 120;
 
 static const int32_t kProgressVerticalOverlaySize = 45;
 
@@ -435,18 +419,8 @@ static const int32_t kProgressClassicOverlaySize = 40;
 
 static int32_t
 GetProgressOverlayStyle(bool aIsVertical)
-{ 
-  if (aIsVertical) {
-    if (IsVistaOrLater()) {
-      return PP_MOVEOVERLAYVERT;
-    }
-    return PP_CHUNKVERT;
-  } else {
-    if (IsVistaOrLater()) {
-      return PP_MOVEOVERLAY;
-    }
-    return PP_CHUNK;
-  }
+{
+  return aIsVertical ? PP_MOVEOVERLAYVERT : PP_MOVEOVERLAY;
 }
 
 
@@ -457,14 +431,11 @@ GetProgressOverlayStyle(bool aIsVertical)
 static int32_t
 GetProgressOverlaySize(bool aIsVertical, bool aIsIndeterminate)
 {
-  if (IsVistaOrLater()) {
-    if (aIsVertical) {
-      return aIsIndeterminate ? kProgressVerticalIndeterminateOverlaySize
-                              : kProgressVerticalOverlaySize;
-    }
-    return kProgressHorizontalVistaOverlaySize;
+  if (aIsVertical) {
+    return aIsIndeterminate ? kProgressVerticalIndeterminateOverlaySize
+                            : kProgressVerticalOverlaySize;
   }
-  return kProgressHorizontalXPOverlaySize;
+  return kProgressHorizontalOverlaySize;
 }
 
 
@@ -568,93 +539,11 @@ nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
 
 
 
-
-static void
-DrawChunkProgressMeter(HTHEME aTheme, HDC aHdc, int aPart,
-                       int aState, nsIFrame* aFrame, RECT* aWidgetRect,
-                       RECT* aClipRect, gfxFloat aAppUnits, bool aIsIndeterm,
-                       bool aIsVertical, bool aIsRtl)
-{
-  NS_ASSERTION(aTheme, "Bad theme.");
-  NS_ASSERTION(aHdc, "Bad hdc.");
-  NS_ASSERTION(aWidgetRect, "Bad rect.");
-  NS_ASSERTION(aClipRect, "Bad clip rect.");
-  NS_ASSERTION(aFrame, "Bad frame.");
-
-  
-  
-  
-  if (aIsVertical) {
-    DrawThemeBackground(aTheme, aHdc, aPart, aState, aWidgetRect, aClipRect);
-    return;
-  }
-
-  
-  int chunkSize, spaceSize;
-  if (FAILED(GetThemeMetric(aTheme, aHdc, aPart, aState,
-                            TMT_PROGRESSCHUNKSIZE, &chunkSize)) ||
-      FAILED(GetThemeMetric(aTheme, aHdc, aPart, aState,
-                            TMT_PROGRESSSPACESIZE, &spaceSize))) {
-    DrawThemeBackground(aTheme, aHdc, aPart, aState, aWidgetRect, aClipRect);
-    return;
-  }
-
-  
-  if (!aIsRtl || aIsIndeterm) {
-    for (int chunk = aWidgetRect->left; chunk <= aWidgetRect->right;
-         chunk += (chunkSize+spaceSize)) {
-      if (!aIsIndeterm && ((chunk + chunkSize) > aWidgetRect->right)) {
-        
-        
-        
-        
-        
-        
-        if (!IsProgressMeterFilled(aFrame)) {
-          break;
-        }
-      }
-      RECT bounds =
-        { chunk, aWidgetRect->top, chunk + chunkSize, aWidgetRect->bottom };
-      DrawThemeBackground(aTheme, aHdc, aPart, aState, &bounds, aClipRect);
-    }
-  } else {
-    
-    for (int chunk = aWidgetRect->right; chunk >= aWidgetRect->left;
-         chunk -= (chunkSize+spaceSize)) {
-      if ((chunk - chunkSize) < aWidgetRect->left) {
-        if (!IsProgressMeterFilled(aFrame)) {
-          break;
-        }
-      }
-      RECT bounds =
-        { chunk - chunkSize, aWidgetRect->top, chunk, aWidgetRect->bottom };
-      DrawThemeBackground(aTheme, aHdc, aPart, aState, &bounds, aClipRect);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void
 nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame, int aWidgetType,
                                           HANDLE aTheme, HDC aHdc,
                                           int aPart, int aState,
-                                          RECT* aWidgetRect, RECT* aClipRect,
-                                          gfxFloat aAppUnits)
+                                          RECT* aWidgetRect, RECT* aClipRect)
 {
   if (!aFrame || !aTheme || !aHdc)
     return;
@@ -665,12 +554,6 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame, int aWidgetType,
   RECT adjWidgetRect, adjClipRect;
   adjWidgetRect = *aWidgetRect;
   adjClipRect = *aClipRect;
-  if (!IsVistaOrLater()) {
-    
-    
-    InflateRect(&adjWidgetRect, 1, 1);
-    InflateRect(&adjClipRect, 1, 1);
-  }
 
   nsIFrame* parentFrame = aFrame->GetParent();
   if (!parentFrame) {
@@ -685,20 +568,13 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame, int aWidgetType,
   bool indeterminate = IsIndeterminateProgress(parentFrame, eventStates);
   bool animate = indeterminate;
 
-  if (IsVistaOrLater()) {
-    
-    
-    DrawThemeBackground(aTheme, aHdc, aPart, aState,
-                        &adjWidgetRect, &adjClipRect);
-    if (!IsProgressMeterFilled(aFrame)) {
-      animate = true;
-    }
-  } else if (!indeterminate) {
-    
-    DrawChunkProgressMeter(aTheme, aHdc, aPart, aState, aFrame,
-                           &adjWidgetRect, &adjClipRect, aAppUnits,
-                           indeterminate, vertical, IsFrameRTL(aFrame));
-  }    
+  
+  
+  DrawThemeBackground(aTheme, aHdc, aPart, aState,
+                      &adjWidgetRect, &adjClipRect);
+  if (!IsProgressMeterFilled(aFrame)) {
+    animate = true;
+  }
 
   if (animate) {
     
@@ -706,14 +582,8 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame, int aWidgetType,
     RECT overlayRect =
       CalculateProgressOverlayRect(aFrame, &adjWidgetRect, vertical,
                                    indeterminate, false);
-    if (IsVistaOrLater()) {
-      DrawThemeBackground(aTheme, aHdc, overlayPart, aState, &overlayRect,
-                          &adjClipRect);
-    } else {
-      DrawChunkProgressMeter(aTheme, aHdc, overlayPart, aState, aFrame,
-                             &overlayRect, &adjClipRect, aAppUnits,
-                             indeterminate, vertical, IsFrameRTL(aFrame));
-    }
+    DrawThemeBackground(aTheme, aHdc, overlayPart, aState, &overlayRect,
+                        &adjClipRect);
 
     if (!QueueAnimatedContentForRefresh(aFrame->GetContent(), 60)) {
       NS_WARNING("unable to animate progress widget!");
@@ -724,15 +594,6 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame, int aWidgetType,
 HANDLE
 nsNativeThemeWin::GetTheme(uint8_t aWidgetType)
 { 
-  if (!IsVistaOrLater()) {
-    
-    
-    
-    
-    if (aWidgetType == NS_THEME_MENULIST)
-      aWidgetType = NS_THEME_TEXTFIELD;
-  }
-
   switch (aWidgetType) {
     case NS_THEME_BUTTON:
     case NS_THEME_RADIO:
@@ -745,9 +606,7 @@ nsNativeThemeWin::GetTheme(uint8_t aWidgetType)
     case NS_THEME_FOCUS_OUTLINE:
       return nsUXThemeData::GetTheme(eUXEdit);
     case NS_THEME_TOOLTIP:
-      
-      return !IsVistaOrLater() ?
-        nullptr : nsUXThemeData::GetTheme(eUXTooltip);
+      return nsUXThemeData::GetTheme(eUXTooltip);
     case NS_THEME_TOOLBOX:
       return nsUXThemeData::GetTheme(eUXRebar);
     case NS_THEME_WIN_MEDIA_TOOLBOX:
@@ -874,12 +733,6 @@ nsresult
 nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType, 
                                        int32_t& aPart, int32_t& aState)
 {
-  if (!IsVistaOrLater()) {
-    
-    if (aWidgetType == NS_THEME_MENULIST)
-      aWidgetType = NS_THEME_TEXTFIELD;
-  }
-
   switch (aWidgetType) {
     case NS_THEME_BUTTON: {
       aPart = BP_BUTTON;
@@ -952,63 +805,43 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
     case NS_THEME_TEXTFIELD_MULTILINE: {
       EventStates eventState = GetContentState(aFrame, aWidgetType);
 
-      if (IsVistaOrLater()) {
+      
+
+
+
+
+
+      aPart = TFP_EDITBORDER_NOSCROLL;
+
+      if (!aFrame) {
+        aState = TFS_EDITBORDER_NORMAL;
+      } else if (IsDisabled(aFrame, eventState)) {
+        aState = TFS_EDITBORDER_DISABLED;
+      } else if (IsReadOnly(aFrame)) {
         
-
-
-
-
-
-
-
-        aPart = TFP_EDITBORDER_NOSCROLL;
-
-        if (!aFrame) {
-          aState = TFS_EDITBORDER_NORMAL;
-        } else if (IsDisabled(aFrame, eventState)) {
-          aState = TFS_EDITBORDER_DISABLED;
-        } else if (IsReadOnly(aFrame)) {
-          
-          aState = TFS_EDITBORDER_NORMAL;
-        } else {
-          nsIContent* content = aFrame->GetContent();
-
-          
-
-
-          if (content && content->IsXULElement() && IsFocused(aFrame))
-            aState = TFS_EDITBORDER_FOCUSED;
-          else if (eventState.HasAtLeastOneOfStates(NS_EVENT_STATE_ACTIVE | NS_EVENT_STATE_FOCUS))
-            aState = TFS_EDITBORDER_FOCUSED;
-          else if (eventState.HasState(NS_EVENT_STATE_HOVER))
-            aState = TFS_EDITBORDER_HOVER;
-          else
-            aState = TFS_EDITBORDER_NORMAL;
-        }
+        aState = TFS_EDITBORDER_NORMAL;
       } else {
-        aPart = TFP_TEXTFIELD;
+        nsIContent* content = aFrame->GetContent();
+
         
-        if (!aFrame)
-          aState = TS_NORMAL;
-        else if (IsDisabled(aFrame, eventState))
-          aState = TS_DISABLED;
-        else if (IsReadOnly(aFrame))
-          aState = TFS_READONLY;
+
+
+        if (content && content->IsXULElement() && IsFocused(aFrame))
+          aState = TFS_EDITBORDER_FOCUSED;
+        else if (eventState.HasAtLeastOneOfStates(NS_EVENT_STATE_ACTIVE | NS_EVENT_STATE_FOCUS))
+          aState = TFS_EDITBORDER_FOCUSED;
+        else if (eventState.HasState(NS_EVENT_STATE_HOVER))
+          aState = TFS_EDITBORDER_HOVER;
         else
-          aState = StandardGetState(aFrame, aWidgetType, true);
+          aState = TFS_EDITBORDER_NORMAL;
       }
 
       return NS_OK;
     }
     case NS_THEME_FOCUS_OUTLINE: {
-      if (IsVistaOrLater()) {
-        
-        aPart = TFP_TEXTFIELD; 
-        aState = TS_FOCUSED; 
-      } else {
-        aPart = TFP_TEXTFIELD;
-        aState = TS_FOCUSED;
-      }
+      
+      aPart = TFP_TEXTFIELD; 
+      aState = TS_FOCUSED; 
       return NS_OK;
     }
     case NS_THEME_TOOLTIP: {
@@ -1032,11 +865,9 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
       nsIFrame* parentFrame = aFrame->GetParent();
       if (aWidgetType == NS_THEME_PROGRESSCHUNK_VERTICAL ||
           IsVerticalProgress(parentFrame)) {
-        aPart = IsVistaOrLater() ?
-          PP_FILLVERT : PP_CHUNKVERT;
+        aPart = PP_FILLVERT;
       } else {
-        aPart = IsVistaOrLater() ?
-          PP_FILL : PP_CHUNK;
+        aPart = PP_FILL;
       }
 
       aState = PBBVS_NORMAL;
@@ -1100,8 +931,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
           aState += TS_ACTIVE;
         else if (eventState.HasState(NS_EVENT_STATE_HOVER))
           aState += TS_HOVER;
-        else if (IsVistaOrLater() &&
-                 parentState.HasState(NS_EVENT_STATE_HOVER))
+        else if (parentState.HasState(NS_EVENT_STATE_HOVER))
           aState = (aWidgetType - NS_THEME_SCROLLBARBUTTON_UP) + SP_BUTTON_IMPLICIT_HOVER_BASE;
         else
           aState += TS_NORMAL;
@@ -1204,14 +1034,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
     case NS_THEME_SCROLLBAR:
     case NS_THEME_SCROLLBAR_SMALL: {
       aState = 0;
-      if (IsVistaOrLater()) {
-        
-        aPart = RP_BACKGROUND;
-      } else {
-        
-        
-        aPart = 0;
-      }
+      aPart = RP_BACKGROUND;
       return NS_OK;
     }
     case NS_THEME_TOOLBAR: {
@@ -1336,8 +1159,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
         aFrame = parentFrame;
 
       EventStates eventState = GetContentState(aFrame, aWidgetType);
-      aPart = IsVistaOrLater() ?
-        CBP_DROPMARKER_VISTA : CBP_DROPMARKER;
+      aPart = CBP_DROPMARKER_VISTA;
 
       
       
@@ -1357,28 +1179,25 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
       else
         isOpen = IsOpenButton(aFrame);
 
-      if (IsVistaOrLater()) {
-        if (isHTML || IsMenuListEditable(aFrame)) {
-          if (isOpen) {
-            
-
-
-
-
-
-
-            aState = TS_HOVER;
-            return NS_OK;
-          }
-        } else {
+      if (isHTML || IsMenuListEditable(aFrame)) {
+        if (isOpen) {
           
 
 
 
 
-          aState = TS_NORMAL;
+
+
+          aState = TS_HOVER;
           return NS_OK;
         }
+      } else {
+        
+
+
+
+        aState = TS_NORMAL;
+        return NS_OK;
       }
 
       aState = TS_NORMAL;
@@ -1879,7 +1698,7 @@ RENDER_AGAIN:
   else if (aWidgetType == NS_THEME_PROGRESSCHUNK ||
            aWidgetType == NS_THEME_PROGRESSCHUNK_VERTICAL) {
     DrawThemedProgressMeter(aFrame, aWidgetType, theme, hdc, part, state,
-                            &widgetRect, &clipRect, p2a);
+                            &widgetRect, &clipRect);
   }
   else if (aWidgetType == NS_THEME_FOCUS_OUTLINE) {
     
@@ -2145,41 +1964,39 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
     return ok;
   }
 
-  if (IsVistaOrLater()) {
-    if (aWidgetType == NS_THEME_NUMBER_INPUT ||
-        aWidgetType == NS_THEME_TEXTFIELD ||
-        aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
-        aWidgetType == NS_THEME_MENULIST)
-    {
-      
-      if (aFrame->PresContext()->HasAuthorSpecifiedRules(aFrame, NS_AUTHOR_SPECIFIED_PADDING))
-        return false;
-    }
+  if (aWidgetType == NS_THEME_NUMBER_INPUT ||
+      aWidgetType == NS_THEME_TEXTFIELD ||
+      aWidgetType == NS_THEME_TEXTFIELD_MULTILINE ||
+      aWidgetType == NS_THEME_MENULIST)
+  {
+    
+    
+    if (aFrame->PresContext()->HasAuthorSpecifiedRules(aFrame, NS_AUTHOR_SPECIFIED_PADDING))
+      return false;
+  }
 
+  
+
+
+
+
+
+  if (aWidgetType == NS_THEME_NUMBER_INPUT ||
+      aWidgetType == NS_THEME_TEXTFIELD ||
+      aWidgetType == NS_THEME_TEXTFIELD_MULTILINE) {
+    aResult->top = aResult->bottom = 2;
+    aResult->left = aResult->right = 2;
+    ScaleForFrameDPI(aResult, aFrame);
+    return ok;
+  } else if (IsHTMLContent(aFrame) && aWidgetType == NS_THEME_MENULIST) {
     
 
 
 
-
-
-    if (aWidgetType == NS_THEME_NUMBER_INPUT ||
-        aWidgetType == NS_THEME_TEXTFIELD ||
-        aWidgetType == NS_THEME_TEXTFIELD_MULTILINE) {
-      aResult->top = aResult->bottom = 2;
-      aResult->left = aResult->right = 2;
-      ScaleForFrameDPI(aResult, aFrame);
-      return ok;
-    } else if (IsHTMLContent(aFrame) && aWidgetType == NS_THEME_MENULIST) {
-      
-
-
-
-
-      aResult->top = aResult->bottom = 1;
-      aResult->left = aResult->right = 1;
-      ScaleForFrameDPI(aResult, aFrame);
-      return ok;
-    }
+    aResult->top = aResult->bottom = 1;
+    aResult->left = aResult->right = 1;
+    ScaleForFrameDPI(aResult, aFrame);
+    return ok;
   }
 
   int32_t right, left, top, bottom;
@@ -2244,23 +2061,21 @@ nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
 
 
 #if 0
-  if (IsVistaOrLater()) {
+  
+
+
+
+  if (aWidgetType == NS_THEME_MENULIST_BUTTON &&
+      IsHTMLContent(aFrame) &&
+      !IsWidgetStyled(aFrame->GetParent()->PresContext(),
+                      aFrame->GetParent(),
+                      NS_THEME_MENULIST))
+  {
+    int32_t p2a = aContext->AppUnitsPerDevPixel();
     
-
-
-
-    if (aWidgetType == NS_THEME_MENULIST_BUTTON &&
-        IsHTMLContent(aFrame) &&
-        !IsWidgetStyled(aFrame->GetParent()->PresContext(),
-                        aFrame->GetParent(),
-                        NS_THEME_MENULIST))
-    {
-      int32_t p2a = aContext->AppUnitsPerDevPixel();
-      
-      nsMargin m(p2a, p2a, p2a, 0);
-      aOverflowRect->Inflate (m);
-      return true;
-    }
+    nsMargin m(p2a, p2a, p2a, 0);
+    aOverflowRect->Inflate (m);
+    return true;
   }
 #endif
 
@@ -2386,20 +2201,16 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
       *aIsOverridable = false;
       
       
-      if (IsVistaOrLater()) {
-        if (aWidgetType == NS_THEME_SCALETHUMB_HORIZONTAL ||
-            (aWidgetType == NS_THEME_RANGE_THUMB && IsRangeHorizontal(aFrame))) {
-          aResult->width = 12;
-          aResult->height = 20;
-        }
-        else {
-          aResult->width = 20;
-          aResult->height = 12;
-        }
-        ScaleForFrameDPI(aResult, aFrame);
-        return rv;
+      if (aWidgetType == NS_THEME_SCALETHUMB_HORIZONTAL ||
+          (aWidgetType == NS_THEME_RANGE_THUMB && IsRangeHorizontal(aFrame))) {
+        aResult->width = 12;
+        aResult->height = 20;
+      } else {
+        aResult->width = 20;
+        aResult->height = 12;
       }
-      break;
+      ScaleForFrameDPI(aResult, aFrame);
+      return rv;
     }
 
     case NS_THEME_SCROLLBAR:
@@ -2438,11 +2249,6 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
       
       aResult->width = nsUXThemeData::sCommandButtons[CMDBUTTONIDX_RESTORE].cx;
       aResult->height = nsUXThemeData::sCommandButtons[CMDBUTTONIDX_RESTORE].cy;
-      
-      if (!IsVistaOrLater()) {
-        aResult->width -= 4;
-        aResult->height -= 4;
-      }
       AddPaddingRect(aResult, CAPTIONBUTTON_RESTORE);
       *aIsOverridable = false;
       return rv;
@@ -2450,10 +2256,6 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     case NS_THEME_WINDOW_BUTTON_MINIMIZE:
       aResult->width = nsUXThemeData::sCommandButtons[CMDBUTTONIDX_MINIMIZE].cx;
       aResult->height = nsUXThemeData::sCommandButtons[CMDBUTTONIDX_MINIMIZE].cy;
-      if (!IsVistaOrLater()) {
-        aResult->width -= 4;
-        aResult->height -= 4;
-      }
       AddPaddingRect(aResult, CAPTIONBUTTON_MINIMIZE);
       *aIsOverridable = false;
       return rv;
@@ -2461,10 +2263,6 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     case NS_THEME_WINDOW_BUTTON_CLOSE:
       aResult->width = nsUXThemeData::sCommandButtons[CMDBUTTONIDX_CLOSE].cx;
       aResult->height = nsUXThemeData::sCommandButtons[CMDBUTTONIDX_CLOSE].cy;
-      if (!IsVistaOrLater()) {
-        aResult->width -= 4;
-        aResult->height -= 4;
-      }
       AddPaddingRect(aResult, CAPTIONBUTTON_CLOSE);
       *aIsOverridable = false;
       return rv;
@@ -2595,17 +2393,8 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame, uint8_t aWidgetType,
   }
 
   
-  if (!IsVistaOrLater() &&
-      (aWidgetType == NS_THEME_SCROLLBAR_VERTICAL || 
-      aWidgetType == NS_THEME_SCROLLBAR_HORIZONTAL)) {
-    *aShouldRepaint = false;
-    return NS_OK;
-  }
-
   
-  
-  if (IsVistaOrLater() &&
-      (aWidgetType == NS_THEME_MENULIST || aWidgetType == NS_THEME_MENULIST_BUTTON) &&
+  if ((aWidgetType == NS_THEME_MENULIST || aWidgetType == NS_THEME_MENULIST_BUTTON) &&
       IsHTMLContent(aFrame))
   {
     *aShouldRepaint = true;

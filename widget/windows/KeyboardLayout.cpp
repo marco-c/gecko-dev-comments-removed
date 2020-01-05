@@ -1358,34 +1358,6 @@ NativeKey::InitWithKeyChar()
         break;
       }
 
-      if (!CanComputeVirtualKeyCodeFromScanCode()) {
-        
-        
-        
-        
-        
-        
-        
-        switch (mOriginalVirtualKeyCode) {
-          case VK_CONTROL:
-            mVirtualKeyCode =
-              mIsExtended && mScanCode == 0x1D ? VK_RCONTROL : VK_LCONTROL;
-            break;
-          case VK_MENU:
-            mVirtualKeyCode =
-              mIsExtended && mScanCode == 0x38 ? VK_RMENU : VK_LMENU;
-            break;
-          case VK_SHIFT:
-            
-            
-            mVirtualKeyCode = VK_LSHIFT;
-            break;
-          default:
-            MOZ_CRASH("Unsupported mOriginalVirtualKeyCode");
-        }
-        break;
-      }
-
       NS_ASSERTION(!mVirtualKeyCode,
                    "mVirtualKeyCode has been computed already");
 
@@ -1442,11 +1414,6 @@ NativeKey::InitWithKeyChar()
       
       
 
-      
-      
-      if (!CanComputeVirtualKeyCodeFromScanCode()) {
-        break;
-      }
       mVirtualKeyCode = mOriginalVirtualKeyCode =
         ComputeVirtualKeyCodeFromScanCodeEx();
       NS_ASSERTION(mVirtualKeyCode, "Failed to compute virtual keycode");
@@ -1864,18 +1831,6 @@ NativeKey::GetKeyLocation() const
   }
 }
 
-bool
-NativeKey::CanComputeVirtualKeyCodeFromScanCode() const
-{
-  
-  if (IsVistaOrLater()) {
-    return true;
-  }
-  
-  
-  return !mIsExtended;
-}
-
 uint8_t
 NativeKey::ComputeVirtualKeyCodeFromScanCode() const
 {
@@ -1889,12 +1844,6 @@ NativeKey::ComputeVirtualKeyCodeFromScanCodeEx() const
   
   
   
-  
-  
-  
-  if (NS_WARN_IF(!CanComputeVirtualKeyCodeFromScanCode())) {
-    return 0;
-  }
   return static_cast<uint8_t>(
            ::MapVirtualKeyEx(GetScanCodeWithExtendedFlag(), MAPVK_VSC_TO_VK_EX,
                              mKeyboardLayout));
@@ -1905,8 +1854,7 @@ NativeKey::ComputeScanCodeExFromVirtualKeyCode(UINT aVirtualKeyCode) const
 {
   return static_cast<uint16_t>(
            ::MapVirtualKeyEx(aVirtualKeyCode,
-                             IsVistaOrLater() ? MAPVK_VK_TO_VSC_EX :
-                                                MAPVK_VK_TO_VSC,
+                             MAPVK_VK_TO_VSC_EX,
                              mKeyboardLayout));
 }
 
@@ -4006,8 +3954,7 @@ KeyboardLayout::LoadLayout(HKL aLayout)
 
   if (MOZ_LOG_TEST(sKeyboardLayoutLogger, LogLevel::Verbose)) {
     static const UINT kExtendedScanCode[] = { 0x0000, 0xE000 };
-    static const UINT kMapType =
-      IsVistaOrLater() ? MAPVK_VSC_TO_VK_EX : MAPVK_VSC_TO_VK;
+    static const UINT kMapType = MAPVK_VSC_TO_VK_EX;
     MOZ_LOG(sKeyboardLayoutLogger, LogLevel::Verbose,
       ("Logging virtual keycode values for scancode (0x%p)...",
        mKeyboardLayout));
@@ -4018,11 +3965,6 @@ KeyboardLayout::LoadLayout(HKL aLayout)
           ::MapVirtualKeyEx(scanCode, kMapType, mKeyboardLayout);
         MOZ_LOG(sKeyboardLayoutLogger, LogLevel::Verbose,
           ("0x%04X, %s", scanCode, kVirtualKeyName[virtualKeyCode]));
-      }
-      
-      
-      if (!IsVistaOrLater()) {
-        break;
       }
     }
   }

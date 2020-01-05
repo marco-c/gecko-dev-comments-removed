@@ -144,9 +144,7 @@ nsUXThemeData::InitTitlebarInfo()
   sCommandButtons[3].cy = sCommandButtons[0].cy;
 
   
-  
-  sTitlebarInfoPopulatedAero = sTitlebarInfoPopulatedThemed =
-    !IsVistaOrLater();
+  sTitlebarInfoPopulatedAero = sTitlebarInfoPopulatedThemed = false;
 }
 
 
@@ -306,7 +304,7 @@ void
 nsUXThemeData::UpdateNativeThemeInfo()
 {
   
-  sTitlebarInfoPopulatedThemed = !IsVistaOrLater();
+  sTitlebarInfoPopulatedThemed = false;
 
   sIsDefaultWindowsTheme = false;
   sThemeId = LookAndFeel::eWindowsTheme_Generic;
