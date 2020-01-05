@@ -189,7 +189,7 @@ pub enum Msg {
     
     CreateOrUpdateDescendantLayer(LayerProperties),
     
-    SetLayerOrigin(PipelineId, LayerId, Point2D<f32>),
+    SetLayerRect(PipelineId, LayerId, Rect<f32>),
     
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>),
     
@@ -231,7 +231,7 @@ impl Debug for Msg {
             Msg::GetGraphicsMetadata(..) => write!(f, "GetGraphicsMetadata"),
             Msg::CreateOrUpdateBaseLayer(..) => write!(f, "CreateOrUpdateBaseLayer"),
             Msg::CreateOrUpdateDescendantLayer(..) => write!(f, "CreateOrUpdateDescendantLayer"),
-            Msg::SetLayerOrigin(..) => write!(f, "SetLayerOrigin"),
+            Msg::SetLayerRect(..) => write!(f, "SetLayerRect"),
             Msg::ScrollFragmentPoint(..) => write!(f, "ScrollFragmentPoint"),
             Msg::AssignPaintedBuffers(..) => write!(f, "AssignPaintedBuffers"),
             Msg::ChangeReadyState(..) => write!(f, "ChangeReadyState"),
