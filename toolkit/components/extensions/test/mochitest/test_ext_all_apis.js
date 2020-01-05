@@ -65,6 +65,7 @@ let expectedBackgroundApis = [
   "extension.isAllowedFileSchemeAccess",
   "extension.isAllowedIncognitoAccess",
   
+  "extensionTypes.CSSOrigin",
   "extensionTypes.ImageFormat",
   "extensionTypes.RunAt",
   "management.ExtensionDisabledReason",
