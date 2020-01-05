@@ -1199,8 +1199,7 @@ VRSystemManagerOculus::HandleInput()
         HandleButtonPress(i, buttonIdx, ovrButton_LThumb, inputState.Buttons,
                           inputState.Touches);
         ++buttonIdx;
-        HandleIndexTriggerPress(i, buttonIdx, ovrTouch_LIndexTrigger,
-                                inputState.IndexTrigger[handIdx], inputState.Touches);
+        HandleIndexTriggerPress(i, buttonIdx, inputState.IndexTrigger[handIdx]);
         ++buttonIdx;
         HandleHandTriggerPress(i, buttonIdx, inputState.HandTrigger[handIdx]);
         ++buttonIdx;
@@ -1217,8 +1216,7 @@ VRSystemManagerOculus::HandleInput()
         HandleButtonPress(i, buttonIdx, ovrButton_RThumb, inputState.Buttons,
                           inputState.Touches);
         ++buttonIdx;
-        HandleIndexTriggerPress(i, buttonIdx, ovrTouch_RIndexTrigger,
-                                inputState.IndexTrigger[handIdx], inputState.Touches);
+        HandleIndexTriggerPress(i, buttonIdx, inputState.IndexTrigger[handIdx]);
         ++buttonIdx;
         HandleHandTriggerPress(i, buttonIdx, inputState.HandTrigger[handIdx]);
         ++buttonIdx;
@@ -1318,19 +1316,20 @@ VRSystemManagerOculus::HandleButtonPress(uint32_t aControllerIdx,
 void
 VRSystemManagerOculus::HandleIndexTriggerPress(uint32_t aControllerIdx,
                                                uint32_t aButton,
-                                               uint64_t aTouchMask,
-                                               float aValue,
-                                               uint64_t aButtonTouched)
+                                               float aValue)
 {
   RefPtr<impl::VRControllerOculus> controller(mOculusController[aControllerIdx]);
   MOZ_ASSERT(controller);
-  const uint64_t touchedDiff = (controller->GetButtonTouched() ^ aButtonTouched);
   const float oldValue = controller->GetIndexTrigger();
+  
+  
+  
+  const float threshold = gfxPrefs::VRControllerTriggerThreshold();
 
   
-  if ((oldValue != aValue) ||
-      (touchedDiff & aTouchMask)) {
-    NewButtonEvent(aControllerIdx, aButton, aValue > 0.1f, aTouchMask & aButtonTouched, aValue);
+  if (oldValue != aValue) {
+    NewButtonEvent(aControllerIdx, aButton, aValue > threshold,
+                   aValue > threshold, aValue);
     controller->SetIndexTrigger(aValue);
   }
 }
@@ -1343,10 +1342,15 @@ VRSystemManagerOculus::HandleHandTriggerPress(uint32_t aControllerIdx,
   RefPtr<impl::VRControllerOculus> controller(mOculusController[aControllerIdx]);
   MOZ_ASSERT(controller);
   const float oldValue = controller->GetHandTrigger();
+  
+  
+  
+  const float threshold = gfxPrefs::VRControllerTriggerThreshold();
 
   
   if (oldValue != aValue) {
-    NewButtonEvent(aControllerIdx, aButton, aValue > 0.1f, aValue > 0.1f, aValue);
+    NewButtonEvent(aControllerIdx, aButton, aValue > threshold,
+                   aValue > threshold, aValue);
     controller->SetHandTrigger(aValue);
   }
 }

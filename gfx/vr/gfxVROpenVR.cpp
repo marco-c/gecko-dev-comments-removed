@@ -647,11 +647,8 @@ VRSystemManagerOpenVR::HandleInput()
                                  state.ulButtonPressed, state.ulButtonTouched);
             ++buttonIdx;
             break;
-          case ::vr::EVRControllerAxisType::k_eControllerAxis_Trigger:
-            HandleTriggerPress(i, buttonIdx,
-                               ::vr::ButtonMaskFromId(
-                                static_cast<::vr::EVRButtonId>(::vr::k_EButton_Axis0 + j)),
-                                state.rAxis[j].x, state.ulButtonPressed, state.ulButtonTouched);
+          case vr::EVRControllerAxisType::k_eControllerAxis_Trigger:
+            HandleTriggerPress(i, buttonIdx, state.rAxis[j].x);
             ++buttonIdx;
             break;
         }
@@ -786,23 +783,21 @@ VRSystemManagerOpenVR::HandleButtonPress(uint32_t aControllerIdx,
 void
 VRSystemManagerOpenVR::HandleTriggerPress(uint32_t aControllerIdx,
                                           uint32_t aButton,
-                                          uint64_t aButtonMask,
-                                          float aValue,
-                                          uint64_t aButtonPressed,
-                                          uint64_t aButtonTouched)
+                                          float aValue)
 {
   RefPtr<impl::VRControllerOpenVR> controller(mOpenVRController[aControllerIdx]);
   MOZ_ASSERT(controller);
-  const uint64_t pressedDiff = (controller->GetButtonPressed() ^ aButtonPressed);
-  const uint64_t touchedDiff = (controller->GetButtonTouched() ^ aButtonTouched);
   const float oldValue = controller->GetTrigger();
+  
+  
+  
+  
+  const float threshold = gfxPrefs::VRControllerTriggerThreshold();
 
   
-  if ((oldValue != aValue) ||
-      (pressedDiff & aButtonMask) ||
-      (touchedDiff & aButtonMask)) {
-    NewButtonEvent(aControllerIdx, aButton, aButtonMask & aButtonPressed,
-                   aButtonMask & aButtonTouched, aValue);
+  if (oldValue != aValue) {
+    NewButtonEvent(aControllerIdx, aButton, aValue > threshold,
+                   aValue > threshold, aValue);
     controller->SetTrigger(aValue);
   }
 }
