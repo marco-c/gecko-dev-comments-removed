@@ -76,6 +76,5 @@ pub mod fetch {
 
 pub mod test {
     pub use chrome_loader::resolve_chrome_url;
-    pub use http_loader::{HttpRequest, HttpRequestFactory, HttpResponse, HttpState};
-    pub use http_loader::{LoadError, LoadErrorType, UIProvider, load};
+    pub use http_loader::HttpState;
 }
