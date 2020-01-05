@@ -536,6 +536,13 @@ Animation::Reverse(ErrorResult& aRv)
   SilentlySetPlaybackRate(-mPlaybackRate);
   Play(aRv, LimitBehavior::AutoRewind);
 
+  
+  
+  if (aRv.Failed()) {
+    SilentlySetPlaybackRate(-mPlaybackRate);
+    return;
+  }
+
   if (IsRelevant()) {
     nsNodeUtils::AnimationChanged(this);
   }
