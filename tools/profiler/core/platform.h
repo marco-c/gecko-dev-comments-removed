@@ -61,15 +61,23 @@
 
 
 
-#if defined(__linux__)
+#if defined(__GLIBC__)
 #include <unistd.h>
-#if !defined(__BIONIC__)
 #include <sys/syscall.h>
 static inline pid_t gettid()
 {
   return (pid_t) syscall(SYS_gettid);
 }
-#endif
+#elif defined(XP_MACOSX)
+#include <unistd.h>
+#include <sys/syscall.h>
+static inline pid_t gettid()
+{
+  return (pid_t) syscall(SYS_thread_selfid);
+}
+#elif defined(LINUX)
+#include <sys/types.h>
+pid_t gettid();
 #endif
 
 #ifdef XP_WIN

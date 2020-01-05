@@ -117,52 +117,12 @@ TracedRunnable::Run()
 
 
 
-TracedTask::TracedTask(Task* aOriginalObj)
-  : TracedTaskCommon()
-  , mOriginalObj(aOriginalObj)
-{
-  Init();
-  LogVirtualTablePtr(mTaskId, mSourceEventId, reinterpret_cast<uintptr_t*>(aOriginalObj));
-}
-
-TracedTask::~TracedTask()
-{
-  if (mOriginalObj) {
-    delete mOriginalObj;
-    mOriginalObj = nullptr;
-  }
-}
-
-void
-TracedTask::Run()
-{
-  SetTLSTraceInfo();
-  LogBegin(mTaskId, mSourceEventId);
-  mOriginalObj->Run();
-  LogEnd(mTaskId, mSourceEventId);
-  ClearTLSTraceInfo();
-}
-
-
-
-
 
 already_AddRefed<nsIRunnable>
 CreateTracedRunnable(already_AddRefed<nsIRunnable>&& aRunnable)
 {
   nsCOMPtr<nsIRunnable> runnable = new TracedRunnable(Move(aRunnable));
   return runnable.forget();
-}
-
-
-
-
-
-Task*
-CreateTracedTask(Task* aTask)
-{
-  Task* task = new TracedTask(aTask);
-  return task;
 }
 
 } 
