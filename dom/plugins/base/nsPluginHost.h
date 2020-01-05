@@ -191,16 +191,16 @@ public:
   static bool ShouldLoadTypeInParent(const nsACString& aMimeType);
 
   
-  enum SpecialType { eSpecialType_None,
-                     
-                     eSpecialType_Test,
-                     
-                     eSpecialType_Flash,
-                     
-                     
-                     eSpecialType_Java,
-                     
-                     eSpecialType_Unity };
+  enum SpecialType {
+    eSpecialType_None,
+    
+    eSpecialType_Test,
+    
+    eSpecialType_Flash,
+    
+    
+    eSpecialType_Java
+  };
   static SpecialType GetSpecialType(const nsACString & aMIMEType);
 
   static nsresult PostPluginUnloadEvent(PRLibrary* aLibrary);
