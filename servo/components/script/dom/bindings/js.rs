@@ -375,7 +375,7 @@ impl RootCollection {
 
     
     #[allow(unrooted_must_root)]
-    fn new_root<'a, 'b, T: Reflectable>(&'a self, unrooted: &JS<T>) -> Root<'a, 'b, T> {
+    fn new_root<'b, 'a: 'b, T: Reflectable>(&'a self, unrooted: &JS<T>) -> Root<'a, 'b, T> {
         Root::new(self, unrooted)
     }
 
@@ -409,7 +409,7 @@ pub struct Root<'a, 'b, T> {
     js_ptr: *mut JSObject,
 }
 
-impl<'a, 'b, T: Reflectable> Root<'a, 'b, T> {
+impl<'b, 'a: 'b, T: Reflectable> Root<'a, 'b, T> {
     
     
     
@@ -434,13 +434,13 @@ impl<'a, 'b, T: Reflectable> Root<'a, 'b, T> {
 }
 
 #[unsafe_destructor]
-impl<'a, 'b, T: Reflectable> Drop for Root<'a, 'b, T> {
+impl<'b, 'a: 'b, T: Reflectable> Drop for Root<'a, 'b, T> {
     fn drop(&mut self) {
         self.root_list.unroot(self);
     }
 }
 
-impl<'a, 'b, T: Reflectable> Deref<JSRef<'b, T>> for Root<'a, 'b, T> {
+impl<'b, 'a: 'b, T: Reflectable> Deref<JSRef<'b, T>> for Root<'a, 'b, T> {
     fn deref<'c>(&'c self) -> &'c JSRef<'b, T> {
         &self.jsref
     }
