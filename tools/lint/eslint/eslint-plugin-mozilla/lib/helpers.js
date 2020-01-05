@@ -11,8 +11,10 @@ var espree = require("espree");
 var estraverse = require("estraverse");
 var path = require("path");
 var fs = require("fs");
+var ini = require("ini-parser");
 
 var modules = null;
+var directoryManifests = new Map();
 
 var definitions = [
   /^loader\.lazyGetter\(this, "(\w+)"/,
@@ -326,10 +328,55 @@ module.exports = {
 
 
 
-  getIsXpcshellTest: function(scope) {
-    var pathAndFilename = this.cleanUpPath(scope.getFilename());
+  getTestHeadFiles: function(scope) {
+    if (!this.getIsTest(scope)) {
+      return [];
+    }
 
-    return /.*[\\/]test_.+\.js$/.test(pathAndFilename);
+    let filepath = this.cleanUpPath(scope.getFilename());
+    let dir = path.dirname(filepath);
+
+    let names = fs.readdirSync(dir)
+                  .filter(name => name.startsWith("head") && name.endsWith(".js"))
+                  .map(name => path.join(dir, name));
+    return names;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getManifestsForDirectory: function(dir) {
+    if (directoryManifests.has(dir)) {
+      return directoryManifests.get(dir);
+    }
+
+    let manifests = [];
+
+    let names = fs.readdirSync(dir);
+    for (let name of names) {
+      if (!name.endsWith(".ini")) {
+        continue;
+      }
+
+      try {
+        let manifest = ini.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+
+        manifests.push({
+          file: path.join(dir, name),
+          manifest
+        })
+      } catch (e) {
+      }
+    }
+
+    directoryManifests.set(dir, manifests);
+    return manifests;
   },
 
   
@@ -342,10 +389,19 @@ module.exports = {
 
 
 
-  getIsBrowserMochitest: function(scope) {
-    var pathAndFilename = this.cleanUpPath(scope.getFilename());
+  getTestManifest: function(scope) {
+    let filepath = this.cleanUpPath(scope.getFilename());
 
-    return /.*[\\/]browser_.+\.js$/.test(pathAndFilename);
+    let dir = path.dirname(filepath);
+    let filename = path.basename(filepath);
+
+    for (let manifest of this.getManifestsForDirectory(dir)) {
+      if (filename in manifest.manifest) {
+        return manifest.file;
+      }
+    }
+
+    return null;
   },
 
   
@@ -359,11 +415,48 @@ module.exports = {
 
 
   getIsTest: function(scope) {
-    if (this.getIsXpcshellTest(scope)) {
+    
+    let manifest = this.getTestManifest(scope);
+    if (manifest) {
       return true;
     }
 
-    return this.getIsBrowserMochitest(scope);
+    return !!this.getTestType(scope);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  getTestType: function(scope) {
+    let manifest = this.getTestManifest(scope);
+    if (manifest) {
+      let name = path.basename(manifest);
+      for (let testType of ["browser", "xpcshell", "chrome", "mochitest"]) {
+        if (name.startsWith(testType)) {
+          return testType;
+        }
+      }
+    }
+
+    let filepath = this.cleanUpPath(scope.getFilename());
+    let filename = path.basename(filepath);
+
+    if (filename.startsWith("browser_")) {
+      return "browser";
+    }
+
+    if (filename.startsWith("test_")) {
+      return "xpcshell";
+    }
+
+    return null;
   },
 
   
