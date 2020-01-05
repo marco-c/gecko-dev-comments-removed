@@ -160,22 +160,24 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
   }
 
   nsCOMPtr<nsIContent> child = aNode->GetChildAt(aStartOffset);
-  NS_ENSURE_STATE(child);
-
-  
-  
-  nsresult rv = NS_OK;
   for (int32_t i = aStartOffset; i < aEndOffset; ++i) {
-    RefPtr<DeleteNodeTransaction> transaction = new DeleteNodeTransaction();
-    rv = transaction->Init(mEditorBase, child, mRangeUpdater);
-    if (NS_SUCCEEDED(rv)) {
-      AppendChild(transaction);
+    
+    
+    if (NS_WARN_IF(!child)) {
+      break;
     }
-
+    RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
+      new DeleteNodeTransaction(*mEditorBase, *child, mRangeUpdater);
+    
+    
+    
+    
+    if (deleteNodeTransaction->CanDoIt()) {
+      AppendChild(deleteNodeTransaction);
+    }
     child = child->GetNextSibling();
   }
 
-  NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
 
@@ -223,12 +225,20 @@ DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween()
 
   while (!iter->IsDone()) {
     nsCOMPtr<nsINode> node = iter->GetCurrentNode();
-    NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
+    if (NS_WARN_IF(!node)) {
+      return NS_ERROR_NULL_POINTER;
+    }
 
-    RefPtr<DeleteNodeTransaction> transaction = new DeleteNodeTransaction();
-    rv = transaction->Init(mEditorBase, node, mRangeUpdater);
-    NS_ENSURE_SUCCESS(rv, rv);
-    AppendChild(transaction);
+    RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
+      new DeleteNodeTransaction(*mEditorBase, *node, mRangeUpdater);
+    
+    
+    
+    
+    if (NS_WARN_IF(!deleteNodeTransaction->CanDoIt())) {
+      return NS_ERROR_FAILURE;
+    }
+    AppendChild(deleteNodeTransaction);
 
     iter->Next();
   }

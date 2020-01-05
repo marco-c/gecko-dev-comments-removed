@@ -4291,14 +4291,19 @@ nsresult
 EditorBase::CreateTxnForDeleteNode(nsINode* aNode,
                                    DeleteNodeTransaction** aTransaction)
 {
-  NS_ENSURE_TRUE(aNode, NS_ERROR_NULL_POINTER);
+  if (NS_WARN_IF(!aNode)) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
-  RefPtr<DeleteNodeTransaction> transaction = new DeleteNodeTransaction();
+  RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
+    new DeleteNodeTransaction(*this, *aNode, &mRangeUpdater);
+  
+  
+  if (!deleteNodeTransaction->CanDoIt()) {
+    return NS_ERROR_FAILURE;
+  }
+  deleteNodeTransaction.forget(aTransaction);
 
-  nsresult rv = transaction->Init(this, aNode, &mRangeUpdater);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  transaction.forget(aTransaction);
   return NS_OK;
 }
 

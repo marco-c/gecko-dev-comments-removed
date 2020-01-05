@@ -25,14 +25,14 @@ class RangeUpdater;
 class DeleteNodeTransaction final : public EditTransactionBase
 {
 public:
+  DeleteNodeTransaction(EditorBase& aEditorBase, nsINode& aNodeToDelete,
+                        RangeUpdater* aRangeUpdater);
+
   
 
 
 
-  nsresult Init(EditorBase* aEditorBase, nsINode* aNode,
-                RangeUpdater* aRangeUpdater);
-
-  DeleteNodeTransaction();
+  bool CanDoIt() const;
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DeleteNodeTransaction,
@@ -46,16 +46,16 @@ protected:
   virtual ~DeleteNodeTransaction();
 
   
-  nsCOMPtr<nsINode> mNode;
+  EditorBase& mEditorBase;
 
   
-  nsCOMPtr<nsINode> mParent;
+  nsCOMPtr<nsINode> mNodeToDelete;
+
+  
+  nsCOMPtr<nsINode> mParentNode;
 
   
   nsCOMPtr<nsIContent> mRefNode;
-
-  
-  EditorBase* mEditorBase;
 
   
   RangeUpdater* mRangeUpdater;
