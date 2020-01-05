@@ -92,11 +92,6 @@ const IMAGE_FETCHING_TIMEOUT = 500;
 
 
 
-const SKIP_TO_PARENT = "SKIP_TO_PARENT";
-const SKIP_TO_SIBLING = "SKIP_TO_SIBLING";
-
-
-
 const PSEUDO_SELECTORS = [
   [":active", 1],
   [":hover", 1],
@@ -939,12 +934,12 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     return "[WalkerActor " + this.actorID + "]";
   },
 
-  getDocumentWalker: function (node, whatToShow, skipTo) {
+  getDocumentWalker: function (node, whatToShow) {
     
     let nodeFilter = this.showAllAnonymousContent
-                    ? allAnonymousContentTreeWalkerFilter
-                    : standardTreeWalkerFilter;
-    return new DocumentWalker(node, this.rootWin, whatToShow, nodeFilter, skipTo);
+                        ? allAnonymousContentTreeWalkerFilter
+                        : standardTreeWalkerFilter;
+    return new DocumentWalker(node, this.rootWin, whatToShow, nodeFilter);
   },
 
   destroy: function () {
@@ -1375,10 +1370,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     
     
     let getFilteredWalker = documentWalkerNode => {
-      let { whatToShow } = options;
-      
-      
-      return this.getDocumentWalker(documentWalkerNode, whatToShow, SKIP_TO_SIBLING);
+      return this.getDocumentWalker(documentWalkerNode, options.whatToShow);
     };
 
     
@@ -1404,7 +1396,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
     
     let backwardWalker = getFilteredWalker(start);
-    if (backwardWalker.currentNode != firstChild && options.center) {
+    if (start != firstChild && options.center) {
       backwardWalker.previousSibling();
       let backwardCount = Math.floor(maxNodes / 2);
       let backwardNodes = this._readBackward(backwardWalker, backwardCount);
@@ -1526,14 +1518,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   _readForward: function (walker, count) {
     let ret = [];
-
     let node = walker.currentNode;
     do {
-      if (!walker.isSkippedNode(node)) {
-        
-        
-        ret.push(this._ref(node));
-      }
+      ret.push(this._ref(node));
       node = walker.nextSibling();
     } while (node && --count);
     return ret;
@@ -1545,14 +1532,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
   _readBackward: function (walker, count) {
     let ret = [];
-
     let node = walker.currentNode;
     do {
-      if (!walker.isSkippedNode(node)) {
-        
-        
-        ret.push(this._ref(node));
-      }
+      ret.push(this._ref(node));
       node = walker.previousSibling();
     } while (node && --count);
     ret.reverse();
@@ -2991,15 +2973,9 @@ function isNodeDead(node) {
 
 
 
-
-
-
-
-
 function DocumentWalker(node, rootWin,
     whatToShow = nodeFilterConstants.SHOW_ALL,
-    filter = standardTreeWalkerFilter,
-    skipTo = SKIP_TO_PARENT) {
+    filter = standardTreeWalkerFilter) {
   if (!rootWin.location) {
     throw new Error("Got an invalid root window in DocumentWalker");
   }
@@ -3012,20 +2988,20 @@ function DocumentWalker(node, rootWin,
   this.walker.init(rootWin.document, whatToShow);
   this.filter = filter;
 
-  if (skipTo === SKIP_TO_PARENT) {
-    while (node && this.isSkippedNode(node)) {
-      node = node.parentNode;
-    }
-  } else if (skipTo === SKIP_TO_SIBLING) {
-    node = this.getClosestAcceptedSibling(node);
-  }
-
+  
   
   
   this.walker.currentNode = node;
+  while (node &&
+         this.filter(node) === nodeFilterConstants.FILTER_SKIP) {
+    node = this.walker.parentNode();
+  }
 }
 
 DocumentWalker.prototype = {
+  get node() {
+    return this.walker.node;
+  },
   get whatToShow() {
     return this.walker.whatToShow;
   },
@@ -3047,7 +3023,8 @@ DocumentWalker.prototype = {
     }
 
     let nextNode = this.walker.nextNode();
-    while (nextNode && this.isSkippedNode(nextNode)) {
+    while (nextNode &&
+           this.filter(nextNode) === nodeFilterConstants.FILTER_SKIP) {
       nextNode = this.walker.nextNode();
     }
 
@@ -3061,7 +3038,8 @@ DocumentWalker.prototype = {
     }
 
     let firstChild = this.walker.firstChild();
-    while (firstChild && this.isSkippedNode(firstChild)) {
+    while (firstChild &&
+           this.filter(firstChild) === nodeFilterConstants.FILTER_SKIP) {
       firstChild = this.walker.nextSibling();
     }
 
@@ -3075,7 +3053,8 @@ DocumentWalker.prototype = {
     }
 
     let lastChild = this.walker.lastChild();
-    while (lastChild && this.isSkippedNode(lastChild)) {
+    while (lastChild &&
+           this.filter(lastChild) === nodeFilterConstants.FILTER_SKIP) {
       lastChild = this.walker.previousSibling();
     }
 
@@ -3084,7 +3063,7 @@ DocumentWalker.prototype = {
 
   previousSibling: function () {
     let node = this.walker.previousSibling();
-    while (node && this.isSkippedNode(node)) {
+    while (node && this.filter(node) === nodeFilterConstants.FILTER_SKIP) {
       node = this.walker.previousSibling();
     }
     return node;
@@ -3092,46 +3071,11 @@ DocumentWalker.prototype = {
 
   nextSibling: function () {
     let node = this.walker.nextSibling();
-    while (node && this.isSkippedNode(node)) {
+    while (node && this.filter(node) === nodeFilterConstants.FILTER_SKIP) {
       node = this.walker.nextSibling();
     }
     return node;
-  },
-
-  
-
-
-
-  getClosestAcceptedSibling: function (startingNode) {
-    if (this.filter(startingNode) === nodeFilterConstants.FILTER_ACCEPT) {
-      
-      return startingNode;
-    }
-
-    
-    let previous = startingNode;
-    let next = startingNode;
-    while (previous || next) {
-      previous = previous && previous.previousSibling;
-      next = next && next.nextSibling;
-
-      if (this.filter(previous) === nodeFilterConstants.FILTER_ACCEPT) {
-        
-        return previous;
-      }
-
-      if (this.filter(next) === nodeFilterConstants.FILTER_ACCEPT) {
-        
-        return next;
-      }
-    }
-
-    return null;
-  },
-
-  isSkippedNode: function (node) {
-    return this.filter(node) === nodeFilterConstants.FILTER_SKIP;
-  },
+  }
 };
 
 function isInXULDocument(el) {
