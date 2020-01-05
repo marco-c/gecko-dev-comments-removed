@@ -134,6 +134,11 @@ void
 CompositorVsyncScheduler::ScheduleComposition()
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!mVsyncObserver) {
+    
+    return;
+  }
+
   if (mAsapScheduling) {
     
     PostCompositeTask(TimeStamp::Now());
