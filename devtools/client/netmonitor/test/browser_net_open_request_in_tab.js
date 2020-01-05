@@ -35,7 +35,7 @@ add_task(function* () {
   
   
   monitor.toolbox.doc
-    .querySelector("#request-list-context-newtab").click();
+    .querySelector("#request-menu-context-newtab").click();
   yield onTabOpen;
 
   ok(true, "A new tab has been opened");

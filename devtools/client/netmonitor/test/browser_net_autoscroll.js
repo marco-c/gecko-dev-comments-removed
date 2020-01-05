@@ -16,7 +16,7 @@ add_task(function* () {
   
   yield waitForRequestListToAppear();
 
-  let requestsContainer = document.querySelector(".requests-list-contents");
+  let requestsContainer = document.querySelector(".requests-menu-contents");
   ok(requestsContainer, "Container element exists as expected.");
 
   
@@ -57,7 +57,7 @@ add_task(function* () {
 
   function waitForRequestListToAppear() {
     info("Waiting until the empty notice disappears and is replaced with the list");
-    return waitUntil(() => !!document.querySelector(".requests-list-contents"));
+    return waitUntil(() => !!document.querySelector(".requests-menu-contents"));
   }
 
   function* waitForRequestsToOverflowContainer() {

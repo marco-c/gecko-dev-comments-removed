@@ -28,8 +28,8 @@ add_task(function* () {
     
     
     monitor.toolbox.doc
-      .querySelector("#request-list-context-copy-image-as-data-uri").click();
- }, TEST_IMAGE_DATA_URI);
+      .querySelector("#request-menu-context-copy-image-as-data-uri").click();
+  }, TEST_IMAGE_DATA_URI);
 
   ok(true, "Clipboard contains the currently selected image as data uri.");
 

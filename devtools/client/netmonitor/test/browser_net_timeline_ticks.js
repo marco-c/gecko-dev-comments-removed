@@ -24,9 +24,9 @@ add_task(function* () {
 
   RequestsMenu.lazyUpdate = false;
 
-  ok($("#requests-list-waterfall-label"),
+  ok($("#requests-menu-waterfall-label"),
     "An timeline label should be displayed when the frontend is opened.");
-  ok($all(".requests-list-timings-division").length == 0,
+  ok($all(".requests-menu-timings-division").length == 0,
     "No tick labels should be displayed when the frontend is opened.");
 
   ok(!RequestsMenu._canvas, "No canvas should be created when the frontend is opened.");
@@ -41,12 +41,12 @@ add_task(function* () {
   NetMonitorController.NetworkEventsHandler.clearMarkers();
   RequestsMenu._flushWaterfallViews(true);
 
-  ok(!$("#requests-list-waterfall-label"),
+  ok(!$("#requests-menu-waterfall-label"),
     "The timeline label should be hidden after the first request.");
-  ok($all(".requests-list-timings-division").length >= 3,
+  ok($all(".requests-menu-timings-division").length >= 3,
     "There should be at least 3 tick labels in the network requests header.");
 
-  let timingDivisionEls = $all(".requests-list-timings-division");
+  let timingDivisionEls = $all(".requests-menu-timings-division");
   is(timingDivisionEls[0].textContent, L10N.getFormatStr("networkMenu.millisecond", 0),
     "The first tick label has correct value");
   is(timingDivisionEls[1].textContent, L10N.getFormatStr("networkMenu.millisecond", 80),
