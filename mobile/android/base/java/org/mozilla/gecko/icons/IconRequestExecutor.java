@@ -16,6 +16,7 @@ import org.mozilla.gecko.icons.loader.IconLoader;
 import org.mozilla.gecko.icons.loader.JarLoader;
 import org.mozilla.gecko.icons.loader.LegacyLoader;
 import org.mozilla.gecko.icons.loader.MemoryLoader;
+import org.mozilla.gecko.icons.loader.SuggestedSiteLoader;
 import org.mozilla.gecko.icons.preparation.AboutPagesPreparer;
 import org.mozilla.gecko.icons.preparation.AddDefaultIconUrl;
 import org.mozilla.gecko.icons.preparation.FilterKnownFailureUrls;
@@ -23,6 +24,7 @@ import org.mozilla.gecko.icons.preparation.FilterMimeTypes;
 import org.mozilla.gecko.icons.preparation.FilterPrivilegedUrls;
 import org.mozilla.gecko.icons.preparation.LookupIconUrl;
 import org.mozilla.gecko.icons.preparation.Preparer;
+import org.mozilla.gecko.icons.preparation.SuggestedSitePreparer;
 import org.mozilla.gecko.icons.processing.ColorProcessor;
 import org.mozilla.gecko.icons.processing.DiskProcessor;
 import org.mozilla.gecko.icons.processing.MemoryProcessor;
@@ -69,6 +71,11 @@ import java.util.concurrent.TimeUnit;
 
             
             
+            
+            new SuggestedSitePreparer(),
+
+            
+            
             new AddDefaultIconUrl(),
 
             
@@ -93,6 +100,9 @@ import java.util.concurrent.TimeUnit;
 
             
             new DiskLoader(),
+
+            
+            new SuggestedSiteLoader(),
 
             
             

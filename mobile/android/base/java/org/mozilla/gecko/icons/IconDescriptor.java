@@ -14,7 +14,7 @@ import android.support.annotation.VisibleForTesting;
 
 
 public class IconDescriptor {
-    @IntDef({ TYPE_GENERIC, TYPE_FAVICON, TYPE_TOUCHICON, TYPE_LOOKUP })
+    @IntDef({ TYPE_GENERIC, TYPE_FAVICON, TYPE_TOUCHICON, TYPE_LOOKUP, TYPE_BUNDLED_TILE })
     @interface IconType {}
 
     
@@ -22,6 +22,7 @@ public class IconDescriptor {
     @VisibleForTesting static final int TYPE_LOOKUP = 1;
     @VisibleForTesting static final int TYPE_FAVICON = 5;
     @VisibleForTesting static final int TYPE_TOUCHICON = 10;
+    @VisibleForTesting static final int TYPE_BUNDLED_TILE = 15;
 
     private final String url;
     private final int size;
@@ -57,6 +58,16 @@ public class IconDescriptor {
     public static IconDescriptor createLookupIcon(@NonNull String url) {
         return new IconDescriptor(TYPE_LOOKUP, url, 0, null);
     }
+
+    
+
+
+
+
+    public static IconDescriptor createBundledTileIcon(@NonNull String url) {
+        return new IconDescriptor(TYPE_BUNDLED_TILE, url, 0, null);
+    }
+
 
     private IconDescriptor(@IconType int type, @NonNull String url, int size, String mimeType) {
         this.type = type;
