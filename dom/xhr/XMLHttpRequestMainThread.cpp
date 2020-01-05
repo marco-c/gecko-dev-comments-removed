@@ -1064,10 +1064,75 @@ XMLHttpRequestMainThread::CloseRequestWithError(const ProgressEventType aType)
 }
 
 void
-XMLHttpRequestMainThread::Abort(ErrorResult& arv)
+XMLHttpRequestMainThread::RequestErrorSteps(const ProgressEventType aEventType,
+                                            const nsresult aOptionalException,
+                                            ErrorResult& aRv)
+{
+  
+  mState = State::done;
+
+  StopProgressEventTimer();
+
+  
+  mFlagSend = false;
+
+  
+  ResetResponse();
+
+  
+  if (mFlagDeleted) {
+    mFlagSyncLooping = false;
+    return;
+  }
+
+  
+  if (mFlagSynchronous && NS_FAILED(aOptionalException)) {
+    aRv.Throw(aOptionalException);
+    return;
+  }
+
+  
+  FireReadystatechangeEvent();
+
+  
+  if (mUpload && !mUploadComplete) {
+
+    
+    mUploadComplete = true;
+
+    
+    if (mFlagHadUploadListenersOnSend) {
+
+      
+      DispatchProgressEvent(mUpload, aEventType, 0, -1);
+    }
+  }
+
+  
+  DispatchProgressEvent(this, aEventType, 0, -1);
+}
+
+void
+XMLHttpRequestMainThread::Abort(ErrorResult& aRv)
 {
   mFlagAborted = true;
-  CloseRequestWithError(ProgressEventType::abort);
+
+  
+  CloseRequest();
+
+  
+  if ((mState == State::opened && mFlagSend) ||
+       mState == State::headers_received ||
+       mState == State::loading) {
+    RequestErrorSteps(ProgressEventType::abort, NS_OK, aRv);
+  }
+
+  
+  if (mState == State::done) {
+    ChangeState(State::unsent, false); 
+  }
+
+  mFlagSyncLooping = false;
 }
 
 NS_IMETHODIMP
