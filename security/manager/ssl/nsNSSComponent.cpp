@@ -1412,6 +1412,11 @@ nsNSSComponent::FillTLSVersionRange(SSLVersionRange& rangeOut,
   }
 
   
+  
+  rangeOut.min = std::max(rangeOut.min, supported.min);
+  rangeOut.max = std::min(rangeOut.max, supported.max);
+
+  
   minFromPrefs += SSL_LIBRARY_VERSION_3_0;
   maxFromPrefs += SSL_LIBRARY_VERSION_3_0;
   
