@@ -9,13 +9,16 @@
 #include "PreloadedStyleSheet.h"
 
 #include "mozilla/css/Loader.h"
+#include "mozilla/dom/Promise.h"
+#include "nsICSSLoaderObserver.h"
 #include "nsLayoutUtils.h"
 
 namespace mozilla {
 
 PreloadedStyleSheet::PreloadedStyleSheet(nsIURI* aURI,
                                          css::SheetParsingMode aParsingMode)
-  : mURI(aURI)
+  : mLoaded(false)
+  , mURI(aURI)
   , mParsingMode(aParsingMode)
 {
 }
@@ -27,26 +30,8 @@ PreloadedStyleSheet::Create(nsIURI* aURI,
 {
   *aResult = nullptr;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   RefPtr<PreloadedStyleSheet> preloadedSheet =
     new PreloadedStyleSheet(aURI, aParsingMode);
-  auto type = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
-                                            : StyleBackendType::Gecko;
-  StyleSheet* sheet;
-  nsresult rv = preloadedSheet->GetSheet(type, &sheet);
-  NS_ENSURE_SUCCESS(rv, rv);
 
   preloadedSheet.forget(aResult);
   return NS_OK;
@@ -67,6 +52,8 @@ PreloadedStyleSheet::GetSheet(StyleBackendType aType, StyleSheet** aResult)
 {
   *aResult = nullptr;
 
+  MOZ_DIAGNOSTIC_ASSERT(mLoaded);
+
   RefPtr<StyleSheet>& sheet =
     aType == StyleBackendType::Gecko ? mGecko : mServo;
 
@@ -79,6 +66,76 @@ PreloadedStyleSheet::GetSheet(StyleBackendType aType, StyleSheet** aResult)
 
   *aResult = sheet;
   return NS_OK;
+}
+
+nsresult
+PreloadedStyleSheet::Preload()
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mLoaded);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  auto type = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
+                                            : StyleBackendType::Gecko;
+
+  mLoaded = true;
+
+  StyleSheet* sheet;
+  return GetSheet(type, &sheet);
+}
+
+NS_IMPL_ISUPPORTS(PreloadedStyleSheet::StylesheetPreloadObserver,
+                  nsICSSLoaderObserver)
+
+NS_IMETHODIMP
+PreloadedStyleSheet::StylesheetPreloadObserver::StyleSheetLoaded(
+  StyleSheet* aSheet, bool aWasAlternate, nsresult aStatus)
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mPreloadedSheet->mLoaded);
+  mPreloadedSheet->mLoaded = true;
+
+  if (NS_FAILED(aStatus)) {
+    mPromise->MaybeReject(aStatus);
+  } else {
+    mPromise->MaybeResolve(mPreloadedSheet);
+  }
+
+  return NS_OK;
+}
+
+
+
+nsresult
+PreloadedStyleSheet::PreloadAsync(NotNull<dom::Promise*> aPromise)
+{
+  MOZ_DIAGNOSTIC_ASSERT(!mLoaded);
+
+  
+  
+  
+  
+  auto type = nsLayoutUtils::StyloEnabled() ? StyleBackendType::Servo
+                                            : StyleBackendType::Gecko;
+
+  RefPtr<StyleSheet>& sheet =
+    type == StyleBackendType::Gecko ? mGecko : mServo;
+
+  RefPtr<css::Loader> loader = new css::Loader(type);
+
+  RefPtr<StylesheetPreloadObserver> obs =
+    new StylesheetPreloadObserver(aPromise, this);
+
+  return loader->LoadSheet(mURI, mParsingMode, false, obs, &sheet);
 }
 
 } 

@@ -360,6 +360,32 @@ public:
 
 
 
+  nsresult LoadSheet(nsIURI* aURL,
+                     SheetParsingMode aParsingMode,
+                     bool aUseSystemPrincipal,
+                     nsICSSLoaderObserver* aObserver,
+                     RefPtr<StyleSheet>* aSheet);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   nsresult LoadSheet(nsIURI* aURL,
                      nsIPrincipal* aOriginPrincipal,
