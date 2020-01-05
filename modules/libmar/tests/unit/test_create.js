@@ -31,40 +31,72 @@ function run_test() {
 
     
     let outMARData = getBinaryFileData(outMAR);
+    if (mozinfo.os != "win") {
+      
+      
+      
+      
+      
+      switch (refMARFileName) {
+        case "0_sized.mar":
+          if (outMARData[143] == 180) {
+            outMARData[143] = 182;
+          }
+          break;
+        case "1_byte.mar":
+          if (outMARData[144] == 180) {
+            outMARData[144] = 182;
+          }
+          break;
+        case "binary_data.mar":
+          if (outMARData[655] == 180) {
+            outMARData[655] = 182;
+          }
+          break;
+        case "multiple_file.mar":
+          if (outMARData[656] == 180) {
+            outMARData[656] = 182;
+          }
+          if (outMARData[681] == 180) {
+            outMARData[681] = 182;
+          }
+          if (outMARData[705] == 180) {
+            outMARData[705] = 182;
+          }
+      }
+    }
     compareBinaryData(outMARData, refMARData);
   }
 
   
   let tests = {
     
-    test_zero_sized: function() {
-      return run_one_test(refMARPrefix + "0_sized_mar.mar", ["0_sized_file"]);
+    test_zero_sized: function _test_zero_sized() {
+      return run_one_test("0_sized.mar", ["0_sized_file"]);
     },
     
-    test_one_byte: function() {
-      return run_one_test(refMARPrefix + "1_byte_mar.mar", ["1_byte_file"]);
+    test_one_byte: function _test_one_byte() {
+      return run_one_test("1_byte.mar", ["1_byte_file"]);
     },
     
-    test_binary_data: function() {
-      return run_one_test(refMARPrefix + "binary_data_mar.mar", 
-                          ["binary_data_file"]);
+    test_binary_data: function _test_binary_data() {
+      return run_one_test("binary_data.mar", ["binary_data_file"]);
     },
     
-    test_multiple_file: function() {
-      return run_one_test(refMARPrefix + "multiple_file_mar.mar", 
+    test_multiple_file: function _test_multiple_file() {
+      return run_one_test("multiple_file.mar",
                           ["0_sized_file", "1_byte_file", "binary_data_file"]);
     },
     
     
-    test_overwrite_already_exists: function() {
-      let differentFile = do_get_file("data/1_byte_mar.mar");
+    test_overwrite_already_exists: function _test_overwrite_already_exists() {
+      let differentFile = do_get_file("data/1_byte.mar");
       let outMARDir = tempDir.clone();
       differentFile.copyTo(outMARDir, "out.mar");
-      return run_one_test(refMARPrefix + "binary_data_mar.mar", 
-                          ["binary_data_file"], false);
+      return run_one_test("binary_data.mar", ["binary_data_file"], false);
     },
     
-    cleanup_per_test: function() {
+    cleanup_per_test: function _cleanup_per_test() {
       let outMAR = tempDir.clone();
       outMAR.append("out.mar");
       if (outMAR.exists()) {

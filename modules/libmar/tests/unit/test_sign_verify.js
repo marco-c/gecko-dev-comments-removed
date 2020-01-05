@@ -25,28 +25,29 @@ function run_test() {
     if (certs.length == 1 && useShortHandCmdLine) {
       args.push("-n", certs[0]);
     } else {
-      for (var i = 0; i < certs.length; i++) {
+      for (let i = 0; i < certs.length; i++) {
         args.push("-n" + i, certs[i]);
       }
     }
     args.push("-s", inMAR.path, outMAR.path);
 
+    let exitValue;
     process.init(signmarBin);
     try {
       process.run(true, args, args.length);
-    } catch(e) {
+      exitValue = process.exitValue;
+    } catch (e) {
       
-      process.exitValue = -1;
+      exitValue = -1;
     }
 
     
     if (wantSuccess) {
-      do_check_eq(process.exitValue, 0);
+      do_check_eq(exitValue, 0);
     } else {
-      do_check_neq(process.exitValue, 0);
+      do_check_neq(exitValue, 0);
     }
   }
-
 
   
 
@@ -69,19 +70,21 @@ function run_test() {
     
     let args = ["-n" + sigIndex, "-X", inMAR.path, extractedSig.path];
 
+    let exitValue;
     process.init(signmarBin);
     try {
       process.run(true, args, args.length);
-    } catch(e) {
+      exitValue = process.exitValue;
+    } catch (e) {
       
-      process.exitValue = -1;
+      exitValue = -1;
     }
 
     
     if (wantSuccess) {
-      do_check_eq(process.exitValue, 0);
+      do_check_eq(exitValue, 0);
     } else {
-      do_check_neq(process.exitValue, 0);
+      do_check_neq(exitValue, 0);
     }
   }
 
@@ -108,19 +111,21 @@ function run_test() {
     
     let args = ["-n" + sigIndex, "-I", inMAR.path, sigFile.path, outMAR.path];
 
+    let exitValue;
     process.init(signmarBin);
     try {
       process.run(true, args, args.length);
-    } catch(e) {
+      exitValue = process.exitValue;
+    } catch (e) {
       
-      process.exitValue = -1;
+      exitValue = -1;
     }
 
     
     if (wantSuccess) {
-      do_check_eq(process.exitValue, 0);
+      do_check_eq(exitValue, 0);
     } else {
-      do_check_neq(process.exitValue, 0);
+      do_check_neq(exitValue, 0);
     }
   }
 
@@ -152,7 +157,7 @@ function run_test() {
       if (certs.length == 1 && useShortHandCmdLine) {
         args.push("-D", "data/" + certs[0] + ".der");
       } else {
-        for (var i = 0; i < certs.length; i++) {
+        for (let i = 0; i < certs.length; i++) {
           args.push("-D" + i, "data/" + certs[i] + ".der");
         }
       }
@@ -162,27 +167,29 @@ function run_test() {
       if (certs.length == 1 && useShortHandCmdLine) {
         args.push("-n", certs[0]);
       } else {
-        for (var i = 0; i < certs.length; i++) {
+        for (let i = 0; i < certs.length; i++) {
           args.push("-n" + i, certs[i]);
         }
       }
     }
     args.push("-v", signedMAR.path);
 
+    let exitValue;
     process.init(signmarBin);
     try {
       
       process.run(true, args, args.length);
+      exitValue = process.exitValue;
     } catch (e) {
       
-      process.exitValue = -1;
+      exitValue = -1;
     }
 
     
     if (wantSuccess) {
-      do_check_eq(process.exitValue, 0);
+      do_check_eq(exitValue, 0);
     } else {
-      do_check_neq(process.exitValue, 0);
+      do_check_neq(exitValue, 0);
     }
   }
 
@@ -205,22 +212,23 @@ function run_test() {
     
     let args = ["-r", signedMAR.path, outMAR.path];
 
+    let exitValue;
     process.init(signmarBin);
     try {
       process.run(true, args, args.length);
+      exitValue = process.exitValue;
     } catch (e) {
       
-      process.exitValue = -1;
+      exitValue = -1;
     }
 
     
     if (wantSuccess) {
-      do_check_eq(process.exitValue, 0);
+      do_check_eq(exitValue, 0);
     } else {
-      do_check_neq(process.exitValue, 0);
+      do_check_neq(exitValue, 0);
     }
   }
-
 
   function cleanup() {
     let outMAR = tempDir.clone();
@@ -251,8 +259,8 @@ function run_test() {
   
   let tests = {
     
-    test_sign_single: function() {
-      let inMAR = do_get_file("data/" + refMARPrefix + "binary_data_mar.mar");
+    test_sign_single: function _test_sign_single() {
+      let inMAR = do_get_file("data/binary_data.mar");
       let outMAR = tempDir.clone();
       outMAR.append("signed_out.mar");
       if (outMAR.exists()) {
@@ -261,13 +269,13 @@ function run_test() {
       signMAR(inMAR, outMAR, ["mycert"], wantSuccess, true);
       do_check_true(outMAR.exists());
       let outMARData = getBinaryFileData(outMAR);
-      let refMAR = do_get_file("data/" + refMARPrefix + "signed_pib_mar.mar");
+      let refMAR = do_get_file("data/signed_pib.mar");
       let refMARData = getBinaryFileData(refMAR);
       compareBinaryData(outMARData, refMARData);
-    }, 
+    },
     
-    test_sign_multiple: function() {
-      let inMAR = do_get_file("data/" + refMARPrefix + "binary_data_mar.mar");
+    test_sign_multiple: function _test_sign_multiple() {
+      let inMAR = do_get_file("data/binary_data.mar");
       let outMAR = tempDir.clone();
       outMAR.append("multiple_signed_out.mar");
       if (outMAR.exists()) {
@@ -278,52 +286,52 @@ function run_test() {
               wantSuccess, true);
       do_check_true(outMAR.exists());
       let outMARData = getBinaryFileData(outMAR);
-      let refMAR = do_get_file("data/" + refMARPrefix + "multiple_signed_pib_mar.mar");
+      let refMAR = do_get_file("data/multiple_signed_pib.mar");
       let refMARData = getBinaryFileData(refMAR);
       compareBinaryData(outMARData, refMARData);
     },
     
-    test_verify_single: function() {
-      let signedMAR = do_get_file("data/signed_pib_mar.mar");
+    test_verify_single: function _test_verify_single() {
+      let signedMAR = do_get_file("data/signed_pib.mar");
       verifyMAR(signedMAR, wantSuccess, ["mycert"], true);
       verifyMAR(signedMAR, wantSuccess, ["mycert"], false);
-    }, 
+    },
     
     
     
-    test_verify_single_too_many_certs: function() {
-      let signedMAR = do_get_file("data/signed_pib_mar.mar");
+    test_verify_single_too_many_certs: function _test_verify_single_too_many_certs() {
+      let signedMAR = do_get_file("data/signed_pib.mar");
       verifyMAR(signedMAR, wantFailure, ["mycert", "mycert"], true);
       verifyMAR(signedMAR, wantFailure, ["mycert", "mycert"], false);
     },
     
-    test_verify_single_wrong_cert: function() {
-      let signedMAR = do_get_file("data/signed_pib_mar.mar");
+    test_verify_single_wrong_cert: function _test_verify_single_wrong_cert() {
+      let signedMAR = do_get_file("data/signed_pib.mar");
       verifyMAR(signedMAR, wantFailure, ["mycert2"], true);
       verifyMAR(signedMAR, wantFailure, ["mycert2"], false);
     },
     
-    test_verify_multiple: function() {
-      let signedMAR = do_get_file("data/multiple_signed_pib_mar.mar");
+    test_verify_multiple: function _test_verify_multiple() {
+      let signedMAR = do_get_file("data/multiple_signed_pib.mar");
       verifyMAR(signedMAR, wantSuccess, ["mycert", "mycert2", "mycert3"]);
     },
     
-    test_verify_unsigned_mar_file_fails: function() {
-      let unsignedMAR = do_get_file("data/binary_data_mar.mar");
+    test_verify_unsigned_mar_file_fails: function _test_verify_unsigned_mar_file_fails() {
+      let unsignedMAR = do_get_file("data/binary_data.mar");
       verifyMAR(unsignedMAR, wantFailure, ["mycert", "mycert2", "mycert3"]);
     },
     
     
     
     
-    test_verify_multiple_same_cert: function() {
-      let signedMAR = do_get_file("data/multiple_signed_pib_mar.mar");
+    test_verify_multiple_same_cert: function _test_verify_multiple_same_cert() {
+      let signedMAR = do_get_file("data/multiple_signed_pib.mar");
       verifyMAR(signedMAR, wantFailure, ["mycert", "mycert", "mycert"]);
     },
     
     
-    test_verify_multiple_wrong_order: function() {
-      let signedMAR = do_get_file("data/multiple_signed_pib_mar.mar");
+    test_verify_multiple_wrong_order: function _test_verify_multiple_wrong_order() {
+      let signedMAR = do_get_file("data/multiple_signed_pib.mar");
       verifyMAR(signedMAR, wantSuccess, ["mycert", "mycert2", "mycert3"]);
       verifyMAR(signedMAR, wantFailure, ["mycert", "mycert3", "mycert2"]);
       verifyMAR(signedMAR, wantFailure, ["mycert2", "mycert", "mycert3"]);
@@ -332,34 +340,32 @@ function run_test() {
       verifyMAR(signedMAR, wantFailure, ["mycert3", "mycert2", "mycert"]);
     },
     
-    test_verify_no_pib: function() {
-      let signedMAR = do_get_file("data/signed_no_pib_mar.mar");
+    test_verify_no_pib: function _test_verify_no_pib() {
+      let signedMAR = do_get_file("data/signed_no_pib.mar");
       verifyMAR(signedMAR, wantSuccess, ["mycert"], true);
       verifyMAR(signedMAR, wantSuccess, ["mycert"], false);
-    }, 
+    },
     
-    test_verify_no_pib_multiple: function() {
-      let signedMAR = do_get_file("data/multiple_signed_no_pib_mar.mar");
+    test_verify_no_pib_multiple: function _test_verify_no_pib_multiple() {
+      let signedMAR = do_get_file("data/multiple_signed_no_pib.mar");
       verifyMAR(signedMAR, wantSuccess, ["mycert", "mycert2", "mycert3"]);
     },
     
     
-    test_crafted_mar: function() {
-      let signedBadMAR = do_get_file("data/manipulated_signed_mar.mar");
+    test_crafted_mar: function _test_crafted_mar() {
+      let signedBadMAR = do_get_file("data/manipulated_signed.mar");
       verifyMAR(signedBadMAR, wantFailure, ["mycert"], true);
       verifyMAR(signedBadMAR, wantFailure, ["mycert"], false);
-    }, 
+    },
     
-    test_bad_path_verify_fails: function() {
-      let noMAR = do_get_file("data/does_not_exist_.mar", true);
+    test_bad_path_verify_fails: function _test_bad_path_verify_fails() {
+      let noMAR = do_get_file("data/does_not_exist.mar", true);
       do_check_false(noMAR.exists());
       verifyMAR(noMAR, wantFailure, ["mycert"], true);
     },
     
-    test_strip_signature: function() {
-      let originalMAR = do_get_file("data/" + 
-                                    refMARPrefix + 
-                                    "binary_data_mar.mar");
+    test_strip_signature: function _test_strip_signature() {
+      let originalMAR = do_get_file("data/binary_data.mar");
       let signedMAR = tempDir.clone();
       signedMAR.append("signed_out.mar");
       let outMAR = tempDir.clone();
@@ -372,10 +378,8 @@ function run_test() {
       compareBinaryData(outMARData, originalMARData);
     },
     
-    test_strip_multiple_signatures: function() {
-      let originalMAR = do_get_file("data/" +
-                                    refMARPrefix +
-                                    "binary_data_mar.mar");
+    test_strip_multiple_signatures: function _test_strip_multiple_signatures() {
+      let originalMAR = do_get_file("data/binary_data.mar");
       let signedMAR = tempDir.clone();
       signedMAR.append("multiple_signed_out.mar");
       let outMAR = tempDir.clone();
@@ -388,8 +392,8 @@ function run_test() {
       compareBinaryData(outMARData, originalMARData);
     },
     
-    test_extract_sig_single: function() {
-      let inMAR = do_get_file("data/signed_pib_mar.mar");
+    test_extract_sig_single: function _test_extract_sig_single() {
+      let inMAR = do_get_file("data/signed_pib.mar");
       let extractedSig = do_get_file("extracted_signature", true);
       if (extractedSig.exists()) {
         extractedSig.remove(false);
@@ -397,14 +401,14 @@ function run_test() {
       extractMARSignature(inMAR, 0, extractedSig, wantSuccess);
       do_check_true(extractedSig.exists());
 
-      let referenceSig = do_get_file("data/signed_pib_mar.signature.0"); +
+      let referenceSig = do_get_file("data/signed_pib_mar.signature.0");
       compareBinaryData(extractedSig, referenceSig);
     },
     
     
-    test_extract_sig_multi: function() {
+    test_extract_sig_multi: function _test_extract_sig_multi() {
       for (let i = 0; i < 3; i++) {
-        let inMAR = do_get_file("data/multiple_signed_pib_mar.mar");
+        let inMAR = do_get_file("data/multiple_signed_pib.mar");
         let extractedSig = do_get_file("extracted_signature", true);
         if (extractedSig.exists()) {
           extractedSig.remove(false);
@@ -412,13 +416,13 @@ function run_test() {
         extractMARSignature(inMAR, i, extractedSig, wantSuccess);
         do_check_true(extractedSig.exists());
 
-        let referenceSig = do_get_file("data/multiple_signed_pib_mar.sig." + i); +
+        let referenceSig = do_get_file("data/multiple_signed_pib_mar.sig." + i);
         compareBinaryData(extractedSig, referenceSig);
       }
     },
     
-    test_extract_sig_out_of_range: function() {
-      let inMAR = do_get_file("data/signed_pib_mar.mar");
+    test_extract_sig_out_of_range: function _test_extract_sig_out_of_range() {
+      let inMAR = do_get_file("data/signed_pib.mar");
       let extractedSig = do_get_file("extracted_signature", true);
       if (extractedSig.exists()) {
         extractedSig.remove(false);
@@ -428,8 +432,8 @@ function run_test() {
       do_check_false(extractedSig.exists());
     },
     
-    test_bad_path_sign_fails: function() {
-      let inMAR = do_get_file("data/does_not_exist_.mar", true);
+    test_bad_path_sign_fails: function _test_bad_path_sign_fails() {
+      let inMAR = do_get_file("data/does_not_exist.mar", true);
       let outMAR = tempDir.clone();
       outMAR.append("signed_out.mar");
       do_check_false(inMAR.exists());
@@ -439,15 +443,15 @@ function run_test() {
     
     
     
-    test_verify_multiple_subset: function() {
-      let signedMAR = do_get_file("data/multiple_signed_pib_mar.mar");
+    test_verify_multiple_subset: function _test_verify_multiple_subset() {
+      let signedMAR = do_get_file("data/multiple_signed_pib.mar");
       verifyMAR(signedMAR, wantFailure, ["mycert", "mycert2"]);
     },
     
     
-    test_import_sig_single: function() {
+    test_import_sig_single: function _test_import_sig_single() {
       
-      let inMAR = do_get_file("data/signed_pib_mar.mar");
+      let inMAR = do_get_file("data/signed_pib.mar");
       verifyMAR(inMAR, wantSuccess, ["mycert"], false);
       verifyMAR(inMAR, wantFailure, ["mycert2"], false);
       verifyMAR(inMAR, wantFailure, ["mycert3"], false);
@@ -456,7 +460,7 @@ function run_test() {
       let sigFile = do_get_file("data/signed_pib_mar.signature.mycert2");
       do_check_true(sigFile.exists());
       let outMAR = tempDir.clone();
-      outMAR.append("sigchanged_signed_pib_mar.mar");
+      outMAR.append("sigchanged_signed_pib.mar");
       if (outMAR.exists()) {
         outMAR.remove(false);
       }
@@ -473,7 +477,7 @@ function run_test() {
 
       
       
-      let refMAR = do_get_file("data/signed_pib_mar_with_mycert2.mar");
+      let refMAR = do_get_file("data/signed_pib_with_mycert2.mar");
       do_check_true(refMAR.exists());
       let refMARData = getBinaryFileData(refMAR);
       let outMARData = getBinaryFileData(outMAR);
@@ -481,18 +485,19 @@ function run_test() {
     },
     
     
-    test_import_wrong_sig: function() {
+    test_import_wrong_sig: function _test_import_wrong_sig() {
       
-      let inMAR = do_get_file("data/signed_pib_mar.mar");
+      let inMAR = do_get_file("data/signed_pib.mar");
       verifyMAR(inMAR, wantSuccess, ["mycert"], false);
       verifyMAR(inMAR, wantFailure, ["mycert2"], false);
       verifyMAR(inMAR, wantFailure, ["mycert3"], false);
 
       
+      
       let sigFile = do_get_file("data/multiple_signed_pib_mar.sig.0");
       do_check_true(sigFile.exists());
       let outMAR = tempDir.clone();
-      outMAR.append("sigchanged_signed_pib_mar.mar");
+      outMAR.append("sigchanged_signed_pib.mar");
       if (outMAR.exists()) {
         outMAR.remove(false);
       }
@@ -509,9 +514,9 @@ function run_test() {
     },
     
     
-    test_import_sig_multiple: function() {
+    test_import_sig_multiple: function _test_import_sig_multiple() {
       
-      let inMAR = do_get_file("data/multiple_signed_pib_mar.mar");
+      let inMAR = do_get_file("data/multiple_signed_pib.mar");
       verifyMAR(inMAR, wantSuccess, ["mycert", "mycert2", "mycert3"], false);
       verifyMAR(inMAR, wantFailure, ["mycert", "mycert", "mycert3"], false);
 
@@ -519,7 +524,7 @@ function run_test() {
       let sigFile = do_get_file("data/multiple_signed_pib_mar.sig.0");
       do_check_true(sigFile.exists());
       let outMAR = tempDir.clone();
-      outMAR.append("sigchanged_signed_pib_mar.mar");
+      outMAR.append("sigchanged_signed_pib.mar");
       if (outMAR.exists()) {
         outMAR.remove(false);
       }
@@ -536,22 +541,22 @@ function run_test() {
 
       
       
-      let refMAR = do_get_file("data/multiple_signed_pib_mar_2.mar");
+      let refMAR = do_get_file("data/multiple_signed_pib_2.mar");
       do_check_true(refMAR.exists());
       let refMARData = getBinaryFileData(refMAR);
       let outMARData = getBinaryFileData(outMAR);
       compareBinaryData(outMARData, refMARData);
     },
     
-    test_bad_path_strip_fails: function() {
-      let noMAR = do_get_file("data/does_not_exist_mar", true);
+    test_bad_path_strip_fails: function _test_bad_path_strip_fails() {
+      let noMAR = do_get_file("data/does_not_exist.mar", true);
       do_check_false(noMAR.exists());
       let outMAR = tempDir.clone();
       outMAR.append("out.mar");
       stripMARSignature(noMAR, outMAR, wantFailure);
     },
     
-    test_extract_bad_path: function() {
+    test_extract_bad_path: function _test_extract_bad_path() {
       let noMAR = do_get_file("data/does_not_exist.mar", true);
       let extractedSig = do_get_file("extracted_signature", true);
       do_check_false(noMAR.exists());
@@ -562,7 +567,7 @@ function run_test() {
       do_check_false(extractedSig.exists());
     },
     
-    cleanup_per_test: function() {
+    cleanup_per_test: function _cleanup_per_test() {
     }
   };
 

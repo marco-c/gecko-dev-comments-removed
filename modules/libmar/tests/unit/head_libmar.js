@@ -1,13 +1,11 @@
 
 
 
-var Cc = Components.classes;
-var Ci = Components.interfaces;
+'use strict';
 
-const refMARPrefix = (mozinfo.os == "win" ? "win_" : "");
+const { classes: Cc, interfaces: Ci } = Components;
 const BIN_SUFFIX = mozinfo.bin_suffix;
-
-var tempDir = do_get_tempdir();
+const tempDir = do_get_tempdir();
 
 
 
@@ -58,7 +56,7 @@ function getBinaryFileData(file) {
 function run_tests(obj) {
   let cleanup_per_test = obj.cleanup_per_test;
   if (cleanup_per_test === undefined) {
-    cleanup_per_test = function() {};
+    cleanup_per_test = function __cleanup_per_test() {};
   }
 
   do_register_cleanup(cleanup_per_test);
@@ -69,7 +67,7 @@ function run_tests(obj) {
   let ranCount = 0;
   
   for (let f in obj) {
-    if (typeof obj[f] === "function" && 
+    if (typeof obj[f] === "function" &&
         obj.hasOwnProperty(f) &&
         f.toString().indexOf("test_") === 0) {
       obj[f]();
@@ -105,14 +103,14 @@ function createMAR(outMAR, dataDir, files) {
   
   
   
-  for (filePath of files) {
+  for (let filePath of files) {
     let f = dataDir.clone();
     f.append(filePath);
     f.permissions = 0o664;
   }
 
   
-  let args = ["-C", dataDir.path, "-H", "\@MAR_CHANNEL_ID\@", 
+  let args = ["-C", dataDir.path, "-H", "\@MAR_CHANNEL_ID\@",
               "-V", "13.0a1", "-c", outMAR.path];
   args = args.concat(files);
 
@@ -153,5 +151,3 @@ function extractMAR(mar, dataDir) {
   
   do_check_eq(process.exitValue, 0);
 }
-
-

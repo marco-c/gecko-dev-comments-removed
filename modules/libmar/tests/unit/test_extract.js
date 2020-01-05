@@ -9,7 +9,7 @@ function run_test() {
 
 
 
-  function run_one_test(marFileName, files) { 
+  function run_one_test(marFileName, files) {
     
     let mar = do_get_file("data/" + marFileName);
 
@@ -46,40 +46,40 @@ function run_test() {
   
   let tests = {
     
-    test_zero_sized: function() {
-      return run_one_test("0_sized_mar.mar", ["0_sized_file"]);
-    }, 
-    
-    test_one_byte: function() {
-      return run_one_test("1_byte_mar.mar", ["1_byte_file"]);
+    test_zero_sized: function _test_zero_sized() {
+      return run_one_test("0_sized.mar", ["0_sized_file"]);
     },
     
-    test_binary_data: function() {
-      return run_one_test("binary_data_mar.mar", ["binary_data_file"]);
+    test_one_byte: function _test_one_byte() {
+      return run_one_test("1_byte.mar", ["1_byte_file"]);
     },
     
-    
-    test_no_pib: function() {
-      return run_one_test("no_pib_mar.mar", ["binary_data_file"]);
+    test_binary_data: function _test_binary_data() {
+      return run_one_test("binary_data.mar", ["binary_data_file"]);
     },
     
     
-    test_no_pib_signed: function() {
-      return run_one_test("signed_no_pib_mar.mar", ["binary_data_file"]);
+    test_no_pib: function _test_no_pib() {
+      return run_one_test("no_pib.mar", ["binary_data_file"]);
     },
     
     
-    test_pib_signed: function() {
-      return run_one_test("signed_pib_mar.mar", ["binary_data_file"]);
+    test_no_pib_signed: function _test_no_pib_signed() {
+      return run_one_test("signed_no_pib.mar", ["binary_data_file"]);
     },
     
-    test_multiple_file: function() {
-      return run_one_test("multiple_file_mar.mar", 
+    
+    test_pib_signed: function _test_pib_signed() {
+      return run_one_test("signed_pib.mar", ["binary_data_file"]);
+    },
+    
+    test_multiple_file: function _test_multiple_file() {
+      return run_one_test("multiple_file.mar",
                           ["0_sized_file", "1_byte_file", "binary_data_file"]);
-    }, 
+    },
     
     
-    cleanup_per_test: function() {
+    cleanup_per_test: function _cleanup_per_test() {
       let outDir = tempDir.clone();
       outDir.append("out");
       if (outDir.exists()) {
