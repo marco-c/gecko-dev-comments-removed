@@ -38,8 +38,8 @@
 
 
 
-#ifndef _LANGNUM_HXX_
-#define _LANGNUM_HXX_
+#ifndef LANGNUM_HXX_
+#define LANGNUM_HXX_
 
 
 

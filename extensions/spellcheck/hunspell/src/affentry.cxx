@@ -79,33 +79,7 @@
 #include "affentry.hxx"
 #include "csutil.hxx"
 
-PfxEntry::PfxEntry(AffixMgr* pmgr, affentry* dp)
-    
-    : pmyMgr(pmgr),
-      next(NULL),
-      nexteq(NULL),
-      nextne(NULL),
-      flgnxt(NULL) {
-  
-  aflag = dp->aflag;        
-  strip = dp->strip;        
-  appnd = dp->appnd;        
-  numconds = dp->numconds;  
-  opts = dp->opts;          
-  
-  if (opts & aeLONGCOND) {
-    memcpy(c.conds, dp->c.l.conds1, MAXCONDLEN_1);
-    c.l.conds2 = dp->c.l.conds2;
-  } else
-    memcpy(c.conds, dp->c.conds, MAXCONDLEN);
-  morphcode = dp->morphcode;
-  contclass = dp->contclass;
-  contclasslen = dp->contclasslen;
-}
-
-PfxEntry::~PfxEntry() {
-  aflag = 0;
-  pmyMgr = NULL;
+AffEntry::~AffEntry() {
   if (opts & aeLONGCOND)
     free(c.l.conds2);
   if (morphcode && !(opts & aeALIASM))
@@ -114,17 +88,26 @@ PfxEntry::~PfxEntry() {
     free(contclass);
 }
 
+PfxEntry::PfxEntry(AffixMgr* pmgr)
+    
+    : pmyMgr(pmgr),
+      next(NULL),
+      nexteq(NULL),
+      nextne(NULL),
+      flgnxt(NULL) {
+}
 
-char* PfxEntry::add(const char* word, size_t len) {
+
+std::string PfxEntry::add(const char* word, size_t len) {
+  std::string result;
   if ((len > strip.size() || (len == 0 && pmyMgr->get_fullstrip())) &&
       (len >= numconds) && test_condition(word) &&
       (!strip.size() || (strncmp(word, strip.c_str(), strip.size()) == 0))) {
     
-    std::string tword(appnd);
-    tword.append(word + strip.size());
-    return mystrdup(tword.c_str());
+    result.assign(appnd);
+    result.append(word + strip.size());
   }
-  return NULL;
+  return result;
 }
 
 inline char* PfxEntry::nextchar(char* p) {
@@ -276,8 +259,7 @@ struct hentry* PfxEntry::checkword(const char* word,
       
       if ((opts & aeXPRODUCT)) {
         he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, aeXPRODUCT, this,
-                                  NULL, 0, NULL, FLAG_NULL, needflag,
-                                  in_compound);
+                                  FLAG_NULL, needflag, in_compound);
         if (he)
           return he;
       }
@@ -291,8 +273,6 @@ struct hentry* PfxEntry::check_twosfx(const char* word,
                                       int len,
                                       char in_compound,
                                       const FLAG needflag) {
-  struct hentry* he;  
-
   
   
   
@@ -324,8 +304,9 @@ struct hentry* PfxEntry::check_twosfx(const char* word,
       
 
       if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-        he = pmyMgr->suffix_check_twosfx(tmpword.c_str(), tmpl, aeXPRODUCT, this,
-                                         needflag);
+        
+        struct hentry* he = pmyMgr->suffix_check_twosfx(tmpword.c_str(), tmpl, aeXPRODUCT, this,
+                                                        needflag);
         if (he)
           return he;
       }
@@ -335,15 +316,15 @@ struct hentry* PfxEntry::check_twosfx(const char* word,
 }
 
 
-char* PfxEntry::check_twosfx_morph(const char* word,
-                                   int len,
-                                   char in_compound,
-                                   const FLAG needflag) {
+std::string PfxEntry::check_twosfx_morph(const char* word,
+                                         int len,
+                                         char in_compound,
+                                         const FLAG needflag) {
+  std::string result;
   
   
   
   
-
   int tmpl = len - appnd.size(); 
 
   if ((tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) &&
@@ -370,22 +351,21 @@ char* PfxEntry::check_twosfx_morph(const char* word,
       
 
       if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-        return pmyMgr->suffix_check_twosfx_morph(tmpword.c_str(), tmpl,
-                                                 aeXPRODUCT,
-                                                 this, needflag);
+        result = pmyMgr->suffix_check_twosfx_morph(tmpword.c_str(), tmpl,
+                                                   aeXPRODUCT,
+                                                   this, needflag);
       }
     }
   }
-  return NULL;
+  return result;
 }
 
 
-char* PfxEntry::check_morph(const char* word,
-                            int len,
-                            char in_compound,
-                            const FLAG needflag) {
-  struct hentry* he;  
-  char* st;
+std::string PfxEntry::check_morph(const char* word,
+                                  int len,
+                                  char in_compound,
+                                  const FLAG needflag) {
+  std::string result;
 
   
   
@@ -411,9 +391,8 @@ char* PfxEntry::check_morph(const char* word,
     
 
     if (test_condition(tmpword.c_str())) {
-      std::string result;
-
       tmpl += strip.size();
+      struct hentry* he;  
       if ((he = pmyMgr->lookup(tmpword.c_str())) != NULL) {
         do {
           if (TESTAFF(he->astr, aflag, he->alen) &&
@@ -455,23 +434,19 @@ char* PfxEntry::check_morph(const char* word,
       
 
       if ((opts & aeXPRODUCT) && (in_compound != IN_CPD_BEGIN)) {
-        st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, aeXPRODUCT, this,
-                                        FLAG_NULL, needflag);
-        if (st) {
+        std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, aeXPRODUCT, this,
+                                                    FLAG_NULL, needflag);
+        if (!st.empty()) {
           result.append(st);
-          free(st);
         }
       }
-
-      if (!result.empty())
-        return mystrdup(result.c_str());
     }
   }
 
-  return NULL;
+  return result;
 }
 
-SfxEntry::SfxEntry(AffixMgr* pmgr, affentry* dp)
+SfxEntry::SfxEntry(AffixMgr* pmgr)
     : pmyMgr(pmgr)  
       ,
       next(NULL),
@@ -481,50 +456,21 @@ SfxEntry::SfxEntry(AffixMgr* pmgr, affentry* dp)
       l_morph(NULL),
       r_morph(NULL),
       eq_morph(NULL) {
-  
-  aflag = dp->aflag;        
-  strip = dp->strip;        
-  appnd = dp->appnd;        
-  numconds = dp->numconds;  
-  opts = dp->opts;          
-
-  
-  if (opts & aeLONGCOND) {
-    memcpy(c.l.conds1, dp->c.l.conds1, MAXCONDLEN_1);
-    c.l.conds2 = dp->c.l.conds2;
-  } else
-    memcpy(c.conds, dp->c.conds, MAXCONDLEN);
-  rappnd = appnd;
-  reverseword(rappnd);
-  morphcode = dp->morphcode;
-  contclass = dp->contclass;
-  contclasslen = dp->contclasslen;
-}
-
-SfxEntry::~SfxEntry() {
-  aflag = 0;
-  pmyMgr = NULL;
-  if (opts & aeLONGCOND)
-    free(c.l.conds2);
-  if (morphcode && !(opts & aeALIASM))
-    free(morphcode);
-  if (contclass && !(opts & aeALIASF))
-    free(contclass);
 }
 
 
-char* SfxEntry::add(const char* word, size_t len) {
+std::string SfxEntry::add(const char* word, size_t len) {
+  std::string result;
   
   if ((len > strip.size() || (len == 0 && pmyMgr->get_fullstrip())) &&
       (len >= numconds) && test_condition(word + len, word) &&
       (!strip.size() ||
        (strcmp(word + len - strip.size(), strip.c_str()) == 0))) {
-    std::string tword(word);
+    result.assign(word);
     
-    tword.replace(len - strip.size(), std::string::npos, appnd);
-    return mystrdup(tword.c_str());
+    result.replace(len - strip.size(), std::string::npos, appnd);
   }
-  return NULL;
+  return result;
 }
 
 inline char* SfxEntry::nextchar(char* p) {
@@ -669,9 +615,6 @@ struct hentry* SfxEntry::checkword(const char* word,
                                    int len,
                                    int optflags,
                                    PfxEntry* ppfx,
-                                   char** wlst,
-                                   int maxSug,
-                                   int* ns,
                                    const FLAG cclass,
                                    const FLAG needflag,
                                    const FLAG badflag) {
@@ -742,27 +685,6 @@ struct hentry* SfxEntry::checkword(const char* word,
             return he;
           he = he->next_homonym;  
         } while (he);
-
-        
-        
-        
-      } else if (wlst && (*ns < maxSug)) {
-        int cwrd = 1;
-        for (int k = 0; k < *ns; k++)
-          if (strcmp(tmpword, wlst[k]) == 0) {
-            cwrd = 0;
-            break;
-          }
-        if (cwrd) {
-          wlst[*ns] = mystrdup(tmpword);
-          if (wlst[*ns] == NULL) {
-            for (int j = 0; j < *ns; j++)
-              free(wlst[j]);
-            *ns = -1;
-            return NULL;
-          }
-          (*ns)++;
-        }
       }
     }
   }
@@ -775,7 +697,6 @@ struct hentry* SfxEntry::check_twosfx(const char* word,
                                       int optflags,
                                       PfxEntry* ppfx,
                                       const FLAG needflag) {
-  struct hentry* he;  
   PfxEntry* ep = ppfx;
 
   
@@ -813,17 +734,18 @@ struct hentry* SfxEntry::check_twosfx(const char* word,
     
 
     if (test_condition(end, beg)) {
+      struct hentry* he;  
       if (ppfx) {
         
         if ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen))
-          he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, 0, NULL, NULL, 0, NULL,
-                                    (FLAG)aflag, needflag);
+          he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, 0, NULL,
+                                    (FLAG)aflag, needflag, IN_CPD_NOT);
         else
-          he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, optflags, ppfx, NULL, 0,
-                                    NULL, (FLAG)aflag, needflag);
+          he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, optflags, ppfx,
+                                    (FLAG)aflag, needflag, IN_CPD_NOT);
       } else {
-        he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, 0, NULL, NULL, 0, NULL,
-                                  (FLAG)aflag, needflag);
+        he = pmyMgr->suffix_check(tmpword.c_str(), tmpl, 0, NULL,
+                                  (FLAG)aflag, needflag, IN_CPD_NOT);
       }
       if (he)
         return he;
@@ -833,23 +755,20 @@ struct hentry* SfxEntry::check_twosfx(const char* word,
 }
 
 
-char* SfxEntry::check_twosfx_morph(const char* word,
-                                   int len,
-                                   int optflags,
-                                   PfxEntry* ppfx,
-                                   const FLAG needflag) {
+std::string SfxEntry::check_twosfx_morph(const char* word,
+                                         int len,
+                                         int optflags,
+                                         PfxEntry* ppfx,
+                                         const FLAG needflag) {
   PfxEntry* ep = ppfx;
-  char* st;
 
-  char result[MAXLNLEN];
-
-  *result = '\0';
+  std::string result;
 
   
   
 
   if ((optflags & aeXPRODUCT) != 0 && (opts & aeXPRODUCT) == 0)
-    return NULL;
+    return result;
 
   
   
@@ -883,40 +802,34 @@ char* SfxEntry::check_twosfx_morph(const char* word,
       if (ppfx) {
         
         if ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen)) {
-          st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, 0, NULL, aflag,
-                                          needflag);
-          if (st) {
+          std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, 0, NULL, aflag,
+                                                      needflag);
+          if (!st.empty()) {
             if (ppfx->getMorph()) {
-              mystrcat(result, ppfx->getMorph(), MAXLNLEN);
-              mystrcat(result, " ", MAXLNLEN);
+              result.append(ppfx->getMorph());
+              result.append(" ");
             }
-            mystrcat(result, st, MAXLNLEN);
-            free(st);
+            result.append(st);
             mychomp(result);
           }
         } else {
-          st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, optflags, ppfx, aflag,
-                                          needflag);
-          if (st) {
-            mystrcat(result, st, MAXLNLEN);
-            free(st);
+          std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, optflags, ppfx, aflag,
+                                                      needflag);
+          if (!st.empty()) {
+            result.append(st);
             mychomp(result);
           }
         }
       } else {
-        st =
-            pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, 0, NULL, aflag, needflag);
-        if (st) {
-          mystrcat(result, st, MAXLNLEN);
-          free(st);
+        std::string st = pmyMgr->suffix_check_morph(tmpword.c_str(), tmpl, 0, NULL, aflag, needflag);
+        if (!st.empty()) {
+          result.append(st);
           mychomp(result);
         }
       }
-      if (*result)
-        return mystrdup(result);
     }
   }
-  return NULL;
+  return result;
 }
 
 
@@ -946,6 +859,11 @@ struct hentry* SfxEntry::get_next_homonym(struct hentry* he,
       return he;
   }
   return NULL;
+}
+
+void SfxEntry::initReverseWord() {
+  rappnd = appnd;
+  reverseword(rappnd);
 }
 
 #if 0
