@@ -620,7 +620,7 @@ HasObjectValueOf(JSObject* obj, JSContext* cx)
 
 
 inline bool
-ToPropertyKey(JSContext* cx, const Value& argument, MutableHandleId result)
+ToPropertyKey(JSContext* cx, HandleValue argument, MutableHandleId result)
 {
     
     RootedValue key(cx, argument);
