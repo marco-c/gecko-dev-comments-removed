@@ -413,6 +413,18 @@ GDIFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 
 
 
+static bool
+ShouldIgnoreItalicStyle(const nsAString& aName)
+{
+    
+    
+    
+    
+    
+    return aName.EqualsLiteral("Meiryo") ||
+           aName.Equals(NS_LITERAL_STRING(u"\x30E1\x30A4\x30EA\x30AA"));
+}
+
 int CALLBACK
 GDIFontFamily::FamilyAddStylesProc(const ENUMLOGFONTEXW *lpelfe,
                                         const NEWTEXTMETRICEXW *nmetrics,
@@ -421,6 +433,10 @@ GDIFontFamily::FamilyAddStylesProc(const ENUMLOGFONTEXW *lpelfe,
     const NEWTEXTMETRICW& metrics = nmetrics->ntmTm;
     LOGFONTW logFont = lpelfe->elfLogFont;
     GDIFontFamily *ff = reinterpret_cast<GDIFontFamily*>(data);
+
+    if (logFont.lfItalic && ShouldIgnoreItalicStyle(ff->mName)) {
+        return 1;
+    }
 
     
     logFont.lfWeight = clamped(logFont.lfWeight, LONG(100), LONG(900));
@@ -531,14 +547,23 @@ GDIFontFamily::FindStyleVariations(FontInfoData *aFontInfoData)
     
     
     
-    size_t count = mAvailableFonts.Length();
-    for (size_t i = 0; i < count; ++i) {
-        if (mAvailableFonts[i]->IsItalic()) {
-            for (uint32_t j = 0; j < count; ++j) {
-                static_cast<GDIFontEntry*>(mAvailableFonts[j].get())->
-                    mFamilyHasItalicFace = true;
+
+    
+    bool hasItalicFace = ShouldIgnoreItalicStyle(mName);
+
+    if (!hasItalicFace) {
+        for (RefPtr<gfxFontEntry>& fontEntry : mAvailableFonts) {
+            if (fontEntry->IsItalic()) {
+                hasItalicFace = true;
+                break;
             }
-            break;
+        }
+    }
+
+    if (hasItalicFace) {
+        for (RefPtr<gfxFontEntry>& fontEntry : mAvailableFonts) {
+            static_cast<GDIFontEntry*>(fontEntry.get())->
+                mFamilyHasItalicFace = true;
         }
     }
 }

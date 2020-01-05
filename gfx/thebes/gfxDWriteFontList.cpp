@@ -184,6 +184,16 @@ gfxDWriteFontFamily::FindStyleVariations(FontInfoData *aFontInfoData)
         fullID.Append(' ');
         fullID.Append(faceName);
 
+        
+        
+        
+        
+        
+        if (fullID.EqualsLiteral("Meiryo Italic") ||
+            fullID.EqualsLiteral("Meiryo Bold Italic")) {
+            continue;
+        }
+
         gfxDWriteFontEntry *fe = new gfxDWriteFontEntry(fullID, font);
         fe->SetForceGDIClassic(mForceGDIClassic);
         AddFontEntry(fe);
