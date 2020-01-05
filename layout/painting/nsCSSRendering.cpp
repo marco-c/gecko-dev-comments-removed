@@ -673,13 +673,141 @@ nsCSSRendering::PaintBorder(nsPresContext* aPresContext,
       nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_color)[side]);
     newStyleBorder.mBorderColor[side] = StyleComplexColor::FromColor(color);
   }
-  DrawResult result =
-    PaintBorderWithStyleBorder(aPresContext, aRenderingContext, aForFrame,
-                               aDirtyRect, aBorderArea, newStyleBorder,
-                               aStyleContext, aFlags, aSkipSides);
-
-  return result;
+  return PaintBorderWithStyleBorder(aPresContext, aRenderingContext, aForFrame,
+                                    aDirtyRect, aBorderArea, newStyleBorder,
+                                    aStyleContext, aFlags, aSkipSides);
 }
+
+Maybe<nsCSSBorderRenderer>
+nsCSSRendering::CreateBorderRenderer(nsPresContext* aPresContext,
+                                     DrawTarget* aDrawTarget,
+                                     nsIFrame* aForFrame,
+                                     const nsRect& aDirtyRect,
+                                     const nsRect& aBorderArea,
+                                     nsStyleContext* aStyleContext,
+                                     Sides aSkipSides)
+{
+  nsStyleContext *styleIfVisited = aStyleContext->GetStyleIfVisited();
+  const nsStyleBorder *styleBorder = aStyleContext->StyleBorder();
+  
+  
+  if (!styleIfVisited) {
+    return CreateBorderRendererWithStyleBorder(aPresContext, aDrawTarget,
+                                               aForFrame, aDirtyRect,
+                                               aBorderArea, *styleBorder,
+                                               aStyleContext, aSkipSides);
+  }
+
+  nsStyleBorder newStyleBorder(*styleBorder);
+
+  NS_FOR_CSS_SIDES(side) {
+    nscolor color = aStyleContext->GetVisitedDependentColor(
+      nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_color)[side]);
+    newStyleBorder.mBorderColor[side] = StyleComplexColor::FromColor(color);
+  }
+  return CreateBorderRendererWithStyleBorder(aPresContext, aDrawTarget,
+                                             aForFrame, aDirtyRect, aBorderArea,
+                                             newStyleBorder, aStyleContext,
+                                             aSkipSides);
+}
+
+nsCSSBorderRenderer
+ConstructBorderRenderer(nsPresContext* aPresContext,
+                        nsStyleContext* aStyleContext,
+                        DrawTarget* aDrawTarget,
+                        nsIFrame* aForFrame,
+                        const nsRect& aDirtyRect,
+                        const nsRect& aBorderArea,
+                        const nsStyleBorder& aStyleBorder,
+                        Sides aSkipSides,
+                        bool* aNeedsClip)
+{
+  nsMargin border = aStyleBorder.GetComputedBorder();
+
+  
+  const nsStyleColor* ourColor = aStyleContext->StyleColor();
+
+  
+  
+  bool quirks = aPresContext->CompatibilityMode() == eCompatibility_NavQuirks;
+  nsIFrame* bgFrame = nsCSSRendering::FindNonTransparentBackgroundFrame(aForFrame, quirks);
+  nsStyleContext* bgContext = bgFrame->StyleContext();
+  nscolor bgColor =
+    bgContext->GetVisitedDependentColor(eCSSProperty_background_color);
+
+  
+  
+  nsRect joinedBorderArea =
+    ::BoxDecorationRectForBorder(aForFrame, aBorderArea, aSkipSides, &aStyleBorder);
+  RectCornerRadii bgRadii;
+  ::GetRadii(aForFrame, aStyleBorder, aBorderArea, joinedBorderArea, &bgRadii);
+
+  PrintAsFormatString(" joinedBorderArea: %d %d %d %d\n", joinedBorderArea.x, joinedBorderArea.y,
+     joinedBorderArea.width, joinedBorderArea.height);
+
+  
+  if (::IsBoxDecorationSlice(aStyleBorder)) {
+    if (joinedBorderArea.IsEqualEdges(aBorderArea)) {
+      
+      border.ApplySkipSides(aSkipSides);
+    } else {
+      
+      
+      *aNeedsClip = true;
+    }
+  } else {
+    MOZ_ASSERT(joinedBorderArea.IsEqualEdges(aBorderArea),
+               "Should use aBorderArea for box-decoration-break:clone");
+    MOZ_ASSERT(aForFrame->GetSkipSides().IsEmpty() ||
+               IS_TRUE_OVERFLOW_CONTAINER(aForFrame),
+               "Should not skip sides for box-decoration-break:clone except "
+               "::first-letter/line continuations or other frame types that "
+               "don't have borders but those shouldn't reach this point. "
+               "Overflow containers do reach this point though.");
+    border.ApplySkipSides(aSkipSides);
+  }
+
+  
+  nscoord twipsPerPixel = aPresContext->DevPixelsToAppUnits(1);
+  Rect joinedBorderAreaPx = NSRectToRect(joinedBorderArea, twipsPerPixel);
+  Float borderWidths[4] = { Float(border.top / twipsPerPixel),
+                                   Float(border.right / twipsPerPixel),
+                                   Float(border.bottom / twipsPerPixel),
+                                   Float(border.left / twipsPerPixel) };
+  Rect dirtyRect = NSRectToRect(aDirtyRect, twipsPerPixel);
+
+  uint8_t borderStyles[4];
+  nscolor borderColors[4];
+  nsBorderColors* compositeColors[4];
+
+  
+  NS_FOR_CSS_SIDES (i) {
+    borderStyles[i] = aStyleBorder.GetBorderStyle(i);
+    borderColors[i] = ourColor->CalcComplexColor(aStyleBorder.mBorderColor[i]);
+    aStyleBorder.GetCompositeColors(i, &compositeColors[i]);
+  }
+
+  PrintAsFormatString(" borderStyles: %d %d %d %d\n", borderStyles[0], borderStyles[1], borderStyles[2], borderStyles[3]);
+
+  nsIDocument* document = nullptr;
+  nsIContent* content = aForFrame->GetContent();
+  if (content) {
+    document = content->OwnerDoc();
+  }
+
+  return nsCSSBorderRenderer(aPresContext,
+                             document,
+                             aDrawTarget,
+                             dirtyRect,
+                             joinedBorderAreaPx,
+                             borderStyles,
+                             borderWidths,
+                             bgRadii,
+                             borderColors,
+                             compositeColors,
+                             bgColor);
+}
+
 
 DrawResult
 nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
@@ -724,17 +852,6 @@ nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
     result = DrawResult::NOT_READY;
   }
 
-  
-  const nsStyleColor* ourColor = aStyleContext->StyleColor();
-
-  
-  
-  bool quirks = aPresContext->CompatibilityMode() == eCompatibility_NavQuirks;
-  nsIFrame* bgFrame = FindNonTransparentBackgroundFrame(aForFrame, quirks);
-  nsStyleContext* bgContext = bgFrame->StyleContext();
-  nscolor bgColor =
-    bgContext->GetVisitedDependentColor(eCSSProperty_background_color);
-
   nsMargin border = aStyleBorder.GetComputedBorder();
   if (0 == border.left && 0 == border.right &&
       0 == border.top  && 0 == border.bottom) {
@@ -742,99 +859,80 @@ nsCSSRendering::PaintBorderWithStyleBorder(nsPresContext* aPresContext,
     return result;
   }
 
-  
-  
-  nsRect joinedBorderArea =
-    ::BoxDecorationRectForBorder(aForFrame, aBorderArea, aSkipSides, &aStyleBorder);
-  RectCornerRadii bgRadii;
-  ::GetRadii(aForFrame, aStyleBorder, aBorderArea, joinedBorderArea, &bgRadii);
+  bool needsClip = false;
+  nsCSSBorderRenderer br = ConstructBorderRenderer(aPresContext,
+                                                   aStyleContext,
+                                                   &aDrawTarget,
+                                                   aForFrame,
+                                                   aDirtyRect,
+                                                   aBorderArea,
+                                                   aStyleBorder,
+                                                   aSkipSides,
+                                                   &needsClip);
 
-  PrintAsFormatString(" joinedBorderArea: %d %d %d %d\n", joinedBorderArea.x, joinedBorderArea.y,
-     joinedBorderArea.width, joinedBorderArea.height);
-
-  
-  bool needToPopClip = false;
-
-  if (::IsBoxDecorationSlice(aStyleBorder)) {
-    if (joinedBorderArea.IsEqualEdges(aBorderArea)) {
-      
-      border.ApplySkipSides(aSkipSides);
-    } else {
-      
-      
-      aDrawTarget.PushClipRect(
+  if (needsClip) {
+    aDrawTarget.PushClipRect(
         NSRectToSnappedRect(aBorderArea,
                             aForFrame->PresContext()->AppUnitsPerDevPixel(),
                             aDrawTarget));
-      needToPopClip = true;
-    }
-  } else {
-    MOZ_ASSERT(joinedBorderArea.IsEqualEdges(aBorderArea),
-               "Should use aBorderArea for box-decoration-break:clone");
-    MOZ_ASSERT(aForFrame->GetSkipSides().IsEmpty() ||
-               IS_TRUE_OVERFLOW_CONTAINER(aForFrame),
-               "Should not skip sides for box-decoration-break:clone except "
-               "::first-letter/line continuations or other frame types that "
-               "don't have borders but those shouldn't reach this point. "
-               "Overflow containers do reach this point though.");
-    border.ApplySkipSides(aSkipSides);
   }
 
-  
-  nscoord twipsPerPixel = aPresContext->DevPixelsToAppUnits(1);
-  Rect joinedBorderAreaPx = NSRectToRect(joinedBorderArea, twipsPerPixel);
-  Float borderWidths[4] = { Float(border.top / twipsPerPixel),
-                            Float(border.right / twipsPerPixel),
-                            Float(border.bottom / twipsPerPixel),
-                            Float(border.left / twipsPerPixel) };
-  Rect dirtyRect = NSRectToRect(aDirtyRect, twipsPerPixel);
-
-  uint8_t borderStyles[4];
-  nscolor borderColors[4];
-  nsBorderColors *compositeColors[4];
-
-  
-  NS_FOR_CSS_SIDES (i) {
-    borderStyles[i] = aStyleBorder.GetBorderStyle(i);
-    borderColors[i] = ourColor->CalcComplexColor(aStyleBorder.mBorderColor[i]);
-    aStyleBorder.GetCompositeColors(i, &compositeColors[i]);
-  }
-
-  PrintAsFormatString(" borderStyles: %d %d %d %d\n", borderStyles[0], borderStyles[1], borderStyles[2], borderStyles[3]);
-  
-
-#if 0
-  
-  ColorPattern color(ToDeviceColor(Color(1.f, 0.f, 0.f, 0.5f)));
-  aDrawTarget.FillRect(joinedBorderAreaPx, color);
-#endif
-
-  nsIDocument* document = nullptr;
-  nsIContent* content = aForFrame->GetContent();
-  if (content) {
-    document = content->OwnerDoc();
-  }
-
-  nsCSSBorderRenderer br(aPresContext,
-                         document,
-                         &aDrawTarget,
-                         dirtyRect,
-                         joinedBorderAreaPx,
-                         borderStyles,
-                         borderWidths,
-                         bgRadii,
-                         borderColors,
-                         compositeColors,
-                         bgColor);
   br.DrawBorders();
 
-  if (needToPopClip) {
+  if (needsClip) {
     aDrawTarget.PopClip();
   }
 
   PrintAsStringNewline();
 
   return result;
+}
+
+Maybe<nsCSSBorderRenderer>
+nsCSSRendering::CreateBorderRendererWithStyleBorder(nsPresContext* aPresContext,
+                                                    DrawTarget* aDrawTarget,
+                                                    nsIFrame* aForFrame,
+                                                    const nsRect& aDirtyRect,
+                                                    const nsRect& aBorderArea,
+                                                    const nsStyleBorder& aStyleBorder,
+                                                    nsStyleContext* aStyleContext,
+                                                    Sides aSkipSides)
+{
+  const nsStyleDisplay* displayData = aStyleContext->StyleDisplay();
+  if (displayData->mAppearance) {
+    nsITheme *theme = aPresContext->GetTheme();
+    if (theme &&
+        theme->ThemeSupportsWidget(aPresContext, aForFrame,
+                                   displayData->mAppearance)) {
+      return Nothing();
+    }
+  }
+
+  if (aStyleBorder.mBorderImageSource.GetType() != eStyleImageType_Null) {
+    return Nothing();
+  }
+
+  nsMargin border = aStyleBorder.GetComputedBorder();
+  if (0 == border.left && 0 == border.right &&
+      0 == border.top  && 0 == border.bottom) {
+    
+    return Nothing();
+  }
+
+  bool needsClip = false;
+  nsCSSBorderRenderer br = ConstructBorderRenderer(aPresContext,
+                                                   aStyleContext,
+                                                   aDrawTarget,
+                                                   aForFrame,
+                                                   aDirtyRect,
+                                                   aBorderArea,
+                                                   aStyleBorder,
+                                                   aSkipSides,
+                                                   &needsClip);
+  if (needsClip) {
+    return Nothing();
+  }
+  return Some(br);
 }
 
 static nsRect
