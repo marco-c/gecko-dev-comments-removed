@@ -45,6 +45,10 @@ pub trait GpuStoreLayout {
     fn items_per_row<T>() -> usize {
         Self::texture_width::<T>() / Self::texels_per_item::<T>()
     }
+
+    fn rows_per_item<T>() -> usize {
+        Self::texels_per_item::<T>() / Self::texture_width::<T>()
+    }
 }
 
 
@@ -81,8 +85,10 @@ impl<T: Clone + Default, L: GpuStoreLayout> GpuStore<T, L> {
         
         
         
-        while items.len() % items_per_row != 0 {
-            items.push(T::default());
+        if items_per_row != 0 {
+            while items_per_row != 0 && items.len() % items_per_row != 0 {
+                items.push(T::default());
+            }
         }
 
         items

@@ -248,9 +248,13 @@ impl ClipScrollNode {
         
         
         
-        self.combined_local_viewport_rect =
-            parent_combined_viewport_in_local_space.intersection(&self.local_clip_rect)
-                                                    .unwrap_or(LayerRect::zero());
+        self.combined_local_viewport_rect = match self.node_type {
+            NodeType::Clip(_) => {
+                parent_combined_viewport_in_local_space.intersection(&self.local_clip_rect)
+                                                       .unwrap_or(LayerRect::zero())
+            }
+            NodeType::ReferenceFrame(_) => parent_combined_viewport_in_local_space,
+        };
 
         
         
