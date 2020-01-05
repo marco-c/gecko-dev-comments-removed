@@ -389,6 +389,11 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
         c = *p++;
 
         
+        while ((c == '-') || (c == '+') || (c == ' ') || (c == '0')) {
+            c = *p++;
+        }
+
+        
         if (c == '*') {
             
             MOZ_CRASH("Bad format string");
@@ -440,10 +445,14 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
         case 'd':
         case 'c':
         case 'i':
+            break;
+
         case 'o':
         case 'u':
         case 'x':
         case 'X':
+            
+            nas[cn].type |= 1;
             break;
 
         case 'e':
@@ -472,11 +481,9 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
                 break;
             }
 #endif
-            if (nas[cn].type == TYPE_INTN) {
-                nas[cn].type = TYPE_STRING;
-            } else {
-                nas[cn].type = TYPE_UNKNOWN;
-            }
+            
+            MOZ_ASSERT (nas[cn].type == TYPE_INTN);
+            nas[cn].type = TYPE_STRING;
             break;
 
         case 'n':
@@ -500,10 +507,10 @@ BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas)
 
     cn = 0;
     while (cn < number) {
-        if (nas[cn].type == TYPE_UNKNOWN) {
-            cn++;
-            continue;
-        }
+        
+        
+        
+        MOZ_ASSERT (nas[cn].type != TYPE_UNKNOWN);
 
         VARARGS_ASSIGN(nas[cn].ap, ap);
 
@@ -629,6 +636,11 @@ mozilla::PrintfTarget::vprint(const char* fmt, va_list ap)
         if (c == '*') {
             c = *fmt++;
             width = va_arg(ap, int);
+            if (width < 0) {
+                width = -width;
+                flags |= FLAG_LEFT;
+                flags &= ~FLAG_ZEROS;
+            }
         } else {
             width = 0;
             while ((c >= '0') && (c <= '9')) {
@@ -816,10 +828,6 @@ mozilla::PrintfTarget::vprint(const char* fmt, va_list ap)
                 u.s = va_arg(ap, const char*);
                 if (!cvt_s(u.s, width, prec, flags))
                     return false;
-                break;
-            } else if (type == TYPE_LONGLONG) {
-                
-                MOZ_ASSERT(0);
                 break;
             }
             MOZ_ASSERT(type == TYPE_LONG);
