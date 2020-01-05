@@ -110,7 +110,7 @@ enum ImageState {
     Prefetching(AfterPrefetch),
     Prefetched(Vec<u8>),
     Decoding,
-    Decoded(Arc<Box<Image>>),
+    Decoded(Arc<Image>),
     Failed
 }
 
@@ -303,7 +303,7 @@ impl ImageCache {
                         load_from_memory(&data)
                     });
 
-                    let image = image.map(|image| Arc::new(box image));
+                    let image = image.map(Arc::new);
                     to_cache.send(Msg::StoreImage(url.clone(), image)).unwrap();
                     debug!("image_cache_task: ended image decode for {}", url.serialize());
                 });
@@ -312,12 +312,12 @@ impl ImageCache {
             }
 
             ImageState::Decoding | ImageState::Decoded(..) | ImageState::Failed => {
-                // We've already begun decoding
+                
             }
         }
     }
 
-    fn store_image(&mut self, url: Url, image: Option<Arc<Box<Image>>>) {
+    fn store_image(&mut self, url: Url, image: Option<Arc<Image>>) {
 
         match self.get_state(&url) {
           ImageState::Decoding => {
@@ -373,7 +373,7 @@ impl ImageCache {
             ImageState::Prefetching(AfterPrefetch::DoNotDecode) | ImageState::Prefetched(..) => panic!("request for image before decode"),
 
             ImageState::Prefetching(AfterPrefetch::DoDecode) | ImageState::Decoding => {
-                // We don't have this image yet
+                
                 match self.wait_map.entry(url) {
                     Occupied(mut entry) => {
                         entry.get_mut().lock().unwrap().push(response);

@@ -833,7 +833,7 @@ pub enum TextOrientation {
 #[derive(Clone)]
 pub struct ImageDisplayItem {
     pub base: BaseDisplayItem,
-    pub image: Arc<Box<Image>>,
+    pub image: Arc<Image>,
 
     
     
