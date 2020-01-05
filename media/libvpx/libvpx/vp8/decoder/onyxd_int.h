@@ -81,7 +81,7 @@ typedef struct VP8D_COMP
 #if CONFIG_MULTITHREAD
     
 
-    volatile int b_multithreaded_rd;
+    int b_multithreaded_rd;
     int max_threads;
     int current_mb_col_main;
     unsigned int decoding_thread_count;
@@ -90,6 +90,8 @@ typedef struct VP8D_COMP
     int mt_baseline_filter_level[MAX_MB_SEGMENTS];
     int sync_range;
     int *mt_current_mb_col;                  
+    pthread_mutex_t *pmutex;
+    pthread_mutex_t mt_mutex;                
 
     unsigned char **mt_yabove_row;           
     unsigned char **mt_uabove_row;

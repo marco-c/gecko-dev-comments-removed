@@ -16,6 +16,7 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/findnearmv.h"
 #include "vp8/common/common.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 
 #define FLOOR(x,q) ((x) & -(1 << (q)))
 
@@ -93,13 +94,13 @@ static void assign_overlap(OVERLAP_NODE* overlaps,
 
 static int block_overlap(int b1_row, int b1_col, int b2_row, int b2_col)
 {
-    const int int_top = MAX(b1_row, b2_row); 
-    const int int_left = MAX(b1_col, b2_col); 
+    const int int_top = VPXMAX(b1_row, b2_row); 
+    const int int_left = VPXMAX(b1_col, b2_col); 
     
 
 
-    const int int_right = MIN(b1_col + (4<<3), b2_col + (4<<3)); 
-    const int int_bottom = MIN(b1_row + (4<<3), b2_row + (4<<3)); 
+    const int int_right = VPXMIN(b1_col + (4<<3), b2_col + (4<<3)); 
+    const int int_bottom = VPXMIN(b1_row + (4<<3), b2_row + (4<<3)); 
     return (int_bottom - int_top) * (int_right - int_left);
 }
 
@@ -124,7 +125,7 @@ static void calculate_overlaps_mb(B_OVERLAP *b_overlaps, union b_mode_info *bmi,
     
 
 
-    const int blk_idx = MAX(rel_ol_blk_row,0) * 4 + MAX(rel_ol_blk_col,0);
+    const int blk_idx = VPXMAX(rel_ol_blk_row,0) * 4 + VPXMAX(rel_ol_blk_col,0);
     
     B_OVERLAP *b_ol_ul = &(b_overlaps[blk_idx]);
 
@@ -132,8 +133,8 @@ static void calculate_overlaps_mb(B_OVERLAP *b_overlaps, union b_mode_info *bmi,
 
 
     
-    int end_row = MIN(4 + mb_row * 4 - first_blk_row, 2);
-    int end_col = MIN(4 + mb_col * 4 - first_blk_col, 2);
+    int end_row = VPXMIN(4 + mb_row * 4 - first_blk_row, 2);
+    int end_col = VPXMIN(4 + mb_col * 4 - first_blk_col, 2);
     int row, col;
 
     
@@ -193,7 +194,7 @@ void vp8_calculate_overlaps(MB_OVERLAP *overlap_ul,
         return;
     }
 
-    if (new_row <= (-4 << 3) || new_col <= (-4 << 3))
+    if (new_row <= -32 || new_col <= -32)
     {
         
         return;
@@ -208,8 +209,8 @@ void vp8_calculate_overlaps(MB_OVERLAP *overlap_ul,
     overlap_mb_row = FLOOR((overlap_b_row << 3) / 4, 3) >> 3;
     overlap_mb_col = FLOOR((overlap_b_col << 3) / 4, 3) >> 3;
 
-    end_row = MIN(mb_rows - overlap_mb_row, 2);
-    end_col = MIN(mb_cols - overlap_mb_col, 2);
+    end_row = VPXMIN(mb_rows - overlap_mb_row, 2);
+    end_col = VPXMIN(mb_cols - overlap_mb_col, 2);
 
     
     
@@ -557,8 +558,7 @@ static void interpolate_mvs(MACROBLOCKD *mb,
 
 void vp8_interpolate_motion(MACROBLOCKD *mb,
                         int mb_row, int mb_col,
-                        int mb_rows, int mb_cols,
-                        int mi_stride)
+                        int mb_rows, int mb_cols)
 {
     
     EC_BLOCK neighbors[NUM_NEIGHBORS];
@@ -583,14 +583,4 @@ void vp8_interpolate_motion(MACROBLOCKD *mb,
     mb->mode_info_context->mbmi.uv_mode = DC_PRED;
     mb->mode_info_context->mbmi.partitioning = 3;
     mb->mode_info_context->mbmi.segment_id = 0;
-}
-
-void vp8_conceal_corrupt_mb(MACROBLOCKD *xd)
-{
-    
-
-
-    
-
-
 }

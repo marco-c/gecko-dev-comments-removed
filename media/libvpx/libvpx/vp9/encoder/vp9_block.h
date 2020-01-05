@@ -47,23 +47,38 @@ struct macroblock_plane {
 typedef unsigned int vp9_coeff_cost[PLANE_TYPES][REF_TYPES][COEF_BANDS][2]
                                    [COEFF_CONTEXTS][ENTROPY_TOKENS];
 
+typedef struct {
+  int_mv ref_mvs[MAX_REF_FRAMES][MAX_MV_REF_CANDIDATES];
+  uint8_t mode_context[MAX_REF_FRAMES];
+} MB_MODE_INFO_EXT;
+
 typedef struct macroblock MACROBLOCK;
 struct macroblock {
   struct macroblock_plane plane[MAX_MB_PLANE];
 
   MACROBLOCKD e_mbd;
+  MB_MODE_INFO_EXT *mbmi_ext;
+  MB_MODE_INFO_EXT *mbmi_ext_base;
   int skip_block;
   int select_tx_size;
   int skip_recode;
   int skip_optimize;
   int q_index;
 
+  
+  
   int errorperbit;
+  
+  
   int sadperbit16;
+  
+  
   int sadperbit4;
   int rddiv;
   int rdmult;
   int mb_energy;
+  int * m_search_count_ptr;
+  int * ex_search_count_ptr;
 
   
   
@@ -93,7 +108,10 @@ struct macroblock {
   int mv_row_min;
   int mv_row_max;
 
+  
+  
   uint8_t zcoeff_blk[TX_SIZES][256];
+
   int skip;
 
   int encode_breakout;
@@ -112,6 +130,9 @@ struct macroblock {
 
   
   uint8_t skip_txfm[MAX_MB_PLANE << 2];
+  #define SKIP_TXFM_NONE 0
+  #define SKIP_TXFM_AC_DC 1
+  #define SKIP_TXFM_AC_ONLY 2
 
   int64_t bsse[MAX_MB_PLANE << 2];
 
@@ -121,6 +142,13 @@ struct macroblock {
   
   
   uint8_t color_sensitivity[2];
+
+  uint8_t sb_is_skin;
+
+  
+  
+  
+  uint8_t variance_low[25];
 
   void (*fwd_txm4x4)(const int16_t *input, tran_low_t *output, int stride);
   void (*itxm_add)(const tran_low_t *input, uint8_t *dest, int stride, int eob);

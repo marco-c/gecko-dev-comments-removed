@@ -8,33 +8,22 @@ import re
 import shutil
 import sys
 import subprocess
+import tarfile
+import urllib
 from pprint import pprint
 from StringIO import StringIO
-
-libvpx_files = [
-    'build/make/ads2gas.pl',
-    'build/make/thumb.pm',
-    'LICENSE',
-    'PATENTS',
-]
 
 def prepare_upstream(prefix, commit=None):
     upstream_url = 'https://chromium.googlesource.com/webm/libvpx'
     shutil.rmtree(os.path.join(base, 'libvpx/'))
-    subprocess.call(['git', 'clone', upstream_url, prefix])
-    os.chdir(prefix)
-    if commit:
-        subprocess.call(['git', 'checkout', commit])
-    else:
-        p = subprocess.Popen(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE)
-        stdout, stderr = p.communicate()
-        commit = stdout.strip()
-
+    print(upstream_url + '/+archive/' + commit + '.tar.gz')
+    urllib.urlretrieve(upstream_url + '/+archive/' + commit + '.tar.gz', 'libvpx.tar.gz')
+    tarfile.open('libvpx.tar.gz').extractall(path='libvpx')
+    os.remove(os.path.join(base, 'libvpx.tar.gz'))
     os.chdir(base)
     return commit
 
 def cleanup_upstream():
-    shutil.rmtree(os.path.join(base, 'libvpx/.git'))
     os.remove(os.path.join(base, 'libvpx/.gitattributes'))
     os.remove(os.path.join(base, 'libvpx/.gitignore'))
     os.remove(os.path.join(base, 'libvpx/build/.gitattributes'))
@@ -46,28 +35,13 @@ def apply_patches():
     
     os.system("patch -p3 < bug1137614.patch")
     
-    
-    os.system("patch -p1 < vp9_filter_restore_aligment.patch")
-    
-    os.system("patch -p3 < vpx_once.patch")
-    
-    os.system("patch -p3 < clamp_abs_lvl_seg.patch")
-    
-    os.system("patch -p3 < clamp-abs-QIndex.patch")
-    
     os.system("patch -p3 < clang-cl.patch")
-    
-    os.system("patch -p3 < cast-char-to-uint-before-shift.patch")
-    
-    os.system("patch -p3 < 1237848-check-lookahead-ctx.patch")
     
     os.system("patch -p3 < input_frame_validation.patch")
     
     os.system("patch -p3 < input_frame_validation_vp9.patch")
     
     os.system("patch -p1 < rename_duplicate_files.patch")
-    
-    os.system("patch -p1 < block_error_fp.patch")
 
 def update_readme(commit):
     with open('README_MOZILLA') as f:
@@ -86,7 +60,7 @@ def update_readme(commit):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='''Update libvpx''')
     parser.add_argument('--debug', dest='debug', action="store_true")
-    parser.add_argument('--commit', dest='commit', type=str, default=None)
+    parser.add_argument('--commit', dest='commit', type=str, default='master')
 
     args = parser.parse_args()
 

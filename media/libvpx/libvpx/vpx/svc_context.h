@@ -40,6 +40,7 @@ typedef struct {
   int output_rc_stat;  
   int speed;  
   int threads;
+  int aqmode;  
   
   void *internal;
 } SvcContext;

@@ -33,47 +33,6 @@ static INLINE unsigned int sad(const uint8_t *a, int a_stride,
   return sad;
 }
 
-
-
-
-
-
-
-
-static INLINE void avg_pred(uint8_t *comp_pred, const uint8_t *pred, int width,
-                            int height, const uint8_t *ref, int ref_stride) {
-  int i, j;
-
-  for (i = 0; i < height; i++) {
-    for (j = 0; j < width; j++) {
-      const int tmp = pred[j] + ref[j];
-      comp_pred[j] = ROUND_POWER_OF_TWO(tmp, 1);
-    }
-    comp_pred += width;
-    pred += width;
-    ref += ref_stride;
-  }
-}
-
-#if CONFIG_VP9_HIGHBITDEPTH
-static INLINE void highbd_avg_pred(uint16_t *comp_pred, const uint8_t *pred8,
-                                   int width, int height, const uint8_t *ref8,
-                                   int ref_stride) {
-  int i, j;
-  uint16_t *pred = CONVERT_TO_SHORTPTR(pred8);
-  uint16_t *ref = CONVERT_TO_SHORTPTR(ref8);
-  for (i = 0; i < height; i++) {
-    for (j = 0; j < width; j++) {
-      const int tmp = pred[j] + ref[j];
-      comp_pred[j] = ROUND_POWER_OF_TWO(tmp, 1);
-    }
-    comp_pred += width;
-    pred += width;
-    ref += ref_stride;
-  }
-}
-#endif  
-
 #define sadMxN(m, n) \
 unsigned int vpx_sad##m##x##n##_c(const uint8_t *src, int src_stride, \
                                   const uint8_t *ref, int ref_stride) { \
@@ -83,7 +42,7 @@ unsigned int vpx_sad##m##x##n##_avg_c(const uint8_t *src, int src_stride, \
                                       const uint8_t *ref, int ref_stride, \
                                       const uint8_t *second_pred) { \
   uint8_t comp_pred[m * n]; \
-  avg_pred(comp_pred, second_pred, m, n, ref, ref_stride); \
+  vpx_comp_avg_pred_c(comp_pred, second_pred, m, n, ref, ref_stride); \
   return sad(src, src_stride, comp_pred, m, m, n); \
 }
 
@@ -221,7 +180,7 @@ unsigned int vpx_highbd_sad##m##x##n##_avg_c(const uint8_t *src, \
                                              int ref_stride, \
                                              const uint8_t *second_pred) { \
   uint16_t comp_pred[m * n]; \
-  highbd_avg_pred(comp_pred, second_pred, m, n, ref, ref_stride); \
+  vpx_highbd_comp_avg_pred_c(comp_pred, second_pred, m, n, ref, ref_stride); \
   return highbd_sadb(src, src_stride, comp_pred, m, m, n); \
 }
 

@@ -36,10 +36,10 @@ struct lookahead_entry {
 #define MAX_PRE_FRAMES 1
 
 struct lookahead_ctx {
-  unsigned int max_sz;         
-  unsigned int sz;             
-  unsigned int read_idx;       
-  unsigned int write_idx;      
+  int max_sz;                  
+  int sz;                      
+  int read_idx;                
+  int write_idx;               
   struct lookahead_entry *buf; 
 };
 

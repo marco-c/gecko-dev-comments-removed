@@ -41,6 +41,11 @@ typedef struct {
   int has_alt_frame;
   size_t layer_size;
   struct vpx_psnr_pkt psnr_pkt;
+  
+  int sb_index;
+  signed char *map;
+  uint8_t *last_coded_q_map;
+  uint8_t *consec_zero_mv;
 } LAYER_CONTEXT;
 
 typedef struct {
@@ -50,6 +55,8 @@ typedef struct {
   int number_temporal_layers;
 
   int spatial_layer_to_encode;
+  int first_spatial_layer_to_encode;
+  int rc_drop_superframe;
 
   
   enum {
@@ -63,6 +70,8 @@ typedef struct {
   
   
   YV12_BUFFER_CONFIG scaled_frames[MAX_LAG_BUFFERS];
+  
+  YV12_BUFFER_CONFIG scaled_temp;
 
   
   
@@ -70,6 +79,16 @@ typedef struct {
   
   
   VP9E_TEMPORAL_LAYERING_MODE temporal_layering_mode;
+  
+  
+  int ext_frame_flags[VPX_MAX_LAYERS];
+  int ext_lst_fb_idx[VPX_MAX_LAYERS];
+  int ext_gld_fb_idx[VPX_MAX_LAYERS];
+  int ext_alt_fb_idx[VPX_MAX_LAYERS];
+  int ref_frame_index[REF_FRAMES];
+  int force_zero_mode_spatial_ref;
+  int current_superframe;
+  int use_base_mv;
 } SVC;
 
 struct VP9_COMP;
@@ -114,6 +133,10 @@ struct lookahead_entry *vp9_svc_lookahead_pop(struct VP9_COMP *const cpi,
 int vp9_svc_start_frame(struct VP9_COMP *const cpi);
 
 int vp9_one_pass_cbr_svc_start_layer(struct VP9_COMP *const cpi);
+
+void vp9_free_svc_cyclic_refresh(struct VP9_COMP *const cpi);
+
+void vp9_svc_reset_key_frame(struct VP9_COMP *const cpi);
 
 #ifdef __cplusplus
 }  

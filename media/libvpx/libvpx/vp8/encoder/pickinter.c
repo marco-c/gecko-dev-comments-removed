@@ -21,10 +21,12 @@
 #include "vp8/common/findnearmv.h"
 #include "encodemb.h"
 #include "vp8/common/reconinter.h"
+#include "vp8/common/reconintra.h"
 #include "vp8/common/reconintra4x4.h"
-#include "vp8/common/variance.h"
+#include "vpx_dsp/variance.h"
 #include "mcomp.h"
 #include "rdopt.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_mem/vpx_mem.h"
 #if CONFIG_TEMPORAL_DENOISING
 #include "denoising.h"
@@ -33,6 +35,8 @@
 #ifdef SPEEDSTATS
 extern unsigned int cnt_pm;
 #endif
+
+#define MODEL_MODE 1
 
 extern const int vp8_ref_frame_order[MAX_MODES];
 extern const MB_PREDICTION_MODE vp8_mode_order[MAX_MODES];
@@ -43,18 +47,22 @@ extern const MB_PREDICTION_MODE vp8_mode_order[MAX_MODES];
 
 
 
-static const int skin_mean[2] = {7463, 9614};                 
+static const int skin_mean[5][2] =
+    {{7463, 9614}, {6400, 10240}, {7040, 10240}, {8320, 9280}, {6800, 9614}};
 static const int skin_inv_cov[4] = {4107, 1663, 1663, 2157};  
-static const int skin_threshold = 1570636;                    
+static const int skin_threshold[6] = {1570636, 1400000, 800000, 800000, 800000,
+    800000};  
 
 
-static int evaluate_skin_color_difference(int cb, int cr)
-{
+static int evaluate_skin_color_difference(int cb, int cr, int idx) {
   const int cb_q6 = cb << 6;
   const int cr_q6 = cr << 6;
-  const int cb_diff_q12 = (cb_q6 - skin_mean[0]) * (cb_q6 - skin_mean[0]);
-  const int cbcr_diff_q12 = (cb_q6 - skin_mean[0]) * (cr_q6 - skin_mean[1]);
-  const int cr_diff_q12 = (cr_q6 - skin_mean[1]) * (cr_q6 - skin_mean[1]);
+  const int cb_diff_q12 =
+      (cb_q6 - skin_mean[idx][0]) * (cb_q6 - skin_mean[idx][0]);
+  const int cbcr_diff_q12 =
+      (cb_q6 - skin_mean[idx][0]) * (cr_q6 - skin_mean[idx][1]);
+  const int cr_diff_q12 =
+      (cr_q6 - skin_mean[idx][1]) * (cr_q6 - skin_mean[idx][1]);
   const int cb_diff_q2 = (cb_diff_q12 + (1 << 9)) >> 10;
   const int cbcr_diff_q2 = (cbcr_diff_q12 + (1 << 9)) >> 10;
   const int cr_diff_q2 = (cr_diff_q12 + (1 << 9)) >> 10;
@@ -65,6 +73,52 @@ static int evaluate_skin_color_difference(int cb, int cr)
   return skin_diff;
 }
 
+
+static int is_skin_color(int y, int cb, int cr, int consec_zeromv)
+{
+  if (y < 40 || y > 220)
+  {
+    return 0;
+  }
+  else
+  {
+    if (MODEL_MODE == 0)
+    {
+      return (evaluate_skin_color_difference(cb, cr, 0) < skin_threshold[0]);
+    }
+    else
+    {
+      int i = 0;
+      
+      if (consec_zeromv > 60)
+        return 0;
+      
+       if (cb == 128 && cr == 128)
+         return 0;
+       
+       if (cb > 150 && cr < 110)
+         return 0;
+       for (; i < 5; i++) {
+         int skin_color_diff = evaluate_skin_color_difference(cb, cr, i);
+         if (skin_color_diff < skin_threshold[i + 1]) {
+            if (y < 60 && skin_color_diff > 3 * (skin_threshold[i + 1] >> 2))
+              return 0;
+            else if (consec_zeromv > 25 &&
+                     skin_color_diff > (skin_threshold[i + 1] >> 1))
+              return 0;
+            else
+             return 1;
+         }
+         
+         if (skin_color_diff > (skin_threshold[i + 1] << 3)) {
+           return 0;
+         }
+       }
+      return 0;
+    }
+  }
+}
+
 static int macroblock_corner_grad(unsigned char* signal, int stride,
                                   int offsetx, int offsety, int sgnx, int sgny)
 {
@@ -72,7 +126,7 @@ static int macroblock_corner_grad(unsigned char* signal, int stride,
   int y2 = signal[offsetx * stride + offsety + sgny];
   int y3 = signal[(offsetx + sgnx) * stride + offsety];
   int y4 = signal[(offsetx + sgnx) * stride + offsety + sgny];
-  return MAX(MAX(abs(y1 - y2), abs(y1 - y3)), abs(y1 - y4));
+  return VPXMAX(VPXMAX(abs(y1 - y2), abs(y1 - y3)), abs(y1 - y4));
 }
 
 static int check_dot_artifact_candidate(VP8_COMP *cpi,
@@ -153,16 +207,6 @@ static int check_dot_artifact_candidate(VP8_COMP *cpi,
     return 0;
   }
   return 0;
-}
-
-
-static int is_skin_color(int y, int cb, int cr)
-{
-  if (y < 40 || y > 220)
-  {
-    return 0;
-  }
-  return (evaluate_skin_color_difference(cb, cr) < skin_threshold);
 }
 
 int vp8_skip_fractional_mv_step(MACROBLOCK *mb, BLOCK *b, BLOCKD *d,
@@ -813,12 +857,23 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
     
     {
-    const int y = x->src.y_buffer[7 * x->src.y_stride + 7];
-    const int cb = x->src.u_buffer[3 * x->src.uv_stride + 3];
-    const int cr = x->src.v_buffer[3 * x->src.uv_stride + 3];
+    const int y = (x->src.y_buffer[7 * x->src.y_stride + 7] +
+        x->src.y_buffer[7 * x->src.y_stride + 8] +
+        x->src.y_buffer[8 * x->src.y_stride + 7] +
+        x->src.y_buffer[8 * x->src.y_stride + 8]) >> 2;
+    const int cb = (x->src.u_buffer[3 * x->src.uv_stride + 3] +
+        x->src.u_buffer[3 * x->src.uv_stride + 4] +
+        x->src.u_buffer[4 * x->src.uv_stride + 3] +
+        x->src.u_buffer[4 * x->src.uv_stride + 4]) >> 2;
+    const int cr = (x->src.v_buffer[3 * x->src.uv_stride + 3] +
+        x->src.v_buffer[3 * x->src.uv_stride + 4] +
+        x->src.v_buffer[4 * x->src.uv_stride + 3] +
+        x->src.v_buffer[4 * x->src.uv_stride + 4]) >> 2;
     x->is_skin = 0;
-    if (!cpi->oxcf.screen_content_mode)
-      x->is_skin = is_skin_color(y, cb, cr);
+    if (!cpi->oxcf.screen_content_mode) {
+      int block_index = mb_row * cpi->common.mb_cols + mb_col;
+      x->is_skin = is_skin_color(y, cb, cr, cpi->consec_zero_last[block_index]);
+    }
     }
 #if CONFIG_TEMPORAL_DENOISING
     if (cpi->oxcf.noise_sensitivity) {
@@ -1136,8 +1191,9 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 #if CONFIG_MULTI_RES_ENCODING
             if (parent_ref_valid && (parent_ref_frame == this_ref_frame) &&
                 dissim <= 2 &&
-                MAX(abs(best_ref_mv.as_mv.row - parent_ref_mv.as_mv.row),
-                    abs(best_ref_mv.as_mv.col - parent_ref_mv.as_mv.col)) <= 4)
+                VPXMAX(abs(best_ref_mv.as_mv.row - parent_ref_mv.as_mv.row),
+                       abs(best_ref_mv.as_mv.col - parent_ref_mv.as_mv.col)) <=
+                    4)
             {
                 d->bmi.mv.as_int = mvp_full.as_int;
                 mode_mv[NEWMV].as_int = mvp_full.as_int;
@@ -1240,7 +1296,10 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             }
 
             mode_mv[NEWMV].as_int = d->bmi.mv.as_int;
-
+            
+            
+            
+            vp8_clamp_mv2(&mode_mv[this_mode], xd);
             
             rate2 += vp8_mv_bit_cost(&mode_mv[NEWMV], &best_ref_mv,
                                      cpi->mb.mvcost, 128);
@@ -1248,7 +1307,6 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
 
         case NEARESTMV:
         case NEARMV:
-
             if (mode_mv[this_mode].as_int == 0)
                 continue;
 
@@ -1419,7 +1477,8 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
         vp8_denoiser_denoise_mb(&cpi->denoiser, x, best_sse, zero_mv_sse,
                                 recon_yoffset, recon_uvoffset,
                                 &cpi->common.lf_info, mb_row, mb_col,
-                                block_index);
+                                block_index,
+                                cpi->consec_zero_last_mvbias[block_index]);
 
         
         

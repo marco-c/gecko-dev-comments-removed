@@ -23,7 +23,7 @@ static const unsigned int NOISE_MOTION_THRESHOLD = 25 * 25;
 
 static const unsigned int SSE_DIFF_THRESHOLD = 16 * 16 * 20;
 static const unsigned int SSE_THRESHOLD = 16 * 16 * 40;
-static const unsigned int SSE_THRESHOLD_HIGH = 16 * 16 * 60;
+static const unsigned int SSE_THRESHOLD_HIGH = 16 * 16 * 80;
 
 
 
@@ -440,6 +440,11 @@ int vp8_denoiser_allocate(VP8_DENOISER *denoiser, int width, int height,
            denoiser->yv12_last_source.frame_size);
 
     denoiser->denoise_state = vpx_calloc((num_mb_rows * num_mb_cols), 1);
+    if (!denoiser->denoise_state)
+    {
+        vp8_denoiser_free(denoiser);
+        return 1;
+    }
     memset(denoiser->denoise_state, 0, (num_mb_rows * num_mb_cols));
     vp8_denoiser_set_parameters(denoiser, mode);
     denoiser->nmse_source_diff = 0;
@@ -492,7 +497,8 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
                              loop_filter_info_n *lfi_n,
                              int mb_row,
                              int mb_col,
-                             int block_index)
+                             int block_index,
+                             int consec_zero_last)
 
 {
     int mv_row;
@@ -523,7 +529,7 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
         
         const int zero_bias = denoiser->denoise_pars.denoise_mv_bias;
         zero_mv_sse = (unsigned int)((int64_t)zero_mv_sse * zero_bias / 100);
-        sse_diff = zero_mv_sse - best_sse;
+        sse_diff = (int)zero_mv_sse - (int)best_sse;
 
         saved_mbmi = *mbmi;
 
@@ -566,59 +572,69 @@ void vp8_denoiser_denoise_mb(VP8_DENOISER *denoiser,
             best_sse = zero_mv_sse;
         }
 
-        saved_pre = filter_xd->pre;
-        saved_dst = filter_xd->dst;
+        mv_row = x->best_sse_mv.as_mv.row;
+        mv_col = x->best_sse_mv.as_mv.col;
+        motion_magnitude2 = mv_row * mv_row + mv_col * mv_col;
+        motion_threshold = denoiser->denoise_pars.scale_motion_thresh *
+            NOISE_MOTION_THRESHOLD;
+
+        if (motion_magnitude2 <
+          denoiser->denoise_pars.scale_increase_filter * NOISE_MOTION_THRESHOLD)
+          x->increase_denoising = 1;
+
+        sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD;
+        if (x->increase_denoising)
+          sse_thresh =
+              denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD_HIGH;
+
+        if (best_sse > sse_thresh || motion_magnitude2 > motion_threshold)
+          decision = COPY_BLOCK;
 
         
-        filter_xd->pre.y_buffer = src->y_buffer + recon_yoffset;
-        filter_xd->pre.u_buffer = src->u_buffer + recon_uvoffset;
-        filter_xd->pre.v_buffer = src->v_buffer + recon_uvoffset;
         
-        filter_xd->dst.y_buffer = dst->y_buffer + recon_yoffset;
-        filter_xd->dst.u_buffer = dst->u_buffer + recon_uvoffset;
-        filter_xd->dst.v_buffer = dst->v_buffer + recon_uvoffset;
+        
+        
+        
+        
+        if (x->is_skin && (consec_zero_last < 2 || motion_magnitude2 > 0))
+          decision = COPY_BLOCK;
 
-        if (!x->skip)
-        {
-            vp8_build_inter_predictors_mb(filter_xd);
+        if (decision == FILTER_BLOCK) {
+          saved_pre = filter_xd->pre;
+          saved_dst = filter_xd->dst;
+
+          
+          filter_xd->pre.y_buffer = src->y_buffer + recon_yoffset;
+          filter_xd->pre.u_buffer = src->u_buffer + recon_uvoffset;
+          filter_xd->pre.v_buffer = src->v_buffer + recon_uvoffset;
+          
+          filter_xd->dst.y_buffer = dst->y_buffer + recon_yoffset;
+          filter_xd->dst.u_buffer = dst->u_buffer + recon_uvoffset;
+          filter_xd->dst.v_buffer = dst->v_buffer + recon_uvoffset;
+
+          if (!x->skip)
+          {
+              vp8_build_inter_predictors_mb(filter_xd);
+          }
+          else
+          {
+              vp8_build_inter16x16_predictors_mb(filter_xd,
+                                                 filter_xd->dst.y_buffer,
+                                                 filter_xd->dst.u_buffer,
+                                                 filter_xd->dst.v_buffer,
+                                                 filter_xd->dst.y_stride,
+                                                 filter_xd->dst.uv_stride);
+          }
+          filter_xd->pre = saved_pre;
+          filter_xd->dst = saved_dst;
+          *mbmi = saved_mbmi;
         }
-        else
-        {
-            vp8_build_inter16x16_predictors_mb(filter_xd,
-                                               filter_xd->dst.y_buffer,
-                                               filter_xd->dst.u_buffer,
-                                               filter_xd->dst.v_buffer,
-                                               filter_xd->dst.y_stride,
-                                               filter_xd->dst.uv_stride);
-        }
-        filter_xd->pre = saved_pre;
-        filter_xd->dst = saved_dst;
-        *mbmi = saved_mbmi;
-
-    }
-
-    mv_row = x->best_sse_mv.as_mv.row;
-    mv_col = x->best_sse_mv.as_mv.col;
-    motion_magnitude2 = mv_row * mv_row + mv_col * mv_col;
-    motion_threshold = denoiser->denoise_pars.scale_motion_thresh *
-        NOISE_MOTION_THRESHOLD;
-
-    
-    
-    
-    if (x->is_skin)
-        motion_threshold = 1;
-
-    if (motion_magnitude2 <
-        denoiser->denoise_pars.scale_increase_filter * NOISE_MOTION_THRESHOLD)
-      x->increase_denoising = 1;
-
-    sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD;
-    if (x->increase_denoising)
-      sse_thresh = denoiser->denoise_pars.scale_sse_thresh * SSE_THRESHOLD_HIGH;
-
-    if (best_sse > sse_thresh || motion_magnitude2 > motion_threshold)
+    } else {
+      
+      
+      
       decision = COPY_BLOCK;
+    }
 
     if (decision == FILTER_BLOCK)
     {

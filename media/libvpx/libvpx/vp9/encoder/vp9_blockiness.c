@@ -7,14 +7,10 @@
 
 
 
+#include <stdlib.h>
 
-#include "./vpx_config.h"
-#include "./vp9_rtcd.h"
-#include "vp9/common/vp9_common.h"
-#include "vp9/common/vp9_convolve.h"
-#include "vp9/common/vp9_filter.h"
 #include "vpx/vpx_integer.h"
-#include "vpx_ports/mem.h"
+#include "vpx_ports/system_state.h"
 
 static int horizontal_filter(const uint8_t *s) {
   return (s[1] - s[-2]) * 2 + (s[-1] - s[0]) * 6;
@@ -52,8 +48,8 @@ static int variance(int sum, int sum_squared, int size) {
 
 
 
-int blockiness_vertical(const uint8_t *s, int sp, const uint8_t *r, int rp,
-                        int size) {
+static int blockiness_vertical(const uint8_t *s, int sp, const uint8_t *r,
+                               int rp, int size) {
   int s_blockiness = 0;
   int r_blockiness = 0;
   int sum_0 = 0;
@@ -84,8 +80,8 @@ int blockiness_vertical(const uint8_t *s, int sp, const uint8_t *r, int rp,
 
 
 
-int blockiness_horizontal(const uint8_t *s, int sp, const uint8_t *r, int rp,
-                          int size) {
+static int blockiness_horizontal(const uint8_t *s, int sp, const uint8_t *r,
+                                 int rp, int size) {
   int s_blockiness = 0;
   int r_blockiness = 0;
   int sum_0 = 0;
@@ -116,12 +112,12 @@ int blockiness_horizontal(const uint8_t *s, int sp, const uint8_t *r, int rp,
 
 
 
-double vp9_get_blockiness(const unsigned char *img1, int img1_pitch,
-                          const unsigned char *img2, int img2_pitch,
-                          int width, int height ) {
+double vp9_get_blockiness(const uint8_t *img1, int img1_pitch,
+                          const uint8_t *img2, int img2_pitch,
+                          int width, int height) {
   double blockiness = 0;
   int i, j;
-  vp9_clear_system_state();
+  vpx_clear_system_state();
   for (i = 0; i < height; i += 4, img1 += img1_pitch * 4,
        img2 += img2_pitch * 4) {
     for (j = 0; j < width; j += 4) {

@@ -28,7 +28,7 @@ extern "C" {
 
 
 
-#define VPX_IMAGE_ABI_VERSION (3) /**<\hideinitializer*/
+#define VPX_IMAGE_ABI_VERSION (4) /**<\hideinitializer*/
 
 
 #define VPX_IMG_FMT_PLANAR     0x100  /**< Image is a planar format. */
@@ -79,9 +79,16 @@ extern "C" {
   } vpx_color_space_t; 
 
   
+  typedef enum vpx_color_range {
+    VPX_CR_STUDIO_RANGE = 0,    
+    VPX_CR_FULL_RANGE   = 1     
+  } vpx_color_range_t; 
+
+  
   typedef struct vpx_image {
     vpx_img_fmt_t fmt; 
     vpx_color_space_t cs; 
+    vpx_color_range_t range; 
 
     
     unsigned int  w;           
@@ -91,6 +98,10 @@ extern "C" {
     
     unsigned int  d_w;   
     unsigned int  d_h;   
+
+    
+    unsigned int  r_w;   
+    unsigned int  r_h;   
 
     
     unsigned int  x_chroma_shift;   

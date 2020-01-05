@@ -12,6 +12,11 @@
 #ifndef VPX_PORTS_X86_H_
 #define VPX_PORTS_X86_H_
 #include <stdlib.h>
+
+#if defined(_MSC_VER)
+#include <intrin.h>  
+#endif
+
 #include "vpx_config.h"
 #include "vpx/vpx_integer.h"
 
@@ -77,16 +82,12 @@ typedef enum {
 #else 
 #if ARCH_X86_64
 #if defined(_MSC_VER) && _MSC_VER > 1500
-void __cpuidex(int CPUInfo[4], int info_type, int ecxvalue);
-#pragma intrinsic(__cpuidex)
 #define cpuid(func, func2, a, b, c, d) do {\
     int regs[4];\
     __cpuidex(regs, func, func2); \
     a = regs[0];  b = regs[1];  c = regs[2];  d = regs[3];\
   } while(0)
 #else
-void __cpuid(int CPUInfo[4], int info_type);
-#pragma intrinsic(__cpuid)
 #define cpuid(func, func2, a, b, c, d) do {\
     int regs[4];\
     __cpuid(regs, func); \
@@ -136,6 +137,13 @@ static INLINE uint64_t xgetbv(void) {
 #define xgetbv() 0U  // no AVX for older x64 or unrecognized toolchains.
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1700
+#include <windows.h>
+#if WINAPI_FAMILY_PARTITION(WINAPI_FAMILY_APP)
+#define getenv(x) NULL
+#endif
+#endif
+
 #define HAS_MMX     0x01
 #define HAS_SSE     0x02
 #define HAS_SSE2    0x04
@@ -165,7 +173,7 @@ x86_simd_caps(void) {
   env = getenv("VPX_SIMD_CAPS_MASK");
 
   if (env && *env)
-    mask = strtol(env, NULL, 0);
+    mask = (unsigned int)strtoul(env, NULL, 0);
 
   
   cpuid(0, 0, max_cpuid_val, reg_ebx, reg_ecx, reg_edx);
@@ -205,10 +213,11 @@ x86_simd_caps(void) {
   return flags & mask;
 }
 
-#if ARCH_X86_64 && defined(_MSC_VER)
-unsigned __int64 __rdtsc(void);
-#pragma intrinsic(__rdtsc)
-#endif
+
+
+
+
+
 static INLINE unsigned int
 x86_readtsc(void) {
 #if defined(__GNUC__) && __GNUC__
@@ -228,6 +237,24 @@ x86_readtsc(void) {
 #endif
 }
 
+static INLINE uint64_t
+x86_readtsc64(void) {
+#if defined(__GNUC__) && __GNUC__
+  uint32_t hi, lo;
+  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)hi << 32) | lo;
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+  uint_t hi, lo;
+  asm volatile("rdtsc\n\t" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)hi << 32) | lo;
+#else
+#if ARCH_X86_64
+  return (uint64_t)__rdtsc();
+#else
+  __asm  rdtsc;
+#endif
+#endif
+}
 
 #if defined(__GNUC__) && __GNUC__
 #define x86_pause_hint()\

@@ -189,11 +189,22 @@ typedef struct MV_SPEED_FEATURES {
   int subpel_iters_per_step;
 
   
+  
+  
+  
+  
   int subpel_force_stop;
 
   
   int fullpel_search_step_param;
 } MV_SPEED_FEATURES;
+
+#define MAX_MESH_STEP 4
+
+typedef struct MESH_PATTERN {
+  int range;
+  int interval;
+} MESH_PATTERN;
 
 typedef struct SPEED_FEATURES {
   MV_SPEED_FEATURES mv;
@@ -267,6 +278,7 @@ typedef struct SPEED_FEATURES {
 
   
   int use_square_partition_only;
+  BLOCK_SIZE use_square_only_threshold;
 
   
   
@@ -297,6 +309,18 @@ typedef struct SPEED_FEATURES {
   
   
   int adaptive_motion_search;
+
+  
+  int allow_exhaustive_searches;
+
+  
+  int exhaustive_searches_thresh;
+
+  
+  int max_exaustive_pct;
+
+  
+  MESH_PATTERN mesh_patterns[MAX_MESH_STEP];
 
   int schedule_mode_search;
 
@@ -415,6 +439,21 @@ typedef struct SPEED_FEATURES {
 
   
   int allow_partition_search_skip;
+
+  
+  int simple_model_rd_from_var;
+
+  
+  
+  int short_circuit_flat_blocks;
+
+  
+  
+  
+  
+  
+  
+  int short_circuit_low_temp_var;
 } SPEED_FEATURES;
 
 struct VP9_COMP;

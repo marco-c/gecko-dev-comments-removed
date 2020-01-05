@@ -13,6 +13,7 @@
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_dsp/vpx_filter.h"
 #include "vpx_ports/mem.h"
 
 
@@ -20,28 +21,19 @@
 extern "C" {
 #endif
 
-#define FILTER_BITS 7
+#define EIGHTTAP            0
+#define EIGHTTAP_SMOOTH     1
+#define EIGHTTAP_SHARP      2
+#define SWITCHABLE_FILTERS  3 /* Number of switchable filters */
+#define BILINEAR            3
 
-#define SUBPEL_BITS 4
-#define SUBPEL_MASK ((1 << SUBPEL_BITS) - 1)
-#define SUBPEL_SHIFTS (1 << SUBPEL_BITS)
-#define SUBPEL_TAPS 8
 
-typedef enum {
-  EIGHTTAP = 0,
-  EIGHTTAP_SMOOTH = 1,
-  EIGHTTAP_SHARP = 2,
-  SWITCHABLE_FILTERS = 3, 
-  BILINEAR = 3,
-  
-  
-  SWITCHABLE_FILTER_CONTEXTS = SWITCHABLE_FILTERS + 1,
-  SWITCHABLE = 4  
-} INTERP_FILTER;
+#define SWITCHABLE_FILTER_CONTEXTS (SWITCHABLE_FILTERS + 1)
+#define SWITCHABLE 4 /* should be the last one */
 
-typedef int16_t InterpKernel[SUBPEL_TAPS];
+typedef uint8_t INTERP_FILTER;
 
-const InterpKernel *vp9_get_interp_kernel(INTERP_FILTER filter);
+extern const InterpKernel *vp9_filter_kernels[4];
 
 #ifdef __cplusplus
 }  

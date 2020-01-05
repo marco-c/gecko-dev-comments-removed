@@ -34,13 +34,7 @@ void vp8_estimate_missing_mvs(VP8D_COMP *pbi);
 
 void vp8_interpolate_motion(MACROBLOCKD *mb,
                             int mb_row, int mb_col,
-                            int mb_rows, int mb_cols,
-                            int mi_stride);
-
-
-
-
-void vp8_conceal_corrupt_mb(MACROBLOCKD *xd);
+                            int mb_rows, int mb_cols);
 
 #ifdef __cplusplus
 }  

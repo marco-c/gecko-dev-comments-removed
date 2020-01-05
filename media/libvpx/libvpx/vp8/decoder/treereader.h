@@ -12,6 +12,7 @@
 #ifndef VP8_DECODER_TREEREADER_H_
 #define VP8_DECODER_TREEREADER_H_
 
+#include "./vpx_config.h"
 #include "vp8/common/treecoder.h"
 #include "dboolhuff.h"
 
@@ -28,7 +29,7 @@ typedef BOOL_DECODER vp8_reader;
 
 
 
-static int vp8_treed_read(
+static INLINE int vp8_treed_read(
     vp8_reader *const r,        
     vp8_tree t,
     const vp8_prob *const p
