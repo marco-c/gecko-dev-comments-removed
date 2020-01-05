@@ -1560,7 +1560,7 @@ this.PlacesUtils = {
 
     
     
-    Services.tm.dispatchToMainThread(function() {
+    Services.tm.mainThread.dispatch(function() {
       if (aCharset && aCharset.length > 0) {
         PlacesUtils.annotations.setPageAnnotation(
           aURI, PlacesUtils.CHARSET_ANNO, aCharset, 0,
@@ -1570,7 +1570,7 @@ this.PlacesUtils = {
           aURI, PlacesUtils.CHARSET_ANNO);
       }
       deferred.resolve();
-    });
+    }, Ci.nsIThread.DISPATCH_NORMAL);
 
     return deferred.promise;
   },
@@ -1585,7 +1585,7 @@ this.PlacesUtils = {
   getCharsetForURI: function PU_getCharsetForURI(aURI) {
     let deferred = Promise.defer();
 
-    Services.tm.dispatchToMainThread(function() {
+    Services.tm.mainThread.dispatch(function() {
       let charset = null;
 
       try {
@@ -1594,7 +1594,7 @@ this.PlacesUtils = {
       } catch (ex) { }
 
       deferred.resolve(charset);
-    });
+    }, Ci.nsIThread.DISPATCH_NORMAL);
 
     return deferred.promise;
   },
@@ -1975,7 +1975,7 @@ this.PlacesUtils = {
       
       if (++yieldCounter % 50 == 0) {
         yield new Promise(resolve => {
-          Services.tm.dispatchToMainThread(resolve);
+          Services.tm.currentThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
         });
       }
     }

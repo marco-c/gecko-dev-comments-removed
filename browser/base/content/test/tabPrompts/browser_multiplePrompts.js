@@ -60,7 +60,7 @@ add_task(function*() {
       
       
       yield new Promise(function(resolve) {
-        Services.tm.dispatchToMainThread(resolve);
+        Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
       });
     }
   }

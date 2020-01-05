@@ -33,9 +33,9 @@ function run_test_with_server(server, callback) {
         
         
         
-        Services.tm.dispatchToMainThread({
+        Services.tm.mainThread.dispatch({
           run: test_simple_stepping
-        });
+        }, Ci.nsIThread.DISPATCH_NORMAL);
       });
   });
 }

@@ -690,9 +690,9 @@ function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI) {
     let deferred = Promise.defer();
     if (useDownloadDir) {
       
-      Services.tm.dispatchToMainThread(function() {
+      Services.tm.mainThread.dispatch(function() {
         deferred.resolve(null);
-      });
+      }, Components.interfaces.nsIThread.DISPATCH_NORMAL);
     } else {
       downloadLastDir.getFileAsync(aRelatedURI, function getFileAsyncCB(aFile) {
         deferred.resolve(aFile);

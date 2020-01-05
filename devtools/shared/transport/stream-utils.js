@@ -99,13 +99,13 @@ StreamCopier.prototype = {
   copy: function () {
     
     
-    Services.tm.dispatchToMainThread(() => {
+    Services.tm.currentThread.dispatch(() => {
       try {
         this._copy();
       } catch (e) {
         this._deferred.reject(e);
       }
-    });
+    }, 0);
     return this;
   },
 

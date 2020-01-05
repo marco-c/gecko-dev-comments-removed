@@ -152,13 +152,13 @@ DOMHelpers.prototype = {
         
         
         
-        Services.tm.dispatchToMainThread(callback);
+        Services.tm.mainThread.dispatch(callback, 0);
       }
     };
     if ((window.document.readyState == "complete" ||
          window.document.readyState == "interactive") &&
          window.location.href == targetURL) {
-      Services.tm.dispatchToMainThread(callback);
+      Services.tm.mainThread.dispatch(callback, 0);
     } else {
       docShell.chromeEventHandler.addEventListener("DOMContentLoaded", onReady);
     }

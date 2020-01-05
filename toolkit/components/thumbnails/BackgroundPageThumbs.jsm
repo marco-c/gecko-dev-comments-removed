@@ -264,9 +264,9 @@ const BackgroundPageThumbs = {
         
         
         
-        Services.tm.dispatchToMainThread(() => {
+        Services.tm.currentThread.dispatch(() => {
           curCapture._done(null, TEL_CAPTURE_DONE_CRASHED);
-        });
+        }, Ci.nsIEventTarget.DISPATCH_NORMAL);
       }
       
       
@@ -503,5 +503,5 @@ function tel(histogramID, value) {
 }
 
 function schedule(callback) {
-  Services.tm.dispatchToMainThread(callback);
+  Services.tm.mainThread.dispatch(callback, Ci.nsIThread.DISPATCH_NORMAL);
 }

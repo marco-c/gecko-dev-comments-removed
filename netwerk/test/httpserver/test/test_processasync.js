@@ -285,7 +285,8 @@ function handleAsyncOrdering(request, response)
     
     
     
-    gThreadManager.dispatchToMainThread(writeData);
+    gThreadManager.currentThread
+                  .dispatch(writeData, Ci.nsIThread.DISPATCH_NORMAL);
   }
   step();
   response.processAsync();

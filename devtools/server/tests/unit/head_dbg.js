@@ -585,9 +585,9 @@ StubTransport.prototype.send = function () {};
 StubTransport.prototype.close = function () {};
 
 function executeSoon(func) {
-  Services.tm.dispatchToMainThread({
+  Services.tm.mainThread.dispatch({
     run: DevToolsUtils.makeInfallible(func)
-  });
+  }, Ci.nsIThread.DISPATCH_NORMAL);
 }
 
 

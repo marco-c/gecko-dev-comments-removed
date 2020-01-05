@@ -394,9 +394,9 @@ class TabTracker extends TabTrackerBase {
     
     
     
-    Services.tm.dispatchToMainThread(() => {
+    Services.tm.mainThread.dispatch(() => {
       this.emit("tab-removed", {nativeTab, tabId, windowId, isWindowClosing});
-    });
+    }, Ci.nsIThread.DISPATCH_NORMAL);
   }
 
   getBrowserData(browser) {

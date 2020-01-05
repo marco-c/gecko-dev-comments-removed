@@ -656,7 +656,7 @@ var Printing = {
       
       
       
-      Services.tm.dispatchToMainThread(() => {
+      Services.tm.mainThread.dispatch(() => {
         try {
           docShell.printPreview.printPreview(printSettings, contentWindow, this);
         } catch (error) {
@@ -665,7 +665,7 @@ var Printing = {
           Components.utils.reportError(error);
           notifyEntered(error);
         }
-      });
+      }, Ci.nsIThread.DISPATCH_NORMAL);
     } catch (error) {
       
       

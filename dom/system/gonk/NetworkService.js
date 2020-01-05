@@ -115,9 +115,9 @@ NetworkWorkerRequestQueue.prototype = {
     this.tasks.shift();
     if (this.tasks.length > 0) {
       
-      Services.tm.dispatchToMainThread(() => {
+      Services.tm.currentThread.dispatch(() => {
         this.runQueue();
-      });
+      }, Ci.nsIThread.DISPATCH_NORMAL);
     }
   }
 };

@@ -235,7 +235,7 @@ this.MigratorPrototype = {
     
     let unblockMainThread = function() {
       return new Promise(resolve => {
-        Services.tm.dispatchToMainThread(resolve);
+        Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
       });
     };
 

@@ -1974,12 +1974,12 @@ var Impl = {
     case "idle-daily":
       
       
-      Services.tm.dispatchToMainThread((function() {
+      Services.tm.mainThread.dispatch((function() {
         
         
         
         Services.obs.notifyObservers(null, "gather-telemetry", null);
-      }));
+      }), Ci.nsIThread.DISPATCH_NORMAL);
       break;
 
     case "application-background":

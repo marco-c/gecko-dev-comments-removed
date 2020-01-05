@@ -671,7 +671,7 @@ DevToolsUtils.makeInfallible(function (window) {
 
 
 
-  Services.tm.dispatchToMainThread(DevToolsUtils.makeInfallible(() => {
+  Services.tm.currentThread.dispatch(DevToolsUtils.makeInfallible(() => {
     
 
 
@@ -682,7 +682,7 @@ DevToolsUtils.makeInfallible(function (window) {
         this._handleActorClose(actor, browser);
       }
     }
-  }, "BrowserTabList.prototype.onCloseWindow's delayed body"));
+  }, "BrowserTabList.prototype.onCloseWindow's delayed body"), 0);
 }, "BrowserTabList.prototype.onCloseWindow");
 
 exports.BrowserTabList = BrowserTabList;

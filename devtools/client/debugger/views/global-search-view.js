@@ -235,9 +235,9 @@ GlobalSearchView.prototype = Heritage.extend(WidgetMethods, {
         
         
         
-        Services.tm.dispatchToMainThread({ run:
+        Services.tm.currentThread.dispatch({ run:
           this._createSourceResultsUI.bind(this, sourceResults)
-        });
+        }, 0);
       }
     }
   },
@@ -332,12 +332,12 @@ GlobalSearchView.prototype = Heritage.extend(WidgetMethods, {
 
 
   _bounceMatch: function (aMatch) {
-    Services.tm.dispatchToMainThread({ run: () => {
+    Services.tm.currentThread.dispatch({ run: () => {
       aMatch.addEventListener("transitionend", function () {
         aMatch.removeAttribute("focused");
       }, {once: true});
       aMatch.setAttribute("focused", "");
-    }});
+    }}, 0);
     aMatch.setAttribute("focusing", "");
   },
 
