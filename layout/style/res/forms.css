@@ -598,7 +598,7 @@ input[type="checkbox"]:disabled:hover:active {
   cursor: inherit;
 }
 
-%if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
+%if defined(MOZ_WIDGET_ANDROID)
 
 
 
