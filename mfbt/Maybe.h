@@ -83,21 +83,18 @@ struct Nothing { };
 
 
 template<class T>
-class Maybe
+class MOZ_NON_PARAM Maybe
 {
-  bool mIsSome;
+  alignas(T) unsigned char mStorage[sizeof(T)];
+  char mIsSome; 
 
   
   
-  
-  
-  
-  
-  typedef typename RemoveCV<T>::Type StorageType;
-  AlignedStorage2<StorageType> mStorage;
+  void* data() { return mStorage; }
+  const void* data() const { return mStorage; }
 
 public:
-  typedef T ValueType;
+  using ValueType = T;
 
   Maybe() : mIsSome(false) { }
   ~Maybe() { reset(); }
@@ -331,13 +328,13 @@ public:
   T& ref()
   {
     MOZ_ASSERT(mIsSome);
-    return *mStorage.addr();
+    return *static_cast<T*>(data());
   }
 
   const T& ref() const
   {
     MOZ_ASSERT(mIsSome);
-    return *mStorage.addr();
+    return *static_cast<const T*>(data());
   }
 
   
@@ -459,7 +456,7 @@ public:
   void emplace(Args&&... aArgs)
   {
     MOZ_ASSERT(!mIsSome);
-    ::new (KnownNotNull, mStorage.addr()) T(Forward<Args>(aArgs)...);
+    ::new (KnownNotNull, data()) T(Forward<Args>(aArgs)...);
     mIsSome = true;
   }
 
