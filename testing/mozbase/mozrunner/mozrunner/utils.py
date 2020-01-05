@@ -153,10 +153,12 @@ def test_environment(xrePath, env=None, crashreporter=True, debugger=False,
 
     
     asan = bool(mozinfo.info.get("asan"))
-    if asan and (mozinfo.isLinux or mozinfo.isMac):
+    if asan:
         try:
             
-            llvmsym = os.path.join(xrePath, "llvm-symbolizer")
+            llvmsym = os.path.join(
+                xrePath,
+                "llvm-symbolizer" + mozinfo.info["bin_suffix"].encode('ascii'))
             if os.path.isfile(llvmsym):
                 env["ASAN_SYMBOLIZER_PATH"] = llvmsym
                 log.info("INFO | runtests.py | ASan using symbolizer at %s"
@@ -166,8 +168,11 @@ def test_environment(xrePath, env=None, crashreporter=True, debugger=False,
                          " ASan symbolizer at %s" % llvmsym)
 
             
-            
-            totalMemory = int(os.popen("free").readlines()[1].split()[1])
+            if mozinfo.isWin:
+                totalMemory = int(
+                    os.popen("wmic computersystem get TotalPhysicalMemory").readlines()[1]) / 1024
+            else:
+                totalMemory = int(os.popen("free").readlines()[1].split()[1])
 
             
             
