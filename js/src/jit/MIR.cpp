@@ -2736,6 +2736,20 @@ MBinaryBitwiseInstruction::foldsTo(TempAllocator& alloc)
 MDefinition*
 MBinaryBitwiseInstruction::foldUnnecessaryBitop()
 {
+    
+    
+    
+    if (isUrsh() && hasOneDefUse() && getOperand(1)->isConstant()) {
+        MConstant* constant = getOperand(1)->toConstant();
+        if (constant->type() == MIRType::Int32 && constant->toInt32() == 0) {
+            for (MUseDefIterator use(this); use; use++) {
+                if (use.def()->isMod() && use.def()->toMod()->isUnsigned())
+                    return getOperand(0);
+                break;
+            }
+        }
+    }
+
     if (specialization_ != MIRType::Int32)
         return this;
 

@@ -1561,12 +1561,39 @@ MMod::computeRange(TempAllocator& alloc)
 
     
     
-    if (!lhs.hasInt32Bounds() || !rhs.hasInt32Bounds())
+    if ((possiblyUnsigned_ == PossiblyUnsigned::NotPossible &&
+         !lhs.hasInt32Bounds()) || !rhs.hasInt32Bounds()) 
+    {
         return;
+    }
 
     
     if (rhs.lower() <= 0 && rhs.upper() >= 0)
         return;
+
+    
+    
+    
+    if (specialization() == MIRType::Int32) {
+        switch (possiblyUnsigned_) {
+          case PossiblyUnsigned::NotPossible:
+            break;
+          case PossiblyUnsigned::LHSPossible:
+            if (rhs.lower() > 0 && !rhs.canHaveFractionalPart())
+                unsigned_ = true;
+            break;
+          case PossiblyUnsigned::RHSPossible:
+            if (lhs.lower() >= 0 && !lhs.canHaveFractionalPart())
+                unsigned_ = true;
+            break;
+          case PossiblyUnsigned::BothPossible:
+            if (lhs.lower() >= 0 && !lhs.canHaveFractionalPart())
+                unsigned_ = true;
+            else if (rhs.lower() > 0 && !rhs.canHaveFractionalPart())
+                unsigned_ = true;
+            break;
+        }
+    }
 
     
     
