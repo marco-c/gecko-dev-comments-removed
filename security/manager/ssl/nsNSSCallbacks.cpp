@@ -48,7 +48,6 @@ namespace {
 
 
 
-const uint32_t NPN_NOT_NEGOTIATED = 64;
 const uint32_t POSSIBLE_VERSION_DOWNGRADE = 4;
 const uint32_t POSSIBLE_CIPHER_SUITE_DOWNGRADE = 2;
 const uint32_t KEA_NOT_SUPPORTED = 1;
@@ -947,8 +946,6 @@ CanFalseStartCallback(PRFileDesc* fd, void* client_data, PRBool *canFalseStart)
     return SECSuccess;
   }
 
-  nsSSLIOLayerHelpers& helpers = infoObject->SharedState().IOLayerHelpers();
-
   
   
   if (channelInfo.protocolVersion != SSL_LIBRARY_VERSION_TLS_1_2) {
@@ -982,18 +979,6 @@ CanFalseStartCallback(PRFileDesc* fd, void* client_data, PRBool *canFalseStart)
   
   
   
-
-  
-  
-  if (helpers.mFalseStartRequireNPN) {
-    nsAutoCString negotiatedNPN;
-    if (NS_FAILED(infoObject->GetNegotiatedNPN(negotiatedNPN)) ||
-        !negotiatedNPN.Length()) {
-      MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("CanFalseStartCallback [%p] failed - "
-                                        "NPN cannot be verified\n", fd));
-      reasonsForNotFalseStarting |= NPN_NOT_NEGOTIATED;
-    }
-  }
 
   Telemetry::Accumulate(Telemetry::SSL_REASONS_FOR_NOT_FALSE_STARTING,
                         reasonsForNotFalseStarting);
