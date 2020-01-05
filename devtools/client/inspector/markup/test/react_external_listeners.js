@@ -1,0 +1,10 @@
+"use strict";
+
+
+function externalFunction() {
+  alert("externalFunction");
+}
+
+function externalCapturingFunction() {
+  alert("externalCapturingFunction");
+}

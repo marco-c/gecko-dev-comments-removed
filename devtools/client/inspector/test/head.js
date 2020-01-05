@@ -232,11 +232,19 @@ function getContainerForNodeFront(nodeFront, {markup}) {
 
 
 
-var getContainerForSelector = Task.async(function* (selector, inspector) {
+
+var getContainerForSelector =
+Task.async(function* (selector, inspector, expectFailure = false) {
   info("Getting the markup-container for node " + selector);
   let nodeFront = yield getNodeFront(selector, inspector);
   let container = getContainerForNodeFront(nodeFront, inspector);
-  info("Found markup-container " + container);
+
+  if (expectFailure) {
+    ok(!container, "Shouldn't find markup-container for selector: " + selector);
+  } else {
+    ok(container, "Found markup-container for selector: " + selector);
+  }
+
   return container;
 });
 
