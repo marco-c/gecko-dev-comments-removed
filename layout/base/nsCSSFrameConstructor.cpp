@@ -4721,6 +4721,15 @@ nsCSSFrameConstructor::FindDisplayData(const nsStyleDisplay* aDisplay,
                              &nsCSSFrameConstructor::ConstructScrollableBlock) };
         return &sScrollableBlockData[caption];
       }
+
+      
+      
+      
+      
+      if (mPresShell->GetPresContext()->
+            ElementWouldPropagateScrollbarStyles(aElement)) {
+        suppressScrollFrame = false;
+      }
     }
 
     
