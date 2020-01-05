@@ -10,6 +10,7 @@
 
 #include <algorithm> 
 #include <limits>
+#include "mozilla/CSSAlignUtils.h"
 #include "mozilla/Function.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h" 
@@ -2583,15 +2584,6 @@ GetDisplayFlagsForGridItem(nsIFrame* aFrame)
   return nsIFrame::DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT;
 }
 
-static nscoord
-SpaceToFill(WritingMode aWM, const LogicalSize& aSize, nscoord aMargin,
-            LogicalAxis aAxis, nscoord aCBSize)
-{
-  nscoord size = aAxis == eLogicalAxisBlock ? aSize.BSize(aWM)
-                                            : aSize.ISize(aWM);
-  return aCBSize - (size + aMargin);
-}
-
 
 static void
 AlignJustifySelf(uint8_t aAlignment, bool aOverflowSafe, LogicalAxis aAxis,
@@ -2601,120 +2593,16 @@ AlignJustifySelf(uint8_t aAlignment, bool aOverflowSafe, LogicalAxis aAxis,
 {
   MOZ_ASSERT(aAlignment != NS_STYLE_ALIGN_AUTO, "unexpected 'auto' "
              "computed value for normal flow grid item");
-  MOZ_ASSERT(aAlignment != NS_STYLE_ALIGN_LEFT &&
-             aAlignment != NS_STYLE_ALIGN_RIGHT,
-             "caller should map that to the corresponding START/END");
 
   
-  switch (aAlignment) {
-    case NS_STYLE_ALIGN_SELF_START: 
-      aAlignment = MOZ_LIKELY(aSameSide) ? NS_STYLE_ALIGN_START
-                                         : NS_STYLE_ALIGN_END;
-      break;
-    case NS_STYLE_ALIGN_SELF_END: 
-      aAlignment = MOZ_LIKELY(aSameSide) ? NS_STYLE_ALIGN_END
-                                         : NS_STYLE_ALIGN_START;
-      break;
-    case NS_STYLE_ALIGN_FLEX_START: 
-      aAlignment = NS_STYLE_ALIGN_START;
-      break;
-    case NS_STYLE_ALIGN_FLEX_END: 
-      aAlignment = NS_STYLE_ALIGN_END;
-      break;
-  }
+  nscoord offset =
+    CSSAlignUtils::AlignJustifySelf(aAlignment, aOverflowSafe, aAxis,
+                                    aSameSide, aBaselineAdjust, aCBSize,
+                                    aRI, aChildSize);
 
   
-  
-
-  
-  const LogicalMargin margin = aRI.ComputedLogicalMargin();
-  WritingMode wm = aRI.GetWritingMode();
-  nscoord marginStart, marginEnd;
-  if (aAxis == eLogicalAxisBlock) {
-    if (MOZ_LIKELY(aSameSide)) {
-      marginStart = margin.BStart(wm);
-      marginEnd = margin.BEnd(wm);
-    } else {
-      marginStart = margin.BEnd(wm);
-      marginEnd = margin.BStart(wm);
-    }
-  } else {
-    if (MOZ_LIKELY(aSameSide)) {
-      marginStart = margin.IStart(wm);
-      marginEnd = margin.IEnd(wm);
-    } else {
-      marginStart = margin.IEnd(wm);
-      marginEnd = margin.IStart(wm);
-    }
-  }
-
-  const auto& styleMargin = aRI.mStyleMargin->mMargin;
-  bool hasAutoMarginStart;
-  bool hasAutoMarginEnd;
-  if (aAxis == eLogicalAxisBlock) {
-    hasAutoMarginStart = styleMargin.GetBStartUnit(wm) == eStyleUnit_Auto;
-    hasAutoMarginEnd = styleMargin.GetBEndUnit(wm) == eStyleUnit_Auto;
-  } else {
-    hasAutoMarginStart = styleMargin.GetIStartUnit(wm) == eStyleUnit_Auto;
-    hasAutoMarginEnd = styleMargin.GetIEndUnit(wm) == eStyleUnit_Auto;
-  }
-
-  
-  
-  
-  if ((MOZ_UNLIKELY(aOverflowSafe) && aAlignment != NS_STYLE_ALIGN_START) ||
-      hasAutoMarginStart || hasAutoMarginEnd) {
-    nscoord space = SpaceToFill(wm, aChildSize, marginStart + marginEnd,
-                                aAxis, aCBSize);
-    
-    
-    if (space < 0) {
-      
-      
-      aAlignment = NS_STYLE_ALIGN_START;
-    } else if (hasAutoMarginEnd) {
-      aAlignment = hasAutoMarginStart ? NS_STYLE_ALIGN_CENTER
-                                      : (aSameSide ? NS_STYLE_ALIGN_START
-                                                   : NS_STYLE_ALIGN_END);
-    } else if (hasAutoMarginStart) {
-      aAlignment = aSameSide ? NS_STYLE_ALIGN_END : NS_STYLE_ALIGN_START;
-    }
-  }
-
-  
-  nscoord offset = 0; 
-  switch (aAlignment) {
-    case NS_STYLE_ALIGN_BASELINE:
-    case NS_STYLE_ALIGN_LAST_BASELINE:
-      if (MOZ_LIKELY(aSameSide == (aAlignment == NS_STYLE_ALIGN_BASELINE))) {
-        offset = marginStart + aBaselineAdjust;
-      } else {
-        nscoord size = aAxis == eLogicalAxisBlock ? aChildSize.BSize(wm)
-                                                  : aChildSize.ISize(wm);
-        offset = aCBSize - (size + marginEnd) - aBaselineAdjust;
-      }
-      break;
-    case NS_STYLE_ALIGN_STRETCH:
-      MOZ_FALLTHROUGH; 
-    case NS_STYLE_ALIGN_START:
-      offset = marginStart;
-      break;
-    case NS_STYLE_ALIGN_END: {
-      nscoord size = aAxis == eLogicalAxisBlock ? aChildSize.BSize(wm)
-                                                : aChildSize.ISize(wm);
-      offset = aCBSize - (size + marginEnd);
-      break;
-    }
-    case NS_STYLE_ALIGN_CENTER: {
-      nscoord size = aAxis == eLogicalAxisBlock ? aChildSize.BSize(wm)
-                                                : aChildSize.ISize(wm);
-      offset = (aCBSize - size + marginStart - marginEnd) / 2;
-      break;
-    }
-    default:
-      MOZ_ASSERT_UNREACHABLE("unknown align-/justify-self value");
-  }
   if (offset != 0) {
+    WritingMode wm = aRI.GetWritingMode();
     nscoord& pos = aAxis == eLogicalAxisBlock ? aPos->B(wm) : aPos->I(wm);
     pos += MOZ_LIKELY(aSameSide) ? offset : -offset;
   }
