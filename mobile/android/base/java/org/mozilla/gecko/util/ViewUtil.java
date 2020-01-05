@@ -169,6 +169,17 @@ public class ViewUtil {
 
 
 
+    public static void setTextDirection(TextView textView, int textDirection) {
+        if(AppConstants.Versions.feature17Plus) {
+            textView.setTextDirection(textDirection);
+        }
+    }
+
+    
+
+
+
+
 
     public static void setTextDirectionRtlCompat(TextView textView, boolean isRtl) {
         if (AppConstants.Versions.feature17Plus) {
