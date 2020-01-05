@@ -34,12 +34,12 @@ public:
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(Timeout)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Timeout)
 
-  nsresult InitTimer(uint32_t aDelay);
+  
+  
+  
+  nsresult InitTimer(nsIEventTarget* aTarget, uint32_t aDelay);
 
   enum class Reason { eTimeoutOrInterval, eIdleCallbackTimeout };
-
-  static void TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
-                                size_t aLen);
 
 #ifdef DEBUG
   bool HasRefCntOne() const;

@@ -11882,7 +11882,7 @@ nsGlobalWindow::Resume()
       continue;
     }
 
-    nsresult rv = t->InitTimer(delay);
+    nsresult rv = t->InitTimer(GetThrottledEventQueue(), delay);
     if (NS_FAILED(rv)) {
       t->mTimer = nullptr;
       t->remove();
@@ -12601,7 +12601,7 @@ nsGlobalWindow::SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
 
     RefPtr<Timeout> copy = timeout;
 
-    rv = timeout->InitTimer(realInterval);
+    rv = timeout->InitTimer(GetThrottledEventQueue(), realInterval);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -12874,7 +12874,8 @@ nsGlobalWindow::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
 
   
   
-  nsresult rv = aTimeout->InitTimer(delay.ToMilliseconds());
+  nsresult rv = aTimeout->InitTimer(GetThrottledEventQueue(),
+                                    delay.ToMilliseconds());
 
   if (NS_FAILED(rv)) {
     NS_ERROR("Error initializing timer for DOM timeout!");
@@ -12949,6 +12950,20 @@ nsGlobalWindow::RunTimeout(Timeout* aTimeout)
       
       timeout->mFiringDepth = firingDepth;
       last_expired_timeout = timeout;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (timeout == aTimeout && !IsChromeWindow()) {
+        break;
+      }
     }
   }
 
@@ -13167,7 +13182,8 @@ nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
       timeout->mFiringDepth = firingDepth;
       timeout->Release();
 
-      nsresult rv = timeout->InitTimer(delay.ToMilliseconds());
+      nsresult rv = timeout->InitTimer(GetThrottledEventQueue(),
+                                       delay.ToMilliseconds());
 
       if (NS_FAILED(rv)) {
         NS_WARNING("Error resetting non background timer for DOM timeout!");
@@ -13254,15 +13270,6 @@ nsGlobalWindow::InsertTimeoutIntoList(Timeout* aTimeout)
   
   
   aTimeout->AddRef();
-}
-
-
-void
-nsGlobalWindow::TimerCallback(nsITimer *aTimer, void *aClosure)
-{
-  RefPtr<Timeout> timeout = (Timeout*)aClosure;
-
-  timeout->mWindow->RunTimeout(timeout);
 }
 
 

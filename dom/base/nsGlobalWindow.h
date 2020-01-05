@@ -1498,7 +1498,6 @@ public:
   
   
   void InsertTimeoutIntoList(mozilla::dom::Timeout* aTimeout);
-  static void TimerCallback(nsITimer *aTimer, void *aClosure);
   uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
 
   

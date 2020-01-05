@@ -55,18 +55,17 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(Timeout, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(Timeout, Release)
 
-nsresult
-Timeout::InitTimer(uint32_t aDelay)
-{
-  return mTimer->InitWithNameableFuncCallback(
-    nsGlobalWindow::TimerCallback, this, aDelay,
-    nsITimer::TYPE_ONE_SHOT, Timeout::TimerNameCallback);
-}
-
+namespace {
 
 void
-Timeout::TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
-                           size_t aLen)
+TimerCallback(nsITimer*, void* aClosure)
+{
+  RefPtr<Timeout> timeout = (Timeout*)aClosure;
+  timeout->mWindow->RunTimeout(timeout);
+}
+
+void
+TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf, size_t aLen)
 {
   RefPtr<Timeout> timeout = (Timeout*)aClosure;
 
@@ -76,6 +75,28 @@ Timeout::TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
   snprintf(aBuf, aLen, "[content] %s:%u:%u", filename, lineNum, column);
 }
 
+} 
+
+nsresult
+Timeout::InitTimer(nsIEventTarget* aTarget, uint32_t aDelay)
+{
+  
+  
+  
+  
+  nsCOMPtr<nsIEventTarget> currentTarget;
+  MOZ_ALWAYS_SUCCEEDS(mTimer->GetTarget(getter_AddRefs(currentTarget)));
+  if ((aTarget && currentTarget != aTarget) ||
+      (!aTarget && currentTarget != NS_GetCurrentThread())) {
+    
+    
+    MOZ_ALWAYS_SUCCEEDS(mTimer->Cancel());
+    MOZ_ALWAYS_SUCCEEDS(mTimer->SetTarget(aTarget));
+  }
+
+  return mTimer->InitWithNameableFuncCallback(
+    TimerCallback, this, aDelay, nsITimer::TYPE_ONE_SHOT, TimerNameCallback);
+}
 
 
 
