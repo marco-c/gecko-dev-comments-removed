@@ -12,9 +12,11 @@
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSValue.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsRefPtrHashtable.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 #include "mozilla/AnimationPerformanceWarning.h"
+#include "mozilla/AnimationPropertySegment.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ComputedTimingFunction.h"
@@ -53,50 +55,6 @@ enum class IterationCompositeOperation : uint8_t;
 enum class CompositeOperation : uint8_t;
 struct AnimationPropertyDetails;
 }
-
-struct AnimationPropertySegment
-{
-  float mFromKey, mToKey;
-  
-  
-  AnimationValue mFromValue, mToValue;
-
-  Maybe<ComputedTimingFunction> mTimingFunction;
-  dom::CompositeOperation mFromComposite = dom::CompositeOperation::Replace;
-  dom::CompositeOperation mToComposite = dom::CompositeOperation::Replace;
-
-  bool HasReplaceableValues() const
-  {
-    return HasReplaceableFromValue() && HasReplaceableToValue();
-  }
-
-  bool HasReplaceableFromValue() const
-  {
-    return !mFromValue.IsNull() &&
-           mFromComposite == dom::CompositeOperation::Replace;
-  }
-
-  bool HasReplaceableToValue() const
-  {
-    return !mToValue.IsNull() &&
-           mToComposite == dom::CompositeOperation::Replace;
-  }
-
-  bool operator==(const AnimationPropertySegment& aOther) const
-  {
-    return mFromKey == aOther.mFromKey &&
-           mToKey == aOther.mToKey &&
-           mFromValue == aOther.mFromValue &&
-           mToValue == aOther.mToValue &&
-           mTimingFunction == aOther.mTimingFunction &&
-           mFromComposite == aOther.mFromComposite &&
-           mToComposite == aOther.mToComposite;
-  }
-  bool operator!=(const AnimationPropertySegment& aOther) const
-  {
-    return !(*this == aOther);
-  }
-};
 
 struct AnimationProperty
 {
@@ -412,10 +370,7 @@ protected:
   void EnsureBaseStyles(nsStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
   void EnsureBaseStyles(const ServoComputedValuesWithParent& aServoValues,
-                        const nsTArray<AnimationProperty>& aProperties)
-  {
-    
-  }
+                        const nsTArray<AnimationProperty>& aProperties);
 
   
   
@@ -425,6 +380,12 @@ protected:
   void EnsureBaseStyle(nsCSSPropertyID aProperty,
                        nsStyleContext* aStyleContext,
                        RefPtr<nsStyleContext>& aCachedBaseStyleContext);
+  
+  
+  void EnsureBaseStyle(const AnimationProperty& aProperty,
+                       nsIAtom* aPseudoAtom,
+                       nsPresContext* aPresContext,
+                       RefPtr<ServoComputedValues>& aBaseComputedValues);
 
   Maybe<OwningAnimationTarget> mTarget;
 
@@ -454,6 +415,8 @@ protected:
   
   
   nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mBaseStyleValues;
+  nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>
+    mBaseStyleValuesForServo;
 
   
   
