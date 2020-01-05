@@ -39,7 +39,7 @@ impl PartialEq for ScheduledEvent {
 
 impl TimerScheduler {
     pub fn start() -> IpcSender<TimerEventRequest> {
-        let (req_ipc_sender, req_ipc_receiver) = ipc::channel().unwrap();
+        let (req_ipc_sender, req_ipc_receiver) = ipc::channel().expect("Channel creation failed.");
         let (req_sender, req_receiver) = mpsc::sync_channel(1);
 
         
@@ -92,7 +92,7 @@ impl TimerScheduler {
                 
                 warn!("TimerScheduler thread terminated.");
             })
-            .unwrap()
+            .expect("Thread creation failed.")
             .thread()
             .clone();
 
@@ -105,13 +105,13 @@ impl TimerScheduler {
             .name(String::from("TimerProxy"))
             .spawn(move || {
                 while let Ok(req) = req_ipc_receiver.recv() {
-                    req_sender.send(req).unwrap();
+                    let _ = req_sender.send(req);
                     timeout_thread.unpark();
                 }
                 
                 warn!("TimerProxy thread terminated.");
             })
-            .unwrap();
+            .expect("Thread creation failed.");
 
         
         req_ipc_sender
