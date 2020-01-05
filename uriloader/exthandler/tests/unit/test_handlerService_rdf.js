@@ -5,44 +5,10 @@
 
 
 
-XPCOMUtils.defineLazyServiceGetter(this, "gHandlerService",
-                                   "@mozilla.org/uriloader/handler-service;1",
-                                   "nsIHandlerService");
-
-
-
-
-
-let unloadHandlerStore = Task.async(function* () {
-  
-  
-  
-  gHandlerService;
-
-  let promise = TestUtils.topicObserved("handlersvc-rdf-replace-complete");
-  Services.obs.notifyObservers(null, "handlersvc-rdf-replace");
-  yield promise;
-});
-
-
-
-
-let deleteHandlerStore = Task.async(function* () {
-  yield unloadHandlerStore();
-
-  yield OS.File.remove(rdfFile.path, { ignoreAbsent: true });
-});
-
-
-
-
-let copyTestDataToHandlerStore = Task.async(function* () {
-  yield unloadHandlerStore();
-
-  let fileName = AppConstants.platform == "android" ? "mimeTypes-android.rdf"
-                                                    : "mimeTypes.rdf";
-  yield OS.File.copy(do_get_file(fileName).path, rdfFile.path);
-});
+let gHandlerService = gHandlerServiceRDF;
+let unloadHandlerStore = unloadHandlerStoreRDF;
+let deleteHandlerStore = deleteHandlerStoreRDF;
+let copyTestDataToHandlerStore = copyTestDataToHandlerStoreRDF;
 
 var scriptFile = do_get_file("common_test_handlerService.js");
 Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);

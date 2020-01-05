@@ -17,6 +17,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
 XPCOMUtils.defineLazyServiceGetter(this, "gExternalProtocolService",
                                    "@mozilla.org/uriloader/external-protocol-service;1",
                                    "nsIExternalProtocolService");
+XPCOMUtils.defineLazyServiceGetter(this, "gHandlerServiceRDF",
+                                   "@mozilla.org/uriloader/handler-service-rdf;1",
+                                   "nsIHandlerService");
 XPCOMUtils.defineLazyServiceGetter(this, "gMIMEService",
                                    "@mozilla.org/mime;1",
                                    "nsIMIMEService");
@@ -43,7 +46,11 @@ HandlerService.prototype = {
         dataPostProcessor: this._dataPostProcessor.bind(this),
       });
       this.__store.ensureDataReady();
-      this._updateDB();
+
+      
+      
+      let alreadyInjected = this._migrateFromRDFIfNeeded();
+      this._injectDefaultProtocolHandlersIfNeeded(alreadyInjected);
     }
     return this.__store;
   },
@@ -56,7 +63,65 @@ HandlerService.prototype = {
     };
   },
 
-  _updateDB() {
+  
+
+
+  _migrateFromRDFIfNeeded() {
+    try {
+      if (Services.prefs.getBoolPref("gecko.handlerService.migrated")) {
+        return false;
+      }
+    } catch (ex) {
+      
+    }
+
+    try {
+      
+      
+      let rdfFile = FileUtils.getFile("ProfD", ["mimeTypes.rdf"]);
+      if (rdfFile.exists()) {
+        this._migrateFromRDF();
+        return true;
+      }
+    } catch (ex) {
+      Cu.reportError(ex);
+    } finally {
+      
+      Services.prefs.setBoolPref("gecko.handlerService.migrated", true);
+    }
+
+    return false;
+  },
+
+  _migrateFromRDF() {
+    
+    
+    
+    
+    
+    
+    let handlerInfoEnumerator = gHandlerServiceRDF.enumerate();
+    while (handlerInfoEnumerator.hasMoreElements()) {
+      let handlerInfo = handlerInfoEnumerator.getNext()
+                                             .QueryInterface(Ci.nsIHandlerInfo);
+      try {
+        
+        
+        
+        gHandlerServiceRDF.fillHandlerInfo(handlerInfo, "");
+        this.store(handlerInfo);
+      } catch (ex) {
+        Cu.reportError(ex);
+      }
+    }
+  },
+
+  
+
+
+
+
+  _injectDefaultProtocolHandlersIfNeeded(alreadyInjected) {
     try {
       let locale = Services.locale.getAppLocaleAsLangTag();
       let prefsDefaultHandlersVersion = Number(Services.prefs.getComplexValue(
@@ -66,7 +131,9 @@ HandlerService.prototype = {
       let defaultHandlersVersion =
           this._store.data.defaultHandlersVersion[locale] || 0;
       if (defaultHandlersVersion < prefsDefaultHandlersVersion) {
-        this._injectNewDefaults();
+        if (!alreadyInjected) {
+          this._injectDefaultProtocolHandlers();
+        }
         this._store.data.defaultHandlersVersion[locale] =
           prefsDefaultHandlersVersion;
       }
@@ -75,7 +142,7 @@ HandlerService.prototype = {
     }
   },
 
-  _injectNewDefaults() {
+  _injectDefaultProtocolHandlers() {
     let schemesPrefBranch = Services.prefs.getBranch("gecko.handlerService.schemes.");
     let schemePrefList = schemesPrefBranch.getChildList("");
 
