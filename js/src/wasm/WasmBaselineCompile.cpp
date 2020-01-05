@@ -2479,8 +2479,12 @@ class BaseCompiler
         masm.freeStack(stackSpace + adjustment);
 
         if (call.reloadMachineStateAfter) {
+            
+            
+#ifndef JS_CODEGEN_X86
             loadFromFramePtr(WasmTlsReg, frameOffsetFromSlot(tlsSlot_, MIRType::Pointer));
             masm.loadWasmPinnedRegsFromTls();
+#endif
         }
     }
 
