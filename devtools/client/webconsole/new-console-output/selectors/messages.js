@@ -99,6 +99,9 @@ function search(messages, text = "") {
 }
 
 function isTextInFrame(text, frame) {
+  if (!frame) {
+    return false;
+  }
   
   return Object.keys(frame)
     .map(key => frame[key])
