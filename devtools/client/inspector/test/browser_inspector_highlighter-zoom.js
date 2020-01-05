@@ -40,7 +40,7 @@ add_task(function* () {
 
     info("Check that the highlighter root wrapper node was scaled down");
 
-    let style = yield getRootNodeStyle(testActor);
+    let style = yield getElementsNodeStyle(testActor);
     let { width, height } = yield testActor.getWindowDimensions();
     is(style, expectedStyle(width, height, level),
       "The style attribute of the root element is correct");
@@ -60,8 +60,8 @@ function* hoverContainer(container, inspector) {
   yield onHighlight;
 }
 
-function* getRootNodeStyle(testActor) {
+function* getElementsNodeStyle(testActor) {
   let value = yield testActor.getHighlighterNodeAttribute(
-    "box-model-root", "style");
+    "box-model-elements", "style");
   return value;
 }
