@@ -28,7 +28,6 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/gfx/2D.h"          
-#include "mozilla/gfx/GPUChild.h"       
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"          
 #include "VRManager.h"                  
@@ -239,11 +238,6 @@ CompositorBridgeParent::Setup()
 
   MOZ_ASSERT(!sCompositorMap);
   sCompositorMap = new CompositorMap;
-
-  gfxPrefs::SetWebRenderProfilerEnabledChangeCallback(
-    [](const GfxPrefValue& aValue) -> void {
-      CompositorBridgeParent::SetWebRenderProfilerEnabled(aValue.get_bool());
-  });
 }
 
 void
@@ -252,7 +246,6 @@ CompositorBridgeParent::Shutdown()
   MOZ_ASSERT(sCompositorMap);
   MOZ_ASSERT(sCompositorMap->empty());
   sCompositorMap = nullptr;
-  gfxPrefs::SetWebRenderProfilerEnabledChangeCallback(nullptr);
 }
 
 void
@@ -1586,18 +1579,6 @@ CompositorBridgeParent::DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aA
   }
   parent->Release(); 
   return true;
-}
-
-void
-CompositorBridgeParent::SetWebRenderProfilerEnabled(bool aEnabled)
-{
-  MonitorAutoLock lock(*sIndirectLayerTreesLock);
-  for (auto it = sIndirectLayerTrees.begin(); it != sIndirectLayerTrees.end(); it++) {
-    LayerTreeState* state = &it->second;
-    if (state->mWRBridge) {
-      state->mWRBridge->SetWebRenderProfilerEnabled(aEnabled);
-    }
-  }
 }
 
 void
