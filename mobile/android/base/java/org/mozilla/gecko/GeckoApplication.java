@@ -166,6 +166,8 @@ public class GeckoApplication extends Application
         DownloadsIntegration.init();
         HomePanelsManager.getInstance().init(context);
 
+        GlobalPageMetadata.getInstance().init();
+
         
         
         GeckoAppShell.setNotificationListener(new NotificationClient(context));
