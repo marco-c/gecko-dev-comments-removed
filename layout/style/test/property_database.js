@@ -3959,8 +3959,13 @@ var gCSSProperties = {
     domProp: "width",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    
-    prerequisites: { "display": "block" },
+    prerequisites: {
+      
+      "display": "block",
+      
+      
+      "margin-left": "5px",
+    },
     initial_values: [ " auto" ],
     
     other_values: [ "15px", "3em", "15%",
@@ -5106,7 +5111,12 @@ var gCSSProperties = {
     get_computed: logical_axis_prop_get_computed,
     
     initial_values: [ "auto" ],
-    prerequisites: { "display": "block" },
+    prerequisites: {
+      "display": "block",
+      
+      
+      "margin-left": "5px",
+    },
     other_values: [ "15px", "3em", "15%",
       
       
