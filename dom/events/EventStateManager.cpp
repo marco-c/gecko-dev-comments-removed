@@ -2948,7 +2948,14 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       }
 
       nsCOMPtr<nsIContent> activeContent;
-      if (nsEventStatus_eConsumeNoDefault != *aStatus) {
+      
+      
+      
+      
+      
+      
+      if (nsEventStatus_eConsumeNoDefault != *aStatus &&
+          !aEvent->DefaultPrevented()) {
         nsCOMPtr<nsIContent> newFocus;      
         bool suppressBlur = false;
         if (mCurrentTarget) {
