@@ -581,10 +581,6 @@ class ScriptSource
         hasIntroductionOffset_ = true;
     }
 
-    uint32_t parameterListEnd() const {
-        return parameterListEnd_;
-    }
-
     
     bool hasEncoder() const { return bool(xdrEncoder_); }
 
@@ -886,8 +882,18 @@ class JSScript : public js::gc::TenuredCell
     uint32_t        bodyScopeIndex_; 
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     uint32_t        sourceStart_;
     uint32_t        sourceEnd_;
+    uint32_t        preludeStart_;
 
 #ifdef MOZ_VTUNE
     
@@ -1057,7 +1063,7 @@ class JSScript : public js::gc::TenuredCell
     
   protected:
 #if JS_BITS_PER_WORD == 32
-    
+    uint32_t padding;
 #endif
 
     
@@ -1068,7 +1074,7 @@ class JSScript : public js::gc::TenuredCell
     static JSScript* Create(JSContext* cx,
                             const JS::ReadOnlyCompileOptions& options,
                             js::HandleObject sourceObject, uint32_t sourceStart,
-                            uint32_t sourceEnd);
+                            uint32_t sourceEnd, uint32_t preludeStart);
 
     void initCompartment(JSContext* cx);
 
@@ -1217,6 +1223,10 @@ class JSScript : public js::gc::TenuredCell
 
     uint32_t sourceEnd() const {
         return sourceEnd_;
+    }
+
+    size_t preludeStart() const {
+        return preludeStart_;
     }
 
     bool noScriptRval() const {
@@ -1552,6 +1562,7 @@ class JSScript : public js::gc::TenuredCell
     bool mayReadFrameArgsDirectly();
 
     static JSFlatString* sourceData(JSContext* cx, JS::HandleScript script);
+    static JSFlatString* sourceDataWithPrelude(JSContext* cx, JS::HandleScript script);
 
     static bool loadSource(JSContext* cx, js::ScriptSource* ss, bool* worked);
 
@@ -1635,15 +1646,6 @@ class JSScript : public js::gc::TenuredCell
                 return &scope->as<js::VarScope>();
         }
         MOZ_CRASH("Function extra body var scope not found");
-    }
-
-    bool needsBodyEnvironment() const {
-        for (uint32_t i = 0; i < scopes()->length; i++) {
-            js::Scope* scope = getScope(i);
-            if (ScopeKindIsInBody(scope->kind()) && scope->hasEnvironment())
-                return true;
-        }
-        return false;
     }
 
     inline js::LexicalScope* maybeNamedLambdaScope() const;
@@ -1989,7 +1991,7 @@ class LazyScript : public gc::TenuredCell
     
   protected:
 #if JS_BITS_PER_WORD == 32
-    uint32_t padding;
+    
 #endif
 
   private:
@@ -2034,20 +2036,25 @@ class LazyScript : public gc::TenuredCell
     };
 
     
+    
     uint32_t begin_;
     uint32_t end_;
+    uint32_t preludeStart_;
+    
+    
     uint32_t lineno_;
     uint32_t column_;
 
     LazyScript(JSFunction* fun, void* table, uint64_t packedFields,
-               uint32_t begin, uint32_t end, uint32_t lineno, uint32_t column);
+               uint32_t begin, uint32_t end, uint32_t preludeStart,
+               uint32_t lineno, uint32_t column);
 
     
     
     
     static LazyScript* CreateRaw(JSContext* cx, HandleFunction fun,
                                  uint64_t packedData, uint32_t begin, uint32_t end,
-                                 uint32_t lineno, uint32_t column);
+                                 uint32_t preludeStart, uint32_t lineno, uint32_t column);
 
   public:
     static const uint32_t NumClosedOverBindingsLimit = 1 << NumClosedOverBindingsBits;
@@ -2059,7 +2066,7 @@ class LazyScript : public gc::TenuredCell
                               const frontend::AtomVector& closedOverBindings,
                               Handle<GCVector<JSFunction*, 8>> innerFunctions,
                               JSVersion version, uint32_t begin, uint32_t end,
-                              uint32_t lineno, uint32_t column);
+                              uint32_t preludeStart, uint32_t lineno, uint32_t column);
 
     
     
@@ -2074,7 +2081,7 @@ class LazyScript : public gc::TenuredCell
                               HandleScript script, HandleScope enclosingScope,
                               HandleScriptSource sourceObject,
                               uint64_t packedData, uint32_t begin, uint32_t end,
-                              uint32_t lineno, uint32_t column);
+                              uint32_t preludeStart, uint32_t lineno, uint32_t column);
 
     void initRuntimeFields(uint64_t packedFields);
 
@@ -2255,6 +2262,9 @@ class LazyScript : public gc::TenuredCell
     uint32_t end() const {
         return end_;
     }
+    uint32_t preludeStart() const {
+        return preludeStart_;
+    }
     uint32_t lineno() const {
         return lineno_;
     }
@@ -2281,7 +2291,8 @@ class LazyScript : public gc::TenuredCell
 };
 
 
-JS_STATIC_ASSERT(sizeof(LazyScript) % js::gc::CellSize == 0);
+static_assert(sizeof(LazyScript) % js::gc::CellSize == 0,
+              "Size of LazyScript must be an integral multiple of js::gc::CellSize");
 
 struct ScriptAndCounts
 {

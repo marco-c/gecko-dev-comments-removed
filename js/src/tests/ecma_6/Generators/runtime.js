@@ -109,7 +109,7 @@ function TestGeneratorFunction() {
     
     
     assertEq(GeneratorFunction('yield 10').toString(),
-             "function* anonymous() {\nyield 10\n}");
+             "function* anonymous(\n) {\nyield 10\n}");
 }
 TestGeneratorFunction();
 

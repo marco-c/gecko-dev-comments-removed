@@ -114,6 +114,8 @@ IsIdentifier(JSLinearString* str);
 
 
 bool
+IsIdentifier(const char* chars, size_t length);
+bool
 IsIdentifier(const char16_t* chars, size_t length);
 
 

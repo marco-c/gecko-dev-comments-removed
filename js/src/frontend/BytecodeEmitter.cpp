@@ -305,6 +305,17 @@ class TryFinallyControl : public BytecodeEmitter::NestableControl
     }
 };
 
+static bool
+ScopeKindIsInBody(ScopeKind kind)
+{
+    return kind == ScopeKind::Lexical ||
+           kind == ScopeKind::SimpleCatch ||
+           kind == ScopeKind::Catch ||
+           kind == ScopeKind::With ||
+           kind == ScopeKind::FunctionBodyVar ||
+           kind == ScopeKind::ParameterExpressionVar;
+}
+
 static inline void
 MarkAllBindingsClosedOver(LexicalScope::Data& data)
 {
@@ -7827,7 +7838,8 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
 
             Rooted<JSObject*> sourceObject(cx, script->sourceObject());
             Rooted<JSScript*> script(cx, JSScript::Create(cx, options, sourceObject,
-                                                          funbox->bufStart, funbox->bufEnd));
+                                                          funbox->bufStart, funbox->bufEnd,
+                                                          funbox->preludeStart));
             if (!script)
                 return false;
 
