@@ -19,8 +19,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "LoginManagerParent",
 
 
 var LoginManagerContextMenu = {
-  dateAndTimeFormatter: new Intl.DateTimeFormat(undefined,
-                        { day: "numeric", month: "short", year: "numeric" }),
   
 
 
@@ -35,7 +33,6 @@ var LoginManagerContextMenu = {
 
 
   addLoginsToMenu(inputElement, browser, documentURI) {
-
     let foundLogins = this._findLogins(documentURI);
 
     if (!foundLogins.length) {
@@ -191,4 +188,12 @@ var LoginManagerContextMenu = {
 XPCOMUtils.defineLazyGetter(LoginManagerContextMenu, "_stringBundle", function() {
   return Services.strings.
          createBundle("chrome://passwordmgr/locale/passwordmgr.properties");
+});
+
+XPCOMUtils.defineLazyGetter(LoginManagerContextMenu, "dateAndTimeFormatter", function() {
+  return new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 });
