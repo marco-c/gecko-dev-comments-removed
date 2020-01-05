@@ -92,7 +92,8 @@ const char * const js::CodeName[] = {
 
 
 
-#define COUNTS_LEN 16
+static bool
+DecompileArgumentFromStack(JSContext* cx, int formalIndex, char** res);
 
 size_t
 js::GetVariableBytecodeLength(jsbytecode* pc)
@@ -1258,6 +1259,24 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc)
         return write(loadAtom(pc));
       case JSOP_GETARG: {
         unsigned slot = GET_ARGNO(pc);
+
+        
+        
+        
+        if (script->selfHosted()) {
+            char* result;
+            if (!DecompileArgumentFromStack(cx, slot, &result))
+                return false;
+
+            
+            
+            if (result) {
+		bool ok = write(result);
+                js_free(result);
+		return ok;
+            }
+        }
+
         JSAtom* atom = getArg(slot);
         if (!atom)
             return false;
@@ -1602,8 +1621,13 @@ DecompileArgumentFromStack(JSContext* cx, int formalIndex, char** res)
 
 
     ++frameIter;
-    if (frameIter.done() || !frameIter.hasScript() || frameIter.compartment() != cx->compartment())
+    if (frameIter.done() ||
+        !frameIter.hasScript() ||
+        frameIter.script()->selfHosted() ||
+        frameIter.compartment() != cx->compartment())
+    {
         return true;
+    }
 
     RootedScript script(cx, frameIter.script());
     jsbytecode* current = frameIter.pc();
