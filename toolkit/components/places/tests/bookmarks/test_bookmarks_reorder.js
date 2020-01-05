@@ -83,19 +83,34 @@ add_task(function* reorder() {
     }
   }
 
+
   do_print("Test partial sorting");
-  
-  
-  sorted = [ sorted[1], sorted[0] ].concat(sorted.slice(2));
-  let sortedGuids = [ sorted[0].guid, sorted[1].guid ];
-  dump("Expected order: " + sorted.map(b => b.guid).join() + "\n");
-  yield PlacesUtils.bookmarks.reorder(PlacesUtils.bookmarks.unfiledGuid,
-                                      sortedGuids);
-  for (let i = 0; i < sorted.length; ++i) {
-    let item = yield PlacesUtils.bookmarks.fetch(sorted[i].guid);
-    Assert.equal(item.index, i);
+  {
+    
+    
+    let sortedGuids = [ sorted[0].guid, sorted[3].guid ];
+    dump("Expected order: " + sorted.map(b => b.guid).join() + "\n");
+    yield PlacesUtils.bookmarks.reorder(PlacesUtils.bookmarks.unfiledGuid,
+                                        sortedGuids);
+    for (let i = 0; i < sorted.length; ++i) {
+      let item = yield PlacesUtils.bookmarks.fetch(sorted[i].guid);
+      Assert.equal(item.index, i);
+    }
   }
 
+  {
+    
+    
+    sorted = [ sorted[1], sorted[0] ].concat(sorted.slice(2));
+    let sortedGuids = [ sorted[0].guid, sorted[1].guid ];
+    dump("Expected order: " + sorted.map(b => b.guid).join() + "\n");
+    yield PlacesUtils.bookmarks.reorder(PlacesUtils.bookmarks.unfiledGuid,
+                                        sortedGuids);
+    for (let i = 0; i < sorted.length; ++i) {
+      let item = yield PlacesUtils.bookmarks.fetch(sorted[i].guid);
+      Assert.equal(item.index, i);
+    }
+  }
   
   let db = yield PlacesUtils.promiseDBConnection();
   let rows = yield db.execute(

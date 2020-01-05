@@ -704,6 +704,9 @@ var Bookmarks = Object.freeze({
 
 
 
+
+
+
   reorder(parentGuid, orderedChildrenGuids, options = {}) {
     let info = { guid: parentGuid };
     info = validateBookmarkObject(info, { guid: { required: true } });
@@ -1299,8 +1302,8 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
       }
 
       
-      
       let guidIndices = new Map();
+      let currentIndices = new Map();
       for (let i = 0; i < orderedChildrenGuids.length; ++i) {
         let guid = orderedChildrenGuids[i];
         guidIndices.set(guid, i);
@@ -1308,76 +1311,105 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
 
       
       
-      children.sort((a, b) => {
+      let needReorder = true;
+      let requestedChildIndices = [];
+      for (let i = 0; i < children.length; ++i) {
         
-        if (!guidIndices.has(a.guid) && !guidIndices.has(b.guid)) {
-          return 0;
-        }
-        if (!guidIndices.has(a.guid)) {
-          return 1;
-        }
-        if (!guidIndices.has(b.guid)) {
-          return -1;
-        }
-        return guidIndices.get(a.guid) < guidIndices.get(b.guid) ? -1 : 1;
-       });
-
-      
-      
-      
-      
-      
-      
-      let valuesTable = children.map((child, i) => `("${child.guid}", ${i})`)
-                                .join();
-      yield db.execute(
-        `WITH sorting(g, p) AS (
-           VALUES ${valuesTable}
-         )
-         UPDATE moz_bookmarks SET position = (
-           SELECT CASE count(*) WHEN 0 THEN -position
-                                       ELSE count(*) - 1
-                  END
-           FROM sorting a
-           JOIN sorting b ON b.p <= a.p
-           WHERE a.g = guid
-         )
-         WHERE parent = :parentId
-        `, { parentId: parent._id});
-
-      let syncChangeDelta =
-        PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
-      if (syncChangeDelta) {
         
-        yield db.executeCached(`
-          UPDATE moz_bookmarks SET
-            syncChangeCounter = syncChangeCounter + :syncChangeDelta
-          WHERE id = :parentId`,
-          { parentId: parent._id, syncChangeDelta });
+        currentIndices.set(children[i].guid, i);
+
+        if (guidIndices.has(children[i].guid)) {
+          let index = guidIndices.get(children[i].guid);
+          requestedChildIndices.push(index);
+        }
       }
 
-      
-      
-      
-      yield db.executeCached(
-        `CREATE TEMP TRIGGER moz_bookmarks_reorder_trigger
-           AFTER UPDATE OF position ON moz_bookmarks
-           WHEN NEW.position = -1
-         BEGIN
-           UPDATE moz_bookmarks
-           SET position = (SELECT MAX(position) FROM moz_bookmarks
-                           WHERE parent = NEW.parent) +
-                          (SELECT count(*) FROM moz_bookmarks
-                           WHERE parent = NEW.parent
-                             AND position BETWEEN OLD.position AND -1)
-           WHERE guid = NEW.guid;
-         END
-        `);
+      if (requestedChildIndices.length) {
+        needReorder = false;
+        for (let i = 1; i < requestedChildIndices.length; ++i) {
+          if (requestedChildIndices[i - 1] > requestedChildIndices[i]) {
+            needReorder = true;
+            break;
+          }
+        }
+      }
 
-      yield db.executeCached(
-        `UPDATE moz_bookmarks SET position = -1 WHERE position < 0`);
+      if (needReorder) {
 
-      yield db.executeCached(`DROP TRIGGER moz_bookmarks_reorder_trigger`);
+
+        
+        
+        children.sort((a, b) => {
+          
+          if (!guidIndices.has(a.guid) && !guidIndices.has(b.guid)) {
+            return currentIndices.get(a.guid) < currentIndices.get(b.guid) ? -1 : 1;
+          }
+          if (!guidIndices.has(a.guid)) {
+            return 1;
+          }
+          if (!guidIndices.has(b.guid)) {
+            return -1;
+          }
+          return guidIndices.get(a.guid) < guidIndices.get(b.guid) ? -1 : 1;
+        });
+
+        
+        
+        
+        
+        
+        
+        let valuesTable = children.map((child, i) => `("${child.guid}", ${i})`)
+                                  .join();
+        yield db.execute(
+          `WITH sorting(g, p) AS (
+             VALUES ${valuesTable}
+           )
+           UPDATE moz_bookmarks SET position = (
+             SELECT CASE count(*) WHEN 0 THEN -position
+                                         ELSE count(*) - 1
+                    END
+             FROM sorting a
+             JOIN sorting b ON b.p <= a.p
+             WHERE a.g = guid
+           )
+           WHERE parent = :parentId
+          `, { parentId: parent._id});
+
+        let syncChangeDelta =
+          PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
+        if (syncChangeDelta) {
+          
+          yield db.executeCached(`
+            UPDATE moz_bookmarks SET
+              syncChangeCounter = syncChangeCounter + :syncChangeDelta
+            WHERE id = :parentId`,
+            { parentId: parent._id, syncChangeDelta });
+        }
+
+        
+        
+        
+        yield db.executeCached(
+          `CREATE TEMP TRIGGER moz_bookmarks_reorder_trigger
+             AFTER UPDATE OF position ON moz_bookmarks
+             WHEN NEW.position = -1
+           BEGIN
+             UPDATE moz_bookmarks
+             SET position = (SELECT MAX(position) FROM moz_bookmarks
+                             WHERE parent = NEW.parent) +
+                            (SELECT count(*) FROM moz_bookmarks
+                             WHERE parent = NEW.parent
+                               AND position BETWEEN OLD.position AND -1)
+             WHERE guid = NEW.guid;
+           END
+          `);
+
+        yield db.executeCached(
+          `UPDATE moz_bookmarks SET position = -1 WHERE position < 0`);
+
+        yield db.executeCached(`DROP TRIGGER moz_bookmarks_reorder_trigger`);
+      }
 
       
       
