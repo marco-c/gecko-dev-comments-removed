@@ -297,6 +297,12 @@ SERVO_BINDING_FUNC(Servo_Element_GetSnapshot, ServoElementSnapshot*,
                    RawGeckoElementBorrowed element)
 
 
+
+SERVO_BINDING_FUNC(Servo_Element_GetStyleRuleList, void,
+                   RawGeckoElementBorrowed element,
+                   RawGeckoServoStyleRuleListBorrowedMut rules)
+
+
 SERVO_BINDING_FUNC(Servo_NoteExplicitHints, void, RawGeckoElementBorrowed element,
                    nsRestyleHint restyle_hint, nsChangeHint change_hint)
 SERVO_BINDING_FUNC(Servo_TakeChangeHint, nsChangeHint, RawGeckoElementBorrowed element)
