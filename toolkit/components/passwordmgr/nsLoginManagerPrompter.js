@@ -803,7 +803,7 @@ LoginManagerPrompter.prototype = {
     let currentNotification;
 
     let updateButtonStatus = (element) => {
-      let mainActionButton = chromeDoc.getAnonymousElementByAttribute(element.button, "anonid", "button");
+      let mainActionButton = element.button;
       
       if (login.password.length == 0) {
         mainActionButton.setAttribute("disabled", true);

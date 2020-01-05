@@ -47,8 +47,7 @@ function triggerMainCommand(popup)
   let notification = notifications[0];
   info("triggering command: " + notification.getAttribute("buttonlabel"));
 
-  
-  EventUtils.synthesizeMouse(notification.button, 20, 10, {});
+  EventUtils.synthesizeMouseAtCenter(notification.button, {});
 }
 
 function triggerSecondaryCommand(popup, index)
@@ -58,11 +57,7 @@ function triggerSecondaryCommand(popup, index)
   ok(notifications.length > 0, "at least one notification displayed");
   let notification = notifications[0];
 
-  
-  
-  SpecialPowers.wrap(document).getAnonymousNodes(popup)[0].style.transition = "none";
-
-  notification.button.focus();
+  notification.button.nextSibling.nextSibling.focus();
 
   popup.addEventListener("popupshown", function () {
     popup.removeEventListener("popupshown", arguments.callee, false);
