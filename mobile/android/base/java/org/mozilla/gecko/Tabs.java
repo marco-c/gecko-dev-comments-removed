@@ -81,6 +81,8 @@ public class Tabs implements BundleEventListener {
     private static final long PERSIST_TABS_AFTER_MILLISECONDS = 1000 * 2;
 
     public static final int INVALID_TAB_ID = -1;
+    
+    public static final int NEW_LAST_INDEX = -1;
 
     private static final AtomicInteger sTabId = new AtomicInteger(0);
     private volatile boolean mInitialTabsAdded;
@@ -261,9 +263,16 @@ public class Tabs implements BundleEventListener {
     }
 
     
-    
-    
+
+
+
+
+
     private int getPrivacySpecificTabIndex(int index, boolean isPrivate, TabType type) {
+        if (index == NEW_LAST_INDEX) {
+            return NEW_LAST_INDEX;
+        }
+
         int privacySpecificIndex = -1;
         for (int i = 0; i <= index; i++) {
             final Tab tab = mOrder.get(i);
@@ -271,7 +280,7 @@ public class Tabs implements BundleEventListener {
                 privacySpecificIndex++;
             }
         }
-        return privacySpecificIndex;
+        return privacySpecificIndex > -1 ? privacySpecificIndex : NEW_LAST_INDEX;
     }
 
     public synchronized void removeTab(int id) {
@@ -1022,7 +1031,7 @@ public class Tabs implements BundleEventListener {
             String tabUrl = (url != null && Uri.parse(url).getScheme() != null) ? url : null;
 
             
-            final int tabIndex = -1;
+            final int tabIndex = NEW_LAST_INDEX;
 
             tabToSelect = addTab(tabId, tabUrl, external, parentId, url, isPrivate, tabIndex, type);
             tabToSelect.setDesktopMode(desktopMode);

@@ -106,8 +106,7 @@ public abstract class TabsLayout extends RecyclerView
         switch (msg) {
             case ADDED:
                 int tabIndex = Integer.parseInt(data);
-                
-                tabIndex = tabIndex == -1 ? tabsAdapter.getItemCount() : tabIndex;
+                tabIndex = tabIndex == Tabs.NEW_LAST_INDEX ? tabsAdapter.getItemCount() : tabIndex;
                 tabsAdapter.notifyTabInserted(tab, tabIndex);
                 if (addAtIndexRequiresScroll(tabIndex)) {
                     
