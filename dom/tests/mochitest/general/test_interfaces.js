@@ -188,7 +188,7 @@ var interfaceNamesInGlobalScope =
 
     "CloseEvent",
 
-    "CommandEvent",
+    {name: "CommandEvent", xbl: true},
 
     "Comment",
 
@@ -849,7 +849,7 @@ var interfaceNamesInGlobalScope =
 
     "SharedWorker",
 
-    "SimpleGestureEvent",
+    {name: "SimpleGestureEvent", xbl: true},
 
     {name: "SimpleTest", xbl: false},
 
