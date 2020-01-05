@@ -152,8 +152,6 @@ public:
   
   nsresult ReadCacheFile(int64_t aOffset, void* aData, int32_t aLength,
                          int32_t* aBytes);
-  
-  nsresult ReadCacheFileAllBytes(int64_t aOffset, void* aData, int32_t aLength);
 
   int64_t AllocateResourceID()
   {
@@ -687,29 +685,6 @@ MediaCache::ReadCacheFile(
     return fileCache->Read(aOffset,
       reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
   }
-}
-
-nsresult
-MediaCache::ReadCacheFileAllBytes(int64_t aOffset, void* aData, int32_t aLength)
-{
-  mReentrantMonitor.AssertCurrentThreadIn();
-
-  int64_t offset = aOffset;
-  int32_t count = aLength;
-  
-  char* data = static_cast<char*>(aData);
-  while (count > 0) {
-    int32_t bytes;
-    nsresult rv = ReadCacheFile(offset, data, count, &bytes);
-    if (NS_FAILED(rv))
-      return rv;
-    if (bytes == 0)
-      return NS_ERROR_FAILURE;
-    count -= bytes;
-    data += bytes;
-    offset += bytes;
-  }
-  return NS_OK;
 }
 
 static int32_t GetMaxBlocks()
