@@ -299,9 +299,12 @@ GMPChild::RecvPreloadLibs(const nsCString& aLibs)
   
   
   static const char *const whitelist[] = {
+    "d3d9.dll", 
     "dxva2.dll", 
     "evr.dll", 
     "mfplat.dll", 
+    "msauddecmft.dll", 
+    "msmpeg2adec.dll", 
     "msmpeg2vdec.dll", 
   };
 
