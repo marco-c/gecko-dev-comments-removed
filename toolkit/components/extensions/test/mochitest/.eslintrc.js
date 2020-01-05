@@ -19,6 +19,14 @@ module.exports = {
     "NetUtil": true,
     "webrequest_test": false,
     "XPCOMUtils": true,
+
+    
+    "addStylesheet": true,
+    "addLink": true,
+    "addImage": true,
+    "addScript": true,
+    "addFrame": true,
+    "makeExtension": false,
   },
 
   "rules": {
