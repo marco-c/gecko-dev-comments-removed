@@ -143,8 +143,7 @@ GetISizeInfo(nsRenderingContext *aRenderingContext,
         
         
         
-        nscoord c = nsLayoutUtils::ComputeISizeValue(aRenderingContext,
-                                                     aFrame, 0, 0, 0, iSize);
+        nscoord c = aFrame->ComputeISizeValue(aRenderingContext, 0, 0, 0, iSize);
         
         
         
@@ -191,9 +190,8 @@ GetISizeInfo(nsRenderingContext *aRenderingContext,
     
     
     if (maxISize.ConvertsToLength() || unit == eStyleUnit_Enumerated) {
-        nscoord c =
-            nsLayoutUtils::ComputeISizeValue(aRenderingContext, aFrame,
-                                             0, 0, 0, maxISize);
+        nscoord c = aFrame->ComputeISizeValue(aRenderingContext,
+                                              0, 0, 0, maxISize);
         minCoord = std::min(c, minCoord);
         prefCoord = std::min(c, prefCoord);
     } else if (unit == eStyleUnit_Percent) {
@@ -217,9 +215,8 @@ GetISizeInfo(nsRenderingContext *aRenderingContext,
     }
     unit = minISize.GetUnit();
     if (minISize.ConvertsToLength() || unit == eStyleUnit_Enumerated) {
-        nscoord c =
-            nsLayoutUtils::ComputeISizeValue(aRenderingContext, aFrame,
-                                             0, 0, 0, minISize);
+        nscoord c = aFrame->ComputeISizeValue(aRenderingContext,
+                                              0, 0, 0, minISize);
         minCoord = std::max(c, minCoord);
         prefCoord = std::max(c, prefCoord);
     } else if (unit == eStyleUnit_Percent) {
