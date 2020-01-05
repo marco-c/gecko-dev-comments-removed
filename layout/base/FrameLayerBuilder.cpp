@@ -1258,7 +1258,9 @@ protected:
 
 
   struct MaskLayerKey;
-  already_AddRefed<ImageLayer> CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey);
+  already_AddRefed<ImageLayer>
+  CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey,
+                                   mozilla::function<void(Layer* aLayer)> aSetUserData);
   
 
 
@@ -1350,6 +1352,12 @@ protected:
 
   Maybe<size_t> SetupMaskLayerForScrolledClip(Layer* aLayer,
                                               const DisplayItemClip& aClip);
+
+  
+
+
+
+  void SetupMaskLayerForCSSMask(Layer* aLayer, nsDisplayMask* aMaskItem);
 
   already_AddRefed<Layer> CreateMaskLayer(
     Layer *aLayer, const DisplayItemClip& aClip,
@@ -2227,7 +2235,8 @@ ContainerState::CreateOrRecycleImageLayer(PaintedLayer *aPainted)
 }
 
 already_AddRefed<ImageLayer>
-ContainerState::CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey)
+ContainerState::CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey,
+                                                 mozilla::function<void(Layer* aLayer)> aSetUserData)
 {
   RefPtr<ImageLayer> result = mRecycledMaskImageLayers.Get(aKey);
   if (result) {
@@ -2239,7 +2248,7 @@ ContainerState::CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey)
     result = mManager->CreateImageLayer();
     if (!result)
       return nullptr;
-    result->SetUserData(&gMaskLayerUserData, new MaskLayerUserData());
+    aSetUserData(result);
   }
 
   return result.forget();
@@ -3863,6 +3872,63 @@ ContainerState::SetupMaskLayerForScrolledClip(Layer* aLayer,
     
   }
   return Nothing();
+}
+
+void
+ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
+                                         nsDisplayMask* aMaskItem)
+{
+  MOZ_ASSERT(mManager->IsCompositingCheap());
+
+  RefPtr<ImageLayer> maskLayer =
+    CreateOrRecycleMaskImageLayerFor(MaskLayerKey(aLayer, Nothing()),
+      [](Layer* aMaskLayer)
+      {
+        aMaskLayer->SetUserData(&gCSSMaskLayerUserData,
+                                new CSSMaskLayerUserData());
+      }
+    );
+
+  CSSMaskLayerUserData* oldUserData =
+    static_cast<CSSMaskLayerUserData*>(maskLayer->GetUserData(&gCSSMaskLayerUserData));
+
+  bool snap;
+  nsRect bounds = aMaskItem->GetBounds(mBuilder, &snap);
+  CSSMaskLayerUserData newUserData(aMaskItem->Frame(), bounds);
+  if (*oldUserData == newUserData) {
+    aLayer->SetMaskLayer(maskLayer);
+    return;
+  }
+
+  const nsIFrame* frame = aMaskItem->Frame();
+  int32_t A2D = frame->PresContext()->AppUnitsPerDevPixel();
+  Rect devBounds = NSRectToRect(bounds, A2D);
+  uint32_t maxSize = mManager->GetMaxTextureSize();
+  gfx::Size surfaceSize(std::min<gfx::Float>(devBounds.Width(), maxSize),
+                        std::min<gfx::Float>(devBounds.Height(), maxSize));
+  IntSize surfaceSizeInt(NSToIntCeil(surfaceSize.width),
+                         NSToIntCeil(surfaceSize.height));
+
+  if (surfaceSizeInt.IsEmpty()) {
+    return;
+  }
+
+  MaskImageData imageData(surfaceSizeInt, mManager);
+  RefPtr<DrawTarget> dt = imageData.CreateDrawTarget();
+  if (!dt || !dt->IsValid()) {
+    NS_WARNING("Could not create DrawTarget for mask layer.");
+    return;
+  }
+
+  RefPtr<ImageContainer> imgContainer =
+    imageData.CreateImageAndImageContainer();
+  if (!imgContainer) {
+    return;
+  }
+  maskLayer->SetContainer(imgContainer);
+
+  *oldUserData = newUserData;
+  aLayer->SetMaskLayer(maskLayer);
 }
 
 
@@ -6147,8 +6213,22 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
                                uint32_t aRoundedRectClipCount)
 {
   
+  
+  
+  
+  MOZ_ASSERT(!aLayer->GetUserData(&gCSSMaskLayerUserData),
+             "A layer contains round clips should not have css-mask on it.");
+
+  
   MaskLayerKey recycleKey(aLayer, aForAncestorMaskLayer);
-  RefPtr<ImageLayer> maskLayer = CreateOrRecycleMaskImageLayerFor(recycleKey);
+  RefPtr<ImageLayer> maskLayer =
+    CreateOrRecycleMaskImageLayerFor(recycleKey,
+      [](Layer* aMaskLayer)
+      {
+        aMaskLayer->SetUserData(&gMaskLayerUserData,
+                                new MaskLayerUserData());
+      }
+    );
   MaskLayerUserData* userData = GetMaskLayerUserData(maskLayer);
 
   MaskLayerUserData newData;
