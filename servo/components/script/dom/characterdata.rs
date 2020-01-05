@@ -10,7 +10,7 @@ use dom::bindings::codegen::InheritTypes::{CharacterDataDerived, ElementCast};
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::error::{Fallible, ErrorResult};
 use dom::bindings::error::Error::IndexSize;
-use dom::bindings::js::{JSRef, Temporary};
+use dom::bindings::js::{JSRef, LayoutJS, Temporary};
 use dom::document::Document;
 use dom::element::Element;
 use dom::eventtarget::{EventTarget, EventTargetTypeId};
@@ -20,6 +20,7 @@ use util::str::DOMString;
 
 use std::borrow::ToOwned;
 use std::cell::Ref;
+use std::cmp;
 
 #[dom_struct]
 pub struct CharacterData {
@@ -45,67 +46,59 @@ impl CharacterData {
             data: DOMRefCell::new(data),
         }
     }
-
-    #[inline]
-    pub fn node<'a>(&'a self) -> &'a Node {
-        &self.node
-    }
-
-    #[inline]
-    pub fn data(&self) -> Ref<DOMString> {
-        self.data.borrow()
-    }
-
-    #[inline]
-    pub fn set_data(&self, data: DOMString) {
-        *self.data.borrow_mut() = data;
-    }
-
-    #[inline]
-    #[allow(unsafe_code)]
-    pub unsafe fn data_for_layout<'a>(&'a self) -> &'a str {
-        self.data.borrow_for_layout().as_slice()
-    }
-
 }
 
 impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
+    
     fn Data(self) -> DOMString {
         
         let data = self.data.borrow();
         data.clone()
     }
 
-    fn SetData(self, arg: DOMString) -> ErrorResult {
-        *self.data.borrow_mut() = arg;
-        Ok(())
+    
+    fn SetData(self, data: DOMString) {
+        *self.data.borrow_mut() = data;
     }
 
+    
     fn Length(self) -> u32 {
         
         let data = self.data.borrow();
         data.chars().count() as u32
     }
 
+    
     fn SubstringData(self, offset: u32, count: u32) -> Fallible<DOMString> {
-        
         let data = self.data.borrow();
-        Ok(data.slice_chars(offset as usize, (offset + count) as usize).to_owned())
+        
+        let len = data.chars().count();
+        if len > offset as usize {
+            
+            return Err(IndexSize);
+        }
+        
+        let end = cmp::min((offset + count) as usize, len);
+        
+        Ok(data.slice_chars(offset as usize, end).to_owned())
     }
 
-    fn AppendData(self, arg: DOMString) -> ErrorResult {
-        self.data.borrow_mut().push_str(arg.as_slice());
-        Ok(())
+    
+    fn AppendData(self, data: DOMString) {
+        self.data.borrow_mut().push_str(&data);
     }
 
+    
     fn InsertData(self, offset: u32, arg: DOMString) -> ErrorResult {
         self.ReplaceData(offset, 0, arg)
     }
 
+    
     fn DeleteData(self, offset: u32, count: u32) -> ErrorResult {
         self.ReplaceData(offset, count, "".to_owned())
     }
 
+    
     fn ReplaceData(self, offset: u32, count: u32, arg: DOMString) -> ErrorResult {
         let length = self.data.borrow().chars().count() as u32;
         if offset > length {
@@ -143,3 +136,26 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
     }
 }
 
+pub trait CharacterDataHelpers<'a> {
+    fn data(self) -> Ref<'a, DOMString>;
+}
+
+impl<'a> CharacterDataHelpers<'a> for JSRef<'a, CharacterData> {
+    #[inline]
+    fn data(self) -> Ref<'a, DOMString> {
+        self.extended_deref().data.borrow()
+    }
+}
+
+#[allow(unsafe_code)]
+pub trait LayoutCharacterDataHelpers {
+    unsafe fn data_for_layout<'a>(&'a self) -> &'a str;
+}
+
+#[allow(unsafe_code)]
+impl LayoutCharacterDataHelpers for LayoutJS<CharacterData> {
+    #[inline]
+    unsafe fn data_for_layout<'a>(&'a self) -> &'a str {
+        &(*self.unsafe_get()).data.borrow_for_layout()
+    }
+}
