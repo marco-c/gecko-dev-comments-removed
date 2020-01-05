@@ -24,7 +24,7 @@ use mime_guess::guess_mime_type;
 use msg::constellation_msg::ReferrerPolicy;
 use net_traits::FetchTaskTarget;
 use net_traits::request::{CacheMode, CredentialsMode, Destination};
-use net_traits::request::{RedirectMode, Referer, Request, RequestMode, ResponseTainting};
+use net_traits::request::{RedirectMode, Referrer, Request, RequestMode, ResponseTainting};
 use net_traits::request::{Type, Origin, Window};
 use net_traits::response::{HttpsState, TerminationReason};
 use net_traits::response::{Response, ResponseBody, ResponseType};
@@ -165,15 +165,15 @@ fn main_fetch(request: Rc<Request>, cache: &mut CORSCache, cors_flag: bool,
     }
 
     
-    if *request.referer.borrow() != Referer::NoReferer {
+    if *request.referrer.borrow() != Referrer::NoReferrer {
         
         
         request.headers.borrow_mut().remove::<RefererHeader>();
         let referrer_url = determine_request_referrer(&mut *request.headers.borrow_mut(),
                                                       request.referrer_policy.get(),
-                                                      request.referer.borrow_mut().take(),
+                                                      request.referrer.borrow_mut().take(),
                                                       request.current_url().clone());
-        *request.referer.borrow_mut() = Referer::from_url(referrer_url);
+        *request.referrer.borrow_mut() = Referrer::from_url(referrer_url);
     }
 
     
@@ -745,11 +745,11 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     }
 
     
-    match *http_request.referer.borrow() {
-        Referer::NoReferer => (),
-        Referer::RefererUrl(ref http_request_referer) =>
-            http_request.headers.borrow_mut().set(RefererHeader(http_request_referer.to_string())),
-        Referer::Client =>
+    match *http_request.referrer.borrow() {
+        Referrer::NoReferrer => (),
+        Referrer::ReferrerUrl(ref http_request_referrer) =>
+            http_request.headers.borrow_mut().set(RefererHeader(http_request_referrer.to_string())),
+        Referrer::Client =>
             
             
             unreachable!()
@@ -1112,7 +1112,7 @@ fn cors_preflight_fetch(request: Rc<Request>, cache: &mut CORSCache,
     preflight.initiator = request.initiator.clone();
     preflight.type_ = request.type_.clone();
     preflight.destination = request.destination.clone();
-    *preflight.referer.borrow_mut() = request.referer.borrow().clone();
+    *preflight.referrer.borrow_mut() = request.referrer.borrow().clone();
     preflight.referrer_policy.set(request.referrer_policy.get());
 
     // Step 2
