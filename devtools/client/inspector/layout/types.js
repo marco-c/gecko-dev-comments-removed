@@ -36,4 +36,4 @@ exports.highlighterSettings = {
   
   showInfiniteLines: PropTypes.bool,
 
- };
+};
