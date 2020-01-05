@@ -15,7 +15,8 @@
 
 
 use color::Color;
-use render_context::RenderContext;
+use display_list::optimizer::DisplayListOptimizer;
+use render_context::{RenderContext, ToAzureRect};
 use text::glyph::CharIndex;
 use text::TextRun;
 
@@ -23,11 +24,16 @@ use azure::azure::AzFloat;
 use collections::dlist::{mod, DList};
 use geom::{Point2D, Rect, SideOffsets2D, Size2D, Matrix2D};
 use libc::uintptr_t;
+use render_task::RenderLayer;
+use script_traits::UntrustedNodeAddress;
+use servo_msg::compositor_msg::LayerId;
 use servo_net::image::base::Image;
 use servo_util::dlist as servo_dlist;
-use servo_util::geometry::Au;
+use servo_util::geometry::{mod, Au};
 use servo_util::range::Range;
+use servo_util::smallvec::{SmallVec, SmallVec8};
 use std::fmt;
+use std::mem;
 use std::slice::Items;
 use style::computed_values::border_style;
 use sync::Arc;
@@ -56,116 +62,21 @@ impl OpaqueNode {
 }
 
 
-#[deriving(Clone, PartialEq, Show)]
-pub enum StackingLevel {
-    
-    BackgroundAndBordersStackingLevel,
-    
-    BlockBackgroundsAndBordersStackingLevel,
-    
-    FloatStackingLevel,
-    
-    ContentStackingLevel,
-    
-    
-    
-    
-    PositionedDescendantStackingLevel(i32)
-}
-
-impl StackingLevel {
-    #[inline]
-    pub fn from_background_and_border_level(level: BackgroundAndBorderLevel) -> StackingLevel {
-        match level {
-            RootOfStackingContextLevel => BackgroundAndBordersStackingLevel,
-            BlockLevel => BlockBackgroundsAndBordersStackingLevel,
-            ContentLevel => ContentStackingLevel,
-        }
-    }
-}
-
-struct StackingContext {
-    
-    pub background_and_borders: DisplayList,
-    
-    pub block_backgrounds_and_borders: DisplayList,
-    
-    pub floats: DisplayList,
-    
-    pub content: DisplayList,
-    
-    pub positioned_descendants: Vec<(i32, DisplayList)>,
-}
-
-impl StackingContext {
-    
-    #[inline]
-    fn new() -> StackingContext {
-        StackingContext {
-            background_and_borders: DisplayList::new(),
-            block_backgrounds_and_borders: DisplayList::new(),
-            floats: DisplayList::new(),
-            content: DisplayList::new(),
-            positioned_descendants: Vec::new(),
-        }
-    }
-
-    
-    
-    fn init_from_list(&mut self, list: &mut DisplayList) {
-        while !list.list.is_empty() {
-            let mut head = DisplayList::from_list(servo_dlist::split(&mut list.list));
-            match head.front().unwrap().base().level {
-                BackgroundAndBordersStackingLevel => {
-                    self.background_and_borders.append_from(&mut head)
-                }
-                BlockBackgroundsAndBordersStackingLevel => {
-                    self.block_backgrounds_and_borders.append_from(&mut head)
-                }
-                FloatStackingLevel => self.floats.append_from(&mut head),
-                ContentStackingLevel => self.content.append_from(&mut head),
-                PositionedDescendantStackingLevel(z_index) => {
-                    match self.positioned_descendants.iter_mut().find(|& &(z, _)| z_index == z) {
-                        Some(&(_, ref mut my_list)) => {
-                            my_list.append_from(&mut head);
-                            continue
-                        }
-                        None => {}
-                    }
-
-                    self.positioned_descendants.push((z_index, head))
-                }
-            }
-        }
-    }
-}
 
 
-pub enum BackgroundAndBorderLevel {
-    RootOfStackingContextLevel,
-    BlockLevel,
-    ContentLevel,
-}
 
 
-#[deriving(Clone, Show)]
 pub struct DisplayList {
-    pub list: DList<DisplayItem>,
-}
-
-pub enum DisplayListIterator<'a> {
-    EmptyDisplayListIterator,
-    ParentDisplayListIterator(Items<'a,DisplayList>),
-}
-
-impl<'a> Iterator<&'a DisplayList> for DisplayListIterator<'a> {
-    #[inline]
-    fn next(&mut self) -> Option<&'a DisplayList> {
-        match *self {
-            EmptyDisplayListIterator => None,
-            ParentDisplayListIterator(ref mut subiterator) => subiterator.next(),
-        }
-    }
+    
+    pub background_and_borders: DList<DisplayItem>,
+    
+    pub block_backgrounds_and_borders: DList<DisplayItem>,
+    
+    pub floats: DList<DisplayItem>,
+    
+    pub content: DList<DisplayItem>,
+    
+    pub children: DList<Arc<StackingContext>>,
 }
 
 impl DisplayList {
@@ -173,122 +84,285 @@ impl DisplayList {
     #[inline]
     pub fn new() -> DisplayList {
         DisplayList {
-            list: DList::new(),
+            background_and_borders: DList::new(),
+            block_backgrounds_and_borders: DList::new(),
+            floats: DList::new(),
+            content: DList::new(),
+            children: DList::new(),
         }
     }
 
     
-    fn from_list(list: DList<DisplayItem>) -> DisplayList {
-        DisplayList {
-            list: list,
-        }
-    }
-
-    
-    #[inline]
-    pub fn push(&mut self, item: DisplayItem) {
-        self.list.push_back(item);
-    }
-
     
     #[inline]
     pub fn append_from(&mut self, other: &mut DisplayList) {
-        servo_dlist::append_from(&mut self.list, &mut other.list)
+        servo_dlist::append_from(&mut self.background_and_borders,
+                                 &mut other.background_and_borders);
+        servo_dlist::append_from(&mut self.block_backgrounds_and_borders,
+                                 &mut other.block_backgrounds_and_borders);
+        servo_dlist::append_from(&mut self.floats, &mut other.floats);
+        servo_dlist::append_from(&mut self.content, &mut other.content);
+        servo_dlist::append_from(&mut self.children, &mut other.children);
     }
 
     
     #[inline]
-    fn front(&self) -> Option<&DisplayItem> {
-        self.list.front()
-    }
-
-    pub fn debug(&self) {
-        for item in self.list.iter() {
-            item.debug_with_level(0);
-        }
+    pub fn form_float_pseudo_stacking_context(&mut self) {
+        servo_dlist::prepend_from(&mut self.floats, &mut self.content);
+        servo_dlist::prepend_from(&mut self.floats, &mut self.block_backgrounds_and_borders);
+        servo_dlist::prepend_from(&mut self.floats, &mut self.background_and_borders);
     }
 
     
     
-    pub fn draw_into_context(&self,
-                             render_context: &mut RenderContext,
-                             current_transform: &Matrix2D<AzFloat>,
-                             current_clip_stack: &mut Vec<Rect<Au>>) {
-        debug!("Beginning display list.");
-        for item in self.list.iter() {
-            item.draw_into_context(render_context, current_transform, current_clip_stack)
+    pub fn all_display_items(&self) -> Vec<DisplayItem> {
+        let mut result = Vec::new();
+        for display_item in self.background_and_borders.iter() {
+            result.push((*display_item).clone())
         }
-        debug!("Ending display list.");
+        for display_item in self.block_backgrounds_and_borders.iter() {
+            result.push((*display_item).clone())
+        }
+        for display_item in self.floats.iter() {
+            result.push((*display_item).clone())
+        }
+        for display_item in self.content.iter() {
+            result.push((*display_item).clone())
+        }
+        result
     }
+}
 
+
+pub struct StackingContext {
+    
+    pub display_list: Box<DisplayList>,
+    
+    pub layer: Option<Arc<RenderLayer>>,
+    
+    pub bounds: Rect<Au>,
+    
+    
+    pub clip_rect: Rect<Au>,
+    
+    pub z_index: i32,
+}
+
+impl StackingContext {
+    
+    
+    
     
     #[inline]
-    pub fn iter<'a>(&'a self) -> DisplayItemIterator<'a> {
-        ParentDisplayItemIterator(self.list.iter())
+    pub fn new(display_list: Box<DisplayList>,
+               bounds: Rect<Au>,
+               z_index: i32,
+               layer: Option<Arc<RenderLayer>>)
+               -> StackingContext {
+        StackingContext {
+            display_list: display_list,
+            layer: layer,
+            bounds: bounds,
+            clip_rect: bounds,
+            z_index: z_index,
+        }
     }
 
     
-    
-    
-    
-    pub fn flatten(&mut self, resulting_level: StackingLevel) {
+    pub fn optimize_and_draw_into_context(&self,
+                                          render_context: &mut RenderContext,
+                                          tile_bounds: &Rect<AzFloat>,
+                                          current_transform: &Matrix2D<AzFloat>,
+                                          current_clip_stack: &mut Vec<Rect<Au>>) {
         
-        if self.list.len() == 0 {
-            return
+        let display_list = DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
+
+        
+        let mut positioned_children = SmallVec8::new();
+        for kid in display_list.children.iter() {
+            positioned_children.push((*kid).clone());
         }
-        if self.list.len() == 1 {
-            self.set_stacking_level(resulting_level);
-            return
+        positioned_children.as_slice_mut().sort_by(|this, other| this.z_index.cmp(&other.z_index));
+
+        
+        for display_item in display_list.background_and_borders.iter() {
+            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
         }
 
-        let mut stacking_context = StackingContext::new();
-        stacking_context.init_from_list(self);
-        debug_assert!(self.list.is_empty());
-
         
-        self.append_from(&mut stacking_context.background_and_borders);
-
-        
-        stacking_context.positioned_descendants.sort_by(|&(z_index_a, _), &(z_index_b, _)| {
-            z_index_a.cmp(&z_index_b)
-        });
-
-        
-        for &(ref mut z_index, ref mut list) in stacking_context.positioned_descendants.iter_mut() {
-            if *z_index < 0 {
-                self.append_from(list)
+        for positioned_kid in positioned_children.iter() {
+            if positioned_kid.z_index >= 0 {
+                break
+            }
+            if positioned_kid.layer.is_none() {
+                let new_transform =
+                    current_transform.translate(positioned_kid.bounds.origin.x.to_nearest_px()
+                                                    as AzFloat,
+                                                positioned_kid.bounds.origin.y.to_nearest_px()
+                                                    as AzFloat);
+                let new_tile_rect =
+                    self.compute_tile_rect_for_child_stacking_context(tile_bounds,
+                                                                      &**positioned_kid);
+                positioned_kid.optimize_and_draw_into_context(render_context,
+                                                              &new_tile_rect,
+                                                              &new_transform,
+                                                              current_clip_stack);
             }
         }
 
         
-        self.append_from(&mut stacking_context.block_backgrounds_and_borders);
+        for display_item in display_list.block_backgrounds_and_borders.iter() {
+            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
+        }
 
         
-        self.append_from(&mut stacking_context.floats);
+        for display_item in display_list.floats.iter() {
+            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
+        }
 
         
 
         
-        self.append_from(&mut stacking_context.content);
+        for display_item in display_list.content.iter() {
+            display_item.draw_into_context(render_context, current_transform, current_clip_stack)
+        }
 
         
-        for &(ref mut z_index, ref mut list) in stacking_context.positioned_descendants.iter_mut() {
-            if *z_index >= 0 {
-                self.append_from(list)
+        for positioned_kid in positioned_children.iter() {
+            if positioned_kid.z_index < 0 {
+                continue
+            }
+
+            if positioned_kid.layer.is_none() {
+                let new_transform =
+                    current_transform.translate(positioned_kid.bounds.origin.x.to_nearest_px()
+                                                    as AzFloat,
+                                                positioned_kid.bounds.origin.y.to_nearest_px()
+                                                    as AzFloat);
+                let new_tile_rect =
+                    self.compute_tile_rect_for_child_stacking_context(tile_bounds,
+                                                                      &**positioned_kid);
+                positioned_kid.optimize_and_draw_into_context(render_context,
+                                                              &new_tile_rect,
+                                                              &new_transform,
+                                                              current_clip_stack);
             }
         }
 
         
-
-        self.set_stacking_level(resulting_level);
     }
 
     
-    fn set_stacking_level(&mut self, new_level: StackingLevel) {
-        for item in self.list.iter_mut() {
-            item.mut_base().level = new_level;
+    fn compute_tile_rect_for_child_stacking_context(&self,
+                                                    tile_bounds: &Rect<AzFloat>,
+                                                    child_stacking_context: &StackingContext)
+                                                    -> Rect<AzFloat> {
+        static ZERO_AZURE_RECT: Rect<f32> = Rect {
+            origin: Point2D {
+                x: 0.0,
+                y: 0.0,
+            },
+            size: Size2D {
+                width: 0.0,
+                height: 0.0
+            }
+        };
+
+        let child_stacking_context_bounds = child_stacking_context.bounds.to_azure_rect();
+        let tile_subrect = tile_bounds.intersection(&child_stacking_context_bounds)
+                                      .unwrap_or(ZERO_AZURE_RECT);
+        let offset = tile_subrect.origin - child_stacking_context_bounds.origin;
+        Rect(offset, tile_subrect.size)
+    }
+
+    
+    
+    
+    pub fn hit_test(&self,
+                    point: Point2D<Au>,
+                    result: &mut Vec<UntrustedNodeAddress>,
+                    topmost_only: bool) {
+        fn hit_test_in_list<'a,I>(point: Point2D<Au>,
+                                  result: &mut Vec<UntrustedNodeAddress>,
+                                  topmost_only: bool,
+                                  mut iterator: I)
+                                  where I: Iterator<&'a DisplayItem> {
+            for item in iterator {
+                if geometry::rect_contains_point(item.base().clip_rect, point) &&
+                        geometry::rect_contains_point(item.bounds(), point) {
+                    result.push(item.base().node.to_untrusted_node_address());
+                    if topmost_only {
+                        return
+                    }
+                }
+            }
+        }
+
+        debug_assert!(!topmost_only || result.is_empty());
+
+        
+        
+        
+        
+        for kid in self.display_list.children.iter().rev() {
+            if kid.z_index < 0 {
+                continue
+            }
+            kid.hit_test(point, result, topmost_only);
+            if topmost_only && !result.is_empty() {
+                return
+            }
+        }
+
+        
+        
+        
+        for display_list in [
+            &self.display_list.content,
+            &self.display_list.floats,
+            &self.display_list.block_backgrounds_and_borders,
+        ].iter() {
+            hit_test_in_list(point, result, topmost_only, display_list.iter().rev());
+            if topmost_only && !result.is_empty() {
+                return
+            }
+        }
+
+        
+        for kid in self.display_list.children.iter().rev() {
+            if kid.z_index >= 0 {
+                continue
+            }
+            kid.hit_test(point, result, topmost_only);
+            if topmost_only && !result.is_empty() {
+                return
+            }
+        }
+
+        
+        hit_test_in_list(point,
+                         result,
+                         topmost_only,
+                         self.display_list.background_and_borders.iter().rev())
+    }
+}
+
+
+pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id: LayerId)
+                                           -> Option<Arc<StackingContext>> {
+    match this.layer {
+        Some(ref layer) if layer.id == layer_id => return Some((*this).clone()),
+        Some(_) | None => {}
+    }
+
+    for kid in this.display_list.children.iter() {
+        match find_stacking_context_with_layer_id(kid, layer_id) {
+            Some(stacking_context) => return Some(stacking_context),
+            None => {}
         }
     }
+
+    None
 }
 
 
@@ -319,9 +393,6 @@ pub struct BaseDisplayItem {
     pub node: OpaqueNode,
 
     
-    pub level: StackingLevel,
-
-    
     
     
     
@@ -330,12 +401,10 @@ pub struct BaseDisplayItem {
 
 impl BaseDisplayItem {
     #[inline(always)]
-    pub fn new(bounds: Rect<Au>, node: OpaqueNode, level: StackingLevel, clip_rect: Rect<Au>)
-               -> BaseDisplayItem {
+    pub fn new(bounds: Rect<Au>, node: OpaqueNode, clip_rect: Rect<Au>) -> BaseDisplayItem {
         BaseDisplayItem {
             bounds: bounds,
             node: node,
-            level: level,
             clip_rect: clip_rect,
         }
     }
@@ -451,9 +520,6 @@ impl DisplayItem {
                          current_transform: &Matrix2D<AzFloat>,
                          current_clip_stack: &mut Vec<Rect<Au>>) {
         
-        assert!(self.base().level == ContentStackingLevel);
-
-        
         let clip_rect = &self.base().clip_rect;
         if current_clip_stack.len() == 0 || current_clip_stack.last().unwrap() != clip_rect {
             while current_clip_stack.len() != 0 {
@@ -463,6 +529,8 @@ impl DisplayItem {
             render_context.draw_push_clip(clip_rect);
             current_clip_stack.push(*clip_rect);
         }
+
+        render_context.draw_target.set_transform(current_transform);
 
         match *self {
             SolidColorDisplayItemClass(ref solid_color) => {
@@ -558,7 +626,7 @@ impl DisplayItem {
 
 impl fmt::Show for DisplayItem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} @ {} ({:x}) [{}]",
+        write!(f, "{} @ {} ({:x})",
             match *self {
                 SolidColorDisplayItemClass(_) => "SolidColor",
                 TextDisplayItemClass(_) => "Text",
@@ -569,9 +637,25 @@ impl fmt::Show for DisplayItem {
                 PseudoDisplayItemClass(_) => "Pseudo",
             },
             self.base().bounds,
-            self.base().node.id(),
-            self.base().level
+            self.base().node.id()
         )
+    }
+}
+
+pub trait OpaqueNodeMethods {
+    
+    
+    fn to_untrusted_node_address(&self) -> UntrustedNodeAddress;
+}
+
+
+impl OpaqueNodeMethods for OpaqueNode {
+    fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
+        unsafe {
+            let OpaqueNode(addr) = *self;
+            let addr: UntrustedNodeAddress = mem::transmute(addr);
+            addr
+        }
     }
 }
 
