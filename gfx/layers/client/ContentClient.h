@@ -304,6 +304,8 @@ protected:
   
   nsTArray<RefPtr<TextureClient> > mOldTextures;
 
+  Maybe<nsIntRegion> mUpdatedRegion;
+
   bool mIsNewBuffer;
   bool mFrontAndBackBufferDiffer;
   gfx::IntSize mSize;

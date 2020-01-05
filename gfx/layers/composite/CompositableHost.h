@@ -102,11 +102,9 @@ public:
 
 
 
-
   virtual bool UpdateThebes(const ThebesBufferData& aData,
                             const nsIntRegion& aUpdated,
-                            const nsIntRegion& aOldValidRegionBack,
-                            nsIntRegion* aUpdatedRegionBack)
+                            const nsIntRegion& aOldValidRegionBack)
   {
     NS_ERROR("should be implemented or not used");
     return false;
