@@ -610,7 +610,7 @@ var pktApi = (function() {
 
 
     function getSignupPanelTabTestVariant() {
-        return getMultipleTestOption('panelSignUp', {control: 1, v1: 2, v2: 7 })
+        return getMultipleTestOption('panelSignUp', {control: 1, v1: 8, v2: 1 })
     }
 
     function getMultipleTestOption(testName, testOptions) {
