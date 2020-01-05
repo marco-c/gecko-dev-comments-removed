@@ -68,8 +68,6 @@ GMPParent::GMPParent()
   , mIsBlockingDeletion(false)
   , mCanDecrypt(false)
   , mGMPContentChildCount(0)
-  , mAsyncShutdownRequired(false)
-  , mAsyncShutdownInProgress(false)
   , mChildPid(0)
   , mHoldingSelfRef(false)
 {
@@ -217,75 +215,13 @@ GMPParent::LoadProcess()
   return NS_OK;
 }
 
-
-void
-GMPParent::AbortWaitingForGMPAsyncShutdown(nsITimer* aTimer, void* aClosure)
-{
-  NS_WARNING("Timed out waiting for GMP async shutdown!");
-  GMPParent* parent = reinterpret_cast<GMPParent*>(aClosure);
-  MOZ_ASSERT(parent->mService);
-#if defined(MOZ_CRASHREPORTER)
-  parent->mService->SetAsyncShutdownPluginState(parent, 'G',
-    NS_LITERAL_CSTRING("Timed out waiting for async shutdown"));
-#endif
-  parent->mService->AsyncShutdownComplete(parent);
-}
-
-nsresult
-GMPParent::EnsureAsyncShutdownTimeoutSet()
-{
-  MOZ_ASSERT(mAsyncShutdownRequired);
-  if (mAsyncShutdownTimeout) {
-    return NS_OK;
-  }
-
-  nsresult rv;
-  mAsyncShutdownTimeout = do_CreateInstance(NS_TIMER_CONTRACTID, &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  
-  rv = mAsyncShutdownTimeout->SetTarget(mGMPThread);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-   return rv;
-  }
-
-  int32_t timeout = MediaPrefs::GMPAsyncShutdownTimeout();
-  RefPtr<GeckoMediaPluginServiceParent> service =
-    GeckoMediaPluginServiceParent::GetSingleton();
-  if (service) {
-    timeout = service->AsyncShutdownTimeoutMs();
-  }
-  rv = mAsyncShutdownTimeout->InitWithFuncCallback(
-    &AbortWaitingForGMPAsyncShutdown, this, timeout,
-    nsITimer::TYPE_ONE_SHOT);
-  Unused << NS_WARN_IF(NS_FAILED(rv));
-  return rv;
-}
-
 mozilla::ipc::IPCResult
 GMPParent::RecvPGMPContentChildDestroyed()
 {
   --mGMPContentChildCount;
   if (!IsUsed()) {
-#if defined(MOZ_CRASHREPORTER)
-    if (mService) {
-      mService->SetAsyncShutdownPluginState(this, 'E',
-        NS_LITERAL_CSTRING("Last content child destroyed"));
-    }
-#endif
     CloseIfUnused();
   }
-#if defined(MOZ_CRASHREPORTER)
-  else {
-    if (mService) {
-      mService->SetAsyncShutdownPluginState(this, 'F',
-        nsPrintfCString("Content child destroyed, remaining: %u", mGMPContentChildCount));
-    }
-  }
-#endif
   return IPC_OK();
 }
 
@@ -293,7 +229,7 @@ void
 GMPParent::CloseIfUnused()
 {
   MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
-  LOGD("%s: mAsyncShutdownRequired=%d", __FUNCTION__, mAsyncShutdownRequired);
+  LOGD("%s", __FUNCTION__);
 
   if ((mDeleteProcessOnlyOnUnload ||
        mState == GMPStateLoaded ||
@@ -304,72 +240,13 @@ GMPParent::CloseIfUnused()
       mTimers[i - 1]->Shutdown();
     }
 
-    if (mAsyncShutdownRequired) {
-      if (!mAsyncShutdownInProgress) {
-        LOGD("%s: sending async shutdown notification", __FUNCTION__);
-#if defined(MOZ_CRASHREPORTER)
-        if (mService) {
-          mService->SetAsyncShutdownPluginState(this, 'H',
-            NS_LITERAL_CSTRING("Sent BeginAsyncShutdown"));
-        }
-#endif
-        mAsyncShutdownInProgress = true;
-        if (!SendBeginAsyncShutdown()) {
-#if defined(MOZ_CRASHREPORTER)
-          if (mService) {
-            mService->SetAsyncShutdownPluginState(this, 'I',
-              NS_LITERAL_CSTRING("Could not send BeginAsyncShutdown - Aborting async shutdown"));
-          }
-#endif
-          AbortAsyncShutdown();
-        } else if (NS_FAILED(EnsureAsyncShutdownTimeoutSet())) {
-#if defined(MOZ_CRASHREPORTER)
-          if (mService) {
-            mService->SetAsyncShutdownPluginState(this, 'J',
-              NS_LITERAL_CSTRING("Could not start timer after sending BeginAsyncShutdown - Aborting async shutdown"));
-          }
-#endif
-          AbortAsyncShutdown();
-        }
-      }
-    } else {
-#if defined(MOZ_CRASHREPORTER)
-      if (mService) {
-        mService->SetAsyncShutdownPluginState(this, 'K',
-          NS_LITERAL_CSTRING("No (more) async-shutdown required"));
-      }
-#endif
-      
-      AbortAsyncShutdown();
-      
-      for (size_t i = mStorage.Length(); i > 0; i--) {
-        mStorage[i - 1]->Shutdown();
-      }
-      Shutdown();
+    
+    
+    for (size_t i = mStorage.Length(); i > 0; i--) {
+      mStorage[i - 1]->Shutdown();
     }
+    Shutdown();
   }
-}
-
-void
-GMPParent::AbortAsyncShutdown()
-{
-  MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
-  LOGD("%s", __FUNCTION__);
-
-  if (mAsyncShutdownTimeout) {
-    mAsyncShutdownTimeout->Cancel();
-    mAsyncShutdownTimeout = nullptr;
-  }
-
-  if (!mAsyncShutdownRequired || !mAsyncShutdownInProgress) {
-    return;
-  }
-
-  RefPtr<GMPParent> kungFuDeathGrip(this);
-  mService->AsyncShutdownComplete(this);
-  mAsyncShutdownRequired = false;
-  mAsyncShutdownInProgress = false;
-  CloseIfUnused();
 }
 
 void
@@ -385,47 +262,8 @@ GMPParent::CloseActive(bool aDieWhenUnloaded)
     mState = GMPStateUnloading;
   }
   if (mState != GMPStateNotLoaded && IsUsed()) {
-#if defined(MOZ_CRASHREPORTER)
-    if (mService) {
-      mService->SetAsyncShutdownPluginState(this, 'A',
-        nsPrintfCString("Sent CloseActive, content children to close: %u", mGMPContentChildCount));
-    }
-#endif
-    if (!SendCloseActive()) {
-#if defined(MOZ_CRASHREPORTER)
-      if (mService) {
-        mService->SetAsyncShutdownPluginState(this, 'B',
-          NS_LITERAL_CSTRING("Could not send CloseActive - Aborting async shutdown"));
-      }
-#endif
-      AbortAsyncShutdown();
-    } else if (IsUsed()) {
-      
-      if (mAsyncShutdownRequired && NS_FAILED(EnsureAsyncShutdownTimeoutSet())) {
-#if defined(MOZ_CRASHREPORTER)
-        if (mService) {
-          mService->SetAsyncShutdownPluginState(this, 'C',
-            NS_LITERAL_CSTRING("Could not start timer after sending CloseActive - Aborting async shutdown"));
-        }
-#endif
-        AbortAsyncShutdown();
-      }
-    } else {
-      
-      
-      
-      
-      
-      
-      
-#if defined(MOZ_CRASHREPORTER)
-      if (mService) {
-        mService->SetAsyncShutdownPluginState(this, 'D',
-          NS_LITERAL_CSTRING("Content children already destroyed"));
-      }
-#endif
-      CloseIfUnused();
-    }
+    Unused << SendCloseActive();
+    CloseIfUnused();
   }
 }
 
@@ -447,8 +285,6 @@ GMPParent::Shutdown()
 {
   LOGD("%s", __FUNCTION__);
   MOZ_ASSERT(GMPThread() == NS_GetCurrentThread());
-
-  MOZ_ASSERT(!mAsyncShutdownTimeout, "Should have canceled shutdown timeout");
 
   if (mAbnormalShutdownInProgress) {
     return;
@@ -706,16 +542,6 @@ GMPParent::ActorDestroy(ActorDestroyReason aWhy)
   
   if (AbnormalShutdown == aWhy) {
     RefPtr<GMPParent> self(this);
-    if (mAsyncShutdownRequired) {
-#if defined(MOZ_CRASHREPORTER)
-      if (mService) {
-        mService->SetAsyncShutdownPluginState(this, 'M',
-          NS_LITERAL_CSTRING("Actor destroyed"));
-      }
-#endif
-      mService->AsyncShutdownComplete(this);
-      mAsyncShutdownRequired = false;
-    }
     
     
     MOZ_ASSERT(mState == GMPStateClosing);
@@ -998,8 +824,7 @@ GMPParent::ParseChromiumManifest(const nsAString& aJSON)
 bool
 GMPParent::CanBeSharedCrossNodeIds() const
 {
-  return !mAsyncShutdownInProgress &&
-         mNodeId.IsEmpty() &&
+  return mNodeId.IsEmpty() &&
          
          
          
@@ -1010,7 +835,7 @@ GMPParent::CanBeSharedCrossNodeIds() const
 bool
 GMPParent::CanBeUsedFrom(const nsACString& aNodeId) const
 {
-  return !mAsyncShutdownInProgress && mNodeId == aNodeId;
+  return mNodeId == aNodeId;
 }
 
 void
@@ -1036,35 +861,6 @@ uint32_t
 GMPParent::GetPluginId() const
 {
   return mPluginId;
-}
-
-mozilla::ipc::IPCResult
-GMPParent::RecvAsyncShutdownRequired()
-{
-  LOGD("%s", __FUNCTION__);
-  if (mAsyncShutdownRequired) {
-    NS_WARNING("Received AsyncShutdownRequired message more than once!");
-    return IPC_OK();
-  }
-  mAsyncShutdownRequired = true;
-  mService->AsyncShutdownNeeded(this);
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-GMPParent::RecvAsyncShutdownComplete()
-{
-  LOGD("%s", __FUNCTION__);
-
-  MOZ_ASSERT(mAsyncShutdownRequired);
-#if defined(MOZ_CRASHREPORTER)
-  if (mService) {
-    mService->SetAsyncShutdownPluginState(this, 'L',
-      NS_LITERAL_CSTRING("Received AsyncShutdownComplete"));
-  }
-#endif
-  AbortAsyncShutdown();
-  return IPC_OK();
 }
 
 void
