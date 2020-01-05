@@ -42,6 +42,8 @@ module.exports = createClass({
     client.addListener("workerListChanged", this.update);
     client.addListener("serviceWorkerRegistrationListChanged", this.update);
     client.addListener("processListChanged", this.update);
+    client.addListener("registration-changed", this.update);
+
     this.update();
   },
 
@@ -50,6 +52,7 @@ module.exports = createClass({
     client.removeListener("processListChanged", this.update);
     client.removeListener("serviceWorkerRegistrationListChanged", this.update);
     client.removeListener("workerListChanged", this.update);
+    client.removeListener("registration-changed", this.update);
   },
 
   update() {
@@ -57,12 +60,22 @@ module.exports = createClass({
 
     getWorkerForms(this.props.client).then(forms => {
       forms.registrations.forEach(form => {
+        
+        
+        
+        
+        
+        let hasWorker = form.activeWorker || form.waitingWorker || form.installingWorker;
+        let isE10s = Services.appinfo.browserTabsRemoteAutostart;
+        let active = form.activeWorker || (isE10s && !hasWorker);
+
         workers.service.push({
           icon: WorkerIcon,
           name: form.url,
           url: form.url,
           scope: form.scope,
-          registrationActor: form.actor
+          registrationActor: form.actor,
+          active
         });
       });
 
@@ -75,16 +88,28 @@ module.exports = createClass({
         };
         switch (form.type) {
           case Ci.nsIWorkerDebugger.TYPE_SERVICE:
-            for (let registration of workers.service) {
-              if (registration.scope === form.scope) {
-                
-                
-                if (!registration.url) {
-                  registration.name = registration.url = form.url;
-                }
-                registration.workerActor = form.actor;
-                break;
+            let registration = this.getRegistrationForWorker(form, workers.service);
+            if (registration) {
+              
+              
+              if (!registration.url) {
+                registration.name = registration.url = form.url;
               }
+              registration.workerActor = form.actor;
+            } else {
+              
+              
+              
+              
+              workers.service.push({
+                icon: WorkerIcon,
+                name: form.url,
+                url: form.url,
+                scope: form.scope,
+                registrationActor: null,
+                workerActor: form.actor,
+                active: false
+              });
             }
             break;
           case Ci.nsIWorkerDebugger.TYPE_SHARED:
@@ -101,6 +126,15 @@ module.exports = createClass({
 
       this.setState({ workers });
     });
+  },
+
+  getRegistrationForWorker(form, registrations) {
+    for (let registration of registrations) {
+      if (registration.scope === form.scope) {
+        return registration;
+      }
+    }
+    return null;
   },
 
   render() {

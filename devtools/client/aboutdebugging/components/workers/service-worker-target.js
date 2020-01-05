@@ -25,15 +25,23 @@ module.exports = createClass({
 
   componentDidMount() {
     let { client } = this.props;
-    client.addListener("push-subscription-modified",
-      this.onPushSubscriptionModified);
+    client.addListener("push-subscription-modified", this.onPushSubscriptionModified);
     this.updatePushSubscription();
+  },
+
+  componentDidUpdate(oldProps, oldState) {
+    let wasActive = oldProps.target.active;
+    if (!wasActive && this.isActive()) {
+      
+      
+      
+      this.updatePushSubscription();
+    }
   },
 
   componentWillUnmount() {
     let { client } = this.props;
-    client.removeListener("push-subscription-modified",
-      this.onPushSubscriptionModified);
+    client.removeListener("push-subscription-modified", this.onPushSubscriptionModified);
   },
 
   debug() {
@@ -47,7 +55,9 @@ module.exports = createClass({
   },
 
   push() {
-    if (!this.isRunning()) {
+    if (!this.isActive() || !this.isRunning()) {
+      
+      
       
       return;
     }
@@ -60,7 +70,7 @@ module.exports = createClass({
   },
 
   start() {
-    if (this.isRunning()) {
+    if (!this.isActive() || this.isRunning()) {
       
       return;
     }
@@ -88,6 +98,11 @@ module.exports = createClass({
   },
 
   updatePushSubscription() {
+    if (!this.props.target.registrationActor) {
+      
+      return;
+    }
+
     let { client, target } = this.props;
     client.request({
       to: target.registrationActor,
@@ -102,14 +117,64 @@ module.exports = createClass({
     return !!this.props.target.workerActor;
   },
 
+  isActive() {
+    return this.props.target.active;
+  },
+
   getServiceWorkerStatus() {
-    return this.isRunning() ? "running" : "stopped";
+    if (this.isActive() && this.isRunning()) {
+      return "running";
+    } else if (this.isActive()) {
+      return "stopped";
+    }
+    
+    
+    
+    return "registering";
+  },
+
+  renderButtons() {
+    let pushButton = dom.button({
+      className: "push-button",
+      onClick: this.push
+    }, Strings.GetStringFromName("push"));
+
+    let debugButton = dom.button({
+      className: "debug-button",
+      onClick: this.debug,
+      disabled: this.props.debugDisabled
+    }, Strings.GetStringFromName("debug"));
+
+    let startButton = dom.button({
+      className: "start-button",
+      onClick: this.start,
+    }, Strings.GetStringFromName("start"));
+
+    if (this.isRunning()) {
+      if (this.isActive()) {
+        return [pushButton, debugButton];
+      }
+      
+      return debugButton;
+    }
+    return startButton;
+  },
+
+  renderUnregisterLink() {
+    if (!this.isActive()) {
+      
+      return null;
+    }
+
+    return dom.a({
+      onClick: this.unregister,
+      className: "unregister-link"
+    }, Strings.GetStringFromName("unregister"));
   },
 
   render() {
-    let { target, debugDisabled } = this.props;
+    let { target } = this.props;
     let { pushSubscription } = this.state;
-    let isRunning = this.isRunning();
     let status = this.getServiceWorkerStatus();
 
     return dom.div({ className: "target-container" },
@@ -138,30 +203,11 @@ module.exports = createClass({
               className: "service-worker-scope",
               title: target.scope
             }, target.scope),
-            dom.a({
-              onClick: this.unregister,
-              className: "unregister-link"
-            }, Strings.GetStringFromName("unregister"))
+            this.renderUnregisterLink()
           )
         )
       ),
-      (isRunning ?
-        [
-          dom.button({
-            className: "push-button",
-            onClick: this.push
-          }, Strings.GetStringFromName("push")),
-          dom.button({
-            className: "debug-button",
-            onClick: this.debug,
-            disabled: debugDisabled
-          }, Strings.GetStringFromName("debug"))
-        ] :
-        dom.button({
-          className: "start-button",
-          onClick: this.start
-        }, Strings.GetStringFromName("start"))
-      )
+      this.renderButtons()
     );
   }
 });

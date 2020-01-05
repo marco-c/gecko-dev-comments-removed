@@ -1,0 +1,17 @@
+
+
+
+
+
+"use strict";
+
+function wait(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+}
+
+
+self.addEventListener("install", function (event) {
+  event.waitUntil(wait(1000));
+});

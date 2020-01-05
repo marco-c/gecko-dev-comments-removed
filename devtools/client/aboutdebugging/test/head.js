@@ -9,6 +9,7 @@
 
 
 
+
 "use strict";
 
 
@@ -263,13 +264,18 @@ function waitForServiceWorkerRegistered(tab) {
 
 
 
-function unregisterServiceWorker(tab) {
-  return ContentTask.spawn(tab.linkedBrowser, {}, function* () {
+
+
+
+function* unregisterServiceWorker(tab, serviceWorkersElement) {
+  let onMutation = waitForMutation(serviceWorkersElement, { childList: true });
+  yield ContentTask.spawn(tab.linkedBrowser, {}, function* () {
     
     let { sw } = content.wrappedJSObject;
     let registration = yield sw;
     yield registration.unregister();
   });
+  return onMutation;
 }
 
 
@@ -325,4 +331,21 @@ function* setupTestAboutDebuggingWebExtension(name, path) {
   ok(debugBtn, "Found its debug button");
 
   return { tab, document, debugBtn };
+}
+
+
+
+
+
+function* waitForServiceWorkerActivation(swUrl, document) {
+  let serviceWorkersElement = getServiceWorkerList(document);
+  let names = serviceWorkersElement.querySelectorAll(".target-name");
+  let name = [...names].filter(element => element.textContent === swUrl)[0];
+
+  let targetElement = name.parentNode.parentNode;
+  let targetStatus = targetElement.querySelector(".target-status");
+  while (targetStatus.textContent === "Registering") {
+    
+    yield waitForMutation(serviceWorkersElement, { childList: true, subtree: true });
+  }
 }

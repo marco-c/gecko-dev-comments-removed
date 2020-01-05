@@ -77,15 +77,12 @@ add_task(function* () {
 
   
   try {
-    yield unregisterServiceWorker(swTab);
+    yield unregisterServiceWorker(swTab, serviceWorkersElement);
     ok(true, "Service worker registration unregistered");
   } catch (e) {
     ok(false, "SW not unregistered; " + e);
   }
 
-  
-  
-  yield waitForMutation(serviceWorkersElement, { childList: true });
   assertHasTarget(false, document, "service-workers", SERVICE_WORKER);
 
   yield removeTab(swTab);
