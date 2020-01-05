@@ -31,6 +31,8 @@ public class GeckoService extends Service {
 
     private static final String INTENT_ACTION_UPDATE_ADDONS = "update-addons";
     private static final String INTENT_ACTION_CREATE_SERVICES = "create-services";
+    private static final String INTENT_ACTION_LOAD_LIBS = "load-libs";
+    private static final String INTENT_ACTION_START_GECKO = "start-gecko";
 
     private static final String INTENT_SERVICE_CATEGORY = "category";
     private static final String INTENT_SERVICE_DATA = "data";
@@ -132,15 +134,24 @@ public class GeckoService extends Service {
         return getIntentToCreateServices(context, category,  null);
     }
 
+    public static Intent getIntentToLoadLibs(final Context context) {
+        return getIntentForAction(context, INTENT_ACTION_LOAD_LIBS);
+    }
+
+    public static Intent getIntentToStartGecko(final Context context) {
+        return getIntentForAction(context, INTENT_ACTION_START_GECKO);
+    }
+
     public static void setIntentProfile(final Intent intent, final String profileName,
                                         final String profileDir) {
         intent.putExtra(INTENT_PROFILE_NAME, profileName);
         intent.putExtra(INTENT_PROFILE_DIR, profileDir);
     }
 
-    private int handleIntent(final Intent intent, final int startId) {
-        if (DEBUG) {
-            Log.d(LOGTAG, "Handling " + intent.getAction());
+    private boolean initGecko(final Intent intent) {
+        if (INTENT_ACTION_LOAD_LIBS.equals(intent.getAction())) {
+            
+            return true;
         }
 
         final String profileName = intent.getStringExtra(INTENT_PROFILE_NAME);
@@ -160,6 +171,17 @@ public class GeckoService extends Service {
                 Log.w(LOGTAG, "Current profile is " + profile.getName() +
                               " [" + profile.getDir().getAbsolutePath() + ']');
             }
+            return false;
+        }
+        return true;
+    }
+
+    private int handleIntent(final Intent intent, final int startId) {
+        if (DEBUG) {
+            Log.d(LOGTAG, "Handling " + intent.getAction());
+        }
+
+        if (!initGecko(intent)) {
             stopSelf(startId);
             return Service.START_NOT_STICKY;
         }
@@ -169,6 +191,10 @@ public class GeckoService extends Service {
         switch (intent.getAction()) {
         case INTENT_ACTION_UPDATE_ADDONS:
             
+            
+        case INTENT_ACTION_LOAD_LIBS:
+            
+        case INTENT_ACTION_START_GECKO:
             
             break;
 
