@@ -218,7 +218,9 @@ fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
     let layout_context = unsafe { &mut **proxy.user_data() };
 
     
-    let node: LayoutNode = layout_node_from_unsafe_layout_node(&unsafe_layout_node);
+    let node: LayoutNode = unsafe {
+        layout_node_from_unsafe_layout_node(&unsafe_layout_node)
+    };
 
     
     
@@ -309,7 +311,9 @@ fn construct_flows(mut unsafe_layout_node: UnsafeLayoutNode,
         let layout_context = unsafe { &mut **proxy.user_data() };
 
         
-        let node: LayoutNode = layout_node_from_unsafe_layout_node(&unsafe_layout_node);
+        let node: LayoutNode = unsafe {
+            layout_node_from_unsafe_layout_node(&unsafe_layout_node)
+        };
 
         
         {

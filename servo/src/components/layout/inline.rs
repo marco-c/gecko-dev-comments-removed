@@ -719,7 +719,7 @@ impl InlineFragments {
 
     
     pub fn get<'a>(&'a self, index: uint) -> &'a Fragment {
-        self.fragments.get(index)
+        &self.fragments[index]
     }
 
     
