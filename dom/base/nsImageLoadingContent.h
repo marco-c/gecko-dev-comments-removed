@@ -77,13 +77,6 @@ public:
     return ForceReload(aNotify, 1);
   }
 
-  
-
-
-
-  already_AddRefed<nsIStreamListener>
-    LoadImageWithChannel(nsIChannel* aChannel, mozilla::ErrorResult& aError);
-
 protected:
   enum ImageLoadType {
     
