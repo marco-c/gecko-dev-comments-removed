@@ -613,10 +613,11 @@ private:
 
   
   
-  using MediaDataPromise = MediaDecoderReader::MediaDataPromise;
+  using AudioDataPromise = MediaDecoderReader::AudioDataPromise;
+  using VideoDataPromise = MediaDecoderReader::VideoDataPromise;
   using WaitForDataPromise = MediaDecoderReader::WaitForDataPromise;
-  MozPromiseRequestHolder<MediaDataPromise> mAudioDataRequest;
-  MozPromiseRequestHolder<MediaDataPromise> mVideoDataRequest;
+  MozPromiseRequestHolder<AudioDataPromise> mAudioDataRequest;
+  MozPromiseRequestHolder<VideoDataPromise> mVideoDataRequest;
   MozPromiseRequestHolder<WaitForDataPromise> mAudioWaitRequest;
   MozPromiseRequestHolder<WaitForDataPromise> mVideoWaitRequest;
 

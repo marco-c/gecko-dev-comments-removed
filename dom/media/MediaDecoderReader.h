@@ -84,8 +84,12 @@ public:
 
   using MetadataPromise =
     MozPromise<RefPtr<MetadataHolder>, MediaResult, IsExclusive>;
-  using MediaDataPromise =
-    MozPromise<RefPtr<MediaData>, MediaResult, IsExclusive>;
+
+  template <typename Type>
+  using DataPromise = MozPromise<RefPtr<Type>, MediaResult, IsExclusive>;
+  using AudioDataPromise = DataPromise<AudioData>;
+  using VideoDataPromise = DataPromise<VideoData>;
+
   using SeekPromise = MozPromise<media::TimeUnit, SeekRejectValue, IsExclusive>;
 
   
@@ -140,13 +144,13 @@ public:
   
   
   
-  virtual RefPtr<MediaDataPromise> RequestAudioData();
+  virtual RefPtr<AudioDataPromise> RequestAudioData();
 
   
   
   
   
-  virtual RefPtr<MediaDataPromise>
+  virtual RefPtr<VideoDataPromise>
   RequestVideoData(bool aSkipToNextKeyframe, int64_t aTimeThreshold);
 
   
@@ -271,7 +275,7 @@ protected:
   
   virtual void UpdateBuffered();
 
-  RefPtr<MediaDataPromise> DecodeToFirstVideoData();
+  RefPtr<VideoDataPromise> DecodeToFirstVideoData();
 
   
   
@@ -377,8 +381,8 @@ private:
 
   
   
-  MozPromiseHolder<MediaDataPromise> mBaseAudioPromise;
-  MozPromiseHolder<MediaDataPromise> mBaseVideoPromise;
+  MozPromiseHolder<AudioDataPromise> mBaseAudioPromise;
+  MozPromiseHolder<VideoDataPromise> mBaseVideoPromise;
 
   MediaEventListener mDataArrivedListener;
 };
