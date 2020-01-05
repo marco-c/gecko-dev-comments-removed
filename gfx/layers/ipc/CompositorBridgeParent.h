@@ -64,7 +64,7 @@ class AsyncCompositionManager;
 class Compositor;
 class CompositorBridgeParent;
 class CompositorVsyncScheduler;
-class LayerManagerComposite;
+class HostLayerManager;
 class LayerTransactionParent;
 class PAPZParent;
 class CrossProcessCompositorBridgeParent;
@@ -359,7 +359,7 @@ public:
     RefPtr<GeckoContentController> mController;
     APZCTreeManagerParent* mApzcTreeManagerParent;
     RefPtr<CompositorBridgeParent> mParent;
-    LayerManagerComposite* mLayerManager;
+    HostLayerManager* mLayerManager;
     
     
     
@@ -547,7 +547,7 @@ protected:
   template <typename Lambda>
   inline void ForEachIndirectLayerTree(const Lambda& aCallback);
 
-  RefPtr<LayerManagerComposite> mLayerManager;
+  RefPtr<HostLayerManager> mLayerManager;
   RefPtr<Compositor> mCompositor;
   RefPtr<AsyncCompositionManager> mCompositionManager;
   widget::CompositorWidget* mWidget;

@@ -89,7 +89,7 @@ class CanvasLayer;
 class ReadbackLayer;
 class ReadbackProcessor;
 class RefLayer;
-class LayerComposite;
+class HostLayer;
 class ShadowableLayer;
 class ShadowLayerForwarder;
 class LayerManagerComposite;
@@ -1526,7 +1526,7 @@ public:
 
 
 
-  virtual LayerComposite* AsLayerComposite() { return nullptr; }
+  virtual HostLayer* AsHostLayer() { return nullptr; }
 
   
 
@@ -1945,6 +1945,13 @@ public:
 
 
   void SetAllowResidualTranslation(bool aAllow) { mAllowResidualTranslation = aAllow; }
+
+  void SetValidRegion(const nsIntRegion& aRegion)
+  {
+    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) ValidRegion", this));
+    mValidRegion = aRegion;
+    Mutated();
+  }
 
   
 
@@ -2370,6 +2377,8 @@ public:
 
 
   virtual void Initialize(const Data& aData) = 0;
+
+  void SetBounds(gfx::IntRect aBounds) { mBounds = aBounds; }
 
   
 

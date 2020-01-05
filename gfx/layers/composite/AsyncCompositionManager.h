@@ -70,7 +70,7 @@ class AsyncCompositionManager final
 public:
   NS_INLINE_DECL_REFCOUNTING(AsyncCompositionManager)
 
-  explicit AsyncCompositionManager(LayerManagerComposite* aManager);
+  explicit AsyncCompositionManager(HostLayerManager* aManager);
 
   
 
@@ -218,7 +218,7 @@ private:
   TargetConfig mTargetConfig;
   CSSRect mContentRect;
 
-  RefPtr<LayerManagerComposite> mLayerManager;
+  RefPtr<HostLayerManager> mLayerManager;
   
   
   

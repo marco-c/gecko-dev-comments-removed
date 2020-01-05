@@ -65,7 +65,121 @@ class PaintCounter;
 
 static const int kVisualWarningDuration = 150; 
 
-class LayerManagerComposite final : public LayerManager
+
+
+class HostLayerManager : public LayerManager
+{
+public:
+  HostLayerManager();
+  ~HostLayerManager();
+
+  virtual bool BeginTransactionWithTarget(gfxContext* aTarget) override
+  {
+    MOZ_CRASH("GFX: Use BeginTransactionWithDrawTarget");
+  }
+
+  virtual bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override
+  {
+    MOZ_CRASH("GFX: Use EndTransaction(aTimeStamp)");
+    return false;
+  }
+
+  virtual void EndTransaction(DrawPaintedLayerCallback aCallback,
+                              void* aCallbackData,
+                              EndTransactionFlags aFlags = END_DEFAULT) override
+  {
+    MOZ_CRASH("GFX: Use EndTransaction(aTimeStamp)");
+  }
+
+  virtual int32_t GetMaxTextureSize() const override
+  {
+    MOZ_CRASH("GFX: Call on compositor, not LayerManagerComposite");
+  }
+
+  virtual LayersBackend GetBackendType() override
+  {
+    MOZ_CRASH("GFX: Shouldn't be called for composited layer manager");
+  }
+  virtual void GetBackendName(nsAString& name) override
+  {
+    MOZ_CRASH("GFX: Shouldn't be called for composited layer manager");
+  }
+  virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() = 0;
+
+
+  virtual void ForcePresent() = 0;
+  virtual void AddInvalidRegion(const nsIntRegion& aRegion) = 0;
+  virtual void ClearApproximatelyVisibleRegions(uint64_t aLayersId,
+                                                const Maybe<uint32_t>& aPresShellId) = 0;
+  virtual void UpdateApproximatelyVisibleRegion(const ScrollableLayerGuid& aGuid,
+                                                const CSSIntRegion& aRegion) = 0;
+
+  virtual void NotifyShadowTreeTransaction() {}
+  virtual void BeginTransactionWithDrawTarget(gfx::DrawTarget* aTarget,
+                                              const gfx::IntRect& aRect) = 0;
+  virtual Compositor* GetCompositor() const = 0;
+  virtual void EndTransaction(const TimeStamp& aTimeStamp,
+                              EndTransactionFlags aFlags = END_DEFAULT) = 0;
+  virtual void UpdateRenderBounds(const gfx::IntRect& aRect) {}
+
+  
+  
+  
+  
+  virtual void ChangeCompositor(Compositor* aNewCompositor) = 0;
+
+  void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotification>* aNotifications)
+  {
+    aNotifications->AppendElements(Move(mImageCompositeNotifications));
+  }
+
+  
+
+
+
+  bool DebugOverlayWantsNextFrame() { return mDebugOverlayWantsNextFrame; }
+  void SetDebugOverlayWantsNextFrame(bool aVal)
+  { mDebugOverlayWantsNextFrame = aVal; }
+
+  
+
+
+
+  void VisualFrameWarning(float severity) {
+    mozilla::TimeStamp now = TimeStamp::Now();
+    if (mWarnTime.IsNull() ||
+        severity > mWarningLevel ||
+        mWarnTime + TimeDuration::FromMilliseconds(kVisualWarningDuration) < now) {
+      mWarnTime = now;
+      mWarningLevel = severity;
+    }
+  }
+
+  
+  
+  
+  void SetWindowOverlayChanged() { mWindowOverlayChanged = true; }
+
+
+  void SetPaintTime(const TimeDuration& aPaintTime) { mLastPaintTime = aPaintTime; }
+
+protected:
+  bool mDebugOverlayWantsNextFrame;
+  nsTArray<ImageCompositeNotification> mImageCompositeNotifications;
+  
+  
+  float mWarningLevel;
+  mozilla::TimeStamp mWarnTime;
+
+  bool mWindowOverlayChanged;
+  RefPtr<PaintCounter> mPaintCounter;
+  TimeDuration mLastPaintTime;
+  TimeStamp mRenderStartTime;
+};
+
+
+
+class LayerManagerComposite final : public HostLayerManager
 {
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::IntSize IntSize;
@@ -99,41 +213,25 @@ public:
     return this;
   }
 
-  void UpdateRenderBounds(const gfx::IntRect& aRect);
+  void UpdateRenderBounds(const gfx::IntRect& aRect) override;
 
   virtual bool BeginTransaction() override;
-  virtual bool BeginTransactionWithTarget(gfxContext* aTarget) override
-  {
-    MOZ_CRASH("GFX: Use BeginTransactionWithDrawTarget");
-    return false;
-  }
   void BeginTransactionWithDrawTarget(gfx::DrawTarget* aTarget,
-                                      const gfx::IntRect& aRect);
-
-  virtual bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override
-  {
-    MOZ_CRASH("GFX: Use EndTransaction(aTimeStamp)");
-    return false;
-  }
+                                      const gfx::IntRect& aRect) override;
+  void EndTransaction(const TimeStamp& aTimeStamp,
+                      EndTransactionFlags aFlags = END_DEFAULT) override;
   virtual void EndTransaction(DrawPaintedLayerCallback aCallback,
                               void* aCallbackData,
                               EndTransactionFlags aFlags = END_DEFAULT) override
   {
     MOZ_CRASH("GFX: Use EndTransaction(aTimeStamp)");
   }
-  void EndTransaction(const TimeStamp& aTimeStamp,
-                      EndTransactionFlags aFlags = END_DEFAULT);
 
   virtual void SetRoot(Layer* aLayer) override { mRoot = aLayer; }
 
   
   
   virtual bool CanUseCanvasLayerForSize(const gfx::IntSize &aSize) override;
-
-  virtual int32_t GetMaxTextureSize() const override
-  {
-    MOZ_CRASH("GFX: Call on compositor, not LayerManagerComposite");
-  }
 
   virtual void ClearCachedResources(Layer* aSubtree = nullptr) override;
 
@@ -142,21 +240,7 @@ public:
   virtual already_AddRefed<ImageLayer> CreateImageLayer() override;
   virtual already_AddRefed<ColorLayer> CreateColorLayer() override;
   virtual already_AddRefed<CanvasLayer> CreateCanvasLayer() override;
-  already_AddRefed<PaintedLayerComposite> CreatePaintedLayerComposite();
-  already_AddRefed<ContainerLayerComposite> CreateContainerLayerComposite();
-  already_AddRefed<ImageLayerComposite> CreateImageLayerComposite();
-  already_AddRefed<ColorLayerComposite> CreateColorLayerComposite();
-  already_AddRefed<CanvasLayerComposite> CreateCanvasLayerComposite();
-  already_AddRefed<RefLayerComposite> CreateRefLayerComposite();
-
-  virtual LayersBackend GetBackendType() override
-  {
-    MOZ_CRASH("GFX: Shouldn't be called for composited layer manager");
-  }
-  virtual void GetBackendName(nsAString& name) override
-  {
-    MOZ_CRASH("GFX: Shouldn't be called for composited layer manager");
-  }
+  virtual already_AddRefed<RefLayer> CreateRefLayer() override;
 
   virtual bool AreComponentAlphaLayersEnabled() override;
 
@@ -207,13 +291,13 @@ public:
 
   static void PlatformSyncBeforeReplyUpdate();
 
-  void AddInvalidRegion(const nsIntRegion& aRegion)
+  void AddInvalidRegion(const nsIntRegion& aRegion) override
   {
     mInvalidRegion.Or(mInvalidRegion, aRegion);
   }
 
   void ClearApproximatelyVisibleRegions(uint64_t aLayersId,
-                                        const Maybe<uint32_t>& aPresShellId)
+                                        const Maybe<uint32_t>& aPresShellId) override
   {
     for (auto iter = mVisibleRegions.Iter(); !iter.Done(); iter.Next()) {
       if (iter.Key().mLayersId == aLayersId &&
@@ -224,7 +308,7 @@ public:
   }
 
   void UpdateApproximatelyVisibleRegion(const ScrollableLayerGuid& aGuid,
-                                        const CSSIntRegion& aRegion)
+                                        const CSSIntRegion& aRegion) override
   {
     CSSIntRegion* regionForScrollFrame = mVisibleRegions.LookupOrAdd(aGuid);
     MOZ_ASSERT(regionForScrollFrame);
@@ -237,7 +321,7 @@ public:
     return mVisibleRegions.Get(aGuid);
   }
 
-  Compositor* GetCompositor() const
+  Compositor* GetCompositor() const override
   {
     return mCompositor;
   }
@@ -246,33 +330,11 @@ public:
   
   
   
-  void ChangeCompositor(Compositor* aNewCompositor);
+  void ChangeCompositor(Compositor* aNewCompositor) override;
 
-  
-
-
-
-  bool DebugOverlayWantsNextFrame() { return mDebugOverlayWantsNextFrame; }
-  void SetDebugOverlayWantsNextFrame(bool aVal)
-  { mDebugOverlayWantsNextFrame = aVal; }
-
-  void NotifyShadowTreeTransaction();
+  void NotifyShadowTreeTransaction() override;
 
   TextRenderer* GetTextRenderer() { return mTextRenderer; }
-
-  
-
-
-
-  void VisualFrameWarning(float severity) {
-    mozilla::TimeStamp now = TimeStamp::Now();
-    if (mWarnTime.IsNull() ||
-        severity > mWarningLevel ||
-        mWarnTime + TimeDuration::FromMilliseconds(kVisualWarningDuration) < now) {
-      mWarnTime = now;
-      mWarningLevel = severity;
-    }
-  }
 
   void UnusedApzTransformWarning() {
     mUnusedApzTransformWarning = true;
@@ -294,19 +356,12 @@ public:
       mImageCompositeNotifications.AppendElement(aNotification);
     }
   }
-  void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotification>* aNotifications)
+  virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() override
   {
-    aNotifications->AppendElements(Move(mImageCompositeNotifications));
+    return mCompositor->GetTextureFactoryIdentifier();
   }
 
-  
-  
-  
-  void SetWindowOverlayChanged() { mWindowOverlayChanged = true; }
-
-  void ForcePresent() { mCompositor->ForcePresent(); }
-
-  void SetPaintTime(const TimeDuration& aPaintTime) { mLastPaintTime = aPaintTime; }
+  void ForcePresent() override { mCompositor->ForcePresent(); }
 
 private:
   
@@ -354,14 +409,10 @@ private:
 
   void ChangeCompositorInternal(Compositor* aNewCompositor);
 
-  float mWarningLevel;
-  mozilla::TimeStamp mWarnTime;
   bool mUnusedApzTransformWarning;
   bool mDisabledApzWarning;
   RefPtr<Compositor> mCompositor;
   UniquePtr<LayerProperties> mClonedLayerTreeProperties;
-
-  nsTArray<ImageCompositeNotification> mImageCompositeNotifications;
 
   
 
@@ -379,16 +430,10 @@ private:
 
   bool mInTransaction;
   bool mIsCompositorReady;
-  bool mDebugOverlayWantsNextFrame;
 
   RefPtr<CompositingRenderTarget> mTwoPassTmpTarget;
   RefPtr<TextRenderer> mTextRenderer;
   bool mGeometryChanged;
-
-  bool mWindowOverlayChanged;
-  RefPtr<PaintCounter> mPaintCounter;
-  TimeDuration mLastPaintTime;
-  TimeStamp mRenderStartTime;
 };
 
 
@@ -396,52 +441,32 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LayerComposite
+class HostLayer
 {
 public:
-  explicit LayerComposite(LayerManagerComposite* aManager);
+  explicit HostLayer(HostLayerManager* aManager)
+    : mCompositorManager(aManager)
+    , mShadowOpacity(1.0)
+    , mShadowTransformSetByAnimation(false)
+    , mShadowOpacitySetByAnimation(false)
+  {
+  }
 
-  virtual ~LayerComposite();
+  virtual void SetLayerManager(HostLayerManager* aManager)
+  {
+    mCompositorManager = aManager;
+  }
+  HostLayerManager* GetLayerManager() const { return mCompositorManager; }
+
+
+  virtual ~HostLayer() {}
 
   virtual LayerComposite* GetFirstChildComposite()
   {
     return nullptr;
   }
 
-  
-
-
-  virtual void Destroy();
-
   virtual Layer* GetLayer() = 0;
-
-  virtual void SetLayerManager(LayerManagerComposite* aManager);
-
-  LayerManagerComposite* GetLayerManager() const { return mCompositeManager; }
-
-  
-
-
-
-
-
-  virtual void Prepare(const RenderTargetIntRect& aClipRect) {}
-
-  
-  virtual void RenderLayer(const gfx::IntRect& aClipRect) = 0;
 
   virtual bool SetCompositableHost(CompositableHost*)
   {
@@ -450,14 +475,6 @@ public:
     return false;
   }
   virtual CompositableHost* GetCompositableHost() = 0;
-
-  virtual void CleanupResources() = 0;
-
-  virtual void DestroyFrontBuffer() { }
-
-  void AddBlendModeEffect(EffectChain& aEffectChain);
-
-  virtual void GenEffectChain(EffectChain& aEffect) { }
 
   
 
@@ -494,6 +511,95 @@ public:
     mShadowTransformSetByAnimation = aSetByAnimation;
   }
 
+  
+  float GetShadowOpacity() { return mShadowOpacity; }
+  const Maybe<ParentLayerIntRect>& GetShadowClipRect() { return mShadowClipRect; }
+  const LayerIntRegion& GetShadowVisibleRegion() { return mShadowVisibleRegion; }
+  const gfx::Matrix4x4& GetShadowBaseTransform() { return mShadowTransform; }
+  gfx::Matrix4x4 GetShadowTransform();
+  bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
+  bool GetShadowOpacitySetByAnimation() { return mShadowOpacitySetByAnimation; }
+  
+  
+
+
+
+  virtual bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr) { return false; }
+
+protected:
+  HostLayerManager* mCompositorManager;
+
+  gfx::Matrix4x4 mShadowTransform;
+  LayerIntRegion mShadowVisibleRegion;
+  Maybe<ParentLayerIntRect> mShadowClipRect;
+  float mShadowOpacity;
+  bool mShadowTransformSetByAnimation;
+  bool mShadowOpacitySetByAnimation;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LayerComposite : public HostLayer
+{
+public:
+  explicit LayerComposite(LayerManagerComposite* aManager);
+
+  virtual ~LayerComposite();
+
+  virtual void SetLayerManager(HostLayerManager* aManager);
+
+  virtual LayerComposite* GetFirstChildComposite()
+  {
+    return nullptr;
+  }
+
+  
+
+
+  virtual void Destroy();
+
+  
+
+
+
+
+
+  virtual void Prepare(const RenderTargetIntRect& aClipRect) {}
+
+  
+  virtual void RenderLayer(const gfx::IntRect& aClipRect) = 0;
+
+  virtual bool SetCompositableHost(CompositableHost*)
+  {
+    
+    NS_WARNING("called SetCompositableHost for a layer type not accepting a compositable");
+    return false;
+  }
+
+  virtual void CleanupResources() = 0;
+
+  virtual void DestroyFrontBuffer() { }
+
+  void AddBlendModeEffect(EffectChain& aEffectChain);
+
+  virtual void GenEffectChain(EffectChain& aEffect) { }
+
   void SetLayerComposited(bool value)
   {
     mLayerComposited = value;
@@ -504,14 +610,6 @@ public:
     mClearRect = aRect;
   }
 
-  
-  float GetShadowOpacity() { return mShadowOpacity; }
-  const Maybe<ParentLayerIntRect>& GetShadowClipRect() { return mShadowClipRect; }
-  const LayerIntRegion& GetShadowVisibleRegion() { return mShadowVisibleRegion; }
-  const gfx::Matrix4x4& GetShadowBaseTransform() { return mShadowTransform; }
-  gfx::Matrix4x4 GetShadowTransform();
-  bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
-  bool GetShadowOpacitySetByAnimation() { return mShadowOpacitySetByAnimation; }
   bool HasLayerBeenComposited() { return mLayerComposited; }
   gfx::IntRect GetClearRect() { return mClearRect; }
 
@@ -525,21 +623,12 @@ public:
 
   virtual nsIntRegion GetFullyRenderedRegion();
 
-  
-
-
-
-  bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr);
+  virtual bool NeedToDrawCheckerboarding(gfx::Color* aOutCheckerboardingColor = nullptr);
 
 protected:
-  gfx::Matrix4x4 mShadowTransform;
-  LayerIntRegion mShadowVisibleRegion;
-  Maybe<ParentLayerIntRect> mShadowClipRect;
   LayerManagerComposite* mCompositeManager;
+
   RefPtr<Compositor> mCompositor;
-  float mShadowOpacity;
-  bool mShadowTransformSetByAnimation;
-  bool mShadowOpacitySetByAnimation;
   bool mDestroyed;
   bool mLayerComposited;
   gfx::IntRect mClearRect;
@@ -589,7 +678,7 @@ RenderWithAllMasks(Layer* aLayer, Compositor* aCompositor,
     EffectChain effectChain(aLayer);
     LayerManagerComposite::AutoAddMaskEffect
       autoMaskEffect(firstMask, effectChain);
-    aLayer->AsLayerComposite()->AddBlendModeEffect(effectChain);
+    static_cast<LayerComposite*>(aLayer->AsHostLayer())->AddBlendModeEffect(effectChain);
     aRenderCallback(effectChain, aClipRect);
     return;
   }
@@ -665,7 +754,7 @@ RenderWithAllMasks(Layer* aLayer, Compositor* aCompositor,
 
   
   
-  aLayer->AsLayerComposite()->AddBlendModeEffect(finalEffectChain);
+  static_cast<LayerComposite*>(aLayer->AsHostLayer())->AddBlendModeEffect(finalEffectChain);
   LayerManagerComposite::AutoAddMaskEffect autoMaskEffect(finalMask, finalEffectChain);
   if (!autoMaskEffect.Failed()) {
     aCompositor->DrawQuad(gfx::Rect(surfaceRect), aClipRect,
