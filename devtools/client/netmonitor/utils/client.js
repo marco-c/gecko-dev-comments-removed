@@ -72,7 +72,29 @@ function getWebConsoleClient() {
   return activeConsole;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function getLongString(stringGrip) {
+  
+  
+  if (typeof stringGrip === "string") {
+    return Promise.resolve(stringGrip);
+  }
+
+  return activeConsole.getString(stringGrip);
+}
+
 module.exports = {
+  getLongString,
   getWebConsoleClient,
   onFirefoxConnect,
   onFirefoxDisconnect,
