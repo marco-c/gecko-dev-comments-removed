@@ -122,11 +122,23 @@ HandlerService.prototype = {
 
 
   _injectDefaultProtocolHandlersIfNeeded(alreadyInjected) {
+    let prefsDefaultHandlersVersion;
     try {
-      let locale = Services.locale.getAppLocaleAsLangTag();
-      let prefsDefaultHandlersVersion = Number(Services.prefs.getComplexValue(
+      prefsDefaultHandlersVersion = Services.prefs.getComplexValue(
         "gecko.handlerService.defaultHandlersVersion",
-        Ci.nsIPrefLocalizedString).data);
+        Ci.nsIPrefLocalizedString);
+    } catch (ex) {
+      if (ex instanceof Components.Exception &&
+          ex.result == Cr.NS_ERROR_UNEXPECTED) {
+        
+        return;
+      }
+      throw ex;
+    }
+
+    try {
+      prefsDefaultHandlersVersion = Number(prefsDefaultHandlersVersion.data);
+      let locale = Services.locale.getAppLocaleAsLangTag();
 
       let defaultHandlersVersion =
           this._store.data.defaultHandlersVersion[locale] || 0;
