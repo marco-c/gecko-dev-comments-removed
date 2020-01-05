@@ -985,9 +985,9 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
 
   
   
-  
   PrefixStringMap prefixes1, prefixes2;
-  PrefixStringMap* output = &prefixes1;
+  PrefixStringMap* input = &prefixes1;
+  PrefixStringMap* output = &prefixes2;
 
   TableUpdateV4* lastAppliedUpdate = nullptr;
   for (uint32_t i = 0; i < aUpdates->Length(); i++) {
@@ -1000,24 +1000,18 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
     NS_ENSURE_TRUE(updateV4, NS_ERROR_FAILURE);
 
     if (updateV4->IsFullUpdate()) {
-      TableUpdateV4::PrefixStdStringMap& map = updateV4->Prefixes();
-
+      input->Clear();
       output->Clear();
-      for (auto iter = map.Iter(); !iter.Done(); iter.Next()) {
-        
-        
-        nsCString* prefix = new nsCString(iter.Data()->GetPrefixString());
-        output->Put(iter.Key(), prefix);
+      rv = lookupCache->ApplyUpdate(updateV4, *input, *output);
+      if (NS_FAILED(rv)) {
+        return rv;
       }
     } else {
-      PrefixStringMap* input = nullptr;
       
       
       
       if (prefixes1.IsEmpty() && prefixes2.IsEmpty()) {
         lookupCache->GetPrefixes(prefixes1);
-        input = &prefixes1;
-        output = &prefixes2;
       } else {
         MOZ_ASSERT(prefixes1.IsEmpty() ^ prefixes2.IsEmpty());
 
@@ -1028,8 +1022,10 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
         output = prefixes1.IsEmpty() ? &prefixes1 : &prefixes2;
       }
 
-      rv = lookupCache->ApplyPartialUpdate(updateV4, *input, *output);
-      NS_ENSURE_SUCCESS(rv, rv);
+      rv = lookupCache->ApplyUpdate(updateV4, *input, *output);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
 
       input->Clear();
     }
