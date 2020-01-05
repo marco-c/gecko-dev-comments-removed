@@ -87,10 +87,10 @@ class JitRuntime
 
     
     
-    UnprotectedData<ExecutableAllocator> execAlloc_;
+    ActiveThreadData<ExecutableAllocator> execAlloc_;
 
     
-    UnprotectedData<ExecutableAllocator> backedgeExecAlloc_;
+    ActiveThreadData<ExecutableAllocator> backedgeExecAlloc_;
 
     
     ExclusiveAccessLockWriteOnceData<JitCode*> exceptionTail_;
@@ -152,7 +152,7 @@ class JitRuntime
     mozilla::Atomic<bool> preventBackedgePatching_;
 
     
-    UnprotectedData<JitcodeGlobalTable*> jitcodeGlobalTable_;
+    ActiveThreadData<JitcodeGlobalTable*> jitcodeGlobalTable_;
 
   private:
     JitCode* generateLazyLinkStub(JSContext* cx);
