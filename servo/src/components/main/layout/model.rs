@@ -20,6 +20,7 @@ use newcss::units::{Em, Pt, Px};
 use newcss::values::{CSSBorderWidth, CSSBorderWidthLength, CSSBorderWidthMedium};
 use newcss::values::{CSSBorderWidthThick, CSSBorderWidthThin};
 use newcss::values::{CSSWidth, CSSWidthLength, CSSWidthPercentage, CSSWidthAuto};
+use newcss::values::{CSSHeight, CSSHeightLength, CSSHeightPercentage, CSSHeightAuto};
 use newcss::values::{CSSMargin, CSSMarginLength, CSSMarginPercentage, CSSMarginAuto};
 use newcss::values::{CSSPadding, CSSPaddingLength, CSSPaddingPercentage};
 
@@ -58,6 +59,17 @@ impl MaybeAuto{
             CSSWidthLength(Px(v)) | 
             CSSWidthLength(Pt(v)) | 
             CSSWidthLength(Em(v)) => Specified(Au::from_frac_px(v)),
+        }
+    }
+
+    pub fn from_height(height: CSSHeight, cb_height: Au) -> MaybeAuto{
+        match height {
+            CSSHeightAuto => Auto,
+            CSSHeightPercentage(percent) => Specified(cb_height.scale_by(percent/100.0)),
+            
+            CSSHeightLength(Px(v)) | 
+            CSSHeightLength(Pt(v)) | 
+            CSSHeightLength(Em(v)) => Specified(Au::from_frac_px(v)),
         }
     }
 
@@ -112,12 +124,12 @@ impl BoxModel {
     }
 
     
-    priv fn compute_border_width(&self, width: CSSBorderWidth) -> Au {
+    pub fn compute_border_width(&self, width: CSSBorderWidth) -> Au {
         match width {
             CSSBorderWidthLength(Px(v)) |
             CSSBorderWidthLength(Em(v)) |
             CSSBorderWidthLength(Pt(v)) => {
-                // FIXME(pcwalton): Handle `em` and `pt` correctly.
+                
                 Au::from_frac_px(v)
             }
             CSSBorderWidthThin => Au::from_px(1),
@@ -126,12 +138,12 @@ impl BoxModel {
         }
     }
 
-    fn compute_padding_length(&self, padding: CSSPadding, content_box_width: Au) -> Au {
+    pub fn compute_padding_length(&self, padding: CSSPadding, content_box_width: Au) -> Au {
         match padding {
             CSSPaddingLength(Px(v)) |
             CSSPaddingLength(Pt(v)) |
             CSSPaddingLength(Em(v)) => {
-                // FIXME(eatkinson): Handle 'em' and 'pt' correctly
+                
                 Au::from_frac_px(v)
             }
             CSSPaddingPercentage(p) => content_box_width.scale_by(p/100.0)
@@ -139,17 +151,17 @@ impl BoxModel {
     }
 }
 
-//
-// Painting
-//
+
+
+
 
 impl RenderBox {
-    /// Adds the display items necessary to paint the borders of this render box to a display list
-    /// if necessary.
+    
+    
     pub fn paint_borders_if_applicable<E:ExtraDisplayListData>(&self,
                                                                list: &Cell<DisplayList<E>>,
                                                                abs_bounds: &Rect<Au>) {
-        // Fast path.
+        
         let border = do self.with_base |base| {
             base.model.border
         };
@@ -157,9 +169,9 @@ impl RenderBox {
             return
         }
 
-        // Are all the widths equal?
-        //
-        // FIXME(pcwalton): Obviously this is wrong.
+        
+        
+        
         if [ border.top, border.right, border.bottom ].all(|a| *a == border.left) {
             let border_width = border.top;
             let bounds = Rect {
@@ -174,9 +186,9 @@ impl RenderBox {
             };
 
             let top_color = self.style().border_top_color();
-            let color = top_color.to_gfx_color(); // FIXME
+            let color = top_color.to_gfx_color(); 
 
-            // Append the border to the display list.
+            
             do list.with_mut_ref |list| {
                 let border_display_item = ~BorderDisplayItem {
                     base: BaseDisplayItem {
