@@ -436,7 +436,10 @@ if (this.addMessageListener) {
   });
 } else {
   
-  SpecialPowers.pushPrefEnv({"set": [["signon.rememberSignons", true]]});
+  SpecialPowers.pushPrefEnv({"set": [["signon.rememberSignons", true],
+                                     ["signon.autofillForms.http", true],
+                                     ["security.insecure_field_warning.contextual.enabled", false]]
+                           });
   SimpleTest.registerCleanupFunction(() => {
     SpecialPowers.popPrefEnv();
     runInParent(function cleanupParent() {
