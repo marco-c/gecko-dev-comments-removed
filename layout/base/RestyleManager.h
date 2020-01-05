@@ -32,7 +32,7 @@ class Element;
 class RestyleManager
 {
 protected:
-  explicit RestyleManager(nsPresContext* aPresContext);
+  RestyleManager(StyleBackendType aType, nsPresContext* aPresContext);
 
 public:
   typedef mozilla::dom::Element Element;
@@ -176,22 +176,15 @@ protected:
     return PresContext()->FrameConstructor();
   }
 
-  inline bool IsGecko() const {
-    return !IsServo();
-  }
-
-  inline bool IsServo() const {
-#ifdef MOZ_STYLO
-    return PresContext()->StyleSet()->IsServo();
-#else
-    return false;
-#endif
-  }
+  MOZ_DECL_STYLO_METHODS(GeckoRestyleManager, ServoRestyleManager)
 
 private:
   nsPresContext* mPresContext; 
   uint32_t mRestyleGeneration;
   uint32_t mHoverGeneration;
+
+  const StyleBackendType mType;
+
   
   bool mObservingRefreshDriver;
 
@@ -229,6 +222,9 @@ protected:
                                    bool* aHaveMoreContinuations = nullptr);
 
   AnimationsWithDestroyedFrame* mAnimationsWithDestroyedFrame = nullptr;
+
+  friend class mozilla::GeckoRestyleManager;
+  friend class mozilla::ServoRestyleManager;
 };
 
 } 
