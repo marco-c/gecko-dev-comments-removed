@@ -77,6 +77,7 @@
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/ServoRestyleManagerInlines.h"
+#include "mozilla/Telemetry.h"
 
 #if defined(MOZ_WIDGET_GTK)
 #include "gfxPlatformGtk.h" 
@@ -1617,6 +1618,15 @@ nsPresContext::RecordInteractionTime(InteractionType aType)
     &nsPresContext::mFirstScrollTime
   };
 
+  
+  
+  Telemetry::ID histogramIds[] = {
+    Telemetry::TIME_TO_FIRST_CLICK,
+    Telemetry::TIME_TO_FIRST_KEY_INPUT,
+    Telemetry::TIME_TO_FIRST_MOUSE_MOVE,
+    Telemetry::TIME_TO_FIRST_SCROLL
+  };
+
   TimeStamp& interactionTime = this->*(
     interactionTimes[static_cast<uint32_t>(aType)]);
   if (!interactionTime.IsNull()) {
@@ -1647,7 +1657,11 @@ nsPresContext::RecordInteractionTime(InteractionType aType)
   
   
   if (this == topContentPresContext) {
-    
+    if (Telemetry::CanRecordExtended()) {
+       double millis = (interactionTime - mFirstPaintTime).ToMilliseconds();
+       Telemetry::Accumulate(histogramIds[static_cast<uint32_t>(aType)],
+                             millis);
+    }
   } else {
     topContentPresContext->RecordInteractionTime(aType);
   }
