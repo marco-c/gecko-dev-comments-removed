@@ -7069,23 +7069,30 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
     return;
   }
 
-  nsCOMPtr<nsINode> anchorNode = aSelection->GetAnchorNode();
+  
+  
+  nsINode* anchorNode = aSelection->GetAnchorNode();
   uint32_t anchorOffset = aSelection->AnchorOffset();
-  nsCOMPtr<nsINode> focusNode = aSelection->GetFocusNode();
+  nsINode* focusNode = aSelection->GetFocusNode();
   uint32_t focusOffset = aSelection->FocusOffset();
 
   
   
   NS_ASSERTION(aRoot->GetChildCount() <= 2, "Unexpected children");
-  nsCOMPtr<nsIContent> firstChild = aRoot->GetFirstChild();
+  nsIContent* firstChild = aRoot->GetFirstChild();
 #ifdef DEBUG
   nsCOMPtr<nsIContent> lastChild = aRoot->GetLastChild();
   NS_ASSERTION(anchorNode == aRoot || anchorNode == firstChild ||
                anchorNode == lastChild, "Unexpected anchorNode");
   NS_ASSERTION(focusNode == aRoot || focusNode == firstChild ||
                focusNode == lastChild, "Unexpected focusNode");
+  
+  MOZ_ASSERT_IF(firstChild,
+                firstChild->IsNodeOfType(nsINode::eTEXT) || firstChild->IsElement());
 #endif
-  if (!firstChild || !firstChild->IsNodeOfType(nsINode::eTEXT)) {
+  
+  
+  if (!firstChild || firstChild->IsElement()) {
     
     anchorOffset = focusOffset = 0;
   } else {
