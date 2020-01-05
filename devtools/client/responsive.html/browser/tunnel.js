@@ -488,13 +488,11 @@ MessageManagerTunnel.prototype = {
 
   init() {
     for (let method of this.PASS_THROUGH_METHODS) {
-      
-      let _method = method;
-      this[_method] = (...args) => {
+      this[method] = (...args) => {
         if (!this.outerParentMM) {
           return null;
         }
-        return this.outerParentMM[_method](...args);
+        return this.outerParentMM[method](...args);
       };
     }
 
@@ -538,13 +536,11 @@ MessageManagerTunnel.prototype = {
     
     
     for (let method of this.OVERRIDDEN_METHODS) {
-      
-      let _method = method;
-      this[_method] = (...args) => {
+      this[method] = (...args) => {
         if (!this.outerParentMM) {
           return null;
         }
-        return this.outerParentMM[_method](...args);
+        return this.outerParentMM[method](...args);
       };
     }
   },

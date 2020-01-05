@@ -157,9 +157,7 @@ Sanitizer.prototype = {
     
     
     let handles = [];
-    for (let itemName of itemsToClear) {
-      
-      let name = itemName;
+    for (let name of itemsToClear) {
       let item = this.items[name];
       try {
         
