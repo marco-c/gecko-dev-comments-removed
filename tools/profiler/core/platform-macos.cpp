@@ -54,25 +54,25 @@ SleepMicro(int aMicroseconds)
 class PlatformData
 {
 public:
-  explicit PlatformData(int aThreadId) : profiled_thread_(mach_thread_self())
+  explicit PlatformData(int aThreadId) : mProfiledThread(mach_thread_self())
   {
     MOZ_COUNT_CTOR(PlatformData);
   }
 
   ~PlatformData() {
     
-    mach_port_deallocate(mach_task_self(), profiled_thread_);
+    mach_port_deallocate(mach_task_self(), mProfiledThread);
 
     MOZ_COUNT_DTOR(PlatformData);
   }
 
-  thread_act_t profiled_thread() { return profiled_thread_; }
+  thread_act_t ProfiledThread() { return mProfiledThread; }
 
 private:
   
   
   
-  thread_act_t profiled_thread_;
+  thread_act_t mProfiledThread;
 };
 
 
@@ -130,7 +130,7 @@ void
 SamplerThread::SuspendAndSampleAndResumeThread(PS::LockRef aLock,
                                                TickSample* aSample)
 {
-  thread_act_t samplee_thread = aSample->mPlatformData->profiled_thread();
+  thread_act_t samplee_thread = aSample->mPlatformData->ProfiledThread();
 
   
   
