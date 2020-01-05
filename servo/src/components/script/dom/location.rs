@@ -16,8 +16,8 @@ use url::query_to_str;
 
 #[deriving(Encodable)]
 pub struct Location {
-    pub reflector_: Reflector, 
-    pub page: Rc<Page>,
+    reflector_: Reflector, 
+    page: Rc<Page>,
 }
 
 impl Location {
