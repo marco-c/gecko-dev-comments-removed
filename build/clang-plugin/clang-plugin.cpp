@@ -906,6 +906,8 @@ AST_MATCHER(CXXConstructorDecl, isInterestingImplicitCtor) {
   const CXXConstructorDecl *Declaration = Node.getCanonicalDecl();
   return
       
+      !ASTIsInSystemHeader(Declaration->getASTContext(), *Declaration) &&
+      
       !isInIgnoredNamespaceForImplicitCtor(Declaration) &&
       !isIgnoredPathForImplicitCtor(Declaration) &&
       
