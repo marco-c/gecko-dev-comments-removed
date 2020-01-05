@@ -2361,7 +2361,7 @@ InlineFrameIterator::findNextFrame()
         
         
         
-        script_ = calleeTemplate_->existingScriptForInlinedFunction();
+        script_ = calleeTemplate_->existingScript();
         MOZ_ASSERT(script_->hasBaselineScript());
 
         pc_ = script_->offsetToPC(si_.pcOffset());
