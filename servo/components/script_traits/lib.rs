@@ -57,7 +57,7 @@ use msg::constellation_msg::{FrameId, FrameType, Key, KeyModifiers, KeyState};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, TraversalDirection};
 use net_traits::{ReferrerPolicy, ResourceThreads};
 use net_traits::image::base::Image;
-use net_traits::image_cache_thread::ImageCacheThread;
+use net_traits::image_cache::ImageCache;
 use net_traits::response::HttpsState;
 use net_traits::storage_thread::StorageType;
 use profile_traits::mem;
@@ -67,6 +67,7 @@ use servo_url::ImmutableOrigin;
 use servo_url::ServoUrl;
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender};
 use style_traits::{CSSPixel, UnsafeNode};
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
@@ -484,7 +485,7 @@ pub struct InitialScriptState {
     
     pub bluetooth_thread: IpcSender<BluetoothRequest>,
     
-    pub image_cache_thread: ImageCacheThread,
+    pub image_cache: Arc<ImageCache>,
     
     pub time_profiler_chan: profile_traits::time::ProfilerChan,
     
@@ -507,7 +508,8 @@ pub trait ScriptThreadFactory {
     
     type Message;
     
-    fn create(state: InitialScriptState, load_data: LoadData) -> (Sender<Self::Message>, Receiver<Self::Message>);
+    fn create(state: InitialScriptState, load_data: LoadData)
+        -> (Sender<Self::Message>, Receiver<Self::Message>);
 }
 
 

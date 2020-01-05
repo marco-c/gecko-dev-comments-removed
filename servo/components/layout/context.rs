@@ -9,8 +9,8 @@ use gfx::display_list::{WebRenderImageInfo, OpaqueNode};
 use gfx::font_cache_thread::FontCacheThread;
 use gfx::font_context::FontContext;
 use heapsize::HeapSizeOf;
-use net_traits::image_cache_thread::{ImageCacheThread, ImageState, CanRequestImages};
-use net_traits::image_cache_thread::{ImageOrMetadataAvailable, UsePlaceholder};
+use net_traits::image_cache::{CanRequestImages, ImageCache, ImageState};
+use net_traits::image_cache::{ImageOrMetadataAvailable, UsePlaceholder};
 use opaque_node::OpaqueNodeMethods;
 use parking_lot::RwLock;
 use script_layout_interface::{PendingImage, PendingImageState};
@@ -80,7 +80,7 @@ pub struct LayoutContext<'a> {
     pub style_context: SharedStyleContext<'a>,
 
     
-    pub image_cache_thread: Mutex<ImageCacheThread>,
+    pub image_cache: Arc<ImageCache>,
 
     
     pub font_cache_thread: Mutex<FontCacheThread>,
@@ -126,10 +126,9 @@ impl<'a> LayoutContext<'a> {
         };
 
         
-        let result = self.image_cache_thread.lock().unwrap()
-                                            .find_image_or_metadata(url.clone(),
-                                                                    use_placeholder,
-                                                                    can_request);
+        let result = self.image_cache.find_image_or_metadata(url.clone(),
+                                                             use_placeholder,
+                                                             can_request);
         match result {
             Ok(image_or_metadata) => Some(image_or_metadata),
             
