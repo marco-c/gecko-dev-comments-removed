@@ -44,8 +44,8 @@ class GenericPrinter
     }
 
     
-    virtual bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-    virtual bool vprintf(const char* fmt, va_list ap);
+    bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+    bool vprintf(const char* fmt, va_list ap);
 
     
     
@@ -118,9 +118,6 @@ class Sprinter final : public GenericPrinter
     
     MOZ_MUST_USE bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
-    
-    virtual bool vprintf(const char* fmt, va_list ap) override;
-
     bool putString(JSString* str);
 
     ptrdiff_t getOffset() const;
@@ -156,10 +153,6 @@ class Fprinter final : public GenericPrinter
     
     virtual bool put(const char* s, size_t len) override;
     using GenericPrinter::put; 
-
-    
-    virtual bool printf(const char* fmt, ...) override MOZ_FORMAT_PRINTF(2, 3);
-    virtual bool vprintf(const char* fmt, va_list ap) override;
 };
 
 
@@ -202,10 +195,6 @@ class LSprinter final : public GenericPrinter
     
     virtual bool put(const char* s, size_t len) override;
     using GenericPrinter::put; 
-
-    
-    virtual bool printf(const char* fmt, ...) override MOZ_FORMAT_PRINTF(2, 3);
-    virtual bool vprintf(const char* fmt, va_list ap) override;
 
     
     
