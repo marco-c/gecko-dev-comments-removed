@@ -3,6 +3,7 @@
 
 
 #![feature(collections)]
+#![feature(std_misc)]
 
 extern crate azure;
 extern crate cssparser;
