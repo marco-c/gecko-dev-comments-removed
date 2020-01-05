@@ -48,7 +48,7 @@ const CLIENTS_TTL = 1814400;
 const CLIENTS_TTL_REFRESH = 604800; 
 const STALE_CLIENT_REMOTE_AGE = 604800; 
 
-const SUPPORTED_PROTOCOL_VERSIONS = ["1.1", "1.5"];
+const SUPPORTED_PROTOCOL_VERSIONS = [SYNC_API_VERSION];
 
 function hasDupeCommand(commands, action) {
   if (!commands) {

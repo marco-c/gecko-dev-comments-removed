@@ -10,7 +10,7 @@ for (let [key, val] of Object.entries({
 WEAVE_VERSION:                         "@weave_version@",
 
 
-SYNC_API_VERSION:                      "1.1",
+SYNC_API_VERSION:                      "1.5",
 
 
 
