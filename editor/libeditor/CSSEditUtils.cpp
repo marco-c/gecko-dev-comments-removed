@@ -582,11 +582,11 @@ CSSEditUtils::GetComputedStyle(Element* aElement)
 
 
 nsresult
-CSSEditUtils::RemoveCSSInlineStyle(nsIDOMNode* aNode,
+CSSEditUtils::RemoveCSSInlineStyle(nsINode& aNode,
                                    nsIAtom* aProperty,
                                    const nsAString& aPropertyValue)
 {
-  nsCOMPtr<Element> element = do_QueryInterface(aNode);
+  RefPtr<Element> element = aNode.AsElement();
   NS_ENSURE_STATE(element);
 
   

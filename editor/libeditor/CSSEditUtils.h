@@ -153,7 +153,7 @@ public:
 
 
 
-  nsresult RemoveCSSInlineStyle(nsIDOMNode* aNode, nsIAtom* aProperty,
+  nsresult RemoveCSSInlineStyle(nsINode& aNode, nsIAtom* aProperty,
                                 const nsAString& aPropertyValue);
 
   

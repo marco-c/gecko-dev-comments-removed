@@ -889,7 +889,7 @@ HTMLEditRules::GetAlignment(bool* aMixed,
       
       return NS_OK;
     }
-    if (HTMLEditUtils::SupportsAlignAttr(GetAsDOMNode(nodeToExamine))) {
+    if (HTMLEditUtils::SupportsAlignAttr(*nodeToExamine)) {
       
       nsAutoString typeAttrVal;
       nodeToExamine->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::align,
@@ -4632,7 +4632,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
   if (nodeArray.Length() == 1) {
     OwningNonNull<nsINode> node = nodeArray[0];
 
-    if (HTMLEditUtils::SupportsAlignAttr(GetAsDOMNode(node))) {
+    if (HTMLEditUtils::SupportsAlignAttr(*node)) {
       
       
       
@@ -4731,7 +4731,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     
     
     
-    if (HTMLEditUtils::SupportsAlignAttr(GetAsDOMNode(curNode))) {
+    if (HTMLEditUtils::SupportsAlignAttr(*curNode)) {
       rv = AlignBlock(*curNode->AsElement(), aAlignType, ContentsOnly::no);
       NS_ENSURE_SUCCESS(rv, rv);
       
@@ -4758,7 +4758,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     
     if (HTMLEditUtils::IsListItem(curNode) ||
         HTMLEditUtils::IsList(curNode)) {
-      rv = RemoveAlignment(GetAsDOMNode(curNode), aAlignType, true);
+      rv = RemoveAlignment(*curNode, aAlignType, true);
       NS_ENSURE_SUCCESS(rv, rv);
       if (useCSS) {
         htmlEditor->mCSSEditUtils->SetCSSEquivalentToHTMLStyle(
@@ -8328,19 +8328,19 @@ HTMLEditRules::DidDeleteSelection(nsISelection *aSelection)
 
 
 nsresult
-HTMLEditRules::RemoveAlignment(nsIDOMNode* aNode,
+HTMLEditRules::RemoveAlignment(nsINode& aNode,
                                const nsAString& aAlignType,
                                bool aChildrenOnly)
 {
-  NS_ENSURE_TRUE(aNode, NS_ERROR_NULL_POINTER);
-
-  if (EditorBase::IsTextNode(aNode) || HTMLEditUtils::IsTable(aNode)) {
+  if (EditorBase::IsTextNode(&aNode) || HTMLEditUtils::IsTable(&aNode)) {
     return NS_OK;
   }
 
-  nsCOMPtr<nsIDOMNode> child = aNode,tmp;
+  nsCOMPtr<nsINode> child, tmp;
   if (aChildrenOnly) {
-    aNode->GetFirstChild(getter_AddRefs(child));
+    child = aNode.GetFirstChild();
+  } else {
+    child = &aNode;
   }
   NS_ENSURE_STATE(mHTMLEditor);
   bool useCSS = mHTMLEditor->IsCSSEnabled();
@@ -8348,65 +8348,60 @@ HTMLEditRules::RemoveAlignment(nsIDOMNode* aNode,
   while (child) {
     if (aChildrenOnly) {
       
-      child->GetNextSibling(getter_AddRefs(tmp));
+      tmp = child->GetNextSibling();
     } else {
       tmp = nullptr;
     }
-    bool isBlock;
-    NS_ENSURE_STATE(mHTMLEditor);
-    nsresult rv = mHTMLEditor->NodeIsBlockStatic(child, &isBlock);
-    NS_ENSURE_SUCCESS(rv, rv);
 
-    if (EditorBase::NodeIsType(child, nsGkAtoms::center)) {
+    if (child->IsHTMLElement(nsGkAtoms::center)) {
       
       
-      rv = RemoveAlignment(child, aAlignType, true);
+      nsresult rv = RemoveAlignment(*child, aAlignType, true);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
       
-      rv = MakeSureElemStartsOrEndsOnCR(child);
+      rv = MakeSureElemStartsOrEndsOnCR(*child);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
       NS_ENSURE_STATE(mHTMLEditor);
-      nsCOMPtr<Element> childAsElement = do_QueryInterface(child);
-      NS_ENSURE_STATE(childAsElement);
-      rv = mHTMLEditor->RemoveContainer(childAsElement);
+      rv = mHTMLEditor->RemoveContainer(child->AsElement());
       NS_ENSURE_SUCCESS(rv, rv);
-    } else if (isBlock || HTMLEditUtils::IsHR(child)) {
+    } else if (IsBlockNode(*child) || child->IsHTMLElement(nsGkAtoms::hr)) {
       
-      nsCOMPtr<Element> curElem = do_QueryInterface(child);
-      if (HTMLEditUtils::SupportsAlignAttr(child)) {
+      if (HTMLEditUtils::SupportsAlignAttr(*child)) {
         
         NS_ENSURE_STATE(mHTMLEditor);
-        rv = mHTMLEditor->RemoveAttribute(curElem, nsGkAtoms::align);
+        nsresult rv = mHTMLEditor->RemoveAttribute(child->AsElement(),
+                                                   nsGkAtoms::align);
         NS_ENSURE_SUCCESS(rv, rv);
       }
       if (useCSS) {
-        if (HTMLEditUtils::IsTable(child) || HTMLEditUtils::IsHR(child)) {
+        if (child->IsAnyOfHTMLElements(nsGkAtoms::table, nsGkAtoms::hr)) {
           NS_ENSURE_STATE(mHTMLEditor);
-          rv = mHTMLEditor->SetAttributeOrEquivalent(curElem,
-                                                     nsGkAtoms::align,
-                                                     aAlignType, false);
+          nsresult rv =
+            mHTMLEditor->SetAttributeOrEquivalent(child->AsElement(),
+                                                  nsGkAtoms::align,
+                                                  aAlignType, false);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
         } else {
           nsAutoString dummyCssValue;
           NS_ENSURE_STATE(mHTMLEditor);
-          rv = mHTMLEditor->mCSSEditUtils->RemoveCSSInlineStyle(
-                                             child,
-                                             nsGkAtoms::textAlign,
-                                             dummyCssValue);
+          nsresult rv = mHTMLEditor->mCSSEditUtils->RemoveCSSInlineStyle(
+                                                      *child,
+                                                      nsGkAtoms::textAlign,
+                                                      dummyCssValue);
           if (NS_WARN_IF(NS_FAILED(rv))) {
             return rv;
           }
         }
       }
-      if (!HTMLEditUtils::IsTable(child)) {
+      if (!child->IsHTMLElement(nsGkAtoms::table)) {
         
-        rv = RemoveAlignment(child, aAlignType, true);
+        nsresult rv = RemoveAlignment(*child, aAlignType, true);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -8419,49 +8414,32 @@ HTMLEditRules::RemoveAlignment(nsIDOMNode* aNode,
 
 
 nsresult
-HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsIDOMNode* aNode,
+HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
                                             bool aStarts)
 {
-  nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-  NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
-
-  nsCOMPtr<nsIDOMNode> child;
+  nsCOMPtr<nsINode> child;
   if (aStarts) {
     NS_ENSURE_STATE(mHTMLEditor);
-    child = GetAsDOMNode(mHTMLEditor->GetFirstEditableChild(*node));
+    child = mHTMLEditor->GetFirstEditableChild(aNode);
   } else {
     NS_ENSURE_STATE(mHTMLEditor);
-    child = GetAsDOMNode(mHTMLEditor->GetLastEditableChild(*node));
+    child = mHTMLEditor->GetLastEditableChild(aNode);
   }
   NS_ENSURE_TRUE(child, NS_OK);
-  bool isChildBlock;
-  NS_ENSURE_STATE(mHTMLEditor);
-  nsresult rv = mHTMLEditor->NodeIsBlockStatic(child, &isChildBlock);
-  NS_ENSURE_SUCCESS(rv, rv);
   bool foundCR = false;
-  if (isChildBlock || TextEditUtils::IsBreak(child)) {
+  if (IsBlockNode(*child) || child->IsHTMLElement(nsGkAtoms::br)) {
     foundCR = true;
   } else {
-    nsCOMPtr<nsIDOMNode> sibling;
+    nsCOMPtr<nsINode> sibling;
     if (aStarts) {
       NS_ENSURE_STATE(mHTMLEditor);
-      rv = mHTMLEditor->GetPriorHTMLSibling(aNode, address_of(sibling));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+      sibling = mHTMLEditor->GetPriorHTMLSibling(&aNode);
     } else {
       NS_ENSURE_STATE(mHTMLEditor);
-      rv = mHTMLEditor->GetNextHTMLSibling(aNode, address_of(sibling));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+      sibling = mHTMLEditor->GetNextHTMLSibling(&aNode);
     }
     if (sibling) {
-      bool isBlock;
-      NS_ENSURE_STATE(mHTMLEditor);
-      rv = mHTMLEditor->NodeIsBlockStatic(sibling, &isBlock);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (isBlock || TextEditUtils::IsBreak(sibling)) {
+      if (IsBlockNode(*sibling) || sibling->IsHTMLElement(nsGkAtoms::br)) {
         foundCR = true;
       }
     } else {
@@ -8471,20 +8449,19 @@ HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsIDOMNode* aNode,
   if (!foundCR) {
     int32_t offset = 0;
     if (!aStarts) {
-      nsCOMPtr<nsINode> node = do_QueryInterface(aNode);
-      NS_ENSURE_STATE(node);
-      offset = node->GetChildCount();
+      offset = aNode.GetChildCount();
     }
-    nsCOMPtr<nsIDOMNode> brNode;
     NS_ENSURE_STATE(mHTMLEditor);
-    rv = mHTMLEditor->CreateBR(aNode, offset, address_of(brNode));
-    NS_ENSURE_SUCCESS(rv, rv);
+    RefPtr<Element> brNode = mHTMLEditor->CreateBR(&aNode, offset);
+    if (NS_WARN_IF(!brNode)) {
+      return NS_ERROR_FAILURE;
+    }
   }
   return NS_OK;
 }
 
 nsresult
-HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsIDOMNode* aNode)
+HTMLEditRules::MakeSureElemStartsOrEndsOnCR(nsINode& aNode)
 {
   nsresult rv = MakeSureElemStartsOrEndsOnCR(aNode, false);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -8504,7 +8481,7 @@ HTMLEditRules::AlignBlock(Element& aElement,
   NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
-  nsresult rv = RemoveAlignment(aElement.AsDOMNode(), aAlignType,
+  nsresult rv = RemoveAlignment(aElement, aAlignType,
                                 aContentsOnly == ContentsOnly::yes);
   NS_ENSURE_SUCCESS(rv, rv);
   if (htmlEditor->IsCSSEnabled()) {
@@ -8516,7 +8493,7 @@ HTMLEditRules::AlignBlock(Element& aElement,
   } else {
     
     
-    if (HTMLEditUtils::SupportsAlignAttr(aElement.AsDOMNode())) {
+    if (HTMLEditUtils::SupportsAlignAttr(aElement)) {
       rv = htmlEditor->SetAttribute(&aElement, nsGkAtoms::align, aAlignType);
       NS_ENSURE_SUCCESS(rv, rv);
     }

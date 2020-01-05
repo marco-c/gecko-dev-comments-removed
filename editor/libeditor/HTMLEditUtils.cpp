@@ -134,15 +134,6 @@ HTMLEditUtils::IsParagraph(nsIDOMNode* aNode)
 
 
 bool
-HTMLEditUtils::IsHR(nsIDOMNode* aNode)
-{
-  return EditorBase::NodeIsType(aNode, nsGkAtoms::hr);
-}
-
-
-
-
-bool
 HTMLEditUtils::IsListItem(nsIDOMNode* aNode)
 {
   MOZ_ASSERT(aNode);
@@ -462,26 +453,24 @@ HTMLEditUtils::IsFormWidget(nsINode* aNode)
 }
 
 bool
-HTMLEditUtils::SupportsAlignAttr(nsIDOMNode* aNode)
+HTMLEditUtils::SupportsAlignAttr(nsINode& aNode)
 {
-  MOZ_ASSERT(aNode);
-  nsCOMPtr<nsIAtom> nodeAtom = EditorBase::GetTag(aNode);
-  return (nodeAtom == nsGkAtoms::hr)
-      || (nodeAtom == nsGkAtoms::table)
-      || (nodeAtom == nsGkAtoms::tbody)
-      || (nodeAtom == nsGkAtoms::tfoot)
-      || (nodeAtom == nsGkAtoms::thead)
-      || (nodeAtom == nsGkAtoms::tr)
-      || (nodeAtom == nsGkAtoms::td)
-      || (nodeAtom == nsGkAtoms::th)
-      || (nodeAtom == nsGkAtoms::div)
-      || (nodeAtom == nsGkAtoms::p)
-      || (nodeAtom == nsGkAtoms::h1)
-      || (nodeAtom == nsGkAtoms::h2)
-      || (nodeAtom == nsGkAtoms::h3)
-      || (nodeAtom == nsGkAtoms::h4)
-      || (nodeAtom == nsGkAtoms::h5)
-      || (nodeAtom == nsGkAtoms::h6);
+  return aNode.IsAnyOfHTMLElements(nsGkAtoms::hr,
+                                   nsGkAtoms::table,
+                                   nsGkAtoms::tbody,
+                                   nsGkAtoms::tfoot,
+                                   nsGkAtoms::thead,
+                                   nsGkAtoms::tr,
+                                   nsGkAtoms::td,
+                                   nsGkAtoms::th,
+                                   nsGkAtoms::div,
+                                   nsGkAtoms::p,
+                                   nsGkAtoms::h1,
+                                   nsGkAtoms::h2,
+                                   nsGkAtoms::h3,
+                                   nsGkAtoms::h4,
+                                   nsGkAtoms::h5,
+                                   nsGkAtoms::h6);
 }
 
 
