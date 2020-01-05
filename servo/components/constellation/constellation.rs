@@ -1735,6 +1735,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             return ReadyToSave::PendingFrames;
         }
 
+        let (state_sender, state_receiver) = ipc::channel().expect("Failed to create IPC channel!");
+        let (epoch_sender, epoch_receiver) = ipc::channel().expect("Failed to create IPC channel!");
+
         
         
         
@@ -1757,12 +1760,11 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             
             
             
-            let (sender, receiver) = ipc::channel().expect("Failed to create IPC channel!");
-            let msg = LayoutControlMsg::GetWebFontLoadState(sender);
+            let msg = LayoutControlMsg::GetWebFontLoadState(state_sender.clone());
             if let Err(e) = pipeline.layout_chan.0.send(msg) {
                 warn!("Get web font failed ({})", e);
             }
-            if receiver.recv().unwrap_or(true) {
+            if state_receiver.recv().unwrap_or(true) {
                 return ReadyToSave::WebFontNotLoaded;
             }
 
@@ -1794,12 +1796,11 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
                         
                         
                         
-                        let (sender, receiver) = ipc::channel().expect("Failed to create IPC channel!");
                         let LayoutControlChan(ref layout_chan) = pipeline.layout_chan;
-                        if let Err(e) = layout_chan.send(LayoutControlMsg::GetCurrentEpoch(sender)) {
+                        if let Err(e) = layout_chan.send(LayoutControlMsg::GetCurrentEpoch(epoch_sender.clone())) {
                             warn!("Failed to send GetCurrentEpoch ({}).", e);
                         }
-                        match receiver.recv() {
+                        match epoch_receiver.recv() {
                             Err(e) => warn!("Failed to receive current epoch ({}).", e),
                             Ok(layout_thread_epoch) => if layout_thread_epoch != *compositor_epoch {
                                 return ReadyToSave::EpochMismatch;
