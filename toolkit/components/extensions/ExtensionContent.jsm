@@ -797,6 +797,9 @@ class BrowserExtensionContent extends EventEmitter {
     
     this.views = new Set();
 
+    
+    this.devtoolsViews = new Set();
+
     let uri = Services.io.newURI(data.resourceURL, null, null);
 
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
