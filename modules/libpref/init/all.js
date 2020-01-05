@@ -1000,6 +1000,9 @@ pref("devtools.defaultColorUnit", "authored");
 pref("devtools.dump.emit", false);
 
 
+pref("toolkit.dump.emit", false);
+
+
 pref("devtools.discovery.log", false);
 
 pref("devtools.remote.wifi.scan", true);
@@ -5690,4 +5693,3 @@ pref("layers.advanced.boxshadow-outer-layers", 2);
 pref("layers.advanced.caret-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
 pref("layers.advanced.outline-layers", 2);
-pref("layers.advanced.solid-color-layers", 2);
