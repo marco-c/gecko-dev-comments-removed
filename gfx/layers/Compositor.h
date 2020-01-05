@@ -134,6 +134,7 @@ class CompositorOGL;
 class CompositorD3D11;
 class BasicCompositor;
 class TextureReadLock;
+struct GPUStats;
 
 enum SurfaceInitMode
 {
@@ -408,6 +409,12 @@ public:
 
 
 
+  virtual void NormalDrawingDone() {}
+
+  
+
+
+
 
   virtual void EndFrame();
 
@@ -512,16 +519,8 @@ public:
 
   static void AssertOnCompositorThread();
 
-  size_t GetFillRatio() {
-    float fillRatio = 0;
-    if (mPixelsFilled > 0 && mPixelsPerFrame > 0) {
-      fillRatio = 100.0f * float(mPixelsFilled) / float(mPixelsPerFrame);
-      if (fillRatio > 999.0f) {
-        fillRatio = 999.0f;
-      }
-    }
-    return fillRatio;
-  }
+  
+  virtual void GetFrameStats(GPUStats* aStats);
 
   ScreenRotation GetScreenRotation() const {
     return mScreenRotation;
