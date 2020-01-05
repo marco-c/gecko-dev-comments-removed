@@ -536,6 +536,9 @@ pref("privacy.panicButton.enabled",         true);
 
 pref("privacy.firstparty.isolate",          false);
 
+
+pref("privacy.temporary_permission_expire_time_ms",  3600000);
+
 pref("network.proxy.share_proxy_settings",  false); 
 
 

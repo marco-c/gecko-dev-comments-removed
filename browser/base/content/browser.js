@@ -1127,6 +1127,10 @@ var gBrowserInit = {
       gIdentityHandler.refreshForInsecureLoginForms();
     });
 
+    gBrowser.addEventListener("PermissionStateChange", function() {
+      gIdentityHandler.refreshIdentityBlock();
+    });
+
     let uriToLoad = this._getUriToLoad();
     if (uriToLoad && uriToLoad != "about:blank") {
       if (uriToLoad instanceof Ci.nsIArray) {
@@ -3225,6 +3229,10 @@ function BrowserReloadWithFlags(reloadFlags) {
     return;
   }
 
+  
+  
+  SitePermissions.clearTemporaryPermissions(gBrowser.selectedBrowser);
+
   let windowUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
                           .getInterface(Ci.nsIDOMWindowUtils);
 
@@ -3327,7 +3335,7 @@ var PrintPreviewListener = {
 
   getPrintPreviewBrowser() {
     if (!this._printPreviewTab) {
-      let browser = gBrowser.selectedTab.linkedBrowser;
+      let browser = gBrowser.selectedBrowser;
       let preferredRemoteType = browser.remoteType;
       this._tabBeforePrintPreview = gBrowser.selectedTab;
       this._printPreviewTab = gBrowser.loadOneTab("about:blank",
@@ -4643,8 +4651,12 @@ var XULBrowserWindow = {
     let uri = gBrowser.currentURI;
     let spec = uri.spec;
     if (this._state == aState &&
-        this._lastLocation == spec)
+        this._lastLocation == spec) {
+      
+      
+      gIdentityHandler.refreshIdentityBlock();
       return;
+    }
     this._state = aState;
     this._lastLocation = spec;
 
@@ -7021,16 +7033,16 @@ var gIdentityHandler = {
     let hasGrantedPermissions = false;
 
     
-    for (let permission of SitePermissions.getAllByURI(this._uri)) {
-      if (permission.state === SitePermissions.BLOCK) {
+    let permissions = SitePermissions.getAllForBrowser(gBrowser.selectedBrowser);
+    for (let permission of permissions) {
+      if (permission.state == SitePermissions.BLOCK) {
 
         let icon = permissionAnchors[permission.id];
         if (icon) {
           icon.setAttribute("showing", "true");
         }
 
-      } else if (permission.state === SitePermissions.ALLOW ||
-                 permission.state === SitePermissions.SESSION) {
+      } else if (permission.state != SitePermissions.UNKNOWN) {
         hasGrantedPermissions = true;
       }
     }
@@ -7365,9 +7377,9 @@ var gIdentityHandler = {
     while (this._permissionList.hasChildNodes())
       this._permissionList.removeChild(this._permissionList.lastChild);
 
-    let uri = gBrowser.currentURI;
+    let permissions =
+      SitePermissions.getAllPermissionDetailsForBrowser(gBrowser.selectedBrowser);
 
-    let permissions = SitePermissions.getPermissionDetailsByURI(uri);
     if (this._sharingState) {
       
       
@@ -7385,7 +7397,8 @@ var gIdentityHandler = {
             
             
             
-            let permission = SitePermissions.getPermissionItem(id);
+            let permission =
+              SitePermissions.getPermissionDetails(id, SitePermissions.SCOPE_REQUEST);
             permission.inUse = true;
             permissions.push(permission);
           }
@@ -7441,14 +7454,21 @@ var gIdentityHandler = {
     let stateLabel = document.createElement("label");
     stateLabel.setAttribute("flex", "1");
     stateLabel.setAttribute("class", "identity-popup-permission-state-label");
-    stateLabel.textContent = SitePermissions.getStateLabel(
-      aPermission.id, aPermission.state, aPermission.inUse || false);
+    let {state, scope} = aPermission;
+    
+    
+    if (state != SitePermissions.ALLOW && aPermission.inUse) {
+      state = SitePermissions.ALLOW;
+      scope = SitePermissions.SCOPE_REQUEST;
+    }
+    stateLabel.textContent = SitePermissions.getStateLabel(state, scope);
 
     let button = document.createElement("button");
     button.setAttribute("class", "identity-popup-permission-remove-button");
     let tooltiptext = gNavigatorBundle.getString("permissions.remove.tooltip");
     button.setAttribute("tooltiptext", tooltiptext);
     button.addEventListener("command", () => {
+	  let browser = gBrowser.selectedBrowser;
       
       this._handleHeightChange(() => this._permissionList.removeChild(container),
                                this._permissionReloadHint.hasAttribute("hidden"));
@@ -7461,21 +7481,24 @@ var gIdentityHandler = {
           
           
           
-          let uris = gBrowser.selectedBrowser._devicePermissionURIs || [];
+          let uris = browser._devicePermissionURIs || [];
           for (let uri of uris) {
             
             
             for (let id of ["camera", "microphone"]) {
-              if (this._sharingState[id] &&
-                  SitePermissions.get(uri, id) == SitePermissions.ALLOW)
-                SitePermissions.remove(uri, id);
+              if (this._sharingState[id]) {
+                let perm = SitePermissions.get(uri, id);
+                if (perm.state == SitePermissions.ALLOW &&
+                    perm.scope == SitePermissions.SCOPE_PERSISTENT) {
+                  SitePermissions.remove(uri, id);
+                }
+              }
             }
           }
         }
-        let mm = gBrowser.selectedBrowser.messageManager;
-        mm.sendAsyncMessage("webrtc:StopSharing", windowId);
+        browser.messageManager.sendAsyncMessage("webrtc:StopSharing", windowId);
       }
-      SitePermissions.remove(gBrowser.currentURI, aPermission.id);
+      SitePermissions.remove(gBrowser.currentURI, aPermission.id, browser);
 
       this._permissionReloadHint.removeAttribute("hidden");
 
@@ -7483,15 +7506,21 @@ var gIdentityHandler = {
       let histogram = Services.telemetry.getKeyedHistogramById("WEB_PERMISSION_CLEARED");
 
       let permissionType = 0;
-      if (aPermission.state == SitePermissions.ALLOW) {
+      if (aPermission.state == SitePermissions.ALLOW &&
+          aPermission.scope == SitePermissions.SCOPE_PERSISTENT) {
         
         permissionType = 1;
-      } else if (aPermission.state == SitePermissions.BLOCK) {
+      } else if (aPermission.state == SitePermissions.BLOCK &&
+                 aPermission.scope == SitePermissions.SCOPE_PERSISTENT) {
         
         permissionType = 2;
+      } else if (aPermission.state == SitePermissions.ALLOW) {
+        
+        permissionType = 3;
+      } else if (aPermission.state == SitePermissions.BLOCK) {
+        
+        permissionType = 4;
       }
-      
-      
 
       histogram.add("(all)", permissionType);
       histogram.add(aPermission.id, permissionType);

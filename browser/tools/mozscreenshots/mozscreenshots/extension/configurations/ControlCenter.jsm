@@ -94,10 +94,11 @@ this.ControlCenter = {
     allPermissions: {
       applyConfig: Task.async(function* () {
         
-        let states = [SitePermissions.ALLOW, SitePermissions.BLOCK, SitePermissions.SESSION];
+        
+        let states = [SitePermissions.ALLOW, SitePermissions.BLOCK];
         let uri = Services.io.newURI(PERMISSIONS_PAGE)
         SitePermissions.listPermissions().forEach(function(permission, index) {
-          SitePermissions.set(uri, permission, states[index % 3]);
+          SitePermissions.set(uri, permission, states[index % 2]);
         });
 
         yield loadPage(PERMISSIONS_PAGE);

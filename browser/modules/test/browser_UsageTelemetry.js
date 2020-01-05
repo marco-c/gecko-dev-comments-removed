@@ -11,6 +11,9 @@ const UNFILTERED_URI_COUNT = "browser.engagement.unfiltered_uri_count";
 const TELEMETRY_SUBSESSION_TOPIC = "internal-telemetry-after-subsession-split";
 
 
+Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC, "");
+
+
 
 
 
