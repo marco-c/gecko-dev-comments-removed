@@ -289,9 +289,6 @@ const ignorableWhitelist = new Set([
   "resource://app/defaults/pinning/pins.json",
 
   
-  "resource://app/defaults/profile/prefs.js",
-
-  
   "resource://gre/res/test.properties",
 ]);
 for (let entry of ignorableWhitelist) {
