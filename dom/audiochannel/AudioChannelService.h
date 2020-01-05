@@ -65,9 +65,15 @@ public:
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIAUDIOCHANNELSERVICE
 
-  enum AudibleState : bool {
-    eAudible = true,
-    eNotAudible = false
+  
+
+
+
+
+  enum AudibleState : uint8_t {
+    eNotAudible = 0,
+    eMaybeAudible = 1,
+    eAudible = 2
   };
 
   enum AudioCaptureState : bool {

@@ -753,7 +753,7 @@ public:
       return;
     }
 
-    bool newAudibleState = IsOwnerAudible();
+    AudibleState newAudibleState = IsOwnerAudible();
     if (mIsOwnerAudible == newAudibleState) {
       return;
     }
@@ -976,25 +976,25 @@ private:
             mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK);
   }
 
-  bool
+  AudibleState
   IsOwnerAudible() const
   {
     
     if (mOwner->Muted() || (std::fabs(mOwner->Volume()) <= 1e-7)) {
-      return false;
+      return AudioChannelService::AudibleState::eNotAudible;
     }
 
     
-    if (IsSuspended()) {
-      return false;
+    if (!mOwner->HasAudio()) {
+      return AudioChannelService::AudibleState::eNotAudible;
     }
 
     
-    if (!mOwner->mIsAudioTrackAudible) {
-      return false;
+    if (mOwner->HasAudio() && !mOwner->mIsAudioTrackAudible) {
+      return AudioChannelService::AudibleState::eMaybeAudible;
     }
 
-    return true;
+    return AudioChannelService::AudibleState::eAudible;
   }
 
   bool
@@ -1065,7 +1065,7 @@ private:
   
   SuspendTypes mSuspended;
   
-  bool mIsOwnerAudible;
+  AudibleState mIsOwnerAudible;
   bool mIsShutDown;
 };
 
@@ -6976,7 +6976,12 @@ HTMLMediaElement::ShouldElementBePaused()
 void
 HTMLMediaElement::SetMediaInfo(const MediaInfo& aInfo)
 {
+  const bool oldHasAudio = mMediaInfo.HasAudio();
   mMediaInfo = aInfo;
+  if (aInfo.HasAudio() != oldHasAudio) {
+    NotifyAudioPlaybackChanged(
+      AudioChannelService::AudibleChangedReasons::eDataAudibleChanged);
+  }
   if (mAudioChannelWrapper) {
     mAudioChannelWrapper->AudioCaptureStreamChangeIfNeeded();
   }
