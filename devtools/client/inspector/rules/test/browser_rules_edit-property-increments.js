@@ -7,6 +7,9 @@
 
 
 
+
+requestLongerTimeout(2);
+
 const TEST_URI = `
   <style>
     #test {
