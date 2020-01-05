@@ -629,7 +629,7 @@ public:
   
   
   
-  layers::Image* GetCurrentImage();
+  already_AddRefed<layers::Image> GetCurrentImage();
 
   already_AddRefed<DOMMediaStream> GetSrcObject() const;
   void SetSrcObject(DOMMediaStream& aValue);

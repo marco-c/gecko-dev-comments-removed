@@ -1527,7 +1527,7 @@ HTMLMediaElement::SetVisible(bool aVisible)
   mDecoder->SetForcedHidden(!aVisible);
 }
 
-layers::Image*
+already_AddRefed<layers::Image>
 HTMLMediaElement::GetCurrentImage()
 {
   
@@ -1544,7 +1544,8 @@ HTMLMediaElement::GetCurrentImage()
   }
 
   AutoLockImage lockImage(container);
-  return lockImage.GetImage();
+  RefPtr<layers::Image> image = lockImage.GetImage();
+  return image.forget();
 }
 
 bool
