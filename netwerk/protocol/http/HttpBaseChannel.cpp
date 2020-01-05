@@ -3248,6 +3248,12 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   
   httpChannel->SetRequestContextID(mRequestContextID);
 
+  
+  nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(newChannel);
+  if (p) {
+    p->SetPriority(mPriority);
+  }
+
   if (httpInternal) {
     
     httpInternal->SetThirdPartyFlags(mThirdPartyFlags);

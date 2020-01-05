@@ -628,8 +628,10 @@ pref("media.mediasource.enabled", true);
 
 pref("media.mediadrm-widevinecdm.visible", true);
 
+#ifdef NIGHTLY_BUILD
 
 pref("media.eme.enabled", true);
+#endif
 
 
 pref("image.downscale-during-decode.enabled", true);
