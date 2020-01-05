@@ -487,6 +487,11 @@ nsHttpHandler::Init()
     if (pc) {
         pc->GetParentalControlsEnabled(&mParentalControlEnabled);
     }
+
+    if (XRE_IsParentProcess()) {
+        
+        nsCOMPtr<nsISupports> temp = do_GetService("@mozilla.org/network/ua-overrides-bootstrapper;1");
+    }
     return NS_OK;
 }
 
