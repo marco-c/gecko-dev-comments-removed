@@ -64,7 +64,7 @@ public class Tab {
     private final SiteIdentity mSiteIdentity;
     private SiteLogins mSiteLogins;
     private BitmapDrawable mThumbnail;
-    private final int mParentId;
+    private volatile int mParentId;
     
     
     private final boolean mExternal;
@@ -166,6 +166,17 @@ public class Tab {
 
     public int getParentId() {
         return mParentId;
+    }
+
+    
+
+
+
+
+
+
+    public void setParentId(int parentId) {
+        mParentId = parentId;
     }
 
     
