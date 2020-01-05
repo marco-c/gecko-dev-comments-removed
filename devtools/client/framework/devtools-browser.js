@@ -25,6 +25,7 @@ loader.lazyRequireGetter(this, "DebuggerServer", "devtools/server/main", true);
 loader.lazyRequireGetter(this, "DebuggerClient", "devtools/shared/client/main", true);
 loader.lazyRequireGetter(this, "BrowserMenus", "devtools/client/framework/browser-menus");
 loader.lazyRequireGetter(this, "findCssSelector", "devtools/shared/inspector/css-logic", true);
+loader.lazyRequireGetter(this, "appendStyleSheet", "devtools/client/shared/stylesheet-utils", true);
 
 loader.lazyImporter(this, "CustomizableUI", "resource:///modules/CustomizableUI.jsm");
 loader.lazyImporter(this, "AppConstants", "resource://gre/modules/AppConstants.jsm");
@@ -41,6 +42,8 @@ const TABS_PINNED_AVG_HISTOGRAM = "DEVTOOLS_TABS_PINNED_AVERAGE_LINEAR";
 const COMPACT_LIGHT_ID = "firefox-compact-light@mozilla.org";
 const COMPACT_DARK_ID = "firefox-compact-dark@mozilla.org";
 
+const BROWSER_STYLESHEET_URL = "chrome://devtools/skin/devtools-browser.css";
+
 
 
 
@@ -51,6 +54,12 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
 
 
   _trackedBrowserWindows: new Set(),
+
+  
+
+
+
+  _browserStyleSheets: new WeakMap(),
 
   _telemetry: new Telemetry(),
 
@@ -493,6 +502,25 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
   
 
 
+
+
+
+
+
+  loadBrowserStyleSheet: function (win) {
+    if (this._browserStyleSheets.has(win)) {
+      return Promise.resolve();
+    }
+
+    let doc = win.document;
+    let {styleSheet, loadPromise} = appendStyleSheet(doc, BROWSER_STYLESHEET_URL);
+    this._browserStyleSheets.set(win, styleSheet);
+    return loadPromise;
+  },
+
+  
+
+
   isWebIDEInitialized: defer(),
 
   
@@ -751,6 +779,12 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
       if (target.tab && target.tab.ownerDocument.defaultView == win) {
         toolbox.destroy();
       }
+    }
+
+    let styleSheet = this._browserStyleSheets.get(win);
+    if (styleSheet) {
+      styleSheet.remove();
+      this._browserStyleSheets.delete(win);
     }
 
     

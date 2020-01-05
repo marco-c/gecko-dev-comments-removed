@@ -378,6 +378,9 @@ DeveloperToolbar.prototype.show = function (focus) {
     
     yield this._hidePromise;
 
+    
+    yield gDevToolsBrowser.loadBrowserStyleSheet(this._chromeWindow);
+
     this.createToolbar();
 
     Services.prefs.setBoolPref("devtools.toolbar.visible", true);
