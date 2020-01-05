@@ -28,10 +28,6 @@
 #include "nsIWidget.h"
 #include "mozilla/dom/FlyWebService.h"
 
-#if defined(XP_WIN)
-#include "mozilla/WindowsVersion.h"
-#endif
-
 #ifdef MOZ_TASK_TRACER
 #include "GeckoTaskTracer.h"
 #endif
@@ -1220,12 +1216,7 @@ nsSocketTransportService::UpdateSendBufferPref(nsIPrefBranch *pref)
     }
 
 #if defined(XP_WIN)
-    
-    if (!IsWin2003OrLater()) { 
-        mSendBufferSize = 131072;
-    } else { 
-        mSendBufferSize = 131072 * 4;
-    }
+    mSendBufferSize = 131072 * 4;
 #endif
 }
 

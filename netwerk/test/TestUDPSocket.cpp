@@ -13,9 +13,6 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsITimer.h"
 #include "mozilla/net/DNS.h"
-#ifdef XP_WIN
-#include "mozilla/WindowsVersion.h"
-#endif
 #include "prerror.h"
 
 #define REQUEST  0x68656c6f
@@ -320,16 +317,6 @@ TEST(TestUDPSocket, TestUDPSocketMain)
   nsCOMPtr<nsITimer> timer = do_CreateInstance("@mozilla.org/timer;1");
   ASSERT_TRUE(timer);
   RefPtr<MulticastTimerCallback> timerCb = new MulticastTimerCallback(waiter);
-
-  
-  
-  
-  
-#ifdef XP_WIN
-  if (!mozilla::IsWin2003OrLater()) {   
-    goto close;
-  }
-#endif
 
   
   printf("Joining multicast group\n");
