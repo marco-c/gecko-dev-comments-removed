@@ -1251,10 +1251,15 @@ gfxPlatform::SupportsAzureContentForDrawTarget(DrawTarget* aTarget)
   return SupportsAzureContentForType(aTarget->GetBackendType());
 }
 
-bool gfxPlatform::UseAcceleratedCanvas()
+bool gfxPlatform::AllowOpenGLCanvas()
 {
   
-  if (mPreferredCanvasBackend == BackendType::SKIA && gfxPrefs::CanvasAzureAccelerated()) {
+  
+  
+  if (gfxPrefs::CanvasAzureAccelerated() &&
+      mCompositorBackend == LayersBackend::LAYERS_OPENGL &&
+      (GetContentBackendFor(mCompositorBackend) == BackendType::SKIA))
+  {
     nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
     int32_t status;
     nsCString discardFailureId;
@@ -1270,7 +1275,7 @@ bool gfxPlatform::UseAcceleratedCanvas()
 void
 gfxPlatform::InitializeSkiaCacheLimits()
 {
-  if (UseAcceleratedCanvas()) {
+  if (AllowOpenGLCanvas()) {
 #ifdef USE_SKIA_GPU
     bool usingDynamicCache = gfxPrefs::CanvasSkiaGLDynamicCache();
     int cacheItemLimit = gfxPrefs::CanvasSkiaGLCacheItems();
@@ -1307,9 +1312,7 @@ gfxPlatform::GetSkiaGLGlue()
 #ifdef USE_SKIA_GPU
   
   
-  if (!mSkiaGlue &&
-      !UseAcceleratedCanvas()) {
-    gfxCriticalNote << "Accelerated Skia canvas is disabled";
+  if (!mSkiaGlue && !AllowOpenGLCanvas()) {
     return nullptr;
   }
 

@@ -270,14 +270,14 @@ public:
     
     
     
-    virtual bool UseAcceleratedCanvas();
+    bool AllowOpenGLCanvas();
     virtual void InitializeSkiaCacheLimits();
 
     static bool AsyncPanZoomEnabled();
 
     virtual void GetAzureBackendInfo(mozilla::widget::InfoObject &aObj) {
       aObj.DefineProperty("AzureCanvasBackend", GetBackendName(mPreferredCanvasBackend));
-      aObj.DefineProperty("AzureCanvasAccelerated", UseAcceleratedCanvas());
+      aObj.DefineProperty("AzureCanvasAccelerated", AllowOpenGLCanvas());
       aObj.DefineProperty("AzureFallbackCanvasBackend", GetBackendName(mFallbackCanvasBackend));
       aObj.DefineProperty("AzureContentBackend", GetBackendName(mContentBackend));
     }
