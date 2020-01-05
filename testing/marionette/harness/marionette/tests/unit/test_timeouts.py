@@ -74,3 +74,10 @@ class TestTimeouts(MarionetteTestCase):
             self.assertRaises(InvalidArgumentException, self.marionette.set_search_timeout, val)
             self.assertRaises(InvalidArgumentException, self.marionette.set_script_timeout, val)
             self.assertRaises(InvalidArgumentException, self.marionette.set_page_load_timeout, val)
+
+    def test_compat_input_types(self):
+        
+        
+        
+        body = {"type": "script", "ms": "30000"}
+        self.marionette._send_message("timeouts", body)
