@@ -10069,6 +10069,8 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
              "This should only be used for children!");
   MOZ_ASSERT(aChildFrame->GetContent() == GetContent(),
              "What content node is it a frame for?");
+  MOZ_ASSERT(!aChildFrame->GetPrevContinuation(),
+             "Only first continuations should end up here");
 
   
   
