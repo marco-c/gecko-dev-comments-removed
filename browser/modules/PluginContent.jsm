@@ -132,13 +132,17 @@ PluginContent.prototype = {
     switch (aTopic) {
       case "decoder-doctor-notification":
         let data = JSON.parse(aData);
-        let type = data.type.toLowerCase();
-        if (type == "cannot-play" &&
-            this.haveShownNotification &&
+        if (this.haveShownNotification &&
             aSubject.top.document == this.content.document &&
             data.formats.toLowerCase().includes("application/x-mpegurl", 0)) {
+          let principal = this.content.document.nodePrincipal;
+          let location = this.content.document.location.href;
           this.global.content.pluginRequiresReload = true;
-          this.updateNotificationUI(this.content.document);
+          this.global.sendAsyncMessage("PluginContent:ShowClickToPlayNotification",
+                                       { plugins: [... this.pluginData.values()],
+                                         showNow: true,
+                                         location: location,
+                                       }, null, principal);
         }
     }
   },
@@ -231,12 +235,6 @@ PluginContent.prototype = {
            };
   },
 
-  
-
-
-
-
-
   _getPluginInfoForTag: function (pluginTag, tagMimetype) {
     let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
 
@@ -271,11 +269,7 @@ PluginContent.prototype = {
              pluginName: pluginName,
              pluginTag: pluginTag,
              permissionString: permissionString,
-             
-             
-             
-             
-             fallbackType: Ci.nsIObjectLoadingContent.PLUGIN_CLICK_TO_PLAY,
+             fallbackType: null,
              blocklistState: blocklistState,
            };
   },
