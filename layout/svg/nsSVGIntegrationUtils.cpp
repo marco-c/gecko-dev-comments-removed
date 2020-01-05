@@ -865,37 +865,57 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
   
 
   if (shouldGenerateMask) {
-    gfxContextMatrixAutoSaveRestore save(&context);
-    SetupContextMatrix(firstFrame, aParams, offsetToBoundingBox,
-                       offsetToUserSpace, true);
+    gfxContextMatrixAutoSaveRestore matSR;
+
     Matrix maskTransform;
     RefPtr<SourceSurface> maskSurface;
+
     if (shouldGenerateMaskLayer) {
+      matSR.SetContext(&context);
+
+      
+      
+      
+      SetupContextMatrix(frame, aParams, offsetToBoundingBox,
+                         offsetToUserSpace, true);
       result = GenerateMaskSurface(aParams, opacity,
                                   firstFrame->StyleContext(),
                                   maskFrames, offsetToUserSpace,
                                   maskTransform, maskSurface);
-    }
-
-    if (shouldGenerateMaskLayer && !maskSurface) {
-      
-      return result;
+      context.PopClip();
+      if (!maskSurface) {
+        
+        return result;
+      }
     }
 
     if (shouldGenerateClipMaskLayer) {
+      matSR.Restore();
+      matSR.SetContext(&context);
+
+      SetupContextMatrix(firstFrame, aParams, offsetToBoundingBox,
+                         offsetToUserSpace, true);
       Matrix clippedMaskTransform;
       RefPtr<SourceSurface> clipMaskSurface =
         clipPathFrame->GetClipMask(context, frame, cssPxToDevPxMatrix,
                                    &clippedMaskTransform, maskSurface,
                                    maskTransform, &result);
+      context.PopClip();
 
       if (clipMaskSurface) {
         maskSurface = clipMaskSurface;
         maskTransform = clippedMaskTransform;
       }
     }
+
     
-    context.PopClip();
+    if (!shouldGenerateClipMaskLayer && !shouldGenerateMaskLayer) {
+      MOZ_ASSERT(opacity != 1.0f);
+
+      matSR.SetContext(&context);
+      SetupContextMatrix(firstFrame, aParams, offsetToBoundingBox,
+                         offsetToUserSpace, true);
+    }
 
     target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA, opacity, maskSurface, maskTransform);
   }
@@ -931,6 +951,12 @@ nsSVGIntegrationUtils::PaintMaskAndClipPath(const PaintFramesParams& aParams)
 
   if (shouldGenerateMask) {
     target->PopGroupAndBlend();
+
+    if (!shouldGenerateClipMaskLayer && !shouldGenerateMaskLayer) {
+      MOZ_ASSERT(opacity != 1.0f);
+      
+      context.PopClip();
+    }
   }
 
   if (aParams.frame->StyleEffects()->mMixBlendMode != NS_STYLE_BLEND_NORMAL) {
@@ -980,7 +1006,7 @@ nsSVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams)
   
   
   
-  context.Save();
+  gfxContextAutoSaveRestore autoSR(&context);
   SetupContextMatrix(firstFrame, aParams, offsetToBoundingBox,
                      offsetToUserSpace, true);
   IntPoint targetOffset;
@@ -1015,7 +1041,6 @@ nsSVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams)
     BlendToTarget(aParams, target, targetOffset);
   }
 
-  context.Restore();
   return result;
 }
 
