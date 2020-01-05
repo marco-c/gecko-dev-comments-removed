@@ -26,6 +26,8 @@ use url::Url;
 use windowing::{WindowEvent, WindowMethods};
 pub use constellation::SendableFrameTree;
 pub use windowing;
+use webrender;
+use webrender_traits;
 
 
 
@@ -97,6 +99,16 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
                 compositor_proxy.send(Msg::TouchEventProcessed(result))
             }
         }
+    }
+}
+
+pub trait RenderListener {
+    fn recomposite(&mut self);
+}
+
+impl RenderListener for Box<CompositorProxy + 'static> {
+    fn recomposite(&mut self) {
+        self.send(Msg::RecompositeAfterScroll);
     }
 }
 
@@ -301,4 +313,7 @@ pub struct InitialCompositorState {
     pub time_profiler_chan: time::ProfilerChan,
     
     pub mem_profiler_chan: mem::ProfilerChan,
+    
+    pub webrender: Option<webrender::Renderer>,
+    pub webrender_api_sender: Option<webrender_traits::RenderApiSender>,
 }

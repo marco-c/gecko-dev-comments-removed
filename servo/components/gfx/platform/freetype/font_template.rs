@@ -5,6 +5,7 @@
 use std::fs::File;
 use std::io::Read;
 use string_cache::Atom;
+use webrender_traits::NativeFontHandle;
 
 
 
@@ -35,5 +36,23 @@ impl FontTemplateData {
             bytes: bytes,
             identifier: identifier,
         }
+    }
+
+    
+    
+    
+    pub fn bytes(&self) -> Vec<u8> {
+        self.bytes.clone()
+    }
+
+    
+    
+    pub fn bytes_if_in_memory(&self) -> Option<Vec<u8>> {
+        Some(self.bytes())
+    }
+
+    
+    pub fn native_font(&self) -> Option<NativeFontHandle> {
+        None
     }
 }

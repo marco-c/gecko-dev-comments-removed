@@ -68,6 +68,8 @@ const CMD_OR_ALT: constellation_msg::KeyModifiers = ALT;
 #[cfg(feature = "window")]
 const LINE_HEIGHT: f32 = 38.0;
 
+const MULTISAMPLES: u16 = 16;
+
 
 #[cfg(feature = "window")]
 pub struct Window {
@@ -88,16 +90,25 @@ impl Window {
                parent: Option<glutin::WindowID>) -> Rc<Window> {
         let width = window_size.to_untyped().width;
         let height = window_size.to_untyped().height;
-        let mut builder = glutin::WindowBuilder::new().with_title("Servo".to_string())
-                                                      .with_decorations(!opts::get().no_native_titlebar)
-                                                      .with_dimensions(width, height)
-                                                      .with_gl(Window::gl_version())
-                                                      .with_visibility(is_foreground)
-                                                      .with_parent(parent)
-                                                      .with_multitouch();
+        let mut builder =
+            glutin::WindowBuilder::new().with_title("Servo".to_string())
+                                        .with_decorations(!opts::get().no_native_titlebar)
+                                        .with_dimensions(width, height)
+                                        .with_gl(Window::gl_version())
+                                        .with_visibility(is_foreground)
+                                        .with_parent(parent)
+                                        .with_multitouch();
 
         if opts::get().enable_vsync {
             builder = builder.with_vsync();
+        }
+
+        if opts::get().use_webrender {
+            builder = builder.with_stencil_buffer(8);
+        }
+
+        if opts::get().use_msaa {
+            builder = builder.with_multisampling(MULTISAMPLES)
         }
 
         let mut glutin_window = builder.build().unwrap();
@@ -144,7 +155,11 @@ impl Window {
 
     #[cfg(not(target_os = "android"))]
     fn gl_version() -> GlRequest {
-        GlRequest::Specific(Api::OpenGl, (2, 1))
+        if opts::get().use_webrender {
+            GlRequest::Specific(Api::OpenGl, (3, 2))
+        } else {
+            GlRequest::Specific(Api::OpenGl, (2, 1))
+        }
     }
 
     #[cfg(target_os = "android")]
@@ -308,29 +323,46 @@ impl Window {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let first_event = self.window.poll_events().next();
-
-        match first_event {
-            Some(event) => {
-                self.handle_window_event(event)
+        if opts::get().use_webrender {
+            let event = self.window.wait_events().next().unwrap();
+            let mut close = self.handle_window_event(event);
+            if !close {
+                while let Some(event) = self.window.poll_events().next() {
+                    if self.handle_window_event(event) {
+                        close = true;
+                        break
+                    }
+                }
             }
-            None => {
-                thread::sleep(Duration::from_millis(16));
-                false
+            close
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let first_event = self.window.poll_events().next();
+
+            match first_event {
+                Some(event) => {
+                    self.handle_window_event(event)
+                }
+                None => {
+                    thread::sleep(Duration::from_millis(16));
+                    false
+                }
             }
         }
     }
