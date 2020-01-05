@@ -4356,7 +4356,6 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
   }
 }
 
-#ifdef MOZ_EME
 static void
 CheckIfContainsEMEContent(nsISupports* aSupports, void* aContainsEME)
 {
@@ -4380,7 +4379,6 @@ nsDocument::ContainsEMEContent()
                              static_cast<void*>(&containsEME));
   return containsEME;
 }
-#endif 
 
 static void
 CheckIfContainsMSEContent(nsISupports* aSupports, void* aContainsMSE)
@@ -8361,13 +8359,11 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
   }
 #endif 
 
-#ifdef MOZ_EME
   
   
   if (ContainsEMEContent()) {
     return false;
   }
-#endif
 
   
   
