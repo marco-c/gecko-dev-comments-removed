@@ -13,18 +13,16 @@ use windowing::{WindowEvent, WindowMethods};
 
 use azure::azure_hl::{SourceSurfaceMethods, Color};
 use geom::point::Point2D;
-use geom::rect::{Rect, TypedRect};
+use geom::rect::Rect;
 use geom::size::Size2D;
 use layers::platform::surface::{NativeCompositingGraphicsContext, NativeGraphicsMetadata};
 use layers::layers::LayerBufferSet;
-use pipeline::CompositionPipeline;
 use msg::compositor_msg::{Epoch, LayerId, LayerMetadata, ReadyState};
 use msg::compositor_msg::{PaintListener, PaintState, ScriptListener, ScrollPolicy};
 use msg::constellation_msg::{ConstellationChan, PipelineId};
 use msg::constellation_msg::{Key, KeyState, KeyModifiers};
 use url::Url;
 use util::cursor::Cursor;
-use util::geometry::PagePx;
 use util::memory::MemoryProfilerChan;
 use util::time::TimeProfilerChan;
 use std::sync::mpsc::{channel, Sender, Receiver};
@@ -208,10 +206,6 @@ pub enum Msg {
     
     SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan),
     
-    CreateRootLayerForPipeline(CompositionPipeline, CompositionPipeline, Option<TypedRect<PagePx, f32>>, Sender<()>),
-    
-    ChangeLayerPipelineAndRemoveChildren(CompositionPipeline, CompositionPipeline, Sender<()>),
-    
     LoadComplete,
     
     
@@ -241,8 +235,6 @@ impl Debug for Msg {
             Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
             Msg::PaintMsgDiscarded(..) => write!(f, "PaintMsgDiscarded"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
-            Msg::CreateRootLayerForPipeline(..) => write!(f, "CreateRootLayerForPipeline"),
-            Msg::ChangeLayerPipelineAndRemoveChildren(..) => write!(f, "ChangeLayerPipelineAndRemoveChildren"),
             Msg::LoadComplete => write!(f, "LoadComplete"),
             Msg::ScrollTimeout(..) => write!(f, "ScrollTimeout"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),

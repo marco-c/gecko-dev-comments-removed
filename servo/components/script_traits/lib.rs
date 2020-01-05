@@ -44,7 +44,7 @@ pub struct UntrustedNodeAddress(pub *const c_void);
 unsafe impl Send for UntrustedNodeAddress {}
 
 pub struct NewLayoutInfo {
-    pub old_pipeline_id: PipelineId,
+    pub containing_pipeline_id: PipelineId,
     pub new_pipeline_id: PipelineId,
     pub subpage_id: SubpageId,
     pub layout_chan: Box<Any+Send>, 
@@ -53,8 +53,6 @@ pub struct NewLayoutInfo {
 
 
 pub enum ConstellationControlMsg {
-    
-    Activate(PipelineId),
     
     AttachLayout(NewLayoutInfo),
     
@@ -74,7 +72,9 @@ pub enum ConstellationControlMsg {
     
     Freeze(PipelineId),
     
-    Thaw(PipelineId)
+    Thaw(PipelineId),
+    
+    Navigate(PipelineId, SubpageId, LoadData),
 }
 
 unsafe impl Send for ConstellationControlMsg {
@@ -112,7 +112,7 @@ pub trait ScriptTaskFactory {
                  storage_task: StorageTask,
                  image_cache_task: ImageCacheTask,
                  devtools_chan: Option<DevtoolsControlChan>,
-                 window_size: WindowSizeData,
+                 window_size: Option<WindowSizeData>,
                  load_data: LoadData)
                  where C: ScriptListener + Send;
     fn create_layout_channel(_phantom: Option<&mut Self>) -> OpaqueScriptLayoutChannel;
