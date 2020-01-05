@@ -977,6 +977,46 @@ sec_pkcs12_is_pkcs12_pbe_algorithm(SECOidTag algorithm)
 }
 
 
+
+
+
+
+
+PRBool
+sec_pkcs12_decode_password(PLArenaPool *arena,
+                           SECItem *result,
+                           SECOidTag algorithm,
+                           const SECItem *pwitem)
+{
+    if (!sec_pkcs12_is_pkcs12_pbe_algorithm(algorithm))
+        return sec_pkcs12_convert_item_to_unicode(arena, result,
+                                                  (SECItem *)pwitem,
+                                                  PR_TRUE, PR_FALSE, PR_FALSE);
+
+    return SECITEM_CopyItem(arena, result, pwitem) == SECSuccess;
+}
+
+
+
+
+
+
+
+PRBool
+sec_pkcs12_encode_password(PLArenaPool *arena,
+                           SECItem *result,
+                           SECOidTag algorithm,
+                           const SECItem *pwitem)
+{
+    if (sec_pkcs12_is_pkcs12_pbe_algorithm(algorithm))
+        return sec_pkcs12_convert_item_to_unicode(arena, result,
+                                                  (SECItem *)pwitem,
+                                                  PR_TRUE, PR_TRUE, PR_TRUE);
+
+    return SECITEM_CopyItem(arena, result, pwitem) == SECSuccess;
+}
+
+
 static const SEC_ASN1TemplateChooserPtr sec_pkcs12_shroud_chooser =
     sec_pkcs12_choose_shroud_type;
 
