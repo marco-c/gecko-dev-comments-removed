@@ -23,10 +23,6 @@ SHOULD_PANIC = "\n#[should_panic] // Look at cookie_http_state_utils.py if this 
 
 
 FAILING_TESTS = [
-    "attribute0004",  
-    "attribute0005",  
-    "attribute0007",  
-    "attribute0008",  
     "0003",           
     "0006",           
     "mozilla0001",    

@@ -12,6 +12,7 @@
 
 #![deny(unsafe_code)]
 
+extern crate cookie as cookie_rs;
 extern crate heapsize;
 extern crate hyper;
 extern crate image as piston_image;
@@ -28,6 +29,7 @@ extern crate util;
 extern crate uuid;
 extern crate websocket;
 
+use cookie_rs::Cookie;
 use filemanager_thread::FileManagerThreadMsg;
 use heapsize::HeapSizeOf;
 use hyper::header::{ContentType, Headers};
@@ -424,7 +426,11 @@ pub enum CoreResourceMsg {
     
     SetCookiesForUrl(Url, String, CookieSource),
     
+    SetCookiesForUrlWithData(Url, Cookie, CookieSource),
+    
     GetCookiesForUrl(Url, IpcSender<Option<String>>, CookieSource),
+    
+    GetCookiesDataForUrl(Url, IpcSender<Vec<Cookie>>, CookieSource),
     
     Cancel(ResourceId),
     
