@@ -32,6 +32,11 @@
 
 #define CHILD_PROCESS_SHUTDOWN_MESSAGE NS_LITERAL_STRING("child-process-shutdown")
 
+#define NO_REMOTE_TYPE ""
+
+
+#define DEFAULT_REMOTE_TYPE "web"
+
 class nsConsoleService;
 class nsICycleCollectorLogSink;
 class nsIDumpGCAndCCLogsCallback;
@@ -129,7 +134,7 @@ public:
 
 
   static already_AddRefed<ContentParent>
-  GetNewOrUsedBrowserProcess(bool aForBrowserElement = false,
+  GetNewOrUsedBrowserProcess(const nsAString& aRemoteType = NS_LITERAL_STRING(NO_REMOTE_TYPE),
                              hal::ProcessPriority aPriority =
                              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
                              ContentParent* aOpener = nullptr,
@@ -582,7 +587,7 @@ private:
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
   ContentParent(ContentParent* aOpener,
-                bool aIsForBrowser);
+                const nsAString& aRemoteType);
 
   
   void InitializeMembers();
@@ -682,8 +687,7 @@ private:
                                 DomainPolicyClone* domainPolicy,
                                 StructuredCloneData* initialData,
                                 InfallibleTArray<FontFamilyListEntry>* fontFamilies,
-                                OptionalURIParams* aUserContentSheetURL,
-                                nsTArray<LookAndFeelInt>* aLookAndFeelIntCache) override;
+                                OptionalURIParams* aUserContentSheetURL) override;
 
   virtual bool
   DeallocPJavaScriptParent(mozilla::jsipc::PJavaScriptParent*) override;
@@ -929,6 +933,8 @@ private:
                                                                 const bool& aContentOrNormalChannel,
                                                                 const bool& aAnyChannel) override;
 
+  virtual mozilla::ipc::IPCResult RecvGetLookAndFeelCache(nsTArray<LookAndFeelInt>* aLookAndFeelIntCache) override;
+
   virtual mozilla::ipc::IPCResult RecvKeywordToURI(const nsCString& aKeyword,
                                                    nsString* aProviderName,
                                                    OptionalInputStreamParams* aPostData,
@@ -1052,6 +1058,8 @@ private:
 
   GeckoChildProcessHost* mSubprocess;
   ContentParent* mOpener;
+
+  nsString mRemoteType;
 
   ContentParentId mChildID;
   int32_t mGeolocationWatchID;
