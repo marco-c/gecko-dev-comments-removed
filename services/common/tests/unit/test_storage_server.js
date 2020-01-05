@@ -597,7 +597,7 @@ add_test(function test_x_num_records() {
     
     do_check_false("x-num-records" in this.response.headers);
     let col = localRequest(server, "/2.0/123/storage/crypto");
-    col.get(function(err2) {
+    col.get(function(err) {
       
       do_check_eq(this.response.headers["x-num-records"], "2");
       server.stop(run_next_test);

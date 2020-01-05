@@ -222,6 +222,7 @@ add_task(function* test_offset_in_hawk_header() {
     "/second": function(request, response) {
       
       let delta = getTimestampDelta(request.getHeader("Authorization"));
+      let message = "Delta: " + delta;
 
       
       
@@ -499,3 +500,4 @@ function run_test() {
   initTestLogging("Trace");
   run_next_test();
 }
+
