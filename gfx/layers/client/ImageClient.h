@@ -11,7 +11,6 @@
 #include "mozilla/Attributes.h"         
 #include "mozilla/RefPtr.h"             
 #include "mozilla/gfx/Types.h"          
-#include "mozilla/layers/AsyncTransactionTracker.h" 
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
@@ -25,7 +24,6 @@ namespace layers {
 
 class ClientLayer;
 class CompositableForwarder;
-class AsyncTransactionTracker;
 class Image;
 class ImageContainer;
 class ShadowableLayer;
@@ -64,12 +62,9 @@ public:
 
 
 
-  virtual void FlushAllImages(AsyncTransactionWaiter* aAsyncTransactionWaiter) {}
+  virtual void FlushAllImages() {}
 
   virtual void RemoveTexture(TextureClient* aTexture) override;
-
-  void RemoveTextureWithWaiter(TextureClient* aTexture,
-                               AsyncTransactionWaiter* aAsyncTransactionWaiter = nullptr);
 
   virtual ImageClientSingle* AsImageClientSingle() { return nullptr; }
 
@@ -102,7 +97,7 @@ public:
 
   virtual TextureInfo GetTextureInfo() const override;
 
-  virtual void FlushAllImages(AsyncTransactionWaiter* aAsyncTransactionWaiter) override;
+  virtual void FlushAllImages() override;
 
   ImageClientSingle* AsImageClientSingle() override { return this; }
 

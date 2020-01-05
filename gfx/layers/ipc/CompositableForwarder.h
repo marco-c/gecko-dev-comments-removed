@@ -26,7 +26,6 @@ namespace mozilla {
 namespace layers {
 
 class CompositableClient;
-class AsyncTransactionTracker;
 class ImageContainer;
 class SurfaceDescriptor;
 class SurfaceDescriptorTiles;
@@ -87,19 +86,6 @@ public:
 
   virtual void RemoveTextureFromCompositable(CompositableClient* aCompositable,
                                              TextureClient* aTexture) = 0;
-
-  
-
-
-
-
-
-
-
-
-  virtual void RemoveTextureFromCompositableAsync(AsyncTransactionTracker* aAsyncTransactionTracker,
-                                                  CompositableClient* aCompositable,
-                                                  TextureClient* aTexture) {}
 
   struct TimedTextureClient {
     TimedTextureClient()

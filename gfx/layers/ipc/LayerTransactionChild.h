@@ -11,7 +11,6 @@
 #include <stdint.h>                     
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/AsyncTransactionTracker.h" 
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/RefPtr.h"
 

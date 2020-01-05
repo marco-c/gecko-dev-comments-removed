@@ -10,7 +10,6 @@
 
 #include <vector>                       
 #include "mozilla/Attributes.h"         
-#include "mozilla/layers/AsyncTransactionTracker.h" 
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersMessages.h"  
 
@@ -46,8 +45,6 @@ protected:
 
   bool ReceiveCompositableUpdate(const CompositableOperation& aEdit,
                                  EditReplyVector& replyv);
-
-  virtual void ReplyRemoveTexture(const OpReplyRemoveTexture& aReply) {};
 
   uint64_t mFwdTransactionId = 0;
 };

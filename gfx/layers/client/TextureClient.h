@@ -609,14 +609,6 @@ public:
 
 
 
-
-
-  virtual void WaitForBufferOwnership(bool aWaitReleaseFence = true);
-
-  
-
-
-
   void SetWaste(int aWasteArea) {
     mWasteTracker.Update(aWasteArea, BytesPerPixel(GetFormat()));
   }
@@ -648,8 +640,6 @@ public:
     return false;
   }
 
-  void WaitFenceHandleOnImageBridge(Mutex& aMutex);
-  void ClearWaitFenceHandleOnImageBridge(Mutex& aMutex);
   void CancelWaitFenceHandleOnImageBridge();
 
   void CancelWaitForRecycle();
@@ -744,7 +734,6 @@ protected:
   TextureFlags mFlags;
   FenceHandle mReleaseFenceHandle;
   FenceHandle mAcquireFenceHandle;
-  RefPtr<AsyncTransactionWaiter> mFenceHandleWaiter;
 
   gl::GfxTextureWasteTracker mWasteTracker;
 
@@ -774,7 +763,6 @@ protected:
   static mozilla::Atomic<uint64_t> sSerialCounter;
 
   friend class TextureChild;
-  friend class RemoveTextureFromCompositableTracker;
   friend void TestTextureClientSurface(TextureClient*, gfxImageSurface*);
   friend void TestTextureClientYCbCr(TextureClient*, PlanarYCbCrData&);
 
