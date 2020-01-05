@@ -278,8 +278,6 @@ impl Shaper {
         
         let mut char_idx = CharIndex(0);
 
-        assert!(glyph_count <= char_max);
-
         debug!("Shaped text[char count={}], got back {} glyph info records.",
                char_max,
                glyph_count);
