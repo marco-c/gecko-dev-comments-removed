@@ -718,7 +718,7 @@ NativeObject::maybeDensifySparseElements(js::ExclusiveContext* cx, HandleNativeO
 
 
 
-    if (!obj->clearFlag(cx, BaseShape::INDEXED))
+    if (!NativeObject::clearFlag(cx, obj, BaseShape::INDEXED))
         return DenseElementResult::Failure;
 
     return DenseElementResult::Success;

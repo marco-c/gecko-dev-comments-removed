@@ -607,7 +607,7 @@ class NativeObject : public ShapedObject
     }
 
     bool shadowingShapeChange(ExclusiveContext* cx, const Shape& shape);
-    bool clearFlag(ExclusiveContext* cx, BaseShape::Flag flag);
+    static bool clearFlag(ExclusiveContext* cx, HandleNativeObject obj, BaseShape::Flag flag);
 
     
     
