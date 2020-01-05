@@ -117,27 +117,7 @@ public class testActivityStreamContextMenu extends BaseTest {
                  true);
 
         
-        db.removeHistoryEntry(contentResolver, TEST_URL);
-
-        mAsserter.info("ContextMenu", "Highlight (Bookmarked, Pinned)");
-        testMenuForHighlight(TEST_URL,
-                 true,
-                 true,
-                 false);
-
-        
-        db.unpinSiteForAS(contentResolver, TEST_URL);
-
-        mAsserter.info("ContextMenu", "Highlight (Bookmarked)");
-        testMenuForHighlight(TEST_URL,
-                 true,
-                 false,
-                 false);
-
-        
         db.removeBookmarksWithURL(contentResolver, TEST_URL);
-        db.pinSiteForAS(contentResolver, TEST_URL, "barfoo");
-        insertVisit(TEST_URL, System.currentTimeMillis() - 60 * 1000 * 1000);
 
         mAsserter.info("ContextMenu", "Highlight (Pinned, Visited)");
         testMenuForHighlight(TEST_URL,
@@ -303,7 +283,7 @@ public class testActivityStreamContextMenu extends BaseTest {
 
 
     private Highlight findHighlightByUrl(String url) {
-        final Cursor cursor = db.getHighlights(getActivity(), 20).loadInBackground();
+        final Cursor cursor = db.getHighlightCandidates(getActivity().getContentResolver(), 20);
         mAsserter.isnot(cursor, null, "Highlights cursor is not null");
 
         try {

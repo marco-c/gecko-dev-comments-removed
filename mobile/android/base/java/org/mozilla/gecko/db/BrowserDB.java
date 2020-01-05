@@ -185,7 +185,7 @@ public abstract class BrowserDB {
 
 
 
-    public abstract CursorLoader getHighlights(Context context, int limit);
+    public abstract Cursor getHighlightCandidates(ContentResolver contentResolver, int limit);
 
     
 
