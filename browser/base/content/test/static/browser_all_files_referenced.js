@@ -81,6 +81,9 @@ var whitelist = new Set([
   {file: "resource://app/modules/NewTabWebChannel.jsm"},
 
   
+  {file: "resource://app/modules/PreviewProvider.jsm", skipNightly: true},
+
+  
   {file: "resource://gre/res/fonts/mathfontSTIXGeneral.properties"},
   {file: "resource://gre/res/fonts/mathfontUnicode.properties"},
 
@@ -237,12 +240,15 @@ var whitelist = new Set([
   
   {file: "resource://gre/modules/PropertyListUtils.jsm", platforms: ["linux", "win"]},
   
+  {file: "resource://gre/modules/Sntp.jsm"},
+  
   {file: "resource://gre/modules/accessibility/AccessFu.jsm"},
   
   {file: "resource://gre/modules/sdk/bootstrap.js"},
 
 ].filter(item =>
   ("isFromDevTools" in item) == isDevtools &&
+  (!item.skipNightly || !AppConstants.NIGHTLY_BUILD) &&
   (!item.platforms || item.platforms.includes(AppConstants.platform))
 ).map(item => item.file));
 
