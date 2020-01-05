@@ -326,9 +326,12 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
         }
 
         nsSecurityFlags securityFlags = loadInfo->GetSecurityMode();
-        if (securityFlags == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS ||
-            securityFlags == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS ||
-            securityFlags == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS) {
+        
+        
+        if (loadInfo->RedirectChain().IsEmpty() &&
+            (securityFlags == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS ||
+             securityFlags == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS ||
+             securityFlags == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS)) {
 
             nsCOMPtr<nsIURI> uri;
             nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
