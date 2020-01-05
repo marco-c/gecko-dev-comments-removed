@@ -3230,17 +3230,17 @@ HTMLEditRules::WillMakeList(Selection* aSelection,
     }
 
     
-    if (TextEditUtils::IsBreak(curNode)) {
+    
+    
+    NS_ENSURE_STATE(mHTMLEditor);
+    if (mHTMLEditor->IsEditable(curNode) && (TextEditUtils::IsBreak(curNode) ||
+                                             IsEmptyInline(curNode))) {
       NS_ENSURE_STATE(mHTMLEditor);
       rv = mHTMLEditor->DeleteNode(curNode);
       NS_ENSURE_SUCCESS(rv, rv);
-      prevListItem = nullptr;
-      continue;
-    } else if (IsEmptyInline(curNode)) {
-      
-      NS_ENSURE_STATE(mHTMLEditor);
-      rv = mHTMLEditor->DeleteNode(curNode);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (TextEditUtils::IsBreak(curNode)) {
+        prevListItem = nullptr;
+      }
       continue;
     }
 
@@ -3504,13 +3504,6 @@ HTMLEditRules::WillMakeBasicBlock(Selection& aSelection,
   rv = GetNodesFromSelection(aSelection, EditAction::makeBasicBlock,
                              arrayOfNodes);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  for (int32_t i = arrayOfNodes.Length() - 1; i >= 0; i--) {
-    if (!htmlEditor->IsEditable(arrayOfNodes[i])) {
-      arrayOfNodes.RemoveElementAt(i);
-    }
-  }
 
   
   if (ListIsEmptyLine(arrayOfNodes)) {
@@ -6781,6 +6774,9 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
         NS_ENSURE_SUCCESS(rv, rv);
         firstNode = lastNode = curBlock = nullptr;
       }
+      if (!mHTMLEditor->IsEditable(curNode)) {
+        continue;
+      }
       
       nsresult rv = htmlEditor->RemoveBlockContainer(*curNode->AsContent());
       NS_ENSURE_SUCCESS(rv, rv);
@@ -6797,6 +6793,9 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
         nsresult rv = RemovePartOfBlock(*curBlock, *firstNode, *lastNode);
         NS_ENSURE_SUCCESS(rv, rv);
         firstNode = lastNode = curBlock = nullptr;
+      }
+      if (!mHTMLEditor->IsEditable(curNode)) {
+        continue;
       }
       
       nsTArray<OwningNonNull<nsINode>> childArray;
@@ -6820,11 +6819,12 @@ HTMLEditRules::RemoveBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray)
         
       }
       curBlock = htmlEditor->GetBlockNodeParent(curNode);
-      if (curBlock && HTMLEditUtils::IsFormatNode(curBlock)) {
-        firstNode = lastNode = curNode->AsContent();
-      } else {
+      if (!curBlock || !HTMLEditUtils::IsFormatNode(curBlock) ||
+          !mHTMLEditor->IsEditable(curBlock)) {
         
         curBlock = nullptr;
+      } else {
+        firstNode = lastNode = curNode->AsContent();
       }
     } else if (curBlock) {
       
@@ -6857,13 +6857,6 @@ HTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
   NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
 
-  
-  for (int32_t i = aNodeArray.Length() - 1; i >= 0; i--) {
-    if (!htmlEditor->IsEditable(aNodeArray[i])) {
-      aNodeArray.RemoveElementAt(i);
-    }
-  }
-
   nsCOMPtr<Element> newBlock;
 
   nsCOMPtr<Element> curBlock;
@@ -6872,7 +6865,8 @@ HTMLEditRules::ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
     int32_t offset = curParent ? curParent->IndexOf(curNode) : -1;
 
     
-    if (curNode->IsHTMLElement(&aBlockTag)) {
+    if (curNode->IsHTMLElement(&aBlockTag) ||
+        (!mHTMLEditor->IsEditable(curNode) && IsBlockNode(curNode))) {
       
       curBlock = nullptr;
       
