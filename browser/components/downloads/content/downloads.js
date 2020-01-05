@@ -720,7 +720,7 @@ const DownloadsView = {
   
 
 
-  kItemCountLimit: 3,
+  kItemCountLimit: 5,
 
   
 
