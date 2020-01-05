@@ -224,8 +224,11 @@ protected:
   bool IsMailEditor() const;
   bool DontEchoPassword() const;
 
+private:
   
   TextEditor* mTextEditor;
+
+protected:
   
   nsString mPasswordText;
   
