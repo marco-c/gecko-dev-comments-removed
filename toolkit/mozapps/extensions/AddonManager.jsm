@@ -1348,7 +1348,7 @@ var AddonManagerInternal = {
     let difference = Extension.comparePermissions(oldPerms, newPerms);
 
     
-    if (difference.origins.length == 0 && difference.permissions.length == 0) {
+    if (difference.hosts.length == 0 && difference.permissions.length == 0) {
       return Promise.resolve();
     }
 
