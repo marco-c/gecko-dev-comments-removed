@@ -9,7 +9,6 @@ const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const { TimelineFront } = require("devtools/shared/fronts/timeline");
 const { CurlUtils } = require("devtools/client/shared/curl");
-const { Task } = require("devtools/shared/task");
 const { ACTIVITY_TYPE } = require("./constants");
 const { EVENTS } = require("./events");
 const { configureStore } = require("./store");
@@ -35,15 +34,15 @@ var NetMonitorController = {
 
 
 
-  startupNetMonitor: Task.async(function* () {
+  async startupNetMonitor() {
     if (this._startup) {
       return this._startup.promise;
     }
     this._startup = promise.defer();
-    yield this.connect();
+    await this.connect();
     this._startup.resolve();
     return undefined;
-  }),
+  },
 
   
 
@@ -51,7 +50,7 @@ var NetMonitorController = {
 
 
 
-  shutdownNetMonitor: Task.async(function* () {
+  async shutdownNetMonitor() {
     if (this._shutdown) {
       return this._shutdown.promise;
     }
@@ -59,10 +58,10 @@ var NetMonitorController = {
     gStore.dispatch(Actions.batchReset());
     this.TargetEventsHandler.disconnect();
     this.NetworkEventsHandler.disconnect();
-    yield this.disconnect();
+    await this.disconnect();
     this._shutdown.resolve();
     return undefined;
-  }),
+  },
 
   
 
@@ -73,7 +72,7 @@ var NetMonitorController = {
 
 
 
-  connect: Task.async(function* () {
+  async connect() {
     if (this._connection) {
       return this._connection.promise;
     }
@@ -97,7 +96,7 @@ var NetMonitorController = {
     };
 
     this.webConsoleClient = this._target.activeConsole;
-    yield connectTimeline();
+    await connectTimeline();
 
     this.TargetEventsHandler.connect();
     this.NetworkEventsHandler.connect();
@@ -107,12 +106,12 @@ var NetMonitorController = {
     this._connection.resolve();
     this._connected = true;
     return undefined;
-  }),
+  },
 
   
 
 
-  disconnect: Task.async(function* () {
+  async disconnect() {
     if (this._disconnection) {
       return this._disconnection.promise;
     }
@@ -120,7 +119,7 @@ var NetMonitorController = {
 
     
     if (!this.isConnected()) {
-      yield this._connection.promise;
+      await this._connection.promise;
     }
 
     
@@ -131,14 +130,14 @@ var NetMonitorController = {
     
     
     if (this._target.getTrait("documentLoadingMarkers")) {
-      yield this.timelineFront.destroy();
+      await this.timelineFront.destroy();
       this.timelineFront = null;
     }
 
     this._disconnection.resolve();
     this._connected = false;
     return undefined;
-  }),
+  },
 
   
 
@@ -566,9 +565,9 @@ NetworkEventsHandler.prototype = {
     .then(() => window.emit(EVENTS.REQUEST_ADDED, id));
   },
 
-  updateRequest: Task.async(function* (id, data) {
+  async updateRequest(id, data) {
     const action = Actions.updateRequest(id, data, true);
-    yield gStore.dispatch(action);
+    await gStore.dispatch(action);
     let {
       responseContent,
       responseCookies,
@@ -580,9 +579,9 @@ NetworkEventsHandler.prototype = {
     let request = getRequestById(gStore.getState(), action.id);
 
     if (requestHeaders && requestHeaders.headers && requestHeaders.headers.length) {
-      let headers = yield fetchHeaders(requestHeaders, this.getString);
+      let headers = await fetchHeaders(requestHeaders, this.getString);
       if (headers) {
-        yield gStore.dispatch(Actions.updateRequest(
+        await gStore.dispatch(Actions.updateRequest(
           action.id,
           { requestHeaders: headers },
           true,
@@ -591,9 +590,9 @@ NetworkEventsHandler.prototype = {
     }
 
     if (responseHeaders && responseHeaders.headers && responseHeaders.headers.length) {
-      let headers = yield fetchHeaders(responseHeaders, this.getString);
+      let headers = await fetchHeaders(responseHeaders, this.getString);
       if (headers) {
-        yield gStore.dispatch(Actions.updateRequest(
+        await gStore.dispatch(Actions.updateRequest(
           action.id,
           { responseHeaders: headers },
           true,
@@ -604,7 +603,7 @@ NetworkEventsHandler.prototype = {
     if (request && responseContent && responseContent.content) {
       let { mimeType } = request;
       let { text, encoding } = responseContent.content;
-      let response = yield this.getString(text);
+      let response = await this.getString(text);
       let payload = {};
 
       if (mimeType.includes("image/")) {
@@ -614,7 +613,7 @@ NetworkEventsHandler.prototype = {
       responseContent.content.text = response;
       payload.responseContent = responseContent;
 
-      yield gStore.dispatch(Actions.updateRequest(action.id, payload, true));
+      await gStore.dispatch(Actions.updateRequest(action.id, payload, true));
 
       if (mimeType.includes("image/")) {
         window.emit(EVENTS.RESPONSE_IMAGE_THUMBNAIL_DISPLAYED);
@@ -625,7 +624,7 @@ NetworkEventsHandler.prototype = {
     
     if (requestPostData && requestPostData.postData) {
       let { text } = requestPostData.postData;
-      let postData = yield this.getString(text);
+      let postData = await this.getString(text);
       const headers = CurlUtils.getHeadersFromMultipartText(postData);
       const headersSize = headers.reduce((acc, { name, value }) => {
         return acc + name.length + value.length + 2;
@@ -635,7 +634,7 @@ NetworkEventsHandler.prototype = {
       payload.requestPostData = Object.assign({}, requestPostData);
       payload.requestHeadersFromUploadStream = { headers, headersSize };
 
-      yield gStore.dispatch(Actions.updateRequest(action.id, payload, true));
+      await gStore.dispatch(Actions.updateRequest(action.id, payload, true));
     }
 
     
@@ -650,11 +649,11 @@ NetworkEventsHandler.prototype = {
       if (typeof cookies[Symbol.iterator] === "function") {
         for (let cookie of cookies) {
           reqCookies.push(Object.assign({}, cookie, {
-            value: yield this.getString(cookie.value),
+            value: await this.getString(cookie.value),
           }));
         }
         if (reqCookies.length) {
-          yield gStore.dispatch(Actions.updateRequest(
+          await gStore.dispatch(Actions.updateRequest(
             action.id,
             { requestCookies: reqCookies },
             true));
@@ -671,18 +670,18 @@ NetworkEventsHandler.prototype = {
       if (typeof cookies[Symbol.iterator] === "function") {
         for (let cookie of cookies) {
           resCookies.push(Object.assign({}, cookie, {
-            value: yield this.getString(cookie.value),
+            value: await this.getString(cookie.value),
           }));
         }
         if (resCookies.length) {
-          yield gStore.dispatch(Actions.updateRequest(
+          await gStore.dispatch(Actions.updateRequest(
             action.id,
             { responseCookies: resCookies },
             true));
         }
       }
     }
-  }),
+  },
 
   
 
@@ -902,17 +901,6 @@ EventEmitter.decorate(window);
 
 NetMonitorController.TargetEventsHandler = new TargetEventsHandler();
 NetMonitorController.NetworkEventsHandler = new NetworkEventsHandler();
-
-
-
-
-Object.defineProperties(window, {
-  "gNetwork": {
-    get: function () {
-      return NetMonitorController.NetworkEventsHandler;
-    },
-    configurable: true
-  }
-});
+window.gNetwork = NetMonitorController.NetworkEventsHandler;
 
 exports.NetMonitorController = NetMonitorController;

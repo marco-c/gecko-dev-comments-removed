@@ -5,7 +5,6 @@
 "use strict";
 
 const Services = require("Services");
-const { Task } = require("devtools/shared/task");
 const { Curl } = require("devtools/client/shared/curl");
 const { gDevTools } = require("devtools/client/framework/devtools");
 const Menu = require("devtools/client/framework/menu");
@@ -218,11 +217,11 @@ RequestListContextMenu.prototype = {
 
 
 
-  copyPostData: Task.async(function* () {
+  async copyPostData() {
     let selected = this.selectedRequest;
 
     
-    let formDataSections = yield getFormDataSections(
+    let formDataSections = await getFormDataSections(
       selected.requestHeaders,
       selected.requestHeadersFromUploadStream,
       selected.requestPostData,
@@ -243,19 +242,19 @@ RequestListContextMenu.prototype = {
     
     if (!string) {
       let postData = selected.requestPostData.postData.text;
-      string = yield window.gNetwork.getString(postData);
+      string = await window.gNetwork.getString(postData);
       if (Services.appinfo.OS !== "WINNT") {
         string = string.replace(/\r/g, "");
       }
     }
 
     clipboardHelper.copyString(string);
-  }),
+  },
 
   
 
 
-  copyAsCurl: Task.async(function* () {
+  async copyAsCurl() {
     let selected = this.selectedRequest;
 
     
@@ -269,18 +268,18 @@ RequestListContextMenu.prototype = {
 
     
     for (let { name, value } of selected.requestHeaders.headers) {
-      let text = yield window.gNetwork.getString(value);
+      let text = await window.gNetwork.getString(value);
       data.headers.push({ name: name, value: text });
     }
 
     
     if (selected.requestPostData) {
       let postData = selected.requestPostData.postData.text;
-      data.postDataText = yield window.gNetwork.getString(postData);
+      data.postDataText = await window.gNetwork.getString(postData);
     }
 
     clipboardHelper.copyString(Curl.generateCommand(data));
-  }),
+  },
 
   
 

@@ -249,16 +249,6 @@ function waitForNetworkEvents(aMonitor, aGetRequests, aPostRequests = 0) {
   return deferred.promise;
 }
 
-
-
-
-
-
-function getItemTarget(requestList, requestItem) {
-  const items = requestList.mountPoint.querySelectorAll(".request-list-item");
-  return [...items].find(el => el.dataset.id == requestItem.id);
-}
-
 function verifyRequestItemTarget(document, requestList, requestItem, aMethod,
                                  aUrl, aData = {}) {
   info("> Verifying: " + aMethod + " " + aUrl + " " + aData.toSource());

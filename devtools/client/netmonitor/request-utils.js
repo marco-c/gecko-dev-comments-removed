@@ -6,7 +6,6 @@
 
 "use strict";
 
-const { Task } = require("devtools/shared/task");
 
 
 
@@ -17,9 +16,7 @@ const { Task } = require("devtools/shared/task");
 
 
 
-
-const getFormDataSections = Task.async(function* (headers, uploadHeaders, postData,
-                                                    getString) {
+async function getFormDataSections(headers, uploadHeaders, postData, getString) {
   let formDataSections = [];
 
   let requestHeaders = headers.headers;
@@ -32,11 +29,11 @@ const getFormDataSections = Task.async(function* (headers, uploadHeaders, postDa
 
   let contentTypeLongString = contentTypeHeader ? contentTypeHeader.value : "";
 
-  let contentType = yield getString(contentTypeLongString);
+  let contentType = await getString(contentTypeLongString);
 
   if (contentType.includes("x-www-form-urlencoded")) {
     let postDataLongString = postData.postData.text;
-    let text = yield getString(postDataLongString);
+    let text = await getString(postDataLongString);
 
     for (let section of text.split(/\r\n|\r|\n/)) {
       
@@ -48,7 +45,7 @@ const getFormDataSections = Task.async(function* (headers, uploadHeaders, postDa
   }
 
   return formDataSections;
-});
+}
 
 
 
@@ -57,13 +54,12 @@ const getFormDataSections = Task.async(function* (headers, uploadHeaders, postDa
 
 
 
-const fetchHeaders = Task.async(function* (headers, getString) {
+async function fetchHeaders(headers, getString) {
   for (let { value } of headers.headers) {
-    headers.headers.value = yield getString(value);
+    headers.headers.value = await getString(value);
   }
-
   return headers;
-});
+}
 
 
 
