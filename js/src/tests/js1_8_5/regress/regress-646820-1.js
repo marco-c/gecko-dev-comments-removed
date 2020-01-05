@@ -2,7 +2,7 @@
 
 
 (function () {
-    var [x, y] = [1, function () x];
+    var [x, y] = [1, function () { return x; }];
     assertEq(y(), 1);
 })();
 

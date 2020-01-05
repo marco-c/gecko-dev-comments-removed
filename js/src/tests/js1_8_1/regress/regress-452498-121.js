@@ -23,7 +23,7 @@ function test()
 
 
 
-  x = function()x;
+  x = function() { return x; };
 
 
 

@@ -24,7 +24,7 @@ function test()
 
 
 
-  x; var x; function x() 0
+  x; var x; function x() { return 0; }
 
 
 

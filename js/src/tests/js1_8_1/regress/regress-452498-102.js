@@ -24,7 +24,7 @@ function test()
 
 
 
-  (function(){function x(){} function x()y})();
+  (function(){function x(){} function x() { return y; }})();
 
 
 
