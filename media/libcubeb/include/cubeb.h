@@ -177,11 +177,70 @@ typedef enum {
 } cubeb_log_level;
 
 
-typedef struct {
-  cubeb_sample_format format; 
 
-  unsigned int rate;          
-  unsigned int channels;      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum {
+  CUBEB_LAYOUT_UNDEFINED, 
+  CUBEB_LAYOUT_DUAL_MONO,
+  CUBEB_LAYOUT_DUAL_MONO_LFE,
+  CUBEB_LAYOUT_MONO,
+  CUBEB_LAYOUT_MONO_LFE,
+  CUBEB_LAYOUT_STEREO,
+  CUBEB_LAYOUT_STEREO_LFE,
+  CUBEB_LAYOUT_3F,
+  CUBEB_LAYOUT_3F_LFE,
+  CUBEB_LAYOUT_2F1,
+  CUBEB_LAYOUT_2F1_LFE,
+  CUBEB_LAYOUT_3F1,
+  CUBEB_LAYOUT_3F1_LFE,
+  CUBEB_LAYOUT_2F2,
+  CUBEB_LAYOUT_2F2_LFE,
+  CUBEB_LAYOUT_3F2,
+  CUBEB_LAYOUT_3F2_LFE,
+  CUBEB_LAYOUT_3F3R_LFE,
+  CUBEB_LAYOUT_3F4_LFE,
+  CUBEB_LAYOUT_MAX
+} cubeb_channel_layout;
+
+
+typedef struct {
+  cubeb_sample_format format;   
+
+  unsigned int rate;            
+  unsigned int channels;        
+  cubeb_channel_layout layout;  
 #if defined(__ANDROID__)
   cubeb_stream_type stream_type; 
 #endif
@@ -397,6 +456,15 @@ CUBEB_EXPORT int cubeb_get_min_latency(cubeb * context,
 
 
 CUBEB_EXPORT int cubeb_get_preferred_sample_rate(cubeb * context, uint32_t * rate);
+
+
+
+
+
+
+
+
+CUBEB_EXPORT int cubeb_get_preferred_channel_layout(cubeb * context, cubeb_channel_layout * layout);
 
 
 

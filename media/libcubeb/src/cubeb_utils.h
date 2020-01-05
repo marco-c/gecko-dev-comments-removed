@@ -46,6 +46,63 @@ void PodZero(T * destination, size_t count)
   memset(destination, 0,  count * sizeof(T));
 }
 
+namespace {
+template<typename T, typename Trait>
+void Copy(T * destination, const T * source, size_t count, Trait)
+{
+  for (size_t i = 0; i < count; i++) {
+    destination[i] = source[i];
+  }
+}
+
+template<typename T>
+void Copy(T * destination, const T * source, size_t count, std::true_type)
+{
+  PodCopy(destination, source, count);
+}
+}
+
+
+
+
+
+
+template<typename T>
+void Copy(T * destination, const T * source, size_t count)
+{
+  assert(destination && source);
+  Copy(destination, source, count, typename std::is_trivial<T>::type());
+}
+
+namespace {
+template<typename T, typename Trait>
+void ConstructDefault(T * destination, size_t count, Trait)
+{
+  for (size_t i = 0; i < count; i++) {
+    destination[i] = T();
+  }
+}
+
+template<typename T>
+void ConstructDefault(T * destination,
+                      size_t count, std::true_type)
+{
+  PodZero(destination, count);
+}
+}
+
+
+
+
+
+template<typename T>
+void ConstructDefault(T * destination, size_t count)
+{
+  assert(destination);
+  ConstructDefault(destination, count,
+                   typename std::is_arithmetic<T>::type());
+}
+
 template<typename T>
 class auto_array
 {
