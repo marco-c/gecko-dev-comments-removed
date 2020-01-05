@@ -3238,7 +3238,11 @@ nsGlobalWindow::PreloadLocalStorage()
   
   
   if (principal->GetPrivateBrowsingId() == 0) {
-    storageManager->PrecacheStorage(principal);
+    nsCOMPtr<nsIDOMStorage> storage;
+    rv = storageManager->PrecacheStorage(principal, getter_AddRefs(storage));
+    if (NS_SUCCEEDED(rv)) {
+      mLocalStorage = static_cast<Storage*>(storage.get());
+    }
   }
 }
 
