@@ -75,9 +75,6 @@ pub struct Box {
     margin: Slot<SideOffsets2D<Au>>,
 
     
-    content_box_width: Au,
-
-    
     specific: SpecificBoxInfo,
 }
 
@@ -218,7 +215,6 @@ impl Box {
             border: Slot::init(Zero::zero()),
             padding: Slot::init(Zero::zero()),
             margin: Slot::init(Zero::zero()),
-            content_box_width: Zero::zero(),
             specific: specific,
         }
     }
@@ -240,7 +236,6 @@ impl Box {
             border: Slot::init(self.border.get()),
             padding: Slot::init(self.padding.get()),
             margin: Slot::init(self.margin.get()),
-            content_box_width: self.content_box_width,
             specific: specific,
         }
     }
@@ -313,7 +308,9 @@ impl Box {
         self.padding.set(padding)
     }
 
-    pub fn compute_padding_length(&self, padding: LengthOrPercentage, content_box_width: Au)
+    pub fn compute_padding_length(&self,
+                                  padding: LengthOrPercentage,
+                                  content_box_width: Au)
                                   -> Au {
         specified(padding, content_box_width)
     }
