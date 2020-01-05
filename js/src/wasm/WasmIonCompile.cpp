@@ -1830,23 +1830,35 @@ EmitBrTable(FunctionCompiler& f)
     if (!depths.reserve(tableLength))
         return false;
 
-    uint32_t depth;
     for (size_t i = 0; i < tableLength; ++i) {
+        uint32_t depth;
         if (!f.iter().readBrTableEntry(&type, &value, &depth))
             return false;
         depths.infallibleAppend(depth);
     }
 
     
-    if (!f.iter().readBrTableDefault(&type, &value, &depth))
+    uint32_t defaultDepth;
+    if (!f.iter().readBrTableDefault(&type, &value, &defaultDepth))
         return false;
 
     MDefinition* maybeValue = IsVoid(type) ? nullptr : value;
 
-    if (tableLength == 0)
-        return f.br(depth, maybeValue);
+    
+    
+    
+    bool allSameDepth = true;
+    for (uint32_t depth : depths) {
+        if (depth != defaultDepth) {
+            allSameDepth = false;
+            break;
+        }
+    }
 
-    return f.brTable(index, depth, depths, maybeValue);
+    if (allSameDepth)
+        return f.br(defaultDepth, maybeValue);
+
+    return f.brTable(index, defaultDepth, depths, maybeValue);
 }
 
 static bool
