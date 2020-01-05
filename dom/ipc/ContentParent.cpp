@@ -719,7 +719,9 @@ ContentParent::GetMaxProcessCount(const nsAString& aContentProcessType)
 
   
   
-  if (!hasUserValue && Preferences::GetBool("extensions.e10sMultiBlockedByAddons", false)) {
+  if (!hasUserValue &&
+      Preferences::GetBool("extensions.e10sMultiBlocksEnabling", false) &&
+      Preferences::GetBool("extensions.e10sMultiBlockedByAddons", false)) {
     return 1;
   }
 

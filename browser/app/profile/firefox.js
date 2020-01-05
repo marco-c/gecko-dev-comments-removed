@@ -1475,6 +1475,7 @@ pref("extensions.interposition.prefetching", true);
 
 #ifdef RELEASE_OR_BETA
 pref("extensions.e10sBlocksEnabling", true);
+pref("extensions.e10sMultiBlocksEnabling", true);
 #endif
 
 
