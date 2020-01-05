@@ -83,6 +83,10 @@ Rule::IsKnownLive() const
     return true;
   }
 
+#if 1
+  return false;
+#else
+  
   StyleSheet* sheet = GetStyleSheet();
   if (!sheet) {
     return false;
@@ -94,6 +98,7 @@ Rule::IsKnownLive() const
 
   return nsCCUncollectableMarker::InGeneration(
     sheet->GetAssociatedDocument()->GetMarkedCCGeneration());
+#endif
 }
 
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(Rule)
