@@ -2077,6 +2077,22 @@ nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow)
 
 
 bool
+nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
+{
+  
+  if (IsSystemCaller(aCx)) {
+    return true;
+  }
+
+  JSCompartment* c = js::GetContextCompartment(aCx);
+  nsIPrincipal* p = nsJSPrincipals::get(JS_GetCompartmentPrincipals(c));
+
+  
+  return BasePrincipal::Cast(p)->AddonHasPermission(aPerm);
+}
+
+
+bool
 nsContentUtils::InProlog(nsINode *aNode)
 {
   NS_PRECONDITION(aNode, "missing node to nsContentUtils::InProlog");
@@ -6160,9 +6176,7 @@ nsresult
 nsContentTypeParser::GetType(nsAString& aResult) const
 {
   nsresult rv = GetParameter(nullptr, aResult);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
   nsContentUtils::ASCIIToLower(aResult);
   return NS_OK;
 }

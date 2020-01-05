@@ -5214,19 +5214,6 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
   EnsureTarget(discardContent ? &drawRect : nullptr);
 
   
-  
-  
-  
-  
-  
-  if (!nsContentUtils::IsCallerChrome()) {
-    
-    
-    aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
-    return;
-  }
-
-  
   if (!(aFlags & nsIDOMCanvasRenderingContext2D::DRAWWINDOW_DO_NOT_FLUSH)) {
     nsContentUtils::FlushLayoutForTree(aWindow.AsInner()->GetOuterWindow());
   }
@@ -5359,6 +5346,7 @@ CanvasRenderingContext2D::DrawWindow(nsGlobalWindow& aWindow, double aX,
                          DrawSurfaceOptions(gfx::SamplingFilter::POINT),
                          DrawOptions(GlobalAlpha(), UsedOperation(),
                                      AntialiasMode::NONE));
+    mTarget->Flush();
   } else {
     mTarget->SetTransform(matrix);
   }

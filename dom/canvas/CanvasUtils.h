@@ -47,6 +47,9 @@ void DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
                               bool CORSUsed);
 
 
+bool HasDrawWindowPrivilege(JSContext* aCx, JSObject* aObj);
+
+
 
 
 bool CoerceDouble(const JS::Value& v, double* d);
