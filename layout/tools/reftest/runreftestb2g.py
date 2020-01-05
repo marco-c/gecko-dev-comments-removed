@@ -254,7 +254,6 @@ class B2GRemoteReftest(RefTest):
         
         prefs["app.update.enabled"] = False
         prefs["app.update.url"] = ""
-        prefs["app.update.url.override"] = ""
         
         prefs["webapps.update.enabled"] = False
         
