@@ -2,6 +2,7 @@
 
 
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
+Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://services-sync/engines.js");
@@ -56,31 +57,29 @@ async function cleanup(server) {
   await bms.eraseEverything();
 }
 
-function getFolderChildrenIDs(folderId) {
-  let index = 0;
-  let result = [];
-  while (true) {
-    let childId = bms.getIdForItemAt(folderId, index);
-    if (childId == -1) {
-      break;
-    }
-    result.push(childId);
-    index++;
-  }
-  return result;
+async function syncIdToId(syncId) {
+  let guid = await PlacesSyncUtils.bookmarks.syncIdToGuid(syncId);
+  return PlacesUtils.promiseItemId(guid);
 }
 
-function createFolder(parentId, title) {
-  let id = bms.createFolder(parentId, title, 0);
-  let guid = store.GUIDForId(id);
-  return { id, guid };
+async function getFolderChildrenIDs(folderId) {
+  let folderSyncId = PlacesSyncUtils.bookmarks.guidToSyncId(await PlacesUtils.promiseItemGuid(folderId));
+  let syncIds = await PlacesSyncUtils.bookmarks.fetchChildSyncIds(folderSyncId);
+  return Promise.all(syncIds.map(async (syncId) => await syncIdToId(syncId)));
 }
 
-function createBookmark(parentId, url, title, index = bms.DEFAULT_INDEX) {
-  let uri = Utils.makeURI(url);
-  let id = bms.insertBookmark(parentId, uri, index, title)
-  let guid = store.GUIDForId(id);
-  return { id, guid };
+async function createFolder(parentId, title) {
+  let parentGuid = await PlacesUtils.promiseItemGuid(parentId);
+  let folder = await bms.insert({ type: bms.TYPE_FOLDER, parentGuid, title, index: 0 });
+  let id = await PlacesUtils.promiseItemId(folder.guid);
+  return { id, guid: folder.guid };
+}
+
+async function createBookmark(parentId, url, title, index = bms.DEFAULT_INDEX) {
+  let parentGuid = await PlacesUtils.promiseItemGuid(parentId);
+  let bookmark = await bms.insert({ parentGuid, url, index, title });
+  let id = await PlacesUtils.promiseItemId(bookmark.guid);
+  return { id, guid: bookmark.guid };
 }
 
 function getServerRecord(collection, id) {
@@ -139,14 +138,14 @@ add_task(async function test_dupe_bookmark() {
 
   try {
     
-    let {id: folder1_id, guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
-    let {guid: bmk1_guid} = createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
+    let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
 
     engine.sync();
 
     
     equal(collection.count(), 6);
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
 
     
     let newGUID = Utils.makeGUID();
@@ -170,7 +169,7 @@ add_task(async function test_dupe_bookmark() {
     
     await promiseNoLocalItem(bmk1_guid);
     
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
     
     let serverRecord = getServerRecord(collection, folder1_guid);
     ok(!serverRecord.children.includes(bmk1_guid));
@@ -190,10 +189,10 @@ add_task(async function test_dupe_reparented_bookmark() {
 
   try {
     
-    let {id: folder1_id, guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
-    let {guid: bmk1_guid} = createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
+    let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
     
-    let {id: folder2_id, guid: folder2_guid } = createFolder(bms.toolbarFolder, "Folder 1");
+    let {id: folder2_id, guid: folder2_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
 
     do_print(`folder1_guid=${folder1_guid}, folder2_guid=${folder2_guid}, bmk1_guid=${bmk1_guid}`);
 
@@ -201,8 +200,8 @@ add_task(async function test_dupe_reparented_bookmark() {
 
     
     equal(collection.count(), 7);
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
-    equal(getFolderChildrenIDs(folder2_id).length, 0);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
+    equal((await getFolderChildrenIDs(folder2_id)).length, 0);
 
     
     
@@ -228,9 +227,9 @@ add_task(async function test_dupe_reparented_bookmark() {
     
     await promiseNoLocalItem(bmk1_guid);
     
-    equal(getFolderChildrenIDs(folder1_id).length, 0);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 0);
     
-    equal(getFolderChildrenIDs(folder2_id).length, 1);
+    equal((await getFolderChildrenIDs(folder2_id)).length, 1);
 
     
     let serverRecord1 = getServerRecord(collection, folder1_guid);
@@ -256,10 +255,10 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
 
   try {
     
-    let {id: folder1_id, guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
-    let {guid: bmk1_guid} = createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
+    let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
     
-    let {id: folder2_id, guid: folder2_guid } = createFolder(bms.toolbarFolder, "Folder 1");
+    let {id: folder2_id, guid: folder2_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
 
     do_print(`folder1_guid=${folder1_guid}, folder2_guid=${folder2_guid}, bmk1_guid=${bmk1_guid}`);
 
@@ -267,8 +266,8 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
 
     
     equal(collection.count(), 7);
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
-    equal(getFolderChildrenIDs(folder2_id).length, 0);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
+    equal((await getFolderChildrenIDs(folder2_id)).length, 0);
 
     
     
@@ -304,9 +303,9 @@ add_task(async function test_dupe_reparented_locally_changed_bookmark() {
     
     await promiseNoLocalItem(bmk1_guid);
     
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
     
-    equal(getFolderChildrenIDs(folder2_id).length, 0);
+    equal((await getFolderChildrenIDs(folder2_id)).length, 0);
 
     
     let serverRecord1 = getServerRecord(collection, folder1_guid);
@@ -333,10 +332,10 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
 
   try {
     
-    let {id: folder1_id, guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
-    let {guid: bmk1_guid} = createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
+    let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
     
-    let {guid: folder2_guid} = createFolder(bms.toolbarFolder, "A second folder");
+    let {guid: folder2_guid} = await createFolder(bms.toolbarFolder, "A second folder");
 
     do_print(`folder1=${folder1_guid}, bmk1=${bmk1_guid} folder2=${folder2_guid}`);
 
@@ -344,7 +343,7 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
 
     
     equal(collection.count(), 7);
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
 
     let newGUID = Utils.makeGUID();
     let newParentGUID = Utils.makeGUID();
@@ -390,10 +389,10 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
     engine.sync();
 
     
-    equal(getFolderChildrenIDs(folder1_id).length, 0);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 0);
     let newParentID = store.idForGUID(newParentGUID);
     let newID = store.idForGUID(newGUID);
-    deepEqual(getFolderChildrenIDs(newParentID), [newID]);
+    deepEqual(await getFolderChildrenIDs(newParentID), [newID]);
 
     
     await validate(collection);
@@ -410,10 +409,10 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
 
   try {
     
-    let {id: folder1_id, guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
-    let {guid: bmk1_guid} = createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
+    let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
     
-    let {guid: folder2_guid} = createFolder(bms.toolbarFolder, "A second folder");
+    let {guid: folder2_guid} = await createFolder(bms.toolbarFolder, "A second folder");
 
     do_print(`folder1=${folder1_guid}, bmk1=${bmk1_guid} folder2=${folder2_guid}`);
 
@@ -421,7 +420,7 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
 
     
     equal(collection.count(), 7);
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
 
     
     
@@ -467,10 +466,10 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
 
     
     
-    equal(getFolderChildrenIDs(folder1_id).length, 0);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 0);
     let newParentID = store.idForGUID(newParentGUID);
     let newID = store.idForGUID(newGUID);
-    deepEqual(getFolderChildrenIDs(newParentID), [newID]);
+    deepEqual(await getFolderChildrenIDs(newParentID), [newID]);
 
     
     await validate(collection);
@@ -487,10 +486,10 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
   try {
     
-    let {id: folder1_id, guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
-    let {guid: bmk1_guid} = createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
+    let {id: folder1_id, guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: bmk1_guid} = await createBookmark(folder1_id, "http://getfirefox.com/", "Get Firefox!");
     
-    let {guid: folder2_guid} = createFolder(bms.toolbarFolder, "A second folder");
+    let {guid: folder2_guid} = await createFolder(bms.toolbarFolder, "A second folder");
 
     do_print(`folder1=${folder1_guid}, bmk1=${bmk1_guid} folder2=${folder2_guid}`);
 
@@ -498,7 +497,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
 
     
     equal(collection.count(), 7);
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
 
     
     
@@ -526,7 +525,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
     
     await promiseNoLocalItem(bmk1_guid);
     
-    equal(getFolderChildrenIDs(folder1_id).length, 1);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 1);
 
     
     let serverRecord1 = getServerRecord(collection, folder1_guid);
@@ -574,10 +573,10 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
     engine.sync();
 
     
-    equal(getFolderChildrenIDs(folder1_id).length, 0);
+    equal((await getFolderChildrenIDs(folder1_id)).length, 0);
     let newParentID = store.idForGUID(newParentGUID);
     let newID = store.idForGUID(newGUID);
-    deepEqual(getFolderChildrenIDs(newParentID), [newID]);
+    deepEqual(await getFolderChildrenIDs(newParentID), [newID]);
 
     
     expected = [
@@ -607,7 +606,7 @@ add_task(async function test_dupe_empty_folder() {
 
   try {
     
-    let {guid: folder1_guid } = createFolder(bms.toolbarFolder, "Folder 1");
+    let {guid: folder1_guid } = await createFolder(bms.toolbarFolder, "Folder 1");
 
     engine.sync();
 
