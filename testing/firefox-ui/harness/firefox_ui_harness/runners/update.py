@@ -2,6 +2,7 @@
 
 
 
+import os
 import sys
 
 import mozfile
@@ -32,6 +33,15 @@ class UpdateTestRunner(FirefoxUITestRunner):
         self.run_fallback_update = not kwargs.pop('update_direct_only', False)
 
         self.test_handlers = [UpdateTestCase]
+
+        
+        
+        
+        
+        
+        
+        
+        os.environ['MOZ_MARIONETTE'] = '1'
 
     def run_tests(self, tests):
         
