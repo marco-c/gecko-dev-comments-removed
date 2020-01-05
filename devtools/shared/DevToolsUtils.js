@@ -402,11 +402,11 @@ DevToolsUtils.defineLazyGetter(this, "NetworkHelper", () => {
 
 
 function mainThreadFetch(urlIn, aOptions = { loadFromCache: true,
-                                          policy: Ci.nsIContentPolicy.TYPE_OTHER,
-                                          window: null,
-                                          charset: null,
-                                          principal: null,
-                                          cacheKey: null }) {
+                                             policy: Ci.nsIContentPolicy.TYPE_OTHER,
+                                             window: null,
+                                             charset: null,
+                                             principal: null,
+                                             cacheKey: null }) {
   
   let url = urlIn.split(" -> ").pop();
   let channel;
