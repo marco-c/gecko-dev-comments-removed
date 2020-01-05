@@ -6,7 +6,9 @@ use azure::azure_hl::DrawTarget;
 use azure::azure::AzGLContext;
 use geom::rect::Rect;
 use geom::size::Size2D;
+use std::util::NonCopyable;
 
+#[deriving(Clone)]
 pub struct LayerBuffer {
     draw_target: DrawTarget,
 
@@ -22,6 +24,7 @@ pub struct LayerBuffer {
 
 
 
+#[deriving(Clone)]
 pub struct LayerBufferSet {
     buffers: ~[LayerBuffer]
 }
@@ -31,14 +34,6 @@ pub struct LayerBufferSet {
 pub enum RenderState {
     IdleRenderState,
     RenderingRenderState,
-}
-
-
-
-pub trait RenderListener {
-    fn get_gl_context(&self) -> AzGLContext;
-    fn paint(&self, layer_buffer_set: LayerBufferSet, new_size: Size2D<uint>);
-    fn set_render_state(&self, render_state: RenderState);
 }
 
 pub enum ReadyState {
@@ -52,6 +47,31 @@ pub enum ReadyState {
 
 
 
+pub trait RenderListener {
+    fn get_gl_context(&self) -> AzGLContext;
+    fn paint(&self, id: uint, layer_buffer_set: LayerBufferSet, new_size: Size2D<uint>);
+    fn set_render_state(&self, render_state: RenderState);
+}
+
+
+
 pub trait ScriptListener : Clone {
     fn set_ready_state(&self, ReadyState);
+}
+
+
+
+
+
+pub struct CompositorToken {
+    construction_restrictor: NonCopyable,
+}
+
+impl CompositorToken {
+    pub fn new() -> CompositorToken {
+        CompositorToken {
+            
+            construction_restrictor: NonCopyable::new(),
+        }
+    }
 }

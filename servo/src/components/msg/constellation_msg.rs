@@ -1,0 +1,44 @@
+
+
+
+
+
+
+
+use std::comm::{Chan, SharedChan};
+use extra::net::url::Url;
+
+#[deriving(Clone)]
+pub struct ConstellationChan {
+    chan: SharedChan<Msg>,
+}
+
+impl ConstellationChan {
+    pub fn new(chan: Chan<Msg>) -> ConstellationChan {
+        ConstellationChan {
+            chan: SharedChan::new(chan),
+        }
+    }
+    pub fn send(&self, msg: Msg) {
+        self.chan.send(msg);
+    }
+}
+
+pub enum Msg {
+    LoadUrlMsg(Url),
+    NavigateMsg(NavigationDirection),
+    ExitMsg(Chan<()>),
+    RendererReadyMsg(uint),
+    CompositorAck(uint),
+}
+
+
+enum NavigationType {
+    Load,               
+    Navigate,           
+}
+
+pub enum NavigationDirection {
+    Forward,
+    Back,
+}

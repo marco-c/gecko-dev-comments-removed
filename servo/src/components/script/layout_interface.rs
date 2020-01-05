@@ -30,7 +30,7 @@ pub enum Msg {
     
     
     
-    QueryMsg(LayoutQuery, Chan<Result<LayoutResponse,()>>),
+    QueryMsg(LayoutQuery),
 
     
     RouteScriptMsg(ScriptMsg),
@@ -42,25 +42,16 @@ pub enum Msg {
 
 pub enum LayoutQuery {
     
-    ContentBoxQuery(AbstractNode<ScriptView>),
+    ContentBoxQuery(AbstractNode<ScriptView>, Chan<Result<ContentBoxResponse, ()>>),
     
-    ContentBoxesQuery(AbstractNode<ScriptView>),
+    ContentBoxesQuery(AbstractNode<ScriptView>, Chan<Result<ContentBoxesResponse, ()>>),
     
-    HitTestQuery(AbstractNode<ScriptView>, Point2D<f32>),
+    HitTestQuery(AbstractNode<ScriptView>, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
 }
 
-
-
-
-
-pub enum LayoutResponse {
-    
-    ContentBoxResponse(Rect<Au>),
-    
-    ContentBoxesResponse(~[Rect<Au>]),
-    
-    HitTestResponse(AbstractNode<LayoutView>),
-}
+pub struct ContentBoxResponse(Rect<Au>);
+pub struct ContentBoxesResponse(~[Rect<Au>]);
+pub struct HitTestResponse(AbstractNode<LayoutView>);
 
 
 pub enum DocumentDamageLevel {

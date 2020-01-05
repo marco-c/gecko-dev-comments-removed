@@ -6,12 +6,17 @@
 
 use geom::point::Point2D;
 use geom::size::Size2D;
-use servo_msg::compositor::{ReadyState, RenderState};
+use servo_msg::compositor_msg::{ReadyState, RenderState};
 
 pub enum WindowMouseEvent {
     WindowClickEvent(uint, Point2D<f32>),
     WindowMouseDownEvent(uint, Point2D<f32>),
     WindowMouseUpEvent(uint, Point2D<f32>),
+}
+
+pub enum WindowNavigateMsg {
+    Forward,
+    Back,
 }
 
 
@@ -31,6 +36,9 @@ pub type ScrollCallback = @fn(Point2D<f32>);
 
 
 pub type ZoomCallback = @fn(f32);
+
+
+pub type NavigationCallback = @fn(WindowNavigateMsg);
 
 
 pub trait ApplicationMethods {
@@ -57,6 +65,8 @@ pub trait WindowMethods<A> {
     pub fn set_scroll_callback(&mut self, new_scroll_callback: ScrollCallback);
     
     pub fn set_zoom_callback(&mut self, new_zoom_callback: ZoomCallback);
+    
+    pub fn set_navigation_callback(&mut self, new_navigation_callback: NavigationCallback);
 
     
     pub fn check_loop(@mut self);
