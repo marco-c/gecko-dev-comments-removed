@@ -1,7 +1,7 @@
 const {AddonManagerPrivate} = Cu.import("resource://gre/modules/AddonManager.jsm", {});
 
 const URL_BASE = "https://example.com/browser/browser/base/content/test/general";
-const ID = "update2@tests.mozilla.org";
+const ID = "update@tests.mozilla.org";
 const ID_ICON = "update_icon@tests.mozilla.org";
 const ID_PERMS = "update_perms@tests.mozilla.org";
 const ID_LEGACY = "legacy_update@tests.mozilla.org";
@@ -157,14 +157,6 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   
   let panel = yield popupPromise;
   checkIconFn(panel.getAttribute("icon"));
-
-  
-  
-  
-  let list = document.getElementById("addon-webext-perm-list");
-  is(list.childElementCount, 1, "Permissions list contains 1 entry");
-
-  
   panel.secondaryButton.click();
 
   addon = yield AddonManager.getAddonByID(id);
