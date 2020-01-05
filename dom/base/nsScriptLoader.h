@@ -83,6 +83,7 @@ public:
       mIsXSLT(false),
       mIsCanceled(false),
       mWasCompiledOMT(false),
+      mIsTracking(false),
       mOffThreadToken(nullptr),
       mScriptTextBuf(nullptr),
       mScriptTextLength(0),
@@ -132,6 +133,16 @@ public:
     return mOffThreadToken ?  &mOffThreadToken : nullptr;
   }
 
+  bool IsTracking() const
+  {
+    return mIsTracking;
+  }
+  void SetIsTracking()
+  {
+    MOZ_ASSERT(!mIsTracking);
+    mIsTracking = true;
+  }
+
   enum class Progress {
     Loading,
     Compiling,
@@ -165,6 +176,7 @@ public:
   bool mIsXSLT;           
   bool mIsCanceled;       
   bool mWasCompiledOMT;   
+  bool mIsTracking;       
   void* mOffThreadToken;  
   nsString mSourceMapURL; 
   char16_t* mScriptTextBuf; 
