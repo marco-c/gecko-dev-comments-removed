@@ -508,7 +508,7 @@ CSSStyleSheet::TraverseInner(nsCycleCollectionTraversalCallback &cb)
   const nsCOMArray<css::Rule>& rules = mInner->mOrderedRules;
   for (int32_t i = 0, count = rules.Count(); i < count; ++i) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mOrderedRules[i]");
-    cb.NoteXPCOMChild(rules[i]->GetExistingDOMRule());
+    cb.NoteXPCOMChild(rules[i]);
   }
 }
 
@@ -764,6 +764,16 @@ ListRules(const nsCOMArray<css::Rule>& aRules, FILE* aOut, int32_t aIndent)
     aRules.ObjectAt(index)->List(aOut, aIndent);
   }
 }
+
+struct ListEnumData {
+  ListEnumData(FILE* aOut, int32_t aIndent)
+    : mOut(aOut),
+      mIndent(aIndent)
+  {
+  }
+  FILE*   mOut;
+  int32_t mIndent;
+};
 
 void
 CSSStyleSheet::List(FILE* out, int32_t aIndent) const
