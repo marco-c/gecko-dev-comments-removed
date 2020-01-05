@@ -156,7 +156,7 @@ using namespace mozilla::gfx;
 #define DEFAULT_QUIESCENT_FRAMES 2
 
 
-#define DEFAULT_IDLE_PERIOD_TIME_LIMIT 1.0f
+#define DEFAULT_IDLE_PERIOD_TIME_LIMIT 3.0f
 
 #ifdef DEBUG
 
@@ -4999,18 +4999,25 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis        aAxis,
     ++gNoiseIndent;
 #endif
     if (MOZ_UNLIKELY(aAxis != ourInlineAxis)) {
-      
-      if (aFlags & BAIL_IF_REFLOW_NEEDED) {
-        return NS_INTRINSIC_WIDTH_UNKNOWN;
+      IntrinsicSize intrinsicSize = aFrame->GetIntrinsicSize();
+      const nsStyleCoord intrinsicBCoord =
+        horizontalAxis ? intrinsicSize.width : intrinsicSize.height;
+      if (intrinsicBCoord.GetUnit() == eStyleUnit_Coord) {
+        result = intrinsicBCoord.GetCoordValue();
+      } else {
+        
+        if (aFlags & BAIL_IF_REFLOW_NEEDED) {
+          return NS_INTRINSIC_WIDTH_UNKNOWN;
+        }
+        
+        
+        
+        
+        
+        
+        
+        result = aFrame->BSize();
       }
-      
-      
-      
-      
-      
-      
-      
-      result = aFrame->BSize();
     } else {
       result = aType == MIN_ISIZE
                ? aFrame->GetMinISize(aRenderingContext)
@@ -5056,6 +5063,9 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis        aAxis,
           GetBSizeTakenByBoxSizing(boxSizing, aFrame, horizontalAxis,
                                    aFlags & IGNORE_PADDING);
 
+        
+        
+        nscoord minContentSize = result;
         nscoord h;
         if (GetAbsoluteCoord(styleBSize, h) ||
             GetPercentBSize(styleBSize, aFrame, horizontalAxis, h)) {
@@ -5067,16 +5077,30 @@ nsLayoutUtils::IntrinsicForAxis(PhysicalAxis        aAxis,
             GetPercentBSize(styleMaxBSize, aFrame, horizontalAxis, h)) {
           h = std::max(0, h - bSizeTakenByBoxSizing);
           nscoord maxISize = NSCoordMulDiv(h, ratioISize, ratioBSize);
-          if (maxISize < result)
+          if (maxISize < result) {
             result = maxISize;
+          }
+          if (maxISize < minContentSize) {
+            minContentSize = maxISize;
+          }
         }
 
         if (GetAbsoluteCoord(styleMinBSize, h) ||
             GetPercentBSize(styleMinBSize, aFrame, horizontalAxis, h)) {
           h = std::max(0, h - bSizeTakenByBoxSizing);
           nscoord minISize = NSCoordMulDiv(h, ratioISize, ratioBSize);
-          if (minISize > result)
+          if (minISize > result) {
             result = minISize;
+          }
+          if (minISize > minContentSize) {
+            minContentSize = minISize;
+          }
+        }
+        if (MOZ_UNLIKELY(aFlags & nsLayoutUtils::MIN_INTRINSIC_ISIZE)) {
+          
+          
+          
+          result = std::min(result, minContentSize);
         }
       }
     }

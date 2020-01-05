@@ -1412,6 +1412,7 @@ public:
 
 
 
+
   static nscoord MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
                                             nsRenderingContext*   aRC,
                                             nsIFrame*             aFrame,
