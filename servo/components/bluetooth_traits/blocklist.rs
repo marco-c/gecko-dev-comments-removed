@@ -9,73 +9,73 @@ use std::io::BufRead;
 use std::string::String;
 use util::resource_files::read_resource_file;
 
-const BLACKLIST_FILE: &'static str = "gatt_blacklist.txt";
-const BLACKLIST_FILE_NOT_FOUND: &'static str = "Could not find gatt_blacklist.txt file";
+const BLOCKLIST_FILE: &'static str = "gatt_blocklist.txt";
+const BLOCKLIST_FILE_NOT_FOUND: &'static str = "Could not find gatt_blocklist.txt file";
 const EXCLUDE_READS: &'static str = "exclude-reads";
 const EXCLUDE_WRITES: &'static str = "exclude-writes";
 const VALID_UUID_REGEX: &'static str = "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 
-thread_local!(pub static BLUETOOTH_BLACKLIST: RefCell<BluetoothBlacklist> =
-              RefCell::new(BluetoothBlacklist(parse_blacklist())));
+thread_local!(pub static BLUETOOTH_BLOCKLIST: RefCell<BluetoothBlocklist> =
+              RefCell::new(BluetoothBlocklist(parse_blocklist())));
 
-pub fn uuid_is_blacklisted(uuid: &str, exclude_type: Blacklist) -> bool {
-    BLUETOOTH_BLACKLIST.with(|blist| {
+pub fn uuid_is_blocklisted(uuid: &str, exclude_type: Blocklist) -> bool {
+    BLUETOOTH_BLOCKLIST.with(|blist| {
         match exclude_type {
-            Blacklist::All => {
-                blist.borrow().is_blacklisted(uuid)
+            Blocklist::All => {
+                blist.borrow().is_blocklisted(uuid)
             },
-            Blacklist::Reads => {
-                blist.borrow().is_blacklisted_for_reads(uuid)
+            Blocklist::Reads => {
+                blist.borrow().is_blocklisted_for_reads(uuid)
             }
-            Blacklist::Writes => {
-                blist.borrow().is_blacklisted_for_writes(uuid)
+            Blocklist::Writes => {
+                blist.borrow().is_blocklisted_for_writes(uuid)
             }
         }
     })
 }
 
-pub struct BluetoothBlacklist(Option<HashMap<String, Blacklist>>);
+pub struct BluetoothBlocklist(Option<HashMap<String, Blocklist>>);
 
 #[derive(Eq, PartialEq)]
-pub enum Blacklist {
+pub enum Blocklist {
     All, 
     Reads,
     Writes,
 }
 
-impl BluetoothBlacklist {
+impl BluetoothBlocklist {
     
-    pub fn is_blacklisted(&self, uuid: &str) -> bool {
+    pub fn is_blocklisted(&self, uuid: &str) -> bool {
         match self.0 {
-            Some(ref map) => map.get(uuid).map_or(false, |et| et.eq(&Blacklist::All)),
+            Some(ref map) => map.get(uuid).map_or(false, |et| et.eq(&Blocklist::All)),
             None => false,
         }
     }
 
     
-    pub fn is_blacklisted_for_reads(&self, uuid: &str) -> bool {
+    pub fn is_blocklisted_for_reads(&self, uuid: &str) -> bool {
         match self.0 {
-            Some(ref map) => map.get(uuid).map_or(false, |et| et.eq(&Blacklist::All) ||
-                                                              et.eq(&Blacklist::Reads)),
+            Some(ref map) => map.get(uuid).map_or(false, |et| et.eq(&Blocklist::All) ||
+                                                              et.eq(&Blocklist::Reads)),
             None => false,
         }
     }
 
     
-    pub fn is_blacklisted_for_writes(&self, uuid: &str) -> bool {
+    pub fn is_blocklisted_for_writes(&self, uuid: &str) -> bool {
         match self.0 {
-            Some(ref map) => map.get(uuid).map_or(false, |et| et.eq(&Blacklist::All) ||
-                                                              et.eq(&Blacklist::Writes)),
+            Some(ref map) => map.get(uuid).map_or(false, |et| et.eq(&Blocklist::All) ||
+                                                              et.eq(&Blocklist::Writes)),
             None => false,
         }
     }
 }
 
 
-fn parse_blacklist() -> Option<HashMap<String, Blacklist>> {
+fn parse_blocklist() -> Option<HashMap<String, Blocklist>> {
     
     let valid_uuid_regex = Regex::new(VALID_UUID_REGEX).unwrap();
-    let content = read_resource_file(BLACKLIST_FILE).expect(BLACKLIST_FILE_NOT_FOUND);
+    let content = read_resource_file(BLOCKLIST_FILE).expect(BLOCKLIST_FILE_NOT_FOUND);
     
     let mut result = HashMap::new();
     
@@ -88,7 +88,7 @@ fn parse_blacklist() -> Option<HashMap<String, Blacklist>> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        let mut exclude_type = Blacklist::All;
+        let mut exclude_type = Blocklist::All;
         let mut words = line.split_whitespace();
         let uuid = match words.next() {
             Some(uuid) => uuid,
@@ -102,10 +102,10 @@ fn parse_blacklist() -> Option<HashMap<String, Blacklist>> {
             None => {},
             
             Some(EXCLUDE_READS) => {
-                exclude_type = Blacklist::Reads;
+                exclude_type = Blocklist::Reads;
             },
             Some(EXCLUDE_WRITES) => {
-                exclude_type  = Blacklist::Writes;
+                exclude_type  = Blocklist::Writes;
             },
             
             _ => {
