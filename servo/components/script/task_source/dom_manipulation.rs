@@ -5,7 +5,7 @@
 use dom::bindings::refcounted::Trusted;
 use dom::event::{EventBubbles, EventCancelable};
 use dom::eventtarget::EventTarget;
-use script_thread::{MainThreadRunnable, MainThreadScriptMsg, Runnable, ScriptThread};
+use script_thread::{MainThreadScriptMsg, Runnable, ScriptThread};
 use std::result::Result;
 use std::sync::mpsc::Sender;
 use string_cache::Atom;
@@ -40,20 +40,11 @@ impl DOMManipulationTaskSource {
 
 pub enum DOMManipulationTask {
     
-    DocumentProgress(Box<Runnable + Send>),
-    
     FireEvent(Trusted<EventTarget>, Atom, EventBubbles, EventCancelable),
     
     FireSimpleEvent(Trusted<EventTarget>, Atom),
-    
-    FireToggleEvent(Box<Runnable + Send>),
-    
-    MediaTask(Box<Runnable + Send>),
-    
-    PlannedNavigation(Box<Runnable + Send>),
-    
-    SendStorageNotification(Box<MainThreadRunnable + Send>),
-    Miscellaneous(Box<Runnable + Send>),
+
+    Runnable(Box<Runnable + Send>),
 }
 
 impl DOMManipulationTask {
@@ -61,7 +52,6 @@ impl DOMManipulationTask {
         use self::DOMManipulationTask::*;
 
         match self {
-            DocumentProgress(runnable) => runnable.handler(),
             FireEvent(element, name, bubbles, cancelable) => {
                 let target = element.root();
                 target.fire_event(&*name, bubbles, cancelable);
@@ -70,11 +60,11 @@ impl DOMManipulationTask {
                 let target = element.root();
                 target.fire_simple_event(&*name);
             }
-            FireToggleEvent(runnable) => runnable.handler(),
-            MediaTask(runnable) => runnable.handler(),
-            PlannedNavigation(runnable) => runnable.handler(),
-            SendStorageNotification(runnable) => runnable.handler(script_thread),
-            Miscellaneous(runnable) => runnable.handler(),
+            Runnable(runnable) => {
+                if !runnable.is_cancelled() {
+                    runnable.main_thread_handler(script_thread);
+                }
+            }
         }
     }
 }
