@@ -3491,63 +3491,6 @@ EditorBase::IsContainer(nsIDOMNode* aNode)
   return aNode ? true : false;
 }
 
-static inline bool
-IsElementVisible(Element* aElement)
-{
-  if (aElement->GetPrimaryFrame()) {
-    
-    return true;
-  }
-
-  nsIContent *cur = aElement;
-  for (;;) {
-    
-    
-    
-    bool haveLazyBitOnChild = cur->HasFlag(NODE_NEEDS_FRAME);
-    cur = cur->GetFlattenedTreeParent();
-    if (!cur) {
-      if (!haveLazyBitOnChild) {
-        
-        
-        return false;
-      }
-
-      
-      
-      break;
-    }
-
-    if (cur->GetPrimaryFrame()) {
-      if (!haveLazyBitOnChild) {
-        
-        
-        return false;
-      }
-
-      if (cur->GetPrimaryFrame()->IsLeaf()) {
-        
-        return false;
-      }
-
-      
-      
-      break;
-    }
-  }
-
-  
-  
-  
-  
-  RefPtr<nsStyleContext> styleContext =
-    nsComputedDOMStyle::GetStyleContextNoFlush(aElement, nullptr, nullptr);
-  if (styleContext) {
-    return styleContext->StyleDisplay()->mDisplay != StyleDisplay::None;
-  }
-  return false;
-}
-
 bool
 EditorBase::IsEditable(nsIDOMNode* aNode)
 {
@@ -3565,18 +3508,10 @@ EditorBase::IsEditable(nsINode* aNode)
     return false;
   }
 
-  
-  
-  if (aNode->IsElement() && !IsElementVisible(aNode->AsElement())) {
-    
-    
-    
-    return false;
-  }
   switch (aNode->NodeType()) {
     case nsIDOMNode::ELEMENT_NODE:
     case nsIDOMNode::TEXT_NODE:
-      return true; 
+      return true;
     default:
       return false;
   }

@@ -1668,9 +1668,6 @@ HTMLEditor::PasteAsCitedQuotation(const nsAString& aCitation,
   rv = selection->Collapse(newNode, 0);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  FlushFrames();
-
   return Paste(aSelectionType);
 }
 
@@ -1727,7 +1724,6 @@ HTMLEditor::PasteAsPlaintextQuotation(int32_t aSelectionType)
 NS_IMETHODIMP
 HTMLEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
 {
-  AutoEditBatch beginBatching(this);
   
   BeginTransaction();
 
@@ -1891,9 +1887,6 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     selection->Collapse(newNode, 0);
   }
 
-  
-  FlushFrames();
-
   if (aAddCites) {
     rv = TextEditor::InsertAsQuotation(aQuotedText, aNodeInserted);
   } else {
@@ -1976,9 +1969,6 @@ HTMLEditor::InsertAsCitedQuotation(const nsAString& aQuotedText,
 
   
   selection->Collapse(newNode, 0);
-
-  
-  FlushFrames();
 
   if (aInsertHTML) {
     rv = LoadHTML(aQuotedText);
