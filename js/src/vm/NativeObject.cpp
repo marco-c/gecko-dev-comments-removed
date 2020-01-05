@@ -2125,24 +2125,12 @@ js::NativeGetPropertyNoGC(JSContext* cx, NativeObject* obj, const Value& receive
 }
 
 bool
-js::GetNameBoundInEnvironment(JSContext* cx, HandleObject envArg, HandleId id, MutableHandleValue vp)
+js::GetPropertyForNameLookup(JSContext* cx, HandleObject obj, HandleId id, MutableHandleValue vp)
 {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RootedObject env(cx, MaybeUnwrapSyntacticWithEnvironment(envArg));
-    RootedValue receiver(cx, ObjectValue(*env));
-    if (env->getOpsGetProperty())
-        return GeneralizedGetProperty(cx, env, id, receiver, NameLookup, vp);
-    return NativeGetPropertyInline<CanGC>(cx, env.as<NativeObject>(), receiver, id, NameLookup, vp);
+    RootedValue receiver(cx, ObjectValue(*obj));
+    if (obj->getOpsGetProperty())
+        return GeneralizedGetProperty(cx, obj, id, receiver, NameLookup, vp);
+    return NativeGetPropertyInline<CanGC>(cx, obj.as<NativeObject>(), receiver, id, NameLookup, vp);
 }
 
 
