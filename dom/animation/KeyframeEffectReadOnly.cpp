@@ -286,6 +286,10 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 
   nsTArray<AnimationProperty> properties = BuildProperties(aStyleContext);
 
+  
+  
+  EnsureBaseStyles(aStyleContext, properties);
+
   if (mProperties == properties) {
     return;
   }
@@ -393,9 +397,7 @@ KeyframeEffectReadOnly::GetUnderlyingStyle(
     
     
     
-    RefPtr<nsStyleContext> styleContext =
-      GetTargetStyleContextWithoutAnimation();
-    result = ResolveBaseStyle(aProperty, styleContext);
+    result = BaseStyle(aProperty);
   }
 
   return result;
@@ -437,38 +439,24 @@ KeyframeEffectReadOnly::CompositeValue(
 }
 
 void
-KeyframeEffectReadOnly::EnsureBaseStylesForCompositor(
-  const nsCSSPropertyIDSet& aPropertiesToSkip)
+KeyframeEffectReadOnly::EnsureBaseStyles(
+  nsStyleContext* aStyleContext,
+  const nsTArray<AnimationProperty>& aProperties)
 {
   if (!mTarget) {
     return;
   }
 
-  RefPtr<nsStyleContext> styleContext;
+  mBaseStyleValues.Clear();
 
-  for (const AnimationProperty& property : mProperties) {
-    if (!nsCSSProps::PropHasFlags(property.mProperty,
-                                  CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR)) {
-      continue;
-    }
-
-    if (aPropertiesToSkip.HasProperty(property.mProperty)) {
-      continue;
-    }
-
+  for (const AnimationProperty& property : aProperties) {
     for (const AnimationPropertySegment& segment : property.mSegments) {
       if (segment.mFromComposite == dom::CompositeOperation::Replace &&
           segment.mToComposite == dom::CompositeOperation::Replace) {
         continue;
       }
 
-      if (!styleContext) {
-        styleContext = GetTargetStyleContextWithoutAnimation();
-      }
-      MOZ_RELEASE_ASSERT(styleContext);
-
-      StyleAnimationValue result =
-        ResolveBaseStyle(property.mProperty, styleContext);
+      Unused << ResolveBaseStyle(property.mProperty, aStyleContext);
       break;
     }
   }
@@ -495,16 +483,6 @@ KeyframeEffectReadOnly::ComposeStyle(
   
   
   if (computedTiming.mProgress.IsNull()) {
-    
-    
-    
-    
-    
-
-    
-    
-    
-    EnsureBaseStylesForCompositor(aPropertiesToSkip);
     return;
   }
 
@@ -674,14 +652,6 @@ KeyframeEffectReadOnly::ComposeStyle(
       }
     }
   }
-
-  
-  
-  
-  
-  
-  
-  EnsureBaseStylesForCompositor(aPropertiesToSkip);
 }
 
 bool
