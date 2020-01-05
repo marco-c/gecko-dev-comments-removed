@@ -6,7 +6,7 @@
 
 use construct::FlowConstructor;
 use context::LayoutContext;
-use css::matching::{ApplicableDeclarations, MatchMethods, StyleSharingResult};
+use css::matching::{ApplicableDeclarations, ElementMatchMethods, MatchMethods, StyleSharingResult};
 use flow::{MutableFlowUtils, PostorderFlowTraversal, PreorderFlowTraversal};
 use flow::{self, Flow};
 use incremental::{self, BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, RestyleDamage};
@@ -165,26 +165,42 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
             
             let style_sharing_candidate_cache =
                 &mut self.layout_context.style_sharing_candidate_cache();
-            let sharing_result = unsafe {
-                node.share_style_if_possible(style_sharing_candidate_cache,
-                                             parent_opt.clone())
+
+            let sharing_result = match node.as_element() {
+                Some(element) => {
+                    unsafe {
+                        element.share_style_if_possible(style_sharing_candidate_cache,
+                                                        parent_opt.clone())
+                    }
+                },
+                None => StyleSharingResult::CannotShare,
             };
+
             
             match sharing_result {
-                StyleSharingResult::CannotShare(mut shareable) => {
+                StyleSharingResult::CannotShare => {
                     let mut applicable_declarations = ApplicableDeclarations::new();
 
-                    if node.as_element().is_some() {
-                        
-                        let stylist = unsafe { &*self.layout_context.shared.stylist };
-                        node.match_node(stylist,
-                                        Some(&*bf),
-                                        &mut applicable_declarations,
-                                        &mut shareable);
-                    } else if node.has_changed() {
-                        ThreadSafeLayoutNode::new(&node).set_restyle_damage(
-                            incremental::rebuild_and_reflow())
-                    }
+                    let shareable_element = match node.as_element() {
+                        Some(element) => {
+                            
+                            let stylist = unsafe { &*self.layout_context.shared.stylist };
+                            if element.match_element(stylist,
+                                                     Some(&*bf),
+                                                     &mut applicable_declarations) {
+                                Some(element)
+                            } else {
+                                None
+                            }
+                        },
+                        None => {
+                            if node.has_changed() {
+                                ThreadSafeLayoutNode::new(&node).set_restyle_damage(
+                                    incremental::rebuild_and_reflow())
+                            }
+                            None
+                        },
+                    };
 
                     
                     unsafe {
@@ -196,10 +212,8 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
                     }
 
                     
-                    if shareable {
-                        if let Some(element) = node.as_element() {
-                            style_sharing_candidate_cache.insert_if_possible(&element);
-                        }
+                    if let Some(element) = shareable_element {
+                        style_sharing_candidate_cache.insert_if_possible(&element);
                     }
                 }
                 StyleSharingResult::StyleWasShared(index, damage) => {
