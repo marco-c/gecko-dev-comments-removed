@@ -76,10 +76,31 @@ impl ToCss for FontRelativeLength {
     }
 }
 
+
+pub enum FontBaseSize {
+    
+    CurrentStyle,
+    
+    InheritedStyle,
+    
+    Custom(Au),
+}
+
+impl FontBaseSize {
+    
+    pub fn resolve(&self, context: &Context) -> Au {
+        match *self {
+            FontBaseSize::Custom(size) => size,
+            FontBaseSize::CurrentStyle => context.style().get_font().clone_font_size(),
+            FontBaseSize::InheritedStyle => context.inherited_style().get_font().clone_font_size(),
+        }
+    }
+}
+
 impl FontRelativeLength {
     
     
-    pub fn to_computed_value(&self, context: &Context, use_inherited: bool) -> Au {
+    pub fn to_computed_value(&self, context: &Context, base_size: FontBaseSize) -> Au {
         fn query_font_metrics(context: &Context, reference_font_size: Au) -> FontMetricsQueryResult {
             context.font_metrics_provider.query(context.style().get_font(),
                                                 reference_font_size,
@@ -88,11 +109,7 @@ impl FontRelativeLength {
                                                 context.device)
         }
 
-        let reference_font_size = if use_inherited {
-            context.inherited_style().get_font().clone_font_size()
-        } else {
-            context.style().get_font().clone_font_size()
-        };
+        let reference_font_size = base_size.resolve(context);
 
         let root_font_size = context.style().root_font_size;
         match *self {
