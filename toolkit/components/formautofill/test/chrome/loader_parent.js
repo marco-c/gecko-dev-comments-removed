@@ -30,7 +30,7 @@ Services.scriptloader.loadSubScript(sharedUrl, this);
 
 
 var Output = {
-  print: message => assert.ok(false, message),
+  print: message => assert.ok(true, message),
 };
 
 
