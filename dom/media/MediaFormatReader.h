@@ -222,15 +222,15 @@ private:
         TrackType type = mType == MediaData::AUDIO_DATA
                          ? TrackType::kAudioTrack
                          : TrackType::kVideoTrack;
+        mShuttingDown = true;
         mDecoder->Shutdown()
           ->Then(mOwner->OwnerThread(), __func__,
                  [owner, this, type]() {
-                   mShutdownRequest.Complete();
+                   mShuttingDown = false;
                    mShutdownPromise.ResolveIfExists(true, __func__);
                    owner->ScheduleUpdate(type);
                  },
-                 []() { MOZ_RELEASE_ASSERT(false, "Can't ever be here"); })
-          ->Track(mShutdownRequest);
+                 []() { MOZ_RELEASE_ASSERT(false, "Can't ever be here"); });
       }
       mDescription = "shutdown";
       mDecoder = nullptr;
@@ -269,7 +269,7 @@ private:
     
     bool mFlushed;
     MozPromiseHolder<ShutdownPromise> mShutdownPromise;
-    MozPromiseRequestHolder<ShutdownPromise> mShutdownRequest;
+    bool mShuttingDown = false; 
 
     MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDrainRequest;
     DrainState mDrainState;
