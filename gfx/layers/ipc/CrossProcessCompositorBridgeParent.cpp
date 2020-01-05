@@ -123,7 +123,15 @@ CrossProcessCompositorBridgeParent::AllocPAPZCTreeManagerParent(const uint64_t& 
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state = sIndirectLayerTrees[aLayersId];
-  MOZ_ASSERT(state.mParent);
+
+  
+  
+  
+  if (!state.mParent) {
+    RefPtr<APZCTreeManager> temp = new APZCTreeManager();
+    return new APZCTreeManagerParent(aLayersId, temp);
+  }
+
   MOZ_ASSERT(!state.mApzcTreeManagerParent);
   state.mApzcTreeManagerParent = new APZCTreeManagerParent(aLayersId, state.mParent->GetAPZCTreeManager());
 
