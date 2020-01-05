@@ -50,11 +50,11 @@ var JsonView = {
 
 
   onSave: function (message) {
-    let value = message.data;
-    let file = JsonViewUtils.getTargetFile();
-    if (file) {
-      JsonViewUtils.saveToFile(file, value);
-    }
+    JsonViewUtils.getTargetFile(file => {
+      if (file) {
+        JsonViewUtils.saveToFile(file, message.data);
+      }
+    });
   }
 };
 

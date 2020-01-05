@@ -316,53 +316,55 @@ nsUnknownContentTypeDialog.prototype = {
         if (lastDir && isUsableDirectory(lastDir))
           picker.displayDirectory = lastDir;
 
-        if (picker.show() == nsIFilePicker.returnCancel) {
-          
-          aLauncher.saveDestinationAvailable(null);
-          return;
-        }
-
-        
-        
-        
-        result = picker.file;
-
-        if (result) {
-          try {
+        picker.open(returnValue => {
+          if (returnValue == nsIFilePicker.returnCancel) {
             
-            
-            
-            
-            if (result.exists() && this.getFinalLeafName(result.leafName) == result.leafName)
-              result.remove(false);
+            aLauncher.saveDestinationAvailable(null);
+            return;
           }
-          catch (ex) {
-            
-            
-          }
-
-          var newDir = result.parent.QueryInterface(Components.interfaces.nsILocalFile);
 
           
-          gDownloadLastDir.setFile(aLauncher.source, newDir);
+          
+          
+          result = picker.file;
 
-          try {
-            result = this.validateLeafName(newDir, result.leafName, null);
-          }
-          catch (ex) {
-            
-            
-            
-
-            if (ex.result == Components.results.NS_ERROR_FILE_ACCESS_DENIED) {
-              this.displayBadPermissionAlert();
-              aLauncher.saveDestinationAvailable(null);
-              return;
+          if (result) {
+            try {
+              
+              
+              
+              
+              if (result.exists() && this.getFinalLeafName(result.leafName) == result.leafName)
+                result.remove(false);
+            }
+            catch (ex) {
+              
+              
             }
 
+            var newDir = result.parent.QueryInterface(Components.interfaces.nsILocalFile);
+
+            
+            gDownloadLastDir.setFile(aLauncher.source, newDir);
+
+            try {
+              result = this.validateLeafName(newDir, result.leafName, null);
+            }
+            catch (ex) {
+              
+              
+              
+
+              if (ex.result == Components.results.NS_ERROR_FILE_ACCESS_DENIED) {
+                this.displayBadPermissionAlert();
+                aLauncher.saveDestinationAvailable(null);
+                return;
+              }
+
+            }
           }
-        }
-        aLauncher.saveDestinationAvailable(result);
+          aLauncher.saveDestinationAvailable(result);
+        });
       }.bind(this));
     }.bind(this)).then(null, Components.utils.reportError);
   },
