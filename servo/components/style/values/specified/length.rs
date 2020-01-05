@@ -294,6 +294,20 @@ impl NoCalcLength {
     }
 
     
+    pub fn from_font_size_int(i: u8) -> Self {
+        let au = match i {
+            0 | 1 => Au::from_px(FONT_MEDIUM_PX) * 3 / 4,
+            2 => Au::from_px(FONT_MEDIUM_PX) * 8 / 9,
+            3 => Au::from_px(FONT_MEDIUM_PX),
+            4 => Au::from_px(FONT_MEDIUM_PX) * 6 / 5,
+            5 => Au::from_px(FONT_MEDIUM_PX) * 3 / 2,
+            6 => Au::from_px(FONT_MEDIUM_PX) * 2,
+            _ => Au::from_px(FONT_MEDIUM_PX) * 3,
+        };
+        NoCalcLength::Absolute(au)
+    }
+
+    
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<NoCalcLength, ()> {
         match_ignore_ascii_case! { unit,
             "px" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_PX) as i32))),
@@ -427,6 +441,11 @@ impl Length {
     
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Length, ()> {
         NoCalcLength::parse_dimension(value, unit).map(Length::NoCalc)
+    }
+
+    
+    pub fn from_font_size_int(i: u8) -> Self {
+        Length::NoCalc(NoCalcLength::from_font_size_int(i))
     }
 
     #[inline]

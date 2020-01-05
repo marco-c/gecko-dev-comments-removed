@@ -12,7 +12,7 @@ use gecko_bindings::bindings::Gecko_CSSValue_GetPercentage;
 use gecko_bindings::bindings::Gecko_CSSValue_SetAbsoluteLength;
 use gecko_bindings::bindings::Gecko_CSSValue_SetCalc;
 use gecko_bindings::bindings::Gecko_CSSValue_SetPercentage;
-use gecko_bindings::structs::{nsCSSValue, nsCSSUnit, nsCSSValue_Array};
+use gecko_bindings::structs::{nsCSSValue, nsCSSUnit, nsCSSValue_Array, nscolor};
 use std::mem;
 use std::ops::Index;
 use std::slice;
@@ -32,6 +32,28 @@ impl nsCSSValue {
                       self.mUnit == nsCSSUnit::eCSSUnit_Enumerated ||
                       self.mUnit == nsCSSUnit::eCSSUnit_EnumColor);
         unsafe { *self.mValue.mInt.as_ref() }
+    }
+
+    
+    pub fn integer(&self) -> Option<i32> {
+        if self.mUnit == nsCSSUnit::eCSSUnit_Integer ||
+           self.mUnit == nsCSSUnit::eCSSUnit_Enumerated ||
+           self.mUnit == nsCSSUnit::eCSSUnit_EnumColor {
+            Some(unsafe { *self.mValue.mInt.as_ref() })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    pub fn color_value(&self) -> Option<nscolor> {
+        if self.mUnit == nsCSSUnit::eCSSUnit_RGBAColor {
+            Some(unsafe { *self.mValue.mColor.as_ref() })
+        } else {
+            None
+        }
     }
 
     
