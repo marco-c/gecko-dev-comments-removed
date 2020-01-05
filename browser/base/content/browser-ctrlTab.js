@@ -477,7 +477,7 @@ var ctrlTab = {
         
         
         if (event.detail.changed.some(
-          (elem, ind, arr) => ["label", "busy", "image", "selected"].includes(elem))) {
+          (elem, ind, arr) => ["label", "busy", "image"].includes(elem))) {
           for (let i = this.previews.length - 1; i >= 0; i--) {
             if (this.previews[i]._tab && this.previews[i]._tab == event.target) {
               this.updatePreview(this.previews[i], event.target);
