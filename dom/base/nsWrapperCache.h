@@ -41,6 +41,26 @@ class nsWindowRoot;
 
 
 
+#if defined(_M_X64) || defined(__x86_64__)
+static_assert(sizeof(void*) == 8, "These architectures should be 64-bit");
+#define BOOL_FLAGS_ON_WRAPPER_CACHE
+#else
+static_assert(sizeof(void*) == 4, "Only support 32-bit and 64-bit");
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -71,7 +91,12 @@ class nsWrapperCache
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_WRAPPERCACHE_IID)
 
-  nsWrapperCache() : mWrapper(nullptr), mFlags(0)
+  nsWrapperCache()
+    : mWrapper(nullptr)
+    , mFlags(0)
+#ifdef BOOL_FLAGS_ON_WRAPPER_CACHE
+    , mBoolFlags(0)
+#endif
   {
   }
   ~nsWrapperCache()
@@ -373,6 +398,10 @@ private:
 
   JSObject* mWrapper;
   FlagsType mFlags;
+protected:
+#ifdef BOOL_FLAGS_ON_WRAPPER_CACHE
+  uint32_t mBoolFlags;
+#endif
 };
 
 enum { WRAPPER_CACHE_FLAGS_BITS_USED = 2 };
