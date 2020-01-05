@@ -718,14 +718,15 @@ NS_NewInputStreamPump(nsIInputStreamPump **result,
                       int64_t              streamLen ,
                       uint32_t             segsize ,
                       uint32_t             segcount ,
-                      bool                 closeWhenDone )
+                      bool                 closeWhenDone ,
+                      nsIEventTarget      *mainThreadTarget )
 {
     nsresult rv;
     nsCOMPtr<nsIInputStreamPump> pump =
         do_CreateInstance(NS_INPUTSTREAMPUMP_CONTRACTID, &rv);
     if (NS_SUCCEEDED(rv)) {
         rv = pump->Init(stream, streamPos, streamLen,
-                        segsize, segcount, closeWhenDone);
+                        segsize, segcount, closeWhenDone, mainThreadTarget);
         if (NS_SUCCEEDED(rv)) {
             *result = nullptr;
             pump.swap(*result);
