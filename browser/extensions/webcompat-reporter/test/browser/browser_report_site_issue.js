@@ -1,8 +1,8 @@
 
 
-
-
 add_task(function* test_screenshot() {
+
+  
   yield SpecialPowers.pushPrefEnv({set: [[PREF_WC_REPORTER_ENDPOINT, NEW_ISSUE_PAGE]]});
 
   let tab1 = yield BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
