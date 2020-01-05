@@ -296,7 +296,7 @@ private:
   
   
   
-  void ScheduleStateMachineIn(int64_t aMicroseconds);
+  void ScheduleStateMachineIn(const media::TimeUnit& aTime);
 
   bool HaveEnoughDecodedAudio();
   bool HaveEnoughDecodedVideo();
