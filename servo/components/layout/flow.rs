@@ -686,8 +686,6 @@ pub struct BaseFlow {
     pub children: FlowList,
 
     
-    
-    
     pub intrinsic_inline_sizes: IntrinsicISizes,
 
     
