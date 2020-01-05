@@ -51,7 +51,7 @@ pub struct CallbackInterface {
 
 
 
-#[allow(raw_pointer_deriving)]
+#[allow(raw_pointer_derive)]
 #[derive(Copy, Clone,PartialEq)]
 #[jstraceable]
 struct CallbackObject {

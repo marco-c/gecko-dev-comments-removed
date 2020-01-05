@@ -40,7 +40,7 @@ use geom::rect::Rect;
 
 
 
-#[allow(raw_pointer_deriving)]
+#[allow(raw_pointer_derive)]
 #[derive(Copy, Clone)]
 pub struct UntrustedNodeAddress(pub *const c_void);
 unsafe impl Send for UntrustedNodeAddress {}

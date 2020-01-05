@@ -47,7 +47,7 @@ use js;
 
 pub struct WindowProxyHandler(pub *const libc::c_void);
 
-#[allow(raw_pointer_deriving)]
+#[allow(raw_pointer_derive)]
 #[jstraceable]
 
 pub struct GlobalStaticData {
@@ -352,7 +352,7 @@ pub fn reflect_dom_object<T: Reflectable>
 
 
 
-#[allow(raw_pointer_deriving, unrooted_must_root, unused_attributes)]
+#[allow(raw_pointer_derive, unrooted_must_root, unused_attributes)]
 #[derive(PartialEq)]
 #[must_root]
 #[servo_lang = "reflector"]

@@ -45,7 +45,7 @@ mod sniffer_task;
 
 
 pub mod fetch {
-    #![allow(dead_code)] 
+    #![allow(dead_code, unused)] 
     pub mod request;
     pub mod response;
     pub mod cors_cache;

@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::{mod, CSSStyleDeclarationMethods};
+use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::{self, CSSStyleDeclarationMethods};
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast};
 use dom::bindings::error::Error;
 use dom::bindings::error::ErrorResult;

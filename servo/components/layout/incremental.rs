@@ -2,7 +2,7 @@
 
 
 
-use flow::{mod, Flow};
+use flow::{self, Flow};
 use flow::{IS_ABSOLUTELY_POSITIONED};
 
 use std::fmt;

@@ -5,7 +5,7 @@
 
 
 use buffer_map::BufferMap;
-use display_list::{mod, StackingContext};
+use display_list::{self, StackingContext};
 use font_cache_task::FontCacheTask;
 use font_context::FontContext;
 use paint_context::PaintContext;
