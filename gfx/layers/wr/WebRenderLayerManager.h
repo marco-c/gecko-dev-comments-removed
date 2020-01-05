@@ -154,6 +154,7 @@ public:
   
   void AddImageKeyForDiscard(wr::ImageKey);
   void DiscardImages();
+  void DiscardLocalImages();
 
   
   

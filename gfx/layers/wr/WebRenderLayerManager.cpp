@@ -335,6 +335,7 @@ WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags)
     return false;
   }
 
+  
   return EndTransactionInternal(nullptr, nullptr, aFlags);
 }
 
@@ -373,6 +374,15 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
 
   wr::DisplayListBuilder builder(WrBridge()->GetPipeline());
   WebRenderLayer::ToWebRenderLayer(mRoot)->RenderLayer(builder);
+  WrBridge()->ClearReadLocks();
+
+  
+  
+  
+  if (mTransactionIncomplete) {
+    DiscardLocalImages();
+    return false;
+  }
 
   bool sync = mTarget != nullptr;
   mLatestTransactionId = mTransactionIdAllocator->GetTransactionId();
@@ -389,7 +399,7 @@ WebRenderLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback
   mKeepAlive.Clear();
   ClearMutatedLayers();
 
-  return !mTransactionIncomplete;
+  return true;
 }
 
 void
@@ -484,6 +494,16 @@ WebRenderLayerManager::DiscardCompositorAnimations()
   mDiscardedCompositorAnimationsIds.clear();
 }
 
+void
+WebRenderLayerManager::DiscardLocalImages()
+{
+  
+  
+  
+  mImageKeys.clear();
+}
+
+void
 WebRenderLayerManager::Mutated(Layer* aLayer)
 {
   LayerManager::Mutated(aLayer);
