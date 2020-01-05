@@ -1221,7 +1221,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD Invalidate(const LayoutDeviceIntRect& aRect) = 0;
+    virtual void Invalidate(const LayoutDeviceIntRect& aRect) = 0;
 
     enum LayerManagerPersistence
     {
