@@ -46,6 +46,12 @@ pub fn resources_dir_path() -> PathBuf {
             break;
         }
         path.pop();
+        
+        path.push("Resources");
+        if path.is_dir() {
+            break;
+        }
+        path.pop();
     }
     *dir = Some(path.to_str().unwrap().to_owned());
     path
