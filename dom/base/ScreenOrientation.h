@@ -57,7 +57,7 @@ public:
 
   
   
-  OrientationType GetType(ErrorResult& aRv) const;
+  OrientationType GetType(CallerType aCallerType, ErrorResult& aRv) const;
   uint16_t GetAngle(ErrorResult& aRv) const;
 
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
