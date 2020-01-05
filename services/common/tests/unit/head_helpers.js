@@ -157,16 +157,3 @@ function uninstallFakePAC() {
   _("Uninstalling fake PAC.");
   MockRegistrar.unregister(fakePACCID);
 }
-
-
-
-
-
-function ensureStartOverKeepsIdentity() {
-  Cu.import("resource://gre/modules/Services.jsm");
-  Services.prefs.setBoolPref("services.sync-testing.startOverKeepIdentity", true);
-  do_register_cleanup(function() {
-    Services.prefs.clearUserPref("services.sync-testing.startOverKeepIdentity");
-  });
-}
-ensureStartOverKeepsIdentity();
