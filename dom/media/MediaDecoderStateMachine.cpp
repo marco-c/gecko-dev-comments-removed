@@ -291,12 +291,6 @@ private:
   {
     mMetadataRequest.Complete();
 
-    if (mPendingDormant) {
-      
-      SetState(DECODER_STATE_DORMANT);
-      return;
-    }
-
     
     Resource()->SetReadMode(MediaCacheStream::MODE_PLAYBACK);
 
@@ -341,6 +335,12 @@ private:
 
     if (mMaster->mNotifyMetadataBeforeFirstFrame) {
       mMaster->EnqueueLoadedMetadataEvent();
+    }
+
+    if (mPendingDormant) {
+      
+      SetState(DECODER_STATE_DORMANT);
+      return;
     }
 
     if (waitingForCDM) {
@@ -418,7 +418,9 @@ public:
   {
     if (!aDormant) {
       
-      SetState(DECODER_STATE_DECODING_METADATA);
+      SetState(Info().IsEncrypted() && !mMaster->mCDMProxy
+        ? DECODER_STATE_WAIT_FOR_CDM
+        : DECODER_STATE_DECODING_FIRSTFRAME);
     }
     return true;
   }
