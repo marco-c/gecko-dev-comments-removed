@@ -697,7 +697,7 @@ class Redirection;
 
 class Simulator : public DecoderVisitor {
  public:
-  explicit Simulator(JSContext* cx, Decoder* decoder, FILE* stream = stdout);
+  explicit Simulator(Decoder* decoder, FILE* stream = stdout);
   ~Simulator();
 
   
@@ -2509,8 +2509,6 @@ class Simulator : public DecoderVisitor {
   void DoPrintf(const Instruction* instr);
 
   
-
-  JSContext* const cx_;
 
   
   SimExclusiveLocalMonitor local_monitor_;

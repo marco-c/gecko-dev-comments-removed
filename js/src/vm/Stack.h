@@ -1360,9 +1360,6 @@ class Activation
         return hideScriptedCallerCount_ > 0;
     }
 
-    static size_t offsetOfPrev() {
-        return offsetof(Activation, prev_);
-    }
     static size_t offsetOfPrevProfiling() {
         return offsetof(Activation, prevProfiling_);
     }
@@ -1728,14 +1725,22 @@ class InterpreterFrameIterator
 
 
 
+
+
+
+
+
 class WasmActivation : public Activation
 {
+    WasmActivation* prevWasm_;
     wasm::Frame* exitFP_;
     wasm::ExitReason exitReason_;
 
   public:
     explicit WasmActivation(JSContext* cx);
     ~WasmActivation();
+
+    WasmActivation* prevWasm() const { return prevWasm_; }
 
     bool isProfiling() const {
         return true;

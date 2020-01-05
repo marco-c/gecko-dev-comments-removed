@@ -301,16 +301,6 @@ PushRetAddr(MacroAssembler& masm, unsigned entry)
 }
 
 static void
-LoadActivation(MacroAssembler& masm, Register dest)
-{
-    
-    
-    masm.loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), dest);
-    masm.loadPtr(Address(dest, JSContext::offsetOfActivation()), dest);
-    masm.loadPtr(Address(dest, Activation::offsetOfPrev()), dest);
-}
-
-static void
 GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
                          uint32_t* entry)
 {
@@ -336,13 +326,15 @@ GenerateCallablePrologue(MacroAssembler& masm, unsigned framePushed, ExitReason 
     }
 
     if (!reason.isNone()) {
-        
-        
         Register scratch = ABINonArgReg0;
+
+        
+        
+        
         if (reason.isNative() && !scratch.volatile_())
             masm.Push(scratch);
 
-        LoadActivation(masm, scratch);
+        masm.loadWasmActivationFromTls(scratch);
         masm.wasmAssertNonExitInvariants(scratch);
         Address exitReason(scratch, WasmActivation::offsetOfExitReason());
         masm.store32(Imm32(reason.raw()), exitReason);
@@ -365,12 +357,13 @@ GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason 
         masm.addToStackPtr(Imm32(framePushed));
 
     if (!reason.isNone()) {
-        
         Register scratch = ABINonArgReturnReg0;
+
+        
         if (reason.isNative() && !scratch.volatile_())
             masm.Push(scratch);
 
-        LoadActivation(masm, scratch);
+        masm.loadWasmActivationFromTls(scratch);
         Address exitFP(scratch, WasmActivation::offsetOfExitFP());
         masm.storePtr(ImmWord(0), exitFP);
         Address exitReason(scratch, WasmActivation::offsetOfExitReason());
@@ -969,34 +962,4 @@ wasm::LookupFaultingInstance(WasmActivation* activation, void* pc, void* fp)
     Instance* instance = reinterpret_cast<Frame*>(fp)->tls->instance;
     MOZ_RELEASE_ASSERT(&instance->code() == code);
     return instance;
-}
-
-WasmActivation*
-wasm::MaybeActiveActivation(JSContext* cx)
-{
-    
-    
-    Activation* act = cx->activation();
-    while (act && act->isJit() && !act->asJit()->isActive())
-        act = act->prev();
-    if (!act || !act->isWasm())
-        return nullptr;
-    return act->asWasm();
-}
-
-bool
-wasm::InCompiledCode(void* pc)
-{
-    JSContext* cx = TlsContext.get();
-    if (!cx)
-        return false;
-
-    MOZ_RELEASE_ASSERT(!cx->handlingSegFault);
-
-    if (cx->compartment()->wasm.lookupCode(pc))
-        return true;
-
-    const CodeRange* codeRange;
-    uint8_t* codeBase;
-    return LookupBuiltinThunk(pc, &codeRange, &codeBase);
 }
