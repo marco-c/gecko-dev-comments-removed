@@ -916,6 +916,9 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     void error(unsigned errorNumber, ...);
 
     
+    void errorAt(uint32_t offset, unsigned errorNumber, ...);
+
+    
 
 
 
