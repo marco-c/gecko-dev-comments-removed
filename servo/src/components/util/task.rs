@@ -2,24 +2,24 @@
 
 
 
+use std::str::IntoMaybeOwned;
 use std::task;
-use std::comm::SharedChan;
+use std::comm::Chan;
 use std::task::TaskBuilder;
 
-pub fn spawn_named<S: IntoSendStr>(name: S, f: proc()) {
-    let mut builder = task::task();
-    builder.name(name);
+pub fn spawn_named<S: IntoMaybeOwned<'static>>(name: S, f: proc()) {
+    let builder = task::task().named(name);
     builder.spawn(f);
 }
 
 
 
-pub fn send_on_failure<T: Send>(builder: &mut TaskBuilder, msg: T, dest: SharedChan<T>) {
+pub fn send_on_failure<T: Send>(builder: &mut TaskBuilder, msg: T, dest: Chan<T>) {
     let port = builder.future_result();
-    do spawn {
+    spawn(proc() {
         match port.recv() {
             Ok(()) => (),
             Err(..) => dest.send(msg),
         }
-    }
+    })
 }

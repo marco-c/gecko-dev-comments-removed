@@ -12,17 +12,17 @@ use std::cast;
 use std::libc;
 use std::ptr;
 
-use extra::serialize::{Encodable, Encoder};
+use serialize::{Encodable, Encoder};
 
 pub enum ExceptionHandling {
     
-    eReportExceptions,
+    ReportExceptions,
     
     
     
-    eRethrowContentExceptions,
+    RethrowContentExceptions,
     
-    eRethrowExceptions
+    RethrowExceptions
 }
 
 #[deriving(Clone,Eq)]

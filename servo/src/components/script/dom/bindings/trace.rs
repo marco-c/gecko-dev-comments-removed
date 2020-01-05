@@ -11,7 +11,7 @@ use std::cast;
 use std::libc;
 use std::ptr;
 use std::ptr::null;
-use extra::serialize::{Encodable, Encoder};
+use serialize::{Encodable, Encoder};
 
 
 

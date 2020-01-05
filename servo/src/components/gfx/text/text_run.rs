@@ -2,12 +2,12 @@
 
 
 
-use extra::arc::Arc;
 use font::{Font, FontDescriptor, RunMetrics, FontStyle, FontMetrics};
 use servo_util::geometry::Au;
 use servo_util::range::Range;
-use std::vec::VecIterator;
+use std::vec::Items;
 use style::computed_values::text_decoration;
+use sync::Arc;
 use text::glyph::GlyphStore;
 
 
@@ -22,7 +22,7 @@ pub struct TextRun {
 }
 
 pub struct SliceIterator<'a> {
-    priv glyph_iter: VecIterator<'a, Arc<GlyphStore>>,
+    priv glyph_iter: Items<'a, Arc<GlyphStore>>,
     priv range:      Range,
     priv offset:     uint,
 }

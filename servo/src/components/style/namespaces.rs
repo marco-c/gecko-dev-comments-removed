@@ -2,8 +2,8 @@
 
 
 
-use std::hashmap::HashMap;
 use cssparser::ast::*;
+use collections::hashmap::HashMap;
 use servo_util::namespace::Namespace;
 use errors::log_css_error;
 

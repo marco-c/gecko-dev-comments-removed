@@ -2,6 +2,7 @@
 
 
 
+use collections::hashmap::HashMap;
 use font::SpecifiedFontStyle;
 use gfx_font::FontHandleMethods;
 use platform::font::FontHandle;
@@ -11,7 +12,6 @@ use style::computed_values::{font_weight, font_style};
 
 use servo_util::time::{ProfilerChan, profile};
 use servo_util::time;
-use std::hashmap::HashMap;
 
 pub type FontFamilyMap = HashMap<~str, FontFamily>;
 
