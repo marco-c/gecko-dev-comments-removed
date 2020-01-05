@@ -90,9 +90,11 @@ public:
              JS::Handle<JS::Value> aValue);
 
   
+  
   bool Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue,
-             JS::Handle<JS::Value> aTransfer);
+             JS::Handle<JS::Value> aTransfer,
+             JS::CloneDataPolicy cloneDataPolicy);
 
   
   
@@ -163,6 +165,7 @@ public:
   void Write(JSContext* aCx,
              JS::Handle<JS::Value> aValue,
              JS::Handle<JS::Value> aTransfer,
+             JS::CloneDataPolicy cloneDataPolicy,
              ErrorResult &aRv);
 
   void Read(nsISupports* aParent,
