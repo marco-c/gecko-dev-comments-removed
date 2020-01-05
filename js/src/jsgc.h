@@ -449,6 +449,11 @@ class ArenaList {
         return !*cursorp_;
     }
 
+    void moveCursorToEnd() {
+        while (!isCursorAtEnd())
+            cursorp_ = &(*cursorp_)->next;
+    }
+
     
     Arena* arenaAfterCursor() const {
         check();
@@ -734,7 +739,7 @@ class ArenaLists
             freeLists[i] = &placeholder;
     }
 
-    inline void prepareForIncrementalGC(JSRuntime* rt);
+    inline void prepareForIncrementalGC();
 
     
     bool arenaIsInUse(Arena* arena, AllocKind kind) const {

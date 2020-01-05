@@ -1689,20 +1689,11 @@ GCMarker::delayMarkingChildren(const void* thing)
 }
 
 inline void
-ArenaLists::prepareForIncrementalGC(JSRuntime* rt)
+ArenaLists::prepareForIncrementalGC()
 {
-    for (auto i : AllAllocKinds()) {
-        FreeSpan* span = freeLists[i];
-        if (span != &placeholder) {
-            if (!span->isEmpty()) {
-                Arena* arena = span->getArena();
-                arena->allocatedDuringIncremental = true;
-                rt->gc.marker.delayMarkingArena(arena);
-            } else {
-                freeLists[i] = &placeholder;
-            }
-        }
-    }
+    purge();
+    for (auto i : AllAllocKinds())
+        arenaLists[i].moveCursorToEnd();
 }
 
 
@@ -3835,12 +3826,9 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
 
 
 
-
-
-
     if (isIncremental) {
         for (GCZonesIter zone(rt); !zone.done(); zone.next())
-            zone->arenas.purge();
+            zone->arenas.prepareForIncrementalGC();
     }
 
     MemProfiler::MarkTenuredStart(rt);
@@ -5759,7 +5747,7 @@ AutoGCSlice::~AutoGCSlice()
     for (ZonesIter zone(runtime, WithAtoms); !zone.done(); zone.next()) {
         if (zone->isGCMarking()) {
             zone->setNeedsIncrementalBarrier(true, Zone::UpdateJit);
-            zone->arenas.prepareForIncrementalGC(runtime);
+            zone->arenas.purge();
         } else {
             zone->setNeedsIncrementalBarrier(false, Zone::UpdateJit);
         }
