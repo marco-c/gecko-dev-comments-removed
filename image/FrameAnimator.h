@@ -31,14 +31,18 @@ public:
     , mLoopCount(-1)
     , mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0))
     , mAnimationMode(aAnimationMode)
-    , mDoneDecoding(false)
+    , mHasBeenDecoded(false)
   { }
 
   
 
 
+  void NotifyDecodeComplete();
 
-  void SetDoneDecoding(bool aDone);
+  
+
+
+  bool GetHasBeenDecoded() { return mHasBeenDecoded; }
 
   
 
@@ -141,7 +145,7 @@ private:
   uint16_t mAnimationMode;
 
   
-  bool mDoneDecoding;
+  bool mHasBeenDecoded;
 };
 
 
