@@ -37,7 +37,9 @@
 
 #include "nsMemoryReporterManager.h"
 
+#ifdef MOZ_STACKWALKING
 #include "mozilla/StackWalk_windows.h"
+#endif
 
 
 class PlatformData {
@@ -191,6 +193,7 @@ class SamplerThread : public Thread {
     if (SuspendThread(profiled_thread) == kSuspendFailed)
       return;
 
+#ifdef MOZ_STACKWALKING
     
     
     
@@ -213,6 +216,7 @@ class SamplerThread : public Thread {
       
       ReleaseStackWalkWorkaroundLock();
     }
+#endif
 
     
     
