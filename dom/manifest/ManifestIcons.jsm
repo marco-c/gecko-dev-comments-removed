@@ -63,7 +63,7 @@ async function getIcon(aWindow, icons, expectedSize) {
   return fetchIcon(aWindow, icons[index].src).catch(err => {
     
     
-    icons = icons.filter(x => x.src === icons[index].src);
+    icons = icons.filter(x => x.src !== icons[index].src);
     return getIcon(aWindow, icons, expectedSize);
   });
 }

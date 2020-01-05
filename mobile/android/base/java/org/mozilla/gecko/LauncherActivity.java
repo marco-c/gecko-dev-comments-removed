@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.customtabs.CustomTabsIntent;
 
+import org.mozilla.gecko.webapps.WebAppActivity;
 import org.mozilla.gecko.customtabs.CustomTabsActivity;
 import org.mozilla.gecko.db.BrowserContract;
 import org.mozilla.gecko.mozglue.SafeIntent;
@@ -31,7 +32,11 @@ public class LauncherActivity extends Activity {
         final SafeIntent safeIntent = new SafeIntent(getIntent());
 
         
-        if (!isViewIntentWithURL(safeIntent)) {
+        if (isWebAppIntent(safeIntent)) {
+            dispatchWebAppIntent();
+
+        
+        } else if (!isViewIntentWithURL(safeIntent)) {
             dispatchNormalIntent();
 
         
@@ -83,6 +88,15 @@ public class LauncherActivity extends Activity {
         startActivity(intent);
     }
 
+    private void dispatchWebAppIntent() {
+        Intent intent = new Intent(getIntent());
+        intent.setClassName(getApplicationContext(), WebAppActivity.class.getName());
+
+        filterFlags(intent);
+
+        startActivity(intent);
+    }
+
     private static void filterFlags(Intent intent) {
         
         
@@ -102,6 +116,10 @@ public class LauncherActivity extends Activity {
     private static boolean isCustomTabsIntent(@NonNull final SafeIntent safeIntent) {
         return isViewIntentWithURL(safeIntent)
                 && safeIntent.hasExtra(CustomTabsIntent.EXTRA_SESSION);
+    }
+
+    private static boolean isWebAppIntent(@NonNull final SafeIntent safeIntent) {
+        return GeckoApp.ACTION_WEBAPP.equals(safeIntent.getAction());
     }
 
     private boolean isCustomTabsEnabled() {
