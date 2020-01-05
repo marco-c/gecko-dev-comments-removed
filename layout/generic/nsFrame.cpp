@@ -10074,6 +10074,8 @@ nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
   
   nsIAtom* pseudo = aChildFrame->StyleContext()->GetPseudo();
   MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(pseudo), "Child is not an anon box?");
+  MOZ_ASSERT(!nsCSSAnonBoxes::IsNonInheritingAnonBox(pseudo),
+             "Why did the caller bother calling us?");
 
   
   RefPtr<nsStyleContext> newContext =
