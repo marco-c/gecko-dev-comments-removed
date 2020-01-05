@@ -55,6 +55,9 @@ class SyncPreference extends Preference {
                         
                         Picasso.with(mContext).cancelRequest(profileAvatarTarget);
                         
+                        
+                        
+                        setIcon(null);
                         setIcon(R.drawable.sync_avatar_default);
                 }
             });
