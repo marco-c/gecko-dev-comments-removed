@@ -17,10 +17,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "styleSheetService",
                                    "@mozilla.org/content/style-sheet-service;1",
                                    "nsIStyleSheetService");
 
-XPCOMUtils.defineLazyGetter(this, "colorUtils", () => {
-  return require("devtools/shared/css/color").colorUtils;
-});
-
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/AppConstants.jsm");
 
@@ -675,7 +671,7 @@ ExtensionTabManager.prototype = {
       active: tab.selected,
       pinned: tab.pinned,
       status: TabManager.getStatus(tab),
-      incognito: WindowManager.isBrowserPrivate(browser),
+      incognito: PrivateBrowsingUtils.isBrowserPrivate(browser),
       width: browser.frameLoader.lazyWidth || browser.clientWidth,
       height: browser.frameLoader.lazyHeight || browser.clientHeight,
       audible: tab.soundPlaying,
@@ -925,11 +921,6 @@ extensions.on("shutdown", (type, extension) => {
 });
 
 
-function memoize(fn) {
-  let weakMap = new DefaultWeakMap(fn);
-  return weakMap.get.bind(weakMap);
-}
-
 
 global.WindowManager = {
   
@@ -969,16 +960,13 @@ global.WindowManager = {
     }
   },
 
-  isBrowserPrivate: memoize(browser => {
-    return PrivateBrowsingUtils.isBrowserPrivate(browser);
-  }),
-
-  getId: memoize(window => {
-    if (window instanceof Ci.nsIInterfaceRequestor) {
-      return window.getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+  getId(window) {
+    if (!window.QueryInterface) {
+      return null;
     }
-    return null;
-  }),
+    return window.QueryInterface(Ci.nsIInterfaceRequestor)
+                 .getInterface(Ci.nsIDOMWindowUtils).outerWindowID;
+  },
 
   getWindow(id, context) {
     if (id == this.WINDOW_ID_CURRENT) {
