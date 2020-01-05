@@ -9,7 +9,6 @@
 
 #include "mozilla/Move.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAutoPtr.h"
 #include "nsTHashtable.h"
 #include "nsString.h"
 #include "nsSMILAnimationFunction.h"
@@ -101,7 +100,8 @@ public:
   
   
   
-  nsAutoPtr<nsSMILValue> mCachedBaseValue;
+  
+  nsSMILValue mCachedBaseValue;
 };
 
 #endif 

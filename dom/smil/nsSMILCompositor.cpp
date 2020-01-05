@@ -82,6 +82,8 @@ nsSMILCompositor::ComposeAttribute(bool& aMightHavePendingStyleUpdates)
   nsSMILValue sandwichResultValue;
   if (!mAnimationFunctions[firstFuncToCompose]->WillReplace()) {
     sandwichResultValue = smilAttr->GetBaseValue();
+    MOZ_ASSERT(!sandwichResultValue.IsNull(),
+               "Result of GetBaseValue should not be null");
   }
   UpdateCachedBaseValue(sandwichResultValue);
 
@@ -198,14 +200,9 @@ nsSMILCompositor::GetFirstFuncToAffectSandwich()
 void
 nsSMILCompositor::UpdateCachedBaseValue(const nsSMILValue& aBaseValue)
 {
-  if (!mCachedBaseValue) {
+  if (mCachedBaseValue != aBaseValue) {
     
-    mCachedBaseValue = new nsSMILValue(aBaseValue);
-    NS_WARNING_ASSERTION(mCachedBaseValue, "failed to cache base value (OOM?)");
-    mForceCompositing = true;
-  } else if (*mCachedBaseValue != aBaseValue) {
-    
-    *mCachedBaseValue = aBaseValue;
+    mCachedBaseValue = aBaseValue;
     mForceCompositing = true;
   }
 }
