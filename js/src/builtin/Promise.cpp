@@ -1645,6 +1645,9 @@ RunResolutionFunction(JSContext *cx, HandleObject resolutionFun, HandleValue res
     
     
     
+    
+    
+    
     assertSameCompartment(cx, resolutionFun);
     assertSameCompartment(cx, result);
     assertSameCompartment(cx, promiseObj);
@@ -3052,7 +3055,7 @@ PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise, HandleValue
         return true;
 
     if (PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_REJECT_FUNCTION))
-        return RejectMaybeWrappedPromise(cx, promise, rejectionValue);
+        return ResolvePromise(cx, promise, rejectionValue, JS::PromiseState::Rejected);
 
     RootedValue funVal(cx, promise->getFixedSlot(PromiseSlot_RejectFunction));
     MOZ_ASSERT(IsCallable(funVal));
