@@ -169,6 +169,8 @@ pub struct NewLayoutInfo {
     
     pub new_pipeline_id: PipelineId,
     
+    pub frame_id: FrameId,
+    
     pub frame_type: FrameType,
     
     pub load_data: LoadData,
@@ -209,21 +211,19 @@ pub enum ConstellationControlMsg {
     ChangeFrameVisibilityStatus(PipelineId, bool),
     
     
-    NotifyVisibilityChange(PipelineId, PipelineId, bool),
+    NotifyVisibilityChange(PipelineId, FrameId, bool),
     
     
-    Navigate(PipelineId, PipelineId, LoadData, bool),
+    Navigate(PipelineId, FrameId, LoadData, bool),
     
     
-    
-    MozBrowserEvent(PipelineId, Option<PipelineId>, MozBrowserEvent),
-    
+    MozBrowserEvent(PipelineId, Option<FrameId>, MozBrowserEvent),
     
     
-    UpdatePipelineId(PipelineId, PipelineId, PipelineId),
+    UpdatePipelineId(PipelineId, FrameId, PipelineId),
     
     
-    FocusIFrame(PipelineId, PipelineId),
+    FocusIFrame(PipelineId, FrameId),
     
     WebDriverScriptCommand(PipelineId, WebDriverScriptCommand),
     
@@ -236,13 +236,15 @@ pub enum ConstellationControlMsg {
     
     DispatchFrameLoadEvent {
         
-        target: PipelineId,
+        target: FrameId,
         
         parent: PipelineId,
+        
+        child: PipelineId,
     },
     
     
-    FramedContentChanged(PipelineId, PipelineId),
+    FramedContentChanged(PipelineId, FrameId),
     
     ReportCSSError(PipelineId, String, usize, usize, String),
     
@@ -430,6 +432,8 @@ pub struct InitialScriptState {
     
     
     pub parent_info: Option<(PipelineId, FrameType)>,
+    
+    pub frame_id: FrameId,
     
     pub control_chan: IpcSender<ConstellationControlMsg>,
     

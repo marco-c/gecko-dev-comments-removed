@@ -85,8 +85,7 @@ pub enum ScriptMsg {
     LoadUrl(PipelineId, LoadData, bool),
     
     
-    
-    MozBrowserEvent(PipelineId, Option<PipelineId>, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, PipelineId, MozBrowserEvent),
     
     TraverseHistory(Option<PipelineId>, TraversalDirection),
     
