@@ -22,7 +22,7 @@ import android.support.annotation.Nullable;
 
 
 
-public class Server11Repository extends Repository {
+public class Server15Repository extends Repository {
   public final AuthHeaderProvider authHeaderProvider;
 
   private final long syncDeadlineMillis;
@@ -44,7 +44,7 @@ public class Server11Repository extends Repository {
 
 
 
-  public Server11Repository(
+  public Server15Repository(
           @NonNull String collection,
           long syncDeadlineMillis,
           @NonNull String storageURL,
@@ -71,7 +71,7 @@ public class Server11Repository extends Repository {
   @Override
   public void createSession(RepositorySessionCreationDelegate delegate,
                             Context context) {
-    delegate.onSessionCreated(new Server11RepositorySession(this));
+    delegate.onSessionCreated(new Server15RepositorySession(this));
   }
 
   public URI collectionURI() {

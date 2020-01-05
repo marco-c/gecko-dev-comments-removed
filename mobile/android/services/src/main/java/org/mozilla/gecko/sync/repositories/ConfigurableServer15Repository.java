@@ -17,12 +17,12 @@ import org.mozilla.gecko.sync.net.AuthHeaderProvider;
 
 
 
-public class ConstrainedServer11Repository extends Server11Repository {
+public class ConfigurableServer15Repository extends Server15Repository {
   private final String sortOrder;
   private final long batchLimit;
   private final boolean allowMultipleBatches;
 
-  public ConstrainedServer11Repository(
+  public ConfigurableServer15Repository(
           String collection,
           long syncDeadline,
           String storageURL,
