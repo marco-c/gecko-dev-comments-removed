@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef NS_UNICODEPROPERTIES_H
 #define NS_UNICODEPROPERTIES_H
 
@@ -155,6 +156,30 @@ private:
 
 
 uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength);
+
+
+
+class ClusterReverseIterator
+{
+public:
+    ClusterReverseIterator(const char16_t* aText, uint32_t aLength)
+        : mPos(aText + aLength), mLimit(aText)
+    { }
+
+    operator const char16_t* () const {
+        return mPos;
+    }
+
+    bool AtEnd() const {
+        return mPos <= mLimit;
+    }
+
+    void Next();
+
+private:
+    const char16_t* mPos;
+    const char16_t* mLimit;
+};
 
 } 
 
