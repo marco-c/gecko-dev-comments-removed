@@ -651,8 +651,6 @@ Tester.prototype = {
 
         barrier.wait().then(() => {
           
-          Services.obs.notifyObservers(null, "net:prune-all-connections", null);
-          
           
           Services.obs.notifyObservers(null, "memory-pressure", "heap-minimize");
 
