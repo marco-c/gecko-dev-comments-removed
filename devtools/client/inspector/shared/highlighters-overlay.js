@@ -31,11 +31,18 @@ function HighlightersOverlay(inspector) {
   this.hoveredHighlighterShown = null;
   
   this.selectorHighlighterShown = null;
+  
+  this.state = {
+    
+    grid: {}
+  };
 
   this.onClick = this.onClick.bind(this);
   this.onMouseMove = this.onMouseMove.bind(this);
   this.onMouseOut = this.onMouseOut.bind(this);
   this.onWillNavigate = this.onWillNavigate.bind(this);
+  this.onNavigate = this.onNavigate.bind(this);
+  this._handleRejection = this._handleRejection.bind(this);
 
   EventEmitter.decorate(this);
 }
@@ -64,6 +71,7 @@ HighlightersOverlay.prototype = {
     el.addEventListener("mouseout", this.onMouseOut);
     el.ownerDocument.defaultView.addEventListener("mouseout", this.onMouseOut);
 
+    this.inspector.target.on("navigate", this.onNavigate);
     this.inspector.target.on("will-navigate", this.onWillNavigate);
   },
 
@@ -85,6 +93,7 @@ HighlightersOverlay.prototype = {
     el.removeEventListener("mousemove", this.onMouseMove);
     el.removeEventListener("mouseout", this.onMouseOut);
 
+    this.inspector.target.off("navigate", this.onNavigate);
     this.inspector.target.off("will-navigate", this.onWillNavigate);
   },
 
@@ -126,10 +135,14 @@ HighlightersOverlay.prototype = {
 
     this._toggleRuleViewGridIcon(node, true);
 
-    
-    
-    this.emit("grid-highlighter-shown", node);
-    this.gridHighlighterShown = node;
+    node.getUniqueSelector().then(selector => {
+      
+      this.state.grid = { selector, options };
+      this.gridHighlighterShown = node;
+      
+      
+      this.emit("grid-highlighter-shown", node);
+    }).catch(this._handleRejection);
   }),
 
   
@@ -151,6 +164,34 @@ HighlightersOverlay.prototype = {
     
     this.emit("grid-highlighter-hidden", this.gridHighlighterShown);
     this.gridHighlighterShown = null;
+
+    
+    this.state.grid = {};
+  }),
+
+  
+
+
+
+
+
+  restoreState: Task.async(function* () {
+    let { selector, options } = this.state.grid;
+
+    if (!selector) {
+      return;
+    }
+
+    
+    yield this.onInspectorNewRoot;
+
+    let walker = this.inspector.walker;
+    let rootNode = yield walker.getRootNode();
+    let nodeFront = yield walker.querySelector(rootNode, selector);
+
+    if (nodeFront) {
+      yield this.showGridHighlighter(nodeFront, options);
+    }
   }),
 
   
@@ -171,6 +212,12 @@ HighlightersOverlay.prototype = {
       this.highlighters[type] = highlighter;
       return highlighter;
     });
+  },
+
+  _handleRejection: function (error) {
+    if (!this.destroyed) {
+      console.error(error);
+    }
   },
 
   
@@ -318,10 +365,20 @@ HighlightersOverlay.prototype = {
   
 
 
+  onNavigate: function () {
+    this.restoreState().catch(this._handleRejection);
+  },
+
+  
+
+
   onWillNavigate: function () {
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
+
+    
+    this.onInspectorNewRoot = this.inspector.once("new-root");
   },
 
   
@@ -345,6 +402,7 @@ HighlightersOverlay.prototype = {
     this.gridHighlighterShown = null;
     this.hoveredHighlighterShown = null;
     this.selectorHighlighterShown = null;
+    this.destroyed = true;
   }
 };
 
