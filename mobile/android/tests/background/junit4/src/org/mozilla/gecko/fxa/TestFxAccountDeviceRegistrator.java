@@ -1,7 +1,7 @@
 
 
 
-package org.mozilla.gecko.fxa.devices;
+package org.mozilla.gecko.fxa;
 
 import org.junit.Before;
 import org.junit.Test;

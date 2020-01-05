@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.fxa.devices;
+package org.mozilla.gecko.fxa;
 
 import android.content.Context;
 import android.content.Intent;
@@ -378,9 +378,8 @@ public class FxAccountDeviceRegistrator implements BundleEventListener {
             break;
           }
           final FxAccountDevice updatedDevice = new FxAccountDevice(device.name, fxaDevice.id, device.type,
-                                                                    null, null,
-                                                                    device.pushCallback, device.pushPublicKey,
-                                                                    device.pushAuthKey);
+                                                                    device.isCurrentDevice, device.pushCallback,
+                                                                    device.pushPublicKey, device.pushAuthKey);
           doFxaRegistration(context, fxAccount, updatedDevice, false);
           return;
         }
