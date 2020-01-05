@@ -49,5 +49,4 @@ pub mod fetch {
     #![allow(dead_code, unused)] 
     pub mod cors_cache;
     pub mod methods;
-    pub mod response;
 }
