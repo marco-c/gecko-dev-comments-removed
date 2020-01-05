@@ -18,6 +18,8 @@ Cu.import("resource://services-sync/browserid_identity.js");
 Cu.import("resource://testing-common/services/sync/utils.js");
 Cu.import("resource://gre/modules/PromiseUtils.jsm");
 
+
+
 Service.engineManager.clear();
 
 function run_test() {
@@ -28,8 +30,6 @@ function run_test() {
   Log.repository.getLogger("Sync.Service").level       = Log.Level.Trace;
   Log.repository.getLogger("Sync.SyncScheduler").level = Log.Level.Trace;
   initTestLogging();
-
-  Service.engineManager.register(RotaryEngine);
 
   
   Status.__authManager = Service.identity = new BrowserIDManager();
@@ -210,8 +210,7 @@ add_task(async function test_momentary_401_engine() {
   let john   = server.user("johndoe");
 
   _("Enabling the Rotary engine.");
-  let engine = Service.engineManager.get("rotary");
-  engine.enabled = true;
+  let { engine, tracker } = registerRotaryEngine();
 
   
   
@@ -253,6 +252,9 @@ add_task(async function test_momentary_401_engine() {
                                       between,
                                       "weave:service:sync:finish",
                                       Service.storageURL + "rotary");
+
+  tracker.clearChangedIDs();
+  Service.engineManager.unregister(engine);
 });
 
 
