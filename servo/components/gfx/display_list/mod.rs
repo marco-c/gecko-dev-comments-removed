@@ -215,13 +215,8 @@ pub struct DisplayList {
 
 impl DisplayList {
     pub fn new(mut root_stacking_context: StackingContext,
-               items: &mut Option<Vec<DisplayItem>>)
+               items: Vec<DisplayItem>)
                -> DisplayList {
-        let items = match items.take() {
-            Some(items) => items,
-            None => panic!("Tried to create empty display list."),
-        };
-
         let mut offsets = FnvHashMap(HashMap::with_hasher(Default::default()));
         DisplayList::sort_and_count_stacking_contexts(&mut root_stacking_context, &mut offsets, 0);
 
@@ -487,7 +482,6 @@ impl DisplayList {
 
     
     
-    
     pub fn hit_test(&self, point: &Point2D<Au>, scroll_offsets: &ScrollOffsetMap)
                     -> Vec<DisplayItemMetadata> {
         let mut traversal = DisplayListTraversal {
@@ -497,7 +491,6 @@ impl DisplayList {
         };
         let mut result = Vec::new();
         self.root_stacking_context.hit_test(&mut traversal, point, scroll_offsets, &mut result);
-        result.reverse();
         result
     }
 }
@@ -641,13 +634,17 @@ impl StackingContext {
 
         for child in self.children.iter() {
             while let Some(item) = traversal.advance(self) {
-                item.hit_test(point, result);
+                if let Some(meta) = item.hit_test(point) {
+                    result.push(meta);
+                }
             }
             child.hit_test(traversal, &point, scroll_offsets, result);
         }
 
         while let Some(item) = traversal.advance(self) {
-            item.hit_test(point, result);
+            if let Some(meta) = item.hit_test(point) {
+                result.push(meta);
+            }
         }
     }
 
@@ -1336,21 +1333,21 @@ impl DisplayItem {
         println!("{}+ {:?}", indent, self);
     }
 
-    fn hit_test(&self, point: Point2D<Au>, result: &mut Vec<DisplayItemMetadata>) {
+    fn hit_test(&self, point: Point2D<Au>) -> Option<DisplayItemMetadata> {
         
         
         let base_item = self.base();
         if !base_item.clip.might_intersect_point(&point) {
             
-            return;
+            return None;
         }
         if !self.bounds().contains(&point) {
             
-            return;
+            return None;
         }
         if base_item.metadata.pointing.is_none() {
             
-            return;
+            return None;
         }
 
         match *self {
@@ -1369,18 +1366,17 @@ impl DisplayItem {
                                     (border.border_widths.top +
                                      border.border_widths.bottom)));
                 if interior_rect.contains(&point) {
-                    return;
+                    return None;
                 }
             }
             DisplayItem::BoxShadowClass(_) => {
                 
-                return
+                return None;
             }
             _ => {}
         }
 
-        
-        result.push(base_item.metadata);
+        Some(base_item.metadata)
     }
 }
 
