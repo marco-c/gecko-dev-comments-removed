@@ -111,6 +111,10 @@ class PostBuildCommands(CommandBase):
                 
                 browserhtml_path = path.relpath(browserhtml_path, os.getcwd())
 
+            if not is_windows():
+                
+                args = args + ['-M', '-S']
+
             args = args + ['-w',
                            '--pref', 'dom.mozbrowser.enabled',
                            '--pref', 'dom.forcetouch.enabled',
