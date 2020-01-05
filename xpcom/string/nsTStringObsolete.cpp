@@ -5,6 +5,7 @@
 
 
 #include "nsTArray.h"
+#include "nsASCIIMask.h"
 #include "mozilla/CheckedInt.h"
 
 
@@ -401,10 +402,9 @@ nsTString_CharT::SetCharAt( char16_t aChar, uint32_t aIndex )
 void
 nsTString_CharT::StripChars( const char* aSet )
 {
-  if (!EnsureMutable())
+  if (!StripChars(aSet, mozilla::fallible)) {
     AllocFailed(mLength);
-
-  mLength = nsBufferRoutines<CharT>::strip_chars(mData, mLength, aSet);
+  }
 }
 
 bool
@@ -421,13 +421,20 @@ nsTString_CharT::StripChars( const char* aSet, const fallible_t& )
 void
 nsTString_CharT::StripWhitespace()
 {
-  StripChars(kWhitespace);
+  if (!StripWhitespace(mozilla::fallible)) {
+    AllocFailed(mLength);
+  }
 }
 
 bool
-nsTString_CharT::StripWhitespace(const fallible_t& aFallible)
+nsTString_CharT::StripWhitespace( const fallible_t& )
 {
-  return StripChars(kWhitespace, aFallible);
+  if (!EnsureMutable()) {
+    return false;
+  }
+
+  StripTaggedASCII(mozilla::ASCIIMask::MaskWhitespace());
+  return true;
 }
 
 
@@ -672,13 +679,44 @@ nsTString_CharT::Trim( const char* aSet, bool aTrimLeading, bool aTrimTrailing, 
 void
 nsTString_CharT::CompressWhitespace( bool aTrimLeading, bool aTrimTrailing )
 {
-  const char* set = kWhitespace;
+  
+  if (mLength == 0) {
+    return;
+  }
 
-  ReplaceChar(set, ' ');
-  Trim(set, aTrimLeading, aTrimTrailing);
+  if (!EnsureMutable())
+    AllocFailed(mLength);
+
+  const ASCIIMaskArray& mask = mozilla::ASCIIMask::MaskWhitespace();
+
+  char_type* to   = mData;
+  char_type* from = mData;
+  char_type* end  = mData + mLength;
 
   
-  mLength = nsBufferRoutines<char_type>::compress_chars(mData, mLength, set);
+  
+  
+  bool skipWS = aTrimLeading;
+  while (from < end) {
+    uint32_t theChar = *from++;
+    if (mozilla::ASCIIMask::IsMasked(mask, theChar)) {
+      if (!skipWS) {
+        *to++ = ' ';
+        skipWS = true;
+      }
+    } else {
+      *to++ = theChar;
+      skipWS = false;
+    }
+  }
+
+  
+  if (aTrimTrailing && skipWS && to > mData) {
+    to--;
+  }
+
+  *to = char_type(0); 
+  mLength = to - mData;
 }
 
 
