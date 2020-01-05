@@ -57,20 +57,6 @@ const GMP_PLUGINS = [
     optionsURL:      "chrome://mozapps/content/extensions/gmpPrefs.xul",
   },
   {
-    id:              EME_ADOBE_ID,
-    name:            "eme-adobe_name",
-    description:     "eme-adobe_description",
-    
-    
-    get learnMoreURL() {
-      return Services.urlFormatter.formatURLPref("app.support.baseURL") + "drm-content";
-    },
-    licenseURL:      "http://help.adobe.com/en_US/primetime/drm/HTML5_CDM_EULA/index.html",
-    homepageURL:     "http://help.adobe.com/en_US/primetime/drm/HTML5_CDM",
-    optionsURL:      "chrome://mozapps/content/extensions/gmpPrefs.xul",
-    isEME:           true,
-  },
-  {
     id:              WIDEVINE_ID,
     name:            "widevine_description",
     
@@ -500,8 +486,7 @@ GMPWrapper.prototype = {
     }
 
     return fileExists(this.gmpPath, libName) &&
-           fileExists(this.gmpPath, infoName) &&
-           (this._plugin.id != EME_ADOBE_ID || fileExists(this.gmpPath, id + ".voucher"));
+           fileExists(this.gmpPath, infoName);
   },
 
   validate() {
