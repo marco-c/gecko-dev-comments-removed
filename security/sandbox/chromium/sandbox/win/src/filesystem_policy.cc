@@ -82,7 +82,11 @@ bool FileSystemPolicy::GenerateRules(const wchar_t* name,
     return false;
   }
 
-  if (!PreProcessName(&mod_name)) {
+  
+  
+  if (!(semantics == TargetPolicy::FILES_ALLOW_READONLY
+        && mod_name.compare(L"*") == 0)
+      && !PreProcessName(&mod_name)) {
     
     NOTREACHED();
     return false;
