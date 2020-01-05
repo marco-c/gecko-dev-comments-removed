@@ -1305,6 +1305,8 @@ protected:
 
   void UpdateScreenOrientation();
 
+  virtual FlashClassification DocumentFlashClassification() override;
+
 #define NS_DOCUMENT_NOTIFY_OBSERVERS(func_, params_)                        \
   NS_OBSERVER_ARRAY_NOTIFY_XPCOM_OBSERVERS(mObservers, nsIDocumentObserver, \
                                            func_, params_);
@@ -1324,6 +1326,14 @@ protected:
   
   
   bool ApplyFullscreen(const FullscreenRequest& aRequest);
+
+  
+  
+  FlashClassification PrincipalFlashClassification(bool aIsTopLevel);
+
+  
+  
+  FlashClassification ComputeFlashClassification();
 
   nsTArray<nsIObserver*> mCharSetObservers;
 
@@ -1369,6 +1379,7 @@ protected:
   
   nsWeakPtr mFullscreenRoot;
 
+  FlashClassification mFlashClassification;
 private:
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 

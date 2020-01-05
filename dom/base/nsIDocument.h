@@ -2893,6 +2893,17 @@ public:
 
   bool PrerenderHref(nsIURI* aHref);
 
+  
+  
+  enum class FlashClassification {
+    Unclassified,   
+                    
+    Unknown,        
+    Allowed,        
+    Denied          
+  };
+  virtual FlashClassification DocumentFlashClassification() = 0;
+
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)
   {
