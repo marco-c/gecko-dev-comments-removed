@@ -6,6 +6,7 @@
 
 
 
+#![feature(box_syntax)]
 #![feature(custom_derive, plugin)]
 #![plugin(serde_macros)]
 

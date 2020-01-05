@@ -16,8 +16,7 @@ use euclid::Matrix4;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use euclid::size::Size2D;
-use ipc_channel::ipc::{self, IpcSender};
-use ipc_channel::router::ROUTER;
+use ipc_channel::ipc::IpcSender;
 use layers::platform::surface::{NativeDisplay, NativeSurface};
 use layers::layers::{BufferRequest, LayerBuffer, LayerBufferSet};
 use msg::compositor_msg::{Epoch, FrameTreeId, LayerId, LayerKind};
@@ -25,7 +24,7 @@ use msg::compositor_msg::{LayerProperties, PaintListener, ScrollPolicy};
 use msg::constellation_msg::Msg as ConstellationMsg;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId};
 use msg::constellation_msg::PipelineExitType;
-use profile_traits::mem::{self, Reporter, ReporterRequest, ReportsChan};
+use profile_traits::mem::{self, ReportsChan};
 use profile_traits::time::{self, profile};
 use rand::{self, Rng};
 use skia::gl_context::GLContext;
@@ -167,27 +166,12 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                     canvas_map: HashMap::new()
                 };
 
-                
                 let reporter_name = format!("paint-reporter-{}", id.0);
-                let (reporter_sender, reporter_receiver) =
-                    ipc::channel::<ReporterRequest>().unwrap();
-                let paint_chan_for_reporter = chrome_to_paint_chan.clone();
-                ROUTER.add_route(reporter_receiver.to_opaque(), box move |message| {
-                    // Just injects an appropriate event into the paint task's queue.
-                    let request: ReporterRequest = message.to().unwrap();
-                    paint_chan_for_reporter.send(ChromeToPaintMsg::CollectReports(
-                            request.reports_channel)).unwrap();
-                });
-                mem_profiler_chan.send(mem::ProfilerMsg::RegisterReporter(
-                        reporter_name.clone(),
-                        Reporter(reporter_sender)));
+                mem_profiler_chan.run_with_memory_reporting(|| {
+                    paint_task.start();
+                }, reporter_name, chrome_to_paint_chan, ChromeToPaintMsg::CollectReports);
 
-                paint_task.start();
-
-                let msg = mem::ProfilerMsg::UnregisterReporter(reporter_name);
-                mem_profiler_chan.send(msg);
-
-                // Tell all the worker threads to shut down.
+                
                 for worker_thread in paint_task.worker_threads.iter_mut() {
                     worker_thread.exit()
                 }
@@ -234,7 +218,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
 
                     self.initialize_layers();
                 }
-                // Inserts a new canvas renderer to the layer map
+                
                 Msg::FromLayout(LayoutToPaintMsg::CanvasLayer(layer_id, canvas_renderer)) => {
                     debug!("Renderer received for canvas with layer {:?}", layer_id);
                     self.canvas_map.insert(layer_id, canvas_renderer);
@@ -277,13 +261,13 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                     self.paint_permission = false;
                 }
                 Msg::FromChrome(ChromeToPaintMsg::CollectReports(ref channel)) => {
-                    // FIXME(njn): should eventually measure the paint task.
+                    
                     channel.send(Vec::new())
                 }
                 Msg::FromLayout(LayoutToPaintMsg::Exit(ref response_channel, _)) |
                 Msg::FromChrome(ChromeToPaintMsg::Exit(ref response_channel, _)) => {
-                    // Ask the compositor to remove any layers it is holding for this paint task.
-                    // FIXME(mrobinson): This can probably move back to the constellation now.
+                    
+                    
                     self.compositor.notify_paint_task_exiting(self.id);
 
                     debug!("PaintTask: Exiting.");
@@ -294,7 +278,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
         }
     }
 
-    /// Paints one layer and places the painted tiles in `replies`.
+    
     fn paint(&mut self,
               replies: &mut Vec<(LayerId, Box<LayerBufferSet>)>,
               mut tiles: Vec<BufferRequest>,
@@ -302,7 +286,7 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
               layer_id: LayerId,
               layer_kind: LayerKind) {
         time::profile(time::ProfilerCategory::Painting, None, self.time_profiler_chan.clone(), || {
-            // Bail out if there is no appropriate stacking context.
+            
             let stacking_context = if let Some(ref stacking_context) = self.root_stacking_context {
                 match display_list::find_stacking_context_with_layer_id(stacking_context,
                                                                         layer_id) {
@@ -313,8 +297,8 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                 return
             };
 
-            // Divide up the layer into tiles and distribute them to workers via a simple round-
-            // robin strategy.
+            
+            
             let tiles = std_mem::replace(&mut tiles, Vec::new());
             let tile_count = tiles.len();
             for (i, tile) in tiles.into_iter().enumerate() {
@@ -365,8 +349,8 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
             let (next_parent_id, page_position, transform, perspective) =
                 match stacking_context.layer {
                 Some(ref paint_layer) => {
-                    // Layers start at the top left of their overflow rect, as far as the info we
-                    // give to the compositor is concerned.
+                    
+                    
                     let overflow_relative_page_position = *page_position +
                                                           stacking_context.bounds.origin +
                                                           stacking_context.overflow.origin;
@@ -393,8 +377,8 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                         establishes_3d_context: establishes_3d_context,
                     });
 
-                    // When there is a new layer, the transforms and origin
-                    // are handled by the compositor.
+                    
+                    
                     (Some(paint_layer.id),
                      Point2D::zero(),
                      Matrix4::identity(),
