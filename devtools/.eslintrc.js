@@ -147,7 +147,7 @@ module.exports = {
     
     "key-spacing": [2, {"beforeColon": false, "afterColon": true}],
     
-    "linebreak-style": 0,
+    "linebreak-style": [2, "unix"],
     
     
     "max-depth": 0,
