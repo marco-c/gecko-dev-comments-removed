@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+//! Builds display lists from flows and fragments.
+//!
+//! Other browser engines sometimes call this "painting", but it is more accurately called display
+//! list building, as the actual painting does not happen here—only deciding *what* we're going to
+//! paint.
 
 #![deny(unsafe_code)]
 
@@ -14,7 +14,7 @@ use app_units::{AU_PER_PX, Au};
 use block::{BlockFlow, BlockStackingContextType};
 use canvas_traits::{CanvasData, CanvasMsg, FromLayoutMsg};
 use context::SharedLayoutContext;
-use euclid::{Point2D, Rect, SideOffsets2D, Size2D};
+use euclid::{Point2D, Rect, SideOffsets2D, Size2D, TypedSize2D};
 use flex::FlexFlow;
 use flow::{BaseFlow, Flow, IS_ABSOLUTELY_POSITIONED};
 use flow_ref::FlowRef;
@@ -32,6 +32,7 @@ use inline::{FIRST_FRAGMENT_OF_ELEMENT, InlineFlow, LAST_FRAGMENT_OF_ELEMENT};
 use ipc_channel::ipc;
 use list_item::ListItemFlow;
 use model::{self, MaybeAuto};
+use msg::constellation_msg::PipelineId;
 use net_traits::image::base::PixelFormat;
 use net_traits::image_cache_thread::UsePlaceholder;
 use range::Range;
@@ -56,6 +57,7 @@ use style::servo::restyle_damage::REPAINT;
 use style::values::{RGBA, computed};
 use style::values::computed::{AngleOrCorner, Gradient, GradientKind, LengthOrPercentage, LengthOrPercentageOrAuto};
 use style::values::specified::{HorizontalDirection, VerticalDirection};
+use style_traits::PagePx;
 use style_traits::cursor::Cursor;
 use table_cell::CollapsedBordersForCell;
 use webrender_traits::{ColorF, GradientStop, ScrollPolicy};
@@ -98,13 +100,17 @@ pub struct DisplayListBuildState<'a> {
     pub scroll_roots: HashMap<ScrollRootId, ScrollRoot>,
     pub processing_scroll_root_element: bool,
 
-    
-    
+    /// The current stacking context id, used to keep track of state when building.
+    /// recursively building and processing the display list.
     pub current_stacking_context_id: StackingContextId,
 
-    
-    
+    /// The current scroll root id, used to keep track of state when
+    /// recursively building and processing the display list.
     pub current_scroll_root_id: ScrollRootId,
+
+    /// Vector containing iframe sizes, used to inform the constellation about
+    /// new iframe sizes
+    pub iframe_sizes: Vec<(PipelineId, TypedSize2D<f32, PagePx>)>,
 }
 
 impl<'a> DisplayListBuildState<'a> {
@@ -118,6 +124,7 @@ impl<'a> DisplayListBuildState<'a> {
             processing_scroll_root_element: false,
             current_stacking_context_id: StackingContextId::root(),
             current_scroll_root_id: ScrollRootId::root(),
+            iframe_sizes: Vec::new(),
         }
     }
 
@@ -225,9 +232,9 @@ impl<'a> DisplayListBuildState<'a> {
                                  mut child_items: Vec<DisplayItem>,
                                  child_stacking_contexts: Vec<StackingContext>,
                                  scroll_root_stack: &mut Vec<ScrollRootId>) {
-        
-        
-        
+        // Properly order display items that make up a stacking context. "Steps" here
+        // refer to the steps in CSS 2.1 Appendix E.
+        // Steps 1 and 2: Borders and background for the root.
         while child_items.last().map_or(false,
              |child| child.section() == DisplayListSection::BackgroundAndBorders) {
             let item = child_items.pop().unwrap();
@@ -235,7 +242,7 @@ impl<'a> DisplayListBuildState<'a> {
             list.push(item);
         }
 
-        
+        // Step 3: Positioned descendants with negative z-indices.
         let mut child_stacking_contexts = child_stacking_contexts.into_iter().peekable();
         while child_stacking_contexts.peek().map_or(false, |child| child.z_index < 0) {
             let context = child_stacking_contexts.next().unwrap();
@@ -243,7 +250,7 @@ impl<'a> DisplayListBuildState<'a> {
             self.to_display_list_for_stacking_context(list, context, scroll_root_stack);
         }
 
-        
+        // Step 4: Block backgrounds and borders.
         while child_items.last().map_or(false,
              |child| child.section() == DisplayListSection::BlockBackgroundsAndBorders) {
             let item = child_items.pop().unwrap();
@@ -251,7 +258,7 @@ impl<'a> DisplayListBuildState<'a> {
             list.push(item);
         }
 
-        
+        // Step 5: Floats.
         while child_stacking_contexts.peek().map_or(false,
             |child| child.context_type == StackingContextType::PseudoFloat) {
             let context = child_stacking_contexts.next().unwrap();
@@ -259,7 +266,7 @@ impl<'a> DisplayListBuildState<'a> {
             self.to_display_list_for_stacking_context(list, context, scroll_root_stack);
         }
 
-        
+        // Step 6 & 7: Content and inlines that generate stacking contexts.
         while child_items.last().map_or(false,
              |child| child.section() == DisplayListSection::Content) {
             let item = child_items.pop().unwrap();
@@ -267,13 +274,13 @@ impl<'a> DisplayListBuildState<'a> {
             list.push(item);
         }
 
-        
+        // Step 8 & 9: Positioned descendants with nonnegative, numeric z-indices.
         for child in child_stacking_contexts {
             self.switch_scroll_roots(list, child.parent_scroll_id, scroll_root_stack);
             self.to_display_list_for_stacking_context(list, child, scroll_root_stack);
         }
 
-        
+        // Step 10: Outlines.
         for item in child_items.drain(..) {
             self.switch_scroll_roots(list, item.scroll_root_id(), scroll_root_stack);
             list.push(item);
@@ -299,11 +306,11 @@ impl<'a> DisplayListBuildState<'a> {
             return;
         }
 
-        
-        
-        
-        
-        
+        // We never want to reach the root of the ScrollRoot tree without encountering the
+        // containing scroll root of this StackingContext. If this does happen we've tried to
+        // switch to a ScrollRoot that does not contain our current stacking context or isn't
+        // itself a direct child of our current stacking context. This should never happen
+        // due to CSS stacking rules.
         debug_assert!(new_id != ScrollRootId::root());
 
         let scroll_root = self.scroll_roots.get(&new_id).unwrap();
@@ -314,12 +321,12 @@ impl<'a> DisplayListBuildState<'a> {
     }
 }
 
-
+/// The logical width of an insertion point: at the moment, a one-pixel-wide line.
 const INSERTION_POINT_LOGICAL_WIDTH: Au = Au(1 * AU_PER_PX);
 
 pub trait FragmentDisplayListBuilding {
-    
-    
+    /// Adds the display items necessary to paint the background of this fragment to the display
+    /// list if necessary.
     fn build_display_list_for_background_if_applicable(&self,
                                                        state: &mut DisplayListBuildState,
                                                        style: &ServoComputedValues,
@@ -327,16 +334,16 @@ pub trait FragmentDisplayListBuilding {
                                                        absolute_bounds: &Rect<Au>,
                                                        clip: &ClippingRegion);
 
-    
-    
+    /// Computes the background size for an image with the given background area according to the
+    /// rules in CSS-BACKGROUNDS § 3.9.
     fn compute_background_image_size(&self,
                                      style: &ServoComputedValues,
                                      bounds: &Rect<Au>,
                                      image: &WebRenderImageInfo, index: usize)
                                      -> Size2D<Au>;
 
-    
-    
+    /// Adds the display items necessary to paint the background image of this fragment to the
+    /// appropriate section of the display list.
     fn build_display_list_for_background_image(&self,
                                                state: &mut DisplayListBuildState,
                                                style: &ServoComputedValues,
@@ -346,8 +353,8 @@ pub trait FragmentDisplayListBuilding {
                                                image_url: &ServoUrl,
                                                background_index: usize);
 
-    
-    
+    /// Adds the display items necessary to paint the background linear gradient of this fragment
+    /// to the appropriate section of the display list.
     fn build_display_list_for_background_gradient(&self,
                                                   state: &mut DisplayListBuildState,
                                                   display_list_section: DisplayListSection,
@@ -356,8 +363,8 @@ pub trait FragmentDisplayListBuilding {
                                                   gradient: &Gradient,
                                                   style: &ServoComputedValues);
 
-    
-    
+    /// Adds the display items necessary to paint the borders of this fragment to a display list if
+    /// necessary.
     fn build_display_list_for_borders_if_applicable(
             &self,
             state: &mut DisplayListBuildState,
@@ -367,16 +374,16 @@ pub trait FragmentDisplayListBuilding {
             display_list_section: DisplayListSection,
             clip: &ClippingRegion);
 
-    
-    
+    /// Adds the display items necessary to paint the outline of this fragment to the display list
+    /// if necessary.
     fn build_display_list_for_outline_if_applicable(&self,
                                                     state: &mut DisplayListBuildState,
                                                     style: &ServoComputedValues,
                                                     bounds: &Rect<Au>,
                                                     clip: &ClippingRegion);
 
-    
-    
+    /// Adds the display items necessary to paint the box shadow of this fragment to the display
+    /// list if necessary.
     fn build_display_list_for_box_shadow_if_applicable(&self,
                                                        state: &mut DisplayListBuildState,
                                                        style: &ServoComputedValues,
@@ -384,7 +391,7 @@ pub trait FragmentDisplayListBuilding {
                                                        absolute_bounds: &Rect<Au>,
                                                        clip: &ClippingRegion);
 
-    
+    /// Adds display items necessary to draw debug boxes around a scanned text fragment.
     fn build_debug_borders_around_text_fragments(&self,
                                                  state: &mut DisplayListBuildState,
                                                  style: &ServoComputedValues,
@@ -393,24 +400,24 @@ pub trait FragmentDisplayListBuilding {
                                                  text_fragment: &ScannedTextFragmentInfo,
                                                  clip: &ClippingRegion);
 
-    
+    /// Adds display items necessary to draw debug boxes around this fragment.
     fn build_debug_borders_around_fragment(&self,
                                            state: &mut DisplayListBuildState,
                                            stacking_relative_border_box: &Rect<Au>,
                                            clip: &ClippingRegion);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Adds the display items for this fragment to the given display list.
+    ///
+    /// Arguments:
+    ///
+    /// * `state`: The display building state, including the display list currently
+    ///   under construction and other metadata useful for constructing it.
+    /// * `dirty`: The dirty rectangle in the coordinate system of the owning flow.
+    /// * `stacking_relative_flow_origin`: Position of the origin of the owning flow with respect
+    ///   to its nearest ancestor stacking context.
+    /// * `relative_containing_block_size`: The size of the containing block that
+    ///   `position: relative` makes use of.
+    /// * `clip`: The region to clip the display items to.
     fn build_display_list(&mut self,
                           state: &mut DisplayListBuildState,
                           stacking_relative_flow_origin: &Point2D<Au>,
@@ -420,29 +427,29 @@ pub trait FragmentDisplayListBuilding {
                           display_list_section: DisplayListSection,
                           clip: &ClippingRegion);
 
-    
+    /// Adjusts the clipping region for all descendants of this fragment as appropriate.
     fn adjust_clipping_region_for_children(&self,
                                            current_clip: &mut ClippingRegion,
                                            stacking_relative_border_box: &Rect<Au>);
 
-    
-    
+    /// Adjusts the clipping rectangle for a fragment to take the `clip` property into account
+    /// per CSS 2.1 § 11.1.2.
     fn adjust_clip_for_style(&self,
                              parent_clip: &mut ClippingRegion,
                              stacking_relative_border_box: &Rect<Au>);
 
-    
-    
+    /// Builds the display items necessary to paint the selection and/or caret for this fragment,
+    /// if any.
     fn build_display_items_for_selection_if_necessary(&self,
                                                       state: &mut DisplayListBuildState,
                                                       stacking_relative_border_box: &Rect<Au>,
                                                       display_list_section: DisplayListSection,
                                                       clip: &ClippingRegion);
 
-    
-    
-    
-    
+    /// Creates the text display item for one text fragment. This can be called multiple times for
+    /// one fragment if there are text shadows.
+    ///
+    /// `text_shadow` will be `Some` if this is rendering a shadow.
     fn build_display_list_for_text_fragment(&self,
                                             state: &mut DisplayListBuildState,
                                             text_fragment: &ScannedTextFragmentInfo,
@@ -450,7 +457,7 @@ pub trait FragmentDisplayListBuilding {
                                             text_shadow: Option<&TextShadow>,
                                             clip: &ClippingRegion);
 
-    
+    /// Creates the display item for a text decoration: underline, overline, or line-through.
     fn build_display_list_for_text_decoration(&self,
                                               state: &mut DisplayListBuildState,
                                               color: &RGBA,
@@ -458,13 +465,13 @@ pub trait FragmentDisplayListBuilding {
                                               clip: &ClippingRegion,
                                               blur_radius: Au);
 
-    
+    /// A helper method that `build_display_list` calls to create per-fragment-type display items.
     fn build_fragment_type_specific_display_items(&mut self,
                                                   state: &mut DisplayListBuildState,
                                                   stacking_relative_border_box: &Rect<Au>,
                                                   clip: &ClippingRegion);
 
-    
+    /// Creates a stacking context for associated fragment.
     fn create_stacking_context(&self,
                                id: StackingContextId,
                                base_flow: &BaseFlow,
@@ -475,8 +482,8 @@ pub trait FragmentDisplayListBuilding {
 }
 
 fn handle_overlapping_radii(size: &Size2D<Au>, radii: &BorderRadii<Au>) -> BorderRadii<Au> {
-    
-    
+    // No two corners' border radii may add up to more than the length of the edge
+    // between them. To prevent that, all radii are scaled down uniformly.
     fn scale_factor(radius_a: Au, radius_b: Au, edge_length: Au) -> f32 {
         let required = radius_a + radius_b;
 
@@ -500,9 +507,9 @@ fn handle_overlapping_radii(size: &Size2D<Au>, radii: &BorderRadii<Au>) -> Borde
 }
 
 fn build_border_radius(abs_bounds: &Rect<Au>, border_style: &style_structs::Border) -> BorderRadii<Au> {
-    
-    
-    
+    // TODO(cgaebel): Support border radii even in the case of multiple border widths.
+    // This is an extension of supporting elliptical radii. For now, all percentage
+    // radii will be relative to the width.
 
     handle_overlapping_radii(&abs_bounds.size, &BorderRadii {
         top_left:     model::specified_border_radius(border_style.border_top_left_radius,
@@ -523,7 +530,7 @@ impl FragmentDisplayListBuilding for Fragment {
                                                        display_list_section: DisplayListSection,
                                                        absolute_bounds: &Rect<Au>,
                                                        clip: &ClippingRegion) {
-        
+        // Adjust the clipping region as necessary to account for `border-radius`.
         let border_radii = build_border_radius(absolute_bounds, style.get_border());
         let mut clip = (*clip).clone();
         if !border_radii.is_square() {
@@ -531,17 +538,17 @@ impl FragmentDisplayListBuilding for Fragment {
         }
         let background = style.get_background();
 
-        
-        
-        
-        
+        // FIXME: This causes a lot of background colors to be displayed when they are clearly not
+        // needed. We could use display list optimization to clean this up, but it still seems
+        // inefficient. What we really want is something like "nearest ancestor element that
+        // doesn't have a fragment".
         let background_color = style.resolve_color(background.background_color);
 
-        
-        
+        // 'background-clip' determines the area within which the background is painted.
+        // http://dev.w3.org/csswg/css-backgrounds-3/#the-background-clip
         let mut bounds = *absolute_bounds;
 
-        
+        // This is the clip for the color (which is the last element in the bg array)
         let color_clip = get_cyclic(&background.background_clip.0,
                                     background.background_image.0.len() - 1);
 
@@ -1443,6 +1450,10 @@ impl FragmentDisplayListBuilding for Fragment {
                         iframe: fragment_info.pipeline_id,
                     });
 
+                    let size = Size2D::new(item.bounds().size.width.to_f32_px(),
+                                           item.bounds().size.height.to_f32_px());
+                    state.iframe_sizes.push((fragment_info.pipeline_id, TypedSize2D::from_untyped(&size)));
+
                     state.add_display_item(item);
                 }
             }
@@ -2017,9 +2028,9 @@ impl InlineFlowDisplayListBuilding for InlineFlow {
         // not recurse on a line if nothing in it can intersect the dirty region.
         debug!("Flow: building display list for {} inline fragments", self.fragments.len());
 
-        
-        
-        
+        // We iterate using an index here, because we want to avoid doing a doing
+        // a double-borrow of self (one mutable for the method call and one immutable
+        // for the self.fragments.fragment iterator itself).
         for index in 0..self.fragments.fragments.len() {
             let (establishes_stacking_context, stacking_context_id) = {
                 let fragment = self.fragments.fragments.get(index).unwrap();
@@ -2052,7 +2063,7 @@ pub trait ListItemFlowDisplayListBuilding {
 
 impl ListItemFlowDisplayListBuilding for ListItemFlow {
     fn build_display_list_for_list_item(&mut self, state: &mut DisplayListBuildState) {
-        
+        // Draw the marker, if applicable.
         for marker in &mut self.marker_fragments {
             marker.build_display_list(state,
                                       &self.block_flow.base.stacking_relative_position,
@@ -2069,7 +2080,7 @@ impl ListItemFlowDisplayListBuilding for ListItemFlow {
                                       &self.block_flow.base.clip);
         }
 
-        
+        // Draw the rest of the block.
         self.block_flow.build_display_list_for_block(state, BorderPaintingMode::Separate)
     }
 }
@@ -2080,7 +2091,7 @@ pub trait FlexFlowDisplayListBuilding {
 
 impl FlexFlowDisplayListBuilding for FlexFlow {
     fn build_display_list_for_flex(&mut self, state: &mut DisplayListBuildState) {
-        
+        // Draw the rest of the block.
         self.as_mut_block().build_display_list_for_block(state, BorderPaintingMode::Separate)
     }
 }
@@ -2127,9 +2138,9 @@ trait ServoComputedValuesCursorUtility {
 }
 
 impl ServoComputedValuesCursorUtility for ServoComputedValues {
-    
-    
-    
+    /// Gets the cursor to use given the specific ServoComputedValues.  `default_cursor` specifies
+    /// the cursor to use if `cursor` is `auto`. Typically, this will be `PointerCursor`, but for
+    /// text display items it may be `TextCursor` or `VerticalTextCursor`.
     #[inline]
     fn get_cursor(&self, default_cursor: Cursor) -> Option<Cursor> {
         match (self.get_pointing().pointer_events, self.get_pointing().cursor) {
@@ -2140,7 +2151,7 @@ impl ServoComputedValuesCursorUtility for ServoComputedValues {
     }
 }
 
-
+// A helper data structure for gradients.
 #[derive(Copy, Clone)]
 struct StopRun {
     start_offset: f32,
@@ -2160,16 +2171,16 @@ fn position_to_offset(position: LengthOrPercentage, Au(total_length): Au) -> f32
     }
 }
 
-
-
+/// Adjusts `content_rect` as necessary for the given spread, and blur so that the resulting
+/// bounding rect contains all of a shadow's ink.
 fn shadow_bounds(content_rect: &Rect<Au>, blur_radius: Au, spread_radius: Au) -> Rect<Au> {
     let inflation = spread_radius + blur_radius * BLUR_INFLATION_FACTOR;
     content_rect.inflate(inflation, inflation)
 }
 
-
+/// Allows a CSS color to be converted into a graphics color.
 pub trait ToGfxColor {
-    
+    /// Converts a CSS color to a graphics color.
     fn to_gfx_color(&self) -> ColorF;
 }
 
@@ -2179,14 +2190,14 @@ impl ToGfxColor for RGBA {
     }
 }
 
-
+/// Describes how to paint the borders.
 #[derive(Copy, Clone)]
 pub enum BorderPaintingMode<'a> {
-    
+    /// Paint borders separately (`border-collapse: separate`).
     Separate,
-    
+    /// Paint collapsed borders.
     Collapse(&'a CollapsedBordersForCell),
-    
+    /// Paint no borders.
     Hidden,
 }
 
