@@ -311,43 +311,25 @@ GeckoDriver.prototype.sendTargettedAsyncMessage_ = function (name, payload) {
 
 
 
-
-
-
-
-
 GeckoDriver.prototype.getCurrentWindow = function (forcedContext = undefined) {
   let context = typeof forcedContext == "undefined" ? this.context : forcedContext;
   let win = null;
 
-  switch (context) {
-    case Context.CHROME:
-      if (this.curFrame !== null) {
-        win = this.curFrame;
-
-      } else if (this.curBrowser !== null) {
+  if (this.curFrame === null) {
+    if (this.curBrowser === null) {
+      let typ = (context === Context.CONTENT) ? "navigator:browser" : null;
+      win = Services.wm.getMostRecentWindow(typ);
+    } else {
+      if (context === Context.CHROME) {
         win = this.curBrowser.window;
-      }
-
-      break;
-
-    case Context.CONTENT:
-      if (this.curFrame !== null) {
-        win = this.curFrame;
-
-      } else if (this.curBrowser !== null) {
-        if (browser.getTabBrowser(this.curBrowser.window)) {
-          
-          if (this.curBrowser.tab && browser.getBrowserForTab(this.curBrowser.tab)) {
-            win = this.curBrowser.window;
-          }
-        } else {
-          
+      } else {
+        if (this.curBrowser.tab && browser.getBrowserForTab(this.curBrowser.tab)) {
           win = this.curBrowser.window;
         }
       }
-
-      break;
+    }
+  } else {
+    win = this.curFrame;
   }
 
   return win;
@@ -616,7 +598,7 @@ GeckoDriver.prototype.newSession = function* (cmd, resp) {
   let browserListening = this.listeningPromise();
 
   let waitForWindow = function() {
-    let win = Services.wm.getMostRecentWindow("navigator:browser");
+    let win = this.getCurrentWindow();
     if (!win) {
       
       let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
@@ -636,8 +618,10 @@ GeckoDriver.prototype.newSession = function* (cmd, resp) {
       win.addEventListener("load", listener, true);
     } else {
       let clickToStart = Preferences.get(CLICK_TO_START_PREF);
-      if (clickToStart) {
-        Services.prompt.alert(win, "", "Click to start execution of marionette tests");
+      if (clickToStart && (this.appName != "B2G")) {
+        let pService = Cc["@mozilla.org/embedcomp/prompt-service;1"]
+            .getService(Ci.nsIPromptService);
+        pService.alert(win, "", "Click to start execution of marionette tests");
       }
       this.startBrowser(win, true);
     }
