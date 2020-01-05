@@ -385,7 +385,7 @@ public:
 
 
 
-  explicit ImageContainer(uint64_t aAsyncContainerID);
+  explicit ImageContainer(const CompositableHandle& aHandle);
 
   typedef uint32_t FrameID;
   typedef uint32_t ProducerID;
@@ -486,7 +486,7 @@ public:
 
 
 
-  uint64_t GetAsyncContainerID();
+  CompositableHandle GetAsyncContainerHandle();
 
   
 
@@ -649,7 +649,7 @@ private:
   
   RefPtr<ImageClient> mImageClient;
 
-  uint64_t mAsyncContainerID;
+  CompositableHandle mAsyncContainerHandle;
 
   nsTArray<FrameID> mFrameIDsNotYetComposited;
   

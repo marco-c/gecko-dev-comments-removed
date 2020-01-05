@@ -128,7 +128,7 @@ public:
 
 
 
-  uint64_t GetAsyncID() const;
+  CompositableHandle GetAsyncHandle() const;
 
   
 
@@ -162,7 +162,7 @@ public:
 
   static RefPtr<CompositableClient> FromIPDLActor(PCompositableChild* aActor);
 
-  void InitIPDLActor(PCompositableChild* aActor, uint64_t aAsyncID = 0);
+  void InitIPDLActor(PCompositableChild* aActor, const CompositableHandle& aHandle);
 
   TextureFlags GetTextureFlags() const { return mTextureFlags; }
 
@@ -181,7 +181,8 @@ protected:
   TextureFlags mTextureFlags;
   RefPtr<TextureClientRecycleAllocator> mTextureClientRecycler;
 
-  uint64_t mAsyncID;
+  
+  CompositableHandle mAsyncHandle;
 
   friend class CompositableChild;
 };
