@@ -81,7 +81,24 @@ public class TestHomeConfigPrefsBackendMigration {
         ));
     }
 
-    private JSONArray createConfigsForList(Context context, PanelType[] panels, int defaultIndex) throws JSONException {
+    private JSONArray createDisabledConfigsForList(Context context,
+                                                   PanelType[] panels) throws JSONException {
+        final JSONArray jsonPanels = new JSONArray();
+
+        for (int i = 0; i < panels.length; i++) {
+            final PanelType panel = panels[i];
+
+            jsonPanels.put(HomeConfig.createBuiltinPanelConfig(context, panel,
+                    EnumSet.of(PanelConfig.Flags.DISABLED_PANEL)).toJSON());
+        }
+
+        return jsonPanels;
+
+    }
+
+
+    private JSONArray createConfigsForList(Context context, PanelType[] panels,
+                                           int defaultIndex) throws JSONException {
         if (defaultIndex < 0 || defaultIndex >= panels.length) {
             throw new IllegalArgumentException("defaultIndex must point to panel in the array");
         }
@@ -120,7 +137,17 @@ public class TestHomeConfigPrefsBackendMigration {
         return null;
     }
 
-    private void checkListContainsExpectedPanels(JSONArray jsonPanels, PanelType[] expected) throws JSONException {
+    private void checkAllPanelsAreDisabled(JSONArray jsonPanels) throws JSONException {
+        for (int i = 0; i < jsonPanels.length(); i++) {
+            final JSONObject jsonPanelConfig = jsonPanels.getJSONObject(i);
+            final PanelConfig config = new PanelConfig(jsonPanelConfig);
+
+            assertTrue("Non disabled panel \"" + config.getType().name() + "\" found in list, excpected all panels to be disabled", config.isDisabled());
+        }
+    }
+
+    private void checkListContainsExpectedPanels(JSONArray jsonPanels,
+                                                 PanelType[] expected) throws JSONException {
         
         final Set<PanelType> expectedSet = new HashSet<>();
         for (PanelType panelType : expected) {
@@ -152,7 +179,7 @@ public class TestHomeConfigPrefsBackendMigration {
         
         
         
-        final  int firstTestedVersion = HomeConfigPrefsBackend.VERSION - (migrationConstellations.size() - 1);
+        final int firstTestedVersion = HomeConfigPrefsBackend.VERSION - (migrationConstellations.size() - 1);
 
         
         
@@ -194,6 +221,44 @@ public class TestHomeConfigPrefsBackendMigration {
 
                 checkListContainsExpectedPanels(jsonPanels, expectedOutputList);
             }
+        }
+    }
+
+    
+    
+    @Test
+    public void testMigrationRetainsAllPanelsHiddenAfter6() throws JSONException {
+        final Context context = RuntimeEnvironment.application;
+
+        final Pair<PanelType[], PanelType[]> finalConstellation = migrationConstellations.get(HomeConfigPrefsBackend.VERSION);
+        assertNotNull("It looks like you added a HomeConfig migration, please add an appropriate entry to migrationConstellations",
+                finalConstellation);
+
+        final int firstTestedVersion = HomeConfigPrefsBackend.VERSION - (migrationConstellations.size() - 1);
+
+        for (int testVersion = HomeConfigPrefsBackend.VERSION - 1; testVersion >= firstTestedVersion; testVersion--) {
+            final Pair<PanelType[], PanelType[]> currentConstellation = migrationConstellations.get(testVersion);
+            assertNotNull("No constellation for version " + testVersion + " - you must provide a constellation for every version upgrade in the list",
+                    currentConstellation);
+
+            final PanelType[] inputList = currentConstellation.first;
+
+            JSONArray jsonPanels = createDisabledConfigsForList(context, inputList);
+
+            jsonPanels = HomeConfigPrefsBackend.migratePrefsFromVersionToVersion(context, testVersion, testVersion + 1, jsonPanels, null);
+
+            
+            checkAllPanelsAreDisabled(jsonPanels);
+
+            
+            
+            
+            final PanelType[] expectedOutputList = migrationConstellations.get(testVersion + 1).first;
+
+            assertEquals("Number of panels after migration doesn't match expected count",
+                    jsonPanels.length(), expectedOutputList.length);
+
+            checkListContainsExpectedPanels(jsonPanels, expectedOutputList);
         }
     }
 }
