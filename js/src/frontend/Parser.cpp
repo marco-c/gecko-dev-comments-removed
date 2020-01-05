@@ -9180,8 +9180,7 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
                 
                 
                 
-                uint32_t begin = handler.getPosition(propName).begin;
-                if (!handler.addPrototypeMutation(literal, begin, propExpr))
+                if (!handler.addPrototypeMutation(literal, namePos.begin, propExpr))
                     return null();
             } else {
                 if (!handler.isConstant(propExpr))
