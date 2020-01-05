@@ -2179,44 +2179,16 @@ ICTypeMonitor_Fallback::addMonitorStubForValue(JSContext* cx, BaselineFrame* fra
 {
     MOZ_ASSERT(types);
 
-    
-    
-    
-    if (numOptimizedMonitorStubs_ >= MAX_OPTIMIZED_STUBS &&
-        val.isObject() &&
-        !types->unknownObject())
-    {
-        return true;
-    }
-
     bool wasDetachedMonitorChain = lastMonitorStubPtrAddr_ == nullptr;
     MOZ_ASSERT_IF(wasDetachedMonitorChain, numOptimizedMonitorStubs_ == 0);
 
-    if (types->unknown()) {
+    if (numOptimizedMonitorStubs_ >= MAX_OPTIMIZED_STUBS) {
         
         
+        return true;
+    }
 
-        
-        for (ICStubConstIterator iter(firstMonitorStub()); !iter.atEnd(); iter++) {
-            if (iter->isTypeMonitor_AnyValue())
-                return true;
-        }
-
-        
-        resetMonitorStubChain(cx->zone());
-        wasDetachedMonitorChain = (lastMonitorStubPtrAddr_ == nullptr);
-
-        ICTypeMonitor_AnyValue::Compiler compiler(cx);
-        ICStub* stub = compiler.getStub(compiler.getStubSpace(frame->script()));
-        if (!stub) {
-            ReportOutOfMemory(cx);
-            return false;
-        }
-
-        JitSpew(JitSpew_BaselineIC, "  Added TypeMonitor stub %p for any value", stub);
-        addOptimizedMonitorStub(stub);
-
-    } else if (val.isPrimitive() || types->unknownObject()) {
+    if (val.isPrimitive()) {
         if (val.isMagic(JS_UNINITIALIZED_LEXICAL))
             return true;
         MOZ_ASSERT(!val.isMagic());
@@ -2229,26 +2201,6 @@ ICTypeMonitor_Fallback::addMonitorStubForValue(JSContext* cx, BaselineFrame* fra
                 existingStub = iter->toTypeMonitor_PrimitiveSet();
                 if (existingStub->containsType(type))
                     return true;
-            }
-        }
-
-        if (val.isObject()) {
-            
-            
-            
-            
-            MOZ_ASSERT(types->unknownObject());
-            bool hasObjectStubs = false;
-            for (ICStubConstIterator iter(firstMonitorStub()); !iter.atEnd(); iter++) {
-                if (iter->isTypeMonitor_SingleObject() || iter->isTypeMonitor_ObjectGroup()) {
-                    hasObjectStubs = true;
-                    break;
-                }
-            }
-            if (hasObjectStubs) {
-                resetMonitorStubChain(cx->zone());
-                wasDetachedMonitorChain = (lastMonitorStubPtrAddr_ == nullptr);
-                existingStub = nullptr;
             }
         }
 
@@ -2444,8 +2396,16 @@ ICTypeMonitor_PrimitiveSet::Compiler::generateStubCode(MacroAssembler& masm)
     if (flags_ & TypeToFlag(JSVAL_TYPE_SYMBOL))
         masm.branchTestSymbol(Assembler::Equal, R0, &success);
 
-    if (flags_ & TypeToFlag(JSVAL_TYPE_OBJECT))
-        masm.branchTestObject(Assembler::Equal, R0, &success);
+    
+    
+    
+    
+    
+    
+
+
+
+    MOZ_ASSERT(!(flags_ & TypeToFlag(JSVAL_TYPE_OBJECT)));
 
     if (flags_ & TypeToFlag(JSVAL_TYPE_NULL))
         masm.branchTestNull(Assembler::Equal, R0, &success);
@@ -2513,13 +2473,6 @@ ICTypeMonitor_ObjectGroup::Compiler::generateStubCode(MacroAssembler& masm)
 
     masm.bind(&failure);
     EmitStubGuardFailure(masm);
-    return true;
-}
-
-bool
-ICTypeMonitor_AnyValue::Compiler::generateStubCode(MacroAssembler& masm)
-{
-    EmitReturnFromIC(masm);
     return true;
 }
 
