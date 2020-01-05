@@ -552,12 +552,8 @@ public:
   dom::AudioChannel AudioChannelType() const { return mAudioChannelType; }
 
   bool IsSuspended() { return mSuspendedCount > 0; }
-  void IncrementSuspendCount() { ++mSuspendedCount; }
-  void DecrementSuspendCount()
-  {
-    NS_ASSERTION(mSuspendedCount > 0, "Suspend count underrun");
-    --mSuspendedCount;
-  }
+  void IncrementSuspendCount();
+  void DecrementSuspendCount();
 
 protected:
   
@@ -1080,10 +1076,21 @@ public:
 
   MediaStreamGraphImpl* GraphImpl();
   MediaStreamGraph* Graph();
+
   
 
 
   void SetGraphImpl(MediaStreamGraphImpl* aGraph);
+
+  
+
+
+  void Suspended();
+
+  
+
+
+  void Resumed();
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
@@ -1182,16 +1189,18 @@ public:
   virtual void AddInput(MediaInputPort* aPort);
   virtual void RemoveInput(MediaInputPort* aPort)
   {
-    mInputs.RemoveElement(aPort);
+    mInputs.RemoveElement(aPort) || mSuspendedInputs.RemoveElement(aPort);
   }
   bool HasInputPort(MediaInputPort* aPort)
   {
-    return mInputs.Contains(aPort);
+    return mInputs.Contains(aPort) || mSuspendedInputs.Contains(aPort);
   }
   uint32_t InputPortCount()
   {
-    return mInputs.Length();
+    return mInputs.Length() + mSuspendedInputs.Length();
   }
+  void InputSuspended(MediaInputPort* aPort);
+  void InputResumed(MediaInputPort* aPort);
   virtual MediaStream* GetInputStreamFor(TrackID aTrackID) { return nullptr; }
   virtual TrackID GetInputTrackIDFor(TrackID aTrackID) { return TRACK_NONE; }
   void DestroyImpl() override;
@@ -1227,7 +1236,9 @@ public:
     size_t amount = MediaStream::SizeOfExcludingThis(aMallocSizeOf);
     
     
+    
     amount += mInputs.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    amount += mSuspendedInputs.ShallowSizeOfExcludingThis(aMallocSizeOf);
     return amount;
   }
 
@@ -1241,6 +1252,8 @@ protected:
 
   
   nsTArray<MediaInputPort*> mInputs;
+  
+  nsTArray<MediaInputPort*> mSuspendedInputs;
   bool mAutofinish;
   
   
