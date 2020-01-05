@@ -89,7 +89,7 @@ add_task(function* history() {
 
 
 
-add_task(function* typedValue() {
+add_task(function*() {
   
   
   let typedValue = "browser_urlbarOneOffs";

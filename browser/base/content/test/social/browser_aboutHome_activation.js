@@ -79,14 +79,14 @@ function test()
   });
 
   Task.spawn(function* () {
-    for (let test of gTests) {
-      info(test.desc);
+    for (let testCase of gTests) {
+      info(testCase.desc);
 
       
       let tab = gBrowser.selectedTab = gBrowser.addTab("about:blank");
 
       
-      let snippetsPromise = promiseSetupSnippetsMap(tab, test.snippet);
+      let snippetsPromise = promiseSetupSnippetsMap(tab, testCase.snippet);
 
       
       yield promiseTabLoadEvent(tab, "about:home", "AboutHomeLoadSnippetsCompleted");
@@ -100,7 +100,7 @@ function test()
       });
 
       yield new Promise(resolve => {
-        activateProvider(tab, test.panel).then(() => {
+        activateProvider(tab, testCase.panel).then(() => {
           checkSocialUI();
           SocialService.uninstallProvider("https://example.com", function() {
             info("provider uninstalled");

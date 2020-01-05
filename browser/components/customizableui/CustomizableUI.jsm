@@ -1307,15 +1307,15 @@ var CustomizableUIInternal = {
       if (toolbox.palette) {
         
         
-        let node = toolbox.palette.getElementsByAttribute("id", aId)[0];
-        if (node) {
+        let element = toolbox.palette.getElementsByAttribute("id", aId)[0];
+        if (element) {
           
           
           
-          if (!node.hasAttribute("removable")) {
-            node.setAttribute("removable", true);
+          if (!element.hasAttribute("removable")) {
+            element.setAttribute("removable", true);
           }
-          return node;
+          return element;
         }
       }
     }

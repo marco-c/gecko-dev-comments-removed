@@ -11,15 +11,15 @@ const re = new RegExp(key + "=([0-9\.]+)");
 
 
 function* doTest(aBrowser) {
-  return yield ContentTask.spawn(aBrowser, {key, re},
-                                 function({key, re}) {
-    let result = re.exec(content.document.cookie);
+  return yield ContentTask.spawn(aBrowser, [key, re],
+                                 function([contentKey, contentRe]) {
+    let result = contentRe.exec(content.document.cookie);
     if (result) {
       return result[1];
     }
     
     let value = Math.random().toString();
-    content.document.cookie = key + "=" + value;
+    content.document.cookie = contentKey + "=" + value;
     return value;
   });
 }

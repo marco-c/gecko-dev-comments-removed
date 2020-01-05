@@ -713,7 +713,7 @@ PlacesTreeView.prototype = {
 
     
     if (aParentNode != this._rootNode && !aParentNode.hasChildren) {
-      let parentRow = oldRow - 1;
+      parentRow = oldRow - 1;
       this._tree.invalidateRow(parentRow);
     }
 
@@ -1184,8 +1184,8 @@ PlacesTreeView.prototype = {
             PlacesUtils.livemarks.getLivemark({ id: node.itemId })
               .then(aLivemark => {
                 this._controller.cacheLivemarkInfo(node, aLivemark);
-                let props = this._cellProperties.get(node);
-                this._cellProperties.set(node, props += " livemark");
+                let livemarkProps = this._cellProperties.get(node);
+                this._cellProperties.set(node, livemarkProps += " livemark");
                 
                 this._invalidateCellValue(node, this.COLUMN_TYPE_TITLE);
               }, () => undefined);
