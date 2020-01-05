@@ -212,18 +212,6 @@ public:
 
 
 
-
-
-
-  virtual void MakeZombie() = 0;
-
-  
-
-
-
-
-
-
   void* AllocateFrame(nsQueryFrame::FrameIID aID, size_t aSize)
   {
     void* result = mFrameArena.AllocateByFrameID(aID, aSize);
@@ -1810,7 +1798,6 @@ protected:
   bool                      mStylesHaveChanged : 1;
   bool                      mDidInitialize : 1;
   bool                      mIsDestroying : 1;
-  bool                      mIsZombie : 1;
   bool                      mIsReflowing : 1;
 
   

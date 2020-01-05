@@ -122,8 +122,6 @@ public:
 
   static void JoinAllSubprocesses();
 
-  static bool PreallocatedProcessReady();
-
   
 
 
@@ -136,11 +134,6 @@ public:
                              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
                              ContentParent* aOpener = nullptr,
                              bool aLargeAllocationProcess = false);
-
-  
-
-
-  static already_AddRefed<ContentParent> PreallocateAppProcess();
 
   
 
@@ -358,8 +351,6 @@ public:
   void KillHard(const char* aWhy);
 
   ContentParentId ChildID() const override { return mChildID; }
-
-  bool IsPreallocated() const;
 
   
 
@@ -583,11 +574,8 @@ private:
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
-  
-  
   ContentParent(ContentParent* aOpener,
-                bool aIsForBrowser,
-                bool aIsForPreallocated);
+                bool aIsForBrowser);
 
   
   void InitializeMembers();
@@ -615,10 +603,6 @@ private:
   
   
   bool SetPriorityAndCheckIsAlive(hal::ProcessPriority aPriority);
-
-  
-  
-  void TransformPreallocatedIntoBrowser(ContentParent* aOpener);
 
   
 
@@ -929,8 +913,6 @@ private:
 
   virtual bool RecvPrivateDocShellsExist(const bool& aExist) override;
 
-  virtual bool RecvFirstIdle() override;
-
   virtual bool RecvAudioChannelChangeDefVolChannel(const int32_t& aChannel,
                                                    const bool& aHidden) override;
 
@@ -1102,7 +1084,6 @@ private:
 
   bool mSendPermissionUpdates;
   bool mIsForBrowser;
-  bool mIsPreallocated;
 
   
   
