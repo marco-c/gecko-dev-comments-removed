@@ -7,14 +7,13 @@
 #ifndef mozilla_dom_CustomElementRegistry_h
 #define mozilla_dom_CustomElementRegistry_h
 
-#include "js/GCHashTable.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
-#include "mozilla/dom/FunctionBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
+#include "mozilla/dom/FunctionBinding.h"
 
 class nsDocument;
 
@@ -173,8 +172,6 @@ private:
   explicit CustomElementRegistry(nsPIDOMWindowInner* aWindow);
   ~CustomElementRegistry();
 
-  bool Init();
-
   
 
 
@@ -194,25 +191,15 @@ private:
     DefinitionMap;
   typedef nsClassHashtable<nsISupportsHashKey, nsTArray<nsWeakPtr>>
     CandidateMap;
-  typedef JS::GCHashMap<JS::Heap<JSObject*>,
-                        nsCOMPtr<nsIAtom>,
-                        js::MovableCellHasher<JS::Heap<JSObject*>>,
-                        js::SystemAllocPolicy> ConstructorMap;
 
   
   
   
   DefinitionMap mCustomDefinitions;
 
-  
-  
-  
-  ConstructorMap mConstructors;
-
   typedef nsRefPtrHashtable<nsISupportsHashKey, Promise>
     WhenDefinedPromiseMap;
   WhenDefinedPromiseMap mWhenDefinedPromiseMap;
-
   
   
   
