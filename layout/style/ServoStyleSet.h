@@ -297,6 +297,15 @@ public:
   already_AddRefed<ServoComputedValues>
   GetBaseComputedValuesForElement(dom::Element* aElement, nsIAtom* aPseudoTag);
 
+  
+
+
+
+
+  already_AddRefed<ServoComputedValues>
+  ResolveForDeclarations(ServoComputedValuesBorrowedOrNull aParentOrNull,
+                         RawServoDeclarationBlockBorrowed aDeclarations);
+
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
                                               nsStyleContext* aParentContext,
