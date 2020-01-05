@@ -1359,8 +1359,7 @@ protected:
   nsTObserverArray<nsIDocumentObserver*> mObservers;
 
   
-  nsTHashtable<nsPtrHashKey<mozilla::dom::DOMIntersectionObserver>>
-    mIntersectionObservers;
+  nsTArray<RefPtr<mozilla::dom::DOMIntersectionObserver>> mIntersectionObservers;
 
   
   
