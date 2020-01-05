@@ -881,11 +881,11 @@ CloseDuringReadFunc(nsIInputStream *aReader,
                     uint32_t aCount,
                     uint32_t* aWriteCountOut)
 {
-  MOZ_ASSERT(aReader);
-  MOZ_ASSERT(aClosure);
-  MOZ_ASSERT(aFromSegment);
-  MOZ_ASSERT(aWriteCountOut);
-  MOZ_ASSERT(aToOffset == 0);
+  MOZ_RELEASE_ASSERT(aReader);
+  MOZ_RELEASE_ASSERT(aClosure);
+  MOZ_RELEASE_ASSERT(aFromSegment);
+  MOZ_RELEASE_ASSERT(aWriteCountOut);
+  MOZ_RELEASE_ASSERT(aToOffset == 0);
 
   
   
@@ -974,5 +974,4 @@ TEST(Pipes, Interfaces)
 
   nsCOMPtr<nsIBufferedInputStream> readerType6 = do_QueryInterface(reader);
   ASSERT_TRUE(readerType6);
-
 }
