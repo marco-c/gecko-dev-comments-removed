@@ -322,6 +322,7 @@ public:
   
   
   
+  StyleClear BreakType() const { return mBreakType; }
 
   
   
@@ -381,9 +382,6 @@ private:
 
 #define NS_INLINE_IS_BREAK_BEFORE(_status) \
   (NS_INLINE_BREAK == ((_status) & (NS_INLINE_BREAK|NS_INLINE_BREAK_AFTER)))
-
-#define NS_INLINE_GET_BREAK_TYPE(_status) \
-  (static_cast<StyleClear>(((_status) >> 12) & 0xF))
 
 #define NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics) \
   aStatus.UpdateTruncated(aReflowInput, aMetrics);

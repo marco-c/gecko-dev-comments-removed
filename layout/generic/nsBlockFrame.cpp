@@ -4188,7 +4188,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
     *aLineReflowStatus = LineReflowStatus::Stop;
 
     
-    StyleClear breakType = NS_INLINE_GET_BREAK_TYPE(frameReflowStatus);
+    StyleClear breakType = frameReflowStatus.BreakType();
     MOZ_ASSERT(StyleClear::None != breakType ||
                StyleClear::None != aState.mFloatBreakType, "bad break type");
 
