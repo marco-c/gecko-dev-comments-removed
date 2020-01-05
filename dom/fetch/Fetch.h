@@ -27,10 +27,10 @@ class nsIGlobalObject;
 namespace mozilla {
 namespace dom {
 
-class ArrayBufferOrArrayBufferViewOrBlobOrFormDataOrUSVStringOrURLSearchParams;
+class BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
 class BlobImpl;
 class InternalRequest;
-class OwningArrayBufferOrArrayBufferViewOrBlobOrFormDataOrUSVStringOrURLSearchParams;
+class OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
 class RequestOrUSVString;
 enum class CallerType : uint32_t;
 
@@ -46,13 +46,18 @@ FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
 nsresult
 UpdateRequestReferrer(nsIGlobalObject* aGlobal, InternalRequest* aRequest);
 
+namespace fetch {
+typedef BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString BodyInit;
+typedef OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString OwningBodyInit;
+};
+
 
 
 
 
 
 nsresult
-ExtractByteStreamFromBody(const OwningArrayBufferOrArrayBufferViewOrBlobOrFormDataOrUSVStringOrURLSearchParams& aBodyInit,
+ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
                           nsIInputStream** aStream,
                           nsCString& aContentType,
                           uint64_t& aContentLength);
@@ -61,7 +66,7 @@ ExtractByteStreamFromBody(const OwningArrayBufferOrArrayBufferViewOrBlobOrFormDa
 
 
 nsresult
-ExtractByteStreamFromBody(const ArrayBufferOrArrayBufferViewOrBlobOrFormDataOrUSVStringOrURLSearchParams& aBodyInit,
+ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
                           nsIInputStream** aStream,
                           nsCString& aContentType,
                           uint64_t& aContentLength);
