@@ -44,7 +44,8 @@ public:
   }
   ConversionRequired NeedsConversion() const override
   {
-    return ConversionRequired::kNeedAVCC;
+    return mConvertToAnnexB ? ConversionRequired::kNeedAnnexB
+                            : ConversionRequired::kNeedAVCC;
   }
 
   
@@ -100,6 +101,7 @@ private:
   MozPromiseHolder<DecodePromise> mDrainPromise;
   MozPromiseHolder<FlushPromise> mFlushPromise;
   DecodedData mDecodedData;
+  bool mConvertToAnnexB = false;
 };
 
 } 

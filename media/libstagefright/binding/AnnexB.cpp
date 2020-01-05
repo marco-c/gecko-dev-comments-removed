@@ -69,6 +69,15 @@ AnnexB::ConvertSampleToAnnexB(mozilla::MediaRawData* aSample, bool aAddSPS)
     if (!samplewriter->Prepend(annexB->Elements(), annexB->Length())) {
       return false;
     }
+
+    
+    
+    
+    
+    if (aSample->mCrypto.mValid) {
+      MOZ_ASSERT(samplewriter->mCrypto.mPlainSizes.Length() > 0);
+      samplewriter->mCrypto.mPlainSizes[0] += annexB->Length();
+    }
   }
 
   return true;
