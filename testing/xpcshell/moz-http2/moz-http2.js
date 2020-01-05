@@ -749,12 +749,15 @@ function handleRequest(req, res) {
 
 
 
-
 var options = {
   key: fs.readFileSync(__dirname + '/http2-key.pem'),
   cert: fs.readFileSync(__dirname + '/http2-cert.pem'),
-  
 };
+
+if (process.env.HTTP2_LOG !== undefined) {
+  var log_module = node_http2_root + "/test/util";
+  options.log = require(log_module).createLogger('server')
+}
 
 var server = http2.createServer(options, handleRequest);
 
