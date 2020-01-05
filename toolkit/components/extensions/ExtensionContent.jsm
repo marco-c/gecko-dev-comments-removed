@@ -49,6 +49,7 @@ Cu.import("resource://gre/modules/ExtensionChild.jsm");
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   runSafeSyncWithoutClone,
+  defineLazyGetter,
   BaseContext,
   LocaleData,
   Messenger,
@@ -274,7 +275,6 @@ class ExtensionContext extends BaseContext {
 
     this.scripts = [];
 
-    let prin;
     let contentPrincipal = contentWindow.document.nodePrincipal;
     let ssm = Services.scriptSecurityManager;
 
@@ -284,12 +284,13 @@ class ExtensionContext extends BaseContext {
     attrs.addonId = this.extension.id;
     let extensionPrincipal = ssm.createCodebasePrincipal(this.extension.baseURI, attrs);
 
+    let principal;
     if (ssm.isSystemPrincipal(contentPrincipal)) {
       
       
-      prin = ssm.createNullPrincipal(attrs);
+      principal = ssm.createNullPrincipal(attrs);
     } else {
-      prin = [contentPrincipal, extensionPrincipal];
+      principal = [contentPrincipal, extensionPrincipal];
     }
 
     if (isExtensionPage) {
@@ -314,7 +315,7 @@ class ExtensionContext extends BaseContext {
         addonId: attrs.addonId,
       };
 
-      this.sandbox = Cu.Sandbox(prin, {
+      this.sandbox = Cu.Sandbox(principal, {
         metadata,
         sandboxPrototype: contentWindow,
         wantXrays: true,
@@ -337,32 +338,24 @@ class ExtensionContext extends BaseContext {
       configurable: true,
     });
 
-    let url = contentWindow.location.href;
-    
-    let sender = {id: this.extension.uuid, frameId, url};
-    let filter = {extensionId: this.extension.id};
-    let optionalFilter = {frameId};
-    this.messenger = new Messenger(this, [this.messageManager], sender, filter, optionalFilter);
+    this.url = contentWindow.location.href;
 
-    this.chromeObj = Cu.createObjectIn(this.sandbox, {defineAs: "browser"});
+    defineLazyGetter(this, "chromeObj", () => {
+      let chromeObj = Cu.createObjectIn(this.sandbox);
 
-    
-    
-    Cu.waiveXrays(this.sandbox).chrome = this.chromeObj;
-
-    let localApis = {};
-    apiManager.generateAPIs(this, localApis);
-    this.childManager = new ChildAPIManager(this, this.messageManager, localApis, {
-      envType: "content_parent",
-      url,
+      Schemas.inject(chromeObj, this.childManager);
+      return chromeObj;
     });
 
-    Schemas.inject(this.chromeObj, this.childManager);
+    Schemas.exportLazyGetter(this.sandbox, "browser", () => this.chromeObj);
+    Schemas.exportLazyGetter(this.sandbox, "chrome", () => this.chromeObj);
 
     
     if (isExtensionPage) {
-      Cu.waiveXrays(this.contentWindow).chrome = this.chromeObj;
-      Cu.waiveXrays(this.contentWindow).browser = this.chromeObj;
+      Schemas.exportLazyGetter(this.contentWindow,
+                               "browser", () => this.chromeObj);
+      Schemas.exportLazyGetter(this.contentWindow,
+                               "chrome", () => this.chromeObj);
     }
   }
 
@@ -398,8 +391,6 @@ class ExtensionContext extends BaseContext {
   close() {
     super.unload();
 
-    this.childManager.close();
-
     if (this.contentWindow) {
       for (let script of this.scripts) {
         if (script.requiresCleanup) {
@@ -418,6 +409,29 @@ class ExtensionContext extends BaseContext {
     this.sandbox = null;
   }
 }
+
+defineLazyGetter(ExtensionContext.prototype, "messenger", function() {
+  
+  let sender = {id: this.extension.uuid, frameId: this.frameId, url: this.url};
+  let filter = {extensionId: this.extension.id};
+  let optionalFilter = {frameId: this.frameId};
+
+  return new Messenger(this, [this.messageManager], sender, filter, optionalFilter);
+});
+
+defineLazyGetter(ExtensionContext.prototype, "childManager", function() {
+  let localApis = {};
+  apiManager.generateAPIs(this, localApis);
+
+  let childManager = new ChildAPIManager(this, this.messageManager, localApis, {
+    envType: "content_parent",
+    url: this.url,
+  });
+
+  this.callOnClose(childManager);
+
+  return childManager;
+});
 
 
 
@@ -708,7 +722,7 @@ DocumentManager = {
     } else {
       let contexts = this.contentScriptWindows.get(getInnerWindowID(window)) || new Map();
       for (let context of contexts.values()) {
-        context.triggerScripts(this.getWindowState(window));
+        context.triggerScripts(when);
       }
     }
   },
