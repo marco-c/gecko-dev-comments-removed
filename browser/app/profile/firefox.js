@@ -1259,7 +1259,7 @@ pref("dom.debug.propagate_gesture_events_through_content", false);
 
 
 
-#ifndef EARLY_BETA_OR_EARLIER
+#ifdef RELEASE
 pref("geo.wifi.uri", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_API_KEY%");
 
 #ifdef XP_MACOSX
@@ -1525,6 +1525,10 @@ pref("media.webspeech.synth.enabled", true);
 pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
+
+#ifdef NIGHTLY_BUILD
+pref("dom.ipc.processPrelaunch.enabled", true);
+#endif
 
 #ifdef EARLY_BETA_OR_EARLIER
 pref("browser.migrate.automigrate.enabled", true);
