@@ -734,6 +734,8 @@ typedef void
 
 
 
+
+
 using JSExternalStringSizeofCallback =
     size_t (*)(JSString* str, mozilla::MallocSizeOf mallocSizeOf);
 
