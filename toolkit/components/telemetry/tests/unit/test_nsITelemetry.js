@@ -207,7 +207,9 @@ add_task(function* test_categorical_histogram()
     h1.add(v);
   }
   for (let s of ["", "Label4", "1234"]) {
-    Assert.throws(() => h1.add(s));
+    
+    
+    h1.add(s);
   }
 
   let snapshot = h1.snapshot();
@@ -220,7 +222,9 @@ add_task(function* test_categorical_histogram()
     h2.add(v);
   }
   for (let s of ["", "Label3", "1234"]) {
-    Assert.throws(() => h2.add(s));
+    
+    
+    h2.add(s);
   }
 
   snapshot = h2.snapshot();
