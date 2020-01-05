@@ -55,13 +55,15 @@ var PermissionsHelper = {
     }
   },
 
-  observe: function observe(aSubject, aTopic, aData) {
+  onEvent: function onEvent(event, data, callback) {
     let uri = BrowserApp.selectedBrowser.currentURI;
     let check = false;
 
-    switch (aTopic) {
+    switch (event) {
       case "Permissions:Check":
         check = true;
+        
+
       case "Permissions:Get":
         let permissions = [];
         for (let i = 0; i < this._permissonTypes.length; i++) {
@@ -114,7 +116,7 @@ var PermissionsHelper = {
  
       case "Permissions:Clear":
         
-        let permissionsToClear = JSON.parse(aData);
+        let permissionsToClear = data.permissions;
         let privacyContext = BrowserApp.selectedBrowser.docShell
                                .QueryInterface(Ci.nsILoadContext);
 

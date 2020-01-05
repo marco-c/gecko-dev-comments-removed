@@ -111,13 +111,19 @@ add_task(function* test_tracking_pb() {
   
   
   yield promiseLoadEvent(browser, undefined, undefined, () => {
-    Services.obs.notifyObservers(null, "Session:Reload", "{\"allowContent\":true,\"contentType\":\"tracking\"}");
+    EventDispatcher.instance.dispatch("Session:Reload", {
+      allowContent: true,
+      contentType: "tracking",
+    });
   });
   Messaging.sendRequest({ type: "Test:Expected", expected: "tracking_content_loaded" });
 
   
   yield promiseLoadEvent(browser, undefined, undefined, () => {
-    Services.obs.notifyObservers(null, "Session:Reload", "{\"allowContent\":false,\"contentType\":\"tracking\"}");
+    EventDispatcher.instance.dispatch("Session:Reload", {
+      allowContent: false,
+      contentType: "tracking",
+    });
   });
   Messaging.sendRequest({ type: "Test:Expected", expected: "tracking_content_blocked" });
 
