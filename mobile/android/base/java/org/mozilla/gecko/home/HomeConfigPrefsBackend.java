@@ -35,7 +35,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
     private static final String LOGTAG = "GeckoHomeConfigBackend";
 
     
-    private static final int VERSION = 7;
+    private static final int VERSION = 8;
 
     
     public static final String PREFS_CONFIG_KEY_OLD = "home_panels";
@@ -211,7 +211,12 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
         return newArray;
     }
 
-    private static void ensureDefaultPanelForV5(Context context, JSONArray jsonPanels) throws JSONException {
+    
+
+
+
+
+    private static void ensureDefaultPanelForV5orV8(Context context, JSONArray jsonPanels) throws JSONException {
         int historyIndex = -1;
 
         for (int i = 0; i < jsonPanels.length(); i++) {
@@ -396,7 +401,7 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
 
                 case 5:
                     
-                    ensureDefaultPanelForV5(context, jsonPanels);
+                    ensureDefaultPanelForV5orV8(context, jsonPanels);
                     break;
 
                 case 6:
@@ -407,6 +412,12 @@ public class HomeConfigPrefsBackend implements HomeConfigBackend {
                 case 7:
                     jsonPanels = removePanel(context, jsonPanels,
                             PanelType.DEPRECATED_RECENT_TABS, PanelType.COMBINED_HISTORY, true);
+                    break;
+
+                case 8:
+                    
+                    
+                    ensureDefaultPanelForV5orV8(context, jsonPanels);
                     break;
             }
         }
