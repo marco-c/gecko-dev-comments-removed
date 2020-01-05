@@ -294,6 +294,8 @@ nsRange::CreateRange(nsIDOMNode* aStartParent, int32_t aStartOffset,
 
   RefPtr<nsRange> range = new nsRange(startParent);
 
+  
+  
   nsresult rv = range->SetStart(startParent, aStartOffset);
   NS_ENSURE_SUCCESS(rv, rv);
 
