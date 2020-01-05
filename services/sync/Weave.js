@@ -102,19 +102,13 @@ WeaveService.prototype = {
 
 
 
+  
   get fxAccountsEnabled() {
-    try {
-      
-      
-      let username = Services.prefs.getCharPref(SYNC_PREFS_BRANCH + "username");
-      return !username || username.includes("@");
-    } catch (_) {
-      return true; 
-    }
+    
+    return true;
   },
 
   
-
 
 
 
@@ -142,8 +136,7 @@ WeaveService.prototype = {
         notify: function() {
           let isConfigured = false;
           
-          let prefs = Services.prefs.getBranch(SYNC_PREFS_BRANCH);
-          if (prefs.prefHasUserValue("username")) {
+          if (this.enabled) {
             
             
             

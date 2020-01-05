@@ -19,7 +19,6 @@ pref("services.sync.scheduler.immediateInterval", 90);
 pref("services.sync.scheduler.idleTime", 300);   
 
 pref("services.sync.scheduler.fxa.singleDeviceInterval", 3600); 
-pref("services.sync.scheduler.sync11.singleDeviceInterval", 86400); 
 
 pref("services.sync.errorhandler.networkFailureReportTimeout", 1209600); 
 

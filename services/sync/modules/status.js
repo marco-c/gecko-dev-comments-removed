@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
-* License, v. 2.0. If a copy of the MPL was not distributed with this
-* file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 this.EXPORTED_SYMBOLS = ["Status"];
 
@@ -11,7 +11,6 @@ var Cu = Components.utils;
 
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://services-sync/identity.js");
 Cu.import("resource://services-sync/browserid_identity.js");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://services-common/async.js");
@@ -25,11 +24,7 @@ this.Status = {
     if (this.__authManager) {
       return this.__authManager;
     }
-    let service = Components.classes["@mozilla.org/weave/service;1"]
-                    .getService(Components.interfaces.nsISupports)
-                    .wrappedJSObject;
-    let idClass = service.fxAccountsEnabled ? BrowserIDManager : IdentityManager;
-    this.__authManager = new idClass();
+    this.__authManager = new BrowserIDManager();
     this.__authManager.initialize();
     return this.__authManager;
   },
@@ -93,8 +88,8 @@ this.Status = {
     }
   },
 
-  // Implement toString because adding a logger introduces a cyclic object
-  // value, so we can't trivially debug-print Status as JSON.
+  
+  
   toString: function toString() {
     return "<Status" +
            ": login: " + Status.login +
@@ -120,13 +115,13 @@ this.Status = {
   },
 
   resetSync: function resetSync() {
-    // Logger setup.
+    
     let logPref = PREFS_BRANCH + "log.logger.status";
     let logLevel = "Trace";
     try {
       logLevel = Services.prefs.getCharPref(logPref);
     } catch (ex) {
-      // Use default.
+      
     }
     this._log.level = Log.Level[logLevel];
 
@@ -139,6 +134,6 @@ this.Status = {
   }
 };
 
-// Initialize various status values.
+
 Status.resetBackoff();
 Status.resetSync();
