@@ -15,7 +15,7 @@ use servo_util::str::DOMString;
 #[must_root]
 #[privatize]
 pub struct Navigator {
-    reflector_: Reflector 
+    reflector_: Reflector,
 }
 
 impl Navigator {
