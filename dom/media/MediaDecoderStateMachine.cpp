@@ -382,7 +382,8 @@ public:
   void Exit() override
   {
     
-    mMaster->mQueuedSeek = Move(mPendingSeek);
+    
+    mPendingSeek.RejectIfExists(__func__);
   }
 
   State GetState() const override
