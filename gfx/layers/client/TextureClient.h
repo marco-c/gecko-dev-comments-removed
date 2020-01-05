@@ -580,7 +580,7 @@ public:
 
 
 
-  bool InitIPDLActor(TextureForwarder* aForwarder, LayersBackend aBackendType);
+  bool InitIPDLActor(TextureForwarder* aForwarder);
 
   
 
