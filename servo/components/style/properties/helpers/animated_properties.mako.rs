@@ -2,9 +2,12 @@
 
 
 
+<%namespace name="helpers" file="/helpers.mako.rs" />
+
 use app_units::Au;
 use cssparser::{Color as CSSParserColor, Parser, RGBA};
 use euclid::{Point2D, Size2D};
+#[cfg(feature = "gecko")] use gecko_bindings::structs::nsCSSPropertyID;
 use properties::{DeclaredValue, PropertyDeclaration};
 use properties::longhands;
 use properties::longhands::background_position_x::computed_value::T as BackgroundPositionX;
@@ -19,6 +22,7 @@ use properties::longhands::box_shadow::single_value::computed_value::T as BoxSha
 use properties::longhands::vertical_align::computed_value::T as VerticalAlign;
 use properties::longhands::visibility::computed_value::T as Visibility;
 use properties::longhands::z_index::computed_value::T as ZIndex;
+#[cfg(feature = "gecko")] use properties::{PropertyDeclarationId, LonghandId};
 use std::cmp;
 use std::fmt;
 use style_traits::ToCss;
@@ -32,14 +36,14 @@ use values::computed::ToComputedValue;
 
 
 
-
-
-
-
+/// A given transition property, that is either `All`, or an animatable
+/// property.
+// NB: This needs to be here because it needs all the longhands generated
+// beforehand.
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum TransitionProperty {
-    
+    /// All, any animatable property changing should generate a transition.
     All,
     % for prop in data.longhands:
         % if prop.animatable:
@@ -97,6 +101,40 @@ impl ToCss for TransitionProperty {
                     TransitionProperty::${prop.camel_case} => dest.write_str("${prop.name}"),
                 % endif
             % endfor
+        }
+    }
+}
+
+/// Convert to nsCSSPropertyID.
+#[cfg(feature = "gecko")]
+#[allow(non_upper_case_globals)]
+impl From<TransitionProperty> for nsCSSPropertyID {
+    fn from(transition_property: TransitionProperty) -> nsCSSPropertyID {
+        match transition_property {
+            % for prop in data.longhands:
+                % if prop.animatable:
+                    TransitionProperty::${prop.camel_case}
+                        => ${helpers.to_nscsspropertyid(prop.ident)},
+                % endif
+            % endfor
+            TransitionProperty::All => nsCSSPropertyID::eCSSPropertyExtra_all_properties,
+        }
+    }
+}
+
+/// Convert to PropertyDeclarationId.
+#[cfg(feature = "gecko")]
+#[allow(non_upper_case_globals)]
+impl<'a> From<TransitionProperty> for PropertyDeclarationId<'a> {
+    fn from(transition_property: TransitionProperty) -> PropertyDeclarationId<'a> {
+        match transition_property {
+            % for prop in data.longhands:
+                % if prop.animatable:
+                    TransitionProperty::${prop.camel_case}
+                        => PropertyDeclarationId::Longhand(LonghandId::${prop.camel_case}),
+                % endif
+            % endfor
+            TransitionProperty::All => panic!(),
         }
     }
 }
@@ -1303,7 +1341,7 @@ impl Interpolate for LengthOrNone {
 
             perspective_matrix = perspective_matrix.inverse().unwrap();
 
-            
+            // Transpose perspective_matrix
             perspective_matrix = ComputedMatrix {
                 % for i in range(1, 5):
                     % for j in range(1, 5):
@@ -1312,7 +1350,7 @@ impl Interpolate for LengthOrNone {
                 % endfor
             };
 
-            
+            // Multiply right_hand_side with perspective_matrix
             let mut tmp: [f32; 4] = [0.0; 4];
             % for i in range(1, 5):
                 tmp[${i - 1}] = (right_hand_side[0] * perspective_matrix.m1${i}) +
