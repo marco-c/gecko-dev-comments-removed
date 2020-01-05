@@ -514,14 +514,12 @@ class BaseCompiler
         bool deadThenBranch;            
     };
 
-    struct BaseCompilePolicy : OpIterPolicy
+    struct BaseCompilePolicy
     {
-        static const bool Validate = true;
-        static const bool Output = true;
-
         
         
         
+        typedef Nothing Value;
 
         
         

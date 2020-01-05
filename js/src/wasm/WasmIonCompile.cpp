@@ -45,11 +45,6 @@ typedef Vector<MBasicBlock*, 8, SystemAllocPolicy> BlockVector;
 struct IonCompilePolicy
 {
     
-    
-    static const bool Output = true;
-    static const bool Validate = true;
-
-    
     typedef MDefinition* Value;
 
     
@@ -62,7 +57,8 @@ class FunctionCompiler;
 
 
 
-enum class TlsUsage {
+enum class TlsUsage
+{
     Unused,     
     Need,       
     CallerSaved 
@@ -70,7 +66,8 @@ enum class TlsUsage {
 };
 
 static bool
-NeedsTls(TlsUsage usage) {
+NeedsTls(TlsUsage usage)
+{
     return usage == TlsUsage::Need || usage == TlsUsage::CallerSaved;
 }
 

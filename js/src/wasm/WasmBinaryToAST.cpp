@@ -66,14 +66,10 @@ struct AstDecodeStackItem
 
 
 
-struct AstDecodePolicy : OpIterPolicy
+struct AstDecodePolicy
 {
-    
-    
-    
-    static const bool Validate = true;
-
-    static const bool Output = true;
+    typedef Nothing Value;
+    typedef Nothing ControlItem;
 };
 
 typedef OpIter<AstDecodePolicy> AstDecodeOpIter;
