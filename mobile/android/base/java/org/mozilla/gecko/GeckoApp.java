@@ -294,7 +294,7 @@ public abstract class GeckoApp
     private volatile HealthRecorder mHealthRecorder;
     private volatile Locale mLastLocale;
 
-    private Intent mRestartIntent;
+    protected Intent mRestartIntent;
 
     private boolean mWasFirstTabShownAfterActivityUnhidden;
 
@@ -2303,26 +2303,8 @@ public abstract class GeckoApp
             "Update:Download",
             "Update:Install");
 
-        deleteTempFiles();
-
-        if (mDoorHangerPopup != null)
-            mDoorHangerPopup.destroy();
-        if (mFormAssistPopup != null)
-            mFormAssistPopup.destroy();
         if (mPromptService != null)
             mPromptService.destroy();
-        if (mTextSelection != null)
-            mTextSelection.destroy();
-        NotificationHelper.destroy();
-        IntentHelper.destroy();
-        GeckoNetworkManager.destroy();
-
-        if (SmsManager.isEnabled()) {
-            SmsManager.getInstance().stop();
-            if (isFinishing()) {
-                SmsManager.getInstance().shutdown();
-            }
-        }
 
         final HealthRecorder rec = mHealthRecorder;
         mHealthRecorder = null;
@@ -2339,28 +2321,6 @@ public abstract class GeckoApp
         super.onDestroy();
 
         Tabs.unregisterOnTabsChangedListener(this);
-
-        if (!isFinishing()) {
-            
-            return;
-        }
-
-        
-        if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
-            GeckoThread.waitOnGecko();
-        }
-
-        if (mRestartIntent != null) {
-            
-            final Intent intent = new Intent();
-            intent.setClass(getApplicationContext(), Restarter.class)
-                  .putExtra("pid", Process.myPid())
-                  .putExtra(Intent.EXTRA_INTENT, mRestartIntent);
-            startService(intent);
-        } else {
-            
-            Process.killProcess(Process.myPid());
-        }
     }
 
     public void showSDKVersionError() {
