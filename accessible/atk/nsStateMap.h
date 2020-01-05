@@ -78,7 +78,7 @@ static const AtkStateMap gAtkStateMap[] = {
   { kNone,                                    kNoStateChange }, 
   { ATK_STATE_BUSY,                           kMapDirectly },   
   { kNone,                                    kMapDirectly },   
-  { kNone,                                    kMapDirectly },   
+  { ATK_STATE_CHECKABLE,                      kMapDirectly },   
   { ATK_STATE_ANIMATED,                       kMapDirectly },   
   { ATK_STATE_VISIBLE,                        kMapOpposite },   
   { ATK_STATE_SHOWING,                        kMapOpposite },   

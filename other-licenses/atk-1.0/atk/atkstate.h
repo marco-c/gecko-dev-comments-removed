@@ -20,12 +20,9 @@
 #ifndef __ATK_STATE_H__
 #define __ATK_STATE_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <glib-object.h>
 
+G_BEGIN_DECLS
 
 
 
@@ -72,7 +69,75 @@ extern "C" {
 
 
 
- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef enum
 {
   ATK_STATE_INVALID,
@@ -114,7 +179,10 @@ typedef enum
   ATK_STATE_DEFAULT,
   ATK_STATE_ANIMATED,
   ATK_STATE_VISITED,
-	
+  ATK_STATE_CHECKABLE,
+  ATK_STATE_HAS_POPUP,
+  ATK_STATE_HAS_TOOLTIP,
+  ATK_STATE_READ_ONLY,
   ATK_STATE_LAST_DEFINED
 } AtkStateType;
 
@@ -122,11 +190,9 @@ typedef guint64      AtkState;
 
 AtkStateType atk_state_type_register            (const gchar *name);
 
-G_CONST_RETURN gchar* atk_state_type_get_name   (AtkStateType type);
+const gchar*          atk_state_type_get_name   (AtkStateType type);
 AtkStateType          atk_state_type_for_name   (const gchar  *name);
 
-#ifdef __cplusplus
-}
-#endif 
+G_END_DECLS
 
 #endif 
