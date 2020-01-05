@@ -1201,8 +1201,6 @@ protected:
   
   bool HasCachedStyleData();
 
-  bool IsChromeSlow() const;
-
   
   
   already_AddRefed<nsITimer> CreateTimer(nsTimerCallbackFunc aCallback,
