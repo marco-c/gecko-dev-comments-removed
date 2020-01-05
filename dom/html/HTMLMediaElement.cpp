@@ -2364,8 +2364,9 @@ public:
   void Stop() override
   {
     
-    NS_ERROR("We're reporting remote=true to not be stoppable. "
-             "Stop() should not be called.");
+    
+    
+    
   }
 
   void NotifyDecoderPrincipalChanged() override
