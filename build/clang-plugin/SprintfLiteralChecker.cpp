@@ -65,7 +65,11 @@ void SprintfLiteralChecker::check(
       Literal = Result.Nodes.getNodeAs<IntegerLiteral>("constant");
     }
 
-    if (Type->getSize().ule(Literal->getValue())) {
+    
+    
+    uint64_t Size = Type->getSize().getZExtValue();
+    uint64_t Lit = Literal->getValue().getZExtValue();
+    if (Size <= Lit) {
       diag(D->getLocStart(), Error, DiagnosticIDs::Error) << Name << Replacement;
       diag(D->getLocStart(), Note, DiagnosticIDs::Note) << Name;
     }
