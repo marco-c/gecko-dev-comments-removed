@@ -4281,8 +4281,8 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
     
     
     for (auto& info : aContent) {
-      if (!info.mStyleContext) {
-        styleSet->StyleNewSubtree(info.mContent);
+      if (!info.mStyleContext && info.mContent->IsElement()) {
+        styleSet->StyleNewSubtree(info.mContent->AsElement());
       }
     }
   }
@@ -7390,11 +7390,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
     
     
     if (!RestyleManager()->AsBase()->IsInStyleRefresh()) {
-      if (aFirstNewContent->GetNextSibling()) {
-        set->StyleNewChildren(aContainer);
-      } else {
-        set->StyleNewSubtree(aFirstNewContent);
-      }
+      set->StyleNewChildren(aContainer->AsElement());
     }
   }
 
@@ -7855,7 +7851,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
     
     
     if (!RestyleManager()->AsBase()->IsInStyleRefresh()) {
-      set->StyleNewSubtree(aStartChild);
+      set->StyleNewChildren(aContainer->AsElement());
     }
   }
 

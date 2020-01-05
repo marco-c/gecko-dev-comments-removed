@@ -132,11 +132,7 @@ public:
 
 
 
-
-
-
-
-  void StyleNewSubtree(nsIContent* aContent);
+  void StyleNewSubtree(Element* aRoot);
 
   
 
@@ -144,8 +140,7 @@ public:
 
 
 
-
-  void StyleNewChildren(nsIContent* aParent);
+  void StyleNewChildren(Element* aParent);
 
 #ifdef DEBUG
   void AssertTreeIsClean();

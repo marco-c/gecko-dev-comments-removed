@@ -53,9 +53,10 @@ enum class LazyComputeBehavior {
 
 
 
-enum class SkipRootBehavior {
-  Skip,
-  DontSkip,
+
+enum class TraversalRootBehavior {
+  Normal,
+  UnstyledChildrenOnly,
 };
 
 } 

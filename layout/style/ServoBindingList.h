@@ -159,7 +159,7 @@ SERVO_BINDING_FUNC(Servo_ResolveStyle, ServoComputedValuesStrong,
 
 SERVO_BINDING_FUNC(Servo_TraverseSubtree, void,
                    RawGeckoElementBorrowed root, RawServoStyleSetBorrowed set,
-                   mozilla::SkipRootBehavior skip_root)
+                   mozilla::TraversalRootBehavior root_behavior)
 
 
 SERVO_BINDING_FUNC(Servo_AssertTreeIsClean, void, RawGeckoElementBorrowed root)
