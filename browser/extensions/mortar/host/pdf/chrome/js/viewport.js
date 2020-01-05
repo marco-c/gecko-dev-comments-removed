@@ -419,6 +419,12 @@ class Viewport {
     });
   }
 
+  save() {
+    this._doAction({
+      type: 'save'
+    });
+  }
+
   
   registerActionHandler(handler) {
     if (typeof handler === 'function') {
