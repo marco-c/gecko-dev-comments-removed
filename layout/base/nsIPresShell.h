@@ -1260,17 +1260,20 @@ public:
   
   static CapturingContentInfo gCaptureInfo;
 
-  struct PointerCaptureInfo
+  class PointerCaptureInfo final
   {
+  public:
     nsCOMPtr<nsIContent> mPendingContent;
     nsCOMPtr<nsIContent> mOverrideContent;
-    bool                 mPrimaryState;
+    bool mPrimaryState;
 
-    explicit PointerCaptureInfo(nsIContent* aPendingContent, bool aPrimaryState) :
-      mPendingContent(aPendingContent), mPrimaryState(aPrimaryState)
+    explicit PointerCaptureInfo(nsIContent* aPendingContent, bool aPrimaryState)
+      : mPendingContent(aPendingContent)
+      , mPrimaryState(aPrimaryState)
     {
       MOZ_COUNT_CTOR(PointerCaptureInfo);
     }
+
     ~PointerCaptureInfo()
     {
       MOZ_COUNT_DTOR(PointerCaptureInfo);
@@ -1282,43 +1285,48 @@ public:
     }
   };
 
-  
-  
-  
-  
-  static nsClassHashtable<nsUint32HashKey, PointerCaptureInfo>* gPointerCaptureList;
-
-  struct PointerInfo
+  class PointerInfo final
   {
-    bool      mActiveState;
-    uint16_t  mPointerType;
-    bool      mPrimaryState;
-    PointerInfo(bool aActiveState, uint16_t aPointerType, bool aPrimaryState) :
-      mActiveState(aActiveState), mPointerType(aPointerType), mPrimaryState(aPrimaryState) {}
+  public:
+    uint16_t mPointerType;
+    bool mActiveState;
+    bool mPrimaryState;
+    explicit PointerInfo(bool aActiveState, uint16_t aPointerType,
+                         bool aPrimaryState)
+      : mPointerType(aPointerType)
+      , mActiveState(aActiveState)
+      , mPrimaryState(aPrimaryState)
+    {
+    }
   };
-  
-  static nsClassHashtable<nsUint32HashKey, PointerInfo>* gActivePointersIds;
 
   static void DispatchGotOrLostPointerCaptureEvent(bool aIsGotCapture,
                                                    uint32_t aPointerId,
                                                    uint16_t aPointerType,
                                                    bool aIsPrimary,
                                                    nsIContent* aCaptureTarget);
-  static void SetPointerCapturingContent(uint32_t aPointerId, nsIContent* aContent);
+  static PointerCaptureInfo* GetPointerCaptureInfo(uint32_t aPointerId);
+  static void SetPointerCapturingContent(uint32_t aPointerId,
+                                         nsIContent* aContent);
   static void ReleasePointerCapturingContent(uint32_t aPointerId);
   static nsIContent* GetPointerCapturingContent(uint32_t aPointerId);
 
+  
   
   static void CheckPointerCaptureState(uint32_t aPointerId,
                                        uint16_t aPointerType, bool aIsPrimary);
 
   
   
+  
+  
   static bool GetPointerInfo(uint32_t aPointerId, bool& aActiveState);
 
   
+  
   static uint16_t GetPointerType(uint32_t aPointerId);
 
+  
   
   static bool GetPointerPrimaryState(uint32_t aPointerId);
 
