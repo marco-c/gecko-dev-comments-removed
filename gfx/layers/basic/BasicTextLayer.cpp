@@ -17,6 +17,7 @@
 #include "nsRect.h"                     
 #include "nsRegion.h"                   
 #include "mozilla/gfx/PathHelpers.h"
+#include "mozilla/layers/LayersMessages.h" 
 
 using namespace mozilla::gfx;
 
