@@ -796,13 +796,22 @@ Animation::ShouldBeSynchronizedWithMainThread(
     return false;
   }
 
-  
-  
   KeyframeEffectReadOnly* keyframeEffect = mEffect
                                            ? mEffect->AsKeyframeEffect()
                                            : nullptr;
   if (!keyframeEffect) {
     return false;
+  }
+
+  
+  
+  
+  
+  if (mSyncWithGeometricAnimations &&
+      keyframeEffect->HasAnimationOfProperty(eCSSProperty_transform)) {
+    aPerformanceWarning = AnimationPerformanceWarning::Type::
+                          TransformWithSyncGeometricAnimations;
+    return true;
   }
 
   return keyframeEffect->
@@ -967,6 +976,16 @@ Animation::NotifyEffectTimingUpdated()
                Animation::SyncNotifyFlag::Async);
 }
 
+void
+Animation::NotifyGeometricAnimationsStartingThisFrame()
+{
+  if (!IsNewlyStarted() || !mEffect) {
+    return;
+  }
+
+  mSyncWithGeometricAnimations = true;
+}
+
 
 void
 Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
@@ -1031,6 +1050,11 @@ Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior)
   }
 
   mPendingState = PendingState::PlayPending;
+
+  
+  
+  
+  mSyncWithGeometricAnimations = false;
 
   nsIDocument* doc = GetRenderedDocument();
   if (doc) {

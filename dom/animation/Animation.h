@@ -63,6 +63,7 @@ public:
     , mFinishedAtLastComposeStyle(false)
     , mIsRelevant(false)
     , mFinishedIsResolved(false)
+    , mSyncWithGeometricAnimations(false)
   {
   }
 
@@ -320,6 +321,7 @@ public:
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   void NotifyEffectTimingUpdated();
+  void NotifyGeometricAnimationsStartingThisFrame();
 
 protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -380,6 +382,18 @@ protected:
 
   void ResetPendingTasks();
 
+  
+
+
+
+
+
+
+
+  bool IsNewlyStarted() const {
+    return mPendingState == PendingState::PlayPending &&
+           mPendingReadyTime.IsNull();
+  }
   bool IsPossiblyOrphanedPendingAnimation() const;
   StickyTimeDuration EffectEnd() const;
 
@@ -438,6 +452,11 @@ protected:
   
   
   bool mFinishedIsResolved;
+
+  
+  
+  
+  bool mSyncWithGeometricAnimations;
 
   nsString mId;
 };
