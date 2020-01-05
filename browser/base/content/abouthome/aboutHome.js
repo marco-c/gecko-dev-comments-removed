@@ -9,6 +9,8 @@
 
 
 
+
+
 const DEFAULT_SNIPPETS_URLS = [
   "https://www.mozilla.org/firefox/features/?utm_source=snippet&utm_medium=snippet&utm_campaign=default+feature+snippet"
 , "https://addons.mozilla.org/firefox/?utm_source=snippet&utm_medium=snippet&utm_campaign=addons"

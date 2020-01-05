@@ -242,7 +242,7 @@ let performLongSpinnerCheck = Task.async(function*() {
 
       let histogram = ping.payload.histograms[LONG_SPINNER_HISTOGRAM];
 
-      for (spinnerTime of Object.keys(histogram.values)) {
+      for (let spinnerTime of Object.keys(histogram.values)) {
         
         
         

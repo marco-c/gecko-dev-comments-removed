@@ -9,6 +9,7 @@ Cu.import("resource://gre/modules/LoadContextInfo.jsm");
 
 
 var commonFile = do_get_file("../../../../toolkit/components/places/tests/head_common.js", false);
+
 if (commonFile) {
   let uri = Services.io.newFileURI(commonFile);
   Services.scriptloader.loadSubScript(uri.spec, this);
