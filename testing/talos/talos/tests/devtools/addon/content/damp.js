@@ -19,6 +19,9 @@ function Damp() {
   this._heapSnapshotFilePath = null;
   
   this._snapshot = null;
+
+  
+  Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
 }
 
 Damp.prototype = {
