@@ -535,11 +535,9 @@ public:
   
   
   
-  
   already_AddRefed<CSSAnimation>
   Build(nsPresContext* aPresContext,
-        const StyleAnimation& aSrc,
-        const nsCSSKeyframesRule* aRule);
+        const StyleAnimation& aSrc);
 
 private:
   nsTArray<Keyframe> BuildAnimationFrames(nsPresContext* aPresContext,
@@ -599,16 +597,20 @@ ConvertTimingFunction(const nsTimingFunction& aTimingFunction);
 
 already_AddRefed<CSSAnimation>
 CSSAnimationBuilder::Build(nsPresContext* aPresContext,
-                           const StyleAnimation& aSrc,
-                           const nsCSSKeyframesRule* aRule)
+                           const StyleAnimation& aSrc)
 {
   MOZ_ASSERT(aPresContext);
-  MOZ_ASSERT(aRule);
+
+  nsCSSKeyframesRule* rule =
+    aPresContext->StyleSet()->AsGecko()->KeyframesRuleForName(aSrc.GetName());
+  if (!rule) {
+    return nullptr;
+  }
 
   TimingParams timing = TimingParamsFrom(aSrc);
 
   nsTArray<Keyframe> keyframes =
-    BuildAnimationFrames(aPresContext, aSrc, aRule);
+    BuildAnimationFrames(aPresContext, aSrc, rule);
 
   bool isStylePaused =
     aSrc.GetPlayState() == NS_STYLE_ANIMATION_PLAY_STATE_PAUSED;
@@ -1083,18 +1085,20 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
     
     
     
-    MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
-               "ServoStyleSet should not use nsAnimationManager for "
-               "animations");
-    nsCSSKeyframesRule* rule =
-      src.GetName().IsEmpty()
-      ? nullptr
-      : mPresContext->StyleSet()->AsGecko()->KeyframesRuleForName(src.GetName());
-    if (!rule) {
+    if (src.GetName().IsEmpty()) {
       continue;
     }
 
-    RefPtr<CSSAnimation> dest = builder.Build(mPresContext, src, rule);
+    MOZ_ASSERT(mPresContext->StyleSet()->IsGecko(),
+               "ServoStyleSet should not use nsAnimationManager for "
+               "animations");
+
+    RefPtr<CSSAnimation> dest =
+      builder.Build(mPresContext, src);
+    if (!dest) {
+      continue;
+    }
+
     dest->SetAnimationIndex(static_cast<uint64_t>(animIdx));
     aAnimations.AppendElement(dest);
   }
