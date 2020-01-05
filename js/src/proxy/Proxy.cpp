@@ -692,8 +692,11 @@ ProxyObject::trace(JSTracer* trc, JSObject* obj)
 
 
 
-        if (proxy->is<CrossCompartmentWrapperObject>() && i == 1)
+        if (proxy->is<CrossCompartmentWrapperObject>() &&
+            i == CrossCompartmentWrapperObject::GrayLinkReservedSlot)
+        {
             continue;
+        }
         TraceEdge(trc, proxy->reservedSlotPtr(i), "proxy_reserved");
     }
 
