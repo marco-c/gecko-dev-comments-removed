@@ -3313,14 +3313,6 @@ Element::AttrValueToCORSMode(const nsAttrValue* aValue)
 static const char*
 GetFullScreenError(nsIDocument* aDoc)
 {
-  if (aDoc->NodePrincipal()->GetAppStatus() >= nsIPrincipal::APP_STATUS_INSTALLED) {
-    
-    
-    
-    
-    return nullptr;
-  }
-
   if (!nsContentUtils::IsRequestFullScreenAllowed()) {
     return "FullscreenDeniedNotInputDriven";
   }
