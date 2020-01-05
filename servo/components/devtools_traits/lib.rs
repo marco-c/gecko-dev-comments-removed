@@ -122,6 +122,7 @@ impl Decodable for Modification {
 
 #[derive(Clone)]
 pub enum ConsoleMessage {
-    LogMessage(String),
+    
+    LogMessage(String, String, u32, u32),
     
 }
