@@ -27,7 +27,7 @@ use net_traits::bluetooth_thread::BluetoothMethodMsg;
 
 
 
-const MAXIMUM_ATTRIBUTE_LENGTH: usize = 512;
+pub const MAXIMUM_ATTRIBUTE_LENGTH: usize = 512;
 
 
 #[dom_struct]
