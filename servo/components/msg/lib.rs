@@ -2,10 +2,11 @@
 
 
 
+#![feature(hash)]
 #![feature(int_uint)]
+#![feature(rustc_private)]
 
 #![allow(missing_copy_implementations)]
-#![allow(unstable)]
 
 extern crate azure;
 #[macro_use] extern crate bitflags;

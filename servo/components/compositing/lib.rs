@@ -2,8 +2,13 @@
 
 
 
-#![feature(box_syntax, plugin)]
-#![feature(int_uint, core, libc, std_misc)]
+#![feature(box_syntax)]
+#![feature(core)]
+#![feature(int_uint)]
+#![feature(io)]
+#![feature(libc)]
+#![feature(rustc_private)]
+#![feature(std_misc)]
 
 #![allow(missing_copy_implementations)]
 

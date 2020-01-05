@@ -4,8 +4,11 @@
 
 
 
-#![feature(box_syntax, int_uint)]
-#![allow(unstable)]
+#![feature(int_uint)]
+#![feature(core)]
+#![feature(hash)]
+#![feature(box_syntax)]
+#![feature(libc)]
 
 #[macro_use] extern crate bitflags;
 #[cfg(target_os="macos")]

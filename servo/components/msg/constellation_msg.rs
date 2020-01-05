@@ -60,7 +60,7 @@ pub enum KeyState {
 }
 
 
-#[derive(Show, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Key {
     Space,
     Apostrophe,
@@ -237,22 +237,22 @@ impl LoadData {
 }
 
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
 pub enum NavigationType {
     Load,               
     Navigate,           
 }
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
 pub enum NavigationDirection {
     Forward,
     Back,
 }
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
 pub struct PipelineId(pub uint);
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Show)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
 pub struct SubpageId(pub uint);
 
 

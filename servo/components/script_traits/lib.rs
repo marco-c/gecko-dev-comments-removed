@@ -2,10 +2,12 @@
 
 
 
+#![feature(core)]
 #![feature(int_uint)]
+#![feature(libc)]
+#![feature(rustc_private)]
 
 #![allow(missing_copy_implementations)]
-#![allow(unstable)]
 
 extern crate devtools_traits;
 extern crate geom;

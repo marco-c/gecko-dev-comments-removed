@@ -2,8 +2,9 @@
 
 
 
+#![feature(core)]
+
 #![allow(missing_copy_implementations)]
-#![allow(unstable)]
 
 extern crate azure;
 extern crate geom;
