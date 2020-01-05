@@ -161,8 +161,10 @@ FileSystemTaskChildBase::ActorCreated(mozilla::ipc::PBackgroundChild* aActor)
   if (HasError()) {
     
     RefPtr<ErrorRunnable> runnable = new ErrorRunnable(this);
+    
     DebugOnly<nsresult> rv = NS_DispatchToCurrentThread(runnable);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NS_DispatchToCurrentThread failed");
+
     return;
   }
 
