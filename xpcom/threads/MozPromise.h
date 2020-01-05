@@ -578,6 +578,57 @@ protected:
     Maybe<RejectFunction> mRejectFunction; 
   };
 
+  
+  
+  template<typename ResolveRejectFunction>
+  class FunctionThenValue<ResolveRejectFunction, void> : public ThenValueBase
+  {
+  public:
+    FunctionThenValue(AbstractThread* aResponseTarget,
+                      ResolveRejectFunction&& aResolveRejectFunction,
+                      const char* aCallSite)
+      : ThenValueBase(aResponseTarget, aCallSite)
+    {
+      mResolveRejectFunction.emplace(Move(aResolveRejectFunction));
+    }
+
+    void Disconnect() override
+    {
+      ThenValueBase::Disconnect();
+
+      
+      
+      
+      
+      mResolveRejectFunction.reset();
+    }
+
+  protected:
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    {
+      
+      
+      
+      
+      
+      RefPtr<MozPromise> completion =
+        InvokeCallbackMethod(mResolveRejectFunction.ptr(),
+                             &ResolveRejectFunction::operator(),
+                             aValue);
+
+      
+      
+      
+      
+      mResolveRejectFunction.reset();
+
+      return completion.forget();
+    }
+
+  private:
+    Maybe<ResolveRejectFunction> mResolveRejectFunction; 
+  };
+
 public:
   void ThenInternal(AbstractThread* aResponseThread, ThenValueBase* aThenValue,
                     const char* aCallSite)
@@ -685,6 +736,16 @@ public:
     using ThenType = FunctionThenValue<ResolveFunction, RejectFunction>;
     RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread,
       Move(aResolveFunction), Move(aRejectFunction), aCallSite);
+    return ThenCommand(aResponseThread, aCallSite, thenValue.forget(), this);
+  }
+
+  template<typename ResolveRejectFunction>
+  ThenCommand Then(AbstractThread* aResponseThread, const char* aCallSite,
+                   ResolveRejectFunction&& aResolveRejectFunction)
+  {
+    using ThenType = FunctionThenValue<ResolveRejectFunction, void>;
+    RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread,
+      Move(aResolveRejectFunction), aCallSite);
     return ThenCommand(aResponseThread, aCallSite, thenValue.forget(), this);
   }
 
