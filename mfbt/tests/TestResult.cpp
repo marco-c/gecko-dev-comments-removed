@@ -4,6 +4,7 @@
 
 
 
+#include <string.h>
 #include "mozilla/Result.h"
 
 using mozilla::GenericErrorResult;
@@ -160,6 +161,45 @@ ReferenceTest()
   MOZ_RELEASE_ASSERT(&res.unwrapErr() == &merror);
 }
 
+static void
+MapTest()
+{
+  struct MyError {
+    int x;
+
+    explicit MyError(int y) : x(y) { }
+  };
+
+  
+  Result<int, MyError> res(5);
+  bool invoked = false;
+  auto res2 = res.map([&invoked](int x) {
+    MOZ_RELEASE_ASSERT(x == 5);
+    invoked = true;
+    return "hello";
+  });
+  MOZ_RELEASE_ASSERT(res2.isOk());
+  MOZ_RELEASE_ASSERT(invoked);
+  MOZ_RELEASE_ASSERT(strcmp(res2.unwrap(), "hello") == 0);
+
+  
+  MyError err(1);
+  Result<char, MyError> res3(err);
+  MOZ_RELEASE_ASSERT(res3.isErr());
+  Result<char, MyError> res4 = res3.map([](int x) {
+    MOZ_RELEASE_ASSERT(false);
+    return 'a';
+  });
+  MOZ_RELEASE_ASSERT(res4.isErr());
+  MOZ_RELEASE_ASSERT(res4.unwrapErr().x == err.x);
+
+  
+  Result<const char*, MyError> res5("hello");
+  auto res6 = res5.map(strlen);
+  MOZ_RELEASE_ASSERT(res6.isOk());
+  MOZ_RELEASE_ASSERT(res6.unwrap() == 5);
+}
+
 
 
 int main()
@@ -168,5 +208,6 @@ int main()
   TypeConversionTests();
   EmptyValueTest();
   ReferenceTest();
+  MapTest();
   return 0;
 }
