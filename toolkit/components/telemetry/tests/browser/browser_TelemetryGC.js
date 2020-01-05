@@ -13,6 +13,7 @@
 
 
 
+
 const {GCTelemetry} = Cu.import("resource://gre/modules/GCTelemetry.jsm", {});
 
 function check(entries) {
