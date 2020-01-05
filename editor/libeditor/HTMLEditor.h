@@ -60,6 +60,8 @@ namespace widget {
 struct IMEState;
 } 
 
+enum class ParagraphSeparator { div, p, br };
+
 
 
 
@@ -370,6 +372,15 @@ public:
     return attrCount > 1 ||
            (1 == attrCount &&
             !aElement->GetAttrNameAt(0)->Equals(nsGkAtoms::mozdirty));
+  }
+
+  ParagraphSeparator GetDefaultParagraphSeparator() const
+  {
+    return mDefaultParagraphSeparator;
+  }
+  void SetDefaultParagraphSeparator(ParagraphSeparator aSep)
+  {
+    mDefaultParagraphSeparator = aSep;
   }
 
 protected:
@@ -1002,6 +1013,9 @@ protected:
   void RemoveMouseClickListener(Element* aElement);
 
   nsCOMPtr<nsILinkHandler> mLinkHandler;
+
+  
+  ParagraphSeparator mDefaultParagraphSeparator = ParagraphSeparator::br;
 
 public:
   friend class HTMLEditorEventListener;

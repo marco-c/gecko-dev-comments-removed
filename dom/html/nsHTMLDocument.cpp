@@ -3042,6 +3042,7 @@ static const struct MidasCommand gMidasCommandTable[] = {
   { "styleWithCSS",  "cmd_setDocumentUseCSS", "", false, true },
   { "contentReadOnly", "cmd_setDocumentReadOnly", "", false, true },
   { "insertBrOnReturn", "cmd_insertBrOnReturn", "", false, true },
+  { "defaultParagraphSeparator", "cmd_defaultParagraphSeparator", "", false, false },
   { "enableObjectResizing", "cmd_enableObjectResizing", "", false, true },
   { "enableInlineTableEditing", "cmd_enableInlineTableEditing", "", false, true },
 #if 0
@@ -3298,6 +3299,14 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
        cmdToDispatch.EqualsLiteral("cmd_insertLinkNoUI") ||
        cmdToDispatch.EqualsLiteral("cmd_paragraphState")) &&
       paramStr.IsEmpty()) {
+    
+    return false;
+  }
+
+  if (cmdToDispatch.EqualsLiteral("cmd_defaultParagraphSeparator") &&
+      !paramStr.LowerCaseEqualsLiteral("div") &&
+      !paramStr.LowerCaseEqualsLiteral("p") &&
+      !paramStr.LowerCaseEqualsLiteral("br")) {
     
     return false;
   }
