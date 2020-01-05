@@ -894,21 +894,6 @@ private:
   }
 };
 
-class CloseRunnable final : public WorkerControlRunnable
-{
-public:
-  explicit CloseRunnable(WorkerPrivate* aWorkerPrivate)
-  : WorkerControlRunnable(aWorkerPrivate, ParentThreadUnchangedBusyCount)
-  { }
-
-private:
-  virtual bool
-  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
-  {
-    return aWorkerPrivate->Close();
-  }
-};
-
 class FreezeRunnable final : public WorkerControlRunnable
 {
 public:
@@ -3296,14 +3281,10 @@ template <class Derived>
 bool
 WorkerPrivateParent<Derived>::Close()
 {
-  AssertIsOnParentThread();
+  mMutex.AssertCurrentThreadOwns();
 
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (mParentStatus < Closing) {
-      mParentStatus = Closing;
-    }
+  if (mParentStatus < Closing) {
+    mParentStatus = Closing;
   }
 
   return true;
@@ -6165,6 +6146,12 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     previousStatus = mStatus;
     mStatus = aStatus;
 
+    
+    
+    if (aStatus == Closing) {
+      Close();
+    }
+
     mEventTarget.swap(eventTarget);
   }
 
@@ -6212,14 +6199,8 @@ WorkerPrivate::NotifyInternal(JSContext* aCx, Status aStatus)
     return true;
   }
 
+  
   if (aStatus == Closing) {
-    
-    RefPtr<CloseRunnable> runnable = new CloseRunnable(this);
-    if (!runnable->Dispatch()) {
-      return false;
-    }
-
-    
     return true;
   }
 
