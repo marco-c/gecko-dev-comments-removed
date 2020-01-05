@@ -109,13 +109,14 @@ KeyframeEffectParams::ParseSpacing(const nsAString& aSpacing,
                                    SpacingMode& aSpacingMode,
                                    nsCSSPropertyID& aPacedProperty,
                                    nsAString& aInvalidPacedProperty,
+                                   dom::CallerType aCallerType,
                                    ErrorResult& aRv)
 {
   aInvalidPacedProperty.Truncate();
 
   
   
-  if (!AnimationUtils::IsCoreAPIEnabledForCaller()) {
+  if (!AnimationUtils::IsCoreAPIEnabledForCaller(aCallerType)) {
     aSpacingMode = SpacingMode::distribute;
     return;
   }

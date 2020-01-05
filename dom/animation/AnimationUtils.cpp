@@ -6,7 +6,6 @@
 
 #include "AnimationUtils.h"
 
-#include "nsContentUtils.h" 
 #include "nsDebug.h"
 #include "nsIAtom.h"
 #include "nsIContent.h"
@@ -79,9 +78,9 @@ AnimationUtils::IsCoreAPIEnabled()
 }
 
  bool
-AnimationUtils::IsCoreAPIEnabledForCaller()
+AnimationUtils::IsCoreAPIEnabledForCaller(dom::CallerType aCallerType)
 {
-  return IsCoreAPIEnabled() || nsContentUtils::IsCallerChrome();
+  return IsCoreAPIEnabled() || aCallerType == dom::CallerType::System;
 }
 
 } 

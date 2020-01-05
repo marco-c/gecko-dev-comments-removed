@@ -14,6 +14,7 @@
 #undef None
 #endif
 #include "mozilla/dom/KeyframeEffectBinding.h" 
+#include "mozilla/dom/BindingDeclarations.h"   
 
 namespace mozilla {
 
@@ -54,6 +55,7 @@ struct KeyframeEffectParams
                            SpacingMode& aSpacingMode,
                            nsCSSPropertyID& aPacedProperty,
                            nsAString& aInvalidPacedProperty,
+                           dom::CallerType aCallerType,
                            ErrorResult& aRv);
 
   dom::IterationCompositeOperation mIterationComposite =
