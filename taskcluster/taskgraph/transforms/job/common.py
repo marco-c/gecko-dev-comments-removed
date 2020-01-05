@@ -67,7 +67,15 @@ def docker_worker_support_vcs_checkout(config, job, taskdesc):
 
     taskdesc['worker'].setdefault('caches', []).append({
         'type': 'persistent',
-        'name': 'level-%s-checkouts' % level,
+        
+        
+        
+        
+        
+        
+        
+        
+        'name': 'level-%s-checkouts-v1' % level,
         'mount-point': '/home/worker/checkouts',
     })
 
