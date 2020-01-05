@@ -79,9 +79,6 @@ public:
 
   nsresult ReparentStyleContext(nsIFrame* aFrame);
 
-  inline bool HasPendingRestyles();
-
-
   
 
 

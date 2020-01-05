@@ -264,9 +264,6 @@ public:
   
   void ProcessPendingRestyles();
 
-  
-  bool HasPendingRestyles() { return mPendingRestyles.Count() != 0; }
-
 private:
   
   
