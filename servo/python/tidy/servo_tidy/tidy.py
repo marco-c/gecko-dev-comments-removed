@@ -82,6 +82,27 @@ WEBIDL_STANDARDS = [
 ]
 
 
+
+
+BLOCKED_PACKAGES = {
+    "rand": [
+        "deque",
+        "gaol",
+        "ipc-channel",
+        "num-bigint",
+        "parking_lot_core",
+        "phf_generator",
+        "rayon",
+        "servo_rand",
+        "tempdir",
+        "tempfile",
+        "uuid",
+        "websocket",
+        "ws",
+    ],
+}
+
+
 def is_iter_empty(iterator):
     try:
         obj = iterator.next()
@@ -337,6 +358,20 @@ def check_lock(file_name, contents):
                 if version in dependency and short_source in dependency:
                     message += "\n\t\t" + name
         yield (1, message)
+
+    
+    for package in content.get("package", []):
+        package_name = package.get("name")
+        package_version = package.get("version")
+        for dependency in package.get("dependencies", []):
+            dependency = dependency.split()
+            dependency_name = dependency[0]
+            whitelist = BLOCKED_PACKAGES.get(dependency_name)
+            if whitelist is not None:
+                if package_name not in whitelist:
+                    fmt = "Package {} {} depends on blocked package {}."
+                    message = fmt.format(package_name, package_version, dependency_name)
+                    yield (1, message)
 
 
 def check_toml(file_name, lines):
