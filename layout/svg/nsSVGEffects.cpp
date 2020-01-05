@@ -903,16 +903,40 @@ ResolveFragmentOrURL(nsIFrame* aFrame, const FragmentOrURL* aFragmentOrURL)
     return result.forget();
   }
 
+  
+  
   nsIContent* content = aFrame->GetContent();
-  nsCOMPtr<nsIURI> baseURI = content->GetBaseURI();
+  nsCOMPtr<nsIURI> baseURI = content->OwnerDoc()->GetDocumentURI();
 
   if (content->IsInAnonymousSubtree()) {
+    nsIContent* bindingParent = content->GetBindingParent();
+    nsCOMPtr<nsIURI> originalURI;
+
     
     
     
     
-    if (!aFragmentOrURL->EqualsExceptRef(baseURI))
-      baseURI = content->OwnerDoc()->GetBaseURI();
+    
+    
+    if (bindingParent) {
+      if (content->IsAnonymousContentInSVGUseSubtree()) {
+        SVGUseElement* useElement = static_cast<SVGUseElement*>(bindingParent);
+        originalURI = useElement->GetSourceDocURI();
+      } else {
+        nsXBLBinding* binding = bindingParent->GetXBLBinding();
+        if (binding) {
+          originalURI = binding->GetSourceDocURI();
+        } else {
+          MOZ_ASSERT(content->IsInNativeAnonymousSubtree(),
+                     "an non-native anonymous tree which is not from "
+                     "an XBL binding?");
+        }
+      }
+
+      if (originalURI && aFragmentOrURL->EqualsExceptRef(originalURI)) {
+        baseURI = originalURI;
+      }
+    }
   }
 
   return aFragmentOrURL->Resolve(baseURI);

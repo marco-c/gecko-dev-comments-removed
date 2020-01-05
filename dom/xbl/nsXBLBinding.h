@@ -156,6 +156,8 @@ public:
   
   nsAnonymousContentList* GetAnonymousNodeList();
 
+ nsIURI* GetSourceDocURI();
+
 
 protected:
 
