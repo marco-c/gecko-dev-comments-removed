@@ -117,13 +117,17 @@ public:
   void AddStateChangeTask(AbstractThread* aThread,
                           already_AddRefed<nsIRunnable> aRunnable) override
   {
-    EnsureTaskGroup(aThread).mStateChangeTasks.AppendElement(aRunnable);
+    nsCOMPtr<nsIRunnable> r = aRunnable;
+    MOZ_RELEASE_ASSERT(r);
+    EnsureTaskGroup(aThread).mStateChangeTasks.AppendElement(r.forget());
   }
 
   void AddTask(AbstractThread* aThread,
                already_AddRefed<nsIRunnable> aRunnable,
                AbstractThread::DispatchFailureHandling aFailureHandling) override
   {
+    nsCOMPtr<nsIRunnable> r = aRunnable;
+    MOZ_RELEASE_ASSERT(r);
     
     
     
@@ -133,7 +137,7 @@ public:
     }
 
     PerThreadTaskGroup& group = *mTaskGroups.LastElement();
-    group.mRegularTasks.AppendElement(aRunnable);
+    group.mRegularTasks.AppendElement(r.forget());
 
     
     
