@@ -18,6 +18,7 @@
 #include "gfxRect.h"                    
 #include "gfx2DGlue.h"
 #include "mozilla/Assertions.h"         
+#include "mozilla/Array.h"
 #include "mozilla/DebugOnly.h"          
 #include "mozilla/EventForwards.h"      
 #include "mozilla/Maybe.h"              
@@ -87,6 +88,7 @@ class ImageLayer;
 class ColorLayer;
 class TextLayer;
 class CanvasLayer;
+class BorderLayer;
 class ReadbackLayer;
 class ReadbackProcessor;
 class RefLayer;
@@ -407,6 +409,11 @@ public:
 
 
   virtual already_AddRefed<TextLayer> CreateTextLayer() = 0;
+  
+
+
+
+  virtual already_AddRefed<BorderLayer> CreateBorderLayer() { return nullptr; }
   
 
 
@@ -752,6 +759,7 @@ public:
     TYPE_CONTAINER,
     TYPE_IMAGE,
     TYPE_TEXT,
+    TYPE_BORDER,
     TYPE_READBACK,
     TYPE_REF,
     TYPE_SHADOW,
@@ -1535,6 +1543,12 @@ public:
 
 
   virtual TextLayer* AsTextLayer() { return nullptr; }
+
+  
+
+
+
+  virtual BorderLayer* AsBorderLayer() { return nullptr; }
 
   
 
@@ -2389,6 +2403,73 @@ protected:
   gfx::IntRect mBounds;
   nsTArray<GlyphArray> mGlyphs;
   RefPtr<gfx::ScaledFont> mFont;
+};
+
+
+
+
+class BorderLayer : public Layer {
+public:
+  virtual BorderLayer* AsBorderLayer() override { return this; }
+
+  
+
+
+
+
+  
+  virtual void SetColors(const BorderColors& aColors)
+  {
+    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Colors", this));
+    PodCopy(&mColors[0], &aColors[0], 4);
+    Mutated();
+  }
+
+  virtual void SetRect(const LayerRect& aRect)
+  {
+    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Rect", this));
+    mRect = aRect;
+    Mutated();
+  }
+
+  
+  
+  virtual void SetCornerRadii(const BorderCorners& aCorners)
+  {
+    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Corners", this));
+    PodCopy(&mCorners[0], &aCorners[0], 4);
+    Mutated();
+  }
+
+  virtual void SetWidths(const BorderWidths& aWidths)
+  {
+    MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Widths", this));
+    PodCopy(&mWidths[0], &aWidths[0], 4);
+    Mutated();
+  }
+
+  MOZ_LAYER_DECL_NAME("BorderLayer", TYPE_BORDER)
+
+  virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
+  {
+    gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
+    mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
+    ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
+  }
+
+protected:
+  BorderLayer(LayerManager* aManager, void* aImplData)
+    : Layer(aManager, aImplData)
+  {}
+
+  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+
+  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
+
+  BorderColors mColors;
+  LayerRect mRect;
+  BorderCorners mCorners;
+  BorderWidths mWidths;
 };
 
 
