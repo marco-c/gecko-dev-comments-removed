@@ -285,7 +285,12 @@ Telemetry.prototype = {
     if (histogramId) {
       try {
         let histogram = Services.telemetry.getKeyedHistogramById(histogramId);
-        histogram.add(key, value);
+
+        if (typeof value === "undefined") {
+          histogram.add(key);
+        } else {
+          histogram.add(key, value);
+        }
       } catch (e) {
         dump("Warning: An attempt was made to write to the " + histogramId +
              " histogram, which is not defined in Histograms.json\n");
@@ -322,4 +327,3 @@ Telemetry.prototype = {
     }
   }
 };
-

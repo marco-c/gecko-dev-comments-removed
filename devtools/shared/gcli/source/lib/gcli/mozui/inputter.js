@@ -22,6 +22,8 @@ var KeyEvent = require('../util/util').KeyEvent;
 var Status = require('../types/types').Status;
 var History = require('../ui/history').History;
 
+var Telemetry = require("devtools/client/shared/telemetry");
+
 var RESOLVED = Promise.resolve(true);
 
 
@@ -46,6 +48,9 @@ function Inputter(components) {
 
   
   this._caretChange = null;
+
+  
+  this._telemetry = new Telemetry();
 
   
   this.onKeyDown = this.onKeyDown.bind(this);
@@ -122,6 +127,7 @@ Inputter.prototype.destroy = function() {
   this.tooltip = undefined;
   this.document = undefined;
   this.element = undefined;
+  this._telemetry = undefined;
 };
 
 
@@ -556,6 +562,9 @@ Inputter.prototype._handleReturn = function() {
   if (this.requisition.status === Status.VALID) {
     this._scrollingThroughHistory = false;
     this.history.add(this.element.value);
+
+    let name = this.requisition.commandAssignment.value.name;
+    this._telemetry.logKeyed("DEVTOOLS_GCLI_COMMANDS_KEYED", name);
 
     return this.requisition.exec().then(function() {
       this.textChanged();

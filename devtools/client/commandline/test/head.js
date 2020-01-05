@@ -1,6 +1,11 @@
 
 
 
+ 
+ 
+ 
+
+"use strict";
 
 const TEST_BASE_HTTP = "http://example.com/browser/devtools/client/commandline/test/";
 const TEST_BASE_HTTPS = "https://example.com/browser/devtools/client/commandline/test/";
