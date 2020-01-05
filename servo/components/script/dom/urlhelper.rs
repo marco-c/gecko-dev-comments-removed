@@ -92,4 +92,18 @@ impl UrlHelper {
             let _ = quirks::set_username(url, &value.0);
         }
     }
+    
+    pub fn is_origin_trustworthy(url: &ServoUrl) -> bool {
+        
+        if url.scheme() == "http" || url.scheme() == "wss" {
+            true
+        
+        } else if url.host().is_some() {
+            let host = url.host_str().unwrap();
+            host == "127.0.0.0/8" || host == "::1/128"
+        
+        } else {
+            url.scheme() == "file"
+        }
+    }
 }
