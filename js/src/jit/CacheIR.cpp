@@ -1985,10 +1985,6 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
     }
 
     
-    if (NativeObject::dynamicSlotsCount(propShape) != NativeObject::dynamicSlotsCount(oldShape))
-        return false;
-
-    
     
     
     if (oldGroup->newScript() && !oldGroup->newScript()->analyzed()) {
@@ -2041,8 +2037,16 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
                                     changeGroup, newGroup);
     } else {
         size_t offset = holderOrExpando->dynamicSlotIndex(propShape->slot()) * sizeof(Value);
-        writer.addAndStoreDynamicSlot(holderId, offset, rhsValId, propShape,
-                                      changeGroup, newGroup);
+        uint32_t numOldSlots = NativeObject::dynamicSlotsCount(oldShape);
+        uint32_t numNewSlots = NativeObject::dynamicSlotsCount(propShape);
+        if (numOldSlots == numNewSlots) {
+            writer.addAndStoreDynamicSlot(holderId, offset, rhsValId, propShape,
+                                          changeGroup, newGroup);
+        } else {
+            MOZ_ASSERT(numNewSlots > numOldSlots);
+            writer.allocateAndStoreDynamicSlot(holderId, offset, rhsValId, propShape,
+                                               changeGroup, newGroup, numNewSlots);
+        }
     }
     writer.returnFromIC();
 
