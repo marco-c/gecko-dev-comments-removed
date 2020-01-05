@@ -33,13 +33,13 @@ WidevineDecryptor::GetInstance(uint32_t aInstanceId)
 WidevineDecryptor::WidevineDecryptor()
   : mCallback(nullptr)
 {
-  Log("WidevineDecryptor created this=%p", this);
+  Log("WidevineDecryptor created this=%p, instanceId=%u", this, mInstanceId);
   AddRef(); 
 }
 
 WidevineDecryptor::~WidevineDecryptor()
 {
-  Log("WidevineDecryptor destroyed this=%p", this);
+  Log("WidevineDecryptor destroyed this=%p, instanceId=%u", this, mInstanceId);
 }
 
 void
@@ -224,7 +224,7 @@ WidevineDecryptor::Decrypt(GMPBuffer* aBuffer,
 void
 WidevineDecryptor::DecryptingComplete()
 {
-  Log("WidevineDecryptor::DecryptingComplete() this=%p", this);
+  Log("WidevineDecryptor::DecryptingComplete() this=%p, instanceId=%u", this, mInstanceId);
   
   
   
