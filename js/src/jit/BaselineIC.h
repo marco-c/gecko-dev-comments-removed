@@ -1718,9 +1718,9 @@ void EmitICUnboxedPreBarrier(MacroAssembler &masm, const T& address, JSValueType
 
 
 template <typename T>
-void BaselineStoreToTypedArray(JSContext* cx, MacroAssembler& masm, Scalar::Type type,
-                               const ValueOperand& value, const T& dest, Register scratch,
-                               Label* failure);
+void StoreToTypedArray(JSContext* cx, MacroAssembler& masm, Scalar::Type type,
+                       const ValueOperand& value, const T& dest, Register scratch,
+                       Label* failure);
 
 } 
 } 
