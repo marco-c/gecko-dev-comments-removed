@@ -353,7 +353,7 @@ DragDataProducer::GetNodeString(nsIContent* inNode,
 
   
   nsCOMPtr<nsIDocument> doc = node->OwnerDoc();
-  mozilla::ErrorResult rv;
+  mozilla::IgnoredErrorResult rv;
   RefPtr<nsRange> range = doc->CreateRange(rv);
   if (range) {
     range->SelectNode(*node, rv);
