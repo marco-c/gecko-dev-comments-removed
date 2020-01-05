@@ -159,6 +159,8 @@ GetPropIRGenerator::tryAttachStub()
                 return true;
             if (tryAttachWindowProxy(obj, objId, id))
                 return true;
+            if (tryAttachCrossCompartmentWrapper(obj, objId, id))
+                return true;
             if (tryAttachFunction(obj, objId, id))
                 return true;
             if (tryAttachProxy(obj, objId, id))
@@ -435,11 +437,14 @@ EmitReadSlotResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
 }
 
 static void
-EmitReadSlotReturn(CacheIRWriter& writer, JSObject*, JSObject* holder, Shape* shape)
+EmitReadSlotReturn(CacheIRWriter& writer, JSObject*, JSObject* holder, Shape* shape,
+                   bool wrapResult = false)
 {
     
     if (holder) {
         MOZ_ASSERT(shape);
+        if (wrapResult)
+            writer.wrapResult();
         writer.typeMonitorResult();
     } else {
         
@@ -591,6 +596,78 @@ GetPropIRGenerator::tryAttachWindowProxy(HandleObject obj, ObjOperandId objId, H
     }
 
     MOZ_CRASH("Unreachable");
+}
+
+bool
+GetPropIRGenerator::tryAttachCrossCompartmentWrapper(HandleObject obj, ObjOperandId objId,
+                                                     HandleId id)
+{
+    
+    
+    if (!IsWrapper(obj) || Wrapper::wrapperHandler(obj) != &CrossCompartmentWrapper::singleton)
+        return false;
+
+    RootedObject unwrapped(cx_, Wrapper::wrappedObject(obj));
+    MOZ_ASSERT(unwrapped == UnwrapOneChecked(obj));
+
+    
+    if (unwrapped->compartment()->zone() != cx_->compartment()->zone())
+        return false;
+
+    AutoCompartment ac(cx_, unwrapped);
+
+    
+    
+    bool isWindowProxy = IsWindowProxy(unwrapped);
+    if (isWindowProxy) {
+        MOZ_ASSERT(ToWindowIfWindowProxy(unwrapped) == unwrapped->compartment()->maybeGlobal());
+        unwrapped = cx_->global();
+        MOZ_ASSERT(unwrapped);
+    }
+
+    RootedShape shape(cx_);
+    RootedNativeObject holder(cx_);
+    NativeGetPropCacheability canCache =
+        CanAttachNativeGetProp(cx_, unwrapped, id, &holder, &shape, pc_, canAttachGetter_,
+                               isTemporarilyUnoptimizable_);
+    if (canCache != CanAttachReadSlot)
+        return false;
+
+    if (holder) {
+        EnsureTrackPropertyTypes(cx_, holder, id);
+        if (unwrapped == holder) {
+            
+            if (IsPreliminaryObject(unwrapped))
+                preliminaryObjectAction_ = PreliminaryObjectAction::NotePreliminary;
+            else
+                preliminaryObjectAction_ = PreliminaryObjectAction::Unlink;
+        }
+    }
+
+    maybeEmitIdGuard(id);
+    writer.guardIsProxy(objId);
+    writer.guardIsCrossCompartmentWrapper(objId);
+
+    
+    ObjOperandId wrapperTargetId = writer.loadWrapperTarget(objId);
+
+    
+    writer.guardCompartment(wrapperTargetId, unwrapped->compartment());
+
+    ObjOperandId unwrappedId = wrapperTargetId;
+    if (isWindowProxy) {
+        
+        
+        
+        writer.guardClass(wrapperTargetId, GuardClassKind::WindowProxy);
+        unwrappedId = writer.loadWrapperTarget(wrapperTargetId);
+    }
+
+    EmitReadSlotResult(writer, unwrapped, holder, shape, unwrappedId);
+    EmitReadSlotReturn(writer, unwrapped, holder, shape,  true);
+
+    trackAttached("CCWSlot");
+    return true;
 }
 
 bool

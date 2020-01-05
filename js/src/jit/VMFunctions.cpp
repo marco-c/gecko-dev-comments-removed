@@ -694,6 +694,38 @@ GetIndexFromString(JSString* str)
     return int32_t(index);
 }
 
+JSObject*
+WrapObjectPure(JSContext* cx, JSObject* obj)
+{
+    MOZ_ASSERT(obj);
+    MOZ_ASSERT(cx->compartment() != obj->compartment());
+
+    
+    
+    
+    
+    
+    
+    obj = UncheckedUnwrap(obj,  true);
+    if (cx->compartment() == obj->compartment()) {
+        MOZ_ASSERT(!IsWindow(obj));
+        JS::ExposeObjectToActiveJS(obj);
+        return obj;
+    }
+
+    
+    
+    if (WrapperMap::Ptr p = cx->compartment()->lookupWrapper(obj)) {
+        JSObject* wrapped = &p->value().get().toObject();
+
+        
+        JS::ExposeObjectToActiveJS(wrapped);
+        return wrapped;
+    }
+
+    return nullptr;
+}
+
 bool
 DebugPrologue(JSContext* cx, BaselineFrame* frame, jsbytecode* pc, bool* mustReturn)
 {
@@ -922,17 +954,6 @@ NewArgumentsObject(JSContext* cx, BaselineFrame* frame, MutableHandleValue res)
         return false;
     res.setObject(*obj);
     return true;
-}
-
-JSObject*
-CopyLexicalEnvironmentObject(JSContext* cx, HandleObject env, bool copySlots)
-{
-    Handle<LexicalEnvironmentObject*> lexicalEnv = env.as<LexicalEnvironmentObject>();
-
-    if (copySlots)
-        return LexicalEnvironmentObject::clone(cx, lexicalEnv);
-
-    return LexicalEnvironmentObject::recreate(cx, lexicalEnv);
 }
 
 JSObject*

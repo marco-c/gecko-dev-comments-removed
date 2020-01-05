@@ -23,6 +23,7 @@ namespace jit {
     _(GuardType)                          \
     _(GuardClass)                         \
     _(GuardIsProxy)                       \
+    _(GuardIsCrossCompartmentWrapper)     \
     _(GuardNotDOMProxy)                   \
     _(GuardMagicValue)                    \
     _(GuardNoUnboxedExpando)              \
@@ -32,6 +33,7 @@ namespace jit {
     _(GuardAndGetIndexFromString)         \
     _(LoadProto)                          \
     _(LoadEnclosingEnvironment)           \
+    _(LoadWrapperTarget)                  \
     _(LoadDOMExpandoValue)                \
     _(LoadDOMExpandoValueIgnoreGeneration)\
     _(LoadUndefinedResult)                \
@@ -47,7 +49,8 @@ namespace jit {
     _(LoadDenseElementHoleResult)         \
     _(LoadDenseElementExistsResult)       \
     _(LoadUnboxedArrayElementResult)      \
-    _(LoadTypedElementResult)
+    _(LoadTypedElementResult)             \
+    _(WrapResult)
 
 
 
