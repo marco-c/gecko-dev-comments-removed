@@ -2936,7 +2936,8 @@ MacroAssembler::wasmEmitTrapOutOfLineCode()
             
             
             
-            loadWasmTlsRegFromFrame();
+            
+            
 
             
             
