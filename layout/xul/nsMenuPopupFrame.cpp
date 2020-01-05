@@ -534,6 +534,11 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
   if (mIsOpenChanged) {
     mIsOpenChanged = false;
 
+    
+    if (IsMenuList() && mCurrentMenu) {
+      EnsureMenuItemIsVisible(mCurrentMenu);
+    }
+
 #ifndef MOZ_WIDGET_GTK
     
     

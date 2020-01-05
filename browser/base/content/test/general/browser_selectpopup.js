@@ -64,31 +64,31 @@ const PAGECONTENT_TRANSLATED =
   "</iframe>" +
   "</div></body></html>";
 
-function openSelectPopup(selectPopup, withMouse, selector = "select")
+function openSelectPopup(selectPopup, withMouse, selector = "select",  win = window)
 {
   let popupShownPromise = BrowserTestUtils.waitForEvent(selectPopup, "popupshown");
 
   if (withMouse) {
     return Promise.all([popupShownPromise,
-                        BrowserTestUtils.synthesizeMouseAtCenter(selector, { }, gBrowser.selectedBrowser)]);
+                        BrowserTestUtils.synthesizeMouseAtCenter(selector, { }, win.gBrowser.selectedBrowser)]);
   }
 
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true, code: "ArrowDown" });
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true, code: "ArrowDown" }, win);
   return popupShownPromise;
 }
 
-function hideSelectPopup(selectPopup, mode = "enter")
+function hideSelectPopup(selectPopup, mode = "enter", win = window)
 {
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(selectPopup, "popuphidden");
 
   if (mode == "escape") {
-    EventUtils.synthesizeKey("KEY_Escape", { code: "Escape" });
+    EventUtils.synthesizeKey("KEY_Escape", { code: "Escape" }, win);
   }
   else if (mode == "enter") {
-    EventUtils.synthesizeKey("KEY_Enter", { code: "Enter" });
+    EventUtils.synthesizeKey("KEY_Enter", { code: "Enter" }, win);
   }
   else if (mode == "click") {
-    EventUtils.synthesizeMouseAtCenter(selectPopup.lastChild, { });
+    EventUtils.synthesizeMouseAtCenter(selectPopup.lastChild, { }, win);
   }
 
   return popupHiddenPromise;
@@ -402,13 +402,11 @@ add_task(function* test_event_order() {
   });
 });
 
+function* performLargePopupTests(win)
+{
+  let browser = win.gBrowser.selectedBrowser;
 
-
-add_task(function* test_large_popup() {
-  const pageUrl = "data:text/html," + escape(PAGECONTENT_SMALL);
-  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
-
-  yield ContentTask.spawn(tab.linkedBrowser, null, function*() {
+  yield ContentTask.spawn(browser, null, function*() {
     let doc = content.document;
     let select = doc.getElementById("one");
     for (var i = 0; i < 180; i++) {
@@ -419,8 +417,8 @@ add_task(function* test_large_popup() {
     select.focus();
   });
 
-  let selectPopup = document.getElementById("ContentSelectDropdown").menupopup;
-  let browserRect = tab.linkedBrowser.getBoundingClientRect();
+  let selectPopup = win.document.getElementById("ContentSelectDropdown").menupopup;
+  let browserRect = browser.getBoundingClientRect();
 
   let positions = [
     "margin-top: 300px;",
@@ -430,15 +428,15 @@ add_task(function* test_large_popup() {
 
   let position;
   while (true) {
-    yield openSelectPopup(selectPopup, false);
+    yield openSelectPopup(selectPopup, false, "select", win);
 
     let rect = selectPopup.getBoundingClientRect();
     ok(rect.top >= browserRect.top, "Popup top position in within browser area");
     ok(rect.bottom <= browserRect.bottom, "Popup bottom position in within browser area");
 
     
-    if (positions.length == 1) {
-      let cs = window.getComputedStyle(selectPopup);
+    if (positions.length > 0) {
+      let cs = win.getComputedStyle(selectPopup);
       let bpBottom = parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);
 
       is(selectPopup.childNodes[60].getBoundingClientRect().bottom,
@@ -446,22 +444,47 @@ add_task(function* test_large_popup() {
          "Popup scroll at correct position " + bpBottom);
     }
 
-    yield hideSelectPopup(selectPopup);
+    yield hideSelectPopup(selectPopup, "enter", win);
 
     position = positions.shift();
     if (!position) {
       break;
     }
 
-    let contentPainted = BrowserTestUtils.contentPainted(tab.linkedBrowser);
-    yield ContentTask.spawn(tab.linkedBrowser, position, function*(position) {
+    let contentPainted = BrowserTestUtils.contentPainted(browser);
+    yield ContentTask.spawn(browser, position, function*(position) {
       let select = content.document.getElementById("one");
       select.setAttribute("style", position);
     });
     yield contentPainted;
   }
+}
+
+
+
+add_task(function* test_large_popup() {
+  const pageUrl = "data:text/html," + escape(PAGECONTENT_SMALL);
+  let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, pageUrl);
+
+  yield* performLargePopupTests(window);
 
   yield BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(function* test_large_popup_in_small_window() {
+  let newwin = yield BrowserTestUtils.openNewBrowserWindow({ width: 400, height: 400 });
+
+  const pageUrl = "data:text/html," + escape(PAGECONTENT_SMALL);
+  let browserLoadedPromise = BrowserTestUtils.browserLoaded(newwin.gBrowser.selectedBrowser);
+  yield BrowserTestUtils.loadURI(newwin.gBrowser.selectedBrowser, pageUrl);
+  yield browserLoadedPromise;
+
+  newwin.gBrowser.selectedBrowser.focus();
+
+  yield* performLargePopupTests(newwin);
+
+  yield BrowserTestUtils.closeWindow(newwin);
 });
 
 
