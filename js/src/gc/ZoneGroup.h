@@ -29,13 +29,6 @@ typedef Vector<JS::Zone*, 4, SystemAllocPolicy> ZoneVector;
 
 
 
-
-
-
-
-
-
-
 class ZoneGroup
 {
   public:
@@ -46,7 +39,7 @@ class ZoneGroup
     UnprotectedData<CooperatingContext> ownerContext_;
 
     
-    ZoneGroupData<size_t> enterCount;
+    UnprotectedData<size_t> enterCount;
 
   public:
     CooperatingContext& ownerContext() { return ownerContext_.ref(); }
@@ -58,9 +51,12 @@ class ZoneGroup
 
     
   private:
-    ActiveThreadOrGCTaskData<ZoneVector> zones_;
+    ZoneGroupOrGCTaskData<ZoneVector> zones_;
   public:
     ZoneVector& zones() { return zones_.ref(); }
+
+    
+    mozilla::Atomic<bool> usedByHelperThread;
 
     explicit ZoneGroup(JSRuntime* runtime);
     ~ZoneGroup();
