@@ -265,6 +265,10 @@ bool UnsetRemoteExceptionHandler();
 #if defined(MOZ_WIDGET_ANDROID)
 
 
+void SetNotificationPipeForChild(int childCrashFd);
+
+
+
 
 
 
