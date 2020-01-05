@@ -5631,7 +5631,12 @@ function middleMousePaste(event) {
 function stripUnsafeProtocolOnPaste(pasteData) {
   
   
-  return pasteData.replace(/\r?\n/g, "").replace(/^(?:\s*javascript:)+/i, "");
+  let changed = false;
+  let pasteDataNoJS = pasteData.replace(/\r?\n/g, "")
+                               .replace(/^(?:\s*javascript:)+/i,
+                                        () => { changed = true;
+                                                return ""; });
+  return changed ? pasteDataNoJS : pasteData;
 }
 
 
