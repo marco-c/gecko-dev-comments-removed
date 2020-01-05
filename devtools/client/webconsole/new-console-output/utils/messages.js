@@ -15,7 +15,10 @@ const {
   MESSAGE_TYPE,
   MESSAGE_LEVEL,
 } = require("../constants");
-const { ConsoleMessage } = require("../types");
+const {
+  ConsoleMessage,
+  NetworkEventMessage,
+} = require("../types");
 
 function prepareMessage(packet, idGenerator) {
   
@@ -135,15 +138,14 @@ function transformPacket(packet) {
     case "networkEvent": {
       let { networkEvent } = packet;
 
-      
-      
-      return new ConsoleMessage({
-        source: MESSAGE_SOURCE.CONSOLE_API,
-        type: MESSAGE_TYPE.LOG,
-        level: MESSAGE_LEVEL.LOG,
-        messageText: networkEvent.request.method + " " + networkEvent.request.url,
+      return new NetworkEventMessage({
+        actor: networkEvent.actor,
+        isXHR: networkEvent.isXHR,
+        request: networkEvent.request,
+        response: networkEvent.response,
       });
     }
+
     case "evaluationResult":
     default: {
       let { result } = packet;
