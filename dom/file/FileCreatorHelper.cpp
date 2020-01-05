@@ -8,6 +8,7 @@
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/FileBinding.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/Promise.h"
@@ -53,6 +54,20 @@ FileCreatorHelper::CreateFile(nsIGlobalObject* aGlobalObject,
   }
 
   
+
+  ContentChild* cc = ContentChild::GetSingleton();
+  if (!cc) {
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return promise.forget();
+  }
+
+  if (!cc->GetRemoteType().EqualsLiteral(FILE_REMOTE_TYPE) &&
+      !Preferences::GetBool("dom.file.createInChild", false)) {
+    
+    
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return promise.forget();
+  }
 
   RefPtr<FileCreatorHelper> helper = new FileCreatorHelper(promise, window);
 
