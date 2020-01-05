@@ -638,6 +638,7 @@ static const ElementInfo kElements[eHTMLTag_userdefined] = {
   ELEM(del, true, true, GROUP_PHRASE | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
   ELEM(details, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
   ELEM(dfn, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+  ELEM(dialog, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
   ELEM(dir, true, false, GROUP_BLOCK, GROUP_LI),
   ELEM(div, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
   ELEM(dl, true, false, GROUP_BLOCK, GROUP_DL_CONTENT),
