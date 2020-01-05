@@ -191,7 +191,6 @@ class MochiRemote(MochitestDesktop):
         manifest = MochitestDesktop.addChromeToProfile(self, options)
 
         
-        
         if options.flavor == 'chrome':
             
             chrome = ("overlay chrome://browser/content/browser.xul "
