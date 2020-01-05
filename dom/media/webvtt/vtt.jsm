@@ -318,6 +318,10 @@ Cu.import('resource://gre/modules/Services.jsm');
 
       var m = input.match(/^([^<]*)(<[^>]+>?)?/);
       
+      if (!m[0]) {
+        return null;
+      }
+      
       
       return consume(m[1] ? m[1] : m[2]);
     }
