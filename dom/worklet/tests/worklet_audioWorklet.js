@@ -1,0 +1,3 @@
+
+registerProcessor("sure!", () => {});
+console.log("So far so good");

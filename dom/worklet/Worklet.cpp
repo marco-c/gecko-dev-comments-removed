@@ -352,7 +352,8 @@ WorkletGlobalScope*
 Worklet::GetOrCreateGlobalScope(JSContext* aCx)
 {
   if (!mScope) {
-    mScope = new WorkletGlobalScope(mWindow);
+    
+    mScope = new AudioWorkletGlobalScope(mWindow);
 
     JS::Rooted<JSObject*> global(aCx);
     NS_ENSURE_TRUE(mScope->WrapGlobalObject(aCx, mPrincipal, &global), nullptr);
