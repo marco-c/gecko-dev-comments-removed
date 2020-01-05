@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+module.exports = {
+  attachRefToHud: () => {},
+  emitNewMessage: () => {},
+  hudProxyClient: {},
+  onViewSourceInDebugger: () => {},
+  openNetworkPanel: () => {},
+  sourceMapService: {
+    subscribe: () => {},
+  },
+};
