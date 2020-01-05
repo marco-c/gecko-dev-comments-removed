@@ -16,7 +16,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
 #include "nsIEditor.h"                  
-#include "nsIEditorIMESupport.h"        
 #include "nsIObserver.h"                
 #include "nsIPhonetic.h"                
 #include "nsIPlaintextEditor.h"         
@@ -145,7 +144,7 @@ struct IMEState;
 
 
 
-class EditorBase : public nsIEditorIMESupport
+class EditorBase : public nsIEditor
                  , public nsSupportsWeakReference
                  , public nsIPhonetic
 {
@@ -196,9 +195,6 @@ public:
 
   
   NS_DECL_NSIEDITOR
-
-  
-  NS_DECL_NSIEDITORIMESUPPORT
 
   
   NS_DECL_NSIPHONETIC
