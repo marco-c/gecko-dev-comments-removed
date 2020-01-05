@@ -105,10 +105,6 @@ wr_dp_end(wrwindowstate* wrWindow, wrstate* wrState)
 WR_FUNC;
 
 WR_INLINE void
-wr_composite(wrwindowstate* wrWindow)
-WR_FUNC;
-
-WR_INLINE void
 wr_dp_push_rect(wrstate* wrState, WRRect bounds, WRRect clip,
                 float r, float g, float b, float a)
 WR_FUNC;
@@ -127,7 +123,8 @@ WR_FUNC;
 
 
 WR_INLINE const uint8_t*
-wr_readback_buffer(uint32_t width, uint32_t height, uint32_t* out_length, uint32_t* out_capacity)
+wr_readback_buffer(wrwindowstate* wrWindow, uint32_t width, uint32_t height,
+                   uint32_t* out_length, uint32_t* out_capacity)
 WR_FUNC;
 
 WR_INLINE void

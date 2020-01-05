@@ -134,6 +134,7 @@ WRScrollFrameStackingContextGenerator::~WRScrollFrameStackingContextGenerator()
 
 WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
   : mWidget(aWidget)
+  , mTarget(nullptr)
 {
 }
 
@@ -175,6 +176,7 @@ WebRenderLayerManager::GetMaxTextureSize() const
 bool
 WebRenderLayerManager::BeginTransactionWithTarget(gfxContext* aTarget)
 {
+  mTarget = aTarget;
   return BeginTransaction();
 }
 
@@ -214,7 +216,51 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
 
   WebRenderLayer::ToWebRenderLayer(mRoot)->RenderLayer();
 
-  WRBridge()->DPEnd();
+  if (mTarget) {
+    WRBridge()->DPSyncEnd();
+    MakeSnapshotIfRequired(size);
+  } else {
+    WRBridge()->DPEnd();
+  }
+}
+
+void
+WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
+{
+  if (!mTarget) {
+    return;
+  }
+
+  nsTArray<uint8_t> data;
+  WRBridge()->SendDPGetSnapshot(aSize.width, aSize.height, &data);
+
+  
+  RefPtr<DataSourceSurface> snapshot =
+                                   Factory::CreateWrappingDataSourceSurface(data.Elements(),
+                                                                            aSize.width * 4,
+                                                                            IntSize(aSize.width, aSize.height),
+                                                                            SurfaceFormat::B8G8R8A8);
+
+
+
+
+
+
+
+
+
+  IntRect bounds = ToOutsideIntRect(mTarget->GetClipExtents());
+  Rect dst(bounds.x, bounds.y, bounds.width, bounds.height);
+  Rect src(0, 0, bounds.width, bounds.height);
+
+  
+  SurfacePattern pattern(snapshot, ExtendMode::CLAMP,
+                         Matrix::Scaling(1.0, -1.0).PostTranslate(0.0, bounds.height));
+  DrawTarget* dt = mTarget->GetDrawTarget();
+  MOZ_RELEASE_ASSERT(dt);
+  dt->FillRect(dst, pattern);
+
+  mTarget = nullptr;
 }
 
 void

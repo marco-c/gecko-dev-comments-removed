@@ -133,6 +133,21 @@ private:
   void *mPaintedLayerCallbackData;
 
   RefPtr<WebRenderBridgeChild> mWRChild;
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ RefPtr<gfxContext> mTarget;
+
+ 
+
+
+
+ void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
 };
 
 } 
