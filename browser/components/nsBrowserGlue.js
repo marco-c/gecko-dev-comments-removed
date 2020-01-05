@@ -2350,15 +2350,33 @@ BrowserGlue.prototype = {
       const deviceName = Weave.Service.clientsEngine.getClientName(URIs[0].clientId);
       const bundle = Services.strings.createBundle("chrome://browser/locale/accounts.properties");
       if (URIs.length == 1) {
-        title = bundle.GetStringFromName("tabArrivingNotification.title");
-        const pageTitle = URIs[0].title || firstTab.linkedBrowser.contentTitle
-                          || URIs[0].uri;
-        body = bundle.formatStringFromName("tabArrivingNotification.body", [pageTitle, deviceName], 2);
+        
+        
+        
+        if (deviceName) {
+          title = bundle.formatStringFromName("tabArrivingNotificationWithDevice.title", [deviceName], 1);
+        } else {
+          title = bundle.GetStringFromName("tabArrivingNotification.title");
+        }
+        
+        
+        body = URIs[0].uri.replace(/[?#].*$/, "");
+        if (win.gURLBar) {
+          body = win.gURLBar.trimValue(body);
+        }
       } else {
         title = bundle.GetStringFromName("tabsArrivingNotification.title");
-        const tabArrivingBody = URIs.every(URI => URI.clientId == URIs[0].clientId) ?
-                                "unnamedTabsArrivingNotification.body" :
-                                "unnamedTabsArrivingNotificationMultiple.body";
+        const allSameDevice = URIs.every(URI => URI.clientId == URIs[0].clientId);
+        const unknownDevice = allSameDevice && !deviceName;
+        let tabArrivingBody;
+        if (unknownDevice) {
+          tabArrivingBody = "unnamedTabsArrivingNotificationNoDevice.body";
+        } else if (allSameDevice) {
+          tabArrivingBody = "unnamedTabsArrivingNotification2.body";
+        } else {
+          tabArrivingBody = "unnamedTabsArrivingNotificationMultiple2.body"
+        }
+
         body = bundle.GetStringFromName(tabArrivingBody);
         body = PluralForm.get(URIs.length, body);
         body = body.replace("#1", URIs.length);
