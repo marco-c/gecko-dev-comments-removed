@@ -699,8 +699,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
     mTextureClientAllocator = new D3D11RecycleAllocator(
       layers::ImageBridgeChild::GetSingleton().get(), mDevice);
 
-    if (ImageBridgeChild::GetSingleton() && gfxPrefs::PDMWMFUseSyncTexture() &&
-        mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
+    if (ImageBridgeChild::GetSingleton() && gfxPrefs::PDMWMFUseSyncTexture()) {
       
       
       
@@ -903,7 +902,7 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
   if (mutex) {
     hr = mutex->AcquireSync(0, 2000);
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-  } else if (mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
+  } else {
     NS_ENSURE_TRUE(mSyncObject, E_FAIL);
   }
 
@@ -940,10 +939,10 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
     hr = mTransform->Output(&sample);
   }
 
-  if (!mutex && mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
+  if (!mutex) {
     client->SyncWithObject(mSyncObject);
     mSyncObject->FinalizeFrame();
-  } else if (mutex) {
+  } else {
     mutex->ReleaseSync(0);
   }
 
