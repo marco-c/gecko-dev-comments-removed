@@ -263,10 +263,6 @@ public:
   bool ShouldReportError() const { return mShouldReportError; }
 
   
-  void SetFinalizeFrames(bool aFinalize) { mFinalizeFrames = aFinalize; }
-  bool GetFinalizeFrames() const { return mFinalizeFrames; }
-
-  
   bool GetDecodeDone() const
   {
     return mReachedTerminalState || mDecodeDone ||
@@ -550,7 +546,6 @@ private:
   bool mDecodeDone : 1;
   bool mError : 1;
   bool mShouldReportError : 1;
-  bool mFinalizeFrames : 1;
 };
 
 } 

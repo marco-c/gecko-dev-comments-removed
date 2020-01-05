@@ -12,6 +12,7 @@
 
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"
+#include "gfxPrefs.h"
 #include "gfxUtils.h"
 #include "gfxAlphaRecovery.h"
 
@@ -19,8 +20,6 @@
 #include "MainThreadUtils.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/gfx/Tools.h"
-#include "mozilla/gfx/gfxVars.h"
-#include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/layers/SourceSurfaceVolatileData.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
@@ -52,12 +51,6 @@ CreateLockedSurface(DataSourceSurface *aSurface,
                     const IntSize& size,
                     SurfaceFormat format)
 {
-  
-  if (aSurface->GetType() == SurfaceType::DATA_SHARED) {
-    RefPtr<DataSourceSurface> surf(aSurface);
-    return surf.forget();
-  }
-
   DataSourceSurface::ScopedMap* smap =
     new DataSourceSurface::ScopedMap(aSurface, DataSourceSurface::READ_WRITE);
   if (smap->IsMapped()) {
@@ -84,17 +77,11 @@ AllocateBufferForImage(const IntSize& size,
                        bool aIsAnimated = false)
 {
   int32_t stride = VolatileSurfaceStride(size, format);
-  if (!aIsAnimated && gfxVars::UseWebRender()) {
-    RefPtr<SourceSurfaceSharedData> newSurf = new SourceSurfaceSharedData();
-    if (newSurf->Init(size, stride, format)) {
-      return newSurf.forget();
-    }
-  } else {
-    RefPtr<SourceSurfaceVolatileData> newSurf= new SourceSurfaceVolatileData();
-    if (newSurf->Init(size, stride, format)) {
-      return newSurf.forget();
-    }
+  RefPtr<SourceSurfaceVolatileData> newSurf = new SourceSurfaceVolatileData();
+  if (newSurf->Init(size, stride, format)) {
+    return newSurf.forget();
   }
+
   return nullptr;
 }
 
@@ -119,19 +106,6 @@ ClearSurface(DataSourceSurface* aSurface, const IntSize& aSize, SurfaceFormat aF
   }
 
   return true;
-}
-
-void
-MarkSurfaceShared(SourceSurface* aSurface)
-{
-  
-  
-  
-  
-  if (aSurface && aSurface->GetType() == SurfaceType::DATA_SHARED) {
-    auto sharedSurface = static_cast<SourceSurfaceSharedData*>(aSurface);
-    sharedSurface->FinishedSharing();
-  }
 }
 
 
@@ -385,8 +359,6 @@ imgFrame::InitWithDrawable(gfxDrawable* aDrawable,
     
     
     mOptSurface = target->Snapshot();
-  } else {
-    FinalizeSurface();
   }
 
   
@@ -579,10 +551,6 @@ bool imgFrame::Draw(gfxContext* aContext, const ImageRegion& aRegion,
                                imageRect.Size(), region, surfaceResult.mFormat,
                                aSamplingFilter, aImageFlags, aOpacity);
   }
-
-  
-  
-  MarkSurfaceShared(surf);
   return true;
 }
 
@@ -613,8 +581,7 @@ imgFrame::Finish(Opacity aFrameOpacity ,
                  FrameTimeout aTimeout
                    ,
                  BlendMethod aBlendMethod ,
-                 const Maybe<IntRect>& aBlendRect ,
-                 bool aFinalize )
+                 const Maybe<IntRect>& aBlendRect )
 {
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
@@ -624,11 +591,6 @@ imgFrame::Finish(Opacity aFrameOpacity ,
   mBlendMethod = aBlendMethod;
   mBlendRect = aBlendRect;
   ImageUpdatedInternal(GetRect());
-
-  if (aFinalize) {
-    FinalizeSurfaceInternal();
-  }
-
   mFinished = true;
 
   
@@ -671,9 +633,6 @@ imgFrame::GetImageDataInternal(uint8_t** aData, uint32_t* aLength) const
   MOZ_ASSERT(mLockCount > 0, "Image data should be locked");
 
   if (mLockedSurface) {
-    
-    
-    
     *aData = mLockedSurface->GetData();
     MOZ_ASSERT(*aData,
       "mLockedSurface is non-null, but GetData is null in GetImageData");
@@ -792,27 +751,6 @@ imgFrame::SetOptimizable()
   AssertImageDataLocked();
   MonitorAutoLock lock(mMonitor);
   mOptimizable = true;
-}
-
-void
-imgFrame::FinalizeSurface()
-{
-  MonitorAutoLock lock(mMonitor);
-  FinalizeSurfaceInternal();
-}
-
-void
-imgFrame::FinalizeSurfaceInternal()
-{
-  mMonitor.AssertCurrentThreadOwns();
-
-  
-  if (!mRawSurface || mRawSurface->GetType() != SurfaceType::DATA_SHARED) {
-    return;
-  }
-
-  auto sharedSurf = static_cast<SourceSurfaceSharedData*>(mRawSurface.get());
-  sharedSurf->Finalize();
 }
 
 already_AddRefed<SourceSurface>
