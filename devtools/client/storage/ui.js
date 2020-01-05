@@ -645,7 +645,17 @@ StorageUI.prototype = {
 
 
 
-  parseItemValue: function (name, value) {
+  parseItemValue: function (name, originalValue) {
+    
+    let decodedValue = "";
+    try {
+      decodedValue = decodeURIComponent(originalValue);
+    } catch (e) {
+      
+    }
+    let value = (decodedValue && decodedValue !== originalValue)
+      ? decodedValue : originalValue;
+
     let json = null;
     try {
       json = JSOL.parse(value);
