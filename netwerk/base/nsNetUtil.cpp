@@ -2311,7 +2311,7 @@ NS_ShouldSecureUpgrade(nsIURI* aURI,
     bool isStsHost = false;
     uint32_t flags = aPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
     rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, flags,
-                          &isStsHost);
+                          nullptr, &isStsHost);
 
     
     

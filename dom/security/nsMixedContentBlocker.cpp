@@ -55,6 +55,11 @@ bool nsMixedContentBlocker::sBlockMixedScript = false;
 bool nsMixedContentBlocker::sBlockMixedDisplay = false;
 
 
+bool nsMixedContentBlocker::sUseHSTS = false;
+
+bool nsMixedContentBlocker::sSendHSTSPriming = false;
+
+
 
 
 class nsMixedContentEvent : public Runnable
@@ -195,6 +200,14 @@ nsMixedContentBlocker::nsMixedContentBlocker()
   
   Preferences::AddBoolVarCache(&sBlockMixedDisplay,
                                "security.mixed_content.block_display_content");
+
+  
+  Preferences::AddBoolVarCache(&sUseHSTS,
+                               "security.mixed_content.use_hsts");
+
+  
+  Preferences::AddBoolVarCache(&sSendHSTSPriming,
+                               "security.mixed_content.send_hsts_priming");
 }
 
 nsMixedContentBlocker::~nsMixedContentBlocker()
@@ -237,8 +250,6 @@ LogMixedContentMessage(MixedContentTypes aClassification,
                                   nsContentUtils::eSECURITY_PROPERTIES,
                                   messageLookupKey.get(), strings, ArrayLength(strings));
 }
-
-
 
 
 
@@ -309,16 +320,34 @@ nsMixedContentBlocker::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  nsCOMPtr<nsISupports> requestingContext = loadInfo->LoadingNode();
+
   int16_t decision = REJECT_REQUEST;
   rv = ShouldLoad(contentPolicyType,
                   newUri,
                   requestingLocation,
-                  loadInfo->LoadingNode(),
+                  requestingContext,
                   EmptyCString(),       
                   nullptr,              
                   requestingPrincipal,
                   &decision);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  if (nsMixedContentBlocker::sSendHSTSPriming) {
+    
+    
+    
+    nsCOMPtr<nsILoadInfo> newLoadInfo;
+    rv = aNewChannel->GetLoadInfo(getter_AddRefs(newLoadInfo));
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = nsMixedContentBlocker::MarkLoadInfoForPriming(newUri,
+                                                       requestingContext,
+                                                       newLoadInfo);
+    if (NS_FAILED(rv)) {
+      decision = REJECT_REQUEST;
+      newLoadInfo->ClearHSTSPriming();
+    }
+  }
 
   
   if (!NS_CP_ACCEPTED(decision)) {
@@ -463,7 +492,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       *aDecision = ACCEPT;
       return NS_OK;
 
-
     
     
     case TYPE_IMAGE:
@@ -497,7 +525,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     
     default:
       MOZ_ASSERT(false, "Mixed content of unknown type");
-      break;
   }
 
   
@@ -677,7 +704,9 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   bool isHttpScheme = false;
   rv = innerContentLocation->SchemeIs("http", &isHttpScheme);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (isHttpScheme && docShell->GetDocument()->GetUpgradeInsecureRequests(isPreload)) {
+  nsIDocument* document = docShell->GetDocument();
+  MOZ_ASSERT(document, "Expected a document");
+  if (isHttpScheme && document->GetUpgradeInsecureRequests(isPreload)) {
     *aDecision = ACCEPT;
     return NS_OK;
   }
@@ -688,7 +717,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  if (docShell->GetDocument()->GetBlockAllMixedContent(isPreload)) {
+  if (document->GetBlockAllMixedContent(isPreload)) {
     
     nsAutoCString spec;
     rv = aContentLocation->GetSpec(spec);
@@ -703,7 +732,7 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
                         0, 
                         0, 
                         nsIScriptError::errorFlag, "CSP",
-                        docShell->GetDocument()->InnerWindowID());
+                        document->InnerWindowID());
     *aDecision = REJECT_REQUEST;
     return NS_OK;
   }
@@ -796,6 +825,34 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
   nsresult stateRV = securityUI->GetState(&state);
 
+  bool doHSTSPriming = false;
+  if (isHttpScheme) {
+    bool hsts = false;
+    bool cached = false;
+    nsCOMPtr<nsISiteSecurityService> sss =
+      do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aContentLocation,
+        0, &cached, &hsts);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    if (hsts && sUseHSTS) {
+      
+      *aDecision = ACCEPT;
+      return NS_OK;
+    }
+
+    
+    
+    if (!cached && sSendHSTSPriming) {
+      
+      doHSTSPriming = true;
+      document->AddHSTSPrimingLocation(innerContentLocation,
+          HSTSPrimingState::eHSTS_PRIMING_ALLOW);
+      *aDecision = ACCEPT;
+    }
+  }
+
   
   
   
@@ -811,14 +868,14 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   bool active = (classification == eMixedScript);
   if (!aHadInsecureImageRedirect) {
     if (XRE_IsParentProcess()) {
-      AccumulateMixedContentHSTS(innerContentLocation, active);
+      AccumulateMixedContentHSTS(innerContentLocation, active, doHSTSPriming);
     } else {
       
       mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
       if (cc) {
         mozilla::ipc::URIParams uri;
         SerializeURI(innerContentLocation, uri);
-        cc->SendAccumulateMixedContentHSTS(uri, active);
+        cc->SendAccumulateMixedContentHSTS(uri, active, doHSTSPriming);
       }
     }
   }
@@ -861,7 +918,13 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
         }
       }
     } else {
-      *aDecision = nsIContentPolicy::REJECT_REQUEST;
+      if (doHSTSPriming) {
+        document->AddHSTSPrimingLocation(innerContentLocation,
+            HSTSPrimingState::eHSTS_PRIMING_BLOCK);
+        *aDecision = nsIContentPolicy::ACCEPT;
+      } else {
+        *aDecision = nsIContentPolicy::REJECT_REQUEST;
+      }
       LogMixedContentMessage(classification, aContentLocation, rootDoc, eBlocked);
       if (!rootDoc->GetHasMixedDisplayContentBlocked() && NS_SUCCEEDED(stateRV)) {
         rootDoc->SetHasMixedDisplayContentBlocked(true);
@@ -907,7 +970,13 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       }
     } else {
       
-      *aDecision = nsIContentPolicy::REJECT_REQUEST;
+      if (doHSTSPriming) {
+        document->AddHSTSPrimingLocation(innerContentLocation,
+            HSTSPrimingState::eHSTS_PRIMING_BLOCK);
+        *aDecision = nsIContentPolicy::ACCEPT;
+      } else {
+        *aDecision = nsIContentPolicy::REJECT_REQUEST;
+      }
       LogMixedContentMessage(classification, aContentLocation, rootDoc, eBlocked);
       
       if (rootDoc->GetHasMixedActiveContentBlocked()) {
@@ -922,7 +991,6 @@ nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
       }
       return NS_OK;
     }
-
   } else {
     
 
@@ -975,8 +1043,22 @@ enum MixedContentHSTSState {
 
 
 
+
+
+
+enum MixedContentHSTSPrimingState {
+  eMCB_HSTS_PASSIVE_WITH_HSTS  = 0,
+  eMCB_HSTS_ACTIVE_WITH_HSTS   = 1,
+  eMCB_HSTS_PASSIVE_NO_PRIMING = 2,
+  eMCB_HSTS_PASSIVE_DO_PRIMING = 3,
+  eMCB_HSTS_ACTIVE_NO_PRIMING  = 4,
+  eMCB_HSTS_ACTIVE_DO_PRIMING  = 5
+};
+
+
+
 void
-nsMixedContentBlocker::AccumulateMixedContentHSTS(nsIURI* aURI, bool aActive)
+nsMixedContentBlocker::AccumulateMixedContentHSTS(nsIURI* aURI, bool aActive, bool aHasHSTSPriming)
 {
   
   
@@ -991,28 +1073,113 @@ nsMixedContentBlocker::AccumulateMixedContentHSTS(nsIURI* aURI, bool aActive)
   if (NS_FAILED(rv)) {
     return;
   }
-  rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, 0, &hsts);
+  rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI, 0, nullptr, &hsts);
   if (NS_FAILED(rv)) {
     return;
   }
 
+  
+  
+  
   if (!aActive) {
     if (!hsts) {
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_PASSIVE_NO_HSTS);
+      if (aHasHSTSPriming) {
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+                              eMCB_HSTS_PASSIVE_DO_PRIMING);
+      } else {
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+                              eMCB_HSTS_PASSIVE_NO_PRIMING);
+      }
     }
     else {
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_PASSIVE_WITH_HSTS);
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+                            eMCB_HSTS_PASSIVE_WITH_HSTS);
     }
   } else {
     if (!hsts) {
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_ACTIVE_NO_HSTS);
+      if (aHasHSTSPriming) {
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+                              eMCB_HSTS_ACTIVE_DO_PRIMING);
+      } else {
+        Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+                              eMCB_HSTS_ACTIVE_NO_PRIMING);
+      }
     }
     else {
       Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS,
                             MCB_HSTS_ACTIVE_WITH_HSTS);
+      Telemetry::Accumulate(Telemetry::MIXED_CONTENT_HSTS_PRIMING,
+                            eMCB_HSTS_ACTIVE_WITH_HSTS);
     }
   }
+}
+
+
+nsresult
+nsMixedContentBlocker::MarkLoadInfoForPriming(nsIURI* aURI,
+                                              nsISupports* aRequestingContext,
+                                              nsILoadInfo* aLoadInfo)
+{
+  nsresult rv;
+  bool sendPriming = false;
+  bool mixedContentWouldBlock = false;
+  rv = GetHSTSPrimingFromRequestingContext(aURI,
+                                           aRequestingContext,
+                                           &sendPriming,
+                                           &mixedContentWouldBlock);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (sendPriming) {
+    aLoadInfo->SetHSTSPriming(mixedContentWouldBlock);
+  }
+
+  return NS_OK;
+}
+
+
+nsresult
+nsMixedContentBlocker::GetHSTSPrimingFromRequestingContext(nsIURI* aURI,
+    nsISupports* aRequestingContext,
+    bool* aSendPrimingRequest,
+    bool* aMixedContentWouldBlock)
+{
+  *aSendPrimingRequest = false;
+  *aMixedContentWouldBlock = false;
+  
+  nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
+  if (!innerURI) {
+    NS_ERROR("Can't get innerURI from aContentLocation");
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
+  bool isHttp = false;
+  innerURI->SchemeIs("http", &isHttp);
+  if (!isHttp) {
+    
+    return NS_OK;
+  }
+
+  
+  nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(aRequestingContext);
+  if (!docShell) {
+    return NS_OK;
+  }
+  nsCOMPtr<nsIDocument> document = docShell->GetDocument();
+  if (!document) {
+    return NS_OK;
+  }
+
+  HSTSPrimingState status = document->GetHSTSPrimingStateForLocation(innerURI);
+  if (status != HSTSPrimingState::eNO_HSTS_PRIMING) {
+    *aSendPrimingRequest = (status != HSTSPrimingState::eNO_HSTS_PRIMING);
+    *aMixedContentWouldBlock = (status == HSTSPrimingState::eHSTS_PRIMING_BLOCK);
+  }
+
+  return NS_OK;
 }

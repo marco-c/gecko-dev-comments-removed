@@ -4986,10 +4986,10 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
             do_GetService(NS_SSSERVICE_CONTRACTID, &rv);
           NS_ENSURE_SUCCESS(rv, rv);
           rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HSTS, aURI,
-                                flags, &isStsHost);
+                                flags, nullptr, &isStsHost);
           NS_ENSURE_SUCCESS(rv, rv);
           rv = sss->IsSecureURI(nsISiteSecurityService::HEADER_HPKP, aURI,
-                                flags, &isPinnedHost);
+                                flags, nullptr, &isPinnedHost);
           NS_ENSURE_SUCCESS(rv, rv);
         } else {
           mozilla::dom::ContentChild* cc =
@@ -9860,6 +9860,25 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     }
 
     return NS_ERROR_CONTENT_BLOCKED;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(context);
+  NS_ENSURE_TRUE(docShell, NS_OK);
+  if (docShell) {
+    nsIDocument* document = docShell->GetDocument();
+    NS_ENSURE_TRUE(document, NS_OK);
+
+    HSTSPrimingState state = document->GetHSTSPrimingStateForLocation(aURI);
+    if (state == HSTSPrimingState::eHSTS_PRIMING_BLOCK) {
+      
+      
+      
+      document->ClearHSTSPrimingLocation(aURI);
+      return NS_ERROR_CONTENT_BLOCKED;
+    }
   }
 
   nsCOMPtr<nsIPrincipal> principalToInherit = aPrincipalToInherit;

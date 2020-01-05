@@ -391,7 +391,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
-pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight");
 
 pref("media.decoder-doctor.verbose", false);
 
@@ -5555,4 +5555,18 @@ pref("media.block-autoplay-until-in-foreground", true);
 #ifdef MOZ_STYLO
 
 pref("layout.css.servo.enabled", true);
+#endif
+
+
+
+
+pref("security.mixed_content.send_hsts_priming", true);
+#ifdef RELEASE_BUILD
+
+
+pref("security.mixed_content.use_hsts", false);
+#else
+
+
+pref("security.mixed_content.use_hsts", true);
 #endif
