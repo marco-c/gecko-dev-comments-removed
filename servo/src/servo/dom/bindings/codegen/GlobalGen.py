@@ -5,6 +5,9 @@
 
 
 
+import sys
+sys.path.append("./parser/")
+sys.path.append("./ply/")
 import os
 import cStringIO
 import WebIDL
