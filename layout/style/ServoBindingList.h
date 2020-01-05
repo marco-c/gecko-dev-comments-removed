@@ -235,6 +235,21 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_SetTextDecorationColorOverride, void,
                    RawServoDeclarationBlockBorrowed declarations)
 
 
+SERVO_BINDING_FUNC(Servo_MediaList_GetText, void,
+                   RawServoMediaListBorrowed list, nsAString* result)
+SERVO_BINDING_FUNC(Servo_MediaList_SetText, void,
+                   RawServoMediaListBorrowed list, const nsACString* text)
+SERVO_BINDING_FUNC(Servo_MediaList_GetLength, uint32_t,
+                   RawServoMediaListBorrowed list)
+SERVO_BINDING_FUNC(Servo_MediaList_GetMediumAt, bool,
+                   RawServoMediaListBorrowed list, uint32_t index,
+                   nsAString* result)
+SERVO_BINDING_FUNC(Servo_MediaList_AppendMedium, void,
+                   RawServoMediaListBorrowed list, const nsACString* new_medium)
+SERVO_BINDING_FUNC(Servo_MediaList_DeleteMedium, bool,
+                   RawServoMediaListBorrowed list, const nsACString* old_medium)
+
+
 SERVO_BINDING_FUNC(Servo_CSSSupports2, bool,
                    const nsACString* name, const nsACString* value)
 SERVO_BINDING_FUNC(Servo_CSSSupports, bool,
