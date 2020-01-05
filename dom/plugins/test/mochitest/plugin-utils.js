@@ -93,32 +93,3 @@ function crashAndGetCrashServiceRecord(crashMethodName, callback) {
     SimpleTest.finish();
   });
 }
-
-
-
-
-function promiseFullScreenChange(){
-  return new Promise(resolve => {
-    document.addEventListener("fullscreenchange", function onFullScreen(e) {
-      document.removeEventListener("fullscreenchange", onFullScreen);
-      resolve();
-    });
-  });
-}
-
-
-
-
-
-
-function crashPlugin(plugin) {
-  return new Promise( (resolve, reject) => {
-    try {
-      plugin.crash();
-      reject();
-    }
-    catch (e) {
-      resolve();
-    }
-  });
-}
