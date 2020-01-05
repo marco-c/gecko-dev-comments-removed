@@ -11,13 +11,12 @@ class QuartzNativeFont/& {
         fail;
     }
 
-    // FIXME: What unit is this returning? Let's have a custom type
+    
     fn glyph_h_advance(_glyph: GlyphIndex) -> option<int> {
         fail;
     }
 }
 
-#[cfg(target_os = "linux")]
-fn with_test_native_font(f: fn@(nf: &NativeFont)) {
+fn with_test_native_font(_f: fn@(nf: &NativeFont)) {
     fail
 }
