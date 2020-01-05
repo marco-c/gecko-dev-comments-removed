@@ -332,3 +332,25 @@ function isOMTAEnabled() {
   return SpecialPowers.DOMWindowUtils.layerManagerRemote &&
          SpecialPowers.getBoolPref(OMTAPrefKey);
 }
+
+
+
+
+
+
+
+
+
+function addSVGElement(target, tag, attrs) {
+  if (!target) {
+    return null;
+  }
+  var element = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  if (attrs) {
+    for (var attrName in attrs) {
+      element.setAttributeNS(null, attrName, attrs[attrName]);
+    }
+  }
+  target.appendChild(element);
+  return element;
+}
