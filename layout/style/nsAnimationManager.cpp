@@ -409,72 +409,6 @@ UpdateOldAnimationPropertiesWithNew(
 }
 
 void
-nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
-                                     mozilla::dom::Element* aElement)
-{
-  MOZ_ASSERT(mPresContext->IsDynamic(),
-             "Should not update animations for print or print preview");
-  MOZ_ASSERT(aElement->IsInComposedDoc(),
-             "Should not update animations that are not attached to the "
-             "document tree");
-
-  NonOwningAnimationTarget target(aElement, aStyleContext->GetPseudoType());
-
-  
-  
-  
-  
-
-  const nsStyleDisplay* disp = aStyleContext->StyleDisplay();
-  CSSAnimationCollection* collection =
-    CSSAnimationCollection::GetAnimationCollection(target.mElement,
-                                                   target.mPseudoType);
-  if (!collection &&
-      disp->mAnimationNameCount == 1 &&
-      disp->mAnimations[0].GetName().IsEmpty()) {
-    return;
-  }
-
-  nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
-
-  
-  
-  OwningCSSAnimationPtrArray newAnimations;
-  if (!aStyleContext->IsInDisplayNoneSubtree()) {
-    BuildAnimations(aStyleContext, target, collection, newAnimations);
-  }
-
-  if (newAnimations.IsEmpty()) {
-    if (collection) {
-      collection->Destroy();
-    }
-    return;
-  }
-
-  if (!collection) {
-    bool createdCollection = false;
-    collection =
-      CSSAnimationCollection::GetOrCreateAnimationCollection(
-        target.mElement, target.mPseudoType, &createdCollection);
-    if (!collection) {
-      MOZ_ASSERT(!createdCollection, "outparam should agree with return value");
-      NS_WARNING("allocating collection failed");
-      return;
-    }
-
-    if (createdCollection) {
-      AddElementCollection(collection);
-    }
-  }
-  collection->mAnimations.SwapElements(newAnimations);
-
-  
-  for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {
-    newAnimations[newAnimIdx]->CancelFromStyle();
-  }
-}
-
-void
 nsAnimationManager::StopAnimationsForElement(
   mozilla::dom::Element* aElement,
   mozilla::CSSPseudoElementType aPseudoType)
@@ -1075,13 +1009,13 @@ CSSAnimationBuilder::GetComputedValue(nsPresContext* aPresContext,
   return result;
 }
 
-void
-nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
-                                    const NonOwningAnimationTarget& aTarget,
-                                    CSSAnimationCollection* aCollection,
-                                    OwningCSSAnimationPtrArray& aAnimations)
+static nsAnimationManager::OwningCSSAnimationPtrArray
+BuildAnimations(nsPresContext* aPresContext,
+                nsStyleContext* aStyleContext,
+                const NonOwningAnimationTarget& aTarget,
+                nsAnimationManager::CSSAnimationCollection* aCollection)
 {
-  MOZ_ASSERT(aAnimations.IsEmpty(), "expect empty array");
+  nsAnimationManager::OwningCSSAnimationPtrArray result;
 
   const nsStyleDisplay *disp = aStyleContext->StyleDisplay();
 
@@ -1099,7 +1033,7 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
       continue;
     }
 
-    RefPtr<CSSAnimation> dest = BuildAnimation(mPresContext,
+    RefPtr<CSSAnimation> dest = BuildAnimation(aPresContext,
                                                aStyleContext,
                                                aTarget,
                                                src,
@@ -1110,7 +1044,77 @@ nsAnimationManager::BuildAnimations(nsStyleContext* aStyleContext,
     }
 
     dest->SetAnimationIndex(static_cast<uint64_t>(animIdx));
-    aAnimations.AppendElement(dest);
+    result.AppendElement(dest);
+  }
+  return result;
+}
+
+void
+nsAnimationManager::UpdateAnimations(nsStyleContext* aStyleContext,
+                                     mozilla::dom::Element* aElement)
+{
+  MOZ_ASSERT(mPresContext->IsDynamic(),
+             "Should not update animations for print or print preview");
+  MOZ_ASSERT(aElement->IsInComposedDoc(),
+             "Should not update animations that are not attached to the "
+             "document tree");
+
+  NonOwningAnimationTarget target(aElement, aStyleContext->GetPseudoType());
+
+  
+  
+  
+  
+
+  const nsStyleDisplay* disp = aStyleContext->StyleDisplay();
+  CSSAnimationCollection* collection =
+    CSSAnimationCollection::GetAnimationCollection(target.mElement,
+                                                   target.mPseudoType);
+  if (!collection &&
+      disp->mAnimationNameCount == 1 &&
+      disp->mAnimations[0].GetName().IsEmpty()) {
+    return;
+  }
+
+  nsAutoAnimationMutationBatch mb(aElement->OwnerDoc());
+
+  
+  
+  OwningCSSAnimationPtrArray newAnimations;
+  if (!aStyleContext->IsInDisplayNoneSubtree()) {
+    newAnimations = BuildAnimations(mPresContext,
+                                    aStyleContext,
+                                    target,
+                                    collection);
+  }
+
+  if (newAnimations.IsEmpty()) {
+    if (collection) {
+      collection->Destroy();
+    }
+    return;
+  }
+
+  if (!collection) {
+    bool createdCollection = false;
+    collection =
+      CSSAnimationCollection::GetOrCreateAnimationCollection(
+        target.mElement, target.mPseudoType, &createdCollection);
+    if (!collection) {
+      MOZ_ASSERT(!createdCollection, "outparam should agree with return value");
+      NS_WARNING("allocating collection failed");
+      return;
+    }
+
+    if (createdCollection) {
+      AddElementCollection(collection);
+    }
+  }
+  collection->mAnimations.SwapElements(newAnimations);
+
+  
+  for (size_t newAnimIdx = newAnimations.Length(); newAnimIdx-- != 0; ) {
+    newAnimations[newAnimIdx]->CancelFromStyle();
   }
 }
 
