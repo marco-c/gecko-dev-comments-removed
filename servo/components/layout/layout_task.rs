@@ -9,7 +9,7 @@
 
 use animation;
 use construct::ConstructionResult;
-use context::{SharedLayoutContext, SharedLayoutContextWrapper, heap_size_of_local_context};
+use context::{SharedLayoutContext, heap_size_of_local_context};
 use css::node_style::StyledNode;
 use data::LayoutDataWrapper;
 use display_list_builder::ToGfxColor;
@@ -108,7 +108,7 @@ pub struct LayoutTaskData {
     pub stylist: Box<Stylist>,
 
     
-    pub parallel_traversal: Option<WorkQueue<SharedLayoutContextWrapper, WorkQueueData>>,
+    pub parallel_traversal: Option<WorkQueue<SharedLayoutContext, WorkQueueData>>,
 
     
     pub dirty: Rect<Au>,
