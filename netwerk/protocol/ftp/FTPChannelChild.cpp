@@ -202,7 +202,7 @@ FTPChannelChild::AsyncOpen(::nsIStreamListener* listener, nsISupports* aContext)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  EnsureDispatcher();
+  EnsureNeckoTarget();
 
   gNeckoChild->
     SendPFTPChannelConstructor(this, tabChild, IPC::SerializedLoadContext(this),
@@ -547,7 +547,8 @@ class nsFtpChildAsyncAlert : public Runnable
 {
 public:
   nsFtpChildAsyncAlert(nsIPrompt *aPrompter, nsString aResponseMsg)
-    : mPrompter(aPrompter)
+    : Runnable("nsFtpChildAsyncAlert")
+    , mPrompter(aPrompter)
     , mResponseMsg(aResponseMsg)
   {
   }
@@ -643,10 +644,9 @@ FTPChannelChild::DoOnStopRequest(const nsresult& aChannelStatus,
                              NS_ConvertASCIItoUTF16(aErrorMsg));
         }
 
-        if (mDispatcher) {
-          mDispatcher->Dispatch("FTPAlertEvent",
-                                TaskCategory::Other,
-                                alertEvent.forget());
+        if (mNeckoTarget) {
+          mNeckoTarget->Dispatch(alertEvent.forget(),
+                                 nsIEventTarget::DISPATCH_NORMAL);
         } else {
           
           SystemGroup::Dispatch("FTPAlertEvent",
@@ -886,7 +886,7 @@ FTPChannelChild::ConnectParent(uint32_t id)
   }
 
   
-  EnsureDispatcher();
+  EnsureNeckoTarget();
 
   
   
@@ -993,25 +993,21 @@ FTPChannelChild::GetDivertingToParent(bool* aDiverting)
 }
 
 void
-FTPChannelChild::EnsureDispatcher()
+FTPChannelChild::EnsureNeckoTarget()
 {
-  if (mDispatcher) {
+  if (mNeckoTarget) {
     return;
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo;
   GetLoadInfo(getter_AddRefs(loadInfo));
 
-  mDispatcher = nsContentUtils::GetDispatcherByLoadInfo(loadInfo);
-  if (!mDispatcher) {
+  mNeckoTarget = nsContentUtils::GetEventTargetByLoadInfo(loadInfo, TaskCategory::Network);
+  if (!mNeckoTarget) {
     return;
   }
 
-  nsCOMPtr<nsIEventTarget> target =
-    mDispatcher->EventTargetFor(TaskCategory::Network);
-  gNeckoChild->SetEventTargetForActor(this, target);
-
-  mNeckoTarget = target;
+  gNeckoChild->SetEventTargetForActor(this, mNeckoTarget);
 }
 
 already_AddRefed<nsIEventTarget>

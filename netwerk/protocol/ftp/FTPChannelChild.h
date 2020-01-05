@@ -23,9 +23,9 @@
 #include "nsIStreamListener.h"
 #include "PrivateBrowsingChannel.h"
 
-namespace mozilla {
+class nsIEventTarget;
 
-class Dispatcher;
+namespace mozilla {
 
 namespace net {
 
@@ -162,9 +162,7 @@ private:
   
   nsCOMPtr<nsIEventTarget> mNeckoTarget;
 
-  RefPtr<Dispatcher> mDispatcher;
-
-  void EnsureDispatcher();
+  void EnsureNeckoTarget();
 };
 
 inline bool

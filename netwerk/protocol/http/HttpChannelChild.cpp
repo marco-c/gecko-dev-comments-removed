@@ -2231,24 +2231,13 @@ HttpChannelChild::SetEventTarget()
   nsCOMPtr<nsILoadInfo> loadInfo;
   GetLoadInfo(getter_AddRefs(loadInfo));
 
-  RefPtr<Dispatcher> dispatcher =
-    nsContentUtils::GetDispatcherByLoadInfo(loadInfo);
+  nsCOMPtr<nsIEventTarget> target =
+    nsContentUtils::GetEventTargetByLoadInfo(loadInfo, TaskCategory::Network);
 
-  if (!dispatcher) {
+  if (!target) {
     return;
   }
 
-#ifdef DEBUG
-  if (dispatcher->AsTabGroup()) {
-    
-    bool isMainDocumentChannel;
-    GetIsMainDocumentChannel(&isMainDocumentChannel);
-    MOZ_ASSERT(isMainDocumentChannel);
-  }
-#endif
-
-  nsCOMPtr<nsIEventTarget> target =
-    dispatcher->EventTargetFor(TaskCategory::Network);
   gNeckoChild->SetEventTargetForActor(this, target);
 
   {
