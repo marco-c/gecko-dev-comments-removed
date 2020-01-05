@@ -59,7 +59,7 @@ use table_wrapper::TableWrapperFlow;
 use util::geometry::ZERO_RECT;
 use util::logical_geometry::{LogicalRect, LogicalSize, WritingMode};
 use util::print_tree::PrintTree;
-use wrapper::{PseudoElementType, ServoThreadSafeLayoutNode, ThreadSafeLayoutNode};
+use wrapper::{PseudoElementType, ThreadSafeLayoutNode};
 
 
 
@@ -435,7 +435,7 @@ pub trait ImmutableFlowUtils {
     fn need_anonymous_flow(self, child: &Flow) -> bool;
 
     
-    fn generate_missing_child_flow(self, node: &ServoThreadSafeLayoutNode) -> FlowRef;
+    fn generate_missing_child_flow<'ln, N: ThreadSafeLayoutNode<'ln>>(self, node: &N) -> FlowRef;
 
     
     fn contains_roots_of_absolute_flow_tree(&self) -> bool;
@@ -1212,7 +1212,7 @@ impl<'a> ImmutableFlowUtils for &'a Flow {
     
     
     
-    fn generate_missing_child_flow(self, node: &ServoThreadSafeLayoutNode) -> FlowRef {
+    fn generate_missing_child_flow<'ln, N: ThreadSafeLayoutNode<'ln>>(self, node: &N) -> FlowRef {
         let mut style = node.style().clone();
         match self.class() {
             FlowClass::Table | FlowClass::TableRowGroup => {
