@@ -1716,7 +1716,11 @@ nsSocketTransport::RecoverFromError()
 
     
     
-    if (!mFDFastOpenInProgress &&
+    
+    if ((!mFDFastOpenInProgress ||
+         ((mCondition != NS_ERROR_CONNECTION_REFUSED) &&
+          (mCondition != NS_ERROR_NET_TIMEOUT) &&
+          (mCondition != NS_ERROR_PROXY_CONNECTION_REFUSED))) &&
         mState == STATE_CONNECTING && mDNSRecord) {
         mDNSRecord->ReportUnusable(SocketPort());
     }
@@ -1867,15 +1871,13 @@ nsSocketTransport::OnSocketConnected()
     
     mNetAddrIsSet = true;
 
-    
-    MOZ_ASSERT(mFastOpenCallback || !mFastOpenCallback);
     if (mFDFastOpenInProgress && mFastOpenCallback) {
         
         
         
         mFastOpenCallback->SetFastOpenConnected(NS_OK);
-        mFastOpenCallback = nullptr;
     }
+    mFastOpenCallback = nullptr;
 
     
     
@@ -2320,6 +2322,18 @@ nsSocketTransport::OnSocketDetached(PRFileDesc *fd)
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!(mFDFastOpenInProgress && mFastOpenCallback));
+
+    
+    
+    
     nsCOMPtr<nsISSLSocketControl> secCtrl = do_QueryInterface(mSecInfo);
     if (secCtrl)
         secCtrl->SetNotificationCallbacks(nullptr);
@@ -2489,10 +2503,11 @@ nsSocketTransport::Close(nsresult reason)
     if (NS_SUCCEEDED(reason))
         reason = NS_BASE_STREAM_CLOSED;
 
-    if (mFastOpenCallback) {
+    if (mFDFastOpenInProgress && mFastOpenCallback) {
         mFastOpenCallback->SetFastOpenConnected(reason);
-        mFastOpenCallback = nullptr;
     }
+    mFastOpenCallback = nullptr;
+
     mInput.CloseWithStatus(reason);
     mOutput.CloseWithStatus(reason);
     return NS_OK;
