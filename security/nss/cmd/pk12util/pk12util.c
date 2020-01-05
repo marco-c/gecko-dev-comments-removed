@@ -1058,7 +1058,7 @@ main(int argc, char **argv)
             certCipher = PKCS12U_MapCipherFromString(cipherString, certKeyLen);
             
 
-            if (cipher == SEC_OID_UNKNOWN) {
+            if (certCipher == SEC_OID_UNKNOWN) {
                 PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
                 SECU_PrintError(progName, "Algorithm: \"%s\"", cipherString);
                 pk12uErrno = PK12UERR_INVALIDALGORITHM;
