@@ -76,6 +76,8 @@ pub struct DisplayList {
     
     pub content: DList<DisplayItem>,
     
+    pub outlines: DList<DisplayItem>,
+    
     pub children: DList<Arc<StackingContext>>,
 }
 
@@ -88,6 +90,7 @@ impl DisplayList {
             block_backgrounds_and_borders: DList::new(),
             floats: DList::new(),
             content: DList::new(),
+            outlines: DList::new(),
             children: DList::new(),
         }
     }
@@ -102,12 +105,14 @@ impl DisplayList {
                                  &mut other.block_backgrounds_and_borders);
         servo_dlist::append_from(&mut self.floats, &mut other.floats);
         servo_dlist::append_from(&mut self.content, &mut other.content);
+        servo_dlist::append_from(&mut self.outlines, &mut other.outlines);
         servo_dlist::append_from(&mut self.children, &mut other.children);
     }
 
     
     #[inline]
     pub fn form_float_pseudo_stacking_context(&mut self) {
+        servo_dlist::prepend_from(&mut self.floats, &mut self.outlines);
         servo_dlist::prepend_from(&mut self.floats, &mut self.content);
         servo_dlist::prepend_from(&mut self.floats, &mut self.block_backgrounds_and_borders);
         servo_dlist::prepend_from(&mut self.floats, &mut self.background_and_borders);
@@ -127,6 +132,9 @@ impl DisplayList {
             result.push((*display_item).clone())
         }
         for display_item in self.content.iter() {
+            result.push((*display_item).clone())
+        }
+        for display_item in self.outlines.iter() {
             result.push((*display_item).clone())
         }
         result
@@ -283,6 +291,9 @@ impl StackingContext {
             }
 
             
+            for display_item in display_list.outlines.iter() {
+                display_item.draw_into_context(&mut paint_subcontext)
+            }
 
             
             if paint_subcontext.transient_clip_rect.is_some() {
@@ -349,6 +360,12 @@ impl StackingContext {
         
         
         
+        
+        hit_test_in_list(point, result, topmost_only, self.display_list.outlines.iter().rev());
+        if topmost_only && !result.is_empty() {
+            return
+        }
+
         
         for kid in self.display_list.children.iter().rev() {
             if kid.z_index < 0 {
