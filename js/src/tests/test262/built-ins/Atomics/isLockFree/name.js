@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Atomics.isLockFree.name, "isLockFree");
+
+verifyNotEnumerable(Atomics.isLockFree, "name");
+verifyNotWritable(Atomics.isLockFree, "name");
+verifyConfigurable(Atomics.isLockFree, "name");
+
+reportCompare(0, 0);

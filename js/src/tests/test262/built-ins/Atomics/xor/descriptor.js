@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyWritable(Atomics, "xor");
+verifyNotEnumerable(Atomics, "xor");
+verifyConfigurable(Atomics, "xor");
+
+reportCompare(0, 0);

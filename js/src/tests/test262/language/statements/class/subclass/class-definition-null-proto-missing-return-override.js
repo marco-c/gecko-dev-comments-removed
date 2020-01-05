@@ -29,15 +29,13 @@
 
 
 
-
-
-
 class Foo extends null {
-  constructor() {}
+  constructor() {
+  }
 }
 
-var foo = new Foo();
-
-assert.sameValue(Object.getPrototypeOf(foo), Foo.prototype);
+assert.throws(ReferenceError, function() {
+  new C();
+});
 
 reportCompare(0, 0);

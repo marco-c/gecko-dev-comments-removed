@@ -15,7 +15,6 @@
 
 
 
-
 assert.sameValue(
   eval('1; do { if (false) { } else { break; } } while (false)'), undefined
 );

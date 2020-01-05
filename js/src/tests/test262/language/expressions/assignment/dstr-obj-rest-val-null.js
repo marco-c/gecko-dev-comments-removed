@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var rest;
+
+assert.throws(TypeError, function() {
+  0, {...rest} = null
+;
+});
+
+reportCompare(0, 0);

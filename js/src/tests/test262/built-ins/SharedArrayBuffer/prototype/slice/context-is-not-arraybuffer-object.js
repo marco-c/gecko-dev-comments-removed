@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  SharedArrayBuffer.prototype.slice.call({});
+}, "`this` value is Object");
+
+assert.throws(TypeError, function() {
+  SharedArrayBuffer.prototype.slice.call([]);
+}, "`this` value is Array");
+
+reportCompare(0, 0);

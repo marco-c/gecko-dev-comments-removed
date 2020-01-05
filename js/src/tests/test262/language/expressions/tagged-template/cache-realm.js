@@ -30,7 +30,7 @@
 
 
 
-var other = $.createRealm().global;
+var other = $262.createRealm().global;
 var strings1, strings2;
 
 strings1 = (function(strings) { return strings; })`1234`;

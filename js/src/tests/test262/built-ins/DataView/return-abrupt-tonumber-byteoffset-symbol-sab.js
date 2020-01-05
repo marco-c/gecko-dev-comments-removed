@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = Symbol("1");
+var ab = new SharedArrayBuffer(0);
+
+assert.throws(TypeError, function() {
+  new DataView(ab, s);
+});
+
+reportCompare(0, 0);

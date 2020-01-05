@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var len = {
+  valueOf: function() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, function() {
+  new SharedArrayBuffer(len);
+});
+
+reportCompare(0, 0);

@@ -10,14 +10,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+var obj;
+
 class Foo extends null {
   constructor() {
-    return {};
+    return obj = {};
   }
 }
 
 var f = new Foo();
 
+assert.sameValue(f, obj);
 assert.sameValue(Object.getPrototypeOf(f), Object.prototype);
 
 reportCompare(0, 0);

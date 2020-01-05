@@ -1,0 +1,37 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, function() {
+  new SharedArrayBuffer(-1);
+});
+
+assert.throws(RangeError, function() {
+  new SharedArrayBuffer(-1.1);
+});
+
+assert.throws(RangeError, function() {
+  new SharedArrayBuffer(-Infinity);
+});
+
+reportCompare(0, 0);

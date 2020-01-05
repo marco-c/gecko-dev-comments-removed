@@ -39,20 +39,13 @@
 
 
 
-
-
-
-
-
-
-
 var unreachable = 0;
 var reachable = 0;
 
 class C extends null {
   constructor() {
     reachable += 1;
-    super();
+    super(unreachable += 1);
     unreachable += 1;
   }
 }

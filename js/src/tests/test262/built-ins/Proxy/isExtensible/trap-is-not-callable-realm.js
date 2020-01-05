@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var OProxy = $262.createRealm().global.Proxy;
+var p = new OProxy({}, {
+  isExtensible: {}
+});
+
+assert.throws(TypeError, function() {
+  Object.isExtensible(p);
+});
+
+reportCompare(0, 0);

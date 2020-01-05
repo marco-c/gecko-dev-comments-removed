@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var other = $262.createRealm().global;
+var C = new other.Function();
+C.prototype = null;
+
+var o = Reflect.construct(RegExp, [], C);
+
+assert.sameValue(Object.getPrototypeOf(o), other.RegExp.prototype);
+
+reportCompare(0, 0);

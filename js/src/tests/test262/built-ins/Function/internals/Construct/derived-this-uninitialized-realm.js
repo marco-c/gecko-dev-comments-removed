@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var C = $262.createRealm().global.eval(
+  '(class C extends Object {' +
+  '  constructor() {}' +
+  '});'
+);
+
+assert.throws(ReferenceError, function() {
+  new C();
+});
+
+reportCompare(0, 0);

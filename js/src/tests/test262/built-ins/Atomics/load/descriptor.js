@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyWritable(Atomics, "load");
+verifyNotEnumerable(Atomics, "load");
+verifyConfigurable(Atomics, "load");
+
+reportCompare(0, 0);

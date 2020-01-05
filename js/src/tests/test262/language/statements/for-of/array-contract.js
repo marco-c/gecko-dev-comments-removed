@@ -9,7 +9,6 @@
 
 
 
-
 var array = [0, 1];
 var iterationCount = 0;
 

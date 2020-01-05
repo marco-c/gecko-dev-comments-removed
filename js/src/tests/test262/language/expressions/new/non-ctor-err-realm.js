@@ -18,7 +18,7 @@
 
 
 
-var otherParseInt = $.createRealm().global.parseInt;
+var otherParseInt = $262.createRealm().global.parseInt;
 
 assert.sameValue(typeof otherParseInt, 'function');
 

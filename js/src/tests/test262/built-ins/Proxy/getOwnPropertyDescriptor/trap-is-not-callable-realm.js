@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var OProxy = $262.createRealm().global.Proxy;
+var p = new OProxy({}, {
+  getOwnPropertyDescriptor: {}
+});
+
+assert.throws(TypeError, function() {
+  Object.getOwnPropertyDescriptor(p, "foo");
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+var OProxy = $262.createRealm().global.Proxy;
+var p = new OProxy(function() {}, {
+  apply: {}
+});
+
+assert.throws(TypeError, function() {
+  p();
+});
+
+reportCompare(0, 0);

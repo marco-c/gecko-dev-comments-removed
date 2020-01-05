@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var rest;
+
+assert.throws(TypeError, function() {
+  0, {...rest} = undefined
+;
+});
+
+reportCompare(0, 0);

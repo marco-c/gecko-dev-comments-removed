@@ -8,7 +8,12 @@
 
 
 
+
+
 testWithIntlConstructors(function (Constructor) {
+    if (Constructor === Intl.DateTimeFormat)
+        return true;
+
     var obj, newObj;
 
     

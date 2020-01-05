@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var arrayBuffer = new SharedArrayBuffer(8);
+
+var start = 6, end = undefined;
+var result = arrayBuffer.slice(start, end);
+assert.sameValue(result.byteLength, 2);
+
+reportCompare(0, 0);

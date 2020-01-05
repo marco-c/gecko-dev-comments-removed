@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  SharedArrayBuffer();
+});
+
+assert.throws(TypeError, function() {
+  SharedArrayBuffer(10);
+});
+
+reportCompare(0, 0);

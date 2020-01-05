@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(SharedArrayBuffer.prototype.constructor, SharedArrayBuffer);
+
+verifyNotEnumerable(SharedArrayBuffer.prototype, "constructor");
+verifyWritable(SharedArrayBuffer.prototype, "constructor");
+verifyConfigurable(SharedArrayBuffer.prototype, "constructor");
+
+reportCompare(0, 0);

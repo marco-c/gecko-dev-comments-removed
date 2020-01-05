@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyWritable(Atomics, "or");
+verifyNotEnumerable(Atomics, "or");
+verifyConfigurable(Atomics, "or");
+
+reportCompare(0, 0);

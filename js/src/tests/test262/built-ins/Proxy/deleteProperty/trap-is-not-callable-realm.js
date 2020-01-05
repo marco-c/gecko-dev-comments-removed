@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var OProxy = $262.createRealm().global.Proxy;
+var p = new OProxy({}, {
+  deleteProperty: {}
+});
+
+assert.throws(TypeError, function() {
+  delete p.attr;
+});
+
+reportCompare(0, 0);

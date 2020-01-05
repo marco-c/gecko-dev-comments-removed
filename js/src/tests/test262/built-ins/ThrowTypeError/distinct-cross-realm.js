@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+var other = $262.createRealm().global;
+var localArgs = function(){ "use strict"; return arguments; }();
+var otherArgs = (new other.Function('return arguments;'))();
+var localThrowTypeError = Object.getOwnPropertyDescriptor(localArgs, "callee").get;
+var otherThrowTypeError = Object.getOwnPropertyDescriptor(otherArgs, "callee").get;
+
+assert.notSameValue(localThrowTypeError, otherThrowTypeError);
+
+reportCompare(0, 0);

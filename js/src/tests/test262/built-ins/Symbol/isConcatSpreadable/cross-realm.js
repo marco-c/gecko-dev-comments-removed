@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var OSymbol = $262.createRealm().global.Symbol;
+
+assert.sameValue(Symbol.isConcatSpreadable, OSymbol.isConcatSpreadable);
+
+reportCompare(0, 0);

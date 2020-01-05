@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  SharedArrayBuffer.prototype.byteLength;
+});
+
+reportCompare(0, 0);

@@ -25,22 +25,17 @@
 
 
 
-
-
-
-
-
-var thisVal, instance;
-
 class C extends null {
   constructor() {
-    thisVal = this;
+    
+    assert.throws(ReferenceError, () => {
+      this;
+    });
   }
 }
 
-instance = new C();
-
-assert.sameValue(instance instanceof C, true);
-assert.sameValue(instance, thisVal);
+assert.throws(ReferenceError, function() {
+  new C();
+});
 
 reportCompare(0, 0);

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyWritable(Atomics, "compareExchange");
+verifyNotEnumerable(Atomics, "compareExchange");
+verifyConfigurable(Atomics, "compareExchange");
+
+reportCompare(0, 0);

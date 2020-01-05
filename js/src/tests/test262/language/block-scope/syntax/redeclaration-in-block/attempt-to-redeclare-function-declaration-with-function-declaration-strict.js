@@ -1,0 +1,16 @@
+
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+{ function f() {} function f() {} }
+

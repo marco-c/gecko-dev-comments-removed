@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+testWithAtomicsNonViewValues(function(view) {
+    assert.throws(TypeError, (() => Atomics.load(view, 0)));
+});
+
+reportCompare(0, 0);

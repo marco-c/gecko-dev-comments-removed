@@ -21,7 +21,7 @@
 
 
 
-var other = $.createRealm().global;
+var other = $262.createRealm().global;
 var numberCount = 0;
 var stringCount = 0;
 var booleanCount = 0;

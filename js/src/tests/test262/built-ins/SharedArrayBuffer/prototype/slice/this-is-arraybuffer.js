@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  var ab = new ArrayBuffer(0);
+  SharedArrayBuffer.prototype.slice.call(ab);
+}, "`this` value cannot be an ArrayBuffer");
+
+reportCompare(0, 0);

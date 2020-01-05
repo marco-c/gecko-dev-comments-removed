@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Atomics.add.length, 3);
+
+verifyNotEnumerable(Atomics.add, "length");
+verifyNotWritable(Atomics.add, "length");
+verifyConfigurable(Atomics.add, "length");
+
+reportCompare(0, 0);

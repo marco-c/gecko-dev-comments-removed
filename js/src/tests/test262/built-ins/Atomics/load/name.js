@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Atomics.load.name, "load");
+
+verifyNotEnumerable(Atomics.load, "name");
+verifyNotWritable(Atomics.load, "name");
+verifyConfigurable(Atomics.load, "name");
+
+reportCompare(0, 0);

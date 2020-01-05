@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var buffer = new SharedArrayBuffer();
+
+assert.sameValue(buffer.byteLength, 0);
+
+reportCompare(0, 0);

@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var OSymbol = $262.createRealm().global.Symbol;
+
+assert.sameValue(Symbol.replace, OSymbol.replace);
+
+reportCompare(0, 0);

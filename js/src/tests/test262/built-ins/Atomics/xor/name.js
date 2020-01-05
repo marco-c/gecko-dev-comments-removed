@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Atomics.xor.name, "xor");
+
+verifyNotEnumerable(Atomics.xor, "name");
+verifyNotWritable(Atomics.xor, "name");
+verifyConfigurable(Atomics.xor, "name");
+
+reportCompare(0, 0);

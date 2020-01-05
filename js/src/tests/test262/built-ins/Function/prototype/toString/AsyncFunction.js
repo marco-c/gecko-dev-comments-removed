@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+async function f() {}
+var AsyncFunction = f.constructor;
+var g = AsyncFunction("a", " /* a */ b, c /* b */ //", "/* c */ ; /* d */ //"); 
+assert.sameValue(g.toString(), "async function anonymous(a, /* a */ b, c /* b */ //\n) {\n/* c */ ; /* d */ //\n}");
+
+reportCompare(0, 0);

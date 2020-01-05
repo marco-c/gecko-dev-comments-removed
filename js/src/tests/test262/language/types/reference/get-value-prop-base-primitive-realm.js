@@ -17,7 +17,7 @@
 
 
 
-var other = $.createRealm().global;
+var other = $262.createRealm().global;
 
 other.Number.prototype.test262 = 'number prototype';
 other.value = 1;

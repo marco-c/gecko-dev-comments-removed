@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(SharedArrayBuffer.prototype[Symbol.toStringTag], 'SharedArrayBuffer');
+
+verifyNotEnumerable(SharedArrayBuffer.prototype, Symbol.toStringTag);
+verifyNotWritable(SharedArrayBuffer.prototype, Symbol.toStringTag);
+verifyConfigurable(SharedArrayBuffer.prototype, Symbol.toStringTag);
+
+reportCompare(0, 0);

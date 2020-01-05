@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var ab = new SharedArrayBuffer(1);
+
+assert.throws(RangeError, function() {
+  new DataView(ab, 2);
+}, "2");
+
+assert.throws(RangeError, function() {
+  new DataView(ab, Infinity);
+}, "Infinity");
+
+reportCompare(0, 0);

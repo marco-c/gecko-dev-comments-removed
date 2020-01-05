@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Atomics.sub.name, "sub");
+
+verifyNotEnumerable(Atomics.sub, "name");
+verifyNotWritable(Atomics.sub, "name");
+verifyConfigurable(Atomics.sub, "name");
+
+reportCompare(0, 0);

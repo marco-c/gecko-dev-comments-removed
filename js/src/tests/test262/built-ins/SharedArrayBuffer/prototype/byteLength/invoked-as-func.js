@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+var getter = Object.getOwnPropertyDescriptor(
+  SharedArrayBuffer.prototype, "byteLength"
+).get;
+
+assert.throws(TypeError, function() {
+  getter();
+});
+
+reportCompare(0, 0);
