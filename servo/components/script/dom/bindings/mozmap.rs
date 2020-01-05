@@ -23,6 +23,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 
+#[derive(Clone)]
 pub struct MozMap<T> {
     map: HashMap<DOMString, T>,
 }
