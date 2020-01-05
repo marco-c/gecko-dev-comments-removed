@@ -420,7 +420,7 @@ impl StackingContext {
         
         let child_stacking_context_overflow =
             child_stacking_context.overflow.translate(&child_stacking_context.bounds.origin)
-                                           .to_azure_rect();
+                                           .to_nearest_azure_rect();
 
         
         
@@ -428,7 +428,7 @@ impl StackingContext {
                                       .unwrap_or(ZERO_AZURE_RECT);
 
         
-        tile_subrect.translate(&-child_stacking_context.bounds.to_azure_rect().origin)
+        tile_subrect.translate(&-child_stacking_context.bounds.to_nearest_azure_rect().origin)
     }
 
     
@@ -489,9 +489,9 @@ impl StackingContext {
         point = point - self.bounds.origin;
 
         debug_assert!(!topmost_only || result.is_empty());
-        let frac_point = self.transform.transform_point(&Point2D(point.x.to_frac32_px(),
-                                                                 point.y.to_frac32_px()));
-        point = Point2D(Au::from_frac32_px(frac_point.x), Au::from_frac32_px(frac_point.y));
+        let frac_point = self.transform.transform_point(&Point2D(point.x.to_f32_px(),
+                                                                 point.y.to_f32_px()));
+        point = Point2D(Au::from_f32_px(frac_point.x), Au::from_f32_px(frac_point.y));
 
         
         
