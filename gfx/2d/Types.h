@@ -484,6 +484,11 @@ constexpr HalfCorner FullToHalfCorner(Corner aCorner, bool aIsVertical)
   return HalfCorner(aCorner * 2 + aIsVertical);
 }
 
+constexpr bool SideIsVertical(Side aSide)
+{
+  return aSide % 2;
+}
+
 } 
 
 #endif 
