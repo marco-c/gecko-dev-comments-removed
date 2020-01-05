@@ -62,7 +62,7 @@ public:
   
   
   
-  virtual int64_t GetEndTime(TrackType aType) const = 0;
+  virtual TimeUnit GetEndTime(TrackType aType) const = 0;
 
   
   
@@ -70,7 +70,7 @@ public:
   
   
   
-  virtual int64_t GetPosition(TimeStamp* aTimeStamp = nullptr) const = 0;
+  virtual TimeUnit GetPosition(TimeStamp* aTimeStamp = nullptr) const = 0;
 
   
   
@@ -100,7 +100,7 @@ public:
 
   
   
-  virtual void Start(int64_t aStartTime, const MediaInfo& aInfo) = 0;
+  virtual void Start(const TimeUnit& aStartTime, const MediaInfo& aInfo) = 0;
 
   
   
