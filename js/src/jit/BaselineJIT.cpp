@@ -1013,7 +1013,7 @@ BaselineScript::toggleTraceLoggerScripts(JSRuntime* runtime, JSScript* script, b
 
     
     
-    if (enable && !traceLoggerScriptEvent_.hasPayload())
+    if (enable && !traceLoggerScriptEvent_.hasTextId())
         traceLoggerScriptEvent_ = TraceLoggerEvent(TraceLogger_Scripts, script);
 
     AutoWritableJitCode awjc(method());
