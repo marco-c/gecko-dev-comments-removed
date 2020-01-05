@@ -2,7 +2,6 @@
 
 
 
-#![feature(clone_from_slice)]
 #![feature(nonzero)]
 #![feature(plugin)]
 #![plugin(plugins)]

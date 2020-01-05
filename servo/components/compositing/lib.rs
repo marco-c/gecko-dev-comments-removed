@@ -3,7 +3,6 @@
 
 
 #![feature(box_syntax)]
-#![feature(clone_from_slice)]
 #![feature(custom_derive)]
 #![feature(plugin)]
 #![feature(mpsc_select)]

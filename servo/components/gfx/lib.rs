@@ -3,7 +3,6 @@
 
 
 
-#![cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), feature(convert))]
 #![cfg_attr(any(target_os = "linux", target_os = "android", target_os = "windows"), feature(heap_api))]
 
 #![feature(alloc)]
