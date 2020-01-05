@@ -84,9 +84,13 @@ class MozLog(object):
                 status = 'FAIL'
         elif report.failed:
             status = 'FAIL' if report.when == 'call' else 'ERROR'
-            crash = report.longrepr.reprcrash  
-            message = "{0} (line {1})".format(crash.message, crash.lineno)
-            stack = report.longrepr.reprtraceback
+            try:
+                crash = report.longrepr.reprcrash  
+                message = "{0} (line {1})".format(crash.message, crash.lineno)
+                stack = report.longrepr.reprtraceback
+            except AttributeError:
+                
+                message = stack = report.longrepr
         elif report.skipped:  
             status = expected = 'SKIP'
             message = report.longrepr[-1]  
