@@ -47,7 +47,7 @@ no_jsmanaged_fields!(Receiver<WebSocketStream>);
 #[dom_struct]
 pub struct WebSocket {
     eventtarget: EventTarget,
-    url: DOMString,
+    url: Url,
     global: GlobalField,
     ready_state: Cell<WebSocketRequestState>,
     sender: RefCell<Option<Sender<WebSocketStream>>>,
@@ -101,7 +101,7 @@ fn parse_web_socket_url(url_str: &str) -> Fallible<(Url, String, u16, String, bo
 }
 
 impl WebSocket {
-    pub fn new_inherited(global: GlobalRef, url: DOMString) -> WebSocket {
+    pub fn new_inherited(global: GlobalRef, url: Url) -> WebSocket {
         WebSocket {
             eventtarget: EventTarget::new_inherited(EventTargetTypeId::WebSocket),
             url: url,
@@ -122,24 +122,24 @@ impl WebSocket {
 
     pub fn new(global: GlobalRef, url: DOMString) -> Fallible<Root<WebSocket>> {
         
+        
+        
+        let (url, _, _, _, _) = try!(parse_web_socket_url(&url));
+
+        
 
 
 
 
 
 
-
-        let ws = reflect_dom_object(box WebSocket::new_inherited(global, url),
+        let ws = reflect_dom_object(box WebSocket::new_inherited(global, url.clone()),
                                     global,
                                     WebSocketBinding::Wrap);
 
-        // FIXME extract the right variables once Client::connect implementation is
-        // fixed to follow the RFC 6455 properly
-        let (parsed_url, _, _, _, _) = try!(parse_web_socket_url(&ws.r().url));
-
         // TODO Client::connect does not conform to RFC 6455
         // see https://github.com/cyderize/rust-websocket/issues/38
-        let request = match Client::connect(parsed_url) {
+        let request = match Client::connect(url) {
             Ok(request) => request,
             Err(_) => {
                 let global_root = ws.r().global.root();
@@ -198,7 +198,7 @@ impl<'a> WebSocketMethods for &'a WebSocket {
     event_handler!(error, GetOnerror, SetOnerror);
 
     fn Url(self) -> DOMString {
-        self.url.clone()
+        self.url.serialize()
     }
 
     fn ReadyState(self) -> u16 {
