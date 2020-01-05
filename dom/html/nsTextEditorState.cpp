@@ -1132,6 +1132,7 @@ void nsTextEditorState::Unlink()
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditor)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootNode)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPlaceholderDiv)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviewDiv)
 }
 
 void nsTextEditorState::Traverse(nsCycleCollectionTraversalCallback& cb)
@@ -1141,6 +1142,7 @@ void nsTextEditorState::Traverse(nsCycleCollectionTraversalCallback& cb)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootNode)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlaceholderDiv)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreviewDiv)
 }
 
 nsFrameSelection*
@@ -2186,6 +2188,7 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   nsContentUtils::DestroyAnonymousContent(&mRootNode);
   nsContentUtils::DestroyAnonymousContent(&mPlaceholderDiv);
+  nsContentUtils::DestroyAnonymousContent(&mPreviewDiv);
 }
 
 nsresult
@@ -2252,6 +2255,38 @@ nsTextEditorState::InitializeRootNode()
   return mBoundFrame->UpdateValueDisplay(false);
 }
 
+Element*
+nsTextEditorState::CreateEmptyDivNode()
+{
+  MOZ_ASSERT(mBoundFrame);
+
+  nsIPresShell *shell = mBoundFrame->PresContext()->GetPresShell();
+  MOZ_ASSERT(shell);
+
+  nsIDocument *doc = shell->GetDocument();
+  MOZ_ASSERT(doc);
+
+  nsNodeInfoManager* pNodeInfoManager = doc->NodeInfoManager();
+  MOZ_ASSERT(pNodeInfoManager);
+
+  Element *element;
+
+  
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+  nodeInfo = pNodeInfoManager->GetNodeInfo(nsGkAtoms::div, nullptr,
+                                           kNameSpaceID_XHTML,
+                                           nsIDOMNode::ELEMENT_NODE);
+
+  element = NS_NewHTMLDivElement(nodeInfo.forget());
+
+  
+  RefPtr<nsTextNode> textNode = new nsTextNode(pNodeInfoManager);
+
+  element->AppendChildTo(textNode, false);
+
+  return element;
+}
+
 nsresult
 nsTextEditorState::CreatePlaceholderNode()
 {
@@ -2270,38 +2305,28 @@ be called if @placeholder is the empty string when trimmed from line breaks");
 #endif 
 
   NS_ENSURE_TRUE(!mPlaceholderDiv, NS_ERROR_UNEXPECTED);
-  NS_ENSURE_ARG_POINTER(mBoundFrame);
-
-  nsIPresShell *shell = mBoundFrame->PresContext()->GetPresShell();
-  NS_ENSURE_TRUE(shell, NS_ERROR_FAILURE);
-
-  nsIDocument *doc = shell->GetDocument();
-  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-
-  nsNodeInfoManager* pNodeInfoManager = doc->NodeInfoManager();
-  NS_ENSURE_TRUE(pNodeInfoManager, NS_ERROR_OUT_OF_MEMORY);
-
-  nsresult rv;
 
   
   
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-  nodeInfo = pNodeInfoManager->GetNodeInfo(nsGkAtoms::div, nullptr,
-                                           kNameSpaceID_XHTML,
-                                           nsIDOMNode::ELEMENT_NODE);
-
-  rv = NS_NewHTMLElement(getter_AddRefs(mPlaceholderDiv), nodeInfo.forget(),
-                         NOT_FROM_PARSER);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  RefPtr<nsTextNode> placeholderText = new nsTextNode(pNodeInfoManager);
-
-  rv = mPlaceholderDiv->AppendChildTo(placeholderText, false);
-  NS_ENSURE_SUCCESS(rv, rv);
+  mPlaceholderDiv = CreateEmptyDivNode();
 
   
   UpdatePlaceholderText(false);
+
+  return NS_OK;
+}
+
+nsresult
+nsTextEditorState::CreatePreviewNode()
+{
+  NS_ENSURE_TRUE(!mPreviewDiv, NS_ERROR_UNEXPECTED);
+
+  
+  
+  mPreviewDiv = CreateEmptyDivNode();
+
+  mPreviewDiv->SetAttr(kNameSpaceID_None, nsGkAtoms::_class,
+                       NS_LITERAL_STRING("preview-div"), false);
 
   return NS_OK;
 }

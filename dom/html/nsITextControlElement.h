@@ -157,6 +157,16 @@ public:
   
 
 
+  NS_IMETHOD_(mozilla::dom::Element*) CreatePreviewNode() = 0;
+
+  
+
+
+  NS_IMETHOD_(mozilla::dom::Element*) GetPreviewNode() = 0;
+
+  
+
+
   NS_IMETHOD_(void) InitializeKeyboardEventListeners() = 0;
 
   
