@@ -127,6 +127,22 @@ protected:
   bool FrameDependsOnContainer(nsIFrame* aFrame, bool aCBWidthChanged,
                                bool aCBHeightChanged);
 
+  
+
+
+
+
+
+
+
+
+  void ResolveSizeDependentOffsets(nsPresContext* aPresContext,
+                                   ReflowInput& aKidReflowInput,
+                                   const mozilla::LogicalSize& aKidSize,
+                                   const mozilla::LogicalMargin& aMargin,
+                                   mozilla::LogicalMargin* aOffsets,
+                                   mozilla::LogicalSize* aLogicalCBSize);
+
   void ReflowAbsoluteFrame(nsIFrame*                aDelegatingFrame,
                            nsPresContext*           aPresContext,
                            const ReflowInput& aReflowInput,
