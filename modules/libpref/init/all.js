@@ -1188,6 +1188,9 @@ pref("dom.forms.color", true);
 pref("dom.forms.datetime", false);
 
 
+pref("dom.forms.datetime.timepicker", false);
+
+
 pref("dom.forms.autocomplete.experimental", false);
 
 
