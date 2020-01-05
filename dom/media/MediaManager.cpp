@@ -2113,7 +2113,7 @@ MediaManager::GetUserMedia(nsPIDOMWindowInner* aWindow,
 
   
   
-if (privileged) {
+  if (privileged) {
     Telemetry::Accumulate(Telemetry::WEBRTC_GET_USER_MEDIA_SECURE_ORIGIN,
                           (uint32_t) GetUserMediaSecurityState::Privileged);
   } else if (isHTTPS) {
