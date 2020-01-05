@@ -262,11 +262,11 @@ nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
     
     if ((consumeResult == ConsumeOutsideClicks_ParentOnly || noRollupOnAnchor) && pos) {
       nsMenuPopupFrame* popupFrame = item->Frame();
-      nsIntRect anchorRect;
+      CSSIntRect anchorRect;
       if (popupFrame->IsAnchored()) {
         
         
-        anchorRect = popupFrame->GetScreenAnchorRect();
+        anchorRect = CSSIntRect::FromUnknownRect(popupFrame->GetScreenAnchorRect());
         if (anchorRect.x == -1 || anchorRect.y == -1) {
           nsCOMPtr<nsIContent> anchor = popupFrame->GetAnchor();
 
@@ -298,8 +298,8 @@ nsXULPopupManager::Rollup(uint32_t aCount, bool aFlush,
       
       
       nsPresContext* presContext = item->Frame()->PresContext();
-      nsIntPoint posCSSPixels(presContext->DevPixelsToIntCSSPixels(pos->x),
-                              presContext->DevPixelsToIntCSSPixels(pos->y));
+      CSSIntPoint posCSSPixels(presContext->DevPixelsToIntCSSPixels(pos->x),
+                               presContext->DevPixelsToIntCSSPixels(pos->y));
       if (anchorRect.Contains(posCSSPixels)) {
         if (consumeResult == ConsumeOutsideClicks_ParentOnly) {
           consume = true;

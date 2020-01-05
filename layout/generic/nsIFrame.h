@@ -1165,23 +1165,17 @@ public:
 
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BidiDataProperty, mozilla::FrameBidiData)
 
-  mozilla::FrameBidiData GetBidiData() const
+  mozilla::FrameBidiData GetBidiData()
   {
-    bool exists;
-    mozilla::FrameBidiData bidiData =
-      Properties().Get(BidiDataProperty(), &exists);
-    if (!exists) {
-      bidiData.precedingControl = mozilla::kBidiLevelNone;
-    }
-    return bidiData;
+    return Properties().Get(BidiDataProperty());
   }
 
-  nsBidiLevel GetBaseLevel() const
+  nsBidiLevel GetBaseLevel()
   {
     return GetBidiData().baseLevel;
   }
 
-  nsBidiLevel GetEmbeddingLevel() const
+  nsBidiLevel GetEmbeddingLevel()
   {
     return GetBidiData().embeddingLevel;
   }
@@ -2591,7 +2585,9 @@ public:
 
 
 
-  nsIntRect GetScreenRect() const;
+
+
+  mozilla::CSSIntRect GetScreenRect() const;
 
   
 
