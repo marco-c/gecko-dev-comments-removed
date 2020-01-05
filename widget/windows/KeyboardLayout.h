@@ -259,6 +259,7 @@ public:
   static bool IsControlChar(char16_t aChar);
 
 private:
+  NativeKey* mLastInstance;
   RefPtr<nsWindowBase> mWidget;
   RefPtr<TextEventDispatcher> mDispatcher;
   HKL mKeyboardLayout;
@@ -543,6 +544,16 @@ private:
   {
     return mFocusedWndBeforeDispatch != ::GetFocus();
   }
+
+  
+  
+  
+
+  
+
+
+
+  static NativeKey* sLatestInstance;
 };
 
 class KeyboardLayout
