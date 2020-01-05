@@ -6,7 +6,7 @@
 
 
 
-use dom::node::{AbstractNode, LayoutDataRef};
+use dom::node::LayoutDataRef;
 
 use extra::url::Url;
 use geom::point::Point2D;
@@ -52,13 +52,17 @@ pub enum Msg {
 
 pub enum LayoutQuery {
     
-    ContentBoxQuery(AbstractNode, Chan<ContentBoxResponse>),
+    ContentBoxQuery(TrustedNodeAddress, Chan<ContentBoxResponse>),
     
-    ContentBoxesQuery(AbstractNode, Chan<ContentBoxesResponse>),
+    ContentBoxesQuery(TrustedNodeAddress, Chan<ContentBoxesResponse>),
     
-    HitTestQuery(AbstractNode, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
-    MouseOverQuery(AbstractNode, Point2D<f32>, Chan<Result<MouseOverResponse, ()>>),
+    HitTestQuery(TrustedNodeAddress, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
+    MouseOverQuery(TrustedNodeAddress, Point2D<f32>, Chan<Result<MouseOverResponse, ()>>),
 }
+
+
+
+pub type TrustedNodeAddress = *c_void;
 
 
 
@@ -92,7 +96,7 @@ impl DocumentDamageLevel {
 
 pub struct DocumentDamage {
     
-    root: AbstractNode,
+    root: TrustedNodeAddress,
     
     level: DocumentDamageLevel,
 }
@@ -109,7 +113,7 @@ pub enum ReflowGoal {
 
 pub struct Reflow {
     
-    document_root: AbstractNode,
+    document_root: TrustedNodeAddress,
     
     damage: DocumentDamage,
     

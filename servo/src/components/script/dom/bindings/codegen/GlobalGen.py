@@ -84,6 +84,9 @@ def main():
     generate_file(config, 'InterfaceTypes', 'declare+define')
 
     
+    generate_file(config, 'InheritTypes', 'declare+define')
+
+    
     generate_file(config, 'BindingDeclarations', 'declare+define')
 
     

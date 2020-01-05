@@ -11,6 +11,8 @@ use layers::platform::surface::{NativeSurface, NativeSurfaceMethods};
 
 use constellation_msg::PipelineId;
 
+use extra::serialize::{Encoder, Encodable};
+
 pub struct LayerBuffer {
     
     
@@ -92,6 +94,11 @@ pub trait ScriptListener : Clone {
     fn invalidate_rect(&self, PipelineId, Rect<uint>);
     fn scroll_fragment_point(&self, PipelineId, Point2D<f32>);
     fn close(&self);
+}
+
+impl<S: Encoder> Encodable<S> for @ScriptListener {
+    fn encode(&self, _s: &mut S) {
+    }
 }
 
 

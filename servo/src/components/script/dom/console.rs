@@ -2,11 +2,13 @@
 
 
 
-use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::codegen::ConsoleBinding;
+use dom::bindings::js::JS;
+use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::window::Window;
 use servo_util::str::DOMString;
 
+#[deriving(Encodable)]
 pub struct Console {
     reflector_: Reflector
 }
@@ -18,8 +20,8 @@ impl Console {
         }
     }
 
-    pub fn new(window: &Window) -> @mut Console {
-        reflect_dom_object(@mut Console::new_inherited(), window, ConsoleBinding::Wrap)
+    pub fn new(window: &Window) -> JS<Console> {
+        reflect_dom_object(~Console::new_inherited(), window, ConsoleBinding::Wrap)
     }
 
     pub fn Log(&self, message: DOMString) {
