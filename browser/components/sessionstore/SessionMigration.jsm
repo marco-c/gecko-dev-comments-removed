@@ -11,6 +11,9 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
 
+XPCOMUtils.defineLazyModuleGetter(this, "Utils",
+  "resource://gre/modules/sessionstore/Utils.jsm");
+
 
 XPCOMUtils.defineLazyGetter(this, "gEncoder", function () {
   return new TextEncoder();
@@ -47,7 +50,9 @@ var SessionMigrationInternal = {
         var tab = {};
         
         tab.entries = oldTab.entries.map(function(entry) {
-          return {url: entry.url, title: entry.title};
+          return { url: entry.url,
+                   triggeringPrincipal_base64: entry.triggeringPrincipal_base64,
+                   title: entry.title };
         });
         tab.index = oldTab.index;
         tab.hidden = oldTab.hidden;
@@ -60,7 +65,8 @@ var SessionMigrationInternal = {
     });
     let url = "about:welcomeback";
     let formdata = {id: {sessionData: state}, url};
-    return {windows: [{tabs: [{entries: [{url}], formdata}]}]};
+    let entry = { url, triggeringPrincipal_base64: Utils.SERIALIZED_SYSTEMPRINCIPAL };
+    return { windows: [{ tabs: [{ entries: [ entry ], formdata}]}]};
   },
   
 

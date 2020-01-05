@@ -106,7 +106,10 @@ var SessionHistoryInternal = {
       
       
       if (uri != "about:blank" || (body && body.hasChildNodes())) {
-        data.entries.push({ url: uri });
+        data.entries.push({
+          url: uri,
+          triggeringPrincipal_base64: Utils.SERIALIZED_SYSTEMPRINCIPAL
+        });
         data.index = 1;
       }
     }
