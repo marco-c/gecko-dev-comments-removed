@@ -1936,11 +1936,16 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             if let Some(pipeline_id) = rng.choose(&*pipeline_ids) {
                 if let Some(pipeline) = self.pipelines.get(pipeline_id) {
                     
-                    if pipeline.parent_info.is_none() { return; }
-                    
-                    
-                    info!("Randomly closing pipeline {}.", pipeline_id);
-                    pipeline.force_exit();
+                    if prefs::get_pref("dom.mozbrowser.enabled").as_boolean().unwrap_or(false) &&
+                        pipeline.parent_info.is_none()
+                    {
+                        info!("Not closing mozbrowser pipeline {}.", pipeline_id);
+                    } else {
+                        
+                        
+                        info!("Randomly closing pipeline {}.", pipeline_id);
+                        pipeline.force_exit();
+                    }
                 }
             }
         }
