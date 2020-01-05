@@ -49,6 +49,8 @@ const TOPICS = [
 
 const PING_FORMAT_VERSION = 1;
 
+const EMPTY_UID = "0".repeat(32);
+
 
 const ENGINES = new Set(["addons", "bookmarks", "clients", "forms", "history",
                          "passwords", "prefs", "tabs", "extension-storage"]);
@@ -237,11 +239,9 @@ class TelemetryRecord {
   toJSON() {
     let result = {
       when: this.when,
-      uid: this.uid,
       took: this.took,
       failureReason: this.failureReason,
       status: this.status,
-      deviceID: this.deviceID,
       devices: this.devices,
     };
     let engines = [];
@@ -277,7 +277,7 @@ class TelemetryRecord {
       this.deviceID = Weave.Service.identity.hashedDeviceID(Weave.Service.clientsEngine.localID);
       includeDeviceInfo = true;
     } catch (e) {
-      this.uid = "0".repeat(32);
+      this.uid = EMPTY_UID;
       this.deviceID = undefined;
     }
 
@@ -419,6 +419,8 @@ class SyncTelemetryImpl {
     this.maxPayloadCount = Svc.Prefs.get("telemetry.maxPayloadCount");
     this.submissionInterval = Svc.Prefs.get("telemetry.submissionInterval") * 1000;
     this.lastSubmissionTime = Telemetry.msSinceProcessStart();
+    this.lastUID = EMPTY_UID;
+    this.lastDeviceID = undefined;
   }
 
   getPingJSON(reason) {
@@ -427,6 +429,8 @@ class SyncTelemetryImpl {
       discarded: this.discarded || undefined,
       version: PING_FORMAT_VERSION,
       syncs: this.payloads.slice(),
+      uid: this.lastUID,
+      deviceID: this.lastDeviceID,
     };
   }
 
@@ -479,12 +483,41 @@ class SyncTelemetryImpl {
     return true;
   }
 
+  shouldSubmitForIDChange(newUID, newDeviceID) {
+    if (newUID != EMPTY_UID && this.lastUID != EMPTY_UID) {
+      
+      return newUID != this.lastUID;
+    }
+    if (newDeviceID && this.lastDeviceID) {
+      
+      return newDeviceID != this.lastDeviceID;
+    }
+    
+    
+    
+    return false;
+  }
+
   onSyncFinished(error) {
     if (!this.current) {
       log.warn("onSyncFinished but we aren't recording");
       return;
     }
     this.current.finished(error);
+    if (this.payloads.length) {
+      if (this.shouldSubmitForIDChange(this.current.uid, this.current.deviceID)) {
+        log.info("Early submission of sync telemetry due to changed IDs");
+        this.finish("idchange");
+        this.lastSubmissionTime = Telemetry.msSinceProcessStart();
+      }
+    }
+    
+    if (this.current.uid !== EMPTY_UID) {
+      this.lastUID = this.current.uid;
+    }
+    if (this.current.deviceID) {
+      this.lastDeviceID = this.current.deviceID;
+    }
     if (this.payloads.length < this.maxPayloadCount) {
       this.payloads.push(this.current.toJSON());
     } else {
