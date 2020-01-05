@@ -7240,14 +7240,9 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             ecPoint.data = mechParams->pPublicData;
             ecPoint.len = mechParams->ulPublicDataLen;
 
-            pubKeyLen = privKey->u.ec.ecParams.pointSize;
+            pubKeyLen = EC_GetPointSize(&privKey->u.ec.ecParams);
 
             
-            if (ecPoint.len < pubKeyLen) {
-                goto ec_loser;
-            }
-            
-
             if (ecPoint.len > pubKeyLen) {
                 SECItem newPoint;
 

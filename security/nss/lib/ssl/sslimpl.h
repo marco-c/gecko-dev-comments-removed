@@ -870,7 +870,6 @@ typedef struct SSL3HandshakeStateStr {
     TLS13CertificateRequest *certificateRequest;
     PRCList cipherSpecs;            
 
-    ssl3CipherSpec *nullSpec;       
     sslZeroRttState zeroRttState;   
     sslZeroRttIgnore zeroRttIgnore; 
     ssl3CipherSuite zeroRttSuite;   
@@ -1222,16 +1221,12 @@ struct sslSocketStr {
     SSLProtocolVariant protocolVariant;
 };
 
-
-
-
-extern NSSRWLock *ssl_global_data_lock;
 extern char ssl_debug;
 extern char ssl_trace;
 extern FILE *ssl_trace_iob;
 extern FILE *ssl_keylog_iob;
-extern PRUint32 ssl_sid_timeout;
 extern PRUint32 ssl3_sid_timeout;
+extern PRUint32 ssl_ticket_lifetime;
 
 extern const char *const ssl3_cipherName[];
 
@@ -1698,10 +1693,6 @@ SECStatus ssl_MaybeSetSessionTicketKeyPair(const sslKeyPair *keyPair);
 SECStatus ssl_GetSessionTicketKeys(sslSocket *ss, unsigned char *keyName,
                                    PK11SymKey **encKey, PK11SymKey **macKey);
 void ssl_ResetSessionTicketKeys();
-
-
-#define TLS_EX_SESS_TICKET_LIFETIME_HINT (2 * 24 * 60 * 60) /* 2 days */
-#define TLS_EX_SESS_TICKET_VERSION (0x0103)
 
 extern SECStatus ssl3_ValidateNextProtoNego(const unsigned char *data,
                                             unsigned int length);

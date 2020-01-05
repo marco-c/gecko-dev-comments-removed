@@ -17,13 +17,6 @@ KeyType seckey_GetKeyType(SECOidTag pubKeyOid);
 SECStatus sec_DecodeSigAlg(const SECKEYPublicKey *key, SECOidTag sigAlg,
                            const SECItem *param, SECOidTag *encalg, SECOidTag *hashalg);
 
-
-
-
-
-
-SECStatus seckey_SetPointEncoding(PLArenaPool *arena, SECKEYPublicKey *pubKey);
-
 SEC_END_PROTOS
 
 #endif 

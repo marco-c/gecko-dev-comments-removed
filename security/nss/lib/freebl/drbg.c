@@ -398,7 +398,7 @@ static PRStatus
 rng_init(void)
 {
     PRUint8 bytes[PRNG_SEEDLEN * 2]; 
-#ifndef UNSAFE_FUZZER_MODE
+#ifndef UNSAFE_RNG_NO_URANDOM_SEED
     unsigned int numBytes;
     SECStatus rv = SECSuccess;
 #endif
@@ -418,7 +418,7 @@ rng_init(void)
             return PR_FAILURE;
         }
 
-#ifndef UNSAFE_FUZZER_MODE
+#ifndef UNSAFE_RNG_NO_URANDOM_SEED
         
         numBytes = (unsigned int)RNG_SystemRNG(bytes, sizeof bytes);
         PORT_Assert(numBytes == 0 || numBytes == sizeof bytes);

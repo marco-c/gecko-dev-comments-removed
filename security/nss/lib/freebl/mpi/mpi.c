@@ -1695,7 +1695,6 @@ mp_iseven(const mp_int *a)
 
 
 
-#if MP_NUMTH
 
 
 
@@ -2376,7 +2375,6 @@ mp_invmod(const mp_int *a, const mp_int *m, mp_int *c)
 } 
 
 
-#endif 
 
 
 

@@ -11,6 +11,7 @@
 #include "ssl.h"
 
 #include "shared.h"
+#include "tls_client_config.h"
 #include "tls_client_socket.h"
 
 static PRStatus EnableAllProtocolVersions() {
@@ -27,24 +28,26 @@ static PRStatus EnableAllProtocolVersions() {
 
 static SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checksig,
                                      PRBool isServer) {
-  return SECSuccess;
+  assert(!isServer);
+  auto config = reinterpret_cast<ClientConfig*>(arg);
+  return config->FailCertificateAuthentication() ? SECFailure : SECSuccess;
 }
 
-static void SetSocketOptions(PRFileDesc* fd) {
+static void SetSocketOptions(PRFileDesc* fd,
+                             std::unique_ptr<ClientConfig>& config) {
   
   SECStatus rv = SSL_OptionSet(fd, SSL_NO_CACHE, true);
   assert(rv == SECSuccess);
 
-  rv = SSL_OptionSet(fd, SSL_ENABLE_EXTENDED_MASTER_SECRET, true);
+  rv = SSL_OptionSet(fd, SSL_ENABLE_EXTENDED_MASTER_SECRET,
+                     config->EnableExtendedMasterSecret());
   assert(rv == SECSuccess);
 
-  rv = SSL_OptionSet(fd, SSL_ENABLE_SIGNED_CERT_TIMESTAMPS, true);
+  rv = SSL_OptionSet(fd, SSL_REQUIRE_DH_NAMED_GROUPS,
+                     config->RequireDhNamedGroups());
   assert(rv == SECSuccess);
 
-  rv = SSL_OptionSet(fd, SSL_ENABLE_FALLBACK_SCSV, true);
-  assert(rv == SECSuccess);
-
-  rv = SSL_OptionSet(fd, SSL_ENABLE_ALPN, true);
+  rv = SSL_OptionSet(fd, SSL_ENABLE_FALSE_START, config->EnableFalseStart());
   assert(rv == SECSuccess);
 
   rv =
@@ -59,8 +62,19 @@ static void EnableAllCipherSuites(PRFileDesc* fd) {
   }
 }
 
-static void SetupAuthCertificateHook(PRFileDesc* fd) {
-  SECStatus rv = SSL_AuthCertificateHook(fd, AuthCertificateHook, nullptr);
+
+
+static SECStatus CanFalseStartCallback(PRFileDesc* fd, void* arg,
+                                       PRBool* canFalseStart) {
+  *canFalseStart = true;
+  return SECSuccess;
+}
+
+static void SetupCallbacks(PRFileDesc* fd, ClientConfig* config) {
+  SECStatus rv = SSL_AuthCertificateHook(fd, AuthCertificateHook, config);
+  assert(rv == SECSuccess);
+
+  rv = SSL_SetCanFalseStartCallback(fd, CanFalseStartCallback, nullptr);
   assert(rv == SECSuccess);
 }
 
@@ -89,10 +103,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t len) {
   assert(db != nullptr);
 
   EnableAllProtocolVersions();
+  std::unique_ptr<ClientConfig> config(new ClientConfig(data, len));
 
+#ifdef UNSAFE_FUZZER_MODE
   
   SECStatus rv = RNG_ResetForFuzzing();
   assert(rv == SECSuccess);
+#endif
 
   
   std::unique_ptr<DummyPrSocket> socket(new DummyPrSocket(data, len));
@@ -104,9 +121,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t len) {
   
   SSL_SetURL(ssl_fd, "server");
 
-  SetSocketOptions(ssl_fd);
+  SetSocketOptions(ssl_fd, config);
   EnableAllCipherSuites(ssl_fd);
-  SetupAuthCertificateHook(ssl_fd);
+  SetupCallbacks(ssl_fd, config.get());
   DoHandshake(ssl_fd);
 
   return 0;
