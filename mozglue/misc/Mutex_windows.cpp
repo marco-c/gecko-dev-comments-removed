@@ -16,12 +16,18 @@ mozilla::detail::MutexImpl::MutexImpl()
 {
   
   const static DWORD LockSpinCount = 1500;
+
+#if defined(RELEASE_OR_BETA)
   
   
   
+  DWORD flags = CRITICAL_SECTION_NO_DEBUG_INFO;
+#else
+  DWORD flags = 0;
+#endif 
+
   BOOL r = InitializeCriticalSectionEx(&platformData()->criticalSection,
-                                       LockSpinCount,
-                                       CRITICAL_SECTION_NO_DEBUG_INFO);
+                                       LockSpinCount, flags);
   MOZ_RELEASE_ASSERT(r);
 }
 
