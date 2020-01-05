@@ -855,11 +855,6 @@ private:
   {
     MOZ_ASSERT(mAudioChannelAgent);
 
-    
-    
-    
-    AutoNoJSAPI nojsapi;
-
     if (aPlaying) {
       AudioPlaybackConfig config;
       nsresult rv = mAudioChannelAgent->NotifyStartedPlaying(&config,
