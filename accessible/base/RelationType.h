@@ -127,8 +127,34 @@ enum class RelationType {
 
   CONTAINING_APPLICATION = 0x14,
 
-  LAST = CONTAINING_APPLICATION
 
+  
+
+
+
+
+
+
+
+  DETAILS = 0x15,
+
+  
+
+
+
+  DETAILS_FOR = 0x16,
+
+  
+
+
+  ERRORMSG = 0x17,
+
+  
+
+
+  ERRORMSG_FOR = 0x18,
+
+  LAST = ERRORMSG_FOR
 };
 
 } 
