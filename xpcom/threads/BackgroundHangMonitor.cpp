@@ -33,16 +33,6 @@
 
 
 
-
-
-
-
-
-
-static const uint32_t kMaximumNativeHangStacks = 300;
-
-
-
 static const size_t kMaxThreadHangStackDepth = 30;
 
 
@@ -486,10 +476,7 @@ BackgroundHangThread::ReportPermaHang()
   Telemetry::HangHistogram& hang = ReportHang(mMaxTimeout);
   Telemetry::HangStack& stack = hang.GetNativeStack();
   if (stack.empty()) {
-    mStats.mNativeStackCnt += 1;
-    if (mStats.mNativeStackCnt <= kMaximumNativeHangStacks) {
-      mStackHelper.GetNativeStack(stack);
-    }
+    mStackHelper.GetNativeStack(stack);
   }
 }
 
