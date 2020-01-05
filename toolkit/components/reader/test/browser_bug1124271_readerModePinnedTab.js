@@ -6,7 +6,7 @@
 
 const PREF = "reader.parse-on-load.enabled";
 
-const TEST_PATH = "http://example.com/browser/browser/base/content/test/general/";
+const TEST_PATH = getRootDirectory(gTestPath).replace("chrome://mochitests/content", "http://example.com");
 
 var readerButton = document.getElementById("reader-mode-button");
 
@@ -37,9 +37,9 @@ add_task(function* () {
   
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");
 
+  let pageShownPromise = BrowserTestUtils.waitForContentEvent(tab.linkedBrowser, "pageshow");
   readerButton.click();
-  yield BrowserTestUtils.waitForContentEvent(tab.linkedBrowser, "pageshow");
-
+  yield pageShownPromise;
   
   is(gBrowser.tabs.length, initialTabsCount, "No additional tabs were opened.");
 
