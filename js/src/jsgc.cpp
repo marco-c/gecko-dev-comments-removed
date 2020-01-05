@@ -6776,7 +6776,7 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
     target->zone()->adoptUniqueIds(source->zone());
 
     
-    target->zone()->types.typeLifoAlloc.ref().transferFrom(&source->zone()->types.typeLifoAlloc.ref());
+    target->zone()->types.typeLifoAlloc().transferFrom(&source->zone()->types.typeLifoAlloc());
 
     
     cx->atomMarking().adoptMarkedAtoms(target->zone(), source->zone());
