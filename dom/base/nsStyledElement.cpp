@@ -5,7 +5,6 @@
 
 
 #include "nsStyledElement.h"
-#include "mozAutoDocUpdate.h"
 #include "nsGkAtoms.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
@@ -87,12 +86,9 @@ nsStyledElement::SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
     static_cast<uint8_t>(nsIDOMMutationEvent::MODIFICATION) :
     static_cast<uint8_t>(nsIDOMMutationEvent::ADDITION);
 
-  nsIDocument* document = GetComposedDoc();
-  mozAutoDocUpdate updateBatch(document, UPDATE_CONTENT_MODEL, aNotify);
   return SetAttrAndNotify(kNameSpaceID_None, nsGkAtoms::style, nullptr,
                           oldValue, attrValue, modType, hasListeners,
-                          aNotify, kDontCallAfterSetAttr, document,
-                          updateBatch);
+                          aNotify, kDontCallAfterSetAttr);
 }
 
 

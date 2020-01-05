@@ -42,7 +42,6 @@
 #include "Units.h"
 #include "DOMIntersectionObserver.h"
 
-class mozAutoDocUpdate;
 class nsIFrame;
 class nsIDOMMozNamedAttrMap;
 class nsIMozBrowserFrame;
@@ -1339,7 +1338,6 @@ protected:
 
 
 
-
   nsresult SetAttrAndNotify(int32_t aNamespaceID,
                             nsIAtom* aName,
                             nsIAtom* aPrefix,
@@ -1348,9 +1346,7 @@ protected:
                             uint8_t aModType,
                             bool aFireMutation,
                             bool aNotify,
-                            bool aCallAfterSetAttr,
-                            nsIDocument* aComposedDocument,
-                            const mozAutoDocUpdate& aGuard);
+                            bool aCallAfterSetAttr);
 
   
 
