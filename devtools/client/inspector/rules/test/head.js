@@ -814,3 +814,13 @@ function waitForStyleModification(inspector) {
     inspector.on("markupmutation", checkForStyleModification);
   });
 }
+
+
+
+
+
+
+function focusAndSendKey(win, key) {
+  win.document.documentElement.focus();
+  EventUtils.sendKey(key, win);
+}
