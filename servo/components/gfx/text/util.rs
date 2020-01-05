@@ -2,7 +2,7 @@
 
 
 
-#[derive(PartialEq, Eq, Copy)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum CompressionMode {
     CompressNone,
     CompressWhitespace,

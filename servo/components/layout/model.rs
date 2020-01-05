@@ -19,7 +19,7 @@ use util::geometry::Au;
 use util::logical_geometry::LogicalMargin;
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct AdjoiningMargins {
     
     pub most_positive: Au,
@@ -62,7 +62,7 @@ impl AdjoiningMargins {
 }
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum CollapsibleMargins {
     
     None(Au, Au),
@@ -260,7 +260,7 @@ impl MarginCollapseInfo {
     }
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum MarginCollapseState {
     AccumulatingCollapsibleTopMargin,
     AccumulatingMarginIn,
@@ -357,7 +357,7 @@ impl IntrinsicISizesContribution {
 }
 
 
-#[derive(Copy, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MaybeAuto {
     Auto,
     Specified(Au),

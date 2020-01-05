@@ -33,7 +33,7 @@ pub enum ReadyState {
 }
 
 
-#[derive(PartialEq, Eq, Debug, Copy)]
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct Epoch(pub u32);
 
 impl Epoch {
@@ -71,7 +71,7 @@ pub enum ScrollPolicy {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct LayerMetadata {
     
     pub id: LayerId,

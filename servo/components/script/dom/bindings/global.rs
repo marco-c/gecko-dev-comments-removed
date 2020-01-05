@@ -25,7 +25,7 @@ use js::jsapi::{JS_GetClass};
 use url::Url;
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum GlobalRef<'a> {
     
     Window(JSRef<'a, window::Window>),

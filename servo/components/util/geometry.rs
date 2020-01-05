@@ -31,7 +31,7 @@ use rustc_serialize::{Encoder, Encodable};
 
 
 
-#[derive(Debug, Copy)]
+#[derive(Debug, Copy, Clone)]
 pub enum ScreenPx {}
 
 
@@ -43,7 +43,7 @@ pub enum ScreenPx {}
 
 
 
-#[derive(RustcEncodable, Debug, Copy)]
+#[derive(RustcEncodable, Debug, Copy, Clone)]
 pub enum ViewportPx {}
 
 
@@ -52,7 +52,7 @@ pub enum ViewportPx {}
 
 
 
-#[derive(RustcEncodable, Debug, Copy)]
+#[derive(RustcEncodable, Debug, Copy, Clone)]
 pub enum PagePx {}
 
 

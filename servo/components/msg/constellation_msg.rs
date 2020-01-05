@@ -27,7 +27,7 @@ impl ConstellationChan {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum IFrameSandboxState {
     IFrameSandboxed,
     IFrameUnsandboxed
@@ -40,7 +40,7 @@ pub struct Failure {
     pub parent_info: Option<(PipelineId, SubpageId)>,
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct WindowSizeData {
     
     
@@ -196,7 +196,7 @@ bitflags! {
 }
 
 
-#[derive(Copy, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum FocusType {
     Element,    
     Parent,     
@@ -342,7 +342,7 @@ pub struct SubpageId(pub u32);
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum PipelineExitType {
     PipelineOnly,
     Complete,

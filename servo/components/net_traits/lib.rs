@@ -192,7 +192,7 @@ impl Metadata {
 }
 
 
-#[derive(PartialEq, Copy)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum CookieSource {
     
     HTTP,

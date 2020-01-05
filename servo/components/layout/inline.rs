@@ -65,7 +65,7 @@ static FONT_SUPERSCRIPT_OFFSET_RATIO: f64 = 0.34;
 
 
 
-#[derive(RustcEncodable, Debug, Copy)]
+#[derive(RustcEncodable, Debug, Copy, Clone)]
 pub struct Line {
     
     

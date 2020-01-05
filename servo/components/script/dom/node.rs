@@ -190,7 +190,7 @@ impl Drop for Node {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 enum SuppressObserver {
     Suppressed,
     Unsuppressed
@@ -266,7 +266,7 @@ impl LayoutDataRef {
 }
 
 
-#[derive(Copy, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 #[jstraceable]
 pub enum NodeTypeId {
     DocumentType,
@@ -1311,7 +1311,7 @@ impl Iterator for TreeIterator {
 
 
 
-#[derive(Copy, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum CloneChildrenFlag {
     CloneChildren,
     DoNotCloneChildren

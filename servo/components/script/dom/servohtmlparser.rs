@@ -33,7 +33,7 @@ pub struct Sink {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct FragmentContext<'a> {
     pub context_elem: JSRef<'a, Node>,
     pub form_elem: Option<JSRef<'a, Node>>,

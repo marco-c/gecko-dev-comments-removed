@@ -66,7 +66,7 @@ impl Encodable for TableRowFlow {
 }
 
 
-#[derive(RustcEncodable, Copy)]
+#[derive(RustcEncodable, Copy, Clone)]
 pub struct CellIntrinsicInlineSize {
     
     pub column_size: ColumnIntrinsicInlineSize,

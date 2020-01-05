@@ -170,22 +170,13 @@ pub trait TLayoutNode {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct LayoutNode<'a> {
     
     node: LayoutJS<Node>,
 
     
     pub chain: PhantomData<&'a ()>,
-}
-
-impl<'ln> Clone for LayoutNode<'ln> {
-    fn clone(&self) -> LayoutNode<'ln> {
-        LayoutNode {
-            node: self.node.clone(),
-            chain: self.chain,
-        }
-    }
 }
 
 impl<'a> PartialEq for LayoutNode<'a> {
@@ -520,7 +511,7 @@ impl<'a> Iterator for LayoutTreeIterator<'a> {
 }
 
 /// A wrapper around elements that ensures layout can only ever access safe properties.
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct LayoutElement<'le> {
     element: &'le Element,
 }

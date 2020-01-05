@@ -693,7 +693,7 @@ pub type DescendantOffsetIter<'a> = Zip<DescendantIter<'a>, IterMut<'a, Au>>;
 
 
 
-#[derive(RustcEncodable, Copy)]
+#[derive(RustcEncodable, Copy, Clone)]
 pub struct AbsolutePositionInfo {
     
     pub relative_containing_block_size: LogicalSize<Au>,

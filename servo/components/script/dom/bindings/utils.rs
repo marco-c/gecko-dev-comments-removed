@@ -129,7 +129,7 @@ pub struct NativePropertyHooks {
 }
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct DOMClass {
     
     
@@ -147,6 +147,9 @@ pub struct DOMJSClass {
     pub base: js::Class,
     
     pub dom_class: DOMClass
+}
+impl Clone for DOMJSClass {
+    fn clone(&self) -> DOMJSClass { *self }
 }
 unsafe impl Sync for DOMJSClass {}
 

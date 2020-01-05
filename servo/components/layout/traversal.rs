@@ -119,7 +119,7 @@ fn insert_ancestors_into_bloom_filter(bf: &mut Box<BloomFilter>,
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct RecalcStyleForNode<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -211,7 +211,7 @@ impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
 }
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct ConstructFlows<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -310,7 +310,7 @@ impl<'a> PostorderFlowTraversal for BubbleISizes<'a> {
 }
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct AssignISizes<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -331,7 +331,7 @@ impl<'a> PreorderFlowTraversal for AssignISizes<'a> {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct AssignBSizesAndStoreOverflow<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -356,7 +356,7 @@ impl<'a> PostorderFlowTraversal for AssignBSizesAndStoreOverflow<'a> {
     }
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct ComputeAbsolutePositions<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
@@ -368,7 +368,7 @@ impl<'a> PreorderFlowTraversal for ComputeAbsolutePositions<'a> {
     }
 }
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct BuildDisplayList<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }

@@ -16,7 +16,7 @@ pub trait ImageResponder : Send {
 }
 
 
-#[derive(PartialEq, Copy)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum ImageState {
     Pending,
     LoadError,

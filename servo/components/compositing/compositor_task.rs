@@ -95,7 +95,7 @@ impl ScriptListener for Box<CompositorProxy+'static+Send> {
 }
 
 
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 pub struct LayerProperties {
     pub pipeline_id: PipelineId,
     pub epoch: Epoch,

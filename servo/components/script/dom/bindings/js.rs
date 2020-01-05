@@ -124,6 +124,9 @@ impl<T: Reflectable> Rootable<T> for Unrooted<T> {
 }
 
 impl<T> Copy for Unrooted<T> {}
+impl<T> Clone for Unrooted<T> {
+    fn clone(&self) -> Unrooted<T> { *self }
+}
 
 
 
@@ -545,6 +548,9 @@ pub struct RootCollection {
 pub struct RootCollectionPtr(pub *const RootCollection);
 
 impl Copy for RootCollectionPtr {}
+impl Clone for RootCollectionPtr {
+    fn clone(&self) -> RootCollectionPtr { *self }
+}
 
 impl RootCollection {
     

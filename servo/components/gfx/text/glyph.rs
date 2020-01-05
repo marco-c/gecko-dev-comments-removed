@@ -87,7 +87,7 @@ impl GlyphEntry {
 pub type GlyphId = u32;
 
 
-#[derive(PartialEq, Copy)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum BreakType {
     None,
     Normal,
@@ -415,7 +415,7 @@ impl<'a> DetailedGlyphStore {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub struct GlyphData {
     id: GlyphId,
     advance: Au,
@@ -449,7 +449,7 @@ impl GlyphData {
 
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum GlyphInfo<'a> {
     Simple(&'a GlyphStore, CharIndex),
     Detail(&'a GlyphStore, CharIndex, u16),

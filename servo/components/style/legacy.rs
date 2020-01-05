@@ -21,14 +21,14 @@ use util::geometry::Au;
 use util::str::LengthOrPercentageOrAuto;
 
 
-#[derive(Copy, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum LengthAttribute {
     
     Width,
 }
 
 
-#[derive(Copy, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum IntegerAttribute {
     
     Size,
@@ -37,7 +37,7 @@ pub enum IntegerAttribute {
 }
 
 
-#[derive(Copy, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum UnsignedIntegerAttribute {
     
     Border,

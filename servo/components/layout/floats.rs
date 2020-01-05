@@ -29,7 +29,7 @@ impl FloatKind {
 }
 
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum ClearType {
     Left,
     Right,

@@ -16,7 +16,7 @@ pub struct MediaQueryList {
     pub media_queries: Vec<MediaQuery>
 }
 
-#[derive(PartialEq, Eq, Copy, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Range<T> {
     Min(T),
     Max(T),
@@ -59,14 +59,14 @@ impl<T: Ord> Range<T> {
 }
 
 
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Expression {
     
     Width(Range<specified::Length>),
 }
 
 
-#[derive(PartialEq, Eq, Copy, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Qualifier {
     Only,
     Not,
@@ -91,13 +91,13 @@ impl MediaQuery {
 }
 
 
-#[derive(PartialEq, Eq, Copy, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum MediaQueryType {
     All,  
     MediaType(MediaType),
 }
 
-#[derive(PartialEq, Eq, Copy, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum MediaType {
     Screen,
     Print,
