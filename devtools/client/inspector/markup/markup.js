@@ -3198,6 +3198,7 @@ ElementEditor.prototype = {
     
     let data = {
       attrName: attribute.name,
+      attrValue: attribute.value,
       tabindex: this.container.canFocus ? "0" : "-1",
     };
     this.template("attribute", data);
