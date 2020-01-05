@@ -1215,12 +1215,12 @@ nsStyleContext::CalcStyleDifferenceInternal(StyleContextLike* aNewContext,
     
     
     
-#define STYLE_FIELD(name_) thisVisStruct->name_ != otherVisStruct->name_ ||
+#define STYLE_FIELD(name_) thisVisStruct->name_ != otherVisStruct->name_
 #define STYLE_STRUCT(name_, fields_)                                    \
     if (!change && PeekStyle##name_()) {                                \
       const nsStyle##name_* thisVisStruct = thisVis->Style##name_();    \
       const nsStyle##name_* otherVisStruct = otherVis->Style##name_();  \
-      if (MOZ_FOR_EACH(STYLE_FIELD, (), fields_) false) {               \
+      if (MOZ_FOR_EACH_SEPARATED(STYLE_FIELD, (||), (), fields_)) {     \
         change = true;                                                  \
       }                                                                 \
     }
