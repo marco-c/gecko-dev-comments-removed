@@ -1070,11 +1070,7 @@ protected:
   
 
 
-  bool DoesStepApply() const
-  {
-    
-    return DoesMinMaxApply() && mType != NS_FORM_INPUT_DATETIME_LOCAL;
-  }
+  bool DoesStepApply() const { return DoesMinMaxApply(); }
 
   
 
@@ -1622,7 +1618,7 @@ protected:
 
 private:
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                    GenericSpecifiedValues* aGenericData);
+                                    nsRuleData* aData);
 
   
 
