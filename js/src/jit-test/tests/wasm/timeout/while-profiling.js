@@ -5,6 +5,10 @@
 if (!wasmIsSupported())
     quit(6);
 
+
+if (!getBuildConfiguration()["arm-simulator"])
+    quit(6);
+
 var code = wasmTextToBinary(`(module
     (func (export "iloop")
         (loop $top br $top)
