@@ -1423,10 +1423,23 @@ Classifier::ReadNoiseEntries(const Prefix& aPrefix,
     return NS_ERROR_FAILURE;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  uint32_t m = prefixes.Length();
+  uint32_t a = aCount % m;
+  uint32_t idx = aPrefix.ToUint32() % m;
+
   for (size_t i = 0; i < aCount; i++) {
-    
-    
-    uint32_t idx = rand() % prefixes.Length();
+    idx = (a * idx + a) % m;
 
     Prefix newPrefix;
     uint32_t hash = prefixes[idx];
