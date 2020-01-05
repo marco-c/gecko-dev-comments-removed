@@ -345,6 +345,9 @@ ResponsiveUI.prototype = {
 
     
     yield this.connectToServer();
+
+    
+    message.post(this.toolWindow, "post-init");
   }),
 
   

@@ -6,7 +6,11 @@
 const TEST_URL = "data:text/html;charset=utf-8,";
 
 addRDMTask(TEST_URL, function* ({ ui, manager }) {
-  ok(ui, "An instance of the RDM should be attached to the tab.");
+  let store = ui.toolWindow.store;
+
+  
+  yield waitUntilState(store, state => state.viewports.length == 1);
+
   yield setViewportSize(ui, manager, 300, 300);
 
   

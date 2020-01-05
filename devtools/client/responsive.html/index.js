@@ -30,6 +30,9 @@ const { changeDisplayPixelRatio } = require("./actions/display-pixel-ratio");
 const { addViewport, resizeViewport } = require("./actions/viewports");
 const { loadDevices } = require("./actions/devices");
 
+
+window.require = require;
+
 let bootstrap = {
 
   telemetry: new Telemetry(),
@@ -44,7 +47,6 @@ let bootstrap = {
               "agent");
     this.telemetry.toolOpened("responsive");
     let store = this.store = Store();
-    this.dispatch(loadDevices());
     let provider = createElement(Provider, { store }, App());
     ReactDOM.render(provider, document.querySelector("#root"));
     message.post(window, "init:done");
@@ -75,6 +77,10 @@ let bootstrap = {
 
 
 message.wait(window, "init").then(() => bootstrap.init());
+
+
+
+message.wait(window, "post-init").then(() => bootstrap.dispatch(loadDevices()));
 
 window.addEventListener("unload", function onUnload() {
   window.removeEventListener("unload", onUnload);

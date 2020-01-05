@@ -115,7 +115,8 @@ addRDMTask(TEST_URL, function* ({ ui }) {
   let select = document.querySelector(".viewport-device-selector");
 
   
-  yield waitUntilState(store, state => state.viewports.length == 1);
+  yield waitUntilState(store, state => state.viewports.length == 1
+    && state.devices.listState == Types.deviceListState.LOADED);
 
   openDeviceModal(ui);
 
