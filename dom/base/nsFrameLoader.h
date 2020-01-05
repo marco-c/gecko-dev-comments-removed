@@ -25,7 +25,6 @@
 #include "Units.h"
 #include "nsIWebBrowserPersistable.h"
 #include "nsIFrame.h"
-#include "nsIGroupedSHistory.h"
 
 class nsIURI;
 class nsSubDocumentFrame;
@@ -75,6 +74,7 @@ class nsFrameLoader final : public nsIFrameLoader,
 
 public:
   static nsFrameLoader* Create(mozilla::dom::Element* aOwner,
+                               nsPIDOMWindowOuter* aOpener,
                                bool aNetworkCreated);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -131,12 +131,12 @@ public:
   
   
   nsresult SwapWithOtherLoader(nsFrameLoader* aOther,
-                               RefPtr<nsFrameLoader>& aFirstToSwap,
-                               RefPtr<nsFrameLoader>& aSecondToSwap);
+                               nsIFrameLoaderOwner* aThisOwner,
+                               nsIFrameLoaderOwner* aOtherOwner);
 
   nsresult SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
-                                     RefPtr<nsFrameLoader>& aFirstToSwap,
-                                     RefPtr<nsFrameLoader>& aSecondToSwap);
+                                     nsIFrameLoaderOwner* aThisOwner,
+                                     nsIFrameLoaderOwner* aOtherOwner);
 
   
 
@@ -229,7 +229,9 @@ public:
   nsCOMPtr<nsIInProcessContentFrameMessageManager> mChildMessageManager;
 
 private:
-  nsFrameLoader(mozilla::dom::Element* aOwner, bool aNetworkCreated);
+  nsFrameLoader(mozilla::dom::Element* aOwner,
+                nsPIDOMWindowOuter* aOpener,
+                bool aNetworkCreated);
   ~nsFrameLoader();
 
   void SetOwnerContent(mozilla::dom::Element* aContent);
@@ -355,6 +357,9 @@ private:
   
   nsCOMPtr<nsIDocument> mContainerDocWhileDetached;
 
+  
+  nsCOMPtr<nsPIDOMWindowOuter> mOpener;
+
   TabParent* mRemoteBrowser;
   uint64_t mChildID;
 
@@ -364,9 +369,6 @@ private:
 
   
   mozilla::ScreenIntSize mLazySize;
-
-  nsCOMPtr<nsIPartialSHistory> mPartialSessionHistory;
-  nsCOMPtr<nsIGroupedSHistory> mGroupedSessionHistory;
 
   bool mIsPrerendered : 1;
   bool mDepthTooGreat : 1;

@@ -58,8 +58,6 @@
 #include "nsPIWindowRoot.h"
 #include "nsLayoutUtils.h"
 #include "nsView.h"
-#include "GroupedSHistory.h"
-#include "PartialSHistory.h"
 
 #include "nsIURI.h"
 #include "nsIURL.h"
@@ -136,12 +134,7 @@ typedef FrameMetrics::ViewID ViewID;
 
 #define MAX_DEPTH_CONTENT_FRAMES 10
 
-NS_IMPL_CYCLE_COLLECTION(nsFrameLoader,
-                         mDocShell,
-                         mMessageManager,
-                         mChildMessageManager,
-                         mPartialSessionHistory,
-                         mGroupedSessionHistory)
+NS_IMPL_CYCLE_COLLECTION(nsFrameLoader, mDocShell, mMessageManager, mChildMessageManager, mOpener)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
@@ -151,9 +144,10 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFrameLoader)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowserPersistable)
 NS_INTERFACE_MAP_END
 
-nsFrameLoader::nsFrameLoader(Element* aOwner, bool aNetworkCreated)
+nsFrameLoader::nsFrameLoader(Element* aOwner, nsPIDOMWindowOuter* aOpener, bool aNetworkCreated)
   : mOwnerContent(aOwner)
   , mDetachedSubdocFrame(nullptr)
+  , mOpener(aOpener)
   , mRemoteBrowser(nullptr)
   , mChildID(0)
   , mEventMode(EVENT_MODE_NORMAL_DISPATCH)
@@ -174,6 +168,8 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, bool aNetworkCreated)
   , mVisible(true)
 {
   mRemoteFrame = ShouldUseRemoteProcess();
+  MOZ_ASSERT(!mRemoteFrame || !aOpener,
+             "Cannot pass aOpener for a remote frame!");
 }
 
 nsFrameLoader::~nsFrameLoader()
@@ -185,7 +181,7 @@ nsFrameLoader::~nsFrameLoader()
 }
 
 nsFrameLoader*
-nsFrameLoader::Create(Element* aOwner, bool aNetworkCreated)
+nsFrameLoader::Create(Element* aOwner, nsPIDOMWindowOuter* aOpener, bool aNetworkCreated)
 {
   NS_ENSURE_TRUE(aOwner, nullptr);
   nsIDocument* doc = aOwner->OwnerDoc();
@@ -215,7 +211,7 @@ nsFrameLoader::Create(Element* aOwner, bool aNetworkCreated)
                   doc->IsStaticDocument()),
                  nullptr);
 
-  return new nsFrameLoader(aOwner, aNetworkCreated);
+  return new nsFrameLoader(aOwner, aOpener, aNetworkCreated);
 }
 
 NS_IMETHODIMP
@@ -372,117 +368,6 @@ nsFrameLoader::MakePrerenderedLoaderActive()
     nsresult rv = mDocShell->SetIsActive(true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsFrameLoader::GetPartialSessionHistory(nsIPartialSHistory** aResult)
-{
-  if (mRemoteBrowser && !mPartialSessionHistory) {
-    
-    
-    mPartialSessionHistory = new PartialSHistory(this);
-  }
-
-  nsCOMPtr<nsIPartialSHistory> partialHistory(mPartialSessionHistory);
-  partialHistory.forget(aResult);
-  return NS_OK;
-}
-
-
-NS_IMETHODIMP
-nsFrameLoader::GetGroupedSessionHistory(nsIGroupedSHistory** aResult)
-{
-  nsCOMPtr<nsIGroupedSHistory> groupedHistory(mGroupedSessionHistory);
-  groupedHistory.forget(aResult);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsFrameLoader::AppendPartialSessionHistoryAndSwap(nsIFrameLoader* aOther)
-{
-  if (!aOther) {
-    return NS_ERROR_INVALID_POINTER;
-  }
-
-  nsCOMPtr<nsIGroupedSHistory> otherGroupedHistory;
-  aOther->GetGroupedSessionHistory(getter_AddRefs(otherGroupedHistory));
-  MOZ_ASSERT(!otherGroupedHistory,
-             "Cannot append a GroupedSHistory owner to another.");
-  if (otherGroupedHistory) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  
-  nsresult rv;
-  if (!mGroupedSessionHistory) {
-    mGroupedSessionHistory = new GroupedSHistory();
-    rv = mGroupedSessionHistory->AppendPartialSessionHistory(mPartialSessionHistory);
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
-    }
-  }
-
-  if (aOther == this) {
-    return NS_OK;
-  }
-
-  
-  RefPtr<nsFrameLoader> otherLoader = static_cast<nsFrameLoader*>(aOther);
-  rv = mGroupedSessionHistory->
-         AppendPartialSessionHistory(otherLoader->mPartialSessionHistory);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  nsCOMPtr<nsIBrowser> ourBrowser = do_QueryInterface(mOwnerContent);
-  nsCOMPtr<nsIBrowser> otherBrowser = do_QueryInterface(otherLoader->mOwnerContent);
-  if (!ourBrowser || !otherBrowser) {
-    return NS_ERROR_FAILURE;
-  }
-  if (NS_FAILED(ourBrowser->SwapBrowsers(otherBrowser))) {
-    return NS_ERROR_FAILURE;
-  }
-  mGroupedSessionHistory.swap(otherLoader->mGroupedSessionHistory);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsFrameLoader::RequestGroupedHistoryNavigation(uint32_t aGlobalIndex)
-{
-  if (!mGroupedSessionHistory) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  nsCOMPtr<nsIFrameLoader> targetLoader;
-  nsresult rv = mGroupedSessionHistory->
-                  GotoIndex(aGlobalIndex, getter_AddRefs(targetLoader));
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  RefPtr<nsFrameLoader> otherLoader = static_cast<nsFrameLoader*>(targetLoader.get());
-  if (!targetLoader) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (targetLoader == this) {
-    return NS_OK;
-  }
-
-  nsCOMPtr<nsIBrowser> ourBrowser = do_QueryInterface(mOwnerContent);
-  nsCOMPtr<nsIBrowser> otherBrowser = do_QueryInterface(otherLoader->mOwnerContent);
-  if (!ourBrowser || !otherBrowser) {
-    return NS_ERROR_FAILURE;
-  }
-  if (NS_FAILED(ourBrowser->SwapBrowsers(otherBrowser))) {
-    return NS_ERROR_FAILURE;
-  }
-  mGroupedSessionHistory.swap(otherLoader->mGroupedSessionHistory);
 
   return NS_OK;
 }
@@ -1036,10 +921,17 @@ nsFrameLoader::Hide()
 
 nsresult
 nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
-                                         RefPtr<nsFrameLoader>& aFirstToSwap,
-                                         RefPtr<nsFrameLoader>& aSecondToSwap)
+                                         nsIFrameLoaderOwner* aThisOwner,
+                                         nsIFrameLoaderOwner* aOtherOwner)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+#ifdef DEBUG
+  RefPtr<nsFrameLoader> first = aThisOwner->GetFrameLoader();
+  RefPtr<nsFrameLoader> second = aOtherOwner->GetFrameLoader();
+  MOZ_ASSERT(first == this, "aThisOwner must own this");
+  MOZ_ASSERT(second == aOther, "aOtherOwner must own aOther");
+#endif
 
   Element* ourContent = mOwnerContent;
   Element* otherContent = aOther->mOwnerContent;
@@ -1188,7 +1080,12 @@ nsFrameLoader::SwapWithOtherRemoteLoader(nsFrameLoader* aOther,
   }
   mMessageManager.swap(aOther->mMessageManager);
 
-  aFirstToSwap.swap(aSecondToSwap);
+  
+  
+  
+  nsCOMPtr<nsIFrameLoader> kungFuDeathGrip(this);
+  aThisOwner->InternalSetFrameLoader(aOther);
+  aOtherOwner->InternalSetFrameLoader(kungFuDeathGrip);
 
   ourFrameFrame->EndSwapDocShells(otherFrame);
 
@@ -1279,12 +1176,16 @@ private:
 
 nsresult
 nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
-                                   RefPtr<nsFrameLoader>& aFirstToSwap,
-                                   RefPtr<nsFrameLoader>& aSecondToSwap)
+                                   nsIFrameLoaderOwner* aThisOwner,
+                                   nsIFrameLoaderOwner* aOtherOwner)
 {
-  NS_PRECONDITION((aFirstToSwap == this && aSecondToSwap == aOther) ||
-                  (aFirstToSwap == aOther && aSecondToSwap == this),
-                  "Swapping some sort of random loaders?");
+#ifdef DEBUG
+  RefPtr<nsFrameLoader> first = aThisOwner->GetFrameLoader();
+  RefPtr<nsFrameLoader> second = aOtherOwner->GetFrameLoader();
+  MOZ_ASSERT(first == this, "aThisOwner must own this");
+  MOZ_ASSERT(second == aOther, "aOtherOwner must own aOther");
+#endif
+
   NS_ENSURE_STATE(!mInShow && !aOther->mInShow);
 
   if (IsRemoteFrame() != aOther->IsRemoteFrame()) {
@@ -1326,7 +1227,7 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   
   if (IsRemoteFrame()) {
     MOZ_ASSERT(aOther->IsRemoteFrame());
-    return SwapWithOtherRemoteLoader(aOther, aFirstToSwap, aSecondToSwap);
+    return SwapWithOtherRemoteLoader(aOther, aThisOwner, aOtherOwner);
   }
 
   
@@ -1588,7 +1489,12 @@ nsFrameLoader::SwapWithOtherLoader(nsFrameLoader* aOther,
   }
   mMessageManager.swap(aOther->mMessageManager);
 
-  aFirstToSwap.swap(aSecondToSwap);
+  
+  
+  
+  nsCOMPtr<nsIFrameLoader> kungFuDeathGrip(this);
+  aThisOwner->InternalSetFrameLoader(aOther);
+  aOtherOwner->InternalSetFrameLoader(kungFuDeathGrip);
 
   
   nsCOMPtr<nsISHistoryInternal> ourInternalHistory =
@@ -2129,6 +2035,12 @@ nsFrameLoader::MaybeCreateDocShell()
   nsCOMPtr<nsIBaseWindow> base_win(do_QueryInterface(mDocShell));
   if (win_private) {
     win_private->SetFrameElementInternal(frame_element);
+
+    
+    if (mOpener) {
+      win_private->SetOpenerWindow(mOpener, true);
+      mOpener = nullptr;
+    }
   }
 
   
@@ -2150,15 +2062,6 @@ nsFrameLoader::MaybeCreateDocShell()
 
     nsCOMPtr<nsIWebNavigation> webNav(do_QueryInterface(mDocShell));
     webNav->SetSessionHistory(sessionHistory);
-
-
-    if (GroupedSHistory::GroupedHistoryEnabled()) {
-      mPartialSessionHistory = new PartialSHistory(this);
-      nsCOMPtr<nsISHistoryListener> listener(do_QueryInterface(mPartialSessionHistory));
-      nsCOMPtr<nsIPartialSHistoryListener> partialListener(do_QueryInterface(mPartialSessionHistory));
-      sessionHistory->AddSHistoryListener(listener);
-      sessionHistory->SetPartialSHistoryListener(partialListener);
-    }
   }
 
   DocShellOriginAttributes attrs;
@@ -3219,18 +3122,6 @@ nsFrameLoader::RequestNotifyAfterRemotePaint()
   }
 
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsFrameLoader::RequestFrameLoaderClose()
-{
-  nsCOMPtr<nsIBrowser> browser = do_QueryInterface(mOwnerContent);
-  if (NS_WARN_IF(!browser)) {
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  return browser->CloseBrowser();
 }
 
 NS_IMETHODIMP
