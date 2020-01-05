@@ -1159,6 +1159,11 @@ struct TlsData
     
     uint8_t* memoryBase;
 
+#ifndef WASM_HUGE_MEMORY
+    
+    uint32_t boundsCheckLimit;
+#endif
+
     
     
     
@@ -1440,32 +1445,6 @@ ComputeMappedSize(uint32_t maxSize);
 
 
 
-class BoundsCheck
-{
-  public:
-    BoundsCheck() = default;
-
-    explicit BoundsCheck(uint32_t cmpOffset)
-      : cmpOffset_(cmpOffset)
-    { }
-
-    uint8_t* patchAt(uint8_t* code) const { return code + cmpOffset_; }
-    void offsetBy(uint32_t offset) { cmpOffset_ += offset; }
-
-  private:
-    uint32_t cmpOffset_;
-};
-
-WASM_DECLARE_POD_VECTOR(BoundsCheck, BoundsCheckVector)
-
-
-
-
-
-
-
-
-
 class MemoryAccess
 {
     uint32_t insnOffset_;
@@ -1497,26 +1476,6 @@ class MemoryAccess
 };
 
 WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
-
-
-
-
-
-
-
-struct MemoryPatch
-{
-    uint32_t offset;
-
-    MemoryPatch() = default;
-    explicit MemoryPatch(uint32_t offset) : offset(offset) {}
-
-    void offsetBy(uint32_t delta) {
-        offset += delta;
-    }
-};
-
-WASM_DECLARE_POD_VECTOR(MemoryPatch, MemoryPatchVector)
 
 
 
