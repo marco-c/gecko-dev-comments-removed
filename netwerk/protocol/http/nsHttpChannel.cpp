@@ -3128,6 +3128,9 @@ nsHttpChannel::OnDoneReadingPartialCacheEntry(bool *streamDone)
     
     
     mCachedContentIsPartial = false;
+    
+    
+    mCachePump = nullptr;
 
     
     
