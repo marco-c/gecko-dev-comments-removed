@@ -111,6 +111,11 @@ pub struct Opts {
 
     
     
+    
+    pub enable_subpixel_text_antialiasing: bool,
+
+    
+    
     pub enable_canvas_antialiasing: bool,
 
     
@@ -242,6 +247,9 @@ pub struct DebugOptions {
     pub disable_text_aa: bool,
 
     
+    pub enable_subpixel_aa: bool,
+
+    
     pub disable_canvas_aa: bool,
 
     
@@ -343,6 +351,7 @@ impl DebugOptions {
                 "help" => debug_options.help = true,
                 "bubble-widths" => debug_options.bubble_widths = true,
                 "disable-text-aa" => debug_options.disable_text_aa = true,
+                "enable-subpixel-aa" => debug_options.enable_subpixel_aa = true,
                 "disable-canvas-aa" => debug_options.disable_text_aa = true,
                 "dump-style-tree" => debug_options.dump_style_tree = true,
                 "dump-rule-tree" => debug_options.dump_rule_tree = true,
@@ -516,6 +525,7 @@ pub fn default_opts() -> Opts {
         show_debug_parallel_layout: false,
         paint_flashing: false,
         enable_text_antialiasing: false,
+        enable_subpixel_text_antialiasing: false,
         enable_canvas_antialiasing: false,
         trace_layout: false,
         debugger_port: None,
@@ -830,6 +840,7 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
         show_debug_parallel_layout: debug_options.show_parallel_layout,
         paint_flashing: debug_options.paint_flashing,
         enable_text_antialiasing: !debug_options.disable_text_aa,
+        enable_subpixel_text_antialiasing: debug_options.enable_subpixel_aa,
         enable_canvas_antialiasing: !debug_options.disable_canvas_aa,
         dump_style_tree: debug_options.dump_style_tree,
         dump_rule_tree: debug_options.dump_rule_tree,
