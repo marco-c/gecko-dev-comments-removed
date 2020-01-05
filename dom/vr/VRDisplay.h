@@ -345,6 +345,7 @@ protected:
   virtual void LastRelease() override;
 
   void ExitPresentInternal();
+  void Shutdown();
   void UpdateFrameInfo();
 
   RefPtr<gfx::VRDisplayClient> mClient;
@@ -372,6 +373,7 @@ protected:
   
   TimeStamp mHandlingVRNavigationEventStart;
   int32_t mVRNavigationEventDepth;
+  bool mShutdown;
 };
 
 } 
