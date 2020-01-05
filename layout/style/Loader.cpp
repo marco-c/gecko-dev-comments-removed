@@ -1109,8 +1109,7 @@ Loader::CreateSheet(nsIURI* aURI,
   
   *aIsAlternate = IsAlternate(aTitle, aHasAlternateRel);
 
-  
-  if (aURI && GetStyleBackendType() == StyleBackendType::Gecko) {
+  if (aURI) {
     aSheetState = eSheetComplete;
     RefPtr<StyleSheet> sheet;
 
@@ -1144,17 +1143,13 @@ Loader::CreateSheet(nsIURI* aURI,
     }
 
     if (sheet) {
-      if (sheet->IsServo()) {
-        MOZ_CRASH("stylo: can't clone ServoStyleSheets yet");
-      }
-
       
       
-      NS_ASSERTION(sheet->AsGecko()->IsComplete(),
+      NS_ASSERTION(sheet->IsComplete(),
                    "Sheet thinks it's not complete while we think it is");
 
       
-      if (sheet->AsGecko()->IsModified()) {
+      if (sheet->IsModified()) {
         LOG(("  Not cloning completed sheet %p because it's been modified",
              sheet.get()));
         sheet = nullptr;
@@ -1207,13 +1202,10 @@ Loader::CreateSheet(nsIURI* aURI,
 
     if (sheet) {
       
-      if (sheet->IsServo()) {
-        MOZ_CRASH("stylo: can't clone ServoStyleSheets yet");
-      }
-      NS_ASSERTION(!sheet->AsGecko()->IsModified() ||
-                   !sheet->AsGecko()->IsComplete(),
+      NS_ASSERTION(!sheet->IsModified() ||
+                   !sheet->IsComplete(),
                    "Unexpected modified complete sheet");
-      NS_ASSERTION(sheet->AsGecko()->IsComplete() ||
+      NS_ASSERTION(sheet->IsComplete() ||
                    aSheetState != eSheetComplete,
                    "Sheet thinks it's not complete while we think it is");
 
@@ -1221,14 +1213,14 @@ Loader::CreateSheet(nsIURI* aURI,
         sheet->Clone(nullptr, nullptr, nullptr, nullptr);
       *aSheet = Move(clonedSheet);
       if (*aSheet && fromCompleteSheets &&
-          !sheet->AsGecko()->GetOwnerNode() &&
-          !sheet->AsGecko()->GetParentSheet()) {
+          !sheet->GetOwnerNode() &&
+          !sheet->GetParentSheet()) {
         
         
         
         
         URIPrincipalReferrerPolicyAndCORSModeHashKey key(aURI, aLoaderPrincipal, aCORSMode, aReferrerPolicy);
-        NS_ASSERTION((*aSheet)->AsGecko()->IsComplete(),
+        NS_ASSERTION((*aSheet)->IsComplete(),
                      "Should only be caching complete sheets");
         mSheets->mCompleteSheets.Put(&key, *aSheet);
       }
@@ -1433,9 +1425,12 @@ Loader::InsertChildSheet(StyleSheet* aSheet,
     aSheet->AsGecko()->SetEnabled(true);
     aGeckoParentRule->SetSheet(aSheet->AsGecko()); 
   } else {
+    
     RefPtr<RawServoStyleSheet> sheet =
       Servo_ImportRule_GetSheet(aServoParentRule).Consume();
-    aSheet->AsServo()->SetSheetForImport(sheet);
+    if (!aSheet->AsServo()->RawSheet()) {
+      aSheet->AsServo()->SetSheetForImport(sheet);
+    }
   }
   aParentSheet->AppendStyleSheet(aSheet);
 
@@ -1952,44 +1947,40 @@ Loader::DoSheetComplete(SheetLoadData* aLoadData, nsresult aStatus,
     
     
     
-    if (aLoadData->mSheet->IsGecko()) {
-      data = aLoadData;
-      CSSStyleSheet* sheet = aLoadData->mSheet->AsGecko();
-      while (data) {
-        if (data->mSheet->GetParentSheet() || data->mSheet->GetOwnerNode()) {
-          sheet = data->mSheet->AsGecko();
-          break;
-        }
-        data = data->mNext;
+    data = aLoadData;
+    StyleSheet* sheet = aLoadData->mSheet;
+    while (data) {
+      if (data->mSheet->GetParentSheet() || data->mSheet->GetOwnerNode()) {
+        sheet = data->mSheet;
+        break;
       }
-#ifdef MOZ_XUL
-      if (IsChromeURI(aLoadData->mURI) &&
-          GetStyleBackendType() == StyleBackendType::Gecko) {
-        nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
-        if (cache && cache->IsEnabled()) {
-          if (!cache->GetStyleSheet(aLoadData->mURI)) {
-            LOG(("  Putting sheet in XUL prototype cache"));
-            NS_ASSERTION(sheet->IsComplete(),
-                         "Should only be caching complete sheets");
-            cache->PutStyleSheet(sheet);
-          }
-        }
-      }
-      else {
-#endif
-        URIPrincipalReferrerPolicyAndCORSModeHashKey key(aLoadData->mURI,
-                                           aLoadData->mLoaderPrincipal,
-                                           aLoadData->mSheet->GetCORSMode(),
-                                           aLoadData->mSheet->GetReferrerPolicy());
-        NS_ASSERTION(sheet->IsComplete(),
-                     "Should only be caching complete sheets");
-        mSheets->mCompleteSheets.Put(&key, sheet);
-#ifdef MOZ_XUL
-      }
-#endif
-    } else {
-      NS_WARNING("stylo: Stylesheet caching not yet supported - see bug 1290218.");
+      data = data->mNext;
     }
+#ifdef MOZ_XUL
+    if (IsChromeURI(aLoadData->mURI) &&
+        GetStyleBackendType() == StyleBackendType::Gecko) {
+      nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
+      if (cache && cache->IsEnabled()) {
+        if (!cache->GetStyleSheet(aLoadData->mURI)) {
+          LOG(("  Putting sheet in XUL prototype cache"));
+          NS_ASSERTION(sheet->IsComplete(),
+                       "Should only be caching complete sheets");
+          cache->PutStyleSheet(sheet);
+        }
+      }
+    }
+    else {
+#endif
+      URIPrincipalReferrerPolicyAndCORSModeHashKey key(aLoadData->mURI,
+                                         aLoadData->mLoaderPrincipal,
+                                         aLoadData->mSheet->GetCORSMode(),
+                                         aLoadData->mSheet->GetReferrerPolicy());
+      NS_ASSERTION(sheet->IsComplete(),
+                   "Should only be caching complete sheets");
+      mSheets->mCompleteSheets.Put(&key, sheet);
+#ifdef MOZ_XUL
+    }
+#endif
   }
 
   NS_RELEASE(aLoadData);  
