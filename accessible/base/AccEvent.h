@@ -51,10 +51,6 @@ public:
      
     eCoalesceReorder,
 
-     
-     
-    eCoalesceMutationTextChange,
-
     
     
     eCoalesceOfSameType,
@@ -214,7 +210,7 @@ class AccMutationEvent: public AccEvent
 {
 public:
   AccMutationEvent(uint32_t aEventType, Accessible* aTarget) :
-    AccEvent(aEventType, aTarget, eAutoDetect, eCoalesceMutationTextChange)
+    AccEvent(aEventType, aTarget, eAutoDetect, eCoalesceReorder)
   {
     
     
