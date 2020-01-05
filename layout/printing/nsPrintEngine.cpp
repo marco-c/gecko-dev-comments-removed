@@ -2615,6 +2615,7 @@ DocHasPrintCallbackCanvas(nsIDocument* aDoc)
 
 
 
+
 bool
 nsPrintEngine::HasPrintCallbackCanvas()
 {
