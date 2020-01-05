@@ -3521,6 +3521,7 @@ KeyboardLayout::IsSysKey(uint8_t aVirtualKey,
   
   
   
+  
   if (!aModKeyState.IsAlt() || aModKeyState.IsControl()) {
     return false;
   }
@@ -3538,7 +3539,7 @@ KeyboardLayout::IsSysKey(uint8_t aVirtualKey,
 
   
   
-  return inputCharsAndModifiers.mModifiers[0] != MODIFIER_ALT;
+  return !!(inputCharsAndModifiers.mModifiers[0] & MODIFIER_ALT);
 }
 
 void
