@@ -22,6 +22,7 @@ FramePropertyTable::SetInternal(
   if (mLastFrame != aFrame || !mLastEntry) {
     mLastFrame = aFrame;
     mLastEntry = mEntries.PutEntry(aFrame);
+    aFrame->AddStateBits(NS_FRAME_HAS_PROPERTIES);
   }
   Entry* entry = mLastEntry;
 
@@ -63,13 +64,18 @@ FramePropertyTable::SetInternal(
 
 void*
 FramePropertyTable::GetInternal(
-  const nsIFrame* aFrame, UntypedDescriptor aProperty, bool* aFoundResult)
+  const nsIFrame* aFrame, UntypedDescriptor aProperty, bool aSkipBitCheck,
+  bool* aFoundResult)
 {
   NS_ASSERTION(aFrame, "Null frame?");
   NS_ASSERTION(aProperty, "Null property?");
 
   if (aFoundResult) {
     *aFoundResult = false;
+  }
+
+  if (!aSkipBitCheck && !(aFrame->GetStateBits() & NS_FRAME_HAS_PROPERTIES)) {
+    return nullptr;
   }
 
   
@@ -82,6 +88,8 @@ FramePropertyTable::GetInternal(
     mLastEntry = entry;
   }
 
+  MOZ_ASSERT(entry || aSkipBitCheck,
+             "NS_FRAME_HAS_PROPERTIES bit should match whether entry exists");
   if (!entry)
     return nullptr;
 
@@ -121,11 +129,17 @@ FramePropertyTable::RemoveInternal(
     *aFoundResult = false;
   }
 
+  if (!(aFrame->GetStateBits() & NS_FRAME_HAS_PROPERTIES)) {
+    return nullptr;
+  }
+
   if (mLastFrame != aFrame) {
     mLastFrame = aFrame;
     mLastEntry = mEntries.GetEntry(aFrame);
   }
   Entry* entry = mLastEntry;
+  MOZ_ASSERT(entry,
+             "NS_FRAME_HAS_PROPERTIES bit should match whether entry exists");
   if (!entry)
     return nullptr;
 
@@ -136,6 +150,7 @@ FramePropertyTable::RemoveInternal(
     
     
     mEntries.RemoveEntry(entry);
+    aFrame->RemoveStateBits(NS_FRAME_HAS_PROPERTIES);
     mLastEntry = nullptr;
     if (aFoundResult) {
       *aFoundResult = true;
@@ -210,7 +225,13 @@ FramePropertyTable::DeleteAllFor(nsIFrame* aFrame)
 {
   NS_ASSERTION(aFrame, "Null frame?");
 
+  if (!(aFrame->GetStateBits() & NS_FRAME_HAS_PROPERTIES)) {
+    return;
+  }
+
   Entry* entry = mEntries.GetEntry(aFrame);
+  MOZ_ASSERT(entry,
+             "NS_FRAME_HAS_PROPERTIES bit should match whether entry exists");
   if (!entry)
     return;
 
@@ -226,6 +247,8 @@ FramePropertyTable::DeleteAllFor(nsIFrame* aFrame)
   
   
   mEntries.RawRemoveEntry(entry);
+
+  
 }
 
 void

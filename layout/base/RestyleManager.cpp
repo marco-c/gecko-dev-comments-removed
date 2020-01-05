@@ -1396,7 +1396,8 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
       break;
     }
 
-    const nsStyleChangeData& data = aChangeList[i];
+    nsStyleChangeData& mutable_data = aChangeList[i];
+    const nsStyleChangeData& data = mutable_data;
     nsIFrame* frame = data.mFrame;
     nsIContent* content = data.mContent;
     nsChangeHint hint = data.mHint;
@@ -1407,7 +1408,11 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
                  "Reflow hint bits set without actually asking for a reflow");
 
     
-    if (frame && !propTable->Get(frame, ChangeListProperty())) {
+    if (frame && !propTable->HasSkippingBitCheck(frame, ChangeListProperty())) {
+      
+      
+      
+      mutable_data.mFrame = nullptr;
       continue;
     }
 
@@ -1475,6 +1480,11 @@ RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
     }
 
     if (hint & nsChangeHint_ReconstructFrame) {
+      
+      
+      
+      mutable_data.mFrame = nullptr;
+
       
       
       
