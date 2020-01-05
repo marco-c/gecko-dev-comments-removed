@@ -14,13 +14,13 @@ use std::fmt;
 use constellation_msg::PipelineId;
 
 
-#[deriving(Eq, Ord, PartialOrd, PartialEq, Clone)]
+#[deriving(PartialEq, Clone)]
 pub enum RenderState {
-    RenderingRenderState,
     IdleRenderState,
+    RenderingRenderState,
 }
 
-#[deriving(Eq, Ord, PartialOrd, PartialEq, Clone)]
+#[deriving(PartialEq, Clone)]
 pub enum ReadyState {
     
     Blank,
@@ -33,7 +33,7 @@ pub enum ReadyState {
 }
 
 
-#[deriving(PartialEq, PartialOrd)]
+#[deriving(PartialEq)]
 pub struct Epoch(pub uint);
 
 impl Epoch {
@@ -105,13 +105,13 @@ pub trait RenderListener {
              epoch: Epoch,
              replies: Vec<(LayerId, Box<LayerBufferSet>)>);
 
-    fn set_render_state(&self, render_state: RenderState, pipeline_id: PipelineId);
+    fn set_render_state(&self, render_state: RenderState);
 }
 
 
 
 pub trait ScriptListener : Clone {
-    fn set_ready_state(&self, pipeline_id: PipelineId, ReadyState);
+    fn set_ready_state(&self, ReadyState);
     fn scroll_fragment_point(&self,
                              pipeline_id: PipelineId,
                              layer_id: LayerId,

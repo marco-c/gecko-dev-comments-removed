@@ -38,8 +38,8 @@ pub struct CompositorChan {
 
 
 impl ScriptListener for CompositorChan {
-    fn set_ready_state(&self, pipeline_id: PipelineId, ready_state: ReadyState) {
-        let msg = ChangeReadyState(ready_state, pipeline_id);
+    fn set_ready_state(&self, ready_state: ReadyState) {
+        let msg = ChangeReadyState(ready_state);
         self.chan.send(msg);
     }
 
@@ -117,6 +117,8 @@ impl RenderListener for CompositorChan {
             } else {
                 self.chan.send(CreateOrUpdateDescendantLayer(layer_properties));
             }
+
+            self.chan.send(SetLayerClipRect(pipeline_id, metadata.id, layer_properties.rect));
         }
     }
 
@@ -131,10 +133,8 @@ impl RenderListener for CompositorChan {
         self.chan.send(SetLayerClipRect(pipeline_id, layer_id, new_rect))
     }
 
-    fn set_render_state(&self,
-                        render_state: RenderState,
-                        pipeline_id: PipelineId) {
-        self.chan.send(ChangeRenderState(render_state, pipeline_id))
+    fn set_render_state(&self, render_state: RenderState) {
+        self.chan.send(ChangeRenderState(render_state))
     }
 }
 
@@ -175,16 +175,15 @@ pub enum Msg {
     
     CreateOrUpdateDescendantLayer(LayerProperties),
     
-    
     SetLayerClipRect(PipelineId, LayerId, Rect<f32>),
     
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>),
     
     Paint(PipelineId, Epoch, Vec<(LayerId, Box<LayerBufferSet>)>),
     
-    ChangeReadyState(ReadyState, PipelineId),
+    ChangeReadyState(ReadyState),
     
-    ChangeRenderState(RenderState, PipelineId),
+    ChangeRenderState(RenderState),
     
     SetIds(SendableFrameTree, Sender<()>, ConstellationChan),
     
