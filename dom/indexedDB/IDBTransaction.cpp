@@ -307,6 +307,9 @@ IDBTransaction::StartRequest(IDBRequest* aRequest, const RequestParams& aParams)
       SendPBackgroundIDBRequestConstructor(actor, aParams);
   }
 
+  MOZ_ASSERT(actor->GetActorEventTarget(),
+    "The event target shall be inherited from its manager actor.");
+
   
   OnNewRequest();
 
@@ -332,6 +335,9 @@ IDBTransaction::OpenCursor(BackgroundCursorChild* aBackgroundActor,
     mBackgroundActor.mNormalBackgroundActor->
       SendPBackgroundIDBCursorConstructor(aBackgroundActor, aParams);
   }
+
+  MOZ_ASSERT(aBackgroundActor->GetActorEventTarget(),
+    "The event target shall be inherited from its manager actor.");
 
   
   OnNewRequest();
