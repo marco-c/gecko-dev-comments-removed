@@ -797,7 +797,7 @@ StripURIForReporting(nsIURI* aURI,
 
 
 nsresult
-nsCSPContext::SendReports(nsIURI* aBlockedURI,
+nsCSPContext::SendReports(nsISupports* aBlockedContentSource,
                           nsIURI* aOriginalURI,
                           nsAString& aViolatedDirective,
                           uint32_t aViolatedPolicyIndex,
@@ -820,11 +820,26 @@ nsCSPContext::SendReports(nsIURI* aBlockedURI,
   nsresult rv;
 
   
-  if (aBlockedURI) {
+  if (aBlockedContentSource) {
     nsAutoCString reportBlockedURI;
-    StripURIForReporting(aBlockedURI, mSelfURI, reportBlockedURI);
+    nsCOMPtr<nsIURI> uri = do_QueryInterface(aBlockedContentSource);
+    
+    if (uri) {
+      StripURIForReporting(uri, mSelfURI, reportBlockedURI);
+    } else {
+      nsCOMPtr<nsISupportsCString> cstr = do_QueryInterface(aBlockedContentSource);
+      if (cstr) {
+        cstr->GetData(reportBlockedURI);
+      }
+    }
+    if (reportBlockedURI.IsEmpty()) {
+      
+      
+      NS_WARNING("No blocked URI (null aBlockedContentSource) for CSP violation report.");
+    }
     report.mCsp_report.mBlocked_uri = NS_ConvertUTF8toUTF16(reportBlockedURI);
   }
+
   
   nsAutoCString reportDocumentURI;
   StripURIForReporting(mSelfURI, mSelfURI, reportDocumentURI);
@@ -1061,14 +1076,13 @@ class CSPReportSenderRunnable final : public Runnable
       NS_ENSURE_SUCCESS(rv, rv);
 
       
-      nsCOMPtr<nsIURI> blockedURI = do_QueryInterface(mBlockedContentSource);
-      mCSPContext->SendReports(blockedURI, mOriginalURI,
+      mCSPContext->SendReports(mBlockedContentSource, mOriginalURI,
                                mViolatedDirective, mViolatedPolicyIndex,
                                mSourceFile, mScriptSample, mLineNum);
 
       
       
-
+      nsCOMPtr<nsIURI> blockedURI = do_QueryInterface(mBlockedContentSource);
       
       nsCOMPtr<nsISupportsCString> blockedString = do_QueryInterface(mBlockedContentSource);
 
