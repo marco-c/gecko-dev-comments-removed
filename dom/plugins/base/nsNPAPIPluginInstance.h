@@ -430,6 +430,7 @@ private:
   char **mCachedParamValues;
 
   nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
+  bool mMuted;
 };
 
 
