@@ -5636,7 +5636,7 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 pref("browser.storageManager.enabled", false);
 pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
 pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
-pref("dom.IntersectionObserver.enabled", true);
+pref("dom.IntersectionObserver.enabled", false);
 
 
 pref("dom.moduleScripts.enabled", false);
