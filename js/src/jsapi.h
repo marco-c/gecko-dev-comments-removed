@@ -981,10 +981,36 @@ JS_IsBuiltinFunctionConstructor(JSFunction* fun);
 
 
 
+
+
 extern JS_PUBLIC_API(JSContext*)
 JS_NewContext(uint32_t maxbytes,
               uint32_t maxNurseryBytes = JS::DefaultNurseryBytes,
               JSRuntime* parentRuntime = nullptr);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+JS_YieldCooperativeContext(JSContext* cx);
+
+
+
+extern JS_PUBLIC_API(void)
+JS_ResumeCooperativeContext(JSContext* cx);
+
+
+
+
+
+extern JS_PUBLIC_API(JSContext*)
+JS_NewCooperativeContext(JSContext* siblingContext);
+
+
+
 
 extern JS_PUBLIC_API(void)
 JS_DestroyContext(JSContext* cx);

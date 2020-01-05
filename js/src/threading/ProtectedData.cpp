@@ -34,6 +34,21 @@ OnHelperThread()
     return false;
 }
 
+void
+CheckThreadLocal::check() const
+{
+    JSContext* cx = TlsContext.get();
+    MOZ_ASSERT(cx);
+
+    
+    
+    
+    if (cx->isCooperativelyScheduled())
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+    else
+        MOZ_ASSERT(id == ThisThread::GetId());
+}
+
 template <AllowedHelperThread Helper>
 void
 CheckActiveThread<Helper>::check() const
@@ -62,6 +77,7 @@ CheckZoneGroup<Helper>::check() const
     if (OnHelperThread<Helper>())
         return;
 
+    JSContext* cx = TlsContext.get();
     if (group) {
         if (group->usedByHelperThread) {
             MOZ_ASSERT(group->ownedByCurrentThread());
@@ -75,14 +91,16 @@ CheckZoneGroup<Helper>::check() const
             
             
             
-            JSContext* cx = TlsContext.get();
+            
+            
+            
             MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 #endif
         }
     } else {
         
         
-        MOZ_ASSERT(TlsContext.get()->runtime()->currentThreadHasExclusiveAccess());
+        MOZ_ASSERT(cx->runtime()->currentThreadHasExclusiveAccess());
     }
 }
 
