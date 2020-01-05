@@ -28,8 +28,8 @@ use std::sync::mpsc::{Sender, Receiver};
 
 
 pub enum LayoutControlMsg {
-    ExitNowMsg(PipelineExitType),
-    TickAnimationsMsg,
+    ExitNow(PipelineExitType),
+    TickAnimations,
 }
 
 

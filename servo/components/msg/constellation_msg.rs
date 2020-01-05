@@ -221,7 +221,7 @@ pub enum Msg {
     
     SetCursor(Cursor),
     
-    MozBrowserEventMsg(PipelineId, SubpageId, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
     
     ChangeRunningAnimationsState(PipelineId, bool),
     
@@ -229,11 +229,11 @@ pub enum Msg {
     
     GetRootPipeline(Sender<Option<PipelineId>>),
     
-    FocusMsg(PipelineId),
+    Focus(PipelineId),
     
     GetClipboardContents(Sender<String>),
     
-    WebDriverCommandMsg(PipelineId, WebDriverScriptCommand)
+    WebDriverCommand(PipelineId, WebDriverScriptCommand)
 }
 
 

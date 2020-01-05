@@ -72,13 +72,13 @@ pub enum ConstellationControlMsg {
     
     Navigate(PipelineId, SubpageId, LoadData),
     
-    MozBrowserEventMsg(PipelineId, SubpageId, MozBrowserEvent),
+    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
     
     UpdateSubpageId(PipelineId, SubpageId, SubpageId),
     
-    FocusIFrameMsg(PipelineId, SubpageId),
+    FocusIFrame(PipelineId, SubpageId),
     
-    WebDriverCommandMsg(PipelineId, WebDriverScriptCommand)
+    WebDriverCommand(PipelineId, WebDriverScriptCommand)
 }
 
 
