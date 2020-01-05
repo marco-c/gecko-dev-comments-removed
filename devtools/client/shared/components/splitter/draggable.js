@@ -31,7 +31,7 @@ const Draggable = React.createClass({
     ev.preventDefault();
     
     
-    this.props.onMove(ev.screenX, ev.screenY);
+    this.props.onMove(ev.clientX, ev.clientY);
   },
 
   onUp(ev) {
