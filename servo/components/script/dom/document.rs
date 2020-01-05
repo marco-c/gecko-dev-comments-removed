@@ -89,7 +89,7 @@ use selectors::states::*;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::boxed::FnBox;
-use std::cell::{Cell, Ref, RefCell, RefMut};
+use std::cell::{Cell, Ref, RefMut};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::default::Default;
@@ -163,7 +163,7 @@ pub struct Document {
     
     
     #[ignore_heap_size_of = "closures are hard"]
-    animation_frame_list: RefCell<HashMap<u32, Box<FnBox(f64)>>>,
+    animation_frame_list: DOMRefCell<HashMap<u32, Box<FnBox(f64)>>>,
     
     loader: DOMRefCell<DocumentLoader>,
     
@@ -1262,7 +1262,7 @@ impl Document {
             asap_scripts_set: DOMRefCell::new(vec!()),
             scripting_enabled: Cell::new(true),
             animation_frame_ident: Cell::new(0),
-            animation_frame_list: RefCell::new(HashMap::new()),
+            animation_frame_list: DOMRefCell::new(HashMap::new()),
             loader: DOMRefCell::new(doc_loader),
             current_parser: Default::default(),
             reflow_timeout: Cell::new(None),
