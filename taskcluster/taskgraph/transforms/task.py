@@ -54,10 +54,6 @@ task_description_schema = Schema({
 
     
     
-    Optional('index-paths'): [basestring],
-
-    
-    
     Optional('scopes'): [basestring],
 
     
@@ -799,7 +795,6 @@ def add_files_changed(config, tasks):
 def setup_optimizations(config, tasks):
     for task in tasks:
         optimizations = task.setdefault('optimizations', [])
-        optimizations.extend([['index-search', idx] for idx in task.get('index-paths', [])])
         optimizations.append(['seta'])
         if 'when' in task and 'files-changed' in task['when']:
             optimizations.append(['files-changed', task['when']['files-changed']])
