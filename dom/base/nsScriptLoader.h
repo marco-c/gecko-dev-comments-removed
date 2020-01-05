@@ -675,8 +675,9 @@ private:
   
 
 
-  nsresult TryDecodeRawData(const uint8_t* aData, uint32_t aDataLength,
-                            bool aEndOfStream);
+
+  nsresult DecodeRawData(const uint8_t* aData, uint32_t aDataLength,
+                         bool aEndOfStream);
 
   
 

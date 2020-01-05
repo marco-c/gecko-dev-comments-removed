@@ -2884,8 +2884,8 @@ nsScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
   *aConsumedLength = aDataLength;
 
   
-  nsresult rv = TryDecodeRawData(aData, aDataLength,
-                                  false);
+  nsresult rv = DecodeRawData(aData, aDataLength,
+                               false);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -2897,9 +2897,9 @@ nsScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
 }
 
 nsresult
-nsScriptLoadHandler::TryDecodeRawData(const uint8_t* aData,
-                                      uint32_t aDataLength,
-                                      bool aEndOfStream)
+nsScriptLoadHandler::DecodeRawData(const uint8_t* aData,
+                                   uint32_t aDataLength,
+                                   bool aEndOfStream)
 {
   int32_t srcLen = aDataLength;
   const char* src = reinterpret_cast<const char *>(aData);
@@ -3027,8 +3027,8 @@ nsScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
     DebugOnly<bool> encoderSet =
       EnsureDecoder(aLoader, aData, aDataLength,  true);
     MOZ_ASSERT(encoderSet);
-    DebugOnly<nsresult> rv = TryDecodeRawData(aData, aDataLength,
-                                               true);
+    DebugOnly<nsresult> rv = DecodeRawData(aData, aDataLength,
+                                            true);
 
     
     if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
