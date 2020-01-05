@@ -120,7 +120,87 @@ function toggleCache(target, disabled) {
   return reconfigureTab(target, options).then(() => navigationFinished);
 }
 
-function initNetMonitor(url, window, enableCache) {
+
+
+
+function waitForTimelineMarkers(monitor) {
+  return new Promise(resolve => {
+    let markers = [];
+
+    function handleTimelineEvent(_, marker) {
+      info(`Got marker: ${marker.name}`);
+      markers.push(marker);
+      if (markers.length == 2) {
+        monitor.panelWin.off(EVENTS.TIMELINE_EVENT, handleTimelineEvent);
+        info("Got two timeline markers, done waiting");
+        resolve(markers);
+      }
+    }
+
+    monitor.panelWin.on(EVENTS.TIMELINE_EVENT, handleTimelineEvent);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function waitForAllRequestsFinished(monitor) {
+  let window = monitor.panelWin;
+  let { windowRequire } = window;
+  let { NetMonitorController } =
+    windowRequire("devtools/client/netmonitor/src/netmonitor-controller");
+
+  return new Promise(resolve => {
+    
+    let requests = new Map();
+
+    function onRequest(_, id) {
+      let networkInfo = NetMonitorController.webConsoleClient.getNetworkRequest(id);
+      let { url } = networkInfo.request;
+      info(`Request ${id} for ${url} not yet done, keep waiting...`);
+      requests.set(id, false);
+    }
+
+    function onTimings(_, id) {
+      let networkInfo = NetMonitorController.webConsoleClient.getNetworkRequest(id);
+      let { url } = networkInfo.request;
+      info(`Request ${id} for ${url} done`);
+      requests.set(id, true);
+      maybeResolve();
+    }
+
+    function maybeResolve() {
+      
+      if (![...requests.values()].every(finished => finished)) {
+        return;
+      }
+
+      
+      window.off(EVENTS.NETWORK_EVENT, onRequest);
+      window.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
+      info("All requests finished");
+      resolve();
+    }
+
+    window.on(EVENTS.NETWORK_EVENT, onRequest);
+    window.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
+  });
+}
+
+function initNetMonitor(url, enableCache) {
   info("Initializing a network monitor pane.");
 
   return Task.spawn(function* () {
@@ -132,21 +212,31 @@ function initNetMonitor(url, window, enableCache) {
     yield target.makeRemote();
     info("Target remoted.");
 
+    let toolbox = yield gDevTools.showToolbox(target, "netmonitor");
+    info("Network monitor pane shown successfully.");
+
+    let monitor = toolbox.getCurrentPanel();
+
     if (!enableCache) {
+      let panel = monitor.panelWin;
+      let { gStore, windowRequire } = panel;
       info("Disabling cache and reloading page.");
+      let requestsDone = waitForAllRequestsFinished(monitor);
+      let markersDone = waitForTimelineMarkers(monitor);
       yield toggleCache(target, true);
+      yield Promise.all([requestsDone, markersDone]);
       info("Cache disabled when the current and all future toolboxes are open.");
       
       
       isnot([...target.activeConsole.getNetworkEvents()].length, 0,
          "Request to reconfigure the tab was recorded.");
+      info("Clearing requests in the console client.");
       target.activeConsole.clearNetworkRequests();
+      info("Clearing requests in the UI.");
+      let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+      gStore.dispatch(Actions.clearRequests());
     }
 
-    let toolbox = yield gDevTools.showToolbox(target, "netmonitor");
-    info("Network monitor pane shown successfully.");
-
-    let monitor = toolbox.getCurrentPanel();
     return {tab, monitor};
   });
 }
@@ -221,22 +311,33 @@ function waitForNetworkEvents(monitor, getRequests, postRequests = 0) {
     }
 
     function onGenericEvent(event, actor) {
+      let networkInfo = NetMonitorController.webConsoleClient.getNetworkRequest(actor);
+      if (!networkInfo) {
+        
+        
+        return;
+      }
       genericEvents++;
-      maybeResolve(event, actor);
+      maybeResolve(event, actor, networkInfo);
     }
 
     function onPostEvent(event, actor) {
+      let networkInfo = NetMonitorController.webConsoleClient.getNetworkRequest(actor);
+      if (!networkInfo) {
+        
+        
+        return;
+      }
       postEvents++;
-      maybeResolve(event, actor);
+      maybeResolve(event, actor, networkInfo);
     }
 
-    function maybeResolve(event, actor) {
+    function maybeResolve(event, actor, networkInfo) {
       info("> Network events progress: " +
         genericEvents + "/" + ((getRequests + postRequests) * 13) + ", " +
         postEvents + "/" + (postRequests * 2) + ", " +
         "got " + event + " for " + actor);
 
-      let networkInfo = NetMonitorController.webConsoleClient.getNetworkRequest(actor);
       let url = networkInfo.request.url;
       updateProgressForURL(url, event);
 
@@ -247,7 +348,7 @@ function waitForNetworkEvents(monitor, getRequests, postRequests = 0) {
       
       
       if (genericEvents >= (getRequests + postRequests) * 13 &&
-          postEvents >= postRequests * 2) {
+        postEvents >= postRequests * 2) {
         awaitedEventsToListeners.forEach(([e, l]) => panel.off(EVENTS[e], l));
         executeSoon(resolve);
       }
