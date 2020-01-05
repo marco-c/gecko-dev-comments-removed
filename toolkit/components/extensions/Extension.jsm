@@ -365,6 +365,22 @@ this.ExtensionData = class {
 
   
   
+  
+  
+  
+  userPermissions() {
+    let result = {
+      hosts: this.whiteListedHosts.pat,
+      apis: [...this.apiNames],
+    };
+    const EXP_PATTERN = /^experiments\.\w+/;
+    result.permissions = [...this.permissions]
+      .filter(p => !result.hosts.includes(p) && !EXP_PATTERN.test(p));
+    return result;
+  }
+
+  
+  
   readManifest() {
     return Promise.all([
       this.readJSON("manifest.json"),

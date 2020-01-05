@@ -994,6 +994,7 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   addon.iconURL = null;
   addon.icon64URL = null;
   addon.icons = manifest.icons || {};
+  addon.userPermissions = extension.userPermissions();
 
   addon.applyBackgroundUpdates = AddonManager.AUTOUPDATE_DEFAULT;
 
@@ -1332,6 +1333,7 @@ let loadManifestFromRDF = Task.async(function*(aUri, aStream) {
 
   
   addon.icons = {};
+  addon.userPermissions = null;
 
   return addon;
 });
@@ -1952,7 +1954,7 @@ function removeAsync(aFile) {
         yield OS.File.remove(aFile.path);
     }
     catch (e) {
-      if (!(e instanceof OS.File.Error) || !e.becauseNoSuchFile)
+      if (!(e instanceof OS.File.Error) || ! e.becauseNoSuchFile)
         throw e;
       
       return;
@@ -3983,9 +3985,24 @@ this.XPIProvider = {
 
   getInstallForURL: function(aUrl, aHash, aName, aIcons, aVersion, aBrowser,
                              aCallback) {
-    createDownloadInstall(function(aInstall) {
-      aCallback(aInstall.wrapper);
-    }, aUrl, aHash, aName, aIcons, aVersion, aBrowser);
+    let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
+    let url = NetUtil.newURI(aUrl);
+
+    let options = {
+      hash: aHash,
+      browser: aBrowser,
+      name: aName,
+      icons: aIcons,
+      version: aVersion,
+    };
+
+    if (url instanceof Ci.nsIFileURL) {
+      let install = new LocalAddonInstall(location, url, options);
+      install.init().then(() => { aCallback(install.wrapper); });
+    } else {
+      let install = new DownloadAddonInstall(location, url, options);
+      aCallback(install.wrapper);
+    }
   },
 
   
@@ -4191,7 +4208,7 @@ this.XPIProvider = {
 
 
   getAddonByID: function(aId, aCallback) {
-    XPIDatabase.getVisibleAddonForID(aId, function(aAddon) {
+    XPIDatabase.getVisibleAddonForID (aId, function(aAddon) {
       aCallback(aAddon ? aAddon.wrapper : null);
     });
   },
@@ -5353,24 +5370,37 @@ class AddonInstall {
 
 
 
-  constructor(aInstallLocation, aUrl, aHash, aExistingAddon) {
-    this.wrapper = new AddonInstallWrapper(this);
-    this.installLocation = aInstallLocation;
-    this.sourceURI = aUrl;
 
-    if (aHash) {
-      let hashSplit = aHash.toLowerCase().split(":");
+
+
+
+
+
+
+
+
+
+
+
+  constructor(installLocation, url, options = {}) {
+    this.wrapper = new AddonInstallWrapper(this);
+    this.installLocation = installLocation;
+    this.sourceURI = url;
+
+    if (options.hash) {
+      let hashSplit = options.hash.toLowerCase().split(":");
       this.originalHash = {
         algorithm: hashSplit[0],
         data: hashSplit[1]
       };
     }
     this.hash = this.originalHash;
-    this.existingAddon = aExistingAddon;
+    this.existingAddon = options.existingAddon || null;
+    this.permHandler = options.permHandler || (() => Promise.resolve());
     this.releaseNotesURI = null;
 
     this.listeners = [];
-    this.icons = {};
+    this.icons = options.icons || {};
     this.error = 0;
 
     this.progress = 0;
@@ -5379,9 +5409,9 @@ class AddonInstall {
     
     this.logger = logger;
 
-    this.name = null;
-    this.type = null;
-    this.version = null;
+    this.name = options.name || null;
+    this.type = options.type || null;
+    this.version = options.version || null;
 
     this.file = null;
     this.ownsTempFile = null;
@@ -5407,6 +5437,12 @@ class AddonInstall {
   install() {
     switch (this.state) {
     case AddonManager.STATE_DOWNLOADED:
+      this.checkPermissions();
+      break;
+    case AddonManager.STATE_PERMISSION_GRANTED:
+      this.checkForBlockers();
+      break;
+    case AddonManager.STATE_READY:
       this.startInstall();
       break;
     case AddonManager.STATE_POSTPONED:
@@ -5775,6 +5811,61 @@ class AddonInstall {
       this.addon.appDisabled = !isUsableAddon(this.addon);
       return undefined;
     }).bind(this));
+  }
+
+  
+
+
+
+
+
+
+  checkPermissions() {
+    Task.spawn((function*() {
+      if (this.permHandler) {
+        let info = {
+          existinAddon: this.existingAddon,
+          addon: this.addon,
+        };
+
+        try {
+          yield this.permHandler(info);
+        } catch (err) {
+          logger.info(`Install of ${this.addon.id} cancelled since user declined permissions`);
+          this.state = AddonManager.STATE_CANCELLED;
+          XPIProvider.removeActiveInstall(this);
+          AddonManagerPrivate.callInstallListeners("onInstallCancelled",
+                                                   this.listeners, this.wrapper);
+          return;
+        }
+      }
+      this.state = AddonManager.STATE_PERMISSION_GRANTED;
+      this.install();
+    }).bind(this));
+  }
+
+  
+
+
+
+
+
+  checkForBlockers() {
+    
+    
+    if (AddonManagerPrivate.hasUpgradeListener(this.addon.id)) {
+      logger.info(`add-on ${this.addon.id} has an upgrade listener, postponing upgrade until restart`);
+      let resumeFn = () => {
+        logger.info(`${this.addon.id} has resumed a previously postponed upgrade`);
+        this.state = AddonManager.STATE_READY;
+        this.install();
+      }
+      this.postpone(resumeFn);
+      return;
+    }
+
+    this.state = AddonManager.STATE_READY;
+    this.install();
   }
 
   
@@ -6205,17 +6296,16 @@ class DownloadAddonInstall extends AddonInstall {
 
 
 
-  constructor(installLocation, url, hash, existingAddon, browser,
-              name, type, icons, version) {
-    super(installLocation, url, hash, existingAddon);
 
-    this.browser = browser;
+
+
+
+  constructor(installLocation, url, options={}) {
+    super(installLocation, url, options);
+
+    this.browser = options.browser;
 
     this.state = AddonManager.STATE_AVAILABLE;
-    this.name = name;
-    this.type = type;
-    this.version = version;
-    this.icons = icons;
 
     this.stream = null;
     this.crypto = null;
@@ -6572,23 +6662,11 @@ class DownloadAddonInstall extends AddonInstall {
           return;
 
         
-        
-        if (AddonManagerPrivate.hasUpgradeListener(this.addon.id)) {
-          logger.info(`add-on ${this.addon.id} has an upgrade listener, postponing upgrade until restart`);
-          let resumeFn = () => {
-            logger.info(`${this.addon.id} has resumed a previously postponed upgrade`);
-            this.state = AddonManager.STATE_DOWNLOADED;
-            this.install();
-          }
-          this.postpone(resumeFn);
-        } else {
-          
-          this.install();
-          if (this.linkedInstalls) {
-            for (let install of this.linkedInstalls) {
-              if (install.state == AddonManager.STATE_DOWNLOADED)
-                install.install();
-            }
+        this.install();
+        if (this.linkedInstalls) {
+          for (let install of this.linkedInstalls) {
+            if (install.state == AddonManager.STATE_DOWNLOADED)
+              install.install();
           }
         }
       }
@@ -6684,54 +6762,24 @@ function createLocalInstall(file, location) {
 
 
 
-
-
-
-
-
-
-
-
-function createDownloadInstall(aCallback, aUri, aHash, aName, aIcons,
-                               aVersion, aBrowser) {
-  let location = XPIProvider.installLocationsByName[KEY_APP_PROFILE];
-  let url = NetUtil.newURI(aUri);
-
-  if (url instanceof Ci.nsIFileURL) {
-    let install = new LocalAddonInstall(location, url, aHash);
-    install.init().then(() => { aCallback(install); });
-  } else {
-    let install = new DownloadAddonInstall(location, url, aHash, null,
-                                           aBrowser, aName, null, aIcons,
-                                           aVersion);
-    aCallback(install);
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
 function createUpdate(aCallback, aAddon, aUpdate) {
   let url = NetUtil.newURI(aUpdate.updateURL);
 
   Task.spawn(function*() {
+    let opts = {
+      hash: aUpdate.updateHash,
+      existingAddon: aAddon,
+      name: aAddon.selectedLocale.name,
+      type: aAddon.type,
+      icons: aAddon.icons,
+      version: aUpdate.version,
+    };
     let install;
     if (url instanceof Ci.nsIFileURL) {
-      install = new LocalAddonInstall(aAddon._installLocation, url,
-                                      aUpdate.updateHash, aAddon);
+      install = new LocalAddonInstall(aAddon._installLocation, url, opts);
       yield install.init();
     } else {
-      install = new DownloadAddonInstall(aAddon._installLocation, url,
-                                         aUpdate.updateHash, aAddon, null,
-                                         aAddon.selectedLocale.name, aAddon.type,
-                                         aAddon.icons, aUpdate.version);
+      install = new DownloadAddonInstall(aAddon._installLocation, url, opts);
     }
     try {
       if (aUpdate.updateInfoURL)
@@ -6792,6 +6840,10 @@ AddonInstallWrapper.prototype = {
     if (!install.linkedInstalls)
       return null;
     return install.linkedInstalls.map(i => i.wrapper);
+  },
+
+  set _permHandler(handler) {
+    installFor(this).permHandler = handler;
   },
 
   install: function() {

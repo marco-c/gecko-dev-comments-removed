@@ -1874,9 +1874,8 @@ var AddonManagerInternal = {
 
 
 
-  getInstallForURL: function(aUrl, aCallback, aMimetype,
-                                                  aHash, aName, aIcons,
-                                                  aVersion, aBrowser) {
+  getInstallForURL: function(aUrl, aCallback, aMimetype, aHash, aName,
+                             aIcons, aVersion, aBrowser) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -2618,9 +2617,11 @@ var AddonManagerInternal = {
     let addons = [];
 
     new AsyncObjectCaller(this.providers, "getAddonsWithOperationsByTypes", {
-      nextObject: function(aCaller, aProvider) {
+      nextObject: function getAddonsWithOperationsByTypes_nextObject
+                           (aCaller, aProvider) {
         callProviderAsync(aProvider, "getAddonsWithOperationsByTypes", aTypes,
-                          function(aProviderAddons) {
+                          function getAddonsWithOperationsByTypes_concatAddons
+                                   (aProviderAddons) {
           if (aProviderAddons) {
             addons = addons.concat(aProviderAddons);
           }
@@ -3198,15 +3199,21 @@ this.AddonManager = {
     
     ["STATE_DOWNLOAD_FAILED", 4],
     
-    ["STATE_POSTPONED", 5],
+    ["STATE_AWAITING_PERMISSIONS", 5],
     
-    ["STATE_INSTALLING", 6],
+    ["STATE_PERMISSION_GRANTED", 6],
     
-    ["STATE_INSTALLED", 7],
+    ["STATE_POSTPONED", 7],
     
-    ["STATE_INSTALL_FAILED", 8],
+    ["STATE_READY", 8],
     
-    ["STATE_CANCELLED", 9],
+    ["STATE_INSTALLING", 9],
+    
+    ["STATE_INSTALLED", 10],
+    
+    ["STATE_INSTALL_FAILED", 11],
+    
+    ["STATE_CANCELLED", 12],
   ]),
 
   
