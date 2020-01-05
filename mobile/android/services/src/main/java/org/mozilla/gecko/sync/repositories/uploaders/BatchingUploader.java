@@ -17,8 +17,16 @@ import org.mozilla.gecko.sync.repositories.delegates.RepositorySessionStoreDeleg
 import org.mozilla.gecko.sync.repositories.domain.Record;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
+
+
+
+
+
 
 
 
@@ -56,29 +64,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BatchingUploader {
     private static final String LOG_TAG = "BatchingUploader";
 
-    private final Uri collectionUri;
-
-    private volatile boolean recordUploadFailed = false;
-
-    private final BatchMeta batchMeta;
-    private final Payload payload;
-
-    
-    private volatile Boolean inBatchingMode;
-
-    
-    
-    
-    private final Object payloadLock = new Object();
-
-    protected Executor workQueue;
-    protected final RepositorySessionStoreDelegate sessionStoreDelegate;
-    protected final Server11RepositorySession repositorySession;
-
-    protected AtomicLong uploadTimestamp = new AtomicLong(0);
-
-    protected static final int PER_RECORD_OVERHEAD_BYTE_COUNT = RecordUploadRunnable.RECORD_SEPARATOR.length;
-    protected static final int PER_PAYLOAD_OVERHEAD_BYTE_COUNT = RecordUploadRunnable.RECORDS_END.length;
+    private static final int PER_RECORD_OVERHEAD_BYTE_COUNT = RecordUploadRunnable.RECORD_SEPARATOR.length;
+     static final int PER_PAYLOAD_OVERHEAD_BYTE_COUNT = RecordUploadRunnable.RECORDS_END.length;
 
     
     static {
@@ -87,20 +74,38 @@ public class BatchingUploader {
         }
     }
 
+    
+    
+    private volatile Payload payload;
+
+    
+     final Uri collectionUri;
+     final RepositorySessionStoreDelegate sessionStoreDelegate;
+     @VisibleForTesting final PayloadDispatcher payloadDispatcher;
+    private final Server11RepositorySession repositorySession;
+    
+    private volatile UploaderMeta uploaderMeta;
+
+    
+    
+    
+    private final Object payloadLock = new Object();
+
+
     public BatchingUploader(final Server11RepositorySession repositorySession, final Executor workQueue, final RepositorySessionStoreDelegate sessionStoreDelegate) {
         this.repositorySession = repositorySession;
-        this.workQueue = workQueue;
         this.sessionStoreDelegate = sessionStoreDelegate;
         this.collectionUri = Uri.parse(repositorySession.getServerRepository().collectionURI().toString());
 
         InfoConfiguration config = repositorySession.getServerRepository().getInfoConfiguration();
-        this.batchMeta = new BatchMeta(
-                payloadLock, config.maxTotalBytes, config.maxTotalRecords,
-                repositorySession.getServerRepository().getCollectionLastModified()
-        );
+        this.uploaderMeta = new UploaderMeta(payloadLock, config.maxTotalBytes, config.maxTotalRecords);
         this.payload = new Payload(payloadLock, config.maxPostBytes, config.maxPostRecords);
+
+        this.payloadDispatcher = new PayloadDispatcher(
+                workQueue, this, repositorySession.getServerRepository().getCollectionLastModified());
     }
 
+    
     public void process(final Record record) {
         final String guid = record.guid;
         final byte[] recordBytes = record.toJSONBytes();
@@ -115,7 +120,7 @@ public class BatchingUploader {
         }
 
         synchronized (payloadLock) {
-            final boolean canFitRecordIntoBatch = batchMeta.canFit(recordDeltaByteCount);
+            final boolean canFitRecordIntoBatch = uploaderMeta.canFit(recordDeltaByteCount);
             final boolean canFitRecordIntoPayload = payload.canFit(recordDeltaByteCount);
 
             
@@ -139,7 +144,6 @@ public class BatchingUploader {
                 flush(true, false);
 
                 Logger.debug(LOG_TAG, "Recording the incoming record into a new batch");
-                batchMeta.reset();
 
                 
                 addAndFlushIfNecessary(recordDeltaByteCount, recordBytes, guid);
@@ -150,12 +154,11 @@ public class BatchingUploader {
     
     private void addAndFlushIfNecessary(long byteCount, byte[] recordBytes, String guid) {
         boolean isPayloadFull = payload.addAndEstimateIfFull(byteCount, recordBytes, guid);
-        boolean isBatchFull = batchMeta.addAndEstimateIfFull(byteCount);
+        boolean isBatchFull = uploaderMeta.addAndEstimateIfFull(byteCount);
 
         
         if (isBatchFull) {
             flush(true, false);
-            batchMeta.reset();
         } else if (isPayloadFull) {
             flush(false, false);
         }
@@ -165,133 +168,37 @@ public class BatchingUploader {
         Logger.debug(LOG_TAG, "Received 'no more records to upload' signal.");
 
         
+        if (!payload.isEmpty()) {
+            flush(true, true);
+            return;
+        }
+
         
-        workQueue.execute(new Runnable() {
+        
+        
+        
+        payloadDispatcher.finalizeQueue(uploaderMeta.needToCommit(), new Runnable() {
             @Override
             public void run() {
-                commitIfNecessaryAfterLastPayload();
+                flush(true, true);
             }
         });
     }
 
-    @VisibleForTesting
-    protected void commitIfNecessaryAfterLastPayload() {
-        
-        synchronized (payload) {
-            
-            if (!payload.isEmpty()) {
-                flush(true, true);
-
-            
-            } else if (batchMeta.needToCommit() && Boolean.TRUE.equals(inBatchingMode)) {
-                flush(true, true);
-
-            
-            } else {
-                finished(uploadTimestamp);
-            }
-        }
-    }
-
-    
-
-
-
-
-
-
-
-    public void payloadSucceeded(final SyncStorageResponse response, final boolean isCommit, final boolean isLastPayload) {
-        
-        if (inBatchingMode == null) {
-            throw new IllegalStateException("Can't process payload success until we know if we're in a batching mode");
-        }
-
-        
-        
-        if (!inBatchingMode || isCommit) {
-            for (String guid : batchMeta.getSuccessRecordGuids()) {
-                sessionStoreDelegate.onRecordStoreSucceeded(guid);
-            }
-        }
-
-        
-        
-        if (isLastPayload) {
-            finished(response.normalizedTimestampForHeader(SyncResponse.X_LAST_MODIFIED));
-        }
-    }
-
-    public void lastPayloadFailed() {
-        finished(uploadTimestamp);
-    }
-
-    private void finished(long lastModifiedTimestamp) {
-        bumpTimestampTo(uploadTimestamp, lastModifiedTimestamp);
-        finished(uploadTimestamp);
-    }
-
-    private void finished(AtomicLong lastModifiedTimestamp) {
+     void finished(AtomicLong lastModifiedTimestamp) {
         repositorySession.storeDone(lastModifiedTimestamp.get());
     }
 
-    public BatchMeta getCurrentBatch() {
-        return batchMeta;
-    }
-
-    public void setInBatchingMode(boolean inBatchingMode) {
-        this.inBatchingMode = inBatchingMode;
-
+    
+    
+     void setUnlimitedMode(boolean isUnlimited) {
         
         
-        this.batchMeta.setIsUnlimited(!inBatchingMode);
+        this.uploaderMeta.setIsUnlimited(isUnlimited);
     }
 
-    public Boolean getInBatchingMode() {
-        return inBatchingMode;
-    }
-
-    public void setLastModified(final Long lastModified, final boolean isCommit) throws BatchingUploaderException {
-        
-        if (inBatchingMode == null) {
-            throw new IllegalStateException("Can't process Last-Modified before we know we're in a batching mode.");
-        }
-
-        
-        
-        
-        batchMeta.setLastModified(lastModified, isCommit || !inBatchingMode);
-    }
-
-    public void recordSucceeded(final String recordGuid) {
-        Logger.debug(LOG_TAG, "Record store succeeded: " + recordGuid);
-        batchMeta.recordSucceeded(recordGuid);
-    }
-
-    public void recordFailed(final String recordGuid) {
-        recordFailed(new Server11RecordPostFailedException(), recordGuid);
-    }
-
-    public void recordFailed(final Exception e, final String recordGuid) {
-        Logger.debug(LOG_TAG, "Record store failed for guid " + recordGuid + " with exception: " + e.toString());
-        recordUploadFailed = true;
-        sessionStoreDelegate.onRecordStoreFailed(e, recordGuid);
-    }
-
-    public Server11RepositorySession getRepositorySession() {
+     Server11RepositorySession getRepositorySession() {
         return repositorySession;
-    }
-
-    private static void bumpTimestampTo(final AtomicLong current, long newValue) {
-        while (true) {
-            long existing = current.get();
-            if (existing > newValue) {
-                return;
-            }
-            if (current.compareAndSet(existing, newValue)) {
-                return;
-            }
-        }
     }
 
     private void flush(final boolean isCommit, final boolean isLastPayload) {
@@ -306,39 +213,28 @@ public class BatchingUploader {
             outgoingGuids = payload.getRecordGuidsBuffer();
             byteCount = payload.getByteCount();
         }
+        payload = payload.nextPayload();
 
-        workQueue.execute(new RecordUploadRunnable(
-                new BatchingAtomicUploaderMayUploadProvider(),
-                collectionUri,
-                batchMeta,
-                new PayloadUploadDelegate(this, outgoingGuids, isCommit, isLastPayload),
-                outgoing,
-                byteCount,
-                isCommit
-        ));
+        payloadDispatcher.queue(outgoing, outgoingGuids, byteCount, isCommit, isLastPayload);
 
-        payload.reset();
-    }
-
-    private class BatchingAtomicUploaderMayUploadProvider implements MayUploadProvider {
-        public boolean mayUpload() {
-            return !recordUploadFailed;
+        if (isCommit && !isLastPayload) {
+            uploaderMeta = uploaderMeta.nextUploaderMeta();
         }
     }
 
-    public static class BatchingUploaderException extends Exception {
+     static class BatchingUploaderException extends Exception {
         private static final long serialVersionUID = 1L;
     }
-    public static class RecordTooLargeToUpload extends BatchingUploaderException {
+     static class LastModifiedDidNotChange extends BatchingUploaderException {
         private static final long serialVersionUID = 1L;
     }
-    public static class LastModifiedDidNotChange extends BatchingUploaderException {
+     static class LastModifiedChangedUnexpectedly extends BatchingUploaderException {
         private static final long serialVersionUID = 1L;
     }
-    public static class LastModifiedChangedUnexpectedly extends BatchingUploaderException {
-        private static final long serialVersionUID = 1L;
-    }
-    public static class TokenModifiedException extends BatchingUploaderException {
+     static class TokenModifiedException extends BatchingUploaderException {
         private static final long serialVersionUID = 1L;
     };
+    private static class RecordTooLargeToUpload extends BatchingUploaderException {
+        private static final long serialVersionUID = 1L;
+    }
 }

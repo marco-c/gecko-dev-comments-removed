@@ -168,10 +168,6 @@ public class SyncStorageRequest implements Resource {
   public SyncStorageRequestDelegate delegate;
   protected BaseResource resource;
 
-  public SyncStorageRequest() {
-    super();
-  }
-
   
   protected BaseResourceDelegate makeResourceDelegate(SyncStorageRequest request) {
     return new SyncStorageResourceDelegate(request);
