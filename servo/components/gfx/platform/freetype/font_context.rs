@@ -18,7 +18,7 @@ use util::mem::{HeapSizeOf, heap_size_of};
 
 
 
-struct User {
+pub struct User {
     size: usize,
 }
 
