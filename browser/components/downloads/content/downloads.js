@@ -1033,6 +1033,11 @@ const DownloadsView = {
     
     let contextMenu = document.getElementById("downloadsContextMenu");
     contextMenu.setAttribute("state", element.getAttribute("state"));
+    if (element.hasAttribute("exists")) {
+      contextMenu.setAttribute("exists", "true");
+    } else {
+      contextMenu.removeAttribute("exists");
+    }
     contextMenu.classList.toggle("temporary-block",
                                  element.classList.contains("temporary-block"));
   },
