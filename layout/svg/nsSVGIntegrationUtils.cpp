@@ -26,6 +26,7 @@
 #include "mozilla/gfx/Point.h"
 #include "nsCSSRendering.h"
 #include "mozilla/Unused.h"
+#include "mozilla/RestyleManager.h"
 
 using namespace mozilla;
 using namespace mozilla::layers;
@@ -117,11 +118,21 @@ private:
     
     
     
-    NS_ASSERTION(nsSVGEffects::GetEffectProperties(aFrame).MightHaveNoneSVGMask() ||
+    
+    
+#ifdef DEBUG
+    nsIFrame* firstFrame =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
+    bool mightHaveNoneSVGMask =
+      nsSVGEffects::GetEffectProperties(firstFrame).MightHaveNoneSVGMask();
+    bool inRestyle =
+      aFrame->PresContext()->RestyleManager()->AsGecko()->IsInStyleRefresh();
+
+    NS_ASSERTION(mightHaveNoneSVGMask || inRestyle ||
                  aFrame->GetParent()->StyleContext()->GetPseudo() ==
                    nsCSSAnonBoxes::mozAnonymousBlock,
                  "How did we getting here, then?");
-
+#endif
     NS_ASSERTION(!aFrame->Properties().Get(
                    aFrame->PreTransformOverflowAreasProperty()),
                  "GetVisualOverflowRect() won't return the pre-effects rect!");
