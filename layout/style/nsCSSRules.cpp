@@ -34,7 +34,6 @@
 #include "nsDOMClassInfoID.h"
 #include "mozilla/dom/CSSStyleDeclarationBinding.h"
 #include "mozilla/dom/CSSNamespaceRuleBinding.h"
-#include "mozilla/dom/CSSImportRuleBinding.h"
 #include "StyleRule.h"
 #include "nsFont.h"
 #include "nsIURI.h"
@@ -265,7 +264,7 @@ ImportRule::ImportRule(nsMediaList* aMedia, const nsString& aURLSpec,
   , mURLSpec(aURLSpec)
   , mMedia(aMedia)
 {
-  MOZ_ASSERT(aMedia);
+  SetIsNotDOMBinding();
   
   
   
@@ -275,6 +274,7 @@ ImportRule::ImportRule(const ImportRule& aCopy)
   : Rule(aCopy),
     mURLSpec(aCopy.mURLSpec)
 {
+  SetIsNotDOMBinding();
   
   
   
@@ -308,6 +308,7 @@ ImportRule::IsCCLeaf() const
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ImportRule)
   NS_INTERFACE_MAP_ENTRY(nsIDOMCSSImportRule)
+  NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(CSSImportRule)
 NS_INTERFACE_MAP_END_INHERITING(Rule)
 
 #ifdef DEBUG
@@ -381,12 +382,6 @@ ImportRule::GetCssTextImpl(nsAString& aCssText) const
   aCssText.Append(';');
 }
 
-StyleSheet*
-ImportRule::GetStyleSheet() const
-{
-  return mChildSheet;
-}
-
 NS_IMETHODIMP
 ImportRule::GetHref(nsAString & aHref)
 {
@@ -399,7 +394,7 @@ ImportRule::GetMedia(nsIDOMMediaList * *aMedia)
 {
   NS_ENSURE_ARG_POINTER(aMedia);
 
-  NS_ADDREF(*aMedia = mMedia);
+  NS_IF_ADDREF(*aMedia = mMedia);
   return NS_OK;
 }
 
@@ -430,7 +425,8 @@ ImportRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
 ImportRule::WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto)
 {
-  return CSSImportRuleBinding::Wrap(aCx, this, aGivenProto);
+  NS_NOTREACHED("We called SetIsNotDOMBinding() in our constructor");
+  return nullptr;
 }
 
 GroupRule::GroupRule(uint32_t aLineNumber, uint32_t aColumnNumber)
