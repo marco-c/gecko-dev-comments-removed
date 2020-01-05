@@ -3399,7 +3399,7 @@ class BaseCompiler
     
     MOZ_MUST_USE size_t loadTemps(MemoryAccessDesc& access) {
 #if defined(JS_CODEGEN_ARM)
-        if (access.isUnaligned()) {
+        if (IsUnaligned(access)) {
             switch (access.type()) {
               case Scalar::Float32:
                 return 2;
@@ -3460,7 +3460,7 @@ class BaseCompiler
                 masm.mov(ScratchRegX86, dest.i32());
         }
 #elif defined(JS_CODEGEN_ARM)
-        if (access.isUnaligned()) {
+        if (IsUnaligned(access)) {
             switch (dest.tag) {
               case AnyReg::I64:
                 masm.wasmUnalignedLoadI64(access, ptr, ptr, dest.i64(), tmp1);
@@ -3492,7 +3492,7 @@ class BaseCompiler
 
     MOZ_MUST_USE size_t storeTemps(MemoryAccessDesc& access) {
 #if defined(JS_CODEGEN_ARM)
-        if (access.isUnaligned()) {
+        if (IsUnaligned(access)) {
             
             
             return 1;
@@ -3547,7 +3547,7 @@ class BaseCompiler
             masm.wasmStore(access, value, dstAddr);
         }
 #elif defined(JS_CODEGEN_ARM)
-        if (access.isUnaligned()) {
+        if (IsUnaligned(access)) {
             
             
             
@@ -6515,7 +6515,7 @@ BaseCompiler::emitLoad(ValType type, Scalar::Type viewType)
       case ValType::I32: {
         RegI32 rp = popMemoryAccess(&access, &omitBoundsCheck);
 #ifdef JS_CODEGEN_ARM
-        RegI32 rv = access.isUnaligned() ? needI32() : rp;
+        RegI32 rv = IsUnaligned(access) ? needI32() : rp;
 #else
         RegI32 rv = rp;
 #endif
