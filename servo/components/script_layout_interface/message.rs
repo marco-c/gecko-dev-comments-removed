@@ -2,6 +2,7 @@
 
 
 
+use {OpaqueStyleAndLayoutData, TrustedNodeAddress};
 use app_units::Au;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
@@ -21,7 +22,6 @@ use style::selector_impl::PseudoElement;
 use style::stylesheets::Stylesheet;
 use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
-use {OpaqueStyleAndLayoutData, TrustedNodeAddress};
 
 
 pub enum Msg {

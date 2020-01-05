@@ -3,8 +3,8 @@
 
 
 use std::sync::Arc;
+use url::{Host, Url};
 use url::Origin as UrlOrigin;
-use url::{Url, Host};
 
 
 #[derive(HeapSizeOf, JSTraceable)]

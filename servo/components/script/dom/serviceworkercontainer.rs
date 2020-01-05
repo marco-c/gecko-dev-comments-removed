@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::Bindings::ServiceWorkerContainerBinding::RegistrationOptions;
 use dom::bindings::codegen::Bindings::ServiceWorkerContainerBinding::{ServiceWorkerContainerMethods, Wrap};
+use dom::bindings::codegen::Bindings::ServiceWorkerContainerBinding::RegistrationOptions;
 use dom::bindings::error::{Error, Fallible};
 use dom::bindings::global::GlobalRef;
 use dom::bindings::inheritance::Castable;

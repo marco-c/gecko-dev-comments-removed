@@ -2,8 +2,8 @@
 
 
 
+use net::hsts::{HstsEntry, HstsList};
 use net::hsts::secure_url;
-use net::hsts::{HstsList, HstsEntry};
 use net_traits::IncludeSubdomains;
 use time;
 use url::Url;

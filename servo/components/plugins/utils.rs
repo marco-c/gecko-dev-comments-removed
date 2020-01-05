@@ -2,8 +2,8 @@
 
 
 
-use rustc::hir::def_id::DefId;
 use rustc::hir::{self, def};
+use rustc::hir::def_id::DefId;
 use rustc::lint::{LateContext, LintContext};
 use syntax::ast;
 use syntax::attr::mark_used;

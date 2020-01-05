@@ -3,8 +3,8 @@
 
 
 use app_units::Au;
-use font::ShapingOptions;
 use font::{Font, FontHandleMethods, FontMetrics, IS_WHITESPACE_SHAPING_FLAG, RunMetrics};
+use font::ShapingOptions;
 use platform::font_template::FontTemplateData;
 use range::Range;
 use std::cell::Cell;

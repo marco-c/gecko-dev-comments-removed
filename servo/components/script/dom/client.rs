@@ -2,8 +2,8 @@
 
 
 
-use dom::bindings::codegen::Bindings::ClientBinding::FrameType;
 use dom::bindings::codegen::Bindings::ClientBinding::{ClientMethods, Wrap};
+use dom::bindings::codegen::Bindings::ClientBinding::FrameType;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::JS;
 use dom::bindings::js::Root;

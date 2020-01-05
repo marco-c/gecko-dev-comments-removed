@@ -5,15 +5,15 @@
 
 
 use compositor_thread::{CompositorProxy, CompositorReceiver};
+use euclid::{Point2D, Size2D};
 use euclid::point::TypedPoint2D;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
-use euclid::{Point2D, Size2D};
 use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeDisplay;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::net_error_list::NetError;
-use script_traits::{MouseButton, TouchpadPressurePhase, TouchEventType, TouchId};
+use script_traits::{MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
 use std::fmt::{Debug, Error, Formatter};
 use style_traits::cursor::Cursor;
 use url::Url;
@@ -147,8 +147,7 @@ pub trait WindowMethods {
     
     
     
-    fn create_compositor_channel(&self)
-                                 -> (Box<CompositorProxy + Send>, Box<CompositorReceiver>);
+    fn create_compositor_channel(&self) -> (Box<CompositorProxy + Send>, Box<CompositorReceiver>);
 
     
     
