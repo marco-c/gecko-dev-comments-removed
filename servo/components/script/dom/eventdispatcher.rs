@@ -103,10 +103,16 @@ fn dispatch_to_listeners(event: &Event, target: &EventTarget, event_path: &[&Eve
     }
 }
 
+#[derive(PartialEq)]
+pub enum EventStatus {
+    Canceled,
+    NotCanceled
+}
+
 
 pub fn dispatch_event(target: &EventTarget,
                       target_override: Option<&EventTarget>,
-                      event: &Event) -> bool {
+                      event: &Event) -> EventStatus {
     assert!(!event.dispatching());
     assert!(event.initialized());
     assert_eq!(event.phase(), EventPhase::None);
@@ -126,7 +132,7 @@ pub fn dispatch_event(target: &EventTarget,
         event.clear_dispatching_flags();
 
         
-        return !event.DefaultPrevented();
+        return event.status();
     }
 
     
@@ -166,7 +172,7 @@ pub fn dispatch_event(target: &EventTarget,
     event.clear_dispatching_flags();
 
     
-    !event.DefaultPrevented()
+    event.status()
 }
 
 
