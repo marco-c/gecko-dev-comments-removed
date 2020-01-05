@@ -50,7 +50,7 @@ impl Node {
 
 /* TODO: LayoutData is just a pointer, but we must circumvent the type
    system to actually compare the pointers. This should be fixed in
-   with a generic implementation of rcu::Handle */
+   with a generic implementation of cow::Handle */
 impl Node : cmp::Eq {
     pure fn eq(other : &Node) -> bool unsafe {
         let my_data : @LayoutData = @self.aux(|a| copy *a);
@@ -132,12 +132,12 @@ enum LayoutData = {
     mut flow:  Option<@FlowContext>
 };
 
-type Node = rcu::Handle<NodeData, LayoutData>;
+type Node = cow::Handle<NodeData, LayoutData>;
 
-type NodeScope = rcu::Scope<NodeData, LayoutData>;
+type NodeScope = cow::Scope<NodeData, LayoutData>;
 
 fn NodeScope() -> NodeScope {
-    rcu::Scope()
+    cow::Scope()
 }
 
 trait NodeScopeExtensions {

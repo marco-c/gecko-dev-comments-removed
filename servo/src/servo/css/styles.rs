@@ -96,7 +96,7 @@ trait StyleMethods {
 
 impl Node : StyleMethods {
     /** If none exists, creates empty layout data for the node (the reader-auxiliary
-     * box in the RCU model) and populates it with an empty style object.
+     * box in the COW model) and populates it with an empty style object.
      */
     fn initialize_layout_data() -> Option<@LayoutData> {
         match self.has_aux() {
