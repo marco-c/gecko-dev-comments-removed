@@ -39,8 +39,6 @@ enum nsDOMClassInfoID
   eDOMClassInfo_ChromeMessageBroadcaster_id,
   eDOMClassInfo_ChromeMessageSender_id,
 
-  eDOMClassInfo_CSSKeyframesRule_id,
-
   
   eDOMClassInfo_CSSCounterStyleRule_id,
 
