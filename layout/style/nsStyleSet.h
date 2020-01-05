@@ -308,7 +308,7 @@ class nsStyleSet final
   nsCSSKeyframesRule* KeyframesRuleForName(const nsString& aName);
 
   
-  nsCSSCounterStyleRule* CounterStyleRuleForName(const nsAString& aName);
+  nsCSSCounterStyleRule* CounterStyleRuleForName(nsIAtom* aName);
 
   
   already_AddRefed<gfxFontFeatureValueSet> GetFontFeatureValuesLookup();
