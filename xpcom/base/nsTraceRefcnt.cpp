@@ -83,6 +83,7 @@ static PLHashTable* gTypesToLog;
 static PLHashTable* gObjectsToLog;
 static PLHashTable* gSerialNumbers;
 static intptr_t gNextSerialNumber;
+static bool gDumpedStatistics = false;
 
 
 
@@ -523,6 +524,11 @@ nsTraceRefcnt::DumpStatistics(StatisticsType aType, FILE* aOut)
   }
 
   AutoTraceLogLock lock;
+
+  MOZ_ASSERT(!gDumpedStatistics,
+             "Calling DumpStatistics more than once may result in "
+             "bogus positive or negative leaks being reported");
+  gDumpedStatistics = true;
 
   
   AutoRestore<LoggingType> saveLogging(gLogging);
