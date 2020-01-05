@@ -1,6 +1,12 @@
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+@namespace html url("http://www.w3.org/1999/xhtml");
 
-scrollbar {
+
+
+
+
+
+*|*:not(html|select) > scrollbar {
   -moz-appearance: none !important;
   position: relative;
   background-color: transparent;
@@ -12,31 +18,30 @@ scrollbar {
 
 
 
-scrollbar[orient="vertical"] {
+*|*:not(html|select) > scrollbar[orient="vertical"] {
   margin-left: -10px;
   min-width: 10px;
   max-width: 10px;
 }
 
-scrollbar[orient="horizontal"] {
+*|*:not(html|select) > scrollbar[orient="horizontal"] {
   margin-top: -10px;
   min-height: 10px;
   max-height: 10px;
 }
 
-slider {
+*|*:not(html|select) > scrollbar slider {
   -moz-appearance: none !important;
 }
 
-thumb {
+*|*:not(html|select) > scrollbar thumb {
   -moz-appearance: none !important;
   background-color: rgba(0,0,0,0.2);
-  border-radius: 3px;
   border-width: 0px !important;
   border-radius: 3px !important;
 }
 
-scrollbar scrollbarbutton,
-scrollbar gripper {
+*|*:not(html|select) > scrollbar scrollbarbutton,
+*|*:not(html|select) > scrollbar gripper {
   display: none;
 }
