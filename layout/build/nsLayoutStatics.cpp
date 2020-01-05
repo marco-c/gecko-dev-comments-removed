@@ -132,7 +132,6 @@ using namespace mozilla::system;
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
-#include "mozilla/dom/ipc/IPCBlobInputStreamStorage.h"
 
 using namespace mozilla;
 using namespace mozilla::net;
@@ -320,9 +319,6 @@ nsLayoutStatics::Initialize()
   
   MediaPrefs::GetSingleton();
 #endif
-
-  
-  mozilla::dom::IPCBlobInputStreamStorage::Initialize();
 
   return NS_OK;
 }
