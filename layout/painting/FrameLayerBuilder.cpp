@@ -13,6 +13,7 @@
 #include "mozilla/gfx/Matrix.h"
 #include "ActiveLayerTracker.h"
 #include "BasicLayers.h"
+#include "DisplayItemScrollClip.h"
 #include "ImageContainer.h"
 #include "ImageLayers.h"
 #include "LayerTreeInvalidation.h"
@@ -52,7 +53,6 @@
 #include "gfxPrefs.h"
 
 #include <algorithm>
-#include <functional>
 
 using namespace mozilla::layers;
 using namespace mozilla::gfx;
@@ -422,12 +422,13 @@ class PaintedLayerData {
 public:
   PaintedLayerData() :
     mAnimatedGeometryRoot(nullptr),
-    mASR(nullptr),
+    mScrollClip(nullptr),
     mReferenceFrame(nullptr),
     mLayer(nullptr),
     mSolidColor(NS_RGBA(0, 0, 0, 0)),
     mIsSolidColorInVisibleRegion(false),
     mFontSmoothingBackgroundColor(NS_RGBA(0,0,0,0)),
+    mSingleItemFixedToViewport(false),
     mNeedComponentAlpha(false),
     mForceTransparentSurface(false),
     mHideAllLayersBelow(false),
@@ -556,11 +557,10 @@ public:
 
 
   AnimatedGeometryRoot* mAnimatedGeometryRoot;
-  const ActiveScrolledRoot* mASR;
   
 
 
-  const DisplayItemClipChain* mClipChain;
+  const DisplayItemScrollClip* mScrollClip;
   
 
 
@@ -586,6 +586,11 @@ public:
 
 
   nscolor mFontSmoothingBackgroundColor;
+  
+
+
+
+  bool mSingleItemFixedToViewport;
   
 
 
@@ -672,24 +677,19 @@ public:
 struct NewLayerEntry {
   NewLayerEntry()
     : mAnimatedGeometryRoot(nullptr)
-    , mASR(nullptr)
-    , mClipChain(nullptr)
-    , mScrollMetadataASR(nullptr)
+    , mScrollClip(nullptr)
     , mLayerContentsVisibleRect(0, 0, -1, -1)
     , mLayerState(LAYER_INACTIVE)
     , mHideAllLayersBelow(false)
     , mOpaqueForAnimatedGeometryRootParent(false)
     , mPropagateComponentAlphaFlattening(true)
     , mUntransformedVisibleRegion(false)
-    , mIsFixedToRootScrollFrame(false)
   {}
   
   
   RefPtr<Layer> mLayer;
   AnimatedGeometryRoot* mAnimatedGeometryRoot;
-  const ActiveScrolledRoot* mASR;
-  const DisplayItemClipChain* mClipChain;
-  const ActiveScrolledRoot* mScrollMetadataASR;
+  const DisplayItemScrollClip* mScrollClip;
   
   
   UniquePtr<ScrollMetadata> mBaseScrollMetadata;
@@ -719,7 +719,6 @@ struct NewLayerEntry {
   
   
   bool mUntransformedVisibleRegion;
-  bool mIsFixedToRootScrollFrame;
 };
 
 class PaintedLayerDataTree;
@@ -775,8 +774,7 @@ public:
   template<typename NewPaintedLayerCallbackType>
   PaintedLayerData* FindPaintedLayerFor(const nsIntRect& aVisibleRect,
                                         bool aBackfaceHidden,
-                                        const ActiveScrolledRoot* aASR,
-                                        const DisplayItemClipChain* aClipChain,
+                                        const DisplayItemScrollClip* aScrollClip,
                                         NewPaintedLayerCallbackType aNewPaintedLayerCallback);
 
   
@@ -950,8 +948,7 @@ public:
 
   template<typename NewPaintedLayerCallbackType>
   PaintedLayerData* FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                        const ActiveScrolledRoot* aASR,
-                                        const DisplayItemClipChain* aClipChain,
+                                        const DisplayItemScrollClip* aScrollClip,
                                         const nsIntRect& aVisibleRect,
                                         bool aBackfaceidden,
                                         NewPaintedLayerCallbackType aNewPaintedLayerCallback);
@@ -1050,17 +1047,14 @@ public:
                  const ContainerLayerParameters& aParameters,
                  bool aFlattenToSingleLayer,
                  nscolor aBackgroundColor,
-                 const ActiveScrolledRoot* aContainerASR,
-                 const ActiveScrolledRoot* aContainerScrollMetadataASR,
-                 const ActiveScrolledRoot* aContainerCompositorASR) :
+                 const DisplayItemScrollClip* aContainerScrollClip) :
     mBuilder(aBuilder), mManager(aManager),
     mLayerBuilder(aLayerBuilder),
     mContainerFrame(aContainerFrame),
     mContainerLayer(aContainerLayer),
     mContainerBounds(aContainerBounds),
-    mContainerASR(aContainerASR),
-    mContainerScrollMetadataASR(aContainerScrollMetadataASR),
-    mContainerCompositorASR(aContainerCompositorASR),
+    mContainerScrollClip(aContainerScrollClip),
+    mScrollClipForPerspectiveChild(aParameters.mScrollClipForPerspectiveChild),
     mParameters(aParameters),
     mPaintedLayerDataTree(*this, aBackgroundColor),
     mFlattenToSingleLayer(aFlattenToSingleLayer)
@@ -1122,14 +1116,6 @@ public:
     }
     return aRect.ScaleToOutsidePixels(mParameters.mXScale, mParameters.mYScale,
                                       mAppUnitsPerDevPixel);
-  }
-  nsIntRegion ScaleToOutsidePixels(const nsRegion& aRegion, bool aSnap = false) const
-  {
-    if (aSnap && mSnappingEnabled) {
-      return ScaleRegionToNearestPixels(aRegion);
-    }
-    return aRegion.ScaleToOutsidePixels(mParameters.mXScale, mParameters.mYScale,
-                                        mAppUnitsPerDevPixel);
   }
   nsIntRect ScaleToInsidePixels(const nsRect& aRect, bool aSnap = false) const
   {
@@ -1274,7 +1260,7 @@ protected:
   struct MaskLayerKey;
   already_AddRefed<ImageLayer>
   CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey,
-                                   std::function<void(Layer* aLayer)> aSetUserData);
+                                   mozilla::function<void(Layer* aLayer)> aSetUserData);
   
 
 
@@ -1338,13 +1324,11 @@ protected:
 
 
 
-
   PaintedLayerData NewPaintedLayerData(nsDisplayItem* aItem,
                                        AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                       const ActiveScrolledRoot* aASR,
-                                       const DisplayItemClipChain* aClipChain,
-                                       const ActiveScrolledRoot* aScrollMetadataASR,
-                                       const nsPoint& aTopLeft);
+                                       const DisplayItemScrollClip* aScrollClip,
+                                       const nsPoint& aTopLeft,
+                                       bool aShouldFixToViewport);
 
   
 
@@ -1381,8 +1365,7 @@ protected:
     uint32_t aRoundedRectClipCount = UINT32_MAX);
 
   bool ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
-                                  AnimatedGeometryRoot** aAnimatedGeometryRoot,
-                                  const ActiveScrolledRoot** aASR);
+                                  AnimatedGeometryRoot **aAnimatedGeometryRoot);
 
   nsDisplayListBuilder*            mBuilder;
   LayerManager*                    mManager;
@@ -1392,19 +1375,8 @@ protected:
   AnimatedGeometryRoot*            mContainerAnimatedGeometryRoot;
   ContainerLayer*                  mContainerLayer;
   nsRect                           mContainerBounds;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const ActiveScrolledRoot*        mContainerASR;
-  const ActiveScrolledRoot*        mContainerScrollMetadataASR;
-  const ActiveScrolledRoot*        mContainerCompositorASR;
+  const DisplayItemScrollClip*     mContainerScrollClip;
+  const DisplayItemScrollClip*     mScrollClipForPerspectiveChild;
 #ifdef DEBUG
   nsRect                           mAccumulatedChildBounds;
 #endif
@@ -1595,24 +1567,29 @@ struct MaskLayerUserData : public LayerUserData
 struct CSSMaskLayerUserData : public LayerUserData
 {
   CSSMaskLayerUserData()
-    : mMaskStyle(nsStyleImageLayers::LayerType::Mask)
+    : mFrame(nullptr)
   { }
 
   CSSMaskLayerUserData(nsIFrame* aFrame, const nsIntSize& aMaskSize)
-    : mMaskSize(aMaskSize),
-      mMaskStyle(aFrame->StyleSVGReset()->mMask)
-  {
-  }
+    : mFrame(aFrame),
+      mMaskSize(aMaskSize)
+  { }
 
-  void operator=(CSSMaskLayerUserData&& aOther)
+  CSSMaskLayerUserData& operator=(const CSSMaskLayerUserData& aOther)
   {
+    mFrame = aOther.mFrame;
     mMaskSize = aOther.mMaskSize;
-    mMaskStyle = Move(aOther.mMaskStyle);
+
+    return *this;
   }
 
   bool
   operator==(const CSSMaskLayerUserData& aOther) const
   {
+    if (mFrame != aOther.mFrame) {
+      return false;
+    }
+
     
     
     
@@ -1622,12 +1599,12 @@ struct CSSMaskLayerUserData : public LayerUserData
       return false;
     }
 
-    return mMaskStyle == aOther.mMaskStyle;
+    return true;
   }
 
 private:
+  nsIFrame* mFrame;
   nsIntSize mMaskSize;
-  nsStyleImageLayers mMaskStyle;
 };
 
 
@@ -1663,7 +1640,8 @@ public:
       return mDrawTarget;
     }
 
-    if (mLayerManager->GetBackendType() == LayersBackend::LAYERS_BASIC) {
+    if (mLayerManager->GetBackendType() == LayersBackend::LAYERS_BASIC ||
+        mLayerManager->GetBackendType() == LayersBackend::LAYERS_WR) {
       mDrawTarget = mLayerManager->CreateOptimalMaskDrawTarget(mSize);
       return mDrawTarget;
     }
@@ -1710,7 +1688,8 @@ public:
 private:
   already_AddRefed<Image> CreateImage()
   {
-    if (mLayerManager->GetBackendType() == LayersBackend::LAYERS_BASIC &&
+    if ((mLayerManager->GetBackendType() == LayersBackend::LAYERS_BASIC ||
+         mLayerManager->GetBackendType() == LayersBackend::LAYERS_WR) &&
         mDrawTarget) {
       RefPtr<SourceSurface> surface = mDrawTarget->Snapshot();
       RefPtr<SourceSurfaceImage> image = new SourceSurfaceImage(mSize, surface);
@@ -2231,7 +2210,7 @@ ContainerState::CreateOrRecycleImageLayer(PaintedLayer *aPainted)
 
 already_AddRefed<ImageLayer>
 ContainerState::CreateOrRecycleMaskImageLayerFor(const MaskLayerKey& aKey,
-                                                 std::function<void(Layer* aLayer)> aSetUserData)
+                                                 mozilla::function<void(Layer* aLayer)> aSetUserData)
 {
   RefPtr<ImageLayer> result = mRecycledMaskImageLayers.Get(aKey);
   if (result) {
@@ -2778,8 +2757,7 @@ template<typename NewPaintedLayerCallbackType>
 PaintedLayerData*
 PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
                                           bool aBackfaceHidden,
-                                          const ActiveScrolledRoot* aASR,
-                                          const DisplayItemClipChain* aClipChain,
+                                          const DisplayItemScrollClip* aScrollClip,
                                           NewPaintedLayerCallbackType aNewPaintedLayerCallback)
 {
   if (!mPaintedLayerDataStack.IsEmpty()) {
@@ -2789,8 +2767,7 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
         break;
       }
       if (data.mBackfaceHidden == aBackfaceHidden &&
-          data.mASR == aASR &&
-          DisplayItemClipChain::Equal(data.mClipChain, aClipChain)) {
+          data.mScrollClip == aScrollClip) {
         lowestUsableLayer = &data;
       }
       nsIntRegion visibleRegion = data.mVisibleRegion;
@@ -2804,17 +2781,8 @@ PaintedLayerDataNode::FindPaintedLayerFor(const nsIntRect& aVisibleRect,
            data.mScaledMaybeHitRegionBounds.Intersects(aVisibleRect))) {
         break;
       }
-      
-      
-      
-      
-      
-      
-      
       if (visibleRegion.Intersects(aVisibleRect)) {
         break;
-      } else if (gfxPrefs::LayoutSmallerPaintedLayers()) {
-        lowestUsableLayer = nullptr;
       }
     }
     if (lowestUsableLayer) {
@@ -2945,8 +2913,7 @@ PaintedLayerDataTree::AddingOwnLayer(AnimatedGeometryRoot* aAnimatedGeometryRoot
 template<typename NewPaintedLayerCallbackType>
 PaintedLayerData*
 PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                          const ActiveScrolledRoot* aASR,
-                                          const DisplayItemClipChain* aClipChain,
+                                          const DisplayItemScrollClip* aScrollClip,
                                           const nsIntRect& aVisibleRect,
                                           bool aBackfaceHidden,
                                           NewPaintedLayerCallbackType aNewPaintedLayerCallback)
@@ -2956,7 +2923,7 @@ PaintedLayerDataTree::FindPaintedLayerFor(AnimatedGeometryRoot* aAnimatedGeometr
   PaintedLayerDataNode* node = EnsureNodeFor(aAnimatedGeometryRoot);
 
   PaintedLayerData* data =
-    node->FindPaintedLayerFor(aVisibleRect, aBackfaceHidden, aASR, aClipChain,
+    node->FindPaintedLayerFor(aVisibleRect, aBackfaceHidden, aScrollClip,
                               aNewPaintedLayerCallback);
   return data;
 }
@@ -3211,14 +3178,11 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
       NS_ASSERTION(newLayerEntry->mLayer == data->mLayer,
                    "Painted layer at wrong index");
       
-      NewLayerEntry* paintedLayerEntry = newLayerEntry;
       newLayerEntry = &mNewChildLayers[data->mNewChildLayersIndex + 1];
       NS_ASSERTION(!newLayerEntry->mLayer, "Slot already occupied?");
       newLayerEntry->mLayer = layer;
       newLayerEntry->mAnimatedGeometryRoot = data->mAnimatedGeometryRoot;
-      newLayerEntry->mASR = paintedLayerEntry->mASR;
-      newLayerEntry->mClipChain = paintedLayerEntry->mClipChain;
-      newLayerEntry->mScrollMetadataASR = paintedLayerEntry->mScrollMetadataASR;
+      newLayerEntry->mScrollClip = data->mScrollClip;
 
       
       
@@ -3235,6 +3199,18 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     layer = data->mLayer;
     layer->SetClipRect(Nothing());
     FLB_LOG_PAINTED_LAYER_DECISION(data, "  Selected painted layer=%p\n", layer.get());
+  }
+
+  
+  
+  
+  
+  
+  if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
+    nsRect clipRect = data->mItemClip.GetClipRect();
+    nsRect insideRoundedCorners = data->mItemClip.ApproximateIntersectInward(clipRect);
+    nsIntRect insideRoundedCornersScaled = ScaleToInsidePixels(insideRoundedCorners);
+    data->mOpaqueRegion.AndWith(insideRoundedCornersScaled);
   }
 
   if (mLayerBuilder->IsBuildingRetainedLayers()) {
@@ -3301,8 +3277,29 @@ void ContainerState::FinishPaintedLayerData(PaintedLayerData& aData, FindOpaqueB
     
     
     int32_t commonClipCount;
-    commonClipCount = std::max(0, data->mCommonClipCount);
-    SetupMaskLayer(layer, data->mItemClip, commonClipCount);
+    
+    
+    
+    if (data->mSingleItemFixedToViewport && data->mItemClip.HasClip()) {
+      nsIntRect layerClipRect = ScaleToNearestPixels(data->mItemClip.GetClipRect());
+      layerClipRect.MoveBy(mParameters.mOffset);
+      
+      
+      LayerClip scrolledClip;
+      scrolledClip.SetClipRect(ViewAs<ParentLayerPixel>(layerClipRect));
+      scrolledClip.SetMaskLayerIndex(
+          SetupMaskLayerForScrolledClip(data->mLayer, data->mItemClip));
+      data->mLayer->SetScrolledClip(Some(scrolledClip));
+      
+      
+      
+      
+      MOZ_ASSERT(data->mCommonClipCount == -1 || data->mCommonClipCount == 0);
+      commonClipCount = data->mItemClip.GetRoundedRectCount();
+    } else {
+      commonClipCount = std::max(0, data->mCommonClipCount);
+      SetupMaskLayer(layer, data->mItemClip, commonClipCount);
+    }
     
     FrameLayerBuilder::PaintedLayerItemsEntry* entry = mLayerBuilder->
       GetPaintedLayerItemsEntry(static_cast<PaintedLayer*>(layer.get()));
@@ -3623,25 +3620,22 @@ PaintedLayerData::AccumulateEventRegions(ContainerState* aState, nsDisplayLayerE
 PaintedLayerData
 ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
                                     AnimatedGeometryRoot* aAnimatedGeometryRoot,
-                                    const ActiveScrolledRoot* aASR,
-                                    const DisplayItemClipChain* aClipChain,
-                                    const ActiveScrolledRoot* aScrollMetadataASR,
-                                    const nsPoint& aTopLeft)
+                                    const DisplayItemScrollClip* aScrollClip,
+                                    const nsPoint& aTopLeft,
+                                    bool aShouldFixToViewport)
 {
   PaintedLayerData data;
   data.mAnimatedGeometryRoot = aAnimatedGeometryRoot;
-  data.mASR = aASR;
-  data.mClipChain = aClipChain,
+  data.mScrollClip = aScrollClip;
   data.mAnimatedGeometryRootOffset = aTopLeft;
   data.mReferenceFrame = aItem->ReferenceFrame();
+  data.mSingleItemFixedToViewport = aShouldFixToViewport;
   data.mBackfaceHidden = aItem->Frame()->In3DContextAndBackfaceIsHidden();
 
   data.mNewChildLayersIndex = mNewChildLayers.Length();
   NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
   newLayerEntry->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
-  newLayerEntry->mASR = aASR;
-  newLayerEntry->mScrollMetadataASR = aScrollMetadataASR;
-  newLayerEntry->mClipChain = aClipChain,
+  newLayerEntry->mScrollClip = aScrollClip;
   
   
 
@@ -3741,8 +3735,7 @@ PaintInactiveLayer(nsDisplayListBuilder* aBuilder,
 
 bool
 ContainerState::ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
-                                           AnimatedGeometryRoot** aAnimatedGeometryRoot,
-                                           const ActiveScrolledRoot** aASR)
+                                           AnimatedGeometryRoot **aAnimatedGeometryRoot)
 {
   for (nsDisplayItem* item = aList.GetBottom(); item; item = item->GetAbove()) {
     LayerState layerState = item->GetLayerState(mBuilder, mManager, mParameters);
@@ -3755,7 +3748,6 @@ ContainerState::ChooseAnimatedGeometryRoot(const nsDisplayList& aList,
     
     
     *aAnimatedGeometryRoot = item->GetAnimatedGeometryRoot();
-    *aASR = item->GetActiveScrolledRoot();
     return true;
   }
   return false;
@@ -3819,6 +3811,27 @@ ContainerState::ComputeOpaqueRect(nsDisplayItem* aItem,
   return opaquePixels;
 }
 
+static const DisplayItemScrollClip*
+InnermostScrollClipApplicableToAGR(const DisplayItemScrollClip* aItemScrollClip,
+                                   AnimatedGeometryRoot* aAnimatedGeometryRoot)
+{
+  
+  
+  
+  
+  
+  for (const DisplayItemScrollClip* scrollClip = aItemScrollClip;
+       scrollClip;
+       scrollClip = scrollClip->mParent) {
+    nsIFrame* scrolledFrame = scrollClip->mScrollableFrame->GetScrolledFrame();
+    if (nsLayoutUtils::IsAncestorFrameCrossDoc(scrolledFrame, *aAnimatedGeometryRoot)) {
+      
+      return scrollClip;
+    }
+  }
+  return nullptr;
+}
+
 Maybe<size_t>
 ContainerState::SetupMaskLayerForScrolledClip(Layer* aLayer,
                                               const DisplayItemClip& aClip)
@@ -3833,18 +3846,6 @@ ContainerState::SetupMaskLayerForScrolledClip(Layer* aLayer,
     
   }
   return Nothing();
-}
-
-static const ActiveScrolledRoot*
-GetASRForPerspective(const ActiveScrolledRoot* aASR, nsIFrame* aPerspectiveFrame)
-{
-  for (const ActiveScrolledRoot* asr = aASR; asr; asr = asr->mParent) {
-    nsIFrame* scrolledFrame = asr->mScrollableFrame->GetScrolledFrame();
-    if (nsLayoutUtils::IsAncestorFrameCrossDoc(scrolledFrame, aPerspectiveFrame)) {
-      return asr;
-    }
-  }
-  return nullptr;
 }
 
 void
@@ -3868,15 +3869,6 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   bool snap;
   nsRect bounds = aMaskItem->GetBounds(mBuilder, &snap);
   nsIntRect itemRect = ScaleToOutsidePixels(bounds, snap);
-
-  
-  
-  
-  Matrix4x4 matrix;
-  matrix.PreTranslate(itemRect.x, itemRect.y, 0);
-  matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
-  maskLayer->SetBaseTransform(matrix);
-
   CSSMaskLayerUserData newUserData(aMaskItem->Frame(), itemRect.Size());
   nsRect dirtyRect;
   if (!aMaskItem->IsInvalid(dirtyRect) && *oldUserData == newUserData) {
@@ -3889,7 +3881,6 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
                       std::min(itemRect.height, maxSize));
 
   if (surfaceSize.IsEmpty()) {
-    
     return;
   }
 
@@ -3909,6 +3900,13 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
     return;
   }
 
+  
+  Matrix4x4 matrix;
+  matrix.PreTranslate(itemRect.x, itemRect.y, 0);
+  matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
+
+  maskLayer->SetBaseTransform(matrix);
+
   RefPtr<ImageContainer> imgContainer =
     imageData.CreateImageAndImageContainer();
   if (!imgContainer) {
@@ -3916,7 +3914,7 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   }
   maskLayer->SetContainer(imgContainer);
 
-  *oldUserData = Move(newUserData);
+  *oldUserData = newUserData;
   aLayer->SetMaskLayer(maskLayer);
 }
 
@@ -3941,7 +3939,6 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
     js::ProfileEntry::Category::GRAPHICS);
 
   AnimatedGeometryRoot* lastAnimatedGeometryRoot = mContainerAnimatedGeometryRoot;
-  const ActiveScrolledRoot* lastASR = mContainerASR;
   nsPoint lastAGRTopLeft;
   nsPoint topLeft(0,0);
 
@@ -3949,7 +3946,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
   
   
   if (mFlattenToSingleLayer) {
-    if (ChooseAnimatedGeometryRoot(*aList, &lastAnimatedGeometryRoot, &lastASR)) {
+    if (ChooseAnimatedGeometryRoot(*aList, &lastAnimatedGeometryRoot)) {
       lastAGRTopLeft = (*lastAnimatedGeometryRoot)->GetOffsetToCrossDoc(mContainerReferenceFrame);
     }
   }
@@ -4018,39 +4015,66 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
 
     bool forceInactive;
     AnimatedGeometryRoot* animatedGeometryRoot;
-    const ActiveScrolledRoot* itemASR = nullptr;
-    const DisplayItemClipChain* layerClipChain = nullptr;
+    AnimatedGeometryRoot* animatedGeometryRootForClip = nullptr;
     if (mFlattenToSingleLayer && layerState != LAYER_ACTIVE_FORCE) {
       forceInactive = true;
       animatedGeometryRoot = lastAnimatedGeometryRoot;
-      itemASR = lastASR;
       topLeft = lastAGRTopLeft;
-      item->FuseClipChainUpTo(mBuilder, mContainerASR);
     } else {
       forceInactive = false;
       if (mManager->IsWidgetLayerManager()) {
         animatedGeometryRoot = item->GetAnimatedGeometryRoot();
-        itemASR = item->GetActiveScrolledRoot();
-        const DisplayItemClipChain* itemClipChain = item->GetClipChain();
-        if (itemClipChain && itemClipChain->mASR == itemASR &&
-            itemType != nsDisplayItem::TYPE_STICKY_POSITION) {
-          layerClipChain = itemClipChain->mParent;
-        } else {
-          layerClipChain = itemClipChain;
-        }
+        animatedGeometryRootForClip = item->AnimatedGeometryRootForScrollMetadata();
       } else {
         
         
         
         animatedGeometryRoot = mContainerAnimatedGeometryRoot;
-        itemASR = mContainerASR;
-        item->FuseClipChainUpTo(mBuilder, mContainerASR);
+
       }
       topLeft = (*animatedGeometryRoot)->GetOffsetToCrossDoc(mContainerReferenceFrame);
     }
+    if (!animatedGeometryRootForClip) {
+      animatedGeometryRootForClip = animatedGeometryRoot;
+    }
 
-    const ActiveScrolledRoot* scrollMetadataASR =
-        layerClipChain ? ActiveScrolledRoot::PickDescendant(itemASR, layerClipChain->mASR) : itemASR;
+    const DisplayItemScrollClip* itemScrollClip = item->ScrollClip();
+    
+    
+    
+    
+    const DisplayItemScrollClip* agrScrollClip =
+      InnermostScrollClipApplicableToAGR(itemScrollClip, animatedGeometryRootForClip);
+    MOZ_ASSERT(DisplayItemScrollClip::IsAncestor(agrScrollClip, itemScrollClip));
+
+    if (agrScrollClip != itemScrollClip) {
+      
+      DisplayItemClip clip = item->GetClip();
+      for (const DisplayItemScrollClip* scrollClip = itemScrollClip;
+           scrollClip && scrollClip != agrScrollClip && scrollClip != mContainerScrollClip;
+           scrollClip = scrollClip->mParent) {
+        if (scrollClip->mClip) {
+          clip.IntersectWith(*scrollClip->mClip);
+        }
+      }
+      item->SetClip(mBuilder, clip);
+    }
+
+    bool clipMovesWithLayer = (animatedGeometryRoot == animatedGeometryRootForClip);
+
+    bool shouldFixToViewport = !clipMovesWithLayer &&
+        !(*animatedGeometryRoot)->GetParent() &&
+        item->ShouldFixToViewport(mBuilder);
+
+    
+    
+    
+    
+    DisplayItemClip fixedToViewportClip = DisplayItemClip::NoClip();
+    if (shouldFixToViewport) {
+      fixedToViewportClip = item->GetClip();
+      item->SetClip(mBuilder, DisplayItemClip::NoClip());
+    }
 
     bool snap;
     nsRect itemContent = item->GetBounds(mBuilder, &snap);
@@ -4081,13 +4105,17 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         bounds.IntersectRect(bounds, itemClip.GetClipRect());
       }
     }
+    bounds = fixedToViewportClip.ApplyNonRoundedIntersection(bounds);
     if (!bounds.IsEmpty()) {
-      if (itemASR != mContainerASR) {
-        const DisplayItemClip* clip = DisplayItemClipChain::ClipForASR(item->GetClipChain(), mContainerASR);
-        MOZ_ASSERT(clip || gfxPrefs::LayoutUseContainersForRootFrames(),
-                   "the item should have finite bounds with respect to mContainerASR.");
-        if (clip) {
-          bounds = clip->GetClipRect();
+      for (const DisplayItemScrollClip* scrollClip = itemScrollClip;
+           scrollClip && scrollClip != mContainerScrollClip;
+           scrollClip = scrollClip->mParent) {
+        if (scrollClip->mClip) {
+          if (scrollClip->mIsAsyncScrollable) {
+            bounds = scrollClip->mClip->GetClipRect();
+          } else {
+            bounds = scrollClip->mClip->ApplyNonRoundedIntersection(bounds);
+          }
         }
       }
     }
@@ -4135,6 +4163,22 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         continue;
       }
 
+      if (mScrollClipForPerspectiveChild) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(itemType == nsDisplayItem::TYPE_TRANSFORM);
+        MOZ_ASSERT(!itemScrollClip);
+        MOZ_ASSERT(!agrScrollClip);
+        MOZ_ASSERT(DisplayItemScrollClip::IsAncestor(mContainerScrollClip,
+                                                      mScrollClipForPerspectiveChild));
+        itemScrollClip = mScrollClipForPerspectiveChild;
+        agrScrollClip = mScrollClipForPerspectiveChild;
+      }
+
       
       
       bool mayDrawOutOfOrder = itemType == nsDisplayItem::TYPE_TRANSFORM &&
@@ -4154,43 +4198,17 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       nscolor* uniformColorPtr = (mayDrawOutOfOrder || IsInInactiveLayer()) ? nullptr :
                                                                               &uniformColor;
       nsIntRect clipRectUntyped;
+      const DisplayItemClip& layerClip = shouldFixToViewport ? fixedToViewportClip : itemClip;
+      ParentLayerIntRect layerClipRect;
       nsIntRect* clipPtr = nullptr;
-      if (itemClip.HasClip()) {
-        clipRectUntyped = clipRect.ToUnknownRect();
+      if (layerClip.HasClip()) {
+        layerClipRect = ViewAs<ParentLayerPixel>(
+          ScaleToNearestPixels(layerClip.GetClipRect()) + mParameters.mOffset);
+        clipRectUntyped = layerClipRect.ToUnknownRect();
         clipPtr = &clipRectUntyped;
       }
-
-      bool hasScrolledClip = layerClipChain && layerClipChain->mClip.HasClip() &&
-        (!ActiveScrolledRoot::IsAncestor(layerClipChain->mASR, itemASR) ||
-         itemType == nsDisplayItem::TYPE_STICKY_POSITION);
-
-      if (hasScrolledClip) {
-        
-        
-        
-        const ActiveScrolledRoot* clipASR = layerClipChain->mASR;
-        AnimatedGeometryRoot* clipAGR = mBuilder->AnimatedGeometryRootForASR(clipASR);
-        nsIntRect scrolledClipRect =
-          ScaleToNearestPixels(layerClipChain->mClip.GetClipRect()) + mParameters.mOffset;
-        mPaintedLayerDataTree.AddingOwnLayer(clipAGR,
-                                             &scrolledClipRect,
-                                             uniformColorPtr);
-      } else if (item->ShouldFixToViewport(mBuilder) && itemClip.HasClip() &&
-                 item->AnimatedGeometryRootForScrollMetadata() != animatedGeometryRoot &&
-                 !nsLayoutUtils::UsesAsyncScrolling(item->Frame())) {
-        
-        
-        
-        
-        
-        AnimatedGeometryRoot* clipAGR = item->AnimatedGeometryRootForScrollMetadata();
-        nsIntRect scrolledClipRect =
-          ScaleToNearestPixels(itemClip.GetClipRect()) + mParameters.mOffset;
-        mPaintedLayerDataTree.AddingOwnLayer(clipAGR,
-                                             &scrolledClipRect,
-                                             uniformColorPtr);
-      } else if (*animatedGeometryRoot == item->Frame() &&
-                 *animatedGeometryRoot != mBuilder->RootReferenceFrame()) {
+      if (*animatedGeometryRoot == item->Frame() &&
+          *animatedGeometryRoot != mBuilder->RootReferenceFrame()) {
         
         
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot->mParentAGR,
@@ -4198,6 +4216,10 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                                              uniformColorPtr);
       } else if (prerenderedTransform) {
         mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRoot,
+                                             clipPtr,
+                                             uniformColorPtr);
+      } else if (shouldFixToViewport) {
+        mPaintedLayerDataTree.AddingOwnLayer(animatedGeometryRootForClip,
                                              clipPtr,
                                              uniformColorPtr);
       } else {
@@ -4216,13 +4238,8 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       ContainerLayerParameters params = mParameters;
       params.mBackgroundColor = uniformColor;
       params.mLayerCreationHint = GetLayerCreationHint(animatedGeometryRoot);
-      params.mScrollMetadataASR = ActiveScrolledRoot::PickDescendant(mContainerScrollMetadataASR, scrollMetadataASR);
-      params.mCompositorASR = params.mScrollMetadataASR != mContainerScrollMetadataASR
-                                ? params.mScrollMetadataASR
-                                : mContainerCompositorASR;
-      if (itemType == nsDisplayItem::TYPE_FIXED_POSITION) {
-        params.mCompositorASR = itemASR;
-      }
+      params.mScrollClip = agrScrollClip;
+      params.mScrollClipForPerspectiveChild = nullptr;
 
       if (itemType == nsDisplayItem::TYPE_PERSPECTIVE) {
         
@@ -4233,9 +4250,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         
         
         
-        scrollMetadataASR = GetASRForPerspective(scrollMetadataASR, item->Frame());
-        params.mScrollMetadataASR = scrollMetadataASR;
-        itemASR = scrollMetadataASR;
+        
+        
+        params.mScrollClipForPerspectiveChild = itemScrollClip;
       }
 
       
@@ -4276,57 +4293,37 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       NS_ASSERTION(ownLayer->Manager() == mManager, "Wrong manager");
       NS_ASSERTION(!ownLayer->HasUserData(&gLayerManagerUserData),
                    "We shouldn't have a FrameLayerBuilder-managed layer here!");
-      NS_ASSERTION(itemClip.HasClip() ||
-                   itemClip.GetRoundedRectCount() == 0,
+      NS_ASSERTION(layerClip.HasClip() ||
+                   layerClip.GetRoundedRectCount() == 0,
                    "If we have rounded rects, we must have a clip rect");
 
       
+
       ownLayer->SetClipRect(Nothing());
       ownLayer->SetScrolledClip(Nothing());
-      ownLayer->SetAncestorMaskLayers({});
-      if (itemClip.HasClip()) {
-        ownLayer->SetClipRect(Some(clipRect));
-
+      if (layerClip.HasClip()) {
         
         
-        if (itemClip.GetRoundedRectCount() > 0) {
-          SetupMaskLayer(ownLayer, itemClip);
+        if (shouldFixToViewport) {
+          LayerClip scrolledClip;
+          scrolledClip.SetClipRect(layerClipRect);
+          if (layerClip.GetRoundedRectCount() > 0) {
+            scrolledClip.SetMaskLayerIndex(
+                SetupMaskLayerForScrolledClip(ownLayer.get(), layerClip));
+          }
+          ownLayer->SetScrolledClip(Some(scrolledClip));
+        } else {
+          ownLayer->SetClipRect(Some(layerClipRect));
+
+          
+          
+          if (layerClip.GetRoundedRectCount() > 0) {
+            SetupMaskLayer(ownLayer, layerClip);
+          }
         }
-      }
-
-      if (hasScrolledClip) {
-        const DisplayItemClip& scrolledClip = layerClipChain->mClip;
-        LayerClip scrolledLayerClip;
-        scrolledLayerClip.SetClipRect(ViewAs<ParentLayerPixel>(
-          ScaleToNearestPixels(scrolledClip.GetClipRect()) + mParameters.mOffset));
-        if (scrolledClip.GetRoundedRectCount() > 0) {
-          scrolledLayerClip.SetMaskLayerIndex(
-              SetupMaskLayerForScrolledClip(ownLayer.get(), scrolledClip));
-        }
-        ownLayer->SetScrolledClip(Some(scrolledLayerClip));
-      }
-
-      if (item->GetType() == nsDisplayItem::TYPE_MASK) {
-        MOZ_ASSERT(itemClip.GetRoundedRectCount() == 0);
-
+      } else if (item->GetType() == nsDisplayItem::TYPE_MASK) {
         nsDisplayMask* maskItem = static_cast<nsDisplayMask*>(item);
         SetupMaskLayerForCSSMask(ownLayer, maskItem);
-
-        nsDisplayItem* next = aList->GetBottom();
-        if (next && next->GetType() == nsDisplayItem::TYPE_SCROLL_INFO_LAYER) {
-          
-          
-          aList->RemoveBottom();
-          next->~nsDisplayItem();
-        }
-      }
-
-      
-      
-      nsIntRegion itemVisibleRegion = itemVisibleRect;
-      nsRegion tightBounds = item->GetTightBounds(mBuilder, &snap);
-      if (!tightBounds.IsEmpty()) {
-        itemVisibleRegion.AndWith(ScaleToOutsidePixels(tightBounds, snap));
       }
 
       ContainerLayer* oldContainer = ownLayer->GetParent();
@@ -4339,15 +4336,8 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       NewLayerEntry* newLayerEntry = mNewChildLayers.AppendElement();
       newLayerEntry->mLayer = ownLayer;
       newLayerEntry->mAnimatedGeometryRoot = animatedGeometryRoot;
-      newLayerEntry->mASR = itemASR;
-      newLayerEntry->mScrollMetadataASR = scrollMetadataASR;
-      newLayerEntry->mClipChain = layerClipChain;
+      newLayerEntry->mScrollClip = agrScrollClip;
       newLayerEntry->mLayerState = layerState;
-      if (itemType == nsDisplayItem::TYPE_FIXED_POSITION) {
-        newLayerEntry->mIsFixedToRootScrollFrame =
-          item->Frame()->StyleDisplay()->mPosition == NS_STYLE_POSITION_FIXED &&
-          nsLayoutUtils::IsReallyFixedPos(item->Frame());
-      }
 
       
       
@@ -4374,10 +4364,10 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
           newLayerEntry->mVisibleRegion =
             item->GetVisibleRectForChildren().ToOutsidePixels(mAppUnitsPerDevPixel);
         } else {
-          newLayerEntry->mVisibleRegion = itemVisibleRegion;
+          newLayerEntry->mVisibleRegion = itemVisibleRect;
         }
         newLayerEntry->mOpaqueRegion = ComputeOpaqueRect(item,
-          animatedGeometryRoot, itemClip, aList,
+          animatedGeometryRoot, layerClip, aList,
           &newLayerEntry->mHideAllLayersBelow,
           &newLayerEntry->mOpaqueForAnimatedGeometryRootParent);
       } else {
@@ -4387,7 +4377,7 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
            item->Frame()->HasPerspective());
         const nsIntRegion &visible = useChildrenVisible ?
           item->GetVisibleRectForChildren().ToOutsidePixels(mAppUnitsPerDevPixel):
-          itemVisibleRegion;
+          itemVisibleRect;
 
         SetOuterVisibleRegionForLayer(ownLayer, visible,
             layerContentsVisibleRect.width >= 0 ? &layerContentsVisibleRect : nullptr,
@@ -4414,12 +4404,12 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
       mLayerBuilder->AddLayerDisplayItem(ownLayer, item, layerState, nullptr);
     } else {
       PaintedLayerData* paintedLayerData =
-        mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, itemASR, layerClipChain,
+        mPaintedLayerDataTree.FindPaintedLayerFor(animatedGeometryRoot, agrScrollClip,
                                                   itemVisibleRect,
                                                   item->Frame()->In3DContextAndBackfaceIsHidden(),
                                                   [&]() {
-          return NewPaintedLayerData(item, animatedGeometryRoot, itemASR, layerClipChain, scrollMetadataASR,
-                                     topLeft);
+          return NewPaintedLayerData(item, animatedGeometryRoot, agrScrollClip,
+                                     topLeft, shouldFixToViewport);
         });
 
       if (itemType == nsDisplayItem::TYPE_LAYER_EVENT_REGIONS) {
@@ -4440,6 +4430,13 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
         opaquePixels.AndWith(itemVisibleRect);
         paintedLayerData->Accumulate(this, item, opaquePixels,
             itemVisibleRect, itemClip, layerState);
+
+        
+        
+        
+        if (fixedToViewportClip.HasClip()) {
+          paintedLayerData->mItemClip = fixedToViewportClip;
+        }
 
         if (!paintedLayerData->mLayer) {
           
@@ -4681,13 +4678,6 @@ FrameLayerBuilder::AddPaintedDisplayItem(PaintedLayerData* aLayerData,
       nsRect visibleRect =
         aItem->GetVisibleRect().Intersect(aItem->GetBounds(mDisplayListBuilder, &snap));
       nsIntRegion rgn = visibleRect.ToOutsidePixels(paintedData->mAppUnitsPerDevPixel);
-
-      
-      
-      nsRegion tightBounds = aItem->GetTightBounds(mDisplayListBuilder, &snap);
-      if (!tightBounds.IsEmpty()) {
-        rgn.AndWith(tightBounds.ToOutsidePixels(paintedData->mAppUnitsPerDevPixel));
-      }
       SetOuterVisibleRegion(tmpLayer, &rgn);
 
       
@@ -4930,89 +4920,6 @@ FindOpaqueRegionEntry(nsTArray<OpaqueRegionEntry>& aEntries,
   return nullptr;
 }
 
-const ActiveScrolledRoot*
-FindDirectChildASR(const ActiveScrolledRoot* aParent, const ActiveScrolledRoot* aDescendant)
-{
-  MOZ_ASSERT(aDescendant, "can't start at the root when looking for a child");
-  MOZ_ASSERT(ActiveScrolledRoot::IsAncestor(aParent, aDescendant));
-  const ActiveScrolledRoot* directChild = aDescendant;
-  while (directChild->mParent != aParent) {
-    directChild = directChild->mParent;
-    MOZ_RELEASE_ASSERT(directChild, "this must not be null");
-  }
-  return directChild;
-}
-
-static FrameMetrics::ViewID
-ViewIDForASR(const ActiveScrolledRoot* aASR)
-{
-  nsIContent* content = aASR->mScrollableFrame->GetScrolledFrame()->GetContent();
-  return nsLayoutUtils::FindOrCreateIDFor(content);
-}
-
-static void
-FixUpFixedPositionLayer(Layer* aLayer,
-                        const ActiveScrolledRoot* aTargetASR,
-                        const ActiveScrolledRoot* aLeafScrollMetadataASR,
-                        const ActiveScrolledRoot* aContainerScrollMetadataASR,
-                        const ActiveScrolledRoot* aContainerCompositorASR,
-                        bool aIsFixedToRootScrollFrame)
-{
-  if (!aLayer->GetIsFixedPosition()) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const ActiveScrolledRoot* compositorASR =
-    aLeafScrollMetadataASR == aContainerScrollMetadataASR
-      ? aContainerCompositorASR
-      : aLeafScrollMetadataASR;
-
-  
-  if (compositorASR && aTargetASR != compositorASR) {
-    
-    aLayer->SetFixedPositionData(
-      ViewIDForASR(FindDirectChildASR(aTargetASR, compositorASR)),
-      aLayer->GetFixedPositionAnchor(),
-      aLayer->GetFixedPositionSides());
-  } else {
-    
-    
-    
-    
-    
-    
-    
-    aLayer->SetIsFixedPosition(aIsFixedToRootScrollFrame);
-  }
-}
-
 void
 ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
 {
@@ -5027,33 +4934,6 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
     
     return;
   }
-
-  const ActiveScrolledRoot* startASR = aEntry->mScrollMetadataASR;
-  const ActiveScrolledRoot* stopASR = mContainerScrollMetadataASR;
-  if (!ActiveScrolledRoot::IsAncestor(stopASR, startASR)) {
-    if (ActiveScrolledRoot::IsAncestor(startASR, stopASR)) {
-      
-      
-      
-      startASR = stopASR;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      do {
-        stopASR = stopASR->mParent;
-      } while (!ActiveScrolledRoot::IsAncestor(stopASR, startASR));
-    }
-  }
-
-  FixUpFixedPositionLayer(aEntry->mLayer, aEntry->mASR, startASR,
-                          mContainerScrollMetadataASR, mContainerCompositorASR,
-                          aEntry->mIsFixedToRootScrollFrame);
 
   AutoTArray<ScrollMetadata,2> metricsArray;
   if (aEntry->mBaseScrollMetadata) {
@@ -5070,37 +4950,21 @@ ContainerState::SetupScrollingMetadata(NewLayerEntry* aEntry)
   
   nsTArray<RefPtr<Layer>> maskLayers(aEntry->mLayer->GetAllAncestorMaskLayers());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const DisplayItemClipChain* clipChain = aEntry->mClipChain;
-
-  for (const ActiveScrolledRoot* asr = startASR; asr != stopASR; asr = asr->mParent) {
-    if (!asr) {
-      MOZ_ASSERT_UNREACHABLE("Should have encountered stopASR on the way up.");
-      break;
-    }
-    if (clipChain && clipChain->mASR == asr) {
-      clipChain = clipChain->mParent;
+  for (const DisplayItemScrollClip* scrollClip = aEntry->mScrollClip;
+       scrollClip && scrollClip != mContainerScrollClip;
+       scrollClip = scrollClip->mParent) {
+    if (!scrollClip->mIsAsyncScrollable) {
+      
+      
+      
+      continue;
     }
 
-    nsIScrollableFrame* scrollFrame = asr->mScrollableFrame;
-    const DisplayItemClip* clip =
-      (clipChain && clipChain->mASR == asr->mParent) ? &clipChain->mClip : nullptr;
+    nsIScrollableFrame* scrollFrame = scrollClip->mScrollableFrame;
+    const DisplayItemClip* clip = scrollClip->mClip;
 
     Maybe<ScrollMetadata> metadata =
-      scrollFrame->ComputeScrollMetadata(aEntry->mLayer, mContainerReferenceFrame,
-                                         mParameters, clip);
+      scrollFrame->ComputeScrollMetadata(aEntry->mLayer, mContainerReferenceFrame, mParameters, clip);
     if (!metadata) {
       continue;
     }
@@ -5196,7 +5060,7 @@ ContainerState::PostprocessRetainedLayers(nsIntRegion* aOpaqueRegionForContainer
       if (clipRect) {
         clippedOpaque.AndWith(clipRect->ToUnknownRect());
       }
-      if (e->mLayer->GetScrolledClip()) {
+      if (e->mLayer->GetIsFixedPosition() && e->mLayer->GetScrolledClip()) {
         
         
         clippedOpaque.SetEmpty();
@@ -5229,9 +5093,7 @@ ContainerState::Finish(uint32_t* aTextContentFlags,
 {
   mPaintedLayerDataTree.Finish();
 
-  if (!mParameters.mForEventsAndPluginsOnly && !gfxPrefs::LayoutUseContainersForRootFrames()) {
-    
-    
+  if (!mParameters.mForEventsAndPluginsOnly) {
     NS_ASSERTION(mContainerBounds.IsEqualInterior(mAccumulatedChildBounds),
                  "Bounds computation mismatch");
   }
@@ -5575,18 +5437,10 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
     return containerLayer.forget();
   }
 
-  const ActiveScrolledRoot* containerASR = aContainerItem ? aContainerItem->GetActiveScrolledRoot() : nullptr;
-  const ActiveScrolledRoot* containerScrollMetadataASR = aParameters.mScrollMetadataASR;
-  const ActiveScrolledRoot* containerCompositorASR = aParameters.mCompositorASR;
-
-  if (!aContainerItem && gfxPrefs::LayoutUseContainersForRootFrames()) {
-    containerASR = aBuilder->ActiveScrolledRootForRootScrollframe();
-    containerScrollMetadataASR = containerASR;
-    containerCompositorASR = containerASR;
-  }
+  const DisplayItemScrollClip* containerScrollClip = aParameters.mScrollClip;
 
   ContainerLayerParameters scaleParameters;
-  nsRect bounds = aChildren->GetClippedBoundsWithRespectToASR(aBuilder, containerASR);
+  nsRect bounds = aChildren->GetScrollClippedBoundsUpTo(aBuilder, containerScrollClip);
   nsRect childrenVisible =
       aContainerItem ? aContainerItem->GetVisibleRectForChildren() :
           aContainerFrame->GetVisualOverflowRectRelativeToSelf();
@@ -5633,8 +5487,7 @@ FrameLayerBuilder::BuildContainerLayerFor(nsDisplayListBuilder* aBuilder,
     ContainerState state(aBuilder, aManager, aManager->GetLayerBuilder(),
                          aContainerFrame, aContainerItem, bounds,
                          containerLayer, scaleParameters, flattenToSingleLayer,
-                         backgroundColor, containerASR, containerScrollMetadataASR,
-                         containerCompositorASR);
+                         backgroundColor, containerScrollClip);
 
     state.ProcessDisplayItems(aChildren);
 
@@ -6397,11 +6250,6 @@ ContainerState::CreateMaskLayer(Layer *aLayer,
   gfx::Matrix maskTransform =
     Matrix::Scaling(surfaceSize.width / boundingRect.Width(),
                     surfaceSize.height / boundingRect.Height());
-  if (surfaceSize.IsEmpty()) {
-    
-    return nullptr;
-  }
-
   gfx::Point p = boundingRect.TopLeft();
   maskTransform.PreTranslate(-p.x, -p.y);
   
