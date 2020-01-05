@@ -45,24 +45,9 @@ this.InsecurePasswordUtils = {
 
 
 
-  checkForInsecurePasswords(aForm) {
-    if (this._formRootsWarned.has(aForm.rootElement) ||
-        this._formRootsWarned.get(aForm.rootElement)) {
-      return;
-    }
 
-    let domDoc = aForm.ownerDocument;
-    let isSafePage = domDoc.defaultView.isSecureContext;
 
-    if (!isSafePage) {
-      if (domDoc.defaultView == domDoc.defaultView.parent) {
-        this._sendWebConsoleMessage("InsecurePasswordsPresentOnPage", domDoc);
-      } else {
-        this._sendWebConsoleMessage("InsecurePasswordsPresentOnIframe", domDoc);
-      }
-      this._formRootsWarned.set(aForm.rootElement, true);
-    }
-
+  _checkFormSecurity(aForm) {
     let isFormSubmitHTTP = false, isFormSubmitSecure = false;
     if (aForm.rootElement instanceof Ci.nsIDOMHTMLFormElement) {
       let uri = Services.io.newURI(aForm.rootElement.action || aForm.rootElement.baseURI,
@@ -73,14 +58,56 @@ this.InsecurePasswordUtils = {
         isFormSubmitHTTP = true;
         if (gContentSecurityManager.isOriginPotentiallyTrustworthy(principal)) {
           isFormSubmitSecure = true;
-        } else if (isSafePage) {
-          
-          this._sendWebConsoleMessage("InsecureFormActionPasswordsPresent", domDoc);
-          this._formRootsWarned.set(aForm.rootElement, true);
         }
       } else {
         isFormSubmitSecure = true;
       }
+    }
+
+    return { isFormSubmitHTTP, isFormSubmitSecure };
+  },
+
+  
+
+
+
+
+
+
+
+  isFormSecure(aForm) {
+    let isSafePage = aForm.ownerDocument.defaultView.isSecureContext;
+    let { isFormSubmitSecure, isFormSubmitHTTP } = this._checkFormSecurity(aForm);
+
+    return isSafePage && (isFormSubmitSecure || !isFormSubmitHTTP);
+  },
+
+  
+
+
+
+
+  reportInsecurePasswords(aForm) {
+    if (this._formRootsWarned.has(aForm.rootElement) ||
+        this._formRootsWarned.get(aForm.rootElement)) {
+      return;
+    }
+
+    let domDoc = aForm.ownerDocument;
+    let isSafePage = domDoc.defaultView.isSecureContext;
+
+    let { isFormSubmitHTTP, isFormSubmitSecure } = this._checkFormSecurity(aForm);
+
+    if (!isSafePage) {
+      if (domDoc.defaultView == domDoc.defaultView.parent) {
+        this._sendWebConsoleMessage("InsecurePasswordsPresentOnPage", domDoc);
+      } else {
+        this._sendWebConsoleMessage("InsecurePasswordsPresentOnIframe", domDoc);
+      }
+      this._formRootsWarned.set(aForm.rootElement, true);
+    } else if (isFormSubmitHTTP && !isFormSubmitSecure) {
+      this._sendWebConsoleMessage("InsecureFormActionPasswordsPresent", domDoc);
+      this._formRootsWarned.set(aForm.rootElement, true);
     }
 
     
