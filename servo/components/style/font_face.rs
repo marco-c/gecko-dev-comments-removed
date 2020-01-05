@@ -112,7 +112,7 @@ fn parse_one_src(context: &ParserContext, input: &mut Parser) -> Result<Source, 
     }
     let url = try!(input.expect_url());
     let url = UrlParser::new().base_url(context.base_url).parse(&url).unwrap_or_else(
-        |_error| Url::parse("about:invalid").unwrap());
+        |_error| url!("about:invalid"));
 
     
     let format_hints = if input.try(|input| input.expect_function_matching("format")).is_ok() {
