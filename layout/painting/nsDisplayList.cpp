@@ -4771,45 +4771,54 @@ nsDisplayBoxShadowOuter::CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCo
   if (!shadows)
     return;
 
+  bool hasBorderRadius;
+  bool nativeTheme = nsCSSRendering::HasBoxShadowNativeTheme(mFrame,
+                                                             hasBorderRadius);
+
   
   for (uint32_t i = 0; i < rects.Length(); ++i) {
     Rect clipRect = NSRectToRect(rects[i], appUnitsPerDevPixel);
-    Rect gfxBorderRect = NSRectToRect(borderRect, appUnitsPerDevPixel);
+    nsCSSShadowArray* shadows = mFrame->StyleEffects()->mBoxShadow;
 
-    Rect deviceClipRect = aLayer->RelativeToParent(clipRect);
-    Rect deviceBoxRect = aLayer->RelativeToParent(gfxBorderRect);
-
-    for (uint32_t j = shadows->Length(); j > 0; --j) {
-      nsCSSShadowItem* shadowItem = shadows->ShadowAt(j - 1);
-      nscoord blurRadius = shadowItem->mRadius;
-      float gfxBlurRadius = blurRadius / appUnitsPerDevPixel;
-
+    for (uint32_t j = shadows->Length(); j  > 0; j--) {
+      nsCSSShadowItem* shadow = shadows->ShadowAt(j - 1);
       
       
-      nscolor shadowColor;
-      if (shadowItem->mHasColor)
-        shadowColor = shadowItem->mColor;
-      else
-        shadowColor = mFrame->StyleColor()->mColor;
+      
+      nsRect shadowRect = nsCSSRendering::GetShadowRect(borderRect,
+                                                        nativeTheme,
+                                                        mFrame);
+      gfx::Color shadowColor = nsCSSRendering::GetShadowColor(shadow,
+                                                              mFrame,
+                                                              mOpacity);
+      shadowRect.MoveBy(shadow->mXOffset, shadow->mYOffset);
 
-      Color gfxShadowColor(Color::FromABGR(shadowColor));
-      gfxShadowColor.a *= mOpacity;
+      
+      Point shadowOffset;
+      shadowOffset.x = (shadow->mXOffset / appUnitsPerDevPixel);
+      shadowOffset.y = (shadow->mYOffset / appUnitsPerDevPixel);
 
-      WrPoint offset;
-      offset.x = shadowItem->mXOffset;
-      offset.y = shadowItem->mYOffset;
+      Rect deviceBoxRect = NSRectToRect(shadowRect, appUnitsPerDevPixel);
+      deviceBoxRect = aLayer->RelativeToParent(deviceBoxRect);
+
+      Rect deviceClipRect = aLayer->RelativeToParent(clipRect + shadowOffset);
+
+      float blurRadius = shadow->mRadius / appUnitsPerDevPixel;
+      
+      float borderRadius = 0.0;
+      float spreadRadius = shadow->mSpread / appUnitsPerDevPixel;
 
       aCommands.AppendElement(OpDPPushBoxShadow(
                               wr::ToWrRect(deviceBoxRect),
                               wr::ToWrRect(deviceClipRect),
                               wr::ToWrRect(deviceBoxRect),
-                              offset,
-                              wr::ToWrColor(gfxShadowColor),
-                              gfxBlurRadius,
-                              0,
-                              0,
+                              wr::ToWrPoint(shadowOffset),
+                              wr::ToWrColor(shadowColor),
+                              blurRadius,
+                              spreadRadius,
+                              borderRadius,
                               WrBoxShadowClipMode::Outset
-      ));
+                              ));
     }
   }
 }
@@ -5212,20 +5221,43 @@ IsItemTooSmallForActiveLayer(nsIFrame* aFrame)
 {
   nsIntRect visibleDevPixels = aFrame->GetVisualOverflowRectRelativeToSelf().ToOutsidePixels(
           aFrame->PresContext()->AppUnitsPerDevPixel());
+  static const int MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS = 16;
   return visibleDevPixels.Size() <
-    nsIntSize(gfxPrefs::LayoutMinActiveLayerSize(),
-              gfxPrefs::LayoutMinActiveLayerSize());
+    nsIntSize(MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS, MIN_ACTIVE_LAYER_SIZE_DEV_PIXELS);
+}
+
+static void
+SetAnimationPerformanceWarningForTooSmallItem(nsIFrame* aFrame,
+                                              nsCSSPropertyID aProperty)
+{
+  
+  
+  nsIntRect visibleDevPixels = aFrame->GetVisualOverflowRectRelativeToSelf().ToNearestPixels(
+          aFrame->PresContext()->AppUnitsPerDevPixel());
+
+  
+  
+  if (visibleDevPixels.IsEmpty()) {
+    return;
+  }
+
+  EffectCompositor::SetPerformanceWarning(aFrame, aProperty,
+      AnimationPerformanceWarning(
+        AnimationPerformanceWarning::Type::ContentTooSmall,
+        { visibleDevPixels.Width(), visibleDevPixels.Height() }));
 }
 
  bool
 nsDisplayOpacity::NeedsActiveLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
 {
-  if (EffectCompositor::HasAnimationsForCompositor(aFrame,
-                                                   eCSSProperty_opacity) ||
-      (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
-                                           eCSSProperty_opacity) &&
-       !IsItemTooSmallForActiveLayer(aFrame))) {
-    return true;
+  if (ActiveLayerTracker::IsStyleAnimated(aBuilder, aFrame,
+                                          eCSSProperty_opacity) ||
+      EffectCompositor::HasAnimationsForCompositor(aFrame,
+                                                   eCSSProperty_opacity)) {
+    if (!IsItemTooSmallForActiveLayer(aFrame)) {
+      return true;
+    }
+    SetAnimationPerformanceWarningForTooSmallItem(aFrame, eCSSProperty_opacity);
   }
   return false;
 }
@@ -5570,7 +5602,7 @@ nsDisplayOwnLayer::BuildLayer(nsDisplayListBuilder* aBuilder,
     layer->SetScrollbarData(mScrollTarget, ScrollDirection::HORIZONTAL, mScrollbarThumbRatio);
   }
   if (mFlags & SCROLLBAR_CONTAINER) {
-    layer->SetIsScrollbarContainer(mScrollTarget);
+    layer->SetIsScrollbarContainer();
   }
 
   if (mFlags & GENERATE_SUBDOC_INVALIDATIONS) {
@@ -6860,18 +6892,15 @@ nsDisplayTransform::MayBeAnimated(nsDisplayListBuilder* aBuilder)
 {
   
   
-  
-  
-  
-  
-  
-  if (EffectCompositor::HasAnimationsForCompositor(mFrame,
-                                                   eCSSProperty_transform) ||
-      (ActiveLayerTracker::IsStyleAnimated(aBuilder,
-                                           mFrame,
-                                           eCSSProperty_transform) &&
-       !IsItemTooSmallForActiveLayer(mFrame))) {
-    return true;
+  if (ActiveLayerTracker::IsStyleAnimated(aBuilder,
+                                          mFrame,
+                                          eCSSProperty_transform) ||
+      EffectCompositor::HasAnimationsForCompositor(mFrame,
+                                                   eCSSProperty_transform)) {
+    if (!IsItemTooSmallForActiveLayer(mFrame)) {
+      return true;
+    }
+    SetAnimationPerformanceWarningForTooSmallItem(mFrame, eCSSProperty_transform);
   }
   return false;
 }
