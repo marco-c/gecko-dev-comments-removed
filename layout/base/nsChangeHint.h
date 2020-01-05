@@ -223,6 +223,13 @@ enum nsChangeHint {
   
   
   
+  
+  
+  
+  
+  
+  
+  
 
   
 
@@ -299,45 +306,70 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight)
 
 
 
-#define nsChangeHint_Hints_NotHandledForDescendants nsChangeHint( \
-          nsChangeHint_UpdateTransformLayer | \
-          nsChangeHint_UpdateEffects | \
-          nsChangeHint_InvalidateRenderingObservers | \
-          nsChangeHint_UpdateOpacityLayer | \
-          nsChangeHint_UpdateOverflow | \
-          nsChangeHint_UpdatePostTransformOverflow | \
-          nsChangeHint_UpdateParentOverflow | \
-          nsChangeHint_ChildrenOnlyTransform | \
-          nsChangeHint_RecomputePosition | \
-          nsChangeHint_UpdateContainingBlock | \
-          nsChangeHint_AddOrRemoveTransform | \
-          nsChangeHint_BorderStyleNoneChange | \
-          nsChangeHint_NeedReflow | \
-          nsChangeHint_ReflowChangesSizeOrPosition | \
-          nsChangeHint_ClearAncestorIntrinsics | \
-          nsChangeHint_UpdateComputedBSize | \
-          nsChangeHint_UpdateUsesOpacity | \
-          nsChangeHint_UpdateBackgroundPosition)
+#define nsChangeHint_Hints_AlwaysHandledForDescendants (   \
+  nsChangeHint_ClearDescendantIntrinsics |                 \
+  nsChangeHint_NeedDirtyReflow |                           \
+  nsChangeHint_NeutralChange |                             \
+  nsChangeHint_ReconstructFrame |                          \
+  nsChangeHint_RepaintFrame |                              \
+  nsChangeHint_SchedulePaint |                             \
+  nsChangeHint_SyncFrameView |                             \
+  nsChangeHint_UpdateCursor |                              \
+  nsChangeHint_UpdateSubtreeOverflow |                     \
+  nsChangeHint_UpdateTextPath                              \
+)
+
+
+#define nsChangeHint_Hints_NeverHandledForDescendants (    \
+  nsChangeHint_BorderStyleNoneChange |                     \
+  nsChangeHint_ChildrenOnlyTransform |                     \
+  nsChangeHint_InvalidateRenderingObservers |              \
+  nsChangeHint_RecomputePosition |                         \
+  nsChangeHint_UpdateBackgroundPosition |                  \
+  nsChangeHint_UpdateComputedBSize |                       \
+  nsChangeHint_UpdateContainingBlock |                     \
+  nsChangeHint_UpdateEffects |                             \
+  nsChangeHint_UpdateOpacityLayer |                        \
+  nsChangeHint_UpdateOverflow |                            \
+  nsChangeHint_UpdateParentOverflow |                      \
+  nsChangeHint_UpdatePostTransformOverflow |               \
+  nsChangeHint_UpdateTransformLayer |                      \
+  nsChangeHint_UpdateUsesOpacity |                         \
+  nsChangeHint_AddOrRemoveTransform                        \
+)
+
+
+#define nsChangeHint_Hints_SometimesHandledForDescendants (\
+  nsChangeHint_ClearAncestorIntrinsics |                   \
+  nsChangeHint_NeedReflow |                                \
+  nsChangeHint_ReflowChangesSizeOrPosition                 \
+)
+
+static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
+                nsChangeHint_Hints_NeverHandledForDescendants) &&
+              !(nsChangeHint_Hints_AlwaysHandledForDescendants &
+                nsChangeHint_Hints_SometimesHandledForDescendants) &&
+              !(nsChangeHint_Hints_NeverHandledForDescendants &
+                nsChangeHint_Hints_SometimesHandledForDescendants) &&
+              !(nsChangeHint_AllHints ^
+                nsChangeHint_Hints_AlwaysHandledForDescendants ^
+                nsChangeHint_Hints_NeverHandledForDescendants ^
+                nsChangeHint_Hints_SometimesHandledForDescendants),
+              "change hints must be present in exactly one of "
+              "nsChangeHint_Hints_{Always,Never,Sometimes}"
+              "HandledForDescendants");
+
+
+#define nsChangeHint_Hints_NotHandledForDescendants (      \
+  nsChangeHint_Hints_NeverHandledForDescendants |          \
+  nsChangeHint_Hints_SometimesHandledForDescendants        \
+)
 
 
 
 inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint) {
-  nsChangeHint result = nsChangeHint(aChangeHint & (
-    nsChangeHint_UpdateTransformLayer |
-    nsChangeHint_UpdateEffects |
-    nsChangeHint_InvalidateRenderingObservers |
-    nsChangeHint_UpdateOpacityLayer |
-    nsChangeHint_UpdateOverflow |
-    nsChangeHint_UpdatePostTransformOverflow |
-    nsChangeHint_UpdateParentOverflow |
-    nsChangeHint_ChildrenOnlyTransform |
-    nsChangeHint_RecomputePosition |
-    nsChangeHint_UpdateContainingBlock |
-    nsChangeHint_AddOrRemoveTransform |
-    nsChangeHint_BorderStyleNoneChange |
-    nsChangeHint_UpdateComputedBSize |
-    nsChangeHint_UpdateUsesOpacity | \
-    nsChangeHint_UpdateBackgroundPosition));
+  nsChangeHint result =
+    aChangeHint & nsChangeHint_Hints_NeverHandledForDescendants;
 
   if (!NS_IsHintSubset(nsChangeHint_NeedDirtyReflow, aChangeHint)) {
     if (NS_IsHintSubset(nsChangeHint_NeedReflow, aChangeHint)) {
