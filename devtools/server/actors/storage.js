@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 const {Cc, Ci, Cu, CC} = require("chrome");
@@ -1766,7 +1764,9 @@ StorageActors.createActor({
     if (!DebuggerServer.isInChildProcess) {
       this.backToChild = (func, rv) => rv;
       this.clearDBStore = indexedDBHelpers.clearDBStore;
-      this.gatherFilesOrFolders = indexedDBHelpers.gatherFilesOrFolders;
+      this.findIDBPathsForHost = indexedDBHelpers.findIDBPathsForHost;
+      this.findSqlitePathsForHost = indexedDBHelpers.findSqlitePathsForHost;
+      this.findStorageTypePaths = indexedDBHelpers.findStorageTypePaths;
       this.getDBMetaData = indexedDBHelpers.getDBMetaData;
       this.getDBNamesForHost = indexedDBHelpers.getDBNamesForHost;
       this.getNameFromDatabaseFile = indexedDBHelpers.getNameFromDatabaseFile;
@@ -2048,30 +2048,18 @@ var indexedDBHelpers = {
     
     
     
-    
-    let sqliteFiles = yield this.gatherFilesOrFolders(storagePath, path => {
-      if (path.endsWith(".sqlite")) {
-        let { components } = OS.Path.split(path);
-        let isIDB = components[components.length - 2] === "idb";
-
-        return isIDB;
-      }
-      return false;
-    });
+    let sqliteFiles = yield this.findSqlitePathsForHost(storagePath, sanitizedHost);
 
     for (let file of sqliteFiles) {
       let splitPath = OS.Path.split(file).components;
       let idbIndex = splitPath.indexOf("idb");
-      let name = splitPath[idbIndex - 1];
       let storage = splitPath[idbIndex - 2];
       let relative = file.substr(profileDir.length + 1);
 
-      if (name.startsWith(sanitizedHost)) {
-        files.push({
-          file: relative,
-          storage: storage === "permanent" ? "persistent" : storage
-        });
-      }
+      files.push({
+        file: relative,
+        storage: storage === "permanent" ? "persistent" : storage
+      });
     }
 
     if (files.length > 0) {
@@ -2093,45 +2081,52 @@ var indexedDBHelpers = {
 
 
 
-
-
-
-
-
-
-
-
-
-  gatherFilesOrFolders: Task.async(function* (path, validationFunc) {
-    let files = [];
-    let iterator;
-    let paths = [path];
-
-    while (paths.length > 0) {
-      try {
-        iterator = new OS.File.DirectoryIterator(paths.pop());
-
-        for (let child in iterator) {
-          child = yield child;
-
-          path = child.path;
-
-          if (child.isDir) {
-            paths.push(path);
-          } else if (validationFunc(path)) {
-            files.push(path);
-          }
+  findSqlitePathsForHost: Task.async(function* (storagePath, sanitizedHost) {
+    let sqlitePaths = [];
+    let idbPaths = yield this.findIDBPathsForHost(storagePath, sanitizedHost);
+    for (let idbPath of idbPaths) {
+      let iterator = new OS.File.DirectoryIterator(idbPath);
+      yield iterator.forEach(entry => {
+        if (!entry.isDir && entry.path.endsWith(".sqlite")) {
+          sqlitePaths.push(entry.path);
         }
-      } catch (ex) {
-        
-        if (ex != StopIteration) {
-          throw ex;
-        }
+      });
+      iterator.close();
+    }
+    return sqlitePaths;
+  }),
+
+  
+
+
+
+  findIDBPathsForHost: Task.async(function* (storagePath, sanitizedHost) {
+    let idbPaths = [];
+    let typePaths = yield this.findStorageTypePaths(storagePath);
+    for (let typePath of typePaths) {
+      let idbPath = OS.Path.join(typePath, sanitizedHost, "idb");
+      if (yield OS.File.exists(idbPath)) {
+        idbPaths.push(idbPath);
       }
     }
-    iterator.close();
+    return idbPaths;
+  }),
 
-    return files;
+  
+
+
+
+
+  findStorageTypePaths: Task.async(function* (storagePath) {
+    let iterator = new OS.File.DirectoryIterator(storagePath);
+    let typePaths = [];
+    yield iterator.forEach(entry => {
+      if (entry.isDir) {
+        typePaths.push(entry.path);
+      }
+    });
+    iterator.close();
+    return typePaths;
   }),
 
   
