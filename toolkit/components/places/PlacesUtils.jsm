@@ -528,6 +528,9 @@ this.PlacesUtils = {
 
 
 
+
+
+
   validateItemProperties(validators, props, behavior = {}) {
     if (!props)
       throw new Error("Input should be a valid object");
@@ -545,10 +548,13 @@ this.PlacesUtils = {
       }
       if (behavior[prop].hasOwnProperty("validIf") && input[prop] !== undefined &&
           !behavior[prop].validIf(input)) {
-        throw new Error(`Invalid value for property '${prop}': ${input[prop]}`);
+        throw new Error(`Invalid value for property '${prop}': ${JSON.stringify(input[prop])}`);
       }
       if (behavior[prop].hasOwnProperty("defaultValue") && input[prop] === undefined) {
         input[prop] = behavior[prop].defaultValue;
+      }
+      if (behavior[prop].hasOwnProperty("replaceWith")) {
+        input[prop] = behavior[prop].replaceWith;
       }
     }
 
@@ -1693,6 +1699,10 @@ this.PlacesUtils = {
     return GuidHelper.getItemId(aGuid)
   },
 
+  promiseManyItemIds(aGuids) {
+    return GuidHelper.getManyItemIds(aGuids);
+  },
+
   
 
 
@@ -2474,6 +2484,28 @@ var GuidHelper = {
 
     this.updateCache(itemId, aGuid);
     return itemId;
+  }),
+
+  getManyItemIds: Task.async(function* (aGuids) {
+    let uncachedGuids = aGuids.filter(guid => !this.idsForGuids.has(guid));
+    if (uncachedGuids.length) {
+      yield PlacesUtils.withConnectionWrapper("GuidHelper.getItemId",
+                                              Task.async(function* (db) {
+        while (uncachedGuids.length) {
+          let chunk = uncachedGuids.splice(0, 100);
+          let rows = yield db.executeCached(
+            `SELECT b.id, b.guid from moz_bookmarks b WHERE
+             b.guid IN (${"?,".repeat(chunk.length - 1) + "?"})
+             LIMIT ${chunk.length}`, chunk);
+          if (rows.length < chunk.length)
+            throw new Error("Not all items were found!");
+          for (let row of rows) {
+            this.updateCache(row.getResultByIndex(0), row.getResultByIndex(1));
+          }
+        }
+      }.bind(this)));
+    }
+    return new Map(aGuids.map(guid => [guid, this.idsForGuids.get(guid)]));
   }),
 
   getItemGuid: Task.async(function* (aItemId) {
