@@ -241,6 +241,14 @@ AtomMarkingRuntime::markAtom(JSContext* cx, TenuredCell* thing)
         
         TenuredCell::readBarrier(thing);
     }
+
+    
+    
+    
+    if (thing->getTraceKind() == JS::TraceKind::Symbol) {
+        JSAtom* description = static_cast<JS::Symbol*>(thing)->description();
+        markAtom(cx, description);
+    }
 }
 
 void
