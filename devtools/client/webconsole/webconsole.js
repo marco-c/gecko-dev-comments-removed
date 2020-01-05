@@ -3270,10 +3270,10 @@ WebConsoleConnectionProxy.prototype = {
     
     
     let messageNodes = this.webConsoleFrame.experimentalOutputNode.querySelectorAll(".message");
-    this.webConsoleFrame.emit("new-messages", {
+    this.webConsoleFrame.emit("new-messages", new Set([{
       response: packet,
       node: messageNodes[messageNodes.length - 1],
-    });
+    }]));
   },
 
   
