@@ -96,7 +96,7 @@ impl HTMLScriptElement {
 }
 
 pub trait HTMLScriptElementHelpers {
-    /// Prepare a script (<http://www.whatwg.org/html/#prepare-a-script>)
+    /// Prepare a script (<https://www.whatwg.org/html/#prepare-a-script>)
     fn prepare(self);
 
     /// [Execute a script block]
@@ -126,7 +126,7 @@ pub trait HTMLScriptElementHelpers {
 }
 
 /// Supported script types as defined by
-/// <http://whatwg.org/html/#support-the-scripting-language>.
+/// <https://whatwg.org/html/#support-the-scripting-language>.
 static SCRIPT_JS_MIMES: StaticStringVec = &[
     "application/ecmascript",
     "application/javascript",
