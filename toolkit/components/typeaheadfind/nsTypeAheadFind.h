@@ -56,8 +56,8 @@ protected:
   
   
   bool IsRangeVisible(nsIPresShell *aPresShell, nsPresContext *aPresContext,
-                        nsIDOMRange *aRange, bool aFlushLayout,
-                        nsIDOMRange **aNewRange,
+                        nsIDOMRange *aRange, bool aMustBeVisible, 
+                        bool aGetTopVisibleLeaf, nsIDOMRange **aNewRange,
                         bool *aUsesIndependentSelection);
   nsresult FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
                      bool aIsFirstVisiblePreferred, bool aFindPrev,
