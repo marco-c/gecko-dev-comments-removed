@@ -2,8 +2,7 @@
 
 
 
-use std::old_io as io;
-use std::old_io::Writer;
+use std::io::{self, Write};
 use std::mem;
 use std::mem::size_of;
 use std::slice;
