@@ -16,12 +16,6 @@ use std::fmt;
 
 
 
-#[deriving(Encodable)]
-pub enum DevicePixel {}
-
-
-
-
 
 
 
