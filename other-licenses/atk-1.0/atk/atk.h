@@ -22,6 +22,12 @@
 
 #define __ATK_H_INSIDE__
 
+
+
+
+
+#define ATK_AVAILABLE_IN_2_12 extern
+
 #include <atk/atkobject.h>
 #include <atk/atkaction.h>
 #include <atk/atkcomponent.h>
@@ -46,6 +52,7 @@
 #include <atk/atkstateset.h>
 #include <atk/atkstreamablecontent.h>
 #include <atk/atktable.h>
+#include <atk/atktablecell.h>
 #include <atk/atktext.h>
 #include <atk/atkutil.h>
 #include <atk/atkvalue.h>
