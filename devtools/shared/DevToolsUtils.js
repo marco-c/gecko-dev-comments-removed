@@ -395,6 +395,7 @@ exports.defineLazyGetter(this, "NetworkHelper", () => {
 
 
 
+
 function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
                                           policy: Ci.nsIContentPolicy.TYPE_OTHER,
                                           window: null,
@@ -526,41 +527,35 @@ function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
 
 function newChannelForURL(url, { policy, window, principal }) {
   var securityFlags = Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL;
-  if (window) {
-    
-    var req = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                    .getInterface(Ci.nsIWebNavigation)
-                    .QueryInterface(Ci.nsIDocumentLoader)
-                    .loadGroup;
-    if (req) {
-      var nc = req.notificationCallbacks;
-      if (nc) {
-        try {
-          var lc = nc.getInterface(Ci.nsILoadContext);
-          if (lc) {
-            if (lc.usePrivateBrowsing) {
-              securityFlags |= Ci.nsILoadInfo.SEC_FORCE_PRIVATE_BROWSING;
-            }
-          }
-        } catch (ex) {}
-      }
-    }
-  }
 
+  let uri;
+  try {
+    uri = Services.io.newURI(url, null, null);
+  } catch (e) {
+    
+    
+    
+    uri = Services.io.newURI("file://" + url, null, null);
+  }
   let channelOptions = {
     contentPolicyType: policy,
     securityFlags: securityFlags,
-    uri: url
+    uri: uri
   };
-  if (principal) {
-    
-    if (!channelOptions.contentPolicyType) {
-      channelOptions.contentPolicyType = Ci.nsIContentPolicy.TYPE_OTHER;
+  let prin = principal;
+  if (!prin) {
+    let oa = {};
+    if (window) {
+      oa = window.document.nodePrincipal.originAttributes;
     }
-    channelOptions.loadingPrincipal = principal;
-  } else {
-    channelOptions.loadUsingSystemPrincipal = true;
+    prin = Services.scriptSecurityManager
+                   .createCodebasePrincipal(uri, oa);
   }
+  
+  if (!channelOptions.contentPolicyType) {
+    channelOptions.contentPolicyType = Ci.nsIContentPolicy.TYPE_OTHER;
+  }
+  channelOptions.loadingPrincipal = prin;
 
   try {
     return NetUtil.newChannel(channelOptions);
@@ -568,9 +563,8 @@ function newChannelForURL(url, { policy, window, principal }) {
     
     
     
-    channelOptions.uri = "file://" + url;
-
-    return NetUtil.newChannel(channelOptions);
+    
+    return newChannelForURL("file://" + url, { policy, window, principal });
   }
 }
 

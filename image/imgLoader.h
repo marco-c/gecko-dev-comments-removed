@@ -256,9 +256,6 @@ public:
 
 
 
-
-
-
   static imgLoader* PrivateBrowsingLoader();
 
   

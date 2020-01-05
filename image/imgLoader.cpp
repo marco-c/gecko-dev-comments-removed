@@ -729,10 +729,6 @@ NewImageChannel(nsIChannel** aResult,
   }
   securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
 
-  if (aRespectPrivacy) {
-    securityFlags |= nsILoadInfo::SEC_FORCE_PRIVATE_BROWSING;
-  }
-
   
   
   
@@ -763,6 +759,22 @@ NewImageChannel(nsIChannel** aResult,
                        nullptr,   
                        callbacks,
                        aLoadFlags);
+
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    
+    
+    
+    NeckoOriginAttributes neckoAttrs;
+    if (aLoadingPrincipal) {
+      neckoAttrs.InheritFromDocToNecko(BasePrincipal::Cast(aLoadingPrincipal)->OriginAttributesRef());
+    }
+    neckoAttrs.mPrivateBrowsingId = aRespectPrivacy ? 1 : 0;
+
+    nsCOMPtr<nsILoadInfo> loadInfo = (*aResult)->GetLoadInfo();
+    rv = loadInfo->SetOriginAttributes(neckoAttrs);
   }
 
   if (NS_FAILED(rv)) {
