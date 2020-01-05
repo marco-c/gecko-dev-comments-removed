@@ -24,6 +24,8 @@ const {
 
 let devtoolsPageDefinitionMap = new Map();
 
+let initDevTools;
+
 
 
 
@@ -104,6 +106,8 @@ global.getTargetTabIdForToolbox = (toolbox) => {
 class DevToolsPage extends HiddenExtensionPage {
   constructor(extension, options) {
     super(extension, "devtools_page");
+
+    initDevTools();
 
     this.url = extension.baseURI.resolve(options.url);
     this.toolbox = options.toolbox;
@@ -246,41 +250,50 @@ class DevToolsPageDefinition {
 
 
 
-
-
-gDevTools.on("toolbox-created", (evt, toolbox) => {
-  if (!toolbox.target.isLocalTab) {
-    
-    
-    let msg = `Ignoring DevTools Toolbox for target "${toolbox.target.toString()}": ` +
-              `"${toolbox.target.name}" ("${toolbox.target.url}"). ` +
-              "Only local tab are currently supported by the WebExtensions DevTools API.";
-    let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
-    scriptError.init(msg, null, null, null, null, Ci.nsIScriptError.warningFlag, "content javascript");
-    let consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
-    consoleService.logMessage(scriptError);
-
+let devToolsInitialized = false;
+initDevTools = function() {
+  if (devToolsInitialized) {
     return;
   }
 
-  for (let devtoolsPage of devtoolsPageDefinitionMap.values()) {
-    devtoolsPage.buildForToolbox(toolbox);
-  }
-});
+  
+  
+  gDevTools.on("toolbox-created", (evt, toolbox) => {
+    if (!toolbox.target.isLocalTab) {
+      
+      
+      let msg = `Ignoring DevTools Toolbox for target "${toolbox.target.toString()}": ` +
+                `"${toolbox.target.name}" ("${toolbox.target.url}"). ` +
+                "Only local tab are currently supported by the WebExtensions DevTools API.";
+      let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(Ci.nsIScriptError);
+      scriptError.init(msg, null, null, null, null, Ci.nsIScriptError.warningFlag, "content javascript");
+      let consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
+      consoleService.logMessage(scriptError);
 
+      return;
+    }
 
+    for (let devtoolsPage of devtoolsPageDefinitionMap.values()) {
+      devtoolsPage.buildForToolbox(toolbox);
+    }
+  });
 
-gDevTools.on("toolbox-destroy", (evt, target) => {
-  if (!target.isLocalTab) {
-    
-    
-    return;
-  }
+  
+  
+  gDevTools.on("toolbox-destroy", (evt, target) => {
+    if (!target.isLocalTab) {
+      
+      
+      return;
+    }
 
-  for (let devtoolsPageDefinition of devtoolsPageDefinitionMap.values()) {
-    devtoolsPageDefinition.shutdownForTarget(target);
-  }
-});
+    for (let devtoolsPageDefinition of devtoolsPageDefinitionMap.values()) {
+      devtoolsPageDefinition.shutdownForTarget(target);
+    }
+  });
+
+  devToolsInitialized = true;
+};
 
 
 
