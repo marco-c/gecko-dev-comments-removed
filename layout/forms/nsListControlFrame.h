@@ -242,11 +242,6 @@ public:
   
 
 
-  virtual bool NeedsView() override { return IsInDropDownMode(); }
-
-  
-
-
   static void Shutdown();
 
 #ifdef ACCESSIBILITY
@@ -398,15 +393,22 @@ protected:
 
   uint32_t GetNumberOfRows();
 
+  nsView* GetViewInternal() const override { return mView; }
+  void SetViewInternal(nsView* aView) override { mView = aView; }
+
   
   int32_t      mStartSelectionIndex;
   int32_t      mEndSelectionIndex;
 
-  nsIComboboxControlFrame *mComboboxFrame;
-  uint32_t     mNumDisplayRows;
+  nsIComboboxControlFrame* mComboboxFrame;
+
+  
+  nsView* mView;
+
+  uint32_t mNumDisplayRows;
   bool mChangesSinceDragStart:1;
   bool mButtonDown:1;
-  
+
   
   bool mItemSelectionStarted:1;
 

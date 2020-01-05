@@ -60,6 +60,7 @@ GetDocumentFromView(nsView* aView)
 
 nsSubDocumentFrame::nsSubDocumentFrame(nsStyleContext* aContext)
   : nsAtomicContainerFrame(aContext)
+  , mOuterView(nullptr)
   , mInnerView(nullptr)
   , mIsInline(false)
   , mPostedReflowCallback(false)
@@ -124,14 +125,7 @@ nsSubDocumentFrame::Init(nsIContent*       aContent,
   
   
   
-  
-  
-  
-  
-  
-  if (!HasView()) {
-    nsFrame::CreateViewForFrame(this, true);
-  }
+  CreateView();
   EnsureInnerView();
 
   

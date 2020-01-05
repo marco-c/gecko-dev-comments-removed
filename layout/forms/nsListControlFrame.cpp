@@ -93,6 +93,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsListControlFrame)
 
 nsListControlFrame::nsListControlFrame(nsStyleContext* aContext)
   : nsHTMLScrollFrame(aContext, false),
+    mView(nullptr),
     mMightNeedSecondPass(false),
     mHasPendingInterruptAtStartOfReflow(false),
     mDropdownCanGrow(false),
@@ -975,6 +976,11 @@ nsListControlFrame::Init(nsIContent*       aContent,
 {
   nsHTMLScrollFrame::Init(aContent, aParent, aPrevInFlow);
 
+  if (IsInDropDownMode()) {
+    AddStateBits(NS_FRAME_IN_POPUP);
+    CreateView();
+  }
+
   
   
   
@@ -996,10 +1002,6 @@ nsListControlFrame::Init(nsIContent*       aContent,
   mEndSelectionIndex = kNothingSelected;
 
   mLastDropdownBackstopColor = PresContext()->DefaultBackgroundColor();
-
-  if (IsInDropDownMode()) {
-    AddStateBits(NS_FRAME_IN_POPUP);
-  }
 }
 
 dom::HTMLOptionsCollection*

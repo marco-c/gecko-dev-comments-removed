@@ -96,8 +96,6 @@ public:
       ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
   }
 
-  virtual bool NeedsView() override { return true; }
-
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
@@ -271,6 +269,9 @@ protected:
   friend class nsDisplayPlugin;
   friend class PluginBackgroundSink;
 
+  nsView* GetViewInternal() const override { return mOuterView; }
+  void SetViewInternal(nsView* aView) override { mOuterView = aView; }
+
 private:
   
   
@@ -303,7 +304,8 @@ private:
   };
 
   nsPluginInstanceOwner*          mInstanceOwner; 
-  nsView*                        mInnerView;
+  nsView*                         mOuterView;
+  nsView*                         mInnerView;
   nsCOMPtr<nsIWidget>             mWidget;
   nsIntRect                       mWindowlessRect;
   

@@ -1607,11 +1607,6 @@ public:
                                 const nsDisplayListSet& aLists,
                                 uint32_t                aFlags = 0);
 
-  
-
-
-  virtual bool NeedsView() { return false; }
-
   bool RefusedAsyncAnimation() const
   {
     return Properties().Get(RefusedAsyncAnimationProperty());
@@ -2446,13 +2441,30 @@ public:
   { return false; }
 
   
-
-
-
-
+  
+  
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
-  nsView* GetView() const;
-  nsresult SetView(nsView* aView);
+protected:
+  virtual nsView* GetViewInternal() const
+  {
+    MOZ_ASSERT_UNREACHABLE("method should have been overridden by subclass");
+    return nullptr;
+  }
+  virtual void SetViewInternal(nsView* aView)
+  {
+    MOZ_ASSERT_UNREACHABLE("method should have been overridden by subclass");
+  }
+public:
+  nsView* GetView() const
+  {
+    if (MOZ_LIKELY(!HasView())) {
+      return nullptr;
+    }
+    nsView* view = GetViewInternal();
+    MOZ_ASSERT(view, "GetViewInternal() should agree with HasView()");
+    return view;
+  }
+  void SetView(nsView* aView);
 
   
 

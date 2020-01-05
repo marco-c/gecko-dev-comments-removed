@@ -690,12 +690,8 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
-  
-  
-  nsView* view = GetView();
   nsPresContext* presContext = PresContext();
-
-  nsIPresShell *shell = presContext->GetPresShell();
+  nsIPresShell* shell = presContext->GetPresShell();
   if (mState & NS_FRAME_OUT_OF_FLOW) {
     nsPlaceholderFrame* placeholder =
       shell->FrameManager()->GetPlaceholderFrameFor(this);
@@ -785,11 +781,9 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     shell->ClearFrameRefs(this);
   }
 
+  nsView* view = GetView();
   if (view) {
-    
     view->SetFrame(nullptr);
-
-    
     view->Destroy();
   }
 
@@ -1072,31 +1066,22 @@ nsIFrame::SyncFrameViewProperties(nsPresContext*  aPresContext,
 }
 
 void
-nsFrame::CreateViewForFrame(nsIFrame* aFrame,
-                            bool aForce)
+nsFrame::CreateView()
 {
-  if (aFrame->HasView()) {
-    return;
-  }
+  MOZ_ASSERT(!HasView());
 
-  
-  if (!aForce && !aFrame->NeedsView()) {
-    
-    return;
-  }
-
-  nsView* parentView = aFrame->GetParent()->GetClosestView();
+  nsView* parentView = GetParent()->GetClosestView();
   NS_ASSERTION(parentView, "no parent with view");
 
   nsViewManager* viewManager = parentView->GetViewManager();
   NS_ASSERTION(viewManager, "null view manager");
 
   
-  nsView* view = viewManager->CreateView(aFrame->GetRect(), parentView);
+  nsView* view = viewManager->CreateView(GetRect(), parentView);
 
-  SyncFrameViewProperties(aFrame->PresContext(), aFrame, nullptr, view);
+  SyncFrameViewProperties(PresContext(), this, nullptr, view);
 
-  nsView* insertBefore = nsLayoutUtils::FindSiblingViewFor(parentView, aFrame);
+  nsView* insertBefore = nsLayoutUtils::FindSiblingViewFor(parentView, this);
   
   
   
@@ -1110,14 +1095,14 @@ nsFrame::CreateViewForFrame(nsIFrame* aFrame,
   
   
   
-  ReparentFrameViewTo(aFrame, viewManager, view, parentView);
+  ReparentFrameViewTo(this, viewManager, view, parentView);
 
   
-  aFrame->SetView(view);
+  SetView(view);
 
   NS_FRAME_LOG(NS_FRAME_TRACE_CALLS,
-               ("nsContainerFrame::CreateViewForFrame: frame=%p view=%p",
-                aFrame, view));
+               ("nsFrame::CreateView: frame=%p view=%p",
+                this, view));
 }
 
 
@@ -5984,23 +5969,8 @@ nsIFrame* nsIFrame::GetTailContinuation()
   return frame;
 }
 
-NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(ViewProperty, nsView)
 
-
-nsView*
-nsIFrame::GetView() const
-{
-  
-  if (!(GetStateBits() & NS_FRAME_HAS_VIEW))
-    return nullptr;
-
-  
-  nsView* value = Properties().Get(ViewProperty());
-  NS_ASSERTION(value, "frame state bit was set but frame has no view");
-  return value;
-}
-
-nsresult
+void
 nsIFrame::SetView(nsView* aView)
 {
   if (aView) {
@@ -6008,8 +5978,7 @@ nsIFrame::SetView(nsView* aView)
 
 #ifdef DEBUG
     nsIAtom* frameType = GetType();
-    NS_ASSERTION(frameType == nsGkAtoms::scrollFrame ||
-                 frameType == nsGkAtoms::subDocumentFrame ||
+    NS_ASSERTION(frameType == nsGkAtoms::subDocumentFrame ||
                  frameType == nsGkAtoms::listControlFrame ||
                  frameType == nsGkAtoms::objectFrame ||
                  frameType == nsGkAtoms::viewportFrame ||
@@ -6018,7 +5987,7 @@ nsIFrame::SetView(nsView* aView)
 #endif
 
     
-    Properties().Set(ViewProperty(), aView);
+    SetViewInternal(aView);
 
     
     AddStateBits(NS_FRAME_HAS_VIEW);
@@ -6028,9 +5997,11 @@ nsIFrame::SetView(nsView* aView)
          f && !(f->GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW);
          f = f->GetParent())
       f->AddStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Destroying a view while the frame is alive?");
+    RemoveStateBits(NS_FRAME_HAS_VIEW);
+    SetViewInternal(nullptr);
   }
-
-  return NS_OK;
 }
 
 

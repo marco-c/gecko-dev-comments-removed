@@ -39,6 +39,8 @@ ViewportFrame::Init(nsIContent*       aContent,
                     nsIFrame*         aPrevInFlow)
 {
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
+  
+  
 
   nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrame(this);
   if (parent) {

@@ -599,8 +599,7 @@ public:
 
 
 
-  static void CreateViewForFrame(nsIFrame* aFrame,
-                                 bool aForce);
+  void CreateView();
 
   
   

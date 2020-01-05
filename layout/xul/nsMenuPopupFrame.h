@@ -533,6 +533,9 @@ protected:
   
   void CreatePopupView();
 
+  nsView* GetViewInternal() const override { return mView; }
+  void SetViewInternal(nsView* aView) override { mView = aView; }
+
   
   
   
@@ -555,6 +558,7 @@ protected:
   nsCOMPtr<nsIContent> mTriggerContent;
 
   nsMenuFrame* mCurrentMenu; 
+  nsView* mView;
 
   RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
 
