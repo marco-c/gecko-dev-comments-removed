@@ -1547,11 +1547,6 @@ impl Node {
     }
 
     
-    pub fn HasAttributes(&self) -> bool {
-        false
-    }
-
-    
     
     
 
