@@ -2199,7 +2199,7 @@ IonCompile(JSContext* cx, JSScript* script,
 
     
     
-    script->ensureNonLazyCanonicalFunction(cx);
+    script->ensureNonLazyCanonicalFunction();
 
     TrackPropertiesForSingletonScopes(cx, script, baselineFrame);
 

@@ -1489,7 +1489,7 @@ class JSScript : public js::gc::TenuredCell
 
 
 
-    inline void ensureNonLazyCanonicalFunction(JSContext* cx);
+    inline void ensureNonLazyCanonicalFunction();
 
     js::ModuleObject* module() const {
         if (bodyScope()->is<js::ModuleScope>())
