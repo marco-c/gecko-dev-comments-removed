@@ -6938,17 +6938,8 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
                                                   aManager,
                                                   mHandleOpacity);
 
-  
-  
-  gfxContext* context = aCtx->ThebesContext();
-  context->Clip(NSRectToSnappedRect(mVisibleRect,
-                                    mFrame->PresContext()->AppUnitsPerDevPixel(),
-                                    *aCtx->GetDrawTarget()));
-
   image::DrawResult result =
     nsSVGIntegrationUtils::PaintMaskAndClipPath(params);
-
-  context->PopClip();
 
   nsDisplaySVGEffectsGeometry::UpdateDrawResult(this, result);
 }
