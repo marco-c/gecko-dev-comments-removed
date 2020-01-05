@@ -233,24 +233,6 @@ class TlsConversationRecorder : public TlsRecordFilter {
 };
 
 
-
-class TlsAlertRecorder : public TlsRecordFilter {
- public:
-  TlsAlertRecorder() : level_(255), description_(255) {}
-
-  virtual PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
-                                            const DataBuffer& input,
-                                            DataBuffer* output);
-
-  uint8_t level() const { return level_; }
-  uint8_t description() const { return description_; }
-
- private:
-  uint8_t level_;
-  uint8_t description_;
-};
-
-
 class ChainedPacketFilter : public PacketFilter {
  public:
   ChainedPacketFilter() {}

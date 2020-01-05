@@ -378,4 +378,27 @@ PRUint32 cert_CountDNSPatterns(CERTGeneralName* firstName);
 SECStatus cert_CheckLeafTrust(CERTCertificate* cert, SECCertUsage usage,
                               unsigned int* failedFlags, PRBool* isTrusted);
 
+
+
+
+void CERT_LockCertTempPerm(const CERTCertificate* cert);
+
+
+
+
+void CERT_UnlockCertTempPerm(const CERTCertificate* cert);
+
+
+
+
+
+
+
+void CERT_LockCertTrust(const CERTCertificate* cert);
+
+
+
+
+void CERT_UnlockCertTrust(const CERTCertificate* cert);
+
 #endif 

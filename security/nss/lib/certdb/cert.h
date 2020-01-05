@@ -1415,19 +1415,6 @@ void CERT_UnlockCertRefCount(CERTCertificate *cert);
 
 
 
-void CERT_LockCertTrust(const CERTCertificate *cert);
-
-
-
-
-void CERT_UnlockCertTrust(const CERTCertificate *cert);
-
-
-
-
-
-
-
 
 
 
@@ -1578,6 +1565,12 @@ extern CERTRevocationFlags *CERT_AllocCERTRevocationFlags(
 
 
 extern void CERT_DestroyCERTRevocationFlags(CERTRevocationFlags *flags);
+
+
+
+
+extern SECStatus CERT_GetCertIsTemp(const CERTCertificate *cert, PRBool *istemp);
+extern SECStatus CERT_GetCertIsPerm(const CERTCertificate *cert, PRBool *isperm);
 
 SEC_END_PROTOS
 

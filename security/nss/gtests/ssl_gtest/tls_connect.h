@@ -68,6 +68,8 @@ class TlsConnectTestBase : public ::testing::Test {
   void CheckConnected();
   
   void ConnectExpectFail();
+  void ExpectAlert(std::shared_ptr<TlsAgent>& sender, uint8_t alert);
+  void ConnectExpectAlert(std::shared_ptr<TlsAgent>& sender, uint8_t alert);
   void ConnectExpectFailOneSide(TlsAgent::Role failingSide);
   void ConnectWithCipherSuite(uint16_t cipher_suite);
   

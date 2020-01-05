@@ -734,6 +734,12 @@ DecodeDBCertEntry(certDBEntryCert *entry, SECItem *dbentry)
     }
 
     
+    if (dbentry->len < headerlen + entry->derCert.len) {
+        PORT_SetError(SEC_ERROR_BAD_DATABASE);
+        goto loser;
+    }
+
+    
     entry->derCert.data = pkcs11_copyStaticData(&dbentry->data[headerlen],
                                                 entry->derCert.len, entry->derCertSpace, sizeof(entry->derCertSpace));
     if (entry->derCert.data == NULL) {
@@ -743,6 +749,11 @@ DecodeDBCertEntry(certDBEntryCert *entry, SECItem *dbentry)
 
     
     if (nnlen > 1) {
+        
+        if (dbentry->len < headerlen + entry->derCert.len + nnlen) {
+            PORT_SetError(SEC_ERROR_BAD_DATABASE);
+            goto loser;
+        }
         entry->nickname = (char *)pkcs11_copyStaticData(
             &dbentry->data[headerlen + entry->derCert.len], nnlen,
             (unsigned char *)entry->nicknameSpace,

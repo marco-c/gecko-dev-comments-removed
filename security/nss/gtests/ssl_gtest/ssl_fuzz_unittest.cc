@@ -17,9 +17,6 @@ namespace nss_test {
 #else
 #define FUZZ_F(c, f) TEST_F(c, DISABLED_Fuzz_##f)
 #define FUZZ_P(c, f) TEST_P(c, DISABLED_Fuzz_##f)
-
-
-#define RNG_ResetForFuzzing() SECFailure
 #endif
 
 const uint8_t kShortEmptyFinished[8] = {0};
@@ -91,7 +88,7 @@ FUZZ_P(TlsConnectGeneric, DeterministicExporter) {
   DisableECDHEServerKeyReuse();
 
   
-  EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
+  EXPECT_EQ(SECSuccess, RNG_RandomUpdate(NULL, 0));
   Connect();
 
   
@@ -105,7 +102,7 @@ FUZZ_P(TlsConnectGeneric, DeterministicExporter) {
   DisableECDHEServerKeyReuse();
 
   
-  EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
+  EXPECT_EQ(SECSuccess, RNG_RandomUpdate(NULL, 0));
   Connect();
 
   
@@ -135,7 +132,7 @@ FUZZ_P(TlsConnectGeneric, DeterministicTranscript) {
     server_->SetPacketFilter(std::make_shared<TlsConversationRecorder>(buffer));
 
     
-    EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
+    EXPECT_EQ(SECSuccess, RNG_RandomUpdate(NULL, 0));
     Connect();
 
     

@@ -259,16 +259,6 @@ loser:
 
 
 
-
-unsigned int
-tls13_SizeOfECDHEKeyShareKEX(const SECKEYPublicKey *pubKey)
-{
-    PORT_Assert(pubKey->keyType == ecKey);
-    return pubKey->u.ec.publicValue.len;
-}
-
-
-
 SECStatus
 tls13_EncodeECDHEKeyShareKEX(const sslSocket *ss, const SECKEYPublicKey *pubKey)
 {

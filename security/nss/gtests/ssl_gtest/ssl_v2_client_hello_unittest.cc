@@ -220,7 +220,7 @@ TEST_P(SSLv2ClientHelloTest, ConnectAfterEmptyV3Record) {
   
   SetPadding(255);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
   EXPECT_EQ(SSL_ERROR_BAD_CLIENT, server_->error_code());
 }
 
@@ -233,7 +233,7 @@ TEST_F(SSLv2ClientHelloTestF, Connect13) {
   std::vector<uint16_t> cipher_suites = {TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256};
   SetAvailableCipherSuites(cipher_suites);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
   EXPECT_EQ(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, server_->error_code());
 }
 
@@ -260,7 +260,7 @@ TEST_P(SSLv2ClientHelloTest, SendSecurityEscape) {
   
   SetPadding(255);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
 }
 
 
@@ -270,7 +270,7 @@ TEST_P(SSLv2ClientHelloTest, AddErroneousPadding) {
   
   SetPadding(5, 4);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
   EXPECT_EQ(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, server_->error_code());
 }
 
@@ -281,7 +281,7 @@ TEST_P(SSLv2ClientHelloTest, AddErroneousPadding2) {
   
   SetPadding(5, 6);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
   EXPECT_EQ(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, server_->error_code());
 }
 
@@ -292,7 +292,7 @@ TEST_P(SSLv2ClientHelloTest, SmallClientRandom) {
   
   SetClientRandomLength(15);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
   EXPECT_EQ(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, server_->error_code());
 }
 
@@ -310,7 +310,7 @@ TEST_P(SSLv2ClientHelloTest, BigClientRandom) {
   
   SetClientRandomLength(33);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
   EXPECT_EQ(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO, server_->error_code());
 }
 
@@ -319,7 +319,7 @@ TEST_P(SSLv2ClientHelloTest, BigClientRandom) {
 TEST_P(SSLv2ClientHelloTest, RequireSafeRenegotiation) {
   RequireSafeRenegotiation();
   SetAvailableCipherSuite(TLS_DHE_RSA_WITH_AES_128_CBC_SHA);
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertHandshakeFailure);
   EXPECT_EQ(SSL_ERROR_UNSAFE_NEGOTIATION, server_->error_code());
 }
 
@@ -361,7 +361,7 @@ TEST_F(SSLv2ClientHelloTestF, InappropriateFallbackSCSV) {
                                          TLS_FALLBACK_SCSV};
   SetAvailableCipherSuites(cipher_suites);
 
-  ConnectExpectFail();
+  ConnectExpectAlert(server_, kTlsAlertInappropriateFallback);
   EXPECT_EQ(SSL_ERROR_INAPPROPRIATE_FALLBACK_ALERT, server_->error_code());
 }
 

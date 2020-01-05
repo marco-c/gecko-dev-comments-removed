@@ -831,8 +831,10 @@ fill_CERTCertificateFields(NSSCertificate *c, CERTCertificate *cc, PRBool forced
     cc->dbhandle = c->object.trustDomain;
     
     
+    CERT_LockCertTempPerm(cc);
     cc->istemp = PR_FALSE; 
     cc->isperm = PR_TRUE;  
+    CERT_UnlockCertTempPerm(cc);
     
     cc->nssCertificate = c;
     if (trust) {

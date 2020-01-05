@@ -267,31 +267,18 @@ ec_GetNamedCurveParams(const ECCurveName name)
 ECGroup *
 ECGroup_fromName(const ECCurveName name)
 {
-    ECGroup *group = NULL;
     const ECCurveBytes *params = NULL;
-    mp_err res = MP_OKAY;
 
     
     PORT_Assert(name != ECCurve25519);
 
     params = ec_GetNamedCurveParams(name);
     if (params == NULL) {
-        res = MP_UNDEF;
-        goto CLEANUP;
+        return NULL;
     }
 
     
-    group = ecgroup_fromName(name, params);
-    if (group == NULL) {
-        res = MP_UNDEF;
-    }
-
-CLEANUP:
-    if (group && res != MP_OKAY) {
-        ECGroup_free(group);
-        return NULL;
-    }
-    return group;
+    return ecgroup_fromName(name, params);
 }
 
 

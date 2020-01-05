@@ -22,7 +22,7 @@
 
 
 
-#define NSS_VERSION "3.30" _NSS_CUSTOMIZED " Beta"
+#define NSS_VERSION "3.31" _NSS_CUSTOMIZED " Beta"
 #define NSS_VMAJOR 3
 #define NSS_VMINOR 31
 #define NSS_VPATCH 0
