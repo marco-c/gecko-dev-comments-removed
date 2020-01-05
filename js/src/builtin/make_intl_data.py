@@ -156,6 +156,10 @@ def readRegistry(registry):
     
     langTagMappings["ja-latn-hepburn-heploc"] = "ja-Latn-alalc97"
 
+    
+    
+    assert all(len(lang) > 3 for lang in langTagMappings.iterkeys())
+
     return {"fileDate": fileDate,
             "langTagMappings": langTagMappings,
             "langSubtagMappings": langSubtagMappings,
