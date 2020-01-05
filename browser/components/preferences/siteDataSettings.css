@@ -1,0 +1,15 @@
+
+
+
+
+#sitesList {
+  min-height: 20em;
+}
+
+#sitesList > richlistitem {
+  -moz-binding: url("chrome://browser/content/preferences/siteListItem.xml#siteListItem");
+}
+
+.item-box {
+  padding: 5px 8px;
+}
