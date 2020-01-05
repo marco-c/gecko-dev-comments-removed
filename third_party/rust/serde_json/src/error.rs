@@ -60,6 +60,9 @@ pub enum ErrorCode {
     ExpectedSomeValue,
 
     
+    ExpectedSomeString,
+
+    
     InvalidEscape,
 
     
@@ -140,6 +143,9 @@ impl Display for ErrorCode {
             ErrorCode::ExpectedSomeValue => {
                 f.write_str("expected value")
             }
+            ErrorCode::ExpectedSomeString => {
+                f.write_str("expected string")
+            }
             ErrorCode::InvalidEscape => {
                 f.write_str("invalid escape")
             }
@@ -174,7 +180,10 @@ impl Display for ErrorCode {
 impl error::Error for Error {
     fn description(&self) -> &str {
         match *self.err {
-            ErrorImpl::Syntax(..) => "syntax error",
+            ErrorImpl::Syntax(..) => {
+                
+                "JSON error"
+            }
             ErrorImpl::Io(ref error) => error::Error::description(error),
         }
     }

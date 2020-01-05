@@ -254,6 +254,6 @@ macro_rules! json_internal {
     
     
     ($other:expr) => {
-        $crate::to_value(&$other).unwrap()
+        $crate::value::ToJson::to_json(&$other).unwrap()
     };
 }

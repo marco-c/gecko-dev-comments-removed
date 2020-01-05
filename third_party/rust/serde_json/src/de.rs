@@ -8,7 +8,9 @@ use serde::de::{self, Unexpected};
 
 use super::error::{Error, ErrorCode, Result};
 
-use read::{self, Read};
+use read;
+
+pub use read::{Read, IteratorRead, SliceRead, StrRead};
 
 
 
@@ -19,8 +21,19 @@ pub struct Deserializer<R> {
     remaining_depth: u8,
 }
 
-impl<R> Deserializer<R> {
-    fn new(read: R) -> Self {
+impl<R> Deserializer<R>
+    where R: read::Read
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(read: R) -> Self {
         Deserializer {
             read: read,
             str_buf: Vec::with_capacity(128),
@@ -38,12 +51,12 @@ impl<I> Deserializer<read::IteratorRead<I>>
     }
 }
 
-impl<R> Deserializer<read::IteratorRead<io::Bytes<R>>>
+impl<R> Deserializer<read::IoRead<R>>
     where R: io::Read
 {
     
     pub fn from_reader(reader: R) -> Self {
-        Deserializer::new(read::IteratorRead::new(reader.bytes()))
+        Deserializer::new(read::IoRead::new(reader))
     }
 }
 
@@ -647,9 +660,69 @@ impl<'a, R: Read> de::Deserializer for &'a mut Deserializer<R> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value>
+        where V: de::Visitor
+    {
+        try!(self.parse_whitespace());
+
+        match try!(self.peek_or_null()) {
+            b'"' => {
+                self.eat_char();
+                self.str_buf.clear();
+                let slice = try!(self.read.parse_str_raw(&mut self.str_buf));
+                visitor.visit_bytes(slice)
+            }
+            _ => self.deserialize(visitor),
+        }
+
+    }
+
+    #[inline]
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value>
+        where V: de::Visitor
+    {
+        self.deserialize_bytes(visitor)
+    }
+
     forward_to_deserialize! {
         bool u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 char str string unit seq
-        seq_fixed_size bytes byte_buf map unit_struct tuple_struct struct
+        seq_fixed_size map unit_struct tuple_struct struct
         struct_field tuple ignored_any
     }
 }
@@ -873,12 +946,49 @@ impl<'a, R: Read + 'a> de::VariantVisitor for UnitVariantVisitor<'a, R> {
 
 
 
-pub struct StreamDeserializer<R, T>
-    where R: Read,
-          T: de::Deserialize,
-{
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct StreamDeserializer<R, T> {
     de: Deserializer<R>,
     _marker: PhantomData<T>,
+}
+
+impl<R, T> StreamDeserializer<R, T>
+    where R: read::Read,
+          T: de::Deserialize
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(read: R) -> Self {
+        StreamDeserializer {
+            de: Deserializer::new(read),
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<R, T> Iterator for StreamDeserializer<R, T>

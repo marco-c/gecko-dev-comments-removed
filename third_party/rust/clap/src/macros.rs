@@ -533,6 +533,65 @@ macro_rules! app_from_crate {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
 macro_rules! clap_app {
     (@app ($builder:expr)) => { $builder };
@@ -625,7 +684,7 @@ macro_rules! clap_app {
         clap_app!{ @arg ($arg) $modes +required $($tail)* }
     };
 
-    (@arg ($arg:expr) $modes:tt !$ident $($tail:tt)*) => {
+    (@arg ($arg:expr) $modes:tt !$ident:ident $($tail:tt)*) => {
         clap_app!{ @arg ($arg.$ident(false)) $modes $($tail)* }
     };
 

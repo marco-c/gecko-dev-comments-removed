@@ -6,6 +6,7 @@ use std::io::{Write, Read};
 use std::io::Error as IoError;
 use std::{error, fmt, result};
 use ::SizeLimit;
+use byteorder::{ByteOrder};
 
 pub use self::reader::{
     Deserializer,
@@ -118,9 +119,8 @@ impl serde::ser::Error for Error {
 
 
 
-pub fn serialize_into<W: ?Sized, T: ?Sized>(writer: &mut W, value: &T, size_limit: SizeLimit) -> Result<()>
-    where W: Write, 
-          T: serde::Serialize,
+pub fn serialize_into<W: ?Sized, T: ?Sized, E>(writer: &mut W, value: &T, size_limit: SizeLimit) -> Result<()>
+    where W: Write, T: serde::Serialize, E: ByteOrder
 {
     match size_limit {
         SizeLimit::Infinite => { }
@@ -130,7 +130,7 @@ pub fn serialize_into<W: ?Sized, T: ?Sized>(writer: &mut W, value: &T, size_limi
         }
     }
 
-    let mut serializer = Serializer::new(writer);
+    let mut serializer = Serializer::<_, E>::new(writer);
     serde::Serialize::serialize(value, &mut serializer)
 }
 
@@ -138,7 +138,7 @@ pub fn serialize_into<W: ?Sized, T: ?Sized>(writer: &mut W, value: &T, size_limi
 
 
 
-pub fn serialize<T: ?Sized>(value: &T, size_limit: SizeLimit) -> Result<Vec<u8>>
+pub fn serialize<T: ?Sized, E: ByteOrder>(value: &T, size_limit: SizeLimit) -> Result<Vec<u8>>
     where T: serde::Serialize
 {
     
@@ -152,7 +152,7 @@ pub fn serialize<T: ?Sized>(value: &T, size_limit: SizeLimit) -> Result<Vec<u8>>
         SizeLimit::Infinite => Vec::new()
     };
 
-    try!(serialize_into(&mut writer, value, SizeLimit::Infinite));
+    try!(serialize_into::<_, _, E>(&mut writer, value, SizeLimit::Infinite));
     Ok(writer)
 }
 
@@ -190,11 +190,11 @@ pub fn serialized_size_bounded<T: ?Sized>(value: &T, max: u64) -> Option<u64>
 
 
 
-pub fn deserialize_from<R: ?Sized, T>(reader: &mut R, size_limit: SizeLimit) -> Result<T>
+pub fn deserialize_from<R: ?Sized, T, E: ByteOrder>(reader: &mut R, size_limit: SizeLimit) -> Result<T>
     where R: Read,
           T: serde::Deserialize,
 {
-    let mut deserializer = Deserializer::new(reader, size_limit);
+    let mut deserializer = Deserializer::<_, E>::new(reader, size_limit);
     serde::Deserialize::deserialize(&mut deserializer)
 }
 
@@ -202,9 +202,9 @@ pub fn deserialize_from<R: ?Sized, T>(reader: &mut R, size_limit: SizeLimit) -> 
 
 
 
-pub fn deserialize<T>(bytes: &[u8]) -> Result<T>
+pub fn deserialize<T, E: ByteOrder>(bytes: &[u8]) -> Result<T>
     where T: serde::Deserialize,
 {
     let mut reader = bytes;
-    deserialize_from(&mut reader, SizeLimit::Infinite)
+    deserialize_from::<_, _, E>(&mut reader, SizeLimit::Infinite)
 }

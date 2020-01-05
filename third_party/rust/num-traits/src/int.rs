@@ -274,7 +274,7 @@ pub trait PrimInt
     
     
     
-    fn pow(self, mut exp: u32) -> Self;
+    fn pow(self, exp: u32) -> Self;
 }
 
 macro_rules! prim_int_impl {

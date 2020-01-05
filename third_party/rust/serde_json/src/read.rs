@@ -7,11 +7,17 @@ use super::error::{Error, ErrorCode, Result};
 
 
 
-pub trait Read {
+
+
+
+pub trait Read: private::Sealed {
+    #[doc(hidden)]
     fn next(&mut self) -> io::Result<Option<u8>>;
+    #[doc(hidden)]
     fn peek(&mut self) -> io::Result<Option<u8>>;
 
     
+    #[doc(hidden)]
     fn discard(&mut self);
 
     
@@ -21,6 +27,7 @@ pub trait Read {
     
     
     
+    #[doc(hidden)]
     fn position(&self) -> Position;
 
     
@@ -30,21 +37,36 @@ pub trait Read {
     
     
     
+    #[doc(hidden)]
     fn peek_position(&self) -> Position;
 
     
     
     
+    #[doc(hidden)]
     fn parse_str<'s>(
         &'s mut self,
-        scratch: &'s mut Vec<u8>
+        scratch: &'s mut Vec<u8>,
     ) -> Result<&'s str>;
+
+    
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    fn parse_str_raw<'s>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>
+    ) -> Result<&'s [u8]>;
 }
 
 pub struct Position {
     pub line: usize,
     pub column: usize,
 }
+
 
 pub struct IteratorRead<Iter>
     where Iter: Iterator<Item = io::Result<u8>>,
@@ -53,6 +75,14 @@ pub struct IteratorRead<Iter>
     
     ch: Option<u8>,
 }
+
+
+pub struct IoRead<R>
+    where R: io::Read
+{
+    delegate: IteratorRead<io::Bytes<R>>,
+}
+
 
 
 
@@ -64,8 +94,15 @@ pub struct SliceRead<'a> {
 }
 
 
+
+
 pub struct StrRead<'a> {
     delegate: SliceRead<'a>,
+}
+
+
+mod private {
+    pub trait Sealed {}
 }
 
 
@@ -73,10 +110,55 @@ pub struct StrRead<'a> {
 impl<Iter> IteratorRead<Iter>
     where Iter: Iterator<Item = io::Result<u8>>,
 {
+    
     pub fn new(iter: Iter) -> Self {
         IteratorRead {
             iter: LineColIterator::new(iter),
             ch: None,
+        }
+    }
+}
+
+impl<Iter> private::Sealed for IteratorRead<Iter>
+    where Iter: Iterator<Item = io::Result<u8>> {}
+
+impl<Iter> IteratorRead<Iter>
+    where Iter: Iterator<Item = io::Result<u8>>
+{
+    fn parse_str_bytes<'s, T, F>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>,
+        validate: bool,
+        result: F
+    ) -> Result<T>
+        where T: 's,
+              F: FnOnce(&'s Self, &'s [u8]) -> Result<T>,
+    {
+        loop {
+            let ch = match try!(self.next()) {
+                Some(ch) => ch,
+                None => {
+                    return error(self, ErrorCode::EOFWhileParsingString);
+                }
+            };
+            if !ESCAPE[ch as usize] {
+                scratch.push(ch);
+                continue;
+            }
+            match ch {
+                b'"' => {
+                    return result(self, scratch);
+                }
+                b'\\' => {
+                    try!(parse_escape(self, scratch));
+                }
+                _ => {
+                    if validate {
+                        return error(self, ErrorCode::InvalidUnicodeCodePoint);
+                    }
+                    scratch.push(ch);
+                }
+            }
         }
     }
 }
@@ -137,35 +219,82 @@ impl<Iter> Read for IteratorRead<Iter>
         &'s mut self,
         scratch: &'s mut Vec<u8>
     ) -> Result<&'s str> {
-        loop {
-            let ch = match try!(self.next()) {
-                Some(ch) => ch,
-                None => {
-                    return error(self, ErrorCode::EOFWhileParsingString);
-                }
-            };
-            if !ESCAPE[ch as usize] {
-                scratch.push(ch);
-                continue;
-            }
-            match ch {
-                b'"' => {
-                    return as_str(self, scratch);
-                }
-                b'\\' => {
-                    try!(parse_escape(self, scratch));
-                }
-                _ => {
-                    return error(self, ErrorCode::InvalidUnicodeCodePoint);
-                }
-            }
+        self.parse_str_bytes(scratch, true, as_str)
+    }
+
+    fn parse_str_raw<'s>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>
+    ) -> Result<&'s [u8]> {
+        self.parse_str_bytes(scratch, false, |_, bytes| Ok(bytes))
+    }
+}
+
+
+
+impl<R> IoRead<R>
+    where R: io::Read
+{
+    
+    pub fn new(reader: R) -> Self {
+        IoRead {
+            delegate: IteratorRead::new(reader.bytes()),
         }
+    }
+}
+
+impl<R> private::Sealed for IoRead<R>
+    where R: io::Read {}
+
+impl<R> Read for IoRead<R>
+    where R: io::Read
+{
+    #[inline]
+    fn next(&mut self) -> io::Result<Option<u8>> {
+        self.delegate.next()
+    }
+
+    #[inline]
+    fn peek(&mut self) -> io::Result<Option<u8>> {
+        self.delegate.peek()
+    }
+
+    #[inline]
+    fn discard(&mut self) {
+        self.delegate.discard();
+    }
+
+    #[inline]
+    fn position(&self) -> Position {
+        self.delegate.position()
+    }
+
+    #[inline]
+    fn peek_position(&self) -> Position {
+        self.delegate.peek_position()
+    }
+
+    #[inline]
+    fn parse_str<'s>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>
+    ) -> Result<&'s str> {
+        self.delegate.parse_str(scratch)
+    }
+
+    #[inline]
+    fn parse_str_raw<'s>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>
+    ) -> Result<&'s [u8]> {
+        self.delegate.parse_str_raw(scratch)
     }
 }
 
 
 
 impl<'a> SliceRead<'a> {
+    
     pub fn new(slice: &'a [u8]) -> Self {
         SliceRead {
             slice: slice,
@@ -198,6 +327,7 @@ impl<'a> SliceRead<'a> {
     fn parse_str_bytes<'s, T, F>(
         &'s mut self,
         scratch: &'s mut Vec<u8>,
+        validate: bool,
         result: F
     ) -> Result<T>
         where T: 's,
@@ -235,12 +365,17 @@ impl<'a> SliceRead<'a> {
                     start = self.index;
                 }
                 _ => {
-                    return error(self, ErrorCode::InvalidUnicodeCodePoint);
+                    if validate {
+                        return error(self, ErrorCode::InvalidUnicodeCodePoint);
+                    }
+                    self.index += 1;
                 }
             }
         }
     }
 }
+
+impl<'a> private::Sealed for SliceRead<'a> {}
 
 impl<'a> Read for SliceRead<'a> {
     #[inline]
@@ -286,19 +421,30 @@ impl<'a> Read for SliceRead<'a> {
         &'s mut self,
         scratch: &'s mut Vec<u8>
     ) -> Result<&'s str> {
-        self.parse_str_bytes(scratch, as_str)
+        self.parse_str_bytes(scratch, true, as_str)
     }
+
+    fn parse_str_raw<'s>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>
+    ) -> Result<&'s [u8]> {
+        self.parse_str_bytes(scratch, false, |_, bytes| Ok(bytes))
+    }
+
 }
 
 
 
 impl<'a> StrRead<'a> {
+    
     pub fn new(s: &'a str) -> Self {
         StrRead {
             delegate: SliceRead::new(s.as_bytes()),
         }
     }
 }
+
+impl<'a> private::Sealed for StrRead<'a> {}
 
 impl<'a> Read for StrRead<'a> {
     #[inline]
@@ -328,11 +474,18 @@ impl<'a> Read for StrRead<'a> {
         &'s mut self,
         scratch: &'s mut Vec<u8>
     ) -> Result<&'s str> {
-        self.delegate.parse_str_bytes(scratch, |_, bytes| {
+        self.delegate.parse_str_bytes(scratch, true, |_, bytes| {
             
             
             Ok(unsafe { str::from_utf8_unchecked(bytes) })
         })
+    }
+
+    fn parse_str_raw<'s>(
+        &'s mut self,
+        scratch: &'s mut Vec<u8>
+    ) -> Result<&'s [u8]> {
+        self.delegate.parse_str_raw(scratch)
     }
 }
 

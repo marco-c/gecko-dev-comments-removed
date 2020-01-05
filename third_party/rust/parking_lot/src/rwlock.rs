@@ -378,6 +378,22 @@ impl<T: ?Sized> RwLock<T> {
     pub unsafe fn raw_unlock_write_fair(&self) {
         self.raw.unlock_exclusive(true);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn raw_downgrade(&self) {
+        self.raw.downgrade();
+    }
 }
 
 impl RwLock<()> {

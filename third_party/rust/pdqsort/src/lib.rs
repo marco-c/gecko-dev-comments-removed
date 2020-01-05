@@ -31,12 +31,6 @@
 
 
 
-
-
-
-
-
-
 #![no_std]
 
 use core::cmp::{self, Ordering};
@@ -62,54 +56,57 @@ impl<T> Drop for WriteOnDrop<T> {
 }
 
 
-
-
-fn insert_head<T, F>(v: &mut [T], is_less: &mut F)
+fn insertion_sort<T, F>(v: &mut [T], is_less: &mut F)
     where F: FnMut(&T, &T) -> bool
 {
-    if v.len() >= 2 && is_less(&v[1], &v[0]) {
+    let len = v.len();
+
+    for i in 1..len {
         unsafe {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let mut tmp = NoDrop { value: Some(ptr::read(&v[0])) };
+            if is_less(v.get_unchecked(i), v.get_unchecked(i - 1)) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let mut tmp = NoDrop { value: Some(ptr::read(v.get_unchecked(i))) };
 
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let mut hole = InsertionHole {
-                src: tmp.value.as_mut().unwrap(),
-                dest: &mut v[1],
-            };
-            ptr::copy_nonoverlapping(&v[1], &mut v[0], 1);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                let mut hole = InsertionHole {
+                    src: tmp.value.as_mut().unwrap(),
+                    dest: v.get_unchecked_mut(i - 1),
+                };
+                ptr::copy_nonoverlapping(v.get_unchecked(i - 1), v.get_unchecked_mut(i), 1);
 
-            for i in 2..v.len() {
-                if !is_less(&v[i], &tmp.value.as_ref().unwrap()) {
-                    break;
+                for j in (0..i-1).rev() {
+                    if !is_less(&tmp.value.as_ref().unwrap(), v.get_unchecked(j)) {
+                        break;
+                    }
+                    ptr::copy_nonoverlapping(v.get_unchecked(j), v.get_unchecked_mut(j + 1), 1);
+                    hole.dest = v.get_unchecked_mut(j);
                 }
-                ptr::copy_nonoverlapping(&v[i], &mut v[i - 1], 1);
-                hole.dest = &mut v[i];
             }
             
         }
@@ -135,18 +132,6 @@ fn insert_head<T, F>(v: &mut [T], is_less: &mut F)
     impl<T> Drop for InsertionHole<T> {
         fn drop(&mut self) {
             unsafe { ptr::copy_nonoverlapping(self.src, self.dest, 1); }
-        }
-    }
-}
-
-
-fn insertion_sort<T, F>(v: &mut [T], is_less: &mut F)
-    where F: FnMut(&T, &T) -> bool
-{
-    let len = v.len();
-    if len >= 2 {
-        for i in (0..len-1).rev() {
-            insert_head(&mut v[i..], is_less);
         }
     }
 }
@@ -203,7 +188,7 @@ fn heapsort<T, F>(v: &mut [T], is_less: &mut F)
 fn partition_in_blocks<T, F>(v: &mut [T], pivot: &T, is_less: &mut F) -> usize
     where F: FnMut(&T, &T) -> bool
 {
-    const BLOCK: usize = 64;
+    const BLOCK: usize = 128;
 
     
     let mut l = v.as_mut_ptr();
@@ -221,6 +206,7 @@ fn partition_in_blocks<T, F>(v: &mut [T], pivot: &T, is_less: &mut F) -> usize
 
     
     fn width<T>(l: *mut T, r: *mut T) -> usize {
+        assert!(mem::size_of::<T>() > 0);
         (r as usize - l as usize) / mem::size_of::<T>()
     }
 
@@ -469,7 +455,7 @@ fn choose_pivot<T, F>(v: &mut [T], is_less: &mut F) -> usize
     let mut c = len / 4 * 3;
     let mut swaps = 0;
 
-    if len >= 4 {
+    if len >= 8 {
         let mut sort2 = |a: &mut usize, b: &mut usize| unsafe {
             if is_less(v.get_unchecked(*b), v.get_unchecked(*a)) {
                 ptr::swap(a, b);
@@ -510,7 +496,7 @@ fn choose_pivot<T, F>(v: &mut [T], is_less: &mut F) -> usize
 
 
 
-fn recurse<T, F>(v: &mut [T], is_less: &mut F, pred: Option<&T>, mut limit: usize)
+fn recurse<'a, T, F>(mut v: &'a mut [T], is_less: &mut F, mut pred: Option<&'a T>, mut limit: usize)
     where F: FnMut(&T, &T) -> bool
 {
     
@@ -521,53 +507,64 @@ fn recurse<T, F>(v: &mut [T], is_less: &mut F, pred: Option<&T>, mut limit: usiz
         16
     };
 
-    let len = v.len();
-
-    if len <= max_insertion {
-        insertion_sort(v, is_less);
-        return;
-    }
-
-    if limit == 0 {
-        heapsort(v, is_less);
-        return;
-    }
-
-    let pivot = choose_pivot(v, is_less);
-
     
-    
-    
-    if let Some(p) = pred {
-        if !is_less(p, &v[pivot]) {
-            let mid = partition_equal(v, pivot, is_less);
-            recurse(&mut v[mid..], is_less, pred, limit);
+    let mut was_balanced = true;
+
+    loop {
+        let len = v.len();
+        if len <= max_insertion {
+            insertion_sort(v, is_less);
             return;
         }
+
+        if limit == 0 {
+            heapsort(v, is_less);
+            return;
+        }
+
+        
+        
+        if !was_balanced {
+            break_patterns(v);
+            limit -= 1;
+        }
+
+        let pivot = choose_pivot(v, is_less);
+
+        
+        
+        
+        if let Some(p) = pred {
+            if !is_less(p, &v[pivot]) {
+                let mid = partition_equal(v, pivot, is_less);
+                v = &mut {v}[mid..];
+                continue;
+            }
+        }
+
+        let (mid, was_partitioned) = partition(v, pivot, is_less);
+        was_balanced = cmp::min(mid, len - mid) >= len / 8;
+
+        
+        
+        if was_balanced && was_partitioned && v.windows(2).all(|w| !is_less(&w[1], &w[0])) {
+            return;
+        }
+
+        let (left, right) = {v}.split_at_mut(mid);
+        let (pivot, right) = right.split_at_mut(1);
+
+        
+        
+        if left.len() < right.len() {
+            recurse(left, is_less, pred, limit);
+            v = right;
+            pred = Some(&pivot[0]);
+        } else {
+            recurse(right, is_less, Some(&pivot[0]), limit);
+            v = left;
+        }
     }
-
-    let (mid, was_partitioned) = partition(v, pivot, is_less);
-    let is_balanced = cmp::min(mid, len - mid) >= len / 8;
-
-    
-    
-    if is_balanced && was_partitioned && v.windows(2).all(|w| !is_less(&w[1], &w[0])) {
-        return;
-    }
-
-    let (left, right) = v.split_at_mut(mid);
-    let (pivot, right) = right.split_at_mut(1);
-
-    
-    
-    if !is_balanced {
-        break_patterns(left);
-        break_patterns(right);
-        limit -= 1;
-    }
-
-    recurse(left, is_less, pred, limit);
-    recurse(right, is_less, Some(&pivot[0]), limit);
 }
 
 

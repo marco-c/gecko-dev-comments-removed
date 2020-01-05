@@ -421,6 +421,11 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
     pub fn template<S: Into<&'b str>>(mut self, s: S) -> Self {
         self.p.meta.template = Some(s.into());
         self

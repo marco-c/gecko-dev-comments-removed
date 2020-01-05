@@ -11,5 +11,7 @@ pub trait Error: Debug + Display {
     fn description(&self) -> &str;
 
     
-    fn cause(&self) -> Option<&Error> { None }
+    fn cause(&self) -> Option<&Error> {
+        None
+    }
 }

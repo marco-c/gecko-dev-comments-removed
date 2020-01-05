@@ -107,6 +107,8 @@ mod impossible;
 
 #[doc(hidden)]
 pub mod private;
+#[cfg(any(feature = "std", feature = "collections"))]
+mod content;
 
 pub use self::impossible::Impossible;
 
@@ -174,8 +176,7 @@ pub trait Serialize {
     
     
     
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer;
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer;
 }
 
 
@@ -254,31 +255,31 @@ pub trait Serializer: Sized {
 
     
     
-    type SerializeSeq: SerializeSeq<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeSeq: SerializeSeq<Ok = Self::Ok, Error = Self::Error>;
 
     
     
-    type SerializeTuple: SerializeTuple<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeTuple: SerializeTuple<Ok = Self::Ok, Error = Self::Error>;
 
     
     
-    type SerializeTupleStruct: SerializeTupleStruct<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeTupleStruct: SerializeTupleStruct<Ok = Self::Ok, Error = Self::Error>;
 
     
     
-    type SerializeTupleVariant: SerializeTupleVariant<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeTupleVariant: SerializeTupleVariant<Ok = Self::Ok, Error = Self::Error>;
 
     
     
-    type SerializeMap: SerializeMap<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeMap: SerializeMap<Ok = Self::Ok, Error = Self::Error>;
 
     
     
-    type SerializeStruct: SerializeStruct<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeStruct: SerializeStruct<Ok = Self::Ok, Error = Self::Error>;
 
     
     
-    type SerializeStructVariant: SerializeStructVariant<Ok=Self::Ok, Error=Self::Error>;
+    type SerializeStructVariant: SerializeStructVariant<Ok = Self::Ok, Error = Self::Error>;
 
     
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error>;
@@ -371,10 +372,7 @@ pub trait Serializer: Sized {
     fn serialize_none(self) -> Result<Self::Ok, Self::Error>;
 
     
-    fn serialize_some<T: ?Sized + Serialize>(
-        self,
-        value: &T,
-    ) -> Result<Self::Ok, Self::Error>;
+    fn serialize_some<T: ?Sized + Serialize>(self, value: &T) -> Result<Self::Ok, Self::Error>;
 
     
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error>;
@@ -382,10 +380,7 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_unit_struct(
-        self,
-        name: &'static str,
-    ) -> Result<Self::Ok, Self::Error>;
+    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error>;
 
     
     
@@ -401,12 +396,11 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_unit_variant(
-        self,
-        name: &'static str,
-        variant_index: usize,
-        variant: &'static str,
-    ) -> Result<Self::Ok, Self::Error>;
+    fn serialize_unit_variant(self,
+                              name: &'static str,
+                              variant_index: usize,
+                              variant: &'static str)
+                              -> Result<Self::Ok, Self::Error>;
 
     
     
@@ -417,30 +411,10 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_newtype_struct<T: ?Sized + Serialize>(
-        self,
-        name: &'static str,
-        value: &T,
-    ) -> Result<Self::Ok, Self::Error>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn serialize_newtype_variant<T: ?Sized + Serialize>(
-        self,
-        name: &'static str,
-        variant_index: usize,
-        variant: &'static str,
-        value: &T,
-    ) -> Result<Self::Ok, Self::Error>;
+    fn serialize_newtype_struct<T: ?Sized + Serialize>(self,
+                                                       name: &'static str,
+                                                       value: &T)
+                                                       -> Result<Self::Ok, Self::Error>;
 
     
     
@@ -453,46 +427,12 @@ pub trait Serializer: Sized {
     
     
     
-    
-    
-    
-    
-    fn serialize_seq(
-        self,
-        len: Option<usize>,
-    ) -> Result<Self::SerializeSeq, Self::Error>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn serialize_seq_fixed_size(
-        self,
-        size: usize,
-    ) -> Result<Self::SerializeSeq, Self::Error>;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn serialize_tuple(
-        self,
-        len: usize,
-    ) -> Result<Self::SerializeTuple, Self::Error>;
+    fn serialize_newtype_variant<T: ?Sized + Serialize>(self,
+                                                        name: &'static str,
+                                                        variant_index: usize,
+                                                        variant: &'static str,
+                                                        value: &T)
+                                                        -> Result<Self::Ok, Self::Error>;
 
     
     
@@ -508,11 +448,53 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_tuple_struct(
-        self,
-        name: &'static str,
-        len: usize,
-    ) -> Result<Self::SerializeTupleStruct, Self::Error>;
+    
+    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn serialize_seq_fixed_size(self, size: usize) -> Result<Self::SerializeSeq, Self::Error>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn serialize_tuple_struct(self,
+                              name: &'static str,
+                              len: usize)
+                              -> Result<Self::SerializeTupleStruct, Self::Error>;
 
     
     
@@ -532,13 +514,12 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_tuple_variant(
-        self,
-        name: &'static str,
-        variant_index: usize,
-        variant: &'static str,
-        len: usize,
-    ) -> Result<Self::SerializeTupleVariant, Self::Error>;
+    fn serialize_tuple_variant(self,
+                               name: &'static str,
+                               variant_index: usize,
+                               variant: &'static str,
+                               len: usize)
+                               -> Result<Self::SerializeTupleVariant, Self::Error>;
 
     
     
@@ -554,10 +535,7 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_map(
-        self,
-        len: Option<usize>,
-    ) -> Result<Self::SerializeMap, Self::Error>;
+    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error>;
 
     
     
@@ -573,11 +551,10 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_struct(
-        self,
-        name: &'static str,
-        len: usize,
-    ) -> Result<Self::SerializeStruct, Self::Error>;
+    fn serialize_struct(self,
+                        name: &'static str,
+                        len: usize)
+                        -> Result<Self::SerializeStruct, Self::Error>;
 
     
     
@@ -598,13 +575,12 @@ pub trait Serializer: Sized {
     
     
     
-    fn serialize_struct_variant(
-        self,
-        name: &'static str,
-        variant_index: usize,
-        variant: &'static str,
-        len: usize,
-    ) -> Result<Self::SerializeStructVariant, Self::Error>;
+    fn serialize_struct_variant(self,
+                                name: &'static str,
+                                variant_index: usize,
+                                variant: &'static str,
+                                len: usize)
+                                -> Result<Self::SerializeStructVariant, Self::Error>;
 
     
     
@@ -613,7 +589,7 @@ pub trait Serializer: Sized {
     
     fn collect_seq<I>(self, iter: I) -> Result<Self::Ok, Self::Error>
         where I: IntoIterator,
-              <I as IntoIterator>::Item: Serialize,
+              <I as IntoIterator>::Item: Serialize
     {
         let iter = iter.into_iter();
         let mut serializer = try!(self.serialize_seq(iter.len_hint()));
@@ -631,7 +607,7 @@ pub trait Serializer: Sized {
     fn collect_map<K, V, I>(self, iter: I) -> Result<Self::Ok, Self::Error>
         where K: Serialize,
               V: Serialize,
-              I: IntoIterator<Item = (K, V)>,
+              I: IntoIterator<Item = (K, V)>
     {
         let iter = iter.into_iter();
         let mut serializer = try!(self.serialize_map(iter.len_hint()));
@@ -773,11 +749,10 @@ pub trait SerializeMap {
     
     
     
-    fn serialize_entry<K: ?Sized + Serialize, V: ?Sized + Serialize>(
-        &mut self,
-        key: &K,
-        value: &V,
-    ) -> Result<(), Self::Error> {
+    fn serialize_entry<K: ?Sized + Serialize, V: ?Sized + Serialize>(&mut self,
+                                                                     key: &K,
+                                                                     value: &V)
+                                                                     -> Result<(), Self::Error> {
         try!(self.serialize_key(key));
         self.serialize_value(value)
     }
@@ -803,7 +778,10 @@ pub trait SerializeStruct {
     type Error: Error;
 
     
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>;
+    fn serialize_field<T: ?Sized + Serialize>(&mut self,
+                                              key: &'static str,
+                                              value: &T)
+                                              -> Result<(), Self::Error>;
 
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
@@ -830,7 +808,10 @@ pub trait SerializeStructVariant {
     type Error: Error;
 
     
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>;
+    fn serialize_field<T: ?Sized + Serialize>(&mut self,
+                                              key: &'static str,
+                                              value: &T)
+                                              -> Result<(), Self::Error>;
 
     
     fn end(self) -> Result<Self::Ok, Self::Error>;
