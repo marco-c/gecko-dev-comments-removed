@@ -219,12 +219,6 @@ SkScalerContext_DW::SkScalerContext_DW(DWriteFontTypeface* typeface,
     fIsColorFont = fFactory2.get() && fontFace2.get() && fontFace2->IsColorFont();
 #endif
 
-    IDWriteFactory* factory = sk_get_dwrite_factory();
-    if (factory != nullptr) {
-        HRVM(factory->CreateRenderingParams(&fDefaultRenderingParams),
-        "Could not create default rendering params");
-    }
-
     
     
     
@@ -324,18 +318,10 @@ SkScalerContext_DW::SkScalerContext_DW(DWriteFontTypeface* typeface,
     
     } else {
         fTextSizeRender = realTextSize;
+        fRenderingMode = DWRITE_RENDERING_MODE_CLEARTYPE_NATURAL_SYMMETRIC;
         fTextureType = DWRITE_TEXTURE_CLEARTYPE_3x1;
         fTextSizeMeasure = realTextSize;
         fMeasuringMode = DWRITE_MEASURING_MODE_NATURAL;
-
-        if (!SUCCEEDED(fTypeface->fDWriteFontFace->GetRecommendedRenderingMode(
-                fTextSizeRender,
-                1.0f,
-                fMeasuringMode,
-                fDefaultRenderingParams.get(),
-                &fRenderingMode))) {
-            fRenderingMode = DWRITE_RENDERING_MODE_CLEARTYPE_NATURAL_SYMMETRIC;
-        }
     }
 
     if (this->isSubpixel()) {
