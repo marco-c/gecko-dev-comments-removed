@@ -64,6 +64,7 @@
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
 #include "nsILoadInfo.h"
+#include "nsXPCOMStrings.h"
 
 
 #define WEBAPPS_PERM_NAME "webapps-manage"
@@ -344,20 +345,6 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
     return GetChannelURIPrincipal(aChannel, aPrincipal);
 }
 
-nsresult
-nsScriptSecurityManager::MaybeSetAddonIdFromURI(OriginAttributes& aAttrs, nsIURI* aURI)
-{
-  nsAutoCString scheme;
-  nsresult rv = aURI->GetScheme(scheme);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (scheme.EqualsLiteral("moz-extension") && GetAddonPolicyService()) {
-    rv = GetAddonPolicyService()->ExtensionURIToAddonId(aURI, aAttrs.mAddonId);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  return NS_OK;
-}
-
 
 
 
@@ -395,8 +382,6 @@ nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
     if (loadInfo) {
       attrs.Inherit(loadInfo->GetOriginAttributes());
     }
-    rv = MaybeSetAddonIdFromURI(attrs, uri);
-    NS_ENSURE_SUCCESS(rv, rv);
     nsCOMPtr<nsIPrincipal> prin = BasePrincipal::CreateCodebasePrincipal(uri, attrs);
     prin.forget(aPrincipal);
     return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
@@ -1165,8 +1150,6 @@ nsScriptSecurityManager::
   OriginAttributes attrs;
   attrs.Inherit(docShellAttrs);
 
-  nsresult rv = MaybeSetAddonIdFromURI(attrs, aURI);
-  NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsIPrincipal> prin = BasePrincipal::CreateCodebasePrincipal(aURI, attrs);
   prin.forget(aPrincipal);
   return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
@@ -1180,8 +1163,6 @@ nsScriptSecurityManager::GetDocShellCodebasePrincipal(nsIURI* aURI,
   OriginAttributes attrs;
   attrs.Inherit(nsDocShell::Cast(aDocShell)->GetOriginAttributes());
 
-  nsresult rv = MaybeSetAddonIdFromURI(attrs, aURI);
-  NS_ENSURE_SUCCESS(rv, rv);
   nsCOMPtr<nsIPrincipal> prin = BasePrincipal::CreateCodebasePrincipal(aURI, attrs);
   prin.forget(aPrincipal);
   return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;

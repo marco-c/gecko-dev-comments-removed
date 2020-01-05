@@ -14,7 +14,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Casting.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/PendingGlobalHistoryEntry.h"
 #include "mozilla/dom/TabChild.h"
@@ -542,31 +541,24 @@ SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
 
   
   nsCOMPtr<nsIHttpChannelInternal> httpInternal = do_QueryInterface(httpChan);
-  nsresult rv;
   if (httpInternal) {
-    rv = httpInternal->SetDocumentURI(doc->GetDocumentURI());
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    httpInternal->SetDocumentURI(doc->GetDocumentURI());
   }
 
-  rv = httpChan->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  httpChan->SetRequestMethod(NS_LITERAL_CSTRING("POST"));
 
   
-  rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept"),
-                                  EmptyCString(), false);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept-language"),
-                                  EmptyCString(), false);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept-encoding"),
-                                  EmptyCString(), false);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
+  httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept"),
+                             EmptyCString(), false);
+  httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept-language"),
+                             EmptyCString(), false);
+  httpChan->SetRequestHeader(NS_LITERAL_CSTRING("accept-encoding"),
+                             EmptyCString(), false);
 
   
   nsAutoCString pingTo;
   if (NS_SUCCEEDED(info->target->GetSpec(pingTo))) {
-    rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-To"), pingTo, false);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-To"), pingTo, false);
   }
 
   nsCOMPtr<nsIScriptSecurityManager> sm =
@@ -575,7 +567,7 @@ SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   if (sm && info->referrer) {
     bool referrerIsSecure;
     uint32_t flags = nsIProtocolHandler::URI_SAFE_TO_LOAD_IN_SECURE_CONTEXT;
-    rv = NS_URIChainHasFlags(info->referrer, flags, &referrerIsSecure);
+    nsresult rv = NS_URIChainHasFlags(info->referrer, flags, &referrerIsSecure);
 
     
     referrerIsSecure = NS_FAILED(rv) || referrerIsSecure;
@@ -590,9 +582,8 @@ SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
     if (sameOrigin || !referrerIsSecure) {
       nsAutoCString pingFrom;
       if (NS_SUCCEEDED(info->referrer->GetSpec(pingFrom))) {
-        rv = httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-From"),
-                                        pingFrom, false);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
+        httpChan->SetRequestHeader(NS_LITERAL_CSTRING("Ping-From"), pingFrom,
+                                   false);
       }
     }
 
@@ -600,8 +591,7 @@ SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
     
     
     if (!sameOrigin && !referrerIsSecure) {
-      rv = httpChan->SetReferrerWithPolicy(info->referrer, info->referrerPolicy);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      httpChan->SetReferrerWithPolicy(info->referrer, info->referrerPolicy);
     }
   }
 
@@ -7515,7 +7505,7 @@ nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
     uint32_t responseStatus = 0;
     nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aOldChannel);
     if (httpChannel) {
-      Unused << httpChannel->GetResponseStatus(&responseStatus);
+      (void)httpChannel->GetResponseStatus(&responseStatus);
     }
 
     
@@ -8037,9 +8027,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
 
   if (aPrincipal && !nsContentUtils::IsSystemPrincipal(aPrincipal) &&
       mItemType != typeChrome) {
-    MOZ_ASSERT(ChromeUtils::IsOriginAttributesEqualIgnoringAddonId(
-      aPrincipal->OriginAttributesRef(),
-      mOriginAttributes));
+    MOZ_ASSERT(aPrincipal->OriginAttributesRef() == mOriginAttributes);
   }
 
   
@@ -11159,20 +11147,16 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     do_QueryInterface(channel));
   if (httpChannelInternal) {
     if (aForceAllowCookies) {
-      rv = httpChannelInternal->SetThirdPartyFlags(
+      httpChannelInternal->SetThirdPartyFlags(
         nsIHttpChannelInternal::THIRD_PARTY_FORCE_ALLOW);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
     if (aFirstParty) {
-      rv = httpChannelInternal->SetDocumentURI(aURI);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      httpChannelInternal->SetDocumentURI(aURI);
     } else {
-      rv = httpChannelInternal->SetDocumentURI(aReferrerURI);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      httpChannelInternal->SetDocumentURI(aReferrerURI);
     }
-    rv = httpChannelInternal->SetRedirectMode(
+    httpChannelInternal->SetRedirectMode(
       nsIHttpChannelInternal::REDIRECT_MODE_MANUAL);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
   nsCOMPtr<nsIWritablePropertyBag2> props(do_QueryInterface(channel));
@@ -11253,8 +11237,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
     
     if (aReferrerURI && aSendReferrer) {
       
-      rv = httpChannel->SetReferrerWithPolicy(aReferrerURI, aReferrerPolicy);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      httpChannel->SetReferrerWithPolicy(aReferrerURI, aReferrerPolicy);
     }
   }
 
@@ -12346,10 +12329,8 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
       uint32_t loadFlags;
       aChannel->GetLoadFlags(&loadFlags);
       loadReplace = loadFlags & nsIChannel::LOAD_REPLACE;
-      rv = httpChannel->GetReferrer(getter_AddRefs(referrerURI));
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
-      rv = httpChannel->GetReferrerPolicy(&referrerPolicy);
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      httpChannel->GetReferrer(getter_AddRefs(referrerURI));
+      httpChannel->GetReferrerPolicy(&referrerPolicy);
 
       discardLayoutState = ShouldDiscardLayoutState(httpChannel);
     }
@@ -12992,7 +12973,7 @@ nsDocShell::ShouldDiscardLayoutState(nsIHttpChannel* aChannel)
 
   
   bool noStore = false;
-  Unused << aChannel->IsNoStoreResponse(&noStore);
+  aChannel->IsNoStoreResponse(&noStore);
   return noStore;
 }
 
@@ -13064,7 +13045,7 @@ nsDocShell::ChannelIsPost(nsIChannel* aChannel)
   }
 
   nsAutoCString method;
-  Unused << httpChannel->GetRequestMethod(method);
+  httpChannel->GetRequestMethod(method);
   return method.EqualsLiteral("POST");
 }
 
