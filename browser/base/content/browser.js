@@ -3182,7 +3182,7 @@ var BrowserOnClick = {
     let title;
     if (reason === "malware") {
       let reportUrl = gSafeBrowsing.getReportURL("MalwareMistake", blockedInfo);
-
+      title = gNavigatorBundle.getString("safebrowsing.reportedAttackSite");
       
       
       if (reportUrl) {
@@ -3196,7 +3196,7 @@ var BrowserOnClick = {
       }
     } else if (reason === "phishing") {
       let reportUrl = gSafeBrowsing.getReportURL("PhishMistake", blockedInfo);
-
+      title = gNavigatorBundle.getString("safebrowsing.deceptiveSite");
       
       
       if (reportUrl) {
