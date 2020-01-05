@@ -629,8 +629,6 @@ BarriersAreAllowedOnCurrentThread();
 static MOZ_ALWAYS_INLINE void
 ExposeGCThingToActiveJS(JS::GCCellPtr thing)
 {
-    MOZ_ASSERT(thing.kind() != JS::TraceKind::Shape);
-
     
     
     
