@@ -66,6 +66,7 @@ function markOutMatched(toBeEmptied, data, deleted) {
     info("Testing for " + storageType);
     for (let host in data[storageType]) {
       ok(toBeEmptied[storageType][host], "Host " + host + " found");
+
       if (!deleted) {
         for (let item of data[storageType][host]) {
           let index = toBeEmptied[storageType][host].indexOf(item);
@@ -87,50 +88,6 @@ function markOutMatched(toBeEmptied, data, deleted) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function testAddIframe(front) {
   info("Testing if new iframe addition works properly");
   return new Promise(resolve => {
@@ -142,7 +99,10 @@ function testAddIframe(front) {
         "https://sectest1.example.org": ["iframe-s-ss1"]
       },
       cookies: {
-        "sectest1.example.org": ["sc1"]
+        "sectest1.example.org": [
+          getCookieId("sc1", "sectest1.example.org",
+                      "/browser/devtools/server/tests/browser/")
+        ]
       },
       indexedDB: {
         
@@ -150,7 +110,7 @@ function testAddIframe(front) {
         "https://sectest1.example.org": []
       },
       Cache: {
-        "https://sectest1.example.org":[]
+        "https://sectest1.example.org": []
       }
     };
 

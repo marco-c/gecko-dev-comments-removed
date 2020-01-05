@@ -616,7 +616,12 @@ TableWidget.prototype = {
 
 
 
-  populateMenuPopup: function () {
+
+
+
+
+
+  populateMenuPopup: function (privateColumns = []) {
     if (!this.menupopup) {
       return;
     }
@@ -626,6 +631,10 @@ TableWidget.prototype = {
     }
 
     for (let column of this.columns.values()) {
+      if (privateColumns.includes(column.id)) {
+        continue;
+      }
+
       let menuitem = this.document.createElementNS(XUL_NS, "menuitem");
       menuitem.setAttribute("label", column.header.getAttribute("value"));
       menuitem.setAttribute("data-id", column.id);
@@ -672,7 +681,12 @@ TableWidget.prototype = {
 
 
 
-  setColumns: function (columns, sortOn = this.sortedOn, hiddenColumns = []) {
+
+
+
+
+  setColumns: function (columns, sortOn = this.sortedOn, hiddenColumns = [],
+                        privateColumns = []) {
     for (let column of this.columns.values()) {
       column.destroy();
     }
@@ -702,13 +716,14 @@ TableWidget.prototype = {
       }
 
       this.columns.set(id, new Column(this, id, columns[id]));
-      if (hiddenColumns.indexOf(id) > -1) {
+      if (hiddenColumns.includes(id) || privateColumns.includes(id)) {
+        
         this.columns.get(id).toggleColumn();
       }
     }
     this.sortedOn = sortOn;
     this.sortBy(this.sortedOn);
-    this.populateMenuPopup();
+    this.populateMenuPopup(privateColumns);
   },
 
   
@@ -776,6 +791,11 @@ TableWidget.prototype = {
     if (this.items.has(item[this.uniqueId])) {
       this.update(item);
       return;
+    }
+
+    if (this.editBookmark && !this.items.has(this.editBookmark)) {
+      
+      this.editBookmark = item[this.uniqueId];
     }
 
     let index = this.columns.get(this.sortedOn).push(item);

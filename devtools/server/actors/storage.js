@@ -15,6 +15,12 @@ const {isWindowIncluded} = require("devtools/shared/layout/utils");
 const specs = require("devtools/shared/specs/storage");
 const { Task } = require("devtools/shared/task");
 
+
+
+
+
+const SEPARATOR_GUID = "{9d414cc5-8319-0a04-0586-c0a6ae01670a}";
+
 loader.lazyImporter(this, "OS", "resource://gre/modules/osfile.jsm");
 loader.lazyImporter(this, "Sqlite", "resource://gre/modules/Sqlite.jsm");
 
@@ -467,9 +473,11 @@ StorageActors.createActor({
     }
 
     return {
+      uniqueKey: `${cookie.name}${SEPARATOR_GUID}${cookie.host}` +
+                 `${SEPARATOR_GUID}${cookie.path}`,
       name: cookie.name,
-      path: cookie.path || "",
       host: cookie.host || "",
+      path: cookie.path || "",
 
       
       expires: (cookie.expires || 0) * 1000,
@@ -495,7 +503,10 @@ StorageActors.createActor({
 
     for (let cookie of cookies) {
       if (this.isCookieAtHost(cookie, host)) {
-        this.hostVsStores.get(host).set(cookie.name, cookie);
+        let uniqueKey = `${cookie.name}${SEPARATOR_GUID}${cookie.host}` +
+                        `${SEPARATOR_GUID}${cookie.path}`;
+
+        this.hostVsStores.get(host).set(uniqueKey, cookie);
       }
     }
   },
@@ -528,8 +539,11 @@ StorageActors.createActor({
       case "changed":
         if (hosts.length) {
           for (let host of hosts) {
-            this.hostVsStores.get(host).set(subject.name, subject);
-            data[host] = [subject.name];
+            let uniqueKey = `${subject.name}${SEPARATOR_GUID}${subject.host}` +
+                            `${SEPARATOR_GUID}${subject.path}`;
+
+            this.hostVsStores.get(host).set(uniqueKey, subject);
+            data[host] = [uniqueKey];
           }
           this.storageActor.update(action, "cookies", data);
         }
@@ -538,8 +552,11 @@ StorageActors.createActor({
       case "deleted":
         if (hosts.length) {
           for (let host of hosts) {
-            this.hostVsStores.get(host).delete(subject.name);
-            data[host] = [subject.name];
+            let uniqueKey = `${subject.name}${SEPARATOR_GUID}${subject.host}` +
+                            `${SEPARATOR_GUID}${subject.path}`;
+
+            this.hostVsStores.get(host).delete(uniqueKey);
+            data[host] = [uniqueKey];
           }
           this.storageActor.update("deleted", "cookies", data);
         }
@@ -550,8 +567,11 @@ StorageActors.createActor({
           for (let host of hosts) {
             let stores = [];
             for (let cookie of subject) {
-              this.hostVsStores.get(host).delete(cookie.name);
-              stores.push(cookie.name);
+              let uniqueKey = `${cookie.name}${SEPARATOR_GUID}${cookie.host}` +
+                              `${SEPARATOR_GUID}${cookie.path}`;
+
+              this.hostVsStores.get(host).delete(uniqueKey);
+              stores.push(uniqueKey);
             }
             data[host] = stores;
           }
@@ -573,15 +593,17 @@ StorageActors.createActor({
 
   getFields: Task.async(function* () {
     return [
-      { name: "name", editable: 1},
-      { name: "path", editable: 1},
-      { name: "host", editable: 1},
-      { name: "expires", editable: 1},
-      { name: "lastAccessed", editable: 0},
-      { name: "value", editable: 1},
-      { name: "isDomain", editable: 0},
-      { name: "isSecure", editable: 1},
-      { name: "isHttpOnly", editable: 1}
+      { name: "uniqueKey", editable: false, private: true },
+      { name: "name", editable: true, hidden: false },
+      { name: "host", editable: true, hidden: false },
+      { name: "path", editable: true, hidden: false },
+      { name: "expires", editable: true, hidden: false },
+      { name: "lastAccessed", editable: false, hidden: false },
+      { name: "creationTime", editable: false, hidden: true },
+      { name: "value", editable: true, hidden: false },
+      { name: "isDomain", editable: false, hidden: true },
+      { name: "isSecure", editable: true, hidden: true },
+      { name: "isHttpOnly", editable: true, hidden: false }
     ];
   }),
 
@@ -727,10 +749,13 @@ var cookieHelpers = {
     let origPath = field === "path" ? oldValue : data.items.path;
     let cookie = null;
 
-    let enumerator = Services.cookies.getCookiesFromHost(origHost, data.originAttributes || {});
+    let enumerator =
+      Services.cookies.getCookiesFromHost(origHost, data.originAttributes || {});
     while (enumerator.hasMoreElements()) {
       let nsiCookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
-      if (nsiCookie.name === origName && nsiCookie.host === origHost) {
+      if (nsiCookie.name === origName &&
+          nsiCookie.host === origHost &&
+          nsiCookie.path === origPath) {
         cookie = {
           host: nsiCookie.host,
           path: nsiCookie.path,
@@ -804,6 +829,15 @@ var cookieHelpers = {
   },
 
   _removeCookies(host, opts = {}) {
+    
+    
+    if (opts.name) {
+      let split = opts.name.split(SEPARATOR_GUID);
+
+      opts.name = split[0];
+      opts.path = split[2];
+    }
+
     function hostMatches(cookieHost, matchHost) {
       if (cookieHost == null) {
         return matchHost == null;
@@ -814,12 +848,15 @@ var cookieHelpers = {
       return cookieHost == host;
     }
 
-    let enumerator = Services.cookies.getCookiesFromHost(host, opts.originAttributes || {});
+    let enumerator =
+      Services.cookies.getCookiesFromHost(host, opts.originAttributes || {});
+
     while (enumerator.hasMoreElements()) {
       let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
       if (hostMatches(cookie.host, host) &&
           (!opts.name || cookie.name === opts.name) &&
-          (!opts.domain || cookie.host === opts.domain)) {
+          (!opts.domain || cookie.host === opts.domain) &&
+          (!opts.path || cookie.path === opts.path)) {
         Services.cookies.remove(
           cookie.host,
           cookie.name,
@@ -1031,8 +1068,8 @@ function getObjectForLocalOrSessionStorage(type) {
 
     getFields: Task.async(function* () {
       return [
-        { name: "name", editable: 1},
-        { name: "value", editable: 1}
+        { name: "name", editable: true },
+        { name: "value", editable: true }
       ];
     }),
 
@@ -1212,8 +1249,8 @@ StorageActors.createActor({
 
   getFields: Task.async(function* () {
     return [
-      { name: "url", editable: 0 },
-      { name: "status", editable: 0 }
+      { name: "url", editable: false },
+      { name: "status", editable: false }
     ];
   }),
 
@@ -1736,26 +1773,26 @@ StorageActors.createActor({
       
       case "database":
         return [
-          { name: "objectStore", editable: 0 },
-          { name: "keyPath", editable: 0 },
-          { name: "autoIncrement", editable: 0 },
-          { name: "indexes", editable: 0 },
+          { name: "objectStore", editable: false },
+          { name: "keyPath", editable: false },
+          { name: "autoIncrement", editable: false },
+          { name: "indexes", editable: false },
         ];
 
       
       case "object store":
         return [
-          { name: "name", editable: 0 },
-          { name: "value", editable: 0 }
+          { name: "name", editable: false },
+          { name: "value", editable: false }
         ];
 
       
       default:
         return [
-          { name: "db", editable: 0 },
-          { name: "origin", editable: 0 },
-          { name: "version", editable: 0 },
-          { name: "objectStores", editable: 0 },
+          { name: "db", editable: false },
+          { name: "origin", editable: false },
+          { name: "version", editable: false },
+          { name: "objectStores", editable: false },
         ];
     }
   })
@@ -2494,6 +2531,7 @@ let StorageActor = protocol.ActorClassWithSpec(specs.storageSpec, {
       
       this.removeNamesFromUpdateList("added", storeType, data);
       this.removeNamesFromUpdateList("changed", storeType, data);
+
       for (let host in data) {
         if (data[host].length == 0 && this.boundUpdate.added &&
             this.boundUpdate.added[storeType] &&
