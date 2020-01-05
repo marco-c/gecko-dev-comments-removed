@@ -60,22 +60,13 @@ module.exports = createClass({
 
     getWorkerForms(this.props.client).then(forms => {
       forms.registrations.forEach(form => {
-        
-        
-        
-        
-        
-        let hasWorker = form.activeWorker || form.waitingWorker || form.installingWorker;
-        let isE10s = Services.appinfo.browserTabsRemoteAutostart;
-        let active = form.activeWorker || (isE10s && !hasWorker);
-
         workers.service.push({
           icon: WorkerIcon,
           name: form.url,
           url: form.url,
           scope: form.scope,
           registrationActor: form.actor,
-          active
+          active: form.active
         });
       });
 
@@ -101,15 +92,9 @@ module.exports = createClass({
               
               
               
-              workers.service.push({
-                icon: WorkerIcon,
-                name: form.url,
-                url: form.url,
-                scope: form.scope,
-                registrationActor: null,
-                workerActor: form.actor,
-                active: false
-              });
+              worker.scope = form.scope;
+              worker.active = false;
+              workers.service.push(worker);
             }
             break;
           case Ci.nsIWorkerDebugger.TYPE_SHARED:
