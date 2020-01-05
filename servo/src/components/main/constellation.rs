@@ -254,12 +254,10 @@ impl Constellation {
         
         match pipeline.navigation_type.get() {
             constellation_msg::Load => {
-                let _evicted = self.navigation_context.navigate(id);
-                
-
-
-
-
+                let evicted = self.navigation_context.navigate(id);
+                for evicted.iter().advance |id| {
+                    self.pipelines.get(id).exit();
+                }
             }
             _ => {}
         }
