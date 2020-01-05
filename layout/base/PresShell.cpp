@@ -965,9 +965,7 @@ PresShell::Init(nsIDocument* aDocument,
 
   
   mPresContext = aPresContext;
-  StyleBackendType backend = aStyleSet->IsServo() ? StyleBackendType::Servo
-                                                  : StyleBackendType::Gecko;
-  aPresContext->AttachShell(this, backend);
+  mPresContext->AttachShell(this, aStyleSet->BackendType());
 
   
   
