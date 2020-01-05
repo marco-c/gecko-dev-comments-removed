@@ -1143,10 +1143,15 @@ nsUrlClassifierClassifyCallback::HandleEvent(const nsACString& tables)
 
 
 
-NS_IMPL_ISUPPORTS(nsUrlClassifierDBService,
-                  nsIUrlClassifierDBService,
-                  nsIURIClassifier,
-                  nsIObserver)
+NS_IMPL_ADDREF(nsUrlClassifierDBService)
+NS_IMPL_RELEASE(nsUrlClassifierDBService)
+NS_INTERFACE_MAP_BEGIN(nsUrlClassifierDBService)
+  
+  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIUrlClassifierDBService, XRE_IsParentProcess())
+  NS_INTERFACE_MAP_ENTRY(nsIURIClassifier)
+  NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIObserver, XRE_IsParentProcess())
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIURIClassifier)
+NS_INTERFACE_MAP_END
 
  nsUrlClassifierDBService*
 nsUrlClassifierDBService::GetInstance(nsresult *result)
@@ -1250,6 +1255,21 @@ nsUrlClassifierDBService::Init()
     if (inSafeMode) {
       return NS_ERROR_NOT_AVAILABLE;
     }
+  }
+
+  switch (XRE_GetProcessType()) {
+  case GeckoProcessType_Default:
+    
+    break;
+  case GeckoProcessType_Content:
+    
+    
+    
+    
+    return NS_OK;
+  default:
+    
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   
@@ -1758,6 +1778,7 @@ nsresult
 nsUrlClassifierDBService::Shutdown()
 {
   LOG(("shutting down db service\n"));
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   if (!gDbBackgroundThread)
     return NS_OK;
