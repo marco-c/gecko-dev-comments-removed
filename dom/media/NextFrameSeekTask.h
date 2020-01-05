@@ -69,14 +69,6 @@ private:
 
   void MaybeFinishSeek();
 
-  void OnAudioDecoded(MediaData* aAudioSample);
-
-  void OnAudioNotDecoded(const MediaResult& aError);
-
-  void OnVideoDecoded(MediaData* aVideoSample);
-
-  void OnVideoNotDecoded(const MediaResult& aError);
-
   
   
   void UpdateSeekTargetTime();
