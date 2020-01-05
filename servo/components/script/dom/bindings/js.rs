@@ -43,6 +43,7 @@ use std::intrinsics::type_name;
 use std::mem;
 use std::ops::Deref;
 use std::ptr;
+use std::rc::Rc;
 use style::thread_state;
 
 
@@ -269,6 +270,12 @@ impl MutHeapJSVal {
         debug_assert!(thread_state::get().is_script());
         unsafe { (*self.val.get()).get() }
     }
+
+    
+    pub unsafe fn get_unsafe(&self) -> *mut JSVal {
+        debug_assert!(thread_state::get().is_script());
+        (*self.val.get()).get_unsafe()
+    }
 }
 
 
@@ -440,10 +447,28 @@ impl<T: Reflectable> LayoutJS<T> {
 }
 
 
+pub trait RootedRcReference<T> {
+    
+    fn r(&self) -> &T;
+}
+
+impl<T: Reflectable> RootedRcReference<T> for Rc<T> {
+    fn r(&self) -> &T {
+        &*self
+    }
+}
+
+
 pub trait RootedReference<T> {
     
     
     fn r(&self) -> Option<&T>;
+}
+
+impl<T: Reflectable> RootedReference<T> for Option<Rc<T>> {
+    fn r(&self) -> Option<&T> {
+        self.as_ref().map(|root| &**root)
+    }
 }
 
 impl<T: Reflectable> RootedReference<T> for Option<Root<T>> {

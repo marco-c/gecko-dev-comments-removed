@@ -658,7 +658,7 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
     
     
     if exceptionCode is None:
-        exceptionCode = "return false;"
+        exceptionCode = "return false;\n"
 
     if failureCode is None:
         failOrPropagate = "throw_type_error(cx, &error);\n%s" % exceptionCode
@@ -797,25 +797,69 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             descriptorType = descriptor.argumentType
 
         templateBody = ""
-        if descriptor.interface.isConsequential():
-            raise TypeError("Consequential interface %s being used as an "
-                            "argument" % descriptor.interface.identifier.name)
+        isPromise = descriptor.interface.identifier.name == "Promise"
+        if isPromise:
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            templateBody = fill(
+                """
+                { // Scope for our JSAutoCompartment.
 
-        if failureCode is None:
-            substitutions = {
-                "sourceDescription": sourceDescription,
-                "interface": descriptor.interface.identifier.name,
-                "exceptionCode": exceptionCode,
-            }
-            unwrapFailureCode = string.Template(
-                'throw_type_error(cx, "${sourceDescription} does not '
-                'implement interface ${interface}.");\n'
-                '${exceptionCode}').substitute(substitutions)
+                  rooted!(in(cx) let globalObj = CurrentGlobalOrNull(cx));
+                  let promiseGlobal = global_root_from_object_maybe_wrapped(globalObj.handle().get());
+
+                  rooted!(in(cx) let mut valueToResolve = $${val}.get());
+                  if !JS_WrapValue(cx, valueToResolve.handle_mut()) {
+                    $*{exceptionCode}
+                  }
+                  match Promise::Resolve(promiseGlobal.r(), cx, valueToResolve.handle()) {
+                      Ok(value) => value,
+                      Err(error) => {
+                        throw_dom_exception(cx, promiseGlobal.r(), error);
+                        $*{exceptionCode}
+                      }
+                  }
+                }
+                """,
+                exceptionCode=exceptionCode)
         else:
-            unwrapFailureCode = failureCode
+            if descriptor.interface.isConsequential():
+                raise TypeError("Consequential interface %s being used as an "
+                                "argument" % descriptor.interface.identifier.name)
 
-        templateBody = unwrapCastableObject(
-            descriptor, "${val}", unwrapFailureCode, conversionFunction)
+            if failureCode is None:
+                substitutions = {
+                    "sourceDescription": sourceDescription,
+                    "interface": descriptor.interface.identifier.name,
+                    "exceptionCode": exceptionCode,
+                }
+                unwrapFailureCode = string.Template(
+                    'throw_type_error(cx, "${sourceDescription} does not '
+                    'implement interface ${interface}.");\n'
+                    '${exceptionCode}').substitute(substitutions)
+            else:
+                unwrapFailureCode = failureCode
+
+            templateBody = unwrapCastableObject(
+                descriptor, "${val}", unwrapFailureCode, conversionFunction)
 
         declType = CGGeneric(descriptorType)
         if type.nullable():
@@ -5372,6 +5416,7 @@ def generate_imports(config, cgthings, descriptors, callbacks=None, dictionaries
         'js::jsapi::AutoIdVector',
         'js::jsapi::Call',
         'js::jsapi::CallArgs',
+        'js::jsapi::CurrentGlobalOrNull',
         'js::jsapi::FreeOp',
         'js::jsapi::GetPropertyKeys',
         'js::jsapi::GetWellKnownSymbol',
@@ -5437,12 +5482,15 @@ def generate_imports(config, cgthings, descriptors, callbacks=None, dictionaries
         'js::jsapi::JS_SetProperty',
         'js::jsapi::JS_SetReservedSlot',
         'js::jsapi::JS_SplicePrototype',
+        'js::jsapi::JS_WrapValue',
         'js::jsapi::MutableHandle',
         'js::jsapi::MutableHandleObject',
         'js::jsapi::MutableHandleValue',
         'js::jsapi::ObjectOpResult',
         'js::jsapi::PropertyDescriptor',
+        'js::jsapi::RootedId',
         'js::jsapi::RootedObject',
+        'js::jsapi::RootedString',
         'js::jsapi::SymbolCode',
         'js::jsapi::jsid',
         'js::jsval::JSVal',
@@ -5472,6 +5520,7 @@ def generate_imports(config, cgthings, descriptors, callbacks=None, dictionaries
         'dom::bindings::constant::ConstantVal',
         'dom::bindings::global::GlobalRef',
         'dom::bindings::global::global_root_from_object',
+        'dom::bindings::global::global_root_from_object_maybe_wrapped',
         'dom::bindings::global::global_root_from_reflector',
         'dom::bindings::interface::ConstructorClassHook',
         'dom::bindings::interface::InterfaceConstructorBehavior',
@@ -5490,6 +5539,7 @@ def generate_imports(config, cgthings, descriptors, callbacks=None, dictionaries
         'dom::bindings::js::JS',
         'dom::bindings::js::OptionalRootedReference',
         'dom::bindings::js::Root',
+        'dom::bindings::js::RootedRcReference',
         'dom::bindings::js::RootedReference',
         'dom::bindings::namespace::NamespaceObjectClass',
         'dom::bindings::namespace::create_namespace_object',
