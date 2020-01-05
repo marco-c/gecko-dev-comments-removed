@@ -283,10 +283,7 @@ public:
     return const_cast<T*>(mRawPtr);
   }
 
-  operator T*() const
-#ifdef MOZ_HAVE_REF_QUALIFIERS
-  &
-#endif
+  operator T*() const &
   
 
 
@@ -299,7 +296,6 @@ public:
     return get();
   }
 
-#ifdef MOZ_HAVE_REF_QUALIFIERS
   
   
   
@@ -310,7 +306,6 @@ public:
   
   explicit operator bool() const { return !!mRawPtr; }
   bool operator!() const { return !mRawPtr; }
-#endif
 
   T*
   operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN

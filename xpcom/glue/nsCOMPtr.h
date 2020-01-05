@@ -747,13 +747,8 @@ public:
   
   
   
-  operator T*() const
-#ifdef MOZ_HAVE_REF_QUALIFIERS
-  &
-#endif
-  { return get(); }
+  operator T*() const & { return get(); }
 
-#ifdef MOZ_HAVE_REF_QUALIFIERS
   
   
   
@@ -761,7 +756,6 @@ public:
 
   
   explicit operator bool() const { return !!mRawPtr; }
-#endif
 
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN
   {
@@ -1467,6 +1461,5 @@ RefPtr<T>::operator=(const nsCOMPtr_helper& aHelper)
   assign_assuming_AddRef(static_cast<T*>(newRawPtr));
   return *this;
 }
-
 
 #endif 
