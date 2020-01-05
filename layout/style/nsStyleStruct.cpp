@@ -336,6 +336,10 @@ nsStylePadding::CalcDifference(const nsStylePadding& aNewData) const
   
   
   
+  
+  
+  
+  
   return NS_STYLE_HINT_REFLOW & ~nsChangeHint_ClearDescendantIntrinsics;
 }
 
@@ -470,6 +474,11 @@ nsStyleBorder::Destroy(nsPresContext* aContext) {
 nsChangeHint
 nsStyleBorder::CalcDifference(const nsStyleBorder& aNewData) const
 {
+  
+  
+  
+  
+  
   
   
   if (mTwipsPerPixel != aNewData.mTwipsPerPixel ||
