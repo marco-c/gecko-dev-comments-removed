@@ -23,12 +23,10 @@ function openTabInUserContext(uri, userContextId) {
 
 add_task(function* setup() {
   
-  yield new Promise(resolve => {
-    SpecialPowers.pushPrefEnv({"set": [
-      ["privacy.userContext.enabled", true],
-      ["dom.ipc.processCount", 1]
-    ]}, resolve);
-  });
+  yield SpecialPowers.pushPrefEnv({"set": [
+    ["privacy.userContext.enabled", true],
+    ["dom.ipc.processCount", 1]
+  ]});
 });
 
 let infos = [];
