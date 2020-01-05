@@ -7,6 +7,7 @@
 use geom::point::Point2D;
 use geom::size::Size2D;
 use servo_msg::compositor_msg::{ReadyState, RenderState};
+use std::rc::Rc;
 
 pub enum MouseWindowEvent {
     MouseWindowClickEvent(uint, Point2D<f32>),
@@ -55,21 +56,21 @@ pub trait ApplicationMethods {
 
 pub trait WindowMethods<A> {
     
-    fn new(app: &A) -> @mut Self;
+    fn new(app: &A) -> Rc<Self>;
     
     fn size(&self) -> Size2D<f32>;
     
-    fn present(&mut self);
+    fn present(&self);
  
     
-    fn recv(@mut self) -> WindowEvent;
+    fn recv(&self) -> WindowEvent;
 
     
-    fn set_ready_state(@mut self, ready_state: ReadyState);
+    fn set_ready_state(&self, ready_state: ReadyState);
     
-    fn set_render_state(@mut self, render_state: RenderState);
+    fn set_render_state(&self, render_state: RenderState);
 
     
-    fn hidpi_factor(@mut self) -> f32;
+    fn hidpi_factor(&self) -> f32;
 }
 

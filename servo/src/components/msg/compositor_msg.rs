@@ -45,13 +45,13 @@ impl LayerBufferSet {
 }
 
 
-#[deriving(Eq)]
+#[deriving(Eq, Clone)]
 pub enum RenderState {
     IdleRenderState,
     RenderingRenderState,
 }
 
-#[deriving(Eq)]
+#[deriving(Eq, Clone)]
 pub enum ReadyState {
     
     Blank,
