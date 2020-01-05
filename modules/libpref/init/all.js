@@ -472,7 +472,7 @@ pref("media.navigator.permission.disabled", false);
 pref("media.peerconnection.simulcast", true);
 pref("media.peerconnection.default_iceservers", "[]");
 pref("media.peerconnection.ice.loopback", false); 
-pref("media.peerconnection.ice.tcp", false);
+pref("media.peerconnection.ice.tcp", true);
 pref("media.peerconnection.ice.tcp_so_sock_count", 0); 
 pref("media.peerconnection.ice.link_local", false); 
 pref("media.peerconnection.ice.force_interface", ""); 
@@ -3413,7 +3413,8 @@ pref("font.minimum-size.th", 10);
 
 pref("font.default.x-devanagari", "sans-serif");
 pref("font.name.serif.x-math", "Latin Modern Math");
-pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Times New Roman");
+
+pref("font.name-list.serif.x-math", "Latin Modern Math, STIX Two Math, XITS Math, Cambria Math, Libertinus Math, DejaVu Math TeX Gyre, TeX Gyre Bonum Math, TeX Gyre Pagella Math, TeX Gyre Schola, TeX Gyre Termes Math, STIX Math, Asana Math, STIXGeneral, DejaVu Serif, DejaVu Sans, Symbol, Times New Roman");
 pref("font.name.sans-serif.x-math", "Arial");
 pref("font.name.monospace.x-math", "Courier New");
 pref("font.name.cursive.x-math", "Comic Sans MS");
