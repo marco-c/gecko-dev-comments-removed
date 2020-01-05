@@ -7400,12 +7400,9 @@ HTMLMediaElement::GetEMEInfo(nsString& aEMEInfo)
 void
 HTMLMediaElement::NotifyDecoderActivityChanges() const
 {
-  
-  
-  const bool visible = !IsHidden() &&
-                       mVisibilityState == Visibility::APPROXIMATELY_VISIBLE;
   if (mDecoder) {
-    mDecoder->NotifyOwnerActivityChanged(visible);
+    mDecoder->NotifyOwnerActivityChanged(!IsHidden(),
+                                         mVisibilityState == Visibility::APPROXIMATELY_VISIBLE);
   }
 }
 

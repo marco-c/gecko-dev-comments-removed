@@ -189,7 +189,8 @@ public:
   virtual nsresult Play();
 
   
-  virtual void NotifyOwnerActivityChanged(bool aIsVisible);
+  virtual void NotifyOwnerActivityChanged(bool aIsDocumentVisible,
+                                          bool aIsElementVisible);
 
   
   virtual void Pause();
@@ -371,7 +372,8 @@ private:
   dom::AudioChannel GetAudioChannel() { return mAudioChannel; }
 
   
-  virtual void SetElementVisibility(bool aIsVisible);
+  virtual void SetElementVisibility(bool aIsDocumentVisible,
+                                    bool aIsElementVisible);
 
   
   
@@ -717,7 +719,10 @@ protected:
   nsAutoPtr<MediaInfo> mInfo;
 
   
-  bool mElementVisible;
+  bool mIsDocumentVisible;
+
+  
+  bool mIsElementVisible;
 
   
   bool mForcedHidden;
