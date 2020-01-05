@@ -377,10 +377,7 @@ public:
     return mScriptableHelper;
   }
 
-  bool NeedsPermissionsUpdate() const
-  {
-    return mSendPermissionUpdates;
-  }
+  bool NeedsPermissionsUpdate(const nsACString& aPermissionKey) const;
 
   
 
@@ -1168,7 +1165,6 @@ private:
   
   bool mIsAlive;
 
-  bool mSendPermissionUpdates;
   bool mIsForBrowser;
 
   
