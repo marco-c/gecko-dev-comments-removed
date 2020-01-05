@@ -6,7 +6,6 @@
 
 #include "mozilla/dom/DeviceStorageFileSystem.h"
 
-#include "DeviceStorage.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Directory.h"
 #include "mozilla/dom/File.h"
@@ -15,7 +14,6 @@
 #include "mozilla/Unused.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
-#include "nsDeviceStorage.h"
 #include "nsIFile.h"
 #include "nsPIDOMWindow.h"
 #include "nsGlobalWindow.h"
@@ -41,34 +39,6 @@ DeviceStorageFileSystem::DeviceStorageFileSystem(const nsAString& aStorageType,
     }
   } else {
     AssertIsOnBackgroundThread();
-  }
-
-  
-  DebugOnly<nsresult> rv =
-    DeviceStorageTypeChecker::GetPermissionForType(mStorageType, mPermission);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "GetPermissionForType failed");
-
-  
-  nsCOMPtr<nsIFile> rootFile;
-  DeviceStorageFile::GetRootDirectoryForType(aStorageType,
-                                             aStorageName,
-                                             getter_AddRefs(rootFile));
-
-  Unused <<
-    NS_WARN_IF(!rootFile ||
-               NS_FAILED(rootFile->GetPath(mLocalOrDeviceStorageRootPath)));
-
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  
-  
-  
-  if (NS_IsMainThread()) {
-    DebugOnly<DeviceStorageTypeChecker*> typeChecker =
-      DeviceStorageTypeChecker::CreateOrGet();
-    MOZ_ASSERT(typeChecker);
   }
 }
 

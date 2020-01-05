@@ -107,10 +107,6 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ipc/URIUtils.h"
 
-#ifdef MOZ_WIDGET_GONK
-#include "nsDeviceStorage.h"
-#endif
-
 using namespace mozilla;
 using namespace mozilla::ipc;
 
@@ -327,55 +323,6 @@ static nsresult GetDownloadDirectory(nsIFile **_directory,
                                          getter_AddRefs(dir));
     NS_ENSURE_SUCCESS(rv, rv);
   }
-#elif defined(MOZ_WIDGET_GONK)
-  
-  
-  
-
-  
-  
-  nsString storageName;
-  nsDOMDeviceStorage::GetDefaultStorageName(NS_LITERAL_STRING("sdcard"),
-                                            storageName);
-
-  RefPtr<DeviceStorageFile> dsf(
-    new DeviceStorageFile(NS_LITERAL_STRING("sdcard"),
-                          storageName,
-                          NS_LITERAL_STRING("downloads")));
-  NS_ENSURE_TRUE(dsf->mFile, NS_ERROR_FILE_ACCESS_DENIED);
-
-  
-  if (aSkipChecks) {
-    dsf->mFile.forget(_directory);
-    return NS_OK;
-  }
-
-  
-  nsString storageStatus;
-  dsf->GetStatus(storageStatus);
-
-  
-  
-  
-  if (storageStatus.EqualsLiteral("unavailable") ||
-      storageStatus.IsEmpty()) {
-    return NS_ERROR_FILE_NOT_FOUND;
-  }
-
-  
-  
-  if (!storageStatus.EqualsLiteral("available")) {
-    return NS_ERROR_FILE_ACCESS_DENIED;
-  }
-
-  bool alreadyThere;
-  nsresult rv = dsf->mFile->Exists(&alreadyThere);
-  NS_ENSURE_SUCCESS(rv, rv);
-  if (!alreadyThere) {
-    rv = dsf->mFile->Create(nsIFile::DIRECTORY_TYPE, 0770);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-  dir = dsf->mFile;
 #elif defined(ANDROID)
   
   

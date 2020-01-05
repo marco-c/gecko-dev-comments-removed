@@ -282,10 +282,6 @@ var interfaceNamesInGlobalScope =
 
     "DeviceProximityEvent",
 
-    { name: "DeviceStorageAreaListener", desktop: false},
-
-    { name: "DeviceStorage", desktop: false},
-
     "Directory",
 
     "Document",
