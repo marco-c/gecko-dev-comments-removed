@@ -427,48 +427,9 @@ NetworkResponseListener.prototype = {
 
 
   onStartRequest: function (request) {
-    
-    if (this.request) {
-      return;
-    }
-
     this.request = request;
     this._getSecurityInfo();
     this._findOpenResponse();
-    
-    
-    this.offset = 0;
-
-    
-    
-    
-    
-    
-    
-    let channel = this.request;
-    if (!this.httpActivity.fromServiceWorker &&
-        channel instanceof Ci.nsIEncodedChannel &&
-        channel.contentEncodings &&
-        !channel.applyConversion) {
-      let encodingHeader = channel.getResponseHeader("Content-Encoding");
-      let scs = Cc["@mozilla.org/streamConverters;1"]
-        .getService(Ci.nsIStreamConverterService);
-      let encodings = encodingHeader.split(/\s*\t*,\s*\t*/);
-      let nextListener = this;
-      let acceptedEncodings = ["gzip", "deflate", "br", "x-gzip", "x-deflate"];
-      for (let i in encodings) {
-        
-        let enc = encodings[i].toLowerCase();
-        if (acceptedEncodings.indexOf(enc) > -1) {
-          this.converter = scs.asyncConvertData(enc, "uncompressed",
-                                                nextListener, null);
-          nextListener = this.converter;
-        }
-      }
-      if (this.converter) {
-        this.converter.onStartRequest(this.request, null);
-      }
-    }
     
     this.setAsyncListener(this.sink.inputStream, this);
   },
@@ -634,7 +595,6 @@ NetworkResponseListener.prototype = {
     this.httpActivity = null;
     this.sink = null;
     this.inputStream = null;
-    this.converter = null;
     this.request = null;
     this.owner = null;
   },
@@ -662,15 +622,11 @@ NetworkResponseListener.prototype = {
 
     if (available != -1) {
       if (available != 0) {
-        if (this.converter) {
-          this.converter.onDataAvailable(this.request, null, stream,
-                                         this.offset, available);
-        } else {
-          this.onDataAvailable(this.request, null, stream, this.offset,
-                               available);
-        }
+        
+        
+        
+        this.onDataAvailable(this.request, null, stream, 0, available);
       }
-      this.offset += available;
       this.setAsyncListener(stream, this);
     } else {
       this.onStreamClose();
