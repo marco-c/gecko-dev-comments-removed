@@ -329,6 +329,7 @@ private:
 
   void OnAudioDecoded(MediaData* aAudio);
   void OnVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStartTime);
+  void OnAudioNotDecoded(const MediaResult& aError);
   void OnNotDecoded(MediaData::Type aType, const MediaResult& aError);
   void OnAudioWaited(MediaData::Type aType);
   void OnVideoWaited(MediaData::Type aType);
@@ -473,6 +474,8 @@ protected:
   
   
   void RequestVideoData();
+
+  bool IsRequestingAudioData() const { return mAudioDataRequest.Exists(); }
 
   
   
@@ -654,10 +657,12 @@ private:
   
   
 
-  MediaEventListener mAudioCallback;
   MediaEventListener mVideoCallback;
   MediaEventListener mAudioWaitCallback;
   MediaEventListener mVideoWaitCallback;
+
+  using MediaDataPromise = MediaDecoderReader::MediaDataPromise;
+  MozPromiseRequestHolder<MediaDataPromise> mAudioDataRequest;
 
   const char* AudioRequestStatus() const;
   const char* VideoRequestStatus() const;
