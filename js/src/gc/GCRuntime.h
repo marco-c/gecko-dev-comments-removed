@@ -596,6 +596,56 @@ typedef HashMap<Value*, const char*, DefaultHasher<Value*>, SystemAllocPolicy> R
 
 using AllocKinds = mozilla::EnumSet<AllocKind>;
 
+template <typename T>
+class MemoryCounter
+{
+    
+    
+    mozilla::Atomic<ptrdiff_t, mozilla::ReleaseAcquire> bytes_;
+
+    
+    js::ActiveThreadData<size_t> maxBytes_;
+
+    
+    
+    
+    
+    
+    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> triggered_;
+
+  public:
+    MemoryCounter()
+      : bytes_(0),
+        maxBytes_(0),
+        triggered_(false)
+    { }
+
+    void reset() {
+        bytes_ = maxBytes_;
+        triggered_ = false;
+    }
+
+    void setMax(size_t newMax) {
+        
+        
+        maxBytes_ = (ptrdiff_t(newMax) >= 0) ? newMax : size_t(-1) >> 1;
+        reset();
+    }
+
+    bool update(T* owner, size_t bytes) {
+        bytes_ -= ptrdiff_t(bytes);
+        if (MOZ_UNLIKELY(isTooMuchMalloc())) {
+            if (!triggered_)
+                triggered_ = owner->triggerGCForTooMuchMalloc();
+        }
+        return triggered_;
+    }
+
+    ptrdiff_t bytes() const { return bytes_; }
+    size_t maxBytes() const { return maxBytes_; }
+    bool isTooMuchMalloc() const { return bytes_ <= 0; }
+};
+
 class GCRuntime
 {
   public:
@@ -667,8 +717,6 @@ class GCRuntime
     void setDeterministic(bool enable);
 #endif
 
-    size_t maxMallocBytesAllocated() { return maxMallocBytes; }
-
     uint64_t nextCellUniqueId() {
         MOZ_ASSERT(nextCellUniqueId_ > 0);
         uint64_t uid = ++nextCellUniqueId_;
@@ -725,12 +773,13 @@ class GCRuntime
     MOZ_MUST_USE bool addBlackRootsTracer(JSTraceDataOp traceOp, void* data);
     void removeBlackRootsTracer(JSTraceDataOp traceOp, void* data);
 
+    bool triggerGCForTooMuchMalloc() { return triggerGC(JS::gcreason::TOO_MUCH_MALLOC); }
+    int32_t getMallocBytes() const { return mallocCounter.bytes(); }
+    size_t maxMallocBytesAllocated() const { return mallocCounter.maxBytes(); }
+    bool isTooMuchMalloc() const { return mallocCounter.isTooMuchMalloc(); }
+    void resetMallocBytes() { mallocCounter.reset(); }
     void setMaxMallocBytes(size_t value);
-    int32_t getMallocBytes() const { return mallocBytesUntilGC; }
-    void resetMallocBytes();
-    bool isTooMuchMalloc() const { return mallocBytesUntilGC <= 0; }
     void updateMallocCounter(JS::Zone* zone, size_t nbytes);
-    void onTooMuchMalloc();
 
     void setGCCallback(JSGCCallback callback, void* data);
     void callGCCallback(JSGCStatus status) const;
@@ -1031,8 +1080,6 @@ class GCRuntime
 
     ActiveThreadData<RootedValueMap> rootsHash;
 
-    ActiveThreadData<size_t> maxMallocBytes;
-
     
     mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> nextCellUniqueId_;
 
@@ -1248,17 +1295,7 @@ class GCRuntime
     CallbackVector<JSWeakPointerZoneGroupCallback> updateWeakPointerZoneGroupCallbacks;
     CallbackVector<JSWeakPointerCompartmentCallback> updateWeakPointerCompartmentCallbacks;
 
-    
-
-
-
-    mozilla::Atomic<ptrdiff_t, mozilla::ReleaseAcquire> mallocBytesUntilGC;
-
-    
-
-
-
-    mozilla::Atomic<bool, mozilla::ReleaseAcquire> mallocGCTriggered;
+    MemoryCounter<GCRuntime> mallocCounter;
 
     
 

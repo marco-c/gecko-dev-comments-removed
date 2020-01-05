@@ -166,16 +166,6 @@ struct Zone : public JS::shadow::Zone,
                                 size_t* shapeTables,
                                 size_t* atomsMarkBitmaps);
 
-    void resetGCMallocBytes();
-    void setGCMaxMallocBytes(size_t value);
-    void updateMallocCounter(size_t nbytes) {
-        
-        
-        gcMallocBytes -= ptrdiff_t(nbytes);
-        if (MOZ_UNLIKELY(isTooMuchMalloc()))
-            onTooMuchMalloc();
-    }
-
     
     
     template <typename T, typename... Args>
@@ -183,11 +173,8 @@ struct Zone : public JS::shadow::Zone,
         return js::gc::ZoneCellIter<T>(const_cast<Zone*>(this), mozilla::Forward<Args>(args)...);
     }
 
-    bool isTooMuchMalloc() const { return gcMallocBytes <= 0; }
-    void onTooMuchMalloc();
-
     MOZ_MUST_USE void* onOutOfMemory(js::AllocFunction allocFunc, size_t nbytes,
-                                               void* reallocPtr = nullptr) {
+                                     void* reallocPtr = nullptr) {
         if (!js::CurrentThreadCanAccessRuntime(runtime_))
             return nullptr;
         return runtimeFromActiveCooperatingThread()->onOutOfMemory(allocFunc, nbytes, reallocPtr);
@@ -399,25 +386,27 @@ struct Zone : public JS::shadow::Zone,
                                              js::SystemAllocPolicy>;
   private:
     js::ZoneGroupData<JS::WeakCache<TypeDescrObjectSet>> typeDescrObjects_;
+
+    
+    
+    
+    js::gc::MemoryCounter<Zone> gcMallocCounter;
+
   public:
     JS::WeakCache<TypeDescrObjectSet>& typeDescrObjects() { return typeDescrObjects_.ref(); }
 
     bool addTypeDescrObject(JSContext* cx, HandleObject obj);
 
-    
-    
-    
-    mozilla::Atomic<ptrdiff_t, mozilla::ReleaseAcquire> gcMallocBytes;
+    bool triggerGCForTooMuchMalloc() {
+        return runtimeFromAnyThread()->gc.triggerZoneGC(this, JS::gcreason::TOO_MUCH_MALLOC);
+    }
 
-    
-    js::ActiveThreadData<size_t> gcMaxMallocBytes;
-
-    
-    
-    
-    
-    
-    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> gcMallocGCTriggered;
+    void resetGCMallocBytes() { gcMallocCounter.reset(); }
+    void setGCMaxMallocBytes(size_t value) { gcMallocCounter.setMax(value); }
+    void updateMallocCounter(size_t nbytes) { gcMallocCounter.update(this, nbytes); }
+    size_t GCMaxMallocBytes() const { return gcMallocCounter.maxBytes(); }
+    size_t GCMallocBytes() const { return gcMallocCounter.bytes(); }
+    bool isTooMuchMalloc() const { return gcMallocCounter.isTooMuchMalloc(); }
 
   private:
     
