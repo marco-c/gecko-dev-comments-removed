@@ -2241,6 +2241,9 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
   }
 
   try {
+    
+    this.curFrame = null;
+
     this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
     this.getCurrentWindow().close();
   } catch (e) {
