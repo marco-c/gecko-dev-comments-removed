@@ -1052,8 +1052,6 @@ ContentParent::Init()
     obs->NotifyObservers(static_cast<nsIObserver*>(this), "ipc:content-created", cpId.get());
   }
 
-  Unused << SendRemoteType(mRemoteType);
-
 #ifdef ACCESSIBILITY
   
   
@@ -1822,6 +1820,11 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
   
   
   mMessageManager->InitWithCallback(this);
+
+  
+  
+  
+  Unused << SendRemoteType(mRemoteType);
 
   
   
