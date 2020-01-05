@@ -107,15 +107,11 @@ def rustup_latest_version():
 
 def http_download_and_hash(url):
     import hashlib
-    import urllib2
-    f = urllib2.urlopen(url)
+    import requests
     h = hashlib.sha256()
-    while True:
-        data = f.read(4096)
-        if data:
-            h.update(data)
-        else:
-            break
+    r = requests.get(url, stream=True)
+    for data in r.iter_content(4096):
+        h.update(data)
     return h.hexdigest()
 
 def make_checksums(version, validate=False):
@@ -140,6 +136,14 @@ if __name__ == '__main__':
     
     
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
+    
+    
+    
+    
+    
+    mod_path = os.path.dirname(__file__)
+    sys.path.insert(0, os.path.join(mod_path, '..', '..', 'requests'))
 
     update = False
     if len(sys.argv) > 1:
