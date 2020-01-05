@@ -1383,7 +1383,7 @@ private:
             break;
           default:
             
-            OnSeekTaskRejected(aError);
+            mMaster->DecodeError(aError);
             break;
         }
         return;
@@ -1433,7 +1433,7 @@ private:
     {
       if (NeedMoreVideo()) {
         
-        OnSeekTaskRejected(NS_ERROR_DOM_MEDIA_CANCELED);
+        mMaster->DecodeError(NS_ERROR_DOM_MEDIA_CANCELED);
         return;
       }
       MaybeFinishSeek();
@@ -1449,16 +1449,6 @@ private:
     
     
     return mSeekJob.mTarget->GetTime().ToMicroseconds();
-  }
-
-  void OnSeekTaskResolved()
-  {
-    SeekCompleted();
-  }
-
-  void OnSeekTaskRejected(MediaResult aError)
-  {
-    mMaster->DecodeError(aError);
   }
 
   void RequestVideoData()
@@ -1516,7 +1506,7 @@ private:
         return aSampleTime < time;
       });
 
-      OnSeekTaskResolved();
+      SeekCompleted();
     }
   }
 
