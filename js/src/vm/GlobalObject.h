@@ -130,7 +130,6 @@ class GlobalObject : public NativeObject
 
     enum WarnOnceFlag : int32_t {
         WARN_WATCH_DEPRECATED                   = 1 << 0,
-        WARN_ARRAYBUFFER_SLICE_DEPRECATED       = 1 << 1,
     };
 
     
@@ -736,12 +735,6 @@ class GlobalObject : public NativeObject
         
         
         return true;
-    }
-
-    
-    static bool warnOnceAboutArrayBufferSlice(JSContext* cx, HandleObject obj) {
-        return warnOnceAbout(cx, obj, WARN_ARRAYBUFFER_SLICE_DEPRECATED,
-                             JSMSG_ARRAYBUFFER_SLICE_DEPRECATED);
     }
 
     static bool getOrCreateEval(JSContext* cx, Handle<GlobalObject*> global,
