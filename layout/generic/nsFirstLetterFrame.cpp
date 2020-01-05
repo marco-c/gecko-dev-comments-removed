@@ -66,7 +66,7 @@ nsFirstLetterFrame::Init(nsIContent*       aContent,
     
     
     
-    nsStyleContext* parentStyleContext = mStyleContext->GetParent();
+    nsStyleContext* parentStyleContext = mStyleContext->GetParentAllowServo();
     if (parentStyleContext) {
       newSC = PresContext()->StyleSet()->
         ResolveStyleForFirstLetterContinuation(parentStyleContext);
@@ -331,7 +331,7 @@ nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresCont
   
   
   
-  nsStyleContext* parentSC = this->StyleContext()->GetParent();
+  nsStyleContext* parentSC = this->StyleContext()->GetParentAllowServo();
   if (parentSC) {
     RefPtr<nsStyleContext> newSC;
     newSC = presShell->StyleSet()->ResolveStyleForFirstLetterContinuation(parentSC);
@@ -386,7 +386,7 @@ nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext)
     if (kidContent) {
       NS_ASSERTION(kidContent->IsNodeOfType(nsINode::eTEXT),
                    "should contain only text nodes");
-      nsStyleContext* parentSC = prevInFlow ? mStyleContext->GetParent() :
+      nsStyleContext* parentSC = prevInFlow ? mStyleContext->GetParentAllowServo() :
                                               mStyleContext;
       sc = aPresContext->StyleSet()->ResolveStyleForText(kidContent, parentSC);
       kid->SetStyleContext(sc);
