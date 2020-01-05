@@ -203,10 +203,6 @@ let gDecoderDoctorHandler = {
   getLabelForNotificationBox(type) {
     if (type == "adobe-cdm-not-found" &&
         AppConstants.platform == "win") {
-      if (AppConstants.isPlatformAndVersionAtMost("win", "5.9")) {
-        
-        return gNavigatorBundle.getFormattedString("emeNotifications.drmContentDisabled.message", [""]);
-      }
       return gNavigatorBundle.getString("decoder.noCodecs.message");
     }
     if (type == "adobe-cdm-not-activated" &&
