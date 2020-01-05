@@ -595,16 +595,6 @@ public:
     return fence;
   }
 
-  virtual void SetAcquireFenceHandle(const FenceHandle& aAcquireFenceHandle)
-  {
-    mAcquireFenceHandle = aAcquireFenceHandle;
-  }
-
-  virtual const FenceHandle& GetAcquireFenceHandle() const
-  {
-    return mAcquireFenceHandle;
-  }
-
   
 
 
@@ -733,7 +723,6 @@ protected:
 
   TextureFlags mFlags;
   FenceHandle mReleaseFenceHandle;
-  FenceHandle mAcquireFenceHandle;
 
   gl::GfxTextureWasteTracker mWasteTracker;
 
