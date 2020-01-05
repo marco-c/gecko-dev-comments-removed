@@ -32,6 +32,7 @@
 #include "nsCommandLineServiceMac.h"
 #include "MacLaunchHelper.h"
 #include "updaterfileutils_osx.h"
+#include "mozilla/Monitor.h"
 #endif
 
 #if defined(XP_WIN)
@@ -89,6 +90,33 @@ static const int  kAppUpdaterPrioDefault        = 19;
 static const int  kAppUpdaterOomScoreAdjDefault = -1000;  
 static const int  kAppUpdaterIOPrioClassDefault = IOPRIO_CLASS_IDLE;
 static const int  kAppUpdaterIOPrioLevelDefault = 0;      
+#endif
+
+#ifdef XP_MACOSX
+static void
+UpdateDriverSetupMacCommandLine(int& argc, char**& argv, bool restart)
+{
+  if (NS_IsMainThread()) {
+    CommandLineServiceMac::SetupMacCommandLine(argc, argv, restart);
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  Monitor monitor("nsUpdateDriver SetupMacCommandLine");
+
+  NS_DispatchToMainThread(
+    NS_NewRunnableFunction([&argc, &argv, restart, &monitor]() -> void
+    {
+      CommandLineServiceMac::SetupMacCommandLine(argc, argv, restart);
+      MonitorAutoLock(monitor).Notify();
+    }));
+
+  MonitorAutoLock(monitor).Wait();
+}
 #endif
 
 static nsresult
@@ -638,7 +666,7 @@ SwitchToUpdatedApp(nsIFile *greDir, nsIFile *updateDir,
   }
   _exit(0);
 #elif defined(XP_MACOSX)
-  CommandLineServiceMac::SetupMacCommandLine(argc, argv, true);
+  UpdateDriverSetupMacCommandLine(argc, argv, true);
   LaunchChildMac(argc, argv);
   exit(0);
 #else
@@ -956,7 +984,7 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *statusFile,
     _exit(0);
   }
 #elif defined(XP_MACOSX)
-  CommandLineServiceMac::SetupMacCommandLine(argc, argv, restart);
+  UpdateDriverSetupMacCommandLine(argc, argv, restart);
   
   
   
