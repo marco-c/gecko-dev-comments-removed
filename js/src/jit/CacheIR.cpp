@@ -267,7 +267,7 @@ IsCacheableNoProperty(JSContext* cx, JSObject* obj, JSObject* holder, Shape* sha
 
     
     
-    if (*pc == JSOP_GETXPROP || cx->compartment()->behaviors().extraWarnings(cx))
+    if (*pc == JSOP_GETBOUNDNAME || cx->compartment()->behaviors().extraWarnings(cx))
         return false;
 
     return CheckHasNoSuchProperty(cx, obj, id);
