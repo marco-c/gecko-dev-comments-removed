@@ -20,8 +20,12 @@ function* testSteps()
   try {
     request.result;
     ok(false, "Getter should have thrown!");
-  } catch (e if e.result == 0x8053000b ) {
-    ok(true, "Getter threw the right exception");
+  } catch (e) {
+    if (e.result == 0x8053000b ) {
+      ok(true, "Getter threw the right exception");
+    } else {
+      throw e;
+    }
   }
 
   request.onerror = errorHandler;
