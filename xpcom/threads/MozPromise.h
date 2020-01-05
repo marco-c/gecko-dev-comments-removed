@@ -678,6 +678,28 @@ private:
       return thenValue.forget();
     }
 
+    
+    
+    
+    operator RefPtr<MozPromise>()
+    {
+      RefPtr<ThenValueBase> thenValue = mThenValue.forget();
+      
+      RefPtr<MozPromise> p = new MozPromise::Private(
+        "<completion promise>", true );
+      thenValue->mCompletionPromise = p;
+      
+      
+      mReceiver->ThenInternal(mResponseThread, thenValue, mCallSite);
+      return p;
+    }
+
+    
+    RefPtr<MozPromise> operator->()
+    {
+      return *this;
+    }
+
   private:
     AbstractThread* mResponseThread;
     const char* mCallSite;
