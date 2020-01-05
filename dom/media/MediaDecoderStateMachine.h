@@ -475,9 +475,6 @@ protected:
 
   void EnqueueFirstFrameLoadedEvent();
 
-  
-  void InitiateSeek(SeekJob aSeekJob);
-
   void DispatchAudioDecodeTaskIfNeeded();
   void DispatchVideoDecodeTaskIfNeeded();
 
