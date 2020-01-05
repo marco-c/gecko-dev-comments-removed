@@ -420,8 +420,12 @@ LayerTransactionParent::RecvUpdate(const TransactionInfo& aInfo,
       }
       RefPtr<CompositableHost> host = imageBridge->FindCompositable(op.compositable());
       if (!host) {
-        NS_ERROR("CompositableHost not found in the map");
-        return IPC_FAIL_NO_REASON(this);
+        
+        
+        
+        
+        gfxCriticalNote << "CompositableHost " << op.compositable().Value() << " not found";
+        continue;
       }
       if (!Attach(AsLayer(op.layer()), host, true)) {
         return IPC_FAIL_NO_REASON(this);
