@@ -494,9 +494,7 @@ WindowIsDeferredWindow(HWND hWnd)
 
   
   
-  
-  if (className.EqualsLiteral("ShockwaveFlashFullScreen") ||
-      className.EqualsLiteral("AGFullScreenWinClass")) {
+  if (className.EqualsLiteral("ShockwaveFlashFullScreen")) {
     SetPropW(hWnd, k3rdPartyWindowProp, (HANDLE)1);
     return true;
   }

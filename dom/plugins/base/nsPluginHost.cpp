@@ -1843,12 +1843,6 @@ nsPluginHost::GetSpecialType(const nsACString & aMIMEType)
     return eSpecialType_Flash;
   }
 
-  if (aMIMEType.LowerCaseEqualsASCII("application/x-silverlight") ||
-      aMIMEType.LowerCaseEqualsASCII("application/x-silverlight-2") ||
-      aMIMEType.LowerCaseEqualsASCII("application/x-silverlight-test")) {
-    return eSpecialType_Silverlight;
-  }
-
   if (aMIMEType.LowerCaseEqualsASCII("application/vnd.unity")) {
     return eSpecialType_Unity;
   }
@@ -2024,12 +2018,7 @@ nsPluginHost::ShouldAddPlugin(nsPluginTag* aPluginTag)
        aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-shockwave-flash-test")))) {
     return true;
   }
-  if (StringBeginsWith(aPluginTag->FileName(), NS_LITERAL_CSTRING("npctrl"), nsCaseInsensitiveCStringComparator()) &&
-      (aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-silverlight-test")) ||
-       aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-silverlight-2")) ||
-       aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-silverlight")))) {
-    return true;
-  }
+
   
   if (aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-test")) ||
       aPluginTag->HasMimeType(NS_LITERAL_CSTRING("application/x-Second-Test")) ||

@@ -679,20 +679,6 @@ nsresult nsNPAPIPluginInstance::GetNPP(NPP* aNPP)
 NPError nsNPAPIPluginInstance::SetWindowless(bool aWindowless)
 {
   mWindowless = aWindowless;
-
-  if (mMIMEType) {
-    
-    
-    
-    
-    
-    
-    if (nsPluginHost::GetSpecialType(nsDependentCString(mMIMEType)) ==
-        nsPluginHost::eSpecialType_Silverlight) {
-      mTransparent = true;
-    }
-  }
-
   return NPERR_NO_ERROR;
 }
 

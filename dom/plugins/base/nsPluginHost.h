@@ -203,8 +203,6 @@ public:
                      
                      eSpecialType_Java,
                      
-                     eSpecialType_Silverlight,
-                     
                      eSpecialType_Unity };
   static SpecialType GetSpecialType(const nsACString & aMIMEType);
 

@@ -15,9 +15,6 @@ enum PluginQuirks {
   QUIRKS_NOT_INITIALIZED                          = 0,
   
   
-  QUIRK_SILVERLIGHT_DEFAULT_TRANSPARENT           = 1 << 0,
-  
-  
   
   QUIRK_WINLESS_TRACKPOPUP_HOOK                   = 1 << 1,
   
@@ -37,10 +34,6 @@ enum PluginQuirks {
   
   
   QUIRK_FLASH_FIXUP_MOUSE_CAPTURE                 = 1 << 6,
-  
-  
-  
-  QUIRK_SILVERLIGHT_FOCUS_CHECK_PARENT            = 1 << 8,
   
   
   QUIRK_ALLOW_OFFLINE_RENDERER                    = 1 << 9,
