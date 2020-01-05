@@ -5,26 +5,6 @@ var {
   EventManager,
 } = ExtensionUtils;
 
-
-var messageHandlers = new WeakMap();
-
-
-extensions.on("startup", (type, extension) => {
-  messageHandlers.set(extension, new Set());
-});
-
-extensions.on("shutdown", (type, extension) => {
-  messageHandlers.delete(extension);
-});
-
-extensions.on("test-message", (type, extension, ...args) => {
-  let handlers = messageHandlers.get(extension);
-  for (let handler of handlers) {
-    handler(...args);
-  }
-});
-
-
 function makeTestAPI(context) {
   let {extension} = context;
   return {
@@ -72,11 +52,13 @@ function makeTestAPI(context) {
       },
 
       onMessage: new EventManager(context, "test.onMessage", fire => {
-        let handlers = messageHandlers.get(extension);
-        handlers.add(fire);
+        let handler = (event, ...args) => {
+          context.runSafe(fire, ...args);
+        };
 
+        extension.on("test-harness-message", handler);
         return () => {
-          handlers.delete(fire);
+          extension.off("test-harness-message", handler);
         };
       }).api(),
     },
