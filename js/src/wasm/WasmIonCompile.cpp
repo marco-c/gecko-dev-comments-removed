@@ -622,6 +622,21 @@ class FunctionCompiler
         if (inDeadCode())
             return nullptr;
         bool trapOnError = !env().isAsmJS();
+        if (!unsignd && type == MIRType::Int32) {
+            
+            
+            
+            
+            
+            
+            
+            auto* lhs2 = MTruncateToInt32::New(alloc(), lhs);
+            curBlock_->add(lhs2);
+            lhs = lhs2;
+            auto* rhs2 = MTruncateToInt32::New(alloc(), rhs);
+            curBlock_->add(rhs2);
+            rhs = rhs2;
+        }
         auto* ins = MDiv::New(alloc(), lhs, rhs, type, unsignd, trapOnError, trapOffset(),
                               mustPreserveNaN(type));
         curBlock_->add(ins);
@@ -633,6 +648,15 @@ class FunctionCompiler
         if (inDeadCode())
             return nullptr;
         bool trapOnError = !env().isAsmJS();
+        if (!unsignd && type == MIRType::Int32) {
+            
+            auto* lhs2 = MTruncateToInt32::New(alloc(), lhs);
+            curBlock_->add(lhs2);
+            lhs = lhs2;
+            auto* rhs2 = MTruncateToInt32::New(alloc(), rhs);
+            curBlock_->add(rhs2);
+            rhs = rhs2;
+        }
         auto* ins = MMod::New(alloc(), lhs, rhs, type, unsignd, trapOnError, trapOffset());
         curBlock_->add(ins);
         return ins;
