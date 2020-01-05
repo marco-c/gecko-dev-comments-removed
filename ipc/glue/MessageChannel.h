@@ -275,10 +275,6 @@ class MessageChannel : HasResultCodes
     void EnqueuePendingMessages();
 
     
-    bool OnMaybeDequeueOne();
-    bool DequeueOne(Message *recvd);
-
-    
     void DispatchMessage(Message &&aMsg);
 
     
@@ -308,6 +304,8 @@ class MessageChannel : HasResultCodes
 
     void EndTimeout();
     void CancelTransaction(int transaction);
+
+    void RepostAllMessages();
 
     
     
@@ -454,118 +452,40 @@ class MessageChannel : HasResultCodes
     }
 
   private:
-#if defined(MOZ_CRASHREPORTER) && defined(OS_WIN)
-    
-    
-    
-    template<class T>
-    struct AnnotateAllocator
+    class MessageTask :
+        public CancelableRunnable,
+        public LinkedListElement<RefPtr<MessageTask>>
     {
-      typedef T value_type;
-      AnnotateAllocator(MessageChannel& channel) : mChannel(channel) {}
-      template<class U> AnnotateAllocator(const AnnotateAllocator<U>& other) :
-        mChannel(other.mChannel) {}
-      template<class U> bool operator==(const AnnotateAllocator<U>&) { return true; }
-      template<class U> bool operator!=(const AnnotateAllocator<U>&) { return false; }
-      T* allocate(size_t n) {
-        void* p = ::operator new(n * sizeof(T), std::nothrow);
-        if (!p && n) {
-          
-          
-          MessageQueue& q = mChannel.mPending;
-          std::sort(q.begin(), q.end(), [](const Message& a, const Message& b) {
-            return a.type() < b.type();
-          });
+    public:
+        explicit MessageTask(MessageChannel* aChannel, Message&& aMessage)
+          : mChannel(aChannel), mMessage(Move(aMessage)), mScheduled(false)
+        {}
 
-          
-          
-          const char* topName = nullptr;
-          const char* curName = nullptr;
-          msgid_t topType = 0, curType = 0;
-          uint32_t topCount = 0, curCount = 0;
-          for (MessageQueue::iterator it = q.begin(); it != q.end(); ++it) {
-            Message &msg = *it;
-            if (msg.type() == curType) {
-              ++curCount;
-            } else {
-              if (curCount > topCount) {
-                topName = curName;
-                topType = curType;
-                topCount = curCount;
-              }
-              curName = StringFromIPCMessageType(msg.type());
-              curType = msg.type();
-              curCount = 1;
-            }
-          }
-          
-          if (curCount > topCount) {
-            topName = curName;
-            topType = curType;
-            topCount = curCount;
-          }
+        NS_IMETHOD Run() override;
+        nsresult Cancel() override;
+        void Post();
+        void Clear();
 
-          CrashReporter::AnnotatePendingIPC(q.size(), topCount, topName, topType);
+        bool IsScheduled() const { return mScheduled; }
 
-          mozalloc_handle_oom(n * sizeof(T));
-        }
-        return static_cast<T*>(p);
-      }
-      void deallocate(T* p, size_t n) {
-        ::operator delete(p);
-      }
-      MessageChannel& mChannel;
+        Message& Msg() { return mMessage; }
+        const Message& Msg() const { return mMessage; }
+
+    private:
+        MessageTask() = delete;
+        MessageTask(const MessageTask&) = delete;
+
+        MessageChannel* mChannel;
+        Message mMessage;
+        bool mScheduled : 1;
     };
-    typedef std::deque<Message, AnnotateAllocator<Message>> MessageQueue;
-#else
-    typedef std::deque<Message> MessageQueue;
-#endif
+
+    bool ShouldRunMessage(const Message& aMsg);
+    void RunMessage(MessageTask& aTask);
+
+    typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
     typedef std::map<size_t, Message> MessageMap;
     typedef IPC::Message::msgid_t msgid_t;
-
-    
-    
-    
-    class RefCountedTask
-    {
-      public:
-        explicit RefCountedTask(already_AddRefed<CancelableRunnable> aTask)
-          : mTask(aTask)
-        { }
-      private:
-        ~RefCountedTask() { }
-      public:
-        void Run() { mTask->Run(); }
-        void Cancel() { mTask->Cancel(); }
-
-        NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedTask)
-
-      private:
-        RefPtr<CancelableRunnable> mTask;
-    };
-
-    
-    
-    class DequeueTask : public CancelableRunnable
-    {
-      public:
-        explicit DequeueTask(RefCountedTask* aTask)
-          : mTask(aTask)
-        { }
-        NS_IMETHOD Run() override {
-          if (mTask) {
-            mTask->Run();
-          }
-          return NS_OK;
-        }
-        nsresult Cancel() override {
-          mTask = nullptr;
-          return NS_OK;
-        }
-
-      private:
-        RefPtr<RefCountedTask> mTask;
-    };
 
   private:
     
@@ -581,9 +501,6 @@ class MessageChannel : HasResultCodes
     
     
     int mWorkerLoopID;
-
-    
-    RefPtr<RefCountedTask> mDequeueOneTask;
 
     
     
@@ -671,8 +588,6 @@ class MessageChannel : HasResultCodes
     int32_t mTimedOutMessageSeqno;
     int mTimedOutMessageNestedLevel;
 
-    
-    
     
     
     
