@@ -39,7 +39,7 @@ class Compartment
 {
     InstanceVector instances_;
     volatile bool  mutatingInstances_;
-    size_t         activationCount_;
+    size_t         interruptedCount_;
 
     friend class js::WasmActivation;
 
@@ -87,6 +87,11 @@ class Compartment
     
 
     Instance* lookupInstanceDeprecated(const void* pc) const;
+
+    
+    
+
+    void setInterrupted(bool interrupted);
 
     
 

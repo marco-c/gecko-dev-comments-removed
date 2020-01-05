@@ -89,7 +89,13 @@ static bool
 WasmHandleExecutionInterrupt()
 {
     WasmActivation* activation = JSContext::innermostWasmActivation();
+
+    
+    
+    
+    activation->compartment()->wasm.setInterrupted(true);
     bool success = CheckForInterrupt(activation->cx());
+    activation->compartment()->wasm.setInterrupted(false);
 
     
     
@@ -167,11 +173,33 @@ WasmHandleDebugTrap()
 static void
 WasmHandleThrow()
 {
-    WasmActivation* activation = JSContext::innermostWasmActivation();
-    MOZ_ASSERT(activation);
-    JSContext* cx = activation->cx();
+    JSContext* cx = TlsContext.get();
 
-    for (FrameIterator iter(activation, FrameIterator::Unwind::True); !iter.done(); ++iter) {
+    WasmActivation* activation = cx->wasmActivationStack();
+    MOZ_ASSERT(activation);
+
+    
+    
+    
+    
+    
+    
+    
+    FrameIterator iter(activation, FrameIterator::Unwind::True);
+    if (iter.done())
+        return;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    RootedWasmInstanceObject keepAlive(cx, iter.instance()->object());
+
+    for (; !iter.done(); ++iter) {
         if (!iter.debugEnabled())
             continue;
 

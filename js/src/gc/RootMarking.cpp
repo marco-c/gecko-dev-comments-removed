@@ -330,6 +330,7 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
             
             TraceInterpreterActivations(cx, target, trc);
             jit::TraceJitActivations(cx, target, trc);
+            wasm::TraceActivations(cx, target, trc);
 
             
             AutoGCRooter::traceAll(target, trc);

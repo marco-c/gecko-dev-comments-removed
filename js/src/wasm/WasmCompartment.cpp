@@ -29,12 +29,12 @@ using namespace wasm;
 
 Compartment::Compartment(Zone* zone)
   : mutatingInstances_(false),
-    activationCount_(0)
+    interruptedCount_(0)
 {}
 
 Compartment::~Compartment()
 {
-    MOZ_ASSERT(activationCount_ == 0);
+    MOZ_ASSERT(interruptedCount_ == 0);
     MOZ_ASSERT(instances_.empty());
     MOZ_ASSERT(!mutatingInstances_);
 }
@@ -60,7 +60,11 @@ Compartment::trace(JSTracer* trc)
     
     
     
-    if (activationCount_) {
+    
+    
+    
+
+    if (interruptedCount_) {
         for (Instance* i : instances_)
             i->trace(trc);
     }
@@ -135,6 +139,17 @@ Compartment::lookupInstanceDeprecated(const void* pc) const
         return nullptr;
 
     return instances_[index];
+}
+
+void
+Compartment::setInterrupted(bool interrupted)
+{
+    if (interrupted) {
+        interruptedCount_++;
+    } else {
+        MOZ_ASSERT(interruptedCount_ > 0);
+        interruptedCount_--;
+    }
 }
 
 void
