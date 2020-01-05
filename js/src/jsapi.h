@@ -1033,6 +1033,31 @@ JS_EndRequest(JSContext* cx);
 extern JS_PUBLIC_API(void)
 JS_SetFutexCanWait(JSContext* cx);
 
+namespace JS {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*BeginSingleThreadedExecutionCallback)(JSContext* cx);
+typedef void (*EndSingleThreadedExecutionCallback)(JSContext* cx);
+
+extern JS_PUBLIC_API(void)
+SetSingleThreadedExecutionCallbacks(JSContext* cx,
+                                    BeginSingleThreadedExecutionCallback begin,
+                                    EndSingleThreadedExecutionCallback end);
+
+} 
+
 namespace js {
 
 void

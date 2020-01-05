@@ -342,6 +342,14 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     
     mozilla::Atomic<size_t> activeContextChangeProhibited_;
 
+    
+    
+    mozilla::Atomic<size_t> singleThreadedExecutionRequired_;
+
+    
+    
+    js::ActiveThreadData<bool> startingSingleThreadedExecution_;
+
   public:
     JSContext* activeContext() const { return activeContext_; }
     const void* addressOfActiveContext() { return &activeContext_; }
@@ -374,6 +382,17 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     };
 
     bool activeContextChangeProhibited() { return activeContextChangeProhibited_; }
+    bool singleThreadedExecutionRequired() { return singleThreadedExecutionRequired_; }
+
+    js::ActiveThreadData<JS::BeginSingleThreadedExecutionCallback> beginSingleThreadedExecutionCallback;
+    js::ActiveThreadData<JS::EndSingleThreadedExecutionCallback> endSingleThreadedExecutionCallback;
+
+    
+    
+    
+    
+    bool beginSingleThreadedExecution(JSContext* cx);
+    void endSingleThreadedExecution(JSContext* cx);
 
     
 

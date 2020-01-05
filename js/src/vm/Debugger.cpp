@@ -713,6 +713,9 @@ Debugger::~Debugger()
 
 
     JS_REMOVE_LINK(&onNewGlobalObjectWatchersLink);
+
+    JSContext* cx = TlsContext.get();
+    cx->runtime()->endSingleThreadedExecution(cx);
 }
 
 bool
@@ -2404,12 +2407,7 @@ class MOZ_RAII ExecutionObservableCompartments : public Debugger::ExecutionObser
     }
 
     bool init() { return compartments_.init() && zones_.init(); }
-    bool add(JSCompartment* comp) {
-        
-        
-        MOZ_ASSERT(comp->zone()->group() == TlsContext.get()->zone()->group());
-        return compartments_.put(comp) && zones_.put(comp->zone());
-    }
+    bool add(JSCompartment* comp) { return compartments_.put(comp) && zones_.put(comp->zone()); }
 
     typedef HashSet<JSCompartment*>::Range CompartmentRange;
     const HashSet<JSCompartment*>* compartments() const { return &compartments_; }
@@ -2503,9 +2501,6 @@ class MOZ_RAII ExecutionObservableScript : public Debugger::ExecutionObservableS
                               MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
       : script_(cx, script)
     {
-        
-        
-        MOZ_ASSERT(singleZone()->group() == cx->zone()->group());
         MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     }
 
@@ -3936,11 +3931,24 @@ Debugger::construct(JSContext* cx, unsigned argc, Value* vp)
         obj->setReservedSlot(slot, proto->getReservedSlot(slot));
     obj->setReservedSlot(JSSLOT_DEBUG_MEMORY_INSTANCE, NullValue());
 
+    
+    
+    
+    if (!cx->runtime()->beginSingleThreadedExecution(cx)) {
+        JS_ReportErrorASCII(cx, "Cannot ensure single threaded execution in Debugger");
+        return false;
+    }
+
     Debugger* debugger;
     {
         
         auto dbg = cx->make_unique<Debugger>(cx, obj.get());
-        if (!dbg || !dbg->init(cx))
+        if (!dbg) {
+            JS::AutoSuppressGCAnalysis nogc; 
+            cx->runtime()->endSingleThreadedExecution(cx);
+            return false;
+        }
+        if (!dbg->init(cx))
             return false;
 
         debugger = dbg.release();
@@ -3962,13 +3970,6 @@ Debugger::construct(JSContext* cx, unsigned argc, Value* vp)
 bool
 Debugger::addDebuggeeGlobal(JSContext* cx, Handle<GlobalObject*> global)
 {
-    
-    
-    
-    
-    MOZ_ASSERT(cx->zone() == object->zone());
-    MOZ_RELEASE_ASSERT(global->zone()->group() == cx->zone()->group());
-
     if (debuggees.has(global))
         return true;
 
