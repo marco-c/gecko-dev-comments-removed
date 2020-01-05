@@ -3,6 +3,7 @@
 
 
 use AnimationTickType;
+use CompositionPipeline;
 use CompositorMsg as ConstellationMsg;
 use SendableFrameTree;
 use app_units::Au;
@@ -33,7 +34,6 @@ use msg::constellation_msg::{Image, PixelFormat};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{NavigationDirection, PipelineId, PipelineIndex, PipelineNamespaceId};
 use msg::constellation_msg::{WindowSizeData, WindowSizeType};
-use pipeline::CompositionPipeline;
 use profile_traits::mem::{self, ReportKind, Reporter, ReporterRequest};
 use profile_traits::time::{self, ProfilerCategory, profile};
 use script_traits::CompositorEvent::{MouseMoveEvent, MouseButtonEvent, TouchEvent};
