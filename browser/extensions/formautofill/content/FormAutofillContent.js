@@ -6,6 +6,8 @@
 
 
 
+
+
 "use strict";
 
 const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, manager: Cm} = Components;
@@ -227,28 +229,69 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 
   startSearch(searchString, searchParam, previousResult, listener) {
-    
-    let fieldName = "name";
-    let profiles = [{
-      guid: "test-guid-1",
-      organization: "Sesame Street",
-      streetAddress: "123 Sesame Street.",
-      tel: "1-345-345-3456.",
-    }, {
-      guid: "test-guid-2",
-      organization: "Mozilla",
-      streetAddress: "331 E. Evelyn Avenue",
-      tel: "1-650-903-0800",
-    }];
-    let result = new ProfileAutoCompleteResult(searchString, fieldName, profiles, {});
+    this.forceStop = false;
+    let inputInfo;
 
-    listener.onSearchResult(this, result);
+    this.getInputInfo().then((info) => {
+      inputInfo = info;
+      return this.getProfiles({info, searchString});
+    }).then((profiles) => {
+      if (this.forceStop) {
+        return;
+      }
+
+      let result = new ProfileAutoCompleteResult(searchString, inputInfo, profiles, {});
+
+      listener.onSearchResult(this, result);
+    });
   },
 
   
 
 
   stopSearch() {
+    this.forceStop = true;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  getProfiles(data) {
+    return new Promise((resolve) => {
+      addMessageListener("FormAutofill:Profiles", function getResult(result) {
+        removeMessageListener("FormAutofill:Profiles", getResult);
+        resolve(result.data);
+      });
+
+      sendAsyncMessage("FormAutofill:GetProfiles", data);
+    });
+  },
+
+
+  
+
+
+
+
+
+  getInputInfo() {
+    let input = formFillController.getFocusedInput();
+
+    
+    
+    return new Promise((resolve) => {
+      resolve(FormAutofillHeuristics.getInfo(input));
+    });
   },
 };
 
@@ -336,5 +379,6 @@ var FormAutofillContent = {
     formFillController.markAsAutofillField(field);
   },
 };
+
 
 FormAutofillContent.init();
