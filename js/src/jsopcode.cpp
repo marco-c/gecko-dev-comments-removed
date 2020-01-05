@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/SizePrintfMacros.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/Vector.h"
 
 #include <algorithm>
 #include <ctype.h>
@@ -254,14 +255,118 @@ js::DumpCompartmentPCCounts(JSContext* cx)
 
 
 
+
+
+struct OffsetAndDefIndex {
+    
+    
+
+    
+    uint32_t offset_;
+
+    
+    uint8_t defIndex_;
+
+    enum : uint8_t {
+        Normal = 0,
+
+        
+        
+        Ignored,
+
+        
+        
+        
+        Merged,
+    } type_;
+
+    uint32_t offset() const {
+        MOZ_ASSERT(!isSpecial());
+        return offset_;
+    };
+    uint32_t specialOffset() const {
+        MOZ_ASSERT(isSpecial());
+        return offset_;
+    };
+
+    uint8_t defIndex() const {
+        MOZ_ASSERT(!isSpecial());
+        return defIndex_;
+    }
+    uint8_t specialDefIndex() const {
+        MOZ_ASSERT(isSpecial());
+        return defIndex_;
+    }
+
+    bool isSpecial() const {
+        return type_ != Normal;
+    }
+    bool isMerged() const {
+        return type_ == Merged;
+    }
+    bool isIgnored() const {
+        return type_ == Ignored;
+    }
+
+    void set(uint32_t aOffset, uint8_t aDefIndex) {
+        offset_ = aOffset;
+        defIndex_ = aDefIndex;
+        type_ = Normal;
+    }
+
+    
+    void setMerged() {
+        type_ = Merged;
+    }
+    void setIgnored() {
+        type_ = Ignored;
+    }
+
+    bool operator==(const OffsetAndDefIndex& rhs) const {
+        return offset_ == rhs.offset_ &&
+               defIndex_ == rhs.defIndex_;
+    }
+
+    bool operator!=(const OffsetAndDefIndex& rhs) const {
+        return !(*this == rhs);
+    }
+};
+
+namespace mozilla {
+
+template <>
+struct IsPod<OffsetAndDefIndex> : TrueType {};
+
+} 
+
 namespace {
 
 class BytecodeParser
 {
+  public:
+    enum class JumpKind {
+        Simple,
+        SwitchCase,
+        SwitchDefault,
+        TryCatch,
+        TryFinally
+    };
+
+  private:
     class Bytecode
     {
       public:
-        Bytecode() { mozilla::PodZero(this); }
+        explicit Bytecode(const LifoAllocPolicy<Fallible>& alloc)
+          : parsed(false),
+            stackDepth(0),
+            offsetStack(nullptr)
+#ifdef DEBUG
+            ,
+            stackDepthAfter(0),
+            offsetStackAfter(nullptr),
+            jumpOrigins(alloc)
+#endif 
+        {}
 
         
         
@@ -274,11 +379,33 @@ class BytecodeParser
         
         
         
-        uint32_t* offsetStack;
+        OffsetAndDefIndex* offsetStack;
 
-        bool captureOffsetStack(LifoAlloc& alloc, const uint32_t* stack, uint32_t depth) {
+#ifdef DEBUG
+        
+        uint32_t stackDepthAfter;
+
+        
+        OffsetAndDefIndex* offsetStackAfter;
+
+        struct JumpInfo {
+            uint32_t from;
+            JumpKind kind;
+
+            JumpInfo(uint32_t from_, JumpKind kind_)
+              : from(from_),
+                kind(kind_)
+            {}
+        };
+
+        
+        
+        Vector<JumpInfo, 0, LifoAllocPolicy<Fallible>> jumpOrigins;
+#endif 
+
+        bool captureOffsetStack(LifoAlloc& alloc, const OffsetAndDefIndex* stack, uint32_t depth) {
             stackDepth = depth;
-            offsetStack = alloc.newArray<uint32_t>(stackDepth);
+            offsetStack = alloc.newArray<OffsetAndDefIndex>(stackDepth);
             if (!offsetStack)
                 return false;
             if (stackDepth) {
@@ -288,20 +415,39 @@ class BytecodeParser
             return true;
         }
 
+#ifdef DEBUG
+        bool captureOffsetStackAfter(LifoAlloc& alloc, const OffsetAndDefIndex* stack,
+                                     uint32_t depth) {
+            stackDepthAfter = depth;
+            offsetStackAfter = alloc.newArray<OffsetAndDefIndex>(stackDepthAfter);
+            if (!offsetStackAfter)
+                return false;
+            if (stackDepthAfter) {
+                for (uint32_t n = 0; n < stackDepthAfter; n++)
+                    offsetStackAfter[n] = stack[n];
+            }
+            return true;
+        }
+
+        bool addJump(uint32_t from, JumpKind kind) {
+            return jumpOrigins.append(JumpInfo(from, kind));
+        }
+#endif 
+
         
         
         
         
         
-        void mergeOffsetStack(const uint32_t* stack, uint32_t depth) {
+        void mergeOffsetStack(const OffsetAndDefIndex* stack, uint32_t depth) {
             MOZ_ASSERT(depth == stackDepth);
             for (uint32_t n = 0; n < stackDepth; n++) {
-                if (stack[n] == SpecialOffsets::IgnoreOffset)
+                if (stack[n].isIgnored())
                     continue;
-                if (offsetStack[n] == SpecialOffsets::IgnoreOffset)
+                if (offsetStack[n].isIgnored())
                     offsetStack[n] = stack[n];
                 if (offsetStack[n] != stack[n])
-                    offsetStack[n] = SpecialOffsets::UnknownOffset;
+                    offsetStack[n].setMerged();
             }
         }
     };
@@ -312,27 +458,31 @@ class BytecodeParser
 
     Bytecode** codeArray_;
 
+#ifdef DEBUG
     
     
-    struct SpecialOffsets {
-        static const uint32_t UnknownOffset = UINT32_MAX;
-        static const uint32_t IgnoreOffset = UINT32_MAX - 1;
-        static const uint32_t FirstSpecialOffset = IgnoreOffset;
-    };
+    
+    bool isStackDump;
+#endif 
 
   public:
     BytecodeParser(JSContext* cx, JSScript* script)
       : cx_(cx),
         allocScope_(&cx->tempLifoAlloc()),
         script_(cx, script),
-        codeArray_(nullptr) { }
+        codeArray_(nullptr)
+#ifdef DEBUG
+        ,
+        isStackDump(false)
+#endif 
+    {}
 
     bool parse();
 
 #ifdef DEBUG
     bool isReachable(uint32_t offset) { return maybeCode(offset); }
     bool isReachable(const jsbytecode* pc) { return maybeCode(pc); }
-#endif
+#endif 
 
     uint32_t stackDepthAtPC(uint32_t offset) {
         
@@ -340,9 +490,20 @@ class BytecodeParser
         
         return getCode(offset).stackDepth;
     }
-    uint32_t stackDepthAtPC(const jsbytecode* pc) { return stackDepthAtPC(script_->pcToOffset(pc)); }
+    uint32_t stackDepthAtPC(const jsbytecode* pc) {
+        return stackDepthAtPC(script_->pcToOffset(pc));
+    }
 
-    uint32_t offsetForStackOperand(uint32_t offset, int operand) {
+#ifdef DEBUG
+    uint32_t stackDepthAfterPC(uint32_t offset) {
+        return getCode(offset).stackDepthAfter;
+    }
+    uint32_t stackDepthAfterPC(const jsbytecode* pc) {
+        return stackDepthAfterPC(script_->pcToOffset(pc));
+    }
+#endif
+
+    const OffsetAndDefIndex& offsetForStackOperand(uint32_t offset, int operand) {
         Bytecode& code = getCode(offset);
         if (operand < 0) {
             operand += code.stackDepth;
@@ -351,12 +512,50 @@ class BytecodeParser
         MOZ_ASSERT(uint32_t(operand) < code.stackDepth);
         return code.offsetStack[operand];
     }
-    jsbytecode* pcForStackOperand(jsbytecode* pc, int operand) {
-        uint32_t offset = offsetForStackOperand(script_->pcToOffset(pc), operand);
-        if (offset >= SpecialOffsets::FirstSpecialOffset)
+    jsbytecode* pcForStackOperand(jsbytecode* pc, int operand, uint8_t* defIndex) {
+        size_t offset = script_->pcToOffset(pc);
+        const OffsetAndDefIndex& offsetAndDefIndex = offsetForStackOperand(offset, operand);
+        if (offsetAndDefIndex.isSpecial())
             return nullptr;
-        return script_->offsetToPC(offset);
+        *defIndex = offsetAndDefIndex.defIndex();
+        return script_->offsetToPC(offsetAndDefIndex.offset());
     }
+
+#ifdef DEBUG
+    const OffsetAndDefIndex& offsetForStackOperandAfterPC(uint32_t offset, int operand) {
+        Bytecode& code = getCode(offset);
+        if (operand < 0) {
+            operand += code.stackDepthAfter;
+            MOZ_ASSERT(operand >= 0);
+        }
+        MOZ_ASSERT(uint32_t(operand) < code.stackDepthAfter);
+        return code.offsetStackAfter[operand];
+    }
+    jsbytecode* pcForStackOperandAfterPC(jsbytecode* pc, int operand, uint8_t* defIndex) {
+        size_t offset = script_->pcToOffset(pc);
+        const OffsetAndDefIndex& offsetAndDefIndex = offsetForStackOperandAfterPC(offset, operand);
+        if (offsetAndDefIndex.isSpecial())
+            return nullptr;
+        *defIndex = offsetAndDefIndex.defIndex();
+        return script_->offsetToPC(offsetAndDefIndex.offset());
+    }
+
+    template <typename Callback>
+    bool forEachJumpOrigins(jsbytecode* pc, Callback callback) {
+        Bytecode& code = getCode(script_->pcToOffset(pc));
+
+        for (Bytecode::JumpInfo& info : code.jumpOrigins) {
+            if (!callback(script_->offsetToPC(info.from), info.kind))
+                return false;
+        }
+
+        return true;
+    }
+
+    void setStackDump() {
+        isStackDump = true;
+    }
+#endif 
 
   private:
     LifoAlloc& alloc() {
@@ -390,18 +589,22 @@ class BytecodeParser
     }
     Bytecode* maybeCode(const jsbytecode* pc) { return maybeCode(script_->pcToOffset(pc)); }
 
-    uint32_t simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint32_t stackDepth);
+    uint32_t simulateOp(JSOp op, uint32_t offset, OffsetAndDefIndex* offsetStack,
+                        uint32_t stackDepth);
 
-    inline bool recordBytecode(uint32_t offset, const uint32_t* offsetStack, uint32_t stackDepth);
+    inline bool recordBytecode(uint32_t offset, const OffsetAndDefIndex* offsetStack,
+                               uint32_t stackDepth);
 
     inline bool addJump(uint32_t offset, uint32_t* currentOffset,
-                        uint32_t stackDepth, const uint32_t* offsetStack);
+                        uint32_t stackDepth, const OffsetAndDefIndex* offsetStack,
+                        jsbytecode* pc, JumpKind kind);
 };
 
 }  
 
 uint32_t
-BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint32_t stackDepth)
+BytecodeParser::simulateOp(JSOp op, uint32_t offset, OffsetAndDefIndex* offsetStack,
+                           uint32_t stackDepth)
 {
     uint32_t nuses = GetUseCount(script_, offset);
     uint32_t ndefs = GetDefCount(script_, offset);
@@ -410,18 +613,64 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
     stackDepth -= nuses;
     MOZ_ASSERT(stackDepth + ndefs <= maximumStackDepth());
 
+#ifdef DEBUG
+    if (isStackDump) {
+        
+        
+        
+        
+        
+        switch (op) {
+          case JSOP_INITELEM_ARRAY:
+          case JSOP_INITHIDDENPROP:
+          case JSOP_INITHIDDENPROP_GETTER:
+          case JSOP_INITHIDDENPROP_SETTER:
+          case JSOP_INITLOCKEDPROP:
+          case JSOP_INITPROP:
+          case JSOP_INITPROP_GETTER:
+          case JSOP_INITPROP_SETTER:
+          case JSOP_SETFUNNAME:
+            
+            MOZ_ASSERT(nuses == 2);
+            MOZ_ASSERT(ndefs == 1);
+            goto end;
+
+          case JSOP_INITELEM:
+          case JSOP_INITELEM_GETTER:
+          case JSOP_INITELEM_SETTER:
+          case JSOP_INITHIDDENELEM:
+          case JSOP_INITHIDDENELEM_GETTER:
+          case JSOP_INITHIDDENELEM_SETTER:
+            
+            MOZ_ASSERT(nuses == 3);
+            MOZ_ASSERT(ndefs == 1);
+            goto end;
+
+          case JSOP_INITELEM_INC:
+            
+            MOZ_ASSERT(nuses == 3);
+            MOZ_ASSERT(ndefs == 2);
+            offsetStack[stackDepth + 1].set(offset, 1);
+            goto end;
+
+          default:
+            break;
+        }
+    }
+#endif 
+
     
     
     
     switch (op) {
       default:
         for (uint32_t n = 0; n != ndefs; ++n)
-            offsetStack[stackDepth + n] = offset;
+            offsetStack[stackDepth + n].set(offset, n);
         break;
 
       case JSOP_NOP_DESTRUCTURING:
         
-        offsetStack[stackDepth - 1] = SpecialOffsets::IgnoreOffset;
+        offsetStack[stackDepth - 1].setIgnored();
         break;
 
       case JSOP_CASE:
@@ -451,7 +700,7 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
 
       case JSOP_SWAP: {
         MOZ_ASSERT(ndefs == 2);
-        uint32_t tmp = offsetStack[stackDepth + 1];
+        OffsetAndDefIndex tmp = offsetStack[stackDepth + 1];
         offsetStack[stackDepth + 1] = offsetStack[stackDepth];
         offsetStack[stackDepth] = tmp;
         break;
@@ -462,7 +711,7 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
         unsigned n = GET_UINT8(pc);
         MOZ_ASSERT(ndefs == n + 1);
         uint32_t top = stackDepth + n;
-        uint32_t tmp = offsetStack[stackDepth];
+        OffsetAndDefIndex tmp = offsetStack[stackDepth];
         for (uint32_t i = stackDepth; i < top; i++)
             offsetStack[i] = offsetStack[i + 1];
         offsetStack[top] = tmp;
@@ -474,7 +723,7 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
         unsigned n = GET_UINT8(pc);
         MOZ_ASSERT(ndefs == n + 1);
         uint32_t top = stackDepth + n;
-        uint32_t tmp = offsetStack[top];
+        OffsetAndDefIndex tmp = offsetStack[top];
         for (uint32_t i = top; i > stackDepth; i--)
             offsetStack[i] = offsetStack[i - 1];
         offsetStack[stackDepth] = tmp;
@@ -538,20 +787,35 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, uint32_t* offsetStack, uint
         MOZ_ASSERT(ndefs == 1);
         offsetStack[stackDepth] = offsetStack[stackDepth + 3];
         break;
+
+      case JSOP_ISGENCLOSING:
+      case JSOP_ISNOITER:
+      case JSOP_MOREITER:
+      case JSOP_OPTIMIZE_SPREADCALL:
+        
+        MOZ_ASSERT(nuses == 1);
+        MOZ_ASSERT(ndefs == 2);
+        offsetStack[stackDepth + 1].set(offset, 1);
+        break;
     }
+
+#ifdef DEBUG
+  end:
+#endif 
+
     stackDepth += ndefs;
     return stackDepth;
 }
 
 bool
-BytecodeParser::recordBytecode(uint32_t offset, const uint32_t* offsetStack,
+BytecodeParser::recordBytecode(uint32_t offset, const OffsetAndDefIndex* offsetStack,
                                uint32_t stackDepth)
 {
     MOZ_ASSERT(offset < script_->length());
 
     Bytecode*& code = codeArray_[offset];
     if (!code) {
-        code = alloc().new_<Bytecode>();
+        code = alloc().new_<Bytecode>(alloc());
         if (!code ||
             !code->captureOffsetStack(alloc(), offsetStack, stackDepth))
         {
@@ -567,10 +831,20 @@ BytecodeParser::recordBytecode(uint32_t offset, const uint32_t* offsetStack,
 
 bool
 BytecodeParser::addJump(uint32_t offset, uint32_t* currentOffset,
-                        uint32_t stackDepth, const uint32_t* offsetStack)
+                        uint32_t stackDepth, const OffsetAndDefIndex* offsetStack,
+                        jsbytecode* pc, JumpKind kind)
 {
     if (!recordBytecode(offset, offsetStack, stackDepth))
         return false;
+
+#ifdef DEBUG
+    if (isStackDump) {
+        if (!codeArray_[offset]->addJump(script_->pcToOffset(pc), kind)) {
+            reportOOM();
+            return false;
+        }
+    }
+#endif 
 
     Bytecode*& code = codeArray_[offset];
     if (offset < *currentOffset && !code->parsed) {
@@ -599,14 +873,14 @@ BytecodeParser::parse()
     mozilla::PodZero(codeArray_, length);
 
     
-    Bytecode* startcode = alloc().new_<Bytecode>();
+    Bytecode* startcode = alloc().new_<Bytecode>(alloc());
     if (!startcode) {
         reportOOM();
         return false;
     }
 
     
-    uint32_t* offsetStack = alloc().newArray<uint32_t>(maximumStackDepth());
+    OffsetAndDefIndex* offsetStack = alloc().newArray<OffsetAndDefIndex>(maximumStackDepth());
     if (maximumStackDepth() && !offsetStack) {
         reportOOM();
         return false;
@@ -654,6 +928,15 @@ BytecodeParser::parse()
 
         uint32_t stackDepth = simulateOp(op, offset, offsetStack, code->stackDepth);
 
+#ifdef DEBUG
+        if (isStackDump) {
+            if (!code->captureOffsetStackAfter(alloc(), offsetStack, stackDepth)) {
+                reportOOM();
+                return false;
+            }
+        }
+#endif 
+
         switch (op) {
           case JSOP_TABLESWITCH: {
             uint32_t defaultOffset = offset + GET_JUMP_OFFSET(pc);
@@ -663,14 +946,20 @@ BytecodeParser::parse()
             int32_t high = GET_JUMP_OFFSET(pc2);
             pc2 += JUMP_OFFSET_LEN;
 
-            if (!addJump(defaultOffset, &nextOffset, stackDepth, offsetStack))
+            if (!addJump(defaultOffset, &nextOffset, stackDepth, offsetStack,
+                         pc, JumpKind::SwitchDefault))
+            {
                 return false;
+            }
 
             for (int32_t i = low; i <= high; i++) {
                 uint32_t targetOffset = offset + GET_JUMP_OFFSET(pc2);
                 if (targetOffset != offset) {
-                    if (!addJump(targetOffset, &nextOffset, stackDepth, offsetStack))
+                    if (!addJump(targetOffset, &nextOffset, stackDepth, offsetStack,
+                                 pc, JumpKind::SwitchCase))
+                    {
                         return false;
+                    }
                 }
                 pc2 += JUMP_OFFSET_LEN;
             }
@@ -688,9 +977,18 @@ BytecodeParser::parse()
                 uint32_t startOffset = script_->mainOffset() + tn->start;
                 if (startOffset == offset + 1) {
                     uint32_t catchOffset = startOffset + tn->length;
-                    if (tn->kind == JSTRY_CATCH || tn->kind == JSTRY_FINALLY) {
-                        if (!addJump(catchOffset, &nextOffset, stackDepth, offsetStack))
+                    if (tn->kind == JSTRY_CATCH) {
+                        if (!addJump(catchOffset, &nextOffset, stackDepth, offsetStack,
+                                     pc, JumpKind::TryCatch))
+                        {
                             return false;
+                        }
+                    } else if (tn->kind == JSTRY_FINALLY) {
+                        if (!addJump(catchOffset, &nextOffset, stackDepth, offsetStack,
+                                     pc, JumpKind::TryFinally))
+                        {
+                            return false;
+                        }
                     }
                 }
             }
@@ -709,7 +1007,8 @@ BytecodeParser::parse()
                 newStackDepth--;
 
             uint32_t targetOffset = offset + GET_JUMP_OFFSET(pc);
-            if (!addJump(targetOffset, &nextOffset, newStackDepth, offsetStack))
+            if (!addJump(targetOffset, &nextOffset, newStackDepth, offsetStack,
+                         pc, JumpKind::Simple))
                 return false;
         }
 
@@ -740,6 +1039,10 @@ js::ReconstructStackDepth(JSContext* cx, JSScript* script, jsbytecode* pc, uint3
     return true;
 }
 
+static unsigned
+Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
+             unsigned loc, bool lines, BytecodeParser* parser, Sprinter* sp);
+
 
 
 
@@ -751,11 +1054,11 @@ DisassembleAtPC(JSContext* cx, JSScript* scriptArg, bool lines,
 {
     RootedScript script(cx, scriptArg);
     BytecodeParser parser(cx, script);
+    parser.setStackDump();
+    if (!parser.parse())
+        return false;
 
     if (showAll) {
-        if (!parser.parse())
-            return false;
-
         if (!sp->jsprintf("%s:%u\n", script->filename(), unsigned(script->lineno())))
             return false;
     }
@@ -830,7 +1133,8 @@ DisassembleAtPC(JSContext* cx, JSScript* scriptArg, bool lines,
                     return false;
             }
         }
-        unsigned len = Disassemble1(cx, script, next, script->pcToOffset(next), lines, sp);
+        unsigned len = Disassemble1(cx, script, next, script->pcToOffset(next), lines,
+                                    &parser, sp);
         if (!len)
             return false;
 
@@ -999,10 +1303,117 @@ ToDisassemblySource(JSContext* cx, HandleScope scope, JSAutoByteString* bytes)
     return true;
 }
 
-unsigned
-js::Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
-                 unsigned loc, bool lines, Sprinter* sp)
+static bool
+DumpJumpOrigins(JSContext* cx, HandleScript script, jsbytecode* pc,
+                BytecodeParser* parser, Sprinter* sp)
 {
+    bool called = false;
+    auto callback = [&script, &sp, &called](jsbytecode* pc, BytecodeParser::JumpKind kind) {
+        if (!called) {
+            called = true;
+            if (!sp->put("\n# "))
+                return false;
+        } else {
+            if (!sp->put(", "))
+                return false;
+        }
+
+        switch (kind) {
+          case BytecodeParser::JumpKind::Simple:
+          break;
+
+          case BytecodeParser::JumpKind::SwitchCase:
+          if (!sp->put("switch-case "))
+              return false;
+          break;
+
+          case BytecodeParser::JumpKind::SwitchDefault:
+          if (!sp->put("swtich-default "))
+              return false;
+          break;
+
+          case BytecodeParser::JumpKind::TryCatch:
+          if (!sp->put("try-catch "))
+              return false;
+          break;
+
+          case BytecodeParser::JumpKind::TryFinally:
+          if (!sp->put("try-finally "))
+              return false;
+          break;
+        }
+
+        if (!sp->jsprintf("from %s @ %05u", CodeName[*pc], unsigned(script->pcToOffset(pc))))
+            return false;
+
+        return true;
+    };
+    if (!parser->forEachJumpOrigins(pc, callback))
+        return false;
+    if (called) {
+        if (!sp->put("\n"))
+            return false;
+    }
+
+    return true;
+}
+
+static bool
+DecompileAtPCForStackDump(JSContext* cx, HandleScript script,
+                          const OffsetAndDefIndex& offsetAndDefIndex, Sprinter* sp);
+
+static unsigned
+Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
+             unsigned loc, bool lines, BytecodeParser* parser, Sprinter* sp)
+{
+    if (parser && parser->isReachable(pc)) {
+        if (!DumpJumpOrigins(cx, script, pc, parser, sp))
+            return 0;
+    }
+
+    size_t before = sp->stringEnd() - sp->string();
+    bool stackDumped = false;
+    auto dumpStack = [&cx, &script, &pc, &parser, &sp, &before, &stackDumped]() {
+        if (!parser)
+            return true;
+        if (stackDumped)
+            return true;
+        stackDumped = true;
+
+        size_t after = sp->stringEnd() - sp->string();
+        MOZ_ASSERT(after >= before);
+
+        static const size_t stack_column = 40;
+        for (size_t i = after - before; i < stack_column - 1; i++)
+            sp->put(" ");
+
+        sp->put(" # ");
+
+        if (!parser->isReachable(pc)) {
+            if (sp->put("!!! UNREACHABLE !!!") < 0)
+                return false;
+        } else {
+            uint32_t depth = parser->stackDepthAfterPC(pc);
+
+            for (uint32_t i = 0; i < depth; i++) {
+                if (i) {
+                    if (sp->put(" ") < 0)
+                        return false;
+                }
+
+                const OffsetAndDefIndex& offsetAndDefIndex
+                    = parser->offsetForStackOperandAfterPC(script->pcToOffset(pc), i);
+                
+                
+                
+                if (!DecompileAtPCForStackDump(cx, script, offsetAndDefIndex, sp))
+                    return false;
+            }
+        }
+
+        return true;
+    };
+
     JSOp op = (JSOp)*pc;
     if (op >= JSOP_LIMIT) {
         char numBuf1[12], numBuf2[12];
@@ -1141,6 +1552,11 @@ js::Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
         pc2 += JUMP_OFFSET_LEN;
         if (!sp->jsprintf(" defaultOffset %d low %d high %d", int(off), low, high))
             return 0;
+
+        
+        if (!dumpStack())
+            return 0;
+
         for (i = low; i <= high; i++) {
             off = GET_JUMP_OFFSET(pc2);
             if (!sp->jsprintf("\n\t%d: %d", i, int(off)))
@@ -1198,8 +1614,19 @@ js::Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
         return 0;
       }
     }
+
+    if (!dumpStack())
+        return 0;
+
     sp->put("\n");
     return len;
+}
+
+unsigned
+js::Disassemble1(JSContext* cx, JS::Handle<JSScript*> script, jsbytecode* pc, unsigned loc,
+                 bool lines, Sprinter* sp)
+{
+    return Disassemble1(cx, script, pc, loc, lines, nullptr, sp);
 }
 
 #endif 
@@ -1243,40 +1670,58 @@ struct ExpressionDecompiler
     BytecodeParser parser;
     Sprinter sprinter;
 
+#ifdef DEBUG
+    
+    
+    
+    bool isStackDump;
+#endif 
+
     ExpressionDecompiler(JSContext* cx, JSScript* script)
         : cx(cx),
           script(cx, script),
           parser(cx, script),
           sprinter(cx)
+#ifdef DEBUG
+          ,
+          isStackDump(false)
+#endif 
     {}
     bool init();
     bool decompilePCForStackOperand(jsbytecode* pc, int i);
-    bool decompilePC(jsbytecode* pc);
+    bool decompilePC(jsbytecode* pc, uint8_t defIndex);
+    bool decompilePC(const OffsetAndDefIndex& offsetAndDefIndex);
     JSAtom* getArg(unsigned slot);
     JSAtom* loadAtom(jsbytecode* pc);
     bool quote(JSString* s, uint32_t quote);
     bool write(const char* s);
     bool write(JSString* str);
     bool getOutput(char** out);
+#ifdef DEBUG
+    void setStackDump() {
+        isStackDump = true;
+        parser.setStackDump();
+    }
+#endif 
 };
 
 bool
 ExpressionDecompiler::decompilePCForStackOperand(jsbytecode* pc, int i)
 {
-    pc = parser.pcForStackOperand(pc, i);
-    if (!pc)
-        return write("(intermediate value)");
-    return decompilePC(pc);
+    return decompilePC(parser.offsetForStackOperand(script->pcToOffset(pc), i));
 }
 
 bool
-ExpressionDecompiler::decompilePC(jsbytecode* pc)
+ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex)
 {
     MOZ_ASSERT(script->containsPC(pc));
 
     JSOp op = (JSOp)*pc;
 
     if (const char* token = CodeToken[op]) {
+        MOZ_ASSERT(defIndex == 0);
+        MOZ_ASSERT(CodeSpec[op].ndefs == 1);
+
         
         switch (CodeSpec[op].nuses) {
           case 2: {
@@ -1317,7 +1762,13 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc)
         
         
         
-        if (script->selfHosted()) {
+        if (script->selfHosted()
+#ifdef DEBUG
+            
+            && !isStackDump
+#endif 
+            )
+        {
             char* result;
             if (!DecompileArgumentFromStack(cx, slot, &result))
                 return false;
@@ -1482,7 +1933,184 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc)
       default:
         break;
     }
+
+#ifdef DEBUG
+    if (isStackDump) {
+        
+        switch (op) {
+          case JSOP_ARGUMENTS:
+            return write("arguments");
+
+          case JSOP_BINDGNAME:
+            return write("GLOBAL");
+
+          case JSOP_BINDNAME:
+          case JSOP_BINDVAR:
+            return write("ENV");
+
+          case JSOP_CALLEE:
+            return write("CALLEE");
+
+          case JSOP_CALLSITEOBJ:
+            return write("OBJ");
+
+          case JSOP_CLASSCONSTRUCTOR:
+          case JSOP_DERIVEDCONSTRUCTOR:
+            return write("CONSTRUCTOR");
+
+          case JSOP_CLASSHERITAGE:
+            if (defIndex == 0)
+                return write("FUNCPROTO");
+            MOZ_ASSERT(defIndex == 1);
+            return write("OBJPROTO");
+
+          case JSOP_DOUBLE:
+            return sprinter.printf("%lf", script->getConst(GET_UINT32_INDEX(pc)).toDouble()) >= 0;
+
+          case JSOP_EXCEPTION:
+            return write("EXCEPTION");
+
+          case JSOP_FINALLY:
+            if (defIndex == 0)
+                return write("THROWING");
+            MOZ_ASSERT(defIndex == 1);
+            return write("PC");
+
+          case JSOP_GIMPLICITTHIS:
+          case JSOP_FUNCTIONTHIS:
+          case JSOP_IMPLICITTHIS:
+            return write("THIS");
+
+          case JSOP_FUNWITHPROTO:
+            return write("FUN");
+
+          case JSOP_GENERATOR:
+            return write("GENERATOR");
+
+          case JSOP_GETIMPORT:
+            return write("VAL");
+
+          case JSOP_GETRVAL:
+            return write("RVAL");
+
+          case JSOP_HOLE:
+            return write("HOLE");
+
+          case JSOP_INITELEM_INC:
+            
+            MOZ_ASSERT(defIndex == 1);
+            return write("INDEX");
+
+          case JSOP_ISGENCLOSING:
+            
+            MOZ_ASSERT(defIndex == 1);
+            return write("ISGENCLOSING");
+
+          case JSOP_ISNOITER:
+            
+            MOZ_ASSERT(defIndex == 1);
+            return write("ISNOITER");
+
+          case JSOP_IS_CONSTRUCTING:
+            return write("JS_IS_CONSTRUCTING");
+
+          case JSOP_ITER:
+            return write("ITER");
+
+          case JSOP_LAMBDA:
+          case JSOP_LAMBDA_ARROW:
+          case JSOP_TOASYNC:
+            return write("FUN");
+
+          case JSOP_MOREITER:
+            
+            MOZ_ASSERT(defIndex == 1);
+            return write("MOREITER");
+
+          case JSOP_MUTATEPROTO:
+            return write("SUCCEEDED");
+
+          case JSOP_NEWINIT:
+          case JSOP_NEWOBJECT:
+          case JSOP_OBJWITHPROTO:
+            return write("OBJ");
+
+          case JSOP_OPTIMIZE_SPREADCALL:
+            
+            MOZ_ASSERT(defIndex == 1);
+            return write("OPTIMIZED");
+
+          case JSOP_REST:
+            return write("REST");
+
+          case JSOP_RESUME:
+            return write("RVAL");
+
+          case JSOP_SPREADCALLARRAY:
+            return write("[]");
+
+          case JSOP_SUPERBASE:
+            return write("HOMEOBJECTPROTO");
+
+          case JSOP_TOID:
+            return write("TOID(") &&
+                   decompilePCForStackOperand(pc, -1) &&
+                   write(")");
+          case JSOP_TOSTRING:
+            return write("TOSTRING(") &&
+                   decompilePCForStackOperand(pc, -1) &&
+                   write(")");
+
+          case JSOP_UNINITIALIZED:
+            return write("UNINITIALIZED");
+
+          case JSOP_YIELD:
+            
+            
+            
+            return write("RVAL");
+
+          default:
+            break;
+        }
+        return write("<unknown>");
+    }
+#endif 
+
     return write("(intermediate value)");
+}
+
+bool
+ExpressionDecompiler::decompilePC(const OffsetAndDefIndex& offsetAndDefIndex)
+{
+    if (offsetAndDefIndex.isSpecial()) {
+#ifdef DEBUG
+        if (isStackDump) {
+            if (offsetAndDefIndex.isMerged()) {
+                if (!write("merged<"))
+                    return false;
+            } else if (offsetAndDefIndex.isIgnored()) {
+                if (!write("ignored<"))
+                    return false;
+            }
+
+            if (!decompilePC(script->offsetToPC(offsetAndDefIndex.specialOffset()),
+                             offsetAndDefIndex.specialDefIndex()))
+            {
+                return false;
+            }
+
+            if (!write(">"))
+                return false;
+
+            return true;
+        }
+#endif 
+        return write("(intermediate value)");
+    }
+
+    return decompilePC(script->offsetToPC(offsetAndDefIndex.offset()),
+                       offsetAndDefIndex.defIndex());
 }
 
 bool
@@ -1559,12 +2187,37 @@ ExpressionDecompiler::getOutput(char** res)
 
 }  
 
+#ifdef DEBUG
+static bool
+DecompileAtPCForStackDump(JSContext* cx, HandleScript script,
+                          const OffsetAndDefIndex& offsetAndDefIndex, Sprinter* sp)
+{
+    ExpressionDecompiler ed(cx, script);
+    ed.setStackDump();
+    if (!ed.init())
+        return false;
+
+    if (!ed.decompilePC(offsetAndDefIndex))
+        return false;
+
+    char* result;
+    if (!ed.getOutput(&result))
+        return false;
+
+    if (!sp->put(result))
+        return false;
+
+    return true;
+}
+#endif 
+
 static bool
 FindStartPC(JSContext* cx, const FrameIter& iter, int spindex, int skipStackHits, const Value& v,
-            jsbytecode** valuepc)
+            jsbytecode** valuepc, uint8_t* defIndex)
 {
     jsbytecode* current = *valuepc;
     *valuepc = nullptr;
+    *defIndex = 0;
 
     if (spindex == JSDVG_IGNORE_STACK)
         return true;
@@ -1604,15 +2257,11 @@ FindStartPC(JSContext* cx, const FrameIter& iter, int spindex, int skipStackHits
             s = iter.frameSlotValue(--index);
         } while (s != v || stackHits++ != skipStackHits);
 
-        
-        
-        
-        if (index < size_t(parser.stackDepthAtPC(current)))
-            *valuepc = parser.pcForStackOperand(current, index);
-        else
-            *valuepc = current;
+        MOZ_ASSERT(index < size_t(parser.stackDepthAtPC(current)));
+
+        *valuepc = parser.pcForStackOperand(current, index, defIndex);
     } else {
-        *valuepc = parser.pcForStackOperand(current, spindex);
+        *valuepc = parser.pcForStackOperand(current, spindex, defIndex);
     }
     return true;
 }
@@ -1649,7 +2298,8 @@ DecompileExpressionFromStack(JSContext* cx, int spindex, int skipStackHits, Hand
     if (valuepc < script->main())
         return true;
 
-    if (!FindStartPC(cx, frameIter, spindex, skipStackHits, v, &valuepc))
+    uint8_t defIndex;
+    if (!FindStartPC(cx, frameIter, spindex, skipStackHits, v, &valuepc, &defIndex))
         return false;
     if (!valuepc)
         return true;
@@ -1657,7 +2307,7 @@ DecompileExpressionFromStack(JSContext* cx, int spindex, int skipStackHits, Hand
     ExpressionDecompiler ed(cx, script);
     if (!ed.init())
         return false;
-    if (!ed.decompilePC(valuepc))
+    if (!ed.decompilePC(valuepc, defIndex))
         return false;
 
     return ed.getOutput(res);
@@ -2106,7 +2756,8 @@ GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac, StringBuffer& buf)
             ExpressionDecompiler ed(cx, script);
             if (!ed.init())
                 return false;
-            if (!ed.decompilePC(pc))
+            
+            if (!ed.decompilePC(pc,  0))
                 return false;
             char* text;
             if (!ed.getOutput(&text))
