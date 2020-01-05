@@ -857,7 +857,7 @@ struct GonkCompositorProxy {
 }
 
 impl CompositorProxy for GonkCompositorProxy {
-    fn send(&mut self, msg: compositor_task::Msg) {
+    fn send(&self, msg: compositor_task::Msg) {
         
         self.sender.send(msg).ok().unwrap();
         self.event_sender.send(WindowEvent::Idle).ok().unwrap();

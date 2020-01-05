@@ -35,7 +35,7 @@ use util::cursor::Cursor;
 
 pub trait CompositorProxy : 'static + Send {
     
-    fn send(&mut self, msg: Msg);
+    fn send(&self, msg: Msg);
     
     fn clone_compositor_proxy(&self) -> Box<CompositorProxy+'static+Send>;
 }
@@ -62,7 +62,7 @@ impl CompositorReceiver for Receiver<Msg> {
     }
 }
 
-pub fn run_script_listener_thread(mut compositor_proxy: Box<CompositorProxy + 'static + Send>,
+pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'static + Send>,
                                   receiver: IpcReceiver<ScriptToCompositorMsg>) {
     while let Ok(msg) = receiver.recv() {
         match msg {
@@ -197,6 +197,8 @@ pub enum Msg {
     
     
     ReturnUnusedLayerBuffers(Vec<Box<LayerBuffer>>),
+    
+    CollectMemoryReports(mem::ReportsChan),
 }
 
 impl Debug for Msg {
@@ -226,6 +228,7 @@ impl Debug for Msg {
             Msg::NewFavicon(..) => write!(f, "NewFavicon"),
             Msg::HeadParsed => write!(f, "HeadParsed"),
             Msg::ReturnUnusedLayerBuffers(..) => write!(f, "ReturnUnusedLayerBuffers"),
+            Msg::CollectMemoryReports(..) => write!(f, "CollectMemoryReports"),
         }
     }
 }
