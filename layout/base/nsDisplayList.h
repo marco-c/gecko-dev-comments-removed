@@ -3918,6 +3918,10 @@ public:
     return mDestRects;
   }
 private:
+  
+  
+  bool ShouldPaintOnMaskLayer(LayerManager* aManager);
+
   nsTArray<nsRect> mDestRects;
 };
 
