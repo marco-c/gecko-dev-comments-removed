@@ -270,7 +270,7 @@ public final class AttributeName
 
 
 
-    static AttributeName nameByBuffer(@NoLength char[] buf, int offset,
+    @Inline static AttributeName nameByBuffer(@NoLength char[] buf, int offset,
             int length
             , Interner interner) {
         
@@ -280,7 +280,7 @@ public final class AttributeName
             return null;
         }
         AttributeName attributeName = AttributeName.ATTRIBUTE_NAMES[index];
-        @Local String name = attributeName.getLocal(AttributeName.HTML);
+        @Local String name = attributeName.getLocal(0);
         if (!Portability.localEqualsBuffer(name, buf, offset, length)) {
             return null;
         }

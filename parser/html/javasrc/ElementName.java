@@ -105,15 +105,15 @@ public final class ElementName
         return flags;
     }
 
-    public int getGroup() {
-        return flags & GROUP_MASK;
+    @Inline public int getGroup() {
+        return flags & ElementName.GROUP_MASK;
     }
 
-    public boolean isInterned() {
-        return (flags & NOT_INTERNED) == 0;
+    @Inline public boolean isInterned() {
+        return (flags & ElementName.NOT_INTERNED) == 0;
     }
 
-    static ElementName elementNameByBuffer(@NoLength char[] buf, int offset, int length, Interner interner) {
+    @Inline static ElementName elementNameByBuffer(@NoLength char[] buf, int offset, int length, Interner interner) {
         @Unsigned int hash = ElementName.bufToHash(buf, length);
         int index = Arrays.binarySearch(ElementName.ELEMENT_HASHES, hash);
         if (index < 0) {
@@ -182,12 +182,15 @@ public final class ElementName
         
     }
 
-    public void setNameForNonInterned(@Local String name) {
+    @Inline public void setNameForNonInterned(@Local String name) {
         
         
         this.name = name;
         this.camelCaseName = name;
-        assert this.flags == (TreeBuilder.OTHER | NOT_INTERNED);
+        
+        
+        
+        assert this.flags == ElementName.NOT_INTERNED;
     }
 
     public static final ElementName ANNOTATION_XML = new ElementName("annotation-xml", "annotation-xml", TreeBuilder.ANNOTATION_XML | SCOPING_AS_MATHML);
