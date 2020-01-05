@@ -22,10 +22,7 @@
 #include <stdint.h>
 
 
-
-
-
 bool
-DecodeBase64KeyOrId(const std::string& aEncoded, std::vector<uint8_t>& aOutDecoded);
+DecodeBase64(const std::string& aEncoded, std::vector<uint8_t>& aOutDecoded);
 
 #endif
