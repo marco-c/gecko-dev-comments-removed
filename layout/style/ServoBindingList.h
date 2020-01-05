@@ -172,6 +172,10 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemoveProperty, void,
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemovePropertyById, void,
                    RawServoDeclarationBlockBorrowed declarations,
                    nsCSSPropertyID property)
+SERVO_BINDING_FUNC(Servo_DeclarationBlock_AddPresValue, void,
+                   RawServoDeclarationBlockBorrowed declarations,
+                   nsCSSPropertyID property,
+                   nsCSSValueBorrowedMut css_value)
 
 
 SERVO_BINDING_FUNC(Servo_CSSSupports2, bool,
@@ -220,6 +224,8 @@ SERVO_BINDING_FUNC(Servo_ResolvePseudoStyle, ServoComputedValuesStrong,
 SERVO_BINDING_FUNC(Servo_ResolveStyleLazily, ServoComputedValuesStrong,
                    RawGeckoElementBorrowed element, nsIAtom* pseudo_tag,
                    RawServoStyleSetBorrowed set)
+
+
 
 
 SERVO_BINDING_FUNC(Servo_TraverseSubtree, void,

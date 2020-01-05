@@ -1085,4 +1085,30 @@ private:
                                   void* aStruct);
 };
 
+
+
+
+
+
+
+
+
+
+
+struct AutoCSSValueArray
+{
+  
+
+
+  AutoCSSValueArray(void* aStorage, size_t aCount);
+
+  ~AutoCSSValueArray();
+
+  nsCSSValue* get() { return mArray; }
+
+private:
+  nsCSSValue *mArray;
+  size_t mCount;
+};
+
 #endif

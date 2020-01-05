@@ -62,6 +62,10 @@ public:
   already_AddRefed<nsMappedAttributes>
     UniqueMappedAttributes(nsMappedAttributes* aMapped);
   void DropMappedAttributes(nsMappedAttributes* aMapped);
+  
+  
+  
+  void CalculateMappedServoDeclarations();
 
   nsIStyleRule* LangRuleFor(const nsString& aLanguage);
 
@@ -175,6 +179,10 @@ private:
   RefPtr<TableTHRule>   mTableTHRule;
 
   PLDHashTable            mMappedAttrTable;
+  
+  
+  
+  bool                    mMappedAttrsDirty;
   PLDHashTable            mLangRuleTable;
 };
 

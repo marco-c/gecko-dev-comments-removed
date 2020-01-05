@@ -284,6 +284,11 @@ public:
   
 
 
+  const nsMappedAttributes* GetMappedAttributes() const;
+
+  
+
+
 
   virtual nsresult SetInlineStyleDeclaration(DeclarationBlock* aDeclaration,
                                              const nsAString* aSerialized,

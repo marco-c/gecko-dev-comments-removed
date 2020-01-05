@@ -2354,44 +2354,25 @@ UnsetPropertiesWithoutFlags(const nsStyleStructID aSID,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-struct AutoCSSValueArray {
+AutoCSSValueArray::AutoCSSValueArray(void* aStorage, size_t aCount)
+{
+  MOZ_ASSERT(size_t(aStorage) % NS_ALIGNMENT_OF(nsCSSValue) == 0,
+             "bad alignment from alloca");
+  mCount = aCount;
   
-
-
-  AutoCSSValueArray(void* aStorage, size_t aCount) {
-    MOZ_ASSERT(size_t(aStorage) % NS_ALIGNMENT_OF(nsCSSValue) == 0,
-               "bad alignment from alloca");
-    mCount = aCount;
-    
-    
-    mArray = static_cast<nsCSSValue*>(aStorage);
-    for (size_t i = 0; i < mCount; ++i) {
-      new (KnownNotNull, mArray + i) nsCSSValue();
-    }
+  
+  mArray = static_cast<nsCSSValue*>(aStorage);
+  for (size_t i = 0; i < mCount; ++i) {
+    new (KnownNotNull, mArray + i) nsCSSValue();
   }
+}
 
-  ~AutoCSSValueArray() {
-    for (size_t i = 0; i < mCount; ++i) {
-      mArray[i].~nsCSSValue();
-    }
+AutoCSSValueArray::~AutoCSSValueArray()
+{
+  for (size_t i = 0; i < mCount; ++i) {
+    mArray[i].~nsCSSValue();
   }
-
-  nsCSSValue* get() { return mArray; }
-
-private:
-  nsCSSValue *mArray;
-  size_t mCount;
-};
+}
 
  bool
 nsRuleNode::ResolveVariableReferences(const nsStyleStructID aSID,

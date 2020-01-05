@@ -199,6 +199,20 @@ private:
                                               CSSPseudoElementType aPseudoType,
                                               LazyComputeBehavior aMayCompute);
 
+  
+
+
+
+
+  void ResolveMappedAttrDeclarationBlocks();
+
+  
+
+
+
+  void PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
+                                 mozilla::TraversalRootBehavior aRootBehavior);
+
   nsPresContext* mPresContext;
   UniquePtr<RawServoStyleSet> mRawSet;
   EnumeratedArray<SheetType, SheetType::Count,
