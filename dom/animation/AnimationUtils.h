@@ -14,11 +14,13 @@
 
 class nsIContent;
 class nsIDocument;
+class nsIFrame;
 struct JSContext;
 
 namespace mozilla {
 
 class ComputedTimingFunction;
+class EffectSet;
 
 class AnimationUtils
 {
@@ -73,6 +75,13 @@ public:
 
 
   static bool IsCoreAPIEnabledForCaller(dom::CallerType aCallerType);
+
+  
+
+
+
+  static bool EffectSetContainsAnimatedScale(EffectSet& aEffects,
+                                             const nsIFrame* aFrame);
 };
 
 } 

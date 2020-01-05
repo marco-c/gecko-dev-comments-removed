@@ -288,6 +288,10 @@ public:
   
   bool NeedsBaseStyle(nsCSSPropertyID aProperty) const;
 
+  
+  
+  bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
+
 protected:
   KeyframeEffectReadOnly(nsIDocument* aDocument,
                          const Maybe<OwningAnimationTarget>& aTarget,
