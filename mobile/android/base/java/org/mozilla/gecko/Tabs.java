@@ -313,6 +313,10 @@ public class Tabs implements BundleEventListener {
     }
 
     public synchronized Tab selectTab(int id) {
+        return selectTab(id, true);
+    }
+
+    public synchronized Tab selectTab(int id, boolean switchActivities) {
         if (!mTabs.containsKey(id))
             return null;
 
@@ -325,7 +329,7 @@ public class Tabs implements BundleEventListener {
             return tab;
         }
 
-        if (oldTab != null && oldTab.getType() != tab.getType() &&
+        if (switchActivities && oldTab != null && oldTab.getType() != tab.getType() &&
                 !currentActivityMatchesTab(tab)) {
             
             
@@ -536,16 +540,22 @@ public class Tabs implements BundleEventListener {
         closeTab(tab, getNextTab(tab));
     }
 
+    
+    public synchronized void closeTabNoActivitySwitch(Tab tab) {
+        closeTab(tab, getNextTab(tab), false, false);
+    }
+
     public synchronized void closeTab(Tab tab, Tab nextTab) {
-        closeTab(tab, nextTab, false);
+        closeTab(tab, nextTab, false, true);
     }
 
     public synchronized void closeTab(Tab tab, boolean showUndoToast) {
-        closeTab(tab, getNextTab(tab), showUndoToast);
+        closeTab(tab, getNextTab(tab), showUndoToast, true);
     }
 
     
-    public synchronized void closeTab(final Tab tab, Tab nextTab, boolean showUndoToast) {
+    public synchronized void closeTab(final Tab tab, Tab nextTab,
+                                      boolean showUndoToast, boolean switchActivities) {
         if (tab == null)
             return;
 
@@ -556,7 +566,7 @@ public class Tabs implements BundleEventListener {
             nextTab = loadUrl(getHomepageForNewTab(mAppContext), LOADURL_NEW_TAB);
         }
 
-        selectTab(nextTab.getId());
+        selectTab(nextTab.getId(), switchActivities);
 
         tab.onDestroy();
 
