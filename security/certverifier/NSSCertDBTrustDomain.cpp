@@ -381,7 +381,7 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   
   Result stapledOCSPResponseResult = Success;
   if (stapledOCSPResponse) {
-    PR_ASSERT(endEntityOrCA == EndEntityOrCA::MustBeEndEntity);
+    MOZ_ASSERT(endEntityOrCA == EndEntityOrCA::MustBeEndEntity);
     bool expired;
     stapledOCSPResponseResult =
       VerifyAndMaybeCacheEncodedOCSPResponse(certID, time,
@@ -459,8 +459,8 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   }
   
   
-  PR_ASSERT((!cachedResponsePresent && cachedResponseResult == Success) ||
-            (cachedResponsePresent && cachedResponseResult != Success));
+  MOZ_ASSERT((!cachedResponsePresent && cachedResponseResult == Success) ||
+             (cachedResponsePresent && cachedResponseResult != Success));
 
   
   bool blocklistIsFresh;
@@ -669,7 +669,7 @@ NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
   
   
   if (responseSource == ResponseWasStapled && expired) {
-    PR_ASSERT(rv != Success);
+    MOZ_ASSERT(rv != Success);
     return rv;
   }
   
@@ -1156,7 +1156,7 @@ LoadLoadableRoots(const nsCString& dir, const nsCString& modNameUTF8)
 void
 UnloadLoadableRoots(const char* modNameUTF8)
 {
-  PR_ASSERT(modNameUTF8);
+  MOZ_ASSERT(modNameUTF8);
   UniqueSECMODModule rootsModule(SECMOD_FindModule(modNameUTF8));
 
   if (rootsModule) {
