@@ -6169,7 +6169,9 @@ nsLayoutUtils::GetFirstLinePosition(WritingMode aWM,
     
     
     nsIAtom* fType = aFrame->GetType();
-    if (fType == nsGkAtoms::tableWrapperFrame) {
+    if (fType == nsGkAtoms::tableWrapperFrame  ||
+        fType == nsGkAtoms::flexContainerFrame ||
+        fType == nsGkAtoms::gridContainerFrame) {
       aResult->mBStart = 0;
       aResult->mBaseline = aFrame->GetLogicalBaseline(aWM);
       
