@@ -673,12 +673,10 @@ ParentAPIManager = {
 
     
     
-    if (context.viewType === "background" && context.listenerPromises) {
-      const {listenerPromises} = context;
-      listenerPromises.add(promise);
-      let remove = () => { listenerPromises.delete(promise); };
-      promise.then(remove, remove);
-    }
+    const {listenerPromises} = context;
+    listenerPromises.add(promise);
+    let remove = () => { listenerPromises.delete(promise); };
+    promise.then(remove, remove);
 
     let handler = await promise;
     handler.addListener(listener, ...args);
@@ -860,9 +858,9 @@ class HiddenExtensionPage {
 
 function promiseExtensionViewLoaded(browser) {
   return new Promise(resolve => {
-    browser.messageManager.addMessageListener("Extension:ExtensionViewLoaded", function onLoad({data}) {
+    browser.messageManager.addMessageListener("Extension:ExtensionViewLoaded", function onLoad() {
       browser.messageManager.removeMessageListener("Extension:ExtensionViewLoaded", onLoad);
-      resolve(data.childId && ParentAPIManager.getContextById(data.childId));
+      resolve();
     });
   });
 }

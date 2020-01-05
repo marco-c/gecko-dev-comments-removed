@@ -239,57 +239,52 @@ class Theme {
   }
 }
 
-this.theme = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
-    if (!gThemesEnabled) {
-      
-      return;
-    }
 
-    let {extension} = this;
-    let {manifest} = extension;
-
-    let theme = new Theme(extension.baseURI, extension.logger);
-    theme.load(manifest.theme);
-    themeMap.set(extension, theme);
+extensions.on("manifest_theme", (type, directive, extension, manifest) => {
+  if (!gThemesEnabled) {
+    
+    return;
   }
 
-  onShutdown() {
-    let {extension} = this;
+  let theme = new Theme(extension.baseURI, extension.logger);
+  theme.load(manifest.theme);
+  themeMap.set(extension, theme);
+});
 
-    let theme = themeMap.get(extension);
+extensions.on("shutdown", (type, extension) => {
+  let theme = themeMap.get(extension);
 
-    if (!theme) {
-      
-      return;
-    }
-
-    theme.unload();
+  if (!theme) {
+    
+    return;
   }
 
-  getAPI(context) {
-    let {extension} = context;
-    return {
-      theme: {
-        update(details) {
-          if (!gThemesEnabled) {
-            
-            return;
-          }
+  theme.unload();
+});
 
-          let theme = themeMap.get(extension);
 
-          if (!theme) {
-            
-            
-            
-            theme = new Theme(extension.baseURI, extension.logger);
-            themeMap.set(extension, theme);
-          }
+extensions.registerSchemaAPI("theme", "addon_parent", context => {
+  let {extension} = context;
+  return {
+    theme: {
+      update(details) {
+        if (!gThemesEnabled) {
+          
+          return;
+        }
 
-          theme.load(details);
-        },
+        let theme = themeMap.get(extension);
+
+        if (!theme) {
+          
+          
+          
+          theme = new Theme(extension.baseURI, extension.logger);
+          themeMap.set(extension, theme);
+        }
+
+        theme.load(details);
       },
-    };
-  }
-};
+    },
+  };
+});
