@@ -537,8 +537,7 @@ KeyframeEffectReadOnly::ComposeStyle(
     return;
   }
 
-  nsPresContext* presContext = GetPresContext();
-  bool isServoBackend = presContext && presContext->StyleSet()->IsServo();
+  bool isServoBackend = mDocument->IsStyledByServo();
 
   for (size_t propIdx = 0, propEnd = mProperties.Length();
        propIdx != propEnd; ++propIdx)
@@ -1618,7 +1617,7 @@ void
 KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
   nsStyleContext *aStyleContext)
 {
-  if (aStyleContext->PresContext()->StyleSet()->IsServo()) {
+  if (mDocument->IsStyledByServo()) {
     
     return;
   }
@@ -1692,8 +1691,7 @@ KeyframeEffectReadOnly::CanIgnoreIfNotVisible() const
 
   
   
-  nsPresContext* presContext = GetPresContext();
-  if (!presContext || presContext->StyleSet()->IsServo()) {
+  if (mDocument->IsStyledByServo()) {
     return false;
   }
 
