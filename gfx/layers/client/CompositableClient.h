@@ -114,8 +114,6 @@ public:
 
   bool IsConnected() const;
 
-  PCompositableChild* GetIPDLActor() const;
-
   CompositableForwarder* GetForwarder() const
   {
     return mForwarder;
@@ -130,6 +128,13 @@ public:
 
 
   CompositableHandle GetAsyncHandle() const;
+
+  
+
+
+  CompositableHandle GetIPCHandle() const {
+    return mHandle;
+  }
 
   
 
@@ -165,7 +170,7 @@ public:
 
   static RefPtr<CompositableClient> FromIPDLActor(PCompositableChild* aActor);
 
-  void InitIPDLActor(PCompositableChild* aActor, const CompositableHandle& aHandle);
+  void InitIPDL(const CompositableHandle& aHandle);
 
   TextureFlags GetTextureFlags() const { return mTextureFlags; }
 
@@ -177,15 +182,14 @@ public:
                                 TextureClient* aTexture,
                                 TextureDumpMode aCompress);
 protected:
-  RefPtr<CompositableChild> mCompositableChild;
   RefPtr<CompositableForwarder> mForwarder;
   
   
   TextureFlags mTextureFlags;
   RefPtr<TextureClientRecycleAllocator> mTextureClientRecycler;
 
-  
-  CompositableHandle mAsyncHandle;
+  CompositableHandle mHandle;
+  bool mIsAsync;
 
   friend class CompositableChild;
 };
