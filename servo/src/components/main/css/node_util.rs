@@ -6,14 +6,14 @@ use layout::incremental::RestyleDamage;
 
 use std::cast;
 use std::cell::Cell;
-use newcss::complete::CompleteSelectResults;
+use style::ComputedValues;
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_util::tree::TreeNodeRef;
 
 
 pub trait NodeUtil<'self> {
-    fn get_css_select_results(self) -> &'self CompleteSelectResults;
-    fn set_css_select_results(self, decl: CompleteSelectResults);
+    fn get_css_select_results(self) -> &'self ComputedValues;
+    fn set_css_select_results(self, decl: ComputedValues);
     fn have_css_select_results(self) -> bool;
 
     fn get_restyle_damage(self) -> RestyleDamage;
@@ -28,7 +28,7 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
 
 
 
-    fn get_css_select_results(self) -> &'self CompleteSelectResults {
+    fn get_css_select_results(self) -> &'self ComputedValues {
         do self.read_layout_data |layout_data| {
             match layout_data.style {
                 None => fail!(~"style() called on node without a style!"),
@@ -43,7 +43,7 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
     }
 
     
-    fn set_css_select_results(self, decl: CompleteSelectResults) {
+    fn set_css_select_results(self, decl: ComputedValues) {
         let cell = Cell::new(decl);
         self.write_layout_data(|data| data.style = Some(cell.take()));
     }

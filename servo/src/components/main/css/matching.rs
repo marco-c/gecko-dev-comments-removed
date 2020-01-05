@@ -4,72 +4,66 @@
 
 
 
-use css::node_util::NodeUtil;
-use css::select_handler::NodeSelectHandler;
-use layout::incremental;
+use std::cell::Cell;
+use css::node_style::StyledNode;
 
 use script::dom::node::{AbstractNode, LayoutView};
-use newcss::complete::CompleteSelectResults;
-use newcss::select::{SelectCtx, SelectResults};
+use style::Stylist;
+use style::cascade;
 use servo_util::tree::TreeNodeRef;
 
 pub trait MatchMethods {
-    fn restyle_subtree(&self, select_ctx: &SelectCtx);
+    fn match_node(&self, stylist: &Stylist);
+    fn match_subtree(&self, stylist: &Stylist);
+
+    fn cascade_node(&self, parent: Option<AbstractNode<LayoutView>>);
+    fn cascade_subtree(&self, parent: Option<AbstractNode<LayoutView>>);
 }
 
 impl MatchMethods for AbstractNode<LayoutView> {
-    
-
-
-
-
-
-
-    fn restyle_subtree(&self, select_ctx: &SelectCtx) {
-        
-        if self.is_element() {
-            do self.with_imm_element |elem| {
-                let inline_style = match elem.style_attribute {
-                    None => None,
-                    Some(ref sheet) => Some(sheet),
-                };
-                let select_handler = NodeSelectHandler { node: *self };
-                let incomplete_results = select_ctx.select_style(self, inline_style, &select_handler);
-                
-                let complete_results = compose_results(*self, incomplete_results);
-
-                
-                
-                if self.have_css_select_results() {
-                    let damage = incremental::compute_damage(self, self.get_css_select_results(), &complete_results);
-                    self.set_restyle_damage(damage);
-                }
-                self.set_css_select_results(complete_results);
+    fn match_node(&self, stylist: &Stylist) {
+        let applicable_declarations = do self.with_imm_element |element| {
+            let style_attribute = match element.style_attribute {
+                None => None,
+                Some(ref style_attribute) => Some(style_attribute)
             };
+            stylist.get_applicable_declarations(self, style_attribute, None)
+        };
+        let cell = Cell::new(applicable_declarations);
+        do self.write_layout_data |data| {
+            data.applicable_declarations = cell.take();
         }
+    }
+    fn match_subtree(&self, stylist: &Stylist) {
+        self.match_node(stylist);
 
         for kid in self.children() {
-            kid.restyle_subtree(select_ctx); 
+            if kid.is_element() {
+                kid.match_subtree(stylist); 
+            }
+        }
+    }
+
+    fn cascade_node(&self, parent: Option<AbstractNode<LayoutView>>) {
+        let parent_style = match parent {
+            Some(parent) => Some(parent.style()),
+            None => None
+        };
+        let computed_values = do self.read_layout_data |data| {
+            cascade(data.applicable_declarations, parent_style)
+        };
+        let cell = Cell::new(computed_values);
+        do self.write_layout_data |data| {
+            data.style = Some(cell.take());
+        }
+    }
+    fn cascade_subtree(&self, parent: Option<AbstractNode<LayoutView>>) {
+        self.cascade_node(parent);
+
+        for kid in self.children() {
+            if kid.is_element() {
+                kid.cascade_subtree(Some(*self));
+            }
         }
     }
 }
-
-fn compose_results(node: AbstractNode<LayoutView>, results: SelectResults)
-                   -> CompleteSelectResults {
-    match find_parent_element_node(node) {
-        None => CompleteSelectResults::new_root(results),
-        Some(parent_node) => {
-            let parent_results = parent_node.get_css_select_results();
-            CompleteSelectResults::new_from_parent(parent_results, results)
-        }
-    }    
-}
-
-fn find_parent_element_node(node: AbstractNode<LayoutView>) -> Option<AbstractNode<LayoutView>> {
-    match node.parent_node() {
-        Some(parent) if parent.is_element() => Some(parent),
-        Some(parent) => find_parent_element_node(parent),
-        None => None,
-    }
-}
-
