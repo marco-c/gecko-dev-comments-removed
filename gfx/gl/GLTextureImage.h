@@ -31,17 +31,6 @@ class GLContext;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 class TextureImage
 {
     NS_INLINE_DECL_REFCOUNTING(TextureImage)
@@ -69,46 +58,6 @@ public:
                        TextureImage::ContentType aContentType,
                        GLenum aWrapMode,
                        TextureImage::Flags aFlags = TextureImage::NoFlags);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual gfx::DrawTarget* BeginUpdate(nsIntRegion& aRegion) = 0;
-    
-
-
-
-
-
-
-    virtual void GetUpdateRegion(nsIntRegion& aForRegion) {
-    }
-    
-
-
-
-
-
-
-    virtual void EndUpdate() = 0;
 
     
 
@@ -146,15 +95,7 @@ public:
 
 
 
-
-
-
-    virtual void Resize(const gfx::IntSize& aSize) {
-        mSize = aSize;
-        nsIntRegion r(gfx::IntRect(0, 0, aSize.width, aSize.height));
-        BeginUpdate(r);
-        EndUpdate();
-    }
+    virtual void Resize(const gfx::IntSize& aSize) = 0;
 
     
 
@@ -194,7 +135,6 @@ public:
 
     gfx::IntSize GetSize() const;
     ContentType GetContentType() const { return mContentType; }
-    virtual bool InUpdate() const = 0;
     GLenum GetWrapMode() const { return mWrapMode; }
 
     void SetSamplingFilter(gfx::SamplingFilter aSamplingFilter) {
@@ -256,25 +196,10 @@ public:
 
     virtual void BindTexture(GLenum aTextureUnit);
 
-    virtual gfx::DrawTarget* BeginUpdate(nsIntRegion& aRegion);
-    virtual void GetUpdateRegion(nsIntRegion& aForRegion);
-    virtual void EndUpdate();
     virtual bool DirectUpdate(gfx::DataSourceSurface* aSurf, const nsIntRegion& aRegion, const gfx::IntPoint& aFrom = gfx::IntPoint(0,0));
     virtual GLuint GetTextureID() { return mTexture; }
-    virtual already_AddRefed<gfx::DrawTarget>
-      GetDrawTargetForUpdate(const gfx::IntSize& aSize, gfx::SurfaceFormat aFmt);
 
     virtual void MarkValid() { mTextureState = Valid; }
-
-    
-    
-    
-    virtual bool FinishedSurfaceUpdate();
-
-    
-    virtual void FinishedSurfaceUpload();
-
-    virtual bool InUpdate() const { return !!mUpdateDrawTarget; }
 
     virtual void Resize(const gfx::IntSize& aSize);
 
@@ -282,11 +207,6 @@ protected:
     GLuint mTexture;
     TextureState mTextureState;
     RefPtr<GLContext> mGLContext;
-    RefPtr<gfx::DrawTarget> mUpdateDrawTarget;
-    nsIntRegion mUpdateRegion;
-
-    
-    nsIntPoint mUpdateOffset;
 };
 
 
@@ -305,9 +225,6 @@ public:
                       TextureImage::ImageFormat aImageFormat = gfx::SurfaceFormat::UNKNOWN);
     ~TiledTextureImage();
     void DumpDiv();
-    virtual gfx::DrawTarget* BeginUpdate(nsIntRegion& aRegion);
-    virtual void GetUpdateRegion(nsIntRegion& aForRegion);
-    virtual void EndUpdate();
     virtual void Resize(const gfx::IntSize& aSize);
     virtual uint32_t GetTileCount();
     virtual void BeginBigImageIteration();
@@ -319,7 +236,6 @@ public:
         return mImages[mCurrentImage]->GetTextureID();
     }
     virtual bool DirectUpdate(gfx::DataSourceSurface* aSurf, const nsIntRegion& aRegion, const gfx::IntPoint& aFrom = gfx::IntPoint(0,0));
-    virtual bool InUpdate() const { return mInUpdate; }
     virtual void BindTexture(GLenum);
 
 protected:
@@ -329,14 +245,9 @@ protected:
     BigImageIterationCallback mIterationCallback;
     void* mIterationCallbackData;
     nsTArray< RefPtr<TextureImage> > mImages;
-    bool mInUpdate;
     unsigned int mTileSize;
     unsigned int mRows, mColumns;
     GLContext* mGL;
-    
-    RefPtr<gfx::DrawTarget> mUpdateDrawTarget;
-    
-    nsIntRegion mUpdateRegion;
     TextureState mTextureState;
     TextureImage::ImageFormat mImageFormat;
 };
