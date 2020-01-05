@@ -18,30 +18,28 @@
 #define __ClearKeySession_h__
 
 #include "ClearKeyUtils.h"
-#include "gmp-api/gmp-decryption.h"
 
-class GMPBuffer;
-class GMPDecryptorCallback;
-class GMPDecryptorHost;
-class GMPEncryptedBufferMetadata;
+
+#include "stddef.h"
+#include "content_decryption_module.h"
+
+#include <string>
+#include <vector>
 
 class ClearKeySession
 {
 public:
   explicit ClearKeySession(const std::string& aSessionId,
-                           GMPDecryptorCallback* aCallback,
-                           GMPSessionType aSessionType);
+                           cdm::SessionType aSessionType);
 
   ~ClearKeySession();
 
   const std::vector<KeyId>& GetKeyIds() const { return mKeyIds; }
 
-  void Init(uint32_t aCreateSessionToken,
-            uint32_t aPromiseId,
-            const string& aInitDataType,
+  bool Init(cdm::InitDataType aInitDataType,
             const uint8_t* aInitData, uint32_t aInitDataSize);
 
-  GMPSessionType Type() const;
+  cdm::SessionType Type() const;
 
   void AddKeyId(const KeyId& aKeyId);
 
@@ -51,8 +49,7 @@ private:
   const std::string mSessionId;
   std::vector<KeyId> mKeyIds;
 
-  GMPDecryptorCallback* mCallback;
-  const GMPSessionType mSessionType;
+  const cdm::SessionType mSessionType;
 };
 
 #endif 

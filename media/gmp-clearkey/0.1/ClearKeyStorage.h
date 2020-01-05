@@ -17,32 +17,27 @@
 #ifndef __ClearKeyStorage_h__
 #define __ClearKeyStorage_h__
 
-#include "gmp-api/gmp-errors.h"
-#include "gmp-api/gmp-platform.h"
+#include <functional>
+#include <stdint.h>
 #include <string>
 #include <vector>
-#include <stdint.h>
 
-class GMPTask;
+#include "ClearKeySessionManager.h"
+
+#define IO_SUCCEEDED(x) ((x) == cdm::FileIOClient::Status::kSuccess)
+#define IO_FAILED(x) ((x) != cdm::FileIOClient::Status::kSuccess)
 
 
-void StoreData(const std::string& aRecordName,
+void WriteData(cdm::Host_8* aHost,
+               std::string& aRecordName,
                const std::vector<uint8_t>& aData,
-               GMPTask* aOnSuccess,
-               GMPTask* aOnFailure);
-
-class ReadContinuation {
-public:
-  virtual void ReadComplete(GMPErr aStatus,
-                            const uint8_t* aData,
-                            uint32_t aLength) = 0;
-  virtual ~ReadContinuation() {}
-};
+               std::function<void()>&& aOnSuccess,
+               std::function<void()>&& aOnFailure);
 
 
-void ReadData(const std::string& aSessionId,
-              ReadContinuation* aContinuation);
-
-GMPErr EnumRecordNames(RecvGMPRecordIteratorPtr aRecvIteratorFunc);
+void ReadData(cdm::Host_8* aHost,
+              std::string& aRecordName,
+              std::function<void(const uint8_t*, uint32_t)>&& aOnSuccess,
+              std::function<void()>&& aOnFailure);
 
 #endif 
