@@ -136,6 +136,7 @@ this.PermissionPromptPrototype = {
 
 
 
+
   get popupOptions() {
     return {};
   },
@@ -329,7 +330,10 @@ this.PermissionPromptPrototype = {
     let secondaryActions = popupNotificationActions.splice(1);
 
     let options = this.popupOptions;
-    options.displayURI = this.principal.URI;
+
+    if (!options.hasOwnProperty('displayURI') || options.displayURI) {
+      options.displayURI = this.principal.URI;
+    }
 
     this.onBeforeShow();
     chromeWin.PopupNotifications.show(this.browser,
