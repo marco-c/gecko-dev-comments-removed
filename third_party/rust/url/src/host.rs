@@ -120,6 +120,7 @@ impl<S: AsRef<str>> fmt::Display for Host<S> {
 
 
 
+#[derive(Clone)]
 pub struct HostAndPort<S=String> {
     pub host: Host<S>,
     pub port: u16,

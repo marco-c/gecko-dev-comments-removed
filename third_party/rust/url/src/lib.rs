@@ -228,11 +228,39 @@ impl<'a> ParseOptions<'a> {
 
 impl Url {
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn parse(input: &str) -> Result<Url, ::ParseError> {
         Url::options().parse(input)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn join(&self, input: &str) -> Result<Url, ::ParseError> {
@@ -251,11 +279,31 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn as_str(&self) -> &str {
         &self.serialization
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -445,6 +493,21 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn has_authority(&self) -> bool {
         debug_assert!(self.byte_at(self.scheme_end) == b':');
@@ -456,9 +519,24 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn cannot_be_a_base(&self) -> bool {
-        self.byte_at(self.path_start) != b'/'
+        !self.slice(self.path_start..).starts_with('/')
     }
 
     
@@ -517,10 +595,43 @@ impl Url {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn has_host(&self) -> bool {
         !matches!(self.host, HostInternal::None)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -545,6 +656,24 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn host(&self) -> Option<Host<&str>> {
         match self.host {
             HostInternal::None => None,
@@ -555,6 +684,18 @@ impl Url {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn domain(&self) -> Option<&str> {
         match self.host {
             HostInternal::Domain => Some(self.slice(self.host_start..self.host_end)),
@@ -563,11 +704,38 @@ impl Url {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn port(&self) -> Option<u16> {
         self.port
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -851,6 +1019,20 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn set_port(&mut self, mut port: Option<u16>) -> Result<(), ()> {
         if !self.has_host() || self.scheme() == "file" {
             return Err(())
@@ -905,12 +1087,18 @@ impl Url {
         }
 
         if let Some(host) = host {
+            if host == "" && SchemeType::from(self.scheme()).is_special() {
+                return Err(ParseError::EmptyHost);
+            }
             self.set_host_internal(try!(Host::parse(host)), None)
         } else if self.has_host() {
+            if SchemeType::from(self.scheme()).is_special() {
+                return Err(ParseError::EmptyHost)
+            }
             debug_assert!(self.byte_at(self.scheme_end) == b':');
             debug_assert!(self.byte_at(self.path_start) == b'/');
             let new_path_start = self.scheme_end + 1;
-            self.serialization.drain(self.path_start as usize..new_path_start as usize);
+            self.serialization.drain(new_path_start as usize..self.path_start as usize);
             let offset = self.path_start - new_path_start;
             self.path_start = new_path_start;
             self.username_end = new_path_start;
@@ -1335,7 +1523,7 @@ impl serde::Deserialize for Url {
     }
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "redox"))]
 fn path_to_file_url_segments(path: &Path, serialization: &mut String) -> Result<(), ()> {
     use std::os::unix::prelude::OsStrExt;
     if !path.is_absolute() {
@@ -1395,7 +1583,7 @@ fn path_to_file_url_segments_windows(path: &Path, serialization: &mut String) ->
     Ok(())
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "redox"))]
 fn file_url_segments_to_pathbuf(segments: str::Split<char>) -> Result<PathBuf, ()> {
     use std::ffi::OsStr;
     use std::os::unix::prelude::OsStrExt;
