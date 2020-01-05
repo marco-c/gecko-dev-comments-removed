@@ -235,8 +235,6 @@ ServiceWorkerManager::ServiceWorkerManager()
   : mActor(nullptr)
   , mShuttingDown(false)
 {
-  
-  MOZ_ALWAYS_TRUE(BackgroundChild::GetOrCreateForCurrentThread(this));
 }
 
 ServiceWorkerManager::~ServiceWorkerManager()
@@ -272,6 +270,12 @@ ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar)
       rv = obs->AddObserver(this, CLEAR_ORIGIN_DATA, false );
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
+  }
+
+  if (!BackgroundChild::GetOrCreateForCurrentThread(this)) {
+    
+    
+    ActorFailed();
   }
 }
 
