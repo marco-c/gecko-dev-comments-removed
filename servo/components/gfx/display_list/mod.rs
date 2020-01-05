@@ -36,6 +36,7 @@ use paint_task::PaintLayer;
 use smallvec::SmallVec;
 use std::collections::linked_list::{self, LinkedList};
 use std::fmt;
+use std::mem;
 use std::slice::Iter;
 use std::sync::Arc;
 use style::computed_values::{border_style, cursor, filter, image_rendering, mix_blend_mode};
@@ -304,7 +305,7 @@ pub struct StackingContext {
 impl StackingContext {
     
     #[inline]
-    pub fn new(mut display_list: Box<DisplayList>,
+    pub fn new(display_list: Box<DisplayList>,
                bounds: &Rect<Au>,
                overflow: &Rect<Au>,
                z_index: i32,
@@ -317,8 +318,7 @@ impl StackingContext {
                scroll_policy: ScrollPolicy,
                layer_id: Option<LayerId>)
                -> StackingContext {
-        display_list.sort_and_layerize_children();
-        StackingContext {
+        let mut stacking_context = StackingContext {
             display_list: display_list,
             bounds: *bounds,
             overflow: *overflow,
@@ -331,6 +331,27 @@ impl StackingContext {
             scrolls_overflow_area: scrolls_overflow_area,
             scroll_policy: scroll_policy,
             layer_id: layer_id,
+        };
+        StackingContextLayerCreator::add_layers_to_preserve_drawing_order(&mut stacking_context);
+        stacking_context
+    }
+
+    pub fn create_layered_child(&self,
+                                layer_id: LayerId,
+                                display_list: Box<DisplayList>) -> StackingContext {
+        StackingContext {
+            display_list: display_list,
+            bounds: self.bounds.clone(),
+            overflow: self.overflow.clone(),
+            z_index: self.z_index,
+            filters: self.filters.clone(),
+            blend_mode: self.blend_mode,
+            transform: Matrix4::identity(),
+            perspective: Matrix4::identity(),
+            establishes_3d_context: false,
+            scrolls_overflow_area: self.scrolls_overflow_area,
+            scroll_policy: self.scroll_policy,
+            layer_id: Some(layer_id),
         }
     }
 
@@ -646,7 +667,85 @@ impl StackingContext {
     }
 }
 
+struct StackingContextLayerCreator {
+    display_list_for_next_layer: Option<Box<DisplayList>>,
+    all_following_children_need_layers: bool,
+}
 
+impl StackingContextLayerCreator {
+    fn new() -> StackingContextLayerCreator {
+        StackingContextLayerCreator {
+            display_list_for_next_layer: None,
+            all_following_children_need_layers: false,
+        }
+    }
+
+    #[inline]
+    fn add_layers_to_preserve_drawing_order(stacking_context: &mut StackingContext) {
+        let mut state = StackingContextLayerCreator::new();
+
+        
+        
+        let existing_children = mem::replace(&mut stacking_context.display_list.children,
+                                             LinkedList::new());
+        let mut sorted_children: SmallVec<[Arc<StackingContext>; 8]> = SmallVec::new();
+        sorted_children.extend(existing_children.into_iter());
+        sorted_children.sort_by(|this, other| this.z_index.cmp(&other.z_index));
+
+        
+        
+        for child_stacking_context in sorted_children.into_iter() {
+            if state.stacking_context_needs_layer(&child_stacking_context) {
+                state.add_stacking_context(child_stacking_context, stacking_context);
+            } else {
+                stacking_context.display_list.children.push_back(child_stacking_context);
+            }
+        }
+        state.finish_building_current_layer(stacking_context);
+    }
+
+    #[inline]
+    fn stacking_context_needs_layer(&mut self, stacking_context: &Arc<StackingContext>) -> bool {
+        self.all_following_children_need_layers || stacking_context.layer_id.is_some()
+    }
+
+    #[inline]
+    fn finish_building_current_layer(&mut self, stacking_context: &mut StackingContext) {
+        if let Some(display_list) = self.display_list_for_next_layer.take() {
+            let next_layer_id =
+                    stacking_context.display_list.layered_children.back().unwrap().id.next_layer_id();
+            let child_stacking_context =
+                Arc::new(stacking_context.create_layered_child(next_layer_id, display_list));
+            stacking_context.display_list.layered_children.push_back(
+                PaintLayer::new(next_layer_id, color::transparent(), child_stacking_context));
+            self.all_following_children_need_layers = true;
+        }
+    }
+
+    fn add_stacking_context(&mut self,
+                            stacking_context: Arc<StackingContext>,
+                            parent_stacking_context: &mut StackingContext) {
+        if let Some(layer_id) = stacking_context.layer_id {
+            self.finish_building_current_layer(parent_stacking_context);
+            parent_stacking_context.display_list.layered_children.push_back(
+                PaintLayer::new(layer_id, color::transparent(), stacking_context));
+
+            
+            
+            self.all_following_children_need_layers = true;
+            return;
+        }
+
+        if self.display_list_for_next_layer.is_none() {
+            self.display_list_for_next_layer = Some(box DisplayList::new());
+        }
+        if let Some(ref mut display_list) = self.display_list_for_next_layer {
+            display_list.children.push_back(stacking_context);
+        }
+    }
+}
+
+/// Returns the stacking context in the given tree of stacking contexts with a specific layer ID.
 pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id: LayerId)
                                            -> Option<Arc<StackingContext>> {
     for kid in &this.display_list.layered_children {
@@ -664,7 +763,7 @@ pub fn find_stacking_context_with_layer_id(this: &Arc<StackingContext>, layer_id
     None
 }
 
-
+/// One drawing command in the list.
 #[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub enum DisplayItem {
     SolidColorClass(Box<SolidColorDisplayItem>),
@@ -676,16 +775,16 @@ pub enum DisplayItem {
     BoxShadowClass(Box<BoxShadowDisplayItem>),
 }
 
-
+/// Information common to all display items.
 #[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub struct BaseDisplayItem {
-    
+    /// The boundaries of the display item, in layer coordinates.
     pub bounds: Rect<Au>,
 
-    
+    /// Metadata attached to this display item.
     pub metadata: DisplayItemMetadata,
 
-    
+    /// The region to clip to.
     pub clip: ClippingRegion,
 }
 
@@ -702,33 +801,33 @@ impl BaseDisplayItem {
 }
 
 
-
-
-
+/// A clipping region for a display item. Currently, this can describe rectangles, rounded
+/// rectangles (for `border-radius`), or arbitrary intersections of the two. Arbitrary transforms
+/// are not supported because those are handled by the higher-level `StackingContext` abstraction.
 #[derive(Clone, PartialEq, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct ClippingRegion {
-    
+    /// The main rectangular region. This does not include any corners.
     pub main: Rect<Au>,
-    
-    
-    
-    
+    /// Any complex regions.
+    ///
+    /// TODO(pcwalton): Atomically reference count these? Not sure if it's worth the trouble.
+    /// Measure and follow up.
     pub complex: Vec<ComplexClippingRegion>,
 }
 
-
-
-
+/// A complex clipping region. These don't as easily admit arbitrary intersection operations, so
+/// they're stored in a list over to the side. Currently a complex clipping region is just a
+/// rounded rectangle, but the CSS WGs will probably make us throw more stuff in here eventually.
 #[derive(Clone, PartialEq, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct ComplexClippingRegion {
-    
+    /// The boundaries of the rectangle.
     pub rect: Rect<Au>,
-    
+    /// Border radii of this rectangle.
     pub radii: BorderRadii<Au>,
 }
 
 impl ClippingRegion {
-    
+    /// Returns an empty clipping region that, if set, will result in no pixels being visible.
     #[inline]
     pub fn empty() -> ClippingRegion {
         ClippingRegion {
@@ -737,7 +836,7 @@ impl ClippingRegion {
         }
     }
 
-    
+    /// Returns an all-encompassing clipping region that clips no pixels out.
     #[inline]
     pub fn max() -> ClippingRegion {
         ClippingRegion {
@@ -746,7 +845,7 @@ impl ClippingRegion {
         }
     }
 
-    
+    /// Returns a clipping region that represents the given rectangle.
     #[inline]
     pub fn from_rect(rect: &Rect<Au>) -> ClippingRegion {
         ClippingRegion {
@@ -755,10 +854,10 @@ impl ClippingRegion {
         }
     }
 
-    
-    
-    
-    
+    /// Returns the intersection of this clipping region and the given rectangle.
+    ///
+    /// TODO(pcwalton): This could more eagerly eliminate complex clipping regions, at the cost of
+    /// complexity.
     #[inline]
     pub fn intersect_rect(self, rect: &Rect<Au>) -> ClippingRegion {
         ClippingRegion {
@@ -767,23 +866,23 @@ impl ClippingRegion {
         }
     }
 
-    
-    
+    /// Returns true if this clipping region might be nonempty. This can return false positives,
+    /// but never false negatives.
     #[inline]
     pub fn might_be_nonempty(&self) -> bool {
         !self.main.is_empty()
     }
 
-    
-    
+    /// Returns true if this clipping region might contain the given point and false otherwise.
+    /// This is a quick, not a precise, test; it can yield false positives.
     #[inline]
     pub fn might_intersect_point(&self, point: &Point2D<Au>) -> bool {
         geometry::rect_contains_point(self.main, *point) &&
             self.complex.iter().all(|complex| geometry::rect_contains_point(complex.rect, *point))
     }
 
-    
-    
+    /// Returns true if this clipping region might intersect the given rectangle and false
+    /// otherwise. This is a quick, not a precise, test; it can yield false positives.
     #[inline]
     pub fn might_intersect_rect(&self, rect: &Rect<Au>) -> bool {
         self.main.intersects(rect) &&
@@ -791,7 +890,7 @@ impl ClippingRegion {
     }
 
 
-    
+    /// Returns a bounding rect that surrounds this entire clipping region.
     #[inline]
     pub fn bounding_rect(&self) -> Rect<Au> {
         let mut rect = self.main;
@@ -801,7 +900,7 @@ impl ClippingRegion {
         rect
     }
 
-    
+    /// Intersects this clipping region with the given rounded rectangle.
     #[inline]
     pub fn intersect_with_rounded_rect(mut self, rect: &Rect<Au>, radii: &BorderRadii<Au>)
                                        -> ClippingRegion {
@@ -812,7 +911,7 @@ impl ClippingRegion {
         self
     }
 
-    
+    /// Translates this clipping region by the given vector.
     #[inline]
     pub fn translate(&self, delta: &Point2D<Au>) -> ClippingRegion {
         ClippingRegion {
@@ -828,23 +927,23 @@ impl ClippingRegion {
 }
 
 
-
-
-
+/// Metadata attached to each display item. This is useful for performing auxiliary tasks with
+/// the display list involving hit testing: finding the originating DOM node and determining the
+/// cursor to use when the element is hovered over.
 #[derive(Clone, Copy, HeapSizeOf, Deserialize, Serialize)]
 pub struct DisplayItemMetadata {
-    
+    /// The DOM node from which this display item originated.
     pub node: OpaqueNode,
-    
-    
+    /// The value of the `cursor` property when the mouse hovers over this display item. If `None`,
+    /// this display item is ineligible for pointer events (`pointer-events: none`).
     pub pointing: Option<Cursor>,
 }
 
 impl DisplayItemMetadata {
-    
-    
-    
-    
+    /// Creates a new set of display metadata for a display item constributed by a DOM node.
+    /// `default_cursor` specifies the cursor to use if `cursor` is `auto`. Typically, this will
+    /// be `PointerCursor`, but for text display items it may be `TextCursor` or
+    /// `VerticalTextCursor`.
     #[inline]
     pub fn new(node: OpaqueNode, style: &ComputedValues, default_cursor: Cursor)
                -> DisplayItemMetadata {
@@ -859,39 +958,39 @@ impl DisplayItemMetadata {
     }
 }
 
-
+/// Paints a solid color.
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct SolidColorDisplayItem {
-    
+    /// Fields common to all display items.
     pub base: BaseDisplayItem,
 
-    
+    /// The color.
     pub color: Color,
 }
 
-
+/// Paints text.
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct TextDisplayItem {
-    
+    /// Fields common to all display items.
     pub base: BaseDisplayItem,
 
-    
+    /// The text run.
     #[ignore_heap_size_of = "Because it is non-owning"]
     pub text_run: Arc<TextRun>,
 
-    
+    /// The range of text within the text run.
     pub range: Range<CharIndex>,
 
-    
+    /// The color of the text.
     pub text_color: Color,
 
-    
+    /// The position of the start of the baseline of this text.
     pub baseline_origin: Point2D<Au>,
 
-    
+    /// The orientation of the text: upright or sideways left/right.
     pub orientation: TextOrientation,
 
-    
+    /// The blur radius for this text. If zero, this text is not blurred.
     pub blur_radius: Au,
 }
 
@@ -902,37 +1001,37 @@ pub enum TextOrientation {
     SidewaysRight,
 }
 
-
+/// Paints an image.
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct ImageDisplayItem {
     pub base: BaseDisplayItem,
     #[ignore_heap_size_of = "Because it is non-owning"]
     pub image: Arc<Image>,
 
-    
-    
-    
+    /// The dimensions to which the image display item should be stretched. If this is smaller than
+    /// the bounds of this display item, then the image will be repeated in the appropriate
+    /// direction to tile the entire bounds.
     pub stretch_size: Size2D<Au>,
 
-    
-    
+    /// The algorithm we should use to stretch the image. See `image_rendering` in CSS-IMAGES-3 §
+    /// 5.3.
     pub image_rendering: image_rendering::T,
 }
 
 
-
+/// Paints a gradient.
 #[derive(Clone, Deserialize, Serialize)]
 pub struct GradientDisplayItem {
-    
+    /// Fields common to all display items.
     pub base: BaseDisplayItem,
 
-    
+    /// The start point of the gradient (computed during display list construction).
     pub start_point: Point2D<Au>,
 
-    
+    /// The end point of the gradient (computed during display list construction).
     pub end_point: Point2D<Au>,
 
-    
+    /// A list of color stops.
     pub stops: Vec<GradientStop>,
 }
 
@@ -942,39 +1041,39 @@ impl HeapSizeOf for GradientDisplayItem {
         use libc::c_void;
         use util::mem::heap_size_of;
 
-        
-        
-        
+        // We can't measure `stops` via Vec's HeapSizeOf implementation because GradientStop isn't
+        // defined in this module, and we don't want to import GradientStop into util::mem where
+        // the HeapSizeOf trait is defined. So we measure the elements directly.
         self.base.heap_size_of_children() +
             heap_size_of(self.stops.as_ptr() as *const c_void)
     }
 }
 
 
-
+/// Paints a border.
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct BorderDisplayItem {
-    
+    /// Fields common to all display items.
     pub base: BaseDisplayItem,
 
-    
+    /// Border widths.
     pub border_widths: SideOffsets2D<Au>,
 
-    
+    /// Border colors.
     pub color: SideOffsets2D<Color>,
 
-    
+    /// Border styles.
     pub style: SideOffsets2D<border_style::T>,
 
-    
-    
-    
+    /// Border radii.
+    ///
+    /// TODO(pcwalton): Elliptical radii.
     pub radius: BorderRadii<Au>,
 }
 
-
-
-
+/// Information about the border radii.
+///
+/// TODO(pcwalton): Elliptical radii.
 #[derive(Clone, PartialEq, Debug, Copy, HeapSizeOf, Deserialize, Serialize)]
 pub struct BorderRadii<T> {
     pub top_left: Size2D<T>,
@@ -1001,7 +1100,7 @@ impl<T> Default for BorderRadii<T> where T: Default, T: Clone {
 }
 
 impl BorderRadii<Au> {
-    
+    // Scale the border radii by the specified factor
     pub fn scale_by(&self, s: f32) -> BorderRadii<Au> {
         BorderRadii { top_left: BorderRadii::scale_corner_by(self.top_left, s),
                       top_right: BorderRadii::scale_corner_by(self.top_right, s),
@@ -1009,14 +1108,14 @@ impl BorderRadii<Au> {
                       bottom_right: BorderRadii::scale_corner_by(self.bottom_right, s) }
     }
 
-    
+    // Scale the border corner radius by the specified factor
     pub fn scale_corner_by(corner: Size2D<Au>, s: f32) -> Size2D<Au> {
         Size2D { width: corner.width.scale_by(s), height: corner.height.scale_by(s) }
     }
 }
 
 impl<T> BorderRadii<T> where T: PartialEq + Zero {
-    
+    /// Returns true if all the radii are zero.
     pub fn is_square(&self) -> bool {
         let zero = Zero::zero();
         self.top_left == zero && self.top_right == zero && self.bottom_right == zero &&
@@ -1025,7 +1124,7 @@ impl<T> BorderRadii<T> where T: PartialEq + Zero {
 }
 
 impl<T> BorderRadii<T> where T: PartialEq + Zero + Clone {
-    
+    /// Returns a set of border radii that all have the given value.
     pub fn all_same(value: T) -> BorderRadii<T> {
         BorderRadii {
             top_left: Size2D { width: value.clone(), height: value.clone() },
@@ -1036,53 +1135,53 @@ impl<T> BorderRadii<T> where T: PartialEq + Zero + Clone {
     }
 }
 
-
+/// Paints a line segment.
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct LineDisplayItem {
     pub base: BaseDisplayItem,
 
-    
+    /// The line segment color.
     pub color: Color,
 
-    
+    /// The line segment style.
     pub style: border_style::T
 }
 
-
+/// Paints a box shadow per CSS-BACKGROUNDS.
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
 pub struct BoxShadowDisplayItem {
-    
+    /// Fields common to all display items.
     pub base: BaseDisplayItem,
 
-    
+    /// The dimensions of the box that we're placing a shadow around.
     pub box_bounds: Rect<Au>,
 
-    
+    /// The offset of this shadow from the box.
     pub offset: Point2D<Au>,
 
-    
+    /// The color of this shadow.
     pub color: Color,
 
-    
+    /// The blur radius for this shadow.
     pub blur_radius: Au,
 
-    
+    /// The spread radius of this shadow.
     pub spread_radius: Au,
 
-    
+    /// How we should clip the result.
     pub clip_mode: BoxShadowClipMode,
 }
 
-
+/// How a box shadow should be clipped.
 #[derive(Clone, Copy, Debug, PartialEq, HeapSizeOf, Deserialize, Serialize)]
 pub enum BoxShadowClipMode {
-    
+    /// No special clipping should occur. This is used for (shadowed) text decorations.
     None,
-    
-    
+    /// The area inside `box_bounds` should be clipped out. Corresponds to the normal CSS
+    /// `box-shadow`.
     Outset,
-    
-    
+    /// The area outside `box_bounds` should be clipped out. Corresponds to the `inset` flag on CSS
+    /// `box-shadow`.
     Inset,
 }
 
@@ -1103,7 +1202,7 @@ impl<'a> Iterator for DisplayItemIterator<'a> {
 }
 
 impl DisplayItem {
-    
+    /// Paints this display item into the given painting context.
     fn draw_into_context(&self, paint_context: &mut PaintContext) {
         let this_clip = &self.base().clip;
         match paint_context.transient_clip {

@@ -36,19 +36,35 @@ impl FrameTreeId {
 }
 
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
-pub struct LayerId(pub usize, pub u32);
+pub struct LayerId(
+    
+    pub usize,
+
+    
+    pub u32,
+
+    
+    
+    
+    pub u32
+);
 
 impl Debug for LayerId {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let LayerId(a, b) = *self;
-        write!(f, "Layer({}, {})", a, b)
+        let LayerId(a, b, c) = *self;
+        write!(f, "Layer({}, {}, {})", a, b, c)
     }
 }
 
 impl LayerId {
     
     pub fn null() -> LayerId {
-        LayerId(0, 0)
+        LayerId(0, 0, 0)
+    }
+
+    pub fn next_layer_id(&self) -> LayerId {
+        let LayerId(a, b, sub_id) = *self;
+        LayerId(a, b, sub_id + 1)
     }
 }
 
