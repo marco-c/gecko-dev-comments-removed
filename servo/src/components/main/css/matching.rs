@@ -286,21 +286,21 @@ pub trait MatchMethods {
     fn recalc_style_for_subtree(&self,
                                 stylist: &Stylist,
                                 layout_context: &mut LayoutContext,
-                                mut font_context: ~FontContext,
+                                mut font_context: Box<FontContext>,
                                 applicable_declarations: &mut ApplicableDeclarations,
                                 applicable_declarations_cache: &mut ApplicableDeclarationsCache,
                                 style_sharing_candidate_cache: &mut StyleSharingCandidateCache,
                                 parent: Option<LayoutNode>)
-                                -> ~FontContext;
+                                -> Box<FontContext>;
 
     fn match_node(&self,
                   stylist: &Stylist,
                   applicable_declarations: &mut ApplicableDeclarations,
                   shareable: &mut bool);
 
-    /// Attempts to share a style with another node. This method is unsafe because it depends on
-    /// the `style_sharing_candidate_cache` having only live nodes in it, and we have no way to
-    /// guarantee that at the type system level yet.
+    
+    
+    
     unsafe fn share_style_if_possible(&self,
                                       style_sharing_candidate_cache:
                                         &mut StyleSharingCandidateCache,
@@ -363,7 +363,7 @@ impl<'ln> PrivateMatchMethods for LayoutNode<'ln> {
             }
         };
 
-        // Cache the resolved style if it was cacheable.
+        
         if cacheable {
             applicable_declarations_cache.insert(applicable_declarations, this_style.clone());
         }
@@ -388,13 +388,13 @@ impl<'ln> PrivateMatchMethods for LayoutNode<'ln> {
         };
         match parent_layout_data {
             &Some(ref parent_layout_data_ref) => {
-                // Check parent style.
+                
                 let parent_style = parent_layout_data_ref.shared_data.style.as_ref().unwrap();
                 if !arc_ptr_eq(parent_style, &candidate.parent_style) {
                     return None
                 }
 
-                // Check tag names, classes, etc.
+                
                 if !candidate.can_share_style_with(&self.as_element()) {
                     return None
                 }
@@ -451,7 +451,7 @@ impl<'ln> MatchMethods for LayoutNode<'ln> {
         for (i, &(ref candidate, ())) in style_sharing_candidate_cache.iter().enumerate() {
             match self.share_style_with_candidate_if_possible(parent.clone(), candidate) {
                 Some(shared_style) => {
-                    // Yay, cache hit. Share the style.
+                    
                     let mut layout_data_ref = self.mutate_layout_data();
                     layout_data_ref.get_mut_ref().shared_data.style = Some(shared_style);
                     return StyleWasShared(i)
@@ -466,20 +466,20 @@ impl<'ln> MatchMethods for LayoutNode<'ln> {
     fn recalc_style_for_subtree(&self,
                                 stylist: &Stylist,
                                 layout_context: &mut LayoutContext,
-                                mut font_context: ~FontContext,
+                                mut font_context: Box<FontContext>,
                                 applicable_declarations: &mut ApplicableDeclarations,
                                 applicable_declarations_cache: &mut ApplicableDeclarationsCache,
                                 style_sharing_candidate_cache: &mut StyleSharingCandidateCache,
                                 parent: Option<LayoutNode>)
-                                -> ~FontContext {
+                                -> Box<FontContext> {
         self.initialize_layout_data(layout_context.layout_chan.clone());
 
-        // First, check to see whether we can share a style with someone.
+        
         let sharing_result = unsafe {
             self.share_style_if_possible(style_sharing_candidate_cache, parent.clone())
         };
 
-        // Otherwise, match and cascade selectors.
+        
         match sharing_result {
             CannotShare(mut shareable) => {
                 if self.is_element() {
@@ -494,7 +494,7 @@ impl<'ln> MatchMethods for LayoutNode<'ln> {
 
                 applicable_declarations.clear();
 
-                // Add ourselves to the LRU cache.
+                
                 if shareable {
                     style_sharing_candidate_cache.insert_if_possible(self)
                 }
@@ -512,7 +512,7 @@ impl<'ln> MatchMethods for LayoutNode<'ln> {
                                                         Some(self.clone()))
         }
 
-        // Construct flows.
+        
         let layout_node = ThreadSafeLayoutNode::new(self);
         let mut flow_constructor = FlowConstructor::new(layout_context, Some(font_context));
         flow_constructor.process(&layout_node);
@@ -523,11 +523,11 @@ impl<'ln> MatchMethods for LayoutNode<'ln> {
                            parent: Option<LayoutNode>,
                            applicable_declarations: &ApplicableDeclarations,
                            applicable_declarations_cache: &mut ApplicableDeclarationsCache) {
-        // Get our parent's style. This must be unsafe so that we don't touch the parent's
-        // borrow flags.
-        //
-        // FIXME(pcwalton): Isolate this unsafety into the `wrapper` module to allow
-        // enforced safe, race-free access to the parent style.
+        
+        
+        
+        
+        
         let parent_style = match parent {
             None => None,
             Some(parent_node) => {

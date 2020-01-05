@@ -23,11 +23,11 @@ use sync::Arc;
 
 pub struct RenderContext<'a> {
     pub draw_target: &'a DrawTarget,
-    pub font_ctx: &'a mut ~FontContext,
+    pub font_ctx: &'a mut Box<FontContext>,
     pub opts: &'a Opts,
-    /// The rectangle that this context encompasses in page coordinates.
+    
     pub page_rect: Rect<f32>,
-    /// The rectangle that this context encompasses in screen coordinates (pixels).
+    
     pub screen_rect: Rect<uint>,
 }
 
@@ -98,7 +98,7 @@ impl<'a> RenderContext<'a>  {
         self.draw_target.pop_clip();
     }
 
-    pub fn draw_image(&self, bounds: Rect<Au>, image: Arc<~Image>) {
+    pub fn draw_image(&self, bounds: Rect<Au>, image: Arc<Box<Image>>) {
         let size = Size2D(image.width as i32, image.height as i32);
         let pixel_width = match image.color_type {
             RGBA8 => 4,
@@ -149,7 +149,7 @@ impl<'a> RenderContext<'a>  {
             }
             border_style::hidden                       => {
             }
-            //FIXME(sammykim): This doesn't work with dash_pattern and cap_style well. I referred firefox code.
+            
             border_style::dotted                       => {
                 self.draw_dashed_border_segment(direction, bounds, border, color_select, DottedBorder);
             }

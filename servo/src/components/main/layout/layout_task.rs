@@ -58,7 +58,7 @@ use std::cast;
 use std::comm::{channel, Sender, Receiver};
 use std::mem;
 use std::ptr;
-use std::task;
+use std::task::TaskBuilder;
 use style::{AuthorOrigin, Stylesheet, Stylist};
 use sync::{Arc, Mutex};
 use url::Url;
@@ -95,22 +95,22 @@ pub struct LayoutTask {
     
     pub display_list: Option<Arc<DisplayList>>,
 
-    pub stylist: ~Stylist,
+    pub stylist: Box<Stylist>,
 
-    /// The workers that we use for parallel operation.
+    
     pub parallel_traversal: Option<WorkQueue<*mut LayoutContext,PaddedUnsafeFlow>>,
 
-    /// The channel on which messages can be sent to the profiler.
+    
     pub profiler_chan: ProfilerChan,
 
-    /// The command-line options.
+    
     pub opts: Opts,
 
-    /// The dirty rect. Used during display list construction.
+    
     pub dirty: Rect<Au>,
 }
 
-/// The damage computation traversal.
+
 #[deriving(Clone)]
 struct ComputeDamageTraversal;
 
@@ -126,9 +126,9 @@ impl PostorderFlowTraversal for ComputeDamageTraversal {
     }
 }
 
-/// Propagates restyle damage up and down the tree as appropriate.
-///
-/// FIXME(pcwalton): Merge this with flow tree building and/or other traversals.
+
+
+
 struct PropagateDamageTraversal {
     all_style_damage: bool,
 }
@@ -151,7 +151,7 @@ impl PreorderFlowTraversal for PropagateDamageTraversal {
     }
 }
 
-/// The flow tree verification traversal. This is only on in debug builds.
+
 #[cfg(debug)]
 struct FlowTreeVerificationTraversal;
 
@@ -169,8 +169,8 @@ impl PreorderFlowTraversal for FlowTreeVerificationTraversal {
     }
 }
 
-/// The bubble-widths traversal, the first part of layout computation. This computes preferred
-/// and intrinsic widths and bubbles them up the tree.
+
+
 pub struct BubbleWidthsTraversal<'a> {
     pub layout_context: &'a mut LayoutContext,
 }
@@ -182,16 +182,16 @@ impl<'a> PostorderFlowTraversal for BubbleWidthsTraversal<'a> {
         true
     }
 
-    // FIXME: We can't prune until we start reusing flows
-    /*
-    #[inline]
-    fn should_prune(&mut self, flow: &mut Flow) -> bool {
-        flow::mut_base(flow).restyle_damage.lacks(BubbleWidths)
-    }
-    */
+    
+    
+
+
+
+
+
 }
 
-/// The assign-widths traversal. In Gecko this corresponds to `Reflow`.
+
 pub struct AssignWidthsTraversal<'a> {
     pub layout_context: &'a mut LayoutContext,
 }
@@ -204,9 +204,9 @@ impl<'a> PreorderFlowTraversal for AssignWidthsTraversal<'a> {
     }
 }
 
-/// The assign-heights-and-store-overflow traversal, the last (and most expensive) part of layout
-/// computation. Determines the final heights for all layout objects, computes positions, and
-/// computes overflow regions. In Gecko this corresponds to `FinishAndStoreOverflow`.
+
+
+
 pub struct AssignHeightsAndStoreOverflowTraversal<'a> {
     pub layout_context: &'a mut LayoutContext,
 }
@@ -215,8 +215,8 @@ impl<'a> PostorderFlowTraversal for AssignHeightsAndStoreOverflowTraversal<'a> {
     #[inline]
     fn process(&mut self, flow: &mut Flow) -> bool {
         flow.assign_height(self.layout_context);
-        // Skip store-overflow for absolutely positioned flows. That will be
-        // done in a separate traversal.
+        
+        
         if !flow.is_store_overflow_delayed() {
             flow.store_overflow(self.layout_context);
         }
@@ -229,7 +229,7 @@ impl<'a> PostorderFlowTraversal for AssignHeightsAndStoreOverflowTraversal<'a> {
     }
 }
 
-/// The display list construction traversal.
+
 pub struct BuildDisplayListTraversal<'a> {
     layout_context: &'a LayoutContext,
 }
@@ -264,7 +264,7 @@ impl ImageResponder for LayoutImageResponder {
         let script_chan = self.script_chan.clone();
         let f: proc(ImageResponseMsg):Send = proc(_) {
             let ScriptChan(chan) = script_chan;
-            drop(chan.try_send(SendEventMsg(id.clone(), ReflowEvent)))
+            drop(chan.send_opt(SendEventMsg(id.clone(), ReflowEvent)))
         };
         f
     }
@@ -283,7 +283,7 @@ impl LayoutTask {
                   opts: Opts,
                   profiler_chan: ProfilerChan,
                   shutdown_chan: Sender<()>) {
-        let mut builder = task::task().named("LayoutTask");
+        let mut builder = TaskBuilder::new().named("LayoutTask");
         let ConstellationChan(con_chan) = constellation_chan.clone();
         send_on_failure(&mut builder, FailureMsg(failure_msg), con_chan);
         builder.spawn(proc() {
@@ -314,10 +314,10 @@ impl LayoutTask {
            opts: &Opts,
            profiler_chan: ProfilerChan)
            -> LayoutTask {
-        let local_image_cache = ~LocalImageCache(image_cache_task.clone());
+        let local_image_cache = box LocalImageCache(image_cache_task.clone());
         let local_image_cache = unsafe {
-            let cache = Arc::new(Mutex::new(cast::transmute::<~LocalImageCache,
-                                                              *()>(local_image_cache)));
+            let cache = Arc::new(Mutex::new(
+                cast::transmute::<Box<LocalImageCache>, *()>(local_image_cache)));
             LocalImageCacheHandle::new(cast::transmute::<Arc<Mutex<*()>>,Arc<*()>>(cache))
         };
         let screen_size = Size2D(Au(0), Au(0));
@@ -339,7 +339,7 @@ impl LayoutTask {
             screen_size: screen_size,
 
             display_list: None,
-            stylist: ~new_stylist(),
+            stylist: box new_stylist(),
             parallel_traversal: parallel_traversal,
             profiler_chan: profiler_chan,
             opts: opts.clone(),
@@ -455,7 +455,7 @@ impl LayoutTask {
     }
 
     /// Retrieves the flow tree root from the root node.
-    fn get_layout_root(&self, node: LayoutNode) -> ~Flow:Share {
+    fn get_layout_root(&self, node: LayoutNode) -> Box<Flow:Share> {
         let mut layout_data_ref = node.mutate_layout_data();
         let result = match &mut *layout_data_ref {
             &Some(ref mut layout_data) => {
@@ -521,7 +521,7 @@ impl LayoutTask {
     /// benchmarked against those two. It is marked `#[inline(never)]` to aid profiling.
     #[inline(never)]
     fn solve_constraints_parallel(&mut self,
-                                  layout_root: &mut ~Flow:Share,
+                                  layout_root: &mut Box<Flow:Share>,
                                   layout_context: &mut LayoutContext) {
         if layout_context.opts.bubble_widths_separately {
             let mut traversal = BubbleWidthsTraversal {
@@ -547,13 +547,13 @@ impl LayoutTask {
     /// This is only on in debug builds.
     #[inline(never)]
     #[cfg(debug)]
-    fn verify_flow_tree(&mut self, layout_root: &mut ~Flow:Share) {
+    fn verify_flow_tree(&mut self, layout_root: &mut Box<Flow:Share>) {
         let mut traversal = FlowTreeVerificationTraversal;
         layout_root.traverse_preorder(&mut traversal);
     }
 
     #[cfg(not(debug))]
-    fn verify_flow_tree(&mut self, _: &mut ~Flow:Share) {
+    fn verify_flow_tree(&mut self, _: &mut Box<Flow:Share>) {
     }
 
     /// The high-level routine that performs layout tasks.
@@ -597,7 +597,7 @@ impl LayoutTask {
         // FIXME(pcwalton): This is a pretty bogus thing to do. Essentially this is a workaround
         // for libgreen having slow TLS.
         let mut font_context_opt = if self.parallel_traversal.is_none() {
-            Some(~FontContext::new(layout_ctx.font_context_info.clone()))
+            Some(box FontContext::new(layout_ctx.font_context_info.clone()))
         } else {
             None
         };
@@ -805,7 +805,7 @@ impl LayoutTask {
                         match *item {
                             ClipDisplayItemClass(ref cc) => {
                                 if geometry::rect_contains_point(cc.base.bounds, Point2D(x, y)) {
-                                    let ret = hit_test(x, y, cc.children.list.rev_iter());
+                                    let ret = hit_test(x, y, cc.children.list.iter().rev());
                                     if !ret.is_none() {
                                         return ret
                                     }
@@ -835,7 +835,7 @@ impl LayoutTask {
                               Au::from_frac_px(point.y as f64));
                 let resp = match self.display_list {
                     None => fail!("no display list!"),
-                    Some(ref display_list) => hit_test(x, y, display_list.list.rev_iter()),
+                    Some(ref display_list) => hit_test(x, y, display_list.list.iter().rev()),
                 };
                 if resp.is_some() {
                     reply_chan.send(Ok(resp.unwrap()));
@@ -900,15 +900,15 @@ impl LayoutTask {
     
     
     
-    fn make_on_image_available_cb(&self) -> ~ImageResponder:Send {
+    fn make_on_image_available_cb(&self) -> Box<ImageResponder:Send> {
         
         
         
         
-        ~LayoutImageResponder {
+        box LayoutImageResponder {
             id: self.id.clone(),
             script_chan: self.script_chan.clone(),
-        } as ~ImageResponder:Send
+        } as Box<ImageResponder:Send>
     }
 
     

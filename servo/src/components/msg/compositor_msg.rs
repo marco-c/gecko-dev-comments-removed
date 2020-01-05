@@ -35,11 +35,11 @@ pub struct LayerBuffer {
 
 
 pub struct LayerBufferSet {
-    pub buffers: Vec<~LayerBuffer>
+    pub buffers: Vec<Box<LayerBuffer>>
 }
 
 impl LayerBufferSet {
-    /// Notes all buffer surfaces will leak if not destroyed via a call to `destroy`.
+    
     pub fn mark_will_leak(&mut self) {
         for buffer in self.buffers.mut_iter() {
             buffer.native_surface.mark_will_leak()
@@ -47,7 +47,7 @@ impl LayerBufferSet {
     }
 }
 
-/// The status of the renderer.
+
 #[deriving(Eq, Clone)]
 pub enum RenderState {
     IdleRenderState,
@@ -56,17 +56,17 @@ pub enum RenderState {
 
 #[deriving(Eq, Clone)]
 pub enum ReadyState {
-    /// Informs the compositor that nothing has been done yet. Used for setting status
+    
     Blank,
-    /// Informs the compositor that a page is loading. Used for setting status
+    
     Loading,
-    /// Informs the compositor that a page is performing layout. Used for setting status
+    
     PerformingLayout,
-    /// Informs the compositor that a page is finished loading. Used for setting status
+    
     FinishedLoading,
 }
 
-/// A newtype struct for denoting the age of messages; prevents race conditions.
+
 #[deriving(Eq)]
 pub struct Epoch(pub uint);
 
@@ -140,7 +140,7 @@ pub trait RenderListener {
     fn paint(&self,
              pipeline_id: PipelineId,
              layer_id: LayerId,
-             layer_buffer_set: ~LayerBufferSet,
+             layer_buffer_set: Box<LayerBufferSet>,
              epoch: Epoch);
 
     fn set_render_state(&self, render_state: RenderState);
@@ -155,10 +155,10 @@ pub trait ScriptListener : Clone {
                              layer_id: LayerId,
                              point: Point2D<f32>);
     fn close(&self);
-    fn dup(&self) -> ~ScriptListener;
+    fn dup(&self) -> Box<ScriptListener>;
 }
 
-impl<E, S: Encoder<E>> Encodable<S, E> for ~ScriptListener {
+impl<E, S: Encoder<E>> Encodable<S, E> for Box<ScriptListener> {
     fn encode(&self, _s: &mut S) -> Result<(), E> {
         Ok(())
     }
@@ -181,7 +181,7 @@ pub trait Tile {
     fn destroy(self, graphics_context: &NativePaintingGraphicsContext);
 }
 
-impl Tile for ~LayerBuffer {
+impl Tile for Box<LayerBuffer> {
     fn get_mem(&self) -> uint {
         
         self.screen_pos.size.width * self.screen_pos.size.height

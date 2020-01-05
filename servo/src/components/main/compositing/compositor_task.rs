@@ -58,12 +58,12 @@ impl ScriptListener for CompositorChan {
         port.recv();
     }
 
-    fn dup(&self) -> ~ScriptListener {
-        ~self.clone() as ~ScriptListener
+    fn dup(&self) -> Box<ScriptListener> {
+        box self.clone() as Box<ScriptListener>
     }
 }
 
-/// Implementation of the abstract `RenderListener` interface.
+
 impl RenderListener for CompositorChan {
     fn get_graphics_metadata(&self) -> Option<NativeGraphicsMetadata> {
         let (chan, port) = channel();
@@ -74,7 +74,7 @@ impl RenderListener for CompositorChan {
     fn paint(&self,
              pipeline_id: PipelineId,
              layer_id: LayerId,
-             layer_buffer_set: ~LayerBufferSet,
+             layer_buffer_set: Box<LayerBufferSet>,
              epoch: Epoch) {
         self.chan.send(Paint(pipeline_id, layer_id, layer_buffer_set, epoch))
     }
@@ -83,9 +83,9 @@ impl RenderListener for CompositorChan {
                                       pipeline_id: PipelineId,
                                       metadata: Vec<LayerMetadata>,
                                       epoch: Epoch) {
-        // FIXME(#2004, pcwalton): This assumes that the first layer determines the page size, and
-        // that all other layers are immediate children of it. This is sufficient to handle
-        // `position: fixed` but will not be sufficient to handle `overflow: scroll` or transforms.
+        
+        
+        
         let mut first = true;
         for metadata in metadata.iter() {
             let origin = Point2D(metadata.position.origin.x as f32,
@@ -147,48 +147,48 @@ impl CompositorChan {
         self.chan.send(msg);
     }
 }
-/// Messages from the painting task and the constellation task to the compositor task.
+
 pub enum Msg {
-    /// Requests that the compositor shut down.
+    
     Exit(Sender<()>),
 
-    /// Informs the compositor that the constellation has completed shutdown.
-    /// Required because the constellation can have pending calls to make (e.g. SetIds)
-    /// at the time that we send it an ExitMsg.
+    
+    
+    
     ShutdownComplete,
 
-    /// Requests the compositor's graphics metadata. Graphics metadata is what the renderer needs
-    /// to create surfaces that the compositor can see. On Linux this is the X display; on Mac this
-    /// is the pixel format.
-    ///
-    /// The headless compositor returns `None`.
+    
+    
+    
+    
+    
     GetGraphicsMetadata(Sender<Option<NativeGraphicsMetadata>>),
 
-    /// Tells the compositor to create the root layer for a pipeline if necessary (i.e. if no layer
-    /// with that ID exists).
+    
+    
     CreateRootCompositorLayerIfNecessary(PipelineId, LayerId, Size2D<f32>),
-    /// Tells the compositor to create a descendant layer for a pipeline if necessary (i.e. if no
-    /// layer with that ID exists).
+    
+    
     CreateDescendantCompositorLayerIfNecessary(PipelineId, LayerId, Rect<f32>, ScrollPolicy),
-    /// Alerts the compositor that the specified layer has changed size.
+    
     SetLayerPageSize(PipelineId, LayerId, Size2D<f32>, Epoch),
-    /// Alerts the compositor that the specified layer's clipping rect has changed.
+    
     SetLayerClipRect(PipelineId, LayerId, Rect<f32>),
-    /// Alerts the compositor that the specified pipeline has been deleted.
+    
     DeleteLayerGroup(PipelineId),
-    /// Scroll a page in a window
+    
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>),
-    /// Requests that the compositor paint the given layer buffer set for the given page size.
-    Paint(PipelineId, LayerId, ~LayerBufferSet, Epoch),
-    /// Alerts the compositor to the current status of page loading.
+    
+    Paint(PipelineId, LayerId, Box<LayerBufferSet>, Epoch),
+    
     ChangeReadyState(ReadyState),
-    /// Alerts the compositor to the current status of rendering.
+    
     ChangeRenderState(RenderState),
-    /// Sets the channel to the current layout and render tasks, along with their id
+    
     SetIds(SendableFrameTree, Sender<()>, ConstellationChan),
-    /// Sets the color of unrendered content for a layer.
+    
     SetUnRenderedColor(PipelineId, LayerId, Color),
-    /// The load of a page for a given URL has completed.
+    
     LoadComplete(PipelineId, Url),
 }
 
@@ -214,9 +214,9 @@ impl CompositorTask {
         }
     }
 
-    /// Creates a graphics context. Platform-specific.
-    ///
-    /// FIXME(pcwalton): Probably could be less platform-specific, using the metadata abstraction.
+    
+    
+    
     #[cfg(target_os="linux")]
     fn create_graphics_context() -> NativeCompositingGraphicsContext {
         NativeCompositingGraphicsContext::from_display(azure_hl::current_display())

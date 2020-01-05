@@ -30,7 +30,7 @@ use servo_util::time;
 use servo_util::task::send_on_failure;
 
 use std::comm::{channel, Receiver, Sender};
-use std::task;
+use std::task::TaskBuilder;
 use sync::Arc;
 
 
@@ -50,19 +50,19 @@ pub struct RenderLayer {
 pub enum Msg {
     RenderMsg(SmallVec1<RenderLayer>),
     ReRenderMsg(Vec<BufferRequest>, f32, LayerId, Epoch),
-    UnusedBufferMsg(Vec<~LayerBuffer>),
+    UnusedBufferMsg(Vec<Box<LayerBuffer>>),
     PaintPermissionGranted,
     PaintPermissionRevoked,
     ExitMsg(Option<Sender<()>>),
 }
 
-/// A request from the compositor to the renderer for tiles that need to be (re)displayed.
+
 #[deriving(Clone)]
 pub struct BufferRequest {
-    // The rect in pixels that will be drawn to the screen
+    
     screen_rect: Rect<uint>,
 
-    // The rect in page coordinates that this tile represents
+    
     page_rect: Rect<f32>,
 }
 
@@ -73,7 +73,7 @@ pub fn BufferRequest(screen_rect: Rect<uint>, page_rect: Rect<f32>) -> BufferReq
     }
 }
 
-// FIXME(#2005, pcwalton): This should be a newtype struct.
+
 pub struct RenderChan {
     pub chan: Sender<Msg>,
 }
@@ -96,16 +96,16 @@ impl RenderChan {
     }
 
     pub fn send(&self, msg: Msg) {
-        assert!(self.try_send(msg), "RenderChan.send: render port closed")
+        assert!(self.send_opt(msg).is_ok(), "RenderChan.send: render port closed")
     }
 
-    pub fn try_send(&self, msg: Msg) -> bool {
-        self.chan.try_send(msg)
+    pub fn send_opt(&self, msg: Msg) -> Result<(), Msg> {
+        self.chan.send_opt(msg)
     }
 }
 
-/// If we're using GPU rendering, this provides the metadata needed to create a GL context that
-/// is compatible with that of the main thread.
+
+
 pub enum GraphicsContext {
     CpuGraphicsContext,
     GpuGraphicsContext,
@@ -116,33 +116,33 @@ pub struct RenderTask<C> {
     port: Receiver<Msg>,
     compositor: C,
     constellation_chan: ConstellationChan,
-    font_ctx: ~FontContext,
+    font_ctx: Box<FontContext>,
     opts: Opts,
 
-    /// A channel to the profiler.
+    
     profiler_chan: ProfilerChan,
 
-    /// The graphics context to use.
+    
     graphics_context: GraphicsContext,
 
-    /// The native graphics context.
+    
     native_graphics_context: Option<NativePaintingGraphicsContext>,
 
-    /// The layers to be rendered.
+    
     render_layers: SmallVec1<RenderLayer>,
 
-    /// Permission to send paint messages to the compositor
+    
     paint_permission: bool,
 
-    /// A counter for epoch messages
+    
     epoch: Epoch,
 
-    /// A data structure to store unused LayerBuffers
-    buffer_map: BufferMap<~LayerBuffer>,
+    
+    buffer_map: BufferMap<Box<LayerBuffer>>,
 }
 
-// If we implement this as a function, we get borrowck errors from borrowing
-// the whole RenderTask struct.
+
+
 macro_rules! native_graphics_context(
     ($task:expr) => (
         $task.native_graphics_context.as_ref().expect("Need a graphics context to do rendering")
@@ -174,7 +174,7 @@ impl<C: RenderListener + Send> RenderTask<C> {
                   opts: Opts,
                   profiler_chan: ProfilerChan,
                   shutdown_chan: Sender<()>) {
-        let mut builder = task::task().named("RenderTask");
+        let mut builder = TaskBuilder::new().named("RenderTask");
         let ConstellationChan(c) = constellation_chan.clone();
         send_on_failure(&mut builder, FailureMsg(failure_msg), c);
         builder.spawn(proc() {
@@ -190,7 +190,7 @@ impl<C: RenderListener + Send> RenderTask<C> {
                     port: port,
                     compositor: compositor,
                     constellation_chan: constellation_chan,
-                    font_ctx: ~FontContext::new(FontContextInfo {
+                    font_ctx: box FontContext::new(FontContextInfo {
                         backend: opts.render_backend.clone(),
                         needs_font_list: false,
                         profiler_chan: profiler_chan.clone(),
@@ -382,7 +382,7 @@ impl<C: RenderListener + Send> RenderTask<C> {
                                         width as i32 * 4);
                                 native_surface.mark_wont_leak();
 
-                                ~LayerBuffer {
+                                box LayerBuffer {
                                     native_surface: native_surface,
                                     rect: tile.page_rect,
                                     screen_pos: tile.screen_rect,
@@ -412,7 +412,7 @@ impl<C: RenderListener + Send> RenderTask<C> {
                             NativeSurfaceAzureMethods::from_azure_surface(native_surface);
                         native_surface.mark_wont_leak();
 
-                        ~LayerBuffer {
+                        box LayerBuffer {
                             native_surface: native_surface,
                             rect: tile.page_rect,
                             screen_pos: tile.screen_rect,
@@ -425,7 +425,7 @@ impl<C: RenderListener + Send> RenderTask<C> {
                 new_buffers.push(buffer);
             }
 
-            let layer_buffer_set = ~LayerBufferSet {
+            let layer_buffer_set = box LayerBufferSet {
                 buffers: new_buffers,
             };
 

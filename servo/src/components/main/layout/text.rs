@@ -151,8 +151,8 @@ impl TextRunScanner {
                     
                     
                     let fontgroup = font_context.get_resolved_font_for_style(&font_style);
-                    let run = ~fontgroup.borrow().create_textrun(transformed_text.clone(),
-                                                                 decoration);
+                    let run = box fontgroup.borrow().create_textrun(
+                        transformed_text.clone(), decoration);
 
                     debug!("TextRunScanner: pushing single text box in range: {} ({})",
                            self.clump,
@@ -167,15 +167,15 @@ impl TextRunScanner {
                 }
             },
             (false, true) => {
-                // TODO(#177): Text run creation must account for the renderability of text by
-                // font group fonts. This is probably achieved by creating the font group above
-                // and then letting `FontGroup` decide which `Font` to stick into the text run.
+                
+                
+                
                 let in_box = &in_boxes[self.clump.begin().to_uint()];
                 let font_style = in_box.font_style();
                 let fontgroup = font_context.get_resolved_font_for_style(&font_style);
                 let decoration = in_box.text_decoration();
 
-                // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
+                
                 let compression = match in_box.white_space() {
                     white_space::normal => CompressWhitespaceNewline,
                     white_space::pre => CompressNone,
@@ -183,7 +183,7 @@ impl TextRunScanner {
 
                 let mut new_line_positions: Vec<NewLinePositions> = vec![];
 
-                // First, transform/compress text of all the nodes.
+                
                 let mut last_whitespace_in_clump = new_whitespace;
                 let transformed_strs: Vec<~str> = Vec::from_fn(self.clump.length().to_uint(), |i| {
                     // TODO(#113): We should be passing the compression context between calls to
@@ -210,7 +210,7 @@ impl TextRunScanner {
 
                 // Next, concatenate all of the transformed strings together, saving the new
                 // character indices.
-                let mut run_str: ~str = "".to_owned();
+                let mut run_str = StrBuf::new();
                 let mut new_ranges: Vec<Range<CharIndex>> = vec![];
                 let mut char_total = CharIndex(0);
                 for i in range(0, transformed_strs.len() as int) {
@@ -225,8 +225,9 @@ impl TextRunScanner {
                 // sequence. If no clump takes ownership, however, it will leak.
                 let clump = self.clump;
                 let run = if clump.length() != CharIndex(0) && run_str.len() > 0 {
-                    Some(Arc::new(~TextRun::new(&mut *fontgroup.borrow().fonts.get(0).borrow_mut(),
-                                                run_str.clone(), decoration)))
+                    Some(Arc::new(box TextRun::new(
+                        &mut *fontgroup.borrow().fonts.get(0).borrow_mut(),
+                        run_str.into_owned(), decoration)))
                 } else {
                     None
                 };

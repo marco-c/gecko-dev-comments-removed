@@ -49,7 +49,6 @@ use script_task::StackRoots;
 use std::cast;
 use std::cell::RefCell;
 use std::kinds::marker::ContravariantLifetime;
-use std::local_data;
 
 
 
@@ -94,12 +93,10 @@ impl<T: Reflectable> Temporary<T> {
 
     
     pub fn root<'a, 'b>(self) -> Root<'a, 'b, T> {
-        local_data::get(StackRoots, |opt| {
-            let collection = opt.unwrap();
-            unsafe {
-                (**collection).new_root(&self.inner)
-            }
-        })
+        let collection = StackRoots.get().unwrap();
+        unsafe {
+            (**collection).new_root(&self.inner)
+        }
     }
 
     unsafe fn inner(&self) -> JS<T> {
@@ -162,12 +159,10 @@ impl<T: Reflectable> JS<T> {
 
     
     pub fn root<'a, 'b>(&self) -> Root<'a, 'b, T> {
-        local_data::get(StackRoots, |opt| {
-            let collection = opt.unwrap();
-            unsafe {
-                (**collection).new_root(self)
-            }
-        })
+        let collection = StackRoots.get().unwrap();
+        unsafe {
+            (**collection).new_root(self)
+        }
     }
 }
 

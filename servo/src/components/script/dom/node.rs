@@ -169,7 +169,7 @@ impl LayoutDataRef {
         }
     }
 
-    pub unsafe fn from_data<T>(data: ~T) -> LayoutDataRef {
+    pub unsafe fn from_data<T>(data: Box<T>) -> LayoutDataRef {
         LayoutDataRef {
             data_cell: RefCell::new(Some(cast::transmute(data))),
         }
@@ -446,7 +446,7 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
 
     /// Dumps the node tree, for debugging, with indentation.
     fn dump_indent(&self, indent: uint) {
-        let mut s = "".to_owned();
+        let mut s = StrBuf::new();
         for _ in range(0, indent) {
             s.push_str("    ");
         }
@@ -887,9 +887,9 @@ fn as_uintptr<T>(t: &T) -> uintptr_t { t as *T as uintptr_t }
 
 impl Node {
     pub fn reflect_node<N: Reflectable+NodeBase>
-            (node:      ~N,
+            (node:      Box<N>,
              document:  &JSRef<Document>,
-             wrap_fn:   extern "Rust" fn(*JSContext, &JSRef<Window>, ~N) -> JS<N>)
+             wrap_fn:   extern "Rust" fn(*JSContext, &JSRef<Window>, Box<N>) -> JS<N>)
              -> Temporary<N> {
         assert!(node.reflector().get_jsobject().is_null());
         let window = document.deref().window.root();
@@ -1406,13 +1406,13 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-baseuri
+    
     fn GetBaseURI(&self) -> Option<DOMString> {
-        // FIXME (#1824) implement.
+        
         None
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-ownerdocument
+    
     fn GetOwnerDocument(&self) -> Option<Temporary<Document>> {
         match self.type_id {
             ElementNodeTypeId(..) |
@@ -1425,12 +1425,12 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-parentnode
+    
     fn GetParentNode(&self) -> Option<Temporary<Node>> {
         self.parent_node.clone().map(|node| Temporary::new(node))
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-parentelement
+    
     fn GetParentElement(&self) -> Option<Temporary<Element>> {
         self.parent_node.clone()
                         .and_then(|parent| {
@@ -1441,12 +1441,12 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                         })
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-haschildnodes
+    
     fn HasChildNodes(&self) -> bool {
         self.first_child.is_some()
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-childnodes
+    
     fn ChildNodes(&mut self) -> Temporary<NodeList> {
         match self.child_list {
             None => (),
@@ -1460,27 +1460,27 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         Temporary::new(self.child_list.get_ref().clone())
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-firstchild
+    
     fn GetFirstChild(&self) -> Option<Temporary<Node>> {
         self.first_child.clone().map(|node| Temporary::new(node))
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-lastchild
+    
     fn GetLastChild(&self) -> Option<Temporary<Node>> {
         self.last_child.clone().map(|node| Temporary::new(node))
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-previoussibling
+    
     fn GetPreviousSibling(&self) -> Option<Temporary<Node>> {
         self.prev_sibling.clone().map(|node| Temporary::new(node))
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-nextsibling
+    
     fn GetNextSibling(&self) -> Option<Temporary<Node>> {
         self.next_sibling.clone().map(|node| Temporary::new(node))
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-nodevalue
+    
     fn GetNodeValue(&self) -> Option<DOMString> {
         match self.type_id {
             CommentNodeTypeId |
@@ -1495,7 +1495,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-nodevalue
+    
     fn SetNodeValue(&mut self, val: Option<DOMString>)
                         -> ErrorResult {
         match self.type_id {
@@ -1508,19 +1508,19 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-textcontent
+    
     fn GetTextContent(&self) -> Option<DOMString> {
         match self.type_id {
             DocumentFragmentNodeTypeId |
             ElementNodeTypeId(..) => {
-                let mut content = "".to_owned();
+                let mut content = StrBuf::new();
                 for node in self.traverse_preorder() {
                     if node.is_text() {
                         let text: &JSRef<Text> = TextCast::to_ref(&node).unwrap();
                         content.push_str(text.deref().characterdata.data.as_slice());
                     }
                 }
-                Some(content)
+                Some(content.into_owned())
             }
             CommentNodeTypeId |
             TextNodeTypeId |
@@ -1560,7 +1560,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
 
                 {
                     let characterdata: &mut JSRef<CharacterData> = CharacterDataCast::to_mut_ref(self).unwrap();
-                    characterdata.deref_mut().data = value.clone();
+                    characterdata.deref_mut().data = value;
                 }
 
                 
