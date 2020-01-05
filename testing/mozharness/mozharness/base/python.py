@@ -7,12 +7,14 @@
 '''Python usage, esp. virtualenv.
 '''
 
+import distutils.version
 import os
 import subprocess
 import sys
 import time
 import json
 import traceback
+import urlparse
 
 import mozharness
 from mozharness.base.script import (
@@ -258,9 +260,19 @@ class VirtualenvMixin(object):
             self.fatal("install_module() doesn't understand an install_method of %s!" % install_method)
 
         
+        
+        
         proxxy = Proxxy(self.config, self.log_obj)
+        trusted_hosts = set()
         for link in proxxy.get_proxies_and_urls(c.get('find_links', [])):
             command.extend(["--find-links", link])
+            parsed = urlparse.urlparse(link)
+            if parsed.scheme != 'https':
+                trusted_hosts.add(parsed.hostname)
+
+        if self.pip_version >= distutils.version.LooseVersion('6.0'):
+            for host in sorted(trusted_hosts):
+                command.extend(['--trusted-host', host])
 
         
         if module_url:
@@ -349,37 +361,55 @@ class VirtualenvMixin(object):
         dirs = self.query_abs_dirs()
         venv_path = self.query_virtualenv_path()
         self.info("Creating virtualenv %s" % venv_path)
-        virtualenv = c.get('virtualenv', self.query_exe('virtualenv'))
-        if isinstance(virtualenv, str):
-            
-            virtualenv = [virtualenv]
-
-        if not os.path.exists(virtualenv[0]) and not self.which(virtualenv[0]):
-            self.add_summary("The executable '%s' is not found; not creating "
-                             "virtualenv!" % virtualenv[0], level=FATAL)
-            return -1
 
         
         
-        if c.get('virtualenv_python_dll'):
+        if self.topsrcdir:
+            virtualenv = [
+                sys.executable,
+                os.path.join(self.topsrcdir, 'python', 'virtualenv', 'virtualenv.py')
+            ]
+            virtualenv_options = c.get('virtualenv_options', [])
             
             
-            dll_name = os.path.basename(c['virtualenv_python_dll'])
-            target = self.query_python_path(dll_name)
-            scripts_dir = os.path.dirname(target)
-            self.mkdir_p(scripts_dir)
-            self.copyfile(c['virtualenv_python_dll'], target, error_level=WARNING)
+            
+            
+            virtualenv_options.append('--always-copy')
+
+        
+        
         else:
-            self.mkdir_p(dirs['abs_work_dir'])
+            virtualenv = c.get('virtualenv', self.query_exe('virtualenv'))
+            if isinstance(virtualenv, str):
+                
+                virtualenv = [virtualenv]
 
-        
-        for module in ('distribute', 'pip'):
-            if c.get('%s_url' % module):
-                self.download_file(c['%s_url' % module],
-                                   parent_dir=dirs['abs_work_dir'])
+            if not os.path.exists(virtualenv[0]) and not self.which(virtualenv[0]):
+                self.add_summary("The executable '%s' is not found; not creating "
+                                 "virtualenv!" % virtualenv[0], level=FATAL)
+                return -1
 
-        virtualenv_options = c.get('virtualenv_options',
-                                   ['--no-site-packages', '--distribute'])
+            
+            
+            if c.get('virtualenv_python_dll'):
+                
+                
+                dll_name = os.path.basename(c['virtualenv_python_dll'])
+                target = self.query_python_path(dll_name)
+                scripts_dir = os.path.dirname(target)
+                self.mkdir_p(scripts_dir)
+                self.copyfile(c['virtualenv_python_dll'], target, error_level=WARNING)
+            else:
+                self.mkdir_p(dirs['abs_work_dir'])
+
+            
+            for module in ('distribute', 'pip'):
+                if c.get('%s_url' % module):
+                    self.download_file(c['%s_url' % module],
+                                       parent_dir=dirs['abs_work_dir'])
+
+            virtualenv_options = c.get('virtualenv_options',
+                                       ['--no-site-packages', '--distribute'])
 
         if os.path.exists(self.query_python_path()):
             self.info("Virtualenv %s appears to already exist; skipping virtualenv creation." % self.query_python_path())
@@ -388,6 +418,18 @@ class VirtualenvMixin(object):
                              cwd=dirs['abs_work_dir'],
                              error_list=VirtualenvErrorList,
                              halt_on_failure=True)
+
+        
+        
+        pip = self.query_python_path('pip')
+        output = self.get_output_from_command([pip, '--version'],
+                                              halt_on_failure=True)
+        words = output.split()
+        if words[0] != 'pip':
+            self.fatal('pip --version output is weird: %s' % output)
+        pip_version = words[1]
+        self.pip_version = distutils.version.LooseVersion(pip_version)
+
         if not modules:
             modules = c.get('virtualenv_modules', [])
         if not requirements:
