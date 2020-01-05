@@ -231,6 +231,9 @@ public:
   NS_IMETHOD
   Run() override;
 
+  virtual nsresult
+  GetTargetPath(nsAString& aPath) const = 0;
+
 private:
   
 

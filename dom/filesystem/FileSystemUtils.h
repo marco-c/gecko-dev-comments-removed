@@ -26,7 +26,8 @@ public:
 
 
   static bool
-  IsDescendantPath(nsIFile* aPath, nsIFile* aDescendantPath);
+  IsDescendantPath(const nsAString& aPath,
+                   const nsAString& aDescendantPath);
 
   
 
