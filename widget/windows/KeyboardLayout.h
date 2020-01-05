@@ -694,7 +694,7 @@ public:
 
 
 
-  bool IsInDeadKeySequence() const { return mActiveDeadKey >= 0; }
+  bool IsInDeadKeySequence() const { return !mActiveDeadKeys.IsEmpty(); }
 
   
 
@@ -811,8 +811,14 @@ private:
 
   VirtualKey mVirtualKeys[NS_NUM_OF_KEYS];
   DeadKeyTableListEntry* mDeadKeyTableListHead;
-  int32_t mActiveDeadKey;                 
-  VirtualKey::ShiftState mDeadKeyShiftState;
+  
+  
+  
+  nsTArray<uint8_t> mActiveDeadKeys;
+  
+  
+  
+  nsTArray<VirtualKey::ShiftState> mDeadKeyShiftStates;
 
   bool mIsOverridden;
   bool mIsPendingToRestoreKeyboardLayout;
@@ -887,12 +893,16 @@ private:
 
 
 
+  UniCharsAndModifiers GetDeadUniCharsAndModifiers() const;
+
+  
 
 
 
-  char16_t GetCompositeChar(uint8_t aVirtualKeyOfDeadKey,
-                            VirtualKey::ShiftState aShiftStateOfDeadKey,
-                            char16_t aBaseChar) const;
+
+
+
+  char16_t GetCompositeChar(char16_t aBaseChar) const;
 
   
   

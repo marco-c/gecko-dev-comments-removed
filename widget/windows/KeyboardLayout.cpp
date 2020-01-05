@@ -3497,11 +3497,18 @@ KeyboardLayout::NotifyIdleServiceOfUserActivity()
   sIdleService->ResetIdleTimeOut(0);
 }
 
-KeyboardLayout::KeyboardLayout() :
-  mKeyboardLayout(0), mIsOverridden(false),
-  mIsPendingToRestoreKeyboardLayout(false)
+KeyboardLayout::KeyboardLayout()
+  : mKeyboardLayout(0)
+  , mIsOverridden(false)
+  , mIsPendingToRestoreKeyboardLayout(false)
 {
   mDeadKeyTableListHead = nullptr;
+  
+  
+  
+  
+  mActiveDeadKeys.SetCapacity(4);
+  mDeadKeyShiftStates.SetCapacity(4);
 
   
 }
@@ -3613,12 +3620,17 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     
     
     
-    UniCharsAndModifiers deadChars =
-      GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
+    UniCharsAndModifiers deadChars = GetDeadUniCharsAndModifiers();
     aNativeKey.mCommittedCharsAndModifiers.
                  OverwriteModifiersIfBeginsWith(deadChars);
     
     DeactivateDeadKeyState();
+    return;
+  }
+
+  
+  
+  if (MaybeInitNativeKeyAsDeadKey(aNativeKey, aModKeyState)) {
     return;
   }
 
@@ -3635,12 +3647,6 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
     "At handling VK_PACKET, we shouldn't refer keyboard layout");
   MOZ_ASSERT(aNativeKey.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING,
     "Printable key's key name index must be KEY_NAME_INDEX_USE_STRING");
-
-  
-  
-  if (MaybeInitNativeKeyAsDeadKey(aNativeKey, aModKeyState)) {
-    return;
-  }
 
   
   
@@ -3662,16 +3668,7 @@ KeyboardLayout::InitNativeKey(NativeKey& aNativeKey,
   
   
   
-  
-  if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey))) {
-    return;
-  }
-
-  
-  
-  
-  UniCharsAndModifiers deadChars =
-    GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
+  UniCharsAndModifiers deadChars = GetDeadUniCharsAndModifiers();
   aNativeKey.mCommittedCharsAndModifiers = deadChars + baseChars;
   if (aNativeKey.IsKeyDownMessage()) {
     DeactivateDeadKeyState();
@@ -3683,24 +3680,27 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
                   NativeKey& aNativeKey,
                   const ModifierKeyState& aModKeyState)
 {
-  if (!IsDeadKey(aNativeKey.mOriginalVirtualKeyCode, aModKeyState)) {
+  
+  if (!IsInDeadKeySequence() &&
+      !IsDeadKey(aNativeKey.mOriginalVirtualKeyCode, aModKeyState)) {
     return false;
   }
 
   
   
+  bool isDeadKeyDownEvent =
+    aNativeKey.IsKeyDownMessage() &&
+    aNativeKey.IsFollowedByDeadCharMessage();
+
   
-  if ((aNativeKey.IsKeyDownMessage() && !IsInDeadKeySequence()) ||
-      (!aNativeKey.IsKeyDownMessage() &&
-       mActiveDeadKey == aNativeKey.mOriginalVirtualKeyCode)) {
+  
+  
+  bool isDeadKeyUpEvent =
+    !aNativeKey.IsKeyDownMessage() &&
+    mActiveDeadKeys.Contains(aNativeKey.mOriginalVirtualKeyCode);
+
+  if (isDeadKeyDownEvent || isDeadKeyUpEvent) {
     ActivateDeadKeyState(aNativeKey, aModKeyState);
-#ifdef DEBUG
-    UniCharsAndModifiers deadChars =
-      GetNativeUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode,
-                                    aModKeyState);
-    MOZ_ASSERT(deadChars.Length() == 1,
-               "dead key must generate only one character");
-#endif
     
     
     
@@ -3723,23 +3723,14 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
   
   
   
-  
-
-  if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey))) {
-#if defined(DEBUG) || defined(MOZ_CRASHREPORTER)
-    nsPrintfCString warning("The virtual key index (%d) of mActiveDeadKey "
-                            "(0x%02X) is not a printable key "
-                            "(aNativeKey.mOriginalVirtualKeyCode=0x%02X)",
-                            GetKeyIndex(mActiveDeadKey), mActiveDeadKey,
-                            aNativeKey.mOriginalVirtualKeyCode);
-    NS_WARNING(warning.get());
-#ifdef MOZ_CRASHREPORTER
-    CrashReporter::AppendAppNotesToCrashReport(
-                     NS_LITERAL_CSTRING("\n") + warning);
-#endif 
-#endif 
-    MOZ_CRASH("Trying to reference out of range of mVirtualKeys");
+  if (!IsDeadKey(aNativeKey.mOriginalVirtualKeyCode, aModKeyState)) {
+    return false;
   }
+
+  
+  
+  
+  
 
   
   
@@ -3749,8 +3740,7 @@ KeyboardLayout::MaybeInitNativeKeyAsDeadKey(
 
   
   
-  UniCharsAndModifiers prevDeadChars =
-    GetUniCharsAndModifiers(mActiveDeadKey, mDeadKeyShiftState);
+  UniCharsAndModifiers prevDeadChars = GetDeadUniCharsAndModifiers();
   UniCharsAndModifiers newChars =
     GetUniCharsAndModifiers(aNativeKey.mOriginalVirtualKeyCode, aModKeyState);
   
@@ -3770,8 +3760,7 @@ KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(
     return false;
   }
 
-  if (NS_WARN_IF(!IsPrintableCharKey(mActiveDeadKey)) ||
-      NS_WARN_IF(!IsPrintableCharKey(aNativeKey.mOriginalVirtualKeyCode))) {
+  if (NS_WARN_IF(!IsPrintableCharKey(aNativeKey.mOriginalVirtualKeyCode))) {
     return false;
   }
 
@@ -3781,8 +3770,7 @@ KeyboardLayout::MaybeInitNativeKeyWithCompositeChar(
     return false;
   }
 
-  char16_t compositeChar =
-    GetCompositeChar(mActiveDeadKey, mDeadKeyShiftState, baseChars.CharAt(0));
+  char16_t compositeChar = GetCompositeChar(baseChars.CharAt(0));
   if (!compositeChar) {
     return false;
   }
@@ -3824,16 +3812,43 @@ KeyboardLayout::GetNativeUniCharsAndModifiers(
   return mVirtualKeys[key].GetNativeUniChars(shiftState);
 }
 
-char16_t
-KeyboardLayout::GetCompositeChar(uint8_t aVirtualKeyOfDeadKey,
-                                 VirtualKey::ShiftState aShiftStateOfDeadKey,
-                                 char16_t aBaseChar) const
+UniCharsAndModifiers
+KeyboardLayout::GetDeadUniCharsAndModifiers() const
 {
-  int32_t key = GetKeyIndex(aVirtualKeyOfDeadKey);
+  MOZ_RELEASE_ASSERT(mActiveDeadKeys.Length() == mDeadKeyShiftStates.Length());
+
+  if (NS_WARN_IF(mActiveDeadKeys.IsEmpty())) {
+    return UniCharsAndModifiers();
+  }
+
+  UniCharsAndModifiers result;
+  for (size_t i = 0; i < mActiveDeadKeys.Length(); ++i) {
+    result +=
+      GetUniCharsAndModifiers(mActiveDeadKeys[i], mDeadKeyShiftStates[i]);
+  }
+  return result;
+}
+
+char16_t
+KeyboardLayout::GetCompositeChar(char16_t aBaseChar) const
+{
+  if (NS_WARN_IF(mActiveDeadKeys.IsEmpty())) {
+    return 0;
+  }
+  
+  
+  
+  
+  
+  
+  if (mActiveDeadKeys.Length() > 1) {
+    return 0;
+  }
+  int32_t key = GetKeyIndex(mActiveDeadKeys[0]);
   if (key < 0) {
     return 0;
   }
-  return mVirtualKeys[key].GetCompositeChar(aShiftStateOfDeadKey, aBaseChar);
+  return mVirtualKeys[key].GetCompositeChar(mDeadKeyShiftStates[0], aBaseChar);
 }
 
 void
@@ -3860,7 +3875,8 @@ KeyboardLayout::LoadLayout(HKL aLayout)
   
   uint16_t shiftStatesWithBaseChars = 0;
 
-  mActiveDeadKey = -1;
+  mActiveDeadKeys.Clear();
+  mDeadKeyShiftStates.Clear();
 
   ReleaseDeadKeyTables();
 
@@ -4099,26 +4115,26 @@ KeyboardLayout::ActivateDeadKeyState(const NativeKey& aNativeKey,
     return;
   }
 
-  MOZ_RELEASE_ASSERT(IsPrintableCharKey(aNativeKey.mOriginalVirtualKeyCode));
-
-  mActiveDeadKey = aNativeKey.mOriginalVirtualKeyCode;
-  mDeadKeyShiftState = VirtualKey::ModifierKeyStateToShiftState(aModKeyState);
+  mActiveDeadKeys.AppendElement(aNativeKey.mOriginalVirtualKeyCode);
+  mDeadKeyShiftStates.AppendElement(
+    VirtualKey::ModifierKeyStateToShiftState(aModKeyState));
 }
 
 void
 KeyboardLayout::DeactivateDeadKeyState()
 {
-  if (mActiveDeadKey < 0) {
+  if (mActiveDeadKeys.IsEmpty()) {
     return;
   }
 
   BYTE kbdState[256];
   memset(kbdState, 0, sizeof(kbdState));
 
-  VirtualKey::FillKbdState(kbdState, mDeadKeyShiftState);
-
-  EnsureDeadKeyActive(false, mActiveDeadKey, kbdState);
-  mActiveDeadKey = -1;
+  
+  VirtualKey::FillKbdState(kbdState, mDeadKeyShiftStates.LastElement());
+  EnsureDeadKeyActive(false, mActiveDeadKeys.LastElement(), kbdState);
+  mActiveDeadKeys.Clear();
+  mDeadKeyShiftStates.Clear();
 }
 
 bool
