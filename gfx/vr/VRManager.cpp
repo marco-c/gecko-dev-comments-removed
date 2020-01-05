@@ -176,6 +176,9 @@ VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
   }
 
   if (bHaveEventListener) {
+    for (uint32_t i = 0; i < mControllerManagers.Length(); ++i) {
+      mControllerManagers[i]->HandleInput();
+    }
     
     
     
@@ -358,10 +361,6 @@ VRManager::RefreshVRControllers()
       mVRControllers.Put(controller->GetControllerInfo().GetControllerID(),
                          controller);
     }
-  }
-
-  for (uint32_t i = 0; i < mControllerManagers.Length(); ++i) {
-    mControllerManagers[i]->HandleInput();
   }
 }
 
