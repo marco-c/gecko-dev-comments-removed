@@ -1084,7 +1084,11 @@ class MessageManagerProxy {
 
 
   sendAsyncMessage(...args) {
-    return this.messageManager.sendAsyncMessage(...args);
+    if (this.messageManager) {
+      return this.messageManager.sendAsyncMessage(...args);
+    }
+    
+    Cu.reportError(`Cannot send message: Other side disconnected: ${uneval(args)}`);
   }
 
   
