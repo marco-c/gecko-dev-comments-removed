@@ -4258,10 +4258,10 @@ JS_BufferIsCompilableUnit(JSContext* cx, HandleObject obj, const char* utf8, siz
     frontend::UsedNameTracker usedNames(cx);
     if (!usedNames.init())
         return false;
-    frontend::Parser<frontend::FullParseHandler> parser(cx, cx->tempLifoAlloc(),
-                                                        options, chars, length,
-                                                         true,
-                                                        usedNames, nullptr, nullptr);
+    frontend::Parser<frontend::FullParseHandler, char16_t> parser(cx, cx->tempLifoAlloc(),
+                                                                  options, chars, length,
+                                                                   true,
+                                                                  usedNames, nullptr, nullptr);
     JS::WarningReporter older = JS::SetWarningReporter(cx, nullptr);
     if (!parser.checkOptions() || !parser.parse()) {
         

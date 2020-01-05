@@ -5302,10 +5302,11 @@ Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp)
     frontend::UsedNameTracker usedNames(cx);
     if (!usedNames.init())
         return false;
-    frontend::Parser<frontend::FullParseHandler> parser(cx, cx->tempLifoAlloc(),
-                                                        options, chars.twoByteChars(),
-                                                        length,  true,
-                                                        usedNames, nullptr, nullptr);
+    frontend::Parser<frontend::FullParseHandler, char16_t> parser(cx, cx->tempLifoAlloc(),
+                                                                  options, chars.twoByteChars(),
+                                                                  length,
+                                                                   true,
+                                                                  usedNames, nullptr, nullptr);
     JS::WarningReporter older = JS::SetWarningReporter(cx, nullptr);
     if (!parser.checkOptions() || !parser.parse()) {
         

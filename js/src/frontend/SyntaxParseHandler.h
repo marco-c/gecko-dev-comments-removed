@@ -7,16 +7,20 @@
 #ifndef frontend_SyntaxParseHandler_h
 #define frontend_SyntaxParseHandler_h
 
+#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 
 #include <string.h>
 
+#include "jscntxt.h"
+
 #include "frontend/ParseNode.h"
 
 namespace js {
+
 namespace frontend {
 
-template <typename ParseHandler>
+template <template <typename CharT> class ParseHandler, typename CharT>
 class Parser;
 
 
@@ -29,7 +33,7 @@ class Parser;
 
 
 
-class SyntaxParseHandler
+class SyntaxParseHandlerBase
 {
     
     JSAtom* lastAtom;
@@ -168,8 +172,7 @@ class SyntaxParseHandler
     }
 
   public:
-    SyntaxParseHandler(JSContext* cx, LifoAlloc& alloc, Parser<SyntaxParseHandler>* syntaxParser,
-                       LazyScript* lazyOuterFunction)
+    SyntaxParseHandlerBase(JSContext* cx, LifoAlloc& alloc, LazyScript* lazyOuterFunction)
       : lastAtom(nullptr)
     {}
 
@@ -618,13 +621,33 @@ class SyntaxParseHandler
         return false;
     }
     JSAtom* nextLazyClosedOverBinding() {
-        MOZ_CRASH("SyntaxParseHandler::canSkipLazyClosedOverBindings must return false");
+        MOZ_CRASH("SyntaxParseHandlerBase::canSkipLazyClosedOverBindings must return false");
     }
 
     void adjustGetToSet(Node node) {}
 
     void disableSyntaxParser() {
     }
+};
+
+template<typename CharT>
+class SyntaxParseHandler : public SyntaxParseHandlerBase
+{
+  public:
+    
+    
+    
+    
+    
+    
+    
+    
+    SyntaxParseHandler(JSContext* cx, LifoAlloc& alloc,
+                       Parser<frontend::SyntaxParseHandler, CharT>* syntaxParser,
+                       LazyScript* lazyOuterFunction)
+      : SyntaxParseHandlerBase(cx, alloc, lazyOuterFunction)
+    {}
+
 };
 
 } 
