@@ -56,7 +56,7 @@ pub trait ApplicationMethods {
 
 pub trait WindowMethods<A> {
     
-    fn new(app: &A) -> Rc<Self>;
+    fn new(app: &A, is_foreground: bool) -> Rc<Self>;
     
     fn size(&self) -> Size2D<f32>;
     

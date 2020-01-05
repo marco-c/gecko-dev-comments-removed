@@ -61,7 +61,7 @@ pub struct Window {
 
 impl WindowMethods<Application> for Window {
     
-    fn new(_: &Application) -> Rc<Window> {
+    fn new(_: &Application, _: bool) -> Rc<Window> {
         
         glut::init_window_size(800, 600);
         let glut_window = glut::create_window("Servo".to_owned());
