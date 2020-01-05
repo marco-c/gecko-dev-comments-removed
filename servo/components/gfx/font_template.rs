@@ -2,14 +2,14 @@
 
 
 
-use style::computed_values::font_weight;
+use font::FontHandleMethods;
 use platform::font_context::FontContextHandle;
 use platform::font::FontHandle;
 use platform::font_template::FontTemplateData;
 
 use std::borrow::ToOwned;
 use std::sync::{Arc, Weak};
-use font::FontHandleMethods;
+use style::computed_values::{font_stretch, font_weight};
 
 
 
@@ -18,13 +18,17 @@ use font::FontHandleMethods;
 #[derive(Clone, Copy)]
 pub struct FontTemplateDescriptor {
     pub weight: font_weight::T,
+    pub stretch: font_stretch::T,
     pub italic: bool,
 }
 
 impl FontTemplateDescriptor {
-    pub fn new(weight: font_weight::T, italic: bool) -> FontTemplateDescriptor {
+    #[inline]
+    pub fn new(weight: font_weight::T, stretch: font_stretch::T, italic: bool)
+               -> FontTemplateDescriptor {
         FontTemplateDescriptor {
             weight: weight,
+            stretch: stretch,
             italic: italic,
         }
     }
@@ -33,7 +37,8 @@ impl FontTemplateDescriptor {
 impl PartialEq for FontTemplateDescriptor {
     fn eq(&self, other: &FontTemplateDescriptor) -> bool {
         self.weight.is_bold() == other.weight.is_bold() &&
-        self.italic == other.italic
+            self.stretch == other.stretch &&
+            self.italic == other.italic
     }
 }
 
@@ -44,7 +49,8 @@ pub struct FontTemplate {
     identifier: String,
     descriptor: Option<FontTemplateDescriptor>,
     weak_ref: Option<Weak<FontTemplateData>>,
-    strong_ref: Option<Arc<FontTemplateData>>,      
+    
+    strong_ref: Option<Arc<FontTemplateData>>,
     is_valid: bool,
 }
 
@@ -82,8 +88,10 @@ impl FontTemplate {
     }
 
     
-    pub fn get_if_matches(&mut self, fctx: &FontContextHandle,
-                            requested_desc: &FontTemplateDescriptor) -> Option<Arc<FontTemplateData>> {
+    pub fn get_if_matches(&mut self,
+                          fctx: &FontContextHandle,
+                          requested_desc: &FontTemplateDescriptor)
+                          -> Option<Arc<FontTemplateData>> {
         
         
         
@@ -97,42 +105,42 @@ impl FontTemplate {
                     None
                 }
             },
-            None => {
-                if self.is_valid {
-                    let data = self.get_data();
-                    let handle: Result<FontHandle, ()> = FontHandleMethods::new_from_template(fctx, data.clone(), None);
-                    match handle {
-                        Ok(handle) => {
-                            let actual_desc = FontTemplateDescriptor::new(handle.boldness(),
-                                                handle.is_italic());
-                            let desc_match = actual_desc == *requested_desc;
+            None if self.is_valid => {
+                let data = self.get_data();
+                let handle: Result<FontHandle, ()> =
+                    FontHandleMethods::new_from_template(fctx, data.clone(), None);
+                match handle {
+                    Ok(handle) => {
+                        let actual_desc = FontTemplateDescriptor::new(handle.boldness(),
+                                                                      handle.stretchiness(),
+                                                                      handle.is_italic());
+                        let desc_match = actual_desc == *requested_desc;
 
-                            self.descriptor = Some(actual_desc);
-                            self.is_valid = true;
-                            if desc_match {
-                                Some(data)
-                            } else {
-                                None
-                            }
-                        }
-                        Err(()) => {
-                            self.is_valid = false;
-                            debug!("Unable to create a font from template {}", self.identifier);
+                        self.descriptor = Some(actual_desc);
+                        self.is_valid = true;
+                        if desc_match {
+                            Some(data)
+                        } else {
                             None
                         }
                     }
-                } else {
-                    None
+                    Err(()) => {
+                        self.is_valid = false;
+                        debug!("Unable to create a font from template {}", self.identifier);
+                        None
+                    }
                 }
             }
+            None => None,
         }
     }
 
     
     pub fn get(&mut self) -> Option<Arc<FontTemplateData>> {
-        match self.is_valid {
-            true => Some(self.get_data()),
-            false => None
+        if self.is_valid {
+            Some(self.get_data())
+        } else {
+            None
         }
     }
 
@@ -145,14 +153,13 @@ impl FontTemplate {
             None => None,
         };
 
-        match maybe_data {
-            Some(data) => data,
-            None => {
-                assert!(self.strong_ref.is_none());
-                let template_data = Arc::new(FontTemplateData::new(self.identifier.as_slice(), None));
-                self.weak_ref = Some(template_data.downgrade());
-                template_data
-            }
+        if let Some(data) = maybe_data {
+            return data
         }
+
+        assert!(self.strong_ref.is_none());
+        let template_data = Arc::new(FontTemplateData::new(self.identifier.as_slice(), None));
+        self.weak_ref = Some(template_data.downgrade());
+        template_data
     }
 }
