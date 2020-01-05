@@ -16,7 +16,7 @@
 #  include <pthread_np.h>
 # endif
 
-# if defined(ANDROID)
+# if defined(ANDROID) && !defined(__aarch64__)
 #  include <sys/types.h>
 #  include <unistd.h>
 # endif
@@ -120,7 +120,7 @@ js::GetNativeStackBaseImpl()
     rc = pthread_stackseg_np(pthread_self(), &ss);
     stackBase = (void*)((size_t) ss.ss_sp - ss.ss_size);
     stackSize = ss.ss_size;
-# elif defined(ANDROID)
+# elif defined(ANDROID) && !defined(__aarch64__)
     if (gettid() == getpid()) {
         
         

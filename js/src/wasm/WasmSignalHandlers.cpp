@@ -1374,6 +1374,7 @@ ProcessHasSignalHandlers()
     sTriedInstallSignalHandlers = true;
 
 #if defined(ANDROID)
+# if !defined(__aarch64__)
     
     
     
@@ -1385,6 +1386,7 @@ ProcessHasSignalHandlers()
         if (atol(version_string) < 19)
             return false;
     }
+# endif
 # if defined(MOZ_LINKER)
     
     if (IsSignalHandlingBroken())
