@@ -18,7 +18,8 @@ class nsIChannel;
 namespace mozilla {
 namespace dom {
 
-class XMLDocument : public nsDocument
+class XMLDocument : public nsDocument,
+                    public nsIDOMXMLDocument
 {
 public:
   explicit XMLDocument(const char* aContentType = "application/xml");
@@ -61,7 +62,10 @@ public:
   {
     return mAsync;
   }
-  
+  void SetAsync(bool aAsync)
+  {
+    mAsync = aAsync;
+  }
 
   
   
