@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use dom::attr::{Attr, AttrHelpers, AttrValue};
 use dom::bindings::cell::DOMRefCell;
@@ -100,9 +100,9 @@ pub struct Document {
     anchors: MutNullableJS<HTMLCollection>,
     applets: MutNullableJS<HTMLCollection>,
     ready_state: Cell<DocumentReadyState>,
-    
+    /// The element that has most recently requested focus for itself.
     possibly_focused: MutNullableJS<Element>,
-    
+    /// The element that currently has the document focus context.
     focused: MutNullableJS<Element>,
 }
 
@@ -209,7 +209,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         self.is_html_document
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-document-url
     fn url(self) -> Url {
         self.url.clone()
     }
@@ -250,7 +250,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         node.dirty(damage);
     }
 
-    
+    /// Remove any existing association between the provided id and any elements in this document.
     fn unregister_named_element(self,
                                 to_unregister: JSRef<Element>,
                                 id: Atom) {
@@ -271,7 +271,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         }
     }
 
-    
+    /// Associate an element present in this document with the provided id.
     fn register_named_element(self,
                               element: JSRef<Element>,
                               id: Atom) {
@@ -320,8 +320,8 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         window.r().load_url(href);
     }
 
-    
-    
+    /// Attempt to find a named element in this page's document.
+    /// https://html.spec.whatwg.org/multipage/#the-indicated-part-of-the-document
     fn find_fragment_node(self, fragid: DOMString) -> Option<Temporary<Element>> {
         self.GetElementById(fragid.clone()).or_else(|| {
             let check_anchor = |&:&node: &JSRef<HTMLAnchorElement>| {
@@ -1015,6 +1015,7 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
             return Err(Security);
         }
         let window = self.window.root();
+        let window = window.r();
         let page = window.page();
         let (tx, rx) = channel();
         let _ = page.resource_task.send(GetCookiesForUrl(url, tx, NonHTTP));
@@ -1022,14 +1023,15 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
         Ok(cookies.unwrap_or("".to_owned()))
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/dom.html#dom-document-cookie
     fn SetCookie(self, cookie: DOMString) -> ErrorResult {
-        
+        //TODO: ignore for cookie-averse Document
         let url = self.url();
         if !is_scheme_host_port_tuple(&url) {
             return Err(Security);
         }
         let window = self.window.root();
+        let window = window.r();
         let page = window.page();
         let _ = page.resource_task.send(SetCookiesForUrl(url, cookie, NonHTTP));
         Ok(())
