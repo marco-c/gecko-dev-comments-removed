@@ -2,40 +2,14 @@
 
 
 
+use euclid::{Rect, Matrix4D};
 use gpu_store::{GpuStore, GpuStoreAddress};
-use prim_store::{ClipData, GpuBlock32, PrimitiveStore};
+use internal_types::DeviceRect;
+use prim_store::{ClipData, GpuBlock32, PrimitiveClipSource, PrimitiveStore};
 use prim_store::{CLIP_DATA_GPU_SIZE, MASK_DATA_GPU_SIZE};
-use util::{rect_from_points_f, TransformedRect};
-use webrender_traits::{AuxiliaryLists, BorderRadius, ClipRegion, ComplexClipRegion, ImageMask};
-use webrender_traits::{DeviceIntRect, DeviceIntSize, LayerRect, LayerToWorldTransform};
-
-const MAX_COORD: f32 = 1.0e+16;
-
-#[derive(Clone, Debug)]
-pub enum ClipSource {
-    NoClip,
-    Complex(LayerRect, f32),
-    Region(ClipRegion),
-}
-
-impl ClipSource {
-    pub fn to_rect(&self) -> Option<LayerRect> {
-        match self {
-            &ClipSource::NoClip => None,
-            &ClipSource::Complex(rect, _) => Some(rect),
-            &ClipSource::Region(ref region) => Some(region.main),
-        }
-    }
-}
-impl<'a> From<&'a ClipRegion> for ClipSource {
-    fn from(clip_region: &'a ClipRegion) -> ClipSource {
-        if clip_region.is_complex() {
-            ClipSource::Region(clip_region.clone())
-        } else {
-            ClipSource::NoClip
-        }
-    }
-}
+use tiling::StackingContextIndex;
+use util::TransformedRect;
+use webrender_traits::{AuxiliaryLists, ImageMask};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct ClipAddressRange {
@@ -43,115 +17,125 @@ pub struct ClipAddressRange {
     pub item_count: u32,
 }
 
-#[derive(Clone, Debug)]
-pub struct MaskCacheInfo {
+type ImageMaskIndex = u16;
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub struct MaskCacheKey {
+    pub layer_id: StackingContextIndex,
     pub clip_range: ClipAddressRange,
-    pub image: Option<(ImageMask, GpuStoreAddress)>,
-    pub local_rect: Option<LayerRect>,
-    pub local_inner: Option<LayerRect>,
-    pub inner_rect: DeviceIntRect,
-    pub outer_rect: DeviceIntRect,
+    pub image: Option<GpuStoreAddress>,
+}
+
+impl MaskCacheKey {
+    pub fn empty(layer_id: StackingContextIndex) -> MaskCacheKey {
+        MaskCacheKey {
+            layer_id: layer_id,
+            clip_range: ClipAddressRange {
+                start: GpuStoreAddress(0),
+                item_count: 0,
+            },
+            image: None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct MaskCacheInfo {
+    pub key: MaskCacheKey,
+    
+    
+    
+    pub image: Option<ImageMask>,
+    pub device_rect: DeviceRect,
+    pub local_rect: Option<Rect<f32>>,
 }
 
 impl MaskCacheInfo {
     
     
-    pub fn new(source: &ClipSource,
+    pub fn new(source: &PrimitiveClipSource,
+               layer_id: StackingContextIndex,
                clip_store: &mut GpuStore<GpuBlock32>)
                -> Option<MaskCacheInfo> {
-        let (image, clip_range) = match source {
-            &ClipSource::NoClip => return None,
-            &ClipSource::Complex(..) => (
-                None,
-                ClipAddressRange {
-                    start: clip_store.alloc(CLIP_DATA_GPU_SIZE),
-                    item_count: 1,
+        let mut clip_key = MaskCacheKey::empty(layer_id);
+
+        let image = match source {
+            &PrimitiveClipSource::NoClip => None,
+            &PrimitiveClipSource::Complex(..) => {
+                clip_key.clip_range.item_count = 1;
+                clip_key.clip_range.start = clip_store.alloc(CLIP_DATA_GPU_SIZE);
+                None
+            }
+            &PrimitiveClipSource::Region(ref region) => {
+                let num = region.complex.length;
+                if num != 0 {
+                    clip_key.clip_range.item_count = num as u32;
+                    clip_key.clip_range.start = clip_store.alloc(CLIP_DATA_GPU_SIZE * num);
                 }
-            ),
-            &ClipSource::Region(ref region) => (
-                region.image_mask.map(|info|
-                    (info, clip_store.alloc(MASK_DATA_GPU_SIZE))
-                ),
-                ClipAddressRange {
-                    start: if region.complex.length > 0 {
-                        clip_store.alloc(CLIP_DATA_GPU_SIZE * region.complex.length)
-                    } else {
-                        GpuStoreAddress(0)
-                    },
-                    item_count: region.complex.length as u32,
+                if region.image_mask.is_some() {
+                    let address = clip_store.alloc(MASK_DATA_GPU_SIZE);
+                    clip_key.image = Some(address);
                 }
-            ),
+                region.image_mask
+            }
         };
 
-        Some(MaskCacheInfo {
-            clip_range: clip_range,
-            image: image,
-            local_rect: None,
-            local_inner: None,
-            inner_rect: DeviceIntRect::zero(),
-            outer_rect: DeviceIntRect::zero(),
-        })
+        if clip_key.clip_range.item_count != 0 || clip_key.image.is_some() {
+            Some(MaskCacheInfo {
+                key: clip_key,
+                image: image,
+                local_rect: None,
+                device_rect: DeviceRect::zero(),
+            })
+        } else {
+            None
+        }
     }
 
     pub fn update(&mut self,
-                  source: &ClipSource,
-                  transform: &LayerToWorldTransform,
+                  source: &PrimitiveClipSource,
+                  transform: &Matrix4D<f32>,
+                  clip_rect: &Rect<f32>,
                   clip_store: &mut GpuStore<GpuBlock32>,
                   device_pixel_ratio: f32,
                   aux_lists: &AuxiliaryLists) {
 
         if self.local_rect.is_none() {
-            let mut local_rect;
-            let mut local_inner: Option<LayerRect>;
+            let mut local_rect = Some(clip_rect.clone());
             match source {
-                &ClipSource::NoClip => unreachable!(),
-                &ClipSource::Complex(rect, radius) => {
-                    let slice = clip_store.get_slice_mut(self.clip_range.start, CLIP_DATA_GPU_SIZE);
+                &PrimitiveClipSource::NoClip => (),
+                &PrimitiveClipSource::Complex(rect, radius) => {
+                    let slice = clip_store.get_slice_mut(self.key.clip_range.start, CLIP_DATA_GPU_SIZE);
                     let data = ClipData::uniform(rect, radius);
                     PrimitiveStore::populate_clip_data(slice, data);
-                    debug_assert_eq!(self.clip_range.item_count, 1);
-                    local_rect = Some(rect);
-                    local_inner = ComplexClipRegion::new(rect, BorderRadius::uniform(radius))
-                                                    .get_inner_rect();
+                    debug_assert_eq!(self.key.clip_range.item_count, 1);
+                    local_rect = local_rect.and_then(|r| r.intersection(&rect));
                 }
-                &ClipSource::Region(ref region) => {
-                    local_rect = Some(LayerRect::from_untyped(&rect_from_points_f(-MAX_COORD, -MAX_COORD, MAX_COORD, MAX_COORD)));
-                    local_inner = match region.image_mask {
+                &PrimitiveClipSource::Region(ref region) => {
+                    let clips = aux_lists.complex_clip_regions(&region.complex);
+                    assert_eq!(self.key.clip_range.item_count, clips.len() as u32);
+                    if !clips.is_empty() {
+                        let slice = clip_store.get_slice_mut(self.key.clip_range.start, CLIP_DATA_GPU_SIZE * clips.len());
+                        for (clip, chunk) in clips.iter().zip(slice.chunks_mut(CLIP_DATA_GPU_SIZE)) {
+                            let data = ClipData::from_clip_region(clip);
+                            PrimitiveStore::populate_clip_data(chunk, data);
+                            local_rect = local_rect.and_then(|r| r.intersection(&clip.rect));
+                        }
+                    }
+                    match region.image_mask {
                         Some(ref mask) if !mask.repeat => {
                             local_rect = local_rect.and_then(|r| r.intersection(&mask.rect));
-                            None
                         },
-                        Some(_) => None,
-                        None => local_rect,
-                    };
-                    let clips = aux_lists.complex_clip_regions(&region.complex);
-                    assert_eq!(self.clip_range.item_count, clips.len() as u32);
-                    let slice = clip_store.get_slice_mut(self.clip_range.start, CLIP_DATA_GPU_SIZE * clips.len());
-                    for (clip, chunk) in clips.iter().zip(slice.chunks_mut(CLIP_DATA_GPU_SIZE)) {
-                        let data = ClipData::from_clip_region(clip);
-                        PrimitiveStore::populate_clip_data(chunk, data);
-                        local_rect = local_rect.and_then(|r| r.intersection(&clip.rect));
-                        local_inner = local_inner.and_then(|r| clip.get_inner_rect()
-                                                                   .and_then(|ref inner| r.intersection(&inner)));
+                        _ => ()
                     }
                 }
             };
-            self.local_rect = Some(local_rect.unwrap_or(LayerRect::zero()));
-            self.local_inner = local_inner;
+            self.local_rect = Some(local_rect.unwrap_or(Rect::zero()));
         }
 
         let transformed = TransformedRect::new(self.local_rect.as_ref().unwrap(),
                                                &transform,
                                                device_pixel_ratio);
-        self.outer_rect = transformed.bounding_rect;
-
-        self.inner_rect = if let Some(ref inner_rect) = self.local_inner {
-            let transformed = TransformedRect::new(inner_rect,
-                                                   &transform,
-                                                   device_pixel_ratio);
-            transformed.inner_rect
-        } else {
-            DeviceIntRect::new(self.outer_rect.origin, DeviceIntSize::zero())
-        }
+        self.device_rect = transformed.bounding_rect;
     }
 }
