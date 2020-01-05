@@ -807,6 +807,8 @@ pub extern "C" fn Servo_ResolveStyle(element: RawGeckoElementBorrowed,
                                      consume: structs::ConsumeStyleBehavior,
                                      compute: structs::LazyComputeBehavior) -> ServoComputedValuesStrong
 {
+    use style::context::StyleContext;
+
     let element = GeckoElement(element);
     debug!("Servo_ResolveStyle: {:?}, consume={:?}, compute={:?}", element, consume, compute);
 
@@ -832,6 +834,9 @@ pub extern "C" fn Servo_ResolveStyle(element: RawGeckoElementBorrowed,
             };
 
             recalc_style_at::<_, _, RecalcStyleOnly>(&context, &mut traversal_data, element, &mut data);
+
+            
+            context.local_context().style_sharing_candidate_cache.borrow_mut().clear();
 
             
             
