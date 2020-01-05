@@ -72,7 +72,7 @@ pub struct Metadata {
     pub headers: Option<ResponseHeaderCollection>,
 
     
-    pub status: Status
+    pub status: Option<Status>
 }
 
 impl Metadata {
@@ -83,7 +83,7 @@ impl Metadata {
             content_type: None,
             charset:      None,
             headers: None,
-            status: StatusOk 
+            status: Some(StatusOk) 
         }
     }
 
