@@ -154,8 +154,6 @@ var gFxAccounts = {
 
   
   updateUI() {
-    let profileInfoEnabled = Services.prefs.getBoolPref("identity.fxaccounts.profile_image.enabled", false);
-
     this.panelUIFooter.hidden = false;
 
     
@@ -187,7 +185,6 @@ var gFxAccounts = {
       this.panelUILabel.setAttribute("label", defaultLabel);
       this.panelUIStatus.setAttribute("tooltiptext", defaultTooltiptext);
       this.panelUIFooter.removeAttribute("fxastatus");
-      this.panelUIFooter.removeAttribute("fxaprofileimage");
       this.panelUIAvatar.style.removeProperty("list-style-image");
       let showErrorBadge = false;
       if (userData) {
@@ -209,9 +206,6 @@ var gFxAccounts = {
           this.panelUIFooter.setAttribute("fxastatus", "signedin");
           this.panelUILabel.setAttribute("label", userData.email);
         }
-        if (profileInfoEnabled) {
-          this.panelUIFooter.setAttribute("fxaprofileimage", "enabled");
-        }
       }
       if (showErrorBadge) {
         PanelUI.showBadgeOnlyNotification("fxa-needs-authentication");
@@ -221,26 +215,22 @@ var gFxAccounts = {
     }
 
     let updateWithProfile = (profile) => {
-      if (profileInfoEnabled) {
-        if (profile.displayName) {
-          this.panelUILabel.setAttribute("label", profile.displayName);
-        }
-        if (profile.avatar) {
-          this.panelUIFooter.setAttribute("fxaprofileimage", "set");
-          let bgImage = "url(\"" + profile.avatar + "\")";
-          this.panelUIAvatar.style.listStyleImage = bgImage;
+      if (profile.displayName) {
+        this.panelUILabel.setAttribute("label", profile.displayName);
+      }
+      if (profile.avatar) {
+        let bgImage = "url(\"" + profile.avatar + "\")";
+        this.panelUIAvatar.style.listStyleImage = bgImage;
 
-          let img = new Image();
-          img.onerror = () => {
-            
-            
-            if (this.panelUIAvatar.style.listStyleImage === bgImage) {
-              this.panelUIFooter.removeAttribute("fxaprofileimage");
-              this.panelUIAvatar.style.removeProperty("list-style-image");
-            }
-          };
-          img.src = profile.avatar;
-        }
+        let img = new Image();
+        img.onerror = () => {
+          
+          
+          if (this.panelUIAvatar.style.listStyleImage === bgImage) {
+            this.panelUIAvatar.style.removeProperty("list-style-image");
+          }
+        };
+        img.src = profile.avatar;
       }
     }
 
@@ -249,7 +239,7 @@ var gFxAccounts = {
       updateWithUserData(userData);
       
       
-      if (!userData || !userData.verified || !profileInfoEnabled) {
+      if (!userData || !userData.verified) {
         return null; 
       }
       if (this._cachedProfile) {

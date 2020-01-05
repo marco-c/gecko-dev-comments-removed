@@ -1385,9 +1385,6 @@ pref("identity.fxaccounts.remote.profile.uri", "https://profile.accounts.firefox
 pref("identity.fxaccounts.remote.oauth.uri", "https://oauth.accounts.firefox.com/v1");
 
 
-pref("identity.fxaccounts.profile_image.enabled", true);
-
-
 pref("identity.sync.tokenserver.uri", "https://token.services.mozilla.com/1.0/sync/1.5");
 
 
@@ -1580,8 +1577,6 @@ pref("media.webspeech.synth.enabled", true);
 pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
-
-pref("dom.ipc.processPrelaunch.enabled", true);
 
 #ifdef EARLY_BETA_OR_EARLIER
 pref("browser.migrate.automigrate.enabled", true);
