@@ -91,6 +91,7 @@ void AudioInputCubeb::UpdateDeviceList()
         
         mDeviceIndexes->AppendElement(i);
         mDeviceNames->AppendElement(devices->device[i]->device_id);
+        j = mDeviceIndexes->Length()-1;
       }
       if (devices->device[i]->preferred & CUBEB_DEVICE_PREF_VOICE) {
         
