@@ -927,7 +927,14 @@ EditorBase::BeginPlaceHolderTransaction(nsIAtom* aName)
     if (selection) {
       mSelState = new SelectionState();
       mSelState->SaveSelection(selection);
-      mRangeUpdater.RegisterSelectionState(*mSelState);
+      
+      
+      
+      
+      
+      if (mPlaceHolderName == nsGkAtoms::IMETxnName) {
+        mRangeUpdater.RegisterSelectionState(*mSelState);
+      }
     }
   }
   mPlaceHolderBatch++;
@@ -979,7 +986,9 @@ EditorBase::EndPlaceHolderTransaction()
     if (mSelState) {
       
       
-      mRangeUpdater.DropSelectionState(*mSelState);
+      if (mPlaceHolderName == nsGkAtoms::IMETxnName) {
+        mRangeUpdater.DropSelectionState(*mSelState);
+      }
       delete mSelState;
       mSelState = nullptr;
     }
