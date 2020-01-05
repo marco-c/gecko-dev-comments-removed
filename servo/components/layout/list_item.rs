@@ -1,9 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! Layout for elements with a CSS `display` property of `list-item`. These elements consist of a
-//! block and an extra inline fragment for the marker.
+
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -27,27 +27,27 @@ use style::properties::ComputedValues;
 use style::computed_values::list_style_type;
 use std::sync::Arc;
 
-/// A block with the CSS `display` property equal to `list-item`.
+
 #[derive(Debug)]
 pub struct ListItemFlow {
-    /// Data common to all block flows.
+    
     pub block_flow: BlockFlow,
-    /// The marker, if outside. (Markers that are inside are instead just fragments on the interior
-    /// `InlineFlow`.)
-    pub marker: Option<Fragment>,
+    
+    
+    pub marker_fragments: Vec<Fragment>,
 }
 
 impl ListItemFlow {
     pub fn from_fragments_and_flotation(main_fragment: Fragment,
-                                        marker_fragment: Option<Fragment>,
+                                        marker_fragments: Vec<Fragment>,
                                         flotation: Option<FloatKind>)
                                         -> ListItemFlow {
         let mut this = ListItemFlow {
             block_flow: BlockFlow::from_fragment(main_fragment, flotation),
-            marker: marker_fragment,
+            marker_fragments: marker_fragments,
         };
 
-        if let Some(ref marker) = this.marker {
+        if let Some(ref marker) = this.marker_fragments.first() {
             match marker.style().get_list().list_style_type {
                 list_style_type::T::disc |
                 list_style_type::T::none |
@@ -77,32 +77,34 @@ impl Flow for ListItemFlow {
     }
 
     fn bubble_inline_sizes(&mut self) {
-        // The marker contributes no intrinsic inline-size, so…
+        
         self.block_flow.bubble_inline_sizes()
     }
 
     fn assign_inline_sizes(&mut self, layout_context: &LayoutContext) {
         self.block_flow.assign_inline_sizes(layout_context);
 
-        if let Some(ref mut marker) = self.marker {
+        let mut marker_inline_start = self.block_flow.fragment.border_box.start.i;
+
+        for marker in self.marker_fragments.iter_mut().rev() {
             let containing_block_inline_size = self.block_flow.base.block_container_inline_size;
             marker.assign_replaced_inline_size_if_necessary(containing_block_inline_size);
 
-            // Do this now. There's no need to do this in bubble-widths, since markers do not
-            // contribute to the inline size of this flow.
+            
+            
             let intrinsic_inline_sizes = marker.compute_intrinsic_inline_sizes();
 
             marker.border_box.size.inline =
                 intrinsic_inline_sizes.content_intrinsic_sizes.preferred_inline_size;
-            marker.border_box.start.i = self.block_flow.fragment.border_box.start.i -
-                marker.border_box.size.inline;
+            marker_inline_start = marker_inline_start - marker.border_box.size.inline;
+            marker.border_box.start.i = marker_inline_start;
         }
     }
 
     fn assign_block_size<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size(layout_context);
 
-        if let Some(ref mut marker) = self.marker {
+        for marker in &mut self.marker_fragments {
             let containing_block_block_size =
                 self.block_flow.base.block_container_explicit_block_size;
             marker.assign_replaced_block_size_if_necessary(containing_block_block_size);
@@ -161,7 +163,7 @@ impl Flow for ListItemFlow {
                                              stacking_context_position: &Point2D<Au>) {
         self.block_flow.iterate_through_fragment_border_boxes(iterator, level, stacking_context_position);
 
-        if let Some(ref marker) = self.marker {
+        for marker in &self.marker_fragments {
             if iterator.should_process(marker) {
                 iterator.process(
                     marker,
@@ -186,13 +188,13 @@ impl Flow for ListItemFlow {
     fn mutate_fragments(&mut self, mutator: &mut FnMut(&mut Fragment)) {
         self.block_flow.mutate_fragments(mutator);
 
-        if let Some(ref mut marker) = self.marker {
+        for marker in &mut self.marker_fragments {
             (*mutator)(marker)
         }
     }
 }
 
-/// The kind of content that `list-style-type` results in.
+
 pub enum ListStyleTypeContent {
     None,
     StaticText(char),
@@ -200,10 +202,10 @@ pub enum ListStyleTypeContent {
 }
 
 impl ListStyleTypeContent {
-    /// Returns the content to be used for the given value of the `list-style-type` property.
+    
     pub fn from_list_style_type(list_style_type: list_style_type::T) -> ListStyleTypeContent {
-        // Just to keep things simple, use a nonbreaking space (Unicode 0xa0) to provide the marker
-        // separation.
+        
+        
         match list_style_type {
             list_style_type::T::none => ListStyleTypeContent::None,
             list_style_type::T::disc | list_style_type::T::circle | list_style_type::T::square |
