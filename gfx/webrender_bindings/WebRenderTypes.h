@@ -44,6 +44,9 @@ inline Epoch NewEpoch(uint32_t aEpoch) {
 inline Maybe<WrImageFormat>
 SurfaceFormatToWrImageFormat(gfx::SurfaceFormat aFormat) {
   switch (aFormat) {
+    case gfx::SurfaceFormat::R8G8B8X8:
+      
+      return Some(WrImageFormat::RGBA8);
     case gfx::SurfaceFormat::B8G8R8X8:
       
       

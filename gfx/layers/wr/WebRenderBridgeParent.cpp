@@ -344,15 +344,27 @@ WebRenderBridgeParent::ProcessWebRenderCommands(const gfx::IntSize &aSize,
         }
         WebRenderTextureHost* wrTexture = texture->AsWebRenderTextureHost();
         if (wrTexture) {
-          
-          gfx::SurfaceFormat format =
-            wrTexture->GetFormat() == SurfaceFormat::YUV ? SurfaceFormat::B8G8R8A8 : wrTexture->GetFormat();
-          wr::ImageDescriptor descriptor(wrTexture->GetSize(), wrTexture->GetRGBStride(), format);
-          mApi->AddExternalImageBuffer(key,
-                                       descriptor,
-                                       wrTexture->GetExternalImageKey());
-          mCompositableHolder->HoldExternalImage(mPipelineId, aEpoch, texture->AsWebRenderTextureHost());
-          keysToDelete.push_back(key);
+          if (wrTexture->IsWrappingNativeHandle()) {
+            
+            
+            wr::ImageDescriptor descriptor(wrTexture->GetSize(), wrTexture->GetReadFormat());
+            mApi->AddExternalImageHandle(key,
+                                         descriptor,
+                                         wrTexture->GetExternalImageKey());
+            mCompositableHolder->HoldExternalImage(mPipelineId, aEpoch, texture->AsWebRenderTextureHost());
+            keysToDelete.push_back(key);
+          } else {
+            
+            gfx::SurfaceFormat format =
+              wrTexture->GetFormat() == SurfaceFormat::YUV ? SurfaceFormat::B8G8R8A8 : wrTexture->GetFormat();
+            wr::ImageDescriptor descriptor(wrTexture->GetSize(), wrTexture->GetRGBStride(), format);
+            mApi->AddExternalImageBuffer(key,
+                                         descriptor,
+                                         wrTexture->GetExternalImageKey());
+            mCompositableHolder->HoldExternalImage(mPipelineId, aEpoch, texture->AsWebRenderTextureHost());
+            keysToDelete.push_back(key);
+          }
+
           break;
         }
         RefPtr<DataSourceSurface> dSurf = host->GetAsSurface();
