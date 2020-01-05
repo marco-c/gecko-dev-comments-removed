@@ -1313,7 +1313,7 @@ ContentEventHandler::OnQuerySelectedText(WidgetQueryContentEvent* aEvent)
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsINode> anchorNode, focusNode;
-  int32_t anchorOffset, focusOffset;
+  int32_t anchorOffset = 0, focusOffset = 0;
   if (mSelection->RangeCount()) {
     
     
@@ -1813,7 +1813,7 @@ ContentEventHandler::OnQueryTextRectArray(WidgetQueryContentEvent* aEvent)
   
   nsRect lastCharRect;
   
-  nsIFrame* lastFrame;
+  nsIFrame* lastFrame = nullptr;
   while (offset < kEndOffset) {
     nsCOMPtr<nsIContent> lastTextContent;
     rv = SetRangeFromFlatTextOffset(range, offset, 1, lineBreakType, true,

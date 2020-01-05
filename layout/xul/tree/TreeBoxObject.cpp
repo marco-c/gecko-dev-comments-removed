@@ -93,7 +93,7 @@ TreeBoxObject::GetTreeBodyFrame(bool aFlushLayout)
   
   
   
-  nsIFrame* frame;
+  nsIFrame* frame = nullptr;
   if (aFlushLayout) {
     frame = GetFrame(aFlushLayout);
     if (!frame)

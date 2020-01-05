@@ -1324,7 +1324,7 @@ nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove, bool aS
   nsRect anchorRect;
 
   
-  int32_t parentWidth;
+  int32_t parentWidth = 0;
 
   bool anchored = IsAnchored();
   if (anchored || aSizedToPopup) {

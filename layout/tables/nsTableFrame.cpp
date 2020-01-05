@@ -2431,7 +2431,7 @@ nsTableFrame::HomogenousInsertFrames(ChildListID     aListID,
       
       nsIFrame* pseudoFrame = aFrameList.FirstChild();
       nsIContent* parentContent = GetContent();
-      nsIContent* content;
+      nsIContent* content = nullptr;
       aPrevFrame = nullptr;
       while (pseudoFrame  && (parentContent ==
                               (content = pseudoFrame->GetContent()))) {
@@ -2441,7 +2441,7 @@ nsTableFrame::HomogenousInsertFrames(ChildListID     aListID,
       if (MOZ_LIKELY(container)) { 
         int32_t newIndex = container->IndexOf(content);
         nsIFrame* kidFrame;
-        nsTableColGroupFrame* lastColGroup;
+        nsTableColGroupFrame* lastColGroup = nullptr;
         if (isColGroup) {
           kidFrame = mColGroups.FirstChild();
           lastColGroup = nsTableColGroupFrame::GetLastRealColGroup(this);

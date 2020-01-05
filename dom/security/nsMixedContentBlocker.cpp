@@ -106,7 +106,7 @@ public:
     
     
     
-    nsresult stateRV;
+    nsresult stateRV = NS_ERROR_FAILURE;
     if (securityUI) {
       stateRV = securityUI->GetState(&state);
     }
