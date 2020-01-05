@@ -147,20 +147,13 @@ CreateClientInfo()
 } 
 
 nsUrlClassifierUtils::nsUrlClassifierUtils()
-  : mEscapeCharmap(nullptr)
-  , mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock")
+  : mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock")
 {
 }
 
 nsresult
 nsUrlClassifierUtils::Init()
 {
-  
-  mEscapeCharmap = new Charmap(0xffffffff, 0xfc009fff, 0xf8000001, 0xf8000001,
-                               0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff);
-  if (!mEscapeCharmap)
-    return NS_ERROR_OUT_OF_MEMORY;
-
   
   
   
