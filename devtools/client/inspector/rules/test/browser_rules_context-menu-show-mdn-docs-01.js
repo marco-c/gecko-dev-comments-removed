@@ -21,6 +21,11 @@
 
 
 
+
+const { PrefObserver } = require("devtools/client/shared/prefs");
+const PREF_ENABLE_MDN_DOCS_TOOLTIP =
+  "devtools.inspector.mdnDocsTooltip.enabled";
+
 const TEST_URI = `
   <html>
     <head>
@@ -36,11 +41,49 @@ const TEST_URI = `
 `;
 
 add_task(function* () {
+  info("Ensure the pref is true to begin with");
+  let initial = Services.prefs.getBoolPref(PREF_ENABLE_MDN_DOCS_TOOLTIP);
+  if (initial != true) {
+    yield setBooleanPref(PREF_ENABLE_MDN_DOCS_TOOLTIP, true);
+  }
+
   yield addTab("data:text/html;charset=utf8," + encodeURIComponent(TEST_URI));
   let {inspector, view} = yield openRuleView();
   yield selectNode("padding", inspector);
   yield testMdnContextMenuItemVisibility(view);
+
+  info("Ensure the pref is reset to its initial value");
+  let eventual = Services.prefs.getBoolPref(PREF_ENABLE_MDN_DOCS_TOOLTIP);
+  if (eventual != initial) {
+    yield setBooleanPref(PREF_ENABLE_MDN_DOCS_TOOLTIP, initial);
+  }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function* setBooleanPref(pref, state) {
+  let oncePrefChanged = defer();
+  let prefObserver = new PrefObserver("devtools.");
+  prefObserver.on(pref, oncePrefChanged.resolve);
+
+  info("Set the pref " + pref + " to: " + state);
+  Services.prefs.setBoolPref(pref, state);
+
+  info("Wait for prefObserver to call back so the UI can update");
+  yield oncePrefChanged.promise;
+  prefObserver.off(pref, oncePrefChanged.resolve);
+}
 
 
 
