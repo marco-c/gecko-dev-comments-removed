@@ -29,17 +29,13 @@ const MILLIS_TIME_FORMAT_MAX_DURATION = 4000;
 
 
 
-
 function createNode(options) {
   if (!options.parent) {
     throw new Error("Missing parent DOMNode to create new node");
   }
 
   let type = options.nodeType || "div";
-  let node =
-    options.namespace
-    ? options.parent.ownerDocument.createElementNS(options.namespace, type)
-    : options.parent.ownerDocument.createElement(type);
+  let node = options.parent.ownerDocument.createElement(type);
 
   for (let name in options.attributes || {}) {
     let value = options.attributes[name];
