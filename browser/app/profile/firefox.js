@@ -1579,6 +1579,7 @@ pref("services.sync.validation.enabled", true);
 
 
 pref("browser.formautofill.experimental", false);
+pref("browser.formautofill.enabled", false);
 
 
 #ifdef NIGHTLY_BUILD
