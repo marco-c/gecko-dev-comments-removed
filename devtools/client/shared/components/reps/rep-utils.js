@@ -49,6 +49,13 @@ define(function (require, exports, module) {
     text = text + "";
 
     
+    
+    
+    
+    let re = new RegExp("[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]", "g");
+    text = text.replace(re, "\ufffd");
+
+    
     if (!limit || limit <= 0) {
       return text;
     }
