@@ -267,7 +267,7 @@ public:
   
 
 
-  virtual DeclarationBlock* GetInlineStyleDeclaration();
+  DeclarationBlock* GetInlineStyleDeclaration() const;
 
   
 
