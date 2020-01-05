@@ -697,6 +697,7 @@ protected:
 
 
 
+
   void UpdateFilter();
 
   nsLayoutUtils::SurfaceFromElementResult
@@ -873,13 +874,12 @@ protected:
 
 
   const gfx::FilterDescription& EnsureUpdatedFilter() {
-    const ContextState& state = CurrentState();
     bool isWriteOnly = mCanvasElement && mCanvasElement->IsWriteOnly();
-    if (state.filterSourceGraphicTainted != isWriteOnly) {
+    if (CurrentState().filterSourceGraphicTainted != isWriteOnly) {
       UpdateFilter();
     }
-    MOZ_ASSERT(state.filterSourceGraphicTainted == isWriteOnly);
-    return state.filter;
+    MOZ_ASSERT(CurrentState().filterSourceGraphicTainted == isWriteOnly);
+    return CurrentState().filter;
   }
 
   bool NeedToCalculateBounds()
