@@ -1988,6 +1988,11 @@ nsFrameLoader::StartDestroy()
     }
   }
 
+  
+  if (mGroupedSessionHistory) {
+    mGroupedSessionHistory->CloseInactiveFrameLoaderOwners();
+  }
+
   nsCOMPtr<nsIRunnable> destroyRunnable = new nsFrameLoaderDestroyRunnable(this);
   if (mNeedsAsyncDestroy || !doc ||
       NS_FAILED(doc->FinalizeFrameLoader(this, destroyRunnable))) {
