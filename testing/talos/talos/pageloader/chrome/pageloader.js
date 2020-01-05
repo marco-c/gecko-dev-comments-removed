@@ -221,10 +221,6 @@ function plInit() {
       var browserLoadFunc = function (ev) {
         browserWindow.removeEventListener('load', browserLoadFunc, true);
 
-        function firstPageCanLoadAsRemote() {
-          return E10SUtils.canLoadURIInProcess(pageUrls[0], Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT);
-        }
-
         
         
         
@@ -239,13 +235,13 @@ function plInit() {
                      
                      
                      
-                     
-                     
-                     
                      if (browserWindow.gMultiProcessBrowser) {
-                       if (!firstPageCanLoadAsRemote())
+                       let remoteType = E10SUtils.getRemoteTypeForURI(pageUrls[0], true);
+                       if (remoteType) {
+                         browserWindow.XULBrowserWindow.forceInitialBrowserRemote(remoteType);
+                       } else {
                          browserWindow.XULBrowserWindow.forceInitialBrowserNonRemote(null);
-                       
+                       }
                      }
 
                      browserWindow.resizeTo(winWidth, winHeight);
