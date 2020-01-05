@@ -62,8 +62,7 @@ CreateTextureHostOGL(const SurfaceDescriptor& aDesc,
 
       result = new SurfaceTextureHost(aFlags,
                                       surfaceTexture,
-                                      desc.size(),
-                                      desc.continuous());
+                                      desc.size());
       break;
     }
 #endif
@@ -412,15 +411,11 @@ SurfaceTextureSource::DeallocateDeviceData()
 
 SurfaceTextureHost::SurfaceTextureHost(TextureFlags aFlags,
                                        mozilla::java::GeckoSurfaceTexture::Ref& aSurfTex,
-                                       gfx::IntSize aSize,
-                                       bool aContinuousUpdate)
+                                       gfx::IntSize aSize)
   : TextureHost(aFlags)
   , mSurfTex(aSurfTex)
   , mSize(aSize)
-  , mContinuousUpdate(aContinuousUpdate)
 {
-  
-  MOZ_ASSERT(!mSurfTex->IsSingleBuffer() || !mContinuousUpdate);
 }
 
 SurfaceTextureHost::~SurfaceTextureHost()
@@ -435,13 +430,9 @@ SurfaceTextureHost::PrepareTextureSource(CompositableTextureSourceRef& aTexture)
     return;
   }
 
-  if (!mContinuousUpdate) {
-    
-    
-    
-    
-    mSurfTex->UpdateTexImage();
-  }
+  
+  
+  mSurfTex->UpdateTexImage();
 }
 
 gl::GLContext*
@@ -457,10 +448,6 @@ SurfaceTextureHost::Lock()
   GLContext* gl = this->gl();
   if (!gl || !gl->MakeCurrent()) {
     return false;
-  }
-
-  if (mContinuousUpdate) {
-    mSurfTex->UpdateTexImage();
   }
 
   if (!mTextureSource) {
