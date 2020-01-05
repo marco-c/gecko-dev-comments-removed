@@ -146,6 +146,24 @@ GetCamerasChildIfExists() {
   return CamerasSingleton::Child();
 }
 
+int CamerasChild::AddDeviceChangeCallback(DeviceChangeCallback* aCallback)
+{
+  
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+
+  EnsureInitialized(CameraEngine);
+  return DeviceChangeCallback::AddDeviceChangeCallback(aCallback);
+}
+
 bool
 CamerasChild::RecvReplyFailure(void)
 {
@@ -304,6 +322,22 @@ CamerasChild::RecvReplyNumberOfCaptureDevices(const int& numdev)
   mReplyInteger = numdev;
   monitor.Notify();
   return true;
+}
+
+int
+CamerasChild::EnsureInitialized(CaptureEngine aCapEngine)
+{
+  LOG((__PRETTY_FUNCTION__));
+  nsCOMPtr<nsIRunnable> runnable =
+    media::NewRunnableFrom([this, aCapEngine]() -> nsresult {
+      if (this->SendEnsureInitialized(aCapEngine)) {
+        return NS_OK;
+      }
+      return NS_ERROR_FAILURE;
+    });
+  LockAndDispatch<> dispatcher(this, __func__, runnable, 0, mReplyInteger);
+  LOG(("Capture Devices: %d", dispatcher.ReturnValue()));
+  return dispatcher.ReturnValue();
 }
 
 int
