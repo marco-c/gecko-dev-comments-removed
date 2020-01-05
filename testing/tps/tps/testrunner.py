@@ -76,6 +76,7 @@ class TPSTestRunner(object):
         'toolkit.startup.max_resumed_crashes': -1,
         
         'xpinstall.signatures.required': False,
+        'services.sync.testing.tps': True,
     }
 
     debug_preferences = {

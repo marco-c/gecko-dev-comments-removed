@@ -403,7 +403,10 @@ Sync11Service.prototype = {
       
       
       case "sync:collection_changed":
-        if (data.includes("clients")) {
+        
+        
+        
+        if (data.includes("clients") && !Svc.Prefs.get("testing.tps", false)) {
           this.sync([]); 
         }
         break;

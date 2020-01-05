@@ -269,7 +269,15 @@ var TPS = {
   },
 
   FinishAsyncOperation: function TPS__FinishAsyncOperation() {
-    this._operations_pending--;
+    
+    
+    
+    
+    
+    
+    if (this._operations_pending) {
+      this._operations_pending--;
+    }
     if (!this.operations_pending) {
       this._currentAction++;
       Utils.nextTick(function() {
@@ -1131,13 +1139,14 @@ var TPS = {
       return;
     }
 
+    
+    this._triggeredSync = true;
     Logger.logInfo("Setting client credentials and login.");
     Authentication.signIn(this.config.fx_account);
     this.waitForSetupComplete();
     Logger.AssertEqual(Weave.Status.service, Weave.STATUS_OK, "Weave status OK");
     this.waitForTracking();
     
-    this._triggeredSync = true;
     this.waitForSyncFinished();
   },
 
@@ -1149,6 +1158,10 @@ var TPS = {
 
 
   Sync: function TPS__Sync(wipeAction) {
+    if (this._syncActive) {
+      Logger.logInfo("WARNING: Sync currently active! Waiting, before triggering another");
+      this.waitForSyncFinished();
+    }
     Logger.logInfo("Executing Sync" + (wipeAction ? ": " + wipeAction : ""));
 
     
