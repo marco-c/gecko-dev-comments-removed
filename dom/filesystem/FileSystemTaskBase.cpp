@@ -256,12 +256,6 @@ FileSystemTaskParentBase::Start()
   AssertIsOnBackgroundThread();
   mFileSystem->AssertIsOnOwningThread();
 
-  if (NeedToGoToMainThread()) {
-    DebugOnly<nsresult> rv = NS_DispatchToMainThread(this, NS_DISPATCH_NORMAL);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NS_DispatchToCurrentThread failed");
-    return;
-  }
-
   DebugOnly<nsresult> rv = DispatchToIOThread(this);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "DispatchToIOThread failed");
 }
@@ -305,52 +299,12 @@ FileSystemTaskParentBase::SetError(const nsresult& aErrorValue)
   mErrorValue = FileSystemErrorFromNsError(aErrorValue);
 }
 
-bool
-FileSystemTaskParentBase::NeedToGoToMainThread() const
-{
-  return mFileSystem->NeedToGoToMainThread();
-}
-
-nsresult
-FileSystemTaskParentBase::MainThreadWork()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  return mFileSystem->MainThreadWork();
-}
-
 NS_IMETHODIMP
 FileSystemTaskParentBase::Run()
 {
   
   
   
-  
-  
-  
-  
-  if (NS_IsMainThread()) {
-    MOZ_ASSERT(NeedToGoToMainThread());
-
-    nsresult rv = MainThreadWork();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      SetError(rv);
-
-      
-      
-      rv = mBackgroundEventTarget->Dispatch(this, NS_DISPATCH_NORMAL);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-    }
-
-    
-    rv = DispatchToIOThread(this);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    return NS_OK;
-  }
 
   
   if (!IsOnBackgroundThread()) {

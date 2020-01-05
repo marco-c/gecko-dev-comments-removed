@@ -225,17 +225,6 @@ public:
   void
   HandleResult();
 
-  
-  
-  
-  virtual bool
-  NeedToGoToMainThread() const;
-
-  
-  
-  virtual nsresult
-  MainThreadWork();
-
   bool
   HasError() const { return NS_FAILED(mErrorValue); }
 
