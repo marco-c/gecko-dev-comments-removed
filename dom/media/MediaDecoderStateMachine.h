@@ -339,6 +339,8 @@ protected:
   
   
   void Push(MediaData* aSample);
+  void PushAudio(MediaData* aSample);
+  void PushVideo(MediaData* aSample);
 
   void OnAudioPopped(const RefPtr<MediaData>& aSample);
   void OnVideoPopped(const RefPtr<MediaData>& aSample);
