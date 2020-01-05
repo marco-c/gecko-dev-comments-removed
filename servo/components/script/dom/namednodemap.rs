@@ -60,8 +60,7 @@ impl<'a> NamedNodeMapMethods for JSRef<'a, NamedNodeMap> {
         let owner = self.owner.root();
         
         let owner = owner.r();
-        let name = owner.parsed_name(name);
-        owner.get_attribute_by_name(&Atom::from_slice(&name))
+        owner.get_attribute_by_name(name)
     }
 
     
