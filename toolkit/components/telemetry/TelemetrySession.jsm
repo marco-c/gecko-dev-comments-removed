@@ -44,6 +44,7 @@ const REASON_SHUTDOWN = "shutdown";
 const HISTOGRAM_SUFFIXES = {
   PARENT: "",
   CONTENT: "#content",
+  GPU: "#gpu",
 }
 
 const ENVIRONMENT_CHANGE_LISTENER = "TelemetrySession::onEnvironmentChange";
@@ -1314,6 +1315,16 @@ var Impl = {
         keyedHistograms: keyedHistograms[HISTOGRAM_SUFFIXES.CONTENT],
       },
     };
+
+    
+    if (HISTOGRAM_SUFFIXES.GPU in histograms ||
+        HISTOGRAM_SUFFIXES.GPU in keyedHistograms)
+    {
+      payloadObj.processes.gpu = {
+        histograms: histograms[HISTOGRAM_SUFFIXES.GPU],
+        keyedHistograms: keyedHistograms[HISTOGRAM_SUFFIXES.GPU],
+      };
+    }
 
     payloadObj.info = info;
 
