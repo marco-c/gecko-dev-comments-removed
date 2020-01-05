@@ -631,8 +631,11 @@ nsUrlClassifierDBServiceWorker::FinishUpdate()
      mUpdateStatus : NS_ERROR_UC_UPDATE_UNKNOWN;
   }
 
-  Telemetry::Accumulate(Telemetry::URLCLASSIFIER_UPDATE_ERROR, provider,
-                        NS_ERROR_GET_CODE(updateStatus));
+  
+  if (!provider.Equals(TESTING_TABLE_PROVIDER_NAME)) {
+    Telemetry::Accumulate(Telemetry::URLCLASSIFIER_UPDATE_ERROR, provider,
+                          NS_ERROR_GET_CODE(updateStatus));
+  }
 
   mMissCache.Clear();
 
@@ -989,7 +992,7 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
       
       
       if ((!gethashUrl.IsEmpty() ||
-           StringBeginsWith(result.mTableName, NS_LITERAL_CSTRING("test-"))) &&
+           StringBeginsWith(result.mTableName, NS_LITERAL_CSTRING("test"))) &&
           mDBService->GetCompleter(result.mTableName,
                                    getter_AddRefs(completer))) {
 

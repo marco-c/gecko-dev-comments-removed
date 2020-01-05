@@ -73,7 +73,10 @@ private:
   bool mInitialized;
   bool mDownloadError;
   bool mBeganStream;
+
+  
   nsCString mStreamTable;
+
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIUrlClassifierDBService> mDBService;
   nsCOMPtr<nsITimer> mTimer;
@@ -98,6 +101,10 @@ private:
   nsCOMPtr<nsIUrlClassifierCallback> mSuccessCallback;
   nsCOMPtr<nsIUrlClassifierCallback> mUpdateErrorCallback;
   nsCOMPtr<nsIUrlClassifierCallback> mDownloadErrorCallback;
+
+  
+  
+  nsCString mTelemetryProvider;
 };
 
 #endif 
