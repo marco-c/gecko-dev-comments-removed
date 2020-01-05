@@ -22,6 +22,7 @@
 #include "nsClassHashtable.h"
 #include "nsISupportsImpl.h"
 #include "mozilla/MozPromise.h"
+#include "GMPContentParent.h"
 
 template <class> struct already_AddRefed;
 
@@ -33,8 +34,7 @@ extern LogModule* GetGMPLog();
 
 namespace gmp {
 
-class GMPContentParent;
-typedef MozPromise<RefPtr<GMPContentParent>, nsresult,  true> GetGMPContentParentPromise;
+typedef MozPromise<RefPtr<GMPContentParent::CloseBlocker>, nsresult,  true> GetGMPContentParentPromise;
 
 class GeckoMediaPluginService : public mozIGeckoMediaPluginService
                               , public nsIObserver
