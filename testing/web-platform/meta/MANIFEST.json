@@ -32194,6 +32194,10 @@
         "url": "/webaudio/the-audio-api/the-audionode-interface/audionode-connect-return-value.html"
       },
       {
+        "path": "webaudio/the-audio-api/the-audioparam-interface/idl-test.html",
+        "url": "/webaudio/the-audio-api/the-audioparam-interface/idl-test.html"
+      },
+      {
         "path": "webaudio/the-audio-api/the-audioparam-interface/retrospective-setValueAtTime.html",
         "url": "/webaudio/the-audio-api/the-audioparam-interface/retrospective-setValueAtTime.html"
       },
@@ -39339,9 +39343,7 @@
     ]
   },
   "local_changes": {
-    "deleted": [
-      "web-animations/animation-model/animation-types/type-per-property.html"
-    ],
+    "deleted": [],
     "deleted_reftests": {},
     "items": {
       "testharness": {
@@ -39573,12 +39575,6 @@
           {
             "path": "uievents/order-of-events/focus-events/focus-automated-blink-webkit.html",
             "url": "/uievents/order-of-events/focus-events/focus-automated-blink-webkit.html"
-          }
-        ],
-        "web-animations/animation-model/animation-types/interpolation-per-property.html": [
-          {
-            "path": "web-animations/animation-model/animation-types/interpolation-per-property.html",
-            "url": "/web-animations/animation-model/animation-types/interpolation-per-property.html"
           }
         ],
         "web-animations/animation-model/animation-types/spacing-keyframes-filters.html": [
