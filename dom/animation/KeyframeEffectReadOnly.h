@@ -67,7 +67,7 @@ struct PropertyValuePair
   
   
   
-  RefPtr<ServoDeclarationBlock> mServoDeclarationBlock;
+  RefPtr<RawServoDeclarationBlock> mServoDeclarationBlock;
 
   bool operator==(const PropertyValuePair& aOther) const {
     return mProperty == aOther.mProperty &&

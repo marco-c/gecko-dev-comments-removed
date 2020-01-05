@@ -3233,12 +3233,12 @@ StyleAnimationValue::ComputeValues(
   nsCSSPropertyID aProperty,
   CSSEnabledState aEnabledState,
   nsStyleContext* aStyleContext,
-  const ServoDeclarationBlock& aDeclarations,
+  const RawServoDeclarationBlock& aDeclarations,
   nsTArray<PropertyStyleAnimationValuePair>& aValues)
 {
   MOZ_ASSERT(aStyleContext->PresContext()->StyleSet()->IsServo(),
              "Should be using ServoStyleSet if we have a"
-             " ServoDeclarationBlock");
+             " RawServoDeclarationBlock");
 
   if (!nsCSSProps::IsEnabled(aProperty, aEnabledState)) {
     return false;
@@ -3249,7 +3249,7 @@ StyleAnimationValue::ComputeValues(
 
   
   
-  auto declarations = const_cast<ServoDeclarationBlock*>(&aDeclarations);
+  auto declarations = const_cast<RawServoDeclarationBlock*>(&aDeclarations);
   RefPtr<ServoComputedValues> computedValues =
     Servo_RestyleWithAddedDeclaration(declarations, previousStyle).Consume();
   if (!computedValues) {
