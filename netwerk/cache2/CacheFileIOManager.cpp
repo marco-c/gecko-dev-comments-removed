@@ -1090,6 +1090,7 @@ CacheFileIOManager::CacheFileIOManager()
   , mTreeCreated(false)
   , mTreeCreationFailed(false)
   , mOverLimitEvicting(false)
+  , mCacheSizeOnHardLimit(false)
   , mRemovingTrashDirs(false)
 {
   LOG(("CacheFileIOManager::CacheFileIOManager [this=%p]", this));
@@ -1992,7 +1993,14 @@ CacheFileIOManager::WriteInternal(CacheFileHandle *aHandle, int64_t aOffset,
   }
 
   
+  
   if (aHandle->mFileSize < aOffset + aCount) {
+    if (mOverLimitEvicting && mCacheSizeOnHardLimit) {
+      LOG(("CacheFileIOManager::WriteInternal() - failing because cache size "
+           "reached hard limit!"));
+      return NS_ERROR_FILE_DISK_FULL;
+    }
+
     int64_t freeSpace = -1;
     rv = mCacheDirectory->GetDiskSpaceAvailable(&freeSpace);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2524,7 +2532,14 @@ CacheFileIOManager::TruncateSeekSetEOFInternal(CacheFileHandle *aHandle,
   }
 
   
+  
   if (aHandle->mFileSize < aEOFPos) {
+    if (mOverLimitEvicting && mCacheSizeOnHardLimit) {
+      LOG(("CacheFileIOManager::TruncateSeekSetEOFInternal() - failing because "
+           "cache size reached hard limit!"));
+      return NS_ERROR_FILE_DISK_FULL;
+    }
+
     int64_t freeSpace = -1;
     rv = mCacheDirectory->GetDiskSpaceAvailable(&freeSpace);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2789,6 +2804,20 @@ CacheFileIOManager::OverLimitEvictionInternal()
     if (cacheUsage > cacheLimit) {
       LOG(("CacheFileIOManager::OverLimitEvictionInternal() - Cache size over "
            "limit. [cacheSize=%u, limit=%u]", cacheUsage, cacheLimit));
+
+      
+      
+      
+      
+      
+      
+      if ((cacheUsage - cacheLimit) > (cacheLimit / 20)) {
+        LOG(("CacheFileIOManager::OverLimitEvictionInternal() - Cache size "
+             "reached hard limit."));
+        mCacheSizeOnHardLimit = true;
+      } else {
+        mCacheSizeOnHardLimit = false;
+      }
     } else if (freeSpace != 1 && freeSpace < freeSpaceLimit) {
       LOG(("CacheFileIOManager::OverLimitEvictionInternal() - Free space under "
            "limit. [freeSpace=%" PRId64 ", freeSpaceLimit=%u]", freeSpace,
@@ -2798,6 +2827,8 @@ CacheFileIOManager::OverLimitEvictionInternal()
            "free space in limits. [cacheSize=%ukB, cacheSizeLimit=%ukB, "
            "freeSpace=%" PRId64 ", freeSpaceLimit=%u]", cacheUsage, cacheLimit,
            freeSpace, freeSpaceLimit));
+
+      mCacheSizeOnHardLimit = false;
       return NS_OK;
     }
 

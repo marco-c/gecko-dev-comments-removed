@@ -474,6 +474,10 @@ private:
   nsTArray<RefPtr<CacheFile> >         mScheduledMetadataWrites;
   nsCOMPtr<nsITimer>                   mMetadataWritesTimer;
   bool                                 mOverLimitEvicting;
+  
+  
+  
+  bool                                 mCacheSizeOnHardLimit;
   bool                                 mRemovingTrashDirs;
   nsCOMPtr<nsITimer>                   mTrashTimer;
   nsCOMPtr<nsIFile>                    mTrashDir;
