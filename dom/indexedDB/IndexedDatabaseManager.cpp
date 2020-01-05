@@ -258,8 +258,15 @@ DataThresholdPrefChangedCallback(const char* aPrefName, void* aClosure)
   MOZ_ASSERT(!strcmp(aPrefName, kDataThresholdPref));
   MOZ_ASSERT(!aClosure);
 
-  gDataThresholdBytes =
+  int32_t dataThresholdBytes =
     Preferences::GetInt(aPrefName, kDefaultDataThresholdBytes);
+
+  
+  if (dataThresholdBytes == -1) {
+    dataThresholdBytes = INT32_MAX;
+  }
+
+  gDataThresholdBytes = dataThresholdBytes;
 }
 
 } 
