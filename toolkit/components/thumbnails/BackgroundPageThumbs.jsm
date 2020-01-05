@@ -15,6 +15,8 @@ const TELEMETRY_HISTOGRAM_ID_PREFIX = "FX_THUMBNAILS_BG_";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
+const ABOUT_NEWTAB_SEGREGATION_PREF = "privacy.usercontext.about_newtab_segregation.enabled";
+
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
@@ -196,10 +198,12 @@ const BackgroundPageThumbs = {
     browser.setAttribute("remote", "true");
     browser.setAttribute("disableglobalhistory", "true");
 
-    
-    let privateIdentity =
-      ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
-    browser.setAttribute("usercontextid", privateIdentity.userContextId);
+    if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
+      
+      let privateIdentity =
+        ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
+      browser.setAttribute("usercontextid", privateIdentity.userContextId);
+    }
 
     
     
@@ -435,11 +439,13 @@ Capture.prototype = {
         }
       }
 
-      
-      let privateIdentity =
-        ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
-      Services.obs.notifyObservers(null, "clear-origin-attributes-data",
+      if (Services.prefs.getBoolPref(ABOUT_NEWTAB_SEGREGATION_PREF)) {
+        
+        let privateIdentity =
+          ContextualIdentityService.getPrivateIdentity("userContextIdInternal.thumbnail");
+        Services.obs.notifyObservers(null, "clear-origin-attributes-data",
           JSON.stringify({ userContextId: privateIdentity.userContextId }));
+      }
     };
 
     if (!data) {
