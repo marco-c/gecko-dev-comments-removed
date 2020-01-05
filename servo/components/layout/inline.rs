@@ -205,6 +205,9 @@ struct LineBreaker {
     
     lines: Vec<Line>,
     
+    
+    last_known_line_breaking_opportunity: Option<FragmentIndex>,
+    
     cur_b: Au,
     
     first_line_indentation: Au,
@@ -232,6 +235,7 @@ impl LineBreaker {
             floats: float_context,
             lines: Vec::new(),
             cur_b: Au(0),
+            last_known_line_breaking_opportunity: None,
             first_line_indentation: first_line_indentation,
             minimum_block_size_above_baseline: minimum_block_size_above_baseline,
             minimum_depth_below_baseline: minimum_depth_below_baseline,
@@ -248,6 +252,7 @@ impl LineBreaker {
 
     
     fn reset_line(&mut self) -> Line {
+        self.last_known_line_breaking_opportunity = None;
         mem::replace(&mut self.pending_line, Line::new(self.floats.writing_mode,
                                                        self.minimum_block_size_above_baseline,
                                                        self.minimum_depth_below_baseline))
@@ -272,7 +277,6 @@ impl LineBreaker {
         self.reflow_fragments(old_fragment_iter, flow, layout_context);
 
         
-
         let para_level = flow.base.writing_mode.to_bidi_level();
 
         
@@ -537,12 +541,17 @@ impl LineBreaker {
                        layout_context: &LayoutContext,
                        flags: InlineReflowFlags) {
         
-        if self.pending_line_is_empty() {
+        
+        
+        let fragment_is_line_break_opportunity = if self.pending_line_is_empty() {
             fragment.strip_leading_whitespace_if_necessary();
             let (line_bounds, _) = self.initial_line_placement(flow, &fragment, self.cur_b);
             self.pending_line.bounds.start = line_bounds.start;
             self.pending_line.green_zone = line_bounds.size;
-        }
+            false
+        } else {
+            !flags.contains(NO_WRAP_INLINE_REFLOW_FLAG)
+        };
 
         debug!("LineBreaker: trying to append to line {} (fragment size: {:?}, green zone: {:?}): \
                {:?}",
@@ -562,6 +571,11 @@ impl LineBreaker {
                 self.flush_current_line();
             }
             return
+        }
+
+        
+        if fragment_is_line_break_opportunity {
+            self.last_known_line_breaking_opportunity = Some(self.pending_line.range.end())
         }
 
         
@@ -587,13 +601,25 @@ impl LineBreaker {
         }
 
         
-        
-        if (!fragment.can_split() && self.pending_line_is_empty()) ||
-                (flags.contains(NO_WRAP_INLINE_REFLOW_FLAG) &&
-                 !flags.contains(WRAP_ON_NEWLINE_INLINE_REFLOW_FLAG)) {
+        if !fragment.can_split() && self.pending_line_is_empty() {
             debug!("LineBreaker: fragment can't split and line {} is empty, so overflowing",
                     self.lines.len());
             self.push_fragment_to_line(layout_context, fragment, LineFlushMode::No);
+            return
+        }
+
+        
+        
+        if flags.contains(NO_WRAP_INLINE_REFLOW_FLAG) &&
+                !flags.contains(WRAP_ON_NEWLINE_INLINE_REFLOW_FLAG) {
+            debug!("LineBreaker: white-space: nowrap in effect; falling back to last known good \
+                    split point");
+            if !self.split_line_at_last_known_good_position() {
+                
+                self.push_fragment_to_line(layout_context, fragment, LineFlushMode::No)
+            } else {
+                self.work_list.push_front(fragment)
+            }
             return
         }
 
@@ -608,9 +634,21 @@ impl LineBreaker {
         let split_result = match fragment.calculate_split_position(available_inline_size,
                                                                    self.pending_line_is_empty()) {
             None => {
-                debug!("LineBreaker: fragment was unsplittable; deferring to next line");
-                self.work_list.push_front(fragment);
-                self.flush_current_line();
+                
+                
+                if fragment_is_line_break_opportunity {
+                    debug!("LineBreaker: fragment was unsplittable; deferring to next line");
+                    self.work_list.push_front(fragment);
+                    self.flush_current_line();
+                } else if self.split_line_at_last_known_good_position() {
+                    
+                    
+                    self.work_list.push_front(fragment)
+                } else {
+                    
+                    
+                    self.push_fragment_to_line(layout_context, fragment, LineFlushMode::No)
+                }
                 return
             }
             Some(split_result) => split_result,
@@ -704,6 +742,37 @@ impl LineBreaker {
         self.pending_line.bounds.size.block =
             self.new_block_size_for_line(&fragment, layout_context);
         self.new_fragments.push(fragment);
+    }
+
+    fn split_line_at_last_known_good_position(&mut self) -> bool {
+        let last_known_line_breaking_opportunity =
+            match self.last_known_line_breaking_opportunity {
+                None => return false,
+                Some(last_known_line_breaking_opportunity) => last_known_line_breaking_opportunity,
+            };
+
+        for fragment_index in (last_known_line_breaking_opportunity.get()..
+                               self.pending_line.range.end().get()).rev() {
+            debug_assert!(fragment_index == (self.new_fragments.len() as isize) - 1);
+            self.work_list.push_front(self.new_fragments.pop().unwrap());
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.pending_line.range.extend_to(last_known_line_breaking_opportunity);
+        self.flush_current_line();
+        true
     }
 
     
