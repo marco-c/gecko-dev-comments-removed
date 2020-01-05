@@ -325,6 +325,8 @@ public:
     
     
 
+    const GLuint64 kMaxClientWaitSyncTimeoutNS = 1000 * 1000 * 1000; 
+
     already_AddRefed<WebGLSync> FenceSync(GLenum condition, GLbitfield flags);
     bool IsSync(const WebGLSync* sync);
     void DeleteSync(WebGLSync* sync);
