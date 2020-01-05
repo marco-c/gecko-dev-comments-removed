@@ -1632,6 +1632,7 @@ nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
     
     gfxContext* renderContext = aRenderingContext.ThebesContext();
     DrawTarget* drawTarget = renderContext->GetDrawTarget();
+    nsContextBoxBlur blurringArea;
 
     
     
@@ -6122,8 +6123,9 @@ nsContextBoxBlur::InsetBoxBlur(gfxContext* aDestinationCtx,
 
   mAlphaBoxBlur.BlurInsetBox(aDestinationCtx, transformedDestRect,
                              transformedShadowClipRect,
-                             blurRadius, aShadowColor,
-                             aHasBorderRadius ? &aInnerClipRectRadii : nullptr,
-                             transformedSkipRect, aShadowOffset);
+                             blurRadius, spreadRadius,
+                             aShadowColor, aHasBorderRadius,
+                             aInnerClipRectRadii, transformedSkipRect,
+                             aShadowOffset);
   return true;
 }

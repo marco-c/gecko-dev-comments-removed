@@ -10,13 +10,14 @@
 #include "nsSize.h"
 #include "gfxPoint.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/gfx/Blur.h"
+#include "mozilla/UniquePtr.h"
 
 class gfxContext;
 struct gfxRect;
 
 namespace mozilla {
   namespace gfx {
+    class AlphaBoxBlur;
     struct Color;
     struct RectCornerRadii;
     class SourceSurface;
@@ -72,19 +73,21 @@ public:
 
 
 
-    already_AddRefed<gfxContext>
-    Init(const gfxRect& aRect,
-         const mozilla::gfx::IntSize& aSpreadRadius,
-         const mozilla::gfx::IntSize& aBlurRadius,
-         const gfxRect* aDirtyRect,
-         const gfxRect* aSkipRect);
+    gfxContext* Init(const gfxRect& aRect,
+                     const mozilla::gfx::IntSize& aSpreadRadius,
+                     const mozilla::gfx::IntSize& aBlurRadius,
+                     const gfxRect* aDirtyRect,
+                     const gfxRect* aSkipRect);
 
-    already_AddRefed<DrawTarget>
-    InitDrawTarget(const mozilla::gfx::Rect& aRect,
-                   const mozilla::gfx::IntSize& aSpreadRadius,
-                   const mozilla::gfx::IntSize& aBlurRadius,
-                   const mozilla::gfx::Rect* aDirtyRect = nullptr,
-                   const mozilla::gfx::Rect* aSkipRect = nullptr);
+    
+
+
+
+
+    gfxContext* GetContext()
+    {
+        return mContext;
+    }
 
     already_AddRefed<mozilla::gfx::SourceSurface>
     DoBlur(DrawTarget* aDT, mozilla::gfx::IntPoint* aTopLeft);
@@ -126,7 +129,7 @@ public:
 
     static void BlurRectangle(gfxContext *aDestinationCtx,
                               const gfxRect& aRect,
-                              const RectCornerRadii* aCornerRadii,
+                              RectCornerRadii* aCornerRadii,
                               const gfxPoint& aBlurStdDev,
                               const Color& aShadowColor,
                               const gfxRect& aDirtyRect,
@@ -148,35 +151,44 @@ public:
 
 
 
+
+
     void BlurInsetBox(gfxContext* aDestinationCtx,
-                      const mozilla::gfx::Rect& aDestinationRect,
-                      const mozilla::gfx::Rect& aShadowClipRect,
-                      const mozilla::gfx::IntSize& aBlurRadius,
+                      const mozilla::gfx::Rect aDestinationRect,
+                      const mozilla::gfx::Rect aShadowClipRect,
+                      const mozilla::gfx::IntSize aBlurRadius,
+                      const mozilla::gfx::IntSize aSpreadRadius,
                       const mozilla::gfx::Color& aShadowColor,
-                      const RectCornerRadii* aInnerClipRadii,
-                      const mozilla::gfx::Rect& aSkipRect,
-                      const mozilla::gfx::Point& aShadowOffset);
+                      const bool aHasBorderRadius,
+                      const RectCornerRadii& aInnerClipRadii,
+                      const mozilla::gfx::Rect aSkipRect,
+                      const mozilla::gfx::Point aShadowOffset);
 
 protected:
     already_AddRefed<mozilla::gfx::SourceSurface>
-    GetInsetBlur(const mozilla::gfx::Rect& aOuterRect,
-                 const mozilla::gfx::Rect& aWhitespaceRect,
-                 bool aIsDestRect,
+    GetInsetBlur(const mozilla::gfx::Rect aOuterRect,
+                 const mozilla::gfx::Rect aWhitespaceRect,
+                 const bool aIsDestRect,
                  const mozilla::gfx::Color& aShadowColor,
                  const mozilla::gfx::IntSize& aBlurRadius,
-                 const RectCornerRadii* aInnerClipRadii,
-                 DrawTarget* aDestDrawTarget,
-                 bool aMirrorCorners);
+                 const bool aHasBorderRadius,
+                 const RectCornerRadii& aInnerClipRadii,
+                 DrawTarget* aDestDrawTarget);
 
     
 
 
-    uint8_t* mData;
+    RefPtr<gfxContext> mContext;
+
+    
+
+
+    mozilla::UniquePtr<unsigned char[]> mData;
 
      
 
 
-    mozilla::gfx::AlphaBoxBlur mBlur;
+    mozilla::UniquePtr<mozilla::gfx::AlphaBoxBlur> mBlur;
 };
 
 #endif 
