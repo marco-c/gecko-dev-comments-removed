@@ -183,22 +183,10 @@ check_one("[...].foo",
           function() { [undefined, ...[]].foo(); },
           " is not a function");
 
-
-
-
-try
-{
-  (function() {
-    var [{x}] = [null, {}];
-   })();
-  throw new Error("didn't throw");
-}
-catch (e)
-{
-  assertEq(e instanceof TypeError, true,
-           "expected TypeError, got " + e);
-  assertEq(e.message, "can't convert null to object");
-}
+check_one("[...][Symbol.iterator](...).next(...).value",
+          function () { var [{x}] = [null, {}]; }, " is null");
+check_one("[...][Symbol.iterator](...).next(...).value",
+          function () { var [{x}] = [void 0, {}]; }, " is undefined");
 
 try {
   (function() {
