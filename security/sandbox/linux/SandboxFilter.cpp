@@ -538,6 +538,7 @@ public:
     case SYS_SEND:
     case SYS_SOCKET: 
     case SYS_CONNECT: 
+    case SYS_ACCEPT4: 
     case SYS_GETSOCKOPT:
     case SYS_SETSOCKOPT:
     case SYS_GETSOCKNAME:
