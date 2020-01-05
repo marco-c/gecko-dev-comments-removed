@@ -11,8 +11,10 @@
 #include "gfxUtils.h"
 #include "ImageHost.h"                  
 #include "TiledContentHost.h"           
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureHost.h"  
+#include "mozilla/layers/WebRenderImageHost.h"
 #include "mozilla/RefPtr.h"                   
 #include "nsDebug.h"                    
 #include "nsISupportsImpl.h"            
@@ -128,7 +130,11 @@ CompositableHost::Create(const TextureInfo& aTextureInfo)
     result = new TiledContentHost(aTextureInfo);
     break;
   case CompositableType::IMAGE:
-    result = new ImageHost(aTextureInfo);
+    if (gfxVars::UseWebRender()) {
+      result = new WebRenderImageHost(aTextureInfo);
+    } else {
+      result = new ImageHost(aTextureInfo);
+    }
     break;
   case CompositableType::CONTENT_SINGLE:
     result = new ContentHostSingleBuffered(aTextureInfo);
