@@ -15,15 +15,12 @@ add_task(function*() {
     set: [["browser.sessionstore.interval", 0]]
   });
 
-  let win = yield BrowserTestUtils.openNewBrowserWindow();
-  let browser = win.gBrowser.selectedBrowser;
-  browser.loadURI(testURL);
-  yield BrowserTestUtils.browserLoaded(browser);
-
-  yield TabStateFlusher.flush(browser);
+  let tab = gBrowser.addTab(testURL);
+  yield BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  yield TabStateFlusher.flush(tab.linkedBrowser);
 
   
-  let state = ss.getWindowState(win);
+  let state = ss.getBrowserState();
 
   
   let enumerator = Services.cookies.enumerator;
@@ -39,7 +36,7 @@ add_task(function*() {
   Services.cookies.removeAll();
 
   
-  ss.setWindowState(win, state, true);
+  ss.setBrowserState(state);
 
   
   enumerator = Services.cookies.enumerator;
@@ -55,5 +52,5 @@ add_task(function*() {
 
   
   Services.cookies.removeAll();
-  yield BrowserTestUtils.closeWindow(win);
+  yield promiseRemoveTab(tab);
 });

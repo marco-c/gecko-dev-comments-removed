@@ -634,10 +634,15 @@ var SessionStoreInternal = {
           let [iniState, remainingState] = this._prepDataForDeferredRestore(state);
           
           
-          if (iniState.windows.length)
+          if (iniState.windows.length) {
+            
+            
+            iniState.cookies = remainingState.cookies;
+            delete remainingState.cookies;
             state = iniState;
-          else
+          } else {
             state = null;
+          }
 
           if (remainingState.windows.length) {
             LastSession.setState(remainingState);
@@ -1153,6 +1158,9 @@ var SessionStoreInternal = {
           
           this._globalState.setFromState(aInitialState);
 
+          
+          SessionCookies.restore(aInitialState.cookies || []);
+
           let overwrite = this._isCmdLineEmpty(aWindow, aInitialState);
           let options = {firstWindow: true, overwriteTabs: overwrite};
           this.restoreWindows(aWindow, aInitialState, options);
@@ -1381,7 +1389,6 @@ var SessionStoreInternal = {
         winData.title = tabbrowser.selectedBrowser.contentTitle || tabbrowser.selectedTab.label;
         winData.title = this._replaceLoadingTitle(winData.title, tabbrowser,
                                                   tabbrowser.selectedTab);
-        SessionCookies.update([winData]);
       }
 
       if (AppConstants.platform != "macosx") {
@@ -2222,6 +2229,9 @@ var SessionStoreInternal = {
     this._globalState.setFromState(state);
 
     
+    SessionCookies.restore(state.cookies || []);
+
+    
     this.restoreWindows(window, state, {overwriteTabs: true});
 
     
@@ -2687,6 +2697,9 @@ var SessionStoreInternal = {
     this._globalState.setFromState(lastSessionState);
 
     
+    SessionCookies.restore(lastSessionState.cookies || []);
+
+    
     for (let i = 0; i < lastSessionState.windows.length; i++) {
       let winState = lastSessionState.windows[i];
       let lastSessionWindowID = winState.__lastSessionWindowID;
@@ -3046,10 +3059,6 @@ var SessionStoreInternal = {
         nonPopupCount++;
     }
 
-    TelemetryStopwatch.start("FX_SESSION_RESTORE_COLLECT_COOKIES_MS");
-    SessionCookies.update(total);
-    TelemetryStopwatch.finish("FX_SESSION_RESTORE_COLLECT_COOKIES_MS");
-
     
     for (ix in this._statesToRestore) {
       for (let winData of this._statesToRestore[ix].windows) {
@@ -3102,6 +3111,11 @@ var SessionStoreInternal = {
       global: this._globalState.getState()
     };
 
+    
+    TelemetryStopwatch.start("FX_SESSION_RESTORE_COLLECT_COOKIES_MS");
+    state.cookies = SessionCookies.collect();
+    TelemetryStopwatch.finish("FX_SESSION_RESTORE_COLLECT_COOKIES_MS");
+
     if (Cu.isModuleLoaded("resource://devtools/client/scratchpad/scratchpad-manager.jsm")) {
       
       let scratchpads = ScratchpadManager.getSessionState();
@@ -3139,10 +3153,7 @@ var SessionStoreInternal = {
       this._collectWindowData(aWindow);
     }
 
-    let windows = [this._windows[aWindow.__SSi]];
-    SessionCookies.update(windows);
-
-    return { windows };
+    return { windows: [this._windows[aWindow.__SSi]] };
   },
 
   
@@ -3386,9 +3397,10 @@ var SessionStoreInternal = {
       this.restoreWindowFeatures(aWindow, winData);
       delete this._windows[aWindow.__SSi].extData;
     }
-    if (winData.cookies) {
-      SessionCookies.restore(winData.cookies);
-    }
+
+    
+    SessionCookies.restore(winData.cookies || []);
+
     if (winData.extData) {
       if (!this._windows[aWindow.__SSi].extData) {
         this._windows[aWindow.__SSi].extData = {};
@@ -4322,7 +4334,6 @@ var SessionStoreInternal = {
 
 
 
-
   _prepDataForDeferredRestore: function ssi_prepDataForDeferredRestore(state) {
     
     
@@ -4338,7 +4349,7 @@ var SessionStoreInternal = {
       let window = state.windows[wIndex];
       window.selected = window.selected || 1;
       
-      let pinnedWindowState = { tabs: [], cookies: []};
+      let pinnedWindowState = { tabs: [] };
       for (let tIndex = 0; tIndex < window.tabs.length;) {
         if (window.tabs[tIndex].pinned) {
           
@@ -4380,9 +4391,6 @@ var SessionStoreInternal = {
                                      = "" + Date.now() + Math.random();
 
         
-        this._splitCookiesFromWindow(window, pinnedWindowState);
-
-        
         defaultState.windows.push(pinnedWindowState);
         
         if (!window.tabs.length) {
@@ -4402,36 +4410,6 @@ var SessionStoreInternal = {
     }
 
     return [defaultState, state];
-  },
-
-  
-
-
-
-
-  _splitCookiesFromWindow:
-    function ssi_splitCookiesFromWindow(aWinState, aTargetWinState) {
-    if (!aWinState.cookies || !aWinState.cookies.length)
-      return;
-
-    
-    let cookieHosts = SessionCookies.getHostsForWindow(aTargetWinState);
-
-    
-    
-    let hosts = [...cookieHosts].join("|").replace(/\./g, "\\.");
-    
-    if (!hosts.length)
-      return;
-    let cookieRegex = new RegExp(".*(" + hosts + ")");
-    for (let cIndex = 0; cIndex < aWinState.cookies.length;) {
-      if (cookieRegex.test(aWinState.cookies[cIndex].host)) {
-        aTargetWinState.cookies =
-          aTargetWinState.cookies.concat(aWinState.cookies.splice(cIndex, 1));
-        continue;
-      }
-      cIndex++;
-    }
   },
 
   _sendRestoreCompletedNotifications: function ssi_sendRestoreCompletedNotifications() {

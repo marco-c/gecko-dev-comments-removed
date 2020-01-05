@@ -24,12 +24,8 @@ const MAX_EXPIRY = Math.pow(2, 62);
 
 
 this.SessionCookies = Object.freeze({
-  update(windows) {
-    SessionCookiesInternal.update(windows);
-  },
-
-  getHostsForWindow(window) {
-    return SessionCookiesInternal.getHostsForWindow(window);
+  collect() {
+    return SessionCookiesInternal.collect();
   },
 
   restore(cookies) {
@@ -49,67 +45,15 @@ var SessionCookiesInternal = {
   
 
 
-
-
-
-
-
-
-  update(windows) {
+  collect() {
     this._ensureInitialized();
-
-    
-    let storeAnyCookies = PrivacyLevel.canSave(false);
-    let storeSecureCookies = PrivacyLevel.canSave(true);
-
-    for (let window of windows) {
-      let cookies = [];
-
-      if (storeAnyCookies) {
-        
-        for (let host of this.getHostsForWindow(window)) {
-          for (let cookie of CookieStore.getCookiesForHost(host)) {
-            if (!cookie.secure || storeSecureCookies) {
-              cookies.push(cookie);
-            }
-          }
-        }
-      }
-
-      
-      if (cookies.length) {
-        window.cookies = cookies;
-      } else if ("cookies" in window) {
-        delete window.cookies;
-      }
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  getHostsForWindow(window) {
-    let hosts = new Set();
-
-    for (let tab of window.tabs) {
-      for (let entry of tab.entries) {
-        this._extractHostsFromEntry(entry, hosts);
-      }
-    }
-
-    return hosts;
+    return CookieStore.toArray();
   },
 
   
 
 
   restore(cookies) {
-
     for (let cookie of cookies) {
       let expiry = "expiry" in cookie ? cookie.expiry : MAX_EXPIRY;
       let cookieObj = {
@@ -117,10 +61,12 @@ var SessionCookiesInternal = {
         path: cookie.path || "",
         name: cookie.name || ""
       };
-      if (!Services.cookies.cookieExists(cookieObj, cookie.originAttributes || {})) {
+
+      let originAttributes = cookie.originAttributes || {};
+      if (!Services.cookies.cookieExists(cookieObj, originAttributes)) {
         Services.cookies.add(cookie.host, cookie.path || "", cookie.name || "",
                              cookie.value, !!cookie.secure, !!cookie.httponly,
-                              true, expiry, cookie.originAttributes || {});
+                              true, expiry, originAttributes);
       }
     }
   },
@@ -146,10 +92,6 @@ var SessionCookiesInternal = {
       case "batch-deleted":
         this._removeCookies(subject);
         break;
-      case "reload":
-        CookieStore.clear();
-        this._reloadCookies();
-        break;
       default:
         throw new Error("Unhandled cookie-changed notification.");
     }
@@ -164,31 +106,11 @@ var SessionCookiesInternal = {
       this._reloadCookies();
       this._initialized = true;
       Services.obs.addObserver(this, "cookie-changed", false);
-    }
-  },
 
-  
-
-
-
-
-
-
-
-
-  _extractHostsFromEntry(entry, hosts) {
-    try {
       
-      let {host, scheme} = Utils.makeURI(entry.url);
-      if (/^(file|https?)$/.test(scheme)) {
-        hosts.add(host);
-      }
-    } catch (ex) { }
-
-    if (entry.children) {
-      for (let child of entry.children) {
-        this._extractHostsFromEntry(child, hosts);
-      }
+      Services.prefs.addObserver("browser.sessionstore.privacy_level", () => {
+        this._reloadCookies();
+      }, false);
     }
   },
 
@@ -198,8 +120,9 @@ var SessionCookiesInternal = {
   _addCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie2);
 
-    if (cookie.isSession) {
-      CookieStore.set(cookie);
+    
+    if (cookie.isSession && PrivacyLevel.canSave(cookie.isSecure)) {
+      CookieStore.add(cookie);
     }
   },
 
@@ -209,8 +132,9 @@ var SessionCookiesInternal = {
   _updateCookie(cookie) {
     cookie.QueryInterface(Ci.nsICookie2);
 
-    if (cookie.isSession) {
-      CookieStore.set(cookie);
+    
+    if (cookie.isSession && PrivacyLevel.canSave(cookie.isSecure)) {
+      CookieStore.add(cookie);
     } else {
       CookieStore.delete(cookie);
     }
@@ -241,6 +165,13 @@ var SessionCookiesInternal = {
 
 
   _reloadCookies() {
+    CookieStore.clear();
+
+    
+    if (!PrivacyLevel.canSave(false)) {
+      return;
+    }
+
     let iter = Services.cookies.enumerator;
     while (iter.hasMoreElements()) {
       this._addCookie(iter.getNext());
@@ -251,71 +182,11 @@ var SessionCookiesInternal = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function* getPossibleSubdomainVariants(host) {
-  
-  yield "." + host;
-
-  
-  let parts = host.split(".");
-  if (parts.length < 3) {
-    return;
-  }
-
-  
-  let rest = parts.slice(1).join(".");
-
-  
-  yield* getPossibleSubdomainVariants(rest);
-}
-
-
-
-
-
 var CookieStore = {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _hosts: new Map(),
+  _entries: new Map(),
 
   
 
@@ -323,42 +194,7 @@ var CookieStore = {
 
 
 
-  getCookiesForHost(mainHost) {
-    let cookies = [];
-
-    let appendCookiesForHost = host => {
-      if (!this._hosts.has(host)) {
-        return;
-      }
-
-      for (let pathToNamesMap of this._hosts.get(host).values()) {
-        for (let nameToCookiesMap of pathToNamesMap.values()) {
-          cookies.push(...nameToCookiesMap.values());
-        }
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    for (let variant of [mainHost, ...getPossibleSubdomainVariants(mainHost)]) {
-      appendCookiesForHost(variant);
-    }
-
-    return cookies;
-  },
-
-  
-
-
-
-
-
-  set(cookie) {
+  add(cookie) {
     let jscookie = {host: cookie.host, value: cookie.value};
 
     
@@ -386,7 +222,7 @@ var CookieStore = {
       jscookie.originAttributes = cookie.originAttributes;
     }
 
-    this._ensureMap(cookie).set(cookie.name, jscookie);
+    this._entries.set(this._getKeyForCookie(cookie), jscookie);
   },
 
   
@@ -396,31 +232,21 @@ var CookieStore = {
 
 
   delete(cookie) {
-    
-    
-    let map = this._hosts.get(cookie.host);
-    if (!map) {
-      return;
-    }
-
-    map = map.get(ChromeUtils.originAttributesToSuffix(cookie.originAttributes));
-    if (!map) {
-      return;
-    }
-
-    map = map.get(cookie.path);
-    if (!map) {
-      return;
-    }
-
-    map.delete(cookie.name);
+    this._entries.delete(this._getKeyForCookie(cookie));
   },
 
   
 
 
   clear() {
-    this._hosts.clear();
+    this._entries.clear();
+  },
+
+  
+
+
+  toArray() {
+    return [...this._entries.values()];
   },
 
   
@@ -432,24 +258,12 @@ var CookieStore = {
 
 
 
-  _ensureMap(cookie) {
-    if (!this._hosts.has(cookie.host)) {
-      this._hosts.set(cookie.host, new Map());
-    }
-
-    let originAttributesMap = this._hosts.get(cookie.host);
-    
-    let originAttributes = ChromeUtils.originAttributesToSuffix(cookie.originAttributes);
-    if (!originAttributesMap.has(originAttributes)) {
-      originAttributesMap.set(originAttributes, new Map());
-    }
-
-    let pathToNamesMap = originAttributesMap.get(originAttributes);
-
-    if (!pathToNamesMap.has(cookie.path)) {
-      pathToNamesMap.set(cookie.path, new Map());
-    }
-
-    return pathToNamesMap.get(cookie.path);
+  _getKeyForCookie(cookie) {
+    return JSON.stringify({
+      host: cookie.host,
+      name: cookie.name,
+      path: cookie.path,
+      attr: ChromeUtils.originAttributesToSuffix(cookie.originAttributes)
+    });
   }
 };

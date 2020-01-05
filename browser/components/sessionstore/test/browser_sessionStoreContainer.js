@@ -2,6 +2,9 @@
 
 
 
+
+
+
 "use strict";
 
 add_task(function* () {
@@ -110,7 +113,8 @@ add_task(function* test() {
     "set": [ [ "privacy.userContext.enabled", true ] ]
   });
 
-  let lastSessionRestore;
+  Services.cookies.removeAll();
+
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
     
@@ -128,13 +132,11 @@ add_task(function* test() {
     
     yield TabStateFlusher.flush(browser);
 
-    lastSessionRestore = ss.getWindowState(window);
-
     
     gBrowser.removeTab(tab);
   }
 
-  let state = JSON.parse(lastSessionRestore);
-  is(state.windows[0].cookies.length, USER_CONTEXTS.length,
+  let state = JSON.parse(ss.getBrowserState());
+  is(state.cookies.length, USER_CONTEXTS.length,
     "session restore should have each container's cookie");
 });

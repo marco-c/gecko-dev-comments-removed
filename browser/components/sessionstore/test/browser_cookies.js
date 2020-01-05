@@ -1,275 +1,73 @@
 "use strict";
 
-const PATH = "/browser/browser/components/sessionstore/test/";
-
-
-
-
-add_task(function* test_setup() {
-  requestLongerTimeout(3);
-  Services.cookies.removeAll();
-});
-
-
-
-
-add_task(function* test_run() {
-  
-  
-  
-  yield testCookieCollection({
-    host: "http://www.example.com",
-    cookieHost: "www.example.com",
-    cookieURIs: ["http://www.example.com" + PATH],
-    noCookieURIs: ["http://example.com/" + PATH]
-  });
-
-  
-  
-  
-  yield testCookieCollection({
-    host: "http://example.com",
-    cookieHost: "example.com",
-    cookieURIs: ["http://example.com" + PATH],
-    noCookieURIs: ["http://www.example.com/" + PATH]
-  });
-
-  
-  
-  
-  yield testCookieCollection({
-    host: "http://example.com",
-    domain: "example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["http://example.com" + PATH, "http://www.example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  
-  
-  yield testCookieCollection({
-    host: "http://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["http://example.com" + PATH, "http://www.example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  
-  
-  yield testCookieCollection({
-    host: "http://www.example.com",
-    domain: "www.example.com",
-    cookieHost: ".www.example.com",
-    cookieURIs: ["http://www.example.com/" + PATH],
-    noCookieURIs: ["http://example.com"]
-  });
-
-  
-  
-  
-  yield testCookieCollection({
-    host: "http://www.example.com",
-    domain: ".www.example.com",
-    cookieHost: ".www.example.com",
-    cookieURIs: ["http://www.example.com/" + PATH],
-    noCookieURIs: ["http://example.com"]
-  });
-});
-
-
-
-
-add_task(function* test_run_privacy_level() {
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("browser.sessionstore.privacy_level");
-  });
-
-  
-  yield testCookieCollection({
-    host: "http://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  yield testCookieCollection({
-    host: "https://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  yield testCookieCollection({
-    isSecure: true,
-    host: "https://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  Services.prefs.setIntPref("browser.sessionstore.privacy_level", 1);
-
-  
-  yield testCookieCollection({
-    host: "http://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  
-  yield testCookieCollection({
-    host: "https://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
-    noCookieURIs: ["about:robots"]
-  });
-
-  
-  yield testCookieCollection({
-    isSecure: true,
-    host: "https://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
-  });
-
-  
-  Services.prefs.setIntPref("browser.sessionstore.privacy_level", 2);
-
-  
-  yield testCookieCollection({
-    host: "http://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
-  });
-
-  
-  yield testCookieCollection({
-    host: "https://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
-  });
-
-  
-  yield testCookieCollection({
-    isSecure: true,
-    host: "https://example.com",
-    domain: ".example.com",
-    cookieHost: ".example.com",
-    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
-  });
-
-  Services.prefs.clearUserPref("browser.sessionstore.privacy_level");
-});
-
-
-
-
-
-
-var testCookieCollection = async function(params) {
-  let tab = gBrowser.addTab("about:blank");
-  let browser = tab.linkedBrowser;
-
-  let urlParams = new URLSearchParams();
-  let value = Math.random();
-  urlParams.append("value", value);
-
-  if (params.domain) {
-    urlParams.append("domain", params.domain);
-  }
-
-  if (params.isSecure) {
-    urlParams.append("secure", "1");
-  }
-
-  
-  let requestUri = `${params.host}${PATH}browser_cookies.sjs?${urlParams}`;
-
-  
-  
-  
-  await Promise.all([
-    waitForNewCookie(),
-    replaceCurrentURI(browser, requestUri)
+function promiseSetCookie(cookie) {
+  info(`Set-Cookie: ${cookie}`);
+  return Promise.all([
+    waitForCookieChanged(),
+    ContentTask.spawn(gBrowser.selectedBrowser, cookie,
+      passedCookie => content.document.cookie = passedCookie)
   ]);
+}
 
-  
-  for (let uri of params.cookieURIs || []) {
-    await replaceCurrentURI(browser, uri);
-
-    
-    let cookie = getCookie();
-    is(cookie.host, params.cookieHost, "cookie host is correct");
-    is(cookie.path, PATH, "cookie path is correct");
-    is(cookie.name, "foobar", "cookie name is correct");
-    is(cookie.value, value, "cookie value is correct");
-  }
-
-  
-  for (let uri of params.noCookieURIs || []) {
-    await replaceCurrentURI(browser, uri);
-
-    
-    ok(!getCookie(), "no cookie collected");
-  }
-
-  
-  gBrowser.removeTab(tab);
-  Services.cookies.removeAll();
-};
-
-
-
-
-
-
-var replaceCurrentURI = async function(browser, uri) {
-  
-  let flags = Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
-  browser.loadURIWithFlags(uri, flags);
-  await promiseBrowserLoaded(browser);
-
-  
-  await TabStateFlusher.flush(browser);
-};
-
-
-
-
-function waitForNewCookie() {
+function waitForCookieChanged() {
   return new Promise(resolve => {
     Services.obs.addObserver(function observer(subj, topic, data) {
-      let cookie = subj.QueryInterface(Ci.nsICookie2);
-      if (data == "added" && cookie.host.endsWith("example.com")) {
-        Services.obs.removeObserver(observer, topic);
-        resolve();
-      }
+      Services.obs.removeObserver(observer, topic);
+      resolve();
     }, "cookie-changed", false);
   });
 }
 
-
-
-
-
-function getCookie() {
-  let state = JSON.parse(ss.getWindowState(window));
-  let cookies = state.windows[0].cookies || [];
-  return cookies[0] || null;
+function cookieExists(host, name, value) {
+  let {cookies: [c]} = JSON.parse(ss.getBrowserState());
+  return c && c.host == host && c.name == name && c.value == value;
 }
+
+
+add_task(function* test_setup() {
+  registerCleanupFunction(() => {
+    Services.cookies.removeAll();
+  });
+});
+
+
+add_task(function* test_run() {
+  Services.cookies.removeAll();
+
+  
+  gBrowser.selectedTab = gBrowser.addTab("http://example.com/");
+  yield promiseBrowserLoaded(gBrowser.selectedBrowser);
+
+  
+  yield promiseSetCookie("foo=bar");
+  ok(cookieExists("example.com", "foo", "bar"), "cookie was added");
+
+  
+  yield promiseSetCookie("foo=baz");
+  ok(cookieExists("example.com", "foo", "baz"), "cookie was modified");
+
+  
+  let expiry = new Date();
+  expiry.setDate(expiry.getDate() + 2);
+  yield promiseSetCookie(`foo=baz; Expires=${expiry.toUTCString()}`);
+  ok(!cookieExists("example.com", "foo", "baz"), "no longer a session cookie");
+
+  
+  yield promiseSetCookie("foo=bar");
+  ok(cookieExists("example.com", "foo", "bar"), "again a session cookie");
+
+  
+  yield promiseSetCookie("foo=; Expires=Thu, 01 Jan 1970 00:00:00 GMT");
+  ok(!cookieExists("example.com", "foo", ""), "cookie was removed");
+
+  
+  yield promiseSetCookie("foo=bar");
+  ok(cookieExists("example.com", "foo", "bar"), "cookie was added");
+
+  
+  Services.cookies.removeAll();
+  ok(!cookieExists("example.com", "foo", "bar"), "cookies were cleared");
+
+  
+  yield promiseRemoveTab(gBrowser.selectedTab);
+});
