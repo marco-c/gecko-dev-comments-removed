@@ -1964,18 +1964,6 @@ pref("network.generic-ntlm-auth.workstation", "WORKSTATION");
 
 pref("network.auth.subresource-http-auth-allow", 2);
 
-
-
-
-
-
-
-
-
-
-
-pref("network.auth.private-browsing-sso", false);
-
 pref("permissions.default.image",           1); 
 
 pref("network.proxy.type",                  5);

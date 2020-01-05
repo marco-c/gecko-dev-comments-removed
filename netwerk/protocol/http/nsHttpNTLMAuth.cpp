@@ -37,7 +37,6 @@ static const char kAllowProxies[] = "network.automatic-ntlm-auth.allow-proxies";
 static const char kAllowNonFqdn[] = "network.automatic-ntlm-auth.allow-non-fqdn";
 static const char kTrustedURIs[]  = "network.automatic-ntlm-auth.trusted-uris";
 static const char kForceGeneric[] = "network.auth.force-generic-ntlm";
-static const char kSSOinPBmode[] = "network.auth.private-browsing-sso";
 
 
 
@@ -189,39 +188,33 @@ CanUseDefaultCredentials(nsIHttpAuthenticableChannel *channel,
                          bool isProxyAuth)
 {
     nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (!prefs) {
-        return false;
-    }
 
-    
-    
-    if (isProxyAuth) {
-        bool val;
-        if (NS_FAILED(prefs->GetBoolPref(kAllowProxies, &val)))
-            val = false;
-        LOG(("Default credentials allowed for proxy: %d\n", val));
-        return val;
-    }
-
-    
     
     
     nsCOMPtr<nsIChannel> bareChannel = do_QueryInterface(channel);
     MOZ_ASSERT(bareChannel);
 
     if (NS_UsePrivateBrowsing(bareChannel)) {
-        bool ssoInPb;
-        if (NS_SUCCEEDED(prefs->GetBoolPref(kSSOinPBmode, &ssoInPb)) &&
-            ssoInPb) {
-            return true;
-        }
-
+        
         bool dontRememberHistory;
-        if (NS_SUCCEEDED(prefs->GetBoolPref("browser.privatebrowsing.autostart",
+        if (prefs &&
+            NS_SUCCEEDED(prefs->GetBoolPref("browser.privatebrowsing.autostart",
                                             &dontRememberHistory)) &&
             !dontRememberHistory) {
             return false;
         }
+    }
+
+    if (!prefs) {
+        return false;
+    }
+
+    if (isProxyAuth) {
+        bool val;
+        if (NS_FAILED(prefs->GetBoolPref(kAllowProxies, &val)))
+            val = false;
+        LOG(("Default credentials allowed for proxy: %d\n", val));
+        return val;
     }
 
     nsCOMPtr<nsIURI> uri;
