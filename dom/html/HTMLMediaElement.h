@@ -1230,6 +1230,7 @@ protected:
   void NotifyAudioChannelAgent(bool aPlaying);
 
   
+  
   void CreateAudioChannelAgent();
 
   
@@ -1634,6 +1635,7 @@ protected:
   
   bool mDisableVideo;
 
+  
   
   RefPtr<AudioChannelAgent> mAudioChannelAgent;
 
