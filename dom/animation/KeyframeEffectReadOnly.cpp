@@ -273,40 +273,7 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 {
   MOZ_ASSERT(aStyleContext);
 
-  nsTArray<AnimationProperty> properties;
-  if (mTarget) {
-    
-    
-    
-    
-    
-    
-    auto keyframesCopy(mKeyframes);
-
-    nsTArray<ComputedKeyframeValues> computedValues =
-      KeyframeUtils::GetComputedKeyframeValues(keyframesCopy,
-                                               mTarget->mElement,
-                                               aStyleContext);
-
-    if (mEffectOptions.mSpacingMode == SpacingMode::paced) {
-      KeyframeUtils::ApplySpacing(keyframesCopy, SpacingMode::paced,
-                                  mEffectOptions.mPacedProperty,
-                                  computedValues, aStyleContext);
-    }
-
-    properties =
-      KeyframeUtils::GetAnimationPropertiesFromKeyframes(keyframesCopy,
-                                                         computedValues,
-                                                         aStyleContext);
-
-#ifdef DEBUG
-    MOZ_ASSERT(SpecifiedKeyframeArraysAreEqual(mKeyframes, keyframesCopy),
-               "Apart from the computed offset members, the keyframes array"
-               " should not be modified");
-#endif
-
-    mKeyframes.SwapElements(keyframesCopy);
-  }
+  nsTArray<AnimationProperty> properties = BuildProperties(aStyleContext);
 
   if (mProperties == properties) {
     return;
@@ -648,6 +615,50 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(const GlobalObject& aGlobal,
   effect->mKeyframes = aSource.mKeyframes;
   effect->mProperties = aSource.mProperties;
   return effect.forget();
+}
+
+nsTArray<AnimationProperty>
+KeyframeEffectReadOnly::BuildProperties(nsStyleContext* aStyleContext)
+{
+  MOZ_ASSERT(aStyleContext);
+
+  nsTArray<AnimationProperty> result;
+  
+  if (!mTarget) {
+    return result;
+  }
+
+  
+  
+  
+  
+  
+  
+  auto keyframesCopy(mKeyframes);
+
+  nsTArray<ComputedKeyframeValues> computedValues =
+    KeyframeUtils::GetComputedKeyframeValues(keyframesCopy,
+                                             mTarget->mElement,
+                                             aStyleContext);
+
+  if (mEffectOptions.mSpacingMode == SpacingMode::paced) {
+    KeyframeUtils::ApplySpacing(keyframesCopy, SpacingMode::paced,
+                                mEffectOptions.mPacedProperty,
+                                computedValues, aStyleContext);
+  }
+
+  result = KeyframeUtils::GetAnimationPropertiesFromKeyframes(keyframesCopy,
+                                                              computedValues,
+                                                              aStyleContext);
+
+#ifdef DEBUG
+  MOZ_ASSERT(SpecifiedKeyframeArraysAreEqual(mKeyframes, keyframesCopy),
+             "Apart from the computed offset members, the keyframes array"
+             " should not be modified");
+#endif
+
+  mKeyframes.SwapElements(keyframesCopy);
+  return result;
 }
 
 void

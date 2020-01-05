@@ -350,6 +350,11 @@ protected:
   
   
   
+  nsTArray<AnimationProperty> BuildProperties(nsStyleContext* aStyleContext);
+
+  
+  
+  
   
   
   
