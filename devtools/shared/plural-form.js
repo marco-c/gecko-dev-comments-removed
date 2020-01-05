@@ -40,7 +40,7 @@
 
 
 const {LocalizationHelper} = require("devtools/shared/l10n");
-const L10N = new LocalizationHelper("global/locale/intl.properties");
+const L10N = new LocalizationHelper("toolkit/locales/intl.properties");
 
 
 

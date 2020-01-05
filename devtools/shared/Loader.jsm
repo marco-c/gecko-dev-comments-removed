@@ -52,6 +52,13 @@ BuiltinProvider.prototype = {
       
       
       "xpcshell-test": "resource://test",
+
+      
+      
+      
+      "devtools/client/locales": "chrome://devtools/locale",
+      "devtools/shared/locales": "chrome://devtools-shared/locale",
+      "toolkit/locales": "chrome://global/locale",
     };
     
     
