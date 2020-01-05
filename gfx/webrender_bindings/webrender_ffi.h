@@ -128,7 +128,7 @@ enum class WrImageRendering: uint32_t
   Sentinel 
 };
 
-enum class WrExternalImageIdType: uint32_t
+enum class WrExternalImageType: uint32_t
 {
   NativeTexture, 
   RawData,
@@ -180,7 +180,7 @@ enum class WrRepeatMode : uint32_t
 
 
 
-typedef uint64_t WrImageIdType;
+typedef uint64_t WrExternalImageId;
 
 
 
@@ -404,14 +404,9 @@ struct WrClipRegion
   bool has_image_mask;
 };
 
-struct WrExternalImageId
-{
-  WrImageIdType id;
-};
-
 struct WrExternalImage
 {
-  WrExternalImageIdType type;
+  WrExternalImageType type;
 
   
   uint32_t handle;
