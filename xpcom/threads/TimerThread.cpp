@@ -141,11 +141,7 @@ public:
 
   nsresult Cancel() override
   {
-    
-    
-    
-    
-    mTimer = nullptr;
+    mTimer->Cancel();
     return NS_OK;
   }
 
@@ -282,11 +278,6 @@ nsTimerEvent::GetName(nsACString& aName)
 NS_IMETHODIMP
 nsTimerEvent::Run()
 {
-  if (!mTimer) {
-    MOZ_ASSERT(false);
-    return NS_OK;
-  }
-
   if (MOZ_LOG_TEST(GetTimerLog(), LogLevel::Debug)) {
     TimeStamp now = TimeStamp::Now();
     MOZ_LOG(GetTimerLog(), LogLevel::Debug,
@@ -296,9 +287,7 @@ nsTimerEvent::Run()
 
   mTimer->Fire(mGeneration);
 
-  
-  
-  return Cancel();
+  return NS_OK;
 }
 
 nsresult
