@@ -20,6 +20,7 @@
 #include "gc/Zone.h"
 #include "vm/Runtime.h"
 
+
 namespace js {
 
 bool
@@ -136,6 +137,9 @@ PerformanceMonitoring::start()
 bool
 PerformanceMonitoring::commit()
 {
+    
+    static const size_t MAX_GROUPS_INIT_CAPACITY = 1024;
+
 #if !defined(MOZ_HAVE_RDTSC)
     
     return false;
@@ -152,12 +156,21 @@ PerformanceMonitoring::commit()
         return true;
     }
 
-    PerformanceGroupVector recentGroups;
-    recentGroups_.swap(recentGroups);
+    
+    
+    
+    PerformanceGroupVector recentGroups(Move(recentGroups_));
+    recentGroups_ = PerformanceGroupVector(); 
 
     bool success = true;
     if (stopwatchCommitCallback)
         success = stopwatchCommitCallback(iteration_, recentGroups, stopwatchCommitClosure);
+
+    
+    
+    const size_t capacity = std::min(recentGroups.capacity(), MAX_GROUPS_INIT_CAPACITY);
+    success = recentGroups_.reserve(capacity)
+            && success;
 
     
     
@@ -227,7 +240,7 @@ AutoStopwatch::AutoStopwatch(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IM
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     JSCompartment* compartment = cx_->compartment();
-    if (compartment->scheduledForDestruction)
+    if (MOZ_UNLIKELY(compartment->scheduledForDestruction))
         return;
 
     JSRuntime* runtime = cx_->runtime();
@@ -266,11 +279,11 @@ AutoStopwatch::~AutoStopwatch()
     }
 
     JSCompartment* compartment = cx_->compartment();
-    if (compartment->scheduledForDestruction)
+    if (MOZ_UNLIKELY(compartment->scheduledForDestruction))
         return;
 
     JSRuntime* runtime = cx_->runtime();
-    if (iteration_ != runtime->performanceMonitoring().iteration()) {
+    if (MOZ_UNLIKELY(iteration_ != runtime->performanceMonitoring().iteration())) {
         
         
         return;

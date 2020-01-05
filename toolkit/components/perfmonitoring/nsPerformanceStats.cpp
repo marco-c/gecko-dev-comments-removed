@@ -1131,6 +1131,9 @@ nsPerformanceStatsService::GetPerformanceGroups(JSContext* cx,
     return false;
   }
 
+  
+  
+  MOZ_ASSERT(out.length() <= out.sMaxInlineStorage);
   return true;
 }
 
@@ -1359,8 +1362,12 @@ nsPerformanceStatsService::GetResources(uint64_t* userTime,
 
 void
 nsPerformanceStatsService::NotifyJankObservers(const mozilla::Vector<uint64_t>& aPreviousJankLevels) {
-  GroupVector alerts;
-  mPendingAlerts.swap(alerts);
+
+  
+  
+  GroupVector alerts(Move(mPendingAlerts));
+  mPendingAlerts = GroupVector(); 
+
   if (!mPendingAlertsCollector) {
     
     return;

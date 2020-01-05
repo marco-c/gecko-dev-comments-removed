@@ -3879,7 +3879,6 @@ class JS_FRIEND_API(TransitiveCompileOptions)
         forceAsync(false),
         sourceIsLazy(false),
         allowHTMLComments(true),
-        isProbablySystemOrAddonCode(false),
         introductionType(nullptr),
         introductionLineno(0),
         introductionOffset(0),
@@ -3916,7 +3915,6 @@ class JS_FRIEND_API(TransitiveCompileOptions)
     bool forceAsync;
     bool sourceIsLazy;
     bool allowHTMLComments;
-    bool isProbablySystemOrAddonCode;
 
     
     
@@ -5164,8 +5162,7 @@ GetSymbolDescription(HandleSymbol symbol);
     macro(split) \
     macro(toPrimitive) \
     macro(toStringTag) \
-    macro(unscopables) \
-    macro(asyncIterator)
+    macro(unscopables)
 
 enum class SymbolCode : uint32_t {
     
@@ -6781,7 +6778,7 @@ struct JS_PUBLIC_API(PerformanceGroup) {
     uint64_t refCount_;
 };
 
-using PerformanceGroupVector = mozilla::Vector<RefPtr<js::PerformanceGroup>, 0, SystemAllocPolicy>;
+using PerformanceGroupVector = mozilla::Vector<RefPtr<js::PerformanceGroup>, 8, SystemAllocPolicy>;
 
 
 
