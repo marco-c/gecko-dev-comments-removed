@@ -1419,6 +1419,7 @@ or run without that action (ie: --no-{action})"
             routes.append(template.format(**fmt))
         self.info("Using routes: %s" % routes)
 
+        taskid = self.buildbot_config['properties'].get('upload_to_task_id')
         tc = Taskcluster(
             branch=self.branch,
             rank=pushinfo.pushdate, 
@@ -1427,10 +1428,13 @@ or run without that action (ie: --no-{action})"
             log_obj=self.log_obj,
             
             
-            task_id=self.buildbot_config['properties'].get('upload_to_task_id'),
+            task_id=taskid,
         )
 
-        task = tc.create_task(routes)
+        if taskid:
+            task = tc.get_task(taskid)
+        else:
+            task = tc.create_task(routes)
         tc.claim_task(task)
 
         
