@@ -193,10 +193,6 @@ public:
         HMODULE gdi32Handle;
         PFND3DKMTQS queryD3DKMTStatistics = nullptr;
 
-        
-        if (!IsWin7OrLater())
-            return NS_OK;
-
         if ((gdi32Handle = LoadLibrary(TEXT("gdi32.dll"))))
             queryD3DKMTStatistics = (PFND3DKMTQS)GetProcAddress(gdi32Handle, "D3DKMTQueryStatistics");
 
@@ -1626,11 +1622,9 @@ gfxWindowsPlatform::InitGPUProcessSupport()
     
     
     
-    
-    
     gpuProc.Disable(
       FeatureStatus::Unavailable,
-      "Windows XP, Vista, and 7 Pre-SP1 cannot use the GPU process",
+      "Windows 7 Pre-SP1 cannot use the GPU process",
       NS_LITERAL_CSTRING("FEATURE_FAILURE_OLD_WINDOWS"));
   } else if (!IsWin8OrLater()) {
     
