@@ -926,6 +926,11 @@ bool NS_IsValidHTTPToken(const nsACString &aToken);
 
 
 
+void NS_TrimHTTPWhitespace(const nsACString& aSource, nsACString& aDest);
+
+
+
+
 nsresult NS_ShouldSecureUpgrade(nsIURI* aURI,
                                 nsILoadInfo* aLoadInfo,
                                 nsIPrincipal* aChannelResultPrincipal,

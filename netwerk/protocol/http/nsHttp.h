@@ -147,6 +147,10 @@ struct nsHttp
     }
 
     
+    static void TrimHTTPWhitespace(const nsACString& aSource,
+                                   nsACString& aDest);
+
+    
     
     
     static bool IsReasonableHeaderValue(const nsACString &s);
