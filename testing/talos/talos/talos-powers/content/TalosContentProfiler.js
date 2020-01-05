@@ -109,14 +109,14 @@ var TalosContentProfiler;
 
     initFromObject(obj={}) {
       if (!initted) {
-        if (("sps_profile_dir" in obj) && typeof obj.sps_profile_dir == "string" &&
-            ("sps_profile_interval" in obj) && Number.isFinite(obj.sps_profile_interval * 1) &&
-            ("sps_profile_entries" in obj) && Number.isFinite(obj.sps_profile_entries * 1) &&
-            ("sps_profile_threads" in obj) && typeof obj.sps_profile_threads == "string") {
-          interval = obj.sps_profile_interval;
-          entries = obj.sps_profile_entries;
-          threadsArray = obj.sps_profile_threads.split(",");
-          profileDir = obj.sps_profile_dir;
+        if (("gecko_profile_dir" in obj) && typeof obj.gecko_profile_dir == "string" &&
+            ("gecko_profile_interval" in obj) && Number.isFinite(obj.gecko_profile_interval * 1) &&
+            ("gecko_profile_entries" in obj) && Number.isFinite(obj.gecko_profile_entries * 1) &&
+            ("gecko_profile_threads" in obj) && typeof obj.gecko_profile_threads == "string") {
+          interval = obj.gecko_profile_interval;
+          entries = obj.gecko_profile_entries;
+          threadsArray = obj.gecko_profile_threads.split(",");
+          profileDir = obj.gecko_profile_dir;
           initted = true;
         } else {
           console.error("Profiler could not init with object: " + JSON.stringify(obj));
