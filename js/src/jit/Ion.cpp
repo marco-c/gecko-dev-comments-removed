@@ -651,11 +651,7 @@ void
 JitCompartment::sweep(FreeOp* fop, JSCompartment* compartment)
 {
     
-    
-    
-    
-    MOZ_ASSERT(!fop->runtime()->isHeapMinorCollecting());
-    CancelOffThreadIonCompile(compartment);
+    MOZ_ASSERT(!HasOffThreadIonCompile(compartment));
 
     stubCodes_->sweep();
     cacheIRStubCodes_->sweep();
@@ -3129,24 +3125,13 @@ InvalidateActivation(FreeOp* fop, const JitActivationIterator& activations, bool
 }
 
 void
-jit::StopAllOffThreadCompilations(JSCompartment* comp)
-{
-    if (!comp->jitCompartment())
-        return;
-    CancelOffThreadIonCompile(comp);
-}
-
-void
-jit::StopAllOffThreadCompilations(Zone* zone)
-{
-    for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
-        StopAllOffThreadCompilations(comp);
-}
-
-void
 jit::InvalidateAll(FreeOp* fop, Zone* zone)
 {
-    StopAllOffThreadCompilations(zone);
+    
+#ifdef DEBUG
+    for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
+        MOZ_ASSERT(!HasOffThreadIonCompile(comp));
+#endif
 
     for (JitActivationIterator iter(fop->runtime()); !iter.done(); ++iter) {
         if (iter->compartment()->zone() == zone) {

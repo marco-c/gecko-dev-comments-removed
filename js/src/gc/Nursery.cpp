@@ -662,11 +662,11 @@ js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
     
     StoreBuffer& sb = rt->gc.storeBuffer;
 
+    
+    
     maybeStartProfile(ProfileKey::CancelIonCompilations);
-    if (sb.cancelIonCompilations()) {
-        for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
-            jit::StopAllOffThreadCompilations(c);
-    }
+    if (sb.cancelIonCompilations())
+        js::CancelOffThreadIonCompile(rt);
     maybeEndProfile(ProfileKey::CancelIonCompilations);
 
     maybeStartProfile(ProfileKey::TraceValues);
