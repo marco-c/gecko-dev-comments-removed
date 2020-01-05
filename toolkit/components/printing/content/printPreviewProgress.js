@@ -35,13 +35,13 @@ function ellipseString(aStr, doFront)
 
 var progressListener = {
 
-  onStateChange: function (aWebProgress, aRequest, aStateFlags, aStatus)
+  onStateChange: function(aWebProgress, aRequest, aStateFlags, aStatus)
   {
     if (aStateFlags & Components.interfaces.nsIWebProgressListener.STATE_STOP)
       window.close();
   },
 
-  onProgressChange: function (aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress)
+  onProgressChange: function(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress)
   {
     if (!progressParams)
       return;
@@ -58,16 +58,16 @@ var progressListener = {
     }
   },
 
-  onLocationChange: function (aWebProgress, aRequest, aLocation, aFlags) {},
-  onSecurityChange: function (aWebProgress, aRequest, state) {},
+  onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {},
+  onSecurityChange: function(aWebProgress, aRequest, state) {},
 
-  onStatusChange: function (aWebProgress, aRequest, aStatus, aMessage)
+  onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage)
   {
     if (aMessage)
       dialog.title.setAttribute("value", aMessage);
   },
 
-  QueryInterface: function (iid)
+  QueryInterface: function(iid)
   {
     if (iid.equals(Components.interfaces.nsIWebProgressListener) || iid.equals(Components.interfaces.nsISupportsWeakReference))
       return this;
@@ -117,7 +117,7 @@ function onUnload()
   catch (e) {}
 }
 
-function getString (stringId) {
+function getString(stringId) {
   
   if (!(stringId in dialog.strings)) {
     
@@ -135,7 +135,7 @@ function getString (stringId) {
 }
 
 
-function onCancel ()
+function onCancel()
 {
   
   try {

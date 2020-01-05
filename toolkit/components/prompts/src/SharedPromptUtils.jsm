@@ -16,7 +16,7 @@ this.PromptUtils = {
     
     
     
-    fireDialogEvent : function (domWin, eventName, maybeTarget, detail) {
+    fireDialogEvent : function(domWin, eventName, maybeTarget, detail) {
         let target = maybeTarget || domWin;
         let eventOptions = {cancelable: true, bubbles: true};
         if (detail) {
@@ -28,7 +28,7 @@ this.PromptUtils = {
         winUtils.dispatchEventToChromeOnly(target, event);
     },
 
-    objectToPropBag : function (obj) {
+    objectToPropBag : function(obj) {
         let bag = Cc["@mozilla.org/hash-property-bag;1"].
                   createInstance(Ci.nsIWritablePropertyBag2);
         bag.QueryInterface(Ci.nsIWritablePropertyBag);
@@ -39,7 +39,7 @@ this.PromptUtils = {
         return bag;
     },
 
-    propBagToObject : function (propBag, obj) {
+    propBagToObject : function(propBag, obj) {
         
         
         
@@ -100,7 +100,7 @@ this.EnableDelayHelper.prototype = {
         }
     },
 
-    onBlur : function () {
+    onBlur : function() {
         this.disableDialog();
         
         
@@ -110,7 +110,7 @@ this.EnableDelayHelper.prototype = {
         }
     },
 
-    onFocus : function () {
+    onFocus : function() {
         this.startOnFocusDelay();
     },
 
@@ -147,7 +147,7 @@ this.EnableDelayHelper.prototype = {
 };
 
 function makeSafe(fn) {
-    return function () {
+    return function() {
         
         
         try {

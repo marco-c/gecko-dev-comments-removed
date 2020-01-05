@@ -95,7 +95,7 @@ NotifyPolicyRequest.prototype = Object.freeze({
   
 
 
-  onUserNotifyComplete: function () {
+  onUserNotifyComplete: function() {
     return TelemetryReportingPolicyImpl._infobarShownCallback();
    },
 
@@ -105,7 +105,7 @@ NotifyPolicyRequest.prototype = Object.freeze({
 
 
 
-  onUserNotifyFailed: function (error) {
+  onUserNotifyFailed: function(error) {
     this._log.error("onUserNotifyFailed - " + error);
   },
 });

@@ -68,7 +68,7 @@ function dateToDays(date) {
 
 
 
-this.CrashManager = function (options) {
+this.CrashManager = function(options) {
   for (let k of ["pendingDumpsDir", "submittedDumpsDir", "eventsDirs",
     "storeDir"]) {
     if (!(k in options)) {
@@ -191,7 +191,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  pendingDumps: function () {
+  pendingDumps: function() {
     return this._getDirectoryEntries(this._pendingDumpsDir, this.DUMP_REGEX);
   },
 
@@ -215,7 +215,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  submittedDumps: function () {
+  submittedDumps: function() {
     return this._getDirectoryEntries(this._submittedDumpsDir,
                                      this.SUBMITTED_REGEX);
   },
@@ -235,7 +235,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  aggregateEventsFiles: function () {
+  aggregateEventsFiles: function() {
     if (this._aggregatePromise) {
       return this._aggregatePromise;
     }
@@ -318,7 +318,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  pruneOldCrashes: function (date) {
+  pruneOldCrashes: function(date) {
     return Task.spawn(function* () {
       let store = yield this._getStore();
       store.pruneOldCrashes(date);
@@ -329,7 +329,7 @@ this.CrashManager.prototype = Object.freeze({
   
 
 
-  runMaintenanceTasks: function () {
+  runMaintenanceTasks: function() {
     return Task.spawn(function* () {
       yield this.aggregateEventsFiles();
 
@@ -344,7 +344,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  scheduleMaintenance: function (delay) {
+  scheduleMaintenance: function(delay) {
     let deferred = Promise.defer();
 
     setTimeout(() => {
@@ -368,7 +368,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  addCrash: function (processType, crashType, id, date, metadata) {
+  addCrash: function(processType, crashType, id, date, metadata) {
     return Task.spawn(function* () {
       let store = yield this._getStore();
       if (store.addCrash(processType, crashType, id, date, metadata)) {
@@ -454,7 +454,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  _getUnprocessedEventsFiles: function () {
+  _getUnprocessedEventsFiles: function() {
     return Task.spawn(function* () {
       let entries = [];
 
@@ -471,7 +471,7 @@ this.CrashManager.prototype = Object.freeze({
   },
 
   
-  _processEventFile: function (entry) {
+  _processEventFile: function(entry) {
     return Task.spawn(function* () {
       let data = yield OS.File.read(entry.path);
       let store = yield this._getStore();
@@ -510,7 +510,7 @@ this.CrashManager.prototype = Object.freeze({
     }.bind(this));
   },
 
-  _handleEventFilePayload: function (store, entry, type, date, payload) {
+  _handleEventFilePayload: function(store, entry, type, date, payload) {
       
       
       
@@ -609,7 +609,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  _getDirectoryEntries: function (path, re) {
+  _getDirectoryEntries: function(path, re) {
     return Task.spawn(function* () {
       try {
         yield OS.File.stat(path);
@@ -652,7 +652,7 @@ this.CrashManager.prototype = Object.freeze({
     }.bind(this));
   },
 
-  _getStore: function () {
+  _getStore: function() {
     if (this._getStoreTask) {
       return this._getStoreTask;
     }
@@ -683,7 +683,7 @@ this.CrashManager.prototype = Object.freeze({
 
         
         
-        let timerCB = function () {
+        let timerCB = function() {
           if (this._storeProtectedCount) {
             this._storeTimer.initWithCallback(timerCB, this.STORE_EXPIRATION_MS,
                                               this._storeTimer.TYPE_ONE_SHOT);
@@ -712,7 +712,7 @@ this.CrashManager.prototype = Object.freeze({
 
 
 
-  getCrashes: function () {
+  getCrashes: function() {
     return Task.spawn(function* () {
       let store = yield this._getStore();
 
@@ -720,7 +720,7 @@ this.CrashManager.prototype = Object.freeze({
     }.bind(this));
   },
 
-  getCrashCountsByDay: function () {
+  getCrashCountsByDay: function() {
     return Task.spawn(function* () {
       let store = yield this._getStore();
 
@@ -797,7 +797,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  load: function () {
+  load: function() {
     return Task.spawn(function* () {
       
       this.reset();
@@ -897,7 +897,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  save: function () {
+  save: function() {
     return Task.spawn(function* () {
       if (!this._data) {
         return;
@@ -967,7 +967,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  _normalize: function (o) {
+  _normalize: function(o) {
     let normalized = {};
 
     for (let k in o) {
@@ -985,7 +985,7 @@ CrashStore.prototype = Object.freeze({
   
 
 
-  _denormalize: function (o) {
+  _denormalize: function(o) {
     let n = {};
 
     for (let k in o) {
@@ -1011,7 +1011,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  pruneOldCrashes: function (date) {
+  pruneOldCrashes: function(date) {
     for (let crash of this.crashes) {
       let newest = crash.newestDate;
       if (!newest || newest.getTime() < date.getTime()) {
@@ -1056,7 +1056,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  getCrash: function (id) {
+  getCrash: function(id) {
     for (let crash of this.crashes) {
       if (crash.id == id) {
         return crash;
@@ -1066,7 +1066,7 @@ CrashStore.prototype = Object.freeze({
     return null;
   },
 
-  _ensureCountsForDay: function (day) {
+  _ensureCountsForDay: function(day) {
     if (!this._countsByDay.has(day)) {
       this._countsByDay.set(day, new Map());
     }
@@ -1091,7 +1091,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  _ensureCrashRecord: function (processType, crashType, id, date, metadata) {
+  _ensureCrashRecord: function(processType, crashType, id, date, metadata) {
     if (!id) {
       
       
@@ -1149,14 +1149,14 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  addCrash: function (processType, crashType, id, date, metadata) {
+  addCrash: function(processType, crashType, id, date, metadata) {
     return !!this._ensureCrashRecord(processType, crashType, id, date, metadata);
   },
 
   
 
 
-  setRemoteCrashID: function (crashID, remoteID) {
+  setRemoteCrashID: function(crashID, remoteID) {
     let crash = this._data.crashes.get(crashID);
     if (!crash || !remoteID) {
       return false;
@@ -1166,7 +1166,7 @@ CrashStore.prototype = Object.freeze({
     return true;
   },
 
-  getCrashesOfType: function (processType, crashType) {
+  getCrashesOfType: function(processType, crashType) {
     let crashes = [];
     for (let crash of this.crashes) {
       if (crash.isOfType(processType, crashType)) {
@@ -1181,7 +1181,7 @@ CrashStore.prototype = Object.freeze({
 
 
 
-  _ensureSubmissionRecord: function (crashID, submissionID) {
+  _ensureSubmissionRecord: function(crashID, submissionID) {
     let crash = this._data.crashes.get(crashID);
     if (!crash || !submissionID) {
       return null;
@@ -1201,7 +1201,7 @@ CrashStore.prototype = Object.freeze({
   
 
 
-  addSubmissionAttempt: function (crashID, submissionID, date) {
+  addSubmissionAttempt: function(crashID, submissionID, date) {
     let [submission, crash] =
       this._ensureSubmissionRecord(crashID, submissionID);
     if (!submission) {
@@ -1217,7 +1217,7 @@ CrashStore.prototype = Object.freeze({
   
 
 
-  addSubmissionResult: function (crashID, submissionID, date, result) {
+  addSubmissionResult: function(crashID, submissionID, date, result) {
     let crash = this._data.crashes.get(crashID);
     if (!crash || !submissionID) {
       return false;
@@ -1237,7 +1237,7 @@ CrashStore.prototype = Object.freeze({
   
 
 
-  setCrashClassifications: function (crashID, classifications) {
+  setCrashClassifications: function(crashID, classifications) {
     let crash = this._data.crashes.get(crashID);
     if (!crash) {
       return false;
@@ -1296,7 +1296,7 @@ CrashRecord.prototype = Object.freeze({
     return this._o.type;
   },
 
-  isOfType: function (processType, crashType) {
+  isOfType: function(processType, crashType) {
     return processType + "-" + crashType == this.type;
   },
 
@@ -1319,7 +1319,7 @@ CrashRecord.prototype = Object.freeze({
 
 
 
-XPCOMUtils.defineLazyGetter(this.CrashManager, "Singleton", function () {
+XPCOMUtils.defineLazyGetter(this.CrashManager, "Singleton", function() {
   if (gCrashManager) {
     return gCrashManager;
   }

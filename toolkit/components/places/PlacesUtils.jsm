@@ -1629,10 +1629,10 @@ this.PlacesUtils = {
 
 
 
-  promiseFaviconData: function (aPageUrl) {
+  promiseFaviconData: function(aPageUrl) {
     let deferred = Promise.defer();
     PlacesUtils.favicons.getFaviconDataForPage(NetUtil.newURI(aPageUrl),
-      function (aURI, aDataLen, aData, aMimeType) {
+      function(aURI, aDataLen, aData, aMimeType) {
         if (aURI) {
           deferred.resolve({ uri: aURI,
                              dataLen: aDataLen,
@@ -1652,7 +1652,7 @@ this.PlacesUtils = {
 
 
 
-  promiseFaviconLinkUrl: function (aPageUrl) {
+  promiseFaviconLinkUrl: function(aPageUrl) {
     let deferred = Promise.defer();
     if (!(aPageUrl instanceof Ci.nsIURI))
       aPageUrl = NetUtil.newURI(aPageUrl);
@@ -2019,7 +2019,7 @@ XPCOMUtils.defineLazyGetter(PlacesUtils, "transactionManager", function() {
   let tm = Cc["@mozilla.org/transactionmanager;1"].
            createInstance(Ci.nsITransactionManager);
   tm.AddListener(PlacesUtils);
-  this.registerShutdownFunction(function () {
+  this.registerShutdownFunction(function() {
     
     
     this.transactionManager.RemoveListener(this);
@@ -2516,7 +2516,7 @@ var GuidHelper = {
     this.idsForGuids.delete(guid);
   },
 
-  ensureObservingRemovedItems: function () {
+  ensureObservingRemovedItems: function() {
     if (!("observer" in this)) {
       
 
@@ -3693,7 +3693,7 @@ PlacesSortFolderByNameTransaction.prototype = {
     let newOrder = [];
     let preSep = []; 
     let sortingMethod =
-      function (a, b) {
+      function(a, b) {
         if (PlacesUtils.nodeIsContainer(a) && !PlacesUtils.nodeIsContainer(b))
           return -1;
         if (!PlacesUtils.nodeIsContainer(a) && PlacesUtils.nodeIsContainer(b))
@@ -3834,7 +3834,7 @@ PlacesUntagURITransaction.prototype = {
     
     
     let tags = PlacesUtils.tagging.getTagsForURI(this.item.uri);
-    this.item.tags = this.item.tags.filter(function (aTag) {
+    this.item.tags = this.item.tags.filter(function(aTag) {
       return tags.includes(aTag);
     });
     PlacesUtils.tagging.untagURI(this.item.uri, this.item.tags);

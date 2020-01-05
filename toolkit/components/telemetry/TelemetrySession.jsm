@@ -645,7 +645,7 @@ this.TelemetrySession = Object.freeze({
   
 
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
   },
 });
@@ -981,7 +981,7 @@ var Impl = {
 
 
 
-  getScalars: function (subsession, clearSubsession, keyed) {
+  getScalars: function(subsession, clearSubsession, keyed) {
     this._log.trace("getScalars - subsession: " + subsession + ", clearSubsession: " +
                     clearSubsession + ", keyed: " + keyed);
 
@@ -1339,7 +1339,7 @@ var Impl = {
   
 
 
-  startNewSubsession: function () {
+  startNewSubsession: function() {
     this._subsessionStartDate = Policy.now();
     this._subsessionStartTimeMonotonic = Policy.monotonicNow();
     this._previousSubsessionId = this._subsessionId;
@@ -1502,7 +1502,7 @@ var Impl = {
           GCTelemetry.init();
         }
 
-        Telemetry.asyncFetchTelemetryData(function () {});
+        Telemetry.asyncFetchTelemetryData(function() {});
 
         if (IS_UNIFIED_TELEMETRY) {
           
@@ -1844,7 +1844,7 @@ var Impl = {
   
 
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     
     if (aTopic != TOPIC_CYCLE_COLLECTOR_BEGIN) {
       this._log.trace("observe - " + aTopic + " notified.");

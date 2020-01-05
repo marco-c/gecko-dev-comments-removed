@@ -104,7 +104,7 @@ ContentProcessSingleton.prototype = {
     }
   },
 
-  receiveMessage: function (message) {
+  receiveMessage: function(message) {
     
     
     if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {

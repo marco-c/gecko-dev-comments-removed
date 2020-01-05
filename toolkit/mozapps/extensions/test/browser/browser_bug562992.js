@@ -21,14 +21,14 @@ function test() {
 
   gProvider = new MockProvider();
 
-  open_manager("addons://list/extension", function (aWindow) {
+  open_manager("addons://list/extension", function(aWindow) {
     gManagerWindow = aWindow;
     run_next_test();
   });
 }
 
 function end_test() {
-  close_manager(gManagerWindow, function () {
+  close_manager(gManagerWindow, function() {
     finish();
   });
 }
@@ -36,7 +36,7 @@ function end_test() {
 
 
 
-add_test(function () {
+add_test(function() {
   let addon = new MockAddon(undefined, EXTENSION_NAME, "extension", true);
   gInstall = new MockInstall(undefined, undefined, addon);
   gInstall.addTestListener({
@@ -47,9 +47,9 @@ add_test(function () {
 
 
 
-add_test(function () {
+add_test(function() {
   gInstall.addTestListener({
-    onInstallEnded: function () {
+    onInstallEnded: function() {
       let list = gManagerWindow.document.getElementById("addon-list");
 
       

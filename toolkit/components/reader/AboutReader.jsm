@@ -178,7 +178,7 @@ AboutReader.prototype = {
     return _viewId;
   },
 
-  receiveMessage: function (message) {
+  receiveMessage: function(message) {
     switch (message.name) {
       
       case "Reader:CloseDropdown": {

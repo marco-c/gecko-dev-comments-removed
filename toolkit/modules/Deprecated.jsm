@@ -16,7 +16,7 @@ Cu.import("resource://gre/modules/Services.jsm");
 var logWarnings = Services.prefs.getBoolPref(PREF_DEPRECATION_WARNINGS);
 
 Services.prefs.addObserver(PREF_DEPRECATION_WARNINGS,
-  function (aSubject, aTopic, aData) {
+  function(aSubject, aTopic, aData) {
     logWarnings = Services.prefs.getBoolPref(PREF_DEPRECATION_WARNINGS);
   }, false);
 
@@ -26,7 +26,7 @@ Services.prefs.addObserver(PREF_DEPRECATION_WARNINGS,
 
 
 
-function stringifyCallstack (aStack) {
+function stringifyCallstack(aStack) {
   
   if (!aStack || !(aStack instanceof Ci.nsIStackFrame)) {
     aStack = Components.stack.caller;
@@ -57,7 +57,7 @@ this.Deprecated = {
 
 
 
-  warning: function (aText, aUrl, aStack) {
+  warning: function(aText, aUrl, aStack) {
     if (!logWarnings) {
       return;
     }

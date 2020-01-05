@@ -1109,7 +1109,7 @@ Blocklist.prototype = {
   
   
   
-  _handleGfxBlacklistNode: function (blocklistElement, result) {
+  _handleGfxBlacklistNode: function(blocklistElement, result) {
     const blockEntry = {};
 
     
@@ -1300,7 +1300,7 @@ Blocklist.prototype = {
     return blockEntry.infoURL;
   },
 
-  _notifyObserversBlocklistGFX: function () {
+  _notifyObserversBlocklistGFX: function() {
     
     
     const payload = this._gfxEntries.map((r) => {

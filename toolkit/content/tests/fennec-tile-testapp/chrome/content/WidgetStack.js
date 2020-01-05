@@ -59,14 +59,14 @@ function wsBorder(t, l, b, r) {
 
 wsBorder.prototype = {
 
-  setBorder: function (t, l, b, r) {
+  setBorder: function(t, l, b, r) {
     this.top = t;
     this.left = l;
     this.bottom = b;
     this.right = r;
   },
 
-  toString: function () {
+  toString: function() {
     return "[l:" + this.left + ",t:" + this.top + ",r:" + this.right + ",b:" + this.bottom + "]";
   }
 };
@@ -380,7 +380,7 @@ WidgetStack.prototype = {
   
   
   
-  init: function (el, ew, eh) {
+  init: function(el, ew, eh) {
     this._el = el;
     this._widgetState = {};
     this._barriers = [];
@@ -422,7 +422,7 @@ WidgetStack.prototype = {
   
   
   
-  moveWidgetBy: function (wid, x, y) {
+  moveWidgetBy: function(wid, x, y) {
     let state = this._getState(wid);
 
     state.rect.x += x;
@@ -472,13 +472,13 @@ WidgetStack.prototype = {
   
   
   
-  freeze: function (wid) {
+  freeze: function(wid) {
     let state = this._getState(wid);
 
     state.frozen = true;
   },
 
-  unfreeze: function (wid) {
+  unfreeze: function(wid) {
     let state = this._getState(wid);
     if (!state.frozen)
       return;
@@ -489,7 +489,7 @@ WidgetStack.prototype = {
 
   
   
-  moveFrozenTo: function (wid, x, y) {
+  moveFrozenTo: function(wid, x, y) {
     let state = this._getState(wid);
     if (!state.frozen)
       throw "moveFrozenTo on non-frozen widget " + wid;
@@ -502,7 +502,7 @@ WidgetStack.prototype = {
   
   
   
-  moveUnfrozenTo: function (wid, x, y) {
+  moveUnfrozenTo: function(wid, x, y) {
     delete this._widgetState[wid];
     let widget = document.getElementById(wid);
     if (x) widget.setAttribute("left", x);
@@ -512,7 +512,7 @@ WidgetStack.prototype = {
   },
 
   
-  get viewportVisibleRect () {
+  get viewportVisibleRect() {
     let rect = this._viewportBounds.intersect(this._viewingRect);
     if (!rect)
         rect = new wsRect(0, 0, 0, 0);
@@ -525,7 +525,7 @@ WidgetStack.prototype = {
 
   
   
-  isWidgetVisible: function (wid) {
+  isWidgetVisible: function(wid) {
     let state = this._getState(wid);
     let visibleStackRect = new wsRect(0, 0, this._viewingRect.width, this._viewingRect.height);
 
@@ -533,7 +533,7 @@ WidgetStack.prototype = {
   },
 
   
-  getWidgetVisibility: function (wid) {
+  getWidgetVisibility: function(wid) {
     let state = this._getState(wid);
     let visibleStackRect = new wsRect(0, 0, this._viewingRect.width, this._viewingRect.height);
 
@@ -545,7 +545,7 @@ WidgetStack.prototype = {
   },
 
   
-  offsetAll: function (x, y) {
+  offsetAll: function(x, y) {
     this.globalOffsetX += x;
     this.globalOffsetY += y;
 
@@ -662,7 +662,7 @@ WidgetStack.prototype = {
   
   
   
-  setViewportHandler: function (uh) {
+  setViewportHandler: function(uh) {
     this._viewportUpdateHandler = uh;
   },
 
@@ -671,7 +671,7 @@ WidgetStack.prototype = {
   
   
   
-  setPanHandler: function (uh) {
+  setPanHandler: function(uh) {
     this._panHandler = uh;
   },
 
@@ -743,7 +743,7 @@ WidgetStack.prototype = {
       if (this._viewportUpdateTimeout != -1)
         clearTimeout(this._viewportUpdateTimeout);
       let self = this;
-      this._viewportUpdateTimeout = setTimeout(function () { self._viewportDragUpdate(); }, this._viewportUpdateInterval);
+      this._viewportUpdateTimeout = setTimeout(function() { self._viewportDragUpdate(); }, this._viewportUpdateInterval);
     }
 
     return panned;
@@ -832,7 +832,7 @@ WidgetStack.prototype = {
     }
   },
 
-  _dumpRects: function () {
+  _dumpRects: function() {
     dump("WidgetStack:\n");
     dump("\tthis._viewportBounds: " + this._viewportBounds + "\n");
     dump("\tthis._viewingRect: " + this._viewingRect + "\n");
@@ -870,7 +870,7 @@ WidgetStack.prototype = {
     this.panBy(panX, panY, true);
   },
 
-  _getState: function (wid) {
+  _getState: function(wid) {
     let w = this._widgetState[wid];
     if (!w)
       throw "Unknown widget id '" + wid + "'; widget not in stack";
@@ -934,7 +934,7 @@ WidgetStack.prototype = {
     this._viewportUpdateHandler.apply(window, [vwb, vwib, vis, boundsChanged]);
   },
 
-  _dragCoordsFromClient: function (cx, cy, t) {
+  _dragCoordsFromClient: function(cx, cy, t) {
     this._dragState.curTime = t ? t : Date.now();
     this._dragState.outerCurX = cx;
     this._dragState.outerCurY = cy;
@@ -945,7 +945,7 @@ WidgetStack.prototype = {
     this._dragState.outerDY = dy;
   },
 
-  _panHandleBarriers: function (dx, dy) {
+  _panHandleBarriers: function(dx, dy) {
     
     
     
@@ -1147,7 +1147,7 @@ WidgetStack.prototype = {
   
   
   
-  _addNewWidget: function (w) {
+  _addNewWidget: function(w) {
     let wid = w.getAttribute("id");
     if (!wid) {
       reportError("WidgetStack: child widget without id!");
@@ -1224,7 +1224,7 @@ WidgetStack.prototype = {
     log("(New widget: " + wid + (state.viewport ? " [viewport]" : "") + " at: " + state.rect + ")");
   },
 
-  _removeWidget: function (w) {
+  _removeWidget: function(w) {
     let wid = w.getAttribute("id");
     delete this._widgetState[wid];
     this._updateWidgets();
@@ -1237,7 +1237,7 @@ WidgetStack.prototype = {
   
   
   
-  _updateWidgets: function () {
+  _updateWidgets: function() {
     let vp = this._viewport;
 
     let ofRect = this._viewingRect.clone();
@@ -1302,7 +1302,7 @@ WidgetStack.prototype = {
     this._pannableBounds = null;
   },
 
-  _widgetBounds: function () {
+  _widgetBounds: function() {
     let r = new wsRect(0, 0, 0, 0);
 
     for (let wid in this._widgetState) {
@@ -1313,7 +1313,7 @@ WidgetStack.prototype = {
     return r;
   },
 
-  _commitState: function (state) {
+  _commitState: function(state) {
     
     
     if (state.frozen)
@@ -1336,7 +1336,7 @@ WidgetStack.prototype = {
 
   
   
-  _rectTranslateConstrain: function (dx, dy, rect, bounds) {
+  _rectTranslateConstrain: function(dx, dy, rect, bounds) {
     let newX, newY;
 
     
@@ -1363,7 +1363,7 @@ WidgetStack.prototype = {
   },
 
   
-  _addNewBarrierFromSpacer: function (el) {
+  _addNewBarrierFromSpacer: function(el) {
     let t = el.getAttribute("barriertype");
 
     

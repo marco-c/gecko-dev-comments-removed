@@ -73,16 +73,16 @@ Finder.prototype = {
       this._highlighter = null;
   },
 
-  addResultListener: function (aListener) {
+  addResultListener: function(aListener) {
     if (this._listeners.indexOf(aListener) === -1)
       this._listeners.push(aListener);
   },
 
-  removeResultListener: function (aListener) {
+  removeResultListener: function(aListener) {
     this._listeners = this._listeners.filter(l => l != aListener);
   },
 
-  _notify: function (options) {
+  _notify: function(options) {
     if (typeof options.storeResult != "boolean")
       options.storeResult = true;
 
@@ -187,7 +187,7 @@ Finder.prototype = {
 
 
 
-  fastFind: function (aSearchString, aLinksOnly, aDrawOutline) {
+  fastFind: function(aSearchString, aLinksOnly, aDrawOutline) {
     this._lastFindResult = this._fastFind.find(aSearchString, aLinksOnly);
     let searchString = this._fastFind.searchString;
     this._notify({
@@ -209,7 +209,7 @@ Finder.prototype = {
 
 
 
-  findAgain: function (aFindBackwards, aLinksOnly, aDrawOutline) {
+  findAgain: function(aFindBackwards, aLinksOnly, aDrawOutline) {
     this._lastFindResult = this._fastFind.findAgain(aFindBackwards, aLinksOnly);
     let searchString = this._fastFind.searchString;
     this._notify({
@@ -351,7 +351,7 @@ Finder.prototype = {
       this._iterator.reset();
   },
 
-  keyPress: function (aEvent) {
+  keyPress: function(aEvent) {
     let controller = this._getSelectionController(this._getWindow());
 
     switch (aEvent.keyCode) {
@@ -475,7 +475,7 @@ Finder.prototype = {
     };
   },
 
-  _getWindow: function () {
+  _getWindow: function() {
     return this._docShell.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindow);
   },
 
@@ -483,7 +483,7 @@ Finder.prototype = {
 
 
 
-  _getResultRect: function () {
+  _getResultRect: function() {
     let topWin = this._getWindow();
     let win = this._fastFind.currentWindow;
     if (!win)
@@ -530,7 +530,7 @@ Finder.prototype = {
     return rect.translate(scrollX.value, scrollY.value);
   },
 
-  _outlineLink: function (aDrawOutline) {
+  _outlineLink: function(aDrawOutline) {
     let foundLink = this._fastFind.foundLink;
 
     
@@ -557,7 +557,7 @@ Finder.prototype = {
     }
   },
 
-  _restoreOriginalOutline: function () {
+  _restoreOriginalOutline: function() {
     
     if (this._previousLink) {
       this._previousLink.style.outline = this._tmpOutline;

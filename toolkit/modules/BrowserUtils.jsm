@@ -22,7 +22,7 @@ this.BrowserUtils = {
   
 
 
-  dumpLn: function (...args) {
+  dumpLn: function(...args) {
     for (let a of args)
       dump(a + " ");
     dump("\n");
@@ -231,7 +231,7 @@ this.BrowserUtils = {
 
 
 
-  makeNicePluginName: function (aName) {
+  makeNicePluginName: function(aName) {
     if (aName == "Shockwave Flash")
       return "Adobe Flash";
     
@@ -256,7 +256,7 @@ this.BrowserUtils = {
 
 
 
-  linkHasNoReferrer: function (linkNode) {
+  linkHasNoReferrer: function(linkNode) {
     
     
     

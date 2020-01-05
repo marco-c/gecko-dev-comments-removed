@@ -1285,7 +1285,7 @@ function check_test_7() {
 
 
 
-add_test(function () {
+add_test(function() {
   
   
   let themes = JSON.parse(Services.prefs.getCharPref("lightweightThemes.usedThemes"));

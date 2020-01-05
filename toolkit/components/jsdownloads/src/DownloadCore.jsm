@@ -148,7 +148,7 @@ const kProgressUpdateIntervalMs = 400;
 
 
 
-this.Download = function ()
+this.Download = function()
 {
   this._deferSucceeded = Promise.defer();
 }
@@ -710,7 +710,7 @@ this.Download.prototype = {
 
 
 
-  launch: function () {
+  launch: function() {
     if (!this.succeeded) {
       return Promise.reject(
         new Error("launch can only be called if the download succeeded")
@@ -844,7 +844,7 @@ this.Download.prototype = {
 
 
 
-  removePartialData: function ()
+  removePartialData: function()
   {
     if (!this.canceled && !this.error) {
       return Promise.resolve();
@@ -919,7 +919,7 @@ this.Download.prototype = {
 
 
 
-  refresh: function ()
+  refresh: function()
   {
     return Task.spawn(function* () {
       if (!this.stopped || this._finalized) {
@@ -998,7 +998,7 @@ this.Download.prototype = {
 
 
 
-  finalize: function (aRemovePartialData)
+  finalize: function(aRemovePartialData)
   {
     
     this._finalized = true;
@@ -1095,7 +1095,7 @@ this.Download.prototype = {
 
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     let serializable = {
       source: this.source.toSerializable(),
@@ -1147,7 +1147,7 @@ this.Download.prototype = {
 
 
 
-  getSerializationHash: function ()
+  getSerializationHash: function()
   {
     
     
@@ -1192,7 +1192,7 @@ const kPlainSerializableDownloadProperties = [
 
 
 
-Download.fromSerializable = function (aSerializable) {
+Download.fromSerializable = function(aSerializable) {
   let download = new Download();
   if (aSerializable.source instanceof DownloadSource) {
     download.source = aSerializable.source;
@@ -1252,7 +1252,7 @@ Download.fromSerializable = function (aSerializable) {
 
 
 
-this.DownloadSource = function () {}
+this.DownloadSource = function() {}
 
 this.DownloadSource.prototype = {
   
@@ -1295,7 +1295,7 @@ this.DownloadSource.prototype = {
 
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     if (this.adjustChannel) {
       
@@ -1342,7 +1342,7 @@ this.DownloadSource.prototype = {
 
 
 
-this.DownloadSource.fromSerializable = function (aSerializable) {
+this.DownloadSource.fromSerializable = function(aSerializable) {
   let source = new DownloadSource();
   if (isString(aSerializable)) {
     
@@ -1379,7 +1379,7 @@ this.DownloadSource.fromSerializable = function (aSerializable) {
 
 
 
-this.DownloadTarget = function () {}
+this.DownloadTarget = function() {}
 
 this.DownloadTarget.prototype = {
   
@@ -1451,7 +1451,7 @@ this.DownloadTarget.prototype = {
 
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     
     if (!this.partFilePath && !this._unknownProperties) {
@@ -1479,7 +1479,7 @@ this.DownloadTarget.prototype = {
 
 
 
-this.DownloadTarget.fromSerializable = function (aSerializable) {
+this.DownloadTarget.fromSerializable = function(aSerializable) {
   let target = new DownloadTarget();
   if (isString(aSerializable)) {
     
@@ -1521,7 +1521,7 @@ this.DownloadTarget.fromSerializable = function (aSerializable) {
 
 
 
-this.DownloadError = function (aProperties)
+this.DownloadError = function(aProperties)
 {
   const NS_ERROR_MODULE_BASE_OFFSET = 0x45;
   const NS_ERROR_MODULE_NETWORK = 6;
@@ -1653,7 +1653,7 @@ this.DownloadError.prototype = {
 
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     let serializable = {
       result: this.result,
@@ -1680,7 +1680,7 @@ this.DownloadError.prototype = {
 
 
 
-this.DownloadError.fromSerializable = function (aSerializable) {
+this.DownloadError.fromSerializable = function(aSerializable) {
   let e = new DownloadError(aSerializable);
   deserializeUnknownProperties(e, aSerializable, property =>
     property != "result" &&
@@ -1701,7 +1701,7 @@ this.DownloadError.fromSerializable = function (aSerializable) {
 
 
 
-this.DownloadSaver = function () {}
+this.DownloadSaver = function() {}
 
 this.DownloadSaver.prototype = {
   
@@ -1768,7 +1768,7 @@ this.DownloadSaver.prototype = {
 
 
 
-  addToHistory: function ()
+  addToHistory: function()
   {
     if (this.download.source.isPrivate) {
       return;
@@ -1805,7 +1805,7 @@ this.DownloadSaver.prototype = {
 
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     throw new Error("Not implemented.");
   },
@@ -1813,12 +1813,12 @@ this.DownloadSaver.prototype = {
   
 
 
-  getSha256Hash: function ()
+  getSha256Hash: function()
   {
     throw new Error("Not implemented.");
   },
 
-  getSignatureInfo: function ()
+  getSignatureInfo: function()
   {
     throw new Error("Not implemented.");
   },
@@ -1834,7 +1834,7 @@ this.DownloadSaver.prototype = {
 
 
 
-this.DownloadSaver.fromSerializable = function (aSerializable) {
+this.DownloadSaver.fromSerializable = function(aSerializable) {
   let serializable = isString(aSerializable) ? { type: aSerializable }
                                              : aSerializable;
   let saver;
@@ -1859,7 +1859,7 @@ this.DownloadSaver.fromSerializable = function (aSerializable) {
 
 
 
-this.DownloadCopySaver = function () {}
+this.DownloadCopySaver = function() {}
 
 this.DownloadCopySaver.prototype = {
   __proto__: DownloadSaver.prototype,
@@ -1967,7 +1967,7 @@ this.DownloadCopySaver.prototype = {
           
           
           backgroundFileSaver.observer = {
-            onTargetChange: function () { },
+            onTargetChange: function() { },
             onSaveComplete: (aSaver, aStatus) => {
               
               if (Components.isSuccessCode(aStatus)) {
@@ -2032,7 +2032,7 @@ this.DownloadCopySaver.prototype = {
               aSetProgressBytesFn(currentBytes, totalBytes, aProgress > 0 &&
                                   partFilePath && keepPartialData);
             },
-            onStatus: function () { },
+            onStatus: function() { },
           };
 
           
@@ -2043,7 +2043,7 @@ this.DownloadCopySaver.prototype = {
           
           backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
           channel.asyncOpen2({
-            onStartRequest: function (aRequest, aContext) {
+            onStartRequest: function(aRequest, aContext) {
               backgroundFileSaver.onStartRequest(aRequest, aContext);
 
               
@@ -2124,7 +2124,7 @@ this.DownloadCopySaver.prototype = {
               }
             }.bind(copySaver),
 
-            onStopRequest: function (aRequest, aContext, aStatusCode) {
+            onStopRequest: function(aRequest, aContext, aStatusCode) {
               try {
                 backgroundFileSaver.onStopRequest(aRequest, aContext,
                                                   aStatusCode);
@@ -2138,8 +2138,8 @@ this.DownloadCopySaver.prototype = {
               }
             }.bind(copySaver),
 
-            onDataAvailable: function (aRequest, aContext, aInputStream,
-                                       aOffset, aCount) {
+            onDataAvailable: function(aRequest, aContext, aInputStream,
+                                      aOffset, aCount) {
               backgroundFileSaver.onDataAvailable(aRequest, aContext,
                                                   aInputStream, aOffset,
                                                   aCount);
@@ -2256,7 +2256,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  removePartialData: function ()
+  removePartialData: function()
   {
     return Task.spawn(function* task_DCS_removePartialData() {
       if (this.download.target.partFilePath) {
@@ -2274,7 +2274,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     
     if (!this.entityID && !this._unknownProperties) {
@@ -2290,7 +2290,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  getSha256Hash: function ()
+  getSha256Hash: function()
   {
     return this._sha256Hash;
   },
@@ -2298,7 +2298,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  getSignatureInfo: function ()
+  getSignatureInfo: function()
   {
     return this._signatureInfo;
   },
@@ -2306,7 +2306,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  getRedirects: function ()
+  getRedirects: function()
   {
     return this._redirects;
   }
@@ -2321,7 +2321,7 @@ this.DownloadCopySaver.prototype = {
 
 
 
-this.DownloadCopySaver.fromSerializable = function (aSerializable) {
+this.DownloadCopySaver.fromSerializable = function(aSerializable) {
   let saver = new DownloadCopySaver();
   if ("entityID" in aSerializable) {
     saver.entityID = aSerializable.entityID;
@@ -2340,7 +2340,7 @@ this.DownloadCopySaver.fromSerializable = function (aSerializable) {
 
 
 
-this.DownloadLegacySaver = function ()
+this.DownloadLegacySaver = function()
 {
   this.deferExecuted = Promise.defer();
   this.deferCanceled = Promise.defer();
@@ -2439,7 +2439,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-  onTransferStarted: function (aRequest, aAlreadyAddedToHistory)
+  onTransferStarted: function(aRequest, aAlreadyAddedToHistory)
   {
     
     if (this.download.tryToKeepPartialData &&
@@ -2602,7 +2602,7 @@ this.DownloadLegacySaver.prototype = {
     }.bind(this));
   },
 
-  _checkReputationAndMove: function () {
+  _checkReputationAndMove: function() {
     return DownloadCopySaver.prototype._checkReputationAndMove
                                       .apply(this, arguments);
   },
@@ -2628,7 +2628,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  removePartialData: function ()
+  removePartialData: function()
   {
     
     
@@ -2639,7 +2639,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     
     
@@ -2651,7 +2651,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  getSha256Hash: function ()
+  getSha256Hash: function()
   {
     if (this.copySaver) {
       return this.copySaver.getSha256Hash();
@@ -2662,7 +2662,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  setSha256Hash: function (hash)
+  setSha256Hash: function(hash)
   {
     this._sha256Hash = hash;
   },
@@ -2670,7 +2670,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  getSignatureInfo: function ()
+  getSignatureInfo: function()
   {
     if (this.copySaver) {
       return this.copySaver.getSignatureInfo();
@@ -2681,7 +2681,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  setSignatureInfo: function (signatureInfo)
+  setSignatureInfo: function(signatureInfo)
   {
     this._signatureInfo = signatureInfo;
   },
@@ -2689,7 +2689,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  getRedirects: function ()
+  getRedirects: function()
   {
     if (this.copySaver) {
       return this.copySaver.getRedirects();
@@ -2701,7 +2701,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-  setRedirects: function (redirects)
+  setRedirects: function(redirects)
   {
     this._redirects = redirects;
   },
@@ -2712,7 +2712,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-this.DownloadLegacySaver.fromSerializable = function () {
+this.DownloadLegacySaver.fromSerializable = function() {
   return new DownloadLegacySaver();
 };
 
@@ -2729,7 +2729,7 @@ this.DownloadLegacySaver.fromSerializable = function () {
 
 
 
-this.DownloadPDFSaver = function () {
+this.DownloadPDFSaver = function() {
 }
 
 this.DownloadPDFSaver.prototype = {
@@ -2745,7 +2745,7 @@ this.DownloadPDFSaver.prototype = {
   
 
 
-  execute: function (aSetProgressBytesFn, aSetPropertiesFn)
+  execute: function(aSetProgressBytesFn, aSetPropertiesFn)
   {
     return Task.spawn(function* task_DCS_execute() {
       if (!this.download.source.windowRef) {
@@ -2800,7 +2800,7 @@ this.DownloadPDFSaver.prototype = {
       try {
         yield new Promise((resolve, reject) => {
           this._webBrowserPrint.print(printSettings, {
-            onStateChange: function (webProgress, request, stateFlags, status) {
+            onStateChange: function(webProgress, request, stateFlags, status) {
               if (stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
                 if (!Components.isSuccessCode(status)) {
                   reject(new DownloadError({ result: status,
@@ -2810,14 +2810,14 @@ this.DownloadPDFSaver.prototype = {
                 }
               }
             },
-            onProgressChange: function (webProgress, request, curSelfProgress,
-                                        maxSelfProgress, curTotalProgress,
-                                        maxTotalProgress) {
+            onProgressChange: function(webProgress, request, curSelfProgress,
+                                       maxSelfProgress, curTotalProgress,
+                                       maxTotalProgress) {
               aSetProgressBytesFn(curTotalProgress, maxTotalProgress, false);
             },
-            onLocationChange: function () {},
-            onStatusChange: function () {},
-            onSecurityChange: function () {},
+            onLocationChange: function() {},
+            onStatusChange: function() {},
+            onSecurityChange: function() {},
           });
         });
       } finally {
@@ -2844,7 +2844,7 @@ this.DownloadPDFSaver.prototype = {
   
 
 
-  toSerializable: function ()
+  toSerializable: function()
   {
     if (this.download.succeeded) {
       return DownloadCopySaver.prototype.toSerializable.call(this);
@@ -2866,6 +2866,6 @@ this.DownloadPDFSaver.prototype = {
 
 
 
-this.DownloadPDFSaver.fromSerializable = function (aSerializable) {
+this.DownloadPDFSaver.fromSerializable = function(aSerializable) {
   return new DownloadPDFSaver();
 };

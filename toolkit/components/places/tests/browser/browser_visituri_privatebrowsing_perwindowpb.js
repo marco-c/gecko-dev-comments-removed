@@ -64,7 +64,7 @@ function test() {
     doTest(true, aWin, initialURL, function() {
       
       testOnWindow({}, function(aWin2) {
-        doTest(false, aWin2, finalURL, function () {
+        doTest(false, aWin2, finalURL, function() {
           PlacesTestUtils.clearHistory().then(finish);
         });
       });

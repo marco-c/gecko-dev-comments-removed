@@ -54,7 +54,7 @@ LoginManagerCrypto_SDR.prototype = {
   _uiBusy : false,
 
 
-  init : function () {
+  init : function() {
     
     
     let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].
@@ -76,7 +76,7 @@ LoginManagerCrypto_SDR.prototype = {
 
 
 
-  encrypt : function (plainText) {
+  encrypt : function(plainText) {
     let cipherText = null;
 
     let wasLoggedIn = this.isLoggedIn;
@@ -117,7 +117,7 @@ LoginManagerCrypto_SDR.prototype = {
 
 
 
-  decrypt : function (cipherText) {
+  decrypt : function(cipherText) {
     let plainText = null;
 
     let wasLoggedIn = this.isLoggedIn;

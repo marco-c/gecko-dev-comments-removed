@@ -174,7 +174,7 @@ this.TelemetryController = Object.freeze({
   
 
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
   },
 
@@ -430,7 +430,7 @@ var Impl = {
 
 
 
-  _trackPendingPingTask: function (aPromise) {
+  _trackPendingPingTask: function(aPromise) {
     this._connectionsBarrier.client.addBlocker("Waiting for ping task", aPromise);
   },
 
@@ -745,7 +745,7 @@ var Impl = {
 
 
 
-  setupContentTelemetry: function (testing = false) {
+  setupContentTelemetry: function(testing = false) {
     this._testMode = testing;
 
     
@@ -820,7 +820,7 @@ var Impl = {
   
 
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     
     if (aTopic == "profile-after-change" || aTopic == "app-startup") {
       

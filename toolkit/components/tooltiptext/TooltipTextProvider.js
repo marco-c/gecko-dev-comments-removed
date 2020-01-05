@@ -128,7 +128,7 @@ TooltipTextProvider.prototype = {
       tipElement = tipElement.parentNode;
     }
 
-    return [titleText, XLinkTitleText, SVGTitleText, XULtooltiptextText].some(function (t) {
+    return [titleText, XLinkTitleText, SVGTitleText, XULtooltiptextText].some(function(t) {
       if (t && /\S/.test(t)) {
         
         textOut.value = t.replace(/\r\n?/g, '\n');

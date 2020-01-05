@@ -143,7 +143,7 @@ FormHandler.prototype = {
 
 
 
-  collectFormFields: function () {
+  collectFormFields: function() {
     let autofillData = {
       sections: [],
     };
@@ -225,7 +225,7 @@ FormHandler.prototype = {
 
 
 
-  autofillFormFields: function (aAutofillResult) {
+  autofillFormFields: function(aAutofillResult) {
     for (let field of aAutofillResult.fields) {
       
       let fieldDetail = this.fieldDetails
@@ -244,8 +244,8 @@ FormHandler.prototype = {
   
 
 
-  waitForTick: function () {
-    return new Promise(function (resolve) {
+  waitForTick: function() {
+    return new Promise(function(resolve) {
       Services.tm.currentThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
     });
   },
@@ -263,7 +263,7 @@ FormAutofillContentService.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormAutofillContentService]),
 
   
-  requestAutocomplete: function (aForm, aWindow) {
+  requestAutocomplete: function(aForm, aWindow) {
     new FormHandler(aForm, aWindow).handleRequestAutocomplete()
                                    .catch(Cu.reportError);
   },

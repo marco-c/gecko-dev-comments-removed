@@ -486,7 +486,7 @@ SaveSerializer.prototype = {
 
 
 
-  enqueueTask: function (aFunction) {
+  enqueueTask: function(aFunction) {
     let promise = new Promise((resolve, reject) =>
       this._queuedOperations.push([aFunction, resolve, reject]));
 
@@ -500,7 +500,7 @@ SaveSerializer.prototype = {
 
 
 
-  flushTasks: function () {
+  flushTasks: function() {
     let dummyTask = () => new Promise(resolve => resolve());
     return this.enqueueTask(dummyTask);
   },
@@ -509,7 +509,7 @@ SaveSerializer.prototype = {
 
 
 
-  _popAndPerformQueuedOperation: function () {
+  _popAndPerformQueuedOperation: function() {
     if (!this._queuedOperations.length || this._queuedInProgress) {
       return;
     }
@@ -1387,7 +1387,7 @@ var TelemetryStorageImpl = {
 
 
 
-  _trackPendingPingSaveTask: function (promise) {
+  _trackPendingPingSaveTask: function(promise) {
     let clear = () => this._activePendingPingSaves.delete(promise);
     promise.then(clear, clear);
     this._activePendingPingSaves.add(promise);
@@ -1398,7 +1398,7 @@ var TelemetryStorageImpl = {
 
 
 
-  promisePendingPingSaves: function () {
+  promisePendingPingSaves: function() {
     
     
     return waitForAll(this._activePendingPingSaves);

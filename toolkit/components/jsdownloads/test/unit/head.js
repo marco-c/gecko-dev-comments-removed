@@ -136,7 +136,7 @@ function getTempFile(aLeafName)
   let file = FileUtils.getFile("TmpD", [leafName]);
   do_check_false(file.exists());
 
-  do_register_cleanup(function () {
+  do_register_cleanup(function() {
     try {
       file.remove(false)
     } catch (e) {
@@ -202,20 +202,20 @@ function promiseWaitForVisit(aUrl)
 
   PlacesUtils.history.addObserver({
     QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver]),
-    onBeginUpdateBatch: function () {},
-    onEndUpdateBatch: function () {},
-    onVisit: function (aURI, aVisitID, aTime, aSessionID, aReferringID,
-                       aTransitionType, aGUID, aHidden) {
+    onBeginUpdateBatch: function() {},
+    onEndUpdateBatch: function() {},
+    onVisit: function(aURI, aVisitID, aTime, aSessionID, aReferringID,
+                      aTransitionType, aGUID, aHidden) {
       if (aURI.equals(uri)) {
         PlacesUtils.history.removeObserver(this);
         deferred.resolve([aTime, aTransitionType]);
       }
     },
-    onTitleChanged: function () {},
-    onDeleteURI: function () {},
-    onClearHistory: function () {},
-    onPageChanged: function () {},
-    onDeleteVisits: function () {},
+    onTitleChanged: function() {},
+    onDeleteURI: function() {},
+    onClearHistory: function() {},
+    onPageChanged: function() {},
+    onDeleteVisits: function() {},
   }, false);
 
   return deferred.promise;
@@ -235,7 +235,7 @@ function promiseIsURIVisited(aUrl) {
   let deferred = Promise.defer();
 
   PlacesUtils.asyncHistory.isURIVisited(NetUtil.newURI(aUrl),
-    function (aURI, aIsVisited) {
+    function(aURI, aIsVisited) {
       deferred.resolve(aIsVisited);
     });
 
@@ -337,11 +337,11 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
 
   let deferred = Promise.defer();
 
-  Downloads.getList(Downloads.ALL).then(function (aList) {
+  Downloads.getList(Downloads.ALL).then(function(aList) {
     
     
     aList.addView({
-      onDownloadAdded: function (aDownload) {
+      onDownloadAdded: function(aDownload) {
         aList.removeView(this).then(null, do_report_unexpected_exception);
 
         
@@ -390,11 +390,11 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
 
   let deferred = Promise.defer();
 
-  Downloads.getList(Downloads.PUBLIC).then(function (aList) {
+  Downloads.getList(Downloads.PUBLIC).then(function(aList) {
     
     
     aList.addView({
-      onDownloadAdded: function (aDownload) {
+      onDownloadAdded: function(aDownload) {
         aList.removeView(this).then(null, do_report_unexpected_exception);
 
         
@@ -416,7 +416,7 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
     channel.asyncOpen2({
       contentListener: null,
 
-      onStartRequest: function (aRequest, aContext)
+      onStartRequest: function(aRequest, aContext)
       {
         let requestChannel = aRequest.QueryInterface(Ci.nsIChannel);
         this.contentListener = gExternalHelperAppService.doContent(
@@ -424,13 +424,13 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
         this.contentListener.onStartRequest(aRequest, aContext);
       },
 
-      onStopRequest: function (aRequest, aContext, aStatusCode)
+      onStopRequest: function(aRequest, aContext, aStatusCode)
       {
         this.contentListener.onStopRequest(aRequest, aContext, aStatusCode);
       },
 
-      onDataAvailable: function (aRequest, aContext, aInputStream, aOffset,
-                                 aCount)
+      onDataAvailable: function(aRequest, aContext, aInputStream, aOffset,
+                                aCount)
       {
         this.contentListener.onDataAvailable(aRequest, aContext, aInputStream,
                                              aOffset, aCount);
@@ -456,7 +456,7 @@ function promiseDownloadMidway(aDownload) {
   let deferred = Promise.defer();
 
   
-  let onchange = function () {
+  let onchange = function() {
     if (!aDownload.stopped && !aDownload.canceled && aDownload.progress == 50) {
       aDownload.onchange = null;
       deferred.resolve();
@@ -576,10 +576,10 @@ function startFakeServer()
 {
   let serverSocket = new ServerSocket(-1, true, -1);
   serverSocket.asyncListen({
-    onSocketAccepted: function (aServ, aTransport) {
+    onSocketAccepted: function(aServ, aTransport) {
       aTransport.close(Cr.NS_BINDING_ABORTED);
     },
-    onStopListening: function () { },
+    onStopListening: function() { },
   });
   return serverSocket;
 }
@@ -642,7 +642,7 @@ function continueResponses()
 
 function registerInterruptibleHandler(aPath, aFirstPartFn, aSecondPartFn)
 {
-  gHttpServer.registerPathHandler(aPath, function (aRequest, aResponse) {
+  gHttpServer.registerPathHandler(aPath, function(aRequest, aResponse) {
     do_print("Interruptible request started.");
 
     
@@ -695,7 +695,7 @@ add_task(function test_common_initialize()
   
   Services.prefs.setBoolPref("browser.cache.disk.enable", false);
   Services.prefs.setBoolPref("browser.cache.memory.enable", false);
-  do_register_cleanup(function () {
+  do_register_cleanup(function() {
     Services.prefs.clearUserPref("browser.cache.disk.enable");
     Services.prefs.clearUserPref("browser.cache.memory.enable");
   });
@@ -769,7 +769,7 @@ add_task(function test_common_initialize()
     });
 
   gHttpServer.registerPathHandler("/shorter-than-content-length-http-1-1.txt",
-    function (aRequest, aResponse) {
+    function(aRequest, aResponse) {
       aResponse.processAsync();
       aResponse.setStatusLine("1.1", 200, "OK");
       aResponse.setHeader("Content-Type", "text/plain", false);
@@ -781,7 +781,7 @@ add_task(function test_common_initialize()
 
   
   gHttpServer.registerPathHandler("/parentalblocked.zip",
-    function (aRequest, aResponse) {
+    function(aRequest, aResponse) {
       aResponse.setStatusLine(aRequest.httpVersion, 450,
                               "Blocked by Windows Parental Controls");
     });

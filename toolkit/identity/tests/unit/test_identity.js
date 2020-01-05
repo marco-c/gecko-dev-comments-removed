@@ -74,7 +74,7 @@ function test_select_identity() {
     IDService.RP.watch(mockedDoc);
 
     
-    makeObserver("identity-request", function (aSubject, aTopic, aData) {
+    makeObserver("identity-request", function(aSubject, aTopic, aData) {
       
       
       

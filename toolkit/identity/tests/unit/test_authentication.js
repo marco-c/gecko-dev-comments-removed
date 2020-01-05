@@ -21,7 +21,7 @@ function test_begin_authentication_flow() {
   
   
   
-  makeObserver("identity-auth", function (aSubject, aTopic, aData) {
+  makeObserver("identity-auth", function(aSubject, aTopic, aData) {
     do_check_neq(aSubject, null);
 
     do_check_eq(aSubject.wrappedJSObject.provId, _provId);
@@ -88,7 +88,7 @@ function test_complete_authentication_flow() {
       run_next_test();
     });
 
-    makeObserver("identity-login-state-changed", function (aSubject, aTopic, aData) {
+    makeObserver("identity-login-state-changed", function(aSubject, aTopic, aData) {
       do_check_neq(aSubject, null);
 
       do_check_eq(aSubject.wrappedJSObject.rpId, mockedDoc.id);

@@ -488,7 +488,7 @@ EnvironmentAddonBuilder.prototype = {
   },
 
   
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     this._environment._log.trace("observe - Topic " + aTopic);
     this._checkForChanges("experiment-changed");
   },
@@ -653,7 +653,7 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  _getActivePlugins: function () {
+  _getActivePlugins: function() {
     let pluginTags =
       Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost).getPluginTags({});
 
@@ -724,7 +724,7 @@ EnvironmentAddonBuilder.prototype = {
 
 
 
-  _getActiveExperiment: function () {
+  _getActiveExperiment: function() {
     let experimentInfo = {};
     try {
       let scope = {};
@@ -840,7 +840,7 @@ EnvironmentCache.prototype = {
 
 
 
-  registerChangeListener: function (name, listener) {
+  registerChangeListener: function(name, listener) {
     this._log.trace("registerChangeListener for " + name);
     if (this._shutdown) {
       this._log.warn("registerChangeListener - already shutdown");
@@ -854,7 +854,7 @@ EnvironmentCache.prototype = {
 
 
 
-  unregisterChangeListener: function (name) {
+  unregisterChangeListener: function(name) {
     this._log.trace("unregisterChangeListener for " + name);
     if (this._shutdown) {
       this._log.warn("registerChangeListener - already shutdown");
@@ -872,7 +872,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _watchPreferences: function (aPreferences) {
+  _watchPreferences: function(aPreferences) {
     this._stopWatchingPrefs();
     this._watchedPrefs = aPreferences;
     this._updateSettings();
@@ -885,7 +885,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getPrefData: function () {
+  _getPrefData: function() {
     let prefData = {};
     for (let [pref, policy] of this._watchedPrefs.entries()) {
       
@@ -909,7 +909,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _startWatchingPrefs: function () {
+  _startWatchingPrefs: function() {
     this._log.trace("_startWatchingPrefs - " + this._watchedPrefs);
 
     for (let [pref, options] of this._watchedPrefs) {
@@ -929,7 +929,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _stopWatchingPrefs: function () {
+  _stopWatchingPrefs: function() {
     this._log.trace("_stopWatchingPrefs");
 
     for (let [pref, options] of this._watchedPrefs) {
@@ -939,7 +939,7 @@ EnvironmentCache.prototype = {
     }
   },
 
-  _addObservers: function () {
+  _addObservers: function() {
     
     Services.obs.addObserver(this, COMPOSITOR_CREATED_TOPIC, false);
     Services.obs.addObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC, false);
@@ -948,7 +948,7 @@ EnvironmentCache.prototype = {
     Services.obs.addObserver(this, SEARCH_SERVICE_TOPIC, false);
   },
 
-  _removeObservers: function () {
+  _removeObservers: function() {
     Services.obs.removeObserver(this, COMPOSITOR_CREATED_TOPIC);
     try {
       Services.obs.removeObserver(this, DISTRIBUTION_CUSTOMIZATION_COMPLETE_TOPIC);
@@ -958,7 +958,7 @@ EnvironmentCache.prototype = {
     Services.obs.removeObserver(this, SEARCH_SERVICE_TOPIC);
   },
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     this._log.trace("observe - aTopic: " + aTopic + ", aData: " + aData);
     switch (aTopic) {
       case SEARCH_ENGINE_MODIFIED_TOPIC:
@@ -996,7 +996,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getDefaultSearchEngine: function () {
+  _getDefaultSearchEngine: function() {
     let engine;
     try {
       engine = Services.search.defaultEngine;
@@ -1019,7 +1019,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _updateSearchEngine: function () {
+  _updateSearchEngine: function() {
     if (!Services.search) {
       
       return;
@@ -1045,7 +1045,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _onSearchEngineChange: function () {
+  _onSearchEngineChange: function() {
     this._log.trace("_onSearchEngineChange");
 
     
@@ -1057,7 +1057,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _updateGraphicsFeatures: function () {
+  _updateGraphicsFeatures: function() {
     let gfxData = this._currentEnvironment.system.gfx;
     try {
       let gfxInfo = Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo);
@@ -1078,7 +1078,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getBuild: function () {
+  _getBuild: function() {
     let buildData = {
       applicationId: Services.appinfo.ID || null,
       applicationName: Services.appinfo.name || null,
@@ -1106,7 +1106,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _isDefaultBrowser: function () {
+  _isDefaultBrowser: function() {
     if (AppConstants.platform === "gonk") {
       return true;
     }
@@ -1147,7 +1147,7 @@ EnvironmentCache.prototype = {
   
 
 
-  _updateSettings: function () {
+  _updateSettings: function() {
     let updateChannel = null;
     try {
       updateChannel = UpdateUtils.getUpdateChannel(false);
@@ -1218,7 +1218,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getPartner: function () {
+  _getPartner: function() {
     let partnerData = {
       distributionId: Preferences.get(PREF_DISTRIBUTION_ID, null),
       distributionVersion: Preferences.get(PREF_DISTRIBUTION_VERSION, null),
@@ -1238,7 +1238,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getCpuData: function () {
+  _getCpuData: function() {
     let cpuData = {
       count: getSysinfoProperty("cpucount", null),
       cores: getSysinfoProperty("cpucores", null),
@@ -1273,7 +1273,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getDeviceData: function () {
+  _getDeviceData: function() {
     if (!["gonk", "android"].includes(AppConstants.platform)) {
       return null;
     }
@@ -1290,7 +1290,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getOSData: function () {
+  _getOSData: function() {
     let data = {
       name: forceToStringOrNull(getSysinfoProperty("name", null)),
       version: forceToStringOrNull(getSysinfoProperty("version", null)),
@@ -1327,7 +1327,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getHDDData: function () {
+  _getHDDData: function() {
     return {
       profile: { 
         model: getSysinfoProperty("profileHDDModel", null),
@@ -1348,7 +1348,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getGFXData: function () {
+  _getGFXData: function() {
     let gfxData = {
       D2DEnabled: getGfxField("D2DEnabled", null),
       DWriteEnabled: getGfxField("DWriteEnabled", null),
@@ -1400,7 +1400,7 @@ EnvironmentCache.prototype = {
 
 
 
-  _getSystem: function () {
+  _getSystem: function() {
     let memoryMB = getSysinfoProperty("memsize", null);
     if (memoryMB) {
       
@@ -1433,7 +1433,7 @@ EnvironmentCache.prototype = {
     return data;
   },
 
-  _onEnvironmentChange: function (what, oldEnvironment) {
+  _onEnvironmentChange: function(what, oldEnvironment) {
     this._log.trace("_onEnvironmentChange for " + what);
 
     
@@ -1452,7 +1452,7 @@ EnvironmentCache.prototype = {
     }
   },
 
-  reset: function () {
+  reset: function() {
     this._shutdown = false;
     this._delayedInitFinished = false;
   }

@@ -785,7 +785,7 @@ XMLPropertyListReader.prototype = {
 
 
 
-function LazyMapProxyHandler () {
+function LazyMapProxyHandler() {
   return {
     _lazyGetters: new Set(),
     get: function(target, name) {

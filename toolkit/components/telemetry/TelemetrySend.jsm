@@ -707,7 +707,7 @@ var TelemetrySendImpl = {
   
 
 
-  setServer: function (server) {
+  setServer: function(server) {
     this._log.trace("setServer", server);
     this._server = server;
   },
@@ -1050,7 +1050,7 @@ var TelemetrySendImpl = {
 
 
 
-  _trackPendingPingTask: function (promise) {
+  _trackPendingPingTask: function(promise) {
     let clear = () => this._pendingPingActivity.delete(promise);
     promise.then(clear, clear);
     this._pendingPingActivity.add(promise);
@@ -1061,7 +1061,7 @@ var TelemetrySendImpl = {
 
 
 
-  promisePendingPingActivity: function () {
+  promisePendingPingActivity: function() {
     this._log.trace("promisePendingPingActivity - Waiting for ping task");
     let p = Array.from(this._pendingPingActivity, p => p.catch(ex => {
       this._log.error("promisePendingPingActivity - ping activity had an error", ex);

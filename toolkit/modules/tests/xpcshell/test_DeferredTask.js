@@ -57,12 +57,12 @@ add_test(function test_arm_delay_respected()
   let executed1 = false;
   let executed2 = false;
 
-  new DeferredTask(function () {
+  new DeferredTask(function() {
     executed1 = true;
     do_check_false(executed2);
   }, 1 * T).arm();
 
-  new DeferredTask(function () {
+  new DeferredTask(function() {
     executed2 = true;
     do_check_true(executed1);
     run_next_test();
@@ -84,7 +84,7 @@ add_test(function test_arm_delay_notrestarted()
   do_timeout(2 * T, () => deferredTask.arm());
 
   
-  do_timeout(5 * T, function () {
+  do_timeout(5 * T, function() {
     do_check_true(executed);
     run_next_test();
   });
@@ -97,7 +97,7 @@ add_test(function test_arm_coalesced()
 {
   let executed = false;
 
-  let deferredTask = new DeferredTask(function () {
+  let deferredTask = new DeferredTask(function() {
     do_check_false(executed);
     executed = true;
     run_next_test();
@@ -115,7 +115,7 @@ add_test(function test_arm_coalesced_nodelay()
 {
   let executed = false;
 
-  let deferredTask = new DeferredTask(function () {
+  let deferredTask = new DeferredTask(function() {
     do_check_false(executed);
     executed = true;
     run_next_test();
@@ -132,7 +132,7 @@ add_test(function test_arm_recursive()
 {
   let executed = false;
 
-  let deferredTask = new DeferredTask(function () {
+  let deferredTask = new DeferredTask(function() {
     if (!executed) {
       executed = true;
       deferredTask.arm();
@@ -167,7 +167,7 @@ add_test(function test_arm_async()
   
   
   
-  do_timeout(4 * T, function () {
+  do_timeout(4 * T, function() {
     do_check_true(deferredTask.isRunning);
     do_check_false(finishedExecution);
     deferredTask.arm();
@@ -175,19 +175,19 @@ add_test(function test_arm_async()
 
   
   
-  do_timeout(7 * T, function () {
+  do_timeout(7 * T, function() {
     do_check_false(deferredTask.isRunning);
     do_check_true(finishedExecution);
   });
 
   
-  do_timeout(10 * T, function () {
+  do_timeout(10 * T, function() {
     do_check_true(deferredTask.isRunning);
     do_check_false(finishedExecutionAgain);
   });
 
   
-  do_timeout(13 * T, function () {
+  do_timeout(13 * T, function() {
     do_check_false(deferredTask.isRunning);
     do_check_true(finishedExecutionAgain);
     run_next_test();
@@ -200,7 +200,7 @@ add_test(function test_arm_async()
 add_test(function test_disarm()
 {
   
-  let deferredTask = new DeferredTask(function () {
+  let deferredTask = new DeferredTask(function() {
     do_throw("This task should not run.");
   }, 2 * T);
   deferredTask.arm();
@@ -222,16 +222,16 @@ add_test(function test_disarm_delay_restarted()
   let deferredTask = new DeferredTask(() => { executed = true; }, 4 * T);
   deferredTask.arm();
 
-  do_timeout(2 * T, function () {
+  do_timeout(2 * T, function() {
     deferredTask.disarm();
     deferredTask.arm();
   });
 
-  do_timeout(5 * T, function () {
+  do_timeout(5 * T, function() {
     do_check_false(executed);
   });
 
-  do_timeout(7 * T, function () {
+  do_timeout(7 * T, function() {
     do_check_true(executed);
     run_next_test();
   });
@@ -252,14 +252,14 @@ add_test(function test_disarm_async()
   }, 1 * T);
   deferredTask.arm();
 
-  do_timeout(2 * T, function () {
+  do_timeout(2 * T, function() {
     do_check_true(deferredTask.isRunning);
     do_check_true(deferredTask.isArmed);
     do_check_false(finishedExecution);
     deferredTask.disarm();
   });
 
-  do_timeout(4 * T, function () {
+  do_timeout(4 * T, function() {
     do_check_false(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
     do_check_true(finishedExecution);
@@ -282,14 +282,14 @@ add_test(function test_disarm_immediate_async()
   }, 1 * T);
   deferredTask.arm();
 
-  do_timeout(2 * T, function () {
+  do_timeout(2 * T, function() {
     do_check_true(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
     deferredTask.arm();
     deferredTask.disarm();
   });
 
-  do_timeout(4 * T, function () {
+  do_timeout(4 * T, function() {
     do_check_true(executed);
     do_check_false(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
@@ -302,7 +302,7 @@ add_test(function test_disarm_immediate_async()
 
 add_test(function test_isArmed_isRunning()
 {
-  let deferredTask = new DeferredTask(function () {
+  let deferredTask = new DeferredTask(function() {
     do_check_true(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
     deferredTask.arm();
@@ -326,7 +326,7 @@ add_test(function test_finalize()
   let executed = false;
   let timePassed = false;
 
-  let deferredTask = new DeferredTask(function () {
+  let deferredTask = new DeferredTask(function() {
     do_check_false(timePassed);
     executed = true;
   }, 2 * T);
@@ -335,7 +335,7 @@ add_test(function test_finalize()
   do_timeout(1 * T, () => { timePassed = true; });
 
   
-  deferredTask.finalize().then(function () {
+  deferredTask.finalize().then(function() {
     do_check_true(executed);
     run_next_test();
   });
@@ -358,7 +358,7 @@ add_test(function test_finalize_executes_entirely()
       do_check_true(deferredTask.isArmed);
       do_check_true(deferredTask.isRunning);
 
-      deferredTask.finalize().then(function () {
+      deferredTask.finalize().then(function() {
         
         do_check_true(executedAgain);
         do_check_false(timePassed);

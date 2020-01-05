@@ -49,7 +49,7 @@ add_task(function* test() {
        "Last Changed column is displayed");
 
     
-    Services.ww.registerNotification(function (aSubject, aTopic, aData) {
+    Services.ww.registerNotification(function(aSubject, aTopic, aData) {
       if (aSubject.location == pwmgrdlg.location && aTopic == "domwindowclosed") {
         
         Services.ww.unregisterNotification(arguments.callee);

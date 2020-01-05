@@ -23,16 +23,16 @@ XPCOMUtils.defineLazyModuleGetter(this, "PageThumbs",
 XPCOMUtils.defineLazyModuleGetter(this, "BinarySearch",
   "resource://gre/modules/BinarySearch.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "gPrincipal", function () {
+XPCOMUtils.defineLazyGetter(this, "gPrincipal", function() {
   let uri = Services.io.newURI("about:newtab", null, null);
   return Services.scriptSecurityManager.createCodebasePrincipal(uri, {});
 });
 
-XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function () {
+XPCOMUtils.defineLazyGetter(this, "gCryptoHash", function() {
   return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
 });
 
-XPCOMUtils.defineLazyGetter(this, "gUnicodeConverter", function () {
+XPCOMUtils.defineLazyGetter(this, "gUnicodeConverter", function() {
   let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"]
                     .createInstance(Ci.nsIScriptableUnicodeConverter);
   converter.charset = 'utf8';
@@ -306,7 +306,7 @@ var AllPages = {
       }
     }
     
-    this._pages.forEach(function (aPage) {
+    this._pages.forEach(function(aPage) {
       aPage.observe(aSubject, aTopic, aData);
     }, this);
   },
@@ -319,7 +319,7 @@ var AllPages = {
     Services.prefs.addObserver(PREF_NEWTAB_ENABLED, this, true);
     Services.prefs.addObserver(PREF_NEWTAB_ENHANCED, this, true);
     Services.obs.addObserver(this, "page-thumbnail:create", true);
-    this._addObserver = function () {};
+    this._addObserver = function() {};
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
@@ -522,7 +522,7 @@ var BlockedLinks = {
   
 
 
-  addObserver: function (aObserver) {
+  addObserver: function(aObserver) {
     this._observers.push(aObserver);
   },
 
@@ -648,7 +648,7 @@ var PlacesProvider = {
     let links = [];
 
     let callback = {
-      handleResult: function (aResultSet) {
+      handleResult: function(aResultSet) {
         let row;
 
         while ((row = aResultSet.getNextRow())) {
@@ -668,12 +668,12 @@ var PlacesProvider = {
         }
       },
 
-      handleError: function (aError) {
+      handleError: function(aError) {
         
         aCallback([]);
       },
 
-      handleCompletion: function (aReason) {
+      handleCompletion: function(aReason) {
         
         
         
@@ -857,7 +857,7 @@ var Links = {
   
 
 
-  addObserver: function (aObserver) {
+  addObserver: function(aObserver) {
     this._observers.push(aObserver);
   },
 
@@ -934,7 +934,7 @@ var Links = {
     }
 
     
-    links = links.filter(function (link) {
+    links = links.filter(function(link) {
       let site = NewTabUtils.extractSite(link.url);
       if (site == null || sites.has(site))
         return false;
@@ -1058,7 +1058,7 @@ var Links = {
 
 
 
-  _populateProviderCache: function (aProvider, aCallback, aForce) {
+  _populateProviderCache: function(aProvider, aCallback, aForce) {
     let cache = this._providers.get(aProvider);
     let createCache = !cache;
     if (createCache) {
@@ -1258,7 +1258,7 @@ var Links = {
     
     
     if (AllPages.length && AllPages.enabled)
-      this.populateCache(function () { AllPages.update() }, true);
+      this.populateCache(function() { AllPages.update() }, true);
     else
       this.resetCache();
   },
@@ -1281,7 +1281,7 @@ var Links = {
 
   _addObserver: function Links_addObserver() {
     Services.obs.addObserver(this, "browser:purge-session-history", true);
-    this._addObserver = function () {};
+    this._addObserver = function() {};
   },
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
@@ -1375,7 +1375,7 @@ var ExpirationFilter = {
       return;
     }
 
-    Links.populateCache(function () {
+    Links.populateCache(function() {
       let urls = [];
 
       
@@ -1462,7 +1462,7 @@ this.NewTabUtils = {
     PinnedLinks.resetCache();
     BlockedLinks.resetCache();
 
-    Links.populateCache(function () {
+    Links.populateCache(function() {
       AllPages.update();
     }, true);
   },

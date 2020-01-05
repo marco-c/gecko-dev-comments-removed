@@ -302,7 +302,7 @@ this.SearchSuggestionController.prototype = {
   
 
 
-  _onRemoteTimeout: function () {
+  _onRemoteTimeout: function() {
     this._request = null;
 
     

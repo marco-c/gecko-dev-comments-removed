@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 XPCOMUtils.defineLazyModuleGetter(this, "Deprecated",
                                   "resource://gre/modules/Deprecated.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "asyncHistory", function () {
+XPCOMUtils.defineLazyGetter(this, "asyncHistory", function() {
   
   PlacesUtils.history.addObserver(PlacesUtils.livemarks, true);
   return PlacesUtils.asyncHistory;

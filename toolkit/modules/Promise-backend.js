@@ -432,7 +432,7 @@ this.Promise = function Promise(aExecutor)
 
 
 
-Promise.prototype.then = function (aOnResolve, aOnReject)
+Promise.prototype.then = function(aOnResolve, aOnReject)
 {
   let handler = new Handler(this, aOnResolve, aOnReject);
   this[N_INTERNALS].handlers.push(handler);
@@ -466,7 +466,7 @@ Promise.prototype.then = function (aOnResolve, aOnReject)
 
 
 
-Promise.prototype.catch = function (aOnReject)
+Promise.prototype.catch = function(aOnReject)
 {
   return this.then(undefined, aOnReject);
 };
@@ -478,7 +478,7 @@ Promise.prototype.catch = function (aOnReject)
 
 
 
-Promise.defer = function ()
+Promise.defer = function()
 {
   return new Deferred();
 };
@@ -495,7 +495,7 @@ Promise.defer = function ()
 
 
 
-Promise.resolve = function (aValue)
+Promise.resolve = function(aValue)
 {
   if (aValue && typeof(aValue) == "function" && aValue.isAsyncFunction) {
     throw new TypeError(
@@ -526,7 +526,7 @@ Promise.resolve = function (aValue)
 
 
 
-Promise.reject = function (aReason)
+Promise.reject = function(aReason)
 {
   return new Promise((_, aReject) => aReject(aReason));
 };
@@ -547,7 +547,7 @@ Promise.reject = function (aReason)
 
 
 
-Promise.all = function (aValues)
+Promise.all = function(aValues)
 {
   if (aValues == null || typeof(aValues[Symbol.iterator]) != "function") {
     throw new Error("Promise.all() expects an iterable.");
@@ -598,7 +598,7 @@ Promise.all = function (aValues)
 
 
 
-Promise.race = function (aValues)
+Promise.race = function(aValues)
 {
   if (aValues == null || typeof(aValues[Symbol.iterator]) != "function") {
     throw new Error("Promise.race() expects an iterable.");
@@ -688,7 +688,7 @@ this.PromiseWalker = {
 
 
 
-  completePromise: function (aPromise, aStatus, aValue)
+  completePromise: function(aPromise, aStatus, aValue)
   {
     
     if (aPromise[N_INTERNALS].status != STATUS_PENDING) {
@@ -763,7 +763,7 @@ this.PromiseWalker = {
 
 
 
-  schedulePromise: function (aPromise)
+  schedulePromise: function(aPromise)
   {
     
     for (let handler of aPromise[N_INTERNALS].handlers) {
@@ -790,7 +790,7 @@ this.PromiseWalker = {
 
 
 
-  walkerLoop: function ()
+  walkerLoop: function()
   {
     
     

@@ -116,13 +116,13 @@ function test() {
         case "domwindowclosed":
           
           
-          waitForFocus(function () {
+          waitForFocus(function() {
             test_next_addon();
           });
           break;
         case "domwindowopened":
           let win = aSubject.QueryInterface(Ci.nsIDOMEventTarget);
-          waitForFocus(function () {
+          waitForFocus(function() {
             
             
             if (win.location != currentAddon.optionsURL &&

@@ -63,7 +63,7 @@ this.DownloadUIHelper = {
 
 
 
-  getPrompter: function (aParent)
+  getPrompter: function(aParent)
   {
     return new DownloadPrompter(aParent || null);
   },
@@ -74,7 +74,7 @@ this.DownloadUIHelper = {
 
 
 
-XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function () {
+XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function() {
   let strings = {};
   let sb = Services.strings.createBundle(kStringBundleUrl);
   let enumerator = sb.getSimpleEnumeration();
@@ -82,7 +82,7 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function () {
     let string = enumerator.getNext().QueryInterface(Ci.nsIPropertyElement);
     let stringName = string.key;
     if (stringName in kStringsRequiringFormatting) {
-      strings[stringName] = function () {
+      strings[stringName] = function() {
         
         return sb.formatStringFromName(stringName,
                                        Array.slice(arguments, 0),
@@ -104,7 +104,7 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function () {
 
 
 
-this.DownloadPrompter = function (aParent)
+this.DownloadPrompter = function(aParent)
 {
   if (AppConstants.MOZ_B2G) {
     
@@ -139,7 +139,7 @@ this.DownloadPrompter.prototype = {
 
 
 
-  confirmLaunchExecutable: function (aPath)
+  confirmLaunchExecutable: function(aPath)
   {
     const kPrefAlertOnEXEOpen = "browser.download.manager.alertOnEXEOpen";
 

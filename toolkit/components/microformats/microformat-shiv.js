@@ -9,7 +9,7 @@
 
 var Microformats; 
 
-(function (root, factory) {
+(function(root, factory) {
     if (typeof define === 'function' && define.amd) {
         define([], factory);
     } else if (typeof exports === 'object') {
@@ -17,7 +17,7 @@ var Microformats;
     } else {
         root.Microformats = factory();
   }
-}(this, function () {
+}(this, function() {
 
     var modules = {};
 
@@ -29,7 +29,7 @@ var Microformats;
 
 
 
-    modules.Parser = function () {
+    modules.Parser = function() {
         this.rootPrefix = 'h-';
         this.propertyPrefixes = ['p-', 'dt-', 'u-', 'e-'];
         this.excludeTags = ['br', 'hr'];
@@ -275,7 +275,7 @@ var Microformats;
 
 
 
-        getParentTreeWalk: function (node, options, recursive) {
+        getParentTreeWalk: function(node, options, recursive) {
             options = (options) ? options : {};
 
             
@@ -2367,7 +2367,7 @@ var Microformats;
 
         sortObjects: function(property, reverse) {
             reverse = (reverse) ? -1 : 1;
-            return function (a, b) {
+            return function(a, b) {
                 a = a[property];
                 b = b[property];
                 if (a < b) {
@@ -2395,7 +2395,7 @@ var Microformats;
 
 
 
-        getDOMParser: function () {
+        getDOMParser: function() {
             if (typeof DOMParser === "undefined") {
                 try {
                     return Components.classes["@mozilla.org/xmlextras/domparser;1"]
@@ -2883,7 +2883,7 @@ var Microformats;
 
 
 
-        getChildIndex: function (node) {
+        getChildIndex: function(node) {
             var parent = node.parentNode,
                 i = -1,
                 child;
@@ -2902,7 +2902,7 @@ var Microformats;
 
 
 
-        getNodePath: function  (node) {
+        getNodePath: function(node) {
             var parent = node.parentNode,
                 path = [],
                 index = this.getChildIndex(node);
@@ -2923,7 +2923,7 @@ var Microformats;
 
 
 
-        getNodeByPath: function (document, path) {
+        getNodeByPath: function(document, path) {
             var node = document.documentElement,
                 i = 0,
                 index;
@@ -3042,7 +3042,7 @@ var Microformats;
 
 
 
-    modules.ISODate = function ( dateString, format ) {
+    modules.ISODate = function( dateString, format ) {
         this.clear();
 
         this.format = (format) ? format : 'auto'; 
@@ -3670,7 +3670,7 @@ var Microformats;
 
 
 
-        concatFragments: function (arr, format) {
+        concatFragments: function(arr, format) {
             var out = new modules.ISODate(),
                 i = 0,
                 value = '';
@@ -3721,7 +3721,7 @@ var Microformats;
 
 
 
-        splitTimeAndZone: function ( text ) {
+        splitTimeAndZone: function( text ) {
            var out = [text],
                chars = ['-', '+', 'z', 'Z'],
                i = chars.length;

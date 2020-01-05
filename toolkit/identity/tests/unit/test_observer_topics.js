@@ -38,7 +38,7 @@ function test_identity_request() {
     IDService.RP.watch(mockedDoc);
 
     
-    makeObserver("identity-request", function (aSubject, aTopic, aData) {
+    makeObserver("identity-request", function(aSubject, aTopic, aData) {
       do_check_eq(aTopic, "identity-request");
       do_check_eq(aData, null);
 
@@ -84,7 +84,7 @@ function test_identity_auth() {
   
   
   
-  makeObserver("identity-auth", function (aSubject, aTopic, aData) {
+  makeObserver("identity-auth", function(aSubject, aTopic, aData) {
     do_check_neq(aSubject, null);
     do_check_eq(aTopic, "identity-auth");
     do_check_eq(aData, "https://myfavoriteflan.com/foo/authenticate.html");

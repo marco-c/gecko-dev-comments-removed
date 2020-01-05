@@ -130,7 +130,7 @@ this.History = Object.freeze({
 
 
 
-  fetch: function (guidOrURI) {
+  fetch: function(guidOrURI) {
     throw new Error("Method not implemented");
   },
 
@@ -175,7 +175,7 @@ this.History = Object.freeze({
 
 
 
-  insert: function (pageInfo) {
+  insert: function(pageInfo) {
     if (typeof pageInfo != "object" || !pageInfo) {
       throw new TypeError("pageInfo must be an object");
     }
@@ -231,7 +231,7 @@ this.History = Object.freeze({
 
 
 
-  insertMany: function (pageInfos, onResult, onError) {
+  insertMany: function(pageInfos, onResult, onError) {
     let infos = [];
 
     if (!Array.isArray(pageInfos)) {
@@ -281,7 +281,7 @@ this.History = Object.freeze({
 
 
 
-  remove: function (pages, onResult = null) {
+  remove: function(pages, onResult = null) {
     
     if (Array.isArray(pages)) {
       if (pages.length == 0) {

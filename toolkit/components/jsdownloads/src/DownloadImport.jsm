@@ -51,7 +51,7 @@ const DOWNLOAD_QUEUED = 5;
 
 
 
-this.DownloadImport = function (aList, aPath)
+this.DownloadImport = function(aList, aPath)
 {
   this.list = aList;
   this.path = aPath;
@@ -68,7 +68,7 @@ this.DownloadImport.prototype = {
 
 
 
-  import: function () {
+  import: function() {
     return Task.spawn(function* task_DI_import() {
       let connection = yield Sqlite.openConnection({ path: this.path });
 

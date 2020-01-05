@@ -63,14 +63,14 @@ add_test(function() {
       case "domwindowclosed":
         
         
-        waitForFocus(function () {
+        waitForFocus(function() {
           Services.ww.unregisterNotification(observer);
           run_next_test();
         });
         break;
       case "domwindowopened":
         let win = aSubject.QueryInterface(Ci.nsIDOMEventTarget);
-        waitForFocus(function () {
+        waitForFocus(function() {
           
           
           if (win.location != addon.mAddon.optionsURL &&

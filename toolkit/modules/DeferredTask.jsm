@@ -112,7 +112,7 @@ const Timer = Components.Constructor("@mozilla.org/timer;1", "nsITimer",
 
 
 
-this.DeferredTask = function (aTaskFn, aDelayMs) {
+this.DeferredTask = function(aTaskFn, aDelayMs) {
   this._taskFn = aTaskFn;
   this._delayMs = aDelayMs;
 }
@@ -161,7 +161,7 @@ this.DeferredTask.prototype = {
   
 
 
-  _startTimer: function ()
+  _startTimer: function()
   {
     this._timer = new Timer(this._timerCallback.bind(this), this._delayMs,
                             Ci.nsITimer.TYPE_ONE_SHOT);
@@ -185,7 +185,7 @@ this.DeferredTask.prototype = {
 
 
 
-  arm: function ()
+  arm: function()
   {
     if (this._finalized) {
       throw new Error("Unable to arm timer, the object has been finalized.");
@@ -208,7 +208,7 @@ this.DeferredTask.prototype = {
 
 
 
-  disarm: function () {
+  disarm: function() {
     this._armed = false;
     if (this._timer) {
       
@@ -238,7 +238,7 @@ this.DeferredTask.prototype = {
 
 
 
-  finalize: function () {
+  finalize: function() {
     if (this._finalized) {
       throw new Error("The object has been already finalized.");
     }
@@ -262,7 +262,7 @@ this.DeferredTask.prototype = {
   
 
 
-  _timerCallback: function ()
+  _timerCallback: function()
   {
     let runningDeferred = Promise.defer();
 

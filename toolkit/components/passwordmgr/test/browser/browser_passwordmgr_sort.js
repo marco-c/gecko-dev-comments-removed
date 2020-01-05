@@ -74,7 +74,7 @@ add_task(function* test() {
 
             
             if (showMode) {
-                Services.ww.registerNotification(function (aSubject, aTopic, aData) {
+                Services.ww.registerNotification(function(aSubject, aTopic, aData) {
                     if (aTopic == "domwindowclosed")
                         Services.ww.unregisterNotification(arguments.callee);
                     else if (aTopic == "domwindowopened") {
@@ -86,7 +86,7 @@ add_task(function* test() {
                 });
             }
 
-            Services.obs.addObserver(function (aSubject, aTopic, aData) {
+            Services.obs.addObserver(function(aSubject, aTopic, aData) {
                 if (aTopic == "passwordmgr-password-toggle-complete") {
                     Services.obs.removeObserver(arguments.callee, aTopic);
                     func();
@@ -191,7 +191,7 @@ add_task(function* test() {
                 checkColumnEntries(2, expectedValues);
                 checkSortDirection(passwordCol, true);
                 
-                Services.ww.registerNotification(function (aSubject, aTopic, aData) {
+                Services.ww.registerNotification(function(aSubject, aTopic, aData) {
                     
                     Services.ww.unregisterNotification(arguments.callee);
 

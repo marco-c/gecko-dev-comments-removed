@@ -40,8 +40,8 @@ this.Debugging = {
   fake: false
 }
 
-this.GetBattery = function () {
-  return new Services.appShell.hiddenDOMWindow.Promise(function (resolve, reject) {
+this.GetBattery = function() {
+  return new Services.appShell.hiddenDOMWindow.Promise(function(resolve, reject) {
     
     if (Debugging.fake) {
       resolve(gFakeBattery);

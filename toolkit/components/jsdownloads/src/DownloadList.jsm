@@ -46,7 +46,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 
 
-this.DownloadList = function ()
+this.DownloadList = function()
 {
   this._downloads = [];
   this._views = new Set();
@@ -204,7 +204,7 @@ this.DownloadList.prototype = {
 
 
 
-  _notifyAllViews: function (aMethodName, aDownload) {
+  _notifyAllViews: function(aMethodName, aDownload) {
     for (let view of this._views) {
       try {
         if (aMethodName in view) {
@@ -267,7 +267,7 @@ this.DownloadList.prototype = {
 
 
 
-this.DownloadCombinedList = function (aPublicList, aPrivateList)
+this.DownloadCombinedList = function(aPublicList, aPrivateList)
 {
   DownloadList.call(this);
   this._publicList = aPublicList;
@@ -305,7 +305,7 @@ this.DownloadCombinedList.prototype = {
 
 
 
-  add: function (aDownload)
+  add: function(aDownload)
   {
     if (aDownload.source.isPrivate) {
       return this._privateList.add(aDownload);
@@ -329,7 +329,7 @@ this.DownloadCombinedList.prototype = {
 
 
 
-  remove: function (aDownload)
+  remove: function(aDownload)
   {
     if (aDownload.source.isPrivate) {
       return this._privateList.remove(aDownload);
@@ -339,18 +339,18 @@ this.DownloadCombinedList.prototype = {
 
   
 
-  onDownloadAdded: function (aDownload)
+  onDownloadAdded: function(aDownload)
   {
     this._downloads.push(aDownload);
     this._notifyAllViews("onDownloadAdded", aDownload);
   },
 
-  onDownloadChanged: function (aDownload)
+  onDownloadChanged: function(aDownload)
   {
     this._notifyAllViews("onDownloadChanged", aDownload);
   },
 
-  onDownloadRemoved: function (aDownload)
+  onDownloadRemoved: function(aDownload)
   {
     let index = this._downloads.indexOf(aDownload);
     if (index != -1) {
@@ -365,7 +365,7 @@ this.DownloadCombinedList.prototype = {
 
 
 
-this.DownloadSummary = function ()
+this.DownloadSummary = function()
 {
   this._downloads = [];
   this._views = new Set();
@@ -396,7 +396,7 @@ this.DownloadSummary.prototype = {
 
 
 
-  bindToList: function (aList)
+  bindToList: function(aList)
   {
     if (this._list) {
       throw new Error("bindToList may be called only once.");
@@ -432,7 +432,7 @@ this.DownloadSummary.prototype = {
 
 
 
-  addView: function (aView)
+  addView: function(aView)
   {
     this._views.add(aView);
 
@@ -458,7 +458,7 @@ this.DownloadSummary.prototype = {
 
 
 
-  removeView: function (aView)
+  removeView: function(aView)
   {
     this._views.delete(aView);
 
@@ -494,7 +494,7 @@ this.DownloadSummary.prototype = {
 
 
 
-  _onListChanged: function () {
+  _onListChanged: function() {
     let allHaveStopped = true;
     let progressTotalBytes = 0;
     let progressCurrentBytes = 0;
@@ -535,7 +535,7 @@ this.DownloadSummary.prototype = {
 
   
 
-  onDownloadAdded: function (aDownload)
+  onDownloadAdded: function(aDownload)
   {
     this._downloads.push(aDownload);
     if (this._list) {
@@ -543,12 +543,12 @@ this.DownloadSummary.prototype = {
     }
   },
 
-  onDownloadChanged: function (aDownload)
+  onDownloadChanged: function(aDownload)
   {
     this._onListChanged();
   },
 
-  onDownloadRemoved: function (aDownload)
+  onDownloadRemoved: function(aDownload)
   {
     let index = this._downloads.indexOf(aDownload);
     if (index != -1) {

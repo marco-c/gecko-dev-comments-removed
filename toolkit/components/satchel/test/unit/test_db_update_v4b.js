@@ -46,7 +46,7 @@ function* next_test()
 
   
   yield countEntries("name-A", "value-A",
-    function (num) {
+    function(num) {
       do_check_true(num > 0);
       do_test_finished();
     }

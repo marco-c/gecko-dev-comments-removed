@@ -66,7 +66,7 @@ add_task(function* test_reader_button() {
 
   
   yield new Promise((resolve, reject) => {
-    waitForClipboard(url, function () {
+    waitForClipboard(url, function() {
       gURLBar.focus();
       gURLBar.select();
       goDoCommand("cmd_copy");

@@ -9,12 +9,12 @@ var tests = [
     desc: "nsNavHistoryFolderResultNode: Basic test, asynchronously open and " +
           "close container with a single child",
 
-    loading: function (node, newState, oldState) {
+    loading: function(node, newState, oldState) {
       this.checkStateChanged("loading", 1);
       this.checkArgs("loading", node, oldState, node.STATE_CLOSED);
     },
 
-    opened: function (node, newState, oldState) {
+    opened: function(node, newState, oldState) {
       this.checkStateChanged("opened", 1);
       this.checkState("loading", 1);
       this.checkArgs("opened", node, oldState, node.STATE_LOADING);
@@ -26,7 +26,7 @@ var tests = [
       node.containerOpen = false;
     },
 
-    closed: function (node, newState, oldState) {
+    closed: function(node, newState, oldState) {
       this.checkStateChanged("closed", 1);
       this.checkState("opened", 1);
       this.checkArgs("closed", node, oldState, node.STATE_OPENED);
@@ -38,13 +38,13 @@ var tests = [
     desc: "nsNavHistoryFolderResultNode: After async open and no changes, " +
           "second open should be synchronous",
 
-    loading: function (node, newState, oldState) {
+    loading: function(node, newState, oldState) {
       this.checkStateChanged("loading", 1);
       this.checkState("closed", 0);
       this.checkArgs("loading", node, oldState, node.STATE_CLOSED);
     },
 
-    opened: function (node, newState, oldState) {
+    opened: function(node, newState, oldState) {
       let cnt = this.checkStateChanged("opened", 1, 2);
       let expectOldState = cnt === 1 ? node.STATE_LOADING : node.STATE_CLOSED;
       this.checkArgs("opened", node, oldState, expectOldState);
@@ -56,7 +56,7 @@ var tests = [
       node.containerOpen = false;
     },
 
-    closed: function (node, newState, oldState) {
+    closed: function(node, newState, oldState) {
       let cnt = this.checkStateChanged("closed", 1, 2);
       this.checkArgs("closed", node, oldState, node.STATE_OPENED);
 
@@ -75,18 +75,18 @@ var tests = [
     desc: "nsNavHistoryFolderResultNode: After closing container in " +
           "loading(), opened() should not be called",
 
-    loading: function (node, newState, oldState) {
+    loading: function(node, newState, oldState) {
       this.checkStateChanged("loading", 1);
       this.checkArgs("loading", node, oldState, node.STATE_CLOSED);
       print("Closing container");
       node.containerOpen = false;
     },
 
-    opened: function (node, newState, oldState) {
+    opened: function(node, newState, oldState) {
       do_throw("opened should not be called");
     },
 
-    closed: function (node, newState, oldState) {
+    closed: function(node, newState, oldState) {
       this.checkStateChanged("closed", 1);
       this.checkState("loading", 1);
       this.checkArgs("closed", node, oldState, node.STATE_LOADING);
@@ -122,7 +122,7 @@ Test.prototype = {
 
 
 
-  checkArgs: function (aNewState, aNode, aOldState, aExpectOldState) {
+  checkArgs: function(aNewState, aNode, aOldState, aExpectOldState) {
     print("Node passed on " + aNewState + " should be result.root");
     do_check_eq(this.result.root, aNode);
     print("Old state passed on " + aNewState + " should be " + aExpectOldState);
@@ -141,7 +141,7 @@ Test.prototype = {
 
 
 
-  checkStateChanged: function (aState, aExpectedMin, aExpectedMax) {
+  checkStateChanged: function(aState, aExpectedMin, aExpectedMax) {
     print(aState + " state change observed");
     if (!this.stateCounts.hasOwnProperty(aState))
       this.stateCounts[aState] = 0;
@@ -163,7 +163,7 @@ Test.prototype = {
 
 
 
-  checkState: function (aState, aExpectedMin, aExpectedMax) {
+  checkState: function(aState, aExpectedMin, aExpectedMax) {
     let cnt = this.stateCounts[aState] || 0;
     if (aExpectedMax === undefined)
       aExpectedMax = aExpectedMin;
@@ -183,12 +183,12 @@ Test.prototype = {
   
 
 
-  openContainer: function () {
+  openContainer: function() {
     
     
     let self = this;
     this.observer = {
-      containerStateChanged: function (container, oldState, newState) {
+      containerStateChanged: function(container, oldState, newState) {
         print("New state passed to containerStateChanged() should equal the " +
               "container's current state");
         do_check_eq(newState, container.state);
@@ -222,7 +222,7 @@ Test.prototype = {
   
 
 
-  run: function () {
+  run: function() {
     this.openContainer();
     return this.deferNextTest.promise;
   },
@@ -253,7 +253,7 @@ Test.prototype = {
 
 
 
-  success: function () {
+  success: function() {
     this.result.removeObserver(this.observer);
 
     
@@ -295,7 +295,7 @@ var DataHelper = {
 
   makeDataArray: function DH_makeDataArray(aData) {
     let self = this;
-    return aData.map(function (dat) {
+    return aData.map(function(dat) {
       let type = dat.type;
       dat = self._makeDataWithDefaults(dat, self.defaults[type]);
       switch (type) {

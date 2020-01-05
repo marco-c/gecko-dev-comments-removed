@@ -235,7 +235,7 @@ function DO_LOG(aText) {
 var LOG = function() {};
 
 if (AppConstants.DEBUG) {
-  LOG = function (aText) {
+  LOG = function(aText) {
     if (getBoolPref(BROWSER_SEARCH_PREF + "log", false)) {
       DO_LOG(aText);
     }
@@ -371,10 +371,10 @@ loadListener.prototype = {
 
   
   
-  onRedirect: function (aChannel, aNewChannel) {},
+  onRedirect: function(aChannel, aNewChannel) {},
   
-  onProgress: function (aRequest, aContext, aProgress, aProgressMax) {},
-  onStatus: function (aRequest, aContext, aStatus, aStatusArg) {}
+  onProgress: function(aRequest, aContext, aProgress, aProgressMax) {},
+  onStatus: function(aRequest, aContext, aStatus, aStatusArg) {}
 }
 
 function isPartnerBuild() {
@@ -1783,7 +1783,7 @@ Engine.prototype = {
                      loadUsingSystemPrincipal: true
                    });
 
-        let iconLoadCallback = function (aByteArray, aEngine) {
+        let iconLoadCallback = function(aByteArray, aEngine) {
           
           
           if (aEngine._hasPreferredIcon && !aIsPreferred)
@@ -2477,7 +2477,7 @@ Engine.prototype = {
   
 
 
-  getURLParsingInfo: function () {
+  getURLParsingInfo: function() {
     let responseType = AppConstants.platform == "android" ? this._defaultMobileResponseType :
                                                             URLTYPE_SEARCH_HTML;
 
@@ -3114,7 +3114,7 @@ SearchService.prototype = {
     LOG("_asyncLoadEngines: done");
   }),
 
-  _asyncReInit: function () {
+  _asyncReInit: function() {
     LOG("_asyncReInit");
     
     gInitialized = false;
@@ -3505,7 +3505,7 @@ SearchService.prototype = {
   }),
 
   _loadFromChromeURLs: function SRCH_SVC_loadFromChromeURLs(aURLs) {
-    aURLs.forEach(function (url) {
+    aURLs.forEach(function(url) {
       try {
         LOG("_loadFromChromeURLs: loading engine from chrome url: " + url);
 
@@ -3872,7 +3872,7 @@ SearchService.prototype = {
     if (aWithHidden)
       return this._sortedEngines;
 
-    return this._sortedEngines.filter(function (engine) {
+    return this._sortedEngines.filter(function(engine) {
                                         return !engine.hidden;
                                       });
   },
@@ -3980,7 +3980,7 @@ SearchService.prototype = {
 
     LOG("getDefaultEngines: engineOrder: " + engineOrder.toSource());
 
-    function compareEngines (a, b) {
+    function compareEngines(a, b) {
       var aIdx = engineOrder[a.name];
       var bIdx = engineOrder[b.name];
 
@@ -4042,7 +4042,7 @@ SearchService.prototype = {
       var uri = makeURI(aEngineURL);
       var engine = new Engine(uri, false);
       if (aCallback) {
-        engine._installCallback = function (errorCode) {
+        engine._installCallback = function(errorCode) {
           try {
             if (errorCode == null)
               aCallback.onSuccess(engine);

@@ -93,7 +93,7 @@ var CrashMonitorInternal = {
 
 
 
-  loadPreviousCheckpoints: function () {
+  loadPreviousCheckpoints: function() {
     this.previousCheckpoints = Task.spawn(function*() {
       let data;
       try {
@@ -155,7 +155,7 @@ this.CrashMonitor = {
 
 
 
-  init: function () {
+  init: function() {
     if (CrashMonitorInternal.initialized) {
       throw new Error("CrashMonitor.init() must only be called once!");
     }
@@ -165,7 +165,7 @@ this.CrashMonitor = {
     
     CrashMonitorInternal.checkpoints["profile-after-change"] = true;
 
-    NOTIFICATIONS.forEach(function (aTopic) {
+    NOTIFICATIONS.forEach(function(aTopic) {
       Services.obs.addObserver(this, aTopic, false);
     }, this);
 
@@ -185,7 +185,7 @@ this.CrashMonitor = {
 
 
 
-  observe: function (aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (!(aTopic in CrashMonitorInternal.checkpoints)) {
       
       
@@ -215,7 +215,7 @@ this.CrashMonitor = {
 
     if (NOTIFICATIONS.every(elem => elem in CrashMonitorInternal.checkpoints)) {
       
-      NOTIFICATIONS.forEach(function (aTopic) {
+      NOTIFICATIONS.forEach(function(aTopic) {
         Services.obs.removeObserver(this, aTopic);
       }, this);
     }

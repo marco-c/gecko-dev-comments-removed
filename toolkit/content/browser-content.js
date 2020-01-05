@@ -20,7 +20,7 @@ var global = this;
 
 
 
-addMessageListener("Finder:Initialize", function () {
+addMessageListener("Finder:Initialize", function() {
   let {RemoteFinderListener} = Cu.import("resource://gre/modules/RemoteFinder.jsm", {});
   new RemoteFinderListener(global);
 });
@@ -501,12 +501,12 @@ var Printing = {
     
     
     let articlePromise = ReaderMode.parseDocument(contentWindow.document).catch(Cu.reportError);
-    articlePromise.then(function (article) {
+    articlePromise.then(function(article) {
       
       
       
       let webProgressListener = {
-        onStateChange: function (webProgress, req, flags, status) {
+        onStateChange: function(webProgress, req, flags, status) {
           if (flags & Ci.nsIWebProgressListener.STATE_STOP) {
             webProgress.removeProgressListener(webProgressListener);
             let domUtils = content.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -919,7 +919,7 @@ WebChannelMessageToChromeListener.init();
 
 
 
-addMessageListener("WebChannelMessageToContent", function (e) {
+addMessageListener("WebChannelMessageToContent", function(e) {
   if (e.data) {
     
     
@@ -1058,7 +1058,7 @@ addMessageListener("Browser:PurgeSessionHistory", function BrowserPurgeHistory()
 });
 
 var ViewSelectionSource = {
-  init: function () {
+  init: function() {
     addMessageListener("ViewSource:GetSelection", this);
   },
 
@@ -1100,7 +1100,7 @@ var ViewSelectionSource = {
     return path;
   },
 
-  getSelection: function () {
+  getSelection: function() {
     
     
     
@@ -1523,12 +1523,12 @@ let AutoCompletePopup = {
     }
   },
 
-  get input () { return this._input; },
-  get overrideValue () { return null; },
-  set selectedIndex (index) {
+  get input() { return this._input; },
+  get overrideValue() { return null; },
+  set selectedIndex(index) {
     sendAsyncMessage("FormAutoComplete:SetSelectedIndex", { index });
   },
-  get selectedIndex () {
+  get selectedIndex() {
     
     
     
@@ -1537,11 +1537,11 @@ let AutoCompletePopup = {
     
     return sendSyncMessage("FormAutoComplete:GetSelectedIndex", {});
   },
-  get popupOpen () {
+  get popupOpen() {
     return this._popupOpen;
   },
 
-  openAutocompletePopup: function (input, element) {
+  openAutocompletePopup: function(input, element) {
     if (this._popupOpen || !input) {
       return;
     }
@@ -1556,7 +1556,7 @@ let AutoCompletePopup = {
     this._input = input;
   },
 
-  closePopup: function () {
+  closePopup: function() {
     
     
     
@@ -1565,7 +1565,7 @@ let AutoCompletePopup = {
     sendAsyncMessage("FormAutoComplete:ClosePopup", {});
   },
 
-  invalidate: function () {
+  invalidate: function() {
     if (this._popupOpen) {
       let results = this.getResultsFromController(this._input);
       sendAsyncMessage("FormAutoComplete:Invalidate", { results });

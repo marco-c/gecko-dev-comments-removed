@@ -163,7 +163,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  initialize : function () {
+  initialize : function() {
     this._dbStmts = {};
 
     let isFirstRun;
@@ -200,12 +200,12 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  terminate : function () {
+  terminate : function() {
     return Promise.resolve();
   },
 
 
-  addLogin : function (login) {
+  addLogin : function(login) {
     
     LoginHelper.checkLoginValues(login);
 
@@ -279,7 +279,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  removeLogin : function (login) {
+  removeLogin : function(login) {
     let [idToDelete, storedLogin] = this._getIdForLogin(login);
     if (!idToDelete)
       throw new Error("No matching logins");
@@ -306,7 +306,7 @@ LoginManagerStorage_mozStorage.prototype = {
     LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
   },
 
-  modifyLogin : function (oldLogin, newLoginData) {
+  modifyLogin : function(oldLogin, newLoginData) {
     let [idToModify, oldStoredLogin] = this._getIdForLogin(oldLogin);
     if (!idToModify)
       throw new Error("No matching logins");
@@ -386,7 +386,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  getAllLogins : function (count) {
+  getAllLogins : function(count) {
     let [logins, ids] = this._searchLogins({});
 
     
@@ -443,7 +443,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _searchLogins : function (matchData, aOptions = {
+  _searchLogins : function(matchData, aOptions = {
     schemeUpgrades: false,
   }) {
     let conditions = [], params = {};
@@ -571,7 +571,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  removeAllLogins : function () {
+  removeAllLogins : function() {
     this.log("Removing all logins");
     let query;
     let stmt;
@@ -599,7 +599,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  findLogins : function (count, hostname, formSubmitURL, httpRealm) {
+  findLogins : function(count, hostname, formSubmitURL, httpRealm) {
     let loginData = {
       hostname: hostname,
       formSubmitURL: formSubmitURL,
@@ -620,7 +620,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  countLogins : function (hostname, formSubmitURL, httpRealm) {
+  countLogins : function(hostname, formSubmitURL, httpRealm) {
 
     let _countLoginsHelper = (hostname, formSubmitURL, httpRealm) => {
       
@@ -669,7 +669,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _getIdForLogin : function (login) {
+  _getIdForLogin : function(login) {
     let matchData = { };
     for (let field of ["hostname", "formSubmitURL", "httpRealm"])
       if (login[field] != '')
@@ -704,7 +704,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _buildConditionsAndParams : function (hostname, formSubmitURL, httpRealm) {
+  _buildConditionsAndParams : function(hostname, formSubmitURL, httpRealm) {
     let conditions = [], params = {};
 
     if (hostname == null) {
@@ -735,7 +735,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _isGuidUnique : function (guid) {
+  _isGuidUnique : function(guid) {
     let query = "SELECT COUNT(1) AS numLogins FROM moz_logins WHERE guid = :guid";
     let params = { guid: guid };
 
@@ -760,7 +760,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _encryptLogin : function (login) {
+  _encryptLogin : function(login) {
     let encUsername = this._crypto.encrypt(login.username);
     let encPassword = this._crypto.encrypt(login.password);
     let encType     = this._crypto.defaultEncType;
@@ -780,7 +780,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _decryptLogins : function (logins) {
+  _decryptLogins : function(logins) {
     let result = [];
 
     for (let login of logins) {
@@ -808,7 +808,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbCreateStatement : function (query, params) {
+  _dbCreateStatement : function(query, params) {
     let wrappedStmt = this._dbStmts[query];
     
     if (!wrappedStmt) {
@@ -828,7 +828,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbInit : function () {
+  _dbInit : function() {
     this.log("Initializing Database");
     let isFirstRun = false;
     try {
@@ -855,7 +855,7 @@ LoginManagerStorage_mozStorage.prototype = {
     return isFirstRun;
   },
 
-  observe: function (subject, topic, data) {
+  observe: function(subject, topic, data) {
     switch (topic) {
       case "profile-before-change":
         Services.obs.removeObserver(this, "profile-before-change");
@@ -864,27 +864,27 @@ LoginManagerStorage_mozStorage.prototype = {
     }
   },
 
-  _dbCreate: function () {
+  _dbCreate: function() {
     this.log("Creating Database");
     this._dbCreateSchema();
     this._dbConnection.schemaVersion = DB_VERSION;
   },
 
 
-  _dbCreateSchema : function () {
+  _dbCreateSchema : function() {
     this._dbCreateTables();
     this._dbCreateIndices();
   },
 
 
-  _dbCreateTables : function () {
+  _dbCreateTables : function() {
     this.log("Creating Tables");
     for (let name in this._dbSchema.tables)
       this._dbConnection.createTable(name, this._dbSchema.tables[name]);
   },
 
 
-  _dbCreateIndices : function () {
+  _dbCreateIndices : function() {
     this.log("Creating Indices");
     for (let name in this._dbSchema.indices) {
       let index = this._dbSchema.indices[name];
@@ -895,7 +895,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  _dbMigrate : function (oldVersion) {
+  _dbMigrate : function(oldVersion) {
     this.log("Attempting to migrate from version " + oldVersion);
 
     if (oldVersion > DB_VERSION) {
@@ -942,7 +942,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbMigrateToVersion2 : function () {
+  _dbMigrateToVersion2 : function() {
     
     let query;
     if (!this._dbColumnExists("guid")) {
@@ -996,7 +996,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbMigrateToVersion3 : function () {
+  _dbMigrateToVersion3 : function() {
     
     let query;
     if (!this._dbColumnExists("encType")) {
@@ -1056,7 +1056,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbMigrateToVersion4 : function () {
+  _dbMigrateToVersion4 : function() {
     let query;
     
     for (let column of ["timeCreated", "timeLastUsed", "timePasswordChanged", "timesUsed"]) {
@@ -1111,7 +1111,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbMigrateToVersion5 : function () {
+  _dbMigrateToVersion5 : function() {
     if (!this._dbConnection.tableExists("moz_deleted_logins")) {
       this._dbConnection.createTable("moz_deleted_logins", this._dbSchema.tables.moz_deleted_logins);
     }
@@ -1121,7 +1121,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbMigrateToVersion6 : function () {
+  _dbMigrateToVersion6 : function() {
     let disabledHosts = [];
     let query = "SELECT hostname FROM moz_disabledHosts";
     let stmt;
@@ -1157,7 +1157,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbAreExpectedColumnsPresent : function () {
+  _dbAreExpectedColumnsPresent : function() {
     let query = "SELECT " +
                    "id, " +
                    "hostname, " +
@@ -1202,7 +1202,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbColumnExists : function (columnName) {
+  _dbColumnExists : function(columnName) {
     let query = "SELECT " + columnName + " FROM moz_logins";
     try {
       let stmt = this._dbConnection.createStatement(query);
@@ -1214,7 +1214,7 @@ LoginManagerStorage_mozStorage.prototype = {
     }
   },
 
-  _dbClose : function () {
+  _dbClose : function() {
     this.log("Closing the DB connection.");
     
     for (let query in this._dbStmts) {
@@ -1237,7 +1237,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbCleanup : function (backup) {
+  _dbCleanup : function(backup) {
     this.log("Cleaning up DB file - close & remove & backup=" + backup);
 
     

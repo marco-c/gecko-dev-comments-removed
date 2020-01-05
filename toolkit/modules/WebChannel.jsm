@@ -31,7 +31,7 @@ var WebChannelBroker = Object.create({
 
 
 
-  registerChannel: function (channel) {
+  registerChannel: function(channel) {
     if (!this._channelMap.has(channel)) {
       this._channelMap.set(channel);
     } else {
@@ -53,7 +53,7 @@ var WebChannelBroker = Object.create({
 
 
 
-  unregisterChannel: function (channelToRemove) {
+  unregisterChannel: function(channelToRemove) {
     if (!this._channelMap.delete(channelToRemove)) {
       Cu.reportError("Failed to unregister the channel. Channel not found.");
     }
@@ -64,7 +64,7 @@ var WebChannelBroker = Object.create({
 
 
 
-  _listener: function (event) {
+  _listener: function(event) {
     let data = event.data;
     let sendingContext = {
       browser: event.target,
@@ -127,7 +127,7 @@ var WebChannelBroker = Object.create({
 
 
 
-  _sendErrorEventToContent: function (id, sendingContext, errorMsg) {
+  _sendErrorEventToContent: function(id, sendingContext, errorMsg) {
     let { browser: targetBrowser, eventTarget, principal: targetPrincipal } = sendingContext;
 
     errorMsg = errorMsg || "Web Channel Broker error";
@@ -240,7 +240,7 @@ this.WebChannel.prototype = {
 
 
 
-  listen: function (callback) {
+  listen: function(callback) {
     if (this._deliverCallback) {
       throw new Error("Failed to listen. Listener already attached.");
     } else if (!callback) {
@@ -255,7 +255,7 @@ this.WebChannel.prototype = {
 
 
 
-  stopListening: function () {
+  stopListening: function() {
     this._broker.unregisterChannel(this);
     this._deliverCallback = null;
   },
@@ -278,7 +278,7 @@ this.WebChannel.prototype = {
 
 
 
-  send: function (message, target) {
+  send: function(message, target) {
     let { browser, principal, eventTarget } = target;
 
     if (message && browser && browser.messageManager && principal) {

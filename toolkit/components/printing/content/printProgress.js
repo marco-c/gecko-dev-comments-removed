@@ -263,7 +263,7 @@ function onUnload()
 }
 
 
-function onCancel ()
+function onCancel()
 {
   
    try

@@ -138,7 +138,7 @@ this.Downloads = {
 
 
 
-  fetch: function (aSource, aTarget, aOptions) {
+  fetch: function(aSource, aTarget, aOptions) {
     return this.createDownload({
       source: aSource,
       target: aTarget,
@@ -169,7 +169,7 @@ this.Downloads = {
 
 
 
-  getList: function (aType)
+  getList: function(aType)
   {
     if (!this._promiseListsInitialized) {
       this._promiseListsInitialized = Task.spawn(function* () {
@@ -231,7 +231,7 @@ this.Downloads = {
 
 
 
-  getSummary: function (aType)
+  getSummary: function(aType)
   {
     if (aType != Downloads.PUBLIC && aType != Downloads.PRIVATE &&
         aType != Downloads.ALL) {

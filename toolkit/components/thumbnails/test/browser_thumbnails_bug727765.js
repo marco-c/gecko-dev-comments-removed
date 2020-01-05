@@ -19,7 +19,7 @@ function* runTests() {
 
   
   yield whenFileExists(URL);
-  yield retrieveImageDataForURL(URL, function (aData) {
+  yield retrieveImageDataForURL(URL, function(aData) {
     let [r, g, b] = [].slice.call(aData, -4);
     let fuzz = 2; 
     var message = "Expected red thumbnail rgb(255, 0, 0), got " + r + "," + g + "," + b;

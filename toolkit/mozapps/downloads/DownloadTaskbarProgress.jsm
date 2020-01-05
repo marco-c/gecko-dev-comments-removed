@@ -196,7 +196,7 @@ var DownloadTaskbarProgressUpdater =
         this._updateTaskbar();
         
         
-        aWindow.addEventListener("unload", function () {
+        aWindow.addEventListener("unload", function() {
           DownloadTaskbarProgressUpdater._onActiveWindowUnload(taskbarProgress);
         }, false);
       }
