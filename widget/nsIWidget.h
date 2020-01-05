@@ -1161,7 +1161,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD HideWindowChrome(bool aShouldHide) = 0;
+    virtual void HideWindowChrome(bool aShouldHide) = 0;
 
     enum FullscreenTransitionStage
     {

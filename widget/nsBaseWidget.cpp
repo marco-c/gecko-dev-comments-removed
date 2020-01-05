@@ -839,16 +839,6 @@ nsBaseWidget::SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects,
   return NS_OK;
 }
 
-
-
-
-
-
-NS_IMETHODIMP nsBaseWidget::HideWindowChrome(bool aShouldHide)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
  void
 nsBaseWidget::PerformFullscreenTransition(FullscreenTransitionStage aStage,
                                           uint16_t aDuration,
