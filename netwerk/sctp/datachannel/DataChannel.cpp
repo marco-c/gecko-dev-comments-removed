@@ -271,6 +271,14 @@ DataChannelConnection::Destroy()
   
   
   
+  if (mUsingDtls) {
+    usrsctp_deregister_address(static_cast<void *>(this));
+    LOG(("Deregistered %p from the SCTP stack.", static_cast<void *>(this)));
+  }
+
+  
+  
+  
   RUN_ON_THREAD(mSTS, WrapRunnable(RefPtr<DataChannelConnection>(this),
                                    &DataChannelConnection::DestroyOnSTS,
                                    mSocket, mMasterSocket),
@@ -279,12 +287,6 @@ DataChannelConnection::Destroy()
   
   mSocket = nullptr;
   mMasterSocket = nullptr; 
-
-  
-  if (mUsingDtls) {
-    usrsctp_deregister_address(static_cast<void *>(this));
-    LOG(("Deregistered %p from the SCTP stack.", static_cast<void *>(this)));
-  }
 
   
   
