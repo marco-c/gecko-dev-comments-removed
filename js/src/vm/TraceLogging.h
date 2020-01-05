@@ -126,10 +126,12 @@ bool CurrentThreadOwnsTraceLoggerThreadStateLock();
 
 
 
+
 class TraceLoggerEventPayload {
     uint32_t textId_;
     UniqueChars string_;
     mozilla::Atomic<uint32_t> uses_;
+    mozilla::Atomic<uint32_t> pointerCount_;
 
   public:
     TraceLoggerEventPayload(uint32_t textId, char* string)
@@ -151,6 +153,9 @@ class TraceLoggerEventPayload {
     uint32_t uses() {
         return uses_;
     }
+    uint32_t pointerCount() {
+        return pointerCount_;
+    }
 
     
     
@@ -162,6 +167,14 @@ class TraceLoggerEventPayload {
     }
     void release() {
         uses_--;
+    }
+    void incPointerCount() {
+        MOZ_ASSERT(CurrentThreadOwnsTraceLoggerThreadStateLock());
+        pointerCount_++;
+    }
+    void decPointerCount() {
+        MOZ_ASSERT(CurrentThreadOwnsTraceLoggerThreadStateLock());
+        pointerCount_--;
     }
 };
 
