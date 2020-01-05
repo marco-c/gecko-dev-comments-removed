@@ -48,6 +48,7 @@ AnimationDetails.prototype = {
     this.unrender();
     this.containerEl = null;
     this.serverTraits = null;
+    this.progressIndicatorEl = null;
   },
 
   unrender: function () {
@@ -187,9 +188,19 @@ AnimationDetails.prototype = {
     const animationTypes = yield this.getAnimationTypes(Object.keys(this.tracks));
 
     
+    this.renderProgressIndicator();
+    
     this.renderAnimatedPropertiesHeader();
     
     this.renderAnimatedPropertiesBody(animationTypes);
+
+    
+    const timing = Object.assign({}, animation.state, {
+      iterations: animation.state.iterationCount
+                  ? animation.state.iterationCount : Infinity
+    });
+    this.dummyAnimation =
+      new this.win.Animation(new this.win.KeyframeEffect(null, null, timing), null);
 
     
     
@@ -286,6 +297,44 @@ AnimationDetails.prototype = {
       keyframesComponent.on("frame-selected", this.onFrameSelected);
       this.keyframeComponents.push(keyframesComponent);
     }
+  },
+
+  renderProgressIndicator: function () {
+    
+    const progressIndicatorWrapperEl = createNode({
+      parent: this.containerEl,
+      attributes: {
+        "class": "track-container progress-indicator-wrapper"
+      }
+    });
+    this.progressIndicatorEl = createNode({
+      parent: progressIndicatorWrapperEl,
+      attributes: {
+        "class": "progress-indicator"
+      }
+    });
+    createNode({
+      parent: this.progressIndicatorEl,
+      attributes: {
+        "class": "progress-indicator-shape"
+      }
+    });
+  },
+
+  indicateProgress: function (time) {
+    if (!this.progressIndicatorEl) {
+      
+      return;
+    }
+    const startTime = this.animation.state.previousStartTime || 0;
+    this.dummyAnimation.currentTime =
+      (time - startTime) * this.animation.state.playbackRate;
+    this.progressIndicatorEl.style.left =
+      `${ this.dummyAnimation.effect.getComputedTiming().progress * 100 }%`;
+  },
+
+  get win() {
+    return this.containerEl.ownerDocument.defaultView;
   }
 };
 
