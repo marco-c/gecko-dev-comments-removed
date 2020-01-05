@@ -34,7 +34,7 @@ public:
 
   void Init();
 
-  void EnsureGPUReady();
+  bool EnsureGPUReady();
 
   
   void OnVarChanged(const GfxVarUpdate& aVar) override;
