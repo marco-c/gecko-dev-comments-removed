@@ -1528,6 +1528,15 @@ JSObject::fixDictionaryShapeAfterSwap()
         as<NativeObject>().shape_->listp = &as<NativeObject>().shape_;
 }
 
+static void
+RemoveFromStoreBuffer(JSContext* cx, js::detail::ProxyValueArray* values)
+{
+    StoreBuffer& sb = cx->zone()->group()->storeBuffer();
+    sb.unputValue(&values->privateSlot);
+    for (size_t i = 0; i < js::detail::PROXY_EXTRA_SLOTS; i++)
+        sb.unputValue(&values->extraSlots[i]);
+}
+
 
 bool
 JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
@@ -1572,6 +1581,11 @@ JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
     MOZ_ASSERT(!a->is<TypedArrayObject>() && !b->is<TypedArrayObject>());
     MOZ_ASSERT(!a->is<TypedObject>() && !b->is<TypedObject>());
 
+    bool aIsProxyWithInlineValues =
+        a->is<ProxyObject>() && a->as<ProxyObject>().usingInlineValueArray();
+    bool bIsProxyWithInlineValues =
+        b->is<ProxyObject>() && b->as<ProxyObject>().usingInlineValueArray();
+
     if (a->tenuredSizeOfThis() == b->tenuredSizeOfThis()) {
         
         
@@ -1586,6 +1600,11 @@ JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
 
         a->fixDictionaryShapeAfterSwap();
         b->fixDictionaryShapeAfterSwap();
+
+        if (aIsProxyWithInlineValues)
+            b->as<ProxyObject>().setInlineValueArray();
+        if (bIsProxyWithInlineValues)
+            a->as<ProxyObject>().setInlineValueArray();
     } else {
         
         
@@ -1618,6 +1637,22 @@ JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
         }
 
         
+        ProxyObject* proxyA = a->is<ProxyObject>() ? &a->as<ProxyObject>() : nullptr;
+        ProxyObject* proxyB = b->is<ProxyObject>() ? &b->as<ProxyObject>() : nullptr;
+
+        Maybe<js::detail::ProxyValueArray> proxyAVals, proxyBVals;
+        if (aIsProxyWithInlineValues) {
+            js::detail::ProxyValueArray* values = js::detail::GetProxyDataLayout(proxyA)->values;
+            proxyAVals.emplace(*values);
+            RemoveFromStoreBuffer(cx, values);
+        }
+        if (bIsProxyWithInlineValues) {
+            js::detail::ProxyValueArray* values = js::detail::GetProxyDataLayout(proxyB)->values;
+            proxyBVals.emplace(*values);
+            RemoveFromStoreBuffer(cx, values);
+        }
+
+        
         char tmp[sizeof(JSObject_Slots0)];
         js_memcpy(&tmp, a, sizeof tmp);
         js_memcpy(a, b, sizeof tmp);
@@ -1633,6 +1668,14 @@ JSObject::swap(JSContext* cx, HandleObject a, HandleObject b)
         if (nb) {
             if (!NativeObject::fillInAfterSwap(cx, a.as<NativeObject>(), bvals, bpriv))
                 oomUnsafe.crash("fillInAfterSwap");
+        }
+        if (aIsProxyWithInlineValues) {
+            if (!b->as<ProxyObject>().initExternalValueArrayAfterSwap(cx, proxyAVals.ref()))
+                oomUnsafe.crash("initExternalValueArray");
+        }
+        if (bIsProxyWithInlineValues) {
+            if (!a->as<ProxyObject>().initExternalValueArrayAfterSwap(cx, proxyBVals.ref()))
+                oomUnsafe.crash("initExternalValueArray");
         }
     }
 
