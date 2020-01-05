@@ -8852,14 +8852,7 @@ nsDocShell::RestoreFromHistory()
       nsCOMPtr<nsIDocument> d = parent->GetDocument();
       if (d) {
         if (d->EventHandlingSuppressed()) {
-          document->SuppressEventHandling(nsIDocument::eEvents,
-                                          d->EventHandlingSuppressed());
-        }
-
-        
-        if (d->AnimationsPaused()) {
-          document->SuppressEventHandling(nsIDocument::eAnimationsOnly,
-                                          d->AnimationsPaused());
+          document->SuppressEventHandling(d->EventHandlingSuppressed());
         }
       }
     }
@@ -14347,19 +14340,10 @@ nsDocShell::GetPrintPreview(nsIWebBrowserPrint** aPrintPreview)
 #if NS_PRINT_PREVIEW
   nsCOMPtr<nsIDocumentViewerPrint> print = do_QueryInterface(mContentViewer);
   if (!print || !print->IsInitializedForPrintPreview()) {
-    
-    
-    
-    
     Stop(nsIWebNavigation::STOP_ALL);
     nsCOMPtr<nsIPrincipal> principal = nsNullPrincipal::CreateWithInheritedAttributes(this);
-    nsCOMPtr<nsIURI> uri;
-    NS_NewURI(getter_AddRefs(uri), NS_LITERAL_CSTRING("about:printpreview"));
-    nsresult rv = CreateAboutBlankContentViewer(principal, uri);
+    nsresult rv = CreateAboutBlankContentViewer(principal, nullptr);
     NS_ENSURE_SUCCESS(rv, rv);
-    
-    
-    SetCurrentURI(uri, nullptr, true, 0);
     print = do_QueryInterface(mContentViewer);
     NS_ENSURE_STATE(print);
     print->InitializeForPrintPreview();
