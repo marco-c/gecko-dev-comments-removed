@@ -2,10 +2,10 @@
 
 
 
-#[crate_id = "github.com/mozilla/servo#msg:0.1"];
-#[crate_type = "lib"];
-#[crate_type = "dylib"];
-#[crate_type = "rlib"];
+#![crate_id = "github.com/mozilla/servo#msg:0.1"]
+#![crate_type = "lib"]
+#![crate_type = "dylib"]
+#![crate_type = "rlib"]
 
 extern crate azure;
 extern crate geom;

@@ -8,6 +8,7 @@ use layout::parallel::DomParallelInfo;
 use layout::wrapper::{LayoutNode, TLayoutNode, ThreadSafeLayoutNode};
 
 use gfx::display_list::OpaqueNode;
+use libc::uintptr_t;
 use script::dom::bindings::js::JS;
 use script::dom::bindings::utils::Reflectable;
 use script::dom::node::Node;
@@ -16,15 +17,14 @@ use servo_util::range::Range;
 use std::cast;
 use std::cell::{Ref, RefMut};
 use std::iter::Enumerate;
-use std::libc::uintptr_t;
 use std::slice::Items;
 use style::ComputedValues;
 use sync::Arc;
 
 
 pub struct NodeRange {
-    node: OpaqueNode,
-    range: Range,
+    pub node: OpaqueNode,
+    pub range: Range,
 }
 
 impl NodeRange {
@@ -37,7 +37,7 @@ impl NodeRange {
 }
 
 pub struct ElementMapping {
-    priv entries: ~[NodeRange],
+    entries: ~[NodeRange],
 }
 
 impl ElementMapping {
@@ -132,27 +132,27 @@ impl ElementMapping {
 
 pub struct PrivateLayoutData {
     
-    style: Option<Arc<ComputedValues>>,
+    pub style: Option<Arc<ComputedValues>>,
 
     
-    before_style: Option<Arc<ComputedValues>>,
+    pub before_style: Option<Arc<ComputedValues>>,
 
     
-    after_style: Option<Arc<ComputedValues>>,
+    pub after_style: Option<Arc<ComputedValues>>,
 
     
-    restyle_damage: Option<int>,
+    pub restyle_damage: Option<int>,
 
     
     
-    flow_construction_result: ConstructionResult,
+    pub flow_construction_result: ConstructionResult,
 
-    before_flow_construction_result: ConstructionResult,
+    pub before_flow_construction_result: ConstructionResult,
 
-    after_flow_construction_result: ConstructionResult,
+    pub after_flow_construction_result: ConstructionResult,
 
     
-    parallel: DomParallelInfo,
+    pub parallel: DomParallelInfo,
 }
 
 impl PrivateLayoutData {
@@ -172,8 +172,8 @@ impl PrivateLayoutData {
 }
 
 pub struct LayoutDataWrapper {
-    chan: Option<LayoutChan>,
-    data: ~PrivateLayoutData,
+    pub chan: Option<LayoutChan>,
+    pub data: ~PrivateLayoutData,
 }
 
 

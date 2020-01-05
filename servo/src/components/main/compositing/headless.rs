@@ -16,7 +16,7 @@ use servo_util::time;
 
 pub struct NullCompositor {
     
-    port: Receiver<Msg>,
+    pub port: Receiver<Msg>,
 }
 
 impl NullCompositor {

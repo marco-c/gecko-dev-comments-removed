@@ -15,8 +15,8 @@ pub type Link = Option<~Flow>;
 
 #[deriving(Clone)]
 pub struct Rawlink {
-    priv vtable: *(),
-    priv obj: *mut (),
+    vtable: *(),
+    obj: *mut (),
 }
 
 
@@ -24,24 +24,24 @@ pub struct Rawlink {
 
 
 pub struct FlowList {
-    priv length: uint,
-    priv list_head: Link,
-    priv list_tail: Rawlink,
+    length: uint,
+    list_head: Link,
+    list_tail: Rawlink,
 }
 
 
 pub struct FlowListIterator<'a> {
-    priv head: &'a Link,
-    priv tail: Rawlink,
-    priv nelem: uint,
+    head: &'a Link,
+    tail: Rawlink,
+    nelem: uint,
 }
 
 
 pub struct MutFlowListIterator<'a> {
-    priv list: &'a mut FlowList,
-    priv head: Rawlink,
-    priv tail: Rawlink,
-    priv nelem: uint,
+    list: &'a mut FlowList,
+    head: Rawlink,
+    tail: Rawlink,
+    nelem: uint,
 }
 
 impl Rawlink {

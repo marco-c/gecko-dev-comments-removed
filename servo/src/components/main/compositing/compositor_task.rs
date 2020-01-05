@@ -35,7 +35,7 @@ mod headless;
 #[deriving(Clone)]
 pub struct CompositorChan {
     
-    chan: Sender<Msg>,
+    pub chan: Sender<Msg>,
 }
 
 
@@ -197,7 +197,7 @@ pub enum CompositorMode {
 }
 
 pub struct CompositorTask {
-    mode: CompositorMode,
+    pub mode: CompositorMode,
 }
 
 impl CompositorTask {

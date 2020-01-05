@@ -28,7 +28,7 @@ pub enum RestyleEffect {
 
 
 pub struct RestyleDamage {
-    priv bits: int
+    bits: int
 }
 
 

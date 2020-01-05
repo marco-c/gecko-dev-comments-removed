@@ -2,17 +2,17 @@
 
 
 
-#[crate_id = "github.com/mozilla/servo#script:0.1"];
-#[crate_type = "lib"];
-#[crate_type = "dylib"];
-#[crate_type = "rlib"];
+#![crate_id = "github.com/mozilla/servo#script:0.1"]
+#![crate_type = "lib"]
+#![crate_type = "dylib"]
+#![crate_type = "rlib"]
 
-#[comment = "The Servo Parallel Browser Project"];
-#[license = "MPL"];
+#![comment = "The Servo Parallel Browser Project"]
+#![license = "MPL"]
 
-#[feature(globs, macro_rules, struct_variant, phase)];
+#![feature(globs, macro_rules, struct_variant, phase)]
 
-#[feature(phase)];
+#![feature(phase)]
 #[phase(syntax, link)]
 extern crate log;
 
@@ -21,6 +21,7 @@ extern crate geom;
 extern crate hubbub;
 extern crate encoding;
 extern crate js;
+extern crate libc;
 extern crate native;
 extern crate serialize;
 #[phase(syntax)]

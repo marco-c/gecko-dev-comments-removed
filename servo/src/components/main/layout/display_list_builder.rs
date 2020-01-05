@@ -15,23 +15,23 @@ use style;
 
 
 pub struct DisplayListBuilder<'a> {
-    ctx: &'a LayoutContext,
+    pub ctx: &'a LayoutContext,
 
     
-    layers: SmallVec0<RenderLayer>,
+    pub layers: SmallVec0<RenderLayer>,
 
     
-    dirty: Rect<Au>,
+    pub dirty: Rect<Au>,
 }
 
 
 pub struct DisplayListBuildingInfo {
     
-    relative_containing_block_size: Size2D<Au>,
+    pub relative_containing_block_size: Size2D<Au>,
     
-    absolute_containing_block_position: Point2D<Au>,
+    pub absolute_containing_block_position: Point2D<Au>,
     
-    layers_needed_for_positioned_flows: bool,
+    pub layers_needed_for_positioned_flows: bool,
 }
 
 

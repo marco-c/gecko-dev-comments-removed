@@ -14,16 +14,16 @@ use servo_util::geometry::Au;
 
 pub struct TableColGroupFlow {
     
-    base: BaseFlow,
+    pub base: BaseFlow,
 
     
-    box_: Option<Box>,
+    pub box_: Option<Box>,
 
     
-    cols: ~[Box],
+    pub cols: ~[Box],
 
     /// The specified widths of table columns
-    widths: ~[Au],
+    pub widths: ~[Au],
 }
 
 impl TableColGroupFlow {

@@ -20,13 +20,13 @@ use std::cell::RefCell;
 #[deriving(Clone)]
 pub struct FontContextInfo {
     
-    backend: BackendType,
+    pub backend: BackendType,
 
     
-    needs_font_list: bool,
+    pub needs_font_list: bool,
 
     
-    profiler_chan: ProfilerChan,
+    pub profiler_chan: ProfilerChan,
 }
 
 pub trait FontContextHandleMethods {
@@ -34,13 +34,13 @@ pub trait FontContextHandleMethods {
 }
 
 pub struct FontContext {
-    instance_cache: LRUCache<FontDescriptor, Rc<RefCell<Font>>>,
-    font_list: Option<FontList>, // only needed by layout
-    group_cache: LRUCache<SpecifiedFontStyle, Rc<RefCell<FontGroup>>>,
-    handle: FontContextHandle,
-    backend: BackendType,
-    generic_fonts: HashMap<~str,~str>,
-    profiler_chan: ProfilerChan,
+    pub instance_cache: LRUCache<FontDescriptor, Rc<RefCell<Font>>>,
+    pub font_list: Option<FontList>, // only needed by layout
+    pub group_cache: LRUCache<SpecifiedFontStyle, Rc<RefCell<FontGroup>>>,
+    pub handle: FontContextHandle,
+    pub backend: BackendType,
+    pub generic_fonts: HashMap<~str,~str>,
+    pub profiler_chan: ProfilerChan,
 }
 
 impl FontContext {

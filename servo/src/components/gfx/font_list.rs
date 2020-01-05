@@ -83,8 +83,8 @@ impl FontList {
 
 
 pub struct FontFamily {
-    family_name: ~str,
-    entries: ~[FontEntry],
+    pub family_name: ~str,
+    pub entries: ~[FontEntry],
 }
 
 impl FontFamily {
@@ -131,10 +131,10 @@ impl FontFamily {
 
 
 pub struct FontEntry {
-    face_name: ~str,
-    priv weight: font_weight::T,
-    priv italic: bool,
-    handle: FontHandle,
+    pub face_name: ~str,
+    weight: font_weight::T,
+    italic: bool,
+    pub handle: FontHandle,
     
 }
 

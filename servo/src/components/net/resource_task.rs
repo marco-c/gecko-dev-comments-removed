@@ -25,13 +25,13 @@ pub enum ControlMsg {
 
 pub struct Metadata {
     
-    final_url: Url,
+    pub final_url: Url,
 
     
-    content_type: Option<(~str, ~str)>,
+    pub content_type: Option<(~str, ~str)>,
 
     /// Character set.
-    charset: Option<~str>,
+    pub charset: Option<~str>,
 }
 
 impl Metadata {
@@ -69,9 +69,9 @@ impl Metadata {
 /// progress_port will provide the error.
 pub struct LoadResponse {
     /// Metadata, such as from HTTP headers.
-    metadata: Metadata,
+    pub metadata: Metadata,
     /// Port for reading data.
-    progress_port: Receiver<ProgressMsg>,
+    pub progress_port: Receiver<ProgressMsg>,
 }
 
 /// Messages sent in response to a `Load` message

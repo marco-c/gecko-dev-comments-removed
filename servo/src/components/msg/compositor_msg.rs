@@ -17,25 +17,25 @@ use constellation_msg::PipelineId;
 pub struct LayerBuffer {
     
     
-    native_surface: NativeSurface,
+    pub native_surface: NativeSurface,
 
     
-    rect: Rect<f32>,
+    pub rect: Rect<f32>,
 
     
-    screen_pos: Rect<uint>,
+    pub screen_pos: Rect<uint>,
 
     
-    resolution: f32,
+    pub resolution: f32,
 
     
-    stride: uint,
+    pub stride: uint,
 }
 
 
 
 pub struct LayerBufferSet {
-    buffers: ~[~LayerBuffer]
+    pub buffers: ~[~LayerBuffer]
 }
 
 impl LayerBufferSet {
@@ -68,7 +68,7 @@ pub enum ReadyState {
 
 /// A newtype struct for denoting the age of messages; prevents race conditions.
 #[deriving(Eq)]
-pub struct Epoch(uint);
+pub struct Epoch(pub uint);
 
 impl Epoch {
     pub fn next(&mut self) {
@@ -78,7 +78,7 @@ impl Epoch {
 }
 
 #[deriving(Clone, Eq)]
-pub struct LayerId(uint, uint);
+pub struct LayerId(pub uint, pub uint);
 
 impl Show for LayerId {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -108,13 +108,13 @@ pub enum ScrollPolicy {
 
 pub struct LayerMetadata {
     
-    id: LayerId,
+    pub id: LayerId,
     
-    position: Rect<uint>,
+    pub position: Rect<uint>,
     
-    background_color: Color,
+    pub background_color: Color,
     
-    scroll_policy: ScrollPolicy,
+    pub scroll_policy: ScrollPolicy,
 }
 
 
@@ -158,8 +158,9 @@ pub trait ScriptListener : Clone {
     fn dup(&self) -> ~ScriptListener;
 }
 
-impl<S: Encoder> Encodable<S> for ~ScriptListener {
-    fn encode(&self, _s: &mut S) {
+impl<E, S: Encoder<E>> Encodable<S, E> for ~ScriptListener {
+    fn encode(&self, _s: &mut S) -> Result<(), E> {
+        Ok(())
     }
 }
 

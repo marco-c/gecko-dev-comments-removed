@@ -18,8 +18,8 @@ pub enum RangeRelation {
 
 #[deriving(Clone)]
 pub struct Range {
-    priv off: uint,
-    priv len: uint
+    off: uint,
+    len: uint
 }
 
 impl fmt::Show for Range {
@@ -110,9 +110,9 @@ impl Range {
         }
     }
 
-    /// Computes the relationship between two ranges (`self` and `other`),
-    /// from the point of view of `self`. So, 'EntirelyBefore' means
-    /// that the `self` range is entirely before `other` range.
+    
+    
+    
     #[inline]
     pub fn relation_to_range(&self, other: &Range) -> RangeRelation {
         if other.begin() > self.end() {

@@ -14,11 +14,11 @@ use servo_util::geometry;
 /// A collapsible margin. See CSS 2.1 § 8.3.1.
 pub struct AdjoiningMargins {
     /// The value of the greatest positive margin.
-    most_positive: Au,
+    pub most_positive: Au,
 
     /// The actual value (not the absolute value) of the negative margin with the largest absolute
     /// value. Since this is not the absolute value, this is always zero or negative.
-    most_negative: Au,
+    pub most_negative: Au,
 }
 
 impl AdjoiningMargins {
@@ -79,9 +79,9 @@ enum FinalMarginState {
 }
 
 pub struct MarginCollapseInfo {
-    state: MarginCollapseState,
-    top_margin: AdjoiningMargins,
-    margin_in: AdjoiningMargins,
+    pub state: MarginCollapseState,
+    pub top_margin: AdjoiningMargins,
+    pub margin_in: AdjoiningMargins,
 }
 
 impl MarginCollapseInfo {
@@ -101,7 +101,7 @@ impl MarginCollapseInfo {
             self.state = AccumulatingMarginIn
         }
 
-        self.top_margin = AdjoiningMargins::from_margin(fragment.margin.get().top)
+        self.top_margin = AdjoiningMargins::from_margin(fragment.margin.borrow().top)
     }
 
     pub fn finish_and_compute_collapsible_margins(mut self,
@@ -135,7 +135,7 @@ impl MarginCollapseInfo {
 
         // Different logic is needed here depending on whether this flow can collapse its bottom
         // margin with its children.
-        let bottom_margin = fragment.margin.get().bottom;
+        let bottom_margin = fragment.margin.borrow().bottom;
         if !can_collapse_bottom_margin_with_kids {
             match state {
                 MarginsCollapseThroughFinalMarginState => {
@@ -239,12 +239,12 @@ pub enum MarginCollapseState {
 
 pub struct IntrinsicWidths {
     
-    minimum_width: Au,
+    pub minimum_width: Au,
     
-    preferred_width: Au,
+    pub preferred_width: Au,
     
     
-    surround_width: Au,
+    pub surround_width: Au,
 }
 
 impl IntrinsicWidths {

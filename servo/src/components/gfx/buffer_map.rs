@@ -15,17 +15,18 @@ use std::mem;
 
 pub struct BufferMap<T> {
     
-    priv map: HashMap<BufferKey, BufferValue<T>>,
-    /// The current amount of memory stored by the BufferMap's buffers.
+    map: HashMap<BufferKey, BufferValue<T>>,
+    
     mem: uint,
-    /// The maximum allowed memory. Unused buffers will be deleted
-    /// when this threshold is exceeded.
+    
+    
     max_mem: uint,
-    /// A monotonically increasing counter to track how recently tile sizes were used.
+    
     counter: uint,
 }
 
-/// A key with which to store buffers. It is based on the size of the buffer.
+
+#[deriving(TotalEq)]
 struct BufferKey([uint, ..2]);
 
 impl Hash for BufferKey {
@@ -40,12 +41,6 @@ impl Eq for BufferKey {
         let BufferKey(s) = *self;
         let BufferKey(o) = *other;
         s[0] == o[0] && s[1] == o[1]
-    }
-}
-
-impl TotalEq for BufferKey {
-    fn equals(&self, other: &BufferKey) -> bool {
-        self.eq(other)
     }
 }
 

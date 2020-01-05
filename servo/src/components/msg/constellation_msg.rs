@@ -11,7 +11,7 @@ use std::comm::{channel, Sender, Receiver};
 use url::Url;
 
 #[deriving(Clone)]
-pub struct ConstellationChan(Sender<Msg>);
+pub struct ConstellationChan(pub Sender<Msg>);
 
 impl ConstellationChan {
     pub fn new() -> (Receiver<Msg>, ConstellationChan) {
@@ -29,8 +29,8 @@ pub enum IFrameSandboxState {
 
 #[deriving(Clone)]
 pub struct Failure {
-    pipeline_id: PipelineId,
-    subpage_id: Option<SubpageId>,
+    pub pipeline_id: PipelineId,
+    pub subpage_id: Option<SubpageId>,
 }
 
 
@@ -61,7 +61,7 @@ pub enum NavigationDirection {
 }
 
 #[deriving(Clone, Eq, TotalEq, Hash, Encodable)]
-pub struct PipelineId(uint);
+pub struct PipelineId(pub uint);
 
 #[deriving(Clone, Eq, TotalEq, Hash, Encodable)]
-pub struct SubpageId(uint);
+pub struct SubpageId(pub uint);

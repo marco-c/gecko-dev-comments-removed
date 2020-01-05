@@ -43,72 +43,72 @@ use time::precise_time_s;
 
 pub struct IOCompositor {
     
-    window: Rc<Window>,
+    pub window: Rc<Window>,
 
     
-    port: Receiver<Msg>,
+    pub port: Receiver<Msg>,
 
     
-    context: RenderContext,
+    pub context: RenderContext,
 
     
-    root_layer: Rc<ContainerLayer>,
+    pub root_layer: Rc<ContainerLayer>,
 
     
-    root_pipeline: Option<CompositionPipeline>,
+    pub root_pipeline: Option<CompositionPipeline>,
 
     
-    scene: Scene,
+    pub scene: Scene,
 
     
-    window_size: Size2D<uint>,
+    pub window_size: Size2D<uint>,
 
     
-    graphics_context: NativeCompositingGraphicsContext,
+    pub graphics_context: NativeCompositingGraphicsContext,
 
     
-    composite_ready: bool,
+    pub composite_ready: bool,
 
     
-    shutting_down: bool,
+    pub shutting_down: bool,
 
     
-    done: bool,
+    pub done: bool,
 
     
-    recomposite: bool,
+    pub recomposite: bool,
 
     
-    world_zoom: f32,
+    pub world_zoom: f32,
 
     
-    zoom_action: bool,
+    pub zoom_action: bool,
 
     
-    zoom_time: f64,
+    pub zoom_time: f64,
 
     
-    ready_state: ReadyState,
+    pub ready_state: ReadyState,
 
     
     
     
-    load_complete: bool,
+    pub load_complete: bool,
 
     
-    opts: Opts,
+    pub opts: Opts,
 
     
-    compositor_layer: Option<CompositorLayer>,
+    pub compositor_layer: Option<CompositorLayer>,
 
     
-    constellation_chan: ConstellationChan,
+    pub constellation_chan: ConstellationChan,
 
     
-    profiler_chan: ProfilerChan,
+    pub profiler_chan: ProfilerChan,
 
     
-    fragment_point: Option<Point2D<f32>>
+    pub fragment_point: Option<Point2D<f32>>
 }
 
 impl IOCompositor {
@@ -376,7 +376,7 @@ impl IOCompositor {
                                                           self.opts.tile_size,
                                                           self.opts.cpu_painting);
 
-            match self.root_layer.first_child.get() {
+            match *self.root_layer.first_child.borrow() {
                 None => {}
                 Some(ref old_layer) => {
                     ContainerLayer::remove_child(self.root_layer.clone(), old_layer.clone())

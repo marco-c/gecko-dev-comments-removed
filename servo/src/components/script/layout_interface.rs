@@ -12,11 +12,11 @@ use dom::node::{Node, LayoutDataRef};
 use geom::point::Point2D;
 use geom::rect::Rect;
 use geom::size::Size2D;
+use libc::c_void;
 use script_task::{ScriptChan};
 use servo_util::geometry::Au;
 use std::cmp;
 use std::comm::{channel, Receiver, Sender};
-use std::libc::c_void;
 use style::Stylesheet;
 use url::Url;
 
@@ -65,15 +65,16 @@ pub enum LayoutQuery {
 
 
 
-pub struct TrustedNodeAddress(*c_void);
+pub struct TrustedNodeAddress(pub *c_void);
 
-impl<S: Encoder> Encodable<S> for TrustedNodeAddress {
-    fn encode(&self, s: &mut S) {
+impl<S: Encoder<E>, E> Encodable<S, E> for TrustedNodeAddress {
+    fn encode(&self, s: &mut S) -> Result<(), E> {
         let TrustedNodeAddress(addr) = *self;
         let node = addr as *Node as *mut Node;
         unsafe {
             JS::from_raw(node).encode(s)
-        }
+        };
+        Ok(())
     }
 }
 
@@ -81,10 +82,10 @@ impl<S: Encoder> Encodable<S> for TrustedNodeAddress {
 
 pub type UntrustedNodeAddress = *c_void;
 
-pub struct ContentBoxResponse(Rect<Au>);
-pub struct ContentBoxesResponse(~[Rect<Au>]);
-pub struct HitTestResponse(UntrustedNodeAddress);
-pub struct MouseOverResponse(~[UntrustedNodeAddress]);
+pub struct ContentBoxResponse(pub Rect<Au>);
+pub struct ContentBoxesResponse(pub ~[Rect<Au>]);
+pub struct HitTestResponse(pub UntrustedNodeAddress);
+pub struct MouseOverResponse(pub ~[UntrustedNodeAddress]);
 
 
 #[deriving(Eq, Ord, TotalEq, TotalOrd, Encodable)]
@@ -110,9 +111,9 @@ impl DocumentDamageLevel {
 #[deriving(Encodable)]
 pub struct DocumentDamage {
     
-    root: TrustedNodeAddress,
+    pub root: TrustedNodeAddress,
     
-    level: DocumentDamageLevel,
+    pub level: DocumentDamageLevel,
 }
 
 
@@ -127,26 +128,26 @@ pub enum ReflowGoal {
 
 pub struct Reflow {
     
-    document_root: TrustedNodeAddress,
+    pub document_root: TrustedNodeAddress,
     
-    damage: DocumentDamage,
+    pub damage: DocumentDamage,
     
-    goal: ReflowGoal,
+    pub goal: ReflowGoal,
     
-    url: Url,
+    pub url: Url,
     
-    script_chan: ScriptChan,
+    pub script_chan: ScriptChan,
     
-    window_size: Size2D<uint>,
+    pub window_size: Size2D<uint>,
     
-    script_join_chan: Sender<()>,
+    pub script_join_chan: Sender<()>,
     
-    id: uint
+    pub id: uint
 }
 
 
 #[deriving(Clone)]
-pub struct LayoutChan(Sender<Msg>);
+pub struct LayoutChan(pub Sender<Msg>);
 
 impl LayoutChan {
     pub fn new() -> (Receiver<Msg>, LayoutChan) {

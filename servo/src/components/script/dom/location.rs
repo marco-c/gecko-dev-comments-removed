@@ -17,8 +17,8 @@ use serialize::{Encoder, Encodable};
 
 #[deriving(Encodable)]
 pub struct Location {
-    reflector_: Reflector, 
-    page: Rc<Page>,
+    pub reflector_: Reflector, 
+    pub page: Rc<Page>,
 }
 
 impl Location {

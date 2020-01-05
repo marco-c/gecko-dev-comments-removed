@@ -2,10 +2,12 @@
 
 
 
-#[crate_id = "github.com/mozilla/servo#macros:0.1"];
-#[crate_type = "lib"];
+#![crate_id = "github.com/mozilla/servo#macros:0.1"]
+#![crate_type = "lib"]
+#![crate_type = "rlib"]
+#![crate_type = "dylib"]
 
-#[feature(macro_rules)];
+#![feature(macro_rules)]
 
 #[macro_export]
 macro_rules! bitfield(

@@ -12,7 +12,7 @@ use std::fmt;
 
 
 
-pub struct Au(i32);
+pub struct Au(pub i32);
 
 
 impl Clone for Au {

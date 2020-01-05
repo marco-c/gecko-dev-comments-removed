@@ -11,7 +11,7 @@ use servo_util::str::DOMString;
 
 #[deriving(Encodable)]
 pub struct Navigator {
-    reflector_: Reflector 
+    pub reflector_: Reflector 
 }
 
 impl Navigator {

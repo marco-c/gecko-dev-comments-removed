@@ -16,7 +16,7 @@ use servo_util::str::DOMString;
 
 #[deriving(Encodable)]
 pub struct Comment {
-    characterdata: CharacterData,
+    pub characterdata: CharacterData,
 }
 
 impl CommentDerived for EventTarget {

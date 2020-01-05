@@ -23,12 +23,12 @@ use style::{After, Before, ComputedValues, MatchedProperty, Stylist, TElement, T
 use sync::Arc;
 
 pub struct ApplicableDeclarations {
-    normal: SmallVec16<MatchedProperty>,
-    before: SmallVec0<MatchedProperty>,
-    after: SmallVec0<MatchedProperty>,
+    pub normal: SmallVec16<MatchedProperty>,
+    pub before: SmallVec0<MatchedProperty>,
+    pub after: SmallVec0<MatchedProperty>,
 
     
-    normal_shareable: bool,
+    pub normal_shareable: bool,
 }
 
 impl ApplicableDeclarations {
@@ -51,7 +51,7 @@ impl ApplicableDeclarations {
 
 #[deriving(Clone)]
 pub struct ApplicableDeclarationsCacheEntry {
-    declarations: SmallVec16<MatchedProperty>,
+    pub declarations: SmallVec16<MatchedProperty>,
 }
 
 impl ApplicableDeclarationsCacheEntry {
@@ -131,7 +131,7 @@ impl<'a> Hash for ApplicableDeclarationsCacheQuery<'a> {
 static APPLICABLE_DECLARATIONS_CACHE_SIZE: uint = 32;
 
 pub struct ApplicableDeclarationsCache {
-    cache: SimpleHashCache<ApplicableDeclarationsCacheEntry,Arc<ComputedValues>>,
+    pub cache: SimpleHashCache<ApplicableDeclarationsCacheEntry,Arc<ComputedValues>>,
 }
 
 impl ApplicableDeclarationsCache {
@@ -155,18 +155,18 @@ impl ApplicableDeclarationsCache {
 
 
 pub struct StyleSharingCandidateCache {
-    priv cache: LRUCache<StyleSharingCandidate,()>,
+    cache: LRUCache<StyleSharingCandidate,()>,
 }
 
 #[deriving(Clone)]
 pub struct StyleSharingCandidate {
-    style: Arc<ComputedValues>,
-    parent_style: Arc<ComputedValues>,
+    pub style: Arc<ComputedValues>,
+    pub parent_style: Arc<ComputedValues>,
 
-    // TODO(pcwalton): Intern.
-    local_name: DOMString,
+    
+    pub local_name: DOMString,
 
-    class: Option<DOMString>,
+    pub class: Option<DOMString>,
 }
 
 impl Eq for StyleSharingCandidate {
@@ -179,9 +179,9 @@ impl Eq for StyleSharingCandidate {
 }
 
 impl StyleSharingCandidate {
-    /// Attempts to create a style sharing candidate from this node. Returns
-    /// the style sharing candidate or `None` if this node is ineligible for
-    /// style sharing.
+    
+    
+    
     fn new(node: &LayoutNode) -> Option<StyleSharingCandidate> {
         let parent_node = match node.parent_node() {
             None => return None,
@@ -270,19 +270,19 @@ impl StyleSharingCandidateCache {
     }
 }
 
-/// The results of attempting to share a style.
+
 pub enum StyleSharingResult<'ln> {
-    /// We didn't find anybody to share the style with. The boolean indicates whether the style
-    /// is shareable at all.
+    
+    
     CannotShare(bool),
-    /// The node's style can be shared. The integer specifies the index in the LRU cache that was
-    /// hit.
+    
+    
     StyleWasShared(uint),
 }
 
 pub trait MatchMethods {
-    /// Performs aux initialization, selector matching, cascading, and flow construction
-    /// sequentially.
+    
+    
     fn recalc_style_for_subtree(&self,
                                 stylist: &Stylist,
                                 layout_context: &mut LayoutContext,
@@ -347,11 +347,11 @@ impl<'ln> PrivateMatchMethods for LayoutNode<'ln> {
                 let cache_entry = applicable_declarations_cache.find(applicable_declarations);
                 match cache_entry {
                     None => cached_computed_values = None,
-                    Some(ref style) => cached_computed_values = Some(style.get()),
+                    Some(ref style) => cached_computed_values = Some(&**style),
                 }
                 let (the_style, is_cacheable) = cascade(applicable_declarations,
                                                         shareable,
-                                                        Some(parent_style.get()),
+                                                        Some(&***parent_style),
                                                         initial_values,
                                                         cached_computed_values);
                 cacheable = is_cacheable;
@@ -492,7 +492,7 @@ impl<'ln> MatchMethods for LayoutNode<'ln> {
                 }
 
                 unsafe {
-                    let initial_values = layout_context.initial_css_values.get();
+                    let initial_values = &*layout_context.initial_css_values;
                     self.cascade_node(parent,
                                       initial_values,
                                       applicable_declarations,
