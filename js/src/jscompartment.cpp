@@ -1025,6 +1025,15 @@ AddLazyFunctionsForCompartment(JSContext* cx, AutoObjectVector& lazyFunctions, A
             continue;
         }
 
+        
+        
+        
+        if (cx->zone()->needsIncrementalBarrier())
+            fun->readBarrier(fun);
+
+        
+        
+
         if (fun->isInterpretedLazy()) {
             LazyScript* lazy = fun->lazyScriptOrNull();
             if (lazy && lazy->sourceObject() && !lazy->hasUncompiledEnclosingScript()) {
