@@ -223,7 +223,7 @@ pub enum Msg {
     
     MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
     
-    ChangeRunningAnimationsState(PipelineId, bool),
+    ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     TickAnimation(PipelineId),
     
@@ -234,6 +234,14 @@ pub enum Msg {
     GetClipboardContents(Sender<String>),
     
     WebDriverCommand(PipelineId, WebDriverScriptCommand)
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub enum AnimationState {
+    AnimationsPresent,
+    AnimationCallbacksPresent,
+    NoAnimationsPresent,
+    NoAnimationCallbacksPresent,
 }
 
 
