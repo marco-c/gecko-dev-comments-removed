@@ -5,7 +5,11 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["BrowserUsageTelemetry", "URLBAR_SELECTED_RESULT_TYPES"];
+this.EXPORTED_SYMBOLS = [
+  "BrowserUsageTelemetry",
+  "URLBAR_SELECTED_RESULT_TYPES",
+  "URLBAR_SELECTED_RESULT_METHODS",
+ ];
 
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
@@ -66,6 +70,19 @@ const URLBAR_SELECTED_RESULT_TYPES = {
   remotetab: 9,
   extension: 10,
   "preloaded-top-site": 11,
+};
+
+
+
+
+
+
+
+
+const URLBAR_SELECTED_RESULT_METHODS = {
+  enter: 0,
+  enterSelection: 1,
+  click: 2,
 };
 
 function getOpenTabsAndWinsCounts() {
@@ -208,6 +225,10 @@ let URICountListener = {
 };
 
 let urlbarListener = {
+
+  
+  selectedIndex: -1,
+
   init() {
     Services.obs.addObserver(this, AUTOCOMPLETE_ENTER_TEXT_TOPIC, true);
   },
@@ -231,12 +252,22 @@ let urlbarListener = {
 
 
   _handleURLBarTelemetry(input) {
-    if (!input ||
-        input.id != "urlbar" ||
-        input.inPrivateContext ||
-        input.popup.selectedIndex < 0) {
+    if (!input || input.id != "urlbar") {
       return;
     }
+    if (input.inPrivateContext || input.popup.selectedIndex < 0) {
+      this.selectedIndex = -1;
+      return;
+    }
+
+    
+    
+    
+    this.selectedIndex =
+      input.popup.selectedIndex > 0 || !input.popup._isFirstResultHeuristic ?
+      input.popup.selectedIndex :
+      -1;
+
     let controller =
       input.popup.view.QueryInterface(Ci.nsIAutoCompleteController);
     let idx = input.popup.selectedIndex;
@@ -461,6 +492,57 @@ let BrowserUsageTelemetry = {
 
     
     this._recordSearch(engine, sourceName, "enter");
+  },
+
+  
+
+
+
+
+
+  recordUrlbarSelectedResultMethod(event) {
+    
+    
+    
+    
+    
+    
+    this._recordUrlOrSearchbarSelectedResultMethod(
+      event, urlbarListener.selectedIndex,
+      "FX_URLBAR_SELECTED_RESULT_METHOD"
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+  recordSearchbarSelectedResultMethod(event, highlightedIndex) {
+    this._recordUrlOrSearchbarSelectedResultMethod(
+      event, highlightedIndex,
+      "FX_SEARCHBAR_SELECTED_RESULT_METHOD"
+    );
+  },
+
+  _recordUrlOrSearchbarSelectedResultMethod(event, highlightedIndex, histogramID) {
+    let histogram = Services.telemetry.getHistogramById(histogramID);
+    
+    let isClick = event instanceof Ci.nsIDOMMouseEvent ||
+                  (event && event.type == "command");
+    let category;
+    if (isClick) {
+      category = "click";
+    } else if (highlightedIndex >= 0) {
+      category = "enterSelection";
+    } else {
+      category = "enter";
+    }
+    histogram.add(category);
   },
 
   

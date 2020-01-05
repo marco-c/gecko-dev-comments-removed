@@ -141,9 +141,13 @@ var gMainPane = {
       gMainPane.configureFonts);
     setEventListener("colors", "command",
       gMainPane.configureColors);
+    setEventListener("layers.acceleration.disabled", "change",
+      gMainPane.updateHardwareAcceleration);
 
     
     this._rebuildFonts();
+
+    this.updateOnScreenKeyboardVisibility();
 
     
     const prefName = "browser.translation.ui.show";
@@ -622,6 +626,33 @@ var gMainPane = {
 
   
 
+
+
+
+
+  updateOnScreenKeyboardVisibility() {
+    if (AppConstants.platform == "win") {
+      let minVersion = Services.prefs.getBoolPref("ui.osk.require_win10") ? 10 : 6.2;
+      if (Services.vc.compare(Services.sysinfo.getProperty("version"), minVersion) >= 0) {
+        document.getElementById("useOnScreenKeyboard").hidden = false;
+      }
+    }
+  },
+
+  
+
+
+
+  updateHardwareAcceleration() {
+    if (AppConstants.platform == "win") {
+      var fromPref = document.getElementById("layers.acceleration.disabled");
+      var toPref = document.getElementById("gfx.direct2d.disabled");
+      toPref.value = fromPref.value;
+    }
+  },
+
+  
+
   
 
 
@@ -702,6 +733,18 @@ var gMainPane = {
   },
 
   
+
+
+
+  _storedSpellCheck: 0,
+
+  
+
+
+
+
+
+
 
 
 
