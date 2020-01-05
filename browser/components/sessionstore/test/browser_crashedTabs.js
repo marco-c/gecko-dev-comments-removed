@@ -125,7 +125,7 @@ function promiseTabCrashedReady(browser) {
 
 
 
-add_task(function test_crash_page_not_in_history() {
+add_task(function* test_crash_page_not_in_history() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
@@ -154,7 +154,7 @@ add_task(function test_crash_page_not_in_history() {
 
 
 
-add_task(function test_revived_history_from_remote() {
+add_task(function* test_revived_history_from_remote() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
@@ -193,7 +193,7 @@ add_task(function test_revived_history_from_remote() {
 
 
 
-add_task(function test_revived_history_from_non_remote() {
+add_task(function* test_revived_history_from_non_remote() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
@@ -231,7 +231,7 @@ add_task(function test_revived_history_from_non_remote() {
 
 
 
-add_task(function test_revive_tab_from_session_store() {
+add_task(function* test_revive_tab_from_session_store() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
@@ -284,7 +284,7 @@ add_task(function test_revive_tab_from_session_store() {
 
 
 
-add_task(function test_revive_all_tabs_from_session_store() {
+add_task(function* test_revive_all_tabs_from_session_store() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;
@@ -344,7 +344,7 @@ add_task(function test_revive_all_tabs_from_session_store() {
 
 
 
-add_task(function test_close_tab_after_crash() {
+add_task(function* test_close_tab_after_crash() {
   let newTab = gBrowser.addTab();
   gBrowser.selectedTab = newTab;
   let browser = newTab.linkedBrowser;

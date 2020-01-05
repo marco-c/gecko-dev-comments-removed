@@ -8,7 +8,7 @@ const URL = ROOT + "browser_466937_sample.html";
 
 
 
-add_task(function test_prevent_file_stealing() {
+add_task(function* test_prevent_file_stealing() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;

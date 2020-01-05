@@ -2,7 +2,7 @@
 
 
 
- add_task(function test() {
+ add_task(function* test() {
   requestLongerTimeout(2);
   const page1 = 'http://mochi.test:8888/browser/browser/components/privatebrowsing/test/browser/' +
                 'browser_privatebrowsing_localStorage_page1.html'

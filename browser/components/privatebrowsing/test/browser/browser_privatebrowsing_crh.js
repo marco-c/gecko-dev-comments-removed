@@ -5,7 +5,7 @@
 
 
 
-add_task(function test() {
+add_task(function* test() {
   function checkDisableOption(aPrivateMode, aWindow) {
     let crhCommand = aWindow.document.getElementById("Tools:Sanitize");
     ok(crhCommand, "The clear recent history command should exist");

@@ -84,7 +84,7 @@ add_task(function* test_run() {
 
 
 
-var testCookieCollection = Task.async(function (params) {
+var testCookieCollection = async function (params) {
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
 
@@ -102,14 +102,14 @@ var testCookieCollection = Task.async(function (params) {
   
   
   
-  yield Promise.all([
+  await Promise.all([
     waitForNewCookie(),
     replaceCurrentURI(browser, uri)
   ]);
 
   
   for (let uri of params.cookieURIs || []) {
-    yield replaceCurrentURI(browser, uri);
+    await replaceCurrentURI(browser, uri);
 
     
     let cookie = getCookie();
@@ -121,7 +121,7 @@ var testCookieCollection = Task.async(function (params) {
 
   
   for (let uri of params.noCookieURIs || []) {
-    yield replaceCurrentURI(browser, uri);
+    await replaceCurrentURI(browser, uri);
 
     
     ok(!getCookie(), "no cookie collected");
@@ -130,22 +130,22 @@ var testCookieCollection = Task.async(function (params) {
   
   gBrowser.removeTab(tab);
   Services.cookies.removeAll();
-});
+};
 
 
 
 
 
 
-var replaceCurrentURI = Task.async(function* (browser, uri) {
+var replaceCurrentURI = async function(browser, uri) {
   
   let flags = Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
   browser.loadURIWithFlags(uri, flags);
-  yield promiseBrowserLoaded(browser);
+  await promiseBrowserLoaded(browser);
 
   
-  yield TabStateFlusher.flush(browser);
-});
+  await TabStateFlusher.flush(browser);
+};
 
 
 

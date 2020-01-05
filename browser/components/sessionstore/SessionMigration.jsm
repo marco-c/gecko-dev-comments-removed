@@ -66,11 +66,11 @@ var SessionMigrationInternal = {
 
 
   readState: function(aPath) {
-    return Task.spawn(function() {
+    return Task.spawn(function*() {
       let bytes = yield OS.File.read(aPath);
       let text = gDecoder.decode(bytes);
       let state = JSON.parse(text);
-      throw new Task.Result(state);
+      return state;
     });
   },
   
@@ -87,7 +87,7 @@ var SessionMigration = {
 
 
   migrate: function(aFromPath, aToPath) {
-    return Task.spawn(function() {
+    return Task.spawn(function*() {
       let inState = yield SessionMigrationInternal.readState(aFromPath);
       let outState = SessionMigrationInternal.convertState(inState);
       

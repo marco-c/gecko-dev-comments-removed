@@ -7,7 +7,7 @@
 
 
 
-add_task(function () {
+add_task(function*() {
   
   
   
@@ -45,7 +45,7 @@ add_task(function () {
 
 
 
-add_task(function () {
+add_task(function*() {
   
   
   

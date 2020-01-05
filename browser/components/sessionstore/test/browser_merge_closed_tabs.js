@@ -5,7 +5,7 @@
 
 
 
-add_task(function () {
+add_task(function* () {
   const initialState = {
     windows: [{
       tabs: [

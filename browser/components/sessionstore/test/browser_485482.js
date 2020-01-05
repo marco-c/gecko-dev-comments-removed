@@ -9,7 +9,7 @@ const URL = ROOT + "browser_485482_sample.html";
 
 
 
-add_task(function test_xpath_exp_for_strange_documents() {
+add_task(function* test_xpath_exp_for_strange_documents() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;

@@ -9,7 +9,7 @@ const URL_NESTED = getRootDirectory(gTestPath) + "browser_pageStyle_sample_neste
 
 
 
-add_task(function page_style() {
+add_task(function* page_style() {
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);
@@ -53,7 +53,7 @@ add_task(function page_style() {
 
 
 
-add_task(function nested_page_style() {
+add_task(function* nested_page_style() {
   let tab = gBrowser.addTab(URL_NESTED);
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);

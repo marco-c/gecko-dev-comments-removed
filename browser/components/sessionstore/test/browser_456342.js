@@ -8,7 +8,7 @@ const URL = ROOT + "browser_456342_sample.xhtml";
 
 
 
-add_task(function test_restore_nonstandard_input_values() {
+add_task(function* test_restore_nonstandard_input_values() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;

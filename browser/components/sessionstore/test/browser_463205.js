@@ -10,7 +10,7 @@ const URL = ROOT + "browser_463205_sample.html";
 
 
 
-add_task(function test_check_urls_before_restoring() {
+add_task(function* test_check_urls_before_restoring() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;

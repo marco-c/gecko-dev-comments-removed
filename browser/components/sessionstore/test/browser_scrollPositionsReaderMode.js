@@ -17,7 +17,7 @@ requestLongerTimeout(2);
 
 
 
-add_task(function test_scroll_background_about_reader_tabs() {
+add_task(function* test_scroll_background_about_reader_tabs() {
   pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
   let newWin = yield BrowserTestUtils.openNewBrowserWindow();

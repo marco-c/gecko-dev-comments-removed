@@ -13,7 +13,7 @@ const URL_FRAMESET = HTTPROOT + "browser_frametree_sample_frameset.html";
 
 
 
-add_task(function test_frametree() {
+add_task(function* test_frametree() {
   const FRAME_TREE_SINGLE = { href: URL };
   const FRAME_TREE_FRAMESET = {
     href: URL_FRAMESET,
@@ -65,7 +65,7 @@ add_task(function test_frametree() {
 
 
 
-add_task(function test_frametree_dynamic() {
+add_task(function* test_frametree_dynamic() {
   
   
   const FRAME_TREE = {

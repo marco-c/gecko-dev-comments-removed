@@ -9,7 +9,7 @@ const URL = ROOT + "browser_form_restore_events_sample.html";
 
 
 
-add_task(function () {
+add_task(function*() {
   
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;

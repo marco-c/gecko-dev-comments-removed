@@ -9,7 +9,7 @@ requestLongerTimeout(2);
 
 
 
-add_task(function test_formdata() {
+add_task(function* test_formdata() {
   const URL = "http://mochi.test:8888/browser/browser/components/" +
               "sessionstore/test/browser_formdata_sample.html";
 
@@ -18,23 +18,21 @@ add_task(function test_formdata() {
 
   
   
-  function createAndRemoveTab() {
-    return Task.spawn(function () {
-      
-      let tab = gBrowser.addTab(URL);
-      let browser = tab.linkedBrowser;
-      yield promiseBrowserLoaded(browser);
+  function* createAndRemoveTab() {
+    
+    let tab = gBrowser.addTab(URL);
+    let browser = tab.linkedBrowser;
+    yield promiseBrowserLoaded(browser);
 
-      
-      yield setInputValue(browser, {id: "txt", value: OUTER_VALUE});
-      yield setInputValue(browser, {id: "txt", value: INNER_VALUE, frame: 0});
+    
+    yield setInputValue(browser, {id: "txt", value: OUTER_VALUE});
+    yield setInputValue(browser, {id: "txt", value: INNER_VALUE, frame: 0});
 
-      
-      yield promiseRemoveTab(tab);
-    });
+    
+    yield promiseRemoveTab(tab);
   }
 
-  yield createAndRemoveTab();
+  yield* createAndRemoveTab();
   let [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   is(formdata.id.txt, OUTER_VALUE, "outer value is correct");
   is(formdata.children[0].id.txt, INNER_VALUE, "inner value is correct");
@@ -42,7 +40,7 @@ add_task(function test_formdata() {
   
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 1);
 
-  yield createAndRemoveTab();
+  yield* createAndRemoveTab();
   [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   is(formdata.id.txt, OUTER_VALUE, "outer value is correct");
   ok(!formdata.children, "inner value was *not* stored");
@@ -50,7 +48,7 @@ add_task(function test_formdata() {
   
   Services.prefs.setIntPref("browser.sessionstore.privacy_level", 2);
 
-  yield createAndRemoveTab();
+  yield* createAndRemoveTab();
   [{state: {formdata}}] = JSON.parse(ss.getClosedTabData(window));
   ok(!formdata, "form data has *not* been stored");
 
@@ -63,7 +61,7 @@ add_task(function test_formdata() {
 
 
 
-add_task(function test_url_check() {
+add_task(function* test_url_check() {
   const URL = "data:text/html;charset=utf-8,<input%20id=input>";
   const VALUE = "value-" + Math.random();
 
@@ -98,7 +96,7 @@ add_task(function test_url_check() {
 
 
 
-add_task(function test_nested() {
+add_task(function* test_nested() {
   const URL = "data:text/html;charset=utf-8," +
               "<iframe src='data:text/html;charset=utf-8," +
               "<input autofocus=true>'/>";
@@ -143,7 +141,7 @@ add_task(function test_nested() {
 
 
 
-add_task(function test_design_mode() {
+add_task(function* test_design_mode() {
   const URL = "data:text/html;charset=utf-8,<h1>mozilla</h1>" +
               "<script>document.designMode='on'</script>";
 

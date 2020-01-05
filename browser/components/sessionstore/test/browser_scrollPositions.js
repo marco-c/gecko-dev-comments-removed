@@ -22,7 +22,7 @@ requestLongerTimeout(2);
 
 
 
-add_task(function test_scroll() {
+add_task(function* test_scroll() {
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);
@@ -65,7 +65,7 @@ add_task(function test_scroll() {
 
 
 
-add_task(function test_scroll_nested() {
+add_task(function* test_scroll_nested() {
   let tab = gBrowser.addTab(URL_FRAMESET);
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);
@@ -109,7 +109,7 @@ add_task(function test_scroll_nested() {
 
 
 
-add_task(function test_scroll_background_tabs() {
+add_task(function* test_scroll_background_tabs() {
   pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
   let newWin = yield BrowserTestUtils.openNewBrowserWindow();

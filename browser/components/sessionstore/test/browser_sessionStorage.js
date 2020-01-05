@@ -15,7 +15,7 @@ const INNER_VALUE = "inner-value-" + RAND;
 
 
 
-add_task(function session_storage() {
+add_task(function* session_storage() {
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);
@@ -102,7 +102,7 @@ add_task(function session_storage() {
 
 
 
-add_task(function purge_domain() {
+add_task(function* purge_domain() {
   let tab = gBrowser.addTab(URL);
   let browser = tab.linkedBrowser;
   yield promiseBrowserLoaded(browser);
@@ -126,7 +126,7 @@ add_task(function purge_domain() {
 
 
 
-add_task(function respect_privacy_level() {
+add_task(function* respect_privacy_level() {
   let tab = gBrowser.addTab(URL + "&secure");
   yield promiseBrowserLoaded(tab.linkedBrowser);
   yield promiseRemoveTab(tab);

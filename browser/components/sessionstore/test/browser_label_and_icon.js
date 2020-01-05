@@ -20,7 +20,7 @@ add_task(function setup() {
 
 
 
-add_task(function test_label_and_icon() {
+add_task(function* test_label_and_icon() {
   
   let tab = gBrowser.addTab("about:robots");
   let browser = tab.linkedBrowser;

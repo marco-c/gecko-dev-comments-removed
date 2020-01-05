@@ -7,7 +7,7 @@
 
 
 
-add_task(function check_history_not_persisted() {
+add_task(function* check_history_not_persisted() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;
@@ -44,7 +44,7 @@ add_task(function check_history_not_persisted() {
 
 
 
-add_task(function check_history_default_persisted() {
+add_task(function* check_history_default_persisted() {
   
   let tab = gBrowser.addTab("about:blank");
   let browser = tab.linkedBrowser;

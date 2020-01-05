@@ -8,7 +8,7 @@
 
 
 
-add_task(function() {
+add_task(function*() {
   let testURL = getRootDirectory(gTestPath) + "browser_frame_history_index.html";
   let tab = gBrowser.addTab(testURL);
   gBrowser.selectedTab = tab;
@@ -51,7 +51,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   let testURL = getRootDirectory(gTestPath) + "browser_frame_history_index2.html";
   let tab = gBrowser.addTab(testURL);
   gBrowser.selectedTab = tab;
@@ -98,7 +98,7 @@ add_task(function() {
 });
 
 
-add_task(function() {
+add_task(function*() {
   
     let blankState = JSON.stringify({
       windows: [{
