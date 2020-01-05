@@ -159,11 +159,6 @@ FirefoxProfileMigrator.prototype._getResourcesInternal = function(sourceProfileD
           Services.prefs.setCharPref("browser.startup.homepage_override.buildID", buildID);
           
           
-          if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
-            Services.prefs.setBoolPref("browser.usedOnWindows10", true);
-          }
-          
-          
           let newPrefsFile = currentProfileDir.clone();
           newPrefsFile.append("prefs.js");
           Services.prefs.savePrefFile(newPrefsFile);

@@ -525,22 +525,6 @@ nsBrowserContentHandler.prototype = {
     if (overridePage == "about:blank")
       overridePage = "";
 
-    
-    let platformVersion = Services.sysinfo.getProperty("version");
-    if (AppConstants.platform == "win" &&
-        Services.vc.compare(platformVersion, "10") == 0 &&
-        !Services.prefs.getBoolPref("browser.usedOnWindows10")) {
-      Services.prefs.setBoolPref("browser.usedOnWindows10", true);
-      let firstUseOnWindows10URL = Services.urlFormatter.formatURLPref("browser.usedOnWindows10.introURL");
-
-      if (firstUseOnWindows10URL && firstUseOnWindows10URL.length) {
-        additionalPage = firstUseOnWindows10URL;
-        if (override == OVERRIDE_NEW_PROFILE) {
-          additionalPage += "&utm_content=firstrun";
-        }
-      }
-    }
-
     if (!additionalPage) {
       additionalPage = LaterRun.getURL() || "";
     }
