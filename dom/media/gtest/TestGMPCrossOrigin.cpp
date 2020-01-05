@@ -24,10 +24,6 @@
 #include "mozilla/dom/MediaKeyStatusMapBinding.h" 
 #include "mozilla/dom/MediaKeyMessageEventBinding.h" 
 
-#if defined(XP_WIN)
-#include "mozilla/WindowsVersion.h"
-#endif
-
 using namespace std;
 
 using namespace mozilla;
@@ -1535,11 +1531,6 @@ TEST(GeckoMediaPlugins, GMPPluginVoucher) {
 
 #if defined(XP_WIN)
 TEST(GeckoMediaPlugins, GMPOutputProtection) {
-  
-  if (!IsVistaOrLater()) {
-    return;
-  }
-
   RefPtr<GMPStorageTest> runner = new GMPStorageTest();
   runner->DoTest(&GMPStorageTest::TestOutputProtection);
 }
