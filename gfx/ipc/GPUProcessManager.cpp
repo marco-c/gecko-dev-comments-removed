@@ -853,6 +853,30 @@ GPUProcessManager::AllocateLayerTreeId()
   return ++mNextLayerTreeId;
 }
 
+uint64_t
+GPUProcessManager::AllocateAndConnectLayerTreeId(PCompositorBridgeChild* aCompositorBridge,
+                                                 base::ProcessId aOtherPid)
+{
+  uint64_t layersId = AllocateLayerTreeId();
+
+  if (!mGPUChild || !aCompositorBridge) {
+    
+    
+    
+    
+    MapLayerTreeId(layersId, aOtherPid);
+    if (aCompositorBridge) {
+      aCompositorBridge->SendNotifyChildCreated(layersId);
+    }
+    return layersId;
+  }
+
+  
+  LayerTreeOwnerTracker::Get()->Map(layersId, aOtherPid);
+  aCompositorBridge->SendMapAndNotifyChildCreated(layersId, aOtherPid);
+  return layersId;
+}
+
 void
 GPUProcessManager::EnsureVsyncIOThread()
 {
