@@ -1209,6 +1209,9 @@ private:
         mWorkerPrivate->SetBaseURI(finalURI);
       }
 
+      nsILoadGroup* loadGroup = mWorkerPrivate->GetLoadGroup();
+      MOZ_DIAGNOSTIC_ASSERT(loadGroup);
+
 #if defined(DEBUG) || !defined(RELEASE_OR_BETA)
       nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
       MOZ_DIAGNOSTIC_ASSERT(principal);
@@ -1224,9 +1227,7 @@ private:
 
       mWorkerPrivate->InitChannelInfo(aChannelInfo);
 
-      nsILoadGroup* loadGroup = mWorkerPrivate->GetLoadGroup();
-      MOZ_DIAGNOSTIC_ASSERT(loadGroup);
-
+      
       
       
       
