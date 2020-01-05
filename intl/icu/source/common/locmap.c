@@ -1022,7 +1022,7 @@ uprv_convertToPosix(uint32_t hostid, char *posixID, int32_t posixIDCapacity, UEr
     
     
     
-    if (hostid & 0x3FF != 0x92) {
+    if ((hostid & 0x3FF) != 0x92) {
         int32_t tmpLen = 0;
         char locName[157];  
 
