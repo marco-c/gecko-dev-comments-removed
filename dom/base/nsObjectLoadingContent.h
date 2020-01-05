@@ -705,6 +705,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     
     bool                        mRewrittenYoutubeEmbed : 1;
 
+    
+    
+    bool                        mPreferFallback : 1;
+    bool                        mPreferFallbackKnown : 1;
+
     nsWeakFrame                 mPrintFrame;
 
     RefPtr<nsPluginInstanceOwner> mInstanceOwner;
