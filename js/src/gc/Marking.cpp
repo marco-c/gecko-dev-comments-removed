@@ -2509,8 +2509,24 @@ js::TenuringTracer::moveObjectToTenured(JSObject* dst, JSObject* src, AllocKind 
 
 
 
-    if (src->is<ArrayObject>())
+    if (src->is<ArrayObject>()) {
         tenuredSize = srcSize = sizeof(NativeObject);
+    } else if (src->is<TypedArrayObject>()) {
+        TypedArrayObject* tarray = &src->as<TypedArrayObject>();
+        
+        
+        
+        
+        
+        
+        
+        
+        if (tarray->hasInlineElements()) {
+            AllocKind srcKind = GetGCObjectKind(TypedArrayObject::FIXED_DATA_START);
+            size_t headerSize = Arena::thingSize(srcKind);
+            srcSize = headerSize + tarray->byteLength();
+        }
+    }
 
     
     MOZ_ASSERT(OffsetToChunkEnd(src) >= ptrdiff_t(srcSize));
