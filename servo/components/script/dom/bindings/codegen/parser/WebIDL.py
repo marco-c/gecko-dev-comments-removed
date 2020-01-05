@@ -508,6 +508,9 @@ class IDLExposureMixins():
     def isExposedInAnyWorker(self):
         return len(self.getWorkerExposureSet()) > 0
 
+    def isExposedInWorkerDebugger(self):
+        return len(self.getWorkerDebuggerExposureSet()) > 0
+
     def isExposedInSystemGlobals(self):
         return 'BackstagePass' in self.exposureSet
 
@@ -526,6 +529,10 @@ class IDLExposureMixins():
     def getWorkerExposureSet(self):
         workerScopes = self._globalScope.globalNameMapping["Worker"]
         return workerScopes.intersection(self.exposureSet)
+
+    def getWorkerDebuggerExposureSet(self):
+        workerDebuggerScopes = self._globalScope.globalNameMapping["WorkerDebugger"]
+        return workerDebuggerScopes.intersection(self.exposureSet)
 
 
 class IDLExternalInterface(IDLObjectWithIdentifier, IDLExposureMixins):
@@ -978,7 +985,9 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
                  (member.getExtendedAttribute("StoreInSlot") or
                   member.getExtendedAttribute("Cached"))) or
                 member.isMaplikeOrSetlike()):
-                member.slotIndex = self.totalMembersInSlots
+                if member.slotIndices is None:
+                    member.slotIndices = dict()
+                member.slotIndices[self.identifier.name] = self.totalMembersInSlots
                 self.totalMembersInSlots += 1
                 if member.getExtendedAttribute("StoreInSlot"):
                     self._ownMembersInSlots += 1
@@ -1121,6 +1130,8 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
                               self.identifier.name,
                               locations)
 
+        indexedGetter = None
+        hasLengthAttribute = False
         for member in self.members:
             member.validate()
 
@@ -1132,7 +1143,12 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
 
             
             
+            
             if member.isAttr():
+                if (member.identifier.name == "length" and
+                    member.type.isInteger()):
+                    hasLengthAttribute = True
+
                 iface = self
                 attr = member
                 putForwards = attr.getExtendedAttribute("PutForwards")
@@ -1172,6 +1188,9 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
             
             
             if member.isMethod():
+                if member.isGetter() and member.isIndexed():
+                    indexedGetter = member
+
                 for alias in member.aliases:
                     if self.isOnGlobalProtoChain():
                         raise WebIDLError("[Alias] must not be used on a "
@@ -1231,6 +1250,35 @@ class IDLInterface(IDLObjectWithScope, IDLExposureMixins):
             raise WebIDLError("Interface with no interface object is "
                               "exposed conditionally",
                               [self.location])
+
+        
+        
+        
+        if self.isIterable():
+            iterableDecl = self.maplikeOrSetlikeOrIterable
+            if iterableDecl.isValueIterator():
+                if not indexedGetter:
+                    raise WebIDLError("Interface with value iterator does not "
+                                      "support indexed properties",
+                                      [self.location])
+
+                if iterableDecl.valueType != indexedGetter.signatures()[0][0]:
+                    raise WebIDLError("Iterable type does not match indexed "
+                                      "getter type",
+                                      [iterableDecl.location,
+                                       indexedGetter.location])
+
+                if not hasLengthAttribute:
+                    raise WebIDLError('Interface with value iterator does not '
+                                      'have an integer-typed "length" attribute',
+                                      [self.location])
+            else:
+                assert iterableDecl.isPairIterator()
+                if indexedGetter:
+                    raise WebIDLError("Interface with pair iterator supports "
+                                      "indexed properties",
+                                      [self.location, iterableDecl.location,
+                                       indexedGetter.location])
 
     def isInterface(self):
         return True
@@ -3432,7 +3480,10 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
 
     def __init__(self, location, identifier, ifaceType, keyType, valueType, ifaceKind):
         IDLInterfaceMember.__init__(self, location, identifier, ifaceKind)
-        assert isinstance(keyType, IDLType)
+        if keyType is not None:
+            assert isinstance(keyType, IDLType)
+        else:
+            assert valueType is not None
         assert ifaceType in ['maplike', 'setlike', 'iterable']
         if valueType is not None:
             assert isinstance(valueType, IDLType)
@@ -3450,6 +3501,9 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
 
     def isIterable(self):
         return self.maplikeOrSetlikeOrIterableType == "iterable"
+
+    def hasKeyType(self):
+        return self.keyType is not None
 
     def hasValueType(self):
         return self.valueType is not None
@@ -3475,7 +3529,8 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
                                   [self.location, member.location])
 
     def addMethod(self, name, members, allowExistingOperations, returnType, args=[],
-                  chromeOnly=False, isPure=False, affectsNothing=False, newObject=False):
+                  chromeOnly=False, isPure=False, affectsNothing=False, newObject=False,
+                  isIteratorAlias=False):
         """
         Create an IDLMethod based on the parameters passed in.
 
@@ -3535,16 +3590,20 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
         if newObject:
             method.addExtendedAttributes(
                 [IDLExtendedAttribute(self.location, ("NewObject",))])
+        if isIteratorAlias:
+            method.addExtendedAttributes(
+                [IDLExtendedAttribute(self.location, ("Alias", "@@iterator"))])
         members.append(method)
 
     def resolve(self, parentScope):
-        self.keyType.resolveType(parentScope)
+        if self.keyType:
+            self.keyType.resolveType(parentScope)
         if self.valueType:
             self.valueType.resolveType(parentScope)
 
     def finish(self, scope):
         IDLInterfaceMember.finish(self, scope)
-        if not self.keyType.isComplete():
+        if self.keyType and not self.keyType.isComplete():
             t = self.keyType.complete(scope)
 
             assert not isinstance(t, IDLUnresolvedType)
@@ -3566,9 +3625,23 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
         IDLInterfaceMember.handleExtendedAttribute(self, attr)
 
     def _getDependentObjects(self):
+        deps = set()
+        if self.keyType:
+            deps.add(self.keyType)
         if self.valueType:
-            return set([self.keyType, self.valueType])
-        return set([self.keyType])
+            deps.add(self.valueType)
+        return deps
+
+    def getForEachArguments(self):
+        return [IDLArgument(self.location,
+                            IDLUnresolvedIdentifier(BuiltinLocation("<auto-generated-identifier>"),
+                                                    "callback"),
+                            BuiltinTypes[IDLBuiltinType.Types.object]),
+                IDLArgument(self.location,
+                            IDLUnresolvedIdentifier(BuiltinLocation("<auto-generated-identifier>"),
+                                                    "thisArg"),
+                            BuiltinTypes[IDLBuiltinType.Types.any],
+                            optional=True)]
 
 
 
@@ -3590,14 +3663,31 @@ class IDLIterable(IDLMaplikeOrSetlikeOrIterableBase):
         specification during parsing.
         """
         
+        
+        if not self.isPairIterator():
+            return
+
+        
         self.addMethod("entries", members, False, self.iteratorType,
-                       affectsNothing=True, newObject=True)
+                       affectsNothing=True, newObject=True,
+                       isIteratorAlias=True)
         
         self.addMethod("keys", members, False, self.iteratorType,
                        affectsNothing=True, newObject=True)
         
         self.addMethod("values", members, False, self.iteratorType,
                        affectsNothing=True, newObject=True)
+
+        
+        self.addMethod("forEach", members, False,
+                       BuiltinTypes[IDLBuiltinType.Types.void],
+                       self.getForEachArguments())
+
+    def isValueIterator(self):
+        return not self.isPairIterator()
+
+    def isPairIterator(self):
+        return self.hasKeyType()
 
 
 class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
@@ -3607,7 +3697,7 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
         IDLMaplikeOrSetlikeOrIterableBase.__init__(self, location, identifier, maplikeOrSetlikeType,
                                                    keyType, valueType, IDLInterfaceMember.Tags.MaplikeOrSetlike)
         self.readonly = readonly
-        self.slotIndex = None
+        self.slotIndices = None
 
         
         
@@ -3635,26 +3725,17 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
 
         
         self.addMethod("entries", members, False, BuiltinTypes[IDLBuiltinType.Types.object],
-                       affectsNothing=True)
+                       affectsNothing=True, isIteratorAlias=self.isMaplike())
         
         self.addMethod("keys", members, False, BuiltinTypes[IDLBuiltinType.Types.object],
                        affectsNothing=True)
         
         self.addMethod("values", members, False, BuiltinTypes[IDLBuiltinType.Types.object],
-                       affectsNothing=True)
+                       affectsNothing=True, isIteratorAlias=self.isSetlike())
 
         
-        foreachArguments = [IDLArgument(self.location,
-                                        IDLUnresolvedIdentifier(BuiltinLocation("<auto-generated-identifier>"),
-                                                                "callback"),
-                                        BuiltinTypes[IDLBuiltinType.Types.object]),
-                            IDLArgument(self.location,
-                                        IDLUnresolvedIdentifier(BuiltinLocation("<auto-generated-identifier>"),
-                                                                "thisArg"),
-                                        BuiltinTypes[IDLBuiltinType.Types.any],
-                                        optional=True)]
         self.addMethod("forEach", members, False, BuiltinTypes[IDLBuiltinType.Types.void],
-                       foreachArguments)
+                       self.getForEachArguments())
 
         def getKeyArg():
             return IDLArgument(self.location,
@@ -3801,7 +3882,7 @@ class IDLAttribute(IDLInterfaceMember):
         self.stringifier = stringifier
         self.enforceRange = False
         self.clamp = False
-        self.slotIndex = None
+        self.slotIndices = None
         assert maplikeOrSetlike is None or isinstance(maplikeOrSetlike, IDLMaplikeOrSetlike)
         self.maplikeOrSetlike = maplikeOrSetlike
         self.dependsOn = "Everything"
@@ -5444,10 +5525,13 @@ class Parser(Tokenizer):
         location = self.getLocation(p, 2)
         identifier = IDLUnresolvedIdentifier(location, "__iterable",
                                              allowDoubleUnderscore=True)
-        keyType = p[3]
-        valueType = None
         if (len(p) > 6):
+            keyType = p[3]
             valueType = p[5]
+        else:
+            keyType = None
+            valueType = p[3]
+
         p[0] = IDLIterable(location, identifier, keyType, valueType, self.globalScope())
 
     def p_Setlike(self, p):
@@ -6518,7 +6602,7 @@ class Parser(Tokenizer):
                 if isinstance(m, IDLIterable):
                     iterable = m
                     break
-            if iterable:
+            if iterable and iterable.isPairIterator():
                 def simpleExtendedAttr(str):
                     return IDLExtendedAttribute(iface.location, (str, ))
                 nextMethod = IDLMethod(
