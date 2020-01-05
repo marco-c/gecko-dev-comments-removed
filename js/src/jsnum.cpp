@@ -1130,28 +1130,9 @@ static const JSFunctionSpec number_static_methods[] = {
 };
 
 
-
-
-
-
-void
-js::FIX_FPU()
-{
-#if (defined __GNUC__ && defined __i386__) || \
-    (defined __SUNPRO_CC && defined __i386)
-    short control;
-    asm("fstcw %0" : "=m" (control) : );
-    control &= ~0x300; 
-    control |= 0x2f3;  
-    asm("fldcw %0" : : "m" (control) );
-#endif
-}
-
 bool
 js::InitRuntimeNumberState(JSRuntime* rt)
 {
-    FIX_FPU();
-
     
     
     
@@ -1222,9 +1203,6 @@ JSObject*
 js::InitNumberClass(JSContext* cx, HandleObject obj)
 {
     MOZ_ASSERT(obj->isNative());
-
-    
-    FIX_FPU();
 
     Handle<GlobalObject*> global = obj.as<GlobalObject>();
 

@@ -10,7 +10,6 @@
 #include "mozilla/Unused.h"
 
 #include "jsnativestack.h"
-#include "jsnum.h" 
 
 #include "builtin/Promise.h"
 #include "frontend/BytecodeCompiler.h"
@@ -1448,12 +1447,6 @@ void
 HelperThread::ThreadMain(void* arg)
 {
     ThisThread::SetName("JS Helper");
-
-    
-    
-    
-    
-    FIX_FPU();
 
     static_cast<HelperThread*>(arg)->threadLoop();
     Mutex::ShutDown();
