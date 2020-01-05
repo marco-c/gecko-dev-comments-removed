@@ -8,46 +8,35 @@ var PointerlockFsWarning = {
   _element: null,
   _origin: null,
 
-  init() {
-    this.Timeout.prototype = {
-      start() {
-        this.cancel();
-        this._id = setTimeout(() => this._handle(), this._delay);
-      },
-      cancel() {
-        if (this._id) {
-          clearTimeout(this._id);
-          this._id = 0;
-        }
-      },
-      _handle() {
+  
+
+
+
+
+  Timeout: class {
+    constructor(func, delay) {
+      this._id = 0;
+      this._func = func;
+      this._delay = delay;
+    }
+    start() {
+      this.cancel();
+      this._id = setTimeout(() => this._handle(), this._delay);
+    }
+    cancel() {
+      if (this._id) {
+        clearTimeout(this._id);
         this._id = 0;
-        this._func();
-      },
-      get delay() {
-        return this._delay;
       }
-    };
+    }
+    _handle() {
+      this._id = 0;
+      this._func();
+    }
+    get delay() {
+      return this._delay;
+    }
   },
-
-  
-  
-
-
-
-
-
-  
-
-
-
-
-  Timeout: function(func, delay) {
-    this._id = 0;
-    this._func = func;
-    this._delay = delay;
-  },
-  
 
   showPointerLock(aOrigin) {
     if (!document.fullscreen) {
