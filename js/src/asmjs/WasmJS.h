@@ -103,14 +103,6 @@ ExportedFunctionToDefinitionIndex(JSFunction* fun);
 
 
 
-
-extern const Class WasmClass;
-
-JSObject*
-InitWasmClass(JSContext* cx, HandleObject global);
-
-
-
 extern const Class WebAssemblyClass;
 
 JSObject*
