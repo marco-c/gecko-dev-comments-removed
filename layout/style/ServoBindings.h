@@ -75,8 +75,8 @@ using mozilla::dom::StyleChildrenIterator;
 
 
 
-#define DECL_BORROWED_REF_TYPE_FOR(type_) typedef type_* type_##Borrowed;
-#define DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_) typedef type_* type_##BorrowedOrNull;
+#define DECL_BORROWED_REF_TYPE_FOR(type_) typedef type_ const* type_##Borrowed;
+#define DECL_NULLABLE_BORROWED_REF_TYPE_FOR(type_) typedef type_ const* type_##BorrowedOrNull;
 #define DECL_BORROWED_MUT_REF_TYPE_FOR(type_) typedef type_* type_##BorrowedMut;
 #define DECL_NULLABLE_BORROWED_MUT_REF_TYPE_FOR(type_) typedef type_* type_##BorrowedMutOrNull;
 
