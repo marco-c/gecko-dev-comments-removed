@@ -2254,7 +2254,7 @@ nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
                                   mozIDOMWindowProxy* aParent,
                                   bool aIsCallerChrome,
                                   const SizeSpec& aSizeSpec,
-                                  Maybe<float> aOpenerFullZoom)
+                                  const Maybe<float>& aOpenerFullZoom)
 {
   
   

@@ -7,7 +7,6 @@
 
 #include <cstdlib>
 
-#include "gfxPrefs.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIDirectoryService.h"
 #include "nsIFile.h"
@@ -377,10 +376,10 @@ CheckGeneratedPalettedImage(Decoder* aDecoder, const IntRect& aRect)
 void
 CheckWritePixels(Decoder* aDecoder,
                  SurfaceFilter* aFilter,
-                 Maybe<IntRect> aOutputRect ,
-                 Maybe<IntRect> aInputRect ,
-                 Maybe<IntRect> aInputWriteRect ,
-                 Maybe<IntRect> aOutputWriteRect ,
+                 const Maybe<IntRect>& aOutputRect ,
+                 const Maybe<IntRect>& aInputRect ,
+                 const Maybe<IntRect>& aInputWriteRect ,
+                 const Maybe<IntRect>& aOutputWriteRect ,
                  uint8_t aFuzz )
 {
   IntRect outputRect = aOutputRect.valueOr(IntRect(0, 0, 100, 100));
@@ -424,10 +423,10 @@ CheckWritePixels(Decoder* aDecoder,
 void
 CheckPalettedWritePixels(Decoder* aDecoder,
                          SurfaceFilter* aFilter,
-                         Maybe<IntRect> aOutputRect ,
-                         Maybe<IntRect> aInputRect ,
-                         Maybe<IntRect> aInputWriteRect ,
-                         Maybe<IntRect> aOutputWriteRect ,
+                         const Maybe<IntRect>& aOutputRect ,
+                         const Maybe<IntRect>& aInputRect ,
+                         const Maybe<IntRect>& aInputWriteRect ,
+                         const Maybe<IntRect>& aOutputWriteRect ,
                          uint8_t aFuzz )
 {
   IntRect outputRect = aOutputRect.valueOr(IntRect(0, 0, 100, 100));
