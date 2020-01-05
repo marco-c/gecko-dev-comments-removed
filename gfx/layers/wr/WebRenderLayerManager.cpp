@@ -6,7 +6,6 @@
 #include "WebRenderLayerManager.h"
 
 #include "apz/src/AsyncPanZoomController.h"
-#include "gfxPrefs.h"
 #include "WebRenderLayersLogging.h"
 #include "mozilla/dom/TabChild.h"
 #include "mozilla/layers/APZCTreeManager.h"
@@ -158,15 +157,11 @@ WrScrollFrameStackingContextGenerator::WrScrollFrameStackingContextGenerator(
         fm.GetScrollId(), Stringify(bounds).c_str(), Stringify(overflow).c_str());
     }
 
-    mLayer->WrBridge()->AddWebRenderCommand(
-      OpDPPushStackingContext(wr::ToWrRect(bounds),
-                              wr::ToWrRect(overflow),
-                              Nothing(),
-                              1.0f,
-                              layer->GetAnimations(),
-                              identity,
-                              WrMixBlendMode::Normal,
-                              fm.GetScrollId()));
+
+
+
+
+
   }
 }
 
@@ -179,7 +174,7 @@ WrScrollFrameStackingContextGenerator::~WrScrollFrameStackingContextGenerator()
       continue;
     }
     if (gfxPrefs::LayersDump()) printf_stderr("Popping stacking context id %" PRIu64"\n", fm.GetScrollId());
-    mLayer->WrBridge()->AddWebRenderCommand(OpDPPopStackingContext());
+
   }
 }
 
