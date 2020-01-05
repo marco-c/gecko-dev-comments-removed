@@ -280,7 +280,7 @@ let urlbarListener = {
 
 let BrowserUsageTelemetry = {
   init() {
-    Services.obs.addObserver(this, WINDOWS_RESTORED_TOPIC, false);
+    Services.obs.addObserver(this, WINDOWS_RESTORED_TOPIC);
     urlbarListener.init();
   },
 
@@ -470,8 +470,8 @@ let BrowserUsageTelemetry = {
 
   _setupAfterRestore() {
     
-    Services.obs.addObserver(this, DOMWINDOW_OPENED_TOPIC, false);
-    Services.obs.addObserver(this, TELEMETRY_SUBSESSIONSPLIT_TOPIC, false);
+    Services.obs.addObserver(this, DOMWINDOW_OPENED_TOPIC);
+    Services.obs.addObserver(this, TELEMETRY_SUBSESSIONSPLIT_TOPIC);
 
     
     let browserEnum = Services.wm.getEnumerator("navigator:browser");

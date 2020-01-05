@@ -24,10 +24,10 @@ function ContentPrefService() {
   
   this._dbInit();
 
-  this._observerSvc.addObserver(this, "last-pb-context-exited", false);
+  this._observerSvc.addObserver(this, "last-pb-context-exited");
 
   
-  this._observerSvc.addObserver(this, "xpcom-shutdown", false);
+  this._observerSvc.addObserver(this, "xpcom-shutdown");
 }
 
 Cu.import("resource://gre/modules/ContentPrefStore.jsm");

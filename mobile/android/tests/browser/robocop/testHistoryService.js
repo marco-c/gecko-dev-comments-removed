@@ -73,7 +73,7 @@ add_test(function setup_browser() {
     BrowserApp.closeTab(BrowserApp.getTabForBrowser(gBrowser));
   });
 
-  Services.obs.addObserver(visitObserver, "link-visited", false);
+  Services.obs.addObserver(visitObserver, "link-visited");
 
   
   let url = "about:blank";

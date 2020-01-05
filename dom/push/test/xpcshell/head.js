@@ -48,7 +48,7 @@ Services.obs.addObserver(function observe(subject, topic, data) {
       Cu.reportError(e);
     }
   }
-}, 'profile-change-net-teardown', false);
+}, 'profile-change-net-teardown');
 
 
 
@@ -94,7 +94,7 @@ function promiseObserverNotification(topic, matchFunc) {
       }
       Services.obs.removeObserver(observe, topic);
       resolve({subject, data});
-    }, topic, false);
+    }, topic);
   });
 }
 

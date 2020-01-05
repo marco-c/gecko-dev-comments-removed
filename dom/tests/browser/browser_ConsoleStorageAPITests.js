@@ -53,7 +53,7 @@ add_task(function*()
         }
       };
 
-      Services.obs.addObserver(ConsoleObserver, "console-storage-cache-event", false);
+      Services.obs.addObserver(ConsoleObserver, "console-storage-cache-event");
 
       
       content.window.location = TEST_URI;

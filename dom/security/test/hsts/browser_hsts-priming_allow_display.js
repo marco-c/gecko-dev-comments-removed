@@ -8,8 +8,8 @@
 
 add_task(function*() {
   
-  Services.obs.addObserver(Observer, "console-api-log-event", false);
-  Services.obs.addObserver(Observer, "http-on-examine-response", false);
+  Services.obs.addObserver(Observer, "console-api-log-event");
+  Services.obs.addObserver(Observer, "http-on-examine-response");
   registerCleanupFunction(do_cleanup);
 
   let which = "allow_display";

@@ -75,14 +75,14 @@ FormAutofillParent.prototype = {
     this._profileStore = new ProfileStorage(storePath);
     this._profileStore.initialize();
 
-    Services.obs.addObserver(this, "advanced-pane-loaded", false);
+    Services.obs.addObserver(this, "advanced-pane-loaded");
     Services.ppmm.addMessageListener("FormAutofill:GetProfiles", this);
     Services.ppmm.addMessageListener("FormAutofill:SaveProfile", this);
     Services.ppmm.addMessageListener("FormAutofill:RemoveProfiles", this);
 
     
-    Services.prefs.addObserver(ENABLED_PREF, this, false);
-    Services.obs.addObserver(this, "formautofill-storage-changed", false);
+    Services.prefs.addObserver(ENABLED_PREF, this);
+    Services.obs.addObserver(this, "formautofill-storage-changed");
 
     
     

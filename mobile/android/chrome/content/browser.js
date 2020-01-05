@@ -175,11 +175,11 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
   });
   let observer = (s, t, d) => {
     Services.obs.removeObserver(observer, t);
-    Services.obs.addObserver(window[name], t, false);
+    Services.obs.addObserver(window[name], t);
     window[name].observe(s, t, d); 
   };
   notifications.forEach((notification) => {
-    Services.obs.addObserver(observer, notification, false);
+    Services.obs.addObserver(observer, notification);
   });
 });
 
@@ -420,13 +420,13 @@ var BrowserApp = {
     
     
     Services.obs.addObserver((subject, topic, data) =>
-        this.quit(data ? JSON.parse(data) : undefined), "Browser:Quit", false);
+        this.quit(data ? JSON.parse(data) : undefined), "Browser:Quit");
 
-    Services.obs.addObserver(this, "android-get-pref", false);
-    Services.obs.addObserver(this, "android-set-pref", false);
-    Services.obs.addObserver(this, "gather-telemetry", false);
-    Services.obs.addObserver(this, "keyword-search", false);
-    Services.obs.addObserver(this, "Vibration:Request", false);
+    Services.obs.addObserver(this, "android-get-pref");
+    Services.obs.addObserver(this, "android-set-pref");
+    Services.obs.addObserver(this, "gather-telemetry");
+    Services.obs.addObserver(this, "keyword-search");
+    Services.obs.addObserver(this, "Vibration:Request");
 
     window.addEventListener("fullscreen", function() {
       WindowEventDispatcher.sendRequest({
@@ -1617,7 +1617,7 @@ var BrowserApp = {
     let paintDone = function() {
       window.removeEventListener("MozAfterPaint", paintDone);
       if (dwu.flushApzRepaints()) {
-        Services.obs.addObserver(apzFlushDone, "apz-repaints-flushed", false);
+        Services.obs.addObserver(apzFlushDone, "apz-repaints-flushed");
       } else {
         apzFlushDone();
       }
@@ -3651,9 +3651,9 @@ Tab.prototype = {
     this.browser.addEventListener("VideoBindingAttached", this, true, true);
     this.browser.addEventListener("VideoBindingCast", this, true, true);
 
-    Services.obs.addObserver(this, "before-first-paint", false);
-    Services.obs.addObserver(this, "media-playback", false);
-    Services.obs.addObserver(this, "media-playback-resumed", false);
+    Services.obs.addObserver(this, "before-first-paint");
+    Services.obs.addObserver(this, "media-playback");
+    Services.obs.addObserver(this, "media-playback-resumed");
 
     
     
@@ -4694,8 +4694,8 @@ Tab.prototype = {
 var BrowserEventHandler = {
   init: function init() {
     this._clickInZoomedView = false;
-    Services.obs.addObserver(this, "Gesture:SingleTap", false);
-    Services.obs.addObserver(this, "Gesture:ClickInZoomedView", false);
+    Services.obs.addObserver(this, "Gesture:SingleTap");
+    Services.obs.addObserver(this, "Gesture:ClickInZoomedView");
 
     BrowserApp.deck.addEventListener("touchend", this, true);
 
@@ -5004,8 +5004,8 @@ var FormAssistant = {
       "FormAssist:Remove",
     ]);
 
-    Services.obs.addObserver(this, "invalidformsubmit", false);
-    Services.obs.addObserver(this, "PanZoom:StateChange", false);
+    Services.obs.addObserver(this, "invalidformsubmit");
+    Services.obs.addObserver(this, "PanZoom:StateChange");
 
     
     BrowserApp.deck.addEventListener("focus", this, true);
@@ -5351,12 +5351,12 @@ var FormAssistant = {
 
 var XPInstallObserver = {
   init: function() {
-    Services.obs.addObserver(this, "addon-install-origin-blocked", false);
-    Services.obs.addObserver(this, "addon-install-disabled", false);
-    Services.obs.addObserver(this, "addon-install-blocked", false);
-    Services.obs.addObserver(this, "addon-install-started", false);
-    Services.obs.addObserver(this, "xpi-signature-changed", false);
-    Services.obs.addObserver(this, "browser-delayed-startup-finished", false);
+    Services.obs.addObserver(this, "addon-install-origin-blocked");
+    Services.obs.addObserver(this, "addon-install-disabled");
+    Services.obs.addObserver(this, "addon-install-blocked");
+    Services.obs.addObserver(this, "addon-install-started");
+    Services.obs.addObserver(this, "xpi-signature-changed");
+    Services.obs.addObserver(this, "browser-delayed-startup-finished");
 
     AddonManager.addInstallListener(this);
   },
@@ -5727,7 +5727,7 @@ var IndexedDB = {
   _permissionsResponse: "indexedDB-permissions-response",
 
   init: function IndexedDB_init() {
-    Services.obs.addObserver(this, this._permissionsPrompt, false);
+    Services.obs.addObserver(this, this._permissionsPrompt);
   },
 
   observe: function IndexedDB_observe(subject, topic, data) {
@@ -6171,7 +6171,7 @@ var SearchEngines = {
       "SearchEngines:RestoreDefaults",
       "SearchEngines:SetDefault",
     ]);
-    Services.obs.addObserver(this, "browser-search-engine-modified", false);
+    Services.obs.addObserver(this, "browser-search-engine-modified");
   },
 
   
@@ -6492,8 +6492,8 @@ var SearchEngines = {
 
 var ActivityObserver = {
   init: function ao_init() {
-    Services.obs.addObserver(this, "application-background", false);
-    Services.obs.addObserver(this, "application-foreground", false);
+    Services.obs.addObserver(this, "application-background");
+    Services.obs.addObserver(this, "application-foreground");
   },
 
   observe: function ao_observe(aSubject, aTopic, aData) {
@@ -6734,7 +6734,7 @@ var Distribution = {
       "Distribution:Changed",
       "Distribution:Set",
     ]);
-    Services.obs.addObserver(this, "prefservice:after-app-defaults", false);
+    Services.obs.addObserver(this, "prefservice:after-app-defaults");
 
     
     
@@ -6962,7 +6962,7 @@ var Tabs = {
     if (BrowserApp.isOnLowMemoryPlatform) {
       this._enableTabExpiration = true;
     } else {
-      Services.obs.addObserver(this, "memory-pressure", false);
+      Services.obs.addObserver(this, "memory-pressure");
     }
 
     GlobalEventDispatcher.registerListener(this, [
@@ -6972,7 +6972,7 @@ var Tabs = {
 
     
     
-    Services.obs.addObserver(this, "network:link-status-changed", false);
+    Services.obs.addObserver(this, "network:link-status-changed");
     let network = Cc["@mozilla.org/network/network-link-service;1"].getService(Ci.nsINetworkLinkService);
     this.useCache = !network.isLinkUp;
 

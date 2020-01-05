@@ -2120,7 +2120,7 @@ function listenA11yEvents(aStartToListen)
   if (aStartToListen) {
     
     if (!(gA11yEventApplicantsCount++))
-      Services.obs.addObserver(gA11yEventObserver, "accessible-event", false);
+      Services.obs.addObserver(gA11yEventObserver, "accessible-event");
   } else {
     
     

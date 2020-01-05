@@ -29,7 +29,7 @@ function* do_run_test() {
   let principal = ssm.createCodebasePrincipal(uri, {});
 
   let observer = new permission_observer(test_generator, now, permType);
-  Services.obs.addObserver(observer, "perm-changed", false);
+  Services.obs.addObserver(observer, "perm-changed");
 
   
   

@@ -39,7 +39,7 @@ add_task(function* test_engineUpdate() {
         Services.obs.removeObserver(obs, TOPIC);
         resolve();
       }
-    }, TOPIC, false);
+    }, TOPIC);
 
     
     

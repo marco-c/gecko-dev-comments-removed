@@ -474,7 +474,7 @@ MessageManagerTunnel.prototype = {
       this.tunneledMessageNames.add(name);
     }
 
-    Services.obs.addObserver(this, "message-manager-close", false);
+    Services.obs.addObserver(this, "message-manager-close");
 
     
     Object.defineProperty(this.outer, "messageManager", {

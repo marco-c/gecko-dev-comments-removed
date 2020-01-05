@@ -197,8 +197,8 @@ var LoginManagerParent = {
       
       
       
-      Services.obs.addObserver(observer, "passwordmgr-crypto-login", false);
-      Services.obs.addObserver(observer, "passwordmgr-crypto-loginCanceled", false);
+      Services.obs.addObserver(observer, "passwordmgr-crypto-login");
+      Services.obs.addObserver(observer, "passwordmgr-crypto-loginCanceled");
       return;
     }
 

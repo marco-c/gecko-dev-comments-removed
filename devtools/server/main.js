@@ -789,7 +789,7 @@ var DebuggerServer = {
       }
     });
     Services.obs.addObserver(onMessageManagerClose,
-                             "message-manager-close", false);
+                             "message-manager-close");
 
     events.on(connection, "closed", onClose);
 
@@ -1182,7 +1182,7 @@ var DebuggerServer = {
       }
     };
     Services.obs.addObserver(onMessageManagerClose,
-                             "message-manager-close", false);
+                             "message-manager-close");
 
     
     

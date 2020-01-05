@@ -21,7 +21,7 @@ function onTabModalDialogLoaded(node) {
 SpecialPowers.pushPrefEnv({"set": [["dom.require_user_interaction_for_beforeunload", false]]});
 
 
-Services.obs.addObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded", false);
+Services.obs.addObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded");
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("browser.tabs.warnOnClose");
   Services.obs.removeObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded");

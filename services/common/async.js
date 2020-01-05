@@ -124,7 +124,7 @@ this.Async = {
         exception.appIsShuttingDown = true;
         throw exception;
       };
-    }, "quit-application", false);
+    }, "quit-application");
     
     return (Async.checkAppReady = function() { return true; })();
   },

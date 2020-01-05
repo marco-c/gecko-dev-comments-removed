@@ -32,8 +32,8 @@ this.UITelemetry = {
     }
 
     
-    Services.prefs.addObserver(PREF_ENABLED, this, false);
-    Services.obs.addObserver(this, "profile-before-change", false);
+    Services.prefs.addObserver(PREF_ENABLED, this);
+    Services.obs.addObserver(this, "profile-before-change");
 
     
     this._enabled = Services.prefs.getBoolPref(PREF_ENABLED, false);

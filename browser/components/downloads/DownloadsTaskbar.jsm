@@ -89,7 +89,7 @@ this.DownloadsTaskbar = {
         Services.obs.addObserver(() => {
           this._taskbarProgress = null;
           gMacTaskbarProgress = null;
-        }, "quit-application-granted", false);
+        }, "quit-application-granted");
       } else if (gWinTaskbar) {
         
         

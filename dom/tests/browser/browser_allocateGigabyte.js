@@ -13,7 +13,7 @@ function expectProcessCreated() {
       ok(true, "Expect process created");
       resolve();
     }
-    os.addObserver(observer, topic,  false);
+    os.addObserver(observer, topic);
   });
 }
 

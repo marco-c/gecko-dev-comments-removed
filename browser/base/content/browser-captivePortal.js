@@ -49,9 +49,9 @@ var CaptivePortalWatcher = {
   },
 
   init() {
-    Services.obs.addObserver(this, "captive-portal-login", false);
-    Services.obs.addObserver(this, "captive-portal-login-abort", false);
-    Services.obs.addObserver(this, "captive-portal-login-success", false);
+    Services.obs.addObserver(this, "captive-portal-login");
+    Services.obs.addObserver(this, "captive-portal-login-abort");
+    Services.obs.addObserver(this, "captive-portal-login-success");
 
     if (cps.state == cps.LOCKED_PORTAL) {
       
@@ -105,7 +105,7 @@ var CaptivePortalWatcher = {
     
     if (win != Services.ww.activeWindow) {
       this._delayedCaptivePortalDetectedInProgress = true;
-      Services.obs.addObserver(this, "xul-window-visible", false);
+      Services.obs.addObserver(this, "xul-window-visible");
     }
 
     this._showNotification();
@@ -155,7 +155,7 @@ var CaptivePortalWatcher = {
         
         self.ensureCaptivePortalTab();
       }
-    }, "captive-portal-check-complete", false);
+    }, "captive-portal-check-complete");
   },
 
   _captivePortalGone() {
@@ -251,7 +251,7 @@ var CaptivePortalWatcher = {
       }
       gBrowser.removeTab(tab);
     }
-    Services.obs.addObserver(tabCloser, "captive-portal-login-abort", false);
-    Services.obs.addObserver(tabCloser, "captive-portal-login-success", false);
+    Services.obs.addObserver(tabCloser, "captive-portal-login-abort");
+    Services.obs.addObserver(tabCloser, "captive-portal-login-success");
   },
 };

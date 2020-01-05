@@ -72,7 +72,7 @@ function waitForDBInit(callback) {
     ok(true, "Received internal event!");
     callbackOnce();
   }
-  Services.obs.addObserver(obsFunc, "mozentries-update-finished", false);
+  Services.obs.addObserver(obsFunc, "mozentries-update-finished");
 
   
   
