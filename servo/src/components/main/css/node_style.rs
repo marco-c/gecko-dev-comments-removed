@@ -9,6 +9,8 @@ use layout::incremental::RestyleDamage;
 
 use newcss::complete::CompleteStyle;
 use script::dom::node::{AbstractNode, LayoutView};
+use servo_util::tree::TreeNodeRef;
+
 
 
 pub trait StyledNode {

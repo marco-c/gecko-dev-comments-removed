@@ -3,8 +3,8 @@
 
 
 use servo_msg::compositor_msg::LayerBuffer;
+use servo_util::geometry::Au;
 use font_context::FontContext;
-use geometry::Au;
 use newcss::values::CSSBorderStyle;
 use newcss::values::{CSSBorderStyleNone, CSSBorderStyleHidden, CSSBorderStyleDotted, CSSBorderStyleDashed, CSSBorderStyleSolid, CSSBorderStyleDouble, CSSBorderStyleGroove, CSSBorderStyleRidge, CSSBorderStyleInset, CSSBorderStyleOutset};
 use opts::Opts;

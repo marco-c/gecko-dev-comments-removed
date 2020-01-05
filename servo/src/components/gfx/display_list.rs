@@ -15,7 +15,7 @@
 
 
 use color::Color;
-use geometry::Au;
+use servo_util::geometry::Au;
 use newcss::values::CSSBorderStyle;
 use render_context::RenderContext;
 use text::SendableTextRun;
