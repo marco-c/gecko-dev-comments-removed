@@ -96,10 +96,6 @@ public:
     
     void UnlockProd();
 
-    
-    
-    virtual void Commit(){}
-
 protected:
     virtual void LockProdImpl() = 0;
     virtual void UnlockProdImpl() = 0;
