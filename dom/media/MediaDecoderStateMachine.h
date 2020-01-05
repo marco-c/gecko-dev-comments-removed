@@ -408,9 +408,6 @@ protected:
   void VisibilityChanged();
 
   
-  void SuspendTaintChanged();
-
-  
   
   void StopPlayback();
 
@@ -754,8 +751,6 @@ private:
   
   Mirror<int64_t> mDecoderPosition;
 
-  
-  Mirror<bool> mHasSuspendTaint;
 
   
   

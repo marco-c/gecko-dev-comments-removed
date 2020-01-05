@@ -723,6 +723,10 @@ protected:
   bool mForcedHidden;
 
   
+  
+  bool mHasSuspendTaint;
+
+  
   MediaEventListener mTimedMetadataListener;
 
   MediaEventListener mMetadataLoadedListener;
@@ -811,10 +815,6 @@ protected:
   
   Canonical<int64_t> mDecoderPosition;
 
-  
-  
-  Canonical<bool> mHasSuspendTaint;
-
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
@@ -856,7 +856,6 @@ public:
   {
     return &mDecoderPosition;
   }
-  AbstractCanonical<bool>* CanonicalHasSuspendTaint() { return &mHasSuspendTaint; }
 
 private:
   
