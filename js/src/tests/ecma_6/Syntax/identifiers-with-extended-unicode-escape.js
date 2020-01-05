@@ -98,7 +98,7 @@ const otherIdContinue = [
     0x19DA,     
 ];
 
-for (let ident of [...idStart, ...otherIdStart]) {
+for (let ident of [...idStart, ...otherIdStart, ...idStartSupplemental]) {
     for (let count of leadingZeros) {
         let zeros = "0".repeat(count);
         eval(`
@@ -108,32 +108,18 @@ for (let ident of [...idStart, ...otherIdStart]) {
     }
 }
 
-
-for (let ident of [...idStartSupplemental]) {
-    for (let zeros of leadingZeros) {
-        assertThrowsInstanceOf(() => eval(`\\u{${zeros}${ident.toString(16)}}`), SyntaxError);
-    }
-}
-
 for (let ident of [...idContinue, ...idContinueSupplemental, ...otherIdContinue]) {
     for (let zeros of leadingZeros) {
         assertThrowsInstanceOf(() => eval(`\\u{${zeros}${ident.toString(16)}}`), SyntaxError);
     }
 }
 
-for (let ident of [...idStart, ...otherIdStart, ...idContinue, ...otherIdContinue]) {
+for (let ident of [...idStart, ...otherIdStart, ...idContinue, ...otherIdContinue, ...idStartSupplemental, ...idContinueSupplemental]) {
     for (let zeros of leadingZeros) {
         eval(`
             let A\\u{${zeros}${ident.toString(16)}} = 123;
             assertEq(${String.fromCodePoint(0x41, ident)}, 123);
         `);
-    }
-}
-
-
-for (let ident of [...idStartSupplemental, ...idContinueSupplemental]) {
-    for (let zeros of leadingZeros) {
-        assertThrowsInstanceOf(() => eval(`\\u{${zeros}${ident.toString(16)}}`), SyntaxError);
     }
 }
 

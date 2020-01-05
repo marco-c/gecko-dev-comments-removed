@@ -10,6 +10,16 @@
 #ifndef vm_UnicodeNonBMP_h
 #define vm_UnicodeNonBMP_h
 
+
+
+
+
+
+
+
+
+
+
 #define FOR_EACH_NON_BMP_LOWERCASE(macro) \
     macro(0x10400, 0x10427, 0xd801, 0xdc00, 0xdc27, 40) \
     macro(0x104b0, 0x104d3, 0xd801, 0xdcb0, 0xdcd3, 40) \
