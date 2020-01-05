@@ -71,6 +71,9 @@ mozharness_run_schema = Schema({
     
     
     Required('keep-artifacts', default=True): bool,
+
+    
+    Optional('job-script'): basestring,
 })
 
 
@@ -109,6 +112,9 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
 
     if 'custom-build-variant-cfg' in run:
         env['MH_CUSTOM_BUILD_VARIANT_CFG'] = run['custom-build-variant-cfg']
+
+    if 'job-script' in run:
+        env['JOB_SCRIPT'] = run['job-script']
 
     
     
@@ -153,8 +159,11 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
         '--vcs-checkout', '/home/worker/workspace/build/src',
         '--tools-checkout', '/home/worker/workspace/build/tools',
         '--',
-        '/home/worker/workspace/build/src/taskcluster/scripts/builder/build-linux.sh',
     ]
+    command.append("/home/worker/workspace/build/src/{}".format(
+        run.get('job-script',
+                "taskcluster/scripts/builder/build-linux.sh"
+                )))
 
     worker['command'] = command
 
