@@ -3,8 +3,8 @@
 
 
 use geometry::Au;
-use servo_gfx_util::range::Range;
-use servo_gfx_util::vec::*;
+use servo_util::range::Range;
+use servo_util::vec::*;
 
 use geometry;
 use core;

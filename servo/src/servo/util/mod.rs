@@ -2,8 +2,9 @@
 
 
 
-pub use gfx::util::cache;
-pub use gfx::util::time;
+pub use servo_util::cache;
+pub use servo_util::time;
 
 pub mod tree;
 pub mod task;
+
