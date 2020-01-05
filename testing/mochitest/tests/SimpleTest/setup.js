@@ -160,7 +160,7 @@ RunSet.runall = function(e) {
   
   
   if (params.testManifest) {
-    getTestManifest("http://mochi.test:8888/" + params.testManifest, params, function(filter) { gTestList = filterTests(filter, gTestList, params.runOnly); RunSet.runtests(); });
+    getTestManifest(getTestManifestURL(params.testManifest), params, function(filter) { gTestList = filterTests(filter, gTestList, params.runOnly); RunSet.runtests(); });
   } else {
     RunSet.runtests();
   }
@@ -235,7 +235,7 @@ function toggleNonTests (e) {
 
 function hookup() {
   if (params.manifestFile) {
-    getTestManifest("http://mochi.test:8888/" + params.manifestFile, params, hookupTests);
+    getTestManifest(getTestManifestURL(params.manifestFile), params, hookupTests);
   } else {
     hookupTests(gTestList);
   }
@@ -257,4 +257,14 @@ function hookupTests(testList) {
   if (params.autorun) {
     RunSet.runall();
   }
+}
+
+function getTestManifestURL(path) {
+  
+  
+  if (window.location.protocol == "http:" ||
+      window.location.protocol == "https:") {
+    return window.location.protocol + "//" + window.location.host + "/" + path;
+  }
+  return "http://mochi.test:8888/" + path;
 }
