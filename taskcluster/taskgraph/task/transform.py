@@ -8,11 +8,9 @@ import logging
 import itertools
 
 from . import base
-from .. import files_changed
 from ..util.python_path import find_object
 from ..util.templates import merge
 from ..util.yaml import load_yaml
-from ..util.seta import is_low_value_task
 
 from ..transforms.base import TransformSequence, TransformConfig
 
@@ -84,51 +82,11 @@ class TransformTask(base.Task):
     """
 
     def __init__(self, kind, task):
-        self.when = task.get('when', {})
         super(TransformTask, self).__init__(kind, task['label'],
                                             task['attributes'], task['task'],
-                                            index_paths=task.get('index-paths'),
+                                            optimizations=task.get('optimizations'),
                                             dependencies=task.get('dependencies'))
-
-    def optimize(self, params):
-        bbb_task = False
-
-        if self.index_paths:
-            optimized, taskId = super(TransformTask, self).optimize(params)
-            if optimized:
-                return optimized, taskId
-
-        elif 'files-changed' in self.when:
-            changed = files_changed.check(
-                params, self.when['files-changed'])
-            if not changed:
-                logger.debug('no files found matching a pattern in `when.files-changed` for ' +
-                             self.label)
-                return True, None
-
-        
-        if self.task.get('extra', {}).get('treeherder', {}).get('jobKind', '') == 'build':
-            return False, None
-
-        
-        if self.task.get('provisionerId', '') == 'buildbot-bridge':
-            self.label = self.task.get('payload').get('buildername')
-            bbb_task = True
-
-        
-        
-        if is_low_value_task(self.label,
-                             params.get('project'),
-                             params.get('pushlog_id'),
-                             params.get('pushdate'),
-                             bbb_task):
-            
-            return True, None
-        else:
-            return False, None
 
     @classmethod
     def from_json(cls, task_dict):
-        
-        task_dict['when'] = {}
         return cls(task_dict['attributes']['kind'], task_dict)

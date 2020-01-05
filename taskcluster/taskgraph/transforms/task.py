@@ -135,6 +135,18 @@ task_description_schema = Schema({
     
     
     
+    Optional('optimizations'): [Any(
+        
+        ['index-search', basestring],
+        
+        ['seta'],
+        
+        ['files-changed', [basestring]],
+    )],
+
+    
+    
+    
     'worker-type': basestring,
 
     
@@ -784,6 +796,17 @@ def add_files_changed(config, tasks):
 
 
 @transforms.add
+def setup_optimizations(config, tasks):
+    for task in tasks:
+        optimizations = task.setdefault('optimizations', [])
+        optimizations.extend([['index-search', idx] for idx in task.get('index-paths', [])])
+        optimizations.append(['seta'])
+        if 'when' in task and 'files-changed' in task['when']:
+            optimizations.append(['files-changed', task['when']['files-changed']])
+        yield task
+
+
+@transforms.add
 def build_task(config, tasks):
     for task in tasks:
         worker_type = task['worker-type'].format(level=str(config.params['level']))
@@ -876,8 +899,7 @@ def build_task(config, tasks):
             'task': task_def,
             'dependencies': task.get('dependencies', {}),
             'attributes': attributes,
-            'index-paths': task.get('index-paths'),
-            'when': task.get('when', {}),
+            'optimizations': task['optimizations'],
         }
 
 
