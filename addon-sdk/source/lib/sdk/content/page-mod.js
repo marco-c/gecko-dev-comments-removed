@@ -52,7 +52,7 @@ const ChildPageMod = Class({
     
     setListeners(this, model);
 
-    function deserializeRules(rules) {
+    function* deserializeRules(rules) {
       for (let rule of rules) {
         yield rule.type == "string" ? rule.value
                                     : new RegExp(rule.pattern, rule.flags);
