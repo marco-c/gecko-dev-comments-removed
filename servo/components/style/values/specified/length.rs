@@ -334,6 +334,51 @@ impl Mul<CSSFloat> for AbsoluteLength {
 }
 
 
+#[derive(Clone, PartialEq, Copy, Debug)]
+#[cfg(feature = "gecko")]
+pub struct PhysicalLength(pub CSSFloat);
+
+#[cfg(feature = "gecko")]
+impl PhysicalLength {
+    fn is_zero(&self) -> bool {
+        self.0 == 0.
+    }
+
+    
+    pub fn to_computed_value(&self, context: &Context) -> Au {
+        use gecko_bindings::bindings;
+        
+        const MM_PER_INCH: f32 = 25.4;
+
+        let physical_inch = unsafe {
+            let pres_context = &*context.device.pres_context;
+            bindings::Gecko_GetAppUnitsPerPhysicalInch(&pres_context)
+        };
+
+        let inch = self.0 / MM_PER_INCH;
+
+        to_au_round(inch, physical_inch as f32)
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl ToCss for PhysicalLength {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        write!(dest, "{}mozmm", self.0)
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl Mul<CSSFloat> for PhysicalLength {
+    type Output = PhysicalLength;
+
+    #[inline]
+    fn mul(self, scalar: CSSFloat) -> PhysicalLength {
+        PhysicalLength(self.0 * scalar)
+    }
+}
+
+
 
 
 #[derive(Clone, PartialEq, Copy, Debug)]
@@ -359,6 +404,10 @@ pub enum NoCalcLength {
     
     
     ServoCharacterWidth(CharacterWidth),
+
+    
+    #[cfg(feature = "gecko")]
+    Physical(PhysicalLength),
 }
 
 impl HasViewportPercentage for NoCalcLength {
@@ -378,6 +427,8 @@ impl ToCss for NoCalcLength {
             NoCalcLength::ViewportPercentage(length) => length.to_css(dest),
             
             NoCalcLength::ServoCharacterWidth(CharacterWidth(i)) => write!(dest, "CharWidth({})", i),
+            #[cfg(feature = "gecko")]
+            NoCalcLength::Physical(length) => length.to_css(dest),
         }
     }
 }
@@ -392,6 +443,8 @@ impl Mul<CSSFloat> for NoCalcLength {
             NoCalcLength::FontRelative(v) => NoCalcLength::FontRelative(v * scalar),
             NoCalcLength::ViewportPercentage(v) => NoCalcLength::ViewportPercentage(v * scalar),
             NoCalcLength::ServoCharacterWidth(_) => panic!("Can't multiply ServoCharacterWidth!"),
+            #[cfg(feature = "gecko")]
+            NoCalcLength::Physical(v) => NoCalcLength::Physical(v * scalar),
         }
     }
 }
@@ -438,6 +491,8 @@ impl NoCalcLength {
                 }
                 Ok(NoCalcLength::ViewportPercentage(ViewportPercentageLength::Vmax(value)))
             },
+            #[cfg(feature = "gecko")]
+            "mozmm" => Ok(NoCalcLength::Physical(PhysicalLength(value))),
             _ => Err(())
         }
     }
@@ -453,6 +508,8 @@ impl NoCalcLength {
     pub fn is_zero(&self) -> bool {
         match *self {
             NoCalcLength::Absolute(length) => length.is_zero(),
+            #[cfg(feature = "gecko")]
+            NoCalcLength::Physical(length) => length.is_zero(),
             _ => false
         }
     }
