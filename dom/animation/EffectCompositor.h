@@ -28,6 +28,7 @@ namespace mozilla {
 
 class EffectSet;
 class RestyleTracker;
+class StyleAnimationValue;
 struct AnimationPerformanceWarning;
 struct NonOwningAnimationTarget;
 
@@ -215,6 +216,10 @@ public:
     nsCSSPropertyID aProperty,
     const AnimationPerformanceWarning& aWarning);
 
+  
+  static StyleAnimationValue GetBaseStyle(nsCSSPropertyID aProperty,
+                                          nsStyleContext* aStyleContext,
+                                          dom::Element& aElement);
 private:
   ~EffectCompositor() = default;
 
