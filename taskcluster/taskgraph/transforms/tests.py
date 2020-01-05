@@ -644,7 +644,8 @@ def parallel_stylo_tests(config, tests):
     parallel traversal in the style system."""
 
     for test in tests:
-        if not test['test-platform'].startswith('linux64-stylo/'):
+        if (not test['test-platform'].startswith('linux64-stylo/')) and \
+           (not test['test-platform'].startswith('linux64-stylo-sequential/')):
             yield test
             continue
 
@@ -655,9 +656,15 @@ def parallel_stylo_tests(config, tests):
             yield test
             continue
 
-        test['mozharness'].setdefault('extra-options', [])\
-                          .append('--parallel-stylo-traversal')
-        yield test
+        
+        if test['test-platform'].startswith('linux64-stylo-sequential/'):
+            yield test
+
+        if test['test-platform'].startswith('linux64-stylo/'):
+            
+            test['mozharness'].setdefault('extra-options', [])\
+                              .append('--parallel-stylo-traversal')
+            yield test
 
 
 @transforms.add
