@@ -4627,6 +4627,8 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                     return false;
                 if (!emitJumpTargetAndPatch(beq))
                     return false;
+                if (!setSrcNoteOffset(noteIndex, 0, end.offset - beq.offset))
+                    return false;
                 stackDepth = depth;
             }
 
@@ -4645,8 +4647,6 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
 
             if (!isHead) {
                 if (!emitJumpTargetAndPatch(end))
-                    return false;
-                if (!setSrcNoteOffset(noteIndex, 0, end.offset - beq.offset))
                     return false;
             }
             needToPopIterator = false;
@@ -4733,6 +4733,8 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             return false;
         if (!emitJumpTargetAndPatch(beq))
             return false;
+        if (!setSrcNoteOffset(noteIndex, 0, end.offset - beq.offset))
+            return false;
 
         stackDepth = depth;
         if (!emitAtomOp(cx->names().value, JSOP_GETPROP))         
@@ -4761,8 +4763,6 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         if (!emitJumpTargetAndPatch(end))
-            return false;
-        if (!setSrcNoteOffset(noteIndex, 0, end.offset - beq.offset))
             return false;
     }
 
@@ -5647,29 +5647,14 @@ BytecodeEmitter::emitTry(ParseNode* pn)
 bool
 BytecodeEmitter::emitIf(ParseNode* pn)
 {
-    
-    bool emittingElse = false;
-
     JumpList jumpsAroundElse;
     JumpList beq;
-    JumpList jmp; 
     unsigned noteIndex = -1;
 
   if_again:
     
     if (!emitConditionallyExecutedTree(pn->pn_kid1))
         return false;
-
-    if (emittingElse) {
-        
-
-
-
-
-        emittingElse = false;
-        if (!setSrcNoteOffset(noteIndex, 0, jmp.offset - beq.offset))
-            return false;
-    }
 
     
     ParseNode* pn3 = pn->pn_kid3;
@@ -5684,8 +5669,6 @@ BytecodeEmitter::emitIf(ParseNode* pn)
         return false;
 
     if (pn3) {
-        emittingElse = true;
-
         
 
 
@@ -5693,10 +5676,18 @@ BytecodeEmitter::emitIf(ParseNode* pn)
 
         if (!emitJump(JSOP_GOTO, &jumpsAroundElse))
             return false;
-        jmp = jumpsAroundElse;
 
         
         if (!emitJumpTargetAndPatch(beq))
+            return false;
+        
+
+
+
+
+
+
+        if (!setSrcNoteOffset(noteIndex, 0, jumpsAroundElse.offset - beq.offset))
             return false;
         if (pn3->isKind(PNK_IF)) {
             pn = pn3;
@@ -5705,16 +5696,6 @@ BytecodeEmitter::emitIf(ParseNode* pn)
 
         if (!emitConditionallyExecutedTree(pn3))
             return false;
-
-        
-
-
-
-
-
-
-        if (!setSrcNoteOffset(noteIndex, 0, jmp.offset - beq.offset))
-            return false;
     } else {
         
         if (!emitJumpTargetAndPatch(beq))
@@ -5722,10 +5703,8 @@ BytecodeEmitter::emitIf(ParseNode* pn)
     }
 
     
-    JumpTarget here;
-    if (!emitJumpTarget(&here))
+    if (!emitJumpTargetAndPatch(jumpsAroundElse))
         return false;
-    patchJumpsToTarget(jumpsAroundElse, here);
 
     return true;
 }
