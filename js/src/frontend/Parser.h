@@ -756,40 +756,85 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     class MOZ_STACK_CLASS PossibleError
     {
-      protected:
-        Parser<ParseHandler>& parser_;
+      private:
+        enum class ErrorKind { Expression, Destructuring };
 
-        enum ErrorState { None, Pending };
-        ErrorState state_;
+        enum class ErrorState { None, Pending };
+
+        struct Error {
+            ErrorState state_ = ErrorState::None;
+
+            
+            uint32_t offset_;
+            unsigned errorNumber_;
+        };
+
+        Parser<ParseHandler>& parser_;
+        Error exprError_;
+        Error destructuringError_;
 
         
-        uint32_t offset_;
-        unsigned errorNumber_;
+        Error& error(ErrorKind kind);
+
+        
+        bool hasError(ErrorKind kind);
+
+        
+        void setResolved(ErrorKind kind);
+
+        
+        
+        void setPending(ErrorKind kind, Node pn, unsigned errorNumber);
+
+        
+        
+        bool checkForError(ErrorKind kind);
+
+        
+        void transferErrorTo(ErrorKind kind, PossibleError* other);
 
       public:
         explicit PossibleError(Parser<ParseHandler>& parser);
 
         
         
-        void setPending(Node pn, unsigned errorNumber);
-
         
-        void setResolved();
-
-        
-        bool hasError();
-
-        
-        
-        bool checkForExprErrors();
+        void setPendingDestructuringError(Node pn, unsigned errorNumber);
 
         
         
         
+        void setPendingExpressionError(Node pn, unsigned errorNumber);
+
         
-        void transferErrorTo(PossibleError* other);
+        
+        bool checkForDestructuringError();
+
+        
+        
+        bool checkForExpressionError();
+
+        
+        
+        
+        
+        void transferErrorsTo(PossibleError* other);
     };
 
   public:
