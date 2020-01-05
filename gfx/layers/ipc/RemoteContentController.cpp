@@ -49,6 +49,21 @@ RemoteContentController::RequestContentRepaint(const FrameMetrics& aFrameMetrics
 }
 
 void
+RemoteContentController::HandleTapOnMainThread(TapType aTapType,
+                                               const LayoutDevicePoint& aPoint,
+                                               Modifiers aModifiers,
+                                               const ScrollableLayerGuid& aGuid,
+                                               uint64_t aInputBlockId)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  dom::TabParent* tab = dom::TabParent::GetTabParentFromLayersId(aGuid.mLayersId);
+  if (tab) {
+    tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
+  }
+}
+
+void
 RemoteContentController::HandleTap(TapType aTapType,
                                    const LayoutDevicePoint& aPoint,
                                    Modifiers aModifiers,
@@ -66,28 +81,20 @@ RemoteContentController::HandleTap(TapType aTapType,
         CompositorBridgeParent::GetApzcTreeManagerParentForRoot(aGuid.mLayersId);
     if (apzctmp) {
       Unused << apzctmp->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
-      return;
     }
+
+    return;
   }
 
-  
-  
-  
-  
-  dom::TabParent* tab = dom::TabParent::GetTabParentFromLayersId(aGuid.mLayersId);
-  if (tab) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  if (NS_IsMainThread()) {
+    HandleTapOnMainThread(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
+  } else {
     
     
-    
-    
-    
-    MOZ_ASSERT(XRE_IsParentProcess());
-    if (NS_IsMainThread()) {
-      tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
-    } else {
-      NS_DispatchToMainThread(NewRunnableMethod<TapType, const LayoutDevicePoint&, Modifiers, const ScrollableLayerGuid&, uint64_t>
-        (tab, &dom::TabParent::SendHandleTap, aTapType, aPoint, aModifiers, aGuid, aInputBlockId));
-    }
+    NS_DispatchToMainThread(NewRunnableMethod<TapType, const LayoutDevicePoint&, Modifiers, const ScrollableLayerGuid&, uint64_t>
+        (this, &RemoteContentController::HandleTapOnMainThread, aTapType, aPoint, aModifiers, aGuid, aInputBlockId));
   }
 }
 
