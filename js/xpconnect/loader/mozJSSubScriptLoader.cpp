@@ -155,32 +155,29 @@ PrepareScript(nsIURI* uri,
                 return JS::Compile(cx, options, srcBuf, script);
             }
             return JS::CompileForNonSyntacticScope(cx, options, srcBuf, script);
-        } else {
-            AutoObjectVector envChain(cx);
-            if (!JS_IsGlobalObject(targetObj) && !envChain.append(targetObj)) {
-                return false;
-            }
-            return JS::CompileFunction(cx, envChain, options, nullptr, 0, nullptr,
-                                       srcBuf, function);
         }
-    } else {
-        
-        
-        if (!reuseGlobal) {
-            options.setSourceIsLazy(true);
-            if (JS_IsGlobalObject(targetObj)) {
-                return JS::Compile(cx, options, buf, len, script);
-            }
-            return JS::CompileForNonSyntacticScope(cx, options, buf, len, script);
-        } else {
-            AutoObjectVector envChain(cx);
-            if (!JS_IsGlobalObject(targetObj) && !envChain.append(targetObj)) {
-                return false;
-            }
-            return JS::CompileFunction(cx, envChain, options, nullptr, 0, nullptr,
-                                       buf, len, function);
+        AutoObjectVector envChain(cx);
+        if (!JS_IsGlobalObject(targetObj) && !envChain.append(targetObj)) {
+            return false;
         }
+        return JS::CompileFunction(cx, envChain, options, nullptr, 0, nullptr,
+                                   srcBuf, function);
     }
+    
+    
+    if (!reuseGlobal) {
+        options.setSourceIsLazy(true);
+        if (JS_IsGlobalObject(targetObj)) {
+            return JS::Compile(cx, options, buf, len, script);
+        }
+        return JS::CompileForNonSyntacticScope(cx, options, buf, len, script);
+    }
+    AutoObjectVector envChain(cx);
+    if (!JS_IsGlobalObject(targetObj) && !envChain.append(targetObj)) {
+        return false;
+    }
+    return JS::CompileFunction(cx, envChain, options, nullptr, 0, nullptr,
+                               buf, len, function);
 }
 
 bool
