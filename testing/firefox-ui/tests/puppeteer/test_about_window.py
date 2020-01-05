@@ -3,6 +3,7 @@
 
 
 from firefox_puppeteer import PuppeteerMixin
+from firefox_puppeteer.ui.deck import Panel
 from marionette_harness import MarionetteTestCase
 
 
@@ -52,6 +53,10 @@ class TestAboutWindow(PuppeteerMixin, MarionetteTestCase):
 
         
         self.assertEqual(self.deck.downloading.element.get_property('localName'), 'hbox')
+
+        
+        self.assertIsInstance(self.deck.selected_index, int)
+        self.assertIsInstance(self.deck.selected_panel, Panel)
 
     def test_open_window(self):
         """Test various opening strategies."""

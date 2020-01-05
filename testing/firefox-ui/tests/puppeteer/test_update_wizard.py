@@ -3,6 +3,7 @@
 
 
 from firefox_puppeteer import PuppeteerMixin
+from firefox_puppeteer.ui.deck import Panel
 from firefox_puppeteer.ui.update_wizard import UpdateWizardDialog
 from marionette_harness import MarionetteTestCase
 
@@ -60,3 +61,7 @@ class TestUpdateWizard(PuppeteerMixin, MarionetteTestCase):
         
         self.assertEqual(self.wizard.downloading.progress.get_property('localName'),
                          'progressmeter')
+
+        
+        self.assertIsInstance(self.wizard.selected_index, int)
+        self.assertIsInstance(self.wizard.selected_panel, Panel)
