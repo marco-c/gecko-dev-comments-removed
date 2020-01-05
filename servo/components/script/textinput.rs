@@ -377,18 +377,16 @@ impl<T: ClipboardProvider> TextInput<T> {
         }
         let adjust = {
             let current_line = &self.lines[self.edit_point.line];
-            
-            
             match direction {
                 Direction::Forward => {
-                    match current_line[self.edit_point.index..].chars().next() {
-                        Some(c) => c.len_utf8() as isize,
+                    match current_line[self.edit_point.index..].graphemes(true).next() {
+                        Some(c) => c.len() as isize,
                         None => 1,  
                     }
                 }
                 Direction::Backward => {
-                    match current_line[..self.edit_point.index].chars().next_back() {
-                        Some(c) => -(c.len_utf8() as isize),
+                    match current_line[..self.edit_point.index].graphemes(true).next_back() {
+                        Some(c) => -(c.len() as isize),
                         None => -1,  
                     }
                 }
@@ -844,5 +842,13 @@ impl<T: ClipboardProvider> TextInput<T> {
         };
 
         selection_start as u32
+    }
+
+    pub fn set_edit_point_index(&mut self, index: usize) {
+        let byte_size = self.lines[self.edit_point.line]
+            .graphemes(true)
+            .take(index)
+            .fold(0, |acc, x| acc + x.len());
+        self.edit_point.index = byte_size;
     }
 }
