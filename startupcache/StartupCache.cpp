@@ -589,8 +589,9 @@ StartupCache::ResetStartupWriteTimer()
     rv = mTimer->Cancel();
   NS_ENSURE_SUCCESS(rv, rv);
   
-  mTimer->InitWithFuncCallback(StartupCache::WriteTimeout, this, 60000,
-                               nsITimer::TYPE_ONE_SHOT);
+  mTimer->InitWithNamedFuncCallback(StartupCache::WriteTimeout, this, 60000,
+                                    nsITimer::TYPE_ONE_SHOT,
+                                    "StartupCache::WriteTimeout");
   return NS_OK;
 }
 
