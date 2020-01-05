@@ -95,7 +95,6 @@ GenerateUUID()
 
 const char kISO8601Date[] = "%F";
 const char kISO8601DateHours[] = "%FT%H:00:00.000Z";
-const char kISO8601FullDate[] = "%FT%T.000Z";
 
 
 
@@ -230,7 +229,7 @@ CreateRootNode(StringTable& strings, const string& aUuid, const string& aHash,
   root["type"] = "crash"; 
   root["id"] = aUuid;
   root["version"] = kTelemetryVersion;
-  root["creationDate"] = CurrentDate(kISO8601FullDate);
+  root["creationDate"] = CurrentDate(kISO8601DateHours);
   root["clientId"] = aClientId;
 
   
