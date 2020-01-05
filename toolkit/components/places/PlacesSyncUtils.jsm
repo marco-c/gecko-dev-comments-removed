@@ -903,6 +903,43 @@ var insertSyncLivemark = Task.async(function* (insertInfo) {
 
 
 
+
+
+
+
+
+
+
+var removeConflictingKeywords = Task.async(function* (bookmarkURL, newKeyword) {
+  let entryForURL = yield PlacesUtils.keywords.fetch({
+    url: bookmarkURL
+  });
+  if (entryForURL && entryForURL.keyword !== newKeyword) {
+    yield PlacesUtils.keywords.remove({
+      keyword: entryForURL.keyword,
+      source: SOURCE_SYNC,
+    });
+    
+    
+    yield BookmarkSyncUtils.addSyncChangesForBookmarksWithURL(entryForURL.url.href);
+  }
+  if (!newKeyword) {
+    return;
+  }
+  let entryForNewKeyword = yield PlacesUtils.keywords.fetch({
+    keyword: newKeyword
+  });
+  if (entryForNewKeyword) {
+    yield PlacesUtils.keywords.remove({
+      keyword: entryForNewKeyword.keyword,
+      source: SOURCE_SYNC,
+    });
+    yield BookmarkSyncUtils.addSyncChangesForBookmarksWithURL(entryForNewKeyword.url.href);
+  }
+});
+
+
+
 var insertBookmarkMetadata = Task.async(function* (bookmarkItem, insertInfo) {
   let itemId = yield PlacesUtils.promiseItemId(bookmarkItem.guid);
   let newItem = yield placesBookmarkToSyncBookmark(bookmarkItem);
@@ -923,6 +960,7 @@ var insertBookmarkMetadata = Task.async(function* (bookmarkItem, insertInfo) {
   }
 
   if (insertInfo.keyword) {
+    yield removeConflictingKeywords(bookmarkItem.url.href, insertInfo.keyword);
     yield PlacesUtils.keywords.insert({
       keyword: insertInfo.keyword,
       url: bookmarkItem.url.href,
@@ -1136,15 +1174,7 @@ var updateBookmarkMetadata = Task.async(function* (oldBookmarkItem,
 
   if (updateInfo.hasOwnProperty("keyword")) {
     
-    let entry = yield PlacesUtils.keywords.fetch({
-      url: oldBookmarkItem.url.href,
-    });
-    if (entry) {
-      yield PlacesUtils.keywords.remove({
-        keyword: entry.keyword,
-        source: SOURCE_SYNC,
-      });
-    }
+    yield removeConflictingKeywords(oldBookmarkItem.url.href, updateInfo.keyword);
     if (updateInfo.keyword) {
       yield PlacesUtils.keywords.insert({
         keyword: updateInfo.keyword,
