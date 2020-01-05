@@ -1815,8 +1815,7 @@ MaybeShutdownAccService(uint32_t aFormerConsumer)
   }
 
   if (nsCoreUtils::AccEventObserversExist() ||
-      xpcAccessibilityService::IsInUse() ||
-      accService->HasXPCDocuments()) {
+      xpcAccessibilityService::IsInUse()) {
     
     nsAccessibilityService::gConsumers =
       (nsAccessibilityService::gConsumers & ~aFormerConsumer) |

@@ -11,7 +11,9 @@ using namespace mozilla::a11y;
 
 
 
-NS_INTERFACE_MAP_BEGIN(xpcAccessibleGeneric)
+NS_IMPL_CYCLE_COLLECTION_0(xpcAccessibleGeneric)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(xpcAccessibleGeneric)
   NS_INTERFACE_MAP_ENTRY(nsIAccessible)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIAccessibleSelectable,
                                      mSupportedIfaces & eSelectable)
@@ -22,30 +24,8 @@ NS_INTERFACE_MAP_BEGIN(xpcAccessibleGeneric)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIAccessible)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_ADDREF(xpcAccessibleGeneric)
-NS_IMPL_RELEASE(xpcAccessibleGeneric)
-
-xpcAccessibleGeneric::~xpcAccessibleGeneric()
-{
-  if (mIntl.IsNull()) {
-    return;
-  }
-
-  xpcAccessibleDocument* xpcDoc = nullptr;
-  if (mIntl.IsAccessible()) {
-    Accessible* acc = mIntl.AsAccessible();
-    if (!acc->IsDoc() && !acc->IsApplication()) {
-      xpcDoc = GetAccService()->GetXPCDocument(acc->Document());
-      xpcDoc->NotifyOfShutdown(acc);
-    }
-  } else {
-    ProxyAccessible* proxy = mIntl.AsProxy();
-    if (!proxy->IsDoc()) {
-      xpcDoc = GetAccService()->GetXPCDocument(proxy->Document());
-      xpcDoc->NotifyOfShutdown(proxy);
-    }
-  }
-}
+NS_IMPL_CYCLE_COLLECTING_ADDREF(xpcAccessibleGeneric)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(xpcAccessibleGeneric)
 
 
 
