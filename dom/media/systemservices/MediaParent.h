@@ -42,14 +42,25 @@ protected:
 
 
 
+
+
+class RefCountedParent
+{
+public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedParent)
+
+protected:
+  virtual ~RefCountedParent() {}
+};
+
+
+
 template<class Super>
-class Parent : public Super
+class Parent : public RefCountedParent, public Super
 {
   typedef mozilla::ipc::IProtocol::ActorDestroyReason
       ActorDestroyReason;
 public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Parent<Super>)
-
   virtual mozilla::ipc::IPCResult
   RecvGetPrincipalKey(const uint32_t& aRequestId,
                       const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
