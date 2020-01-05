@@ -128,7 +128,8 @@ private:
 
 
 
-  void PaintMarkers(gfxContext& aContext, const gfxMatrix& aMatrix);
+  DrawResult PaintMarkers(gfxContext& aContext, const gfxMatrix& aMatrix,
+                          uint32_t aFlags);
 
   struct MarkerProperties {
     nsSVGMarkerProperty* mMarkerStart;
