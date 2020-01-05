@@ -274,7 +274,7 @@ private:
 };
 
 extern nsSocketTransportService *gSocketTransportService;
-extern Atomic<PRThread*, Relaxed> gSocketThread;
+bool OnSocketThread();
 
 } 
 } 

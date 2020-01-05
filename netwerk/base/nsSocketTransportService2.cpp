@@ -41,7 +41,7 @@ LazyLogModule gUDPSocketLog("UDPSocket");
 LazyLogModule gTCPSocketLog("TCPSocket");
 
 nsSocketTransportService *gSocketTransportService = nullptr;
-Atomic<PRThread*, Relaxed> gSocketThread;
+static Atomic<PRThread*, Relaxed> gSocketThread;
 
 #define SEND_BUFFER_PREF "network.tcp.sendbuffer"
 #define KEEPALIVE_ENABLED_PREF "network.tcp.keepalive.enabled"
@@ -59,6 +59,13 @@ Atomic<PRThread*, Relaxed> gSocketThread;
 
 uint32_t nsSocketTransportService::gMaxCount;
 PRCallOnceType nsSocketTransportService::gMaxCountInitOnce;
+
+
+bool
+OnSocketThread()
+{
+  return PR_GetCurrentThread() == gSocketThread;
+}
 
 
 
@@ -174,7 +181,7 @@ nsSocketTransportService::NotifyWhenCanAttachSocket(nsIRunnable *event)
 {
     SOCKET_LOG(("nsSocketTransportService::NotifyWhenCanAttachSocket\n"));
 
-    NS_ASSERTION(PR_GetCurrentThread() == gSocketThread, "wrong thread");
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
     if (CanAttachSocket()) {
         return Dispatch(event, NS_DISPATCH_NORMAL);
@@ -190,7 +197,7 @@ nsSocketTransportService::AttachSocket(PRFileDesc *fd, nsASocketHandler *handler
 {
     SOCKET_LOG(("nsSocketTransportService::AttachSocket [handler=%p]\n", handler));
 
-    NS_ASSERTION(PR_GetCurrentThread() == gSocketThread, "wrong thread");
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
     if (!CanAttachSocket()) {
         return NS_ERROR_NOT_AVAILABLE;
@@ -783,7 +790,7 @@ nsSocketTransportService::OnDispatchedEvent(nsIThreadInternal *thread)
     
     
     
-    if (PR_GetCurrentThread() == gSocketThread) {
+    if (OnSocketThread()) {
         
         
         
@@ -1288,7 +1295,7 @@ void
 nsSocketTransportService::OnKeepaliveEnabledPrefChange()
 {
     
-    if (PR_GetCurrentThread() != gSocketThread) {
+    if (!OnSocketThread()) {
         gSocketTransportService->Dispatch(
             NewRunnableMethod(
                 this, &nsSocketTransportService::OnKeepaliveEnabledPrefChange),
@@ -1429,7 +1436,7 @@ nsSocketTransportService::GetSendBufferSize(int32_t *value)
 void
 nsSocketTransportService::ProbeMaxCount()
 {
-    NS_ASSERTION(PR_GetCurrentThread() == gSocketThread, "wrong thread");
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
     if (mProbedMaxCount)
         return;
@@ -1581,7 +1588,7 @@ nsSocketTransportService::AnalyzeConnection(nsTArray<SocketInfo> *data,
 void
 nsSocketTransportService::GetSocketConnections(nsTArray<SocketInfo> *data)
 {
-    NS_ASSERTION(PR_GetCurrentThread() == gSocketThread, "wrong thread");
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
     for (uint32_t i = 0; i < mActiveCount; i++)
         AnalyzeConnection(data, &mActiveList[i], true);
     for (uint32_t i = 0; i < mIdleCount; i++)

@@ -616,7 +616,7 @@ uint32_t
 nsHttpHandler::Get32BitsOfPseudoRandom()
 {
     
-    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
     
     

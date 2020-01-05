@@ -31,7 +31,7 @@ static PRIOMethods   *sPollableEventLayerMethodsPtr = nullptr;
 
 static void LazyInitSocket()
 {
-  MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (sPollableEventLayerMethodsPtr) {
     return;
   }
@@ -140,7 +140,7 @@ PollableEvent::PollableEvent()
   , mSignaled(false)
 {
   MOZ_COUNT_CTOR(PollableEvent);
-  MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   
   
   
@@ -257,7 +257,7 @@ PollableEvent::Signal()
   
   
   
-  if (PR_GetCurrentThread() == gSocketThread) {
+  if (OnSocketThread()) {
     SOCKET_LOG(("PollableEvent::Signal OnSocketThread nop\n"));
     return true;
   }
@@ -287,7 +287,7 @@ bool
 PollableEvent::Clear()
 {
   
-  MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
   SOCKET_LOG(("PollableEvent::Clear\n"));
   mSignaled = false;
