@@ -536,9 +536,7 @@ public:
   }; 
 
 private:
-  virtual ~OSXVsyncSource()
-  {
-  }
+  virtual ~OSXVsyncSource() = default;
 
   OSXDisplay mGlobalDisplay;
 }; 

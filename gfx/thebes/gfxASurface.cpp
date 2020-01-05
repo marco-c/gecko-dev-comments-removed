@@ -466,7 +466,7 @@ static_assert(uint32_t(CAIRO_SURFACE_TYPE_SKIA) ==
 
 class SurfaceMemoryReporter final : public nsIMemoryReporter
 {
-    ~SurfaceMemoryReporter() {}
+    ~SurfaceMemoryReporter() = default;
 
     
     
