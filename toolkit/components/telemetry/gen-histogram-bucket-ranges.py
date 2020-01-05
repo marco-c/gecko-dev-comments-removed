@@ -28,7 +28,7 @@ def main(argv):
             'linear': '1',
             'exponential': '0',
             'count': '4',
-            }
+        }
         
         histogram_tools.table_dispatch(histogram.kind(), table,
                                        lambda k: parameters.__setitem__('kind', k))
