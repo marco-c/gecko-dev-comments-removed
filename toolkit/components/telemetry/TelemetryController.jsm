@@ -199,9 +199,11 @@ this.TelemetryController = Object.freeze({
 
 
 
+
   submitExternalPing(aType, aPayload, aOptions = {}) {
     aOptions.addClientId = aOptions.addClientId || false;
     aOptions.addEnvironment = aOptions.addEnvironment || false;
+    aOptions.usePingSender = aOptions.usePingSender || false;
 
     return Impl.submitExternalPing(aType, aPayload, aOptions);
   },
@@ -453,6 +455,7 @@ var Impl = {
 
 
 
+
   _submitPingLogic: Task.async(function* (aType, aPayload, aOptions) {
     
     
@@ -473,12 +476,13 @@ var Impl = {
       .catch(e => this._log.error("submitExternalPing - Failed to archive ping " + pingData.id, e));
     let p = [ archivePromise ];
 
-    p.push(TelemetrySend.submitPing(pingData));
+    p.push(TelemetrySend.submitPing(pingData, {usePingSender: aOptions.usePingSender}));
 
     return Promise.all(p).then(() => pingData.id);
   }),
 
   
+
 
 
 

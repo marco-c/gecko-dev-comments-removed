@@ -63,6 +63,8 @@ const MS_IN_ONE_DAY   = 24 * MS_IN_ONE_HOUR;
 const PREF_BRANCH = "toolkit.telemetry.";
 const PREF_SERVER = PREF_BRANCH + "server";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
+const PREF_BYPASS_NOTIFICATION = "datareporting.policy.dataSubmissionPolicyBypassNotification";
+const PREF_SHUTDOWN_PINGSENDER = "toolkit.telemetry.shutdownPingSender.enabled";
 
 const DATAREPORTING_DIR = "datareporting";
 const ABORTED_PING_FILE_NAME = "aborted-session-ping";
@@ -1369,6 +1371,56 @@ add_task(function* test_savedPingsOnShutdown() {
     Assert.equal(ping.payload.info.reason, expectedReason);
     Assert.equal(ping.clientId, gClientID);
   }
+});
+
+add_task(function* test_sendShutdownPing() {
+  if (gIsAndroid ||
+      (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)) {
+    
+    
+    
+    
+    return;
+  }
+
+  Preferences.set(PREF_SHUTDOWN_PINGSENDER, true);
+  PingServer.clearRequests();
+
+  
+  let nextPing = PingServer.promiseNextPing();
+  yield TelemetryController.testShutdown();
+  const ping = yield nextPing;
+
+  
+  checkPingFormat(ping, ping.type, true, true);
+  Assert.equal(ping.payload.info.reason, REASON_SHUTDOWN);
+  Assert.equal(ping.clientId, gClientID);
+
+  
+  
+  PingServer.registerPingHandler(() => Assert.ok(false, "Telemetry must not send pings if not allowed to."));
+  Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
+  yield TelemetryController.testReset();
+  yield TelemetryController.testShutdown();
+
+  
+  yield TelemetryStorage.testClearPendingPings();
+
+  
+  
+  Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
+  Preferences.set(PREF_BYPASS_NOTIFICATION, false);
+  yield TelemetryController.testReset();
+  yield TelemetryController.testShutdown();
+
+
+  
+  Preferences.reset(PREF_SHUTDOWN_PINGSENDER);
+  
+  
+  Preferences.set(PREF_BYPASS_NOTIFICATION, true);
+  PingServer.resetPingHandler();
+  yield TelemetryController.testReset();
 });
 
 add_task(function* test_savedSessionData() {
