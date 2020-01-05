@@ -99,15 +99,6 @@ LoadContext::GetNestedFrameId(uint64_t* aId)
 }
 
 NS_IMETHODIMP
-LoadContext::IsAppOfType(uint32_t, bool*)
-{
-  MOZ_ASSERT(mIsNotNull);
-
-  
-  return NS_ERROR_UNEXPECTED;
-}
-
-NS_IMETHODIMP
 LoadContext::GetIsContent(bool* aIsContent)
 {
   MOZ_ASSERT(mIsNotNull);
