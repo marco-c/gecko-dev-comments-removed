@@ -607,7 +607,13 @@ PuppetWidget::GetLayerManager(PLayerTransactionChild* aShadowManager,
       return mLayerManager;
     }
 
-    if (gfxVars::UseWebRender()) {
+    if (mTabChild && !mTabChild->IsLayersConnected()) {
+      
+      
+      
+      
+      mLayerManager = new BasicLayerManager(this);
+    } else if (gfxVars::UseWebRender()) {
       mLayerManager = new WebRenderLayerManager(this);
     } else {
       mLayerManager = new ClientLayerManager(this);

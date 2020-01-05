@@ -81,6 +81,7 @@ public:
   void GetTextureFactoryIdentifier(TextureFactoryIdentifier* aTextureFactoryIdentifier);
 
   inline uint64_t GetLayersId() const { return mLayersId; }
+  inline bool IsLayersConnected() const { return mLayersConnected; }
 
   void TakeFocusForClickFromTap();
 
@@ -99,6 +100,10 @@ private:
   
   
   uint64_t mLayersId;
+  
+  
+  
+  bool mLayersConnected;
 
   RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<ContainerLayer> mContainer;

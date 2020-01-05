@@ -659,7 +659,8 @@ TabParent::InitRenderFrame()
 
       TextureFactoryIdentifier textureFactoryIdentifier;
       renderFrame->GetTextureFactoryIdentifier(&textureFactoryIdentifier);
-      Unused << SendInitRendering(textureFactoryIdentifier, layersId, renderFrame);
+      Unused << SendInitRendering(textureFactoryIdentifier, layersId,
+        renderFrame->IsLayersConnected(), renderFrame);
     }
   } else {
     
