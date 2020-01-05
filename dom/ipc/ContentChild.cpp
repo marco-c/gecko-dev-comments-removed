@@ -201,6 +201,11 @@
 #include "nscore.h" 
 #include "VRManagerChild.h"
 
+#ifdef MOZ_WIDGET_GTK
+#include "nsAppRunner.h"
+#endif
+
+
 using namespace mozilla;
 using namespace mozilla::docshell;
 using namespace mozilla::dom::devicestorage;
@@ -527,7 +532,7 @@ ContentChild::Init(MessageLoop* aIOLoop,
   
   
   
-  char* display_name = PR_GetEnv("DISPLAY");
+  const char* display_name = DetectDisplay();
   if (display_name) {
     int argc = 3;
     char option_name[] = "--display";
@@ -536,7 +541,7 @@ ContentChild::Init(MessageLoop* aIOLoop,
       
       nullptr,
       option_name,
-      display_name,
+      const_cast<char*>(display_name),
       nullptr
     };
     char** argvp = argv;
