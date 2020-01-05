@@ -36,7 +36,7 @@ class CodeCoverageMixin(object):
                 return True
 
             
-            return self.buildbot_config['properties']['stage_platform'] in ('linux64-cc',)
+            return self.buildbot_config['properties']['stage_platform'] in ('linux64-ccov',)
         except (AttributeError, KeyError, TypeError):
             return False
 

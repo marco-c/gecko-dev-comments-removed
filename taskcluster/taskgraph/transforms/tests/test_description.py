@@ -32,7 +32,10 @@ test_description_schema = Schema({
     'description': basestring,
 
     
-    'suite': basestring,
+    Required('suite'): Any(
+        basestring,
+        {'by-test-platform': {basestring: basestring}},
+    ),
 
     
     
@@ -50,6 +53,14 @@ test_description_schema = Schema({
     
     
     Optional('attributes'): {basestring: object},
+
+    
+    
+    
+    Optional('run-on-projects', default=['all']): Any(
+        [basestring],
+        {'by-test-platform': {basestring: [basestring]}},
+    ),
 
     
     Optional('tier'): int,
@@ -138,7 +149,10 @@ test_description_schema = Schema({
 
         
         
-        Required('extra-options', default=[]): [basestring],
+        Required('extra-options', default=[]): Any(
+            [basestring],
+            {'by-test-platform': {basestring: [basestring]}},
+        ),
 
         
         
