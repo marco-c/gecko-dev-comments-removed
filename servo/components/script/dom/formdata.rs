@@ -50,13 +50,13 @@ impl FormData {
     }
 
     pub fn Constructor(global: GlobalRef, form: Option<&HTMLFormElement>) -> Fallible<Root<FormData>> {
-        
+        // TODO: Construct form data set for form if it is supplied
         Ok(FormData::new(form, global))
     }
 }
 
 impl FormDataMethods for FormData {
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-append
     fn Append(&self, name: USVString, value: USVString) {
         let mut data = self.data.borrow_mut();
         match data.entry(Atom::from(name.0)) {
@@ -66,7 +66,7 @@ impl FormDataMethods for FormData {
     }
 
     #[allow(unrooted_must_root)]
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-append
     fn Append_(&self, name: USVString, value: &Blob, filename: Option<USVString>) {
         let blob = FormDatum::BlobData(JS::from_rooted(&self.get_file_or_blob(value, filename)));
         let mut data = self.data.borrow_mut();
@@ -78,12 +78,12 @@ impl FormDataMethods for FormData {
         }
     }
 
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-delete
     fn Delete(&self, name: USVString) {
         self.data.borrow_mut().remove(&Atom::from(name.0));
     }
 
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-get
     fn Get(&self, name: USVString) -> Option<BlobOrUSVString> {
         self.data.borrow()
                  .get(&Atom::from(name.0))
@@ -93,7 +93,7 @@ impl FormDataMethods for FormData {
                  })
     }
 
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-getall
     fn GetAll(&self, name: USVString) -> Vec<BlobOrUSVString> {
         self.data.borrow()
                  .get(&Atom::from(name.0))
@@ -105,13 +105,13 @@ impl FormDataMethods for FormData {
                  )
     }
 
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-has
     fn Has(&self, name: USVString) -> bool {
         self.data.borrow().contains_key(&Atom::from(name.0))
     }
 
     #[allow(unrooted_must_root)]
-    
+    // https://xhr.spec.whatwg.org/#dom-formdata-set
     fn Set(&self, name: USVString, value: BlobOrUSVString) {
         let val = match value {
             BlobOrUSVString::USVString(s) => FormDatum::StringData(s.0),
@@ -128,7 +128,7 @@ impl FormData {
             Some(fname) => {
                 let global = self.global();
                 let name = DOMString::from(fname.0);
-                Root::upcast(File::new(global.r(), value, name))
+                Root::upcast(File::new(global.r(), value.get_data().clone(), name, None, ""))
             }
             None => Root::from_ref(value)
         }
