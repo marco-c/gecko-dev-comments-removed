@@ -8,9 +8,10 @@ use euclid::scale_factor::ScaleFactor;
 use euclid::{Point2D, Size2D};
 use msg::constellation_msg::AnimationState;
 use msg::constellation_msg::CompositorMsg as ConstellationMsg;
-use msg::constellation_msg::{ConstellationChan, WindowSizeData};
+use msg::constellation_msg::WindowSizeData;
 use profile_traits::mem;
 use profile_traits::time;
+use std::sync::mpsc::Sender;
 use util::opts;
 use windowing::WindowEvent;
 
@@ -22,7 +23,7 @@ pub struct NullCompositor {
     
     pub port: Box<CompositorReceiver>,
     
-    constellation_chan: ConstellationChan<ConstellationMsg>,
+    constellation_chan: Sender<ConstellationMsg>,
     
     time_profiler_chan: time::ProfilerChan,
     
@@ -44,8 +45,7 @@ impl NullCompositor {
 
         
         {
-            let ConstellationChan(ref chan) = compositor.constellation_chan;
-            chan.send(ConstellationMsg::ResizedWindow(WindowSizeData {
+            compositor.constellation_chan.send(ConstellationMsg::ResizedWindow(WindowSizeData {
                 initial_viewport: Size2D::typed(800_f32, 600_f32),
                 visible_viewport: Size2D::typed(800_f32, 600_f32),
                 device_pixel_ratio:
@@ -62,8 +62,7 @@ impl CompositorEventListener for NullCompositor {
         match self.port.recv_compositor_msg() {
             Msg::Exit(chan) => {
                 debug!("shutting down the constellation");
-                let ConstellationChan(ref con_chan) = self.constellation_chan;
-                con_chan.send(ConstellationMsg::Exit).unwrap();
+                self.constellation_chan.send(ConstellationMsg::Exit).unwrap();
                 chan.send(()).unwrap();
             }
 
@@ -100,7 +99,7 @@ impl CompositorEventListener for NullCompositor {
                     AnimationState::NoAnimationCallbacksPresent => {}
                     AnimationState::AnimationCallbacksPresent => {
                         let msg = ConstellationMsg::TickAnimation(pipeline_id);
-                        self.constellation_chan.0.send(msg).unwrap()
+                        self.constellation_chan.send(msg).unwrap()
                     }
                 }
             }

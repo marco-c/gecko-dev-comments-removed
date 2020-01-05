@@ -41,7 +41,7 @@ use net_traits::image_cache_task::ImageCacheTask;
 use net_traits::storage_task::StorageTask;
 use profile_traits::mem;
 use std::any::Any;
-use std::sync::mpsc::{Receiver, Sender};
+use util::ipc::OptionalOpaqueIpcSender;
 use util::mem::HeapSizeOf;
 
 
@@ -68,6 +68,7 @@ pub enum LayoutControlMsg {
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub struct NewLayoutInfo {
     
     pub containing_pipeline_id: PipelineId,
@@ -79,19 +80,19 @@ pub struct NewLayoutInfo {
     pub load_data: LoadData,
     
     
-    
-    
-    pub paint_chan: Box<Any + Send>,
+    pub paint_chan: OptionalOpaqueIpcSender,
     
     pub failure: Failure,
     
     pub pipeline_port: IpcReceiver<LayoutControlMsg>,
     
-    pub layout_shutdown_chan: Sender<()>,
+    pub layout_shutdown_chan: IpcSender<()>,
+    
+    pub content_process_shutdown_chan: IpcSender<()>,
 }
 
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum ScriptState {
     
     DocumentLoaded,
@@ -100,6 +101,7 @@ pub enum ScriptState {
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub enum ConstellationControlMsg {
     
     AttachLayout(NewLayoutInfo),
@@ -135,11 +137,11 @@ pub enum ConstellationControlMsg {
     
     WebFontLoaded(PipelineId),
     
-    GetCurrentState(Sender<ScriptState>, PipelineId),
+    GetCurrentState(IpcSender<ScriptState>, PipelineId),
 }
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum MouseButton {
     
     Left,
@@ -150,7 +152,7 @@ pub enum MouseButton {
 }
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum TouchEventType {
     
     Down,
@@ -165,10 +167,11 @@ pub enum TouchEventType {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
 pub struct TouchId(pub i32);
 
 
+#[derive(Deserialize, Serialize)]
 pub enum CompositorEvent {
     
     ResizeEvent(WindowSizeData),
@@ -250,9 +253,9 @@ pub struct InitialScriptState {
     
     pub compositor: IpcSender<ScriptToCompositorMsg>,
     
-    pub control_chan: Sender<ConstellationControlMsg>,
+    pub control_chan: IpcSender<ConstellationControlMsg>,
     
-    pub control_port: Receiver<ConstellationControlMsg>,
+    pub control_port: IpcReceiver<ConstellationControlMsg>,
     
     pub constellation_chan: ConstellationChan<ConstellationMsg>,
     
@@ -275,7 +278,13 @@ pub struct InitialScriptState {
     pub window_size: Option<WindowSizeData>,
     
     pub pipeline_namespace_id: PipelineNamespaceId,
+    
+    pub content_process_shutdown_chan: IpcSender<()>,
 }
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct ScriptControlChan(pub IpcSender<ConstellationControlMsg>);
 
 
 

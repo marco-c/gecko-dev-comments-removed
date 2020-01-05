@@ -2,6 +2,8 @@
 
 
 
+use ipc_channel::ipc::IpcSender;
+use serde::Serialize;
 use std::borrow::ToOwned;
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -16,14 +18,35 @@ pub fn spawn_named<F>(name: String, f: F)
 }
 
 
-pub fn spawn_named_with_send_on_failure<F, T>(name: String,
-                                              state: task_state::TaskState,
-                                              f: F,
-                                              msg: T,
-                                              dest: Sender<T>)
-    where F: FnOnce() + Send + 'static,
-          T: Send + 'static
-{
+
+pub trait SendOnFailure {
+    type Value;
+    fn send_on_failure(&mut self, value: Self::Value);
+}
+
+impl<T> SendOnFailure for Sender<T> where T: Send + 'static {
+    type Value = T;
+    fn send_on_failure(&mut self, value: T) {
+        self.send(value).unwrap();
+    }
+}
+
+impl<T> SendOnFailure for IpcSender<T> where T: Send + Serialize + 'static {
+    type Value = T;
+    fn send_on_failure(&mut self, value: T) {
+        self.send(value).unwrap();
+    }
+}
+
+
+pub fn spawn_named_with_send_on_failure<F, T, S>(name: String,
+                                                 state: task_state::TaskState,
+                                                 f: F,
+                                                 msg: T,
+                                                 mut dest: S)
+                                                 where F: FnOnce() + Send + 'static,
+                                                       T: Send + 'static,
+                                                       S: Send + SendOnFailure<Value=T> + 'static {
     let future_handle = thread::Builder::new().name(name.to_owned()).spawn(move || {
         task_state::initialize(state);
         f()
@@ -35,8 +58,9 @@ pub fn spawn_named_with_send_on_failure<F, T>(name: String,
             Ok(()) => (),
             Err(..) => {
                 debug!("{} failed, notifying constellation", name);
-                dest.send(msg).unwrap();
+                dest.send_on_failure(msg);
             }
         }
     }).unwrap();
 }
+

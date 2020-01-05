@@ -5,15 +5,16 @@
 
 
 use compositor;
-use euclid::{Point2D, Size2D};
+use euclid::point::Point2D;
+use euclid::size::Size2D;
 use headless;
-use ipc_channel::ipc::{IpcReceiver, IpcSender};
+use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::{NativeDisplay, NativeSurface};
 use msg::compositor_msg::{Epoch, EventResult, FrameTreeId, LayerId, LayerProperties};
 use msg::compositor_msg::{PaintListener, ScriptToCompositorMsg};
 use msg::constellation_msg::CompositorMsg as ConstellationMsg;
-use msg::constellation_msg::{AnimationState, ConstellationChan, PipelineId};
+use msg::constellation_msg::{AnimationState, PipelineId};
 use msg::constellation_msg::{Image, Key, KeyModifiers, KeyState};
 use profile_traits::mem;
 use profile_traits::time;
@@ -60,11 +61,11 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
                                   receiver: IpcReceiver<ScriptToCompositorMsg>) {
     while let Ok(msg) = receiver.recv() {
         match msg {
-            ScriptToCompositorMsg::ScrollFragmentPoint(pipeline_id, layer_id, point, _smooth) => {
+            ScriptToCompositorMsg::ScrollFragmentPoint(pipeline_id, layer_id, point, smooth) => {
                 compositor_proxy.send(Msg::ScrollFragmentPoint(pipeline_id,
                                                                layer_id,
                                                                point,
-                                                               _smooth));
+                                                               smooth));
             }
 
             ScriptToCompositorMsg::GetClientWindow(send) => {
@@ -80,7 +81,7 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
             }
 
             ScriptToCompositorMsg::Exit => {
-                let (chan, port) = channel();
+                let (chan, port) = ipc::channel().unwrap();
                 compositor_proxy.send(Msg::Exit(chan));
                 port.recv().unwrap();
             }
@@ -152,7 +153,7 @@ impl PaintListener for Box<CompositorProxy + 'static + Send> {
 
 pub enum Msg {
     
-    Exit(Sender<()>),
+    Exit(IpcSender<()>),
 
     
     
@@ -180,7 +181,7 @@ pub enum Msg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan<ConstellationMsg>),
+    SetFrameTree(SendableFrameTree, IpcSender<()>, Sender<ConstellationMsg>),
     
     LoadStart(bool, bool),
     
@@ -296,7 +297,7 @@ pub struct InitialCompositorState {
     
     pub receiver: Box<CompositorReceiver>,
     
-    pub constellation_chan: ConstellationChan<ConstellationMsg>,
+    pub constellation_chan: Sender<ConstellationMsg>,
     
     pub time_profiler_chan: time::ProfilerChan,
     
