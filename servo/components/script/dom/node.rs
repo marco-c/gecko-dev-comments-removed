@@ -2525,9 +2525,9 @@ impl<'a> style::node::TNode<'a> for JSRef<'a, Node> {
                     })
             },
             NamespaceConstraint::Any => {
-                self.as_element().get_attributes(local_name).into_iter()
-                    .map(|attr| attr.root())
-                    .any(|attr| {
+                let mut attributes: RootedVec<JS<Attr>> = RootedVec::new();
+                self.as_element().get_attributes(local_name, &mut attributes);
+                attributes.iter().map(|attr| attr.root()).any(|attr| {
                         
                         let attr = attr.r();
                         let value = attr.value();
