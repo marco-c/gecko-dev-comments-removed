@@ -192,6 +192,14 @@ class NrIceProxyServer {
 
 class TestNat;
 
+class NrIceStats {
+ public:
+  uint16_t stun_retransmits;
+  uint16_t turn_401s;
+  uint16_t turn_403s;
+  uint16_t turn_438s;
+};
+
 class NrIceCtx {
  friend class NrIceCtxHandler;
  public:
@@ -321,6 +329,9 @@ class NrIceCtx {
   
   
   nsresult Finalize();
+
+  void AccumulateStats(const NrIceStats& stats);
+  NrIceStats Destroy();
 
   
   bool generating_trickle() const { return trickle_; }
