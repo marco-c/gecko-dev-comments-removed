@@ -3,7 +3,9 @@
 
 
 
+#include <errno.h>
 #include <jni.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 
@@ -52,6 +54,12 @@ jlong JNICALL
 Java_org_mozilla_gecko_mozglue_SharedMemory_map(JNIEnv *env, jobject jobj, jint fd, jint length)
 {
   void* address = mmap(NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  if (address == MAP_FAILED) {
+    char msg[128];
+    snprintf(msg, sizeof(msg), "mmap failed. errno=%d", errno);
+    env->ThrowNew(env->FindClass("java/lang/NullPointerException"), msg);
+    return 0;
+  }
   return jlong(address);
 }
 
