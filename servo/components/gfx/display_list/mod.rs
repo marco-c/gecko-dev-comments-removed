@@ -22,7 +22,7 @@ use euclid::num::Zero;
 use euclid::rect::TypedRect;
 use euclid::{Matrix2D, Matrix4D, Point2D, Rect, SideOffsets2D, Size2D};
 use fnv::FnvHasher;
-use gfx_traits::{LayerId, ScrollPolicy};
+use gfx_traits::{LayerId, ScrollPolicy, StackingContextId};
 use ipc_channel::ipc::IpcSharedMemory;
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::{Image, PixelFormat};
@@ -1392,37 +1392,6 @@ impl fmt::Debug for DisplayItem {
             self.bounds(),
             self.base().clip
         )
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf, RustcEncodable)]
-pub enum FragmentType {
-    
-    FragmentBody,
-    
-    BeforePseudoContent,
-    
-    AfterPseudoContent,
-}
-
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, HeapSizeOf, PartialEq, RustcEncodable, Serialize)]
-pub struct StackingContextId(
-    
-    
-    usize
-);
-
-impl StackingContextId {
-    #[inline(always)]
-    pub fn new(id: usize) -> StackingContextId {
-        StackingContextId::new_of_type(id, FragmentType::FragmentBody)
-    }
-
-    #[inline(always)]
-    pub fn new_of_type(id: usize, fragment_type: FragmentType) -> StackingContextId {
-        debug_assert_eq!(id & fragment_type as usize, 0);
-        StackingContextId(id | fragment_type as usize)
     }
 }
 

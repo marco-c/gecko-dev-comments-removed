@@ -39,6 +39,7 @@ use euclid::point::Point2D;
 use euclid::rect::Rect;
 use gfx_traits::Epoch;
 use gfx_traits::LayerId;
+use gfx_traits::StackingContextId;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::constellation_msg::{FrameId, FrameType, Key, KeyModifiers, KeyState, LoadData};
@@ -76,6 +77,8 @@ pub enum LayoutControlMsg {
     TickAnimations,
     
     SetVisibleRects(Vec<(LayerId, Rect<Au>)>),
+    
+    SetStackingContextScrollStates(Vec<StackingContextScrollState>),
     
     
     GetWebFontLoadState(IpcSender<bool>),
@@ -122,6 +125,8 @@ pub enum ConstellationControlMsg {
     SendEvent(PipelineId, CompositorEvent),
     
     Viewport(PipelineId, Rect<f32>),
+    
+    SetScrollState(PipelineId, Point2D<f32>),
     
     GetTitle(PipelineId),
     
@@ -461,6 +466,15 @@ pub enum AnimationTickType {
     Script,
     
     Layout,
+}
+
+
+#[derive(Copy, Clone, Debug, Deserialize, Serialize)]
+pub struct StackingContextScrollState {
+    
+    pub stacking_context_id: StackingContextId,
+    
+    pub scroll_offset: Point2D<f32>,
 }
 
 
