@@ -64,6 +64,7 @@ pub const NS_ERROR_MODULE_BASE_OFFSET: ::std::os::raw::c_uint = 69;
 pub const MOZ_STRING_WITH_OBSOLETE_API: ::std::os::raw::c_uint = 1;
 pub const NSID_LENGTH: ::std::os::raw::c_uint = 39;
 pub const NS_NUMBER_OF_FLAGS_IN_REFCNT: ::std::os::raw::c_uint = 2;
+pub const _STL_PAIR_H: ::std::os::raw::c_uint = 1;
 pub const TWIPS_PER_POINT_INT: ::std::os::raw::c_uint = 20;
 pub const POINTS_PER_INCH_INT: ::std::os::raw::c_uint = 72;
 pub const NS_FONT_VARIANT_NORMAL: ::std::os::raw::c_uint = 0;
@@ -1547,8 +1548,10 @@ fn bindgen_test_layout_nsAutoString() {
 pub enum Dont_Instantiate_nsTArray_of { }
 pub enum Instead_Use_nsTArray_of { }
 #[repr(C)]
-pub struct nsTArrayElementTraits<> {
-    pub _phantom0: ::std::marker::PhantomData<nsAutoString>,
+#[derive(Debug, Copy)]
+pub struct nsTArrayElementTraits;
+impl ::std::clone::Clone for nsTArrayElementTraits {
+    fn clone(&self) -> Self { *self }
 }
 #[repr(C)]
 #[derive(Debug)]
@@ -1661,9 +1664,9 @@ fn bindgen_test_layout_nsAdoptingCString() {
     assert_eq!(::std::mem::size_of::<nsAdoptingCString>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsAdoptingCString>() , 8usize);
 }
-/**
- * A helper class that converts a UTF-16 string to ASCII in a lossy manner
- */
+
+
+
 #[repr(C)]
 pub struct NS_LossyConvertUTF16toASCII {
     pub _base: nsAutoCString,
@@ -1684,9 +1687,9 @@ fn bindgen_test_layout_NS_ConvertASCIItoUTF16() {
     assert_eq!(::std::mem::size_of::<NS_ConvertASCIItoUTF16>() , 160usize);
     assert_eq!(::std::mem::align_of::<NS_ConvertASCIItoUTF16>() , 8usize);
 }
-/**
- * A helper class that converts a UTF-16 string to UTF-8
- */
+
+
+
 #[repr(C)]
 pub struct NS_ConvertUTF16toUTF8 {
     pub _base: nsAutoCString,
@@ -1868,9 +1871,9 @@ fn bindgen_test_layout_nsCSSGridTemplateAreaScanner() {
     assert_eq!(::std::mem::align_of::<nsCSSGridTemplateAreaScanner>() ,
                8usize);
 }
-/**
- * A "unique identifier". This is modeled after OSF DCE UUIDs.
- */
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsID {
@@ -1884,12 +1887,12 @@ fn bindgen_test_layout_nsID() {
     assert_eq!(::std::mem::size_of::<nsID>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsID>() , 4usize);
 }
-/**
- * A stack helper class to convert a nsID to a string.  Useful
- * for printing nsIDs.  For example:
- *   nsID aID = ...;
- *   printf("%s", nsIDToCString(aID).get());
- */
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Copy)]
 pub struct nsIDToCString {
@@ -1904,18 +1907,18 @@ fn bindgen_test_layout_nsIDToCString() {
     assert_eq!(::std::mem::align_of::<nsIDToCString>() , 1usize);
 }
 pub type nsCID = nsID;
-/**
- * An "interface id" which can be used to uniquely identify a given
- * interface.
- */
+
+
+
+
 pub type nsIID = nsID;
 pub enum COMTypeInfo { }
-/**
- * Basic component object model interface. Objects which implement
- * this interface support runtime interface discovery (QueryInterface)
- * and a reference counted memory model (AddRef/Release). This is
- * modelled after the win32 IUnknown API.
- */
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsISupports {
@@ -1983,20 +1986,20 @@ fn bindgen_test_layout_ThreadSafeAutoRefCnt() {
     assert_eq!(::std::mem::size_of::<ThreadSafeAutoRefCnt>() , 8usize);
     assert_eq!(::std::mem::align_of::<ThreadSafeAutoRefCnt>() , 8usize);
 }
-/**
- * There are two ways of implementing QueryInterface, and we use both:
- *
- * Table-driven QueryInterface uses a static table of IID->offset mappings
- * and a shared helper function. Using it tends to reduce codesize and improve
- * runtime performance (due to processor cache hits).
- *
- * Macro-driven QueryInterface generates a QueryInterface function directly
- * using common macros. This is necessary if special QueryInterface features
- * are being used (such as tearoffs and conditional interfaces).
- *
- * These methods can be combined into a table-driven function call followed
- * by custom code for tearoffs and conditionals.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct QITableEntry {
@@ -2073,7 +2076,7 @@ fn bindgen_test_layout_nsQueryInterfaceWithError() {
     assert_eq!(::std::mem::size_of::<nsQueryInterfaceWithError>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsQueryInterfaceWithError>() , 8usize);
 }
-////////////////////////////////////////////////////////////////////////////
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsGetServiceByCID {
@@ -2130,15 +2133,15 @@ fn bindgen_test_layout_nsGetServiceByContractIDWithError() {
     assert_eq!(::std::mem::align_of::<nsGetServiceByContractIDWithError>() ,
                8usize);
 }
-/**
- * Factors implementation for all template versions of nsCOMPtr.
- *
- * Here's the way people normally do things like this:
- *
- *   template<class T> class Foo { ... };
- *   template<> class Foo<void*> { ... };
- *   template<class T> class Foo<T*> : private Foo<void*> { ... };
- */
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsCOMPtr_base {
@@ -2154,21 +2157,21 @@ fn bindgen_test_layout_nsCOMPtr_base() {
 pub struct nsCOMPtr<T> {
     pub mRawPtr: *mut T,
 }
-/**
- * This class is designed to be used for anonymous temporary objects in the
- * argument list of calls that return COM interface pointers, e.g.,
- *
- *   nsCOMPtr<IFoo> fooP;
- *   ...->QueryInterface(iid, getter_AddRefs(fooP))
- *
- * DO NOT USE THIS TYPE DIRECTLY IN YOUR CODE. Use |getter_AddRefs()| instead.
- *
- * When initialized with a |nsCOMPtr|, as in the example above, it returns
- * a |void**|, a |T**|, or an |nsISupports**| as needed, that the outer call
- * (|QueryInterface| in this case) can fill in.
- *
- * This type should be a nested class inside |nsCOMPtr<T>|.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsGetterAddRefs<T> {
@@ -2231,7 +2234,7 @@ pub struct PLDHashTable {
     pub mEntryCount: u32,
     pub mRemovedCount: u32,
     pub mEntryStore: [u64; 2usize],
-    pub mChecker: Checker,
+    pub mChecker: ::std::cell::UnsafeCell<Checker>,
 }
 #[repr(C)]
 pub struct PLDHashTable_EntryStore {
@@ -2317,57 +2320,57 @@ fn bindgen_test_layout_PLDHashEntryStub() {
     assert_eq!(::std::mem::size_of::<PLDHashEntryStub>() , 16usize);
     assert_eq!(::std::mem::align_of::<PLDHashEntryStub>() , 8usize);
 }
-/**
- * a base class for templated hashtables.
- *
- * Clients will rarely need to use this class directly. Check the derived
- * classes first, to see if they will meet your needs.
- *
- * @param EntryType  the templated entry-type class that is managed by the
- *   hashtable. <code>EntryType</code> must extend the following declaration,
- *   and <strong>must not declare any virtual functions or derive from classes
- *   with virtual functions.</strong>  Any vtable pointer would break the
- *   PLDHashTable code.
- *<pre>   class EntryType : public PLDHashEntryHdr
- *   {
- *   public: or friend nsTHashtable<EntryType>;
- *     // KeyType is what we use when Get()ing or Put()ing this entry
- *     // this should either be a simple datatype (uint32_t, nsISupports*) or
- *     // a const reference (const nsAString&)
- *     typedef something KeyType;
- *     // KeyTypePointer is the pointer-version of KeyType, because
- *     // PLDHashTable.h requires keys to cast to <code>const void*</code>
- *     typedef const something* KeyTypePointer;
- *
- *     EntryType(KeyTypePointer aKey);
- *
- *     // A copy or C++11 Move constructor must be defined, even if
- *     // AllowMemMove() == true, otherwise you will cause link errors.
- *     EntryType(const EntryType& aEnt);  // Either this...
- *     EntryType(EntryType&& aEnt);       // ...or this
- *
- *     // the destructor must be defined... or you will cause link errors!
- *     ~EntryType();
- *
- *     // KeyEquals(): does this entry match this key?
- *     bool KeyEquals(KeyTypePointer aKey) const;
- *
- *     // KeyToPointer(): Convert KeyType to KeyTypePointer
- *     static KeyTypePointer KeyToPointer(KeyType aKey);
- *
- *     // HashKey(): calculate the hash number
- *     static PLDHashNumber HashKey(KeyTypePointer aKey);
- *
- *     // ALLOW_MEMMOVE can we move this class with memmove(), or do we have
- *     // to use the copy constructor?
- *     enum { ALLOW_MEMMOVE = true/false };
- *   }</pre>
- *
- * @see nsInterfaceHashtable
- * @see nsDataHashtable
- * @see nsClassHashtable
- * @author "Benjamin Smedberg <bsmedberg@covad.net>"
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 pub struct nsTHashtable<EntryType> {
     pub mTable: PLDHashTable,
@@ -2385,7 +2388,10 @@ pub enum CSSVariableResolver { }
 #[repr(C)]
 pub struct CSSVariableValues {
     pub mVariableIDs: [u64; 6usize],
-    pub mVariables: u64,
+    
+
+
+    pub mVariables: nsTArray<CSSVariableValues_Variable>,
 }
 #[repr(C)]
 #[derive(Debug)]
@@ -2428,30 +2434,30 @@ pub type cairo_user_data_key_t = _cairo_user_data_key;
 pub type thebes_destroy_func_t =
     ::std::option::Option<unsafe extern "C" fn(data:
                                                    *mut ::std::os::raw::c_void)>;
-/**
- * Currently needs to be 'double' for Cairo compatibility. Could
- * become 'float', perhaps, in some configurations.
- */
+
+
+
+
 pub type gfxFloat = f64;
-/**
- * Priority of a line break opportunity.
- *
- * eNoBreak       The line has no break opportunities
- * eWordWrapBreak The line has a break opportunity only within a word. With
- *                word-wrap: break-word we will break at this point only if
- *                there are no other break opportunities in the line.
- * eNormalBreak   The line has a break opportunity determined by the standard
- *                line-breaking algorithm.
- *
- * Future expansion: split eNormalBreak into multiple priorities, e.g.
- *                    punctuation break and whitespace break (bug 389710).
- *                   As and when we implement it, text-wrap: unrestricted will
- *                    mean that priorities are ignored and all line-break
- *                    opportunities are equal.
- *
- * @see gfxTextRun::BreakAndMeasureText
- * @see nsLineLayout::NotifyOptionalBreakPosition
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum gfxBreakPriority {
@@ -2495,6 +2501,19 @@ pub enum gfxContentType {
     ALPHA = 8192,
     COLOR_ALPHA = 12288,
     SENTINEL = 65535,
+}
+#[repr(C)]
+#[derive(Debug, Copy)]
+pub struct piecewise_construct_t;
+impl ::std::clone::Clone for piecewise_construct_t {
+    fn clone(&self) -> Self { *self }
+}
+pub enum tuple { }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct pair<_T1, _T2> {
+    pub first: _T1,
+    pub second: _T2,
 }
 pub type Float = f32;
 #[repr(i8)]
@@ -2762,15 +2781,15 @@ fn bindgen_test_layout_nsIntPoint() {
     assert_eq!(::std::mem::size_of::<nsIntPoint>() , 8usize);
     assert_eq!(::std::mem::align_of::<nsIntPoint>() , 4usize);
 }
-/**
- * These *_Simple types are used to map Gecko types to layout-equivalent but
- * simpler Rust types, to aid Rust binding generation.
- *
- * If something in this types or the assertions below needs to change, ask
- * bholley, heycam or emilio before!
- *
- * <div rustbindgen="true" replaces="nsPoint">
- */
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsPoint {
@@ -2785,9 +2804,9 @@ fn bindgen_test_layout_nsPoint() {
     assert_eq!(::std::mem::size_of::<nsPoint>() , 8usize);
     assert_eq!(::std::mem::align_of::<nsPoint>() , 4usize);
 }
-/**
- * <div rustbindgen="true" replaces="nsMargin">
- */
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsMargin {
@@ -2822,9 +2841,9 @@ fn bindgen_test_layout_nsIntRect() {
     assert_eq!(::std::mem::size_of::<nsIntRect>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsIntRect>() , 4usize);
 }
-/**
- * <div rustbindgen="true" replaces="nsRect">
- */
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsRect {
@@ -2847,11 +2866,11 @@ pub const eFamily_generic_last: FontFamilyType =
     FontFamilyType::eFamily_fantasy;
 pub const eFamily_generic_count: FontFamilyType =
     FontFamilyType::eFamily_monospace;
-/**
- * type of font family name, either a name (e.g. Helvetica) or a
- * generic (e.g. serif, sans-serif), with the ability to distinguish
- * between unquoted and quoted names for serializaiton
- */
+
+
+
+
+
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum FontFamilyType {
@@ -2869,10 +2888,10 @@ pub enum FontFamilyType {
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum QuotedName { eQuotedName = 0, eUnquotedName = 1, }
-/**
- * font family name, a string for the name if not a generic and
- * a font type indicated named family or which generic family
- */
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct FontFamilyName {
@@ -2884,14 +2903,15 @@ fn bindgen_test_layout_FontFamilyName() {
     assert_eq!(::std::mem::size_of::<FontFamilyName>() , 24usize);
     assert_eq!(::std::mem::align_of::<FontFamilyName>() , 8usize);
 }
-/**
- * font family list, array of font families and a default font type.
- * font family names are either named strings or generics. the default
- * font type is used to preserve the variable font fallback behavior
- */
+
+
+
+
+
 #[repr(C)]
+#[derive(Debug)]
 pub struct FontFamilyList {
-    pub mFontlist: u64,
+    pub mFontlist: nsTArray<FontFamilyName>,
     pub mDefaultFontType: FontFamilyType,
 }
 #[test]
@@ -2959,9 +2979,9 @@ pub struct nsFont {
     pub synthesis: u8,
     pub size: nscoord,
     pub sizeAdjust: f32,
-    pub alternateValues: u64,
+    pub alternateValues: nsTArray<gfxAlternateValue>,
     pub featureValueLookup: RefPtr<gfxFontFeatureValueSet>,
-    pub fontFeatureSettings: u64,
+    pub fontFeatureSettings: nsTArray<gfxFontFeature>,
     pub languageOverride: nsString,
 }
 #[test]
@@ -3504,15 +3524,15 @@ pub enum nsCSSPropertyLogicalGroup {
     eCSSPropertyLogicalGroup_COUNT = 9,
 }
 pub type nscolor = u32;
-/**
- * This structure precedes the string buffers "we" allocate.  It may be the
- * case that nsTAString::mData does not point to one of these special
- * buffers.  The mFlags member variable distinguishes the buffer type.
- *
- * When this header is in use, it enables reference counting, and capacity
- * tracking.  NOTE: A string buffer can be modified only if its reference
- * count is 1.
- */
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStringBuffer {
@@ -3558,9 +3578,10 @@ fn bindgen_test_layout_GridNamedArea() {
     assert_eq!(::std::mem::align_of::<GridNamedArea>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct GridTemplateAreasValue {
-    pub mNamedAreas: u64,
-    pub mTemplates: u64,
+    pub mNamedAreas: nsTArray<GridNamedArea>,
+    pub mTemplates: nsTArray<nsString>,
     pub mNColumns: u32,
     pub mRefCnt: nsAutoRefCnt,
     pub _mOwningThread: nsAutoOwningThread,
@@ -3571,6 +3592,7 @@ fn bindgen_test_layout_GridTemplateAreasValue() {
     assert_eq!(::std::mem::align_of::<GridTemplateAreasValue>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct FontFamilyListRefCnt {
     pub _base: FontFamilyList,
     pub mRefCnt: nsAutoRefCnt,
@@ -3872,6 +3894,7 @@ fn bindgen_test_layout_nsCSSValueGradientStop() {
     assert_eq!(::std::mem::align_of::<nsCSSValueGradientStop>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsCSSValueGradient {
     pub mIsRadial: bool,
     pub mIsRepeating: bool,
@@ -3880,7 +3903,7 @@ pub struct nsCSSValueGradient {
     pub mBgPos: nsCSSValuePair,
     pub mAngle: nsCSSValue,
     pub mRadialValues: [nsCSSValue; 2usize],
-    pub mStops: u64,
+    pub mStops: nsTArray<nsCSSValueGradientStop>,
     pub mRefCnt: nsAutoRefCnt,
     pub _mOwningThread: nsAutoOwningThread,
 }
@@ -3959,13 +3982,14 @@ fn bindgen_test_layout_CounterStyle() {
     assert_eq!(::std::mem::align_of::<CounterStyle>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct AnonymousCounterStyle {
     pub _base: CounterStyle,
     pub mRefCnt: nsAutoRefCnt,
     pub _mOwningThread: nsAutoOwningThread,
     pub mSingleString: bool,
     pub mSystem: u8,
-    pub mSymbols: u64,
+    pub mSymbols: nsTArray<nsString>,
 }
 #[repr(C)]
 pub struct _vftable_AnonymousCounterStyle {
@@ -4340,6 +4364,7 @@ fn bindgen_test_layout_nsStyleGradientStop() {
     assert_eq!(::std::mem::align_of::<nsStyleGradientStop>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsStyleGradient {
     pub mShape: u8,
     pub mSize: u8,
@@ -4350,7 +4375,7 @@ pub struct nsStyleGradient {
     pub mAngle: nsStyleCoord,
     pub mRadiusX: nsStyleCoord,
     pub mRadiusY: nsStyleCoord,
-    pub mStops: u64,
+    pub mStops: nsTArray<nsStyleGradientStop>,
     pub mRefCnt: nsAutoRefCnt,
     pub _mOwningThread: nsAutoOwningThread,
 }
@@ -4419,8 +4444,21 @@ fn bindgen_test_layout_nsStyleColor() {
     assert_eq!(::std::mem::size_of::<nsStyleColor>() , 4usize);
     assert_eq!(::std::mem::align_of::<nsStyleColor>() , 4usize);
 }
+
+
+
+
 #[repr(C)]
-pub struct nsStyleAutoArray;
+#[derive(Debug)]
+pub struct nsStyleAutoArray<T> {
+    pub mFirstElement: T,
+    pub mOtherElements: nsTArray<T>,
+}
+#[repr(i32)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum nsStyleAutoArray_WithSingleInitialElement {
+    WITH_SINGLE_INITIAL_ELEMENT = 0,
+}
 #[repr(C)]
 pub struct nsStyleImageLayers {
     pub mAttachmentCount: u32,
@@ -4433,7 +4471,7 @@ pub struct nsStyleImageLayers {
     pub mMaskModeCount: u32,
     pub mBlendModeCount: u32,
     pub mCompositeCount: u32,
-    pub mLayers: [u64; 15usize],
+    pub mLayers: nsStyleAutoArray<nsStyleImageLayers_Layer>,
 }
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -4664,10 +4702,11 @@ fn bindgen_test_layout_nsStyleOutline() {
 
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsStyleQuoteValues {
     pub mRefCnt: nsAutoRefCnt,
     pub _mOwningThread: nsAutoOwningThread,
-    pub mQuotePairs: u64,
+    pub mQuotePairs: nsTArray<pair<nsString, nsString>>,
 }
 #[test]
 fn bindgen_test_layout_nsStyleQuoteValues() {
@@ -4701,12 +4740,13 @@ fn bindgen_test_layout_nsStyleGridLine() {
     assert_eq!(::std::mem::align_of::<nsStyleGridLine>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsStyleGridTemplate {
-    pub mLineNameLists: u64,
-    pub mMinTrackSizingFunctions: u64,
-    pub mMaxTrackSizingFunctions: u64,
-    pub mRepeatAutoLineNameListBefore: u64,
-    pub mRepeatAutoLineNameListAfter: u64,
+    pub mLineNameLists: nsTArray<nsTArray<nsString>>,
+    pub mMinTrackSizingFunctions: nsTArray<nsStyleCoord>,
+    pub mMaxTrackSizingFunctions: nsTArray<nsStyleCoord>,
+    pub mRepeatAutoLineNameListBefore: nsTArray<nsString>,
+    pub mRepeatAutoLineNameListAfter: nsTArray<nsString>,
     pub mRepeatAutoIndex: i16,
     pub _bitfield_1: u8,
 }
@@ -4716,6 +4756,7 @@ fn bindgen_test_layout_nsStyleGridTemplate() {
     assert_eq!(::std::mem::align_of::<nsStyleGridTemplate>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsStylePosition {
     pub mObjectPosition: nsStyleImageLayers_Position,
     pub mOffset: nsStyleSides,
@@ -5021,7 +5062,7 @@ pub struct nsStyleDisplay {
     pub mIsolation: u8,
     pub mTopLayer: u8,
     pub mWillChangeBitField: u8,
-    pub mWillChange: u64,
+    pub mWillChange: nsTArray<nsString>,
     pub mTouchAction: u8,
     pub mScrollBehavior: u8,
     pub mScrollSnapTypeX: u8,
@@ -5029,7 +5070,7 @@ pub struct nsStyleDisplay {
     pub mScrollSnapPointsX: nsStyleCoord,
     pub mScrollSnapPointsY: nsStyleCoord,
     pub mScrollSnapDestination: nsStyleImageLayers_Position,
-    pub mScrollSnapCoordinate: u64,
+    pub mScrollSnapCoordinate: nsTArray<nsStyleImageLayers_Position>,
     pub mBackfaceVisibility: u8,
     pub mTransformStyle: u8,
     pub mTransformBox: u8,
@@ -5038,12 +5079,12 @@ pub struct nsStyleDisplay {
     pub mChildPerspective: nsStyleCoord,
     pub mPerspectiveOrigin: [nsStyleCoord; 2usize],
     pub mVerticalAlign: nsStyleCoord,
-    pub mTransitions: [u64; 6usize],
+    pub mTransitions: nsStyleAutoArray<StyleTransition>,
     pub mTransitionTimingFunctionCount: u32,
     pub mTransitionDurationCount: u32,
     pub mTransitionDelayCount: u32,
     pub mTransitionPropertyCount: u32,
-    pub mAnimations: [u64; 9usize],
+    pub mAnimations: nsStyleAutoArray<StyleAnimation>,
     pub mAnimationTimingFunctionCount: u32,
     pub mAnimationDurationCount: u32,
     pub mAnimationDelayCount: u32,
@@ -5310,12 +5351,13 @@ fn bindgen_test_layout_nsStyleSVG() {
     assert_eq!(::std::mem::align_of::<nsStyleSVG>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsStyleBasicShape {
     pub mRefCnt: nsAutoRefCnt,
     pub _mOwningThread: nsAutoOwningThread,
     pub mType: nsStyleBasicShape_Type,
     pub mFillRule: i32,
-    pub mCoordinates: u64,
+    pub mCoordinates: nsTArray<nsStyleCoord>,
     pub mPosition: nsStyleImageLayers_Position,
     pub mRadius: nsStyleCorners,
 }
@@ -5426,8 +5468,9 @@ fn bindgen_test_layout_nsStyleVariables() {
     assert_eq!(::std::mem::align_of::<nsStyleVariables>() , 8usize);
 }
 #[repr(C)]
+#[derive(Debug)]
 pub struct nsStyleEffects {
-    pub mFilters: u64,
+    pub mFilters: nsTArray<nsStyleFilter>,
     pub mBoxShadow: RefPtr<nsCSSShadowArray>,
     pub mClip: nsRect,
     pub mOpacity: f32,
@@ -5438,4 +5481,18 @@ pub struct nsStyleEffects {
 fn bindgen_test_layout_nsStyleEffects() {
     assert_eq!(::std::mem::size_of::<nsStyleEffects>() , 40usize);
     assert_eq!(::std::mem::align_of::<nsStyleEffects>() , 8usize);
+}
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct nsTArray<T> {
+    pub mBuffer: *mut T,
 }
