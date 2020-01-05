@@ -152,19 +152,6 @@ public:
     return SupportsMimeType(aTrackInfo.mMimeType, aDiagnostics);
   }
 
-  enum class ConversionRequired : uint8_t
-  {
-    kNeedNone,
-    kNeedAVCC,
-    kNeedAnnexB,
-  };
-
-  
-  
-  
-  virtual ConversionRequired DecoderNeedsConversion(
-    const TrackInfo& aConfig) const = 0;
-
 protected:
   PlatformDecoderModule() { }
   virtual ~PlatformDecoderModule() { }
@@ -316,6 +303,20 @@ public:
                "Can only work with a decoder supporting recycling.");
   }
 
+  enum class ConversionRequired
+  {
+    kNeedNone = 0,
+    kNeedAVCC = 1,
+    kNeedAnnexB = 2,
+  };
+
+  
+  
+  
+  virtual ConversionRequired NeedsConversion() const
+  {
+    return ConversionRequired::kNeedNone;
+  }
 };
 
 } 
