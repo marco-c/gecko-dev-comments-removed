@@ -507,6 +507,7 @@ MessageChannel::MessageChannel(const char* aName,
     mTransactionStack(nullptr),
     mTimedOutMessageSeqno(0),
     mTimedOutMessageNestedLevel(0),
+    mMaybeDeferredPendingCount(0),
     mRemoteStackDepthGuess(0),
     mSawInterruptOutMsg(false),
     mIsWaitingForIncoming(false),
@@ -554,6 +555,21 @@ MessageChannel::~MessageChannel()
 #endif
     Clear();
 }
+
+#ifdef DEBUG
+void
+MessageChannel::AssertMaybeDeferredCountCorrect()
+{
+    size_t count = 0;
+    for (MessageTask* task : mPending) {
+        if (!IsAlwaysDeferred(task->Msg())) {
+            count++;
+        }
+    }
+
+    MOZ_ASSERT(count == mMaybeDeferredPendingCount);
+}
+#endif
 
 
 
@@ -688,6 +704,8 @@ MessageChannel::Clear()
         task->Clear();
     }
     mPending.clear();
+
+    mMaybeDeferredPendingCount = 0;
 
     mOutOfTurnReplies.clear();
     while (!mDeferred.empty()) {
@@ -952,21 +970,35 @@ MessageChannel::MaybeInterceptSpecialIOMessage(const Message& aMsg)
     return false;
 }
 
+ bool
+MessageChannel::IsAlwaysDeferred(const Message& aMsg)
+{
+    
+    
+    return aMsg.nested_level() != IPC::Message::NESTED_INSIDE_CPOW &&
+           !aMsg.is_sync();
+}
+
 bool
 MessageChannel::ShouldDeferMessage(const Message& aMsg)
 {
     
     
     
-    if (aMsg.nested_level() == IPC::Message::NESTED_INSIDE_CPOW)
+    if (aMsg.nested_level() == IPC::Message::NESTED_INSIDE_CPOW) {
+        MOZ_ASSERT(!IsAlwaysDeferred(aMsg));
         return false;
+    }
 
     
     
     if (!aMsg.is_sync()) {
         MOZ_RELEASE_ASSERT(aMsg.nested_level() == IPC::Message::NOT_NESTED);
+        MOZ_ASSERT(IsAlwaysDeferred(aMsg));
         return true;
     }
+
+    MOZ_ASSERT(!IsAlwaysDeferred(aMsg));
 
     int msgNestedLevel = aMsg.nested_level();
     int waitingNestedLevel = AwaitingSyncReplyNestedLevel();
@@ -1050,11 +1082,14 @@ MessageChannel::OnMessageReceivedFromLink(Message&& aMsg)
                 
                 
                 MOZ_RELEASE_ASSERT(p->Msg().compress_type() == IPC::Message::COMPRESSION_ALL);
+                MOZ_RELEASE_ASSERT(IsAlwaysDeferred(p->Msg()));
                 p->remove();
                 break;
             }
         }
     }
+
+    bool alwaysDeferred = IsAlwaysDeferred(aMsg);
 
     bool wakeUpSyncSend = AwaitingSyncReply() && !ShouldDeferMessage(aMsg);
 
@@ -1103,6 +1138,10 @@ MessageChannel::OnMessageReceivedFromLink(Message&& aMsg)
     RefPtr<MessageTask> task = new MessageTask(this, Move(aMsg));
     mPending.insertBack(task);
 
+    if (!alwaysDeferred) {
+        mMaybeDeferredPendingCount++;
+    }
+
     if (shouldWakeUp) {
         NotifyWorkerThread();
     }
@@ -1130,6 +1169,11 @@ void
 MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
 {
     mMonitor->AssertCurrentThreadOwns();
+
+    AssertMaybeDeferredCountCorrect();
+    if (mMaybeDeferredPendingCount == 0) {
+        return;
+    }
 
     IPC_LOG("ProcessPendingRequests for seqno=%d, xid=%d",
             aTransaction.SequenceNumber(), aTransaction.TransactionID());
@@ -1160,8 +1204,12 @@ MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
             }
 
             if (!defer) {
+                MOZ_ASSERT(!IsAlwaysDeferred(msg));
+
                 if (!toProcess.append(Move(msg)))
                     MOZ_CRASH();
+
+                mMaybeDeferredPendingCount--;
 
                 p = p->removeAndGetNext();
                 continue;
@@ -1180,6 +1228,8 @@ MessageChannel::ProcessPendingRequests(AutoEnterTransaction& aTransaction)
             ProcessPendingRequest(Move(*it));
         }
     }
+
+    AssertMaybeDeferredCountCorrect();
 }
 
 bool
@@ -1486,6 +1536,9 @@ MessageChannel::Call(Message* aMsg, Message* aReply)
         } else if (!mPending.isEmpty()) {
             RefPtr<MessageTask> task = mPending.popFirst();
             recvd = Move(task->Msg());
+            if (!IsAlwaysDeferred(recvd)) {
+                mMaybeDeferredPendingCount--;
+            }
         } else {
             
             
@@ -1701,6 +1754,10 @@ MessageChannel::RunMessage(MessageTask& aTask)
     MOZ_RELEASE_ASSERT(aTask.isInList());
     aTask.remove();
 
+    if (!IsAlwaysDeferred(msg)) {
+        mMaybeDeferredPendingCount--;
+    }
+
     if (IsOnCxxStack() && msg.is_interrupt() && msg.is_reply()) {
         
         
@@ -1762,6 +1819,10 @@ MessageChannel::MessageTask::Cancel()
         return NS_OK;
     }
     remove();
+
+    if (!IsAlwaysDeferred(Msg())) {
+        mChannel->mMaybeDeferredPendingCount--;
+    }
 
     return NS_OK;
 }
@@ -2013,6 +2074,7 @@ MessageChannel::MaybeUndeferIncall()
     MOZ_RELEASE_ASSERT(call.nested_level() == IPC::Message::NOT_NESTED);
     RefPtr<MessageTask> task = new MessageTask(this, Move(call));
     mPending.insertBack(task);
+    MOZ_ASSERT(IsAlwaysDeferred(task->Msg()));
     task->Post();
 }
 
@@ -2619,6 +2681,8 @@ MessageChannel::RepostAllMessages()
         mPending.insertBack(newTask);
         newTask->Post();
     }
+
+    AssertMaybeDeferredCountCorrect();
 }
 
 void
@@ -2672,12 +2736,17 @@ MessageChannel::CancelTransaction(int transaction)
             MOZ_RELEASE_ASSERT(msg.transaction_id() != transaction);
             IPC_LOG("Removing msg from queue seqno=%d xid=%d", msg.seqno(), msg.transaction_id());
             foundSync = true;
+            if (!IsAlwaysDeferred(msg)) {
+                mMaybeDeferredPendingCount--;
+            }
             p = p->removeAndGetNext();
             continue;
         }
 
         p = p->getNext();
     }
+
+    AssertMaybeDeferredCountCorrect();
 }
 
 bool
