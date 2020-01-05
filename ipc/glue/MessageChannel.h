@@ -788,7 +788,7 @@ class MessageChannel : HasResultCodes
     
     
     
-    RefPtr<RefCountedTask> mOnChannelConnectedTask;
+    RefPtr<CancelableRunnable> mOnChannelConnectedTask;
     bool mPeerPidSet;
     int32_t mPeerPid;
 };
