@@ -359,3 +359,7 @@ user_pref("startup.homepage_welcome_url.additional", "");
 
 
 user_pref("plugin.load_flash_only", false);
+
+
+
+user_pref("media.libavcodec.allow-obsolete", true);
