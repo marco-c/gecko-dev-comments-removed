@@ -12350,11 +12350,6 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
       discardLayoutState = ShouldDiscardLayoutState(httpChannel);
     }
 
-    
-    nsCOMPtr<nsISupports> owner;
-    aChannel->GetOwner(getter_AddRefs(owner));
-    triggeringPrincipal = do_QueryInterface(owner);
-
     nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
     if (loadInfo) {
       if (!triggeringPrincipal) {
