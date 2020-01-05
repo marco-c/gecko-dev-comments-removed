@@ -1278,12 +1278,6 @@ GatherCertificateTransparencyTelemetry(const UniqueCERTCertList& certList,
     return;
   }
 
-  if (!info.processedSCTs) {
-    
-    Telemetry::Accumulate(Telemetry::SSL_SCTS_PER_CONNECTION, 0);
-    return;
-  }
-
   for (const ct::VerifiedSCT& sct : info.verifyResult.verifiedScts) {
     GatherTelemetryForSingleSCT(sct);
   }

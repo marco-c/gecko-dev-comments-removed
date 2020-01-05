@@ -93,23 +93,17 @@ var security = {
       }
 
       
+      
+      
+      
       switch (status.certificateTransparencyStatus) {
         case nsISSLStatus.CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE:
-          
-          
+        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_NOT_ENOUGH_SCTS:
+        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_NOT_DIVERSE_SCTS:
           retval.certificateTransparency = null;
           break;
-        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_NONE:
-          retval.certificateTransparency = "None";
-          break;
-        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_OK:
-          retval.certificateTransparency = "OK";
-          break;
-        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_UNKNOWN_LOG:
-          retval.certificateTransparency = "UnknownLog";
-          break;
-        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_INVALID:
-          retval.certificateTransparency = "Invalid";
+        case nsISSLStatus.CERTIFICATE_TRANSPARENCY_POLICY_COMPLIANT:
+          retval.certificateTransparency = "Compliant";
           break;
       }
 

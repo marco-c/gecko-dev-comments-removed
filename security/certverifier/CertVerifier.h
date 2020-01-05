@@ -8,6 +8,7 @@
 #define CertVerifier_h
 
 #include "BRNameMatchingPolicy.h"
+#include "CTPolicyEnforcer.h"
 #include "CTVerifyResult.h"
 #include "OCSPCache.h"
 #include "ScopedNSSTypes.h"
@@ -32,6 +33,7 @@ namespace mozilla { namespace ct {
 
 
 class MultiLogCTVerifier;
+class CTDiversityPolicy;
 
 } } 
 
@@ -79,11 +81,11 @@ public:
   
   bool enabled;
   
-  bool processedSCTs;
-  
   mozilla::ct::CTVerifyResult verifyResult;
+  
+  mozilla::ct::CTPolicyCompliance policyCompliance;
 
-  void Reset() { enabled = false; processedSCTs = false; verifyResult.Reset(); }
+  void Reset();
 };
 
 class NSSCertDBTrustDomain;
@@ -205,9 +207,10 @@ private:
   
   
   UniquePtr<mozilla::ct::MultiLogCTVerifier> mCTVerifier;
+  UniquePtr<mozilla::ct::CTDiversityPolicy> mCTDiversityPolicy;
 
   void LoadKnownCTLogs();
-  mozilla::pkix::Result VerifySignedCertificateTimestamps(
+  mozilla::pkix::Result VerifyCertificateTransparencyPolicy(
                      NSSCertDBTrustDomain& trustDomain,
                      const UniqueCERTCertList& builtChain,
                      mozilla::pkix::Input sctsFromTLS,
