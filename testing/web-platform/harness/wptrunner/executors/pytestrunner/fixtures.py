@@ -58,7 +58,7 @@ class Session(object):
     def __init__(self, client):
         self.client = client
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture(scope="function")
     def session(self, request):
         
         

@@ -10,7 +10,6 @@ Cu.import("resource://gre/modules/Log.jsm");
 
 Cu.import("chrome://marionette/content/atom.js");
 Cu.import("chrome://marionette/content/error.js");
-Cu.import("chrome://marionette/content/wait.js");
 
 const logger = Log.repository.getLogger("Marionette");
 
@@ -247,14 +246,9 @@ element.find = function (container, strategy, selector, opts = {}) {
   }
 
   return new Promise((resolve, reject) => {
-    let findElements = wait.until((resolve, reject) => {
-      let res = find_(container, strategy, selector, searchFn, opts);
-      if (res.length > 0) {
-        resolve(Array.from(res));
-      } else {
-        reject([]);
-      }
-    }, opts.timeout);
+    let findElements = implicitlyWaitFor(
+        () => find_(container, strategy, selector, searchFn, opts),
+        opts.timeout);
 
     findElements.then(foundEls => {
       
@@ -560,6 +554,82 @@ function findElements(using, value, rootNode, startNode) {
     default:
       throw new InvalidSelectorError(`No such strategy: ${using}`);
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function implicitlyWaitFor(func, timeout, interval = 100) {
+  let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+
+  return new Promise((resolve, reject) => {
+    let startTime = new Date().getTime();
+    let endTime = startTime + timeout;
+
+    let elementSearch = function() {
+      let res;
+      try {
+        res = func();
+      } catch (e) {
+        reject(e);
+      }
+
+      if (
+        
+        
+        (element.isCollection(res) && res.length > 0)
+
+        
+        
+        || (!element.isCollection(res) && !!res)
+
+        
+        
+        || startTime == endTime
+
+        
+        || new Date().getTime() >= endTime
+      ) {
+        resolve(res);
+      }
+    };
+
+    
+    
+    elementSearch();
+
+    timer.init(elementSearch, interval, Ci.nsITimer.TYPE_REPEATING_SLACK);
+
+  
+  }).then(res => {
+    timer.cancel();
+    return res;
+  }, err => {
+    timer.cancel();
+    throw err;
+  });
 }
 
 
