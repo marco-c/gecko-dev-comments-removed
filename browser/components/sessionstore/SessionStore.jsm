@@ -3708,6 +3708,7 @@ var SessionStoreInternal = {
       formdata: tabData.formdata || null,
       disallow: tabData.disallow || null,
       pageStyle: tabData.pageStyle || null,
+      userContextId: tabData.userContextId || 0,
 
       
       
