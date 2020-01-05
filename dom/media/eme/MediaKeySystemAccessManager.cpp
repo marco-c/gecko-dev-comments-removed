@@ -94,14 +94,13 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
   DecoderDoctorDiagnostics diagnostics;
 
   
-  nsAutoString keySystem;
-  int32_t minCdmVersion = NO_CDM_VERSION;
-  if (!ParseKeySystem(aKeySystem, keySystem, minCdmVersion)) {
+  if (!IsWidevineKeySystem(aKeySystem) &&
+      !IsClearkeyKeySystem(aKeySystem) &&
+      !IsPrimetimeKeySystem(aKeySystem)) {
     
     
     aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-                          NS_LITERAL_CSTRING("Key system string is invalid,"
-                                             " or key system is unsupported"));
+                          NS_LITERAL_CSTRING("Key system is unsupported"));
     diagnostics.StoreMediaKeySystemAccess(mWindow->GetExtantDoc(),
                                           aKeySystem, false, __func__);
     return;
@@ -123,17 +122,17 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
 
   nsAutoCString message;
   MediaKeySystemStatus status =
-    MediaKeySystemAccess::GetKeySystemStatus(keySystem, message);
+    MediaKeySystemAccess::GetKeySystemStatus(aKeySystem, message);
 
   nsPrintfCString msg("MediaKeySystemAccess::GetKeySystemStatus(%s) "
                       "result=%s msg='%s'",
-                      NS_ConvertUTF16toUTF8(keySystem).get(),
+                      NS_ConvertUTF16toUTF8(aKeySystem).get(),
                       MediaKeySystemStatusValues::strings[(size_t)status].value,
                       message.get());
   LogToBrowserConsole(NS_ConvertUTF8toUTF16(msg));
 
   if (status == MediaKeySystemStatus::Cdm_not_installed &&
-      (IsPrimetimeKeySystem(keySystem) || IsWidevineKeySystem(keySystem))) {
+      (IsPrimetimeKeySystem(aKeySystem) || IsWidevineKeySystem(aKeySystem))) {
     
     
     
@@ -147,7 +146,7 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
       
       
       
-      MediaKeySystemAccess::NotifyObservers(mWindow, keySystem, status);
+      MediaKeySystemAccess::NotifyObservers(mWindow, aKeySystem, status);
     } else {
       
       
@@ -163,13 +162,13 @@ MediaKeySystemAccessManager::Request(DetailedPromise* aPromise,
     
     
     
-    MediaKeySystemAccess::NotifyObservers(mWindow, keySystem, status);
+    MediaKeySystemAccess::NotifyObservers(mWindow, aKeySystem, status);
     aPromise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR, message);
     return;
   }
 
   MediaKeySystemConfiguration config;
-  if (MediaKeySystemAccess::GetSupportedConfig(keySystem, aConfigs, config, &diagnostics)) {
+  if (MediaKeySystemAccess::GetSupportedConfig(aKeySystem, aConfigs, config, &diagnostics)) {
     RefPtr<MediaKeySystemAccess> access(
       new MediaKeySystemAccess(mWindow, aKeySystem, config));
     aPromise->MaybeResolve(access);
