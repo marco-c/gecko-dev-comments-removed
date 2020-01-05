@@ -172,9 +172,10 @@ impl PropertyDeclarationBlock {
 
     
     
+    
     pub fn set_parsed_declaration(&mut self,
                                   declaration: PropertyDeclaration,
-                                  importance: Importance) {
+                                  importance: Importance) -> bool {
         for slot in &mut *self.declarations {
             if slot.0.id() == declaration.id() {
                 match (slot.1, importance) {
@@ -184,10 +185,12 @@ impl PropertyDeclarationBlock {
                     (Importance::Important, Importance::Normal) => {
                         self.important_count -= 1;
                     }
-                    _ => {}
+                    _ => if slot.0 == declaration {
+                        return false;
+                    }
                 }
                 *slot = (declaration, importance);
-                return
+                return true;
             }
         }
 
@@ -195,6 +198,7 @@ impl PropertyDeclarationBlock {
         if importance.important() {
             self.important_count += 1;
         }
+        true
     }
 
     
