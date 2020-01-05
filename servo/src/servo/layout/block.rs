@@ -24,11 +24,11 @@ trait BlockLayout {
     pure fn starts_block_flow() -> bool;
     pure fn with_block_box(fn(box: &@RenderBox) -> ()) -> ();
 
-    fn bubble_widths_block(ctx: &LayoutContext);
-    fn assign_widths_block(ctx: &LayoutContext);
-    fn assign_height_block(ctx: &LayoutContext);
+    fn bubble_widths_block(@self, ctx: &LayoutContext);
+    fn assign_widths_block(@self, ctx: &LayoutContext);
+    fn assign_height_block(@self, ctx: &LayoutContext);
 
-    fn build_display_list_block(a: &dl::DisplayListBuilder, b: &Rect<au>,
+    fn build_display_list_block(@self, a: &dl::DisplayListBuilder, b: &Rect<au>,
                                 c: &Point2D<au>, d: &dl::DisplayList);
 }
 
@@ -66,22 +66,22 @@ impl FlowContext : BlockLayout {
     
     
     
-    fn bubble_widths_block(ctx: &LayoutContext) {
+    fn bubble_widths_block(@self, ctx: &LayoutContext) {
         assert self.starts_block_flow();
 
         let mut min_width = au(0);
         let mut pref_width = au(0);
 
         
-        for FlowTree.each_child(@self) |child_ctx| {
+        for FlowTree.each_child(self) |child_ctx| {
             assert child_ctx.starts_block_flow() || child_ctx.starts_inline_flow();
 
             min_width  = au::max(min_width, child_ctx.d().min_width);
             pref_width = au::max(pref_width, child_ctx.d().pref_width);
         }
 
-        
-
+        /* if not an anonymous block context, add in block box's widths.
+           these widths will not include child elements, just padding etc. */
         do self.with_block_box |box| {
             min_width = min_width.add(&box.get_min_width(ctx));
             pref_width = pref_width.add(&box.get_pref_width(ctx));
@@ -91,14 +91,14 @@ impl FlowContext : BlockLayout {
         self.d().pref_width = pref_width;
     }
  
-    /* Recursively (top-down) determines the actual width of child
-    contexts and boxes. When called on this context, the context has
-    had its width set by the parent context.
+    
 
-    Dual boxes consume some width first, and the remainder is assigned to
-    all child (block) contexts. */
 
-    fn assign_widths_block(_ctx: &LayoutContext) { 
+
+
+
+
+    fn assign_widths_block(@self, _ctx: &LayoutContext) { 
         assert self.starts_block_flow();
 
         let mut remaining_width = self.d().position.size.width;
@@ -113,19 +113,19 @@ impl FlowContext : BlockLayout {
             remaining_width = remaining_width.sub(&left_used.add(&right_used));
         }
 
-        for FlowTree.each_child(@self) |child_ctx| {
+        for FlowTree.each_child(self) |child_ctx| {
             assert child_ctx.starts_block_flow() || child_ctx.starts_inline_flow();
             child_ctx.d().position.origin.x = left_used;
             child_ctx.d().position.size.width = remaining_width;
         }
     }
 
-    fn assign_height_block(_ctx: &LayoutContext) {
+    fn assign_height_block(@self, _ctx: &LayoutContext) {
         assert self.starts_block_flow();
 
         let mut cur_y = au(0);
 
-        for FlowTree.each_child(@self) |child_ctx| {
+        for FlowTree.each_child(self) |child_ctx| {
             child_ctx.d().position.origin.y = cur_y;
             cur_y = cur_y.add(&child_ctx.d().position.size.height);
         }
@@ -142,7 +142,7 @@ impl FlowContext : BlockLayout {
         }
     }
 
-    fn build_display_list_block(builder: &dl::DisplayListBuilder, dirty: &Rect<au>, 
+    fn build_display_list_block(@self, builder: &dl::DisplayListBuilder, dirty: &Rect<au>, 
                                 offset: &Point2D<au>, list: &dl::DisplayList) {
 
         assert self.starts_block_flow();
@@ -155,7 +155,7 @@ impl FlowContext : BlockLayout {
         
 
         
-        for FlowTree.each_child(@self) |child| {
+        for FlowTree.each_child(self) |child| {
             self.build_display_list_for_child(builder, child, dirty, offset, list)
         }
     }
