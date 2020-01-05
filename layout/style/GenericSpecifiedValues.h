@@ -78,6 +78,11 @@ public:
     virtual void SetColorValue(nsCSSPropertyID aId, nscolor aValue) = 0;
     virtual void SetColorValueIfUnset(nsCSSPropertyID aId, nscolor aValue) = 0;
 
+    
+    virtual void SetFontFamily(const nsString& aValue) = 0;
+    
+    virtual void SetTextDecorationColorOverride() = 0;
+
     virtual nsRuleData* AsRuleData() = 0;
 };
 
