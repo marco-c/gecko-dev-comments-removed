@@ -1144,7 +1144,7 @@ function CopyTest(name, next)
 
   
   this._copier =
-    new WriteThroughCopier(this._source, this._sink, this, null);
+    new WriteThroughCopier(this._source, this._sink, this, null, false);
 
   
   this._waitForWrittenData();
