@@ -92,6 +92,17 @@ public:
 
   static void ClearServoDataFromSubtree(Element* aElement);
 
+  
+
+
+
+
+
+
+
+
+  static void PostRestyleEventForAnimations(dom::Element* aElement,
+                                            nsRestyleHint aRestyleHint);
 protected:
   ~ServoRestyleManager() override
   {

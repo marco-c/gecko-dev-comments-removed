@@ -17,6 +17,7 @@
 #include "mozilla/LayerAnimationInfo.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/RestyleManagerInlines.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "nsComputedDOMStyle.h" 
 #include "nsCSSPseudoElements.h"
@@ -313,11 +314,28 @@ EffectCompositor::PostRestyleForAnimation(dom::Element* aElement,
                                         eRestyle_CSSTransitions :
                                         eRestyle_CSSAnimations;
 
-  
-  
-  if (mPresContext->StyleSet()->IsServo() &&
-      !mPresContext->RestyleManager()->IsInStyleRefresh()) {
-    hint = eRestyle_Self | eRestyle_Subtree;
+  if (mPresContext->StyleSet()->IsServo()) {
+    MOZ_ASSERT(NS_IsMainThread(),
+               "Restyle request during restyling should be requested only on "
+               "the main-thread. e.g. after the parallel traversal");
+    if (ServoStyleSet::IsInServoTraversal()) {
+      
+      MOZ_ASSERT(hint == eRestyle_CSSAnimations);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      return;
+    } else if (!mPresContext->RestyleManager()->IsInStyleRefresh()) {
+      
+      
+      hint = eRestyle_Self | eRestyle_Subtree;
+    }
   }
   mPresContext->PresShell()->RestyleForAnimation(element, hint);
 }
@@ -932,12 +950,13 @@ EffectCompositor::SetPerformanceWarning(
   }
 }
 
-void
+bool
 EffectCompositor::PreTraverse()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext->RestyleManager()->IsServo());
 
+  bool foundElementsNeedingRestyle = false;
   for (auto& elementsToRestyle : mElementsToRestyle) {
     for (auto iter = elementsToRestyle.Iter(); !iter.Done(); iter.Next()) {
       bool postedRestyle = iter.Data();
@@ -947,6 +966,16 @@ EffectCompositor::PreTraverse()
       }
 
       NonOwningAnimationTarget target = iter.Key();
+
+      
+      
+      
+      
+      mPresContext->RestyleManager()->AsServo()->
+        PostRestyleEventForAnimations(target.mElement,
+                                      eRestyle_Self | eRestyle_Subtree);
+      foundElementsNeedingRestyle = true;
+
       EffectSet* effects =
         EffectSet::GetEffectSet(target.mElement, target.mPseudoType);
       if (!effects) {
@@ -964,6 +993,7 @@ EffectCompositor::PreTraverse()
       iter.Remove();
     }
   }
+  return foundElementsNeedingRestyle;
 }
 
 void

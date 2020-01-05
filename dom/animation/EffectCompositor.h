@@ -229,7 +229,8 @@ public:
   
   
   
-  void PreTraverse();
+  
+  bool PreTraverse();
 
   
   void PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull);
