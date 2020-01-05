@@ -1168,7 +1168,7 @@ pref("dom.require_user_interaction_for_beforeunload", true);
 
 pref("dom.disable_open_during_load",                false);
 pref("dom.popup_maximum",                           20);
-pref("dom.popup_allowed_events", "change click dblclick mouseup notificationclick reset submit touchend");
+pref("dom.popup_allowed_events", "change click dblclick mouseup pointerup notificationclick reset submit touchend");
 pref("dom.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
@@ -1193,8 +1193,11 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
-
 pref("dom.forms.datetime", false);
+
+
+
+pref("dom.forms.datetime.others", false);
 
 
 pref("dom.forms.datetime.timepicker", false);
@@ -2905,7 +2908,7 @@ pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
-pref("dom.ipc.processCount", 2);
+pref("dom.ipc.processCount", 4);
 #else
 pref("dom.ipc.processCount", 1);
 #endif
