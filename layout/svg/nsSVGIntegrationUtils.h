@@ -160,6 +160,13 @@ public:
   static DrawResult
   PaintMaskAndClipPath(const PaintFramesParams& aParams);
 
+  
+
+
+
+  static DrawResult
+  PaintMask(const PaintFramesParams& aParams);
+
   struct MaskUsage {
     bool shouldGenerateMaskLayer;
     bool shouldGenerateClipMaskLayer;
