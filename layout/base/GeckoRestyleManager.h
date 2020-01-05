@@ -44,17 +44,14 @@ public:
 
   explicit GeckoRestyleManager(nsPresContext* aPresContext);
 
-private:
-  
-  ~GeckoRestyleManager()
+protected:
+  ~GeckoRestyleManager() override
   {
     MOZ_ASSERT(!mReframingStyleContexts,
                "temporary member should be nulled out before destruction");
   }
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(mozilla::GeckoRestyleManager)
-
   
   
   nsresult ContentStateChanged(nsIContent*   aContent,

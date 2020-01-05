@@ -31,11 +31,10 @@ class Element;
 
 class RestyleManager
 {
-protected:
-  RestyleManager(StyleBackendType aType, nsPresContext* aPresContext);
-
 public:
   typedef mozilla::dom::Element Element;
+
+  NS_INLINE_DECL_REFCOUNTING(mozilla::RestyleManager)
 
   
   
@@ -142,7 +141,10 @@ public:
   }
 
 protected:
-  ~RestyleManager() {
+  RestyleManager(StyleBackendType aType, nsPresContext* aPresContext);
+
+  virtual ~RestyleManager()
+  {
     MOZ_ASSERT(!mAnimationsWithDestroyedFrame,
                "leaving dangling pointers from AnimationsWithDestroyedFrame");
   }
