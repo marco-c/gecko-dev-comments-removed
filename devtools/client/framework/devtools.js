@@ -18,7 +18,6 @@ const {defaultTools: DefaultTools, defaultThemes: DefaultThemes} =
 const EventEmitter = require("devtools/shared/event-emitter");
 const {JsonView} = require("devtools/client/jsonview/main");
 const AboutDevTools = require("devtools/client/framework/about-devtools-toolbox");
-const {when: unload} = require("sdk/system/unload");
 const {Task} = require("devtools/shared/task");
 
 const FORBIDDEN_IDS = new Set(["toolbox", ""]);
@@ -36,16 +35,11 @@ function DevTools() {
   this._creatingToolboxes = new Map(); 
 
   
-  this.destroy = this.destroy.bind(this);
-
-  
   JsonView.initialize();
 
   AboutDevTools.register();
 
   EventEmitter.decorate(this);
-
-  Services.obs.addObserver(this.destroy, "quit-application", false);
 
   
   
@@ -482,18 +476,21 @@ DevTools.prototype = {
   
 
 
-  _teardown: function DT_teardown() {
-    for (let [target, toolbox] of this._toolboxes) {
-      toolbox.destroy();
+
+
+
+
+
+
+  destroy: function ({ shuttingDown }) {
+    
+    
+    if (!shuttingDown) {
+      for (let [target, toolbox] of this._toolboxes) {
+        toolbox.destroy();
+      }
+      AboutDevTools.unregister();
     }
-    AboutDevTools.unregister();
-  },
-
-  
-
-
-  destroy: function () {
-    Services.obs.removeObserver(this.destroy, "quit-application");
 
     for (let [key, tool] of this.getToolDefinitionMap()) {
       this.unregisterTool(key, true);
@@ -519,8 +516,3 @@ DevTools.prototype = {
 };
 
 const gDevTools = exports.gDevTools = new DevTools();
-
-
-unload(function () {
-  gDevTools._teardown();
-});
