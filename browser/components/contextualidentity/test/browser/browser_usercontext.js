@@ -69,7 +69,7 @@ add_task(function* test() {
     yield BrowserTestUtils.browserLoaded(browser);
 
     
-    let title = browser.contentDocument.title.trim().split("|");
+    let title = browser.contentTitle.trim().split("|");
 
     
     for (let part of title) {
