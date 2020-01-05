@@ -124,14 +124,12 @@ impl Blob {
                         blobPropertyBag: &BlobBinding::BlobPropertyBag)
                         -> Fallible<Root<Blob>> {
         
-        
-        let bytes: Vec<u8> = String::from(blobParts).into_bytes();
         let typeString = if is_ascii_printable(&blobPropertyBag.type_) {
             &*blobPropertyBag.type_
         } else {
             ""
         };
-        Ok(Blob::new(global, bytes, &typeString.to_ascii_lowercase()))
+        Ok(Blob::new(global, blobParts.into(), &typeString.to_ascii_lowercase()))
     }
 
     pub fn get_data(&self) -> &DataSlice {
