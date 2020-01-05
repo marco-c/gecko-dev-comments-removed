@@ -10,11 +10,12 @@
 
 
 use hyper::method::Method;
+use net_traits::request::Origin;
 use std::ascii::AsciiExt;
 use std::sync::mpsc::{Sender, Receiver, channel};
 use time;
 use time::{now, Timespec};
-use url::{Origin, Url};
+use url::Url;
 
 
 
