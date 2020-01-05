@@ -49,6 +49,7 @@ use net_traits::image_cache_thread::ImageCacheThread;
 use net_traits::storage_thread::StorageThread;
 use profile_traits::mem;
 use std::any::Any;
+use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
 use util::mem::HeapSizeOf;
 
@@ -324,4 +325,30 @@ pub enum EventResult {
     DefaultAllowed,
     
     DefaultPrevented,
+}
+
+
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Deserialize, Serialize)]
+pub enum IFrameSandboxState {
+    
+    IFrameSandboxed,
+    
+    IFrameUnsandboxed
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub struct IFrameLoadInfo {
+    
+    pub url: Option<Url>,
+    
+    pub containing_pipeline_id: PipelineId,
+    
+    pub new_subpage_id: SubpageId,
+    
+    pub old_subpage_id: Option<SubpageId>,
+    
+    pub new_pipeline_id: PipelineId,
+    
+    pub sandbox: IFrameSandboxState,
 }

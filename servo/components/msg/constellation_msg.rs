@@ -36,12 +36,6 @@ impl<T: Serialize + Deserialize> Clone for ConstellationChan<T> {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Deserialize, Serialize)]
-pub enum IFrameSandboxState {
-    IFrameSandboxed,
-    IFrameUnsandboxed
-}
-
 
 #[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct Failure {
@@ -204,23 +198,6 @@ bitflags! {
         const ALT = 0x04,
         const SUPER = 0x08,
     }
-}
-
-
-#[derive(Deserialize, Serialize)]
-pub struct IframeLoadInfo {
-    
-    pub url: Option<Url>,
-    
-    pub containing_pipeline_id: PipelineId,
-    
-    pub new_subpage_id: SubpageId,
-    
-    pub old_subpage_id: Option<SubpageId>,
-    
-    pub new_pipeline_id: PipelineId,
-    
-    pub sandbox: IFrameSandboxState,
 }
 
 #[derive(Deserialize, HeapSizeOf, Serialize)]
