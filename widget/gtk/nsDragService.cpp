@@ -1319,11 +1319,23 @@ nsDragService::GetSourceList(void)
                         MOZ_LOG(sDragLm, LogLevel::Debug,
                                ("adding target %s\n", target->target));
                         targetArray.AppendElement(target);
+
+                        
+                        if (strcmp(flavorStr, kFileMime) == 0) {
+                            GtkTargetEntry *urilistTarget =
+                             (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
+                            urilistTarget->target = g_strdup(gTextUriListType);
+                            urilistTarget->flags = 0;
+                            MOZ_LOG(sDragLm, LogLevel::Debug,
+                                   ("automatically adding target %s\n",
+                                    urilistTarget->target));
+                            targetArray.AppendElement(urilistTarget);
+                        }
                         
                         
                         
                         
-                        if (strcmp(flavorStr, kUnicodeMime) == 0) {
+                        else if (strcmp(flavorStr, kUnicodeMime) == 0) {
                             GtkTargetEntry *plainUTF8Target =
                              (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
                             plainUTF8Target->target = g_strdup(gTextPlainUTF8Type);
@@ -1345,7 +1357,7 @@ nsDragService::GetSourceList(void)
                         
                         
                         
-                        if (strcmp(flavorStr, kURLMime) == 0) {
+                        else if (strcmp(flavorStr, kURLMime) == 0) {
                             GtkTargetEntry *urlTarget =
                              (GtkTargetEntry *)g_malloc(sizeof(GtkTargetEntry));
                             urlTarget->target = g_strdup(gMozUrlType);
@@ -1509,6 +1521,38 @@ CreateUriList(nsIArray *items, gchar **text, gint *length)
                 if (tmpData) {
                     
                     free(tmpData);
+                }
+            } else {
+                
+                
+                nsCOMPtr<nsISupports> data;
+                rv = item->GetTransferData(kFileMime,
+                                           getter_AddRefs(data),
+                                           &tmpDataLen);
+                if (NS_SUCCEEDED(rv)) {
+                    nsCOMPtr<nsIFile> file = do_QueryInterface(data);
+                    if (!file) {
+                        
+                        
+                        
+                        nsCOMPtr<nsISupportsInterfacePointer> ptr =
+                          do_QueryInterface(data);
+                        if (ptr) {
+                            ptr->GetData(getter_AddRefs(data));
+                            file = do_QueryInterface(data);
+                        }
+                    }
+
+                    if (file) {
+                        nsCOMPtr<nsIURI> fileURI;
+                        NS_NewFileURI(getter_AddRefs(fileURI), file);
+                        if (fileURI) {
+                            nsAutoCString uristring;
+                            fileURI->GetSpec(uristring);
+                            g_string_append(uriList, uristring.get());
+                            g_string_append(uriList, "\r\n");
+                        }
+                    }
                 }
             }
         }
