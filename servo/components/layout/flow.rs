@@ -288,6 +288,9 @@ pub trait Flow: fmt::Show + ToString + Sync {
 
     
     
+    
+    
+    
     fn generated_containing_block_rect(&self) -> LogicalRect<Au> {
         panic!("generated_containing_block_position not yet implemented for this flow")
     }
