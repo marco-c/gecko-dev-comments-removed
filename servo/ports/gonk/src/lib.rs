@@ -11,7 +11,7 @@ extern crate log;
 
 extern crate compositing;
 extern crate devtools;
-extern crate "net" as servo_net;
+extern crate net;
 extern crate msg;
 #[macro_use]
 extern crate util;
@@ -34,11 +34,11 @@ use msg::constellation_msg::ConstellationChan;
 use script::dom::bindings::codegen::RegisterBindings;
 
 #[cfg(not(test))]
-use servo_net::image_cache_task::ImageCacheTask;
+use net::image_cache_task::ImageCacheTask;
 #[cfg(not(test))]
-use servo_net::storage_task::StorageTaskFactory;
+use net::storage_task::StorageTaskFactory;
 #[cfg(not(test))]
-use servo_net::resource_task::new_resource_task;
+use net::resource_task::new_resource_task;
 #[cfg(not(test))]
 use gfx::font_cache_task::FontCacheTask;
 #[cfg(not(test))]
@@ -88,11 +88,11 @@ impl<Window> Browser<Window> where Window: WindowMethods + 'static {
         Builder::new()
             .spawn(move || {
             let opts = &opts_clone;
-            // Create a Servo instance.
+            
             let resource_task = new_resource_task(opts.user_agent.clone());
-            // If we are emitting an output file, then we need to block on
-            // image load or we risk emitting an output file missing the
-            // image.
+            
+            
+            
             let image_cache_task = if opts.output_file.is_some() {
                 ImageCacheTask::new_sync(resource_task.clone(), shared_task_pool)
             } else {
@@ -110,7 +110,7 @@ impl<Window> Browser<Window> where Window: WindowMethods + 'static {
                                                           devtools_chan,
                                                           storage_task);
 
-            // Send the URL command to the constellation.
+            
             let cwd = os::getcwd().unwrap();
             for url in opts.urls.iter() {
                 let url = match url::Url::parse(url.as_slice()) {
@@ -124,7 +124,7 @@ impl<Window> Browser<Window> where Window: WindowMethods + 'static {
                 chan.send(ConstellationMsg::InitLoadUrl(url));
             }
 
-            // Send the constallation Chan as the result
+            
             result_chan.send(constellation_chan);
         });
 
