@@ -10,7 +10,7 @@
 #include "nsISerializable.h"
 #include "nsIFileURL.h"
 #include "nsIStandardURL.h"
-#include "nsIUnicodeEncoder.h"
+#include "nsNCRFallbackEncoderWrapper.h"
 #include "nsIObserver.h"
 #include "nsCOMPtr.h"
 #include "nsURLHelper.h"
@@ -143,7 +143,7 @@ public:
         
         const char* mCharset;  
                                
-        nsCOMPtr<nsIUnicodeEncoder> mEncoder;
+        mozilla::UniquePtr<nsNCRFallbackEncoderWrapper> mEncoder;
     };
     friend class nsSegmentEncoder;
 
