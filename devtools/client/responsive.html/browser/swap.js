@@ -56,6 +56,10 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       tab.isResponsiveDesignMode = true;
 
       
+      
+      tab.linkedBrowser.style.visibility = "hidden";
+
+      
       freezeNavigationState(tab);
 
       
@@ -135,9 +139,16 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       thawNavigationState(tab);
       gBrowser.setTabTitle(tab);
       gBrowser.updateCurrentBrowser(true);
+
+      
+      tab.linkedBrowser.style.visibility = "";
     }),
 
     stop() {
+      
+      
+      tab.linkedBrowser.style.visibility = "hidden";
+
       
       tunnel.stop();
       tunnel = null;
@@ -197,6 +208,9 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       tab.linkedBrowser.frameLoader.activateRemoteFrame();
 
       delete tab.isResponsiveDesignMode;
+
+      
+      tab.linkedBrowser.style.visibility = "";
     },
 
   };
