@@ -38,7 +38,6 @@ pub enum GlobalRef<'a> {
 }
 
 
-#[no_move]
 pub enum GlobalRoot {
     
     Window(Root<window::Window>),
@@ -228,6 +227,11 @@ impl GlobalField {
             GlobalField::Worker(ref worker) => GlobalRoot::Worker(worker.root()),
         }
     }
+}
+
+
+pub fn global_object_for_reflector<T: Reflectable>(reflector: &T) -> GlobalRoot {
+    global_object_for_js_object(*reflector.reflector().get_jsobject())
 }
 
 
