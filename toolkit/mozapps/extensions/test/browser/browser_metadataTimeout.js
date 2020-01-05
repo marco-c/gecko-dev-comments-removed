@@ -17,8 +17,8 @@ var ARContext = Components.utils.import("resource://gre/modules/addons/AddonRepo
 
 
 var pXHRStarted = Promise.defer();
-var oldXHRConstructor = ARContext.ServiceRequest;
-ARContext.ServiceRequest = function() {
+var oldXHRConstructor = ARContext.XHRequest;
+ARContext.XHRequest = function() {
   this._handlers = new Map();
   this.mozBackgroundRequest = false;
   this.timeout = undefined;
@@ -106,7 +106,7 @@ add_task(function* amo_ping_timeout() {
   xhr._handlers.get("timeout")();
 
   
-  ARContext.ServiceRequest = oldXHRConstructor;
+  ARContext.XHRequest = oldXHRConstructor;
   
   yield promise_window_close(compatWindow);
 });
