@@ -50,6 +50,10 @@ private:
     
     TimeStamp mStart;
     
+    TimeStamp mLastFrameTime;
+    
+    TimeDuration mLongestFrame;
+    
     uint32_t mFrameCount;
 
     AnimationData()
@@ -64,7 +68,8 @@ private:
                                  bool aInProgress,
                                  AnimationData& aAnimationData,
                                  TimeDuration aVsyncInterval,
-                                 Telemetry::HistogramID aHistogram);
+                                 Telemetry::HistogramID aThroughputHistogram,
+                                 Telemetry::HistogramID aMaxDropsHistogram);
 
   
   
