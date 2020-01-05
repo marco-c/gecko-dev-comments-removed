@@ -134,7 +134,7 @@ Summariser::Rule(uintptr_t aAddress, int aNewReg,
 
   
 
-#if defined(LUL_ARCH_arm)
+#if defined(SPS_ARCH_arm)
 
   
 
@@ -237,7 +237,7 @@ Summariser::Rule(uintptr_t aAddress, int aNewReg,
     mCurrRules.mR15expr = LExpr(NODEREF, DW_REG_ARM_R14, 0);
   }
 
-#elif defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#elif defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
 
   
 

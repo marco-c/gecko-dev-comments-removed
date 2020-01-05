@@ -60,11 +60,11 @@ NameOf_DW_REG(int16_t aReg)
 {
   switch (aReg) {
     case DW_REG_CFA:       return "cfa";
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
     case DW_REG_INTEL_XBP: return "xbp";
     case DW_REG_INTEL_XSP: return "xsp";
     case DW_REG_INTEL_XIP: return "xip";
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
     case DW_REG_ARM_R7:    return "r7";
     case DW_REG_ARM_R11:   return "r11";
     case DW_REG_ARM_R12:   return "r12";
@@ -119,11 +119,11 @@ RuleSet::Print(void(*aLog)(const char*)) const
   res += mCfaExpr.ShowRule("cfa");
   res += " in";
   
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
   res += mXipExpr.ShowRule(" RA");
   res += mXspExpr.ShowRule(" SP");
   res += mXbpExpr.ShowRule(" BP");
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
   res += mR15expr.ShowRule(" R15");
   res += mR7expr .ShowRule(" R7" );
   res += mR11expr.ShowRule(" R11");
@@ -140,11 +140,11 @@ LExpr*
 RuleSet::ExprForRegno(DW_REG_NUMBER aRegno) {
   switch (aRegno) {
     case DW_REG_CFA: return &mCfaExpr;
-#   if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#   if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
     case DW_REG_INTEL_XIP: return &mXipExpr;
     case DW_REG_INTEL_XSP: return &mXspExpr;
     case DW_REG_INTEL_XBP: return &mXbpExpr;
-#   elif defined(LUL_ARCH_arm)
+#   elif defined(SPS_ARCH_arm)
     case DW_REG_ARM_R15:   return &mR15expr;
     case DW_REG_ARM_R14:   return &mR14expr;
     case DW_REG_ARM_R13:   return &mR13expr;
@@ -633,7 +633,7 @@ class PriMap {
     
     
 
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
     
     
     
@@ -645,7 +645,7 @@ class PriMap {
     
 
     uint8_t* p = (uint8_t*)ia;
-#   if defined(LUL_ARCH_x64)
+#   if defined(SPS_ARCH_amd64)
     
     if (ia - 6 >= insns_min && p[-6] == 0xFF && p[-5] == 0x15) {
       return true;
@@ -745,7 +745,7 @@ class PriMap {
       return true;
     }
 
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
     if (ia & 1) {
       uint16_t w0 = 0, w1 = 0;
       
@@ -1093,11 +1093,11 @@ TaggedUWord EvaluateReg(int16_t aReg, const UnwindRegs* aOldRegs,
 {
   switch (aReg) {
     case DW_REG_CFA:       return aCFA;
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
     case DW_REG_INTEL_XBP: return aOldRegs->xbp;
     case DW_REG_INTEL_XSP: return aOldRegs->xsp;
     case DW_REG_INTEL_XIP: return aOldRegs->xip;
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
     case DW_REG_ARM_R7:    return aOldRegs->r7;
     case DW_REG_ARM_R11:   return aOldRegs->r11;
     case DW_REG_ARM_R12:   return aOldRegs->r12;
@@ -1285,11 +1285,11 @@ void UseRuleSet(UnwindRegs* aRegs,
   
   
   
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
   aRegs->xbp = TaggedUWord();
   aRegs->xsp = TaggedUWord();
   aRegs->xip = TaggedUWord();
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
   aRegs->r7  = TaggedUWord();
   aRegs->r11 = TaggedUWord();
   aRegs->r12 = TaggedUWord();
@@ -1313,14 +1313,14 @@ void UseRuleSet(UnwindRegs* aRegs,
   
   
 
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
   aRegs->xbp
     = aRS->mXbpExpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
   aRegs->xsp
     = aRS->mXspExpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
   aRegs->xip
     = aRS->mXipExpr.EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
   aRegs->r7
     = aRS->mR7expr .EvaluateExpr(&old_regs, cfa, aStackImg, aPfxInstrs);
   aRegs->r11
@@ -1370,7 +1370,7 @@ LUL::Unwind(uintptr_t* aFramePCs,
     if (DEBUG_MAIN) {
       char buf[300];
       mLog("\n");
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
       SprintfLiteral(buf,
                      "LoopTop: rip %d/%llx  rsp %d/%llx  rbp %d/%llx\n",
                      (int)regs.xip.Valid(), (unsigned long long int)regs.xip.Value(),
@@ -1378,7 +1378,7 @@ LUL::Unwind(uintptr_t* aFramePCs,
                      (int)regs.xbp.Valid(), (unsigned long long int)regs.xbp.Value());
       buf[sizeof(buf)-1] = 0;
       mLog(buf);
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
       SprintfLiteral(buf,
                      "LoopTop: r15 %d/%llx  r7 %d/%llx  r11 %d/%llx"
                      "  r12 %d/%llx  r13 %d/%llx  r14 %d/%llx\n",
@@ -1395,10 +1395,10 @@ LUL::Unwind(uintptr_t* aFramePCs,
 #endif
     }
 
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
     TaggedUWord ia = regs.xip;
     TaggedUWord sp = regs.xsp;
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
     TaggedUWord ia = (*aFramesUsed == 0 ? regs.r15 : regs.r14);
     TaggedUWord sp = regs.r13;
 #else
@@ -1503,7 +1503,7 @@ LUL::Unwind(uintptr_t* aFramePCs,
     
     
     
-#if defined(LUL_PLAT_x86_android) || defined(LUL_PLAT_x86_linux)
+#if defined(SPS_PLAT_x86_android) || defined(SPS_PLAT_x86_linux)
     if (!ruleset && *aFramesUsed == 1 && ia.Valid() && sp.Valid()) {
       uintptr_t insns_min, insns_max;
       uintptr_t eip = ia.Value();
@@ -1575,11 +1575,11 @@ LUL::Unwind(uintptr_t* aFramePCs,
           scan_succeeded = true;
           (*aScannedFramesAcquired)++;
 
-#if defined(LUL_ARCH_x64) || defined(LUL_ARCH_x86)
+#if defined(SPS_ARCH_amd64) || defined(SPS_ARCH_x86)
           
           
           
-#         if defined(LUL_ARCH_x64)
+#         if defined(SPS_ARCH_amd64)
           const int wordSize = 8;
 #         else
           const int wordSize = 4;
@@ -1619,7 +1619,7 @@ LUL::Unwind(uintptr_t* aFramePCs,
           
           sp = sp + TaggedUWord(wordSize);
 
-#elif defined(LUL_ARCH_arm)
+#elif defined(SPS_ARCH_arm)
           
           
 
@@ -1686,7 +1686,7 @@ bool GetAndCheckStackTrace(LUL* aLUL, const char* dstring)
   
   UnwindRegs startRegs;
   memset(&startRegs, 0, sizeof(startRegs));
-#if defined(LUL_PLAT_x64_linux)
+#if defined(SPS_PLAT_amd64_linux)
   volatile uintptr_t block[3];
   MOZ_ASSERT(sizeof(block) == 24);
   __asm__ __volatile__(
@@ -1701,7 +1701,7 @@ bool GetAndCheckStackTrace(LUL* aLUL, const char* dstring)
   startRegs.xbp = TaggedUWord(block[2]);
   const uintptr_t REDZONE_SIZE = 128;
   uintptr_t start = block[1] - REDZONE_SIZE;
-#elif defined(LUL_PLAT_x86_linux) || defined(LUL_PLAT_x86_android)
+#elif defined(SPS_PLAT_x86_linux) || defined(SPS_PLAT_x86_android)
   volatile uintptr_t block[3];
   MOZ_ASSERT(sizeof(block) == 12);
   __asm__ __volatile__(
@@ -1717,7 +1717,7 @@ bool GetAndCheckStackTrace(LUL* aLUL, const char* dstring)
   startRegs.xbp = TaggedUWord(block[2]);
   const uintptr_t REDZONE_SIZE = 0;
   uintptr_t start = block[1] - REDZONE_SIZE;
-#elif defined(LUL_PLAT_arm_android)
+#elif defined(SPS_PLAT_arm_android)
   volatile uintptr_t block[6];
   MOZ_ASSERT(sizeof(block) == 24);
   __asm__ __volatile__(

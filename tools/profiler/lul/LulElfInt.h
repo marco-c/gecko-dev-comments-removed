@@ -48,14 +48,14 @@
 
 #include "mozilla/Assertions.h"
 
-#include "LulPlatformMacros.h"
+#include "PlatformMacros.h"
 
 
 
 
 
 
-#if defined(LUL_OS_android)
+#if defined(SPS_OS_android)
 
 
 
