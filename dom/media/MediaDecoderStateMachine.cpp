@@ -1252,10 +1252,19 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
   if (Info().mMetadataDuration.isSome()) {
     mMaster->RecomputeDuration();
   } else if (Info().mUnadjustedMetadataEndTime.isSome()) {
-    const TimeUnit unadjusted = Info().mUnadjustedMetadataEndTime.ref();
-    const TimeUnit adjustment = Info().mStartTime;
-    mMaster->mInfo->mMetadataDuration.emplace(unadjusted - adjustment);
-    mMaster->RecomputeDuration();
+    RefPtr<Master> master = mMaster;
+    Reader()->AwaitStartTime()->Then(OwnerThread(), __func__,
+      [master] () {
+        NS_ENSURE_TRUE_VOID(!master->IsShutdown());
+        auto& info = master->mInfo.ref();
+        TimeUnit unadjusted = info.mUnadjustedMetadataEndTime.ref();
+        TimeUnit adjustment = master->mReader->StartTime();
+        info.mMetadataDuration.emplace(unadjusted - adjustment);
+        master->RecomputeDuration();
+      }, [master, this] () {
+        SWARN("Adjusting metadata end time failed");
+      }
+    );
   }
 
   if (mMaster->HasVideo()) {
@@ -1265,11 +1274,22 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
          mMaster->GetAmpleVideoFrames());
   }
 
-  MOZ_ASSERT(mMaster->mDuration.Ref().isSome());
+  
+  
+  
+  
+  
+  
+  bool waitingForCDM = Info().IsEncrypted() && !mMaster->mCDMProxy;
 
-  mMaster->EnqueueLoadedMetadataEvent();
+  mMaster->mNotifyMetadataBeforeFirstFrame =
+    mMaster->mDuration.Ref().isSome() || waitingForCDM;
 
-  if (Info().IsEncrypted() && !mMaster->mCDMProxy) {
+  if (mMaster->mNotifyMetadataBeforeFirstFrame) {
+    mMaster->EnqueueLoadedMetadataEvent();
+  }
+
+  if (waitingForCDM) {
     
     
     SetState<WaitForCDMState>(mPendingDormant);
@@ -1512,25 +1532,30 @@ MediaDecoderStateMachine::
 SeekingState::SeekCompleted()
 {
   int64_t seekTime = mSeekTask->GetSeekTarget().GetTime().ToMicroseconds();
-  int64_t newCurrentTime;
+  int64_t newCurrentTime = seekTime;
 
   
-  
-  
-  
-  
-  
-  if (mSeekTask->GetSeekTarget().IsAccurate()) {
+  RefPtr<MediaData> video = mMaster->VideoQueue().PeekFront();
+  if (seekTime == mMaster->Duration().ToMicroseconds()) {
     newCurrentTime = seekTime;
-  } else {
+  } else if (mMaster->HasAudio()) {
     RefPtr<MediaData> audio = mMaster->AudioQueue().PeekFront();
-    RefPtr<MediaData> video = mMaster->VideoQueue().PeekFront();
-    const int64_t audioStart = audio ? audio->mTime : INT64_MAX;
-    const int64_t videoStart = video ? video->mTime : INT64_MAX;
-    newCurrentTime = std::min(audioStart, videoStart);
-    if (newCurrentTime == INT64_MAX) {
-      newCurrentTime = seekTime;
+    
+    
+    
+    
+    
+    
+    int64_t audioStart = audio ? audio->mTime : seekTime;
+    
+    
+    if (video && video->mTime <= seekTime && video->GetEndTime() > seekTime) {
+      newCurrentTime = std::min(audioStart, video->mTime);
+    } else {
+      newCurrentTime = audioStart;
     }
+  } else {
+    newCurrentTime = video ? video->mTime : seekTime;
   }
 
   
@@ -1570,7 +1595,7 @@ SeekingState::SeekCompleted()
   
   SLOG("Seek completed, mCurrentPosition=%lld", mMaster->mCurrentPosition.Ref());
 
-  if (mMaster->VideoQueue().PeekFront()) {
+  if (video) {
     mMaster->mMediaSink->Redraw(Info().mVideo);
     mMaster->mOnPlaybackEvent.Notify(MediaEventType::Invalidate);
   }
@@ -1758,6 +1783,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mAudioCaptured(false),
   INIT_WATCHABLE(mAudioCompleted, false),
   INIT_WATCHABLE(mVideoCompleted, false),
+  mNotifyMetadataBeforeFirstFrame(false),
   mMinimizePreroll(false),
   mSentLoadedMetadataEvent(false),
   mSentFirstFrameLoadedEvent(false),
@@ -2411,10 +2437,7 @@ void MediaDecoderStateMachine::RecomputeDuration()
     duration = TimeUnit::FromSeconds(d);
   } else if (mEstimatedDuration.Ref().isSome()) {
     duration = mEstimatedDuration.Ref().ref();
-  } else if (mInfo.isSome() && Info().mMetadataDuration.isSome()) {
-    
-    
-    
+  } else if (Info().mMetadataDuration.isSome()) {
     duration = Info().mMetadataDuration.ref();
   } else {
     return;
@@ -2909,6 +2932,11 @@ MediaDecoderStateMachine::FinishDecodeFirstFrame()
 
   
   mReader->ReadUpdatedMetadata(mInfo.ptr());
+
+  if (!mNotifyMetadataBeforeFirstFrame) {
+    
+    EnqueueLoadedMetadataEvent();
+  }
 
   EnqueueFirstFrameLoadedEvent();
 }

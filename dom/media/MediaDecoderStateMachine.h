@@ -702,6 +702,14 @@ private:
   
   
   
+  bool mNotifyMetadataBeforeFirstFrame;
+
+  
+  
+  
+  
+  
+  
   
   
   
