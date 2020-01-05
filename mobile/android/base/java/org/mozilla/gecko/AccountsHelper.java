@@ -89,6 +89,10 @@ public class AccountsHelper implements BundleEventListener {
         }
 
         if ("Accounts:CreateFirefoxAccountFromJSON".equals(event)) {
+            
+            
+            AndroidFxAccount.invalidateCaches();
+
             AndroidFxAccount fxAccount = null;
             try {
                 final GeckoBundle json = message.getBundle("json");
@@ -150,6 +154,10 @@ public class AccountsHelper implements BundleEventListener {
             }
 
         } else if ("Accounts:UpdateFirefoxAccountFromJSON".equals(event)) {
+            
+            
+            AndroidFxAccount.invalidateCaches();
+
             final Account account = FirefoxAccounts.getFirefoxAccount(mContext);
             if (account == null) {
                 if (callback != null) {
