@@ -32,8 +32,6 @@ typedef nsresult (*nsDOMConstructorFunc)(nsISupports** aNewObject);
 struct nsDOMClassInfoData
 {
   
-  
-  const char *mName;
   const char16_t *mNameUTF16;
   const js::ClassOps mClassOps;
   const js::Class mClass;
