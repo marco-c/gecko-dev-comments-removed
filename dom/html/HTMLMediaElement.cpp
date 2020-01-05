@@ -996,7 +996,7 @@ private:
   IsOwnerAudible() const
   {
     
-    if (mOwner->mMuted || (std::fabs(mOwner->Volume()) <= 1e-7)) {
+    if (mOwner->Muted() || (std::fabs(mOwner->Volume()) <= 1e-7)) {
       return AudioChannelService::AudibleState::eNotAudible;
     }
 
