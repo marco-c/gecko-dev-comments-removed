@@ -192,6 +192,14 @@ class nsStyleSet final
                                  nsStyleContext* aParentContext);
 
   
+  already_AddRefed<nsStyleContext>
+  ResolvePseudoElementStyleWithoutAnimation(
+    mozilla::dom::Element* aParentElement,
+    mozilla::CSSPseudoElementType aType,
+    nsStyleContext* aParentContext,
+    mozilla::dom::Element* aPseudoElement);
+
+  
   
   
   
@@ -541,6 +549,13 @@ private:
                           nsStyleContext* aParentContext,
                           TreeMatchContext& aTreeMatchContext,
                           AnimationFlag aAnimationFlag);
+
+  already_AddRefed<nsStyleContext>
+  ResolvePseudoElementStyleInternal(mozilla::dom::Element* aParentElement,
+                                    mozilla::CSSPseudoElementType aType,
+                                    nsStyleContext* aParentContext,
+                                    mozilla::dom::Element* aPseudoElement,
+                                    AnimationFlag aAnimationFlag);
 
   nsPresContext* PresContext() { return mRuleTree->PresContext(); }
 
