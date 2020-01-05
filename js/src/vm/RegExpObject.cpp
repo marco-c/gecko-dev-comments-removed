@@ -9,6 +9,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PodOperations.h"
 
+#include "jshashutil.h"
 #include "jsstr.h"
 #ifdef DEBUG
 #include "jsutil.h"
@@ -119,25 +120,11 @@ VectorMatchPairs::allocOrExpandArray(size_t pairCount)
 
 
 
-static inline void
-RegExpSharedReadBarrier(JSContext* cx, RegExpShared* shared)
-{
-    Zone* zone = cx->zone();
-    if (zone->needsIncrementalBarrier())
-        shared->trace(zone->barrierTracer());
-    if (shared->isMarkedGray())
-        shared->unmarkGray();
-}
-
  bool
 RegExpObject::getShared(JSContext* cx, Handle<RegExpObject*> regexp, RegExpGuard* g)
 {
-    if (RegExpShared* shared = regexp->maybeShared()) {
-        
-        
-        RegExpSharedReadBarrier(cx, shared);
-
-        g->init(*shared);
+    if (regexp->hasShared()) {
+        g->set(regexp->sharedRef());
         return true;
     }
 
@@ -174,10 +161,12 @@ RegExpObject::isOriginalFlagGetter(JSNative native, RegExpFlag* mask)
  void
 RegExpObject::trace(JSTracer* trc, JSObject* obj)
 {
-    RegExpShared* shared = obj->as<RegExpObject>().maybeShared();
-    if (!shared)
-        return;
+    obj->as<RegExpObject>().trace(trc);
+}
 
+static inline bool
+IsMarkingTrace(JSTracer* trc)
+{
     
     
     
@@ -185,15 +174,19 @@ RegExpObject::trace(JSTracer* trc, JSObject* obj)
     
     
     
+
+    return JS::CurrentThreadIsHeapCollecting() && trc->isMarkingTracer();
+}
+
+void
+RegExpObject::trace(JSTracer* trc)
+{
     
-    if (JS::CurrentThreadIsHeapCollecting() &&
-        trc->isMarkingTracer() &&
-        !obj->asTenured().zone()->isPreservingCode())
-    {
-        obj->as<RegExpObject>().NativeObject::setPrivate(nullptr);
-    } else {
-        shared->trace(trc);
-    }
+    
+    if (IsMarkingTrace(trc) && !zone()->isPreservingCode())
+        sharedRef() = nullptr;
+
+    TraceNullableEdge(trc, &sharedRef(), "RegExpObject shared");
 }
 
 static JSObject*
@@ -282,7 +275,7 @@ RegExpObject::create(JSContext* cx, HandleAtom source, RegExpFlag flags,
  bool
 RegExpObject::createShared(JSContext* cx, Handle<RegExpObject*> regexp, RegExpGuard* g)
 {
-    MOZ_ASSERT(!regexp->maybeShared());
+    MOZ_ASSERT(!regexp->hasShared());
     if (!cx->compartment()->regExps.get(cx, regexp->getSource(), regexp->getFlags(), g))
         return false;
 
@@ -898,7 +891,7 @@ RegExpObject::dumpBytecode(JSContext* cx, Handle<RegExpObject*> regexp,
     if (!getShared(cx, regexp, &g))
         return false;
 
-    return g.re()->dumpBytecode(cx, match_only, input);
+    return g->dumpBytecode(cx, match_only, input);
 }
 #endif
 
@@ -947,7 +940,7 @@ js::StringHasRegExpMetaChars(JSLinearString* str)
 
 
 RegExpShared::RegExpShared(JSAtom* source, RegExpFlag flags)
-  : source(source), flags(flags), parenCount(0), canStringMatch(false), marked_(false)
+  : source(source), flags(flags), canStringMatch(false), parenCount(0)
 {}
 
 RegExpShared::~RegExpShared()
@@ -957,37 +950,22 @@ RegExpShared::~RegExpShared()
 }
 
 void
-RegExpShared::trace(JSTracer* trc)
+RegExpShared::traceChildren(JSTracer* trc)
 {
-    if (trc->isMarkingTracer())
-        marked_ = true;
+    
+    if (IsMarkingTrace(trc) && trc->runtime()->gc.isShrinkingGC())
+        discardJitCode();
 
     TraceNullableEdge(trc, &source, "RegExpShared source");
     for (auto& comp : compilationArray)
         TraceNullableEdge(trc, &comp.jitCode, "RegExpShared code");
 }
 
-bool
-RegExpShared::isMarkedGray() const
-{
-    if (source && source->isMarked(gc::GRAY))
-        return true;
-    for (const auto& comp : compilationArray) {
-        if (comp.jitCode && comp.jitCode->isMarked(gc::GRAY))
-            return true;
-    }
-    return false;
-}
-
 void
-RegExpShared::unmarkGray()
+RegExpShared::discardJitCode()
 {
-    if (source)
-        JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr(source));
-    for (const auto& comp : compilationArray) {
-        if (comp.jitCode)
-            JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr(comp.jitCode.get()));
-    }
+    for (auto& comp : compilationArray)
+        comp.jitCode = nullptr;
 }
 
 bool
@@ -1184,9 +1162,9 @@ RegExpShared::execute(JSContext* cx, HandleLinearString input, size_t start,
 }
 
 size_t
-RegExpShared::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
+RegExpShared::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
 {
-    size_t n = mallocSizeOf(this);
+    size_t n = 0;
 
     for (size_t i = 0; i < ArrayLength(compilationArray); i++) {
         const RegExpCompilation& compilation = compilationArray[i];
@@ -1203,8 +1181,8 @@ RegExpShared::sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
 
 
 
-RegExpCompartment::RegExpCompartment(JSRuntime* rt)
-  : set_(rt),
+RegExpCompartment::RegExpCompartment(Zone* zone)
+  : set_(zone, Set(zone->runtimeFromActiveCooperatingThread())),
     matchResultTemplateObject_(nullptr),
     optimizableRegExpPrototypeShape_(nullptr),
     optimizableRegExpInstanceShape_(nullptr)
@@ -1212,14 +1190,7 @@ RegExpCompartment::RegExpCompartment(JSRuntime* rt)
 
 RegExpCompartment::~RegExpCompartment()
 {
-    
-    
-    if (set_.initialized()) {
-        for (Set::Enum e(set_); !e.empty(); e.popFront()) {
-            RegExpShared* shared = e.front();
-            js_delete(shared);
-        }
-    }
+    MOZ_ASSERT_IF(set_.initialized(), set_.empty());
 }
 
 ArrayObject*
@@ -1229,7 +1200,7 @@ RegExpCompartment::createMatchResultTemplateObject(JSContext* cx)
 
     
     RootedArrayObject templateObject(cx, NewDenseUnallocatedArray(cx, RegExpObject::MaxPairCount,
-                                     nullptr, TenuredObject));
+                                                                  nullptr, TenuredObject));
     if (!templateObject)
         return matchResultTemplateObject_; 
 
@@ -1285,59 +1256,9 @@ RegExpCompartment::init(JSContext* cx)
     return true;
 }
 
-bool
-RegExpShared::needsSweep(JSRuntime* rt)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool keep = marked() && IsMarked(rt, &source);
-    for (size_t i = 0; i < ArrayLength(compilationArray); i++) {
-        RegExpShared::RegExpCompilation& compilation = compilationArray[i];
-        if (compilation.jitCode && gc::IsAboutToBeFinalized(&compilation.jitCode))
-            keep = false;
-    }
-
-    MOZ_ASSERT(JS::CurrentThreadIsHeapMajorCollecting());
-    if (keep || rt->gc.isHeapCompacting()) {
-        clearMarked();
-        return false;
-    }
-
-    return true;
-}
-
-void
-RegExpShared::discardJitCode()
-{
-    for (size_t i = 0; i < ArrayLength(compilationArray); i++)
-        compilationArray[i].jitCode = nullptr;
-}
-
 void
 RegExpCompartment::sweep(JSRuntime* rt)
 {
-    if (!set_.initialized())
-        return;
-
-    for (Set::Enum e(set_); !e.empty(); e.popFront()) {
-        RegExpShared* shared = e.front();
-        if (shared->needsSweep(rt)) {
-            js_delete(shared);
-            e.removeFront();
-        } else {
-            
-            if (rt->gc.isHeapCompacting())
-                shared->discardJitCode();
-        }
-    }
-
     if (matchResultTemplateObject_ &&
         IsAboutToBeFinalized(&matchResultTemplateObject_))
     {
@@ -1360,30 +1281,24 @@ RegExpCompartment::sweep(JSRuntime* rt)
 bool
 RegExpCompartment::get(JSContext* cx, JSAtom* source, RegExpFlag flags, RegExpGuard* g)
 {
-    Key key(source, flags);
-    Set::AddPtr p = set_.lookupForAdd(key);
+    DependentAddPtr<Set> p(cx, set_.get(), Key(source, flags));
     if (p) {
-        
-        
-        RegExpSharedReadBarrier(cx, *p);
-
-        g->init(**p);
+        g->set(*p);
         return true;
     }
 
-    ScopedJSDeletePtr<RegExpShared> shared(cx->new_<RegExpShared>(source, flags));
+    auto shared = Allocate<RegExpShared>(cx);
     if (!shared)
         return false;
 
-    if (!set_.add(p, shared)) {
+    new (shared) RegExpShared(source, flags);
+
+    if (!p.add(cx, set_.get(), Key(source, flags), shared)) {
         ReportOutOfMemory(cx);
         return false;
     }
 
-    
-    RegExpSharedReadBarrier(cx, shared);
-
-    g->init(*shared.forget());
+    g->set(shared);
     return true;
 }
 
@@ -1400,13 +1315,7 @@ RegExpCompartment::get(JSContext* cx, HandleAtom atom, JSString* opt, RegExpGuar
 size_t
 RegExpCompartment::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf)
 {
-    size_t n = 0;
-    n += set_.sizeOfExcludingThis(mallocSizeOf);
-    for (Set::Enum e(set_); !e.empty(); e.popFront()) {
-        RegExpShared* shared = e.front();
-        n += shared->sizeOfIncludingThis(mallocSizeOf);
-    }
-    return n;
+    return set_.sizeOfExcludingThis(mallocSizeOf);
 }
 
 
@@ -1434,7 +1343,7 @@ js::CloneRegExpObject(JSContext* cx, JSObject* obj_)
         return nullptr;
 
     clone->initAndZeroLastIndex(source, g->getFlags(), cx);
-    clone->setShared(*g.re());
+    clone->setShared(*g);
 
     return clone;
 }
@@ -1567,4 +1476,11 @@ JS_FRIEND_API(bool)
 js::RegExpToSharedNonInline(JSContext* cx, HandleObject obj, js::RegExpGuard* g)
 {
     return RegExpToShared(cx, obj, g);
+}
+
+JS::ubi::Node::Size
+JS::ubi::Concrete<RegExpShared>::size(mozilla::MallocSizeOf mallocSizeOf) const
+{
+    return js::gc::Arena::thingSize(gc::AllocKind::REGEXP_SHARED) +
+        get().sizeOfExcludingThis(mallocSizeOf);
 }

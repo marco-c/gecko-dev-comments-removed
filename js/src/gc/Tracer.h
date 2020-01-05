@@ -65,6 +65,10 @@ template <typename T>
 void
 TraceNullableEdge(JSTracer* trc, WriteBarrieredBase<T>* thingp, const char* name);
 
+template <typename T>
+void
+TraceNullableEdge(JSTracer* trc, ReadBarriered<T>* thingp, const char* name);
+
 
 
 
