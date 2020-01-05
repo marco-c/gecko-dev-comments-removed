@@ -37,6 +37,10 @@
 
 #define CSS_PSEUDO_ELEMENT_UA_SHEET_ONLY               (1<<4)
 
+
+
+#define CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC           (1<<5)
+
 namespace mozilla {
 
 
@@ -99,6 +103,11 @@ public:
   }
 
   static bool PseudoElementSupportsUserActionState(const Type aType);
+
+  static bool PseudoElementIsJSCreatedNAC(Type aType)
+  {
+    return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC);
+  }
 
   static bool IsEnabled(Type aType, EnabledState aEnabledState)
   {

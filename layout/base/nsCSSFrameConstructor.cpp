@@ -5096,8 +5096,19 @@ nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
                                            LazyComputeBehavior::Assert);
       }
     } else {
-      MOZ_ASSERT(aOriginatingElementOrNull);
       MOZ_ASSERT(aContent->IsInNativeAnonymousSubtree());
+      if (!aOriginatingElementOrNull) {
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(nsCSSPseudoElements::PseudoElementIsJSCreatedNAC(pseudoType));
+        aOriginatingElementOrNull =
+          nsContentUtils::GetClosestNonNativeAnonymousAncestor(aContent->AsElement());
+      }
+      MOZ_ASSERT(aOriginatingElementOrNull);
       result = styleSet->ResolvePseudoElementStyle(aOriginatingElementOrNull,
                                                    pseudoType,
                                                    aParentStyleContext,

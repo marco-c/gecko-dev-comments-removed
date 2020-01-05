@@ -731,6 +731,25 @@ ElementForStyleContext(nsIContent* aParentContent,
     return f->GetContent()->AsElement();
   }
 
+  Element* frameElement = aFrame->GetContent()->AsElement();
+  if (frameElement->IsNativeAnonymous() &&
+      nsCSSPseudoElements::PseudoElementIsJSCreatedNAC(aPseudoType)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Element* originatingElement =
+      nsContentUtils::GetClosestNonNativeAnonymousAncestor(frameElement);
+    if (originatingElement) {
+      return originatingElement;
+    }
+  }
+
   if (aParentContent) {
     return aParentContent->AsElement();
   }

@@ -2792,6 +2792,12 @@ public:
   static bool
   IsWebComponentsEnabled() { return sIsWebComponentsEnabled; }
 
+  
+
+
+
+  static Element* GetClosestNonNativeAnonymousAncestor(Element* aElement);
+
 private:
   static bool InitializeEventTable();
 
