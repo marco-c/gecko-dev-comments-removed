@@ -37265,54 +37265,6 @@
         ]
       },
       "reftest": {
-        "html/semantics/grouping-content/the-ol-element/reversed-1a.html": [
-          {
-            "path": "html/semantics/grouping-content/the-ol-element/reversed-1a.html",
-            "references": [
-              [
-                "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-                "=="
-              ]
-            ],
-            "url": "/html/semantics/grouping-content/the-ol-element/reversed-1a.html"
-          }
-        ],
-        "html/semantics/grouping-content/the-ol-element/reversed-1b.html": [
-          {
-            "path": "html/semantics/grouping-content/the-ol-element/reversed-1b.html",
-            "references": [
-              [
-                "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-                "=="
-              ]
-            ],
-            "url": "/html/semantics/grouping-content/the-ol-element/reversed-1b.html"
-          }
-        ],
-        "html/semantics/grouping-content/the-ol-element/reversed-1c.html": [
-          {
-            "path": "html/semantics/grouping-content/the-ol-element/reversed-1c.html",
-            "references": [
-              [
-                "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-                "=="
-              ]
-            ],
-            "url": "/html/semantics/grouping-content/the-ol-element/reversed-1c.html"
-          }
-        ],
-        "html/semantics/grouping-content/the-ol-element/reversed-1d.html": [
-          {
-            "path": "html/semantics/grouping-content/the-ol-element/reversed-1d.html",
-            "references": [
-              [
-                "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-                "=="
-              ]
-            ],
-            "url": "/html/semantics/grouping-content/the-ol-element/reversed-1d.html"
-          }
-        ],
         "svg/linking/reftests/href-a-element-attr-change.html": [
           {
             "path": "svg/linking/reftests/href-a-element-attr-change.html",
@@ -37478,6 +37430,12 @@
             "url": "/html/semantics/embedded-content/the-iframe-element/iframe_sandbox_popups_nonescaping-3.html"
           }
         ],
+        "html/semantics/forms/the-select-element/select-validity.html": [
+          {
+            "path": "html/semantics/forms/the-select-element/select-validity.html",
+            "url": "/html/semantics/forms/the-select-element/select-validity.html"
+          }
+        ],
         "html/semantics/forms/the-textarea-element/cloning-steps.html": [
           {
             "path": "html/semantics/forms/the-textarea-element/cloning-steps.html",
@@ -37565,54 +37523,6 @@
       }
     },
     "reftest_nodes": {
-      "html/semantics/grouping-content/the-ol-element/reversed-1a.html": [
-        {
-          "path": "html/semantics/grouping-content/the-ol-element/reversed-1a.html",
-          "references": [
-            [
-              "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-              "=="
-            ]
-          ],
-          "url": "/html/semantics/grouping-content/the-ol-element/reversed-1a.html"
-        }
-      ],
-      "html/semantics/grouping-content/the-ol-element/reversed-1b.html": [
-        {
-          "path": "html/semantics/grouping-content/the-ol-element/reversed-1b.html",
-          "references": [
-            [
-              "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-              "=="
-            ]
-          ],
-          "url": "/html/semantics/grouping-content/the-ol-element/reversed-1b.html"
-        }
-      ],
-      "html/semantics/grouping-content/the-ol-element/reversed-1c.html": [
-        {
-          "path": "html/semantics/grouping-content/the-ol-element/reversed-1c.html",
-          "references": [
-            [
-              "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-              "=="
-            ]
-          ],
-          "url": "/html/semantics/grouping-content/the-ol-element/reversed-1c.html"
-        }
-      ],
-      "html/semantics/grouping-content/the-ol-element/reversed-1d.html": [
-        {
-          "path": "html/semantics/grouping-content/the-ol-element/reversed-1d.html",
-          "references": [
-            [
-              "/html/semantics/grouping-content/the-ol-element/reversed-1-ref.html",
-              "=="
-            ]
-          ],
-          "url": "/html/semantics/grouping-content/the-ol-element/reversed-1d.html"
-        }
-      ],
       "svg/linking/reftests/href-a-element-attr-change.html": [
         {
           "path": "svg/linking/reftests/href-a-element-attr-change.html",
