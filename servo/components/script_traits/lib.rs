@@ -151,6 +151,8 @@ pub enum ConstellationControlMsg {
         
         parent: PipelineId
     },
+    
+    ReportCSSError(PipelineId, String, usize, usize, String),
 }
 
 
