@@ -2,6 +2,8 @@
 
 
 
+Cu.import("resource:///modules/sessionstore/SessionStore.jsm");
+
 function test() {
   
 
@@ -37,14 +39,19 @@ function test() {
                             test_state.windows[0]._closedTabs.length);
     ss.setWindowState(newWin, JSON.stringify(test_state), true);
 
-    let closedTabs = JSON.parse(ss.getClosedTabData(newWin));
+    let closedTabs = SessionStore.getClosedTabData(newWin, false);
+
+    
+    is(JSON.stringify(closedTabs), SessionStore.getClosedTabData(newWin),
+       "Non-serialized data is the same as serialized data")
+
     is(closedTabs.length, test_state.windows[0]._closedTabs.length,
        "Closed tab list has the expected length");
     is(countByTitle(closedTabs, FORGET),
        test_state.windows[0]._closedTabs.length - remember_count,
        "The correct amout of tabs are to be forgotten");
     is(countByTitle(closedTabs, REMEMBER), remember_count,
-       "Everything is set up.");
+       "Everything is set up");
 
     
     ok(testForError(() => ss.forgetClosedTab({}, 0)),
@@ -58,13 +65,18 @@ function test() {
     ss.forgetClosedTab(newWin, 2);
     ss.forgetClosedTab(newWin, null);
 
-    closedTabs = JSON.parse(ss.getClosedTabData(newWin));
+    closedTabs = SessionStore.getClosedTabData(newWin, false);
+
+    
+    is(JSON.stringify(closedTabs), SessionStore.getClosedTabData(newWin),
+       "Non-serialized data is the same as serialized data")
+
     is(closedTabs.length, remember_count,
        "The correct amout of tabs was removed");
     is(countByTitle(closedTabs, FORGET), 0,
        "All tabs specifically forgotten were indeed removed");
     is(countByTitle(closedTabs, REMEMBER), remember_count,
-       "... and tabs not specifically forgetten weren't.");
+       "... and tabs not specifically forgetten weren't");
 
     
     gPrefService.clearUserPref("browser.sessionstore.max_tabs_undo");
