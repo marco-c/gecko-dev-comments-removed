@@ -197,7 +197,7 @@ JSRuntime::finishAtoms()
 }
 
 void
-js::MarkAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock)
+js::TraceAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
     JSRuntime* rt = trc->runtime();
 
@@ -216,7 +216,7 @@ js::MarkAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 }
 
 void
-js::MarkPermanentAtoms(JSTracer* trc)
+js::TracePermanentAtoms(JSTracer* trc)
 {
     JSRuntime* rt = trc->runtime();
 
@@ -239,7 +239,7 @@ js::MarkPermanentAtoms(JSTracer* trc)
 }
 
 void
-js::MarkWellKnownSymbols(JSTracer* trc)
+js::TraceWellKnownSymbols(JSTracer* trc)
 {
     JSRuntime* rt = trc->runtime();
 

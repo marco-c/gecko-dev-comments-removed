@@ -2909,14 +2909,14 @@ Debugger::removeAllocationsTrackingForAllDebuggees()
 
 
 void
-Debugger::markCrossCompartmentEdges(JSTracer* trc)
+Debugger::traceCrossCompartmentEdges(JSTracer* trc)
 {
-    objects.markCrossCompartmentEdges<DebuggerObject_trace>(trc);
-    environments.markCrossCompartmentEdges<DebuggerEnv_trace>(trc);
-    scripts.markCrossCompartmentEdges<DebuggerScript_trace>(trc);
-    sources.markCrossCompartmentEdges<DebuggerSource_trace>(trc);
-    wasmInstanceScripts.markCrossCompartmentEdges<DebuggerScript_trace>(trc);
-    wasmInstanceSources.markCrossCompartmentEdges<DebuggerSource_trace>(trc);
+    objects.traceCrossCompartmentEdges<DebuggerObject_trace>(trc);
+    environments.traceCrossCompartmentEdges<DebuggerEnv_trace>(trc);
+    scripts.traceCrossCompartmentEdges<DebuggerScript_trace>(trc);
+    sources.traceCrossCompartmentEdges<DebuggerSource_trace>(trc);
+    wasmInstanceScripts.traceCrossCompartmentEdges<DebuggerScript_trace>(trc);
+    wasmInstanceSources.traceCrossCompartmentEdges<DebuggerSource_trace>(trc);
 }
 
 
@@ -2944,7 +2944,7 @@ Debugger::markCrossCompartmentEdges(JSTracer* trc)
 
 
  void
-Debugger::markIncomingCrossCompartmentEdges(JSTracer* trc)
+Debugger::traceIncomingCrossCompartmentEdges(JSTracer* trc)
 {
     JSRuntime* rt = trc->runtime();
     gc::State state = rt->gc.state();
@@ -2955,7 +2955,7 @@ Debugger::markIncomingCrossCompartmentEdges(JSTracer* trc)
         if ((state == gc::State::MarkRoots && !zone->isCollecting()) ||
             (state == gc::State::Compact && !zone->isGCCompacting()))
         {
-            dbg->markCrossCompartmentEdges(trc);
+            dbg->traceCrossCompartmentEdges(trc);
         }
     }
 }
@@ -2971,7 +2971,7 @@ Debugger::markIncomingCrossCompartmentEdges(JSTracer* trc)
 
 
  bool
-Debugger::markAllIteratively(GCMarker* trc)
+Debugger::markIteratively(GCMarker* marker)
 {
     bool markedAny = false;
 
@@ -2979,7 +2979,7 @@ Debugger::markAllIteratively(GCMarker* trc)
 
 
 
-    JSRuntime* rt = trc->runtime();
+    JSRuntime* rt = marker->runtime();
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
         if (c->isDebuggee()) {
             GlobalObject* global = c->unsafeUnbarrieredMaybeGlobal();
@@ -3011,7 +3011,7 @@ Debugger::markAllIteratively(GCMarker* trc)
 
 
 
-                    TraceEdge(trc, &dbgobj, "enabled Debugger");
+                    TraceEdge(marker, &dbgobj, "enabled Debugger");
                     markedAny = true;
                     dbgMarked = true;
                 }
@@ -3025,7 +3025,7 @@ Debugger::markAllIteratively(GCMarker* trc)
 
 
                             if (!IsMarked(&bp->getHandlerRef())) {
-                                TraceEdge(trc, &bp->getHandlerRef(), "breakpoint handler");
+                                TraceEdge(marker, &bp->getHandlerRef(), "breakpoint handler");
                                 markedAny = true;
                             }
                         }
@@ -3043,7 +3043,7 @@ Debugger::markAllIteratively(GCMarker* trc)
 
 
  void
-Debugger::markAll(JSTracer* trc)
+Debugger::traceAll(JSTracer* trc)
 {
     JSRuntime* rt = trc->runtime();
     for (Debugger* dbg : rt->debuggerList) {

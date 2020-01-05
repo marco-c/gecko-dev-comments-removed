@@ -597,7 +597,7 @@ jit::LazyLinkTopActivation(JSContext* cx)
 }
 
  void
-JitRuntime::Mark(JSTracer* trc, AutoLockForExclusiveAccess& lock)
+JitRuntime::Trace(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
     MOZ_ASSERT(!trc->runtime()->isHeapMinorCollecting());
 
@@ -614,23 +614,23 @@ JitRuntime::Mark(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 }
 
  void
-JitRuntime::MarkJitcodeGlobalTableUnconditionally(JSTracer* trc)
+JitRuntime::TraceJitcodeGlobalTable(JSTracer* trc)
 {
     if (trc->runtime()->spsProfiler.enabled() &&
         trc->runtime()->hasJitRuntime() &&
         trc->runtime()->jitRuntime()->hasJitcodeGlobalTable())
     {
-        trc->runtime()->jitRuntime()->getJitcodeGlobalTable()->markUnconditionally(trc);
+        trc->runtime()->jitRuntime()->getJitcodeGlobalTable()->trace(trc);
     }
 }
 
  bool
-JitRuntime::MarkJitcodeGlobalTableIteratively(JSTracer* trc)
+JitRuntime::MarkJitcodeGlobalTableIteratively(GCMarker* marker)
 {
-    if (trc->runtime()->hasJitRuntime() &&
-        trc->runtime()->jitRuntime()->hasJitcodeGlobalTable())
+    if (marker->runtime()->hasJitRuntime() &&
+        marker->runtime()->jitRuntime()->hasJitcodeGlobalTable())
     {
-        return trc->runtime()->jitRuntime()->getJitcodeGlobalTable()->markIteratively(trc);
+        return marker->runtime()->jitRuntime()->getJitcodeGlobalTable()->markIteratively(marker);
     }
     return false;
 }
@@ -643,7 +643,7 @@ JitRuntime::SweepJitcodeGlobalTable(JSRuntime* rt)
 }
 
 void
-JitCompartment::mark(JSTracer* trc, JSCompartment* compartment)
+JitCompartment::trace(JSTracer* trc, JSCompartment* compartment)
 {
     
     trc->runtime()->jitRuntime()->freeOsrTempData();

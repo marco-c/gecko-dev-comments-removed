@@ -56,7 +56,7 @@ struct ConcreteTraceable {
 
 template <typename T, TraceFunction<T> TraceFn = TraceNullableRoot>
 static inline void
-MarkExactStackRootList(JSTracer* trc, JS::Rooted<void*>* rooter, const char* name)
+TraceExactStackRootList(JSTracer* trc, JS::Rooted<void*>* rooter, const char* name)
 {
     while (rooter) {
         T* addr = reinterpret_cast<JS::Rooted<T>*>(rooter)->address();
@@ -68,13 +68,13 @@ MarkExactStackRootList(JSTracer* trc, JS::Rooted<void*>* rooter, const char* nam
 static inline void
 TraceStackRoots(JSTracer* trc, RootedListHeads& stackRoots)
 {
-#define MARK_ROOTS(name, type, _) \
-    MarkExactStackRootList<type*>(trc, stackRoots[JS::RootKind::name], "exact-" #name);
-JS_FOR_EACH_TRACEKIND(MARK_ROOTS)
-#undef MARK_ROOTS
-    MarkExactStackRootList<jsid>(trc, stackRoots[JS::RootKind::Id], "exact-id");
-    MarkExactStackRootList<Value>(trc, stackRoots[JS::RootKind::Value], "exact-value");
-    MarkExactStackRootList<ConcreteTraceable,
+#define TRACE_ROOTS(name, type, _) \
+    TraceExactStackRootList<type*>(trc, stackRoots[JS::RootKind::name], "exact-" #name);
+JS_FOR_EACH_TRACEKIND(TRACE_ROOTS)
+#undef TRACE_ROOTS
+    TraceExactStackRootList<jsid>(trc, stackRoots[JS::RootKind::Id], "exact-id");
+    TraceExactStackRootList<Value>(trc, stackRoots[JS::RootKind::Value], "exact-value");
+    TraceExactStackRootList<ConcreteTraceable,
                            js::DispatchWrapper<ConcreteTraceable>::TraceWrapped>(
         trc, stackRoots[JS::RootKind::Traceable], "Traceable");
 }
@@ -86,7 +86,7 @@ js::RootLists::traceStackRoots(JSTracer* trc)
 }
 
 static void
-MarkExactStackRoots(JSRuntime* rt, JSTracer* trc)
+TraceExactStackRoots(JSRuntime* rt, JSTracer* trc)
 {
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next())
         TraceStackRoots(trc, zone->stackRoots_);
@@ -95,7 +95,7 @@ MarkExactStackRoots(JSRuntime* rt, JSTracer* trc)
 
 template <typename T, TraceFunction<T> TraceFn = TraceNullableRoot>
 static inline void
-MarkPersistentRootedList(JSTracer* trc, mozilla::LinkedList<PersistentRooted<void*>>& list,
+TracePersistentRootedList(JSTracer* trc, mozilla::LinkedList<PersistentRooted<void*>>& list,
                          const char* name)
 {
     for (PersistentRooted<void*>* r : list)
@@ -105,19 +105,19 @@ MarkPersistentRootedList(JSTracer* trc, mozilla::LinkedList<PersistentRooted<voi
 void
 js::RootLists::tracePersistentRoots(JSTracer* trc)
 {
-#define MARK_ROOTS(name, type, _) \
-    MarkPersistentRootedList<type*>(trc, heapRoots_[JS::RootKind::name], "persistent-" #name);
-JS_FOR_EACH_TRACEKIND(MARK_ROOTS)
-#undef MARK_ROOTS
-    MarkPersistentRootedList<jsid>(trc, heapRoots_[JS::RootKind::Id], "persistent-id");
-    MarkPersistentRootedList<Value>(trc, heapRoots_[JS::RootKind::Value], "persistent-value");
-    MarkPersistentRootedList<ConcreteTraceable,
+#define TRACE_ROOTS(name, type, _) \
+    TracePersistentRootedList<type*>(trc, heapRoots_[JS::RootKind::name], "persistent-" #name);
+JS_FOR_EACH_TRACEKIND(TRACE_ROOTS)
+#undef TRACE_ROOTS
+    TracePersistentRootedList<jsid>(trc, heapRoots_[JS::RootKind::Id], "persistent-id");
+    TracePersistentRootedList<Value>(trc, heapRoots_[JS::RootKind::Value], "persistent-value");
+    TracePersistentRootedList<ConcreteTraceable,
                              js::DispatchWrapper<ConcreteTraceable>::TraceWrapped>(trc,
             heapRoots_[JS::RootKind::Traceable], "persistent-traceable");
 }
 
 static void
-MarkPersistentRooted(JSRuntime* rt, JSTracer* trc)
+TracePersistentRooted(JSRuntime* rt, JSTracer* trc)
 {
     rt->contextFromMainThread()->roots.tracePersistentRoots(trc);
 }
@@ -151,7 +151,7 @@ AutoGCRooter::trace(JSTracer* trc)
 {
     switch (tag_) {
       case PARSER:
-        frontend::MarkParser(trc, this);
+        frontend::TraceParser(trc, this);
         return;
 
       case VALARRAY: {
@@ -281,7 +281,7 @@ js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc, AutoLockForExclusiveAcc
     gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_ROOTS);
 
     
-    jit::JitRuntime::MarkJitcodeGlobalTableUnconditionally(trc);
+    jit::JitRuntime::TraceJitcodeGlobalTable(trc);
 
     traceRuntimeCommon(trc, TraceRuntime, lock);
 }
@@ -312,10 +312,10 @@ void
 js::gc::GCRuntime::traceRuntimeAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock)
 {
     gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_RUNTIME_DATA);
-    MarkPermanentAtoms(trc);
-    MarkAtoms(trc, lock);
-    MarkWellKnownSymbols(trc);
-    jit::JitRuntime::Mark(trc, lock);
+    TracePermanentAtoms(trc);
+    TraceAtoms(trc, lock);
+    TraceWellKnownSymbols(trc);
+    jit::JitRuntime::Trace(trc, lock);
 }
 
 void
@@ -328,8 +328,8 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
         gcstats::AutoPhase ap(stats, gcstats::PHASE_MARK_STACK);
 
         
-        MarkInterpreterActivations(rt, trc);
-        jit::MarkJitActivations(rt, trc);
+        TraceInterpreterActivations(rt, trc);
+        jit::TraceJitActivations(rt, trc);
 
         
         AutoGCRooter::traceAll(trc);
@@ -340,21 +340,21 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
         }
 
         
-        MarkExactStackRoots(rt, trc);
+        TraceExactStackRoots(rt, trc);
     }
 
     
-    MarkPersistentRooted(rt, trc);
+    TracePersistentRooted(rt, trc);
 
     
-    rt->markSelfHostingGlobal(trc);
+    rt->traceSelfHostingGlobal(trc);
 
     
     rt->traceSharedIntlData(trc);
 
     
     
-    rt->contextFromMainThread()->mark(trc);
+    rt->contextFromMainThread()->trace(trc);
 
     
     

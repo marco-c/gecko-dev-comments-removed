@@ -915,7 +915,7 @@ class InterpreterStack
     }
 };
 
-void MarkInterpreterActivations(JSRuntime* rt, JSTracer* trc);
+void TraceInterpreterActivations(JSRuntime* rt, JSTracer* trc);
 
 
 
@@ -1539,7 +1539,7 @@ class JitActivation : public Activation
     
     void removeRematerializedFrame(uint8_t* top);
 
-    void markRematerializedFrames(JSTracer* trc);
+    void traceRematerializedFrames(JSTracer* trc);
 
 
     
@@ -1552,7 +1552,7 @@ class JitActivation : public Activation
     
     void removeIonFrameRecovery(JitFrameLayout* fp);
 
-    void markIonRecovery(JSTracer* trc);
+    void traceIonRecovery(JSTracer* trc);
 
     
     const BailoutFrameInfo* bailoutData() const { return bailoutData_; }

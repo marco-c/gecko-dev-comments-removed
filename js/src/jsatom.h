@@ -197,13 +197,13 @@ class AutoLockForExclusiveAccess;
 
 
 void
-MarkAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock);
+TraceAtoms(JSTracer* trc, AutoLockForExclusiveAccess& lock);
 
 void
-MarkPermanentAtoms(JSTracer* trc);
+TracePermanentAtoms(JSTracer* trc);
 
 void
-MarkWellKnownSymbols(JSTracer* trc);
+TraceWellKnownSymbols(JSTracer* trc);
 
 
 enum PinningBehavior

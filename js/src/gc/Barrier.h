@@ -245,15 +245,6 @@ bool
 IsMarkedBlack(NativeObject* obj);
 #endif
 
-namespace gc {
-
-
-
-void MarkValueForBarrier(JSTracer* trc, Value* v, const char* name);
-void MarkIdForBarrier(JSTracer* trc, jsid* idp, const char* name);
-
-} 
-
 template <typename T>
 struct InternalBarrierMethods {};
 

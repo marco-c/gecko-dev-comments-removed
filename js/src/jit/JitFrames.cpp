@@ -921,7 +921,7 @@ EnsureBareExitFrame(JSContext* cx, JitFrameLayout* frame)
 }
 
 CalleeToken
-MarkCalleeToken(JSTracer* trc, CalleeToken token)
+TraceCalleeToken(JSTracer* trc, CalleeToken token)
 {
     switch (CalleeTokenTag tag = GetCalleeTokenTag(token)) {
       case CalleeToken_Function:
@@ -963,7 +963,7 @@ ReadAllocation(const JitFrameIterator& frame, const LAllocation* a)
 #endif
 
 static void
-MarkThisAndArguments(JSTracer* trc, const JitFrameIterator& frame)
+TraceThisAndArguments(JSTracer* trc, const JitFrameIterator& frame)
 {
     
     
@@ -1019,11 +1019,11 @@ WriteAllocation(const JitFrameIterator& frame, const LAllocation* a, uintptr_t v
 #endif
 
 static void
-MarkIonJSFrame(JSTracer* trc, const JitFrameIterator& frame)
+TraceIonJSFrame(JSTracer* trc, const JitFrameIterator& frame)
 {
     JitFrameLayout* layout = (JitFrameLayout*)frame.fp();
 
-    layout->replaceCalleeToken(MarkCalleeToken(trc, layout->calleeToken()));
+    layout->replaceCalleeToken(TraceCalleeToken(trc, layout->calleeToken()));
 
     IonScript* ionScript = nullptr;
     if (frame.checkInvalidation(&ionScript)) {
@@ -1035,7 +1035,7 @@ MarkIonJSFrame(JSTracer* trc, const JitFrameIterator& frame)
         ionScript = frame.ionScriptFromCalleeToken();
     }
 
-    MarkThisAndArguments(trc, frame);
+    TraceThisAndArguments(trc, frame);
 
     const SafepointIndex* si = ionScript->getSafepointIndex(frame.returnAddressToFp());
 
@@ -1085,15 +1085,15 @@ MarkIonJSFrame(JSTracer* trc, const JitFrameIterator& frame)
 }
 
 static void
-MarkBailoutFrame(JSTracer* trc, const JitFrameIterator& frame)
+TraceBailoutFrame(JSTracer* trc, const JitFrameIterator& frame)
 {
     JitFrameLayout* layout = (JitFrameLayout*)frame.fp();
 
-    layout->replaceCalleeToken(MarkCalleeToken(trc, layout->calleeToken()));
+    layout->replaceCalleeToken(TraceCalleeToken(trc, layout->calleeToken()));
 
     
     
-    MarkThisAndArguments(trc, frame);
+    TraceThisAndArguments(trc, frame);
 
     
     
@@ -1166,7 +1166,7 @@ UpdateIonJSFrameForMinorGC(JSTracer* trc, const JitFrameIterator& frame)
 }
 
 static void
-MarkJitStubFrame(JSTracer* trc, const JitFrameIterator& frame)
+TraceJitStubFrame(JSTracer* trc, const JitFrameIterator& frame)
 {
     
     
@@ -1181,7 +1181,7 @@ MarkJitStubFrame(JSTracer* trc, const JitFrameIterator& frame)
 }
 
 static void
-MarkIonAccessorICFrame(JSTracer* trc, const JitFrameIterator& frame)
+TraceIonAccessorICFrame(JSTracer* trc, const JitFrameIterator& frame)
 {
     MOZ_ASSERT(frame.type() == JitFrame_IonAccessorIC);
     IonAccessorICFrameLayout* layout = (IonAccessorICFrameLayout*)frame.fp();
@@ -1198,7 +1198,7 @@ alignDoubleSpillWithOffset(uint8_t* pointer, int32_t offset)
 }
 
 static void
-MarkJitExitFrameCopiedArguments(JSTracer* trc, const VMFunction* f, ExitFooterFrame* footer)
+TraceJitExitFrameCopiedArguments(JSTracer* trc, const VMFunction* f, ExitFooterFrame* footer)
 {
     uint8_t* doubleArgs = reinterpret_cast<uint8_t*>(footer);
     doubleArgs = alignDoubleSpillWithOffset(doubleArgs, sizeof(intptr_t));
@@ -1219,14 +1219,14 @@ MarkJitExitFrameCopiedArguments(JSTracer* trc, const VMFunction* f, ExitFooterFr
 }
 #else
 static void
-MarkJitExitFrameCopiedArguments(JSTracer* trc, const VMFunction* f, ExitFooterFrame* footer)
+TraceJitExitFrameCopiedArguments(JSTracer* trc, const VMFunction* f, ExitFooterFrame* footer)
 {
     
 }
 #endif
 
 static void
-MarkJitExitFrame(JSTracer* trc, const JitFrameIterator& frame)
+TraceJitExitFrame(JSTracer* trc, const JitFrameIterator& frame)
 {
     ExitFooterFrame* footer = frame.exitFrame()->footer();
 
@@ -1307,8 +1307,8 @@ MarkJitExitFrame(JSTracer* trc, const JitFrameIterator& frame)
         JitFrameLayout* layout = ll->jsFrame();
 
         TraceRoot(trc, ll->stubCode(), "lazy-link-code");
-        layout->replaceCalleeToken(MarkCalleeToken(trc, layout->calleeToken()));
-        MarkThisAndArguments(trc, frame);
+        layout->replaceCalleeToken(TraceCalleeToken(trc, layout->calleeToken()));
+        TraceThisAndArguments(trc, frame);
         return;
     }
 
@@ -1387,11 +1387,11 @@ MarkJitExitFrame(JSTracer* trc, const JitFrameIterator& frame)
         }
     }
 
-    MarkJitExitFrameCopiedArguments(trc, f, footer);
+    TraceJitExitFrameCopiedArguments(trc, f, footer);
 }
 
 static void
-MarkRectifierFrame(JSTracer* trc, const JitFrameIterator& frame)
+TraceRectifierFrame(JSTracer* trc, const JitFrameIterator& frame)
 {
     
     
@@ -1402,7 +1402,7 @@ MarkRectifierFrame(JSTracer* trc, const JitFrameIterator& frame)
 }
 
 static void
-MarkJitActivation(JSTracer* trc, const JitActivationIterator& activations)
+TraceJitActivation(JSTracer* trc, const JitActivationIterator& activations)
 {
     JitActivation* activation = activations->asJit();
 
@@ -1415,32 +1415,32 @@ MarkJitActivation(JSTracer* trc, const JitActivationIterator& activations)
     }
 #endif
 
-    activation->markRematerializedFrames(trc);
-    activation->markIonRecovery(trc);
+    activation->traceRematerializedFrames(trc);
+    activation->traceIonRecovery(trc);
 
     for (JitFrameIterator frames(activations); !frames.done(); ++frames) {
         switch (frames.type()) {
           case JitFrame_Exit:
-            MarkJitExitFrame(trc, frames);
+            TraceJitExitFrame(trc, frames);
             break;
           case JitFrame_BaselineJS:
             frames.baselineFrame()->trace(trc, frames);
             break;
           case JitFrame_IonJS:
-            MarkIonJSFrame(trc, frames);
+            TraceIonJSFrame(trc, frames);
             break;
           case JitFrame_BaselineStub:
           case JitFrame_IonStub:
-            MarkJitStubFrame(trc, frames);
+            TraceJitStubFrame(trc, frames);
             break;
           case JitFrame_Bailout:
-            MarkBailoutFrame(trc, frames);
+            TraceBailoutFrame(trc, frames);
             break;
           case JitFrame_Rectifier:
-            MarkRectifierFrame(trc, frames);
+            TraceRectifierFrame(trc, frames);
             break;
           case JitFrame_IonAccessorIC:
-            MarkIonAccessorICFrame(trc, frames);
+            TraceIonAccessorICFrame(trc, frames);
             break;
           default:
             MOZ_CRASH("unexpected frame type");
@@ -1449,10 +1449,10 @@ MarkJitActivation(JSTracer* trc, const JitActivationIterator& activations)
 }
 
 void
-MarkJitActivations(JSRuntime* rt, JSTracer* trc)
+TraceJitActivations(JSRuntime* rt, JSTracer* trc)
 {
     for (JitActivationIterator activations(rt); !activations.done(); ++activations)
-        MarkJitActivation(trc, activations);
+        TraceJitActivation(trc, activations);
 }
 
 JSCompartment*

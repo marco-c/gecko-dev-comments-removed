@@ -213,7 +213,7 @@ ICStub::makesGCCalls() const
 }
 
 void
-ICStub::markCode(JSTracer* trc, const char* name)
+ICStub::traceCode(JSTracer* trc, const char* name)
 {
     JitCode* stubJitCode = jitCode();
     TraceManuallyBarrieredEdge(trc, &stubJitCode, name);
@@ -230,7 +230,7 @@ ICStub::updateCode(JitCode* code)
  void
 ICStub::trace(JSTracer* trc)
 {
-    markCode(trc, "shared-stub-jitcode");
+    traceCode(trc, "shared-stub-jitcode");
 
     
     

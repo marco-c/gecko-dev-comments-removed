@@ -284,7 +284,7 @@ void HandleException(ResumeFromException* rfe);
 
 void EnsureBareExitFrame(JSContext* cx, JitFrameLayout* frame);
 
-void MarkJitActivations(JSRuntime* rt, JSTracer* trc);
+void TraceJitActivations(JSRuntime* rt, JSTracer* trc);
 
 JSCompartment*
 TopmostIonActivationCompartment(JSRuntime* rt);
@@ -1033,7 +1033,7 @@ void
 GetPcScript(JSContext* cx, JSScript** scriptRes, jsbytecode** pcRes);
 
 CalleeToken
-MarkCalleeToken(JSTracer* trc, CalleeToken token);
+TraceCalleeToken(JSTracer* trc, CalleeToken token);
 
 
 

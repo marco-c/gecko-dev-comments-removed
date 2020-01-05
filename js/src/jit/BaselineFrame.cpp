@@ -18,7 +18,7 @@ using namespace js;
 using namespace js::jit;
 
 static void
-MarkLocals(BaselineFrame* frame, JSTracer* trc, unsigned start, unsigned end)
+TraceLocals(BaselineFrame* frame, JSTracer* trc, unsigned start, unsigned end)
 {
     if (start < end) {
         
@@ -30,7 +30,7 @@ MarkLocals(BaselineFrame* frame, JSTracer* trc, unsigned start, unsigned end)
 void
 BaselineFrame::trace(JSTracer* trc, JitFrameIterator& frameIterator)
 {
-    replaceCalleeToken(MarkCalleeToken(trc, calleeToken()));
+    replaceCalleeToken(TraceCalleeToken(trc, calleeToken()));
 
     
     if (isFunctionFrame()) {
@@ -70,21 +70,21 @@ BaselineFrame::trace(JSTracer* trc, JitFrameIterator& frameIterator)
 
     if (nfixed == nlivefixed) {
         
-        MarkLocals(this, trc, 0, numValueSlots());
+        TraceLocals(this, trc, 0, numValueSlots());
     } else {
         
-        MarkLocals(this, trc, nfixed, numValueSlots());
+        TraceLocals(this, trc, nfixed, numValueSlots());
 
         
         while (nfixed > nlivefixed)
             unaliasedLocal(--nfixed).setUndefined();
 
         
-        MarkLocals(this, trc, 0, nlivefixed);
+        TraceLocals(this, trc, 0, nlivefixed);
     }
 
     if (script->compartment()->debugEnvs)
-        script->compartment()->debugEnvs->markLiveFrame(trc, this);
+        script->compartment()->debugEnvs->traceLiveFrame(trc, this);
 }
 
 bool

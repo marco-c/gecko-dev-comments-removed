@@ -396,7 +396,7 @@ InterpreterFrame::trace(JSTracer* trc, Value* sp, jsbytecode* pc)
     }
 
     if (script->compartment()->debugEnvs)
-        script->compartment()->debugEnvs->markLiveFrame(trc, this);
+        script->compartment()->debugEnvs->traceLiveFrame(trc, this);
 
     if (trc->isMarkingTracer())
         script->compartment()->zone()->active = true;
@@ -410,7 +410,7 @@ InterpreterFrame::traceValues(JSTracer* trc, unsigned start, unsigned end)
 }
 
 static void
-MarkInterpreterActivation(JSTracer* trc, InterpreterActivation* act)
+TraceInterpreterActivation(JSTracer* trc, InterpreterActivation* act)
 {
     for (InterpreterFrameIterator frames(act); !frames.done(); ++frames) {
         InterpreterFrame* fp = frames.frame();
@@ -419,12 +419,12 @@ MarkInterpreterActivation(JSTracer* trc, InterpreterActivation* act)
 }
 
 void
-js::MarkInterpreterActivations(JSRuntime* rt, JSTracer* trc)
+js::TraceInterpreterActivations(JSRuntime* rt, JSTracer* trc)
 {
     for (ActivationIterator iter(rt); !iter.done(); ++iter) {
         Activation* act = iter.activation();
         if (act->isInterpreter())
-            MarkInterpreterActivation(trc, act->asInterpreter());
+            TraceInterpreterActivation(trc, act->asInterpreter());
     }
 }
 
@@ -1574,7 +1574,7 @@ jit::JitActivation::removeRematerializedFramesFromDebugger(JSContext* cx, uint8_
 }
 
 void
-jit::JitActivation::markRematerializedFrames(JSTracer* trc)
+jit::JitActivation::traceRematerializedFrames(JSTracer* trc)
 {
     if (!rematerializedFrames_)
         return;
@@ -1615,7 +1615,7 @@ jit::JitActivation::removeIonFrameRecovery(JitFrameLayout* fp)
 }
 
 void
-jit::JitActivation::markIonRecovery(JSTracer* trc)
+jit::JitActivation::traceIonRecovery(JSTracer* trc)
 {
     for (RInstructionResults* it = ionRecovery_.begin(); it != ionRecovery_.end(); it++)
         it->trace(trc);

@@ -140,7 +140,7 @@ class DebuggerWeakMap : private WeakMap<HeapPtr<UnbarrieredKey>, HeapPtr<JSObjec
 
   public:
     template <void (traceValueEdges)(JSTracer*, JSObject*)>
-    void markCrossCompartmentEdges(JSTracer* tracer) {
+    void traceCrossCompartmentEdges(JSTracer* tracer) {
         for (Enum e(*static_cast<Base*>(this)); !e.empty(); e.popFront()) {
             traceValueEdges(tracer, e.front().value());
             Key key = e.front().key();
@@ -582,7 +582,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
     static void traceObject(JSTracer* trc, JSObject* obj);
     void trace(JSTracer* trc);
     static void finalize(FreeOp* fop, JSObject* obj);
-    void markCrossCompartmentEdges(JSTracer* tracer);
+    void traceCrossCompartmentEdges(JSTracer* tracer);
 
     static const ClassOps classOps_;
 
@@ -819,9 +819,9 @@ class Debugger : private mozilla::LinkedListElement<Debugger>
 
 
 
-    static void markIncomingCrossCompartmentEdges(JSTracer* tracer);
-    static MOZ_MUST_USE bool markAllIteratively(GCMarker* trc);
-    static void markAll(JSTracer* trc);
+    static void traceIncomingCrossCompartmentEdges(JSTracer* tracer);
+    static MOZ_MUST_USE bool markIteratively(GCMarker* marker);
+    static void traceAll(JSTracer* trc);
     static void sweepAll(FreeOp* fop);
     static void detachAllDebuggersFromGlobal(FreeOp* fop, GlobalObject* global);
     static void findZoneEdges(JS::Zone* v, gc::ZoneComponentFinder& finder);

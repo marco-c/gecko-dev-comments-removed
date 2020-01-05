@@ -117,7 +117,7 @@ IsKeyword(JSLinearString* str);
 
 
 void
-MarkParser(JSTracer* trc, JS::AutoGCRooter* parser);
+TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
 } 
 } 
