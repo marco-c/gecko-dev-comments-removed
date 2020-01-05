@@ -84,19 +84,19 @@ public:
   
   nsresult PaintMark(gfxContext& aContext,
                      const gfxMatrix& aToMarkedFrameUserSpace,
-                     SVGGeometryFrame *aMarkedFrame,
+                     mozilla::SVGGeometryFrame *aMarkedFrame,
                      nsSVGMark *aMark,
                      float aStrokeWidth);
 
   SVGBBox GetMarkBBoxContribution(const Matrix &aToBBoxUserspace,
                                   uint32_t aFlags,
-                                  SVGGeometryFrame *aMarkedFrame,
+                                  mozilla::SVGGeometryFrame *aMarkedFrame,
                                   const nsSVGMark *aMark,
                                   float aStrokeWidth);
 
 private:
   
-  SVGGeometryFrame *mMarkedFrame;
+  mozilla::SVGGeometryFrame *mMarkedFrame;
   float mStrokeWidth, mX, mY, mAutoAngle;
   bool mIsStart;  
 
@@ -112,7 +112,7 @@ private:
   {
   public:
     AutoMarkerReferencer(nsSVGMarkerFrame *aFrame,
-                         SVGGeometryFrame *aMarkedFrame
+                         mozilla::SVGGeometryFrame *aMarkedFrame
                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
     ~AutoMarkerReferencer();
   private:

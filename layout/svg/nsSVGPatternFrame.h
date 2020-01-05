@@ -142,7 +142,7 @@ private:
   
   
   
-  SVGGeometryFrame                 *mSource;
+  mozilla::SVGGeometryFrame        *mSource;
   nsAutoPtr<gfxMatrix>              mCTM;
 
 protected:
