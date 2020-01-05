@@ -348,7 +348,7 @@ WebRenderBridgeParent::CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::In
   mWidget->PostRender(&widgetContext);
 
   
-  mCompositor->EndFrame()
+  mCompositor->EndFrame();
   mCompositor->FlushPendingNotifyNotUsed();
 }
 
