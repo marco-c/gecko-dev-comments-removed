@@ -177,7 +177,9 @@ class Longhand(object):
         self.animatable = animation_type != "none"
         if self.logical:
             
+            
             self.animatable = False
+            self.animation_type = None
         
         
         
