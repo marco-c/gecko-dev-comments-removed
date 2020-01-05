@@ -492,6 +492,16 @@ IterateGrayObjects(JS::Zone* zone, GCThingCallback cellCallback, void* data);
 extern JS_FRIEND_API(void)
 IterateGrayObjectsUnderCC(JS::Zone* zone, GCThingCallback cellCallback, void* data);
 
+#ifdef DEBUG
+
+
+
+
+
+extern JS_FRIEND_API(bool)
+CheckGrayMarkingState(JSContext* cx);
+#endif
+
 #ifdef JS_HAS_CTYPES
 extern JS_FRIEND_API(size_t)
 SizeOfDataIfCDataObject(mozilla::MallocSizeOf mallocSizeOf, JSObject* obj);
