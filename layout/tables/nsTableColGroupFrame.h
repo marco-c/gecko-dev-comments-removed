@@ -50,9 +50,12 @@ public:
     return static_cast<nsTableFrame*>(parent);
   }
 
+  
+
+
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
-                                const nsDisplayListSet& aLists) override;
+                                const nsDisplayListSet& aLists) override {}
 
   
 

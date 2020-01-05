@@ -190,11 +190,7 @@ nsTableWrapperFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
   
   
-  set.BlockBorderBackgrounds()->SortByContentOrder(GetContent());
-  set.Floats()->SortByContentOrder(GetContent());
-  set.Content()->SortByContentOrder(GetContent());
-  set.PositionedDescendants()->SortByContentOrder(GetContent());
-  set.Outlines()->SortByContentOrder(GetContent());
+  set.SortAllByContentOrder(GetContent());
   set.MoveTo(aLists);
 }
 

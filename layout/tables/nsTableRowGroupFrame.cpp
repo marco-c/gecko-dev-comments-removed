@@ -293,8 +293,19 @@ nsTableRowGroupFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                        const nsRect&           aDirtyRect,
                                        const nsDisplayListSet& aLists)
 {
+  nsDisplayTableItem* item = nullptr;
+  if (IsVisibleInSelection(aBuilder)) {
+    bool isRoot = aBuilder->IsAtRootOfPseudoStackingContext();
+    if (isRoot) {
+      
+      
+      
+      item = new (aBuilder) nsDisplayTableRowGroupBackground(aBuilder, this);
+      aLists.BorderBackground()->AppendNewToTop(item);
+    }
+  }
   nsTableFrame::DisplayGenericTablePart(aBuilder, this, aDirtyRect,
-                                        aLists, DisplayRows);
+                                        aLists, item, DisplayRows);
 }
 
 nsIFrame::LogicalSides

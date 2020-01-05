@@ -621,7 +621,21 @@ nsTableRowFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                   const nsRect&           aDirtyRect,
                                   const nsDisplayListSet& aLists)
 {
-  nsTableFrame::DisplayGenericTablePart(aBuilder, this, aDirtyRect, aLists);
+  nsDisplayTableItem* item = nullptr;
+  if (IsVisibleInSelection(aBuilder)) {
+    bool isRoot = aBuilder->IsAtRootOfPseudoStackingContext();
+    if (isRoot) {
+      
+      
+      
+      
+      
+      
+      item = new (aBuilder) nsDisplayTableRowBackground(aBuilder, this);
+      aLists.BorderBackground()->AppendNewToTop(item);
+    }
+  }
+  nsTableFrame::DisplayGenericTablePart(aBuilder, this, aDirtyRect, aLists, item);
 }
 
 nsIFrame::LogicalSides
