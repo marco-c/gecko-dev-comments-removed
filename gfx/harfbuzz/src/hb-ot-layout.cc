@@ -112,6 +112,8 @@ _hb_ot_layout_create (hb_face_t *face)
       
       || (844 == gdef_len && 45474 == gpos_len && 7302 == gsub_len)
       
+      || (180 == gdef_len && 7254 == gpos_len && 13054 == gsub_len)
+      
       || (192 == gdef_len && 7254 == gpos_len && 12638 == gsub_len)
       
       || (192 == gdef_len && 7254 == gpos_len && 12690 == gsub_len)
