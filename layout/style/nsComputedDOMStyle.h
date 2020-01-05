@@ -487,6 +487,7 @@ private:
   already_AddRefed<CSSValue> DoGetShapeOutside();
 
   
+  already_AddRefed<CSSValue> DoGetCaretColor();
   already_AddRefed<CSSValue> DoGetCursor();
   already_AddRefed<CSSValue> DoGetForceBrokenImageIcon();
   already_AddRefed<CSSValue> DoGetIMEMode();
