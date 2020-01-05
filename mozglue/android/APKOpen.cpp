@@ -37,7 +37,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "XREChildData.h"
-#include "nsXPCOMGlue.h"
 
 
 #ifndef RUSAGE_THREAD
