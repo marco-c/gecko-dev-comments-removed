@@ -186,6 +186,12 @@ FileReaderSync::ReadAsText(Blob& aBlob,
   
   
 
+  nsCOMPtr<nsIInputStream> stringStream;
+  aRv = NS_NewCStringInputStream(getter_AddRefs(stringStream), sniffBuf);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+
   nsCOMPtr<nsIMultiplexInputStream> multiplexStream =
     do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1");
   if (NS_WARN_IF(!multiplexStream)) {
@@ -193,24 +199,12 @@ FileReaderSync::ReadAsText(Blob& aBlob,
     return;
   }
 
-  nsCOMPtr<nsIInputStream> sniffStringStream;
-  aRv = NS_NewCStringInputStream(getter_AddRefs(sniffStringStream), sniffBuf);
+  aRv = multiplexStream->AppendStream(stringStream);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
 
-  aRv = multiplexStream->AppendStream(sniffStringStream);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  nsCOMPtr<nsIInputStream> syncStream;
-  aRv = ConvertAsyncToSyncStream(stream, getter_AddRefs(syncStream));
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
-  aRv = multiplexStream->AppendStream(syncStream);
+  aRv = multiplexStream->AppendStream(stream);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -439,45 +433,4 @@ FileReaderSync::SyncRead(nsIInputStream* aStream, char* aBuffer,
 
   
   return SyncRead(aStream, aBuffer, aBufferSize, aRead);
-}
-
-nsresult
-FileReaderSync::ConvertAsyncToSyncStream(nsIInputStream* aAsyncStream,
-                                         nsIInputStream** aSyncStream)
-{
-  
-  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aAsyncStream);
-  if (!asyncStream) {
-    nsCOMPtr<nsIInputStream> stream = aAsyncStream;
-    stream.forget(aSyncStream);
-    return NS_OK;
-  }
-
-  uint64_t length;
-  nsresult rv = aAsyncStream->Available(&length);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  nsAutoCString buffer;
-  if (!buffer.SetLength(length, fallible)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  uint32_t read;
-  rv = SyncRead(aAsyncStream, buffer.BeginWriting(), length, &read);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  if (read != length) {
-    return NS_ERROR_FAILURE;
-  }
-
-  rv = NS_NewCStringInputStream(aSyncStream, buffer);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  return NS_OK;
 }
