@@ -188,7 +188,7 @@ pub trait Flow: fmt::Show + ToString + Sync {
     
     
     
-    fn bubble_inline_sizes(&mut self, _ctx: &LayoutContext) {
+    fn bubble_inline_sizes(&mut self) {
         fail!("bubble_inline_sizes not yet implemented")
     }
 

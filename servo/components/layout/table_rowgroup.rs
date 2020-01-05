@@ -139,7 +139,9 @@ impl Flow for TableRowGroupFlow {
     
     
     
-    fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
+    
+    
+    fn bubble_inline_sizes(&mut self) {
         let _scope = layout_debug_scope!("table_rowgroup::bubble_inline_sizes {:s}",
                                             self.block_flow.base.debug_id());
 

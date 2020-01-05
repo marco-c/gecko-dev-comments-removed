@@ -24,6 +24,13 @@ pub mod specified {
         Au_(Au),  
         Em(CSSFloat),
         Ex(CSSFloat),
+
+        
+        
+        
+        
+        ServoCharacterWidth(i32),
+
         
 
 
@@ -245,6 +252,15 @@ pub mod computed {
                 let x_height = 0.5;  
                 reference_font_size.scale_by(value * x_height)
             },
+            specified::ServoCharacterWidth(value) => {
+                
+                
+                
+                
+                let average_advance = reference_font_size.scale_by(0.5);
+                let max_advance = reference_font_size;
+                average_advance.scale_by(value as CSSFloat - 1.0) + max_advance
+            }
         }
     }
 

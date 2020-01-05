@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+pub enum LengthAttribute {
+    
+    WidthLengthAttribute,
+}
+
+
+pub enum IntegerAttribute {
+    
+    SizeIntegerAttribute,
+}
+
