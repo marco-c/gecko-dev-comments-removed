@@ -62,14 +62,13 @@ public:
 
 
 
-class ServiceWorkerPrivate final : public nsIObserver
+class ServiceWorkerPrivate final : public nsISupports
 {
   friend class KeepAliveToken;
 
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ServiceWorkerPrivate)
-  NS_DECL_NSIOBSERVER
 
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
@@ -150,9 +149,6 @@ public:
   bool
   IsIdle() const;
 
-  void
-  AddPendingWindow(Runnable* aPendingWindow);
-
 private:
   enum WakeUpReason {
     FetchEvent = 0,
@@ -225,8 +221,6 @@ private:
   
   
   nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
-
-  nsTArray<Runnable*> pendingWindows;
 };
 
 } 
