@@ -137,29 +137,26 @@ class FxDesktopBuild(BuildScript, TryToolsMixin, object):
             
             
             
-            
-            
             self.info('Artifact build requested in try syntax.')
 
-            default = 'artifact'
-            if c.get('build_variant') in ['debug', 'cross-debug']:
-                default = 'debug-artifact'
-
             variant = None
+
             if 'artifact_flag_build_variant_in_try' in c:
-                variant = c.get('artifact_flag_build_variant_in_try')
+                variant = c['artifact_flag_build_variant_in_try']
                 if not variant:
                     self.info('Build variant has falsy `artifact_flag_build_variant_in_try`; '
                               'ignoring artifact build request and performing original build.')
                     return
-
-                self.info('Build variant has non-falsy `artifact_build_variant_in_try`.')
+                self.info('Build variant has `artifact_build_variant_in_try`: "%s".' % variant)
             else:
-                variant = default
+                if not c.get('build_variant'):
+                    variant = 'artifact'
+                elif c.get('build_variant') in ['debug', 'cross-debug']:
+                    variant = 'debug-artifact'
 
-            self.info('Using artifact build variant "%s".' % variant)
-
-            self._update_build_variant(rw_config, variant)
+            if variant:
+                self.info('Using artifact build variant "%s".' % variant)
+                self._update_build_variant(rw_config, variant)
 
     
     def _update_build_variant(self, rw_config, variant='artifact'):
