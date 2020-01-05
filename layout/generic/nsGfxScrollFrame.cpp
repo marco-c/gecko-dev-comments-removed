@@ -3100,7 +3100,8 @@ ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder*   aBuilder,
     
     
     bool isOverlayScrollbar = (flags != 0) && overlayScrollbars;
-    bool createLayer = aCreateLayer || isOverlayScrollbar;
+    bool createLayer = aCreateLayer || isOverlayScrollbar ||
+        gfxPrefs::AlwaysLayerizeScrollbarTrackTestOnly();
 
     nsDisplayListBuilder::AutoCurrentScrollbarInfoSetter
       infoSetter(aBuilder, scrollTargetId, flags, createLayer);
