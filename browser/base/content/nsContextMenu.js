@@ -567,28 +567,10 @@ nsContextMenu.prototype = {
   },
 
   inspectNode: function() {
-    let {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
     let gBrowser = this.browser.ownerGlobal.gBrowser;
-    let target = devtools.TargetFactory.forTab(gBrowser.selectedTab);
-
-    return gDevTools.showToolbox(target, "inspector").then(toolbox => {
-      let inspector = toolbox.getCurrentPanel();
-
-      
-      
-      let onNewNode = inspector.selection.once("new-node-front");
-
-      this.browser.messageManager.sendAsyncMessage("debug:inspect", {}, {node: this.target});
-      inspector.walker.findInspectingNode().then(nodeFront => {
-        inspector.selection.setNodeFront(nodeFront, "browser-context-menu");
-      });
-
-      return onNewNode.then(() => {
-        
-        
-        return inspector.once("inspector-updated");
-      });
-    });
+    let { require } = Cu.import("resource://devtools/shared/Loader.jsm", {});
+    let { gDevToolsBrowser } = require("devtools/client/framework/devtools-browser");
+    return gDevToolsBrowser.inspectNode(gBrowser.selectedTab, this.target);
   },
 
   
