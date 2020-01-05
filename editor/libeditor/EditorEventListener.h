@@ -6,6 +6,7 @@
 #ifndef EditorEventListener_h
 #define EditorEventListener_h
 
+#include "mozilla/EventForwards.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsIDOMEventListener.h"
@@ -60,14 +61,14 @@ protected:
   nsresult KeyUp(nsIDOMKeyEvent* aKeyEvent);
 #endif
   nsresult KeyPress(nsIDOMKeyEvent* aKeyEvent);
-  nsresult HandleText(nsIDOMEvent* aTextEvent);
-  nsresult HandleStartComposition(nsIDOMEvent* aCompositionEvent);
-  void HandleEndComposition(nsIDOMEvent* aCompositionEvent);
+  nsresult HandleChangeComposition(WidgetCompositionEvent* aCompositionEvent);
+  nsresult HandleStartComposition(WidgetCompositionEvent* aCompositionEvent);
+  void HandleEndComposition(WidgetCompositionEvent* aCompositionEvent);
   virtual nsresult MouseDown(nsIDOMMouseEvent* aMouseEvent);
   virtual nsresult MouseUp(nsIDOMMouseEvent* aMouseEvent) { return NS_OK; }
   virtual nsresult MouseClick(nsIDOMMouseEvent* aMouseEvent);
-  nsresult Focus(nsIDOMEvent* aEvent);
-  nsresult Blur(nsIDOMEvent* aEvent);
+  nsresult Focus(WidgetEvent* aFocusEvent);
+  nsresult Blur(WidgetEvent* aBlurEvent);
   nsresult DragEnter(nsIDOMDragEvent* aDragEvent);
   nsresult DragOver(nsIDOMDragEvent* aDragEvent);
   nsresult DragExit(nsIDOMDragEvent* aDragEvent);
@@ -84,6 +85,19 @@ protected:
   bool IsFileControlTextBox();
   bool ShouldHandleNativeKeyBindings(nsIDOMKeyEvent* aKeyEvent);
   nsresult HandleMiddleClickPaste(nsIDOMMouseEvent* aMouseEvent);
+
+  
+
+
+
+  bool DetachedFromEditor() const;
+
+  
+
+
+
+
+  bool DetachedFromEditorOrDefaultPrevented(WidgetEvent* aEvent) const;
 
   EditorBase* mEditorBase; 
   RefPtr<nsCaret> mCaret;

@@ -53,6 +53,12 @@ HTMLEditorEventListener::GetHTMLEditor()
 nsresult
 HTMLEditorEventListener::MouseUp(nsIDOMMouseEvent* aMouseEvent)
 {
+  if (DetachedFromEditor()) {
+    return NS_OK;
+  }
+
+  
+  
   HTMLEditor* htmlEditor = GetHTMLEditor();
 
   nsCOMPtr<nsIDOMEventTarget> target;
@@ -72,6 +78,10 @@ HTMLEditorEventListener::MouseUp(nsIDOMMouseEvent* aMouseEvent)
 nsresult
 HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
 {
+  if (NS_WARN_IF(!aMouseEvent) || DetachedFromEditor()) {
+    return NS_OK;
+  }
+
   WidgetMouseEvent* mousedownEvent =
     aMouseEvent->AsEvent()->WidgetEventPtr()->AsMouseEvent();
 
@@ -85,6 +95,9 @@ HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
     
     return EditorEventListener::MouseDown(aMouseEvent);
   }
+
+  
+  
 
   
   
@@ -178,6 +191,9 @@ HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
           selection->Collapse(parent, offset);
         } else {
           htmlEditor->SelectElement(element);
+        }
+        if (DetachedFromEditor()) {
+          return NS_OK;
         }
       }
     }
