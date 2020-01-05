@@ -555,7 +555,8 @@ nsFrame::Init(nsIContent*       aContent,
   }
   const nsStyleDisplay *disp = StyleDisplay();
   if (disp->HasTransform(this) ||
-      nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_transform)) {
+      (IsFrameOfType(eSupportsCSSTransforms) &&
+       nsLayoutUtils::HasAnimationOfProperty(this, eCSSProperty_transform))) {
     
     
     mState |= NS_FRAME_MAY_BE_TRANSFORMED;
@@ -2896,19 +2897,12 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
     if (aBuilder->IsBuildingLayerEventRegions()) {
       
       
-      if (buildingForChild.IsAnimatedGeometryRoot() || isPositioned) {
+      if (buildingForChild.IsAnimatedGeometryRoot()) {
         nsDisplayLayerEventRegions* eventRegions =
           new (aBuilder) nsDisplayLayerEventRegions(aBuilder, child);
         eventRegions->AddFrame(aBuilder, child);
         aBuilder->SetLayerEventRegions(eventRegions);
-
-        if (isPositioned) {
-          
-          
-          list.AppendNewToTop(eventRegions);
-        } else {
-          aLists.BorderBackground()->AppendNewToTop(eventRegions);
-        }
+        aLists.BorderBackground()->AppendNewToTop(eventRegions);
       } else {
         nsDisplayLayerEventRegions* eventRegions = aBuilder->GetLayerEventRegions();
         if (eventRegions) {
