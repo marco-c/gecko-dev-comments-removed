@@ -1011,7 +1011,7 @@ protected:
 private:
   virtual void DoSeek() = 0;
 
-  virtual int64_t CalculateNewCurrentTime() const = 0;
+  virtual TimeUnit CalculateNewCurrentTime() const = 0;
 };
 
 class MediaDecoderStateMachine::AccurateSeekingState
@@ -1205,9 +1205,9 @@ private:
     DemuxerSeek();
   }
 
-  int64_t CalculateNewCurrentTime() const override
+  TimeUnit CalculateNewCurrentTime() const override
   {
-    const int64_t seekTime = mSeekJob.mTarget->GetTime().ToMicroseconds();
+    const auto seekTime = mSeekJob.mTarget->GetTime();
 
     
     
@@ -1230,13 +1230,14 @@ private:
 
       const int64_t audioStart = audio ? audio->mTime : INT64_MAX;
       const int64_t videoStart = video ? video->mTime : INT64_MAX;
-      const int64_t audioGap = std::abs(audioStart - seekTime);
-      const int64_t videoGap = std::abs(videoStart - seekTime);
-      return audioGap <= videoGap ? audioStart : videoStart;
+      const int64_t audioGap = std::abs(audioStart - seekTime.ToMicroseconds());
+      const int64_t videoGap = std::abs(videoStart - seekTime.ToMicroseconds());
+      return TimeUnit::FromMicroseconds(
+        audioGap <= videoGap ? audioStart : videoStart);
     }
 
     MOZ_ASSERT(false, "AccurateSeekTask doesn't handle other seek types.");
-    return 0;
+    return TimeUnit::Zero();
   }
 
   void OnSeekResolved(media::TimeUnit)
@@ -1630,11 +1631,11 @@ private:
     RequestVideoData();
   }
 
-  int64_t CalculateNewCurrentTime() const override
+  TimeUnit CalculateNewCurrentTime() const override
   {
     
     
-    return mSeekJob.mTarget->GetTime().ToMicroseconds();
+    return mSeekJob.mTarget->GetTime();
   }
 
   void RequestVideoData()
@@ -2369,10 +2370,10 @@ void
 MediaDecoderStateMachine::
 SeekingState::SeekCompleted()
 {
-  const int64_t newCurrentTime = CalculateNewCurrentTime();
+  const auto newCurrentTime = CalculateNewCurrentTime();
 
   bool isLiveStream = Resource()->IsLiveStream();
-  if (newCurrentTime == mMaster->Duration().ToMicroseconds() && !isLiveStream) {
+  if (newCurrentTime == mMaster->Duration() && !isLiveStream) {
     
     
     
@@ -2410,8 +2411,7 @@ SeekingState::SeekCompleted()
     
     
     
-    mMaster->UpdatePlaybackPositionInternal(
-      TimeUnit::FromMicroseconds(newCurrentTime));
+    mMaster->UpdatePlaybackPositionInternal(newCurrentTime);
   }
 
   
