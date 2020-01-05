@@ -41,7 +41,6 @@
 #include "nsISHistoryListener.h"
 #include "nsIPartialSHistoryListener.h"
 
-class nsICachedFileDescriptorListener;
 class nsIDOMWindowUtils;
 class nsIHttpChannel;
 
@@ -339,11 +338,6 @@ public:
 
   virtual bool RecvLoadURL(const nsCString& aURI,
                            const ShowInfo& aInfo) override;
-
-  virtual bool RecvCacheFileDescriptor(const nsString& aPath,
-                                       const FileDescriptor& aFileDescriptor)
-                                       override;
-
   virtual bool
   RecvShow(const ScreenIntSize& aSize,
            const ShowInfo& aInfo,
@@ -528,15 +522,6 @@ public:
 
   void MakeVisible();
   void MakeHidden();
-
-  
-  
-  bool GetCachedFileDescriptor(const nsAString& aPath,
-                               nsICachedFileDescriptorListener* aCallback);
-
-  void CancelCachedFileDescriptorCallback(
-                                  const nsAString& aPath,
-                                  nsICachedFileDescriptorListener* aCallback);
 
   nsIContentChild* Manager() const { return mManager; }
 
@@ -764,8 +749,6 @@ private:
     mUnscaledInnerSize = aSize;
   }
 
-  class CachedFileDescriptorInfo;
-  class CachedFileDescriptorCallbackRunnable;
   class DelayedDeleteRunnable;
 
   TextureFactoryIdentifier mTextureFactoryIdentifier;
@@ -779,11 +762,6 @@ private:
   int32_t mActiveSuppressDisplayport;
   uint64_t mLayersId;
   CSSRect mUnscaledOuterRect;
-  
-  bool mAppPackageFileDescriptorRecved;
-  
-  AutoTArray<nsAutoPtr<CachedFileDescriptorInfo>, 1>
-      mCachedFileDescriptorInfos;
   nscolor mLastBackgroundColor;
   bool mDidFakeShow;
   bool mNotified;
