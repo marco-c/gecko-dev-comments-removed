@@ -189,10 +189,8 @@ public:
     
     if (rv == NS_ERROR_TYPE_ERR ||
         rv == NS_ERROR_RANGE_ERR ||
-        rv == NS_ERROR_DOM_JS_EXCEPTION ||
-        rv == NS_ERROR_DOM_DOMEXCEPTION) {
-      
-      
+        rv == NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION ||
+        rv == NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION) {
       
       return NS_ERROR_DOM_INVALID_STATE_ERR;
     }
@@ -277,7 +275,10 @@ public:
   
   
   void ThrowJSException(JSContext* cx, JS::Handle<JS::Value> exn);
-  bool IsJSException() const { return ErrorCode() == NS_ERROR_DOM_JS_EXCEPTION; }
+  bool IsJSException() const
+  {
+    return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION;
+  }
 
   
   
@@ -285,7 +286,10 @@ public:
   
   
   void ThrowDOMException(nsresult rv, const nsACString& message = EmptyCString());
-  bool IsDOMException() const { return ErrorCode() == NS_ERROR_DOM_DOMEXCEPTION; }
+  bool IsDOMException() const
+  {
+    return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION;
+  }
 
   
   
@@ -295,7 +299,7 @@ public:
   
   
   bool IsJSContextException() {
-    return ErrorCode() == NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT;
+    return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_EXCEPTION_ON_JSCONTEXT;
   }
 
   
@@ -399,18 +403,18 @@ private:
     MOZ_ASSERT(aRv != NS_ERROR_TYPE_ERR, "Use ThrowTypeError()");
     MOZ_ASSERT(aRv != NS_ERROR_RANGE_ERR, "Use ThrowRangeError()");
     MOZ_ASSERT(!IsErrorWithMessage(), "Don't overwrite errors with message");
-    MOZ_ASSERT(aRv != NS_ERROR_DOM_JS_EXCEPTION, "Use ThrowJSException()");
+    MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION,
+               "Use ThrowJSException()");
     MOZ_ASSERT(!IsJSException(), "Don't overwrite JS exceptions");
-    MOZ_ASSERT(aRv != NS_ERROR_DOM_DOMEXCEPTION, "Use ThrowDOMException()");
+    MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION,
+               "Use ThrowDOMException()");
     MOZ_ASSERT(!IsDOMException(), "Don't overwrite DOM exceptions");
     MOZ_ASSERT(aRv != NS_ERROR_XPC_NOT_ENOUGH_ARGS, "May need to bring back ThrowNotEnoughArgsError");
-    MOZ_ASSERT(aRv != NS_ERROR_DOM_EXCEPTION_ON_JSCONTEXT,
+    MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_EXCEPTION_ON_JSCONTEXT,
                "Use NoteJSContextException");
     
     if (aRv == NS_ERROR_TYPE_ERR ||
-        aRv == NS_ERROR_RANGE_ERR ||
-        aRv == NS_ERROR_DOM_JS_EXCEPTION ||
-        aRv == NS_ERROR_DOM_DOMEXCEPTION) {
+        aRv == NS_ERROR_RANGE_ERR) {
       mResult = NS_ERROR_UNEXPECTED;
     } else {
       mResult = aRv;
@@ -445,6 +449,8 @@ private:
     MOZ_ASSERT(mUnionState == HasNothing);
   }
 
+  
+  
   
   
   
