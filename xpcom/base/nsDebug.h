@@ -381,7 +381,6 @@ inline void NS_ABORT_OOM(size_t)
 }
 #endif
 
-typedef void (*StderrCallback)(const char* aFmt, va_list aArgs);
 
 
 
@@ -390,7 +389,6 @@ typedef void (*StderrCallback)(const char* aFmt, va_list aArgs);
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 
 
@@ -424,37 +422,6 @@ void vprintf_stderr(const char* aFmt, va_list aArgs);
 
 
 void fprintf_stderr(FILE* aFile, const char* aFmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-
-
-
-void set_stderr_callback(StderrCallback aCallback);
-
-#if defined(ANDROID) && !defined(RELEASE_OR_BETA)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void copy_stderr_to_file(const char* aFile);
-#endif
 
 #ifdef __cplusplus
 }
