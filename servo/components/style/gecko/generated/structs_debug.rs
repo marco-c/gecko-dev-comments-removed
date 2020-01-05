@@ -2130,6 +2130,18 @@ pub mod root {
                             ComplexColorValue ) , "::" , stringify ! (
                             _mOwningThread ) ));
             }
+            #[repr(i32)]
+            
+
+
+
+            #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+            pub enum URLMatchingFunction {
+                eURL = 0,
+                eURLPrefix = 1,
+                eDomain = 2,
+                eRegExp = 3,
+            }
             #[repr(C)]
             #[derive(Debug, Copy, Clone)]
             pub struct DocumentRule {
