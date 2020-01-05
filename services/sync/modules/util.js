@@ -95,7 +95,7 @@ this.Utils = {
         return func.call(thisArg);
       }
       catch(ex) {
-        thisArg._log.debug("Exception calling " + (func.name || "anonymous function"), ex);
+        thisArg._log.debug("Exception", ex);
         if (exceptionCallback) {
           return exceptionCallback.call(thisArg, ex);
         }
@@ -359,7 +359,6 @@ this.Utils = {
     } catch (e) {
       if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
         
-        json = null;
       } else {
         if (that._log) {
           that._log.debug("Failed to load json", e);

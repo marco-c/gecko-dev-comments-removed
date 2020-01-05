@@ -13,8 +13,9 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://tps/logger.jsm");
 
-Cu.import("resource://gre/modules/FormHistory.jsm");
-Cu.import("resource://gre/modules/Log.jsm");
+var formService = Cc["@mozilla.org/satchel/form-history;1"]
+                  .getService(Ci.nsIFormHistory2);
+
 
 
 
@@ -22,21 +23,6 @@ Cu.import("resource://gre/modules/Log.jsm");
 
 
 var FormDB = {
-  _update(data) {
-    return new Promise((resolve, reject) => {
-      let handlers = {
-        handleError(error) {
-          Logger.logError("Error occurred updating form history: " + Log.exceptionStr(error));
-          reject(error);
-        },
-        handleCompletion(reason) {
-          resolve();
-        }
-      }
-      FormHistory.update(data, handlers);
-    });
-  },
-
   
 
 
@@ -45,26 +31,29 @@ var FormDB = {
 
 
 
+  makeGUID: function makeGUID() {
+    
+    const code =
+      "!()*-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~";
 
+    let guid = "";
+    let num = 0;
+    let val;
 
+    
+    for (let i = 0; i < 10; i++) {
+      
+      if (i == 0 || i == 5)
+        num = Math.random();
 
-  insertValue(fieldname, value, us) {
-    let data = { op: "add", fieldname, value, timesUsed: 1,
-                 firstUsed: us, lastUsed: us }
-    return this._update(data);
-  },
+      
+      num *= 70;
+      val = Math.floor(num);
+      guid += code[val];
+      num -= val;
+    }
 
-  
-
-
-
-
-
-
-
-
-  updateValue(id, newvalue) {
-    return this._update({ op: "update", guid: id, value: newvalue });
+    return guid;
   },
 
   
@@ -79,27 +68,19 @@ var FormDB = {
 
 
 
-  getDataForValue(fieldname, value) {
-    return new Promise((resolve, reject) => {
-      let result = null;
-      let handlers = {
-        handleResult(oneResult) {
-          if (result != null) {
-            reject("more than 1 result for this query");
-            return;
-          }
-          result = oneResult;
-        },
-        handleError(error) {
-          Logger.logError("Error occurred updating form history: " + Log.exceptionStr(error));
-          reject(error);
-        },
-        handleCompletion(reason) {
-          resolve(result);
-        }
-      }
-      FormHistory.search(["guid", "lastUsed", "firstUsed"], { fieldname }, handlers);
-    });
+  insertValue: function (fieldname, value, us) {
+    let query = this.createStatement(
+      "INSERT INTO moz_formhistory " +
+      "(fieldname, value, timesUsed, firstUsed, lastUsed, guid) VALUES " +
+      "(:fieldname, :value, :timesUsed, :firstUsed, :lastUsed, :guid)");
+    query.params.fieldname = fieldname;
+    query.params.value = value;
+    query.params.timesUsed = 1;
+    query.params.firstUsed = us;
+    query.params.lastUsed = us;
+    query.params.guid = this.makeGUID();
+    query.execute();
+    query.reset();
   },
 
   
@@ -110,9 +91,70 @@ var FormDB = {
 
 
 
-   remove(guid) {
-    return this._update({ op: "remove", guid });
+
+  updateValue: function (id, newvalue) {
+    let query = this.createStatement(
+      "UPDATE moz_formhistory SET value = :value WHERE id = :id");
+    query.params.id = id;
+    query.params.value = newvalue;
+    query.execute();
+    query.reset();
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  getDataForValue: function (fieldname, value) {
+    let query = this.createStatement(
+      "SELECT id, lastUsed, firstUsed FROM moz_formhistory WHERE " +
+      "fieldname = :fieldname AND value = :value");
+    query.params.fieldname = fieldname;
+    query.params.value = value;
+    if (!query.executeStep())
+      return null;
+
+    return {
+      id: query.row.id,
+      lastUsed: query.row.lastUsed,
+      firstUsed: query.row.firstUsed
+    };
+  },
+
+  
+
+
+
+
+
+
+
+
+  createStatement: function createStatement(query) {
+    try {
+      
+      return formService.DBConnection.createStatement(query);
+    }
+    catch(ex) {
+      
+      formService.DBConnection.executeSimpleSQL(
+        "ALTER TABLE moz_formhistory ADD COLUMN guid TEXT");
+      formService.DBConnection.executeSimpleSQL(
+        "CREATE INDEX IF NOT EXISTS moz_formhistory_guid_index " +
+        "ON moz_formhistory (guid)");
+    }
+
+    
+    return formService.DBConnection.createStatement(query);
+  }
 };
 
 
@@ -162,18 +204,18 @@ FormData.prototype = {
     Logger.AssertTrue(this.fieldname != null && this.value != null,
       "Must specify both fieldname and value");
 
-    return FormDB.getDataForValue(this.fieldname, this.value).then(formdata => {
-      if (!formdata) {
-        
-        return FormDB.insertValue(this.fieldname, this.value,
-                                  this.hours_to_us(this.date));
-      } else {
-        
+    let formdata = FormDB.getDataForValue(this.fieldname, this.value);
+    if (!formdata) {
+      
+      FormDB.insertValue(this.fieldname, this.value,
+                         this.hours_to_us(this.date));
+    }
+    else {
+      
 
 
 
-      }
-    });
+    }
   },
 
   
@@ -185,10 +227,10 @@ FormData.prototype = {
 
 
   Find: function() {
-    return FormDB.getDataForValue(this.fieldname, this.value).then(formdata => {
-      let status = formdata != null;
-      if (status) {
-        
+    let formdata = FormDB.getDataForValue(this.fieldname, this.value);
+    let status = formdata != null;
+    if (status) {
+      
 
 
 
@@ -197,10 +239,9 @@ FormData.prototype = {
 
 
 
-          this.id = formdata.guid;
-      }
-      return status;
-    });
+        this.id = formdata.id;
+    }
+    return status;
   },
 
   
@@ -214,6 +255,7 @@ FormData.prototype = {
   Remove: function() {
     
 
-    return FormDB.remove(this.id);
+    formService.removeEntry(this.fieldname, this.value);
+    return true;
   },
 };
