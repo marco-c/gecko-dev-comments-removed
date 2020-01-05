@@ -3273,8 +3273,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleContent
     mResets[aIndex].mValue = aValue;
   }
 
-  nsStyleCoord  mMarkerOffset;  
-
 protected:
   nsTArray<nsStyleContentData> mContents;
   nsTArray<nsStyleCounterData> mIncrements;
