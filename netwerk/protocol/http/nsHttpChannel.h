@@ -458,6 +458,12 @@ private:
     
     nsCOMPtr<nsICacheEntry>           mCacheEntry;
     
+    
+    
+    
+    
+    nsCOMPtr<nsICacheEntry>           mAltDataCacheEntry;
+    
     AutoClose<nsIInputStream>         mCacheInputStream;
     RefPtr<nsInputStreamPump>       mCachePump;
     nsAutoPtr<nsHttpResponseHead>     mCachedResponseHead;

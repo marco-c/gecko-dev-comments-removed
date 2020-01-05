@@ -530,6 +530,10 @@ protected:
   bool mOnStartRequestCalled;
   bool mOnStopRequestCalled;
 
+  
+  
+  bool mAfterOnStartRequestBegun;
+
   uint64_t mTransferSize;
   uint64_t mDecodedBodySize;
   uint64_t mEncodedBodySize;
@@ -544,6 +548,11 @@ protected:
   nsTArray<nsCString>               mUnsafeHeaders;
 
   nsCOMPtr<nsIConsoleReportCollector> mReportCollector;
+
+  
+  nsCString mPreferredCachedAltDataType;
+  
+  nsCString mAvailableCachedAltDataType;
 
   bool mForceMainDocumentChannel;
 
