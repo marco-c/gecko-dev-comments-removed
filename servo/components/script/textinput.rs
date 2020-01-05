@@ -24,9 +24,9 @@ enum Selection {
 #[derive(Copy)]
 struct TextPoint {
     
-    line: uint,
+    line: usize,
     
-    index: uint,
+    index: usize,
 }
 
 
@@ -166,13 +166,13 @@ impl TextInput {
     }
 
     
-    fn current_line_length(&self) -> uint {
+    fn current_line_length(&self) -> usize {
         self.lines[self.edit_point.line].chars().count()
     }
 
     
     
-    fn adjust_vertical(&mut self, adjust: int, select: Selection) {
+    fn adjust_vertical(&mut self, adjust: isize, select: Selection) {
         if !self.multiline {
             return;
         }
@@ -187,26 +187,26 @@ impl TextInput {
 
         assert!(self.edit_point.line < self.lines.len());
 
-        let target_line: int = self.edit_point.line as int + adjust;
+        let target_line: isize = self.edit_point.line as isize + adjust;
 
         if target_line < 0 {
             self.edit_point.index = 0;
             self.edit_point.line = 0;
             return;
-        } else if target_line as uint >= self.lines.len() {
+        } else if target_line as usize >= self.lines.len() {
             self.edit_point.line = self.lines.len() - 1;
             self.edit_point.index = self.current_line_length();
             return;
         }
 
-        self.edit_point.line = target_line as uint;
+        self.edit_point.line = target_line as usize;
         self.edit_point.index = min(self.current_line_length(), self.edit_point.index);
     }
 
     
     
     
-    fn adjust_horizontal(&mut self, adjust: int, select: Selection) {
+    fn adjust_horizontal(&mut self, adjust: isize, select: Selection) {
         if select == Selection::Selected {
             if self.selection_begin.is_none() {
                 self.selection_begin = Some(self.edit_point);
@@ -222,23 +222,23 @@ impl TextInput {
 
         if adjust < 0 {
             let remaining = self.edit_point.index;
-            if adjust.abs() as uint > remaining && self.edit_point.line > 0 {
+            if adjust.abs() as usize > remaining && self.edit_point.line > 0 {
                 self.adjust_vertical(-1, select);
                 self.edit_point.index = self.current_line_length();
                 self.adjust_horizontal(adjust + remaining as int + 1, select);
             } else {
-                self.edit_point.index = max(0, self.edit_point.index as int + adjust) as uint;
+                self.edit_point.index = max(0, self.edit_point.index as int + adjust) as usize;
             }
         } else {
             let remaining = self.current_line_length() - self.edit_point.index;
-            if adjust as uint > remaining && self.lines.len() > self.edit_point.line + 1 {
+            if adjust as usize > remaining && self.lines.len() > self.edit_point.line + 1 {
                 self.adjust_vertical(1, select);
                 self.edit_point.index = 0;
                 
                 self.adjust_horizontal(adjust - remaining as int - 1, select);
             } else {
                 self.edit_point.index = min(self.current_line_length(),
-                                            self.edit_point.index + adjust as uint);
+                                            self.edit_point.index + adjust as usize);
             }
         }
     }
