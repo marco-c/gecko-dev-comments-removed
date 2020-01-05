@@ -75,8 +75,8 @@ TEST_P(TlsConnectGeneric, ConnectEcdheP384Client) {
 
 TEST_P(TlsConnectGeneric, ConnectEcdheP384Server) {
   EnsureTlsSetup();
-  auto hrr_capture =
-      new TlsInspectorRecordHandshakeMessage(kTlsHandshakeHelloRetryRequest);
+  auto hrr_capture = std::make_shared<TlsInspectorRecordHandshakeMessage>(
+      kTlsHandshakeHelloRetryRequest);
   server_->SetPacketFilter(hrr_capture);
   const std::vector<SSLNamedGroup> groups = {ssl_grp_ec_secp384r1};
   server_->ConfigNamedGroups(groups);
@@ -223,8 +223,9 @@ class TlsKeyExchangeGroupCapture : public TlsHandshakeFilter {
 
 TEST_P(TlsConnectGenericPre13, DropSupportedGroupExtensionP256) {
   EnsureTlsSetup();
-  client_->SetPacketFilter(new TlsExtensionDropper(ssl_supported_groups_xtn));
-  auto group_capture = new TlsKeyExchangeGroupCapture();
+  client_->SetPacketFilter(
+      std::make_shared<TlsExtensionDropper>(ssl_supported_groups_xtn));
+  auto group_capture = std::make_shared<TlsKeyExchangeGroupCapture>();
   server_->SetPacketFilter(group_capture);
 
   ConnectExpectFail();
@@ -237,7 +238,8 @@ TEST_P(TlsConnectGenericPre13, DropSupportedGroupExtensionP256) {
 
 TEST_P(TlsConnectTls13, DropSupportedGroupExtension) {
   EnsureTlsSetup();
-  client_->SetPacketFilter(new TlsExtensionDropper(ssl_supported_groups_xtn));
+  client_->SetPacketFilter(
+      std::make_shared<TlsExtensionDropper>(ssl_supported_groups_xtn));
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_MISSING_EXTENSION_ALERT);
   server_->CheckErrorCode(SSL_ERROR_MISSING_SUPPORTED_GROUPS_EXTENSION);
@@ -559,14 +561,14 @@ class ECCServerKEXFilter : public TlsHandshakeFilter {
 
 TEST_P(TlsConnectGenericPre13, ConnectECDHEmptyServerPoint) {
   
-  server_->SetPacketFilter(new ECCServerKEXFilter());
+  server_->SetPacketFilter(std::make_shared<ECCServerKEXFilter>());
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_SERVER_KEY_EXCH);
 }
 
 TEST_P(TlsConnectGenericPre13, ConnectECDHEmptyClientPoint) {
   
-  client_->SetPacketFilter(new ECCClientKEXFilter());
+  client_->SetPacketFilter(std::make_shared<ECCClientKEXFilter>());
   ConnectExpectFail();
   server_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_CLIENT_KEY_EXCH);
 }

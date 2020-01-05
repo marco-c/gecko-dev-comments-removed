@@ -77,9 +77,10 @@ TEST_P(TlsConnectGeneric, ClientAuthBigRsa) {
 }
 
 
-static void CheckSigScheme(TlsInspectorRecordHandshakeMessage* capture,
-                           size_t offset, TlsAgent* peer,
-                           uint16_t expected_scheme, size_t expected_size) {
+static void CheckSigScheme(
+    std::shared_ptr<TlsInspectorRecordHandshakeMessage>& capture, size_t offset,
+    std::shared_ptr<TlsAgent>& peer, uint16_t expected_scheme,
+    size_t expected_size) {
   EXPECT_LT(offset + 2U, capture->buffer().len());
 
   uint32_t scheme = 0;
@@ -95,8 +96,8 @@ static void CheckSigScheme(TlsInspectorRecordHandshakeMessage* capture,
 
 TEST_P(TlsConnectTls12, ServerAuthCheckSigAlg) {
   EnsureTlsSetup();
-  auto capture_ske =
-      new TlsInspectorRecordHandshakeMessage(kTlsHandshakeServerKeyExchange);
+  auto capture_ske = std::make_shared<TlsInspectorRecordHandshakeMessage>(
+      kTlsHandshakeServerKeyExchange);
   server_->SetPacketFilter(capture_ske);
   Connect();
   CheckKeys();
@@ -114,7 +115,8 @@ TEST_P(TlsConnectTls12, ServerAuthCheckSigAlg) {
 TEST_P(TlsConnectTls12, ClientAuthCheckSigAlg) {
   EnsureTlsSetup();
   auto capture_cert_verify =
-      new TlsInspectorRecordHandshakeMessage(kTlsHandshakeCertificateVerify);
+      std::make_shared<TlsInspectorRecordHandshakeMessage>(
+          kTlsHandshakeCertificateVerify);
   client_->SetPacketFilter(capture_cert_verify);
   client_->SetupClientAuth();
   server_->RequestClientAuth(true);
@@ -127,7 +129,8 @@ TEST_P(TlsConnectTls12, ClientAuthCheckSigAlg) {
 TEST_P(TlsConnectTls12, ClientAuthBigRsaCheckSigAlg) {
   Reset(TlsAgent::kServerRsa, TlsAgent::kRsa2048);
   auto capture_cert_verify =
-      new TlsInspectorRecordHandshakeMessage(kTlsHandshakeCertificateVerify);
+      std::make_shared<TlsInspectorRecordHandshakeMessage>(
+          kTlsHandshakeCertificateVerify);
   client_->SetPacketFilter(capture_cert_verify);
   client_->SetupClientAuth();
   server_->RequestClientAuth(true);
@@ -186,10 +189,11 @@ class TlsZeroCertificateRequestSigAlgsFilter : public TlsHandshakeFilter {
 
 TEST_P(TlsConnectTls12, ClientAuthNoSigAlgsFallback) {
   EnsureTlsSetup();
-  auto filter = new TlsZeroCertificateRequestSigAlgsFilter();
+  auto filter = std::make_shared<TlsZeroCertificateRequestSigAlgsFilter>();
   server_->SetPacketFilter(filter);
   auto capture_cert_verify =
-      new TlsInspectorRecordHandshakeMessage(kTlsHandshakeCertificateVerify);
+      std::make_shared<TlsInspectorRecordHandshakeMessage>(
+          kTlsHandshakeCertificateVerify);
   client_->SetPacketFilter(capture_cert_verify);
   client_->SetupClientAuth();
   server_->RequestClientAuth(true);
@@ -339,7 +343,7 @@ TEST_P(TlsConnectPre12, SignatureAlgorithmNoOverlapEcdsa) {
 
 TEST_P(TlsConnectTls13, SignatureAlgorithmDrop) {
   client_->SetPacketFilter(
-      new TlsExtensionDropper(ssl_signature_algorithms_xtn));
+      std::make_shared<TlsExtensionDropper>(ssl_signature_algorithms_xtn));
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_MISSING_EXTENSION_ALERT);
   server_->CheckErrorCode(SSL_ERROR_MISSING_SIGNATURE_ALGORITHMS_EXTENSION);
@@ -349,7 +353,7 @@ TEST_P(TlsConnectTls13, SignatureAlgorithmDrop) {
 
 TEST_P(TlsConnectTls12, SignatureAlgorithmDrop) {
   client_->SetPacketFilter(
-      new TlsExtensionDropper(ssl_signature_algorithms_xtn));
+      std::make_shared<TlsExtensionDropper>(ssl_signature_algorithms_xtn));
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_DECRYPT_ERROR_ALERT);
   server_->CheckErrorCode(SSL_ERROR_BAD_HANDSHAKE_HASH_VALUE);
@@ -367,7 +371,8 @@ class BeforeFinished : public TlsRecordFilter {
   enum HandshakeState { BEFORE_CCS, AFTER_CCS, DONE };
 
  public:
-  BeforeFinished(TlsAgent* client, TlsAgent* server, VoidFunction before_ccs,
+  BeforeFinished(std::shared_ptr<TlsAgent>& client,
+                 std::shared_ptr<TlsAgent>& server, VoidFunction before_ccs,
                  VoidFunction before_finished)
       : client_(client),
         server_(server),
@@ -390,8 +395,8 @@ class BeforeFinished : public TlsRecordFilter {
           
           DataBuffer ccs;
           header.Write(&ccs, 0, body);
-          server_->SendDirect(ccs);
-          client_->Handshake();
+          server_.lock()->SendDirect(ccs);
+          client_.lock()->Handshake();
           state_ = AFTER_CCS;
           
           return DROP;
@@ -414,8 +419,8 @@ class BeforeFinished : public TlsRecordFilter {
   }
 
  private:
-  TlsAgent* client_;
-  TlsAgent* server_;
+  std::weak_ptr<TlsAgent> client_;
+  std::weak_ptr<TlsAgent> server_;
   VoidFunction before_ccs_;
   VoidFunction before_finished_;
   HandshakeState state_;
@@ -440,7 +445,8 @@ class BeforeFinished13 : public PacketFilter {
   };
 
  public:
-  BeforeFinished13(TlsAgent* client, TlsAgent* server,
+  BeforeFinished13(std::shared_ptr<TlsAgent>& client,
+                   std::shared_ptr<TlsAgent>& server,
                    VoidFunction before_finished)
       : client_(client),
         server_(server),
@@ -454,7 +460,7 @@ class BeforeFinished13 : public PacketFilter {
       case 1:
         
         EXPECT_EQ(SECSuccess,
-                  SSLInt_SetMTU(server_->ssl_fd(), input.len() - 1));
+                  SSLInt_SetMTU(server_.lock()->ssl_fd(), input.len() - 1));
         return DROP;
 
       
@@ -464,7 +470,7 @@ class BeforeFinished13 : public PacketFilter {
         
         
         
-        client_->Handshake();
+        client_.lock()->Handshake();
         before_finished_();
         break;
 
@@ -475,8 +481,8 @@ class BeforeFinished13 : public PacketFilter {
   }
 
  private:
-  TlsAgent* client_;
-  TlsAgent* server_;
+  std::weak_ptr<TlsAgent> client_;
+  std::weak_ptr<TlsAgent> server_;
   VoidFunction before_finished_;
   size_t records_;
 };
@@ -490,9 +496,11 @@ static SECStatus AuthCompleteBlock(TlsAgent*, PRBool, PRBool) {
 
 TEST_F(TlsConnectDatagram13, AuthCompleteBeforeFinished) {
   client_->SetAuthCertificateCallback(AuthCompleteBlock);
-  server_->SetPacketFilter(new BeforeFinished13(client_, server_, [this]() {
-    EXPECT_EQ(SECSuccess, SSL_AuthCertificateComplete(client_->ssl_fd(), 0));
-  }));
+  server_->SetPacketFilter(
+      std::make_shared<BeforeFinished13>(client_, server_, [this]() {
+        EXPECT_EQ(SECSuccess,
+                  SSL_AuthCertificateComplete(client_->ssl_fd(), 0));
+      }));
   Connect();
 }
 
@@ -509,9 +517,9 @@ static void TriggerAuthComplete(PollTarget* target, Event event) {
 TEST_F(TlsConnectDatagram13, AuthCompleteAfterFinished) {
   client_->SetAuthCertificateCallback(
       [this](TlsAgent*, PRBool, PRBool) -> SECStatus {
-        Poller::Timer* timer_handle;
+        std::shared_ptr<Poller::Timer> timer_handle;
         
-        Poller::Instance()->SetTimer(1U, client_, TriggerAuthComplete,
+        Poller::Instance()->SetTimer(1U, client_.get(), TriggerAuthComplete,
                                      &timer_handle);
         return SECWouldBlock;
       });
@@ -520,7 +528,7 @@ TEST_F(TlsConnectDatagram13, AuthCompleteAfterFinished) {
 
 TEST_P(TlsConnectGenericPre13, ClientWriteBetweenCCSAndFinishedWithFalseStart) {
   client_->EnableFalseStart();
-  server_->SetPacketFilter(new BeforeFinished(
+  server_->SetPacketFilter(std::make_shared<BeforeFinished>(
       client_, server_,
       [this]() { EXPECT_TRUE(client_->can_falsestart_hook_called()); },
       [this]() {
@@ -536,7 +544,7 @@ TEST_P(TlsConnectGenericPre13, ClientWriteBetweenCCSAndFinishedWithFalseStart) {
 TEST_P(TlsConnectGenericPre13, AuthCompleteBeforeFinishedWithFalseStart) {
   client_->EnableFalseStart();
   client_->SetAuthCertificateCallback(AuthCompleteBlock);
-  server_->SetPacketFilter(new BeforeFinished(
+  server_->SetPacketFilter(std::make_shared<BeforeFinished>(
       client_, server_,
       []() {
         
@@ -583,7 +591,7 @@ TEST_P(TlsConnectGenericPre13, AuthCompleteDelayed) {
   EXPECT_EQ(TlsAgent::STATE_CONNECTED, server_->state());
 
   
-  client_->SetPacketFilter(new EnforceNoActivity());
+  client_->SetPacketFilter(std::make_shared<EnforceNoActivity>());
   client_->Handshake();
   EXPECT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
 
@@ -610,7 +618,7 @@ TEST_P(TlsConnectTls13, AuthCompleteDelayed) {
   EXPECT_EQ(TlsAgent::STATE_CONNECTING, server_->state());
 
   
-  client_->SetPacketFilter(new EnforceNoActivity());
+  client_->SetPacketFilter(std::make_shared<EnforceNoActivity>());
   client_->Handshake();
   EXPECT_EQ(TlsAgent::STATE_CONNECTING, client_->state());
 
@@ -724,7 +732,7 @@ class TlsSignatureSchemeConfiguration
         signature_scheme_(std::get<4>(GetParam())) {}
 
  protected:
-  void TestSignatureSchemeConfig(TlsAgent* configPeer) {
+  void TestSignatureSchemeConfig(std::shared_ptr<TlsAgent>& configPeer) {
     EnsureTlsSetup();
     configPeer->SetSignatureSchemes(&signature_scheme_, 1);
     Connect();
@@ -744,8 +752,8 @@ TEST_P(TlsSignatureSchemeConfiguration, SignatureSchemeConfigServer) {
 
 TEST_P(TlsSignatureSchemeConfiguration, SignatureSchemeConfigClient) {
   Reset(certificate_);
-  TlsExtensionCapture* capture =
-      new TlsExtensionCapture(ssl_signature_algorithms_xtn);
+  auto capture =
+      std::make_shared<TlsExtensionCapture>(ssl_signature_algorithms_xtn);
   client_->SetPacketFilter(capture);
   TestSignatureSchemeConfig(client_);
 

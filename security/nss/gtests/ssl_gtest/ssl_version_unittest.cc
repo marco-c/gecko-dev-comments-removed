@@ -57,7 +57,8 @@ TEST_P(TlsConnectGeneric, ServerNegotiateTls12) {
 
 TEST_F(TlsConnectTest, TestDowngradeDetectionToTls11) {
   client_->SetPacketFilter(
-      new TlsInspectorClientHelloVersionSetter(SSL_LIBRARY_VERSION_TLS_1_1));
+      std::make_shared<TlsInspectorClientHelloVersionSetter>(
+          SSL_LIBRARY_VERSION_TLS_1_1));
   ConnectExpectFail();
   ASSERT_EQ(SSL_ERROR_RX_MALFORMED_SERVER_HELLO, client_->error_code());
 }
@@ -65,7 +66,8 @@ TEST_F(TlsConnectTest, TestDowngradeDetectionToTls11) {
 
 TEST_F(DtlsConnectTest, TestDtlsVersion11) {
   client_->SetPacketFilter(
-      new TlsInspectorClientHelloVersionSetter(((~0x0101) & 0xffff)));
+      std::make_shared<TlsInspectorClientHelloVersionSetter>(
+          ((~0x0101) & 0xffff)));
   ConnectExpectFail();
   
   
@@ -77,7 +79,8 @@ TEST_F(DtlsConnectTest, TestDtlsVersion11) {
 TEST_F(TlsConnectTest, TestDowngradeDetectionToTls12) {
   EnsureTlsSetup();
   client_->SetPacketFilter(
-      new TlsInspectorClientHelloVersionSetter(SSL_LIBRARY_VERSION_TLS_1_2));
+      std::make_shared<TlsInspectorClientHelloVersionSetter>(
+          SSL_LIBRARY_VERSION_TLS_1_2));
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
                            SSL_LIBRARY_VERSION_TLS_1_3);
   server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
@@ -90,7 +93,8 @@ TEST_F(TlsConnectTest, TestDowngradeDetectionToTls12) {
 
 TEST_F(TlsConnectTest, TestDowngradeDetectionToTls10) {
   client_->SetPacketFilter(
-      new TlsInspectorClientHelloVersionSetter(SSL_LIBRARY_VERSION_TLS_1_0));
+      std::make_shared<TlsInspectorClientHelloVersionSetter>(
+          SSL_LIBRARY_VERSION_TLS_1_0));
   client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_0,
                            SSL_LIBRARY_VERSION_TLS_1_1);
   server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_0,
@@ -258,9 +262,10 @@ class Tls13NoSupportedVersions : public TlsConnectStreamTls12 {
                              SSL_LIBRARY_VERSION_TLS_1_2);
     server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2, max_server_version);
     client_->SetPacketFilter(
-        new TlsInspectorClientHelloVersionSetter(overwritten_client_version));
-    auto capture =
-        new TlsInspectorRecordHandshakeMessage(kTlsHandshakeServerHello);
+        std::make_shared<TlsInspectorClientHelloVersionSetter>(
+            overwritten_client_version));
+    auto capture = std::make_shared<TlsInspectorRecordHandshakeMessage>(
+        kTlsHandshakeServerHello);
     server_->SetPacketFilter(capture);
     ConnectExpectFail();
     client_->CheckErrorCode(SSL_ERROR_DECRYPT_ERROR_ALERT);
@@ -293,10 +298,11 @@ TEST_F(Tls13NoSupportedVersions,
 
 
 TEST_F(TlsConnectStreamTls13, Tls14ClientHelloWithSupportedVersions) {
-  client_->SetPacketFilter(new TlsInspectorClientHelloVersionSetter(
-      SSL_LIBRARY_VERSION_TLS_1_3 + 1));
-  auto capture =
-      new TlsInspectorRecordHandshakeMessage(kTlsHandshakeServerHello);
+  client_->SetPacketFilter(
+      std::make_shared<TlsInspectorClientHelloVersionSetter>(
+          SSL_LIBRARY_VERSION_TLS_1_3 + 1));
+  auto capture = std::make_shared<TlsInspectorRecordHandshakeMessage>(
+      kTlsHandshakeServerHello);
   server_->SetPacketFilter(capture);
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
