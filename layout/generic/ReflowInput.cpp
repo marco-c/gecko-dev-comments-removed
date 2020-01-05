@@ -2399,10 +2399,9 @@ ReflowInput::InitConstraints(nsPresContext*     aPresContext,
       if (alignCBType == nsGkAtoms::gridContainerFrame) {
         
         
-        auto inlineAxisAlignment =
-          wm.IsOrthogonalTo(cbwm)
-            ? mStylePosition->UsedAlignSelf(alignCB->StyleContext())
-            : mStylePosition->UsedJustifySelf(alignCB->StyleContext());
+        auto inlineAxisAlignment = wm.IsOrthogonalTo(cbwm) ?
+          mStylePosition->UsedAlignSelf(mFrame->StyleContext()->GetParent()) :
+          mStylePosition->UsedJustifySelf(mFrame->StyleContext()->GetParent());
         if ((inlineAxisAlignment != NS_STYLE_ALIGN_STRETCH &&
              inlineAxisAlignment != NS_STYLE_ALIGN_NORMAL) ||
             mStyleMargin->mMargin.GetIStartUnit(wm) == eStyleUnit_Auto ||

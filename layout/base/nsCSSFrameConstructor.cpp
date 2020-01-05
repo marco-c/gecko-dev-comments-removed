@@ -1741,7 +1741,7 @@ nsCSSFrameConstructor::CreateGeneratedContent(nsFrameConstructorState& aState,
 
     case eStyleContentType_Counter:
     case eStyleContentType_Counters: {
-      nsCSSValue::ThreadSafeArray* counters = data.GetCounters();
+      nsCSSValue::Array* counters = data.GetCounters();
       nsCounterList* counterList = mCounterManager.CounterListFor(
           nsDependentString(counters->Item(0).GetStringBufferValue()));
 
@@ -7379,31 +7379,6 @@ nsCSSFrameConstructor::MaybeRecreateForFrameset(nsIFrame* aParentFrame,
 }
 
 void
-nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
-                                          nsIContent* aEndChild)
-{
-  ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
-
-  for (nsIContent* child = aStartChild; child != aEndChild;
-       child = child->GetNextSibling()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (child->IsElement() && !child->AsElement()->HasServoData()) {
-      Element* parent = child->AsElement()->GetFlattenedTreeParentElement();
-      MOZ_ASSERT(parent);
-      styleSet->StyleNewChildren(parent);
-    }
-  }
-}
-
-void
 nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                        nsIContent* aFirstNewContent,
                                        bool aAllowLazyConstruction,
@@ -7453,47 +7428,9 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   }
 #endif 
 
-  
-  
-  
-  
-  
-  bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
-                                     !RestyleManager()->IsInStyleRefresh();
-
-  bool isNewShadowTreeContent =
-    aContainer && aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-    !aContainer->IsInNativeAnonymousSubtree() &&
-    !aFirstNewContent->IsInNativeAnonymousSubtree();
-
-  if (!isNewShadowTreeContent) {
-    
-    if (!GetContentInsertionFrameFor(aContainer) &&
-        !aContainer->IsActiveChildrenElement()) {
-      
-      
-      
-      if (isNewlyAddedContentForServo) {
-        aContainer->AsElement()->NoteDirtyDescendantsForServo();
-      }
-      return;
-    }
-
-    if (aAllowLazyConstruction &&
-        MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
-      if (isNewlyAddedContentForServo) {
-        aContainer->AsElement()->NoteDirtyDescendantsForServo();
-      }
-      return;
-    }
-  }
-
-  
-  if (isNewlyAddedContentForServo) {
-    StyleNewChildRange(aFirstNewContent, nullptr);
-  }
-
-  if (isNewShadowTreeContent) {
+  if (aContainer && aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
+      !aContainer->IsInNativeAnonymousSubtree() &&
+      !aFirstNewContent->IsInNativeAnonymousSubtree()) {
     
     
     
@@ -7504,6 +7441,39 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                              REMOVE_FOR_RECONSTRUCTION, nullptr);
     LAYOUT_PHASE_TEMP_REENTER();
     return;
+  }
+
+  
+  
+  
+  
+  
+  bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
+                                     !RestyleManager()->IsInStyleRefresh();
+
+  
+  if (!GetContentInsertionFrameFor(aContainer) &&
+      !aContainer->IsActiveChildrenElement()) {
+    
+    
+    
+    if (isNewlyAddedContentForServo) {
+      aContainer->AsElement()->NoteDirtyDescendantsForServo();
+    }
+    return;
+  }
+
+  if (aAllowLazyConstruction &&
+      MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
+    if (isNewlyAddedContentForServo) {
+      aContainer->AsElement()->NoteDirtyDescendantsForServo();
+    }
+    return;
+  }
+
+  
+  if (isNewlyAddedContentForServo) {
+    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContainer->AsElement());
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7923,6 +7893,22 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
     return;
   }
 
+  if (aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
+      !aContainer->IsInNativeAnonymousSubtree() &&
+      (!aStartChild || !aStartChild->IsInNativeAnonymousSubtree()) &&
+      (!aEndChild || !aEndChild->IsInNativeAnonymousSubtree())) {
+    
+    
+    
+    
+    nsIContent* bindingParent = aContainer->GetBindingParent();
+    LAYOUT_PHASE_TEMP_EXIT();
+    RecreateFramesForContent(bindingParent, false,
+                             REMOVE_FOR_RECONSTRUCTION, nullptr);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return;
+  }
+
   
   
   
@@ -7931,13 +7917,10 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
                                      !RestyleManager()->IsInStyleRefresh();
 
-  bool isNewShadowTreeContent =
-    aContainer->HasFlag(NODE_IS_IN_SHADOW_TREE) &&
-    !aContainer->IsInNativeAnonymousSubtree() &&
-    (!aStartChild || !aStartChild->IsInNativeAnonymousSubtree()) &&
-    (!aEndChild || !aEndChild->IsInNativeAnonymousSubtree());
 
-  if (!isNewShadowTreeContent) {
+  
+  
+  {
     nsContainerFrame* parentFrame = GetContentInsertionFrameFor(aContainer);
     
     
@@ -7967,20 +7950,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   
   if (isNewlyAddedContentForServo) {
-    StyleNewChildRange(aStartChild, aEndChild);
-  }
-
-  if (isNewShadowTreeContent) {
-    
-    
-    
-    
-    nsIContent* bindingParent = aContainer->GetBindingParent();
-    LAYOUT_PHASE_TEMP_EXIT();
-    RecreateFramesForContent(bindingParent, false,
-                             REMOVE_FOR_RECONSTRUCTION, nullptr);
-    LAYOUT_PHASE_TEMP_REENTER();
-    return;
+    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContainer->AsElement());
   }
 
   InsertionPoint insertion;
@@ -11525,7 +11495,7 @@ nsCSSFrameConstructor::CreateFloatingLetterFrame(
     nextTextFrame =
       CreateContinuingFrame(aState.mPresContext, aTextFrame, aParentFrame);
     
-    nsStyleContext* parentStyleContext = aStyleContext->GetParentAllowServo();
+    nsStyleContext* parentStyleContext = aStyleContext->GetParent();
     if (parentStyleContext) {
       RefPtr<nsStyleContext> newSC = styleSet->
         ResolveStyleForText(aTextContent, parentStyleContext);
