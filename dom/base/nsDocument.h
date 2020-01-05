@@ -775,12 +775,6 @@ public:
 
   virtual nsViewportInfo GetViewportInfo(const mozilla::ScreenIntSize& aDisplaySize) override;
 
-  
-
-
-
-  void OnAppThemeChanged();
-
   void ReportUseCounters();
 
 private:
@@ -1428,12 +1422,6 @@ public:
 
   uint16_t mCurrentOrientationAngle;
   mozilla::dom::OrientationType mCurrentOrientationType;
-
-  
-  
-  
-  
-  bool mObservingAppThemeChanged:1;
 
   
   

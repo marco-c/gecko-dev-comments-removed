@@ -877,11 +877,6 @@ pref("gfx.screen-mirroring.enabled", true);
 pref("b2g.neterror.url", "net_error.html");
 
 
-pref("b2g.theme.origin", "app://theme.gaiamobile.org");
-pref("dom.mozApps.themable", true);
-pref("dom.mozApps.selected_theme", "default_theme.gaiamobile.org");
-
-
 pref("network.proxy.pac_generator", true);
 
 
