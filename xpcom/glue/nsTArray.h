@@ -2017,6 +2017,16 @@ public:
   
   void Sort() { Sort(nsDefaultComparator<elem_type, elem_type>()); }
 
+  
+  void Reverse()
+  {
+    elem_type* elements = Elements();
+    const size_type len = Length();
+    for (index_type i = 0, iend = len / 2; i < iend; ++i) {
+      mozilla::Swap(elements[i], elements[len - i - 1]);
+    }
+  }
+
 protected:
   using base_type::Hdr;
   using base_type::ShrinkCapacity;
