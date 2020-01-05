@@ -381,8 +381,8 @@ pub type ProtoOrIfaceArray = [*mut JSObject; PrototypeList::ID::Count as usize];
 
 
 pub fn initialize_global(global: *mut JSObject) {
-    let proto_array: Box<ProtoOrIfaceArray> = box ()
-        ([0 as *mut JSObject; PrototypeList::ID::Count as usize]);
+    let proto_array: Box<ProtoOrIfaceArray> =
+        box [0 as *mut JSObject; PrototypeList::ID::Count as usize];
     unsafe {
         assert!(((*JS_GetClass(global)).flags & JSCLASS_DOM_GLOBAL) != 0);
         let box_ = Box::into_raw(proto_array);
@@ -392,18 +392,18 @@ pub fn initialize_global(global: *mut JSObject) {
     }
 }
 
-
+/// A trait to provide access to the `Reflector` for a DOM object.
 pub trait Reflectable {
-    
+    /// Returns the receiver's reflector.
     fn reflector<'a>(&'a self) -> &'a Reflector;
-    
+    /// Initializes the Reflector
     fn init_reflector(&mut self, _obj: *mut JSObject) {
         panic!("Cannot call init on this Reflectable");
     }
 }
 
-
-
+/// Create the reflector for a new DOM object and yield ownership to the
+/// reflector.
 pub fn reflect_dom_object<T: Reflectable>
         (obj:     Box<T>,
          global:  GlobalRef,
@@ -412,11 +412,11 @@ pub fn reflect_dom_object<T: Reflectable>
     wrap_fn(global.get_cx(), global, obj)
 }
 
-
+/// A struct to store a reference to the reflector of a DOM object.
 #[allow(raw_pointer_derive, unrooted_must_root)]
 #[must_root]
 #[servo_lang = "reflector"]
-
+// If you're renaming or moving this field, update the path in plugins::reflector as well
 pub struct Reflector {
     object: UnsafeCell<*mut JSObject>,
 }
@@ -429,13 +429,13 @@ impl PartialEq for Reflector {
 }
 
 impl Reflector {
-    
+    /// Get the reflector.
     #[inline]
     pub fn get_jsobject(&self) -> HandleObject {
         HandleObject { ptr: self.object.get() }
     }
 
-    
+    /// Initialize the reflector. (May be called only once.)
     pub fn set_jsobject(&mut self, object: *mut JSObject) {
         unsafe {
             let obj = self.object.get();
@@ -445,14 +445,14 @@ impl Reflector {
         }
     }
 
-    
-    
-    
+    /// Return a pointer to the memory location at which the JS reflector
+    /// object is stored. Used to root the reflector, as
+    /// required by the JSAPI rooting APIs.
     pub fn rootable(&self) -> *mut *mut JSObject {
         self.object.get()
     }
 
-    
+    /// Create an uninitialized `Reflector`.
     pub fn new() -> Reflector {
         Reflector {
             object: UnsafeCell::new(ptr::null_mut())
@@ -460,15 +460,15 @@ impl Reflector {
     }
 }
 
-
-
-
-
+/// Gets the property `id` on  `proxy`'s prototype. If it exists, `*found` is
+/// set to true and `*vp` to the value, otherwise `*found` is set to false.
+///
+/// Returns false on JSAPI failure.
 pub fn get_property_on_prototype(cx: *mut JSContext, proxy: HandleObject,
                                  id: HandleId, found: *mut bool, vp: MutableHandleValue)
                                  -> bool {
     unsafe {
-      
+      //let proto = GetObjectProto(proxy);
       let mut proto = RootedObject::new(cx, ptr::null_mut());
       if JS_GetPrototype(cx, proxy, proto.handle_mut()) == 0 ||
          proto.ptr.is_null() {
@@ -489,8 +489,8 @@ pub fn get_property_on_prototype(cx: *mut JSContext, proxy: HandleObject,
   }
 }
 
-
-
+/// Get an array index from the given `jsid`. Returns `None` if the given
+/// `jsid` is not an integer.
 pub fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32> {
     unsafe {
         if RUST_JSID_IS_INT(id) != 0 {
@@ -498,25 +498,25 @@ pub fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32>
         }
         return None;
     }
-    
-    
+    // if id is length atom, -1, otherwise
+    /*return if JSID_IS_ATOM(id) {
+        let atom = JSID_TO_ATOM(id);
+        //let s = *GetAtomChars(id);
+        if s > 'a' && s < 'z' {
+            return -1;
+        }
 
-
-
-
-
-
-
-
-
-
-
-
+        let i = 0;
+        let str = AtomToLinearString(JSID_TO_ATOM(id));
+        return if StringIsArray(str, &mut i) != 0 { i } else { -1 }
+    } else {
+        IdToInt32(cx, id);
+    }*/
 }
 
-
-
-
+/// Find the index of a string given by `v` in `values`.
+/// Returns `Err(())` on JSAPI failure (there is a pending exception), and
+/// `Ok(None)` if there was no matching string.
 pub fn find_enum_string_index(cx: *mut JSContext,
                               v: HandleValue,
                               values: &[&'static str])
@@ -530,31 +530,31 @@ pub fn find_enum_string_index(cx: *mut JSContext,
     Ok(values.iter().position(|value| value == &search))
 }
 
-
-
+/// Returns wether `obj` is a platform object
+/// https://heycam.github.io/webidl/#dfn-platform-object
 pub fn is_platform_object(obj: *mut JSObject) -> bool {
     unsafe {
-        
+        // Fast-path the common case
         let mut clasp = JS_GetClass(obj);
         if is_dom_class(&*clasp) {
             return true;
         }
-        
+        // Now for simplicity check for security wrappers before anything else
         if IsWrapper(obj) == 1 {
-            let unwrapped_obj = UnwrapObject(obj,  0);
+            let unwrapped_obj = UnwrapObject(obj, /* stopAtOuter = */ 0);
             if unwrapped_obj.is_null() {
                 return false;
             }
             clasp = js::jsapi::JS_GetClass(obj);
         }
-        
+        // TODO also check if JS_IsArrayBufferObject
         return is_dom_class(&*clasp);
     }
 }
 
-
-
-
+/// Get the property with name `property` from `object`.
+/// Returns `Err(())` on JSAPI failure (there is a pending exception), and
+/// `Ok(false)` if there was no property with the given name.
 pub fn get_dictionary_property(cx: *mut JSContext,
                                object: HandleObject,
                                property: &str,
@@ -594,9 +594,9 @@ pub fn get_dictionary_property(cx: *mut JSContext,
     Ok(true)
 }
 
-
-
-
+/// Set the property with name `property` from `object`.
+/// Returns `Err(())` on JSAPI failure, or null object,
+/// and Ok(()) otherwise
 pub fn set_dictionary_property(cx: *mut JSContext,
                                object: HandleObject,
                                property: &str,
@@ -615,16 +615,16 @@ pub fn set_dictionary_property(cx: *mut JSContext,
     Ok(())
 }
 
-
+/// Returns whether `proxy` has a property `id` on its prototype.
 pub fn has_property_on_prototype(cx: *mut JSContext, proxy: HandleObject,
                                  id: HandleId) -> bool {
-    
+    //  MOZ_ASSERT(js::IsProxy(proxy) && js::GetProxyHandler(proxy) == handler);
     let mut found = false;
     return !get_property_on_prototype(cx, proxy, id, &mut found,
                                       MutableHandleValue { ptr: ptr::null_mut() }) || found;
 }
 
-
+/// Create a DOM global object with the given class.
 pub fn create_dom_global(cx: *mut JSContext, class: *const JSClass,
                          trace: JSTraceOp)
                          -> *mut JSObject {
@@ -648,7 +648,7 @@ pub fn create_dom_global(cx: *mut JSContext, class: *const JSClass,
     }
 }
 
-
+/// Drop the resources held by reserved slots of a global object
 pub unsafe fn finalize_global(obj: *mut JSObject) {
     let protolist = get_proto_or_iface_array(obj);
     let list = (*protolist).as_mut_ptr();
@@ -663,7 +663,7 @@ pub unsafe fn finalize_global(obj: *mut JSObject) {
         Box::from_raw(protolist);
 }
 
-
+/// Trace the resources held by reserved slots of a global object
 pub unsafe fn trace_global(tracer: *mut JSTracer, obj: *mut JSObject) {
     let array = get_proto_or_iface_array(obj);
     for proto in (&*array).iter() {
@@ -677,8 +677,8 @@ unsafe extern fn wrap(cx: *mut JSContext,
                       _existing: HandleObject,
                       obj: HandleObject)
                       -> *mut JSObject {
-    
-    
+    // FIXME terrible idea. need security wrappers
+    // https://github.com/servo/servo/issues/2382
     WrapperNew(cx, obj, GetCrossCompartmentWrapper())
 }
 
@@ -689,23 +689,23 @@ unsafe extern fn pre_wrap(cx: *mut JSContext, _existing: HandleObject,
     JS_ObjectToOuterObject(cx, obj)
 }
 
-
+/// Callback table for use with JS_SetWrapObjectCallbacks
 pub static WRAP_CALLBACKS: JSWrapObjectCallbacks = JSWrapObjectCallbacks {
     wrap: Some(wrap),
     preWrap: Some(pre_wrap),
 };
 
-
+/// Callback to outerize windows.
 pub unsafe extern fn outerize_global(_cx: *mut JSContext, obj: HandleObject) -> *mut JSObject {
     debug!("outerizing");
     let win: Root<window::Window> = native_from_handleobject(obj).unwrap();
-    
+    // FIXME(https://github.com/rust-lang/rust/issues/23338)
     let win = win.r();
     let context = win.browsing_context();
     context.as_ref().unwrap().window_proxy()
 }
 
-
+/// Deletes the property `id` from `object`.
 pub unsafe fn delete_property_by_id(cx: *mut JSContext, object: HandleObject,
                                     id: HandleId, bp: *mut ObjectOpResult) -> u8 {
     JS_DeletePropertyById1(cx, object, id, bp)
@@ -748,21 +748,21 @@ unsafe fn generic_call(cx: *mut JSContext, argc: libc::c_uint, vp: *mut JSVal,
     call(info, cx, obj.handle(), this as *mut libc::c_void, argc, vp)
 }
 
-
+/// Generic method of IDL interface.
 pub unsafe extern fn generic_method(cx: *mut JSContext,
                                     argc: libc::c_uint, vp: *mut JSVal)
                                     -> u8 {
     generic_call(cx, argc, vp, false, CallJitMethodOp)
 }
 
-
+/// Generic getter of IDL interface.
 pub unsafe extern fn generic_getter(cx: *mut JSContext,
                                     argc: libc::c_uint, vp: *mut JSVal)
                                     -> u8 {
     generic_call(cx, argc, vp, false, CallJitGetterOp)
 }
 
-
+/// Generic lenient getter of IDL interface.
 pub unsafe extern fn generic_lenient_getter(cx: *mut JSContext,
                                             argc: libc::c_uint,
                                             vp: *mut JSVal)
@@ -781,14 +781,14 @@ unsafe extern fn call_setter(info: *const JSJitInfo, cx: *mut JSContext,
     1
 }
 
-
+/// Generic setter of IDL interface.
 pub unsafe extern fn generic_setter(cx: *mut JSContext,
                                     argc: libc::c_uint, vp: *mut JSVal)
                                     -> u8 {
     generic_call(cx, argc, vp, false, call_setter)
 }
 
-
+/// Generic lenient setter of IDL interface.
 pub unsafe extern fn generic_lenient_setter(cx: *mut JSContext,
                                             argc: libc::c_uint,
                                             vp: *mut JSVal)
@@ -796,15 +796,15 @@ pub unsafe extern fn generic_lenient_setter(cx: *mut JSContext,
     generic_call(cx, argc, vp, true, call_setter)
 }
 
-
+/// Validate a qualified name. See https://dom.spec.whatwg.org/#validate for details.
 pub fn validate_qualified_name(qualified_name: &str) -> ErrorResult {
     match xml_name_type(qualified_name) {
         XMLName::InvalidXMLName => {
-            
+            // Step 1.
             return Err(Error::InvalidCharacter);
         },
         XMLName::Name => {
-            
+            // Step 2.
             return Err(Error::Namespace);
         },
         XMLName::QName => Ok(())
@@ -819,24 +819,24 @@ unsafe extern "C" fn instance_class_has_proto_at_depth(clasp: *const js::jsapi::
     (domclass.dom_class.interface_chain[depth as usize] as u32 == proto_id) as u8
 }
 
-#[allow(missing_docs)]  
+#[allow(missing_docs)]  // FIXME
 pub const DOM_CALLBACKS: DOMCallbacks = DOMCallbacks {
     instanceClassMatchesProto: Some(instance_class_has_proto_at_depth),
 };
 
-
-
+/// Validate a namespace and qualified name and extract their parts.
+/// See https://dom.spec.whatwg.org/#validate-and-extract for details.
 pub fn validate_and_extract(namespace: Option<DOMString>, qualified_name: &str)
                             -> Fallible<(Namespace, Option<Atom>, Atom)> {
-    
+    // Step 1.
     let namespace = namespace_from_domstring(namespace);
 
-    
+    // Step 2.
     try!(validate_qualified_name(qualified_name));
 
     let colon = ':';
 
-    
+    // Step 5.
     let mut parts = qualified_name.splitn(2, colon);
 
     let (maybe_prefix, local_name) = {

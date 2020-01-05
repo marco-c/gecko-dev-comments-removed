@@ -22,7 +22,7 @@ pub fn match_ty_unwrap<'a>(ty: &'a Ty, segments: &[&str]) -> Option<&'a [P<Ty>]>
             
             
             
-            if seg.iter().rev().zip(segments.iter().rev()).all(|(a,b)| a.identifier.as_str() == *b) {
+            if seg.iter().rev().zip(segments.iter().rev()).all(|(a,b)| a.identifier.name.as_str() == *b) {
                 match seg.last() {
                     Some(&PathSegment {parameters: AngleBracketedParameters(ref a), ..}) => {
                         Some(&a.types)
