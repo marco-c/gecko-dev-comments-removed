@@ -46,6 +46,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsNumberControlFrame.h"
 #include "nsFrameSelection.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/layers/ScrollInputMethods.h"
 
@@ -1498,6 +1499,12 @@ nsTextEditorState::PrepareEditor(const nsAString *aValue)
   }
 
   
+  
+  
+  
+  
+  
+  
   if (number) {
     number->ClearSelectionCached();
   } else {
@@ -1557,39 +1564,48 @@ nsTextEditorState::SetSelectionProperties(nsTextEditorState::SelectionProperties
   }
 }
 
-nsresult
+void
 nsTextEditorState::GetSelectionRange(int32_t* aSelectionStart,
-                                     int32_t* aSelectionEnd)
+                                     int32_t* aSelectionEnd,
+                                     ErrorResult& aRv)
 {
   MOZ_ASSERT(aSelectionStart);
   MOZ_ASSERT(aSelectionEnd);
+  MOZ_ASSERT(IsSelectionCached() || GetSelectionController(),
+             "How can we not have a cached selection if we have no selection "
+             "controller?");
 
-  if (!mBoundFrame) {
-    return NS_ERROR_FAILURE;
+  
+  
+  if (IsSelectionCached()) {
+    const SelectionProperties& props = GetSelectionProperties();
+    *aSelectionStart = props.GetStart();
+    *aSelectionEnd = props.GetEnd();
+    return;
   }
 
-  
-  
-  
-
-  nsresult rv = mBoundFrame->EnsureEditorInitialized();
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsISelectionController* selCon = GetSelectionController();
-  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsISelection> selection;
-  rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
-                            getter_AddRefs(selection));
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
+  nsresult rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                                     getter_AddRefs(selection));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    aRv.Throw(rv);
+    return;
+  }
+  if (NS_WARN_IF(!selection)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
+  }
 
   dom::Selection* sel = selection->AsSelection();
   mozilla::dom::Element* root = GetRootNode();
-  NS_ENSURE_STATE(root);
+  if (NS_WARN_IF(!root)) {
+    aRv.Throw(NS_ERROR_UNEXPECTED);
+    return;
+  }
   nsContentUtils::GetSelectionInTextControl(sel, root,
                                             *aSelectionStart, *aSelectionEnd);
-  return NS_OK;
 }
 
 nsresult
@@ -1702,29 +1718,26 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
   
   
   
-  
-  int32_t start = 0, end = 0;
-  nsITextControlFrame::SelectionDirection direction =
-    nsITextControlFrame::eForward;
-  if (mEditorInitialized) {
+  if (!IsSelectionCached()) {
+    
+    int32_t start = 0, end = 0;
+    nsITextControlFrame::SelectionDirection direction =
+      nsITextControlFrame::eForward;
+    IgnoredErrorResult rangeRv;
+    GetSelectionRange(&start, &end, rangeRv);
+    GetSelectionDirection(&direction);
+    MOZ_ASSERT(aFrame == mBoundFrame);
+    SelectionProperties& props = GetSelectionProperties();
+    props.SetStart(start);
+    props.SetEnd(end);
+    props.SetDirection(direction);
     HTMLInputElement* number = GetParentNumberControl(aFrame);
     if (number) {
       
       
       
-      SelectionProperties props;
-      GetSelectionRange(&start, &end);
-      GetSelectionDirection(&direction);
-      props.SetStart(start);
-      props.SetEnd(end);
-      props.SetDirection(direction);
-      number->SetSelectionProperties(props);
+      number->SetSelectionCached();
     } else {
-      GetSelectionRange(&start, &end);
-      GetSelectionDirection(&direction);
-      mSelectionProperties.SetStart(start);
-      mSelectionProperties.SetEnd(end);
-      mSelectionProperties.SetDirection(direction);
       mSelectionCached = true;
     }
   }
@@ -2262,6 +2275,19 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     }
     if (!mValue->Assign(value, fallible)) {
       return false;
+    }
+
+    
+    if (IsSelectionCached()) {
+      SelectionProperties& props = GetSelectionProperties();
+      if (aFlags & eSetValue_MoveCursorToEnd) {
+        props.SetStart(value.Length());
+        props.SetEnd(value.Length());
+      } else {
+        
+        props.SetStart(std::min(uint32_t(props.GetStart()), value.Length()));
+        props.SetEnd(std::min(uint32_t(props.GetEnd()), value.Length()));
+      }
     }
 
     
