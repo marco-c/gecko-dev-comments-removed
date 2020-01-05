@@ -14,6 +14,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 
 
+
 function FormAutofillHandler(form) {
   this.form = form;
   this.fieldDetails = [];
@@ -130,5 +131,3 @@ FormAutofillHandler.prototype = {
     }
   },
 };
-
-this.EXPORTED_SYMBOLS = ["FormAutofillHandler"];
