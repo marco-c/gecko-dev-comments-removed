@@ -17,6 +17,7 @@ use std::any::Any;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::boxed::BoxAny;
 use style::stylesheets::Stylesheet;
+use style::media_queries::MediaQueryList;
 use url::Url;
 
 pub use dom::node::TrustedNodeAddress;
@@ -24,10 +25,10 @@ pub use dom::node::TrustedNodeAddress;
 
 pub enum Msg {
     
-    AddStylesheet(Stylesheet),
+    AddStylesheet(Stylesheet, MediaQueryList),
 
     
-    LoadStylesheet(Url),
+    LoadStylesheet(Url, MediaQueryList),
 
     
     SetQuirksMode,
