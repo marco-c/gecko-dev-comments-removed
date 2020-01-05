@@ -74,7 +74,7 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn mem_profiler_chan(&self) -> mem::ProfilerChan {
+    pub fn mem_profiler_chan(&self) -> &mem::ProfilerChan {
         match *self {
             GlobalRef::Window(window) => window.mem_profiler_chan(),
             GlobalRef::Worker(worker) => worker.mem_profiler_chan(),
@@ -82,7 +82,7 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn constellation_chan(&self) -> ConstellationChan<ConstellationMsg> {
+    pub fn constellation_chan(&self) -> &ConstellationChan<ConstellationMsg> {
         match *self {
             GlobalRef::Window(window) => window.constellation_chan(),
             GlobalRef::Worker(worker) => worker.constellation_chan(),
@@ -90,7 +90,7 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn scheduler_chan(&self) -> IpcSender<TimerEventRequest> {
+    pub fn scheduler_chan(&self) -> &IpcSender<TimerEventRequest> {
         match *self {
             GlobalRef::Window(window) => window.scheduler_chan(),
             GlobalRef::Worker(worker) => worker.scheduler_chan(),
