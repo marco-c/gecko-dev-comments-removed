@@ -130,6 +130,7 @@ extern nsresult nsStringInputStreamConstructor(nsISupports*, REFNSIID, void**);
 #include "mozilla/Services.h"
 #include "mozilla/Omnijar.h"
 #include "mozilla/HangMonitor.h"
+#include "mozilla/SystemGroup.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/BackgroundHangMonitor.h"
 
@@ -554,6 +555,9 @@ NS_InitXPCOM2(nsIServiceManager** aResult,
   }
 
   
+  SystemGroup::InitStatic();
+
+  
   rv = nsTimerImpl::Startup();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -785,6 +789,9 @@ NS_InitMinimalXPCOM()
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
+
+  
+  SystemGroup::InitStatic();
 
   
   rv = nsTimerImpl::Startup();
@@ -1064,6 +1071,9 @@ ShutdownXPCOM(nsIServiceManager* aServMgr)
   }
   nsComponentManagerImpl::gComponentManager = nullptr;
   nsCategoryManager::Destroy();
+
+  
+  SystemGroup::Shutdown();
 
   NS_ShutdownAtomTable();
 

@@ -8,6 +8,7 @@
 #define mozilla_SystemGroup_h
 
 #include "mozilla/TaskCategory.h"
+#include "mozilla/Dispatcher.h"
 
 
 
@@ -16,7 +17,8 @@
 
 namespace mozilla {
 
-class SystemGroup {
+class SystemGroup
+{
  public:
   
   static nsresult Dispatch(const char* aName,
@@ -25,6 +27,13 @@ class SystemGroup {
 
   
   static nsIEventTarget* EventTargetFor(TaskCategory aCategory);
+
+  
+  
+  static AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
+
+  static void InitStatic();
+  static void Shutdown();
 };
 
 } 
