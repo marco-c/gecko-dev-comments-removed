@@ -388,7 +388,7 @@ fn have_same_class<E: TElement>(element: &E,
         candidate.class_attributes = Some(attrs)
     }
 
-    element_class_attributes == candidate.class_attributes.clone().unwrap()
+    element_class_attributes == *candidate.class_attributes.as_ref().unwrap()
 }
 
 
