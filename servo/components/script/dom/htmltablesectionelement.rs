@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrHelpers};
+use dom::attr::Attr;
 use dom::bindings::codegen::Bindings::HTMLTableSectionElementBinding;
 use dom::bindings::codegen::InheritTypes::{HTMLElementCast, HTMLTableSectionElementDerived};
 use dom::bindings::js::Root;
@@ -51,12 +51,9 @@ impl HTMLTableSectionElement {
     }
 }
 
-pub trait HTMLTableSectionElementHelpers {
-    fn get_background_color(self) -> Option<RGBA>;
-}
 
-impl<'a> HTMLTableSectionElementHelpers for &'a HTMLTableSectionElement {
-    fn get_background_color(self) -> Option<RGBA> {
+impl HTMLTableSectionElement {
+    pub fn get_background_color(&self) -> Option<RGBA> {
         self.background_color.get()
     }
 }

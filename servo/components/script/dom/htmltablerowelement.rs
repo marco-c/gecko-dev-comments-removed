@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrHelpers};
+use dom::attr::Attr;
 use dom::bindings::codegen::Bindings::HTMLTableRowElementBinding;
 use dom::bindings::codegen::InheritTypes::{HTMLElementCast, HTMLTableRowElementDerived};
 use dom::bindings::js::Root;
@@ -53,12 +53,9 @@ impl HTMLTableRowElement {
 }
 
 
-pub trait HTMLTableRowElementHelpers {
-    fn get_background_color(self) -> Option<RGBA>;
-}
 
-impl<'a> HTMLTableRowElementHelpers for &'a HTMLTableRowElement {
-    fn get_background_color(self) -> Option<RGBA> {
+impl HTMLTableRowElement {
+    pub fn get_background_color(&self) -> Option<RGBA> {
         self.background_color.get()
     }
 }

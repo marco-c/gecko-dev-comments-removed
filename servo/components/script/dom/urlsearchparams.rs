@@ -123,25 +123,19 @@ impl<'a> URLSearchParamsMethods for &'a URLSearchParams {
     }
 }
 
-pub trait URLSearchParamsHelpers {
-    fn serialize(self, encoding: Option<EncodingRef>) -> DOMString;
-}
 
-impl<'a> URLSearchParamsHelpers for &'a URLSearchParams {
+impl URLSearchParams {
     
-    fn serialize(self, encoding: Option<EncodingRef>) -> DOMString {
+    pub fn serialize(&self, encoding: Option<EncodingRef>) -> DOMString {
         let list = self.list.borrow();
         serialize_with_encoding(list.iter(), encoding)
     }
 }
 
-trait PrivateURLSearchParamsHelpers {
-    fn update_steps(self);
-}
 
-impl<'a> PrivateURLSearchParamsHelpers for &'a URLSearchParams {
+impl URLSearchParams {
     
-    fn update_steps(self) {
+    fn update_steps(&self) {
         
     }
 }
