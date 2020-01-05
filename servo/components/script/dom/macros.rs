@@ -111,7 +111,7 @@ macro_rules! make_enumerated_getter(
             let element: JSRef<Element> = ElementCast::from_ref(self);
             let val = element.get_string_attribute(&Atom::from_slice($htmlname))
                              .into_ascii_lowercase();
-            // https://html.spec.whatwg.org/multipage/forms.html#attr-fs-method
+            // https://html.spec.whatwg.org/multipage/#attr-fs-method
             match val.as_slice() {
                 $($choices)|+ => val,
                 _ => $default.to_owned()
