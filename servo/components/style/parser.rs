@@ -81,3 +81,11 @@ impl<'a> ParserContext<'a> {
 pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str, parsercontext: &ParserContext) {
     parsercontext.error_reporter.report_error(input, position, message);
 }
+
+
+
+
+
+pub trait Parse {
+    fn parse(input: &mut Parser) -> Result<Self, ()> where Self: Sized;
+}

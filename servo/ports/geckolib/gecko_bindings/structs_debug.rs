@@ -6375,8 +6375,7 @@ fn bindgen_test_layout_StyleAnimation() {
 #[repr(C)]
 #[derive(Debug)]
 pub struct StyleBasicShape {
-    pub mRefCnt: nsAutoRefCnt,
-    pub _mOwningThread: nsAutoOwningThread,
+    pub mRefCnt: ThreadSafeAutoRefCnt,
     pub mType: StyleBasicShapeType,
     pub mFillRule: StyleFillRule,
     pub mCoordinates: nsTArray<nsStyleCoord>,
@@ -6385,7 +6384,7 @@ pub struct StyleBasicShape {
 }
 #[test]
 fn bindgen_test_layout_StyleBasicShape() {
-    assert_eq!(::std::mem::size_of::<StyleBasicShape>() , 128usize);
+    assert_eq!(::std::mem::size_of::<StyleBasicShape>() , 120usize);
     assert_eq!(::std::mem::align_of::<StyleBasicShape>() , 8usize);
 }
 #[repr(C)]
