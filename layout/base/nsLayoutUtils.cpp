@@ -603,10 +603,10 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
       for (const AnimationPropertySegment& segment : prop.mSegments) {
         
         
-        if (segment.HasReplacableFromValue()) {
+        if (segment.HasReplaceableFromValue()) {
           UpdateMinMaxScale(aFrame, segment.mFromValue, aMinScale, aMaxScale);
         }
-        if (segment.HasReplacableToValue()) {
+        if (segment.HasReplaceableToValue()) {
           UpdateMinMaxScale(aFrame, segment.mToValue, aMinScale, aMaxScale);
         }
       }

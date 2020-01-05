@@ -467,7 +467,7 @@ KeyframeEffectReadOnly::EnsureBaseStyles(
 
   for (const AnimationProperty& property : aProperties) {
     for (const AnimationPropertySegment& segment : property.mSegments) {
-      if (segment.HasReplacableValues()) {
+      if (segment.HasReplaceableValues()) {
         continue;
       }
 
@@ -1660,7 +1660,7 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
       
       
       
-      if (!segment.HasReplacableValues()) {
+      if (!segment.HasReplaceableValues()) {
         mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
         return;
       }
