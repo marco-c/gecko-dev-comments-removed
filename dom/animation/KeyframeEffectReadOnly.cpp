@@ -101,7 +101,7 @@ KeyframeEffectReadOnly::IterationComposite() const
 CompositeOperation
 KeyframeEffectReadOnly::Composite() const
 {
-  return CompositeOperation::Replace;
+  return mEffectOptions.mComposite;
 }
 
 void
@@ -583,6 +583,10 @@ KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
     
     if (AnimationUtils::IsCoreAPIEnabledForCaller()) {
       result.mIterationComposite = options.mIterationComposite;
+      
+      if (options.mComposite != dom::CompositeOperation::Add) {
+        result.mComposite = options.mComposite;
+      }
     }
   }
   return result;
