@@ -17,36 +17,93 @@ from mozrunner import Runner, FennecEmulatorRunner
 
 class GeckoInstance(object):
     required_prefs = {
-        "browser.sessionstore.resume_from_crash": False,
-        "browser.shell.checkDefaultBrowser": False,
-        
-        "browser.startup.homepage_override.mstone": "ignore",
-        "browser.startup.page": 0,
-        "browser.tabs.remote.autostart.1": False,
-        "browser.tabs.remote.autostart.2": False,
-        "browser.tabs.remote.autostart": False,
-        "browser.urlbar.userMadeSearchSuggestionsChoice": True,
-        "browser.warnOnQuit": False,
-        "datareporting.healthreport.logging.consoleEnabled": False,
-        "datareporting.healthreport.service.enabled": False,
-        "datareporting.healthreport.service.firstRun": False,
-        "datareporting.healthreport.uploadEnabled": False,
-        "datareporting.policy.dataSubmissionEnabled": False,
-        "datareporting.policy.dataSubmissionPolicyAccepted": False,
-        "dom.ipc.reportProcessHangs": False,
         
         
         
-        "extensions.enabledScopes": 5,
-        "extensions.autoDisableScopes": 10,
-        "focusmanager.testmode": True,
-        "marionette.defaultPrefs.enabled": True,
-        "startup.homepage_welcome_url": "",
-        "startup.homepage_welcome_url.additional": "",
-        "toolkit.telemetry.enabled": False,
+        
+        
+        
+        "apz.content_response_timeout": 60000,
+
+        
+        "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
+        "datareporting.healthreport.about.reportUrl": "http://%(server)s/dummy/abouthealthreport/",
+
+        
+        "datareporting.policy.dataSubmissionPolicyBypassNotification": True,
+
         
         
         "dom.ipc.cpows.forbid-unsafe-from-browser": False,
+        "dom.ipc.reportProcessHangs": False,
+
+        
+        "dom.max_chrome_script_run_time": 0,
+        "dom.max_script_run_time": 0,
+
+        
+        
+        "extensions.autoDisableScopes": 0,
+        "extensions.enabledScopes": 5,
+        
+        "extensions.e10sBlocksEnabling": False,
+        
+        "extensions.getAddons.cache.enabled": False,
+        
+        "extensions.installDistroAddons": False,
+        "extensions.showMismatchUI": False,
+        
+        "extensions.update.enabled": False,
+        "extensions.update.notifyUser": False,
+        
+        "extensions.webservice.discoverURL": "http://%(server)s/dummy/discoveryURL",
+
+        
+        "focusmanager.testmode": True,
+
+        
+        "general.useragent.updates.enabled": False,
+
+        
+        
+        "geo.provider.testing": True,
+        
+        "geo.wifi.scan": False,
+
+        
+        "hangmonitor.timeout": 0,
+
+        "javascript.options.showInConsole": True,
+        "marionette.defaultPrefs.enabled": True,
+        "media.volume_scale": "0.01",
+
+        
+        "network.http.bypass-cachelock-threshold": 200000,
+        
+        "network.http.prompt-temp-redirect": False,
+        
+        
+        "network.http.speculative-parallel-limit": 0,
+        
+        "network.manage-offline-status": False,
+        
+        "network.sntp.pools": "%(server)s",
+
+        
+        "security.notification_enable_delay": 0,
+
+        
+        "services.settings.server": "http://%(server)s/dummy/blocklist/",
+
+        
+        
+        "signon.rememberSignons": False,
+
+        
+        "toolkit.startup.max_resumed_crashes": -1,
+
+        
+        "toolkit.telemetry.server": "https://%(server)s/dummy/telemetry/",
     }
 
     def __init__(self, host=None, port=None, bin=None, profile=None, addons=None,
@@ -84,11 +141,11 @@ class GeckoInstance(object):
             return self._gecko_log
 
         path = self._gecko_log_option
-        if path != '-':
+        if path != "-":
             if path is None:
-                path = 'gecko.log'
+                path = "gecko.log"
             elif os.path.isdir(path):
-                fname = 'gecko-{}.log'.format(time.time())
+                fname = "gecko-{}.log".format(time.time())
                 path = os.path.join(path, fname)
 
             path = os.path.realpath(path)
@@ -106,7 +163,7 @@ class GeckoInstance(object):
         if self.verbose:
             level = "TRACE" if self.verbose >= 2 else "DEBUG"
             profile_args["preferences"]["marionette.logging"] = level
-        if '-jsdebugger' in self.app_args:
+        if "-jsdebugger" in self.app_args:
             profile_args["preferences"].update({
                 "devtools.browsertoolbox.panel": "jsdebugger",
                 "devtools.debugger.remote-enabled": True,
@@ -115,18 +172,18 @@ class GeckoInstance(object):
                 "marionette.debugging.clicktostart": True,
             })
         if self.addons:
-            profile_args['addons'] = self.addons
+            profile_args["addons"] = self.addons
 
         if hasattr(self, "profile_path") and self.profile is None:
             if not self.profile_path:
                 if self.workspace:
-                    profile_args['profile'] = tempfile.mkdtemp(
-                        suffix='.mozrunner-{:.0f}'.format(time.time()),
+                    profile_args["profile"] = tempfile.mkdtemp(
+                        suffix=".mozrunner-{:.0f}".format(time.time()),
                         dir=self.workspace)
                 self.profile = Profile(**profile_args)
             else:
                 profile_args["path_from"] = self.profile_path
-                profile_name = '{}-{:.0f}'.format(
+                profile_name = "{}-{:.0f}".format(
                     os.path.basename(self.profile_path),
                     time.time()
                 )
@@ -156,30 +213,30 @@ class GeckoInstance(object):
 
     def _get_runner_args(self):
         process_args = {
-            'processOutputLine': [NullOutput()],
+            "processOutputLine": [NullOutput()],
         }
 
-        if self.gecko_log == '-':
-            process_args['stream'] = sys.stdout
+        if self.gecko_log == "-":
+            process_args["stream"] = sys.stdout
         else:
-            process_args['logfile'] = self.gecko_log
+            process_args["logfile"] = self.gecko_log
 
         env = os.environ.copy()
 
         
         
-        env.update({'MOZ_CRASHREPORTER': '1',
-                    'MOZ_CRASHREPORTER_NO_REPORT': '1',
-                    'MOZ_CRASHREPORTER_SHUTDOWN': '1',
+        env.update({"MOZ_CRASHREPORTER": "1",
+                    "MOZ_CRASHREPORTER_NO_REPORT": "1",
+                    "MOZ_CRASHREPORTER_SHUTDOWN": "1",
                     })
 
         return {
-            'binary': self.binary,
-            'profile': self.profile,
-            'cmdargs': ['-no-remote', '-marionette'] + self.app_args,
-            'env': env,
-            'symbols_path': self.symbols_path,
-            'process_args': process_args
+            "binary": self.binary,
+            "profile": self.profile,
+            "cmdargs": ["-no-remote", "-marionette"] + self.app_args,
+            "env": env,
+            "symbols_path": self.symbols_path,
+            "process_args": process_args
         }
 
     def close(self, restart=False):
@@ -205,10 +262,37 @@ class GeckoInstance(object):
 
 
 class FennecInstance(GeckoInstance):
+    fennec_prefs = {
+        
+        "browser.dom.window.dump.enabled": True,
+
+        
+        "browser.snippets.enabled": False,
+        "browser.snippets.syncPromo.enabled": False,
+        "browser.snippets.firstrunHomepage.enabled": False,
+
+        
+        "browser.safebrowsing.downloads.enabled": False,
+
+        
+        "browser.sessionstore.resume_from_crash": False,
+
+        
+        "browser.tabs.remote.autostart.1": False,
+        "browser.tabs.remote.autostart.2": False,
+        "browser.tabs.remote.autostart": False,
+
+        
+        
+        "browser.tabs.disableBackgroundZombification": True,
+    }
+
     def __init__(self, emulator_binary=None, avd_home=None, avd=None,
                  adb_path=None, serial=None, connect_to_running_emulator=False,
                  package_name=None, *args, **kwargs):
         super(FennecInstance, self).__init__(*args, **kwargs)
+        self.required_prefs.update(FennecInstance.fennec_prefs)
+
         self.runner_class = FennecEmulatorRunner
         
         self._package_name = package_name
@@ -227,10 +311,10 @@ class FennecInstance(GeckoInstance):
         Note that FennecInstance does not use self.binary
         """
         if self._package_name is None:
-            self._package_name = 'org.mozilla.fennec'
-            user = os.getenv('USER')
+            self._package_name = "org.mozilla.fennec"
+            user = os.getenv("USER")
             if user:
-                self._package_name += '_' + user
+                self._package_name += "_" + user
         return self._package_name
 
     def start(self):
@@ -242,17 +326,17 @@ class FennecInstance(GeckoInstance):
             self.runner.start()
         except Exception as e:
             exc, val, tb = sys.exc_info()
-            message = 'Error possibly due to runner or device args: {}'
+            message = "Error possibly due to runner or device args: {}"
             raise exc, message.format(e.message), tb
         
         logcat_args = {
-            'filterspec': 'Gecko',
-            'serial': self.runner.device.dm._deviceSerial
+            "filterspec": "Gecko",
+            "serial": self.runner.device.dm._deviceSerial
         }
-        if self.gecko_log == '-':
-            logcat_args['stream'] = sys.stdout
+        if self.gecko_log == "-":
+            logcat_args["stream"] = sys.stdout
         else:
-            logcat_args['logfile'] = self.gecko_log
+            logcat_args["logfile"] = self.gecko_log
         self.runner.device.start_logcat(**logcat_args)
         self.runner.device.setup_port_forwarding(
             local_port=self.marionette_port,
@@ -261,23 +345,23 @@ class FennecInstance(GeckoInstance):
 
     def _get_runner_args(self):
         process_args = {
-            'processOutputLine': [NullOutput()],
+            "processOutputLine": [NullOutput()],
         }
 
         runner_args = {
-            'app': self.package_name,
-            'avd_home': self.avd_home,
-            'adb_path': self.adb_path,
-            'binary': self.emulator_binary,
-            'profile': self.profile,
-            'cmdargs': ['-marionette'] + self.app_args,
-            'symbols_path': self.symbols_path,
-            'process_args': process_args,
-            'logdir': self.workspace or os.getcwd(),
-            'serial': self.serial,
+            "app": self.package_name,
+            "avd_home": self.avd_home,
+            "adb_path": self.adb_path,
+            "binary": self.emulator_binary,
+            "profile": self.profile,
+            "cmdargs": ["-marionette"] + self.app_args,
+            "symbols_path": self.symbols_path,
+            "process_args": process_args,
+            "logdir": self.workspace or os.getcwd(),
+            "serial": self.serial,
         }
         if self.avd:
-            runner_args['avd'] = self.avd
+            runner_args["avd"] = self.avd
 
         return runner_args
 
@@ -285,42 +369,82 @@ class FennecInstance(GeckoInstance):
         super(FennecInstance, self).close(restart)
         if self.runner and self.runner.device.connected:
             self.runner.device.dm.remove_forward(
-                'tcp:{}'.format(int(self.marionette_port))
+                "tcp:{}".format(int(self.marionette_port))
             )
 
 
 class DesktopInstance(GeckoInstance):
     desktop_prefs = {
-        'app.update.auto': False,
-        'app.update.enabled': False,
-        'browser.dom.window.dump.enabled': True,
-        'browser.firstrun-content.dismissed': True,
+        
+        "app.update.enabled": False,
+
+        
+        "browser.dom.window.dump.enabled": True,
+
         
         
-        'browser.newtab.url': 'about:newtab',
-        'browser.newtabpage.enabled': False,
-        'browser.reader.detectedFirstArticle': True,
-        'browser.safebrowsing.blockedURIs.enabled': False,
-        'browser.safebrowsing.forbiddenURIs.enabled': False,
-        'browser.safebrowsing.malware.enabled': False,
-        'browser.safebrowsing.phishing.enabled': False,
-        'browser.search.update': False,
-        'browser.tabs.animate': False,
-        'browser.tabs.warnOnClose': False,
-        'browser.tabs.warnOnOpen': False,
-        'browser.uitour.enabled': False,
-        'extensions.getAddons.cache.enabled': False,
-        'extensions.installDistroAddons': False,
-        'extensions.showMismatchUI': False,
-        'extensions.update.enabled': False,
-        'extensions.update.notifyUser': False,
-        'geo.provider.testing': True,
-        'javascript.options.showInConsole': True,
-        'privacy.trackingprotection.enabled': False,
-        'privacy.trackingprotection.pbmode.enabled': False,
-        'security.notification_enable_delay': 0,
-        'signon.rememberSignons': False,
-        'toolkit.startup.max_resumed_crashes': -1,
+        "browser.download.panel.shown": True,
+
+        
+        "browser.EULA.override": True,
+
+        
+        
+        
+        "browser.newtabpage.enabled": True,
+        
+        
+        "browser.newtabpage.introShown": True,
+
+        
+        
+        "browser.pagethumbnails.capturing_disabled": True,
+
+        
+        "browser.reader.detectedFirstArticle": True,
+
+        
+        "browser.safebrowsing.blockedURIs.enabled": False,
+        "browser.safebrowsing.downloads.enabled": False,
+        "browser.safebrowsing.forbiddenURIs.enabled": False,
+        "browser.safebrowsing.malware.enabled": False,
+        "browser.safebrowsing.phishing.enabled": False,
+
+        
+        "browser.search.update": False,
+
+        
+        "browser.sessionstore.resume_from_crash": False,
+
+        
+        "browser.shell.checkDefaultBrowser": False,
+
+        
+        "browser.tabs.remote.autostart.1": False,
+        "browser.tabs.remote.autostart.2": False,
+        "browser.tabs.remote.autostart": False,
+
+        
+        "browser.startup.homepage_override.mstone": "ignore",
+        
+        "browser.startup.page": 0,
+
+        
+        "browser.tabs.animate": False,
+
+        
+        "browser.tabs.warnOnClose": False,
+        
+        "browser.tabs.warnOnCloseOtherTabs": False,
+        
+        "browser.tabs.warnOnOpen": False,
+
+        
+        "browser.uitour.enabled": False,
+
+        
+        "startup.homepage_welcome_url": "about:blank",
+        "startup.homepage_welcome_url.additional": "",
     }
 
     def __init__(self, *args, **kwargs):
