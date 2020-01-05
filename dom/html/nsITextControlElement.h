@@ -167,6 +167,16 @@ public:
   
 
 
+  NS_IMETHOD_(void) SetPreviewValue(const nsAString& aValue) = 0;
+
+  
+
+
+  NS_IMETHOD_(void) GetPreviewValue(nsAString& aValue) = 0;
+
+  
+
+
   NS_IMETHOD_(void) InitializeKeyboardEventListeners() = 0;
 
   

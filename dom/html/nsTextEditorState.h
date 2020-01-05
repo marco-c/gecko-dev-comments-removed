@@ -223,7 +223,12 @@ public:
   bool GetPlaceholderVisibility() {
     return mPlaceholderVisibility;
   }
+
   void UpdatePlaceholderText(bool aNotify);
+
+  
+  void SetPreviewText(const nsAString& aValue, bool aNotify);
+  void GetPreviewText(nsAString& aValue);
 
   
 
