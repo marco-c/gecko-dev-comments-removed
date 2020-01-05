@@ -7,7 +7,6 @@ use bezier::Bezier;
 use cssparser::{Color, RGBA};
 use dom::{OpaqueNode, TRestyleDamage};
 use euclid::point::Point2D;
-use properties::ComputedValues;
 use properties::longhands::background_position::computed_value::T as BackgroundPosition;
 use properties::longhands::border_spacing::computed_value::T as BorderSpacing;
 use properties::longhands::clip::computed_value::ClipRect;
@@ -25,6 +24,8 @@ use properties::longhands::transition_timing_function::computed_value::{Transiti
 use properties::longhands::vertical_align::computed_value::T as VerticalAlign;
 use properties::longhands::visibility::computed_value::T as Visibility;
 use properties::longhands::z_index::computed_value::T as ZIndex;
+use properties::style_struct_traits::TAnimation;
+use properties::{ComputedValues, TComputedValues};
 use std::cmp::Ordering;
 use std::iter::repeat;
 use std::sync::mpsc::Sender;
@@ -73,7 +74,7 @@ impl PropertyAnimation {
                            -> Vec<PropertyAnimation> {
         let mut result = Vec::new();
         let transition_property =
-            new_style.get_animation().transition_property.0[transition_index];
+            new_style.as_servo().get_animation().transition_property.0[transition_index];
         if transition_property != TransitionProperty::All {
             if let Some(property_animation) =
                     PropertyAnimation::from_transition_property(transition_property,
@@ -929,22 +930,22 @@ impl<T> GetMod for Vec<T> {
 
 
 
-pub fn start_transitions_if_applicable(new_animations_sender: &Mutex<Sender<Animation>>,
-                                       node: OpaqueNode,
-                                       old_style: &ComputedValues,
-                                       new_style: &mut ComputedValues)
-                                       -> bool {
+pub fn start_transitions_if_applicable<C: TComputedValues>(new_animations_sender: &Mutex<Sender<Animation>>,
+                                                           node: OpaqueNode,
+                                                           old_style: &C,
+                                                           new_style: &mut C)
+                                                           -> bool {
     let mut had_animations = false;
-    for i in 0..new_style.get_animation().transition_property.0.len() {
+    for i in 0..new_style.get_animation().transition_count() {
         
-        let property_animations = PropertyAnimation::from_transition(i, old_style, new_style);
+        let property_animations = PropertyAnimation::from_transition(i, old_style.as_servo(), new_style.as_servo_mut());
         for property_animation in property_animations {
             
-            property_animation.update(new_style, 0.0);
+            property_animation.update(new_style.as_servo_mut(), 0.0);
 
             
             let now = time::precise_time_s();
-            let animation_style = new_style.get_animation();
+            let animation_style = new_style.as_servo().get_animation();
             let start_time =
                 now + (animation_style.transition_delay.0.get_mod(i).seconds() as f64);
             new_animations_sender.lock().unwrap().send(Animation {
@@ -964,9 +965,10 @@ pub fn start_transitions_if_applicable(new_animations_sender: &Mutex<Sender<Anim
 
 
 
-pub fn update_style_for_animation<ConcreteRestyleDamage: TRestyleDamage>(animation: &Animation,
-                                                                         style: &mut Arc<ComputedValues>,
-                                                                         damage: Option<&mut ConcreteRestyleDamage>) {
+pub fn update_style_for_animation<C: TComputedValues,
+                                  Damage: TRestyleDamage<ConcreteComputedValues=C>>(animation: &Animation,
+                                                                                    style: &mut Arc<C>,
+                                                                                    damage: Option<&mut Damage>) {
     let now = time::precise_time_s();
     let mut progress = (now - animation.start_time) / animation.duration();
     if progress > 1.0 {
@@ -977,9 +979,9 @@ pub fn update_style_for_animation<ConcreteRestyleDamage: TRestyleDamage>(animati
     }
 
     let mut new_style = (*style).clone();
-    animation.property_animation.update(&mut *Arc::make_mut(&mut new_style), progress);
+    animation.property_animation.update(Arc::make_mut(&mut new_style).as_servo_mut(), progress);
     if let Some(damage) = damage {
-        *damage = *damage | ConcreteRestyleDamage::compute(Some(style), &new_style);
+        *damage = *damage | Damage::compute(Some(style), &new_style);
     }
 
     *style = new_style
