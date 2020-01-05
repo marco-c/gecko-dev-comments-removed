@@ -157,6 +157,9 @@ module.exports = {
     "no-shadow-restricted-names": "error",
 
     
+    "no-sparse-arrays": "error",
+
+    
     "no-trailing-spaces": "error",
 
     
