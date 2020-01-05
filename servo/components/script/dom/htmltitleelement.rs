@@ -44,8 +44,8 @@ impl HTMLTitleElement {
 
 impl<'a> HTMLTitleElementMethods for JSRef<'a, HTMLTitleElement> {
     
-    fn Text(&self) -> DOMString {
-        let node: JSRef<Node> = NodeCast::from_ref(*self);
+    fn Text(self) -> DOMString {
+        let node: JSRef<Node> = NodeCast::from_ref(self);
         let mut content = String::new();
         for child in node.children() {
             let text: Option<JSRef<Text>> = TextCast::to_ref(child);
@@ -58,8 +58,8 @@ impl<'a> HTMLTitleElementMethods for JSRef<'a, HTMLTitleElement> {
     }
 
     
-    fn SetText(&self, value: DOMString) {
-        let node: JSRef<Node> = NodeCast::from_ref(*self);
+    fn SetText(self, value: DOMString) {
+        let node: JSRef<Node> = NodeCast::from_ref(self);
         node.SetTextContent(Some(value))
     }
 }

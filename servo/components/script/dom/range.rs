@@ -39,7 +39,7 @@ impl Range {
 
 impl<'a> RangeMethods for JSRef<'a, Range> {
     
-    fn Detach(&self) {
+    fn Detach(self) {
         
     }
 }

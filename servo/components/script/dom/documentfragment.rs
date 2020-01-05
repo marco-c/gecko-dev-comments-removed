@@ -53,23 +53,22 @@ impl DocumentFragment {
 
 impl<'a> DocumentFragmentMethods for JSRef<'a, DocumentFragment> {
     
-    fn Children(&self) -> Temporary<HTMLCollection> {
-        let window = window_from_node(*self).root();
-        HTMLCollection::children(*window, NodeCast::from_ref(*self))
+    fn Children(self) -> Temporary<HTMLCollection> {
+        let window = window_from_node(self).root();
+        HTMLCollection::children(*window, NodeCast::from_ref(self))
     }
 
     
-    fn QuerySelector(&self, selectors: DOMString) -> Fallible<Option<Temporary<Element>>> {
-        let root: JSRef<Node> = NodeCast::from_ref(*self);
+    fn QuerySelector(self, selectors: DOMString) -> Fallible<Option<Temporary<Element>>> {
+        let root: JSRef<Node> = NodeCast::from_ref(self);
         root.query_selector(selectors)
     }
 
     
-    fn QuerySelectorAll(&self, selectors: DOMString) -> Fallible<Temporary<NodeList>> {
-        let root: JSRef<Node> = NodeCast::from_ref(*self);
+    fn QuerySelectorAll(self, selectors: DOMString) -> Fallible<Temporary<NodeList>> {
+        let root: JSRef<Node> = NodeCast::from_ref(self);
         root.query_selector_all(selectors)
     }
-
 }
 
 impl Reflectable for DocumentFragment {
