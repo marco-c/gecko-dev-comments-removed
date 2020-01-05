@@ -331,41 +331,23 @@ JSCompartment::wrap(JSContext* cx, MutableHandleString strp)
 }
 
 bool
-JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existingArg)
+JSCompartment::getNonWrapperObjectForCurrentCompartment(JSContext* cx, MutableHandleObject obj)
 {
-    MOZ_ASSERT(!cx->runtime()->isAtomsCompartment(this));
-    MOZ_ASSERT(cx->compartment() == this);
-    MOZ_ASSERT_IF(existingArg, existingArg->compartment() == cx->compartment());
-    MOZ_ASSERT_IF(existingArg, IsDeadProxyObject(existingArg));
-
-    if (!obj)
-        return true;
-    AutoDisableProxyCheck adpc(cx->runtime());
+    
+    MOZ_ASSERT(cx->global());
 
     
     
     
     
-    
-    
-    
-    
-    
-    MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
+    MOZ_ASSERT(!cx->runtime()->isSelfHostingGlobal(cx->global()));
+    MOZ_ASSERT(!cx->runtime()->isSelfHostingGlobal(&obj->global()));
 
     
     
     
-    
-    
-    HandleObject global = cx->global();
-    RootedObject objGlobal(cx, &obj->global());
-    MOZ_ASSERT(global);
-    MOZ_ASSERT(objGlobal);
-
     if (obj->compartment() == this) {
         obj.set(ToWindowProxyIfWindow(obj));
-        MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
         return true;
     }
 
@@ -373,19 +355,9 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
     
     
     
-    MOZ_ASSERT(!cx->runtime()->isSelfHostingGlobal(global) &&
-               !cx->runtime()->isSelfHostingGlobal(objGlobal));
-
     
     RootedObject objectPassedToWrap(cx, obj);
     obj.set(UncheckedUnwrap(obj,  true));
-
-    
-    
-    
-    if (!existingArg)
-        ExposeObjectToActiveJS(obj);
-
     if (obj->compartment() == this) {
         MOZ_ASSERT(!IsWindow(obj));
         return true;
@@ -399,53 +371,43 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
         if (!GetBuiltinConstructor(cx, JSProto_StopIteration, &stopIteration))
             return false;
         obj.set(stopIteration);
-        MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
         return true;
     }
 
-    const JSWrapObjectCallbacks* cb = cx->runtime()->wrapObjectCallbacks;
-
     
     
+    
+    
+    
+    
+    auto preWrap = cx->runtime()->wrapObjectCallbacks->preWrap;
     JS_CHECK_SYSTEM_RECURSION(cx, return false);
-    if (cb->preWrap) {
-        cb->preWrap(cx, global, obj, objectPassedToWrap, obj);
+    if (preWrap) {
+        preWrap(cx, cx->global(), obj, objectPassedToWrap, obj);
         if (!obj)
             return false;
-        MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(obj));
     }
     MOZ_ASSERT(!IsWindow(obj));
 
-    if (obj->compartment() == this)
-        return true;
+    return true;
+}
 
+bool
+JSCompartment::getOrCreateWrapper(JSContext* cx, HandleObject existing, MutableHandleObject obj)
+{
     
     RootedValue key(cx, ObjectValue(*obj));
     if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
         obj.set(&p->value().get().toObject());
         MOZ_ASSERT(obj->is<CrossCompartmentWrapperObject>());
-        
-        
-        MOZ_ASSERT(!ObjectIsMarkedGray(obj));
         return true;
     }
 
-    RootedObject existing(cx, existingArg);
-    if (existing) {
-        
-        if (existing->hasStaticPrototype() ||
-            
-            existing->isCallable() ||
-            obj->isCallable())
-        {
-            existing = nullptr;
-        }
-    }
-
-    RootedObject wrapper(cx, cb->wrap(cx, existing, obj));
+    
+    auto wrap = cx->runtime()->wrapObjectCallbacks->wrap;
+    RootedObject wrapper(cx, wrap(cx, existing, obj));
     if (!wrapper)
         return false;
-    MOZ_ASSERT_IF(!existingArg, !ObjectIsMarkedGray(wrapper));
 
     
     
@@ -464,6 +426,75 @@ JSCompartment::wrap(JSContext* cx, MutableHandleObject obj, HandleObject existin
 
     obj.set(wrapper);
     return true;
+}
+
+bool
+JSCompartment::wrap(JSContext* cx, MutableHandleObject obj)
+{
+    MOZ_ASSERT(!cx->runtime()->isAtomsCompartment(this));
+    MOZ_ASSERT(cx->compartment() == this);
+
+    if (!obj)
+        return true;
+
+    AutoDisableProxyCheck adpc(cx->runtime());
+
+    
+    
+    MOZ_ASSERT(!ObjectIsMarkedGray(obj));
+
+    
+    
+    if (!getNonWrapperObjectForCurrentCompartment(cx, obj))
+        return false;
+
+    
+    
+    if (obj->compartment() != this) {
+        if (!getOrCreateWrapper(cx, nullptr, obj))
+            return false;
+    }
+
+    
+    ExposeObjectToActiveJS(obj);
+    return true;
+}
+
+bool
+JSCompartment::rewrap(JSContext* cx, MutableHandleObject obj, HandleObject existingArg)
+{
+    MOZ_ASSERT(!cx->runtime()->isAtomsCompartment(this));
+    MOZ_ASSERT(cx->compartment() == this);
+    MOZ_ASSERT(obj);
+    MOZ_ASSERT(existingArg);
+    MOZ_ASSERT(existingArg->compartment() == cx->compartment());
+    MOZ_ASSERT(IsDeadProxyObject(existingArg));
+
+    AutoDisableProxyCheck adpc(cx->runtime());
+
+    
+    
+    
+    RootedObject existing(cx, existingArg);
+    if (existing->hasStaticPrototype() ||
+        
+        existing->isCallable() ||
+        obj->isCallable())
+    {
+        existing.set(nullptr);
+    }
+
+    
+    
+    if (!getNonWrapperObjectForCurrentCompartment(cx, obj))
+        return false;
+
+    
+    
+    if (obj->compartment() == this)
+        return true;
+
+    return getOrCreateWrapper(cx, existing, obj);
 }
 
 bool

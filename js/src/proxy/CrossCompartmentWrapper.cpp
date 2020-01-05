@@ -579,7 +579,7 @@ js::RemapWrapper(JSContext* cx, JSObject* wobjArg, JSObject* newTargetArg)
     
     RootedObject tobj(cx, newTarget);
     AutoCompartment ac(cx, wobj);
-    if (!wcompartment->wrap(cx, &tobj, wobj))
+    if (!wcompartment->rewrap(cx, &tobj, wobj))
         MOZ_CRASH();
 
     
