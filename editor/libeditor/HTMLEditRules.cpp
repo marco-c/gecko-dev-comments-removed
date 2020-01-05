@@ -2172,9 +2172,13 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
                                   address_of(selPointNode), &selPointOffset);
         NS_ENSURE_STATE(leftNode && leftNode->IsContent() &&
                         rightNode && rightNode->IsContent());
+        bool handled = false, canceled = false;
+        rv = TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
+                             &canceled, &handled);
+        
+        
         *aHandled = true;
-        rv = JoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
-                        aCancel);
+        *aCancel |= canceled;
         NS_ENSURE_SUCCESS(rv, rv);
       }
       aSelection->Collapse(selPointNode, selPointOffset);
@@ -2223,9 +2227,14 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         AutoTrackDOMPoint tracker(mHTMLEditor->mRangeUpdater,
                                   address_of(selPointNode), &selPointOffset);
         NS_ENSURE_STATE(leftNode->IsContent() && rightNode->IsContent());
+        bool handled = false, canceled = false;
+        rv = TryToJoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
+                             &canceled, &handled);
+        
+        
+        
         *aHandled = true;
-        rv = JoinBlocks(*leftNode->AsContent(), *rightNode->AsContent(),
-                        aCancel);
+        *aCancel |= canceled;
         NS_ENSURE_SUCCESS(rv, rv);
       }
       aSelection->Collapse(selPointNode, selPointOffset);
@@ -2397,7 +2406,10 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
         }
 
         if (join) {
-          rv = JoinBlocks(*leftParent, *rightParent, aCancel);
+          bool handled = false, canceled = false;
+          rv = TryToJoinBlocks(*leftParent, *rightParent, &canceled, &handled);
+          MOZ_ASSERT(*aHandled);
+          *aCancel |= canceled;
           NS_ENSURE_SUCCESS(rv, rv);
         }
       }
@@ -2547,21 +2559,17 @@ HTMLEditRules::GetGoodSelPointForNode(nsINode& aNode,
   return ret;
 }
 
-
-
-
-
-
-
-
-
-
 nsresult
-HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
-                          nsIContent& aRightNode,
-                          bool* aCanceled)
+HTMLEditRules::TryToJoinBlocks(nsIContent& aLeftNode,
+                               nsIContent& aRightNode,
+                               bool* aCanceled,
+                               bool* aHandled)
 {
   MOZ_ASSERT(aCanceled);
+  MOZ_ASSERT(aHandled);
+
+  *aCanceled = false;
+  *aHandled = false;
 
   NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
@@ -2577,6 +2585,7 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
       HTMLEditUtils::IsTableElement(rightBlock)) {
     
     *aCanceled = true;
+    *aHandled = true;
     return NS_OK;
   }
 
@@ -2593,6 +2602,7 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
   
   if (leftBlock == rightBlock) {
     *aCanceled = true;
+    *aHandled = true;
     return NS_OK;
   }
 
@@ -2600,6 +2610,7 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
   if (HTMLEditUtils::IsList(leftBlock) &&
       HTMLEditUtils::IsListItem(rightBlock) &&
       rightBlock->GetParentNode() == leftBlock) {
+    *aHandled = true;
     return NS_OK;
   }
 
@@ -2670,11 +2681,15 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
         rv = htmlEditor->MoveNode(child, leftList, -1);
         NS_ENSURE_SUCCESS(rv, rv);
       }
+      
+      *aHandled = true;
     } else {
-      MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
+      bool handled = false;
+      MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset, &handled);
+      *aHandled |= handled;
     }
-    if (brNode) {
-      htmlEditor->DeleteNode(brNode);
+    if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
+      *aHandled = true;
     }
   
   
@@ -2706,7 +2721,9 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
     nsCOMPtr<Element> brNode =
       CheckForInvisibleBR(*leftBlock, BRLocation::beforeBlock, leftOffset);
     if (mergeLists) {
-      MoveContents(*rightList, *leftList, &leftOffset);
+      bool handled = false;
+      MoveContents(*rightList, *leftList, &leftOffset, &handled);
+      *aHandled |= handled;
     } else {
       
       
@@ -2762,12 +2779,14 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
 
       NS_ENSURE_TRUE(previousContentParent, NS_ERROR_NULL_POINTER);
 
+      bool handled = false;
       rv = MoveBlock(*previousContentParent->AsElement(), *rightBlock,
-                     previousContentOffset, rightOffset);
+                     previousContentOffset, rightOffset, &handled);
+      *aHandled |= handled;
       NS_ENSURE_SUCCESS(rv, rv);
     }
-    if (brNode) {
-      htmlEditor->DeleteNode(brNode);
+    if (brNode && NS_SUCCEEDED(htmlEditor->DeleteNode(brNode))) {
+      *aHandled = true;
     }
   } else {
     
@@ -2791,32 +2810,37 @@ HTMLEditRules::JoinBlocks(nsIContent& aLeftNode,
         ConvertListType(rightBlock, getter_AddRefs(newBlock),
                         existingList, nsGkAtoms::li);
       }
+      *aHandled = true;
     } else {
       
-      rv = MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset);
+      bool handled = false;
+      rv =
+        MoveBlock(*leftBlock, *rightBlock, leftOffset, rightOffset, &handled);
+      *aHandled |= handled;
       NS_ENSURE_SUCCESS(rv, rv);
     }
     if (brNode) {
       rv = htmlEditor->DeleteNode(brNode);
+      
+      
       NS_ENSURE_SUCCESS(rv, rv);
+      *aHandled = true;
     }
   }
   return NS_OK;
 }
 
-
-
-
-
-
-
-
 nsresult
 HTMLEditRules::MoveBlock(Element& aLeftBlock,
                          Element& aRightBlock,
                          int32_t aLeftOffset,
-                         int32_t aRightOffset)
+                         int32_t aRightOffset,
+                         bool* aHandled)
 {
+  MOZ_ASSERT(aHandled);
+
+  *aHandled = false;
+
   nsTArray<OwningNonNull<nsINode>> arrayOfNodes;
   
   nsresult rv = GetNodesFromPoint(EditorDOMPoint(&aRightBlock, aRightOffset),
@@ -2827,15 +2851,20 @@ HTMLEditRules::MoveBlock(Element& aLeftBlock,
     
     if (IsBlockNode(arrayOfNodes[i])) {
       
+      bool handled = false;
       rv = MoveContents(*arrayOfNodes[i]->AsElement(), aLeftBlock,
-                        &aLeftOffset);
+                        &aLeftOffset, &handled);
+      *aHandled |= handled;
       NS_ENSURE_SUCCESS(rv, rv);
       NS_ENSURE_STATE(mHTMLEditor);
       rv = mHTMLEditor->DeleteNode(arrayOfNodes[i]);
+      *aHandled = true;
     } else {
       
+      bool handled = false;
       rv = MoveNodeSmart(*arrayOfNodes[i]->AsContent(), aLeftBlock,
-                         &aLeftOffset);
+                         &aLeftOffset, &handled);
+      *aHandled |= handled;
     }
   }
 
@@ -2844,17 +2873,16 @@ HTMLEditRules::MoveBlock(Element& aLeftBlock,
   return NS_OK;
 }
 
-
-
-
-
-
 nsresult
 HTMLEditRules::MoveNodeSmart(nsIContent& aNode,
                              Element& aDestElement,
-                             int32_t* aInOutDestOffset)
+                             int32_t* aInOutDestOffset,
+                             bool* aHandled)
 {
   MOZ_ASSERT(aInOutDestOffset);
+  MOZ_ASSERT(aHandled);
+
+  *aHandled = false;
 
   NS_ENSURE_STATE(mHTMLEditor);
   RefPtr<HTMLEditor> htmlEditor(mHTMLEditor);
@@ -2868,37 +2896,43 @@ HTMLEditRules::MoveNodeSmart(nsIContent& aNode,
     if (*aInOutDestOffset != -1) {
       (*aInOutDestOffset)++;
     }
+    
+    *aHandled = true;
   } else {
     
     if (aNode.IsElement()) {
-      nsresult rv =
-        MoveContents(*aNode.AsElement(), aDestElement, aInOutDestOffset);
+      bool handled = false;
+      nsresult rv = MoveContents(*aNode.AsElement(), aDestElement,
+                                 aInOutDestOffset, &handled);
+      *aHandled |= handled;
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
     nsresult rv = htmlEditor->DeleteNode(&aNode);
     NS_ENSURE_SUCCESS(rv, rv);
+    *aHandled = true;
   }
   return NS_OK;
 }
 
-
-
-
-
-
 nsresult
 HTMLEditRules::MoveContents(Element& aElement,
                             Element& aDestElement,
-                            int32_t* aInOutDestOffset)
+                            int32_t* aInOutDestOffset,
+                            bool* aHandled)
 {
   MOZ_ASSERT(aInOutDestOffset);
+  MOZ_ASSERT(aHandled);
+
+  *aHandled = false;
 
   NS_ENSURE_TRUE(&aElement != &aDestElement, NS_ERROR_ILLEGAL_VALUE);
 
   while (aElement.GetFirstChild()) {
+    bool handled = false;
     nsresult rv = MoveNodeSmart(*aElement.GetFirstChild(), aDestElement,
-                                aInOutDestOffset);
+                                aInOutDestOffset, &handled);
+    *aHandled |= handled;
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;

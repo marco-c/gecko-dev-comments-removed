@@ -163,14 +163,71 @@ protected:
   nsresult InsertBRIfNeeded(Selection* aSelection);
   mozilla::EditorDOMPoint GetGoodSelPointForNode(nsINode& aNode,
                                                  nsIEditor::EDirection aAction);
-  nsresult JoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
-                      bool* aCanceled);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult TryToJoinBlocks(nsIContent& aLeftNode, nsIContent& aRightNode,
+                           bool* aCanceled, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
   nsresult MoveBlock(Element& aLeftBlock, Element& aRightBlock,
-                     int32_t aLeftOffset, int32_t aRightOffset);
+                     int32_t aLeftOffset, int32_t aRightOffset,
+                     bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
   nsresult MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
-                         int32_t* aOffset);
+                         int32_t* aInOutDestOffset, bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
   nsresult MoveContents(Element& aElement, Element& aDestElement,
-                        int32_t* aOffset);
+                        int32_t* aInOutDestOffset, bool* aHandled);
+
   nsresult DeleteNonTableElements(nsINode* aNode);
   nsresult WillMakeList(Selection* aSelection,
                         const nsAString* aListType,
