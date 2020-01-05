@@ -181,6 +181,11 @@ function setRadioState(aPartId, aValue) {
 }
 
 function initIndexedDBRow() {
+  
+  
+  if (gPermPrincipal.isNullPrincipal)
+    return;
+
   let row = document.getElementById("perm-indexedDB-row");
   let extras = document.getElementById("perm-indexedDB-extras");
 
