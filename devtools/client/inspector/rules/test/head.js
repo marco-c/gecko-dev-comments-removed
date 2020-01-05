@@ -52,125 +52,12 @@ addTab = function (url) {
 
 
 
-
-function waitForContentMessage(name) {
-  info("Expecting message " + name + " from content");
-
-  let mm = gBrowser.selectedBrowser.messageManager;
-
-  let def = defer();
-  mm.addMessageListener(name, function onMessage(msg) {
-    mm.removeMessageListener(name, onMessage);
-    def.resolve(msg.data);
-  });
-  return def.promise;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function executeInContent(name, data = {}, objects = {},
-                          expectResponse = true) {
-  info("Sending message " + name + " to content");
-  let mm = gBrowser.selectedBrowser.messageManager;
-
-  mm.sendAsyncMessage(name, data, objects);
-  if (expectResponse) {
-    return waitForContentMessage(name);
-  }
-
-  return promise.resolve();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function* getComputedStyleProperty(selector, pseudo, propName) {
-  return yield executeInContent("Test:GetComputedStylePropertyValue",
-    {selector,
-     pseudo,
-     name: propName});
-}
-
-
-
-
-
-
-
-
-
 function getStyle(testActor, selector, propName) {
   return testActor.eval(`
     content.document.querySelector("${selector}")
                     .style.getPropertyValue("${propName}");
   `);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function* waitForComputedStyleProperty(selector, pseudo, name, expected) {
-  return yield executeInContent("Test:WaitForComputedStylePropertyValue",
-    {selector,
-     pseudo,
-     expected,
-     name});
-}
-
-
-
-
-
-
-
-var focusEditableField = Task.async(function* (ruleView, editable, xOffset = 1,
-    yOffset = 1, options = {}) {
-  let onFocus = once(editable.parentNode, "focus", true);
-  info("Clicking on editable field to turn to edit mode");
-  EventUtils.synthesizeMouse(editable, xOffset, yOffset, options,
-    editable.ownerDocument.defaultView);
-  yield onFocus;
-
-  info("Editable field gained focus, returning the input field now");
-  let onEdit = inplaceEditor(editable.ownerDocument.activeElement);
-
-  return onEdit;
-});
 
 
 
@@ -218,109 +105,6 @@ var waitForSuccess = Task.async(function* (validatorFn, desc = "untitled") {
     yield new Promise(r => setTimeout(r, 200));
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-function getRuleViewRule(view, selectorText) {
-  let rule;
-  for (let r of view.styleDocument.querySelectorAll(".ruleview-rule")) {
-    let selector = r.querySelector(".ruleview-selectorcontainer, " +
-                                   ".ruleview-selector-matched");
-    if (selector && selector.textContent === selectorText) {
-      rule = r;
-      break;
-    }
-  }
-
-  return rule;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getRuleViewProperty(view, selectorText, propertyName) {
-  let prop;
-
-  let rule = getRuleViewRule(view, selectorText);
-  if (rule) {
-    
-    for (let p of rule.querySelectorAll(".ruleview-property")) {
-      let nameSpan = p.querySelector(".ruleview-propertyname");
-      let valueSpan = p.querySelector(".ruleview-propertyvalue");
-
-      if (nameSpan.textContent === propertyName) {
-        prop = {nameSpan: nameSpan, valueSpan: valueSpan};
-        break;
-      }
-    }
-  }
-  return prop;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getRuleViewPropertyValue(view, selectorText, propertyName) {
-  return getRuleViewProperty(view, selectorText, propertyName)
-    .valueSpan.textContent;
-}
-
-
-
-
-
-
-
-
-
-
-
-function getRuleViewSelector(view, selectorText) {
-  let rule = getRuleViewRule(view, selectorText);
-  return rule.querySelector(".ruleview-selector, .ruleview-selector-matched");
-}
-
-
-
-
-
-
-
-
-
-
-
-function getRuleViewSelectorHighlighterIcon(view, selectorText) {
-  let rule = getRuleViewRule(view, selectorText);
-  return rule.querySelector(".ruleview-selectorhighlighter");
-}
 
 
 
@@ -451,34 +235,6 @@ var openCubicBezierAndChangeCoords = Task.async(function* (view, ruleIndex,
 
   return {propEditor, swatch, bezierTooltip};
 });
-
-
-
-
-
-
-
-
-
-
-function getRuleViewLinkByIndex(view, index) {
-  let links = view.styleDocument.querySelectorAll(".ruleview-rule-source");
-  return links[index];
-}
-
-
-
-
-
-
-
-
-
-
-function getRuleViewLinkTextByIndex(view, index) {
-  let link = getRuleViewLinkByIndex(view, index);
-  return link.querySelector(".ruleview-rule-source-label").textContent;
-}
 
 
 
@@ -633,74 +389,6 @@ var togglePropStatus = Task.async(function* (view, textProp) {
 
 
 
-var focusNewRuleViewProperty = Task.async(function* (ruleEditor) {
-  info("Clicking on a close ruleEditor brace to start editing a new property");
-
-  
-  ruleEditor.closeBrace.scrollIntoView(false);
-  let editor = yield focusEditableField(ruleEditor.ruleView,
-    ruleEditor.closeBrace);
-
-  is(inplaceEditor(ruleEditor.newPropSpan), editor,
-    "Focused editor is the new property editor.");
-
-  return editor;
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var createNewRuleViewProperty = Task.async(function* (ruleEditor, inputValue) {
-  info("Creating a new property editor");
-  let editor = yield focusNewRuleViewProperty(ruleEditor);
-
-  info("Entering the value " + inputValue);
-  editor.input.value = inputValue;
-
-  info("Submitting the new value and waiting for value field focus");
-  let onFocus = once(ruleEditor.element, "focus", true);
-  EventUtils.synthesizeKey("VK_RETURN", {},
-    ruleEditor.element.ownerDocument.defaultView);
-  yield onFocus;
-});
-
-
-
-
-
-
-
-
-
-
-
-var setSearchFilter = Task.async(function* (view, searchValue) {
-  info("Setting filter text to \"" + searchValue + "\"");
-  let win = view.styleWindow;
-  let searchField = view.searchField;
-  searchField.focus();
-  synthesizeKeys(searchValue, win);
-  yield view.inspector.once("ruleview-filtered");
-});
-
-
-
-
-
-
-
-
-
 
 function* reloadPage(inspector, testActor) {
   let onNewRoot = inspector.once("new-root");
@@ -776,26 +464,6 @@ function* sendKeysAndWaitForFocus(view, element, keys) {
     EventUtils.sendKey(key, view.styleWindow);
   }
   yield onFocus;
-}
-
-
-
-
-
-
-
-function openStyleContextMenuAndGetAllItems(view, target) {
-  let menu = view._contextmenu._openMenu({target: target});
-
-  
-  let allItems = [].concat.apply([], menu.items.map(function addItem(item) {
-    if (item.submenu) {
-      return addItem(item.submenu.items);
-    }
-    return item;
-  }));
-
-  return allItems;
 }
 
 
