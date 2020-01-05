@@ -478,13 +478,7 @@ VRSystemManagerPuppet::ScanForControllers()
   const uint32_t newControllerCount = 2;
 
   if (newControllerCount != mControllerCount) {
-    
-    for (uint32_t i = 0; i < mPuppetController.Length(); ++i) {
-      RemoveGamepad(i);
-    }
-
-    mControllerCount = 0;
-    mPuppetController.Clear();
+    RemoveControllers();
 
     
     for (uint32_t i = 0; i < newControllerCount; ++i) {
@@ -503,6 +497,10 @@ VRSystemManagerPuppet::ScanForControllers()
 void
 VRSystemManagerPuppet::RemoveControllers()
 {
+  
+  for (uint32_t i = 0; i < mPuppetController.Length(); ++i) {
+    RemoveGamepad(i);
+  }
   mPuppetController.Clear();
   mControllerCount = 0;
 }
