@@ -531,12 +531,23 @@ HTMLTextAreaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     aVisitor.mEvent->mFlags.mNoContentDispatch = false;
   }
 
-  
   if (aVisitor.mEvent->mMessage == eBlur) {
-    FireChangeEventIfNeeded();
+    
+    
+    aVisitor.mWantsPreHandleEvent = true;
   }
 
   return nsGenericHTMLFormElementWithState::GetEventTargetParent(aVisitor);
+}
+
+nsresult
+HTMLTextAreaElement::PreHandleEvent(EventChainVisitor& aVisitor)
+{
+  if (aVisitor.mEvent->mMessage == eBlur) {
+    
+    FireChangeEventIfNeeded();
+  }
+  return nsGenericHTMLFormElementWithState::PreHandleEvent(aVisitor);
 }
 
 void
