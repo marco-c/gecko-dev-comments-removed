@@ -299,6 +299,14 @@ class PerThreadData
     bool ionCompilingSafeForMinorGC;
 
     
+    
+    
+    bool performingGC;
+
+    
+    
+    
+    
     bool gcSweeping;
 #endif
 
@@ -701,7 +709,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     
     js::Thread::Id ownerThread_;
     size_t ownerThreadNative_;
-    friend bool js::CurrentThreadCanAccessRuntime(JSRuntime* rt);
+    friend bool js::CurrentThreadCanAccessRuntime(const JSRuntime* rt);
   public:
 
     size_t ownerThreadNative() const {
@@ -1286,6 +1294,10 @@ struct JSRuntime : public JS::shadow::Runtime,
         MOZ_ASSERT(format != js::StackFormat::Default);
         stackFormat_ = format;
     }
+
+    
+    friend class js::gc::AutoTraceSession;
+    friend class JS::AutoEnterCycleCollection;
 };
 
 namespace js {
@@ -1635,6 +1647,29 @@ class MOZ_RAII AutoEnterIonCompilation
 };
 
 namespace gc {
+
+
+struct MOZ_RAII AutoSetThreadIsPerformingGC
+{
+#ifdef DEBUG
+    AutoSetThreadIsPerformingGC()
+      : threadData_(js::TlsPerThreadData.get())
+    {
+        MOZ_ASSERT(!threadData_->performingGC);
+        threadData_->performingGC = true;
+    }
+
+    ~AutoSetThreadIsPerformingGC() {
+        MOZ_ASSERT(threadData_->performingGC);
+        threadData_->performingGC = false;
+    }
+
+  private:
+    PerThreadData* threadData_;
+#else
+    AutoSetThreadIsPerformingGC() {}
+#endif
+};
 
 
 struct MOZ_RAII AutoSetThreadIsSweeping

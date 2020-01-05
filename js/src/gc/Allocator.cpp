@@ -294,7 +294,7 @@ GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind, size
     MOZ_ASSERT(!cx->runtime()->isHeapBusy(), "allocating while under GC");
 
     AutoMaybeStartBackgroundAllocation maybeStartBGAlloc;
-    return cx->arenas()->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
+    return cx->arenas()->allocateFromArena(zone, thingKind, CheckThresholds, maybeStartBGAlloc);
 }
 
  TenuredCell*
@@ -306,7 +306,7 @@ GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind
     MOZ_ASSERT(!zone->wasGCStarted());
 
     AutoMaybeStartBackgroundAllocation maybeStartBGAlloc;
-    return cx->arenas()->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
+    return cx->arenas()->allocateFromArena(zone, thingKind, CheckThresholds, maybeStartBGAlloc);
 }
 
  TenuredCell*
@@ -322,14 +322,17 @@ GCRuntime::refillFreeListInGC(Zone* zone, AllocKind thingKind)
     MOZ_ASSERT_IF(!rt->isHeapMinorCollecting(), !rt->gc.isBackgroundSweeping());
 
     AutoMaybeStartBackgroundAllocation maybeStartBackgroundAllocation;
-    return zone->arenas.allocateFromArena(zone, thingKind, maybeStartBackgroundAllocation);
+    return zone->arenas.allocateFromArena(zone, thingKind, DontCheckThresholds,
+                                          maybeStartBackgroundAllocation);
 }
 
 TenuredCell*
 ArenaLists::allocateFromArena(JS::Zone* zone, AllocKind thingKind,
+                              ShouldCheckThresholds checkThresholds,
                               AutoMaybeStartBackgroundAllocation& maybeStartBGAlloc)
 {
     JSRuntime* rt = zone->runtimeFromAnyThread();
+
     mozilla::Maybe<AutoLockGC> maybeLock;
 
     
@@ -356,7 +359,7 @@ ArenaLists::allocateFromArena(JS::Zone* zone, AllocKind thingKind,
 
     
     
-    arena = rt->gc.allocateArena(chunk, zone, thingKind, maybeLock.ref());
+    arena = rt->gc.allocateArena(chunk, zone, thingKind, checkThresholds, maybeLock.ref());
     if (!arena)
         return nullptr;
 
@@ -407,23 +410,20 @@ GCRuntime::wantBackgroundAllocation(const AutoLockGC& lock) const
 }
 
 Arena*
-GCRuntime::allocateArena(Chunk* chunk, Zone* zone, AllocKind thingKind, const AutoLockGC& lock)
+GCRuntime::allocateArena(Chunk* chunk, Zone* zone, AllocKind thingKind,
+                         ShouldCheckThresholds checkThresholds, const AutoLockGC& lock)
 {
     MOZ_ASSERT(chunk->hasAvailableArenas());
 
     
-    if (!rt->isHeapMinorCollecting() &&
-        !isHeapCompacting() &&
-        usage.gcBytes() >= tunables.gcMaxBytes())
-    {
+    if (checkThresholds && usage.gcBytes() >= tunables.gcMaxBytes())
         return nullptr;
-    }
 
     Arena* arena = chunk->allocateArena(rt, zone, thingKind, lock);
     zone->usage.addGCArena();
 
     
-    if (!rt->isHeapMinorCollecting() && !isHeapCompacting())
+    if (checkThresholds)
         maybeAllocTriggerZoneGC(zone, lock);
 
     return arena;

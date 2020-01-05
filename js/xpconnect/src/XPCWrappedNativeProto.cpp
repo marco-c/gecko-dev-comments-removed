@@ -115,7 +115,7 @@ XPCWrappedNativeProto::CallPostCreatePrototype()
 void
 XPCWrappedNativeProto::JSProtoObjectFinalized(js::FreeOp* fop, JSObject* obj)
 {
-    MOZ_ASSERT(obj == mJSProtoObject, "huh?");
+    MOZ_ASSERT(obj == mJSProtoObject.unbarrieredGet(), "huh?");
 
     
     ClassInfo2WrappedNativeProtoMap* map = GetScope()->GetWrappedNativeProtoMap();

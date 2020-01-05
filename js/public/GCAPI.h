@@ -633,14 +633,19 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
     MOZ_ASSERT(thing.kind() != JS::TraceKind::Shape);
 
     
-
-
-
-
+    
+    
     if (IsInsideNursery(thing.asCell()))
         return;
+
+    
+    
+    if (thing.mayBeOwnedByOtherRuntime())
+        return;
+
     JS::shadow::Runtime* rt = detail::GetGCThingRuntime(thing.unsafeAsUIntPtr());
     MOZ_DIAGNOSTIC_ASSERT(rt->allowGCBarriers());
+
     if (IsIncrementalBarrierNeededOnTenuredGCThing(rt, thing))
         JS::IncrementalReferenceBarrier(thing);
     else if (JS::GCThingIsMarkedGray(thing))
@@ -650,13 +655,19 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
 static MOZ_ALWAYS_INLINE void
 MarkGCThingAsLive(JSRuntime* aRt, JS::GCCellPtr thing)
 {
-    JS::shadow::Runtime* rt = JS::shadow::Runtime::asShadowRuntime(aRt);
-    MOZ_DIAGNOSTIC_ASSERT(rt->allowGCBarriers());
     
-
-
+    
     if (IsInsideNursery(thing.asCell()))
         return;
+
+    
+    
+    if (thing.mayBeOwnedByOtherRuntime())
+        return;
+
+    JS::shadow::Runtime* rt = JS::shadow::Runtime::asShadowRuntime(aRt);
+    MOZ_DIAGNOSTIC_ASSERT(rt->allowGCBarriers());
+
     if (IsIncrementalBarrierNeededOnTenuredGCThing(rt, thing))
         JS::IncrementalReferenceBarrier(thing);
 }

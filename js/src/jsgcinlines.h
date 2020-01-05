@@ -181,18 +181,34 @@ template<>
 JSObject*
 ArenaCellIterImpl::get<JSObject>() const;
 
+class ArenaCellIter : public ArenaCellIterImpl
+{
+  public:
+    explicit ArenaCellIter(Arena* arena)
+      : ArenaCellIterImpl(arena)
+    {
+        MOZ_ASSERT(arena->zone->runtimeFromMainThread()->isHeapTracing());
+    }
+};
+
 class ArenaCellIterUnderGC : public ArenaCellIterImpl
 {
   public:
-    explicit ArenaCellIterUnderGC(Arena* arena) : ArenaCellIterImpl(arena) {
-        MOZ_ASSERT(arena->zone->runtimeFromAnyThread()->isHeapBusy());
+    explicit ArenaCellIterUnderGC(Arena* arena)
+      : ArenaCellIterImpl(arena)
+    {
+        MOZ_ASSERT(CurrentThreadIsPerformingGC());
     }
 };
 
 class ArenaCellIterUnderFinalize : public ArenaCellIterImpl
 {
   public:
-    explicit ArenaCellIterUnderFinalize(Arena* arena) : ArenaCellIterImpl(arena) {}
+    explicit ArenaCellIterUnderFinalize(Arena* arena)
+      : ArenaCellIterImpl(arena)
+    {
+        MOZ_ASSERT(CurrentThreadIsGCSweeping());
+    }
 };
 
 template <typename T>
@@ -368,6 +384,7 @@ class GCZonesIter
 
   public:
     explicit GCZonesIter(JSRuntime* rt, ZoneSelector selector = WithAtoms) : zone(rt, selector) {
+        MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt) && rt->isHeapBusy());
         if (!zone->isCollecting())
             next();
     }
@@ -399,7 +416,7 @@ class GCZoneGroupIter {
 
   public:
     explicit GCZoneGroupIter(JSRuntime* rt) {
-        MOZ_ASSERT(rt->isHeapBusy());
+        MOZ_ASSERT(CurrentThreadIsPerformingGC());
         current = rt->gc.getCurrentZoneGroup();
     }
 

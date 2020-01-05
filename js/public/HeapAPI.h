@@ -17,11 +17,6 @@
 
 namespace js {
 
-
-
-JS_FRIEND_API(bool)
-CurrentThreadCanAccessRuntime(JSRuntime* rt);
-
 JS_FRIEND_API(bool)
 CurrentThreadCanAccessZone(JS::Zone* zone);
 
@@ -384,8 +379,11 @@ IsIncrementalBarrierNeededOnTenuredGCThing(JS::shadow::Runtime* rt, const JS::GC
 {
     MOZ_ASSERT(thing);
     MOZ_ASSERT(!js::gc::IsInsideNursery(thing.asCell()));
-    if (rt->isHeapCollecting())
-        return false;
+
+    
+    
+    MOZ_ASSERT(!rt->isHeapCollecting());
+
     JS::Zone* zone = JS::GetTenuredGCThingZone(thing);
     return JS::shadow::Zone::asShadowZone(zone)->needsIncrementalBarrier();
 }

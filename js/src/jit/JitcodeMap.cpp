@@ -453,8 +453,8 @@ JitcodeGlobalTable::lookupForSamplerInfallible(void* ptr, JSRuntime* rt, uint32_
     
     
     
-    MOZ_ASSERT_IF(rt->isHeapBusy() && entry->jitcode()->zoneFromAnyThread()->isGCSweeping(),
-                  entry->isMarkedFromAnyThread(rt));
+    
+    
 
     return *entry;
 }
