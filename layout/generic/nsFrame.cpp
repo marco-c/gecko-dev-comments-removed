@@ -1824,20 +1824,17 @@ nsFrame::DisplaySelectionOverlay(nsDisplayListBuilder*   aBuilder,
     offset = newContent->IndexOf(mContent);
   }
 
-  SelectionDetails *details;
   
-  details = frameSelection->LookUpSelection(newContent, offset, 1, false);
+  UniquePtr<SelectionDetails> details
+    = frameSelection->LookUpSelection(newContent, offset, 1, false);
   if (!details)
     return;
-  
+
   bool normal = false;
-  while (details) {
-    if (details->mSelectionType == SelectionType::eNormal) {
+  for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
+    if (sd->mSelectionType == SelectionType::eNormal) {
       normal = true;
     }
-    SelectionDetails *next = details->mNext;
-    delete details;
-    details = next;
   }
 
   if (!normal && aContentType == nsISelectionDisplay::DISPLAY_IMAGES) {
@@ -3412,22 +3409,21 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
   
   
 
-  SelectionDetails *details = 0;
   if (GetContent()->IsSelectionDescendant())
   {
     bool inSelection = false;
-    details = frameselection->LookUpSelection(offsets.content, 0,
-        offsets.EndOffset(), false);
+    UniquePtr<SelectionDetails> details
+      = frameselection->LookUpSelection(offsets.content, 0,
+                                        offsets.EndOffset(), false);
 
     
     
     
     
 
-    SelectionDetails *curDetail = details;
-
-    while (curDetail)
-    {
+    for (SelectionDetails* curDetail = details.get();
+         curDetail;
+         curDetail = curDetail->mNext.get()) {
       
       
       
@@ -3443,10 +3439,6 @@ nsFrame::HandlePress(nsPresContext* aPresContext,
       {
         inSelection = true;
       }
-
-      SelectionDetails *nextDetail = curDetail->mNext;
-      delete curDetail;
-      curDetail = nextDetail;
     }
 
     if (inSelection) {

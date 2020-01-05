@@ -9,6 +9,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/UniquePtr.h"
 #include "nsFrame.h"
 #include "nsSplittableFrame.h"
 #include "nsLineBox.h"
@@ -475,12 +476,12 @@ public:
   
   bool PaintTextWithSelectionColors(
          const PaintTextSelectionParams& aParams,
-         SelectionDetails* aDetails,
+         const mozilla::UniquePtr<SelectionDetails>& aDetails,
          RawSelectionType* aAllRawSelectionTypes,
          const nsCharClipDisplayItem::ClipEdges& aClipEdges);
   
   void PaintTextSelectionDecorations(const PaintTextSelectionParams& aParams,
-                                     SelectionDetails* aDetails,
+                                     const mozilla::UniquePtr<SelectionDetails>& aDetails,
                                      SelectionType aSelectionType);
 
   void DrawEmphasisMarks(gfxContext* aContext,
@@ -627,10 +628,7 @@ protected:
 
   virtual bool IsFrameSelected() const override;
 
-  
-  
-  
-  SelectionDetails* GetSelectionDetails();
+  mozilla::UniquePtr<SelectionDetails> GetSelectionDetails();
 
   void UnionAdditionalOverflow(nsPresContext* aPresContext,
                                nsIFrame* aBlock,
