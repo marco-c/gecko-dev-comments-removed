@@ -128,7 +128,7 @@ public:
 #endif
 
   
-  NS_IMETHOD SetTitle(const nsAString& aTitle) override
+  virtual nsresult SetTitle(const nsAString& aTitle) override
   { return NS_ERROR_UNEXPECTED; }
 
   virtual LayoutDeviceIntPoint WidgetToScreenOffset() override

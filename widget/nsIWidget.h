@@ -1311,7 +1311,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetTitle(const nsAString& aTitle) = 0;
+    virtual nsresult SetTitle(const nsAString& aTitle) = 0;
 
     
 
