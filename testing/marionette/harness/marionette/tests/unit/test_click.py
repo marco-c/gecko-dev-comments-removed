@@ -2,12 +2,50 @@
 
 
 
+import urllib
 from unittest import skip
 
 from marionette_driver.by import By
 from marionette_driver.errors import NoSuchElementException, ElementNotVisibleException
 from marionette_driver.wait import Wait
 from marionette import MarionetteTestCase
+
+
+def inline(doc):
+    return "data:text/html;charset=utf-8,{}".format(urllib.quote(doc))
+
+
+
+
+
+
+fixed_overlay = inline("""
+<style>
+* { margin: 0; padding: 0; }
+body { height: 300vh }
+div, a { display: block }
+div {
+  background-color: pink;
+  position: fixed;
+  width: 100%;
+  height: 40px;
+  top: 0;
+}
+a {
+  margin-top: 1000px;
+}
+</style>
+
+<div>overlay</div>
+<a href=#>link</a>
+
+<script>
+window.clicked = false;
+
+let link = document.querySelector("a");
+link.addEventListener("click", () => window.clicked = true);
+</script>
+""")
 
 
 class TestLegacyClick(MarionetteTestCase):
@@ -45,6 +83,12 @@ class TestLegacyClick(MarionetteTestCase):
         self.marionette.navigate(test_html)
         self.marionette.find_element(By.ID, "overflowLink").click()
         self.wait_for_condition(lambda mn: self.marionette.title == "XHTML Test Page")
+
+    def test_scroll_into_view_near_end(self):
+        self.marionette.navigate(fixed_overlay)
+        link = self.marionette.find_element(By.TAG_NAME, "a")
+        link.click()
+        self.assertTrue(self.marionette.execute_script("return window.clicked", sandbox=None))
 
 
 class TestClick(TestLegacyClick):
