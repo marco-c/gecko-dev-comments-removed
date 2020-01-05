@@ -6,18 +6,17 @@
 
 use construct::FlowConstructor;
 use context::LayoutContext;
-use css::matching::{ElementMatchMethods, MatchMethods, StyleSharingResult};
 use flow::{PostorderFlowTraversal, PreorderFlowTraversal};
 use flow::{self, Flow};
 use gfx::display_list::OpaqueNode;
-use incremental::{self, BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, RestyleDamage};
+use incremental::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, RestyleDamage};
 use script::layout_interface::ReflowGoal;
 use selectors::bloom::BloomFilter;
 use std::cell::RefCell;
 use std::mem;
 use style::context::StyleContext;
-use style::dom::UnsafeNode;
-use style::matching::ApplicableDeclarations;
+use style::dom::{TRestyleDamage, UnsafeNode};
+use style::matching::{ApplicableDeclarations, ElementMatchMethods, MatchMethods, StyleSharingResult};
 use util::opts;
 use util::tid::tid;
 use wrapper::{LayoutNode, ThreadSafeLayoutNode};
@@ -118,17 +117,30 @@ fn insert_ancestors_into_bloom_filter<'ln, N>(bf: &mut Box<BloomFilter>,
     debug!("[{}] Inserted {} ancestors.", tid(), ancestors);
 }
 
+#[derive(Copy, Clone)]
+pub struct DomTraversalContext<'a> {
+    pub layout_context: &'a LayoutContext<'a>,
+    pub root: OpaqueNode,
+}
 
-
-pub trait PreorderDomTraversal<'ln, ConcreteLayoutNode: LayoutNode<'ln>>  {
-    
-    fn process(&self, node: ConcreteLayoutNode);
+pub trait DomTraversal<'ln, N: LayoutNode<'ln>>  {
+    fn process_preorder<'a>(context: &'a DomTraversalContext<'a>, node: N);
+    fn process_postorder<'a>(context: &'a DomTraversalContext<'a>, node: N);
 }
 
 
-pub trait PostorderDomTraversal<'ln, ConcreteLayoutNode: LayoutNode<'ln>> {
-    
-    fn process(&self, node: ConcreteLayoutNode);
+
+#[allow(dead_code)]
+pub struct RecalcStyleOnly;
+impl<'ln, N: LayoutNode<'ln>> DomTraversal<'ln, N> for RecalcStyleOnly {
+    fn process_preorder<'a>(context: &'a DomTraversalContext<'a>, node: N) { recalc_style_at(context, node); }
+    fn process_postorder<'a>(_: &'a DomTraversalContext<'a>, _: N) {}
+}
+
+pub struct RecalcStyleAndConstructFlows;
+impl<'ln, N: LayoutNode<'ln>> DomTraversal<'ln, N> for RecalcStyleAndConstructFlows {
+    fn process_preorder<'a>(context: &'a DomTraversalContext<'a>, node: N) { recalc_style_at(context, node); }
+    fn process_postorder<'a>(context: &'a DomTraversalContext<'a>, node: N) { construct_flows_at(context, node); }
 }
 
 
@@ -139,176 +151,155 @@ pub trait PostorderNodeMutTraversal<'ln, ConcreteThreadSafeLayoutNode: ThreadSaf
 
 
 
-#[derive(Copy, Clone)]
-pub struct RecalcStyleForNode<'a> {
-    pub layout_context: &'a LayoutContext<'a>,
-    pub root: OpaqueNode,
-}
+#[inline]
+#[allow(unsafe_code)]
+fn recalc_style_at<'a, 'ln, N: LayoutNode<'ln>> (context: &'a DomTraversalContext<'a>, node: N) {
+    
+    
+    
+    
+    node.initialize_data();
 
-impl<'a, 'ln, ConcreteLayoutNode> PreorderDomTraversal<'ln, ConcreteLayoutNode>
-                                  for RecalcStyleForNode<'a>
-                                  where ConcreteLayoutNode: LayoutNode<'ln> {
-    #[inline]
-    #[allow(unsafe_code)]
-    fn process(&self, node: ConcreteLayoutNode) {
+    
+    let parent_opt = node.layout_parent_node(context.root);
+
+    
+    let mut bf = take_task_local_bloom_filter(parent_opt, context.root, context.layout_context);
+
+    let nonincremental_layout = opts::get().nonincremental_layout;
+    if nonincremental_layout || node.is_dirty() {
         
         
-        
-        
-        node.initialize_data();
-
-        
-        let parent_opt = node.layout_parent_node(self.root);
-
-        
-        let mut bf = take_task_local_bloom_filter(parent_opt, self.root, self.layout_context);
-
-        let nonincremental_layout = opts::get().nonincremental_layout;
-        if nonincremental_layout || node.is_dirty() {
-            
-            
-            if node.has_changed() {
-                let node = node.to_threadsafe();
-                node.unstyle();
-            }
-
-            
-            let style_sharing_candidate_cache =
-                &mut self.layout_context.style_sharing_candidate_cache();
-
-            let sharing_result = match node.as_element() {
-                Some(element) => {
-                    unsafe {
-                        element.share_style_if_possible(style_sharing_candidate_cache,
-                                                        parent_opt.clone())
-                    }
-                },
-                None => StyleSharingResult::CannotShare,
-            };
-
-            
-            match sharing_result {
-                StyleSharingResult::CannotShare => {
-                    let mut applicable_declarations = ApplicableDeclarations::new();
-
-                    let shareable_element = match node.as_element() {
-                        Some(element) => {
-                            
-                            let stylist = unsafe { &*self.layout_context.shared_context().stylist.0 };
-                            if element.match_element(stylist,
-                                                     Some(&*bf),
-                                                     &mut applicable_declarations) {
-                                Some(element)
-                            } else {
-                                None
-                            }
-                        },
-                        None => {
-                            if node.has_changed() {
-                                node.to_threadsafe().set_restyle_damage(
-                                    incremental::rebuild_and_reflow())
-                            }
-                            None
-                        },
-                    };
-
-                    
-                    unsafe {
-                        node.cascade_node(self.layout_context.shared,
-                                          parent_opt,
-                                          &applicable_declarations,
-                                          &mut self.layout_context.applicable_declarations_cache(),
-                                          &self.layout_context.shared_context().new_animations_sender);
-                    }
-
-                    
-                    if let Some(element) = shareable_element {
-                        style_sharing_candidate_cache.insert_if_possible(&element);
-                    }
-                }
-                StyleSharingResult::StyleWasShared(index, damage) => {
-                    style_sharing_candidate_cache.touch(index);
-                    node.to_threadsafe().set_restyle_damage(damage);
-                }
-            }
+        if node.has_changed() {
+            let node = node.to_threadsafe();
+            node.unstyle();
         }
 
-        let unsafe_layout_node = node.to_unsafe();
-
         
-        
-        debug!("[{}] + {:X}", tid(), unsafe_layout_node.0);
-        node.insert_into_bloom_filter(&mut *bf);
+        let style_sharing_candidate_cache =
+            &mut context.layout_context.style_sharing_candidate_cache();
 
-        
-        put_task_local_bloom_filter(bf, &unsafe_layout_node, self.layout_context);
-    }
-}
-
-
-#[derive(Copy, Clone)]
-pub struct ConstructFlows<'a> {
-    pub layout_context: &'a LayoutContext<'a>,
-    pub root: OpaqueNode,
-}
-
-impl<'a, 'ln, ConcreteLayoutNode> PostorderDomTraversal<'ln, ConcreteLayoutNode>
-                                  for ConstructFlows<'a>
-                                  where ConcreteLayoutNode: LayoutNode<'ln> {
-    #[inline]
-    #[allow(unsafe_code)]
-    fn process(&self, node: ConcreteLayoutNode) {
-        
-        {
-            let tnode = node.to_threadsafe();
-
-            
-            let nonincremental_layout = opts::get().nonincremental_layout;
-            if nonincremental_layout || node.has_dirty_descendants() {
-                let mut flow_constructor = FlowConstructor::new(self.layout_context);
-                if nonincremental_layout || !flow_constructor.repair_if_possible(&tnode) {
-                    flow_constructor.process(&tnode);
-                    debug!("Constructed flow for {:x}: {:x}",
-                           tnode.debug_id(),
-                           tnode.flow_debug_id());
+        let sharing_result = match node.as_element() {
+            Some(element) => {
+                unsafe {
+                    element.share_style_if_possible(style_sharing_candidate_cache,
+                                                    parent_opt.clone())
                 }
-            }
-
-            
-            
-            tnode.set_restyle_damage(RestyleDamage::empty());
-        }
-
-        unsafe {
-            node.set_changed(false);
-            node.set_dirty(false);
-            node.set_dirty_descendants(false);
-        }
-
-        let unsafe_layout_node = node.to_unsafe();
-
-        let (mut bf, old_node, old_generation) =
-            STYLE_BLOOM.with(|style_bloom| {
-                mem::replace(&mut *style_bloom.borrow_mut(), None)
-                .expect("The bloom filter should have been set by style recalc.")
-            });
-
-        assert_eq!(old_node, unsafe_layout_node);
-        assert_eq!(old_generation, self.layout_context.shared_context().generation);
-
-        match node.layout_parent_node(self.root) {
-            None => {
-                debug!("[{}] - {:X}, and deleting BF.", tid(), unsafe_layout_node.0);
-                
-            }
-            Some(parent) => {
-                
-                node.remove_from_bloom_filter(&mut *bf);
-                let unsafe_parent = parent.to_unsafe();
-                put_task_local_bloom_filter(bf, &unsafe_parent, self.layout_context);
             },
+            None => StyleSharingResult::CannotShare,
         };
+
+        
+        match sharing_result {
+            StyleSharingResult::CannotShare => {
+                let mut applicable_declarations = ApplicableDeclarations::new();
+
+                let shareable_element = match node.as_element() {
+                    Some(element) => {
+                        
+                        let stylist = unsafe { &*context.layout_context.shared_context().stylist.0 };
+                        if element.match_element(stylist,
+                                                 Some(&*bf),
+                                                 &mut applicable_declarations) {
+                            Some(element)
+                        } else {
+                            None
+                        }
+                    },
+                    None => {
+                        if node.has_changed() {
+                            node.set_restyle_damage(N::ConcreteRestyleDamage::rebuild_and_reflow())
+                        }
+                        None
+                    },
+                };
+
+                
+                unsafe {
+                    node.cascade_node(&context.layout_context.shared.style_context,
+                                      parent_opt,
+                                      &applicable_declarations,
+                                      &mut context.layout_context.applicable_declarations_cache(),
+                                      &context.layout_context.shared_context().new_animations_sender);
+                }
+
+                
+                if let Some(element) = shareable_element {
+                    style_sharing_candidate_cache.insert_if_possible(&element);
+                }
+            }
+            StyleSharingResult::StyleWasShared(index, damage) => {
+                style_sharing_candidate_cache.touch(index);
+                node.set_restyle_damage(damage);
+            }
+        }
     }
+
+    let unsafe_layout_node = node.to_unsafe();
+
+    
+    
+    debug!("[{}] + {:X}", tid(), unsafe_layout_node.0);
+    node.insert_into_bloom_filter(&mut *bf);
+
+    
+    put_task_local_bloom_filter(bf, &unsafe_layout_node, context.layout_context);
+}
+
+
+#[inline]
+#[allow(unsafe_code)]
+fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a DomTraversalContext<'a>, node: N) {
+    
+    {
+        let tnode = node.to_threadsafe();
+
+        
+        let nonincremental_layout = opts::get().nonincremental_layout;
+        if nonincremental_layout || node.has_dirty_descendants() {
+            let mut flow_constructor = FlowConstructor::new(context.layout_context);
+            if nonincremental_layout || !flow_constructor.repair_if_possible(&tnode) {
+                flow_constructor.process(&tnode);
+                debug!("Constructed flow for {:x}: {:x}",
+                       tnode.debug_id(),
+                       tnode.flow_debug_id());
+            }
+        }
+
+        
+        
+        tnode.set_restyle_damage(RestyleDamage::empty());
+    }
+
+    unsafe {
+        node.set_changed(false);
+        node.set_dirty(false);
+        node.set_dirty_descendants(false);
+    }
+
+    let unsafe_layout_node = node.to_unsafe();
+
+    let (mut bf, old_node, old_generation) =
+        STYLE_BLOOM.with(|style_bloom| {
+            mem::replace(&mut *style_bloom.borrow_mut(), None)
+            .expect("The bloom filter should have been set by style recalc.")
+        });
+
+    assert_eq!(old_node, unsafe_layout_node);
+    assert_eq!(old_generation, context.layout_context.shared_context().generation);
+
+    match node.layout_parent_node(context.root) {
+        None => {
+            debug!("[{}] - {:X}, and deleting BF.", tid(), unsafe_layout_node.0);
+            
+        }
+        Some(parent) => {
+            
+            node.remove_from_bloom_filter(&mut *bf);
+            let unsafe_parent = parent.to_unsafe();
+            put_task_local_bloom_filter(bf, &unsafe_parent, context.layout_context);
+        },
+    };
 }
 
 

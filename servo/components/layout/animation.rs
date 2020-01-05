@@ -6,53 +6,15 @@
 
 use flow::{self, Flow};
 use gfx::display_list::OpaqueNode;
-use incremental::{self, RestyleDamage};
+use incremental::RestyleDamage;
 use msg::constellation_msg::{AnimationState, ConstellationChan, PipelineId};
 use script::layout_interface::Animation;
 use script_traits::LayoutMsg as ConstellationMsg;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
-use std::sync::mpsc::{Sender, Receiver};
-use std::sync::{Arc, Mutex};
-use style::animation::{GetMod, PropertyAnimation};
-use style::properties::ComputedValues;
+use std::sync::mpsc::Receiver;
+use style::animation::update_style_for_animation;
 use time;
-
-
-
-
-pub fn start_transitions_if_applicable(new_animations_sender: &Mutex<Sender<Animation>>,
-                                       node: OpaqueNode,
-                                       old_style: &ComputedValues,
-                                       new_style: &mut ComputedValues)
-                                       -> bool {
-    let mut had_animations = false;
-    for i in 0..new_style.get_animation().transition_property.0.len() {
-        
-        let property_animations = PropertyAnimation::from_transition(i, old_style, new_style);
-        for property_animation in property_animations {
-            
-            property_animation.update(new_style, 0.0);
-
-            
-            let now = time::precise_time_s();
-            let animation_style = new_style.get_animation();
-            let start_time =
-                now + (animation_style.transition_delay.0.get_mod(i).seconds() as f64);
-            new_animations_sender.lock().unwrap().send(Animation {
-                node: node,
-                property_animation: property_animation,
-                start_time: start_time,
-                end_time: start_time +
-                    (animation_style.transition_duration.0.get_mod(i).seconds() as f64),
-            }).unwrap();
-
-            had_animations = true
-        }
-    }
-
-    had_animations
-}
 
 
 
@@ -138,27 +100,4 @@ pub fn recalc_style_for_animations(flow: &mut Flow,
     for kid in base.children.iter_mut() {
         recalc_style_for_animations(kid, animations)
     }
-}
-
-
-
-pub fn update_style_for_animation(animation: &Animation,
-                                  style: &mut Arc<ComputedValues>,
-                                  damage: Option<&mut RestyleDamage>) {
-    let now = time::precise_time_s();
-    let mut progress = (now - animation.start_time) / animation.duration();
-    if progress > 1.0 {
-        progress = 1.0
-    }
-    if progress <= 0.0 {
-        return
-    }
-
-    let mut new_style = (*style).clone();
-    animation.property_animation.update(&mut *Arc::make_mut(&mut new_style), progress);
-    if let Some(damage) = damage {
-        damage.insert(incremental::compute_damage(&Some((*style).clone()), &new_style));
-    }
-
-    *style = new_style
 }
