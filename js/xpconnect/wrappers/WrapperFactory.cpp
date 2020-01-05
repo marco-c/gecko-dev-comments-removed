@@ -211,7 +211,7 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
             
             
             
-            nsresult rv = wn->GetScriptableInfo()->GetCallback()->
+            nsresult rv = wn->GetScriptable()->
                 PreCreate(wn->Native(), cx, scope, wrapScope.address());
             if (NS_FAILED(rv)) {
                 retObj.set(waive ? WaiveXray(cx, obj) : obj);
@@ -250,7 +250,7 @@ WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
                 
                 
                 RootedObject probe(cx);
-                rv = wn->GetScriptableInfo()->GetCallback()->
+                rv = wn->GetScriptable()->
                     PreCreate(wn->Native(), cx, currentScope, probe.address());
 
                 

@@ -16,8 +16,8 @@ namespace XPCNativeWrapper {
 
 
 #define NATIVE_HAS_FLAG(_wn, _flag)                                           \
-  ((_wn)->GetScriptableInfo() &&                                              \
-   (_wn)->GetScriptableInfo()->GetCallback()->_flag())
+  ((_wn)->GetScriptable() &&                                                  \
+   (_wn)->GetScriptable()->_flag())
 
 bool
 AttachNewConstructorObject(JSContext* aCx, JS::HandleObject aGlobalObject);

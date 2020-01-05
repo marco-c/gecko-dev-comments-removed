@@ -86,6 +86,13 @@ XPC_MAP_CLASSNAME::GetClass()
 }
 
 
+const JSClass*
+XPC_MAP_CLASSNAME::GetJSClass()
+{
+    return Jsvalify(GetClass());
+}
+
+
 
 #ifndef XPC_MAP_WANT_PRECREATE
 NS_IMETHODIMP XPC_MAP_CLASSNAME::PreCreate(nsISupports* nativeObj, JSContext * cx, JSObject * globalObj, JSObject * *parentObj)

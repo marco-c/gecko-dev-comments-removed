@@ -65,7 +65,6 @@
 
 
 
-
 #ifndef xpcprivate_h___
 #define xpcprivate_h___
 
@@ -703,7 +702,7 @@ public:
     inline bool                         CanGetTearOff() const ;
     inline XPCWrappedNativeTearOff*     GetTearOff() const ;
 
-    inline XPCNativeScriptableInfo*     GetScriptableInfo() const ;
+    inline nsIXPCScriptable*            GetScriptable() const ;
     inline bool                         CanGetSet() const ;
     inline XPCNativeSet*                GetSet() const ;
     inline bool                         CanGetInterface() const ;
@@ -779,7 +778,7 @@ private:
     XPCWrappedNative*               mWrapper;
     XPCWrappedNativeTearOff*        mTearOff;
 
-    XPCNativeScriptableInfo*        mScriptableInfo;
+    nsCOMPtr<nsIXPCScriptable>      mScriptable;
 
     RefPtr<XPCNativeSet>            mSet;
     RefPtr<XPCNativeInterface>      mInterface;
@@ -1387,44 +1386,6 @@ class XPCNativeSet final
 
 
 
-class XPCNativeScriptableInfo final
-{
-public:
-    static XPCNativeScriptableInfo*
-    Construct(const XPCNativeScriptableCreateInfo* sci);
-
-    nsIXPCScriptable*
-    GetCallback() const { return mCallback; }
-
-    const JSClass*
-    GetJSClass() { return Jsvalify(mCallback->GetClass()); }
-
-protected:
-    explicit XPCNativeScriptableInfo(nsIXPCScriptable* aCallback)
-        : mCallback(aCallback)
-    {
-        MOZ_COUNT_CTOR(XPCNativeScriptableInfo);
-    }
-public:
-    ~XPCNativeScriptableInfo()
-    {
-        MOZ_COUNT_DTOR(XPCNativeScriptableInfo);
-    }
-private:
-
-    
-    XPCNativeScriptableInfo(const XPCNativeScriptableInfo& r) = delete;
-    XPCNativeScriptableInfo& operator= (const XPCNativeScriptableInfo& r) = delete;
-
-private:
-    nsCOMPtr<nsIXPCScriptable> mCallback;
-};
-
-
-
-
-
-
 class MOZ_STACK_CLASS XPCNativeScriptableCreateInfo final
 {
 public:
@@ -1469,8 +1430,8 @@ public:
     XPCNativeSet*
     GetSet()           const {return mSet;}
 
-    XPCNativeScriptableInfo*
-    GetScriptableInfo()   {return mScriptableInfo;}
+    nsIXPCScriptable*
+    GetScriptable() const { return mScriptable; }
 
     bool CallPostCreatePrototype();
     void JSProtoObjectFinalized(js::FreeOp* fop, JSObject* obj);
@@ -1529,7 +1490,7 @@ private:
     JS::ObjectPtr            mJSProtoObject;
     nsCOMPtr<nsIClassInfo>   mClassInfo;
     RefPtr<XPCNativeSet>     mSet;
-    XPCNativeScriptableInfo* mScriptableInfo;
+    nsCOMPtr<nsIXPCScriptable> mScriptable;
 };
 
 
@@ -1692,11 +1653,8 @@ private:
 
 public:
 
-    XPCNativeScriptableInfo*
-    GetScriptableInfo() const {return mScriptableInfo;}
-
-    nsIXPCScriptable*      
-    GetScriptableCallback() const  {return mScriptableInfo->GetCallback();}
+    nsIXPCScriptable*
+    GetScriptable() const { return mScriptable; }
 
     nsIClassInfo*
     GetClassInfo() const {return IsValid() && HasProto() ?
@@ -1844,7 +1802,7 @@ private:
     };
     RefPtr<XPCNativeSet> mSet;
     JS::TenuredHeap<JSObject*> mFlatJSObject;
-    XPCNativeScriptableInfo* mScriptableInfo;
+    nsCOMPtr<nsIXPCScriptable> mScriptable;
     XPCWrappedNativeTearOff mFirstTearOff;
 };
 
