@@ -68,6 +68,8 @@ public:
 
 
 
+
+
   virtual void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                         uint32_t aFilter) = 0;
 

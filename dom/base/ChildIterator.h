@@ -264,10 +264,14 @@ private:
 
 
 
-class StyleChildrenIterator : private AllChildrenIterator {
+
+class StyleChildrenIterator : private AllChildrenIterator
+{
 public:
   explicit StyleChildrenIterator(const nsIContent* aContent)
-    : AllChildrenIterator(aContent, nsIContent::eAllChildren)
+    : AllChildrenIterator(aContent,
+                          nsIContent::eAllChildren |
+                          nsIContent::eSkipDocumentLevelNativeAnonymousContent)
   {
     MOZ_COUNT_CTOR(StyleChildrenIterator);
   }

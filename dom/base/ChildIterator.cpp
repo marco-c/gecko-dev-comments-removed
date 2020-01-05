@@ -383,7 +383,10 @@ AllChildrenIterator::AppendNativeAnonymousChildren()
 
   
   
-  if (mOriginalContent == mOriginalContent->OwnerDoc()->GetRootElement()) {
+  
+  
+  if (!(mFlags & nsIContent::eSkipDocumentLevelNativeAnonymousContent) &&
+      mOriginalContent == mOriginalContent->OwnerDoc()->GetRootElement()) {
     nsIPresShell* presShell = mOriginalContent->OwnerDoc()->GetShell();
     nsIFrame* scrollFrame = presShell ? presShell->GetRootScrollFrame() : nullptr;
     if (scrollFrame) {
@@ -582,12 +585,6 @@ StyleChildrenIterator::IsNeeded(const Element* aElement)
   
   nsIAnonymousContentCreator* ac = do_QueryFrame(aElement->GetPrimaryFrame());
   if (ac) {
-    return true;
-  }
-
-  
-  
-  if (aElement == aElement->OwnerDoc()->GetRootElement()) {
     return true;
   }
 

@@ -145,7 +145,14 @@ public:
 
 
 
-    eSkipPlaceholderContent = 2
+    eSkipPlaceholderContent = 2,
+
+    
+
+
+
+
+    eSkipDocumentLevelNativeAnonymousContent = 4,
   };
 
   
