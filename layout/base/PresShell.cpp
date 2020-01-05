@@ -4255,10 +4255,8 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     }
   }
 
-  if (!didLayoutFlush && !mIsDestroying &&
-      (flushType >=
-       (mSuppressInterruptibleReflows ? FlushType::Layout
-                                      : FlushType::InterruptibleLayout))) {
+  if (!didLayoutFlush && flushType >= FlushType::InterruptibleLayout &&
+      !mIsDestroying) {
     
     
     
