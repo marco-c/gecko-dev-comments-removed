@@ -294,8 +294,6 @@ PROFILER_FUNC_VOID(profiler_js_interrupt_callback())
 
 PROFILER_FUNC(double profiler_time(), 0)
 
-PROFILER_FUNC(bool profiler_is_active_and_not_in_privacy_mode(), false)
-
 PROFILER_FUNC_VOID(profiler_log(const char *str))
 
 
@@ -355,7 +353,7 @@ static inline void*
 profiler_call_enter(const char* aInfo,
                     js::ProfileEntry::Category aCategory,
                     void *aFrameAddress, bool aCopy, uint32_t line,
-                    const char* aAnnotationString = nullptr)
+                    const char* aDynamicString = nullptr)
 {
   
 
@@ -365,7 +363,7 @@ profiler_call_enter(const char* aInfo,
   if (!stack) {
     return stack;
   }
-  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line, aAnnotationString);
+  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line, aDynamicString);
 
   
   
@@ -516,11 +514,7 @@ private:
   void* Enter(const char* aInfo, js::ProfileEntry::Category aCategory,
               uint32_t aLine, const char* aDynamicString)
   {
-    if (profiler_is_active_and_not_in_privacy_mode()) {
-      return profiler_call_enter(aInfo, aCategory, this, true, aLine, aDynamicString);
-    } else {
-      return profiler_call_enter(aInfo, aCategory, this, false, aLine);
-    }
+    return profiler_call_enter(aInfo, aCategory, this, true, aLine, aDynamicString);
   }
 
   nsCString mDynamicStorage;
