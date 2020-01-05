@@ -4,33 +4,45 @@
 
 use cookie::Cookie;
 use cookie_storage::CookieStorage;
-use fetch::methods::should_be_blocked_due_to_bad_port;
-use http_loader;
-use hyper::header::{Host, SetCookie};
-use net_traits::{CookieSource, MessageData, WebSocketCommunicate};
-use net_traits::{WebSocketConnectData, WebSocketDomAction, WebSocketNetworkEvent};
-use net_traits::hosts::replace_host_in_url;
+use fetch::methods::{should_be_blocked_due_to_bad_port, should_be_blocked_due_to_nosniff};
+use http_loader::{is_redirect_status, set_request_cookies};
+use hyper::buffer::BufReader;
+use hyper::header::{Accept, CacheControl, CacheDirective, Connection, ConnectionOption};
+use hyper::header::{Headers, Host, SetCookie, Pragma, Protocol, ProtocolName, Upgrade};
+use hyper::http::h1::{LINE_ENDING, parse_response};
+use hyper::method::Method;
+use hyper::net::{HttpStream, HttpsStream};
+use hyper::status::StatusCode;
+use hyper::version::HttpVersion;
+use net_traits::{CookieSource, MessageData, NetworkError, WebSocketCommunicate, WebSocketConnectData};
+use net_traits::{WebSocketDomAction, WebSocketNetworkEvent};
+use net_traits::hosts::replace_host;
+use net_traits::request::Type;
+use openssl::ssl::{SslContext, SslStream};
 use servo_url::ServoUrl;
 use std::ascii::AsciiExt;
+use std::io::{self, Write};
+use std::net::TcpStream;
 use std::sync::{Arc, Mutex, RwLock};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
-use websocket::{Client, Message};
-use websocket::header::{Origin, WebSocketProtocol};
-use websocket::message::Type;
+use url::Position;
+use websocket::{Message, Receiver as WSReceiver, Sender as WSSender};
+use websocket::header::{Origin, WebSocketAccept, WebSocketKey, WebSocketProtocol, WebSocketVersion};
+use websocket::message::Type as MessageType;
 use websocket::receiver::Receiver;
-use websocket::result::{WebSocketError, WebSocketResult};
 use websocket::sender::Sender;
-use websocket::stream::WebSocketStream;
-use websocket::ws::receiver::Receiver as WSReceiver;
-use websocket::ws::sender::Sender as Sender_Object;
 
-pub fn init(connect: WebSocketCommunicate, connect_data: WebSocketConnectData, cookie_jar: Arc<RwLock<CookieStorage>>) {
+pub fn init(connect: WebSocketCommunicate,
+            connect_data: WebSocketConnectData,
+            cookie_jar: Arc<RwLock<CookieStorage>>,
+            ssl_context: Arc<SslContext>) {
     thread::Builder::new().name(format!("WebSocket connection to {}", connect_data.resource_url)).spawn(move || {
         let channel = establish_a_websocket_connection(&connect_data.resource_url,
                                                        connect_data.origin,
                                                        connect_data.protocols,
-                                                       cookie_jar);
+                                                       cookie_jar,
+                                                       ssl_context);
         let (ws_sender, mut receiver) = match channel {
             Ok((protocol_in_use, sender, receiver)) => {
                 let _ = connect.event_sender.send(WebSocketNetworkEvent::ConnectionEstablished { protocol_in_use });
@@ -61,15 +73,15 @@ pub fn init(connect: WebSocketCommunicate, connect_data: WebSocketConnectData, c
                     }
                 };
                 let message = match message.opcode {
-                    Type::Text => MessageData::Text(String::from_utf8_lossy(&message.payload).into_owned()),
-                    Type::Binary => MessageData::Binary(message.payload.into_owned()),
-                    Type::Ping => {
+                    MessageType::Text => MessageData::Text(String::from_utf8_lossy(&message.payload).into_owned()),
+                    MessageType::Binary => MessageData::Binary(message.payload.into_owned()),
+                    MessageType::Ping => {
                         let pong = Message::pong(message.payload);
                         ws_sender_incoming.lock().unwrap().send_message(&pong).unwrap();
                         continue;
                     },
-                    Type::Pong => continue,
-                    Type::Close => {
+                    MessageType::Pong => continue,
+                    MessageType::Close => {
                         if !initiated_close_incoming.fetch_or(true, Ordering::SeqCst) {
                             ws_sender_incoming.lock().unwrap().send_message(&message).unwrap();
                         }
@@ -105,38 +117,191 @@ pub fn init(connect: WebSocketCommunicate, connect_data: WebSocketConnectData, c
     }).expect("Thread spawning failed");
 }
 
+type Stream = HttpsStream<SslStream<HttpStream>>;
+
+
+fn obtain_a_websocket_connection(url: &ServoUrl, ssl_context: Arc<SslContext>)
+                                 -> Result<Stream, NetworkError> {
+    
+    let host = url.host_str().unwrap();
+
+    
+    let port = url.port_or_known_default().unwrap();
+
+    
+    
+    
+    let secure = match url.scheme() {
+        "ws" => false,
+        "wss" => true,
+        _ => panic!("URL's scheme should be ws or wss"),
+    };
+
+    
+    let host = replace_host(host);
+    let tcp_stream = TcpStream::connect((&*host, port)).map_err(|e| {
+        NetworkError::Internal(format!("Could not connect to host: {}", e))
+    })?;
+    let http_stream = HttpStream(tcp_stream);
+    if !secure {
+        return Ok(HttpsStream::Http(http_stream));
+    }
+    let ssl_stream = SslStream::connect(&*ssl_context, http_stream).map_err(|e| {
+        NetworkError::from_ssl_error(url, &e)
+    })?;
+    Ok(HttpsStream::Https(ssl_stream))
+}
+
 
 fn establish_a_websocket_connection(resource_url: &ServoUrl,
                                     origin: String,
                                     protocols: Vec<String>,
-                                    cookie_jar: Arc<RwLock<CookieStorage>>)
-                                    -> WebSocketResult<(Option<String>,
-                                                        Sender<WebSocketStream>,
-                                                        Receiver<WebSocketStream>)> {
+                                    cookie_jar: Arc<RwLock<CookieStorage>>,
+                                    ssl_context: Arc<SslContext>)
+                                    -> Result<(Option<String>,
+                                               Sender<Stream>,
+                                               Receiver<Stream>),
+                                              NetworkError> {
     
     
 
-    if should_be_blocked_due_to_bad_port(resource_url) {
-        
-        
-        
-        return Err(WebSocketError::RequestError("Request should be blocked due to bad port."));
-    }
+    
+    let mut headers = Headers::new();
 
     
-    let net_url = replace_host_in_url(resource_url.clone());
-    let mut request = try!(Client::connect(net_url.as_url()));
+    headers.set(Upgrade(vec![Protocol::new(ProtocolName::WebSocket, None)]));
 
     
+    headers.set(Connection(vec![ConnectionOption::ConnectionHeader("upgrade".into())]));
+
     
-    request.headers.set(Host {
-        hostname: resource_url.host_str().unwrap().to_owned(),
-        port: resource_url.port(),
-    });
+    let key_value = WebSocketKey::new();
+
+    
+    headers.set(key_value);
+
+    
+    headers.set(WebSocketVersion::WebSocket13);
 
     
     if !protocols.is_empty() {
-        request.headers.set(WebSocketProtocol(protocols.clone()));
+        headers.set(WebSocketProtocol(protocols.clone()));
+    }
+
+    
+    
+
+    
+    let response = fetch(resource_url, origin, headers, cookie_jar, ssl_context)?;
+
+    
+    if response.status != StatusCode::SwitchingProtocols {
+        return Err(NetworkError::Internal("Response's status should be 101.".into()));
+    }
+
+    
+    if !protocols.is_empty() {
+        if response.headers.get::<WebSocketProtocol>().map_or(true, |protocols| protocols.is_empty()) {
+            return Err(NetworkError::Internal(
+                "Response's Sec-WebSocket-Protocol header is missing, malformed or empty.".into()));
+        }
+    }
+
+    
+    let upgrade_header = response.headers.get::<Upgrade>().ok_or_else(|| {
+        NetworkError::Internal("Response should have an Upgrade header.".into())
+    })?;
+    if upgrade_header.len() != 1 {
+        return Err(NetworkError::Internal("Response's Upgrade header should have only one value.".into()));
+    }
+    if upgrade_header[0].name != ProtocolName::WebSocket {
+        return Err(NetworkError::Internal("Response's Upgrade header value should be \"websocket\".".into()));
+    }
+
+    
+    let connection_header = response.headers.get::<Connection>().ok_or_else(|| {
+        NetworkError::Internal("Response should have a Connection header.".into())
+    })?;
+    let connection_includes_upgrade = connection_header.iter().any(|option| {
+        match *option {
+            ConnectionOption::ConnectionHeader(ref option) => *option == "upgrade",
+            _ => false,
+        }
+    });
+    if !connection_includes_upgrade {
+        return Err(NetworkError::Internal("Response's Connection header value should include \"upgrade\".".into()));
+    }
+
+    
+    let accept_header = response.headers.get::<WebSocketAccept>().ok_or_else(|| {
+        NetworkError::Internal("Response should have a Sec-Websocket-Accept header.".into())
+    })?;
+    if *accept_header != WebSocketAccept::new(&key_value) {
+        return Err(NetworkError::Internal(
+            "Response's Sec-WebSocket-Accept header value did not match the sent key.".into()));
+    }
+
+    
+    
+    
+    
+    if response.headers.get_raw("Sec-WebSocket-Extensions").is_some() {
+        return Err(NetworkError::Internal(
+            "Response's Sec-WebSocket-Extensions header value included unsupported extensions.".into()));
+    }
+
+    
+    let protocol_in_use = if let Some(response_protocols) = response.headers.get::<WebSocketProtocol>() {
+        for replied in &**response_protocols {
+            if !protocols.iter().any(|requested| requested.eq_ignore_ascii_case(replied)) {
+                return Err(NetworkError::Internal(
+                    "Response's Sec-WebSocket-Protocols contain values that were not requested.".into()));
+            }
+        }
+        response_protocols.first().cloned()
+    } else {
+        None
+    };
+
+    let sender = Sender::new(response.writer, true);
+    let receiver = Receiver::new(response.reader, false);
+    Ok((protocol_in_use, sender, receiver))
+}
+
+struct Response {
+    status: StatusCode,
+    headers: Headers,
+    reader: BufReader<Stream>,
+    writer: Stream,
+}
+
+
+fn fetch(url: &ServoUrl,
+         origin: String,
+         mut headers: Headers,
+         cookie_jar: Arc<RwLock<CookieStorage>>,
+         ssl_context: Arc<SslContext>)
+         -> Result<Response, NetworkError> {
+    
+    
+
+    
+    
+
+    
+    
+    {
+        
+        let value = Accept::star();
+
+        
+        
+
+        
+        
+
+        
+        headers.set(value);
     }
 
     
@@ -144,41 +309,363 @@ fn establish_a_websocket_connection(resource_url: &ServoUrl,
 
     
     
-    request.headers.set(Origin(origin));
 
     
     
-    http_loader::set_request_cookies(&resource_url, &mut request.headers, &cookie_jar);
-
-    
-    let response = try!(request.send());
-
-    
-    try!(response.validate());
 
     
     
-    let protocol_in_use = response.protocol().and_then(|header| {
+    {
         
-        header.first().cloned()
+        
+
+        
+        
+    }
+
+    
+    main_fetch(url, origin, headers, cookie_jar, ssl_context)
+}
+
+
+fn main_fetch(url: &ServoUrl,
+              origin: String,
+              mut headers: Headers,
+              cookie_jar: Arc<RwLock<CookieStorage>>,
+              ssl_context: Arc<SslContext>)
+              -> Result<Response, NetworkError> {
+    
+    let mut response = None;
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    if should_be_blocked_due_to_bad_port(url) {
+        response = Some(Err(NetworkError::Internal("Request should be blocked due to bad port.".into())));
+    }
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    let mut response = response.unwrap_or_else(|| {
+        
+        
+
+        
+        
+        
+
+        
+        basic_fetch(url, origin, &mut headers, cookie_jar, ssl_context)
     });
-    if let Some(ref protocol_name) = protocol_in_use {
-        if !protocols.is_empty() && !protocols.iter().any(|p| (&**p).eq_ignore_ascii_case(protocol_name)) {
-            return Err(WebSocketError::ProtocolError("Protocol in Use not in client-supplied protocol list"));
-        };
+
+    
+    
+
+    
+    
+    
+
+    
+    
+
+    
+    if response.is_ok() {
+        
+        
+        
+        if should_be_blocked_due_to_nosniff(Type::None, &headers) {
+            response = Err(NetworkError::Internal("Request should be blocked due to nosniff.".into()));
+        }
+    }
+
+    
+    
+
+    
+    
+
+    
+    
+    response
+}
+
+
+fn basic_fetch(url: &ServoUrl,
+               origin: String,
+               headers: &mut Headers,
+               cookie_jar: Arc<RwLock<CookieStorage>>,
+               ssl_context: Arc<SslContext>)
+               -> Result<Response, NetworkError> {
+    
+    http_fetch(url, origin, headers, cookie_jar, ssl_context)
+}
+
+
+fn http_fetch(url: &ServoUrl,
+              origin: String,
+              headers: &mut Headers,
+              cookie_jar: Arc<RwLock<CookieStorage>>,
+              ssl_context: Arc<SslContext>)
+              -> Result<Response, NetworkError> {
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+    let mut response = {
+        
+        
+
+        
+        
+
+        
+        let response = http_network_or_cache_fetch(url, origin, headers, cookie_jar, ssl_context);
+
+        
+        
+
+        response
+    };
+
+    
+    if response.as_ref().ok().map_or(false, |response| is_redirect_status(response.status)) {
+        
+        
+
+        
+        
+
+        
+        
+        response = Err(NetworkError::Internal("Response should not be a redirection.".into()));
+    }
+
+    
+    response
+}
+
+
+fn http_network_or_cache_fetch(url: &ServoUrl,
+                               origin: String,
+                               headers: &mut Headers,
+                               cookie_jar: Arc<RwLock<CookieStorage>>,
+                               ssl_context: Arc<SslContext>)
+                               -> Result<Response, NetworkError> {
+    
+    
+    
+
+    
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+    headers.set(Origin(origin));
+
+    
+    
+
+    
+    
+
+    
+    {
+        
+        
+        headers.set(Pragma::NoCache);
+
+        
+        
+        headers.set(CacheControl(vec![CacheDirective::NoCache]));
+    }
+
+    
+    
+    
+    
+    headers.set(Host {
+        hostname: url.host_str().unwrap().to_owned(),
+        port: url.port(),
+    });
+
+    
+    
+    {
+        
+        
+        set_request_cookies(&url, headers, &cookie_jar);
+
+        
+        
+    }
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+    let response = {
+        
+        
+
+        
+        let forward_response = http_network_fetch(url, headers, cookie_jar, ssl_context);
+
+        
+        
+
+        
+        
+
+        
+        
+        forward_response
     };
 
     
     
+
+    
+    
+
+    
+    
+
+    
+    response
+}
+
+
+fn http_network_fetch(url: &ServoUrl,
+                      headers: &Headers,
+                      cookie_jar: Arc<RwLock<CookieStorage>>,
+                      ssl_context: Arc<SslContext>)
+                      -> Result<Response, NetworkError> {
+    
+    
+
+    
+    
+    let connection = obtain_a_websocket_connection(url, ssl_context)?;
+
+    
+    
+
+    
+    let response = make_request(connection, url, headers)?;
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
     if let Some(cookies) = response.headers.get::<SetCookie>() {
         let mut jar = cookie_jar.write().unwrap();
         for cookie in &**cookies {
-            if let Some(cookie) = Cookie::new_wrapped(cookie.clone(), resource_url, CookieSource::HTTP) {
-                jar.push(cookie, resource_url, CookieSource::HTTP);
+            if let Some(cookie) = Cookie::new_wrapped(cookie.clone(), url, CookieSource::HTTP) {
+                jar.push(cookie, url, CookieSource::HTTP);
             }
         }
     }
 
-    let (sender, receiver) = response.begin().split();
-    Ok((protocol_in_use, sender, receiver))
+    
+    
+
+    
+    Ok(response)
+}
+
+fn make_request(mut stream: Stream,
+                url: &ServoUrl,
+                headers: &Headers)
+                -> Result<Response, NetworkError> {
+    write_request(&mut stream, url, headers).map_err(|e| {
+        NetworkError::Internal(format!("Request could not be sent: {}", e))
+    })?;
+
+    
+    let writer = stream.clone();
+
+    
+    let mut reader = BufReader::new(stream);
+
+    let head = parse_response(&mut reader).map_err(|e| {
+        NetworkError::Internal(format!("Response could not be read: {}", e))
+    })?;
+
+    
+    if head.version != HttpVersion::Http11 {
+        return Err(NetworkError::Internal("Response's HTTP version should be HTTP/1.1.".into()));
+    }
+
+    
+    let status = StatusCode::from_u16(head.subject.0);
+    Ok(Response {
+        status: status,
+        headers: head.headers,
+        reader: reader,
+        writer: writer,
+    })
+}
+
+fn write_request(stream: &mut Stream,
+                 url: &ServoUrl,
+                 headers: &Headers)
+                 -> io::Result<()> {
+    
+    let method = Method::Get;
+    let request_uri = &url.as_url()[Position::BeforePath..Position::AfterQuery];
+    let version = HttpVersion::Http11;
+    write!(stream, "{} {} {}{}", method, request_uri, version, LINE_ENDING)?;
+
+    
+    write!(stream, "{}{}", headers, LINE_ENDING)
 }

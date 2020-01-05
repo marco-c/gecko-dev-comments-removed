@@ -527,7 +527,7 @@ fn is_null_body_status(status: &Option<StatusCode>) -> bool {
 }
 
 
-fn should_be_blocked_due_to_nosniff(request_type: Type, response_headers: &Headers) -> bool {
+pub fn should_be_blocked_due_to_nosniff(request_type: Type, response_headers: &Headers) -> bool {
     
     
     
