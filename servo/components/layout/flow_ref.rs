@@ -8,7 +8,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use flow::Flow;
 use flow;

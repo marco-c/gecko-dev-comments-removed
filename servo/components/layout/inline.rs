@@ -2,7 +2,7 @@
 
 
 
-#![deny(unsafe_blocks)]
+#![deny(unsafe_code)]
 
 use css::node_style::StyledNode;
 use context::LayoutContext;

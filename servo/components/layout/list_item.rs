@@ -5,7 +5,7 @@
 
 
 
-#![deny(unsafe_blocks)]
+#![deny(unsafe_code)]
 
 use block::BlockFlow;
 use context::LayoutContext;

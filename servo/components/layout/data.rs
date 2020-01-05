@@ -2,7 +2,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use construct::{ConstructionItem, ConstructionResult};
 use incremental::RestyleDamage;

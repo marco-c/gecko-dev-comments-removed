@@ -5,7 +5,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use construct::ConstructionResult;
 use context::{SharedLayoutContext, SharedLayoutContextWrapper};

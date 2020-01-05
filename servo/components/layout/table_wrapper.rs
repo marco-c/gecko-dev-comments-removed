@@ -11,7 +11,7 @@
 
 
 
-#![deny(unsafe_blocks)]
+#![deny(unsafe_code)]
 
 use block::{BlockFlow, BlockNonReplaced, FloatNonReplaced, ISizeAndMarginsComputer};
 use block::{MarginsMayCollapseFlag};

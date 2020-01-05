@@ -4,7 +4,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use css::matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
 

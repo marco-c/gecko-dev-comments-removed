@@ -6,7 +6,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use context::{LayoutContext, SharedLayoutContextWrapper, SharedLayoutContext};
 use flow::{Flow, MutableFlowUtils, PreorderFlowTraversal, PostorderFlowTraversal};

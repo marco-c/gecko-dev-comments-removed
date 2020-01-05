@@ -4,7 +4,7 @@
 
 
 
-#![deny(unsafe_blocks)]
+#![deny(unsafe_code)]
 
 use block::{self, BlockFlow, CandidateBSizeIterator, ISizeAndMarginsComputer};
 use block::{ISizeConstraintInput, ISizeConstraintSolution};

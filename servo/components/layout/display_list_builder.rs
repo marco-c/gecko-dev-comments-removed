@@ -8,7 +8,7 @@
 
 
 
-#![deny(unsafe_blocks)]
+#![deny(unsafe_code)]
 
 use azure::azure_hl::Color;
 use block::BlockFlow;

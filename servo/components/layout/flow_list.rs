@@ -31,6 +31,7 @@ impl FlowList {
 
     
     #[inline]
+    #[allow(unsafe_code)]
     pub unsafe fn front_mut<'a>(&'a mut self) -> Option<&'a mut Flow> {
         self.flows.front_mut().map(|head| &mut **head)
     }
@@ -43,6 +44,7 @@ impl FlowList {
 
     
     #[inline]
+    #[allow(unsafe_code)]
     pub unsafe fn back_mut<'a>(&'a mut self) -> Option<&'a mut Flow> {
         self.flows.back_mut().map(|tail| &mut **tail)
     }

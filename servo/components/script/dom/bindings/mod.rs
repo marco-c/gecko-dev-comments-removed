@@ -25,7 +25,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 #![deny(missing_docs, non_snake_case)]
 
 pub mod cell;

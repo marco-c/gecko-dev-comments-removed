@@ -30,7 +30,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use canvas::canvas_paint_task::CanvasMsg;
 use context::SharedLayoutContext;

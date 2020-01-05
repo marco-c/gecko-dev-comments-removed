@@ -2,7 +2,7 @@
 
 
 
-#![allow(unsafe_blocks)]
+#![allow(unsafe_code)]
 
 use gfx::display_list::OpaqueNode;
 use libc::{c_void, uintptr_t};

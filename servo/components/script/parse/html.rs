@@ -2,7 +2,7 @@
 
 
 
-#![allow(unsafe_blocks, unrooted_must_root)]
+#![allow(unsafe_code, unrooted_must_root)]
 
 use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
