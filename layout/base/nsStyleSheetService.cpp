@@ -21,6 +21,7 @@
 #include "nsISupportsPrimitives.h"
 #include "nsISimpleEnumerator.h"
 #include "nsNetUtil.h"
+#include "nsIConsoleService.h"
 #include "nsIObserverService.h"
 #include "nsLayoutStatics.h"
 
@@ -135,7 +136,27 @@ NS_IMETHODIMP
 nsStyleSheetService::LoadAndRegisterSheet(nsIURI *aSheetURI,
                                           uint32_t aSheetType)
 {
-  nsresult rv = LoadAndRegisterSheetInternal(aSheetURI, aSheetType);
+  
+  
+  
+  
+  
+  bool hasRef;
+  nsresult rv = aSheetURI->GetHasRef(&hasRef);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (aSheetURI && hasRef) {
+    nsCOMPtr<nsIConsoleService> consoleService =
+      do_GetService(NS_CONSOLESERVICE_CONTRACTID);
+    NS_WARNING_ASSERTION(consoleService, "Failed to get console service!");
+    if (consoleService) {
+      const char16_t* message = u"nsStyleSheetService::LoadAndRegisterSheet: "
+        u"URI contains unescaped hash character, which might be truncating "
+        u"the sheet, if it's a data URI.";
+      consoleService->LogStringMessage(message);
+    }
+  }
+
+  rv = LoadAndRegisterSheetInternal(aSheetURI, aSheetType);
   if (NS_SUCCEEDED(rv)) {
     const char* message;
     switch (aSheetType) {
