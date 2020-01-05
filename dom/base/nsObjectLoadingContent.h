@@ -677,7 +677,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent
     bool                        mActivated : 1;
 
     
-    bool                        mContentBlockingDisabled : 1;
+    bool                        mContentBlockingEnabled : 1;
 
     
     bool                        mIsStopping : 1;
