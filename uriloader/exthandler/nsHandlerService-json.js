@@ -56,9 +56,7 @@ HandlerService.prototype = {
   _updateDB() {
     try {
 
-      let locale = Cc["@mozilla.org/chrome/chrome-registry;1"]
-                     .getService(Ci.nsIXULChromeRegistry)
-                     .getSelectedLocale("global");
+      let locale = Services.locale.getAppLocaleAsLangTag();
       let prefsDefaultHandlersVersion = Number(Services.prefs.getComplexValue(
         "gecko.handlerService.defaultHandlersVersion",
         Ci.nsIPrefLocalizedString).data);
@@ -206,7 +204,7 @@ HandlerService.prototype = {
       handlerObj.possibleHandlers = possibleHandlers;
     }
 
-    if (handlerInfo instanceof Ci.nsIMIMEInfo) {
+    if (this._isMIMEInfo(handlerInfo)) {
       let extEnumerator = handlerInfo.getFileExtensions();
       let extensions = [];
       while (extEnumerator.hasMore()) {
@@ -263,7 +261,7 @@ HandlerService.prototype = {
     
     handlerInfo.alwaysAskBeforeHandling = storedHandlerInfo.askBeforeHandling;
 
-    if (handlerInfo instanceof Ci.nsIMIMEInfo) {
+    if (this._isMIMEInfo(handlerInfo)) {
       if (storedHandlerInfo.fileExtensions) {
         for (let extension of storedHandlerInfo.fileExtensions) {
           handlerInfo.appendExtension(extension);
@@ -345,10 +343,19 @@ HandlerService.prototype = {
 
 
   _getHandlerListByHandlerInfoType(handlerInfo) {
-    if (handlerInfo instanceof Ci.nsIMIMEInfo) {
-      return this._store.data.mimetypes;
-    }
-    return this._store.data.schemes;
+    return this._isMIMEInfo(handlerInfo) ? this._store.data.mimetypes
+                                         : this._store.data.schemes;
+  },
+
+  
+
+
+  _isMIMEInfo(handlerInfo) {
+    
+    
+    
+    return handlerInfo instanceof Ci.nsIMIMEInfo &&
+           handlerInfo.type.includes("/");
   },
 
   

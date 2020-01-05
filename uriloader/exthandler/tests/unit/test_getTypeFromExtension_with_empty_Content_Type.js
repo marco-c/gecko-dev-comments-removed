@@ -18,8 +18,6 @@ function run_test() {
 
   
 
-  Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-
   
 
 
