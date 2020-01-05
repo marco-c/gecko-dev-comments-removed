@@ -16,7 +16,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "eTLDService", "@mozilla.org/network/ef
 class UAOverrider {
   constructor(overrides) {
     this._overrides = {};
-    this._overrideForURICache = new Map();
 
     this.initOverrides(overrides);
   }
@@ -49,29 +48,12 @@ class UAOverrider {
     }
 
     let channel = subject.QueryInterface(Components.interfaces.nsIHttpChannel);
-    let uaOverride = this.getUAForURI(channel.URI);
+    let uaOverride = this.lookupUAOverride(channel.URI);
 
     if (uaOverride) {
       console.log("The user agent has been overridden for compatibility reasons.");
       channel.setRequestHeader("User-Agent", uaOverride, false);
     }
-  }
-
-  getUAForURI(uri) {
-    let bareUri = uri.specIgnoringRef;
-    if (this._overrideForURICache.has(bareUri)) {
-      
-      
-      
-      
-      
-      return this._overrideForURICache.get(bareUri);
-    }
-
-    let finalUA = this.lookupUAOverride(uri);
-    this._overrideForURICache.set(bareUri, finalUA);
-
-    return finalUA;
   }
 
   
@@ -80,13 +62,14 @@ class UAOverrider {
 
 
 
-  hasUAForURIInCache(uri) {
-    let bareUri = uri.specIgnoringRef;
-    if (this._overrideForURICache.has(bareUri)) {
-      return !!this._overrideForURICache.get(bareUri);
-    }
 
-    return false;
+
+  getBaseDomainFromURI(uri) {
+    try {
+      return eTLDService.getBaseDomain(uri);
+    } catch (_) {
+      return false;
+    }
   }
 
   
@@ -106,8 +89,8 @@ class UAOverrider {
 
 
   lookupUAOverride(uri) {
-    let baseDomain = eTLDService.getBaseDomain(uri);
-    if (this._overrides[baseDomain]) {
+    let baseDomain = this.getBaseDomainFromURI(uri);
+    if (baseDomain && this._overrides[baseDomain]) {
       for (let uaOverride of this._overrides[baseDomain]) {
         if (uaOverride.uriMatcher(uri.specIgnoringRef)) {
           return uaOverride.uaTransformer(DefaultUA);
