@@ -1795,6 +1795,13 @@ GLContext::InitExtensions()
             MarkExtensionSupported(OES_EGL_sync);
         }
 
+        if (Vendor() == GLVendor::ATI) {
+            
+            
+            
+            MarkExtensionUnsupported(OES_EGL_image);
+        }
+
         if (Vendor() == GLVendor::Imagination &&
             Renderer() == GLRenderer::SGX540)
         {
