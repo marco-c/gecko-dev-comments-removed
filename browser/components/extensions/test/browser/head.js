@@ -15,8 +15,9 @@
 
 
 
-var {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
-var {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm");
+
+const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
+const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm");
 
 
 
@@ -238,6 +239,30 @@ function* closeExtensionContextMenu(itemToSelect) {
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(contentAreaContextMenu, "popuphidden");
   EventUtils.synthesizeMouseAtCenter(itemToSelect, {});
   yield popupHiddenPromise;
+}
+
+function* openActionContextMenu(extension, kind, win = window) {
+  const menu = win.document.getElementById("toolbar-context-menu");
+  const id = `${makeWidgetId(extension.id)}-${kind}-action`;
+  const button = win.document.getElementById(id);
+  SetPageProxyState("valid");
+
+  const shown = BrowserTestUtils.waitForEvent(menu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(button, {type: "contextmenu"}, win);
+  yield shown;
+
+  return menu;
+}
+
+function closeActionContextMenu(itemToSelect, win = window) {
+  const menu = win.document.getElementById("toolbar-context-menu");
+  const hidden = BrowserTestUtils.waitForEvent(menu, "popuphidden");
+  if (itemToSelect) {
+    EventUtils.synthesizeMouseAtCenter(itemToSelect, {}, win);
+  } else {
+    menu.hidePopup();
+  }
+  return hidden;
 }
 
 function getPageActionPopup(extension, win = window) {

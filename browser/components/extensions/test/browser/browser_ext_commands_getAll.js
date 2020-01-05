@@ -2,8 +2,6 @@
 
 "use strict";
 
-var {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
-
 add_task(function* () {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {

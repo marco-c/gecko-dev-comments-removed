@@ -13,6 +13,8 @@ var {
   IconDetails,
 } = ExtensionUtils;
 
+const ACTION_MENU_TOP_LEVEL_LIMIT = 6;
+
 
 
 
@@ -30,12 +32,12 @@ var gNextRadioGroupID = 0;
 
 var gMaxLabelLength = 64;
 
-
-
-
-
 var gMenuBuilder = {
-  build: function(contextData) {
+  
+  
+  
+  
+  build(contextData) {
     let xulMenu = contextData.menu;
     xulMenu.addEventListener("popuphidden", this);
     this.xulMenu = xulMenu;
@@ -75,9 +77,44 @@ var gMenuBuilder = {
     }
   },
 
+  
+  buildActionContextMenu(contextData) {
+    const {menu} = contextData;
+
+    contextData.tab = TabManager.activeTab;
+    contextData.pageUrl = contextData.tab.linkedBrowser.currentURI.spec;
+
+    const root = gRootItems.get(contextData.extension);
+    const children = this.buildChildren(root, contextData);
+    const visible = children.slice(0, ACTION_MENU_TOP_LEVEL_LIMIT);
+
+    if (visible.length) {
+      this.xulMenu = menu;
+      menu.addEventListener("popuphidden", this);
+
+      const separator = menu.ownerDocument.createElement("menuseparator");
+      menu.insertBefore(separator, menu.firstChild);
+      this.itemsToCleanUp.add(separator);
+
+      for (const child of visible) {
+        this.itemsToCleanUp.add(child);
+        menu.insertBefore(child, separator);
+      }
+    }
+  },
+
   buildElementWithChildren(item, contextData) {
-    let element = this.buildSingleElement(item, contextData);
+    const element = this.buildSingleElement(item, contextData);
+    const children = this.buildChildren(item, contextData);
+    if (children.length) {
+      element.firstChild.append(...children);
+    }
+    return element;
+  },
+
+  buildChildren(item, contextData) {
     let groupName;
+    let children = [];
     for (let child of item.children) {
       if (child.type == "radio" && !child.groupName) {
         if (!groupName) {
@@ -89,15 +126,10 @@ var gMenuBuilder = {
       }
 
       if (child.enabledForContext(contextData)) {
-        let childElement = this.buildElementWithChildren(child, contextData);
-        
-        
-        
-        element.firstChild.appendChild(childElement);
+        children.push(this.buildElementWithChildren(child, contextData));
       }
     }
-
-    return element;
+    return children;
   },
 
   removeTopLevelMenuIfNeeded(element) {
@@ -198,7 +230,7 @@ var gMenuBuilder = {
     return element;
   },
 
-  handleEvent: function(event) {
+  handleEvent(event) {
     if (this.xulMenu != event.target || event.type != "popuphidden") {
       return;
     }
@@ -213,6 +245,11 @@ var gMenuBuilder = {
   },
 
   itemsToCleanUp: new Set(),
+};
+
+
+global.actionContextMenu = function(contextData) {
+  gMenuBuilder.buildActionContextMenu(contextData);
 };
 
 function contextMenuObserver(subject, topic, data) {
@@ -253,6 +290,14 @@ function getContexts(contextData) {
 
   if (contextData.onAudio) {
     contexts.add("audio");
+  }
+
+  if (contextData.onPageAction) {
+    contexts.add("page_action");
+  }
+
+  if (contextData.onBrowserAction) {
+    contexts.add("browser_action");
   }
 
   if (contexts.size == 1) {
