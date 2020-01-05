@@ -36,13 +36,13 @@ namespace dom {
 
 
 
-class DocGroup final : public Dispatcher
+class DocGroup final
 {
 public:
   typedef nsTArray<nsIDocument*>::iterator Iterator;
   friend class TabGroup;
 
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DocGroup, override)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DocGroup)
 
   
   
@@ -81,11 +81,14 @@ public:
     return mDocuments.end();
   }
 
-  virtual nsresult Dispatch(const char* aName,
-                            TaskCategory aCategory,
-                            already_AddRefed<nsIRunnable>&& aRunnable) override;
+  nsresult Dispatch(const char* aName,
+                    TaskCategory aCategory,
+                    already_AddRefed<nsIRunnable>&& aRunnable);
 
-  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const override;
+  nsIEventTarget* EventTargetFor(TaskCategory aCategory) const;
+
+  AbstractThread*
+  AbstractMainThreadFor(TaskCategory aCategory);
 
   
   void ValidateAccess() const
@@ -99,9 +102,6 @@ public:
   bool* GetValidAccessPtr();
 
 private:
-  virtual AbstractThread*
-  AbstractMainThreadForImpl(TaskCategory aCategory) override;
-
   DocGroup(TabGroup* aTabGroup, const nsACString& aKey);
   ~DocGroup();
 
