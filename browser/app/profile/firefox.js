@@ -1162,6 +1162,9 @@ sticky_pref("browser.newtabpage.enhanced", true);
 pref("browser.newtabpage.compact", false);
 
 
+pref("browser.newtabpage.thumbnailPlaceholder", false);
+
+
 pref("browser.newtabpage.rows", 3);
 
 
@@ -1560,4 +1563,4 @@ pref("services.sync.validation.enabled", true);
 #endif
 
 
-pref("browser.formautofill.experimental", false);
+pref("browser.formautofill.enabled", false);
