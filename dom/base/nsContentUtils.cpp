@@ -7063,7 +7063,7 @@ nsContentUtils::GetHTMLEditor(nsPresContext* aPresContext)
 }
 
 bool
-nsContentUtils::IsContentInsertionPoint(const nsIContent* aContent)
+nsContentUtils::IsContentInsertionPoint(nsIContent* aContent)
 {
   
   if (aContent->IsActiveChildrenElement()) {
@@ -7071,11 +7071,9 @@ nsContentUtils::IsContentInsertionPoint(const nsIContent* aContent)
   }
 
   
-  if (aContent->IsHTMLElement(nsGkAtoms::content)) {
-    return static_cast<const HTMLContentElement*>(aContent)->IsInsertionPoint();
-  }
-
-  return false;
+  HTMLContentElement* contentElement =
+    HTMLContentElement::FromContent(aContent);
+  return contentElement && contentElement->IsInsertionPoint();
 }
 
 

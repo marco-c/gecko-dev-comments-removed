@@ -60,7 +60,7 @@ GetMatchedNodesForPoint(nsIContent* aContent)
 
   
   MOZ_ASSERT(aContent->IsHTMLElement(nsGkAtoms::content));
-  return MatchedNodes(static_cast<HTMLContentElement*>(aContent));
+  return MatchedNodes(HTMLContentElement::FromContent(aContent));
 }
 
 nsIContent*

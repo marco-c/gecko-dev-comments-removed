@@ -2412,7 +2412,7 @@ public:
 
 
 
-  static bool IsContentInsertionPoint(const nsIContent* aContent);
+  static bool IsContentInsertionPoint(nsIContent* aContent);
 
 
   

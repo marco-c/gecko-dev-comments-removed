@@ -1329,6 +1329,10 @@ public:
   
   virtual bool IsHTMLShadowElement() const { return false; }
 
+  
+  
+  virtual bool IsHTMLContentElement() const { return false; }
+
 protected:
   nsIURI* GetExplicitBaseURI() const {
     if (HasExplicitBaseURI()) {
