@@ -14,7 +14,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.home.HomeConfig.PanelConfig;
 import org.mozilla.gecko.util.GeckoEventListener;
@@ -78,7 +77,7 @@ public class PanelInfoManager implements GeckoEventListener {
         synchronized (sCallbacks) {
             
             if (sCallbacks.size() == 0) {
-                GeckoApp.getEventDispatcher().registerGeckoThreadListener(this,
+                EventDispatcher.getInstance().registerGeckoThreadListener(this,
                     "HomePanels:Data");
             }
             sCallbacks.put(requestId, callback);
@@ -137,7 +136,7 @@ public class PanelInfoManager implements GeckoEventListener {
 
                 
                 if (sCallbacks.size() == 0) {
-                    GeckoApp.getEventDispatcher().unregisterGeckoThreadListener(this,
+                    EventDispatcher.getInstance().unregisterGeckoThreadListener(this,
                         "HomePanels:Data");
                 }
             }
