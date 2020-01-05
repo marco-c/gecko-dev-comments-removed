@@ -1569,8 +1569,7 @@ ElementRestyler::AddLayerChangesForAnimation()
     
     
     if (!layer &&
-        nsLayoutUtils::HasRelevantAnimationOfProperty(mFrame,
-                                                      layerInfo.mProperty)) {
+        nsLayoutUtils::HasEffectiveAnimation(mFrame, layerInfo.mProperty)) {
       hint |= layerInfo.mChangeHint;
     }
   }
