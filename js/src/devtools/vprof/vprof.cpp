@@ -9,7 +9,7 @@
 
 
 #ifdef WIN32
-#include "windows.h"
+#include "jswin.h"
 #else
 #define __cdecl
 #include <stdarg.h>

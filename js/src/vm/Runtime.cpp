@@ -15,8 +15,6 @@
 #include <mach/mach.h>
 #elif defined(XP_UNIX)
 #include <sys/resource.h>
-#elif defined(XP_WIN)
-#include <windows.h>
 #endif 
 
 #include <locale.h>

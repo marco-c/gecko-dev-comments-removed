@@ -33,9 +33,6 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/UnboxedObject.h"
 
-
-#undef MemoryBarrier
-
 namespace js {
 
 class StringObject;

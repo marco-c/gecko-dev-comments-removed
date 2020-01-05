@@ -190,12 +190,6 @@ ExecutableAllocator::poolForSize(size_t n)
  size_t
 ExecutableAllocator::roundUpAllocationSize(size_t request, size_t granularity)
 {
-    
-    
-#ifdef _MSC_VER
-# undef max
-#endif
-
     if ((std::numeric_limits<size_t>::max() - granularity) <= request)
         return OVERSIZE_ALLOCATION;
 
