@@ -863,10 +863,7 @@ class MediaDecoderStateMachine::ShutdownState
 public:
   explicit ShutdownState(Master* aPtr) : StateObject(aPtr) {}
 
-  void Enter() override
-  {
-    mMaster->mIsShutdown = true;
-  }
+  void Enter() override;
 
   void Exit() override
   {
@@ -1363,6 +1360,68 @@ CompletedState::HandleSeek(SeekTarget aTarget)
   RefPtr<MediaDecoder::SeekPromise> p = seekJob.mPromise.Ensure(__func__);
   SetState<SeekingState>(Move(seekJob));
   return p.forget();
+}
+
+void
+MediaDecoderStateMachine::
+ShutdownState::Enter()
+{
+  auto master = mMaster;
+
+  master->mIsShutdown = true;
+  master->mDelayedScheduler.Reset();
+  master->mBufferedUpdateRequest.DisconnectIfExists();
+  master->mQueuedSeek.RejectIfExists(__func__);
+
+  
+  
+  master->mVideoDecodeSuspendTimer.Reset();
+
+  master->mCDMProxyPromise.DisconnectIfExists();
+
+  if (master->IsPlaying()) {
+    master->StopPlayback();
+  }
+
+  
+  master->CancelMediaDecoderReaderWrapperCallback();
+
+  master->Reset();
+
+  master->mMediaSink->Shutdown();
+
+  
+  master->mAudioQueueListener.Disconnect();
+  master->mVideoQueueListener.Disconnect();
+  master->mMetadataManager.Disconnect();
+
+  
+  master->mBuffered.DisconnectIfConnected();
+  master->mIsReaderSuspended.DisconnectIfConnected();
+  master->mEstimatedDuration.DisconnectIfConnected();
+  master->mExplicitDuration.DisconnectIfConnected();
+  master->mPlayState.DisconnectIfConnected();
+  master->mNextPlayState.DisconnectIfConnected();
+  master->mVolume.DisconnectIfConnected();
+  master->mPreservesPitch.DisconnectIfConnected();
+  master->mSameOriginMedia.DisconnectIfConnected();
+  master->mMediaPrincipalHandle.DisconnectIfConnected();
+  master->mPlaybackBytesPerSecond.DisconnectIfConnected();
+  master->mPlaybackRateReliable.DisconnectIfConnected();
+  master->mDecoderPosition.DisconnectIfConnected();
+  master->mMediaSeekable.DisconnectIfConnected();
+  master->mMediaSeekableOnlyInBufferedRanges.DisconnectIfConnected();
+  master->mIsVisible.DisconnectIfConnected();
+
+  master->mDuration.DisconnectAll();
+  master->mIsShutdown.DisconnectAll();
+  master->mNextFrameStatus.DisconnectAll();
+  master->mCurrentPosition.DisconnectAll();
+  master->mPlaybackOffset.DisconnectAll();
+  master->mIsAudioDataAudible.DisconnectAll();
+
+  
+  master->mWatchManager.Shutdown();
 }
 
 #define INIT_WATCHABLE(name, val) \
@@ -2087,64 +2146,6 @@ MediaDecoderStateMachine::Shutdown()
   MOZ_ASSERT(OnTaskQueue());
 
   mStateObj->SetState<ShutdownState>();
-
-  mDelayedScheduler.Reset();
-
-  mBufferedUpdateRequest.DisconnectIfExists();
-
-  mQueuedSeek.RejectIfExists(__func__);
-
-  
-  
-  mVideoDecodeSuspendTimer.Reset();
-
-  mCDMProxyPromise.DisconnectIfExists();
-
-  if (IsPlaying()) {
-    StopPlayback();
-  }
-
-  
-  CancelMediaDecoderReaderWrapperCallback();
-
-  Reset();
-
-  mMediaSink->Shutdown();
-
-  
-  mAudioQueueListener.Disconnect();
-  mVideoQueueListener.Disconnect();
-  mMetadataManager.Disconnect();
-
-  
-  mBuffered.DisconnectIfConnected();
-  mIsReaderSuspended.DisconnectIfConnected();
-  mEstimatedDuration.DisconnectIfConnected();
-  mExplicitDuration.DisconnectIfConnected();
-  mPlayState.DisconnectIfConnected();
-  mNextPlayState.DisconnectIfConnected();
-  mVolume.DisconnectIfConnected();
-  mPreservesPitch.DisconnectIfConnected();
-  mSameOriginMedia.DisconnectIfConnected();
-  mMediaPrincipalHandle.DisconnectIfConnected();
-  mPlaybackBytesPerSecond.DisconnectIfConnected();
-  mPlaybackRateReliable.DisconnectIfConnected();
-  mDecoderPosition.DisconnectIfConnected();
-  mMediaSeekable.DisconnectIfConnected();
-  mMediaSeekableOnlyInBufferedRanges.DisconnectIfConnected();
-  mIsVisible.DisconnectIfConnected();
-
-  mDuration.DisconnectAll();
-  mIsShutdown.DisconnectAll();
-  mNextFrameStatus.DisconnectAll();
-  mCurrentPosition.DisconnectAll();
-  mPlaybackOffset.DisconnectAll();
-  mIsAudioDataAudible.DisconnectAll();
-
-  
-  mWatchManager.Shutdown();
-
-  DECODER_LOG("Shutdown started");
 
   
   
