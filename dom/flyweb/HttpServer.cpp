@@ -585,16 +585,13 @@ HttpServer::Connection::ConsumeLine(const char* aBuffer,
     NS_ENSURE_TRUE(tokens.hasMoreTokens(), NS_ERROR_UNEXPECTED);
     nsDependentCSubstring method = tokens.nextToken();
     NS_ENSURE_TRUE(NS_IsValidHTTPToken(method), NS_ERROR_UNEXPECTED);
-
     NS_ENSURE_TRUE(tokens.hasMoreTokens(), NS_ERROR_UNEXPECTED);
     nsDependentCSubstring url = tokens.nextToken();
     
     
     NS_ENSURE_TRUE(url.First() == '/', NS_ERROR_UNEXPECTED);
-
-    mPendingReq = new InternalRequest(url);
+    mPendingReq = new InternalRequest(url,  EmptyCString());
     mPendingReq->SetMethod(method);
-
     NS_ENSURE_TRUE(tokens.hasMoreTokens(), NS_ERROR_UNEXPECTED);
     nsDependentCSubstring version = tokens.nextToken();
     NS_ENSURE_TRUE(StringBeginsWith(version, NS_LITERAL_CSTRING("HTTP/1.")),

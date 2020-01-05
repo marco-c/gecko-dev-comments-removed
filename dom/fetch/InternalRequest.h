@@ -87,17 +87,14 @@ class Request;
 class IPCInternalRequest;
 
 #define kFETCH_CLIENT_REFERRER_STR "about:client"
-
 class InternalRequest final
 {
   friend class Request;
-
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InternalRequest)
-
-  explicit InternalRequest(const nsACString& aURL);
-
+  InternalRequest(const nsACString& aURL, const nsACString& aFragment);
   InternalRequest(const nsACString& aURL,
+                  const nsACString& aFragment,
                   const nsACString& aMethod,
                   already_AddRefed<InternalHeaders> aHeaders,
                   RequestCache aCacheMode,
@@ -134,37 +131,49 @@ public:
            mMethod.LowerCaseEqualsASCII("post") ||
            mMethod.LowerCaseEqualsASCII("head");
   }
-
+  
   
   
   void
   GetURL(nsACString& aURL) const
   {
-    MOZ_RELEASE_ASSERT(!mURLList.IsEmpty(), "Internal Request's urlList should not be empty.");
-
-    aURL.Assign(mURLList.LastElement());
+    aURL.Assign(GetURLWithoutFragment());
+    if (GetFragment().IsEmpty()) {
+      return;
+    }
+    aURL.Append(NS_LITERAL_CSTRING("#"));
+    aURL.Append(GetFragment());
   }
 
-  
+  const nsCString&
+  GetURLWithoutFragment() const
+  {
+    MOZ_RELEASE_ASSERT(!mURLList.IsEmpty(),
+                       "Internal Request's urlList should not be empty.");
+
+    return mURLList.LastElement();
+  }
   
   
   
   
   
   void
-  AddURL(const nsACString& aURL)
+  AddURL(const nsACString& aURL, const nsACString& aFragment)
   {
     MOZ_ASSERT(!aURL.IsEmpty());
-    mURLList.AppendElement(aURL);
-    MOZ_ASSERT(mURLList.LastElement().Find(NS_LITERAL_CSTRING("#")) == kNotFound);
-  }
+    MOZ_ASSERT(!aURL.Contains('#'));
 
+    mURLList.AppendElement(aURL);
+
+    mFragment.Assign(aFragment);
+  }
+  
   void
-  GetURLList(nsTArray<nsCString>& aURLList)
+  GetURLListWithoutFragment(nsTArray<nsCString>& aURLList)
   {
     aURLList.Assign(mURLList);
   }
-
   void
   GetReferrer(nsAString& aReferrer) const
   {
@@ -321,12 +330,16 @@ public:
   {
     return mIntegrity;
   }
-
   void
   SetIntegrity(const nsAString& aIntegrity)
   {
     MOZ_ASSERT(mIntegrity.IsEmpty());
     mIntegrity.Assign(aIntegrity);
+  }
+  const nsCString&
+  GetFragment() const
+  {
+    return mFragment;
   }
 
   nsContentPolicyType
@@ -334,7 +347,6 @@ public:
   {
     return mContentPolicyType;
   }
-
   void
   SetContentPolicyType(nsContentPolicyType aContentPolicyType);
 
@@ -491,15 +503,13 @@ private:
   
   
   net::ReferrerPolicy mEnvironmentReferrerPolicy;
-
   RequestMode mMode;
   RequestCredentials mCredentialsMode;
   MOZ_INIT_OUTSIDE_CTOR LoadTainting mResponseTainting;
   RequestCache mCacheMode;
   RequestRedirect mRedirectMode;
-
   nsString mIntegrity;
-
+  nsCString mFragment;
   MOZ_INIT_OUTSIDE_CTOR bool mAuthenticationFlag;
   MOZ_INIT_OUTSIDE_CTOR bool mForceOriginHeader;
   MOZ_INIT_OUTSIDE_CTOR bool mPreserveContentCodings;
