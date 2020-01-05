@@ -140,7 +140,11 @@ ServoRestyleManager::RecreateStyleContexts(nsIContent* aContent,
 
     
     
-    if (!primaryFrame) {
+    
+    
+    
+    
+    if (!primaryFrame || (changeHint & nsChangeHint_ReconstructFrame)) {
       aContent->UnsetIsDirtyForServo();
       return;
     }
