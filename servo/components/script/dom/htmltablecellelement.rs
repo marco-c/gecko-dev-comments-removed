@@ -77,6 +77,8 @@ impl HTMLTableCellElement {
 impl HTMLTableCellElementMethods for HTMLTableCellElement {
     
     make_uint_getter!(ColSpan, "colspan", DEFAULT_COLSPAN);
+
+    
     make_uint_setter!(SetColSpan, "colspan");
 }
 

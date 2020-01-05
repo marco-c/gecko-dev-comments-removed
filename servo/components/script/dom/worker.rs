@@ -162,7 +162,10 @@ impl WorkerMethods for Worker {
         Ok(())
     }
 
+    
     event_handler!(message, GetOnmessage, SetOnmessage);
+
+    
     event_handler!(error, GetOnerror, SetOnerror);
 }
 

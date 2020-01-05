@@ -334,5 +334,6 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
         rval
     }
 
+    
     css_properties_accessors!(css_properties);
 }

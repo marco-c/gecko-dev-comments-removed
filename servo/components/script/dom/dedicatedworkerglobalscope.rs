@@ -357,6 +357,7 @@ impl DedicatedWorkerGlobalScopeMethods for DedicatedWorkerGlobalScope {
         Ok(())
     }
 
+    
     event_handler!(message, GetOnmessage, SetOnmessage);
 }
 
