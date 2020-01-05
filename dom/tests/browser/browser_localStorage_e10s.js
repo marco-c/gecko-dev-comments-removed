@@ -241,8 +241,16 @@ add_task(function*() {
   
   
   
-  let keepAliveCount =
-    SpecialPowers.getIntPref("dom.ipc.keepProcessesAlive.web", 1);
+  let keepAliveCount = 0;
+  try {
+    
+    
+    
+    
+    keepAliveCount = SpecialPowers.getIntPref("dom.ipc.keepProcessesAlive.web");
+  } catch (ex) {
+    
+  }
   let safeProcessCount = keepAliveCount + 6;
   info("dom.ipc.keepProcessesAlive.web is " + keepAliveCount + ", boosting " +
        "process count temporarily to " + safeProcessCount);
