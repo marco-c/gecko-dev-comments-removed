@@ -5,7 +5,7 @@
 from marionette_driver.by import By
 from marionette_driver.keys import Keys
 
-from marionette_harness import MarionetteTestCase, WindowManagerMixin
+from marionette_harness import MarionetteTestCase, skip_if_mobile, WindowManagerMixin
 
 
 class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
@@ -26,6 +26,7 @@ class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
 
         super(TestAboutPages, self).tearDown()
 
+    @skip_if_mobile  
     def test_back_forward(self):
         
         
@@ -45,6 +46,7 @@ class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
         self.marionette.close()
         self.marionette.switch_to_window(self.start_tab)
 
+    @skip_if_mobile  
     def test_navigate_non_remote_about_pages(self):
         
         
@@ -59,6 +61,7 @@ class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
         self.marionette.close()
         self.marionette.switch_to_window(self.start_tab)
 
+    @skip_if_mobile  
     def test_navigate_shortcut_key(self):
         def open_with_shortcut():
             with self.marionette.using_context("chrome"):
@@ -73,6 +76,7 @@ class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
         self.marionette.close()
         self.marionette.switch_to_window(self.start_tab)
 
+    @skip_if_mobile  
     def test_type_to_non_remote_tab(self):
         
         
@@ -89,6 +93,7 @@ class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
         self.marionette.close()
         self.marionette.switch_to_window(self.start_tab)
 
+    @skip_if_mobile  
     def test_type_to_remote_tab(self):
         
         self.marionette.navigate("about:blank")
@@ -98,6 +103,7 @@ class TestAboutPages(WindowManagerMixin, MarionetteTestCase):
 
         self.wait_for_condition(lambda mn: mn.get_url() == self.remote_uri)
 
+    @skip_if_mobile  
     def test_hang(self):
         
         new_tab = self.open_tab(trigger="menu")
