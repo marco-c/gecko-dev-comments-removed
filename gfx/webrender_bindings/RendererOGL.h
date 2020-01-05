@@ -40,8 +40,8 @@ class RenderTextureHost;
 
 class RendererOGL
 {
-  friend WrExternalImage LockExternalImage(void* aObj, WrExternalImageId aId);
-  friend void UnlockExternalImage(void* aObj, WrExternalImageId aId);
+  friend WrExternalImage LockExternalImage(void* aObj, WrExternalImageId aId, uint8_t aChannelIndex);
+  friend void UnlockExternalImage(void* aObj, WrExternalImageId aId, uint8_t aChannelIndex);
 
 public:
   WrExternalImageHandler GetExternalImageHandler();
