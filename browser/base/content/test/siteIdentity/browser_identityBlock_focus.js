@@ -14,6 +14,7 @@ function synthesizeKeyAndWaitForFocus(element, keyCode, options) {
 
 
 add_task(function* testWithoutNotifications() {
+  yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
   yield BrowserTestUtils.withNewTab("https://example.com", function*() {
     yield synthesizeKeyAndWaitForFocus(gURLBar, "l", {accelKey: true})
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
@@ -26,7 +27,7 @@ add_task(function* testWithoutNotifications() {
 
 
 add_task(function* testWithoutNotifications() {
-
+  yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
   yield BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, function*(browser) {
     let popupshown = BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
     
@@ -46,6 +47,7 @@ add_task(function* testWithoutNotifications() {
 
 
 add_task(function* testInvalidPageProxyState() {
+  yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
   yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {
     
     
