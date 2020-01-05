@@ -68,7 +68,7 @@ pub trait TLayoutNode {
     
     
     unsafe fn get<'a>(&'a self) -> &'a Node {
-        cast::transmute::<*mut Node,&'a Node>(self.get_jsmanaged().unsafe_get())
+        &*self.get_jsmanaged().unsafe_get()
     }
 
     fn node_is_element(&self) -> bool {
@@ -436,7 +436,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
             
             
             ThreadSafeLayoutElement {
-                element: cast::transmute::<*mut Element,&mut Element>(element),
+                element: &mut *element,
             }
         }
     }
@@ -536,4 +536,3 @@ pub fn layout_node_to_unsafe_layout_node(node: &LayoutNode) -> UnsafeLayoutNode 
         cast::transmute_copy(node)
     }
 }
-
