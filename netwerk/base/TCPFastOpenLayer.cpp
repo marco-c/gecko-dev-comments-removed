@@ -359,13 +359,7 @@ TCPFastOpenFinish(PRFileDesc * fd, PRErrorCode *err,
   *fastOpenNotSupported = false;
   PRErrorCode result = 0;
 
-  
-  
-  
-  
-  
-  if (!secret->mFirstPacketBufLen ||
-      (tfoFd->lower->methods->sendto == (PRSendtoFN)tfoFd->lower->methods->reserved_fn_0)) {
+  if (!secret->mFirstPacketBufLen) {
     
     
     
@@ -375,12 +369,6 @@ TCPFastOpenFinish(PRFileDesc * fd, PRErrorCode *err,
       result = PR_IS_CONNECTED_ERROR;
     } else {
       result = PR_GetError();
-    }
-    if (tfoFd->lower->methods->sendto == (PRSendtoFN)tfoFd->lower->methods->reserved_fn_0) {
-        
-        
-        SOCKET_LOG(("TCPFastOpenFinish - sendto not implemented.\n"));
-        *fastOpenNotSupported = true;
     }
   } else {
     
