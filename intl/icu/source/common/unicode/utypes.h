@@ -29,6 +29,8 @@
 
 
 
+
+
 #ifndef UTYPES_H
 #define UTYPES_H
 
@@ -391,88 +393,6 @@ typedef double UDate;
 
 
 
-
-
-
-
-
-
-
-
-#if defined(__cplusplus) && U_DEBUG && U_OVERRIDE_CXX_ALLOCATION && (_MSC_VER>=1200) && !defined(U_STATIC_IMPLEMENTATION) && (defined(U_COMMON_IMPLEMENTATION) || defined(U_I18N_IMPLEMENTATION) || defined(U_IO_IMPLEMENTATION) || defined(U_LAYOUT_IMPLEMENTATION) || defined(U_LAYOUTEX_IMPLEMENTATION))
-
-#ifndef U_HIDE_INTERNAL_API
-
-
-
-
-
-inline void *
-operator new(size_t ) {
-    char *q=NULL;
-    *q=5; 
-    return q;
-}
-
-#ifdef _Ret_bytecap_
-
-_Ret_bytecap_(_Size)
-#endif
-
-
-
-
-
-inline void *
-operator new[](size_t ) {
-    char *q=NULL;
-    *q=5; 
-    return q;
-}
-
-
-
-
-
-
-inline void
-operator delete(void * ) {
-    char *q=NULL;
-    *q=5; 
-}
-
-
-
-
-
-
-inline void
-operator delete[](void * ) {
-    char *q=NULL;
-    *q=5; 
-}
-
-#endif 
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 typedef enum UErrorCode {
     
 
@@ -499,8 +419,13 @@ typedef enum UErrorCode {
     
     U_PLUGIN_CHANGED_LEVEL_WARNING = -120, 
 
-    U_ERROR_WARNING_LIMIT,              
+#ifndef U_HIDE_DEPRECATED_API
+    
 
+
+
+    U_ERROR_WARNING_LIMIT,
+#endif  
 
     U_ZERO_ERROR              =  0,     
 
@@ -536,7 +461,14 @@ typedef enum UErrorCode {
     U_USELESS_COLLATOR_ERROR  = 29,     
     U_NO_WRITE_PERMISSION     = 30,     
 
-    U_STANDARD_ERROR_LIMIT,             
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    U_STANDARD_ERROR_LIMIT,
+#endif  
+
     
 
 
@@ -576,7 +508,13 @@ typedef enum UErrorCode {
     U_INTERNAL_TRANSLITERATOR_ERROR,  
     U_INVALID_ID,                     
     U_INVALID_FUNCTION,               
-    U_PARSE_ERROR_LIMIT,              
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    U_PARSE_ERROR_LIMIT,
+#endif  
 
     
 
@@ -601,7 +539,13 @@ typedef enum UErrorCode {
     U_DEFAULT_KEYWORD_MISSING,        
     U_DECIMAL_NUMBER_SYNTAX_ERROR,    
     U_FORMAT_INEXACT_ERROR,           
-    U_FMT_PARSE_ERROR_LIMIT,          
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    U_FMT_PARSE_ERROR_LIMIT,
+#endif  
 
     
 
@@ -621,7 +565,13 @@ typedef enum UErrorCode {
     U_BRK_RULE_EMPTY_SET,                  
     U_BRK_UNRECOGNIZED_OPTION,             
     U_BRK_MALFORMED_RULE_TAG,              
-    U_BRK_ERROR_LIMIT,                     
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    U_BRK_ERROR_LIMIT,
+#endif  
 
     
 
@@ -649,11 +599,15 @@ typedef enum UErrorCode {
     U_REGEX_STACK_OVERFLOW,               
     U_REGEX_TIME_OUT,                     
     U_REGEX_STOPPED_BY_CALLER,            
-#ifndef U_HIDE_DRAFT_API
     U_REGEX_PATTERN_TOO_BIG,              
     U_REGEX_INVALID_CAPTURE_GROUP_NAME,   
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    U_REGEX_ERROR_LIMIT=U_REGEX_STOPPED_BY_CALLER+3,
 #endif  
-    U_REGEX_ERROR_LIMIT=U_REGEX_STOPPED_BY_CALLER+3, 
 
     
 
@@ -668,7 +622,13 @@ typedef enum UErrorCode {
     U_IDNA_LABEL_TOO_LONG_ERROR,
     U_IDNA_ZERO_LENGTH_LABEL_ERROR,
     U_IDNA_DOMAIN_NAME_TOO_LONG_ERROR,
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
     U_IDNA_ERROR_LIMIT,
+#endif  
     
 
 
@@ -682,9 +642,21 @@ typedef enum UErrorCode {
     U_PLUGIN_ERROR_START=0x10500,         
     U_PLUGIN_TOO_HIGH=0x10500,            
     U_PLUGIN_DIDNT_SET_LEVEL,             
-    U_PLUGIN_ERROR_LIMIT,                 
+#ifndef U_HIDE_DEPRECATED_API
+    
 
-    U_ERROR_LIMIT=U_PLUGIN_ERROR_LIMIT      
+
+
+    U_PLUGIN_ERROR_LIMIT,
+#endif  
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    U_ERROR_LIMIT=U_PLUGIN_ERROR_LIMIT
+#endif  
 } UErrorCode;
 
 

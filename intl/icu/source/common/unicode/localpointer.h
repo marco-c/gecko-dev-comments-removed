@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef __LOCALPOINTER_H__
 #define __LOCALPOINTER_H__
 
@@ -185,13 +187,14 @@ private:
 template<typename T>
 class LocalPointer : public LocalPointerBase<T> {
 public:
+    using LocalPointerBase<T>::operator*;
+    using LocalPointerBase<T>::operator->;
     
 
 
 
 
     explicit LocalPointer(T *p=NULL) : LocalPointerBase<T>(p) {}
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -220,7 +223,6 @@ public:
         src.ptr=NULL;
     }
 #endif
-#endif  
     
 
 
@@ -228,7 +230,6 @@ public:
     ~LocalPointer() {
         delete LocalPointerBase<T>::ptr;
     }
-#ifndef U_HIDE_DRAFT_API
 #if U_HAVE_RVALUE_REFERENCES
     
 
@@ -241,6 +242,7 @@ public:
         return moveFrom(src);
     }
 #endif
+    
     
 
 
@@ -275,7 +277,6 @@ public:
     friend inline void swap(LocalPointer<T> &p1, LocalPointer<T> &p2) U_NOEXCEPT {
         p1.swap(p2);
     }
-#endif  
     
 
 
@@ -286,7 +287,6 @@ public:
         delete LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=p;
     }
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -313,7 +313,6 @@ public:
             delete p;
         }
     }
-#endif  
 };
 
 
@@ -337,13 +336,14 @@ public:
 template<typename T>
 class LocalArray : public LocalPointerBase<T> {
 public:
+    using LocalPointerBase<T>::operator*;
+    using LocalPointerBase<T>::operator->;
     
 
 
 
 
     explicit LocalArray(T *p=NULL) : LocalPointerBase<T>(p) {}
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -372,7 +372,6 @@ public:
         src.ptr=NULL;
     }
 #endif
-#endif  
     
 
 
@@ -380,7 +379,6 @@ public:
     ~LocalArray() {
         delete[] LocalPointerBase<T>::ptr;
     }
-#ifndef U_HIDE_DRAFT_API
 #if U_HAVE_RVALUE_REFERENCES
     
 
@@ -393,6 +391,7 @@ public:
         return moveFrom(src);
     }
 #endif
+    
     
 
 
@@ -427,7 +426,6 @@ public:
     friend inline void swap(LocalArray<T> &p1, LocalArray<T> &p2) U_NOEXCEPT {
         p1.swap(p2);
     }
-#endif  
     
 
 
@@ -438,7 +436,6 @@ public:
         delete[] LocalPointerBase<T>::ptr;
         LocalPointerBase<T>::ptr=p;
     }
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -465,7 +462,6 @@ public:
             delete[] p;
         }
     }
-#endif  
     
 
 
@@ -496,24 +492,23 @@ public:
 
 
 
-
-
-
 #if U_HAVE_RVALUE_REFERENCES
 #define U_DEFINE_LOCAL_OPEN_POINTER(LocalPointerClassName, Type, closeFunction) \
     class LocalPointerClassName : public LocalPointerBase<Type> { \
     public: \
+        using LocalPointerBase<Type>::operator*; \
+        using LocalPointerBase<Type>::operator->; \
         explicit LocalPointerClassName(Type *p=NULL) : LocalPointerBase<Type>(p) {} \
         LocalPointerClassName(LocalPointerClassName &&src) U_NOEXCEPT \
                 : LocalPointerBase<Type>(src.ptr) { \
             src.ptr=NULL; \
         } \
-        ~LocalPointerClassName() { closeFunction(ptr); } \
+        ~LocalPointerClassName() { if (ptr != NULL) { closeFunction(ptr); } } \
         LocalPointerClassName &operator=(LocalPointerClassName &&src) U_NOEXCEPT { \
             return moveFrom(src); \
         } \
         LocalPointerClassName &moveFrom(LocalPointerClassName &src) U_NOEXCEPT { \
-            closeFunction(ptr); \
+            if (ptr != NULL) { closeFunction(ptr); } \
             LocalPointerBase<Type>::ptr=src.ptr; \
             src.ptr=NULL; \
             return *this; \
@@ -527,7 +522,7 @@ public:
             p1.swap(p2); \
         } \
         void adoptInstead(Type *p) { \
-            closeFunction(ptr); \
+            if (ptr != NULL) { closeFunction(ptr); } \
             ptr=p; \
         } \
     }
@@ -535,10 +530,12 @@ public:
 #define U_DEFINE_LOCAL_OPEN_POINTER(LocalPointerClassName, Type, closeFunction) \
     class LocalPointerClassName : public LocalPointerBase<Type> { \
     public: \
+        using LocalPointerBase<Type>::operator*; \
+        using LocalPointerBase<Type>::operator->; \
         explicit LocalPointerClassName(Type *p=NULL) : LocalPointerBase<Type>(p) {} \
         ~LocalPointerClassName() { closeFunction(ptr); } \
         LocalPointerClassName &moveFrom(LocalPointerClassName &src) U_NOEXCEPT { \
-            closeFunction(ptr); \
+            if (ptr != NULL) { closeFunction(ptr); } \
             LocalPointerBase<Type>::ptr=src.ptr; \
             src.ptr=NULL; \
             return *this; \
@@ -552,7 +549,7 @@ public:
             p1.swap(p2); \
         } \
         void adoptInstead(Type *p) { \
-            closeFunction(ptr); \
+            if (ptr != NULL) { closeFunction(ptr); } \
             ptr=p; \
         } \
     }

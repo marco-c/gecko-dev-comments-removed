@@ -22,8 +22,9 @@
 
 
 
- 
 
+
+ 
 
 
 
@@ -51,13 +52,13 @@
 
 
 #define U_COPYRIGHT_STRING \
-  " Copyright (C) 2015, International Business Machines Corporation and others. All Rights Reserved. "
+  " Copyright (C) 2016 and later: Unicode, Inc. and others. License & terms of use: http://www.unicode.org/copyright.html "
 
 
 
 
 
-#define U_ICU_VERSION_MAJOR_NUM 56
+#define U_ICU_VERSION_MAJOR_NUM 58
 
 
 
@@ -83,7 +84,7 @@
 
 
 
-#define U_ICU_VERSION_SUFFIX _56
+#define U_ICU_VERSION_SUFFIX _58
 
 
 
@@ -118,19 +119,19 @@
 
 
 
-#define U_ICU_VERSION "56.1"
+#define U_ICU_VERSION "58.1"
 
 
 
 
 
-#define U_ICU_VERSION_SHORT "56"
+#define U_ICU_VERSION_SHORT "58"
 
 #ifndef U_HIDE_INTERNAL_API
 
 
 
-#define U_ICU_DATA_VERSION "56.1"
+#define U_ICU_DATA_VERSION "58.1"
 #endif  
 
 

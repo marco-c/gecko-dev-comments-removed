@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __STRINGTRIEBUILDER_H__
 #define __STRINGTRIEBUILDER_H__
 
@@ -184,7 +186,8 @@ protected:
     
     UHashtable *nodes;
 
-#ifndef U_HIDE_INTERNAL_API
+    
+    
     
     class Node : public UObject {
     public:
@@ -243,6 +246,7 @@ protected:
         int32_t offset;
     };
 
+#ifndef U_HIDE_INTERNAL_API
     
     
     
@@ -258,7 +262,10 @@ protected:
     protected:
         int32_t value;
     };
+#endif  
 
+    
+    
     
 
 
@@ -276,6 +283,7 @@ protected:
         int32_t value;
     };
 
+#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -289,7 +297,10 @@ protected:
     protected:
         Node *next;
     };
+#endif  
 
+    
+    
     
 
 
@@ -305,6 +316,7 @@ protected:
         Node *next;
     };
 
+#ifndef U_HIDE_INTERNAL_API
     
 
 

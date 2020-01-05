@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef __UTF8COLLATIONITERATOR_H__
 #define __UTF8COLLATIONITERATOR_H__
 
@@ -19,6 +21,7 @@
 #include "cmemory.h"
 #include "collation.h"
 #include "collationdata.h"
+#include "collationiterator.h"
 #include "normalizer2impl.h"
 
 U_NAMESPACE_BEGIN

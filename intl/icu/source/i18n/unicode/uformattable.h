@@ -25,6 +25,8 @@
 
 
 
+
+
 #ifndef UFORMATTABLE_H
 #define UFORMATTABLE_H
 
@@ -49,7 +51,13 @@ typedef enum UFormattableType {
   UFMT_ARRAY,    
   UFMT_INT64,    
   UFMT_OBJECT,   
-  UFMT_COUNT     
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    UFMT_COUNT
+#endif  
 } UFormattableType;
 
 

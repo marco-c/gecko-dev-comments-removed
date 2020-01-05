@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/unistr.h"
 #include "unicode/uset.h"
@@ -619,6 +621,18 @@ ucase_getCaseLocale(const char *locale, int32_t *locCache) {
                 result=UCASE_LOC_LITHUANIAN;
             }
         }
+    } else if(is_e(c)) {
+        
+        c=*locale++;
+        if(is_l(c)) {
+            c=*locale++;
+            if(is_l(c)) {
+                c=*locale;
+            }
+            if(is_sep(c)) {
+                result=UCASE_LOC_GREEK;
+            }
+        }
     } else if(is_n(c)) {
         
         c=*locale++;
@@ -801,8 +815,9 @@ U_CAPI int32_t U_EXPORT2
 ucase_toFullLower(const UCaseProps *csp, UChar32 c,
                   UCaseContextIterator *iter, void *context,
                   const UChar **pString,
-                  const char *locale, int32_t *locCache)
-{
+                  const char *locale, int32_t *locCache) {
+    
+    U_ASSERT(c >= 0);
     UChar32 result=c;
     uint16_t props=UTRIE2_GET16(&csp->trie, c);
     if(!PROPS_HAS_EXCEPTION(props)) {
@@ -947,6 +962,8 @@ toUpperOrTitle(const UCaseProps *csp, UChar32 c,
                const UChar **pString,
                const char *locale, int32_t *locCache,
                UBool upperNotTitle) {
+    
+    U_ASSERT(c >= 0);
     UChar32 result=c;
     uint16_t props=UTRIE2_GET16(&csp->trie, c);
     if(!PROPS_HAS_EXCEPTION(props)) {
@@ -1155,8 +1172,9 @@ ucase_fold(const UCaseProps *csp, UChar32 c, uint32_t options) {
 U_CAPI int32_t U_EXPORT2
 ucase_toFullFolding(const UCaseProps *csp, UChar32 c,
                     const UChar **pString,
-                    uint32_t options)
-{
+                    uint32_t options) {
+    
+    U_ASSERT(c >= 0);
     UChar32 result=c;
     uint16_t props=UTRIE2_GET16(&csp->trie, c);
     if(!PROPS_HAS_EXCEPTION(props)) {

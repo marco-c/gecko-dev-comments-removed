@@ -4,6 +4,8 @@
 
 
 
+
+
 #include "flagparser.h"
 #include "filestrm.h"
 #include "cstring.h"
@@ -61,7 +63,7 @@ parseFlagsFile(const char *fileName, char **flagBuffer, int32_t flagBufferSize, 
                 continue;
             }
 
-            if (uprv_strlen(buffer) == (currentBufferSize - 1) && buffer[currentBufferSize-2] != '\n') {
+            if ((int32_t)uprv_strlen(buffer) == (currentBufferSize - 1) && buffer[currentBufferSize-2] != '\n') {
                 
                 allocateMoreSpace = TRUE;
                 T_FileStream_rewind(f);
@@ -96,7 +98,7 @@ parseFlagsFile_cleanup:
     uprv_free(buffer);
 
     T_FileStream_close(f);
-
+    
     if (U_FAILURE(*status) && *status != U_BUFFER_OVERFLOW_ERROR) {
         return -1;
     }

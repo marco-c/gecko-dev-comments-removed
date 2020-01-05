@@ -102,6 +102,8 @@
 
 
 
+
+
 #ifndef ICUPLUG_H
 #define ICUPLUG_H
 
@@ -157,7 +159,11 @@ typedef enum {
     UPLUG_REASON_QUERY = 0,     
     UPLUG_REASON_LOAD = 1,     
     UPLUG_REASON_UNLOAD = 2,   
-    UPLUG_REASON_COUNT         
+    
+
+
+
+    UPLUG_REASON_COUNT
 } UPlugReason;
 
 
@@ -173,7 +179,11 @@ typedef enum {
     UPLUG_LEVEL_UNKNOWN = 1,     
     UPLUG_LEVEL_LOW     = 2,     
     UPLUG_LEVEL_HIGH    = 3,     
-    UPLUG_LEVEL_COUNT         
+    
+
+
+
+    UPLUG_LEVEL_COUNT
 } UPlugLevel;
 
 

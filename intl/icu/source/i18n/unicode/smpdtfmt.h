@@ -21,6 +21,8 @@
 
 
 
+
+
 #ifndef SMPDTFMT_H
 #define SMPDTFMT_H
 
@@ -1007,6 +1009,12 @@ public:
 
 
 
+
+
+
+
+
+
     virtual UnicodeString& toLocalizedPattern(UnicodeString& result,
                                               UErrorCode& status) const;
 
@@ -1130,7 +1138,7 @@ public:
 
 
     virtual void setContext(UDisplayContext value, UErrorCode& status);
-    
+
     
 
 
@@ -1357,7 +1365,14 @@ private:
 
     int32_t matchQuarterString(const UnicodeString& text, int32_t start, UCalendarDateFields field,
                                const UnicodeString* stringArray, int32_t stringArrayCount, Calendar& cal) const;
+
     
+
+
+    int32_t matchDayPeriodStrings(const UnicodeString& text, int32_t start,
+                                  const UnicodeString* stringArray, int32_t stringArrayCount,
+                                  int32_t &dayPeriod) const;
+
     
 
 
@@ -1374,9 +1389,9 @@ private:
 
 
     static UBool matchLiterals(const UnicodeString &pattern, int32_t &patternOffset,
-                               const UnicodeString &text, int32_t &textOffset, 
+                               const UnicodeString &text, int32_t &textOffset,
                                UBool whitespaceLenient, UBool partialMatchLenient, UBool oldLeniency);
-    
+
     
 
 
@@ -1399,7 +1414,8 @@ private:
 
     int32_t subParse(const UnicodeString& text, int32_t& start, UChar ch, int32_t count,
                      UBool obeyCount, UBool allowNegative, UBool ambiguousYear[], int32_t& saveHebrewMonth, Calendar& cal,
-                     int32_t patLoc, MessageFormat * numericLeapMonthFormatter, UTimeZoneFormatTimeType *tzTimeType, SimpleDateFormatMutableNFs &mutableNFs) const;
+                     int32_t patLoc, MessageFormat * numericLeapMonthFormatter, UTimeZoneFormatTimeType *tzTimeType, SimpleDateFormatMutableNFs &mutableNFs,
+                     int32_t *dayPeriod=NULL) const;
 
     void parseInt(const UnicodeString& text,
                   Formattable& number,
@@ -1555,6 +1571,14 @@ private:
 
 
     UDate                fDefaultCenturyStart;
+
+    UBool                fHasMinute;
+    UBool                fHasSecond;
+
+    
+
+
+    void                 parsePattern();
 
     
 

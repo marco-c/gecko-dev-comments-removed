@@ -5,13 +5,14 @@
 
 
 
+
+
 #ifndef ULISTFORMATTER_H
 #define ULISTFORMATTER_H
 
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
 
 #include "unicode/localpointer.h"
 
@@ -48,7 +49,7 @@ typedef struct UListFormatter UListFormatter;
 
 
 
-U_DRAFT UListFormatter* U_EXPORT2
+U_STABLE UListFormatter* U_EXPORT2
 ulistfmt_open(const char*  locale,
               UErrorCode*  status);
 
@@ -58,7 +59,7 @@ ulistfmt_open(const char*  locale,
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 ulistfmt_close(UListFormatter *listfmt);
 
 
@@ -124,7 +125,6 @@ ulistfmt_format(const UListFormatter* listfmt,
                 int32_t            resultCapacity,
                 UErrorCode*        status);
 
-#endif 
 #endif 
 
 #endif

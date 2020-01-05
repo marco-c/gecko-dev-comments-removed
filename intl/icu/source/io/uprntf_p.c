@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING && !UCONFIG_NO_CONVERSION
@@ -143,7 +145,7 @@ u_printf_set_sign(UNumberFormat        *format,
             symbolLen = unum_getSymbol(format,
                 UNUM_PLUS_SIGN_SYMBOL,
                 plusSymbol,
-                sizeof(plusSymbol)/sizeof(*plusSymbol),
+                UPRV_LENGTHOF(plusSymbol),
                 status);
             unum_setTextAttribute(format,
                 UNUM_POSITIVE_PREFIX,
@@ -215,7 +217,7 @@ u_printf_string_handler(const u_printf_stream_handler  *handler,
         }
         else {
             s = ufmt_defaultCPToUnicode(arg, argSize, buffer,
-                    sizeof(buffer)/sizeof(UChar));
+                    UPRV_LENGTHOF(buffer));
         }
     }
     else {
@@ -251,7 +253,7 @@ u_printf_char_handler(const u_printf_stream_handler  *handler,
     unsigned char arg = (unsigned char)(args[0].int64Value);
 
     
-    ufmt_defaultCPToUnicode((const char *)&arg, 2, s, sizeof(s)/sizeof(UChar));
+    ufmt_defaultCPToUnicode((const char *)&arg, 2, s, UPRV_LENGTHOF(s));
 
     
     if (arg != 0) {
@@ -1508,6 +1510,7 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
                     
                     info->fWidth = *written;
                     
+                    U_FALLTHROUGH;
                 case ufmt_string:
                 case ufmt_ustring:
                 case ufmt_pointer:
@@ -1535,6 +1538,7 @@ u_printf_parse(const u_printf_stream_handler *streamHandler,
                     
                     info->fWidth = *written;
                     
+                    U_FALLTHROUGH;
                 case ufmt_string:
                 case ufmt_ustring:
                 case ufmt_pointer:

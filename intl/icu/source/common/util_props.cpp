@@ -8,6 +8,8 @@
 
 
 
+
+
 #include "unicode/uchar.h"
 #include "unicode/utf16.h"
 #include "patternprops.h"
@@ -101,6 +103,7 @@ int32_t ICU_Utility::parsePattern(const UnicodeString& rule, int32_t pos, int32_
                 return -1;
             }
             
+            U_FALLTHROUGH;
         case 126 :
             pos = skipWhitespace(rule, pos);
             break;

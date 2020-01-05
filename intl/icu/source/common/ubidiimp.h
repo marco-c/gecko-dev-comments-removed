@@ -14,10 +14,13 @@
 
 
 
+
+
 #ifndef UBIDIIMP_H
 #define UBIDIIMP_H
 
 #include "unicode/utypes.h"
+#include "unicode/ubidi.h"
 #include "unicode/uchar.h"
 #include "ubidi_props.h"
 

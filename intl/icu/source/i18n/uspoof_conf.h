@@ -16,6 +16,8 @@
 
 
 
+
+
 #ifndef __USPOOF_BUILDCONF_H__
 #define __USPOOF_BUILDCONF_H__
 
@@ -23,6 +25,8 @@
 
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS 
 
+#include "unicode/uregex.h"
+#include "uhash.h"
 #include "uspoof_impl.h"
 
 U_NAMESPACE_BEGIN
@@ -34,7 +38,7 @@ U_NAMESPACE_BEGIN
 
 struct SPUString : public UMemory {
     UnicodeString  *fStr;             
-    int32_t         fStrTableIndex;   
+    int32_t         fCharOrStrTableIndex;   
                                       
                                       
     SPUString(UnicodeString *s);
@@ -84,10 +88,7 @@ class ConfusabledataBuilder : public UMemory {
   private:
     SpoofImpl  *fSpoofImpl;
     UChar      *fInput;
-    UHashtable *fSLTable;
-    UHashtable *fSATable; 
-    UHashtable *fMLTable; 
-    UHashtable *fMATable;
+    UHashtable *fTable;
     UnicodeSet *fKeySet;     
 
     
@@ -95,7 +96,6 @@ class ConfusabledataBuilder : public UMemory {
     UVector            *fKeyVec;
     UVector            *fValueVec;
     UnicodeString      *fStringTable;
-    UVector            *fStringLengthsTable;
     
     SPUStringPool      *stringPool;
     URegularExpression *fParseLine;

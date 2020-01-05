@@ -17,6 +17,8 @@
 
 
 
+
+
 #ifndef BRKITER_H
 #define BRKITER_H
 
@@ -166,6 +168,11 @@ public:
      virtual UText *getUText(UText *fillIn, UErrorCode &status) const = 0;
 
     
+
+
+
+
+
 
 
 
@@ -623,8 +630,11 @@ protected:
     BreakIterator();
     
     BreakIterator (const BreakIterator &other) : UObject(other) {}
+#ifndef U_HIDE_INTERNAL_API
     
     BreakIterator (const Locale& valid, const Locale& actual);
+#endif  
+
 private:
 
     

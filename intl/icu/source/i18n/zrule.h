@@ -4,6 +4,8 @@
 
 
 
+
+
 #ifndef __ZRULE_H
 #define __ZRULE_H
 
@@ -15,6 +17,8 @@
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
+
+#include "unicode/uobject.h"
 
 #ifndef UCNV_H
 

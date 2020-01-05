@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef USEARCH_H
 #define USEARCH_H
 
@@ -188,11 +190,13 @@ typedef enum {
 
     USEARCH_ELEMENT_COMPARISON = 2,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     USEARCH_ATTRIBUTE_COUNT = 3
+#endif  
 } USearchAttribute;
 
 
@@ -262,11 +266,13 @@ typedef enum {
 
     USEARCH_ANY_BASE_WEIGHT_IS_WILDCARD,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     USEARCH_ATTRIBUTE_VALUE_COUNT
+#endif  
 } USearchAttributeValue;
 
 

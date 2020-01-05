@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef __ULOCDATA_H__
 #define __ULOCDATA_H__
 
@@ -47,8 +49,13 @@ typedef enum ULocaleDataExemplarSetType  {
     ULOCDATA_ES_INDEX=2,
     
     ULOCDATA_ES_PUNCTUATION=3,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     ULOCDATA_ES_COUNT=4
+#endif  
 } ULocaleDataExemplarSetType;
 
 
@@ -63,8 +70,13 @@ typedef enum ULocaleDataDelimiterType {
     ULOCDATA_ALT_QUOTATION_START = 2,
     
     ULOCDATA_ALT_QUOTATION_END = 3,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     ULOCDATA_DELIMITER_COUNT = 4
+#endif  
 } ULocaleDataDelimiterType;
 
 
@@ -189,7 +201,13 @@ typedef enum UMeasurementSystem {
     UMS_SI,     
     UMS_US,     
     UMS_UK,     
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
     UMS_LIMIT
+#endif  
 } UMeasurementSystem;
 
 

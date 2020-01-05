@@ -5,6 +5,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/ures.h"
 #include "unicode/putil.h"
@@ -16,6 +18,7 @@
 #include "uinvchar.h"
 #include "ulocimp.h"
 #include "uassert.h"
+
 
 
 typedef struct VariantListEntry {
@@ -577,6 +580,14 @@ _addExtensionToList(ExtensionListEntry **first, ExtensionListEntry *ext, UBool l
                     cmp = LDMLEXT - *(cur->key);
                 } else {
                     cmp = uprv_compareInvCharsAsAscii(ext->key, cur->key);
+                    
+                    if (cmp != 0) {
+                        if (uprv_strcmp(cur->key, LOCALE_ATTRIBUTE_KEY) == 0) {
+                            cmp = 1;
+                        } else if (uprv_strcmp(ext->key, LOCALE_ATTRIBUTE_KEY) == 0) {
+                            cmp = -1;
+                        }
+                    }
                 }
             } else {
                 cmp = uprv_compareInvCharsAsAscii(ext->key, cur->key);
@@ -892,7 +903,6 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
     char buf[ULOC_KEYWORD_AND_VALUES_CAPACITY];
     char attrBuf[ULOC_KEYWORD_AND_VALUES_CAPACITY] = { 0 };
     int32_t attrBufLength = 0;
-    UBool isAttribute = FALSE;
     UEnumeration *keywordEnum = NULL;
     int32_t reslen = 0;
 
@@ -919,7 +929,6 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
         UBool isBcpUExt;
 
         while (TRUE) {
-            isAttribute = FALSE;
             key = uenum_next(keywordEnum, NULL, status);
             if (key == NULL) {
                 break;
@@ -941,7 +950,6 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
 
             
             if (uprv_strcmp(key, LOCALE_ATTRIBUTE_KEY) == 0) {
-                isAttribute = TRUE;
                 if (len > 0) {
                     int32_t i = 0;
                     while (TRUE) {
@@ -984,6 +992,9 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                             }
                         }
                     }
+                    
+                    bcpKey = LOCALE_ATTRIBUTE_KEY;
+                    bcpValue = NULL;
                 }
             } else if (isBcpUExt) {
                 bcpKey = uloc_toUnicodeLocaleKey(key);
@@ -1063,22 +1074,20 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                 }
             }
 
-            if (!isAttribute) {
-                
-                ext = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
-                if (ext == NULL) {
-                    *status = U_MEMORY_ALLOCATION_ERROR;
-                    break;
-                }
-                ext->key = bcpKey;
-                ext->value = bcpValue;
+            
+            ext = (ExtensionListEntry*)uprv_malloc(sizeof(ExtensionListEntry));
+            if (ext == NULL) {
+                *status = U_MEMORY_ALLOCATION_ERROR;
+                break;
+            }
+            ext->key = bcpKey;
+            ext->value = bcpValue;
 
-                if (!_addExtensionToList(&firstExt, ext, TRUE)) {
-                    uprv_free(ext);
-                    if (strict) {
-                        *status = U_ILLEGAL_ARGUMENT_ERROR;
-                        break;
-                    }
+            if (!_addExtensionToList(&firstExt, ext, TRUE)) {
+                uprv_free(ext);
+                if (strict) {
+                    *status = U_ILLEGAL_ARGUMENT_ERROR;
+                    break;
                 }
             }
         }
@@ -1101,12 +1110,9 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
 
         if (U_SUCCESS(*status) && (firstExt != NULL || firstAttr != NULL)) {
             UBool startLDMLExtension = FALSE;
-
-            attr = firstAttr;
-            ext = firstExt;
-            do {
-                if (!startLDMLExtension && (ext && uprv_strlen(ext->key) > 1)) {
-                   
+            for (ext = firstExt; ext; ext = ext->next) {
+                if (!startLDMLExtension && uprv_strlen(ext->key) > 1) {
+                    
                    if (reslen < capacity) {
                        *(appendAt + reslen) = SEP;
                    }
@@ -1120,7 +1126,20 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                 }
 
                 
-                if (ext && (uprv_strlen(ext->key) == 1 || attr == NULL)) {
+                if (uprv_strcmp(ext->key, LOCALE_ATTRIBUTE_KEY) == 0) {
+                    
+                    for (attr = firstAttr; attr; attr = attr->next) {
+                        if (reslen < capacity) {
+                            *(appendAt + reslen) = SEP;
+                        }
+                        reslen++;
+                        len = (int32_t)uprv_strlen(attr->attribute);
+                        if (reslen < capacity) {
+                            uprv_memcpy(appendAt + reslen, attr->attribute, uprv_min(len, capacity - reslen));
+                        }
+                        reslen += len;
+                    }
+                } else {
                     if (reslen < capacity) {
                         *(appendAt + reslen) = SEP;
                     }
@@ -1139,23 +1158,8 @@ _appendKeywordsToLanguageTag(const char* localeID, char* appendAt, int32_t capac
                         uprv_memcpy(appendAt + reslen, ext->value, uprv_min(len, capacity - reslen));
                     }
                     reslen += len;
-
-                    ext = ext->next;
-                } else if (attr) {
-                    
-                    if (reslen < capacity) {
-                        *(appendAt + reslen) = SEP;
-                    }
-                    reslen++;
-                    len = (int32_t)uprv_strlen(attr->attribute);
-                    if (reslen < capacity) {
-                        uprv_memcpy(appendAt + reslen, attr->attribute, uprv_min(len, capacity - reslen));
-                    }
-                    reslen += len;
-
-                    attr = attr->next;
                 }
-            } while (attr != NULL || ext != NULL);
+            }
         }
 cleanup:
         
@@ -1771,6 +1775,15 @@ _appendPrivateuseToLanguageTag(const char* localeID, char* appendAt, int32_t cap
 #define EXTV 0x0040
 #define PRIV 0x0080
 
+
+
+
+
+
+#if (defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 190024210))
+#pragma optimize( "", off )
+#endif
+
 static ULanguageTag*
 ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* status) {
     ULanguageTag *t;
@@ -2133,6 +2146,13 @@ error:
     ultag_close(t);
     return NULL;
 }
+
+
+
+
+#if (defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 190024210))
+#pragma optimize( "", on )
+#endif
 
 static void
 ultag_close(ULanguageTag* langtag) {

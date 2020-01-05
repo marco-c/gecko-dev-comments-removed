@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef _UNUM
 #define _UNUM
 
@@ -219,7 +221,6 @@ typedef enum UNumberFormatStyle {
 
 
     UNUM_CASH_CURRENCY=13,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -241,13 +242,14 @@ typedef enum UNumberFormatStyle {
 
 
     UNUM_CURRENCY_STANDARD=16,
-#endif 
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     UNUM_FORMAT_STYLE_COUNT=17,
+#endif  
 
     
 
@@ -323,7 +325,13 @@ enum UCurrencySpacing {
     UNUM_CURRENCY_SURROUNDING_MATCH,
     
     UNUM_CURRENCY_INSERT,
+
     
+    
+    
+
+
+
     UNUM_CURRENCY_SPACING_COUNT
 };
 typedef enum UCurrencySpacing UCurrencySpacing; 
@@ -357,8 +365,13 @@ typedef enum UNumberFormatFields {
     UNUM_PERMILL_FIELD,
     
     UNUM_SIGN_FIELD,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UNUM_FIELD_COUNT
+#endif  
 } UNumberFormatFields;
 
 
@@ -1272,8 +1285,13 @@ typedef enum UNumberFormatSymbol {
 
   UNUM_EXPONENT_MULTIPLICATION_SYMBOL = 27,
 
-  
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
   UNUM_FORMAT_SYMBOL_COUNT = 28
+#endif  
 } UNumberFormatSymbol;
 
 

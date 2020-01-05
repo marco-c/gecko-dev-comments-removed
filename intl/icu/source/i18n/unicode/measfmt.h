@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef MEASUREFORMAT_H
 #define MEASUREFORMAT_H
 
@@ -59,11 +61,13 @@ enum UMeasureFormatWidth {
 
     UMEASFMT_WIDTH_NUMERIC,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     UMEASFMT_WIDTH_COUNT = 4
+#endif  
 };
 
 typedef enum UMeasureFormatWidth UMeasureFormatWidth; 
@@ -78,7 +82,7 @@ class MeasureFormatCacheData;
 class SharedNumberFormat;
 class SharedPluralRules;
 class QuantityFormatter;
-class SimplePatternFormatter;
+class SimpleFormatter;
 class ListFormatter;
 class DateFormat;
 
@@ -186,7 +190,6 @@ class U_I18N_API MeasureFormat : public Format {
             FieldPosition &pos,
             UErrorCode &status) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -207,7 +210,21 @@ class U_I18N_API MeasureFormat : public Format {
             FieldPosition &pos,
             UErrorCode &status) const;
 
-#endif  
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+    UnicodeString getUnitDisplayName(const MeasureUnit& unit, UErrorCode &status) const;
+#endif 
+
 
     
 
@@ -327,17 +344,19 @@ class U_I18N_API MeasureFormat : public Format {
     
     ListFormatter *listFormatter;
 
-    const QuantityFormatter *getQuantityFormatter(
-            int32_t index,
-            int32_t widthIndex,
-            UErrorCode &status) const;
+    const SimpleFormatter *getFormatterOrNull(
+            const MeasureUnit &unit, UMeasureFormatWidth width, int32_t index) const;
 
-    const SimplePatternFormatter *getPerUnitFormatter(
-            int32_t index,
-            int32_t widthIndex) const;
+    const SimpleFormatter *getFormatter(
+            const MeasureUnit &unit, UMeasureFormatWidth width, int32_t index,
+            UErrorCode &errorCode) const;
 
-    const SimplePatternFormatter *getPerFormatter(
-            int32_t widthIndex,
+    const SimpleFormatter *getPluralFormatter(
+            const MeasureUnit &unit, UMeasureFormatWidth width, int32_t index,
+            UErrorCode &errorCode) const;
+
+    const SimpleFormatter *getPerFormatter(
+            UMeasureFormatWidth width,
             UErrorCode &status) const;
 
     int32_t withPerUnitAndAppend(

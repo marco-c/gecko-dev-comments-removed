@@ -10,9 +10,12 @@
 
 
 
+
+
 #ifndef USPOOFIM_H
 #define USPOOFIM_H
 
+#include "uassert.h"
 #include "unicode/utypes.h"
 #include "unicode/uspoof.h"
 #include "unicode/uscript.h"
@@ -37,11 +40,13 @@ U_NAMESPACE_BEGIN
 
 #define USPOOF_MAGIC 0x3845fdef
 
-class IdentifierInfo;
+
+#define USPOOF_CHECK_MAGIC 0x2734ecde
+
 class ScriptSet;
 class SpoofData;
 struct SpoofDataHeader;
-struct SpoofStringLengthsElement;
+class ConfusableDataUtils;
 
 
 
@@ -49,24 +54,19 @@ struct SpoofStringLengthsElement;
 
 class SpoofImpl : public UObject  {
 public:
-	SpoofImpl(SpoofData *data, UErrorCode &status);
-	SpoofImpl();
-	virtual ~SpoofImpl();
+    SpoofImpl(SpoofData *data, UErrorCode& status);
+    SpoofImpl(UErrorCode& status);
+    SpoofImpl();
+    void construct(UErrorCode& status);
+    virtual ~SpoofImpl();
 
     
 
     SpoofImpl(const SpoofImpl &src, UErrorCode &status);
     
+    USpoofChecker *asUSpoofChecker();
     static SpoofImpl *validateThis(USpoofChecker *sc, UErrorCode &status);
     static const SpoofImpl *validateThis(const USpoofChecker *sc, UErrorCode &status);
-
-    
-
-
-
-
-  
-    int32_t confusableLookup(UChar32 inChar, int32_t tableMask, UnicodeString &destBuf) const;
 
     
     void setAllowedLocales(const char *localesList, UErrorCode &status);
@@ -76,25 +76,18 @@ public:
     
     void addScriptChars(const char *locale, UnicodeSet *allowedChars, UErrorCode &status);
 
+    
+    static void getAugmentedScriptSet(UChar32 codePoint, ScriptSet& result, UErrorCode& status);
+    void getResolvedScriptSet(const UnicodeString& input, ScriptSet& result, UErrorCode& status) const;
+    void getResolvedScriptSetWithout(const UnicodeString& input, UScriptCode script, ScriptSet& result, UErrorCode& status) const;
+    void getNumerics(const UnicodeString& input, UnicodeSet& result, UErrorCode& status) const;
+    URestrictionLevel getRestrictionLevel(const UnicodeString& input, UErrorCode& status) const;
 
     
     static UChar32 ScanHex(const UChar *s, int32_t start, int32_t limit, UErrorCode &status);
 
-    
-    
-    
-    void wholeScriptCheck(
-        const UnicodeString &text, ScriptSet *result, UErrorCode &status) const;
-	    
     static UClassID U_EXPORT2 getStaticClassID(void);
     virtual UClassID getDynamicClassID(void) const;
-
-    
-    
-    
-    
-    IdentifierInfo *getIdentifierInfo(UErrorCode &status) const; 
-    void releaseIdentifierInfo(IdentifierInfo *idInfo) const;
 
     
     
@@ -110,8 +103,31 @@ public:
 
     const char       *fAllowedLocales;    
     URestrictionLevel fRestrictionLevel;  
+};
 
-    IdentifierInfo    *fCachedIdentifierInfo;    
+
+
+
+
+class CheckResult : public UObject {
+public:
+    CheckResult();
+    virtual ~CheckResult();
+
+    USpoofCheckResult *asUSpoofCheckResult();
+    static CheckResult *validateThis(USpoofCheckResult *ptr, UErrorCode &status);
+    static const CheckResult *validateThis(const USpoofCheckResult *ptr, UErrorCode &status);
+
+    void clear();
+
+    
+    int32_t toCombinedBitmask(int32_t expectedChecks);
+
+    
+    int32_t fMagic;                        
+    int32_t fChecks;                       
+    UnicodeSet fNumerics;                  
+    URestrictionLevel fRestrictionLevel;   
 };
 
 
@@ -152,31 +168,21 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-#define USPOOF_SL_TABLE_FLAG (1<<24)
-#define USPOOF_SA_TABLE_FLAG (1<<25)
-#define USPOOF_ML_TABLE_FLAG (1<<26)
-#define USPOOF_MA_TABLE_FLAG (1<<27)
-#define USPOOF_KEY_MULTIPLE_VALUES (1<<28)
-#define USPOOF_KEY_LENGTH_SHIFT 29
-#define USPOOF_KEY_LENGTH_FIELD(x) (((x)>>29) & 3)
-
-
-struct SpoofStringLengthsElement {
-    uint16_t      fLastString;         
-    uint16_t      fStrLength;           
+#define USPOOF_CONFUSABLE_DATA_FORMAT_VERSION 2  // version for ICU 58
+class ConfusableDataUtils {
+public:
+    inline static UChar32 keyToCodePoint(int32_t key) {
+        return key & 0x00ffffff;
+    }
+    inline static int32_t keyToLength(int32_t key) {
+        return ((key & 0xff000000) >> 24) + 1;
+    }
+    inline static int32_t codePointAndLengthToKey(UChar32 codePoint, int32_t length) {
+        U_ASSERT((codePoint & 0x00ffffff) == codePoint);
+        U_ASSERT(length <= 256);
+        return codePoint | ((length - 1) << 24);
+    }
 };
-
 
 
 
@@ -195,7 +201,9 @@ struct SpoofStringLengthsElement {
 
 class SpoofData: public UMemory {
   public:
-    static SpoofData *getDefault(UErrorCode &status);   
+    static SpoofData* getDefault(UErrorCode &status);   
+    static void releaseDefault();   
+
     SpoofData(UErrorCode &status);   
                                      
     
@@ -210,7 +218,8 @@ class SpoofData: public UMemory {
 
     
     
-    static UBool validateDataVersion(const SpoofDataHeader *rawData, UErrorCode &status);
+    UBool validateDataVersion(UErrorCode &status) const;
+
     ~SpoofData();                    
                                      
     
@@ -222,6 +231,35 @@ class SpoofData: public UMemory {
 
     
     
+    void reset();
+
+    
+    int32_t serialize(void *buf, int32_t capacity, UErrorCode &status) const;
+
+    
+    
+    int32_t size() const;
+
+    
+    
+    
+    
+    int32_t confusableLookup(UChar32 inChar, UnicodeString &dest) const;
+
+    
+    int32_t length() const;
+
+    
+    UChar32 codePointAt(int32_t index) const;
+
+    
+    
+    
+    int32_t appendValueTo(int32_t index, UnicodeString& dest) const;
+
+  private:
+    
+    
     
     
     
@@ -230,10 +268,6 @@ class SpoofData: public UMemory {
     
     void initPtrs(UErrorCode &status);
 
-    
-    
-    void reset();
-    
     SpoofDataHeader             *fRawData;          
     UBool                       fDataOwned;         
                                                     
@@ -247,15 +281,10 @@ class SpoofData: public UMemory {
     
     int32_t                     *fCFUKeys;
     uint16_t                    *fCFUValues;
-    SpoofStringLengthsElement   *fCFUStringLengths;
     UChar                       *fCFUStrings;
 
-    
-    UTrie2                      *fAnyCaseTrie;
-    UTrie2                      *fLowerCaseTrie;
-    ScriptSet                   *fScriptSets;
-    };
-    
+    friend class ConfusabledataBuilder;
+};
 
 
 
@@ -284,46 +313,10 @@ struct SpoofDataHeader {
     int32_t       fCFUStringTable;        
     int32_t       fCFUStringTableLen;     
 
-    int32_t       fCFUStringLengths;      
-    int32_t       fCFUStringLengthsSize;  
-
-
-    
-    
-    int32_t       fAnyCaseTrie;           
-    int32_t       fAnyCaseTrieLength;     
-    
-    int32_t       fLowerCaseTrie;         
-    int32_t       fLowerCaseTrieLength;   
-
-    int32_t       fScriptSets;            
-    int32_t       fScriptSetsLength;      
     
 
-    
-    
-    
     int32_t       unused[15];              
-    
- }; 
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+};
 
 
 

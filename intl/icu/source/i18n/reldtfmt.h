@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef RELDTFMT_H
 #define RELDTFMT_H
 
@@ -25,7 +27,7 @@ U_NAMESPACE_BEGIN
 
 
 class DateFormatSymbols;
-class MessageFormat;
+class SimpleFormatter;
 
 
 struct URelativeString;
@@ -250,13 +252,11 @@ private:
     SimpleDateFormat *fDateTimeFormatter;
     UnicodeString fDatePattern;
     UnicodeString fTimePattern;
-    MessageFormat *fCombinedFormat; 
+    SimpleFormatter *fCombinedFormat;  
 
     UDateFormatStyle fDateStyle;
     Locale  fLocale;
 
-    int32_t fDayMin;    
-    int32_t fDayMax;    
     int32_t fDatesLen;    
     URelativeString *fDates; 
 
@@ -264,7 +264,11 @@ private:
     UBool fCapitalizationInfoSet;
     UBool fCapitalizationOfRelativeUnitsForUIListMenu;
     UBool fCapitalizationOfRelativeUnitsForStandAlone;
+#if !UCONFIG_NO_BREAK_ITERATION
     BreakIterator* fCapitalizationBrkIter;
+#else
+    UObject* fCapitalizationBrkIter;
+#endif
 
     
 
@@ -333,4 +337,3 @@ U_NAMESPACE_END
 #endif 
 
 #endif 
-

@@ -16,6 +16,8 @@
 
 
 
+
+
 #ifndef DATEFMT_H
 #define DATEFMT_H
 
@@ -586,7 +588,6 @@ public:
             UErrorCode &status);
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -642,7 +643,6 @@ public:
             const Locale &locale,
             UErrorCode &status);
 
-#endif 
 
     
 

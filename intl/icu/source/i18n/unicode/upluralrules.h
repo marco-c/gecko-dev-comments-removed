@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef UPLURALRULES_H
 #define UPLURALRULES_H
 
@@ -52,11 +54,13 @@ enum UPluralType {
 
 
     UPLURAL_TYPE_ORDINAL,
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     UPLURAL_TYPE_COUNT
+#endif  
 };
 
 

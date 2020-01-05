@@ -16,6 +16,8 @@
 
 
 
+
+
 #include "uposixdefs.h"
 
 #include "unicode/utypes.h"
@@ -274,7 +276,7 @@ main(int argc, char* argv[]) {
     options[MODE].value = "common";
 
     
-    argc=u_parseArgs(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    argc=u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
 
     
     
@@ -332,7 +334,7 @@ main(int argc, char* argv[]) {
             progname);
 
         fprintf(stderr, "\n options:\n");
-        for(i=0;i<(sizeof(options)/sizeof(options[0]));i++) {
+        for(i=0;i<UPRV_LENGTHOF(options);i++) {
             fprintf(stderr, "%-5s -%c %s%-10s  %s\n",
                 (i<1?"[REQ]":""),
                 options[i].shortName,
@@ -342,7 +344,7 @@ main(int argc, char* argv[]) {
         }
 
         fprintf(stderr, "modes: (-m option)\n");
-        for(i=0;i<(sizeof(modes)/sizeof(modes[0]));i++) {
+        for(i=0;i<UPRV_LENGTHOF(modes);i++) {
             fprintf(stderr, "   %-9s ", modes[i].name);
             if (modes[i].alt_name) {
                 fprintf(stderr, "/ %-9s", modes[i].alt_name);

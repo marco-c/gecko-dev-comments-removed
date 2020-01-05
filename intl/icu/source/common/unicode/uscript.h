@@ -13,6 +13,8 @@
 
 
 
+
+
 #ifndef USCRIPT_H
 #define USCRIPT_H
 #include "unicode/utypes.h"
@@ -425,17 +427,32 @@ typedef enum UScriptCode {
       USCRIPT_SIDDHAM                       = 166,
 
       
+      USCRIPT_ADLAM                         = 167,
+      
+      USCRIPT_BHAIKSUKI                     = 168,
+      
+      USCRIPT_MARCHEN                       = 169,
+      
+      USCRIPT_NEWA                          = 170,
+      
+      USCRIPT_OSAGE                         = 171,
+
+      
+      USCRIPT_HAN_WITH_BOPOMOFO             = 172,
+      
+      USCRIPT_JAMO                          = 173,
+      
+      USCRIPT_SYMBOLS_EMOJI                 = 174,
+
+#ifndef U_HIDE_DEPRECATED_API
+    
 
 
 
 
 
-
-
-
-
-
-      USCRIPT_CODE_LIMIT    = 167
+    USCRIPT_CODE_LIMIT    = 175
+#endif  
 } UScriptCode;
 
 
@@ -457,7 +474,7 @@ typedef enum UScriptCode {
 
 
 
-U_STABLE int32_t  U_EXPORT2 
+U_STABLE int32_t  U_EXPORT2
 uscript_getCode(const char* nameOrAbbrOrLocale,UScriptCode* fillIn,int32_t capacity,UErrorCode *err);
 
 
@@ -470,7 +487,7 @@ uscript_getCode(const char* nameOrAbbrOrLocale,UScriptCode* fillIn,int32_t capac
 
 
 
-U_STABLE const char*  U_EXPORT2 
+U_STABLE const char*  U_EXPORT2
 uscript_getName(UScriptCode scriptCode);
 
 
@@ -482,7 +499,7 @@ uscript_getName(UScriptCode scriptCode);
 
 
 
-U_STABLE const char*  U_EXPORT2 
+U_STABLE const char*  U_EXPORT2
 uscript_getShortName(UScriptCode scriptCode);
 
 
@@ -493,11 +510,8 @@ uscript_getShortName(UScriptCode scriptCode);
 
 
 
-U_STABLE UScriptCode  U_EXPORT2 
+U_STABLE UScriptCode  U_EXPORT2
 uscript_getScript(UChar32 codepoint, UErrorCode *err);
-
-
-
 
 
 
@@ -513,8 +527,6 @@ uscript_getScript(UChar32 codepoint, UErrorCode *err);
 
 U_STABLE UBool U_EXPORT2
 uscript_hasScript(UChar32 c, UScriptCode sc);
-
-
 
 
 

@@ -17,6 +17,8 @@
 
 
 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "unicode/utypes.h"
@@ -53,7 +55,7 @@ main(int argc, char* argv[]) {
     U_MAIN_INIT_ARGS(argc, argv);
 
     
-    argc=u_parseArgs(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    argc=u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
 
     
     if(argc<0) {

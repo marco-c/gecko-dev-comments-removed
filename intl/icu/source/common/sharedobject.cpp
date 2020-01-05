@@ -5,6 +5,8 @@
 
 
 
+
+
 #include "sharedobject.h"
 #include "uassert.h"
 
@@ -26,6 +28,7 @@ SharedObject::addRef(UBool fromWithinCache) const {
         
         
         
+        (void)fromWithinCache;   
         U_ASSERT(fromWithinCache);
         cachePtr->incrementItemsInUse();
     }

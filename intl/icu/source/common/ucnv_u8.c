@@ -18,6 +18,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -680,7 +682,8 @@ static UChar32 ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
             break;
         }
         ++source;
-    case 5: 
+        U_FALLTHROUGH;
+    case 5:
         ch += (myByte = *source);
         ch <<= 6;
         if (!U8_IS_TRAIL(myByte))
@@ -689,7 +692,8 @@ static UChar32 ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
             break;
         }
         ++source;
-    case 4: 
+        U_FALLTHROUGH;
+    case 4:
         ch += (myByte = *source);
         ch <<= 6;
         if (!U8_IS_TRAIL(myByte))
@@ -698,7 +702,8 @@ static UChar32 ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
             break;
         }
         ++source;
-    case 3: 
+        U_FALLTHROUGH;
+    case 3:
         ch += (myByte = *source);
         ch <<= 6;
         if (!U8_IS_TRAIL(myByte))
@@ -707,7 +712,8 @@ static UChar32 ucnv_getNextUChar_UTF8(UConverterToUnicodeArgs *args,
             break;
         }
         ++source;
-    case 2: 
+        U_FALLTHROUGH;
+    case 2:
         ch += (myByte = *source);
         if (!U8_IS_TRAIL(myByte))
         {
@@ -1068,7 +1074,10 @@ static const UConverterImpl _CESU8Impl={
     NULL,
     NULL,
     NULL,
-    ucnv_getCompleteUnicodeSet
+    ucnv_getCompleteUnicodeSet,
+
+    NULL,
+    NULL
 };
 
 static const UConverterStaticData _CESU8StaticData={

@@ -22,6 +22,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/putil.h"
 #include "unicode/ucnv.h" 
@@ -230,7 +232,7 @@ main(int argc, char* argv[]) {
 
     
     options[DESTDIR].value=options[SOURCEDIR].value=u_getDataDirectory();
-    argc=u_parseArgs(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    argc=u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
 
     
     if(argc<0) {

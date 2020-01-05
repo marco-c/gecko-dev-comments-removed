@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef REGION_H
 #define REGION_H
 
@@ -101,13 +103,11 @@ public:
 
     static const Region* U_EXPORT2 getInstance (int32_t code, UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
 
     static StringEnumeration* U_EXPORT2 getAvailable(URegionType type, UErrorCode &status);
-#endif 
    
     
 
@@ -127,7 +127,6 @@ public:
 
     const Region* getContainingRegion(URegionType type) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -147,7 +146,6 @@ public:
 
 
     StringEnumeration* getContainedRegions( URegionType type, UErrorCode &status ) const;
-#endif 
  
     
 
@@ -155,7 +153,6 @@ public:
 
     UBool contains(const Region &other) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -163,7 +160,6 @@ public:
 
 
     StringEnumeration* getPreferredValues(UErrorCode &status) const;
-#endif 
 
     
 
@@ -216,7 +212,7 @@ private:
 
 
 
-    static void loadRegionData(UErrorCode &status);
+    static void U_CALLCONV loadRegionData(UErrorCode &status);
 
 };
 

@@ -44,6 +44,8 @@
 
 
 
+
+
 #ifndef UCNV_H
 #define UCNV_H
 
@@ -941,8 +943,13 @@ typedef enum UConverterUnicodeSet {
     UCNV_ROUNDTRIP_SET,
     
     UCNV_ROUNDTRIP_AND_FALLBACK_SET,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UCNV_SET_COUNT
+#endif  
 } UConverterUnicodeSet;
 
 

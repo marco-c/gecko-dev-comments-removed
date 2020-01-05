@@ -22,6 +22,8 @@
 
 
 
+
+
 #ifndef DCFMTSYM_H
 #define DCFMTSYM_H
 
@@ -358,10 +360,10 @@ public:
 #ifndef U_HIDE_INTERNAL_API
     
 
- 
-    inline UBool isCustomCurrencySymbol() const { 
-        return fIsCustomCurrencySymbol; 
-    } 
+
+    inline UBool isCustomCurrencySymbol() const {
+        return fIsCustomCurrencySymbol;
+    }
 
     
 
@@ -425,7 +427,7 @@ private:
 
     UnicodeString currencySpcBeforeSym[UNUM_CURRENCY_SPACING_COUNT];
     UnicodeString currencySpcAfterSym[UNUM_CURRENCY_SPACING_COUNT];
-    UBool fIsCustomCurrencySymbol; 
+    UBool fIsCustomCurrencySymbol;
     UBool fIsCustomIntlCurrencySymbol;
 };
 
@@ -443,7 +445,6 @@ DecimalFormatSymbols::getSymbol(ENumberFormatSymbol symbol) const {
 }
 
 
-
 inline const UnicodeString &
 DecimalFormatSymbols::getConstSymbol(ENumberFormatSymbol symbol) const {
     const UnicodeString *strPtr;
@@ -457,17 +458,14 @@ DecimalFormatSymbols::getConstSymbol(ENumberFormatSymbol symbol) const {
 
 
 
-
-
-
 inline void
 DecimalFormatSymbols::setSymbol(ENumberFormatSymbol symbol, const UnicodeString &value, const UBool propogateDigits = TRUE) {
-    if (symbol == kCurrencySymbol) { 
-        fIsCustomCurrencySymbol = TRUE; 
-    } 
-    else if (symbol == kIntlCurrencySymbol) { 
-        fIsCustomIntlCurrencySymbol = TRUE; 
-    } 
+    if (symbol == kCurrencySymbol) {
+        fIsCustomCurrencySymbol = TRUE;
+    }
+    else if (symbol == kIntlCurrencySymbol) {
+        fIsCustomIntlCurrencySymbol = TRUE;
+    }
     if(symbol<kFormatSymbolCount) {
         fSymbols[symbol]=value;
     }

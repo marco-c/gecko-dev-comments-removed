@@ -15,6 +15,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_NO_LEGACY_CONVERSION && !UCONFIG_ONLY_HTML_CONVERSION
@@ -1284,7 +1286,7 @@ static void UConverter_toUnicode_ISCII_OFFSETS_LOGIC(UConverterToUnicodeArgs *ar
             
             switch (sourceChar) {
             case ISCII_INV:
-            case EXT: 
+            case EXT:
             case ATR:
                 *contextCharToUnicode = (UChar)sourceChar;
 
@@ -1322,7 +1324,6 @@ static void UConverter_toUnicode_ISCII_OFFSETS_LOGIC(UConverterToUnicodeArgs *ar
                 }
                 break;
             case 0x0A:
-                
             case 0x0D:
                 data->resetToDefaultToUnicode = TRUE;
                 GET_MAPPING(sourceChar,targetUniChar,data)
@@ -1334,7 +1335,7 @@ static void UConverter_toUnicode_ISCII_OFFSETS_LOGIC(UConverterToUnicodeArgs *ar
                 i=1;
                 found=FALSE;
                 for (; i<vowelSignESpecialCases[0][0]; i++) {
-                    U_ASSERT(i<sizeof(vowelSignESpecialCases)/sizeof(vowelSignESpecialCases[0]));
+                    U_ASSERT(i<UPRV_LENGTHOF(vowelSignESpecialCases));
                     if (vowelSignESpecialCases[i][0]==(uint8_t)*contextCharToUnicode) {
                         targetUniChar=vowelSignESpecialCases[i][1];
                         found=TRUE;
@@ -1420,6 +1421,7 @@ static void UConverter_toUnicode_ISCII_OFFSETS_LOGIC(UConverterToUnicodeArgs *ar
                         
                     }
                     
+                    U_FALLTHROUGH;
                 }
             default:GET_MAPPING(sourceChar,targetUniChar,data)
                 ;

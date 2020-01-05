@@ -20,6 +20,8 @@
 
 
 
+
+
 #ifndef UCHAR_H
 #define UCHAR_H
 
@@ -39,7 +41,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "8.0"
+#define U_UNICODE_VERSION "9.0"
 
 
 
@@ -397,8 +399,43 @@ typedef enum UProperty {
     UCHAR_CHANGES_WHEN_CASEMAPPED=55,
     
     UCHAR_CHANGES_WHEN_NFKC_CASEFOLDED=56,
+#ifndef U_HIDE_DRAFT_API
     
-    UCHAR_BINARY_LIMIT=57,
+
+
+
+
+
+    UCHAR_EMOJI=57,
+    
+
+
+
+
+
+    UCHAR_EMOJI_PRESENTATION=58,
+    
+
+
+
+
+
+    UCHAR_EMOJI_MODIFIER=59,
+    
+
+
+
+
+
+    UCHAR_EMOJI_MODIFIER_BASE=60,
+#endif 
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    UCHAR_BINARY_LIMIT=61,
+#endif  
 
     
 
@@ -485,8 +522,13 @@ typedef enum UProperty {
 
 
     UCHAR_BIDI_PAIRED_BRACKET_TYPE=0x1015,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UCHAR_INT_LIMIT=0x1016,
+#endif  
 
     
 
@@ -499,16 +541,26 @@ typedef enum UProperty {
     UCHAR_GENERAL_CATEGORY_MASK=0x2000,
     
     UCHAR_MASK_START=UCHAR_GENERAL_CATEGORY_MASK,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UCHAR_MASK_LIMIT=0x2001,
+#endif  
 
     
 
     UCHAR_NUMERIC_VALUE=0x3000,
     
     UCHAR_DOUBLE_START=UCHAR_NUMERIC_VALUE,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UCHAR_DOUBLE_LIMIT=0x3001,
+#endif  
 
     
 
@@ -560,8 +612,13 @@ typedef enum UProperty {
     
 
     UCHAR_BIDI_PAIRED_BRACKET=0x400D,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UCHAR_STRING_LIMIT=0x400E,
+#endif  
 
     
 
@@ -571,9 +628,14 @@ typedef enum UProperty {
     UCHAR_SCRIPT_EXTENSIONS=0x7000,
     
     UCHAR_OTHER_PROPERTY_START=UCHAR_SCRIPT_EXTENSIONS,
+#ifndef U_HIDE_DEPRECATED_API
     
 
+
+
     UCHAR_OTHER_PROPERTY_LIMIT=0x7001,
+#endif  
+
     
     UCHAR_INVALID_CODE = -1
 } UProperty;
@@ -655,6 +717,12 @@ typedef enum UCharCategory
     
     U_FINAL_PUNCTUATION       = 29,
     
+
+
+
+
+
+
     U_CHAR_CATEGORY_COUNT
 } UCharCategory;
 
@@ -828,8 +896,15 @@ typedef enum UCharDirection {
     U_RIGHT_TO_LEFT_ISOLATE       = 21,
     
     U_POP_DIRECTIONAL_ISOLATE     = 22,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
+
+
     U_CHAR_DIRECTION_COUNT
+#endif  
 } UCharDirection;
 
 
@@ -851,8 +926,15 @@ typedef enum UBidiPairedBracketType {
     U_BPT_OPEN,
     
     U_BPT_CLOSE,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
+
+
     U_BPT_COUNT 
+#endif  
 } UBidiPairedBracketType;
 
 
@@ -1183,7 +1265,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_CYRILLIC_SUPPLEMENTARY = UBLOCK_CYRILLIC_SUPPLEMENT, 
+    UBLOCK_CYRILLIC_SUPPLEMENTARY = UBLOCK_CYRILLIC_SUPPLEMENT,
     
     UBLOCK_TAGALOG = 98, 
     
@@ -1543,7 +1625,39 @@ enum UBlockCode {
     UBLOCK_SUTTON_SIGNWRITING = 262, 
 
     
-    UBLOCK_COUNT = 263,
+
+    
+    UBLOCK_ADLAM = 263, 
+    
+    UBLOCK_BHAIKSUKI = 264, 
+    
+    UBLOCK_CYRILLIC_EXTENDED_C = 265, 
+    
+    UBLOCK_GLAGOLITIC_SUPPLEMENT = 266, 
+    
+    UBLOCK_IDEOGRAPHIC_SYMBOLS_AND_PUNCTUATION = 267, 
+    
+    UBLOCK_MARCHEN = 268, 
+    
+    UBLOCK_MONGOLIAN_SUPPLEMENT = 269, 
+    
+    UBLOCK_NEWA = 270, 
+    
+    UBLOCK_OSAGE = 271, 
+    
+    UBLOCK_TANGUT = 272, 
+    
+    UBLOCK_TANGUT_COMPONENTS = 273, 
+
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+    UBLOCK_COUNT = 274,
+#endif  
 
     
     UBLOCK_INVALID_CODE=-1
@@ -1572,7 +1686,15 @@ typedef enum UEastAsianWidth {
     U_EA_FULLWIDTH, 
     U_EA_NARROW,    
     U_EA_WIDE,      
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_EA_COUNT
+#endif  
 } UEastAsianWidth;
 
 
@@ -1589,7 +1711,7 @@ typedef enum UEastAsianWidth {
 typedef enum UCharNameChoice {
     
     U_UNICODE_CHAR_NAME,
-#ifndef U_HIDE_DEPRECATED_API 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -1601,8 +1723,13 @@ typedef enum UCharNameChoice {
     U_EXTENDED_CHAR_NAME = U_UNICODE_CHAR_NAME+2,
     
     U_CHAR_NAME_ALIAS,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     U_CHAR_NAME_CHOICE_COUNT
+#endif  
 } UCharNameChoice;
 
 
@@ -1621,7 +1748,13 @@ typedef enum UCharNameChoice {
 typedef enum UPropertyNameChoice {
     U_SHORT_PROPERTY_NAME,
     U_LONG_PROPERTY_NAME,
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
     U_PROPERTY_NAME_CHOICE_COUNT
+#endif  
 } UPropertyNameChoice;
 
 
@@ -1655,7 +1788,15 @@ typedef enum UDecompositionType {
     U_DT_SUPER,             
     U_DT_VERTICAL,          
     U_DT_WIDE,              
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_DT_COUNT 
+#endif  
 } UDecompositionType;
 
 
@@ -1677,7 +1818,15 @@ typedef enum UJoiningType {
     U_JT_LEFT_JOINING,      
     U_JT_RIGHT_JOINING,     
     U_JT_TRANSPARENT,       
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_JT_COUNT 
+#endif  
 } UJoiningType;
 
 
@@ -1780,7 +1929,18 @@ typedef enum UJoiningGroup {
     U_JG_MANICHAEAN_YODH,  
     U_JG_MANICHAEAN_ZAYIN,  
     U_JG_STRAIGHT_WAW,  
+    U_JG_AFRICAN_FEH,  
+    U_JG_AFRICAN_NOON,  
+    U_JG_AFRICAN_QAF,  
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_JG_COUNT
+#endif  
 } UJoiningGroup;
 
 
@@ -1806,10 +1966,31 @@ typedef enum UGraphemeClusterBreak {
     U_GCB_LVT = 7,              
     U_GCB_T = 8,                
     U_GCB_V = 9,                
+    
     U_GCB_SPACING_MARK = 10,     
+    
     U_GCB_PREPEND = 11,         
+    
     U_GCB_REGIONAL_INDICATOR = 12,   
-    U_GCB_COUNT = 13
+    
+    U_GCB_E_BASE = 13,           
+    
+    U_GCB_E_BASE_GAZ = 14,      
+    
+    U_GCB_E_MODIFIER = 15,      
+    
+    U_GCB_GLUE_AFTER_ZWJ = 16,  
+    
+    U_GCB_ZWJ = 17,             
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+    U_GCB_COUNT = 18
+#endif  
 } UGraphemeClusterBreak;
 
 
@@ -1834,16 +2015,43 @@ typedef enum UWordBreakValues {
     U_WB_MIDNUM = 5,            
     U_WB_NUMERIC = 6,           
     U_WB_EXTENDNUMLET = 7,      
+    
     U_WB_CR = 8,                 
+    
     U_WB_EXTEND = 9,            
+    
     U_WB_LF = 10,               
+    
     U_WB_MIDNUMLET =11,         
+    
     U_WB_NEWLINE =12,           
+    
     U_WB_REGIONAL_INDICATOR = 13,    
+    
     U_WB_HEBREW_LETTER = 14,     
+    
     U_WB_SINGLE_QUOTE = 15,     
+    
     U_WB_DOUBLE_QUOTE = 16,     
-    U_WB_COUNT = 17
+    
+    U_WB_E_BASE = 17,            
+    
+    U_WB_E_BASE_GAZ = 18,       
+    
+    U_WB_E_MODIFIER = 19,       
+    
+    U_WB_GLUE_AFTER_ZWJ = 20,   
+    
+    U_WB_ZWJ = 21,              
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+    U_WB_COUNT = 22
+#endif  
 } UWordBreakValues;
 
 
@@ -1874,7 +2082,15 @@ typedef enum USentenceBreak {
     U_SB_EXTEND = 12,           
     U_SB_LF = 13,               
     U_SB_SCONTINUE = 14,        
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_SB_COUNT = 15
+#endif  
 } USentenceBreak;
 
 
@@ -1921,18 +2137,43 @@ typedef enum ULineBreak {
     U_LB_SPACE = 26,             
     U_LB_BREAK_SYMBOLS = 27,     
     U_LB_ZWSPACE = 28,           
+    
     U_LB_NEXT_LINE = 29,          
+    
     U_LB_WORD_JOINER = 30,       
+    
     U_LB_H2 = 31,                 
+    
     U_LB_H3 = 32,                
+    
     U_LB_JL = 33,                
+    
     U_LB_JT = 34,                
+    
     U_LB_JV = 35,                
+    
     U_LB_CLOSE_PARENTHESIS = 36,  
+    
     U_LB_CONDITIONAL_JAPANESE_STARTER = 37, 
+    
     U_LB_HEBREW_LETTER = 38,      
+    
     U_LB_REGIONAL_INDICATOR = 39, 
-    U_LB_COUNT = 40
+    
+    U_LB_E_BASE = 40,             
+    
+    U_LB_E_MODIFIER = 41,        
+    
+    U_LB_ZWJ = 42,               
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
+    U_LB_COUNT = 43
+#endif  
 } ULineBreak;
 
 
@@ -1952,7 +2193,15 @@ typedef enum UNumericType {
     U_NT_DECIMAL,           
     U_NT_DIGIT,             
     U_NT_NUMERIC,           
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_NT_COUNT
+#endif  
 } UNumericType;
 
 
@@ -1974,7 +2223,15 @@ typedef enum UHangulSyllableType {
     U_HST_TRAILING_JAMO,    
     U_HST_LV_SYLLABLE,      
     U_HST_LVT_SYLLABLE,     
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+
+
     U_HST_COUNT
+#endif  
 } UHangulSyllableType;
 
 
@@ -2839,7 +3096,7 @@ u_charName(UChar32 code, UCharNameChoice nameChoice,
            char *buffer, int32_t bufferLength,
            UErrorCode *pErrorCode);
 
-#ifndef U_HIDE_DEPRECATED_API 
+#ifndef U_HIDE_DEPRECATED_API
 
 
 

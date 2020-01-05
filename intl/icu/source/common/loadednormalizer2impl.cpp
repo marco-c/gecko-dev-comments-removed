@@ -1,13 +1,15 @@
-/*
-*******************************************************************************
-* Copyright (C) 2014, International Business Machines
-* Corporation and others.  All Rights Reserved.
-*******************************************************************************
-* loadednormalizer2impl.cpp
-*
-* created on: 2014sep03
-* created by: Markus W. Scherer
-*/
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "unicode/utypes.h"
 
@@ -49,21 +51,21 @@ LoadedNormalizer2Impl::~LoadedNormalizer2Impl() {
 }
 
 UBool U_CALLCONV
-LoadedNormalizer2Impl::isAcceptable(void * /*context*/,
-                                    const char * /* type */, const char * /*name*/,
+LoadedNormalizer2Impl::isAcceptable(void * ,
+                                    const char * , const char * ,
                                     const UDataInfo *pInfo) {
     if(
         pInfo->size>=20 &&
         pInfo->isBigEndian==U_IS_BIG_ENDIAN &&
         pInfo->charsetFamily==U_CHARSET_FAMILY &&
-        pInfo->dataFormat[0]==0x4e &&    /* dataFormat="Nrm2" */
+        pInfo->dataFormat[0]==0x4e &&    
         pInfo->dataFormat[1]==0x72 &&
         pInfo->dataFormat[2]==0x6d &&
         pInfo->dataFormat[3]==0x32 &&
         pInfo->formatVersion[0]==2
     ) {
-        // Normalizer2Impl *me=(Normalizer2Impl *)context;
-        // uprv_memcpy(me->dataVersion, pInfo->dataVersion, 4);
+        
+        
         return TRUE;
     } else {
         return FALSE;
@@ -83,7 +85,7 @@ LoadedNormalizer2Impl::load(const char *packageName, const char *name, UErrorCod
     const int32_t *inIndexes=(const int32_t *)inBytes;
     int32_t indexesLength=inIndexes[IX_NORM_TRIE_OFFSET]/4;
     if(indexesLength<=IX_MIN_MAYBE_YES) {
-        errorCode=U_INVALID_FORMAT_ERROR;  // Not enough indexes.
+        errorCode=U_INVALID_FORMAT_ERROR;  
         return;
     }
 
@@ -100,14 +102,14 @@ LoadedNormalizer2Impl::load(const char *packageName, const char *name, UErrorCod
     nextOffset=inIndexes[IX_SMALL_FCD_OFFSET];
     const uint16_t *inExtraData=(const uint16_t *)(inBytes+offset);
 
-    // smallFCD: new in formatVersion 2
+    
     offset=nextOffset;
     const uint8_t *inSmallFCD=inBytes+offset;
 
     init(inIndexes, ownedTrie, inExtraData, inSmallFCD);
 }
 
-// instance cache ---------------------------------------------------------- ***
+
 
 Norm2AllModes *
 Norm2AllModes::createInstance(const char *packageName,
@@ -136,14 +138,14 @@ static UHashtable    *cache=NULL;
 static icu::UInitOnce nfkcInitOnce = U_INITONCE_INITIALIZER;
 static icu::UInitOnce nfkc_cfInitOnce = U_INITONCE_INITIALIZER;
 
-// UInitOnce singleton initialization function
+
 static void U_CALLCONV initSingletons(const char *what, UErrorCode &errorCode) {
     if (uprv_strcmp(what, "nfkc") == 0) {
         nfkcSingleton    = Norm2AllModes::createInstance(NULL, "nfkc", errorCode);
     } else if (uprv_strcmp(what, "nfkc_cf") == 0) {
         nfkc_cfSingleton = Norm2AllModes::createInstance(NULL, "nfkc_cf", errorCode);
     } else {
-        U_ASSERT(FALSE);   // Unknown singleton
+        U_ASSERT(FALSE);   
     }
     ucln_common_registerCleanup(UCLN_COMMON_LOADED_NORMALIZER2, uprv_loaded_normalizer2_cleanup);
 }
@@ -254,7 +256,7 @@ Normalizer2::getInstance(const char *packageName,
                     allModes=localAllModes.getAlias();
                     uhash_put(cache, nameCopy, localAllModes.orphan(), &errorCode);
                 } else {
-                    // race condition
+                    
                     allModes=(Norm2AllModes *)temp;
                 }
             }
@@ -271,7 +273,7 @@ Normalizer2::getInstance(const char *packageName,
         case UNORM2_COMPOSE_CONTIGUOUS:
             return &allModes->fcc;
         default:
-            break;  // do nothing
+            break;  
         }
     }
     return NULL;
@@ -293,7 +295,7 @@ Normalizer2Factory::getInstance(UNormalizationMode mode, UErrorCode &errorCode) 
         return Normalizer2::getNFKCInstance(errorCode);
     case UNORM_FCD:
         return getFCDInstance(errorCode);
-    default:  // UNORM_NONE
+    default:  
         return getNoopInstance(errorCode);
     }
 }
@@ -312,7 +314,7 @@ Normalizer2Factory::getNFKC_CFImpl(UErrorCode &errorCode) {
 
 U_NAMESPACE_END
 
-// C API ------------------------------------------------------------------- ***
+
 
 U_NAMESPACE_USE
 
@@ -353,4 +355,4 @@ unorm_getQuickCheck(UChar32 c, UNormalizationMode mode) {
     }
 }
 
-#endif  // !UCONFIG_NO_NORMALIZATION
+#endif  

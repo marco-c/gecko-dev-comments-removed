@@ -7,6 +7,8 @@
 
 
 
+
+
 #ifndef TRIDPARS_H
 #define TRIDPARS_H
 
@@ -349,7 +351,7 @@ class TransliteratorIDParser  {
     
 
 
-    static void init(UErrorCode &status);
+    static void U_CALLCONV init(UErrorCode &status);
 
     friend class SingleID;
 };

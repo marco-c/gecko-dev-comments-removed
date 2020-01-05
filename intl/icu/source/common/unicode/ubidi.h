@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef UBIDI_H
 #define UBIDI_H
 
@@ -718,9 +720,13 @@ typedef enum UBiDiReorderingMode {
 
 
     UBIDI_REORDER_INVERSE_FOR_NUMBERS_SPECIAL,
+#ifndef U_HIDE_DEPRECATED_API
     
 
+
+
     UBIDI_REORDER_COUNT
+#endif  
 } UBiDiReorderingMode;
 
 
@@ -1960,12 +1966,18 @@ ubidi_getResultLength(const UBiDi *pBiDi);
 
 U_CDECL_BEGIN
 
+#ifndef U_HIDE_DEPRECATED_API
+
+
+
+
 
 
 
 
 
 #define U_BIDI_CLASS_DEFAULT  U_CHAR_DIRECTION_COUNT
+#endif  
 
 
 

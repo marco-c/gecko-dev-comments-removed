@@ -11,6 +11,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_COLLATION
@@ -1609,7 +1611,7 @@ RuleBasedCollator::isUnsafe(UChar32 c) const {
     return data->isUnsafeBackward(c, settings->isNumeric());
 }
 
-void
+void U_CALLCONV
 RuleBasedCollator::computeMaxExpansions(const CollationTailoring *t, UErrorCode &errorCode) {
     t->maxExpansions = CollationElementIterator::computeMaxExpansions(t->data, errorCode);
 }

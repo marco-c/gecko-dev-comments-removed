@@ -57,6 +57,8 @@
 
 
 
+
+
 #ifndef TBLCOLL_H
 #define TBLCOLL_H
 
@@ -161,7 +163,7 @@ public:
                     UColAttributeValue decompositionMode,
                     UErrorCode& status);
 
-#ifndef U_HIDE_INTERNAL_API 
+#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -196,8 +198,8 @@ public:
 
 
 
-    RuleBasedCollator(const uint8_t *bin, int32_t length, 
-                    const RuleBasedCollator *base, 
+    RuleBasedCollator(const uint8_t *bin, int32_t length,
+                    const RuleBasedCollator *base,
                     UErrorCode &status);
 
     
@@ -413,7 +415,7 @@ public:
 
     virtual void getVersion(UVersionInfo info) const;
 
-#ifndef U_HIDE_DEPRECATED_API 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -458,7 +460,7 @@ public:
 
     static UClassID U_EXPORT2 getStaticClassID(void);
 
-#ifndef U_HIDE_DEPRECATED_API 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -725,6 +727,7 @@ public:
             uint8_t *dest, int32_t count, UErrorCode &errorCode) const;
 
     
+    
 
 
 
@@ -853,7 +856,7 @@ private:
 
     UBool isUnsafe(UChar32 c) const;
 
-    static void computeMaxExpansions(const CollationTailoring *t, UErrorCode &errorCode);
+    static void U_CALLCONV computeMaxExpansions(const CollationTailoring *t, UErrorCode &errorCode);
     UBool initMaxExpansions(UErrorCode &errorCode) const;
 
     void setFastLatinOptions(CollationSettings &ownedSettings) const;

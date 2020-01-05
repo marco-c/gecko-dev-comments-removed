@@ -14,10 +14,12 @@
 
 
 
-     
+
+
+
 #ifndef DTFMTSYM_H
 #define DTFMTSYM_H
- 
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -270,9 +272,15 @@ public:
 
 
     enum DtContextType {
-         FORMAT,
-         STANDALONE,
-         DT_CONTEXT_COUNT
+        FORMAT,
+        STANDALONE,
+#ifndef U_HIDE_DEPRECATED_API
+        
+
+
+
+        DT_CONTEXT_COUNT
+#endif  
     };
 
     
@@ -280,17 +288,21 @@ public:
 
 
     enum DtWidthType {
-         ABBREVIATED,
-         WIDE,
-         NARROW,
-         
+        ABBREVIATED,
+        WIDE,
+        NARROW,
+        
 
 
 
-         SHORT,
-         
+        SHORT,
+#ifndef U_HIDE_DEPRECATED_API
+        
 
-         DT_WIDTH_COUNT = 4
+
+
+        DT_WIDTH_COUNT = 4
+#endif  
     };
 
     
@@ -421,9 +433,7 @@ public:
 
 
     static const UChar ALTERNATE_TIME_SEPARATOR = 0x002e;  
-#endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -851,6 +861,42 @@ private:
 
 
      UBool fCapitalization[kCapContextUsageTypeCount][2];
+
+    
+
+
+    UnicodeString  *fAbbreviatedDayPeriods;
+    int32_t         fAbbreviatedDayPeriodsCount;
+
+    
+
+
+    UnicodeString  *fWideDayPeriods;
+    int32_t         fWideDayPeriodsCount;
+
+    
+
+
+    UnicodeString  *fNarrowDayPeriods;
+    int32_t         fNarrowDayPeriodsCount;
+
+    
+
+
+    UnicodeString  *fStandaloneAbbreviatedDayPeriods;
+    int32_t         fStandaloneAbbreviatedDayPeriodsCount;
+
+    
+
+
+    UnicodeString  *fStandaloneWideDayPeriods;
+    int32_t         fStandaloneWideDayPeriodsCount;
+
+    
+
+
+    UnicodeString  *fStandaloneNarrowDayPeriods;
+    int32_t         fStandaloneNarrowDayPeriodsCount;
 
 private:
     

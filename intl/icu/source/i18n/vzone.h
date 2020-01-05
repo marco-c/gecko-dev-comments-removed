@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __VZONE_H
 #define __VZONE_H
 
@@ -19,6 +21,7 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#include "unicode/uobject.h"
 #include "ztrans.h"
 
 #ifndef UCNV_H

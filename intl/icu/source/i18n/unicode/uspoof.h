@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef USPOOF_H
 #define USPOOF_H
 
@@ -149,8 +151,235 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct USpoofChecker;
 typedef struct USpoofChecker USpoofChecker; 
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+struct USpoofCheckResult;
+
+
+
+typedef struct USpoofCheckResult USpoofCheckResult;
+#endif 
 
 
 
@@ -161,6 +390,9 @@ typedef struct USpoofChecker USpoofChecker;
 
 typedef enum USpoofChecks {
     
+
+
+
 
 
 
@@ -185,16 +417,29 @@ typedef enum USpoofChecks {
 
 
 
-
     USPOOF_WHOLE_SCRIPT_CONFUSABLE  =   4,
-    
+
+#ifndef U_HIDE_DRAFT_API
     
 
+
+
+
+
+
+
+
+    USPOOF_CONFUSABLE               =   USPOOF_SINGLE_SCRIPT_CONFUSABLE | USPOOF_MIXED_SCRIPT_CONFUSABLE | USPOOF_WHOLE_SCRIPT_CONFUSABLE,
+#endif 
+
+#ifndef U_HIDE_DEPRECATED_API
+    
 
 
 
 
     USPOOF_ANY_CASE                 =   8,
+#endif  
 
     
 
@@ -211,7 +456,7 @@ typedef enum USpoofChecks {
 
     USPOOF_RESTRICTION_LEVEL        = 16,
 
-#ifndef U_HIDE_DEPRECATED_API 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
@@ -219,7 +464,7 @@ typedef enum USpoofChecks {
 
     USPOOF_SINGLE_SCRIPT            =  USPOOF_RESTRICTION_LEVEL,
 #endif  
-   
+
     
 
 
@@ -229,6 +474,7 @@ typedef enum USpoofChecks {
     USPOOF_INVISIBLE                =  32,
 
     
+
 
 
 
@@ -264,9 +510,13 @@ typedef enum USpoofChecks {
     USPOOF_AUX_INFO                  = 0x40000000
 
     } USpoofChecks;
+
+
     
-    
-    
+
+
+
+
 
 
 
@@ -277,8 +527,10 @@ typedef enum USpoofChecks {
 
 
 
+
         USPOOF_ASCII = 0x10000000,
         
+
 
 
 
@@ -291,8 +543,16 @@ typedef enum USpoofChecks {
 
 
 
+
+
+
+
+
+
         USPOOF_HIGHLY_RESTRICTIVE = 0x30000000,
         
+
+
 
 
 
@@ -315,7 +575,14 @@ typedef enum USpoofChecks {
 
 
 
-         USPOOF_RESTRICTION_LEVEL_MASK = 0x7F000000 
+        USPOOF_RESTRICTION_LEVEL_MASK = 0x7F000000,
+#ifndef U_HIDE_INTERNAL_API
+        
+
+
+
+        USPOOF_UNDEFINED_RESTRICTIVE = -1
+#endif  
     } URestrictionLevel;
 
 
@@ -356,7 +623,6 @@ uspoof_open(UErrorCode *status);
 U_STABLE USpoofChecker * U_EXPORT2
 uspoof_openFromSerialized(const void *data, int32_t length, int32_t *pActualLength,
                           UErrorCode *pErrorCode);
-
 
 
 
@@ -446,6 +712,31 @@ uspoof_clone(const USpoofChecker *sc, UErrorCode *status);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 U_STABLE void U_EXPORT2
 uspoof_setChecks(USpoofChecker *sc, int32_t checks, UErrorCode *status);
 
@@ -462,6 +753,9 @@ uspoof_setChecks(USpoofChecker *sc, int32_t checks, UErrorCode *status);
 
 U_STABLE int32_t U_EXPORT2
 uspoof_getChecks(const USpoofChecker *sc, UErrorCode *status);
+
+
+
 
 
 
@@ -675,11 +969,22 @@ uspoof_getAllowedUnicodeSet(const USpoofChecker *sc, UErrorCode *status);
 
 
 
+
+
+
+
+
+
 U_STABLE int32_t U_EXPORT2
 uspoof_check(const USpoofChecker *sc,
-                         const UChar *id, int32_t length, 
+                         const UChar *id, int32_t length,
                          int32_t *position,
                          UErrorCode *status);
+
+
+
+
+
 
 
 
@@ -740,13 +1045,222 @@ uspoof_checkUTF8(const USpoofChecker *sc,
 
 
 
+
+
+
+
+
 U_STABLE int32_t U_EXPORT2
 uspoof_checkUnicodeString(const USpoofChecker *sc,
-                          const icu::UnicodeString &id, 
+                          const icu::UnicodeString &id,
                           int32_t *position,
                           UErrorCode *status);
+#endif
+
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+uspoof_check2(const USpoofChecker *sc,
+    const UChar* id, int32_t length,
+    USpoofCheckResult* checkResult,
+    UErrorCode *status);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+uspoof_check2UTF8(const USpoofChecker *sc,
+    const char *id, int32_t length,
+    USpoofCheckResult* checkResult,
+    UErrorCode *status);
+
+#if U_SHOW_CPLUSPLUS_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+uspoof_check2UnicodeString(const USpoofChecker *sc,
+    const icu::UnicodeString &id,
+    USpoofCheckResult* checkResult,
+    UErrorCode *status);
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT USpoofCheckResult* U_EXPORT2
+uspoof_openCheckResult(UErrorCode *status);
+
+
+
+
+
+
+
+
+U_DRAFT void U_EXPORT2
+uspoof_closeCheckResult(USpoofCheckResult *checkResult);
+
+#if U_SHOW_CPLUSPLUS_API
+
+U_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
+
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalUSpoofCheckResultPointer, USpoofCheckResult, uspoof_closeCheckResult);
+
+U_NAMESPACE_END
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT int32_t U_EXPORT2
+uspoof_getCheckResultChecks(const USpoofCheckResult *checkResult, UErrorCode *status);
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT URestrictionLevel U_EXPORT2
+uspoof_getCheckResultRestrictionLevel(const USpoofCheckResult *checkResult, UErrorCode *status);
+
+
+
+
+
+
+
+
+
+
+
+
+U_DRAFT const USet* U_EXPORT2
+uspoof_getCheckResultNumerics(const USpoofCheckResult *checkResult, UErrorCode *status);
+#endif 
+
+
+
+
 
 
 
@@ -891,14 +1405,12 @@ uspoof_areConfusableUnicodeString(const USpoofChecker *sc,
 
 
 
-
 U_STABLE int32_t U_EXPORT2
 uspoof_getSkeleton(const USpoofChecker *sc,
                    uint32_t type,
                    const UChar *id,  int32_t length,
                    UChar *dest, int32_t destCapacity,
                    UErrorCode *status);
-    
 
 
 
@@ -933,14 +1445,13 @@ uspoof_getSkeleton(const USpoofChecker *sc,
 
 
 
-   
 U_STABLE int32_t U_EXPORT2
 uspoof_getSkeletonUTF8(const USpoofChecker *sc,
                        uint32_t type,
                        const char *id,  int32_t length,
                        char *dest, int32_t destCapacity,
                        UErrorCode *status);
-    
+
 #if U_SHOW_CPLUSPLUS_API
 
 
@@ -965,8 +1476,6 @@ uspoof_getSkeletonUTF8(const USpoofChecker *sc,
 
 
 
-
-   
 U_I18N_API icu::UnicodeString & U_EXPORT2
 uspoof_getSkeletonUnicodeString(const USpoofChecker *sc,
                                 uint32_t type,
@@ -986,8 +1495,10 @@ uspoof_getSkeletonUnicodeString(const USpoofChecker *sc,
 
 
 
+
 U_STABLE const USet * U_EXPORT2
 uspoof_getInclusionSet(UErrorCode *status);
+
 
 
 
@@ -1016,8 +1527,10 @@ uspoof_getRecommendedSet(UErrorCode *status);
 
 
 
+
 U_STABLE const icu::UnicodeSet * U_EXPORT2
 uspoof_getInclusionUnicodeSet(UErrorCode *status);
+
 
 
 

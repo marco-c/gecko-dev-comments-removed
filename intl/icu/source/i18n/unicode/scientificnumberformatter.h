@@ -4,6 +4,8 @@
 
 
 
+
+
 #ifndef SCINUMBERFORMATTER_H
 #define SCINUMBERFORMATTER_H
 
@@ -11,7 +13,6 @@
 
 #if !UCONFIG_NO_FORMATTING
 
-#ifndef U_HIDE_DRAFT_API
 
 #include "unicode/unistr.h"
 
@@ -216,7 +217,6 @@ public:
 
 U_NAMESPACE_END
 
-#endif 
 
 #endif 
 #endif 

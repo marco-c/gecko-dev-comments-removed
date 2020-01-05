@@ -19,6 +19,8 @@
 
 
 
+
+
 #define USPREP_TYPE_NAMES_ARRAY 1
 
 #include <stdio.h>
@@ -153,7 +155,7 @@ main(int argc, char* argv[]) {
     options[BUNDLE_NAME].value = DATA_NAME;
     options[NORMALIZE].value = "";
 
-    argc=u_parseArgs(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    argc=u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
 
     
     if(argc<0) {
@@ -201,7 +203,7 @@ main(int argc, char* argv[]) {
 #else
 
     setUnicodeVersion(options[UNICODE_VERSION].value);
-    filename = (char* ) uprv_malloc(uprv_strlen(srcDir) + 300); 
+    filename = (char* ) uprv_malloc(uprv_strlen(srcDir) + uprv_strlen(inputFileName) + (icuUniDataDir == NULL ? 0 : uprv_strlen(icuUniDataDir)) + 40); 
    
     
     if(uprv_strchr(srcDir,U_FILE_SEP_CHAR) == NULL && uprv_strchr(srcDir,U_FILE_ALT_SEP_CHAR) == NULL){

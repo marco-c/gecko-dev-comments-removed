@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef __UDATA_H__
 #define __UDATA_H__
 
@@ -408,8 +410,13 @@ typedef enum UDataFileAccess {
     UDATA_PACKAGES_FIRST,
     
     UDATA_NO_FILES,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UDATA_FILE_ACCESS_COUNT
+#endif  
 } UDataFileAccess;
 
 

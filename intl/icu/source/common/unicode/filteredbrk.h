@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef FILTEREDBRK_H
 #define FILTEREDBRK_H
 
@@ -12,8 +14,6 @@
 #include "unicode/brkiter.h"
 
 #if !UCONFIG_NO_BREAK_ITERATION && !UCONFIG_NO_FILTERED_BREAK_ITERATION
-
-#ifndef U_HIDE_DRAFT_API
 
 U_NAMESPACE_BEGIN
 
@@ -113,8 +113,6 @@ class U_COMMON_API FilteredBreakIteratorBuilder : public UObject {
 
 
 U_NAMESPACE_END
-
-#endif  
 
 #endif 
 

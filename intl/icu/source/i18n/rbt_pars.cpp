@@ -8,6 +8,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_TRANSLITERATION
@@ -1102,7 +1104,7 @@ void TransliteratorParser::parseRules(const UnicodeString& rule,
 
             for (int32_t j = 0; j < data->variablesLength; j++) {
                 data->variables[j] =
-                    ((UnicodeSet*)variablesVector.elementAt(j));
+                    static_cast<UnicodeFunctor *>(variablesVector.elementAt(j));
             }
             
             data->variableNames.removeAll();

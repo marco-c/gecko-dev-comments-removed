@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef UREGION_H
 #define UREGION_H
 
@@ -105,11 +107,13 @@ typedef enum URegionType {
 
     URGN_DEPRECATED,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     URGN_LIMIT
+#endif  
 } URegionType;
 
 #if !UCONFIG_NO_FORMATTING

@@ -16,6 +16,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING && !UCONFIG_NO_CONVERSION
@@ -350,7 +352,7 @@ u_scanf_skip_leading_positive_sign(UFILE   *input,
         symbolLen = unum_getSymbol(format,
             UNUM_PLUS_SIGN_SYMBOL,
             plusSymbol,
-            sizeof(plusSymbol)/sizeof(*plusSymbol),
+            UPRV_LENGTHOF(plusSymbol),
             &localStatus);
 
         if (U_SUCCESS(localStatus)) {
@@ -1352,7 +1354,7 @@ u_scanf_parse(UFILE     *f,
                 case ufmt_count:
                     
                     spec.fInfo.fWidth = cpConsumed;
-                    
+                    U_FALLTHROUGH;
                 case ufmt_char:
                 case ufmt_uchar:
                 case ufmt_int:

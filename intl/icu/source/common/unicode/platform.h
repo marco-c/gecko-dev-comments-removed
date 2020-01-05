@@ -16,6 +16,8 @@
 
 
 
+
+
 #ifndef _PLATFORM_H
 #define _PLATFORM_H
 
@@ -432,6 +434,9 @@
 #ifndef __has_attribute
 #    define __has_attribute(x) 0
 #endif
+#ifndef __has_cpp_attribute
+#    define __has_cpp_attribute(x) 0
+#endif
 #ifndef __has_builtin
 #    define __has_builtin(x) 0
 #endif
@@ -440,6 +445,9 @@
 #endif
 #ifndef __has_extension
 #    define __has_extension(x) 0
+#endif
+#ifndef __has_warning
+#    define __has_warning(x) 0
 #endif
 
 
@@ -514,12 +522,32 @@
 
 #ifdef U_NOEXCEPT
     
+#elif defined(_HAS_EXCEPTIONS) && !_HAS_EXCEPTIONS  
+#   define U_NOEXCEPT
 #elif U_CPLUSPLUS_VERSION >= 11 || __has_feature(cxx_noexcept) || __has_extension(cxx_noexcept) \
         || (defined(_MSC_VER) && _MSC_VER >= 1900)  
 #   define U_NOEXCEPT noexcept
 #else
 #   define U_NOEXCEPT
 #endif
+
+
+
+
+
+
+
+#ifdef __cplusplus
+#   if __has_cpp_attribute(clang::fallthrough) || \
+            (__has_feature(cxx_attributes) && __has_warning("-Wimplicit-fallthrough"))
+#       define U_FALLTHROUGH [[clang::fallthrough]]
+#   else
+#       define U_FALLTHROUGH
+#   endif
+#else
+#   define U_FALLTHROUGH
+#endif
+
 
 
 
@@ -805,6 +833,12 @@
 #else
 #   define U_IMPORT 
 #endif
+
+
+
+
+
+
 
 
 

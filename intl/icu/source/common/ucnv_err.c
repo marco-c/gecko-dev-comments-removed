@@ -15,6 +15,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -26,7 +28,7 @@
 #include "unicode/ucnv.h"
 #include "ustrfmt.h"
 
-#define VALUE_STRING_LENGTH 32
+#define VALUE_STRING_LENGTH 48
 
 #define UNICODE_PERCENT_SIGN_CODEPOINT  0x0025
 #define UNICODE_U_CODEPOINT             0x0055

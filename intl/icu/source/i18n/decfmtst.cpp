@@ -11,6 +11,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -141,11 +143,11 @@ DecimalFormatStaticSets::DecimalFormatStaticSets(UErrorCode &status)
 
     initUnicodeSet(
             gMinusSigns,
-            sizeof(gMinusSigns) / sizeof(gMinusSigns[0]),
+            UPRV_LENGTHOF(gMinusSigns),
             fMinusSigns);
     initUnicodeSet(
             gPlusSigns,
-            sizeof(gPlusSigns) / sizeof(gPlusSigns[0]),
+            UPRV_LENGTHOF(gPlusSigns),
             fPlusSigns);
 
     

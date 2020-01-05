@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef ULOCIMP_H
 #define ULOCIMP_H
 
@@ -58,6 +60,35 @@ U_CFUNC int32_t
 ulocimp_getCountry(const char *localeID,
                    char *country, int32_t countryCapacity,
                    const char **pEnd);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+ulocimp_getRegionForSupplementalData(const char *localeID, UBool inferRegion,
+                                     char *region, int32_t regionCapacity, UErrorCode* status);
 
 U_CAPI const char * U_EXPORT2
 locale_getKeywordsStart(const char *localeID);

@@ -15,6 +15,8 @@
 
 
 
+
+
 #include "cmemory.h"
 #include "unicode/utypes.h"
 #include "unicode/ustring.h"
@@ -2383,7 +2385,7 @@ setParaRunsOnly(UBiDi *pBiDi, const UChar *text, int32_t length,
 
 
     levels=ubidi_getLevels(pBiDi, pErrorCode);
-    uprv_memcpy(saveLevels, levels, pBiDi->length*sizeof(UBiDiLevel));
+    uprv_memcpy(saveLevels, levels, (size_t)pBiDi->length*sizeof(UBiDiLevel));
     saveTrailingWSStart=pBiDi->trailingWSStart;
     saveLength=pBiDi->length;
     saveDirection=pBiDi->direction;
@@ -2512,7 +2514,7 @@ setParaRunsOnly(UBiDi *pBiDi, const UChar *text, int32_t length,
     if(saveLength>pBiDi->levelsSize) {
         saveLength=pBiDi->levelsSize;
     }
-    uprv_memcpy(pBiDi->levels, saveLevels, saveLength*sizeof(UBiDiLevel));
+    uprv_memcpy(pBiDi->levels, saveLevels, (size_t)saveLength*sizeof(UBiDiLevel));
     pBiDi->trailingWSStart=saveTrailingWSStart;
     if(pBiDi->runCount>1) {
         pBiDi->direction=UBIDI_MIXED;

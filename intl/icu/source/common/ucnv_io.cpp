@@ -27,6 +27,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -380,7 +382,8 @@ static const uint8_t ebcdicTypes[128] = {
 #endif
 
 
-U_CFUNC char * U_EXPORT2
+
+U_CAPI char * U_CALLCONV
 ucnv_io_stripASCIIForCompare(char *dst, const char *name) {
     char *dstItr = dst;
     uint8_t type, nextType;
@@ -415,7 +418,7 @@ ucnv_io_stripASCIIForCompare(char *dst, const char *name) {
     return dst;
 }
 
-U_CFUNC char * U_EXPORT2
+U_CAPI char * U_CALLCONV
 ucnv_io_stripEBCDICForCompare(char *dst, const char *name) {
     char *dstItr = dst;
     uint8_t type, nextType;
@@ -731,9 +734,7 @@ findTaggedConverterNum(const char *alias, const char *standard, UErrorCode *pErr
     return UINT32_MAX;
 }
 
-
-
-U_CFUNC const char *
+U_CAPI const char *
 ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *pErrorCode) {
     const char *aliasTmp = alias;
     int32_t i = 0;
@@ -764,6 +765,9 @@ ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *p
     return NULL;
 }
 
+U_CDECL_BEGIN
+
+
 static int32_t U_CALLCONV
 ucnv_io_countStandardAliases(UEnumeration *enumerator, UErrorCode * ) {
     int32_t value = 0;
@@ -776,7 +780,7 @@ ucnv_io_countStandardAliases(UEnumeration *enumerator, UErrorCode * ) {
     return value;
 }
 
-static const char* U_CALLCONV
+static const char * U_CALLCONV
 ucnv_io_nextStandardAliases(UEnumeration *enumerator,
                             int32_t* resultLength,
                             UErrorCode * )
@@ -813,6 +817,8 @@ ucnv_io_closeUEnumeration(UEnumeration *enumerator) {
     uprv_free(enumerator->context);
     uprv_free(enumerator);
 }
+
+U_CDECL_END
 
 
 static const UEnumeration gEnumAliases = {
@@ -1010,12 +1016,15 @@ ucnv_getCanonicalName(const char *alias, const char *standard, UErrorCode *pErro
     return NULL;
 }
 
+U_CDECL_BEGIN
+
+
 static int32_t U_CALLCONV
 ucnv_io_countAllConverters(UEnumeration * , UErrorCode * ) {
     return gMainTable.converterListSize;
 }
 
-static const char* U_CALLCONV
+static const char * U_CALLCONV
 ucnv_io_nextAllConverters(UEnumeration *enumerator,
                             int32_t* resultLength,
                             UErrorCode * )
@@ -1040,7 +1049,7 @@ static void U_CALLCONV
 ucnv_io_resetAllConverters(UEnumeration *enumerator, UErrorCode * ) {
     *((uint16_t *)(enumerator->context)) = 0;
 }
-
+U_CDECL_END
 static const UEnumeration gEnumAllConverters = {
     NULL,
     NULL,
@@ -1075,7 +1084,7 @@ ucnv_openAllNames(UErrorCode *pErrorCode) {
     return myEnum;
 }
 
-U_CFUNC uint16_t
+U_CAPI uint16_t
 ucnv_io_countKnownConverters(UErrorCode *pErrorCode) {
     if (haveAliasData(pErrorCode)) {
         return (uint16_t)gMainTable.converterListSize;
@@ -1085,7 +1094,11 @@ ucnv_io_countKnownConverters(UErrorCode *pErrorCode) {
 
 
 
+U_CDECL_BEGIN
+
 typedef char * U_CALLCONV StripForCompareFn(char *dst, const char *name);
+U_CDECL_END
+
 
 
 
@@ -1109,7 +1122,7 @@ enum {
     STACK_ROW_CAPACITY=500
 };
 
-static int32_t
+static int32_t U_CALLCONV
 io_compareRows(const void *context, const void *left, const void *right) {
     char strippedLeft[UCNV_MAX_CONVERTER_NAME_LENGTH],
          strippedRight[UCNV_MAX_CONVERTER_NAME_LENGTH];
@@ -1297,13 +1310,13 @@ ucnv_swapAliases(const UDataSwapper *ds,
                         oldIndex=tempTable.rows[i].sortIndex;
                         ds->swapArray16(ds, p+oldIndex, 2, r+i, pErrorCode);
                     }
-                    uprv_memcpy(q, r, 2*count);
+                    uprv_memcpy(q, r, 2*(size_t)count);
 
                     for(i=0; i<count; ++i) {
                         oldIndex=tempTable.rows[i].sortIndex;
                         ds->swapArray16(ds, p2+oldIndex, 2, r+i, pErrorCode);
                     }
-                    uprv_memcpy(q2, r, 2*count);
+                    uprv_memcpy(q2, r, 2*(size_t)count);
                 }
             }
 

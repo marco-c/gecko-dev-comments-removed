@@ -37,6 +37,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include <float.h>
 
@@ -850,6 +852,7 @@ GregorianCalendar::roll(UCalendarDateFields field, int32_t amount, UErrorCode& s
                         inCutoverMonth = TRUE;
                     }
             }
+            break;
         default:
             ;
         }

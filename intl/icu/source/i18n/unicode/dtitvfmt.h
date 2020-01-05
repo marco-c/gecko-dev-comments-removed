@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef __DTITVFMT_H__
 #define __DTITVFMT_H__
 
@@ -508,6 +510,12 @@ public:
 
 
 
+
+
+
+
+
+
     const DateFormat* getDateFormat(void) const;
 
     
@@ -680,6 +688,9 @@ private:
 
 
     
+
+
+
 
 
 
@@ -951,6 +962,37 @@ private:
                         const UnicodeString* firstPart,
                         const UnicodeString* secondPart,
                         UBool laterDateFirst);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString& formatImpl(Calendar& fromCalendar,
+                              Calendar& toCalendar,
+                              UnicodeString& appendTo,
+                              FieldPosition& fieldPosition,
+                              UErrorCode& status) const ;
 
 
     

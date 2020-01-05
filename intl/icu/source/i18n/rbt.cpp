@@ -8,6 +8,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_TRANSLITERATION
@@ -240,31 +242,27 @@ RuleBasedTransliterator::handleTransliterate(Replaceable& text, UTransPosition& 
     
     
 
-    
-    
-    
     UBool    lockedMutexAtThisLevel = FALSE;
-    if (isDataOwned == FALSE) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        UBool needToLock;
-        {
-            Mutex m;
-            needToLock = (&text != gLockedText);
-        }
-        if (needToLock) {
-            umtx_lock(&transliteratorDataMutex);  
-            Mutex m;
-            gLockedText = &text;
-            lockedMutexAtThisLevel = TRUE;
-        }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UBool needToLock;
+    {
+        Mutex m;
+        needToLock = (&text != gLockedText);
+    }
+    if (needToLock) {
+        umtx_lock(&transliteratorDataMutex);  
+        Mutex m;
+        gLockedText = &text;
+        lockedMutexAtThisLevel = TRUE;
     }
     
     

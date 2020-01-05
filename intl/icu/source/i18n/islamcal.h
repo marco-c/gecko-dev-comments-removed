@@ -13,6 +13,8 @@
 
 
 
+
+
 #ifndef ISLAMCAL_H
 #define ISLAMCAL_H
 
@@ -417,7 +419,7 @@ class U_I18N_API IslamicCalendar : public Calendar {
 
 
 
-  static void  initializeSystemDefaultCentury(void);
+  static void U_CALLCONV initializeSystemDefaultCentury(void);
 };
 
 U_NAMESPACE_END

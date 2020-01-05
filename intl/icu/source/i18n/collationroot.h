@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef __COLLATIONROOT_H__
 #define __COLLATIONROOT_H__
 
@@ -34,7 +36,7 @@ public:
     static const CollationSettings *getSettings(UErrorCode &errorCode);
 
 private:
-    static void load(UErrorCode &errorCode);
+    static void U_CALLCONV load(UErrorCode &errorCode);
 };
 
 U_NAMESPACE_END

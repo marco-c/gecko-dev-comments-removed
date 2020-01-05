@@ -24,6 +24,8 @@
 
 
 
+
+
 #ifndef __USET_H__
 #define __USET_H__
 
@@ -196,11 +198,13 @@ typedef enum USetSpanCondition {
 
 
     USET_SPAN_SIMPLE = 2,
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     USET_SPAN_CONDITION_COUNT
+#endif  
 } USetSpanCondition;
 
 enum {

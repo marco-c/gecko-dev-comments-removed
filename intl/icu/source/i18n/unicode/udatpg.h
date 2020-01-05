@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef __UDATPG_H__
 #define __UDATPG_H__
 
@@ -83,7 +85,13 @@ typedef enum UDateTimePatternField {
     UDATPG_FRACTIONAL_SECOND_FIELD,
     
     UDATPG_ZONE_FIELD,
+
     
+    
+    
+
+
+
     UDATPG_FIELD_COUNT
 } UDateTimePatternField;
 
@@ -120,8 +128,13 @@ typedef enum UDateTimePatternConflict {
     UDATPG_BASE_CONFLICT,
     
     UDATPG_CONFLICT,
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UDATPG_CONFLICT_COUNT
+#endif  
 } UDateTimePatternConflict;
 
 

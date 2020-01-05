@@ -24,6 +24,8 @@
 
 
 
+
+
 #include "unicode/putil.h"
 #include "unicode/ustring.h"
 #include "unicode/utf.h"
@@ -291,7 +293,8 @@ utf8_nextCharSafeBodyTerminated(const uint8_t **ps, UChar32 c) {
             illegal=1;
             break;
         }
-    case 2: 
+        U_FALLTHROUGH;
+    case 2:
         trail=(uint8_t)(*s++ - 0x80);
         if(trail>0x3f) {
             
@@ -299,7 +302,8 @@ utf8_nextCharSafeBodyTerminated(const uint8_t **ps, UChar32 c) {
             break;
         }
         c=(c<<6)|trail;
-    case 1: 
+        U_FALLTHROUGH;
+    case 1:
         trail=(uint8_t)(*s++ - 0x80);
         if(trail>0x3f) {
             
@@ -362,11 +366,13 @@ utf8_nextCharSafeBodyPointer(const uint8_t **ps, const uint8_t *limit, UChar32 c
                 illegal=1;
                 break;
             }
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             trail=*s++;
             c=(c<<6)|(trail&0x3f);
             illegal|=(trail&0xc0)^0x80;
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             trail=*s++;
             c=(c<<6)|(trail&0x3f);
             illegal|=(trail&0xc0)^0x80;

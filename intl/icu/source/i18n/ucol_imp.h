@@ -23,6 +23,8 @@
 
 
 
+
+
 #ifndef UCOL_IMP_H
 #define UCOL_IMP_H
 
@@ -76,7 +78,7 @@ public:
     const CollationCacheEntry *createCacheEntry(UErrorCode &errorCode);
 
 private:
-    static void loadRootRules(UErrorCode &errorCode);
+    static void U_CALLCONV loadRootRules(UErrorCode &errorCode);
 
     
     

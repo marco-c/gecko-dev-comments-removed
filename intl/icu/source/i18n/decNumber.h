@@ -28,6 +28,8 @@
 
 
 
+
+
 #if !defined(DECNUMBER)
   #define DECNUMBER
   #define DECNAME     "decNumber"                       /* Short name */

@@ -9,6 +9,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -78,8 +80,8 @@ void  RBBITableBuilder::build() {
     fTree = fTree->flattenVariables();
 #ifdef RBBI_DEBUG
     if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "ftree")) {
-        RBBIDebugPuts("Parse tree after flattening variable references.");
-        fTree->printTree(TRUE);
+        RBBIDebugPuts("\nParse tree after flattening variable references.");
+        RBBINode::printTree(fTree, TRUE);
     }
 #endif
 
@@ -136,8 +138,8 @@ void  RBBITableBuilder::build() {
     fTree->flattenSets();
 #ifdef RBBI_DEBUG
     if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "stree")) {
-        RBBIDebugPuts("Parse tree after flattening Unicode Set references.");
-        fTree->printTree(TRUE);
+        RBBIDebugPuts("\nParse tree after flattening Unicode Set references.");
+        RBBINode::printTree(fTree, TRUE);
     }
 #endif
 
@@ -381,6 +383,25 @@ void RBBITableBuilder::calcFollowPos(RBBINode *n) {
 
 
 
+void RBBITableBuilder::addRuleRootNodes(UVector *dest, RBBINode *node) {
+    if (node == NULL || U_FAILURE(*fStatus)) {
+        return;
+    }
+    if (node->fRuleRoot) {
+        dest->addElement(node, *fStatus);
+        
+        
+        return;
+    }
+    addRuleRootNodes(dest, node->fLeftChild);
+    addRuleRootNodes(dest, node->fRightChild);
+}
+
+
+
+
+
+
 
 void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree) {
 
@@ -404,16 +425,21 @@ void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree) {
     
     
     
-    RBBINode *userRuleRoot = tree;
-    if (fRB->fSetBuilder->sawBOF()) {
-        userRuleRoot = tree->fLeftChild->fRightChild;
+    
+    UVector ruleRootNodes(*fStatus);
+    addRuleRootNodes(&ruleRootNodes, tree);
+
+    UVector matchStartNodes(*fStatus);
+    for (int i=0; i<ruleRootNodes.size(); ++i) {
+        RBBINode *node = static_cast<RBBINode *>(ruleRootNodes.elementAt(i));
+        if (node->fChainIn) {
+            setAdd(&matchStartNodes, node->fFirstPosSet);
+        }
     }
-    U_ASSERT(userRuleRoot != NULL);
-    UVector *matchStartNodes = userRuleRoot->fFirstPosSet;
+    if (U_FAILURE(*fStatus)) {
+        return;
+    }
 
-
-    
-    
     int32_t  endNodeIx;
     int32_t  startNodeIx;
 
@@ -455,8 +481,8 @@ void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree) {
         
         
         RBBINode *startNode;
-        for (startNodeIx = 0; startNodeIx<matchStartNodes->size(); startNodeIx++) {
-            startNode = (RBBINode *)matchStartNodes->elementAt(startNodeIx);
+        for (startNodeIx = 0; startNodeIx<matchStartNodes.size(); startNodeIx++) {
+            startNode = (RBBINode *)matchStartNodes.elementAt(startNodeIx);
             if (startNode->fType != RBBINode::leafChar) {
                 continue;
             }
@@ -1032,7 +1058,9 @@ void RBBITableBuilder::printPosSets(RBBINode *n) {
     if (n==NULL) {
         return;
     }
-    n->printNode();
+    printf("\n");
+    RBBINode::printNodeHeader();
+    RBBINode::printNode(n);
     RBBIDebugPrintf("         Nullable:  %s\n", n->fNullable?"TRUE":"FALSE");
 
     RBBIDebugPrintf("         firstpos:  ");
@@ -1141,8 +1169,8 @@ void RBBITableBuilder::exportTable(void *where) {
 void RBBITableBuilder::printSet(UVector *s) {
     int32_t  i;
     for (i=0; i<s->size(); i++) {
-        void *v = s->elementAt(i);
-        RBBIDebugPrintf("%10p", v);
+        const RBBINode *v = static_cast<const RBBINode *>(s->elementAt(i));
+        RBBIDebugPrintf("%5d", v==NULL? -1 : v->fSerialNum);
     }
     RBBIDebugPrintf("\n");
 }

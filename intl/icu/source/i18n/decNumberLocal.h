@@ -22,6 +22,8 @@
 
 
 
+
+
 #if !defined(DECNUMBERLOC)
   #define DECNUMBERLOC
   #define DECVERSION    "decNumber 3.61" /* Package Version [16 max.] */
@@ -29,6 +31,7 @@
 
   #include <stdlib.h>         
   #include <string.h>         
+  #include "decContext.h"
 
   
   #if !defined(DECLITEND)

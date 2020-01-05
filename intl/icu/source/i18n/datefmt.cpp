@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -317,7 +319,7 @@ DateFormat::format(UDate date, UnicodeString& appendTo) const
 {
     
     
-    FieldPosition fpos(0);
+    FieldPosition fpos(FieldPosition::DONT_CARE);
     return format(date, appendTo, fpos);
 }
 

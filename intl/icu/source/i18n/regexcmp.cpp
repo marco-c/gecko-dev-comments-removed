@@ -9,6 +9,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
@@ -71,6 +73,7 @@ RegexCompile::RegexCompile(RegexPattern *rxp, UErrorCode &status) :
     fMatchOpenParen   = -1;
     fMatchCloseParen  = -1;
     fCaptureName      = NULL;
+    fLastSetLiteral   = U_SENTINEL;
 
     if (U_SUCCESS(status) && U_FAILURE(rxp->fDeferredStatus)) {
         status = rxp->fDeferredStatus;
@@ -1757,7 +1760,7 @@ UBool RegexCompile::doParseActions(int32_t action)
         
         {
             UChar32  c = scanNamedChar();
-            if (U_SUCCESS(*fStatus) && fLastSetLiteral > c) {
+            if (U_SUCCESS(*fStatus) && (fLastSetLiteral == U_SENTINEL || fLastSetLiteral > c)) {
                 error(U_REGEX_INVALID_RANGE);
             }
             UnicodeSet *s = (UnicodeSet *)fSetStack.peek();
@@ -1826,7 +1829,8 @@ UBool RegexCompile::doParseActions(int32_t action)
         
         
         {
-        if (fLastSetLiteral > fC.fChar) {
+
+        if (fLastSetLiteral == U_SENTINEL || fLastSetLiteral > fC.fChar) {
             error(U_REGEX_INVALID_RANGE);
         }
         UnicodeSet *s = (UnicodeSet *)fSetStack.peek();
@@ -2601,7 +2605,11 @@ void  RegexCompile::findCaseInsensitiveStarters(UChar32 c, UnicodeSet *starterCh
 
 
 
-    if (u_hasBinaryProperty(c, UCHAR_CASE_SENSITIVE)) {
+    if (c < UCHAR_MIN_VALUE || c > UCHAR_MAX_VALUE) {
+        
+        U_ASSERT(FALSE);
+        starterChars->clear();
+    } else if (u_hasBinaryProperty(c, UCHAR_CASE_SENSITIVE)) {
         UChar32 caseFoldedC  = u_foldCase(c, U_FOLD_CASE_DEFAULT);
         starterChars->set(caseFoldedC, caseFoldedC);
 
@@ -2894,6 +2902,7 @@ void   RegexCompile::matchStartType() {
 
         case URX_JMPX:
             loc++;             
+            U_FALLTHROUGH;
         case URX_JMP:
             {
                 int32_t  jmpDest = URX_VAL(op);
@@ -3256,6 +3265,7 @@ int32_t   RegexCompile::minMatchLength(int32_t start, int32_t end) {
         case URX_JMPX:
             loc++;              
                                 
+            U_FALLTHROUGH;
         case URX_JMP:
             {
                 int32_t  jmpDest = URX_VAL(op);

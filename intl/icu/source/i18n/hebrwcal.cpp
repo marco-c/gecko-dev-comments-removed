@@ -13,10 +13,13 @@
 
 
 
+
+
 #include "hebrwcal.h"
 
 #if !UCONFIG_NO_FORMATTING
 
+#include "cmemory.h"
 #include "umutex.h"
 #include <float.h>
 #include "gregoimp.h" 
@@ -580,7 +583,7 @@ void HebrewCalendar::handleComputeFields(int32_t julianDay, UErrorCode &status) 
     UBool isLeap = isLeapYear(year);
 
     int32_t month = 0;
-    int32_t momax = sizeof(MONTH_START) / (3 * sizeof(MONTH_START[0][0]));
+    int32_t momax = UPRV_LENGTHOF(MONTH_START);
     while (month < momax && dayOfYear > (  isLeap ? LEAP_MONTH_START[month][type] : MONTH_START[month][type] ) ) {
         month++;
     }

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "resource.h"
+
+U_NAMESPACE_BEGIN
+
+ResourceValue::~ResourceValue() {}
+
+ResourceSink::~ResourceSink() {}
+
+U_NAMESPACE_END

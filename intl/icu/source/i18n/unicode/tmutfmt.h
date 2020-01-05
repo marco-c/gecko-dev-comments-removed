@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef __TMUTFMT_H__
 #define __TMUTFMT_H__
 
@@ -49,6 +51,8 @@ U_NAMESPACE_BEGIN
 
 class Hashtable;
 class UVector;
+
+struct TimeUnitFormatReadSink;
 
 
 
@@ -227,6 +231,7 @@ private:
     
     static const char* getTimeUnitName(TimeUnit::UTimeUnitFields field, UErrorCode& status);
 
+    friend struct TimeUnitFormatReadSink;
 };
 
 inline UBool

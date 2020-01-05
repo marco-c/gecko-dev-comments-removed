@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef __QUANTITY_FORMATTER_H__
 #define __QUANTITY_FORMATTER_H__
 
@@ -14,9 +16,11 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#include "standardplural.h"
+
 U_NAMESPACE_BEGIN
 
-class SimplePatternFormatter;
+class SimpleFormatter;
 class UnicodeString;
 class PluralRules;
 class NumberFormat;
@@ -71,10 +75,7 @@ public:
 
 
 
-    UBool add(
-            const char *variant,
-            const UnicodeString &rawPattern,
-            UErrorCode &status);
+    UBool addIfAbsent(const char *variant, const UnicodeString &rawPattern, UErrorCode &status);
 
     
 
@@ -86,7 +87,7 @@ public:
 
 
 
-    const SimplePatternFormatter *getByVariant(const char *variant) const;
+    const SimpleFormatter *getByVariant(const char *variant) const;
 
     
 
@@ -101,15 +102,36 @@ public:
 
 
     UnicodeString &format(
-            const Formattable &quantity,
+            const Formattable &number,
             const NumberFormat &fmt,
             const PluralRules &rules,
             UnicodeString &appendTo,
             FieldPosition &pos,
             UErrorCode &status) const;
 
+    
+
+
+    static StandardPlural::Form selectPlural(
+            const Formattable &number,
+            const NumberFormat &fmt,
+            const PluralRules &rules,
+            UnicodeString &formattedNumber,
+            FieldPosition &pos,
+            UErrorCode &status);
+
+    
+
+
+    static UnicodeString &format(
+            const SimpleFormatter &pattern,
+            const UnicodeString &value,
+            UnicodeString &appendTo,
+            FieldPosition &pos,
+            UErrorCode &status);
+
 private:
-    SimplePatternFormatter *formatters[6];
+    SimpleFormatter *formatters[StandardPlural::COUNT];
 };
 
 U_NAMESPACE_END

@@ -12,6 +12,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/bytestrie.h"
 #include "unicode/bytestriebuilder.h"
@@ -35,7 +37,7 @@ class BytesTrieElement : public UMemory {
 public:
     
 
-    void setTo(const StringPiece &s, int32_t val, CharString &strings, UErrorCode &errorCode);
+    void setTo(StringPiece s, int32_t val, CharString &strings, UErrorCode &errorCode);
 
     StringPiece getString(const CharString &strings) const {
         int32_t offset=stringOffset;
@@ -86,7 +88,7 @@ private:
 };
 
 void
-BytesTrieElement::setTo(const StringPiece &s, int32_t val,
+BytesTrieElement::setTo(StringPiece s, int32_t val,
                         CharString &strings, UErrorCode &errorCode) {
     if(U_FAILURE(errorCode)) {
         return;
@@ -143,7 +145,7 @@ BytesTrieBuilder::~BytesTrieBuilder() {
 }
 
 BytesTrieBuilder &
-BytesTrieBuilder::add(const StringPiece &s, int32_t value, UErrorCode &errorCode) {
+BytesTrieBuilder::add(StringPiece s, int32_t value, UErrorCode &errorCode) {
     if(U_FAILURE(errorCode)) {
         return *this;
     }
@@ -165,7 +167,7 @@ BytesTrieBuilder::add(const StringPiece &s, int32_t value, UErrorCode &errorCode
             return *this; 
         }
         if(elementsLength>0) {
-            uprv_memcpy(newElements, elements, elementsLength*sizeof(BytesTrieElement));
+            uprv_memcpy(newElements, elements, (size_t)elementsLength*sizeof(BytesTrieElement));
         }
         delete[] elements;
         elements=newElements;

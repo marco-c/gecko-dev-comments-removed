@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef __TMUNIT_H__
 #define __TMUNIT_H__
 
@@ -41,7 +43,13 @@ public:
         UTIMEUNIT_HOUR,
         UTIMEUNIT_MINUTE,
         UTIMEUNIT_SECOND,
+#ifndef U_HIDE_DEPRECATED_API
+        
+
+
+
         UTIMEUNIT_FIELD_COUNT
+#endif  
     };
 
     

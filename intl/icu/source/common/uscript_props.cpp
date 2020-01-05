@@ -12,6 +12,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/unistr.h"
 #include "unicode/uscript.h"
@@ -72,7 +74,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x1826 | ASPIRATIONAL,  
     0x1000 | RECOMMENDED | LB_LETTERS,  
     0x168F | EXCLUSION,  
-    0x10308 | EXCLUSION,  
+    0x10300 | EXCLUSION,  
     0x0B15 | RECOMMENDED,  
     0x16A0 | EXCLUSION,  
     0x0D85 | RECOMMENDED,  
@@ -102,7 +104,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x10A00 | EXCLUSION | RTL,  
     0xA800 | LIMITED_USE,  
     0x1980 | LIMITED_USE | LB_LETTERS,  
-    0x2D5E | ASPIRATIONAL,  
+    0x2D30 | ASPIRATIONAL,  
     0x103A0 | EXCLUSION,  
     0x1B05 | LIMITED_USE,  
     0x1BC0 | LIMITED_USE,  
@@ -129,7 +131,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x0840 | LIMITED_USE | RTL,  
     0,
     0x10980 | EXCLUSION | RTL,  
-    0x07D8 | LIMITED_USE | RTL,  
+    0x07CA | LIMITED_USE | RTL,  
     0x10C00 | EXCLUSION | RTL,  
     0x1036B | EXCLUSION,  
     0xA840 | EXCLUSION,  
@@ -146,7 +148,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x12000 | EXCLUSION,  
     0,
     0xFDD0 | UNKNOWN,  
-    0x102B7 | EXCLUSION,  
+    0x102A0 | EXCLUSION,  
     0x304B | RECOMMENDED | LB_LETTERS,  
     0x1A20 | LIMITED_USE | LB_LETTERS,  
     0x10280 | EXCLUSION,  
@@ -163,7 +165,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x11103 | LIMITED_USE,  
     0xAC00 | RECOMMENDED,  
     0x11083 | EXCLUSION,  
-    0x10AC1 | EXCLUSION | RTL,  
+    0x10AD8 | EXCLUSION | RTL,  
     0x10B60 | EXCLUSION | RTL,  
     0x10B8F | EXCLUSION | RTL,  
     0,
@@ -173,7 +175,7 @@ const int32_t SCRIPT_PROPS[] = {
     0,
     0,
     0xA6A0 | LIMITED_USE,  
-    0xA4E8 | LIMITED_USE,  
+    0xA4D0 | LIMITED_USE,  
     0,
     0x10A60 | EXCLUSION | RTL,  
     0x16AE6 | EXCLUSION,  
@@ -196,7 +198,7 @@ const int32_t SCRIPT_PROPS[] = {
     0x11183 | EXCLUSION,  
     0x110D0 | EXCLUSION,  
     0x11680 | EXCLUSION,  
-    0,
+    0x18229 | EXCLUSION | LB_LETTERS,  
     0,
     0x14400 | EXCLUSION,  
     0x11208 | EXCLUSION,  
@@ -209,6 +211,14 @@ const int32_t SCRIPT_PROPS[] = {
     0x1128F | EXCLUSION,  
     0x11AC0 | EXCLUSION,  
     0x1158E | EXCLUSION,  
+    0x1E909 | LIMITED_USE | RTL | CASED,  
+    0x11C0E | EXCLUSION,  
+    0x11C72 | EXCLUSION,  
+    0x11412 | LIMITED_USE,  
+    0x104B5 | LIMITED_USE | CASED,  
+    0x5B57 | RECOMMENDED | LB_LETTERS,  
+    0x1112 | RECOMMENDED,  
+    0,
     
 };
 

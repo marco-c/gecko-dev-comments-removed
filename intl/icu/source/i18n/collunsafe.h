@@ -4,8 +4,13 @@
 
 
 
+
+
+
 #ifndef COLLUNSAFE_H
 #define COLLUNSAFE_H
+
+#include "unicode/utypes.h"
 
 #define COLLUNSAFE_ICU_VERSION "56.0.1"
 #define COLLUNSAFE_COLL_VERSION "9.64"

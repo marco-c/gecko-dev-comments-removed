@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef GREGOIMP_H
 #define GREGOIMP_H
 #include "unicode/utypes.h"
@@ -290,71 +292,6 @@ inline int32_t Grego::gregorianShift(int32_t eyear) {
   int32_t gregShift = ClockMath::floorDivide(y, 400) - ClockMath::floorDivide(y, 100) + 2;
   return gregShift;
 }
-
-
-
-
-
-class CalendarData : public UMemory {
-public: 
-    
-
-
-
-
-
-
-    CalendarData(const Locale& loc, const char *type, UErrorCode& status);
-
-    
-
-
-
-
-
-
-
-    UResourceBundle* getByKey(const char *key, UErrorCode& status);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    UResourceBundle* getByKey2(const char *key, const char *subKey, UErrorCode& status);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    UResourceBundle* getByKey3(const char *key, const char *contextKey, const char *subKey, UErrorCode& status);
-
-    ~CalendarData();
-
-private:
-    void initData(const char *locale, const char *type, UErrorCode& status);
-
-    UResourceBundle *fFillin;
-    UResourceBundle *fOtherFillin;
-    UResourceBundle *fBundle;
-    UResourceBundle *fFallback;
-    CalendarData(); 
-};
 
 U_NAMESPACE_END
 

@@ -23,6 +23,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_NO_LEGACY_CONVERSION && !UCONFIG_ONLY_HTML_CONVERSION
@@ -793,12 +795,16 @@ LMBCSConversionWorker (
    {
    case 4:
       *pLMBCS++ = (ulmbcs_byte_t)(value >> 24);
-   case 3: 
+      U_FALLTHROUGH;
+   case 3:
       *pLMBCS++ = (ulmbcs_byte_t)(value >> 16);
-   case 2: 
+      U_FALLTHROUGH;
+   case 2:
       *pLMBCS++ = (ulmbcs_byte_t)(value >> 8);
-   case 1: 
+      U_FALLTHROUGH;
+   case 1:
       *pLMBCS++ = (ulmbcs_byte_t)value;
+      U_FALLTHROUGH;
    default:
       
       break;

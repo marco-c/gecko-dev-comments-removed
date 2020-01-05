@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if U_PLATFORM_HAS_WIN32_API
@@ -98,7 +100,7 @@ main(int argc, char* argv[]) {
     options[kOptDestDir].value = ".";
 
     
-    argc=u_parseArgs(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    argc=u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
 
     
     if(argc<0) {

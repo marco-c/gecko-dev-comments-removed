@@ -1,12 +1,14 @@
-/*
-******************************************************************************
-*   Copyright (C) 1997-2014, International Business Machines
-*   Corporation and others.  All Rights Reserved.
-******************************************************************************
-*   Date        Name        Description
-*   03/28/00    aliu        Creation.
-******************************************************************************
-*/
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef HASH_H
 #define HASH_H
@@ -18,13 +20,13 @@
 
 U_NAMESPACE_BEGIN
 
-/**
- * Hashtable is a thin C++ wrapper around UHashtable, a general-purpose void*
- * hashtable implemented in C.  Hashtable is designed to be idiomatic and
- * easy-to-use in C++.
- *
- * Hashtable is an INTERNAL CLASS.
- */
+
+
+
+
+
+
+
 class U_COMMON_API Hashtable : public UMemory {
     UHashtable* hash;
     UHashtable hashObj;
@@ -32,37 +34,37 @@ class U_COMMON_API Hashtable : public UMemory {
     inline void init(UHashFunction *keyHash, UKeyComparator *keyComp, UValueComparator *valueComp, UErrorCode& status);
 
 public:
-    /**
-     * Construct a hashtable
-     * @param ignoreKeyCase If true, keys are case insensitive.
-     * @param status Error code
-    */
+    
+
+
+
+
     Hashtable(UBool ignoreKeyCase, UErrorCode& status);
 
-    /**
-     * Construct a hashtable
-     * @param keyComp Comparator for comparing the keys
-     * @param valueComp Comparator for comparing the values
-     * @param status Error code
-    */
+    
+
+
+
+
+
     Hashtable(UKeyComparator *keyComp, UValueComparator *valueComp, UErrorCode& status);
 
-    /**
-     * Construct a hashtable
-     * @param status Error code
-    */
+    
+
+
+
     Hashtable(UErrorCode& status);
 
-    /**
-     * Construct a hashtable, _disregarding any error_.  Use this constructor
-     * with caution.
-     */
+    
+
+
+
     Hashtable();
 
-    /**
-     * Non-virtual destructor; make this virtual if Hashtable is subclassed
-     * in the future.
-     */
+    
+
+
+
     ~Hashtable();
 
     UObjectDeleter *setValueDeleter(UObjectDeleter *fn);
@@ -85,10 +87,10 @@ public:
 
     const UHashElement* find(const UnicodeString& key) const;
 
-    /**
-     * @param pos - must be UHASH_FIRST on first call, and untouched afterwards.
-     * @see uhash_nextElement
-     */
+    
+
+
+
     const UHashElement* nextElement(int32_t& pos) const;
     
     UKeyComparator* setKeyComparator(UKeyComparator*keyComp);
@@ -97,13 +99,13 @@ public:
 
     UBool equals(const Hashtable& that) const;
 private:
-    Hashtable(const Hashtable &other); // forbid copying of this class
-    Hashtable &operator=(const Hashtable &other); // forbid copying of this class
+    Hashtable(const Hashtable &other); 
+    Hashtable &operator=(const Hashtable &other); 
 };
 
-/*********************************************************************
- * Implementation
- ********************************************************************/
+
+
+
 
 inline void Hashtable::init(UHashFunction *keyHash, UKeyComparator *keyComp, 
                             UValueComparator *valueComp, UErrorCode& status) {

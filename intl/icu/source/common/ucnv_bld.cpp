@@ -19,6 +19,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -385,7 +387,7 @@ getAlgorithmicTypeFromName(const char *realName)
 
     
     start = 0;
-    limit = sizeof(cnvNameType)/sizeof(cnvNameType[0]);
+    limit = UPRV_LENGTHOF(cnvNameType);
     mid = limit;
     lastMid = UINT32_MAX;
 

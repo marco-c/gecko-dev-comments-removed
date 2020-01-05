@@ -5,13 +5,14 @@
 
 
 
+
+
 #ifndef UFIELDPOSITER_H
 #define UFIELDPOSITER_H
 
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef U_HIDE_DRAFT_API
 
 #include "unicode/localpointer.h"
 
@@ -51,7 +52,7 @@ typedef struct UFieldPositionIterator UFieldPositionIterator;
 
 
 
-U_DRAFT UFieldPositionIterator* U_EXPORT2
+U_STABLE UFieldPositionIterator* U_EXPORT2
 ufieldpositer_open(UErrorCode* status);
 
 
@@ -60,7 +61,7 @@ ufieldpositer_open(UErrorCode* status);
 
 
 
-U_DRAFT void U_EXPORT2
+U_STABLE void U_EXPORT2
 ufieldpositer_close(UFieldPositionIterator *fpositer);
 
 
@@ -111,11 +112,10 @@ U_NAMESPACE_END
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 ufieldpositer_next(UFieldPositionIterator *fpositer,
                    int32_t *beginIndex, int32_t *endIndex);
 
-#endif 
 #endif 
 
 #endif

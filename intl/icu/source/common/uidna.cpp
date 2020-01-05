@@ -14,6 +14,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_IDNA
@@ -316,7 +318,7 @@ _internal_toASCII(const UChar* src, int32_t srcLength,
     
     if(srcIsASCII){
         if(b1Len <= destCapacity){
-            uprv_memmove(dest, b1, b1Len * U_SIZEOF_UCHAR);
+            u_memmove(dest, b1, b1Len);
             reqLength = b1Len;
         }else{
             reqLength = b1Len;
@@ -362,9 +364,9 @@ _internal_toASCII(const UChar* src, int32_t srcLength,
                 goto CLEANUP;
             }
             
-            uprv_memcpy(dest,ACE_PREFIX,ACE_PREFIX_LENGTH * U_SIZEOF_UCHAR);
+            u_memcpy(dest, ACE_PREFIX, ACE_PREFIX_LENGTH);
             
-            uprv_memcpy(dest+ACE_PREFIX_LENGTH, b2, b2Len * U_SIZEOF_UCHAR);
+            u_memcpy(dest+ACE_PREFIX_LENGTH, b2, b2Len);
 
         }else{
             *status = U_IDNA_ACE_PREFIX_ERROR; 
@@ -541,7 +543,7 @@ _internal_toUnicode(const UChar* src, int32_t srcLength,
         
         reqLength = b2Len;
         if(b2Len <= destCapacity) {
-            uprv_memmove(dest, b2, b2Len * U_SIZEOF_UCHAR);
+            u_memmove(dest, b2, b2Len);
         }
     }
     else{
@@ -570,7 +572,7 @@ _internal_toUnicode(const UChar* src, int32_t srcLength,
         
         
         if(srcLength <= destCapacity){
-            uprv_memmove(dest,src,srcLength * U_SIZEOF_UCHAR);
+            u_memmove(dest, src, srcLength);
         }
         reqLength = srcLength;
     }
@@ -597,7 +599,7 @@ CLEANUP:
         if(dest && srcLength <= destCapacity){
             
             U_ASSERT(srcLength >= 0);
-            uprv_memmove(dest,src,srcLength * U_SIZEOF_UCHAR);
+            u_memmove(dest, src, srcLength);
         }
         reqLength = srcLength;
         *status = U_ZERO_ERROR;

@@ -16,6 +16,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_NO_LEGACY_CONVERSION
@@ -690,10 +692,13 @@ ucnv_extWriteFromU(UConverter *cnv, const int32_t *cx,
         switch(length) {
         case 3:
             *p++=(uint8_t)(value>>16);
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             *p++=(uint8_t)(value>>8);
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             *p++=(uint8_t)value;
+            U_FALLTHROUGH;
         default:
             break; 
         }
@@ -880,7 +885,7 @@ ucnv_extContinueMatchFromU(UConverter *cnv,
         } else {
             
             int32_t length=cnv->preFromULength-match;
-            uprv_memmove(cnv->preFromU, cnv->preFromU+match, length*U_SIZEOF_UCHAR);
+            u_memmove(cnv->preFromU, cnv->preFromU+match, length);
             cnv->preFromULength=(int8_t)-length;
         }
 

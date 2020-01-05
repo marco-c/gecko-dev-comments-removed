@@ -16,6 +16,8 @@
 
 
 
+
+
 #include <stdlib.h>
 #include "unicode/utypes.h"
 #include "cmemory.h"
@@ -218,7 +220,7 @@ upvec_setValue(UPropsVectors *pv,
                 *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
                 return;
             }
-            uprv_memcpy(newVectors, pv->v, rows*columns*4);
+            uprv_memcpy(newVectors, pv->v, (size_t)rows*columns*4);
             firstRow=newVectors+(firstRow-pv->v);
             lastRow=newVectors+(lastRow-pv->v);
             uprv_free(pv->v);
@@ -240,7 +242,7 @@ upvec_setValue(UPropsVectors *pv,
         if(splitFirstRow) {
             
             count = (int32_t)((lastRow-firstRow)+columns);
-            uprv_memmove(firstRow+columns, firstRow, count*4);
+            uprv_memmove(firstRow+columns, firstRow, (size_t)count*4);
             lastRow+=columns;
 
             
@@ -251,7 +253,7 @@ upvec_setValue(UPropsVectors *pv,
         
         if(splitLastRow) {
             
-            uprv_memcpy(lastRow+columns, lastRow, columns*4);
+            uprv_memcpy(lastRow+columns, lastRow, (size_t)columns*4);
 
             
             lastRow[1]=lastRow[columns]=(uint32_t)limit;
@@ -415,7 +417,7 @@ upvec_compact(UPropsVectors *pv, UPVecCompactHandler *handler, void *context, UE
         
         if(count<0 || 0!=uprv_memcmp(row+2, pv->v+count, valueColumns*4)) {
             count+=valueColumns;
-            uprv_memmove(pv->v+count, row+2, valueColumns*4);
+            uprv_memmove(pv->v+count, row+2, (size_t)valueColumns*4);
         }
 
         if(start<UPVEC_FIRST_SPECIAL_CP) {
@@ -477,7 +479,7 @@ upvec_cloneArray(const UPropsVectors *pv,
 
 U_CAPI UTrie2 * U_EXPORT2
 upvec_compactToUTrie2WithRowIndexes(UPropsVectors *pv, UErrorCode *pErrorCode) {
-    UPVecToUTrie2Context toUTrie2={ NULL };
+    UPVecToUTrie2Context toUTrie2={ NULL, 0, 0, 0 };
     upvec_compact(pv, upvec_compactToUTrie2Handler, &toUTrie2, pErrorCode);
     utrie2_freeze(toUTrie2.trie, UTRIE2_16_VALUE_BITS, pErrorCode);
     if(U_FAILURE(*pErrorCode)) {

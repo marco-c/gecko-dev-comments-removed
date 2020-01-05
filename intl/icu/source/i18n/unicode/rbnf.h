@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef RBNF_H
 #define RBNF_H
 
@@ -54,7 +56,13 @@ enum URBNFRuleSetTag {
     URBNF_ORDINAL,
     URBNF_DURATION,
     URBNF_NUMBERING_SYSTEM,
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
     URBNF_COUNT
+#endif  
 };
 
 

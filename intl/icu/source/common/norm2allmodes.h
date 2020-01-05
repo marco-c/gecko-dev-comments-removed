@@ -1,13 +1,15 @@
-/*
-*******************************************************************************
-* Copyright (C) 2014, International Business Machines
-* Corporation and others.  All Rights Reserved.
-*******************************************************************************
-* loadednormalizer2impl.h
-*
-* created on: 2014sep07
-* created by: Markus W. Scherer
-*/
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef __NORM2ALLMODES_H__
 #define __NORM2ALLMODES_H__
@@ -23,14 +25,14 @@
 
 U_NAMESPACE_BEGIN
 
-// Intermediate class:
-// Has Normalizer2Impl and does boilerplate argument checking and setup.
+
+
 class Normalizer2WithImpl : public Normalizer2 {
 public:
     Normalizer2WithImpl(const Normalizer2Impl &ni) : impl(ni) {}
     virtual ~Normalizer2WithImpl();
 
-    // normalize
+    
     virtual UnicodeString &
     normalize(const UnicodeString &src,
               UnicodeString &dest,
@@ -56,7 +58,7 @@ public:
     normalize(const UChar *src, const UChar *limit,
               ReorderingBuffer &buffer, UErrorCode &errorCode) const = 0;
 
-    // normalize and append
+    
     virtual UnicodeString &
     normalizeSecondAndAppend(UnicodeString &first,
                              const UnicodeString &second,
@@ -91,9 +93,9 @@ public:
                 normalizeAndAppend(secondArray, secondArray+second.length(), doNormalize,
                                    safeMiddle, buffer, errorCode);
             }
-        }  // The ReorderingBuffer destructor finalizes the first string.
+        }  
         if(U_FAILURE(errorCode)) {
-            // Restore the modified suffix of the first string.
+            
             first.replace(firstLength-safeMiddle.length(), 0x7fffffff, safeMiddle);
         }
         return first;
@@ -111,9 +113,9 @@ public:
             return FALSE;
         }
         if(d==buffer) {
-            decomposition.setTo(buffer, length);  // copy the string (Jamos from Hangul syllable c)
+            decomposition.setTo(buffer, length);  
         } else {
-            decomposition.setTo(FALSE, d, length);  // read-only alias
+            decomposition.setTo(FALSE, d, length);  
         }
         return TRUE;
     }
@@ -126,9 +128,9 @@ public:
             return FALSE;
         }
         if(d==buffer) {
-            decomposition.setTo(buffer, length);  // copy the string (algorithmic decomposition)
+            decomposition.setTo(buffer, length);  
         } else {
-            decomposition.setTo(FALSE, d, length);  // read-only alias
+            decomposition.setTo(FALSE, d, length);  
         }
         return TRUE;
     }
@@ -142,7 +144,7 @@ public:
         return impl.getCC(impl.getNorm16(c));
     }
 
-    // quick checks
+    
     virtual UBool
     isNormalized(const UnicodeString &s, UErrorCode &errorCode) const {
         if(U_FAILURE(errorCode)) {
@@ -193,7 +195,7 @@ private:
               ReorderingBuffer &buffer, UErrorCode &errorCode) const {
         impl.decompose(src, limit, &buffer, errorCode);
     }
-    using Normalizer2WithImpl::normalize;  // Avoid warning about hiding base class function.
+    using Normalizer2WithImpl::normalize;  
     virtual void
     normalizeAndAppend(const UChar *src, const UChar *limit, UBool doNormalize,
                        UnicodeString &safeMiddle,
@@ -204,7 +206,7 @@ private:
     spanQuickCheckYes(const UChar *src, const UChar *limit, UErrorCode &errorCode) const {
         return impl.decompose(src, limit, NULL, errorCode);
     }
-    using Normalizer2WithImpl::spanQuickCheckYes;  // Avoid warning about hiding base class function.
+    using Normalizer2WithImpl::spanQuickCheckYes;  
     virtual UNormalizationCheckResult getQuickCheck(UChar32 c) const {
         return impl.isDecompYes(impl.getNorm16(c)) ? UNORM_YES : UNORM_NO;
     }
@@ -225,7 +227,7 @@ private:
               ReorderingBuffer &buffer, UErrorCode &errorCode) const {
         impl.compose(src, limit, onlyContiguous, TRUE, buffer, errorCode);
     }
-    using Normalizer2WithImpl::normalize;  // Avoid warning about hiding base class function.
+    using Normalizer2WithImpl::normalize;  
     virtual void
     normalizeAndAppend(const UChar *src, const UChar *limit, UBool doNormalize,
                        UnicodeString &safeMiddle,
@@ -245,7 +247,7 @@ private:
         }
         UnicodeString temp;
         ReorderingBuffer buffer(impl, temp);
-        if(!buffer.init(5, errorCode)) {  // small destCapacity for substring normalization
+        if(!buffer.init(5, errorCode)) {  
             return FALSE;
         }
         return impl.compose(sArray, sArray+s.length(), onlyContiguous, FALSE, buffer, errorCode);
@@ -268,7 +270,7 @@ private:
     spanQuickCheckYes(const UChar *src, const UChar *limit, UErrorCode &) const {
         return impl.composeQuickCheck(src, limit, onlyContiguous, NULL);
     }
-    using Normalizer2WithImpl::spanQuickCheckYes;  // Avoid warning about hiding base class function.
+    using Normalizer2WithImpl::spanQuickCheckYes;  
     virtual UNormalizationCheckResult getQuickCheck(UChar32 c) const {
         return impl.getCompQuickCheck(impl.getNorm16(c));
     }
@@ -296,7 +298,7 @@ private:
               ReorderingBuffer &buffer, UErrorCode &errorCode) const {
         impl.makeFCD(src, limit, &buffer, errorCode);
     }
-    using Normalizer2WithImpl::normalize;  // Avoid warning about hiding base class function.
+    using Normalizer2WithImpl::normalize;  
     virtual void
     normalizeAndAppend(const UChar *src, const UChar *limit, UBool doNormalize,
                        UnicodeString &safeMiddle,
@@ -307,7 +309,7 @@ private:
     spanQuickCheckYes(const UChar *src, const UChar *limit, UErrorCode &errorCode) const {
         return impl.makeFCD(src, limit, NULL, errorCode);
     }
-    using Normalizer2WithImpl::spanQuickCheckYes;  // Avoid warning about hiding base class function.
+    using Normalizer2WithImpl::spanQuickCheckYes;  
     virtual UBool hasBoundaryBefore(UChar32 c) const { return impl.hasFCDBoundaryBefore(c); }
     virtual UBool hasBoundaryAfter(UChar32 c) const { return impl.hasFCDBoundaryAfter(c); }
     virtual UBool isInert(UChar32 c) const { return impl.isFCDInert(c); }
@@ -337,5 +339,5 @@ struct Norm2AllModes : public UMemory {
 
 U_NAMESPACE_END
 
-#endif  // !UCONFIG_NO_NORMALIZATION
-#endif  // __NORM2ALLMODES_H__
+#endif  
+#endif  

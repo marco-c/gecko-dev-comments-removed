@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __PATTERNPROPS_H__
 #define __PATTERNPROPS_H__
 

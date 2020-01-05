@@ -17,6 +17,9 @@
 
 
 
+
+
+#include "unicode/localpointer.h"
 #include "unicode/ucnv.h"
 #include "filestrm.h"
 
@@ -140,6 +143,14 @@ ucbuf_close(UCHARBUF* buf);
 #if U_SHOW_CPLUSPLUS_API
 
 U_NAMESPACE_BEGIN
+
+
+
+
+
+
+
+
 
 U_DEFINE_LOCAL_OPEN_POINTER(LocalUCHARBUFPointer, UCHARBUF, ucbuf_close);
 

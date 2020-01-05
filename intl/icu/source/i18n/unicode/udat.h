@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef UDAT_H
 #define UDAT_H
 
@@ -167,16 +169,16 @@ typedef enum UDateFormatStyle {
 
     
     UDAT_RELATIVE = (1 << 7),
-    
+
     UDAT_FULL_RELATIVE = UDAT_FULL | UDAT_RELATIVE,
-        
+
     UDAT_LONG_RELATIVE = UDAT_LONG | UDAT_RELATIVE,
-    
+
     UDAT_MEDIUM_RELATIVE = UDAT_MEDIUM | UDAT_RELATIVE,
-    
+
     UDAT_SHORT_RELATIVE = UDAT_SHORT | UDAT_RELATIVE,
-    
-    
+
+
     
     UDAT_NONE = -1,
 
@@ -294,7 +296,7 @@ typedef enum UDateFormatStyle {
 
 
 
-#define UDAT_YEAR_ABBR_MONTH_WEEKDAY_DAY "yMMMEd" 
+#define UDAT_YEAR_ABBR_MONTH_WEEKDAY_DAY "yMMMEd"
 
 
 
@@ -446,7 +448,7 @@ typedef enum UDateFormatStyle {
 
 
 
-#ifndef U_HIDE_DEPRECATED_API 
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -759,7 +761,7 @@ typedef enum UDateFormatField {
 
 
     UDAT_RELATED_YEAR_FIELD = 34,
-#endif 
+#endif  
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -768,19 +770,34 @@ typedef enum UDateFormatField {
 
 
 
-    UDAT_TIME_SEPARATOR_FIELD = 35,
+    UDAT_AM_PM_MIDNIGHT_NOON_FIELD = 35,
+
+    
+
+
+
+    UDAT_FLEXIBLE_DAY_PERIOD_FIELD = 36,
+#endif 
+
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+    UDAT_TIME_SEPARATOR_FIELD = 37,
 #endif  
 
-   
+#ifndef U_HIDE_DEPRECATED_API
+    
 
 
 
 
 
-
-
-    UDAT_FIELD_COUNT = 36
-
+    UDAT_FIELD_COUNT = 38
+#endif  
 } UDateFormatField;
 
 
@@ -834,7 +851,7 @@ udat_toCalendarDateField(UDateFormatField field);
 
 
 
-U_STABLE UDateFormat* U_EXPORT2 
+U_STABLE UDateFormat* U_EXPORT2
 udat_open(UDateFormatStyle  timeStyle,
           UDateFormatStyle  dateStyle,
           const char        *locale,
@@ -851,7 +868,7 @@ udat_open(UDateFormatStyle  timeStyle,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_close(UDateFormat* format);
 
 
@@ -872,7 +889,6 @@ typedef enum UDateFormatBooleanAttribute {
 
 
     UDAT_PARSE_ALLOW_NUMERIC = 1,
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -883,9 +899,11 @@ typedef enum UDateFormatBooleanAttribute {
 
 
 
- 
+
     UDAT_PARSE_MULTIPLE_PATTERNS_FOR_MATCH = 3,
-#endif 
+
+    
+    
     
 
 
@@ -948,7 +966,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE UDateFormat* U_EXPORT2 
+U_STABLE UDateFormat* U_EXPORT2
 udat_clone(const UDateFormat *fmt,
        UErrorCode *status);
 
@@ -970,7 +988,7 @@ udat_clone(const UDateFormat *fmt,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 udat_format(    const    UDateFormat*    format,
                         UDate           dateToFormat,
                         UChar*          result,
@@ -978,7 +996,6 @@ udat_format(    const    UDateFormat*    format,
                         UFieldPosition* position,
                         UErrorCode*     status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1001,7 +1018,7 @@ udat_format(    const    UDateFormat*    format,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 udat_formatCalendar(    const UDateFormat*  format,
                         UCalendar*      calendar,
                         UChar*          result,
@@ -1036,7 +1053,7 @@ udat_formatCalendar(    const UDateFormat*  format,
 
 
 
-U_DRAFT int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 udat_formatForFields(   const UDateFormat* format,
                         UDate           dateToFormat,
                         UChar*          result,
@@ -1074,7 +1091,7 @@ udat_formatForFields(   const UDateFormat* format,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 udat_formatCalendarForFields( const UDateFormat* format,
                         UCalendar*      calendar,
                         UChar*          result,
@@ -1082,7 +1099,6 @@ udat_formatCalendarForFields( const UDateFormat* format,
                         UFieldPositionIterator* fpositer,
                         UErrorCode*     status);
 
-#endif  
 
 
 
@@ -1109,7 +1125,7 @@ udat_formatCalendarForFields( const UDateFormat* format,
 
 
 
-U_STABLE UDate U_EXPORT2 
+U_STABLE UDate U_EXPORT2
 udat_parse(const    UDateFormat*    format,
            const    UChar*          text,
                     int32_t         textLength,
@@ -1137,7 +1153,7 @@ udat_parse(const    UDateFormat*    format,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_parseCalendar(const    UDateFormat*    format,
                             UCalendar*      calendar,
                    const    UChar*          text,
@@ -1154,7 +1170,7 @@ udat_parseCalendar(const    UDateFormat*    format,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_STABLE UBool U_EXPORT2
 udat_isLenient(const UDateFormat* fmt);
 
 
@@ -1166,7 +1182,7 @@ udat_isLenient(const UDateFormat* fmt);
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_setLenient(    UDateFormat*    fmt,
                     UBool          isLenient);
 
@@ -1179,7 +1195,7 @@ udat_setLenient(    UDateFormat*    fmt,
 
 
 
-U_STABLE const UCalendar* U_EXPORT2 
+U_STABLE const UCalendar* U_EXPORT2
 udat_getCalendar(const UDateFormat* fmt);
 
 
@@ -1191,7 +1207,7 @@ udat_getCalendar(const UDateFormat* fmt);
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_setCalendar(            UDateFormat*    fmt,
                     const   UCalendar*      calendarToSet);
 
@@ -1204,7 +1220,7 @@ udat_setCalendar(            UDateFormat*    fmt,
 
 
 
-U_STABLE const UNumberFormat* U_EXPORT2 
+U_STABLE const UNumberFormat* U_EXPORT2
 udat_getNumberFormat(const UDateFormat* fmt);
 
 
@@ -1216,7 +1232,7 @@ udat_getNumberFormat(const UDateFormat* fmt);
 
 
 
-U_STABLE const UNumberFormat* U_EXPORT2 
+U_STABLE const UNumberFormat* U_EXPORT2
 udat_getNumberFormatForField(const UDateFormat* fmt, UChar field);
 
 
@@ -1234,7 +1250,7 @@ udat_getNumberFormatForField(const UDateFormat* fmt, UChar field);
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_adoptNumberFormatForFields(  UDateFormat* fmt,
                             const UChar* fields,
                                   UNumberFormat*  numberFormatToSet,
@@ -1251,7 +1267,7 @@ udat_adoptNumberFormatForFields(  UDateFormat* fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_setNumberFormat(            UDateFormat*    fmt,
                         const   UNumberFormat*  numberFormatToSet);
 
@@ -1263,7 +1279,7 @@ udat_setNumberFormat(            UDateFormat*    fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_adoptNumberFormat(            UDateFormat*    fmt,
                                    UNumberFormat*  numberFormatToAdopt);
 
@@ -1275,7 +1291,7 @@ udat_adoptNumberFormat(            UDateFormat*    fmt,
 
 
 
-U_STABLE const char* U_EXPORT2 
+U_STABLE const char* U_EXPORT2
 udat_getAvailable(int32_t localeIndex);
 
 
@@ -1286,7 +1302,7 @@ udat_getAvailable(int32_t localeIndex);
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 udat_countAvailable(void);
 
 
@@ -1299,7 +1315,7 @@ udat_countAvailable(void);
 
 
 
-U_STABLE UDate U_EXPORT2 
+U_STABLE UDate U_EXPORT2
 udat_get2DigitYearStart(    const   UDateFormat     *fmt,
                                     UErrorCode      *status);
 
@@ -1313,7 +1329,7 @@ udat_get2DigitYearStart(    const   UDateFormat     *fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_set2DigitYearStart(    UDateFormat     *fmt,
                             UDate           d,
                             UErrorCode      *status);
@@ -1330,7 +1346,7 @@ udat_set2DigitYearStart(    UDateFormat     *fmt,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 udat_toPattern(    const   UDateFormat     *fmt,
                         UBool          localized,
                         UChar           *result,
@@ -1347,7 +1363,7 @@ udat_toPattern(    const   UDateFormat     *fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_applyPattern(            UDateFormat     *format,
                             UBool          localized,
                     const   UChar           *pattern,
@@ -1473,7 +1489,7 @@ typedef struct UDateFormatSymbols UDateFormatSymbols;
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 udat_getSymbols(const   UDateFormat             *fmt,
                         UDateFormatSymbolType   type,
                         int32_t                 symbolIndex,
@@ -1493,7 +1509,7 @@ udat_getSymbols(const   UDateFormat             *fmt,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 udat_countSymbols(    const    UDateFormat                *fmt,
                             UDateFormatSymbolType    type);
 
@@ -1512,7 +1528,7 @@ udat_countSymbols(    const    UDateFormat                *fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 udat_setSymbols(    UDateFormat             *format,
                     UDateFormatSymbolType   type,
                     int32_t                 symbolIndex,
@@ -1532,7 +1548,7 @@ udat_setSymbols(    UDateFormat             *format,
 U_STABLE const char* U_EXPORT2
 udat_getLocaleByType(const UDateFormat *fmt,
                      ULocDataLocaleType type,
-                     UErrorCode* status); 
+                     UErrorCode* status);
 
 
 
@@ -1569,7 +1585,7 @@ udat_getContext(const UDateFormat* fmt, UDisplayContextType type, UErrorCode* st
 
 
 
-U_INTERNAL int32_t U_EXPORT2 
+U_INTERNAL int32_t U_EXPORT2
 udat_toPatternRelativeDate(const UDateFormat *fmt,
                            UChar             *result,
                            int32_t           resultLength,
@@ -1586,7 +1602,7 @@ udat_toPatternRelativeDate(const UDateFormat *fmt,
 
 
 
-U_INTERNAL int32_t U_EXPORT2 
+U_INTERNAL int32_t U_EXPORT2
 udat_toPatternRelativeTime(const UDateFormat *fmt,
                            UChar             *result,
                            int32_t           resultLength,
@@ -1604,7 +1620,7 @@ udat_toPatternRelativeTime(const UDateFormat *fmt,
 
 
 
-U_INTERNAL void U_EXPORT2 
+U_INTERNAL void U_EXPORT2
 udat_applyPatternRelative(UDateFormat *format,
                           const UChar *datePattern,
                           int32_t     datePatternLength,

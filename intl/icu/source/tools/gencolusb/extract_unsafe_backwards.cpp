@@ -6,6 +6,8 @@
 
 
 
+
+
 #include <stdio.h>
 #include "unicode/uversion.h"
 #include "unicode/uniset.h"
@@ -105,6 +107,8 @@ int main(int argc, const char *argv[]) {
   printf("\n");
   printf("#ifndef COLLUNSAFE_H\n"
          "#define COLLUNSAFE_H\n"
+         "\n"
+         "#include \"unicode/utypes.h\"\n"
          "\n"
          "#define COLLUNSAFE_ICU_VERSION \"" U_ICU_VERSION "\"\n");
   printf("#define COLLUNSAFE_COLL_VERSION \"%s\"\n", verString);

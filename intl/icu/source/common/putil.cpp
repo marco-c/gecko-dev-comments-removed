@@ -39,6 +39,8 @@
 
 
 
+
+
 #include "uposixdefs.h"
 
 
@@ -832,7 +834,6 @@ static const char* remapShortTimeZone(const char *stdID, const char *dstID, int3
 #endif
 
 #ifdef SEARCH_TZFILE
-#define MAX_PATH_SIZE PATH_MAX /* Set the limit for the size of the path. */
 #define MAX_READ_SIZE 512
 
 typedef struct DefaultTZInfo {
@@ -911,12 +912,16 @@ static UBool compareBinaryFiles(const char* defaultTZFileName, const char* TZFil
 
 
 
-
 #define SKIP1 "."
 #define SKIP2 ".."
-static char SEARCH_TZFILE_RESULT[MAX_PATH_SIZE] = "";
+static UBool U_CALLCONV putil_cleanup(void);
+static CharString *gSearchTZFileResult = NULL;
+
+
+
+
+
 static char* searchForTZFile(const char* path, DefaultTZInfo* tzInfo) {
-    char curpath[MAX_PATH_SIZE];
     DIR* dirp = opendir(path);
     DIR* subDirp = NULL;
     struct dirent* dirEntry = NULL;
@@ -926,24 +931,40 @@ static char* searchForTZFile(const char* path, DefaultTZInfo* tzInfo) {
         return result;
     }
 
+    if (gSearchTZFileResult == NULL) {
+        gSearchTZFileResult = new CharString;
+        if (gSearchTZFileResult == NULL) {
+            return NULL;
+        }
+        ucln_common_registerCleanup(UCLN_COMMON_PUTIL, putil_cleanup);
+    }
+
     
-    uprv_memset(curpath, 0, MAX_PATH_SIZE);
-    uprv_strcpy(curpath, path);
+    UErrorCode status = U_ZERO_ERROR;
+    CharString curpath(path, -1, status);
+    if (U_FAILURE(status)) {
+        return NULL;
+    }
 
     
     while((dirEntry = readdir(dirp)) != NULL) {
         const char* dirName = dirEntry->d_name;
         if (uprv_strcmp(dirName, SKIP1) != 0 && uprv_strcmp(dirName, SKIP2) != 0) {
             
-            char newpath[MAX_PATH_SIZE];
-            uprv_strcpy(newpath, curpath);
-            uprv_strcat(newpath, dirName);
+            CharString newpath(curpath, status);
+            newpath.append(dirName, -1, status);
+            if (U_FAILURE(status)) {
+                return NULL;
+            }
 
-            if ((subDirp = opendir(newpath)) != NULL) {
+            if ((subDirp = opendir(newpath.data())) != NULL) {
                 
                 closedir(subDirp);
-                uprv_strcat(newpath, "/");
-                result = searchForTZFile(newpath, tzInfo);
+                newpath.append('/', status);
+                if (U_FAILURE(status)) {
+                    return NULL;
+                }
+                result = searchForTZFile(newpath.data(), tzInfo);
                 
 
 
@@ -955,11 +976,19 @@ static char* searchForTZFile(const char* path, DefaultTZInfo* tzInfo) {
                 if (result != NULL)
                     break;
             } else if (uprv_strcmp(TZFILE_SKIP, dirName) != 0 && uprv_strcmp(TZFILE_SKIP2, dirName) != 0) {
-                if(compareBinaryFiles(TZDEFAULT, newpath, tzInfo)) {
-                    const char* zoneid = newpath + (sizeof(TZZONEINFO)) - 1;
+                if(compareBinaryFiles(TZDEFAULT, newpath.data(), tzInfo)) {
+                    int32_t amountToSkip = sizeof(TZZONEINFO) - 1;
+                    if (amountToSkip > newpath.length()) {
+                        amountToSkip = newpath.length();
+                    }
+                    const char* zoneid = newpath.data() + amountToSkip;
                     skipZoneIDPrefix(&zoneid);
-                    uprv_strcpy(SEARCH_TZFILE_RESULT, zoneid);
-                    result = SEARCH_TZFILE_RESULT;
+                    gSearchTZFileResult->clear();
+                    gSearchTZFileResult->append(zoneid, -1, status);
+                    if (U_FAILURE(status)) {
+                        return NULL;
+                    }
+                    result = gSearchTZFileResult->data();
                     
                     break;
                 }
@@ -1009,6 +1038,10 @@ uprv_tzname(int n)
         && uprv_strcmp(tzid, TZ_ENV_CHECK) != 0
 #endif
     ) {
+         
+        if (tzid[0] == ':') { 
+            tzid++; 
+        } 
         
         skipZoneIDPrefix(&tzid);
         return tzid;
@@ -1024,7 +1057,7 @@ uprv_tzname(int n)
 
 
 
-        int32_t ret = (int32_t)readlink(TZDEFAULT, gTimeZoneBuffer, sizeof(gTimeZoneBuffer));
+        int32_t ret = (int32_t)readlink(TZDEFAULT, gTimeZoneBuffer, sizeof(gTimeZoneBuffer)-1);
         if (0 < ret) {
             int32_t tzZoneInfoLen = uprv_strlen(TZZONEINFO);
             gTimeZoneBuffer[ret] = 0;
@@ -1143,6 +1176,11 @@ static UBool U_CALLCONV putil_cleanup(void)
     delete gTimeZoneFilesDirectory;
     gTimeZoneFilesDirectory = NULL;
     gTimeZoneFilesInitOnce.reset();
+
+#ifdef SEARCH_TZFILE
+    delete gSearchTZFileResult;
+    gSearchTZFileResult = NULL;
+#endif
 
 #if U_POSIX_LOCALE || U_PLATFORM_USES_ONLY_WIN32_API
     if (gCorrectedPOSIXLocale) {
@@ -1392,9 +1430,18 @@ static const char *uprv_getPOSIXIDForCategory(int category)
         {
             
             posixID = getenv("LC_ALL");
+            
+
+
+#if U_PLATFORM == U_PF_SOLARIS
+            if ((posixID == 0) || (posixID[0] == '\0')) {
+                posixID = getenv(category == LC_MESSAGES ? "LC_MESSAGES" : "LC_CTYPE");
+                if ((posixID == 0) || (posixID[0] == '\0')) {
+#else
             if (posixID == 0) {
                 posixID = getenv(category == LC_MESSAGES ? "LC_MESSAGES" : "LC_CTYPE");
                 if (posixID == 0) {
+#endif                    
                     posixID = getenv("LANG");
                 }
             }
@@ -1886,7 +1933,10 @@ int_getDefaultCodepage()
 
     localeName = uprv_getPOSIXIDForDefaultCodepage();
     uprv_memset(codesetName, 0, sizeof(codesetName));
-#if U_HAVE_NL_LANGINFO_CODESET
+    
+
+
+#if (U_HAVE_NL_LANGINFO_CODESET && U_PLATFORM != U_PF_SOLARIS)
     
 
 
@@ -2197,6 +2247,7 @@ uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
 
 U_INTERNAL void * U_EXPORT2
 uprv_dl_open(const char *libName, UErrorCode *status) {
+    (void)libName;
     if(U_FAILURE(*status)) return NULL;
     *status = U_UNSUPPORTED_ERROR;
     return NULL;
@@ -2204,6 +2255,7 @@ uprv_dl_open(const char *libName, UErrorCode *status) {
 
 U_INTERNAL void U_EXPORT2
 uprv_dl_close(void *lib, UErrorCode *status) {
+    (void)lib;
     if(U_FAILURE(*status)) return;
     *status = U_UNSUPPORTED_ERROR;
     return;
@@ -2212,6 +2264,8 @@ uprv_dl_close(void *lib, UErrorCode *status) {
 
 U_INTERNAL UVoidFunction* U_EXPORT2
 uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
+  (void)lib;
+  (void)sym;
   if(U_SUCCESS(*status)) {
     *status = U_UNSUPPORTED_ERROR;
   }

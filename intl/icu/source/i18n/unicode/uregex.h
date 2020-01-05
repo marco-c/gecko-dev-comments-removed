@@ -20,6 +20,8 @@
 
 
 
+
+
 #ifndef UREGEX_H
 #define UREGEX_H
 
@@ -607,7 +609,6 @@ U_STABLE int32_t U_EXPORT2
 uregex_groupCount(URegularExpression *regexp,
                   UErrorCode         *status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -624,7 +625,7 @@ uregex_groupCount(URegularExpression *regexp,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 uregex_groupNumberFromName(URegularExpression *regexp,
                            const UChar        *groupName,
                            int32_t             nameLength,
@@ -648,12 +649,11 @@ uregex_groupNumberFromName(URegularExpression *regexp,
 
 
 
-U_DRAFT int32_t U_EXPORT2
+U_STABLE int32_t U_EXPORT2
 uregex_groupNumberFromCName(URegularExpression *regexp,
                             const char         *groupName,
                             int32_t             nameLength,
                             UErrorCode          *status);
-#endif  
 
 
 

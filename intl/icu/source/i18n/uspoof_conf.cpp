@@ -16,6 +16,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/uspoof.h"
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
@@ -59,9 +61,11 @@ U_NAMESPACE_USE
 
 
 
+
+
 SPUString::SPUString(UnicodeString *s) {
     fStr = s;
-    fStrTableIndex = 0;
+    fCharOrStrTableIndex = 0;
 }
 
 
@@ -143,15 +147,11 @@ SPUString *SPUStringPool::addString(UnicodeString *src, UErrorCode &status) {
 ConfusabledataBuilder::ConfusabledataBuilder(SpoofImpl *spImpl, UErrorCode &status) :
     fSpoofImpl(spImpl),
     fInput(NULL),
-    fSLTable(NULL),
-    fSATable(NULL),
-    fMLTable(NULL),
-    fMATable(NULL),
+    fTable(NULL),
     fKeySet(NULL),
     fKeyVec(NULL),
     fValueVec(NULL),
     fStringTable(NULL),
-    fStringLengthsTable(NULL),
     stringPool(NULL),
     fParseLine(NULL),
     fParseHexNum(NULL),
@@ -160,10 +160,7 @@ ConfusabledataBuilder::ConfusabledataBuilder(SpoofImpl *spImpl, UErrorCode &stat
     if (U_FAILURE(status)) {
         return;
     }
-    fSLTable    = uhash_open(uhash_hashLong, uhash_compareLong, NULL, &status);
-    fSATable    = uhash_open(uhash_hashLong, uhash_compareLong, NULL, &status);
-    fMLTable    = uhash_open(uhash_hashLong, uhash_compareLong, NULL, &status);
-    fMATable    = uhash_open(uhash_hashLong, uhash_compareLong, NULL, &status);
+    fTable    = uhash_open(uhash_hashLong, uhash_compareLong, NULL, &status);
     fKeySet     = new UnicodeSet();
     fKeyVec     = new UVector(status);
     fValueVec   = new UVector(status);
@@ -175,14 +172,10 @@ ConfusabledataBuilder::~ConfusabledataBuilder() {
     uprv_free(fInput);
     uregex_close(fParseLine);
     uregex_close(fParseHexNum);
-    uhash_close(fSLTable);
-    uhash_close(fSATable);
-    uhash_close(fMLTable);
-    uhash_close(fMATable);
+    uhash_close(fTable);
     delete fKeySet;
     delete fKeyVec;
     delete fStringTable;
-    delete fStringLengthsTable;
     delete fValueVec;
     delete stringPool;
 }
@@ -295,40 +288,11 @@ void ConfusabledataBuilder::build(const char * confusables, int32_t confusablesL
         SPUString *smapString = stringPool->addString(mapString, status);
 
         
-        UHashtable *table = uregex_start(fParseLine, 3, &status) >= 0 ? fSLTable :
-                            uregex_start(fParseLine, 4, &status) >= 0 ? fSATable :
-                            uregex_start(fParseLine, 5, &status) >= 0 ? fMLTable :
-                            uregex_start(fParseLine, 6, &status) >= 0 ? fMATable :
-                            NULL;
-        if (U_SUCCESS(status) && table == NULL) {
-            status = U_PARSE_ERROR;
-        }
-        if (U_FAILURE(status)) {
-            return;
-        }
-
         
         
-        
-        
-        
-        
-        
-        
-        
-        if (table != fMATable) {
-            status = U_PARSE_ERROR;
-            return;
-        };
-        
-        uhash_iput(fSLTable, keyChar, smapString, &status);
-        uhash_iput(fSATable, keyChar, smapString, &status);
-        uhash_iput(fMLTable, keyChar, smapString, &status);
-        uhash_iput(fMATable, keyChar, smapString, &status);
+        uhash_iput(fTable, keyChar, smapString, &status);
+        if (U_FAILURE(status)) { return; }
         fKeySet->add(keyChar);
-        if (U_FAILURE(status)) {
-            return;
-        }
     }
 
     
@@ -338,46 +302,27 @@ void ConfusabledataBuilder::build(const char * confusables, int32_t confusablesL
     
     
 
-    
-    
     
     
     
     
     stringPool->sort(status);
     fStringTable = new UnicodeString();
-    fStringLengthsTable = new UVector(status);
-    int32_t previousStringLength = 0;
-    int32_t previousStringIndex  = 0;
     int32_t poolSize = stringPool->size();
     int32_t i;
     for (i=0; i<poolSize; i++) {
         SPUString *s = stringPool->getByIndex(i);
         int32_t strLen = s->fStr->length();
         int32_t strIndex = fStringTable->length();
-        U_ASSERT(strLen >= previousStringLength);
         if (strLen == 1) {
             
             
             
-            s->fStrTableIndex = s->fStr->charAt(0);
+            s->fCharOrStrTableIndex = s->fStr->charAt(0);
         } else {
-            if ((strLen > previousStringLength) && (previousStringLength >= 4)) {
-                fStringLengthsTable->addElement(previousStringIndex, status);
-                fStringLengthsTable->addElement(previousStringLength, status);
-            }
-            s->fStrTableIndex = strIndex;
+            s->fCharOrStrTableIndex = strIndex;
             fStringTable->append(*(s->fStr));
         }
-        previousStringLength = strLen;
-        previousStringIndex  = strIndex;
-    }
-    
-    
-    
-    if (previousStringLength >= 4) {
-        fStringLengthsTable->addElement(previousStringIndex, status);
-        fStringLengthsTable->addElement(previousStringLength, status);
     }
 
     
@@ -396,10 +341,22 @@ void ConfusabledataBuilder::build(const char * confusables, int32_t confusablesL
         
         for (UChar32 keyChar=fKeySet->getRangeStart(range);
                 keyChar <= fKeySet->getRangeEnd(range); keyChar++) {
-            addKeyEntry(keyChar, fSLTable, USPOOF_SL_TABLE_FLAG, status);
-            addKeyEntry(keyChar, fSATable, USPOOF_SA_TABLE_FLAG, status);
-            addKeyEntry(keyChar, fMLTable, USPOOF_ML_TABLE_FLAG, status);
-            addKeyEntry(keyChar, fMATable, USPOOF_MA_TABLE_FLAG, status);
+            SPUString *targetMapping = static_cast<SPUString *>(uhash_iget(fTable, keyChar));
+            U_ASSERT(targetMapping != NULL);
+
+            
+            
+            if (targetMapping->fStr->length() > 256) {
+                status = U_ILLEGAL_ARGUMENT_ERROR;
+                return;
+            }
+
+            int32_t key = ConfusableDataUtils::codePointAndLengthToKey(keyChar,
+                targetMapping->fStr->length());
+            int32_t value = targetMapping->fCharOrStrTableIndex;
+
+            fKeyVec->addElement(key, status);
+            fValueVec->addElement(value, status);
         }
     }
 
@@ -435,14 +392,14 @@ void ConfusabledataBuilder::outputData(UErrorCode &status) {
         return;
     }
     int i;
-    int32_t previousKey = 0;
+    UChar32 previousCodePoint = 0;
     for (i=0; i<numKeys; i++) {
         int32_t key =  fKeyVec->elementAti(i);
-        (void)previousKey;         
-        U_ASSERT((key & 0x00ffffff) >= (previousKey & 0x00ffffff));
-        U_ASSERT((key & 0xff000000) != 0);
+        UChar32 codePoint = ConfusableDataUtils::keyToCodePoint(key);
+        
+        U_ASSERT(codePoint > previousCodePoint);
         keys[i] = key;
-        previousKey = key;
+        previousCodePoint = codePoint;
     }
     SpoofDataHeader *rawData = fSpoofImpl->fSpoofData->fRawData;
     rawData->fCFUKeys = (int32_t)((char *)keys - (char *)rawData);
@@ -484,143 +441,6 @@ void ConfusabledataBuilder::outputData(UErrorCode &status) {
     rawData->fCFUStringTable = (int32_t)((char *)strings - (char *)rawData);
     rawData->fCFUStringTableLen = stringsLength;
     fSpoofImpl->fSpoofData->fCFUStrings = strings;
-
-    
-    
-    
-    
-    
-    int32_t lengthTableLength = fStringLengthsTable->size();
-    uint16_t *stringLengths =
-        static_cast<uint16_t *>(fSpoofImpl->fSpoofData->reserveSpace(lengthTableLength*sizeof(uint16_t), status));
-    if (U_FAILURE(status)) {
-        return;
-    }
-    int32_t destIndex = 0;
-    uint32_t previousLength = 0;
-    for (i=0; i<lengthTableLength; i+=2) {
-        uint32_t offset = static_cast<uint32_t>(fStringLengthsTable->elementAti(i));
-        uint32_t length = static_cast<uint32_t>(fStringLengthsTable->elementAti(i+1));
-        U_ASSERT(offset < stringsLength);
-        U_ASSERT(length < 40);
-        (void)previousLength;  
-        U_ASSERT(length > previousLength);
-        stringLengths[destIndex++] = static_cast<uint16_t>(offset);
-        stringLengths[destIndex++] = static_cast<uint16_t>(length);
-        previousLength = length;
-    }
-    rawData = fSpoofImpl->fSpoofData->fRawData;
-    rawData->fCFUStringLengths = (int32_t)((char *)stringLengths - (char *)rawData);
-    
-    
-    rawData->fCFUStringLengthsSize = lengthTableLength / 2;
-    fSpoofImpl->fSpoofData->fCFUStringLengths =
-        reinterpret_cast<SpoofStringLengthsElement *>(stringLengths);
-}
-
-
-
-
-
-
-
-
-
-void ConfusabledataBuilder::addKeyEntry(
-    UChar32     keyChar,     
-    UHashtable *table,       
-    int32_t     tableFlag,   
-    UErrorCode &status) {
-
-    SPUString *targetMapping = static_cast<SPUString *>(uhash_iget(table, keyChar));
-    if (targetMapping == NULL) {
-        
-        
-        
-        return;
-    }
-
-    
-    
-    
-
-    UBool keyHasMultipleValues = FALSE;
-    int32_t i;
-    for (i=fKeyVec->size()-1; i>=0 ; i--) {
-        int32_t key = fKeyVec->elementAti(i);
-        if ((key & 0x0ffffff) != keyChar) {
-            
-            
-            break;
-        }
-        UnicodeString mapping = getMapping(i);
-        if (mapping == *(targetMapping->fStr)) {
-            
-            
-            key |= tableFlag;
-            fKeyVec->setElementAt(key, i);
-            return;
-        }
-        keyHasMultipleValues = TRUE;
-    }
-
-    
-    
-
-    int32_t newKey = keyChar | tableFlag;
-    if (keyHasMultipleValues) {
-        newKey |= USPOOF_KEY_MULTIPLE_VALUES;
-    }
-    int32_t adjustedMappingLength = targetMapping->fStr->length() - 1;
-    if (adjustedMappingLength>3) {
-        adjustedMappingLength = 3;
-    }
-    newKey |= adjustedMappingLength << USPOOF_KEY_LENGTH_SHIFT;
-
-    int32_t newData = targetMapping->fStrTableIndex;
-
-    fKeyVec->addElement(newKey, status);
-    fValueVec->addElement(newData, status);
-
-    
-    
-    if (keyHasMultipleValues) {
-        int32_t previousKeyIndex = fKeyVec->size() - 2;
-        int32_t previousKey = fKeyVec->elementAti(previousKeyIndex);
-        previousKey |= USPOOF_KEY_MULTIPLE_VALUES;
-        fKeyVec->setElementAt(previousKey, previousKeyIndex);
-    }
-}
-
-
-
-UnicodeString ConfusabledataBuilder::getMapping(int32_t index) {
-    int32_t key = fKeyVec->elementAti(index);
-    int32_t value = fValueVec->elementAti(index);
-    int32_t length = USPOOF_KEY_LENGTH_FIELD(key);
-    int32_t lastIndexWithLen;
-    switch (length) {
-      case 0:
-        return UnicodeString(static_cast<UChar>(value));
-      case 1:
-      case 2:
-        return UnicodeString(*fStringTable, value, length+1);
-      case 3:
-        length = 0;
-        int32_t i;
-        for (i=0; i<fStringLengthsTable->size(); i+=2) {
-            lastIndexWithLen = fStringLengthsTable->elementAti(i);
-            if (value <= lastIndexWithLen) {
-                length = fStringLengthsTable->elementAti(i+1);
-                break;
-            }
-        }
-        U_ASSERT(length>=3);
-        return UnicodeString(*fStringTable, value, length);
-      default:
-        U_ASSERT(FALSE);
-    }
-    return UnicodeString();
 }
 
 #endif

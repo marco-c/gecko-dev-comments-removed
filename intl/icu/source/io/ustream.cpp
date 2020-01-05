@@ -12,6 +12,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -88,7 +90,7 @@ operator>>(STD_ISTREAM& stream, UnicodeString& str)
     converter = u_getDefaultConverter(&errorCode);
     if(U_SUCCESS(errorCode)) {
         UChar *us = uBuffer;
-        const UChar *uLimit = uBuffer + sizeof(uBuffer)/sizeof(*uBuffer);
+        const UChar *uLimit = uBuffer + UPRV_LENGTHOF(uBuffer);
         const char *s, *sLimit;
         char ch;
         UChar ch32;

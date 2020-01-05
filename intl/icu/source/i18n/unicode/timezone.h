@@ -24,6 +24,8 @@
 
 
 
+
+
 #ifndef TIMEZONE_H
 #define TIMEZONE_H
 
@@ -273,7 +275,6 @@ public:
     static const UnicodeString U_EXPORT2 getEquivalentID(const UnicodeString& id,
                                                int32_t index);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -288,7 +289,6 @@ public:
 
 
     static TimeZone* U_EXPORT2 detectHostTimeZone();
-#endif  
 
     
 

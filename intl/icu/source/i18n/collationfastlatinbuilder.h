@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef __COLLATIONFASTLATINBUILDER_H__
 #define __COLLATIONFASTLATINBUILDER_H__
 
@@ -16,6 +18,7 @@
 
 #if !UCONFIG_NO_COLLATION
 
+#include "unicode/ucol.h"
 #include "unicode/unistr.h"
 #include "unicode/uobject.h"
 #include "collation.h"

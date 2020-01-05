@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __IDNA_H__
 #define __IDNA_H__
 
@@ -198,7 +200,7 @@ public:
 
 
     virtual void
-    labelToASCII_UTF8(const StringPiece &label, ByteSink &dest,
+    labelToASCII_UTF8(StringPiece label, ByteSink &dest,
                       IDNAInfo &info, UErrorCode &errorCode) const;
 
     
@@ -216,7 +218,7 @@ public:
 
 
     virtual void
-    labelToUnicodeUTF8(const StringPiece &label, ByteSink &dest,
+    labelToUnicodeUTF8(StringPiece label, ByteSink &dest,
                        IDNAInfo &info, UErrorCode &errorCode) const;
 
     
@@ -234,7 +236,7 @@ public:
 
 
     virtual void
-    nameToASCII_UTF8(const StringPiece &name, ByteSink &dest,
+    nameToASCII_UTF8(StringPiece name, ByteSink &dest,
                      IDNAInfo &info, UErrorCode &errorCode) const;
 
     
@@ -252,7 +254,7 @@ public:
 
 
     virtual void
-    nameToUnicodeUTF8(const StringPiece &name, ByteSink &dest,
+    nameToUnicodeUTF8(StringPiece name, ByteSink &dest,
                       IDNAInfo &info, UErrorCode &errorCode) const;
 };
 

@@ -11,6 +11,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
 
@@ -23,6 +25,7 @@
 #include "unicode/utf16.h"
 #include "uassert.h"
 #include "cmemory.h"
+#include "cstr.h"
 #include "uvector.h"
 #include "uvectr32.h"
 #include "uvectr64.h"
@@ -30,6 +33,7 @@
 #include "regexst.h"
 #include "regextxt.h"
 #include "ucase.h"
+
 
 
 
@@ -237,7 +241,7 @@ void RegexMatcher::init2(UText *input, UErrorCode &status) {
         return;
     }
 
-    if (fPattern->fDataSize > (int32_t)(sizeof(fSmallData)/sizeof(fSmallData[0]))) {
+    if (fPattern->fDataSize > UPRV_LENGTHOF(fSmallData)) {
         fData = (int64_t *)uprv_malloc(fPattern->fDataSize * sizeof(int64_t));
         if (fData == NULL) {
             status = fDeferredStatus = U_MEMORY_ALLOCATION_ERROR;
@@ -782,7 +786,7 @@ UBool RegexMatcher::find(UErrorCode &status) {
                     if (fMatch) {
                         return TRUE;
                     }
-                    UTEXT_SETNATIVEINDEX(fInputText, pos);
+                    UTEXT_SETNATIVEINDEX(fInputText, startPos);
                 }
                 if (startPos > testStartLimit) {
                     fMatch = FALSE;
@@ -2723,6 +2727,18 @@ inline REStackFrame *RegexMatcher::StateSave(REStackFrame *fp, int64_t savePatId
     return (REStackFrame *)newFP;
 }
 
+#if defined(REGEX_DEBUG)
+namespace {
+UnicodeString StringFromUText(UText *ut) {
+    UnicodeString result;
+    for (UChar32 c = utext_next32From(ut, 0); c != U_SENTINEL; c = UTEXT_NEXT32(ut)) {
+        result.append(c);
+    }
+    return result;
+}
+}
+#endif 
+
 
 
 
@@ -2742,32 +2758,10 @@ void RegexMatcher::MatchAt(int64_t startIdx, UBool toEnd, UErrorCode &status) {
     int32_t     opValue;               
 
 #ifdef REGEX_RUN_DEBUG
-    if (fTraceDebug)
-    {
+    if (fTraceDebug) {
         printf("MatchAt(startIdx=%ld)\n", startIdx);
-        printf("Original Pattern: ");
-        UChar32 c = utext_next32From(fPattern->fPattern, 0);
-        while (c != U_SENTINEL) {
-            if (c<32 || c>256) {
-                c = '.';
-            }
-            printf("%c", c);
-
-            c = UTEXT_NEXT32(fPattern->fPattern);
-        }
-        printf("\n");
-        printf("Input String: ");
-        c = utext_next32From(fInputText, 0);
-        while (c != U_SENTINEL) {
-            if (c<32 || c>256) {
-                c = '.';
-            }
-            printf("%c", c);
-
-            c = UTEXT_NEXT32(fInputText);
-        }
-        printf("\n");
-        printf("\n");
+        printf("Original Pattern: \"%s\"\n", CStr(StringFromUText(fPattern->fPattern))());
+        printf("Input String:     \"%s\"\n\n", CStr(StringFromUText(fInputText))());
     }
 #endif
 
@@ -3936,28 +3930,38 @@ GC_Done:
                 
                 int32_t minML = (int32_t)pat[fp->fPatIdx++];
                 int32_t maxML = (int32_t)pat[fp->fPatIdx++];
+                if (!UTEXT_USES_U16(fInputText)) {
+                    
+                    
+                    maxML *= 3;
+                }
                 U_ASSERT(minML <= maxML);
                 U_ASSERT(minML >= 0);
 
                 
                 U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  *lbStartIdx = &fData[opValue+2];
-                if (*lbStartIdx < 0) {
+                int64_t  &lbStartIdx = fData[opValue+2];
+                if (lbStartIdx < 0) {
                     
-                    *lbStartIdx = fp->fInputIdx - minML;
+                    lbStartIdx = fp->fInputIdx - minML;
+                    if (lbStartIdx > 0) {
+                        
+                        UTEXT_SETNATIVEINDEX(fInputText, lbStartIdx);
+                        lbStartIdx = UTEXT_GETNATIVEINDEX(fInputText);
+                    }
                 } else {
                     
                     
-                    if (*lbStartIdx == 0) {
-                        (*lbStartIdx)--;
+                    if (lbStartIdx == 0) {
+                        (lbStartIdx)--;
                     } else {
-                        UTEXT_SETNATIVEINDEX(fInputText, *lbStartIdx);
+                        UTEXT_SETNATIVEINDEX(fInputText, lbStartIdx);
                         (void)UTEXT_PREVIOUS32(fInputText);
-                        *lbStartIdx = UTEXT_GETNATIVEINDEX(fInputText);
+                        lbStartIdx = UTEXT_GETNATIVEINDEX(fInputText);
                     }
                 }
 
-                if (*lbStartIdx < 0 || *lbStartIdx < fp->fInputIdx - maxML) {
+                if (lbStartIdx < 0 || lbStartIdx < fp->fInputIdx - maxML) {
                     
                     
                     
@@ -3972,7 +3976,7 @@ GC_Done:
                 
                 
                 fp = StateSave(fp, fp->fPatIdx-3, status);
-                fp->fInputIdx = *lbStartIdx;
+                fp->fInputIdx = lbStartIdx;
             }
             break;
 
@@ -4009,6 +4013,11 @@ GC_Done:
                 
                 int32_t minML       = (int32_t)pat[fp->fPatIdx++];
                 int32_t maxML       = (int32_t)pat[fp->fPatIdx++];
+                if (!UTEXT_USES_U16(fInputText)) {
+                    
+                    
+                    maxML *= 3;
+                }
                 int32_t continueLoc = (int32_t)pat[fp->fPatIdx++];
                         continueLoc = URX_VAL(continueLoc);
                 U_ASSERT(minML <= maxML);
@@ -4017,23 +4026,28 @@ GC_Done:
 
                 
                 U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  *lbStartIdx = &fData[opValue+2];
-                if (*lbStartIdx < 0) {
+                int64_t  &lbStartIdx = fData[opValue+2];
+                if (lbStartIdx < 0) {
                     
-                    *lbStartIdx = fp->fInputIdx - minML;
+                    lbStartIdx = fp->fInputIdx - minML;
+                    if (lbStartIdx > 0) {
+                        
+                        UTEXT_SETNATIVEINDEX(fInputText, lbStartIdx);
+                        lbStartIdx = UTEXT_GETNATIVEINDEX(fInputText);
+                    }
                 } else {
                     
                     
-                    if (*lbStartIdx == 0) {
-                        (*lbStartIdx)--;
+                    if (lbStartIdx == 0) {
+                        (lbStartIdx)--;
                     } else {
-                        UTEXT_SETNATIVEINDEX(fInputText, *lbStartIdx);
+                        UTEXT_SETNATIVEINDEX(fInputText, lbStartIdx);
                         (void)UTEXT_PREVIOUS32(fInputText);
-                        *lbStartIdx = UTEXT_GETNATIVEINDEX(fInputText);
+                        lbStartIdx = UTEXT_GETNATIVEINDEX(fInputText);
                     }
                 }
 
-                if (*lbStartIdx < 0 || *lbStartIdx < fp->fInputIdx - maxML) {
+                if (lbStartIdx < 0 || lbStartIdx < fp->fInputIdx - maxML) {
                     
                     
                     
@@ -4048,7 +4062,7 @@ GC_Done:
                 
                 
                 fp = StateSave(fp, fp->fPatIdx-4, status);
-                fp->fInputIdx = *lbStartIdx;
+                fp->fInputIdx = lbStartIdx;
             }
             break;
 
@@ -4310,29 +4324,8 @@ void RegexMatcher::MatchChunkAt(int32_t startIdx, UBool toEnd, UErrorCode &statu
 #ifdef REGEX_RUN_DEBUG
     if (fTraceDebug) {
         printf("MatchAt(startIdx=%d)\n", startIdx);
-        printf("Original Pattern: ");
-        UChar32 c = utext_next32From(fPattern->fPattern, 0);
-        while (c != U_SENTINEL) {
-            if (c<32 || c>256) {
-                c = '.';
-            }
-            printf("%c", c);
-
-            c = UTEXT_NEXT32(fPattern->fPattern);
-        }
-        printf("\n");
-        printf("Input String: ");
-        c = utext_next32From(fInputText, 0);
-        while (c != U_SENTINEL) {
-            if (c<32 || c>256) {
-                c = '.';
-            }
-            printf("%c", c);
-
-            c = UTEXT_NEXT32(fInputText);
-        }
-        printf("\n");
-        printf("\n");
+        printf("Original Pattern: \"%s\"\n", CStr(StringFromUText(fPattern->fPattern))());
+        printf("Input String:     \"%s\"\n\n", CStr(StringFromUText(fInputText))());
     }
 #endif
 
@@ -5232,6 +5225,12 @@ GC_Done:
                         break;
                     }
                 }
+                if (success && groupStartIdx < groupEndIdx && U16_IS_LEAD(inputBuf[groupEndIdx-1]) &&
+                        inputIndex < fActiveLimit && U16_IS_TRAIL(inputBuf[inputIndex])) {
+                    
+                    
+                    success = FALSE;
+                }
                 if (success) {
                     fp->fInputIdx = inputIndex;
                 } else {
@@ -5444,21 +5443,24 @@ GC_Done:
 
                 
                 U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  *lbStartIdx = &fData[opValue+2];
-                if (*lbStartIdx < 0) {
+                int64_t  &lbStartIdx = fData[opValue+2];
+                if (lbStartIdx < 0) {
                     
-                    *lbStartIdx = fp->fInputIdx - minML;
+                    lbStartIdx = fp->fInputIdx - minML;
+                    if (lbStartIdx > 0) {
+                        U16_SET_CP_START(inputBuf, 0, lbStartIdx);
+                    }
                 } else {
                     
                     
-                    if (*lbStartIdx == 0) {
-                        (*lbStartIdx)--;
+                    if (lbStartIdx == 0) {
+                        lbStartIdx--;
                     } else {
-                        U16_BACK_1(inputBuf, 0, *lbStartIdx);
+                        U16_BACK_1(inputBuf, 0, lbStartIdx);
                     }
                 }
 
-                if (*lbStartIdx < 0 || *lbStartIdx < fp->fInputIdx - maxML) {
+                if (lbStartIdx < 0 || lbStartIdx < fp->fInputIdx - maxML) {
                     
                     
                     
@@ -5473,7 +5475,7 @@ GC_Done:
                 
                 
                 fp = StateSave(fp, fp->fPatIdx-3, status);
-                fp->fInputIdx =  *lbStartIdx;
+                fp->fInputIdx =  lbStartIdx;
             }
             break;
 
@@ -5518,21 +5520,24 @@ GC_Done:
 
                 
                 U_ASSERT(opValue>=0 && opValue+1<fPattern->fDataSize);
-                int64_t  *lbStartIdx = &fData[opValue+2];
-                if (*lbStartIdx < 0) {
+                int64_t  &lbStartIdx = fData[opValue+2];
+                if (lbStartIdx < 0) {
                     
-                    *lbStartIdx = fp->fInputIdx - minML;
+                    lbStartIdx = fp->fInputIdx - minML;
+                    if (lbStartIdx > 0) {
+                        U16_SET_CP_START(inputBuf, 0, lbStartIdx);
+                    }
                 } else {
                     
                     
-                    if (*lbStartIdx == 0) {
-                        (*lbStartIdx)--;   
+                    if (lbStartIdx == 0) {
+                        lbStartIdx--;   
                     } else {
-                        U16_BACK_1(inputBuf, 0, *lbStartIdx);
+                        U16_BACK_1(inputBuf, 0, lbStartIdx);
                     }
                 }
 
-                if (*lbStartIdx < 0 || *lbStartIdx < fp->fInputIdx - maxML) {
+                if (lbStartIdx < 0 || lbStartIdx < fp->fInputIdx - maxML) {
                     
                     
                     
@@ -5547,7 +5552,7 @@ GC_Done:
                 
                 
                 fp = StateSave(fp, fp->fPatIdx-4, status);
-                fp->fInputIdx =  *lbStartIdx;
+                fp->fInputIdx =  lbStartIdx;
             }
             break;
 

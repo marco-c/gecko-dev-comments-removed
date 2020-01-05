@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef RBBITBLB_H
 #define RBBITBLB_H
 
@@ -57,6 +59,8 @@ private:
     void     flagLookAheadStates();
     void     flagTaggedStates();
     void     mergeRuleStatusVals();
+
+    void     addRuleRootNodes(UVector *dest, RBBINode *node);
 
     
     

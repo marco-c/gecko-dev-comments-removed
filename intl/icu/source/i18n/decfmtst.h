@@ -11,12 +11,16 @@
 
 
 
+
+
 #ifndef DECFMTST_H
 #define DECFMTST_H
 
 #include "unicode/utypes.h"
 
- #if !UCONFIG_NO_FORMATTING
+#if !UCONFIG_NO_FORMATTING
+
+#include "unicode/uobject.h"
 
 U_NAMESPACE_BEGIN
 

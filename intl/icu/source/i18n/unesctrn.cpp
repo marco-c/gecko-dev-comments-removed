@@ -8,6 +8,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_TRANSLITERATION
@@ -85,7 +87,7 @@ static UChar* copySpec(const UChar* spec) {
     UChar *result = (UChar *)uprv_malloc(len*sizeof(UChar));
     
     if (result != NULL) {
-    	uprv_memcpy(result, spec, len*sizeof(result[0]));
+    	uprv_memcpy(result, spec, (size_t)len*sizeof(result[0]));
     }
     return result;
 }

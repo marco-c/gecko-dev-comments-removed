@@ -5,6 +5,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -19,8 +21,6 @@
 U_NAMESPACE_BEGIN
 
 #define BUFFER_SIZE 8192
-
-#define ARRAY_SIZE(array) (sizeof array / sizeof array[0])
 
 #define NEW_ARRAY(type,count) (type *) uprv_malloc((count) * sizeof(type))
 #define DELETE_ARRAY(array) uprv_free((void *) (array))

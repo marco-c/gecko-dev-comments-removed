@@ -1,21 +1,23 @@
-/*
-*******************************************************************************
-*
-*   Copyright (C) 2013-2014, International Business Machines
-*   Corporation and others.  All Rights Reserved.
-*
-*******************************************************************************
-*   file name:  listformatter.cpp
-*   encoding:   US-ASCII
-*   tab size:   8 (not used)
-*   indentation:4
-*
-*   created on: 2012aug27
-*   created by: Umesh P. Nair
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "unicode/listformatter.h"
-#include "simplepatternformatter.h"
+#include "unicode/simpleformatter.h"
 #include "mutex.h"
 #include "hash.h"
 #include "cstring.h"
@@ -27,26 +29,27 @@
 U_NAMESPACE_BEGIN
 
 struct ListFormatInternal : public UMemory {
-    SimplePatternFormatter twoPattern;
-    SimplePatternFormatter startPattern;
-    SimplePatternFormatter middlePattern;
-    SimplePatternFormatter endPattern;
+    SimpleFormatter twoPattern;
+    SimpleFormatter startPattern;
+    SimpleFormatter middlePattern;
+    SimpleFormatter endPattern;
 
 ListFormatInternal(
         const UnicodeString& two,
         const UnicodeString& start,
         const UnicodeString& middle,
-        const UnicodeString& end) :
-        twoPattern(two),
-        startPattern(start),
-        middlePattern(middle),
-        endPattern(end) {}
+        const UnicodeString& end,
+        UErrorCode &errorCode) :
+        twoPattern(two, 2, 2, errorCode),
+        startPattern(start, 2, 2, errorCode),
+        middlePattern(middle, 2, 2, errorCode),
+        endPattern(end, 2, 2, errorCode) {}
 
-ListFormatInternal(const ListFormatData &data) :
-        twoPattern(data.twoPattern),
-        startPattern(data.startPattern),
-        middlePattern(data.middlePattern),
-        endPattern(data.endPattern) { }
+ListFormatInternal(const ListFormatData &data, UErrorCode &errorCode) :
+        twoPattern(data.twoPattern, errorCode),
+        startPattern(data.startPattern, errorCode),
+        middlePattern(data.middlePattern, errorCode),
+        endPattern(data.endPattern, errorCode) { }
 
 ListFormatInternal(const ListFormatInternal &other) :
     twoPattern(other.twoPattern),
@@ -191,9 +194,13 @@ static ListFormatInternal* loadListFormatInternal(
     if (U_FAILURE(errorCode)) {
         return NULL;
     }
-    ListFormatInternal* result = new ListFormatInternal(two, start, middle, end);
+    ListFormatInternal* result = new ListFormatInternal(two, start, middle, end, errorCode);
     if (result == NULL) {
         errorCode = U_MEMORY_ALLOCATION_ERROR;
+        return NULL;
+    }
+    if (U_FAILURE(errorCode)) {
+        delete result;
         return NULL;
     }
     return result;
@@ -209,7 +216,7 @@ static void getStringByKey(const UResourceBundle* rb, const char* key, UnicodeSt
 }
 
 ListFormatter* ListFormatter::createInstance(UErrorCode& errorCode) {
-    Locale locale;  // The default locale.
+    Locale locale;  
     return createInstance(locale, errorCode);
 }
 
@@ -231,8 +238,8 @@ ListFormatter* ListFormatter::createInstance(const Locale& locale, const char *s
     return p;
 }
 
-ListFormatter::ListFormatter(const ListFormatData& listFormatData) {
-    owned = new ListFormatInternal(listFormatData);
+ListFormatter::ListFormatter(const ListFormatData& listFormatData, UErrorCode &errorCode) {
+    owned = new ListFormatInternal(listFormatData, errorCode);
     data = owned;
 }
 
@@ -243,16 +250,16 @@ ListFormatter::~ListFormatter() {
     delete owned;
 }
 
-/**
- * Joins first and second using the pattern pat.
- * On entry offset is an offset into first or -1 if offset unspecified.
- * On exit offset is offset of second in result if recordOffset was set
- * Otherwise if it was >=0 it is set to point into result where it used
- * to point into first. On exit, result is the join of first and second
- * according to pat. Any previous value of result gets replaced.
- */
+
+
+
+
+
+
+
+
 static void joinStringsAndReplace(
-        const SimplePatternFormatter& pat,
+        const SimpleFormatter& pat,
         const UnicodeString& first,
         const UnicodeString& second,
         UnicodeString &result,

@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef UNICODESET_H
 #define UNICODESET_H
 
@@ -312,7 +314,7 @@ public:
 
 
     inline UBool isBogus(void) const;
-    
+
     
 
 

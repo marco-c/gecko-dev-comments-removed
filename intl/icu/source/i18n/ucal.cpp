@@ -5,6 +5,8 @@
 
 
 
+
+
 #include "utypeinfo.h"  
 
 #include "unicode/utypes.h"
@@ -25,6 +27,7 @@
 #include "ustrenum.h"
 #include "uenumimp.h"
 #include "ulist.h"
+#include "ulocimp.h"
 
 U_NAMESPACE_USE
 
@@ -669,15 +672,8 @@ static const char * const CAL_TYPES[] = {
 U_CAPI UEnumeration* U_EXPORT2
 ucal_getKeywordValuesForLocale(const char * , const char* locale, UBool commonlyUsed, UErrorCode *status) {
     
-    char prefRegion[ULOC_FULLNAME_CAPACITY] = "";
-    int32_t prefRegionLength = 0;
-    prefRegionLength = uloc_getCountry(locale, prefRegion, sizeof(prefRegion), status);
-    if (prefRegionLength == 0) {
-        char loc[ULOC_FULLNAME_CAPACITY] = "";
-        uloc_addLikelySubtags(locale, loc, sizeof(loc), status);
-        
-        prefRegionLength = uloc_getCountry(loc, prefRegion, sizeof(prefRegion), status);
-    }
+    char prefRegion[ULOC_COUNTRY_CAPACITY];
+    (void)ulocimp_getRegionForSupplementalData(locale, TRUE, prefRegion, sizeof(prefRegion), status);
     
     
     UResourceBundle *rb = ures_openDirect(NULL, "supplementalData", status);

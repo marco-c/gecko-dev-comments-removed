@@ -14,10 +14,13 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_ONLY_HTML_CONVERSION
 
+#include "cmemory.h"
 #include "unicode/ucnv.h"
 #include "ucnv_bld.h"
 #include "ucnv_cnv.h"
@@ -487,7 +490,7 @@ _UTF7FromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
         inDirectMode=(UBool)((status>>24)&1);
         base64Counter=(int8_t)(status>>16);
         bits=(uint8_t)status;
-        U_ASSERT(bits<=sizeof(toBase64)/sizeof(toBase64[0]));
+        U_ASSERT(bits<=UPRV_LENGTHOF(toBase64));
     }
 
     
@@ -759,7 +762,10 @@ static const UConverterImpl _UTF7Impl={
     _UTF7GetName,
     NULL, 
     NULL,
-    ucnv_getCompleteUnicodeSet
+    ucnv_getCompleteUnicodeSet,
+
+    NULL,
+    NULL
 };
 
 static const UConverterStaticData _UTF7StaticData={

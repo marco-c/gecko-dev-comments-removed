@@ -37,6 +37,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -445,13 +447,25 @@ DecimalFormat::construct(UErrorCode&            status,
     if (patternUsed->indexOf(kCurrencySign) != -1) {
         
         
-        if (fCurrencyPluralInfo == NULL) {
-           fCurrencyPluralInfo = new CurrencyPluralInfo(fImpl->fSymbols->getLocale(), status);
-           if (U_FAILURE(status)) {
-               return;
-           }
-        }
-        
+        handleCurrencySignInPattern(status);
+    }
+}
+
+void
+DecimalFormat::handleCurrencySignInPattern(UErrorCode& status) {
+    
+    
+    if (U_FAILURE(status)) {
+        return;
+    }
+    if (fCurrencyPluralInfo == NULL) {
+       fCurrencyPluralInfo = new CurrencyPluralInfo(fImpl->fSymbols->getLocale(), status);
+       if (U_FAILURE(status)) {
+           return;
+       }
+    }
+    
+    if (fAffixPatternsForCurrency == NULL) {
         setupCurrencyAffixPatterns(status);
     }
 }
@@ -828,7 +842,7 @@ DecimalFormat::format(  double number,
 
 
 UnicodeString&
-DecimalFormat::format(const StringPiece &number,
+DecimalFormat::format(StringPiece number,
                       UnicodeString &toAppendTo,
                       FieldPositionIterator *posIter,
                       UErrorCode &status) const
@@ -1643,7 +1657,7 @@ UBool DecimalFormat::subparse(const UnicodeString& text,
         
         if(!sawDecimal && isDecimalPatternMatchRequired()) 
         {
-            if(formatPattern.indexOf(DecimalFormatSymbols::kDecimalSeparatorSymbol) != 0) 
+            if(formatPattern.indexOf(kPatternDecimalSeparator) != -1)
             {
                 parsePosition.setIndex(oldStart);
                 parsePosition.setErrorIndex(position);
@@ -1769,7 +1783,7 @@ printf("PP -> %d, SLOW = [%s]!    pp=%d, os=%d, err=%s\n", position, parsedNum.d
     
     if(fastParseOk && isDecimalPatternMatchRequired()) 
     {
-        if(formatPattern.indexOf(DecimalFormatSymbols::kDecimalSeparatorSymbol) != 0) 
+        if(formatPattern.indexOf(kPatternDecimalSeparator) != -1)
         {
             parsePosition.setIndex(oldStart);
             parsePosition.setErrorIndex(position);
@@ -2815,6 +2829,9 @@ DecimalFormat::toLocalizedPattern(UnicodeString& result) const
 void
 DecimalFormat::applyPattern(const UnicodeString& pattern, UErrorCode& status)
 {
+    if (pattern.indexOf(kCurrencySign) != -1) {
+        handleCurrencySignInPattern(status);
+    }
     fImpl->applyPattern(pattern, status);
 }
 
@@ -2825,6 +2842,9 @@ DecimalFormat::applyPattern(const UnicodeString& pattern,
                             UParseError& parseError,
                             UErrorCode& status)
 {
+    if (pattern.indexOf(kCurrencySign) != -1) {
+        handleCurrencySignInPattern(status);
+    }
     fImpl->applyPattern(pattern, parseError, status);
 }
 
@@ -2832,6 +2852,9 @@ DecimalFormat::applyPattern(const UnicodeString& pattern,
 void
 DecimalFormat::applyLocalizedPattern(const UnicodeString& pattern, UErrorCode& status)
 {
+    if (pattern.indexOf(kCurrencySign) != -1) {
+        handleCurrencySignInPattern(status);
+    }
     fImpl->applyLocalizedPattern(pattern, status);
 }
 
@@ -2842,6 +2865,9 @@ DecimalFormat::applyLocalizedPattern(const UnicodeString& pattern,
                                      UParseError& parseError,
                                      UErrorCode& status)
 {
+    if (pattern.indexOf(kCurrencySign) != -1) {
+        handleCurrencySignInPattern(status);
+    }
     fImpl->applyLocalizedPattern(pattern, parseError, status);
 }
 

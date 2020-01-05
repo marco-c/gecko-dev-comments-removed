@@ -1,9 +1,11 @@
-/*
- *******************************************************************************
- * Copyright (C) 2002-2014, International Business Machines Corporation and
- * others. All Rights Reserved.
- *******************************************************************************
- */
+
+
+
+
+
+
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_SERVICE || !UCONFIG_NO_TRANSLITERATION
@@ -17,7 +19,7 @@
 #include "uassert.h"
 #include "umutex.h"
 
-// see LocaleUtility::getAvailableLocaleNames
+
 static icu::UInitOnce   LocaleUtilityInitOnce = U_INITONCE_INITIALIZER;
 static icu::Hashtable * LocaleUtility_cache = NULL;
 
@@ -25,13 +27,13 @@ static icu::Hashtable * LocaleUtility_cache = NULL;
 #define AT_SIGN_CHAR    ((UChar)64)
 #define PERIOD_CHAR     ((UChar)46)
 
-/*
- ******************************************************************
- */
 
-/**
- * Release all static memory held by Locale Utility.  
- */
+
+
+
+
+
+
 U_CDECL_BEGIN
 static UBool U_CALLCONV service_cleanup(void) {
     if (LocaleUtility_cache) {
@@ -69,13 +71,13 @@ LocaleUtility::canonicalLocaleString(const UnicodeString* id, UnicodeString& res
   if (id == NULL) {
     result.setToBogus();
   } else {
-    // Fix case only (no other changes) up to the first '@' or '.' or
-    // end of string, whichever comes first.  In 3.0 I changed this to
-    // stop at first '@' or '.'.  It used to run out to the end of
-    // string.  My fix makes the tests pass but is probably
-    // structurally incorrect.  See below.  [alan 3.0]
+    
+    
+    
+    
+    
 
-    // TODO: Doug, you might want to revise this...
+    
     result = *id;
     int32_t i = 0;
     int32_t end = result.indexOf(AT_SIGN_CHAR);
@@ -108,20 +110,20 @@ LocaleUtility::canonicalLocaleString(const UnicodeString* id, UnicodeString& res
   return result;
 
 #if 0
-    // This code does a proper full level 2 canonicalization of id.
-    // It's nasty to go from UChar to char to char to UChar -- but
-    // that's what you have to do to use the uloc_canonicalize
-    // function on UnicodeStrings.
+    
+    
+    
+    
 
-    // I ended up doing the alternate fix (see above) not for
-    // performance reasons, although performance will certainly be
-    // better, but because doing a full level 2 canonicalization
-    // causes some tests to fail.  [alan 3.0]
+    
+    
+    
+    
 
-    // TODO: Doug, you might want to revisit this...
+    
     result.setToBogus();
     if (id != 0) {
-        int32_t buflen = id->length() + 8; // space for NUL
+        int32_t buflen = id->length() + 8; 
         char* buf = (char*) uprv_malloc(buflen);
         char* canon = (buf == 0) ? 0 : (char*) uprv_malloc(buflen);
         if (buf != 0 && canon != 0) {
@@ -142,42 +144,42 @@ LocaleUtility::canonicalLocaleString(const UnicodeString* id, UnicodeString& res
 Locale&
 LocaleUtility::initLocaleFromName(const UnicodeString& id, Locale& result)
 {
-    enum { BUFLEN = 128 }; // larger than ever needed
+    enum { BUFLEN = 128 }; 
 
     if (id.isBogus() || id.length() >= BUFLEN) {
         result.setToBogus();
     } else {
-        /*
-         * We need to convert from a UnicodeString to char * in order to
-         * create a Locale.
-         *
-         * Problem: Locale ID strings may contain '@' which is a variant
-         * character and cannot be handled by invariant-character conversion.
-         *
-         * Hack: Since ICU code can handle locale IDs with multiple encodings
-         * of '@' (at least for EBCDIC; it's not known to be a problem for
-         * ASCII-based systems),
-         * we use regular invariant-character conversion for everything else
-         * and manually convert U+0040 into a compiler-char-constant '@'.
-         * While this compilation-time constant may not match the runtime
-         * encoding of '@', it should be one of the encodings which ICU
-         * recognizes.
-         *
-         * There should be only at most one '@' in a locale ID.
-         */
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         char buffer[BUFLEN];
         int32_t prev, i;
         prev = 0;
         for(;;) {
             i = id.indexOf((UChar)0x40, prev);
             if(i < 0) {
-                // no @ between prev and the rest of the string
+                
                 id.extract(prev, INT32_MAX, buffer + prev, BUFLEN - prev, US_INV);
-                break; // done
+                break; 
             } else {
-                // normal invariant-character conversion for text between @s
+                
                 id.extract(prev, i - prev, buffer + prev, BUFLEN - prev, US_INV);
-                // manually "convert" U+0040 at id[i] into '@' at buffer[i]
+                
                 buffer[i] = '@';
                 prev = i + 1;
             }
@@ -201,18 +203,18 @@ LocaleUtility::initNameFromLocale(const Locale& locale, UnicodeString& result)
 const Hashtable*
 LocaleUtility::getAvailableLocaleNames(const UnicodeString& bundleID)
 {
-    // LocaleUtility_cache is a hash-of-hashes.  The top-level keys
-    // are path strings ('bundleID') passed to
-    // ures_openAvailableLocales.  The top-level values are
-    // second-level hashes.  The second-level keys are result strings
-    // from ures_openAvailableLocales.  The second-level values are
-    // garbage ((void*)1 or other random pointer).
+    
+    
+    
+    
+    
+    
 
     UErrorCode status = U_ZERO_ERROR;
     umtx_initOnce(LocaleUtilityInitOnce, locale_utility_init, status);
     Hashtable *cache = LocaleUtility_cache;
     if (cache == NULL) {
-        // Catastrophic failure.
+        
         return NULL;
     }
 
@@ -243,8 +245,8 @@ LocaleUtility::getAvailableLocaleNames(const UnicodeString& bundleID)
             umtx_lock(NULL);
             Hashtable *t = static_cast<Hashtable *>(cache->get(bundleID));
             if (t != NULL) {
-                // Another thread raced through this code, creating the cache entry first.
-                // Discard ours and return theirs.
+                
+                
                 umtx_unlock(NULL);
                 delete htp;
                 htp = t;
@@ -267,7 +269,7 @@ LocaleUtility::isFallbackOf(const UnicodeString& root, const UnicodeString& chil
 
 U_NAMESPACE_END
 
-/* !UCONFIG_NO_SERVICE */
+
 #endif
 
 

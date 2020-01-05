@@ -11,15 +11,18 @@
 
 
 
+
+
 #ifndef RBBISCAN_H
 #define RBBISCAN_H
 
 #include "unicode/utypes.h"
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
 
-#include "unicode/uobject.h"
-#include "unicode/uniset.h"
 #include "unicode/parseerr.h"
+#include "unicode/uniset.h"
+#include "unicode/uobject.h"
+#include "unicode/utext.h"
 #include "uhash.h"
 #include "uvector.h"
 #include "uvectr32.h"

@@ -12,6 +12,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -114,7 +116,7 @@ MessagePatternList<T, stackCapacity>::copyFrom(
             errorCode=U_MEMORY_ALLOCATION_ERROR;
             return;
         }
-        uprv_memcpy(a.getAlias(), other.a.getAlias(), length*sizeof(T));
+        uprv_memcpy(a.getAlias(), other.a.getAlias(), (size_t)length*sizeof(T));
     }
 }
 

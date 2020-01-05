@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __USTR_IMP_H__
 #define __USTR_IMP_H__
 
@@ -217,6 +219,44 @@ ucasemap_mapUTF8(const UCaseMap *csm,
                  const uint8_t *src, int32_t srcLength,
                  UTF8CaseMapper *stringCaseMapper,
                  UErrorCode *pErrorCode);
+
+#ifdef __cplusplus
+
+U_NAMESPACE_BEGIN
+namespace GreekUpper {
+
+
+static const uint32_t UPPER_MASK = 0x3ff;
+static const uint32_t HAS_VOWEL = 0x1000;
+static const uint32_t HAS_YPOGEGRAMMENI = 0x2000;
+static const uint32_t HAS_ACCENT = 0x4000;
+static const uint32_t HAS_DIALYTIKA = 0x8000;
+
+static const uint32_t HAS_COMBINING_DIALYTIKA = 0x10000;
+static const uint32_t HAS_OTHER_GREEK_DIACRITIC = 0x20000;
+
+static const uint32_t HAS_VOWEL_AND_ACCENT = HAS_VOWEL | HAS_ACCENT;
+static const uint32_t HAS_VOWEL_AND_ACCENT_AND_DIALYTIKA =
+        HAS_VOWEL_AND_ACCENT | HAS_DIALYTIKA;
+static const uint32_t HAS_EITHER_DIALYTIKA = HAS_DIALYTIKA | HAS_COMBINING_DIALYTIKA;
+
+
+static const uint32_t AFTER_CASED = 1;
+static const uint32_t AFTER_VOWEL_WITH_ACCENT = 2;
+
+uint32_t getLetterData(UChar32 c);
+
+
+
+
+
+
+uint32_t getDiacriticData(UChar32 c);
+
+}  
+U_NAMESPACE_END
+
+#endif  
 
 U_CAPI int32_t U_EXPORT2 
 ustr_hashUCharsN(const UChar *str, int32_t length);

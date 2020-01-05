@@ -16,6 +16,8 @@
 
 
 
+
+
 #ifndef __UCASE_H__
 #define __UCASE_H__
 
@@ -62,6 +64,7 @@ enum {
     UCASE_LOC_ROOT,
     UCASE_LOC_TURKISH,
     UCASE_LOC_LITHUANIAN,
+    UCASE_LOC_GREEK,
     UCASE_LOC_DUTCH
 };
 

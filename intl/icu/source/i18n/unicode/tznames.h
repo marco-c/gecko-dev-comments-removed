@@ -4,6 +4,8 @@
 
 
 
+
+
 #ifndef __TZNAMES_H
 #define __TZNAMES_H
 
@@ -287,6 +289,18 @@ public:
 
 
     virtual UnicodeString& getDisplayName(const UnicodeString& tzID, UTimeZoneNameType type, UDate date, UnicodeString& name) const;
+
+    
+
+
+
+    virtual void loadAllDisplayNames(UErrorCode& status);
+
+    
+
+
+
+    virtual void getDisplayNames(const UnicodeString& tzID, const UTimeZoneNameType types[], int32_t numTypes, UDate date, UnicodeString dest[], UErrorCode& status) const;
 
     
 

@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/ustdio.h"
 
 #if !UCONFIG_NO_CONVERSION
@@ -296,7 +298,7 @@ u_fputc(UChar32      uc,
     int32_t idx = 0;
     UBool isError = FALSE;
 
-    U16_APPEND(buf, idx, sizeof(buf)/sizeof(*buf), uc, isError);
+    U16_APPEND(buf, idx, UPRV_LENGTHOF(buf), uc, isError);
     if (isError) {
         return U_EOF;
     }
@@ -428,7 +430,7 @@ ufile_fill_uchar_buffer(UFILE *f)
 
     
     if(dataSize != 0) {
-        uprv_memmove(f->fUCBuffer, str->fPos, dataSize * sizeof(UChar)); 
+        u_memmove(f->fUCBuffer, str->fPos, dataSize); 
     }
 
 

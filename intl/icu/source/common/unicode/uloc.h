@@ -18,6 +18,8 @@
 
 
 
+
+
 #ifndef ULOC_H
 #define ULOC_H
 
@@ -348,10 +350,14 @@ typedef enum {
 
 
   ULOC_REQUESTED_LOCALE = 2,
-#endif 
 
-  ULOC_DATA_LOCALE_TYPE_LIMIT = 3
-} ULocDataLocaleType ;
+    
+
+
+
+    ULOC_DATA_LOCALE_TYPE_LIMIT = 3
+#endif  
+} ULocDataLocaleType;
 
 #ifndef U_HIDE_SYSTEM_API
 
@@ -585,6 +591,8 @@ uloc_getDisplayScript(const char* locale,
             UChar* script,
             int32_t scriptCapacity,
             UErrorCode* status);
+
+
 
 
 

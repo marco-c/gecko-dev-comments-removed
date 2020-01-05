@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef NORMLZR_H
 #define NORMLZR_H
 
@@ -179,6 +181,7 @@ public:
 
 
   Normalizer(const CharacterIterator& iter, UNormalizationMode mode);
+#endif  
 
   
 
@@ -186,7 +189,6 @@ public:
 
 
   Normalizer(const Normalizer& copy);
-#endif  
 
   
 
@@ -750,9 +752,7 @@ private:
 
   FilteredNormalizer2*fFilteredNorm2;  
   const Normalizer2  *fNorm2;  
-#ifndef U_HIDE_DEPRECATED_API
-  UNormalizationMode  fUMode;
-#endif  
+  UNormalizationMode  fUMode;  
   int32_t             fOptions;
 
   

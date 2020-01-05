@@ -10,6 +10,8 @@
 
 
 
+
+
 #include "uhash.h"
 #include "unicode/ustring.h"
 #include "cstring.h"
@@ -83,7 +85,7 @@ static const int32_t PRIMES[] = {
     1073741789, 2147483647 
 };
 
-#define PRIMES_LENGTH (sizeof(PRIMES) / sizeof(PRIMES[0]))
+#define PRIMES_LENGTH UPRV_LENGTHOF(PRIMES)
 #define DEFAULT_PRIME_INDEX 3
 
 

@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef ULIST_H
 #define ULIST_H
 
@@ -21,6 +23,8 @@ U_CAPI void U_EXPORT2 ulist_addItemEndList(UList *list, const void *data, UBool 
 U_CAPI void U_EXPORT2 ulist_addItemBeginList(UList *list, const void *data, UBool forceDelete, UErrorCode *status);
 
 U_CAPI UBool U_EXPORT2 ulist_containsString(const UList *list, const char *data, int32_t length);
+
+U_CAPI UBool U_EXPORT2 ulist_removeString(UList *list, const char *data);
 
 U_CAPI void *U_EXPORT2 ulist_getNext(UList *list);
 

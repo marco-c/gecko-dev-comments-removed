@@ -7,6 +7,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
@@ -245,7 +247,7 @@ int  main(int argc, char **argv) {
     
     U_MAIN_INIT_ARGS(argc, argv);
     progName = argv[0];
-    argc=u_parseArgs(argc, argv, sizeof(options)/sizeof(options[0]), options);
+    argc=u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
     if(argc<0) {
         
         fprintf(stderr, "error in command line argument \"%s\"\n", argv[-argc]);

@@ -23,6 +23,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/putil.h"
 #include "unicode/udata.h"
@@ -230,7 +232,7 @@ uprops_swap(const UDataSwapper *ds,
 
         
         if(inData32!=outData32) {
-            uprv_memcpy(outData32, inData32, 4*dataTop);
+            uprv_memcpy(outData32, inData32, 4*(size_t)dataTop);
         }
 
         

@@ -13,6 +13,8 @@
 
 
 
+
+
 #include "islamcal.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -734,7 +736,7 @@ int32_t IslamicCalendar::defaultCenturyStartYear() const
 }
 
 
-void U_CALLCONV
+U_CFUNC void U_CALLCONV
 IslamicCalendar::initializeSystemDefaultCentury()
 {
     

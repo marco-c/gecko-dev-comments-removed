@@ -7,6 +7,8 @@
 
 
 
+
+
 #ifndef STRENUM_H
 #define STRENUM_H
 

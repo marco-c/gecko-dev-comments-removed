@@ -19,6 +19,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -469,7 +471,7 @@ umsg_vformat(   const UMessageFormat *fmt,
         }
     }
     UnicodeString resultStr;
-    FieldPosition fieldPosition(0);
+    FieldPosition fieldPosition(FieldPosition::DONT_CARE);
     
     
     ((const MessageFormat*)fmt)->format(args,count,resultStr,fieldPosition,*status);

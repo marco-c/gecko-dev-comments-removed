@@ -15,6 +15,8 @@
 
 
 
+
+
 #ifndef UMUTEX_H
 #define UMUTEX_H
 
@@ -229,7 +231,7 @@ struct UInitOnce {
 U_COMMON_API UBool U_EXPORT2 umtx_initImplPreInit(UInitOnce &);
 U_COMMON_API void  U_EXPORT2 umtx_initImplPostInit(UInitOnce &);
 
-template<class T> void umtx_initOnce(UInitOnce &uio, T *obj, void (T::*fp)()) {
+template<class T> void umtx_initOnce(UInitOnce &uio, T *obj, void (U_CALLCONV T::*fp)()) {
     if (umtx_loadAcquire(uio.fState) == 2) {
         return;
     }
@@ -242,7 +244,7 @@ template<class T> void umtx_initOnce(UInitOnce &uio, T *obj, void (T::*fp)()) {
 
 
 
-inline void umtx_initOnce(UInitOnce &uio, void (*fp)()) {
+inline void umtx_initOnce(UInitOnce &uio, void (U_CALLCONV *fp)()) {
     if (umtx_loadAcquire(uio.fState) == 2) {
         return;
     }
@@ -254,7 +256,7 @@ inline void umtx_initOnce(UInitOnce &uio, void (*fp)()) {
 
 
 
-inline void umtx_initOnce(UInitOnce &uio, void (*fp)(UErrorCode &), UErrorCode &errCode) {
+inline void umtx_initOnce(UInitOnce &uio, void (U_CALLCONV *fp)(UErrorCode &), UErrorCode &errCode) {
     if (U_FAILURE(errCode)) {
         return;
     }
@@ -273,7 +275,7 @@ inline void umtx_initOnce(UInitOnce &uio, void (*fp)(UErrorCode &), UErrorCode &
 
 
 
-template<class T> void umtx_initOnce(UInitOnce &uio, void (*fp)(T), T context) {
+template<class T> void umtx_initOnce(UInitOnce &uio, void (U_CALLCONV *fp)(T), T context) {
     if (umtx_loadAcquire(uio.fState) == 2) {
         return;
     }
@@ -285,7 +287,7 @@ template<class T> void umtx_initOnce(UInitOnce &uio, void (*fp)(T), T context) {
 
 
 
-template<class T> void umtx_initOnce(UInitOnce &uio, void (*fp)(T, UErrorCode &), T context, UErrorCode &errCode) {
+template<class T> void umtx_initOnce(UInitOnce &uio, void (U_CALLCONV *fp)(T, UErrorCode &), T context, UErrorCode &errCode) {
     if (U_FAILURE(errCode)) {
         return;
     }
@@ -318,13 +320,7 @@ U_NAMESPACE_END
 
 #include U_MUTEX_XSTR(U_USER_MUTEX_H)
 
-#elif U_PLATFORM_HAS_WIN32_API
-
-
-
-
-
-
+#elif U_PLATFORM_USES_ONLY_WIN32_API
 
 
 

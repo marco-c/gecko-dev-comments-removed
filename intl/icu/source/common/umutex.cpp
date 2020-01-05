@@ -18,6 +18,8 @@
 
 
 
+
+
 #include "umutex.h"
 
 #include "unicode/utypes.h"
@@ -37,16 +39,7 @@ static UMutex   globalMutex = U_MUTEX_INITIALIZER;
 
 #include U_MUTEX_XSTR(U_USER_MUTEX_CPP)
 
-#elif U_PLATFORM_HAS_WIN32_API
-
-
-
-
-
-
-
-
-
+#elif U_PLATFORM_USES_ONLY_WIN32_API
 
 #if defined U_NO_PLATFORM_ATOMICS
 #error ICU on Win32 requires support for low level atomic operations.
@@ -68,10 +61,8 @@ U_NAMESPACE_BEGIN
 U_COMMON_API UBool U_EXPORT2 umtx_initImplPreInit(UInitOnce &uio) {
     for (;;) {
         int32_t previousState = InterlockedCompareExchange(
-#if (U_PLATFORM == U_PF_MINGW) || (U_PLATFORM == U_PF_CYGWIN) || defined(__clang__)
-           (LONG volatile *) 
-#endif
-            &uio.fState,  
+            (LONG volatile *) 
+                &uio.fState,  
             1,            
             0);           
 

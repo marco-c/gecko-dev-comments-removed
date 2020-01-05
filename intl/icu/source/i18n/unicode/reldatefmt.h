@@ -9,12 +9,15 @@
 
 
 
+
+
 #ifndef __RELDATEFMT_H
 #define __RELDATEFMT_H
 
 #include "unicode/utypes.h"
 #include "unicode/uobject.h"
 #include "unicode/udisplaycontext.h"
+#include "unicode/ureldatefmt.h"
 #include "unicode/locid.h"
 
 
@@ -22,37 +25,7 @@
 
 
 
-#if !UCONFIG_NO_FORMATTING && !UCONFIG_NO_BREAK_ITERATION
-
-
-
-
-
-typedef enum UDateRelativeDateTimeFormatterStyle {
-  
-
-
-
-  UDAT_STYLE_LONG,
-
-  
-
-
-
-  UDAT_STYLE_SHORT,
-
-  
-
-
-
-  UDAT_STYLE_NARROW,
-
-  
-
-
-
-  UDAT_STYLE_COUNT
-} UDateRelativeDateTimeFormatterStyle;
+#if !UCONFIG_NO_FORMATTING
 
 
 
@@ -103,11 +76,13 @@ typedef enum UDateRelativeUnit {
 
     UDAT_RELATIVE_YEARS,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     UDAT_RELATIVE_UNIT_COUNT
+#endif  
 } UDateRelativeUnit;
 
 
@@ -190,11 +165,13 @@ typedef enum UDateAbsoluteUnit {
 
     UDAT_ABSOLUTE_NOW,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     UDAT_ABSOLUTE_UNIT_COUNT
+#endif  
 } UDateAbsoluteUnit;
 
 
@@ -240,13 +217,16 @@ typedef enum UDateDirection {
 
     UDAT_DIRECTION_PLAIN,
 
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     UDAT_DIRECTION_COUNT
+#endif  
 } UDateDirection;
 
+#if !UCONFIG_NO_BREAK_ITERATION
 
 U_NAMESPACE_BEGIN
 
@@ -434,6 +414,54 @@ public:
             UnicodeString& appendTo,
             UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString& formatNumeric(
+            double offset,
+            URelativeDateTimeUnit unit,
+            UnicodeString& appendTo,
+            UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString& format(
+            double offset,
+            URelativeDateTimeUnit unit,
+            UnicodeString& appendTo,
+            UErrorCode& status) const;
+#endif  
+
     
 
 
@@ -491,4 +519,5 @@ private:
 U_NAMESPACE_END
 
 #endif 
-#endif
+#endif 
+#endif 

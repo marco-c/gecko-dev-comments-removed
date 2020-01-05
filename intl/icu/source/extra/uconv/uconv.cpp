@@ -18,6 +18,8 @@
 
 
 
+
+
 #include <unicode/utypes.h>
 #include <unicode/putil.h>
 #include <unicode/ucnv.h>
@@ -173,7 +175,7 @@ static struct callback_ent {
 
 static const struct callback_ent *findCallback(const char *name) {
     int i, count =
-        sizeof(transcode_callbacks) / sizeof(*transcode_callbacks);
+        UPRV_LENGTHOF(transcode_callbacks);
 
     
 
@@ -944,7 +946,7 @@ ConvertFile::convertFile(const char *pname,
                     int8_t i, length, errorLength;
 
                     UErrorCode localError = U_ZERO_ERROR;
-                    errorLength = (int8_t)UPRV_LENGTHOF(errorUChars);
+                    errorLength = UPRV_LENGTHOF(errorUChars);
                     ucnv_getInvalidUChars(convto, errorUChars, &errorLength, &localError);
                     if (U_FAILURE(localError) || errorLength == 0) {
                         
@@ -1082,7 +1084,7 @@ static void usage(const char *pname, int ecode) {
             
 
             int i, count =
-                sizeof(transcode_callbacks) / sizeof(*transcode_callbacks);
+                UPRV_LENGTHOF(transcode_callbacks);
             for (i = 0; i < count; ++i) {
                 fprintf(fp, " %s", transcode_callbacks[i].name);
             }

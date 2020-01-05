@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -35,6 +37,7 @@
 #include "locbased.h"
 #include "uresimp.h"
 #include "ureslocs.h"
+#include "charstr.h"
 
 
 
@@ -51,9 +54,44 @@ static const char gAfterCurrencyTag[] = "afterCurrency";
 static const char gCurrencyMatchTag[] = "currencyMatch";
 static const char gCurrencySudMatchTag[] = "surroundingMatch";
 static const char gCurrencyInsertBtnTag[] = "insertBetween";
-
+static const char gLatn[] =  "latn";
+static const char gSymbols[] = "symbols";
+static const char gNumberElementsLatnSymbols[] = "NumberElements/latn/symbols";
 
 static const UChar INTL_CURRENCY_SYMBOL_STR[] = {0xa4, 0xa4, 0};
+
+
+
+static const char *gNumberElementKeys[DecimalFormatSymbols::kFormatSymbolCount] = {
+    "decimal",
+    "group",
+    "list",
+    "percentSign",
+    NULL, 
+    NULL, 
+    "minusSign",
+    "plusSign",
+    NULL, 
+    NULL, 
+    "currencyDecimal",
+    "exponential",
+    "perMille",
+    NULL, 
+    "infinity",
+    "nan",
+    NULL, 
+    "currencyGroup",
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    NULL, 
+    "superscriptingExponent", 
+};
 
 
 
@@ -166,63 +204,149 @@ DecimalFormatSymbols::operator==(const DecimalFormatSymbols& that) const
 
 
 
+namespace {
+
+
+
+
+
+
+
+
+struct DecFmtSymDataSink : public ResourceSink {
+
+    
+    DecimalFormatSymbols& dfs;
+    
+    
+    UBool seenSymbol[DecimalFormatSymbols::kFormatSymbolCount];
+
+    
+    DecFmtSymDataSink(DecimalFormatSymbols& _dfs) : dfs(_dfs) {
+        uprv_memset(seenSymbol, FALSE, sizeof(seenSymbol));
+    }
+    virtual ~DecFmtSymDataSink();
+
+    virtual void put(const char *key, ResourceValue &value, UBool ,
+            UErrorCode &errorCode) {
+        ResourceTable symbolsTable = value.getTable(errorCode);
+        if (U_FAILURE(errorCode)) { return; }
+        for (int32_t j = 0; symbolsTable.getKeyAndValue(j, key, value); ++j) {
+            for (int32_t i=0; i<DecimalFormatSymbols::kFormatSymbolCount; i++) {
+                if (gNumberElementKeys[i] != NULL && uprv_strcmp(key, gNumberElementKeys[i]) == 0) {
+                    if (!seenSymbol[i]) {
+                        seenSymbol[i] = TRUE;
+                        dfs.setSymbol(
+                            (DecimalFormatSymbols::ENumberFormatSymbol) i,
+                            value.getUnicodeString(errorCode));
+                        if (U_FAILURE(errorCode)) { return; }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    
+    UBool seenAll() {
+        for (int32_t i=0; i<DecimalFormatSymbols::kFormatSymbolCount; i++) {
+            if (!seenSymbol[i]) {
+                return FALSE;
+            }
+        }
+        return TRUE;
+    }
+
+    
+    
+    void resolveMissingMonetarySeparators(const UnicodeString* fSymbols) {
+        if (!seenSymbol[DecimalFormatSymbols::kMonetarySeparatorSymbol]) {
+            dfs.setSymbol(
+                DecimalFormatSymbols::kMonetarySeparatorSymbol,
+                fSymbols[DecimalFormatSymbols::kDecimalSeparatorSymbol]);
+        }
+        if (!seenSymbol[DecimalFormatSymbols::kMonetaryGroupingSeparatorSymbol]) {
+            dfs.setSymbol(
+                DecimalFormatSymbols::kMonetaryGroupingSeparatorSymbol,
+                fSymbols[DecimalFormatSymbols::kGroupingSeparatorSymbol]);
+        }
+    }
+};
+
+struct CurrencySpacingSink : public ResourceSink {
+    DecimalFormatSymbols& dfs;
+    UBool hasBeforeCurrency;
+    UBool hasAfterCurrency;
+
+    CurrencySpacingSink(DecimalFormatSymbols& _dfs)
+        : dfs(_dfs), hasBeforeCurrency(FALSE), hasAfterCurrency(FALSE) {}
+    virtual ~CurrencySpacingSink();
+
+    virtual void put(const char *key, ResourceValue &value, UBool ,
+            UErrorCode &errorCode) {
+        ResourceTable spacingTypesTable = value.getTable(errorCode);
+        for (int32_t i = 0; spacingTypesTable.getKeyAndValue(i, key, value); ++i) {
+            UBool beforeCurrency;
+            if (uprv_strcmp(key, gBeforeCurrencyTag) == 0) {
+                beforeCurrency = TRUE;
+                hasBeforeCurrency = TRUE;
+            } else if (uprv_strcmp(key, gAfterCurrencyTag) == 0) {
+                beforeCurrency = FALSE;
+                hasAfterCurrency = TRUE;
+            } else {
+                continue;
+            }
+
+            ResourceTable patternsTable = value.getTable(errorCode);
+            for (int32_t j = 0; patternsTable.getKeyAndValue(j, key, value); ++j) {
+                UCurrencySpacing pattern;
+                if (uprv_strcmp(key, gCurrencyMatchTag) == 0) {
+                    pattern = UNUM_CURRENCY_MATCH;
+                } else if (uprv_strcmp(key, gCurrencySudMatchTag) == 0) {
+                    pattern = UNUM_CURRENCY_SURROUNDING_MATCH;
+                } else if (uprv_strcmp(key, gCurrencyInsertBtnTag) == 0) {
+                    pattern = UNUM_CURRENCY_INSERT;
+                } else {
+                    continue;
+                }
+
+                const UnicodeString& current = dfs.getPatternForCurrencySpacing(
+                    pattern, beforeCurrency, errorCode);
+                if (current.isEmpty()) {
+                    dfs.setPatternForCurrencySpacing(
+                        pattern, beforeCurrency, value.getUnicodeString(errorCode));
+                }
+            }
+        }
+    }
+
+    void resolveMissing() {
+        
+        
+        static const char* defaults[] = { "[:letter:]", "[:digit:]", " " };
+        if (!hasBeforeCurrency || !hasAfterCurrency) {
+            for (UBool beforeCurrency = 0; beforeCurrency <= TRUE; beforeCurrency++) {
+                for (int32_t pattern = 0; pattern < UNUM_CURRENCY_SPACING_COUNT; pattern++) {
+                    dfs.setPatternForCurrencySpacing((UCurrencySpacing)pattern,
+                        beforeCurrency, UnicodeString(defaults[pattern], -1, US_INV));
+                }
+            }
+        }
+    }
+};
+
+
+DecFmtSymDataSink::~DecFmtSymDataSink() {}
+CurrencySpacingSink::~CurrencySpacingSink() {}
+
+} 
+
 void
 DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status, UBool useLastResortData)
 {
-    static const char *gNumberElementKeys[kFormatSymbolCount] = {
-        "decimal",
-        "group",
-        "list",
-        "percentSign",
-        NULL, 
-        NULL, 
-        "minusSign",
-        "plusSign",
-        NULL, 
-        NULL, 
-        "currencyDecimal",
-        "exponential",
-        "perMille",
-        NULL, 
-        "infinity",
-        "nan",
-        NULL, 
-        "currencyGroup",
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
-        NULL, 
-        "superscriptingExponent", 
-    };
-
-    static const char *gLatn =  "latn";
-    static const char *gSymbols = "symbols";
-    const char *nsName;
-    const UChar *sym = NULL;
-    int32_t len = 0;
-
+    if (U_FAILURE(status)) { return; }
     *validLocale = *actualLocale = 0;
     currPattern = NULL;
-    if (U_FAILURE(status))
-        return;
-
-    const char* locStr = loc.getName();
-    LocalUResourceBundlePointer resource(ures_open(NULL, locStr, &status));
-    LocalUResourceBundlePointer numberElementsRes(
-        ures_getByKeyWithFallback(resource.getAlias(), gNumberElements, NULL, &status));
-
-    if (U_FAILURE(status)) {
-        if ( useLastResortData ) {
-            status = U_USING_DEFAULT_WARNING;
-            initialize();
-        }
-        return;
-    }
 
     
     initialize();
@@ -231,8 +355,8 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status, UBool us
     
     
     
-
     LocalPointer<NumberingSystem> ns(NumberingSystem::createInstance(loc, status));
+    const char *nsName;
     if (U_SUCCESS(status) && ns->getRadix() == 10 && !ns->isAlgorithmic()) {
         nsName = ns->getName();
         UnicodeString digitString(ns->getDescription());
@@ -248,60 +372,60 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status, UBool us
         nsName = gLatn;
     }
 
-    UBool isLatn = !uprv_strcmp(nsName,gLatn);
+    
+    const char* locStr = loc.getName();
+    LocalUResourceBundlePointer resource(ures_open(NULL, locStr, &status));
+    LocalUResourceBundlePointer numberElementsRes(
+        ures_getByKeyWithFallback(resource.getAlias(), gNumberElements, NULL, &status));
 
-    UErrorCode nlStatus = U_ZERO_ERROR;
-    LocalUResourceBundlePointer nonLatnSymbols;
-    if ( !isLatn ) {
-        nonLatnSymbols.adoptInstead(
-            ures_getByKeyWithFallback(numberElementsRes.getAlias(), nsName, NULL, &nlStatus));
-        ures_getByKeyWithFallback(nonLatnSymbols.getAlias(), gSymbols, nonLatnSymbols.getAlias(), &nlStatus);
+    if (U_FAILURE(status)) {
+        if ( useLastResortData ) {
+            status = U_USING_DEFAULT_WARNING;
+            initialize();
+        }
+        return;
     }
 
-    LocalUResourceBundlePointer latnSymbols(
-        ures_getByKeyWithFallback(numberElementsRes.getAlias(), gLatn, NULL, &status));
-    ures_getByKeyWithFallback(latnSymbols.getAlias(), gSymbols, latnSymbols.getAlias(), &status);
+    
+    
+    U_LOCALE_BASED(locBased, *this);
+    locBased.setLocaleIDs(
+        ures_getLocaleByType(
+            numberElementsRes.getAlias(),
+            ULOC_VALID_LOCALE, &status),
+        ures_getLocaleByType(
+            numberElementsRes.getAlias(),
+            ULOC_ACTUAL_LOCALE, &status));
 
-    UBool kMonetaryDecimalSet = FALSE;
-    UBool kMonetaryGroupingSet = FALSE;
-    for(int32_t i = 0; i<kFormatSymbolCount; i++) {
-        if ( gNumberElementKeys[i] != NULL ) {
-            UErrorCode localStatus = U_ZERO_ERROR;
-            if ( !isLatn ) {
-                sym = ures_getStringByKeyWithFallback(nonLatnSymbols.getAlias(),
-                                                      gNumberElementKeys[i], &len, &localStatus);
-                
-                
-                if ( U_FAILURE(localStatus) ) {
-                    localStatus = U_ZERO_ERROR;
-                    sym = ures_getStringByKeyWithFallback(latnSymbols.getAlias(),
-                                                          gNumberElementKeys[i], &len, &localStatus);
-                }
-            } else {
-                    sym = ures_getStringByKeyWithFallback(latnSymbols.getAlias(),
-                                                          gNumberElementKeys[i], &len, &localStatus);
-            }
+    
+    
+    DecFmtSymDataSink sink(*this);
+    if (uprv_strcmp(nsName, gLatn) != 0) {
+        CharString path;
+        path.append(gNumberElements, status)
+            .append('/', status)
+            .append(nsName, status)
+            .append('/', status)
+            .append(gSymbols, status);
+        ures_getAllItemsWithFallback(resource.getAlias(), path.data(), sink, status);
 
-            if ( U_SUCCESS(localStatus) ) {
-                setSymbol((ENumberFormatSymbol)i, UnicodeString(TRUE, sym, len));
-                if ( i == kMonetarySeparatorSymbol ) {
-                    kMonetaryDecimalSet = TRUE;
-                } else if ( i == kMonetaryGroupingSeparatorSymbol ) {
-                    kMonetaryGroupingSet = TRUE;
-                }
-            }
+        
+        
+        if (status == U_MISSING_RESOURCE_ERROR) {
+            status = U_ZERO_ERROR;
+        } else if (U_FAILURE(status)) {
+            return;
         }
     }
 
     
-    
+    if (!sink.seenAll()) {
+        ures_getAllItemsWithFallback(resource.getAlias(), gNumberElementsLatnSymbols, sink, status);
+        if (U_FAILURE(status)) { return; }
+    }
 
-    if ( !kMonetaryDecimalSet ) {
-        setSymbol(kMonetarySeparatorSymbol,fSymbols[kDecimalSeparatorSymbol]);
-    }
-    if ( !kMonetaryGroupingSet ) {
-        setSymbol(kMonetaryGroupingSeparatorSymbol,fSymbols[kGroupingSeparatorSymbol]);
-    }
+    
+    sink.resolveMissingMonetarySeparators(fSymbols);
 
     
     
@@ -317,12 +441,6 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status, UBool us
         fSymbols[kCurrencySymbol] = tempStr;
     }
     
-
-    U_LOCALE_BASED(locBased, *this);
-    locBased.setLocaleIDs(ures_getLocaleByType(numberElementsRes.getAlias(),
-                                               ULOC_VALID_LOCALE, &status),
-                          ures_getLocaleByType(numberElementsRes.getAlias(),
-                                               ULOC_ACTUAL_LOCALE, &status));
 
     
     UChar ucc[4]={0}; 
@@ -361,38 +479,11 @@ DecimalFormatSymbols::initialize(const Locale& loc, UErrorCode& status, UBool us
         
 
     
-    localStatus = U_ZERO_ERROR;
-    LocalUResourceBundlePointer currencyResource(ures_open(U_ICUDATA_CURR, locStr, &localStatus));
-    LocalUResourceBundlePointer currencySpcRes(
-        ures_getByKeyWithFallback(currencyResource.getAlias(),
-                                  gCurrencySpacingTag, NULL, &localStatus));
-
-    if (localStatus == U_USING_FALLBACK_WARNING || U_SUCCESS(localStatus)) {
-        const char* keywords[UNUM_CURRENCY_SPACING_COUNT] = {
-            gCurrencyMatchTag, gCurrencySudMatchTag, gCurrencyInsertBtnTag
-        };
-        localStatus = U_ZERO_ERROR;
-        LocalUResourceBundlePointer dataRes(
-            ures_getByKeyWithFallback(currencySpcRes.getAlias(),
-                                      gBeforeCurrencyTag, NULL, &localStatus));
-        if (localStatus == U_USING_FALLBACK_WARNING || U_SUCCESS(localStatus)) {
-            localStatus = U_ZERO_ERROR;
-            for (int32_t i = 0; i < UNUM_CURRENCY_SPACING_COUNT; i++) {
-                currencySpcBeforeSym[i] =
-                    ures_getUnicodeStringByKey(dataRes.getAlias(), keywords[i], &localStatus);
-            }
-        }
-        dataRes.adoptInstead(
-            ures_getByKeyWithFallback(currencySpcRes.getAlias(),
-                                      gAfterCurrencyTag, NULL, &localStatus));
-        if (localStatus == U_USING_FALLBACK_WARNING || U_SUCCESS(localStatus)) {
-            localStatus = U_ZERO_ERROR;
-            for (int32_t i = 0; i < UNUM_CURRENCY_SPACING_COUNT; i++) {
-                currencySpcAfterSym[i] =
-                    ures_getUnicodeStringByKey(dataRes.getAlias(), keywords[i], &localStatus);
-            }
-        }
-    }
+    LocalUResourceBundlePointer currencyResource(ures_open(U_ICUDATA_CURR, locStr, &status));
+    CurrencySpacingSink currencySink(*this);
+    ures_getAllItemsWithFallback(currencyResource.getAlias(), gCurrencySpacingTag, currencySink, status);
+    currencySink.resolveMissing();
+    if (U_FAILURE(status)) { return; }
 }
 
 void

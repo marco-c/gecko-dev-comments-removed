@@ -11,6 +11,8 @@
 
 
 
+
+
 #ifndef RBBI_H
 #define RBBI_H
 
@@ -58,13 +60,9 @@ struct RBBIStateTable;
 
 
 
-
-
-
-
 class U_COMMON_API RuleBasedBreakIterator  : public BreakIterator {
 
-protected:
+private:
     
 
 
@@ -139,7 +137,7 @@ protected:
 
 
     int32_t             fPositionInCache;
-    
+
     
 
 
@@ -148,7 +146,7 @@ protected:
 
 
     UStack              *fLanguageBreakEngines;
-    
+
     
 
 
@@ -157,31 +155,17 @@ protected:
 
 
     UnhandledEngine     *fUnhandledBreakEngine;
-    
+
     
 
 
 
 
     int32_t             fBreakType;
-    
-protected:
-    
+
     
     
-
-#ifndef U_HIDE_INTERNAL_API
     
-
-
-
-
-
-
-
-    enum EDontAdopt {
-        kDontAdopt
-    };
 
     
 
@@ -194,17 +178,6 @@ protected:
 
 
     RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode &status);
-
-    
-
-
-
-
-
-
-
-    RuleBasedBreakIterator(const RBBIDataHeader* data, enum EDontAdopt dontAdopt, UErrorCode &status);
-#endif  
 
 
     friend class RBBIRuleBuilder;
@@ -400,6 +373,11 @@ public:
     virtual void adoptText(CharacterIterator* newText);
 
     
+
+
+
+
+
 
 
 
@@ -661,7 +639,7 @@ public:
     virtual RuleBasedBreakIterator &refreshInputText(UText *input, UErrorCode &status);
 
 
-protected:
+private:
     
     
     
@@ -670,41 +648,19 @@ protected:
 
 
 
-    virtual void reset(void);
-
-#if 0
-    
-
-
-
-
-
-
-
-    virtual UBool isDictionaryChar(UChar32);
+    void reset(void);
 
     
 
 
 
-    virtual int32_t getBreakType() const;
-#endif
+    void setBreakType(int32_t type);
 
-    
-
-
-
-    virtual void setBreakType(int32_t type);
-
-#ifndef U_HIDE_INTERNAL_API
     
 
 
 
     void init();
-#endif
-
-private:
 
     
 
@@ -728,9 +684,7 @@ private:
 
     int32_t handleNext(const RBBIStateTable *statetable);
 
-protected:
 
-#ifndef U_HIDE_INTERNAL_API
     
 
 
@@ -746,9 +700,7 @@ protected:
 
 
     int32_t checkDictionary(int32_t startPos, int32_t endPos, UBool reverse);
-#endif  
 
-private:
 
     
 

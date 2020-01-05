@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef UBRK_H
 #define UBRK_H
 
@@ -114,14 +116,21 @@ typedef enum UBreakIteratorType {
 
 
   UBRK_TITLE = 4,
-#endif 
-  UBRK_COUNT = 5
+    
+
+
+
+    UBRK_COUNT = 5
+#endif  
 } UBreakIteratorType;
 
 
 
 
 #define UBRK_DONE ((int32_t) -1)
+
+
+
 
 
 
@@ -165,6 +174,9 @@ typedef enum UWordBreak {
 
 
 
+
+
+
 typedef enum ULineBreakTag {
     
 
@@ -176,6 +188,9 @@ typedef enum ULineBreakTag {
     
     UBRK_LINE_HARD_LIMIT      = 200
 } ULineBreakTag;
+
+
+
 
 
 
@@ -314,6 +329,10 @@ U_DEFINE_LOCAL_OPEN_POINTER(LocalUBreakIteratorPointer, UBreakIterator, ubrk_clo
 U_NAMESPACE_END
 
 #endif
+
+
+
+
 
 
 

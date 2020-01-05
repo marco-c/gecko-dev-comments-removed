@@ -19,6 +19,8 @@
 
 
 
+
+
 #include "unicode/ustring.h"
 #include "unicode/ucnv.h"
 #include "charstr.h"
@@ -267,7 +269,7 @@ static UBool U_CALLCONV ures_cleanup(void)
 }
 
 
-static void createCache(UErrorCode &status) {
+static void U_CALLCONV createCache(UErrorCode &status) {
     U_ASSERT(cache == NULL);
     cache = uhash_open(hashEntry, compareEntries, NULL, &status);
     ucln_common_registerCleanup(UCLN_COMMON_URES, ures_cleanup);
@@ -1485,7 +1487,8 @@ U_CAPI const UChar* U_EXPORT2 ures_getNextString(UResourceBundle *resB, int32_t*
     case URES_BINARY:
     case URES_INT_VECTOR:
         *status = U_RESOURCE_TYPE_MISMATCH;
-    default: 
+        U_FALLTHROUGH;
+    default:
       return NULL;
     }
   }
@@ -1882,6 +1885,97 @@ ures_getByKeyWithFallback(const UResourceBundle *resB,
     return fillIn;
 }
 
+namespace {
+
+void getAllItemsWithFallback(
+        const UResourceBundle *bundle, ResourceDataValue &value,
+        ResourceSink &sink,
+        UErrorCode &errorCode) {
+    if (U_FAILURE(errorCode)) { return; }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    value.pResData = &bundle->fResData;
+    UResourceDataEntry *parentEntry = bundle->fData->fParent;
+    UBool hasParent = parentEntry != NULL && U_SUCCESS(parentEntry->fBogus);
+    value.setResource(bundle->fRes);
+    sink.put(bundle->fKey, value, !hasParent, errorCode);
+    if (hasParent) {
+        
+        
+
+        
+        
+        
+        
+        
+        UResourceBundle parentBundle;
+        ures_initStackObject(&parentBundle);
+        parentBundle.fTopLevelData = parentBundle.fData = parentEntry;
+        
+        uprv_memcpy(&parentBundle.fResData, &parentEntry->fData, sizeof(ResourceData));
+        
+        parentBundle.fHasFallback = !parentBundle.fResData.noFallback;
+        parentBundle.fIsTopLevel = TRUE;
+        parentBundle.fRes = parentBundle.fResData.rootRes;
+        parentBundle.fSize = res_countArrayItems(&(parentBundle.fResData), parentBundle.fRes);
+        parentBundle.fIndex = -1;
+        entryIncrease(parentEntry);
+
+        
+        UResourceBundle containerBundle;
+        ures_initStackObject(&containerBundle);
+        const UResourceBundle *rb;
+        UErrorCode pathErrorCode = U_ZERO_ERROR;  
+        if (bundle->fResPath == NULL || *bundle->fResPath == 0) {
+            rb = &parentBundle;
+        } else {
+            rb = ures_getByKeyWithFallback(&parentBundle, bundle->fResPath,
+                                           &containerBundle, &pathErrorCode);
+        }
+        if (U_SUCCESS(pathErrorCode)) {
+            getAllItemsWithFallback(rb, value, sink, errorCode);
+        }
+        ures_close(&containerBundle);
+        ures_close(&parentBundle);
+    }
+}
+
+}  
+
+U_CAPI void U_EXPORT2
+ures_getAllItemsWithFallback(const UResourceBundle *bundle, const char *path,
+                             icu::ResourceSink &sink, UErrorCode &errorCode) {
+    if (U_FAILURE(errorCode)) { return; }
+    if (path == NULL) {
+        errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
+    UResourceBundle stackBundle;
+    ures_initStackObject(&stackBundle);
+    const UResourceBundle *rb;
+    if (*path == 0) {
+        
+        rb = bundle;
+    } else {
+        rb = ures_getByKeyWithFallback(bundle, path, &stackBundle, &errorCode);
+        if (U_FAILURE(errorCode)) {
+            ures_close(&stackBundle);
+            return;
+        }
+    }
+    
+    ResourceDataValue value;
+    getAllItemsWithFallback(rb, value, sink, errorCode);
+    ures_close(&stackBundle);
+}
 
 U_CAPI UResourceBundle* U_EXPORT2 ures_getByKey(const UResourceBundle *resB, const char* inKey, UResourceBundle *fillIn, UErrorCode *status) {
     Resource res = RES_BOGUS;
@@ -2314,7 +2408,10 @@ ures_loc_countLocales(UEnumeration *en, UErrorCode * ) {
     return ures_getSize(&ctx->installed);
 }
 
-static const char* U_CALLCONV 
+U_CDECL_BEGIN
+
+
+static const char * U_CALLCONV
 ures_loc_nextLocale(UEnumeration* en,
                     int32_t* resultLength,
                     UErrorCode* status) {
@@ -2340,6 +2437,7 @@ ures_loc_resetLocales(UEnumeration* en,
     ures_resetIterator(res);
 }
 
+U_CDECL_END
 
 static const UEnumeration gLocalesEnum = {
     NULL,

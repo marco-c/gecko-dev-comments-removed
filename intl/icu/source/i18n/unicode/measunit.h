@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef __MEASUREUNIT_H__
 #define __MEASUREUNIT_H__
 
@@ -187,6 +189,14 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+
+
+    static int32_t internalGetIndexForTypeAndSubtype(const char *type, const char *subtype);
+
+    
+
+
+
     static MeasureUnit *resolveUnitPerUnit(
             const MeasureUnit &unit, const MeasureUnit &perUnit);
 #endif 
@@ -247,7 +257,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createRadian(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -255,7 +264,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createRevolutionAngle(UErrorCode &status);
-#endif  
 
     
 
@@ -329,6 +337,14 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createSquareYard(UErrorCode &status);
 
+    
+
+
+
+
+
+    static MeasureUnit *createKarat(UErrorCode &status);
+
 #ifndef U_HIDE_DRAFT_API
     
 
@@ -336,8 +352,36 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    static MeasureUnit *createLiterPer100Kilometers(UErrorCode &status);
+    static MeasureUnit *createMilligramPerDeciliter(UErrorCode &status);
 #endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createMillimolePerLiter(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createPartPerMillion(UErrorCode &status);
+#endif  
+
+    
+
+
+
+
+
+    static MeasureUnit *createLiterPer100Kilometers(UErrorCode &status);
 
     
 
@@ -354,6 +398,56 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMilePerGallon(UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createMilePerGallonImperial(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createEast(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createNorth(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createSouth(UErrorCode &status);
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createWest(UErrorCode &status);
+#endif  
 
     
 
@@ -435,7 +529,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createTerabyte(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -443,7 +536,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createCentury(UErrorCode &status);
-#endif  
 
     
 
@@ -733,7 +825,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createMile(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -741,7 +832,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createMileScandinavian(UErrorCode &status);
-#endif  
 
     
 
@@ -981,17 +1071,8 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    static MeasureUnit *createKarat(UErrorCode &status);
-
-    
-
-
-
-
-
     static MeasureUnit *createKilometerPerHour(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -999,7 +1080,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createKnot(UErrorCode &status);
-#endif  
 
     
 
@@ -1033,7 +1113,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createFahrenheit(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1041,7 +1120,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createGenericTemperature(UErrorCode &status);
-#endif  
 
     
 
@@ -1139,7 +1217,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createCup(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1147,7 +1224,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createCupMetric(UErrorCode &status);
-#endif  
 
     
 
@@ -1172,6 +1248,16 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createGallon(UErrorCode &status);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    static MeasureUnit *createGallonImperial(UErrorCode &status);
+#endif  
 
     
 
@@ -1213,7 +1299,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit *createPint(UErrorCode &status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1221,7 +1306,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit *createPintMetric(UErrorCode &status);
-#endif  
 
     
 

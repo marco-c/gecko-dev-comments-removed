@@ -13,6 +13,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
@@ -155,7 +157,7 @@ Formattable::Formattable(int64_t value)
 
 
 
-Formattable::Formattable(const StringPiece &number, UErrorCode &status) {
+Formattable::Formattable(StringPiece number, UErrorCode &status) {
     init();
     setDecimalNumber(number, status);
 }
@@ -431,7 +433,8 @@ Formattable::getLong(UErrorCode& status) const
             return ((const Measure*) fValue.fObject)->
                 getNumber().getLong(status);
         }
-    default: 
+        U_FALLTHROUGH;
+    default:
         status = U_INVALID_FORMAT_ERROR;
         return 0;
     }
@@ -482,7 +485,8 @@ Formattable::getInt64(UErrorCode& status) const
             return ((const Measure*) fValue.fObject)->
                 getNumber().getInt64(status);
         }
-    default: 
+        U_FALLTHROUGH;
+    default:
         status = U_INVALID_FORMAT_ERROR;
         return 0;
     }
@@ -512,7 +516,8 @@ Formattable::getDouble(UErrorCode& status) const
             return ((const Measure*) fValue.fObject)->
                 getNumber().getDouble(status);
         }
-    default: 
+        U_FALLTHROUGH;
+    default:
         status = U_INVALID_FORMAT_ERROR;
         return 0;
     }
@@ -793,7 +798,7 @@ Formattable::adoptDigitList(DigitList *dl) {
 
 
 void
-Formattable::setDecimalNumber(const StringPiece &numberString, UErrorCode &status) {
+Formattable::setDecimalNumber(StringPiece numberString, UErrorCode &status) {
     if (U_FAILURE(status)) {
         return;
     }

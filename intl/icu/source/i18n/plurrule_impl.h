@@ -10,10 +10,14 @@
 
 
 
-#ifndef PLURRULE_IMPLE
-#define PLURRULE_IMPLE
 
 
+#ifndef PLURRULE_IMPL
+#define PLURRULE_IMPL
+
+
+
+#include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
 
@@ -21,7 +25,6 @@
 #include "unicode/locid.h"
 #include "unicode/parseerr.h"
 #include "unicode/ures.h"
-#include "unicode/utypes.h"
 #include "uvector.h"
 #include "hash.h"
 
@@ -32,6 +35,7 @@ U_NAMESPACE_BEGIN
 class AndConstraint;
 class RuleChain;
 class DigitInterval;
+class PluralRules;
 class VisibleDigits;
 
 static const UChar DOT             = ((UChar)0x002E);

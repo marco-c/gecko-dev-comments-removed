@@ -14,6 +14,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/ustring.h"
 #include "unicode/unistr.h"
@@ -2527,6 +2529,7 @@ ucstrTextExtract(UText *ut,
             ut->chunkLength         = si;
             ut->nativeIndexingLimit = si;
             strLength               = si;
+            limit32                 = si;
             break;
         }
         U_ASSERT(di>=0); 
@@ -2548,16 +2551,21 @@ ucstrTextExtract(UText *ut,
     
     
     if (si>0 && U16_IS_LEAD(s[si-1]) &&
-        ((si<strLength || strLength<0)  && U16_IS_TRAIL(s[si])))
+            ((si<strLength || strLength<0)  && U16_IS_TRAIL(s[si])))
     {
         if (di<destCapacity) {
             
-            dest[di++] = s[si++];
+            dest[di++] = s[si];
         }
+        si++;
     }
 
     
-    ut->chunkOffset = uprv_min(strLength, start32 + destCapacity);
+    if (si <= ut->chunkNativeLimit) {
+        ut->chunkOffset = si;
+    } else {
+        ucstrTextAccess(ut, si, TRUE);
+    }
 
     
     

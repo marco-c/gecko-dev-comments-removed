@@ -18,6 +18,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/appendable.h"
 #include "unicode/putil.h"
@@ -82,7 +84,7 @@ us_arrayCopy(const UChar *src, int32_t srcStart,
          UChar *dst, int32_t dstStart, int32_t count)
 {
   if(count>0) {
-    uprv_memmove(dst+dstStart, src+srcStart, (size_t)(count*sizeof(*src)));
+    uprv_memmove(dst+dstStart, src+srcStart, (size_t)count*sizeof(*src));
   }
 }
 
@@ -151,41 +153,39 @@ UnicodeString::UnicodeString(int32_t capacity, UChar32 c, int32_t count) {
   if(count <= 0 || (uint32_t)c > 0x10ffff) {
     
     allocate(capacity);
-  } else {
-    
-    int32_t unitCount = U16_LENGTH(c), length = count * unitCount;
+  } else if(c <= 0xffff) {
+    int32_t length = count;
     if(capacity < length) {
       capacity = length;
     }
     if(allocate(capacity)) {
       UChar *array = getArrayStart();
-      int32_t i = 0;
-
-      
-      if(unitCount == 1) {
-        
-        while(i < length) {
-          array[i++] = (UChar)c;
-        }
-      } else {
-        
-        UChar units[U16_MAX_LENGTH];
-        U16_APPEND_UNSAFE(units, i, c);
-
-        
-        i = 0;
-
-        
-        
-        while(i < length) {
-          int32_t unitIdx = 0;
-          while(unitIdx < unitCount) {
-            array[i++]=units[unitIdx++];
-          }
-        }
+      UChar unit = (UChar)c;
+      for(int32_t i = 0; i < length; ++i) {
+        array[i] = unit;
       }
+      setLength(length);
     }
-    setLength(length);
+  } else {  
+    if(count > (INT32_MAX / 2)) {
+      
+      allocate(capacity);
+      return;
+    }
+    int32_t length = count * 2;
+    if(capacity < length) {
+      capacity = length;
+    }
+    if(allocate(capacity)) {
+      UChar *array = getArrayStart();
+      UChar lead = U16_LEAD(c);
+      UChar trail = U16_TRAIL(c);
+      for(int32_t i = 0; i < length; i += 2) {
+        array[i] = lead;
+        array[i + 1] = trail;
+      }
+      setLength(length);
+    }
   }
 }
 
@@ -342,33 +342,60 @@ UnicodeString::clone() const {
 
 
 
+namespace {
+
+const int32_t kGrowSize = 128;
+
+
+
+
+
+
+
+
+const int32_t kMaxCapacity = 0x7ffffff5;
+
+int32_t getGrowCapacity(int32_t newLength) {
+  int32_t growSize = (newLength >> 2) + kGrowSize;
+  if(growSize <= (kMaxCapacity - newLength)) {
+    return newLength + growSize;
+  } else {
+    return kMaxCapacity;
+  }
+}
+
+}  
+
 UBool
 UnicodeString::allocate(int32_t capacity) {
   if(capacity <= US_STACKBUF_SIZE) {
     fUnion.fFields.fLengthAndFlags = kShortString;
-  } else {
+    return TRUE;
+  }
+  if(capacity <= kMaxCapacity) {
+    ++capacity;  
     
     
+    size_t numBytes = sizeof(int32_t) + (size_t)capacity * U_SIZEOF_UCHAR;
     
-    
-    int32_t words = (int32_t)(((sizeof(int32_t) + (capacity + 1) * U_SIZEOF_UCHAR + 15) & ~15) >> 2);
-    int32_t *array = (int32_t*) uprv_malloc( sizeof(int32_t) * words );
-    if(array != 0) {
+    numBytes = (numBytes + 15) & ~15;
+    int32_t *array = (int32_t *) uprv_malloc(numBytes);
+    if(array != NULL) {
       
       *array++ = 1;
+      numBytes -= sizeof(int32_t);
 
       
       fUnion.fFields.fArray = (UChar *)array;
-      fUnion.fFields.fCapacity = (int32_t)((words - 1) * (sizeof(int32_t) / U_SIZEOF_UCHAR));
+      fUnion.fFields.fCapacity = (int32_t)(numBytes / U_SIZEOF_UCHAR);
       fUnion.fFields.fLengthAndFlags = kLongString;
-    } else {
-      fUnion.fFields.fLengthAndFlags = kIsBogus;
-      fUnion.fFields.fArray = 0;
-      fUnion.fFields.fCapacity = 0;
-      return FALSE;
+      return TRUE;
     }
   }
-  return TRUE;
+  fUnion.fFields.fLengthAndFlags = kIsBogus;
+  fUnion.fFields.fArray = 0;
+  fUnion.fFields.fCapacity = 0;
+  return FALSE;
 }
 
 
@@ -415,7 +442,7 @@ UnicodeString::~UnicodeString()
 
 
 
-UnicodeString UnicodeString::fromUTF8(const StringPiece &utf8) {
+UnicodeString UnicodeString::fromUTF8(StringPiece utf8) {
   UnicodeString result;
   result.setToUTF8(utf8);
   return result;
@@ -521,15 +548,17 @@ UnicodeString::copyFrom(const UnicodeString &src, UBool fastCopy) {
     }
     
     
+    U_FALLTHROUGH;
   case kWritableAlias: {
     
     int32_t srcLength = src.length();
     if(allocate(srcLength)) {
-      uprv_memcpy(getArrayStart(), src.getArrayStart(), srcLength * U_SIZEOF_UCHAR);
+      u_memcpy(getArrayStart(), src.getArrayStart(), srcLength);
       setLength(srcLength);
       break;
     }
     
+    U_FALLTHROUGH;
   }
   default:
     
@@ -853,7 +882,7 @@ UnicodeString::extract(UChar *dest, int32_t destCapacity,
     } else {
       const UChar *array = getArrayStart();
       if(len>0 && len<=destCapacity && array!=dest) {
-        uprv_memcpy(dest, array, len*U_SIZEOF_UCHAR);
+        u_memcpy(dest, array, len);
       }
       return u_terminateUChars(dest, destCapacity, len, &errorCode);
     }
@@ -1215,7 +1244,7 @@ UnicodeString::getTerminatedBuffer() {
       return array;
     }
   }
-  if(cloneArrayIfNeeded(len+1)) {
+  if(len<INT32_MAX && cloneArrayIfNeeded(len+1)) {
     array = getArrayStart();
     array[len] = 0;
     return array;
@@ -1297,7 +1326,7 @@ UnicodeString::setTo(UChar *buffer,
   return *this;
 }
 
-UnicodeString &UnicodeString::setToUTF8(const StringPiece &utf8) {
+UnicodeString &UnicodeString::setToUTF8(StringPiece utf8) {
   unBogus();
   int32_t length = utf8.length();
   int32_t capacity;
@@ -1427,7 +1456,13 @@ UnicodeString::doReplace(int32_t start,
   pinIndices(start, length);
 
   
-  int32_t newLength = oldLength - length + srcLength;
+  
+  int32_t newLength = oldLength - length;
+  if(srcLength > (INT32_MAX - newLength)) {
+    setToBogus();
+    return *this;
+  }
+  newLength += srcLength;
 
   
   
@@ -1444,7 +1479,7 @@ UnicodeString::doReplace(int32_t start,
 
   
   int32_t *bufferToDelete = 0;
-  if(!cloneArrayIfNeeded(newLength, newLength + (newLength >> 2) + kGrowSize,
+  if(!cloneArrayIfNeeded(newLength, getGrowCapacity(newLength),
                          FALSE, &bufferToDelete)
   ) {
     return *this;
@@ -1511,7 +1546,7 @@ UnicodeString::doAppend(const UChar *srcChars, int32_t srcStart, int32_t srcLeng
   int32_t newLength = oldLength + srcLength;
   
   if((newLength <= getCapacity() && isBufferWritable()) ||
-      cloneArrayIfNeeded(newLength, newLength + (newLength >> 2) + kGrowSize)) {
+      cloneArrayIfNeeded(newLength, getGrowCapacity(newLength))) {
     UChar *newArray = getArrayStart();
     
     
@@ -1859,7 +1894,9 @@ UnicodeStringAppendable::getAppendBuffer(int32_t minCapacity,
     return NULL;
   }
   int32_t oldLength = str.length();
-  if(str.cloneArrayIfNeeded(oldLength + minCapacity, oldLength + desiredCapacityHint)) {
+  if(minCapacity <= (kMaxCapacity - oldLength) &&
+      desiredCapacityHint <= (kMaxCapacity - oldLength) &&
+      str.cloneArrayIfNeeded(oldLength + minCapacity, oldLength + desiredCapacityHint)) {
     *resultCapacity = str.getCapacity() - oldLength;
     return str.getArrayStart() + oldLength;
   }

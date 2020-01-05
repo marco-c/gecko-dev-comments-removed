@@ -14,6 +14,8 @@
 
 
 
+
+
 #ifndef __LISTFORMATTER_H__
 #define __LISTFORMATTER_H__
 
@@ -145,7 +147,7 @@ class U_COMMON_API ListFormatter : public UObject{
     
 
 
-    ListFormatter(const ListFormatData &data);
+    ListFormatter(const ListFormatData &data, UErrorCode &errorCode);
     
 
 

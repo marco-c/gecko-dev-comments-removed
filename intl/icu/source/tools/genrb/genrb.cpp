@@ -16,12 +16,15 @@
 
 
 
+
+
 #include <assert.h>
 #include "genrb.h"
 #include "unicode/localpointer.h"
 #include "unicode/uclean.h"
 #include "unicode/utf16.h"
 #include "charstr.h"
+#include "cmemory.h"
 #include "reslist.h"
 #include "ucmndata.h"  
 
@@ -126,7 +129,7 @@ main(int argc,
 
     options[JAVA_PACKAGE].value = "com.ibm.icu.impl.data";
     options[BUNDLE_NAME].value = "LocaleElements";
-    argc = u_parseArgs(argc, argv, (int32_t)(sizeof(options)/sizeof(options[0])), options);
+    argc = u_parseArgs(argc, argv, UPRV_LENGTHOF(options), options);
 
     
     if(argc<0) {

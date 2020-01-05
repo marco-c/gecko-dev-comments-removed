@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __BYTESTRIE_H__
 #define __BYTESTRIE_H__
 
@@ -306,7 +308,7 @@ public:
 
 
 
-        const StringPiece &getString() const { return sp_; }
+        StringPiece getString() const;
         
 
 
@@ -325,7 +327,6 @@ public:
         int32_t initialRemainingMatchLength_;
 
         CharString *str_;
-        StringPiece sp_;
         int32_t maxLength_;
         int32_t value_;
 

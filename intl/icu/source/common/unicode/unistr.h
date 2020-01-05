@@ -18,6 +18,8 @@
 
 
 
+
+
 #ifndef UNISTR_H
 #define UNISTR_H
 
@@ -74,7 +76,9 @@ UStringCaseMapper(const UCaseMap *csm,
 
 U_NAMESPACE_BEGIN
 
+#if !UCONFIG_NO_BREAK_ITERATION
 class BreakIterator;        
+#endif
 class Locale;               
 class StringCharacterIterator;
 class UnicodeStringAppendable;  
@@ -171,8 +175,6 @@ class UnicodeStringAppendable;
 #   define UNISTR_FROM_STRING_EXPLICIT
 # endif
 #endif
-
-
 
 
 
@@ -1902,7 +1904,6 @@ public:
 
   UnicodeString &fastCopyFrom(const UnicodeString &src);
 
-#ifndef U_HIDE_DRAFT_API
 #if U_HAVE_RVALUE_REFERENCES
   
 
@@ -1916,6 +1917,7 @@ public:
     return moveFrom(src);
   }
 #endif
+  
   
 
 
@@ -1945,7 +1947,6 @@ public:
   swap(UnicodeString &s1, UnicodeString &s2) U_NOEXCEPT {
     s1.swap(s2);
   }
-#endif  
 
   
 
@@ -3212,7 +3213,6 @@ public:
 
   UnicodeString(const UnicodeString& that);
 
-#ifndef U_HIDE_DRAFT_API
 #if U_HAVE_RVALUE_REFERENCES
   
 
@@ -3222,7 +3222,6 @@ public:
 
   UnicodeString(UnicodeString &&src) U_NOEXCEPT;
 #endif
-#endif  
 
   
 
@@ -3277,7 +3276,7 @@ public:
 
 
 
-  static UnicodeString fromUTF8(const StringPiece &utf8);
+  static UnicodeString fromUTF8(StringPiece utf8);
 
   
 
@@ -3392,7 +3391,7 @@ protected:
 
 private:
   
-  UnicodeString &setToUTF8(const StringPiece &utf8);
+  UnicodeString &setToUTF8(StringPiece utf8);
   
   
   
@@ -3617,7 +3616,6 @@ private:
 
     US_STACKBUF_SIZE=(int32_t)(UNISTR_OBJECT_SIZE-sizeof(void *)-2)/U_SIZEOF_UCHAR,
     kInvalidUChar=0xffff, 
-    kGrowSize=128, 
     kInvalidHashCode=0, 
     kEmptyHashCode=1, 
 

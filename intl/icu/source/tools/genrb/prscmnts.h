@@ -16,8 +16,12 @@
 
 
 
+
+
 #ifndef PRSCMNTS_H
 #define PRSCMNTS_H 1
+
+#include "unicode/utypes.h"
 
 #if UCONFIG_NO_REGULAR_EXPRESSIONS==0 
 

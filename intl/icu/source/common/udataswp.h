@@ -18,6 +18,8 @@
 
 
 
+
+
 #ifndef __UDATASWP_H__
 #define __UDATASWP_H__
 
@@ -317,6 +319,20 @@ U_CFUNC int32_t
 uprv_compareInvEbcdic(const UDataSwapper *ds,
                       const char *outString, int32_t outLength,
                       const UChar *localString, int32_t localLength);
+
+
+
+
+
+
+#if U_CHARSET_FAMILY==U_ASCII_FAMILY
+#   define uprv_compareInvWithUChar uprv_compareInvAscii
+#elif U_CHARSET_FAMILY==U_EBCDIC_FAMILY
+#   define uprv_compareInvWithUChar uprv_compareInvEbcdic
+#else
+#   error Unknown charset family!
+#endif
+
 
 
 

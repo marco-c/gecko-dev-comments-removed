@@ -20,6 +20,8 @@
 
 
 
+
+
  
 #ifndef DIGITLST_H
 #define DIGITLST_H
@@ -267,7 +269,7 @@ public:
 
 
 
-    void set(const StringPiece &source, UErrorCode &status, uint32_t fastpathBits = 0);
+    void set(StringPiece source, UErrorCode &status, uint32_t fastpathBits = 0);
 
     
 
@@ -477,8 +479,7 @@ private:
     } fUnion;
     enum EHave {
       kNone=0,
-      kDouble,
-      kInt64
+      kDouble
     } fHave;
 
 
@@ -494,7 +495,8 @@ private:
     static inline void * U_EXPORT2 operator new(size_t size) U_NO_THROW { return ::operator new(size); };
     static inline void U_EXPORT2 operator delete(void *ptr )  U_NO_THROW { ::operator delete(ptr); };
 #endif
-    static char U_EXPORT2 getStrtodDecimalSeparator();
+
+    static double U_EXPORT2 decimalStrToDouble(char *decstr, char **end);
 
     
 
@@ -512,10 +514,6 @@ private:
     inline void internalSetDouble(double d) {
       fHave = kDouble;
       fUnion.fDouble=d;
-    }
-    inline void internalSetInt64(int64_t d) {
-      fHave = kInt64;
-      fUnion.fInt64=d;
     }
     inline void internalClear() {
       fHave = kNone;

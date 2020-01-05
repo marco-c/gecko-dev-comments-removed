@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef __SHAREDOBJECT_H__
 #define __SHAREDOBJECT_H__
 
@@ -21,7 +23,7 @@ U_NAMESPACE_BEGIN
 
 
 
-class UnifiedCacheBase : public UObject {
+class U_COMMON_API UnifiedCacheBase : public UObject {
 public:
     UnifiedCacheBase() { }
 

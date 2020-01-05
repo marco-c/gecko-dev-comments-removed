@@ -18,6 +18,8 @@
 
 
 
+
+
 #ifndef NUMFMT_H
 #define NUMFMT_H
 
@@ -49,11 +51,6 @@ class SharedNumberFormat;
 class NumberFormatFactory;
 class StringEnumeration;
 #endif
-
-
-
-
-
 
 
 
@@ -482,6 +479,7 @@ public:
 
 
 
+
     virtual UnicodeString& format(int64_t number,
                                   UnicodeString& appendTo,
                                   FieldPosition& pos,
@@ -521,7 +519,7 @@ public:
 
 
 
-    virtual UnicodeString& format(const StringPiece &number,
+    virtual UnicodeString& format(StringPiece number,
                                   UnicodeString& appendTo,
                                   FieldPositionIterator* posIter,
                                   UErrorCode& status) const;
@@ -680,14 +678,9 @@ public:
 
 
 
-
-
-
     static NumberFormat* U_EXPORT2 createInstance(UErrorCode&);
 
     
-
-
 
 
 
@@ -1062,9 +1055,11 @@ private:
     int32_t     fMinFractionDigits;
 
   protected:
+    
     static const int32_t gDefaultMaxIntegerDigits;
+    
     static const int32_t gDefaultMinIntegerDigits;
- 
+
   private:
     UBool      fParseIntegerOnly;
     UBool      fLenient; 

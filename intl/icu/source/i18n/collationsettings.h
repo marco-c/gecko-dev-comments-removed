@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef __COLLATIONSETTINGS_H__
 #define __COLLATIONSETTINGS_H__
 

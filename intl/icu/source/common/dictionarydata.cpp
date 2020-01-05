@@ -1,13 +1,15 @@
-/*
-*******************************************************************************
-* Copyright (C) 2014, International Business Machines
-* Corporation and others.  All Rights Reserved.
-*******************************************************************************
-* dictionarydata.h
-*
-* created on: 2012may31
-* created by: Markus W. Scherer & Maxime Serrano
-*/
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "dictionarydata.h"
 #include "unicode/ucharstrie.h"
@@ -45,13 +47,13 @@ int32_t UCharsDictionaryMatcher::matches(UText *text, int32_t maxLength, int32_t
                             int32_t *prefix) const {
 
     UCharsTrie uct(characters);
-    int32_t startingTextIndex = utext_getNativeIndex(text);
+    int32_t startingTextIndex = (int32_t)utext_getNativeIndex(text);
     int32_t wordCount = 0;
     int32_t codePointsMatched = 0;
 
     for (UChar32 c = utext_next32(text); c >= 0; c=utext_next32(text)) {
         UStringTrieResult result = (codePointsMatched == 0) ? uct.first(c) : uct.next(c);
-        int32_t lengthMatched = utext_getNativeIndex(text) - startingTextIndex;
+        int32_t lengthMatched = (int32_t)utext_getNativeIndex(text) - startingTextIndex;
         codePointsMatched += 1;
         if (USTRINGTRIE_HAS_VALUE(result)) {
             if (wordCount < limit) {
@@ -112,13 +114,13 @@ int32_t BytesDictionaryMatcher::matches(UText *text, int32_t maxLength, int32_t 
                             int32_t *lengths, int32_t *cpLengths, int32_t *values,
                             int32_t *prefix) const {
     BytesTrie bt(characters);
-    int32_t startingTextIndex = utext_getNativeIndex(text);
+    int32_t startingTextIndex = (int32_t)utext_getNativeIndex(text);
     int32_t wordCount = 0;
     int32_t codePointsMatched = 0;
 
     for (UChar32 c = utext_next32(text); c >= 0; c=utext_next32(text)) {
         UStringTrieResult result = (codePointsMatched == 0) ? bt.first(transform(c)) : bt.next(transform(c));
-        int32_t lengthMatched = utext_getNativeIndex(text) - startingTextIndex;
+        int32_t lengthMatched = (int32_t)utext_getNativeIndex(text) - startingTextIndex;
         codePointsMatched += 1;
         if (USTRINGTRIE_HAS_VALUE(result)) {
             if (wordCount < limit) {
@@ -220,15 +222,15 @@ udict_swap(const UDataSwapper *ds, const void *inData, int32_t length,
         if (trieType == DictionaryData::TRIE_TYPE_UCHARS) {
             ds->swapArray16(ds, inBytes + offset, nextOffset - offset, outBytes + offset, pErrorCode);
         } else if (trieType == DictionaryData::TRIE_TYPE_BYTES) {
-            // nothing to do
+            
         } else {
             udata_printError(ds, "udict_swap(): unknown trie type!\n");
             *pErrorCode = U_UNSUPPORTED_ERROR;
             return 0;
         }
 
-        // these next two sections are empty in the current format,
-        // but may be used later.
+        
+        
         offset = nextOffset;
         nextOffset = indexes[DictionaryData::IX_RESERVED2_OFFSET];
         offset = nextOffset;

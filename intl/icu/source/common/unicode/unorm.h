@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef UNORM_H
 #define UNORM_H
 
@@ -22,7 +24,6 @@
 #include "unicode/uiter.h"
 #include "unicode/unorm2.h"
 
-#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -129,14 +130,14 @@
 
 
 
-#ifndef U_HIDE_DEPRECATED_API
+
 
 
 
 
 typedef enum {
   
-  UNORM_NONE = 1, 
+  UNORM_NONE = 1,
   
   UNORM_NFD = 2,
   
@@ -144,7 +145,7 @@ typedef enum {
   
   UNORM_NFC = 4,
   
-  UNORM_DEFAULT = UNORM_NFC, 
+  UNORM_DEFAULT = UNORM_NFC,
   
   UNORM_NFKC =5,
   
@@ -153,7 +154,8 @@ typedef enum {
   
   UNORM_MODE_COUNT
 } UNormalizationMode;
-#endif  
+
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -208,7 +210,7 @@ enum {
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 unorm_normalize(const UChar *source, int32_t sourceLength,
                 UNormalizationMode mode, int32_t options,
                 UChar *result, int32_t resultLength,
@@ -256,7 +258,7 @@ unorm_quickCheck(const UChar *source, int32_t sourcelength,
 
 
 U_STABLE UNormalizationCheckResult U_EXPORT2
-unorm_quickCheckWithOptions(const UChar *src, int32_t srcLength, 
+unorm_quickCheckWithOptions(const UChar *src, int32_t srcLength,
                             UNormalizationMode mode, int32_t options,
                             UErrorCode *pErrorCode);
 

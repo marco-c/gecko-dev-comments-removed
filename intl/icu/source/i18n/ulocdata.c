@@ -14,6 +14,8 @@
 
 
 
+
+
 #include "cmemory.h"
 #include "unicode/ustring.h"
 #include "unicode/ures.h"
@@ -21,6 +23,7 @@
 #include "unicode/ulocdata.h"
 #include "uresimp.h"
 #include "ureslocs.h"
+#include "ulocimp.h"
 
 #define MEASUREMENT_SYSTEM  "MeasurementSystem"
 #define PAPER_SIZE          "PaperSize"
@@ -189,16 +192,11 @@ ulocdata_getDelimiter(ULocaleData *uld, ULocaleDataDelimiterType type,
 }
 
 static UResourceBundle * measurementTypeBundleForLocale(const char *localeID, const char *measurementType, UErrorCode *status){
-    char fullLoc[ULOC_FULLNAME_CAPACITY];
     char region[ULOC_COUNTRY_CAPACITY];
     UResourceBundle *rb;
     UResourceBundle *measTypeBundle = NULL;
     
-    
-
-
-    uloc_addLikelySubtags(localeID, fullLoc, ULOC_FULLNAME_CAPACITY, status);
-    uloc_getCountry(fullLoc, region, ULOC_COUNTRY_CAPACITY, status);
+    ulocimp_getRegionForSupplementalData(localeID, TRUE, region, ULOC_COUNTRY_CAPACITY, status);
     
     rb = ures_openDirect(NULL, "supplementalData", status);
     ures_getByKey(rb, "measurementData", rb, status);

@@ -21,6 +21,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/uchar.h"
 #include "unicode/unorm2.h"
@@ -270,7 +272,11 @@ static const BinaryProperty binProps[UCHAR_BINARY_LIMIT]={
     { UPROPS_SRC_CASE,  0, caseBinaryPropertyContains },  
     { UPROPS_SRC_CASE_AND_NORM,  0, changesWhenCasefolded },
     { UPROPS_SRC_CASE,  0, caseBinaryPropertyContains },  
-    { UPROPS_SRC_NFKC_CF, 0, changesWhenNFKC_Casefolded }
+    { UPROPS_SRC_NFKC_CF, 0, changesWhenNFKC_Casefolded },
+    { 2,                U_MASK(UPROPS_2_EMOJI), defaultContains },
+    { 2,                U_MASK(UPROPS_2_EMOJI_PRESENTATION), defaultContains },
+    { 2,                U_MASK(UPROPS_2_EMOJI_MODIFIER), defaultContains },
+    { 2,                U_MASK(UPROPS_2_EMOJI_MODIFIER_BASE), defaultContains },
 };
 
 U_CAPI UBool U_EXPORT2

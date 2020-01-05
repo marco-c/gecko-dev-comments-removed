@@ -15,6 +15,8 @@
 
 
 
+
+
 #include "unicode/stringpiece.h"
 #include "unicode/ucnv.h"
 #include "unicode/unistr.h"
@@ -342,7 +344,7 @@ static UChar *quotedString(const UChar *string) {
 
             case 0x0022:
                 *np++ = 0x005C;
-
+                U_FALLTHROUGH;
             default:
                 *np++ = *sp;
                 break;

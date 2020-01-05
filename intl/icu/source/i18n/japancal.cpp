@@ -11,10 +11,13 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
 
+#include "cmemory.h"
 #include "japancal.h"
 #include "unicode/gregocal.h"
 #include "umutex.h"
@@ -276,7 +279,7 @@ static const struct {
     {  1989,    1,  8 }   
 };
 
-#define kEraCount (sizeof(kEraInfo)/sizeof(kEraInfo[0]))
+#define kEraCount UPRV_LENGTHOF(kEraInfo)
 
 
 

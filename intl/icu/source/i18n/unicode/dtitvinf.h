@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef __DTITVINF_H__
 #define __DTITVINF_H__
 
@@ -150,7 +152,8 @@ U_NAMESPACE_BEGIN
 
 class U_I18N_API DateIntervalInfo U_FINAL : public UObject {
 public:
-#ifndef U_HIDE_INTERNAL_API
+    
+    
     
 
 
@@ -165,7 +168,6 @@ public:
 
 
     DateIntervalInfo(UErrorCode& status);
-#endif  
 
 
     
@@ -258,8 +260,8 @@ public:
 
 
 
-    void setIntervalPattern(const UnicodeString& skeleton, 
-                            UCalendarDateFields lrgDiffCalUnit, 
+    void setIntervalPattern(const UnicodeString& skeleton,
+                            UCalendarDateFields lrgDiffCalUnit,
                             const UnicodeString& intervalPattern,
                             UErrorCode& status);
 
@@ -276,7 +278,7 @@ public:
     UnicodeString& getIntervalPattern(const UnicodeString& skeleton,
                                       UCalendarDateFields field,
                                       UnicodeString& result,
-                                      UErrorCode& status) const; 
+                                      UErrorCode& status) const;
 
     
 
@@ -342,6 +344,11 @@ private:
     
 
 
+    struct DateIntervalSink;
+
+    
+
+
 
 
     enum IntervalPatternIndex
@@ -390,7 +397,7 @@ private:
     void setIntervalPatternInternally(const UnicodeString& skeleton,
                                       UCalendarDateFields lrgDiffCalUnit,
                                       const UnicodeString& intervalPattern,
-                                      UErrorCode& status); 
+                                      UErrorCode& status);
 
 
     
@@ -422,7 +429,7 @@ private:
 
 
 
-    static void U_EXPORT2 parseSkeleton(const UnicodeString& skeleton, 
+    static void U_EXPORT2 parseSkeleton(const UnicodeString& skeleton,
                                         int32_t* skeletonFieldWidth);
 
 

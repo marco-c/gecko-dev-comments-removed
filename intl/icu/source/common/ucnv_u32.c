@@ -14,6 +14,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_ONLY_HTML_CONVERSION
@@ -480,7 +482,10 @@ static const UConverterImpl _UTF32BEImpl = {
     NULL,
     NULL,
     NULL,
-    ucnv_getNonSurrogateUnicodeSet
+    ucnv_getNonSurrogateUnicodeSet,
+
+    NULL,
+    NULL
 };
 
 
@@ -972,7 +977,10 @@ static const UConverterImpl _UTF32LEImpl = {
     NULL,
     NULL,
     NULL,
-    ucnv_getNonSurrogateUnicodeSet
+    ucnv_getNonSurrogateUnicodeSet,
+
+    NULL,
+    NULL
 };
 
 
@@ -1214,7 +1222,10 @@ static const UConverterImpl _UTF32Impl = {
     NULL,
     NULL,
     NULL,
-    ucnv_getNonSurrogateUnicodeSet
+    ucnv_getNonSurrogateUnicodeSet,
+
+    NULL,
+    NULL
 };
 
 

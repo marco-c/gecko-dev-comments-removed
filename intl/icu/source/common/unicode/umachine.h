@@ -20,6 +20,8 @@
 
 
 
+
+
 #ifndef __UMACHINE_H__
 #define __UMACHINE_H__
 
@@ -48,6 +50,29 @@
 
 
 #include <stddef.h>
+
+#ifndef U_HIDE_INTERNAL_API
+
+
+
+
+
+
+
+#ifdef U_USE_CHAR16_T
+#ifdef UCHAR_TYPE
+#undef UCHAR_TYPE
+#endif
+#define UCHAR_TYPE char16_t
+
+
+
+
+#ifndef __cplusplus
+#include <uchar.h>
+#endif
+#endif
+#endif  
 
 
 

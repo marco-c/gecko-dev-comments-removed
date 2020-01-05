@@ -9,6 +9,8 @@
 
 
 
+
+
 #define DEBUG_COLLATION_FAST_LATIN_BUILDER 0  // 0 or 1 or 2
 #if DEBUG_COLLATION_FAST_LATIN_BUILDER
 #include <stdio.h>
@@ -147,7 +149,7 @@ CollationFastLatinBuilder::loadGroups(const CollationData &data, UErrorCode &err
             
             return FALSE;
         }
-        result.append(0);  
+        result.append((UChar)0);  
     }
 
     firstDigitPrimary = data.getFirstPrimaryForGroup(UCOL_REORDER_CODE_DIGIT);
@@ -564,7 +566,7 @@ CollationFastLatinBuilder::encodeCharCEs(UErrorCode &errorCode) {
     if(U_FAILURE(errorCode)) { return FALSE; }
     int32_t miniCEsStart = result.length();
     for(int32_t i = 0; i < CollationFastLatin::NUM_FAST_CHARS; ++i) {
-        result.append(0);  
+        result.append((UChar)0);  
     }
     int32_t indexBase = result.length();
     for(int32_t i = 0; i < CollationFastLatin::NUM_FAST_CHARS; ++i) {

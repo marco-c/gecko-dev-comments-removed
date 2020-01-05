@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef RBBISCAN_H
 #define RBBISCAN_H
 
@@ -21,9 +23,7 @@
 #include "unicode/symtable.h"
                           
 #include "rbbinode.h"
-
-
-
+#include "rbbirpt.h"
 
 U_NAMESPACE_BEGIN
 
@@ -54,6 +54,7 @@ public:
     struct RBBIRuleChar {
         UChar32             fChar;
         UBool               fEscaped;
+        RBBIRuleChar() : fChar(0), fEscaped(FALSE) {};
     };
 
     RBBIRuleScanner(RBBIRuleBuilder  *rb);
@@ -128,6 +129,8 @@ private:
 
     UBool                          fLookAheadRule;   
                                                      
+
+    UBool                          fNoChainInRule;   
 
     RBBISymbolTable               *fSymbolTable;     
                                                      

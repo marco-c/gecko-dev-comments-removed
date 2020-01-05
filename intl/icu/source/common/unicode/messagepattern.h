@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef __MESSAGEPATTERN_H__
 #define __MESSAGEPATTERN_H__
 

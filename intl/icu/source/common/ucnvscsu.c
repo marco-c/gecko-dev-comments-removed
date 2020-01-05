@@ -19,6 +19,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_ONLY_HTML_CONVERSION
@@ -1395,12 +1397,16 @@ outputBytes:
                 
             case 4:
                 *target++=(uint8_t)(c>>24);
-            case 3: 
+                U_FALLTHROUGH;
+            case 3:
                 *target++=(uint8_t)(c>>16);
-            case 2: 
+                U_FALLTHROUGH;
+            case 2:
                 *target++=(uint8_t)(c>>8);
-            case 1: 
+                U_FALLTHROUGH;
+            case 1:
                 *target++=(uint8_t)c;
+                U_FALLTHROUGH;
             default:
                 
                 break;
@@ -1411,15 +1417,19 @@ outputBytes:
             case 4:
                 *target++=(uint8_t)(c>>24);
                 *offsets++=sourceIndex;
-            case 3: 
+                U_FALLTHROUGH;
+            case 3:
                 *target++=(uint8_t)(c>>16);
                 *offsets++=sourceIndex;
-            case 2: 
+                U_FALLTHROUGH;
+            case 2:
                 *target++=(uint8_t)(c>>8);
                 *offsets++=sourceIndex;
-            case 1: 
+                U_FALLTHROUGH;
+            case 1:
                 *target++=(uint8_t)c;
                 *offsets++=sourceIndex;
+                U_FALLTHROUGH;
             default:
                 
                 break;
@@ -1448,12 +1458,16 @@ outputBytes:
             
         case 4:
             *p++=(uint8_t)(c>>24);
-        case 3: 
+            U_FALLTHROUGH;
+        case 3:
             *p++=(uint8_t)(c>>16);
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             *p++=(uint8_t)(c>>8);
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             *p=(uint8_t)c;
+            U_FALLTHROUGH;
         default:
             
             break;
@@ -1469,16 +1483,19 @@ outputBytes:
             if(offsets!=NULL) {
                 *offsets++=sourceIndex;
             }
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             *target++=(uint8_t)(c>>8);
             if(offsets!=NULL) {
                 *offsets++=sourceIndex;
             }
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             *target++=(uint8_t)c;
             if(offsets!=NULL) {
                 *offsets++=sourceIndex;
             }
+            U_FALLTHROUGH;
         default:
             break;
         }
@@ -1853,12 +1870,16 @@ outputBytes:
             
         case 4:
             *target++=(uint8_t)(c>>24);
-        case 3: 
+            U_FALLTHROUGH;
+        case 3:
             *target++=(uint8_t)(c>>16);
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             *target++=(uint8_t)(c>>8);
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             *target++=(uint8_t)c;
+            U_FALLTHROUGH;
         default:
             
             break;
@@ -1885,12 +1906,16 @@ outputBytes:
             
         case 4:
             *p++=(uint8_t)(c>>24);
-        case 3: 
+            U_FALLTHROUGH;
+        case 3:
             *p++=(uint8_t)(c>>16);
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             *p++=(uint8_t)(c>>8);
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             *p=(uint8_t)c;
+            U_FALLTHROUGH;
         default:
             
             break;
@@ -1903,10 +1928,13 @@ outputBytes:
             
         case 3:
             *target++=(uint8_t)(c>>16);
-        case 2: 
+            U_FALLTHROUGH;
+        case 2:
             *target++=(uint8_t)(c>>8);
-        case 1: 
+            U_FALLTHROUGH;
+        case 1:
             *target++=(uint8_t)c;
+            U_FALLTHROUGH;
         default:
             break;
         }

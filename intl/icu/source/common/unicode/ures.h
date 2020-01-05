@@ -20,6 +20,8 @@
 
 
 
+
+
 #ifndef URES_H
 #define URES_H
 
@@ -119,10 +121,14 @@ typedef enum {
     
     RES_INT_VECTOR=URES_INT_VECTOR,
     
-    RES_RESERVED=15, 
-#endif 
+    RES_RESERVED=15,
+
+    
+
+
 
     URES_LIMIT = 16
+#endif  
 } UResType;
 
 
@@ -157,9 +163,9 @@ typedef enum {
 
 
 
-U_STABLE UResourceBundle*  U_EXPORT2 
+U_STABLE UResourceBundle*  U_EXPORT2
 ures_open(const char*    packageName,
-          const char*  locale, 
+          const char*  locale,
           UErrorCode*     status);
 
 
@@ -180,9 +186,9 @@ ures_open(const char*    packageName,
 
 
 
-U_STABLE UResourceBundle* U_EXPORT2 
-ures_openDirect(const char* packageName, 
-                const char* locale, 
+U_STABLE UResourceBundle* U_EXPORT2
+ures_openDirect(const char* packageName,
+                const char* locale,
                 UErrorCode* status);
 
 
@@ -203,9 +209,9 @@ ures_openDirect(const char* packageName,
 
 
 
-U_STABLE UResourceBundle* U_EXPORT2 
-ures_openU(const UChar* packageName, 
-           const char* locale, 
+U_STABLE UResourceBundle* U_EXPORT2
+ures_openU(const UChar* packageName,
+           const char* locale,
            UErrorCode* status);
 
 #ifndef U_HIDE_DEPRECATED_API
@@ -225,7 +231,7 @@ ures_openU(const UChar* packageName,
 
 
 
-U_DEPRECATED int32_t U_EXPORT2 
+U_DEPRECATED int32_t U_EXPORT2
 ures_countArrayItems(const UResourceBundle* resourceBundle,
                      const char* resourceKey,
                      UErrorCode* err);
@@ -239,7 +245,7 @@ ures_countArrayItems(const UResourceBundle* resourceBundle,
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 ures_close(UResourceBundle* resourceBundle);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -272,7 +278,7 @@ U_NAMESPACE_END
 
 
 
-U_DEPRECATED const char* U_EXPORT2 
+U_DEPRECATED const char* U_EXPORT2
 ures_getVersionNumber(const UResourceBundle*   resourceBundle);
 #endif  
 
@@ -285,8 +291,8 @@ ures_getVersionNumber(const UResourceBundle*   resourceBundle);
 
 
 
-U_STABLE void U_EXPORT2 
-ures_getVersion(const UResourceBundle* resB, 
+U_STABLE void U_EXPORT2
+ures_getVersion(const UResourceBundle* resB,
                 UVersionInfo versionInfo);
 
 #ifndef U_HIDE_DEPRECATED_API
@@ -302,8 +308,8 @@ ures_getVersion(const UResourceBundle* resB,
 
 
 
-U_DEPRECATED const char* U_EXPORT2 
-ures_getLocale(const UResourceBundle* resourceBundle, 
+U_DEPRECATED const char* U_EXPORT2
+ures_getLocale(const UResourceBundle* resourceBundle,
                UErrorCode* status);
 #endif  
 
@@ -319,9 +325,9 @@ ures_getLocale(const UResourceBundle* resourceBundle,
 
 
 
-U_STABLE const char* U_EXPORT2 
-ures_getLocaleByType(const UResourceBundle* resourceBundle, 
-                     ULocDataLocaleType type, 
+U_STABLE const char* U_EXPORT2
+ures_getLocaleByType(const UResourceBundle* resourceBundle,
+                     ULocDataLocaleType type,
                      UErrorCode* status);
 
 
@@ -342,10 +348,10 @@ ures_getLocaleByType(const UResourceBundle* resourceBundle,
 
 
 
-U_INTERNAL void U_EXPORT2 
-ures_openFillIn(UResourceBundle *r, 
+U_INTERNAL void U_EXPORT2
+ures_openFillIn(UResourceBundle *r,
                 const char* packageName,
-                const char* localeID, 
+                const char* localeID,
                 UErrorCode* status);
 #endif  
 
@@ -366,9 +372,9 @@ ures_openFillIn(UResourceBundle *r,
 
 
 
-U_STABLE const UChar* U_EXPORT2 
-ures_getString(const UResourceBundle* resourceBundle, 
-               int32_t* len, 
+U_STABLE const UChar* U_EXPORT2
+ures_getString(const UResourceBundle* resourceBundle,
+               int32_t* len,
                UErrorCode* status);
 
 
@@ -441,9 +447,9 @@ ures_getUTF8String(const UResourceBundle *resB,
 
 
 
-U_STABLE const uint8_t* U_EXPORT2 
-ures_getBinary(const UResourceBundle* resourceBundle, 
-               int32_t* len, 
+U_STABLE const uint8_t* U_EXPORT2
+ures_getBinary(const UResourceBundle* resourceBundle,
+               int32_t* len,
                UErrorCode* status);
 
 
@@ -463,9 +469,9 @@ ures_getBinary(const UResourceBundle* resourceBundle,
 
 
 
-U_STABLE const int32_t* U_EXPORT2 
-ures_getIntVector(const UResourceBundle* resourceBundle, 
-                  int32_t* len, 
+U_STABLE const int32_t* U_EXPORT2
+ures_getIntVector(const UResourceBundle* resourceBundle,
+                  int32_t* len,
                   UErrorCode* status);
 
 
@@ -484,8 +490,8 @@ ures_getIntVector(const UResourceBundle* resourceBundle,
 
 
 
-U_STABLE uint32_t U_EXPORT2 
-ures_getUInt(const UResourceBundle* resourceBundle, 
+U_STABLE uint32_t U_EXPORT2
+ures_getUInt(const UResourceBundle* resourceBundle,
              UErrorCode *status);
 
 
@@ -504,8 +510,8 @@ ures_getUInt(const UResourceBundle* resourceBundle,
 
 
 
-U_STABLE int32_t U_EXPORT2 
-ures_getInt(const UResourceBundle* resourceBundle, 
+U_STABLE int32_t U_EXPORT2
+ures_getInt(const UResourceBundle* resourceBundle,
             UErrorCode *status);
 
 
@@ -518,7 +524,7 @@ ures_getInt(const UResourceBundle* resourceBundle,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_STABLE int32_t U_EXPORT2
 ures_getSize(const UResourceBundle *resourceBundle);
 
 
@@ -529,7 +535,7 @@ ures_getSize(const UResourceBundle *resourceBundle);
 
 
 
-U_STABLE UResType U_EXPORT2 
+U_STABLE UResType U_EXPORT2
 ures_getType(const UResourceBundle *resourceBundle);
 
 
@@ -540,7 +546,7 @@ ures_getType(const UResourceBundle *resourceBundle);
 
 
 
-U_STABLE const char * U_EXPORT2 
+U_STABLE const char * U_EXPORT2
 ures_getKey(const UResourceBundle *resourceBundle);
 
 
@@ -553,7 +559,7 @@ ures_getKey(const UResourceBundle *resourceBundle);
 
 
 
-U_STABLE void U_EXPORT2 
+U_STABLE void U_EXPORT2
 ures_resetIterator(UResourceBundle *resourceBundle);
 
 
@@ -563,7 +569,7 @@ ures_resetIterator(UResourceBundle *resourceBundle);
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_STABLE UBool U_EXPORT2
 ures_hasNext(const UResourceBundle *resourceBundle);
 
 
@@ -578,9 +584,9 @@ ures_hasNext(const UResourceBundle *resourceBundle);
 
 
 
-U_STABLE UResourceBundle* U_EXPORT2 
-ures_getNextResource(UResourceBundle *resourceBundle, 
-                     UResourceBundle *fillIn, 
+U_STABLE UResourceBundle* U_EXPORT2
+ures_getNextResource(UResourceBundle *resourceBundle,
+                     UResourceBundle *fillIn,
                      UErrorCode *status);
 
 
@@ -595,10 +601,10 @@ ures_getNextResource(UResourceBundle *resourceBundle,
 
 
 
-U_STABLE const UChar* U_EXPORT2 
-ures_getNextString(UResourceBundle *resourceBundle, 
-                   int32_t* len, 
-                   const char ** key, 
+U_STABLE const UChar* U_EXPORT2
+ures_getNextString(UResourceBundle *resourceBundle,
+                   int32_t* len,
+                   const char ** key,
                    UErrorCode *status);
 
 
@@ -613,10 +619,10 @@ ures_getNextString(UResourceBundle *resourceBundle,
 
 
 
-U_STABLE UResourceBundle* U_EXPORT2 
-ures_getByIndex(const UResourceBundle *resourceBundle, 
-                int32_t indexR, 
-                UResourceBundle *fillIn, 
+U_STABLE UResourceBundle* U_EXPORT2
+ures_getByIndex(const UResourceBundle *resourceBundle,
+                int32_t indexR,
+                UResourceBundle *fillIn,
                 UErrorCode *status);
 
 
@@ -630,10 +636,10 @@ ures_getByIndex(const UResourceBundle *resourceBundle,
 
 
 
-U_STABLE const UChar* U_EXPORT2 
-ures_getStringByIndex(const UResourceBundle *resourceBundle, 
-                      int32_t indexS, 
-                      int32_t* len, 
+U_STABLE const UChar* U_EXPORT2
+ures_getStringByIndex(const UResourceBundle *resourceBundle,
+                      int32_t indexS,
+                      int32_t* len,
                       UErrorCode *status);
 
 
@@ -703,10 +709,10 @@ ures_getUTF8StringByIndex(const UResourceBundle *resB,
 
 
 
-U_STABLE UResourceBundle* U_EXPORT2 
-ures_getByKey(const UResourceBundle *resourceBundle, 
-              const char* key, 
-              UResourceBundle *fillIn, 
+U_STABLE UResourceBundle* U_EXPORT2
+ures_getByKey(const UResourceBundle *resourceBundle,
+              const char* key,
+              UResourceBundle *fillIn,
               UErrorCode *status);
 
 
@@ -721,10 +727,10 @@ ures_getByKey(const UResourceBundle *resourceBundle,
 
 
 
-U_STABLE const UChar* U_EXPORT2 
-ures_getStringByKey(const UResourceBundle *resB, 
-                    const char* key, 
-                    int32_t* len, 
+U_STABLE const UChar* U_EXPORT2
+ures_getStringByKey(const UResourceBundle *resB,
+                    const char* key,
+                    int32_t* len,
                     UErrorCode *status);
 
 
@@ -799,13 +805,17 @@ U_NAMESPACE_BEGIN
 
 
 
-inline UnicodeString 
-ures_getUnicodeString(const UResourceBundle *resB, 
-                      UErrorCode* status) 
-{
+inline UnicodeString
+ures_getUnicodeString(const UResourceBundle *resB, UErrorCode* status) {
+    UnicodeString result;
     int32_t len = 0;
     const UChar *r = ures_getString(resB, &len, status);
-    return UnicodeString(TRUE, r, len);
+    if(U_SUCCESS(*status)) {
+        result.setTo(TRUE, r, len);
+    } else {
+        result.setToBogus();
+    }
+    return result;
 }
 
 
@@ -818,14 +828,19 @@ ures_getUnicodeString(const UResourceBundle *resB,
 
 
 
-inline UnicodeString 
-ures_getNextUnicodeString(UResourceBundle *resB, 
-                          const char ** key, 
-                          UErrorCode* status) 
-{
+
+
+inline UnicodeString
+ures_getNextUnicodeString(UResourceBundle *resB, const char ** key, UErrorCode* status) {
+    UnicodeString result;
     int32_t len = 0;
     const UChar* r = ures_getNextString(resB, &len, key, status);
-    return UnicodeString(TRUE, r, len);
+    if(U_SUCCESS(*status)) {
+        result.setTo(TRUE, r, len);
+    } else {
+        result.setToBogus();
+    }
+    return result;
 }
 
 
@@ -837,14 +852,17 @@ ures_getNextUnicodeString(UResourceBundle *resB,
 
 
 
-inline UnicodeString 
-ures_getUnicodeStringByIndex(const UResourceBundle *resB, 
-                             int32_t indexS, 
-                             UErrorCode* status) 
-{
+inline UnicodeString
+ures_getUnicodeStringByIndex(const UResourceBundle *resB, int32_t indexS, UErrorCode* status) {
+    UnicodeString result;
     int32_t len = 0;
     const UChar* r = ures_getStringByIndex(resB, indexS, &len, status);
-    return UnicodeString(TRUE, r, len);
+    if(U_SUCCESS(*status)) {
+        result.setTo(TRUE, r, len);
+    } else {
+        result.setToBogus();
+    }
+    return result;
 }
 
 
@@ -857,14 +875,17 @@ ures_getUnicodeStringByIndex(const UResourceBundle *resB,
 
 
 
-inline UnicodeString 
-ures_getUnicodeStringByKey(const UResourceBundle *resB, 
-                           const char* key, 
-                           UErrorCode* status) 
-{
+inline UnicodeString
+ures_getUnicodeStringByKey(const UResourceBundle *resB, const char* key, UErrorCode* status) {
+    UnicodeString result;
     int32_t len = 0;
     const UChar* r = ures_getStringByKey(resB, key, &len, status);
-    return UnicodeString(TRUE, r, len);
+    if(U_SUCCESS(*status)) {
+        result.setTo(TRUE, r, len);
+    } else {
+        result.setToBogus();
+    }
+    return result;
 }
 
 U_NAMESPACE_END

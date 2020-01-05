@@ -15,6 +15,8 @@
 
 
 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "unicode/utypes.h"
@@ -223,7 +225,7 @@ CharList *pkg_appendUniqueDirToList(CharList *l, CharList** end, const char *str
     if(!rPtr) {
         return l; 
     }
-    if((rPtr-strAlias) >= (sizeof(aBuf)/sizeof(aBuf[0]))) {
+    if((rPtr-strAlias) >= UPRV_LENGTHOF(aBuf)) {
         fprintf(stderr, "## ERR: Path too long [%d chars]: %s\n", (int)sizeof(aBuf), strAlias);
         return l;
     }

@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef UCOL_H
 #define UCOL_H
 
@@ -123,8 +125,13 @@ typedef enum {
   
   UCOL_UPPER_FIRST = 25,
 
-  UCOL_ATTRIBUTE_VALUE_COUNT
+#ifndef U_HIDE_DEPRECATED_API
+    
 
+
+
+  UCOL_ATTRIBUTE_VALUE_COUNT
+#endif  
 } UColAttributeValue;
 
 
@@ -191,12 +198,13 @@ typedef enum {
 
     
     UCOL_REORDER_CODE_DIGIT         = 0x1004,
-   
-
-
-
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
     UCOL_REORDER_CODE_LIMIT         = 0x1005
+#endif  
 } UColReorderCode;
 
 
@@ -333,7 +341,10 @@ typedef enum {
 
 
      UCOL_NUMERIC_COLLATION = UCOL_STRENGTH + 2, 
-     
+
+    
+    
+    
 
 
 
@@ -1050,7 +1061,13 @@ typedef enum {
   UCOL_BOUND_UPPER = 1,
   
   UCOL_BOUND_UPPER_LONG = 2,
-  UCOL_BOUND_VALUE_COUNT
+#ifndef U_HIDE_DEPRECATED_API
+    
+
+
+
+    UCOL_BOUND_VALUE_COUNT
+#endif  
 } UColBoundMode;
 
 

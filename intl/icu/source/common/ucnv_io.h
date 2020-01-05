@@ -10,6 +10,8 @@
 
 
 
+
+
 #ifndef UCNV_IO_H
 #define UCNV_IO_H
 
@@ -75,10 +77,10 @@ typedef struct UConverterAlias {
 #   error U_CHARSET_FAMILY is not valid
 #endif
 
-U_CAPI char * U_EXPORT2
+U_CAPI char * U_CALLCONV
 ucnv_io_stripASCIIForCompare(char *dst, const char *name);
 
-U_CAPI char * U_EXPORT2
+U_CAPI char * U_CALLCONV
 ucnv_io_stripEBCDICForCompare(char *dst, const char *name);
 
 
@@ -91,7 +93,7 @@ ucnv_io_stripEBCDICForCompare(char *dst, const char *name);
 
 
 
-U_CFUNC const char *
+U_CAPI const char *
 ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *pErrorCode);
 
 
@@ -99,7 +101,7 @@ ucnv_io_getConverterName(const char *alias, UBool *containsOption, UErrorCode *p
 
 
 
-U_CFUNC uint16_t
+U_CAPI uint16_t
 ucnv_io_countKnownConverters(UErrorCode *pErrorCode);
 
 

@@ -6,6 +6,8 @@
 
 
 
+
+
 #ifndef __SHARED_NUMBERFORMAT_H__
 #define __SHARED_NUMBERFORMAT_H__
 

@@ -15,6 +15,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING && !UCONFIG_NO_CONVERSION
@@ -71,7 +73,7 @@ u_vsscanf(const UChar   *buffer,
     int32_t size = (int32_t)uprv_strlen(patternSpecification) + 1;
 
     
-    if (size >= MAX_UCHAR_BUFFER_SIZE(patBuffer)) {
+    if (size >= (int32_t)MAX_UCHAR_BUFFER_SIZE(patBuffer)) {
         pattern = (UChar *)uprv_malloc(size * sizeof(UChar));
         if(pattern == 0) {
             return 0;

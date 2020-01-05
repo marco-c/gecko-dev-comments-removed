@@ -12,6 +12,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -87,24 +89,27 @@ U_NAMESPACE_BEGIN
 RBBIRuleScanner::RBBIRuleScanner(RBBIRuleBuilder *rb)
 {
     fRB                 = rb;
+    fScanIndex          = 0;
+    fNextIndex          = 0;
+    fQuoteMode          = FALSE;
+    fLineNum            = 1;
+    fCharNum            = 0;
+    fLastChar           = 0;
+    
+    fStateTable         = NULL;
+    fStack[0]           = 0;
     fStackPtr           = 0;
-    fStack[fStackPtr]   = 0;
-    fNodeStackPtr       = 0;
-    fRuleNum            = 0;
     fNodeStack[0]       = NULL;
-
-    fSymbolTable                            = NULL;
-    fSetTable                               = NULL;
-
-    fScanIndex = 0;
-    fNextIndex = 0;
+    fNodeStackPtr       = 0;
 
     fReverseRule        = FALSE;
     fLookAheadRule      = FALSE;
+    fNoChainInRule      = FALSE;
 
-    fLineNum    = 1;
-    fCharNum    = 0;
-    fQuoteMode  = FALSE;
+    fSymbolTable        = NULL;
+    fSetTable           = NULL;
+    fRuleNum            = 0;
+    fOptionStart        = 0;
 
     
     
@@ -202,6 +207,12 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
     case doExprStart:
         pushNewNode(RBBINode::opStart);
         fRuleNum++;
+        break;
+
+
+    case doNoChain:
+        
+        fNoChainInRule = TRUE;
         break;
 
 
@@ -318,11 +329,11 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
         if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "rtree")) {printNodeStack("end of rule");}
 #endif
         U_ASSERT(fNodeStackPtr == 1);
+        RBBINode *thisRule = fNodeStack[fNodeStackPtr];
 
         
         
         if (fLookAheadRule) {
-            RBBINode  *thisRule       = fNodeStack[fNodeStackPtr];
             RBBINode  *endNode        = pushNewNode(RBBINode::endMark);
             RBBINode  *catNode        = pushNewNode(RBBINode::opCat);
             if (U_FAILURE(*fRB->fStatus)) {
@@ -334,7 +345,23 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
             fNodeStack[fNodeStackPtr] = catNode;
             endNode->fVal             = fRuleNum;
             endNode->fLookAheadEnd    = TRUE;
+            thisRule                  = catNode;
+
+            
+            
+            
         }
+
+        
+        thisRule->fRuleRoot = TRUE;
+
+        
+        
+        if (fRB->fChainRules &&         
+                !fNoChainInRule) {      
+            thisRule->fChainIn = TRUE;
+        }
+
 
         
         
@@ -372,6 +399,7 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
         }
         fReverseRule   = FALSE;   
         fLookAheadRule = FALSE;
+        fNoChainInRule = FALSE;
         fNodeStackPtr  = 0;
         }
         break;
@@ -994,7 +1022,7 @@ void RBBIRuleScanner::parse() {
 
         for (;;) {
             #ifdef RBBI_DEBUG
-                if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "scan")) { RBBIDebugPrintf(".");}
+                if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "scan")) { RBBIDebugPrintf("."); fflush(stdout);}
             #endif
             if (tableEl->fCharClass < 127 && fC.fEscaped == FALSE &&   tableEl->fCharClass == fC.fChar) {
                 
@@ -1077,6 +1105,17 @@ void RBBIRuleScanner::parse() {
 
     }
 
+    if (U_FAILURE(*fRB->fStatus)) {
+        return;
+    }
+    
+    
+    
+    if (fRB->fForwardTree == NULL) {
+        error(U_BRK_RULE_SYNTAX);
+        return;
+    }
+
     
     
     
@@ -1100,16 +1139,15 @@ void RBBIRuleScanner::parse() {
     
 #ifdef RBBI_DEBUG
     if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "symbols")) {fSymbolTable->rbbiSymtablePrint();}
-    if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "ptree"))
-    {
+    if (fRB->fDebugEnv && uprv_strstr(fRB->fDebugEnv, "ptree")) {
         RBBIDebugPrintf("Completed Forward Rules Parse Tree...\n");
-        fRB->fForwardTree->printTree(TRUE);
+        RBBINode::printTree(fRB->fForwardTree, TRUE);
         RBBIDebugPrintf("\nCompleted Reverse Rules Parse Tree...\n");
-        fRB->fReverseTree->printTree(TRUE);
+        RBBINode::printTree(fRB->fReverseTree, TRUE);
         RBBIDebugPrintf("\nCompleted Safe Point Forward Rules Parse Tree...\n");
-        fRB->fSafeFwdTree->printTree(TRUE);
+        RBBINode::printTree(fRB->fSafeFwdTree, TRUE);
         RBBIDebugPrintf("\nCompleted Safe Point Reverse Rules Parse Tree...\n");
-        fRB->fSafeRevTree->printTree(TRUE);
+        RBBINode::printTree(fRB->fSafeRevTree, TRUE);
     }
 #endif
 }
@@ -1124,7 +1162,7 @@ void RBBIRuleScanner::parse() {
 void RBBIRuleScanner::printNodeStack(const char *title) {
     int i;
     RBBIDebugPrintf("%s.  Dumping node stack...\n", title);
-    for (i=fNodeStackPtr; i>0; i--) {fNodeStack[i]->printTree(TRUE);}
+    for (i=fNodeStackPtr; i>0; i--) {RBBINode::printTree(fNodeStack[i], TRUE);}
 }
 #endif
 

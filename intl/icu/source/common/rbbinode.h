@@ -4,10 +4,13 @@
 
 
 
+
+
 #ifndef RBBINODE_H
 #define RBBINODE_H
 
 #include "unicode/utypes.h"
+#include "unicode/unistr.h"
 #include "unicode/uobject.h"
 
 
@@ -79,6 +82,10 @@ class RBBINode : public UMemory {
         UBool         fLookAheadEnd;        
                                             
 
+        UBool         fRuleRoot;            
+        UBool         fChainIn;             
+                                            
+
         UVector       *fFirstPosSet;
         UVector       *fLastPosSet;         
         UVector       *fFollowPos;
@@ -94,8 +101,9 @@ class RBBINode : public UMemory {
         void         findNodes(UVector *dest, RBBINode::NodeType kind, UErrorCode &status);
 
 #ifdef RBBI_DEBUG
-        void        printNode();
-        void        printTree(UBool withHeading);
+        static void printNodeHeader();
+        static void printNode(const RBBINode *n);
+        static void printTree(const RBBINode *n, UBool withHeading);
 #endif
 
     private:
@@ -103,6 +111,7 @@ class RBBINode : public UMemory {
         UBool operator == (const RBBINode &other);    
 
 #ifdef RBBI_DEBUG
+    public:
         int           fSerialNum;           
 #endif
 };

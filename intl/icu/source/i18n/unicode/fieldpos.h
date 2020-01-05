@@ -18,6 +18,8 @@
 
 
 
+
+
  
 #ifndef FIELDPOS_H
 #define FIELDPOS_H
@@ -106,6 +108,7 @@ U_NAMESPACE_BEGIN
 class U_I18N_API FieldPosition : public UObject {
 public:
     
+
 
 
 

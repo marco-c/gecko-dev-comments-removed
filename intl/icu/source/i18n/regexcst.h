@@ -9,8 +9,12 @@
 
 
 
+
+
 #ifndef RBBIRPT_H
 #define RBBIRPT_H
+
+#include "unicode/utypes.h"
 
 U_NAMESPACE_BEGIN
 

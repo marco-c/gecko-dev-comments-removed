@@ -22,6 +22,8 @@
 
 
 
+
+
 #ifndef DECIMFMT_H
 #define DECIMFMT_H
 
@@ -54,7 +56,6 @@
 U_NAMESPACE_BEGIN
 
 class DigitList;
-class ChoiceFormat;
 class CurrencyPluralInfo;
 class Hashtable;
 class UnicodeSet;
@@ -808,7 +809,7 @@ public:
     virtual int32_t getAttribute( UNumberFormatAttribute attr,
                                   UErrorCode &status) const;
 
-    
+
     
 
 
@@ -1090,7 +1091,7 @@ public:
 
 
 
-    virtual UnicodeString& format(const StringPiece &number,
+    virtual UnicodeString& format(StringPiece number,
                                   UnicodeString& appendTo,
                                   FieldPositionIterator* posIter,
                                   UErrorCode& status) const;
@@ -1674,6 +1675,9 @@ public:
 
     int32_t getMinimumGroupingDigits() const;
 
+#endif  
+
+	
     
 
 
@@ -1684,7 +1688,6 @@ public:
 
     virtual void setMinimumGroupingDigits(int32_t newValue);
 
-#endif  
 
     
 
@@ -2100,6 +2103,8 @@ private:
                    DecimalFormatSymbols*    symbolsToAdopt = 0
                    );
 
+    void handleCurrencySignInPattern(UErrorCode& status);
+
     void parse(const UnicodeString& text,
                Formattable& result,
                ParsePosition& pos,
@@ -2192,7 +2197,7 @@ private:
     
     double getCurrencyRounding(const UChar* currency,
                                UErrorCode* ec) const;
-	
+
     
     int getCurrencyFractionDigits(const UChar* currency,
                                   UErrorCode* ec) const;
@@ -2247,7 +2252,7 @@ private:
 
     
     const DecimalFormatStaticSets *fStaticSets;
-	
+
 protected:
 
 #ifndef U_HIDE_INTERNAL_API

@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef __DTPTNGEN_H__
 #define __DTPTNGEN_H__
 
@@ -84,7 +86,7 @@ public:
 
 
      static DateTimePatternGenerator* U_EXPORT2 createEmptyInstance(UErrorCode& status);
-     
+
     
 
 
@@ -106,7 +108,7 @@ public:
 
 
     UBool operator==(const DateTimePatternGenerator& other) const;
-    
+
     
 
 
@@ -116,7 +118,6 @@ public:
 
     UBool operator!=(const DateTimePatternGenerator& other) const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -128,7 +129,6 @@ public:
 
 
     static UnicodeString staticGetSkeleton(const UnicodeString& pattern, UErrorCode& status);
-#endif  
 
     
 
@@ -142,11 +142,13 @@ public:
 
 
 
-    UnicodeString getSkeleton(const UnicodeString& pattern, UErrorCode& status) {
-        return staticGetSkeleton(pattern, status);
-    }
+    UnicodeString getSkeleton(const UnicodeString& pattern, UErrorCode& status); 
 
-#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
     
 
 
@@ -161,7 +163,6 @@ public:
 
 
     static UnicodeString staticGetBaseSkeleton(const UnicodeString& pattern, UErrorCode& status);
-#endif  
 
     
 
@@ -178,9 +179,12 @@ public:
 
 
 
-    UnicodeString getBaseSkeleton(const UnicodeString& pattern, UErrorCode& status) {
-        return staticGetBaseSkeleton(pattern, status);
-    }
+    UnicodeString getBaseSkeleton(const UnicodeString& pattern, UErrorCode& status); 
+
+
+
+
+
 
     
 
@@ -207,8 +211,8 @@ public:
 
 
 
-    UDateTimePatternConflict addPattern(const UnicodeString& pattern, 
-                                        UBool override, 
+    UDateTimePatternConflict addPattern(const UnicodeString& pattern,
+                                        UBool override,
                                         UnicodeString& conflictingPattern,
                                         UErrorCode& status);
 
@@ -361,8 +365,8 @@ public:
 
 
 
-     UnicodeString replaceFieldTypes(const UnicodeString& pattern, 
-                                     const UnicodeString& skeleton, 
+     UnicodeString replaceFieldTypes(const UnicodeString& pattern,
+                                     const UnicodeString& skeleton,
                                      UErrorCode& status);
 
     
@@ -387,8 +391,8 @@ public:
 
 
 
-     UnicodeString replaceFieldTypes(const UnicodeString& pattern, 
-                                     const UnicodeString& skeleton, 
+     UnicodeString replaceFieldTypes(const UnicodeString& pattern,
+                                     const UnicodeString& skeleton,
                                      UDateTimePatternMatchOptions options,
                                      UErrorCode& status);
 
@@ -412,7 +416,7 @@ public:
 
 
      const UnicodeString& getPatternForSkeleton(const UnicodeString& skeleton) const;
-     
+
     
 
 
@@ -512,21 +516,26 @@ private:
     UnicodeString decimal;
     DateTimeMatcher *skipMatcher;
     Hashtable *fAvailableFormatKeyHash;
-    UnicodeString hackPattern;
     UnicodeString emptyString;
     UChar fDefaultHourFormatChar;
-    
+
+    int32_t fAllowedHourFormats[7];  
+
     
     enum {
         kDTPGNoFlags = 0,
         kDTPGFixFractionalSeconds = 1,
-        kDTPGSkeletonUsesCapJ = 2
+        kDTPGSkeletonUsesCapJ = 2,
+        kDTPGSkeletonUsesLowB = 3,
+        kDTPGSkeletonUsesCapB = 4
     };
 
     void initData(const Locale &locale, UErrorCode &status);
-    void addCanonicalItems();
+    void addCanonicalItems(UErrorCode &status);
     void addICUPatterns(const Locale& locale, UErrorCode& status);
     void hackTimes(const UnicodeString& hackPattern, UErrorCode& status);
+    void getCalendarTypeToUse(const Locale& locale, CharString& destination, UErrorCode& err);
+    void consumeShortTimePattern(const UnicodeString& shortTimePattern, UErrorCode& status);
     void addCLDRData(const Locale& locale, UErrorCode& status);
     UDateTimePatternConflict addPatternWithSkeleton(const UnicodeString& pattern, const UnicodeString * skeletonToUse, UBool override, UnicodeString& conflictingPattern, UErrorCode& status);
     void initHashtable(UErrorCode& status);
@@ -534,6 +543,7 @@ private:
     void setDecimalSymbols(const Locale& locale, UErrorCode& status);
     UDateTimePatternField getAppendFormatNumber(const char* field) const;
     UDateTimePatternField getAppendNameNumber(const char* field) const;
+    UnicodeString& getMutableAppendItemName(UDateTimePatternField field);
     void getAppendName(UDateTimePatternField field, UnicodeString& value);
     int32_t getCanonicalIndex(const UnicodeString& field);
     const UnicodeString* getBestRaw(DateTimeMatcher& source, int32_t includeMask, DistanceInfo* missingFields, const PtnSkeleton** specifiedSkeletonPtr = 0);
@@ -544,6 +554,12 @@ private:
     UBool isAvailableFormatSet(const UnicodeString &key) const;
     void copyHashtable(Hashtable *other, UErrorCode &status);
     UBool isCanonicalItem(const UnicodeString& item) const;
+    static void U_CALLCONV loadAllowedHourFormatsData(UErrorCode &status);
+    void getAllowedHourFormats(const Locale &locale, UErrorCode &status);
+
+    struct AppendItemFormatsSink;
+    struct AppendItemNamesSink;
+    struct AvailableFormatsSink;
 } ;
 
 U_NAMESPACE_END

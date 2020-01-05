@@ -17,6 +17,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_CONVERSION && !UCONFIG_ONLY_HTML_CONVERSION
@@ -386,7 +388,7 @@ packDiff(int32_t diff) {
 }
 
 
-static void
+static void U_CALLCONV
 _Bocu1FromUnicodeWithOffsets(UConverterFromUnicodeArgs *pArgs,
                              UErrorCode *pErrorCode) {
     UConverter *cnv;
@@ -549,15 +551,18 @@ getTrail:
                     case 4:
                         *target++=(uint8_t)(diff>>24);
                         *offsets++=sourceIndex;
-                    case 3: 
+                        U_FALLTHROUGH;
+                    case 3:
                         *target++=(uint8_t)(diff>>16);
                         *offsets++=sourceIndex;
-                    case 2: 
+                        U_FALLTHROUGH;
+                    case 2:
                         *target++=(uint8_t)(diff>>8);
                         *offsets++=sourceIndex;
                     
                         *target++=(uint8_t)diff;
                         *offsets++=sourceIndex;
+                        U_FALLTHROUGH;
                     default:
                         
                         break;
@@ -580,10 +585,13 @@ getTrail:
                         
                     case 3:
                         *charErrorBuffer++=(uint8_t)(diff>>16);
-                    case 2: 
+                        U_FALLTHROUGH;
+                    case 2:
                         *charErrorBuffer++=(uint8_t)(diff>>8);
-                    case 1: 
+                        U_FALLTHROUGH;
+                    case 1:
                         *charErrorBuffer=(uint8_t)diff;
+                        U_FALLTHROUGH;
                     default:
                         
                         break;
@@ -597,12 +605,15 @@ getTrail:
                     case 3:
                         *target++=(uint8_t)(diff>>16);
                         *offsets++=sourceIndex;
-                    case 2: 
+                        U_FALLTHROUGH;
+                    case 2:
                         *target++=(uint8_t)(diff>>8);
                         *offsets++=sourceIndex;
-                    case 1: 
+                        U_FALLTHROUGH;
+                    case 1:
                         *target++=(uint8_t)diff;
                         *offsets++=sourceIndex;
+                        U_FALLTHROUGH;
                     default:
                         
                         break;
@@ -638,7 +649,7 @@ getTrail:
 
 
 
-static void
+static void U_CALLCONV
 _Bocu1FromUnicode(UConverterFromUnicodeArgs *pArgs,
                   UErrorCode *pErrorCode) {
     UConverter *cnv;
@@ -777,12 +788,14 @@ getTrail:
                         
                     case 4:
                         *target++=(uint8_t)(diff>>24);
-                    case 3: 
+                        U_FALLTHROUGH;
+                    case 3:
                         *target++=(uint8_t)(diff>>16);
                     
                         *target++=(uint8_t)(diff>>8);
                     
                         *target++=(uint8_t)diff;
+                        U_FALLTHROUGH;
                     default:
                         
                         break;
@@ -804,10 +817,13 @@ getTrail:
                         
                     case 3:
                         *charErrorBuffer++=(uint8_t)(diff>>16);
-                    case 2: 
+                        U_FALLTHROUGH;
+                    case 2:
                         *charErrorBuffer++=(uint8_t)(diff>>8);
-                    case 1: 
+                        U_FALLTHROUGH;
+                    case 1:
                         *charErrorBuffer=(uint8_t)diff;
+                        U_FALLTHROUGH;
                     default:
                         
                         break;
@@ -820,10 +836,13 @@ getTrail:
                         
                     case 3:
                         *target++=(uint8_t)(diff>>16);
-                    case 2: 
+                        U_FALLTHROUGH;
+                    case 2:
                         *target++=(uint8_t)(diff>>8);
-                    case 1: 
+                        U_FALLTHROUGH;
+                    case 1:
                         *target++=(uint8_t)diff;
+                        U_FALLTHROUGH;
                     default:
                         
                         break;
@@ -933,7 +952,7 @@ decodeBocu1TrailByte(int32_t count, int32_t b) {
     }
 }
 
-static void
+static void U_CALLCONV
 _Bocu1ToUnicodeWithOffsets(UConverterToUnicodeArgs *pArgs,
                            UErrorCode *pErrorCode) {
     UConverter *cnv;
@@ -1156,7 +1175,7 @@ endloop:
 
 
 
-static void
+static void U_CALLCONV
 _Bocu1ToUnicode(UConverterToUnicodeArgs *pArgs,
                 UErrorCode *pErrorCode) {
     UConverter *cnv;

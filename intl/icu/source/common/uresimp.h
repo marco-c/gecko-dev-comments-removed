@@ -5,6 +5,8 @@
 
 
 
+
+
 #ifndef URESIMP_H
 #define URESIMP_H
 
@@ -221,6 +223,14 @@ ures_getStringByKeyWithFallback(const UResourceBundle *resB,
                           const char* inKey,  
                           int32_t* len,
                           UErrorCode *status);
+
+#ifdef __cplusplus
+
+U_CAPI void U_EXPORT2
+ures_getAllItemsWithFallback(const UResourceBundle *bundle, const char *path,
+                             icu::ResourceSink &sink, UErrorCode &errorCode);
+
+#endif  
 
 
 

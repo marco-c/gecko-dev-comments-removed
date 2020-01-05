@@ -17,6 +17,8 @@
 
 
 
+
+
 #ifndef __BYTESTRIEBUILDER_H__
 #define __BYTESTRIEBUILDER_H__
 
@@ -29,7 +31,6 @@ U_NAMESPACE_BEGIN
 
 class BytesTrieElement;
 class CharString;
-
 
 
 
@@ -65,7 +66,7 @@ public:
 
 
 
-    BytesTrieBuilder &add(const StringPiece &s, int32_t value, UErrorCode &errorCode);
+    BytesTrieBuilder &add(StringPiece s, int32_t value, UErrorCode &errorCode);
 
     
 
@@ -152,7 +153,8 @@ private:
     private:
         const char *s;
     };
-
+    
+    
     virtual Node *createLinearMatchNode(int32_t i, int32_t byteIndex, int32_t length,
                                         Node *nextNode) const;
 

@@ -15,6 +15,8 @@
 
 
 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "unicode/utypes.h"
@@ -326,7 +328,7 @@ storeMappingData(){
                      mappingData[currentIndex++] = (uint16_t) mappingLength;
                 }
                 
-                uprv_memmove(mappingData+currentIndex, value->mapping, value->length*U_SIZEOF_UCHAR);
+                u_memmove(mappingData+currentIndex, value->mapping, value->length);
                 currentIndex += value->length;
                 if (currentIndex > mappingDataCapacity) {
                     

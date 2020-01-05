@@ -14,6 +14,8 @@
 
 
 
+
+
 #include <stdio.h>
 #include "unicode/utypes.h"
 #include "cstring.h"
@@ -831,10 +833,13 @@ MBCSAddFromUnicode(MBCSData *mbcsData,
     switch(length) {
     case 4:
         b=*pb++;
+        U_FALLTHROUGH;
     case 3:
         b=(b<<8)|*pb++;
+        U_FALLTHROUGH;
     case 2:
         b=(b<<8)|*pb++;
+        U_FALLTHROUGH;
     case 1:
     default:
         b=(b<<8)|*pb++;
@@ -1011,6 +1016,7 @@ MBCSAddTable(NewConverter *cnvData, UCMTable *table, UConverterStaticData *stati
         case -1:
             
             
+            U_FALLTHROUGH;
         case 0:
             
             isOK&=MBCSAddToUnicode(mbcsData, m->b.bytes, m->bLen, c, f);

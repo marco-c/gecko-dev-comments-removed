@@ -12,6 +12,8 @@
 
 
 
+
+
 #ifndef FMTABLE_H
 #define FMTABLE_H
 
@@ -134,7 +136,7 @@ public:
 
 
 
-    Formattable(const StringPiece &number, UErrorCode &status);
+    Formattable(StringPiece number, UErrorCode &status);
 
     
 
@@ -581,7 +583,7 @@ public:
 
 
 
-    void             setDecimalNumber(const StringPiece &numberString,
+    void             setDecimalNumber(StringPiece numberString,
                                       UErrorCode &status);
 
     

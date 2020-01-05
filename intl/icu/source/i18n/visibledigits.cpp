@@ -5,6 +5,8 @@
 
 
 
+
+
 #include <math.h>
 
 #include "unicode/utypes.h"
@@ -84,8 +86,11 @@ double VisibleDigits::computeAbsDoubleValue() const {
     }
 
     
-    char rawNumber[sizeof(decNumber) + MAX_DBL_DIGITS+3];
-    decNumber *numberPtr = (decNumber *) rawNumber;
+    struct {
+        decNumber  decNum;
+        char       digits[MAX_DBL_DIGITS+3];
+    } decNumberWithStorage;
+    decNumber *numberPtr = &decNumberWithStorage.decNum;
 
     int32_t mostSig = fInterval.getMostSignificantExclusive();
     int32_t mostSigNonZero = fExponent + fDigits.length();
@@ -109,15 +114,8 @@ double VisibleDigits::computeAbsDoubleValue() const {
     char str[MAX_DBL_DIGITS+18];
     uprv_decNumberToString(numberPtr, str);
     U_ASSERT(uprv_strlen(str) < MAX_DBL_DIGITS+18);
-    char decimalSeparator = DigitList::getStrtodDecimalSeparator();
-    if (decimalSeparator != '.') {
-        char *decimalPt = strchr(str, '.');
-        if (decimalPt != NULL) {
-            *decimalPt = decimalSeparator;
-        }
-    }
     char *unused = NULL;
-    return uprv_strtod(str, &unused);
+    return DigitList::decimalStrToDouble(str, &unused);
 }
 
 void VisibleDigits::getFixedDecimal(
@@ -165,7 +163,8 @@ void VisibleDigits::getFixedDecimal(
     
     
     int32_t idx = -1;
-    for (; idx >= -v && getDigitByExponent(idx) == 0; --idx);
+    for (; idx >= -v && getDigitByExponent(idx) == 0; --idx)
+      ;
 
     
     

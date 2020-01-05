@@ -11,12 +11,13 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/uscript.h"
 
+#include "cmemory.h"
 #include "scrptrun.h"
-
-#define ARRAY_SIZE(array) (sizeof array  / sizeof array[0])
 
 const char ScriptRun::fgClassID=0;
 
@@ -40,7 +41,7 @@ UChar32 ScriptRun::pairedChars[] = {
     0x301a, 0x301b
 };
 
-const int32_t ScriptRun::pairedCharCount = ARRAY_SIZE(pairedChars);
+const int32_t ScriptRun::pairedCharCount = UPRV_LENGTHOF(pairedChars);
 const int32_t ScriptRun::pairedCharPower = 1 << highBit(pairedCharCount);
 const int32_t ScriptRun::pairedCharExtra = pairedCharCount - pairedCharPower;
 

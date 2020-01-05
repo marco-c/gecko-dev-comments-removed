@@ -19,6 +19,8 @@
 
 
 
+
+
 #include "unicode/utypes.h"
 #include "unicode/uchar.h"
 #include "unicode/uscript.h"
@@ -434,7 +436,7 @@ u_getNumericValue(UChar32 c) {
         }
 
         return numValue;
-    } else if(ntv<UPROPS_NTV_RESERVED_START) {
+    } else if(ntv<UPROPS_NTV_FRACTION20_START) {
         
         int32_t numValue=(ntv>>2)-0xbf;
         int32_t exp=(ntv&3)+1;
@@ -458,6 +460,12 @@ u_getNumericValue(UChar32 c) {
         }
 
         return numValue;
+    } else if(ntv<UPROPS_NTV_RESERVED_START) {
+        
+        int32_t frac20=ntv-UPROPS_NTV_FRACTION20_START;  
+        int32_t numerator=2*(frac20&3)+1;
+        int32_t denominator=20<<(frac20>>2);
+        return (double)numerator/denominator;
     } else {
         
         return U_NO_NUMERIC_VALUE;
