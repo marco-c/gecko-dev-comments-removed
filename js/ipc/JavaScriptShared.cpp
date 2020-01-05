@@ -650,16 +650,38 @@ JavaScriptShared::fromObjectOrNullVariant(JSContext* cx, const ObjectOrNullVaria
 CrossProcessCpowHolder::CrossProcessCpowHolder(dom::CPOWManagerGetter* managerGetter,
                                                const InfallibleTArray<CpowEntry>& cpows)
   : js_(nullptr),
-    cpows_(cpows)
+    cpows_(cpows),
+    unwrapped_(false)
 {
     
     if (cpows.Length())
         js_ = managerGetter->GetCPOWManager();
 }
 
+CrossProcessCpowHolder::~CrossProcessCpowHolder()
+{
+    if (cpows_.Length() && !unwrapped_) {
+        
+        
+        
+        
+        
+        
+        
+        AutoJSAPI jsapi;
+        if (!jsapi.Init(xpc::PrivilegedJunkScope()))
+            return;
+        JSContext* cx = jsapi.cx();
+        JS::Rooted<JSObject*> cpows(cx);
+        js_->Unwrap(cx, cpows_, &cpows);
+    }
+}
+
 bool
 CrossProcessCpowHolder::ToObject(JSContext* cx, JS::MutableHandleObject objp)
 {
+    unwrapped_ = true;
+
     if (!cpows_.Length())
         return true;
 
