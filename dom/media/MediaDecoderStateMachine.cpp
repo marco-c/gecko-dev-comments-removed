@@ -1302,11 +1302,6 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
     mMaster->RecomputeDuration();
   }
 
-  
-  if (mMaster->mDuration.Ref().isNothing()) {
-    mMaster->mDuration = Some(TimeUnit::FromInfinity());
-  }
-
   if (mMaster->HasVideo()) {
     SLOG("Video decode isAsync=%d HWAccel=%d videoQueueSize=%d",
          Reader()->IsAsync(),
@@ -2942,6 +2937,11 @@ MediaDecoderStateMachine::FinishDecodeFirstFrame()
   DECODER_LOG("FinishDecodeFirstFrame");
 
   mMediaSink->Redraw(Info().mVideo);
+
+  
+  if (mDuration.Ref().isNothing()) {
+    mDuration = Some(TimeUnit::FromInfinity());
+  }
 
   DECODER_LOG("Media duration %lld, "
               "transportSeekable=%d, mediaSeekable=%d",
