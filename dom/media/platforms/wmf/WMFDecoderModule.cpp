@@ -210,22 +210,22 @@ WMFDecoderModule::Supports(const TrackInfo& aTrackInfo,
        WMFDecoderModule::HasAAC()) {
     return true;
   }
-  if (MP4Decoder::IsH264(aTrackInfo.mMimeType) &&
-      WMFDecoderModule::HasH264() &&
-      !MediaPrefs::PDMWMFAllowUnsupportedResolutions()) {
-    const VideoInfo* videoInfo = aTrackInfo.GetAsVideoInfo();
-    MOZ_ASSERT(videoInfo);
-    
-    
-    if (IsWin8OrLater()) {
+  if (MP4Decoder::IsH264(aTrackInfo.mMimeType) && WMFDecoderModule::HasH264()) {
+    if (!MediaPrefs::PDMWMFAllowUnsupportedResolutions()) {
+      const VideoInfo* videoInfo = aTrackInfo.GetAsVideoInfo();
+      MOZ_ASSERT(videoInfo);
       
-      if (videoInfo->mImage.width > 4096 || videoInfo->mImage.height > 2304) {
-        return false;
-      }
-    } else {
       
-      if (videoInfo->mImage.width > 1920 || videoInfo->mImage.height > 1088) {
-        return false;
+      if (IsWin8OrLater()) {
+        
+        if (videoInfo->mImage.width > 4096 || videoInfo->mImage.height > 2304) {
+          return false;
+        }
+      } else {
+        
+        if (videoInfo->mImage.width > 1920 || videoInfo->mImage.height > 1088) {
+          return false;
+        }
       }
     }
     return true;
