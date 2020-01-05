@@ -243,7 +243,7 @@ add_task(function* test_new_remote_window_flags() {
         return docShell.getInterface(Ci.nsITabChild)
                        .QueryInterface(Ci.nsIWebBrowserChrome)
                        .chromeFlags;
-      } catch(e) {
+      } catch (e) {
         
         return docShell.QueryInterface(Ci.nsIDocShellTreeItem)
                        .treeOwner
