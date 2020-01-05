@@ -469,6 +469,9 @@ impl StackingContext {
             }
         }
 
+        
+        point = point - self.bounds.origin;
+
         debug_assert!(!topmost_only || result.is_empty());
         let frac_point = self.transform.transform_point(&Point2D(point.x.to_frac32_px(),
                                                                  point.y.to_frac32_px()));
