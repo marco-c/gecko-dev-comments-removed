@@ -316,9 +316,6 @@ class TenuredCell : public Cell
                                                    TenuredCell* next);
 
     
-    void finalize(FreeOp* fop) {}
-
-    
     void fixupAfterMovingGC() {}
 
 #ifdef DEBUG
