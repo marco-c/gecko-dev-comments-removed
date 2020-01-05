@@ -35,11 +35,9 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
         
         super(AccessibleCaretCursorModeTestCase, self).setUp()
         self.caret_tested_pref = 'layout.accessiblecaret.enabled'
-        self.caret_timeout_ms_pref = 'layout.accessiblecaret.timeout_ms'
         self.hide_carets_for_mouse = 'layout.accessiblecaret.hide_carets_for_mouse_input'
         self.prefs = {
             self.caret_tested_pref: True,
-            self.caret_timeout_ms_pref: 0,
             self.hide_carets_for_mouse: False,
         }
         self.marionette.set_prefs(self.prefs)
@@ -129,40 +127,6 @@ class AccessibleCaretCursorModeTestCase(MarionetteTestCase):
 
         self.actions.key_down(content_to_add).key_up(content_to_add).perform()
         self.assertEqual(target_content, sel.content)
-
-    @parameterized(_input_id, el_id=_input_id)
-    @parameterized(_textarea_id, el_id=_textarea_id)
-    @parameterized(_contenteditable_id, el_id=_contenteditable_id)
-    def test_dragging_caret_to_top_left_corner_after_timeout(self, el_id):
-        self.open_test_html(self._cursor_html)
-        el = self.marionette.find_element(By.ID, el_id)
-        sel = SelectionManager(el)
-        content_to_add = '!'
-        non_target_content = content_to_add + sel.content
-
-        
-        timeout = 1
-        self.marionette.set_pref(self.caret_timeout_ms_pref, timeout * 1000)
-
-        
-        timeout *= 3
-
-        
-        
-        
-        el.tap()
-        sel.move_cursor_to_end()
-        sel.move_cursor_by_offset(1, backward=True)
-        el.tap(*sel.cursor_location())
-
-        
-        
-        src_x, src_y = sel.first_caret_location()
-        dest_x, dest_y = 0, 0
-        self.actions.wait(timeout).flick(el, src_x, src_y, dest_x, dest_y).perform()
-
-        self.actions.key_down(content_to_add).key_up(content_to_add).perform()
-        self.assertNotEqual(non_target_content, sel.content)
 
     def test_caret_not_appear_when_typing_in_scrollable_content(self):
         self.open_test_html(self._cursor_html)
