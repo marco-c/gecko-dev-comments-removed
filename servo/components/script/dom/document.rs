@@ -65,7 +65,7 @@ use dom::nodeiterator::NodeIterator;
 use dom::nodelist::NodeList;
 use dom::processinginstruction::ProcessingInstruction;
 use dom::range::Range;
-use dom::servohtmlparser::ServoHTMLParser;
+use dom::servohtmlparser::{ParserRoot, ParserRef, MutNullableParserField};
 use dom::text::Text;
 use dom::touch::Touch;
 use dom::touchevent::TouchEvent;
@@ -184,7 +184,7 @@ pub struct Document {
     
     loader: DOMRefCell<DocumentLoader>,
     
-    current_parser: MutNullableHeap<JS<ServoHTMLParser>>,
+    current_parser: MutNullableParserField,
     
     reflow_timeout: Cell<Option<u64>>,
     
@@ -1224,9 +1224,9 @@ impl Document {
 
         
         
-        if let Some(parser) = self.current_parser.get() {
-            if parser.is_suspended() {
-                parser.resume();
+        if let Some(parser) = self.get_current_parser() {
+            if parser.r().is_suspended() {
+                parser.r().resume();
             }
         } else if self.reflow_timeout.get().is_none() {
             
@@ -1347,11 +1347,11 @@ impl Document {
 
     }
 
-    pub fn set_current_parser(&self, script: Option<&ServoHTMLParser>) {
+    pub fn set_current_parser(&self, script: Option<ParserRef>) {
         self.current_parser.set(script);
     }
 
-    pub fn get_current_parser(&self) -> Option<Root<ServoHTMLParser>> {
+    pub fn get_current_parser(&self) -> Option<ParserRoot> {
         self.current_parser.get()
     }
 
