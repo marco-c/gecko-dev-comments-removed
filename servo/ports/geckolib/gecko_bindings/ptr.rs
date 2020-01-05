@@ -9,15 +9,18 @@ use std::fmt::{self, Debug};
 
 
 
-macro_rules! define_holder_arc {
-    ($arc_type:ident, $name:ident, $holder_type:ident, $addref: ident, $release: ident) => (
+
+
+
+macro_rules! define_arc {
+    ($arc_type:ident, $name:ident, $gecko_type:ident, $addref: ident, $release: ident) => (
         #[derive(PartialEq)]
         pub struct $arc_type {
-            ptr: *mut $holder_type,
+            ptr: *mut $gecko_type,
         }
 
         impl $arc_type {
-            pub fn new(data: *mut $holder_type) -> $arc_type {
+            pub fn new(data: *mut $gecko_type) -> $arc_type {
                 debug_assert!(!data.is_null());
                 unsafe { $addref(data); }
                 $arc_type {
@@ -25,7 +28,7 @@ macro_rules! define_holder_arc {
                 }
             }
 
-            pub fn as_raw(&self) -> *mut $holder_type { self.ptr }
+            pub fn as_raw(&self) -> *mut $gecko_type { self.ptr }
         }
 
         unsafe impl Send for $arc_type {}
@@ -55,7 +58,7 @@ macro_rules! define_holder_arc {
     )
 }
 
-define_holder_arc!(GeckoArcPrincipal, Principal, ThreadSafePrincipalHolder,
-                   Gecko_AddRefPrincipalArbitraryThread, Gecko_ReleasePrincipalArbitraryThread);
-define_holder_arc!(GeckoArcURI, URI, ThreadSafeURIHolder,
-                   Gecko_AddRefURIArbitraryThread, Gecko_ReleaseURIArbitraryThread);
+define_arc!(GeckoArcPrincipal, Principal, ThreadSafePrincipalHolder,
+            Gecko_AddRefPrincipalArbitraryThread, Gecko_ReleasePrincipalArbitraryThread);
+define_arc!(GeckoArcURI, URI, ThreadSafeURIHolder,
+            Gecko_AddRefURIArbitraryThread, Gecko_ReleaseURIArbitraryThread);
