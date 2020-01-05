@@ -93,7 +93,7 @@ enum class InvalidEscapeType {
     Octal
 };
 
-class TokenStream;
+class TokenStreamBase;
 
 struct Token
 {
@@ -161,7 +161,7 @@ struct Token
         
         OperandIsNone,
     };
-    friend class TokenStream;
+    friend class TokenStreamBase;
 
   public:
     TokenKind           type;           
@@ -269,48 +269,11 @@ class StrictModeGetter {
     virtual bool strictMode() = 0;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MOZ_STACK_CLASS TokenStream
+class TokenStreamBase
 {
+  protected:
+    TokenStreamBase(JSContext* cx, const ReadOnlyCompileOptions& options, StrictModeGetter* smg);
+
     
     enum {
         LINE_SEPARATOR = 0x2028,
@@ -323,27 +286,18 @@ class MOZ_STACK_CLASS TokenStream
     static const unsigned ntokensMask = ntokens - 1;
 
   public:
-    typedef Vector<char16_t, 32> CharBuffer;
-
-    TokenStream(JSContext* cx, const ReadOnlyCompileOptions& options,
-                const char16_t* base, size_t length, StrictModeGetter* smg);
-
-    ~TokenStream();
-
-    MOZ_MUST_USE bool checkOptions();
-
     
     const Token& currentToken() const { return tokens[cursor]; }
     bool isCurrentTokenType(TokenKind type) const {
         return currentToken().type == type;
     }
-    const CharBuffer& getTokenbuf() const { return tokenbuf; }
+
     const char* getFilename() const { return filename; }
     bool getMutedErrors() const { return mutedErrors; }
     JSVersion versionNumber() const { return VersionNumber(options().version); }
     JSVersion versionWithFlags() const { return options().version; }
 
-  private:
+  protected:
     PropertyName* reservedWordToPropertyName(TokenKind tt) const;
 
   public:
@@ -380,76 +334,11 @@ class MOZ_STACK_CLASS TokenStream
         invalidTemplateEscapeType = InvalidEscapeType::None;
     }
 
-    
-    
-    bool checkForInvalidTemplateEscapeError() {
-        if (invalidTemplateEscapeType == InvalidEscapeType::None)
-            return true;
-
-        reportInvalidEscapeError(invalidTemplateEscapeOffset, invalidTemplateEscapeType);
-        return false;
-    }
-
-    
-    bool reportError(unsigned errorNumber, ...);
-    bool reportErrorNoOffset(unsigned errorNumber, ...);
-
-    
-    void error(unsigned errorNumber, ...);
-
-    
-    void errorAt(uint32_t offset, unsigned errorNumber, ...);
-
-    
-    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
-
     static const uint32_t NoOffset = UINT32_MAX;
 
+  protected:
     
     
-    
-    bool reportCompileErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset, unsigned flags,
-                                    unsigned errorNumber, va_list args);
-    bool reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
-                                       bool strictMode, unsigned errorNumber, va_list args);
-    bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
-                                         unsigned errorNumber, va_list args);
-
-    
-    void reportAsmJSError(uint32_t offset, unsigned errorNumber, ...);
-
-    JSAtom* getRawTemplateStringAtom() {
-        MOZ_ASSERT(currentToken().type == TOK_TEMPLATE_HEAD ||
-                   currentToken().type == TOK_NO_SUBS_TEMPLATE);
-        const char16_t* cur = userbuf.rawCharPtrAt(currentToken().pos.begin + 1);
-        const char16_t* end;
-        if (currentToken().type == TOK_TEMPLATE_HEAD) {
-            
-            end = userbuf.rawCharPtrAt(currentToken().pos.end - 2);
-        } else {
-            
-            end = userbuf.rawCharPtrAt(currentToken().pos.end - 1);
-        }
-
-        CharBuffer charbuf(cx);
-        while (cur < end) {
-            int32_t ch = *cur;
-            if (ch == '\r') {
-                ch = '\n';
-                if ((cur + 1 < end) && (*(cur + 1) == '\n'))
-                    cur++;
-            }
-            if (!charbuf.append(ch))
-                return nullptr;
-            cur++;
-        }
-        return AtomizeChars(cx, charbuf.begin(), charbuf.length());
-    }
-
-  private:
-    
-    
-    bool reportStrictModeError(unsigned errorNumber, ...);
     bool strictMode() const { return strictModeGetter && strictModeGetter->strictMode(); }
 
     void setInvalidTemplateEscape(uint32_t offset, InvalidEscapeType type) {
@@ -459,29 +348,11 @@ class MOZ_STACK_CLASS TokenStream
         invalidTemplateEscapeOffset = offset;
         invalidTemplateEscapeType = type;
     }
-    void reportInvalidEscapeError(uint32_t offset, InvalidEscapeType type) {
-        switch (type) {
-            case InvalidEscapeType::None:
-                MOZ_ASSERT_UNREACHABLE("unexpected InvalidEscapeType");
-                return;
-            case InvalidEscapeType::Hexadecimal:
-                errorAt(offset, JSMSG_MALFORMED_ESCAPE, "hexadecimal");
-                return;
-            case InvalidEscapeType::Unicode:
-                errorAt(offset, JSMSG_MALFORMED_ESCAPE, "Unicode");
-                return;
-            case InvalidEscapeType::UnicodeOverflow:
-                errorAt(offset, JSMSG_UNICODE_OVERFLOW, "escape sequence");
-                return;
-            case InvalidEscapeType::Octal:
-                errorAt(offset, JSMSG_DEPRECATED_OCTAL);
-                return;
-        }
-    }
 
-    static JSAtom* atomize(JSContext* cx, CharBuffer& cb);
-    MOZ_MUST_USE bool putIdentInTokenbuf(const char16_t* identStart);
+    uint32_t invalidTemplateEscapeOffset = 0;
+    InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
+  protected:
     struct Flags
     {
         bool isEOF:1;           
@@ -494,9 +365,6 @@ class MOZ_STACK_CLASS TokenStream
           : isEOF(), isDirtyLine(), sawOctalEscape(), hadError()
         {}
     };
-
-    uint32_t invalidTemplateEscapeOffset = 0;
-    InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
   public:
     typedef Token::Modifier Modifier;
@@ -568,6 +436,286 @@ class MOZ_STACK_CLASS TokenStream
 #endif
     }
 
+#ifdef DEBUG
+    inline bool debugHasNoLookahead() const {
+        return lookahead == 0;
+    }
+#endif
+
+    bool hasDisplayURL() const {
+        return displayURL_ != nullptr;
+    }
+
+    char16_t* displayURL() {
+        return displayURL_.get();
+    }
+
+    bool hasSourceMapURL() const {
+        return sourceMapURL_ != nullptr;
+    }
+
+    char16_t* sourceMapURL() {
+        return sourceMapURL_.get();
+    }
+
+    
+    
+    class SourceCoords
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Vector<uint32_t, 128> lineStartOffsets_;
+        uint32_t            initialLineNum_;
+
+        
+        
+        mutable uint32_t    lastLineIndex_;
+
+        uint32_t lineIndexOf(uint32_t offset) const;
+
+        static const uint32_t MAX_PTR = UINT32_MAX;
+
+        uint32_t lineIndexToNum(uint32_t lineIndex) const { return lineIndex + initialLineNum_; }
+        uint32_t lineNumToIndex(uint32_t lineNum)   const { return lineNum   - initialLineNum_; }
+
+      public:
+        SourceCoords(JSContext* cx, uint32_t ln);
+
+        MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
+        MOZ_MUST_USE bool fill(const SourceCoords& other);
+
+        bool isOnThisLine(uint32_t offset, uint32_t lineNum, bool* onThisLine) const {
+            uint32_t lineIndex = lineNumToIndex(lineNum);
+            if (lineIndex + 1 >= lineStartOffsets_.length()) 
+                return false;
+            *onThisLine = lineStartOffsets_[lineIndex] <= offset &&
+                          offset < lineStartOffsets_[lineIndex + 1];
+            return true;
+        }
+
+        uint32_t lineNum(uint32_t offset) const;
+        uint32_t columnIndex(uint32_t offset) const;
+        void lineNumAndColumnIndex(uint32_t offset, uint32_t* lineNum, uint32_t* columnIndex) const;
+    };
+
+    SourceCoords srcCoords;
+
+    JSAtomState& names() const {
+        return cx->names();
+    }
+
+    JSContext* context() const {
+        return cx;
+    }
+
+    const ReadOnlyCompileOptions& options() const {
+        return options_;
+    }
+
+    void updateFlagsForEOL();
+
+    const Token& nextToken() const {
+        MOZ_ASSERT(hasLookahead());
+        return tokens[(cursor + 1) & ntokensMask];
+    }
+
+    bool hasLookahead() const { return lookahead > 0; }
+
+  protected:
+    
+    const ReadOnlyCompileOptions& options_;
+
+    Token               tokens[ntokens];    
+    unsigned            cursor;             
+    unsigned            lookahead;          
+    unsigned            lineno;             
+    Flags               flags;              
+    size_t              linebase;           
+    size_t              prevLinebase;       
+    const char*         filename;           
+    UniqueTwoByteChars  displayURL_;        
+    UniqueTwoByteChars  sourceMapURL_;      
+    uint8_t             isExprEnding[TOK_LIMIT];
+    JSContext* const    cx;
+    bool                mutedErrors;
+    StrictModeGetter*   strictModeGetter;  
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS TokenStream final : public TokenStreamBase
+{
+  public:
+    using CharBuffer = Vector<char16_t, 32>;
+
+    TokenStream(JSContext* cx, const ReadOnlyCompileOptions& options,
+                const char16_t* base, size_t length, StrictModeGetter* smg);
+
+    MOZ_MUST_USE bool checkOptions();
+
+    const CharBuffer& getTokenbuf() const { return tokenbuf; }
+
+    
+    
+    bool checkForInvalidTemplateEscapeError() {
+        if (invalidTemplateEscapeType == InvalidEscapeType::None)
+            return true;
+
+        reportInvalidEscapeError(invalidTemplateEscapeOffset, invalidTemplateEscapeType);
+        return false;
+    }
+
+    
+    bool reportError(unsigned errorNumber, ...);
+    bool reportErrorNoOffset(unsigned errorNumber, ...);
+
+    
+    void error(unsigned errorNumber, ...);
+
+    
+    void errorAt(uint32_t offset, unsigned errorNumber, ...);
+
+    
+    MOZ_MUST_USE bool warning(unsigned errorNumber, ...);
+
+    
+    
+    
+    bool reportCompileErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset, unsigned flags,
+                                    unsigned errorNumber, va_list args);
+    bool reportStrictModeErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
+                                       bool strictMode, unsigned errorNumber, va_list args);
+    bool reportExtraWarningErrorNumberVA(UniquePtr<JSErrorNotes> notes, uint32_t offset,
+                                         unsigned errorNumber, va_list args);
+
+    
+    void reportAsmJSError(uint32_t offset, unsigned errorNumber, ...);
+
+    JSAtom* getRawTemplateStringAtom() {
+        MOZ_ASSERT(currentToken().type == TOK_TEMPLATE_HEAD ||
+                   currentToken().type == TOK_NO_SUBS_TEMPLATE);
+        const char16_t* cur = userbuf.rawCharPtrAt(currentToken().pos.begin + 1);
+        const char16_t* end;
+        if (currentToken().type == TOK_TEMPLATE_HEAD) {
+            
+            end = userbuf.rawCharPtrAt(currentToken().pos.end - 2);
+        } else {
+            
+            end = userbuf.rawCharPtrAt(currentToken().pos.end - 1);
+        }
+
+        CharBuffer charbuf(cx);
+        while (cur < end) {
+            int32_t ch = *cur;
+            if (ch == '\r') {
+                ch = '\n';
+                if ((cur + 1 < end) && (*(cur + 1) == '\n'))
+                    cur++;
+            }
+            if (!charbuf.append(ch))
+                return nullptr;
+            cur++;
+        }
+        return AtomizeChars(cx, charbuf.begin(), charbuf.length());
+    }
+
+  private:
+    
+    
+    bool reportStrictModeError(unsigned errorNumber, ...);
+
+    void reportInvalidEscapeError(uint32_t offset, InvalidEscapeType type) {
+        switch (type) {
+            case InvalidEscapeType::None:
+                MOZ_ASSERT_UNREACHABLE("unexpected InvalidEscapeType");
+                return;
+            case InvalidEscapeType::Hexadecimal:
+                errorAt(offset, JSMSG_MALFORMED_ESCAPE, "hexadecimal");
+                return;
+            case InvalidEscapeType::Unicode:
+                errorAt(offset, JSMSG_MALFORMED_ESCAPE, "Unicode");
+                return;
+            case InvalidEscapeType::UnicodeOverflow:
+                errorAt(offset, JSMSG_UNICODE_OVERFLOW, "escape sequence");
+                return;
+            case InvalidEscapeType::Octal:
+                errorAt(offset, JSMSG_DEPRECATED_OCTAL);
+                return;
+        }
+    }
+
+    static JSAtom* atomize(JSContext* cx, CharBuffer& cb);
+    MOZ_MUST_USE bool putIdentInTokenbuf(const char16_t* identStart);
+
+  public:
     
     
     MOZ_MUST_USE bool getToken(TokenKind* ttp, Modifier modifier = None) {
@@ -731,11 +879,6 @@ class MOZ_STACK_CLASS TokenStream
     void tell(Position*);
     void seek(const Position& pos);
     MOZ_MUST_USE bool seek(const Position& pos, const TokenStream& other);
-#ifdef DEBUG
-    inline bool debugHasNoLookahead() const {
-        return lookahead == 0;
-    }
-#endif
 
     const char16_t* rawCharPtrAt(size_t offset) const {
         return userbuf.rawCharPtrAt(offset);
@@ -743,106 +886,6 @@ class MOZ_STACK_CLASS TokenStream
 
     const char16_t* rawLimit() const {
         return userbuf.limit();
-    }
-
-    bool hasDisplayURL() const {
-        return displayURL_ != nullptr;
-    }
-
-    char16_t* displayURL() {
-        return displayURL_.get();
-    }
-
-    bool hasSourceMapURL() const {
-        return sourceMapURL_ != nullptr;
-    }
-
-    char16_t* sourceMapURL() {
-        return sourceMapURL_.get();
-    }
-
-    
-    
-    class SourceCoords
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        Vector<uint32_t, 128> lineStartOffsets_;
-        uint32_t            initialLineNum_;
-
-        
-        
-        mutable uint32_t    lastLineIndex_;
-
-        uint32_t lineIndexOf(uint32_t offset) const;
-
-        static const uint32_t MAX_PTR = UINT32_MAX;
-
-        uint32_t lineIndexToNum(uint32_t lineIndex) const { return lineIndex + initialLineNum_; }
-        uint32_t lineNumToIndex(uint32_t lineNum)   const { return lineNum   - initialLineNum_; }
-
-      public:
-        SourceCoords(JSContext* cx, uint32_t ln);
-
-        MOZ_MUST_USE bool add(uint32_t lineNum, uint32_t lineStartOffset);
-        MOZ_MUST_USE bool fill(const SourceCoords& other);
-
-        bool isOnThisLine(uint32_t offset, uint32_t lineNum, bool* onThisLine) const {
-            uint32_t lineIndex = lineNumToIndex(lineNum);
-            if (lineIndex + 1 >= lineStartOffsets_.length()) 
-                return false;
-            *onThisLine = lineStartOffsets_[lineIndex] <= offset &&
-                          offset < lineStartOffsets_[lineIndex + 1];
-            return true;
-        }
-
-        uint32_t lineNum(uint32_t offset) const;
-        uint32_t columnIndex(uint32_t offset) const;
-        void lineNumAndColumnIndex(uint32_t offset, uint32_t* lineNum, uint32_t* columnIndex) const;
-    };
-
-    SourceCoords srcCoords;
-
-    JSAtomState& names() const {
-        return cx->names();
-    }
-
-    JSContext* context() const {
-        return cx;
-    }
-
-    const ReadOnlyCompileOptions& options() const {
-        return options_;
     }
 
   private:
@@ -1019,34 +1062,9 @@ class MOZ_STACK_CLASS TokenStream
     }
 
     MOZ_MUST_USE MOZ_ALWAYS_INLINE bool updateLineInfoForEOL();
-    void updateFlagsForEOL();
 
-    const Token& nextToken() const {
-        MOZ_ASSERT(hasLookahead());
-        return tokens[(cursor + 1) & ntokensMask];
-    }
-
-    bool hasLookahead() const { return lookahead > 0; }
-
-    
-    const ReadOnlyCompileOptions& options_;
-
-    Token               tokens[ntokens];    
-    unsigned            cursor;             
-    unsigned            lookahead;          
-    unsigned            lineno;             
-    Flags               flags;              
-    size_t              linebase;           
-    size_t              prevLinebase;       
     TokenBuf            userbuf;            
-    const char*         filename;           
-    UniqueTwoByteChars  displayURL_;        
-    UniqueTwoByteChars  sourceMapURL_;      
     CharBuffer          tokenbuf;           
-    uint8_t             isExprEnding[TOK_LIMIT];
-    JSContext* const    cx;
-    bool                mutedErrors;
-    StrictModeGetter*   strictModeGetter;  
 };
 
 extern const char*
