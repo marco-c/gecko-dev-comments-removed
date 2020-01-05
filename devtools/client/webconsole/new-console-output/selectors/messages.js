@@ -114,35 +114,13 @@ function matchSearchFilters(message, filters) {
     
     || isTextInFrame(text, message.frame)
     
-    || (
-      Array.isArray(message.stacktrace) &&
-      message.stacktrace.some(frame => isTextInFrame(text,
-        
-        
-        {
-          functionName: frame.functionName ||
-            l10n.getStr("stacktrace.anonymousFunction"),
-          filename: frame.filename,
-          lineNumber: frame.lineNumber,
-          columnNumber: frame.columnNumber
-        }))
-    )
+    || isTextInNetEvent(text, message.request)
     
-    || (message.messageText &&
-          message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
+    || isTextInStackTrace(text, message.stacktrace)
     
-    || (message.parameters &&
-        message.parameters.join("").toLocaleLowerCase()
-          .includes(text.toLocaleLowerCase()))
+    || isTextInMessageText(text, message.messageText)
     
-    || (Array.isArray(message.notes) && message.notes.some(note =>
-          
-          isTextInFrame(text, note.frame)
-          
-          || (note.messageBody &&
-                note.messageBody.toLocaleLowerCase()
-                  .includes(text.toLocaleLowerCase()))
-        ))
+    || isTextInNotes(text, message.notes)
   );
 }
 
@@ -170,6 +148,68 @@ function isTextInParameters(text, parameters) {
   text = text.toLocaleLowerCase();
   return getAllProps(parameters).find(prop =>
     (prop + "").toLocaleLowerCase().includes(text)
+  );
+}
+
+
+
+
+function isTextInNetEvent(text, request) {
+  if (!request) {
+    return false;
+  }
+
+  text = text.toLocaleLowerCase();
+
+  let method = request.method.toLocaleLowerCase();
+  let url = request.url.toLocaleLowerCase();
+  return method.includes(text) || url.includes(text);
+}
+
+
+
+
+function isTextInStackTrace(text, stacktrace) {
+  if (!Array.isArray(stacktrace)) {
+    return false;
+  }
+
+  
+  
+  return stacktrace.some(frame => isTextInFrame(text, {
+    functionName: frame.functionName || l10n.getStr("stacktrace.anonymousFunction"),
+    filename: frame.filename,
+    lineNumber: frame.lineNumber,
+    columnNumber: frame.columnNumber
+  }));
+}
+
+
+
+
+function isTextInMessageText(text, messageText) {
+  if (!messageText) {
+    return false;
+  }
+
+  return messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase());
+}
+
+
+
+
+function isTextInNotes(text, notes) {
+  if (!Array.isArray(notes)) {
+    return false;
+  }
+
+  return notes.some(note =>
+    
+    isTextInFrame(text, note.frame) ||
+    
+    (note.messageBody &&
+        note.messageBody.toLocaleLowerCase()
+          .includes(text.toLocaleLowerCase()))
   );
 }
 
