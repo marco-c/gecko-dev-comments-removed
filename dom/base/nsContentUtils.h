@@ -2937,6 +2937,13 @@ public:
   static bool
   SkipCursorMoveForSameValueSet() { return sSkipCursorMoveForSameValueSet; }
 
+  
+
+
+
+  static bool
+  GetUserIsInteracting();
+
 private:
   static bool InitializeEventTable();
 
@@ -3067,6 +3074,9 @@ private:
 
   static int32_t sPrivacyMaxInnerWidth;
   static int32_t sPrivacyMaxInnerHeight;
+
+  class UserInteractionObserver;
+  static UserInteractionObserver* sUserInteractionObserver;
 
   static nsHtml5StringParser* sHTMLFragmentParser;
   static nsIParser* sXMLFragmentParser;

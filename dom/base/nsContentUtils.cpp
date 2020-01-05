@@ -219,6 +219,7 @@
 #include "mozilla/dom/TabGroup.h"
 #include "nsIWebNavigationInfo.h"
 #include "nsPluginHost.h"
+#include "mozilla/HangAnnotations.h"
 
 #include "nsIBidiKeyboard.h"
 
@@ -301,6 +302,9 @@ bool nsContentUtils::sRequestIdleCallbackEnabled = false;
 
 int32_t nsContentUtils::sPrivacyMaxInnerWidth = 1000;
 int32_t nsContentUtils::sPrivacyMaxInnerHeight = 1000;
+
+nsContentUtils::UserInteractionObserver*
+nsContentUtils::sUserInteractionObserver = nullptr;
 
 uint32_t nsContentUtils::sHandlingInputTimeout = 1000;
 
@@ -494,6 +498,32 @@ private:
 } 
 
 
+
+
+
+
+
+
+
+
+class nsContentUtils::UserInteractionObserver final : public nsIObserver
+                                                    , public HangMonitor::Annotator
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  void Init();
+  void Shutdown();
+  virtual void AnnotateHang(HangMonitor::HangAnnotations& aAnnotations) override;
+
+  static Atomic<bool> sUserActive;
+
+private:
+  ~UserInteractionObserver() {}
+};
+
+
 TimeDuration
 nsContentUtils::HandlingUserInputTimeout()
 {
@@ -660,6 +690,10 @@ nsContentUtils::Init()
     return rv;
   }
   uuidGenerator.forget(&sUUIDGenerator);
+
+  RefPtr<UserInteractionObserver> uio = new UserInteractionObserver();
+  uio->Init();
+  uio.forget(&sUserInteractionObserver);
 
   sInitialized = true;
 
@@ -2026,6 +2060,11 @@ nsContentUtils::Shutdown()
   sModifierSeparator = nullptr;
 
   NS_IF_RELEASE(sSameOriginChecker);
+
+  if (sUserInteractionObserver) {
+    sUserInteractionObserver->Shutdown();
+    NS_RELEASE(sUserInteractionObserver);
+  }
 
   HTMLInputElement::Shutdown();
   nsMappedAttributes::Shutdown();
@@ -10382,5 +10421,71 @@ nsContentUtils::GenerateTabId()
   uint64_t tabBits = tabId & ((uint64_t(1) << kTabIdTabBits) - 1);
 
   return (processBits << kTabIdTabBits) | tabBits;
-
 }
+
+ bool
+nsContentUtils::GetUserIsInteracting()
+{
+  return UserInteractionObserver::sUserActive;
+}
+
+static const char* kUserInteractionInactive = "user-interaction-inactive";
+static const char* kUserInteractionActive = "user-interaction-active";
+
+void
+nsContentUtils::UserInteractionObserver::Init()
+{
+  
+  
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  obs->AddObserver(this, kUserInteractionInactive, false);
+  obs->AddObserver(this, kUserInteractionActive, false);
+
+  
+  
+  
+  HangMonitor::RegisterAnnotator(*this);
+}
+
+void
+nsContentUtils::UserInteractionObserver::Shutdown()
+{
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->RemoveObserver(this, kUserInteractionInactive);
+    obs->RemoveObserver(this, kUserInteractionActive);
+  }
+
+  HangMonitor::UnregisterAnnotator(*this);
+}
+
+
+
+
+
+void
+nsContentUtils::UserInteractionObserver::AnnotateHang(HangMonitor::HangAnnotations& aAnnotations)
+{
+  
+  if (sUserActive) {
+    aAnnotations.AddAnnotation(NS_LITERAL_STRING("UserInteracting"), true);
+  }
+}
+
+NS_IMETHODIMP
+nsContentUtils::UserInteractionObserver::Observe(nsISupports* aSubject,
+                                                 const char* aTopic,
+                                                 const char16_t* aData)
+{
+  if (!strcmp(aTopic, kUserInteractionInactive)) {
+    sUserActive = false;
+  } else if (!strcmp(aTopic, kUserInteractionActive)) {
+    sUserActive = true;
+  } else {
+    NS_WARNING("Unexpected observer notification");
+  }
+  return NS_OK;
+}
+
+Atomic<bool> nsContentUtils::UserInteractionObserver::sUserActive(false);
+NS_IMPL_ISUPPORTS(nsContentUtils::UserInteractionObserver, nsIObserver)
