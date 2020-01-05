@@ -11,6 +11,7 @@
 #include "nsITimeoutHandler.h"
 #include "mozilla/dom/TabGroup.h"
 
+using namespace mozilla;
 using namespace mozilla::dom;
 
 static int32_t              gRunningTimeoutDepth       = 0;
@@ -227,7 +228,8 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     }
   }
 
-  InsertTimeoutIntoList(timeout);
+  mTimeouts.Insert(timeout, mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
+                                               : Timeouts::SortBy::TimeWhen);
 
   timeout->mTimeoutId = GetTimeoutId(aReason);
   *aReturn = timeout->mTimeoutId;
@@ -420,7 +422,8 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
     if (needsReinsertion) {
       
       
-      InsertTimeoutIntoList(timeout);
+      mTimeouts.Insert(timeout, mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
+                                                   : Timeouts::SortBy::TimeWhen);
     }
 
     
@@ -629,6 +632,21 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
     return NS_OK;
   }
 
+  Timeouts::SortBy sortBy = mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
+                                               : Timeouts::SortBy::TimeWhen;
+
+  return mTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
+                                                   DOMMinTimeoutValue(),
+                                                   sortBy,
+                                                   mWindow.GetThrottledEventQueue());
+}
+
+nsresult
+TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS,
+                                                          int32_t aMinTimeoutValueMS,
+                                                          SortBy aSortBy,
+                                                          ThrottledEventQueue* aQueue)
+{
   TimeStamp now = TimeStamp::Now();
 
   
@@ -638,8 +656,8 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
   
   
   
-  for (Timeout* timeout = mTimeouts.InsertionPoint() ?
-         mTimeouts.InsertionPoint()->getNext() : mTimeouts.GetFirst();
+  for (Timeout* timeout = InsertionPoint() ?
+         InsertionPoint()->getNext() : GetFirst();
        timeout; ) {
     
     
@@ -662,7 +680,7 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
     
     TimeDuration interval =
       TimeDuration::FromMilliseconds(std::max(timeout->mInterval,
-                                            uint32_t(DOMMinTimeoutValue())));
+                                            uint32_t(aMinTimeoutValueMS)));
     uint32_t oldIntervalMillisecs = 0;
     timeout->mTimer->GetDelay(&oldIntervalMillisecs);
     TimeDuration oldInterval = TimeDuration::FromMilliseconds(oldIntervalMillisecs);
@@ -693,12 +711,11 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
       
       
       uint32_t firingDepth = timeout->mFiringDepth;
-      InsertTimeoutIntoList(timeout);
+      Insert(timeout, aSortBy);
       timeout->mFiringDepth = firingDepth;
       timeout->Release();
 
-      nsresult rv = timeout->InitTimer(mWindow.GetThrottledEventQueue(),
-                                       delay.ToMilliseconds());
+      nsresult rv = timeout->InitTimer(aQueue, delay.ToMilliseconds());
 
       if (NS_FAILED(rv)) {
         NS_WARNING("Error resetting non background timer for DOM timeout!");
@@ -755,16 +772,16 @@ TimeoutManager::ClearAllTimeouts()
 }
 
 void
-TimeoutManager::InsertTimeoutIntoList(Timeout* aTimeout)
+TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
 {
   
   
   Timeout* prevSibling;
-  for (prevSibling = mTimeouts.GetLast();
-       prevSibling && prevSibling != mTimeouts.InsertionPoint() &&
+  for (prevSibling = GetLast();
+       prevSibling && prevSibling != InsertionPoint() &&
          
          
-         (mWindow.IsFrozen() ?
+         (aSortBy == SortBy::TimeRemaining ?
           prevSibling->mTimeRemaining > aTimeout->mTimeRemaining :
           prevSibling->mWhen > aTimeout->mWhen);
        prevSibling = prevSibling->getPrevious()) {
@@ -775,7 +792,7 @@ TimeoutManager::InsertTimeoutIntoList(Timeout* aTimeout)
   if (prevSibling) {
     prevSibling->setNext(aTimeout);
   } else {
-    mTimeouts.InsertFront(aTimeout);
+    InsertFront(aTimeout);
   }
 
   aTimeout->mFiringDepth = 0;
