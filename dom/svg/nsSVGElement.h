@@ -357,6 +357,9 @@ protected:
                                               nsIAtom* aAttribute,
                                               const nsAString& aValue);
 
+  void UpdateAnimatedContentDeclarationBlock();
+  mozilla::DeclarationBlock* GetAnimatedContentDeclarationBlock();
+
   nsAttrValue WillChangeValue(nsIAtom* aName);
   
   

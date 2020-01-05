@@ -37,6 +37,7 @@ public:
   virtual nsSMILAnimationFunction& AnimationFunction() override;
   virtual bool GetTargetAttributeName(int32_t *aNamespaceID,
                                       nsIAtom **aLocalName) const override;
+  virtual nsSMILTargetAttrType GetTargetAttributeType() const override;
 
   
   virtual nsIAtom* GetPathDataAttrName() const override {

@@ -688,9 +688,35 @@ nsSMILAnimationController::GetTargetIdentifierForAnimation(
     return false;
 
   
-  aResult.mElement              = targetElem;
-  aResult.mAttributeName        = attributeName;
+  nsSMILTargetAttrType attributeType = aAnimElem->GetTargetAttributeType();
+
+  
+  
+  
+  bool isCSS = false;
+  if (attributeType == eSMILTargetAttrType_auto) {
+    if (attributeNamespaceID == kNameSpaceID_None) {
+      
+      
+      if (attributeName == nsGkAtoms::width ||
+          attributeName == nsGkAtoms::height) {
+        isCSS = targetElem->GetNameSpaceID() != kNameSpaceID_SVG;
+      } else {
+        nsCSSPropertyID prop =
+          nsCSSProps::LookupProperty(nsDependentAtomString(attributeName),
+                                     CSSEnabledState::eForAllContent);
+        isCSS = nsSMILCSSProperty::IsPropertyAnimatable(prop);
+      }
+    }
+  } else {
+    isCSS = (attributeType == eSMILTargetAttrType_CSS);
+  }
+
+  
+  aResult.mElement = targetElem;
+  aResult.mAttributeName = attributeName;
   aResult.mAttributeNamespaceID = attributeNamespaceID;
+  aResult.mIsCSS = isCSS;
 
   return true;
 }
@@ -710,9 +736,13 @@ nsSMILAnimationController::AddStyleUpdatesTo(RestyleTracker& aTracker)
       continue;
     }
 
-    aTracker.AddPendingRestyle(key.mElement,
-                               eRestyle_StyleAttribute_Animations,
-                               nsChangeHint(0));
+    
+    
+    
+    
+    nsRestyleHint rshint = key.mIsCSS ? eRestyle_StyleAttribute_Animations
+                                      : eRestyle_SVGAttrAnimations;
+    aTracker.AddPendingRestyle(key.mElement, rshint, nsChangeHint(0));
   }
 
   mMightHavePendingStyleUpdates = false;

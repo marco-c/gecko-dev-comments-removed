@@ -51,6 +51,15 @@ SVGAnimateMotionElement::GetTargetAttributeName(int32_t *aNamespaceID,
   return true;
 }
 
+nsSMILTargetAttrType
+SVGAnimateMotionElement::GetTargetAttributeType() const
+{
+  
+  
+  
+  return eSMILTargetAttrType_XML;
+}
+
 } 
 } 
 

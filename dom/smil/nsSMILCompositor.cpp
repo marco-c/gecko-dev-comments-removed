@@ -25,7 +25,8 @@ nsSMILCompositor::HashKey(KeyTypePointer aKey)
   
   
   return (NS_PTR_TO_UINT32(aKey->mElement.get()) >> 2) +
-    NS_PTR_TO_UINT32(aKey->mAttributeName.get());
+    NS_PTR_TO_UINT32(aKey->mAttributeName.get()) +
+    (aKey->mIsCSS ? 1 : 0);
 }
 
 
@@ -126,26 +127,18 @@ nsSMILCompositor::ClearAnimationEffects()
 nsISMILAttr*
 nsSMILCompositor::CreateSMILAttr()
 {
-  nsCSSPropertyID propID =
-    nsCSSProps::LookupProperty(nsDependentAtomString(mKey.mAttributeName),
-                               CSSEnabledState::eForAllContent);
-  if (nsSMILCSSProperty::IsPropertyAnimatable(propID)) {
-    
-    
-    
-    
-    
-    bool animateAsAttr = (mKey.mAttributeName == nsGkAtoms::width ||
-                          mKey.mAttributeName == nsGkAtoms::height) &&
-                         mKey.mElement->GetNameSpaceID() == kNameSpaceID_SVG &&
-                         !mKey.mElement->IsAttributeMapped(mKey.mAttributeName);
-    if (!animateAsAttr) {
-      return new nsSMILCSSProperty(propID, mKey.mElement.get());
+  if (mKey.mIsCSS) {
+    nsCSSPropertyID propId =
+      nsCSSProps::LookupProperty(nsDependentAtomString(mKey.mAttributeName),
+                                 CSSEnabledState::eForAllContent);
+    if (nsSMILCSSProperty::IsPropertyAnimatable(propId)) {
+      return new nsSMILCSSProperty(propId, mKey.mElement.get());
     }
+  } else {
+    return mKey.mElement->GetAnimatedAttr(mKey.mAttributeNamespaceID,
+                                          mKey.mAttributeName);
   }
-
-  return mKey.mElement->GetAnimatedAttr(mKey.mAttributeNamespaceID,
-                                        mKey.mAttributeName);
+  return nullptr;
 }
 
 uint32_t
