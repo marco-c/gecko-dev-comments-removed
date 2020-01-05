@@ -164,7 +164,7 @@ var Debugger =
 	
 	    return {
 	      text,
-	      contentType: isJavaScript(originalSource.url) ? "text/javascript" : "text/plain"
+	      contentType: isJavaScript(originalSource.url || "") ? "text/javascript" : "text/plain"
 	    };
 	  });
 	
@@ -175,27 +175,36 @@ var Debugger =
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 	
-	var networkRequest = __webpack_require__(205);
-	var URL = __webpack_require__(289);
-	var path = __webpack_require__(276);
 	
-	var _require = __webpack_require__(465);
+
+
+
 	
-	var SourceMapConsumer = _require.SourceMapConsumer;
-	var SourceMapGenerator = _require.SourceMapGenerator;
+	var networkRequest = __webpack_require__(207);
 	
-	var _require2 = __webpack_require__(275);
+	var _require = __webpack_require__(293);
 	
-	var isJavaScript = _require2.isJavaScript;
+	var parse = _require.parse;
 	
-	var assert = __webpack_require__(245);
+	var path = __webpack_require__(278);
 	
-	var _require3 = __webpack_require__(263);
+	var _require2 = __webpack_require__(472);
 	
-	var originalToGeneratedId = _require3.originalToGeneratedId;
-	var generatedToOriginalId = _require3.generatedToOriginalId;
-	var isGeneratedId = _require3.isGeneratedId;
-	var isOriginalId = _require3.isOriginalId;
+	var SourceMapConsumer = _require2.SourceMapConsumer;
+	var SourceMapGenerator = _require2.SourceMapGenerator;
+	
+	var _require3 = __webpack_require__(277);
+	
+	var isJavaScript = _require3.isJavaScript;
+	
+	var assert = __webpack_require__(247);
+	
+	var _require4 = __webpack_require__(265);
+	
+	var originalToGeneratedId = _require4.originalToGeneratedId;
+	var generatedToOriginalId = _require4.generatedToOriginalId;
+	var isGeneratedId = _require4.isGeneratedId;
+	var isOriginalId = _require4.isOriginalId;
 	
 	
 	var sourceMapRequests = new Map();
@@ -210,23 +219,35 @@ var Debugger =
 	}
 	
 	function _resolveSourceMapURL(source) {
-	  if (path.isURL(source.sourceMapURL) || !source.url) {
+	  var _source$url = source.url;
+	  var url = _source$url === undefined ? "" : _source$url;
+	  var _source$sourceMapURL = source.sourceMapURL;
+	  var sourceMapURL = _source$sourceMapURL === undefined ? "" : _source$sourceMapURL;
+	
+	  if (path.isURL(sourceMapURL) || url == "") {
 	    
 	    
-	    return source.sourceMapURL;
-	  } else if (path.isAbsolute(source.sourceMapURL)) {
+	    return sourceMapURL;
+	  } else if (path.isAbsolute(sourceMapURL)) {
 	    
 	    
-	    var urlObj = URL.parse(source.url);
-	    var base = urlObj.protocol + "//" + urlObj.host;
-	    return base + source.sourceMapURL;
+	    var _parse = parse(url);
+	
+	    var _parse$protocol = _parse.protocol;
+	    var protocol = _parse$protocol === undefined ? "" : _parse$protocol;
+	    var _parse$host = _parse.host;
+	    var host = _parse$host === undefined ? "" : _parse$host;
+	
+	    return `${ protocol }//${ host }${ sourceMapURL }`;
 	  }
 	  
 	  
-	  return path.dirname(source.url) + "/" + source.sourceMapURL;
+	  return path.dirname(url) + "/" + sourceMapURL;
 	}
 	
 	
+
+
 
 
 	function _setSourceMapRoot(sourceMap, absSourceMapURL, source) {
@@ -326,7 +347,7 @@ var Debugger =
 
  },
 
- 205:
+ 207:
  function(module, exports) {
 
 	function networkRequest(url, opts) {
@@ -361,7 +382,7 @@ var Debugger =
 
  },
 
- 242:
+ 244:
  function(module, exports, __webpack_require__) {
 
 	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
@@ -374,8 +395,17 @@ var Debugger =
 
 
 	
-	var co = __webpack_require__(243);
 	
+
+
+
+	
+	var co = __webpack_require__(245);
+	
+	
+
+
+
 	function asPaused(client, func) {
 	  if (client.state != "paused") {
 	    return co(function* () {
@@ -398,10 +428,18 @@ var Debugger =
 	  return func();
 	}
 	
+	
+
+
+
 	function handleError(err) {
 	  console.log("ERROR: ", err);
 	}
 	
+	
+
+
+
 	function promisify(context, method) {
 	  for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
 	    args[_key - 2] = arguments[_key];
@@ -419,6 +457,10 @@ var Debugger =
 	  });
 	}
 	
+	
+
+
+
 	function truncateStr(str, size) {
 	  if (str.length > size) {
 	    return str.slice(0, size) + "...";
@@ -426,6 +468,10 @@ var Debugger =
 	  return str;
 	}
 	
+	
+
+
+
 	function endTruncateStr(str, size) {
 	  if (str.length > size) {
 	    return "..." + str.slice(str.length - size);
@@ -434,6 +480,10 @@ var Debugger =
 	}
 	
 	var msgId = 1;
+	
+
+
+
 	function workerTask(worker, method) {
 	  return function () {
 	    for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
@@ -474,6 +524,8 @@ var Debugger =
 
 
 
+
+
 	function zip(a, b) {
 	  if (!b) {
 	    return a;
@@ -496,10 +548,15 @@ var Debugger =
 
 
 
+
 	function entries(obj) {
 	  return Object.keys(obj).map(k => [k, obj[k]]);
 	}
 	
+	
+
+
+
 	function mapObject(obj, iteratee) {
 	  return toObject(entries(obj).map((_ref2) => {
 	    var _ref3 = _slicedToArray(_ref2, 2);
@@ -515,6 +572,8 @@ var Debugger =
 
 
 
+
+
 	function toObject(arr) {
 	  var obj = {};
 	  for (var pair of arr) {
@@ -524,6 +583,8 @@ var Debugger =
 	}
 	
 	
+
+
 
 
 
@@ -548,10 +609,18 @@ var Debugger =
 	  };
 	}
 	
+	
+
+
+
 	function updateObj(obj, fields) {
 	  return Object.assign({}, obj, fields);
 	}
 	
+	
+
+
+
 	function throttle(func, ms) {
 	  var timeout = void 0,
 	      _this = void 0;
@@ -588,7 +657,7 @@ var Debugger =
 
  },
 
- 243:
+ 245:
  function(module, exports) {
 
 	
@@ -832,7 +901,7 @@ var Debugger =
 
  },
 
- 245:
+ 247:
  function(module, exports) {
 
 	function assert(condition, message) {
@@ -845,14 +914,14 @@ var Debugger =
 
  },
 
- 263:
+ 265:
  function(module, exports, __webpack_require__) {
 
-	var md5 = __webpack_require__(264);
+	var md5 = __webpack_require__(266);
 	
 	function originalToGeneratedId(originalId) {
 	  var match = originalId.match(/(.*)\/originalSource/);
-	  return match ? match[1] : null;
+	  return match ? match[1] : "";
 	}
 	
 	function generatedToOriginalId(generatedId, url) {
@@ -860,7 +929,7 @@ var Debugger =
 	}
 	
 	function isOriginalId(id) {
-	  return id.match(/\/originalSource/);
+	  return !!id.match(/\/originalSource/);
 	}
 	
 	function isGeneratedId(id) {
@@ -873,14 +942,14 @@ var Debugger =
 
  },
 
- 264:
+ 266:
  function(module, exports, __webpack_require__) {
 
 	(function(){
-	  var crypt = __webpack_require__(265),
-	      utf8 = __webpack_require__(266).utf8,
-	      isBuffer = __webpack_require__(267),
-	      bin = __webpack_require__(266).bin,
+	  var crypt = __webpack_require__(267),
+	      utf8 = __webpack_require__(268).utf8,
+	      isBuffer = __webpack_require__(269),
+	      bin = __webpack_require__(268).bin,
 	
 	  
 	  md5 = function (message, options) {
@@ -1040,7 +1109,7 @@ var Debugger =
 
  },
 
- 265:
+ 267:
  function(module, exports) {
 
 	(function() {
@@ -1143,7 +1212,7 @@ var Debugger =
 
  },
 
- 266:
+ 268:
  function(module, exports) {
 
 	var charenc = {
@@ -1183,7 +1252,7 @@ var Debugger =
 
  },
 
- 267:
+ 269:
  function(module, exports) {
 
 	
@@ -1211,19 +1280,29 @@ var Debugger =
 
  },
 
- 275:
+ 277:
  function(module, exports, __webpack_require__) {
 
-	var _require = __webpack_require__(242);
+	
+	
+	
+
+
+
+	
+	var _require = __webpack_require__(244);
 	
 	var endTruncateStr = _require.endTruncateStr;
 	
-	var _require2 = __webpack_require__(276);
+	var _require2 = __webpack_require__(278);
 	
 	var basename = _require2.basename;
 	
 	
 	
+
+
+
 
 
 	function trimUrlQuery(url) {
@@ -1243,17 +1322,27 @@ var Debugger =
 
 
 
+
+
+
 	function isJavaScript(url) {
 	  var contentType = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
 	
 	  return url && /\.(jsm|js)?$/.test(trimUrlQuery(url)) || contentType.includes("javascript");
 	}
 	
+	
+
+
+
 	function isPretty(source) {
 	  return source.url ? /formatted$/.test(source.url) : false;
 	}
 	
 	
+
+
+
 
 
 
@@ -1266,7 +1355,7 @@ var Debugger =
 	    return `SOURCE${ sourceId }`;
 	  }
 	
-	  var name = basename(source.url);
+	  var name = basename(source.url || "") || "(index)";
 	  return endTruncateStr(name, 50);
 	}
 	
@@ -1278,7 +1367,7 @@ var Debugger =
 
  },
 
- 276:
+ 278:
  function(module, exports) {
 
 	function basename(path) {
@@ -1298,13 +1387,17 @@ var Debugger =
 	  return str[0] === "/";
 	}
 	
+	function join(base, dir) {
+	  return base + "/" + dir;
+	}
+	
 	module.exports = {
-	  basename, dirname, isURL, isAbsolute
+	  basename, dirname, isURL, isAbsolute, join
 	};
 
  },
 
- 289:
+ 293:
  function(module, exports, __webpack_require__) {
 
 	
@@ -1328,7 +1421,7 @@ var Debugger =
 	
 	
 	
-	var punycode = __webpack_require__(290);
+	var punycode = __webpack_require__(294);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -1400,7 +1493,7 @@ var Debugger =
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(291);
+	    querystring = __webpack_require__(295);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && isObject(url) && url instanceof Url) return url;
@@ -2018,7 +2111,7 @@ var Debugger =
 
  },
 
- 290:
+ 294:
  function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;(function(module, global) {
@@ -2554,18 +2647,18 @@ var Debugger =
 
  },
 
- 291:
+ 295:
  function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(292);
-	exports.encode = exports.stringify = __webpack_require__(293);
+	exports.decode = exports.parse = __webpack_require__(296);
+	exports.encode = exports.stringify = __webpack_require__(297);
 
 
  },
 
- 292:
+ 296:
  function(module, exports) {
 
 	
@@ -2652,7 +2745,7 @@ var Debugger =
 
  },
 
- 293:
+ 297:
  function(module, exports) {
 
 	
@@ -2723,7 +2816,7 @@ var Debugger =
 
  },
 
- 465:
+ 472:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2731,14 +2824,14 @@ var Debugger =
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(466).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(472).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(475).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(473).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(479).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(482).SourceNode;
 
 
  },
 
- 466:
+ 473:
  function(module, exports, __webpack_require__) {
 
 	
@@ -2748,10 +2841,10 @@ var Debugger =
 
 
 	
-	var base64VLQ = __webpack_require__(467);
-	var util = __webpack_require__(469);
-	var ArraySet = __webpack_require__(470).ArraySet;
-	var MappingList = __webpack_require__(471).MappingList;
+	var base64VLQ = __webpack_require__(474);
+	var util = __webpack_require__(476);
+	var ArraySet = __webpack_require__(477).ArraySet;
+	var MappingList = __webpack_require__(478).MappingList;
 	
 	
 
@@ -3149,7 +3242,7 @@ var Debugger =
 
  },
 
- 467:
+ 474:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3189,7 +3282,7 @@ var Debugger =
 
 
 	
-	var base64 = __webpack_require__(468);
+	var base64 = __webpack_require__(475);
 	
 	
 	
@@ -3296,7 +3389,7 @@ var Debugger =
 
  },
 
- 468:
+ 475:
  function(module, exports) {
 
 	
@@ -3370,7 +3463,7 @@ var Debugger =
 
  },
 
- 469:
+ 476:
  function(module, exports) {
 
 	
@@ -3794,7 +3887,7 @@ var Debugger =
 
  },
 
- 470:
+ 477:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3804,7 +3897,7 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(469);
+	var util = __webpack_require__(476);
 	var has = Object.prototype.hasOwnProperty;
 	
 	
@@ -3905,7 +3998,7 @@ var Debugger =
 
  },
 
- 471:
+ 478:
  function(module, exports, __webpack_require__) {
 
 	
@@ -3915,7 +4008,7 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(469);
+	var util = __webpack_require__(476);
 	
 	
 
@@ -3991,7 +4084,7 @@ var Debugger =
 
  },
 
- 472:
+ 479:
  function(module, exports, __webpack_require__) {
 
 	
@@ -4001,11 +4094,11 @@ var Debugger =
 
 
 	
-	var util = __webpack_require__(469);
-	var binarySearch = __webpack_require__(473);
-	var ArraySet = __webpack_require__(470).ArraySet;
-	var base64VLQ = __webpack_require__(467);
-	var quickSort = __webpack_require__(474).quickSort;
+	var util = __webpack_require__(476);
+	var binarySearch = __webpack_require__(480);
+	var ArraySet = __webpack_require__(477).ArraySet;
+	var base64VLQ = __webpack_require__(474);
+	var quickSort = __webpack_require__(481).quickSort;
 	
 	function SourceMapConsumer(aSourceMap) {
 	  var sourceMap = aSourceMap;
@@ -5080,7 +5173,7 @@ var Debugger =
 
  },
 
- 473:
+ 480:
  function(module, exports) {
 
 	
@@ -5198,7 +5291,7 @@ var Debugger =
 
  },
 
- 474:
+ 481:
  function(module, exports) {
 
 	
@@ -5319,7 +5412,7 @@ var Debugger =
 
  },
 
- 475:
+ 482:
  function(module, exports, __webpack_require__) {
 
 	
@@ -5329,8 +5422,8 @@ var Debugger =
 
 
 	
-	var SourceMapGenerator = __webpack_require__(466).SourceMapGenerator;
-	var util = __webpack_require__(469);
+	var SourceMapGenerator = __webpack_require__(473).SourceMapGenerator;
+	var util = __webpack_require__(476);
 	
 	
 	
