@@ -51,7 +51,7 @@ MFTDecoder::SetMediaTypes(IMFMediaType* aInputType,
   HRESULT hr = mDecoder->SetInputType(0, aInputType, 0);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  hr = SetDecoderOutputType(true , aCallback, aData);
+  hr = SetDecoderOutputType(aCallback, aData);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
   hr = mDecoder->GetInputStreamInfo(0, &mInputStreamInfo);
@@ -76,34 +76,21 @@ MFTDecoder::GetAttributes()
 }
 
 HRESULT
-MFTDecoder::SetDecoderOutputType(bool aMatchAllAttributes,
-                                 ConfigureOutputCallback aCallback,
-                                 void* aData)
+MFTDecoder::SetDecoderOutputType(ConfigureOutputCallback aCallback, void* aData)
 {
   NS_ENSURE_TRUE(mDecoder != nullptr, E_POINTER);
 
-  GUID currentSubtype = {0};
-  HRESULT hr = mOutputType->GetGUID(MF_MT_SUBTYPE, &currentSubtype);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
   
   
+  HRESULT hr;
   RefPtr<IMFMediaType> outputType;
   UINT32 typeIndex = 0;
   while (SUCCEEDED(mDecoder->GetOutputAvailableType(
     0, typeIndex++, getter_AddRefs(outputType)))) {
-    GUID outSubtype = {0};
-    hr = outputType->GetGUID(MF_MT_SUBTYPE, &outSubtype);
-    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
-    BOOL resultMatch = currentSubtype == outSubtype;
-
-    if (resultMatch && aMatchAllAttributes) {
-      hr = mOutputType->Compare(outputType, MF_ATTRIBUTES_MATCH_OUR_ITEMS,
-                                &resultMatch);
-      NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-    }
-    if (resultMatch == TRUE) {
+    BOOL resultMatch;
+    hr = mOutputType->Compare(
+      outputType, MF_ATTRIBUTES_MATCH_OUR_ITEMS, &resultMatch);
+    if (SUCCEEDED(hr) && resultMatch == TRUE) {
       if (aCallback) {
         hr = aCallback(outputType, aData);
         NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
@@ -237,6 +224,13 @@ MFTDecoder::Output(RefPtr<IMFSample>* aOutput)
   }
 
   if (hr == MF_E_TRANSFORM_STREAM_CHANGE) {
+    
+    
+    
+    
+    hr = SetDecoderOutputType(nullptr, nullptr);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+    
     return MF_E_TRANSFORM_STREAM_CHANGE;
   }
 

@@ -109,8 +109,8 @@ WMFVideoMFTManager::WMFVideoMFTManager(
                             layers::ImageContainer* aImageContainer,
                             bool aDXVAEnabled)
   : mVideoInfo(aConfig)
-  , mImageSize(aConfig.mImage)
   , mVideoStride(0)
+  , mImageSize(aConfig.mImage)
   , mImageContainer(aImageContainer)
   , mDXVAEnabled(aDXVAEnabled)
   , mKnowsCompositor(aKnowsCompositor)
@@ -572,35 +572,8 @@ WMFVideoMFTManager::InitInternal()
   hr = SetDecoderMediaTypes();
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  RefPtr<IMFMediaType> outputType;
-  hr = mDecoder->GetOutputMediaType(outputType);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
-  if (mUseHwAccel && !CanUseDXVA(outputType)) {
-    mDXVAEnabled = false;
-    
-    return InitInternal(aForceD3D9);
-  }
-
   LOG("Video Decoder initialized, Using DXVA: %s",
       (mUseHwAccel ? "Yes" : "No"));
-
-  if (mDXVA2Manager) {
-    hr = mDXVA2Manager->ConfigureForSize(mVideoInfo.ImageRect().width,
-                                         mVideoInfo.ImageRect().height);
-    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-  } else {
-    GetDefaultStride(outputType, mVideoInfo.ImageRect().width, &mVideoStride);
-  }
-  LOG("WMFVideoMFTManager frame geometry stride=%u picture=(%d, %d, %d, %d) "
-      "display=(%d,%d)",
-      mVideoStride,
-      mVideoInfo.ImageRect().x,
-      mVideoInfo.ImageRect().y,
-      mVideoInfo.ImageRect().width,
-      mVideoInfo.ImageRect().height,
-      mVideoInfo.mDisplay.width,
-      mVideoInfo.mDisplay.height);
 
   return true;
 }
@@ -623,26 +596,24 @@ WMFVideoMFTManager::SetDecoderMediaTypes()
                             MFVideoInterlace_MixedInterlaceOrProgressive);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  hr = inputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  
+  if (mStreamType == VP9 || mStreamType == VP8) {
+    hr =
+      inputType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  hr = MFSetAttributeSize(inputType,
-                          MF_MT_FRAME_SIZE,
-                          mVideoInfo.ImageRect().width,
-                          mVideoInfo.ImageRect().height);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+    hr = MFSetAttributeSize(inputType,
+                            MF_MT_FRAME_SIZE,
+                            mVideoInfo.ImageRect().width,
+                            mVideoInfo.ImageRect().height);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  }
 
   RefPtr<IMFMediaType> outputType;
   hr = wmf::MFCreateMediaType(getter_AddRefs(outputType));
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
   hr = outputType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
-  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
-  hr = MFSetAttributeSize(outputType,
-                          MF_MT_FRAME_SIZE,
-                          mVideoInfo.ImageRect().width,
-                          mVideoInfo.ImageRect().height);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
   GUID outputSubType = mUseHwAccel ? MFVideoFormat_NV12 : MFVideoFormat_YV12;
@@ -664,19 +635,18 @@ WMFVideoMFTManager::Input(MediaRawData* aSample)
     return E_FAIL;
   }
 
-  RefPtr<IMFSample> inputSample;
   HRESULT hr = mDecoder->CreateInputSample(aSample->Data(),
                                            uint32_t(aSample->Size()),
                                            aSample->mTime,
-                                           &inputSample);
-  NS_ENSURE_TRUE(SUCCEEDED(hr) && inputSample != nullptr, hr);
+                                           &mLastInput);
+  NS_ENSURE_TRUE(SUCCEEDED(hr) && mLastInput != nullptr, hr);
 
   mLastDuration = aSample->mDuration;
   mLastTime = aSample->mTime;
   mSamplesCount++;
 
   
-  return mDecoder->Input(inputSample);
+  return mDecoder->Input(mLastInput);
 }
 
 class SupportsConfigEvent : public Runnable {
@@ -747,6 +717,69 @@ WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType)
   return event->mSupportsConfig;
 }
 
+HRESULT
+WMFVideoMFTManager::ConfigureVideoFrameGeometry()
+{
+  RefPtr<IMFMediaType> mediaType;
+  HRESULT hr = mDecoder->GetOutputMediaType(mediaType);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  
+  
+  
+  
+  if (mUseHwAccel && !CanUseDXVA(mediaType)) {
+    mDXVAEnabled = false;
+    if (!Init()) {
+      return E_FAIL;
+    }
+
+    mDecoder->Input(mLastInput);
+    return S_OK;
+  }
+
+  
+  
+  
+  
+  
+  
+  GUID videoFormat;
+  hr = mediaType->GetGUID(MF_MT_SUBTYPE, &videoFormat);
+  NS_ENSURE_TRUE(videoFormat == MFVideoFormat_NV12 || !mUseHwAccel, E_FAIL);
+  NS_ENSURE_TRUE(videoFormat == MFVideoFormat_YV12 || mUseHwAccel, E_FAIL);
+
+  nsIntRect pictureRegion;
+  hr = GetPictureRegion(mediaType, pictureRegion);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+
+  UINT32 width = pictureRegion.width;
+  UINT32 height = pictureRegion.height;
+  mImageSize = nsIntSize(width, height);
+  
+  
+  pictureRegion = mVideoInfo.ScaledImageRect(width, height);
+  if (!IsValidVideoRegion(mImageSize, pictureRegion, mVideoInfo.mDisplay)) {
+    
+    return E_FAIL;
+  }
+
+  if (mDXVA2Manager) {
+    hr = mDXVA2Manager->ConfigureForSize(width, height);
+    NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+  }
+
+  
+  GetDefaultStride(mediaType, width, &mVideoStride);
+
+  LOG("WMFVideoMFTManager frame geometry frame=(%u,%u) stride=%u picture=(%d, %d, %d, %d) display=(%d,%d)",
+      width, height,
+      mVideoStride,
+      pictureRegion.x, pictureRegion.y, pictureRegion.width, pictureRegion.height,
+      mVideoInfo.mDisplay.width, mVideoInfo.mDisplay.height);
+
+  return S_OK;
+}
 
 HRESULT
 WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
@@ -940,25 +973,13 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
     if (hr == MF_E_TRANSFORM_NEED_MORE_INPUT) {
       return MF_E_TRANSFORM_NEED_MORE_INPUT;
     }
-
     if (hr == MF_E_TRANSFORM_STREAM_CHANGE) {
+      
+      
+      
       MOZ_ASSERT(!sample);
-      
-      
-      hr = mDecoder->SetDecoderOutputType(false ,
-                                          nullptr,
-                                          nullptr);
+      hr = ConfigureVideoFrameGeometry();
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-
-      if (!mUseHwAccel) {
-        
-        RefPtr<IMFMediaType> outputType;
-        hr = mDecoder->GetOutputMediaType(outputType);
-        NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-        hr = GetDefaultStride(outputType, mVideoInfo.ImageRect().width,
-                              &mVideoStride);
-        NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-      }
       
       
       
@@ -967,7 +988,6 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset,
       ++typeChangeCount;
       continue;
     }
-
     if (SUCCEEDED(hr)) {
       if (!sample) {
         LOG("Video MFTDecoder returned success but no output!");
