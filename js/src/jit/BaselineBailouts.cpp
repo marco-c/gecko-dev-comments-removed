@@ -360,7 +360,7 @@ struct BaselineStackBuilder
         
         
         
-        if (type == JitFrame_IonJS || type == JitFrame_Entry || type == JitFrame_IonAccessorIC)
+        if (type == JitFrame_IonJS || type == JitFrame_Entry || type == JitFrame_IonICCall)
             return nullptr;
 
         
@@ -1483,7 +1483,7 @@ jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation, JitFrameIter
                prevFrameType == JitFrame_BaselineStub ||
                prevFrameType == JitFrame_Entry ||
                prevFrameType == JitFrame_Rectifier ||
-               prevFrameType == JitFrame_IonAccessorIC);
+               prevFrameType == JitFrame_IonICCall);
 #endif
 
     

@@ -1044,7 +1044,7 @@ EmitGetterCall(JSContext* cx, MacroAssembler& masm,
 
         
         uint32_t descriptor = MakeFrameDescriptor(masm.framePushed(), JitFrame_IonJS,
-                                                  IonAccessorICFrameLayout::Size());
+                                                  IonICCallFrameLayout::Size());
         attacher.pushStubCodePointer(masm);
         masm.Push(Imm32(descriptor));
         masm.Push(ImmPtr(returnAddr));
@@ -1064,7 +1064,7 @@ EmitGetterCall(JSContext* cx, MacroAssembler& masm,
 
         masm.movePtr(ImmGCPtr(target), scratchReg);
 
-        descriptor = MakeFrameDescriptor(argSize + padding, JitFrame_IonAccessorIC,
+        descriptor = MakeFrameDescriptor(argSize + padding, JitFrame_IonICCall,
                                          JitFrameLayout::Size());
         masm.Push(Imm32(0)); 
         masm.Push(scratchReg);
@@ -2847,7 +2847,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
 
         
         uint32_t descriptor = MakeFrameDescriptor(masm.framePushed(), JitFrame_IonJS,
-                                                  IonAccessorICFrameLayout::Size());
+                                                  IonICCallFrameLayout::Size());
         attacher.pushStubCodePointer(masm);
         masm.Push(Imm32(descriptor));
         masm.Push(ImmPtr(returnAddr));
@@ -2869,7 +2869,7 @@ GenerateCallSetter(JSContext* cx, IonScript* ion, MacroAssembler& masm,
 
         masm.movePtr(ImmGCPtr(target), tempReg);
 
-        descriptor = MakeFrameDescriptor(argSize + padding, JitFrame_IonAccessorIC,
+        descriptor = MakeFrameDescriptor(argSize + padding, JitFrame_IonICCall,
                                          JitFrameLayout::Size());
         masm.Push(Imm32(1)); 
         masm.Push(tempReg);

@@ -48,7 +48,7 @@ enum FrameType
     JitFrame_Rectifier,
 
     
-    JitFrame_IonAccessorIC,
+    JitFrame_IonICCall,
 
     
     
@@ -151,8 +151,8 @@ class JitFrameIterator
     bool isIonStub() const {
         return type_ == JitFrame_IonStub;
     }
-    bool isIonAccessorIC() const {
-        return type_ == JitFrame_IonAccessorIC;
+    bool isIonICCall() const {
+        return type_ == JitFrame_IonICCall;
     }
     bool isBailoutJS() const {
         return type_ == JitFrame_Bailout;
