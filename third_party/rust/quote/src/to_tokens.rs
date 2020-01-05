@@ -1,5 +1,7 @@
 use super::Tokens;
 
+use std::borrow::Cow;
+
 
 pub trait ToTokens {
     
@@ -28,6 +30,12 @@ pub trait ToTokens {
 }
 
 impl<'a, T: ?Sized + ToTokens> ToTokens for &'a T {
+    fn to_tokens(&self, tokens: &mut Tokens) {
+        (**self).to_tokens(tokens);
+    }
+}
+
+impl<'a, T: ?Sized + ToOwned + ToTokens> ToTokens for Cow<'a, T> {
     fn to_tokens(&self, tokens: &mut Tokens) {
         (**self).to_tokens(tokens);
     }

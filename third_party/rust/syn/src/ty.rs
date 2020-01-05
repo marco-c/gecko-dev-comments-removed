@@ -33,6 +33,14 @@ pub enum Ty {
     
     
     Infer,
+    
+    Mac(Mac),
+}
+
+#[cfg(not(feature = "type-macros"))]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct Mac {
+    _private: (),
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -55,7 +63,10 @@ pub enum Mutability {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Path {
+    
+    
     pub global: bool,
+    
     pub segments: Vec<PathSegment>,
 }
 
@@ -75,7 +86,13 @@ impl<T> From<T> for Path
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PathSegment {
+    
     pub ident: Ident,
+    
+    
+    
+    
+    
     pub parameters: PathParameters,
 }
 
@@ -228,10 +245,16 @@ pub mod parsing {
     use generics::parsing::{lifetime, lifetime_def, ty_param_bound, bound_lifetimes};
     use ident::parsing::ident;
     use lit::parsing::quoted_string;
+    #[cfg(feature = "type-macros")]
+    use mac::parsing::mac;
+    #[cfg(not(feature = "type-macros"))]
+    use nom::IResult;
     use std::str;
 
     named!(pub ty -> Ty, alt!(
         ty_paren // must be before ty_tup
+        |
+        ty_mac // must be before ty_path
         |
         ty_path // must be before ty_poly_trait_ref
         |
@@ -253,6 +276,14 @@ pub mod parsing {
         |
         ty_impl_trait
     ));
+
+    #[cfg(feature = "type-macros")]
+    named!(ty_mac -> Ty, map!(mac, Ty::Mac));
+
+    #[cfg(not(feature = "type-macros"))]
+    fn ty_mac(_: &str) -> IResult<&str, Ty> {
+        IResult::Error
+    }
 
     named!(ty_vec -> Ty, do_parse!(
         punct!("[") >>
@@ -648,6 +679,7 @@ mod printing {
                 Ty::Infer => {
                     tokens.append("_");
                 }
+                Ty::Mac(ref mac) => mac.to_tokens(tokens),
             }
         }
     }
@@ -821,6 +853,13 @@ mod printing {
                 Abi::Named(ref named) => named.to_tokens(tokens),
                 Abi::Rust => {}
             }
+        }
+    }
+
+    #[cfg(not(feature = "type-macros"))]
+    impl ToTokens for Mac {
+        fn to_tokens(&self, _tokens: &mut Tokens) {
+            unreachable!()
         }
     }
 }
