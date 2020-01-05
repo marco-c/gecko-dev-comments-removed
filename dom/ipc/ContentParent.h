@@ -159,7 +159,7 @@ public:
 
 
   static already_AddRefed<ContentParent>
-  MinTabSelect(const nsTArray<ContentParent*>& aContentParents,
+  RandomSelect(const nsTArray<ContentParent*>& aContentParents,
                ContentParent* aOpener,
                int32_t maxContentParents);
 
@@ -468,6 +468,8 @@ public:
                                                             const nsString& aPageURL,
                                                             const bool& aIsAudio,
                                                             const bool& aIsVideo) override;
+
+  virtual mozilla::ipc::IPCResult RecvGetGfxInfoFeatureStatus(nsTArray<mozilla::dom::GfxInfoFeatureStatus>* aFS) override;
 
   bool CycleCollectWithLogs(bool aDumpAllTraces,
                             nsICycleCollectorLogSink* aSink,
@@ -801,6 +803,7 @@ private:
                                                                      bool* aIsCompatible) override;
 
   virtual mozilla::ipc::IPCResult RecvNSSU2FTokenIsRegistered(nsTArray<uint8_t>&& aKeyHandle,
+                                                              nsTArray<uint8_t>&& aApplication,
                                                               bool* aIsValidKeyHandle) override;
 
   virtual mozilla::ipc::IPCResult RecvNSSU2FTokenRegister(nsTArray<uint8_t>&& aApplication,
