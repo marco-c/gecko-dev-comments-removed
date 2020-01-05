@@ -1289,7 +1289,7 @@ function focusElement(element) {
 
 
 event.sendKeysToElement = function (
-    keySequence, el, opts = {}, window = undefined) {
+    keyString, el, opts = {}, window = undefined) {
 
   if (opts.ignoreVisibility || element.isVisible(el)) {
     focusElement(el);
@@ -1300,9 +1300,8 @@ event.sendKeysToElement = function (
       modifiers[modifier] = false;
     }
 
-    let value = keySequence.join("");
-    for (let i = 0; i < value.length; i++) {
-      let c = value.charAt(i);
+    for (let i = 0; i < keyString.length; i++) {
+      let c = keyString.charAt(i);
       event.sendSingleKey(c, modifiers, window);
     }
 
