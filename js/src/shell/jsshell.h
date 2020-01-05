@@ -78,6 +78,18 @@ struct RCFile {
     bool release();
 };
 
+
+
+
+
+
+
+
+
+
+bool
+CreateAlias(JSContext* cx, const char* dstName, JS::HandleObject namespaceObj, const char* srcName);
+
 } 
 } 
 
