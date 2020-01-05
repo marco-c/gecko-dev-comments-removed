@@ -7,10 +7,6 @@
 
 #[feature(macro_rules)];
 
-
-
-
-
 #[macro_export]
 macro_rules! bitfield(
     ($bitfieldname:ident, $getter:ident, $setter:ident, $value:expr) => (
