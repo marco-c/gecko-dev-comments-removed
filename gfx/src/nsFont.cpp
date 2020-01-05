@@ -5,7 +5,6 @@
 
 #include "nsFont.h"
 #include "gfxFont.h"                    
-#include "gfxFontConstants.h"           
 #include "gfxFontFeatures.h"            
 #include "gfxFontUtils.h"               
 #include "nsCRT.h"                      
@@ -20,37 +19,14 @@ using namespace mozilla;
 
 nsFont::nsFont(const FontFamilyList& aFontlist, nscoord aSize)
   : fontlist(aFontlist)
+  , size(aSize)
 {
-  Init();
-  size = aSize;
 }
 
 nsFont::nsFont(FontFamilyType aGenericType, nscoord aSize)
   : fontlist(aGenericType)
+  , size(aSize)
 {
-  Init();
-  size = aSize;
-}
-
-void
-nsFont::Init()
-{
-  style = NS_FONT_STYLE_NORMAL;
-  weight = NS_FONT_WEIGHT_NORMAL;
-  stretch = NS_FONT_STRETCH_NORMAL;
-  systemFont = false;
-  smoothing = NS_FONT_SMOOTHING_AUTO;
-  sizeAdjust = -1.0f;
-  kerning = NS_FONT_KERNING_AUTO;
-  synthesis = NS_FONT_SYNTHESIS_WEIGHT | NS_FONT_SYNTHESIS_STYLE;
-
-  variantAlternates = 0;
-  variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
-  variantEastAsian = 0;
-  variantLigatures = 0;
-  variantNumeric = 0;
-  variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
-  variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
 }
 
 nsFont::nsFont(const nsFont& aOther) = default;

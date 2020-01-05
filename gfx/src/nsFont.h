@@ -9,6 +9,7 @@
 #include <stdint.h>                     
 #include <sys/types.h>                  
 #include "gfxFontFamilyList.h"
+#include "gfxFontConstants.h"           
 #include "gfxFontFeatures.h"
 #include "gfxFontVariations.h"
 #include "mozilla/RefPtr.h"             
@@ -46,52 +47,52 @@ struct nsFont {
   mozilla::FontFamilyList fontlist;
 
   
-  uint8_t style;
+  uint8_t style = NS_FONT_STYLE_NORMAL;
 
   
   
-  bool systemFont;
+  bool systemFont = false;
 
   
-  uint8_t variantCaps;
-  uint8_t variantNumeric;
-  uint8_t variantPosition;
-  uint8_t variantWidth;
+  uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
+  uint8_t variantNumeric = 0;
+  uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
+  uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
 
-  uint16_t variantLigatures;
-  uint16_t variantEastAsian;
-
-  
-  
-  
-
-  
-  uint16_t variantAlternates;
-
-  
-  uint8_t smoothing;
-
-  
-  uint16_t weight;
-
-  
-  
-  int16_t stretch;
-
-  
-  uint8_t kerning;
-
-  
-  uint8_t synthesis;
-
-  
-  nscoord size;
+  uint16_t variantLigatures = 0;
+  uint16_t variantEastAsian = 0;
 
   
   
   
+
   
-  float sizeAdjust;
+  uint16_t variantAlternates = 0;
+
+  
+  uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
+
+  
+  uint16_t weight = NS_FONT_WEIGHT_NORMAL;
+
+  
+  
+  int16_t stretch = NS_FONT_STRETCH_NORMAL;
+
+  
+  uint8_t kerning = NS_FONT_KERNING_AUTO;
+
+  
+  uint8_t synthesis = NS_FONT_SYNTHESIS_WEIGHT | NS_FONT_SYNTHESIS_STYLE;
+
+  
+  nscoord size = 0;
+
+  
+  
+  
+  
+  float sizeAdjust = -1.0f;
 
   
   nsTArray<gfxAlternateValue> alternateValues;
@@ -142,9 +143,6 @@ struct nsFont {
   void AddFontFeaturesToStyle(gfxFontStyle *aStyle) const;
 
   void AddFontVariationsToStyle(gfxFontStyle *aStyle) const;
-
-protected:
-  void Init(); 
 };
 
 #define NS_FONT_VARIANT_NORMAL            0
