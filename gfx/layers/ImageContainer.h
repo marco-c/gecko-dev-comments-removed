@@ -480,7 +480,7 @@ public:
 
 
 
-  uint64_t GetAsyncContainerID() const;
+  uint64_t GetAsyncContainerID();
 
   
 
@@ -595,6 +595,8 @@ private:
   
   
   void EnsureActiveImage();
+
+  void EnsureImageClient(bool aCreate);
 
   void NotifyCompositeInternal(const ImageCompositeNotification& aNotification);
 

@@ -104,6 +104,24 @@ BufferRecycleBin::ClearRecycledBuffers()
   mRecycledBufferSize = 0;
 }
 
+void
+ImageContainer::EnsureImageClient(bool aCreate)
+{
+  
+  
+  if (!aCreate && (!mImageClient || mImageClient->GetForwarder()->GetLayersIPCActor()->IPCOpen())) {
+    return;
+  }
+
+  RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
+  if (imageBridge) {
+    mIPDLChild = new ImageContainerChild(this);
+    mImageClient = imageBridge->CreateImageClient(CompositableType::IMAGE, this, mIPDLChild);
+    MOZ_ASSERT(mImageClient);
+    mAsyncContainerID = mImageClient->GetAsyncID();
+  }
+}
+
 ImageContainer::ImageContainer(Mode flag)
 : mReentrantMonitor("ImageContainer.mReentrantMonitor"),
   mGenerationCounter(++sGenerationCounter),
@@ -113,25 +131,11 @@ ImageContainer::ImageContainer(Mode flag)
   mRecycleBin(new BufferRecycleBin()),
   mCurrentProducerID(-1)
 {
-  RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
-  if (imageBridge) {
-    
-    
-    switch (flag) {
-      case SYNCHRONOUS:
-        break;
-      case ASYNCHRONOUS:
-        mIPDLChild = new ImageContainerChild(this);
-        mImageClient = imageBridge->CreateImageClient(CompositableType::IMAGE, this, mIPDLChild);
-        MOZ_ASSERT(mImageClient);
-        break;
-      default:
-        MOZ_ASSERT(false, "This flag is invalid.");
-        break;
-    }
+  if (flag == ASYNCHRONOUS) {
+    EnsureImageClient(true);
+  } else {
+    mAsyncContainerID = sInvalidAsyncContainerId;
   }
-  mAsyncContainerID = mImageClient ? mImageClient->GetAsyncID()
-                                   : sInvalidAsyncContainerId;
 }
 
 ImageContainer::ImageContainer(uint64_t aAsyncContainerID)
@@ -331,9 +335,10 @@ bool ImageContainer::IsAsync() const
   return mAsyncContainerID != sInvalidAsyncContainerId;
 }
 
-uint64_t ImageContainer::GetAsyncContainerID() const
+uint64_t ImageContainer::GetAsyncContainerID()
 {
   NS_ASSERTION(IsAsync(),"Shared image ID is only relevant to async ImageContainers");
+  EnsureImageClient(false);
   return mAsyncContainerID;
 }
 
