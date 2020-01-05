@@ -55,7 +55,7 @@ FetchPageInfo(const RefPtr<Database>& aDB,
   
   
   nsCString query = nsPrintfCString(
-    "SELECT h.id, h.guid, ( "
+    "SELECT h.id, pi.id, h.guid, ( "
       "SELECT h.url FROM moz_bookmarks b WHERE b.fk = h.id "
       "UNION ALL " 
       "SELECT url FROM moz_places WHERE id = ( "
@@ -71,6 +71,7 @@ FetchPageInfo(const RefPtr<Database>& aDB,
       ") "
     ") "
     "FROM moz_places h "
+    "LEFT JOIN moz_pages_w_icons pi ON page_url_hash = hash(:page_url) AND page_url = :page_url "
     "WHERE h.url_hash = hash(:page_url) AND h.url = :page_url",
     nsINavHistoryService::TRANSITION_REDIRECT_PERMANENT,
     nsINavHistoryService::TRANSITION_REDIRECT_TEMPORARY,
@@ -94,17 +95,19 @@ FetchPageInfo(const RefPtr<Database>& aDB,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  rv = stmt->GetInt64(0, &_page.id);
+  rv = stmt->GetInt64(0, &_page.placeId);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->GetUTF8String(1, _page.guid);
+  
+  _page.id = stmt->AsInt64(1);
+  rv = stmt->GetUTF8String(2, _page.guid);
   NS_ENSURE_SUCCESS(rv, rv);
   
   bool isNull;
-  rv = stmt->GetIsNull(2, &isNull);
+  rv = stmt->GetIsNull(3, &isNull);
   NS_ENSURE_SUCCESS(rv, rv);
   
   if (!isNull) {
-    rv = stmt->GetUTF8String(2, _page.bookmarkedSpec);
+    rv = stmt->GetUTF8String(3, _page.bookmarkedSpec);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -794,23 +797,48 @@ AsyncAssociateIconToPage::Run()
   
   
   
-  if (mPage.id == 0) {
+  if (mPage.placeId == 0) {
     rv = transaction.Commit();
     NS_ENSURE_SUCCESS(rv, rv);
     return NS_OK;
   }
 
   
-  {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mPage.id != 0)  {
     nsCOMPtr<mozIStorageStatement> stmt;
     stmt = DB->GetStatement(
-      "INSERT OR IGNORE INTO moz_pages_w_icons (id, page_url, page_url_hash) "
-      "VALUES (:page_id, :page_url, hash(:page_url)) "
+      "DELETE FROM moz_icons_to_pages WHERE icon_id IN ( "
+        "SELECT icon_id FROM moz_icons_to_pages "
+        "JOIN moz_icons i ON icon_id = i.id "
+        "WHERE page_id = :page_id "
+          "AND expire_ms < strftime('%s','now','localtime','start of day','-7 days','utc') * 1000 "
+      ") "
     );
     NS_ENSURE_STATE(stmt);
     mozStorageStatementScoper scoper(stmt);
     rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), mPage.id);
     NS_ENSURE_SUCCESS(rv, rv);
+    rv = stmt->Execute();
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    
+    
+    
+    nsCOMPtr<mozIStorageStatement> stmt;
+    stmt = DB->GetStatement(
+      "INSERT OR IGNORE INTO moz_pages_w_icons (page_url, page_url_hash) "
+      "VALUES (:page_url, hash(:page_url)) "
+    );
+    NS_ENSURE_STATE(stmt);
+    mozStorageStatementScoper scoper(stmt);
     rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("page_url"), mPage.spec);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = stmt->Execute();
@@ -821,7 +849,8 @@ AsyncAssociateIconToPage::Run()
   nsCOMPtr<mozIStorageStatement> stmt;
   stmt = DB->GetStatement(
     "INSERT OR IGNORE INTO moz_icons_to_pages (page_id, icon_id) "
-    "VALUES (:page_id, :icon_id) "
+    "VALUES ((SELECT id from moz_pages_w_icons WHERE page_url_hash = hash(:page_url) AND page_url = :page_url), "
+            ":icon_id) "
   );
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoper(stmt);
@@ -832,7 +861,7 @@ AsyncAssociateIconToPage::Run()
     nsCOMPtr<mozIStorageBindingParams> params;
     rv = paramsArray->NewBindingParams(getter_AddRefs(params));
     NS_ENSURE_SUCCESS(rv, rv);
-    rv = params->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), mPage.id);
+    rv = URIBinder::Bind(params, NS_LITERAL_CSTRING("page_url"), mPage.spec);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = params->BindInt64ByName(NS_LITERAL_CSTRING("icon_id"), payload.id);
     NS_ENSURE_SUCCESS(rv, rv);
