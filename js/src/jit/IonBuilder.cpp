@@ -5536,7 +5536,6 @@ ObjectOrSimplePrimitive(MDefinition* op)
 {
     
     return !op->mightBeType(MIRType::String)
-        && !op->mightBeType(MIRType::Symbol)
         && !op->mightBeType(MIRType::Double)
         && !op->mightBeType(MIRType::Float32)
         && !op->mightBeType(MIRType::MagicOptimizedArguments)
@@ -5640,8 +5639,12 @@ IonBuilder::compareTryBitwise(bool* emitted, JSOp op, MDefinition* left, MDefini
 
         
         
-        bool simpleLHS = left->mightBeType(MIRType::Boolean) || left->mightBeType(MIRType::Int32);
-        bool simpleRHS = right->mightBeType(MIRType::Boolean) || right->mightBeType(MIRType::Int32);
+        bool simpleLHS = left->mightBeType(MIRType::Boolean) ||
+                         left->mightBeType(MIRType::Int32) ||
+                         left->mightBeType(MIRType::Symbol);
+        bool simpleRHS = right->mightBeType(MIRType::Boolean) ||
+                         right->mightBeType(MIRType::Int32) ||
+                         right->mightBeType(MIRType::Symbol);
         if ((left->mightBeType(MIRType::Object) && simpleRHS) ||
             (right->mightBeType(MIRType::Object) && simpleLHS))
         {
