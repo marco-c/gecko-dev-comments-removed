@@ -39,6 +39,7 @@ use std::ptr;
 use std::slice;
 use util::non_geckolib::jsstring_to_str;
 use util::prefs;
+use util::str::DOMString;
 
 
 pub struct WindowProxyHandler(pub *const libc::c_void);
@@ -186,14 +187,14 @@ pub fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32>
 pub unsafe fn find_enum_string_index(cx: *mut JSContext,
                                      v: HandleValue,
                                      values: &[&'static str])
-                                     -> Result<Option<usize>, ()> {
+                                     -> Result<(Option<usize>, DOMString), ()> {
     let jsstr = ToString(cx, v);
     if jsstr.is_null() {
         return Err(());
     }
 
     let search = jsstring_to_str(cx, jsstr);
-    Ok(values.iter().position(|value| search == *value))
+    Ok((values.iter().position(|value| search == *value), search))
 }
 
 
