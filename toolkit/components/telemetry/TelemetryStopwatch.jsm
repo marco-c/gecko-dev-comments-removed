@@ -151,6 +151,25 @@ this.TelemetryStopwatch = {
 
 
 
+  running(aHistogram, aObj) {
+    return TelemetryStopwatchImpl.running(aHistogram, aObj, null);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   cancel(aHistogram, aObj) {
@@ -243,6 +262,28 @@ this.TelemetryStopwatch = {
 
 
 
+
+
+
+
+  runningKeyed(aHistogram, aKey, aObj) {
+    return TelemetryStopwatchImpl.running(aHistogram, aObj, aKey);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   cancelKeyed(aHistogram, aKey, aObj) {
     return TelemetryStopwatchImpl.cancel(aHistogram, aObj, aKey);
   },
@@ -302,6 +343,10 @@ this.TelemetryStopwatchImpl = {
     }
 
     return Timers.put(histogram, object, key, Components.utils.now());
+  },
+
+  running(histogram, object, key) {
+    return Timers.has(histogram, object, key);
   },
 
   cancel(histogram, object, key) {
