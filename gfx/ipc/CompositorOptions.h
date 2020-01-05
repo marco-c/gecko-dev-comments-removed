@@ -6,6 +6,10 @@
 #ifndef _include_mozilla_gfx_ipc_CompositorOptions_h_
 #define _include_mozilla_gfx_ipc_CompositorOptions_h_
 
+namespace IPC {
+template <typename> struct ParamTraits;
+} 
+
 namespace mozilla {
 namespace layers {
 
@@ -24,6 +28,12 @@ namespace layers {
 class CompositorOptions
 {
 public:
+  
+  CompositorOptions()
+    : mUseAPZ(false)
+  {
+  }
+
   explicit CompositorOptions(bool aUseAPZ)
     : mUseAPZ(aUseAPZ)
   {
@@ -31,8 +41,12 @@ public:
 
   bool UseAPZ() const { return mUseAPZ; }
 
+  friend struct IPC::ParamTraits<CompositorOptions>;
+
 private:
   bool mUseAPZ;
+
+  
 };
 
 } 
