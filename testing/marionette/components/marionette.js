@@ -287,7 +287,7 @@ MarionetteComponent.prototype.init = function () {
     
     
     let insaneSacrificialGoat =
-        new ServerSocket(666, Ci.nsIServerSocket.KeepWhenOffline, 4);
+        new ServerSocket(0, Ci.nsIServerSocket.KeepWhenOffline, 4);
     insaneSacrificialGoat.asyncListen(this);
   }
 
