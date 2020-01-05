@@ -2300,9 +2300,12 @@ CacheFile::InitIndexEntry()
 
   nsresult rv;
 
-  rv = CacheFileIOManager::InitIndexEntry(
-         mHandle, GetOriginAttrsHash(mMetadata->OriginAttributes()),
-         mMetadata->IsAnonymous(), mPinned);
+  
+  rv = CacheFileIOManager::InitIndexEntry(mHandle,
+                                          mMetadata->OriginAttributes().mAppId,
+                                          mMetadata->IsAnonymous(),
+                                          mMetadata->OriginAttributes().mInIsolatedMozBrowser,
+                                          mPinned);
   NS_ENSURE_SUCCESS(rv, rv);
 
   uint32_t expTime;
