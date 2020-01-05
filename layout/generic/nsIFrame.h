@@ -2250,6 +2250,14 @@ public:
 
     eIClampMarginBoxMinSize = 1 << 2, 
     eBClampMarginBoxMinSize = 1 << 3, 
+    
+
+
+
+
+
+
+    eIApplyAutoMinSize = 1 << 4, 
   };
 
   

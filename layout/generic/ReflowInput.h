@@ -220,6 +220,7 @@ public:
     bool mStaticPosIsCBOrigin : 1; 
     bool mIClampMarginBoxMinSize : 1; 
     bool mBClampMarginBoxMinSize : 1; 
+    bool mApplyAutoMinSize : 1;       
 
     
     
@@ -739,6 +740,9 @@ public:
 
     
     B_CLAMP_MARGIN_BOX_MIN_SIZE = (1<<6),
+
+    
+    I_APPLY_AUTO_MIN_SIZE = (1<<7),
   };
 
   
