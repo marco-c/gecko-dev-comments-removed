@@ -1202,6 +1202,11 @@ StorageActors.createActor({
     
     
     let { CacheStorage } = this.storageActor.window;
+
+    if (!CacheStorage) {
+      return [];
+    }
+
     let cache = new CacheStorage("content", principal);
     return cache;
   }),
