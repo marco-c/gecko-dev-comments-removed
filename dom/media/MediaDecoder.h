@@ -137,6 +137,11 @@ public:
   
   
   
+  void NotifyXPCOMShutdown();
+
+  
+  
+  
   virtual nsresult Load(nsIStreamListener** aListener);
 
   

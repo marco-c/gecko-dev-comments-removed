@@ -523,6 +523,22 @@ MediaDecoder::Shutdown()
   mOwner = nullptr;
 }
 
+void
+MediaDecoder::NotifyXPCOMShutdown()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (auto owner = GetOwner()) {
+    owner->NotifyXPCOMShutdown();
+  }
+  MOZ_DIAGNOSTIC_ASSERT(IsShutdown());
+
+  
+  
+  if (!IsShutdown()) {
+    Shutdown();
+  }
+}
+
 MediaDecoder::~MediaDecoder()
 {
   MOZ_ASSERT(NS_IsMainThread());
