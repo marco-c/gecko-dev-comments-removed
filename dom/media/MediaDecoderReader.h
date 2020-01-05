@@ -164,7 +164,7 @@ public:
   
   
   
-  virtual RefPtr<SeekPromise> Seek(SeekTarget aTarget, int64_t aEndTime) = 0;
+  virtual RefPtr<SeekPromise> Seek(const SeekTarget& aTarget, int64_t aEndTime) = 0;
 
   virtual void SetCDMProxy(CDMProxy* aProxy) {}
 
