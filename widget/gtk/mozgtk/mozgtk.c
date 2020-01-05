@@ -611,3 +611,22 @@ STUB(gdk_x11_window_get_drawable_impl)
 STUB(gdkx_visual_get)
 STUB(gtk_object_get_type)
 #endif
+
+#ifndef GTK3_SYMBOLS
+
+
+#include <X11/Xlib.h>
+
+
+
+
+
+
+
+MOZ_EXPORT Bool
+XShmQueryExtension(Display* aDisplay)
+{
+  return False;
+}
+#endif
+
