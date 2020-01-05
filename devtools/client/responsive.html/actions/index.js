@@ -72,6 +72,6 @@ createEnum([
   "UPDATE_DEVICE_DISPLAYED",
 
   
-  "UPDATE_DEVICE_MODAL_OPEN",
+  "UPDATE_DEVICE_MODAL",
 
 ], module.exports);

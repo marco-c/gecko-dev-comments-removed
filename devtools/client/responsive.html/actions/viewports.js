@@ -27,11 +27,12 @@ module.exports = {
   
 
 
-  changeDevice(id, device) {
+  changeDevice(id, device, deviceType) {
     return {
       type: CHANGE_DEVICE,
       id,
       device,
+      deviceType,
     };
   },
 

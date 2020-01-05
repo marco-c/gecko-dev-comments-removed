@@ -90,6 +90,9 @@ exports.devices = {
   isModalOpen: PropTypes.bool,
 
   
+  modalOpenedFromViewport: PropTypes.number,
+
+  
   listState: PropTypes.oneOf(Object.keys(exports.deviceListState)),
 
 };
@@ -139,6 +142,9 @@ exports.viewport = {
 
   
   device: PropTypes.string,
+
+  
+  deviceType: PropTypes.string,
 
   
   width: PropTypes.number,
