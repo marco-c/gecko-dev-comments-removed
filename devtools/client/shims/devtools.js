@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+const DevTools = {
+  chromeWindowType: "navigator:browser",
+};
+
+exports.gDevTools = DevTools;

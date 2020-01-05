@@ -39,13 +39,13 @@
 
 
 
-const {LocalizationHelper} = require("devtools/shared/l10n");
+const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N = new LocalizationHelper("toolkit/locales/intl.properties");
 
 
 
 
-var gFunctions = [
+const gFunctions = [
   
   [1, (n) => 0],
   
@@ -82,7 +82,7 @@ var gFunctions = [
   [5, (n) => n%10==1&&n%100!=11&&n%100!=71&&n%100!=91?0:n%10==2&&n%100!=12&&n%100!=72&&n%100!=92?1:(n%10==3||n%10==4||n%10==9)&&n%100!=13&&n%100!=14&&n%100!=19&&n%100!=73&&n%100!=74&&n%100!=79&&n%100!=93&&n%100!=94&&n%100!=99?2:n%1000000==0&&n!=0?3:4],
 ];
 
-this.PluralForm = {
+const PluralForm = {
   
 
 
@@ -100,12 +100,12 @@ this.PluralForm = {
     
 
     
-    delete PluralForm.numForms;
-    delete PluralForm.get;
+    delete this.numForms;
+    delete this.get;
 
     
-    [PluralForm.get, PluralForm.numForms] = PluralForm.makeGetter(PluralForm.ruleNum);
-    return PluralForm.get;
+    [this.get, this.numForms] = this.makeGetter(this.ruleNum);
+    return this.get;
   },
 
   
@@ -159,8 +159,8 @@ this.PluralForm = {
   get numForms()
   {
     
-    PluralForm.get();
-    return PluralForm.numForms;
+    this.get();
+    return this.numForms;
   },
 
   
@@ -173,7 +173,7 @@ this.PluralForm = {
     try {
       return parseInt(L10N.getStr("pluralRule"), 10);
     } catch (e) {
-      
+    
       return 1;
     }
   }
@@ -191,6 +191,6 @@ function log(aMsg)
   console.log(msg + "\n");
 }
 
-exports.PluralForm = this.PluralForm;
+exports.PluralForm = PluralForm;
 
 

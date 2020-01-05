@@ -1,0 +1,16 @@
+
+
+
+
+"use strict";
+
+
+class TimelineFront {
+  constructor(client, { timelineActor }) {}
+  start({ withDocLoadingEvents }) {}
+  destroy() {}
+  on(evt, cb) {}
+  off(evt, cb) {}
+}
+
+exports.TimelineFront = TimelineFront;
