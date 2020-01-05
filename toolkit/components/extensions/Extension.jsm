@@ -283,6 +283,8 @@ class ProxyContext extends BaseContext {
 
     this.uri = NetUtil.newURI(params.url);
 
+    this.incognito = params.incognito;
+
     
     
     
