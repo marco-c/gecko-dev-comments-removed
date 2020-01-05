@@ -13,7 +13,7 @@ use dom::bindings::utils::{Reflector, reflect_dom_object};
 use dom::element::{Element, AttributeHandlers};
 use dom::node::window_from_node;
 
-use util::str::{DOMString, HTML_SPACE_CHARACTERS};
+use util::str::{DOMString, HTML_SPACE_CHARACTERS, str_join};
 use string_cache::Atom;
 
 use std::borrow::ToOwned;
@@ -102,7 +102,7 @@ impl<'a> DOMTokenListMethods for &'a DOMTokenList {
         })
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-domtokenlist-add
     fn Add(self, tokens: Vec<DOMString>) -> ErrorResult {
         let element = self.element.root();
         let mut atoms = element.r().get_tokenlist_attribute(&self.local_name);
@@ -116,7 +116,7 @@ impl<'a> DOMTokenListMethods for &'a DOMTokenList {
         Ok(())
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-domtokenlist-remove
     fn Remove(self, tokens: Vec<DOMString>) -> ErrorResult {
         let element = self.element.root();
         let mut atoms = element.r().get_tokenlist_attribute(&self.local_name);
@@ -130,7 +130,7 @@ impl<'a> DOMTokenListMethods for &'a DOMTokenList {
         Ok(())
     }
 
-    
+    // https://dom.spec.whatwg.org/#dom-domtokenlist-toggle
     fn Toggle(self, token: DOMString, force: Option<bool>) -> Fallible<bool> {
         let element = self.element.root();
         let mut atoms = element.r().get_tokenlist_attribute(&self.local_name);
@@ -155,8 +155,9 @@ impl<'a> DOMTokenListMethods for &'a DOMTokenList {
         }
     }
 
-    
+    // https://dom.spec.whatwg.org/#stringification-behavior
     fn Stringifier(self) -> DOMString {
-        self.element.root().r().get_string_attribute(&self.local_name)
+        let tokenlist = self.element.root().r().get_tokenlist_attribute(&self.local_name);
+        str_join(&tokenlist, "\x20")
     }
 }
