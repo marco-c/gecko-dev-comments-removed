@@ -17,7 +17,7 @@
 #![deny(unsafe_code)]
 
 use display_list::optimizer::DisplayListOptimizer;
-use paint_context::{PaintContext, ToAzureRect};
+use paint_context::PaintContext;
 use self::DisplayItem::*;
 use self::DisplayItemIterator::*;
 use text::glyph::CharIndex;
@@ -286,22 +286,15 @@ impl StackingContext {
     pub fn draw_into_context(&self,
                              display_list: &DisplayList,
                              paint_context: &mut PaintContext,
-                             tile_bounds: &Rect<AzFloat>,
                              transform: &Matrix4,
                              clip_rect: Option<&Rect<Au>>) {
-        
-        
-        let transform = match self.layer {
-            Some(..) => *transform,
-            None => transform.mul(&self.transform),
-        };
         let temporary_draw_target =
             paint_context.get_or_create_temporary_draw_target(&self.filters, self.blend_mode);
         {
             let mut paint_subcontext = PaintContext {
                 draw_target: temporary_draw_target.clone(),
                 font_context: &mut *paint_context.font_context,
-                page_rect: *tile_bounds,
+                page_rect: paint_context.page_rect,
                 screen_rect: paint_context.screen_rect,
                 clip_rect: clip_rect.map(|clip_rect| *clip_rect),
                 transient_clip: None,
@@ -309,14 +302,16 @@ impl StackingContext {
             };
 
             if opts::get().dump_display_list_optimized {
-                println!("**** optimized display list. Tile bounds: {:?}", tile_bounds);
+                println!("**** optimized display list. Tile bounds: {:?}", paint_context.page_rect);
                 display_list.print_items("*".to_owned());
             }
 
             
             let mut positioned_children: SmallVec<[Arc<StackingContext>; 8]> = SmallVec::new();
             for kid in display_list.children.iter() {
-                positioned_children.push((*kid).clone());
+                if kid.layer.is_none() {
+                    positioned_children.push((*kid).clone());
+                }
             }
             positioned_children.sort_by(|this, other| this.z_index.cmp(&other.z_index));
 
@@ -338,25 +333,19 @@ impl StackingContext {
                 if positioned_kid.z_index >= 0 {
                     break
                 }
-                if positioned_kid.layer.is_none() {
-                    let new_transform =
-                        transform.translate(positioned_kid.bounds
-                                                          .origin
-                                                          .x
-                                                          .to_nearest_px() as AzFloat,
-                                            positioned_kid.bounds
-                                                          .origin
-                                                          .y
-                                                          .to_nearest_px() as AzFloat,
-                                            0.0);
-                    let new_tile_rect =
-                        self.compute_tile_rect_for_child_stacking_context(tile_bounds,
-                                                                          &**positioned_kid);
-                    positioned_kid.optimize_and_draw_into_context(&mut paint_subcontext,
-                                                                  &new_tile_rect,
-                                                                  &new_transform,
-                                                                  Some(&positioned_kid.overflow))
-                }
+                let new_transform =
+                    transform.translate(positioned_kid.bounds
+                                                      .origin
+                                                      .x
+                                                      .to_nearest_px() as AzFloat,
+                                        positioned_kid.bounds
+                                                      .origin
+                                                      .y
+                                                      .to_nearest_px() as AzFloat,
+                                        0.0);
+                positioned_kid.optimize_and_draw_into_context(&mut paint_subcontext,
+                                                              &new_transform,
+                                                              Some(&positioned_kid.overflow))
             }
 
             
@@ -386,26 +375,19 @@ impl StackingContext {
                 if positioned_kid.z_index < 0 {
                     continue
                 }
-
-                if positioned_kid.layer.is_none() {
-                    let new_transform =
-                        transform.translate(positioned_kid.bounds
-                                                          .origin
-                                                          .x
-                                                          .to_nearest_px() as AzFloat,
-                                            positioned_kid.bounds
-                                                          .origin
-                                                          .y
-                                                          .to_nearest_px() as AzFloat,
-                                            0.0);
-                    let new_tile_rect =
-                        self.compute_tile_rect_for_child_stacking_context(tile_bounds,
-                                                                          &**positioned_kid);
-                    positioned_kid.optimize_and_draw_into_context(&mut paint_subcontext,
-                                                                  &new_tile_rect,
-                                                                  &new_transform,
-                                                                  Some(&positioned_kid.overflow))
-                }
+                let new_transform =
+                    transform.translate(positioned_kid.bounds
+                                                      .origin
+                                                      .x
+                                                      .to_nearest_px() as AzFloat,
+                                        positioned_kid.bounds
+                                                      .origin
+                                                      .y
+                                                      .to_nearest_px() as AzFloat,
+                                        0.0);
+                positioned_kid.optimize_and_draw_into_context(&mut paint_subcontext,
+                                                              &new_transform,
+                                                              Some(&positioned_kid.overflow))
             }
 
             
@@ -428,60 +410,45 @@ impl StackingContext {
     
     pub fn optimize_and_draw_into_context(&self,
                                           paint_context: &mut PaintContext,
-                                          tile_bounds: &Rect<AzFloat>,
                                           transform: &Matrix4,
                                           clip_rect: Option<&Rect<Au>>) {
+
+        
+        
+        let transform = match self.layer {
+            Some(..) => *transform,
+            None => transform.mul(&self.transform),
+        };
+
         
         
         
         if paint_context.layer_kind == LayerKind::Layer3D {
             self.draw_into_context(&self.display_list,
                                    paint_context,
-                                   tile_bounds,
-                                   transform,
+                                   &transform,
                                    clip_rect);
 
         } else {
             
-            let display_list =
-                DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
+            
+            
+            let inverse_transform = transform.invert();
+            let inverse_transform_2d = Matrix2D::new(inverse_transform.m11, inverse_transform.m12,
+                                                     inverse_transform.m21, inverse_transform.m22,
+                                                     inverse_transform.m41, inverse_transform.m42);
+
+            let tile_rect = Rect::new(Point2D::zero(), paint_context.page_rect.size);
+            let tile_rect = inverse_transform_2d.transform_rect(&tile_rect);
+
+            
+            let display_list = DisplayListOptimizer::new(&tile_rect).optimize(&*self.display_list);
 
             self.draw_into_context(&display_list,
                                    paint_context,
-                                   tile_bounds,
-                                   transform,
+                                   &transform,
                                    clip_rect);
         }
-    }
-
-    
-    fn compute_tile_rect_for_child_stacking_context(&self,
-                                                    tile_bounds: &Rect<AzFloat>,
-                                                    child_stacking_context: &StackingContext)
-                                                    -> Rect<AzFloat> {
-        static ZERO_AZURE_RECT: Rect<f32> = Rect {
-            origin: Point2D {
-                x: 0.0,
-                y: 0.0,
-            },
-            size: Size2D {
-                width: 0.0,
-                height: 0.0
-            }
-        };
-
-        
-        let child_stacking_context_overflow =
-            child_stacking_context.overflow.translate(&child_stacking_context.bounds.origin)
-                                           .to_nearest_azure_rect();
-
-        
-        
-        let tile_subrect = tile_bounds.intersection(&child_stacking_context_overflow)
-                                      .unwrap_or(ZERO_AZURE_RECT);
-
-        
-        tile_subrect.translate(&-child_stacking_context.bounds.to_nearest_azure_rect().origin)
     }
 
     
