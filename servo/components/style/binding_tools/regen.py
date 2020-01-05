@@ -438,7 +438,7 @@ def build(objdir, target_name, debug, debugger, kind_name=None,
             flags.append("{}BorrowedOrNull".format(ty))
             flags.append("--raw-line")
             flags.append("pub type {0}BorrowedOrNull<'a> = \
-                          ::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;".format(ty))
+::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;".format(ty))
             flags.append("--blacklist-type")
             flags.append("{}Borrowed".format(ty))
             flags.append("--raw-line")
@@ -455,7 +455,7 @@ def build(objdir, target_name, debug, debugger, kind_name=None,
             flags.append("{}BorrowedOrNull".format(ty))
             flags.append("--raw-line")
             flags.append("pub type {0}BorrowedOrNull<'a> = \
-                          ::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;".format(ty))
+::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;".format(ty))
             
             
             
