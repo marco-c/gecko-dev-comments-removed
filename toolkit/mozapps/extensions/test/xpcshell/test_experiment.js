@@ -1,7 +1,7 @@
 
 
 
-var scope = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm");
+var scope = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
 const XPIProvider = scope.XPIProvider;
 const ID = "experiment1@tests.mozilla.org";
 

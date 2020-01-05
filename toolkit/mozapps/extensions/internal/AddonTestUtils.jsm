@@ -559,7 +559,7 @@ var AddonTestUtils = {
 
         
         
-        let XPIscope = Cu.import("resource://gre/modules/addons/XPIProvider.jsm");
+        let XPIscope = Cu.import("resource://gre/modules/addons/XPIProvider.jsm", {});
         
         
         let shutdownError = XPIscope.XPIProvider._shutdownError;

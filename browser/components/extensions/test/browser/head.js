@@ -17,8 +17,8 @@
 
 
 
-const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm");
-const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm");
+const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
+const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {});
 
 
 

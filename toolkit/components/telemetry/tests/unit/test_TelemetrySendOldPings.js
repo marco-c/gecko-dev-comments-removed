@@ -90,7 +90,7 @@ var clearPings = Task.async(function* (aPingIds) {
 
 
 function fakePendingPingsQuota(aPendingQuota) {
-  let storage = Cu.import("resource://gre/modules/TelemetryStorage.jsm");
+  let storage = Cu.import("resource://gre/modules/TelemetryStorage.jsm", {});
   storage.Policy.getPendingPingsQuota = () => aPendingQuota;
 }
 

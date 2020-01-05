@@ -6,7 +6,7 @@ const {
   
   
   fetchGuidsWithAnno,
-} = Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
+} = Cu.import("resource://gre/modules/PlacesSyncUtils.jsm", {});
 Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/engines/bookmarks.js");

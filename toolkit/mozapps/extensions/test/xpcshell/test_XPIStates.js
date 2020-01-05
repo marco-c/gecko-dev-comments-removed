@@ -100,7 +100,7 @@ function checkChange(XS, aPath, aChange) {
 
 
 function getXS() {
-  let XPI = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm");
+  let XPI = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
   return XPI.XPIStates;
 }
 

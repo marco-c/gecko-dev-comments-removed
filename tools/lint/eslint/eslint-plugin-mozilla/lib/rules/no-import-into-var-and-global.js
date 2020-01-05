@@ -27,19 +27,30 @@ module.exports = function(context) {
 
   return {
     "CallExpression": function(node) {
+      
+      
       if (node.callee.type === "MemberExpression" &&
           node.parent.type === "VariableDeclarator" &&
-          node.arguments.length === 2) {
+          node.arguments.length <= 2) {
         let memexp = node.callee;
-        if (((memexp.object.type === "Identifier" &&
-              memexp.object.name === "Cu") ||
-             (memexp.object.type === "MemberExpression" &&
-              memexp.object.object && memexp.object.property &&
-              memexp.object.object.name === "Components" &&
-              memexp.object.property.name === "utils")) &&
+
+        
+        let isACu =
+          ((memexp.object.type === "Identifier" &&
+            memexp.object.name === "Cu") ||
+           (memexp.object.type === "MemberExpression" &&
+            memexp.object.object && memexp.object.property &&
+            memexp.object.object.name === "Components" &&
+            memexp.object.property.name === "utils"));
+
+        if (isACu &&
+            
             memexp.property.type === "Identifier" &&
             memexp.property.name === "import" &&
-            node.arguments[1].type === "ThisExpression") {
+            
+            
+            (node.arguments.length == 1 ||
+              node.arguments[1].type === "ThisExpression")) {
           context.report(node, "Cu.import imports into variables and into " +
                          "global scope.");
         }

@@ -4,7 +4,7 @@
 
 
 
-var scope = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm");
+var scope = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
 var XPIProvider = scope.XPIProvider;
 
 function run_test() {

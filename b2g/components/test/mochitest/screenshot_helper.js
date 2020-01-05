@@ -3,7 +3,7 @@ var Ci = Components.interfaces;
 
 Cu.importGlobalProperties(['File']);
 
-const { Services } = Cu.import("resource://gre/modules/Services.jsm");
+const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 
 
 var scope = {};

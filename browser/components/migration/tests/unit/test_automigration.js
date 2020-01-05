@@ -1,6 +1,6 @@
 "use strict";
 
-let AutoMigrateBackstage = Cu.import("resource:///modules/AutoMigrate.jsm"); 
+Cu.import("resource:///modules/AutoMigrate.jsm", this);
 
 let gShimmedMigratorKeyPicker = null;
 let gShimmedMigrator = null;
@@ -10,6 +10,8 @@ const kUsecPerMin = 60 * 1000000;
 
 
 
+
+let AutoMigrateBackstage = Cu.import("resource:///modules/AutoMigrate.jsm", {});
 
 AutoMigrateBackstage.MigrationUtils = new Proxy({}, {
   get(target, name) {
@@ -608,4 +610,3 @@ add_task(function* checkUndoVisitsState() {
                "1 unrelated.org visits should have persisted as it's not involved in the import.");
   yield PlacesTestUtils.clearHistory();
 });
-

@@ -23,7 +23,7 @@ XPCOMUtils.defineLazyGetter(this, "gPingsArchivePath", function() {
 
 
 function fakeStorageQuota(aArchiveQuota) {
-  let storage = Cu.import("resource://gre/modules/TelemetryStorage.jsm");
+  let storage = Cu.import("resource://gre/modules/TelemetryStorage.jsm", {});
   storage.Policy.getArchiveQuota = () => aArchiveQuota;
 }
 

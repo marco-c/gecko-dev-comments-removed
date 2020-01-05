@@ -4,7 +4,7 @@ const {
   
   
   fetchGuidsWithAnno,
-} = Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
+} = Cu.import("resource://gre/modules/PlacesSyncUtils.jsm", {});
 Cu.import("resource://testing-common/httpd.js");
 Cu.importGlobalProperties(["crypto", "URLSearchParams"]);
 

@@ -3,7 +3,7 @@
 
 
 function closeWindow(aClose, aPromptFunction) {
-  let { AppConstants } = Components.utils.import("resource://gre/modules/AppConstants.jsm");
+  let { AppConstants } = Components.utils.import("resource://gre/modules/AppConstants.jsm", {});
 
   
   if (AppConstants.platform != "macosx") {
