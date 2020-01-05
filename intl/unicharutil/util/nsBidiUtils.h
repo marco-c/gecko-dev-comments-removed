@@ -150,7 +150,14 @@ typedef enum nsCharType nsCharType;
 
 
 
-   bool HasRTLChars(const nsAString& aString);
+   bool HasRTLChars(const char16_t* aText, uint32_t aLength);
+
+  
+
+
+   inline bool HasRTLChars(const nsAString& aString) {
+     return HasRTLChars(aString.BeginReading(), aString.Length());
+   }
 
 
 
