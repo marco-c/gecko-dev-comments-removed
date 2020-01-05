@@ -387,9 +387,8 @@ protected:
     const RefPtr<AnimValuesStyleRule>& aAnimationRule);
 
   
-  
-  void EnsureBaseStylesForCompositor(
-    const nsCSSPropertyIDSet& aPropertiesToSkip);
+  void EnsureBaseStyles(nsStyleContext* aStyleContext,
+                        const nsTArray<AnimationProperty>& aProperties);
 
   
   StyleAnimationValue ResolveBaseStyle(nsCSSPropertyID aProperty,
