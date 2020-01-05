@@ -27,7 +27,6 @@
 #include "nsIPresShell.h"
 #include "nsIPresShellInlines.h"
 #include "nsIPrincipal.h"
-#include "nsIURI.h"
 #include "nsFontMetrics.h"
 #include "nsMappedAttributes.h"
 #include "nsMediaFeatures.h"
@@ -1183,6 +1182,8 @@ CreateStyleImageRequest(nsStyleImageRequest::Mode aModeFlags,
   return req.forget();
 }
 
+NS_IMPL_THREADSAFE_FFI_REFCOUNTING(mozilla::css::ImageValue, ImageValue);
+
 void
 Gecko_SetUrlImageValue(nsStyleImage* aImage, ServoBundledURI aURI)
 {
@@ -2025,26 +2026,6 @@ void
 Gecko_UnregisterProfilerThread()
 {
   profiler_unregister_thread();
-}
-
-bool
-Gecko_DocumentRule_UseForPresentation(RawGeckoPresContextBorrowed aPresContext,
-                                      const nsACString* aPattern,
-                                      css::URLMatchingFunction aURLMatchingFunction)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsIDocument *doc = aPresContext->Document();
-  nsIURI *docURI = doc->GetDocumentURI();
-  nsAutoCString docURISpec;
-  if (docURI) {
-    
-    nsresult rv = docURI->GetSpec(docURISpec);
-    NS_ENSURE_SUCCESS(rv, false);
-  }
-
-  return css::DocumentRule::UseForPresentation(doc, docURI, docURISpec,
-                                               *aPattern, aURLMatchingFunction);
 }
 
 #include "nsStyleStructList.h"
