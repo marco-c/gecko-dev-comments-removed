@@ -855,3 +855,15 @@ function loadPKCS11TestModule(expectModuleUnloadToFail) {
   });
   pkcs11.addModule("PKCS11 Test Module", libraryFile.path, 0, 0);
 }
+
+
+
+
+
+function hexify(data) {
+  
+  
+  
+  
+  return Array.from(data, (c, i) => ("0" + data.charCodeAt(i).toString(16)).slice(-2)).join("");
+}
