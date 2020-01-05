@@ -91,25 +91,20 @@ public class SearchEngineBar extends RecyclerView
 
         if (searchEngineCount > 0) {
             final int availableWidth = getMeasuredWidth() - mLabelContainerWidth;
-            final double searchEnginesToDisplay;
 
             if (searchEngineCount * mMinIconContainerWidth <= availableWidth) {
                 
-                searchEnginesToDisplay = searchEngineCount;
+                mIconContainerWidth = (int) mMinIconContainerWidth;
             } else {
                 
                 
                 
 
-                searchEnginesToDisplay = Math.floor((availableWidth / mMinIconContainerWidth) - 0.5) + 0.5;
+                final double searchEnginesToDisplay = Math.floor((availableWidth / mMinIconContainerWidth) - 0.5) + 0.5;
+                
+                mIconContainerWidth = (int) (availableWidth / searchEnginesToDisplay);
             }
 
-            
-            final int availableWidthPerContainer = (int) (availableWidth / searchEnginesToDisplay);
-
-            if (availableWidthPerContainer != mIconContainerWidth) {
-                mIconContainerWidth = availableWidthPerContainer;
-            }
             mAdapter.setIconContainerWidth(mIconContainerWidth);
         }
     }
