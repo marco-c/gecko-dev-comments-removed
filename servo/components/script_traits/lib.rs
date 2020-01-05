@@ -405,7 +405,12 @@ pub enum MozBrowserEvent {
     
     LocationChange(String, bool, bool),
     
-    OpenWindow,
+    
+    
+    OpenTab(String),
+    
+    
+    OpenWindow(String, Option<String>, Option<String>),
     
     SecurityChange(HttpsState),
     
@@ -431,7 +436,8 @@ impl MozBrowserEvent {
             MozBrowserEvent::LoadEnd => "mozbrowserloadend",
             MozBrowserEvent::LoadStart => "mozbrowserloadstart",
             MozBrowserEvent::LocationChange(_, _, _) => "mozbrowserlocationchange",
-            MozBrowserEvent::OpenWindow => "mozbrowseropenwindow",
+            MozBrowserEvent::OpenTab(_) => "mozbrowseropentab",
+            MozBrowserEvent::OpenWindow(_, _, _) => "mozbrowseropenwindow",
             MozBrowserEvent::SecurityChange(_) => "mozbrowsersecuritychange",
             MozBrowserEvent::ShowModalPrompt(_, _, _, _) => "mozbrowsershowmodalprompt",
             MozBrowserEvent::TitleChange(_) => "mozbrowsertitlechange",
