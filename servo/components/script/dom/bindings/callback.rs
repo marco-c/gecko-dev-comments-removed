@@ -21,10 +21,6 @@ pub enum ExceptionHandling {
     
     ReportExceptions,
     
-    
-    
-    RethrowContentExceptions,
-    
     RethrowExceptions
 }
 
