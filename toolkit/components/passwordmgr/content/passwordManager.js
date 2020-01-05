@@ -135,7 +135,7 @@ let signonsTreeView = {
       return "";
     }
 
-    const signon = this._filterSet.length ? this._filterSet[row] : signons[row];
+    const signon = GetVisibleLogins()[row];
 
     
     if (this._faviconMap.has(signon.hostname)) {
@@ -158,7 +158,7 @@ let signonsTreeView = {
   getCellValue(row, column) {},
   getCellText(row, column) {
     let time;
-    let signon = this._filterSet.length ? this._filterSet[row] : signons[row];
+    let signon = GetVisibleLogins()[row];
     switch (column.id) {
       case "siteCol":
         return signon.httpRealm ?
@@ -202,8 +202,7 @@ let signonsTreeView = {
     return "";
   },
   setCellText(row, col, value) {
-    
-    let table = signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons;
+    let table = GetVisibleLogins();
     function _editLogin(field) {
       if (value == table[row][field]) {
         return;
@@ -228,7 +227,7 @@ let signonsTreeView = {
 };
 
 function SortTree(column, ascending) {
-  let table = signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons;
+  let table = GetVisibleLogins();
   
   let selections = GetTreeSelections();
   let selectedNumber = selections.length ? table[selections[0]].number : -1;
@@ -321,6 +320,10 @@ function LoadSignons() {
   return true;
 }
 
+function GetVisibleLogins() {
+  return signonsTreeView._filterSet.length ? signonsTreeView._filterSet : signons;
+}
+
 function GetTreeSelections() {
   let selections = [];
   let select = signonsTree.view.selection;
@@ -350,11 +353,10 @@ function SignonSelected() {
 }
 
 function DeleteSignon() {
-  let filterSet = signonsTreeView._filterSet;
-  let syncNeeded = (filterSet.length != 0);
+  let syncNeeded = (signonsTreeView._filterSet.length != 0);
   let tree = signonsTree;
   let view = signonsTreeView;
-  let table = filterSet.length ? filterSet : signons;
+  let table = GetVisibleLogins();
 
   
   tree.view.selection.selectEventsSuppressed = true;
@@ -408,10 +410,9 @@ function DeleteAllSignons() {
                          null, null, null, null, dummy) == 1) 
     return;
 
-  let filterSet = signonsTreeView._filterSet;
-  let syncNeeded = (filterSet.length != 0);
+  let syncNeeded = signonsTreeView._filterSet.length != 0;
   let view = signonsTreeView;
-  let table = filterSet.length ? filterSet : signons;
+  let table = GetVisibleLogins();
 
   
   for (let i = 0; i < table.length; i++) {
