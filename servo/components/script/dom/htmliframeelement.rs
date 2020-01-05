@@ -2,6 +2,7 @@
 
 
 
+use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::HTMLIFrameElementBinding;
 use dom::bindings::codegen::Bindings::HTMLIFrameElementBinding::HTMLIFrameElementMethods;
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast};

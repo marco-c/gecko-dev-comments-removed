@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::Attr;
+use dom::attr::{Attr, AttrHelpers};
 use dom::bindings::codegen::Bindings::DOMTokenListBinding;
 use dom::bindings::codegen::Bindings::DOMTokenListBinding::DOMTokenListMethods;
 use dom::bindings::error::{Fallible, InvalidCharacter, Syntax};

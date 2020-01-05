@@ -2,6 +2,7 @@
 
 
 
+use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast};
 use dom::bindings::js::{JS, JSRef, Temporary};

@@ -2,6 +2,7 @@
 
 
 
+use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::AttrBinding::AttrMethods;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::InheritTypes::{NodeBase, NodeCast, TextCast};
