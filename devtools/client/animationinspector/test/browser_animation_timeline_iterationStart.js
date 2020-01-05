@@ -11,7 +11,7 @@ add_task(function* () {
   let {panel} = yield openAnimationInspector();
   let timelineComponent = panel.animationsTimelineComponent;
   let timeBlockComponents = timelineComponent.timeBlocks;
-  let detailsComponents = timelineComponent.details;
+  let detailsComponent = timelineComponent.details;
 
   for (let i = 0; i < timeBlockComponents.length; i++) {
     info(`Expand time block ${i} so its keyframes are visible`);
@@ -26,7 +26,7 @@ add_task(function* () {
     
     
     
-    let keyframeComponent = detailsComponents[i].keyframeComponents[0];
+    let keyframeComponent = detailsComponent.keyframeComponents[0];
     let frameEl = keyframeComponent.keyframesEl.querySelector(".frame");
     checkKeyframeOffset(containerEl, frameEl, state);
   }

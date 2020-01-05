@@ -139,8 +139,6 @@ body {
 
 #players {
   height: calc(100% - var(--toolbar-height));
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 [empty] #players {
@@ -230,15 +228,20 @@ body {
   width: 4.5em;
 }
 
+.animation-root > .uncontrolled {
+  overflow: hidden;
+}
+
 
 
 .animation-timeline {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  overflow: auto;
 }
 
 
+.animation-detail .track-container,
 .animation-timeline .track-container {
   position: absolute;
   top: 0;
@@ -251,46 +254,48 @@ body {
 
 .animation-timeline .scrubber-wrapper {
   position: absolute;
+  z-index: 5;
   left: var(--timeline-sidebar-width);
   
 
   right: var(--keyframes-marker-size);
-  height: 100%;
+  pointer-events: none;
 }
 
 .animation-timeline .scrubber {
-  z-index: 5;
   pointer-events: none;
   position: absolute;
-  
-
-  height: calc(100vh - var(--toolbar-height) - 1px);
-  min-height: 100%;
   width: 0;
-  border-right: 1px solid red;
-  box-sizing: border-box;
+  margin-left: -6px;
 }
 
 
 
 .animation-timeline .scrubber .scrubber-handle {
-  position: absolute;
+  position: fixed;
   height: 100%;
   
-  width: 6px;
-  right: -1.5px;
+  width: 12px;
   cursor: col-resize;
   pointer-events: all;
 }
 
 .animation-timeline .scrubber .scrubber-handle::before {
   content: "";
-  position: sticky;
+  position: absolute;
   top: 0;
   width: 1px;
   border-top: 5px solid red;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
+}
+
+.animation-timeline .scrubber .scrubber-handle .scrubber-line {
+  position: relative;
+  height: 100%;
+  left: 5px;
+  width: 0;
+  border-right: 1px solid red;
 }
 
 .animation-timeline .time-header {
@@ -314,29 +319,33 @@ body {
   border-bottom: 1px solid var(--time-graduation-border-color);
   z-index: 3;
   height: var(--timeline-animation-height);
+  width: 100%;
   overflow: hidden;
 }
 
 .animation-timeline .time-body {
-  height: 100%;
+  top: var(--timeline-animation-height);
 }
 
 .progress-tick-container .progress-tick,
 .animation-timeline .time-body .time-tick {
   -moz-user-select: none;
   position: absolute;
-  width: 0;
-  
   height: 100%;
-  
+}
 
-  min-height: calc(100vh - var(--timeline-animation-height) - 1px);
+.progress-tick-container .progress-tick::before,
+.animation-timeline .time-body .time-tick::before {
+  content: "";
+  position: fixed;
+  height: 100vh;
+  width: 0;
   border-left: 0.5px solid var(--time-graduation-border-color);
 }
 
 .animation-timeline .animations {
+  position: relative;
   width: 100%;
-  height: 100%;
   padding: 0;
   list-style-type: none;
   margin-top: 0;
@@ -351,10 +360,12 @@ body {
 }
 
 
-
-
-.animation-timeline .animation:nth-child(4n+1) {
+.animation-timeline .animation:nth-child(2n+1) {
   background-color: var(--even-animation-timeline-background-color);
+}
+
+.animation-timeline .animation:last-child {
+  margin-bottom: calc(var(--timeline-animation-height) / 2);
 }
 
 .animation-timeline .animation .target {
@@ -487,7 +498,6 @@ body {
 }
 
 
-
 .animation-target {
   background-color: var(--theme-toolbar-background);
   padding: 0 4px;
@@ -520,24 +530,16 @@ body {
 
 
 
-.animation-timeline .animated-properties:not(.selected) {
-  display: none;
-}
-
-.animation-timeline .animated-properties {
-  background-color: var(--theme-selection-background-semitransparent);
-}
-
-.animation-timeline .animated-properties .property {
+.animation-detail .animated-properties .property {
   height: var(--timeline-animation-height);
   position: relative;
 }
 
-.animation-timeline .animated-properties .property:nth-child(2n) {
+.animation-detail .animated-properties .property:nth-child(2n) {
   background-color: var(--even-animation-timeline-background-color);
 }
 
-.animation-timeline .animated-properties .name {
+.animation-detail .animated-properties .name {
   width: var(--timeline-sidebar-width);
   padding-right: var(--keyframes-marker-size);
   box-sizing: border-box;
@@ -549,24 +551,24 @@ body {
   align-items: center;
 }
 
-.animation-timeline .animated-properties .name div {
+.animation-detail .animated-properties .name div {
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.animated-properties.cssanimation {
+.animation-detail .animated-properties.cssanimation {
   --background-color: var(--theme-contrast-background);
 }
 
-.animated-properties.csstransition {
+.animation-detail .animated-properties.csstransition {
   --background-color: var(--theme-highlight-blue);
 }
 
-.animated-properties.scriptanimation {
+.animation-detail .animated-properties.scriptanimation {
   --background-color: var(--theme-graphs-green);
 }
 
-.animation-timeline .animated-properties .oncompositor::before {
+.animation-detail .animated-properties .oncompositor::before {
   content: "";
   display: inline-block;
   width: 17px;
@@ -576,11 +578,11 @@ body {
   vertical-align: middle;
 }
 
-.animation-timeline .animated-properties .warning {
+.animation-detail .animated-properties .warning {
   text-decoration: underline dotted;
 }
 
-.animation-timeline .animated-properties .frames {
+.animation-detail .animated-properties .frames {
   
 
 
@@ -606,7 +608,6 @@ body {
   top: 0;
   width: 100%;
   height: 100%;
-
 }
 
 .keyframes .frame {
@@ -670,11 +671,62 @@ body {
 
 .keyframes svg path.color {
   stroke: none;
+  height: 100%;
+}
+
+.animation-detail {
+  position: relative;
+  width: 100%;
+  background-color: var(--theme-body-background);
+  z-index: 5;
+}
+
+.animation-detail .animation-detail-header {
+  height: var(--toolbar-height);
+  width: 100%;
+}
+
+.animation-detail .animation-detail-header > div {
+  position: fixed;
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  height: var(--toolbar-height);
+  line-height: var(--toolbar-height);
+  background-color: var(--theme-body-background);
+  z-index: 5;
+}
+
+.animation-detail .animation-detail-header > div > div {
+  white-space: nowrap;
+}
+
+.animation-detail .animation-detail-header > div > div:first-child {
+  margin-left: 15px;
+}
+
+.animation-detail .animation-detail-header > div > div:nth-child(2) {
+  margin-left: .5em;
+}
+
+.animation-detail .animation-detail-body {
+  position: relative;
+  background-color: var(--theme-body-background);
+}
+
+.animation-detail .animation-detail-body .animated-properties {
+  position: relative;
+  height: 100%;
 }
 
 .animated-properties-header {
-  min-height: var(--timeline-animation-height);
   -moz-user-select: none;
+  position: sticky;
+  top: var(--timeline-animation-height);
+  min-height: var(--timeline-animation-height);
+  padding-top: 2px;
+  z-index: 3;
+  background-color: var(--theme-body-background);
 }
 
 .animated-properties-header .header-item:nth-child(2) {
@@ -682,7 +734,7 @@ body {
 }
 
 .animated-properties-header .header-item:nth-child(3) {
-  right: 0;
+  right: -0.5px;
   border-left: none;
   border-right: 0.5px solid var(--time-graduation-border-color);
 }
@@ -693,4 +745,9 @@ body {
 
 .progress-tick-container .progress-tick:nth-child(3) {
   left: 100%;
+}
+
+.animated-properties-body .property:last-child {
+  
+  padding-bottom: calc(var(--timeline-animation-height) / 2);
 }

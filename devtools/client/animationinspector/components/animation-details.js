@@ -205,12 +205,12 @@ AnimationDetails.prototype = {
     
     const headerEl = createNode({
       parent: this.containerEl,
-      attributes: { "class": "animated-properties-header property" }
+      attributes: { "class": "animated-properties-header" }
     });
 
     
     const progressTickContainerEl = createNode({
-      parent: headerEl,
+      parent: this.containerEl,
       attributes: { "class": "progress-tick-container track-container" }
     });
 

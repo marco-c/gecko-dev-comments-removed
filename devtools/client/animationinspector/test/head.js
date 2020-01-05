@@ -385,7 +385,7 @@ function* clickOnAnimation(panel, index, shouldClose) {
   
   let onReady = shouldClose
                 ? Promise.resolve()
-                : timeline.details[index].once("animation-detail-rendering-completed");
+                : timeline.details.once("animation-detail-rendering-completed");
 
   info("Click on animation " + index + " in the timeline");
   let timeBlock = timeline.rootWrapperEl.querySelectorAll(".time-block")[index];
@@ -402,10 +402,9 @@ function* clickOnAnimation(panel, index, shouldClose) {
 
 
 
-
-function getKeyframeComponent(panel, animationIndex, propertyName) {
+function getKeyframeComponent(panel, propertyName) {
   let timeline = panel.animationsTimelineComponent;
-  let detailsComponent = timeline.details[animationIndex];
+  let detailsComponent = timeline.details;
   return detailsComponent.keyframeComponents
                          .find(c => c.propertyName === propertyName);
 }
@@ -417,10 +416,8 @@ function getKeyframeComponent(panel, animationIndex, propertyName) {
 
 
 
-
-function getKeyframeEl(panel, animationIndex, propertyName, keyframeIndex) {
-  let keyframeComponent = getKeyframeComponent(panel, animationIndex,
-                                               propertyName);
+function getKeyframeEl(panel, propertyName, keyframeIndex) {
+  let keyframeComponent = getKeyframeComponent(panel, propertyName);
   return keyframeComponent.keyframesEl
                           .querySelectorAll(".frame")[keyframeIndex];
 }

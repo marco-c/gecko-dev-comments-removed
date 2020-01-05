@@ -7,7 +7,8 @@
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const {createNode, TimeScale} = require("devtools/client/animationinspector/utils");
+const {createNode, TimeScale, getFormattedAnimationTitle} =
+  require("devtools/client/animationinspector/utils");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N =
@@ -353,30 +354,6 @@ AnimationTimeBlock.prototype = {
     return this.containerEl.ownerDocument.defaultView;
   }
 };
-
-
-
-
-
-
-
-
-
-function getFormattedAnimationTitle({state}) {
-  
-  
-  
-  if (!state.type) {
-    return state.name;
-  }
-
-  
-  if (state.type === "scriptanimation" && !state.name) {
-    return L10N.getStr("timeline.scriptanimation.unnamedLabel");
-  }
-
-  return L10N.getFormatStr(`timeline.${state.type}.nameLabel`, state.name);
-}
 
 
 
