@@ -621,7 +621,6 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, OffsetAndDefIndex* offsetSt
         
         
         switch (op) {
-          case JSOP_INITELEM_ARRAY:
           case JSOP_INITHIDDENPROP:
           case JSOP_INITHIDDENPROP_GETTER:
           case JSOP_INITHIDDENPROP_SETTER:
@@ -644,13 +643,6 @@ BytecodeParser::simulateOp(JSOp op, uint32_t offset, OffsetAndDefIndex* offsetSt
             
             MOZ_ASSERT(nuses == 3);
             MOZ_ASSERT(ndefs == 1);
-            goto end;
-
-          case JSOP_INITELEM_INC:
-            
-            MOZ_ASSERT(nuses == 3);
-            MOZ_ASSERT(ndefs == 2);
-            offsetStack[stackDepth + 1].set(offset, 1);
             goto end;
 
           default:
@@ -1930,6 +1922,21 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex)
         return write("(typeof ") &&
                decompilePCForStackOperand(pc, -1) &&
                write(")");
+
+      case JSOP_INITELEM_ARRAY:
+        return write("[...]");
+
+      case JSOP_INITELEM_INC:
+        if (defIndex == 0)
+            return write("[...]");
+        MOZ_ASSERT(defIndex == 1);
+#ifdef DEBUG
+        
+        if (isStackDump)
+            return write("INDEX");
+#endif
+        break;
+
       default:
         break;
     }
@@ -1995,11 +2002,6 @@ ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex)
 
           case JSOP_HOLE:
             return write("HOLE");
-
-          case JSOP_INITELEM_INC:
-            
-            MOZ_ASSERT(defIndex == 1);
-            return write("INDEX");
 
           case JSOP_ISGENCLOSING:
             
