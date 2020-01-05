@@ -71,8 +71,6 @@ class GeneratedSourceMap
     void setTotalLines(uint32_t val) { totalLines_ = val; }
 
     bool searchLineByOffset(JSContext* cx, uint32_t offset, size_t* exprlocIndex);
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
 typedef UniquePtr<GeneratedSourceMap> UniqueGeneratedSourceMap;
@@ -82,6 +80,7 @@ typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>, SystemAl
 class DebugState
 {
     const SharedCode         code_;
+    const SharedMetadata     metadata_;
     const SharedBytes        maybeBytecode_;
     UniqueGeneratedSourceMap maybeSourceMap_;
 
@@ -98,6 +97,7 @@ class DebugState
 
   public:
     DebugState(SharedCode code,
+               const Metadata& metadata,
                const ShareableBytes* maybeBytecode);
 
     
@@ -140,26 +140,6 @@ class DebugState
     
 
     JSString* debugDisplayURL(JSContext* cx) const;
-
-    
-
-    const Metadata& metadata() const { return code_->metadata(); }
-    bool debugEnabled() const { return metadata().debugEnabled; }
-    const CodeRangeVector& codeRanges() const { return metadata().codeRanges; }
-    const CallSiteVector& callSites() const { return metadata().callSites; }
-
-    uint32_t debugFuncToCodeRange(uint32_t funcIndex) const {
-        return metadata().debugFuncToCodeRange[funcIndex];
-    }
-
-    
-
-    void addSizeOfMisc(MallocSizeOf mallocSizeOf,
-                       Metadata::SeenSet* seenMetadata,
-                       ShareableBytes::SeenSet* seenBytes,
-                       Code::SeenSet* seenCode,
-                       size_t* code,
-                       size_t* data) const;
 };
 
 typedef UniquePtr<DebugState> UniqueDebugState;
