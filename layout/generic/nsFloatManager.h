@@ -201,9 +201,9 @@ public:
 
 
 
-  nsresult AddFloat(nsIFrame* aFloatFrame,
-                    const mozilla::LogicalRect& aMarginRect,
-                    mozilla::WritingMode aWM, const nsSize& aContainerSize);
+  void AddFloat(nsIFrame* aFloatFrame,
+                const mozilla::LogicalRect& aMarginRect,
+                mozilla::WritingMode aWM, const nsSize& aContainerSize);
 
   
 
@@ -387,7 +387,7 @@ private:
                                  const nscoord aRadiusY);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
-    FloatInfo(const FloatInfo& aOther);
+    FloatInfo(FloatInfo&& aOther);
     ~FloatInfo();
 #endif
 
