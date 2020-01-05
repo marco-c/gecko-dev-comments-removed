@@ -321,7 +321,7 @@ var gCSSProperties = {
   'clear': {
     
     types: [
-      { type: 'discrete', options: [ [ 'inline-start', 'inline-end' ] ] }
+      { type: 'discrete', options: [ [ 'left', 'right' ] ] }
     ]
   },
   'clip': {
