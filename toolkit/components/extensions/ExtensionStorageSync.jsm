@@ -52,8 +52,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
                                   "resource://gre/modules/ExtensionStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
                                   "resource://gre/modules/FxAccounts.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "KintoHttpClient",
-                                  "resource://services-common/kinto-http-client.js");
 XPCOMUtils.defineLazyModuleGetter(this, "loadKinto",
                                   "resource://services-common/kinto-offline-client.js");
 XPCOMUtils.defineLazyModuleGetter(this, "Log",
@@ -236,17 +234,7 @@ const cryptoCollection = this.cryptoCollection = {
   getKeyRingRecord: Task.async(function* () {
     const collection = yield this._kintoCollectionPromise;
     const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
-
-    let data = cryptoKeyRecord.data;
-    if (!data) {
-      
-      
-      
-      const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
-      const uuid = uuidgen.generateUUID();
-      data = {uuid};
-    }
-    return data;
+    return cryptoKeyRecord.data;
   }),
 
   
@@ -257,15 +245,13 @@ const cryptoCollection = this.cryptoCollection = {
   getKeyRing: Task.async(function* () {
     const cryptoKeyRecord = yield this.getKeyRingRecord();
     const collectionKeys = new CollectionKeyManager();
-    if (cryptoKeyRecord.keys) {
+    if (cryptoKeyRecord) {
       collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
     } else {
       
       
       collectionKeys.generateDefaultKey();
     }
-    
-    collectionKeys.uuid = cryptoKeyRecord.uuid;
     return collectionKeys;
   }),
 
@@ -290,15 +276,6 @@ const cryptoCollection = this.cryptoCollection = {
     return yield ExtensionStorageSync._syncCollection(collection, {
       strategy: "server_wins",
     });
-  }),
-
-  
-
-
-
-  resetSyncStatus: Task.async(function* () {
-    const coll = yield this._kintoCollectionPromise;
-    yield coll.db.resetSyncStatus();
   }),
 
   
@@ -561,20 +538,6 @@ this.ExtensionStorageSync = {
   
 
 
-  _deleteBucket: Task.async(function* () {
-    return yield this._requestWithToken("Clearing server", function* (token) {
-      const headers = {Authorization: "Bearer " + token};
-      const kintoHttp = new KintoHttpClient(prefStorageSyncServerURL, {
-        headers: headers,
-        timeout: KINTO_REQUEST_TIMEOUT,
-      });
-      return yield kintoHttp.deleteBucket("default");
-    });
-  }),
-
-  
-
-
 
 
 
@@ -592,12 +555,11 @@ this.ExtensionStorageSync = {
     const newRecord = {
       id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
       keys: newKeys.asWBO().cleartext,
-      uuid: collectionKeys.uuid,
       
       kbHash: kbHash,
     };
     yield cryptoCollection.upsert(newRecord);
-    const result = yield this._syncKeyRing(newRecord);
+    const result = yield cryptoCollection.sync();
     if (result.resolved.length != 0) {
       
       
@@ -678,12 +640,6 @@ this.ExtensionStorageSync = {
       
       
       
-      yield this._syncKeyRing(cryptoKeyRecord);
-    }
-  }),
-
-  _syncKeyRing: Task.async(function* (cryptoKeyRecord) {
-    try {
       
       
       
@@ -702,49 +658,7 @@ this.ExtensionStorageSync = {
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      const result = yield cryptoCollection.sync();
-      if (result.resolved.length > 0) {
-        if (result.resolved[0].uuid != cryptoKeyRecord.uuid) {
-          log.info("Detected a new UUID. Reseting sync status for everything.");
-          yield cryptoCollection.resetSyncStatus();
-          
-          
-          for (let [, cPromise] of collectionPromises) {
-            const coll = yield cPromise;
-            
-            coll._lastModified = null;
-          }
-
-          
-          return result;
-        }
-      }
-      
-      return result;
-    } catch (e) {
-      if (KeyRingEncryptionRemoteTransformer.isOutdatedKB(e)) {
-        
-        
-        const isSessionValid = yield this._fxaService.sessionStatus();
-        if (isSessionValid) {
-          yield this._deleteBucket();
-          yield cryptoCollection.resetSyncStatus();
-
-          
-          
-          
-          return yield cryptoCollection.sync();
-        }
-      }
-      throw e;
+      yield cryptoCollection.sync();
     }
   }),
 
