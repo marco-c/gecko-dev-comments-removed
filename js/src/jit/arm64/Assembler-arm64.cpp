@@ -161,7 +161,6 @@ Assembler::executableCopy(uint8_t* buffer)
             
         }
     }
-    AutoFlushICache::setRange(uintptr_t(buffer), armbuffer_.size());
 }
 
 BufferOffset
