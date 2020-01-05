@@ -988,7 +988,14 @@ Toolbox.prototype = {
 
 
   _onToolbarArrowKeypress: function (event) {
-    let { key, target } = event;
+    let { key, target, ctrlKey, shiftKey, altKey, metaKey } = event;
+
+    
+    
+    if (ctrlKey || shiftKey || altKey || metaKey) {
+      return;
+    }
+
     let buttons = [...this._componentMount.querySelectorAll("button")];
     let curIndex = buttons.indexOf(target);
 
