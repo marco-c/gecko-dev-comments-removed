@@ -7,6 +7,8 @@
 
 
 
+requestLongerTimeout(3);
+
 
 var TEST_PAGE = "data:text/html;charset=utf-8,<body><ul>";
 for (let i = 0; i < 101; i++) {
