@@ -76,12 +76,6 @@ struct CSSStyleSheetInner : public StyleSheetInfo
   AutoTArray<CSSStyleSheet*, 8> mSheets;
   IncrementalClearCOMRuleArray mOrderedRules;
   nsAutoPtr<nsXMLNameSpaceMap> mNameSpaceMap;
-  
-  
-  
-  
-  
-  RefPtr<StyleSheet> mFirstChild;
 };
 
 
@@ -244,8 +238,8 @@ protected:
   AutoTArray<nsCSSRuleProcessor*, 8>* mRuleProcessors;
   nsTArray<nsStyleSet*> mStyleSets;
 
-  friend class ::nsCSSRuleProcessor;
   friend class mozilla::StyleSheet;
+  friend class ::nsCSSRuleProcessor;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(CSSStyleSheet, NS_CSS_STYLE_SHEET_IMPL_CID)

@@ -14,7 +14,7 @@
 #include "nsIURI.h"
 
 namespace mozilla {
-class CSSStyleSheet;
+class StyleSheet;
 } 
 class nsCSSRuleProcessor;
 class nsIPrincipal;
@@ -42,6 +42,13 @@ struct StyleSheetInfo
   ReferrerPolicy         mReferrerPolicy;
   dom::SRIMetadata       mIntegrity;
   bool                   mComplete;
+
+  
+  
+  
+  
+  
+  RefPtr<StyleSheet>     mFirstChild;
 #ifdef DEBUG
   bool                   mPrincipalSet;
 #endif
