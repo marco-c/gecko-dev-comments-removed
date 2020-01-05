@@ -2735,6 +2735,16 @@ TabChild::MakeHidden()
   
   compositor->RecvClearCachedResources(mLayersId);
 
+  
+  if (nsCOMPtr<nsIPresShell> shell = GetPresShell()) {
+    if (nsPresContext* presContext = shell->GetPresContext()) {
+      nsRootPresContext* rootPresContext = presContext->GetRootPresContext();
+      nsIFrame* rootFrame = shell->FrameConstructor()->GetRootFrame();
+      rootPresContext->ComputePluginGeometryUpdates(rootFrame, nullptr, nullptr);
+      rootPresContext->ApplyPluginGeometryUpdates();
+    }
+  }
+
   if (mPuppetWidget) {
     mPuppetWidget->Show(false);
   }
