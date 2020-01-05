@@ -403,7 +403,10 @@ public:
   
   
   
-  void Dispatch(ErrorResult& aRv);
+  
+  
+  
+  void Dispatch(Status aFailStatus, ErrorResult& aRv);
 
 private:
   NS_IMETHOD Run() override;

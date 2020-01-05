@@ -403,7 +403,7 @@ Request::Constructor(const GlobalObject& aGlobal,
           
           RefPtr<ReferrerSameOriginChecker> checker =
             new ReferrerSameOriginChecker(worker, referrerURL, rv);
-          checker->Dispatch(aRv);
+          checker->Dispatch(Terminating, aRv);
           if (aRv.Failed() || NS_FAILED(rv)) {
             aRv.ThrowTypeError<MSG_CROSS_ORIGIN_REFERRER_URL>(referrer,
                                                               worker->GetLocationInfo().mOrigin);

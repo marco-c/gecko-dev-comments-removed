@@ -999,7 +999,7 @@ ImageBitmap::CreateInternal(nsIGlobalObject* aGlobal, ImageData& aImageData,
                                                        imageSize,
                                                        aCropRect,
                                                        getter_AddRefs(data));
-    task->Dispatch(aRv);
+    task->Dispatch(Terminating, aRv);
   }
 
   if (NS_WARN_IF(!data)) {
@@ -1435,10 +1435,10 @@ private:
     RefPtr<DecodeBlobInMainThreadSyncTask> task =
       new DecodeBlobInMainThreadSyncTask(mWorkerPrivate, *mBlob, mCropRect,
                                          getter_AddRefs(data), sourceSize);
-    task->Dispatch(rv); 
+    task->Dispatch(Terminating, rv); 
 
+    
     if (NS_WARN_IF(rv.Failed())) {
-      
       mPromise->MaybeReject(rv);
       return nullptr;
     }
@@ -2165,7 +2165,10 @@ ImageBitmap::Create(nsIGlobalObject* aGlobal,
                                                                  aFormat,
                                                                  aLayout,
                                                                  getter_AddRefs(data));
-    task->Dispatch(aRv);
+    task->Dispatch(Terminating, aRv);
+    if (aRv.Failed()) {
+      return promise.forget();
+    }
   }
 
   if (NS_WARN_IF(!data)) {

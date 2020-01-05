@@ -1454,8 +1454,11 @@ private:
     memcpy(aPreferences, mPreferences, WORKERPREF_COUNT * sizeof(bool));
   }
 
+  
+  
+  
   already_AddRefed<nsIEventTarget>
-  CreateNewSyncLoop();
+  CreateNewSyncLoop(Status aFailStatus);
 
   bool
   RunCurrentSyncLoop();
@@ -1530,9 +1533,11 @@ class AutoSyncLoopHolder
   uint32_t mIndex;
 
 public:
-  explicit AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate)
+  
+  
+  AutoSyncLoopHolder(WorkerPrivate* aWorkerPrivate, Status aFailStatus)
   : mWorkerPrivate(aWorkerPrivate)
-  , mTarget(aWorkerPrivate->CreateNewSyncLoop())
+  , mTarget(aWorkerPrivate->CreateNewSyncLoop(aFailStatus))
   , mIndex(aWorkerPrivate->mSyncLoopStack.Length() - 1)
   {
     aWorkerPrivate->AssertIsOnWorkerThread();
@@ -1540,7 +1545,7 @@ public:
 
   ~AutoSyncLoopHolder()
   {
-    if (mWorkerPrivate) {
+    if (mWorkerPrivate && mTarget) {
       mWorkerPrivate->AssertIsOnWorkerThread();
       mWorkerPrivate->StopSyncLoop(mTarget, false);
       mWorkerPrivate->DestroySyncLoop(mIndex);
@@ -1559,8 +1564,9 @@ public:
   }
 
   nsIEventTarget*
-  EventTarget() const
+  GetEventTarget() const
   {
+    
     return mTarget;
   }
 };
