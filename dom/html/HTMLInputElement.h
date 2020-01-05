@@ -246,6 +246,7 @@ public:
   
   
   int32_t GetSelectionStartIgnoringType(ErrorResult& aRv);
+  int32_t GetSelectionEndIgnoringType(ErrorResult& aRv);
 
   void GetDisplayFileName(nsAString& aFileName) const;
 
