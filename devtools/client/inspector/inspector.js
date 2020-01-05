@@ -1144,7 +1144,7 @@ Inspector.prototype = {
       id: "node-menu-screenshotnode",
       label: INSPECTOR_L10N.getStr("inspectorScreenshotNode.label"),
       disabled: !isScreenshotable,
-      click: () => this.screenshotNode(),
+      click: () => this.screenshotNode().catch(console.error),
     }));
     menu.append(new MenuItem({
       id: "node-menu-useinconsole",
@@ -1767,16 +1767,23 @@ Inspector.prototype = {
   
 
 
-  screenshotNode: function () {
+  screenshotNode: Task.async(function* () {
     const command = Services.prefs.getBoolPref("devtools.screenshot.clipboard.enabled") ?
       "screenshot --file --clipboard --selector" :
       "screenshot --file --selector";
+
+    
+    
+    
+    
+    yield this.highlighter.hideBoxModel();
+
     
     
     
     CommandUtils.executeOnTarget(this._target,
       `${command} '${this.selectionCssSelector}'`);
-  },
+  }),
 
   
 
