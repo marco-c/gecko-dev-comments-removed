@@ -783,12 +783,22 @@ Collection.prototype = {
 
     this._onRecord = onRecord;
 
-    this._onProgress = function() {
-      let newline;
+    this._onProgress = function(httpChannel) {
+      let newline, length = 0, contentLength = "unknown";
+
+      try {
+          
+          contentLength = httpChannel.getResponseHeader("Content-Length");
+      } catch (ex) { }
+
       while ((newline = this._data.indexOf("\n")) > 0) {
         
         let json = this._data.slice(0, newline);
         this._data = this._data.slice(newline + 1);
+
+        length += json.length;
+        coll._log.trace("Record: Content-Length = " + contentLength +
+                        ", ByteCount = " + length);
 
         
         let record = new coll._recordObj();
