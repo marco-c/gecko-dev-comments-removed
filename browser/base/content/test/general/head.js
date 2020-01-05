@@ -1023,8 +1023,17 @@ function* loadBadCertPage(url) {
                              "cert-exception-ui-ready", false);
   });
 
-  yield BrowserTestUtils.loadURI(gBrowser.selectedBrowser, url);
-  yield promiseErrorPageLoaded(gBrowser.selectedBrowser);
+  
+  
+  yield BrowserTestUtils.waitForCondition(function*() {
+    yield BrowserTestUtils.loadURI(gBrowser.selectedBrowser, url);
+    yield promiseErrorPageLoaded(gBrowser.selectedBrowser);
+    let isErrorPage = yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
+      return content.document.documentURI.startsWith("about:certerror");
+    });
+    return isErrorPage;
+  }, "Could not load error page", 1000);
+
   yield ContentTask.spawn(gBrowser.selectedBrowser, null, function*() {
     content.document.getElementById("exceptionDialogButton").click();
   });
