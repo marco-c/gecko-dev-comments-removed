@@ -33,8 +33,7 @@ var gCSSProperties = {
   },
   'background-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'background-blend-mode': {
     
@@ -125,8 +124,7 @@ var gCSSProperties = {
   },
   'border-bottom-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'border-bottom-left-radius': {
     
@@ -223,8 +221,7 @@ var gCSSProperties = {
   },
   'border-left-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'border-left-style': {
     
@@ -243,8 +240,7 @@ var gCSSProperties = {
   },
   'border-right-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'border-right-style': {
     
@@ -268,8 +264,7 @@ var gCSSProperties = {
   },
   'border-top-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'border-top-left-radius': {
     
@@ -348,8 +343,7 @@ var gCSSProperties = {
   },
   'color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'color-adjust': {
     
@@ -380,8 +374,7 @@ var gCSSProperties = {
   },
   'column-rule-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'column-fill': {
     
@@ -511,8 +504,7 @@ var gCSSProperties = {
   },
   'flood-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'flood-opacity': {
     
@@ -769,8 +761,7 @@ var gCSSProperties = {
   },
   'lighting-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'line-height': {
     
@@ -1021,8 +1012,7 @@ var gCSSProperties = {
   },
   'outline-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'outline-offset': {
     
@@ -1223,8 +1213,7 @@ var gCSSProperties = {
   },
   'stop-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'stop-opacity': {
     
@@ -1308,8 +1297,7 @@ var gCSSProperties = {
   },
   'text-decoration-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'text-decoration-line': {
     
@@ -1325,8 +1313,7 @@ var gCSSProperties = {
   },
   'text-emphasis-color': {
     
-    types: [
-    ]
+    types: [ 'color' ]
   },
   'text-emphasis-position': {
     
