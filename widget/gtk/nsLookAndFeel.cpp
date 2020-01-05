@@ -158,29 +158,54 @@ GetUnicoBorderGradientColors(GtkStyleContext* aContext,
 }
 
 
-static void
+
+
+
+
+static bool
 GetBorderColors(GtkStyleContext* aContext,
                 GdkRGBA* aLightColor, GdkRGBA* aDarkColor)
 {
-    if (GetUnicoBorderGradientColors(aContext, aLightColor, aDarkColor))
-        return;
-
+    
     GtkStateFlags state = gtk_style_context_get_state(aContext);
+    GtkBorderStyle borderStyle;
+    gtk_style_context_get(aContext, state, GTK_STYLE_PROPERTY_BORDER_STYLE,
+                          &borderStyle, nullptr);
+    bool visible = borderStyle != GTK_BORDER_STYLE_NONE &&
+        borderStyle != GTK_BORDER_STYLE_HIDDEN;
+    if (visible) {
+        
+        
+        GtkBorder border;
+        gtk_style_context_get_border(aContext, GTK_STATE_FLAG_NORMAL, &border);
+        visible = border.top != 0 || border.right != 0 ||
+            border.bottom != 0 || border.left != 0;
+    }
+
+    if (visible &&
+        GetUnicoBorderGradientColors(aContext, aLightColor, aDarkColor))
+        return true;
+
+    
+    
+    
     gtk_style_context_get_border_color(aContext, state, aDarkColor);
     
     
     
     *aLightColor = *aDarkColor;
+    return visible;
 }
 
-static void
+static bool
 GetBorderColors(GtkStyleContext* aContext,
                 nscolor* aLightColor, nscolor* aDarkColor)
 {
     GdkRGBA lightColor, darkColor;
-    GetBorderColors(aContext, &lightColor, &darkColor);
+    bool ret = GetBorderColors(aContext, &lightColor, &darkColor);
     *aLightColor = GDK_RGBA_TO_NS_RGBA(lightColor);
     *aDarkColor = GDK_RGBA_TO_NS_RGBA(darkColor);
+    return ret;
 }
 #endif
 
@@ -1340,9 +1365,19 @@ nsLookAndFeel::Init()
 
     gtk_widget_path_free(path);
 
+    
+    
+    
+    
     style = ClaimStyleContext(MOZ_GTK_FRAME_BORDER);
-    GetBorderColors(style, &sFrameOuterLightBorder, &sFrameInnerDarkBorder);
+    bool themeUsesColors =
+        GetBorderColors(style, &sFrameOuterLightBorder, &sFrameInnerDarkBorder);
     ReleaseStyleContext(style);
+    if (!themeUsesColors) {
+        style = ClaimStyleContext(MOZ_GTK_FRAME);
+        GetBorderColors(style, &sFrameOuterLightBorder, &sFrameInnerDarkBorder);
+        ReleaseStyleContext(style);
+    }
 
     
     
