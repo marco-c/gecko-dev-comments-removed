@@ -14,7 +14,8 @@ function* awaitResize(browser) {
   
 
   return Promise.race([
-    BrowserTestUtils.waitForEvent(browser, "WebExtPopupResized", event => event.detail === "delayed"),
+    BrowserTestUtils.waitForEvent(browser, "WebExtPopupResized")
+      .then(() => BrowserTestUtils.waitForEvent(browser, "WebExtPopupResized")),
     new Promise(resolve => setTimeout(resolve, 5000)),
   ]);
 }
