@@ -176,6 +176,14 @@ impl WebGLTexture {
         }
     }
 
+    pub fn is_deleted(&self) -> bool {
+        self.is_deleted.get()
+    }
+
+    pub fn target(&self) -> Option<u32> {
+        self.target.get()
+    }
+
     
     
     
