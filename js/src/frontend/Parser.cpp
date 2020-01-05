@@ -1089,8 +1089,6 @@ Parser<ParseHandler>::notePositionalFormalParameter(Node fn, HandlePropertyName 
                                                     bool disallowDuplicateParams,
                                                     bool* duplicatedParam)
 {
-    AutoTraceLog traceLog(TraceLoggerForCurrentThread(context), TraceLogger_FrontendNameAnalysis);
-
     if (AddDeclaredNamePtr p = pc->functionScope().lookupDeclaredNameForAdd(name)) {
         if (disallowDuplicateParams) {
             error(JSMSG_BAD_DUP_ARGS);
@@ -1322,8 +1320,6 @@ bool
 Parser<ParseHandler>::tryDeclareVarForAnnexBLexicalFunction(HandlePropertyName name,
                                                             uint32_t beginPos, bool* tryAnnexB)
 {
-    AutoTraceLog traceLog(TraceLoggerForCurrentThread(context), TraceLogger_FrontendNameAnalysis);
-
     Maybe<DeclarationKind> redeclaredKind;
     uint32_t unused;
     if (!tryDeclareVar(name, DeclarationKind::VarForAnnexBLexicalFunction, beginPos,
@@ -1392,8 +1388,6 @@ bool
 Parser<ParseHandler>::noteDeclaredName(HandlePropertyName name, DeclarationKind kind,
                                        TokenPos pos)
 {
-    AutoTraceLog traceLog(TraceLoggerForCurrentThread(context), TraceLogger_FrontendNameAnalysis);
-
     
     
     if (pc->useAsmOrInsideUseAsm())
@@ -1565,8 +1559,6 @@ template <typename ParseHandler>
 bool
 Parser<ParseHandler>::noteUsedName(HandlePropertyName name)
 {
-    AutoTraceLog traceLog(TraceLoggerForCurrentThread(context), TraceLogger_FrontendNameAnalysis);
-
     
     
     if (handler.canSkipLazyClosedOverBindings())
@@ -1592,8 +1584,6 @@ template <typename ParseHandler>
 bool
 Parser<ParseHandler>::hasUsedName(HandlePropertyName name)
 {
-    AutoTraceLog traceLog(TraceLoggerForCurrentThread(context), TraceLogger_FrontendNameAnalysis);
-
     if (UsedNamePtr p = usedNames.lookup(name))
         return p->value().isUsedInScript(pc->scriptId());
     return false;
@@ -1603,8 +1593,6 @@ template <typename ParseHandler>
 bool
 Parser<ParseHandler>::propagateFreeNamesAndMarkClosedOverBindings(ParseContext::Scope& scope)
 {
-    AutoTraceLog traceLog(TraceLoggerForCurrentThread(context), TraceLogger_FrontendNameAnalysis);
-
     if (handler.canSkipLazyClosedOverBindings()) {
         
         
