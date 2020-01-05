@@ -507,7 +507,7 @@ function test_swipeGestures() {
 function test_rotateHelperGetImageRotation(aImageElement) {
   
   
-  let transformValue = content.window.getComputedStyle(aImageElement, null)
+  let transformValue = content.window.getComputedStyle(aImageElement)
                                      .transform;
   if (transformValue == "none")
     return 0;

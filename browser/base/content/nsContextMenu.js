@@ -898,13 +898,13 @@ nsContextMenu.prototype = {
   getComputedStyle: function(aElem, aProp) {
     return aElem.ownerDocument
                 .defaultView
-                .getComputedStyle(aElem, "").getPropertyValue(aProp);
+                .getComputedStyle(aElem).getPropertyValue(aProp);
   },
 
   
   getComputedURL: function(aElem, aProp) {
     var url = aElem.ownerDocument
-                   .defaultView.getComputedStyle(aElem, "")
+                   .defaultView.getComputedStyle(aElem)
                    .getPropertyCSSValue(aProp);
     if (url instanceof CSSValueList) {
       if (url.length != 1)

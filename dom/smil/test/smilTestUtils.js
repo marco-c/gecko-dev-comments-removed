@@ -35,7 +35,7 @@ var SMILUtil =
   
   getComputedStyleSimple: function(elem, prop)
   {
-    return window.getComputedStyle(elem, null).getPropertyValue(prop);
+    return window.getComputedStyle(elem).getPropertyValue(prop);
   },
 
   getAttributeValue: function(elem, attr)

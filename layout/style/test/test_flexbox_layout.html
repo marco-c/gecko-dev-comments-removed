@@ -34,7 +34,7 @@
 
 function getComputedStyleWrapper(elem, prop)
 {
-  return window.getComputedStyle(elem, null).getPropertyValue(prop);
+  return window.getComputedStyle(elem).getPropertyValue(prop);
 }
 
 function setPossiblyAliasedProperty(aElem, aPropertyName, aPropertyValue,

@@ -30,7 +30,7 @@
  */
 
 function checkStyle(elem, expectedVal, message) {
-  is(window.getComputedStyle(elem, "").objectFit, expectedVal, message);
+  is(window.getComputedStyle(elem).objectFit, expectedVal, message);
 }
 
 function main() {

@@ -409,7 +409,7 @@ function safelyGetContentWindow(frame) {
 
 
 function getFrameContentOffset(frame) {
-  let style = safelyGetContentWindow(frame).getComputedStyle(frame, null);
+  let style = safelyGetContentWindow(frame).getComputedStyle(frame);
 
   
   if (!style) {

@@ -163,7 +163,7 @@ function get_actual_results() {
   for (var item of rows) {
 
     
-    var style = gManagerWindow.document.defaultView.getComputedStyle(item, "");
+    var style = gManagerWindow.document.defaultView.getComputedStyle(item);
     if (style.display == "none" || style.visibility != "visible")
       continue;
 

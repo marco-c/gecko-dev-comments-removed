@@ -15,7 +15,7 @@ var gTransformation = {
 
 
   get _cellBorderWidths() {
-    let cstyle = window.getComputedStyle(gGrid.cells[0].node, null);
+    let cstyle = window.getComputedStyle(gGrid.cells[0].node);
     let widths = {
       left: parseInt(cstyle.getPropertyValue("border-left-width")),
       top: parseInt(cstyle.getPropertyValue("border-top-width"))
@@ -223,7 +223,7 @@ var gTransformation = {
 
 
   _getNodeOpacity: function Transformation_getNodeOpacity(aNode) {
-    let cstyle = window.getComputedStyle(aNode, null);
+    let cstyle = window.getComputedStyle(aNode);
     return cstyle.getPropertyValue("opacity");
   },
 

@@ -24,7 +24,7 @@ var SidebarUtils = {
       
       
       
-      var isRTL = window.getComputedStyle(aTree, null).direction == "rtl";
+      var isRTL = window.getComputedStyle(aTree).direction == "rtl";
       if (isRTL)
         mouseInGutter = aEvent.clientX > rect.x;
       else
