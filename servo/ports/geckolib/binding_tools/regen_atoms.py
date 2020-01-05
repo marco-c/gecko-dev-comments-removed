@@ -17,7 +17,9 @@ def msvc64_symbolify(source, ident):
 
 
 def msvc32_symbolify(source, ident):
-    return "?" + ident + "@" + source.CLASS + "@@2PAV" + source.TYPE + "@@A"
+    
+    
+    return "\\x01?" + ident + "@" + source.CLASS + "@@2PAV" + source.TYPE + "@@A"
 
 
 class GkAtomSource:
