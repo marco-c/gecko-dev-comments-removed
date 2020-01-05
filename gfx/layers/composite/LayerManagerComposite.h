@@ -65,6 +65,11 @@ class PaintCounter;
 
 static const int kVisualWarningDuration = 150; 
 
+struct ImageCompositeNotificationInfo {
+  base::ProcessId mImageBridgeProcessId;
+  ImageCompositeNotification mNotification;
+};
+
 
 
 class HostLayerManager : public LayerManager
@@ -128,7 +133,7 @@ public:
   
   virtual void ChangeCompositor(Compositor* aNewCompositor) = 0;
 
-  void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotification>* aNotifications)
+  void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotificationInfo>* aNotifications)
   {
     aNotifications->AppendElements(Move(mImageCompositeNotifications));
   }
@@ -165,7 +170,7 @@ public:
 
 protected:
   bool mDebugOverlayWantsNextFrame;
-  nsTArray<ImageCompositeNotification> mImageCompositeNotifications;
+  nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
   
   
   float mWarningLevel;
@@ -346,7 +351,8 @@ public:
 
   bool AsyncPanZoomEnabled() const override;
 
-  void AppendImageCompositeNotification(const ImageCompositeNotification& aNotification)
+public:
+  void AppendImageCompositeNotification(const ImageCompositeNotificationInfo& aNotification)
   {
     
     
@@ -357,6 +363,8 @@ public:
       mImageCompositeNotifications.AppendElement(aNotification);
     }
   }
+
+public:
   virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() override
   {
     return mCompositor->GetTextureFactoryIdentifier();
