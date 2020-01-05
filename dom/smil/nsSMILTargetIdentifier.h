@@ -26,20 +26,18 @@ struct nsSMILTargetIdentifier
 {
   nsSMILTargetIdentifier()
     : mElement(nullptr), mAttributeName(nullptr),
-      mAttributeNamespaceID(kNameSpaceID_Unknown), mIsCSS(false) {}
+      mAttributeNamespaceID(kNameSpaceID_Unknown) {}
 
   inline bool Equals(const nsSMILTargetIdentifier& aOther) const
   {
     return (aOther.mElement              == mElement &&
             aOther.mAttributeName        == mAttributeName &&
-            aOther.mAttributeNamespaceID == mAttributeNamespaceID &&
-            aOther.mIsCSS                == mIsCSS);
+            aOther.mAttributeNamespaceID == mAttributeNamespaceID);
   }
 
   RefPtr<mozilla::dom::Element> mElement;
-  RefPtr<nsIAtom>    mAttributeName;
-  int32_t              mAttributeNamespaceID;
-  bool                 mIsCSS;
+  RefPtr<nsIAtom>               mAttributeName;
+  int32_t                       mAttributeNamespaceID;
 };
 
 
@@ -57,7 +55,7 @@ class nsSMILWeakTargetIdentifier
 public:
   
   nsSMILWeakTargetIdentifier()
-    : mElement(nullptr), mAttributeName(nullptr), mIsCSS(false) {}
+    : mElement(nullptr), mAttributeName(nullptr) {}
 
   
   nsSMILWeakTargetIdentifier&
@@ -65,7 +63,6 @@ public:
   {
     mElement = aOther.mElement;
     mAttributeName = aOther.mAttributeName;
-    mIsCSS = aOther.mIsCSS;
     return *this;
   }
 
@@ -73,14 +70,12 @@ public:
   inline bool Equals(const nsSMILTargetIdentifier& aOther) const
   {
     return (aOther.mElement       == mElement &&
-            aOther.mAttributeName == mAttributeName &&
-            aOther.mIsCSS         == mIsCSS);
+            aOther.mAttributeName == mAttributeName);
   }
 
 private:
   const nsIContent* mElement;
   const nsIAtom*    mAttributeName;
-  bool              mIsCSS;
 };
 
 #endif 

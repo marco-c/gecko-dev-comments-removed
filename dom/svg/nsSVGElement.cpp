@@ -2624,24 +2624,6 @@ nsSVGElement::GetAnimatedAttr(int32_t aNamespaceID, nsIAtom* aName)
 {
   if (aNamespaceID == kNameSpaceID_None) {
     
-    
-    
-    
-
-    
-    if (IsAttributeMapped(aName)) {
-      nsCSSPropertyID prop =
-        nsCSSProps::LookupProperty(nsDependentAtomString(aName),
-                                   CSSEnabledState::eForAllContent);
-      
-      
-      
-      if (nsSMILCSSProperty::IsPropertyAnimatable(prop)) {
-        return new nsSMILMappedAttribute(prop, this);
-      }
-    }
-
-    
     if (GetTransformListAttrName() == aName) {
       
       
