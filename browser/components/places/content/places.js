@@ -313,7 +313,7 @@ var PlacesOrganizer = {
         
         
         
-        PlacesUIUtils.openContainerNodeInTabs(selectedNode, aEvent, this._places);
+        PlacesUIUtils.openContainerNodeInTabs(node, aEvent, this._places);
       }
     }
   },
