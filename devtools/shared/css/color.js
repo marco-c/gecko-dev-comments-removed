@@ -6,6 +6,9 @@
 
 const Services = require("Services");
 
+const {CSS_ANGLEUNIT} = require("devtools/shared/css/properties-db");
+const {getAngleValueInDegrees} = require("devtools/shared/css/parsing-utils");
+
 const {getCSSLexer} = require("devtools/shared/css/lexer");
 const {cssColors} = require("devtools/shared/css/color-db");
 
@@ -650,13 +653,172 @@ function clamp(value, min, max) {
 
 
 function getToken(lexer) {
+  if (lexer._hasPushBackToken) {
+    lexer._hasPushBackToken = false;
+    return lexer._currentToken;
+  }
+
   while (true) {
     let token = lexer.nextToken();
     if (!token || (token.tokenType !== "comment" &&
                    token.tokenType !== "whitespace")) {
+      lexer._currentToken = token;
       return token;
     }
   }
+}
+
+
+
+
+
+
+
+function unGetToken(lexer) {
+  if (lexer._hasPushBackToken) {
+    throw new Error("Double pushback.");
+  }
+  lexer._hasPushBackToken = true;
+}
+
+
+
+
+
+
+
+
+
+
+function expectSymbol(lexer, symbol) {
+  let token = getToken(lexer);
+  if (!token) {
+    return false;
+  }
+
+  if (token.tokenType !== "symbol" || token.text !== symbol) {
+    unGetToken(lexer);
+    return false;
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseColorComponent(lexer, isPercentage, separator, colorArray) {
+  let token = getToken(lexer);
+
+  if (!token) {
+    return false;
+  }
+
+  if (isPercentage) {
+    if (token.tokenType !== "percentage") {
+      return false;
+    }
+  } else if (token.tokenType !== "number") {
+    return false;
+  }
+
+  let colorComponent = 0;
+  if (isPercentage) {
+    colorComponent = clamp(token.number, 0, 1);
+  } else {
+    colorComponent = clamp(token.number, 0, 255);
+  }
+
+  if (separator !== "" && !expectSymbol(lexer, separator)) {
+    return false;
+  }
+
+  colorArray.push(colorComponent);
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function parseColorOpacityAndCloseParen(lexer, separator, colorArray) {
+  
+  
+  if (expectSymbol(lexer, ")")) {
+    colorArray.push(1);
+    return true;
+  }
+
+  if (!expectSymbol(lexer, separator)) {
+    return false;
+  }
+
+  let token = getToken(lexer);
+  if (!token) {
+    return false;
+  }
+
+  
+  if (token.tokenType !== "number" && token.tokenType !== "percentage") {
+    return false;
+  }
+
+  if (!expectSymbol(lexer, ")")) {
+    return false;
+  }
+
+  colorArray.push(clamp(token.number, 0, 1));
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+function parseHue(lexer, colorArray) {
+  let token = getToken(lexer);
+
+  if (!token) {
+    return false;
+  }
+
+  let val = 0;
+  if (token.tokenType === "number") {
+    val = token.number;
+  } else if (token.tokenType === "dimension" && token.text in CSS_ANGLEUNIT) {
+    val = getAngleValueInDegrees(token.number, token.text);
+  } else {
+    return false;
+  }
+
+  val = val / 360.0;
+  colorArray.push(val - Math.floor(val));
+
+  return true;
 }
 
 
@@ -684,25 +846,39 @@ function requireComma(lexer, token) {
 
 
 function parseHsl(lexer) {
-  let vals = [];
+  
+  
+  
+  
+  
+  
+  
 
-  let token = getToken(lexer);
-  if (!token || token.tokenType !== "number") {
+  const commaSeparator = ",";
+  let hsl = [];
+  let a = [];
+
+  
+  if (!parseHue(lexer, hsl)) {
     return null;
   }
 
-  let val = token.number / 360.0;
-  vals.push(val - Math.floor(val));
+  
+  
+  let hasComma = expectSymbol(lexer, commaSeparator);
 
-  for (let i = 0; i < 2; ++i) {
-    token = requireComma(lexer, getToken(lexer));
-    if (!token || token.tokenType !== "percentage") {
-      return null;
-    }
-    vals.push(clamp(token.number, 0, 1));
+  
+  
+  
+  
+  let separatorBeforeAlpha = hasComma ? commaSeparator : "/";
+  if (parseColorComponent(lexer, true, hasComma ? commaSeparator : "", hsl) &&
+      parseColorComponent(lexer, true, "", hsl) &&
+      parseColorOpacityAndCloseParen(lexer, separatorBeforeAlpha, a)) {
+    return [...hslToRGB(hsl), ...a];
   }
 
-  return hslToRGB(vals);
+  return null;
 }
 
 
@@ -713,36 +889,46 @@ function parseHsl(lexer) {
 
 
 function parseRgb(lexer) {
-  let isPercentage = false;
-  let vals = [];
-  for (let i = 0; i < 3; ++i) {
-    let token = getToken(lexer);
-    if (i > 0) {
-      token = requireComma(lexer, token);
-    }
-    if (!token) {
-      return null;
-    }
+  
+  
+  
+  
+  
+  
+  
 
-    
+  const commaSeparator = ",";
+  let rgba = [];
 
-    if (i === 0 && token.tokenType === "percentage") {
-      isPercentage = true;
-    }
-
-    if (isPercentage) {
-      if (token.tokenType !== "percentage") {
-        return null;
-      }
-      vals.push(Math.round(255 * clamp(token.number, 0, 1)));
-    } else {
-      if (token.tokenType !== "number" || !token.isInteger) {
-        return null;
-      }
-      vals.push(clamp(token.number, 0, 255));
-    }
+  let token = getToken(lexer);
+  if (token.tokenType !== "percentage" && token.tokenType !== "number") {
+    return null;
   }
-  return vals;
+  unGetToken(lexer);
+  let isPercentage = token.tokenType === "percentage";
+
+  
+  if (!parseColorComponent(lexer, isPercentage, "", rgba)) {
+    return null;
+  }
+  let hasComma = expectSymbol(lexer, commaSeparator);
+
+  
+  
+  
+  let separatorBeforeAlpha = hasComma ? commaSeparator : "/";
+  if (parseColorComponent(lexer, isPercentage, hasComma ? commaSeparator : "", rgba) &&
+      parseColorComponent(lexer, isPercentage, "", rgba) &&
+      parseColorOpacityAndCloseParen(lexer, separatorBeforeAlpha, rgba)) {
+    if (isPercentage) {
+      rgba[0] = Math.round(255 * rgba[0]);
+      rgba[1] = Math.round(255 * rgba[1]);
+      rgba[2] = Math.round(255 * rgba[2]);
+    }
+    return rgba;
+  }
+
+  return null;
 }
 
 
@@ -786,26 +972,9 @@ function colorToRGBA(name) {
   }
 
   let hsl = func.text === "hsl" || func.text === "hsla";
-  let alpha = func.text === "rgba" || func.text === "hsla";
 
   let vals = hsl ? parseHsl(lexer) : parseRgb(lexer);
   if (!vals) {
-    return null;
-  }
-
-  if (alpha) {
-    let token = requireComma(lexer, getToken(lexer));
-    if (!token || token.tokenType !== "number") {
-      return null;
-    }
-    vals.push(clamp(token.number, 0, 1));
-  } else {
-    vals.push(1);
-  }
-
-  let parenToken = getToken(lexer);
-  if (!parenToken || parenToken.tokenType !== "symbol" ||
-      parenToken.text !== ")") {
     return null;
   }
   if (getToken(lexer) !== null) {
