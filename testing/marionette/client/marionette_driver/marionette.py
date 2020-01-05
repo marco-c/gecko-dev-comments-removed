@@ -3,6 +3,7 @@
 
 
 import base64
+import copy
 import datetime
 import json
 import os
@@ -1278,7 +1279,25 @@ class Marionette(object):
         self.wait_for_port(timeout=timeout)
         self.protocol, _ = self.client.connect()
 
-        body = {"capabilities": capabilities, "sessionId": session_id}
+        if capabilities is not None:
+            caps = copy.deepcopy(capabilities)
+        else:
+            caps = {}
+
+        
+        
+        
+        
+        if "desiredCapabilities" not in caps:
+            caps.update({
+                "desiredCapabilities": {
+                    "timeouts": {
+                        "page load": 60000,  
+                    }
+                }
+            })
+
+        body = {"capabilities": caps, "sessionId": session_id}
         resp = self._send_message("newSession", body)
 
         self.session_id = resp["sessionId"]
