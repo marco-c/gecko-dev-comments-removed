@@ -7,6 +7,8 @@
 
 
 #include "nsSMILCSSValueType.h"
+
+#include "nsComputedDOMStyle.h"
 #include "nsString.h"
 #include "nsSMILParserUtils.h"
 #include "nsSMILValue.h"

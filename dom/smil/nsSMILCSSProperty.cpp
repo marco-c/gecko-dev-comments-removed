@@ -10,46 +10,14 @@
 
 #include "mozilla/dom/Element.h"
 #include "mozilla/Move.h"
+#include "mozilla/StyleAnimationValue.h"
+#include "nsICSSDeclaration.h"
 #include "nsSMILCSSValueType.h"
 #include "nsSMILValue.h"
-#include "nsComputedDOMStyle.h"
 #include "nsCSSProps.h"
-#include "nsIDOMElement.h"
-#include "nsIDocument.h"
 
+using namespace mozilla;
 using namespace mozilla::dom;
-
-
-static bool
-GetCSSComputedValue(Element* aElem,
-                    nsCSSPropertyID aPropID,
-                    nsAString& aResult)
-{
-  MOZ_ASSERT(!nsCSSProps::IsShorthand(aPropID),
-             "Can't look up computed value of shorthand property");
-  MOZ_ASSERT(nsSMILCSSProperty::IsPropertyAnimatable(aPropID),
-             "Shouldn't get here for non-animatable properties");
-
-  nsIDocument* doc = aElem->GetUncomposedDoc();
-  if (!doc) {
-    
-    
-    
-    return false;
-  }
-
-  nsIPresShell* shell = doc->GetShell();
-  if (!shell) {
-    NS_WARNING("Unable to look up computed style -- no pres shell");
-    return false;
-  }
-
-  RefPtr<nsComputedDOMStyle> computedStyle =
-    NS_NewComputedDOMStyle(aElem, EmptyString(), shell);
-
-  computedStyle->GetPropertyValue(aPropID, aResult);
-  return true;
-}
 
 
 nsSMILCSSProperty::nsSMILCSSProperty(nsCSSPropertyID aPropID,
@@ -74,7 +42,13 @@ nsSMILCSSProperty::GetBaseValue() const
 
   
   
-  if (nsCSSProps::IsShorthand(mPropID) || mPropID == eCSSProperty_display) {
+  
+  if (nsCSSProps::IsShorthand(mPropID) ||
+      mPropID == eCSSProperty_display ||
+      !mBaseStyleContext) {
+    
+    
+    
     
     
     
@@ -90,40 +64,16 @@ nsSMILCSSProperty::GetBaseValue() const
     return baseValue;
   }
 
-  
-  
-  
-  nsICSSDeclaration* overrideDecl = mElement->GetSMILOverrideStyle();
-  nsAutoString cachedOverrideStyleVal;
-  if (overrideDecl) {
-    overrideDecl->GetPropertyValue(mPropID, cachedOverrideStyleVal);
-    
-    if (!cachedOverrideStyleVal.IsEmpty()) {
-      overrideDecl->SetPropertyValue(mPropID, EmptyString());
-    }
+  StyleAnimationValue computedValue;
+  if (!StyleAnimationValue::ExtractComputedValue(mPropID,
+                                                 mBaseStyleContext,
+                                                 computedValue)) {
+    return baseValue;
   }
 
-  
-  nsAutoString computedStyleVal;
-  bool didGetComputedVal = GetCSSComputedValue(mElement, mPropID,
-                                                 computedStyleVal);
-
-  
-  if (overrideDecl && !cachedOverrideStyleVal.IsEmpty()) {
-    overrideDecl->SetPropertyValue(mPropID, cachedOverrideStyleVal);
-  }
-
-  
-  if (didGetComputedVal) {
-    
-    
-    
-    
-    
-    nsSMILCSSValueType::ValueFromString(mPropID, mElement,
-                                        computedStyleVal, baseValue,
-                                        nullptr);
-  }
+  baseValue =
+    nsSMILCSSValueType::ValueFromAnimationValue(mPropID, mElement,
+                                                computedValue);
   return baseValue;
 }
 
