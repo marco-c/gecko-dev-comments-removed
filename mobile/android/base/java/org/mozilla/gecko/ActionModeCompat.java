@@ -4,41 +4,25 @@
 
 package org.mozilla.gecko;
 
-import org.mozilla.gecko.menu.GeckoMenu;
-import org.mozilla.gecko.menu.GeckoMenuItem;
-import org.mozilla.gecko.widget.GeckoPopupMenu;
-
+import android.support.v7.view.ActionMode;
 import android.view.Gravity;
-import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-class ActionModeCompat implements GeckoPopupMenu.OnMenuItemClickListener,
-                                  GeckoPopupMenu.OnMenuItemLongClickListener,
-                                  View.OnClickListener {
+import org.mozilla.gecko.menu.GeckoMenu;
+import org.mozilla.gecko.menu.GeckoMenuItem;
+import org.mozilla.gecko.widget.GeckoPopupMenu;
+
+class ActionModeCompat extends ActionMode implements GeckoPopupMenu.OnMenuItemClickListener,
+        GeckoPopupMenu.OnMenuItemLongClickListener,
+        View.OnClickListener {
     private final String LOGTAG = "GeckoActionModeCompat";
 
     private final Callback mCallback;
     private final ActionModeCompatView mView;
     private final Presenter mPresenter;
-
-    
-
-    public static interface Callback {
-        
-        public boolean onCreateActionMode(ActionModeCompat mode, GeckoMenu menu);
-
-        
-
-        public boolean onPrepareActionMode(ActionModeCompat mode, GeckoMenu menu);
-
-        
-        public boolean onActionItemClicked(ActionModeCompat mode, MenuItem item);
-
-        
-        public void onDestroyActionMode(ActionModeCompat mode);
-    }
 
     
 
@@ -73,12 +57,43 @@ class ActionModeCompat implements GeckoPopupMenu.OnMenuItemClickListener,
         return mView.getTitle();
     }
 
+    @Override
+    public CharSequence getSubtitle() {
+        throw new UnsupportedOperationException("This method is not supported by this class");
+    }
+
+    @Override
+    public View getCustomView() {
+        return mView;
+    }
+
+    @Override
+    public MenuInflater getMenuInflater() {
+        throw new UnsupportedOperationException("This method is not supported by this class");
+    }
+
     public void setTitle(CharSequence title) {
         mView.setTitle(title);
     }
 
     public void setTitle(int resId) {
         mView.setTitle(resId);
+    }
+
+    @Override
+    public void setSubtitle(CharSequence subtitle) {
+        throw new UnsupportedOperationException("This method is not supported by this class");
+    }
+
+    @Override
+    public void setSubtitle(int resId) {
+        throw new UnsupportedOperationException("This method is not supported by this class");
+    }
+
+    @Override
+    public void setCustomView(View view) {
+        
+        throw new UnsupportedOperationException("This method is not supported by this class");
     }
 
     public GeckoMenu getMenu() {
