@@ -55,7 +55,7 @@ enum MonitorAction
 enum SegmentChangeResult
 {
   SegmentNotChanged,
-  SegmentDeleted
+  SegmentAdvanceBufferRead
 };
 
 } 
@@ -311,10 +311,13 @@ private:
   
   
   
+  
+  
 
   void PeekSegment(const nsPipeReadState& aReadState, uint32_t aIndex,
                    char*& aCursor, char*& aLimit);
-  SegmentChangeResult AdvanceReadSegment(nsPipeReadState& aReadState);
+  SegmentChangeResult AdvanceReadSegment(nsPipeReadState& aReadState,
+                                         const ReentrantMonitorAutoEnter &ev);
   bool ReadSegmentBeingWritten(nsPipeReadState& aReadState);
   uint32_t CountSegmentReferences(int32_t aSegment);
   void SetAllNullReadCursors();
@@ -322,13 +325,15 @@ private:
   void RollBackAllReadCursors(char* aWriteCursor);
   void UpdateAllReadCursors(char* aWriteCursor);
   void ValidateAllReadCursors();
+  uint32_t GetBufferSegmentCount(const nsPipeReadState& aReadState,
+                                 const ReentrantMonitorAutoEnter& ev) const;
+  bool IsAdvanceBufferFull(const ReentrantMonitorAutoEnter& ev) const;
 
   
   
   
 
   void     DrainInputStream(nsPipeReadState& aReadState, nsPipeEvents& aEvents);
-
   nsresult GetWriteSegment(char*& aSegment, uint32_t& aSegmentLen);
   void     AdvanceWriteCursor(uint32_t aCount);
 
@@ -364,6 +369,11 @@ private:
 
   ReentrantMonitor    mReentrantMonitor;
   nsSegmentedBuffer   mBuffer;
+
+  
+  
+  
+  uint32_t            mMaxAdvanceBufferSegmentCount;
 
   int32_t             mWriteSegment;
   char*               mWriteCursor;
@@ -505,10 +515,18 @@ private:
 
 
 
+
+
+
+
+
+
+
 nsPipe::nsPipe()
   : mOutput(this)
   , mOriginalInput(new nsPipeInputStream(this))
   , mReentrantMonitor("nsPipe.mReentrantMonitor")
+  , mMaxAdvanceBufferSegmentCount(0)
   , mWriteSegment(-1)
   , mWriteCursor(nullptr)
   , mWriteLimit(nullptr)
@@ -566,10 +584,16 @@ nsPipe::Init(bool aNonBlockingIn,
     aSegmentCount = maxCount;
   }
 
-  nsresult rv = mBuffer.Init(aSegmentSize, aSegmentSize * aSegmentCount);
+  
+  
+  
+  
+  nsresult rv = mBuffer.Init(aSegmentSize, UINT32_MAX);
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+  mMaxAdvanceBufferSegmentCount = aSegmentCount;
 
   mOutput.SetNonBlocking(aNonBlockingOut);
   mOriginalInput->SetNonBlocking(aNonBlockingIn);
@@ -692,7 +716,7 @@ nsPipe::AdvanceReadCursor(nsPipeReadState& aReadState, uint32_t aBytesRead)
 
       
       
-      if (AdvanceReadSegment(aReadState) == SegmentDeleted &&
+      if (AdvanceReadSegment(aReadState, mon) == SegmentAdvanceBufferRead &&
           mOutput.OnOutputWritable(events) == NotifyMonitor) {
         mon.NotifyAll();
       }
@@ -703,16 +727,16 @@ nsPipe::AdvanceReadCursor(nsPipeReadState& aReadState, uint32_t aBytesRead)
 }
 
 SegmentChangeResult
-nsPipe::AdvanceReadSegment(nsPipeReadState& aReadState)
+nsPipe::AdvanceReadSegment(nsPipeReadState& aReadState,
+                           const ReentrantMonitorAutoEnter &ev)
 {
-  mReentrantMonitor.AssertCurrentThreadIn();
+  
+  uint32_t startBufferSegments = GetBufferSegmentCount(aReadState, ev);
 
   int32_t currentSegment = aReadState.mSegment;
 
   
   aReadState.mSegment += 1;
-
-  SegmentChangeResult result = SegmentNotChanged;
 
   
   if (currentSegment == 0 && CountSegmentReferences(currentSegment) == 0) {
@@ -737,8 +761,6 @@ nsPipe::AdvanceReadSegment(nsPipeReadState& aReadState)
     
     mBuffer.DeleteFirstSegment();
     LOG(("III deleting first segment\n"));
-
-    result = SegmentDeleted;
   }
 
   if (mWriteSegment < aReadState.mSegment) {
@@ -761,7 +783,19 @@ nsPipe::AdvanceReadSegment(nsPipeReadState& aReadState)
     }
   }
 
-  return result;
+  
+  
+  uint32_t endBufferSegments = GetBufferSegmentCount(aReadState, ev);
+
+  
+  
+  if (startBufferSegments >= mMaxAdvanceBufferSegmentCount &&
+      endBufferSegments < mMaxAdvanceBufferSegmentCount) {
+    return SegmentAdvanceBufferRead;
+  }
+
+  
+  return SegmentNotChanged;
 }
 
 void
@@ -782,7 +816,6 @@ nsPipe::DrainInputStream(nsPipeReadState& aReadState, nsPipeEvents& aEvents)
 
   aReadState.mAvailable = 0;
 
-  SegmentChangeResult result = SegmentNotChanged;
   while(mWriteSegment >= aReadState.mSegment) {
 
     
@@ -791,14 +824,15 @@ nsPipe::DrainInputStream(nsPipeReadState& aReadState, nsPipeEvents& aEvents)
       break;
     }
 
-    if (AdvanceReadSegment(aReadState) == SegmentDeleted) {
-      result = SegmentDeleted;
-    }
+    
+    
+    
+    AdvanceReadSegment(aReadState, mon);
   }
 
   
   
-  if (result == SegmentDeleted &&
+  if (!IsAdvanceBufferFull(mon) &&
       mOutput.OnOutputWritable(aEvents) == NotifyMonitor) {
     mon.NotifyAll();
   }
@@ -826,11 +860,18 @@ nsPipe::GetWriteSegment(char*& aSegment, uint32_t& aSegmentLen)
 
   
   if (mWriteCursor == mWriteLimit) {
-    char* seg = mBuffer.AppendNewSegment();
     
-    if (!seg) {
+    
+    
+    if (IsAdvanceBufferFull(mon)) {
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
+
+    
+    
+    char* seg = mBuffer.AppendNewSegment();
+    MOZ_DIAGNOSTIC_ASSERT(seg);
+
     LOG(("OOO appended new segment\n"));
     mWriteCursor = seg;
     mWriteLimit = mWriteCursor + mBuffer.GetSegmentSize();
@@ -877,9 +918,7 @@ nsPipe::AdvanceWriteCursor(uint32_t aBytesWritten)
 
     
     if (mWriteCursor == mWriteLimit) {
-      if (mBuffer.GetSize() >= mBuffer.GetMaxSize()) {
-        mOutput.SetWritable(false);
-      }
+      mOutput.SetWritable(!IsAdvanceBufferFull(mon));
     }
 
     
@@ -1099,6 +1138,68 @@ nsPipe::ValidateAllReadCursors()
                  "read cursor is bad");
   }
 #endif
+}
+
+uint32_t
+nsPipe::GetBufferSegmentCount(const nsPipeReadState& aReadState,
+                              const ReentrantMonitorAutoEnter& ev) const
+{
+  
+  
+  
+  
+  if (mWriteSegment < aReadState.mSegment) {
+    return 0;
+  }
+
+  MOZ_ASSERT(mWriteSegment >= 0);
+  MOZ_ASSERT(aReadState.mSegment >= 0);
+
+  
+  
+  
+  return 1 + mWriteSegment - aReadState.mSegment;
+}
+
+bool
+nsPipe::IsAdvanceBufferFull(const ReentrantMonitorAutoEnter& ev) const
+{
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(mWriteSegment >= -1);
+  MOZ_DIAGNOSTIC_ASSERT(mWriteSegment < INT32_MAX);
+  uint32_t totalWriteSegments = mWriteSegment + 1;
+  if (totalWriteSegments < mMaxAdvanceBufferSegmentCount) {
+    return false;
+  }
+
+  
+  
+  uint32_t minBufferSegments = UINT32_MAX;
+  for (uint32_t i = 0; i < mInputList.Length(); ++i) {
+    
+    if (NS_FAILED(mInputList[i]->Status(ev))) {
+      continue;
+    }
+    const nsPipeReadState& state = mInputList[i]->ReadState();
+    uint32_t bufferSegments = GetBufferSegmentCount(state, ev);
+    minBufferSegments = std::min(minBufferSegments, bufferSegments);
+    
+    
+    if (minBufferSegments < mMaxAdvanceBufferSegmentCount) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+
+  return true;
 }
 
 
