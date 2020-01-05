@@ -72,6 +72,7 @@ this.FxAccountsProfile.prototype = {
 
   
   _cacheProfile(response) {
+    this._cachedAt = Date.now();
     let profileCache = {
       profile: response.body,
       etag: response.etag
@@ -89,10 +90,6 @@ this.FxAccountsProfile.prototype = {
   },
 
   _fetchAndCacheProfileInternal() {
-    let onFinally = () => {
-      this._cachedAt = Date.now();
-      this._currentFetchPromise = null;
-    }
     return this.fxa.getProfileCache()
       .then(profileCache => {
         const etag = profileCache ? profileCache.etag : null;
@@ -102,13 +99,11 @@ this.FxAccountsProfile.prototype = {
         return this._cacheProfile(response);
       })
       .then(body => { 
-        onFinally();
+        this._currentFetchPromise = null;
         return body;
-      }, err => {
-        onFinally();
-        if (err.code != 304) { 
-          throw e;
-        }
+      }, e => {
+        this._currentFetchPromise = null;
+        throw e;
       });
   },
 
@@ -130,7 +125,8 @@ this.FxAccountsProfile.prototype = {
             
             
             this._fetchAndCacheProfile().catch(err => {
-              log.error("Background refresh of profile failed", err);
+              log.error("Background refresh of profile failed, bumping _cachedAt", err);
+              this._cachedAt = Date.now();
             });
           } else {
             log.trace("not checking freshness of profile as it remains recent");
