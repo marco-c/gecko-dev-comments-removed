@@ -101,12 +101,11 @@ nsFirstLetterFrame::GetChildFrameContainingOffset(int32_t inContentOffset,
                                                   nsIFrame **outChildFrame)
 {
   nsIFrame *kid = mFrames.FirstChild();
-  if (kid)
-  {
+  if (kid) {
     return kid->GetChildFrameContainingOffset(inContentOffset, inHint, outFrameContentOffset, outChildFrame);
-  }
-  else
+  } else {
     return nsFrame::GetChildFrameContainingOffset(inContentOffset, inHint, outFrameContentOffset, outChildFrame);
+  }
 }
 
 
@@ -240,8 +239,7 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
     ConsiderChildOverflow(aMetrics.mOverflowAreas, kid);
 
     FinishAndStoreOverflow(&aMetrics);
-  }
-  else {
+  } else {
     
     nsLineLayout* ll = aReflowInput.mLineLayout;
     bool          pushedFrame;
@@ -273,8 +271,7 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
         
         kidNextInFlow->GetParent()->DeleteNextInFlowChild(kidNextInFlow, true);
       }
-    }
-    else {
+    } else {
       
       
       if (!IsFloating()) {
