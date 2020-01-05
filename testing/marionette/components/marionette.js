@@ -51,12 +51,8 @@ const ServerSocket = CC("@mozilla.org/network/server-socket;1",
 
 const prefs = {
   get enabled () {
-#ifdef ENABLE_MARIONETTE
     let fallback = Preferences.get("marionette.defaultPrefs.enabled", false);
     return Preferences.get("marionette.enabled", fallback);
-#else
-    return false;
-#endif
   },
 
   get port () {
