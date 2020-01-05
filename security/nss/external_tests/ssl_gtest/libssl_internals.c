@@ -26,9 +26,10 @@ SECStatus SSLInt_IncrementClientHandshakeVersion(PRFileDesc *fd) {
 
 
 PRUint32 SSLInt_DetermineKEABits(PRUint16 serverKeyBits,
-                                 const SSLCipherSuiteInfo *info) {
+                                 SSLAuthType authAlgorithm,
+                                 PRUint32 symKeyBits) {
   PRUint32 authBits;
-  SSLAuthType authAlgorithm = info->authType;
+
   if (authAlgorithm == ssl_auth_ecdsa || authAlgorithm == ssl_auth_ecdh_rsa ||
       authAlgorithm == ssl_auth_ecdh_ecdsa) {
     authBits = serverKeyBits;
@@ -40,7 +41,7 @@ PRUint32 SSLInt_DetermineKEABits(PRUint16 serverKeyBits,
 
   
   
-  PRUint32 targetKeaBits = PR_MIN(info->symKeyBits * 2, authBits);
+  PRUint32 targetKeaBits = PR_MIN(symKeyBits * 2, authBits);
 
   
   return PR_MAX(256U, targetKeaBits);
@@ -282,4 +283,11 @@ SECStatus SSLInt_AdvanceWriteSeqByAWindow(PRFileDesc *fd, PRInt32 extra) {
   to = ss->ssl3.cwSpec->write_seq_num + DTLS_RECVD_RECORDS_WINDOW + extra;
   ssl_ReleaseSpecReadLock(ss);
   return SSLInt_AdvanceWriteSeqNum(fd, to & RECORD_SEQ_MAX);
+}
+
+SSLKEAType SSLInt_GetKEAType(SSLNamedGroup group) {
+  const sslNamedGroupDef *groupDef = ssl_LookupNamedGroup(group);
+  if (!groupDef) return ssl_kea_null;
+
+  return groupDef->keaType;
 }

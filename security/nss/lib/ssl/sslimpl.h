@@ -60,11 +60,6 @@ typedef SSLMACAlgorithm SSL3MACAlgorithm;
 #define hmac_sha384 ssl_hmac_sha384
 #define mac_aead ssl_mac_aead
 
-#define SET_ERROR_CODE
-#define SEND_ALERT
-#define TEST_FOR_FAILURE
-#define DEAL_WITH_FAILURE
-
 #if defined(DEBUG) || defined(TRACE)
 #ifdef __cplusplus
 #define Debug 1
@@ -138,8 +133,6 @@ typedef enum { SSLAppOpRead = 0,
 #define BPB 8 /* Bits Per Byte */
 #endif
 
-#define EXPORT_RSA_KEY_LENGTH 64 /* bytes */
-
 
 #define DTLS_RETRANSMIT_INITIAL_MS 50
 
@@ -148,7 +141,7 @@ typedef enum { SSLAppOpRead = 0,
 #define DTLS_RETRANSMIT_FINISHED_MS 30000
 
 
-#define SSL_NAMED_GROUP_COUNT 30
+#define SSL_NAMED_GROUP_COUNT 31
 
 
 typedef enum {
@@ -157,28 +150,27 @@ typedef enum {
     ec_type_named = 3
 } ECType;
 
-
 typedef enum {
-    group_type_ec,
-    group_type_ff
-} NamedGroupType;
+    ticket_allow_early_data = 1,
+    ticket_allow_psk_ke = 2,
+    ticket_allow_psk_dhe_ke = 4,
+    ticket_allow_psk_auth = 8,
+    ticket_allow_psk_sign_auth = 16
+} TLS13SessionTicketFlags;
 
 typedef struct {
-    
-
-    PRUint8 index;
     
     SSLNamedGroup name;
     
     unsigned int bits;
     
-    NamedGroupType type;
+    SSLKEAType keaType;
     
 
     SECOidTag oidTag;
     
-    PRBool suiteb;
-} namedGroupDef;
+    PRBool assumeSupported;
+} sslNamedGroupDef;
 
 typedef struct sslBufferStr sslBuffer;
 typedef struct sslConnectInfoStr sslConnectInfo;
@@ -218,9 +210,9 @@ typedef PRInt32 (*ssl3HelloExtensionSenderFunc)(sslSocket *ss, PRBool append,
 
 
 
-typedef SECStatus (*ssl3HelloExtensionHandlerFunc)(sslSocket *ss,
-                                                   PRUint16 ex_type,
-                                                   SECItem *data);
+typedef SECStatus (*ssl3ExtensionHandlerFunc)(sslSocket *ss,
+                                              PRUint16 ex_type,
+                                              SECItem *data);
 
 
 typedef struct {
@@ -231,8 +223,8 @@ typedef struct {
 
 typedef struct {
     PRInt32 ex_type;
-    ssl3HelloExtensionHandlerFunc ex_handler;
-} ssl3HelloExtensionHandler;
+    ssl3ExtensionHandlerFunc ex_handler;
+} ssl3ExtensionHandler;
 
 extern SECStatus
 ssl3_RegisterServerHelloExtensionSender(sslSocket *ss, PRUint16 ex_type,
@@ -303,7 +295,7 @@ typedef struct {
 #endif
 } ssl3CipherSuiteCfg;
 
-#define ssl_V3_SUITES_IMPLEMENTED 80
+#define ssl_V3_SUITES_IMPLEMENTED 71
 
 #define MAX_DTLS_SRTP_CIPHER_SUITES 4
 
@@ -324,7 +316,6 @@ typedef struct sslOptionsStr {
     unsigned int noCache : 1;
     unsigned int fdx : 1;
     unsigned int detectRollBack : 1;
-    unsigned int noStepDown : 1;
     unsigned int bypassPKCS11 : 1;
     unsigned int noLocks : 1;
     unsigned int enableSessionTickets : 1;
@@ -709,12 +700,6 @@ typedef struct {
     SSLAuthType authKeyType;
     
 
-
-    PRBool is_limited;
-    unsigned int key_size_limit;
-    PRBool tls_keygen;
-    
-
     PRBool ephemeral;
     
     SECOidTag oid;
@@ -766,6 +751,7 @@ typedef enum {
 } sslZeroRttIgnore;
 
 typedef enum {
+    idle_handshake,
     wait_client_hello,
     wait_client_cert,
     wait_client_key,
@@ -780,7 +766,6 @@ typedef enum {
     wait_hello_done,
     wait_new_session_ticket,
     wait_encrypted_extensions,
-    idle_handshake,
     wait_0rtt_finished,
     wait_invalid 
 } SSL3WaitState;
@@ -813,6 +798,10 @@ struct TLSExtensionDataStr {
     PRBool ticketTimestampVerified;
     PRBool emptySessionTicket;
     PRBool sentSessionTicketInClientHello;
+    SECItem psk_ke_modes;
+    SECItem psk_auth_modes;
+    PRUint32 ticket_age_add;
+    PRBool ticket_age_add_found;
 
     
 
@@ -852,9 +841,9 @@ typedef struct DTLSQueuedMessageStr {
 } DTLSQueuedMessage;
 
 typedef struct TLS13KeyShareEntryStr {
-    PRCList link;               
-    const namedGroupDef *group; 
-    SECItem key_exchange;       
+    PRCList link;                  
+    const sslNamedGroupDef *group; 
+    SECItem key_exchange;          
 } TLS13KeyShareEntry;
 
 typedef struct TLS13EarlyDataStr {
@@ -927,11 +916,10 @@ typedef struct SSL3HandshakeStateStr {
     
     SSL3HandshakeType msg_type;
     unsigned long msg_len;
-    PRBool isResuming;      
-    PRBool usedStepDownKey; 
-    PRBool sendingSCSV;     
-    sslBuffer msgState;     
-                            
+    PRBool isResuming;  
+    PRBool sendingSCSV; 
+    sslBuffer msgState; 
+                        
 
     
 
@@ -1006,16 +994,16 @@ typedef struct SSL3HandshakeStateStr {
 
     
     TLS13CertificateRequest *certificateRequest;
-    ssl3CipherSuite origCipherSuite; 
+    PRCList cipherSpecs;            
 
-    PRCList cipherSpecs;             
+    ssl3CipherSpec *nullSpec;       
+    sslZeroRttState zeroRttState;   
+    sslZeroRttIgnore zeroRttIgnore; 
+    PRCList bufferedEarlyData;      
 
-    ssl3CipherSpec *nullSpec;        
-    sslZeroRttState zeroRttState;    
-    sslZeroRttIgnore zeroRttIgnore;  
-    PRCList bufferedEarlyData;       
+    PRBool helloRetry;              
 
-    PRBool helloRetry;               
+    ssl3KEADef kea_def_mutable;     
 
 } SSL3HandshakeState;
 
@@ -1071,7 +1059,7 @@ struct ssl3StateStr {
     PRUint16 dtlsSRTPCipherSuite; 
     PRBool fatalAlertSent;
     PRBool dheWeakGroupEnabled; 
-    const namedGroupDef *dhePreferredGroup;
+    const sslNamedGroupDef *dhePreferredGroup;
 
     
 
@@ -1105,7 +1093,7 @@ struct sslKeyPairStr {
 
 typedef struct {
     PRCList link;
-    const namedGroupDef *group;
+    const sslNamedGroupDef *group;
     sslKeyPair *keys;
 } sslEphemeralKeyPair;
 
@@ -1255,8 +1243,6 @@ struct sslSocketStr {
     
     char *peerID; 
 
-    sslKeyPair *stepDownKeyPair; 
-
     
 
 
@@ -1338,7 +1324,9 @@ struct sslSocketStr {
 
 
 
-    const namedGroupDef *namedGroupPreferences[SSL_NAMED_GROUP_COUNT];
+    const sslNamedGroupDef *namedGroupPreferences[SSL_NAMED_GROUP_COUNT];
+    
+    unsigned int additionalShares;
 
     
     ssl3State ssl3;
@@ -1372,7 +1360,7 @@ extern sslSessionIDLookupFunc ssl_sid_lookup;
 extern sslSessionIDCacheFunc ssl_sid_cache;
 extern sslSessionIDUncacheFunc ssl_sid_uncache;
 
-extern const namedGroupDef ssl_named_groups[];
+extern const sslNamedGroupDef ssl_named_groups[];
 
 
 
@@ -1653,7 +1641,7 @@ extern PRBool ssl3_VersionIsSupported(SSLProtocolVariant protocolVariant,
 
 extern SECStatus ssl3_KeyAndMacDeriveBypass(ssl3CipherSpec *pwSpec,
                                             const unsigned char *cr, const unsigned char *sr,
-                                            PRBool isTLS, HASH_HashType tls12HashType, PRBool isExport);
+                                            PRBool isTLS, HASH_HashType tls12HashType);
 extern SECStatus ssl3_MasterSecretDeriveBypass(ssl3CipherSpec *pwSpec,
                                                const unsigned char *cr, const unsigned char *sr,
                                                const SECItem *pms, PRBool isTLS,
@@ -1692,13 +1680,6 @@ int ssl3_GatherAppDataRecord(sslSocket *ss, int flags);
 int ssl3_GatherCompleteHandshake(sslSocket *ss, int flags);
 
 
-
-
-
-
-extern SECStatus ssl3_CreateRSAStepDownKeys(sslSocket *ss);
-
-
 extern sslKeyPair *ssl_NewKeyPair(SECKEYPrivateKey *privKey,
                                   SECKEYPublicKey *pubKey);
 
@@ -1709,56 +1690,54 @@ extern sslKeyPair *ssl_GetKeyPairRef(sslKeyPair *keyPair);
 extern void ssl_FreeKeyPair(sslKeyPair *keyPair);
 
 extern sslEphemeralKeyPair *ssl_NewEphemeralKeyPair(
-    const namedGroupDef *group,
+    const sslNamedGroupDef *group,
     SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey);
 extern sslEphemeralKeyPair *ssl_CopyEphemeralKeyPair(
     sslEphemeralKeyPair *keyPair);
 extern void ssl_FreeEphemeralKeyPair(sslEphemeralKeyPair *keyPair);
 extern sslEphemeralKeyPair *ssl_LookupEphemeralKeyPair(
-    sslSocket *ss, const namedGroupDef *groupDef);
+    sslSocket *ss, const sslNamedGroupDef *groupDef);
 extern void ssl_FreeEphemeralKeyPairs(sslSocket *ss);
 
 extern SECStatus ssl_AppendPaddedDHKeyShare(sslSocket *ss,
                                             SECKEYPublicKey *pubKey,
                                             PRBool appendLength);
-extern const ssl3DHParams *ssl_GetDHEParams(const namedGroupDef *groupDef);
+extern const ssl3DHParams *ssl_GetDHEParams(const sslNamedGroupDef *groupDef);
 extern SECStatus ssl_SelectDHEGroup(sslSocket *ss,
-                                    const namedGroupDef **groupDef);
-extern SECStatus ssl_CreateDHEKeyPair(const namedGroupDef *groupDef,
+                                    const sslNamedGroupDef **groupDef);
+extern SECStatus ssl_CreateDHEKeyPair(const sslNamedGroupDef *groupDef,
                                       const ssl3DHParams *params,
                                       sslEphemeralKeyPair **keyPair);
 extern PRBool ssl_IsValidDHEShare(const SECItem *dh_p, const SECItem *dh_Ys);
 extern SECStatus ssl_ValidateDHENamedGroup(sslSocket *ss,
                                            const SECItem *dh_p,
                                            const SECItem *dh_g,
-                                           const namedGroupDef **groupDef,
+                                           const sslNamedGroupDef **groupDef,
                                            const ssl3DHParams **dhParams);
 
 extern PRBool ssl_IsECCEnabled(sslSocket *ss);
 extern PRBool ssl_IsDHEEnabled(sslSocket *ss);
 
 
+#define SSL_RSASTRENGTH_TO_ECSTRENGTH(s)                            \
+    ((s <= 1024) ? 160                                              \
+                 : ((s <= 2048) ? 224                               \
+                                : ((s <= 3072) ? 256                \
+                                               : ((s <= 7168) ? 384 \
+                                                              : 521))))
 
-#define SSL_RSASTRENGTH_TO_ECSTRENGTH(s)                                       \
-        ((s <= 1024) ? 160                                                     \
-                     : ((s <= 2048) ? 224                                      \
-                                    : ((s <= 3072) ? 256                       \
-                                                   : ((s <= 7168) ? 384        \
-                                                                  : 521 ) ) ) )
-
-
-extern const namedGroupDef *ssl_LookupNamedGroup(SSLNamedGroup group);
-extern PRBool ssl_NamedGroupEnabled(const sslSocket *ss, const namedGroupDef *group);
+extern const sslNamedGroupDef *ssl_LookupNamedGroup(SSLNamedGroup group);
+extern PRBool ssl_NamedGroupEnabled(const sslSocket *ss, const sslNamedGroupDef *group);
 extern SECStatus ssl_NamedGroup2ECParams(PLArenaPool *arena,
-                                         const namedGroupDef *curve,
+                                         const sslNamedGroupDef *curve,
                                          SECKEYECParams *params);
-extern const namedGroupDef *ssl_ECPubKey2NamedGroup(
+extern const sslNamedGroupDef *ssl_ECPubKey2NamedGroup(
     const SECKEYPublicKey *pubKey);
 
-extern const namedGroupDef *ssl_GetECGroupWithStrength(sslSocket *ss,
-                                                       unsigned int requiredECCbits);
-extern const namedGroupDef *ssl_GetECGroupForServerSocket(sslSocket *ss);
-extern void ssl_DisableNonSuiteBGroups(sslSocket *ss);
+extern const sslNamedGroupDef *ssl_GetECGroupWithStrength(sslSocket *ss,
+                                                          unsigned int requiredECCbits);
+extern const sslNamedGroupDef *ssl_GetECGroupForServerSocket(sslSocket *ss);
+extern void ssl_FilterSupportedGroups(sslSocket *ss);
 
 extern SECStatus ssl3_CipherPrefSetDefault(ssl3CipherSuite which, PRBool on);
 extern SECStatus ssl3_CipherPrefGetDefault(ssl3CipherSuite which, PRBool *on);
@@ -1793,9 +1772,9 @@ extern SECStatus ssl3_HandleECDHClientKeyExchange(sslSocket *ss,
                                                   SSL3Opaque *b, PRUint32 length,
                                                   sslKeyPair *serverKeys);
 extern SECStatus ssl3_SendECDHServerKeyExchange(sslSocket *ss);
-extern SECStatus tls13_ImportECDHKeyShare(
+extern SECStatus ssl_ImportECDHKeyShare(
     sslSocket *ss, SECKEYPublicKey *peerKey,
-    SSL3Opaque *b, PRUint32 length, const namedGroupDef *curve);
+    SSL3Opaque *b, PRUint32 length, const sslNamedGroupDef *curve);
 unsigned int tls13_SizeOfECDHEKeyShareKEX(const SECKEYPublicKey *pubKey);
 SECStatus tls13_EncodeECDHEKeyShareKEX(sslSocket *ss,
                                        const SECKEYPublicKey *pubKey);
@@ -1875,9 +1854,9 @@ extern PRInt32 ssl3_SendSupportedPointFormatsXtn(sslSocket *ss,
                                                  PRBool append, PRUint32 maxBytes);
 
 
-extern SECStatus ssl3_HandleHelloExtensions(sslSocket *ss,
-                                            SSL3Opaque **b, PRUint32 *length,
-                                            SSL3HandshakeType handshakeMessage);
+extern SECStatus ssl3_HandleExtensions(sslSocket *ss,
+                                       SSL3Opaque **b, PRUint32 *length,
+                                       SSL3HandshakeType handshakeMessage);
 
 
 extern PRBool ssl3_ExtensionNegotiated(sslSocket *ss, PRUint16 ex_type);
@@ -2005,8 +1984,10 @@ SECStatus ssl3_ComputeHandshakeHashes(sslSocket *ss,
                                       PRUint32 sender);
 PRInt32 tls13_ServerSendKeyShareXtn(sslSocket *ss, PRBool append,
                                     PRUint32 maxBytes);
-SECStatus ssl_CreateECDHEphemeralKeyPair(const namedGroupDef *ecGroup,
+SECStatus ssl_CreateECDHEphemeralKeyPair(const sslNamedGroupDef *ecGroup,
                                          sslEphemeralKeyPair **keyPair);
+SECStatus ssl_CreateStaticECDHEKey(sslSocket *ss,
+                                   const sslNamedGroupDef *ecGroup);
 SECStatus ssl3_FlushHandshake(sslSocket *ss, PRInt32 flags);
 PK11SymKey *ssl3_GetWrappingKey(sslSocket *ss,
                                 PK11SlotInfo *masterSecretSlot,
@@ -2019,14 +2000,22 @@ PRInt32 tls13_ServerSendPreSharedKeyXtn(sslSocket *ss,
 PRInt32 tls13_ServerSendEarlyDataXtn(sslSocket *ss,
                                      PRBool append,
                                      PRUint32 maxBytes);
+PRInt32 tls13_ServerSendSigAlgsXtn(sslSocket *ss,
+                                   PRBool append,
+                                   PRUint32 maxBytes);
 PRBool ssl3_ClientExtensionAdvertised(sslSocket *ss, PRUint16 ex_type);
 SECStatus ssl3_FillInCachedSID(sslSocket *ss, sslSessionID *sid);
 const ssl3CipherSuiteDef *ssl_LookupCipherSuiteDef(ssl3CipherSuite suite);
 const ssl3BulkCipherDef *
 ssl_GetBulkCipherDef(const ssl3CipherSuiteDef *cipher_def);
 SECStatus ssl3_SelectServerCert(sslSocket *ss);
+SECStatus ssl_PickSignatureScheme(sslSocket *ss, SECKEYPublicKey *key,
+                                  const SignatureScheme *peerSchemes,
+                                  unsigned int peerSchemeCount,
+                                  PRBool requireSha1);
 SECOidTag ssl3_HashTypeToOID(SSLHashType hashType);
 SSLHashType ssl_SignatureSchemeToHashType(SignatureScheme scheme);
+KeyType ssl_SignatureSchemeToKeyType(SignatureScheme scheme);
 
 SECStatus ssl3_SetCipherSuite(sslSocket *ss, ssl3CipherSuite chosenSuite,
                               PRBool initHashes);
@@ -2045,10 +2034,6 @@ extern int ssl_MapLowLevelError(int hiLevelError);
 extern PRUint32 ssl_Time(void);
 
 extern void SSL_AtomicIncrementLong(long *x);
-
-SECStatus SSL_DisableDefaultExportCipherSuites(void);
-SECStatus SSL_DisableExportCipherSuites(PRFileDesc *fd);
-PRBool SSL_IsExportCipherSuite(PRUint16 cipherSuite);
 
 SECStatus ssl3_ApplyNSSPolicy(void);
 

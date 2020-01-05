@@ -1795,24 +1795,26 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
             crv = sftk_Attribute2SSecItem(arena, &pubKey->u.ec.publicValue,
                                           object, CKA_EC_POINT);
             if (crv == CKR_OK) {
-                unsigned int keyLen, curveLen;
-
-                curveLen = (pubKey->u.ec.ecParams.fieldID.size + 7) / 8;
-                keyLen = (2 * curveLen) + 1;
+                unsigned int keyLen = pubKey->u.ec.ecParams.pointSize;
 
                 
 
 
 
                 
-                if (pubKey->u.ec.publicValue.data[0] == EC_POINT_FORM_UNCOMPRESSED && pubKey->u.ec.publicValue.len == keyLen) {
+
+
+                if (pubKey->u.ec.publicValue.len == keyLen &&
+                    (pubKey->u.ec.ecParams.fieldID.type == ec_field_plain ||
+                     pubKey->u.ec.publicValue.data[0] == EC_POINT_FORM_UNCOMPRESSED)) {
                     break; 
                 }
 
-                
+                PORT_Assert(pubKey->u.ec.ecParams.name != ECCurve25519);
 
                 
-                if ((pubKey->u.ec.publicValue.data[0] == SEC_ASN1_OCTET_STRING) && pubKey->u.ec.publicValue.len > keyLen) {
+                if ((pubKey->u.ec.publicValue.data[0] == SEC_ASN1_OCTET_STRING) &&
+                    pubKey->u.ec.publicValue.len > keyLen) {
                     SECItem publicValue;
                     SECStatus rv;
 
