@@ -3468,16 +3468,31 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   
   nsRect bgPositioningArea;
 
-  StyleGeometryBox backgroundOrigin = aLayer.mOrigin;
+  StyleGeometryBox backgroundOrigin =
+    ComputeBoxValue(aForFrame, aLayer.mOrigin);
 
-  
-  
-  
-  if (backgroundOrigin == StyleGeometryBox::Fill ||
-      backgroundOrigin == StyleGeometryBox::Stroke ||
-      backgroundOrigin == StyleGeometryBox::View) {
-    backgroundOrigin = StyleGeometryBox::Border;
+  if (IsSVGStyleGeometryBox(backgroundOrigin)) {
+    MOZ_ASSERT(aForFrame->IsFrameOfType(nsIFrame::eSVG) &&
+               (aForFrame->GetType() != nsGkAtoms::svgOuterSVGFrame));
+    *aAttachedToFrame = aForFrame;
+
+    bgPositioningArea =
+      nsLayoutUtils::ComputeGeometryBox(aForFrame, backgroundOrigin);
+
+    nsPoint toStrokeBoxOffset = nsPoint(0, 0);
+    if (backgroundOrigin != StyleGeometryBox::Stroke) {
+      nsRect strokeBox =
+        nsLayoutUtils::ComputeGeometryBox(aForFrame,
+                                          StyleGeometryBox::Stroke);
+      toStrokeBoxOffset = bgPositioningArea.TopLeft() - strokeBox.TopLeft();
+    }
+
+    
+    return nsRect(toStrokeBoxOffset, bgPositioningArea.Size());
   }
+
+  MOZ_ASSERT(!aForFrame->IsFrameOfType(nsIFrame::eSVG) ||
+             aForFrame->GetType() == nsGkAtoms::svgOuterSVGFrame);
 
   nsIAtom* frameType = aForFrame->GetType();
   nsIFrame* geometryFrame = aForFrame;
@@ -3521,9 +3536,6 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     bgPositioningArea = nsRect(nsPoint(0,0), aBorderArea.Size());
   }
 
-  
-  
-  
   
   
   if (backgroundOrigin != StyleGeometryBox::Border && geometryFrame) {
