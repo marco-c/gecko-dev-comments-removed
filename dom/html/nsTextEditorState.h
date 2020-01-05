@@ -261,6 +261,10 @@ public:
   void SetSelectionProperties(SelectionProperties& aProps);
   void WillInitEagerly() { mSelectionRestoreEagerInit = true; }
   bool HasNeverInitializedBefore() const { return !mEverInited; }
+  
+  
+  
+  void SyncUpSelectionPropertiesBeforeDestruction();
 
   
   nsresult GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd);
