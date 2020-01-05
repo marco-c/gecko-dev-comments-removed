@@ -1789,8 +1789,7 @@ ScriptSource::setCompressedSource(SharedImmutableString&& raw, size_t uncompress
 }
 
 bool
-ScriptSource::setSourceCopy(JSContext* cx, SourceBufferHolder& srcBuf,
-                            SourceCompressionTask* task)
+ScriptSource::setSourceCopy(JSContext* cx, SourceBufferHolder& srcBuf)
 {
     MOZ_ASSERT(!hasSourceData());
 
@@ -1805,35 +1804,6 @@ ScriptSource::setSourceCopy(JSContext* cx, SourceBufferHolder& srcBuf,
         return false;
     }
     setSource(mozilla::Move(*deduped));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool canCompressOffThread =
-        HelperThreadState().cpuCount > 1 &&
-        HelperThreadState().threadCount >= 2 &&
-        CanUseExtraThreads();
-    const size_t TINY_SCRIPT = 256;
-    if (TINY_SCRIPT <= srcBuf.length() && canCompressOffThread) {
-        task->ss = this;
-        if (!StartOffThreadCompression(cx, task))
-            return false;
-    }
 
     return true;
 }
@@ -1874,9 +1844,6 @@ SourceCompressionTask::work()
     bool cont = true;
     bool reallocated = false;
     while (cont) {
-        if (abort_)
-            return Aborted;
-
         switch (comp.compressMore()) {
           case Compressor::CONTINUE:
             break;
