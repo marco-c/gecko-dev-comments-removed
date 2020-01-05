@@ -336,7 +336,6 @@ ControlFlowGenerator::snoopControlFlow(JSOp op)
       case JSOP_TRY:
         return processTry();
 
-      case JSOP_OPTIMIZE_SPREADCALL:
       case JSOP_THROWMSG:
         
         return ControlStatus::Abort;
