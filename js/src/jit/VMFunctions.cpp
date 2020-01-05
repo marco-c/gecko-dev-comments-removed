@@ -1318,10 +1318,21 @@ ThrowRuntimeLexicalError(JSContext* cx, unsigned errorNumber)
 }
 
 bool
-ThrowReadOnlyError(JSContext* cx, int32_t index)
+ThrowReadOnlyError(JSContext* cx, HandleObject obj, int32_t index)
 {
-    RootedValue val(cx, Int32Value(index));
-    ReportValueError(cx, JSMSG_READ_ONLY, JSDVG_IGNORE_STACK, val, nullptr);
+    
+    
+    
+
+    RootedValue objVal(cx, ObjectValue(*obj));
+    RootedValue indexVal(cx, Int32Value(index));
+    RootedId id(cx);
+    if (!ValueToId<CanGC>(cx, indexVal, &id))
+        return false;
+
+    ObjectOpResult result;
+    MOZ_ALWAYS_FALSE(SetProperty(cx, obj, id, UndefinedHandleValue, objVal, result) &&
+                     result.checkStrictErrorOrWarning(cx, obj, id,  true));
     return false;
 }
 
