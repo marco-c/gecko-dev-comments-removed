@@ -302,7 +302,7 @@ this.Utils = {
 
 
 
-  derivePresentableKeyFromPassphrase : function derivePresentableKeyFromPassphrase(passphrase, salt, keyLength, forceJS) {
+  derivePresentableKeyFromPassphrase: function derivePresentableKeyFromPassphrase(passphrase, salt, keyLength, forceJS) {
     let k = CryptoUtils.deriveKeyFromPassphrase(passphrase, salt, keyLength,
                                                 forceJS);
     return Utils.encodeKeyBase32(k);
@@ -312,7 +312,7 @@ this.Utils = {
 
 
 
-  deriveEncodedKeyFromPassphrase : function deriveEncodedKeyFromPassphrase(passphrase, salt, keyLength, forceJS) {
+  deriveEncodedKeyFromPassphrase: function deriveEncodedKeyFromPassphrase(passphrase, salt, keyLength, forceJS) {
     let k = CryptoUtils.deriveKeyFromPassphrase(passphrase, salt, keyLength,
                                                 forceJS);
     return Utils.base64Key(k);
@@ -323,7 +323,7 @@ this.Utils = {
 
 
 
-  presentEncodedKeyAsSyncKey : function presentEncodedKeyAsSyncKey(encodedKey) {
+  presentEncodedKeyAsSyncKey: function presentEncodedKeyAsSyncKey(encodedKey) {
     return Utils.encodeKeyBase32(atob(encodedKey));
   },
 
@@ -461,13 +461,13 @@ this.Utils = {
     try {
       if (args) {
         return Str.errors.formatStringFromName(error, args, args.length);
-      } else {
-        return Str.errors.GetStringFromName(error);
       }
+      return Str.errors.GetStringFromName(error);
+
     } catch (e) {}
 
     
-    return Str.errors.GetStringFromName('error.reason.unknown');
+    return Str.errors.GetStringFromName("error.reason.unknown");
   },
 
   

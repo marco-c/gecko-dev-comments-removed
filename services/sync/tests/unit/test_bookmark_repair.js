@@ -74,7 +74,7 @@ async function promiseValidationDone(expected) {
   actual.sort((a, b) => String(a.name).localeCompare(b.name));
   expected.sort((a, b) => String(a.name).localeCompare(b.name));
   deepEqual(actual, expected);
-};
+}
 
 async function cleanup(server) {
   bookmarksEngine._store.wipe();
@@ -166,8 +166,8 @@ add_task(async function test_bookmark_repair_integration() {
     
     _("Sync again to trigger repair");
     validationPromise = promiseValidationDone([
-      {"name":"missingChildren","count":1},
-      {"name":"structuralDifferences","count":1},
+      {"name": "missingChildren", "count": 1},
+      {"name": "structuralDifferences", "count": 1},
     ]);
     Service.sync();
     await validationPromise;
@@ -396,8 +396,8 @@ add_task(async function test_repair_client_missing() {
     
     _("Syncing again.");
     validationPromise = promiseValidationDone([
-      {"name":"clientMissing","count":1},
-      {"name":"structuralDifferences","count":1},
+      {"name": "clientMissing", "count": 1},
+      {"name": "structuralDifferences", "count": 1},
     ]);
     Service.sync();
     await validationPromise;
@@ -480,8 +480,8 @@ add_task(async function test_repair_server_missing() {
     
     _("Syncing again.");
     validationPromise = promiseValidationDone([
-      {"name":"serverMissing","count":1},
-      {"name":"missingChildren","count":1},
+      {"name": "serverMissing", "count": 1},
+      {"name": "missingChildren", "count": 1},
     ]);
     Service.sync();
     await validationPromise;
@@ -567,9 +567,9 @@ add_task(async function test_repair_server_deleted() {
     
     _("Syncing again.");
     validationPromise = promiseValidationDone([
-      {"name":"serverDeleted","count":1},
-      {"name":"deletedChildren","count":1},
-      {"name":"orphans","count":1}
+      {"name": "serverDeleted", "count": 1},
+      {"name": "deletedChildren", "count": 1},
+      {"name": "orphans", "count": 1}
     ]);
     Service.sync();
     await validationPromise;

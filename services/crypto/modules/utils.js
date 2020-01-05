@@ -182,7 +182,7 @@ this.CryptoUtils = {
 
 
 
-  pbkdf2Generate : function pbkdf2Generate(P, S, c, dkLen,
+  pbkdf2Generate: function pbkdf2Generate(P, S, c, dkLen,
                        hmacAlg = Ci.nsICryptoHMAC.SHA1, hmacLen = 20) {
 
     
