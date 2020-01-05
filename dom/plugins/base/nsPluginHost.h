@@ -191,6 +191,13 @@ public:
   static bool ShouldLoadTypeInParent(const nsACString& aMimeType);
 
   
+
+
+
+  static bool
+  CanUsePluginForMIMEType(const nsACString& aMIMEType);
+
+  
   enum SpecialType {
     eSpecialType_None,
     

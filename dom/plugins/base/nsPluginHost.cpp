@@ -1033,6 +1033,15 @@ nsPluginHost::HavePluginForExtension(const nsACString & aExtension,
                                       nsACString & aMimeType,
                                      PluginFilter aFilter)
 {
+  
+  
+  
+  
+  if (!aExtension.LowerCaseEqualsLiteral("swf") &&
+      !aExtension.LowerCaseEqualsLiteral("tst")) {
+    return false;
+  }
+
   bool checkEnabled = aFilter & eExcludeDisabled;
   bool allowFake = !(aFilter & eExcludeFake);
   return FindNativePluginForExtension(aExtension, aMimeType, checkEnabled) ||
@@ -1171,6 +1180,12 @@ nsPluginHost::FindNativePluginForType(const nsACString & aMimeType,
                                       bool aCheckEnabled)
 {
   if (aMimeType.IsEmpty()) {
+    return nullptr;
+  }
+
+  
+  
+  if (!nsPluginHost::CanUsePluginForMIMEType(aMimeType)) {
     return nullptr;
   }
 
@@ -3956,6 +3971,25 @@ nsPluginHost::DestroyRunningInstances(nsPluginTag* aPluginTag)
       }
     }
   }
+}
+
+
+bool
+nsPluginHost::CanUsePluginForMIMEType(const nsACString& aMIMEType)
+{
+  
+  
+  
+  
+  if (nsPluginHost::GetSpecialType(aMIMEType) == nsPluginHost::eSpecialType_Flash ||
+      aMIMEType.LowerCaseEqualsLiteral("application/x-test") ||
+      aMIMEType.LowerCaseEqualsLiteral("application/x-second-test") ||
+      aMIMEType.LowerCaseEqualsLiteral("application/x-third-test") ||
+      aMIMEType.LowerCaseEqualsLiteral("application/x-java-test")) {
+    return true;
+  }
+
+  return false;
 }
 
 

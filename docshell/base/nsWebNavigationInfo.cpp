@@ -12,12 +12,9 @@
 #include "nsIDocShell.h"
 #include "nsContentUtils.h"
 #include "imgLoader.h"
+#include "nsPluginHost.h"
 
 NS_IMPL_ISUPPORTS(nsWebNavigationInfo, nsIWebNavigationInfo)
-
-#define CONTENT_DLF_CONTRACT "@mozilla.org/content/document-loader-factory;1"
-#define PLUGIN_DLF_CONTRACT \
-  "@mozilla.org/content/plugin/document-loader-factory;1"
 
 nsresult
 nsWebNavigationInfo::Init()
@@ -57,6 +54,12 @@ nsWebNavigationInfo::IsTypeSupported(const nsACString& aType,
 
   if (*aIsTypeSupported) {
     return rv;
+  }
+
+  
+  
+  if (!nsPluginHost::CanUsePluginForMIMEType(aType)) {
+    return NS_OK;
   }
 
   
