@@ -188,8 +188,6 @@ public:
     return mDoc;
   }
 
-  virtual bool IsRunningTimeout() = 0;
-
 protected:
   
   
@@ -854,6 +852,8 @@ public:
   bool HasAudioContexts() const;
 
   mozilla::dom::TimeoutManager& TimeoutManager();
+
+  bool IsRunningTimeout();
 
 protected:
   void CreatePerformanceObjectIfNeeded();

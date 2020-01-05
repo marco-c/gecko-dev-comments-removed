@@ -395,7 +395,6 @@ public:
   virtual void SyncStateFromParentWindow();
 
   virtual nsresult FireDelayedDOMEvents() override;
-  virtual bool IsRunningTimeout() override;
 
   
   virtual bool WouldReuseInnerWindow(nsIDocument* aNewDocument) override;
