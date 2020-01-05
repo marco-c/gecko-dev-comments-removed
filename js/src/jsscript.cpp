@@ -1106,7 +1106,7 @@ JSScript::initScriptCounts(JSContext* cx)
 
     
     
-    for (ActivationIterator iter(cx->runtime()); !iter.done(); ++iter) {
+    for (ActivationIterator iter(cx); !iter.done(); ++iter) {
         if (iter->isInterpreter())
             iter->asInterpreter()->enableInterruptsIfRunning(this);
     }
@@ -3623,7 +3623,7 @@ JSScript::ensureHasDebugScript(JSContext* cx)
 
 
 
-    for (ActivationIterator iter(cx->runtime()); !iter.done(); ++iter) {
+    for (ActivationIterator iter(cx); !iter.done(); ++iter) {
         if (iter->isInterpreter())
             iter->asInterpreter()->enableInterruptsIfRunning(this);
     }

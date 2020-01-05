@@ -936,7 +936,24 @@ class InterpreterStack
     }
 };
 
-void TraceInterpreterActivations(JSRuntime* rt, JSTracer* trc);
+
+
+
+
+
+class CooperatingContext
+{
+    JSContext* cx;
+
+  public:
+    explicit CooperatingContext(JSContext* cx) : cx(cx) {}
+    JSContext* context() const { return cx; }
+
+    
+    friend class ZoneGroup;
+};
+
+void TraceInterpreterActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc);
 
 
 
@@ -1410,7 +1427,6 @@ class InterpreterActivation : public Activation
 };
 
 
-
 class ActivationIterator
 {
     uint8_t* jitTop_;
@@ -1422,7 +1438,12 @@ class ActivationIterator
     void settle();
 
   public:
-    explicit ActivationIterator(JSRuntime* rt);
+    explicit ActivationIterator(JSContext* cx);
+
+    
+    
+    
+    ActivationIterator(JSContext* cx, const CooperatingContext& target);
 
     ActivationIterator& operator++();
 
@@ -1614,8 +1635,14 @@ class JitActivationIterator : public ActivationIterator
     }
 
   public:
-    explicit JitActivationIterator(JSRuntime* rt)
-      : ActivationIterator(rt)
+    explicit JitActivationIterator(JSContext* cx)
+      : ActivationIterator(cx)
+    {
+        settle();
+    }
+
+    JitActivationIterator(JSContext* cx, const CooperatingContext& target)
+      : ActivationIterator(cx, target)
     {
         settle();
     }

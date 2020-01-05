@@ -1171,7 +1171,9 @@ JSCompartment::updateDebuggerObservesCoverage()
     if (debuggerObservesCoverage()) {
         
         
-        for (ActivationIterator iter(runtimeFromMainThread()); !iter.done(); ++iter) {
+        JSContext* cx = TlsContext.get();
+        MOZ_ASSERT(zone()->group()->ownedByCurrentThread());
+        for (ActivationIterator iter(cx); !iter.done(); ++iter) {
             if (iter->isInterpreter())
                 iter->asInterpreter()->enableInterruptsUnconditionally();
         }

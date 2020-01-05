@@ -224,7 +224,7 @@ TraceLoggerThread::enable(JSContext* cx)
 
     if (enabled_ == 1) {
         
-        ActivationIterator iter(cx->runtime());
+        ActivationIterator iter(cx);
         Activation* act = iter.activation();
 
         if (!act)

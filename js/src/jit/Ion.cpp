@@ -3194,8 +3194,10 @@ jit::InvalidateAll(FreeOp* fop, Zone* zone)
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
         MOZ_ASSERT(!HasOffThreadIonCompile(comp));
 #endif
-
-    for (JitActivationIterator iter(fop->runtime()); !iter.done(); ++iter) {
+    if (zone->isAtomsZone())
+        return;
+    JSContext* cx = TlsContext.get();
+    for (JitActivationIterator iter(cx, zone->group()->ownerContext()); !iter.done(); ++iter) {
         if (iter->compartment()->zone() == zone) {
             JitSpew(JitSpew_IonInvalidate, "Invalidating all frames for GC");
             InvalidateActivation(fop, iter, true);
@@ -3241,7 +3243,15 @@ jit::Invalidate(TypeZone& types, FreeOp* fop,
         return;
     }
 
-    for (JitActivationIterator iter(fop->runtime()); !iter.done(); ++iter)
+    
+    
+    
+    
+    
+    JSRuntime::AutoProhibitActiveContextChange apacc(fop->runtime());
+
+    JSContext* cx = TlsContext.get();
+    for (JitActivationIterator iter(cx, types.zone()->group()->ownerContext()); !iter.done(); ++iter)
         InvalidateActivation(fop, iter, false);
 
     

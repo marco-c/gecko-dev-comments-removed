@@ -325,9 +325,12 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
     {
         gcstats::AutoPhase ap(stats(), gcstats::PHASE_MARK_STACK);
 
-        
-        TraceInterpreterActivations(rt, trc);
-        jit::TraceJitActivations(rt, trc);
+        JSContext* cx = TlsContext.get();
+        for (const CooperatingContext& target : rt->cooperatingContexts()) {
+            
+            TraceInterpreterActivations(cx, target, trc);
+            jit::TraceJitActivations(cx, target, trc);
+        }
 
         
         AutoGCRooter::traceAll(trc);

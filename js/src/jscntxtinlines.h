@@ -503,7 +503,7 @@ JSContext::setCompartment(JSCompartment* comp,
     
     
     MOZ_ASSERT_IF(comp && !comp->zone()->isAtomsZone() && !comp->zone()->usedByExclusiveThread,
-                  comp->zone()->group()->context == this);
+                  comp->zone()->group()->ownedByCurrentThread());
 
     compartment_ = comp;
     zone_ = comp ? comp->zone() : nullptr;
