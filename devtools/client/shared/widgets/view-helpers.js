@@ -253,6 +253,11 @@ const ViewHelpers = exports.ViewHelpers = {
     pane.classList.add("generic-toggled-pane");
 
     
+    if (pane.hasAttribute("animated")) {
+      return;
+    }
+
+    
     if (flags.visible == !pane.classList.contains("pane-collapsed")) {
       if (flags.callback) {
         flags.callback();
@@ -283,23 +288,36 @@ const ViewHelpers = exports.ViewHelpers = {
         pane.style.marginLeft = -width + "px";
         pane.style.marginRight = -width + "px";
         pane.style.marginBottom = -height + "px";
-        pane.classList.add("pane-collapsed");
       }
 
       
       if (flags.animated) {
-        pane.addEventListener("transitionend", function onEvent() {
-          pane.removeEventListener("transitionend", onEvent, false);
+        let options = {
+          useCapture: false,
+          once: true
+        };
+
+        pane.addEventListener("transitionend", () => {
           
           
           pane.removeAttribute("animated");
+
+          if (!flags.visible) {
+            pane.classList.add("pane-collapsed");
+          }
           if (flags.callback) {
             flags.callback();
           }
-        }, false);
-      } else if (flags.callback) {
+        }, options);
+      } else {
+        if (!flags.visible) {
+          pane.classList.add("pane-collapsed");
+        }
+
         
-        flags.callback();
+        if (flags.callback) {
+          flags.callback();
+        }
       }
     };
 
