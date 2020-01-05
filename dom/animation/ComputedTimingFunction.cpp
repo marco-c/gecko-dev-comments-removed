@@ -172,7 +172,7 @@ ComputedTimingFunction::AppendToString(nsAString& aResult) const
       nsStyleUtil::AppendStepsTimingFunction(mType, mStepsOrFrames, aResult);
       break;
     case nsTimingFunction::Type::Frames:
-      
+      nsStyleUtil::AppendFramesTimingFunction(mStepsOrFrames, aResult);
       break;
     default:
       nsStyleUtil::AppendCubicBezierKeywordTimingFunction(mType, aResult);
