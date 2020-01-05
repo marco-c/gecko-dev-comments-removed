@@ -15,6 +15,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsPoint.h"
 #include "nsCycleCollectionParticipant.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/EventBinding.h"
 #include "nsIScriptGlobalObject.h"
 #include "Units.h"
@@ -182,12 +183,12 @@ public:
   
   
   
-  virtual void PreventDefault(JSContext* aCx);
+  virtual void PreventDefault(JSContext* aCx, CallerType aCallerType);
 
   
   
   
-  bool DefaultPrevented(JSContext* aCx) const;
+  bool DefaultPrevented(CallerType aCallerType) const;
 
   bool DefaultPrevented() const
   {
@@ -273,12 +274,6 @@ protected:
     return IsTrusted() && mWantsPopupControlCheck;
   }
 
-  
-
-
-
-  bool IsChrome(JSContext* aCx) const;
-
   void SetComposed(bool aComposed)
   {
     mEvent->SetComposed(aComposed);
@@ -363,7 +358,7 @@ private:
 
 #define NS_FORWARD_TO_EVENT \
   NS_FORWARD_NSIDOMEVENT(Event::) \
-  virtual void PreventDefault(JSContext* aCx) override { Event::PreventDefault(aCx); }
+  virtual void PreventDefault(JSContext* aCx, CallerType aCallerType) override { Event::PreventDefault(aCx, aCallerType); }
 
 #define NS_FORWARD_NSIDOMEVENT_NO_SERIALIZATION_NO_DUPLICATION(_to) \
   NS_IMETHOD GetType(nsAString& aType) override { return _to GetType(aType); } \
@@ -392,7 +387,7 @@ private:
 
 #define NS_FORWARD_TO_EVENT_NO_SERIALIZATION_NO_DUPLICATION \
   NS_FORWARD_NSIDOMEVENT_NO_SERIALIZATION_NO_DUPLICATION(Event::) \
-  virtual void PreventDefault(JSContext* aCx) override { Event::PreventDefault(aCx); }
+  virtual void PreventDefault(JSContext* aCx, CallerType aCallerType) override { Event::PreventDefault(aCx, aCallerType); }
 
 inline nsISupports*
 ToSupports(mozilla::dom::Event* e)

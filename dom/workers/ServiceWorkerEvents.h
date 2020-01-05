@@ -176,7 +176,7 @@ public:
   Default();
 
   void
-  PreventDefault(JSContext* aCx) override;
+  PreventDefault(JSContext* aCx, CallerType aCallerType) override;
 
   void
   ReportCanceled();
