@@ -104,7 +104,7 @@ class MacroAssemblerARM : public Assembler
                              bool isUnsigned, Label* oolEntry);
     void outOfLineWasmTruncateToIntCheck(FloatRegister input, MIRType fromType,
                                          MIRType toType, bool isUnsigned, Label* rejoin,
-                                         wasm::TrapOffset trapOffs);
+                                         wasm::BytecodeOffset trapOffset);
 
     
     

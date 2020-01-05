@@ -495,6 +495,8 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void call(ImmPtr imm) PER_SHARED_ARCH;
     void call(wasm::SymbolicAddress imm) PER_SHARED_ARCH;
+    inline void call(const wasm::CallSiteDesc& desc, wasm::SymbolicAddress imm);
+
     
     void call(JitCode* c) PER_SHARED_ARCH;
 
@@ -548,6 +550,11 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
+    
+    void setupWasmABICall(); 
+
+    
+    
     void setupUnalignedABICall(Register scratch) PER_ARCH;
 
     
@@ -563,6 +570,9 @@ class MacroAssembler : public MacroAssemblerSpecific
     template <typename T>
     inline void callWithABI(const T& fun, MoveOp::Type result = MoveOp::GENERAL);
 
+    void callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
+                     MoveOp::Type result = MoveOp::GENERAL);
+
   private:
     
     
@@ -573,12 +583,11 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     void callWithABINoProfiler(void* fun, MoveOp::Type result);
-    void callWithABINoProfiler(wasm::SymbolicAddress imm, MoveOp::Type result);
     void callWithABINoProfiler(Register fun, MoveOp::Type result) PER_ARCH;
     void callWithABINoProfiler(const Address& fun, MoveOp::Type result) PER_ARCH;
 
     
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result) PER_ARCH;
+    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result, bool callFromWasm = false) PER_ARCH;
 
     
     
@@ -1439,14 +1448,14 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     void wasmTruncateDoubleToUInt32(FloatRegister input, Register output, Label* oolEntry) DEFINED_ON(x86, x64, arm);
     void wasmTruncateDoubleToInt32(FloatRegister input, Register output, Label* oolEntry) DEFINED_ON(x86_shared, arm);
-    void outOfLineWasmTruncateDoubleToInt32(FloatRegister input, bool isUnsigned, wasm::TrapOffset off, Label* rejoin) DEFINED_ON(x86_shared);
+    void outOfLineWasmTruncateDoubleToInt32(FloatRegister input, bool isUnsigned, wasm::BytecodeOffset off, Label* rejoin) DEFINED_ON(x86_shared);
 
     void wasmTruncateFloat32ToUInt32(FloatRegister input, Register output, Label* oolEntry) DEFINED_ON(x86, x64, arm);
     void wasmTruncateFloat32ToInt32(FloatRegister input, Register output, Label* oolEntry) DEFINED_ON(x86_shared, arm);
-    void outOfLineWasmTruncateFloat32ToInt32(FloatRegister input, bool isUnsigned, wasm::TrapOffset off, Label* rejoin) DEFINED_ON(x86_shared);
+    void outOfLineWasmTruncateFloat32ToInt32(FloatRegister input, bool isUnsigned, wasm::BytecodeOffset off, Label* rejoin) DEFINED_ON(x86_shared);
 
-    void outOfLineWasmTruncateDoubleToInt64(FloatRegister input, bool isUnsigned, wasm::TrapOffset off, Label* rejoin) DEFINED_ON(x86_shared);
-    void outOfLineWasmTruncateFloat32ToInt64(FloatRegister input, bool isUnsigned, wasm::TrapOffset off, Label* rejoin) DEFINED_ON(x86_shared);
+    void outOfLineWasmTruncateDoubleToInt64(FloatRegister input, bool isUnsigned, wasm::BytecodeOffset off, Label* rejoin) DEFINED_ON(x86_shared);
+    void outOfLineWasmTruncateFloat32ToInt64(FloatRegister input, bool isUnsigned, wasm::BytecodeOffset off, Label* rejoin) DEFINED_ON(x86_shared);
 
     
     
@@ -1458,7 +1467,7 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
     
-    void wasmCallBuiltinInstanceMethod(const ABIArg& instanceArg,
+    void wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc, const ABIArg& instanceArg,
                                        wasm::SymbolicAddress builtin);
 
     
@@ -1977,7 +1986,7 @@ class MacroAssembler : public MacroAssemblerSpecific
                                             Label* fail, MIRType outputType);
 
     void outOfLineTruncateSlow(FloatRegister src, Register dest, bool widenFloatToDouble,
-                               bool compilingWasm);
+                               bool compilingWasm, wasm::BytecodeOffset callOffset);
 
     void convertInt32ValueToDouble(const Address& address, Register scratch, Label* done);
     void convertInt32ValueToDouble(ValueOperand val);

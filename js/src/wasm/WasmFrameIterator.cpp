@@ -409,7 +409,7 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
 
     
     offsets->begin = masm.currentOffset();
-    TrapOffset trapOffset(0);  
+    BytecodeOffset trapOffset(0);  
     TrapDesc trap(trapOffset, Trap::IndirectCallBadSig, masm.framePushed());
     switch (sigId.kind()) {
       case SigIdDesc::Kind::Global: {

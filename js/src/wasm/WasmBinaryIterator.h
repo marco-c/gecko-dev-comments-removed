@@ -436,13 +436,13 @@ class MOZ_STACK_CLASS OpIter : private Policy
     }
 
     
-    size_t errorOffset() const {
+    size_t lastOpcodeOffset() const {
         return offsetOfLastReadOp_ ? offsetOfLastReadOp_ : d_.currentOffset();
     }
 
     
-    TrapOffset trapOffset() const {
-        return TrapOffset(errorOffset());
+    BytecodeOffset bytecodeOffset() const {
+        return BytecodeOffset(lastOpcodeOffset());
     }
 
     
@@ -612,7 +612,7 @@ template <typename Policy>
 inline bool
 OpIter<Policy>::fail(const char* msg)
 {
-    return d_.fail(errorOffset(), msg);
+    return d_.fail(lastOpcodeOffset(), msg);
 }
 
 

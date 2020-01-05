@@ -38,7 +38,6 @@ class Instance;
 class SigIdDesc;
 struct FuncOffsets;
 struct CallableOffsets;
-struct TrapOffset;
 
 
 

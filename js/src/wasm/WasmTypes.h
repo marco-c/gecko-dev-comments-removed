@@ -971,12 +971,16 @@ enum class Trap
 
 
 
-struct TrapOffset
+
+struct BytecodeOffset
 {
+    static const uint32_t INVALID = -1;
     uint32_t bytecodeOffset;
 
-    TrapOffset() = default;
-    explicit TrapOffset(uint32_t bytecodeOffset) : bytecodeOffset(bytecodeOffset) {}
+    BytecodeOffset() : bytecodeOffset(INVALID) {}
+    explicit BytecodeOffset(uint32_t bytecodeOffset) : bytecodeOffset(bytecodeOffset) {}
+
+    bool isValid() const { return bytecodeOffset != INVALID; }
 };
 
 
@@ -991,9 +995,9 @@ class CallSiteDesc
     uint32_t kind_ : 3;
   public:
     enum Kind {
-        Func,      
-        Dynamic,   
-        Symbolic,  
+        Func,       
+        Dynamic,    
+        Symbolic,   
         TrapExit,   
         EnterFrame, 
         LeaveFrame, 
