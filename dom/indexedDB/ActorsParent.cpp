@@ -19009,6 +19009,10 @@ Maintenance::Finish()
 
   mDirectoryLock = nullptr;
 
+  
+  
+  RefPtr<Maintenance> kungFuDeathGrip = this;
+
   mQuotaClient->NoteFinishedMaintenance(this);
 
   mState = State::Complete;
