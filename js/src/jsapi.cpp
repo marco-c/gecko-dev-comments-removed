@@ -6761,7 +6761,7 @@ DescribeScriptedCaller(JSContext* cx, AutoFilename* filename, unsigned* lineno,
     if (filename) {
         if (i.isWasm()) {
             
-            UniqueChars copy = DuplicateString(i.filename());
+            UniqueChars copy = DuplicateString(i.filename() ? i.filename() : "");
             if (!copy)
                 filename->setUnowned("out of memory");
             else
