@@ -841,7 +841,7 @@ public class AndroidFxAccount {
     
     
     try {
-      return Long.valueOf(timestampStr);
+      return Long.parseLong(timestampStr);
     } catch (NumberFormatException e) {
       Logger.warn(LOG_TAG, "Couldn't parse deviceRegistrationTimestamp; defaulting to 0L.", e);
       return 0L;
