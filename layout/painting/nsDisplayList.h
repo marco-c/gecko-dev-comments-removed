@@ -279,6 +279,7 @@ class nsDisplayListBuilder {
 public:
   typedef mozilla::FrameLayerBuilder FrameLayerBuilder;
   typedef mozilla::DisplayItemClip DisplayItemClip;
+  typedef mozilla::DisplayItemClipChain DisplayItemClipChain;
   typedef mozilla::DisplayListClipState DisplayListClipState;
   typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
   typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
@@ -732,6 +733,32 @@ public:
 
   ActiveScrolledRoot* AllocateActiveScrolledRoot(const ActiveScrolledRoot* aParent,
                                                  nsIScrollableFrame* aScrollableFrame);
+
+  
+
+
+
+  const DisplayItemClipChain* AllocateDisplayItemClipChain(const DisplayItemClip& aClip,
+                                                           const ActiveScrolledRoot* aASR,
+                                                           const DisplayItemClipChain* aParent);
+
+  
+
+
+
+
+
+
+
+
+  const DisplayItemClipChain* CreateClipChainIntersection(const DisplayItemClipChain* aAncestor,
+                                                          const DisplayItemClipChain* aLeafClip1,
+                                                          const DisplayItemClipChain* aLeafClip2);
+
+  
+
+
+  const DisplayItemClipChain* CopyWholeChain(const DisplayItemClipChain* aClipChain);
 
   
 
@@ -1414,6 +1441,7 @@ private:
   nsTArray<DisplayItemScrollClip*> mScrollClipsToDestroy;
   nsTArray<DisplayItemClip*>     mDisplayItemClipsToDestroy;
   nsTArray<ActiveScrolledRoot*>  mActiveScrolledRoots;
+  nsTArray<DisplayItemClipChain*> mClipChainsToDestroy;
   nsDisplayListBuilderMode       mMode;
   ViewID                         mCurrentScrollParentId;
   ViewID                         mCurrentScrollbarTarget;
@@ -1491,6 +1519,7 @@ public:
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::DisplayItemClip DisplayItemClip;
   typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
+  typedef mozilla::DisplayItemClipChain DisplayItemClipChain;
   typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
   typedef mozilla::layers::FrameMetrics FrameMetrics;
   typedef mozilla::layers::ScrollMetadata ScrollMetadata;
