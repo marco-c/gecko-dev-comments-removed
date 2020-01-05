@@ -2122,6 +2122,24 @@ ScopedUnpackReset::UnwrapImpl()
 
 
 void
+ScopedFBRebinder::UnwrapImpl()
+{
+    const auto fnName = [&](WebGLFramebuffer* fb) {
+        return fb ? fb->mGLName : 0;
+    };
+
+    if (mWebGL->IsWebGL2()) {
+        mGL->fBindFramebuffer(LOCAL_GL_DRAW_FRAMEBUFFER, fnName(mWebGL->mBoundDrawFramebuffer));
+        mGL->fBindFramebuffer(LOCAL_GL_READ_FRAMEBUFFER, fnName(mWebGL->mBoundReadFramebuffer));
+    } else {
+        MOZ_ASSERT(mWebGL->mBoundDrawFramebuffer == mWebGL->mBoundReadFramebuffer);
+        mGL->fBindFramebuffer(LOCAL_GL_FRAMEBUFFER, fnName(mWebGL->mBoundDrawFramebuffer));
+    }
+}
+
+
+
+void
 Intersect(uint32_t srcSize, int32_t dstStartInSrc, uint32_t dstSize,
           uint32_t* const out_intStartInSrc, uint32_t* const out_intStartInDst,
           uint32_t* const out_intSize)
