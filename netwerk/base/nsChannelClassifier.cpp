@@ -409,7 +409,9 @@ nsChannelClassifier::StartInternal()
            "uri %s", this, principalURI->GetSpecOrDefault().get(),
            uri->GetSpecOrDefault().get()));
     }
-    rv = uriClassifier->Classify(principal, sAnnotateChannelEnabled | trackingProtectionEnabled,
+    
+    
+    rv = uriClassifier->Classify(principal, nullptr, sAnnotateChannelEnabled | trackingProtectionEnabled,
                                  this, &expectCallback);
     if (NS_FAILED(rv)) {
         return rv;
