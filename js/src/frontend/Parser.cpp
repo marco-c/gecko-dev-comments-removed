@@ -2841,7 +2841,8 @@ Parser<ParseHandler>::checkFunctionDefinition(HandleAtom funAtom, Node pn, Funct
 
 template <>
 bool
-Parser<FullParseHandler>::skipLazyInnerFunction(ParseNode* pn, bool tryAnnexB)
+Parser<FullParseHandler>::skipLazyInnerFunction(ParseNode* pn, FunctionSyntaxKind kind,
+                                                bool tryAnnexB)
 {
     
     
@@ -2867,12 +2868,21 @@ Parser<FullParseHandler>::skipLazyInnerFunction(ParseNode* pn, bool tryAnnexB)
     
     Rooted<LazyScript*> lazyOuter(context, handler.lazyOuterFunction());
     uint32_t userbufBase = lazyOuter->begin() - lazyOuter->column();
-    return tokenStream.advance(fun->lazyScript()->end() - userbufBase);
+    if (!tokenStream.advance(fun->lazyScript()->end() - userbufBase))
+        return false;
+
+    if (kind == Statement && fun->isExprBody()) {
+        if (!MatchOrInsertSemicolonAfterExpression(tokenStream))
+            return false;
+    }
+
+    return true;
 }
 
 template <>
 bool
-Parser<SyntaxParseHandler>::skipLazyInnerFunction(Node pn, bool tryAnnexB)
+Parser<SyntaxParseHandler>::skipLazyInnerFunction(Node pn, FunctionSyntaxKind kind,
+                                                  bool tryAnnexB)
 {
     MOZ_CRASH("Cannot skip lazy inner functions when syntax parsing");
 }
@@ -2970,7 +2980,7 @@ Parser<ParseHandler>::functionDefinition(InHandling inHandling, YieldHandling yi
     
     
     if (handler.canSkipLazyInnerFunctions()) {
-        if (!skipLazyInnerFunction(pn, tryAnnexB))
+        if (!skipLazyInnerFunction(pn, kind, tryAnnexB))
             return null();
         return pn;
     }
