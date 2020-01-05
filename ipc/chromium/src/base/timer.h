@@ -176,7 +176,7 @@ class BaseTimer : public BaseTimer_Helper {
         
         
         if (self->delayed_task_ == this)
-          self->delayed_task_ = NULL;
+          self->delayed_task_ = nullptr;
         
         
         
