@@ -392,8 +392,18 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
 
 already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsAFlatString& aFileExt, const char *aTypeHint)
 {
-  if (aFileExt.IsEmpty())
+  if (aExtension.IsEmpty())
     return nullptr;
+
+  
+  nsAutoCString typeToUse;
+  if (aTypeHint && *aTypeHint) {
+    typeToUse.Assign(aTypeHint);
+  } else if (!GetMIMETypeFromOSForExtension(NS_ConvertUTF16toUTF8(aFileExt), typeToUse)) {
+    return nullptr;
+  }
+
+  RefPtr<nsMIMEInfoWin> mimeInfo = new nsMIMEInfoWin(typeToUse);
 
   
   
@@ -402,34 +412,6 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsAFl
     fileExtToUse = char16_t('.');
 
   fileExtToUse.Append(aFileExt);
-
-  
-  nsCOMPtr<nsIWindowsRegKey> regKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey) 
-    return nullptr; 
-
-  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                             fileExtToUse,
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv))
-    return nullptr; 
-
-  nsAutoCString typeToUse;
-  if (aTypeHint && *aTypeHint) {
-    typeToUse.Assign(aTypeHint);
-  }
-  else {
-    nsAutoString temp;
-    if (NS_FAILED(regKey->ReadStringValue(NS_LITERAL_STRING("Content Type"),
-                  temp)) || temp.IsEmpty()) {
-      return nullptr; 
-    }
-    
-    LossyAppendUTF16toASCII(temp, typeToUse);
-  }
-
-  RefPtr<nsMIMEInfoWin> mimeInfo = new nsMIMEInfoWin(typeToUse);
 
   
   mimeInfo->AppendExtension(NS_ConvertUTF16toUTF8(Substring(fileExtToUse, 1)));
@@ -458,8 +440,17 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsAFl
   } 
   else
   {
-    found = NS_SUCCEEDED(regKey->ReadStringValue(EmptyString(), 
-                                                 appInfo));
+    nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+    if (!regKey)
+      return nullptr;
+    nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
+                               fileExtToUse,
+                               nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+    if (NS_SUCCEEDED(rv)) {
+      found = NS_SUCCEEDED(regKey->ReadStringValue(EmptyString(),
+                                                   appInfo));
+    }
   }
 
   
@@ -597,3 +588,40 @@ nsOSHelperAppService::GetProtocolHandlerInfoFromOS(const nsACString &aScheme,
   return NS_OK;
 }
 
+bool
+nsOSHelperAppService::GetMIMETypeFromOSForExtension(const nsACString& aExtension,
+                                                    nsACString& aMIMEType)
+{
+  if (aExtension.IsEmpty())
+    return false;
+
+  
+  
+  nsAutoString fileExtToUse;
+  if (aExtension.First() != '.')
+    fileExtToUse = char16_t('.');
+
+  AppendUTF8toUTF16(aExtension, fileExtToUse);
+
+  
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+    do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!regKey)
+    return false;
+
+  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
+                             fileExtToUse,
+                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv))
+    return false;
+
+  nsAutoString mimeType;
+  if (NS_FAILED(regKey->ReadStringValue(NS_LITERAL_STRING("Content Type"),
+                mimeType)) || mimeType.IsEmpty()) {
+    return false;
+  }
+  
+  aMIMEType.Truncate();
+  LossyAppendUTF16toASCII(mimeType, aMIMEType);
+  return true;
+}
