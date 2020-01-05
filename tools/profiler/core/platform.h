@@ -238,8 +238,7 @@ class Promise;
 class Sampler {
 public:
   
-  Sampler(int aEntrySize,
-          const char** aFeatures, uint32_t aFeatureCount,
+  Sampler(const char** aFeatures, uint32_t aFeatureCount,
           uint32_t aFilterCount);
   ~Sampler();
 
@@ -249,10 +248,6 @@ public:
 
   
   SyncProfile* GetBacktrace();
-
-  
-  
-  void DeleteExpiredMarkers();
 
   
   void Start();
@@ -310,8 +305,6 @@ public:
   void StreamTaskTracer(SpliceableJSONWriter& aWriter);
   void FlushOnJSShutdown(JSContext* aContext);
 
-  void GetBufferInfo(uint32_t *aCurrentPosition, uint32_t *aTotalSize, uint32_t *aGeneration);
-
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
 private:
@@ -323,7 +316,6 @@ private:
   
   void InplaceTick(TickSample* sample);
 
-  RefPtr<ProfileBuffer> mBuffer;
   bool mAddLeafAddresses;
   bool mUseStackWalk;
   bool mProfileJS;

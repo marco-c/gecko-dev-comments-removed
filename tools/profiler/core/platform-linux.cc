@@ -291,9 +291,8 @@ static void* SignalSender(void* arg) {
 
   TimeDuration lastSleepOverhead = 0;
   TimeStamp sampleStart = TimeStamp::Now();
-  
   while (gIsActive) {
-    gSampler->DeleteExpiredMarkers();
+    gBuffer->deleteExpiredStoredMarkers();
 
     if (!gIsPaused) {
       StaticMutexAutoLock lock(sRegisteredThreadsMutex);
