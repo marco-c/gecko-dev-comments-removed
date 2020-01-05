@@ -414,9 +414,15 @@ Sanitizer.prototype = {
           while (windows.hasMoreElements()) {
             let currentWindow = windows.getNext();
             let currentDocument = currentWindow.document;
+
+            
+            
+            
+            
             let searchBar = currentDocument.getElementById("searchbar");
-            if (searchBar)
+            if (searchBar && searchBar.textbox)
               searchBar.textbox.reset();
+
             let tabBrowser = currentWindow.gBrowser;
             if (!tabBrowser) {
               
