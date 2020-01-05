@@ -589,27 +589,44 @@ struct AnimationValue
   StyleAnimationValue mGecko;
   RefPtr<RawServoAnimationValue> mServo;
 
-  bool operator==(const AnimationValue& aOther) const {
+  bool operator==(const AnimationValue& aOther) const
+  {
     
     return mGecko == aOther.mGecko && mServo == aOther.mServo;
   }
 
   bool IsNull() const { return mGecko.IsNull() && !mServo; }
 
-  float GetOpacity() const {
+  float GetOpacity() const
+  {
     return mServo ? Servo_AnimationValues_GetOpacity(mServo)
                   : mGecko.GetFloatValue();
   }
 
   
   
-  gfxSize GetScaleValue(const nsIFrame* aFrame) const {
+  gfxSize GetScaleValue(const nsIFrame* aFrame) const
+  {
     if (mServo) {
       RefPtr<nsCSSValueSharedList> list;
       Servo_AnimationValues_GetTransform(mServo, &list);
       return nsStyleTransformMatrix::GetScaleValue(list, aFrame);
     }
     return mGecko.GetScaleValue(aFrame);
+  }
+
+  
+  void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
+                               nsAString& aString) const
+  {
+    if (mServo) {
+      Servo_AnimationValue_Serialize(mServo, aProperty, &aString);
+      return;
+    }
+
+    DebugOnly<bool> uncomputeResult =
+      StyleAnimationValue::UncomputeValue(aProperty, mGecko, aString);
+    MOZ_ASSERT(uncomputeResult, "failed to uncompute StyleAnimationValue");
   }
 };
 
