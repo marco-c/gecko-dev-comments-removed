@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/TestFunctions.h"
+#include "mozilla/dom/TestFunctionsBinding.h"
 
 namespace mozilla {
 namespace dom {
@@ -14,6 +15,20 @@ TestFunctions::ThrowUncatchableException(GlobalObject& aGlobal,
                                          ErrorResult& aRv)
 {
   aRv.ThrowUncatchableException();
+}
+
+ Promise*
+TestFunctions::PassThroughPromise(GlobalObject& aGlobal, Promise& aPromise)
+{
+  return &aPromise;
+}
+
+ already_AddRefed<Promise>
+TestFunctions::PassThroughCallbackPromise(GlobalObject& aGlobal,
+                                          PromiseReturner& aCallback,
+                                          ErrorResult& aRv)
+{
+  return aCallback.Call(aRv);
 }
 
 }
