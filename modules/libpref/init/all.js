@@ -3423,14 +3423,6 @@ pref("font.name.cursive.x-math", "Comic Sans MS");
 
 
 
-pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
-
-
-pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-
-
-
-
 
 
 
