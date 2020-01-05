@@ -335,6 +335,7 @@ Toolbox.prototype = {
   get splitConsole() {
     return this._splitConsole;
   },
+
   
 
 
@@ -1267,6 +1268,16 @@ Toolbox.prototype = {
       
       
       let built = definition.build(iframe.contentWindow, this);
+
+      
+      let docEl = iframe.contentWindow.document.documentElement;
+      if (docEl.namespaceURI === HTML_NS) {
+        let top = this.win.top;
+        let topDocEl = top.document.documentElement;
+        let isRtl = top.getComputedStyle(topDocEl).direction === "rtl";
+        docEl.setAttribute("dir", isRtl ? "rtl" : "ltr");
+      }
+
       if (!(typeof built.then == "function")) {
         let panel = built;
         iframe.panel = panel;
