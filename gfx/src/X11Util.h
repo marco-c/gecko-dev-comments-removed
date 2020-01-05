@@ -118,10 +118,7 @@ public:
     static int
     ErrorHandler(Display *, XErrorEvent *ev);
 
-    
-
-
-    ScopedXErrorHandler(bool aAllowOffMainThread = false);
+    ScopedXErrorHandler();
 
     ~ScopedXErrorHandler();
 
@@ -132,15 +129,6 @@ public:
 
 
     bool SyncAndGetError(Display *dpy, XErrorEvent *ev = nullptr);
-};
-
-class OffMainThreadScopedXErrorHandler : public ScopedXErrorHandler
-{
-public:
-  OffMainThreadScopedXErrorHandler()
-    : ScopedXErrorHandler(true)
-  {
-  }
 };
 
 } 
