@@ -58,6 +58,8 @@ add_task(function* blockRepoShutdown() {
   
   
   let mockRepo = mockAddonProvider("Mock repo");
+  
+  void AMscope.AddonRepository;
   AMscope.AddonRepository = mockRepo;
 
   let mockProvider = mockAddonProvider("Mock provider");
