@@ -264,7 +264,6 @@ private:
   
   
   
-  
   bool
   StartTimer(JSContext* aCx, const JS::Value& aName,
              DOMHighResTimeStamp aTimestamp,
@@ -284,7 +283,6 @@ private:
                         DOMHighResTimeStamp aTimerValue,
                         bool aTimerStatus) const;
 
-  
   
   
   

@@ -1096,13 +1096,12 @@ Event::TimeStamp() const
 
   
   
-  
   workers::WorkerPrivate* workerPrivate =
     workers::GetCurrentThreadWorkerPrivate();
   MOZ_ASSERT(workerPrivate);
 
   TimeDuration duration =
-    mEvent->mTimeStamp - workerPrivate->NowBaseTimeStamp();
+    mEvent->mTimeStamp - workerPrivate->CreationTimeStamp();
   return duration.ToMilliseconds();
 }
 
