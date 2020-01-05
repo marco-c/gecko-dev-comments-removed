@@ -129,6 +129,8 @@ function Tester(aTests, structuredLogger, aCallback) {
   this.structuredLogger = structuredLogger;
   this.tests = aTests;
   this.callback = aCallback;
+  this.openedWindows = {};
+  this.openedURLs = {};
 
   this._scriptLoader = Services.scriptloader;
   this.EventUtils = {};
@@ -213,6 +215,7 @@ Tester.prototype = {
   checker: null,
   currentTestIndex: -1,
   lastStartTime: null,
+  openedWindows: null,
   lastAssertionCount: 0,
   failuresFromInitialWindowState: 0,
 
@@ -245,6 +248,8 @@ Tester.prototype = {
 
     this.structuredLogger.info("*** Start BrowserChrome Test Results ***");
     Services.console.registerListener(this);
+    Services.obs.addObserver(this, "chrome-document-global-created", false);
+    Services.obs.addObserver(this, "content-document-global-created", false);
     this._globalProperties = Object.keys(window);
     this._globalPropertyWhitelist = [
       "navigator", "constructor", "top",
@@ -365,6 +370,8 @@ Tester.prototype = {
     else{
       TabDestroyObserver.destroy();
       Services.console.unregisterListener(this);
+      Services.obs.removeObserver(this, "chrome-document-global-created");
+      Services.obs.removeObserver(this, "content-document-global-created");
       this.Promise.Debugging.clearUncaughtErrorObservers();
       this._treatUncaughtRejectionsAsFailures = false;
 
@@ -393,6 +400,7 @@ Tester.prototype = {
       this.callback(this.tests);
       this.callback = null;
       this.tests = null;
+      this.openedWindows = null;
     }
   },
 
@@ -402,7 +410,30 @@ Tester.prototype = {
     this.repeat = 0;
   },
 
-  observe: function Tester_onConsoleMessage(aConsoleMessage) {
+  observe: function Tester_observe(aSubject, aTopic, aData) {
+    if (!aTopic) {
+      this.onConsoleMessage(aSubject);
+    } else if (this.currentTest) {
+      this.onDocumentCreated(aSubject);
+    }
+  },
+
+  onDocumentCreated: function Tester_onDocumentCreated(aWindow) {
+    let utils = aWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDOMWindowUtils);
+    let outerID = utils.outerWindowID;
+    let innerID = utils.currentInnerWindowID;
+
+    if (!(outerID in this.openedWindows)) {
+      this.openedWindows[outerID] = this.currentTest;
+    }
+    this.openedWindows[innerID] = this.currentTest;
+
+    let url = aWindow.location.href || "about:blank";
+    this.openedURLs[outerID] = this.openedURLs[innerID] = url;
+  },
+
+  onConsoleMessage: function Tester_onConsoleMessage(aConsoleMessage) {
     
     if (!aConsoleMessage.message)
       return;
@@ -605,19 +636,29 @@ Tester.prototype = {
         
         
 
-        let shutdownCleanup = aCallback => {
+        let checkForLeakedGlobalWindows = aCallback => {
           Cu.schedulePreciseShrinkingGC(() => {
-            
-            
-            let numCycles = 3;
-            for (i = 0; i < numCycles; i++) {
-              Cu.forceGC();
-              Cu.forceCC();
-            }
-            aCallback();
+            let analyzer = new CCAnalyzer();
+            analyzer.run(() => {
+              let results = [];
+              for (let obj of analyzer.find("nsGlobalWindow ")) {
+                let m = obj.name.match(/^nsGlobalWindow #(\d+)/);
+                if (m && m[1] in this.openedWindows)
+                  results.push({ name: obj.name, url: m[1] });
+              }
+              aCallback(results);
+            });
           });
         };
 
+        let reportLeaks = aResults => {
+          for (let result of aResults) {
+            let test = this.openedWindows[result.url];
+            let msg = "leaked until shutdown [" + result.name +
+                      " " + (this.openedURLs[result.url] || "NULL") + "]";
+            test.addResult(new testResult(false, msg, "", false));
+          }
+        };
 
         let {AsyncShutdown} =
           Cu.import("resource://gre/modules/AsyncShutdown.jsm", {});
@@ -639,9 +680,17 @@ Tester.prototype = {
                        .getService(Ci.nsIMessageBroadcaster);
           ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
-          shutdownCleanup(() => {
+          checkForLeakedGlobalWindows(aResults => {
+            if (aResults.length == 0) {
+              this.finish();
+              return;
+            }
+            
+            
+            
             setTimeout(() => {
-              shutdownCleanup(() => {
+              checkForLeakedGlobalWindows(aResults => {
+                reportLeaks(aResults);
                 this.finish();
               });
             }, 1000);
