@@ -6,7 +6,6 @@
 
 "use strict";
 
-var escope = require("escope");
 var espree = require("espree");
 var estraverse = require("estraverse");
 var path = require("path");
@@ -229,7 +228,7 @@ module.exports = {
     }
 
     for (var reg of definitions) {
-      var match = source.match(reg);
+      let match = source.match(reg);
       if (match) {
         
         if (!isGlobal) {
@@ -241,7 +240,7 @@ module.exports = {
     }
 
     for (reg of imports) {
-      var match = source.match(reg);
+      let match = source.match(reg);
       if (match) {
         
         if (node.expression.arguments.length > 1 && !isGlobal) {
@@ -572,7 +571,7 @@ module.exports = {
 
 
 
-  cleanUpPath(path) {
-    return path.replace(/^"/, "").replace(/"$/, "");
+  cleanUpPath(pathName) {
+    return pathName.replace(/^"/, "").replace(/"$/, "");
   }
 };

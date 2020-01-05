@@ -12,7 +12,6 @@ const path = require("path");
 const fs = require("fs");
 const helpers = require("./helpers");
 const escope = require("escope");
-const estraverse = require("estraverse");
 
 
 
@@ -134,19 +133,19 @@ module.exports = {
 
 
 
-  getGlobalsForFile(path) {
-    if (globalCache.has(path)) {
-      return globalCache.get(path);
+  getGlobalsForFile(filePath) {
+    if (globalCache.has(filePath)) {
+      return globalCache.get(filePath);
     }
 
-    if (globalDiscoveryInProgressForFiles.has(path)) {
+    if (globalDiscoveryInProgressForFiles.has(filePath)) {
       
       
       return [];
     }
-    globalDiscoveryInProgressForFiles.add(path);
+    globalDiscoveryInProgressForFiles.add(filePath);
 
-    let content = fs.readFileSync(path, "utf8");
+    let content = fs.readFileSync(filePath, "utf8");
 
     
     let ast = helpers.getAST(content);
@@ -161,7 +160,7 @@ module.exports = {
     }));
 
     
-    let handler = new GlobalsForNode(path);
+    let handler = new GlobalsForNode(filePath);
 
     helpers.walkAST(ast, (type, node, parents) => {
       
@@ -187,9 +186,9 @@ module.exports = {
       }
     });
 
-    globalCache.set(path, globals);
+    globalCache.set(filePath, globals);
 
-    globalDiscoveryInProgressForFiles.delete(path);
+    globalDiscoveryInProgressForFiles.delete(filePath);
     return globals;
   },
 
