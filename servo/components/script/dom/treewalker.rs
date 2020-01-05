@@ -540,18 +540,18 @@ impl<'a> TreeWalkerHelpers for JSRef<'a, TreeWalker> {
 impl<'a> Iterator for JSRef<'a, TreeWalker> {
     type Item = JSRef<'a, Node>;
 
-   fn next(&mut self) -> Option<JSRef<'a, Node>> {
-       match self.next_node() {
-           Ok(node) => node.map(|n| n.root().get_unsound_ref_forever()),
-           Err(_) =>
-               
-               
-               
-               
-               
-               unreachable!()
+    fn next(&mut self) -> Option<JSRef<'a, Node>> {
+        match self.next_node() {
+            Ok(node) => node.map(|n| n.root().get_unsound_ref_forever()),
+            Err(_) =>
+                
+                
+                
+                
+                
+                unreachable!()
        }
-   }
+    }
 }
 
 #[jstraceable]
