@@ -605,6 +605,25 @@ GeckoRestyleManager::UpdateOnlyAnimationStyles()
 }
 
 void
+GeckoRestyleManager::PostRestyleEventInternal(bool aForLazyConstruction)
+{
+  
+  
+  
+  bool inRefresh = !aForLazyConstruction && mInStyleRefresh;
+  nsIPresShell* presShell = PresContext()->PresShell();
+  if (!inRefresh) {
+    presShell->ObserveStyleFlushes();
+  }
+
+  
+  
+  
+  presShell->SetNeedStyleFlush();
+}
+
+
+void
 GeckoRestyleManager::PostRestyleEvent(Element* aElement,
                                       nsRestyleHint aRestyleHint,
                                       nsChangeHint aMinChangeHint,
