@@ -13,6 +13,15 @@ const { createEnum } = require("devtools/client/shared/enum");
 
 
 
+
+
+exports.location = PropTypes.string;
+
+
+
+
+
+
 const device = {
 
   
@@ -88,14 +97,25 @@ exports.devices = {
 
 
 
-exports.location = PropTypes.string;
+
+
+exports.networkThrottling = {
+
+  
+  enabled: PropTypes.bool,
+
+  
+  profile: PropTypes.string,
+
+};
 
 
 
 
-exports.screenshot = {
+const pixelRatio = exports.pixelRatio = {
 
-  isCapturing: PropTypes.bool,
+  
+  value: PropTypes.number,
 
 };
 
@@ -106,19 +126,6 @@ exports.touchSimulation = {
 
   
   enabled: PropTypes.bool,
-
-};
-
-
-
-
-exports.networkThrottling = {
-
-  
-  enabled: PropTypes.bool,
-
-  
-  profile: PropTypes.string,
 
 };
 
@@ -138,5 +145,20 @@ exports.viewport = {
 
   
   height: PropTypes.number,
+
+  
+  pixelRatio: PropTypes.shape(pixelRatio),
+
+};
+
+
+
+
+
+
+exports.screenshot = {
+
+  
+  isCapturing: PropTypes.bool,
 
 };
