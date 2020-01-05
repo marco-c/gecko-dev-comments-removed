@@ -147,6 +147,12 @@ class Channel {
   
   static std::wstring GenerateVerifiedChannelID(const std::wstring& prefix);
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  static void SetClientChannelFd(int fd);
+#endif 
+
  private:
   
   class ChannelImpl;

@@ -61,6 +61,14 @@ namespace IPC {
 
 
 
+
+
+
+
+
+
+
+
 namespace {
 
 
@@ -133,7 +141,14 @@ class PipeMap {
 
 
 
-static const int kClientChannelFd = 3;
+static int gClientChannelFd =
+#if defined(MOZ_WIDGET_ANDROID)
+
+-1
+#else
+3
+#endif 
+;
 
 
 int ChannelNameToClientFD(const std::string& channel_id) {
@@ -144,7 +159,7 @@ int ChannelNameToClientFD(const std::string& channel_id) {
 
   
   
-  return kClientChannelFd;
+  return gClientChannelFd;
 }
 
 
@@ -164,6 +179,12 @@ bool SetCloseOnExec(int fd) {
 
 }  
 
+
+#if defined(MOZ_WIDGET_ANDROID)
+void Channel::SetClientChannelFd(int fd) {
+  gClientChannelFd = fd;
+}
+#endif 
 
 Channel::ChannelImpl::ChannelImpl(const std::wstring& channel_id, Mode mode,
                                   Listener* listener)
@@ -762,7 +783,7 @@ void Channel::ChannelImpl::GetClientFileDescriptorMapping(int *src_fd,
                                                           int *dest_fd) const {
   DCHECK(mode_ == MODE_SERVER);
   *src_fd = client_pipe_;
-  *dest_fd = kClientChannelFd;
+  *dest_fd = gClientChannelFd;
 }
 
 void Channel::ChannelImpl::CloseClientFileDescriptor() {
