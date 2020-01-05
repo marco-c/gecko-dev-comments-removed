@@ -1651,17 +1651,6 @@ toolbar#nav-bar {
         extensions = self.getExtensionsToInstall(options)
 
         
-        appsPath = os.path.join(
-            SCRIPT_DIR,
-            'profile_data',
-            'webapps_mochitest.json')
-        if os.path.exists(appsPath):
-            with open(appsPath) as apps_file:
-                apps = json.load(apps_file)
-        else:
-            apps = None
-
-        
         preferences = [
             os.path.join(
                 SCRIPT_DIR,
@@ -1712,7 +1701,6 @@ toolbar#nav-bar {
                                addons=extensions,
                                locations=self.locations,
                                preferences=prefs,
-                               apps=apps,
                                proxy=proxy
                                )
 
