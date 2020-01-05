@@ -1,0 +1,102 @@
+
+
+
+
+
+
+
+
+#ifndef mozilla_ServoPageRule_h
+#define mozilla_ServoPageRule_h
+
+#include "mozilla/dom/CSSPageRule.h"
+#include "mozilla/ServoBindingTypes.h"
+
+#include "nsDOMCSSDeclaration.h"
+
+namespace mozilla {
+
+class ServoDeclarationBlock;
+class ServoPageRule;
+
+class ServoPageRuleDeclaration final : public nsDOMCSSDeclaration
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  NS_IMETHOD GetParentRule(nsIDOMCSSRule** aParent) final;
+  nsINode* GetParentObject() final;
+
+protected:
+  DeclarationBlock* GetCSSDeclaration(Operation aOperation) final;
+  nsresult SetCSSDeclaration(DeclarationBlock* aDecl) final;
+  nsIDocument* DocToUpdate() final;
+  void GetCSSParsingEnvironment(CSSParsingEnvironment& aCSSParseEnv) final;
+  URLExtraData* GetURLData() const final;
+
+private:
+  
+  friend class ServoPageRule;
+
+  explicit ServoPageRuleDeclaration(
+    already_AddRefed<RawServoDeclarationBlock> aDecls);
+  ~ServoPageRuleDeclaration();
+
+  inline ServoPageRule* Rule();
+  inline const ServoPageRule* Rule() const;
+
+  RefPtr<ServoDeclarationBlock> mDecls;
+};
+
+class ServoPageRule final : public dom::CSSPageRule
+{
+public:
+  explicit ServoPageRule(RefPtr<RawServoPageRule> aRawRule);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(
+    ServoPageRule, dom::CSSPageRule
+  )
+  bool IsCCLeaf() const final;
+
+  RawServoPageRule* Raw() const { return mRawRule; }
+
+  
+  void GetCssTextImpl(nsAString& aCssText) const final;
+  nsICSSDeclaration* Style() final;
+
+  
+  already_AddRefed<css::Rule> Clone() const final;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
+    const final;
+#ifdef DEBUG
+  void List(FILE* out = stdout, int32_t aIndent = 0) const final;
+#endif
+
+private:
+  virtual ~ServoPageRule();
+
+  
+  friend class ServoPageRuleDeclaration;
+
+  RefPtr<RawServoPageRule> mRawRule;
+  ServoPageRuleDeclaration mDecls;
+};
+
+ServoPageRule*
+ServoPageRuleDeclaration::Rule()
+{
+  return reinterpret_cast<ServoPageRule*>(
+    reinterpret_cast<uint8_t*>(this) - offsetof(ServoPageRule, mDecls));
+}
+
+const ServoPageRule*
+ServoPageRuleDeclaration::Rule() const
+{
+  return reinterpret_cast<const ServoPageRule*>(
+    reinterpret_cast<const uint8_t*>(this) - offsetof(ServoPageRule, mDecls));
+}
+
+} 
+
+#endif 

@@ -1,0 +1,205 @@
+
+
+
+
+
+
+
+
+#include "mozilla/ServoPageRule.h"
+
+#include "mozilla/DeclarationBlockInlines.h"
+#include "mozilla/ServoBindings.h"
+#include "mozilla/ServoDeclarationBlock.h"
+
+using namespace mozilla::dom;
+
+namespace mozilla {
+
+
+
+ServoPageRuleDeclaration::ServoPageRuleDeclaration(
+  already_AddRefed<RawServoDeclarationBlock> aDecls)
+  : mDecls(new ServoDeclarationBlock(Move(aDecls)))
+{
+}
+
+ServoPageRuleDeclaration::~ServoPageRuleDeclaration()
+{
+}
+
+
+NS_INTERFACE_MAP_BEGIN(ServoPageRuleDeclaration)
+  NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
+  
+  
+  if (aIID.Equals(NS_GET_IID(nsCycleCollectionISupports)) ||
+      aIID.Equals(NS_GET_IID(nsXPCOMCycleCollectionParticipant))) {
+    return Rule()->QueryInterface(aIID, aInstancePtr);
+  }
+  else
+NS_IMPL_QUERY_TAIL_INHERITING(nsDOMCSSDeclaration)
+
+NS_IMPL_ADDREF_USING_AGGREGATOR(ServoPageRuleDeclaration, Rule())
+NS_IMPL_RELEASE_USING_AGGREGATOR(ServoPageRuleDeclaration, Rule())
+
+
+
+NS_IMETHODIMP
+ServoPageRuleDeclaration::GetParentRule(nsIDOMCSSRule** aParent)
+{
+  *aParent = do_AddRef(Rule()).take();
+  return NS_OK;
+}
+
+nsINode*
+ServoPageRuleDeclaration::GetParentObject()
+{
+  return Rule()->GetDocument();
+}
+
+DeclarationBlock*
+ServoPageRuleDeclaration::GetCSSDeclaration(Operation aOperation)
+{
+  return mDecls;
+}
+
+nsresult
+ServoPageRuleDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl)
+{
+  MOZ_ASSERT(aDecl, "must be non-null");
+  ServoPageRule* rule = Rule();
+
+  if (aDecl != mDecls) {
+    mDecls->SetOwningRule(nullptr);
+    RefPtr<ServoDeclarationBlock> decls = aDecl->AsServo();
+    Servo_PageRule_SetStyle(rule->Raw(), decls->Raw());
+    mDecls = decls.forget();
+    mDecls->SetOwningRule(rule);
+  }
+
+  return NS_OK;
+}
+
+nsIDocument*
+ServoPageRuleDeclaration::DocToUpdate()
+{
+  return nullptr;
+}
+
+void
+ServoPageRuleDeclaration::GetCSSParsingEnvironment(
+  CSSParsingEnvironment& aCSSParseEnv)
+{
+  MOZ_ASSERT_UNREACHABLE("GetCSSParsingEnvironment "
+                         "shouldn't be calling for a Servo rule");
+  GetCSSParsingEnvironmentForRule(Rule(), aCSSParseEnv);
+}
+
+URLExtraData*
+ServoPageRuleDeclaration::GetURLData() const
+{
+  return GetURLDataForRule(Rule());
+}
+
+
+
+ServoPageRule::ServoPageRule(RefPtr<RawServoPageRule> aRawRule)
+  : CSSPageRule(0, 0)
+  , mRawRule(Move(aRawRule))
+  , mDecls(Servo_PageRule_GetStyle(mRawRule).Consume())
+{
+}
+
+ServoPageRule::~ServoPageRule()
+{
+}
+
+NS_IMPL_ADDREF_INHERITED(ServoPageRule, CSSPageRule)
+NS_IMPL_RELEASE_INHERITED(ServoPageRule, CSSPageRule)
+
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION_INHERITED(ServoPageRule)
+NS_INTERFACE_MAP_END_INHERITING(CSSPageRule)
+
+NS_IMPL_CYCLE_COLLECTION_CLASS(ServoPageRule)
+
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ServoPageRule, CSSPageRule)
+  
+
+  
+  
+  
+  tmp->mDecls.TraceWrapper(aCallbacks, aClosure);
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ServoPageRule, CSSPageRule)
+  
+
+  
+  
+  
+  tmp->mDecls.ReleaseWrapper(static_cast<nsISupports*>(p));
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(ServoPageRule, CSSPageRule)
+  
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+bool
+ServoPageRule::IsCCLeaf() const
+{
+  if (!Rule::IsCCLeaf()) {
+    return false;
+  }
+
+  return !mDecls.PreservingWrapper();
+}
+
+already_AddRefed<css::Rule>
+ServoPageRule::Clone() const
+{
+  
+  
+  
+  MOZ_ASSERT_UNREACHABLE("Shouldn't be cloning ServoPageRule");
+  return nullptr;
+}
+
+size_t
+ServoPageRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  
+  return aMallocSizeOf(this);
+}
+
+#ifdef DEBUG
+void
+ServoPageRule::List(FILE* out, int32_t aIndent) const
+{
+  nsAutoCString str;
+  for (int32_t i = 0; i < aIndent; i++) {
+    str.AppendLiteral("  ");
+  }
+  Servo_PageRule_Debug(mRawRule, &str);
+  fprintf_stderr(out, "%s\n", str.get());
+}
+#endif
+
+
+
+void
+ServoPageRule::GetCssTextImpl(nsAString& aCssText) const
+{
+  Servo_PageRule_GetCssText(mRawRule, &aCssText);
+}
+
+
+
+nsICSSDeclaration*
+ServoPageRule::Style()
+{
+  return &mDecls;
+}
+
+} 
