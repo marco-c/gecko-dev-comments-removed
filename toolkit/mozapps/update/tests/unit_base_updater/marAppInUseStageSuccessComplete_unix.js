@@ -31,7 +31,7 @@ function setupUpdaterTestFinished() {
 
 
 function waitForHelperSleepFinished() {
-  stageUpdate();
+  stageUpdate(true);
 }
 
 
@@ -40,7 +40,7 @@ function waitForHelperSleepFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS_STAGE, true);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
 }
@@ -84,8 +84,7 @@ function checkPostUpdateAppLogFinished() {
 
 
 function setupSymLinks() {
-  
-  if (IS_UNIX && !IS_TOOLKIT_GONK) {
+  if (IS_UNIX) {
     removeSymlink();
     createSymlink();
     do_register_cleanup(removeSymlink);
@@ -108,8 +107,7 @@ function setupSymLinks() {
 
 
 function checkSymLinks() {
-  
-  if (IS_UNIX && !IS_TOOLKIT_GONK) {
+  if (IS_UNIX) {
     checkSymlink();
   }
 }

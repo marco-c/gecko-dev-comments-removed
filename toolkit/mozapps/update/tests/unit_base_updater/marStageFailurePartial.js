@@ -23,7 +23,7 @@ function run_test() {
 
 
 function setupUpdaterTestFinished() {
-  stageUpdate();
+  stageUpdate(true);
 }
 
 

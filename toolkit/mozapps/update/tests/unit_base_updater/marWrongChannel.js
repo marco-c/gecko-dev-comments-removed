@@ -25,8 +25,8 @@ function run_test() {
 function setupUpdaterTestFinished() {
   
   
-  runUpdateUsingUpdater(STATE_FAILED_MAR_CHANNEL_MISMATCH_ERROR, false,
-                        (USE_EXECV ? 0 : 1));
+  runUpdate(STATE_FAILED_MAR_CHANNEL_MISMATCH_ERROR, false, (USE_EXECV ? 0 : 1),
+            false);
 }
 
 

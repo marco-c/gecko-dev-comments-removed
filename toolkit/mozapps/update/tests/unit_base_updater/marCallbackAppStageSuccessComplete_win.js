@@ -20,7 +20,7 @@ function run_test() {
 
 
 function setupUpdaterTestFinished() {
-  stageUpdate();
+  stageUpdate(true);
 }
 
 
@@ -29,9 +29,9 @@ function setupUpdaterTestFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS_STAGE, true);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
-  runUpdate(STATE_SUCCEEDED, true, 0, false);
+  runUpdate(STATE_SUCCEEDED, true, 0, true);
 }
 
 

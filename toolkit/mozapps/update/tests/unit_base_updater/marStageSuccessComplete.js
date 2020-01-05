@@ -25,7 +25,7 @@ function run_test() {
 
 
 function setupUpdaterTestFinished() {
-  stageUpdate();
+  stageUpdate(true);
 }
 
 
@@ -34,7 +34,7 @@ function setupUpdaterTestFinished() {
 function stageUpdateFinished() {
   checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getStageDirFile, true);
-  checkUpdateLogContents(LOG_COMPLETE_SUCCESS_STAGE, true);
+  checkUpdateLogContents(LOG_COMPLETE_SUCCESS, true);
   
   runUpdate(STATE_SUCCEEDED, true, 0, true);
 }
@@ -101,8 +101,7 @@ function checkDistributionDir() {
 function setupSymLinks() {
   
   
-  
-  if (IS_UNIX && !IS_MACOSX && !IS_TOOLKIT_GONK) {
+  if (IS_UNIX && !IS_MACOSX) {
     removeSymlink();
     createSymlink();
     do_register_cleanup(removeSymlink);
@@ -126,7 +125,8 @@ function setupSymLinks() {
 
 function checkSymLinks() {
   
-  if (IS_UNIX && !IS_MACOSX && !IS_TOOLKIT_GONK) {
+  
+  if (IS_UNIX && !IS_MACOSX) {
     checkSymlink();
   }
 }

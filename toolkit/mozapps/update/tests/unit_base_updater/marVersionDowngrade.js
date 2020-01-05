@@ -25,8 +25,8 @@ function run_test() {
 function setupUpdaterTestFinished() {
   
   
-  runUpdateUsingUpdater(STATE_FAILED_VERSION_DOWNGRADE_ERROR, false,
-                        (USE_EXECV ? 0 : 1));
+  runUpdate(STATE_FAILED_VERSION_DOWNGRADE_ERROR, false, (USE_EXECV ? 0 : 1),
+            false);
 }
 
 

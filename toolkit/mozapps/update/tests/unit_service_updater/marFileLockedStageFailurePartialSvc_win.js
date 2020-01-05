@@ -27,7 +27,7 @@ function setupUpdaterTestFinished() {
 
 
 function waitForHelperSleepFinished() {
-  stageUpdate();
+  stageUpdate(true);
 }
 
 

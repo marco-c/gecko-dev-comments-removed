@@ -21,16 +21,8 @@ function run_test() {
 
   standardInit();
 
-  if (IS_TOOLKIT_GONK) {
-    
-    
-    
-    Assert.ok(!!gUpdateManager.activeUpdate,
-              "there should be an active update");
-  } else {
-    Assert.ok(!gUpdateManager.activeUpdate,
-              "there should not be an active update");
-  }
+  Assert.ok(!gUpdateManager.activeUpdate,
+            "there should not be an active update");
   Assert.equal(gUpdateManager.updateCount, 0,
                "the update manager update count" + MSG_SHOULD_EQUAL);
 

@@ -24,8 +24,8 @@ function setupUpdaterTestFinished() {
   overrideApplyToDir(getApplyDirPath() + "/../NoSuchDir");
   
   
-  runUpdateUsingUpdater(STATE_FAILED_INVALID_APPLYTO_DIR_ERROR, false,
-                        (USE_EXECV ? 0 : 1));
+  runUpdate(STATE_FAILED_INVALID_APPLYTO_DIR_ERROR, false, (USE_EXECV ? 0 : 1),
+            false);
 }
 
 
