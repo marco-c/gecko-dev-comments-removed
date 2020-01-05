@@ -5,24 +5,29 @@
 
 package org.mozilla.gecko.customtabs;
 
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
+import android.os.Handler;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.ActionBar;
-import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
-import org.mozilla.gecko.AppConstants;
+import org.mozilla.gecko.R;
+import org.mozilla.gecko.SiteIdentity;
+import org.mozilla.gecko.Tab;
+import org.mozilla.gecko.toolbar.SecurityModeUtil;
 import org.mozilla.gecko.util.ColorUtil;
-
-import java.lang.reflect.Field;
 
 
 
@@ -30,29 +35,33 @@ import java.lang.reflect.Field;
 
 public class ActionBarPresenter {
 
-    private static final String LOGTAG = "CustomTabsActionBar";
+    @ColorInt
+    private static final int DEFAULT_TEXT_PRIMARY_COLOR = 0xFFFFFFFF;
+    private static final long CUSTOM_VIEW_UPDATE_DELAY = 1000;
+
     private final ActionBar mActionBar;
-    private boolean useDomainTitle = true;
+    private final ImageButton mIconView;
+    private final TextView mTitleView;
+    private final TextView mUrlView;
+    private final Handler mHandler = new Handler();
 
-    ActionBarPresenter(@NonNull final ActionBar actionBar, @NonNull Toolbar toolbar) {
+    private Runnable mUpdateAction;
+
+    @ColorInt
+    private int mTextPrimaryColor = DEFAULT_TEXT_PRIMARY_COLOR;
+
+    ActionBarPresenter(@NonNull final ActionBar actionBar) {
         mActionBar = actionBar;
-        initActionBar(toolbar);
-    }
+        mActionBar.setDisplayShowCustomEnabled(true);
+        mActionBar.setDisplayShowTitleEnabled(false);
 
-    private void initActionBar(@NonNull final Toolbar toolbar) {
-        try {
-            
-            
-            final Field f = toolbar.getClass().getDeclaredField("mTitleTextView");
-            f.setAccessible(true);
-            final TextView textView = (TextView) f.get(toolbar);
-            textView.setEllipsize(TextUtils.TruncateAt.START);
-        } catch (Exception e) {
-            
-            
-            Log.w(LOGTAG, "Failed to get Toolbar TextView, using default title.");
-            useDomainTitle = false;
-        }
+        mActionBar.setCustomView(R.layout.customtabs_action_bar_custom_view);
+        final View customView = mActionBar.getCustomView();
+        mIconView = (ImageButton) customView.findViewById(R.id.custom_tabs_action_bar_icon);
+        mTitleView = (TextView) customView.findViewById(R.id.custom_tabs_action_bar_title);
+        mUrlView = (TextView) customView.findViewById(R.id.custom_tabs_action_bar_url);
+
+        onThemeChanged(mActionBar.getThemedContext().getTheme());
     }
 
     
@@ -60,13 +69,29 @@ public class ActionBarPresenter {
 
 
 
-    @UiThread
-    public void update(@Nullable final String title) {
-        if (useDomainTitle || TextUtils.isEmpty(title)) {
-            mActionBar.setTitle(AppConstants.MOZ_APP_BASENAME);
-        } else {
-            mActionBar.setTitle(title);
-        }
+    public void displayUrlOnly(@NonNull final String url) {
+        updateCustomView(null, null, url);
+    }
+
+    
+
+
+
+
+    public void update(@NonNull final Tab tab) {
+        final String title = tab.getTitle();
+        final String url = tab.getBaseDomain();
+
+        
+        
+        mHandler.removeCallbacks(mUpdateAction);
+        mUpdateAction = new Runnable() {
+            @Override
+            public void run() {
+                updateCustomView(tab.getSiteIdentity(), title, url);
+            }
+        };
+        mHandler.postDelayed(mUpdateAction, CUSTOM_VIEW_UPDATE_DELAY);
     }
 
     
@@ -86,5 +111,54 @@ public class ActionBarPresenter {
                 window.setStatusBarColor(ColorUtil.darken(color, 0.25));
             }
         }
+    }
+
+    
+
+
+
+
+
+
+    @UiThread
+    private void updateCustomView(@Nullable SiteIdentity identity,
+                                  @Nullable String title,
+                                  @NonNull String url) {
+        
+        if (identity == null) {
+            mIconView.setVisibility(View.INVISIBLE);
+        } else {
+            final SecurityModeUtil.Mode mode = SecurityModeUtil.resolve(identity);
+            mIconView.setVisibility(View.VISIBLE);
+            mIconView.setImageLevel(mode.ordinal());
+
+            if (mode == SecurityModeUtil.Mode.LOCK_SECURE) {
+                
+                DrawableCompat.setTintList(mIconView.getDrawable(), null);
+            } else {
+                
+                DrawableCompat.setTint(mIconView.getDrawable(), mTextPrimaryColor);
+            }
+        }
+
+        
+        if (TextUtils.isEmpty(title)) {
+            mTitleView.setText(url);
+            mUrlView.setText(null);
+            mUrlView.setVisibility(View.GONE);
+        } else {
+            mTitleView.setText(title);
+            mUrlView.setText(url);
+            mUrlView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void onThemeChanged(@NonNull final Resources.Theme currentTheme) {
+        
+        final TypedArray themeArray = currentTheme.obtainStyledAttributes(
+                new int[]{android.R.attr.textColorPrimary});
+
+        mTextPrimaryColor = themeArray.getColor(0, DEFAULT_TEXT_PRIMARY_COLOR);
+        themeArray.recycle();
     }
 }
