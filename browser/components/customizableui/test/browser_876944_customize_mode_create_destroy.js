@@ -9,6 +9,7 @@ const kTestWidget2 = "test-customize-mode-create-destroy2";
 
 
 add_task(function* testWrapUnwrap() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   yield startCustomizing();
   CustomizableUI.createWidget({id: kTestWidget1, label: "Pretty label", tooltiptext: "Pretty tooltip"});
   let elem = document.getElementById(kTestWidget1);

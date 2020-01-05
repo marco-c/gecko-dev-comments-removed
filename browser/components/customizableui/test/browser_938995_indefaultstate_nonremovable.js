@@ -7,7 +7,9 @@
 const kWidgetId = "test-non-removable-widget";
 
 
-add_task(function() {
+add_task(async function() {
+  await SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
+  await PanelUI.ensureReady();
   ok(CustomizableUI.inDefaultState, "Should start in default state");
 
   let button = createDummyXULButton(kWidgetId, "Test non-removable inDefaultState handling");

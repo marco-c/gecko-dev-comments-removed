@@ -8,6 +8,7 @@ requestLongerTimeout(2);
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   let homeButtonId = "home-button";
   CustomizableUI.removeWidgetFromArea(homeButtonId);
   yield startCustomizing();

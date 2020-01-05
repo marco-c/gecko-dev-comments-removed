@@ -8,6 +8,7 @@
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   yield startCustomizing();
   CustomizableUI.addWidgetToArea("characterencoding-button", "PanelUI-contents");
   yield endCustomizing();

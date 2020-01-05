@@ -7,6 +7,7 @@ const kWidgetId = "test-981418-widget-onbeforecreated";
 
 
 add_task(function* testAddOnBeforeCreatedWidget() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   let viewShownDeferred = Promise.defer();
   let onBeforeCreatedCalled = false;
   let widgetSpec = {

@@ -11,6 +11,7 @@ function isFullscreenSizeMode() {
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   
   
   let shownPanelPromise = promisePanelShown(window);

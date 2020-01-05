@@ -8,6 +8,7 @@ requestLongerTimeout(5);
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   yield startCustomizing();
   let zoomControls = document.getElementById("zoom-controls");
   let printButton = document.getElementById("print-button");

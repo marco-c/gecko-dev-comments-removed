@@ -13,6 +13,7 @@ registerCleanupFunction(function() {
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
 
   overflowPanel.setAttribute("animate", "false");
 

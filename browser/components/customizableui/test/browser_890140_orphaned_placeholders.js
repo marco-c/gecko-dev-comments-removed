@@ -8,6 +8,7 @@ requestLongerTimeout(2);
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   yield startCustomizing();
 
   if (isInDevEdition()) {

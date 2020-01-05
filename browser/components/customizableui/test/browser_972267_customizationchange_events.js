@@ -7,6 +7,7 @@
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   let newWindow = yield openAndLoadWindow();
   let otherToolbox = newWindow.gNavToolbox;
 

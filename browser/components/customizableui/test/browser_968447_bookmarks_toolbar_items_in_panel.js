@@ -7,6 +7,7 @@
 
 
 add_task(function*() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   const buttonId = "bookmarks-toolbar-placeholder";
   yield startCustomizing();
   CustomizableUI.addWidgetToArea("personal-bookmarks", CustomizableUI.AREA_PANEL);

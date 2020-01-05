@@ -190,6 +190,7 @@ function checkNotOverflowing(aID) {
 
 
 add_task(function* testOverflowingBookmarksButtonContextMenu() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   ok(!gNavBar.hasAttribute("overflowing"), "Should start with a non-overflowing toolbar.");
   ok(CustomizableUI.inDefaultState, "Should start in default state.");
 

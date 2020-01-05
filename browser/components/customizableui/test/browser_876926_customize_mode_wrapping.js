@@ -155,6 +155,7 @@ var otherWin;
 
 
 add_task(function* MoveWidgetsInTwoWindows() {
+  yield SpecialPowers.pushPrefEnv({set: [["browser.photon.structure.enabled", false]]});
   yield startCustomizing();
   otherWin = yield openAndLoadWindow(null, true);
   yield otherWin.PanelUI.ensureReady();
