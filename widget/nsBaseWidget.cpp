@@ -1223,7 +1223,8 @@ nsBaseWidget::DispatchInputEvent(WidgetInputEvent* aEvent)
       APZThreadUtils::RunOnControllerThread(r.forget());
       return nsEventStatus_eConsumeDoDefault;
     }
-    MOZ_CRASH();
+    
+    MOZ_ASSERT(aEvent->AsKeyboardEvent());
   }
 
   nsEventStatus status;

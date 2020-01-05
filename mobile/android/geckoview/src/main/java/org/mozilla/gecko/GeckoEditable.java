@@ -93,11 +93,11 @@ final class GeckoEditable extends JNIObject
     private static final int IME_RANGE_BACKCOLOR = 4;
     private static final int IME_RANGE_LINECOLOR = 8;
 
-    @WrapForJNI(dispatchTo = "proxy")
+    @WrapForJNI(dispatchTo = "proxy") 
     private native void onKeyEvent(int action, int keyCode, int scanCode, int metaState,
-                                   long time, int unicodeChar, int baseUnicodeChar,
-                                   int domPrintableKeyValue, int repeatCount, int flags,
-                                   boolean isSynthesizedImeKey, KeyEvent event);
+                                   int keyPressMetaState, long time, int domPrintableKeyValue,
+                                   int repeatCount, int flags, boolean isSynthesizedImeKey,
+                                   KeyEvent event);
 
     private void onKeyEvent(KeyEvent event, int action, int savedMetaState,
                             boolean isSynthesizedImeKey) {
@@ -112,35 +112,40 @@ final class GeckoEditable extends JNIObject
         final int metaState = event.getMetaState() | savedMetaState;
         final int unmodifiedMetaState = metaState &
                 ~(KeyEvent.META_ALT_MASK | KeyEvent.META_CTRL_MASK | KeyEvent.META_META_MASK);
+
         final int unicodeChar = event.getUnicodeChar(metaState);
+        final int unmodifiedUnicodeChar = event.getUnicodeChar(unmodifiedMetaState);
         final int domPrintableKeyValue =
                 unicodeChar >= ' '               ? unicodeChar :
-                unmodifiedMetaState != metaState ? event.getUnicodeChar(unmodifiedMetaState) :
-                                                   0;
+                unmodifiedMetaState != metaState ? unmodifiedUnicodeChar : 0;
+
+        
+        
+        final int keyPressMetaState = (unicodeChar >= ' ' &&
+                unicodeChar != unmodifiedUnicodeChar) ? unmodifiedMetaState : metaState;
+
         onKeyEvent(action, event.getKeyCode(), event.getScanCode(),
-                   metaState, event.getEventTime(), unicodeChar,
-                   
-                   
-                   event.getUnicodeChar(0), domPrintableKeyValue, event.getRepeatCount(),
-                   event.getFlags(), isSynthesizedImeKey, event);
+                   metaState, keyPressMetaState, event.getEventTime(),
+                   domPrintableKeyValue, event.getRepeatCount(), event.getFlags(),
+                   isSynthesizedImeKey, event);
     }
 
-    @WrapForJNI(dispatchTo = "proxy")
+    @WrapForJNI(dispatchTo = "gecko")
     private native void onImeSynchronize();
 
-    @WrapForJNI(dispatchTo = "proxy")
+    @WrapForJNI(dispatchTo = "proxy") 
     private native void onImeReplaceText(int start, int end, String text);
 
-    @WrapForJNI(dispatchTo = "proxy")
+    @WrapForJNI(dispatchTo = "gecko")
     private native void onImeAddCompositionRange(int start, int end, int rangeType,
                                                  int rangeStyles, int rangeLineStyle,
                                                  boolean rangeBoldLine, int rangeForeColor,
                                                  int rangeBackColor, int rangeLineColor);
 
-    @WrapForJNI(dispatchTo = "proxy")
+    @WrapForJNI(dispatchTo = "proxy") 
     private native void onImeUpdateComposition(int start, int end);
 
-    @WrapForJNI(dispatchTo = "proxy")
+    @WrapForJNI(dispatchTo = "gecko")
     private native void onImeRequestCursorUpdates(int requestMode);
 
     
@@ -582,7 +587,7 @@ final class GeckoEditable extends JNIObject
         onViewChange(v);
     }
 
-    @WrapForJNI(dispatchTo = "proxy") @Override
+    @WrapForJNI(dispatchTo = "gecko") @Override
     protected native void disposeNative();
 
     @WrapForJNI(calledFrom = "gecko")
