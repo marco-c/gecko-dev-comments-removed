@@ -12,6 +12,7 @@
 #include "mozilla/dom/ChildIterator.h"
 #include "nsContentUtils.h"
 #include "nsPrintfCString.h"
+#include "nsRefreshDriver.h"
 #include "nsStyleChangeList.h"
 
 using namespace mozilla::dom;
@@ -365,6 +366,10 @@ ServoRestyleManager::ProcessPendingRestyles()
 
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
+
+  
+  
+  PresContext()->RefreshDriver()->MostRecentRefresh();
 
   mInStyleRefresh = true;
 
