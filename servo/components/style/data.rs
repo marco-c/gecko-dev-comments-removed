@@ -9,7 +9,7 @@
 use dom::TElement;
 use properties::ComputedValues;
 use properties::longhands::display::computed_value as display;
-use restyle_hints::{RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
+use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use rule_tree::StrongRuleNode;
 use selector_parser::{PseudoElement, RestyleDamage, Snapshot};
 use std::collections::HashMap;
@@ -128,97 +128,51 @@ impl ElementStyles {
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum DescendantRestyleHint {
-    
-    Empty,
-    
-    Children,
-    
-    Descendants,
-}
-
-impl DescendantRestyleHint {
-    
-    fn propagate(self) -> Self {
-        use self::DescendantRestyleHint::*;
-        if self == Descendants {
-            Descendants
-        } else {
-            Empty
-        }
-    }
-
-    fn union(self, other: Self) -> Self {
-        use self::DescendantRestyleHint::*;
-        if self == Descendants || other == Descendants {
-            Descendants
-        } else if self == Children || other == Children {
-            Children
-        } else {
-            Empty
-        }
-    }
-}
-
 
 
 #[derive(Clone, Debug)]
-pub struct StoredRestyleHint {
-    
-    
-    
-    
-    pub self_: RestyleHint,
-    
-    pub descendants: DescendantRestyleHint,
-}
+pub struct StoredRestyleHint(RestyleHint);
 
 impl StoredRestyleHint {
     
     pub fn propagate(&self) -> Self {
-        StoredRestyleHint {
-            self_: if self.descendants == DescendantRestyleHint::Empty {
-                RestyleHint::empty()
-            } else {
-                RESTYLE_SELF
-            },
-            descendants: self.descendants.propagate(),
-        }
+        StoredRestyleHint(if self.0.contains(RESTYLE_DESCENDANTS) {
+            RESTYLE_SELF | RESTYLE_DESCENDANTS
+        } else {
+            RestyleHint::empty()
+        })
     }
 
     
     pub fn empty() -> Self {
-        StoredRestyleHint {
-            self_: RestyleHint::empty(),
-            descendants: DescendantRestyleHint::Empty,
-        }
+        StoredRestyleHint(RestyleHint::empty())
     }
 
     
     
     pub fn subtree() -> Self {
-        StoredRestyleHint {
-            self_: RESTYLE_SELF,
-            descendants: DescendantRestyleHint::Descendants,
-        }
+        StoredRestyleHint(RESTYLE_SELF | RESTYLE_DESCENDANTS)
     }
 
     
     pub fn has_self_invalidations(&self) -> bool {
-        !self.self_.is_empty()
+        self.0.intersects(RestyleHint::for_self())
+    }
+
+    
+    
+    pub fn has_sibling_invalidations(&self) -> bool {
+        self.0.intersects(RESTYLE_LATER_SIBLINGS)
     }
 
     
     pub fn is_empty(&self) -> bool {
-        !self.has_self_invalidations() &&
-            self.descendants == DescendantRestyleHint::Empty
+        self.0.is_empty()
     }
 
     
     pub fn insert(&mut self, other: &Self) {
-        self.self_ |= other.self_;
-        self.descendants = self.descendants.union(other.descendants);
+        self.0 |= other.0
     }
 }
 
@@ -230,13 +184,7 @@ impl Default for StoredRestyleHint {
 
 impl From<RestyleHint> for StoredRestyleHint {
     fn from(hint: RestyleHint) -> Self {
-        use restyle_hints::*;
-        use self::DescendantRestyleHint::*;
-        debug_assert!(!hint.contains(RESTYLE_LATER_SIBLINGS), "Caller should apply sibling hints");
-        StoredRestyleHint {
-            self_: hint & RestyleHint::for_self(),
-            descendants: if hint.contains(RESTYLE_DESCENDANTS) { Descendants } else { Empty },
-        }
+        StoredRestyleHint(hint)
     }
 }
 
@@ -324,14 +272,19 @@ pub struct RestyleData {
 impl RestyleData {
     
     
-    pub fn expand_snapshot<E: TElement>(&mut self, element: E, stylist: &Stylist) -> bool {
-        if self.snapshot.is_none() {
-            return false;
-        }
+    
+    
+    
+    
+    pub fn compute_final_hint<E: TElement>(&mut self,
+                                           element: E,
+                                           stylist: &Stylist)
+                                           -> bool {
+        let mut hint = self.hint.0;
 
-        
-        let mut hint = stylist.compute_restyle_hint(&element,
-                                                    self.snapshot.as_ref().unwrap());
+        if let Some(snapshot) = self.snapshot.as_ref() {
+            hint |= stylist.compute_restyle_hint(&element, snapshot);
+        }
 
         
         
@@ -339,7 +292,8 @@ impl RestyleData {
         hint.remove(RESTYLE_LATER_SIBLINGS);
 
         
-        self.hint.insert(&hint.into());
+        
+        self.hint = hint.into();
 
         
         self.snapshot.destroy();
@@ -352,6 +306,11 @@ impl RestyleData {
         self.hint.has_self_invalidations() ||
             self.recascade ||
             self.snapshot.is_some()
+    }
+
+    
+    pub fn has_sibling_invalidations(&self) -> bool {
+        self.hint.has_sibling_invalidations() || self.snapshot.is_some()
     }
 
     
@@ -436,7 +395,8 @@ impl ElementData {
 
         debug_assert!(self.restyle.is_some());
         let restyle_data = self.restyle.as_ref().unwrap();
-        let hint = restyle_data.hint.self_;
+
+        let hint = restyle_data.hint.0;
         if hint.contains(RESTYLE_SELF) {
             return RestyleKind::MatchAndCascade;
         }
