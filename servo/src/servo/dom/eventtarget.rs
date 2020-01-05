@@ -1,0 +1,17 @@
+
+
+
+
+use dom::bindings::utils::WrapperCache;
+
+pub struct EventTarget {
+    wrapper: WrapperCache
+}
+
+pub impl EventTarget {
+    fn new() -> ~EventTarget {
+        ~EventTarget {
+            wrapper: WrapperCache::new()
+        }
+    }
+}
