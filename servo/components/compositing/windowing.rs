@@ -135,4 +135,7 @@ pub trait WindowMethods {
 
     
     fn handle_key(&self, key: Key, mods: KeyModifiers);
+
+    
+    fn supports_clipboard(&self) -> bool;
 }
