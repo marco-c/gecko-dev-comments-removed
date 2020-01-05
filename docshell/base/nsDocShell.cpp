@@ -9738,20 +9738,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                          nsIDocShell** aDocShell,
                          nsIRequest** aRequest)
 {
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aTriggeringPrincipal ||
-             (!aPrincipalToInherit ||
-              aPrincipalToInherit->GetIsNullPrincipal()));
-  MOZ_ASSERT(aPrincipalToInherit ||
-             (!aTriggeringPrincipal ||
-              aTriggeringPrincipal->GetIsNullPrincipal() ||
-              (aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)));
-
   nsresult rv = NS_OK;
   mOriginalUriString.Truncate();
 
@@ -9943,26 +9929,12 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   {
     bool inherits;
     
-    if (!principalToInherit && 
+    if (aLoadType != LOAD_NORMAL_EXTERNAL && !principalToInherit &&
+        (aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL) &&
         NS_SUCCEEDED(nsContentUtils::URIInheritsSecurityContext(aURI,
                                                                 &inherits)) &&
         inherits) {
-      if (aLoadType != LOAD_NORMAL_EXTERNAL && 
-          (aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)) {
-        principalToInherit = GetInheritedPrincipal(true);
-      }
-
-      
-      
-      
-      
-      if (!principalToInherit && 
-          (nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal) ||
-           (!aTriggeringPrincipal && !aReferrer))) {
-        
-        
-        principalToInherit = nsNullPrincipal::CreateWithInheritedAttributes(this);
-      }
+      principalToInherit = GetInheritedPrincipal(true);
     }
   }
 
@@ -12328,7 +12300,7 @@ nsDocShell::AddToSessionHistory(nsIURI* aURI, nsIChannel* aChannel,
             pAttrs.InheritFromNecko(nAttrs);
             principalToInherit = nsNullPrincipal::Create(pAttrs);
           }
-        } else {
+        } else if (loadInfo->GetForceInheritPrincipal()) {
           principalToInherit = loadInfo->PrincipalToInherit();
         }
       }
