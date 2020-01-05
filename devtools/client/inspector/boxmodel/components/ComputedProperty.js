@@ -6,6 +6,8 @@
 
 const { addons, createClass, DOM: dom, PropTypes } =
   require("devtools/client/shared/vendor/react");
+const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
+const { Rep } = REPS;
 
 module.exports = createClass({
 
@@ -14,12 +16,79 @@ module.exports = createClass({
   propTypes: {
     name: PropTypes.string.isRequired,
     value: PropTypes.string,
+    referenceElement: PropTypes.object,
+    referenceElementType: PropTypes.string,
+    setSelectedNode: PropTypes.func.isRequired,
+    onHideBoxModelHighlighter: PropTypes.func.isRequired,
+    onShowBoxModelHighlighterForNode: PropTypes.func.isRequired,
   },
 
   mixins: [ addons.PureRenderMixin ],
 
+  
+
+
+
+
+
+
+
+  translateNodeFrontToGrip(nodeFront) {
+    let {
+      attributes
+    } = nodeFront;
+
+    
+    
+    let attributesMap = {};
+    for (let { name, value } of attributes) {
+      attributesMap[name] = value;
+    }
+
+    return {
+      actor: nodeFront.actorID,
+      preview: {
+        attributes: attributesMap,
+        attributesLength: attributes.length,
+        
+        nodeName: nodeFront.nodeName.toLowerCase(),
+        nodeType: nodeFront.nodeType,
+        isConnected: true,
+      }
+    };
+  },
+
   onFocus() {
     this.container.focus();
+  },
+
+  renderReferenceElementPreview() {
+    let {
+      referenceElement,
+      referenceElementType,
+      setSelectedNode,
+      onShowBoxModelHighlighterForNode,
+      onHideBoxModelHighlighter
+    } = this.props;
+
+    if (!referenceElement) {
+      return null;
+    }
+
+    return dom.div(
+      {
+        className: "reference-element"
+      },
+      dom.span({ className: "reference-element-type" }, referenceElementType),
+      Rep({
+        defaultRep: referenceElement,
+        mode: MODE.TINY,
+        object: this.translateNodeFrontToGrip(referenceElement),
+        onInspectIconClick: () => setSelectedNode(referenceElement, "box-model"),
+        onDOMNodeMouseOver: () => onShowBoxModelHighlighterForNode(referenceElement),
+        onDOMNodeMouseOut: () => onHideBoxModelHighlighter(),
+      })
+    );
   },
 
   render() {
@@ -60,7 +129,8 @@ module.exports = createClass({
             onClick: this.onFocus,
           },
           value
-        )
+        ),
+        this.renderReferenceElementPreview()
       )
     );
   },

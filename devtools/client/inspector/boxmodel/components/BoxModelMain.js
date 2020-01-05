@@ -13,10 +13,6 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 
 const BoxModelEditable = createFactory(require("./BoxModelEditable"));
 
-
-const { REPS, MODE } = require("devtools/client/shared/components/reps/reps");
-const { Rep } = REPS;
-
 const Types = require("../types");
 
 const BOXMODEL_STRINGS_URI = "devtools/client/locales/boxmodel.properties";
@@ -32,11 +28,9 @@ module.exports = createClass({
   propTypes: {
     boxModel: PropTypes.shape(Types.boxModel).isRequired,
     boxModelContainer: PropTypes.object,
-    setSelectedNode: PropTypes.func.isRequired,
     onHideBoxModelHighlighter: PropTypes.func.isRequired,
     onShowBoxModelEditor: PropTypes.func.isRequired,
     onShowBoxModelHighlighter: PropTypes.func.isRequired,
-    onShowBoxModelHighlighterForNode: PropTypes.func.isRequired,
   },
 
   mixins: [ addons.PureRenderMixin ],
@@ -254,38 +248,6 @@ module.exports = createClass({
     });
   },
 
-  
-
-
-
-
-
-
-
-  translateNodeFrontToGrip(nodeFront) {
-    let {
-      attributes
-    } = nodeFront;
-
-    
-    
-    let attributesMap = {};
-    for (let { name, value } of attributes) {
-      attributesMap[name] = value;
-    }
-
-    return {
-      actor: nodeFront.actorID,
-      preview: {
-        attributes: attributesMap,
-        attributesLength: attributes.length,
-        
-        nodeName: nodeFront.nodeName.toLowerCase(),
-        nodeType: nodeFront.nodeType,
-      }
-    };
-  },
-
   onHighlightMouseOver(event) {
     let region = event.target.getAttribute("data-box");
 
@@ -302,12 +264,6 @@ module.exports = createClass({
       } while (el.parentNode);
 
       this.props.onHideBoxModelHighlighter();
-    }
-
-    if (region === "offset-parent") {
-      this.props.onHideBoxModelHighlighter();
-      this.props.onShowBoxModelHighlighterForNode(this.props.boxModel.offsetParent);
-      return;
     }
 
     this.props.onShowBoxModelHighlighter({
@@ -409,14 +365,11 @@ module.exports = createClass({
   render() {
     let {
       boxModel,
-      setSelectedNode,
       onShowBoxModelEditor,
     } = this.props;
-    let { layout, offsetParent } = boxModel;
-    let { height, width, position } = layout;
+    let { layout } = boxModel;
+    let { height, width } = layout;
     let { activeDescendant: level, focusable } = this.state;
-
-    let displayOffsetParent = offsetParent && layout.position === "absolute";
 
     let borderTop = this.getBorderOrPaddingValue("border-top-width");
     let borderRight = this.getBorderOrPaddingValue("border-right-width");
@@ -496,34 +449,6 @@ module.exports = createClass({
         onMouseOver: this.onHighlightMouseOver,
         onMouseOut: this.props.onHideBoxModelHighlighter,
       },
-      displayOffsetParent ?
-        dom.span(
-          {
-            className: "boxmodel-offset-parent",
-            "data-box": "offset-parent",
-          },
-          Rep(
-            {
-              defaultRep: offsetParent,
-              mode: MODE.TINY,
-              object: this.translateNodeFrontToGrip(offsetParent),
-              onInspectIconClick: () => setSelectedNode(offsetParent, "box-model"),
-            }
-          )
-        )
-        :
-        null,
-      displayPosition ?
-        dom.span(
-          {
-            className: "boxmodel-legend",
-            "data-box": "position",
-            title: BOXMODEL_L10N.getFormatStr("boxmodel.position", position),
-          },
-          BOXMODEL_L10N.getFormatStr("boxmodel.position", position)
-        )
-        :
-        null,
       dom.div(
         {
           className: "boxmodel-box"

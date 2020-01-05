@@ -22,6 +22,9 @@ module.exports = createClass({
 
   propTypes: {
     boxModel: PropTypes.shape(Types.boxModel).isRequired,
+    setSelectedNode: PropTypes.func.isRequired,
+    onHideBoxModelHighlighter: PropTypes.func.isRequired,
+    onShowBoxModelHighlighterForNode: PropTypes.func.isRequired,
   },
 
   mixins: [ addons.PureRenderMixin ],
@@ -32,6 +35,32 @@ module.exports = createClass({
     };
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+  getReferenceElement(propertyName) {
+    let value = this.props.boxModel.layout[propertyName];
+
+    if (propertyName === "position" &&
+        value !== "static" && value !== "fixed" &&
+        this.props.boxModel.offsetParent) {
+      return {
+        referenceElement: this.props.boxModel.offsetParent,
+        referenceElementType: BOXMODEL_L10N.getStr("boxmodel.offsetParent")
+      };
+    }
+
+    return {};
+  },
+
   onToggleExpander() {
     this.setState({
       isOpen: !this.state.isOpen,
@@ -39,17 +68,31 @@ module.exports = createClass({
   },
 
   render() {
-    let { boxModel } = this.props;
+    let {
+      boxModel,
+      setSelectedNode,
+      onHideBoxModelHighlighter,
+      onShowBoxModelHighlighterForNode,
+    } = this.props;
     let { layout } = boxModel;
 
     let layoutInfo = ["box-sizing", "display", "float",
                       "line-height", "position", "z-index"];
 
-    const properties = layoutInfo.map(info => ComputedProperty({
-      name: info,
-      key: info,
-      value: layout[info],
-    }));
+    const properties = layoutInfo.map(info => {
+      let { referenceElement, referenceElementType } = this.getReferenceElement(info);
+
+      return ComputedProperty({
+        name: info,
+        key: info,
+        value: layout[info],
+        referenceElement,
+        referenceElementType,
+        setSelectedNode,
+        onHideBoxModelHighlighter,
+        onShowBoxModelHighlighterForNode,
+      });
+    });
 
     return dom.div(
       {
