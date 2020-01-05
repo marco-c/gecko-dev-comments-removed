@@ -172,25 +172,45 @@ pub enum CompositorEvent {
 pub struct OpaqueScriptLayoutChannel(pub (Box<Any + Send>, Box<Any + Send>));
 
 
+pub struct InitialScriptState {
+    
+    pub id: PipelineId,
+    
+    
+    pub parent_info: Option<(PipelineId, SubpageId)>,
+    
+    pub compositor: IpcSender<ScriptToCompositorMsg>,
+    
+    pub control_chan: Sender<ConstellationControlMsg>,
+    
+    pub control_port: Receiver<ConstellationControlMsg>,
+    
+    pub constellation_chan: ConstellationChan,
+    
+    pub failure_info: Failure,
+    
+    pub resource_task: ResourceTask,
+    
+    pub storage_task: StorageTask,
+    
+    pub image_cache_task: ImageCacheTask,
+    
+    pub time_profiler_chan: time::ProfilerChan,
+    
+    pub mem_profiler_chan: mem::ProfilerChan,
+    
+    pub devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
+    
+    pub window_size: Option<WindowSizeData>,
+}
+
+
 
 pub trait ScriptTaskFactory {
     
     fn create(_phantom: Option<&mut Self>,
-              id: PipelineId,
-              parent_info: Option<(PipelineId, SubpageId)>,
-              compositor: IpcSender<ScriptToCompositorMsg>,
+              state: InitialScriptState,
               layout_chan: &OpaqueScriptLayoutChannel,
-              control_chan: Sender<ConstellationControlMsg>,
-              control_port: Receiver<ConstellationControlMsg>,
-              constellation_msg: ConstellationChan,
-              failure_msg: Failure,
-              resource_task: ResourceTask,
-              storage_task: StorageTask,
-              image_cache_task: ImageCacheTask,
-              time_profiler_chan: time::ProfilerChan,
-              mem_profiler_chan: mem::ProfilerChan,
-              devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
-              window_size: Option<WindowSizeData>,
               load_data: LoadData);
     
     fn create_layout_channel(_phantom: Option<&mut Self>) -> OpaqueScriptLayoutChannel;

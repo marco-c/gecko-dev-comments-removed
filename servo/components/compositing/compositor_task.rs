@@ -260,28 +260,16 @@ pub struct CompositorTask;
 
 impl CompositorTask {
     pub fn create<Window>(window: Option<Rc<Window>>,
-                          sender: Box<CompositorProxy + Send>,
-                          receiver: Box<CompositorReceiver>,
-                          constellation_chan: ConstellationChan,
-                          time_profiler_chan: time::ProfilerChan,
-                          mem_profiler_chan: mem::ProfilerChan)
+                          state: InitialCompositorState)
                           -> Box<CompositorEventListener + 'static>
                           where Window: WindowMethods + 'static {
         match window {
             Some(window) => {
-                box compositor::IOCompositor::create(window,
-                                                     sender,
-                                                     receiver,
-                                                     constellation_chan,
-                                                     time_profiler_chan,
-                                                     mem_profiler_chan)
+                box compositor::IOCompositor::create(window, state)
                     as Box<CompositorEventListener>
             }
             None => {
-                box headless::NullCompositor::create(receiver,
-                                                     constellation_chan,
-                                                     time_profiler_chan,
-                                                     mem_profiler_chan)
+                box headless::NullCompositor::create(state)
                     as Box<CompositorEventListener>
             }
         }
@@ -295,4 +283,18 @@ pub trait CompositorEventListener {
     fn pinch_zoom_level(&self) -> f32;
     
     fn title_for_main_frame(&self);
+}
+
+
+pub struct InitialCompositorState {
+    
+    pub sender: Box<CompositorProxy + Send>,
+    
+    pub receiver: Box<CompositorReceiver>,
+    
+    pub constellation_chan: ConstellationChan,
+    
+    pub time_profiler_chan: time::ProfilerChan,
+    
+    pub mem_profiler_chan: mem::ProfilerChan,
 }
