@@ -118,7 +118,7 @@ namespace {
 
 
 const int kExceptionSignals[] = {
-  SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS
+  SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS, SIGTRAP
 };
 const int kNumHandledSignals =
     sizeof(kExceptionSignals) / sizeof(kExceptionSignals[0]);

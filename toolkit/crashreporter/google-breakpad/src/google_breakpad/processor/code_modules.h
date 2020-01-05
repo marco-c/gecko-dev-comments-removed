@@ -35,7 +35,12 @@
 #ifndef GOOGLE_BREAKPAD_PROCESSOR_CODE_MODULES_H__
 #define GOOGLE_BREAKPAD_PROCESSOR_CODE_MODULES_H__
 
+#include <stddef.h>
+
+#include <vector>
+
 #include "google_breakpad/common/breakpad_types.h"
+#include "processor/linked_ptr.h"
 
 namespace google_breakpad {
 
@@ -91,6 +96,14 @@ class CodeModules {
   
   
   virtual const CodeModules* Copy() const = 0;
+
+  
+  
+  virtual std::vector<linked_ptr<const CodeModule> >
+  GetShrunkRangeModules() const = 0;
+
+  
+  virtual bool IsModuleShrinkEnabled() const = 0;
 };
 
 }  

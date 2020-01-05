@@ -26,18 +26,12 @@ static std::string getId(const char *bin_name)
   using namespace google_breakpad;
   using namespace std;
 
-  uint8_t identifier[kMDGUIDSize];
-  char id_str[37]; 
+  PageAllocator allocator;
+  auto_wasteful_vector<uint8_t, sizeof(MDGUID)> identifier(&allocator);
 
   FileID file_id(bin_name);
   if (file_id.ElfFileIdentifier(identifier)) {
-    FileID::ConvertIdentifierToString(identifier, id_str, ARRAY_SIZE(id_str));
-    
-    
-    char *id_end = remove(id_str, id_str + strlen(id_str), '-');
-    
-    
-    return string(id_str, id_end) + '0';
+    return FileID::ConvertIdentifierToUUIDString(identifier) + "0";
   }
 
   return "";

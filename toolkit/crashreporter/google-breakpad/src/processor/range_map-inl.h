@@ -40,26 +40,45 @@
 #include <assert.h>
 
 #include "processor/range_map.h"
+#include "processor/linked_ptr.h"
 #include "processor/logging.h"
 
 
 namespace google_breakpad {
 
+template<typename AddressType, typename EntryType>
+void RangeMap<AddressType, EntryType>::SetEnableShrinkDown(
+    bool enable_shrink_down) {
+  enable_shrink_down_ = enable_shrink_down;
+}
+
+template<typename AddressType, typename EntryType>
+bool RangeMap<AddressType, EntryType>::IsShrinkDownEnabled() const {
+  return enable_shrink_down_;
+}
 
 template<typename AddressType, typename EntryType>
 bool RangeMap<AddressType, EntryType>::StoreRange(const AddressType &base,
                                                   const AddressType &size,
                                                   const EntryType &entry) {
-  AddressType high = base + size - 1;
+  return StoreRangeInternal(base, 0 , size, entry);
+}
+
+template<typename AddressType, typename EntryType>
+bool RangeMap<AddressType, EntryType>::StoreRangeInternal(
+    const AddressType &base, const AddressType &delta,
+    const AddressType &size, const EntryType &entry) {
+  AddressType high = base + (size - 1);
 
   
   if (size <= 0 || high < base) {
     
     
     
-    BPLOG_IF(INFO, size != 0) << "StoreRange failed, " << HexString(base) <<
-                                 "+" << HexString(size) << ", " <<
-                                 HexString(high);
+    BPLOG_IF(INFO, size != 0) << "StoreRangeInternal failed, "
+                              << HexString(base) << "+" << HexString(size)
+                              << ", " << HexString(high)
+                              << ", delta: " << HexString(delta);
     return false;
   }
 
@@ -73,26 +92,12 @@ bool RangeMap<AddressType, EntryType>::StoreRange(const AddressType &base,
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    return false;
-  }
-
-  if (iterator_high != map_.end()) {
-    if (iterator_high->second.base() <= high) {
-      
-      
-      
-      
+    if (enable_shrink_down_) {
+      AddressType additional_delta = iterator_base->first - base + 1;
+      return StoreRangeInternal(base + additional_delta,
+                                delta + additional_delta,
+                                size - additional_delta, entry);
+    } else {
       
       
       
@@ -107,17 +112,58 @@ bool RangeMap<AddressType, EntryType>::StoreRange(const AddressType &base,
     }
   }
 
+  if (iterator_high != map_.end()) {
+    if (iterator_high->second.base() <= high) {
+      
+      
+      
+      
+      if (enable_shrink_down_ && iterator_high->first > high) {
+        
+        AddressType other_high = iterator_high->first;
+        AddressType additional_delta =
+            high - iterator_high->second.base() + 1;
+        EntryType other_entry;
+        AddressType other_base = AddressType();
+        AddressType other_size = AddressType();
+        AddressType other_delta = AddressType();
+        RetrieveRange(other_high, &other_entry, &other_base, &other_delta,
+                      &other_size);
+        map_.erase(iterator_high);
+        map_.insert(MapValue(other_high,
+                             Range(other_base + additional_delta,
+                                   other_delta + additional_delta,
+                                   other_entry)));
+        
+        return StoreRangeInternal(base, delta, size, entry);
+      } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        return false;
+      }
+    }
+  }
+
   
   
-  map_.insert(MapValue(high, Range(base, entry)));
+  map_.insert(MapValue(high, Range(base, delta, entry)));
   return true;
 }
 
 
 template<typename AddressType, typename EntryType>
 bool RangeMap<AddressType, EntryType>::RetrieveRange(
-    const AddressType &address, EntryType *entry,
-    AddressType *entry_base, AddressType *entry_size) const {
+    const AddressType &address, EntryType *entry, AddressType *entry_base,
+    AddressType *entry_delta, AddressType *entry_size) const {
   BPLOG_IF(ERROR, !entry) << "RangeMap::RetrieveRange requires |entry|";
   assert(entry);
 
@@ -136,6 +182,8 @@ bool RangeMap<AddressType, EntryType>::RetrieveRange(
   *entry = iterator->second.entry();
   if (entry_base)
     *entry_base = iterator->second.base();
+  if (entry_delta)
+    *entry_delta = iterator->second.delta();
   if (entry_size)
     *entry_size = iterator->first - iterator->second.base() + 1;
 
@@ -145,13 +193,13 @@ bool RangeMap<AddressType, EntryType>::RetrieveRange(
 
 template<typename AddressType, typename EntryType>
 bool RangeMap<AddressType, EntryType>::RetrieveNearestRange(
-    const AddressType &address, EntryType *entry,
-    AddressType *entry_base, AddressType *entry_size) const {
+    const AddressType &address, EntryType *entry, AddressType *entry_base,
+    AddressType *entry_delta, AddressType *entry_size) const {
   BPLOG_IF(ERROR, !entry) << "RangeMap::RetrieveNearestRange requires |entry|";
   assert(entry);
 
   
-  if (RetrieveRange(address, entry, entry_base, entry_size))
+  if (RetrieveRange(address, entry, entry_base, entry_delta, entry_size))
     return true;
 
   
@@ -167,6 +215,8 @@ bool RangeMap<AddressType, EntryType>::RetrieveNearestRange(
   *entry = iterator->second.entry();
   if (entry_base)
     *entry_base = iterator->second.base();
+  if (entry_delta)
+    *entry_delta = iterator->second.delta();
   if (entry_size)
     *entry_size = iterator->first - iterator->second.base() + 1;
 
@@ -176,8 +226,8 @@ bool RangeMap<AddressType, EntryType>::RetrieveNearestRange(
 
 template<typename AddressType, typename EntryType>
 bool RangeMap<AddressType, EntryType>::RetrieveRangeAtIndex(
-    int index, EntryType *entry,
-    AddressType *entry_base, AddressType *entry_size) const {
+    int index, EntryType *entry, AddressType *entry_base,
+    AddressType *entry_delta, AddressType *entry_size) const {
   BPLOG_IF(ERROR, !entry) << "RangeMap::RetrieveRangeAtIndex requires |entry|";
   assert(entry);
 
@@ -195,6 +245,8 @@ bool RangeMap<AddressType, EntryType>::RetrieveRangeAtIndex(
   *entry = iterator->second.entry();
   if (entry_base)
     *entry_base = iterator->second.base();
+  if (entry_delta)
+    *entry_delta = iterator->second.delta();
   if (entry_size)
     *entry_size = iterator->first - iterator->second.base() + 1;
 
