@@ -15,10 +15,6 @@ const self = require('sdk/self');
 const { getTabId } = require('../tabs/utils');
 const { getInnerId } = require('../window/utils');
 
-const { devtools } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-const { require: devtoolsRequire } = devtools;
-const { addContentGlobal, removeContentGlobal } = devtoolsRequire("devtools/server/content-globals");
-
 
 
 
@@ -31,13 +27,6 @@ function sandbox(target, options) {
 
   let sandbox = Cu.Sandbox(target || systemPrincipal, options);
   Cu.setSandboxMetadata(sandbox, options.metadata);
-  let innerWindowID = options.metadata['inner-window-id']
-  if (innerWindowID) {
-    addContentGlobal({
-      global: sandbox,
-      'inner-window-id': innerWindowID
-    });
-  }
   return sandbox;
 }
 exports.sandbox = sandbox;
