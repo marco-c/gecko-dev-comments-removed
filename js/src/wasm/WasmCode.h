@@ -237,10 +237,10 @@ class CodeRange
         ImportInterpExit,  
         TrapExit,          
         DebugTrap,         
-                           
         FarJumpIsland,     
         Inline,            
-        Throw              
+        Throw,             
+        Interrupt          
     };
 
   private:

@@ -549,6 +549,7 @@ ProfilingFrameIterator::initFromExitFP()
       case CodeRange::DebugTrap:
       case CodeRange::Inline:
       case CodeRange::Throw:
+      case CodeRange::Interrupt:
       case CodeRange::FarJumpIsland:
         MOZ_CRASH("Unexpected CodeRange kind");
     }
@@ -666,6 +667,14 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
             AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
         }
         break;
+      case CodeRange::DebugTrap:
+      case CodeRange::Inline:
+        
+        
+        callerPC_ = ReturnAddressFromFP(fp);
+        callerFP_ = CallerFPFromFP(fp);
+        AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
+        break;
       case CodeRange::Entry:
         
         
@@ -673,18 +682,13 @@ ProfilingFrameIterator::ProfilingFrameIterator(const WasmActivation& activation,
         callerPC_ = nullptr;
         callerFP_ = nullptr;
         break;
-      case CodeRange::DebugTrap:
-      case CodeRange::Inline:
-        
-        
-        
-        
-        
-        callerPC_ = ReturnAddressFromFP(fp);
-        callerFP_ = CallerFPFromFP(fp);
-        AssertMatchesCallSite(*activation_, callerPC_, callerFP_);
-        break;
       case CodeRange::Throw:
+        
+        
+        
+        MOZ_ASSERT(done());
+        return;
+      case CodeRange::Interrupt:
         
         
         
@@ -722,7 +726,6 @@ ProfilingFrameIterator::operator++()
 
     switch (codeRange_->kind()) {
       case CodeRange::Entry:
-      case CodeRange::Throw:
         MOZ_ASSERT(callerFP_ == nullptr);
         callerPC_ = nullptr;
         break;
@@ -738,6 +741,9 @@ ProfilingFrameIterator::operator++()
         AssertMatchesCallSite(*activation_, callerPC_, CallerFPFromFP(callerFP_));
         callerFP_ = CallerFPFromFP(callerFP_);
         break;
+      case CodeRange::Interrupt:
+      case CodeRange::Throw:
+        MOZ_CRASH("code range doesn't have frame");
     }
 
     MOZ_ASSERT(!done());
@@ -780,7 +786,8 @@ ProfilingFrameIterator::label() const
       case CodeRange::DebugTrap:        return debugTrapDescription;
       case CodeRange::Inline:           return "inline stub (in asm.js)";
       case CodeRange::FarJumpIsland:    return "interstitial (in asm.js)";
-      case CodeRange::Throw:            MOZ_CRASH("no frame for throw stubs");
+      case CodeRange::Throw:            MOZ_FALLTHROUGH;
+      case CodeRange::Interrupt:        MOZ_CRASH("does not have a frame");
     }
 
     MOZ_CRASH("bad code range kind");
