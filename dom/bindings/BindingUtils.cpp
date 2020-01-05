@@ -2205,9 +2205,9 @@ ReparentWrapper(JSContext* aCx, JS::Handle<JSObject*> aObjArg)
   
   
   
-  js::SetReservedOrProxyPrivateSlot(newobj, DOM_OBJECT_SLOT,
-                                    js::GetReservedOrProxyPrivateSlot(aObj, DOM_OBJECT_SLOT));
-  js::SetReservedOrProxyPrivateSlot(aObj, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
+  js::SetReservedSlot(newobj, DOM_OBJECT_SLOT,
+                      js::GetReservedSlot(aObj, DOM_OBJECT_SLOT));
+  js::SetReservedSlot(aObj, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
 
   aObj = xpc::TransplantObject(aCx, aObj, newobj);
   if (!aObj) {

@@ -685,14 +685,17 @@ ProxyObject::trace(JSTracer* trc, JSObject* obj)
     
     
     TraceCrossCompartmentEdge(trc, obj, proxy->slotOfPrivate(), "private");
-    TraceEdge(trc, proxy->slotOfExtra(0), "extra0");
 
-    
+    size_t nreserved = proxy->numReservedSlots();
+    for (size_t i = 0; i < nreserved; i++) {
+        
 
 
 
-    if (!proxy->is<CrossCompartmentWrapperObject>())
-        TraceEdge(trc, proxy->slotOfExtra(1), "extra1");
+        if (proxy->is<CrossCompartmentWrapperObject>() && i == 1)
+            continue;
+        TraceEdge(trc, proxy->reservedSlotPtr(i), "proxy_reserved");
+    }
 
     Proxy::trace(trc, obj);
 }
@@ -714,7 +717,7 @@ proxy_Finalize(FreeOp* fop, JSObject* obj)
     obj->as<ProxyObject>().handler()->finalize(fop, obj);
 
     if (!obj->as<ProxyObject>().usingInlineValueArray())
-        js_free(js::detail::GetProxyDataLayout(obj)->values);
+        js_free(js::detail::GetProxyDataLayout(obj)->values());
 }
 
 static void
@@ -803,8 +806,8 @@ ProxyObject::renew(const BaseProxyHandler* handler, const Value& priv)
 
     setHandler(handler);
     setCrossCompartmentPrivate(priv);
-    setExtra(0, UndefinedValue());
-    setExtra(1, UndefinedValue());
+    for (size_t i = 0; i < numReservedSlots(); i++)
+        setReservedSlot(i, UndefinedValue());
 }
 
 JS_FRIEND_API(JSObject*)

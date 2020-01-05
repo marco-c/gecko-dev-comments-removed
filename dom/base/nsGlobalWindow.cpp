@@ -1116,7 +1116,7 @@ protected:
   static nsGlobalWindow* GetOuterWindow(JSObject *proxy)
   {
     nsGlobalWindow* outerWindow = nsGlobalWindow::FromSupports(
-      static_cast<nsISupports*>(js::GetProxyExtra(proxy, 0).toPrivate()));
+      static_cast<nsISupports*>(js::GetProxyReservedSlot(proxy, 0).toPrivate()));
     MOZ_ASSERT_IF(outerWindow, outerWindow->IsOuterWindow());
     return outerWindow;
   }
@@ -1570,8 +1570,7 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     mIsValidatingTabGroup(false),
 #endif
     mCanSkipCCGeneration(0),
-    mAutoActivateVRDisplayID(0),
-    mBeforeUnloadListenerCount(0)
+    mAutoActivateVRDisplayID(0)
 {
   AssertIsOnMainThread();
 
@@ -1606,13 +1605,6 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     
     
     MOZ_ASSERT(IsFrozen());
-  }
-
-  if (XRE_IsContentProcess()) {
-    nsCOMPtr<nsIDocShell> docShell = GetDocShell();
-    if (docShell) {
-      mTabChild = docShell->GetTabChild();
-    }
   }
 
   
@@ -1738,7 +1730,7 @@ nsGlobalWindow::~nsGlobalWindow()
   if (IsOuterWindow()) {
     JSObject *proxy = GetWrapperMaybeDead();
     if (proxy) {
-      js::SetProxyExtra(proxy, 0, js::PrivateValue(nullptr));
+      js::SetProxyReservedSlot(proxy, 0, js::PrivateValue(nullptr));
     }
 
     
@@ -2130,12 +2122,6 @@ nsGlobalWindow::FreeInnerObjects()
   DisableVRUpdates();
   mHasVREvents = false;
   mVRDisplays.Clear();
-
-  if (mTabChild) {
-    while (mBeforeUnloadListenerCount-- > 0) {
-      mTabChild->BeforeUnloadRemoved();
-    }
-  }
 }
 
 
@@ -2275,7 +2261,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindow)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIndexedDB)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocumentPrincipal)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIdleService)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWakeLock)
@@ -2359,7 +2344,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindow)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSuspendedDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIndexedDB)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocumentPrincipal)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTabChild)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIdleService)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWakeLock)
@@ -3160,7 +3144,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
         NewOuterWindowProxy(cx, newInnerGlobal, thisChrome));
       NS_ENSURE_TRUE(outer, NS_ERROR_FAILURE);
 
-      js::SetProxyExtra(outer, 0, js::PrivateValue(ToSupports(this)));
+      js::SetProxyReservedSlot(outer, 0, js::PrivateValue(ToSupports(this)));
 
       
       mContext->SetWindowProxy(outer);
@@ -3178,8 +3162,8 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
 
       JS::Rooted<JSObject*> obj(cx, GetWrapperPreserveColor());
 
-      js::SetProxyExtra(obj, 0, js::PrivateValue(nullptr));
-      js::SetProxyExtra(outerObject, 0, js::PrivateValue(nullptr));
+      js::SetProxyReservedSlot(obj, 0, js::PrivateValue(nullptr));
+      js::SetProxyReservedSlot(outerObject, 0, js::PrivateValue(nullptr));
 
       outerObject = xpc::TransplantObject(cx, obj, outerObject);
       if (!outerObject) {
@@ -3187,7 +3171,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
         return NS_ERROR_FAILURE;
       }
 
-      js::SetProxyExtra(outerObject, 0, js::PrivateValue(ToSupports(this)));
+      js::SetProxyReservedSlot(outerObject, 0, js::PrivateValue(ToSupports(this)));
 
       SetWrapper(outerObject);
 
@@ -13427,33 +13411,11 @@ nsGlobalWindow::EventListenerAdded(nsIAtom* aType)
     NotifyVREventListenerAdded();
   }
 
-  if (aType == nsGkAtoms::onbeforeunload &&
-      mTabChild &&
-      (!mDoc || !(mDoc->GetSandboxFlags() & SANDBOXED_MODALS))) {
-    MOZ_ASSERT(IsInnerWindow());
-    mBeforeUnloadListenerCount++;
-    MOZ_ASSERT(mBeforeUnloadListenerCount > 0);
-    mTabChild->BeforeUnloadAdded();
-  }
-
   
   if (aType == nsGkAtoms::onstorage) {
     ErrorResult rv;
     GetLocalStorage(rv);
     rv.SuppressException();
-  }
-}
-
-void
-nsGlobalWindow::EventListenerRemoved(nsIAtom* aType)
-{
-  if (aType == nsGkAtoms::onbeforeunload &&
-      mTabChild &&
-      (!mDoc || !(mDoc->GetSandboxFlags() & SANDBOXED_MODALS))) {
-    MOZ_ASSERT(IsInnerWindow());
-    mBeforeUnloadListenerCount--;
-    MOZ_ASSERT(mBeforeUnloadListenerCount >= 0);
-    mTabChild->BeforeUnloadRemoved();
   }
 }
 

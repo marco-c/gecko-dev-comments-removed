@@ -872,13 +872,13 @@ class DebugEnvironmentProxy : public ProxyObject
 
 
 
-    static const unsigned ENCLOSING_EXTRA = 0;
+    static const unsigned ENCLOSING_SLOT = 0;
 
     
 
 
 
-    static const unsigned SNAPSHOT_EXTRA = 1;
+    static const unsigned SNAPSHOT_SLOT = 1;
 
   public:
     static DebugEnvironmentProxy* create(JSContext* cx, EnvironmentObject& env,

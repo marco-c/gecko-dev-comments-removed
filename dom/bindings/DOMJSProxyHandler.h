@@ -14,13 +14,9 @@
 #include "js/Proxy.h"
 #include "nsString.h"
 
-#define DOM_PROXY_OBJECT_SLOT js::PROXY_PRIVATE_SLOT
-
 namespace mozilla {
 namespace dom {
 
-enum {
-  
 
 
 
@@ -41,8 +37,6 @@ enum {
 
 
 
-  JSPROXYSLOT_EXPANDO = 0
-};
 
 template<typename T> struct Prefable;
 

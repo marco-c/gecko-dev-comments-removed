@@ -114,7 +114,14 @@
 
 
 
-#define JSSLOT_FREE(clasp)  JSCLASS_RESERVED_SLOTS(clasp)
+MOZ_ALWAYS_INLINE size_t
+JSSLOT_FREE(const js::Class* clasp)
+{
+    
+    
+    MOZ_ASSERT(!clasp->isProxy());
+    return JSCLASS_RESERVED_SLOTS(clasp);
+}
 
 namespace js {
 
@@ -919,7 +926,10 @@ class Shape : public gc::TenuredCell
 
     uint32_t slotSpan(const Class* clasp) const {
         MOZ_ASSERT(!inDictionary());
-        uint32_t free = JSSLOT_FREE(clasp);
+        
+        
+        
+        uint32_t free = clasp->isProxy() ? 0 : JSSLOT_FREE(clasp);
         return hasMissingSlot() ? free : Max(free, maybeSlot() + 1);
     }
 
@@ -1323,11 +1333,6 @@ struct StackShape
 
     uint32_t slot() const { MOZ_ASSERT(hasSlot() && !hasMissingSlot()); return slot_; }
     uint32_t maybeSlot() const { return slot_; }
-
-    uint32_t slotSpan() const {
-        uint32_t free = JSSLOT_FREE(base->clasp_);
-        return hasMissingSlot() ? free : (maybeSlot() + 1);
-    }
 
     void setSlot(uint32_t slot) {
         MOZ_ASSERT(slot <= SHAPE_INVALID_SLOT);
