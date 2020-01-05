@@ -6,127 +6,6 @@
 
 this.EXPORTED_SYMBOLS = ["PanelMultiView"];
 
-const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SlidingPanelViews extends Array {
-  constructor() {
-    super();
-    this._marker = 0;
-  }
-
-  
-
-
-
-
-  get current() {
-    return this._marker;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  set current(index) {
-    if (index == this._marker) {
-      
-      return index;
-    }
-    if (index == -1 || index > (this.length - 1)) {
-      throw new Error(`SlidingPanelViews :: index ${index} out of bounds`);
-    }
-
-    let view = this.splice(index, 1)[0];
-    if (this._marker > index) {
-      
-      
-      --this._marker;
-    }
-    
-    this.splice(++this._marker, 0, view);
-    return this._marker;
-  }
-
-  
-
-
-
-
-  get currentView() {
-    return this[this._marker];
-  }
-
-  
-
-
-
-
-
-  set currentView(view) {
-    if (!view)
-      return this.current;
-    
-    return this.current = this.indexOf(view);
-  }
-
-  
-
-
-
-
-
-  get previousView() {
-    return this[this._marker + 1];
-  }
-
-  
-
-
-
-
-
-  back() {
-    if (this._marker > 0)
-      --this._marker;
-    return [this.currentView, this.previousView];
-  }
-
-  
-
-
-
-  clear() {
-    this._marker = 0;
-    this.splice(0, this.length);
-  }
-}
-
 
 
 
@@ -151,7 +30,7 @@ this.PanelMultiView = class {
   }
 
   get showingSubView() {
-    return this.node.getAttribute("viewtype") == "subview";
+    return this._viewStack.getAttribute("viewtype") == "subview";
   }
   get _mainViewId() {
     return this.node.getAttribute("mainViewId");
@@ -193,34 +72,6 @@ this.PanelMultiView = class {
     }
   }
 
-  get panelViews() {
-    
-    
-    if (this._subViews)
-      return null;
-
-    if (this._panelViews)
-      return this._panelViews;
-
-    this._panelViews = new SlidingPanelViews();
-    this._panelViews.push(...this.node.getElementsByTagName("panelview"));
-    return this._panelViews;
-  }
-  get _dwu() {
-    return this.window.QueryInterface(Ci.nsIInterfaceRequestor)
-                      .getInterface(Ci.nsIDOMWindowUtils);
-  }
-  get _currentSubView() {
-    return this.panelViews ? this.panelViews.currentView : this.__currentSubView;
-  }
-  set _currentSubView(panel) {
-    if (this.panelViews)
-      this.panelViews.currentView = panel;
-    else
-      this.__currentSubView = panel;
-    return panel;
-  }
-
   constructor(xulNode) {
     this.node = xulNode;
 
@@ -241,33 +92,23 @@ this.PanelMultiView = class {
     this._viewStack =
       document.getAnonymousElementByAttribute(this.node, "anonid", "viewStack");
 
+    this._clickCapturer.addEventListener("click", this);
     this._panel.addEventListener("popupshowing", this);
+    this._panel.addEventListener("popupshown", this);
     this._panel.addEventListener("popuphidden", this);
-    if (this.panelViews) {
-      let cs = window.getComputedStyle(document.documentElement);
-      
-      
-      this._dir = cs.direction;
-      this.setMainView(this.panelViews.currentView);
-      this.showMainView();
-    } else {
-      this._panel.addEventListener("popupshown", this);
-      this._clickCapturer.addEventListener("click", this);
-      this._subViews.addEventListener("overflow", this);
-      this._mainViewContainer.addEventListener("overflow", this);
+    this._subViews.addEventListener("overflow", this);
+    this._mainViewContainer.addEventListener("overflow", this);
 
-      
-      
-      this._subViewObserver = new window.MutationObserver(this._syncContainerWithSubView.bind(this));
-      this._mainViewObserver = new window.MutationObserver(this._syncContainerWithMainView.bind(this));
+    
+    
+    this._subViewObserver = new window.MutationObserver(this._syncContainerWithSubView.bind(this));
+    this._mainViewObserver = new window.MutationObserver(this._syncContainerWithMainView.bind(this));
 
-      this._mainViewContainer.setAttribute("panelid", this._panel.id);
+    this._mainViewContainer.setAttribute("panelid", this._panel.id);
 
-      if (this._mainView) {
-        this.setMainView(this._mainView);
-      }
+    if (this._mainView) {
+      this.setMainView(this._mainView);
     }
-
     this.node.setAttribute("viewtype", "main");
 
     
@@ -279,7 +120,7 @@ this.PanelMultiView = class {
         set: (val) => this[property] = val
       });
     });
-    ["goBack", "setHeightToFit", "setMainView", "showMainView", "showSubView"].forEach(method => {
+    ["setHeightToFit", "setMainView", "showMainView", "showSubView"].forEach(method => {
       Object.defineProperty(this.node, method, {
         enumerable: true,
         value: (...args) => this[method](...args)
@@ -291,88 +132,62 @@ this.PanelMultiView = class {
     if (this._mainView) {
       this._mainView.removeAttribute("mainview");
     }
-    if (this.panelViews) {
-      this.panelViews.clear();
-    } else {
-      this._mainViewObserver.disconnect();
-      this._subViewObserver.disconnect();
-      this._subViews.removeEventListener("overflow", this);
-      this._mainViewContainer.removeEventListener("overflow", this);
-      this._clickCapturer.removeEventListener("click", this);
-    }
+    this._mainViewObserver.disconnect();
+    this._subViewObserver.disconnect();
     this._panel.removeEventListener("popupshowing", this);
     this._panel.removeEventListener("popupshown", this);
     this._panel.removeEventListener("popuphidden", this);
-    this.node = this._clickCapturer = this._viewContainer = this._mainViewContainer =
-      this._subViews = this._viewStack = null;
-  }
+    this._subViews.removeEventListener("overflow", this);
+    this._mainViewContainer.removeEventListener("overflow", this);
+    this._clickCapturer.removeEventListener("click", this);
 
-  goBack(target) {
-    let [current, previous] = this.panelViews.back();
-    return this.showSubView(current, target, previous);
+    this.node = this.__clickCapturer = this.__viewContainer = this.__mainViewContainer =
+      this.__subViews = this.__viewStack = null;
   }
 
   setMainView(aNewMainView) {
-    if (this.panelViews) {
-      
-      
-      if (aNewMainView.parentNode != this._viewStack && this._viewStack.firstChild != aNewMainView) {
-        this._viewStack.insertBefore(aNewMainView, this._viewStack.firstChild);
-      }
-    } else {
-      if (this._mainView) {
-        this._mainViewObserver.disconnect();
-        this._subViews.appendChild(this._mainView);
-        this._mainView.removeAttribute("mainview");
-      }
-      this._mainViewId = aNewMainView.id;
-      aNewMainView.setAttribute("mainview", "true");
-      this._mainViewContainer.appendChild(aNewMainView);
+    if (this._mainView) {
+      this._mainViewObserver.disconnect();
+      this._subViews.appendChild(this._mainView);
+      this._mainView.removeAttribute("mainview");
     }
+    this._mainViewId = aNewMainView.id;
+    aNewMainView.setAttribute("mainview", "true");
+    this._mainViewContainer.appendChild(aNewMainView);
   }
 
   showMainView() {
-    if (this.panelViews) {
-      this.showSubView(this._mainViewId);
-    } else {
-      if (this.showingSubView) {
-        let viewNode = this._currentSubView;
-        let evt = new this.window.CustomEvent("ViewHiding", { bubbles: true, cancelable: true });
-        viewNode.dispatchEvent(evt);
+    if (this.showingSubView) {
+      let viewNode = this._currentSubView;
+      let evt = new this.window.CustomEvent("ViewHiding", { bubbles: true, cancelable: true });
+      viewNode.dispatchEvent(evt);
 
-        viewNode.removeAttribute("current");
-        this._currentSubView = null;
+      viewNode.removeAttribute("current");
+      this._currentSubView = null;
 
-        this._subViewObserver.disconnect();
+      this._subViewObserver.disconnect();
 
-        this._setViewContainerHeight(this._mainViewHeight);
+      this._setViewContainerHeight(this._mainViewHeight);
 
-        this.node.setAttribute("viewtype", "main");
-      }
-
-      this._shiftMainView();
+      this.node.setAttribute("viewtype", "main");
     }
+
+    this._shiftMainView();
   }
 
-  showSubView(aViewId, aAnchor, aPreviousView) {
+  showSubView(aViewId, aAnchor) {
     const {document, window} = this;
-    return window.Task.spawn(function*() {
-      
-      let viewNode = typeof aViewId == "string" ? this.node.querySelector("#" + aViewId) : aViewId;
+    window.Task.spawn(function*() {
+      let viewNode = this.node.querySelector("#" + aViewId);
       if (!viewNode) {
         viewNode = document.getElementById(aViewId);
         if (viewNode) {
-          if (this.panelViews) {
-            this._viewStack.appendChild(viewNode);
-            this.panelViews.push(viewNode);
-          } else {
-            this._subViews.appendChild(viewNode);
-          }
+          this._subViews.appendChild(viewNode);
         } else {
           throw new Error(`Subview ${aViewId} doesn't exist!`);
         }
       }
-
+      viewNode.setAttribute("current", true);
       
       
       let detail = {
@@ -391,7 +206,7 @@ this.PanelMultiView = class {
           let results = yield window.Promise.all(detail.blockers);
           cancel = cancel || results.some(val => val === false);
         } catch (e) {
-          Cu.reportError(e);
+          Components.utils.reportError(e);
           cancel = true;
         }
       }
@@ -400,19 +215,7 @@ this.PanelMultiView = class {
         return;
       }
 
-      let reverse = !!aPreviousView;
-      let previousViewNode = aPreviousView || this._currentSubView;
       this._currentSubView = viewNode;
-      let playTransition = (!!previousViewNode && previousViewNode != viewNode);
-
-      let dwu, previousRect;
-      if (playTransition) {
-        dwu = this._dwu;
-        previousRect = previousViewNode.__lastKnownBoundingRect =
-          dwu.getBoundsWithoutFlushing(previousViewNode);
-      }
-
-      viewNode.setAttribute("current", true);
 
       
       
@@ -426,138 +229,19 @@ this.PanelMultiView = class {
       
       
       this.node.setAttribute("viewtype", "subview");
+      this._shiftMainView(aAnchor);
 
-      if (this.panelViews && playTransition) {
-        
-        
-        
-        let onTransitionEnd = () => {
-          evt = new window.CustomEvent("ViewHiding", { bubbles: true, cancelable: true });
-          previousViewNode.dispatchEvent(evt);
-          previousViewNode.removeAttribute("current");
-        };
+      this._mainViewHeight = this._viewStack.clientHeight;
 
-        
-        
-        if (this._panel.state != "open") {
-          onTransitionEnd();
-          return;
-        }
+      let newHeight = this._heightOfSubview(viewNode, this._subViews);
+      this._setViewContainerHeight(newHeight);
 
-        if (aAnchor)
-          aAnchor.setAttribute("open", true);
-        this._viewContainer.style.height = previousRect.height + "px";
-        this._viewContainer.style.width = previousRect.width + "px";
-
-        this._transitioning = true;
-        this._viewContainer.setAttribute("transition-reverse", reverse);
-        let nodeToAnimate = reverse ? previousViewNode : viewNode;
-
-        if (!reverse) {
-          
-          
-          
-          
-          
-          nodeToAnimate.style.marginInlineStart = previousRect.width + "px";
-        }
-
-        
-        
-        
-        
-        nodeToAnimate.style.transition = "transform ease-" + (reverse ? "in" : "out") +
-          " var(--panelui-subview-transition-duration)";
-        nodeToAnimate.style.willChange = "transform";
-
-        
-        
-        
-        window.addEventListener("MozAfterPaint", () => {
-          let viewRect = viewNode.__lastKnownBoundingRect;
-          if (!viewRect) {
-            viewRect = dwu.getBoundsWithoutFlushing(viewNode);
-            if (!reverse) {
-              
-              
-              
-              
-              
-              
-              viewRect.height = [viewNode.header, ...viewNode.children].reduce((acc, node) => {
-                return acc + dwu.getBoundsWithoutFlushing(node).height;
-              }, 0);
-            }
-          }
-
-          
-          
-          this._viewContainer.style.height = viewRect.height + "px";
-          this._viewContainer.style.width = viewRect.width + "px";
-
-          
-          let moveToLeft = (this._dir == "rtl" && !reverse) || (this._dir == "ltr" && reverse);
-          let movementX = reverse ? viewRect.width : previousRect.width;
-          let moveX = (moveToLeft ? "" : "-") + movementX;
-          nodeToAnimate.style.transform = "translateX(" + moveX + "px)";
-          
-          
-          nodeToAnimate.style.width = viewRect.width + "px";
-
-          let listener;
-          let seen = 0;
-          this._viewContainer.addEventListener("transitionend", listener = ev => {
-            if (ev.target == this._viewContainer && ev.propertyName == "height") {
-              
-              
-              
-              
-              window.setTimeout(() => {
-                this._viewContainer.style.removeProperty("height");
-                this._viewContainer.style.removeProperty("width");
-              }, 500);
-              ++seen;
-            } else if (ev.target == nodeToAnimate && ev.propertyName == "transform") {
-              onTransitionEnd();
-              this._transitioning = false;
-
-              
-              
-              
-              
-              window.addEventListener("MozAfterPaint", () => {
-                nodeToAnimate.style.removeProperty("transition");
-                nodeToAnimate.style.removeProperty("transform");
-                nodeToAnimate.style.removeProperty("width");
-
-                if (!reverse)
-                  viewNode.style.removeProperty("margin-inline-start");
-                if (aAnchor)
-                  aAnchor.removeAttribute("open");
-
-                this._viewContainer.removeAttribute("transition-reverse");
-              }, { once: true });
-              ++seen;
-            }
-            if (seen == 2)
-              this._viewContainer.removeEventListener("transitionend", listener);
-          });
-        }, { once: true });
-      } else if (!this.panelViews) {
-        this._shiftMainView(aAnchor);
-
-        this._mainViewHeight = this._viewStack.clientHeight;
-
-        let newHeight = this._heightOfSubview(viewNode, this._subViews);
-        this._setViewContainerHeight(newHeight);
-
-        this._subViewObserver.observe(viewNode, {
-          attributes: true,
-          characterData: true,
-          childList: true,
-          subtree: true
-        });
-      }
+      this._subViewObserver.observe(viewNode, {
+        attributes: true,
+        characterData: true,
+        childList: true,
+        subtree: true
+      });
     }.bind(this));
   }
 
@@ -622,7 +306,7 @@ this.PanelMultiView = class {
         }
         break;
       case "overflow":
-        if (!this.panelViews && aEvent.target.localName == "vbox") {
+        if (aEvent.target.localName == "vbox") {
           
           if (this.showingSubView) {
             this.window.setTimeout(this._syncContainerWithSubView.bind(this), 0);
@@ -639,16 +323,15 @@ this.PanelMultiView = class {
         
         
         this._panel.autoPosition = false;
+        this._syncContainerWithMainView();
 
-        if (!this.panelViews) {
-          this._syncContainerWithMainView();
-          this._mainViewObserver.observe(this._mainView, {
-            attributes: true,
-            characterData: true,
-            childList: true,
-            subtree: true
-          });
-        }
+        this._mainViewObserver.observe(this._mainView, {
+          attributes: true,
+          characterData: true,
+          childList: true,
+          subtree: true
+        });
+
         break;
       case "popupshown":
         this._setMaxHeight();
@@ -657,8 +340,7 @@ this.PanelMultiView = class {
         this.node.removeAttribute("panelopen");
         this._mainView.style.removeProperty("height");
         this.showMainView();
-        if (!this.panelViews)
-          this._mainViewObserver.disconnect();
+        this._mainViewObserver.disconnect();
         break;
     }
   }
