@@ -53,7 +53,7 @@ impl<'a> LocationMethods for JSRef<'a, Location> {
     }
 
     
-    fn Stringify(self) -> DOMString {
+    fn Stringifier(self) -> DOMString {
         self.Href().0
     }
 
