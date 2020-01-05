@@ -1539,34 +1539,71 @@ impl Document {
         loader.fetch_async(load, request, fetch_target);
     }
 
+    
+    
     pub fn finish_load(&self, load: LoadType) {
-        debug!("Document got finish_load: {:?}", load);
         
-        {
-            let mut loader = self.loader.borrow_mut();
-            loader.finish_load(&load);
-        }
+        debug!("Document got finish_load: {:?}", load);
+        self.loader.borrow_mut().finish_load(&load);
 
         match load {
             LoadType::Stylesheet(_) => {
-                self.process_deferred_scripts();
+                
+                
                 self.process_pending_parsing_blocking_script();
+
+                
+                self.process_deferred_scripts();
             },
             LoadType::PageSource(_) => {
+                
+                
+
+                
                 self.process_deferred_scripts();
             },
             _ => {},
         }
 
-        if !self.loader.borrow().is_blocked() && !self.loader.borrow().events_inhibited() {
-            self.loader.borrow_mut().inhibit_events();
+        
+        
+
+        
+        
+
+        if self.loader.borrow().is_blocked() {
             
-            debug!("Document loads are complete.");
-            let handler = box DocumentProgressHandler::new(Trusted::new(self));
-            self.window.dom_manipulation_task_source().queue(handler, self.window.upcast()).unwrap();
+            return;
         }
+
+        
+        if self.loader.borrow().events_inhibited() {
+            return;
+        }
+        self.loader.borrow_mut().inhibit_events();
+
+        
+        debug!("Document loads are complete.");
+        let handler = box DocumentProgressHandler::new(Trusted::new(self));
+        self.window.dom_manipulation_task_source().queue(handler, self.window.upcast()).unwrap();
+
+        
+        
+
+        
+        
+
+        
+        
+
+        
+        
+
+        
+        
     }
 
+    
     pub fn set_pending_parsing_blocking_script(&self,
                                                script: &HTMLScriptElement,
                                                load: Option<ScriptResult>) {
@@ -1574,6 +1611,7 @@ impl Document {
         *self.pending_parsing_blocking_script.borrow_mut() = Some(PendingScript::new_with_load(script, load));
     }
 
+    
     pub fn has_pending_parsing_blocking_script(&self) -> bool {
         self.pending_parsing_blocking_script.borrow().is_some()
     }
@@ -1603,6 +1641,7 @@ impl Document {
         }
     }
 
+    
     pub fn add_asap_script(&self, script: &HTMLScriptElement) {
         self.asap_scripts_set.borrow_mut().push(JS::from_ref(script));
     }
@@ -1618,6 +1657,7 @@ impl Document {
         element.execute(result);
     }
 
+    
     pub fn push_asap_in_order_script(&self, script: &HTMLScriptElement) {
         self.asap_in_order_scripts_list.push(script);
     }
@@ -1633,10 +1673,12 @@ impl Document {
         }
     }
 
+    
     pub fn add_deferred_script(&self, script: &HTMLScriptElement) {
         self.deferred_scripts.push(script);
     }
 
+    
     
     pub fn deferred_script_loaded(&self, element: &HTMLScriptElement, result: ScriptResult) {
         self.deferred_scripts.loaded(element, result);
@@ -1665,6 +1707,7 @@ impl Document {
         }
     }
 
+    
     pub fn maybe_dispatch_dom_content_loaded(&self) {
         if self.domcontentloaded_dispatched.get() {
             return;
@@ -1675,6 +1718,7 @@ impl Document {
 
         update_with_current_time_ms(&self.dom_content_loaded_event_start);
 
+        
         let window = self.window();
         window.dom_manipulation_task_source().queue_event(self.upcast(), atom!("DOMContentLoaded"),
             EventBubbles::Bubbles, EventCancelable::NotCancelable, window);
@@ -1683,6 +1727,9 @@ impl Document {
                       ReflowQueryType::NoQuery,
                       ReflowReason::DOMContentLoaded);
         update_with_current_time_ms(&self.dom_content_loaded_event_end);
+
+        
+        
     }
 
     pub fn notify_constellation_load(&self) {
