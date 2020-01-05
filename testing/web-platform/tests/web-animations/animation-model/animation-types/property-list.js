@@ -331,6 +331,11 @@ var gCSSProperties = {
   'clip': {
     
     types: [
+      'rect',
+      { type: 'discrete', options: [ [ 'rect(10px, 10px, 10px, 10px)',
+                                       'auto' ],
+                                     [ 'rect(10px, 10px, 10px, 10px)',
+                                       'rect(10px, 10px, 10px, auto)'] ] }
     ]
   },
   'clip-path': {
