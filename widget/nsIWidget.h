@@ -1724,7 +1724,7 @@ public:
 
 
 
-    NS_IMETHOD
+    virtual MOZ_MUST_USE nsresult
     GetSelectionAsPlaintext(nsAString& aResult)
     {
       return NS_ERROR_NOT_IMPLEMENTED;
