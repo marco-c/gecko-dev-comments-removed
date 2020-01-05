@@ -5,16 +5,17 @@
 
 
 use azure::azure::AzIntSize;
-use azure::azure_hl::{SurfaceFormat, Color, ColorPattern, DrawOptions};
-use azure::azure_hl::{DrawSurfaceOptions, DrawTarget, ExtendMode, FilterType};
+use azure::azure_hl::{Color, ColorPattern};
+use azure::azure_hl::{DrawOptions, DrawSurfaceOptions, DrawTarget, ExtendMode, FilterType};
 use azure::azure_hl::{GaussianBlurInput, GradientStop, Filter, LinearGradientPattern};
 use azure::azure_hl::{PatternRef, Path, PathBuilder, CompositionOp};
-use azure::azure_hl::{GaussianBlurAttribute, StrokeOptions};
+use azure::azure_hl::{GaussianBlurAttribute, StrokeOptions, SurfaceFormat};
 use azure::scaled_font::ScaledFont;
 use azure::{AZ_CAP_BUTT, AzFloat, struct__AzDrawOptions, struct__AzGlyph};
 use azure::{struct__AzGlyphBuffer, struct__AzPoint, AzDrawTargetFillGlyphs};
 use display_list::TextOrientation::{SidewaysLeft, SidewaysRight, Upright};
 use display_list::{BOX_SHADOW_INFLATION_FACTOR, BorderRadii, ClippingRegion, TextDisplayItem};
+use filters;
 use font_context::FontContext;
 use geom::matrix2d::Matrix2D;
 use geom::point::Point2D;
@@ -33,7 +34,7 @@ use std::f32;
 use std::mem;
 use std::num::{Float, FloatMath};
 use std::ptr;
-use style::computed_values::border_style;
+use style::computed_values::{border_style, filter};
 use std::sync::Arc;
 use text::TextRun;
 use text::glyph::CharIndex;
@@ -75,7 +76,7 @@ impl<'a> PaintContext<'a> {
     pub fn draw_solid_color(&self, bounds: &Rect<Au>, color: Color) {
         self.draw_target.make_current();
         self.draw_target.fill_rect(&bounds.to_azure_rect(),
-                                   PatternRef::ColorPatternRef(&ColorPattern::new(color)),
+                                   PatternRef::Color(&ColorPattern::new(color)),
                                    None);
     }
 
@@ -158,10 +159,9 @@ impl<'a> PaintContext<'a> {
                         Size2D(self.screen_rect.size.width as AzFloat,
                                self.screen_rect.size.height as AzFloat));
         let mut draw_options = DrawOptions::new(1.0, 0);
-        draw_options.set_composition_op(CompositionOp::SourceOp);
+        draw_options.set_composition_op(CompositionOp::Source);
         self.draw_target.make_current();
-        self.draw_target.fill_rect(&rect, PatternRef::ColorPatternRef(&pattern),
-                                   Some(&draw_options));
+        self.draw_target.fill_rect(&rect, PatternRef::Color(&pattern), Some(&draw_options));
     }
 
     fn draw_border_segment(&self,
@@ -859,19 +859,20 @@ impl<'a> PaintContext<'a> {
                                 stops: &[GradientStop]) {
         self.draw_target.make_current();
 
-        let stops = self.draw_target.create_gradient_stops(stops, ExtendMode::ExtendClamp);
+        let stops = self.draw_target.create_gradient_stops(stops, ExtendMode::Clamp);
         let pattern = LinearGradientPattern::new(&start_point.to_azure_point(),
                                                  &end_point.to_azure_point(),
                                                  stops,
                                                  &Matrix2D::identity());
 
         self.draw_target.fill_rect(&bounds.to_azure_rect(),
-                                   PatternRef::LinearGradientPatternRef(&pattern),
+                                   PatternRef::LinearGradient(&pattern),
                                    None);
     }
 
-    pub fn get_or_create_temporary_draw_target(&mut self, opacity: AzFloat) -> DrawTarget {
-        if opacity == 1.0 {
+    pub fn get_or_create_temporary_draw_target(&mut self, filters: &filter::T) -> DrawTarget {
+        
+        if !filters::temporary_draw_target_needed_for_style_filters(filters) {
             
             
             
@@ -883,10 +884,7 @@ impl<'a> PaintContext<'a> {
 
         
         let size = self.draw_target.get_size();
-        let size = Size2D {
-            width: size.width,
-            height: size.height,
-        };
+        let size = Size2D(size.width, size.height);
 
         let temporary_draw_target =
             self.draw_target.create_similar_draw_target(&size, self.draw_target.get_format());
@@ -898,24 +896,29 @@ impl<'a> PaintContext<'a> {
     
     pub fn draw_temporary_draw_target_if_necessary(&mut self,
                                                    temporary_draw_target: &DrawTarget,
-                                                   opacity: AzFloat) {
+                                                   filters: &filter::T) {
         if (*temporary_draw_target) == self.draw_target {
             
             return
         }
 
+        
         let old_transform = self.draw_target.get_transform();
         self.draw_target.set_transform(&Matrix2D::identity());
         temporary_draw_target.set_transform(&Matrix2D::identity());
+
+        
+        let (filter_node, opacity) = filters::create_filters(&self.draw_target,
+                                                             temporary_draw_target,
+                                                             filters);
+
+        
         let rect = Rect(Point2D(0.0, 0.0), self.draw_target.get_size().to_azure_size());
-        let source_surface = temporary_draw_target.snapshot();
-        let draw_surface_options = DrawSurfaceOptions::new(Filter::Linear, true);
         let draw_options = DrawOptions::new(opacity, 0);
-        self.draw_target.draw_surface(source_surface,
-                                      rect,
-                                      rect,
-                                      draw_surface_options,
-                                      draw_options);
+        self.draw_target.draw_filter(&filter_node,
+                                     &rect,
+                                     &rect.origin,
+                                     draw_options);
         self.draw_target.set_transform(&old_transform);
     }
 
@@ -974,9 +977,9 @@ impl<'a> PaintContext<'a> {
         if blur_radius > Au(0) {
             
             
-            let blur_filter = self.draw_target.create_filter(FilterType::GaussianBlurFilterType);
-            blur_filter.set_attribute(GaussianBlurAttribute::StdDeviationGaussianBlurAttribute(
-                blur_radius.to_subpx() as AzFloat));
+            let blur_filter = self.draw_target.create_filter(FilterType::GaussianBlur);
+            blur_filter.set_attribute(GaussianBlurAttribute::StdDeviation(blur_radius.to_subpx() as
+                                                                          AzFloat));
             blur_filter.set_input(GaussianBlurInput, &temporary_draw_target.snapshot());
 
             
@@ -985,7 +988,7 @@ impl<'a> PaintContext<'a> {
             self.draw_target.set_transform(&Matrix2D::identity());
             let temporary_draw_target_size = temporary_draw_target.get_size();
             self.draw_target
-                .draw_filter(blur_filter,
+                .draw_filter(&blur_filter,
                              &Rect(Point2D(0.0, 0.0),
                                    Size2D(temporary_draw_target_size.width as AzFloat,
                                           temporary_draw_target_size.height as AzFloat)),

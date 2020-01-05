@@ -434,6 +434,15 @@ pub mod specified {
                 Err(())
             }
         }
+        
+        pub fn parse(value: &ComponentValue) -> Result<Angle,()> {
+            match *value {
+                Dimension(ref value, ref unit) => {
+                    Angle::parse_dimension(value.value, unit.as_slice())
+                }
+                _ => Err(())
+            }
+        }
     }
 
     

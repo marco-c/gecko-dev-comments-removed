@@ -41,7 +41,7 @@ use std::fmt;
 use std::slice::Items;
 use std::sync::Arc;
 use style::ComputedValues;
-use style::computed_values::{border_style, cursor, pointer_events};
+use style::computed_values::{border_style, cursor, filter, pointer_events};
 
 
 
@@ -164,7 +164,7 @@ pub struct StackingContext {
     
     pub z_index: i32,
     
-    pub opacity: AzFloat,
+    pub filters: filter::T,
 }
 
 impl StackingContext {
@@ -174,7 +174,7 @@ impl StackingContext {
                bounds: &Rect<Au>,
                overflow: &Rect<Au>,
                z_index: i32,
-               opacity: AzFloat,
+               filters: filter::T,
                layer: Option<Arc<PaintLayer>>)
                -> StackingContext {
         StackingContext {
@@ -183,7 +183,7 @@ impl StackingContext {
             bounds: *bounds,
             overflow: *overflow,
             z_index: z_index,
-            opacity: opacity,
+            filters: filters,
         }
     }
 
@@ -194,7 +194,7 @@ impl StackingContext {
                                           transform: &Matrix2D<AzFloat>,
                                           clip_rect: Option<&Rect<Au>>) {
         let temporary_draw_target =
-            paint_context.get_or_create_temporary_draw_target(self.opacity);
+            paint_context.get_or_create_temporary_draw_target(&self.filters);
         {
             let mut paint_subcontext = PaintContext {
                 draw_target: temporary_draw_target.clone(),
@@ -306,7 +306,8 @@ impl StackingContext {
             paint_subcontext.draw_target.set_transform(&old_transform)
         }
 
-        paint_context.draw_temporary_draw_target_if_necessary(&temporary_draw_target, self.opacity)
+        paint_context.draw_temporary_draw_target_if_necessary(&temporary_draw_target,
+                                                              &self.filters)
     }
 
     
