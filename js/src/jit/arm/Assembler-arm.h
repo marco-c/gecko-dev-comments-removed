@@ -25,26 +25,26 @@ namespace jit {
 
 
 
-static constexpr Register r0  = { Registers::r0 };
-static constexpr Register r1  = { Registers::r1 };
-static constexpr Register r2  = { Registers::r2 };
-static constexpr Register r3  = { Registers::r3 };
-static constexpr Register r4  = { Registers::r4 };
-static constexpr Register r5  = { Registers::r5 };
-static constexpr Register r6  = { Registers::r6 };
-static constexpr Register r7  = { Registers::r7 };
-static constexpr Register r8  = { Registers::r8 };
-static constexpr Register r9  = { Registers::r9 };
-static constexpr Register r10 = { Registers::r10 };
-static constexpr Register r11 = { Registers::r11 };
-static constexpr Register r12 = { Registers::ip };
-static constexpr Register ip  = { Registers::ip };
-static constexpr Register sp  = { Registers::sp };
-static constexpr Register r14 = { Registers::lr };
-static constexpr Register lr  = { Registers::lr };
-static constexpr Register pc  = { Registers::pc };
+static constexpr Register r0  { Registers::r0 };
+static constexpr Register r1  { Registers::r1 };
+static constexpr Register r2  { Registers::r2 };
+static constexpr Register r3  { Registers::r3 };
+static constexpr Register r4  { Registers::r4 };
+static constexpr Register r5  { Registers::r5 };
+static constexpr Register r6  { Registers::r6 };
+static constexpr Register r7  { Registers::r7 };
+static constexpr Register r8  { Registers::r8 };
+static constexpr Register r9  { Registers::r9 };
+static constexpr Register r10 { Registers::r10 };
+static constexpr Register r11 { Registers::r11 };
+static constexpr Register r12 { Registers::ip };
+static constexpr Register ip  { Registers::ip };
+static constexpr Register sp  { Registers::sp };
+static constexpr Register r14 { Registers::lr };
+static constexpr Register lr  { Registers::lr };
+static constexpr Register pc  { Registers::pc };
 
-static constexpr Register ScratchRegister = {Registers::ip};
+static constexpr Register ScratchRegister {Registers::ip};
 
 
 
@@ -128,7 +128,7 @@ static constexpr Register WasmTableCallIndexReg = ABINonArgReg2;
 
 static constexpr Register PreBarrierReg = r1;
 
-static constexpr Register InvalidReg = { Registers::invalid_reg };
+static constexpr Register InvalidReg { Registers::invalid_reg };
 static constexpr FloatRegister InvalidFloatReg;
 
 static constexpr Register JSReturnReg_Type = r3;
