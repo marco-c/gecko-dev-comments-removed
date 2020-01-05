@@ -17,7 +17,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "HiddenFrame",
-  "resource:///modules/HiddenFrame.jsm");
+  "resource://gre/modules/HiddenFrame.jsm");
 
 
 const PREF_ENABLED = "browser.selfsupport.enabled";

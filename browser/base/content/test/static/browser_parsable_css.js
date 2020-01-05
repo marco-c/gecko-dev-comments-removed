@@ -257,7 +257,7 @@ add_task(function* checkAllTheCSS() {
   
   
   let testFile = getRootDirectory(gTestPath) + "dummy_page.html";
-  let HiddenFrame = Cu.import("resource:///modules/HiddenFrame.jsm", {}).HiddenFrame;
+  let HiddenFrame = Cu.import("resource://gre/modules/HiddenFrame.jsm", {}).HiddenFrame;
   let hiddenFrame = new HiddenFrame();
   let win = yield hiddenFrame.get();
   let iframe = win.document.createElementNS("http://www.w3.org/1999/xhtml", "html:iframe");
