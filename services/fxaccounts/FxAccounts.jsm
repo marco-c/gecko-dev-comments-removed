@@ -1010,12 +1010,7 @@ FxAccountsInternal.prototype = {
     
     
     
-    let ignoreCachedAuthCredentials = false;
-    try {
-      ignoreCachedAuthCredentials = Services.prefs.getBoolPref("services.sync.debug.ignoreCachedAuthCredentials");
-    } catch (e) {
-      
-    }
+    let ignoreCachedAuthCredentials = Services.prefs.getBoolPref("services.sync.debug.ignoreCachedAuthCredentials", false);
     let mustBeValidUntil = this.now() + ASSERTION_USE_PERIOD;
     let accountData = yield currentState.getUserAccountData(["cert", "keyPair", "sessionToken"]);
 
@@ -1250,12 +1245,7 @@ FxAccountsInternal.prototype = {
   },
 
   requiresHttps() {
-    let allowHttp = false;
-    try {
-      allowHttp = Services.prefs.getBoolPref("identity.fxaccounts.allowHttp");
-    } catch (e) {
-      
-    }
+    let allowHttp = Services.prefs.getBoolPref("identity.fxaccounts.allowHttp", false);
     return allowHttp !== true;
   },
 

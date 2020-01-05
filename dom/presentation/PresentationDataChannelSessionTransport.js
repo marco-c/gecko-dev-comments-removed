@@ -109,13 +109,7 @@ PresentationTransportBuilder.prototype = {
 
     
     
-    let timeout;
-    try {
-      timeout = Services.prefs.getIntPref("presentation.receiver.loading.timeout");
-    } catch (e) {
-      
-      timeout = 10000;
-    }
+    let timeout = Services.prefs.getIntPref("presentation.receiver.loading.timeout", 10000);
 
     
     this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);

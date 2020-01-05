@@ -964,11 +964,7 @@ BrowserElementChild.prototype = {
       self._takeScreenshot(maxWidth, maxHeight, mimeType, domRequestID);
     };
 
-    let maxDelayMS = 2000;
-    try {
-      maxDelayMS = Services.prefs.getIntPref('dom.browserElement.maxScreenshotDelayMS');
-    }
-    catch(e) {}
+    let maxDelayMS = Services.prefs.getIntPref('dom.browserElement.maxScreenshotDelayMS', 2000);
 
     
     
@@ -1649,10 +1645,7 @@ BrowserElementChild.prototype = {
                 
                 
                 
-                let errorPage = null;
-                try {
-                  errorPage = Services.prefs.getCharPref(CERTIFICATE_ERROR_PAGE_PREF);
-                } catch (e) {}
+                let errorPage = Services.prefs.getCharPref(CERTIFICATE_ERROR_PAGE_PREF, "");
 
                 if (errorPage == 'certerror') {
                   sendAsyncMsg('error', { type: 'certerror' });

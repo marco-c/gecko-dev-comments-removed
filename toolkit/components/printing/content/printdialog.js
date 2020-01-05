@@ -75,15 +75,7 @@ function stripTrailingWhitespace(element) {
 
 
 function getPrinterDescription(printerName) {
-  var s = "";
-
-  try {
-    
-    s = gPrefs.getCharPref("print.printer_" + printerName + ".printer_description")
-  } catch (e) {
-  }
-
-  return s;
+  return gPrefs.getCharPref("print.printer_" + printerName + ".printer_description", "");
 }
 
 

@@ -17,12 +17,7 @@ function getMaxContentParents(processType) {
     maxContentParents = Services.prefs.getIntPref(PREF_BRANCH + processType);
   } catch (e) {
     
-    try {
-      maxContentParents = Services.prefs.getIntPref(BASE_PREF);
-    } catch (e) {
-      
-      maxContentParents = 1;
-    }
+    maxContentParents = Services.prefs.getIntPref(BASE_PREF, 1);
   }
 
   return maxContentParents;

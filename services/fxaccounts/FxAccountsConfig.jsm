@@ -72,12 +72,7 @@ this.FxAccountsConfig = {
       whitelistValue = whitelistValue.slice(autoconfigURL.length + 1);
       
       
-      let defaultWhitelist;
-      try {
-        defaultWhitelist = Services.prefs.getDefaultBranch("webchannel.allowObject.").getCharPref("urlWhitelist");
-      } catch (e) {
-        
-      }
+      let defaultWhitelist = Services.prefs.getDefaultBranch("webchannel.allowObject.").getCharPref("urlWhitelist", "");
 
       if (defaultWhitelist === whitelistValue) {
         Services.prefs.clearUserPref("webchannel.allowObject.urlWhitelist");
@@ -88,10 +83,7 @@ this.FxAccountsConfig = {
   },
 
   getAutoConfigURL() {
-    let pref;
-    try {
-      pref = Services.prefs.getCharPref("identity.fxaccounts.autoconfig.uri");
-    } catch (e) {  }
+    let pref = Services.prefs.getCharPref("identity.fxaccounts.autoconfig.uri", "");
     if (!pref) {
       
       return "";

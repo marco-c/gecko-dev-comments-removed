@@ -253,10 +253,7 @@ nsUnknownContentTypeDialog.prototype = {
       if (!aForcePrompt) {
         
         
-        let autodownload = false;
-        try {
-          autodownload = prefs.getBoolPref(PREF_BD_USEDOWNLOADDIR);
-        } catch (e) { }
+        let autodownload = prefs.getBoolPref(PREF_BD_USEDOWNLOADDIR, false);
 
         if (autodownload) {
           

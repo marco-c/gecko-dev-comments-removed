@@ -935,10 +935,7 @@ BrowserGlue.prototype = {
     
     const OFFER_PROFILE_RESET_INTERVAL_MS = 60 * 24 * 60 * 60 * 1000;
     let lastUse = Services.appinfo.replacedLockTime;
-    let disableResetPrompt = false;
-    try {
-      disableResetPrompt = Services.prefs.getBoolPref("browser.disableResetPrompt");
-    } catch (e) {}
+    let disableResetPrompt = Services.prefs.getBoolPref("browser.disableResetPrompt", false);
 
     if (!disableResetPrompt && lastUse &&
         Date.now() - lastUse >= OFFER_PROFILE_RESET_INTERVAL_MS) {
@@ -1456,10 +1453,7 @@ BrowserGlue.prototype = {
     } catch (ex) {}
 
     
-    let autoExportHTML = false;
-    try {
-      autoExportHTML = Services.prefs.getBoolPref("browser.bookmarks.autoExportHTML");
-    } catch (ex) {} 
+    let autoExportHTML = Services.prefs.getBoolPref("browser.bookmarks.autoExportHTML", false); 
     if (autoExportHTML) {
       
       
@@ -1526,10 +1520,7 @@ BrowserGlue.prototype = {
         
         
         
-        let smartBookmarksVersion = 0;
-        try {
-          smartBookmarksVersion = Services.prefs.getIntPref("browser.places.smartBookmarksVersion");
-        } catch (ex) {}
+        let smartBookmarksVersion = Services.prefs.getIntPref("browser.places.smartBookmarksVersion", 0);
         if (!autoExportHTML && smartBookmarksVersion != -1)
           Services.prefs.setIntPref("browser.places.smartBookmarksVersion", 0);
 
@@ -1876,10 +1867,7 @@ BrowserGlue.prototype = {
       
       
       let types = ["history", "bookmark", "openpage"];
-      let defaultBehavior = 0;
-      try {
-        defaultBehavior = Services.prefs.getIntPref("browser.urlbar.default.behavior");
-      } catch (ex) {}
+      let defaultBehavior = Services.prefs.getIntPref("browser.urlbar.default.behavior", 0);
       try {
         let autocompleteEnabled = Services.prefs.getBoolPref("browser.urlbar.autocomplete.enabled");
         if (!autocompleteEnabled) {
@@ -2018,10 +2006,7 @@ BrowserGlue.prototype = {
     }
 
     if (currentUIVersion < 43) {
-      let currentTheme = null;
-      try {
-        currentTheme = Services.prefs.getCharPref("lightweightThemes.selectedThemeID");
-      } catch (e) {}
+      let currentTheme = Services.prefs.getCharPref("lightweightThemes.selectedThemeID", "");
       if (currentTheme == "firefox-devedition@mozilla.org") {
         let newTheme = Services.prefs.getCharPref("devtools.theme") == "dark" ?
           "firefox-compact-dark@mozilla.org" : "firefox-compact-light@mozilla.org";
@@ -2099,10 +2084,7 @@ BrowserGlue.prototype = {
     const MAX_RESULTS = 10;
 
     
-    let smartBookmarksCurrentVersion = 0;
-    try {
-      smartBookmarksCurrentVersion = Services.prefs.getIntPref(SMART_BOOKMARKS_PREF);
-    } catch (ex) {}
+    let smartBookmarksCurrentVersion = Services.prefs.getIntPref(SMART_BOOKMARKS_PREF, 0);
 
     
     if (smartBookmarksCurrentVersion == -1 ||

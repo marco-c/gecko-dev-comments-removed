@@ -113,13 +113,7 @@ DirectoryProvider.prototype = {
     
     
     if (prop == "coreAppsDir") {
-      let coreAppsDirPref;
-      try {
-        coreAppsDirPref = Services.prefs.getCharPref(COREAPPSDIR_PREF);
-      } catch (e) {
-        
-        
-      }
+      let coreAppsDirPref = Services.prefs.getCharPref(COREAPPSDIR_PREF, "");
       let appsDir;
       
       if (!coreAppsDirPref || coreAppsDirPref == "") {

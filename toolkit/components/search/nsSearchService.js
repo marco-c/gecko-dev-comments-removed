@@ -392,12 +392,7 @@ function isPartnerBuild() {
 
 
 function geoSpecificDefaultsEnabled() {
-  let geoSpecificDefaults = false;
-  try {
-    geoSpecificDefaults = Services.prefs.getBoolPref("browser.search.geoSpecificDefaults");
-  } catch (e) {}
-
-  return geoSpecificDefaults;
+  return Services.prefs.getBoolPref("browser.search.geoSpecificDefaults", false);
 }
 
 
@@ -502,10 +497,7 @@ function isUSTimezone() {
 
 var ensureKnownCountryCode = Task.async(function* (ss) {
   
-  let countryCode;
-  try {
-    countryCode = Services.prefs.getCharPref("browser.search.countryCode");
-  } catch (e) {}
+  let countryCode = Services.prefs.getCharPref("browser.search.countryCode", "");
 
   if (!countryCode) {
     
@@ -728,10 +720,7 @@ var fetchRegionDefault = (ss) => new Promise(resolve => {
 
   
   const cohortPref = "browser.search.cohort";
-  let cohort;
-  try {
-    cohort = Services.prefs.getCharPref(cohortPref);
-  } catch (e) {}
+  let cohort = Services.prefs.getCharPref(cohortPref, "");
   if (cohort)
     endpoint += "/" + cohort;
 

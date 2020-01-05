@@ -1502,10 +1502,7 @@ CustomizeMode.prototype = {
     if (!AppConstants.CAN_DRAW_IN_TITLEBAR) {
       return;
     }
-    let drawInTitlebar = true;
-    try {
-      drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref);
-    } catch (ex) { }
+    let drawInTitlebar = Services.prefs.getBoolPref(kDrawInTitlebarPref, true);
     let button = this.document.getElementById("customization-titlebar-visibility-button");
     
     if (drawInTitlebar) {

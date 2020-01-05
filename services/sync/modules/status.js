@@ -117,12 +117,7 @@ this.Status = {
   resetSync: function resetSync() {
     
     let logPref = PREFS_BRANCH + "log.logger.status";
-    let logLevel = "Trace";
-    try {
-      logLevel = Services.prefs.getCharPref(logPref);
-    } catch (ex) {
-      
-    }
+    let logLevel = Services.prefs.getCharPref(logPref, "Trace");
     this._log.level = Log.Level[logLevel];
 
     this._log.info("Resetting Status.");

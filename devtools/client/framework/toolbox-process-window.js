@@ -100,17 +100,13 @@ function openToolbox({ form, chrome, isTabActor }) {
   };
   TargetFactory.forRemoteTab(options).then(target => {
     let frame = document.getElementById("toolbox-iframe");
-    let selectedTool = "jsdebugger";
 
-    try {
-      
-      selectedTool = Services.prefs.getCharPref("devtools.toolbox.selectedTool");
-    } catch(e) {}
-
-    try {
-      
-      selectedTool = Services.prefs.getCharPref("devtools.browsertoolbox.panel");
-    } catch(e) {}
+    
+    
+    let selectedTool =
+      Services.prefs.getCharPref("devtools.browsertoolbox.panel",
+                                 Services.prefs.getCharPref("devtools.toolbox.selectedTool",
+                                                            "jsdebugger"));
 
     let options = { customIframe: frame };
     gDevTools.showToolbox(target,

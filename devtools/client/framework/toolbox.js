@@ -1226,12 +1226,7 @@ Toolbox.prototype = {
       visibilityswitch
     } = button;
 
-    let visible = true;
-    try {
-      visible = Services.prefs.getBoolPref(visibilityswitch);
-    } catch (ex) {
-      
-    }
+    let visible = Services.prefs.getBoolPref(visibilityswitch, true);
 
     if (isTargetSupported) {
       return visible && isTargetSupported(this.target);

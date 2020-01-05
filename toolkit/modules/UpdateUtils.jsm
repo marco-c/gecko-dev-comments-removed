@@ -111,15 +111,7 @@ this.UpdateUtils = {
 
 
 function getDistributionPrefValue(aPrefName) {
-  var prefValue = "default";
-
-  try {
-    prefValue = Services.prefs.getDefaultBranch(null).getCharPref(aPrefName);
-  } catch (e) {
-    
-  }
-
-  return prefValue;
+  return Services.prefs.getDefaultBranch(null).getCharPref(aPrefName, "default");
 }
 
 

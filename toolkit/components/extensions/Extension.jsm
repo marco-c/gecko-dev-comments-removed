@@ -447,12 +447,7 @@ this.ExtensionData = class {
         
       }
 
-      let containersEnabled = true;
-      try {
-        containersEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled");
-      } catch (e) {
-        
-      }
+      let containersEnabled = Services.prefs.getBoolPref("privacy.userContext.enabled", true);
 
       let permissions = this.manifest.permissions || [];
 

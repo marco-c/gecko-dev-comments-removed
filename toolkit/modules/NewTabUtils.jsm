@@ -118,18 +118,14 @@ LinksStorage.prototype = {
 
   get _storedVersion() {
     if (this.__storedVersion === undefined) {
-      try {
-        this.__storedVersion =
-          Services.prefs.getIntPref("browser.newtabpage.storageVersion");
-      } catch (ex) {
-        
-        
-        
-        
-        
-        
-        this.__storedVersion = 1;
-      }
+      
+      
+      
+      
+      
+      
+      this.__storedVersion =
+        Services.prefs.getIntPref("browser.newtabpage.storageVersion", 1);
     }
     return this.__storedVersion;
   },

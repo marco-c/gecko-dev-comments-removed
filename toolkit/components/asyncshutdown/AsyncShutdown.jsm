@@ -360,12 +360,7 @@ this.AsyncShutdown = {
 
 
   get _getPhase() {
-    let accepted = false;
-    try {
-      accepted = Services.prefs.getBoolPref("toolkit.asyncshutdown.testing");
-    } catch (ex) {
-      
-    }
+    let accepted = Services.prefs.getBoolPref("toolkit.asyncshutdown.testing", false);
     if (accepted) {
       return getPhase;
     }
@@ -464,12 +459,7 @@ function getPhase(topic) {
 
 
     get _trigger() {
-      let accepted = false;
-      try {
-        accepted = Services.prefs.getBoolPref("toolkit.asyncshutdown.testing");
-      } catch (ex) {
-        
-      }
+      let accepted = Services.prefs.getBoolPref("toolkit.asyncshutdown.testing", false);
       if (accepted) {
         return () => spinner.observe();
       }
