@@ -1217,26 +1217,10 @@ GetPropIRGenerator::tryAttachStringChar(ValOperandId valId, ValOperandId indexId
     if (!val_.isString())
         return false;
 
-    int32_t index = idVal_.toInt32();
-    if (index < 0)
-        return false;
-
     JSString* str = val_.toString();
-    if (size_t(index) >= str->length())
-        return false;
-
-    
-    if (str->isRope()) {
-        JSRope* rope = &str->asRope();
-
-        
-        if (size_t(index) >= rope->leftChild()->length())
-            return false;
-
-        str = rope->leftChild();
-    }
-
-    if (!str->isLinear() ||
+    int32_t index = idVal_.toInt32();
+    if (size_t(index) >= str->length() ||
+        !str->isLinear() ||
         str->asLinear().latin1OrTwoByteChar(index) >= StaticStrings::UNIT_STATIC_LIMIT)
     {
         return false;
