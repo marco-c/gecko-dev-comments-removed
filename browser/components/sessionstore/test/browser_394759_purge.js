@@ -93,8 +93,10 @@ add_task(function* () {
   ss.setBrowserState(JSON.stringify(testState));
 
   
+  let clearHistoryPromise = promiseClearHistory();
   yield ForgetAboutSite.removeDataFromDomain("mozilla.org");
-  yield promiseClearHistory();
+  yield clearHistoryPromise;
+
   let closedWindowData = JSON.parse(ss.getClosedWindowData());
 
   
