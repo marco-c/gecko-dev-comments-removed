@@ -102,6 +102,9 @@ class BlockReflowInput {
 
     
     bool mFloatFragmentsInsideColumnEnabled : 1;
+
+    
+    bool mCanHaveTextOverflow : 1;
   };
 
 public:

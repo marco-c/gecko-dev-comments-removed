@@ -325,7 +325,10 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
 TextOverflow::WillProcessLines(nsDisplayListBuilder*   aBuilder,
                                nsIFrame*               aBlockFrame)
 {
-  if (!CanHaveTextOverflow(aBuilder, aBlockFrame)) {
+  
+  if (aBuilder->IsForEventDelivery() ||
+      aBuilder->IsForFrameVisibility() ||
+      !CanHaveTextOverflow(aBlockFrame)) {
     return nullptr;
   }
   nsIScrollableFrame* scrollableFrame = nsLayoutUtils::GetScrollableFrameFor(aBlockFrame);
@@ -717,15 +720,11 @@ TextOverflow::HasClippedOverflow(nsIFrame* aBlockFrame)
 }
 
  bool
-TextOverflow::CanHaveTextOverflow(nsDisplayListBuilder* aBuilder,
-                                  nsIFrame*             aBlockFrame)
+TextOverflow::CanHaveTextOverflow(nsIFrame* aBlockFrame)
 {
   
-  
   if (HasClippedOverflow(aBlockFrame) ||
-      IsInlineAxisOverflowVisible(aBlockFrame) ||
-      aBuilder->IsForEventDelivery() ||
-      aBuilder->IsForFrameVisibility()) {
+      IsInlineAxisOverflowVisible(aBlockFrame)) {
     return false;
   }
 
