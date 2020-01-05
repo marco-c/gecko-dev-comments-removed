@@ -11,6 +11,7 @@ use bit_vec::BitVec;
 use context::QuirksMode;
 use data::ComputedStyle;
 use dom::{AnimationRules, TElement};
+use element_state::ElementState;
 use error_reporting::RustLogReporter;
 use font_metrics::FontMetricsProvider;
 use keyframes::KeyframesAnimation;
@@ -27,7 +28,7 @@ use selectors::Element;
 use selectors::bloom::BloomFilter;
 use selectors::matching::{AFFECTED_BY_STYLE_ATTRIBUTE, AFFECTED_BY_PRESENTATIONAL_HINTS};
 use selectors::matching::{ElementSelectorFlags, StyleRelations, matches_selector};
-use selectors::parser::{Combinator, Component, Selector, SelectorInner, SelectorIter};
+use selectors::parser::{AttrSelector, Combinator, Component, Selector, SelectorInner, SelectorIter};
 use selectors::parser::{SelectorMethods, LocalName as LocalNameSelector};
 use selectors::visitor::SelectorVisitor;
 use shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
@@ -121,6 +122,28 @@ pub struct Stylist {
     
     
     
+    
+    
+    
+    #[cfg_attr(feature = "servo", ignore_heap_size_of = "just an array")]
+    attribute_dependencies: BloomFilter,
+
+    
+    
+    
+    
+    
+    
+    style_attribute_dependency: bool,
+
+    
+    
+    
+    state_dependencies: ElementState,
+
+    
+    
+    
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     selectors_for_cache_revalidation: SelectorMap<SelectorInner<SelectorImpl>>,
 
@@ -184,6 +207,9 @@ impl Stylist {
             rules_source_order: 0,
             rule_tree: RuleTree::new(),
             dependencies: DependencySet::new(),
+            attribute_dependencies: BloomFilter::new(),
+            style_attribute_dependency: false,
+            state_dependencies: ElementState::empty(),
             selectors_for_cache_revalidation: SelectorMap::new(),
             num_selectors: 0,
             num_declarations: 0,
@@ -254,6 +280,9 @@ impl Stylist {
         self.rules_source_order = 0;
         
         self.dependencies.clear();
+        self.attribute_dependencies.clear();
+        self.style_attribute_dependency = false;
+        self.state_dependencies = ElementState::empty();
         self.selectors_for_cache_revalidation = SelectorMap::new();
         self.num_selectors = 0;
         self.num_declarations = 0;
@@ -375,6 +404,7 @@ impl Stylist {
                         self.add_rule_to_map(selector, locked, stylesheet);
                         self.dependencies.note_selector(selector);
                         self.note_for_revalidation(selector);
+                        self.note_attribute_and_state_dependencies(selector);
                     }
                     self.rules_source_order += 1;
                 }
@@ -432,6 +462,34 @@ impl Stylist {
         if needs_revalidation(selector) {
             self.selectors_for_cache_revalidation.insert(selector.inner.clone());
         }
+    }
+
+    
+    
+    pub fn might_have_attribute_dependency(&self,
+                                           local_name: &<SelectorImpl as ::selectors::SelectorImpl>::LocalName)
+                                           -> bool {
+        #[cfg(feature = "servo")]
+        let style_lower_name = local_name!("style");
+        #[cfg(feature = "gecko")]
+        let style_lower_name = atom!("style");
+
+        if *local_name == style_lower_name {
+            self.style_attribute_dependency
+        } else {
+            self.attribute_dependencies.might_contain(local_name)
+        }
+    }
+
+    
+    
+    pub fn has_state_dependency(&self, state: ElementState) -> bool {
+        self.state_dependencies.intersects(state)
+    }
+
+    #[inline]
+    fn note_attribute_and_state_dependencies(&mut self, selector: &Selector<SelectorImpl>) {
+        selector.visit(&mut AttributeAndStateDependencyVisitor(self));
     }
 
     
@@ -959,6 +1017,36 @@ impl Drop for Stylist {
         
         
         unsafe { self.rule_tree.gc(); }
+    }
+}
+
+
+
+struct AttributeAndStateDependencyVisitor<'a>(&'a mut Stylist);
+
+impl<'a> SelectorVisitor for AttributeAndStateDependencyVisitor<'a> {
+    type Impl = SelectorImpl;
+
+    fn visit_attribute_selector(&mut self, selector: &AttrSelector<Self::Impl>) -> bool {
+        #[cfg(feature = "servo")]
+        let style_lower_name = local_name!("style");
+        #[cfg(feature = "gecko")]
+        let style_lower_name = atom!("style");
+
+        if selector.lower_name == style_lower_name {
+            self.0.style_attribute_dependency = true;
+        } else {
+            self.0.attribute_dependencies.insert(&selector.name);
+            self.0.attribute_dependencies.insert(&selector.lower_name);
+        }
+        true
+    }
+
+    fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
+        if let Component::NonTSPseudoClass(ref p) = *s {
+            self.0.state_dependencies.insert(p.state_flag());
+        }
+        true
     }
 }
 
