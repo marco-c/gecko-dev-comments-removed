@@ -9,7 +9,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["ExtensionStorageSync"];
+this.EXPORTED_SYMBOLS = ["ExtensionStorageSync", "extensionStorageSync"];
 
 const Ci = Components.interfaces;
 const Cc = Components.classes;
@@ -34,9 +34,8 @@ const FXA_OAUTH_OPTIONS = {
 const KINTO_REQUEST_TIMEOUT = 30000;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-const {
-  runSafeSyncWithoutClone,
-} = Cu.import("resource://gre/modules/ExtensionUtils.jsm", {});
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
 
 XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
                                   "resource://gre/modules/AsyncShutdown.jsm");
@@ -75,6 +74,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "prefPermitsStorageSync",
 XPCOMUtils.defineLazyPreferenceGetter(this, "prefStorageSyncServerURL",
                                       STORAGE_SYNC_SERVER_URL_PREF,
                                       KINTO_DEFAULT_SERVER_URL);
+const {
+  runSafeSyncWithoutClone,
+} = ExtensionUtils;
 
 
 
@@ -83,6 +85,32 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "prefStorageSyncServerURL",
 const extensionContexts = new Map();
 
 const log = Log.repository.getLogger("Sync.Engine.Extension-Storage");
+
+
+
+let _fxaService = null;
+if (AppConstants.platform != "android") {
+  _fxaService = fxAccounts;
+}
+
+
+
+
+
+
+
+
+
+function throwIfNoFxA(fxAccounts, action) {
+  if (!fxAccounts) {
+    throw new Error(`${action} is impossible because FXAccounts is not available; are you on Android?`);
+  }
+}
+
+
+
+
+this.extensionStorageSync = null;
 
 
 
@@ -97,6 +125,30 @@ function ciphertextHMAC(keyBundle, id, IV, ciphertext) {
   const hasher = keyBundle.sha256HMACHasher;
   return Utils.bytesAsHex(Utils.digestUTF8(id + IV + ciphertext, hasher));
 }
+
+
+
+
+
+
+
+
+const getKBHash = Task.async(function* (fxaService) {
+  const signedInUser = yield fxaService.getSignedInUser();
+  if (!signedInUser) {
+    throw new Error("User isn't signed in!");
+  }
+
+  if (!signedInUser.kB) {
+    throw new Error("User doesn't have kB??");
+  }
+
+  let kBbytes = CommonUtils.hexToBytes(signedInUser.kB);
+  let hasher = Cc["@mozilla.org/security/hash;1"]
+      .createInstance(Ci.nsICryptoHash);
+  hasher.init(hasher.SHA256);
+  return CommonUtils.bytesAsHex(CryptoUtils.digestBytes(signedInUser.uid + kBbytes, hasher));
+});
 
 
 
@@ -203,17 +255,17 @@ class EncryptionRemoteTransformer {
 global.EncryptionRemoteTransformer = EncryptionRemoteTransformer;
 
 
-EncryptionRemoteTransformer.prototype._fxaService = null;
-if (AppConstants.platform != "android") {
-  EncryptionRemoteTransformer.prototype._fxaService = fxAccounts;
-}
-
-
 
 
 
 class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
+  constructor(fxaService) {
+    super();
+    this._fxaService = fxaService;
+  }
+
   getKeys() {
+    throwIfNoFxA(this._fxaService, "encrypting chrome.storage.sync records");
     const self = this;
     return Task.spawn(function* () {
       const user = yield self._fxaService.getSignedInUser();
@@ -250,23 +302,20 @@ class KeyRingEncryptionRemoteTransformer extends EncryptionRemoteTransformer {
     });
   }
 
-  decode(record) {
-    const decodePromise = super.decode(record);
-    return Task.spawn(function* () {
-      try {
-        return yield decodePromise;
-      } catch (e) {
-        if (Utils.isHMACMismatch(e)) {
-          const currentKBHash = yield ExtensionStorageSync.getKBHash();
-          if (record.kbHash != currentKBHash) {
-            
-            
-            KeyRingEncryptionRemoteTransformer.throwOutdatedKB(currentKBHash, record.kbHash);
-          }
+  async decode(record) {
+    try {
+      return await super.decode(record);
+    } catch (e) {
+      if (Utils.isHMACMismatch(e)) {
+        const currentKBHash = await getKBHash(this._fxaService);
+        if (record.kbHash != currentKBHash) {
+          
+          
+          KeyRingEncryptionRemoteTransformer.throwOutdatedKB(currentKBHash, record.kbHash);
         }
-        throw e;
       }
-    });
+      throw e;
+    }
   }
 
   
@@ -384,14 +433,19 @@ const cryptoCollectionIdSchema = {
 
 
 
-let cryptoCollection = this.cryptoCollection = {
-  getCollection: Task.async(function* () {
-    const {kinto} = yield storageSyncInit;
+class CryptoCollection {
+  constructor(fxaService) {
+    this._fxaService = fxaService;
+  }
+
+  async getCollection() {
+    throwIfNoFxA(this._fxaService, "tried to access cryptoCollection");
+    const {kinto} = await storageSyncInit;
     return kinto.collection(STORAGE_SYNC_CRYPTO_COLLECTION_NAME, {
       idSchema: cryptoCollectionIdSchema,
-      remoteTransformers: [new KeyRingEncryptionRemoteTransformer()],
+      remoteTransformers: [new KeyRingEncryptionRemoteTransformer(this._fxaService)],
     });
-  }),
+  }
 
   
 
@@ -401,7 +455,7 @@ let cryptoCollection = this.cryptoCollection = {
 
   getNewSalt() {
     return btoa(CryptoUtils.generateRandomBytes(STORAGE_SYNC_CRYPTO_SALT_LENGTH_BYTES));
-  },
+  }
 
   
 
@@ -421,9 +475,9 @@ let cryptoCollection = this.cryptoCollection = {
 
 
 
-  getKeyRingRecord: Task.async(function* () {
-    const collection = yield this.getCollection();
-    const cryptoKeyRecord = yield collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
+  async getKeyRingRecord() {
+    const collection = await this.getCollection();
+    const cryptoKeyRecord = await collection.getAny(STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID);
 
     let data = cryptoKeyRecord.data;
     if (!data) {
@@ -435,22 +489,27 @@ let cryptoCollection = this.cryptoCollection = {
       data = {uuid, id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID};
     }
     return data;
-  }),
+  }
 
-  getSalts: Task.async(function* () {
-    const cryptoKeyRecord = yield this.getKeyRingRecord();
+  async getSalts() {
+    const cryptoKeyRecord = await this.getKeyRingRecord();
     return cryptoKeyRecord && cryptoKeyRecord.salts;
-  }),
+  }
 
   
 
 
-  _setSalt: Task.async(function* (extensionId, salt) {
-    const cryptoKeyRecord = yield this.getKeyRingRecord();
+
+
+
+
+
+  async _setSalt(extensionId, salt) {
+    const cryptoKeyRecord = await this.getKeyRingRecord();
     cryptoKeyRecord.salts = cryptoKeyRecord.salts || {};
     cryptoKeyRecord.salts[extensionId] = salt;
-    this.upsert(cryptoKeyRecord);
-  }),
+    await this.upsert(cryptoKeyRecord);
+  }
 
   
 
@@ -473,7 +532,7 @@ let cryptoCollection = this.cryptoCollection = {
   extensionIdToCollectionId(extensionId) {
     return this.hashWithExtensionSalt(CommonUtils.encodeUTF8(extensionId), extensionId)
       .then(hash => `ext-${hash}`);
-  },
+  }
 
   
 
@@ -489,8 +548,8 @@ let cryptoCollection = this.cryptoCollection = {
 
 
 
-  hashWithExtensionSalt: Task.async(function* (value, extensionId) {
-    const salts = yield this.getSalts();
+  async hashWithExtensionSalt(value, extensionId) {
+    const salts = await this.getSalts();
     const saltBase64 = salts && salts[extensionId];
     if (!saltBase64) {
       
@@ -506,15 +565,15 @@ let cryptoCollection = this.cryptoCollection = {
     const message = `${salt}\x00${value}`;
     const hash = CryptoUtils.digestBytes(message, hasher);
     return CommonUtils.encodeBase64URL(hash, false);
-  }),
+  }
 
   
 
 
 
 
-  getKeyRing: Task.async(function* () {
-    const cryptoKeyRecord = yield this.getKeyRingRecord();
+  async getKeyRing() {
+    const cryptoKeyRecord = await this.getKeyRingRecord();
     const collectionKeys = new CollectionKeyManager();
     if (cryptoKeyRecord.keys) {
       collectionKeys.setContents(cryptoKeyRecord.keys, cryptoKeyRecord.last_modified);
@@ -526,42 +585,43 @@ let cryptoCollection = this.cryptoCollection = {
     
     collectionKeys.uuid = cryptoKeyRecord.uuid;
     return collectionKeys;
-  }),
+  }
 
-  updateKBHash: Task.async(function* (kbHash) {
-    const coll = yield this.getCollection();
-    yield coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
+  async updateKBHash(kbHash) {
+    const coll = await this.getCollection();
+    await coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
                        kbHash: kbHash},
                       {patch: true});
-  }),
+  }
 
-  upsert: Task.async(function* (record) {
-    const collection = yield this.getCollection();
-    yield collection.upsert(record);
-  }),
+  async upsert(record) {
+    const collection = await this.getCollection();
+    await collection.upsert(record);
+  }
 
-  sync: Task.async(function* () {
-    const collection = yield this.getCollection();
-    return yield ExtensionStorageSync._syncCollection(collection, {
+  async sync(extensionStorageSync) {
+    const collection = await this.getCollection();
+    return await extensionStorageSync._syncCollection(collection, {
       strategy: "server_wins",
     });
-  }),
+  }
 
   
 
 
 
-  resetSyncStatus: Task.async(function* () {
-    const coll = yield this.getCollection();
-    yield coll.db.resetSyncStatus();
-  }),
+  async resetSyncStatus() {
+    const coll = await this.getCollection();
+    await coll.db.resetSyncStatus();
+  }
 
   
-  _clear: Task.async(function* () {
-    const collection = yield this.getCollection();
-    yield collection.clear();
-  }),
-};
+  async _clear() {
+    const collection = await this.getCollection();
+    await collection.clear();
+  }
+}
+this.CryptoCollection = CryptoCollection;
 
 
 
@@ -576,8 +636,9 @@ let cryptoCollection = this.cryptoCollection = {
 
 
 let CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTransformer {
-  constructor(extensionId) {
+  constructor(cryptoCollection, extensionId) {
     super();
+    this.cryptoCollection = cryptoCollection;
     this.extensionId = extensionId;
   }
 
@@ -585,7 +646,7 @@ let CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTra
     const self = this;
     return Task.spawn(function* () {
       
-      const collectionKeys = yield cryptoCollection.getKeyRing();
+      const collectionKeys = yield self.cryptoCollection.getKeyRing();
       if (!collectionKeys.hasKeysFor([self.extensionId])) {
         
         
@@ -603,7 +664,7 @@ let CollectionKeyEncryptionRemoteTransformer = class extends EncryptionRemoteTra
     
     
     
-    return cryptoCollection.hashWithExtensionSalt(id, this.extensionId)
+    return this.cryptoCollection.hashWithExtensionSalt(id, this.extensionId)
       .then(hash => `id-${hash}`);
   }
 };
@@ -642,10 +703,10 @@ function cleanUpForContext(extension, context) {
 
 
 
-const openCollection = Task.async(function* (extension, context) {
+const openCollection = Task.async(function* (cryptoCollection, extension, context) {
   let collectionId = extension.id;
   const {kinto} = yield storageSyncInit;
-  const remoteTransformers = [new CollectionKeyEncryptionRemoteTransformer(extension.id)];
+  const remoteTransformers = [new CollectionKeyEncryptionRemoteTransformer(cryptoCollection, extension.id)];
   const coll = kinto.collection(collectionId, {
     idSchema: storageSyncIdSchema,
     remoteTransformers,
@@ -653,19 +714,18 @@ const openCollection = Task.async(function* (extension, context) {
   return coll;
 });
 
+class ExtensionStorageSync {
+  
 
 
 
-let _fxaService = null;
-if (AppConstants.platform != "android") {
-  _fxaService = fxAccounts;
-}
+  constructor(fxaService) {
+    this._fxaService = fxaService;
+    this.cryptoCollection = new CryptoCollection(fxaService);
+    this.listeners = new WeakMap();
+  }
 
-this.ExtensionStorageSync = {
-  _fxaService,
-  listeners: new WeakMap(),
-
-  syncAll: Task.async(function* () {
+  async syncAll() {
     const extensions = extensionContexts.keys();
     const extIds = Array.from(extensions, extension => extension.id);
     log.debug(`Syncing extension settings for ${JSON.stringify(extIds)}`);
@@ -673,27 +733,28 @@ this.ExtensionStorageSync = {
       
       return;
     }
-    yield this.ensureCanSync(extIds);
-    yield this.checkSyncKeyRing();
+    await this.ensureCanSync(extIds);
+    await this.checkSyncKeyRing();
     const promises = Array.from(extensionContexts.keys(), extension => {
-      return openCollection(extension).then(coll => {
+      return openCollection(this.cryptoCollection, extension).then(coll => {
         return this.sync(extension, coll);
       });
     });
-    yield Promise.all(promises);
-  }),
+    await Promise.all(promises);
+  }
 
-  sync: Task.async(function* (extension, collection) {
-    const signedInUser = yield this._fxaService.getSignedInUser();
+  async sync(extension, collection) {
+    throwIfNoFxA(this._fxaService, "syncing chrome.storage.sync");
+    const signedInUser = await this._fxaService.getSignedInUser();
     if (!signedInUser) {
       
       log.info("User was not signed into FxA; cannot sync");
       throw new Error("Not signed in to FxA");
     }
-    const collectionId = yield cryptoCollection.extensionIdToCollectionId(extension.id);
+    const collectionId = await this.cryptoCollection.extensionIdToCollectionId(extension.id);
     let syncResults;
     try {
-      syncResults = yield this._syncCollection(collection, {
+      syncResults = await this._syncCollection(collection, {
         strategy: "client_wins",
         collection: collectionId,
       });
@@ -735,7 +796,7 @@ this.ExtensionStorageSync = {
     if (Object.keys(changes).length > 0) {
       this.notifyListeners(extension, changes);
     }
-  }),
+  }
 
   
 
@@ -747,9 +808,9 @@ this.ExtensionStorageSync = {
 
 
 
-  _syncCollection: Task.async(function* (collection, options) {
+  async _syncCollection(collection, options) {
     
-    return yield this._requestWithToken(`Syncing ${collection.name}`, function* (token) {
+    return await this._requestWithToken(`Syncing ${collection.name}`, async function(token) {
       const allOptions = Object.assign({}, {
         remote: prefStorageSyncServerURL,
         headers: {
@@ -757,59 +818,62 @@ this.ExtensionStorageSync = {
         },
       }, options);
 
-      return yield collection.sync(allOptions);
+      return await collection.sync(allOptions);
     });
-  }),
+  }
 
   
   
   
-  _requestWithToken: Task.async(function* (description, f) {
-    const fxaToken = yield this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
+  async _requestWithToken(description, f) {
+    throwIfNoFxA(this._fxaService, "making remote requests from chrome.storage.sync");
+    const fxaToken = await this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
     try {
-      return yield f(fxaToken);
+      return await f(fxaToken);
     } catch (e) {
       log.error(`${description}: request failed`, e);
       if (e && e.data && e.data.code == 401) {
         
         log.info("Token might have expired");
-        yield this._fxaService.removeCachedOAuthToken({token: fxaToken});
-        const newToken = yield this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
+        await this._fxaService.removeCachedOAuthToken({token: fxaToken});
+        const newToken = await this._fxaService.getOAuthToken(FXA_OAUTH_OPTIONS);
 
         
-        return yield f(newToken);
+        return await f(newToken);
       }
       
       throw e;
     }
-  }),
+  }
 
   
 
 
-  _deleteBucket: Task.async(function* () {
-    return yield this._requestWithToken("Clearing server", function* (token) {
+
+
+  async _deleteBucket() {
+    return await this._requestWithToken("Clearing server", async function(token) {
       const headers = {Authorization: "Bearer " + token};
       const kintoHttp = new KintoHttpClient(prefStorageSyncServerURL, {
         headers: headers,
         timeout: KINTO_REQUEST_TIMEOUT,
       });
-      return yield kintoHttp.deleteBucket("default");
+      return await kintoHttp.deleteBucket("default");
     });
-  }),
+  }
 
-  ensureSaltsFor: Task.async(function* (keysRecord, extIds) {
+  async ensureSaltsFor(keysRecord, extIds) {
     const newSalts = Object.assign({}, keysRecord.salts);
     for (let collectionId of extIds) {
       if (newSalts[collectionId]) {
         continue;
       }
 
-      newSalts[collectionId] = cryptoCollection.getNewSalt();
+      newSalts[collectionId] = this.cryptoCollection.getNewSalt();
     }
 
     return newSalts;
-  }),
+  }
 
   
 
@@ -832,7 +896,7 @@ this.ExtensionStorageSync = {
     }
 
     return true;
-  },
+  }
 
   
 
@@ -843,16 +907,16 @@ this.ExtensionStorageSync = {
 
 
 
-  ensureCanSync: Task.async(function* (extIds) {
-    const keysRecord = yield cryptoCollection.getKeyRingRecord();
-    const collectionKeys = yield cryptoCollection.getKeyRing();
+  async ensureCanSync(extIds) {
+    const keysRecord = await this.cryptoCollection.getKeyRingRecord();
+    const collectionKeys = await this.cryptoCollection.getKeyRing();
     if (collectionKeys.hasKeysFor(extIds) && this.hasSaltsFor(keysRecord, extIds)) {
       return collectionKeys;
     }
 
-    const kbHash = yield this.getKBHash();
-    const newKeys = yield collectionKeys.ensureKeysFor(extIds);
-    const newSalts = yield this.ensureSaltsFor(keysRecord, extIds);
+    const kbHash = await getKBHash(this._fxaService);
+    const newKeys = await collectionKeys.ensureKeysFor(extIds);
+    const newSalts = await this.ensureSaltsFor(keysRecord, extIds);
     const newRecord = {
       id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
       keys: newKeys.asWBO().cleartext,
@@ -861,46 +925,25 @@ this.ExtensionStorageSync = {
       
       kbHash: kbHash,
     };
-    yield cryptoCollection.upsert(newRecord);
-    const result = yield this._syncKeyRing(newRecord);
+    await this.cryptoCollection.upsert(newRecord);
+    const result = await this._syncKeyRing(newRecord);
     if (result.resolved.length != 0) {
       
       
       
-      return yield this.ensureCanSync(extIds);
+      return await this.ensureCanSync(extIds);
     }
 
     
     return newKeys;
-  }),
+  }
 
   
 
 
-
-
-  getKBHash: Task.async(function* () {
-    const signedInUser = yield this._fxaService.getSignedInUser();
-    if (!signedInUser) {
-      throw new Error("User isn't signed in!");
-    }
-
-    if (!signedInUser.kB) {
-      throw new Error("User doesn't have kB??");
-    }
-
-    let kBbytes = CommonUtils.hexToBytes(signedInUser.kB);
-    let hasher = Cc["@mozilla.org/security/hash;1"]
-                    .createInstance(Ci.nsICryptoHash);
-    hasher.init(hasher.SHA256);
-    return CommonUtils.bytesAsHex(CryptoUtils.digestBytes(signedInUser.uid + kBbytes, hasher));
-  }),
-
-  
-
-
-  updateKeyRingKB: Task.async(function* () {
-    const signedInUser = yield this._fxaService.getSignedInUser();
+  async updateKeyRingKB() {
+    throwIfNoFxA(this._fxaService, "use of chrome.storage.sync \"keyring\"");
+    const signedInUser = await this._fxaService.getSignedInUser();
     if (!signedInUser) {
       
       
@@ -912,9 +955,9 @@ this.ExtensionStorageSync = {
       return;
     }
 
-    const thisKBHash = yield this.getKBHash();
-    yield cryptoCollection.updateKBHash(thisKBHash);
-  }),
+    const thisKBHash = await getKBHash(this._fxaService);
+    await this.cryptoCollection.updateKBHash(thisKBHash);
+  }
 
   
 
@@ -923,21 +966,22 @@ this.ExtensionStorageSync = {
 
 
 
-  checkSyncKeyRing: Task.async(function* () {
-    yield this.updateKeyRingKB();
+  async checkSyncKeyRing() {
+    await this.updateKeyRingKB();
 
-    const cryptoKeyRecord = yield cryptoCollection.getKeyRingRecord();
+    const cryptoKeyRecord = await this.cryptoCollection.getKeyRingRecord();
     if (cryptoKeyRecord && cryptoKeyRecord._status !== "synced") {
       
       
       
       
       
-      yield this._syncKeyRing(cryptoKeyRecord);
+      await this._syncKeyRing(cryptoKeyRecord);
     }
-  }),
+  }
 
-  _syncKeyRing: Task.async(function* (cryptoKeyRecord) {
+  async _syncKeyRing(cryptoKeyRecord) {
+    throwIfNoFxA(this._fxaService, "syncing chrome.storage.sync \"keyring\"");
     try {
       
       
@@ -965,11 +1009,11 @@ this.ExtensionStorageSync = {
       
       
       
-      const result = yield cryptoCollection.sync();
+      const result = await this.cryptoCollection.sync(this);
       if (result.resolved.length > 0) {
         if (result.resolved[0].uuid != cryptoKeyRecord.uuid) {
           log.info(`Detected a new UUID (${result.resolved[0].uuid}, was ${cryptoKeyRecord.uuid}). Reseting sync status for everything.`);
-          yield cryptoCollection.resetSyncStatus();
+          await this.cryptoCollection.resetSyncStatus();
 
           
           return result;
@@ -981,20 +1025,20 @@ this.ExtensionStorageSync = {
       if (KeyRingEncryptionRemoteTransformer.isOutdatedKB(e)) {
         
         
-        const isSessionValid = yield this._fxaService.sessionStatus();
+        const isSessionValid = await this._fxaService.sessionStatus();
         if (isSessionValid) {
-          yield this._deleteBucket();
-          yield cryptoCollection.resetSyncStatus();
+          await this._deleteBucket();
+          await this.cryptoCollection.resetSyncStatus();
 
           
           
           
-          return yield cryptoCollection.sync();
+          return await this.cryptoCollection.sync(this);
         }
       }
       throw e;
     }
-  }),
+  }
 
   
 
@@ -1026,14 +1070,14 @@ this.ExtensionStorageSync = {
       });
     }
 
-    return openCollection(extension, context);
-  },
+    return openCollection(this.cryptoCollection, extension, context);
+  }
 
-  set: Task.async(function* (extension, items, context) {
-    const coll = yield this.getCollection(extension, context);
+  async set(extension, items, context) {
+    const coll = await this.getCollection(extension, context);
     const keys = Object.keys(items);
     const ids = keys.map(keyToId);
-    const changes = yield coll.execute(txn => {
+    const changes = await coll.execute(txn => {
       let changes = {};
       for (let [i, key] of keys.entries()) {
         const id = ids[i];
@@ -1055,14 +1099,14 @@ this.ExtensionStorageSync = {
       return changes;
     }, {preloadIds: ids});
     this.notifyListeners(extension, changes);
-  }),
+  }
 
-  remove: Task.async(function* (extension, keys, context) {
-    const coll = yield this.getCollection(extension, context);
+  async remove(extension, keys, context) {
+    const coll = await this.getCollection(extension, context);
     keys = [].concat(keys);
     const ids = keys.map(keyToId);
     let changes = {};
-    yield coll.execute(txn => {
+    await coll.execute(txn => {
       for (let [i, key] of keys.entries()) {
         const id = ids[i];
         const res = txn.deleteAny(id);
@@ -1077,25 +1121,25 @@ this.ExtensionStorageSync = {
     if (Object.keys(changes).length > 0) {
       this.notifyListeners(extension, changes);
     }
-  }),
+  }
 
-  clear: Task.async(function* (extension, context) {
+  async clear(extension, context) {
     
     
     
-    const coll = yield this.getCollection(extension, context);
-    const res = yield coll.list();
+    const coll = await this.getCollection(extension, context);
+    const res = await coll.list();
     const records = res.data;
     const keys = records.map(record => record.key);
-    yield this.remove(extension, keys, context);
-  }),
+    await this.remove(extension, keys, context);
+  }
 
-  get: Task.async(function* (extension, spec, context) {
-    const coll = yield this.getCollection(extension, context);
+  async get(extension, spec, context) {
+    const coll = await this.getCollection(extension, context);
     let keys, records;
     if (spec === null) {
       records = {};
-      const res = yield coll.list();
+      const res = await coll.list();
       for (let record of res.data) {
         records[record.key] = record.data;
       }
@@ -1113,14 +1157,14 @@ this.ExtensionStorageSync = {
     }
 
     for (let key of keys) {
-      const res = yield coll.getAny(keyToId(key));
+      const res = await coll.getAny(keyToId(key));
       if (res.data && res.data._status != "deleted") {
         records[res.data.key] = res.data.data;
       }
     }
 
     return records;
-  }),
+  }
 
   addOnChangedListener(extension, listener, context) {
     let listeners = this.listeners.get(extension) || new Set();
@@ -1129,7 +1173,7 @@ this.ExtensionStorageSync = {
 
     
     return this.getCollection(extension, context);
-  },
+  }
 
   removeOnChangedListener(extension, listener) {
     let listeners = this.listeners.get(extension);
@@ -1137,7 +1181,7 @@ this.ExtensionStorageSync = {
     if (listeners.size == 0) {
       this.listeners.delete(extension);
     }
-  },
+  }
 
   notifyListeners(extension, changes) {
     Observers.notify("ext.storage.sync-changed");
@@ -1147,5 +1191,7 @@ this.ExtensionStorageSync = {
         runSafeSyncWithoutClone(listener, changes);
       }
     }
-  },
-};
+  }
+}
+this.ExtensionStorageSync = ExtensionStorageSync;
+this.extensionStorageSync = new ExtensionStorageSync(_fxaService);
