@@ -56,8 +56,12 @@ public:
 #include "nsCSSAnonBoxList.h"
 #undef CSS_NON_INHERITING_ANON_BOX
 #undef CSS_ANON_BOX
-      0;
+      false;
   }
+
+  
+  
+  static NonInheriting NonInheritingTypeForPseudoTag(nsIAtom* aPseudo);
 
   
   
