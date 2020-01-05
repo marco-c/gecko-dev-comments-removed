@@ -103,6 +103,7 @@ class FrameUniformityData;
 class PersistentBufferProvider;
 class GlyphArray;
 class WebRenderLayerManager;
+struct AnimData;
 
 namespace layerscope {
 class LayersPacket;
@@ -764,20 +765,14 @@ private:
   std::map<FrameMetrics::ViewID,ScrollUpdateInfo> mPendingScrollUpdates;
 };
 
-typedef InfallibleTArray<Animation> AnimationArray;
-
-struct AnimData {
-  InfallibleTArray<mozilla::StyleAnimationValue> mStartValues;
-  InfallibleTArray<mozilla::StyleAnimationValue> mEndValues;
-  InfallibleTArray<Maybe<mozilla::ComputedTimingFunction>> mFunctions;
-};
-
 
 
 
 
 class Layer {
   NS_INLINE_DECL_REFCOUNTING(Layer)
+
+  typedef InfallibleTArray<Animation> AnimationArray;
 
 public:
   
