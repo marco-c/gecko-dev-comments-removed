@@ -25,6 +25,7 @@ namespace mozilla
 namespace layers
 {
   class ImageContainer;
+  class KnowsCompositor;
 } 
 class MediaResource;
 class ReentrantMonitor;
@@ -65,6 +66,15 @@ public:
   
   
   virtual MediaEventSource<void>* DataArrivedEvent()
+  {
+    return nullptr;
+  }
+
+  
+  
+  
+  
+  virtual MediaEventSource<RefPtr<layers::KnowsCompositor>>* CompositorUpdatedEvent()
   {
     return nullptr;
   }

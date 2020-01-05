@@ -32,6 +32,8 @@
 #include "nsPrintfCString.h"
 #include "mozilla/Telemetry.h"
 #include "GMPService.h"
+#include "Layers.h"
+#include "mozilla/layers/ShadowLayers.h"
 
 #ifdef MOZ_ANDROID_OMX
 #include "AndroidBridge.h"
@@ -172,6 +174,15 @@ MediaDecoder::ResourceCallback::SetInfinite(bool aInfinite)
 }
 
 void
+MediaDecoder::ResourceCallback::SetMediaSeekable(bool aMediaSeekable)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mDecoder) {
+    mDecoder->SetMediaSeekable(aMediaSeekable);
+  }
+}
+
+void
 MediaDecoder::ResourceCallback::NotifyNetworkError()
 {
   MOZ_ASSERT(NS_IsMainThread());
@@ -287,6 +298,19 @@ MediaDecoder::NotifyOwnerActivityChanged(bool aIsVisible)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!IsShutdown());
   SetElementVisibility(aIsVisible);
+
+  MediaDecoderOwner* owner = GetOwner();
+  NS_ENSURE_TRUE_VOID(owner);
+
+  dom::HTMLMediaElement* element = owner->GetMediaElement();
+  NS_ENSURE_TRUE_VOID(element);
+
+  RefPtr<LayerManager> layerManager =
+    nsContentUtils::LayerManagerForDocument(element->OwnerDoc());
+  NS_ENSURE_TRUE_VOID(layerManager);
+
+  RefPtr<KnowsCompositor> knowsCompositor = layerManager->AsShadowForwarder();
+  mCompositorUpdatedEvent.Notify(knowsCompositor);
 }
 
 void
@@ -397,6 +421,8 @@ MediaDecoder::MediaDecoder(MediaDecoderOwner* aOwner)
   , INIT_CANONICAL(mPlaybackBytesPerSecond, 0.0)
   , INIT_CANONICAL(mPlaybackRateReliable, true)
   , INIT_CANONICAL(mDecoderPosition, 0)
+  , INIT_CANONICAL(mMediaSeekable, true)
+  , INIT_CANONICAL(mMediaSeekableOnlyInBufferedRanges, false)
   , INIT_CANONICAL(mIsVisible, !aOwner->IsHidden())
   , mTelemetryReported(false)
 {
@@ -780,8 +806,8 @@ MediaDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
               aInfo->mAudio.mChannels, aInfo->mAudio.mRate,
               aInfo->HasAudio(), aInfo->HasVideo());
 
-  mMediaSeekable = aInfo->mMediaSeekable;
-  mMediaSeekableOnlyInBufferedRanges = aInfo->mMediaSeekableOnlyInBufferedRanges;
+  SetMediaSeekable(aInfo->mMediaSeekable);
+  SetMediaSeekableOnlyInBufferedRanges(aInfo->mMediaSeekableOnlyInBufferedRanges);
   mInfo = aInfo.forget();
   ConstructMediaTracks();
 
@@ -1275,6 +1301,18 @@ MediaDecoder::UpdateEstimatedMediaDuration(int64_t aDuration)
   mEstimatedDuration = Some(TimeUnit::FromMicroseconds(aDuration));
 }
 
+void
+MediaDecoder::SetMediaSeekable(bool aMediaSeekable) {
+  MOZ_ASSERT(NS_IsMainThread());
+  mMediaSeekable = aMediaSeekable;
+}
+
+void
+MediaDecoder::SetMediaSeekableOnlyInBufferedRanges(bool aMediaSeekableOnlyInBufferedRanges){
+  MOZ_ASSERT(NS_IsMainThread());
+  mMediaSeekableOnlyInBufferedRanges = aMediaSeekableOnlyInBufferedRanges;
+}
+
 bool
 MediaDecoder::IsTransportSeekable()
 {
@@ -1290,6 +1328,13 @@ MediaDecoder::IsMediaSeekable()
   return mMediaSeekable;
 }
 
+bool
+MediaDecoder::IsMediaSeekableOnlyInBufferedRanges()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  return mMediaSeekableOnlyInBufferedRanges;
+}
+
 media::TimeIntervals
 MediaDecoder::GetSeekable()
 {
@@ -1303,7 +1348,7 @@ MediaDecoder::GetSeekable()
   
   
   
-  if (mMediaSeekableOnlyInBufferedRanges) {
+  if (IsMediaSeekableOnlyInBufferedRanges()) {
     return GetBuffered();
   } else if (!IsMediaSeekable()) {
     return media::TimeIntervals();
