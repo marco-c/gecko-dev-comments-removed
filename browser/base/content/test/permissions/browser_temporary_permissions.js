@@ -3,12 +3,11 @@
 
 "use strict";
 
-Cu.import("resource:///modules/SitePermissions.jsm", this);
 Cu.import("resource:///modules/E10SUtils.jsm");
 
 const ORIGIN = "https://example.com";
-const PERMISSIONS_PAGE = getRootDirectory(gTestPath).replace("chrome://mochitests/content", ORIGIN) + "permissions.html"
-const SUBFRAME_PAGE = getRootDirectory(gTestPath).replace("chrome://mochitests/content", ORIGIN) + "temporary_permissions_subframe.html"
+const PERMISSIONS_PAGE = getRootDirectory(gTestPath).replace("chrome://mochitests/content", ORIGIN) + "permissions.html";
+const SUBFRAME_PAGE = getRootDirectory(gTestPath).replace("chrome://mochitests/content", ORIGIN) + "temporary_permissions_subframe.html";
 
 const EXPIRE_TIME_MS = 100;
 const TIMEOUT_MS = 500;
