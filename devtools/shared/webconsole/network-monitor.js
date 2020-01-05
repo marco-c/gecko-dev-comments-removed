@@ -38,6 +38,8 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 const RESPONSE_BODY_LIMIT = 1048576;
 
+exports.RESPONSE_BODY_LIMIT = RESPONSE_BODY_LIMIT;
+
 
 
 
@@ -598,7 +600,7 @@ NetworkResponseListener.prototype = {
       text: data || "",
     };
 
-    response.size = response.text.length;
+    response.size = this.bodySize;
     response.transferredSize = this.transferredSize;
 
     try {
