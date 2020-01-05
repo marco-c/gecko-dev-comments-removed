@@ -541,8 +541,7 @@ NS_IMETHODIMP nsXULWindow::GetUnscaledDevicePixelsPerCSSPixel(double *aScale)
 
 NS_IMETHODIMP nsXULWindow::SetPositionDesktopPix(int32_t aX, int32_t aY)
 {
-  nsresult rv = mWindow->Move(aX, aY);
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  mWindow->Move(aX, aY);
   if (!mChromeLoaded) {
     
     
@@ -581,8 +580,7 @@ NS_IMETHODIMP nsXULWindow::SetSize(int32_t aCX, int32_t aCY, bool aRepaint)
 
   DesktopToLayoutDeviceScale scale = mWindow->GetDesktopToDeviceScale();
   DesktopSize size = LayoutDeviceIntSize(aCX, aCY) / scale;
-  nsresult rv = mWindow->Resize(size.width, size.height, aRepaint);
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  mWindow->Resize(size.width, size.height, aRepaint);
   if (!mChromeLoaded) {
     
     
@@ -614,9 +612,8 @@ NS_IMETHODIMP nsXULWindow::SetPositionAndSize(int32_t aX, int32_t aY,
 
   DesktopToLayoutDeviceScale scale = mWindow->GetDesktopToDeviceScale();
   DesktopRect rect = LayoutDeviceIntRect(aX, aY, aCX, aCY) / scale;
-  nsresult rv = mWindow->Resize(rect.x, rect.y, rect.width, rect.height,
-                                !!(aFlags & nsIBaseWindow::eRepaint));
-  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  mWindow->Resize(rect.x, rect.y, rect.width, rect.height,
+                  !!(aFlags & nsIBaseWindow::eRepaint));
   if (!mChromeLoaded) {
     
     

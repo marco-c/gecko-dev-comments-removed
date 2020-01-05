@@ -721,7 +721,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD Move(double aX, double aY) = 0;
+    virtual void Move(double aX, double aY) = 0;
 
     
 
@@ -745,10 +745,9 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD Resize(double aWidth,
-                      double aHeight,
-                      bool   aRepaint) = 0;
+    virtual void Resize(double aWidth,
+                        double aHeight,
+                        bool   aRepaint) = 0;
 
     
 
@@ -761,11 +760,11 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD Resize(double aX,
-                      double aY,
-                      double aWidth,
-                      double aHeight,
-                      bool   aRepaint) = 0;
+    virtual void Resize(double aX,
+                        double aY,
+                        double aWidth,
+                        double aHeight,
+                        bool   aRepaint) = 0;
 
     
 
