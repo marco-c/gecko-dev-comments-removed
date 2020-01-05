@@ -520,7 +520,7 @@ pub struct BlockFlow {
     pub float: Option<Box<FloatedBlockInfo>>,
 
     
-    pub flags: BlockFlowFlags,
+    flags: BlockFlowFlags,
 }
 
 bitflags! {
