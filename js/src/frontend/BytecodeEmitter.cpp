@@ -6748,9 +6748,6 @@ BytecodeEmitter::emitFunction(ParseNode* pn, bool needsProto)
             if (emittingRunOnceLambda)
                 fun->lazyScript()->setTreatAsRunOnce();
         } else {
-
-            if (outersc->isFunctionBox() && outersc->asFunctionBox()->mightAliasLocals())
-                funbox->setMightAliasLocals();      
             MOZ_ASSERT_IF(outersc->strict(), funbox->strictScript);
 
             
