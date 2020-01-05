@@ -344,24 +344,6 @@ public:
     nsCOMArray_base::ReplaceElementAt(aIndex, aElement);
   }
 
-  
-  
-  
-  typedef bool (*nsCOMArrayEnumFunc)(T* aElement, void* aData);
-
-  
-  bool EnumerateForwards(nsCOMArrayEnumFunc aFunc, void* aData)
-  {
-    return nsCOMArray_base::EnumerateForwards(nsBaseArrayEnumFunc(aFunc),
-                                              aData);
-  }
-
-  bool EnumerateBackwards(nsCOMArrayEnumFunc aFunc, void* aData)
-  {
-    return nsCOMArray_base::EnumerateBackwards(nsBaseArrayEnumFunc(aFunc),
-                                               aData);
-  }
-
   typedef int (*nsCOMArrayComparatorFunc)(T* aElement1, T* aElement2,
                                           void* aData);
 
