@@ -1302,11 +1302,6 @@ ProcessHasSignalHandlers()
         return sHaveSignalHandlers;
     sTriedInstallSignalHandlers = true;
 
-    
-    
-    if (getenv("JS_DISABLE_SLOW_SCRIPT_SIGNALS") || getenv("JS_NO_SIGNALS"))
-        return false;
-
 #if defined(ANDROID)
     
     

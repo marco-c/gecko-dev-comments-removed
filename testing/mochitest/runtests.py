@@ -1528,9 +1528,6 @@ toolbar#nav-bar {
         if self.mozLogs:
             browserEnv["MOZ_LOG"] = MOZ_LOG
 
-        if debugger and not options.slowscript:
-            browserEnv["JS_DISABLE_SLOW_SCRIPT_SIGNALS"] = "1"
-
         
         
         if not options.enableCPOWWarnings:
@@ -2243,7 +2240,10 @@ toolbar#nav-bar {
             
             
 
-            skip_leak_conditions = []
+            info = mozinfo.info
+            skip_leak_conditions = [
+                (info['debug'] and options.flavor == 'plain' and d == 'toolkit/components/prompts/test' and info['os'] == 'mac', 'bug 1325275'),  
+            ]
 
             for condition, reason in skip_leak_conditions:
                 if condition:
