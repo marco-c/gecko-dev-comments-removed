@@ -193,6 +193,9 @@ this.SelectParentHelper = {
         return;
       }
 
+      let scrollBox = currentMenulist.menupopup.scrollBox;
+      let scrollTop = scrollBox.scrollTop;
+
       let options = msg.data.options;
       let selectedIndex = msg.data.selectedIndex;
       let uaBackgroundColor = msg.data.uaBackgroundColor;
@@ -206,6 +209,9 @@ this.SelectParentHelper = {
                     currentZoom, uaBackgroundColor, uaColor,
                     uaSelectBackgroundColor, uaSelectColor,
                     selectBackgroundColor, selectColor, selectTextShadow);
+
+      
+      scrollBox.scrollTop = scrollTop;
     }
   },
 
