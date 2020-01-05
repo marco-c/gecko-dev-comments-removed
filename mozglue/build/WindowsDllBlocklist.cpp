@@ -238,6 +238,8 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
 
   
   { "nahimic2devprops.dll", ALL_VERSIONS },
+  
+  { "nahimicmsiosd.dll", ALL_VERSIONS },
 
   { nullptr, 0 }
 };
