@@ -27,7 +27,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for InheritancePass {
                         _gen: &hir::Generics, id: ast::NodeId) {
         
         
-        if cx.tcx.has_attr(cx.tcx.map.local_def_id(id), "_dom_struct_marker") {
+        if cx.tcx.has_attr(cx.tcx.hir.local_def_id(id), "_dom_struct_marker") {
             
             let reflector_span = def.fields().iter().enumerate()
                                     .find(|&(ctr, f)| {
@@ -66,7 +66,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for InheritancePass {
             if let Some(sp) = reflector_span {
                 if dom_spans.len() > 0 {
                     let mut db = cx.struct_span_lint(INHERITANCE_INTEGRITY,
-                                                     cx.tcx.map.expect_item(id).span,
+                                                     cx.tcx.hir.expect_item(id).span,
                                                      "This DOM struct has both Reflector \
                                                       and bare DOM struct members");
                     if cx.current_level(INHERITANCE_INTEGRITY) != Level::Allow {
@@ -79,7 +79,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for InheritancePass {
             
             } else if dom_spans.len() > 1 {
                 let mut db = cx.struct_span_lint(INHERITANCE_INTEGRITY,
-                                                 cx.tcx.map.expect_item(id).span,
+                                                 cx.tcx.hir.expect_item(id).span,
                                                  "This DOM struct has multiple \
                                                   DOM struct members, only one is allowed");
                 if cx.current_level(INHERITANCE_INTEGRITY) != Level::Allow {
@@ -88,7 +88,7 @@ impl<'a, 'tcx> LateLintPass<'a, 'tcx> for InheritancePass {
                     }
                 }
             } else if dom_spans.is_empty() {
-                cx.span_lint(INHERITANCE_INTEGRITY, cx.tcx.map.expect_item(id).span,
+                cx.span_lint(INHERITANCE_INTEGRITY, cx.tcx.hir.expect_item(id).span,
                              "This DOM struct has no reflector or parent DOM struct");
             }
         }
