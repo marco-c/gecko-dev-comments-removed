@@ -399,6 +399,14 @@ impl Generics {
     pub fn is_parameterized(&self) -> bool {
         self.is_lt_parameterized() || self.is_type_parameterized()
     }
+    pub fn span_for_name(&self, name: &str) -> Option<Span> {
+        for t in &self.ty_params {
+            if t.ident.name.as_str() == name {
+                return Some(t.span);
+            }
+        }
+        None
+    }
 }
 
 impl Default for Generics {
@@ -1012,7 +1020,7 @@ pub enum ExprKind {
     
     
     
-    Closure(CaptureBy, P<FnDecl>, P<Block>, Span),
+    Closure(CaptureBy, P<FnDecl>, P<Expr>, Span),
     
     Block(P<Block>),
 
@@ -1050,7 +1058,7 @@ pub enum ExprKind {
     Ret(Option<P<Expr>>),
 
     
-    InlineAsm(InlineAsm),
+    InlineAsm(P<InlineAsm>),
 
     
     Mac(Mac),
