@@ -92,6 +92,10 @@ function checkIndirectCall(entry, location, callee)
     var name = entry.name;
 
     
+    if (callee.startsWith('malloc_table_t.'))
+        return;
+
+    
     if (/PLDHashTable/.test(name) && (/matchEntry/.test(callee) || /hashKey/.test(callee)))
         return;
     if (/PL_HashTable/.test(name) && /keyCompare/.test(callee))
@@ -468,6 +472,12 @@ function WorklistEntry(name, safeArguments, stack)
     this.stack = stack;
 }
 
+WorklistEntry.prototype.readable = function()
+{
+    const [ mangled, readable ] = splitFunction(this.name);
+    return readable;
+}
+
 WorklistEntry.prototype.mangledName = function()
 {
     var str = this.name;
@@ -618,7 +628,7 @@ function dumpError(entry, location, text)
 {
     var stack = entry.stack;
     print("Error: " + text);
-    print("Location: " + entry.name + (location ? " @ " + location : "") + stack[0].safeString());
+    print("Location: " + entry.readable() + (location ? " @ " + location : "") + stack[0].safeString());
     print("Stack Trace:");
     
     
@@ -795,10 +805,27 @@ function maybeProcessMissingFunction(entry, addCallee)
     }
 
     
+    if (name.includes("C1E")) {
+        var callee = name.replace("C1E", "C4E");
+        addCallee(new CallSite(name, entry.safeArguments, entry.stack[0].location));
+        return true;
+    }
+
+    
     
     
     if (/mozilla::dom::Element/.test(name)) {
         var callee = name.replace("mozilla::dom::Element", "nsIDocument::Element");
+        addCallee(new CallSite(name, entry.safeArguments, entry.stack[0].location));
+        return true;
+    }
+
+    
+    
+    
+    
+    if (/\$nsTextFrame*/.test(name)) {
+        var callee = name.replace("nsTextFrame", "nsIFrame");
         addCallee(new CallSite(name, entry.safeArguments, entry.stack[0].location));
         return true;
     }
