@@ -1288,11 +1288,7 @@ pref("privacy.trackingprotection.pbmode.enabled",  true);
 pref("privacy.trackingprotection.annotate_channels",  true);
 
 
-#ifdef NIGHTLY_BUILD
-pref("privacy.trackingprotection.lower_network_priority", true);
-#else
-pref("privacy.trackingprotection.lower_network_priority", false);
-#endif
+pref("privacy.trackingprotection.lower_network_priority",  false);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
@@ -4661,6 +4657,7 @@ pref("layers.dump-host-layers", false);
 pref("layers.draw-borders", false);
 pref("layers.draw-tile-borders", false);
 pref("layers.draw-bigimage-borders", false);
+pref("layers.frame-counter", false);
 pref("layers.enable-tiles", false);
 pref("layers.single-tile.enabled", true);
 pref("layers.low-precision-buffer", false);
@@ -5665,7 +5662,7 @@ pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
 
 pref("prompts.authentication_dialog_abuse_limit", 3);
 
-pref("dom.IntersectionObserver.enabled", true);
+pref("dom.IntersectionObserver.enabled", false);
 
 
 pref("dom.moduleScripts.enabled", false);
@@ -5690,3 +5687,4 @@ pref("layers.advanced.boxshadow-outer-layers", 2);
 pref("layers.advanced.caret-layers", 2);
 pref("layers.advanced.displaybuttonborder-layers", 2);
 pref("layers.advanced.outline-layers", 2);
+pref("layers.advanced.solid-color-layers", 2);
