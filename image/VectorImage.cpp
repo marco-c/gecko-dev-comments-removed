@@ -153,7 +153,7 @@ public:
 
     
     
-    RefPtr<SVGParseCompleteListener> kungFuDeathGroup(this);
+    RefPtr<SVGParseCompleteListener> kungFuDeathGrip(this);
 
     mImage->OnSVGDocumentParsed();
   }
@@ -212,7 +212,7 @@ public:
 
     
     
-    RefPtr<SVGLoadEventListener> kungFuDeathGroup(this);
+    RefPtr<SVGLoadEventListener> kungFuDeathGrip(this);
 
     nsAutoString eventType;
     aEvent->GetType(eventType);
@@ -536,8 +536,8 @@ VectorImage::RequestRefresh(const TimeStamp& aTime)
   mSVGDocumentWrapper->TickRefreshDriver();
 
   if (mHasPendingInvalidation) {
-    SendInvalidationNotifications();
     mHasPendingInvalidation = false;
+    SendInvalidationNotifications();
   }
 }
 
@@ -1142,6 +1142,10 @@ VectorImage::OnStartRequest(nsIRequest* aRequest, nsISupports* aCtxt)
 
   
   
+  RefPtr<VectorImage> kungFuDeathGrip(this);
+
+  
+  
   if (mProgressTracker) {
     mProgressTracker->SyncNotifyProgress(FLAG_ONLOAD_BLOCKED);
   }
@@ -1219,6 +1223,10 @@ VectorImage::OnSVGDocumentLoaded()
 
   
   mRenderingObserver = new SVGRootRenderingObserver(mSVGDocumentWrapper, this);
+
+  
+  
+  RefPtr<VectorImage> kungFuDeathGrip(this);
 
   
   if (mProgressTracker) {
