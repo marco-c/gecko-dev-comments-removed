@@ -516,7 +516,6 @@ this.tabs = class extends ExtensionAPI {
         },
 
         async move(tabIds, moveProperties) {
-          let index = moveProperties.index;
           let tabsMoved = [];
           if (!Array.isArray(tabIds)) {
             tabIds = [tabIds];
@@ -539,6 +538,7 @@ this.tabs = class extends ExtensionAPI {
 
 
           let indexMap = new Map();
+          let lastInsertion = new Map();
 
           let tabs = tabIds.map(tabId => tabTracker.getTab(tabId));
           for (let nativeTab of tabs) {
@@ -546,7 +546,7 @@ this.tabs = class extends ExtensionAPI {
             let window = destinationWindow || nativeTab.ownerGlobal;
             let gBrowser = window.gBrowser;
 
-            let insertionPoint = indexMap.get(window) || index;
+            let insertionPoint = indexMap.get(window) || moveProperties.index;
             
             if (insertionPoint == -1) {
               insertionPoint = gBrowser.tabs.length;
@@ -562,7 +562,16 @@ this.tabs = class extends ExtensionAPI {
               continue;
             }
 
-            indexMap.set(window, insertionPoint + 1);
+            
+            
+            
+            
+            if (lastInsertion.has(window) &&
+              lastInsertion.get(window) === insertionPoint &&
+              nativeTab._tPos > insertionPoint) {
+                insertionPoint++;
+                indexMap.set(window, insertionPoint);
+            }
 
             if (nativeTab.ownerGlobal != window) {
               
@@ -572,6 +581,7 @@ this.tabs = class extends ExtensionAPI {
               
               gBrowser.moveTabTo(nativeTab, insertionPoint);
             }
+            lastInsertion.set(window, nativeTab._tPos);
             tabsMoved.push(nativeTab);
           }
 
