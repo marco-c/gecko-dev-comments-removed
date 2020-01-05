@@ -2,45 +2,46 @@
 
 
 
-use syntax::ext::base::ExtCtxt;
+use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::codemap::Span;
-use syntax::ptr::P;
-use syntax::ast::{Item, MetaItem};
+use syntax::ast::MetaItem;
 use syntax::ast;
 use utils::match_ty_unwrap;
 
 
-pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, item: &Item, push: &mut FnMut(P<Item>) -> ()) {
-    if let ast::ItemStruct(ref def, _) = item.node {
-        let struct_name = item.ident;
-        
-        match def.fields.iter().find(|f| match_ty_unwrap(&*f.node.ty, &["dom", "bindings", "utils", "Reflector"]).is_some()) {
+pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, annotatable: Annotatable, push: &mut FnMut(Annotatable)) {
+    if let Annotatable::Item(item) = annotatable {
+        if let ast::ItemStruct(ref def, _) = item.node {
+            let struct_name = item.ident;
             
-            Some(f) => {
-                let field_name = f.node.ident();
-                let impl_item = quote_item!(cx,
-                    impl ::dom::bindings::utils::Reflectable for $struct_name {
-                        fn reflector<'a>(&'a self) -> &'a ::dom::bindings::utils::Reflector {
-                            &self.$field_name
+            match def.fields.iter().find(|f| match_ty_unwrap(&*f.node.ty, &["dom", "bindings", "utils", "Reflector"]).is_some()) {
+                
+                Some(f) => {
+                    let field_name = f.node.ident();
+                    let impl_item = quote_item!(cx,
+                        impl ::dom::bindings::utils::Reflectable for $struct_name {
+                            fn reflector<'a>(&'a self) -> &'a ::dom::bindings::utils::Reflector {
+                                &self.$field_name
+                            }
                         }
-                    }
-                );
-                impl_item.map(|it| push(it))
-            },
-            
-            None => {
-                let field_name = def.fields[0].node.ident();
-                let impl_item = quote_item!(cx,
-                    impl ::dom::bindings::utils::Reflectable for $struct_name {
-                        fn reflector<'a>(&'a self) -> &'a ::dom::bindings::utils::Reflector {
-                            self.$field_name.reflector()
+                    );
+                    impl_item.map(|it| push(Annotatable::Item(it)))
+                },
+                
+                None => {
+                    let field_name = def.fields[0].node.ident();
+                    let impl_item = quote_item!(cx,
+                        impl ::dom::bindings::utils::Reflectable for $struct_name {
+                            fn reflector<'a>(&'a self) -> &'a ::dom::bindings::utils::Reflector {
+                                self.$field_name.reflector()
+                            }
                         }
-                    }
-                );
-                impl_item.map(|it| push(it))
-            }
-        };
-    } else {
-        cx.span_err(span, "#[dom_struct] seems to have been applied to a non-struct");
+                    );
+                    impl_item.map(|it| push(Annotatable::Item(it)))
+                }
+            };
+        } else {
+            cx.span_err(span, "#[dom_struct] seems to have been applied to a non-struct");
+        }
     }
 }

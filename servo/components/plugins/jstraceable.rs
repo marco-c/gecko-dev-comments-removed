@@ -5,23 +5,28 @@
 use syntax::ext::base::{Annotatable, ExtCtxt};
 use syntax::codemap::Span;
 use syntax::ptr::P;
-use syntax::ast::{Item, MetaItem, Expr};
+use syntax::ast::{MetaItem, Expr};
 use syntax::ast;
 use syntax::ext::build::AstBuilder;
 use syntax::ext::deriving::generic::{combine_substructure, EnumMatching, FieldInfo, MethodDef, Struct, Substructure, TraitDef, ty};
 
-pub fn expand_dom_struct(cx: &mut ExtCtxt, _: Span, _: &MetaItem, item: P<Item>) -> P<Item> {
-    let mut item2 = (*item).clone();
-    item2.attrs.push(quote_attr!(cx, #[must_root]));
-    item2.attrs.push(quote_attr!(cx, #[privatize]));
-    item2.attrs.push(quote_attr!(cx, #[jstraceable]));
+pub fn expand_dom_struct(cx: &mut ExtCtxt, sp: Span, _: &MetaItem, anno: Annotatable) -> Annotatable {
+    if let Annotatable::Item(item) = anno {
+        let mut item2 = (*item).clone();
+        item2.attrs.push(quote_attr!(cx, #[must_root]));
+        item2.attrs.push(quote_attr!(cx, #[privatize]));
+        item2.attrs.push(quote_attr!(cx, #[jstraceable]));
 
-    
-    item2.attrs.push(quote_attr!(cx, #[_generate_reflector]));
-    
-    
-    item2.attrs.push(quote_attr!(cx, #[_dom_struct_marker]));
-    P(item2)
+        
+        item2.attrs.push(quote_attr!(cx, #[_generate_reflector]));
+        
+        
+        item2.attrs.push(quote_attr!(cx, #[_dom_struct_marker]));
+        Annotatable::Item(P(item2))
+    } else {
+        cx.span_err(sp, "#[dom_struct] applied to something other than a struct");
+        anno
+    }
 }
 
 
