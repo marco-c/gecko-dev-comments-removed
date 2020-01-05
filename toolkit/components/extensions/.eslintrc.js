@@ -168,6 +168,9 @@ module.exports = {
     "no-lonely-if": "warn",
 
     
+    "no-mixed-operators": ["error", {"groups": [["&&", "||"], ["==", "!=", "===", "!==", ">", ">=", "<", "<="], ["in", "instanceof"]]}],
+
+    
     "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
 
     
