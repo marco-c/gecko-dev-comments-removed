@@ -4,17 +4,20 @@
 
 use dom::bindings::codegen::Bindings::NodeBinding::NodeConstants;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
+use dom::bindings::codegen::Bindings::NodeListBinding::NodeListMethods;
 use dom::bindings::codegen::Bindings::RangeBinding::{self, RangeConstants};
 use dom::bindings::codegen::Bindings::RangeBinding::RangeMethods;
+use dom::bindings::codegen::Bindings::TextBinding::TextMethods;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
-use dom::bindings::codegen::InheritTypes::NodeCast;
+use dom::bindings::codegen::InheritTypes::{NodeCast, TextCast};
 use dom::bindings::error::{Error, ErrorResult, Fallible};
+use dom::bindings::error::Error::HierarchyRequest;
 use dom::bindings::global::GlobalRef;
-use dom::bindings::js::{JS, Root};
+use dom::bindings::js::{JS, Root, RootedReference};
 use dom::bindings::utils::{Reflector, reflect_dom_object};
+use dom::characterdata::CharacterDataTypeId;
 use dom::document::{Document, DocumentHelpers};
-use dom::node::{Node, NodeHelpers};
-
+use dom::node::{Node, NodeHelpers, NodeTypeId};
 use std::cell::RefCell;
 use std::cmp::{Ord, Ordering, PartialEq, PartialOrd};
 use std::rc::Rc;
@@ -287,6 +290,90 @@ impl<'a> RangeMethods for &'a Range {
     
     fn Detach(self) {
         
+    }
+
+    
+    
+    fn InsertNode(self, node: &Node) -> ErrorResult {
+        let (start_node, start_offset) = {
+            let inner = self.inner().borrow();
+            let start = &inner.start;
+            (start.node(), start.offset())
+        };
+
+        
+        match start_node.type_id() {
+            
+            NodeTypeId::CharacterData(CharacterDataTypeId::Text) => (),
+            NodeTypeId::CharacterData(_) => return Err(HierarchyRequest),
+            _ => ()
+        }
+
+        
+        let (reference_node, parent) =
+            if start_node.type_id() == NodeTypeId::CharacterData(CharacterDataTypeId::Text) {
+                
+                let parent = match start_node.GetParentNode() {
+                    Some(parent) => parent,
+                    
+                    None => return Err(HierarchyRequest)
+                };
+                
+                (Some(Root::from_ref(start_node.r())), parent)
+            } else {
+                
+                let child = start_node.ChildNodes().Item(start_offset);
+                (child, Root::from_ref(start_node.r()))
+            };
+
+        
+        try!(Node::ensure_pre_insertion_validity(node,
+                                                 parent.r(),
+                                                 reference_node.r()));
+
+        
+        let split_text;
+        let reference_node =
+            match TextCast::to_ref(start_node.r()) {
+                Some(text) => {
+                    split_text = try!(text.SplitText(start_offset));
+                    let new_reference = NodeCast::from_root(split_text);
+                    assert!(new_reference.GetParentNode().r() == Some(parent.r()));
+                    Some(new_reference)
+                },
+                _ => reference_node
+            };
+
+        
+        let reference_node = if Some(node) == reference_node.r() {
+            node.GetNextSibling()
+        } else {
+            reference_node
+        };
+
+        
+        node.remove_self();
+
+        
+        let new_offset =
+            reference_node.r().map_or(parent.len(), |node| node.index());
+
+        
+        let new_offset = new_offset + if node.type_id() == NodeTypeId::DocumentFragment {
+            node.len()
+        } else {
+            1
+        };
+
+        
+        try!(Node::pre_insert(node, parent.r(), reference_node.r()));
+
+        
+        if self.Collapsed() {
+            self.inner().borrow_mut().set_end(parent.r(), new_offset);
+        }
+
+        Ok(())
     }
 }
 
