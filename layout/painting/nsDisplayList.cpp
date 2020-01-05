@@ -6226,9 +6226,9 @@ nsDisplayTransform::CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder)
   return mAllowAsyncAnimation;
 }
 
- bool
+ auto
 nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBuilder,
-                                                      nsIFrame* aFrame)
+                                                      nsIFrame* aFrame) -> PrerenderDecision
 {
   
   
@@ -6242,7 +6242,7 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
       AnimationPerformanceWarning(
         AnimationPerformanceWarning::Type::TransformFrameInactive));
 
-    return false;
+    return NoPrerender;
   }
 
   nsSize refSize = aBuilder->RootReferenceFrame()->GetSize();
@@ -6258,7 +6258,7 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
   if (frameSize <= refSize) {
     maxInAppUnits = aFrame->PresContext()->DevPixelsToAppUnits(4096);
     if (frameSize <= nsSize(maxInAppUnits, maxInAppUnits)) {
-      return true;
+      return FullPrerender;
     }
   }
 
@@ -6278,7 +6278,7 @@ nsDisplayTransform::ShouldPrerenderTransformedContent(nsDisplayListBuilder* aBui
         nsPresContext::AppUnitsToIntCSSPixels(visual.height),
         nsPresContext::AppUnitsToIntCSSPixels(maxInAppUnits)
       }));
-  return false;
+  return NoPrerender;
 }
 
 
