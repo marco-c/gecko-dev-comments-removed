@@ -468,24 +468,30 @@ DocAccessibleParent::GetXPCAccessible(ProxyAccessible* aProxy)
 
 
 
-
-
-
-mozilla::ipc::IPCResult
-DocAccessibleParent::RecvCOMProxy(const IAccessibleHolder& aCOMProxy,
-                                  IAccessibleHolder* aParentCOMProxy)
+void
+DocAccessibleParent::SetCOMProxy(const RefPtr<IAccessible>& aCOMProxy)
 {
-  RefPtr<IAccessible> ptr(aCOMProxy.Get());
-  SetCOMInterface(ptr);
+  SetCOMInterface(aCOMProxy);
+
+  
+  auto tab = static_cast<dom::TabParent*>(Manager());
+  MOZ_ASSERT(tab);
+  if (tab->IsDestroyed()) {
+    return;
+  }
 
   Accessible* outerDoc = OuterDocOfRemoteBrowser();
+  MOZ_ASSERT(outerDoc);
+
   IAccessible* rawNative = nullptr;
   if (outerDoc) {
     outerDoc->GetNativeInterface((void**) &rawNative);
+    MOZ_ASSERT(rawNative);
   }
 
-  aParentCOMProxy->Set(IAccessibleHolder::COMPtrType(rawNative));
-  return IPC_OK();
+  IAccessibleHolder::COMPtrType ptr(rawNative);
+  IAccessibleHolder holder(Move(ptr));
+  Unused << SendParentCOMProxy(holder);
 }
 
 mozilla::ipc::IPCResult
