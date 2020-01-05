@@ -751,7 +751,7 @@ impl IOCompositor {
 
         // Render to PNG. We must read from the back buffer (ie, before
         // self.window.present()) as OpenGL ES 2 does not have glReadBuffer().
-        if self.load_complete && self.ready_state == FinishedLoading 
+        if self.load_complete && self.ready_state == FinishedLoading
             && self.opts.output_file.is_some() {
             let (width, height) = (self.window_size.width as uint, self.window_size.height as uint);
             let path = from_str::<Path>(*self.opts.output_file.get_ref()).unwrap();

@@ -61,7 +61,7 @@ pub trait WindowMethods<A> {
     fn size(&self) -> Size2D<f32>;
     
     fn present(&self);
- 
+
     
     fn recv(&self) -> WindowEvent;
 
