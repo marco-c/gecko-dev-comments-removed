@@ -10,6 +10,7 @@ import org.mozilla.gecko.Tab;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,8 @@ import java.util.ArrayList;
 
 public class TabsLayoutRecyclerAdapter
         extends RecyclerView.Adapter<TabsLayoutRecyclerAdapter.TabsListViewHolder> {
+
+    private static final String LOGTAG = "Gecko" + TabsLayoutRecyclerAdapter.class.getSimpleName();
 
     private final int tabLayoutId;
     private @NonNull ArrayList<Tab> tabs;
@@ -74,6 +77,21 @@ public class TabsLayoutRecyclerAdapter
 
      void notifyTabChanged(Tab tab) {
         notifyItemChanged(getPositionForTab(tab));
+    }
+
+     void notifyTabInserted(Tab tab, int index) {
+        if (index >= 0 && index <= tabs.size()) {
+            tabs.add(index, tab);
+            notifyItemInserted(index);
+        } else {
+            
+            tabs.add(tab);
+            notifyItemInserted(tabs.size() - 1);
+            
+            if (index != -1) {
+                Log.e(LOGTAG, "Tab was inserted at an invalid position: " + Integer.toString(index));
+            }
+        }
     }
 
     @Override

@@ -98,8 +98,13 @@ public abstract class TabsLayout extends RecyclerView
     public void onTabChanged(Tab tab, Tabs.TabEvents msg, String data) {
         switch (msg) {
             case ADDED:
-                
-                refreshTabsData();
+                final int tabIndex = Integer.parseInt(data);
+                tabsAdapter.notifyTabInserted(tab, tabIndex);
+                if (addAtIndexRequiresScroll(tabIndex)) {
+                    
+                    
+                    scrollToPosition(tabIndex);
+                }
                 break;
 
             case CLOSED:
@@ -118,6 +123,10 @@ public abstract class TabsLayout extends RecyclerView
                 break;
         }
     }
+
+    
+    
+    abstract protected boolean addAtIndexRequiresScroll(int index);
 
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
