@@ -1267,8 +1267,6 @@ EnsureMIMEOfScript(nsIURI* aURI, nsHttpResponseHead* aResponseHead, nsILoadInfo*
 nsresult
 nsHttpChannel::CallOnStartRequest()
 {
-    LOG(("nsHttpChannel::CallOnStartRequest [this=%p]", this));
-
     MOZ_RELEASE_ASSERT(!(mRequireCORSPreflight &&
                          mInterceptCache != INTERCEPTED) ||
                        mIsCorsPreflightDone,
@@ -1362,7 +1360,7 @@ nsHttpChannel::CallOnStartRequest()
         }
     }
 
-    LOG(("  calling mListener->OnStartRequest [this=%p, listener=%p]\n", this, mListener.get()));
+    LOG(("  calling mListener->OnStartRequest\n"));
     if (mListener) {
         MOZ_ASSERT(!mOnStartRequestCalled,
                    "We should not call OsStartRequest twice");
@@ -2154,8 +2152,6 @@ nsHttpChannel::ContinueProcessResponse1()
 nsresult
 nsHttpChannel::ContinueProcessResponse2(nsresult rv)
 {
-    LOG(("nsHttpChannel::ContinueProcessResponse1 [this=%p, rv=0x%08x]", this, rv));
-
     if (NS_SUCCEEDED(rv)) {
         
         
@@ -2413,8 +2409,6 @@ nsHttpChannel::ProcessNormal()
 nsresult
 nsHttpChannel::ContinueProcessNormal(nsresult rv)
 {
-    LOG(("nsHttpChannel::ContinueProcessNormal [this=%p]", this));
-
     if (NS_FAILED(rv)) {
         
         
@@ -2652,8 +2646,6 @@ nsHttpChannel::StartRedirectChannelToURI(nsIURI *upgradedURI, uint32_t flags)
 nsresult
 nsHttpChannel::ContinueAsyncRedirectChannelToURI(nsresult rv)
 {
-    LOG(("nsHttpChannel::ContinueAsyncRedirectChannelToURI [this=%p]", this));
-
     
     
     mAPIRedirectToURI = nullptr;
@@ -2666,14 +2658,14 @@ nsHttpChannel::ContinueAsyncRedirectChannelToURI(nsresult rv)
         
         
         
-        Cancel(rv);
+        mStatus = rv;
     }
 
     if (mLoadGroup) {
         mLoadGroup->RemoveRequest(this, nullptr, mStatus);
     }
 
-    if (NS_FAILED(rv) && !mCachePump && !mTransactionPump) {
+    if (NS_FAILED(rv)) {
         
         
         
@@ -6755,8 +6747,6 @@ nsHttpChannel::ContinueOnStartRequest2(nsresult result)
 nsresult
 nsHttpChannel::ContinueOnStartRequest3(nsresult result)
 {
-    LOG(("nsHttpChannel::ContinueOnStartRequest3 [this=%p]", this));
-
     if (mFallingBack)
         return NS_OK;
 

@@ -2086,12 +2086,6 @@ HttpBaseChannel::GetRequestSucceeded(bool *aValue)
 NS_IMETHODIMP
 HttpBaseChannel::RedirectTo(nsIURI *targetURI)
 {
-  NS_ENSURE_ARG(targetURI);
-
-  nsAutoCString spec;
-  targetURI->GetAsciiSpec(spec);
-  LOG(("HttpBaseChannel::RedirectTo [this=%p, uri=%s]", this, spec.get()));
-
   
   
   
@@ -2975,8 +2969,6 @@ HttpBaseChannel::ReleaseListeners()
 void
 HttpBaseChannel::DoNotifyListener()
 {
-  LOG(("HttpBaseChannel::DoNotifyListener this=%p", this));
-
   if (mListener) {
     MOZ_ASSERT(!mOnStartRequestCalled,
                "We should not call OnStartRequest twice");
