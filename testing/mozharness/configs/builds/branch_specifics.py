@@ -394,7 +394,9 @@ config = {
         'stage_server': 'upload.ffxbld.productdelivery.prod.mozaws.net',
     },
     'fig': {},
-    
+    'graphics': {
+        'stage_server': 'upload.ffxbld.productdelivery.prod.mozaws.net',
+    },
     
     'jamun': {
         'update_channel': 'release-dev',
