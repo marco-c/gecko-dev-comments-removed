@@ -52,16 +52,13 @@ module.exports = createClass({
   componentWillMount() {
     const sourceMapService = this.props.sourceMapService;
     if (sourceMapService) {
-      const source = this.getSource();
-      sourceMapService.subscribe(source, this.onSourceUpdated);
-    }
-  },
-
-  componentWillUnmount() {
-    const sourceMapService = this.props.sourceMapService;
-    if (sourceMapService) {
-      const source = this.getSource();
-      sourceMapService.unsubscribe(source, this.onSourceUpdated);
+      const { source, line, column } = this.props.frame;
+      sourceMapService.originalPositionFor(source, line, column)
+        .then(resolvedLocation => {
+          if (resolvedLocation) {
+            this.onSourceUpdated(resolvedLocation);
+          }
+        });
     }
   },
 
@@ -70,8 +67,14 @@ module.exports = createClass({
 
 
 
-  onSourceUpdated(event, location, resolvedLocation) {
-    const frame = this.getFrame(resolvedLocation);
+  onSourceUpdated(resolvedLocation) {
+    const { sourceUrl, line, column } = resolvedLocation;
+    const frame = {
+      source: sourceUrl,
+      line,
+      column,
+      functionDisplayName: this.props.frame.functionDisplayName,
+    };
     this.setState({
       frame,
       isSourceMapped: true,
@@ -84,26 +87,10 @@ module.exports = createClass({
 
 
 
-  getSource(frame) {
-    frame = frame || this.props.frame;
+  getSourceForClick(frame) {
     const { source, line, column } = frame;
     return {
       url: source,
-      line,
-      column,
-    };
-  },
-
-  
-
-
-
-
-
-  getFrame(source) {
-    const { url, line, column } = source;
-    return {
-      source: url,
       line,
       column,
       functionDisplayName: this.props.frame.functionDisplayName,
@@ -224,7 +211,7 @@ module.exports = createClass({
       sourceEl = dom.a({
         onClick: e => {
           e.preventDefault();
-          onClick(this.getSource(frame));
+          onClick(this.getSourceForClick(frame));
         },
         href: source,
         className: "frame-link-source",

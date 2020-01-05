@@ -62,6 +62,8 @@ loader.lazyRequireGetter(this, "ToolboxButtons",
   "devtools/client/definitions", true);
 loader.lazyRequireGetter(this, "SourceMapService",
   "devtools/client/framework/source-map-service", true);
+loader.lazyRequireGetter(this, "SourceMapURLService",
+  "devtools/client/framework/source-map-url-service", true);
 loader.lazyRequireGetter(this, "HUDService",
   "devtools/client/webconsole/hudservice");
 loader.lazyRequireGetter(this, "viewSource",
@@ -538,6 +540,7 @@ Toolbox.prototype = {
 
 
 
+
   get sourceMapService() {
     if (!Services.prefs.getBoolPref("devtools.source-map.client-service.enabled")) {
       return null;
@@ -550,6 +553,25 @@ Toolbox.prototype = {
       this.browserRequire("devtools/client/shared/source-map/index");
     this._sourceMapService.startSourceMapWorker(SOURCE_MAP_WORKER);
     return this._sourceMapService;
+  },
+
+  
+
+
+
+
+
+
+  get sourceMapURLService() {
+    if (this._sourceMapURLService) {
+      return this._sourceMapURLService;
+    }
+    let sourceMaps = this.sourceMapService;
+    if (!sourceMaps) {
+      return null;
+    }
+    this._sourceMapURLService = new SourceMapURLService(this._target, sourceMaps);
+    return this._sourceMapURLService;
   },
 
   
@@ -2297,6 +2319,11 @@ Toolbox.prototype = {
     if (this._deprecatedServerSourceMapService) {
       this._deprecatedServerSourceMapService.destroy();
       this._deprecatedServerSourceMapService = null;
+    }
+
+    if (this._sourceMapURLService) {
+      this._sourceMapURLService.destroy();
+      this._sourceMapURLService = null;
     }
 
     if (this._sourceMapService) {
