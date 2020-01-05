@@ -187,18 +187,6 @@
 
 #define XPCOM_API(type) NS_EXTERN_C type
 
-#ifdef MOZILLA_INTERNAL_API
-   
-
-
-
-
-
-
-#  define nsAString nsAString_internal
-#  define nsACString nsACString_internal
-#endif
-
 #if (defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING))
 
 
