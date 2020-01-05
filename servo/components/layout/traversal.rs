@@ -73,18 +73,17 @@ fn take_task_local_bloom_filter(parent_node: Option<LayoutNode>, layout_context:
             }
             
             (Some(parent), Some((mut bloom_filter, old_node, old_generation))) => {
-                
                 if old_node == layout_node_to_unsafe_layout_node(&parent) &&
                     old_generation == layout_context.shared.generation {
+                    
                     debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.0);
-                    bloom_filter.clone()
                 } else {
                     
                     
-                    *bloom_filter = BloomFilter::new();
+                    bloom_filter.clear();
                     insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, layout_context);
-                    bloom_filter
                 }
+                bloom_filter
             },
         }
     })
