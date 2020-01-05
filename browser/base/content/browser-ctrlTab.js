@@ -5,6 +5,7 @@
 
 
 
+
 var tabPreviews = {
   init: function tabPreviews_init() {
     if (this._selectedTab)
@@ -474,10 +475,14 @@ var ctrlTab = {
         break;
       case "TabAttrModified":
         
-        for (let i = this.previews.length - 1; i >= 0; i--) {
-          if (this.previews[i]._tab && this.previews[i]._tab == event.target) {
-            this.updatePreview(this.previews[i], event.target);
-            break;
+        
+        if (event.detail.changed.some(
+          (elem, ind, arr) => ["label", "busy", "image", "selected"].includes(elem))) {
+          for (let i = this.previews.length - 1; i >= 0; i--) {
+            if (this.previews[i]._tab && this.previews[i]._tab == event.target) {
+              this.updatePreview(this.previews[i], event.target);
+              break;
+            }
           }
         }
         break;
