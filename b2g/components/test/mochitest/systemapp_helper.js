@@ -80,15 +80,6 @@ function listener(event) {
 
 
 var steps = [
-  function waitForWebapps() {
-    
-    
-    let { DOMApplicationRegistry } =  Cu.import('resource://gre/modules/Webapps.jsm', {});
-    DOMApplicationRegistry.registryReady.then(function () {
-      next();
-    });
-  },
-
   function earlyEvents() {
     
     SystemAppProxy._sendCustomEvent("mozChromeEvent", { name: "first" }, true);

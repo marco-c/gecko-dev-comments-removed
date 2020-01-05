@@ -4904,30 +4904,6 @@ pref("social.toast-notifications.enabled", true);
 pref("dom.idle-observers-api.fuzz_time.disabled", true);
 
 
-pref("dom.mozApps.maxLocalId", 1000);
-
-
-pref("dom.apps.reset-permissions", false);
-
-
-
-
-
-
-
-
-
-
-
-pref("dom.mozApps.signed_apps_installable_from", "https://marketplace.firefox.com");
-
-
-
-
-
-pref("dom.mozApps.debug", false);
-
-
 
 
 
@@ -5441,9 +5417,7 @@ pref("narrate.enabled", false);
 
 pref("narrate.test", false);
 pref("narrate.rate", 0);
-pref("narrate.voice", " { \"default\": \"automatic\" }");
-
-pref("narrate.filter-voices", true);
+pref("narrate.voice", "automatic");
 
 #if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
 

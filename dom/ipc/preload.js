@@ -126,9 +126,6 @@ var DoPreloadPostfork = function(aCallback) {
     Cc["@mozilla.org/permissionmanager;1"].getService(Ci["nsIPermissionManager"]);
 
     
-    Cc["@mozilla.org/webapps;1"].createInstance(Ci["nsISupports"]);
-
-    
     
     Cc["@mozilla.org/network/protocol-proxy-service;1"].getService(Ci["nsIProtocolProxyService"]);
 

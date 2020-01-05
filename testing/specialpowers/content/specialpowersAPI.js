@@ -1172,50 +1172,6 @@ SpecialPowersAPI.prototype = {
     }
   },
 
-  
-  
-  
-  
-  autoConfirmAppInstall: function(cb) {
-    this.pushPrefEnv({set: [['dom.mozApps.auto_confirm_install', true]]}, cb);
-  },
-
-  autoConfirmAppUninstall: function(cb) {
-    this.pushPrefEnv({set: [['dom.mozApps.auto_confirm_uninstall', true]]}, cb);
-  },
-
-  
-  allowUnsignedAddons: function() {
-    this._sendSyncMessage("SPWebAppService", {
-      op: "allow-unsigned-addons"
-    });
-  },
-
-  
-  debugUserCustomizations: function(value) {
-    this._sendSyncMessage("SPWebAppService", {
-      op: "debug-customizations",
-      value: value
-    });
-  },
-
-  
-  injectApp: function(aAppId, aApp) {
-    this._sendSyncMessage("SPWebAppService", {
-      op: "inject-app",
-      appId: aAppId,
-      app: aApp
-    });
-  },
-
-  
-  rejectApp: function(aAppId) {
-    this._sendSyncMessage("SPWebAppService", {
-      op: "reject-app",
-      appId: aAppId
-    });
-  },
-
   _proxiedObservers: {
     "specialpowers-http-notify-request": function(aMessage) {
       let uri = aMessage.json.uri;
@@ -2126,11 +2082,6 @@ SpecialPowersAPI.prototype = {
   observeMutationEvents: function(mo, node, nativeAnonymousChildList, subtree) {
     unwrapIfWrapped(mo).observe(unwrapIfWrapped(node),
                                 {nativeAnonymousChildList, subtree});
-  },
-
-  clearAppPrivateData: function(appId, browserOnly) {
-    return this._sendAsyncMessage('SPClearAppPrivateData',
-                                  { appId: appId, browserOnly: browserOnly });
   },
 };
 

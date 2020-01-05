@@ -1,6 +1,8 @@
 
 
 
+var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
+
 Cu.import("resource:///modules/AppsUtils.jsm");
 
 add_test(() => {
