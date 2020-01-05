@@ -368,6 +368,8 @@ public:
 
   void LoadURL(nsIURI* aURI);
 
+  void InitRenderFrame();
+
   
   
   
