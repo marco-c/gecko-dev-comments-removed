@@ -313,14 +313,16 @@ private:
   RawAccessFrameRef GetRawFrame(uint32_t aFrameNum) const;
 
   
-  FrameTimeout GetTimeoutForFrame(uint32_t aFrameNum) const;
+  Maybe<FrameTimeout> GetTimeoutForFrame(AnimationState& aState,
+                                         uint32_t aFrameNum) const;
 
   
 
 
 
 
-  TimeStamp GetCurrentImgFrameEndTime(AnimationState& aState) const;
+
+  Maybe<TimeStamp> GetCurrentImgFrameEndTime(AnimationState& aState) const;
 
   bool DoBlend(gfx::IntRect* aDirtyRect,
                uint32_t aPrevFrameIndex,

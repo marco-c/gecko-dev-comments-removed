@@ -141,28 +141,33 @@ AnimationState::LoopLength() const
 
 
 
-TimeStamp
+Maybe<TimeStamp>
 FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState) const
 {
   TimeStamp currentFrameTime = aState.mCurrentAnimationFrameTime;
-  FrameTimeout timeout = GetTimeoutForFrame(aState.mCurrentAnimationFrameIndex);
+  Maybe<FrameTimeout> timeout = GetTimeoutForFrame(aState, aState.mCurrentAnimationFrameIndex);
 
-  if (timeout == FrameTimeout::Forever()) {
+  if (timeout.isNothing()) {
+    MOZ_ASSERT(aState.GetHasBeenDecoded() && !aState.GetIsCurrentlyDecoded());
+    return Nothing();
+  }
+
+  if (*timeout == FrameTimeout::Forever()) {
     
     
     
     
     
     
-    return TimeStamp::NowLoRes() +
-           TimeDuration::FromMilliseconds(31536000.0);
+    return Some(TimeStamp::NowLoRes() +
+                TimeDuration::FromMilliseconds(31536000.0));
   }
 
   TimeDuration durationOfTimeout =
-    TimeDuration::FromMilliseconds(double(timeout.AsMilliseconds()));
+    TimeDuration::FromMilliseconds(double(timeout->AsMilliseconds()));
   TimeStamp currentFrameEndTime = currentFrameTime + durationOfTimeout;
 
-  return currentFrameEndTime;
+  return Some(currentFrameEndTime);
 }
 
 RefreshResult
@@ -238,7 +243,11 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     return ret;
   }
 
-  if (GetTimeoutForFrame(nextFrameIndex) == FrameTimeout::Forever()) {
+  Maybe<FrameTimeout> nextFrameTimeout = GetTimeoutForFrame(aState, nextFrameIndex);
+  
+  
+  MOZ_ASSERT(nextFrameTimeout.isSome());
+  if (*nextFrameTimeout == FrameTimeout::Forever()) {
     ret.mAnimationFinished = true;
   }
 
@@ -252,7 +261,9 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
       
       NS_WARNING("FrameAnimator::AdvanceFrame(): Compositing of frame failed");
       nextFrame->SetCompositingFailed(true);
-      aState.mCurrentAnimationFrameTime = GetCurrentImgFrameEndTime(aState);
+      Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+      MOZ_ASSERT(currentFrameEndTime.isSome());
+      aState.mCurrentAnimationFrameTime = *currentFrameEndTime;
       aState.mCurrentAnimationFrameIndex = nextFrameIndex;
 
       return ret;
@@ -261,7 +272,9 @@ FrameAnimator::AdvanceFrame(AnimationState& aState, TimeStamp aTime)
     nextFrame->SetCompositingFailed(false);
   }
 
-  aState.mCurrentAnimationFrameTime = GetCurrentImgFrameEndTime(aState);
+  Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+  MOZ_ASSERT(currentFrameEndTime.isSome());
+  aState.mCurrentAnimationFrameTime = *currentFrameEndTime;
 
   
   
@@ -301,10 +314,18 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
 
   
   
-  TimeStamp currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+  Maybe<TimeStamp> currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+  if (currentFrameEndTime.isNothing()) {
+    MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
+    MOZ_ASSERT(aState.GetHasBeenDecoded() && !aState.GetIsCurrentlyDecoded());
+    MOZ_ASSERT(aState.mCompositedFrameInvalid);
+    
+    
+    return ret;
+  }
 
-  while (currentFrameEndTime <= aTime) {
-    TimeStamp oldFrameEndTime = currentFrameEndTime;
+  while (*currentFrameEndTime <= aTime) {
+    TimeStamp oldFrameEndTime = *currentFrameEndTime;
 
     RefreshResult frameRes = AdvanceFrame(aState, aTime);
 
@@ -312,17 +333,19 @@ FrameAnimator::RequestRefresh(AnimationState& aState, const TimeStamp& aTime)
     ret.Accumulate(frameRes);
 
     currentFrameEndTime = GetCurrentImgFrameEndTime(aState);
+    
+    MOZ_ASSERT(currentFrameEndTime.isSome());
 
     
     
     
-    if (!frameRes.mFrameAdvanced && (currentFrameEndTime == oldFrameEndTime)) {
+    if (!frameRes.mFrameAdvanced && (*currentFrameEndTime == oldFrameEndTime)) {
       break;
     }
   }
 
   
-  if (currentFrameEndTime > aTime) {
+  if (*currentFrameEndTime > aTime) {
     aState.mCompositedFrameInvalid = false;
   }
 
@@ -371,17 +394,18 @@ FrameAnimator::GetCompositedFrame(AnimationState& aState)
   return result;
 }
 
-FrameTimeout
-FrameAnimator::GetTimeoutForFrame(uint32_t aFrameNum) const
+Maybe<FrameTimeout>
+FrameAnimator::GetTimeoutForFrame(AnimationState& aState,
+                                  uint32_t aFrameNum) const
 {
   RawAccessFrameRef frame = GetRawFrame(aFrameNum);
   if (frame) {
     AnimationData data = frame->GetAnimationData();
-    return data.mTimeout;
+    return Some(data.mTimeout);
   }
 
-  NS_WARNING("No frame; called GetTimeoutForFrame too early?");
-  return FrameTimeout::FromRawMilliseconds(100);
+  MOZ_ASSERT(aState.mHasBeenDecoded && !aState.mIsCurrentlyDecoded);
+  return Nothing();
 }
 
 static void
