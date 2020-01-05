@@ -3536,6 +3536,10 @@ nsHalfOpenSocket::StartFastOpen()
     MOZ_ASSERT(mStreamOut);
     MOZ_ASSERT(mEnt && !mBackupTransport);
     mUsingFastOpen = true;
+    
+    
+    
+    RefPtr<nsHalfOpenSocket> deleteProtector(this);
     if (mEnt && !mBackupTransport && !mSynTimer) {
         
         
@@ -3822,9 +3826,6 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
         }
     }
     if (aFastOpen) {
-        
-        mTransaction = new NullHttpTransaction(mEnt->mConnInfo,
-                                               callbacks, mCaps);
         mConnectionNegotiatingFastOpen = conn;
     }
 
