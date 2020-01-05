@@ -5556,7 +5556,6 @@ pref("dom.storageManager.enabled", true);
 pref("dom.storageManager.enabled", false);
 #endif
 
-pref("dom.IntersectionObserver.enabled", true);
 
 
 
