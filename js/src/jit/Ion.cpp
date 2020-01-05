@@ -2561,7 +2561,7 @@ jit::CanEnter(JSContext* cx, RunState& state)
 
     
     
-    if (script->isIonCompilingOffThread())
+    if (rscript->isIonCompilingOffThread())
         return Method_Skipped;
 
     
