@@ -11563,7 +11563,14 @@ nsGlobalWindow::ShowSlowScriptDialog()
   
   JS::AutoFilename filename;
   unsigned lineno;
-  bool hasFrame = JS::DescribeScriptedCaller(cx, &filename, &lineno);
+  
+  
+  
+  
+  
+  
+  unsigned* linenop = XRE_IsParentProcess() ? &lineno : nullptr;
+  bool hasFrame = JS::DescribeScriptedCaller(cx, &filename, linenop);
 
   
   
