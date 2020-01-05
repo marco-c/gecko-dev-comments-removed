@@ -4867,11 +4867,14 @@ MultiprocessBlockPolicy() {
     }
   }
 
-  
-  
   bool doAccessibilityCheck = true;
 #if defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)
+  
+  
   doAccessibilityCheck = false;
+#elif defined(XP_WIN)
+  
+  doAccessibilityCheck = !IsVistaOrLater();
 #endif
 
   if (doAccessibilityCheck && disabledForA11y) {
