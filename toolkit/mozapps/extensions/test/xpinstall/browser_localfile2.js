@@ -1,9 +1,7 @@
 
 
 
-function test() {
-  waitForExplicitFinish();
-
+add_task(function* test() {
   var cr = Components.classes["@mozilla.org/chrome/chrome-registry;1"]
                      .getService(Components.interfaces.nsIChromeRegistry);
 
@@ -18,33 +16,23 @@ function test() {
   var triggers = encodeURIComponent(JSON.stringify({
     "Unsigned XPI": xpipath
   }));
-  gBrowser.selectedTab = gBrowser.addTab();
-
-  function loadListener() {
-    gBrowser.selectedBrowser.removeEventListener("load", loadListener, true);
-    gBrowser.contentWindow.addEventListener("InstallTriggered", page_loaded, false);
-  }
-
-  gBrowser.selectedBrowser.addEventListener("load", loadListener, true);
 
   
   if (!gMultiProcessBrowser)
     expectUncaughtException();
 
-  gBrowser.loadURI(TESTROOT + "installtrigger.html?" + triggers);
-}
+  let URI = TESTROOT + "installtrigger.html?" + triggers;
+  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
+    yield ContentTask.spawn(browser, URI, function* (URI) {
+      content.location.href = URI;
 
-function page_loaded() {
-  gBrowser.contentWindow.removeEventListener("InstallTriggered", page_loaded, false);
-  var doc = gBrowser.contentDocument;
-  is(doc.getElementById("return").textContent, "exception", "installTrigger should have failed");
+      let loaded = ContentTaskUtils.waitForEvent(this, "load", true);
+      let installTriggered = ContentTaskUtils.waitForEvent(this, "InstallTriggered", true, null, true);
+      yield Promise.all([ loaded, installTriggered ]);
 
-  
-  
-  
-  executeSoon(() => {
-    gBrowser.removeCurrentTab();
-    finish();
+      let doc = content.document;
+      is(doc.getElementById("return").textContent, "exception", "installTrigger should have failed");
+    });
   });
-}
+});
 
