@@ -20,6 +20,7 @@ class nsString;
 namespace mozilla {
 
 class CSSStyleSheet;
+class StyleSheet;
 
 namespace css {
 
@@ -60,6 +61,9 @@ public:
   
   uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
+  
+  nsMediaList* Media() const { return mMedia; }
+  StyleSheet* GetStyleSheet() const;
 
 private:
   nsString  mURLSpec;
