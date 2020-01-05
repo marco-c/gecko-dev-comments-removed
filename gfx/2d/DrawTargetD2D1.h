@@ -186,7 +186,7 @@ private:
   void AddDependencyOnSource(SourceSurfaceD2D1* aSource);
 
   
-  already_AddRefed<ID2D1Image> GetImageForLayerContent();
+  already_AddRefed<ID2D1Image> GetImageForLayerContent(bool aShouldPreserveContent = true);
 
   ID2D1Image* CurrentTarget()
   {
