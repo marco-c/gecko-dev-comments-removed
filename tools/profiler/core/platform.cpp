@@ -525,10 +525,10 @@ public:
   static ThreadInfo* Info(PSLockRef) { return sThreadInfo.get(); }
 
   
-  static PseudoStack* Stack()
+  static RacyThreadInfo* RacyInfo()
   {
     ThreadInfo* info = sThreadInfo.get();
-    return info ? info->Stack().get() : nullptr;
+    return info ? info->RacyInfo().get() : nullptr;
   }
 
   static void SetInfo(PSLockRef, ThreadInfo* aInfo) { sThreadInfo.set(aInfo); }
@@ -573,7 +573,7 @@ public:
     : mIsSynchronous(false)
     , mTimeStamp(mozilla::TimeStamp::Now())
     , mThreadId(aThreadInfo->ThreadId())
-    , mPseudoStack(aThreadInfo->Stack())
+    , mRacyInfo(aThreadInfo->RacyInfo())
     , mStackTop(aThreadInfo->StackTop())
     , mLastSample(&aThreadInfo->LastSample())
     , mPlatformData(aThreadInfo->GetPlatformData())
@@ -592,11 +592,11 @@ public:
   
   
   
-  TickSample(NotNull<PseudoStack*> aPseudoStack, PlatformData* aPlatformData)
+  TickSample(NotNull<RacyThreadInfo*> aRacyInfo, PlatformData* aPlatformData)
     : mIsSynchronous(true)
     , mTimeStamp(mozilla::TimeStamp::Now())
     , mThreadId(Thread::GetCurrentId())
-    , mPseudoStack(aPseudoStack)
+    , mRacyInfo(aRacyInfo)
     , mStackTop(nullptr)
     , mLastSample(nullptr)
     , mPlatformData(aPlatformData)
@@ -622,7 +622,7 @@ public:
 
   const int mThreadId;
 
-  const NotNull<PseudoStack*> mPseudoStack;
+  const NotNull<RacyThreadInfo*> mRacyInfo;
 
   void* const mStackTop;
 
@@ -674,7 +674,8 @@ static const int SAMPLER_MAX_STRING_LENGTH = 128;
 
 static void
 AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
-               volatile js::ProfileEntry& entry, PseudoStack* aPseudoStack)
+               volatile js::ProfileEntry& entry,
+               NotNull<RacyThreadInfo*> aRacyInfo)
 {
   
   
@@ -709,7 +710,7 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
         if (!entry.pc()) {
           
           MOZ_ASSERT(&entry ==
-                     &aPseudoStack->mStack[aPseudoStack->stackSize() - 1]);
+                     &aRacyInfo->mStack[aRacyInfo->stackSize() - 1]);
         } else {
           lineno = JS_PCToLineNumber(script, entry.pc());
         }
@@ -769,9 +770,9 @@ static void
 MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
                        const TickSample& aSample, NativeStack& aNativeStack)
 {
-  NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
-  volatile js::ProfileEntry* pseudoFrames = pseudoStack->mStack;
-  uint32_t pseudoCount = pseudoStack->stackSize();
+  NotNull<RacyThreadInfo*> racyInfo = aSample.mRacyInfo;
+  volatile js::ProfileEntry* pseudoFrames = racyInfo->mStack;
+  uint32_t pseudoCount = racyInfo->stackSize();
 
   
   
@@ -789,8 +790,8 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
   JS::ProfilingFrameIterator::Frame jsFrames[1000];
 
   
-  if (pseudoStack->mContext &&
-      JS::IsProfilingEnabledForContext(pseudoStack->mContext)) {
+  if (racyInfo->mContext &&
+      JS::IsProfilingEnabledForContext(racyInfo->mContext)) {
     AutoWalkJSStack autoWalkJSStack;
     const uint32_t maxFrames = mozilla::ArrayLength(jsFrames);
 
@@ -801,8 +802,7 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
       registerState.lr = aSample.mLR;
       registerState.fp = aSample.mFP;
 
-      JS::ProfilingFrameIterator jsIter(pseudoStack->mContext,
-                                        registerState,
+      JS::ProfilingFrameIterator jsIter(racyInfo->mContext, registerState,
                                         startBufferGen);
       for (; jsCount < maxFrames && !jsIter.done(); ++jsIter) {
         
@@ -898,7 +898,7 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
     if (pseudoStackAddr > jsStackAddr && pseudoStackAddr > nativeStackAddr) {
       MOZ_ASSERT(pseudoIndex < pseudoCount);
       volatile js::ProfileEntry& pseudoFrame = pseudoFrames[pseudoIndex];
-      AddPseudoEntry(aLock, aBuffer, pseudoFrame, pseudoStack);
+      AddPseudoEntry(aLock, aBuffer, pseudoFrame, racyInfo);
       pseudoIndex++;
       continue;
     }
@@ -951,10 +951,10 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
   
   
   
-  if (!aSample.mIsSynchronous && pseudoStack->mContext) {
+  if (!aSample.mIsSynchronous && racyInfo->mContext) {
     MOZ_ASSERT(aBuffer->mGeneration >= startBufferGen);
     uint32_t lapCount = aBuffer->mGeneration - startBufferGen;
-    JS::UpdateJSContextProfilerSampleBufferGen(pseudoStack->mContext,
+    JS::UpdateJSContextProfilerSampleBufferGen(racyInfo->mContext,
                                                aBuffer->mGeneration,
                                                lapCount);
   }
@@ -1033,16 +1033,16 @@ DoNativeBacktrace(PSLockRef aLock, ProfileBuffer* aBuffer,
   const mcontext_t* mcontext =
     &reinterpret_cast<ucontext_t*>(aSample.mContext)->uc_mcontext;
   mcontext_t savedContext;
-  NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
+  NotNull<RacyThreadInfo*> racyInfo = aSample.mRacyInfo;
 
   
   
   
   
-  for (uint32_t i = pseudoStack->stackSize(); i > 0; --i) {
+  for (uint32_t i = racyInfo->stackSize(); i > 0; --i) {
     
     
-    volatile js::ProfileEntry& entry = pseudoStack->mStack[i - 1];
+    volatile js::ProfileEntry& entry = racyInfo->mStack[i - 1];
     if (!entry.isJs() && strcmp(entry.label(), "EnterJIT") == 0) {
       
       
@@ -1274,8 +1274,6 @@ Tick(PSLockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
     aSample.mTimeStamp - CorePS::ProcessStartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
-  NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
-
 #if defined(HAVE_NATIVE_UNWIND)
   if (ActivePS::FeatureStackWalk(aLock)) {
     DoNativeBacktrace(aLock, aBuffer, aSample);
@@ -1289,7 +1287,7 @@ Tick(PSLockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
   
   if (!aSample.mIsSynchronous) {
     ProfilerMarkerLinkedList* pendingMarkersList =
-      pseudoStack->getPendingMarkers();
+      aSample.mRacyInfo->GetPendingMarkers();
     while (pendingMarkersList && pendingMarkersList->peek()) {
       ProfilerMarker* marker = pendingMarkersList->popHead();
       aBuffer->addStoredMarker(marker);
@@ -1854,7 +1852,7 @@ SamplerThread::Run()
           
           
           
-          if (info->Stack()->CanDuplicateLastSampleDueToSleep()) {
+          if (info->RacyInfo()->CanDuplicateLastSampleDueToSleep()) {
             bool dup_ok =
               ActivePS::Buffer(lock)->DuplicateLastSample(
                 info->ThreadId(), CorePS::ProcessStartTime(lock),
@@ -2026,15 +2024,15 @@ locked_register_thread(PSLockRef aLock, const char* aName, void* stackTop)
                                     NS_IsMainThread(), stackTop);
   TLSInfo::SetInfo(aLock, info);
 
-  NotNull<PseudoStack*> pseudoStack = info->Stack();
+  NotNull<RacyThreadInfo*> racyInfo = info->RacyInfo();
 
   if (ActivePS::Exists(aLock) && ActivePS::ShouldProfileThread(aLock, info)) {
     info->StartProfiling();
     if (ActivePS::FeatureJS(aLock)) {
       
       
-      pseudoStack->startJSSampling();
-      pseudoStack->pollJSSampling();
+      racyInfo->StartJSSampling();
+      racyInfo->PollJSSampling();
     }
   }
 
@@ -2444,11 +2442,11 @@ locked_profiler_start(PSLockRef aLock, int aEntries, double aInterval,
     if (ActivePS::ShouldProfileThread(aLock, info)) {
       info->StartProfiling();
       if (ActivePS::FeatureJS(aLock)) {
-        info->Stack()->startJSSampling();
+        info->RacyInfo()->StartJSSampling();
         if (info->ThreadId() == tid) {
           
           
-          info->Stack()->pollJSSampling();
+          info->RacyInfo()->PollJSSampling();
         }
       }
     }
@@ -2535,11 +2533,11 @@ locked_profiler_stop(PSLockRef aLock)
     ThreadInfo* info = liveThreads.at(i);
     if (info->IsBeingProfiled()) {
       if (ActivePS::FeatureJS(aLock)) {
-        info->Stack()->stopJSSampling();
+        info->RacyInfo()->StopJSSampling();
         if (info->ThreadId() == tid) {
           
           
-          info->Stack()->pollJSSampling();
+          info->RacyInfo()->PollJSSampling();
         }
       }
       info->StopProfiling();
@@ -2763,11 +2761,12 @@ profiler_thread_sleep()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return;
   }
-  pseudoStack->setSleeping();
+
+  racyInfo->SetSleeping();
 }
 
 void
@@ -2777,11 +2776,12 @@ profiler_thread_wake()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return;
   }
-  pseudoStack->setAwake();
+
+  racyInfo->SetAwake();
 }
 
 bool
@@ -2790,11 +2790,11 @@ profiler_thread_is_sleeping()
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return false;
   }
-  return pseudoStack->isSleeping();
+  return racyInfo->IsSleeping();
 }
 
 void
@@ -2805,12 +2805,12 @@ profiler_js_interrupt_callback()
 
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return;
   }
 
-  pseudoStack->pollJSSampling();
+  racyInfo->PollJSSampling();
 }
 
 double
@@ -2839,9 +2839,9 @@ profiler_get_backtrace()
     return nullptr;
   }
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
-    MOZ_ASSERT(pseudoStack);
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
+    MOZ_ASSERT(racyInfo);
     return nullptr;
   }
 
@@ -2851,7 +2851,7 @@ profiler_get_backtrace()
 
   UniquePlatformData platformData = AllocPlatformData(tid);
 
-  TickSample sample(WrapNotNull(pseudoStack), platformData.get());
+  TickSample sample(WrapNotNull(racyInfo), platformData.get());
 
 #if defined(HAVE_NATIVE_UNWIND)
 #if defined(GP_OS_windows) || defined(GP_OS_linux) || defined(GP_OS_android)
@@ -2895,15 +2895,15 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
     return;
   }
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return;
   }
 
   bool includeDynamicString = !ActivePS::FeaturePrivacy(lock);
 
-  volatile js::ProfileEntry *pseudoFrames = pseudoStack->mStack;
-  uint32_t pseudoCount = pseudoStack->stackSize();
+  volatile js::ProfileEntry* pseudoFrames = racyInfo->mStack;
+  uint32_t pseudoCount = racyInfo->stackSize();
 
   for (uint32_t i = 0; i < pseudoCount; i++) {
     const char* label = pseudoFrames[i].label();
@@ -2947,8 +2947,8 @@ locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
   
   mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return;
   }
 
@@ -2956,7 +2956,8 @@ locked_profiler_add_marker(PSLockRef aLock, const char* aMarker,
                             ? payload->GetStartTime()
                             : mozilla::TimeStamp::Now();
   mozilla::TimeDuration delta = origin - CorePS::ProcessStartTime(aLock);
-  pseudoStack->addMarker(aMarker, payload.release(), delta.ToMilliseconds());
+  racyInfo->AddPendingMarker(aMarker, payload.release(),
+                             delta.ToMilliseconds());
 }
 
 void
@@ -3027,7 +3028,7 @@ profiler_get_pseudo_stack()
 {
   
 
-  return TLSInfo::Stack();
+  return TLSInfo::RacyInfo();
 }
 
 void
@@ -3037,12 +3038,12 @@ profiler_set_js_context(JSContext* aCx)
 
   MOZ_ASSERT(aCx);
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
-  if (!pseudoStack) {
+  RacyThreadInfo* racyInfo = TLSInfo::RacyInfo();
+  if (!racyInfo) {
     return;
   }
 
-  pseudoStack->setJSContext(aCx);
+  racyInfo->SetJSContext(aCx);
 }
 
 void
@@ -3059,9 +3060,9 @@ profiler_clear_js_context()
     return;
   }
 
-  NotNull<PseudoStack*> pseudoStack = info->Stack();
+  NotNull<RacyThreadInfo*> racyInfo = info->RacyInfo();
 
-  if (!pseudoStack->mContext) {
+  if (!racyInfo->mContext) {
     return;
   }
 
@@ -3083,7 +3084,7 @@ profiler_clear_js_context()
   
   
 
-  pseudoStack->mContext = nullptr;
+  racyInfo->mContext = nullptr;
 }
 
 
@@ -3100,14 +3101,13 @@ profiler_call_enter(const char* aInfo,
 {
   
 
-  PseudoStack* pseudoStack = TLSInfo::Stack();
+  PseudoStack* pseudoStack = TLSInfo::RacyInfo();   
   if (!pseudoStack) {
     return pseudoStack;
   }
   pseudoStack->push(aInfo, aCategory, aFrameAddress, aCopy, aLine,
                     aDynamicString);
 
-  
   
   
   return pseudoStack;

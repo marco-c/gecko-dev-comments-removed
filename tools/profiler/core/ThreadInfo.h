@@ -4,14 +4,278 @@
 
 
 
-#ifndef MOZ_THREAD_INFO_H
-#define MOZ_THREAD_INFO_H
+#ifndef ThreadInfo_h
+#define ThreadInfo_h
 
 #include "mozilla/NotNull.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 #include "ProfileBuffer.h"
 #include "platform.h"
+
+
+void ProfilerJSEventMarker(const char* aEvent);
+
+
+
+
+
+
+class RacyThreadInfo final : public PseudoStack
+{
+public:
+  RacyThreadInfo()
+    : PseudoStack()
+    , mContext(nullptr)
+    , mJSSampling(INACTIVE)
+    , mSleep(AWAKE)
+  {
+    MOZ_COUNT_CTOR(RacyThreadInfo);
+  }
+
+  ~RacyThreadInfo()
+  {
+    MOZ_COUNT_DTOR(RacyThreadInfo);
+  }
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+  {
+    size_t n = aMallocSizeOf(this);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    return n;
+  }
+
+  void AddPendingMarker(const char* aMarkerStr, ProfilerMarkerPayload* aPayload,
+                        double aTime)
+  {
+    ProfilerMarker* marker = new ProfilerMarker(aMarkerStr, aPayload, aTime);
+    mPendingMarkers.insert(marker);
+  }
+
+  
+  ProfilerMarkerLinkedList* GetPendingMarkers()
+  {
+    
+    
+    
+    return mPendingMarkers.accessList();
+  }
+
+  
+  
+  void SetJSContext(JSContext* aContext)
+  {
+    
+
+    MOZ_ASSERT(aContext && !mContext);
+
+    mContext = aContext;
+
+    js::SetContextProfilingStack(aContext,
+                                 (js::ProfileEntry*) mStack,
+                                 &mStackPointer,
+                                 (uint32_t) mozilla::ArrayLength(mStack));
+    PollJSSampling();
+  }
+
+  
+  
+  
+  void StartJSSampling()
+  {
+    
+
+    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
+                       mJSSampling == INACTIVE_REQUESTED);
+    mJSSampling = ACTIVE_REQUESTED;
+  }
+
+  
+  
+  void StopJSSampling()
+  {
+    
+
+    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
+                       mJSSampling == ACTIVE_REQUESTED);
+    mJSSampling = INACTIVE_REQUESTED;
+  }
+
+  
+  void PollJSSampling()
+  {
+    
+
+    
+    if (mContext) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mJSSampling.compareExchange(ACTIVE_REQUESTED, ACTIVE)) {
+        js::EnableContextProfilingStack(mContext, true);
+        js::RegisterContextProfilingEventMarker(mContext,
+                                                &ProfilerJSEventMarker);
+
+      } else if (mJSSampling.compareExchange(INACTIVE_REQUESTED, INACTIVE)) {
+        js::EnableContextProfilingStack(mContext, false);
+      }
+    }
+  }
+
+  
+  
+  void ReinitializeOnResume()
+  {
+    
+    
+    
+    
+    (void)mSleep.compareExchange(SLEEPING_OBSERVED, SLEEPING_NOT_OBSERVED);
+  }
+
+  
+  bool CanDuplicateLastSampleDueToSleep()
+  {
+    if (mSleep == AWAKE) {
+      return false;
+    }
+
+    if (mSleep.compareExchange(SLEEPING_NOT_OBSERVED, SLEEPING_OBSERVED)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  
+  
+  void SetSleeping()
+  {
+    MOZ_ASSERT(mSleep == AWAKE);
+    mSleep = SLEEPING_NOT_OBSERVED;
+  }
+
+  
+  
+  void SetAwake()
+  {
+    MOZ_ASSERT(mSleep != AWAKE);
+    mSleep = AWAKE;
+  }
+
+  bool IsSleeping() { return mSleep != AWAKE; }
+
+private:
+  
+  ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
+
+public:
+  
+  
+  JSContext* mContext;
+
+private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const int INACTIVE = 0;
+  static const int ACTIVE_REQUESTED = 1;
+  static const int ACTIVE = 2;
+  static const int INACTIVE_REQUESTED = 3;
+  mozilla::Atomic<int> mJSSampling;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const int AWAKE = 0;
+  static const int SLEEPING_NOT_OBSERVED = 1;
+  static const int SLEEPING_OBSERVED = 2;
+  mozilla::Atomic<int> mSleep;
+};
+
 
 class ThreadInfo final
 {
@@ -26,7 +290,7 @@ public:
 
   bool IsMainThread() const { return mIsMainThread; }
 
-  mozilla::NotNull<PseudoStack*> Stack() const { return mPseudoStack; }
+  mozilla::NotNull<RacyThreadInfo*> RacyInfo() const { return mRacyInfo; }
 
   void StartProfiling();
   void StopProfiling();
@@ -48,7 +312,7 @@ private:
   
   
   
-  mozilla::NotNull<PseudoStack*> mPseudoStack;
+  mozilla::NotNull<RacyThreadInfo*> mRacyInfo;
 
   UniquePlatformData mPlatformData;
   void* mStackTop;
@@ -106,4 +370,4 @@ StreamSamplesAndMarkers(const char* aName, int aThreadId,
                         char* aSavedStreamedMarkers,
                         UniqueStacks& aUniqueStacks);
 
-#endif
+#endif  

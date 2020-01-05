@@ -4,13 +4,11 @@
 
 
 
-#ifndef PROFILER_PSEUDO_STACK_H_
-#define PROFILER_PSEUDO_STACK_H_
+#ifndef PseudoStack_h
+#define PseudoStack_h
 
 #include "mozilla/ArrayUtils.h"
 #include "js/ProfilingStack.h"
-#include <stdlib.h>
-#include "mozilla/Atomics.h"
 #include "nsISupportsImpl.h"
 
 #include <stdlib.h>
@@ -135,7 +133,8 @@ private:
 typedef ProfilerLinkedList<ProfilerMarker> ProfilerMarkerLinkedList;
 
 template<typename T>
-class ProfilerSignalSafeLinkedList {
+class ProfilerSignalSafeLinkedList
+{
 public:
   ProfilerSignalSafeLinkedList()
     : mSignalLock(false)
@@ -190,21 +189,12 @@ private:
 };
 
 
-void ProfilerJSEventMarker(const char* aEvent);
-
-
-
-
-
 
 class PseudoStack
 {
 public:
   PseudoStack()
     : mStackPointer(0)
-    , mSleep(AWAKE)
-    , mContext(nullptr)
-    , mJSSampling(INACTIVE)
   {
     MOZ_COUNT_CTOR(PseudoStack);
   }
@@ -217,33 +207,6 @@ public:
     
     
     MOZ_RELEASE_ASSERT(mStackPointer == 0);
-  }
-
-  
-  
-  void reinitializeOnResume()
-  {
-    
-    
-    
-    
-    (void)mSleep.compareExchange(SLEEPING_OBSERVED, SLEEPING_NOT_OBSERVED);
-  }
-
-  void addMarker(const char* aMarkerStr, ProfilerMarkerPayload* aPayload,
-                 double aTime)
-  {
-    ProfilerMarker* marker = new ProfilerMarker(aMarkerStr, aPayload, aTime);
-    mPendingMarkers.insert(marker);
-  }
-
-  
-  ProfilerMarkerLinkedList* getPendingMarkers()
-  {
-    
-    
-    
-    return mPendingMarkers.accessList();
   }
 
   void push(const char* aName, js::ProfileEntry::Category aCategory,
@@ -285,230 +248,19 @@ public:
     return std::min(uint32_t(mStackPointer), uint32_t(mozilla::ArrayLength(mStack)));
   }
 
-  
-  
-  void setJSContext(JSContext* aContext)
-  {
-    
-
-    MOZ_ASSERT(aContext && !mContext);
-
-    mContext = aContext;
-
-    js::SetContextProfilingStack(aContext,
-                                 (js::ProfileEntry*) mStack,
-                                 &mStackPointer,
-                                 (uint32_t) mozilla::ArrayLength(mStack));
-    pollJSSampling();
-  }
-
-  
-  
-  
-  void startJSSampling()
-  {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
-                       mJSSampling == INACTIVE_REQUESTED);
-    mJSSampling = ACTIVE_REQUESTED;
-  }
-
-  
-  
-  void stopJSSampling()
-  {
-    
-
-    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
-                       mJSSampling == ACTIVE_REQUESTED);
-    mJSSampling = INACTIVE_REQUESTED;
-  }
-
-  
-  void pollJSSampling()
-  {
-    
-
-    
-    if (mContext) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (mJSSampling.compareExchange(ACTIVE_REQUESTED, ACTIVE)) {
-        js::EnableContextProfilingStack(mContext, true);
-        js::RegisterContextProfilingEventMarker(mContext,
-                                                &ProfilerJSEventMarker);
-
-      } else if (mJSSampling.compareExchange(INACTIVE_REQUESTED, INACTIVE)) {
-        js::EnableContextProfilingStack(mContext, false);
-      }
-    }
-  }
-
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-  {
-    size_t n = aMallocSizeOf(this);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    return n;
-  }
-
-  
-  bool CanDuplicateLastSampleDueToSleep()
-  {
-    if (mSleep == AWAKE) {
-      return false;
-    }
-
-    if (mSleep.compareExchange(SLEEPING_NOT_OBSERVED, SLEEPING_OBSERVED)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  
-  
-  void setSleeping()
-  {
-    MOZ_ASSERT(mSleep == AWAKE);
-    mSleep = SLEEPING_NOT_OBSERVED;
-  }
-
-  
-  
-  void setAwake()
-  {
-    MOZ_ASSERT(mSleep != AWAKE);
-    mSleep = AWAKE;
-  }
-
-  bool isSleeping() { return mSleep != AWAKE; }
-
 private:
   
   PseudoStack(const PseudoStack&) = delete;
   void operator=(const PseudoStack&) = delete;
 
-  void flushSamplerOnJSShutdown();
-
 public:
   
   js::ProfileEntry volatile mStack[1024];
 
-private:
-  
-  ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
-
+protected:
   
   
   mozilla::Atomic<uint32_t> mStackPointer;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const int AWAKE = 0;
-  static const int SLEEPING_NOT_OBSERVED = 1;
-  static const int SLEEPING_OBSERVED = 2;
-  mozilla::Atomic<int> mSleep;
-
-public:
-  
-  
-  JSContext* mContext;
-
-private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static const int INACTIVE = 0;
-  static const int ACTIVE_REQUESTED = 1;
-  static const int ACTIVE = 2;
-  static const int INACTIVE_REQUESTED = 3;
-  mozilla::Atomic<int> mJSSampling;
 };
 
-#endif
+#endif  

@@ -24,7 +24,7 @@ ThreadInfo::ThreadInfo(const char* aName, int aThreadId, bool aIsMainThread,
   : mName(strdup(aName))
   , mThreadId(aThreadId)
   , mIsMainThread(aIsMainThread)
-  , mPseudoStack(mozilla::WrapNotNull(new PseudoStack()))
+  , mRacyInfo(mozilla::WrapNotNull(new RacyThreadInfo()))
   , mPlatformData(AllocPlatformData(aThreadId))
   , mStackTop(aStackTop)
   , mIsBeingProfiled(false)
@@ -47,14 +47,14 @@ ThreadInfo::~ThreadInfo()
 {
   MOZ_COUNT_DTOR(ThreadInfo);
 
-  delete mPseudoStack;
+  delete mRacyInfo;
 }
 
 void
 ThreadInfo::StartProfiling()
 {
   mIsBeingProfiled = true;
-  mPseudoStack->reinitializeOnResume();
+  mRacyInfo->ReinitializeOnResume();
   if (mIsMainThread) {
     mResponsiveness.emplace();
   }
@@ -73,13 +73,13 @@ ThreadInfo::StreamJSON(ProfileBuffer* aBuffer, SpliceableJSONWriter& aWriter,
 {
   
   if (!mUniqueStacks.isSome()) {
-    mUniqueStacks.emplace(mPseudoStack->mContext);
+    mUniqueStacks.emplace(mRacyInfo->mContext);
   }
 
   aWriter.Start(SpliceableJSONWriter::SingleLineStyle);
   {
     StreamSamplesAndMarkers(Name(), ThreadId(), aBuffer, aWriter, aStartTime,
-                            aSinceTime, mPseudoStack->mContext,
+                            aSinceTime, mRacyInfo->mContext,
                             mSavedStreamedSamples.get(),
                             mSavedStreamedMarkers.get(), *mUniqueStacks);
     mSavedStreamedSamples.reset();
@@ -206,7 +206,7 @@ ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
 {
   
   
-  MOZ_ASSERT(mPseudoStack->mContext);
+  MOZ_ASSERT(mRacyInfo->mContext);
 
   
   
@@ -215,14 +215,14 @@ ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
   
   
   
-  mUniqueStacks.emplace(mPseudoStack->mContext);
+  mUniqueStacks.emplace(mRacyInfo->mContext);
 
   {
     SpliceableChunkedJSONWriter b;
     b.StartBareList();
     {
       aBuffer->StreamSamplesToJSON(b, mThreadId,  0,
-                                   mPseudoStack->mContext, *mUniqueStacks);
+                                   mRacyInfo->mContext, *mUniqueStacks);
     }
     b.EndBareList();
     mSavedStreamedSamples = b.WriteFunc()->CopyData();
@@ -249,7 +249,7 @@ ThreadInfo::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
   n += aMallocSizeOf(mName.get());
-  n += mPseudoStack->SizeOfIncludingThis(aMallocSizeOf);
+  n += mRacyInfo->SizeOfIncludingThis(aMallocSizeOf);
 
   
   
