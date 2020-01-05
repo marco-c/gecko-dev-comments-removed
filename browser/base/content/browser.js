@@ -4302,6 +4302,8 @@ function updateEditUIVisibility() {
   let contextMenuPopupState = document.getElementById("contentAreaContextMenu").state;
   let placesContextMenuPopupState = document.getElementById("placesContext").state;
 
+  let oldVisible = gEditUIVisible;
+
   
   
   
@@ -4310,18 +4312,35 @@ function updateEditUIVisibility() {
                    contextMenuPopupState == "showing" ||
                    contextMenuPopupState == "open" ||
                    placesContextMenuPopupState == "showing" ||
-                   placesContextMenuPopupState == "open" ||
-                   document.getElementById("edit-controls") ? true : false;
+                   placesContextMenuPopupState == "open";
+  if (!gEditUIVisible) {
+    
+    let placement = CustomizableUI.getPlacementOfWidget("edit-controls");
+    let areaType = placement ? CustomizableUI.getAreaType(placement.area) : "";
+    if (areaType == CustomizableUI.TYPE_MENU_PANEL) {
+      let panelUIMenuPopupState = document.getElementById("PanelUI-popup").state;
+      if (panelUIMenuPopupState == "showing" || panelUIMenuPopupState == "open") {
+        gEditUIVisible = true;
+      }
+    } else if (areaType == CustomizableUI.TYPE_TOOLBAR) {
+      
+      gEditUIVisible = true;
+    }
+  }
+
+  
+  if (gEditUIVisible == oldVisible) {
+    return;
+  }
 
   
   
-  if (gEditUIVisible)
+  if (gEditUIVisible) {
     goUpdateGlobalEditMenuItems();
-
-  
-  
-  
-  else {
+  } else {
+    
+    
+    
     goSetCommandEnabled("cmd_undo", true);
     goSetCommandEnabled("cmd_redo", true);
     goSetCommandEnabled("cmd_cut", true);
