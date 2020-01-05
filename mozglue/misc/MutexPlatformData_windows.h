@@ -1,0 +1,19 @@
+
+
+
+
+
+
+#ifndef MutexPlatformData_windows_h
+#define MutexPlatformData_windows_h
+
+#include <windows.h>
+
+#include "mozilla/PlatformMutex.h"
+
+struct mozilla::detail::MutexImpl::PlatformData
+{
+  CRITICAL_SECTION criticalSection;
+};
+
+#endif 

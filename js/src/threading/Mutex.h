@@ -9,58 +9,11 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Move.h"
+#include "mozilla/PlatformMutex.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/Vector.h"
 
 namespace js {
-
-namespace detail {
-
-class ConditionVariableImpl;
-
-class MutexImpl
-{
-public:
-  struct PlatformData;
-
-  MutexImpl();
-  ~MutexImpl();
-
-  bool operator==(const MutexImpl& rhs) {
-    return platformData_ == rhs.platformData_;
-  }
-
-protected:
-  void lock();
-  void unlock();
-
-private:
-  MutexImpl(const MutexImpl&) = delete;
-  void operator=(const MutexImpl&) = delete;
-  MutexImpl(MutexImpl&&) = delete;
-  void operator=(MutexImpl&&) = delete;
-
-  PlatformData* platformData();
-
-
-
-
-#if defined(__APPLE__) && defined(__MACH__) && defined(__i386__)
-  void* platformData_[11];
-#elif defined(__APPLE__) && defined(__MACH__) && defined(__amd64__)
-  void* platformData_[8];
-#elif defined(__linux__)
-  void* platformData_[40 / sizeof(void*)];
-#elif defined(_WIN32)
-  void* platformData_[6];
-#else
-  void* platformData_[64 / sizeof(void*)];
-#endif
-
-  friend class js::detail::ConditionVariableImpl;
-};
-
-} 
 
 
 
@@ -75,7 +28,7 @@ struct MutexId
 
 #ifndef DEBUG
 
-class Mutex : public detail::MutexImpl
+class Mutex : public mozilla::detail::MutexImpl
 {
 public:
   static bool Init() { return true; }
@@ -94,7 +47,7 @@ public:
 
 
 
-class Mutex : public detail::MutexImpl
+class Mutex : public mozilla::detail::MutexImpl
 {
 public:
   static bool Init();
