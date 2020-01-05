@@ -15,7 +15,7 @@ def strip(dir):
     
     
     
-    for p, f in FileFinder(dir):
+    for p, f in FileFinder(dir, find_executables=True):
         copier.add(p, f)
     copier.copy(dir)
 
