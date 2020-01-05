@@ -5,7 +5,7 @@
 
 
 use CompositorMsg as ConstellationMsg;
-use compositor;
+use compositor::{self, CompositingReason};
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use gfx_traits::{Epoch, FrameTreeId, LayerId, LayerProperties, PaintListener};
@@ -103,12 +103,12 @@ pub fn run_script_listener_thread(compositor_proxy: Box<CompositorProxy + 'stati
 }
 
 pub trait RenderListener {
-    fn recomposite(&mut self);
+    fn recomposite(&mut self, reason: CompositingReason);
 }
 
 impl RenderListener for Box<CompositorProxy + 'static> {
-    fn recomposite(&mut self) {
-        self.send(Msg::RecompositeAfterScroll);
+    fn recomposite(&mut self, reason: CompositingReason) {
+        self.send(Msg::Recomposite(reason));
     }
 }
 
@@ -198,9 +198,9 @@ pub enum Msg {
     
     LoadComplete(bool, bool),
     
+    DelayedCompositionTimeout(u64),
     
-    ScrollTimeout(u64),
-    RecompositeAfterScroll,
+    Recomposite(CompositingReason),
     
     KeyEvent(Key, KeyState, KeyModifiers),
     
@@ -251,8 +251,8 @@ impl Debug for Msg {
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
             Msg::LoadComplete(..) => write!(f, "LoadComplete"),
             Msg::LoadStart(..) => write!(f, "LoadStart"),
-            Msg::ScrollTimeout(..) => write!(f, "ScrollTimeout"),
-            Msg::RecompositeAfterScroll => write!(f, "RecompositeAfterScroll"),
+            Msg::DelayedCompositionTimeout(..) => write!(f, "DelayedCompositionTimeout"),
+            Msg::Recomposite(..) => write!(f, "Recomposite"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),
             Msg::TouchEventProcessed(..) => write!(f, "TouchEventProcessed"),
             Msg::SetCursor(..) => write!(f, "SetCursor"),
