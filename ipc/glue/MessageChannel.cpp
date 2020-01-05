@@ -488,10 +488,8 @@ private:
     nsAutoPtr<IPC::Message> mReply;
 };
 
-MessageChannel::MessageChannel(const char* aName,
-                               IToplevelProtocol *aListener)
-  : mName(aName),
-    mListener(aListener),
+MessageChannel::MessageChannel(IToplevelProtocol *aListener)
+  : mListener(aListener),
     mChannelState(ChannelClosed),
     mSide(UnknownSide),
     mLink(nullptr),
@@ -630,16 +628,6 @@ MessageChannel::CanSend() const
 }
 
 void
-MessageChannel::WillDestroyCurrentMessageLoop()
-{
-#if defined(MOZ_CRASHREPORTER)
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProtocolName"),
-                                       nsDependentCString(mName));
-#endif
-    MOZ_CRASH("MessageLoop destroyed before MessageChannel that's bound to it");
-}
-
-void
 MessageChannel::Clear()
 {
     
@@ -652,20 +640,8 @@ MessageChannel::Clear()
     
     
 
-    if (!Unsound_IsClosed()) {
-#if defined(MOZ_CRASHREPORTER)
-        CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProtocolName"),
-                                           nsDependentCString(mName));
-#endif
-        MOZ_CRASH("MessageChannel destroyed without being closed");
-    }
-
     if (gParentProcessBlocker == this) {
         gParentProcessBlocker = nullptr;
-    }
-
-    if (mWorkerLoop) {
-        mWorkerLoop->RemoveDestructionObserver(this);
     }
 
     mWorkerLoop = nullptr;
@@ -699,8 +675,6 @@ MessageChannel::Open(Transport* aTransport, MessageLoop* aIOLoop, Side aSide)
     mMonitor = new RefCountedMonitor();
     mWorkerLoop = MessageLoop::current();
     mWorkerLoopID = mWorkerLoop->id();
-
-    mWorkerLoop->AddDestructionObserver(this);
 
     ProcessLink *link = new ProcessLink(this);
     link->Open(aTransport, aIOLoop, aSide); 
@@ -778,7 +752,6 @@ MessageChannel::CommonThreadOpenInit(MessageChannel *aTargetChan, Side aSide)
 {
     mWorkerLoop = MessageLoop::current();
     mWorkerLoopID = mWorkerLoop->id();
-    mWorkerLoop->AddDestructionObserver(this);
     mLink = new ThreadLink(this, aTargetChan);
     mSide = aSide;
 }
