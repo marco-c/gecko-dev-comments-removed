@@ -1066,24 +1066,25 @@ CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
     mAttachments->mSyncTexture->QueryInterface((IDXGIKeyedMutex**)getter_AddRefs(mutex));
 
     MOZ_ASSERT(mutex);
-    HRESULT hr = mutex->AcquireSync(0, 10000);
-    if (hr == WAIT_TIMEOUT) {
-      hr = mDevice->GetDeviceRemovedReason();
-      if (hr == S_OK) {
+    {
+      HRESULT hr;
+      AutoTextureLock lock(mutex, hr, 10000);
+      if (hr == WAIT_TIMEOUT) {
+        hr = mDevice->GetDeviceRemovedReason();
+        if (hr == S_OK) {
+          
+          MOZ_CRASH("GFX: D3D11 normal status timeout");
+        }
+
         
-        MOZ_CRASH("GFX: D3D11 normal status timeout");
+        
+        gfxCriticalNote << "GFX: D3D11 timeout with device-removed:" << gfx::hexa(hr);
+        *aRenderBoundsOut = IntRect();
+        return;
+      } else if (hr == WAIT_ABANDONED) {
+        gfxCriticalNote << "GFX: D3D11 abandoned sync";
       }
-
-      
-      
-      gfxCriticalNote << "GFX: D3D11 timeout with device-removed:" << gfx::hexa(hr);
-      *aRenderBoundsOut = IntRect();
-      return;
-    } else if (hr == WAIT_ABANDONED) {
-      gfxCriticalNote << "GFX: D3D11 abandoned sync";
     }
-
-    mutex->ReleaseSync(0);
   }
 }
 
