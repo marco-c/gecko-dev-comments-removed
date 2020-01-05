@@ -6118,7 +6118,7 @@ nsGridContainerFrame::Reflow(nsPresContext*           aPresContext,
                                         SizingConstraint::eNoConstraint);
     bSize = computedSize.BSize(wm);
   } else {
-    consumedBSize = GetConsumedBSize();
+    consumedBSize = ConsumedBSize(wm);
     gridReflowInput.InitializeForContinuation(this, consumedBSize);
     const uint32_t numRows = gridReflowInput.mRows.mSizes.Length();
     bSize = gridReflowInput.mRows.GridLineEdge(numRows,

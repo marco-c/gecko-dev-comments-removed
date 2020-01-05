@@ -1111,7 +1111,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
 
   const ReflowInput *reflowInput = &aReflowInput;
   WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord consumedBSize = GetConsumedBSize();
+  nscoord consumedBSize = ConsumedBSize(wm);
   nscoord effectiveComputedBSize = GetEffectiveComputedBSize(aReflowInput,
                                                              consumedBSize);
   Maybe<ReflowInput> mutableReflowInput;
@@ -1628,7 +1628,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
                                      aState.mBCoord + nonCarriedOutBDirMargin);
       
       nscoord effectiveComputedBSize =
-        GetEffectiveComputedBSize(aReflowInput, aState.GetConsumedBSize());
+        GetEffectiveComputedBSize(aReflowInput, aState.ConsumedBSize());
       finalSize.BSize(wm) =
         std::min(finalSize.BSize(wm),
                  borderPadding.BStart(wm) + effectiveComputedBSize);

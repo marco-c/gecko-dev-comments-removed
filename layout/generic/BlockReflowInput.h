@@ -199,7 +199,8 @@ public:
   
 
 
-  nscoord GetConsumedBSize();
+
+  nscoord ConsumedBSize();
 
   
   void ReconstructMarginBefore(nsLineList::iterator aLine);

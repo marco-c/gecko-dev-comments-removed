@@ -87,7 +87,7 @@ protected:
 
 
 
-  nscoord GetConsumedBSize() const;
+  nscoord ConsumedBSize(mozilla::WritingMode aWM) const;
 
   
 
