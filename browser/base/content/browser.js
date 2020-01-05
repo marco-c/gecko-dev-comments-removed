@@ -1340,6 +1340,7 @@ var gBrowserInit = {
         
         
         
+        
         let referrerURI = window.arguments[2];
         if (typeof(referrerURI) == "string") {
           try {
@@ -1356,7 +1357,7 @@ var gBrowserInit = {
                 window.arguments[4] || false, referrerPolicy, userContextId,
                 
                 
-                window.arguments[7], !!window.arguments[7]);
+                window.arguments[7], !!window.arguments[7], window.arguments[8]);
         window.focus();
       } else {
         
@@ -2248,7 +2249,8 @@ function BrowserTryToCloseWindow() {
 }
 
 function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
-                 userContextId, originPrincipal, forceAboutBlankViewerInCurrent) {
+                 userContextId, originPrincipal, forceAboutBlankViewerInCurrent,
+                 triggeringPrincipal) {
   try {
     openLinkIn(uri, "current",
                { referrerURI: referrer,
@@ -2257,6 +2259,7 @@ function loadURI(uri, referrer, postData, allowThirdPartyFixup, referrerPolicy,
                  allowThirdPartyFixup,
                  userContextId,
                  originPrincipal,
+                 triggeringPrincipal,
                  forceAboutBlankViewerInCurrent,
                });
   } catch (e) {}
@@ -5782,6 +5785,7 @@ function handleLinkClick(event, href, linkNode) {
     referrerPolicy,
     noReferrer: BrowserUtils.linkHasNoReferrer(linkNode),
     originPrincipal: doc.nodePrincipal,
+    triggeringPrincipal: doc.nodePrincipal,
     frameOuterWindowID,
   };
 

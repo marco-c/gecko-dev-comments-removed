@@ -220,6 +220,7 @@ function openLinkIn(url, where, params) {
   var aUserContextId        = params.userContextId;
   var aIndicateErrorPageLoad = params.indicateErrorPageLoad;
   var aPrincipal            = params.originPrincipal;
+  var aTriggeringPrincipal  = params.triggeringPrincipal;
   var aForceAboutBlankViewerInCurrent =
       params.forceAboutBlankViewerInCurrent;
 
@@ -260,13 +261,18 @@ function openLinkIn(url, where, params) {
   
   
   
-  if (aPrincipal && aPrincipal.isCodebasePrincipal) {
-    let attrs = {
-      userContextId: aUserContextId,
-      privateBrowsingId: aIsPrivate || (w && PrivateBrowsingUtils.isWindowPrivate(w)),
-    };
-    aPrincipal = Services.scriptSecurityManager.createCodebasePrincipal(aPrincipal.URI, attrs);
+  function useOAForPrincipal(principal) {
+    if (principal && principal.isCodebasePrincipal) {
+      let attrs = {
+        userContextId: aUserContextId,
+        privateBrowsingId: aIsPrivate || (w && PrivateBrowsingUtils.isWindowPrivate(w)),
+      };
+      return Services.scriptSecurityManager.createCodebasePrincipal(principal.URI, attrs);
+    }
+    return principal;
   }
+  aPrincipal = useOAForPrincipal(aPrincipal);
+  aTriggeringPrincipal = useOAForPrincipal(aTriggeringPrincipal);
 
   if (!w || where == "window") {
     
@@ -311,6 +317,7 @@ function openLinkIn(url, where, params) {
     sa.appendElement(referrerPolicySupports,  false);
     sa.appendElement(userContextIdSupports,  false);
     sa.appendElement(aPrincipal,  false);
+    sa.appendElement(aTriggeringPrincipal,  false);
 
     let features = "chrome,dialog=no,all";
     if (aIsPrivate) {
@@ -414,7 +421,7 @@ function openLinkIn(url, where, params) {
     }
 
     targetBrowser.loadURIWithFlags(url, {
-      triggeringPrincipal: aPrincipal,
+      triggeringPrincipal: aTriggeringPrincipal,
       flags,
       referrerURI: aNoReferrer ? null : aReferrerURI,
       referrerPolicy: aReferrerPolicy,
@@ -439,7 +446,7 @@ function openLinkIn(url, where, params) {
       noReferrer: aNoReferrer,
       userContextId: aUserContextId,
       originPrincipal: aPrincipal,
-      triggeringPrincipal: aPrincipal,
+      triggeringPrincipal: aTriggeringPrincipal,
     });
     targetBrowser = tabUsedForLoad.linkedBrowser;
 
