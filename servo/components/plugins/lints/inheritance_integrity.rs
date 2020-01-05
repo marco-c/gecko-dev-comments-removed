@@ -4,7 +4,8 @@
 
 use rustc::lint::{Context, LintPass, LintArray, Level};
 use rustc::middle::def;
-use syntax::{ast, ast_util};
+use rustc::middle::def_id::DefId;
+use syntax::ast;
 
 use utils::match_lang_ty;
 
@@ -26,7 +27,7 @@ impl LintPass for InheritancePass {
                         _gen: &ast::Generics, id: ast::NodeId) {
         
         
-        if cx.tcx.has_attr(ast_util::local_def(id), "_dom_struct_marker") {
+        if cx.tcx.has_attr(DefId::local(id), "_dom_struct_marker") {
             
             let reflector_span = def.fields.iter().enumerate()
                                     .find(|&(ctr, f)| {

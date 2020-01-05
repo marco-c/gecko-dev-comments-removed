@@ -266,7 +266,7 @@ pub mod rule_filter {
 }
 
 
-pub trait CSSRuleIteratorExt<'a>: Iterator<Item=&'a CSSRule> {
+pub trait CSSRuleIteratorExt<'a>: Iterator<Item=&'a CSSRule> + Sized {
     
     fn font_face(self) -> rule_filter::FontFace<'a, Self>;
 
