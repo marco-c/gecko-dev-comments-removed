@@ -964,7 +964,7 @@ IsObjectInContextCompartment(JSObject* obj, const JSContext* cx);
 JS_FRIEND_API(bool)
 RunningWithTrustedPrincipals(JSContext* cx);
 
-inline uintptr_t
+MOZ_ALWAYS_INLINE uintptr_t
 GetNativeStackLimit(JSContext* cx, JS::StackKind kind, int extraAllowance = 0)
 {
     uintptr_t limit = JS::RootingContext::get(cx)->nativeStackLimit[kind];
@@ -976,7 +976,7 @@ GetNativeStackLimit(JSContext* cx, JS::StackKind kind, int extraAllowance = 0)
     return limit;
 }
 
-inline uintptr_t
+MOZ_ALWAYS_INLINE uintptr_t
 GetNativeStackLimit(JSContext* cx, int extraAllowance = 0)
 {
     JS::StackKind kind = RunningWithTrustedPrincipals(cx) ? JS::StackForTrustedScript
@@ -1005,16 +1005,23 @@ CheckRecursionLimit(JSContext* cx, uintptr_t limit)
 }
 
 MOZ_ALWAYS_INLINE bool
-CheckRecursionLimit(JSContext* cx)
-{
-    return CheckRecursionLimit(cx, GetNativeStackLimit(cx));
-}
-
-MOZ_ALWAYS_INLINE bool
 CheckRecursionLimitDontReport(JSContext* cx, uintptr_t limit)
 {
     int stackDummy;
     return JS_CHECK_STACK_SIZE(limit, &stackDummy);
+}
+
+MOZ_ALWAYS_INLINE bool
+CheckRecursionLimit(JSContext* cx)
+{
+    
+    
+    
+    
+    uintptr_t untrustedLimit = GetNativeStackLimit(cx, JS::StackForUntrustedScript);
+    if (MOZ_LIKELY(CheckRecursionLimitDontReport(cx, untrustedLimit)))
+        return true;
+    return CheckRecursionLimit(cx, GetNativeStackLimit(cx));
 }
 
 MOZ_ALWAYS_INLINE bool
