@@ -148,7 +148,7 @@ GPUProcessManager::DisableGPUProcess(const char* aMessage)
 void
 GPUProcessManager::EnsureGPUReady()
 {
-  if (mProcess && mProcess->IsConnected()) {
+  if (mProcess && !mProcess->IsConnected()) {
     if (!mProcess->WaitForLaunch()) {
       
       
