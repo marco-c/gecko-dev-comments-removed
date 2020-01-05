@@ -322,10 +322,12 @@ KeyframeEffectReadOnly::CompositeValue(
       
       
       return aUnderlyingValue;
-    case dom::CompositeOperation::Accumulate:
-      
-      MOZ_ASSERT_UNREACHABLE("Not implemented yet");
-      break;
+    case dom::CompositeOperation::Accumulate: {
+      StyleAnimationValue result(aValueToComposite);
+      return StyleAnimationValue::Accumulate(aProperty,
+                                             aUnderlyingValue,
+                                             Move(result));
+    }
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown compisite operation type");
       break;
@@ -1000,6 +1002,10 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
       keyframeDict.mEasing.Truncate();
       keyframe.mTimingFunction.ref().AppendToString(keyframeDict.mEasing);
     } 
+
+    if (keyframe.mComposite) {
+      keyframeDict.mComposite.Construct(keyframe.mComposite.value());
+    }
 
     JS::Rooted<JS::Value> keyframeJSValue(aCx);
     if (!ToJSValue(aCx, keyframeDict, &keyframeJSValue)) {
