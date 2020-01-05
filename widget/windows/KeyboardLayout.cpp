@@ -1461,7 +1461,7 @@ NativeKey::InitWithKeyChar()
   
   
   
-  mKeyNameIndex = IsFollowedByNonControlCharMessage() ?
+  mKeyNameIndex = IsFollowedByPrintableCharMessage() ?
     KEY_NAME_INDEX_USE_STRING :
     keyboardLayout->ConvertNativeKeyCodeToKeyNameIndex(mOriginalVirtualKeyCode);
   mCodeNameIndex =
@@ -1659,7 +1659,7 @@ NativeKey::IsFollowedByDeadCharMessage() const
 }
 
 bool
-NativeKey::IsFollowedByNonControlCharMessage() const
+NativeKey::IsFollowedByPrintableCharMessage() const
 {
   for (size_t i = 0; i < mFollowingCharMsgs.Length(); ++i) {
     if (IsPrintableCharMessage(mFollowingCharMsgs[i])) {
@@ -2797,7 +2797,7 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
   
   
   
-  if (IsFollowedByNonControlCharMessage()) {
+  if (IsFollowedByPrintableCharMessage()) {
     return false;
   }
 
