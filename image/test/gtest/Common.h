@@ -411,6 +411,8 @@ ImageTestCase DownscaledICOTestCase();
 ImageTestCase DownscaledIconTestCase();
 ImageTestCase DownscaledTransparentICOWithANDMaskTestCase();
 
+ImageTestCase TruncatedSmallGIFTestCase();
+
 } 
 } 
 
