@@ -27,7 +27,7 @@ namespace mozilla {
 
 
 struct PlaybackInfoInit {
-  int64_t mStartTime;
+  media::TimeUnit mStartTime;
   MediaInfo mInfo;
 };
 
@@ -144,8 +144,8 @@ public:
   
   
   
-  int64_t mNextVideoTime; 
-  int64_t mNextAudioTime; 
+  media::TimeUnit mNextVideoTime;
+  media::TimeUnit mNextAudioTime;
   
   
   RefPtr<layers::Image> mLastVideoImage;
@@ -234,8 +234,9 @@ DecodedStreamData::GetDebugInfo()
     "DecodedStreamData=%p mPlaying=%d mAudioFramesWritten=%" PRId64
     " mNextAudioTime=%" PRId64 " mNextVideoTime=%" PRId64 " mHaveSentFinish=%d "
     "mHaveSentFinishAudio=%d mHaveSentFinishVideo=%d",
-    this, mPlaying, mAudioFramesWritten, mNextAudioTime, mNextVideoTime,
-    mHaveSentFinish, mHaveSentFinishAudio, mHaveSentFinishVideo);
+    this, mPlaying, mAudioFramesWritten, mNextAudioTime.ToMicroseconds(),
+    mNextVideoTime.ToMicroseconds(), mHaveSentFinish, mHaveSentFinishAudio,
+    mHaveSentFinishVideo);
 }
 
 DecodedStream::DecodedStream(AbstractThread* aOwnerThread,
@@ -298,8 +299,8 @@ DecodedStream::Start(int64_t aStartTime, const MediaInfo& aInfo)
   AssertOwnerThread();
   MOZ_ASSERT(mStartTime.isNothing(), "playback already started.");
 
-  mStartTime.emplace(aStartTime);
-  mLastOutputTime = 0;
+  mStartTime.emplace(FromMicroseconds(aStartTime));
+  mLastOutputTime = media::TimeUnit::Zero();
   mInfo = aInfo;
   mPlaying = true;
   ConnectListener();
@@ -345,7 +346,7 @@ DecodedStream::Start(int64_t aStartTime, const MediaInfo& aInfo)
   MozPromiseHolder<GenericPromise> promise;
   mFinishPromise = promise.Ensure(__func__);
   PlaybackInfoInit init {
-    aStartTime, aInfo
+    FromMicroseconds(aStartTime), aInfo
   };
   nsCOMPtr<nsIRunnable> r =
     new R(Move(init), Move(promise), mOutputStreamManager, mAbstractMainThread);
@@ -447,7 +448,7 @@ DecodedStream::SetPreservesPitch(bool aPreservesPitch)
 }
 
 static void
-SendStreamAudio(DecodedStreamData* aStream, int64_t aStartTime,
+SendStreamAudio(DecodedStreamData* aStream, const media::TimeUnit& aStartTime,
                 AudioData* aData, AudioSegment* aOutput, uint32_t aRate,
                 const PrincipalHandle& aPrincipalHandle)
 {
@@ -458,14 +459,14 @@ SendStreamAudio(DecodedStreamData* aStream, int64_t aStartTime,
   AudioData* audio = aData;
   
   
-  CheckedInt64 audioWrittenOffset = aStream->mAudioFramesWritten +
-                                    UsecsToFrames(aStartTime, aRate);
+  CheckedInt64 audioWrittenOffset = aStream->mAudioFramesWritten
+    + TimeUnitToFrames(aStartTime, aRate);
   CheckedInt64 frameOffset = UsecsToFrames(audio->mTime, aRate);
 
   if (!audioWrittenOffset.isValid() ||
       !frameOffset.isValid() ||
       
-      audio->GetEndTime() <= aStream->mNextAudioTime) {
+      audio->GetEndTime() <= aStream->mNextAudioTime.ToMicroseconds()) {
     return;
   }
 
@@ -491,7 +492,7 @@ SendStreamAudio(DecodedStreamData* aStream, int64_t aStartTime,
   aOutput->AppendFrames(buffer.forget(), channels, audio->mFrames, aPrincipalHandle);
   aStream->mAudioFramesWritten += audio->mFrames;
 
-  aStream->mNextAudioTime = audio->GetEndTime();
+  aStream->mNextAudioTime = media::TimeUnit::FromMicroseconds(audio->GetEndTime());
 }
 
 void
@@ -540,17 +541,17 @@ DecodedStream::SendAudio(double aVolume, bool aIsSameOrigin,
 static void
 WriteVideoToMediaStream(MediaStream* aStream,
                         layers::Image* aImage,
-                        int64_t aEndMicroseconds,
-                        int64_t aStartMicroseconds,
+                        const media::TimeUnit& aEnd,
+                        const media::TimeUnit& aStart,
                         const mozilla::gfx::IntSize& aIntrinsicSize,
                         const TimeStamp& aTimeStamp,
                         VideoSegment* aOutput,
                         const PrincipalHandle& aPrincipalHandle)
 {
   RefPtr<layers::Image> image = aImage;
-  StreamTime duration =
-      aStream->MicrosecondsToStreamTimeRoundDown(aEndMicroseconds) -
-      aStream->MicrosecondsToStreamTimeRoundDown(aStartMicroseconds);
+  auto end = aStream->MicrosecondsToStreamTimeRoundDown(aEnd.ToMicroseconds());
+  auto start = aStream->MicrosecondsToStreamTimeRoundDown(aStart.ToMicroseconds());
+  StreamTime duration = end - start;
   aOutput->AppendFrame(image.forget(), duration, aIntrinsicSize,
                        aPrincipalHandle, false, aTimeStamp);
 }
@@ -594,7 +595,7 @@ DecodedStream::SendVideo(bool aIsSameOrigin, const PrincipalHandle& aPrincipalHa
   for (uint32_t i = 0; i < video.Length(); ++i) {
     VideoData* v = video[i];
 
-    if (mData->mNextVideoTime < v->mTime) {
+    if (mData->mNextVideoTime.ToMicroseconds() < v->mTime) {
       
       
 
@@ -604,19 +605,21 @@ DecodedStream::SendVideo(bool aIsSameOrigin, const PrincipalHandle& aPrincipalHa
       
       
       
-      WriteVideoToMediaStream(sourceStream, mData->mLastVideoImage, v->mTime,
-          mData->mNextVideoTime, mData->mLastVideoImageDisplaySize,
-          tracksStartTimeStamp + TimeDuration::FromMicroseconds(v->mTime),
-          &output, aPrincipalHandle);
-      mData->mNextVideoTime = v->mTime;
+      WriteVideoToMediaStream(sourceStream, mData->mLastVideoImage,
+        FromMicroseconds(v->mTime),
+        mData->mNextVideoTime, mData->mLastVideoImageDisplaySize,
+        tracksStartTimeStamp + TimeDuration::FromMicroseconds(v->mTime),
+        &output, aPrincipalHandle);
+      mData->mNextVideoTime = FromMicroseconds(v->mTime);
     }
 
-    if (mData->mNextVideoTime < v->GetEndTime()) {
-      WriteVideoToMediaStream(sourceStream, v->mImage, v->GetEndTime(),
-          mData->mNextVideoTime, v->mDisplay,
-          tracksStartTimeStamp + TimeDuration::FromMicroseconds(v->GetEndTime()),
-          &output, aPrincipalHandle);
-      mData->mNextVideoTime = v->GetEndTime();
+    if (mData->mNextVideoTime.ToMicroseconds() < v->GetEndTime()) {
+      WriteVideoToMediaStream(sourceStream, v->mImage,
+        FromMicroseconds(v->GetEndTime()),
+        mData->mNextVideoTime, v->mDisplay,
+        tracksStartTimeStamp + TimeDuration::FromMicroseconds(v->GetEndTime()),
+        &output, aPrincipalHandle);
+      mData->mNextVideoTime = FromMicroseconds(v->GetEndTime());
       mData->mLastVideoImage = v->mImage;
       mData->mLastVideoImageDisplaySize = v->mDisplay;
     }
@@ -639,13 +642,13 @@ DecodedStream::SendVideo(bool aIsSameOrigin, const PrincipalHandle& aPrincipalHa
     if (mData->mEOSVideoCompensation) {
       VideoSegment endSegment;
       
-      int64_t deviation_usec = sourceStream->StreamTimeToMicroseconds(1);
+      auto deviation = FromMicroseconds(sourceStream->StreamTimeToMicroseconds(1));
       WriteVideoToMediaStream(sourceStream, mData->mLastVideoImage,
-          mData->mNextVideoTime + deviation_usec, mData->mNextVideoTime,
-          mData->mLastVideoImageDisplaySize,
-          tracksStartTimeStamp + TimeDuration::FromMicroseconds(mData->mNextVideoTime + deviation_usec),
-          &endSegment, aPrincipalHandle);
-      mData->mNextVideoTime += deviation_usec;
+        mData->mNextVideoTime + deviation, mData->mNextVideoTime,
+        mData->mLastVideoImageDisplaySize,
+        tracksStartTimeStamp + (mData->mNextVideoTime + deviation).ToTimeDuration(),
+        &endSegment, aPrincipalHandle);
+      mData->mNextVideoTime += deviation;
       MOZ_ASSERT(endSegment.GetDuration() > 0);
       if (!aIsSameOrigin) {
         endSegment.ReplaceWithDisabled();
@@ -672,7 +675,7 @@ DecodedStream::AdvanceTracks()
 
   if (mInfo.HasVideo()) {
     StreamTime videoEnd = mData->mStream->MicrosecondsToStreamTimeRoundDown(
-        mData->mNextVideoTime - mStartTime.ref());
+      (mData->mNextVideoTime - mStartTime.ref()).ToMicroseconds());
     endPosition = std::max(endPosition, videoEnd);
   }
 
@@ -715,13 +718,13 @@ DecodedStream::GetEndTime(TrackType aType) const
 {
   AssertOwnerThread();
   if (aType == TrackInfo::kAudioTrack && mInfo.HasAudio() && mData) {
-    CheckedInt64 t = mStartTime.ref() +
-      FramesToUsecs(mData->mAudioFramesWritten, mInfo.mAudio.mRate);
-    if (t.isValid()) {
-      return t.value();
+    auto t = mStartTime.ref() + FramesToTimeUnit(
+      mData->mAudioFramesWritten, mInfo.mAudio.mRate);
+    if (t.IsValid()) {
+      return t.ToMicroseconds();
     }
   } else if (aType == TrackInfo::kVideoTrack && mData) {
-    return mData->mNextVideoTime;
+    return mData->mNextVideoTime.ToMicroseconds();
   }
   return -1;
 }
@@ -736,14 +739,14 @@ DecodedStream::GetPosition(TimeStamp* aTimeStamp) const
   if (aTimeStamp) {
     *aTimeStamp = TimeStamp::Now();
   }
-  return mStartTime.ref() + mLastOutputTime;
+  return (mStartTime.ref() + mLastOutputTime).ToMicroseconds();
 }
 
 void
 DecodedStream::NotifyOutput(int64_t aTime)
 {
   AssertOwnerThread();
-  mLastOutputTime = aTime;
+  mLastOutputTime = FromMicroseconds(aTime);
   int64_t currentTime = GetPosition();
 
   
@@ -784,9 +787,10 @@ nsCString
 DecodedStream::GetDebugInfo()
 {
   AssertOwnerThread();
+  int64_t startTime = mStartTime.isSome() ? mStartTime->ToMicroseconds() : -1;
   return nsPrintfCString(
     "DecodedStream=%p mStartTime=%" PRId64 " mLastOutputTime=%" PRId64 " mPlaying=%d mData=%p",
-    this, mStartTime.valueOr(-1), mLastOutputTime, mPlaying, mData.get())
+    this, startTime, mLastOutputTime.ToMicroseconds(), mPlaying, mData.get())
     + (mData ? nsCString("\n") + mData->GetDebugInfo() : nsCString());
 }
 
