@@ -56,8 +56,7 @@ public:
   
   
   
-  virtual already_AddRefed<nsIEventTarget>
-  EventTargetFor(TaskCategory aCategory) const;
+  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const;
 };
 
 
@@ -70,8 +69,7 @@ public:
 
   
   
-  virtual already_AddRefed<nsIEventTarget>
-  EventTargetFor(TaskCategory aCategory) const = 0;
+  virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const = 0;
 
   
   
