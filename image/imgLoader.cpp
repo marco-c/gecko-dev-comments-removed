@@ -645,8 +645,9 @@ ValidateSecurityInfo(imgRequest* request, bool forcePrincipalCheck,
   
   if (request->GetCORSMode() != corsmode) {
     return false;
-  } else if (request->GetCORSMode() != imgIRequest::CORS_NONE ||
-             forcePrincipalCheck) {
+  }
+  if (request->GetCORSMode() != imgIRequest::CORS_NONE ||
+      forcePrincipalCheck) {
     nsCOMPtr<nsIPrincipal> otherprincipal = request->GetLoadingPrincipal();
 
     
@@ -1338,9 +1339,9 @@ imgLoader::ClearCache(bool chrome)
 
   if (chrome) {
     return ClearChromeImageCache();
-  } else {
-    return ClearImageCache();
   }
+  return ClearImageCache();
+
 }
 
 NS_IMETHODIMP
@@ -1633,80 +1634,79 @@ imgLoader::ValidateRequestWithNewChannel(imgRequest* request,
 
     return NS_SUCCEEDED(rv);
 
-  } else {
-    
-    
-    
-    nsCOMPtr<nsIChannel> newChannel;
-    bool forcePrincipalCheck;
-    rv = NewImageChannel(getter_AddRefs(newChannel),
-                         &forcePrincipalCheck,
-                         aURI,
-                         aInitialDocumentURI,
-                         aCORSMode,
-                         aReferrerURI,
-                         aReferrerPolicy,
-                         aLoadGroup,
-                         mAcceptHeader,
-                         aLoadFlags,
-                         aLoadPolicyType,
-                         aLoadingPrincipal,
-                         aCX,
-                         mRespectPrivacy);
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    RefPtr<imgRequestProxy> req;
-    rv = CreateNewProxyForRequest(request, aLoadGroup, aObserver,
-                                  aLoadFlags, getter_AddRefs(req));
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    
-    RefPtr<nsProgressNotificationProxy> progressproxy =
-        new nsProgressNotificationProxy(newChannel, req);
-    if (!progressproxy) {
-      return false;
-    }
-
-    RefPtr<imgCacheValidator> hvc =
-      new imgCacheValidator(progressproxy, this, request, aCX,
-                            forcePrincipalCheck);
-
-    
-    nsCOMPtr<nsIStreamListener> listener =
-      do_QueryInterface(static_cast<nsIThreadRetargetableStreamListener*>(hvc));
-    NS_ENSURE_TRUE(listener, false);
-
-    
-    
-    
-    newChannel->SetNotificationCallbacks(hvc);
-
-    request->SetValidator(hvc);
-
-    
-    
-    
-    
-    req->SetNotificationsDeferred(true);
-
-    
-    hvc->AddProxy(req);
-
-    mozilla::net::PredictorLearn(aURI, aInitialDocumentURI,
-        nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, aLoadGroup);
-
-    rv = newChannel->AsyncOpen2(listener);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return false;
-    }
-
-    req.forget(aProxyRequest);
-    return true;
   }
+  
+  
+  
+  nsCOMPtr<nsIChannel> newChannel;
+  bool forcePrincipalCheck;
+  rv = NewImageChannel(getter_AddRefs(newChannel),
+                       &forcePrincipalCheck,
+                       aURI,
+                       aInitialDocumentURI,
+                       aCORSMode,
+                       aReferrerURI,
+                       aReferrerPolicy,
+                       aLoadGroup,
+                       mAcceptHeader,
+                       aLoadFlags,
+                       aLoadPolicyType,
+                       aLoadingPrincipal,
+                       aCX,
+                       mRespectPrivacy);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  RefPtr<imgRequestProxy> req;
+  rv = CreateNewProxyForRequest(request, aLoadGroup, aObserver,
+                                aLoadFlags, getter_AddRefs(req));
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  
+  RefPtr<nsProgressNotificationProxy> progressproxy =
+    new nsProgressNotificationProxy(newChannel, req);
+  if (!progressproxy) {
+    return false;
+  }
+
+  RefPtr<imgCacheValidator> hvc =
+    new imgCacheValidator(progressproxy, this, request, aCX,
+                          forcePrincipalCheck);
+
+  
+  nsCOMPtr<nsIStreamListener> listener =
+    do_QueryInterface(static_cast<nsIThreadRetargetableStreamListener*>(hvc));
+  NS_ENSURE_TRUE(listener, false);
+
+  
+  
+  
+  newChannel->SetNotificationCallbacks(hvc);
+
+  request->SetValidator(hvc);
+
+  
+  
+  
+  
+  req->SetNotificationsDeferred(true);
+
+  
+  hvc->AddProxy(req);
+
+  mozilla::net::PredictorLearn(aURI, aInitialDocumentURI,
+                               nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, aLoadGroup);
+
+  rv = newChannel->AsyncOpen2(listener);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return false;
+  }
+
+  req.forget(aProxyRequest);
+  return true;
 }
 
 bool
@@ -1876,10 +1876,8 @@ imgLoader::RemoveFromCache(const ImageCacheKey& aKey)
     AddToUncachedImages(request);
 
     return true;
-
-  } else {
-    return false;
   }
+  return false;
 }
 
 bool
