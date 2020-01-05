@@ -21,7 +21,7 @@ use style::computed_values::{border_collapse, border_spacing};
 use style::logical_geometry::{LogicalSize, WritingMode};
 use style::properties::ComputedValues;
 use table::{ColumnComputedInlineSize, ColumnIntrinsicInlineSize, InternalTable, TableLikeFlow};
-use table_row::{self, CollapsedBordersForRow};
+use table_row;
 use util::print_tree::PrintTree;
 
 
@@ -41,10 +41,6 @@ pub struct TableRowGroupFlow {
     
     
     pub table_writing_mode: WritingMode,
-
-    
-    
-    pub preliminary_collapsed_borders: CollapsedBordersForRow,
 
     
     
@@ -73,7 +69,6 @@ impl TableRowGroupFlow {
                 vertical: Au(0),
             },
             table_writing_mode: writing_mode,
-            preliminary_collapsed_borders: CollapsedBordersForRow::new(),
             collapsed_inline_direction_border_widths_for_table: Vec::new(),
             collapsed_block_direction_border_widths_for_table: Vec::new(),
         }

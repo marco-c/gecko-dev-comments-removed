@@ -720,7 +720,7 @@ pub fn propagate_column_inline_sizes_to_child(
     }
 }
 
-
+/// Lay out table cells inline according to the computer column sizes.
 fn set_inline_position_of_child_flow(
         child_flow: &mut Flow,
         child_index: usize,
@@ -738,11 +738,11 @@ fn set_inline_position_of_child_flow(
 
     let reverse_column_order = table_writing_mode.is_bidi_ltr() != row_writing_mode.is_bidi_ltr();
 
-    
+    // Handle border collapsing, if necessary.
     let child_table_cell = child_flow.as_mut_table_cell();
     match *border_collapse_info {
         Some(ref border_collapse_info) => {
-            
+            // Write in the child's border collapse state.
             child_table_cell.collapsed_borders = CollapsedBordersForCell {
                 inline_start_border: border_collapse_info.collapsed_borders_for_row
                                                          .inline
@@ -773,7 +773,7 @@ fn set_inline_position_of_child_flow(
                 block_end_width: border_collapse_info.collapsed_border_spacing_for_row.block_end,
             };
 
-            
+            // Move over past the collapsed border.
             if reverse_column_order {
                 *inline_end_margin_edge = *inline_end_margin_edge +
                     child_table_cell.collapsed_borders.inline_start_width
@@ -783,7 +783,7 @@ fn set_inline_position_of_child_flow(
             }
         }
         None => {
-            
+            // Take spacing into account.
             if reverse_column_order {
                 *inline_end_margin_edge = *inline_end_margin_edge + border_spacing.horizontal
             } else {
@@ -797,12 +797,12 @@ fn set_inline_position_of_child_flow(
     kid_base.block_container_inline_size = column_inline_size;
 
     if reverse_column_order {
-        
+        // Columns begin from the inline-end edge.
         kid_base.position.start.i =
             parent_content_inline_size - *inline_end_margin_edge - column_inline_size;
         *inline_end_margin_edge = *inline_end_margin_edge + column_inline_size;
     } else {
-        
+        // Columns begin from the inline-start edge.
         kid_base.position.start.i = *inline_start_margin_edge;
         *inline_start_margin_edge = *inline_start_margin_edge + column_inline_size;
     }
@@ -814,16 +814,17 @@ pub struct BorderCollapseInfoForChildTableCell<'a> {
     collapsed_border_spacing_for_row: &'a CollapsedBorderSpacingForRow,
 }
 
-
-
-
-
+/// Performs border-collapse in the inline direction for all the cells' inside borders in the
+/// inline-direction cells and propagates the outside borders (the far left and right) up to the
+/// table row. This is done eagerly here so that at least the inline inside border collapse
+/// computations can be parallelized across all the rows of the table.
 fn perform_inline_direction_border_collapse_for_row(
         child_index: usize,
         child_table_cell: &mut TableCellFlow,
         iterator: &mut Peekable<Enumerate<MutFlowListIterator>>,
         preliminary_collapsed_borders: &mut CollapsedBordersForRow) {
-    let inline_collapsed_border = preliminary_collapsed_borders.inline.push_or_mutate(
+    println!("    perform_inline_direction_border_collapse_for_row");
+    let inline_collapsed_border = preliminary_collapsed_borders.inline.push_or_set(
         child_index + 1,
         CollapsedBorder::inline_end(&*child_table_cell.block_flow.fragment.style,
                                     CollapsedBorderProvenance::FromPreviousTableCell));
@@ -838,9 +839,9 @@ fn perform_inline_direction_border_collapse_for_row(
     let block_start_border =
         CollapsedBorder::block_start(&*child_table_cell.block_flow.fragment.style,
                                      CollapsedBorderProvenance::FromNextTableCell);
-    preliminary_collapsed_borders.block_start.push_or_mutate(child_index, block_start_border);
+    preliminary_collapsed_borders.block_start.push_or_set(child_index, block_start_border);
     let block_end_border =
         CollapsedBorder::block_end(&*child_table_cell.block_flow.fragment.style,
                                    CollapsedBorderProvenance::FromPreviousTableCell);
-    preliminary_collapsed_borders.block_end.push_or_mutate(child_index, block_end_border);
+    preliminary_collapsed_borders.block_end.push_or_set(child_index, block_end_border);
 }
