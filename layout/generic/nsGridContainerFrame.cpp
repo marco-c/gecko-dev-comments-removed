@@ -141,6 +141,24 @@ GetPercentSizeParts(const nsStyleCoord& aCoord, nscoord* aLength, float* aPercen
   }
 }
 
+static void
+ResolvePercentSizeParts(const nsStyleCoord& aCoord, nscoord aPercentBasis,
+                        nscoord* aLength, float* aPercent)
+{
+  MOZ_ASSERT(aCoord.IsCoordPercentCalcUnit());
+  if (aPercentBasis != NS_UNCONSTRAINEDSIZE) {
+    *aLength = std::max(nscoord(0),
+                        nsRuleNode::ComputeCoordPercentCalc(aCoord,
+                                                            aPercentBasis));
+    *aPercent = 0.0f;
+    return;
+  }
+  if (!GetPercentSizeParts(aCoord, aLength, aPercent)) {
+    *aLength = aCoord.ToLength();
+    *aPercent = 0.0f;
+  }
+}
+
 
 
 
@@ -1108,8 +1126,11 @@ struct nsGridContainerFrame::TrackSizingFunctions
       return 1;
     }
     nscoord repeatTrackSize = 0;
+    float repeatTrackPercent = 0.0f;
     
     nscoord sum = 0;
+    float percentSum = 0.0f;
+    const nscoord percentBasis = aSize;
     for (uint32_t i = 0; i < numTracks; ++i) {
       
       
@@ -1122,30 +1143,59 @@ struct nsGridContainerFrame::TrackSizingFunctions
           return 1;
         }
       }
-      nscoord trackSize = ::ResolveToDefiniteSize(*coord, aSize);
+      float trackPercent;
+      nscoord trackSize;
+      ResolvePercentSizeParts(*coord, percentBasis, &trackSize, &trackPercent);
       if (i == mRepeatAutoStart) {
-        
-        if (trackSize < AppUnitsPerCSSPixel()) {
-          trackSize = AppUnitsPerCSSPixel();
+        if (percentBasis != NS_UNCONSTRAINEDSIZE) {
+          
+          if (trackSize < AppUnitsPerCSSPixel()) {
+            trackSize = AppUnitsPerCSSPixel();
+          }
         }
         repeatTrackSize = trackSize;
+        repeatTrackPercent = trackPercent;
       }
       sum += trackSize;
+      percentSum += trackPercent;
     }
-    nscoord gridGap = ::ResolveToDefiniteSize(aGridGap, aSize);
+    nscoord gridGap;
+    float gridGapPercent;
+    ResolvePercentSizeParts(aGridGap, percentBasis, &gridGap, &gridGapPercent);
     if (numTracks > 1) {
       
       sum += gridGap * (numTracks - 1);
+      percentSum += gridGapPercent * (numTracks - 1);
     }
+    
     nscoord available = maxFill != NS_UNCONSTRAINEDSIZE ? maxFill : aMinSize;
-    nscoord spaceToFill = available - sum;
-    if (spaceToFill <= 0) {
+    nscoord size = nsLayoutUtils::AddPercents(sum, percentSum);
+    if (available - size < 0) {
       
       return 1;
     }
-    
-    uint32_t numRepeatTracks = (spaceToFill / (repeatTrackSize + gridGap)) + 1;
-    if (maxFill == NS_UNCONSTRAINEDSIZE) {
+    uint32_t numRepeatTracks = 1;
+    bool exactFit = false;
+    while (true) {
+      sum += gridGap + repeatTrackSize;
+      percentSum += gridGapPercent + repeatTrackPercent;
+      nscoord newSize = nsLayoutUtils::AddPercents(sum, percentSum);
+      if (newSize <= size) {
+        
+        return numRepeatTracks;
+      }
+      size = newSize;
+      nscoord remaining = available - size;
+      exactFit = remaining == 0;
+      if (remaining >= 0) {
+        ++numRepeatTracks;
+      }
+      if (remaining <= 0) {
+        break;
+      }
+    }
+
+    if (!exactFit && maxFill == NS_UNCONSTRAINEDSIZE) {
       
       
       
