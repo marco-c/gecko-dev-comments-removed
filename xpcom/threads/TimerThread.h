@@ -81,7 +81,7 @@ private:
 
   struct Entry
   {
-    TimeStamp mTimeout;
+    const TimeStamp mTimeout;
     RefPtr<nsTimerImpl> mTimerImpl;
 
     Entry(const TimeStamp& aMinTimeout, const TimeStamp& aTimeout,
@@ -90,23 +90,16 @@ private:
       mTimerImpl(aTimerImpl)
     { }
 
-    Entry(Entry&& aRight) = default;
-    Entry& operator=(Entry&& aRight) = default;
-
-    bool operator<(const Entry& aRight) const
+    static bool
+    UniquePtrLessThan(UniquePtr<Entry>& aLeft, UniquePtr<Entry>& aRight)
     {
       
       
-      return mTimeout > aRight.mTimeout;
-    }
-
-    bool operator==(const Entry& aRight) const
-    {
-      return mTimeout == aRight.mTimeout;
+      return aRight->mTimeout < aLeft->mTimeout;
     }
   };
 
-  nsTArray<Entry> mTimers;
+  nsTArray<UniquePtr<Entry>> mTimers;
 };
 
 struct TimerAdditionComparator
