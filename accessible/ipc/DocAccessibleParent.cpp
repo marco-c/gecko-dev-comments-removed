@@ -460,6 +460,11 @@ DocAccessibleParent::Destroy()
     iter.Remove();
   }
 
+  
+  
+  mAccessibles.Clear();
+  mChildDocs.Clear();
+
   DocManager::NotifyOfRemoteDocShutdown(this);
   ProxyDestroyed(this);
   if (mParentDoc)
