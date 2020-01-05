@@ -5544,14 +5544,15 @@ pref("layout.css.servo.enabled", true);
 
 
 
-pref("security.mixed_content.send_hsts_priming", true);
 #ifdef RELEASE_OR_BETA
 
 
+pref("security.mixed_content.send_hsts_priming", false);
 pref("security.mixed_content.use_hsts", false);
 #else
 
 
+pref("security.mixed_content.send_hsts_priming", true);
 pref("security.mixed_content.use_hsts", true);
 #endif
 
