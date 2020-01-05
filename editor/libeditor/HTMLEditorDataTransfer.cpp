@@ -1775,6 +1775,13 @@ HTMLEditor::InsertTextWithQuotations(const nsAString& aStringToInsert)
       
       if (curHunkIsQuoted) {
         lineStart = firstNewline;
+
+        
+        
+        
+        
+        
+        lineStart++;
       }
     }
 
