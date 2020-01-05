@@ -3,7 +3,7 @@
 
 
 use font::{Font, FontDescriptor, FontGroup, FontStyle, SelectorPlatformIdentifier};
-use font::{SelectorStubDummy, SpecifiedFontStyle, UsedFontStyle};
+use font::{SpecifiedFontStyle, UsedFontStyle};
 use font_context;
 use font_list::FontList;
 use servo_util::cache::Cache;
@@ -15,14 +15,7 @@ use azure::azure_hl::BackendType;
 use core::hashmap::HashMap;
 
 
-static TEST_FONT: [u8, ..33004] = include_bin!("JosefinSans-SemiBold.ttf");
 
-fn test_font_bin() -> ~[u8] {
-    return vec::from_fn(33004, |i| TEST_FONT[i]);
-}
-
-// TODO(Rust #3934): creating lots of new dummy styles is a workaround
-// for not being able to store symbolic enums in top-level constants.
 pub fn dummy_style() -> FontStyle {
     use font::FontWeight300;
     return FontStyle {
@@ -135,18 +128,6 @@ pub impl<'self> FontContext {
             }
         }
 
-        // TODO(Issue #194): *always* attach a fallback font to the
-        // font list, so that this assertion will never fail.
-
-        // assert fonts.len() > 0;
-        if fonts.len() == 0 {
-            let desc = FontDescriptor::new(font_context::dummy_style(), SelectorStubDummy);
-            debug!("(create font group) trying descriptor `%?`", desc);
-            match self.get_font_by_descriptor(&desc) {
-                Ok(instance) => fonts.push(instance),
-                Err(()) => {}
-            }
-        }
         assert!(fonts.len() > 0);
         // TODO(Issue #179): Split FontStyle into specified and used styles
         let used_style = copy *style;
@@ -158,9 +139,6 @@ pub impl<'self> FontContext {
 
     priv fn create_font_instance(&self, desc: &FontDescriptor) -> Result<@mut Font, ()> {
         return match &desc.selector {
-            &SelectorStubDummy => {
-                Font::new_from_buffer(self, test_font_bin(), &desc.style, self.backend)
-            },
             
             &SelectorPlatformIdentifier(ref identifier) => { 
                 let result_handle = self.handle.create_font_from_identifier(copy *identifier,
