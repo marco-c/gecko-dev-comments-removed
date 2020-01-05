@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import time
+from copy import deepcopy
 
 from taskgraph.util.treeherder import split_symbol
 from taskgraph.transforms.base import TransformSequence
@@ -212,10 +213,17 @@ task_description_schema = Schema({
         Optional('retry-exit-status'): int,
 
     }, {
+        
+        
         Required('implementation'): 'generic-worker',
 
         
-        Required('command'): [taskref_or_string],
+        
+        
+        Required('command'): Any(
+            [taskref_or_string],   
+            [[taskref_or_string]]  
+        ),
 
         
         
@@ -225,15 +233,48 @@ task_description_schema = Schema({
 
             
             'path': basestring,
+
+            
+            Optional('name'): basestring
         }],
 
         
+        
+        
+        
         Optional('mounts'): [{
             
-            'cache-name': basestring,
+            
+            Optional('cache-name'): basestring,
+            
+            
+            
+            Optional('content'): {
+
+                
+
+                
+                Optional('artifact'): basestring,
+                
+                Optional('task-id'): taskref_or_string,
+                
+                
+                Optional('url'): basestring
+            },
 
             
-            'path': basestring,
+
+            
+            
+            
+            Optional('directory'): basestring,
+            
+            
+            Optional('file'): basestring,
+            
+            
+            
+            Optional('format'): Any('rar', 'tar.bz2', 'tar.gz', 'zip')
         }],
 
         
@@ -244,6 +285,9 @@ task_description_schema = Schema({
 
         
         Optional('os-groups', default=[]): [basestring],
+
+        
+        Required('chain-of-trust', default=False): bool,
     }, {
         Required('implementation'): 'buildbot-bridge',
 
@@ -557,19 +601,26 @@ def build_generic_worker_payload(config, task, task_def):
     artifacts = []
 
     for artifact in worker['artifacts']:
-        artifacts.append({
+        a = {
             'path': artifact['path'],
             'type': artifact['type'],
             'expires': task_def['expires'],  
-        })
+        }
+        if 'name' in artifact:
+            a['name'] = artifact['name']
+        artifacts.append(a)
 
-    mounts = []
-
-    for mount in worker.get('mounts', []):
-        mounts.append({
-            'cacheName': mount['cache-name'],
-            'directory': mount['path']
-        })
+    
+    
+    
+    
+    mounts = deepcopy(worker.get('mounts', []))
+    for mount in mounts:
+        if 'cache-name' in mount:
+            mount['cacheName'] = mount.pop('cache-name')
+        if 'content' in mount:
+            if 'task-id' in mount['content']:
+                mount['content']['taskId'] = mount['content'].pop('task-id')
 
     task_def['payload'] = {
         'command': worker['command'],
@@ -584,6 +635,15 @@ def build_generic_worker_payload(config, task, task_def):
 
     if 'retry-exit-status' in worker:
         raise Exception("retry-exit-status not supported in generic-worker")
+
+    
+    features = {}
+
+    if worker.get('chain-of-trust'):
+        features['chainOfTrust'] = True
+
+    if features:
+        task_def['payload']['features'] = features
 
 
 @payload_builder('scriptworker-signing')
