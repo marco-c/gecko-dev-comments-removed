@@ -290,19 +290,6 @@ const TEST_CONDITIONS = {
 
 const TESTS = {
   
-  error: {
-    test: function*() {
-      try {
-        yield install_system_addons("foobar");
-        do_throw("Expected to fail the update check");
-      }
-      catch (e) {
-        do_check_true(true, "Expected to fail the update check");
-      }
-    },
-  },
-
-  
   blank: {
     updateList: null,
   },

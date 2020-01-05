@@ -6,8 +6,23 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
+const LOCAL_EME_SOURCES = [{
+  "id": "gmp-eme-adobe",
+  "src": "chrome://global/content/gmp-sources/eme-adobe.json"
+}, {
+  "id": "gmp-gmpopenh264",
+  "src": "chrome://global/content/gmp-sources/openh264.json"
+}, {
+  "id": "gmp-widevinecdm",
+  "src": "chrome://global/content/gmp-sources/widevinecdm.json"
+}];
+
 this.EXPORTED_SYMBOLS = [ "ProductAddonChecker" ];
 
+Cu.importGlobalProperties(["XMLHttpRequest"]);
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/CertUtils.jsm");
@@ -16,6 +31,14 @@ Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/osfile.jsm");
 
+
+XPCOMUtils.defineLazyModuleGetter(this, "GMPPrefs",
+                                  "resource://gre/modules/GMPUtils.jsm");
+
+
+
+XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
+                                  "resource://gre/modules/UpdateUtils.jsm");
 
 var logger = Log.repository.getLogger("addons.productaddons");
 
@@ -139,6 +162,27 @@ function downloadXML(url, allowNonBuiltIn = false, allowedCerts = null) {
   });
 }
 
+function downloadJSON(uri) {
+  logger.info("fetching config from: " + uri);
+  return new Promise((resolve, reject) => {
+    let xmlHttp = new XMLHttpRequest({mozAnon: true});
+
+    xmlHttp.onload = function(aResponse) {
+      resolve(JSON.parse(this.responseText));
+    };
+
+    xmlHttp.onerror = function(e) {
+      reject("Fetching " + uri + " results in error code: " + e.target.status);
+    };
+
+    xmlHttp.open("GET", uri);
+    xmlHttp.overrideMimeType("application/json");
+    xmlHttp.send();
+  });
+}
+
+
+
 
 
 
@@ -175,7 +219,67 @@ function parseXML(document) {
     results.push(addon);
   }
 
-  return results;
+  return {
+    usedFallback: false,
+    gmpAddons: results
+  };
+}
+
+
+
+
+
+function downloadLocalConfig() {
+
+  if (!GMPPrefs.get(GMPPrefs.KEY_UPDATE_ENABLED, true)) {
+    logger.info("Updates are disabled via media.gmp-manager.updateEnabled");
+    return Promise.resolve({usedFallback: true, gmpAddons: []});
+  }
+
+  return Promise.all(LOCAL_EME_SOURCES.map(conf => {
+    return downloadJSON(conf.src).then(addons => {
+
+      let platforms = addons.vendors[conf.id].platforms;
+      let target = Services.appinfo.OS + "_" + UpdateUtils.ABI;
+      let details = null;
+
+      while (!details) {
+        if (!(target in platforms)) {
+          
+          
+          logger.info("no details found for: " + target);
+          return false;
+        }
+        
+        
+        if (platforms[target].alias) {
+          target = platforms[target].alias;
+        } else {
+          details = platforms[target];
+        }
+      }
+
+      logger.info("found plugin: " + conf.id);
+      return {
+        "id": conf.id,
+        "URL": details.fileUrl,
+        "hashFunction": addons.hashFunction,
+        "hashValue": details.hashValue,
+        "version": addons.vendors[conf.id].version,
+        "size": details.filesize
+      };
+    });
+  })).then(addons => {
+
+    
+    
+    addons = addons.filter(x => x !== false);
+
+    return {
+      usedFallback: true,
+      gmpAddons: addons
+    };
+  });
 }
 
 
@@ -316,8 +420,11 @@ const ProductAddonChecker = {
 
 
 
+
   getProductAddonList: function(url, allowNonBuiltIn = false, allowedCerts = null) {
-    return downloadXML(url, allowNonBuiltIn, allowedCerts).then(parseXML);
+    return downloadXML(url, allowNonBuiltIn, allowedCerts)
+      .then(parseXML)
+      .catch(downloadLocalConfig);
   },
 
   

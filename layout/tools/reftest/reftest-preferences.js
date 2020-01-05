@@ -110,6 +110,7 @@ user_pref("startup.homepage_override_url", "");
 user_pref("browser.usedOnWindows10.introURL", "");
 
 user_pref("media.gmp-manager.url.override", "http://localhost/dummy-gmp-manager.xml");
+user_pref("media.gmp-manager.updateEnabled", false);
 
 
 user_pref("testing.supports.moz-bool-pref", true);
