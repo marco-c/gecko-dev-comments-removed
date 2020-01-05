@@ -670,6 +670,7 @@ namespace wasm {
 
 
 
+
 struct Frame
 {
     
@@ -689,6 +690,7 @@ static const uint32_t FrameBytesAfterReturnAddress = sizeof(void*);
 
 
 
+
 struct SymbolicAccess
 {
     SymbolicAccess(jit::CodeOffset patchAt, SymbolicAddress target)
@@ -697,6 +699,11 @@ struct SymbolicAccess
     jit::CodeOffset patchAt;
     SymbolicAddress target;
 };
+
+typedef Vector<SymbolicAccess, 0, SystemAllocPolicy> SymbolicAccessVector;
+
+
+
 
 class MemoryAccessDesc
 {
@@ -830,7 +837,7 @@ class AssemblerShared
     wasm::MemoryPatchVector memoryPatches_;
     wasm::BoundsCheckVector boundsChecks_;
     wasm::GlobalAccessVector globalAccesses_;
-    Vector<wasm::SymbolicAccess, 0, SystemAllocPolicy> wasmSymbolicAccesses_;
+    wasm::SymbolicAccessVector symbolicAccesses_;
 
   protected:
     Vector<CodeLabel, 0, SystemAllocPolicy> codeLabels_;
@@ -913,9 +920,9 @@ class AssemblerShared
     void append(wasm::GlobalAccess access) { enoughMemory_ &= globalAccesses_.append(access); }
     const wasm::GlobalAccessVector& globalAccesses() const { return globalAccesses_; }
 
-    void append(wasm::SymbolicAccess link) { enoughMemory_ &= wasmSymbolicAccesses_.append(link); }
-    size_t numWasmSymbolicAccesses() const { return wasmSymbolicAccesses_.length(); }
-    wasm::SymbolicAccess wasmSymbolicAccess(size_t i) const { return wasmSymbolicAccesses_[i]; }
+    void append(wasm::SymbolicAccess access) { enoughMemory_ &= symbolicAccesses_.append(access); }
+    size_t numSymbolicAccesses() const { return symbolicAccesses_.length(); }
+    wasm::SymbolicAccess symbolicAccess(size_t i) const { return symbolicAccesses_[i]; }
 
     static bool canUseInSingleByteInstruction(Register reg) { return true; }
 
@@ -964,10 +971,10 @@ class AssemblerShared
         for (; i < globalAccesses_.length(); i++)
             globalAccesses_[i].patchAt.offsetBy(delta);
 
-        i = wasmSymbolicAccesses_.length();
-        enoughMemory_ &= wasmSymbolicAccesses_.appendAll(other.wasmSymbolicAccesses_);
-        for (; i < wasmSymbolicAccesses_.length(); i++)
-            wasmSymbolicAccesses_[i].patchAt.offsetBy(delta);
+        i = symbolicAccesses_.length();
+        enoughMemory_ &= symbolicAccesses_.appendAll(other.symbolicAccesses_);
+        for (; i < symbolicAccesses_.length(); i++)
+            symbolicAccesses_[i].patchAt.offsetBy(delta);
 
         i = codeLabels_.length();
         enoughMemory_ &= codeLabels_.appendAll(other.codeLabels_);

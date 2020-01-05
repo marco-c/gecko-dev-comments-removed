@@ -392,6 +392,20 @@ ModuleGenerator::finishFuncExports()
 {
     
     
+
+    for (ElemSegment& elems : elemSegments_) {
+        if (shared_->tables[elems.tableIndex].external) {
+            for (uint32_t funcIndex : elems.elemFuncIndices) {
+                if (funcIsImport(funcIndex))
+                    continue;
+                if (!exportedFuncs_.put(funcIndex))
+                    return false;
+            }
+        }
+    }
+
+    
+    
     
 
     Uint32Vector sorted;
@@ -555,8 +569,8 @@ ModuleGenerator::finishLinkData(Bytes& code)
     linkData_.globalDataLength = AlignBytes(linkData_.globalDataLength, gc::SystemPageSize());
 
     
-    for (size_t i = 0; i < masm_.numWasmSymbolicAccesses(); i++) {
-        SymbolicAccess src = masm_.wasmSymbolicAccess(i);
+    for (size_t i = 0; i < masm_.numSymbolicAccesses(); i++) {
+        SymbolicAccess src = masm_.symbolicAccess(i);
         if (!linkData_.symbolicLinks[src.target].append(src.patchAt.offset()))
             return false;
     }
@@ -856,23 +870,6 @@ ModuleGenerator::startFuncDefs()
     
     
     
-
-    for (ElemSegment& elems : elemSegments_) {
-        if (!shared_->tables[elems.tableIndex].external)
-            continue;
-
-        for (uint32_t funcIndex : elems.elemFuncIndices) {
-            if (funcIsImport(funcIndex))
-                continue;
-
-            if (!exportedFuncs_.put(funcIndex))
-                return false;
-        }
-    }
-
-    
-    
-    
     
     
     
@@ -1082,11 +1079,6 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
     MOZ_ASSERT(!activeFuncDef_);
     MOZ_ASSERT(finishedFuncDefs_);
 
-    
-    
-    if (isAsmJS() && !shared_->tables.resize(numTables_))
-        return nullptr;
-
     if (!finishFuncExports())
         return nullptr;
 
@@ -1139,6 +1131,11 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
     metadata_->codeRanges.podResizeToFit();
     metadata_->callSites.podResizeToFit();
     metadata_->callThunks.podResizeToFit();
+
+    
+    
+    if (isAsmJS() && !metadata_->tables.resize(numTables_))
+        return nullptr;
 
     
 #ifdef DEBUG
