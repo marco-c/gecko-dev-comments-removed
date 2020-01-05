@@ -1091,12 +1091,21 @@ static bool
 GetSpeciesConstructor(JSContext* cx, HandleObject obj, bool isWrapped,
                       SpeciesConstructorOverride override, MutableHandleValue ctor)
 {
+    if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_ArrayBuffer))
+        return false;
+    RootedValue defaultCtor(cx, cx->global()->getConstructor(JSProto_ArrayBuffer));
+
+    
+    if (override == SpeciesConstructorOverride::ArrayBuffer) {
+        ctor.set(defaultCtor);
+        return true;
+    }
+
     if (!isWrapped) {
-        if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_ArrayBuffer))
-            return false;
-        RootedValue defaultCtor(cx, cx->global()->getConstructor(JSProto_ArrayBuffer));
         
-        if (override == SpeciesConstructorOverride::ArrayBuffer || IsArrayBufferSpecies(cx, obj))
+        
+        
+        if (IsArrayBufferSpecies(cx, obj))
             ctor.set(defaultCtor);
         else if (!SpeciesConstructor(cx, obj, defaultCtor, ctor))
             return false;
@@ -1104,18 +1113,14 @@ GetSpeciesConstructor(JSContext* cx, HandleObject obj, bool isWrapped,
         return true;
     }
 
-    {
-        JSAutoCompartment ac(cx, obj);
-        if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_ArrayBuffer))
-            return false;
-        RootedValue defaultCtor(cx, cx->global()->getConstructor(JSProto_ArrayBuffer));
-        if (override == SpeciesConstructorOverride::ArrayBuffer)
-            ctor.set(defaultCtor);
-        else if (!SpeciesConstructor(cx, obj, defaultCtor, ctor))
-            return false;
-    }
+    RootedObject wrappedObj(cx, obj);
+    if (!cx->compartment()->wrap(cx, &wrappedObj))
+        return false;
 
-    return JS_WrapValue(cx, ctor);
+    if (!SpeciesConstructor(cx, wrappedObj, defaultCtor, ctor))
+        return false;
+
+    return true;
 }
 
 
@@ -1174,6 +1179,7 @@ TypedArrayObjectTemplate<T>::fromArray(JSContext* cx, HandleObject other,
 
     return fromObject(cx, other, newTarget);
 }
+
 
 
 template<typename T>
