@@ -2607,9 +2607,6 @@ pref("layout.css.text-combine-upright.enabled", true);
 pref("layout.css.text-combine-upright-digits.enabled", false);
 
 
-pref("layout.css.object-fit-and-position.enabled", true);
-
-
 
 #ifdef XP_MACOSX
 pref("layout.css.osx-font-smoothing.enabled", true);
@@ -4714,6 +4711,9 @@ pref("gfx.direct2d.disabled", false);
 pref("gfx.direct2d.force-enabled", false);
 
 pref("layers.prefer-opengl", false);
+pref("layers.prefer-d3d9", false);
+
+pref("layers.allow-d3d9-fallback", false);
 #endif
 
 
@@ -4775,8 +4775,6 @@ pref("extensions.webextensions.keepStorageOnUninstall", false);
 pref("extensions.webextensions.keepUuidOnUninstall", false);
 
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
-
-pref("extensions.webextensions.themes.enabled", false);
 pref("extensions.webextensions.remote", false);
 
 
@@ -5572,7 +5570,11 @@ pref("dom.webkitBlink.dirPicker.enabled", true);
 pref("dom.webkitBlink.filesystem.enabled", true);
 #endif
 
+#ifdef NIGHTLY_BUILD
 pref("media.block-autoplay-until-in-foreground", true);
+#else
+pref("media.block-autoplay-until-in-foreground", false);
+#endif
 
 #ifdef MOZ_STYLO
 

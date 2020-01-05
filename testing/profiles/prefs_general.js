@@ -177,9 +177,6 @@ user_pref("layout.css.contain.enabled", true);
 user_pref("layout.css.initial-letter.enabled", true);
 
 
-user_pref("layout.css.object-fit-and-position.enabled", true);
-
-
 user_pref("layout.css.prefixes.webkit", true);
 
 
