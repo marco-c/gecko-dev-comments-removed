@@ -507,12 +507,6 @@ public class GeckoView extends LayerView
 
 
 
-        public void onReady(GeckoView view);
-
-        
-
-
-
 
 
 

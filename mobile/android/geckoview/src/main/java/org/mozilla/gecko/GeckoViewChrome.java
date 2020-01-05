@@ -12,13 +12,6 @@ public class GeckoViewChrome implements GeckoView.ChromeDelegate {
 
 
 
-    @Override
-    public void onReady(GeckoView view) {}
-
-    
-
-
-
 
 
 

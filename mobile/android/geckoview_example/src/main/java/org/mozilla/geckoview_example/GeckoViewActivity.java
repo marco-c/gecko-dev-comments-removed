@@ -16,7 +16,6 @@ import org.mozilla.gecko.BaseGeckoInterface;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoThread;
 import org.mozilla.gecko.GeckoView;
-import org.mozilla.gecko.PrefsHelper;
 
 import static org.mozilla.gecko.GeckoView.setGeckoInterface;
 
@@ -49,23 +48,6 @@ public class GeckoViewActivity extends Activity {
     }
 
     private class MyGeckoViewChrome implements GeckoView.ChromeDelegate {
-        @Override
-        public void onReady(GeckoView view) {
-            Log.i(LOGTAG, "Gecko is ready");
-            
-            
-
-            
-            PrefsHelper.setPref("layers.dump", true);
-            PrefsHelper.setPref("devtools.debugger.remote-port", 6000);
-            PrefsHelper.setPref("devtools.debugger.unix-domain-socket", "");
-            PrefsHelper.setPref("devtools.debugger.remote-enabled", true);
-
-            
-            
-            
-        }
-
         @Override
         public void onAlert(GeckoView view, GeckoView.Browser browser, String message, GeckoView.PromptResult result) {
             Log.i(LOGTAG, "Alert!");
