@@ -671,7 +671,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
   {
     
     if (aBidiLevel & BIDI_LEVEL_UNDEFINED) {
-      aBidiLevel = nsBidi::GetEmbeddingLevel(theFrame);
+      aBidiLevel = theFrame->GetEmbeddingLevel();
     }
 
     int32_t start;
@@ -719,7 +719,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
                 
                 
                 
-                nsBidiLevel baseLevel = nsBidi::GetBaseLevel(frameAfter);
+                nsBidiLevel baseLevel = frameAfter->GetBaseLevel();
                 if (baseLevel != levelAfter)
                 {
                   nsPeekOffsetStruct pos(eSelectBeginLine, eDirPrevious, 0,
@@ -754,7 +754,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
                 
                 
                 
-                nsBidiLevel baseLevel = nsBidi::GetBaseLevel(frameBefore);
+                nsBidiLevel baseLevel = frameBefore->GetBaseLevel();
                 if (baseLevel != levelBefore)
                 {
                   nsPeekOffsetStruct pos(eSelectEndLine, eDirNext, 0,
@@ -775,7 +775,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
             if (NS_SUCCEEDED(aFrameSelection->GetFrameFromLevel(frameAfter, eDirNext, aBidiLevel, &theFrame)))
             {
               theFrame->GetOffsets(start, end);
-              levelAfter = nsBidi::GetEmbeddingLevel(theFrame);
+              levelAfter = theFrame->GetEmbeddingLevel();
               if (IS_LEVEL_RTL(aBidiLevel)) 
                 theFrameOffset = IS_LEVEL_RTL(levelAfter) ? start : end;
               else               
@@ -789,7 +789,7 @@ nsCaret::GetCaretFrameForNodeOffset(nsFrameSelection*    aFrameSelection,
             if (NS_SUCCEEDED(aFrameSelection->GetFrameFromLevel(frameBefore, eDirPrevious, aBidiLevel, &theFrame)))
             {
               theFrame->GetOffsets(start, end);
-              levelBefore = nsBidi::GetEmbeddingLevel(theFrame);
+              levelBefore = theFrame->GetEmbeddingLevel();
               if (IS_LEVEL_RTL(aBidiLevel)) 
                 theFrameOffset = IS_LEVEL_RTL(levelBefore) ? end : start;
               else               

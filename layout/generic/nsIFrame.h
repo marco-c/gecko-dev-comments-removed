@@ -350,6 +350,72 @@ enum class nsDidReflowStatus : uint32_t {
 #define NS_FRAME_OVERFLOW_LARGE   0x000000ff // overflow is stored as a
                                              
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef uint8_t nsBidiLevel;
+
+
+
+
+#define NSBIDI_DEFAULT_LTR 0xfe
+
+
+
+
+#define NSBIDI_DEFAULT_RTL 0xff
+
+
+
+
+
+
+#define NSBIDI_MAX_EXPLICIT_LEVEL 125
+
+
+
+
+#define NSBIDI_LEVEL_OVERRIDE 0x80
+
+
+
+
+enum nsBidiDirection {
+  
+  NSBIDI_LTR,
+  
+  NSBIDI_RTL,
+  
+  NSBIDI_MIXED
+};
+
 namespace mozilla {
 
 
@@ -376,6 +442,19 @@ struct IntrinsicSize {
   bool operator!=(const IntrinsicSize& rhs) {
     return !(*this == rhs);
   }
+};
+
+
+static const nsBidiLevel kBidiLevelNone = 0xff;
+
+struct FrameBidiData
+{
+  nsBidiLevel baseLevel;
+  nsBidiLevel embeddingLevel;
+  
+  
+  
+  nsBidiLevel precedingControl;
 };
 
 } 
@@ -952,6 +1031,23 @@ public:
 
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(GenConProperty, ContentArray,
                                       DestroyContentArray)
+
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BidiDataProperty, mozilla::FrameBidiData)
+
+  mozilla::FrameBidiData GetBidiData()
+  {
+    return Properties().Get(BidiDataProperty());
+  }
+
+  nsBidiLevel GetBaseLevel()
+  {
+    return GetBidiData().baseLevel;
+  }
+
+  nsBidiLevel GetEmbeddingLevel()
+  {
+    return GetBidiData().embeddingLevel;
+  }
 
   nsTArray<nsIContent*>* GetGenConPseudos() {
     return Properties().Get(GenConProperty());

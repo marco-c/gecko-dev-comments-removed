@@ -298,9 +298,7 @@ struct TextRunMappedFlow {
 
 
 struct TextRunUserData {
-#ifdef DEBUG
   TextRunMappedFlow* mMappedFlows;
-#endif
   uint32_t           mMappedFlowCount;
   uint32_t           mLastFlowIndex;
 };
@@ -462,9 +460,7 @@ CreateUserData(uint32_t aMappedFlowCount)
   TextRunUserData* data = static_cast<TextRunUserData*>
       (moz_xmalloc(sizeof(TextRunUserData) +
        aMappedFlowCount * sizeof(TextRunMappedFlow)));
-#ifdef DEBUG
   data->mMappedFlows = reinterpret_cast<TextRunMappedFlow*>(data + 1);
-#endif
   data->mMappedFlowCount = aMappedFlowCount;
   data->mLastFlowIndex = 0;
   return data;
@@ -485,9 +481,7 @@ CreateComplexUserData(uint32_t aMappedFlowCount)
       (moz_xmalloc(sizeof(ComplexTextRunUserData) +
        aMappedFlowCount * sizeof(TextRunMappedFlow)));
   new (data) ComplexTextRunUserData();
-#ifdef DEBUG
   data->mMappedFlows = reinterpret_cast<TextRunMappedFlow*>(data + 1);
-#endif
   data->mMappedFlowCount = aMappedFlowCount;
   data->mLastFlowIndex = 0;
   return data;
@@ -521,26 +515,6 @@ DestroyTextRunUserData(gfxTextRun* aTextRun)
   }
   aTextRun->ClearFlagBits(nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES);
   aTextRun->SetUserData(nullptr);
-}
-
-static TextRunMappedFlow*
-GetMappedFlows(const gfxTextRun* aTextRun)
-{
-  MOZ_ASSERT(aTextRun->GetUserData(), "UserData must exist.");
-  MOZ_ASSERT(!(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_IS_SIMPLE_FLOW),
-            "The method should not be called for simple flows.");
-  TextRunMappedFlow* flows;
-  if (aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES) {
-    flows = reinterpret_cast<TextRunMappedFlow*>(
-      static_cast<ComplexTextRunUserData*>(aTextRun->GetUserData()) + 1);
-  } else {
-    flows = reinterpret_cast<TextRunMappedFlow*>(
-      static_cast<TextRunUserData*>(aTextRun->GetUserData()) + 1);
-  }
-  MOZ_ASSERT(static_cast<TextRunUserData*>(aTextRun->GetUserData())->
-             mMappedFlows == flows,
-             "GetMappedFlows should return the same pointer as mMappedFlows.");
-  return flows;
 }
 
 
@@ -632,10 +606,9 @@ UnhookTextRunFromFrames(gfxTextRun* aTextRun, nsTextFrame* aStartContinuation)
     }
   } else {
     auto userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
-    TextRunMappedFlow* userMappedFlows = GetMappedFlows(aTextRun);
     int32_t destroyFromIndex = aStartContinuation ? -1 : 0;
     for (uint32_t i = 0; i < userData->mMappedFlowCount; ++i) {
-      nsTextFrame* userDataFrame = userMappedFlows[i].mStartFrame;
+      nsTextFrame* userDataFrame = userData->mMappedFlows[i].mStartFrame;
       nsFrameState whichTextRunState =
         userDataFrame->GetTextRun(nsTextFrame::eInflated) == aTextRun
           ? TEXT_IN_TEXTRUN_USER_DATA
@@ -704,9 +677,8 @@ GlyphObserver::NotifyGlyphsChanged()
   }
 
   auto data = static_cast<TextRunUserData*>(mTextRun->GetUserData());
-  TextRunMappedFlow* userMappedFlows = GetMappedFlows(mTextRun);
   for (uint32_t i = 0; i < data->mMappedFlowCount; ++i) {
-    InvalidateFrameDueToGlyphsChanged(userMappedFlows[i].mStartFrame);
+    InvalidateFrameDueToGlyphsChanged(data->mMappedFlows[i].mStartFrame);
   }
 }
 
@@ -950,14 +922,10 @@ CreateObserversForAnimatedGlyphs(gfxTextRun* aTextRun)
   } else {
     if (!(aTextRun->GetFlags() & nsTextFrameUtils::TEXT_MIGHT_HAVE_GLYPH_CHANGES)) {
       auto oldData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
-      TextRunMappedFlow* oldMappedFlows = GetMappedFlows(aTextRun);
-      ComplexTextRunUserData* data =
-        CreateComplexUserData(oldData->mMappedFlowCount);
-      TextRunMappedFlow* dataMappedFlows =
-        reinterpret_cast<TextRunMappedFlow*>(data + 1);
+      auto data = CreateComplexUserData(oldData->mMappedFlowCount);
       data->mLastFlowIndex = oldData->mLastFlowIndex;
       for (uint32_t i = 0; i < oldData->mMappedFlowCount; ++i) {
-        dataMappedFlows[i] = oldMappedFlows[i];
+        data->mMappedFlows[i] = oldData->mMappedFlows[i];
       }
       DestroyUserData(oldData);
       aTextRun->SetUserData(data);
@@ -1577,12 +1545,11 @@ BuildTextRunsScanner::IsTextRunValidForMappedFlows(const gfxTextRun* aTextRun)
   }
 
   auto userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
-  TextRunMappedFlow* userMappedFlows = GetMappedFlows(aTextRun);
   if (userData->mMappedFlowCount != mMappedFlows.Length())
     return false;
   for (uint32_t i = 0; i < mMappedFlows.Length(); ++i) {
-    if (userMappedFlows[i].mStartFrame != mMappedFlows[i].mStartFrame ||
-        int32_t(userMappedFlows[i].mContentLength) !=
+    if (userData->mMappedFlows[i].mStartFrame != mMappedFlows[i].mStartFrame ||
+        int32_t(userData->mMappedFlows[i].mContentLength) !=
             mMappedFlows[i].GetContentEnd() - mMappedFlows[i].mStartFrame->GetContentOffset())
       return false;
   }
@@ -1791,8 +1758,8 @@ BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1, nsTextFr
   
   
   if (mBidiEnabled) {
-    FrameBidiData data1 = nsBidi::GetBidiData(aFrame1);
-    FrameBidiData data2 = nsBidi::GetBidiData(aFrame2);
+    FrameBidiData data1 = aFrame1->GetBidiData();
+    FrameBidiData data2 = aFrame2->GetBidiData();
     if (data1.embeddingLevel != data2.embeddingLevel ||
         data2.precedingControl != kBidiLevelNone) {
       return false;
@@ -2034,7 +2001,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   AutoTArray<int32_t,50> textBreakPoints;
   TextRunUserData dummyData;
   TextRunMappedFlow dummyMappedFlow;
-  TextRunMappedFlow* userMappedFlows;
+
   TextRunUserData* userData;
   TextRunUserData* userDataToDestroy;
   
@@ -2042,13 +2009,12 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   if (mMappedFlows.Length() == 1 && !mMappedFlows[0].mEndFrame &&
       mMappedFlows[0].mStartFrame->GetContentOffset() == 0) {
     userData = &dummyData;
-    userMappedFlows = &dummyMappedFlow;
     userDataToDestroy = nullptr;
+    dummyData.mMappedFlows = &dummyMappedFlow;
     dummyData.mMappedFlowCount = mMappedFlows.Length();
     dummyData.mLastFlowIndex = 0;
   } else {
     userData = CreateUserData(mMappedFlows.Length());
-    userMappedFlows = reinterpret_cast<TextRunMappedFlow*>(userData + 1);
     userDataToDestroy = userData;
   }
 
@@ -2178,7 +2144,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
     int32_t contentEnd = mappedFlow->GetContentEnd();
     int32_t contentLength = contentEnd - contentStart;
 
-    TextRunMappedFlow* newFlow = &userMappedFlows[i];
+    TextRunMappedFlow* newFlow = &userData->mMappedFlows[i];
     newFlow->mStartFrame = mappedFlow->mStartFrame;
     newFlow->mDOMOffsetToBeforeTransformOffset = skipChars.GetOriginalCharCount() -
       mappedFlow->mStartFrame->GetContentOffset();
@@ -2260,7 +2226,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
   if (textFlags & nsTextFrameUtils::TEXT_HAS_SHY) {
     textFlags |= gfxTextRunFactory::TEXT_ENABLE_HYPHEN_BREAKS;
   }
-  if (mBidiEnabled && (IS_LEVEL_RTL(nsBidi::GetEmbeddingLevel(firstFrame)))) {
+  if (mBidiEnabled && (IS_LEVEL_RTL(firstFrame->GetEmbeddingLevel()))) {
     textFlags |= gfxTextRunFactory::TEXT_IS_RTL;
   }
   if (mNextRunContextInfo & nsTextFrameUtils::INCOMING_WHITESPACE) {
@@ -2435,7 +2401,7 @@ BuildTextRunsScanner::SetupLineBreakerContext(gfxTextRun *aTextRun)
   AutoTArray<int32_t,50> textBreakPoints;
   TextRunUserData dummyData;
   TextRunMappedFlow dummyMappedFlow;
-  TextRunMappedFlow* userMappedFlows;
+
   TextRunUserData* userData;
   TextRunUserData* userDataToDestroy;
   
@@ -2443,13 +2409,12 @@ BuildTextRunsScanner::SetupLineBreakerContext(gfxTextRun *aTextRun)
   if (mMappedFlows.Length() == 1 && !mMappedFlows[0].mEndFrame &&
       mMappedFlows[0].mStartFrame->GetContentOffset() == 0) {
     userData = &dummyData;
-    userMappedFlows = &dummyMappedFlow;
     userDataToDestroy = nullptr;
+    dummyData.mMappedFlows = &dummyMappedFlow;
     dummyData.mMappedFlowCount = mMappedFlows.Length();
     dummyData.mLastFlowIndex = 0;
   } else {
     userData = CreateUserData(mMappedFlows.Length());
-    userMappedFlows = reinterpret_cast<TextRunMappedFlow*>(userData + 1);
     userDataToDestroy = userData;
   }
 
@@ -2472,7 +2437,7 @@ BuildTextRunsScanner::SetupLineBreakerContext(gfxTextRun *aTextRun)
     int32_t contentEnd = mappedFlow->GetContentEnd();
     int32_t contentLength = contentEnd - contentStart;
 
-    TextRunMappedFlow* newFlow = &userMappedFlows[i];
+    TextRunMappedFlow* newFlow = &userData->mMappedFlows[i];
     newFlow->mStartFrame = mappedFlow->mStartFrame;
     newFlow->mDOMOffsetToBeforeTransformOffset = skipChars.GetOriginalCharCount() -
       mappedFlow->mStartFrame->GetContentOffset();
@@ -2684,8 +2649,7 @@ BuildTextRunsScanner::SetupTextEmphasisForTextRun(gfxTextRun* aTextRun,
 
 
 static inline TextRunMappedFlow*
-FindFlowForContent(TextRunUserData* aUserData, nsIContent* aContent,
-                   TextRunMappedFlow* userMappedFlows)
+FindFlowForContent(TextRunUserData* aUserData, nsIContent* aContent)
 {
   
   int32_t i = aUserData->mLastFlowIndex;
@@ -2694,7 +2658,7 @@ FindFlowForContent(TextRunUserData* aUserData, nsIContent* aContent,
   
   
   while (i >= 0 && uint32_t(i) < aUserData->mMappedFlowCount) {
-    TextRunMappedFlow* flow = &userMappedFlows[i];
+    TextRunMappedFlow* flow = &aUserData->mMappedFlows[i];
     if (flow->mStartFrame->GetContent() == aContent) {
       return flow;
     }
@@ -2710,14 +2674,14 @@ FindFlowForContent(TextRunUserData* aUserData, nsIContent* aContent,
   i += delta;
   if (sign > 0) {
     for (; i < int32_t(aUserData->mMappedFlowCount); ++i) {
-      TextRunMappedFlow* flow = &userMappedFlows[i];
+      TextRunMappedFlow* flow = &aUserData->mMappedFlows[i];
       if (flow->mStartFrame->GetContent() == aContent) {
         return flow;
       }
     }
   } else {
     for (; i >= 0; --i) {
-      TextRunMappedFlow* flow = &userMappedFlows[i];
+      TextRunMappedFlow* flow = &aUserData->mMappedFlows[i];
       if (flow->mStartFrame->GetContent() == aContent) {
         return flow;
       }
@@ -2746,9 +2710,8 @@ BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun, float aInflation)
           }
         } else {
           auto userData = static_cast<TextRunUserData*>(aTextRun->GetUserData());
-          TextRunMappedFlow* userMappedFlows = GetMappedFlows(aTextRun);
           if (userData->mMappedFlowCount >= mMappedFlows.Length() ||
-              userMappedFlows[userData->mMappedFlowCount - 1].mStartFrame !=
+              userData->mMappedFlows[userData->mMappedFlowCount - 1].mStartFrame !=
               mMappedFlows[userdata->mMappedFlowCount - 1].mStartFrame) {
             NS_WARNING("REASSIGNING MULTIFLOW TEXT RUN (not append)!");
           }
@@ -2764,11 +2727,10 @@ BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun, float aInflation)
           firstFrame = GetFrameForSimpleFlow(oldTextRun);
         } else {
           auto userData = static_cast<TextRunUserData*>(oldTextRun->GetUserData());
-          TextRunMappedFlow* userMappedFlows = GetMappedFlows(oldTextRun);
-          firstFrame = userMappedFlows[0].mStartFrame;
+          firstFrame = userData->mMappedFlows[0].mStartFrame;
           if (MOZ_UNLIKELY(f != firstFrame)) {
-            TextRunMappedFlow* flow =
-              FindFlowForContent(userData, f->GetContent(), userMappedFlows);
+            TextRunMappedFlow* flow = FindFlowForContent(userData,
+                                                         f->GetContent());
             if (flow) {
               startOffset = flow->mDOMOffsetToBeforeTransformOffset;
             } else {
@@ -2852,13 +2814,11 @@ nsTextFrame::EnsureTextRun(TextRunType aWhichTextRun,
   }
 
   auto userData = static_cast<TextRunUserData*>(textRun->GetUserData());
-  TextRunMappedFlow* userMappedFlows = GetMappedFlows(textRun);
-  TextRunMappedFlow* flow =
-    FindFlowForContent(userData, mContent, userMappedFlows);
+  TextRunMappedFlow* flow = FindFlowForContent(userData, mContent);
   if (flow) {
     
     
-    uint32_t flowIndex = flow - userMappedFlows;
+    uint32_t flowIndex = flow - userData->mMappedFlows;
     userData->mLastFlowIndex = flowIndex;
     gfxSkipCharsIterator iter(textRun->GetSkipChars(),
                               flow->mDOMOffsetToBeforeTransformOffset, mContentOffset);
@@ -4338,9 +4298,9 @@ nsContinuingTextFrame::Init(nsIContent*       aContent,
     }
   }
   if (aPrevInFlow->GetStateBits() & NS_FRAME_IS_BIDI) {
-    FrameBidiData bidiData = nsBidi::GetBidiData(aPrevInFlow);
+    FrameBidiData bidiData = aPrevInFlow->GetBidiData();
     bidiData.precedingControl = kBidiLevelNone;
-    Properties().Set(nsBidi::BidiDataProperty(), bidiData);
+    Properties().Set(BidiDataProperty(), bidiData);
 
     if (nextContinuation) {
       SetNextContinuation(nextContinuation);
@@ -4349,7 +4309,7 @@ nsContinuingTextFrame::Init(nsIContent*       aContent,
       while (nextContinuation &&
              nextContinuation->GetContentOffset() < mContentOffset) {
 #ifdef DEBUG
-        FrameBidiData nextBidiData = nsBidi::GetBidiData(nextContinuation);
+        FrameBidiData nextBidiData = nextContinuation->GetBidiData();
         NS_ASSERTION(bidiData.embeddingLevel == nextBidiData.embeddingLevel &&
                      bidiData.baseLevel == nextBidiData.baseLevel,
                      "stealing text from different type of BIDI continuation");

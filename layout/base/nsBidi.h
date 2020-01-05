@@ -52,73 +52,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef uint8_t nsBidiLevel;
-
-
-
-
-#define NSBIDI_DEFAULT_LTR 0xfe
-
-
-
-
-#define NSBIDI_DEFAULT_RTL 0xff
-
-
-
-
-
-
-#define NSBIDI_MAX_EXPLICIT_LEVEL 125
-
-
-
-
-#define NSBIDI_LEVEL_OVERRIDE 0x80
-
-
-
-
-
-
-
-
-
 #define NSBIDI_MAP_NOWHERE (-1)
-
-
-
-
-enum nsBidiDirection {
-  
-  NSBIDI_LTR,
-  
-  NSBIDI_RTL,
-  
-  NSBIDI_MIXED
-};
 
 
 
@@ -412,23 +346,6 @@ struct LevState {
     nsBidiLevel runLevel;               
 };
 
-namespace mozilla {
-
-
-static const nsBidiLevel kBidiLevelNone = 0xff;
-
-struct FrameBidiData
-{
-  nsBidiLevel baseLevel;
-  nsBidiLevel embeddingLevel;
-  
-  
-  
-  nsBidiLevel precedingControl;
-};
-
-} 
-
 
 
 
@@ -668,23 +585,6 @@ public:
 
 
   nsresult WriteReverse(const char16_t *aSrc, int32_t aSrcLength, char16_t *aDest, uint16_t aOptions, int32_t *aDestSize);
-
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BidiDataProperty, mozilla::FrameBidiData)
-
-  static mozilla::FrameBidiData GetBidiData(nsIFrame* aFrame)
-  {
-    return aFrame->Properties().Get(BidiDataProperty());
-  }
-
-  static nsBidiLevel GetBaseLevel(nsIFrame* aFrame)
-  {
-    return GetBidiData(aFrame).baseLevel;
-  }
-
-  static nsBidiLevel GetEmbeddingLevel(nsIFrame* aFrame)
-  {
-    return GetBidiData(aFrame).embeddingLevel;
-  }
 
 protected:
   friend class nsBidiPresUtils;
