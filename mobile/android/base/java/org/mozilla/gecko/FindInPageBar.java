@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 package org.mozilla.gecko;
 
@@ -47,8 +47,8 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         content.findViewById(R.id.find_next).setOnClickListener(this);
         content.findViewById(R.id.find_close).setOnClickListener(this);
 
-        // Capture clicks on the rest of the view to prevent them from
-        // leaking into other views positioned below.
+        
+        
         content.setOnClickListener(this);
 
         mFindText = (CustomEditText) content.findViewById(R.id.find_text);
@@ -67,7 +67,9 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         mStatusText = (TextView) content.findViewById(R.id.find_status);
 
         mInflated = true;
-        GeckoApp.getEventDispatcher().registerGeckoThreadListener(this, "TextSelection:Data");
+        GeckoApp.getEventDispatcher().registerGeckoThreadListener(this,
+            "FindInPage:MatchesCountResult",
+            "TextSelection:Data");
     }
 
     public void show() {
@@ -77,26 +79,26 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         setVisibility(VISIBLE);
         mFindText.requestFocus();
 
-        // handleMessage() receives response message and determines initial state of softInput
+        
         GeckoAppShell.notifyObservers("TextSelection:Get", REQUEST_ID);
         GeckoAppShell.notifyObservers("FindInPage:Opened", null);
     }
 
     public void hide() {
         if (!mInflated || getVisibility() == View.GONE) {
-            // There's nothing to hide yet.
+            
             return;
         }
 
-        // Always clear the Find string, primarily for privacy.
+        
         mFindText.setText("");
 
-        // Only close the IMM if its EditText is the one with focus.
+        
         if (mFindText.isFocused()) {
           getInputMethodManager(mFindText).hideSoftInputFromWindow(mFindText.getWindowToken(), 0);
         }
 
-        // Close the FIPB / FindHelper state.
+        
         setVisibility(GONE);
         GeckoAppShell.notifyObservers("FindInPage:Closed", null);
     }
@@ -110,10 +112,37 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         if (!mInflated) {
             return;
         }
-        GeckoApp.getEventDispatcher().unregisterGeckoThreadListener(this, "TextSelection:Data");
+        GeckoApp.getEventDispatcher().unregisterGeckoThreadListener(this,
+            "FindInPage:MatchesCountResult",
+            "TextSelection:Data");
     }
 
-    // TextWatcher implementation
+    private void onMatchesCountResult(final int total, final int current, final int limit, final String searchString) {
+        if (total == -1) {
+            updateResult(Integer.toString(limit) + "+");
+        } else if (total > 0) {
+            updateResult(Integer.toString(current) + "/" + Integer.toString(total));
+        } else if (TextUtils.isEmpty(searchString)) {
+            updateResult("");
+        } else {
+            
+            
+            
+            updateResult("0/0");
+        }
+    }
+
+    private void updateResult(final String statusText) {
+        ThreadUtils.postToUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mStatusText.setVisibility(statusText.isEmpty() ? View.GONE : View.VISIBLE);
+                mStatusText.setText(statusText);
+            }
+        });
+    }
+
+    
 
     @Override
     public void afterTextChanged(Editable s) {
@@ -122,15 +151,15 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-        // ignore
+        
     }
 
     @Override
     public void onTextChanged(CharSequence s, int start, int before, int count) {
-        // ignore
+        
     }
 
-    // View.OnClickListener implementation
+    
 
     @Override
     public void onClick(View v) {
@@ -156,19 +185,27 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         }
     }
 
-    // GeckoEventListener implementation
+    
 
     @Override
     public void handleMessage(String event, JSONObject message) {
+        if (event.equals("FindInPage:MatchesCountResult")) {
+            onMatchesCountResult(message.optInt("total", 0),
+                message.optInt("current", 0),
+                message.optInt("limit", 0),
+                message.optString("searchString"));
+            return;
+        }
+
         if (!event.equals("TextSelection:Data") || !REQUEST_ID.equals(message.optString("requestId"))) {
             return;
         }
 
         final String text = message.optString("text");
 
-        // Populate an initial find string, virtual keyboard not required.
+        
         if (!TextUtils.isEmpty(text)) {
-            // Populate initial selection
+            
             ThreadUtils.postToUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -178,11 +215,11 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
             return;
         }
 
-        // Show the virtual keyboard.
+        
         if (mFindText.hasWindowFocus()) {
             getInputMethodManager(mFindText).showSoftInput(mFindText, 0);
         } else {
-            // showSoftInput won't work until after the window is focused.
+            
             mFindText.setOnWindowFocusChangeListener(new CustomEditText.OnWindowFocusChangeListener() {
                 @Override
                 public void onWindowFocusChanged(boolean hasFocus) {
@@ -196,46 +233,23 @@ public class FindInPageBar extends LinearLayout implements TextWatcher, View.OnC
         }
     }
 
-    /**
-     * Request find operation, and update matchCount results (current count and total).
-     */
+    
+
+
     private void sendRequestToFinderHelper(final String request, final String searchString) {
         GeckoAppShell.sendRequestToGecko(new GeckoRequest(request, searchString) {
             @Override
             public void onResponse(NativeJSObject nativeJSObject) {
-                final int total = nativeJSObject.optInt("total", 0);
-                if (total == -1) {
-                    final int limit = nativeJSObject.optInt("limit", 0);
-                    updateResult(Integer.toString(limit) + "+");
-                } else if (total > 0) {
-                    final int current = nativeJSObject.optInt("current", 0);
-                    updateResult(Integer.toString(current) + "/" + Integer.toString(total));
-                } else if (TextUtils.isEmpty(searchString)) {
-                    updateResult("");
-                } else {
-                    // We display 0/0, when there were no
-                    // matches found, or if matching has been turned off by setting
-                    // pref accessibility.typeaheadfind.matchesCountLimit to 0.
-                    updateResult("0/0");
-                }
+                
+                
             }
 
             @Override
             public void onError(NativeJSObject error) {
-                // Gecko didn't respond due to state change, javascript error, etc.
+                
                 Log.d(LOGTAG, "No response from Gecko on request to match string: [" +
                     searchString + "]");
                 updateResult("");
-            }
-
-            private void updateResult(final String statusText) {
-                ThreadUtils.postToUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mStatusText.setVisibility(statusText.isEmpty() ? View.GONE : View.VISIBLE);
-                        mStatusText.setText(statusText);
-                    }
-                });
             }
         });
     }

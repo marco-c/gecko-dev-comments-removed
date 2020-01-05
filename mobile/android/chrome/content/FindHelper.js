@@ -9,7 +9,8 @@ var FindHelper = {
   _initialViewport: null,
   _viewportChanged: false,
   _result: null,
-  _limit: 0,
+
+  
 
   observe: function(aMessage, aTopic, aData) {
     switch(aTopic) {
@@ -31,33 +32,24 @@ var FindHelper = {
     }
   },
 
+  
+
+
+
+
   _findOpened: function() {
-    try {
-      this._limit = Services.prefs.getIntPref("accessibility.typeaheadfind.matchesCountLimit");
-    } catch (e) {
-      
-      this._limit = 0;
-    }
-
-    Messaging.addListener((data) => {
-      this.doFind(data);
-      return this._getMatchesCountResult(data);
-    }, "FindInPage:Find");
-
-    Messaging.addListener((data) => {
-      this.findAgain(data, false);
-      return this._getMatchesCountResult(data);
-    }, "FindInPage:Next");
-
-    Messaging.addListener((data) => {
-      this.findAgain(data, true);
-      return this._getMatchesCountResult(data);
-    }, "FindInPage:Prev");
+    Messaging.addListener(data => this.doFind(data), "FindInPage:Find");
+    Messaging.addListener(data => this.findAgain(data, false), "FindInPage:Next");
+    Messaging.addListener(data => this.findAgain(data, true), "FindInPage:Prev");
 
     
     this._init();
-    this._finder.requestMatchesCount("", 1);
+    this._finder.requestMatchesCount("");
   },
+
+  
+
+
 
   _init: function() {
     
@@ -78,6 +70,10 @@ var FindHelper = {
     this._viewportChanged = false;
   },
 
+  
+
+
+
   _uninit: function() {
     
     if (!this._finder) {
@@ -92,6 +88,9 @@ var FindHelper = {
     this._viewportChanged = false;
   },
 
+  
+
+
   _findClosed: function() {
     Messaging.removeListener("FindInPage:Find");
     Messaging.removeListener("FindInPage:Next");
@@ -101,24 +100,10 @@ var FindHelper = {
   
 
 
-  _getMatchesCountResult: function(findString) {
-    
-    if (this._limit <= 0) {
-      return { total: 0, current: 0, limit: 0 };
-    }
-
-    
-    this._finder.requestMatchesCount(findString, this._limit);
-    return this._result;
-  },
-
-  
 
 
-  onMatchesCountResult: function(result) {
-    this._result = result;
-    this._result.limit = this._limit;
-  },
+
+
 
   doFind: function(searchString) {
     if (!this._finder) {
@@ -126,19 +111,72 @@ var FindHelper = {
     }
 
     this._finder.fastFind(searchString, false);
+    return { searchString, findBackwards: false };
   },
+
+  
+
+
+
+
+
+
 
   findAgain: function(searchString, findBackwards) {
     
     
     
     if (!this._finder) {
-      this.doFind(searchString);
-      return;
+      return this.doFind(searchString);
     }
 
     this._finder.findAgain(findBackwards, false, false);
+    return { searchString, findBackwards };
   },
+
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+  onMatchesCountResult: function(result) {
+    this._result = result;
+
+    Messaging.sendRequest(Object.assign({
+      type: "FindInPage:MatchesCountResult"
+    }, this._result));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   onFindResult: function(aData) {
     if (aData.result == Ci.nsITypeAheadFind.FIND_NOTFOUND) {
