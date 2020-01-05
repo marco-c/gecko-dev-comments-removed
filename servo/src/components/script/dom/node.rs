@@ -1732,16 +1732,6 @@ impl Node {
     }
 
     
-    pub fn GetPrefix(&self) -> Option<DOMString> {
-        None
-    }
-
-    
-    pub fn GetLocalName(&self) -> Option<DOMString> {
-        None
-    }
-
-    
     
     
 
