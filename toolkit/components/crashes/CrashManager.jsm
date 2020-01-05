@@ -140,6 +140,9 @@ this.CrashManager.prototype = Object.freeze({
   PROCESS_TYPE_GMPLUGIN: "gmplugin",
 
   
+  PROCESS_TYPE_GPU: "gpu",
+
+  
   CRASH_TYPE_CRASH: "crash",
 
   
