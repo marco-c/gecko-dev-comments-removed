@@ -30,8 +30,8 @@ this.SessionHistory = Object.freeze({
     return SessionHistoryInternal.isEmpty(docShell);
   },
 
-  collect: function (docShell) {
-    return SessionHistoryInternal.collect(docShell);
+  collect: function (docShell, aFromIdx = -1) {
+    return SessionHistoryInternal.collect(docShell, aFromIdx);
   },
 
   restore: function (docShell, tabData) {
@@ -70,10 +70,14 @@ var SessionHistoryInternal = {
 
 
 
-  collect: function (docShell) {
+
+
+
+  collect: function (docShell, aFromIdx = -1) {
     let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
+    let ihistory = history.QueryInterface(Ci.nsISHistory);
 
     let data = {entries: [], userContextId: loadContext.originAttributes.userContextId };
 
@@ -105,6 +109,23 @@ var SessionHistoryInternal = {
         data.entries.push({ url: uri });
         data.index = 1;
       }
+    }
+
+    
+    if (aFromIdx > -1) {
+      data.entries.splice(0, aFromIdx + 1);
+    }
+
+    
+    data.index += ihistory.globalIndexOffset;
+    data.fromIdx = aFromIdx + ihistory.globalIndexOffset;
+
+    
+    
+    
+    
+    if (ihistory.globalIndexOffset + ihistory.count < ihistory.globalCount) {
+      data.toIdx = data.fromIdx + ihistory.count;
     }
 
     return data;

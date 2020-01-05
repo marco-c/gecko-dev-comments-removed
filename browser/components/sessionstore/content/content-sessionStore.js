@@ -114,6 +114,7 @@ var MessageListener = {
     "SessionStore:restoreTabContent",
     "SessionStore:resetRestore",
     "SessionStore:flush",
+    "SessionStore:becomeActiveProcess",
   ],
 
   init: function () {
@@ -147,6 +148,18 @@ var MessageListener = {
         break;
       case "SessionStore:flush":
         this.flush(data);
+        break;
+      case "SessionStore:becomeActiveProcess":
+        let shistory = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory;
+        
+        
+        
+        
+        if (shistory.globalCount - shistory.globalIndexOffset == shistory.count) {
+          SessionHistoryListener.collect();
+        } else {
+          SessionHistoryListener.collectFrom(kLastIndex);
+        }
         break;
       default:
         debug("received unknown message '" + name + "'");
@@ -255,9 +268,12 @@ var SessionHistoryListener = {
   },
 
   collect: function () {
-    this._fromIdx = kNoIndex;
+    
+    
+    
+    
     if (docShell) {
-      MessageQueue.push("history", () => SessionHistory.collect(docShell));
+      this.collectFrom(-1);
     }
   },
 
@@ -286,15 +302,7 @@ var SessionHistoryListener = {
         return null;
       }
 
-      let history = SessionHistory.collect(docShell);
-      if (kLastIndex == idx) {
-        history.entries = [];
-      } else {
-        history.entries.splice(0, this._fromIdx + 1);
-      }
-
-      history.fromIdx = this._fromIdx;
-
+      let history = SessionHistory.collect(docShell, this._fromIdx);
       this._fromIdx = kNoIndex;
       return history;
     });
