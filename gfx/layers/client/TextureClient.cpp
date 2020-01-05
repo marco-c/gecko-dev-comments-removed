@@ -152,13 +152,6 @@ private:
   
   
   
-  void DestroySynchronously(const TextureDeallocParams& aParams);
-
-  
-  
-  
-  
-  
   
   
   
@@ -279,43 +272,22 @@ TextureChild::Destroy(const TextureDeallocParams& aParams)
 
   mOwnerCalledDestroy = true;
 
+  if (!IPCOpen()) {
+    DestroyTextureData(
+      aParams.data,
+      aParams.allocator,
+      aParams.clientDeallocation,
+      mMainThreadOnly);
+    return;
+  }
+
   
   mTextureData = aParams.data;
   mOwnsTextureData = aParams.clientDeallocation;
 
   if (!mCompositableForwarder ||
-      !mCompositableForwarder->DestroyInTransaction(this, false))
+      !mCompositableForwarder->DestroyInTransaction(this))
   {
-    this->SendDestroy();
-  }
-}
-
-void
-TextureChild::DestroySynchronously(const TextureDeallocParams& aParams)
-{
-  MOZ_PERFORMANCE_WARNING("gfx", "TextureClient/Host pair requires synchronous deallocation");
-
-  MOZ_ASSERT(!mOwnerCalledDestroy);
-  if (mOwnerCalledDestroy) {
-    return;
-  }
-
-  mOwnerCalledDestroy = true;
-
-  DestroyTextureData(
-    aParams.data,
-    aParams.allocator,
-    aParams.clientDeallocation,
-    mMainThreadOnly);
-
-  if (!IPCOpen()) {
-    return;
-  }
-
-  if (!mCompositableForwarder ||
-      !mCompositableForwarder->DestroyInTransaction(this, true))
-  {
-    this->SendDestroySync();
     this->SendDestroy();
   }
 }
@@ -401,14 +373,10 @@ DeallocateTextureClient(TextureDeallocParams params)
     return;
   }
 
-  if (params.syncDeallocation || !actor->IPCOpen()) {
-    actor->DestroySynchronously(params);
-  } else {
-    actor->Destroy(params);
-  }
+  actor->Destroy(params);
 }
 
-void TextureClient::Destroy(bool aForceSync)
+void TextureClient::Destroy()
 {
   if (mActor && !mIsLocked) {
     mActor->Lock();
@@ -444,7 +412,7 @@ void TextureClient::Destroy(bool aForceSync)
     
     
     
-    params.syncDeallocation = !!(mFlags & TextureFlags::DEALLOCATE_CLIENT) || aForceSync;
+    params.syncDeallocation = !!(mFlags & TextureFlags::DEALLOCATE_CLIENT);
 
     
     
@@ -631,7 +599,7 @@ TextureClient::SerializeReadLock(ReadLockDescriptor& aDescriptor)
 TextureClient::~TextureClient()
 {
   mReadLock = nullptr;
-  Destroy(false);
+  Destroy();
 }
 
 void

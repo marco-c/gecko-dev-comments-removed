@@ -589,9 +589,7 @@ public:
 
 
 
-
-
-  void Destroy(bool sync = false);
+  void Destroy();
 
   
 
