@@ -2,12 +2,12 @@
 
 
 
-#![feature(borrow_state)]
 #![feature(box_syntax)]
 #![feature(core_intrinsics)]
 #![feature(filling_drop)]
 #![feature(link_args)]
 #![feature(plugin)]
+#![feature(try_borrow)]
 #![feature(unicode)]
 #![feature(unsafe_no_drop_flag)]
 
