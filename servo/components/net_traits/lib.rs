@@ -5,12 +5,13 @@
 #![feature(box_syntax)]
 #![feature(custom_attribute)]
 #![feature(custom_derive)]
+#![feature(box_raw)]
 #![feature(plugin)]
 #![feature(slice_patterns)]
 #![feature(step_by)]
 #![feature(vec_push_all)]
-
-#![plugin(plugins, serde_macros)]
+#![feature(custom_attribute)]
+#![plugin(serde_macros, plugins)]
 #![plugin(regex_macros)]
 
 #[macro_use]
@@ -30,10 +31,12 @@ use hyper::header::{ContentType, Headers};
 use hyper::http::RawStatus;
 use hyper::method::Method;
 use hyper::mime::{Attr, Mime};
+use hyper::status::StatusCode;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use msg::constellation_msg::{PipelineId};
 use regex::Regex;
 use serde::{Deserializer, Serializer};
+use std::sync::mpsc::Receiver;
 use std::thread;
 use url::Url;
 use util::mem::HeapSizeOf;
@@ -46,6 +49,80 @@ pub mod storage_task;
 pub static IPV4_REGEX: Regex = regex!(
     r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$");
 pub static IPV6_REGEX: Regex = regex!(r"^([a-fA-F0-9]{0,4}[:]?){1,8}(/\d{1,3})?$");
+
+
+#[derive(Clone, PartialEq, Copy)]
+pub enum ResponseType {
+    Basic,
+    CORS,
+    Default,
+    Error,
+    Opaque
+}
+
+
+#[derive(Clone, Copy)]
+pub enum TerminationReason {
+    EndUserAbort,
+    Fatal,
+    Timeout
+}
+
+
+
+#[derive(Clone)]
+pub enum ResponseBody {
+    Empty, 
+    Receiving(Vec<u8>),
+    Done(Vec<u8>),
+}
+
+pub enum ResponseMsg {
+    Chunk(Vec<u8>),
+    Finished,
+    Errored
+}
+
+pub struct ResponseLoader {
+    response: Response,
+    chan: Receiver<ResponseMsg>
+}
+
+
+#[derive(Clone)]
+pub struct Response {
+    pub response_type: ResponseType,
+    pub termination_reason: Option<TerminationReason>,
+    pub url: Option<Url>,
+    
+    pub status: Option<StatusCode>,
+    pub headers: Headers,
+    pub body: ResponseBody,
+    
+    
+    pub internal_response: Option<Box<Response>>,
+}
+
+impl Response {
+    pub fn network_error() -> Response {
+        Response {
+            response_type: ResponseType::Error,
+            termination_reason: None,
+            url: None,
+            status: None,
+            headers: Headers::new(),
+            body: ResponseBody::Empty,
+            internal_response: None
+        }
+    }
+
+    pub fn is_network_error(&self) -> bool {
+        match self.response_type {
+            ResponseType::Error => true,
+            _ => false
+        }
+    }
+}
 
 
 
@@ -83,6 +160,11 @@ impl LoadData {
             pipeline_id: id,
         }
     }
+}
+
+
+pub trait AsyncFetchListener {
+    fn response_available(&self, response: Response);
 }
 
 

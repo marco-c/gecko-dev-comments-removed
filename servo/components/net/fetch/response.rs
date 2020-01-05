@@ -4,65 +4,18 @@
 
 use hyper::header::Headers;
 use hyper::status::StatusCode;
+use net_traits::{Response, ResponseBody, ResponseType};
 use std::ascii::AsciiExt;
 use std::sync::mpsc::Receiver;
 use url::Url;
 
-
-#[derive(Clone, PartialEq, Copy)]
-pub enum ResponseType {
-    Basic,
-    CORS,
-    Default,
-    Error,
-    Opaque
+pub trait ResponseMethods {
+    fn new() -> Response;
+    fn to_filtered(self, ResponseType) -> Response;
 }
 
-
-#[derive(Clone, Copy)]
-pub enum TerminationReason {
-    EndUserAbort,
-    Fatal,
-    Timeout
-}
-
-
-
-#[derive(Clone)]
-pub enum ResponseBody {
-    Empty, 
-    Receiving(Vec<u8>),
-    Done(Vec<u8>),
-}
-
-pub enum ResponseMsg {
-    Chunk(Vec<u8>),
-    Finished,
-    Errored
-}
-
-pub struct ResponseLoader {
-    response: Response,
-    chan: Receiver<ResponseMsg>
-}
-
-
-#[derive(Clone)]
-pub struct Response {
-    pub response_type: ResponseType,
-    pub termination_reason: Option<TerminationReason>,
-    pub url: Option<Url>,
-    
-    pub status: Option<StatusCode>,
-    pub headers: Headers,
-    pub body: ResponseBody,
-    
-    
-    pub internal_response: Option<Box<Response>>,
-}
-
-impl Response {
-    pub fn new() -> Response {
+impl ResponseMethods for Response {
+    fn new() -> Response {
         Response {
             response_type: ResponseType::Default,
             termination_reason: None,
@@ -74,28 +27,9 @@ impl Response {
         }
     }
 
-    pub fn network_error() -> Response {
-        Response {
-            response_type: ResponseType::Error,
-            termination_reason: None,
-            url: None,
-            status: None,
-            headers: Headers::new(),
-            body: ResponseBody::Empty,
-            internal_response: None
-        }
-    }
-
-    pub fn is_network_error(&self) -> bool {
-        match self.response_type {
-            ResponseType::Error => true,
-            _ => false
-        }
-    }
-
     
     
-    pub fn to_filtered(self, filter_type: ResponseType) -> Response {
+    fn to_filtered(self, filter_type: ResponseType) -> Response {
         assert!(filter_type != ResponseType::Error);
         assert!(filter_type != ResponseType::Default);
         if self.is_network_error() {
