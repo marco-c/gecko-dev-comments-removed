@@ -66,6 +66,7 @@ class GeckoInputConnection
     private String mIMETypeHint = "";
     private String mIMEModeHint = "";
     private String mIMEActionHint = "";
+    private boolean mFocused;
 
     private String mCurrentInputMethod = "";
 
@@ -320,6 +321,8 @@ class GeckoInputConnection
         mBatchTextChanged = false;
 
         
+
+        restartInput();
     }
 
     @Override
@@ -963,9 +966,14 @@ class GeckoInputConnection
         switch (type) {
 
             case NOTIFY_IME_OF_FOCUS:
+                
+                mFocused = true;
+                resetInputConnection();
+                break;
+
             case NOTIFY_IME_OF_BLUR:
                 
-                resetInputConnection();
+                mFocused = false;
                 break;
 
             case NOTIFY_IME_OPEN_VKB:
@@ -1021,7 +1029,15 @@ class GeckoInputConnection
             
             return;
         }
-        restartInput();
+
+        
+        
+        
+        
+        
+        if (mIMEState == IME_STATE_DISABLED || mFocused) {
+            restartInput();
+        }
     }
 }
 

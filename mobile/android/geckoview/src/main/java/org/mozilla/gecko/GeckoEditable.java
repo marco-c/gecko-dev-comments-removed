@@ -125,9 +125,6 @@ final class GeckoEditable extends JNIObject
     private native void onImeSynchronize();
 
     @WrapForJNI(dispatchTo = "proxy")
-    private native void onImeAcknowledgeFocus();
-
-    @WrapForJNI(dispatchTo = "proxy")
     private native void onImeReplaceText(int start, int end, String text);
 
     @WrapForJNI(dispatchTo = "proxy")
@@ -371,9 +368,7 @@ final class GeckoEditable extends JNIObject
         
         static final int TYPE_REMOVE_SPAN = 3;
         
-        static final int TYPE_ACKNOWLEDGE_FOCUS = 4;
-        
-        static final int TYPE_SET_HANDLER = 5;
+        static final int TYPE_SET_HANDLER = 4;
 
         final int mType;
         int mStart;
@@ -487,10 +482,6 @@ final class GeckoEditable extends JNIObject
             }
             mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
             onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString());
-            break;
-
-        case Action.TYPE_ACKNOWLEDGE_FOCUS:
-            onImeAcknowledgeFocus();
             break;
 
         default:
@@ -1014,9 +1005,8 @@ final class GeckoEditable extends JNIObject
         geckoPostToIc(new Runnable() {
             @Override
             public void run() {
-                if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS) {
-                    
-                    icOfferAction(new Action(Action.TYPE_ACKNOWLEDGE_FOCUS));
+                if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS && mListener != null) {
+                    mText.syncShadowText( null);
                 }
 
                 if (mListener != null) {
@@ -1125,9 +1115,14 @@ final class GeckoEditable extends JNIObject
         final int newEnd = start + text.length();
         final Action action = mActions.peek();
 
-        if (action != null && action.mType == Action.TYPE_ACKNOWLEDGE_FOCUS) {
+        if (start == 0 && unboundedOldEnd > currentLength) {
             
-            mText.currentReplace(0, currentLength, text);
+            
+            mText.currentReplace(0, currentLength, "");
+            mText.currentReplace(0, 0, text);
+
+            
+            mIgnoreSelectionChange = false;
 
         } else if (action != null &&
                 action.mType == Action.TYPE_REPLACE_TEXT &&

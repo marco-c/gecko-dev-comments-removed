@@ -415,6 +415,7 @@ private:
     };
     void PostFlushIMEChanges();
     void FlushIMEChanges(FlushChangesFlag aFlags = FLUSH_FLAG_NONE);
+    void FlushIMEText();
     void AsyncNotifyIME(int32_t aNotification);
     void UpdateCompositionRects();
 
@@ -442,9 +443,6 @@ public:
 
     
     void OnImeSynchronize();
-
-    
-    void OnImeAcknowledgeFocus();
 
     
     void OnImeReplaceText(int32_t aStart, int32_t aEnd,
@@ -2824,6 +2822,25 @@ nsWindow::GeckoViewSupport::FlushIMEChanges(FlushChangesFlag aFlags)
     }
 }
 
+void
+nsWindow::GeckoViewSupport::FlushIMEText()
+{
+    
+    mIMETextChanges.Clear();
+    mIMESelectionChanged = true;
+
+    
+    
+    
+    IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
+    notification.mTextChangeData.mStartOffset = 0;
+    notification.mTextChangeData.mRemovedEndOffset = INT32_MAX / 2;
+    notification.mTextChangeData.mAddedEndOffset = INT32_MAX / 2;
+    NotifyIME(notification);
+
+    FlushIMEChanges();
+}
+
 static jni::ObjectArray::LocalRef
 ConvertRectArrayToJavaRectFArray(JNIEnv* aJNIEnv, const nsTArray<LayoutDeviceIntRect>& aRects, const LayoutDeviceIntPoint& aOffset, const CSSToLayoutDeviceScale aScale)
 {
@@ -2916,21 +2933,38 @@ nsWindow::GeckoViewSupport::NotifyIME(const IMENotification& aIMENotification)
         case NOTIFY_IME_OF_FOCUS: {
             ALOGIME("IME: NOTIFY_IME_OF_FOCUS");
             
+            RefPtr<nsWindow> window(&this->window);
+
             
-            mIMEMonitorCursor = false;
-            mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_FOCUS);
+            
+            
+            nsAppShell::PostEvent([this, window] {
+                --mIMEMaskEventsCount;
+                if (mIMEMaskEventsCount || window->Destroyed()) {
+                    return;
+                }
+
+                FlushIMEText();
+
+                
+                
+                mIMEMonitorCursor = false;
+
+                MOZ_ASSERT(mEditable);
+                mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_FOCUS);
+            });
             return true;
         }
 
         case NOTIFY_IME_OF_BLUR: {
             ALOGIME("IME: NOTIFY_IME_OF_BLUR");
 
-            
-            
+            if (!mIMEMaskEventsCount) {
+                mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_BLUR);
+            }
+
             
             mIMEMaskEventsCount++;
-
-            mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_OF_BLUR);
             return true;
         }
 
@@ -3044,33 +3078,6 @@ nsWindow::GeckoViewSupport::OnImeSynchronize()
         FlushIMEChanges();
     }
     mEditable->NotifyIME(GeckoEditableListener::NOTIFY_IME_REPLY_EVENT);
-}
-
-void
-nsWindow::GeckoViewSupport::OnImeAcknowledgeFocus()
-{
-    MOZ_ASSERT(mIMEMaskEventsCount > 0);
-
-    AutoIMESynchronize as(this);
-
-    if (--mIMEMaskEventsCount > 0) {
-        
-        return;
-    }
-
-    
-    
-    mIMETextChanges.Clear();
-    mIMESelectionChanged = false;
-    
-    
-    
-    
-    IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
-    notification.mTextChangeData.mStartOffset = 0;
-    notification.mTextChangeData.mRemovedEndOffset =
-        notification.mTextChangeData.mAddedEndOffset = INT32_MAX / 2;
-    NotifyIME(notification);
 }
 
 void
