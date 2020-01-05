@@ -2702,8 +2702,13 @@ PluginModuleParent::NPP_NewInternal(NPMIMEType pluginType, NPP instance,
     if (mIsFlashPlugin) {
         parentInstance->InitMetadata(strPluginType, srcAttribute);
 #ifdef XP_WIN
-        bool supportsAsyncRender = false;
-        CallModuleSupportsAsyncRender(&supportsAsyncRender);
+        bool supportsAsyncRender =
+          Preferences::GetBool("dom.ipc.plugins.asyncdrawing.enabled", false);
+        if (supportsAsyncRender) {
+          
+          
+          CallModuleSupportsAsyncRender(&supportsAsyncRender);
+        }
 #ifdef _WIN64
         
         
