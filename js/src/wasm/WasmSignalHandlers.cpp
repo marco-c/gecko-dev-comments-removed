@@ -1340,8 +1340,7 @@ ProcessHasSignalHandlers()
     
     
 # if defined(XP_WIN)
-    
-    if (!AddVectoredExceptionHandler( false, WasmFaultHandler))
+    if (!AddVectoredExceptionHandler( true, WasmFaultHandler))
         return false;
 # elif defined(XP_DARWIN)
     
