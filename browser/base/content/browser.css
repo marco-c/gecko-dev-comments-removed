@@ -823,7 +823,6 @@ html|*#fullscreen-exit-button {
 .popup-anchor {
   
   opacity: 0;
-  visibility: hidden;
   pointer-events: none;
   -moz-stack-sizing: ignore;
 }
