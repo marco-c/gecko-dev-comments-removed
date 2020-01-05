@@ -448,10 +448,10 @@ protected:
   
   
   
-  int64_t GetMediaTime() const
+  media::TimeUnit GetMediaTime() const
   {
     MOZ_ASSERT(OnTaskQueue());
-    return mCurrentPosition;
+    return media::TimeUnit::FromMicroseconds(mCurrentPosition.Ref());
   }
 
   
