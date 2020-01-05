@@ -10603,13 +10603,30 @@ void nsCSSFrameConstructor::CreateNeededPseudoSiblings(
 }
 
 #ifdef DEBUG
-static bool
-FrameWantsToBeInAnonymousItem(const nsIAtom* aParentType, const nsIFrame* aFrame)
-{
-  MOZ_ASSERT(aParentType == nsGkAtoms::flexContainerFrame ||
-             aParentType == nsGkAtoms::gridContainerFrame);
 
-  return aFrame->IsFrameOfType(nsIFrame::eLineParticipant);
+
+
+
+
+
+
+
+
+static bool
+FrameWantsToBeInAnonymousItem(const nsIFrame* aContainerFrame,
+                              const nsIFrame* aFrame)
+{
+  nsIAtom* containerType = aContainerFrame->GetType();
+  MOZ_ASSERT(containerType == nsGkAtoms::flexContainerFrame ||
+             containerType == nsGkAtoms::gridContainerFrame);
+
+  
+  
+  if (aFrame->IsFrameOfType(nsIFrame::eLineParticipant)) {
+    return true;
+  }
+
+  return false;
 }
 #endif
 
@@ -10626,7 +10643,7 @@ VerifyGridFlexContainerChildren(nsIFrame* aParentFrame,
 
   bool prevChildWasAnonItem = false;
   for (const nsIFrame* child : aChildren) {
-    MOZ_ASSERT(!FrameWantsToBeInAnonymousItem(parentType, child),
+    MOZ_ASSERT(!FrameWantsToBeInAnonymousItem(aParentFrame, child),
                "frame wants to be inside an anonymous item, but it isn't");
     if (IsAnonymousFlexOrGridItem(child)) {
       AssertAnonymousFlexOrGridItemParent(child, aParentFrame);
