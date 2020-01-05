@@ -181,6 +181,7 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "nsHostObjectProtocolHandler.h"
 #include "nsICaptivePortalService.h"
+#include "nsIObjectLoadingContent.h"
 
 #include "nsIBidiKeyboard.h"
 
@@ -5062,11 +5063,25 @@ ContentParent::TransmitPermissionsFor(nsIChannel* aChannel)
 #ifdef MOZ_PERMISSIONS
   
   
+  
+  
   nsLoadFlags loadFlags;
   nsresult rv = aChannel->GetLoadFlags(&loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
+
   if (!(loadFlags & nsIChannel::LOAD_DOCUMENT_URI)) {
-    return NS_OK;
+    if (loadFlags & nsIRequest::LOAD_HTML_OBJECT_DATA) {
+      nsAutoCString mimeType;
+      aChannel->GetContentType(mimeType);
+      if (nsContentUtils::HtmlObjectContentTypeForMIMEType(mimeType, nullptr) !=
+          nsIObjectLoadingContent::TYPE_DOCUMENT) {
+        
+        return NS_OK;
+      }
+    } else {
+      
+      return NS_OK;
+    }
   }
 
   
