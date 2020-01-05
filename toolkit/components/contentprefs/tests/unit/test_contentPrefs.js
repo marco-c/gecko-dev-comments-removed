@@ -4,7 +4,6 @@
 
 function run_test() {
   
-  
 
   
   
@@ -113,7 +112,6 @@ function run_test() {
   do_check_eq(0, statement.getInt32(0));
 
   
-  
 
   do_check_eq(cps.getPref(uri, "test.nonexistent.getPref"), undefined);
   do_check_eq(cps.setPref(uri, "test.nonexistent.setPref", 5), undefined);
@@ -121,7 +119,6 @@ function run_test() {
   do_check_eq(cps.removePref(uri, "test.nonexistent.removePref"), undefined);
 
 
-  
   
 
   cps.setPref(uri, "test.existing", 5);
@@ -141,7 +138,6 @@ function run_test() {
   do_check_false(cps.hasPref(uri, "test.existing"));
 
 
-  
   
 
   
@@ -185,7 +181,6 @@ function run_test() {
 
 
   
-  
 
   cps.setPref(uri, "test.getPrefs.a", 1);
   cps.setPref(uri, "test.getPrefs.b", 2);
@@ -200,7 +195,6 @@ function run_test() {
   do_check_eq(prefs.get("test.getPrefs.c"), 3);
 
 
-  
   
 
   
@@ -231,7 +225,6 @@ function run_test() {
   do_check_false(cps.hasPref(uri3, "test.site-specificity.uri4"));
 
 
-  
   
 
   var specificObserver = {
@@ -334,7 +327,6 @@ function run_test() {
 
 
   
-  
 
   {
     var anObserver = {
@@ -421,7 +413,6 @@ function run_test() {
   }
 
 
-  
   
 
   {

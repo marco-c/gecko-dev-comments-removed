@@ -75,9 +75,6 @@ add_task(function* test_onlyBookmarked()
   do_print("end first test");
 
   
-
-
-
   var liveUpdateTestData = [
     
     { isBookmark: true,

@@ -29,7 +29,6 @@ var FullZoom = {
   },
 
   
-  
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIDOMEventListener,
                                          Ci.nsIObserver,
@@ -37,7 +36,6 @@ var FullZoom = {
                                          Ci.nsISupportsWeakReference,
                                          Ci.nsISupports]),
 
-  
   
 
   init: function FullZoom_init() {
@@ -75,7 +73,6 @@ var FullZoom = {
   },
 
 
-  
   
 
   
@@ -247,7 +244,6 @@ var FullZoom = {
   },
 
   
-  
 
   
 
@@ -391,7 +387,6 @@ var FullZoom = {
     });
   },
 
-  
   
 
   

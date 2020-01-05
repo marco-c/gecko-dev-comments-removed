@@ -50,7 +50,6 @@ const privModeStorage = new ContentPrefStore();
 
 ContentPrefService.prototype = {
   
-  
 
   classID: Components.ID("{e3f772f3-023f-4b32-b074-36cf0fd5d414}"),
 
@@ -72,7 +71,6 @@ ContentPrefService.prototype = {
     throw Cr.NS_ERROR_NO_INTERFACE;
   },
 
-  
   
 
   
@@ -103,7 +101,6 @@ ContentPrefService.prototype = {
   },
 
 
-  
   
 
   _destroy: function ContentPrefService__destroy() {
@@ -192,7 +189,6 @@ ContentPrefService.prototype = {
 
 
   
-  
 
   observe: function ContentPrefService_observe(subject, topic, data) {
     switch (topic) {
@@ -207,12 +203,10 @@ ContentPrefService.prototype = {
 
 
   
-  
 
   _cache: cache,
   _privModeStorage: privModeStorage,
 
-  
   
 
   getPref: function ContentPrefService_getPref(aGroup, aName, aContext, aCallback) {
@@ -569,7 +563,6 @@ ContentPrefService.prototype = {
   },
 
 
-  
   
 
   __stmtSelectPref: null,
@@ -998,7 +991,6 @@ ContentPrefService.prototype = {
 
 
   
-  
 
   _dbVersion: 4,
 
@@ -1262,12 +1254,10 @@ function HostnameGrouper() {}
 
 HostnameGrouper.prototype = {
   
-  
 
   classID:          Components.ID("{8df290ae-dcaa-4c11-98a5-2429a4dc97bb}"),
   QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentURIGrouper]),
 
-  
   
 
   group: function HostnameGrouper_group(aURI) {
@@ -1335,7 +1325,6 @@ AsyncStatement.prototype = {
     });
   }
 };
-
 
 
 

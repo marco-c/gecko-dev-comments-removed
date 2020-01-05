@@ -17,7 +17,6 @@ const CONTENT_PREFS_BACKUP_DB_FILENAME = "content-prefs.sqlite.corrupt";
 
 var ContentPrefTest = {
   
-  
 
   __dirSvc: null,
   get _dirSvc() {
@@ -45,7 +44,6 @@ var ContentPrefTest = {
 
 
   
-  
 
   interfaces: [Ci.nsIDirectoryServiceProvider, Ci.nsISupports],
 
@@ -56,7 +54,6 @@ var ContentPrefTest = {
   },
 
 
-  
   
 
   getFile: function ContentPrefTest_getFile(property, persistent) {
@@ -72,7 +69,6 @@ var ContentPrefTest = {
   },
 
 
-  
   
 
   getURI: function ContentPrefTest_getURI(spec) {

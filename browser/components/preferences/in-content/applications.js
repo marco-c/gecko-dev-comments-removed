@@ -6,7 +6,6 @@
 
 
 
-
 Components.utils.import('resource://gre/modules/Services.jsm');
 Components.utils.import('resource://gre/modules/AppConstants.jsm');
 const TYPE_MAYBE_FEED = "application/vnd.mozilla.maybe.feed";
@@ -75,7 +74,6 @@ const ICON_URL_APP = AppConstants.platform == "linux" ?
 
 
 const APP_ICON_ATTR_NAME = "appHandlerIcon";
-
 
 
 
@@ -151,7 +149,6 @@ function isFeedType(t) {
 
 
 
-
 function HandlerInfoWrapper(aType, aHandlerInfo) {
   this._type = aType;
   this.wrappedHandlerInfo = aHandlerInfo;
@@ -164,7 +161,6 @@ HandlerInfoWrapper.prototype = {
   wrappedHandlerInfo: null,
 
 
-  
   
 
   _handlerSvc: Cc["@mozilla.org/uriloader/handler-service;1"].
@@ -181,7 +177,6 @@ HandlerInfoWrapper.prototype = {
   },
 
 
-  
   
 
   
@@ -323,7 +318,6 @@ HandlerInfoWrapper.prototype = {
 
 
   
-  
 
   
   
@@ -341,7 +335,6 @@ HandlerInfoWrapper.prototype = {
   },
 
 
-  
   
 
   
@@ -418,14 +411,12 @@ HandlerInfoWrapper.prototype = {
 
 
   
-  
 
   store: function() {
     this._handlerSvc.store(this.wrappedHandlerInfo);
   },
 
 
-  
   
 
   get smallIcon() {
@@ -463,7 +454,6 @@ HandlerInfoWrapper.prototype = {
 
 
 
-
 function FeedHandlerInfo(aMIMEType) {
   HandlerInfoWrapper.call(this, aMIMEType, null);
 }
@@ -472,7 +462,6 @@ FeedHandlerInfo.prototype = {
   __proto__: HandlerInfoWrapper.prototype,
 
   
-  
 
   _converterSvc:
     Cc["@mozilla.org/embeddor.implemented/web-content-handler-registrar;1"].
@@ -480,7 +469,6 @@ FeedHandlerInfo.prototype = {
 
   _shellSvc: AppConstants.HAVE_SHELL_SERVICE ? getShellService() : null,
 
-  
   
 
   get description() {
@@ -724,14 +712,12 @@ FeedHandlerInfo.prototype = {
 
 
   
-  
 
   get primaryExtension() {
     return "xml";
   },
 
 
-  
   
 
   
@@ -759,7 +745,6 @@ FeedHandlerInfo.prototype = {
   },
 
 
-  
   
 
   get smallIcon() {
@@ -841,7 +826,6 @@ var pdfHandlerInfo = {
 
 
 
-
 var gApplicationsPane = {
   
   
@@ -863,7 +847,6 @@ var gApplicationsPane = {
   _visibleTypeDescriptionCount: {},
 
 
-  
   
 
   
@@ -888,7 +871,6 @@ var gApplicationsPane = {
                   getService(Ci.nsIIOService),
 
 
-  
   
 
   init: function() {
@@ -992,7 +974,6 @@ var gApplicationsPane = {
 
 
   
-  
 
   QueryInterface: function(aIID) {
     if (aIID.equals(Ci.nsIObserver) ||
@@ -1004,7 +985,6 @@ var gApplicationsPane = {
   },
 
 
-  
   
 
   observe: function (aSubject, aTopic, aData) {
@@ -1027,7 +1007,6 @@ var gApplicationsPane = {
 
 
   
-  
 
   handleEvent: function(aEvent) {
     if (aEvent.type == "unload") {
@@ -1036,7 +1015,6 @@ var gApplicationsPane = {
   },
 
 
-  
   
 
   _loadData: function() {
@@ -1131,7 +1109,6 @@ var gApplicationsPane = {
   },
 
 
-  
   
 
   _rebuildVisibleTypes: function() {
@@ -1556,7 +1533,6 @@ var gApplicationsPane = {
 
 
   
-  
 
   _sortColumn: null,
 
@@ -1628,7 +1604,6 @@ var gApplicationsPane = {
   },
 
 
-  
   
 
   onSelectAction: function(aActionItem) {
