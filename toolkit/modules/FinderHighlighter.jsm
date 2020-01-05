@@ -21,7 +21,8 @@ XPCOMUtils.defineLazyGetter(this, "kDebug", () => {
 
 const kContentChangeThresholdPx = 5;
 const kBrightTextSampleSize = 5;
-const kModalHighlightRepaintFreqMs = 100;
+const kModalHighlightRepaintLoFreqMs = 100;
+const kModalHighlightRepaintHiFreqMs = 16;
 const kHighlightAllPref = "findbar.highlightAll";
 const kModalHighlightPref = "findbar.modalHighlight";
 const kFontPropsCSS = ["color", "font-family", "font-kerning", "font-size",
@@ -233,11 +234,11 @@ FinderHighlighter.prototype = {
     this._found = true;
   },
 
-  onIteratorReset() {},
-
-  onIteratorRestart() {
+  onIteratorReset() {
     this.clear(this.finder._getWindow());
   },
+
+  onIteratorRestart() {},
 
   onIteratorStart(params) {
     let window = this.finder._getWindow();
@@ -511,11 +512,8 @@ FinderHighlighter.prototype = {
   onHighlightAllChange(highlightAll) {
     this._highlightAll = highlightAll;
     if (!highlightAll) {
-      let window = this.finder._getWindow();
-      if (!this._modal)
-        this.hide(window);
-      this.clear(window);
-      this._scheduleRepaintOfMask(window);
+      this.clear();
+      this._scheduleRepaintOfMask(this.finder._getWindow());
     }
   },
 
@@ -1127,6 +1125,8 @@ FinderHighlighter.prototype = {
 
 
 
+
+
   _scheduleRepaintOfMask(window, { contentChanged, scrollOnly, updateAllRanges } =
                                  { contentChanged: false, scrollOnly: false, updateAllRanges: false }) {
     if (!this._modal)
@@ -1134,7 +1134,8 @@ FinderHighlighter.prototype = {
 
     window = window.top;
     let dict = this.getForWindow(window);
-    let repaintDynamicRanges = ((scrollOnly || contentChanged) && !!dict.dynamicRangesSet.size);
+    let hasDynamicRanges = !!dict.dynamicRangesSet.size;
+    let repaintDynamicRanges = ((scrollOnly || contentChanged) && hasDynamicRanges);
 
     
     
@@ -1164,7 +1165,7 @@ FinderHighlighter.prototype = {
         dict.unconditionalRepaintRequested = false;
         this._repaintHighlightAllMask(window);
       }
-    }, kModalHighlightRepaintFreqMs);
+    }, hasDynamicRanges ? kModalHighlightRepaintHiFreqMs : kModalHighlightRepaintLoFreqMs);
   },
 
   
