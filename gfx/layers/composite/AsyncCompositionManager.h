@@ -227,7 +227,7 @@ private:
 
 #ifdef MOZ_WIDGET_ANDROID
 public:
-  void SetFixedLayerMarginsBottom(ScreenIntCoord aBottom);
+  void SetFixedLayerMargins(ScreenIntCoord aTop, ScreenIntCoord aBottom);
 private:
   
   

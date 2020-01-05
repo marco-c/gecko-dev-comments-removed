@@ -26,11 +26,11 @@
 namespace {
 
 
-static const float   ANIMATION_DURATION  = 0.15f; 
-static const int32_t MOVE_TOOLBAR_DOWN =  1;      
-static const int32_t MOVE_TOOLBAR_UP   = -1;      
-static const float   SHRINK_FACTOR     = 0.95f;   
-                                                  
+static const float   ANIMATION_DURATION = 0.15f; 
+static const int32_t MOVE_TOOLBAR_DOWN  =  1;    
+static const int32_t MOVE_TOOLBAR_UP    = -1;    
+static const float   SHRINK_FACTOR      = 0.95f; 
+                                                 
 } 
 
 namespace mozilla {
@@ -62,6 +62,8 @@ AndroidDynamicToolbarAnimator::AndroidDynamicToolbarAnimator()
   , mCompositorShutdown(false)
   , mCompositorAnimationDeferred(false)
   , mCompositorLayersUpdateEnabled(false)
+  , mCompositorAnimationStarted(false)
+  , mCompositorReceivedFirstPaint(false)
   , mCompositorAnimationStyle(eAnimate)
   , mCompositorMaxToolbarHeight(0)
   , mCompositorToolbarHeight(0)
@@ -229,6 +231,16 @@ AndroidDynamicToolbarAnimator::GetCurrentToolbarHeight() const
 }
 
 ScreenIntCoord
+AndroidDynamicToolbarAnimator::GetCurrentContentOffset() const {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (mCompositorAnimationStarted && (mToolbarState == eToolbarAnimating)) {
+    return 0;
+  }
+
+  return mCompositorToolbarHeight;
+}
+
+ScreenIntCoord
 AndroidDynamicToolbarAnimator::GetCurrentSurfaceHeight() const
 {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
@@ -325,6 +337,30 @@ AndroidDynamicToolbarAnimator::UpdateAnimation(const TimeStamp& aCurrentFrame)
     return false;
   }
 
+  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
+  if (!parent) {
+    return false;
+  }
+
+  AsyncCompositionManager* manager = parent->GetCompositionManager(nullptr);
+  if (!manager) {
+    return false;
+  }
+
+  if (mCompositorSurfaceHeight != mCompositorCompositionSize.height) {
+    
+    return true;
+  } else if (!mCompositorAnimationStarted) {
+    parent->GetAPZCTreeManager()->AdjustScrollForSurfaceShift(ScreenPoint(0.0f, (float)(-mCompositorToolbarHeight)));
+    manager->SetFixedLayerMargins(mCompositorToolbarHeight, 0);
+    mCompositorAnimationStarted = true;
+    mCompositorReceivedFirstPaint = false;
+    
+    mCompositorAnimationStartTimeStamp = aCurrentFrame;
+    
+    return true;
+  }
+
   bool continueAnimating = true;
 
   if (mCompositorAnimationStyle == eImmediate) {
@@ -354,11 +390,16 @@ AndroidDynamicToolbarAnimator::UpdateAnimation(const TimeStamp& aCurrentFrame)
     mCompositorToolbarHeight = 0;
   }
 
-  CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
-  if (parent) {
-    AsyncCompositionManager* manager = parent->GetCompositionManager(nullptr);
-    if (manager) {
-      manager->SetFixedLayerMarginsBottom(GetFixedLayerMarginsBottom());
+  if (continueAnimating) {
+    manager->SetFixedLayerMargins(mCompositorToolbarHeight, 0);
+  } else {
+    if (mCompositorAnimationDirection == MOVE_TOOLBAR_DOWN) {
+      if (!mCompositorReceivedFirstPaint) {
+        parent->GetAPZCTreeManager()->AdjustScrollForSurfaceShift(ScreenPoint(0.0f, (float)mCompositorMaxToolbarHeight));
+      }
+      manager->SetFixedLayerMargins(0, GetFixedLayerMarginsBottom());
+    } else {
+      manager->SetFixedLayerMargins(0, 0);
     }
   }
 
@@ -374,6 +415,8 @@ AndroidDynamicToolbarAnimator::UpdateAnimation(const TimeStamp& aCurrentFrame)
 void
 AndroidDynamicToolbarAnimator::FirstPaint()
 {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  mCompositorReceivedFirstPaint = true;
   PostMessage(FIRST_PAINT);
 }
 
@@ -717,7 +760,11 @@ AndroidDynamicToolbarAnimator::UpdateFixedLayerMargins()
     }
     AsyncCompositionManager* manager = parent->GetCompositionManager(nullptr);
     if (manager) {
-      manager->SetFixedLayerMarginsBottom(GetFixedLayerMarginsBottom());
+      if (mToolbarState == eToolbarAnimating) {
+        manager->SetFixedLayerMargins(mCompositorToolbarHeight, 0);
+      } else {
+        manager->SetFixedLayerMargins(0, GetFixedLayerMarginsBottom());
+      }
     }
   }
 }
@@ -772,13 +819,14 @@ AndroidDynamicToolbarAnimator::StartCompositorAnimation(int32_t aDirection, Anim
     
     mCompositorAnimationDeferred = false;
     mToolbarState = eToolbarAnimating;
+    mCompositorAnimationStarted = false;
     
     NotifyControllerAnimationStarted();
-    
     CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
     if (parent) {
       mCompositorAnimationStartTimeStamp = parent->GetAPZCTreeManager()->GetFrameTime();
     }
+    
     RequestComposite();
   }
 }
@@ -808,6 +856,17 @@ AndroidDynamicToolbarAnimator::StopCompositorAnimation()
   }
 
   if (mToolbarState == eToolbarAnimating) {
+    if (mCompositorAnimationStarted) {
+      mCompositorAnimationStarted = false;
+      CompositorBridgeParent* parent = CompositorBridgeParent::GetCompositorBridgeParentFromLayersId(mRootLayerTreeId);
+      if (parent) {
+        AsyncCompositionManager* manager = parent->GetCompositionManager(nullptr);
+        if (manager) {
+            parent->GetAPZCTreeManager()->AdjustScrollForSurfaceShift(ScreenPoint(0.0f, (float)(mCompositorToolbarHeight)));
+            RequestComposite();
+        }
+      }
+    }
     mToolbarState = eToolbarUnlocked;
   }
 
@@ -845,7 +904,11 @@ AndroidDynamicToolbarAnimator::RequestComposite()
   if (parent) {
     AsyncCompositionManager* manager = parent->GetCompositionManager(nullptr);
     if (manager) {
-      manager->SetFixedLayerMarginsBottom(GetFixedLayerMarginsBottom());
+      if ((mToolbarState == eToolbarAnimating) && mCompositorAnimationStarted) {
+        manager->SetFixedLayerMargins(mCompositorToolbarHeight, 0);
+      } else {
+        manager->SetFixedLayerMargins(0, GetFixedLayerMarginsBottom());
+      }
       parent->Invalidate();
       parent->ScheduleComposition();
     }

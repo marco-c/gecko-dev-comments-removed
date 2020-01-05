@@ -788,17 +788,26 @@ class ScopedCompositorRenderOffset {
 public:
   ScopedCompositorRenderOffset(CompositorOGL* aCompositor, const ScreenPoint& aOffset) :
     mCompositor(aCompositor),
-    mOriginalOffset(mCompositor->GetScreenRenderOffset())
+    mOriginalOffset(mCompositor->GetScreenRenderOffset()),
+    mOriginalProjection(mCompositor->GetProjMatrix())
   {
-    mCompositor->SetScreenRenderOffset(aOffset);
+    ScreenPoint offset(mOriginalOffset.x + aOffset.x, mOriginalOffset.y + aOffset.y);
+    mCompositor->SetScreenRenderOffset(offset);
+    
+    
+    gfx::Matrix4x4 mat = mOriginalProjection;
+    mat.PreTranslate(aOffset.x, aOffset.y, 0.0f);
+    mCompositor->SetProjMatrix(mat);
   }
   ~ScopedCompositorRenderOffset()
   {
     mCompositor->SetScreenRenderOffset(mOriginalOffset);
+    mCompositor->SetProjMatrix(mOriginalProjection);
   }
 private:
   CompositorOGL* const mCompositor;
   const ScreenPoint mOriginalOffset;
+  const gfx::Matrix4x4 mOriginalProjection;
 };
 #endif 
 
@@ -888,9 +897,8 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
     clipRect = ParentLayerIntRect(rect.x, rect.y, rect.width, rect.height);
   }
 #if defined(MOZ_WIDGET_ANDROID)
-  int32_t toolbarHeight = RenderToolbar();
-  
-  ScopedCompositorRenderOffset scopedOffset(mCompositor->AsCompositorOGL(), ScreenPoint(0, toolbarHeight));
+  ScreenCoord offset = GetContentShiftForToolbar();
+  ScopedCompositorRenderOffset scopedOffset(mCompositor->AsCompositorOGL(), ScreenPoint(0.0f, offset));
 #endif
 
   if (actualBounds.IsEmpty()) {
@@ -947,6 +955,9 @@ LayerManagerComposite::Render(const nsIntRegion& aInvalidRegion, const nsIntRegi
   mCompositor->NormalDrawingDone();
 
 #if defined(MOZ_WIDGET_ANDROID)
+  
+  
+  RenderToolbar();
   HandlePixelsTarget();
 #endif 
 
@@ -1122,22 +1133,38 @@ LayerManagerComposite::RenderToPresentationSurface()
   mCompositor->EndFrame();
 }
 
-int32_t
-LayerManagerComposite::RenderToolbar()
+ScreenCoord
+LayerManagerComposite::GetContentShiftForToolbar()
 {
-  int32_t toolbarHeight = 0;
-
+  ScreenCoord result(0.0f);
   
   if (mCompositor->GetTargetContext() != nullptr) {
-    return toolbarHeight;
+    return result;
   }
 
   if (CompositorBridgeParent* bridge = mCompositor->GetCompositorBridgeParent()) {
     AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
-    MOZ_ASSERT(animator);
-    toolbarHeight = animator->GetCurrentToolbarHeight();
+    MOZ_RELEASE_ASSERT(animator);
+    result.value = (float)animator->GetCurrentContentOffset().value;
+  }
+  return result;
+}
+
+void
+LayerManagerComposite::RenderToolbar()
+{
+  
+  if (mCompositor->GetTargetContext() != nullptr) {
+    return;
+  }
+
+  if (CompositorBridgeParent* bridge = mCompositor->GetCompositorBridgeParent()) {
+    AndroidDynamicToolbarAnimator* animator = bridge->GetAPZCTreeManager()->GetAndroidDynamicToolbarAnimator();
+    MOZ_RELEASE_ASSERT(animator);
+
+    int32_t toolbarHeight = animator->GetCurrentToolbarHeight();
     if (toolbarHeight == 0) {
-      return toolbarHeight;
+      return;
     }
 
     EffectChain effects;
@@ -1146,17 +1173,12 @@ LayerManagerComposite::RenderToolbar()
     
     
     if (effects.mPrimaryEffect) {
+      ScopedCompositorRenderOffset toolbarOffset(mCompositor->AsCompositorOGL(),
+                                                 ScreenPoint(0.0f, -animator->GetCurrentContentOffset()));
       mCompositor->DrawQuad(gfx::Rect(0, 0, mRenderBounds.width, toolbarHeight),
                             IntRect(0, 0, mRenderBounds.width, toolbarHeight), effects, 1.0, gfx::Matrix4x4());
     }
-
-    
-    gfx::Matrix4x4 mat = mCompositor->AsCompositorOGL()->GetProjMatrix();
-    mat.PreTranslate(0.0f, float(toolbarHeight), 0.0f);
-    mCompositor->AsCompositorOGL()->SetProjMatrix(mat);
   }
-
-  return toolbarHeight;
 }
 
 

@@ -438,7 +438,10 @@ private:
 #if defined(MOZ_WIDGET_ANDROID)
   void RenderToPresentationSurface();
   
-  int32_t RenderToolbar();
+  
+  ScreenCoord GetContentShiftForToolbar();
+  
+  void RenderToolbar();
   
   void HandlePixelsTarget();
 #endif

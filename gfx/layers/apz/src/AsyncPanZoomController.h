@@ -323,6 +323,8 @@ public:
 
 
 
+
+
   void AdjustScrollForSurfaceShift(const ScreenPoint& aShift);
 
   

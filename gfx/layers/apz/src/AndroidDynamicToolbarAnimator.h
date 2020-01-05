@@ -72,6 +72,8 @@ public:
   
   ScreenIntCoord GetCurrentToolbarHeight() const;
   
+  ScreenIntCoord GetCurrentContentOffset() const;
+  
   
   
   ScreenIntCoord GetCurrentSurfaceHeight() const;
@@ -162,13 +164,13 @@ protected:
   Atomic<uint32_t> mPinnedFlags;            
 
   
-  bool    mControllerScrollingRootContent;     
-  bool    mControllerDragThresholdReached;     
-  bool    mControllerCancelTouchTracking;      
-  bool    mControllerDragChangedDirection;     
-  bool    mControllerResetOnNextMove;          
-                                               
-                                               
+  bool mControllerScrollingRootContent; 
+  bool mControllerDragThresholdReached; 
+  bool mControllerCancelTouchTracking;  
+  bool mControllerDragChangedDirection; 
+  bool mControllerResetOnNextMove;      
+                                        
+                                        
   ScreenIntCoord mControllerStartTouch;        
   ScreenIntCoord mControllerPreviousTouch;     
   ScreenIntCoord mControllerTotalDistance;     
@@ -209,9 +211,11 @@ protected:
   };
 
   
-  bool    mCompositorShutdown;
-  bool    mCompositorAnimationDeferred;           
-  bool    mCompositorLayersUpdateEnabled;         
+  bool mCompositorShutdown;            
+  bool mCompositorAnimationDeferred;   
+  bool mCompositorLayersUpdateEnabled; 
+  bool mCompositorAnimationStarted;    
+  bool mCompositorReceivedFirstPaint;  
   AnimationStyle mCompositorAnimationStyle;       
   ScreenIntCoord mCompositorMaxToolbarHeight;     
   ScreenIntCoord mCompositorToolbarHeight;        
