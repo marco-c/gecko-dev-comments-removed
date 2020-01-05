@@ -48,6 +48,8 @@
 #include "nsPresContext.h"              
 #include "nsReadableUtils.h"            
 #include "nsStringFwd.h"                
+#include "mozilla/dom/Selection.h"      
+#include "nsFrameSelection.h"           
 
 class nsISupports;
 class nsIURI;
@@ -405,17 +407,23 @@ nsEditingSession::SetupEditorOnWindow(mozIDOMWindowProxy* aWindow)
   
   nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
   NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
+  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
   if (!mInteractive) {
     
-    nsCOMPtr<nsIPresShell> presShell = docShell->GetPresShell();
-    NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
     nsPresContext* presContext = presShell->GetPresContext();
     NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
 
     mImageAnimationMode = presContext->ImageAnimationMode();
     presContext->SetImageAnimationMode(imgIContainer::kDontAnimMode);
   }
+
+  
+  
+  RefPtr<nsFrameSelection> fs = presShell->FrameSelection();
+  NS_ENSURE_TRUE(fs, NS_ERROR_FAILURE);
+  mozilla::dom::AutoHideSelectionChanges hideSelectionChanges(fs);
 
   
   
