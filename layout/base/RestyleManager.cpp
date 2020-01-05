@@ -408,8 +408,8 @@ RestyleManager::RestyleHintToString(nsRestyleHint aHint)
   bool any = false;
   const char* names[] = {
     "Self", "SomeDescendants", "Subtree", "LaterSiblings", "CSSTransitions",
-    "CSSAnimations", "SVGAttrAnimations", "StyleAttribute",
-    "StyleAttribute_Animations", "Force", "ForceDescendants"
+    "CSSAnimations", "StyleAttribute", "StyleAttribute_Animations", "Force",
+    "ForceDescendants"
   };
   uint32_t hint = aHint & ((1 << ArrayLength(names)) - 1);
   uint32_t rest = aHint & ~((1 << ArrayLength(names)) - 1);
@@ -1172,8 +1172,12 @@ SyncViewsAndInvalidateDescendants(nsIFrame* aFrame, nsChangeHint aChange)
                                       nsChangeHint_SchedulePaint)),
                "Invalid change flag");
 
-  if (aChange & nsChangeHint_SyncFrameView) {
-    aFrame->SyncFrameViewProperties();
+  nsView* view = aFrame->GetView();
+  if (view) {
+    if (aChange & nsChangeHint_SyncFrameView) {
+      nsContainerFrame::SyncFrameViewProperties(aFrame->PresContext(), aFrame,
+                                                nullptr, view);
+    }
   }
 
   nsIFrame::ChildListIterator lists(aFrame);
