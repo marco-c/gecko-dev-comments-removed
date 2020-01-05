@@ -2079,7 +2079,7 @@ public:
     SFE_WANT_IMAGE_SURFACE = 1 << 0,
     
 
-    SFE_WANT_FIRST_FRAME = 1 << 1,
+    SFE_WANT_FIRST_FRAME_IF_IMAGE = 1 << 1,
     
     SFE_NO_COLORSPACE_CONVERSION = 1 << 2,
     
