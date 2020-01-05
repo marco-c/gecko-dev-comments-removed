@@ -187,6 +187,16 @@ void Gecko_SetListStyleImage(nsStyleList* style_struct,
 void Gecko_CopyListStyleImageFrom(nsStyleList* dest, const nsStyleList* src);
 
 
+void Gecko_SetCursorArrayLength(nsStyleUserInterface* ui, size_t len);
+void Gecko_SetCursorImage(nsCursorImage* cursor,
+                          const uint8_t* string_bytes, uint32_t string_length,
+                          ThreadSafeURIHolder* base_uri,
+                          ThreadSafeURIHolder* referrer,
+                          ThreadSafePrincipalHolder* principal);
+void Gecko_CopyCursorArrayFrom(nsStyleUserInterface* dest,
+                               const nsStyleUserInterface* src);
+
+
 void Gecko_SetMozBinding(nsStyleDisplay* style_struct,
                          const uint8_t* string_bytes, uint32_t string_length,
                          ThreadSafeURIHolder* base_uri,
