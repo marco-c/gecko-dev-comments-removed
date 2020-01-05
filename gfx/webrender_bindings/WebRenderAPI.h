@@ -138,9 +138,9 @@ public:
                 float aGlyphSize);
 
   
-  WRState* Raw() { return mWRState; }
+  WrState* Raw() { return mWrState; }
 protected:
-  WRState* mWRState;
+  WrState* mWrState;
 
   friend class WebRenderAPI;
 };
