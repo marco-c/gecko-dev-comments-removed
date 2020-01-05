@@ -1238,7 +1238,7 @@ pub struct ImageDisplayItem {
 
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, HeapSizeOf, Serialize)]
 pub struct GradientDisplayItem {
     
     pub base: BaseDisplayItem,
@@ -1252,21 +1252,6 @@ pub struct GradientDisplayItem {
     
     pub stops: Vec<GradientStop>,
 }
-
-
-impl HeapSizeOf for GradientDisplayItem {
-    fn heap_size_of_children(&self) -> usize {
-        use heapsize::heap_size_of;
-        use libc::c_void;
-
-        
-        
-        
-        self.base.heap_size_of_children() +
-            heap_size_of(self.stops.as_ptr() as *const c_void)
-    }
-}
-
 
 
 #[derive(Clone, HeapSizeOf, Deserialize, Serialize)]
