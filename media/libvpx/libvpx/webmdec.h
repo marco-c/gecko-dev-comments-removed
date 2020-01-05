@@ -52,8 +52,7 @@ int file_is_webm(struct WebmInputContext *webm_ctx,
 
 
 
-int webm_read_frame(struct WebmInputContext *webm_ctx,
-                    uint8_t **buffer,
+int webm_read_frame(struct WebmInputContext *webm_ctx, uint8_t **buffer,
                     size_t *buffer_size);
 
 

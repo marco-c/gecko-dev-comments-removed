@@ -30,24 +30,24 @@
 
 #define fseeko fseeko64
 #define ftello ftello64
-#endif  
+#endif 
 
 #if CONFIG_OS_SUPPORT
 #if defined(_MSC_VER)
-#include <io.h>  
-#define isatty   _isatty
-#define fileno   _fileno
+#include <io.h> 
+#define isatty _isatty
+#define fileno _fileno
 #else
-#include <unistd.h>  
-#endif  
-#endif  
+#include <unistd.h> 
+#endif              
+#endif              
 
 
 
 #if !CONFIG_OS_SUPPORT
 #define fseeko fseek
 #define ftello ftell
-#endif  
+#endif 
 
 #define LITERALU64(hi, lo) ((((uint64_t)hi) << 32) | lo)
 
@@ -55,7 +55,7 @@
 #define PATH_MAX 512
 #endif
 
-#define IVF_FRAME_HDR_SZ (4 + 8)  /* 4 byte size + 8 byte timestamp */
+#define IVF_FRAME_HDR_SZ (4 + 8) /* 4 byte size + 8 byte timestamp */
 #define IVF_FILE_HDR_SZ 32
 
 #define RAW_FRAME_HDR_SZ sizeof(uint32_t)
@@ -157,7 +157,7 @@ void vpx_img_truncate_16_to_8(vpx_image_t *dst, vpx_image_t *src);
 #endif
 
 #ifdef __cplusplus
-}  
+} 
 #endif
 
 #endif  

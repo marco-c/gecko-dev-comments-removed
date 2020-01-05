@@ -16,16 +16,15 @@
 #include "vpx_dsp/vpx_filter.h"
 #include "vpx_ports/mem.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define EIGHTTAP            0
-#define EIGHTTAP_SMOOTH     1
-#define EIGHTTAP_SHARP      2
-#define SWITCHABLE_FILTERS  3 /* Number of switchable filters */
-#define BILINEAR            3
+#define EIGHTTAP 0
+#define EIGHTTAP_SMOOTH 1
+#define EIGHTTAP_SHARP 2
+#define SWITCHABLE_FILTERS 3 /* Number of switchable filters */
+#define BILINEAR 3
 
 
 #define SWITCHABLE_FILTER_CONTEXTS (SWITCHABLE_FILTERS + 1)

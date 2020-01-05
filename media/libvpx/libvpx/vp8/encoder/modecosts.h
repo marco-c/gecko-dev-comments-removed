@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP8_ENCODER_MODECOSTS_H_
 #define VP8_ENCODER_MODECOSTS_H_
 

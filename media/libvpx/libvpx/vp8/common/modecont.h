@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP8_COMMON_MODECONT_H_
 #define VP8_COMMON_MODECONT_H_
 

@@ -41,16 +41,16 @@ enum {
 };
 
 static const uint8_t extend_modes[INTRA_MODES] = {
-  NEED_ABOVE | NEED_LEFT,       
-  NEED_ABOVE,                   
-  NEED_LEFT,                    
-  NEED_ABOVERIGHT,              
-  NEED_LEFT | NEED_ABOVE,       
-  NEED_LEFT | NEED_ABOVE,       
-  NEED_LEFT | NEED_ABOVE,       
-  NEED_LEFT,                    
-  NEED_ABOVERIGHT,              
-  NEED_LEFT | NEED_ABOVE,       
+  NEED_ABOVE | NEED_LEFT,  
+  NEED_ABOVE,              
+  NEED_LEFT,               
+  NEED_ABOVERIGHT,         
+  NEED_LEFT | NEED_ABOVE,  
+  NEED_LEFT | NEED_ABOVE,  
+  NEED_LEFT | NEED_ABOVE,  
+  NEED_LEFT,               
+  NEED_ABOVERIGHT,         
+  NEED_LEFT | NEED_ABOVE,  
 };
 
 typedef void (*intra_pred_fn)(uint8_t *dst, ptrdiff_t stride,
@@ -68,9 +68,9 @@ static intra_high_pred_fn dc_pred_high[2][2][4];
 #endif  
 
 static void vp9_init_intra_predictors_internal(void) {
-#define INIT_ALL_SIZES(p, type) \
-  p[TX_4X4] = vpx_##type##_predictor_4x4; \
-  p[TX_8X8] = vpx_##type##_predictor_8x8; \
+#define INIT_ALL_SIZES(p, type)               \
+  p[TX_4X4] = vpx_##type##_predictor_4x4;     \
+  p[TX_8X8] = vpx_##type##_predictor_8x8;     \
   p[TX_16X16] = vpx_##type##_predictor_16x16; \
   p[TX_32X32] = vpx_##type##_predictor_32x32
 
@@ -110,18 +110,10 @@ static void vp9_init_intra_predictors_internal(void) {
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-static void build_intra_predictors_high(const MACROBLOCKD *xd,
-                                        const uint8_t *ref8,
-                                        int ref_stride,
-                                        uint8_t *dst8,
-                                        int dst_stride,
-                                        PREDICTION_MODE mode,
-                                        TX_SIZE tx_size,
-                                        int up_available,
-                                        int left_available,
-                                        int right_available,
-                                        int x, int y,
-                                        int plane, int bd) {
+static void build_intra_predictors_high(
+    const MACROBLOCKD *xd, const uint8_t *ref8, int ref_stride, uint8_t *dst8,
+    int dst_stride, PREDICTION_MODE mode, TX_SIZE tx_size, int up_available,
+    int left_available, int right_available, int x, int y, int plane, int bd) {
   int i;
   uint16_t *dst = CONVERT_TO_SHORTPTR(dst8);
   uint16_t *ref = CONVERT_TO_SHORTPTR(ref8);
@@ -163,8 +155,7 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
       if (xd->mb_to_bottom_edge < 0) {
         
         if (y0 + bs <= frame_height) {
-          for (i = 0; i < bs; ++i)
-            left_col[i] = ref[i * ref_stride - 1];
+          for (i = 0; i < bs; ++i) left_col[i] = ref[i * ref_stride - 1];
         } else {
           const int extend_bottom = frame_height - y0;
           for (i = 0; i < extend_bottom; ++i)
@@ -174,8 +165,7 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
         }
       } else {
         
-        for (i = 0; i < bs; ++i)
-          left_col[i] = ref[i * ref_stride - 1];
+        for (i = 0; i < bs; ++i) left_col[i] = ref[i * ref_stride - 1];
       }
     } else {
       vpx_memset16(left_col, base + 1, bs);
@@ -261,9 +251,8 @@ static void build_intra_predictors_high(const MACROBLOCKD *xd,
 
   
   if (mode == DC_PRED) {
-    dc_pred_high[left_available][up_available][tx_size](dst, dst_stride,
-                                                        const_above_row,
-                                                        left_col, xd->bd);
+    dc_pred_high[left_available][up_available][tx_size](
+        dst, dst_stride, const_above_row, left_col, xd->bd);
   } else {
     pred_high[mode][tx_size](dst, dst_stride, const_above_row, left_col,
                              xd->bd);
@@ -313,8 +302,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
       if (xd->mb_to_bottom_edge < 0) {
         
         if (y0 + bs <= frame_height) {
-          for (i = 0; i < bs; ++i)
-            left_col[i] = ref[i * ref_stride - 1];
+          for (i = 0; i < bs; ++i) left_col[i] = ref[i * ref_stride - 1];
         } else {
           const int extend_bottom = frame_height - y0;
           for (i = 0; i < extend_bottom; ++i)
@@ -324,8 +312,7 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
         }
       } else {
         
-        for (i = 0; i < bs; ++i)
-          left_col[i] = ref[i * ref_stride - 1];
+        for (i = 0; i < bs; ++i) left_col[i] = ref[i * ref_stride - 1];
       }
     } else {
       memset(left_col, 129, bs);
@@ -415,10 +402,9 @@ static void build_intra_predictors(const MACROBLOCKD *xd, const uint8_t *ref,
   }
 }
 
-void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
-                             TX_SIZE tx_size, PREDICTION_MODE mode,
-                             const uint8_t *ref, int ref_stride,
-                             uint8_t *dst, int dst_stride,
+void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in, TX_SIZE tx_size,
+                             PREDICTION_MODE mode, const uint8_t *ref,
+                             int ref_stride, uint8_t *dst, int dst_stride,
                              int aoff, int loff, int plane) {
   const int bw = (1 << bwl_in);
   const int txw = (1 << tx_size);
@@ -431,8 +417,8 @@ void vp9_predict_intra_block(const MACROBLOCKD *xd, int bwl_in,
 #if CONFIG_VP9_HIGHBITDEPTH
   if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
     build_intra_predictors_high(xd, ref, ref_stride, dst, dst_stride, mode,
-                                tx_size, have_top, have_left, have_right,
-                                x, y, plane, xd->bd);
+                                tx_size, have_top, have_left, have_right, x, y,
+                                plane, xd->bd);
     return;
   }
 #endif

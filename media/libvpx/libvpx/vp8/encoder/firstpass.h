@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP8_ENCODER_FIRSTPASS_H_
 #define VP8_ENCODER_FIRSTPASS_H_
 

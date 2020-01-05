@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP8_ENCODER_ENCODEINTRA_H_
 #define VP8_ENCODER_ENCODEINTRA_H_
 #include "onyx_int.h"

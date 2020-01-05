@@ -12,9 +12,8 @@
 
 
 
-
 #include <assert.h>
-#include <string.h>   
+#include <string.h>  
 #include "./vpx_thread.h"
 #include "vpx_mem/vpx_mem.h"
 
@@ -22,8 +21,8 @@
 
 struct VPxWorkerImpl {
   pthread_mutex_t mutex_;
-  pthread_cond_t  condition_;
-  pthread_t       thread_;
+  pthread_cond_t condition_;
+  pthread_t thread_;
 };
 
 
@@ -31,29 +30,28 @@ struct VPxWorkerImpl {
 static void execute(VPxWorker *const worker);  
 
 static THREADFN thread_loop(void *ptr) {
-  VPxWorker *const worker = (VPxWorker*)ptr;
+  VPxWorker *const worker = (VPxWorker *)ptr;
   int done = 0;
   while (!done) {
     pthread_mutex_lock(&worker->impl_->mutex_);
-    while (worker->status_ == OK) {   
+    while (worker->status_ == OK) {  
       pthread_cond_wait(&worker->impl_->condition_, &worker->impl_->mutex_);
     }
     if (worker->status_ == WORK) {
       execute(worker);
       worker->status_ = OK;
-    } else if (worker->status_ == NOT_OK) {   
+    } else if (worker->status_ == NOT_OK) {  
       done = 1;
     }
     
     pthread_cond_signal(&worker->impl_->condition_);
     pthread_mutex_unlock(&worker->impl_->mutex_);
   }
-  return THREAD_RETURN(NULL);    
+  return THREAD_RETURN(NULL);  
 }
 
 
-static void change_state(VPxWorker *const worker,
-                         VPxWorkerStatus new_status) {
+static void change_state(VPxWorker *const worker, VPxWorkerStatus new_status) {
   
   
   
@@ -96,7 +94,7 @@ static int reset(VPxWorker *const worker) {
   worker->had_error = 0;
   if (worker->status_ < OK) {
 #if CONFIG_MULTITHREAD
-    worker->impl_ = (VPxWorkerImpl*)vpx_calloc(1, sizeof(*worker->impl_));
+    worker->impl_ = (VPxWorkerImpl *)vpx_calloc(1, sizeof(*worker->impl_));
     if (worker->impl_ == NULL) {
       return 0;
     }
@@ -114,7 +112,7 @@ static int reset(VPxWorker *const worker) {
     if (!ok) {
       pthread_mutex_destroy(&worker->impl_->mutex_);
       pthread_cond_destroy(&worker->impl_->condition_);
- Error:
+    Error:
       vpx_free(worker->impl_);
       worker->impl_ = NULL;
       return 0;
@@ -162,15 +160,14 @@ static void end(VPxWorker *const worker) {
 
 
 
-static VPxWorkerInterface g_worker_interface = {
-  init, reset, sync, launch, execute, end
-};
+static VPxWorkerInterface g_worker_interface = { init,   reset,   sync,
+                                                 launch, execute, end };
 
-int vpx_set_worker_interface(const VPxWorkerInterface* const winterface) {
-  if (winterface == NULL ||
-      winterface->init == NULL || winterface->reset == NULL ||
-      winterface->sync == NULL || winterface->launch == NULL ||
-      winterface->execute == NULL || winterface->end == NULL) {
+int vpx_set_worker_interface(const VPxWorkerInterface *const winterface) {
+  if (winterface == NULL || winterface->init == NULL ||
+      winterface->reset == NULL || winterface->sync == NULL ||
+      winterface->launch == NULL || winterface->execute == NULL ||
+      winterface->end == NULL) {
     return 0;
   }
   g_worker_interface = *winterface;

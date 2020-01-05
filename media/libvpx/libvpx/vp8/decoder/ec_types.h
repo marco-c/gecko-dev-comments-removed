@@ -20,35 +20,28 @@ extern "C" {
 
 
 
-
-typedef struct
-{
-    int overlap;
-    union b_mode_info *bmi;
+typedef struct {
+  int overlap;
+  union b_mode_info *bmi;
 } OVERLAP_NODE;
 
 
-typedef struct
-{
-    
-    OVERLAP_NODE overlaps[MAX_OVERLAPS];
+typedef struct {
+  
+  OVERLAP_NODE overlaps[MAX_OVERLAPS];
 } B_OVERLAP;
 
 
 
 
-typedef struct
-{
-    B_OVERLAP overlaps[16];
-} MB_OVERLAP;
+typedef struct { B_OVERLAP overlaps[16]; } MB_OVERLAP;
 
 
 
 
-typedef struct
-{
-    MV mv;
-    MV_REFERENCE_FRAME ref_frame;
+typedef struct {
+  MV mv;
+  MV_REFERENCE_FRAME ref_frame;
 } EC_BLOCK;
 
 #ifdef __cplusplus

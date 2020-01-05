@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP8_ENCODER_MR_DISSIM_H_
 #define VP8_ENCODER_MR_DISSIM_H_
 #include "vpx_config.h"

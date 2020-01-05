@@ -8,87 +8,104 @@
 #ifndef MKVMUXER_MKVMUXERUTIL_H_
 #define MKVMUXER_MKVMUXERUTIL_H_
 
-#include <stdint.h>
+#include "mkvmuxertypes.h"
+
+#include "stdint.h"
 
 namespace mkvmuxer {
 class Cluster;
 class Frame;
 class IMkvWriter;
 
-const uint64_t kEbmlUnknownValue = 0x01FFFFFFFFFFFFFFULL;
-const int64_t kMaxBlockTimecode = 0x07FFFLL;
-
-
-int32_t SerializeInt(IMkvWriter* writer, int64_t value, int32_t size);
-
-
-int32_t GetUIntSize(uint64_t value);
-int32_t GetIntSize(int64_t value);
-int32_t GetCodedUIntSize(uint64_t value);
-uint64_t EbmlMasterElementSize(uint64_t type, uint64_t value);
-uint64_t EbmlElementSize(uint64_t type, int64_t value);
-uint64_t EbmlElementSize(uint64_t type, uint64_t value);
-uint64_t EbmlElementSize(uint64_t type, float value);
-uint64_t EbmlElementSize(uint64_t type, const char* value);
-uint64_t EbmlElementSize(uint64_t type, const uint8_t* value, uint64_t size);
-uint64_t EbmlDateElementSize(uint64_t type);
-
-
-
-
-uint64_t EbmlElementSize(uint64_t type, uint64_t value, uint64_t fixed_size);
-
-
-
-
-int32_t WriteUInt(IMkvWriter* writer, uint64_t value);
-
-
-
-
-int32_t WriteUIntSize(IMkvWriter* writer, uint64_t value, int32_t size);
-
-
-bool WriteEbmlMasterElement(IMkvWriter* writer, uint64_t value, uint64_t size);
-
-
-
-int32_t WriteID(IMkvWriter* writer, uint64_t type);
-
-
-bool WriteEbmlElement(IMkvWriter* writer, uint64_t type, uint64_t value);
-bool WriteEbmlElement(IMkvWriter* writer, uint64_t type, int64_t value);
-bool WriteEbmlElement(IMkvWriter* writer, uint64_t type, float value);
-bool WriteEbmlElement(IMkvWriter* writer, uint64_t type, const char* value);
-bool WriteEbmlElement(IMkvWriter* writer, uint64_t type, const uint8_t* value,
-                      uint64_t size);
-bool WriteEbmlDateElement(IMkvWriter* writer, uint64_t type, int64_t value);
 
 
 
 
 
-bool WriteEbmlElement(IMkvWriter* writer, uint64_t type, uint64_t value,
-                      uint64_t fixed_size);
 
 
 
-uint64_t WriteFrame(IMkvWriter* writer, const Frame* const frame,
-                    Cluster* cluster);
+const uint64 kEbmlUnknownValue = 0x01FFFFFFFFFFFFFFULL;
+const int64 kMaxBlockTimecode = 0x07FFFLL;
+
+
+int32 SerializeInt(IMkvWriter* writer, int64 value, int32 size);
+
+
+int32 GetUIntSize(uint64 value);
+int32 GetIntSize(int64 value);
+int32 GetCodedUIntSize(uint64 value);
+uint64 EbmlMasterElementSize(uint64 type, uint64 value);
+uint64 EbmlElementSize(uint64 type, int64 value);
+uint64 EbmlElementSize(uint64 type, uint64 value);
+uint64 EbmlElementSize(uint64 type, float value);
+uint64 EbmlElementSize(uint64 type, const char* value);
+uint64 EbmlElementSize(uint64 type, const uint8* value, uint64 size);
+uint64 EbmlDateElementSize(uint64 type);
 
 
 
 
-uint64_t WriteVoidElement(IMkvWriter* writer, uint64_t size);
+uint64 EbmlElementSize(uint64 type, uint64 value, uint64 fixed_size);
 
 
 
-void GetVersion(int32_t* major, int32_t* minor, int32_t* build,
-                int32_t* revision);
+
+int32 WriteUInt(IMkvWriter* writer, uint64 value);
 
 
 
-uint64_t MakeUID(unsigned int* seed);
+
+int32 WriteUIntSize(IMkvWriter* writer, uint64 value, int32 size);
+
+
+bool WriteEbmlMasterElement(IMkvWriter* writer, uint64 value, uint64 size);
+
+
+
+int32 WriteID(IMkvWriter* writer, uint64 type);
+
+
+bool WriteEbmlElement(IMkvWriter* writer, uint64 type, uint64 value);
+bool WriteEbmlElement(IMkvWriter* writer, uint64 type, int64 value);
+bool WriteEbmlElement(IMkvWriter* writer, uint64 type, float value);
+bool WriteEbmlElement(IMkvWriter* writer, uint64 type, const char* value);
+bool WriteEbmlElement(IMkvWriter* writer, uint64 type, const uint8* value,
+                      uint64 size);
+bool WriteEbmlDateElement(IMkvWriter* writer, uint64 type, int64 value);
+
+
+
+
+
+bool WriteEbmlElement(IMkvWriter* writer, uint64 type, uint64 value,
+                      uint64 fixed_size);
+
+
+
+uint64 WriteFrame(IMkvWriter* writer, const Frame* const frame,
+                  Cluster* cluster);
+
+
+
+
+uint64 WriteVoidElement(IMkvWriter* writer, uint64 size);
+
+
+
+void GetVersion(int32* major, int32* minor, int32* build, int32* revision);
+
+
+
+uint64 MakeUID(unsigned int* seed);
+
+
+bool IsMatrixCoefficientsValueValid(uint64_t value);
+bool IsChromaSitingHorzValueValid(uint64_t value);
+bool IsChromaSitingVertValueValid(uint64_t value);
+bool IsColourRangeValueValid(uint64_t value);
+bool IsTransferCharacteristicsValueValid(uint64_t value);
+bool IsPrimariesValueValid(uint64_t value);
 
 }  
 

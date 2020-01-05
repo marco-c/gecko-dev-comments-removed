@@ -26,7 +26,7 @@ static uvec8 kVTbl4x4Transpose =
 
 void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride, int width) {
-  const uint8* src_temp = NULL;
+  const uint8* src_temp;
   int64 width64 = (int64) width;  
   asm volatile (
     
@@ -235,13 +235,13 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
     "4:                                          \n"
 
-    : "+r"(src_temp),                             // %0
-      "+r"(src),                                  // %1
-      "+r"(dst),                                  // %2
-      "+r"(width64)                               // %3
-    : "r"(&kVTbl4x4Transpose),                    // %4
-      "r"(static_cast<ptrdiff_t>(src_stride)),    // %5
-      "r"(static_cast<ptrdiff_t>(dst_stride))     // %6
+    : "=&r"(src_temp),                            
+      "+r"(src),                                  
+      "+r"(dst),                                  
+      "+r"(width64)                               
+    : "r"(&kVTbl4x4Transpose),                    
+      "r"(static_cast<ptrdiff_t>(src_stride)),    
+      "r"(static_cast<ptrdiff_t>(dst_stride))     
     : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
       "v17", "v18", "v19", "v20", "v21", "v22", "v23"
   );
@@ -255,7 +255,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width) {
-  const uint8* src_temp = NULL;
+  const uint8* src_temp;
   int64 width64 = (int64) width;  
   asm volatile (
     
@@ -520,15 +520,15 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
     "4:                                        \n"
 
-    : "+r"(src_temp),                             // %0
-      "+r"(src),                                  // %1
-      "+r"(dst_a),                                // %2
-      "+r"(dst_b),                                // %3
-      "+r"(width64)                               // %4
-    : "r"(static_cast<ptrdiff_t>(src_stride)),    // %5
-      "r"(static_cast<ptrdiff_t>(dst_stride_a)),  // %6
-      "r"(static_cast<ptrdiff_t>(dst_stride_b)),  // %7
-      "r"(&kVTbl4x4TransposeDi)                   // %8
+    : "=&r"(src_temp),                            
+      "+r"(src),                                  
+      "+r"(dst_a),                                
+      "+r"(dst_b),                                
+      "+r"(width64)                               
+    : "r"(static_cast<ptrdiff_t>(src_stride)),    
+      "r"(static_cast<ptrdiff_t>(dst_stride_a)),  
+      "r"(static_cast<ptrdiff_t>(dst_stride_b)),  
+      "r"(&kVTbl4x4TransposeDi)                   
     : "memory", "cc",
       "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
       "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",

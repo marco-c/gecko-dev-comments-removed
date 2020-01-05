@@ -13,12 +13,11 @@
 
 namespace {
 
-class VP9FrameSizeTestsLarge
-    : public ::libvpx_test::EncoderTest,
-      public ::testing::Test {
+class VP9FrameSizeTestsLarge : public ::libvpx_test::EncoderTest,
+                               public ::testing::Test {
  protected:
-  VP9FrameSizeTestsLarge() : EncoderTest(&::libvpx_test::kVP9),
-                             expected_res_(VPX_CODEC_OK) {}
+  VP9FrameSizeTestsLarge()
+      : EncoderTest(&::libvpx_test::kVP9), expected_res_(VPX_CODEC_OK) {}
   virtual ~VP9FrameSizeTestsLarge() {}
 
   virtual void SetUp() {
@@ -27,7 +26,7 @@ class VP9FrameSizeTestsLarge
   }
 
   virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
-                                  const libvpx_test::VideoSource& ,
+                                  const libvpx_test::VideoSource & ,
                                   libvpx_test::Decoder *decoder) {
     EXPECT_EQ(expected_res_, res_dec) << decoder->DecodeError();
     return !::testing::Test::HasFailure();
@@ -67,13 +66,13 @@ TEST_F(VP9FrameSizeTestsLarge, ValidSizes) {
   expected_res_ = VPX_CODEC_OK;
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 #else
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 #if defined(_WIN32) && !defined(_WIN64) || defined(__OS2__)
   video.SetSize(4096, 3072);
 #else

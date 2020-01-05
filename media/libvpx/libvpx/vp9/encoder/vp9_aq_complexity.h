@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP9_ENCODER_VP9_AQ_COMPLEXITY_H_
 #define VP9_ENCODER_VP9_AQ_COMPLEXITY_H_
 
@@ -23,8 +22,8 @@ struct macroblock;
 
 
 void vp9_caq_select_segment(struct VP9_COMP *cpi, struct macroblock *,
-                            BLOCK_SIZE bs,
-                            int mi_row, int mi_col, int projected_rate);
+                            BLOCK_SIZE bs, int mi_row, int mi_col,
+                            int projected_rate);
 
 
 

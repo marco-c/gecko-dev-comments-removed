@@ -31,24 +31,24 @@ def cleanup_upstream():
 
 def apply_patches():
     
-    os.system("patch -p0 < stdint.patch")
+    os.system("patch -p3 < stdint.patch")
     
     os.system("patch -p3 < bug1137614.patch")
-    
-    os.system("patch -p3 < clang-cl.patch")
     
     os.system("patch -p3 < input_frame_validation.patch")
     
     os.system("patch -p3 < input_frame_validation_vp9.patch")
     
     os.system("patch -p1 < rename_duplicate_files.patch")
+    os.system("mv libvpx/vpx_dsp/x86/loopfilter_sse2.c libvpx/vpx_dsp/x86/loopfilter_intrin_sse2.c")
+
 
 def update_readme(commit):
     with open('README_MOZILLA') as f:
         readme = f.read()
 
     if 'The git commit ID used was' in readme:
-        new_readme = re.sub('The git commit ID used was [a-f0-9]+',
+        new_readme = re.sub('The git commit ID used was [v\.a-f0-9]+',
             'The git commit ID used was %s' % commit, readme)
     else:
         new_readme = "%s\n\nThe git commit ID used was %s\n" % (readme, commit)

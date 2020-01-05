@@ -48,86 +48,78 @@
 
 
 static LONG once_state;
-static void once(void (*func)(void))
-{
+static void once(void (*func)(void)) {
+  
+
+
+  if (InterlockedCompareExchange(&once_state, 1, 0) == 0) {
     
 
-
-    if (InterlockedCompareExchange(&once_state, 1, 0) == 0) {
-        
-
-        func();
-        
-        InterlockedIncrement(&once_state);
-        return;
-    }
-
+    func();
     
-
-
-
-
-
-
-    while (InterlockedCompareExchange(&once_state, 2, 2) != 2) {
-        
-
-
-
-
-
-
-
-
-
-        Sleep(0);
-    }
-
-    
-
-
-
-
-
+    InterlockedIncrement(&once_state);
     return;
-}
+  }
 
+  
+
+
+
+
+
+
+  while (InterlockedCompareExchange(&once_state, 2, 2) != 2) {
+    
+
+
+
+
+
+
+
+
+
+    Sleep(0);
+  }
+
+  
+
+
+
+
+
+  return;
+}
 
 #elif CONFIG_MULTITHREAD && defined(__OS2__)
 #define INCL_DOS
 #include <os2.h>
-static void once(void (*func)(void))
-{
-    static int done;
+static void once(void (*func)(void)) {
+  static int done;
 
-    
-    if(done)
-        return;
+  
+  if (done) return;
 
-    
+  
 
 
-    DosEnterCritSec();
+  DosEnterCritSec();
 
-    if (!done)
-    {
-        func();
-        done = 1;
-    }
+  if (!done) {
+    func();
+    done = 1;
+  }
 
-    
-    DosExitCritSec();
+  
+  DosExitCritSec();
 }
-
 
 #elif CONFIG_MULTITHREAD && HAVE_PTHREAD_H
 #include <pthread.h>
-static void once(void (*func)(void))
-{
-    static pthread_once_t lock = PTHREAD_ONCE_INIT;
-    pthread_once(&lock, func);
+static void once(void (*func)(void)) {
+  static pthread_once_t lock = PTHREAD_ONCE_INIT;
+  pthread_once(&lock, func);
 }
-
 
 #else
 
@@ -135,15 +127,13 @@ static void once(void (*func)(void))
 
 
 
-static void once(void (*func)(void))
-{
-    static int done;
+static void once(void (*func)(void)) {
+  static int done;
 
-    if(!done)
-    {
-        func();
-        done = 1;
-    }
+  if (!done) {
+    func();
+    done = 1;
+  }
 }
 #endif
 

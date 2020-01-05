@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP9_ENCODER_VP9_AQ_VARIANCE_H_
 #define VP9_ENCODER_VP9_AQ_VARIANCE_H_
 

@@ -13,9 +13,12 @@
 
 #include "libyuv/basic_types.h"
 
-#include "libyuv/convert_from.h"
-#include "libyuv/planar_functions.h"
-#include "libyuv/rotate.h"
+#include "libyuv/rotate.h"  
+
+
+#include "libyuv/convert_argb.h"  
+#include "libyuv/convert_from.h"  
+#include "libyuv/planar_functions.h"  
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -114,6 +117,17 @@ int M420ToI420(const uint8* src_m420, int src_stride_m420,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
+
+
+LIBYUV_API
+int Android420ToI420(const uint8* src_y, int src_stride_y,
+                     const uint8* src_u, int src_stride_u,
+                     const uint8* src_v, int src_stride_v,
+                     int pixel_stride_uv,
+                     uint8* dst_y, int dst_stride_y,
+                     uint8* dst_u, int dst_stride_u,
+                     uint8* dst_v, int dst_stride_v,
+                     int width, int height);
 
 
 LIBYUV_API

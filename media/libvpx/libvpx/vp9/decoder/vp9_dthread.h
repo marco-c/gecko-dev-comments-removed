@@ -68,7 +68,7 @@ void vp9_frameworker_copy_context(VPxWorker *const dst_worker,
                                   VPxWorker *const src_worker);
 
 #ifdef __cplusplus
-}    
+}  
 #endif
 
 #endif  

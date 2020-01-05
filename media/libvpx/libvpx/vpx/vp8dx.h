@@ -17,7 +17,6 @@
 
 
 
-
 #ifndef VPX_VP8DX_H_
 #define VPX_VP8DX_H_
 
@@ -33,7 +32,7 @@ extern "C" {
 
 
 
-extern vpx_codec_iface_t  vpx_codec_vp8_dx_algo;
+extern vpx_codec_iface_t vpx_codec_vp8_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp8_dx(void);
 
 
@@ -42,7 +41,7 @@ extern vpx_codec_iface_t *vpx_codec_vp8_dx(void);
 
 
 
-extern vpx_codec_iface_t  vpx_codec_vp9_dx_algo;
+extern vpx_codec_iface_t vpx_codec_vp9_dx_algo;
 extern vpx_codec_iface_t *vpx_codec_vp9_dx(void);
 
 
@@ -112,6 +111,11 @@ enum vp8_dec_control_id {
 
   VP9_SET_SKIP_LOOP_FILTER,
 
+  
+
+
+  VP9_DECODE_SVC_SPATIAL_LAYER,
+
   VP8_DECODER_CTRL_ID_MAX
 };
 
@@ -126,11 +130,11 @@ typedef void (*vpx_decrypt_cb)(void *decrypt_state, const unsigned char *input,
 
 
 typedef struct vpx_decrypt_init {
-    
-    vpx_decrypt_cb decrypt_cb;
+  
+  vpx_decrypt_cb decrypt_cb;
 
-    
-    void *decrypt_state;
+  
+  void *decrypt_state;
 } vpx_decrypt_init;
 
 
@@ -145,26 +149,26 @@ typedef vpx_decrypt_init vp8_decrypt_init;
 
 
 
-
-
-VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_UPDATES,    int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_UPDATES, int *)
 #define VPX_CTRL_VP8D_GET_LAST_REF_UPDATES
-VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED,     int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_FRAME_CORRUPTED, int *)
 #define VPX_CTRL_VP8D_GET_FRAME_CORRUPTED
-VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED,       int *)
+VPX_CTRL_USE_TYPE(VP8D_GET_LAST_REF_USED, int *)
 #define VPX_CTRL_VP8D_GET_LAST_REF_USED
-VPX_CTRL_USE_TYPE(VPXD_SET_DECRYPTOR,           vpx_decrypt_init *)
+VPX_CTRL_USE_TYPE(VPXD_SET_DECRYPTOR, vpx_decrypt_init *)
 #define VPX_CTRL_VPXD_SET_DECRYPTOR
-VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR,           vpx_decrypt_init *)
+VPX_CTRL_USE_TYPE(VP8D_SET_DECRYPTOR, vpx_decrypt_init *)
 #define VPX_CTRL_VP8D_SET_DECRYPTOR
-VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE,        int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_DISPLAY_SIZE, int *)
 #define VPX_CTRL_VP9D_GET_DISPLAY_SIZE
-VPX_CTRL_USE_TYPE(VP9D_GET_BIT_DEPTH,           unsigned int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_BIT_DEPTH, unsigned int *)
 #define VPX_CTRL_VP9D_GET_BIT_DEPTH
-VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE,          int *)
+VPX_CTRL_USE_TYPE(VP9D_GET_FRAME_SIZE, int *)
 #define VPX_CTRL_VP9D_GET_FRAME_SIZE
 VPX_CTRL_USE_TYPE(VP9_INVERT_TILE_DECODE_ORDER, int)
 #define VPX_CTRL_VP9_INVERT_TILE_DECODE_ORDER
+#define VPX_CTRL_VP9_DECODE_SVC_SPATIAL_LAYER
+VPX_CTRL_USE_TYPE(VP9_DECODE_SVC_SPATIAL_LAYER, int)
 
 
 

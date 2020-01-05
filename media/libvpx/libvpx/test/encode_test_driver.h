@@ -33,19 +33,17 @@ enum TestMode {
   kTwoPassGood,
   kTwoPassBest
 };
-#define ALL_TEST_MODES ::testing::Values(::libvpx_test::kRealTime, \
-                                         ::libvpx_test::kOnePassGood, \
-                                         ::libvpx_test::kOnePassBest, \
-                                         ::libvpx_test::kTwoPassGood, \
-                                         ::libvpx_test::kTwoPassBest)
+#define ALL_TEST_MODES                                                        \
+  ::testing::Values(::libvpx_test::kRealTime, ::libvpx_test::kOnePassGood,    \
+                    ::libvpx_test::kOnePassBest, ::libvpx_test::kTwoPassGood, \
+                    ::libvpx_test::kTwoPassBest)
 
-#define ONE_PASS_TEST_MODES ::testing::Values(::libvpx_test::kRealTime, \
-                                              ::libvpx_test::kOnePassGood, \
-                                              ::libvpx_test::kOnePassBest)
+#define ONE_PASS_TEST_MODES                                                \
+  ::testing::Values(::libvpx_test::kRealTime, ::libvpx_test::kOnePassGood, \
+                    ::libvpx_test::kOnePassBest)
 
-#define TWO_PASS_TEST_MODES ::testing::Values(::libvpx_test::kTwoPassGood, \
-                                              ::libvpx_test::kTwoPassBest)
-
+#define TWO_PASS_TEST_MODES \
+  ::testing::Values(::libvpx_test::kTwoPassGood, ::libvpx_test::kTwoPassBest)
 
 
 class CxDataIterator {
@@ -58,8 +56,8 @@ class CxDataIterator {
   }
 
  private:
-  vpx_codec_ctx_t  *encoder_;
-  vpx_codec_iter_t  iter_;
+  vpx_codec_ctx_t *encoder_;
+  vpx_codec_iter_t iter_;
 };
 
 
@@ -75,14 +73,11 @@ class TwopassStatsStore {
     return buf;
   }
 
-  void Reset() {
-    buffer_.clear();
-  }
+  void Reset() { buffer_.clear(); }
 
  protected:
-  std::string  buffer_;
+  std::string buffer_;
 };
-
 
 
 
@@ -97,13 +92,9 @@ class Encoder {
     memset(&encoder_, 0, sizeof(encoder_));
   }
 
-  virtual ~Encoder() {
-    vpx_codec_destroy(&encoder_);
-  }
+  virtual ~Encoder() { vpx_codec_destroy(&encoder_); }
 
-  CxDataIterator GetCxData() {
-    return CxDataIterator(&encoder_);
-  }
+  CxDataIterator GetCxData() { return CxDataIterator(&encoder_); }
 
   void InitEncoder(VideoSource *video);
 
@@ -115,9 +106,7 @@ class Encoder {
   void EncodeFrame(VideoSource *video, const unsigned long frame_flags);
 
   
-  void EncodeFrame(VideoSource *video) {
-    EncodeFrame(video, 0);
-  }
+  void EncodeFrame(VideoSource *video) { EncodeFrame(video, 0); }
 
   void Control(int ctrl_id, int arg) {
     const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
@@ -156,12 +145,10 @@ class Encoder {
     cfg_ = *cfg;
   }
 
-  void set_deadline(unsigned long deadline) {
-    deadline_ = deadline;
-  }
+  void set_deadline(unsigned long deadline) { deadline_ = deadline; }
 
  protected:
-  virtual vpx_codec_iface_t* CodecInterface() const = 0;
+  virtual vpx_codec_iface_t *CodecInterface() const = 0;
 
   const char *EncoderError() {
     const char *detail = vpx_codec_error_detail(&encoder_);
@@ -175,11 +162,11 @@ class Encoder {
   
   void Flush();
 
-  vpx_codec_ctx_t      encoder_;
-  vpx_codec_enc_cfg_t  cfg_;
-  unsigned long        deadline_;
-  unsigned long        init_flags_;
-  TwopassStatsStore   *stats_;
+  vpx_codec_ctx_t encoder_;
+  vpx_codec_enc_cfg_t cfg_;
+  unsigned long deadline_;
+  unsigned long init_flags_;
+  TwopassStatsStore *stats_;
 };
 
 
@@ -221,36 +208,35 @@ class EncoderTest {
   virtual void EndPassHook() {}
 
   
-  virtual void PreEncodeFrameHook(VideoSource* ) {}
-  virtual void PreEncodeFrameHook(VideoSource* ,
-                                  Encoder* ) {}
+  virtual void PreEncodeFrameHook(VideoSource * ) {}
+  virtual void PreEncodeFrameHook(VideoSource * ,
+                                  Encoder * ) {}
 
   
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t* ) {}
+  virtual void FramePktHook(const vpx_codec_cx_pkt_t * ) {}
 
   
-  virtual void PSNRPktHook(const vpx_codec_cx_pkt_t* ) {}
+  virtual void PSNRPktHook(const vpx_codec_cx_pkt_t * ) {}
 
   
   virtual bool Continue() const {
     return !(::testing::Test::HasFatalFailure() || abort_);
   }
 
-  const CodecFactory   *codec_;
+  const CodecFactory *codec_;
   
   virtual bool DoDecode() const { return 1; }
 
   
-  virtual void MismatchHook(const vpx_image_t *img1,
-                            const vpx_image_t *img2);
+  virtual void MismatchHook(const vpx_image_t *img1, const vpx_image_t *img2);
 
   
-  virtual void DecompressedFrameHook(const vpx_image_t& ,
+  virtual void DecompressedFrameHook(const vpx_image_t & ,
                                      vpx_codec_pts_t ) {}
 
   
   virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
-                                  const VideoSource& ,
+                                  const VideoSource & ,
                                   Decoder *decoder) {
     EXPECT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
     return VPX_CODEC_OK == res_dec;
@@ -262,15 +248,15 @@ class EncoderTest {
     return pkt;
   }
 
-  bool                 abort_;
-  vpx_codec_enc_cfg_t  cfg_;
-  vpx_codec_dec_cfg_t  dec_cfg_;
-  unsigned int         passes_;
-  unsigned long        deadline_;
-  TwopassStatsStore    stats_;
-  unsigned long        init_flags_;
-  unsigned long        frame_flags_;
-  vpx_codec_pts_t      last_pts_;
+  bool abort_;
+  vpx_codec_enc_cfg_t cfg_;
+  vpx_codec_dec_cfg_t dec_cfg_;
+  unsigned int passes_;
+  unsigned long deadline_;
+  TwopassStatsStore stats_;
+  unsigned long init_flags_;
+  unsigned long frame_flags_;
+  vpx_codec_pts_t last_pts_;
 };
 
 }  

@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef VP9_COMMON_VP9_ALLOCCOMMON_H_
 #define VP9_COMMON_VP9_ALLOCCOMMON_H_
 

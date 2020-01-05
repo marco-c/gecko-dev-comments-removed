@@ -37,9 +37,9 @@ extern "C" {
 
 
 typedef struct vpx_codec_frame_buffer {
-  uint8_t *data;  
-  size_t size;  
-  void *priv;  
+  uint8_t *data; 
+  size_t size;   
+  void *priv;    
 } vpx_codec_frame_buffer_t;
 
 
@@ -60,8 +60,8 @@ typedef struct vpx_codec_frame_buffer {
 
 
 
-typedef int (*vpx_get_frame_buffer_cb_fn_t)(
-    void *priv, size_t min_size, vpx_codec_frame_buffer_t *fb);
+typedef int (*vpx_get_frame_buffer_cb_fn_t)(void *priv, size_t min_size,
+                                            vpx_codec_frame_buffer_t *fb);
 
 
 
@@ -73,8 +73,8 @@ typedef int (*vpx_get_frame_buffer_cb_fn_t)(
 
 
 
-typedef int (*vpx_release_frame_buffer_cb_fn_t)(
-    void *priv, vpx_codec_frame_buffer_t *fb);
+typedef int (*vpx_release_frame_buffer_cb_fn_t)(void *priv,
+                                                vpx_codec_frame_buffer_t *fb);
 
 #ifdef __cplusplus
 }  

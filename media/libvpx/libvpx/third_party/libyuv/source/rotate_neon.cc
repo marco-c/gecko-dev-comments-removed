@@ -27,7 +27,7 @@ static uvec8 kVTbl4x4Transpose =
 void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride,
                        int width) {
-  const uint8* src_temp = NULL;
+  const uint8* src_temp;
   asm volatile (
     
     
@@ -35,7 +35,6 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "sub         %5, #8                        \n"
 
     
-    ".p2align  2                               \n"
     "1:                                        \n"
       "mov         %0, %1                      \n"
 
@@ -230,13 +229,13 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
     "4:                                        \n"
 
-    : "+r"(src_temp),          // %0
-      "+r"(src),               // %1
-      "+r"(src_stride),        // %2
-      "+r"(dst),               // %3
-      "+r"(dst_stride),        // %4
-      "+r"(width)              // %5
-    : "r"(&kVTbl4x4Transpose)  // %6
+    : "=&r"(src_temp),         
+      "+r"(src),               
+      "+r"(src_stride),        
+      "+r"(dst),               
+      "+r"(dst_stride),        
+      "+r"(width)              
+    : "r"(&kVTbl4x4Transpose)  
     : "memory", "cc", "q0", "q1", "q2", "q3"
   );
 }
@@ -248,7 +247,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width) {
-  const uint8* src_temp = NULL;
+  const uint8* src_temp;
   asm volatile (
     
     
@@ -256,7 +255,6 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "sub         %7, #8                        \n"
 
     
-    ".p2align  2                               \n"
     "1:                                        \n"
       "mov         %0, %1                      \n"
 
@@ -514,15 +512,15 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
     "4:                                        \n"
 
-    : "+r"(src_temp),            // %0
-      "+r"(src),                 // %1
-      "+r"(src_stride),          // %2
-      "+r"(dst_a),               // %3
-      "+r"(dst_stride_a),        // %4
-      "+r"(dst_b),               // %5
-      "+r"(dst_stride_b),        // %6
-      "+r"(width)                // %7
-    : "r"(&kVTbl4x4TransposeDi)  // %8
+    : "=&r"(src_temp),           
+      "+r"(src),                 
+      "+r"(src_stride),          
+      "+r"(dst_a),               
+      "+r"(dst_stride_a),        
+      "+r"(dst_b),               
+      "+r"(dst_stride_b),        
+      "+r"(width)                
+    : "r"(&kVTbl4x4TransposeDi)  
     : "memory", "cc",
       "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11"
   );

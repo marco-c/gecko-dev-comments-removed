@@ -17,8 +17,7 @@ extern "C" {
 #endif
 
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    defined(_MSC_VER) && !defined(__clang__)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 
 __declspec(naked)
 void TransposeWx8_SSSE3(const uint8* src, int src_stride,
