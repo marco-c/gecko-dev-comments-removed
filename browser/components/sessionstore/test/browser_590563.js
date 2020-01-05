@@ -56,16 +56,13 @@ function newWindowWithState(state, callback) {
   let win = window.openDialog(getBrowserURL(), "_blank", opts);
 
   win.addEventListener("load", function() {
+    let tab = win.gBrowser.selectedTab;
+
     
     
-    let onSSTabRestored = event => {
-      let tab = event.target;
-      if (tab.selected) {
-        win.gBrowser.tabContainer.removeEventListener("SSTabRestored", onSSTabRestored, true);
-        callback(win);
-      }
-    };
-    win.gBrowser.tabContainer.addEventListener("SSTabRestored", onSSTabRestored, true);
+    tab.addEventListener("SSTabRestored", function() {
+      callback(win);
+    }, {capture: true, once: true});
 
     executeSoon(function() {
       ss.setWindowState(win, JSON.stringify(state), true);
