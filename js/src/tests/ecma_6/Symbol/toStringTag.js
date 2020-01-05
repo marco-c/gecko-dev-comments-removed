@@ -149,4 +149,7 @@ testDefault(function* () {}().__proto__.__proto__, "Generator");
 
 testDefault(Promise.prototype, "Promise");
 
+
+testDefault(async function() {}.constructor.prototype, "AsyncFunction");
+
 reportCompare(true, true);
