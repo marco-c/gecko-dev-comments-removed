@@ -791,7 +791,7 @@ function ArrayKeys() {
 }
 
 
-function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
+function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
     
     var C = this;
 

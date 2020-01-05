@@ -75,7 +75,7 @@ function SortByColumn(array, len, aux, col) {
 
     
     for (let r = 0; r < R; r++) {
-        counts[r+1] += counts[r];
+        counts[r + 1] += counts[r];
     }
 
     
@@ -212,13 +212,13 @@ function Merge(list, start, mid, end, lBuffer, rBuffer, comparefn) {
 
     
     while (i < sizeLeft) {
-        list[k] =lBuffer[i];
+        list[k] = lBuffer[i];
         i++;
         k++;
     }
 
     while (j < sizeRight) {
-        list[k] =rBuffer[j];
+        list[k] = rBuffer[j];
         j++;
         k++;
     }

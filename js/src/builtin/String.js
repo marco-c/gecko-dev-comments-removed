@@ -68,7 +68,7 @@ function String_generic_match(thisValue, regexp) {
 
 
 
-function String_pad(maxLength, fillString, padEnd=false) {
+function String_pad(maxLength, fillString, padEnd = false) {
 
     
     RequireObjectCoercible(this);
@@ -105,11 +105,11 @@ function String_pad(maxLength, fillString, padEnd=false) {
     return truncatedStringFiller + str;
 }
 
-function String_pad_start(maxLength, fillString=" ") {
+function String_pad_start(maxLength, fillString = " ") {
     return callFunction(String_pad, this, maxLength, fillString, false);
 }
 
-function String_pad_end(maxLength, fillString=" ") {
+function String_pad_end(maxLength, fillString = " ") {
     return callFunction(String_pad, this, maxLength, fillString, true);
 }
 
