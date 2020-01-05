@@ -2,6 +2,10 @@
 
 
 
+#![deny(missing_docs)]
+
+
+
 use {Atom, Prefix, Namespace, LocalName};
 use attr::{AttrIdentifier, AttrValue};
 use cssparser::ToCss;
@@ -16,8 +20,11 @@ use std::fmt;
 use std::fmt::Debug;
 
 
+
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum PseudoElement {
     Before,
     After,
@@ -55,6 +62,7 @@ impl ToCss for PseudoElement {
 
 
 impl PseudoElement {
+    
     #[inline]
     pub fn is_before_or_after(&self) -> bool {
         match *self {
@@ -64,6 +72,9 @@ impl PseudoElement {
         }
     }
 
+    
+    
+    
     #[inline]
     pub fn cascade_type(&self) -> PseudoElementCascadeType {
         match *self {
@@ -83,8 +94,11 @@ impl PseudoElement {
     }
 }
 
+
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum NonTSPseudoClass {
     AnyLink,
     Link,
@@ -129,6 +143,8 @@ impl ToCss for NonTSPseudoClass {
 }
 
 impl NonTSPseudoClass {
+    
+    
     pub fn state_flag(&self) -> ElementState {
         use element_state::*;
         use self::NonTSPseudoClass::*;
@@ -152,6 +168,8 @@ impl NonTSPseudoClass {
         }
     }
 }
+
+
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -289,14 +307,17 @@ impl<'a> ::selectors::Parser for SelectorParser<'a> {
 }
 
 impl SelectorImpl {
+    
     #[inline]
     pub fn pseudo_element_cascade_type(pseudo: &PseudoElement) -> PseudoElementCascadeType {
         pseudo.cascade_type()
     }
 
+    
     #[inline]
     pub fn each_pseudo_element<F>(mut fun: F)
-        where F: FnMut(PseudoElement) {
+        where F: FnMut(PseudoElement),
+    {
         fun(PseudoElement::Before);
         fun(PseudoElement::After);
         fun(PseudoElement::DetailsContent);
@@ -311,11 +332,13 @@ impl SelectorImpl {
         fun(PseudoElement::ServoAnonymousBlock);
     }
 
+    
     #[inline]
     pub fn pseudo_class_state_flag(pc: &NonTSPseudoClass) -> ElementState {
         pc.state_flag()
     }
 
+    
     #[inline]
     pub fn pseudo_is_before_or_after(pseudo: &PseudoElement) -> bool {
         pseudo.is_before_or_after()
@@ -326,12 +349,16 @@ impl SelectorImpl {
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct ServoElementSnapshot {
+    
     pub state: Option<ElementState>,
+    
     pub attrs: Option<Vec<(AttrIdentifier, AttrValue)>>,
+    
     pub is_html_element_in_html_document: bool,
 }
 
 impl ServoElementSnapshot {
+    
     pub fn new(is_html_element_in_html_document: bool) -> Self {
         ServoElementSnapshot {
             state: None,
@@ -373,7 +400,7 @@ impl ElementSnapshot for ServoElementSnapshot {
     }
 
     fn each_class<F>(&self, mut callback: F)
-        where F: FnMut(&Atom)
+        where F: FnMut(&Atom),
     {
         if let Some(v) = self.get_attr(&ns!(), &local_name!("class")) {
             for class in v.as_tokens() {

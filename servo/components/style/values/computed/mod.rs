@@ -2,6 +2,8 @@
 
 
 
+
+
 use app_units::Au;
 use euclid::size::Size2D;
 use font_metrics::FontMetricsProvider;
@@ -24,23 +26,41 @@ pub mod image;
 pub mod length;
 pub mod position;
 
+
+
 pub struct Context<'a> {
+    
     pub is_root_element: bool,
+
+    
     pub viewport_size: Size2D<Au>,
+
+    
     pub inherited_style: &'a ComputedValues,
 
     
     
     
     pub style: ComputedValues,
+
+    
+    
+    
+    
     pub font_metrics_provider: Option<&'a FontMetricsProvider>,
 }
 
 impl<'a> Context<'a> {
+    
     pub fn is_root_element(&self) -> bool { self.is_root_element }
+    
     pub fn viewport_size(&self) -> Size2D<Au> { self.viewport_size }
+    
     pub fn inherited_style(&self) -> &ComputedValues { &self.inherited_style }
+    
+    
     pub fn style(&self) -> &ComputedValues { &self.style }
+    
     pub fn mutate_style(&mut self) -> &mut ComputedValues { &mut self.style }
 
     
@@ -58,11 +78,15 @@ impl<'a> Context<'a> {
     }
 }
 
+
 pub trait ToComputedValue {
+    
     type ComputedValue;
 
+    
+    
     #[inline]
-    fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue;
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue;
 
     #[inline]
     
@@ -72,9 +96,13 @@ pub trait ToComputedValue {
     fn from_computed_value(computed: &Self::ComputedValue) -> Self;
 }
 
+
+
 pub trait ComputedValueAsSpecified {}
 
-impl<T> ToComputedValue for T where T: ComputedValueAsSpecified + Clone {
+impl<T> ToComputedValue for T
+    where T: ComputedValueAsSpecified + Clone,
+{
     type ComputedValue = T;
 
     #[inline]
@@ -133,9 +161,11 @@ impl ToComputedValue for specified::Length {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct BorderRadiusSize(pub Size2D<LengthOrPercentage>);
 
 impl BorderRadiusSize {
+    #[allow(missing_docs)]
     pub fn zero() -> BorderRadiusSize {
         BorderRadiusSize(Size2D::new(LengthOrPercentage::Length(Au(0)), LengthOrPercentage::Length(Au(0))))
     }
@@ -169,6 +199,7 @@ impl ToCss for BorderRadiusSize {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct Shadow {
     pub offset_x: Au,
     pub offset_y: Au,
@@ -178,5 +209,8 @@ pub struct Shadow {
     pub inset: bool,
 }
 
+
 pub type Number = CSSFloat;
+
+
 pub type Opacity = CSSFloat;

@@ -2,6 +2,8 @@
 
 
 
+
+
 use app_units::Au;
 use ordered_float::NotNaN;
 use std::fmt;
@@ -16,6 +18,7 @@ pub use values::specified::{Angle, BorderStyle, Time, UrlOrNone};
 
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct CalcLengthOrPercentage {
     pub length: Au,
     pub percentage: Option<CSSFloat>,
@@ -23,11 +26,13 @@ pub struct CalcLengthOrPercentage {
 
 impl CalcLengthOrPercentage {
     #[inline]
+    #[allow(missing_docs)]
     pub fn length(&self) -> Au {
         self.length
     }
 
     #[inline]
+    #[allow(missing_docs)]
     pub fn percentage(&self) -> CSSFloat {
         self.percentage.unwrap_or(0.)
     }
@@ -130,6 +135,7 @@ impl ToComputedValue for specified::CalcLengthOrPercentage {
 
 #[derive(PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentage {
     Length(Au),
     Percentage(CSSFloat),
@@ -138,6 +144,7 @@ pub enum LengthOrPercentage {
 
 impl LengthOrPercentage {
     #[inline]
+    #[allow(missing_docs)]
     pub fn zero() -> LengthOrPercentage {
         LengthOrPercentage::Length(Au(0))
     }
@@ -154,6 +161,7 @@ impl LengthOrPercentage {
         }
     }
 
+    #[allow(missing_docs)]
     pub fn to_hash_key(&self) -> (Au, NotNaN<f32>) {
         use self::LengthOrPercentage::*;
         match *self {
@@ -223,6 +231,7 @@ impl ToCss for LengthOrPercentage {
 
 #[derive(PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentageOrAuto {
     Length(Au),
     Percentage(CSSFloat),
@@ -311,6 +320,7 @@ impl ToCss for LengthOrPercentageOrAuto {
 
 #[derive(PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentageOrAutoOrContent {
     Length(Au),
     Percentage(CSSFloat),
@@ -397,6 +407,7 @@ impl ToCss for LengthOrPercentageOrAutoOrContent {
 
 #[derive(PartialEq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentageOrNone {
     Length(Au),
     Percentage(CSSFloat),
@@ -469,12 +480,17 @@ impl ToCss for LengthOrPercentageOrNone {
     }
 }
 
+
+pub type Length = Au;
+
+
 pub type LengthOrNone = Either<Length, None_>;
+
 
 pub type LengthOrAuto = Either<Length, Auto>;
 
+
 pub type LengthOrNumber = Either<Length, Number>;
 
-pub type LengthOrNormal = Either<Length, Normal>;
 
-pub type Length = Au;
+pub type LengthOrNormal = Either<Length, Normal>;

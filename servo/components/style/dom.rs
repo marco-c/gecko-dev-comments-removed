@@ -5,6 +5,7 @@
 
 
 #![allow(unsafe_code)]
+#![deny(missing_docs)]
 
 use {Atom, Namespace, LocalName};
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
@@ -48,15 +49,24 @@ impl OpaqueNode {
 
 
 pub trait NodeInfo {
+    
     fn is_element(&self) -> bool;
+    
     fn is_text_node(&self) -> bool;
 
+    
+    
     
     fn needs_layout(&self) -> bool { self.is_element() || self.is_text_node() }
 }
 
+
 pub struct LayoutIterator<T>(pub T);
-impl<T, I> Iterator for LayoutIterator<T> where T: Iterator<Item=I>, I: NodeInfo {
+
+impl<T, I> Iterator for LayoutIterator<T>
+    where T: Iterator<Item=I>,
+          I: NodeInfo,
+{
     type Item = I;
     fn next(&mut self) -> Option<I> {
         loop {
@@ -69,11 +79,22 @@ impl<T, I> Iterator for LayoutIterator<T> where T: Iterator<Item=I>, I: NodeInfo
     }
 }
 
+
+
 pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
+    
     type ConcreteElement: TElement<ConcreteNode = Self>;
+
+    
+    
+    
+    
     type ConcreteChildrenIterator: Iterator<Item = Self>;
 
+    
     fn to_unsafe(&self) -> UnsafeNode;
+
+    
     unsafe fn from_unsafe(n: &UnsafeNode) -> Self;
 
     
@@ -82,24 +103,35 @@ pub trait TNode : Sized + Copy + Clone + Debug + NodeInfo {
     
     fn opaque(&self) -> OpaqueNode;
 
+    
     fn parent_element(&self) -> Option<Self::ConcreteElement> {
         self.parent_node().and_then(|n| n.as_element())
     }
 
+    
     fn debug_id(self) -> usize;
 
+    
     fn as_element(&self) -> Option<Self::ConcreteElement>;
 
+    
     fn needs_dirty_on_viewport_size_changed(&self) -> bool;
 
+    
     unsafe fn set_dirty_on_viewport_size_changed(&self);
 
+    
+    
     fn can_be_fragmented(&self) -> bool;
 
+    
     unsafe fn set_can_be_fragmented(&self, value: bool);
 
+    
     fn parent_node(&self) -> Option<Self>;
 
+    
+    
     fn is_in_doc(&self) -> bool;
 }
 
@@ -187,14 +219,20 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
     Ok(())
 }
 
+
 pub trait PresentationalHintsSynthetizer {
+    
+    
     fn synthesize_presentational_hints_for_legacy_attributes<V>(&self, hints: &mut V)
         where V: Push<ApplicableDeclarationBlock>;
 }
 
+
 pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + PresentationalHintsSynthetizer {
+    
     type ConcreteNode: TNode<ConcreteElement = Self>;
 
+    
     fn as_node(&self) -> Self::ConcreteNode;
 
     
@@ -207,13 +245,22 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
         }
     }
 
+    
     fn style_attribute(&self) -> Option<&Arc<RwLock<PropertyDeclarationBlock>>>;
 
+    
     fn get_state(&self) -> ElementState;
 
+    
     fn has_attr(&self, namespace: &Namespace, attr: &LocalName) -> bool;
+
+    
     fn attr_equals(&self, namespace: &Namespace, attr: &LocalName, value: &Atom) -> bool;
 
+    
+    
+    
+    
     
     
     
@@ -271,10 +318,12 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
 
 
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct SendNode<N: TNode>(N);
 unsafe impl<N: TNode> Send for SendNode<N> {}
 impl<N: TNode> SendNode<N> {
+    
     pub unsafe fn new(node: N) -> Self {
         SendNode(node)
     }
@@ -286,10 +335,13 @@ impl<N: TNode> Deref for SendNode<N> {
     }
 }
 
+
+
 #[derive(Debug, PartialEq)]
 pub struct SendElement<E: TElement>(E);
 unsafe impl<E: TElement> Send for SendElement<E> {}
 impl<E: TElement> SendElement<E> {
+    
     pub unsafe fn new(el: E) -> Self {
         SendElement(el)
     }

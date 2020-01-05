@@ -2,6 +2,10 @@
 
 
 
+
+
+#![deny(missing_docs)]
+
 use num_traits::ToPrimitive;
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
@@ -9,7 +13,10 @@ use std::convert::AsRef;
 use std::iter::{Filter, Peekable};
 use std::str::Split;
 
+
 pub type StaticCharVec = &'static [char];
+
+
 pub type StaticStringVec = &'static [&'static str];
 
 
@@ -23,23 +30,31 @@ pub static HTML_SPACE_CHARACTERS: StaticCharVec = &[
     '\u{000d}',
 ];
 
+
 #[inline]
 pub fn char_is_whitespace(c: char) -> bool {
     HTML_SPACE_CHARACTERS.contains(&c)
 }
 
+
+#[inline]
 pub fn is_whitespace(s: &str) -> bool {
     s.chars().all(char_is_whitespace)
 }
 
+#[inline]
+fn not_empty(&split: &&str) -> bool { !split.is_empty() }
+
+
+#[inline]
 pub fn split_html_space_chars<'a>(s: &'a str) ->
                                   Filter<Split<'a, StaticCharVec>, fn(&&str) -> bool> {
-    fn not_empty(&split: &&str) -> bool { !split.is_empty() }
     s.split(HTML_SPACE_CHARACTERS).filter(not_empty as fn(&&str) -> bool)
 }
 
+
+#[inline]
 pub fn split_commas<'a>(s: &'a str) -> Filter<Split<'a, char>, fn(&&str) -> bool> {
-    fn not_empty(&split: &&str) -> bool { !split.is_empty() }
     s.split(',').filter(not_empty as fn(&&str) -> bool)
 }
 
@@ -61,6 +76,7 @@ fn is_exponent_char(c: char) -> bool {
     }
 }
 
+
 pub fn read_numbers<I: Iterator<Item=char>>(mut iter: Peekable<I>) -> (Option<i64>, usize) {
     match iter.peek() {
         Some(c) if is_ascii_digit(c) => (),
@@ -79,6 +95,7 @@ pub fn read_numbers<I: Iterator<Item=char>>(mut iter: Peekable<I>) -> (Option<i6
     })
 }
 
+
 pub fn read_fraction<I: Iterator<Item=char>>(mut iter: Peekable<I>,
                                              mut divisor: f64,
                                              value: f64) -> (f64, usize) {
@@ -92,10 +109,10 @@ pub fn read_fraction<I: Iterator<Item=char>>(mut iter: Peekable<I>,
         d as i64 - '0' as i64
     ).fold((value, 1), |accumulator, d| {
         divisor *= 10f64;
-        (accumulator.0 + d as f64 / divisor,
-            accumulator.1 + 1)
+        (accumulator.0 + d as f64 / divisor, accumulator.1 + 1)
     })
 }
+
 
 pub fn read_exponent<I: Iterator<Item=char>>(mut iter: Peekable<I>) -> Option<i32> {
     match iter.peek() {
@@ -118,8 +135,10 @@ pub fn read_exponent<I: Iterator<Item=char>>(mut iter: Peekable<I>) -> Option<i3
     }
 }
 
+
 pub fn str_join<I, T>(strs: I, join: &str) -> String
-    where I: IntoIterator<Item=T>, T: AsRef<str>,
+    where I: IntoIterator<Item=T>,
+          T: AsRef<str>,
 {
     strs.into_iter().enumerate().fold(String::new(), |mut acc, (i, s)| {
         if i > 0 { acc.push_str(join); }

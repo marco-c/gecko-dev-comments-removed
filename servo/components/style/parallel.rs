@@ -20,6 +20,8 @@
 
 
 
+#![deny(missing_docs)]
+
 use dom::{OpaqueNode, SendNode, TElement, TNode};
 use rayon;
 use scoped_tls::ScopedTLS;
@@ -28,7 +30,11 @@ use std::sync::atomic::Ordering;
 use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
 use traversal::{STYLE_SHARING_CACHE_HITS, STYLE_SHARING_CACHE_MISSES};
 
+
+
+
 pub const CHUNK_SIZE: usize = 64;
+
 
 #[allow(unsafe_code)]
 pub fn traverse_dom<N, D>(traversal: &D,
@@ -37,7 +43,7 @@ pub fn traverse_dom<N, D>(traversal: &D,
                           token: PreTraverseToken,
                           queue: &rayon::ThreadPool)
     where N: TNode,
-          D: DomTraversal<N>
+          D: DomTraversal<N>,
 {
     if opts::get().style_sharing_stats {
         STYLE_SHARING_CACHE_HITS.store(0, Ordering::SeqCst);
@@ -181,7 +187,7 @@ fn bottom_up_dom<N, D>(traversal: &D,
                        root: OpaqueNode,
                        mut node: N)
     where N: TNode,
-          D: DomTraversal<N>
+          D: DomTraversal<N>,
 {
     loop {
         

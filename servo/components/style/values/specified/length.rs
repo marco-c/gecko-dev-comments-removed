@@ -2,6 +2,10 @@
 
 
 
+
+
+
+
 use app_units::Au;
 use cssparser::{Parser, Token};
 use euclid::size::Size2D;
@@ -23,15 +27,22 @@ pub use super::image::{SizeKeyword, VerticalDirection};
 
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+
 pub enum FontRelativeLength {
+    
     Em(CSSFloat),
+    
     Ex(CSSFloat),
+    
     Ch(CSSFloat),
+    
     Rem(CSSFloat)
 }
 
 impl ToCss for FontRelativeLength {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write
+    {
         match *self {
             FontRelativeLength::Em(length) => write!(dest, "{}em", length),
             FontRelativeLength::Ex(length) => write!(dest, "{}ex", length),
@@ -42,6 +53,8 @@ impl ToCss for FontRelativeLength {
 }
 
 impl FontRelativeLength {
+    
+    
     pub fn find_first_available_font_metrics(context: &Context) -> Option<FontMetrics> {
         use font_metrics::FontMetricsQueryResult::*;
         if let Some(ref metrics_provider) = context.font_metrics_provider {
@@ -121,10 +134,17 @@ impl FontRelativeLength {
 
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+
+
+
 pub enum ViewportPercentageLength {
+    
     Vw(CSSFloat),
+    
     Vh(CSSFloat),
+    
     Vmin(CSSFloat),
+    
     Vmax(CSSFloat)
 }
 
@@ -146,6 +166,7 @@ impl ToCss for ViewportPercentageLength {
 }
 
 impl ViewportPercentageLength {
+    
     pub fn to_computed_value(&self, viewport_size: Size2D<Au>) -> Au {
         macro_rules! to_unit {
             ($viewport_dimension:expr) => {
@@ -167,11 +188,13 @@ impl ViewportPercentageLength {
     }
 }
 
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct CharacterWidth(pub i32);
 
 impl CharacterWidth {
+    
     pub fn to_computed_value(&self, reference_font_size: Au) -> Au {
         
         
@@ -183,11 +206,23 @@ impl CharacterWidth {
     }
 }
 
+
+
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Length {
+    
     Absolute(Au),  
+
+    
+    
+    
     FontRelative(FontRelativeLength),
+
+    
+    
+    
     ViewportPercentage(ViewportPercentageLength),
 
     
@@ -196,6 +231,12 @@ pub enum Length {
     
     ServoCharacterWidth(CharacterWidth),
 
+    
+    
+    
+    
+    
+    
     Calc(CalcLengthOrPercentage, AllowedNumericType),
 }
 
@@ -306,9 +347,13 @@ impl Length {
             _ => Err(())
         }
     }
+
+    
     pub fn parse_non_negative(input: &mut Parser) -> Result<Length, ()> {
         Length::parse_internal(input, AllowedNumericType::NonNegative)
     }
+
+    
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<Length, ()> {
         match_ignore_ascii_case! { unit,
             "px" => Ok(Length::from_px(value)),
@@ -331,6 +376,8 @@ impl Length {
             _ => Err(())
         }
     }
+
+    
     #[inline]
     pub fn from_px(px_value: CSSFloat) -> Length {
         Length::Absolute(Au((px_value * AU_PER_PX) as i32))
@@ -345,22 +392,29 @@ impl Parse for Length {
 
 impl<T> Either<Length, T> {
     #[inline]
+    #[allow(missing_docs)]
     pub fn parse_non_negative_length(_context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
         Length::parse_internal(input, AllowedNumericType::NonNegative).map(Either::First)
     }
 }
 
+
 #[derive(Clone, Debug)]
 pub struct CalcSumNode {
+    
     pub products: Vec<CalcProductNode>,
 }
 
+
 #[derive(Clone, Debug)]
 pub struct CalcProductNode {
+    
     values: Vec<CalcValueNode>
 }
 
+
 #[derive(Clone, Debug)]
+#[allow(missing_docs)]
 pub enum CalcValueNode {
     Length(Length),
     Angle(Angle),
@@ -371,6 +425,7 @@ pub enum CalcValueNode {
 }
 
 #[derive(Clone, Copy, PartialEq)]
+#[allow(missing_docs)]
 pub enum CalcUnit {
     Number,
     Integer,
@@ -382,6 +437,7 @@ pub enum CalcUnit {
 
 #[derive(Clone, PartialEq, Copy, Debug, Default)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct CalcLengthOrPercentage {
     pub absolute: Option<Au>,
     pub vw: Option<ViewportPercentageLength>,
@@ -396,6 +452,7 @@ pub struct CalcLengthOrPercentage {
 }
 
 impl CalcLengthOrPercentage {
+    
     pub fn parse_sum(input: &mut Parser, expected_unit: CalcUnit) -> Result<CalcSumNode, ()> {
         let mut products = Vec::new();
         products.push(try!(CalcLengthOrPercentage::parse_product(input, expected_unit)));
@@ -516,6 +573,7 @@ impl CalcLengthOrPercentage {
         }
     }
 
+    #[allow(missing_docs)]
     pub fn simplify_product(node: &CalcProductNode) -> Result<SimplifiedValueNode, ()> {
         let mut multiplier = 1.;
         let mut node_with_unit = None;
@@ -554,6 +612,7 @@ impl CalcLengthOrPercentage {
         CalcLengthOrPercentage::parse(input, CalcUnit::LengthOrPercentage)
     }
 
+    #[allow(missing_docs)]
     pub fn parse(input: &mut Parser,
                  expected_unit: CalcUnit) -> Result<CalcLengthOrPercentage, ()> {
         let ast = try!(CalcLengthOrPercentage::parse_sum(input, expected_unit));
@@ -624,6 +683,7 @@ impl CalcLengthOrPercentage {
         })
     }
 
+    #[allow(missing_docs)]
     pub fn parse_time(input: &mut Parser) -> Result<Time, ()> {
         let ast = try!(CalcLengthOrPercentage::parse_sum(input, CalcUnit::Time));
 
@@ -651,6 +711,7 @@ impl CalcLengthOrPercentage {
         }
     }
 
+    #[allow(missing_docs)]
     pub fn parse_angle(input: &mut Parser) -> Result<Angle, ()> {
         let ast = try!(CalcLengthOrPercentage::parse_sum(input, CalcUnit::Angle));
 
@@ -740,9 +801,12 @@ impl ToCss for CalcLengthOrPercentage {
      }
 }
 
+
+
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
-pub struct Percentage(pub CSSFloat); 
+pub struct Percentage(pub CSSFloat);
 
 impl ToCss for Percentage {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
@@ -762,8 +826,12 @@ impl Parse for Percentage {
     }
 }
 
+
+
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentage {
     Length(Length),
     Percentage(Percentage),
@@ -790,6 +858,7 @@ impl ToCss for LengthOrPercentage {
     }
 }
 impl LengthOrPercentage {
+    
     pub fn zero() -> LengthOrPercentage {
         LengthOrPercentage::Length(Length::Absolute(Au(0)))
     }
@@ -812,6 +881,7 @@ impl LengthOrPercentage {
         }
     }
 
+    
     #[inline]
     pub fn parse_non_negative(input: &mut Parser) -> Result<LengthOrPercentage, ()> {
         LengthOrPercentage::parse_internal(input, AllowedNumericType::NonNegative)
@@ -825,8 +895,11 @@ impl Parse for LengthOrPercentage {
     }
 }
 
+
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentageOrAuto {
     Length(Length),
     Percentage(Percentage),
@@ -875,6 +948,8 @@ impl LengthOrPercentageOrAuto {
             _ => Err(())
         }
     }
+
+    
     #[inline]
     pub fn parse_non_negative(input: &mut Parser) -> Result<LengthOrPercentageOrAuto, ()> {
         LengthOrPercentageOrAuto::parse_internal(input, AllowedNumericType::NonNegative)
@@ -888,8 +963,11 @@ impl Parse for LengthOrPercentageOrAuto {
     }
 }
 
+
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentageOrNone {
     Length(Length),
     Percentage(Percentage),
@@ -937,6 +1015,7 @@ impl LengthOrPercentageOrNone {
             _ => Err(())
         }
     }
+    
     #[inline]
     pub fn parse_non_negative(input: &mut Parser) -> Result<LengthOrPercentageOrNone, ()> {
         LengthOrPercentageOrNone::parse_internal(input, AllowedNumericType::NonNegative)
@@ -950,19 +1029,31 @@ impl Parse for LengthOrPercentageOrNone {
     }
 }
 
+
 pub type LengthOrNone = Either<Length, None_>;
+
 
 pub type LengthOrNormal = Either<Length, Normal>;
 
+
 pub type LengthOrAuto = Either<Length, Auto>;
+
+
+
+
 
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum LengthOrPercentageOrAutoOrContent {
+    
     Length(Length),
+    
     Percentage(Percentage),
+    
     Calc(CalcLengthOrPercentage),
+    
     Auto,
+    
     Content
 }
 
@@ -1011,9 +1102,11 @@ impl Parse for LengthOrPercentageOrAutoOrContent {
     }
 }
 
+
 pub type LengthOrNumber = Either<Length, Number>;
 
 impl LengthOrNumber {
+    
     pub fn parse_non_negative(input: &mut Parser) -> Result<Self, ()> {
         if let Ok(v) = input.try(Length::parse_non_negative) {
             Ok(Either::First(v))

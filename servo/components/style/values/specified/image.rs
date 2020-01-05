@@ -21,7 +21,9 @@ use values::specified::url::{SpecifiedUrl, UrlExtraData};
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Image {
+    
     Url(SpecifiedUrl),
+    
     Gradient(Gradient),
 }
 
@@ -35,6 +37,7 @@ impl ToCss for Image {
 }
 
 impl Image {
+    #[allow(missing_docs)]
     pub fn parse(context: &ParserContext, input: &mut Parser) -> Result<Image, ()> {
         if let Ok(url) = input.try(|input| SpecifiedUrl::parse(context, input)) {
             return Ok(Image::Url(url));
@@ -151,7 +154,14 @@ impl Gradient {
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum GradientKind {
+    
+    
+    
     Linear(AngleOrCorner),
+
+    
+    
+    
     Radial(EndingShape, Position),
 }
 
@@ -234,6 +244,7 @@ fn parse_position(context: &ParserContext, input: &mut Parser) -> Result<Positio
 
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum AngleOrCorner {
     Angle(Angle),
     Corner(Option<HorizontalDirection>, Option<VerticalDirection>),
@@ -327,6 +338,7 @@ impl Parse for ColorStop {
 
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum EndingShape {
     Circle(LengthOrKeyword),
     Ellipse(LengthOrPercentageOrKeyword),
@@ -351,6 +363,7 @@ impl ToCss for EndingShape {
 
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrKeyword {
     Length(Length),
     Keyword(SizeKeyword),
@@ -378,6 +391,7 @@ impl ToCss for LengthOrKeyword {
 
 #[derive(Clone, PartialEq, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub enum LengthOrPercentageOrKeyword {
     LengthOrPercentage(LengthOrPercentage, LengthOrPercentage),
     Keyword(SizeKeyword),

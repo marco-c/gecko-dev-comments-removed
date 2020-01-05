@@ -2,6 +2,8 @@
 
 
 
+
+
 use app_units::Au;
 use std::fmt;
 
@@ -78,13 +80,14 @@ macro_rules! __define_css_keyword_enum__add_optional_traits {
 #[macro_export]
 macro_rules! __define_css_keyword_enum__actual {
     ($name: ident [ $( $derived_trait: ident),* ] [ $( $css: expr => $variant: ident ),+ ]) => {
-        #[allow(non_camel_case_types)]
+        #[allow(non_camel_case_types, missing_docs)]
         #[derive(Clone, Eq, PartialEq, Copy, Hash, RustcEncodable, Debug $(, $derived_trait )* )]
         pub enum $name {
             $( $variant ),+
         }
 
         impl $name {
+            /// Parse this property from a CSS input stream.
             pub fn parse(input: &mut ::cssparser::Parser) -> Result<$name, ()> {
                 match_ignore_ascii_case! { try!(input.expect_ident()),
                                            $( $css => Ok($name::$variant), )+
@@ -95,27 +98,33 @@ macro_rules! __define_css_keyword_enum__actual {
 
         impl ToCss for $name {
             fn to_css<W>(&self, dest: &mut W) -> ::std::fmt::Result
-                where W: ::std::fmt::Write {
-                    match *self {
-                        $( $name::$variant => dest.write_str($css) ),+
-                    }
+                where W: ::std::fmt::Write
+            {
+                match *self {
+                    $( $name::$variant => dest.write_str($css) ),+
                 }
+            }
         }
     }
 }
 
+
 pub mod specified {
     use app_units::Au;
 
+    
     #[repr(u8)]
     #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
     #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum AllowedNumericType {
+        
         All,
+        
         NonNegative
     }
 
     impl AllowedNumericType {
+        
         #[inline]
         pub fn is_ok(&self, value: f32) -> bool {
             match *self {
@@ -124,6 +133,7 @@ pub mod specified {
             }
         }
 
+        
         #[inline]
         pub fn clamp(&self, val: Au) -> Au {
             use std::cmp;

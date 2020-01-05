@@ -4,6 +4,8 @@
 
 
 
+#![deny(missing_docs)]
+
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use context::{SharedStyleContext, StyleContext};
 use data::{ElementData, ElementStyles, StoredRestyleHint};
@@ -21,11 +23,20 @@ use stylist::Stylist;
 
 
 pub static STYLE_SHARING_CACHE_HITS: AtomicUsize = ATOMIC_USIZE_INIT;
+
+
 pub static STYLE_SHARING_CACHE_MISSES: AtomicUsize = ATOMIC_USIZE_INIT;
+
+
+
 
 
 #[derive(Clone, Debug)]
 pub struct PerLevelTraversalData {
+    
+    
+    
+    
     pub current_dom_depth: Option<usize>,
 }
 
@@ -37,10 +48,12 @@ pub struct PreTraverseToken {
 }
 
 impl PreTraverseToken {
+    
     pub fn should_traverse(&self) -> bool {
         self.traverse
     }
 
+    
     pub fn traverse_unstyled_children_only(&self) -> bool {
         self.unstyled_children_only
     }
@@ -48,15 +61,22 @@ impl PreTraverseToken {
 
 
 pub enum LogBehavior {
+    
     MayLog,
+    
     DontLog,
 }
 use self::LogBehavior::*;
 impl LogBehavior {
-    fn allow(&self) -> bool { match *self { MayLog => true, DontLog => false, } }
+    fn allow(&self) -> bool { matches!(*self, MayLog) }
 }
 
+
+
 pub trait DomTraversal<N: TNode> : Sync {
+    
+    
+    
     type ThreadLocalContext: Send;
 
     
@@ -249,8 +269,10 @@ pub trait DomTraversal<N: TNode> : Sync {
     
     unsafe fn clear_element_data(element: &N::ConcreteElement);
 
+    
     fn shared_context(&self) -> &SharedStyleContext;
 
+    
     fn create_thread_local_context(&self) -> Self::ThreadLocalContext;
 }
 
@@ -528,6 +550,7 @@ fn preprocess_children<E, D>(traversal: &D,
         }
     }
 }
+
 
 pub fn clear_descendant_data<E: TElement, F: Fn(E)>(el: E, clear_data: &F) {
     for kid in el.as_node().children() {

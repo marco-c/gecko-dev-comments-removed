@@ -2,6 +2,8 @@
 
 
 
+
+
 use cssparser::Parser;
 use parser::{Parse, ParserContext};
 use std::fmt;
@@ -9,9 +11,10 @@ use style_traits::ToCss;
 use values::NoViewportPercentage;
 use values::computed::ComputedValueAsSpecified;
 
-
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+
+#[allow(missing_docs)]
 pub struct GridLine {
     pub is_span: bool,
     pub ident: Option<String>,

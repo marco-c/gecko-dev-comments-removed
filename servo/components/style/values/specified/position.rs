@@ -20,8 +20,13 @@ use values::specified::{LengthOrPercentage, Percentage};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+
+
+
 pub struct Position {
+    
     pub horizontal: HorizontalPosition,
+    
     pub vertical: VerticalPosition,
 }
 
@@ -59,9 +64,12 @@ impl HasViewportPercentage for Position {
 }
 
 impl Position {
-    pub fn new(mut first_position: Option<PositionComponent>, mut second_position: Option<PositionComponent>,
-               first_keyword: Option<PositionComponent>, second_keyword: Option<PositionComponent>)
-            -> Result<Position, ()> {
+    
+    pub fn new(mut first_position: Option<PositionComponent>,
+               mut second_position: Option<PositionComponent>,
+               first_keyword: Option<PositionComponent>,
+               second_keyword: Option<PositionComponent>)
+               -> Result<Position, ()> {
         
         let first_key = first_keyword.unwrap_or(PositionComponent::Keyword(Keyword::Left));
         let second_key = second_keyword.unwrap_or(PositionComponent::Keyword(Keyword::Top));
@@ -150,6 +158,7 @@ impl Position {
         })
     }
 
+    
     pub fn center() -> Position {
         Position {
             horizontal: HorizontalPosition {
@@ -242,6 +251,7 @@ impl ToComputedValue for Position {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct HorizontalPosition {
     pub keyword: Option<Keyword>,
     pub position: Option<LengthOrPercentage>,
@@ -249,11 +259,7 @@ pub struct HorizontalPosition {
 
 impl HasViewportPercentage for HorizontalPosition {
     fn has_viewport_percentage(&self) -> bool {
-        if let Some(pos) = self.position {
-            pos.has_viewport_percentage()
-        } else {
-            false
-        }
+        self.position.map_or(false, |pos| pos.has_viewport_percentage())
     }
 }
 
@@ -371,6 +377,7 @@ impl ToComputedValue for HorizontalPosition {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct VerticalPosition {
     pub keyword: Option<Keyword>,
     pub position: Option<LengthOrPercentage>,
@@ -378,11 +385,7 @@ pub struct VerticalPosition {
 
 impl HasViewportPercentage for VerticalPosition {
     fn has_viewport_percentage(&self) -> bool {
-        if let Some(pos) = self.position {
-            pos.has_viewport_percentage()
-        } else {
-            false
-        }
+        self.position.map_or(false, |pos| pos.has_viewport_percentage())
     }
 }
 
@@ -510,6 +513,7 @@ define_css_keyword_enum!(Keyword:
                          "y-end" => YEnd);
 
 impl Keyword {
+    
     pub fn to_length_or_percentage(self) -> LengthOrPercentage {
         match self {
             Keyword::Center => LengthOrPercentage::Percentage(Percentage(0.5)),
@@ -533,9 +537,13 @@ enum PositionCategory {
 }
 
 
+
+
 #[derive(Clone, PartialEq, Copy)]
 pub enum PositionComponent {
+    
     Length(LengthOrPercentage),
+    
     Keyword(Keyword),
 }
 
@@ -568,6 +576,7 @@ impl HasViewportPercentage for PositionComponent {
 }
 
 impl PositionComponent {
+    
     #[inline]
     pub fn to_length_or_percentage(self) -> LengthOrPercentage {
         match self {

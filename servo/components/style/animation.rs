@@ -3,6 +3,7 @@
 
 
 
+#![deny(missing_docs)]
 
 use Atom;
 use bezier::Bezier;
@@ -28,6 +29,7 @@ use values::computed::Time;
 
 #[derive(Debug, Clone)]
 pub enum KeyframesIterationState {
+    
     Infinite,
     
     Finite(u32, u32),
@@ -192,6 +194,7 @@ pub enum Animation {
 }
 
 impl Animation {
+    
     #[inline]
     pub fn mark_as_expired(&mut self) {
         debug_assert!(!self.is_expired());
@@ -201,6 +204,7 @@ impl Animation {
         }
     }
 
+    
     #[inline]
     pub fn is_expired(&self) -> bool {
         match *self {
@@ -209,6 +213,7 @@ impl Animation {
         }
     }
 
+    
     #[inline]
     pub fn node(&self) -> &OpaqueNode {
         match *self {
@@ -217,6 +222,7 @@ impl Animation {
         }
     }
 
+    
     #[inline]
     pub fn is_paused(&self) -> bool {
         match *self {
@@ -237,6 +243,7 @@ pub struct AnimationFrame {
     pub duration: f64,
 }
 
+
 #[derive(Debug, Clone)]
 pub struct PropertyAnimation {
     property: AnimatedProperty,
@@ -245,10 +252,12 @@ pub struct PropertyAnimation {
 }
 
 impl PropertyAnimation {
-    pub fn property_name(&self) -> String {
+    
+    pub fn property_name(&self) -> &'static str {
         self.property.name()
     }
 
+    
     
     
     
@@ -312,6 +321,7 @@ impl PropertyAnimation {
         }
     }
 
+    
     pub fn update(&self, style: &mut ComputedValues, time: f64) {
         let progress = match self.timing_function {
             TransitionTimingFunction::CubicBezier(p1, p2) => {
@@ -336,8 +346,9 @@ impl PropertyAnimation {
         self.property.does_animate() && self.duration != Time(0.0)
     }
 
+    
     #[inline]
-    pub fn has_the_same_end_value_as(&self, other: &PropertyAnimation) -> bool {
+    pub fn has_the_same_end_value_as(&self, other: &Self) -> bool {
         self.property.has_the_same_end_value_as(&other.property)
     }
 }
@@ -427,6 +438,8 @@ fn compute_style_for_animation_step(context: &SharedStyleContext,
         }
     }
 }
+
+
 
 pub fn maybe_start_animations(context: &SharedStyleContext,
                               new_animations_sender: &Sender<Animation>,

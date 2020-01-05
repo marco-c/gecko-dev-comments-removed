@@ -1,14 +1,19 @@
 
 
 
+
+#![deny(missing_docs)]
+
+
+
 use time;
-
-
 
 
 #[derive(Debug, Clone)]
 enum TimerMode {
+    
     Test(f64),
+    
     Current,
 }
 

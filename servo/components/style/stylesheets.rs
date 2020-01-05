@@ -4,6 +4,8 @@
 
 
 
+#![deny(missing_docs)]
+
 use {Atom, Prefix, Namespace};
 use cssparser::{AtRuleParser, Parser, QualifiedRuleParser, decode_stylesheet_bytes};
 use cssparser::{AtRuleType, RuleListParser, SourcePosition, Token, parse_one_rule};
@@ -46,22 +48,27 @@ pub enum Origin {
     User,
 }
 
+
 #[derive(Default, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct Namespaces {
     pub default: Option<Namespace>,
     pub prefixes: FnvHashMap<Prefix , Namespace>,
 }
 
+
 #[derive(Debug)]
 pub struct CssRules(pub Vec<CssRule>);
 
 impl CssRules {
+    
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 }
 
+#[allow(missing_docs)]
 pub enum RulesMutateError {
     Syntax,
     IndexSize,
@@ -79,6 +86,7 @@ impl From<SingleRuleParseError> for RulesMutateError {
 }
 
 impl CssRules {
+    #[allow(missing_docs)]
     pub fn new(rules: Vec<CssRule>) -> Arc<RwLock<CssRules>> {
         Arc::new(RwLock::new(CssRules(rules)))
     }
@@ -161,6 +169,7 @@ impl CssRules {
     }
 }
 
+
 #[derive(Debug)]
 pub struct Stylesheet {
     
@@ -168,22 +177,33 @@ pub struct Stylesheet {
     pub rules: Arc<RwLock<CssRules>>,
     
     pub media: Arc<RwLock<MediaList>>,
+    
     pub origin: Origin,
+    
     pub base_url: ServoUrl,
+    
     pub namespaces: RwLock<Namespaces>,
+    
     pub dirty_on_viewport_size_change: AtomicBool,
+    
     pub disabled: AtomicBool,
 }
 
 
 
 pub struct UserAgentStylesheets {
+    
     pub user_or_user_agent_stylesheets: Vec<Stylesheet>,
+    
     pub quirks_mode_stylesheet: Stylesheet,
 }
 
 
+
+
+
 #[derive(Debug, Clone)]
+#[allow(missing_docs)]
 pub enum CssRule {
     
     
@@ -197,6 +217,7 @@ pub enum CssRule {
     Keyframes(Arc<RwLock<KeyframesRule>>),
 }
 
+#[allow(missing_docs)]
 pub enum CssRuleType {
     
     Style               = 1,
@@ -236,12 +257,14 @@ impl ParseErrorReporter for MemoryHoleReporter {
     }
 }
 
+#[allow(missing_docs)]
 pub enum SingleRuleParseError {
     Syntax,
     Hierarchy,
 }
 
 impl CssRule {
+    #[allow(missing_docs)]
     pub fn rule_type(&self) -> CssRuleType {
         match *self {
             CssRule::Style(_)     => CssRuleType::Style,
@@ -268,7 +291,8 @@ impl CssRule {
     
     
     pub fn with_nested_rules_and_mq<F, R>(&self, mut f: F) -> R
-    where F: FnMut(&[CssRule], Option<&MediaList>) -> R {
+        where F: FnMut(&[CssRule], Option<&MediaList>) -> R
+    {
         match *self {
             CssRule::Import(ref lock) => {
                 let rule = lock.read();
@@ -296,6 +320,7 @@ impl CssRule {
 
     
     
+    #[allow(missing_docs)]
     pub fn parse(css: &str,
                  parent_stylesheet: &Stylesheet,
                  extra_data: ParserContextExtraData,
@@ -348,6 +373,7 @@ impl ToCss for CssRule {
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+#[allow(missing_docs)]
 pub struct NamespaceRule {
     
     pub prefix: Option<Prefix>,
@@ -374,6 +400,7 @@ impl ToCss for NamespaceRule {
 
 #[derive(Debug)]
 pub struct ImportRule {
+    
     pub url: SpecifiedUrl,
 
     
@@ -396,9 +423,14 @@ impl ToCss for ImportRule {
     }
 }
 
+
+
+
 #[derive(Debug)]
 pub struct KeyframesRule {
+    
     pub name: Atom,
+    
     pub keyframes: Vec<Arc<RwLock<Keyframe>>>,
 }
 
@@ -417,6 +449,7 @@ impl ToCss for KeyframesRule {
     }
 }
 
+#[allow(missing_docs)]
 #[derive(Debug)]
 pub struct MediaRule {
     pub media_queries: Arc<RwLock<MediaList>>,
@@ -438,6 +471,7 @@ impl ToCss for MediaRule {
     }
 }
 
+#[allow(missing_docs)]
 #[derive(Debug)]
 pub struct StyleRule {
     pub selectors: SelectorList<SelectorImpl>,
@@ -465,6 +499,11 @@ impl ToCss for StyleRule {
 }
 
 impl Stylesheet {
+    
+    
+    
+    
+    
     pub fn from_bytes(bytes: &[u8],
                       base_url: ServoUrl,
                       protocol_encoding_label: Option<&str>,
@@ -486,6 +525,8 @@ impl Stylesheet {
                              extra_data)
     }
 
+    
+    
     pub fn update_from_bytes(existing: &Stylesheet,
                              bytes: &[u8],
                              protocol_encoding_label: Option<&str>,
@@ -493,7 +534,6 @@ impl Stylesheet {
                              stylesheet_loader: Option<&StylesheetLoader>,
                              error_reporter: Box<ParseErrorReporter + Send>,
                              extra_data: ParserContextExtraData) {
-        assert!(existing.rules.read().is_empty());
         let (string, _) = decode_stylesheet_bytes(
             bytes, protocol_encoding_label, environment_encoding);
         Self::update_from_str(existing,
@@ -503,6 +543,7 @@ impl Stylesheet {
                               extra_data)
     }
 
+    
     pub fn update_from_str(existing: &Stylesheet,
                            css: &str,
                            stylesheet_loader: Option<&StylesheetLoader>,
@@ -545,7 +586,14 @@ impl Stylesheet {
             .store(input.seen_viewport_percentages(), Ordering::Release);
     }
 
-    pub fn from_str(css: &str, base_url: ServoUrl, origin: Origin,
+    
+    
+    
+    
+    
+    pub fn from_str(css: &str,
+                    base_url: ServoUrl,
+                    origin: Origin,
                     media: MediaList,
                     stylesheet_loader: Option<&StylesheetLoader>,
                     error_reporter: Box<ParseErrorReporter + Send>,
@@ -569,6 +617,7 @@ impl Stylesheet {
         s
     }
 
+    
     pub fn dirty_on_viewport_size_change(&self) -> bool {
         self.dirty_on_viewport_size_change.load(Ordering::SeqCst)
     }
@@ -608,10 +657,13 @@ impl Stylesheet {
     }
 
     
+    
     pub fn disabled(&self) -> bool {
         self.disabled.load(Ordering::SeqCst)
     }
 
+    
+    
     
     
     
@@ -640,6 +692,7 @@ macro_rules! rule_filter {
     ($( $method: ident($variant:ident => $rule_type: ident), )+) => {
         impl Stylesheet {
             $(
+                #[allow(missing_docs)]
                 pub fn $method<F>(&self, device: &Device, mut f: F) where F: FnMut(&$rule_type) {
                     self.effective_rules(device, |rule| {
                         if let CssRule::$variant(ref lock) = *rule {
@@ -690,6 +743,7 @@ impl<'b> TopLevelRuleParser<'b> {
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
+#[allow(missing_docs)]
 pub enum State {
     Start = 1,
     Imports = 2,

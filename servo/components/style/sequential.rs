@@ -4,14 +4,17 @@
 
 
 
+#![deny(missing_docs)]
+
 use dom::{TElement, TNode};
 use traversal::{DomTraversal, PerLevelTraversalData, PreTraverseToken};
+
 
 pub fn traverse_dom<N, D>(traversal: &D,
                           root: N::ConcreteElement,
                           token: PreTraverseToken)
     where N: TNode,
-          D: DomTraversal<N>
+          D: DomTraversal<N>,
 {
     debug_assert!(token.should_traverse());
 

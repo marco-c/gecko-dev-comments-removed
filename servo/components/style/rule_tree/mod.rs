@@ -3,6 +3,9 @@
 
 
 #![allow(unsafe_code)]
+#![deny(missing_docs)]
+
+
 
 use arc_ptr_eq;
 #[cfg(feature = "servo")]
@@ -17,15 +20,40 @@ use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use stylesheets::StyleRule;
 use thread_state;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct RuleTree {
     root: StrongRuleNode,
 }
 
+
+
+
+
+
+
+
 #[derive(Debug, Clone)]
 pub enum StyleSource {
+    
     Style(Arc<RwLock<StyleRule>>),
+    
     Declarations(Arc<RwLock<PropertyDeclarationBlock>>),
 }
 
@@ -34,8 +62,11 @@ type StyleSourceGuardHandle<'a> =
         RwLockReadGuard<'a, StyleRule>,
         RwLockReadGuard<'a, PropertyDeclarationBlock>>;
 
+
 pub enum StyleSourceGuard<'a> {
+    
     Style(StyleSourceGuardHandle<'a>),
+    
     Declarations(RwLockReadGuard<'a, PropertyDeclarationBlock>),
 }
 
@@ -71,6 +102,8 @@ impl StyleSource {
         let _ = write!(writer, "  -> {:?}", self.read().declarations);
     }
 
+    
+    
     #[inline]
     pub fn read<'a>(&'a self) -> StyleSourceGuard<'a> {
         use self::StyleSource::*;
@@ -87,15 +120,19 @@ impl StyleSource {
 
 
 
+
+
 const FREE_LIST_SENTINEL: *mut RuleNode = 0x01 as *mut RuleNode;
 
 impl RuleTree {
+    
     pub fn new() -> Self {
         RuleTree {
             root: StrongRuleNode::new(Box::new(RuleNode::root())),
         }
     }
 
+    
     pub fn root(&self) -> StrongRuleNode {
         self.root.clone()
     }
@@ -105,13 +142,16 @@ impl RuleTree {
         self.root.get().dump(writer, 0);
     }
 
+    
     pub fn dump_stdout(&self) {
         let mut stdout = io::stdout();
         self.dump(&mut stdout);
     }
 
+    
+    
     pub fn insert_ordered_rules<'a, I>(&self, iter: I) -> StrongRuleNode
-        where I: Iterator<Item=(StyleSource, Importance)>
+        where I: Iterator<Item=(StyleSource, Importance)>,
     {
         let mut current = self.root.clone();
         for (source, importance) in iter {
@@ -294,6 +334,7 @@ struct WeakRuleNode {
     ptr: *mut RuleNode,
 }
 
+
 #[derive(Debug)]
 pub struct StrongRuleNode {
     ptr: *mut RuleNode,
@@ -412,14 +453,19 @@ impl StrongRuleNode {
         unsafe { &*self.ptr }
     }
 
+    
+    
+    
     pub fn style_source(&self) -> Option<&StyleSource> {
         self.get().source.as_ref()
     }
 
+    
     pub fn importance(&self) -> Importance {
         self.get().importance
     }
 
+    
     pub fn self_and_ancestors(&self) -> SelfAndAncestors {
         SelfAndAncestors {
             current: Some(self)
@@ -526,6 +572,7 @@ impl StrongRuleNode {
         }
     }
 }
+
 
 #[derive(Clone)]
 pub struct SelfAndAncestors<'a> {

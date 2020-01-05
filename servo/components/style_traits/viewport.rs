@@ -2,6 +2,8 @@
 
 
 
+
+
 use {PagePx, ViewportPx};
 use cssparser::{Parser, ToCss};
 use euclid::scale_factor::ScaleFactor;
@@ -20,16 +22,25 @@ define_css_keyword_enum!(Orientation:
                          "landscape" => Landscape);
 
 
+
+
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize, HeapSizeOf))]
 pub struct ViewportConstraints {
+    
+    
+    
     pub size: TypedSize2D<f32, ViewportPx>,
-
+    
     pub initial_zoom: ScaleFactor<f32, PagePx, ViewportPx>,
+    
     pub min_zoom: Option<ScaleFactor<f32, PagePx, ViewportPx>>,
+    
     pub max_zoom: Option<ScaleFactor<f32, PagePx, ViewportPx>>,
-
+    
     pub user_zoom: UserZoom,
+    
     pub orientation: Orientation
 }
 
@@ -54,18 +65,20 @@ impl ToCss for ViewportConstraints {
 }
 
 
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum Zoom {
+    
     Number(f32),
+    
     Percentage(f32),
+    
     Auto,
 }
 
 impl ToCss for Zoom {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result
-        where W: fmt::Write
+        where W: fmt::Write,
     {
         match *self {
             Zoom::Number(number) => write!(dest, "{}", number),
@@ -76,6 +89,9 @@ impl ToCss for Zoom {
 }
 
 impl Zoom {
+    
+    
+    
     pub fn parse(input: &mut Parser) -> Result<Zoom, ()> {
         use cssparser::Token;
 
@@ -90,6 +106,8 @@ impl Zoom {
         }
     }
 
+    
+    
     #[inline]
     pub fn to_f32(&self) -> Option<f32> {
         match *self {
