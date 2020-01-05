@@ -477,26 +477,42 @@ MediaKeySession::Close(ErrorResult& aRv)
   if (aRv.Failed()) {
     return nullptr;
   }
-  if (!IsCallable()) {
-    
-    
-    EME_LOG("MediaKeySession[%p,''] Close() called before sessionId set by CDM", this);
-    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
-      NS_LITERAL_CSTRING("MediaKeySession.Close() called before sessionId set by CDM"));
-    return promise.forget();
-  }
-  if (IsClosed() || !mKeys->GetCDMProxy()) {
+  
+  
+  if (IsClosed()) {
     EME_LOG("MediaKeySession[%p,'%s'] Close() already closed",
             this, NS_ConvertUTF16toUTF8(mSessionId).get());
     promise->MaybeResolveWithUndefined();
     return promise.forget();
   }
+  
+  
+  if (!IsCallable()) {
+    EME_LOG("MediaKeySession[%p,''] Close() called before sessionId set by CDM", this);
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+      NS_LITERAL_CSTRING("MediaKeySession.Close() called before sessionId set by CDM"));
+    return promise.forget();
+  }
+  if (!mKeys->GetCDMProxy()) {
+    EME_LOG("MediaKeySession[%p,'%s'] Close() null CDMProxy",
+            this, NS_ConvertUTF16toUTF8(mSessionId).get());
+    promise->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR,
+      NS_LITERAL_CSTRING("MediaKeySession.Close() lost reference to CDM"));
+    return promise.forget();
+  }
+  
   PromiseId pid = mKeys->StorePromise(promise);
+  
+  
+  
   mKeys->GetCDMProxy()->CloseSession(mSessionId, pid);
 
   EME_LOG("MediaKeySession[%p,'%s'] Close() sent to CDM, promiseId=%d",
           this, NS_ConvertUTF16toUTF8(mSessionId).get(), pid);
 
+  
+
+  
   return promise.forget();
 }
 
