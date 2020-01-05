@@ -27,7 +27,7 @@
 
 use css::node_style::StyledNode;
 use layout::block::BlockFlow;
-use layout::box::RenderBox;
+use layout::box::Box;
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData};
 use layout::float_context::{FloatContext, Invalid};
@@ -340,12 +340,12 @@ pub struct FlowData {
 }
 
 pub struct BoxIterator {
-    priv boxes: ~[@RenderBox],
+    priv boxes: ~[@Box],
     priv index: uint,
 }
 
-impl Iterator<@RenderBox> for BoxIterator {
-    fn next(&mut self) -> Option<@RenderBox> {
+impl Iterator<@Box> for BoxIterator {
+    fn next(&mut self) -> Option<@Box> {
         if self.index >= self.boxes.len() {
             None
         } else {
