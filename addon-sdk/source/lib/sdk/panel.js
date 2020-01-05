@@ -16,7 +16,7 @@ module.metadata = {
 const { Cu, Ci } = require("chrome");
 const { setTimeout } = require('./timers');
 const { Class } = require("./core/heritage");
-const { merge } = require("./util/object");
+const { DefaultWeakMap, merge } = require("./util/object");
 const { WorkerHost } = require("./content/utils");
 const { Worker } = require("./deprecated/sync-worker");
 const { Disposable } = require("./core/disposable");
@@ -99,10 +99,36 @@ function isDisposed(panel) {
   return !views.has(panel);
 }
 
+var optionsMap = new WeakMap();
 var panels = new WeakMap();
 var models = new WeakMap();
-var views = new WeakMap();
-var workers = new WeakMap();
+var views = new DefaultWeakMap(panel => {
+  let model = models.get(panel);
+
+  
+  let viewOptions = {allowJavascript: !model.allow || (model.allow.script !== false)};
+  let view = domPanel.make(null, viewOptions);
+  panels.set(view, panel);
+
+  
+  domPanel.setURL(view, model.contentURL);
+
+  
+  domPanel.allowContextMenu(view, model.contextMenu);
+
+  return view;
+});
+var workers = new DefaultWeakMap(panel => {
+  let options = optionsMap.get(panel);
+
+  let worker = new Worker(stripListeners(options));
+  workers.set(panel, worker);
+
+  
+  pipe(worker, panel);
+
+  return worker;
+});
 var styles = new WeakMap();
 
 const viewFor = (panel) => views.get(panel);
@@ -207,38 +233,22 @@ const Panel = Class({
       }));
     }
 
-    
-    let viewOptions = {allowJavascript: !model.allow || (model.allow.script !== false)};
-    let view = domPanel.make(null, viewOptions);
-    panels.set(view, this);
-    views.set(this, view);
-
-    
-    domPanel.setURL(view, model.contentURL);
-
-    
-    domPanel.allowContextMenu(view, model.contextMenu);
+    optionsMap.set(this, options);
 
     
     setListeners(this, options);
-    let worker = new Worker(stripListeners(options));
-    workers.set(this, worker);
-
-    
-    pipe(worker, this);
   },
   dispose: function dispose() {
-    this.hide();
+    if (views.has(this))
+      this.hide();
     off(this);
 
     workerFor(this).destroy();
     detach(styleFor(this));
 
-    domPanel.dispose(viewFor(this));
+    if (views.has(this))
+      domPanel.dispose(viewFor(this));
 
-    
-    
-    
     views.delete(this);
   },
   
@@ -301,6 +311,7 @@ const Panel = Class({
 
   
   show: function show(options={}, anchor) {
+    let view = viewFor(this);
     SinglePanelManager.requestOpen(this, () => {
       if (options instanceof Ci.nsIDOMElement) {
         [anchor, options] = [options, null];
@@ -315,7 +326,6 @@ const Panel = Class({
       }
 
       let model = modelFor(this);
-      let view = viewFor(this);
       let anchorView = getNodeView(anchor || options.position || model.position);
 
       options = merge({

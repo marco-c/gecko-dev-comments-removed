@@ -163,19 +163,21 @@ on('sdk:loader:destroy', function onunload({ subject, data: reason }) {
     off('sdk:loader:destroy', onunload, false);
 
     
-    if (reason === 'shutdown') 
+    if (reason === 'shutdown')
       return;
 
-    stillAlive.forEach( (type, ref) => {
-      let observer = ref.get();
-      if (observer) {
-        if (wasShimmed.get(ref)) {
-          removeObserver(observer, type);
-        } else {
-          removeObserverNoShim(observer, type);
+    
+    Promise.resolve().then(() => {
+      stillAlive.forEach((type, ref) => {
+        let observer = ref.get();
+        if (observer) {
+          if (wasShimmed.get(ref)) {
+            removeObserver(observer, type);
+          } else {
+            removeObserverNoShim(observer, type);
+          }
         }
-      }
-    })
+      });
+    });
   }
-  
 }, true, false);
