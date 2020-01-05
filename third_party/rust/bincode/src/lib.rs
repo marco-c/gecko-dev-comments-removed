@@ -30,28 +30,20 @@
 
 
 
-
 #![crate_name = "bincode"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
 #![doc(html_logo_url = "./icon.png")]
 
-#[cfg(feature = "rustc-serialize")]
-extern crate rustc_serialize as rustc_serialize_crate;
 extern crate byteorder;
 extern crate num_traits;
-#[cfg(feature = "serde")]
 extern crate serde as serde_crate;
 
+pub mod refbox;
+mod serde;
 
-pub use refbox::{RefBox, StrBox, SliceBox};
-
-mod refbox;
-#[cfg(feature = "rustc-serialize")]
-pub mod rustc_serialize;
-#[cfg(feature = "serde")]
-pub mod serde;
+pub use serde::*;
 
 
 
@@ -76,4 +68,3 @@ pub enum SizeLimit {
     Infinite,
     Bounded(u64)
 }
-

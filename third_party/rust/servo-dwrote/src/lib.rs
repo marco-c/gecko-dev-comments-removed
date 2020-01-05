@@ -2,7 +2,6 @@
 
 
 
-#![cfg_attr(feature = "serde_derive", feature(proc_macro, rustc_attrs, structural_match))]
 #![allow(non_upper_case_globals)]
 
 #[cfg(feature = "serde_derive")]

@@ -2,8 +2,7 @@
 
 
 
-use bincode::serde::serialize;
-use bincode;
+use bincode::{SizeLimit, serialize};
 use std::fmt::Debug;
 use std::mem;
 use std::any::TypeId;
@@ -51,7 +50,7 @@ impl BinaryRecorder {
 impl ApiRecordingReceiver for BinaryRecorder {
     fn write_msg(&mut self, _: u32, msg: &ApiMsg) {
         if should_record_msg(msg) {
-            let buf = serialize(msg, bincode::SizeLimit::Infinite).unwrap();
+            let buf = serialize(msg, SizeLimit::Infinite).unwrap();
             self.write_length_and_data(&buf);
         }
     }

@@ -3,19 +3,16 @@
 
 
 use std::io::{Write, Read};
+use std::io::Error as IoError;
+use std::{error, fmt, result};
 use ::SizeLimit;
 
 pub use self::reader::{
     Deserializer,
-    DeserializeResult,
-    DeserializeError,
-    InvalidEncoding
 };
 
 pub use self::writer::{
     Serializer,
-    SerializeResult,
-    SerializeError,
 };
 
 use self::writer::SizeChecker;
@@ -25,6 +22,93 @@ use serde_crate as serde;
 mod reader;
 mod writer;
 
+pub type Result<T> = result::Result<T, Error>;
+
+
+
+
+
+pub type Error = Box<ErrorKind>;
+
+#[derive(Debug)]
+pub enum ErrorKind {
+    
+    
+    IoError(IoError),
+    
+    
+    
+    
+    InvalidEncoding{
+        desc: &'static str, 
+        detail: Option<String>
+    },
+    
+    
+    SizeLimit,
+    SequenceMustHaveLength,
+    Custom(String)
+}
+
+impl error::Error for ErrorKind {
+    fn description(&self) -> &str {
+        match *self {
+            ErrorKind::IoError(ref err) => error::Error::description(err),
+            ErrorKind::InvalidEncoding{desc, ..} => desc,
+            ErrorKind::SequenceMustHaveLength => "bincode can't encode infinite sequences",
+            ErrorKind::SizeLimit => "the size limit for decoding has been reached",
+            ErrorKind::Custom(ref msg) => msg,
+
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            ErrorKind::IoError(ref err) => err.cause(),
+            ErrorKind::InvalidEncoding{..} => None,
+            ErrorKind::SequenceMustHaveLength => None,
+            ErrorKind::SizeLimit => None,
+            ErrorKind::Custom(_) => None,
+        }
+    }
+}
+
+impl From<IoError> for Error {
+    fn from(err: IoError) -> Error {
+        ErrorKind::IoError(err).into()
+    }
+}
+
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ErrorKind::IoError(ref ioerr) =>
+                write!(fmt, "IoError: {}", ioerr),
+            ErrorKind::InvalidEncoding{desc, detail: None}=>
+                write!(fmt, "InvalidEncoding: {}", desc),
+            ErrorKind::InvalidEncoding{desc, detail: Some(ref detail)}=>
+                write!(fmt, "InvalidEncoding: {} ({})", desc, detail),
+            ErrorKind::SequenceMustHaveLength =>
+                write!(fmt, "Bincode can only encode sequences and maps that have a knowable size ahead of time."),
+            ErrorKind::SizeLimit =>
+                write!(fmt, "SizeLimit"),
+            ErrorKind::Custom(ref s) =>
+                s.fmt(fmt),
+        }
+    }
+}
+
+impl serde::de::Error for Error {
+    fn custom<T: fmt::Display>(desc: T) -> Error {
+        ErrorKind::Custom(desc.to_string()).into()
+    }
+}
+
+impl serde::ser::Error for Error {
+    fn custom<T: fmt::Display>(msg: T) -> Self {
+        ErrorKind::Custom(msg.to_string()).into()
+    }
+} 
 
 
 
@@ -33,8 +117,10 @@ mod writer;
 
 
 
-pub fn serialize_into<W, T>(writer: &mut W, value: &T, size_limit: SizeLimit) -> SerializeResult<()>
-    where W: Write, T: serde::Serialize,
+
+pub fn serialize_into<W: ?Sized, T: ?Sized>(writer: &mut W, value: &T, size_limit: SizeLimit) -> Result<()>
+    where W: Write, 
+          T: serde::Serialize,
 {
     match size_limit {
         SizeLimit::Infinite => { }
@@ -52,18 +138,15 @@ pub fn serialize_into<W, T>(writer: &mut W, value: &T, size_limit: SizeLimit) ->
 
 
 
-pub fn serialize<T>(value: &T, size_limit: SizeLimit) -> SerializeResult<Vec<u8>>
-    where T: serde::Serialize,
+pub fn serialize<T: ?Sized>(value: &T, size_limit: SizeLimit) -> Result<Vec<u8>>
+    where T: serde::Serialize
 {
     
     
     
     let mut writer = match size_limit {
         SizeLimit::Bounded(size_limit) => {
-            let actual_size = match serialized_size_bounded(value, size_limit) {
-                Some(actual_size) => actual_size,
-                None => { return Err(SerializeError::SizeLimit); }
-            };
+            let actual_size = try!(serialized_size_bounded(value, size_limit).ok_or(ErrorKind::SizeLimit));
             Vec::with_capacity(actual_size as usize)
         }
         SizeLimit::Infinite => Vec::new()
@@ -77,7 +160,9 @@ pub fn serialize<T>(value: &T, size_limit: SizeLimit) -> SerializeResult<Vec<u8>
 
 
 
-pub fn serialized_size<T: serde::Serialize>(value: &T) -> u64 {
+pub fn serialized_size<T: ?Sized>(value: &T) -> u64 
+    where T: serde::Serialize
+{
     use std::u64::MAX;
     let mut size_checker = SizeChecker::new(MAX);
     value.serialize(&mut size_checker).ok();
@@ -89,7 +174,9 @@ pub fn serialized_size<T: serde::Serialize>(value: &T) -> u64 {
 
 
 
-pub fn serialized_size_bounded<T: serde::Serialize>(value: &T, max: u64) -> Option<u64> {
+pub fn serialized_size_bounded<T: ?Sized>(value: &T, max: u64) -> Option<u64> 
+    where T: serde::Serialize
+{
     let mut size_checker = SizeChecker::new(max);
     value.serialize(&mut size_checker).ok().map(|_| size_checker.written)
 }
@@ -103,7 +190,7 @@ pub fn serialized_size_bounded<T: serde::Serialize>(value: &T, max: u64) -> Opti
 
 
 
-pub fn deserialize_from<R, T>(reader: &mut R, size_limit: SizeLimit) -> DeserializeResult<T>
+pub fn deserialize_from<R: ?Sized, T>(reader: &mut R, size_limit: SizeLimit) -> Result<T>
     where R: Read,
           T: serde::Deserialize,
 {
@@ -115,7 +202,7 @@ pub fn deserialize_from<R, T>(reader: &mut R, size_limit: SizeLimit) -> Deserial
 
 
 
-pub fn deserialize<T>(bytes: &[u8]) -> DeserializeResult<T>
+pub fn deserialize<T>(bytes: &[u8]) -> Result<T>
     where T: serde::Deserialize,
 {
     let mut reader = bytes;

@@ -2,7 +2,7 @@
 
 
 
-use device::{MAX_TEXTURE_SIZE, TextureFilter};
+use device::TextureFilter;
 use fnv::FnvHasher;
 use freelist::{FreeList, FreeListItem, FreeListItemId};
 use internal_types::{TextureUpdate, TextureUpdateOp};
@@ -27,9 +27,6 @@ const MAX_RGBA_PIXELS_PER_TEXTURE: u32 = MAX_BYTES_PER_TEXTURE / 4;
 
 
 const INITIAL_TEXTURE_SIZE: u32 = 1024;
-
-
-const INITIAL_TEXTURE_AREA: u32 = INITIAL_TEXTURE_SIZE * INITIAL_TEXTURE_SIZE;
 
 
 
@@ -330,9 +327,8 @@ impl TexturePage {
         self.texture_size = new_texture_size
     }
 
-    fn can_grow(&self) -> bool {
-        self.texture_size.width < max_texture_size() ||
-        self.texture_size.height < max_texture_size()
+    fn can_grow(&self, max_size: u32) -> bool {
+        self.texture_size.width < max_size || self.texture_size.height < max_size
     }
 }
 
@@ -541,6 +537,7 @@ pub struct TextureCache {
     items: FreeList<TextureCacheItem>,
     arena: TextureCacheArena,
     pending_updates: TextureUpdateList,
+    max_texture_size: u32,
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -556,14 +553,23 @@ pub struct AllocationResult {
 }
 
 impl TextureCache {
-    pub fn new() -> TextureCache {
+    pub fn new(mut max_texture_size: u32) -> TextureCache {
+        if max_texture_size * max_texture_size > MAX_RGBA_PIXELS_PER_TEXTURE {
+            max_texture_size = SQRT_MAX_RGBA_PIXELS_PER_TEXTURE;
+        }
+
         TextureCache {
             cache_id_list: CacheTextureIdList::new(),
             free_texture_levels: HashMap::with_hasher(Default::default()),
             items: FreeList::new(),
             pending_updates: TextureUpdateList::new(),
             arena: TextureCacheArena::new(),
+            max_texture_size: max_texture_size,
         }
+    }
+
+    pub fn max_texture_size(&self) -> u32 {
+        self.max_texture_size
     }
 
     pub fn pending_updates(&mut self) -> TextureUpdateList {
@@ -626,8 +632,8 @@ impl TextureCache {
         };
 
         
-        assert!(requested_size.width < max_texture_size());
-        assert!(requested_size.height < max_texture_size());
+        assert!(requested_size.width < self.max_texture_size);
+        assert!(requested_size.height < self.max_texture_size);
 
         
         
@@ -651,11 +657,11 @@ impl TextureCache {
                 }
             }
 
-            if !page_list.is_empty() && page_list.last().unwrap().can_grow() {
+            if !page_list.is_empty() && page_list.last().unwrap().can_grow(self.max_texture_size) {
                 let last_page = page_list.last_mut().unwrap();
                 
-                let new_width = cmp::min(last_page.texture_size.width * 2, max_texture_size());
-                let new_height = cmp::min(last_page.texture_size.height * 2, max_texture_size());
+                let new_width = cmp::min(last_page.texture_size.width * 2, self.max_texture_size);
+                let new_height = cmp::min(last_page.texture_size.height * 2, self.max_texture_size);
                 let texture_size = DeviceUintSize::new(new_width, new_height);
                 self.pending_updates.push(TextureUpdate {
                     id: last_page.texture_id,
@@ -673,7 +679,7 @@ impl TextureCache {
             }
 
             
-            let texture_size = initial_texture_size();
+            let texture_size = initial_texture_size(self.max_texture_size);
             let free_texture_levels_entry = self.free_texture_levels.entry(format);
             let mut free_texture_levels = match free_texture_levels_entry {
                 Entry::Vacant(entry) => entry.insert(Vec::new()),
@@ -714,6 +720,9 @@ impl TextureCache {
             ImageData::ExternalHandle(..) | ImageData::ExternalBuffer(..)=> {
                 panic!("Doesn't support Update() for external image.");
             }
+            ImageData::Blob(..) => {
+                panic!("The vector image should have been rasterized into a raw image.");
+            }
             ImageData::Raw(bytes) => {
                 TextureUpdateOp::Update {
                     page_pos_x: existing_item.allocated_rect.origin.x,
@@ -739,6 +748,10 @@ impl TextureCache {
                   descriptor: ImageDescriptor,
                   filter: TextureFilter,
                   data: ImageData) {
+        if let ImageData::Blob(..) = data {
+            panic!("must rasterize the vector image before adding to the cache");
+        }
+
         let width = descriptor.width;
         let height = descriptor.height;
         let format = descriptor.format;
@@ -755,6 +768,9 @@ impl TextureCache {
                 match data {
                     ImageData::ExternalHandle(..) => {
                         panic!("External handle should not go through texture_cache.");
+                    }
+                    ImageData::Blob(..) => {
+                        panic!("The vector image should have been rasterized.");
                     }
                     ImageData::Raw(bytes) => {
                         let update_op = TextureUpdate {
@@ -877,22 +893,7 @@ pub struct FreeTextureLevel {
 }
 
 
-fn initial_texture_size() -> DeviceUintSize {
-    let max_hardware_texture_size = *MAX_TEXTURE_SIZE as u32;
-    let initial_size = if max_hardware_texture_size * max_hardware_texture_size > INITIAL_TEXTURE_AREA {
-        INITIAL_TEXTURE_SIZE
-    } else {
-        max_hardware_texture_size
-    };
+fn initial_texture_size(max_texture_size: u32) -> DeviceUintSize {
+    let initial_size = cmp::min(max_texture_size, INITIAL_TEXTURE_SIZE);
     DeviceUintSize::new(initial_size, initial_size)
-}
-
-
-fn max_texture_size() -> u32 {
-    let max_hardware_texture_size = *MAX_TEXTURE_SIZE as u32;
-    if max_hardware_texture_size * max_hardware_texture_size > MAX_RGBA_PIXELS_PER_TEXTURE {
-        SQRT_MAX_RGBA_PIXELS_PER_TEXTURE
-    } else {
-        max_hardware_texture_size
-    }
 }
