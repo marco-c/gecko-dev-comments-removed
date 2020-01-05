@@ -53,8 +53,6 @@ this.EXPORTED_SYMBOLS = ["BookmarkValidator", "BookmarkProblemData"];
 
 
 
-
-
 class BookmarkProblemData {
   constructor() {
     this.rootOnServer = false;
@@ -72,7 +70,6 @@ class BookmarkProblemData {
     this.childrenOnNonFolder = [];
     this.duplicateChildren = [];
     this.parentNotFolder = [];
-    this.wrongParentName = [];
 
     this.clientMissing = [];
     this.serverMissing = [];
@@ -134,7 +131,6 @@ class BookmarkProblemData {
       { name: "childrenOnNonFolder", count: this.childrenOnNonFolder.length },
       { name: "duplicateChildren", count: this.duplicateChildren.length },
       { name: "parentNotFolder", count: this.parentNotFolder.length },
-      { name: "wrongParentName", count: this.wrongParentName.length },
     ];
     if (full) {
       let structural = this._summarizeDifferences("sdiff", this.structuralDifferences);
@@ -258,7 +254,6 @@ class BookmarkValidator {
           traverse(child);
           child.parent = treeNode;
           child.parentid = guid;
-          child.parentName = treeNode.title;
           treeNode.childGUIDs.push(child.guid);
         }
       }
@@ -441,9 +436,10 @@ class BookmarkValidator {
         problemData.deletedParents.push(record.id);
       }
 
-      if (record.parentName !== parent.title && parent.id !== 'unfiled') {
-        problemData.wrongParentName.push(record.id);
-      }
+      
+      
+      
+      
     }
 
     
@@ -650,12 +646,6 @@ class BookmarkValidator {
       if (client.parentid || server.parentid) {
         if (client.parentid !== server.parentid) {
           structuralDifferences.push('parentid');
-        }
-        
-        
-        
-        if (client.parentName !== server.parentName && server.parentid !== 'unfiled') {
-          differences.push('parentName');
         }
       }
 

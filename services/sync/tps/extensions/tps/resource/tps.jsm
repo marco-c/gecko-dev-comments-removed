@@ -641,15 +641,6 @@ var TPS = {
         
         if (name === "serverUnexpected" && problemData.serverUnexpected.indexOf("mobile") >= 0) {
           --count;
-        } else if (name === "differences") {
-          
-          
-          let newCount = problemData.differences.filter(diffInfo =>
-            !diffInfo.differences.every(diff =>
-              diff === "parentName")).length
-          count = newCount;
-        } else if (name === "wrongParentName") {
-          continue;
         }
         if (count) {
           
