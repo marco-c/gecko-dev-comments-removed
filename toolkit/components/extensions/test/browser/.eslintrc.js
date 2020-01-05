@@ -8,6 +8,7 @@ module.exports = {
   },
 
   "globals": {
+    "BrowserTestUtils": true,
     "ExtensionTestUtils": false,
     "XPCOMUtils": true,
   },
