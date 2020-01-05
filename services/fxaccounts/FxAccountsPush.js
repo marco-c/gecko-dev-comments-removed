@@ -238,6 +238,3 @@ FxAccountsPushService.prototype = {
 
 const components = [FxAccountsPushService];
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory(components);
-
-
-this.EXPORTED_SYMBOLS = ["FxAccountsPushService"];
