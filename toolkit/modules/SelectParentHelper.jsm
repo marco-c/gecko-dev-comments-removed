@@ -333,6 +333,7 @@ function populateChildren(menulist, options, selectedIndex, zoom,
     searchbox.addEventListener("input", onSearchInput);
     searchbox.addEventListener("focus", onSearchFocus);
     searchbox.addEventListener("blur", onSearchBlur);
+    searchbox.addEventListener("command", onSearchInput);
 
     
     searchbox.addEventListener("keydown", function(event) {
