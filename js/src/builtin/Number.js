@@ -36,7 +36,7 @@ function Number_toLocaleString() {
     }
 
     
-    return intl_FormatNumber(numberFormat, x);
+    return intl_FormatNumber(numberFormat, x,  false);
 }
 
 
