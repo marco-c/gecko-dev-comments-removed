@@ -1717,6 +1717,12 @@ private:
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
 
+public:
+  
+  virtual nsresult Dispatch(const char* aName,
+                            mozilla::dom::TaskCategory aCategory,
+                            already_AddRefed<nsIRunnable>&& aRunnable) override;
+
 protected:
   
   

@@ -13,6 +13,7 @@
 #include "nsTHashtable.h"
 #include "nsString.h"
 
+#include "mozilla/dom/Dispatcher.h"
 #include "mozilla/RefPtr.h"
 
 namespace mozilla {
@@ -36,7 +37,7 @@ namespace dom {
 
 class DocGroup;
 
-class TabGroup final : public nsISupports
+class TabGroup final : public Dispatcher
 {
 private:
   class HashEntry : public nsCStringHashKey
@@ -104,6 +105,10 @@ public:
   
   ThrottledEventQueue*
   GetThrottledEventQueue() const;
+
+  virtual nsresult Dispatch(const char* aName,
+                            TaskCategory aCategory,
+                            already_AddRefed<nsIRunnable>&& aRunnable) override;
 
 private:
   ~TabGroup();

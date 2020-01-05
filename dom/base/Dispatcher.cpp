@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#include "mozilla/dom/Dispatcher.h"
+#include "mozilla/Move.h"
+
+using namespace mozilla;
+
+nsresult
+DispatcherTrait::Dispatch(const char* aName,
+                          TaskCategory aCategory,
+                          already_AddRefed<nsIRunnable>&& aRunnable)
+{
+  return NS_DispatchToMainThread(Move(aRunnable));
+}
