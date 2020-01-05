@@ -21,6 +21,7 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/ScaleFactor.h"    
+#include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/APZUtils.h"    
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/CompositorBridgeParent.h" 
