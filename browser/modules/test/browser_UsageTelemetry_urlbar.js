@@ -6,6 +6,7 @@ const SCALAR_URLBAR = "browser.engagement.navigation.urlbar";
 const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
 
 const SUGGESTION_ENGINE_NAME = "browser_UsageTelemetry usageTelemetrySearchSuggestions.xml";
+const ONEOFF_URLBAR_PREF = "browser.urlbar.oneOffSearches";
 
 let searchInAwesomebar = Task.async(function* (inputText, win=window) {
   yield new Promise(r => waitForFocus(r, win));
@@ -56,10 +57,14 @@ add_task(function* setup() {
   Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, true);
 
   
+  Services.prefs.setBoolPref(ONEOFF_URLBAR_PREF, true);
+
+  
   registerCleanupFunction(function* () {
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engine);
     Services.prefs.clearUserPref(SUGGEST_URLBAR_PREF, true);
+    Services.prefs.clearUserPref(ONEOFF_URLBAR_PREF);
   });
 });
 
