@@ -66,7 +66,7 @@ public:
 
 
   static bool
-  IsCoreAPIEnabled();
+  IsCoreAPIEnabledForCaller();
 };
 
 } 

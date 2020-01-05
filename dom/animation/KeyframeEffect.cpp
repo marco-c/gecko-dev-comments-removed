@@ -132,7 +132,7 @@ KeyframeEffect::SetIterationComposite(
 {
   
   
-  if (!AnimationUtils::IsCoreAPIEnabled()) {
+  if (!AnimationUtils::IsCoreAPIEnabledForCaller()) {
     return;
   }
 

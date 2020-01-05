@@ -115,7 +115,7 @@ KeyframeEffectParams::ParseSpacing(const nsAString& aSpacing,
 
   
   
-  if (!AnimationUtils::IsCoreAPIEnabled()) {
+  if (!AnimationUtils::IsCoreAPIEnabledForCaller()) {
     aSpacingMode = SpacingMode::distribute;
     return;
   }

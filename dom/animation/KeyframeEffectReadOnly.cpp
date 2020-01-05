@@ -512,7 +512,7 @@ KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
                                        aRv);
     
     
-    if (AnimationUtils::IsCoreAPIEnabled()) {
+    if (AnimationUtils::IsCoreAPIEnabledForCaller()) {
       result.mIterationComposite = options.mIterationComposite;
     }
   }
