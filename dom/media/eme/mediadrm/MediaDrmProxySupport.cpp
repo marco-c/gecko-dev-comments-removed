@@ -199,12 +199,11 @@ MediaDrmProxySupport::MediaDrmProxySupport(const nsAString& aKeySystem)
   : mKeySystem(aKeySystem), mDestroyed(false)
 {
   mJavaCallbacks = MediaDrmProxy::NativeMediaDrmProxyCallbacks::New();
-  
-  
-  
+
   mBridgeProxy =
     MediaDrmProxy::Create(mKeySystem,
-                          mJavaCallbacks);
+                          mJavaCallbacks,
+                          MediaPrefs::PDMAndroidRemoteCodecEnabled());
 }
 
 MediaDrmProxySupport::~MediaDrmProxySupport()
