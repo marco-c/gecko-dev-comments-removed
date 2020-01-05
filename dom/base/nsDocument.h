@@ -31,7 +31,6 @@
 #include "nsJSThingHashtable.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsIURI.h"
-#include "nsScriptLoader.h"
 #include "nsIRadioGroupContainer.h"
 #include "nsILayoutHistoryState.h"
 #include "nsIRequest.h"
@@ -60,6 +59,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PendingAnimationTracker.h"
 #include "mozilla/dom/DOMImplementation.h"
+#include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/StyleSheetList.h"
 #include "nsDataHashtable.h"
 #include "mozilla/TimeStamp.h"
@@ -742,7 +742,7 @@ public:
   
 
 
-  virtual nsScriptLoader* ScriptLoader() override;
+  virtual mozilla::dom::ScriptLoader* ScriptLoader() override;
 
   
 
@@ -1492,7 +1492,7 @@ public:
   RefPtr<mozilla::EventListenerManager> mListenerManager;
   RefPtr<mozilla::dom::StyleSheetList> mDOMStyleSheets;
   RefPtr<nsDOMStyleSheetSetList> mStyleSheetSetList;
-  RefPtr<nsScriptLoader> mScriptLoader;
+  RefPtr<mozilla::dom::ScriptLoader> mScriptLoader;
   nsDocHeaderData* mHeaderData;
   
 
