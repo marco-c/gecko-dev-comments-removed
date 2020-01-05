@@ -93,4 +93,13 @@ impl<T> nsTArray<T> {
         let mut header = self.header_mut();
         header.mLength = len;
     }
+
+    
+    
+    
+    pub unsafe fn set_len_pod(&mut self, len: u32) where T: Copy {
+        self.ensure_capacity(len as usize);
+        let mut header = unsafe { self.header_mut() };
+        header.mLength = len;
+    }
 }

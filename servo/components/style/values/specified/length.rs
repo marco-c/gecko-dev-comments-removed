@@ -1215,7 +1215,7 @@ pub type LengthOrNumber = Either<Length, Number>;
 
 impl LengthOrNumber {
     
-    pub fn parse_non_negative(input: &mut Parser) -> Result<Self, ()> {
+    pub fn parse_non_negative(_context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
         
         
         
