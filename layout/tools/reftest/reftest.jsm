@@ -741,9 +741,7 @@ function BuildConditionSandbox(aURL) {
 
     
     
-    var navigator = gContainingWindow.navigator;
-    var testPlugin = navigator.plugins["Test Plug-in"];
-    sandbox.haveTestPlugin = !!testPlugin;
+    sandbox.haveTestPlugin = !!getTestPlugin("Test Plug-in");
 
     
     sandbox.windowsDefaultTheme = gContainingWindow.matchMedia("(-moz-windows-default-theme)").matches;
