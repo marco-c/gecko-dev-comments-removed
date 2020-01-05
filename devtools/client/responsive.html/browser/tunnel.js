@@ -99,13 +99,7 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      Object.defineProperty(outer, "isRemoteBrowser", {
-        get() {
-          return true;
-        },
-        configurable: true,
-        enumerable: true,
-      });
+      outer.setAttribute("remote", "true");
 
       
       
@@ -222,10 +216,12 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      delete outer.isRemoteBrowser;
       delete outer.hasContentOpener;
       delete outer.docShellIsActive;
       delete outer.preserveLayers;
+
+      
+      outer.setAttribute("remote", "false");
 
       
       delete inner.ownerGlobal.PopupNotifications;

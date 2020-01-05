@@ -7,13 +7,6 @@
 
 const TEST_URL = "http://example.com/";
 
-function waitForClientClose(ui) {
-  return new Promise(resolve => {
-    info("RDM's debugger client is now closed");
-    ui.client.addOneTimeListener("closed", resolve);
-  });
-}
-
 add_task(function* () {
   let tab = yield addTab(TEST_URL);
 
@@ -21,7 +14,7 @@ add_task(function* () {
   let clientClosed = waitForClientClose(ui);
 
   closeRDM(tab, {
-    reason: "TabClose",
+    reason: "BeforeTabRemotenessChange",
   });
 
   
@@ -39,7 +32,8 @@ add_task(function* () {
   let { ui } = yield openRDM(tab);
   let clientClosed = waitForClientClose(ui);
 
-  yield removeTab(tab);
+  
+  yield load(tab.linkedBrowser, "about:robots");
 
   
   

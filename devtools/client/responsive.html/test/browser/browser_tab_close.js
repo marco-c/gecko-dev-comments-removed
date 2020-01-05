@@ -1,0 +1,43 @@
+
+
+
+"use strict";
+
+
+
+const TEST_URL = "http://example.com/";
+
+add_task(function* () {
+  let tab = yield addTab(TEST_URL);
+
+  let { ui } = yield openRDM(tab);
+  let clientClosed = waitForClientClose(ui);
+
+  closeRDM(tab, {
+    reason: "TabClose",
+  });
+
+  
+  
+  
+  is(ui.destroyed, true, "RDM closed synchronously");
+
+  yield clientClosed;
+  yield removeTab(tab);
+});
+
+add_task(function* () {
+  let tab = yield addTab(TEST_URL);
+
+  let { ui } = yield openRDM(tab);
+  let clientClosed = waitForClientClose(ui);
+
+  yield removeTab(tab);
+
+  
+  
+  
+  is(ui.destroyed, true, "RDM closed synchronously");
+
+  yield clientClosed;
+});
