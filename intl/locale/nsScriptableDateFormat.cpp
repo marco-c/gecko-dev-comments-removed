@@ -3,14 +3,16 @@
 
 
 
-#include "DateTimeFormat.h"
 #include "mozilla/Sprintf.h"
 #include "nsILocaleService.h"
+#include "nsDateTimeFormatCID.h"
+#include "nsIDateTimeFormat.h"
 #include "nsIScriptableDateFormat.h"
 #include "nsCOMPtr.h"
 #include "nsServiceManagerUtils.h"
 
 static NS_DEFINE_CID(kLocaleServiceCID, NS_LOCALESERVICE_CID);
+static NS_DEFINE_CID(kDateTimeFormatCID, NS_DATETIMEFORMAT_CID);
 
 class nsScriptableDateFormat : public nsIScriptableDateFormat {
  public: 
@@ -87,6 +89,9 @@ NS_IMETHODIMP nsScriptableDateFormat::FormatDateTime(
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  nsCOMPtr<nsIDateTimeFormat> dateTimeFormat(do_CreateInstance(kDateTimeFormatCID, &rv));
+  NS_ENSURE_SUCCESS(rv, rv);
+
   tm tmTime;
   time_t timetTime;
 
@@ -102,8 +107,8 @@ NS_IMETHODIMP nsScriptableDateFormat::FormatDateTime(
   timetTime = mktime(&tmTime);
 
   if ((time_t)-1 != timetTime) {
-    rv = mozilla::DateTimeFormat::FormatTime(dateFormatSelector, timeFormatSelector,
-                                             timetTime, mStringOut);
+    rv = dateTimeFormat->FormatTime(locale, dateFormatSelector, timeFormatSelector, 
+                                     timetTime, mStringOut);
   }
   else {
     
@@ -113,8 +118,8 @@ NS_IMETHODIMP nsScriptableDateFormat::FormatDateTime(
     if (PR_SUCCESS != PR_ParseTimeString(string, false, &prtime))
       return NS_ERROR_INVALID_ARG;
 
-    rv = mozilla::DateTimeFormat::FormatPRTime(dateFormatSelector, timeFormatSelector,
-                                               prtime, mStringOut);
+    rv = dateTimeFormat->FormatPRTime(locale, dateFormatSelector, timeFormatSelector, 
+                                      prtime, mStringOut);
   }
   if (NS_SUCCEEDED(rv))
     *dateTimeString = ToNewUnicode(mStringOut);
