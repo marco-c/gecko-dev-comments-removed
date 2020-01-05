@@ -85,7 +85,7 @@ public class ResizablePathDrawable extends ShapeDrawable {
 
 
 
-    public static class NonScaledPathShape extends Shape {
+    public static class NonScaledPathShape extends Shape implements Cloneable {
         private Path path;
 
         public NonScaledPathShape() {

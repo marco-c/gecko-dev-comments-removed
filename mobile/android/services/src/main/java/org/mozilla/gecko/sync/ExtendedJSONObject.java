@@ -25,7 +25,7 @@ import java.util.Set;
 
 
 
-public class ExtendedJSONObject {
+public class ExtendedJSONObject implements Cloneable {
 
   public JSONObject object;
 
@@ -174,7 +174,7 @@ public class ExtendedJSONObject {
   }
 
   @Override
-  public ExtendedJSONObject clone() {
+  public ExtendedJSONObject clone() throws CloneNotSupportedException {
     return new ExtendedJSONObject((JSONObject) this.object.clone());
   }
 
