@@ -73,9 +73,6 @@ public:
   
   
   using nsIDocument::GetLocation;
-  
-  
-  using nsDocument::GetLocation;
 
 protected:
   virtual ~XMLDocument();
