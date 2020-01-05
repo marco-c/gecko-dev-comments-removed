@@ -33,6 +33,7 @@
 #include "gfxFontFamilyList.h"
 
 class imgRequestProxy;
+class nsIContent;
 class nsIDocument;
 class nsIPrincipal;
 class nsIURI;
@@ -137,6 +138,17 @@ public:
   bool IsLocalRef() const { return mIsLocalRef; }
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValueData)
+
+  
+  
+  already_AddRefed<nsIURI> ResolveLocalRef(nsIURI* aURI) const;
+  already_AddRefed<nsIURI> ResolveLocalRef(nsIContent* aContent) const;
+
+  
+  
+  void GetSourceString(nsString& aRef) const;
+
+  bool EqualsExceptRef(nsIURI* aURI) const;
 
 private:
   
