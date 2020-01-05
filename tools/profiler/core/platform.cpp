@@ -88,6 +88,9 @@ static mozilla::StaticMutex gThreadNameFiltersMutex;
 static Vector<std::string> gFeatures;
 
 
+static int gEntrySize = 0;
+
+
 
 
 
@@ -677,7 +680,7 @@ profiler_get_start_params(int* aEntrySize,
     return;
   }
 
-  *aEntrySize = gSampler->EntrySize();
+  *aEntrySize = gEntrySize;
   *aInterval = gSampler->interval();
 
   {
@@ -852,9 +855,9 @@ profiler_start(int aProfileEntries, double aInterval,
     gFeatures[i] = aFeatures[i];
   }
 
+  gEntrySize = aProfileEntries ? aProfileEntries : PROFILE_DEFAULT_ENTRY;
   gSampler =
-    new Sampler(aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL,
-                aProfileEntries ? aProfileEntries : PROFILE_DEFAULT_ENTRY,
+    new Sampler(aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL, gEntrySize,
                 aFeatures, aFeatureCount, aFilterCount);
   gGatherer = new mozilla::ProfileGatherer(gSampler);
 
@@ -954,6 +957,7 @@ profiler_stop()
   gSampler->Stop();
   delete gSampler;
   gSampler = nullptr;
+  gEntrySize = 0;
 
   
   gGatherer->Cancel();

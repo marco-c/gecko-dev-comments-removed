@@ -272,8 +272,6 @@ public:
   bool IsPaused() const { return paused_; }
   void SetPaused(bool value) { NoBarrier_Store(&paused_, value); }
 
-  int EntrySize() { return entrySize_; }
-
   
   
   
@@ -344,7 +342,6 @@ private:
   const double interval_;
   Atomic32 paused_;
   Atomic32 active_;
-  const int entrySize_;
 
   
 #if defined(SPS_OS_linux) || defined(SPS_OS_android)
