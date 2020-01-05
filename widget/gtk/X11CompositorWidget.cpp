@@ -21,7 +21,7 @@ X11CompositorWidget::X11CompositorWidget(const CompositorWidgetInitData& aInitDa
   
   
   if (aWindow) {
-    mXDisplay = (Display*)aWindow->GetNativeData(NS_NATIVE_COMPOSITOR_DISPLAY);
+    mXDisplay = aWindow->XDisplay();
   } else {
     mXDisplay = XOpenDisplay(aInitData.XDisplayString().get());
   }
