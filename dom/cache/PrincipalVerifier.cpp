@@ -49,7 +49,7 @@ void
 PrincipalVerifier::AddListener(Listener* aListener)
 {
   AssertIsOnBackgroundThread();
-  MOZ_ASSERT(aListener);
+  MOZ_DIAGNOSTIC_ASSERT(aListener);
   MOZ_ASSERT(!mListenerList.Contains(aListener));
   mListenerList.AppendElement(aListener);
 }
@@ -58,7 +58,7 @@ void
 PrincipalVerifier::RemoveListener(Listener* aListener)
 {
   AssertIsOnBackgroundThread();
-  MOZ_ASSERT(aListener);
+  MOZ_DIAGNOSTIC_ASSERT(aListener);
   MOZ_ALWAYS_TRUE(mListenerList.RemoveElement(aListener));
 }
 
@@ -71,8 +71,8 @@ PrincipalVerifier::PrincipalVerifier(Listener* aListener,
   , mResult(NS_OK)
 {
   AssertIsOnBackgroundThread();
-  MOZ_ASSERT(mInitiatingThread);
-  MOZ_ASSERT(aListener);
+  MOZ_DIAGNOSTIC_ASSERT(mInitiatingThread);
+  MOZ_DIAGNOSTIC_ASSERT(aListener);
 
   mListenerList.AppendElement(aListener);
 }
@@ -83,11 +83,11 @@ PrincipalVerifier::~PrincipalVerifier()
   
   
 
-  MOZ_ASSERT(mListenerList.IsEmpty());
+  MOZ_DIAGNOSTIC_ASSERT(mListenerList.IsEmpty());
 
   
   
-  MOZ_ASSERT(!mActor);
+  MOZ_DIAGNOSTIC_ASSERT(!mActor);
 }
 
 NS_IMETHODIMP
@@ -190,7 +190,7 @@ PrincipalVerifier::CompleteOnInitiatingThread()
   }
 
   
-  MOZ_ASSERT(mListenerList.IsEmpty());
+  MOZ_DIAGNOSTIC_ASSERT(mListenerList.IsEmpty());
 }
 
 void

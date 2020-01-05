@@ -42,25 +42,25 @@ CacheChild::~CacheChild()
 {
   MOZ_COUNT_DTOR(cache::CacheChild);
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  MOZ_ASSERT(!mListener);
-  MOZ_ASSERT(!mNumChildActors);
-  MOZ_ASSERT(!mLocked);
+  MOZ_DIAGNOSTIC_ASSERT(!mListener);
+  MOZ_DIAGNOSTIC_ASSERT(!mNumChildActors);
+  MOZ_DIAGNOSTIC_ASSERT(!mLocked);
 }
 
 void
 CacheChild::SetListener(Cache* aListener)
 {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  MOZ_ASSERT(!mListener);
+  MOZ_DIAGNOSTIC_ASSERT(!mListener);
   mListener = aListener;
-  MOZ_ASSERT(mListener);
+  MOZ_DIAGNOSTIC_ASSERT(mListener);
 }
 
 void
 CacheChild::ClearListener()
 {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  MOZ_ASSERT(mListener);
+  MOZ_DIAGNOSTIC_ASSERT(mListener);
   mListener = nullptr;
 }
 
@@ -81,7 +81,7 @@ CacheChild::StartDestroyFromListener()
   
   
   
-  MOZ_ASSERT(!mNumChildActors);
+  MOZ_DIAGNOSTIC_ASSERT(!mNumChildActors);
 
   StartDestroy();
 }
@@ -113,7 +113,7 @@ CacheChild::StartDestroy()
   listener->DestroyInternal(this);
 
   
-  MOZ_ASSERT(!mListener);
+  MOZ_DIAGNOSTIC_ASSERT(!mListener);
 
   
   Unused << SendTeardown();
@@ -127,7 +127,7 @@ CacheChild::ActorDestroy(ActorDestroyReason aReason)
   if (listener) {
     listener->DestroyInternal(this);
     
-    MOZ_ASSERT(!mListener);
+    MOZ_DIAGNOSTIC_ASSERT(!mListener);
   }
 
   RemoveWorkerHolder();
@@ -167,7 +167,7 @@ void
 CacheChild::Lock()
 {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  MOZ_ASSERT(!mLocked);
+  MOZ_DIAGNOSTIC_ASSERT(!mLocked);
   mLocked = true;
 }
 
@@ -175,7 +175,7 @@ void
 CacheChild::Unlock()
 {
   NS_ASSERT_OWNINGTHREAD(CacheChild);
-  MOZ_ASSERT(mLocked);
+  MOZ_DIAGNOSTIC_ASSERT(mLocked);
   mLocked = false;
   MaybeFlushDelayedDestroy();
 }

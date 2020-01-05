@@ -20,7 +20,7 @@ ActorChild::SetWorkerHolder(CacheWorkerHolder* aWorkerHolder)
   
   
   if (mWorkerHolder) {
-    MOZ_ASSERT(mWorkerHolder == aWorkerHolder);
+    MOZ_DIAGNOSTIC_ASSERT(mWorkerHolder == aWorkerHolder);
     return;
   }
 
@@ -58,7 +58,7 @@ ActorChild::ActorChild()
 
 ActorChild::~ActorChild()
 {
-  MOZ_ASSERT(!mWorkerHolder);
+  MOZ_DIAGNOSTIC_ASSERT(!mWorkerHolder);
 }
 
 } 
