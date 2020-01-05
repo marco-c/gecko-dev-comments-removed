@@ -123,6 +123,7 @@ namespace layers {
 struct Effect;
 struct EffectChain;
 class Image;
+class ImageHostOverlay;
 class Layer;
 class TextureSource;
 class DataTextureSource;
@@ -141,6 +142,10 @@ enum SurfaceInitMode
   INIT_MODE_NONE,
   INIT_MODE_CLEAR
 };
+
+
+
+
 
 
 
@@ -312,14 +317,14 @@ public:
                     gfx::Float aOpacity,
                     const gfx::Matrix4x4& aTransform,
                     const gfx::Rect& aVisibleRect,
-                    const Maybe<gfx::Polygon>& aGeometry);
+                    const Maybe<gfx::Polygon3D>& aGeometry);
 
   void DrawGeometry(const gfx::Rect& aRect,
                     const gfx::IntRect& aClipRect,
                     const EffectChain &aEffectChain,
                     gfx::Float aOpacity,
                     const gfx::Matrix4x4& aTransform,
-                    const Maybe<gfx::Polygon>& aGeometry)
+                    const Maybe<gfx::Polygon3D>& aGeometry)
   {
     DrawGeometry(aRect, aClipRect, aEffectChain, aOpacity,
                  aTransform, aRect, aGeometry);
@@ -357,11 +362,6 @@ public:
                             const gfx::Rect& aVisibleRect)
   {
     MOZ_CRASH("Compositor::DrawTriangle is not implemented for the current platform!");
-  }
-
-  virtual bool SupportsLayerGeometry() const
-  {
-    return false;
   }
 
   
@@ -432,9 +432,14 @@ public:
 
   virtual void EndFrame();
 
-  virtual void CancelFrame() { ReadUnlockTextures(); }
-
   virtual void SetDispAcquireFence(Layer* aLayer);
+
+  
+
+
+
+
+  virtual void EndFrameForExternalComposition(const gfx::Matrix& aTransform) = 0;
 
   
 
@@ -518,6 +523,12 @@ public:
 
   widget::CompositorWidget* GetWidget() const { return mWidget; }
 
+  virtual bool HasImageHostOverlays() { return false; }
+
+  virtual void AddImageHostOverlay(ImageHostOverlay* aOverlay) {}
+
+  virtual void RemoveImageHostOverlay(ImageHostOverlay* aOverlay) {}
+
   
 
 
@@ -566,7 +577,7 @@ public:
   
   
   void SetInvalid();
-  bool IsValid() const;
+  virtual bool IsValid() const;
   CompositorBridgeParent* GetCompositorBridgeParent() const {
     return mParent;
   }
@@ -621,21 +632,6 @@ protected:
                                        gfx::Matrix4x4* aOutTransform,
                                        gfx::Rect* aOutLayerQuad = nullptr);
 
-  virtual void DrawTriangles(const nsTArray<gfx::TexturedTriangle>& aTriangles,
-                             const gfx::Rect& aRect,
-                             const gfx::IntRect& aClipRect,
-                             const EffectChain& aEffectChain,
-                             gfx::Float aOpacity,
-                             const gfx::Matrix4x4& aTransform,
-                             const gfx::Rect& aVisibleRect);
-
-  virtual void DrawPolygon(const gfx::Polygon& aPolygon,
-                           const gfx::Rect& aRect,
-                           const gfx::IntRect& aClipRect,
-                           const EffectChain& aEffectChain,
-                           gfx::Float aOpacity,
-                           const gfx::Matrix4x4& aTransform,
-                           const gfx::Rect& aVisibleRect);
 
   
 
