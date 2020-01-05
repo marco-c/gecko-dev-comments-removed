@@ -2348,15 +2348,6 @@ profiler_register_thread(const char* aName, void* aGuessStackTop)
     return;
   }
 
-#if defined(MOZ_WIDGET_GONK) && !defined(MOZ_PROFILING)
-  
-  
-  
-  if (!profiler_is_active()) {
-    return;
-  }
-#endif
-
   MOZ_ASSERT(tlsPseudoStack.get() == nullptr);
   PseudoStack* stack = new PseudoStack();
   tlsPseudoStack.set(stack);
