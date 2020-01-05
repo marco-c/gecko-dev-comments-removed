@@ -16,14 +16,6 @@
 #include "nsTHashtable.h"
 
 
-enum BaselineSharingGroup
-{
-  
-  eFirst = 0,
-  eLast = 1,
-};
-
-
 
 
 
@@ -118,6 +110,22 @@ public:
     nscoord b;
     GetBBaseline(BaselineSharingGroup::eFirst, &b);
     return b;
+  }
+
+  bool GetVerticalAlignBaseline(mozilla::WritingMode aWM,
+                                nscoord* aBaseline) const override
+  {
+    return GetNaturalBaselineBOffset(aWM, BaselineSharingGroup::eFirst, aBaseline);
+  }
+
+  bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
+                                 BaselineSharingGroup aBaselineGroup,
+                                 nscoord*             aBaseline) const override
+  {
+    if (HasAnyStateBits(NS_STATE_GRID_SYNTHESIZE_BASELINE)) {
+      return false;
+    }
+    return GetBBaseline(aBaselineGroup, aBaseline);
   }
 
 #ifdef DEBUG_FRAME_DUMP

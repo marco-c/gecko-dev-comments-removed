@@ -419,6 +419,24 @@ enum nsBidiDirection {
 namespace mozilla {
 
 
+enum BaselineSharingGroup
+{
+  
+  eFirst = 0,
+  eLast = 1,
+};
+
+
+enum class AlignmentContext
+{
+  eInline,
+  eTable,
+  eFlexbox,
+  eGrid,
+};
+
+
+
 
 
 
@@ -499,6 +517,8 @@ static void ReleaseValue(T* aPropertyValue)
 class nsIFrame : public nsQueryFrame
 {
 public:
+  using AlignmentContext = mozilla::AlignmentContext;
+  using BaselineSharingGroup = mozilla::BaselineSharingGroup;
   template <typename T> using Maybe = mozilla::Maybe<T>;
   using Nothing = mozilla::Nothing;
   using OnNonvisible = mozilla::OnNonvisible;
@@ -1203,7 +1223,89 @@ public:
 
 
 
-  virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode) const = 0;
+
+
+
+
+
+  virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+  inline nscoord SynthesizeBaselineBOffsetFromMarginBox(
+                   mozilla::WritingMode aWM,
+                   BaselineSharingGroup aGroup) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  inline nscoord SynthesizeBaselineBOffsetFromBorderBox(
+                   mozilla::WritingMode aWM,
+                   BaselineSharingGroup aGroup) const;
+
+  
+
+
+
+
+
+
+
+
+
+  inline nscoord GetBaseline(mozilla::WritingMode aWM,
+                             BaselineSharingGroup aBaselineGroup,
+                             AlignmentContext     aAlignmentContext) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  virtual bool GetVerticalAlignBaseline(mozilla::WritingMode aWM,
+                                        nscoord* aBaseline) const {
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  virtual bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
+                                         BaselineSharingGroup aBaselineGroup,
+                                         nscoord*             aBaseline) const {
+    return false;
+  }
 
   
 
@@ -1213,18 +1315,6 @@ public:
 
   virtual nscoord GetCaretBaseline() const {
     return GetLogicalBaseline(GetWritingMode());
-  }
-
-  
-
-
-
-
-
-  nscoord SynthesizeBaselineFromBorderBox(mozilla::WritingMode aWM) const
-  {
-    nscoord borderBoxSize = BSize(aWM);
-    return aWM.IsAlphabeticalBaseline() ? borderBoxSize : borderBoxSize / 2;
   }
 
   

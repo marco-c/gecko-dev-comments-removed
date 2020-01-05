@@ -726,6 +726,12 @@ public:
     return mHelper.ComputeCustomOverflow(aOverflowAreas);
   }
 
+  bool GetVerticalAlignBaseline(mozilla::WritingMode aWM,
+                                nscoord* aBaseline) const override {
+    *aBaseline = GetLogicalBaseline(aWM);
+    return true;
+  }
+
   
   
   
@@ -1114,6 +1120,12 @@ public:
 
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override {
     return mHelper.ComputeCustomOverflow(aOverflowAreas);
+  }
+
+  bool GetVerticalAlignBaseline(mozilla::WritingMode aWM,
+                                nscoord* aBaseline) const override {
+    *aBaseline = GetLogicalBaseline(aWM);
+    return true;
   }
 
   
