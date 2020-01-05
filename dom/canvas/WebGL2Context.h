@@ -66,6 +66,8 @@ public:
     virtual JS::Value GetFramebufferAttachmentParameter(JSContext* cx, GLenum target,
                                                         GLenum attachment, GLenum pname,
                                                         ErrorResult& rv) override;
+    
+    using WebGLContext::GetFramebufferAttachmentParameter;
 
     void InvalidateFramebuffer(GLenum target, const dom::Sequence<GLenum>& attachments,
                                ErrorResult& rv);
@@ -366,6 +368,8 @@ public:
 
 
     virtual JS::Value GetParameter(JSContext* cx, GLenum pname, ErrorResult& rv) override;
+    
+    using WebGLContext::GetParameter;
     void GetIndexedParameter(JSContext* cx, GLenum target, GLuint index,
                              JS::MutableHandleValue retval, ErrorResult& rv);
     void GetUniformIndices(const WebGLProgram& program,
