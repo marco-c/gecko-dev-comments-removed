@@ -417,6 +417,9 @@ IProtocol::Lookup(int32_t aId)
 void
 IProtocol::Unregister(int32_t aId)
 {
+  if (mId == aId) {
+    mId = kFreedActorId;
+  }
   Manager()->Unregister(aId);
 }
 
@@ -518,12 +521,35 @@ IProtocol::DeallocShmem(Shmem& aMem)
   return ok;
 }
 
+void
+IProtocol::SetManager(IProtocol* aManager)
+{
+  MOZ_RELEASE_ASSERT(!mManager || mManager == aManager);
+  mManager = aManager;
+}
+
+void
+IProtocol::SetEventTargetForActor(IProtocol* aActor, nsIEventTarget* aEventTarget)
+{
+  
+  aActor->SetManager(this);
+  SetEventTargetForActorInternal(aActor, aEventTarget);
+}
+
+void
+IProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
+                                          nsIEventTarget* aEventTarget)
+{
+  Manager()->SetEventTargetForActorInternal(aActor, aEventTarget);
+}
+
 IToplevelProtocol::IToplevelProtocol(ProtocolId aProtoId, Side aSide)
  : IProtocol(aSide),
    mProtocolId(aProtoId),
    mOtherPid(mozilla::ipc::kInvalidProcessId),
-   mLastRouteId(aSide == ParentSide ? 1 : 0),
-   mLastShmemId(aSide == ParentSide ? 1 : 0)
+   mLastRouteId(aSide == ParentSide ? kFreedActorId : kNullActorId),
+   mLastShmemId(aSide == ParentSide ? kFreedActorId : kNullActorId),
+   mEventTargetMutex("ProtocolEventTargetMutex")
 {
 }
 
@@ -598,8 +624,22 @@ IToplevelProtocol::IsOnCxxStack() const
 int32_t
 IToplevelProtocol::Register(IProtocol* aRouted)
 {
+  if (aRouted->Id() != kNullActorId && aRouted->Id() != kFreedActorId) {
+    
+    return aRouted->Id();
+  }
   int32_t id = GetSide() == ParentSide ? ++mLastRouteId : --mLastRouteId;
   mActorMap.AddWithID(aRouted, id);
+  aRouted->SetId(id);
+
+  
+  if (IProtocol* manager = aRouted->Manager()) {
+    MutexAutoLock lock(mEventTargetMutex);
+    if (nsCOMPtr<nsIEventTarget> target = mEventTargetMap.Lookup(manager->Id())) {
+      mEventTargetMap.AddWithID(target, id);
+    }
+  }
+
   return id;
 }
 
@@ -608,6 +648,7 @@ IToplevelProtocol::RegisterID(IProtocol* aRouted,
                               int32_t aId)
 {
   mActorMap.AddWithID(aRouted, aId);
+  aRouted->SetId(aId);
   return aId;
 }
 
@@ -620,7 +661,10 @@ IToplevelProtocol::Lookup(int32_t aId)
 void
 IToplevelProtocol::Unregister(int32_t aId)
 {
-  return mActorMap.Remove(aId);
+  mActorMap.Remove(aId);
+
+  MutexAutoLock lock(mEventTargetMutex);
+  mEventTargetMap.RemoveIfPresent(aId);
 }
 
 Shmem::SharedMemory*
@@ -724,6 +768,53 @@ IToplevelProtocol::ShmemDestroyed(const Message& aMsg)
     Shmem::Dealloc(Shmem::IHadBetterBeIPDLCodeCallingThis_OtherwiseIAmADoodyhead(), rawmem);
   }
   return true;
+}
+
+already_AddRefed<nsIEventTarget>
+IToplevelProtocol::GetMessageEventTarget(const Message& aMsg)
+{
+  int32_t route = aMsg.routing_id();
+
+  MutexAutoLock lock(mEventTargetMutex);
+  nsCOMPtr<nsIEventTarget> target = mEventTargetMap.Lookup(route);
+
+  if (aMsg.is_constructor()) {
+    ActorHandle handle;
+    PickleIterator iter = PickleIterator(aMsg);
+    if (!IPC::ReadParam(&aMsg, &iter, &handle)) {
+      return nullptr;
+    }
+
+    
+    
+    
+    if (!target) {
+      MutexAutoUnlock unlock(mEventTargetMutex);
+      target = GetConstructedEventTarget(aMsg);
+    }
+
+    mEventTargetMap.AddWithID(target, handle.mId);
+  }
+
+  return target.forget();
+}
+
+void
+IToplevelProtocol::SetEventTargetForActorInternal(IProtocol* aActor,
+                                                  nsIEventTarget* aEventTarget)
+{
+  
+  
+  
+  MOZ_RELEASE_ASSERT(aActor->Id() == kNullActorId || aActor->Id() == kFreedActorId);
+
+  
+  
+  int32_t id = Register(aActor);
+  aActor->SetId(id);
+
+  MutexAutoLock lock(mEventTargetMutex);
+  mEventTargetMap.AddWithID(aEventTarget, id);
 }
 
 } 
