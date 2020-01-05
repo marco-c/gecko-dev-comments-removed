@@ -796,27 +796,16 @@ or run without that action (ie: --no-{action})"
 
         buildid = None
         if c.get("is_automation"):
-            if self.buildbot_config.get('properties'):
-                
-                if self.buildbot_config.get('properties').get('buildid'):
-                    
-                    
-                    self.info("Determining buildid from buildbot properties")
-                    buildid = self.buildbot_config['properties']['buildid'].encode(
-                        'ascii', 'replace'
-                    )
+            if self.buildbot_config['properties'].get('buildid'):
+                self.info("Determining buildid from buildbot properties")
+                buildid = self.buildbot_config['properties']['buildid'].encode(
+                    'ascii', 'replace'
+                )
             else:
                 
                 
                 
-                
-                try:
-                    buildid = os.environ['MOZ_BUILD_DATE']
-                except KeyError:
-                    self.fatal(
-                        "MOZ_BUILD_DATE must be provided as an environment var on Taskcluster"
-                    )
-
+                buildid = os.environ.get('MOZ_BUILD_DATE')
 
         if not buildid:
             self.info("Creating buildid through current time")
