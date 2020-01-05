@@ -1722,7 +1722,7 @@ impl ScriptTask {
         
         
         self.compositor.borrow_mut().send(ScriptToCompositorMsg::ScrollFragmentPoint(
-                                                 pipeline_id, LayerId::null(), point)).unwrap();
+                                                 pipeline_id, LayerId::null(), point, false)).unwrap();
     }
 
     

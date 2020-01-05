@@ -5,9 +5,8 @@
 
 
 
-use compositor_msg::Epoch;
-
 use canvas_traits::CanvasMsg;
+use compositor_msg::Epoch;
 use euclid::rect::Rect;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::{Size2D, TypedSize2D};
