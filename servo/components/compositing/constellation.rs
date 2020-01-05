@@ -905,7 +905,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                                    containing_pipeline_id: PipelineId,
                                    subpage_id: SubpageId,
                                    event: MozBrowserEvent) {
-        assert!(prefs::get_pref("dom.mozbrowser.enabled").unwrap_or(false));
+        assert!(prefs::get_pref("dom.mozbrowser.enabled").as_boolean().unwrap_or(false));
 
         
         
@@ -1387,7 +1387,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
     
     fn trigger_mozbrowserlocationchange(&self, pipeline_id: PipelineId) {
-        if prefs::get_pref("dom.mozbrowser.enabled").unwrap_or(false) {
+        if prefs::get_pref("dom.mozbrowser.enabled").as_boolean().unwrap_or(false) {
             
             let event_info = {
                 let pipeline = self.pipeline(pipeline_id);

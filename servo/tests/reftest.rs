@@ -25,6 +25,7 @@ use std::io::{self, Read, Result};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::process::{Command, Stdio};
+use std::thread::sleep_ms;
 use test::run_tests_console;
 use test::{AutoColor, DynTestName, DynTestFn, TestDesc, TestOpts, TestDescAndFn, ShouldPanic};
 use url::Url;
@@ -111,10 +112,22 @@ fn run(test_opts: TestOpts, all_tests: Vec<TestDescAndFn>,
     
     
     
-    let output = match Command::new(&servo_path()).args(&servo_args).output() {
+    let mut command = Command::new(&servo_path());
+    command
+        .args(&servo_args)
+        .arg("-z")
+        .arg("about:blank");
+
+    let mut child = match command.spawn() {
         Ok(p) => p,
         Err(e) => panic!("failed to execute process: {}", e),
     };
+
+    
+    sleep_ms(1000);
+    child.kill().unwrap();
+    let output = try!(child.wait_with_output());
+
     let stderr = String::from_utf8(output.stderr).unwrap();
 
     if stderr.contains("Unrecognized") {
