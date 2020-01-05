@@ -320,11 +320,24 @@ public:
   
   
   enum class Mode : uint8_t {
-    Track   = 0x1,  
-    Lock    = 0x2,  
-    Discard = 0x4,  
+    
+    
+    
+    
+    
+    
+    
+    Track = 0x1,
+
+    
+    
+    
+    
+    Discard = 0x2,
   };
 
+  
+  
   
   nsStyleImageRequest(Mode aModeFlags,
                       imgRequestProxy* aRequestProxy,
