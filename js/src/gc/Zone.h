@@ -371,8 +371,16 @@ struct Zone : public JS::shadow::Zone,
     
     
     js::ZoneGroupData<ZoneSet> gcZoneGroupEdges_;
+
+    
+    
+    js::ZoneGroupData<bool> hasDeadProxies_;
+
   public:
     ZoneSet& gcZoneGroupEdges() { return gcZoneGroupEdges_.ref(); }
+
+    bool hasDeadProxies() { return hasDeadProxies_; }
+    void setHasDeadProxies(bool b) { hasDeadProxies_ = b; }
 
     
     

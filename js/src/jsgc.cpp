@@ -4451,6 +4451,28 @@ JSCompartment::findOutgoingEdges(ZoneComponentFinder& finder)
     }
 }
 
+bool
+JSCompartment::findDeadProxyZoneEdges(bool* foundAny)
+{
+    
+    
+    
+    *foundAny = false;
+    for (js::WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
+        Value value = e.front().value().get();
+        if (value.isObject()) {
+            if (IsDeadProxyObject(&value.toObject())) {
+                *foundAny = true;
+                CrossCompartmentKey& key = e.front().mutableKey();
+                if (!key.as<JSObject*>()->zone()->gcZoneGroupEdges().put(zone()))
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void
 Zone::findOutgoingEdges(ZoneComponentFinder& finder)
 {
@@ -4475,7 +4497,7 @@ Zone::findOutgoingEdges(ZoneComponentFinder& finder)
 }
 
 bool
-GCRuntime::findZoneEdgesForWeakMaps()
+GCRuntime::findInterZoneEdges()
 {
     
 
@@ -4492,6 +4514,20 @@ GCRuntime::findZoneEdgesForWeakMaps()
             return false;
     }
 
+    for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
+        if (zone->hasDeadProxies()) {
+            bool foundInZone = false;
+            for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
+                bool foundInCompartment = false;
+                if (!comp->findDeadProxyZoneEdges(&foundInCompartment))
+                    return false;
+                foundInZone = foundInZone || foundInCompartment;
+            }
+            if (!foundInZone)
+                zone->setHasDeadProxies(false);
+        }
+    }
+
     return true;
 }
 
@@ -4505,7 +4541,7 @@ GCRuntime::findZoneGroups(AutoLockForExclusiveAccess& lock)
 
     JSContext* cx = TlsContext.get();
     ZoneComponentFinder finder(cx->nativeStackLimit[JS::StackForSystemCode], lock);
-    if (!isIncremental || !findZoneEdgesForWeakMaps())
+    if (!isIncremental || !findInterZoneEdges())
         finder.useOneComponent();
 
     for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
@@ -4780,6 +4816,8 @@ js::NotifyGCNukeWrapper(JSObject* obj)
 
 
     RemoveFromGrayList(obj);
+
+    obj->zone()->setHasDeadProxies(true);
 }
 
 enum {
