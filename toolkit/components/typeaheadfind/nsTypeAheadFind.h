@@ -95,7 +95,7 @@ protected:
   
   nsCOMPtr<nsISound> mSoundInterface;
   bool mIsSoundInitialized;
-
+  
   
   nsCOMPtr<nsIDOMRange> mStartFindRange;
   nsCOMPtr<nsIDOMRange> mSearchRange;
