@@ -782,11 +782,9 @@ DoSampleStackTrace(ThreadInfo& aInfo, TickSample* aSample,
   NativeStack nativeStack = { nullptr, nullptr, 0, 0 };
   MergeStacksIntoProfile(aInfo, aSample, nativeStack);
 
-#ifdef ENABLE_LEAF_DATA
   if (aSample && aAddLeafAddresses) {
     aInfo.addTag(ProfileEntry::NativeLeafAddr((void*)aSample->pc));
   }
-#endif
 }
 
 
@@ -1869,11 +1867,10 @@ profiler_get_features()
     
     "stackwalk",
 #endif
-#if defined(ENABLE_LEAF_DATA)
     
     
     "leaf",
-#endif
+    
     "java",
     
     "js",
