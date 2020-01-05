@@ -76,7 +76,7 @@ const Class AtomicsObject::class_ = {
 static bool
 ReportBadArrayType(JSContext* cx)
 {
-    JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_ATOMICS_BAD_ARRAY);
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ATOMICS_BAD_ARRAY);
     return false;
 }
 
@@ -86,14 +86,14 @@ ReportOutOfRange(JSContext* cx)
     
     
     
-    JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
     return false;
 }
 
 static bool
 ReportCannotWait(JSContext* cx)
 {
-    JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_ATOMICS_WAIT_NOT_ALLOWED);
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ATOMICS_WAIT_NOT_ALLOWED);
     return false;
 }
 
@@ -977,7 +977,7 @@ js::FutexRuntime::wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
     
 
     if (state_ == WaitingInterrupted) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_ATOMICS_WAIT_NOT_ALLOWED);
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ATOMICS_WAIT_NOT_ALLOWED);
         return false;
     }
 

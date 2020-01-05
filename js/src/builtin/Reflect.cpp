@@ -40,7 +40,7 @@ InitArgsFromArrayLike(JSContext* cx, HandleValue v, InvokeArgs* args)
 
     
     if (len > ARGS_LENGTH_MAX) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_TOO_MANY_FUN_APPLY_ARGS);
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TOO_MANY_FUN_APPLY_ARGS);
         return false;
     }
     if (!args->init(len))
