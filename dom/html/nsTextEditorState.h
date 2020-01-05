@@ -304,6 +304,12 @@ public:
   void SetSelectionStart(const mozilla::dom::Nullable<uint32_t>& aStart,
                          mozilla::ErrorResult& aRv);
 
+  
+  
+  
+  void SetSelectionEnd(const mozilla::dom::Nullable<uint32_t>& aEnd,
+                       mozilla::ErrorResult& aRv);
+
   void UpdateEditableState(bool aNotify) {
     if (mRootNode) {
       mRootNode->UpdateEditableState(aNotify);
