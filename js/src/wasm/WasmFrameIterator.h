@@ -36,9 +36,8 @@ class CodeRange;
 class DebugFrame;
 class Instance;
 class SigIdDesc;
-struct CallThunk;
 struct FuncOffsets;
-struct ProfilingOffsets;
+struct CallableOffsets;
 struct TrapOffset;
 
 
@@ -96,7 +95,6 @@ enum class ExitReason : uint32_t
 
 
 
-
 class ProfilingFrameIterator
 {
     const WasmActivation* activation_;
@@ -125,26 +123,15 @@ class ProfilingFrameIterator
 
 void
 GenerateExitPrologue(jit::MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                     ProfilingOffsets* offsets);
+                     CallableOffsets* offsets);
 void
 GenerateExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                     ProfilingOffsets* offsets);
+                     CallableOffsets* offsets);
 void
 GenerateFunctionPrologue(jit::MacroAssembler& masm, unsigned framePushed, const SigIdDesc& sigId,
                          FuncOffsets* offsets);
 void
 GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets);
-
-
-
-void
-ToggleProfiling(const Code& code, const CallSite& callSite, bool enabled);
-
-void
-ToggleProfiling(const Code& code, const CallThunk& callThunk, bool enabled);
-
-void
-ToggleProfiling(const Code& code, const CodeRange& codeRange, bool enabled);
 
 } 
 } 

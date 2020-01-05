@@ -40,7 +40,6 @@ class Compartment
     InstanceVector instances_;
     volatile bool  mutatingInstances_;
     size_t         activationCount_;
-    bool           profilingEnabled_;
 
     friend class js::WasmActivation;
 
@@ -90,11 +89,8 @@ class Compartment
     Instance* lookupInstanceDeprecated(const void* pc) const;
 
     
-    
-    
 
-    bool ensureProfilingState(JSContext* cx);
-    bool profilingEnabled() const;
+    void ensureProfilingLabels(bool profilingEnabled);
 
     
 

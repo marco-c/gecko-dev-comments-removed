@@ -782,62 +782,39 @@ struct Offsets
     }
 };
 
-struct ProfilingOffsets : Offsets
+struct CallableOffsets : Offsets
 {
-    MOZ_IMPLICIT ProfilingOffsets(uint32_t profilingReturn = 0)
-      : Offsets(), profilingReturn(profilingReturn)
+    MOZ_IMPLICIT CallableOffsets(uint32_t ret = 0)
+      : Offsets(), ret(ret)
     {}
 
     
     
-    uint32_t profilingEntry() const { return begin; }
-
-    
-    
-    
-    uint32_t profilingReturn;
+    uint32_t ret;
 
     void offsetBy(uint32_t offset) {
         Offsets::offsetBy(offset);
-        profilingReturn += offset;
+        ret += offset;
     }
 };
 
-struct FuncOffsets : ProfilingOffsets
+struct FuncOffsets : CallableOffsets
 {
     MOZ_IMPLICIT FuncOffsets()
-      : ProfilingOffsets(),
-        tableEntry(0),
-        tableProfilingJump(0),
-        nonProfilingEntry(0),
-        profilingJump(0),
-        profilingEpilogue(0)
+      : CallableOffsets(),
+        normalEntry(0)
     {}
 
     
     
     
     
-    uint32_t tableEntry;
-    uint32_t tableProfilingJump;
-
     
-    
-    
-    uint32_t nonProfilingEntry;
-
-    
-    
-    uint32_t profilingJump;
-    uint32_t profilingEpilogue;
+    uint32_t normalEntry;
 
     void offsetBy(uint32_t offset) {
-        ProfilingOffsets::offsetBy(offset);
-        tableEntry += offset;
-        tableProfilingJump += offset;
-        nonProfilingEntry += offset;
-        profilingJump += offset;
-        profilingEpilogue += offset;
+        CallableOffsets::offsetBy(offset);
+        normalEntry += offset;
     }
 };
 
@@ -926,26 +903,18 @@ class CallSiteDesc
 class CallSite : public CallSiteDesc
 {
     uint32_t returnAddressOffset_;
-    uint32_t stackDepth_;
 
   public:
     CallSite() {}
 
-    CallSite(CallSiteDesc desc, uint32_t returnAddressOffset, uint32_t stackDepth)
+    CallSite(CallSiteDesc desc, uint32_t returnAddressOffset)
       : CallSiteDesc(desc),
-        returnAddressOffset_(returnAddressOffset),
-        stackDepth_(stackDepth)
+        returnAddressOffset_(returnAddressOffset)
     { }
 
     void setReturnAddressOffset(uint32_t r) { returnAddressOffset_ = r; }
     void offsetReturnAddressBy(int32_t o) { returnAddressOffset_ += o; }
     uint32_t returnAddressOffset() const { return returnAddressOffset_; }
-
-    
-    
-    
-    
-    uint32_t stackDepth() const { return stackDepth_; }
 };
 
 WASM_DECLARE_POD_VECTOR(CallSite, CallSiteVector)
@@ -1485,8 +1454,6 @@ WASM_DECLARE_POD_VECTOR(MemoryAccess, MemoryAccessVector)
 
 struct Frame
 {
-    
-    
     
     
     uint8_t* callerFP;

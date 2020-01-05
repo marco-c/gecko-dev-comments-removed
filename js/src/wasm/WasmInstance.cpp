@@ -352,7 +352,7 @@ Instance::Instance(JSContext* cx,
             const CodeRange& codeRange = calleeInstanceObj->getExportedFunctionCodeRange(f);
             Instance& calleeInstance = calleeInstanceObj->instance();
             import.tls = calleeInstance.tlsData();
-            import.code = calleeInstance.codeSegment().base() + codeRange.funcNonProfilingEntry();
+            import.code = calleeInstance.codeSegment().base() + codeRange.funcNormalEntry();
             import.baselineScript = nullptr;
             import.obj = calleeInstanceObj;
         } else {
@@ -537,9 +537,6 @@ Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
 {
     
     MOZ_RELEASE_ASSERT(!memory_ || tlsData()->memoryBase == memory_->buffer().dataPointerEither());
-
-    if (!cx->compartment()->wasm.ensureProfilingState(cx))
-        return false;
 
     const FuncExport& func = metadata().lookupFuncExport(funcIndex);
 
@@ -780,61 +777,6 @@ Instance::deoptimizeImportExit(uint32_t funcImportIndex)
     FuncImportTls& import = funcImportTls(fi);
     import.code = codeBase() + fi.interpExitCodeOffset();
     import.baselineScript = nullptr;
-}
-
-static void
-UpdateEntry(const Code& code, bool profilingEnabled, void** entry)
-{
-    const CodeRange& codeRange = *code.lookupRange(*entry);
-    void* from = code.segment().base() + codeRange.funcNonProfilingEntry();
-    void* to = code.segment().base() + codeRange.funcProfilingEntry();
-
-    if (!profilingEnabled)
-        Swap(from, to);
-
-    MOZ_ASSERT(*entry == from);
-    *entry = to;
-}
-
-bool
-Instance::ensureProfilingState(JSContext* cx, bool newProfilingEnabled)
-{
-    if (code_->profilingEnabled() == newProfilingEnabled)
-        return true;
-
-    if (!code_->ensureProfilingState(cx->runtime(), newProfilingEnabled))
-        return false;
-
-    
-    
-    
-
-    for (const FuncImport& fi : metadata().funcImports) {
-        FuncImportTls& import = funcImportTls(fi);
-        if (import.obj && import.obj->is<WasmInstanceObject>()) {
-            Code& code = import.obj->as<WasmInstanceObject>().instance().code();
-            UpdateEntry(code, newProfilingEnabled, &import.code);
-        }
-    }
-
-    for (const SharedTable& table : tables_) {
-        if (!table->isTypedFunction())
-            continue;
-
-        
-        
-        
-        MOZ_ASSERT(metadata().kind == ModuleKind::AsmJS);
-
-        void** array = table->internalArray();
-        uint32_t length = table->length();
-        for (size_t i = 0; i < length; i++) {
-            if (array[i])
-                UpdateEntry(*code_, newProfilingEnabled, &array[i]);
-        }
-    }
-
-    return true;
 }
 
 void

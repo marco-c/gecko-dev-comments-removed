@@ -57,9 +57,6 @@ class CodeSegment
     uint8_t* outOfBoundsCode_;
     uint8_t* unalignedAccessCode_;
 
-    
-    bool profilingEnabled_;
-
   public:
 #ifdef MOZ_VTUNE
     unsigned vtune_method_id_; 
@@ -249,21 +246,17 @@ class CodeRange
   private:
     
     uint32_t begin_;
-    uint32_t profilingReturn_;
+    uint32_t ret_;
     uint32_t end_;
     uint32_t funcIndex_;
     uint32_t funcLineOrBytecode_;
-    uint8_t funcBeginToTableEntry_;
-    uint8_t funcBeginToTableProfilingJump_;
-    uint8_t funcBeginToNonProfilingEntry_;
-    uint8_t funcProfilingJumpToProfilingReturn_;
-    uint8_t funcProfilingEpilogueToProfilingReturn_;
+    uint8_t funcBeginToNormalEntry_;
     Kind kind_ : 8;
 
   public:
     CodeRange() = default;
     CodeRange(Kind kind, Offsets offsets);
-    CodeRange(Kind kind, ProfilingOffsets offsets);
+    CodeRange(Kind kind, CallableOffsets offsets);
     CodeRange(uint32_t funcIndex, uint32_t lineOrBytecode, FuncOffsets offsets);
 
     
@@ -293,41 +286,30 @@ class CodeRange
     bool isInline() const {
         return kind() == Inline;
     }
+    bool isThunk() const {
+        return kind() == FarJumpIsland;
+    }
 
     
     
+    
 
-    uint32_t profilingReturn() const {
+    uint32_t ret() const {
         MOZ_ASSERT(isFunction() || isImportExit() || isTrapExit());
-        return profilingReturn_;
+        return ret_;
     }
 
     
     
+    
 
-    uint32_t funcProfilingEntry() const {
-        MOZ_ASSERT(isFunction());
-        return begin();
-    }
     uint32_t funcTableEntry() const {
         MOZ_ASSERT(isFunction());
-        return begin_ + funcBeginToTableEntry_;
+        return begin_;
     }
-    uint32_t funcTableProfilingJump() const {
+    uint32_t funcNormalEntry() const {
         MOZ_ASSERT(isFunction());
-        return begin_ + funcBeginToTableProfilingJump_;
-    }
-    uint32_t funcNonProfilingEntry() const {
-        MOZ_ASSERT(isFunction());
-        return begin_ + funcBeginToNonProfilingEntry_;
-    }
-    uint32_t funcProfilingJump() const {
-        MOZ_ASSERT(isFunction());
-        return profilingReturn_ - funcProfilingJumpToProfilingReturn_;
-    }
-    uint32_t funcProfilingEpilogue() const {
-        MOZ_ASSERT(isFunction());
-        return profilingReturn_ - funcProfilingEpilogueToProfilingReturn_;
+        return begin_ + funcBeginToNormalEntry_;
     }
     uint32_t funcIndex() const {
         MOZ_ASSERT(isFunction());
@@ -353,25 +335,6 @@ class CodeRange
 };
 
 WASM_DECLARE_POD_VECTOR(CodeRange, CodeRangeVector)
-
-
-
-
-
-
-struct CallThunk
-{
-    uint32_t offset;
-    union {
-        uint32_t funcIndex;
-        uint32_t codeRangeIndex;
-    } u;
-
-    CallThunk(uint32_t offset, uint32_t funcIndex) : offset(offset) { u.funcIndex = funcIndex; }
-    CallThunk() = default;
-};
-
-WASM_DECLARE_POD_VECTOR(CallThunk, CallThunkVector)
 
 
 
@@ -463,7 +426,6 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     MemoryAccessVector    memoryAccesses;
     CodeRangeVector       codeRanges;
     CallSiteVector        callSites;
-    CallThunkVector       callThunks;
     NameInBytecodeVector  funcNames;
     CustomSectionVector   customSections;
     CacheableChars        filename;
@@ -560,8 +522,9 @@ class Code
     const SharedMetadata     metadata_;
     const SharedBytes        maybeBytecode_;
     UniqueGeneratedSourceMap maybeSourceMap_;
-    CacheableCharsVector     funcLabels_;
-    bool                     profilingEnabled_;
+
+    
+    CacheableCharsVector     profilingLabels_;
 
     
 
@@ -604,13 +567,9 @@ class Code
 
     
     
-    
-    
-    
 
-    MOZ_MUST_USE bool ensureProfilingState(JSRuntime* rt, bool enabled);
-    bool profilingEnabled() const { return profilingEnabled_; }
-    const char* profilingLabel(uint32_t funcIndex) const { return funcLabels_[funcIndex].get(); }
+    void ensureProfilingLabels(bool profilingEnabled);
+    const char* profilingLabel(uint32_t funcIndex) const;
 
     
     

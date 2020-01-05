@@ -752,6 +752,25 @@ typedef Vector<GlobalAccess, 0, SystemAllocPolicy> GlobalAccessVector;
 
 
 
+struct CallFarJump
+{
+    uint32_t funcIndex;
+    jit::CodeOffset jump;
+
+    CallFarJump(uint32_t funcIndex, jit::CodeOffset jump)
+      : funcIndex(funcIndex), jump(jump)
+    {}
+
+    void offsetBy(size_t delta) {
+        jump.offsetBy(delta);
+    }
+};
+
+typedef Vector<CallFarJump, 0, SystemAllocPolicy> CallFarJumpVector;
+
+
+
+
 
 
 struct TrapDesc : TrapOffset
@@ -808,6 +827,7 @@ namespace jit {
 class AssemblerShared
 {
     wasm::CallSiteAndTargetVector callSites_;
+    wasm::CallFarJumpVector callFarJumps_;
     wasm::TrapSiteVector trapSites_;
     wasm::TrapFarJumpVector trapFarJumps_;
     wasm::MemoryAccessVector memoryAccesses_;
@@ -842,15 +862,17 @@ class AssemblerShared
     }
 
     template <typename... Args>
-    void append(const wasm::CallSiteDesc& desc, CodeOffset retAddr, size_t framePushed,
-                Args&&... args)
+    void append(const wasm::CallSiteDesc& desc, CodeOffset retAddr, Args&&... args)
     {
-        
-        
-        wasm::CallSite cs(desc, retAddr.offset(), framePushed + sizeof(wasm::Frame));
+        wasm::CallSite cs(desc, retAddr.offset());
         enoughMemory_ &= callSites_.emplaceBack(cs, mozilla::Forward<Args>(args)...);
     }
     wasm::CallSiteAndTargetVector& callSites() { return callSites_; }
+
+    void append(wasm::CallFarJump jmp) {
+        enoughMemory_ &= callFarJumps_.append(jmp);
+    }
+    const wasm::CallFarJumpVector& callFarJumps() const { return callFarJumps_; }
 
     void append(wasm::TrapSite trapSite) {
         enoughMemory_ &= trapSites_.append(trapSite);
@@ -910,6 +932,11 @@ class AssemblerShared
             callSites_[i].offsetReturnAddressBy(delta);
 
         MOZ_ASSERT(other.trapSites_.empty(), "should have been cleared by wasmEmitTrapOutOfLineCode");
+
+        i = callFarJumps_.length();
+        enoughMemory_ &= callFarJumps_.appendAll(other.callFarJumps_);
+        for (; i < callFarJumps_.length(); i++)
+            callFarJumps_[i].offsetBy(delta);
 
         i = trapFarJumps_.length();
         enoughMemory_ &= trapFarJumps_.appendAll(other.trapFarJumps_);

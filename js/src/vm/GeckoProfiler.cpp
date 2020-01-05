@@ -141,6 +141,12 @@ GeckoProfiler::enable(bool enabled)
         }
     }
 
+    
+    
+    
+    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next())
+        c->wasm.ensureProfilingLabels(enabled);
+
     return true;
 }
 
@@ -289,7 +295,6 @@ GeckoProfiler::push(const char* string, void* sp, JSScript* script, jsbytecode* 
         }
 
         entry.setLabel(string);
-        entry.setDynamicString(nullptr);
         entry.setCategory(category);
 
         

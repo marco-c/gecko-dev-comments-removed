@@ -153,10 +153,6 @@ class Instance
     void onMovingGrowTable();
 
     
-
-    MOZ_MUST_USE bool ensureProfilingState(JSContext* cx, bool enabled);
-
-    
     bool debugEnabled() const { return code_->metadata().debugEnabled; }
     bool enterFrameTrapsEnabled() const { return enterFrameTrapsEnabled_; }
     void ensureEnterFrameTrapsState(JSContext* cx, bool enabled);

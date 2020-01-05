@@ -63,8 +63,6 @@ class Table : public ShareableBase<Table>
     uint8_t* base() const { return array_.get(); }
 
     
-    
-    
 
     void** internalArray() const;
     ExternalTableElem* externalArray() const;

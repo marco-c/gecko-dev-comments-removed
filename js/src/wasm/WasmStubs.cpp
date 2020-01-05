@@ -497,7 +497,7 @@ wasm::GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, Si
 
 
 
-ProfilingOffsets
+CallableOffsets
 wasm::GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex,
                                Label* throwLabel)
 {
@@ -519,7 +519,7 @@ wasm::GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint3
     unsigned argBytes = Max<size_t>(1, fi.sig().args().length()) * sizeof(Value);
     unsigned framePushed = StackDecrementForCall(masm, ABIStackAlignment, argOffset + argBytes);
 
-    ProfilingOffsets offsets;
+    CallableOffsets offsets;
     GenerateExitPrologue(masm, framePushed, ExitReason::ImportInterp, &offsets);
 
     
@@ -626,7 +626,7 @@ static const unsigned SavedTlsReg = sizeof(void*);
 
 
 
-ProfilingOffsets
+CallableOffsets
 wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel)
 {
     masm.setFramePushed(0);
@@ -644,7 +644,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
                               sizeOfRetAddr;
 
-    ProfilingOffsets offsets;
+    CallableOffsets offsets;
     GenerateExitPrologue(masm, jitFramePushed, ExitReason::ImportJit, &offsets);
 
     
@@ -867,7 +867,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
 
 
 
-ProfilingOffsets
+CallableOffsets
 wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
 {
     masm.haltingAlign(CodeAlignment);
@@ -879,7 +879,7 @@ wasm::GenerateTrapExit(MacroAssembler& masm, Trap trap, Label* throwLabel)
 
     uint32_t framePushed = StackDecrementForCall(masm, ABIStackAlignment, args);
 
-    ProfilingOffsets offsets;
+    CallableOffsets offsets;
     GenerateExitPrologue(masm, framePushed, ExitReason::Trap, &offsets);
 
     ABIArgMIRTypeIter i(args);
@@ -1174,7 +1174,7 @@ wasm::GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel)
 
     masm.setFramePushed(0);
 
-    ProfilingOffsets offsets;
+    CallableOffsets offsets;
     GenerateExitPrologue(masm, 0, ExitReason::DebugTrap, &offsets);
 
     
