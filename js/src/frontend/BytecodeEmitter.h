@@ -648,7 +648,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     
     
     MOZ_MUST_USE bool emitDestructuringLHS(ParseNode* target, DestructuringFlavor flav);
-    MOZ_MUST_USE bool emitDestructuringLHSInBranch(ParseNode* target, DestructuringFlavor flav);
 
     
     

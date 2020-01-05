@@ -4465,13 +4465,6 @@ BytecodeEmitter::emitDestructuringLHS(ParseNode* target, DestructuringFlavor fla
 }
 
 bool
-BytecodeEmitter::emitDestructuringLHSInBranch(ParseNode* target, DestructuringFlavor flav)
-{
-    TDZCheckCache tdzCache(this);
-    return emitDestructuringLHS(target, flav);
-}
-
-bool
 BytecodeEmitter::emitIteratorNext(ParseNode* pn, bool allowSelfHosted)
 {
     MOZ_ASSERT(allowSelfHosted || emitterMode != BytecodeEmitter::SelfHosting,
@@ -4808,38 +4801,35 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     
 
     
-
-
-
+    
     if (!emit1(JSOP_DUP))                                         
         return false;
     if (!emitIterator())                                          
         return false;
-    bool needToPopIterator = true;
 
     for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
         bool isHead = member == pattern->pn_head;
+        bool hasNext = !!member->pn_next;
+
         if (member->isKind(PNK_SPREAD)) {
             IfThenElseEmitter ifThenElse(this);
             if (!isHead) {
                 
                 
+                
                 if (!ifThenElse.emitIfElse())                     
                     return false;
 
-                if (!emit1(JSOP_POP))                             
-                    return false;
                 if (!emitUint32Operand(JSOP_NEWARRAY, 0))         
                     return false;
-                if (!emitDestructuringLHSInBranch(member, flav))  
-                    return false;
-
                 if (!ifThenElse.emitElse())                       
                     return false;
             }
 
             
             
+            if (!emit1(JSOP_DUP))                                 
+                return false;
             if (!emitUint32Operand(JSOP_NEWARRAY, 0))             
                 return false;
             if (!emitNumberOp(0))                                 
@@ -4848,16 +4838,17 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 return false;
             if (!emit1(JSOP_POP))                                 
                 return false;
-            if (!emitDestructuringLHSInBranch(member, flav))      
-                return false;
 
             if (!isHead) {
                 if (!ifThenElse.emitEnd())
                     return false;
-                MOZ_ASSERT(ifThenElse.popped() == 1);
+                MOZ_ASSERT(ifThenElse.pushed() == 1);
             }
-            needToPopIterator = false;
-            MOZ_ASSERT(!member->pn_next);
+
+            if (!emitDestructuringLHS(member, flav))              
+                return false;
+
+            MOZ_ASSERT(!hasNext);
             break;
         }
 
@@ -4869,73 +4860,83 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         bool isElision = subpattern->isKind(PNK_ELISION);
-        bool hasNextNonSpread = member->pn_next && !member->pn_next->isKind(PNK_SPREAD);
-        bool hasNextSpread = member->pn_next && member->pn_next->isKind(PNK_SPREAD);
 
         MOZ_ASSERT(!subpattern->isKind(PNK_SPREAD));
 
-        auto emitNext = [pattern](ExclusiveContext* cx, BytecodeEmitter* bce) {
-            if (!bce->emit1(JSOP_DUP))                            
-                return false;
-            if (!bce->emitIteratorNext(pattern))                  
-                return false;
-            if (!bce->emit1(JSOP_DUP))                            
-                return false;
-            if (!bce->emitAtomOp(cx->names().done, JSOP_GETPROP)) 
-                return false;
-            return true;
-        };
-
-        if (isHead) {
-            if (!emitNext(cx, this))                              
-                return false;
-        }
-
-        IfThenElseEmitter ifThenElse(this);
-        if (!ifThenElse.emitIfElse())                             
-            return false;
-
-        if (!emit1(JSOP_POP))                                     
-            return false;
-        if (pndefault) {
+        IfThenElseEmitter ifAlreadyDone(this);
+        if (!isHead) {
             
             
-            if (!emitInitializerInBranch(pndefault, subpattern))  
-                return false;
-        } else {
-            if (!isElision) {
-                if (!emit1(JSOP_UNDEFINED))                       
+            
+            if (hasNext) {
+                if (!emit1(JSOP_DUP))                             
                     return false;
-                if (!emit1(JSOP_NOP_DESTRUCTURING))
+            }
+            if (!ifAlreadyDone.emitIfElse())                      
+                return false;
+
+            if (!emit1(JSOP_UNDEFINED))                           
+                return false;
+            if (!emit1(JSOP_NOP_DESTRUCTURING))                   
+                return false;
+
+            if (!ifAlreadyDone.emitElse())                        
+                return false;
+
+            if (hasNext) {
+                if (!emit1(JSOP_POP))                             
                     return false;
             }
         }
-        if (!isElision) {
-            if (!emitDestructuringLHSInBranch(subpattern, flav))  
-                return false;
-        } else if (pndefault) {
-            if (!emit1(JSOP_POP))                                 
-                return false;
-        }
 
-        
-        if (hasNextNonSpread) {
-            if (!emit1(JSOP_UNDEFINED))                           
-                return false;
-            if (!emit1(JSOP_NOP_DESTRUCTURING))
-                return false;
-            if (!emit1(JSOP_TRUE))                                
-                return false;
-        } else if (hasNextSpread) {
-            if (!emit1(JSOP_TRUE))                                
-                return false;
-        }
-
-        if (!ifThenElse.emitElse())                               
+        if (!emit1(JSOP_DUP))                                     
+            return false;
+        if (!emitIteratorNext(pattern))                           
+            return false;
+        if (!emit1(JSOP_DUP))                                     
+            return false;
+        if (!emitAtomOp(cx->names().done, JSOP_GETPROP))          
             return false;
 
+        if (hasNext) {
+            if (!emit1(JSOP_DUP))                                 
+                return false;
+        }
+
+        IfThenElseEmitter ifDone(this);
+        if (!ifDone.emitIfElse())                                 
+            return false;
+
+        if (hasNext) {
+            if (!emit1(JSOP_SWAP))                                
+                return false;
+        }
+        if (!emit1(JSOP_POP))                                     
+            return false;
+        if (!emit1(JSOP_UNDEFINED))                               
+            return false;
+        if (!emit1(JSOP_NOP_DESTRUCTURING))                       
+            return false;
+
+        if (!ifDone.emitElse())                                   
+            return false;
+
+        if (hasNext) {
+            if (!emit1(JSOP_SWAP))                                
+                return false;
+        }
         if (!emitAtomOp(cx->names().value, JSOP_GETPROP))         
             return false;
+
+        if (!ifDone.emitEnd())
+            return false;
+        MOZ_ASSERT(ifDone.pushed() == 0);
+
+        if (!isHead) {
+            if (!ifAlreadyDone.emitEnd())
+                return false;
+            MOZ_ASSERT(ifAlreadyDone.pushed() == 1);
+        }
 
         if (pndefault) {
             if (!emitDefault(pndefault, subpattern))              
@@ -4943,36 +4944,16 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         if (!isElision) {
-            if (!emitDestructuringLHSInBranch(subpattern, flav))  
+            if (!emitDestructuringLHS(subpattern, flav))          
                 return false;
         } else {
             if (!emit1(JSOP_POP))                                 
                 return false;
         }
-
-        
-        if (hasNextNonSpread) {
-            if (!emitNext(cx, this))                              
-                return false;
-        } else if (hasNextSpread) {
-            if (!emit1(JSOP_FALSE))                               
-                return false;
-        }
-
-        if (!ifThenElse.emitEnd())
-            return false;
-        if (hasNextNonSpread)
-            MOZ_ASSERT(ifThenElse.pushed() == 1);
-        else if (hasNextSpread)
-            MOZ_ASSERT(ifThenElse.pushed() == 0);
-        else
-            MOZ_ASSERT(ifThenElse.popped() == 1);
     }
 
-    if (needToPopIterator) {
-        if (!emit1(JSOP_POP))                                     
-            return false;
-    }
+    if (!emit1(JSOP_POP))                                         
+        return false;
 
     return true;
 }
