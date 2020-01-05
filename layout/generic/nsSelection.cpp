@@ -4964,6 +4964,16 @@ Selection::AddRange(nsIDOMRange* aDOMRange)
 void
 Selection::AddRange(nsRange& aRange, ErrorResult& aRv)
 {
+  nsINode* rangeRoot = aRange.GetRoot();
+  nsIDocument* doc = GetParentObject();
+  if (doc != rangeRoot && (!rangeRoot ||
+                           doc != rangeRoot->GetComposedDoc())) {
+    
+    
+    
+    return;
+  }
+
   
   
   bool didAddRange;
