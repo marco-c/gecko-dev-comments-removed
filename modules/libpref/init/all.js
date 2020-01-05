@@ -381,6 +381,7 @@ pref("media.raw.enabled", true);
 pref("media.ogg.enabled", true);
 pref("media.opus.enabled", true);
 pref("media.wave.enabled", true);
+pref("media.wave.decoder.enabled", true);
 pref("media.webm.enabled", true);
 
 #ifdef MOZ_APPLEMEDIA
@@ -577,6 +578,7 @@ pref("media.mediasource.webm.enabled", true);
 pref("media.mediasource.webm.audio.enabled", true);
 
 
+pref("media.format-reader.ogg", true);
 pref("media.flac.enabled", true);
 pref("media.ogg.flac.enabled", true);
 
@@ -1184,9 +1186,6 @@ pref("dom.forms.color", true);
 
 
 pref("dom.forms.datetime", false);
-
-
-pref("dom.forms.datetime.timepicker", false);
 
 
 pref("dom.forms.autocomplete.experimental", false);
@@ -2849,7 +2848,11 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 #endif
 
+#ifdef NIGHTLY_BUILD
+pref("dom.ipc.processCount", 2);
+#else
 pref("dom.ipc.processCount", 1);
+#endif
 
 
 pref("svg.path-caching.enabled", true);
@@ -4614,7 +4617,6 @@ pref("layers.offmainthreadcomposition.log-animations", false);
 pref("layers.bufferrotation.enabled", true);
 
 pref("layers.componentalpha.enabled", true);
-pref("layers.draw-mask-debug", false);
 
 
 pref("gfx.content.use-native-pushlayer", false);
