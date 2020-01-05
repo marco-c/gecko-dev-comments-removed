@@ -49,7 +49,6 @@
 
 #include "client/linux/dump_writer_common/mapping_info.h"
 #include "client/linux/dump_writer_common/thread_info.h"
-#include "common/linux/file_id.h"
 #include "common/memory.h"
 #include "google_breakpad/common/minidump_format.h"
 
@@ -73,9 +72,7 @@ const char kLinuxGateLibraryName[] = "linux-gate.so";
 
 class LinuxDumper {
  public:
-  
-  
-  explicit LinuxDumper(pid_t pid, const char* root_prefix = "");
+  explicit LinuxDumper(pid_t pid);
 
   virtual ~LinuxDumper();
 
@@ -130,7 +127,7 @@ class LinuxDumper {
   bool ElfFileIdentifierForMapping(const MappingInfo& mapping,
                                    bool member,
                                    unsigned int mapping_id,
-                                   wasteful_vector<uint8_t>& identifier);
+                                   uint8_t identifier[sizeof(MDGUID)]);
 
   uintptr_t crash_address() const { return crash_address_; }
   void set_crash_address(uintptr_t crash_address) {
@@ -145,19 +142,14 @@ class LinuxDumper {
 
   
   
-  bool GetMappingAbsolutePath(const MappingInfo& mapping,
-                              char path[PATH_MAX]) const;
-
   
   
   
-  
-  
-  void GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
-                                      char* file_path,
-                                      size_t file_path_size,
-                                      char* file_name,
-                                      size_t file_name_size);
+  static void GetMappingEffectiveNameAndPath(const MappingInfo& mapping,
+                                             char* file_path,
+                                             size_t file_path_size,
+                                             char* file_name,
+                                             size_t file_name_size);
 
  protected:
   bool ReadAuxv();
@@ -179,9 +171,6 @@ class LinuxDumper {
 
    
   const pid_t pid_;
-
-  
-  const char* const root_prefix_;
 
   
   uintptr_t crash_address_;

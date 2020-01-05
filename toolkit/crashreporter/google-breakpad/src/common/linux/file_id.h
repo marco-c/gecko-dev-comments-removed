@@ -37,15 +37,10 @@
 #include <string>
 
 #include "common/linux/guid_creator.h"
-#include "common/memory.h"
 
 namespace google_breakpad {
 
-
-
-
-
-static const size_t kDefaultBuildIdSize = 20;
+static const size_t kMDGUIDSize = sizeof(MDGUID);
 
 class FileID {
  public:
@@ -58,24 +53,20 @@ class FileID {
   
   
   
-  bool ElfFileIdentifier(wasteful_vector<uint8_t>& identifier);
+  bool ElfFileIdentifier(uint8_t identifier[kMDGUIDSize]);
 
   
   
   
-  static bool ElfFileIdentifierFromMappedFile(
-      const void* base,
-      wasteful_vector<uint8_t>& identifier);
+  static bool ElfFileIdentifierFromMappedFile(const void* base,
+                                              uint8_t identifier[kMDGUIDSize]);
 
   
   
   
-  static std::string ConvertIdentifierToUUIDString(
-      const wasteful_vector<uint8_t>& identifier);
-
   
-  static std::string ConvertIdentifierToString(
-      const wasteful_vector<uint8_t>& identifier);
+  static void ConvertIdentifierToString(const uint8_t identifier[kMDGUIDSize],
+                                        char* buffer, int buffer_length);
 
  private:
   

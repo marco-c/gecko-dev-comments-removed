@@ -364,7 +364,7 @@ static uint64_t LookupSymbol(const char* symbol_name,
   return list.n_value;
 }
 
-#if TARGET_OS_IPHONE || MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
+#if TARGET_OS_IPHONE
 static bool HasTaskDyldInfo() {
   return true;
 }
@@ -381,7 +381,11 @@ static SInt32 GetOSVersion() {
 }
 
 static bool HasTaskDyldInfo() {
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_6
+  return true;
+#else
   return GetOSVersion() >= 0x1060;
+#endif
 }
 #endif  
 

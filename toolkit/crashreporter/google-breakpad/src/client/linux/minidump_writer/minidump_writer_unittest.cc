@@ -54,6 +54,10 @@
 
 using namespace google_breakpad;
 
+
+
+const int kGUIDStringSize = 37;
+
 namespace {
 
 typedef testing::Test MinidumpWriterTest;
@@ -133,7 +137,19 @@ TEST(MinidumpWriterTest, MappingInfo) {
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
     0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
   };
-  const string module_identifier = "33221100554477668899AABBCCDDEEFF0";
+  char module_identifier_buffer[kGUIDStringSize];
+  FileID::ConvertIdentifierToString(kModuleGUID,
+                                    module_identifier_buffer,
+                                    sizeof(module_identifier_buffer));
+  string module_identifier(module_identifier_buffer);
+  
+  size_t pos;
+  while ((pos = module_identifier.find('-')) != string::npos) {
+    module_identifier.erase(pos, 1);
+  }
+  
+  
+  module_identifier += "0";
 
   
   char* memory =
@@ -169,7 +185,6 @@ TEST(MinidumpWriterTest, MappingInfo) {
   info.start_addr = kMemoryAddress;
   info.size = memory_size;
   info.offset = 0;
-  info.exec = false;
   strcpy(info.name, kMemoryName);
 
   MappingList mappings;
@@ -218,53 +233,6 @@ TEST(MinidumpWriterTest, MappingInfo) {
 
 
 
-
-TEST(MinidumpWriterTest, BuildIDLong) {
-  int fds[2];
-  ASSERT_NE(-1, pipe(fds));
-
-  const pid_t child = fork();
-  if (child == 0) {
-    close(fds[1]);
-    char b;
-    IGNORE_RET(HANDLE_EINTR(read(fds[0], &b, sizeof(b))));
-    close(fds[0]);
-    syscall(__NR_exit);
-  }
-  close(fds[0]);
-
-  ExceptionHandler::CrashContext context;
-  memset(&context, 0, sizeof(context));
-  ASSERT_EQ(0, getcontext(&context.context));
-  context.tid = child;
-
-  AutoTempDir temp_dir;
-  const string dump_path = temp_dir.path() + kMDWriterUnitTestFileName;
-
-  EXPECT_TRUE(WriteMinidump(dump_path.c_str(),
-                            child, &context, sizeof(context)));
-  close(fds[1]);
-
-  
-  
-  Minidump minidump(dump_path);
-  ASSERT_TRUE(minidump.Read());
-
-  MinidumpModuleList* module_list = minidump.GetModuleList();
-  ASSERT_TRUE(module_list);
-  const MinidumpModule* module = module_list->GetMainModule();
-  ASSERT_TRUE(module);
-  const string module_identifier = "030201000504070608090A0B0C0D0E0F0";
-  
-  const string build_id =
-      "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
-  EXPECT_EQ(module_identifier, module->debug_identifier());
-  EXPECT_EQ(build_id, module->code_identifier());
-}
-
-
-
-
 TEST(MinidumpWriterTest, MappingInfoContained) {
   int fds[2];
   ASSERT_NE(-1, pipe(fds));
@@ -277,7 +245,19 @@ TEST(MinidumpWriterTest, MappingInfoContained) {
     0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
     0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
   };
-  const string module_identifier = "33221100554477668899AABBCCDDEEFF0";
+  char module_identifier_buffer[kGUIDStringSize];
+  FileID::ConvertIdentifierToString(kModuleGUID,
+                                    module_identifier_buffer,
+                                    sizeof(module_identifier_buffer));
+  string module_identifier(module_identifier_buffer);
+  
+  size_t pos;
+  while ((pos = module_identifier.find('-')) != string::npos) {
+    module_identifier.erase(pos, 1);
+  }
+  
+  
+  module_identifier += "0";
 
   
   AutoTempDir temp_dir;
@@ -324,7 +304,6 @@ TEST(MinidumpWriterTest, MappingInfoContained) {
   info.start_addr = kMemoryAddress - memory_size;
   info.size = memory_size * 3;
   info.offset = 0;
-  info.exec = false;
   strcpy(info.name, kMemoryName);
 
   MappingList mappings;
@@ -431,10 +410,12 @@ TEST(MinidumpWriterTest, DeletedBinary) {
   EXPECT_STREQ(binpath.c_str(), module->code_file().c_str());
   
   FileID fileid(helper_path.c_str());
-  PageAllocator allocator;
-  wasteful_vector<uint8_t> identifier(&allocator, kDefaultBuildIdSize);
+  uint8_t identifier[sizeof(MDGUID)];
   EXPECT_TRUE(fileid.ElfFileIdentifier(identifier));
-  string identifier_string = FileID::ConvertIdentifierToUUIDString(identifier);
+  char identifier_string[kGUIDStringSize];
+  FileID::ConvertIdentifierToString(identifier,
+                                    identifier_string,
+                                    kGUIDStringSize);
   string module_identifier(identifier_string);
   
   size_t pos;

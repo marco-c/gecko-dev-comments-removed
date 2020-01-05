@@ -39,19 +39,14 @@
 #include <string.h>
 
 #include <algorithm>
-#include <string>
 
 #include "common/linux/elf_gnu_compat.h"
 #include "common/linux/elfutils.h"
 #include "common/linux/linux_libc_support.h"
 #include "common/linux/memory_mapped_file.h"
-#include "common/using_std_string.h"
 #include "third_party/lss/linux_syscall_support.h"
 
 namespace google_breakpad {
-
-
-const size_t kMDGUIDSize = sizeof(MDGUID);
 
 FileID::FileID(const char* path) : path_(path) {}
 
@@ -63,7 +58,7 @@ FileID::FileID(const char* path) : path_(path) {}
 
 template<typename ElfClass>
 static bool ElfClassBuildIDNoteIdentifier(const void *section, size_t length,
-                                          wasteful_vector<uint8_t>& identifier) {
+                                          uint8_t identifier[kMDGUIDSize]) {
   typedef typename ElfClass::Nhdr Nhdr;
 
   const void* section_end = reinterpret_cast<const char*>(section) + length;
@@ -81,19 +76,21 @@ static bool ElfClassBuildIDNoteIdentifier(const void *section, size_t length,
     return false;
   }
 
-  const uint8_t* build_id = reinterpret_cast<const uint8_t*>(note_header) +
+  const char* build_id = reinterpret_cast<const char*>(note_header) +
     sizeof(Nhdr) + NOTE_PADDING(note_header->n_namesz);
-  identifier.insert(identifier.end(),
-                    build_id,
-                    build_id + note_header->n_descsz);
+  
+  
+  my_memset(identifier, 0, kMDGUIDSize);
+  memcpy(identifier, build_id,
+         std::min(kMDGUIDSize, (size_t)note_header->n_descsz));
 
   return true;
 }
 
 
 
-static bool FindElfBuildIDNote(const void* elf_mapped_base,
-                               wasteful_vector<uint8_t>& identifier) {
+static bool FindElfBuildIDNote(const void *elf_mapped_base,
+                               uint8_t identifier[kMDGUIDSize]) {
   void* note_section;
   size_t note_size;
   int elfclass;
@@ -119,10 +116,8 @@ static bool FindElfBuildIDNote(const void* elf_mapped_base,
 
 
 
-static bool HashElfTextSection(const void* elf_mapped_base,
-                               wasteful_vector<uint8_t>& identifier) {
-  identifier.resize(kMDGUIDSize);
-
+static bool HashElfTextSection(const void *elf_mapped_base,
+                               uint8_t identifier[kMDGUIDSize]) {
   void* text_section;
   size_t text_size;
   if (!FindElfSection(elf_mapped_base, ".text", SHT_PROGBITS,
@@ -131,9 +126,7 @@ static bool HashElfTextSection(const void* elf_mapped_base,
     return false;
   }
 
-  
-  
-  my_memset(&identifier[0], 0, kMDGUIDSize);
+  my_memset(identifier, 0, kMDGUIDSize);
   const uint8_t* ptr = reinterpret_cast<const uint8_t*>(text_section);
   const uint8_t* ptr_end = ptr + std::min(text_size, static_cast<size_t>(4096));
   while (ptr < ptr_end) {
@@ -146,7 +139,7 @@ static bool HashElfTextSection(const void* elf_mapped_base,
 
 
 bool FileID::ElfFileIdentifierFromMappedFile(const void* base,
-                                             wasteful_vector<uint8_t>& identifier) {
+                                             uint8_t identifier[kMDGUIDSize]) {
   
   if (FindElfBuildIDNote(base, identifier))
     return true;
@@ -155,7 +148,7 @@ bool FileID::ElfFileIdentifierFromMappedFile(const void* base,
   return HashElfTextSection(base, identifier);
 }
 
-bool FileID::ElfFileIdentifier(wasteful_vector<uint8_t>& identifier) {
+bool FileID::ElfFileIdentifier(uint8_t identifier[kMDGUIDSize]) {
   MemoryMappedFile mapped_file(path_.c_str(), 0);
   if (!mapped_file.data())  
     return false;
@@ -164,25 +157,12 @@ bool FileID::ElfFileIdentifier(wasteful_vector<uint8_t>& identifier) {
 }
 
 
-
-static string bytes_to_hex_string(const uint8_t* bytes, size_t count) {
-  string result;
-  for (unsigned int idx = 0; idx < count; ++idx) {
-    char buf[3];
-    snprintf(buf, sizeof(buf), "%02X", bytes[idx]);
-    result.append(buf);
-  }
-  return result;
-}
-
-
-string FileID::ConvertIdentifierToUUIDString(
-    const wasteful_vector<uint8_t>& identifier) {
-  uint8_t identifier_swapped[kMDGUIDSize] = { 0 };
+void FileID::ConvertIdentifierToString(const uint8_t identifier[kMDGUIDSize],
+                                       char* buffer, int buffer_length) {
+  uint8_t identifier_swapped[kMDGUIDSize];
 
   
-  memcpy(identifier_swapped, &identifier[0],
-         std::min(kMDGUIDSize, identifier.size()));
+  memcpy(identifier_swapped, identifier, kMDGUIDSize);
   uint32_t* data1 = reinterpret_cast<uint32_t*>(identifier_swapped);
   *data1 = htonl(*data1);
   uint16_t* data2 = reinterpret_cast<uint16_t*>(identifier_swapped + 4);
@@ -190,13 +170,22 @@ string FileID::ConvertIdentifierToUUIDString(
   uint16_t* data3 = reinterpret_cast<uint16_t*>(identifier_swapped + 6);
   *data3 = htons(*data3);
 
-  return bytes_to_hex_string(identifier_swapped, kMDGUIDSize);
-}
+  int buffer_idx = 0;
+  for (unsigned int idx = 0;
+       (buffer_idx < buffer_length) && (idx < kMDGUIDSize);
+       ++idx) {
+    int hi = (identifier_swapped[idx] >> 4) & 0x0F;
+    int lo = (identifier_swapped[idx]) & 0x0F;
 
+    if (idx == 4 || idx == 6 || idx == 8 || idx == 10)
+      buffer[buffer_idx++] = '-';
 
-string FileID::ConvertIdentifierToString(
-    const wasteful_vector<uint8_t>& identifier) {
-  return bytes_to_hex_string(&identifier[0], identifier.size());
+    buffer[buffer_idx++] = (hi >= 10) ? 'A' + hi - 10 : '0' + hi;
+    buffer[buffer_idx++] = (lo >= 10) ? 'A' + lo - 10 : '0' + lo;
+  }
+
+  
+  buffer[(buffer_idx < buffer_length) ? buffer_idx : buffer_idx - 1] = 0;
 }
 
 }  

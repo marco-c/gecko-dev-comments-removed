@@ -40,14 +40,6 @@
 
 
 
-
-
-#if defined(ANDROID_NDK_MAJOR_VERSION) && ANDROID_NDK_MAJOR_VERSION > 10
-#ifdef __aarch64__
-#include <stdint.h>
-#endif  
-#endif  
-
 #include_next <sys/user.h>
 
 #ifdef __i386__
@@ -60,7 +52,6 @@ typedef struct user_fxsr_struct user_fpxregs_struct;
 #endif  
 #endif
 
-#if !defined(ANDROID_NDK_MAJOR_VERSION) || ANDROID_NDK_MAJOR_VERSION == 10
 #ifdef __aarch64__
 #ifdef __cplusplus
 extern "C" {
@@ -79,7 +70,6 @@ struct user_fpsimd_struct {
 #ifdef __cplusplus
 }  
 #endif  
-#endif
 #endif
 
 #endif

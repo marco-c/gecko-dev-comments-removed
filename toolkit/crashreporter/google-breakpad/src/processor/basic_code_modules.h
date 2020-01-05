@@ -41,15 +41,12 @@
 #ifndef PROCESSOR_BASIC_CODE_MODULES_H__
 #define PROCESSOR_BASIC_CODE_MODULES_H__
 
-#include <stddef.h>
-
-#include <vector>
-
 #include "google_breakpad/processor/code_modules.h"
-#include "processor/linked_ptr.h"
-#include "processor/range_map.h"
 
 namespace google_breakpad {
+
+template<typename T> class linked_ptr;
+template<typename AddressType, typename EntryType> class RangeMap;
 
 class BasicCodeModules : public CodeModules {
  public:
@@ -69,9 +66,6 @@ class BasicCodeModules : public CodeModules {
   virtual const CodeModule* GetModuleAtSequence(unsigned int sequence) const;
   virtual const CodeModule* GetModuleAtIndex(unsigned int index) const;
   virtual const CodeModules* Copy() const;
-  virtual std::vector<linked_ptr<const CodeModule> >
-  GetShrunkRangeModules() const;
-  virtual bool IsModuleShrinkEnabled() const;
 
  protected:
   BasicCodeModules();
@@ -81,11 +75,7 @@ class BasicCodeModules : public CodeModules {
 
   
   
-  RangeMap<uint64_t, linked_ptr<const CodeModule> > map_;
-
-  
-  
-  std::vector<linked_ptr<const CodeModule> > shrunk_range_modules_;
+  RangeMap<uint64_t, linked_ptr<const CodeModule> > *map_;
 
  private:
   

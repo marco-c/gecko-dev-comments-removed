@@ -41,6 +41,12 @@
 
 namespace google_breakpad {
 
+static const int kWaitForHandlerThreadMs = 60000;
+static const int kExceptionHandlerThreadInitialStackSize = 64 * 1024;
+
+
+static const DWORD kFailedToSuspendThread = static_cast<DWORD>(-1);
+
 
 typedef struct {
   AppMemoryList::const_iterator iter;
@@ -211,7 +217,6 @@ void ExceptionHandler::Initialize(
     
     if (handler_finish_semaphore_ != NULL && handler_start_semaphore_ != NULL) {
       DWORD thread_id;
-      const int kExceptionHandlerThreadInitialStackSize = 64 * 1024;
       handler_thread_ = CreateThread(NULL,         
                                      kExceptionHandlerThreadInitialStackSize,
                                      ExceptionHandlerThreadMain,
@@ -348,7 +353,6 @@ ExceptionHandler::~ExceptionHandler() {
     
     is_shutdown_ = true;
     ReleaseSemaphore(handler_start_semaphore_, 1, NULL);
-    const int kWaitForHandlerThreadMs = 60000;
     WaitForSingleObject(handler_thread_, kWaitForHandlerThreadMs);
 #else
     TerminateThread(handler_thread_, 1);
@@ -777,8 +781,6 @@ bool ExceptionHandler::WriteMinidumpForChild(HANDLE child,
   EXCEPTION_RECORD ex;
   CONTEXT ctx;
   EXCEPTION_POINTERS exinfo = { NULL, NULL };
-  
-  const DWORD kFailedToSuspendThread = static_cast<DWORD>(-1);
   DWORD last_suspend_count = kFailedToSuspendThread;
   HANDLE child_thread_handle = OpenThread(THREAD_GET_CONTEXT |
                                           THREAD_QUERY_INFORMATION |

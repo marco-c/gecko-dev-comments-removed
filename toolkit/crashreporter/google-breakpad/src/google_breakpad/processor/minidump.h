@@ -151,8 +151,6 @@ class MinidumpStream : public MinidumpObject {
   
   
   virtual bool Read(uint32_t expected_size) = 0;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpStream);
 };
 
 
@@ -193,8 +191,6 @@ class MinidumpContext : public DumpContext {
   
   
   Minidump* minidump_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpContext);
 };
 
 
@@ -362,8 +358,6 @@ class MinidumpThreadList : public MinidumpStream {
   
   MinidumpThreads* threads_;
   uint32_t        thread_count_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpThreadList);
 };
 
 
@@ -398,14 +392,7 @@ class MinidumpModule : public MinidumpObject,
   virtual string debug_file() const;
   virtual string debug_identifier() const;
   virtual string version() const;
-  virtual CodeModule* Copy() const;
-
-  
-  
-  
-  
-  virtual uint64_t shrink_down_delta() const;
-  virtual void SetShrinkDownDelta(uint64_t shrink_down_delta);
+  virtual const CodeModule* Copy() const;
 
   
   
@@ -515,13 +502,6 @@ class MinidumpModuleList : public MinidumpStream,
   virtual const CodeModules* Copy() const;
 
   
-  
-  virtual vector<linked_ptr<const CodeModule> > GetShrunkRangeModules() const;
-
-  
-  virtual bool IsModuleShrinkEnabled() const;
-
-  
   void Print();
 
  protected:
@@ -545,8 +525,6 @@ class MinidumpModuleList : public MinidumpStream,
 
   MinidumpModules *modules_;
   uint32_t module_count_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpModuleList);
 };
 
 
@@ -609,8 +587,6 @@ class MinidumpMemoryList : public MinidumpStream {
   
   MemoryRegions *regions_;
   uint32_t region_count_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpMemoryList);
 };
 
 
@@ -650,8 +626,6 @@ class MinidumpException : public MinidumpStream {
 
   MDRawExceptionStream exception_;
   MinidumpContext*     context_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpException);
 };
 
 
@@ -692,8 +666,6 @@ class MinidumpAssertion : public MinidumpStream {
   string expression_;
   string function_;
   string file_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpAssertion);
 };
 
 
@@ -747,8 +719,6 @@ class MinidumpSystemInfo : public MinidumpStream {
 
   
   const string* cpu_vendor_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpSystemInfo);
 };
 
 
@@ -782,8 +752,6 @@ class MinidumpMiscInfo : public MinidumpStream {
   string daylight_name_;
   string build_string_;
   string dbg_bld_str_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpMiscInfo);
 };
 
 
@@ -816,8 +784,6 @@ class MinidumpBreakpadInfo : public MinidumpStream {
   bool Read(uint32_t expected_size_);
 
   MDRawBreakpadInfo breakpad_info_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpBreakpadInfo);
 };
 
 
@@ -888,8 +854,6 @@ class MinidumpMemoryInfoList : public MinidumpStream {
 
   MinidumpMemoryInfos* infos_;
   uint32_t info_count_;
-
-  DISALLOW_COPY_AND_ASSIGN(MinidumpMemoryInfoList);
 };
 
 
@@ -1097,9 +1061,6 @@ class Minidump {
   
   void Print();
 
-  
-  bool IsAndroid();
-
  private:
   
   
@@ -1160,8 +1121,6 @@ class Minidump {
   
   
   bool                      valid_;
-
-  DISALLOW_COPY_AND_ASSIGN(Minidump);
 };
 
 

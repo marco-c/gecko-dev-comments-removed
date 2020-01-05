@@ -35,6 +35,6 @@
 
 
 
-#define IGNORE_RET(x) do { if (x) {} } while (0)
+#define IGNORE_RET(x) do { if (x); } while (0)
 
 #endif  

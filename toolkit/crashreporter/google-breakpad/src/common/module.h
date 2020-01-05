@@ -186,7 +186,7 @@ class Module {
   
   
   Module(const string &name, const string &os, const string &architecture,
-         const string &id, const string &code_id = "");
+         const string &id);
   ~Module();
 
   
@@ -292,7 +292,6 @@ class Module {
   string os() const { return os_; }
   string architecture() const { return architecture_; }
   string identifier() const { return id_; }
-  string code_identifier() const { return code_id_; }
 
  private:
   
@@ -305,7 +304,7 @@ class Module {
   static bool WriteRuleMap(const RuleMap &rule_map, std::ostream &stream);
 
   
-  string name_, os_, architecture_, id_, code_id_;
+  string name_, os_, architecture_, id_;
 
   
   
