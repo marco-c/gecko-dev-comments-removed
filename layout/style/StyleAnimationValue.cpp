@@ -5202,10 +5202,11 @@ AnimationValue::operator==(const AnimationValue& aOther) const
   
   
   MOZ_ASSERT(!mServo || mGecko.IsNull());
-  if (mServo) {
+  if (mServo && aOther.mServo) {
     return Servo_AnimationValue_DeepEqual(mServo, aOther.mServo);
   }
-  return mGecko == aOther.mGecko;
+  return !mServo && !aOther.mServo &&
+         mGecko == aOther.mGecko;
 }
 
 float
