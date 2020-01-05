@@ -483,8 +483,6 @@ public:
 
     nsTArray<nsSVGMaskFrame*> GetMaskFrames();
 
-    bool MightHaveNoneSVGMask() const;
-
     
 
 
