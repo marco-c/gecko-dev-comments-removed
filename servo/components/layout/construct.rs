@@ -11,12 +11,6 @@
 
 
 
-
-
-
-
-
-
 #![deny(unsafe_block)]
 
 use css::node_style::StyledNode;
@@ -85,11 +79,11 @@ pub enum ConstructionResult {
 
 impl ConstructionResult {
     pub fn swap_out(&mut self) -> ConstructionResult {
-        if opts::get().incremental_layout {
-            return (*self).clone();
+        if opts::get().nonincremental_layout {
+            return mem::replace(self, NoConstructionResult)
         }
 
-        mem::replace(self, NoConstructionResult)
+        (*self).clone()
     }
 
     pub fn debug_id(&self) -> uint {
