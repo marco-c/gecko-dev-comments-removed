@@ -27,10 +27,6 @@ namespace wasm {
 static const uint32_t MagicNumber        = 0x6d736100; 
 static const uint32_t EncodingVersion    = 0x01;
 
-
-
-static const uint32_t PrevEncodingVersion = 0x0d;
-
 static const char NameSectionName[]      = "name";
 
 enum class SectionId

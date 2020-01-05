@@ -74,6 +74,7 @@ var ecmaGlobals =
     "URIError",
     "WeakMap",
     "WeakSet",
+    "WebAssembly"
   ];
 
 
