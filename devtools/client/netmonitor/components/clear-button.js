@@ -2,12 +2,12 @@
 
 
 
-
-
 "use strict";
 
 const { DOM } = require("devtools/client/shared/vendor/react");
+const { connect } = require("devtools/client/shared/vendor/react-redux");
 const { L10N } = require("../l10n");
+const Actions = require("../actions/index");
 
 const { button } = DOM;
 
@@ -15,15 +15,18 @@ const { button } = DOM;
 
 
 
-function ClearButton() {
+function ClearButton({ onClick }) {
   return button({
     id: "requests-menu-clear-button",
     className: "devtools-button devtools-clear-icon",
     title: L10N.getStr("netmonitor.toolbar.clear"),
-    onClick: () => {
-      NetMonitorView.RequestsMenu.clear();
-    },
+    onClick,
   });
 }
 
-module.exports = ClearButton;
+module.exports = connect(
+  undefined,
+  dispatch => ({
+    onClick: () => dispatch(Actions.clearRequests())
+  })
+)(ClearButton);

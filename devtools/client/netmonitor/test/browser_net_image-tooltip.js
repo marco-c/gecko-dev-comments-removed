@@ -26,12 +26,12 @@ add_task(function* test() {
   yield onThumbnail;
 
   info("Checking the image thumbnail after a few requests were made...");
-  yield showTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.items[0]);
+  yield showTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.getItemAtIndex(0));
 
   
   
   info("Checking the image thumbnail gets hidden...");
-  yield hideTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.items[0]);
+  yield hideTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.getItemAtIndex(0));
 
   
   onEvents = waitForNetworkEvents(monitor, IMAGE_TOOLTIP_REQUESTS + 1);
@@ -44,10 +44,10 @@ add_task(function* test() {
   yield onThumbnail;
 
   info("Checking the image thumbnail after a reload.");
-  yield showTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.items[1]);
+  yield showTooltipAndVerify(RequestsMenu.tooltip, RequestsMenu.getItemAtIndex(1));
 
   info("Checking if the image thumbnail is hidden when mouse leaves the menu widget");
-  let requestsMenuEl = $("#requests-menu-contents");
+  let requestsMenuEl = $(".requests-menu-contents");
   let onHidden = RequestsMenu.tooltip.once("hidden");
   EventUtils.synthesizeMouse(requestsMenuEl, 0, 0, {type: "mouseout"}, monitor.panelWin);
   yield onHidden;
@@ -65,7 +65,7 @@ add_task(function* test() {
 
 
   function* showTooltipAndVerify(tooltip, requestItem) {
-    let anchor = $(".requests-menu-file", requestItem.target);
+    let anchor = $(".requests-menu-file", getItemTarget(RequestsMenu, requestItem));
     yield showTooltipOn(tooltip, anchor);
 
     info("Tooltip was successfully opened for the image request.");
@@ -89,12 +89,12 @@ add_task(function* test() {
 
   function* hideTooltipAndVerify(tooltip, requestItem) {
     
-    let anchor = $(".requests-menu-method", requestItem.target);
+    let anchor = $(".requests-menu-method", getItemTarget(RequestsMenu, requestItem));
 
-    let onHidden = tooltip.once("hidden");
+    let onTooltipHidden = tooltip.once("hidden");
     let win = anchor.ownerDocument.defaultView;
     EventUtils.synthesizeMouseAtCenter(anchor, {type: "mousemove"}, win);
-    yield onHidden;
+    yield onTooltipHidden;
 
     info("Tooltip was successfully closed.");
   }
