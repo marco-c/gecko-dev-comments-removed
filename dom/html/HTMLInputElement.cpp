@@ -4129,7 +4129,8 @@ HTMLInputElement::StartNumberControlSpinnerSpin()
 
   mNumberControlSpinnerIsSpinning = true;
 
-  nsRepeatService::GetInstance()->Start(HandleNumberControlSpin, this);
+  nsRepeatService::GetInstance()->Start(HandleNumberControlSpin, this,
+                                        NS_LITERAL_CSTRING("HandleNumberControlSpin"));
 
   
   

@@ -32,7 +32,11 @@ public:
   
   
   
-  void Start(Callback aCallback, void* aData,
+  
+  
+  
+  void Start(Callback aCallback, void* aCallbackData,
+             const nsACString& aCallbackName,
              uint32_t aInitialDelay = INITAL_REPEAT_DELAY);
   
   
@@ -51,6 +55,7 @@ private:
 
   Callback           mCallback;
   void*              mCallbackData;
+  nsCString          mCallbackName;
   nsCOMPtr<nsITimer> mRepeatTimer;
 
 }; 
