@@ -164,7 +164,7 @@ test_description_schema = Schema({
     
     Optional('worker-implementation'): Any(
         'docker-worker',
-        'native-engine',
+        'macosx-engine',
         'generic-worker',
         
         'docker-engine',
@@ -196,9 +196,6 @@ test_description_schema = Schema({
 
     
     Required('checkout', default=False): bool,
-
-    
-    Optional('reboot', default=False): bool,
 
     
     Required('mozharness'): optionally_keyed_by(
@@ -336,7 +333,6 @@ def set_defaults(config, tests):
         test.setdefault('run-on-projects', ['all'])
         test.setdefault('instance-size', 'default')
         test.setdefault('max-run-time', 3600)
-        test.setdefault('reboot', False)
         test['mozharness'].setdefault('extra-options', [])
         yield test
 
@@ -399,7 +395,7 @@ def set_worker_implementation(config, tests):
         elif test['test-platform'].startswith('win'):
             test['worker-implementation'] = 'generic-worker'
         elif test['test-platform'].startswith('macosx'):
-            test['worker-implementation'] = 'native-engine'
+            test['worker-implementation'] = 'macosx-engine'
         else:
             test['worker-implementation'] = 'docker-worker'
         yield test
@@ -479,6 +475,16 @@ def handle_keyed_by(config, tests):
     for test in tests:
         for field in fields:
             resolve_keyed_by(test, field, item_name=test['test-name'])
+        yield test
+
+
+@transforms.add
+def enable_code_coverage(config, tests):
+    """Enable code coverage for linux64-ccov/opt build-platforms"""
+    for test in tests:
+        if test['build-platform'] == 'linux64-ccov/opt':
+            test['mozharness'].setdefault('extra-options', []).append('--code-coverage')
+            test['run-on-projects'] = []
         yield test
 
 
@@ -895,7 +901,7 @@ def generic_worker_setup(config, test, taskdesc):
     ]
 
 
-@worker_setup_function("native-engine")
+@worker_setup_function("macosx-engine")
 def macosx_engine_setup(config, test, taskdesc):
     mozharness = test['mozharness']
 
@@ -911,7 +917,6 @@ def macosx_engine_setup(config, test, taskdesc):
     worker = taskdesc['worker'] = {}
     worker['implementation'] = test['worker-implementation']
 
-    worker['reboot'] = test['reboot']
     worker['artifacts'] = [{
         'name': prefix.rstrip('/'),
         'path': path.rstrip('/'),
@@ -929,7 +934,7 @@ def macosx_engine_setup(config, test, taskdesc):
 
     
 
-    worker['context'] = '{}/raw-file/{}/taskcluster/scripts/tester/test-macosx.sh'.format(
+    worker['link'] = '{}/raw-file/{}/taskcluster/scripts/tester/test-macosx.sh'.format(
         config.params['head_repository'], config.params['head_rev']
     )
 
