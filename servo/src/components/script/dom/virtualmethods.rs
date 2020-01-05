@@ -59,6 +59,8 @@ use dom::htmlselectelement::HTMLSelectElement;
 use dom::htmlstyleelement::HTMLStyleElement;
 use dom::htmltextareaelement::HTMLTextAreaElement;
 use dom::node::{Node, NodeHelpers, ElementNodeTypeId};
+
+use servo_util::atom::Atom;
 use servo_util::str::DOMString;
 
 
@@ -70,7 +72,7 @@ pub trait VirtualMethods {
 
     
     
-    fn after_set_attr(&self, name: DOMString, value: DOMString) {
+    fn after_set_attr(&self, name: &Atom, value: DOMString) {
         match self.super_type() {
             Some(ref s) => s.after_set_attr(name, value),
             _ => (),
@@ -79,7 +81,7 @@ pub trait VirtualMethods {
 
     
     
-    fn before_remove_attr(&self, name: DOMString, value: DOMString) {
+    fn before_remove_attr(&self, name: &Atom, value: DOMString) {
         match self.super_type() {
             Some(ref s) => s.before_remove_attr(name, value),
             _ => (),
