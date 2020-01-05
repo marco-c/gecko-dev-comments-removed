@@ -149,15 +149,22 @@ impl Decodable for Modification {
     }
 }
 
+#[derive(Clone)]
+pub enum LogLevel {
+    Log,
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
 
 #[derive(Clone)]
-pub enum ConsoleMessage {
-    LogMessage {
-        message: String,
-        filename: String,
-        lineNumber: u32,
-        columnNumber: u32,
-    },
+pub struct ConsoleMessage {
+    pub message: String,
+    pub logLevel: LogLevel,
+    pub filename: String,
+    pub lineNumber: u32,
+    pub columnNumber: u32,
 }
 
 bitflags! {
