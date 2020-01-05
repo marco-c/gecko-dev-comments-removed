@@ -263,18 +263,6 @@ pub trait Action<Listener> {
 }
 
 
-pub trait AsyncResponseListener {
-    
-    fn headers_available(&mut self, metadata: Result<Metadata, NetworkError>);
-    
-    
-    fn data_available(&mut self, payload: Vec<u8>);
-    
-    
-    fn response_complete(&mut self, status: Result<(), NetworkError>);
-}
-
-
 
 #[derive(Deserialize, Serialize)]
 pub enum ResponseAction {
@@ -284,17 +272,6 @@ pub enum ResponseAction {
     DataAvailable(Vec<u8>),
     
     ResponseComplete(Result<(), NetworkError>)
-}
-
-impl<T: AsyncResponseListener> Action<T> for ResponseAction {
-    
-    fn process(self, listener: &mut T) {
-        match self {
-            ResponseAction::HeadersAvailable(m) => listener.headers_available(m),
-            ResponseAction::DataAvailable(d) => listener.data_available(d),
-            ResponseAction::ResponseComplete(r) => listener.response_complete(r),
-        }
-    }
 }
 
 impl<T: FetchResponseListener> Action<T> for FetchResponseMsg {

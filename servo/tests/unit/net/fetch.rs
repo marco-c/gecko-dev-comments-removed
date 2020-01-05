@@ -708,7 +708,7 @@ fn response_is_done(response: &Response) -> bool {
             (*response.body.lock().unwrap()).is_done()
         }
         
-        ResponseType::Opaque | ResponseType::OpaqueRedirect | ResponseType::Error => true
+        ResponseType::Opaque | ResponseType::OpaqueRedirect | ResponseType::Error(..) => true
     };
 
     let internal_complete = if let Some(ref res) = response.internal_response {
