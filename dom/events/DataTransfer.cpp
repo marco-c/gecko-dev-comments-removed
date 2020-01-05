@@ -337,7 +337,7 @@ DataTransfer::GetTypes(nsTArray<nsString>& aTypes, CallerType aCallerType) const
     
     nsAutoString type;
     item->GetInternalType(type);
-    if (item->Kind() == DataTransferItem::KIND_STRING || type.EqualsASCII(kFileMime)) {
+    if (item->Kind() != DataTransferItem::KIND_FILE || type.EqualsASCII(kFileMime)) {
       
       aTypes.AppendElement(type);
     }
