@@ -30,6 +30,16 @@ ServoStyleSheetInner::ServoStyleSheetInner(CORSMode aCORSMode,
 {
 }
 
+size_t
+ServoStyleSheetInner::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = aMallocSizeOf(this);
+
+  
+
+  return n;
+}
+
 ServoStyleSheet::ServoStyleSheet(css::SheetParsingMode aParsingMode,
                                  CORSMode aCORSMode,
                                  net::ReferrerPolicy aReferrerPolicy,
@@ -231,6 +241,27 @@ ServoStyleSheet::InsertRuleIntoGroupInternal(const nsAString& aRule,
   auto rules = static_cast<ServoCSSRuleList*>(aGroup->CssRules());
   MOZ_ASSERT(rules->GetParentRule() == aGroup);
   return rules->InsertRule(aRule, aIndex);
+}
+
+size_t
+ServoStyleSheet::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
+{
+  size_t n = StyleSheet::SizeOfIncludingThis(aMallocSizeOf);
+  const ServoStyleSheet* s = this;
+  while (s) {
+    
+    
+    if (s->Inner()->mSheets.LastElement() == s) {
+      n += s->Inner()->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
+    
+    
+    
+
+    s = s->mNext ? s->mNext->AsServo() : nullptr;
+  }
+  return n;
 }
 
 } 

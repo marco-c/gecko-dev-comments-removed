@@ -33,6 +33,8 @@ struct ServoStyleSheetInner : public StyleSheetInfo
                        ReferrerPolicy aReferrerPolicy,
                        const dom::SRIMetadata& aIntegrity);
 
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+
   RefPtr<const RawServoStyleSheet> mSheet;
   
   
@@ -122,6 +124,8 @@ protected:
                                        uint32_t aIndex);
 
   void EnabledStateChangedInternal() {}
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
 private:
   ServoStyleSheet(const ServoStyleSheet& aCopy,
