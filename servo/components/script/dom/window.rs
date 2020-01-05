@@ -281,6 +281,7 @@ pub fn base64_atob(atob: DOMString) -> Fallible<DOMString> {
 }
 
 impl<'a> WindowMethods for JSRef<'a, Window> {
+    
     fn Alert(self, s: DOMString) {
         
         println!("ALERT: {}", s);
@@ -296,14 +297,17 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         context.as_ref().unwrap().active_document()
     }
 
+    
     fn Location(self) -> Temporary<Location> {
         self.Document().root().r().Location()
     }
 
+    
     fn SessionStorage(self) -> Temporary<Storage> {
         self.session_storage.or_init(|| Storage::new(&GlobalRef::Window(self), StorageType::Session))
     }
 
+    
     fn LocalStorage(self) -> Temporary<Storage> {
         self.local_storage.or_init(|| Storage::new(&GlobalRef::Window(self), StorageType::Local))
     }
@@ -312,16 +316,19 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         self.console.or_init(|| Console::new(GlobalRef::Window(self)))
     }
 
+    
     fn GetFrameElement(self) -> Option<Temporary<Element>> {
         
         let context = self.browser_context();
         context.as_ref().unwrap().frame_element()
     }
 
+    
     fn Navigator(self) -> Temporary<Navigator> {
         self.navigator.or_init(|| Navigator::new(self))
     }
 
+    
     fn SetTimeout(self, _cx: *mut JSContext, callback: Function, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::FunctionTimerCallback(callback),
                                             args,
@@ -331,6 +338,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
+    
     fn SetTimeout_(self, _cx: *mut JSContext, callback: DOMString, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::StringTimerCallback(callback),
                                             args,
@@ -340,10 +348,12 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
+    
     fn ClearTimeout(self, handle: i32) {
         self.timers.clear_timeout_or_interval(handle);
     }
 
+    
     fn SetInterval(self, _cx: *mut JSContext, callback: Function, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::FunctionTimerCallback(callback),
                                             args,
@@ -353,6 +363,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
+    
     fn SetInterval_(self, _cx: *mut JSContext, callback: DOMString, timeout: i32, args: Vec<JSVal>) -> i32 {
         self.timers.set_timeout_or_interval(TimerCallback::StringTimerCallback(callback),
                                             args,
@@ -362,6 +373,7 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
                                             self.script_chan.clone())
     }
 
+    
     fn ClearInterval(self, handle: i32) {
         self.ClearTimeout(handle);
     }
