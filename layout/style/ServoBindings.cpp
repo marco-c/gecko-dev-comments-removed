@@ -315,7 +315,6 @@ Gecko_GetServoDeclarationBlock(RawGeckoElementBorrowed aElement)
   if (decl->IsGecko()) {
     
     
-    
     NS_WARNING("stylo: requesting a Gecko declaration block?");
     return nullptr;
   }
