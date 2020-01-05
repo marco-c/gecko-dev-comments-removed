@@ -372,6 +372,78 @@ nsPluginCrashedEvent::Run()
   return NS_OK;
 }
 
+class nsStopPluginRunnable : public Runnable, public nsITimerCallback
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  nsStopPluginRunnable(nsPluginInstanceOwner* aInstanceOwner,
+                       nsObjectLoadingContent* aContent)
+    : mInstanceOwner(aInstanceOwner)
+    , mContent(aContent)
+  {
+    NS_ASSERTION(aInstanceOwner, "need an owner");
+    NS_ASSERTION(aContent, "need a nsObjectLoadingContent");
+  }
+
+  
+  NS_IMETHOD Run() override;
+
+  
+  NS_IMETHOD Notify(nsITimer* timer) override;
+
+protected:
+  virtual ~nsStopPluginRunnable() {}
+
+private:
+  nsCOMPtr<nsITimer> mTimer;
+  RefPtr<nsPluginInstanceOwner> mInstanceOwner;
+  nsCOMPtr<nsIObjectLoadingContent> mContent;
+};
+
+NS_IMPL_ISUPPORTS_INHERITED(nsStopPluginRunnable, Runnable, nsITimerCallback)
+
+NS_IMETHODIMP
+nsStopPluginRunnable::Notify(nsITimer *aTimer)
+{
+  return Run();
+}
+
+NS_IMETHODIMP
+nsStopPluginRunnable::Run()
+{
+  
+  
+  nsCOMPtr<nsITimerCallback> kungFuDeathGrip = this;
+  nsCOMPtr<nsIAppShell> appShell = do_GetService(kAppShellCID);
+  if (appShell) {
+    uint32_t currentLevel = 0;
+    appShell->GetEventloopNestingLevel(&currentLevel);
+    if (currentLevel > mInstanceOwner->GetLastEventloopNestingLevel()) {
+      if (!mTimer)
+        mTimer = do_CreateInstance("@mozilla.org/timer;1");
+      if (mTimer) {
+        
+        
+        nsresult rv = mTimer->InitWithCallback(this, 100,
+                                               nsITimer::TYPE_ONE_SHOT);
+        if (NS_SUCCEEDED(rv)) {
+          return rv;
+        }
+      }
+      NS_ERROR("Failed to setup a timer to stop the plugin later (at a safe "
+               "time). Stopping the plugin now, this might crash.");
+    }
+  }
+
+  mTimer = nullptr;
+
+  static_cast<nsObjectLoadingContent*>(mContent.get())->
+    DoStopPlugin(mInstanceOwner, false, true);
+
+  return NS_OK;
+}
+
 
 
 
@@ -2998,6 +3070,29 @@ nsObjectLoadingContent::GetSrcURI(nsIURI** aURI)
   return NS_OK;
 }
 
+static bool
+DoDelayedStop(nsPluginInstanceOwner* aInstanceOwner,
+              nsObjectLoadingContent* aContent,
+              bool aDelayedStop)
+{
+  
+  
+  if (aDelayedStop
+#if !(defined XP_WIN || defined MOZ_X11)
+      && !aInstanceOwner->MatchPluginName("QuickTime")
+      && !aInstanceOwner->MatchPluginName("Flip4Mac")
+      && !aInstanceOwner->MatchPluginName("XStandard plugin")
+      && !aInstanceOwner->MatchPluginName("CMISS Zinc Plugin")
+#endif
+      ) {
+    nsCOMPtr<nsIRunnable> evt =
+      new nsStopPluginRunnable(aInstanceOwner, aContent);
+    NS_DispatchToCurrentThread(evt);
+    return true;
+  }
+  return false;
+}
+
 void
 nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   EventStates oldState = ObjectState();
@@ -3061,13 +3156,16 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
 }
 
 void
-nsObjectLoadingContent::DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner)
+nsObjectLoadingContent::DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner,
+                                     bool aDelayedStop,
+                                     bool aForcedReentry)
 {
   
   
   
   
-  if (mIsStopping) {
+  
+  if (mIsStopping && !aForcedReentry) {
     return;
   }
   mIsStopping = true;
@@ -3076,6 +3174,10 @@ nsObjectLoadingContent::DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner)
   RefPtr<nsNPAPIPluginInstance> inst;
   aInstanceOwner->GetInstance(getter_AddRefs(inst));
   if (inst) {
+    if (DoDelayedStop(aInstanceOwner, this, aDelayedStop)) {
+      return;
+    }
+
 #if defined(XP_MACOSX)
     aInstanceOwner->HidePluginWindow();
 #endif
@@ -3128,11 +3230,27 @@ nsObjectLoadingContent::StopPluginInstance()
   
   mInstanceOwner->SetFrame(nullptr);
 
+  bool delayedStop = false;
+#ifdef XP_WIN
+  
+  RefPtr<nsNPAPIPluginInstance> inst;
+  mInstanceOwner->GetInstance(getter_AddRefs(inst));
+  if (inst) {
+    const char* mime = nullptr;
+    if (NS_SUCCEEDED(inst->GetMIMEType(&mime)) && mime) {
+      if (nsPluginHost::GetSpecialType(nsDependentCString(mime)) ==
+          nsPluginHost::eSpecialType_RealPlayer) {
+        delayedStop = true;
+      }
+    }
+  }
+#endif
+
   RefPtr<nsPluginInstanceOwner> ownerGrip(mInstanceOwner);
   mInstanceOwner = nullptr;
 
   
-  DoStopPlugin(ownerGrip);
+  DoStopPlugin(ownerGrip, delayedStop);
 
   return NS_OK;
 }
