@@ -138,7 +138,7 @@ this.DateTimePickerHelper = {
     
     
     
-    if (!this.picker.loadPicker) {
+    if (!this.picker.openPicker) {
       let bindingPromise = new Promise(resolve => {
         this.picker.addEventListener("DateTimePickerBindingReady",
                                      resolve, {once: true});
@@ -146,10 +146,9 @@ this.DateTimePickerHelper = {
       this.picker.setAttribute("active", true);
       yield bindingPromise;
     }
-    this.picker.loadPicker(type, detail);
     
     
-    this.picker.openPopup(this._anchor, "after_start", 0, 0);
+    this.picker.openPicker(type, this._anchor, detail);
 
     this.addPickerListeners();
   }),
