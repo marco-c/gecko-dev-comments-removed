@@ -8847,6 +8847,29 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
 
             tokenStream.consumeKnownToken(TOK_ASSIGN);
 
+            if (!seenCoverInitializedName) {
+                
+                
+                seenCoverInitializedName = true;
+
+                if (!possibleError) {
+                    
+                    
+                    
+                    report(ParseError, false, null(), JSMSG_COLON_AFTER_ID);
+                    return null();
+                }
+
+                
+                
+                
+                if (!possibleError->setPending(ParseError, JSMSG_COLON_AFTER_ID, false)) {
+                    
+                    possibleError->checkForExprErrors();
+                    return null();
+                }
+            }
+
             Node rhs;
             {
                 
@@ -8866,32 +8889,6 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
 
             if (!abortIfSyntaxParser())
                 return null();
-
-            if (!seenCoverInitializedName) {
-
-                
-                
-                seenCoverInitializedName = true;
-
-                if (!possibleError) {
-                    
-                    
-                    
-                    report(ParseError, false, null(), JSMSG_COLON_AFTER_ID);
-                    return null();
-                }
-
-                
-                
-                
-                if (!possibleError->setPending(ParseError, JSMSG_COLON_AFTER_ID, false)) {
-
-                    
-                    possibleError->checkForExprErrors();
-                    return null();
-                }
-            }
-
         } else {
             
             
