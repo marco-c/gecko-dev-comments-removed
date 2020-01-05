@@ -6,4 +6,8 @@ module.exports = {
   "globals": {
     "browser": false,
   },
+
+  "env": {
+    "browser": true,
+  }
 };

@@ -4,6 +4,7 @@ module.exports = {
   "extends": "../../../../../testing/mochitest/mochitest.eslintrc.js",
 
   "env": {
+    "browser": true,
     "webextensions": true,
   },
 

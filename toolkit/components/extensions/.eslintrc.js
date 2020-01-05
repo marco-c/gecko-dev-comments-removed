@@ -3,6 +3,10 @@
 module.exports = { 
   "extends": "../../.eslintrc.js",
 
+  "env": {
+    "browser": false,
+  },
+
   "globals": {
     "Cc": true,
     "Ci": true,
