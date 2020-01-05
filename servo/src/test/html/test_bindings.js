@@ -130,6 +130,7 @@ document.title = "foo";
 window.alert(document.title);
 
 window.alert(document.links[0]);
+window.alert(document.getElementsByTagName('iframe')[0]);
 
 window.alert(document.getElementsByTagName("body")[0]);
 

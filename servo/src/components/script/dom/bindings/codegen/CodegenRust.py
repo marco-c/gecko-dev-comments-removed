@@ -4622,6 +4622,7 @@ class CGBindingRoot(CGThing):
                           'dom::htmlelement::HTMLElement', 
                           'dom::htmldocument::HTMLDocument', 
                           'dom::htmlhrelement::HTMLHRElement',
+                          'dom::htmliframeelement::HTMLIFrameElement', 
                           'dom::htmlimageelement::HTMLImageElement', 
                           'dom::htmlscriptelement::HTMLScriptElement',
                           'dom::bindings::utils::*',
