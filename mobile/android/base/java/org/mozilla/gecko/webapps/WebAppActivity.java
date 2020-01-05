@@ -158,6 +158,11 @@ public class WebAppActivity extends GeckoApp {
         return Tabs.LOADURL_WEBAPP | super.getNewTabFlags();
     }
 
+    @Override
+    protected void onDone() {
+        finish();
+    }
+
     
 
 
