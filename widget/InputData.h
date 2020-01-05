@@ -431,8 +431,9 @@ public:
   
   
   PinchGestureInput(PinchGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
-                    const ParentLayerPoint& aLocalFocusPoint, float aCurrentSpan,
-                    float aPreviousSpan, Modifiers aModifiers);
+                    const ParentLayerPoint& aLocalFocusPoint,
+                    ParentLayerCoord aCurrentSpan,
+                    ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
 
@@ -455,14 +456,12 @@ public:
   ParentLayerPoint mLocalFocusPoint;
 
   
-  
-  
-  float mCurrentSpan;
+  ParentLayerCoord mCurrentSpan;
 
   
   
   
-  float mPreviousSpan;
+  ParentLayerCoord mPreviousSpan;
 };
 
 

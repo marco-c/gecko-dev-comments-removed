@@ -171,13 +171,13 @@ private:
 
 
 
-  float mSpanChange;
+  ParentLayerCoord mSpanChange;
 
   
 
 
 
-  float mPreviousSpan;
+  ParentLayerCoord mPreviousSpan;
 
   
 
