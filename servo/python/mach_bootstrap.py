@@ -11,6 +11,8 @@ import sys
 SEARCH_PATHS = [
     "python/mach",
     "python/toml",
+    "python/mozinfo",
+    "python/mozdebug",
 ]
 
 
