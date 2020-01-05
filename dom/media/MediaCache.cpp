@@ -143,6 +143,11 @@ public:
   
   
   
+  static void CloseStreamsForPrivateBrowsing();
+
+  
+  
+  
   nsresult ReadCacheFile(int64_t aOffset, void* aData, int32_t aLength,
                          int32_t* aBytes);
   
@@ -355,10 +360,12 @@ NS_IMETHODIMP
 MediaCacheFlusher::Observe(nsISupports *aSubject, char const *aTopic, char16_t const *aData)
 {
   if (strcmp(aTopic, "last-pb-context-exited") == 0) {
-    MediaCache::Flush();
+    MediaCache::CloseStreamsForPrivateBrowsing();
+    return NS_OK;
   }
   if (strcmp(aTopic, "cacheservice:empty-cache") == 0) {
     MediaCache::Flush();
+    return NS_OK;
   }
   return NS_OK;
 }
@@ -612,6 +619,20 @@ MediaCache::FlushInternal()
     mFileCache = nullptr;
   }
   Init();
+}
+
+void
+MediaCache::CloseStreamsForPrivateBrowsing()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!gMediaCache) {
+    return;
+  }
+  for (auto& s : gMediaCache->mStreams) {
+    if (s->mIsPrivateBrowsing) {
+      s->Close();
+    }
+  }
 }
 
 void
