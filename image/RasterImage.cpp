@@ -1266,16 +1266,13 @@ RasterImage::Decode(const IntSize& aSize,
     
     
     
+    mAnimationState->UpdateState(mAnimationFinished, this, mSize);
     
     
     
-    
-    
-#ifdef DEBUG
-    gfx::IntRect rect =
-#endif
-      mAnimationState->UpdateState(mAnimationFinished, this, mSize);
-    MOZ_ASSERT(rect.IsEmpty());
+    if (mAnimationFinished) {
+      mAnimationState->SetCompositedFrameInvalid(false);
+    }
   } else {
     task = DecoderFactory::CreateDecoder(mDecoderType, WrapNotNull(this),
                                          mSourceBuffer, mSize, aSize,
