@@ -269,6 +269,22 @@ public:
   static bool ShouldResistFingerprinting(nsIDocShell* aDocShell);
 
   
+  
+  
+  
+  
+  static void CalcRoundedWindowSizeForResistingFingerprinting(int32_t  aChromeWidth,
+                                                              int32_t  aChromeHeight,
+                                                              int32_t  aScreenWidth,
+                                                              int32_t  aScreenHeight,
+                                                              int32_t  aInputWidth,
+                                                              int32_t  aInputHeight,
+                                                              bool     aSetOuterWidth,
+                                                              bool     aSetOuterHeight,
+                                                              int32_t* aOutputWidth,
+                                                              int32_t* aOutputHeight);
+
+  
 
 
 
@@ -2933,6 +2949,9 @@ private:
   static bool sUseActivityCursor;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
+
+  static int32_t sPrivacyMaxInnerWidth;
+  static int32_t sPrivacyMaxInnerHeight;
 
   static nsHtml5StringParser* sHTMLFragmentParser;
   static nsIParser* sXMLFragmentParser;

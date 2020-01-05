@@ -1029,10 +1029,12 @@ NS_IMETHODIMP nsXULWindow::ForceRoundedDimensions()
     return NS_OK;
   }
 
-  int32_t windowWidth, windowHeight;
-  int32_t availWidthCSS, availHeightCSS;
-  int32_t contentWidthCSS, contentHeightCSS;
-  int32_t contentWidth, contentHeight;
+  int32_t availWidthCSS    = 0;
+  int32_t availHeightCSS   = 0;
+  int32_t contentWidthCSS  = 0;
+  int32_t contentHeightCSS = 0;
+  int32_t windowWidthCSS   = 0;
+  int32_t windowHeightCSS  = 0;
   double devicePerCSSPixels = 1.0;
 
   GetUnscaledDevicePixelsPerCSSPixel(&devicePerCSSPixels);
@@ -1043,48 +1045,38 @@ NS_IMETHODIMP nsXULWindow::ForceRoundedDimensions()
   
   SetSpecifiedSize(availWidthCSS, availHeightCSS);
 
-  GetSize(&windowWidth, &windowHeight); 
+  
+  GetSize(&windowWidthCSS, &windowHeightCSS); 
+  windowWidthCSS = NSToIntRound(windowWidthCSS / devicePerCSSPixels);
+  windowHeightCSS = NSToIntRound(windowHeightCSS / devicePerCSSPixels);
 
-  int32_t availWidth = NSToIntRound(devicePerCSSPixels *
-                                    availWidthCSS); 
-  int32_t availHeight = NSToIntRound(devicePerCSSPixels *
-                                     availHeightCSS); 
+  
   GetPrimaryContentSize(&contentWidthCSS, &contentHeightCSS);
 
-  contentWidth = NSToIntRound(devicePerCSSPixels *
-                              contentWidthCSS); 
-  contentHeight = NSToIntRound(devicePerCSSPixels *
-                               contentHeightCSS); 
-
   
-  int32_t chromeWidth = windowWidth - contentWidth;
-  int32_t chromeHeight = windowHeight - contentHeight;
+  int32_t chromeWidth = 0, chromeHeight = 0;
+  chromeWidth = windowWidthCSS - contentWidthCSS;
+  chromeHeight = windowHeightCSS - contentHeightCSS;
 
-  int maxInnerWidth = Preferences::GetInt("privacy.window.maxInnerWidth",
-                                          1000);
-  int maxInnerHeight = Preferences::GetInt("privacy.window.maxInnerHeight",
-                                           1000);
+  int32_t targetContentWidth = 0, targetContentHeight = 0;
 
   
   
-  
-  
-  
-  int32_t availForContentWidthCSS =
-    std::min(maxInnerWidth, NSToIntRound((availWidth - chromeWidth) /
-                                         devicePerCSSPixels));
-  int32_t availForContentHeightCSS =
-    std::min(maxInnerHeight, NSToIntRound((0.95 * availHeight - chromeHeight) /
-                                          devicePerCSSPixels));
-  
-  
-  
-  int32_t targetContentWidth =
-    NSToIntRound(devicePerCSSPixels *
-                 (availForContentWidthCSS - (availForContentWidthCSS % 200)));
-  int32_t targetContentHeight =
-    NSToIntRound(devicePerCSSPixels *
-                 (availForContentHeightCSS - (availForContentHeightCSS % 100)));
+  nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
+    chromeWidth,
+    chromeHeight,
+    availWidthCSS,
+    availHeightCSS,
+    availWidthCSS,
+    availHeightCSS,
+    false, 
+    false, 
+    &targetContentWidth,
+    &targetContentHeight
+  );
+
+  targetContentWidth = NSToIntRound(targetContentWidth * devicePerCSSPixels);
+  targetContentHeight = NSToIntRound(targetContentHeight * devicePerCSSPixels);
 
   SetPrimaryContentSize(targetContentWidth, targetContentHeight);
 
