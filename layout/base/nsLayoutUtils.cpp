@@ -179,6 +179,9 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  uint32_t nsLayoutUtils::sFontSizeInflationMaxRatio;
  bool nsLayoutUtils::sFontSizeInflationForceEnabled;
  bool nsLayoutUtils::sFontSizeInflationDisabledInMasterProcess;
+ uint32_t nsLayoutUtils::sSystemFontScale;
+ uint32_t nsLayoutUtils::sZoomMaxPercent;
+ uint32_t nsLayoutUtils::sZoomMinPercent;
  bool nsLayoutUtils::sInvalidationDebuggingIsEnabled;
  bool nsLayoutUtils::sCSSVariablesEnabled;
  bool nsLayoutUtils::sInterruptibleReflowEnabled;
@@ -7716,6 +7719,12 @@ nsLayoutUtils::Initialize()
                                "font.size.inflation.forceEnabled");
   Preferences::AddBoolVarCache(&sFontSizeInflationDisabledInMasterProcess,
                                "font.size.inflation.disabledInMasterProcess");
+  Preferences::AddUintVarCache(&sSystemFontScale,
+                               "font.size.systemFontScale", 100);
+  Preferences::AddUintVarCache(&sZoomMaxPercent,
+                               "zoom.maxPercent", 300);
+  Preferences::AddUintVarCache(&sZoomMinPercent,
+                               "zoom.minPercent", 30);
   Preferences::AddBoolVarCache(&sInvalidationDebuggingIsEnabled,
                                "nglayout.debug.invalidation");
   Preferences::AddBoolVarCache(&sCSSVariablesEnabled,

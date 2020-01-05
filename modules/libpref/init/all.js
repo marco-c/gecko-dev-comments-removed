@@ -3230,6 +3230,17 @@ pref("font.size.inflation.maxRatio", 0);
 
 
 
+pref("font.size.systemFontScale", 100);
+
+
+
+
+
+
+
+
+
+
 pref("ui.touch.radius.enabled", false);
 pref("ui.touch.radius.leftmm", 8);
 pref("ui.touch.radius.topmm", 12);
