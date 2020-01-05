@@ -2,7 +2,7 @@
 
 
 
-use canvas_traits::{CanvasCommonMsg, CanvasMsg, CanvasPixelData, CanvasData, CanvasWebGLMsg, FromLayoutMsg};
+use canvas_traits::{CanvasCommonMsg, CanvasMsg, CanvasPixelData, CanvasData, FromLayoutMsg};
 use euclid::size::Size2D;
 use gleam::gl;
 use ipc_channel::ipc::{self, IpcSender, IpcSharedMemory};
@@ -42,7 +42,7 @@ impl WebGLPaintThread {
         })
     }
 
-    pub fn handle_webgl_message(&self, message: CanvasWebGLMsg) {
+    pub fn handle_webgl_message(&self, message: webrender_traits::WebGLCommand) {
         debug!("WebGL message: {:?}", message);
         match self.data {
             WebGLPaintTaskData::WebRender(ref api, id) => {
