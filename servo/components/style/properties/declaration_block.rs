@@ -61,6 +61,11 @@ impl fmt::Debug for PropertyDeclarationBlock {
 
 impl PropertyDeclarationBlock {
     
+    pub fn len(&self) -> usize {
+        self.declarations.len()
+    }
+
+    
     pub fn new() -> Self {
         PropertyDeclarationBlock {
             declarations: Vec::new(),

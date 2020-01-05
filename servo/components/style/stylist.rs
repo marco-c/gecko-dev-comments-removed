@@ -109,13 +109,22 @@ pub struct Stylist {
     rules_source_order: usize,
 
     
-    state_deps: DependencySet,
+    dependencies: DependencySet,
 
     
     
     
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
     selectors_for_cache_revalidation: Vec<Selector<SelectorImpl>>,
+
+    
+    num_selectors: usize,
+
+    
+    num_declarations: usize,
+
+    
+    num_rebuilds: usize,
 }
 
 
@@ -165,9 +174,11 @@ impl Stylist {
             precomputed_pseudo_element_decls: Default::default(),
             rules_source_order: 0,
             rule_tree: RuleTree::new(),
-            state_deps: DependencySet::new(),
-
+            dependencies: DependencySet::new(),
             selectors_for_cache_revalidation: vec![],
+            num_selectors: 0,
+            num_declarations: 0,
+            num_rebuilds: 0,
         };
 
         SelectorImpl::each_eagerly_cascaded_pseudo_element(|pseudo| {
@@ -177,6 +188,31 @@ impl Stylist {
         
 
         stylist
+    }
+
+    
+    pub fn num_selectors(&self) -> usize {
+        self.num_selectors
+    }
+
+    
+    pub fn num_declarations(&self) -> usize {
+        self.num_declarations
+    }
+
+    
+    pub fn num_rebuilds(&self) -> usize {
+        self.num_rebuilds
+    }
+
+    
+    pub fn num_dependencies(&self) -> usize {
+        self.dependencies.len()
+    }
+
+    
+    pub fn num_revalidation_selectors(&self) -> usize {
+        self.selectors_for_cache_revalidation.len()
     }
 
     
@@ -194,6 +230,7 @@ impl Stylist {
         if !(self.is_device_dirty || stylesheets_changed) {
             return false;
         }
+        self.num_rebuilds += 1;
 
         let cascaded_rule = ViewportRule {
             declarations: viewport::Cascade::from_stylesheets(
@@ -218,10 +255,11 @@ impl Stylist {
 
         self.precomputed_pseudo_element_decls = Default::default();
         self.rules_source_order = 0;
-        self.state_deps.clear();
+        self.dependencies.clear();
         self.animations.clear();
-
         self.selectors_for_cache_revalidation.clear();
+        self.num_selectors = 0;
+        self.num_declarations = 0;
 
         extra_data.clear_font_faces();
 
@@ -239,12 +277,6 @@ impl Stylist {
         for ref stylesheet in doc_stylesheets.iter() {
             self.add_stylesheet(stylesheet, guards.author, extra_data);
         }
-
-        debug!("Stylist stats:");
-        debug!(" - Got {} selectors for cache revalidation",
-               self.selectors_for_cache_revalidation.len());
-        debug!(" - Got {} deps for style-hint calculation",
-               self.state_deps.len());
 
         SelectorImpl::each_precomputed_pseudo_element(|pseudo| {
             if let Some(map) = self.pseudos_map.remove(&pseudo) {
@@ -273,7 +305,10 @@ impl Stylist {
             match *rule {
                 CssRule::Style(ref locked) => {
                     let style_rule = locked.read_with(&guard);
+                    self.num_declarations += style_rule.block.read_with(&guard).len();
+
                     for selector in &style_rule.selectors.0 {
+                        self.num_selectors += 1;
                         let map = if let Some(ref pseudo) = selector.pseudo_element {
                             self.pseudos_map
                                 .entry(pseudo.clone())
@@ -294,7 +329,7 @@ impl Stylist {
 
                     for selector in &style_rule.selectors.0 {
                         let needs_cache_revalidation =
-                            self.state_deps.note_selector(&selector.complex_selector);
+                            self.dependencies.note_selector(&selector.complex_selector);
                         if needs_cache_revalidation {
                             self.selectors_for_cache_revalidation.push(selector.clone());
                         }
@@ -800,7 +835,7 @@ impl Stylist {
                                    -> RestyleHint
         where E: TElement,
     {
-        self.state_deps.compute_hint(element, snapshot)
+        self.dependencies.compute_hint(element, snapshot)
     }
 }
 
