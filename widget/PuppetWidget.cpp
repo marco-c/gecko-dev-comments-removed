@@ -205,6 +205,15 @@ PuppetWidget::Show(bool aState)
   }
 
   if (!wasVisible && mVisible) {
+    
+    
+    
+    
+    
+    
+    
+    
+    mPreviouslyAttachedWidgetListener = nullptr;
     Resize(mBounds.width, mBounds.height, false);
     Invalidate(mBounds);
   }
