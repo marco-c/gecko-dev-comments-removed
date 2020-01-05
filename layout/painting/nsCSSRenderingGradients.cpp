@@ -629,7 +629,10 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
     if (i > 0) {
       
       
-      position = std::max(position, stops[i - 1].mPosition);
+      double previousPosition = firstUnsetPosition > 0
+        ? stops[firstUnsetPosition - 1].mPosition
+        : stops[i - 1].mPosition;
+      position = std::max(position, previousPosition);
     }
     stops.AppendElement(ColorStop(position, stop.mIsInterpolationHint,
                                   Color::FromABGR(stop.mColor)));
@@ -1026,9 +1029,11 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
     stops[i].offset = mStops[i].mPosition;
   }
 
+  double firstStop = mStops[0].mPosition;
+  double lastStop = mStops[mStops.Length() - 1].mPosition;
+
   LayoutDevicePoint lineStart = LayoutDevicePoint(mLineStart.x, mLineStart.y);
   LayoutDevicePoint lineEnd = LayoutDevicePoint(mLineEnd.x, mLineEnd.y);
-  LayoutDeviceSize gradientRadius = LayoutDeviceSize(mRadiusX, mRadiusY);
 
   
   
@@ -1068,11 +1073,17 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
       } else {
         LayoutDevicePoint relativeGradientCenter = lineStart + tileOffset;
 
+        
+        double innerRadius = mRadiusX * firstStop;
+        double outerRadius = mRadiusX * lastStop;
+
         aBuilder.PushRadialGradient(
           mozilla::wr::ToWrRect(tileRect),
           aBuilder.BuildClipRegion(mozilla::wr::ToWrRect(clipBounds)),
           mozilla::wr::ToWrPoint(relativeGradientCenter),
-          mozilla::wr::ToWrSize(gradientRadius),
+          mozilla::wr::ToWrPoint(relativeGradientCenter),
+          innerRadius,
+          outerRadius,
           stops,
           extendMode);
       }
