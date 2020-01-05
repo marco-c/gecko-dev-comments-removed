@@ -67,7 +67,7 @@ public:
   
   
   static AnimationCollection<AnimationType>*
-    GetAnimationCollection(dom::Element* aElement,
+    GetAnimationCollection(const dom::Element* aElement,
                            CSSPseudoElementType aPseudoType);
 
   
