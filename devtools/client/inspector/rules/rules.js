@@ -8,7 +8,6 @@
 "use strict";
 
 const promise = require("promise");
-const defer = require("devtools/shared/defer");
 const Services = require("Services");
 const {Task} = require("devtools/shared/task");
 const {Tools} = require("devtools/client/definitions");
@@ -77,47 +76,6 @@ const FILTER_STRICT_RE = /\s*`(.*?)`\s*$/;
 
 
 
-
-
-
-
-
-
-
-
-var gDummyPromise;
-function createDummyDocument() {
-  if (gDummyPromise) {
-    return gDummyPromise;
-  }
-  const { getDocShell, create: makeFrame } = require("sdk/frame/utils");
-
-  let frame = makeFrame(Services.appShell.hiddenDOMWindow.document, {
-    nodeName: "iframe",
-    namespaceURI: "http://www.w3.org/1999/xhtml",
-    allowJavascript: false,
-    allowPlugins: false,
-    allowAuth: false
-  });
-  let docShell = getDocShell(frame);
-  let eventTarget = docShell.chromeEventHandler;
-  let ssm = Services.scriptSecurityManager;
-
-  
-  
-  let nullPrincipal = ssm.createNullPrincipal(docShell.getOriginAttributes());
-  docShell.createAboutBlankContentViewer(nullPrincipal);
-  let window = docShell.contentViewer.DOMDocument.defaultView;
-  window.location = "data:text/html,<html></html>";
-  let deferred = defer();
-  eventTarget.addEventListener("DOMContentLoaded", function handler() {
-    eventTarget.removeEventListener("DOMContentLoaded", handler, false);
-    deferred.resolve(window.document);
-    frame.remove();
-  }, false);
-  gDummyPromise = deferred.promise;
-  return gDummyPromise;
-}
 
 
 
@@ -717,8 +675,6 @@ CssRuleView.prototype = {
     this.clear();
 
     this._dummyElement = null;
-    this.dummyElementPromise = null;
-    gDummyPromise = null;
 
     this._prefObserver.off(PREF_ORIG_SOURCES, this._onSourcePrefChanged);
     this._prefObserver.off(PREF_UA_STYLES, this._handlePrefChange);
@@ -825,14 +781,12 @@ CssRuleView.prototype = {
     
     
     
-    this.dummyElementPromise = createDummyDocument().then(document => {
+    let dummyElementPromise = promise.resolve(this.styleDocument).then(document => {
       
       let namespaceURI = this.element.namespaceURI ||
           document.documentElement.namespaceURI;
       this._dummyElement = document.createElementNS(namespaceURI,
                                                    this.element.tagName);
-      document.documentElement.appendChild(this._dummyElement);
-      return this._dummyElement;
     }).then(null, promiseWarn);
 
     let elementStyle = new ElementStyle(element, this, this.store,
@@ -841,7 +795,7 @@ CssRuleView.prototype = {
 
     this._startSelectingElement();
 
-    return this.dummyElementPromise.then(() => {
+    return dummyElementPromise.then(() => {
       if (this._elementStyle === elementStyle) {
         return this._populate();
       }
