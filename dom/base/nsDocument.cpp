@@ -104,7 +104,6 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
-#include "nsNullPrincipal.h"
 
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
@@ -2740,7 +2739,7 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   if (cspSandboxFlags & SANDBOXED_ORIGIN) {
     
     
-    principal = nsNullPrincipal::Create();
+    principal = do_CreateInstance("@mozilla.org/nullprincipal;1");
     SetPrincipal(principal);
   }
 
