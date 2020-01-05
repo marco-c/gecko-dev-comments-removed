@@ -746,7 +746,7 @@ fn crop_image(image_data: Vec<u8>,
     
     let stride = image_size.width * 4;
     let image_bytes_length = image_size.height * image_size.width * 4;
-    let crop_area_bytes_length = crop_rect.size.height * crop_rect.size.height * 4;
+    let crop_area_bytes_length = crop_rect.size.height * crop_rect.size.width * 4;
     
     if image_bytes_length <= crop_area_bytes_length {
         return image_data;
