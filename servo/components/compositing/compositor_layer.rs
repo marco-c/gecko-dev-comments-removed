@@ -449,17 +449,22 @@ impl RcCompositorLayer for Rc<Layer<CompositorData>> {
                 compositor: &mut IOCompositor<Window>,
                 pipeline_id: PipelineId,
                 new_layers: &[LayerProperties],
-                pipelines_removed: &mut Vec<PipelineId>)
+                pipelines_removed: &mut Vec<PipelineId>,
+                layer_pipeline_id: Option<PipelineId>)
                 where Window: WindowMethods {
             
             
             
             for kid in &*layer.children() {
+                let extra_data = kid.extra_data.borrow();
+                let layer_pipeline_id = extra_data.subpage_info.or(layer_pipeline_id);
+
                 collect_old_layers_for_pipeline(kid,
                                                 compositor,
                                                 pipeline_id,
                                                 new_layers,
-                                                pipelines_removed);
+                                                pipelines_removed,
+                                                layer_pipeline_id);
             }
 
             
@@ -477,7 +482,7 @@ impl RcCompositorLayer for Rc<Layer<CompositorData>> {
                     }
                 }
 
-                if let Some(layer_pipeline_id) = extra_data.subpage_info {
+                if let Some(layer_pipeline_id) = layer_pipeline_id {
                     for layer_properties in new_layers.iter() {
                         
                         if let Some(ref subpage_layer_info) = layer_properties.subpage_layer_info {
@@ -507,7 +512,8 @@ impl RcCompositorLayer for Rc<Layer<CompositorData>> {
                                         compositor,
                                         pipeline_id,
                                         new_layers,
-                                        pipelines_removed);
+                                        pipelines_removed,
+                                        None);
     }
 }
 
