@@ -2,8 +2,8 @@
 
 
 
-#![feature(plugin, custom_derive, heap_api)]
-#![plugin(plugins)]
+#![cfg_attr(test, feature(plugin, custom_derive, heap_api))]
+#![cfg_attr(test, plugin(plugins))]
 extern crate util;
 extern crate libc;
 extern crate euclid;
