@@ -362,30 +362,40 @@ ServoRestyleManager::ProcessPendingRestyles()
   nsIDocument* doc = PresContext()->Document();
   Element* root = doc->GetRootElement();
   if (root) {
-    for (auto iter = mModifiedElements.Iter(); !iter.Done(); iter.Next()) {
-      ServoElementSnapshot* snapshot = iter.UserData();
-      Element* element = iter.Key();
+    
+    
+    
+    
+    
+    while (!mModifiedElements.IsEmpty()) {
+      for (auto iter = mModifiedElements.Iter(); !iter.Done(); iter.Next()) {
+        ServoElementSnapshot* snapshot = iter.UserData();
+        Element* element = iter.Key();
 
-      
-      
-      
-      
-      
-      if (!element->IsInComposedDoc()) {
-        continue;
+        
+        
+        
+        
+        
+        if (!element->IsInComposedDoc()) {
+          continue;
+        }
+
+        
+        
+        nsRestyleHint hint = styleSet->ComputeRestyleHint(element, snapshot);
+        hint |= snapshot->ExplicitRestyleHint();
+
+        if (hint) {
+          NoteRestyleHint(element, hint);
+        }
       }
 
-      
-      
-      nsRestyleHint hint = styleSet->ComputeRestyleHint(element, snapshot);
-      hint |= snapshot->ExplicitRestyleHint();
-
-      if (hint) {
-        NoteRestyleHint(element, hint);
+      if (!root->IsDirtyForServo() && !root->HasDirtyDescendantsForServo()) {
+        mModifiedElements.Clear();
+        break;
       }
-    }
 
-    if (root->IsDirtyForServo() || root->HasDirtyDescendantsForServo()) {
       mInStyleRefresh = true;
       styleSet->StyleDocument( true);
 
@@ -401,6 +411,8 @@ ServoRestyleManager::ProcessPendingRestyles()
 
       nsStyleChangeList changeList;
       RecreateStyleContexts(root, nullptr, styleSet, changeList);
+
+      mModifiedElements.Clear();
       ProcessRestyledFrames(changeList);
 
       mInStyleRefresh = false;
@@ -409,8 +421,6 @@ ServoRestyleManager::ProcessPendingRestyles()
 
   MOZ_ASSERT(!doc->IsDirtyForServo());
   doc->UnsetHasDirtyDescendantsForServo();
-
-  mModifiedElements.Clear();
 
   IncrementRestyleGeneration();
 }
