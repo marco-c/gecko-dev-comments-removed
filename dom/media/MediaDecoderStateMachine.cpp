@@ -730,6 +730,20 @@ private:
     }
   }
 
+  void EnterDormant()
+  {
+    auto t = mMaster->mMediaSink->IsStarted()
+      ? mMaster->GetClock()
+      : mMaster->GetMediaTime();
+    SeekJob seekJob;
+    seekJob.mTarget = SeekTarget(t, SeekTarget::Accurate,
+                                 MediaDecoderEventVisibility::Suppressed);
+    
+    
+    RefPtr<MediaDecoder::SeekPromise> unused = seekJob.mPromise.Ensure(__func__);
+    SetState<DormantState>(Move(seekJob));
+  }
+
   void StartDormantTimer()
   {
     auto timeout = MediaPrefs::DormantOnPauseTimeout();
@@ -738,7 +752,7 @@ private:
       return;
     } else if (timeout == 0) {
       
-      HandleDormant(true);
+      EnterDormant();
       return;
     }
 
@@ -748,7 +762,7 @@ private:
     mDormantTimer.Ensure(target,
       [this] () {
         mDormantTimer.CompleteRequest();
-        HandleDormant(true);
+        EnterDormant();
       }, [this] () {
         mDormantTimer.CompleteRequest();
       });
