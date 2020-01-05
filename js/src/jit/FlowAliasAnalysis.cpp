@@ -815,7 +815,7 @@ FlowAliasAnalysis::saveStoreDependency(MDefinition* ins, BlockStoreInfo& prevSto
     
     
 
-    StoreDependency* dependency = new(alloc()) StoreDependency(alloc());
+    StoreDependency* dependency = new(alloc().fallible()) StoreDependency(alloc());
     if (!dependency)
         return false;
     if (!dependency->init(prevStores))
