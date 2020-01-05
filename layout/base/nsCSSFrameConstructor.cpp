@@ -1837,11 +1837,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
              aPseudoElement == CSSPseudoElementType::after,
              "unexpected aPseudoElement");
 
-  
-  if (!aParentContent->IsElement()) {
-    NS_ERROR("Bogus generated content parent");
-    return;
-  }
+  MOZ_ASSERT(aParentContent->IsElement());
 
   StyleSetHandle styleSet = mPresShell->StyleSet();
 
@@ -1869,6 +1865,13 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   nsresult rv = NS_NewXMLElement(getter_AddRefs(container), nodeInfo.forget());
   if (NS_FAILED(rv))
     return;
+
+  
+  
+  nsIAtom* property = isBefore
+    ? nsGkAtoms::beforePseudoProperty : nsGkAtoms::afterPseudoProperty;
+  aParentContent->SetProperty(property, container.get());
+
   container->SetIsNativeAnonymousRoot();
   container->SetPseudoElementType(aPseudoElement);
 
