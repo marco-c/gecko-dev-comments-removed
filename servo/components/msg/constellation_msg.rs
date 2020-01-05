@@ -358,7 +358,7 @@ pub enum FrameType {
 
 
 
-#[derive(HeapSizeOf, Clone, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, HeapSizeOf, Serialize)]
 pub enum ReferrerPolicy {
     NoReferrer,
     NoRefWhenDowngrade,
