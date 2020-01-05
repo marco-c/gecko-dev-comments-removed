@@ -4527,6 +4527,7 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
         if (NS_SUCCEEDED(rv)) {
           MOZ_RELEASE_ASSERT(mDocGroup->MatchesKey(docGroupKey));
         }
+        MOZ_RELEASE_ASSERT(mDocGroup->GetTabGroup() == tabgroup);
       } else {
         mDocGroup = tabgroup->AddDocument(docGroupKey, this);
         MOZ_ASSERT(mDocGroup);
@@ -9220,12 +9221,17 @@ nsDocument::CloneDocHelper(nsDocument* clone) const
   clone->mDocumentBaseURI = mDocumentBaseURI;
   clone->SetChromeXHRDocBaseURI(mChromeXHRDocBaseURI);
 
-  
   bool hasHadScriptObject = true;
   nsIScriptGlobalObject* scriptObject =
     GetScriptHandlingObject(hasHadScriptObject);
   NS_ENSURE_STATE(scriptObject || !hasHadScriptObject);
-  if (scriptObject) {
+  if (mCreatingStaticClone) {
+    
+    
+    
+    
+    clone->mHasHadScriptHandlingObject = true;
+  } else if (scriptObject) {
     clone->SetScriptHandlingObject(scriptObject);
   } else {
     clone->SetScopeObject(GetScopeObject());
