@@ -1281,9 +1281,6 @@ protected:
   bool IsTabActivated() const;
 
   bool IsAudible() const;
-  bool HaveFailedWithSourceNotSupportedError() const;
-
-  void OpenUnsupportedMediaWithExtenalAppIfNeeded();
 
   
   
@@ -1293,6 +1290,10 @@ protected:
   using nsGenericHTMLElement::DispatchEvent;
   
   nsresult DispatchEvent(const nsAString& aName);
+
+  
+  
+  void OpenUnsupportedMediaWithExternalAppIfNeeded() const;
 
   
   
