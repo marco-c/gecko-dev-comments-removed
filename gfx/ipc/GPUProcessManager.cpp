@@ -3,7 +3,10 @@
 
 
 
+
 #include "GPUProcessManager.h"
+
+#include "gfxPrefs.h"
 #include "GPUProcessHost.h"
 #include "GPUProcessListener.h"
 #include "mozilla/MemoryReportingProcess.h"

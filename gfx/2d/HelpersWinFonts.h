@@ -3,6 +3,8 @@
 
 
 
+#include "gfxPrefs.h"
+
 namespace mozilla {
 namespace gfx {
 

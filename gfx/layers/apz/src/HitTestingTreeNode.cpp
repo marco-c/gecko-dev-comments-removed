@@ -7,6 +7,7 @@
 #include "HitTestingTreeNode.h"
 
 #include "AsyncPanZoomController.h"                     
+#include "gfxPrefs.h"
 #include "LayersLogging.h"                              
 #include "mozilla/gfx/Point.h"                          
 #include "mozilla/layers/APZThreadUtils.h"              

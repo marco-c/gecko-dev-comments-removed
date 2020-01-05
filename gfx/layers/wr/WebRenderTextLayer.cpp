@@ -4,7 +4,9 @@
 
 
 #include "WebRenderTextLayer.h"
+
 #include "WebRenderLayersLogging.h"
+#include "gfxPrefs.h"
 #include "mozilla/webrender/WebRenderTypes.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 
