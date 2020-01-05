@@ -11,13 +11,9 @@
 
 #include "threading/Mutex.h"
 
-namespace js {
-
-struct Mutex::PlatformData
+struct js::detail::MutexImpl::PlatformData
 {
   CRITICAL_SECTION criticalSection;
 };
-
-} 
 
 #endif 

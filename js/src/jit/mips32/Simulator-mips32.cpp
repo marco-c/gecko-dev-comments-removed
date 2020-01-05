@@ -1241,6 +1241,7 @@ Simulator::FlushICache(void* start_addr, size_t size)
 }
 
 Simulator::Simulator()
+  : cacheLock_(mutexid::SimulatorCacheLock)
 {
     
     
