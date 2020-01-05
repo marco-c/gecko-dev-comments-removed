@@ -84,17 +84,20 @@ impl BluetoothThreadFactory for IpcSender<BluetoothMethodMsg> {
     }
 }
 
+
 fn matches_filter(device: &BluetoothDevice, filter: &BluetoothScanfilter) -> bool {
     if filter.is_empty_or_invalid() {
         return false;
     }
 
+    
     if !filter.get_name().is_empty() {
         if device.get_name().ok() != Some(filter.get_name().to_string()) {
             return false;
         }
     }
 
+    
     if !filter.get_name_prefix().is_empty() {
         if let Ok(device_name) = device.get_name() {
             if !device_name.starts_with(filter.get_name_prefix()) {
@@ -105,6 +108,7 @@ fn matches_filter(device: &BluetoothDevice, filter: &BluetoothScanfilter) -> boo
         }
     }
 
+    
     if !filter.get_services().is_empty() {
         if let Ok(device_uuids) = device.get_uuids() {
             for service in filter.get_services() {
@@ -114,7 +118,25 @@ fn matches_filter(device: &BluetoothDevice, filter: &BluetoothScanfilter) -> boo
             }
         }
     }
-    return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    true
 }
 
 fn matches_filters(device: &BluetoothDevice, filters: &BluetoothScanfilterSequence) -> bool {
@@ -427,6 +449,7 @@ impl BluetoothManager {
 
     
 
+    
     fn request_device(&mut self,
                       options: RequestDeviceoptions,
                       sender: IpcSender<BluetoothResult<BluetoothDeviceMsg>>) {
@@ -437,10 +460,19 @@ impl BluetoothManager {
             }
             let _ = session.stop_discovery();
         }
-        let devices = self.get_and_cache_devices(&mut adapter);
-        let matched_devices: Vec<BluetoothDevice> = devices.into_iter()
-                                                           .filter(|d| matches_filters(d, options.get_filters()))
-                                                           .collect();
+
+        
+        
+        let mut matched_devices = self.get_and_cache_devices(&mut adapter);
+
+        
+        if !options.is_accepting_all_devices() {
+            matched_devices = matched_devices.into_iter()
+                                             .filter(|d| matches_filters(d, options.get_filters()))
+                                             .collect();
+        }
+
+        
         if let Some(address) = self.select_device(matched_devices) {
             let device_id = match self.address_to_id.get(&address) {
                 Some(id) => id.clone(),
