@@ -1365,9 +1365,4 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 } 
 } 
 
-
-
-
-#define TS(p) (&(p)->tokenStream)
-
 #endif 
