@@ -123,8 +123,7 @@ protected:
                                              const NetAddr& peerAddr,
                                              const int16_t& redirectCount,
                                              const uint32_t& cacheKey,
-                                             const nsCString& altDataType,
-                                             const bool& contentDecodingWillBeCalledOnParent) override;
+                                             const nsCString& altDataType) override;
   mozilla::ipc::IPCResult RecvOnTransportAndData(const nsresult& channelStatus,
                                                  const nsresult& status,
                                                  const uint64_t& progress,
@@ -275,8 +274,6 @@ private:
   
   
   bool mSuspendParentAfterSynthesizeResponse;
-
-  bool mContentDecodingWillBeCalledOnParent;
 
   
   nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;

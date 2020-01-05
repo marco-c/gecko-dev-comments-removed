@@ -180,7 +180,6 @@ HttpChannelChild::HttpChannelChild()
   , mPostRedirectChannelShouldUpgrade(false)
   , mShouldParentIntercept(false)
   , mSuspendParentAfterSynthesizeResponse(false)
-  , mContentDecodingWillBeCalledOnParent(false)
 {
   LOG(("Creating HttpChannelChild @%x\n", this));
 
@@ -383,8 +382,7 @@ HttpChannelChild::RecvOnStartRequest(const nsresult& channelStatus,
                                      const NetAddr& peerAddr,
                                      const int16_t& redirectCount,
                                      const uint32_t& cacheKey,
-                                     const nsCString& altDataType,
-                                     const bool& contentDecodingWillBeCalledOnParent)
+                                     const nsCString& altDataType)
 {
   LOG(("HttpChannelChild::RecvOnStartRequest [this=%p]\n", this));
   
@@ -396,8 +394,6 @@ HttpChannelChild::RecvOnStartRequest(const nsresult& channelStatus,
 
 
   mRedirectCount = redirectCount;
-
-  mContentDecodingWillBeCalledOnParent = contentDecodingWillBeCalledOnParent;
 
   mEventQ->RunOrEnqueue(new StartRequestEvent(this, channelStatus, responseHead,
                                               useResponseHead, requestHeaders,
@@ -557,26 +553,6 @@ HttpChannelChild::DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   if (NS_FAILED(rv)) {
     Cancel(rv);
     return;
-  }
-
-  if (mContentDecodingWillBeCalledOnParent) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool doContentConversion;
-    GetApplyConversion(&doContentConversion);
-    SetApplyConversion(false);
-    SendApplyConversion(doContentConversion);
-    mContentDecodingWillBeCalledOnParent = false;
-    LOG(("HttpChannelChild::DoOnStartRequest [this=%p] doing content decoding"
-         " on the parent; doContentEncoding=%d \n",
-         this, doContentConversion));
   }
 
   if (mDivertingToParent) {
@@ -1853,12 +1829,6 @@ HttpChannelChild::Cancel(nsresult status)
   LOG(("HttpChannelChild::Cancel [this=%p]\n", this));
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mContentDecodingWillBeCalledOnParent) {
-    LOG(("HttpChannelChild::Cancel call SendApplyConversion [this=%p]\n", this));
-    SendApplyConversion(false);
-    mContentDecodingWillBeCalledOnParent = false;
-  }
-
   if (!mCanceled) {
     
     
@@ -2795,12 +2765,6 @@ HttpChannelChild::DivertToParent(ChannelDiverterChild **aChild)
   PChannelDiverterChild* diverter =
     gNeckoChild->SendPChannelDiverterConstructor(args);
   MOZ_RELEASE_ASSERT(diverter);
-
-  
-  
-  
-  
-  mContentDecodingWillBeCalledOnParent = false;
 
   *aChild = static_cast<ChannelDiverterChild*>(diverter);
 
