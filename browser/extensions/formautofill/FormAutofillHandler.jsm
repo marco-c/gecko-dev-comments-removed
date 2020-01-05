@@ -85,7 +85,7 @@ FormAutofillHandler.prototype = {
         addressType: info.addressType,
         contactType: info.contactType,
         fieldName: info.fieldName,
-        element, 
+        elementWeakRef: Cu.getWeakReference(element),
       };
 
       this.fieldDetails.push(formatWithElement);
@@ -113,14 +113,14 @@ FormAutofillHandler.prototype = {
       
       
 
-      if (fieldDetail.element === focusedInput ||
-          fieldDetail.element.value) {
+      let element = fieldDetail.elementWeakRef.get();
+      if (!element || element === focusedInput || element.value) {
         continue;
       }
 
       let value = profile[fieldDetail.fieldName];
       if (value) {
-        fieldDetail.element.setUserInput(value);
+        element.setUserInput(value);
       }
     }
   },
