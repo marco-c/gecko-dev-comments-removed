@@ -70,7 +70,6 @@ public class GeckoView extends LayerView
     private final EventDispatcher mEventDispatcher =
         new EventDispatcher(mNativeQueue);
 
-    private ChromeDelegate mChromeDelegate;
      ContentListener mContentListener;
      NavigationListener mNavigationListener;
      ProgressListener mProgressListener;
@@ -509,15 +508,6 @@ public class GeckoView extends LayerView
 
 
 
-    public void setChromeDelegate(ChromeDelegate chrome) {
-        mChromeDelegate = chrome;
-    }
-
-    
-
-
-
-
     public void setContentListener(ContentListener content) {
         mContentListener = content;
     }
@@ -592,72 +582,6 @@ public class GeckoView extends LayerView
 
     public EventDispatcher getEventDispatcher() {
         return mEventDispatcher;
-    }
-
-    
-
-
-
-    public class PromptResult {
-        public PromptResult() {
-        }
-
-        
-
-
-        public void confirm() {
-        }
-
-        
-
-
-
-        public void confirmWithValue(String value) {
-        }
-
-        
-
-
-        public void cancel() {
-        }
-    }
-
-    public interface ChromeDelegate {
-        
-
-
-
-
-
-
-        void onAlert(GeckoView view, String message, GeckoView.PromptResult result);
-
-        
-
-
-
-
-
-
-        void onConfirm(GeckoView view, String message, GeckoView.PromptResult result);
-
-        
-
-
-
-
-
-
-
-        void onPrompt(GeckoView view, String message, String defaultValue, GeckoView.PromptResult result);
-
-        
-
-
-
-
-
-        void onDebugRequest(GeckoView view, GeckoView.PromptResult result);
     }
 
     public interface ProgressListener {
