@@ -259,7 +259,7 @@ SetShadowTransform(Layer* aLayer, LayerToParentLayerMatrix4x4 aTransform)
 
 static void
 TranslateShadowLayer(Layer* aLayer,
-                     const gfxPoint& aTranslation,
+                     const ParentLayerPoint& aTranslation,
                      bool aAdjustClipRect,
                      AsyncCompositionManager::ClipPartsCache* aClipPartsCache)
 {
@@ -272,13 +272,13 @@ TranslateShadowLayer(Layer* aLayer,
   LayerToParentLayerMatrix4x4 layerTransform = aLayer->GetLocalTransformTyped();
 
   
-  layerTransform.PostTranslate(aTranslation.x, aTranslation.y, 0);
+  layerTransform.PostTranslate(aTranslation);
 
   SetShadowTransform(aLayer, layerTransform);
   aLayer->AsLayerComposite()->SetShadowTransformSetByAnimation(false);
 
   if (aAdjustClipRect) {
-    auto transform = ParentLayerToParentLayerMatrix4x4::Translation(aTranslation.x, aTranslation.y, 0);
+    auto transform = ParentLayerToParentLayerMatrix4x4::Translation(aTranslation);
     
     
     if (aClipPartsCache) {
@@ -540,8 +540,7 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
         
         
         
-        TranslateShadowLayer(layer, ThebesPoint(translation.ToUnknownPoint()),
-            true, aClipPartsCache);
+        TranslateShadowLayer(layer, translation, true, aClipPartsCache);
 
         
         
@@ -852,7 +851,7 @@ MoveScrollbarForLayerMargin(Layer* aRoot, FrameMetrics::ViewID aRootScrollId,
     
     
     
-    TranslateShadowLayer(scrollbar, gfxPoint(0, -aFixedLayerMargins.bottom), true, nullptr);
+    TranslateShadowLayer(scrollbar, ParentLayerPoint(0, -aFixedLayerMargins.bottom), true, nullptr);
     if (scrollbar->GetParent()) {
       
       
