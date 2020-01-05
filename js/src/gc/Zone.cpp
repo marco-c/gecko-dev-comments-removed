@@ -204,7 +204,7 @@ Zone::sweepWeakMaps()
 }
 
 void
-Zone::discardJitCode(FreeOp* fop)
+Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
 {
     if (!jitZone())
         return;
@@ -213,14 +213,16 @@ Zone::discardJitCode(FreeOp* fop)
         PurgeJITCaches(this);
     } else {
 
+        if (discardBaselineCode) {
 #ifdef DEBUG
-        
-        for (auto script = cellIter<JSScript>(); !script.done(); script.next())
-            MOZ_ASSERT_IF(script->hasBaselineScript(), !script->baselineScript()->active());
+            
+            for (auto script = cellIter<JSScript>(); !script.done(); script.next())
+                MOZ_ASSERT_IF(script->hasBaselineScript(), !script->baselineScript()->active());
 #endif
 
-        
-        jit::MarkActiveBaselineScripts(this);
+            
+            jit::MarkActiveBaselineScripts(this);
+        }
 
         
         jit::InvalidateAll(fop, this);
@@ -232,7 +234,8 @@ Zone::discardJitCode(FreeOp* fop)
 
 
 
-            jit::FinishDiscardBaselineScript(fop, script);
+            if (discardBaselineCode)
+                jit::FinishDiscardBaselineScript(fop, script);
 
             
 
@@ -250,7 +253,8 @@ Zone::discardJitCode(FreeOp* fop)
 
 
 
-        jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(fop->runtime());
+        if (discardBaselineCode)
+            jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(fop->runtime());
     }
 }
 
