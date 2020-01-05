@@ -15,7 +15,8 @@ const {
 } = require("./utils/markup");
 const {
   getCurrentZoom,
-  setIgnoreLayoutChanges
+  setIgnoreLayoutChanges,
+  getWindowDimensions
 } = require("devtools/shared/layout/utils");
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
 
@@ -118,11 +119,20 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
       }
     });
 
+    let root = createNode(this.win, {
+      parent: container,
+      attributes: {
+        "id": "root",
+        "class": "root"
+      },
+      prefix: this.ID_CLASS_PREFIX
+    });
+
     
     
     
     createNode(this.win, {
-      parent: container,
+      parent: root,
       nodeType: "canvas",
       attributes: {
         "id": "canvas",
@@ -135,7 +145,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     
     let svg = createSVGNode(this.win, {
       nodeType: "svg",
-      parent: container,
+      parent: root,
       attributes: {
         "id": "elements",
         "width": "100%",
@@ -355,8 +365,16 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   _update() {
     setIgnoreLayoutChanges(true);
 
+    let root = this.getElement("root");
     
-    this.clearCanvas();
+    
+    root.setAttribute("style", "display: none");
+    this.currentNode.offsetWidth;
+
+    let { width, height } = getWindowDimensions(this.win);
+
+    
+    this.clearCanvas(width, height);
     this.clearGridAreas();
 
     
@@ -374,6 +392,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     }
 
     this._showGrid();
+
+    root.setAttribute("style",
+      `position:absolute; width:${width}px;height:${height}px; overflow:hidden`);
 
     setIgnoreLayoutChanges(false, this.highlighterEnv.window.document.documentElement);
     return true;
@@ -434,15 +455,13 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     moveInfobar(container, bounds, this.win);
   },
 
-  clearCanvas() {
+  clearCanvas(width, height) {
     let ratio = parseFloat((this.win.devicePixelRatio || 1).toFixed(2));
-    let width = this.win.innerWidth;
-    let height = this.win.innerHeight;
 
     
     this.canvas.setAttribute("width", width * ratio);
     this.canvas.setAttribute("height", height * ratio);
-    this.canvas.setAttribute("style", `width:${width}px;height:${height}px`);
+    this.canvas.setAttribute("style", `width:${width}px;height:${height}px;`);
     this.ctx.scale(ratio, ratio);
 
     this.ctx.clearRect(0, 0, width, height);

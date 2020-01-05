@@ -9,7 +9,9 @@
 
 
 const { Cc, Ci, Cu } = require("chrome");
-const {getRect, getElementFromPoint, getAdjustedQuads} = require("devtools/shared/layout/utils");
+const {
+  getRect, getElementFromPoint, getAdjustedQuads, getWindowDimensions
+} = require("devtools/shared/layout/utils");
 const defer = require("devtools/shared/defer");
 const {Task} = require("devtools/shared/task");
 const {isContentStylesheet} = require("devtools/shared/inspector/css-logic");
@@ -286,6 +288,12 @@ var testSpec = protocol.generateActorSpec({
       request: {
         selector: Arg(0, "string")
       },
+      response: {
+        value: RetVal("json")
+      }
+    },
+    getWindowDimensions: {
+      request: {},
       response: {
         value: RetVal("json")
       }
@@ -782,6 +790,16 @@ var TestActor = exports.TestActor = protocol.ActorClassWithSpec(testSpec, {
     }
 
     return sheets;
+  },
+
+  
+
+
+
+
+
+  getWindowDimensions: function () {
+    return getWindowDimensions(this.content);
   }
 });
 
