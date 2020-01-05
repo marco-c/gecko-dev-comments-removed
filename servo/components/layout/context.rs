@@ -77,7 +77,7 @@ pub struct SharedLayoutContext {
     pub style_context: SharedStyleContext,
 
     
-    pub image_cache_thread: ImageCacheThread,
+    pub image_cache_thread: Mutex<ImageCacheThread>,
 
     
     pub image_cache_sender: Mutex<ImageCacheChan>,
@@ -133,7 +133,8 @@ impl SharedLayoutContext {
         debug_assert!(opts::get().output_file.is_some() || opts::get().exit_after_load);
 
         
-        let result = self.image_cache_thread.find_image(url.clone(), use_placeholder);
+        let result = self.image_cache_thread.lock().unwrap()
+                                            .find_image(url.clone(), use_placeholder);
 
         match result {
             Ok(image) => return Some(image),
@@ -147,7 +148,7 @@ impl SharedLayoutContext {
         
         
         let (sync_tx, sync_rx) = ipc::channel().unwrap();
-        self.image_cache_thread.request_image(url, ImageCacheChan(sync_tx), None);
+        self.image_cache_thread.lock().unwrap().request_image(url, ImageCacheChan(sync_tx), None);
         loop {
             match sync_rx.recv() {
                 Err(_) => return None,
@@ -171,7 +172,8 @@ impl SharedLayoutContext {
                        .map(|img| ImageOrMetadataAvailable::ImageAvailable(img));
         }
         
-        let result = self.image_cache_thread.find_image_or_metadata(url.clone(),
+        let result = self.image_cache_thread.lock().unwrap()
+                                            .find_image_or_metadata(url.clone(),
                                                                     use_placeholder);
         match result {
             Ok(image_or_metadata) => Some(image_or_metadata),
@@ -180,7 +182,8 @@ impl SharedLayoutContext {
             
             Err(ImageState::NotRequested) => {
                 let sender = self.image_cache_sender.lock().unwrap().clone();
-                self.image_cache_thread.request_image_and_metadata(url, sender, None);
+                self.image_cache_thread.lock().unwrap()
+                                       .request_image_and_metadata(url, sender, None);
                 None
             }
             
