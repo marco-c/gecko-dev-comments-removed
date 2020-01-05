@@ -85,7 +85,7 @@ var NetMonitorController = {
       
       
       this.toolbox = connection.toolbox;
-      this._target = connection.client.getTabTarget();
+      this._target = connection.tabConnection.tabTarget;
       this.tabClient = this._target.isTabActor ? this._target.activeTab : null;
 
       let connectTimeline = () => {
@@ -251,12 +251,12 @@ var NetMonitorController = {
 
 
 
-  inspectRequest: function (requestId) {
+  inspectRequest(requestId) {
     
     
     return new Promise((resolve) => {
       let request = null;
-      let inspector = function () {
+      let inspector = () => {
         request = getDisplayedRequestById(window.gStore.getState(), requestId);
         if (!request) {
           
