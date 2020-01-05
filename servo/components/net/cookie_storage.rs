@@ -38,7 +38,7 @@ impl CookieStorage {
         let cookies = self.cookies_map.entry(domain).or_insert(vec![]);
 
         
-        if !cookie.cookie.secure && url.scheme() != "https" && url.scheme() != "wss" {
+        if !cookie.cookie.secure && !url.is_secure_scheme() {
             let new_domain = cookie.cookie.domain.as_ref().unwrap();
             let new_path = cookie.cookie.path.as_ref().unwrap();
 
@@ -85,7 +85,7 @@ impl CookieStorage {
     
     pub fn push(&mut self, mut cookie: Cookie, url: &ServoUrl, source: CookieSource) {
         
-        if cookie.cookie.secure && url.scheme() != "https" && url.scheme() != "wss" {
+        if cookie.cookie.secure && !url.is_secure_scheme() {
             return;
         }
 
