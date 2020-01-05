@@ -259,7 +259,7 @@ marionette:
             default: 1
     mozharness:
         by-test-platform:
-            android.*:
+            android:
                 script: android_emulator_unittest.py
                 no-read-buildbot-config: true
                 config:
@@ -381,6 +381,8 @@ mochitest-browser-chrome:
     chunks:
         by-test-platform:
             linux64-jsdcov/opt: 35
+            linux64/debug: 12
+            linux32/debug: 12
             linux64-asan/opt: 10
             default: 7
     e10s:
@@ -393,6 +395,7 @@ mochitest-browser-chrome:
             linux64-jsdcov/opt: 7200
             linux64-ccov/opt: 7200
             linux64/debug: 5400
+            linux32/debug: 5400
             default: 3600
     mozharness:
         script: desktop_unittest.py
@@ -553,7 +556,7 @@ mochitest-devtools-chrome:
                 linux64-ccov/opt:
                     - --mochitest-suite=mochitest-devtools-chrome-chunked
                     - --code-coverage
-                linux64-jsdcov/opt:
+                linux64-jsdcov:
                     - --mochitest-suite=mochitest-devtools-chrome-coverage
                 default:
                     - --mochitest-suite=mochitest-devtools-chrome-chunked
