@@ -4216,9 +4216,10 @@ var SessionStoreInternal = {
   _shouldSaveTab: function ssi_shouldSaveTab(aTabState) {
     
     
-    return aTabState.entries.length &&
-           !(aTabState.entries[0].url == "about:printpreview" ||
-             aTabState.entries[0].url == "about:privatebrowsing");
+    return aTabState.userTypedValue ||
+           (aTabState.entries.length &&
+            !(aTabState.entries[0].url == "about:printpreview" ||
+              aTabState.entries[0].url == "about:privatebrowsing"));
   },
 
   
