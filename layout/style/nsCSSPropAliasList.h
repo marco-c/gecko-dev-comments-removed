@@ -260,6 +260,11 @@ CSS_PROP_ALIAS(-webkit-animation-timing-function,
                WebkitAnimationTimingFunction,
                WEBKIT_PREFIX_PREF)
 
+CSS_PROP_ALIAS(-webkit-appearance,
+               appearance,
+               WebkitAppearance,
+               "layout.css.appearance.enabled") 
+
 CSS_PROP_ALIAS(-webkit-filter,
                filter,
                WebkitFilter,

@@ -2641,6 +2641,10 @@ pref("layout.css.contain.enabled", false);
 pref("layout.css.display-flow-root.enabled", true);
 
 
+pref("layout.css.appearance.enabled", true);
+pref("layout.css.moz-appearance.enabled", true);
+
+
 pref("layout.css.box-decoration-break.enabled", true);
 
 
@@ -5644,10 +5648,11 @@ pref("fuzzing.enabled", false);
 #endif
 
 
-pref("layers.advanced.border-layers", false);
-#ifdef MOZ_ENABLE_WEBRENDER
-pref("layers.advanced.caret-layers", true);
-pref("layers.advanced.boxshadow-outer-layers", false);
-#else
-pref("layers.advanced.caret-layers", false);
-#endif
+
+
+
+
+
+pref("layers.advanced.border-layers", 2);
+pref("layers.advanced.boxshadow-outer-layers", 2);
+pref("layers.advanced.caret-layers", 2);
