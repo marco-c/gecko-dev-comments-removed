@@ -2417,7 +2417,7 @@ Toolbox.prototype = {
           
           try {
             win.location.replace("about:blank");
-          } catch(e) {
+          } catch (e) {
             
           }
 
