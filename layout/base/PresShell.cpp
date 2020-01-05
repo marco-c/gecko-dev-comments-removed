@@ -5313,8 +5313,10 @@ PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
   
   
   
-  bool addedScrollingBackgroundColor = false;
-  if (!aFrame->GetParent()) {
+  
+  
+  bool addedScrollingBackgroundColor = (aFlags & APPEND_UNSCROLLED_ONLY);
+  if (!aFrame->GetParent() && !addedScrollingBackgroundColor) {
     nsIScrollableFrame* sf =
       aFrame->PresContext()->PresShell()->GetRootScrollFrameAsScrollable();
     if (sf) {
@@ -5326,13 +5328,21 @@ PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
     }
   }
 
-  if (!addedScrollingBackgroundColor ||
-      (nsLayoutUtils::UsesAsyncScrolling(aFrame) && NS_GET_A(bgcolor) == 255)) {
+  
+  
+  
+  
+  
+  bool forceUnscrolledItem = nsLayoutUtils::UsesAsyncScrolling(aFrame) &&
+                             NS_GET_A(bgcolor) == 255;
+  if ((aFlags & ADD_FOR_SUBDOC) && gfxPrefs::LayoutUseContainersForRootFrames()) {
     
     
     
-    
-    
+    forceUnscrolledItem = false;
+  }
+
+  if (!addedScrollingBackgroundColor || forceUnscrolledItem) {
     aList.AppendNewToBottom(
       new (&aBuilder) nsDisplaySolidColor(&aBuilder, aFrame, aBounds, bgcolor));
   }

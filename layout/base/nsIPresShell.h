@@ -1273,8 +1273,20 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
   enum {
-    FORCE_DRAW = 0x01
+    FORCE_DRAW = 0x01,
+    ADD_FOR_SUBDOC = 0x02,
+    APPEND_UNSCROLLED_ONLY = 0x04,
   };
   virtual void AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
                                             nsDisplayList& aList,
