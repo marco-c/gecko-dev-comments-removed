@@ -29,14 +29,6 @@ static bool do_preload = false;
 #define READ_TEXTMODE "r"
 #endif
 
-#if defined(SUNOS4) || defined(NEXTSTEP) || \
-    defined(XP_MACOSX) || \
-    (defined(OPENBSD) || defined(NETBSD)) && !defined(__ELF__)
-#define LEADING_UNDERSCORE "_"
-#else
-#define LEADING_UNDERSCORE
-#endif
-
 #if defined(XP_WIN)
 #include <windows.h>
 #include <mbstring.h>
@@ -84,61 +76,6 @@ CloseLibHandle(LibHandleType aLibHandle)
   FreeLibrary(aLibHandle);
 }
 
-#elif defined(XP_MACOSX)
-#include <mach-o/dyld.h>
-
-typedef const mach_header* LibHandleType;
-
-static LibHandleType
-GetLibHandle(pathstr_t aDependentLib)
-{
-  LibHandleType libHandle = NSAddImage(aDependentLib,
-                                       NSADDIMAGE_OPTION_RETURN_ON_ERROR |
-                                       NSADDIMAGE_OPTION_MATCH_FILENAME_BY_INSTALLNAME);
-  if (!libHandle) {
-    NSLinkEditErrors linkEditError;
-    int errorNum;
-    const char* errorString;
-    const char* fileName;
-    NSLinkEditError(&linkEditError, &errorNum, &fileName, &errorString);
-    fprintf(stderr, "XPCOMGlueLoad error %d:%d for file %s:\n%s\n",
-            linkEditError, errorNum, fileName, errorString);
-  }
-  return libHandle;
-}
-
-static NSFuncPtr
-GetSymbol(LibHandleType aLibHandle, const char* aSymbol)
-{
-  
-  
-  
-  
-  
-  
-  NSSymbol sym = nullptr;
-  if (aLibHandle) {
-    sym = NSLookupSymbolInImage(aLibHandle, aSymbol,
-                                NSLOOKUPSYMBOLINIMAGE_OPTION_BIND |
-                                NSLOOKUPSYMBOLINIMAGE_OPTION_RETURN_ON_ERROR);
-  } else {
-    if (NSIsSymbolNameDefined(aSymbol)) {
-      sym = NSLookupAndBindSymbol(aSymbol);
-    }
-  }
-  if (!sym) {
-    return nullptr;
-  }
-
-  return (NSFuncPtr)NSAddressOfSymbol(sym);
-}
-
-static void
-CloseLibHandle(LibHandleType aLibHandle)
-{
-  
-}
-
 #else
 #include <dlfcn.h>
 
@@ -159,7 +96,12 @@ typedef void* LibHandleType;
 static LibHandleType
 GetLibHandle(pathstr_t aDependentLib)
 {
-  LibHandleType libHandle = dlopen(aDependentLib, RTLD_GLOBAL | RTLD_LAZY);
+  LibHandleType libHandle = dlopen(aDependentLib,
+                                   RTLD_GLOBAL | RTLD_LAZY
+#ifdef XP_MACOSX
+                                   | RTLD_FIRST
+#endif
+                                   );
   if (!libHandle) {
     fprintf(stderr, "XPCOMGlueLoad error for file %s:\n%s\n", aDependentLib,
             dlerror());
@@ -385,7 +327,7 @@ XPCOMGlueLoad(const char* aXPCOMFile)
 
   GetFrozenFunctionsFunc sym =
     (GetFrozenFunctionsFunc)GetSymbol(sTop->libHandle,
-                                      LEADING_UNDERSCORE "NS_GetFrozenFunctions");
+                                      "NS_GetFrozenFunctions");
 
   if (!sym) { 
     XPCOMGlueUnload();
@@ -404,8 +346,7 @@ XPCOMGlueLoadXULFunctions(const nsDynamicFunctionLoad* aSymbols)
   nsresult rv = NS_OK;
   while (aSymbols->functionName) {
     char buffer[512];
-    snprintf(buffer, sizeof(buffer),
-             LEADING_UNDERSCORE "%s", aSymbols->functionName);
+    snprintf(buffer, sizeof(buffer), "%s", aSymbols->functionName);
 
     *aSymbols->function = (NSFuncPtr)GetSymbol(sTop->libHandle, buffer);
     if (!*aSymbols->function) {
