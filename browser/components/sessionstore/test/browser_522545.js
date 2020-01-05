@@ -207,7 +207,9 @@ function test() {
       runNextTest();
     }
 
-    gBrowser.loadTabs(uris);
+    gBrowser.loadTabs(uris, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
   }
 
   
