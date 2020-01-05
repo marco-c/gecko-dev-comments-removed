@@ -37,6 +37,12 @@ NS_IMPL_ISUPPORTS(nsProfiler, nsIProfiler)
 nsProfiler::nsProfiler()
   : mLockedForPrivateBrowsing(false)
 {
+  
+  
+  
+  if (profiler_is_active()) {
+    mGatherer = new ProfileGatherer();
+  }
 }
 
 nsProfiler::~nsProfiler()
