@@ -194,15 +194,22 @@ protected:
                                       const FlexboxAxisTracker& aAxisTracker);
 
   
-  
-  
-  
+
+
+
+
+
+
+
+
+
   void GenerateFlexLines(nsPresContext* aPresContext,
                          const ReflowInput& aReflowInput,
                          nscoord aContentBoxMainSize,
                          nscoord aAvailableBSizeForContent,
                          const nsTArray<StrutInfo>& aStruts,
                          const FlexboxAxisTracker& aAxisTracker,
+                         nsTArray<nsIFrame*>& aPlaceholders,
                          mozilla::LinkedList<FlexLine>& aLines);
 
   nscoord GetMainSizeFromReflowInput(const ReflowInput& aReflowInput,
@@ -258,6 +265,36 @@ protected:
                       const FlexItem& aItem,
                       mozilla::LogicalPoint& aFramePos,
                       const nsSize& aContainerSize);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void ReflowPlaceholders(nsPresContext* aPresContext,
+                          const ReflowInput& aReflowInput,
+                          nsTArray<nsIFrame*>& aPlaceholders,
+                          const mozilla::LogicalPoint& aContentBoxOrigin,
+                          const nsSize& aContainerSize);
 
   bool mChildrenHaveBeenReordered; 
                                    
