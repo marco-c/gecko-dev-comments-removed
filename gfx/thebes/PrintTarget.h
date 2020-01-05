@@ -149,10 +149,19 @@ protected:
 
   cairo_surface_t* mCairoSurface;
   RefPtr<DrawTarget> mRefDT; 
+
+  
+  
+  
+  
+  RefPtr<DrawTarget> mRecordingRefDT;
+
   IntSize mSize;
   bool mIsFinished;
 #ifdef DEBUG
   bool mHasActivePage;
+  
+  DrawEventRecorder* mRecorder;
 #endif
 };
 
