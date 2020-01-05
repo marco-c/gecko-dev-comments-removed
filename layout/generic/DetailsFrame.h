@@ -38,6 +38,12 @@ public:
   }
 #endif
 
+#ifdef DEBUG
+  
+  
+  void CheckValidMainSummary(const nsFrameList& aFrameList) const;
+#endif
+
   void SetInitialChildList(ChildListID aListID,
                            nsFrameList& aChildList) override;
 
