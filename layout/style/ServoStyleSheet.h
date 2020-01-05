@@ -20,6 +20,7 @@ class ServoCSSRuleList;
 
 namespace css {
 class Loader;
+class Rule;
 }
 
 
@@ -74,7 +75,7 @@ public:
   
   
   
-  nsIDOMCSSRule* GetDOMOwnerRule() const final;
+  css::Rule* GetDOMOwnerRule() const final;
 
   void WillDirty() {}
   void DidDirty() {}
