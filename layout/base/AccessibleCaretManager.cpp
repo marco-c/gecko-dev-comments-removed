@@ -199,6 +199,7 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
   
   
   if (sHideCaretsForMouseInput &&
+      mLastInputSource == nsIDOMMouseEvent::MOZ_SOURCE_KEYBOARD &&
       (aReason & nsISelectionListener::SELECTALL_REASON)) {
     HideCarets();
     return NS_OK;
