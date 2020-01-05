@@ -157,6 +157,15 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool CanSkip(void* aPtr, bool aRemovingAllowed)
   {
     return mMightSkip ? CanSkipReal(aPtr, aRemovingAllowed) : false;
@@ -165,11 +174,45 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   bool CanSkipInCC(void* aPtr)
   {
     return mMightSkip ? CanSkipInCCReal(aPtr) : false;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -348,6 +391,8 @@ DowncastCCParticipant(void* aPtr)
 
 
 
+
+
 #define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(_class)                        \
   NS_IMETHODIMP_(bool)                                                         \
   NS_CYCLE_COLLECTION_CLASSNAME(_class)::CanSkipReal(void *p,                  \
@@ -360,6 +405,8 @@ DowncastCCParticipant(void* aPtr)
     return false;                                                              \
   }
 
+
+
 #define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_IN_CC_BEGIN(_class)                  \
   NS_IMETHODIMP_(bool)                                                         \
   NS_CYCLE_COLLECTION_CLASSNAME(_class)::CanSkipInCCReal(void *p)              \
@@ -370,6 +417,8 @@ DowncastCCParticipant(void* aPtr)
     (void)tmp;                                                                 \
     return false;                                                              \
   }
+
+
 
 #define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(_class)                   \
   NS_IMETHODIMP_(bool)                                                         \
