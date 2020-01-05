@@ -149,6 +149,7 @@ using namespace mozilla::gfx;
 #define GRID_ENABLED_PREF_NAME "layout.css.grid.enabled"
 #define GRID_TEMPLATE_SUBGRID_ENABLED_PREF_NAME "layout.css.grid-template-subgrid-value.enabled"
 #define WEBKIT_PREFIXES_ENABLED_PREF_NAME "layout.css.prefixes.webkit"
+#define DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME "layout.css.display-flow-root.enabled"
 #define TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME "layout.css.text-align-unsafe-value.enabled"
 #define FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME "layout.css.float-logical-values.enabled"
 #define BG_CLIP_TEXT_ENABLED_PREF_NAME "layout.css.background-clip-text.enabled"
@@ -310,6 +311,36 @@ WebkitPrefixEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
     nsCSSProps::kDisplayKTable[sIndexOfWebkitInlineFlexInDisplayTable].mKeyword =
       isWebkitPrefixSupportEnabled ?
       eCSSKeyword__webkit_inline_flex : eCSSKeyword_UNKNOWN;
+  }
+}
+
+
+
+
+static void
+DisplayFlowRootEnabledPrefChangeCallback(const char* aPrefName, void* aClosure)
+{
+  NS_ASSERTION(strcmp(aPrefName, DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME) == 0,
+               "Did you misspell " DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME " ?");
+
+  static bool sIsDisplayFlowRootKeywordIndexInitialized;
+  static int32_t sIndexOfFlowRootInDisplayTable;
+  bool isDisplayFlowRootEnabled =
+    Preferences::GetBool(DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME, false);
+
+  if (!sIsDisplayFlowRootKeywordIndexInitialized) {
+    
+    sIndexOfFlowRootInDisplayTable =
+      nsCSSProps::FindIndexOfKeyword(eCSSKeyword_flow_root,
+                                     nsCSSProps::kDisplayKTable);
+    sIsDisplayFlowRootKeywordIndexInitialized = true;
+  }
+
+  
+  
+  if (sIndexOfFlowRootInDisplayTable >= 0) {
+    nsCSSProps::kDisplayKTable[sIndexOfFlowRootInDisplayTable].mKeyword =
+      isDisplayFlowRootEnabled ? eCSSKeyword_flow_root : eCSSKeyword_UNKNOWN;
   }
 }
 
@@ -7544,6 +7575,8 @@ static const PrefCallbacks kPrefCallbacks[] = {
     WebkitPrefixEnabledPrefChangeCallback },
   { TEXT_ALIGN_UNSAFE_ENABLED_PREF_NAME,
     TextAlignUnsafeEnabledPrefChangeCallback },
+  { DISPLAY_FLOW_ROOT_ENABLED_PREF_NAME,
+    DisplayFlowRootEnabledPrefChangeCallback },
   { FLOAT_LOGICAL_VALUES_ENABLED_PREF_NAME,
     FloatLogicalValuesEnabledPrefChangeCallback },
   { BG_CLIP_TEXT_ENABLED_PREF_NAME,

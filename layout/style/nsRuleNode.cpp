@@ -233,6 +233,7 @@ nsRuleNode::EnsureBlockDisplay(StyleDisplay& display,
   case StyleDisplay::Flex:
   case StyleDisplay::WebkitBox:
   case StyleDisplay::Grid:
+  case StyleDisplay::FlowRoot:
     
     
     
@@ -276,6 +277,7 @@ nsRuleNode::EnsureInlineDisplay(StyleDisplay& display)
   
   switch (display) {
     case StyleDisplay::Block:
+    case StyleDisplay::FlowRoot:
       display = StyleDisplay::InlineBlock;
       break;
     case StyleDisplay::Table:

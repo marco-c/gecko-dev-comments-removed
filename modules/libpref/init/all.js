@@ -2625,6 +2625,9 @@ pref("layout.css.grid-template-subgrid-value.enabled", false);
 pref("layout.css.contain.enabled", false);
 
 
+pref("layout.css.display-flow-root.enabled", true);
+
+
 pref("layout.css.box-decoration-break.enabled", true);
 
 
