@@ -18,7 +18,7 @@ use dom::{AnimationRules, SendElement, TElement, TNode};
 use properties::{CascadeFlags, ComputedValues, SHAREABLE, SKIP_ROOT_AND_ITEM_BASED_DISPLAY_FIXUP, cascade};
 use properties::longhands::display::computed_value as display;
 use restyle_hints::{RESTYLE_STYLE_ATTRIBUTE, RestyleHint};
-use rule_tree::{CascadeLevel, StrongRuleNode};
+use rule_tree::{CascadeLevel, RuleTree, StrongRuleNode};
 use selector_parser::{PseudoElement, RestyleDamage, SelectorImpl};
 use selectors::MatchAttr;
 use selectors::bloom::BloomFilter;
@@ -750,12 +750,12 @@ trait PrivateMatchMethods: TElement {
     }
 }
 
-fn compute_rule_node<E: TElement>(context: &StyleContext<E>,
+fn compute_rule_node<E: TElement>(rule_tree: &RuleTree,
                                   applicable_declarations: &mut Vec<ApplicableDeclarationBlock>)
                                   -> StrongRuleNode
 {
     let rules = applicable_declarations.drain(..).map(|d| (d.source, d.level));
-    let rule_node = context.shared.stylist.rule_tree.insert_ordered_rules(rules);
+    let rule_node = rule_tree.insert_ordered_rules(rules);
     rule_node
 }
 
@@ -775,20 +775,75 @@ pub trait MatchMethods : TElement {
         let stylist = &context.shared.stylist;
         let style_attribute = self.style_attribute();
         let animation_rules = self.get_animation_rules(None);
-        let mut flags = ElementSelectorFlags::empty();
         let mut rule_nodes_changed = false;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let tasks = &mut context.thread_local.tasks;
+        let mut set_selector_flags = |element: &Self, flags: ElementSelectorFlags| {
+            
+            let self_flags = flags.for_self();
+            if !self_flags.is_empty() {
+                if element == self {
+                    unsafe { element.set_selector_flags(self_flags); }
+                } else {
+                    if !element.has_selector_flags(self_flags) {
+                        let task =
+                            SequentialTask::set_selector_flags(element.clone(),
+                                                               self_flags);
+                        tasks.push(task);
+                    }
+                }
+            }
+            let parent_flags = flags.for_parent();
+            if !parent_flags.is_empty() {
+                if let Some(p) = element.parent_element() {
+                    
+                    
+                    if !p.has_selector_flags(parent_flags) {
+                        let task = SequentialTask::set_selector_flags(p, parent_flags);
+                        tasks.push(task);
+                    }
+                }
+            }
+        };
+
+        
+        
+        let guards = &context.shared.guards;
+        let rule_tree = &context.shared.stylist.rule_tree;
+        let bloom_filter = context.thread_local.bloom_filter.filter();
 
         
         let mut primary_relations =
             stylist.push_applicable_declarations(self,
-                                                 Some(context.thread_local.bloom_filter.filter()),
+                                                 Some(bloom_filter),
                                                  style_attribute,
                                                  animation_rules,
                                                  None,
-                                                 &context.shared.guards,
+                                                 guards,
                                                  &mut applicable_declarations,
-                                                 &mut flags);
-        let primary_rule_node = compute_rule_node(context, &mut applicable_declarations);
+                                                 &mut set_selector_flags);
+
+        let primary_rule_node =
+            compute_rule_node::<Self>(rule_tree, &mut applicable_declarations);
         if !data.has_styles() {
             data.set_styles(ElementStyles::new(ComputedStyle::new_partial(primary_rule_node)));
             rule_nodes_changed = true;
@@ -808,15 +863,16 @@ pub trait MatchMethods : TElement {
                 AnimationRules(None, None)
             };
             stylist.push_applicable_declarations(self,
-                                                 Some(context.thread_local.bloom_filter.filter()),
+                                                 Some(bloom_filter),
                                                  None, pseudo_animation_rules,
                                                  Some(&pseudo),
-                                                 &context.shared.guards,
+                                                 &guards,
                                                  &mut applicable_declarations,
-                                                 &mut flags);
+                                                 &mut set_selector_flags);
 
             if !applicable_declarations.is_empty() {
-                let new_rules = compute_rule_node(context, &mut applicable_declarations);
+                let new_rules =
+                    compute_rule_node::<Self>(rule_tree, &mut applicable_declarations);
                 match per_pseudo.entry(pseudo) {
                     Entry::Occupied(mut e) => {
                         if e.get().rules != new_rules {
@@ -846,22 +902,6 @@ pub trait MatchMethods : TElement {
         
         if !data.styles().pseudos.is_empty() {
             primary_relations |= AFFECTED_BY_PSEUDO_ELEMENTS;
-        }
-
-        
-        let self_flags = flags.for_self();
-        if !self_flags.is_empty() {
-            unsafe { self.set_selector_flags(self_flags); }
-        }
-        let parent_flags = flags.for_parent();
-        if !parent_flags.is_empty() {
-            if let Some(p) = self.parent_element() {
-                
-                if !p.has_selector_flags(parent_flags) {
-                    let task = SequentialTask::set_selector_flags(p, parent_flags);
-                    context.thread_local.tasks.push(task);
-                }
-            }
         }
 
         MatchResults {
