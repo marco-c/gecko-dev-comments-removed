@@ -205,8 +205,8 @@ var PrintUtils = {
       
       
       
-      this._sourceBrowser = this._listener.getPrintPreviewBrowser();
-      this._sourceBrowser.collapsed = true;
+      let ppBrowser = this._listener.getPrintPreviewBrowser();
+      ppBrowser.collapsed = true;
     }
 
     this._webProgressPP = {};
@@ -531,15 +531,15 @@ var PrintUtils = {
         
         
         spMM.sendAsyncMessage("Printing:Preview:ParseDocument", {
-          URL: this._listener.getSourceBrowser().currentURI.spec,
-          windowID: this._listener.getSourceBrowser().outerWindowID,
+          URL: this._sourceBrowser.currentURI.spec,
+          windowID: this._sourceBrowser.outerWindowID,
         });
 
         
         this.logTelemetry("PRINT_PREVIEW_SIMPLIFY_PAGE_OPENED_COUNT");
       }
     } else {
-      sendEnterPreviewMessage(this._listener.getSourceBrowser(), false);
+      sendEnterPreviewMessage(this._sourceBrowser, false);
     }
 
     if (this._webProgressPP.value) {
