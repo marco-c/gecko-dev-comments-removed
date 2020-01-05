@@ -26,6 +26,11 @@ module.exports = function(context) {
     Program(node) {
       let filePath = helpers.getAbsoluteFilePath(context);
       let relativePath = path.relative(helpers.rootDir, filePath);
+      
+      
+      if (path.win32) {
+        relativePath = relativePath.split(path.sep).join("/");
+      }
 
       if (browserWindowEnv.browserjsScripts &&
           browserWindowEnv.browserjsScripts.includes(relativePath)) {
