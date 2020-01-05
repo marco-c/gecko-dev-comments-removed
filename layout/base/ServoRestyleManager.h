@@ -148,6 +148,13 @@ private:
   
   
   ReentrantChangeList* mReentrantChanges;
+
+  
+  
+  
+  
+  
+  bool mHaveNonAnimationRestyles = false;
 };
 
 } 

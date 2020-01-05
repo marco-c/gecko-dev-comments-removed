@@ -55,6 +55,10 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
     return;
   }
 
+  if (aRestyleHint & ~eRestyle_AllHintsWithAnimations) {
+    mHaveNonAnimationRestyles = true;
+  }
+
   Servo_NoteExplicitHints(aElement, aRestyleHint, aMinChangeHint);
 }
 
@@ -70,6 +74,8 @@ ServoRestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
                                          nsRestyleHint aRestyleHint)
 {
   StyleSet()->RebuildData();
+
+  mHaveNonAnimationRestyles = true;
 
   
   
@@ -387,6 +393,9 @@ ServoRestyleManager::ProcessPendingRestyles()
   
   
   mInStyleRefresh = true;
+  if (mHaveNonAnimationRestyles) {
+    ++mAnimationGeneration;
+  }
   while (styleSet->StyleDocument()) {
     
     
@@ -419,6 +428,7 @@ ServoRestyleManager::ProcessPendingRestyles()
 
   FlushOverflowChangedTracker();
 
+  mHaveNonAnimationRestyles = false;
   mInStyleRefresh = false;
   styleSet->AssertTreeIsClean();
 
