@@ -115,7 +115,7 @@ Links.prototype = {
             aGuid, aHidden, aVisitCount, aTyped, aLastKnownTitle) {
       
       if (!this._batchProcessingDepth && aVisitCount == 1 && aLastKnownTitle) {
-        this.onTitleChanged(aURI, aTitle, aGuid);
+        this.onTitleChanged(aURI, aLastKnownTitle, aGuid);
       }
     },
 
