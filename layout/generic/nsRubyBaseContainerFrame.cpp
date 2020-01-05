@@ -315,6 +315,8 @@ nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
     return;
   }
 
+  mDescendantLeadings.Reset();
+
   MoveOverflowToChildList();
   
   AutoRubyTextContainerArray textContainers(this);
