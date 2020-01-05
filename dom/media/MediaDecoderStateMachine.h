@@ -595,24 +595,6 @@ private:
 
   
   
-  
-  
-  
-  
-  uint32_t AudioPrerollUsecs() const
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return mAmpleAudioThreshold.ToMicroseconds() / 2;
-  }
-
-  uint32_t VideoPrerollFrames() const
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    return GetAmpleVideoFrames() / 2;
-  }
-
-  
-  
   using AudioDataPromise = MediaDecoderReader::AudioDataPromise;
   using VideoDataPromise = MediaDecoderReader::VideoDataPromise;
   using WaitForDataPromise = MediaDecoderReader::WaitForDataPromise;

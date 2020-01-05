@@ -837,18 +837,34 @@ private:
     }
   }
 
+  
+  
+  
+  
+  
+  
+  uint32_t AudioPrerollUsecs() const
+  {
+    return mMaster->mAmpleAudioThreshold.ToMicroseconds() / 2;
+  }
+
+  uint32_t VideoPrerollFrames() const
+  {
+    return mMaster->GetAmpleVideoFrames() / 2;
+  }
+
   bool DonePrerollingAudio()
   {
     return !mMaster->IsAudioDecoding()
            || mMaster->GetDecodedAudioDuration()
-              >= mMaster->AudioPrerollUsecs() * mMaster->mPlaybackRate;
+              >= AudioPrerollUsecs() * mMaster->mPlaybackRate;
   }
 
   bool DonePrerollingVideo()
   {
     return !mMaster->IsVideoDecoding()
            || static_cast<uint32_t>(mMaster->VideoQueue().GetSize())
-              >= mMaster->VideoPrerollFrames() * mMaster->mPlaybackRate + 1;
+              >= VideoPrerollFrames() * mMaster->mPlaybackRate + 1;
   }
 
   void MaybeStopPrerolling()
