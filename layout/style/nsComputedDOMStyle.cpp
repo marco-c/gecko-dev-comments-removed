@@ -492,13 +492,6 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
 
   
   
-  RefPtr<nsStyleContext> parentContext;
-  nsIContent* parent = aPseudo ? aElement : aElement->GetParent();
-  
-  if (parent && parent->IsElement())
-    parentContext = GetStyleContextForElementNoFlush(parent->AsElement(),
-                                                     nullptr, presShell,
-                                                     aStyleType);
 
   nsPresContext *presContext = presShell->GetPresContext();
   if (!presContext)
@@ -506,13 +499,35 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
 
   StyleSetHandle styleSet = presShell->StyleSet();
 
-  RefPtr<nsStyleContext> sc;
+  auto type = CSSPseudoElementType::NotPseudo;
   if (aPseudo) {
     CSSPseudoElementType type = nsCSSPseudoElements::
       GetPseudoType(aPseudo, CSSEnabledState::eIgnoreEnabledState);
     if (type >= CSSPseudoElementType::Count) {
       return nullptr;
     }
+  }
+
+  
+  
+  if (ServoStyleSet* servoSet = styleSet->GetAsServo()) {
+    if (aStyleType == eDefaultOnly) {
+      NS_ERROR("stylo: ServoStyleSets cannot supply UA-only styles yet");
+      return nullptr;
+    }
+    return servoSet->ResolveTransientStyle(aElement, type);
+  }
+
+  RefPtr<nsStyleContext> sc;
+  RefPtr<nsStyleContext> parentContext;
+  nsIContent* parent = aPseudo ? aElement : aElement->GetParent();
+  
+  if (parent && parent->IsElement())
+    parentContext = GetStyleContextForElementNoFlush(parent->AsElement(),
+                                                     nullptr, aPresShell,
+                                                     aStyleType);
+
+  if (type != CSSPseudoElementType::NotPseudo) {
     nsIFrame* frame = nsLayoutUtils::GetStyleFrame(aElement);
     Element* pseudoElement =
       frame && inDocWithShell ? frame->GetPseudoElement(type) : nullptr;
@@ -524,11 +539,6 @@ nsComputedDOMStyle::GetStyleContextForElementNoFlush(Element* aElement,
   }
 
   if (aStyleType == eDefaultOnly) {
-    if (styleSet->IsServo()) {
-      NS_ERROR("stylo: ServoStyleSets cannot supply UA-only styles yet");
-      return nullptr;
-    }
-
     
     nsTArray< nsCOMPtr<nsIStyleRule> > rules;
     for (nsRuleNode* ruleNode = sc->RuleNode();
@@ -4140,14 +4150,6 @@ nsComputedDOMStyle::DoGetUnicodeBidi()
   val->SetIdent(
     nsCSSProps::ValueToKeywordEnum(StyleTextReset()->mUnicodeBidi,
                                    nsCSSProps::kUnicodeBidiKTable));
-  return val.forget();
-}
-
-already_AddRefed<CSSValue>
-nsComputedDOMStyle::DoGetCaretColor()
-{
-  RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
-  SetValueFromComplexColor(val, StyleUserInterface()->mCaretColor);
   return val.forget();
 }
 

@@ -154,9 +154,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
   bool recreateContext = primaryFrame && changeHint;
   if (recreateContext) {
     RefPtr<ServoComputedValues> computedValues
-      = Servo_ResolveStyle(aElement, aStyleSet->mRawSet.get(),
-                           ConsumeStyleBehavior::Consume,
-                           LazyComputeBehavior::Assert).Consume();
+      = Servo_ResolveStyle(aElement, ConsumeStyleBehavior::Consume).Consume();
 
     
     
