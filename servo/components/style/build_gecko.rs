@@ -230,6 +230,7 @@ mod bindings {
             "mozilla::DisplayItemClip",  
                                          
                                          
+            "mozilla::StyleShapeRadius",
             ".*ThreadSafe.*Holder",
             "AnonymousContent",
             "AudioContext",
