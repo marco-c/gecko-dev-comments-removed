@@ -121,9 +121,9 @@ class SegmentedVector : private AllocPolicy
     ? (IdealSegmentSize - kSingleElementSegmentSize) / sizeof(T) + 1
     : 1;
 
+public:
   typedef SegmentImpl<kSegmentCapacity> Segment;
 
-public:
   
   
   
@@ -260,7 +260,6 @@ public:
     
     MOZ_ASSERT(last);
     MOZ_ASSERT(last == mSegments.getLast());
-    MOZ_ASSERT(aNumElements != 0);
     MOZ_ASSERT(aNumElements < last->Length());
     for (uint32_t i = 0; i < aNumElements; ++i) {
       last->PopLast();
@@ -275,6 +274,10 @@ public:
   
   
   
+  
+  
+  
+  
   class IterImpl
   {
     friend class SegmentedVector;
@@ -282,10 +285,14 @@ public:
     Segment* mSegment;
     size_t mIndex;
 
-    explicit IterImpl(SegmentedVector* aVector)
-      : mSegment(aVector->mSegments.getFirst())
-      , mIndex(0)
-    {}
+    explicit IterImpl(SegmentedVector* aVector, bool aFromFirst)
+      : mSegment(aFromFirst ? aVector->mSegments.getFirst() :
+                              aVector->mSegments.getLast())
+      , mIndex(aFromFirst ? 0 :
+                            (mSegment ? mSegment->Length() - 1 : 0))
+    {
+      MOZ_ASSERT_IF(mSegment, mSegment->Length() > 0);
+    }
 
   public:
     bool Done() const { return !mSegment; }
@@ -311,9 +318,23 @@ public:
         mIndex = 0;
       }
     }
+
+    void Prev()
+    {
+      MOZ_ASSERT(!Done());
+      if (mIndex == 0) {
+        mSegment = mSegment->getPrevious();
+        if (mSegment) {
+          mIndex = mSegment->Length() - 1;
+        }
+      } else {
+        --mIndex;
+      }
+    }
   };
 
-  IterImpl Iter() { return IterImpl(this); }
+  IterImpl Iter() { return IterImpl(this, true); }
+  IterImpl IterFromLast() { return IterImpl(this, false); }
 
   
   

@@ -161,6 +161,7 @@
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Move.h"
 #include "mozilla/SegmentedVector.h"
 
 #include "nsCycleCollectionParticipant.h"
@@ -977,14 +978,46 @@ CanonicalizeParticipant(void** aParti, nsCycleCollectionParticipant** aCp)
 
 struct nsPurpleBufferEntry
 {
-  union
+  nsPurpleBufferEntry(void* aObject, nsCycleCollectingAutoRefCnt* aRefCnt,
+                      nsCycleCollectionParticipant* aParticipant)
+    : mObject(aObject)
+    , mRefCnt(aRefCnt)
+    , mParticipant(aParticipant)
   {
-    void* mObject;                        
-    nsPurpleBufferEntry* mNextInFreeList; 
-  };
+  }
 
+  nsPurpleBufferEntry(nsPurpleBufferEntry&& aOther)
+    : mObject(nullptr)
+    , mRefCnt(nullptr)
+    , mParticipant(nullptr)
+  {
+    Swap(aOther);
+  }
+
+  void Swap(nsPurpleBufferEntry& aOther)
+  {
+    std::swap(mObject, aOther.mObject);
+    std::swap(mRefCnt, aOther.mRefCnt);
+    std::swap(mParticipant, aOther.mParticipant);
+  }
+
+  void Clear()
+  {
+    mRefCnt->RemoveFromPurpleBuffer();
+    mRefCnt = nullptr;
+    mObject = nullptr;
+    mParticipant = nullptr;
+  }
+
+  ~nsPurpleBufferEntry()
+  {
+    if (mRefCnt) {
+      mRefCnt->RemoveFromPurpleBuffer();
+    }
+  }
+
+  void* mObject;
   nsCycleCollectingAutoRefCnt* mRefCnt;
-
   nsCycleCollectionParticipant* mParticipant; 
 };
 
@@ -993,118 +1026,116 @@ class nsCycleCollector;
 struct nsPurpleBuffer
 {
 private:
-  struct PurpleBlock
-  {
-    PurpleBlock* mNext;
-    
-    
-    
-    
-    
-    nsPurpleBufferEntry mEntries[1365];
-
-    PurpleBlock() : mNext(nullptr)
-    {
-      
-      static_assert(
-        sizeof(PurpleBlock) == 16384 ||       
-        sizeof(PurpleBlock) == 32768,         
-        "ill-sized nsPurpleBuffer::PurpleBlock"
-      );
-
-      InitNextPointers();
-    }
-
-    
-    void InitNextPointers()
-    {
-      for (uint32_t i = 1; i < ArrayLength(mEntries); ++i) {
-        mEntries[i - 1].mNextInFreeList =
-          (nsPurpleBufferEntry*)(uintptr_t(mEntries + i) | 1);
-      }
-      mEntries[ArrayLength(mEntries) - 1].mNextInFreeList =
-        (nsPurpleBufferEntry*)1;
-    }
-
-    template<class PurpleVisitor>
-    void VisitEntries(nsPurpleBuffer& aBuffer, PurpleVisitor& aVisitor)
-    {
-      nsPurpleBufferEntry* eEnd = ArrayEnd(mEntries);
-      for (nsPurpleBufferEntry* e = mEntries; e != eEnd; ++e) {
-        MOZ_ASSERT(e->mObject, "There should be no null mObject when we iterate over the purple buffer");
-        if (!(uintptr_t(e->mObject) & uintptr_t(1)) && e->mObject) {
-          aVisitor.Visit(aBuffer, e);
-        }
-      }
-    }
-  };
-  
-  
-
   uint32_t mCount;
-  PurpleBlock mFirstBlock;
-  nsPurpleBufferEntry* mFreeList;
 
+  
+  
+  
+  
+  
+  static const uint32_t kEntriesPerSegment = 1365;
+  static const size_t kSegmentSize =
+    sizeof(nsPurpleBufferEntry) * kEntriesPerSegment;
+  typedef
+    SegmentedVector<nsPurpleBufferEntry, kSegmentSize, InfallibleAllocPolicy>
+    PurpleBufferVector;
+  PurpleBufferVector mEntries;
 public:
   nsPurpleBuffer()
+    : mCount(0)
   {
-    InitBlocks();
+    static_assert(
+      sizeof(PurpleBufferVector::Segment) == 16372 || 
+      sizeof(PurpleBufferVector::Segment) == 32760 || 
+      sizeof(PurpleBufferVector::Segment) == 32744,   
+      "ill-sized nsPurpleBuffer::mEntries");
   }
 
   ~nsPurpleBuffer()
   {
-    FreeBlocks();
   }
 
+  
   template<class PurpleVisitor>
   void VisitEntries(PurpleVisitor& aVisitor)
   {
-    for (PurpleBlock* b = &mFirstBlock; b; b = b->mNext) {
-      b->VisitEntries(*this, aVisitor);
+    if (mEntries.IsEmpty()) {
+      return;
     }
-  }
 
-  void InitBlocks()
-  {
-    mCount = 0;
-    mFreeList = mFirstBlock.mEntries;
+    uint32_t oldLength = mEntries.Length();
+    uint32_t newLength = 0;
+    auto revIter = mEntries.IterFromLast();
+    auto iter = mEntries.Iter();
+     
+    auto firstEmptyIter = mEntries.Iter();
+    auto iterFromLastEntry = mEntries.IterFromLast();
+    for (; !iter.Done(); iter.Next()) {
+      nsPurpleBufferEntry& e = iter.Get();
+      if (e.mObject) {
+        aVisitor.Visit(*this, &e);
+      }
+
+      
+      
+      if (!e.mObject) {
+        
+        for (; !revIter.Done(); revIter.Prev()) {
+          nsPurpleBufferEntry& otherEntry = revIter.Get();
+          if (&e == &otherEntry) {
+            break;
+          }
+          if (otherEntry.mObject) {
+            aVisitor.Visit(*this, &otherEntry);
+            
+            if (otherEntry.mObject) {
+              e.Swap(otherEntry);
+              revIter.Prev(); 
+              break;
+            }
+          }
+        }
+      }
+
+      
+      
+      if (e.mObject) {
+        firstEmptyIter.Next();
+        ++newLength;
+      }
+
+      if (&e == &revIter.Get()) {
+        break;
+      }
+    }
+
+    
+    if (oldLength != newLength) {
+
+      
+      
+      
+      if (&iterFromLastEntry.Get() != &mEntries.GetLast()) {
+        iterFromLastEntry.Next(); 
+        auto& iterForNewEntries = iterFromLastEntry;
+        while (!iterForNewEntries.Done()) {
+          MOZ_ASSERT(!firstEmptyIter.Done());
+          MOZ_ASSERT(!firstEmptyIter.Get().mObject);
+          firstEmptyIter.Get().Swap(iterForNewEntries.Get());
+          firstEmptyIter.Next();
+          iterForNewEntries.Next();
+          ++newLength; 
+        }
+      }
+
+      mEntries.PopLastN(oldLength - newLength);
+    }
   }
 
   void FreeBlocks()
   {
-    if (mCount > 0) {
-      UnmarkRemainingPurple(&mFirstBlock);
-    }
-    PurpleBlock* b = mFirstBlock.mNext;
-    while (b) {
-      if (mCount > 0) {
-        UnmarkRemainingPurple(b);
-      }
-      PurpleBlock* next = b->mNext;
-      delete b;
-      b = next;
-    }
-    mFirstBlock.mNext = nullptr;
-  }
-
-  struct UnmarkRemainingPurpleVisitor
-  {
-    void
-    Visit(nsPurpleBuffer& aBuffer, nsPurpleBufferEntry* aEntry)
-    {
-      if (aEntry->mRefCnt) {
-        aEntry->mRefCnt->RemoveFromPurpleBuffer();
-        aEntry->mRefCnt = nullptr;
-      }
-      aEntry->mObject = nullptr;
-      --aBuffer.mCount;
-    }
-  };
-
-  void UnmarkRemainingPurple(PurpleBlock* aBlock)
-  {
-    UnmarkRemainingPurpleVisitor visitor;
-    aBlock->VisitEntries(*this, visitor);
+    mCount = 0;
+    mEntries.Clear();
   }
 
   void SelectPointers(CCGraphBuilder& aBuilder);
@@ -1121,48 +1152,20 @@ public:
                        bool aAsyncSnowWhiteFreeing,
                        CC_ForgetSkippableCallback aCb);
 
-  MOZ_ALWAYS_INLINE nsPurpleBufferEntry* NewEntry()
-  {
-    if (MOZ_UNLIKELY(!mFreeList)) {
-      PurpleBlock* b = new PurpleBlock;
-      mFreeList = b->mEntries;
-
-      
-      b->mNext = mFirstBlock.mNext;
-      mFirstBlock.mNext = b;
-    }
-
-    nsPurpleBufferEntry* e = mFreeList;
-    mFreeList = (nsPurpleBufferEntry*)
-      (uintptr_t(mFreeList->mNextInFreeList) & ~uintptr_t(1));
-    return e;
-  }
-
   MOZ_ALWAYS_INLINE void Put(void* aObject, nsCycleCollectionParticipant* aCp,
                              nsCycleCollectingAutoRefCnt* aRefCnt)
   {
-    nsPurpleBufferEntry* e = NewEntry();
-
+    nsPurpleBufferEntry entry(aObject, aRefCnt, aCp);
+    Unused << mEntries.Append(Move(entry));
+    MOZ_ASSERT(!entry.mRefCnt, "Move didn't work!");
     ++mCount;
-
-    e->mObject = aObject;
-    e->mRefCnt = aRefCnt;
-    e->mParticipant = aCp;
   }
 
   void Remove(nsPurpleBufferEntry* aEntry)
   {
     MOZ_ASSERT(mCount != 0, "must have entries");
-
-    if (aEntry->mRefCnt) {
-      aEntry->mRefCnt->RemoveFromPurpleBuffer();
-      aEntry->mRefCnt = nullptr;
-    }
-    aEntry->mNextInFreeList =
-      (nsPurpleBufferEntry*)(uintptr_t(mFreeList) | uintptr_t(1));
-    mFreeList = aEntry;
-
     --mCount;
+    aEntry->Clear();
   }
 
   uint32_t Count() const
@@ -1172,22 +1175,7 @@ public:
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
   {
-    size_t n = 0;
-
-    
-    const PurpleBlock* block = mFirstBlock.mNext;
-    while (block) {
-      n += aMallocSizeOf(block);
-      block = block->mNext;
-    }
-
-    
-    
-    
-    
-    
-
-    return n;
+    return mEntries.SizeOfExcludingThis(aMallocSizeOf);
   }
 };
 
@@ -1224,11 +1212,9 @@ nsPurpleBuffer::SelectPointers(CCGraphBuilder& aBuilder)
   SelectPointersVisitor visitor(aBuilder);
   VisitEntries(visitor);
 
-  NS_ASSERTION(mCount == 0, "AddPurpleRoot failed");
+  MOZ_ASSERT(mCount == 0, "AddPurpleRoot failed");
   if (mCount == 0) {
     FreeBlocks();
-    InitBlocks();
-    mFirstBlock.InitNextPointers();
   }
 }
 
