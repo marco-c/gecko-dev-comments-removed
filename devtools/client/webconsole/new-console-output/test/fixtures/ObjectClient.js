@@ -1,0 +1,9 @@
+
+
+
+"use strict";
+
+class ObjectClient {
+}
+
+module.exports = ObjectClient;
