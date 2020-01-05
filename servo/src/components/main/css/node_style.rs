@@ -7,22 +7,20 @@
 use css::node_util::NodeUtil;
 use layout::incremental::RestyleDamage;
 
+use extra::arc::Arc;
 use style::ComputedValues;
 use script::dom::node::{AbstractNode, LayoutView};
 
 
 pub trait StyledNode {
-    fn style(&self) -> &ComputedValues;
+    fn style<'a>(&'a self) -> &'a Arc<ComputedValues>;
     fn restyle_damage(&self) -> RestyleDamage;
 }
 
 impl StyledNode for AbstractNode<LayoutView> {
     #[inline]
-    fn style(&self) -> &ComputedValues {
-        
-        
-        let results = self.get_css_select_results();
-        results
+    fn style<'a>(&'a self) -> &'a Arc<ComputedValues> {
+        self.get_css_select_results()
     }
 
     fn restyle_damage(&self) -> RestyleDamage {

@@ -127,7 +127,7 @@ pub struct LayoutData {
     applicable_declarations: ~[Arc<~[PropertyDeclaration]>],
 
     
-    style: Option<ComputedValues>,
+    style: Option<Arc<ComputedValues>>,
 
     
     restyle_damage: Option<int>,
