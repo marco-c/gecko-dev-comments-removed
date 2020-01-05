@@ -43,7 +43,14 @@ add_task(function* () {
 
   info("Run tests for a Tooltip with a XUL panel");
   useXulWrapper = true;
-  yield runTests(doc);
+
+  let isLinux = Services.appinfo.OS === "Linux";
+  if (!isLinux) {
+    
+    
+    
+    yield runTests(doc);
+  }
 });
 
 function* runTests(doc) {
