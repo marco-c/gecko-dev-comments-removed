@@ -128,7 +128,27 @@ enum {
   NODE_IS_EDITABLE =                      NODE_FLAG_BIT(7),
 
   
-  THIS_BIT_BELONGS_TO_BHOLLEY =           NODE_FLAG_BIT(8),
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NODE_IS_NATIVE_ANONYMOUS =              NODE_FLAG_BIT(8),
 
   
   NODE_IS_IN_SHADOW_TREE =                NODE_FLAG_BIT(9),
@@ -1168,6 +1188,15 @@ public:
 #else
     return IsEditableExternal();
 #endif
+  }
+
+  
+
+
+
+  bool IsNativeAnonymous() const
+  {
+    return HasFlag(NODE_IS_NATIVE_ANONYMOUS);
   }
 
   
