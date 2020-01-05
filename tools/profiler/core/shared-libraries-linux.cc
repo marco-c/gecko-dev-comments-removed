@@ -132,11 +132,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
       LOG("Get maps line failed");
       continue;
     }
-#if defined(ANDROID) && !defined(MOZ_WIDGET_GONK)
+#if defined(PROFILE_JAVA)
     
     
-    if (strcmp(name, "/dev/ashmem/dalvik-jit-code-cache") != 0)
+    if (strcmp(name, "/dev/ashmem/dalvik-jit-code-cache") != 0) {
       continue;
+    }
 #else
     if (strcmp(perm, "r-xp") != 0) {
       
