@@ -133,6 +133,31 @@ AccurateSeekTask::HandleNotDecoded(MediaData::Type aType, const MediaResult& aEr
   OnNotDecoded(aType, aError);
 }
 
+void
+AccurateSeekTask::HandleAudioWaited(MediaData::Type aType)
+{
+  AssertOwnerThread();
+
+  
+  if (mTarget.IsVideoOnly()) {
+    return;
+  }
+  RequestAudioData();
+}
+
+void
+AccurateSeekTask::HandleVideoWaited(MediaData::Type aType)
+{
+  AssertOwnerThread();
+  RequestVideoData();
+}
+
+void
+AccurateSeekTask::HandleNotWaited(const WaitForDataRejectValue& aRejection)
+{
+  AssertOwnerThread();
+}
+
 RefPtr<AccurateSeekTask::SeekTaskPromise>
 AccurateSeekTask::Seek(const media::TimeUnit& aDuration)
 {
@@ -496,19 +521,19 @@ AccurateSeekTask::SetCallbacks()
 
   mAudioWaitCallback = mReader->AudioWaitCallback().Connect(
     OwnerThread(), [this] (WaitCallbackData aData) {
-    
-    if (mTarget.IsVideoOnly()) {
-      return;
-    }
     if (aData.is<MediaData::Type>()) {
-      RequestAudioData();
+      HandleAudioWaited(aData.as<MediaData::Type>());
+    } else {
+      HandleNotWaited(aData.as<WaitForDataRejectValue>());
     }
   });
 
   mVideoWaitCallback = mReader->VideoWaitCallback().Connect(
     OwnerThread(), [this] (WaitCallbackData aData) {
     if (aData.is<MediaData::Type>()) {
-      RequestVideoData();
+      HandleVideoWaited(aData.as<MediaData::Type>());
+    } else {
+      HandleNotWaited(aData.as<WaitForDataRejectValue>());
     }
   });
 }

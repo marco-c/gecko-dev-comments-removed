@@ -108,6 +108,57 @@ NextFrameSeekTask::HandleNotDecoded(MediaData::Type aType, const MediaResult& aE
   }
 }
 
+void
+NextFrameSeekTask::HandleAudioWaited(MediaData::Type aType)
+{
+  AssertOwnerThread();
+
+  
+  
+  MaybeFinishSeek();
+}
+
+void
+NextFrameSeekTask::HandleVideoWaited(MediaData::Type aType)
+{
+  AssertOwnerThread();
+
+  if (NeedMoreVideo()) {
+    RequestVideoData();
+    return;
+  }
+  MaybeFinishSeek();
+}
+
+void
+NextFrameSeekTask::HandleNotWaited(const WaitForDataRejectValue& aRejection)
+{
+  AssertOwnerThread();
+
+  switch(aRejection.mType) {
+  case MediaData::AUDIO_DATA:
+  {
+    
+    
+    MaybeFinishSeek();
+    break;
+  }
+  case MediaData::VIDEO_DATA:
+  {
+    if (NeedMoreVideo()) {
+      
+      CancelCallbacks();
+      RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
+      return;
+    }
+    MaybeFinishSeek();
+    break;
+  }
+  default:
+    MOZ_ASSERT_UNREACHABLE("We cannot handle RAW_DATA or NULL_DATA here.");
+  }
+}
+
 
 
 
@@ -330,24 +381,20 @@ NextFrameSeekTask::SetCallbacks()
 
   mAudioWaitCallback = mReader->AudioWaitCallback().Connect(
     OwnerThread(), [this] (WaitCallbackData aData) {
-    
-    
-    MaybeFinishSeek();
+    if (aData.is<MediaData::Type>()) {
+      HandleAudioWaited(aData.as<MediaData::Type>());
+    } else {
+      HandleNotWaited(aData.as<WaitForDataRejectValue>());
+    }
   });
 
   mVideoWaitCallback = mReader->VideoWaitCallback().Connect(
     OwnerThread(), [this] (WaitCallbackData aData) {
-    if (NeedMoreVideo()) {
-      if (aData.is<MediaData::Type>()) {
-        RequestVideoData();
-      } else {
-        
-        CancelCallbacks();
-        RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
-      }
-      return;
+    if (aData.is<MediaData::Type>()) {
+      HandleVideoWaited(aData.as<MediaData::Type>());
+    } else {
+      HandleNotWaited(aData.as<WaitForDataRejectValue>());
     }
-    MaybeFinishSeek();
   });
 }
 
