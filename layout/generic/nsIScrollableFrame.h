@@ -359,6 +359,15 @@ public:
 
 
 
+  virtual void AllowScrollOriginDowngrade() = 0;
+  
+
+
+
+
+
+
+
 
 
 
