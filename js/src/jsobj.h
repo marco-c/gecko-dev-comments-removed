@@ -444,7 +444,7 @@ class JSObject : public js::gc::Cell
 
 
 
-    bool shouldSplicePrototype(JSContext* cx);
+    bool shouldSplicePrototype();
 
     
 

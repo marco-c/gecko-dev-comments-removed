@@ -252,7 +252,7 @@ ObjectGroup::useSingletonForAllocationSite(JSScript* script, jsbytecode* pc, con
 
 
 bool
-JSObject::shouldSplicePrototype(JSContext* cx)
+JSObject::shouldSplicePrototype()
 {
     
 
