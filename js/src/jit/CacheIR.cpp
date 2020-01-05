@@ -6,6 +6,7 @@
 
 #include "jit/CacheIR.h"
 
+#include "mozilla/DebugOnly.h"
 #include "mozilla/FloatingPoint.h"
 
 #include "jit/BaselineIC.h"
@@ -20,6 +21,7 @@
 using namespace js;
 using namespace js::jit;
 
+using mozilla::DebugOnly;
 using mozilla::Maybe;
 
 const char* js::jit::CacheKindNames[] = {
@@ -2368,11 +2370,15 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
     }
 
     
-    if (ClassMayResolveId(cx_->names(), obj->getClass(), id, obj) ||
-        obj->getClass()->getAddProperty())
-    {
+    if (ClassMayResolveId(cx_->names(), obj->getClass(), id, obj))
         return false;
-    }
+
+    
+    
+    DebugOnly<uint32_t> index;
+    MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
+    if (!obj->is<ArrayObject>() && obj->getClass()->getAddProperty())
+        return false;
 
     
     
