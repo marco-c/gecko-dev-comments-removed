@@ -417,6 +417,7 @@ public:
     , mKeys(mozilla::Move(aKeys))
     , mDeclaration(mozilla::Move(aDeclaration))
   {
+    SetIsNotDOMBinding();
     mDeclaration->SetOwningRule(this);
   }
 private:
@@ -440,9 +441,6 @@ public:
   
   uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
-  
-  
-  nsICSSDeclaration* Style();
 
   const nsTArray<float>& GetKeys() const     { return mKeys; }
   mozilla::css::Declaration* Declaration()   { return mDeclaration; }
