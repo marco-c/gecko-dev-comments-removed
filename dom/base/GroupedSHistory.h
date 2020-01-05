@@ -89,12 +89,6 @@ private:
   void PurgePartialHistories(uint32_t aLastPartialIndexToKeep);
 
   
-
-
-
-  void PurgePrerendering();
-
-  
   uint32_t mCount;
 
   
@@ -103,14 +97,6 @@ private:
 
   
   nsCOMArray<nsIPartialSHistory> mPartialHistories;
-
-  
-  struct PrerenderingHistory
-  {
-    nsCOMPtr<nsIPartialSHistory> mPartialHistory;
-    int32_t mId;
-  };
-  nsTArray<PrerenderingHistory> mPrerenderingHistories;
 };
 
 } 
