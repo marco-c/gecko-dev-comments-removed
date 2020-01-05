@@ -951,23 +951,6 @@ static bool
 TryAttachGetElemStub(JSContext* cx, JSScript* script, jsbytecode* pc, ICGetElem_Fallback* stub,
                      HandleValue lhs, HandleValue rhs, HandleValue res, bool* attached)
 {
-    
-    if (lhs.isString() && rhs.isInt32() && res.isString() &&
-        !stub->hasStub(ICStub::GetElem_String))
-    {
-        
-
-        JitSpew(JitSpew_BaselineIC, "  Generating GetElem(String[Int32]) stub");
-        ICGetElem_String::Compiler compiler(cx);
-        ICStub* stringStub = compiler.getStub(compiler.getStubSpace(script));
-        if (!stringStub)
-            return false;
-
-        stub->addNewStub(stringStub);
-        *attached = true;
-        return true;
-    }
-
     if (lhs.isMagic(JS_OPTIMIZED_ARGUMENTS) && rhs.isInt32() &&
         !ArgumentsGetElemStubExists(stub, ICGetElem_Arguments::Magic))
     {
@@ -1190,56 +1173,6 @@ ICGetElem_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     pushStubPayload(masm, R0.scratchReg());
 
     return tailCallVM(DoGetElemFallbackInfo, masm);
-}
-
-
-
-
-
-bool
-ICGetElem_String::Compiler::generateStubCode(MacroAssembler& masm)
-{
-    MOZ_ASSERT(engine_ == Engine::Baseline);
-
-    Label failure;
-    masm.branchTestString(Assembler::NotEqual, R0, &failure);
-    masm.branchTestInt32(Assembler::NotEqual, R1, &failure);
-
-    AllocatableGeneralRegisterSet regs(availableGeneralRegs(2));
-    Register scratchReg = regs.takeAny();
-
-    
-    Register str = masm.extractString(R0, ExtractTemp0);
-
-    
-    masm.branchIfRope(str, &failure);
-
-    
-    Register key = masm.extractInt32(R1, ExtractTemp1);
-
-    
-    masm.branch32(Assembler::BelowOrEqual, Address(str, JSString::offsetOfLength()),
-                  key, &failure);
-
-    
-    masm.loadStringChar(str, key, scratchReg);
-
-    
-    masm.branch32(Assembler::AboveOrEqual, scratchReg, Imm32(StaticStrings::UNIT_STATIC_LIMIT),
-                  &failure);
-
-    
-    masm.movePtr(ImmPtr(&cx->staticStrings().unitStaticTable), str);
-    masm.loadPtr(BaseIndex(str, scratchReg, ScalePointer), str);
-
-    
-    masm.tagValue(JSVAL_TYPE_STRING, str, R0);
-    EmitReturnFromIC(masm);
-
-    
-    masm.bind(&failure);
-    EmitStubGuardFailure(masm);
-    return true;
 }
 
 
