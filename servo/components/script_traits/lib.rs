@@ -19,11 +19,13 @@ extern crate msg;
 extern crate net_traits;
 extern crate profile_traits;
 extern crate serde;
+extern crate time;
 extern crate url;
 extern crate util;
 
 use app_units::Au;
 use devtools_traits::ScriptToDevtoolsControlMsg;
+use euclid::length::Length;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
@@ -36,10 +38,11 @@ use msg::webdriver_msg::WebDriverScriptCommand;
 use net_traits::ResourceTask;
 use net_traits::image_cache_task::ImageCacheTask;
 use net_traits::storage_task::StorageTask;
-use profile_traits::{mem, time};
+use profile_traits::mem;
 use std::any::Any;
 use std::sync::mpsc::{Receiver, Sender};
 use url::Url;
+use util::mem::HeapSizeOf;
 
 
 
@@ -178,6 +181,56 @@ pub enum CompositorEvent {
 pub struct OpaqueScriptLayoutChannel(pub (Box<Any + Send>, Box<Any + Send>));
 
 
+pub struct TimerEventRequest(pub Box<TimerEventChan + Send>, pub TimerSource, pub TimerEventId, pub MsDuration);
+
+
+
+
+pub struct TimerEvent(pub TimerSource, pub TimerEventId);
+
+
+pub trait TimerEventChan {
+    
+    fn send(&self, msg: TimerEvent) -> Result<(), ()>;
+    
+    fn clone(&self) -> Box<TimerEventChan + Send>;
+}
+
+
+#[derive(Copy, Clone, HeapSizeOf)]
+pub enum TimerSource {
+    
+    FromWindow(PipelineId),
+    
+    FromWorker
+}
+
+
+#[derive(PartialEq, Eq, Copy, Clone, Debug, HeapSizeOf)]
+pub struct TimerEventId(pub u32);
+
+
+#[derive(Clone, Copy, HeapSizeOf)]
+pub enum Milliseconds {}
+
+#[derive(Clone, Copy, HeapSizeOf)]
+pub enum Nanoseconds {}
+
+
+pub type MsDuration = Length<Milliseconds, u64>;
+
+pub type NsDuration = Length<Nanoseconds, u64>;
+
+
+pub fn precise_time_ms() -> MsDuration {
+    Length::new(time::precise_time_ns() / (1000 * 1000))
+}
+
+pub fn precise_time_ns() -> NsDuration {
+    Length::new(time::precise_time_ns())
+}
+
+
 pub struct InitialScriptState {
     
     pub id: PipelineId,
@@ -193,6 +246,8 @@ pub struct InitialScriptState {
     
     pub constellation_chan: ConstellationChan,
     
+    pub scheduler_chan: Sender<TimerEventRequest>,
+    
     pub failure_info: Failure,
     
     pub resource_task: ResourceTask,
@@ -201,7 +256,7 @@ pub struct InitialScriptState {
     
     pub image_cache_task: ImageCacheTask,
     
-    pub time_profiler_chan: time::ProfilerChan,
+    pub time_profiler_chan: profile_traits::time::ProfilerChan,
     
     pub mem_profiler_chan: mem::ProfilerChan,
     
