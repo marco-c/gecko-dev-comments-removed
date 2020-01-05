@@ -2346,6 +2346,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                             
                                             , XmlViolationPolicy.ALLOW
                                     
+                                            
                                     );
                                 }
                                 appendToCurrentNodeAndPushFormElementMayFoster(formAttrs);
@@ -2371,6 +2372,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                         
                                         , XmlViolationPolicy.ALLOW
                                 
+                                
                                 );
                                 for (int i = 0; i < attributes.getLength(); i++) {
                                     AttributeName attributeQName = attributes.getAttributeNameNoBoundsCheck(i);
@@ -2384,7 +2386,7 @@ public abstract class TreeBuilder<T> implements TokenHandler,
                                                 
                                                 , XmlViolationPolicy.ALLOW
                                         
-
+                                        
                                         );
                                     }
                                 }

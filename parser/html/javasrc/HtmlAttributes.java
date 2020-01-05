@@ -65,6 +65,8 @@ public final class HtmlAttributes implements Attributes {
 
     
 
+    
+
     private String idValue;
 
     private int xmlnsLength;
@@ -82,8 +84,10 @@ public final class HtmlAttributes implements Attributes {
 
 
 
-        this.names = new AttributeName[5];
-        this.values = new String[5];
+
+        this.names = new AttributeName[8];
+        this.values = new String[8];
+        
 
         
 
@@ -198,6 +202,16 @@ public final class HtmlAttributes implements Attributes {
         
         return names[index];
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
     
@@ -393,7 +407,8 @@ public final class HtmlAttributes implements Attributes {
     void addAttribute(AttributeName name, String value
             
             , XmlViolationPolicy xmlnsPolicy
-    
+            
+            
     ) throws SAXException {
         
         if (name == AttributeName.ID) {
@@ -436,9 +451,13 @@ public final class HtmlAttributes implements Attributes {
             String[] newValues = new String[newLen];
             System.arraycopy(values, 0, newValues, 0, values.length);
             values = newValues;
+            
+            
+            
         }
         names[length] = name;
         values[length] = value;
+        
         length++;
     }
 
@@ -519,6 +538,7 @@ public final class HtmlAttributes implements Attributes {
                     Portability.newStringFromString(values[i])
                     
                     , XmlViolationPolicy.ALLOW
+                    
                     
             );
         }

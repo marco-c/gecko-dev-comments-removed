@@ -493,6 +493,13 @@ public class Tokenizer implements Locator {
 
     private int line;
 
+    
+
+
+
+
+    
+
     private Interner interner;
 
     
@@ -747,6 +754,7 @@ public class Tokenizer implements Locator {
 
 
     public void setLineNumber(int line) {
+        
         this.line = line;
     }
 
@@ -1175,6 +1183,7 @@ public class Tokenizer implements Locator {
                         
                         , xmlnsPolicy
                 
+                
                 );
                 
             }
@@ -1206,6 +1215,7 @@ public class Tokenizer implements Locator {
             attributes.addAttribute(attributeName, val
             
                     , xmlnsPolicy
+            
             
             );
             attributeName = null; 
@@ -1754,6 +1764,7 @@ public class Tokenizer implements Locator {
                                     c += 0x20;
                                 }
                                 
+                                
 
 
 
@@ -1902,6 +1913,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                                 clearStrBuf();
                                 state = transition(state, Tokenizer.ATTRIBUTE_VALUE_DOUBLE_QUOTED, reconsume, pos);
                                 break beforeattributevalueloop;
@@ -1912,6 +1924,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                                 clearStrBuf();
                                 reconsume = true;
                                 state = transition(state, Tokenizer.ATTRIBUTE_VALUE_UNQUOTED, reconsume, pos);
@@ -1922,6 +1935,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                                 clearStrBuf();
                                 state = transition(state, Tokenizer.ATTRIBUTE_VALUE_SINGLE_QUOTED, reconsume, pos);
                                 continue stateloop;
@@ -1965,6 +1979,7 @@ public class Tokenizer implements Locator {
 
 
 
+                                
                                 clearStrBufAndAppend(c);
                                 
 
@@ -6737,6 +6752,7 @@ public class Tokenizer implements Locator {
         confident = false;
         strBuf = null;
         line = 1;
+        
         
         html4 = false;
         metaBoundaryPassed = false;
