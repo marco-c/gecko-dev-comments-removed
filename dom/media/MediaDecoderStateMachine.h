@@ -730,24 +730,6 @@ private:
             VideoPrerollFrames() * mPlaybackRate + 1;
   }
 
-  void StopPrerollingAudio()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    if (mIsAudioPrerolling) {
-      mIsAudioPrerolling = false;
-      ScheduleStateMachine();
-    }
-  }
-
-  void StopPrerollingVideo()
-  {
-    MOZ_ASSERT(OnTaskQueue());
-    if (mIsVideoPrerolling) {
-      mIsVideoPrerolling = false;
-      ScheduleStateMachine();
-    }
-  }
-
   
   
   
