@@ -995,9 +995,17 @@ element.getInViewCentrePoint = function (rect, win) {
 element.getPointerInteractablePaintTree = function (el) {
   const doc = el.ownerDocument;
   const win = doc.defaultView;
+  const container = {frame: win};
+  const rootNode = el.getRootNode();
 
   
-  if (element.isDisconnected(el, {frame: win})) {
+  
+  if (rootNode !== doc) {
+    container.shadowRoot = rootNode;
+  }
+
+  
+  if (element.isDisconnected(el, container)) {
     return [];
   }
 
