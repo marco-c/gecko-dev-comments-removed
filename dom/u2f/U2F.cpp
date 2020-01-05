@@ -720,9 +720,9 @@ U2FRegisterRunnable::Run()
           status->WaitGroupDone();
         },
         [&status, this] (ErrorCode aErrorCode) {
-          if (!status->IsStopped()) {
-            status->Stop(aErrorCode);
-          }
+          
+          
+          
           status->WaitGroupDone();
      });
     }
@@ -906,9 +906,9 @@ U2FSignRunnable::Run()
           status->WaitGroupDone();
         },
         [&status, this] (ErrorCode aErrorCode) {
-          if (!status->IsStopped()) {
-            status->Stop(aErrorCode);
-          }
+          
+          
+          
           status->WaitGroupDone();
       });
     }
