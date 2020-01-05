@@ -214,6 +214,13 @@ impl Debug for DebugWritingMode {
 
 
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Direction {
+    Inline,
+    Block
+}
+
+
 #[derive(PartialEq, Eq, Clone, Copy)]
 #[cfg_attr(feature = "servo", derive(Serialize))]
 pub struct LogicalSize<T> {
@@ -761,6 +768,16 @@ impl<T: Copy + Add<T, Output=T>> LogicalMargin<T> {
     #[inline]
     pub fn block_start_end(&self) -> T {
         self.block_start + self.block_end
+    }
+
+    #[inline]
+    pub fn start_end(&self, direction: Direction) -> T {
+        match direction {
+            Direction::Inline =>
+                self.inline_start + self.inline_end,
+            Direction::Block =>
+                self.block_start + self.block_end
+        }
     }
 
     #[inline]
