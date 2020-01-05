@@ -16,7 +16,7 @@
 
 
 
-#![feature(libc, rustc_private, thread_local)]
+#![feature(libc, thread_local)]
 #![cfg_attr(not(test), feature(path))]
 
 extern crate compositing;
