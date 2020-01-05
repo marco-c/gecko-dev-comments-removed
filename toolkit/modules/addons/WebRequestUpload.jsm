@@ -370,18 +370,20 @@ function parseFormData(stream, channel, lenient = false) {
   try {
     let headers;
     if (stream instanceof Ci.nsIMIMEInputStream && stream.data) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      if (channel instanceof Ci.nsIUploadChannel2 && channel.uploadStreamHasHeaders) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-      headers = readString(createTextStream(stream),
-                           stream.available() - stream.data.available());
+        headers = readString(createTextStream(stream),
+                             stream.available() - stream.data.available());
+      }
 
       rewind(stream);
       stream = stream.data;
