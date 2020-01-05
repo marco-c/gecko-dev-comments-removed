@@ -80,7 +80,8 @@ struct nsCharProps1 {
 #if ENABLE_INTL_API
 
 struct nsCharProps2 {
-  unsigned char mPairedBracketType:2;
+  
+  
   unsigned char mVertOrient:2;
   unsigned char mXidmod:4;
 };
