@@ -5,87 +5,28 @@
 
 
 #include "mozilla/layers/CrossProcessCompositorBridgeParent.h"
-#include <stdio.h>                      
 #include <stdint.h>                     
-#include <map>                          
-#include <utility>                      
 #include "LayerTransactionParent.h"     
-#include "RenderTrace.h"                
 #include "base/message_loop.h"          
-#include "base/process.h"               
 #include "base/task.h"                  
 #include "base/thread.h"                
-#include "gfxContext.h"                 
-#include "gfxPlatform.h"                
-#include "TreeTraversal.h"              
-#ifdef MOZ_WIDGET_GTK
-#include "gfxPlatformGtk.h"             
-#endif
-#include "gfxPrefs.h"                   
-#include "mozilla/AutoRestore.h"        
-#include "mozilla/ClearOnShutdown.h"    
-#include "mozilla/DebugOnly.h"          
-#include "mozilla/dom/ContentParent.h"
-#include "mozilla/dom/TabParent.h"
-#include "mozilla/gfx/2D.h"          
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Rect.h"          
-#include "VRManager.h"                  
 #include "mozilla/ipc/Transport.h"      
 #include "mozilla/layers/APZCTreeManager.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"  
 #include "mozilla/layers/AsyncCompositionManager.h"
-#include "mozilla/layers/BasicCompositor.h"  
-#include "mozilla/layers/Compositor.h"  
-#include "mozilla/layers/CompositorOGL.h"  
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/FrameUniformityData.h"
-#include "mozilla/layers/ImageBridgeParent.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
-#include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/PLayerTransactionParent.h"
 #include "mozilla/layers/RemoteContentController.h"
-#include "mozilla/layout/RenderFrameParent.h"
-#include "mozilla/media/MediaSystemResourceService.h" 
 #include "mozilla/mozalloc.h"           
-#include "mozilla/Telemetry.h"
-#ifdef MOZ_WIDGET_GTK
-#include "basic/X11BasicCompositor.h" 
-#endif
-#include "nsCOMPtr.h"                   
 #include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsIWidget.h"                  
 #include "nsTArray.h"                   
-#include "nsThreadUtils.h"              
 #include "nsXULAppAPI.h"                
-#ifdef XP_WIN
-#include "mozilla/layers/CompositorD3D11.h"
-#include "mozilla/layers/CompositorD3D9.h"
-#endif
-#include "GeckoProfiler.h"
-#include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/Unused.h"
-#include "mozilla/Hal.h"
-#include "mozilla/HalTypes.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Telemetry.h"
-#ifdef MOZ_ENABLE_PROFILER_SPS
-#include "ProfilerMarkers.h"
-#endif
-#include "mozilla/VsyncDispatcher.h"
-#if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-#include "VsyncSource.h"
-#endif
-#include "mozilla/widget/CompositorWidget.h"
-#ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
-# include "mozilla/widget/CompositorWidgetParent.h"
-#endif
 
-#include "LayerScope.h"
 using namespace std;
 
 namespace mozilla {
