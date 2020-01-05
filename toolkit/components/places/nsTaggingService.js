@@ -154,13 +154,19 @@ TaggingService.prototype = {
           this._createTag(tag.name, aSource);
         }
 
-        if (this._getItemIdForTaggedURI(aURI, tag.name) == -1) {
+        let itemId = this._getItemIdForTaggedURI(aURI, tag.name);
+        if (itemId == -1) {
           
           
           PlacesUtils.bookmarks.insertBookmark(
             tag.id, aURI, PlacesUtils.bookmarks.DEFAULT_INDEX,
              null,  null, aSource
           );
+        } else {
+          
+          
+          PlacesUtils.bookmarks.setItemLastModified(itemId,
+            PlacesUtils.toPRTime(Date.now()), aSource);
         }
 
         

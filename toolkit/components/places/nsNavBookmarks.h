@@ -36,6 +36,7 @@ namespace places {
     int64_t parentId;
     int64_t grandParentId;
     int32_t type;
+    int32_t syncStatus;
     nsCString serviceCID;
     PRTime dateAdded;
     PRTime lastModified;
@@ -56,6 +57,11 @@ namespace places {
     bool isAnnotation;
     nsCString newValue;
     nsCString oldValue;
+  };
+
+  struct TombstoneData {
+    nsCString guid;
+    PRTime dateRemoved;
   };
 
   typedef void (nsNavBookmarks::*ItemVisitMethod)(const ItemVisitData&);
@@ -215,6 +221,7 @@ public:
   static const int32_t kGetChildrenIndex_Position;
   static const int32_t kGetChildrenIndex_Type;
   static const int32_t kGetChildrenIndex_PlaceID;
+  static const int32_t kGetChildrenIndex_SyncStatus;
 
   static mozilla::Atomic<int64_t> sLastInsertedItemId;
   static void StoreLastInsertedId(const nsACString& aTable,
@@ -266,6 +273,38 @@ private:
 
   nsresult GetLastChildId(int64_t aFolder, int64_t* aItemId);
 
+  nsresult AddSyncChangesForBookmarksWithURL(const nsACString& aURL,
+                                             int64_t aSyncChangeDelta);
+
+  
+  
+  nsresult AddSyncChangesForBookmarksWithURI(nsIURI* aURI,
+                                             int64_t aSyncChangeDelta);
+
+  
+  
+  nsresult AddSyncChangesForBookmarksInFolder(int64_t aFolderId,
+                                              int64_t aSyncChangeDelta);
+
+  
+  nsresult InsertTombstone(const BookmarkData& aBookmark);
+
+  
+  nsresult InsertTombstones(const nsTArray<TombstoneData>& aTombstones);
+
+  
+  nsresult RemoveTombstone(const nsACString& aGUID);
+
+  
+  
+  
+  
+  nsresult PreventSyncReparenting(const BookmarkData& aBookmark);
+
+  nsresult SetItemTitleInternal(BookmarkData& aBookmark,
+                                const nsACString& aTitle,
+                                int64_t aSyncChangeDelta);
+
   
 
 
@@ -291,6 +330,7 @@ private:
   nsresult IsBookmarkedInDatabase(int64_t aBookmarkID, bool* aIsBookmarked);
 
   nsresult SetItemDateInternal(enum mozilla::places::BookmarkDate aDateType,
+                               int64_t aSyncChangeDelta,
                                int64_t aItemId,
                                PRTime aValue);
 
