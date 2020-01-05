@@ -85,7 +85,15 @@ template<class T>
 class Maybe
 {
   bool mIsSome;
-  AlignedStorage2<T> mStorage;
+
+  
+  
+  
+  
+  
+  
+  typedef typename RemoveCV<T>::Type StorageType;
+  AlignedStorage2<StorageType> mStorage;
 
 public:
   typedef T ValueType;
