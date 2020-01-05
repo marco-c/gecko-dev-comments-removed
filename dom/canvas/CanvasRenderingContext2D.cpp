@@ -3801,9 +3801,8 @@ void
 CanvasRenderingContext2D::EnsureWritablePath()
 {
   EnsureTarget();
-  if (!IsTargetValid()) {
-    return;
-  }
+  
+  
 
   if (mDSPathBuilder) {
     return;
