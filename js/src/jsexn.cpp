@@ -116,7 +116,7 @@ ErrorObject::subErrorClassSpec_ = {
 };
 
 const ClassSpec
-ErrorObject::debuggeeWouldRunClassSpec_ = {
+ErrorObject::nonGlobalErrorClassSpec_ = {
     ErrorObject::createConstructor,
     ErrorObject::createProto,
     nullptr,
@@ -139,8 +139,9 @@ ErrorObject::classes[JSEXN_LIMIT] = {
     IMPLEMENT_ERROR_CLASS(URIError,       &ErrorObject::subErrorClassSpec_),
 
     
-    
-    IMPLEMENT_ERROR_CLASS(DebuggeeWouldRun, &ErrorObject::debuggeeWouldRunClassSpec_)
+    IMPLEMENT_ERROR_CLASS(DebuggeeWouldRun, &ErrorObject::nonGlobalErrorClassSpec_),
+    IMPLEMENT_ERROR_CLASS(CompileError,   &ErrorObject::nonGlobalErrorClassSpec_),
+    IMPLEMENT_ERROR_CLASS(RuntimeError,   &ErrorObject::nonGlobalErrorClassSpec_)
 };
 
 JSErrorReport*
