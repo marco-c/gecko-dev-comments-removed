@@ -43,12 +43,30 @@
 static nsPermissionManager *gPermissionManager = nullptr;
 
 using mozilla::dom::ContentParent;
+using mozilla::dom::ContentChild;
 using mozilla::Unused; 
 
 static bool
 IsChildProcess()
 {
   return XRE_IsContentProcess();
+}
+
+
+
+
+
+static ContentChild*
+ChildProcess()
+{
+  if (IsChildProcess()) {
+    ContentChild* cpc = ContentChild::GetSingleton();
+    if (!cpc)
+      MOZ_CRASH("Content Process is nullptr!");
+    return cpc;
+  }
+
+  return nullptr;
 }
 
 static void
@@ -781,8 +799,7 @@ nsPermissionManager::Init()
 
   if (IsChildProcess()) {
     
-    
-    return NS_OK;
+    return FetchPermissions();
   }
 
   nsCOMPtr<nsIObserverService> observerService =
@@ -2892,87 +2909,19 @@ nsPermissionManager::UpdateExpireTime(nsIPrincipal* aPrincipal,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsPermissionManager::GetPermissionsWithKey(const nsACString& aPermissionKey,
-                                           nsTArray<IPC::Permission>& aPerms)
-{
-  aPerms.Clear();
-  if (NS_WARN_IF(XRE_IsContentProcess())) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  for (auto iter = mPermissionTable.Iter(); !iter.Done(); iter.Next()) {
-    PermissionHashKey* entry = iter.Get();
-
-    
-    
-
-    
-    nsCOMPtr<nsIPrincipal> principal;
-    nsresult rv = GetPrincipalFromOrigin(entry->GetKey()->mOrigin,
-                                         getter_AddRefs(principal));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-    
-    
-    nsAutoCString permissionKey;
-    GetKeyForPrincipal(principal, permissionKey);
-
-    if (permissionKey != aPermissionKey) {
-      continue;
-    }
-
-    for (const auto& permEntry : entry->GetPermissions()) {
-      
-      
-      
-      if (permEntry.mPermission == nsIPermissionManager::UNKNOWN_ACTION) {
-        continue;
-      }
-
-      aPerms.AppendElement(IPC::Permission(entry->GetKey()->mOrigin,
-                                           mTypeArray.ElementAt(permEntry.mType),
-                                           permEntry.mPermission,
-                                           permEntry.mExpireType,
-                                           permEntry.mExpireTime));
-    }
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPermissionManager::SetPermissionsWithKey(const nsACString& aPermissionKey,
-                                           nsTArray<IPC::Permission>& aPerms)
-{
-  if (NS_WARN_IF(XRE_IsParentProcess())) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
+nsresult
+nsPermissionManager::FetchPermissions() {
+  MOZ_ASSERT(IsChildProcess(), "FetchPermissions can only be invoked in child process");
   
-  if (NS_WARN_IF(mAvailablePermissionKeys.Contains(aPermissionKey))) {
-    
-    
-    return NS_OK;
-  }
-  mAvailablePermissionKeys.PutEntry(aPermissionKey);
+  InfallibleTArray<IPC::Permission> perms;
+  ChildProcess()->SendReadPermissions(&perms);
 
-  
-  for (IPC::Permission& perm : aPerms) {
+  for (uint32_t i = 0; i < perms.Length(); i++) {
+    const IPC::Permission &perm = perms[i];
+
     nsCOMPtr<nsIPrincipal> principal;
     nsresult rv = GetPrincipalFromOrigin(perm.origin, getter_AddRefs(principal));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-#ifdef DEBUG
-    nsAutoCString permissionKey;
-    GetKeyForPrincipal(principal, permissionKey);
-    MOZ_ASSERT(permissionKey == aPermissionKey,
-               "The permission keys which were sent over should match!");
-#endif
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     
