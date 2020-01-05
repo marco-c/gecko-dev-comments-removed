@@ -119,7 +119,7 @@ test_description_schema = Schema({
     
     
     Required('e10s', default='both'): optionally_keyed_by(
-        'test-platform',
+        'test-platform', 'project',
         Any(bool, 'both')),
 
     
@@ -456,7 +456,8 @@ def handle_keyed_by(config, tests):
     ]
     for test in tests:
         for field in fields:
-            resolve_keyed_by(test, field, item_name=test['test-name'])
+            resolve_keyed_by(test, field, item_name=test['test-name'],
+                             project=config.params['project'])
         yield test
 
 
