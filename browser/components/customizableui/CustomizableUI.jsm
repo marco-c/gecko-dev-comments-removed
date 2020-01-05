@@ -234,6 +234,13 @@ var CustomizableUIInternal = {
     }, true);
     PanelWideWidgetTracker.init();
 
+    if (Services.prefs.getBoolPref("browser.photon.structure.enabled")) {
+      this.registerArea(CustomizableUI.AREA_FIXED_OVERFLOW_PANEL, {
+        type: CustomizableUI.TYPE_MENU_PANEL,
+        defaultPlacements: [],
+      }, true);
+    }
+
     let navbarPlacements = [
       "urlbar-container",
       "search-container",
@@ -897,9 +904,8 @@ var CustomizableUIInternal = {
     return [null, null];
   },
 
-  registerMenuPanel(aPanelContents) {
-    if (gBuildAreas.has(CustomizableUI.AREA_PANEL) &&
-        gBuildAreas.get(CustomizableUI.AREA_PANEL).has(aPanelContents)) {
+  registerMenuPanel(aPanelContents, aArea) {
+    if (gBuildAreas.has(aArea) && gBuildAreas.get(aArea).has(aPanelContents)) {
       return;
     }
 
@@ -910,9 +916,9 @@ var CustomizableUIInternal = {
 
     this.addPanelCloseListeners(this._getPanelForNode(aPanelContents));
 
-    let placements = gPlacements.get(CustomizableUI.AREA_PANEL);
-    this.buildArea(CustomizableUI.AREA_PANEL, placements, aPanelContents);
-    this.notifyListeners("onAreaNodeRegistered", CustomizableUI.AREA_PANEL, aPanelContents);
+    let placements = gPlacements.get(aArea);
+    this.buildArea(aArea, placements, aPanelContents);
+    this.notifyListeners("onAreaNodeRegistered", aArea, aPanelContents);
 
     for (let child of aPanelContents.children) {
       if (child.localName != "toolbarbutton") {
@@ -925,7 +931,7 @@ var CustomizableUIInternal = {
       child.setAttribute("wrap", "true");
     }
 
-    this.registerBuildArea(CustomizableUI.AREA_PANEL, aPanelContents);
+    this.registerBuildArea(aArea, aPanelContents);
   },
 
   onWidgetAdded(aWidgetId, aArea, aPosition) {
@@ -1489,8 +1495,9 @@ var CustomizableUIInternal = {
     } else if (aWidget.type == "view") {
       let ownerWindow = aNode.ownerGlobal;
       let area = this.getPlacementOfWidget(aNode.id).area;
+      let areaType = CustomizableUI.getAreaType(area);
       let anchor = aNode;
-      if (area != CustomizableUI.AREA_PANEL) {
+      if (areaType != CustomizableUI.TYPE_MENU_PANEL) {
         let wrapper = this.wrapWidget(aWidget.id).forWindow(ownerWindow);
 
         if (wrapper && !wrapper.overflowed && wrapper.anchor) {
@@ -2151,7 +2158,8 @@ var CustomizableUIInternal = {
       let addToDefaultPlacements = false;
       let area = gAreas.get(widget.defaultArea);
       if (!CustomizableUI.isBuiltinToolbar(widget.defaultArea) &&
-          widget.defaultArea != CustomizableUI.AREA_PANEL) {
+          widget.defaultArea != CustomizableUI.AREA_PANEL &&
+          widget.defaultArea != CustomizableUI.AREA_FIXED_OVERFLOW_PANEL) {
         addToDefaultPlacements = true;
       }
 
@@ -2827,6 +2835,11 @@ this.CustomizableUI = {
   
 
 
+  AREA_FIXED_OVERFLOW_PANEL: "widget-overflow-fixed-list",
+
+  
+
+
   TYPE_MENU_PANEL: "menu-panel",
   
 
@@ -3047,8 +3060,9 @@ this.CustomizableUI = {
 
 
 
-  registerMenuPanel(aPanel) {
-    CustomizableUIInternal.registerMenuPanel(aPanel);
+
+  registerMenuPanel(aPanelContents, aArea) {
+    CustomizableUIInternal.registerMenuPanel(aPanelContents, aArea);
   },
   
 
@@ -4150,8 +4164,11 @@ OverflowableToolbar.prototype = {
     this._panel.removeEventListener("dragover", this);
     this._panel.removeEventListener("dragend", this);
     let doc = aEvent.target.ownerDocument;
-    let contextMenu = doc.getElementById(this._panel.getAttribute("context"));
-    gELS.removeSystemEventListener(contextMenu, "command", this, true);
+    let contextMenuId = this._panel.getAttribute("context");
+    if (contextMenuId) {
+      let contextMenu = doc.getElementById(contextMenuId);
+      gELS.removeSystemEventListener(contextMenu, "command", this, true);
+    }
   },
 
   onOverflow(aEvent) {
