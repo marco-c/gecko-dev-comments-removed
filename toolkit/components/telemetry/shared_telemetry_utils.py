@@ -75,7 +75,7 @@ class StringTable:
         :param name: the name of the output array.
         """
         entries = self.table.items()
-        entries.sort(key=lambda x:x[1])
+        entries.sort(key=lambda x: x[1])
 
         
         
