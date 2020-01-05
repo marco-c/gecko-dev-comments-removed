@@ -20,9 +20,7 @@ from manifestparser import TestManifest
 from reftest import ReftestManifest
 
 from mozbuild.util import ensureParentDir
-from mozpack.copier import FileRegistry
-from mozpack.files import ExistingFile, FileFinder
-from mozpack.manifests import InstallManifest
+from mozpack.files import FileFinder
 from mozpack.mozjar import JarWriter
 import mozpack.path as mozpath
 
@@ -73,22 +71,6 @@ GMP_TEST_PLUGIN_DIRS = [
     'gmp-fake/**',
     'gmp-fakeopenh264/**',
 ]
-
-
-
-OBJDIR_TEST_FILES = {
-    'xpcshell': {
-        'source': buildconfig.topobjdir,
-        'base': '_tests/xpcshell',
-        'pattern': '**',
-        'dest': 'xpcshell/tests',
-    },
-    'mochitest': {
-        'source': buildconfig.topobjdir,
-        'base': '_tests/testing',
-        'pattern': 'mochitest/**',
-    },
-}
 
 
 ARCHIVE_FILES = {
@@ -320,7 +302,6 @@ ARCHIVE_FILES = {
         },
     ],
     'mochitest': [
-        OBJDIR_TEST_FILES['mochitest'],
         {
             'source': buildconfig.topobjdir,
             'base': '_tests/testing',
@@ -403,7 +384,12 @@ ARCHIVE_FILES = {
         },
     ],
     'xpcshell': [
-        OBJDIR_TEST_FILES['xpcshell'],
+        {
+            'source': buildconfig.topobjdir,
+            'base': '_tests/xpcshell',
+            'pattern': '**',
+            'dest': 'xpcshell/tests',
+        },
         {
             'source': buildconfig.topsrcdir,
             'base': 'testing/xpcshell',
@@ -457,51 +443,8 @@ for k, v in ARCHIVE_FILES.items():
         raise Exception('"common" ignore list probably should contain %s' % k)
 
 
-def find_generated_harness_files():
-    
-    
-    manifest = InstallManifest(mozpath.join(buildconfig.topobjdir,
-                                            '_build_manifests',
-                                            'install',
-                                            '_tests'))
-    registry = FileRegistry()
-    manifest.populate_registry(registry)
-    
-    
-    
-    return [mozpath.join('_tests', p) for p in registry.paths()
-            if isinstance(registry[p], ExistingFile)]
-
-
 def find_files(archive):
-    extra_entries = []
-    generated_harness_files = find_generated_harness_files()
-
-    if archive == 'common':
-        
-        
-        packaged_paths = set()
-        for entry in OBJDIR_TEST_FILES.values():
-            pat = mozpath.join(entry['base'], entry['pattern'])
-            del entry['pattern']
-            patterns = []
-            for path in generated_harness_files:
-                if mozpath.match(path, pat):
-                    patterns.append(path[len(entry['base']) + 1:])
-                    packaged_paths.add(path)
-            if patterns:
-                entry['patterns'] = patterns
-                extra_entries.append(entry)
-        entry = {
-            'source': buildconfig.topobjdir,
-            'base': '_tests',
-            'patterns': [],
-        }
-        for path in set(generated_harness_files) - packaged_paths:
-            entry['patterns'].append(path[len('_tests') + 1:])
-        extra_entries.append(entry)
-
-    for entry in ARCHIVE_FILES[archive] + extra_entries:
+    for entry in ARCHIVE_FILES[archive]:
         source = entry['source']
         dest = entry.get('dest')
         base = entry.get('base', '')
@@ -525,12 +468,6 @@ def find_files(archive):
             '**/.mkdir.done',
             '**/*.pyc',
         ])
-
-        if archive != 'common' and base.startswith('_tests'):
-            
-            for path in generated_harness_files:
-                if path.startswith(base):
-                    ignore.append(path[len(base) + 1:])
 
         common_kwargs = {
             'find_executables': False,
