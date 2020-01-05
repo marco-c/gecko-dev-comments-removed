@@ -107,24 +107,27 @@ impl ToCss for CSSColor {
     }
 }
 
+impl From<Color> for CSSColor {
+    fn from(color: Color) -> Self {
+        CSSColor {
+            parsed: color,
+            authored: None,
+        }
+    }
+}
+
 impl CSSColor {
     #[inline]
     
     pub fn currentcolor() -> CSSColor {
-        CSSColor {
-            parsed: Color::CurrentColor,
-            authored: None,
-        }
+        Color::CurrentColor.into()
     }
 
     #[inline]
     
     pub fn transparent() -> CSSColor {
-        CSSColor {
-            parsed: Color::RGBA(cssparser::RGBA::transparent()),
-            
-            authored: None,
-        }
+        
+        Color::RGBA(cssparser::RGBA::transparent()).into()
     }
 }
 

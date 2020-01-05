@@ -48,6 +48,8 @@ mod gecko {
         MozActiveHyperlinktext,
         
         MozVisitedHyperlinktext,
+        
+        InheritFromBodyQuirk,
     }
 
     no_viewport_percentage!(Color);
@@ -89,6 +91,7 @@ mod gecko {
                 Color::MozHyperlinktext => dest.write_str("-moz-hyperlinktext"),
                 Color::MozActiveHyperlinktext => dest.write_str("-moz-activehyperlinktext"),
                 Color::MozVisitedHyperlinktext => dest.write_str("-moz-visitedhyperlinktext"),
+                Color::InheritFromBodyQuirk => Ok(()),
             }
         }
     }
