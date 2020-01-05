@@ -4,7 +4,6 @@
 
 import json
 import os
-import shutil
 import sys
 import tempfile
 import traceback
@@ -240,7 +239,6 @@ class RobocopTestRunner(MochitestDesktop):
         self.localProfile = self.options.profilePath
         self.log.debug("Profile created at %s" % self.localProfile)
         
-        shutil.rmtree(os.path.join(self.localProfile, 'webapps'))
         os.remove(os.path.join(self.localProfile, 'userChrome.css'))
         try:
             self.dm.pushDir(self.localProfile, self.remoteProfileCopy)
