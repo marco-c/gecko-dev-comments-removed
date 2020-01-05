@@ -45,6 +45,12 @@ function* test_socket_conn()
     host: "127.0.0.1",
     port: gPort
   });
+
+  
+  let settings = transport.connectionSettings;
+  do_check_eq(settings.host, "127.0.0.1");
+  do_check_eq(settings.port, gPort);
+
   let closedDeferred = defer();
   transport.hooks = {
     onPacket: function (aPacket) {

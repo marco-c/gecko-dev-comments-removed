@@ -34,6 +34,13 @@ const { Task } = require("devtools/shared/task");
 
 
 
+
+
+
+
+
+
+
 exports.targetFromURL = Task.async(function* (url) {
   let params = url.searchParams;
   let type = params.get("type");
@@ -45,9 +52,7 @@ exports.targetFromURL = Task.async(function* (url) {
   
   let chrome = params.has("chrome");
 
-  
-  
-  let client = createClient();
+  let client = yield createClient(params);
 
   yield client.connect();
 
@@ -95,12 +100,21 @@ exports.targetFromURL = Task.async(function* (url) {
   return TargetFactory.forRemoteTab({ client, form, chrome, isTabActor });
 });
 
-function createClient() {
-  
-  if (!DebuggerServer.initialized) {
-    DebuggerServer.init();
-    DebuggerServer.addBrowserActors();
-  }
+function* createClient(params) {
+  let host = params.get("host");
+  let port = params.get("port");
+  let webSocket = !!params.get("ws");
 
-  return new DebuggerClient(DebuggerServer.connectPipe());
+  let transport;
+  if (port) {
+    transport = yield DebuggerClient.socketConnect({ host, port, webSocket });
+  } else {
+    
+    if (!DebuggerServer.initialized) {
+      DebuggerServer.init();
+      DebuggerServer.addBrowserActors();
+    }
+    transport = DebuggerServer.connectPipe()
+  }
+  return new DebuggerClient(transport);
 }
