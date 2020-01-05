@@ -2,6 +2,8 @@
 
 
 
+use util::mem::HeapSizeOf;
+
 #[derive(Clone)]
 pub struct FontContextHandle {
     ctx: ()
@@ -11,5 +13,11 @@ impl FontContextHandle {
     
     pub fn new() -> FontContextHandle {
         FontContextHandle { ctx: () }
+    }
+}
+
+impl HeapSizeOf for FontContextHandle {
+    fn heap_size_of_children(&self) -> usize {
+        0
     }
 }

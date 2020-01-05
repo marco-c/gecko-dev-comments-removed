@@ -10,35 +10,72 @@ use freetype::freetype::FT_Memory;
 use freetype::freetype::FT_New_Library;
 use freetype::freetype::struct_FT_MemoryRec_;
 
+use alloc::heap;
 use std::ptr;
 use std::rc::Rc;
+use util::mem::{HeapSizeOf, heap_size_of};
 
-use libc::{self, c_void, c_long, size_t};
+use libc::{c_void, c_long};
 
-extern fn ft_alloc(_mem: FT_Memory, size: c_long) -> *mut c_void {
+
+
+
+struct User {
+    size: usize,
+}
+
+
+const FT_ALIGNMENT: usize = 0;
+
+extern fn ft_alloc(mem: FT_Memory, req_size: c_long) -> *mut c_void {
     unsafe {
-        let ptr = libc::malloc(size as size_t);
-        ptr as *mut c_void
+        let ptr = heap::allocate(req_size as usize, FT_ALIGNMENT) as *mut c_void;
+        let actual_size = heap_size_of(ptr);
+
+        let user = (*mem).user as *mut User;
+        (*user).size += actual_size;
+
+        ptr
     }
 }
 
-extern fn ft_free(_mem: FT_Memory, block: *mut c_void) {
+extern fn ft_free(mem: FT_Memory, ptr: *mut c_void) {
     unsafe {
-        libc::free(block);
+        let actual_size = heap_size_of(ptr);
+
+        let user = (*mem).user as *mut User;
+        (*user).size -= actual_size;
+
+        heap::deallocate(ptr as *mut u8, actual_size, FT_ALIGNMENT);
     }
 }
 
-extern fn ft_realloc(_mem: FT_Memory, _cur_size: c_long, new_size: c_long, block: *mut c_void) -> *mut c_void {
+extern fn ft_realloc(mem: FT_Memory, _cur_size: c_long, new_req_size: c_long,
+                     old_ptr: *mut c_void) -> *mut c_void {
     unsafe {
-        let ptr = libc::realloc(block, new_size as size_t);
-        ptr as *mut c_void
+        let old_actual_size = heap_size_of(old_ptr);
+        let new_ptr = heap::reallocate(old_ptr as *mut u8, old_actual_size,
+                                       new_req_size as usize, FT_ALIGNMENT) as *mut c_void;
+        let new_actual_size = heap_size_of(new_ptr);
+
+        let user = (*mem).user as *mut User;
+        (*user).size += new_actual_size - old_actual_size;
+
+        new_ptr
     }
 }
+
+
+
+pub type UserPtr = *mut User;
+
+
 
 #[derive(Clone)]
 pub struct FreeTypeLibraryHandle {
     pub ctx: FT_Library,
-    pub mem: FT_Memory,
+    mem: FT_Memory,
+    user: UserPtr,
 }
 
 impl Drop for FreeTypeLibraryHandle {
@@ -47,19 +84,37 @@ impl Drop for FreeTypeLibraryHandle {
         unsafe {
             FT_Done_Library(self.ctx);
             Box::from_raw(self.mem);
+            Box::from_raw(self.user);
         }
     }
 }
 
-#[derive(Clone)]
+impl HeapSizeOf for FreeTypeLibraryHandle {
+    fn heap_size_of_children(&self) -> usize {
+        let ft_size = unsafe { (*self.user).size };
+        ft_size +
+            heap_size_of(self.ctx as *const c_void) +
+            heap_size_of(self.mem as *const c_void) +
+            heap_size_of(self.user as *const c_void)
+    }
+}
+
+#[derive(Clone, HeapSizeOf)]
 pub struct FontContextHandle {
+    
+    
+    
     pub ctx: Rc<FreeTypeLibraryHandle>,
 }
 
 impl FontContextHandle {
     pub fn new() -> FontContextHandle {
+        let user = box User {
+            size: 0,
+        };
+        let user: *mut User = ::std::boxed::into_raw(user);
         let mem = box struct_FT_MemoryRec_ {
-            user: ptr::null_mut(),
+            user: user as *mut c_void,
             alloc: ft_alloc,
             free: ft_free,
             realloc: ft_realloc,
@@ -74,7 +129,7 @@ impl FontContextHandle {
             FT_Add_Default_Modules(ctx);
 
             FontContextHandle {
-                ctx: Rc::new(FreeTypeLibraryHandle { ctx: ctx, mem: mem }),
+                ctx: Rc::new(FreeTypeLibraryHandle { ctx: ctx, mem: mem, user: user }),
             }
         }
     }
