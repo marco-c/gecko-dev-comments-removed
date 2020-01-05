@@ -251,7 +251,6 @@ class LinuxArtifactJob(ArtifactJob):
         'firefox/dependentlibs.list',
         'firefox/firefox',
         'firefox/firefox-bin',
-        'firefox/minidump-analyzer',
         'firefox/platform.ini',
         'firefox/plugin-container',
         'firefox/updater',
@@ -321,7 +320,6 @@ class MacArtifactJob(ArtifactJob):
             
             paths_no_keep_path = ('Contents/MacOS', [
                 'crashreporter.app/Contents/MacOS/crashreporter',
-                'crashreporter.app/Contents/MacOS/minidump-analyzer',
                 'firefox',
                 'firefox-bin',
                 'libfreebl3.dylib',
