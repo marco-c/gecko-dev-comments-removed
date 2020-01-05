@@ -418,6 +418,12 @@ public class Tokenizer implements Locator {
 
 
 
+    private boolean containsHyphen;
+
+    
+
+
+
 
 
     private ElementName tagName = null;
@@ -525,6 +531,7 @@ public class Tokenizer implements Locator {
         this.charRefBuf = new char[32];
         this.bmpChar = new char[1];
         this.astralChar = new char[2];
+        this.containsHyphen = false;
         this.tagName = null;
         this.nonInternedTagName = new ElementName();
         this.attributeName = null;
@@ -555,6 +562,7 @@ public class Tokenizer implements Locator {
         this.charRefBuf = new char[32];
         this.bmpChar = new char[1];
         this.astralChar = new char[2];
+        this.containsHyphen = false;
         this.tagName = null;
         this.nonInternedTagName = new ElementName();
         this.attributeName = null;
@@ -1101,13 +1109,26 @@ public class Tokenizer implements Locator {
     }
 
     private void strBufToElementNameString() {
-        tagName = ElementName.elementNameByBuffer(strBuf, 0, strBufLen,
-                interner);
-        if (tagName == null) {
-            nonInternedTagName.setNameForNonInterned(Portability.newLocalNameFromBuffer(strBuf, 0, strBufLen,
-                interner));
-            tagName = nonInternedTagName;
+        if (containsHyphen) {
+            
+            @Local String annotationName = ElementName.ANNOTATION_XML.getName();
+            if (Portability.localEqualsBuffer(annotationName, strBuf, 0, strBufLen)) {
+                tagName = ElementName.ANNOTATION_XML;
+            } else {
+                nonInternedTagName.setNameForNonInterned(Portability.newLocalNameFromBuffer(strBuf, 0, strBufLen,
+                        interner));
+                tagName = nonInternedTagName;
+            }
+        } else {
+            tagName = ElementName.elementNameByBuffer(strBuf, 0, strBufLen,
+                    interner);
+            if (tagName == null) {
+                nonInternedTagName.setNameForNonInterned(Portability.newLocalNameFromBuffer(strBuf, 0, strBufLen,
+                    interner));
+                tagName = nonInternedTagName;
+            }
         }
+        containsHyphen = false;
         clearStrBufAfterUse();
     }
 
@@ -1558,6 +1579,7 @@ public class Tokenizer implements Locator {
 
                             clearStrBufBeforeUse();
                             appendStrBuf((char) (c + 0x20));
+                            containsHyphen = false;
                             
                             state = transition(state, Tokenizer.TAG_NAME, reconsume, pos);
                             
@@ -1578,6 +1600,7 @@ public class Tokenizer implements Locator {
 
                             clearStrBufBeforeUse();
                             appendStrBuf(c);
+                            containsHyphen = false;
                             
                             state = transition(state, Tokenizer.TAG_NAME, reconsume, pos);
                             
@@ -1721,6 +1744,8 @@ public class Tokenizer implements Locator {
 
 
                                     c += 0x20;
+                                } else if (c == '-') {
+                                    containsHyphen = true;
                                 }
                                 
 
@@ -3622,6 +3647,7 @@ public class Tokenizer implements Locator {
 
                                 clearStrBufBeforeUse();
                                 appendStrBuf(c);
+                                containsHyphen = false;
                                 
 
 
@@ -6734,6 +6760,7 @@ public class Tokenizer implements Locator {
         endTag = false;
         shouldSuspend = false;
         initDoctypeFields();
+        containsHyphen = false;
         if (tagName != null) {
             tagName = null;
         }
@@ -6800,6 +6827,7 @@ public class Tokenizer implements Locator {
             publicIdentifier = Portability.newStringFromString(other.publicIdentifier);
         }
 
+        containsHyphen = other.containsHyphen;
         if (other.tagName == null) {
             tagName = null;
         } else if (other.tagName.isInterned()) {
