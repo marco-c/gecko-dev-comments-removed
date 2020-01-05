@@ -2,7 +2,6 @@
 
 
 
-
 "use strict"; 
 
 var gTestfile = 'element-setting-ToNumber-detaches.js';

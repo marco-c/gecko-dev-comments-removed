@@ -3,7 +3,6 @@
 
 
 
-
 var gTestfile = "set-object-funky-length-detaches.js";
 
 var BUGNUMBER = 991981;

@@ -1,5 +1,3 @@
-
-
 var buf = new ArrayBuffer([1,2]);
 var bufView = new DataView(buf);
 

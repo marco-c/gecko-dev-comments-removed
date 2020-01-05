@@ -3,7 +3,6 @@
 
 
 
-
 var gTestfile = "TypedArray-subarray-arguments-detaching.js";
 
 var BUGNUMBER = 991981;

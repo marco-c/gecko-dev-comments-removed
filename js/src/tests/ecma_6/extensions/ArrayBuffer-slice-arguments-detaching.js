@@ -3,7 +3,6 @@
 
 
 
-
 var gTestfile = "ArrayBuffer-slice-arguments-detaching.js";
 
 var BUGNUMBER = 991981;

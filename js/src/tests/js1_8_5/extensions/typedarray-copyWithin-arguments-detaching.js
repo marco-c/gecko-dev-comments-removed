@@ -3,7 +3,6 @@
 
 
 
-
 var gTestfile = "typedarray-copyWithin-arguments-detaching.js";
 
 var BUGNUMBER = 991981;

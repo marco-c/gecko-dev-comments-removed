@@ -3,7 +3,6 @@
 
 
 
-
 var gTestfile = "DataView-set-arguments-detaching.js";
 
 var BUGNUMBER = 991981;
