@@ -309,8 +309,9 @@ nsCaseTransformTextRunFactory::TransformString(
   mozilla::IrishCasing::State irishState;
   uint32_t irishMark = uint32_t(-1); 
                                      
-  uint32_t irishMarkSrc; 
-                         
+  uint32_t irishMarkSrc = uint32_t(-1); 
+                                        
+                                        
 
   for (uint32_t i = 0; i < length; ++i, ++aOffsetInTextRun) {
     uint32_t ch = str[i];
@@ -330,6 +331,7 @@ nsCaseTransformTextRunFactory::TransformString(
         greekState.Reset();
         irishState.Reset();
         irishMark = uint32_t(-1);
+        irishMarkSrc = uint32_t(-1);
       }
     }
 
@@ -472,6 +474,7 @@ nsCaseTransformTextRunFactory::TransformString(
                          "bad irishMark!");
             str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
             irishMark = uint32_t(-1);
+            irishMarkSrc = uint32_t(-1);
             break;
           case 2:
             
@@ -480,12 +483,15 @@ nsCaseTransformTextRunFactory::TransformString(
             str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
             str.SetCharAt(ToLowerCase(str[irishMark + 1]), irishMark + 1);
             irishMark = uint32_t(-1);
+            irishMarkSrc = uint32_t(-1);
             break;
           case 3:
             
             
             NS_ASSERTION(str.Length() >= 2 && irishMark == str.Length() - 2,
                          "bad irishMark!");
+            MOZ_ASSERT(irishMark != uint32_t(-1) && irishMarkSrc != uint32_t(-1),
+                       "failed to set irishMarks");
             str.Replace(irishMark, 2, ToLowerCase(str[irishMark]));
             aDeletedCharsArray[irishMarkSrc + 1] = true;
             
@@ -498,6 +504,7 @@ nsCaseTransformTextRunFactory::TransformString(
             }
             mergeNeeded = true;
             irishMark = uint32_t(-1);
+            irishMarkSrc = uint32_t(-1);
             break;
           }
           
