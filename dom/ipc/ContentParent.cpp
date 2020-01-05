@@ -1608,11 +1608,6 @@ ContentParent::ShouldKeepProcessAlive() const
     return false;
   }
 
-  
-  if (!mRemoteType.EqualsLiteral(DEFAULT_REMOTE_TYPE)) {
-    return false;
-  }
-
   auto contentParents = sBrowserContentParents->Get(mRemoteType);
   if (!contentParents) {
     return false;
@@ -1621,8 +1616,14 @@ ContentParent::ShouldKeepProcessAlive() const
   
   
   
-  int32_t processesToKeepAlive =
-    Preferences::GetInt("dom.ipc.keepProcessesAlive", 0);
+  int32_t processesToKeepAlive = 0;
+
+  nsAutoCString keepAlivePref("dom.ipc.keepProcessesAlive.");
+  keepAlivePref.Append(NS_ConvertUTF16toUTF8(mRemoteType));
+  if (NS_FAILED(Preferences::GetInt(keepAlivePref.get(), &processesToKeepAlive))) {
+    return false;
+  }
+
   int32_t numberOfAliveProcesses = contentParents->Length();
 
   return numberOfAliveProcesses <= processesToKeepAlive;

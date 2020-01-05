@@ -109,7 +109,7 @@ function testInit() {
     if (processCount > 1) {
       
       
-      prefs.setIntPref("dom.ipc.keepProcessesAlive", processCount);
+      prefs.setIntPref("dom.ipc.keepProcessesAlive.web", processCount);
     }
 
     let globalMM = Cc["@mozilla.org/globalmessagemanager;1"]
