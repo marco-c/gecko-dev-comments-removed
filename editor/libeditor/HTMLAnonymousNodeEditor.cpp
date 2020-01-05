@@ -242,7 +242,7 @@ HTMLEditor::CreateAnonymousElement(nsIAtom* aTag,
 #endif 
 
   
-  ps->RecreateFramesFor(newContent);
+  ps->PostRecreateFramesFor(newContent);
 
   return newContent.forget();
 }

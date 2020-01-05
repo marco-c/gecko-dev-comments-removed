@@ -56,6 +56,10 @@ class nsAutoCauseReflowNotifier;
 
 namespace mozilla {
 
+namespace dom {
+class Element;
+}  
+
 class EventDispatchingCallback;
 
 
@@ -131,11 +135,6 @@ public:
   virtual void DestroyFramesFor(nsIContent*  aContent,
                                 nsIContent** aDestroyedFramesFor) override;
   virtual void CreateFramesFor(nsIContent* aContent) override;
-
-  
-
-
-  virtual nsresult RecreateFramesFor(nsIContent* aContent) override;
 
   
 

@@ -2674,27 +2674,31 @@ nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
 
   EventStates newState = ObjectState();
 
+  if (newState == aOldState && mType == aOldType) {
+    return; 
+  }
+
   if (newState != aOldState) {
     NS_ASSERTION(thisContent->IsInComposedDoc(), "Something is confused");
     
     EventStates changedBits = aOldState ^ newState;
-
     {
       nsAutoScriptBlocker scriptBlocker;
       doc->ContentStateChanged(thisContent, changedBits);
-    }
-    if (aSync) {
-      NS_ASSERTION(InActiveDocument(thisContent), "Something is confused");
-      
-      doc->FlushPendingNotifications(FlushType::Frames);
     }
   } else if (aOldType != mType) {
     
     
     nsCOMPtr<nsIPresShell> shell = doc->GetShell();
     if (shell) {
-      shell->RecreateFramesFor(thisContent);
+      shell->PostRecreateFramesFor(thisContent->AsElement());
     }
+  }
+
+  if (aSync) {
+    NS_ASSERTION(InActiveDocument(thisContent), "Something is confused");
+    
+    doc->FlushPendingNotifications(FlushType::Frames);
   }
 }
 

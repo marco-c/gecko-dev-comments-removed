@@ -221,7 +221,8 @@ nsXBLResourceLoader::NotifyBoundElements()
   uint32_t eltCount = mBoundElements.Count();
   for (uint32_t j = 0; j < eltCount; j++) {
     nsCOMPtr<nsIContent> content = mBoundElements.ObjectAt(j);
-    
+    MOZ_ASSERT(content->IsElement());
+
     bool ready = false;
     xblService->BindingReady(content, bindingURI, &ready);
 
@@ -229,7 +230,7 @@ nsXBLResourceLoader::NotifyBoundElements()
       
       
       nsIDocument* doc = content->GetUncomposedDoc();
-    
+
       if (doc) {
         
         doc->FlushPendingNotifications(FlushType::Frames);
@@ -248,11 +249,14 @@ nsXBLResourceLoader::NotifyBoundElements()
           nsIFrame* childFrame = content->GetPrimaryFrame();
           if (!childFrame) {
             
+            
+            
+            
             nsStyleContext* sc =
               shell->FrameManager()->GetUndisplayedContent(content);
 
             if (!sc) {
-              shell->RecreateFramesFor(content);
+              shell->PostRecreateFramesFor(content->AsElement());
             }
           }
         }

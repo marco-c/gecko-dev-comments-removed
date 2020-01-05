@@ -2946,44 +2946,6 @@ PresShell::CreateFramesFor(nsIContent* aContent)
   --mChangeNestCount;
 }
 
-nsresult
-PresShell::RecreateFramesFor(nsIContent* aContent)
-{
-  NS_ENSURE_TRUE(mPresContext, NS_ERROR_FAILURE);
-  if (!mDidInitialize) {
-    
-    
-    return NS_OK;
-  }
-
-  
-  
-
-  NS_ASSERTION(mViewManager, "Should have view manager");
-
-  
-  
-  mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
-
-  nsAutoScriptBlocker scriptBlocker;
-
-  nsStyleChangeList changeList(mPresContext->StyleSet()->BackendType());
-  changeList.AppendChange(nullptr, aContent, nsChangeHint_ReconstructFrame);
-
-  
-  
-  ServoStyleSet::AutoAllowStaleStyles guard(mStyleSet->GetAsServo());
-
-  
-  ++mChangeNestCount;
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
-  restyleManager->ProcessRestyledFrames(changeList);
-  restyleManager->FlushOverflowChangedTracker();
-  --mChangeNestCount;
-
-  return NS_OK;
-}
-
 void
 nsIPresShell::PostRecreateFramesFor(Element* aElement)
 {

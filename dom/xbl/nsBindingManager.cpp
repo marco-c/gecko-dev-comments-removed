@@ -255,11 +255,11 @@ nsBindingManager::GetAnonymousNodesFor(nsIContent* aContent)
 }
 
 nsresult
-nsBindingManager::ClearBinding(nsIContent* aContent)
+nsBindingManager::ClearBinding(Element* aElement)
 {
   
   RefPtr<nsXBLBinding> binding =
-    aContent ? aContent->GetXBLBinding() : nullptr;
+    aElement ? aElement->GetXBLBinding() : nullptr;
 
   if (!binding) {
     return NS_OK;
@@ -273,14 +273,14 @@ nsBindingManager::ClearBinding(nsIContent* aContent)
   
   
   
-  nsCOMPtr<nsIDocument> doc = aContent->OwnerDoc();
+  nsCOMPtr<nsIDocument> doc = aElement->OwnerDoc();
 
   
   
   
   binding->UnhookEventHandlers();
   binding->ChangeDocument(doc, nullptr);
-  aContent->SetXBLBinding(nullptr, this);
+  aElement->SetXBLBinding(nullptr, this);
   binding->MarkForDeath();
 
   
@@ -290,7 +290,8 @@ nsBindingManager::ClearBinding(nsIContent* aContent)
   nsIPresShell *presShell = doc->GetShell();
   NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
-  return presShell->RecreateFramesFor(aContent);;
+  presShell->PostRecreateFramesFor(aElement);
+  return NS_OK;
 }
 
 nsresult
