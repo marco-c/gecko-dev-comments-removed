@@ -193,7 +193,10 @@ DottedCornerFinder::Next(void)
 
   
   (void)FindNext(mBestOverlap);
-  (void)FindNext(mBestOverlap);
+  if (mHasMore) {
+    (void)FindNext(mBestOverlap);
+  }
+
   return Result(mLastC, mLastR);
 }
 
@@ -343,6 +346,17 @@ DottedCornerFinder::FindNext(Float overlap)
     }
 
     circlesDist = sqrt(circlesDistSquare);
+  }
+
+  if (mHasZeroBorderWidth) {
+    
+    
+    const Float R_MARGIN = 0.1f;
+    if (mLastR < R_MARGIN && r > mLastR) {
+      mHasMore = false;
+      mLastR = 0.0f;
+      return 0.0f;
+    }
   }
 
   mLastT = t;
