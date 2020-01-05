@@ -91,6 +91,8 @@ const kSaveDelayMs = 1500;
 
 
 
+
+
 function JSONFile(config) {
   this.path = config.path;
 
@@ -105,6 +107,11 @@ function JSONFile(config) {
     config.saveDelayMs = kSaveDelayMs;
   }
   this._saver = new DeferredTask(() => this._save(), config.saveDelayMs);
+
+  this._options = {};
+  if (config.compression) {
+    this._options.compression = config.compression;
+  }
 
   this._finalizeAt = config.finalizeAt || AsyncShutdown.profileBeforeChange;
   this._finalizeInternalBound = this._finalizeInternal.bind(this);
@@ -176,7 +183,7 @@ JSONFile.prototype = {
     let data = {};
 
     try {
-      let bytes = yield OS.File.read(this.path);
+      let bytes = yield OS.File.read(this.path, this._options);
 
       
       if (this.dataReady) {
@@ -286,7 +293,9 @@ JSONFile.prototype = {
       yield Promise.resolve(this._beforeSave());
     }
     yield OS.File.writeAtomic(this.path, bytes,
-                              { tmpPath: this.path + ".tmp" });
+                              Object.assign(
+                                { tmpPath: this.path + ".tmp" },
+                                this._options));
   }),
 
   
