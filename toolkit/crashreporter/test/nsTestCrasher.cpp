@@ -3,9 +3,12 @@
 #include <stdio.h>
 
 #include "nscore.h"
-#include "nsExceptionHandler.h"
 #include "mozilla/Unused.h"
 #include "ExceptionThrower.h"
+
+#ifdef XP_WIN
+#include <windows.h>
+#endif
 
 
 
