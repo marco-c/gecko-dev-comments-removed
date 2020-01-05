@@ -57,4 +57,9 @@ public @interface WrapForJNI {
 
 
     String dispatchTo() default "current";
+
+    
+
+
+    boolean noLiteral() default false;
 }
