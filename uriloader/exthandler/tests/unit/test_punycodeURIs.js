@@ -102,7 +102,7 @@ function run_test() {
   
   
   
-  var greDir = HandlerServiceTest._dirSvc.get("GreD", Components.interfaces.nsIFile);
+  var greDir = Services.dirsvc.get("GreD", Components.interfaces.nsIFile);
 
   envSvc.set("DYLD_LIBRARY_PATH", greDir.path);
   

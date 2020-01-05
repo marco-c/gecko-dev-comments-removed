@@ -928,7 +928,8 @@ HandlerService.prototype = {
   __ds: null,
   get _ds() {
     if (!this.__ds) {
-      var file = this._dirSvc.get("UMimTyp", Ci.nsIFile);
+      var file = this._dirSvc.get("ProfD", Ci.nsIFile);
+      file.append("mimeTypes.rdf");
       
       var ioService = Cc["@mozilla.org/network/io-service;1"].
                       getService(Ci.nsIIOService);
