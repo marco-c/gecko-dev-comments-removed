@@ -1985,6 +1985,7 @@ pref("network.cookie.cookieBehavior",       0);
 pref("network.cookie.cookieBehavior",       0); 
 #endif
 pref("network.cookie.thirdparty.sessionOnly", false);
+pref("network.cookie.leave-secure-alone",   true);
 pref("network.cookie.lifetimePolicy",       0); 
 pref("network.cookie.prefsMigrated",        false);
 pref("network.cookie.lifetime.days",        90); 
