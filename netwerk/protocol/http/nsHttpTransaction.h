@@ -425,14 +425,6 @@ private:
     bool mPassedRatePacing;
     bool mSynchronousRatePaceRequest;
     nsCOMPtr<nsICancelable> mTokenBucketCancel;
-
-
-
-    uint32_t                           mAppId;
-    bool                               mIsInIsolatedMozBrowser;
-#ifdef MOZ_WIDGET_GONK
-    nsMainThreadPtrHandle<nsINetworkInfo> mActiveNetworkInfo;
-#endif
 public:
     void     SetClassOfService(uint32_t cos) { mClassOfService = cos; }
     uint32_t ClassOfService() { return mClassOfService; }

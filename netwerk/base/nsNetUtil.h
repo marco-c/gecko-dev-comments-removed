@@ -678,14 +678,6 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 
 
 
-
-bool NS_GetAppInfo(nsIChannel *aChannel,
-                   uint32_t *aAppID,
-                   bool *aIsInIsolatedMozBrowserElement);
-
-
-
-
 bool NS_ShouldCheckAppCache(nsIURI *aURI, bool usePrivateBrowsing);
 
 bool NS_ShouldCheckAppCache(nsIPrincipal *aPrincipal, bool usePrivateBrowsing);
