@@ -1867,10 +1867,10 @@ impl Element {
                     }
                 }
                 
-                None => {event.fire(target);}
+                None => { event.fire(target); }
             },
             
-            None => {event.fire(target);}
+            None => { event.fire(target); }
         }
         
         self.set_click_in_progress(false);

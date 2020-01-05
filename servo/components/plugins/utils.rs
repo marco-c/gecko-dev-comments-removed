@@ -17,14 +17,14 @@ use syntax::ptr::P;
 
 pub fn match_ty_unwrap<'a>(ty: &'a Ty, segments: &[&str]) -> Option<&'a [P<Ty>]> {
     match ty.node {
-        TyPath(_, Path {segments: ref seg, ..}) => {
+        TyPath(_, Path { segments: ref seg, .. }) => {
             
             
             
             
             if seg.iter().rev().zip(segments.iter().rev()).all(|(a, b)| a.identifier.name.as_str() == *b) {
                 match seg.last() {
-                    Some(&PathSegment {parameters: AngleBracketedParameters(ref a), ..}) => {
+                    Some(&PathSegment { parameters: AngleBracketedParameters(ref a), .. }) => {
                         Some(&a.types)
                     }
                     _ => None
