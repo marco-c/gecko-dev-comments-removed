@@ -460,16 +460,21 @@ nsThread::ThreadFunc(void* aArg)
   self->mThread = PR_GetCurrentThread();
   SetupCurrentThreadForChaosMode();
 
-  if (initData->name.Length() > 0) {
+  if (!initData->name.IsEmpty()) {
     PR_SetCurrentThreadName(initData->name.BeginReading());
-
-    profiler_register_thread(initData->name.BeginReading(), &stackTop);
   }
 
   
   nsThreadManager::get().RegisterCurrentThread(*self);
 
   mozilla::IOInterposer::RegisterCurrentThread();
+
+  
+  
+  
+  if (!initData->name.IsEmpty()) {
+    profiler_register_thread(initData->name.BeginReading(), &stackTop);
+  }
 
   
   nsCOMPtr<nsIRunnable> event;
