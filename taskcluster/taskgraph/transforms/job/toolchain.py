@@ -116,6 +116,9 @@ def docker_worker_toolchain(config, job, taskdesc):
 
     worker['command'] = [
         '/home/worker/bin/run-task',
+        
+        '--chown-recursive', '/home/worker/workspace',
+        '--chown-recursive', '/home/worker/tooltool-cache',
         '--vcs-checkout=/home/worker/workspace/build/src',
         '--',
         'bash',
