@@ -198,6 +198,12 @@ TextPropertyEditor.prototype = {
     });
 
     
+    
+    this.shorthandOverridden = createChild(this.element, "ul", {
+      class: "ruleview-overridden-items",
+    });
+
+    
     if (this.ruleEditor.isEditable) {
       this.enable.addEventListener("click", this._onEnableClicked, true);
 
@@ -456,6 +462,7 @@ TextPropertyEditor.prototype = {
 
     
     this._updateComputed();
+    this._updateShorthandOverridden();
 
     
     this.ruleView._updatePropertyHighlight(this);
@@ -527,43 +534,84 @@ TextPropertyEditor.prototype = {
         continue;
       }
 
-      let li = createChild(this.computed, "li", {
-        class: "ruleview-computed"
-      });
+      
+      
+      computed.element = this._createComputedListItem(this.computed, computed,
+        "ruleview-computed");
+    }
+  },
 
-      if (computed.overridden) {
-        li.classList.add("ruleview-overridden");
+  
+
+
+
+
+  _updateShorthandOverridden: function () {
+    this.shorthandOverridden.innerHTML = "";
+
+    this._populatedShorthandOverridden = false;
+    this._populateShorthandOverridden();
+  },
+
+  
+
+
+  _populateShorthandOverridden: function () {
+    if (this._populatedShorthandOverridden || this.prop.overridden) {
+      return;
+    }
+    this._populatedShorthandOverridden = true;
+
+    for (let computed of this.prop.computed) {
+      
+      
+      if (computed.name === this.prop.name || !computed.overridden) {
+        continue;
       }
 
-      createChild(li, "span", {
-        class: "ruleview-propertyname theme-fg-color5",
-        textContent: computed.name
-      });
-      appendText(li, ": ");
-
-      let outputParser = this.ruleView._outputParser;
-      let frag = outputParser.parseCssProperty(
-        computed.name, computed.value, {
-          colorSwatchClass: "ruleview-swatch ruleview-colorswatch",
-          urlClass: "theme-link",
-          baseURI: this.sheetHref
-        }
-      );
-
-      
-      computed.parsedValue = frag.textContent;
-
-      createChild(li, "span", {
-        class: "ruleview-propertyvalue theme-fg-color1",
-        child: frag
-      });
-
-      appendText(li, ";");
-
-      
-      
-      computed.element = li;
+      this._createComputedListItem(this.shorthandOverridden, computed,
+        "ruleview-overridden-item");
     }
+  },
+
+  
+
+
+  _createComputedListItem: function (parentEl, computed, className) {
+    let li = createChild(parentEl, "li", {
+      class: className
+    });
+
+    if (computed.overridden) {
+      li.classList.add("ruleview-overridden");
+    }
+
+    createChild(li, "span", {
+      class: "ruleview-propertyname theme-fg-color5",
+      textContent: computed.name
+    });
+    appendText(li, ": ");
+
+    let outputParser = this.ruleView._outputParser;
+    let frag = outputParser.parseCssProperty(
+      computed.name, computed.value, {
+        colorSwatchClass: "ruleview-swatch ruleview-colorswatch",
+        urlClass: "theme-link",
+        baseURI: this.sheetHref
+      }
+    );
+
+    
+    computed.parsedValue = frag.textContent;
+
+    createChild(li, "span", {
+      class: "ruleview-propertyvalue theme-fg-color1",
+      child: frag
+    });
+
+    appendText(li, ";");
+
+    return li;
   },
 
   
@@ -593,9 +641,12 @@ TextPropertyEditor.prototype = {
       this.expander.removeAttribute("open");
       this.computed.removeAttribute("filter-open");
       this.computed.removeAttribute("user-open");
+      this.shorthandOverridden.removeAttribute("hidden");
+      this._populateShorthandOverridden();
     } else {
       this.expander.setAttribute("open", "true");
       this.computed.setAttribute("user-open", "");
+      this.shorthandOverridden.setAttribute("hidden", "true");
       this._populateComputed();
     }
 
