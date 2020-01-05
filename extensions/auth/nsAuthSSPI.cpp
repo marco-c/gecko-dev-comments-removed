@@ -119,9 +119,11 @@ MakeSN(const char *principal, nsCString &result)
     
     
     nsCOMPtr<nsIDNSRecord> record;
-    rv = dns->Resolve(Substring(buf, index + 1),
-                      nsIDNSService::RESOLVE_CANONICAL_NAME,
-                      getter_AddRefs(record));
+    mozilla::OriginAttributes attrs;
+    rv = dns->ResolveNative(Substring(buf, index + 1),
+                            nsIDNSService::RESOLVE_CANONICAL_NAME,
+                            attrs,
+                            getter_AddRefs(record));
     if (NS_FAILED(rv))
         return rv;
 

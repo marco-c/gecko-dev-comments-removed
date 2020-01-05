@@ -829,6 +829,8 @@ function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
     return;
   }
 
+  let contentPrincipal = browser.contentPrincipal;
+
   
   
   
@@ -931,7 +933,8 @@ function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
   };
 
   try {
-    gDNSService.asyncResolve(hostName, 0, onLookupComplete, Services.tm.mainThread);
+    gDNSService.asyncResolve(hostName, 0, onLookupComplete, Services.tm.mainThread,
+                             contentPrincipal.originAttributes);
   } catch (ex) {
     
     if (ex.result != Cr.NS_ERROR_UNKNOWN_HOST) {
