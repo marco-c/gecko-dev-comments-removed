@@ -3543,9 +3543,7 @@ nsHalfOpenSocket::FastOpenConnected(nsresult aError)
         
         
         MOZ_ASSERT(mConnectionNegotiatingFastOpen);
-        DebugOnly<nsresult> rv =
-            mConnectionNegotiatingFastOpen->Transaction()->RestartOnFastOpenError();
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
+        Unused << mConnectionNegotiatingFastOpen->Transaction()->RestartOnFastOpenError();
     }
     if (mConnectionNegotiatingFastOpen) {
         mSocketTransport = nullptr;
