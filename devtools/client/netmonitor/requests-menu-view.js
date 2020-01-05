@@ -404,10 +404,7 @@ RequestsMenuView.prototype = {
 
 
   onSelectionUpdate(newSelected, oldSelected) {
-    if (newSelected && oldSelected && newSelected.id === oldSelected.id) {
-      
-      NetMonitorView.NetworkDetails.populate(newSelected);
-    } else if (newSelected) {
+    if (newSelected) {
       
       NetMonitorView.Sidebar.populate(newSelected);
       NetMonitorView.Sidebar.toggle(true);

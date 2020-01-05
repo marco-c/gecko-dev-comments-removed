@@ -7,6 +7,7 @@
 const {
   OPEN_SIDEBAR,
   OPEN_STATISTICS,
+  SELECT_DETAILS_PANEL_TAB,
   WATERFALL_RESIZE,
 } = require("../constants");
 
@@ -47,6 +48,18 @@ function resizeWaterfall(width) {
 
 
 
+
+
+function selectDetailsPanelTab(index) {
+  return {
+    type: SELECT_DETAILS_PANEL_TAB,
+    index,
+  };
+}
+
+
+
+
 function toggleSidebar() {
   return (dispatch, getState) => dispatch(openSidebar(!getState().ui.sidebarOpen));
 }
@@ -62,6 +75,7 @@ module.exports = {
   openSidebar,
   openStatistics,
   resizeWaterfall,
+  selectDetailsPanelTab,
   toggleSidebar,
   toggleStatistics,
 };

@@ -30,9 +30,7 @@ add_task(function* () {
 
   let origItem = RequestsMenu.getItemAtIndex(0);
 
-  let onTabUpdated = panelWin.once(EVENTS.TAB_UPDATED);
   RequestsMenu.selectedItem = origItem;
-  yield onTabUpdated;
 
   
   let onPopulated = panelWin.once(EVENTS.CUSTOMREQUESTVIEW_POPULATED);
