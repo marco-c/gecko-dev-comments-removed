@@ -138,8 +138,6 @@ public:
   wr::BuiltDisplayList Finalize();
 
   void PushStackingContext(const WrRect& aBounds, 
-                           const WrRect& aOverflow,
-                           const WrImageMask* aMask, 
                            const float aOpacity,
                            const gfx::Matrix4x4& aTransform,
                            const WrMixBlendMode& aMixBlendMode);
