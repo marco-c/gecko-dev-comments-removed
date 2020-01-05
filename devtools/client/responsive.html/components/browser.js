@@ -137,7 +137,8 @@ module.exports = createClass({
 
 
         dangerouslySetInnerHTML: {
-          __html: `<iframe class="browser" mozbrowser="true" remote="true"
+          __html: `<iframe class="browser" mozbrowser="true"
+                           remote="true" remoteType="web"
                            noisolation="true" allowfullscreen="true"
                            src="${location}" width="100%" height="100%">
                    </iframe>`

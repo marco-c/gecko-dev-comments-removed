@@ -28,31 +28,69 @@ function getAboutModule(aURL) {
   }
 }
 
+const NOT_REMOTE = null;
+const WEB_REMOTE_TYPE = "web";
+const DEFAULT_REMOTE_TYPE = WEB_REMOTE_TYPE;
+
 this.E10SUtils = {
+  DEFAULT_REMOTE_TYPE,
+  NOT_REMOTE,
+  WEB_REMOTE_TYPE,
+
   canLoadURIInProcess: function(aURL, aProcess) {
+    let remoteType = aProcess == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT
+                     ? DEFAULT_REMOTE_TYPE : NOT_REMOTE;
+    return remoteType == this.getRemoteTypeForURI(aURL, true, remoteType);
+  },
+
+  getRemoteTypeForURI: function(aURL, aMultiProcess,
+                                aPreferredRemoteType = DEFAULT_REMOTE_TYPE) {
+    if (!aMultiProcess) {
+      return NOT_REMOTE;
+    }
+
     
-    if (!aURL)
+    if (!aURL) {
       aURL = "about:blank";
+    }
 
     
-    if (aURL.startsWith("javascript:"))
-      return true;
+    if (aURL.startsWith("javascript:")) {
+      return aPreferredRemoteType;
+    }
 
-    let processIsRemote = aProcess == Ci.nsIXULRuntime.PROCESS_TYPE_CONTENT;
-
-    let canLoadRemote = true;
-    let mustLoadRemote = true;
+    
+    
+    if (aURL.startsWith("data:")) {
+      return aPreferredRemoteType == NOT_REMOTE ? DEFAULT_REMOTE_TYPE
+                                                : aPreferredRemoteType;
+    }
 
     if (aURL.startsWith("about:")) {
+      
+      if (aURL == "about:blank") {
+        return aPreferredRemoteType;
+      }
+
       let url = Services.io.newURI(aURL, null, null);
       let module = getAboutModule(url);
       
       
-      if (module) {
-        let flags = module.getURIFlags(url);
-        canLoadRemote = !!(flags & Ci.nsIAboutModule.URI_CAN_LOAD_IN_CHILD);
-        mustLoadRemote = !!(flags & Ci.nsIAboutModule.URI_MUST_LOAD_IN_CHILD);
+      if (!module) {
+        return aPreferredRemoteType;
       }
+
+      let flags = module.getURIFlags(url);
+      if (flags & Ci.nsIAboutModule.URI_MUST_LOAD_IN_CHILD) {
+        return DEFAULT_REMOTE_TYPE;
+      }
+
+      if (flags & Ci.nsIAboutModule.URI_CAN_LOAD_IN_CHILD &&
+          aPreferredRemoteType != NOT_REMOTE) {
+        return DEFAULT_REMOTE_TYPE;
+      }
+
+      return NOT_REMOTE;
     }
 
     if (aURL.startsWith("chrome:")) {
@@ -62,34 +100,33 @@ this.E10SUtils = {
         
         url = Services.io.newURI(aURL, null, null);
       } catch (ex) {
-        canLoadRemote = true;
-        mustLoadRemote = false;
+        return aPreferredRemoteType;
       }
 
-      if (url) {
-        let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
-                        getService(Ci.nsIXULChromeRegistry);
-        canLoadRemote = chromeReg.canLoadURLRemotely(url);
-        mustLoadRemote = chromeReg.mustLoadURLRemotely(url);
+      let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].
+                      getService(Ci.nsIXULChromeRegistry);
+      if (chromeReg.mustLoadURLRemotely(url)) {
+        return DEFAULT_REMOTE_TYPE;
       }
+
+      if (chromeReg.canLoadURLRemotely(url) &&
+          aPreferredRemoteType != NOT_REMOTE) {
+        return DEFAULT_REMOTE_TYPE;
+      }
+
+      return NOT_REMOTE;
     }
 
     if (aURL.startsWith("moz-extension:")) {
-      canLoadRemote = useRemoteWebExtensions;
-      mustLoadRemote = useRemoteWebExtensions;
+      return useRemoteWebExtensions ? WEB_REMOTE_TYPE : NOT_REMOTE;
     }
 
     if (aURL.startsWith("view-source:")) {
-      return this.canLoadURIInProcess(aURL.substr("view-source:".length), aProcess);
+      return this.getRemoteTypeForURI(aURL.substr("view-source:".length),
+                                      aMultiProcess, aPreferredRemoteType);
     }
 
-    if (mustLoadRemote)
-      return processIsRemote;
-
-    if (!canLoadRemote && processIsRemote)
-      return false;
-
-    return true;
+    return WEB_REMOTE_TYPE;
   },
 
   shouldLoadURI: function(aDocShell, aURI, aReferrer) {

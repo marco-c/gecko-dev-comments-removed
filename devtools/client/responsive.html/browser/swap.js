@@ -139,7 +139,8 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
-      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true);
+      gBrowser.updateBrowserRemoteness(tab.linkedBrowser, true,
+                                       contentBrowser.remoteType);
 
       
       
@@ -207,6 +208,15 @@ function addXULBrowserDecorations(browser) {
     Object.defineProperty(browser, "isRemoteBrowser", {
       get() {
         return this.getAttribute("remote") == "true";
+      },
+      configurable: true,
+      enumerable: true,
+    });
+  }
+  if (browser.remoteType == undefined) {
+    Object.defineProperty(browser, "remoteType", {
+      get() {
+        return this.getAttribute("remoteType");
       },
       configurable: true,
       enumerable: true,
