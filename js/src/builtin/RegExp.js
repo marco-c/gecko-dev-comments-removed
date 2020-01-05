@@ -554,10 +554,9 @@ function RegExpSearch(string) {
     
     var S = ToString(string);
 
-    var result;
     if (IsRegExpMethodOptimizable(rx) && S.length < 0x7fff) {
         
-        result = RegExpSearcher(rx, S, 0);
+        var result = RegExpSearcher(rx, S, 0);
 
         
         if (result === -1)
@@ -567,6 +566,12 @@ function RegExpSearch(string) {
         return result & 0x7fff;
     }
 
+    return RegExpSearchSlowPath(rx, S);
+}
+
+
+
+function RegExpSearchSlowPath(rx, S) {
     
     var previousLastIndex = rx.lastIndex;
 
@@ -574,7 +579,7 @@ function RegExpSearch(string) {
     rx.lastIndex = 0;
 
     
-    result = RegExpExec(rx, S, false);
+    var result = RegExpExec(rx, S, false);
 
     
     rx.lastIndex = previousLastIndex;
