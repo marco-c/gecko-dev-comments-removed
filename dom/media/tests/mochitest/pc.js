@@ -1550,6 +1550,28 @@ PeerConnectionWrapper.prototype = {
   
 
 
+  getStatsLegacy : function(selector, onSuccess, onFail) {
+    let wrapper = stats => {
+      info(this + ": Got legacy stats: " + JSON.stringify(stats));
+      onSuccess(stats);
+    };
+    return this._pc.getStats(selector, wrapper, onFail);
+  },
+
+  
+
+
+
+  checkLegacyStatTypeNames: function(stats) {
+    let types = [];
+    stats.forEach(stat => types.push(stat.type));
+    ok(types.filter(type => type.includes("-")).length == 0,
+       "legacy getStats API is not returning stats with hyphenated types.");
+  },
+
+  
+
+
   getStats : function(selector) {
     return this._pc.getStats(selector).then(stats => {
       info(this + ": Got stats: " + JSON.stringify(stats));
