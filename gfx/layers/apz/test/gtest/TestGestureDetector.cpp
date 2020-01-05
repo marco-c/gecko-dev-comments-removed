@@ -235,7 +235,7 @@ protected:
     uint64_t blockId = 0;
 
     
-    Pan(apzc, touchStart, touchEnd, false, nullptr, nullptr, &blockId);
+    Pan(apzc, touchStart, touchEnd, PanOptions::None, nullptr, nullptr, &blockId);
     apzc->ConfirmTarget(blockId);
     apzc->ContentReceivedInputBlock(blockId, false);
 

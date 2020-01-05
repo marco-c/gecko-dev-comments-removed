@@ -344,7 +344,7 @@ TEST_F(APZCBasicTester, OverScrollPanningAbort) {
   
   int touchStart = 500;
   int touchEnd = 10;
-  Pan(apzc, touchStart, touchEnd, true); 
+  Pan(apzc, touchStart, touchEnd, PanOptions::KeepFingerDown);
   EXPECT_TRUE(apzc->IsOverscrolled());
 
   
