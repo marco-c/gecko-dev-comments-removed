@@ -54,6 +54,7 @@ VideoDecoderParent::VideoDecoderParent(VideoDecoderManagerParent* aParent,
   , mDestroyed(false)
 {
   MOZ_COUNT_CTOR(VideoDecoderParent);
+  MOZ_ASSERT(OnManagerThread());
   
   
   
@@ -91,6 +92,7 @@ VideoDecoderParent::~VideoDecoderParent()
 void
 VideoDecoderParent::Destroy()
 {
+  MOZ_ASSERT(OnManagerThread());
   mDecodeTaskQueue->AwaitShutdownAndIdle();
   mDestroyed = true;
   mIPDLSelfRef = nullptr;
@@ -99,6 +101,7 @@ VideoDecoderParent::Destroy()
 mozilla::ipc::IPCResult
 VideoDecoderParent::RecvInit()
 {
+  MOZ_ASSERT(OnManagerThread());
   RefPtr<VideoDecoderParent> self = this;
   mDecoder->Init()->Then(mManagerTaskQueue, __func__,
     [self] (TrackInfo::TrackType aTrack) {
@@ -119,6 +122,7 @@ VideoDecoderParent::RecvInit()
 mozilla::ipc::IPCResult
 VideoDecoderParent::RecvInput(const MediaRawDataIPDL& aData)
 {
+  MOZ_ASSERT(OnManagerThread());
   
   
   RefPtr<MediaRawData> data = new MediaRawData(aData.buffer().get<uint8_t>(), aData.buffer().Size<uint8_t>());
@@ -138,6 +142,7 @@ mozilla::ipc::IPCResult
 VideoDecoderParent::RecvFlush()
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(OnManagerThread());
   if (mDecoder) {
     mDecoder->Flush();
   }
@@ -158,6 +163,7 @@ mozilla::ipc::IPCResult
 VideoDecoderParent::RecvDrain()
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(OnManagerThread());
   mDecoder->Drain();
   return IPC_OK();
 }
@@ -166,6 +172,7 @@ mozilla::ipc::IPCResult
 VideoDecoderParent::RecvShutdown()
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(OnManagerThread());
   if (mDecoder) {
     mDecoder->Shutdown();
   }
@@ -177,6 +184,7 @@ mozilla::ipc::IPCResult
 VideoDecoderParent::RecvSetSeekThreshold(const int64_t& aTime)
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(OnManagerThread());
   mDecoder->SetSeekThreshold(media::TimeUnit::FromMicroseconds(aTime));
   return IPC_OK();
 }
@@ -185,6 +193,7 @@ void
 VideoDecoderParent::ActorDestroy(ActorDestroyReason aWhy)
 {
   MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(OnManagerThread());
   if (mDecoder) {
     mDecoder->Shutdown();
     mDecoder = nullptr;
@@ -278,6 +287,12 @@ VideoDecoderParent::OnReaderTaskQueue()
   
   
   
+  return OnManagerThread();
+}
+
+bool
+VideoDecoderParent::OnManagerThread()
+{
   return mParent->OnManagerThread();
 }
 
