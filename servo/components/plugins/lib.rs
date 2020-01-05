@@ -12,7 +12,7 @@
 
 
 
-#![feature(plugin_registrar, quote, plugin, box_syntax, rustc_private, unicode)]
+#![feature(plugin_registrar, quote, plugin, box_syntax, rustc_private, collections)]
 
 #[macro_use]
 extern crate syntax;

@@ -154,7 +154,6 @@ unsafe fn linked_list2_check() {
 
 
 
-#[unsafe_destructor]
 impl<T> Drop for LinkedList2<T> {
     fn drop(&mut self) {}
 }

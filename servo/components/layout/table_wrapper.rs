@@ -590,7 +590,7 @@ impl SelectedAutoLayoutCandidateGuess {
 
 
 fn weight(low: Au, middle: Au, high: Au) -> CSSFloat {
-    (middle - low).to_subpx() / (high - low).to_subpx()
+    (middle - low).to_frac32_px() / (high - low).to_frac32_px()
 }
 
 
@@ -653,9 +653,9 @@ impl ExcessInlineSizeDistributionInfo {
                 
                 if !column_intrinsic_inline_size.constrained &&
                         column_intrinsic_inline_size.percentage == 0.0 {
-                    column_intrinsic_inline_size.preferred.to_subpx() /
+                    column_intrinsic_inline_size.preferred.to_frac32_px() /
                         self.preferred_inline_size_of_nonconstrained_columns_with_no_percentage
-                            .to_subpx()
+                            .to_frac32_px()
                 } else {
                     0.0
                 }
@@ -663,8 +663,8 @@ impl ExcessInlineSizeDistributionInfo {
                 1.0 / (self.count_of_nonconstrained_columns_with_no_percentage as CSSFloat)
             } else if self.preferred_inline_size_of_constrained_columns_with_no_percentage >
                     Au(0) {
-                column_intrinsic_inline_size.preferred.to_subpx() /
-                    self.preferred_inline_size_of_constrained_columns_with_no_percentage.to_subpx()
+                column_intrinsic_inline_size.preferred.to_frac32_px() /
+                    self.preferred_inline_size_of_constrained_columns_with_no_percentage.to_frac32_px()
             } else if self.total_percentage > 0.0 {
                 column_intrinsic_inline_size.percentage / self.total_percentage
             } else {
@@ -684,7 +684,7 @@ impl ExcessInlineSizeDistributionInfo {
 
 struct IntermediateColumnInlineSize {
     size: Au,
-    percentage: f64,
+    percentage: f32,
 }
 
 fn initial_computed_inline_size(block: &mut BlockFlow,

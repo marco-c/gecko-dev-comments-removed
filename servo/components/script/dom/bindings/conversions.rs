@@ -56,15 +56,14 @@ use js::jsval::{UndefinedValue, NullValue, BooleanValue, Int32Value, UInt32Value
 use js::jsval::{StringValue, ObjectValue, ObjectOrNullValue};
 
 use libc;
+use num::Float;
 use std::borrow::ToOwned;
 use std::default;
-use std::marker::MarkerTrait;
-use std::num::Float;
 use std::slice;
 
 
 
-pub trait IDLInterface: MarkerTrait {
+pub trait IDLInterface {
     
     fn get_prototype_id() -> PrototypeList::ID;
     

@@ -167,7 +167,7 @@ fn test_replace_hosts() {
 
     
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    let port = listener.socket_addr().unwrap().port();
+    let port = listener.local_addr().unwrap().port();
 
     
     let resource_task = new_resource_task(None);

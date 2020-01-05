@@ -14,7 +14,7 @@ use dom::node::window_from_node;
 use std::borrow::ToOwned;
 
 
-pub trait Activatable : Copy {
+pub trait Activatable {
     fn as_element(&self) -> Temporary<Element>;
 
     

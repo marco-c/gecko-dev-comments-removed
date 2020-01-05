@@ -101,7 +101,6 @@ pub trait CORSCache {
 
 
 #[derive(Clone)]
-#[unstable = "This might later be replaced with a HashMap-like entity, though that requires a separate Origin struct"]
 pub struct BasicCORSCache(Vec<CORSCacheEntry>);
 
 impl BasicCORSCache {

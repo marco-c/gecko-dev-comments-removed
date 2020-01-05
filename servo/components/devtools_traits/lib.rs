@@ -9,12 +9,10 @@
 #![crate_name = "devtools_traits"]
 #![crate_type = "rlib"]
 
-#![feature(net)]
-
 #![allow(non_snake_case)]
 
 extern crate msg;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate url;
 extern crate util;
 extern crate time;
@@ -30,15 +28,15 @@ use std::sync::mpsc::{Sender, Receiver};
 pub type DevtoolsControlChan = Sender<DevtoolsControlMsg>;
 pub type DevtoolsControlPort = Receiver<DevtoolScriptControlMsg>;
 
-// Information would be attached to NewGlobal to be received and show in devtools.
-// Extend these fields if we need more information.
+
+
 pub struct DevtoolsPageInfo {
     pub title: DOMString,
     pub url: Url
 }
 
-/// Messages to the instruct the devtools server to update its known actors/state
-/// according to changes in the browser.
+
+
 pub enum DevtoolsControlMsg {
     AddClient(TcpStream),
     NewGlobal((PipelineId, Option<WorkerId>), Sender<DevtoolScriptControlMsg>, DevtoolsPageInfo),
@@ -46,8 +44,8 @@ pub enum DevtoolsControlMsg {
     ServerExitMsg
 }
 
-/// Serialized JS return values
-/// TODO: generalize this beyond the EvaluateJS message?
+
+
 pub enum EvaluateJSReply {
     VoidValue,
     NullValue,
@@ -106,7 +104,7 @@ pub enum TimelineMarkerType {
     DOMEvent,
 }
 
-/// Messages to process in a particular script task, as instructed by a devtools client.
+
 pub enum DevtoolScriptControlMsg {
     EvaluateJS(PipelineId, String, Sender<EvaluateJSReply>),
     GetRootNode(PipelineId, Sender<NodeInfo>),

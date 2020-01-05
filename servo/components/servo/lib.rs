@@ -17,7 +17,6 @@
 
 
 #![feature(libc, thread_local)]
-#![cfg_attr(not(test), feature(path))]
 
 extern crate compositing;
 extern crate devtools;

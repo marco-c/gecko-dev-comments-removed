@@ -15,7 +15,7 @@
 
 
 
-#![feature(start)]
+#![feature(start, libc)]
 
 
 extern crate servo;
@@ -26,7 +26,7 @@ extern crate net;
 
 extern crate util;
 
-extern crate "glutin_app" as app;
+extern crate glutin_app as app;
 extern crate time;
 
 #[cfg(target_os="android")]
@@ -43,11 +43,11 @@ use compositing::windowing::WindowEvent;
 use std::borrow::ToOwned;
 
 fn main() {
-    // Parse the command line options and store them globally
+    
     if opts::from_cmdline_args(&*get_args()) {
         setup_logging();
 
-        // Possibly interpret the `HOST_FILE` environment variable
+        
         resource_task::global_init();
 
         let window = if opts::get().headless {
@@ -56,8 +56,8 @@ fn main() {
             Some(app::create_window())
         };
 
-        // Our wrapper around `Browser` that also implements some
-        // callbacks required by the glutin window implementation.
+        
+        
         let mut browser = BrowserWrapper {
             browser: Browser::new(window.clone()),
         };
@@ -66,8 +66,8 @@ fn main() {
 
         browser.browser.handle_event(WindowEvent::InitializeCompositing);
 
-        // Feed events from the window to the browser until the browser
-        // says to stop.
+        
+        
         loop {
             let should_continue = match window {
                 None => browser.browser.handle_event(WindowEvent::Idle),
@@ -156,10 +156,10 @@ fn get_args() -> Vec<String> {
     env::args().collect()
 }
 
-// This macro must be used at toplevel because it defines a nested
-// module, but macros can only accept identifiers - not paths -
-// preventing the expansion of this macro within the android module
-// without use of an additionl stub method or other hackery.
+
+
+
+
 #[cfg(target_os = "android")]
 android_start!(main);
 
@@ -173,7 +173,7 @@ mod android {
 
     pub fn setup_logging() {
         use self::libc::consts::os::posix88::{STDERR_FILENO, STDOUT_FILENO};
-        //os::setenv("RUST_LOG", "servo,gfx,msg,util,layers,js,std,rt,extra");
+        
         redirect_output(STDERR_FILENO);
         redirect_output(STDOUT_FILENO);
     }
@@ -187,7 +187,6 @@ mod android {
         use self::libc::funcs::posix88::stdio::fdopen;
         use self::libc::funcs::c95::stdio::fgets;
         use util::task::spawn_named;
-        use std::mem;
         use std::ffi::CString;
         use std::str::from_utf8;
 
@@ -195,14 +194,15 @@ mod android {
             let mut pipes: [c_int; 2] = [ 0, 0 ];
             pipe(pipes.as_mut_ptr());
             dup2(pipes[1], file_no);
-            let mode = CString::from_slice("r".as_bytes());
+            let mode = CString::new("r").unwrap();
             let input_file = FilePtr(fdopen(pipes[0], mode.as_ptr()));
             spawn_named("android-logger".to_owned(), move || {
                 loop {
-                    let mut read_buffer: [u8; 1024] = mem::zeroed();
+                    let mut read_buffer: Vec<u8> = vec!();
+                    read_buffer.reserve(1024);
                     let FilePtr(input_file) = input_file;
                     fgets(read_buffer.as_mut_ptr() as *mut i8, read_buffer.len() as i32, input_file);
-                    let cs = CString::from_slice(&read_buffer);
+                    let cs = CString::new(read_buffer).unwrap();
                     match from_utf8(cs.as_bytes()) {
                         Ok(s) => android_glue::write_log(s),
                         _ => {}

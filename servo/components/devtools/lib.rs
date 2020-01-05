@@ -11,10 +11,7 @@
 #![crate_type = "rlib"]
 
 #![feature(box_syntax, core, rustc_private)]
-#![feature(collections, std_misc)]
-#![feature(io)]
-#![feature(net)]
-#![feature(old_io)]
+#![feature(collections)]
 
 #![allow(non_snake_case)]
 
@@ -24,7 +21,7 @@ extern crate log;
 extern crate collections;
 extern crate core;
 extern crate devtools_traits;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate msg;
 extern crate time;
 extern crate util;
@@ -46,13 +43,14 @@ use util::task::spawn_named;
 use std::borrow::ToOwned;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::error::Error;
 use std::sync::mpsc::{channel, Receiver, Sender, RecvError};
 use std::net::{TcpListener, TcpStream, Shutdown};
 use std::sync::{Arc, Mutex};
 use time::precise_time_ns;
 
 mod actor;
-/// Corresponds to http://mxr.mozilla.org/mozilla-central/source/toolkit/devtools/server/actors/
+
 mod actors {
     pub mod console;
     pub mod framerate;
@@ -82,7 +80,7 @@ struct ConsoleMsg {
     columnNumber: u32,
 }
 
-/// Spin up a devtools server that listens for connections on the specified port.
+
 pub fn start_server(port: u16) -> Sender<DevtoolsControlMsg> {
     let (sender, receiver) = channel();
     {
@@ -117,7 +115,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
     let mut actor_workers: HashMap<(PipelineId, WorkerId), String> = HashMap::new();
 
 
-    /// Process the input from a single devtools client until EOF.
+    
     fn handle_client(actors: Arc<Mutex<ActorRegistry>>, mut stream: TcpStream) {
         println!("connection established to {}", stream.peer_addr().unwrap());
         {
@@ -128,7 +126,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
 
         'outer: loop {
             match stream.read_json_packet() {
-                Ok(json_packet) => {
+                Ok(Some(json_packet)) => {
                     match actors.lock().unwrap().handle_message(json_packet.as_object().unwrap(),
                                                                 &mut stream) {
                         Ok(()) => {},
@@ -139,6 +137,10 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
                         }
                     }
                 }
+                Ok(None) => {
+                    println!("error: EOF");
+                    break 'outer
+                }
                 Err(e) => {
                     println!("error: {}", e.description());
                     break 'outer
@@ -147,9 +149,9 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
         }
     }
 
-    // We need separate actor representations for each script global that exists;
-    // clients can theoretically connect to multiple globals simultaneously.
-    // TODO: move this into the root or tab modules?
+    
+    
+    
     fn handle_new_global(actors: Arc<Mutex<ActorRegistry>>,
                          ids: (PipelineId, Option<WorkerId>),
                          scriptSender: Sender<DevtoolScriptControlMsg>,
@@ -160,7 +162,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
 
         let (pipeline, worker_id) = ids;
 
-        //TODO: move all this actor creation into a constructor method on TabActor
+        
         let (tab, console, inspector, timeline) = {
             let console = ConsoleActor {
                 name: actors.new_name("console"),
@@ -244,7 +246,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
                           id: PipelineId,
                           actor_pipelines: &HashMap<PipelineId, String>) -> String {
         let actors = actors.lock().unwrap();
-        let ref tab_actor_name = (*actor_pipelines)[id];
+        let ref tab_actor_name = (*actor_pipelines)[&id];
         let tab_actor = actors.find::<TabActor>(tab_actor_name);
         let console_actor_name = tab_actor.console.clone();
         return console_actor_name;

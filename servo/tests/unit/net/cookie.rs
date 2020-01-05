@@ -2,7 +2,7 @@
 
 
 
-extern crate "cookie" as cookie_rs;
+extern crate cookie as cookie_rs;
 
 use net::cookie::Cookie;
 use net::cookie_storage::CookieStorage;
@@ -44,23 +44,23 @@ fn fn_cookie_constructor() {
     let url = &Url::parse("http://example.com/foo").unwrap();
 
     let gov_url = &Url::parse("http://gov.ac/foo").unwrap();
-    // cookie name/value test
+    
     assert!(cookie_rs::Cookie::parse(" baz ").is_err());
     assert!(cookie_rs::Cookie::parse(" = bar  ").is_err());
     assert!(cookie_rs::Cookie::parse(" baz = ").is_ok());
 
-    // cookie domains test
+    
     let cookie = cookie_rs::Cookie::parse(" baz = bar; Domain =  ").unwrap();
     assert!(Cookie::new_wrapped(cookie.clone(), url, CookieSource::HTTP).is_some());
     let cookie = Cookie::new_wrapped(cookie, url, CookieSource::HTTP).unwrap();
     assert!(&**cookie.cookie.domain.as_ref().unwrap() == "example.com");
 
-    // cookie public domains test
+    
     let cookie = cookie_rs::Cookie::parse(" baz = bar; Domain =  gov.ac").unwrap();
     assert!(Cookie::new_wrapped(cookie.clone(), url, CookieSource::HTTP).is_none());
     assert!(Cookie::new_wrapped(cookie, gov_url, CookieSource::HTTP).is_some());
 
-    // cookie domain matching test
+    
     let cookie = cookie_rs::Cookie::parse(" baz = bar ; Secure; Domain = bazample.com").unwrap();
     assert!(Cookie::new_wrapped(cookie, url, CookieSource::HTTP).is_none());
 

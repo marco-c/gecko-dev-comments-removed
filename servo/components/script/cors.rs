@@ -30,6 +30,7 @@ use hyper::header::{ContentType, Host};
 use hyper::method::Method;
 use hyper::status::StatusClass::Success;
 
+use unicase::UniCase;
 use url::{SchemeData, Url};
 use util::task::spawn_named;
 
@@ -185,10 +186,10 @@ impl CORSRequest {
         
         let mut header_names = vec!();
         for header in self.headers.iter() {
-            header_names.push(header.name().to_ascii_lowercase());
+            header_names.push(header.name().to_owned());
         }
         header_names.sort();
-        preflight.headers.set(AccessControlRequestHeaders(header_names));
+        preflight.headers.set(AccessControlRequestHeaders(header_names.into_iter().map(UniCase).collect()));
 
         
         
@@ -446,8 +447,8 @@ fn is_simple_method(m: &Method) -> bool {
 pub fn allow_cross_origin_request(req: &CORSRequest, headers: &Headers) -> bool {
     
     match headers.get() {
-        Some(&AccessControlAllowOrigin::AllowStar) => true, 
-        Some(&AccessControlAllowOrigin::AllowOrigin(ref url)) =>
+        Some(&AccessControlAllowOrigin::Any) => true, 
+        Some(&AccessControlAllowOrigin::Value(ref url)) =>
             url.scheme == req.origin.scheme &&
             url.host() == req.origin.host() &&
             url.port() == req.origin.port(),

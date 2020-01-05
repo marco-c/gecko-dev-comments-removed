@@ -2,7 +2,7 @@
 
 
 
-extern crate "time" as std_time;
+extern crate time as std_time;
 extern crate url;
 
 use self::std_time::precise_time_ns;

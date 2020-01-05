@@ -11,13 +11,13 @@ use geom::scale_factor::ScaleFactor;
 use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
 use getopts;
+use num_cpus;
 use std::collections::HashSet;
 use std::cmp;
 use std::env;
 use std::io::{self, Write};
 use std::mem;
 use std::ptr;
-use std::rt;
 
 
 #[derive(Clone)]
@@ -307,7 +307,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
 
     let mut paint_threads: usize = match opt_match.opt_str("t") {
         Some(paint_threads_str) => paint_threads_str.parse().unwrap(),
-        None => cmp::max(rt::default_sched_threads() * 3 / 4, 1),
+        None => cmp::max(num_cpus::get() * 3 / 4, 1),
     };
 
     
@@ -322,7 +322,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
 
     let mut layout_threads: usize = match opt_match.opt_str("y") {
         Some(layout_threads_str) => layout_threads_str.parse().unwrap(),
-        None => cmp::max(rt::default_sched_threads() * 3 / 4, 1),
+        None => cmp::max(num_cpus::get() * 3 / 4, 1),
     };
 
     let nonincremental_layout = opt_match.opt_present("i");

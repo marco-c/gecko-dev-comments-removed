@@ -16,7 +16,6 @@ use profile_traits::mem::{Reporter, ReportsChan};
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel, UntrustedNodeAddress};
 use std::any::Any;
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::boxed::BoxAny;
 use style::animation::PropertyAnimation;
 use style::media_queries::MediaQueryList;
 use style::stylesheets::Stylesheet;
@@ -88,7 +87,7 @@ pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 
 
-#[derive(PartialEq, Copy, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug)]
 pub enum ReflowGoal {
     
     ForDisplay,
@@ -185,15 +184,15 @@ pub struct Animation {
     
     pub property_animation: PropertyAnimation,
     
-    pub start_time: f64,
+    pub start_time: f32,
     
-    pub end_time: f64,
+    pub end_time: f32,
 }
 
 impl Animation {
     
     #[inline]
-    pub fn duration(&self) -> f64 {
+    pub fn duration(&self) -> f32 {
         self.end_time - self.start_time
     }
 }
