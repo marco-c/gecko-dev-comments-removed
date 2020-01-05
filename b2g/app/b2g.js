@@ -413,7 +413,6 @@ pref("dom.mozApps.single_variant_sourcedir", "/persist/svoperapps");
 
 
 pref("dom.mozSettings.enabled", true);
-pref("dom.mozPermissionSettings.enabled", true);
 
 
 pref("device.camera.enabled", true);
