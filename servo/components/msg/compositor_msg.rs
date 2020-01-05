@@ -8,7 +8,7 @@ use euclid::point::Point2D;
 use euclid::rect::Rect;
 use euclid::Matrix4;
 use layers::platform::surface::NativeDisplay;
-use layers::layers::LayerBufferSet;
+use layers::layers::{BufferRequest, LayerBufferSet};
 use std::fmt::{Formatter, Debug};
 use std::fmt;
 
@@ -107,6 +107,9 @@ pub trait PaintListener {
                               epoch: Epoch,
                               replies: Vec<(LayerId, Box<LayerBufferSet>)>,
                               frame_tree_id: FrameTreeId);
+
+    
+    fn ignore_buffer_requests(&mut self, buffer_requests: Vec<BufferRequest>);
 
     
     fn notify_paint_task_exiting(&mut self, pipeline_id: PipelineId);

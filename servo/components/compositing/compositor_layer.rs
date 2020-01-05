@@ -10,7 +10,6 @@ use euclid::length::Length;
 use euclid::point::{Point2D, TypedPoint2D};
 use euclid::size::TypedSize2D;
 use euclid::rect::Rect;
-use gfx::paint_task::Msg as PaintMsg;
 use layers::color::Color;
 use layers::geometry::LayerPixel;
 use layers::layers::{Layer, LayerBufferSet};
@@ -76,25 +75,25 @@ pub trait CompositorLayer {
     fn update_layer(&self, layer_properties: LayerProperties);
 
     fn add_buffers<Window>(&self,
-                           compositor: &IOCompositor<Window>,
+                           compositor: &mut IOCompositor<Window>,
                            new_buffers: Box<LayerBufferSet>,
                            epoch: Epoch)
                            where Window: WindowMethods;
 
     
     
-    fn clear<Window>(&self, compositor: &IOCompositor<Window>) where Window: WindowMethods;
+    fn clear<Window>(&self, compositor: &mut IOCompositor<Window>) where Window: WindowMethods;
 
     
     
-    fn clear_all_tiles<Window>(&self, compositor: &IOCompositor<Window>)
+    fn clear_all_tiles<Window>(&self, compositor: &mut IOCompositor<Window>)
                                where Window: WindowMethods;
 
     
     
     
     fn remove_root_layer_with_pipeline_id<Window>(&self,
-                                                  compositor: &IOCompositor<Window>,
+                                                  compositor: &mut IOCompositor<Window>,
                                                   pipeline_id: PipelineId)
                                                   where Window: WindowMethods;
 
@@ -214,7 +213,7 @@ impl CompositorLayer for Layer<CompositorData> {
     
     
     fn add_buffers<Window>(&self,
-                           compositor: &IOCompositor<Window>,
+                           compositor: &mut IOCompositor<Window>,
                            new_buffers: Box<LayerBufferSet>,
                            epoch: Epoch)
                            where Window: WindowMethods {
@@ -225,33 +224,21 @@ impl CompositorLayer for Layer<CompositorData> {
             self.add_buffer(buffer);
         }
 
-        let unused_buffers = self.collect_unused_buffers();
-        if !unused_buffers.is_empty() { 
-            let pipeline = compositor.get_pipeline(self.pipeline_id());
-            let _ = pipeline.paint_chan.send(PaintMsg::UnusedBuffer(unused_buffers));
-        }
+        compositor.cache_unused_buffers(self.collect_unused_buffers())
     }
 
-    fn clear<Window>(&self, compositor: &IOCompositor<Window>) where Window: WindowMethods {
-        let mut buffers = self.collect_buffers();
+    fn clear<Window>(&self, compositor: &mut IOCompositor<Window>) where Window: WindowMethods {
+        let buffers = self.collect_buffers();
 
         if !buffers.is_empty() {
-            
-            
-            
-            for buffer in buffers.iter_mut() {
-                buffer.mark_wont_leak()
-            }
-
-            let pipeline = compositor.get_pipeline(self.pipeline_id());
-            let _ = pipeline.paint_chan.send(PaintMsg::UnusedBuffer(buffers));
+            compositor.cache_unused_buffers(buffers);
         }
     }
 
     
     
     fn clear_all_tiles<Window>(&self,
-                               compositor: &IOCompositor<Window>)
+                               compositor: &mut IOCompositor<Window>)
                                where Window: WindowMethods {
         self.clear(compositor);
         for kid in self.children().iter() {
@@ -260,7 +247,7 @@ impl CompositorLayer for Layer<CompositorData> {
     }
 
     fn remove_root_layer_with_pipeline_id<Window>(&self,
-                                                  compositor: &IOCompositor<Window>,
+                                                  compositor: &mut IOCompositor<Window>,
                                                   pipeline_id: PipelineId)
                                                   where Window: WindowMethods {
         
