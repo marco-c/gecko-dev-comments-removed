@@ -1411,18 +1411,19 @@ pub enum FragmentType {
 pub struct StackingContextId(
     
     
-    FragmentType,
-    
     usize
 );
 
 impl StackingContextId {
+    #[inline(always)]
     pub fn new(id: usize) -> StackingContextId {
-        StackingContextId(FragmentType::FragmentBody, id)
+        StackingContextId::new_of_type(id, FragmentType::FragmentBody)
     }
 
+    #[inline(always)]
     pub fn new_of_type(id: usize, fragment_type: FragmentType) -> StackingContextId {
-        StackingContextId(fragment_type, id)
+        debug_assert_eq!(id & fragment_type as usize, 0);
+        StackingContextId(id | fragment_type as usize)
     }
 }
 
