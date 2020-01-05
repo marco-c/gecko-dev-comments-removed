@@ -48,7 +48,6 @@ exceptions = [
     
     "src/support",
     "src/platform",
-    "src/compiler",
     "src/test/wpt/web-platform-tests",
 
     
