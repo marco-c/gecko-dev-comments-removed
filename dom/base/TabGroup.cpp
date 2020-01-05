@@ -217,7 +217,8 @@ TabGroup::FindItemWithName(const nsAString& aName,
     docshell->GetSameTypeRootTreeItem(getter_AddRefs(root));
     MOZ_RELEASE_ASSERT(docshell == root);
     if (root && aRequestor != root) {
-      root->FindItemWithName(aName, this, aOriginalRequestor, aFoundItem);
+      root->FindItemWithName(aName, aRequestor, aOriginalRequestor,
+                              true, aFoundItem);
       if (*aFoundItem) {
         break;
       }

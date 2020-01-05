@@ -3693,8 +3693,9 @@ ItemIsActive(nsIDocShellTreeItem* aItem)
 
 NS_IMETHODIMP
 nsDocShell::FindItemWithName(const nsAString& aName,
-                             nsISupports* aRequestor,
+                             nsIDocShellTreeItem* aRequestor,
                              nsIDocShellTreeItem* aOriginalRequestor,
+                             bool aSkipTabGroup,
                              nsIDocShellTreeItem** aResult)
 {
   NS_ENSURE_ARG_POINTER(aResult);
@@ -3709,7 +3710,8 @@ nsDocShell::FindItemWithName(const nsAString& aName,
   if (aRequestor) {
     
     
-    return DoFindItemWithName(aName, aRequestor, aOriginalRequestor, aResult);
+    return DoFindItemWithName(aName, aRequestor, aOriginalRequestor,
+                              aSkipTabGroup, aResult);
   } else {
     
     
@@ -3733,7 +3735,7 @@ nsDocShell::FindItemWithName(const nsAString& aName,
     } else {
       
       DoFindItemWithName(aName, aRequestor, aOriginalRequestor,
-                         getter_AddRefs(foundItem));
+                         aSkipTabGroup, getter_AddRefs(foundItem));
     }
 
     if (foundItem && !CanAccessItem(foundItem, aOriginalRequestor)) {
@@ -3763,8 +3765,9 @@ nsDocShell::AssertOriginAttributesMatchPrivateBrowsing() {
 
 nsresult
 nsDocShell::DoFindItemWithName(const nsAString& aName,
-                               nsISupports* aRequestor,
+                               nsIDocShellTreeItem* aRequestor,
                                nsIDocShellTreeItem* aOriginalRequestor,
+                               bool aSkipTabGroup,
                                nsIDocShellTreeItem** aResult)
 {
   
@@ -3776,14 +3779,10 @@ nsDocShell::DoFindItemWithName(const nsAString& aName,
 
   
   
-  nsCOMPtr<nsIDocShellTreeItem> reqAsTreeItem(do_QueryInterface(aRequestor));
-
-  
-  
 #ifdef DEBUG
   nsresult rv =
 #endif
-  FindChildWithName(aName, true, true, reqAsTreeItem, aOriginalRequestor,
+  FindChildWithName(aName, true, true, aRequestor, aOriginalRequestor,
                     aResult);
   NS_ASSERTION(NS_SUCCEEDED(rv),
                "FindChildWithName should not be failing here.");
@@ -3799,7 +3798,7 @@ nsDocShell::DoFindItemWithName(const nsAString& aName,
   nsCOMPtr<nsIDocShellTreeItem> parentAsTreeItem =
     do_QueryInterface(GetAsSupports(mParent));
   if (parentAsTreeItem) {
-    if (parentAsTreeItem == reqAsTreeItem) {
+    if (parentAsTreeItem == aRequestor) {
       return NS_OK;
     }
 
@@ -3810,6 +3809,7 @@ nsDocShell::DoFindItemWithName(const nsAString& aName,
         aName,
         static_cast<nsIDocShellTreeItem*>(this),
         aOriginalRequestor,
+         false,
         aResult);
     }
   }
@@ -3817,13 +3817,9 @@ nsDocShell::DoFindItemWithName(const nsAString& aName,
   
   
   nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
-  if (window) {
+  if (window && !aSkipTabGroup) {
     RefPtr<mozilla::dom::TabGroup> tabGroup = window->TabGroup();
-    
-    
-    if (tabGroup != aRequestor) {
-      tabGroup->FindItemWithName(aName, this, aOriginalRequestor, aResult);
-    }
+    tabGroup->FindItemWithName(aName, aRequestor, aOriginalRequestor, aResult);
   }
 
   return NS_OK;
@@ -9834,7 +9830,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         aWindowTarget.LowerCaseEqualsLiteral("_self") ||
         aWindowTarget.LowerCaseEqualsLiteral("_parent") ||
         aWindowTarget.LowerCaseEqualsLiteral("_top")) {
-      rv = FindItemWithName(aWindowTarget, nullptr, this,
+      rv = FindItemWithName(aWindowTarget, nullptr, this, false,
                             getter_AddRefs(targetItem));
       NS_ENSURE_SUCCESS(rv, rv);
     }

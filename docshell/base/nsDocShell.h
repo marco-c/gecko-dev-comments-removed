@@ -1057,8 +1057,9 @@ private:
   
   
   nsresult DoFindItemWithName(const nsAString& aName,
-                              nsISupports* aRequestor,
+                              nsIDocShellTreeItem* aRequestor,
                               nsIDocShellTreeItem* aOriginalRequestor,
+                              bool aSkipTabGroup,
                               nsIDocShellTreeItem** aResult);
 
   

@@ -1652,6 +1652,7 @@ nsWindowWatcher::GetWindowByName(const nsAString& aTargetName,
   if (startItem) {
     
     startItem->FindItemWithName(aTargetName, nullptr, nullptr,
+                                 false,
                                 getter_AddRefs(treeItem));
   } else {
     
@@ -2108,6 +2109,7 @@ nsWindowWatcher::SafeGetWindowByName(const nsAString& aName,
   nsCOMPtr<nsIDocShellTreeItem> foundItem;
   if (startItem) {
     startItem->FindItemWithName(aName, nullptr, callerItem,
+                                 false,
                                 getter_AddRefs(foundItem));
   } else {
     FindItemWithName(aName, nullptr, callerItem,
