@@ -530,7 +530,7 @@ Instance::object() const
 }
 
 bool
-Instance::callExport(JSContext* cx, uint32_t funcDefIndex, CallArgs args)
+Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
 {
     
     MOZ_RELEASE_ASSERT(!memory_ || tlsData_.memoryBase == memory_->buffer().dataPointerEither());
@@ -538,7 +538,7 @@ Instance::callExport(JSContext* cx, uint32_t funcDefIndex, CallArgs args)
     if (!cx->compartment()->wasm.ensureProfilingState(cx))
         return false;
 
-    const FuncDefExport& func = metadata().lookupFuncDefExport(funcDefIndex);
+    const FuncExport& func = metadata().lookupFuncExport(funcIndex);
 
     
     

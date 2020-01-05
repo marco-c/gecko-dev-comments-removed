@@ -390,11 +390,6 @@ enum class Expr : uint32_t
     OldCallIndirect,
 
     
-    
-    
-    OldCallImport,
-
-    
     I32AtomicsCompareExchange,
     I32AtomicsExchange,
     I32AtomicsLoad,

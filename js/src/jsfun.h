@@ -715,7 +715,7 @@ class FunctionExtended : public JSFunction
 
 
 
-    static const unsigned WASM_FUNC_DEF_INDEX_SLOT = 1;
+    static const unsigned WASM_FUNC_INDEX_SLOT = 1;
 
     
 

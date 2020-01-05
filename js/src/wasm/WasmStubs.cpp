@@ -96,7 +96,7 @@ static const unsigned FramePushedForEntrySP = FramePushedAfterSave + sizeof(void
 
 
 Offsets
-wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
+wasm::GenerateEntry(MacroAssembler& masm, const FuncExport& fe)
 {
     masm.haltingAlign(CodeAlignment);
 
@@ -160,11 +160,11 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
     masm.andToStackPtr(Imm32(~(WasmStackAlignment - 1)));
 
     
-    masm.reserveStack(AlignBytes(StackArgBytes(func.sig().args()), WasmStackAlignment));
+    masm.reserveStack(AlignBytes(StackArgBytes(fe.sig().args()), WasmStackAlignment));
 
     
     
-    for (ABIArgValTypeIter iter(func.sig().args()); !iter.done(); iter++) {
+    for (ABIArgValTypeIter iter(fe.sig().args()); !iter.done(); iter++) {
         unsigned argOffset = iter.index() * sizeof(ExportArg);
         Address src(argv, argOffset);
         MIRType type = iter.mirType();
@@ -264,7 +264,7 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
 
     
     masm.assertStackAlignment(WasmStackAlignment);
-    masm.call(CallSiteDesc(CallSiteDesc::FuncDef), func.funcDefIndex());
+    masm.call(CallSiteDesc(CallSiteDesc::Func), fe.funcIndex());
 
     
     masm.loadWasmActivationFromTls(scratch);
@@ -275,7 +275,7 @@ wasm::GenerateEntry(MacroAssembler& masm, const FuncDefExport& func)
     masm.Pop(argv);
 
     
-    switch (func.sig().ret()) {
+    switch (fe.sig().ret()) {
       case ExprType::Void:
         break;
       case ExprType::I32:
@@ -354,7 +354,7 @@ FillArgumentArray(MacroAssembler& masm, const ValTypeVector& args, unsigned argO
             if (type == MIRType::Int64)
                 masm.store64(i->gpr64(), dstAddr);
             else
-                MOZ_CRASH("AsmJS uses hardfp for function calls.");
+                MOZ_CRASH("wasm uses hardfp for function calls.");
             break;
 #endif
           case ABIArg::FPU: {
@@ -437,8 +437,6 @@ ProfilingOffsets
 wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t funcImportIndex,
                          Label* throwLabel)
 {
-    const Sig& sig = fi.sig();
-
     masm.setFramePushed(0);
 
     
@@ -454,7 +452,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
     
     
     unsigned argOffset = AlignBytes(StackArgBytes(invokeArgTypes), sizeof(double));
-    unsigned argBytes = Max<size_t>(1, sig.args().length()) * sizeof(Value);
+    unsigned argBytes = Max<size_t>(1, fi.sig().args().length()) * sizeof(Value);
     unsigned framePushed = StackDecrementForCall(masm, ABIStackAlignment, argOffset + argBytes);
 
     ProfilingOffsets offsets;
@@ -463,7 +461,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
     
     unsigned offsetToCallerStackArgs = sizeof(Frame) + masm.framePushed();
     Register scratch = ABINonArgReturnReg0;
-    FillArgumentArray(masm, sig.args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(false));
+    FillArgumentArray(masm, fi.sig().args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(false));
 
     
     ABIArgMIRTypeIter i(invokeArgTypes);
@@ -486,7 +484,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
     i++;
 
     
-    unsigned argc = sig.args().length();
+    unsigned argc = fi.sig().args().length();
     if (i->kind() == ABIArg::GPR)
         masm.mov(ImmWord(argc), i->gpr());
     else
@@ -506,7 +504,7 @@ wasm::GenerateInterpExit(MacroAssembler& masm, const FuncImport& fi, uint32_t fu
 
     
     AssertStackAlignment(masm, ABIStackAlignment);
-    switch (sig.ret()) {
+    switch (fi.sig().ret()) {
       case ExprType::Void:
         masm.call(SymbolicAddress::CallImport_Void);
         masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
@@ -571,8 +569,6 @@ static const unsigned SavedTlsReg = sizeof(void*);
 ProfilingOffsets
 wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLabel)
 {
-    const Sig& sig = fi.sig();
-
     masm.setFramePushed(0);
 
     
@@ -583,7 +579,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     
     static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
     unsigned sizeOfRetAddr = sizeof(void*);
-    unsigned jitFrameBytes = 3 * sizeof(void*) + (1 + sig.args().length()) * sizeof(Value);
+    unsigned jitFrameBytes = 3 * sizeof(void*) + (1 + fi.sig().args().length()) * sizeof(Value);
     unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes + SavedTlsReg;
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
                               sizeOfRetAddr;
@@ -614,7 +610,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     masm.loadBaselineOrIonNoArgCheck(callee, callee, nullptr);
 
     
-    unsigned argc = sig.args().length();
+    unsigned argc = fi.sig().args().length();
     masm.storePtr(ImmWord(uintptr_t(argc)), Address(masm.getStackPointer(), argOffset));
     argOffset += sizeof(size_t);
 
@@ -624,8 +620,8 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
 
     
     unsigned offsetToCallerStackArgs = jitFramePushed + sizeof(Frame);
-    FillArgumentArray(masm, sig.args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
-    argOffset += sig.args().length() * sizeof(Value);
+    FillArgumentArray(masm, fi.sig().args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
+    argOffset += fi.sig().args().length() * sizeof(Value);
     MOZ_ASSERT(argOffset == jitFrameBytes);
 
     
@@ -704,7 +700,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
     masm.branchTestMagic(Assembler::Equal, JSReturnOperand, throwLabel);
 
     Label oolConvert;
-    switch (sig.ret()) {
+    switch (fi.sig().ret()) {
       case ExprType::Void:
         break;
       case ExprType::I32:
@@ -774,7 +770,7 @@ wasm::GenerateJitExit(MacroAssembler& masm, const FuncImport& fi, Label* throwLa
 
         
         AssertStackAlignment(masm, ABIStackAlignment);
-        switch (sig.ret()) {
+        switch (fi.sig().ret()) {
           case ExprType::I32:
             masm.call(SymbolicAddress::CoerceInPlace_ToInt32);
             masm.branchTest32(Assembler::Zero, ReturnReg, ReturnReg, throwLabel);
