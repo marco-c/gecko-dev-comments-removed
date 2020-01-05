@@ -6,7 +6,7 @@ this.EXPORTED_SYMBOLS = ["TabEngine", "TabSetRecord"];
 
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
-const TABS_TTL = 604800;           
+const TABS_TTL = 1814400;          
 const TAB_ENTRIES_LIMIT = 25;      
 
 Cu.import("resource://gre/modules/Preferences.jsm");
