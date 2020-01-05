@@ -38,6 +38,7 @@ class nsIDocument;
 class nsStyleContext;
 class nsPresContext;
 struct nsTimingFunction;
+struct RawServoRuleNode;
 struct TreeMatchContext;
 
 namespace mozilla {
@@ -191,6 +192,10 @@ public:
   
   already_AddRefed<nsStyleContext>
   ResolveNonInheritingAnonymousBoxStyle(nsIAtom* aPseudoTag);
+
+  
+  already_AddRefed<RawServoRuleNode>
+  ResolveRuleNode(dom::Element *aElement, nsIAtom *aPseudoTag);
 
   
   nsresult AppendStyleSheet(SheetType aType, ServoStyleSheet* aSheet);
