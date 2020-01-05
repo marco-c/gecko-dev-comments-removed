@@ -803,8 +803,8 @@ nsScriptLoader::SetModuleFetchFinishedAndResumeWaitingRequests(nsModuleLoadReque
   
   
 
-  LOG(("ScriptLoadRequest (%p): Module fetch finished (result == %d)",
-       aRequest, aResult));
+  LOG(("ScriptLoadRequest (%p): Module fetch finished (result == %u)",
+       aRequest, unsigned(aResult)));
 
   MOZ_ASSERT(!aRequest->IsReadyToRun());
 
