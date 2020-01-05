@@ -57,6 +57,7 @@ add_task(function* test_check_maybeSync(){
     
     
     updater.addTestBlocklistClient("test-collection", {
+      bucketName: "blocklists",
       maybeSync(lastModified, serverTime) {
         do_check_eq(lastModified, 1000);
         do_check_eq(serverTime, 2000);
