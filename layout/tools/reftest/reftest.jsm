@@ -55,7 +55,6 @@ const FOCUS_FILTER_ALL_TESTS = "all";
 const FOCUS_FILTER_NEEDS_FOCUS_TESTS = "needs-focus";
 const FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS = "non-needs-focus";
 var gFocusFilterMode = FOCUS_FILTER_ALL_TESTS;
-var gCompareStyloToGecko = false;
 
 
 const BLANK_URL_FOR_CLEARING = "data:text/html;charset=UTF-8,%3C%21%2D%2DCLEAR%2D%2D%3E";
@@ -63,6 +62,7 @@ const BLANK_URL_FOR_CLEARING = "data:text/html;charset=UTF-8,%3C%21%2D%2DCLEAR%2
 var gBrowser;
 
 var gBrowserIsRemote;           
+var gB2GisMulet;                
 
 var gBrowserIsIframe;           
 var gBrowserMessageManager;
@@ -282,6 +282,12 @@ this.OnRefTestLoad = function OnRefTestLoad(win)
     }
 
     try {
+        gB2GisMulet = prefs.getBoolPref("b2g.is_mulet");
+    } catch (e) {
+        gB2GisMulet = false;
+    }
+
+    try {
       gBrowserIsIframe = prefs.getBoolPref("reftest.browser.iframe.enabled");
     } catch (e) {
       gBrowserIsIframe = false;
@@ -308,15 +314,19 @@ this.OnRefTestLoad = function OnRefTestLoad(win)
       gBrowser.setAttribute("class", "lightweight");
     }
     gBrowser.setAttribute("id", "browser");
-    gBrowser.setAttribute("type", "content");
-    gBrowser.setAttribute("primary", "true");
+    gBrowser.setAttribute("type", "content-primary");
     gBrowser.setAttribute("remote", gBrowserIsRemote ? "true" : "false");
     
     
     gBrowser.setAttribute("style", "padding: 0px; margin: 0px; border:none; min-width: 800px; min-height: 1000px; max-width: 800px; max-height: 1000px");
 
     if (Services.appinfo.OS == "Android") {
-      let doc = gContainingWindow.document.getElementById('main-window');
+      let doc;
+      if (Services.appinfo.widgetToolkit == "gonk") {
+        doc = gContainingWindow.document.getElementsByTagName("html")[0];
+      } else {
+        doc = gContainingWindow.document.getElementById('main-window');
+      }
       while (doc.hasChildNodes()) {
         doc.removeChild(doc.firstChild);
       }
@@ -399,12 +409,6 @@ function InitAndStartRefTests()
         gFocusFilterMode = prefs.getCharPref("reftest.focusFilterMode");
     } catch(e) {}
 
-#ifdef MOZ_STYLO
-    try {
-        gCompareStyloToGecko = prefs.getBoolPref("reftest.compareStyloToGecko");
-    } catch(e) {}
-#endif
-
     gWindowUtils = gContainingWindow.QueryInterface(CI.nsIInterfaceRequestor).getInterface(CI.nsIDOMWindowUtils);
     if (!gWindowUtils || !gWindowUtils.compareCanvases)
         throw "nsIDOMWindowUtils inteface missing";
@@ -431,11 +435,10 @@ function InitAndStartRefTests()
 
     
     if (gFocusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
-        gBrowser.addEventListener("focus", StartTests, true);
         gBrowser.focus();
-    } else {
-        StartTests();
     }
+
+    StartTests();
 }
 
 function StartHTTPServer()
@@ -458,10 +461,6 @@ function Shuffle(array)
 
 function StartTests()
 {
-    if (gFocusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
-        gBrowser.removeEventListener("focus", StartTests, true);
-    }
-
     var manifests;
     
     try {
@@ -664,6 +663,7 @@ function BuildConditionSandbox(aURL) {
 
     sandbox.gpuProcess = gfxInfo.usingGPUProcess;
     sandbox.azureCairo = canvasBackend == "cairo";
+    sandbox.azureQuartz = canvasBackend == "quartz";
     sandbox.azureSkia = canvasBackend == "skia";
     sandbox.skiaContent = contentBackend == "skia";
     sandbox.azureSkiaGL = canvasAccelerated; 
@@ -679,11 +679,14 @@ function BuildConditionSandbox(aURL) {
       gWindowUtils.layerManagerType == "Direct3D 9";
     sandbox.layersOpenGL =
       gWindowUtils.layerManagerType == "OpenGL";
+    sandbox.webrender =
+      gWindowUtils.layerManagerType == "WebRender";
     sandbox.layersOMTC =
       gWindowUtils.layerManagerRemote == true;
 
     
-    sandbox.Android = xr.OS == "Android";
+    sandbox.B2G = xr.widgetToolkit == "gonk";
+    sandbox.Android = xr.OS == "Android" && !sandbox.B2G;
     sandbox.cocoaWidget = xr.widgetToolkit == "cocoa";
     sandbox.gtkWidget = xr.widgetToolkit == "gtk2"
                         || xr.widgetToolkit == "gtk3";
@@ -711,12 +714,6 @@ function BuildConditionSandbox(aURL) {
     sandbox.webrtc = true;
 #else
     sandbox.webrtc = false;
-#endif
-
-#ifdef MOZ_STYLO
-    sandbox.stylo = true;
-#else
-    sandbox.stylo = false;
 #endif
 
     var hh = CC[NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX + "http"].
@@ -750,11 +747,6 @@ function BuildConditionSandbox(aURL) {
     } catch (e) {
         sandbox.nativeThemePref = true;
     }
-    try {
-        sandbox.gpuProcessForceEnabled = prefs.getBoolPref("layers.gpu-process.force-enabled");
-    } catch (e) {
-        sandbox.gpuProcessForceEnabled = false;
-    }
 
     sandbox.prefs = CU.cloneInto({
         getBoolPref: function(p) { return prefs.getBoolPref(p); },
@@ -764,6 +756,7 @@ function BuildConditionSandbox(aURL) {
     
     
     sandbox.browserIsRemote = gBrowserIsRemote;
+    sandbox.Mulet = gB2GisMulet;
 
     try {
         sandbox.asyncPan = gContainingWindow.document.docShell.asyncPanZoomEnabled;
@@ -810,7 +803,7 @@ function AddPrefSettings(aWhere, aPrefName, aPrefValExpression, aSandbox, aTestP
 
 function ReadTopManifest(aFileURL, aFilter)
 {
-    var url = gIOService.newURI(aFileURL);
+    var url = gIOService.newURI(aFileURL, null, null);
     if (!url)
         throw "Expected a file or http URL for the manifest.";
     ReadManifest(url, EXPECTED_PASS, aFilter);
@@ -1214,7 +1207,7 @@ function ServeFiles(manifestPrincipal, depth, aURL, files)
                      .getService(CI.nsIScriptSecurityManager);
 
     var testbase = gIOService.newURI("http://localhost:" + gHttpServerPort +
-                                     path + dirPath);
+                                     path + dirPath, null, null);
 
     
     Services.perms.add(testbase, "allowXULXBL", Services.perms.ALLOW_ACTION);
@@ -1315,21 +1308,10 @@ function StartCurrentURI(aState)
 
     RestoreChangedPreferences();
 
-    var prefs = Components.classes["@mozilla.org/preferences-service;1"].
-        getService(Components.interfaces.nsIPrefBranch);
-
-    if (gCompareStyloToGecko) {
-        if (gState == 2){
-            logger.info("Disabling Servo-backed style system");
-            prefs.setBoolPref('layout.css.servo.enabled', false);
-        } else {
-            logger.info("Enabling Servo-backed style system");
-            prefs.setBoolPref('layout.css.servo.enabled', true);
-        }
-    }
-
     var prefSettings = gURLs[0]["prefSettings" + aState];
     if (prefSettings.length > 0) {
+        var prefs = Components.classes["@mozilla.org/preferences-service;1"].
+                    getService(Components.interfaces.nsIPrefBranch);
         var badPref = undefined;
         try {
             prefSettings.forEach(function(ps) {
