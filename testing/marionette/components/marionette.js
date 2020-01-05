@@ -55,7 +55,6 @@ MarionetteComponent.prototype = {
   ],
   enabled: false,
   finalUiStartup: false,
-  gfxWindow: null,
   server: null,
 };
 
@@ -114,15 +113,13 @@ MarionetteComponent.prototype.handle = function (cmdLine) {
   }
 };
 
-MarionetteComponent.prototype.observe = function (subject, topic, data) {
+MarionetteComponent.prototype.observe = function (subj, topic, data) {
   switch (topic) {
     case "profile-after-change":
-      
-      
-      this.observerService.addObserver(this, "sessionstore-windows-restored", false);
-
       this.maybeReadPrefsFromEnvironment();
-
+      
+      
+      this.observerService.addObserver(this, "final-ui-startup", false);
 #ifdef ENABLE_MARIONETTE
       this.enabled = Preferences.get(ENABLED_PREF, false);
       if (this.enabled) {
@@ -137,43 +134,16 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
 #endif
       break;
 
-    case "domwindowclosed":
-      if (this.gfxWindow === null || subject === this.gfxWindow) {
-        this.observerService.removeObserver(this, topic);
-
-        this.observerService.addObserver(this, "xpcom-shutdown", false);
-        this.finalUiStartup = true;
-        this.init();
-      }
+    case "final-ui-startup":
+      this.finalUiStartup = true;
+      this.observerService.removeObserver(this, topic);
+      this.observerService.addObserver(this, "xpcom-shutdown", false);
+      this.init();
       break;
 
     case "domwindowopened":
       this.observerService.removeObserver(this, topic);
       this.suppressSafeModeDialog_(subj);
-      break;
-
-    case "sessionstore-windows-restored":
-      this.observerService.removeObserver(this, topic);
-
-      
-      
-      let winEn = Services.wm.getEnumerator(null);
-      while (winEn.hasMoreElements()) {
-        let win = winEn.getNext();
-        if (win.document.documentURI == "chrome://gfxsanity/content/sanityparent.html") {
-          this.gfxWindow = win;
-          break;
-        }
-      }
-
-      if (this.gfxWindow) {
-        this.observerService.addObserver(this, "domwindowclosed", false);
-      } else {
-        this.observerService.addObserver(this, "xpcom-shutdown", false);
-        this.finalUiStartup = true;
-        this.init();
-      }
-
       break;
 
     case "xpcom-shutdown":
