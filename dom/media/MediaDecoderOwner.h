@@ -10,6 +10,7 @@
 
 namespace mozilla {
 
+class AbstractThread;
 class VideoFrameContainer;
 class MediaResult;
 
@@ -43,6 +44,9 @@ public:
   {
     return nullptr;
   }
+
+  
+  virtual AbstractThread* AbstractMainThread() const = 0;
 
   
   virtual bool GetPaused() = 0;

@@ -25,6 +25,7 @@ namespace layers
   class ImageContainer;
   class KnowsCompositor;
 } 
+class AbstractThread;
 class MediaResource;
 class ReentrantMonitor;
 class VideoFrameContainer;
@@ -89,6 +90,9 @@ public:
   {
     return nullptr;
   }
+
+  
+  virtual AbstractThread* AbstractMainThread() const = 0;
 
 protected:
   virtual void UpdateEstimatedMediaDuration(int64_t aDuration) {};

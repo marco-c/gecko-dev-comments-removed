@@ -24,7 +24,9 @@ class BufferDecoder final : public AbstractMediaDecoder
 public:
   
   
-  explicit BufferDecoder(MediaResource* aResource, GMPCrashHelper* aCrashHelper);
+  explicit BufferDecoder(MediaResource* aResource,
+                         AbstractThread* aMainThread,
+                         GMPCrashHelper* aCrashHelper);
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
@@ -42,10 +44,13 @@ public:
 
   already_AddRefed<GMPCrashHelper> GetCrashHelper() override;
 
+  AbstractThread* AbstractMainThread() const final override;
+
 private:
   virtual ~BufferDecoder();
   RefPtr<TaskQueue> mTaskQueueIdentity;
   RefPtr<MediaResource> mResource;
+  const RefPtr<AbstractThread> mAbstractMainThread;
   RefPtr<GMPCrashHelper> mCrashHelper;
 };
 

@@ -654,32 +654,14 @@ public:
     }
   }
 
-  bool
-  ShouldResetSuspend() const
-  {
-    
-    if (!mOwner->Paused() &&
-        mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE) {
-      return true;
-    }
-
-    
-    
-    if (mOwner->Paused() &&
-        mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
-      return true;
-    }
-
-    return false;
-  }
-
   void
-  NotifyPlayStateChanged()
+  NotifyPlayStarted()
   {
     MOZ_ASSERT(!mIsShutDown);
-    if (ShouldResetSuspend()) {
-      SetSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-    }
+    
+    
+    
+    SetSuspended(nsISuspendedTypes::NONE_SUSPENDED);
     UpdateAudioChannelPlayingState();
   }
 
@@ -898,7 +880,7 @@ private:
     if (!IsSuspended()) {
       MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
              ("HTMLMediaElement::AudioChannelAgentCallback, ResumeFromAudioChannel, "
-              "this = %p, don't need to be resumed!\n", this));
+              "this = %p, Error : resume without suspended!\n", this));
       return;
     }
 
@@ -2775,9 +2757,7 @@ HTMLMediaElement::Pause(ErrorResult& aRv)
   
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
-  if (mAudioChannelWrapper) {
-    mAudioChannelWrapper->NotifyPlayStateChanged();
-  }
+  UpdateAudioChannelPlayingState();
 
   if (!oldPaused) {
     FireTimeUpdate(false);
@@ -3593,7 +3573,8 @@ NS_IMPL_ISUPPORTS(HTMLMediaElement::ShutdownObserver, nsIObserver)
 
 HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
   : nsGenericHTMLElement(aNodeInfo),
-    mWatchManager(this, AbstractThread::MainThread()),
+    mAbstractMainThread(OwnerDoc()->AbstractMainThreadFor(TaskCategory::Other)),
+    mWatchManager(this, mAbstractMainThread),
     mSrcStreamTracksAvailable(false),
     mSrcStreamPausedCurrentTime(-1),
     mShutdownObserver(new ShutdownObserver),
@@ -4657,7 +4638,7 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
   
   if (waitingForKeyProducer) {
     mWaitingForKeyListener = waitingForKeyProducer->Connect(
-      AbstractThread::MainThread(), this, &HTMLMediaElement::CannotDecryptWaitingForKey);
+      mAbstractMainThread, this, &HTMLMediaElement::CannotDecryptWaitingForKey);
   }
 
   if (mChannelLoader) {
@@ -7152,8 +7133,16 @@ HTMLMediaElement::UpdateCustomPolicyAfterPlayed()
 {
   OpenUnsupportedMediaWithExternalAppIfNeeded();
   if (mAudioChannelWrapper) {
-    mAudioChannelWrapper->NotifyPlayStateChanged();
+    mAudioChannelWrapper->NotifyPlayStarted();
   }
+}
+
+AbstractThread*
+HTMLMediaElement::AbstractMainThread() const
+{
+  MOZ_ASSERT(mAbstractMainThread);
+
+  return mAbstractMainThread;
 }
 
 nsTArray<RefPtr<Promise>>

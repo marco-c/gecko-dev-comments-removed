@@ -41,6 +41,7 @@ typedef uint32_t AudibleChangedReasons;
 typedef uint8_t AudibleState;
 
 namespace mozilla {
+class AbstractThread;
 class DecoderDoctorDiagnostics;
 class DOMMediaStream;
 class ErrorResult;
@@ -1172,6 +1173,8 @@ protected:
     return this;
   }
 
+  virtual AbstractThread* AbstractMainThread() const final override;
+
   
   virtual bool GetPaused() final override
   {
@@ -1250,7 +1253,7 @@ protected:
   
   
   void OpenUnsupportedMediaWithExternalAppIfNeeded() const;
-  
+
   
   
   nsTArray<RefPtr<Promise>> TakePendingPlayPromises();
@@ -1272,6 +1275,9 @@ protected:
   
   
   RefPtr<MediaDecoder> mDecoder;
+
+  
+  RefPtr<AbstractThread> mAbstractMainThread;
 
   
   
@@ -1701,7 +1707,7 @@ private:
   
   
   RefPtr<AudioChannelAgentCallback> mAudioChannelWrapper;
-  
+
   
   
   nsTArray<RefPtr<Promise>> mPendingPlayPromises;
