@@ -128,6 +128,9 @@ GetPropIRGenerator::tryAttachStub()
 
         MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
 
+        if (tryAttachProxyElement(obj, objId))
+            return true;
+
         uint32_t index;
         Int32OperandId indexId;
         if (maybeGuardInt32Index(idVal_, getElemKeyValueId(), &index, &indexId)) {
@@ -141,6 +144,7 @@ GetPropIRGenerator::tryAttachStub()
                 return true;
             if (tryAttachArgumentsObjectArg(obj, objId, index, indexId))
                 return true;
+            return false;
         }
 
         return false;
@@ -1116,6 +1120,25 @@ GetPropIRGenerator::tryAttachTypedElement(HandleObject obj, ObjOperandId objId,
         writer.typeMonitorResult();
     else
         writer.returnFromIC();
+    return true;
+}
+
+bool
+GetPropIRGenerator::tryAttachProxyElement(HandleObject obj, ObjOperandId objId)
+{
+    if (!obj->is<ProxyObject>())
+        return false;
+
+    writer.guardIsProxy(objId);
+
+    
+    
+    
+    
+    
+    MOZ_ASSERT(cacheKind_ == CacheKind::GetElem);
+    writer.callProxyGetByValueResult(objId, getElemKeyValueId());
+    writer.typeMonitorResult();
     return true;
 }
 
