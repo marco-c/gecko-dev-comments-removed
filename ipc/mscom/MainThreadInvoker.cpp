@@ -9,35 +9,89 @@
 #include "GeckoProfiler.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/HangMonitor.h"
 #include "mozilla/RefPtr.h"
+#include "nsServiceManagerUtils.h"
+#include "nsSystemInfo.h"
 #include "private/prpriv.h" 
 #include "WinUtils.h"
 
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#pragma intrinsic(_mm_pause)
+#define CPU_PAUSE() _mm_pause()
+#elif defined(__GNUC__) || defined(__clang__)
+#define CPU_PAUSE() __builtin_ia32_pause()
+#endif
+
+static bool sIsMulticore;
+
 namespace {
 
-class SyncRunnable : public mozilla::Runnable
+
+
+
+
+
+
+
+class MOZ_RAII SyncRunnable
 {
 public:
-  SyncRunnable(HANDLE aEvent, already_AddRefed<nsIRunnable>&& aRunnable)
-    : mDoneEvent(aEvent)
+  explicit SyncRunnable(already_AddRefed<nsIRunnable>&& aRunnable)
+    : mDoneEvent(sIsMulticore ? nullptr :
+                 ::CreateEventW(nullptr, FALSE, FALSE, nullptr))
+    , mDone(false)
     , mRunnable(aRunnable)
   {
-    MOZ_ASSERT(aEvent);
+    MOZ_ASSERT(sIsMulticore || mDoneEvent);
     MOZ_ASSERT(mRunnable);
   }
 
-  NS_IMETHOD Run() override
+  ~SyncRunnable()
+  {
+    if (mDoneEvent) {
+      ::CloseHandle(mDoneEvent);
+    }
+  }
+
+  void Run()
   {
     mRunnable->Run();
-    ::SetEvent(mDoneEvent);
-    return NS_OK;
+
+    if (mDoneEvent) {
+      ::SetEvent(mDoneEvent);
+    } else {
+      mDone = true;
+    }
+  }
+
+  bool WaitUntilComplete()
+  {
+    if (mDoneEvent) {
+      HANDLE handles[] = {mDoneEvent,
+                          mozilla::mscom::MainThreadInvoker::GetTargetThread()};
+      DWORD waitResult = ::WaitForMultipleObjects(mozilla::ArrayLength(handles),
+                                                  handles, FALSE, INFINITE);
+      return waitResult == WAIT_OBJECT_0;
+    }
+
+    while (!mDone) {
+      
+      
+      
+      CPU_PAUSE();
+    }
+    return true;
   }
 
 private:
   HANDLE                mDoneEvent;
+  mozilla::Atomic<bool> mDone;
   nsCOMPtr<nsIRunnable> mRunnable;
 };
 
@@ -56,67 +110,60 @@ MainThreadInvoker::InitStatics()
   if (NS_FAILED(rv)) {
     return false;
   }
+
   PRThread* mainPrThread = nullptr;
   rv = mainThread->GetPRThread(&mainPrThread);
   if (NS_FAILED(rv)) {
     return false;
   }
+
   PRUint32 tid = ::PR_GetThreadID(mainPrThread);
   sMainThread = ::OpenThread(SYNCHRONIZE | THREAD_SET_CONTEXT, FALSE, tid);
+
+  nsCOMPtr<nsIPropertyBag2> infoService = do_GetService(NS_SYSTEMINFO_CONTRACTID);
+  if (infoService) {
+    uint32_t cpuCount;
+    nsresult rv = infoService->GetPropertyAsUint32(NS_LITERAL_STRING("cpucount"),
+                                                   &cpuCount);
+    sIsMulticore = NS_SUCCEEDED(rv) && cpuCount > 1;
+  }
+
   return !!sMainThread;
 }
 
 MainThreadInvoker::MainThreadInvoker()
-  : mDoneEvent(::CreateEventW(nullptr, FALSE, FALSE, nullptr))
 {
   static const bool gotStatics = InitStatics();
   MOZ_ASSERT(gotStatics);
 }
 
-MainThreadInvoker::~MainThreadInvoker()
-{
-  if (mDoneEvent) {
-    ::CloseHandle(mDoneEvent);
-  }
-}
-
 bool
-MainThreadInvoker::WaitForCompletion(DWORD aTimeout)
-{
-  HANDLE handles[] = {mDoneEvent, sMainThread};
-  DWORD waitResult = ::WaitForMultipleObjects(ArrayLength(handles), handles,
-                                              FALSE, aTimeout);
-  return waitResult == WAIT_OBJECT_0;
-}
-
-bool
-MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable,
-                          DWORD aTimeout)
+MainThreadInvoker::Invoke(already_AddRefed<nsIRunnable>&& aRunnable)
 {
   nsCOMPtr<nsIRunnable> runnable(Move(aRunnable));
   if (!runnable) {
     return false;
   }
+
   if (NS_IsMainThread()) {
     runnable->Run();
     return true;
   }
-  RefPtr<SyncRunnable> wrappedRunnable(new SyncRunnable(mDoneEvent,
-                                                        runnable.forget()));
-  
-  wrappedRunnable->AddRef();
+
+  SyncRunnable syncRunnable(runnable.forget());
+
   if (!::QueueUserAPC(&MainThreadAPC, sMainThread,
-                      reinterpret_cast<UINT_PTR>(wrappedRunnable.get()))) {
-    
-    wrappedRunnable->Release();
+                      reinterpret_cast<UINT_PTR>(&syncRunnable))) {
     return false;
   }
+
   
   
   
   
   widget::WinUtils::SetAPCPending();
-  return WaitForCompletion(aTimeout);
+
+  return syncRunnable.WaitUntilComplete();
 }
 
  VOID CALLBACK
@@ -125,8 +172,7 @@ MainThreadInvoker::MainThreadAPC(ULONG_PTR aParam)
   GeckoProfilerWakeRAII wakeProfiler;
   mozilla::HangMonitor::NotifyActivity(mozilla::HangMonitor::kGeneralActivity);
   MOZ_ASSERT(NS_IsMainThread());
-  RefPtr<SyncRunnable> runnable(already_AddRefed<SyncRunnable>(
-                                  reinterpret_cast<SyncRunnable*>(aParam)));
+  auto runnable = reinterpret_cast<SyncRunnable*>(aParam);
   runnable->Run();
 }
 
