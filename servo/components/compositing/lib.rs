@@ -2,11 +2,8 @@
 
 
 
-#![feature(box_syntax)]
-#![feature(plugin)]
-#![plugin(plugins)]
-
 #![deny(unsafe_code)]
+#![feature(box_syntax)]
 
 extern crate euclid;
 extern crate gfx_traits;

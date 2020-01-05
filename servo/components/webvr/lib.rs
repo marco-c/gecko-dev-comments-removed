@@ -2,8 +2,6 @@
 
 
 
-#![feature(custom_derive)]
-#![feature(plugin)]
 #![deny(unsafe_code)]
 
 extern crate ipc_channel;

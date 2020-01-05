@@ -2,9 +2,6 @@
 
 
 
-#![feature(plugin)]
-#![plugin(plugins)]
-
 extern crate content_blocker;
 extern crate cookie as cookie_rs;
 extern crate devtools_traits;

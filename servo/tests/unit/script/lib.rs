@@ -2,9 +2,6 @@
 
 
 
-#![feature(plugin)]
-#![plugin(plugins)]
-
 extern crate euclid;
 extern crate msg;
 extern crate script;

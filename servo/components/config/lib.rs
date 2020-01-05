@@ -2,9 +2,6 @@
 
 
 
-#![cfg_attr(feature = "servo", feature(plugin))]
-#![cfg_attr(feature = "servo", plugin(plugins))]
-
 #![deny(unsafe_code)]
 
 extern crate euclid;

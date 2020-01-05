@@ -6,11 +6,8 @@
 
 
 
-#![feature(box_syntax)]
-#![feature(plugin)]
-#![plugin(plugins)]
-
 #![deny(unsafe_code)]
+#![feature(box_syntax)]
 
 extern crate ipc_channel;
 #[macro_use]

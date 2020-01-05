@@ -2,12 +2,9 @@
 
 
 
+#![deny(unsafe_code)]
 #![feature(box_syntax)]
 #![feature(mpsc_select)]
-#![feature(plugin)]
-#![plugin(plugins)]
-
-#![deny(unsafe_code)]
 
 extern crate brotli;
 extern crate content_blocker as content_blocker_parser;

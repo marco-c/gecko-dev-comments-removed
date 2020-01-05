@@ -2,9 +2,6 @@
 
 
 
-#![feature(plugin)]
-#![plugin(plugins)]
-
 #![deny(unsafe_code)]
 
 #[macro_use]

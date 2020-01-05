@@ -2,9 +2,6 @@
 
 
 
-#![feature(plugin)]
-#![plugin(plugins)]
-
 #![crate_name = "gfx_traits"]
 #![crate_type = "rlib"]
 
