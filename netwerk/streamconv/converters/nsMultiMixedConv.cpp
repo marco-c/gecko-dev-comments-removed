@@ -877,6 +877,10 @@ nsMultiMixedConv::SendStart()
 
     mPartChannel->SetContentDisposition(mContentDisposition);
 
+    
+    
+    
+    
     nsLoadFlags loadFlags = 0;
     mPartChannel->GetLoadFlags(&loadFlags);
     loadFlags |= nsIChannel::LOAD_REPLACE;
