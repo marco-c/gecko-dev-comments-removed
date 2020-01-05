@@ -23,7 +23,8 @@ class nsCollationFactory final : public nsICollationFactory {
 public: 
   NS_DECL_ISUPPORTS 
 
-  NS_IMETHOD CreateCollation(nsILocale* locale, nsICollation** instancePtr) override;
+  NS_IMETHOD CreateCollation(nsICollation** instancePtr) override;
+  NS_IMETHOD CreateCollationForLocale(const nsACString& locale, nsICollation** instancePtr) override;
 
   nsCollationFactory() {}
 };
