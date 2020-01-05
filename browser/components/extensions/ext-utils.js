@@ -346,6 +346,7 @@ class BasePopup {
 
     this.panel.style.setProperty("--arrowpanel-background", panelBackground);
     this.panel.style.setProperty("--panel-arrow-image-vertical", panelArrow);
+    this.background = background;
   }
 }
 
@@ -474,6 +475,8 @@ class ViewPopup extends BasePopup {
       
       
       let popupRect = this.panel.getBoundingClientRect();
+
+      this.setBackground(this.background);
 
       let win = this.window;
       let popupBottom = win.mozInnerScreenY + popupRect.bottom;
