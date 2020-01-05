@@ -24,7 +24,6 @@ use rule_tree::{CascadeLevel, RuleTree, StrongRuleNode, StyleSource};
 use selector_parser::{SelectorImpl, PseudoElement, Snapshot};
 use selectors::Element;
 use selectors::bloom::BloomFilter;
-use selectors::matching::{AFFECTED_BY_ANIMATIONS, AFFECTED_BY_TRANSITIONS};
 use selectors::matching::{AFFECTED_BY_STYLE_ATTRIBUTE, AFFECTED_BY_PRESENTATIONAL_HINTS};
 use selectors::matching::{ElementSelectorFlags, StyleRelations, matches_selector};
 use selectors::parser::{Component, Selector, SelectorInner, LocalName as LocalNameSelector};
@@ -716,7 +715,6 @@ impl Stylist {
             
             
             if let Some(anim) = animation_rules.0 {
-                relations |= AFFECTED_BY_ANIMATIONS;
                 Push::push(
                     applicable_declarations,
                     ApplicableDeclarationBlock::from_declarations(anim.clone(),
@@ -773,7 +771,6 @@ impl Stylist {
         
         
         if let Some(anim) = animation_rules.1 {
-            relations |= AFFECTED_BY_TRANSITIONS;
             Push::push(
                 applicable_declarations,
                 ApplicableDeclarationBlock::from_declarations(anim.clone(), CascadeLevel::Transitions));
