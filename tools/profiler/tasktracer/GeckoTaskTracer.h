@@ -7,7 +7,11 @@
 #ifndef GECKO_TASK_TRACER_H
 #define GECKO_TASK_TRACER_H
 
+#include <stdarg.h>
+
 #include "mozilla/UniquePtr.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 #include "nsCOMPtr.h"
 #include "nsTArrayForwardDeclare.h"
 
@@ -35,6 +39,26 @@ class Runnable;
 
 namespace tasktracer {
 
+extern bool gStarted;
+
+
+
+
+inline bool IsStartLogging()
+{
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  return gStarted;
+}
+
 enum {
   FORKED_AFTER_NUWA = 1 << 0
 };
@@ -45,29 +69,71 @@ enum SourceEventType {
 #undef SOURCE_EVENT_NAME
 };
 
-class AutoSaveCurTraceInfo
+class AutoSaveCurTraceInfoImpl
 {
   uint64_t mSavedTaskId;
   uint64_t mSavedSourceEventId;
   SourceEventType mSavedSourceEventType;
 public:
-  AutoSaveCurTraceInfo();
-  ~AutoSaveCurTraceInfo();
+  AutoSaveCurTraceInfoImpl();
+  ~AutoSaveCurTraceInfoImpl();
+};
+
+class AutoSaveCurTraceInfo
+{
+  Maybe<AutoSaveCurTraceInfoImpl> mSaved;
+public:
+  AutoSaveCurTraceInfo() {
+    if (IsStartLogging()) {
+      mSaved.emplace();
+    }
+  }
+
+  
+
+
+
+
+
+  bool HasSavedTraceInfo() {
+    return !!mSaved;
+  }
 };
 
 class AutoSourceEvent : public AutoSaveCurTraceInfo
 {
+  void StartScope(SourceEventType aType);
+  void StopScope();
 public:
-  explicit AutoSourceEvent(SourceEventType aType);
-  ~AutoSourceEvent();
+  explicit AutoSourceEvent(SourceEventType aType) : AutoSaveCurTraceInfo() {
+    if (HasSavedTraceInfo()) {
+      StartScope(aType);
+    }
+  }
+
+  ~AutoSourceEvent() {
+    if (HasSavedTraceInfo()) {
+      StopScope();
+    }
+  }
 };
 
 void InitTaskTracer(uint32_t aFlags = 0);
 void ShutdownTaskTracer();
 
+void DoAddLabel(const char* aFormat, va_list& aArgs);
 
 
-void AddLabel(const char* aFormat, ...) MOZ_FORMAT_PRINTF(1, 2);
+
+inline void AddLabel(const char* aFormat, ...) MOZ_FORMAT_PRINTF(1, 2);
+inline void AddLabel(const char* aFormat, ...) {
+  if (IsStartLogging()) {
+    va_list args;
+    va_start(args, aFormat);
+    DoAddLabel(aFormat, args);
+    va_end(args);
+  }
+}
 
 void StartLogging();
 void StopLogging();
@@ -96,9 +162,26 @@ void GetCurTraceInfo(uint64_t* aOutSourceEventId, uint64_t* aOutParentTaskId,
 class AutoScopedLabel
 {
   char* mLabel;
+  void Init(const char* aFormat, va_list& aArgs);
+
 public:
-  explicit AutoScopedLabel(const char* aFormat, ...);
-  ~AutoScopedLabel();
+  explicit AutoScopedLabel(const char* aFormat, ...) : mLabel(nullptr)
+  {
+    if (IsStartLogging()) {
+      va_list args;
+      va_start(args, aFormat);
+      Init(aFormat, args);
+      va_end(args);
+    }
+  }
+
+  ~AutoScopedLabel()
+  {
+    if (mLabel) {
+      AddLabel("End %s", mLabel);
+      free(mLabel);
+    }
+  }
 };
 
 } 
