@@ -123,10 +123,6 @@ static Vector<std::string> gFeatures;
 static int gEntrySize = 0;
 
 
-
-
-
-
 static double gInterval = 0;
 
 
@@ -1591,7 +1587,7 @@ RegisterCurrentThread(const char* aName, PseudoStack* aPseudoStack,
 
 
 static void PlatformInit();
-static void PlatformStart();
+static void PlatformStart(double aInterval);
 static void PlatformStop();
 
 void
@@ -2032,7 +2028,7 @@ profiler_start(int aProfileEntries, double aInterval,
   gGatherer = new mozilla::ProfileGatherer();
 
   MOZ_ASSERT(!gIsActive && !gIsPaused);
-  PlatformStart();
+  PlatformStart(gInterval);
   MOZ_ASSERT(gIsActive && !gIsPaused);  
 
   if (gProfileJS || privacyMode) {

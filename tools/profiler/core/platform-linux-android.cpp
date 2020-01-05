@@ -145,6 +145,8 @@ static void* setup_atfork() {
 }
 #endif 
 
+static int gIntervalMicro;
+
 
 
 static ThreadInfo* gCurrentThreadInfo;
@@ -342,11 +344,8 @@ SigprofSender(void* aArg)
 #endif
     }
 
-    
-    
-    
     TimeStamp targetSleepEndTime =
-      sampleStart + TimeDuration::FromMicroseconds(gInterval * 1000);
+      sampleStart + TimeDuration::FromMicroseconds(gIntervalMicro);
     TimeStamp beforeSleep = TimeStamp::Now();
     TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
     double sleepTime = std::max(0.0, (targetSleepDuration - lastSleepOverhead).ToMicroseconds());
@@ -358,7 +357,7 @@ SigprofSender(void* aArg)
 }
 
 static void
-PlatformStart()
+PlatformStart(double aInterval)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
@@ -371,6 +370,11 @@ PlatformStart()
      gLUL_initialization_routine();
   }
 #endif
+
+  gIntervalMicro = floor(aInterval * 1000 + 0.5);
+  if (gIntervalMicro <= 0) {
+    gIntervalMicro = 1;
+  }
 
   
   gCurrentThreadInfo = nullptr;
@@ -425,6 +429,8 @@ PlatformStop()
 
   MOZ_ASSERT(gIsActive);
   gIsActive = false;
+
+  gIntervalMicro = 0;
 
   
   
