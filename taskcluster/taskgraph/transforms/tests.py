@@ -35,8 +35,6 @@ from voluptuous import (
 
 import copy
 import logging
-import requests
-from collections import defaultdict
 
 WORKER_TYPE = {
     
@@ -396,19 +394,21 @@ def set_treeherder_machine_platform(config, tests):
 def set_worker_implementation(config, tests):
     """Set the worker implementation based on the test platform."""
     for test in tests:
-        test_platform = test['test-platform']
-        if test_platform.startswith('macosx'):
-            if config.config['args'].taskcluster_worker:
+        if test['test-platform'].startswith('macosx'):
+            
+            if config.config['args'].generic_worker:
+                test['worker-implementation'] = 'generic-worker'
+            
+            elif config.config['args'].taskcluster_worker:
                 test['worker-implementation'] = 'native-engine'
             else:
-                test['worker-implementation'] = 'generic-worker'
+                test['worker-implementation'] = 'buildbot-bridge'
         elif test.get('suite', '') == 'talos':
             test['worker-implementation'] = 'buildbot-bridge'
-        elif test_platform.startswith('win'):
+        elif test['test-platform'].startswith('win'):
             test['worker-implementation'] = 'generic-worker'
         else:
             test['worker-implementation'] = 'docker-worker'
-
         yield test
 
 
@@ -668,33 +668,6 @@ def parallel_stylo_tests(config, tests):
 
 
 @transforms.add
-def allocate_to_bbb(config, tests):
-    """Make the load balancing between taskcluster and buildbot"""
-    j = get_load_balacing_settings()
-
-    tests_set = defaultdict(list)
-    for test in tests:
-        tests_set[test['test-platform']].append(test)
-
-    
-    for test_platform, t in tests_set.iteritems():
-        
-        t.sort(key=lambda x: (x['test-name'], x.get('this_chunk', 1)))
-        
-        
-        
-        
-        n = j.get(test_platform, 1.0)
-        if not (test_platform.startswith('mac') \
-                and config.config['args'].taskcluster_worker):
-            for i in range(int(n * len(t)), len(t)):
-                t[i]['worker-implementation'] = 'buildbot-bridge'
-
-        for y in t:
-            yield y
-
-
-@transforms.add
 def make_job_description(config, tests):
     """Convert *test* descriptions to *job* descriptions (input to
     taskgraph.transforms.job)"""
@@ -794,10 +767,3 @@ def normpath(path):
 def get_firefox_version():
     with open('browser/config/version.txt', 'r') as f:
         return f.readline().strip()
-
-def get_load_balacing_settings():
-    url = "https://s3.amazonaws.com/taskcluster-graph-scheduling/tests-load.json"
-    try:
-        return requests.get(url).json()
-    except Exception:
-        return {}
