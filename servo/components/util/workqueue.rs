@@ -35,7 +35,7 @@ pub struct WorkUnit<QueueData, WorkData: Send> {
 
 enum WorkerMsg<QueueData: 'static, WorkData: 'static + Send> {
     
-    Start(Worker<WorkUnit<QueueData, WorkData>>, *mut AtomicUsize, *const QueueData),
+    Start(Worker<WorkUnit<QueueData, WorkData>>, *const AtomicUsize, *const QueueData),
     
     Stop,
     
@@ -199,7 +199,7 @@ impl<QueueData: Sync, WorkData: Send> WorkerThread<QueueData, WorkData> {
 
 pub struct WorkerProxy<'a, QueueData: 'a, WorkData: 'a + Send> {
     worker: &'a mut Worker<WorkUnit<QueueData, WorkData>>,
-    ref_count: *mut AtomicUsize,
+    ref_count: *const AtomicUsize,
     queue_data: &'a QueueData,
     worker_index: u8,
 }
@@ -307,10 +307,10 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
     
     pub fn run(&mut self, data: &QueueData) {
         
-        let mut work_count = AtomicUsize::new(self.work_count);
+        let work_count = AtomicUsize::new(self.work_count);
         for worker in &mut self.workers {
             worker.chan.send(WorkerMsg::Start(worker.deque.take().unwrap(),
-                                              &mut work_count,
+                                              &work_count,
                                               data)).unwrap()
         }
 
