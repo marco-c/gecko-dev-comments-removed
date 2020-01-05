@@ -5,10 +5,12 @@
 
 
 use gecko_bindings::structs;
+use gecko_bindings::sugar::ownership::HasArcFFI;
 use heapsize::HeapSizeOf;
 use std::{mem, ptr};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 
 
@@ -193,6 +195,14 @@ impl<T: RefCounted> structs::RefPtr<T> {
             unsafe { (*self.mRawPtr).release(); }
         }
         *self = other.forget();
+    }
+}
+
+impl<T> structs::RefPtr<T> {
+    
+    
+    pub fn set_arc_leaky<U>(&mut self, other: Arc<U>) where U: HasArcFFI<FFIType = T> {
+        *self = unsafe { mem::transmute(other) }; 
     }
 }
 
