@@ -18,10 +18,6 @@ class nsIAtom;
 
 
 
-
-
-
-
 #define HTML_TAG(_tag, _classname, _interfacename) eHTMLTag_##_tag,
 #define HTML_OTHER(_tag) eHTMLTag_##_tag,
 enum nsHTMLTag {

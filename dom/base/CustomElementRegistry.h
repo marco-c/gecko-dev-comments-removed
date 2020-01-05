@@ -128,10 +128,6 @@ struct CustomElementDefinition
 
   
   uint32_t mDocOrder;
-
-  bool IsCustomBuiltIn() {
-    return mType != mLocalName;
-  }
 };
 
 class CustomElementRegistry final : public nsISupports,
@@ -157,9 +153,6 @@ public:
 
   CustomElementDefinition* LookupCustomElementDefinition(
     const nsAString& aLocalName, const nsAString* aIs = nullptr) const;
-
-  CustomElementDefinition* LookupCustomElementDefinition(
-    JSContext* aCx, JSObject *aConstructor) const;
 
   
 

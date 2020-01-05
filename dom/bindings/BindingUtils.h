@@ -42,7 +42,6 @@
 
 #include "nsWrapperCacheInlines.h"
 
-class nsGenericHTMLElement;
 class nsIJSID;
 
 namespace mozilla {
@@ -3180,13 +3179,6 @@ bool GetSetlikeBackingObject(JSContext* aCx, JS::Handle<JSObject*> aObj,
 bool
 GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
                 JS::MutableHandle<JSObject*> aDesiredProto);
-
-
-
-
-already_AddRefed<nsGenericHTMLElement>
-CreateHTMLElement(const GlobalObject& aGlobal, const JS::CallArgs& aCallArgs,
-                  ErrorResult& aRv);
 
 void
 SetDocumentAndPageUseCounter(JSContext* aCx, JSObject* aObject,
