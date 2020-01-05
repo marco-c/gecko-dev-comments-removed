@@ -77,12 +77,15 @@ var ContentClick = {
 
     
 
-    let params = { charset: browser.characterSet,
-                   referrerURI: browser.documentURI,
-                   referrerPolicy: json.referrerPolicy,
-                   noReferrer: json.noReferrer,
-                   allowMixedContent: json.allowMixedContent,
-                   isContentWindowPrivate: json.isContentWindowPrivate};
+    let params = {
+      charset: browser.characterSet,
+      referrerURI: browser.documentURI,
+      referrerPolicy: json.referrerPolicy,
+      noReferrer: json.noReferrer,
+      allowMixedContent: json.allowMixedContent,
+      isContentWindowPrivate: json.isContentWindowPrivate,
+      originPrincipal: json.originPrincipal,
+    };
 
     
     if (json.originAttributes.userContextId) {

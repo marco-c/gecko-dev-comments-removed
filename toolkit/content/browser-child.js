@@ -8,6 +8,7 @@ var Cu = Components.utils;
 var Cr = Components.results;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/BrowserUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import('resource://gre/modules/XPCOMUtils.jsm');
 Cu.import("resource://gre/modules/RemoteAddonsChild.jsm");
@@ -563,6 +564,18 @@ addMessageListener("Browser:Thumbnail:GetOriginalURL", function (aMessage) {
     channelError: channelError,
     originalURL: originalURL,
   });
+});
+
+
+
+
+addMessageListener("Browser:CreateAboutBlank", function(aMessage) {
+  if (!content.document || content.document.documentURI != "about:blank") {
+    throw new Error("Can't create a content viewer unless on about:blank");
+  }
+  let principal = aMessage.data;
+  principal = BrowserUtils.principalWithMatchingOA(principal, content.document.nodePrincipal);
+  docShell.createAboutBlankContentViewer(principal);
 });
 
 
