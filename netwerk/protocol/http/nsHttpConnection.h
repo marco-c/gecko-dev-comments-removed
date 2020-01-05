@@ -83,7 +83,7 @@ public:
     MOZ_MUST_USE nsresult Activate(nsAHttpTransaction *, uint32_t caps,
                                    int32_t pri);
 
-    void SetFastOpen(bool aFastOpen) { mFastOpen = aFastOpen; }
+    void SetFastOpen(PRFileDesc *aFastOpen) { mFastOpen = aFastOpen; }
     
     
     
@@ -399,7 +399,7 @@ private:
     
     bool                           mResumeRecvOnUnthrottle;
 
-    bool                           mFastOpen;
+    PRFileDesc                    *mFastOpen;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)
