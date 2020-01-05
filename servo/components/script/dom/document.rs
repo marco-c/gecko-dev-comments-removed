@@ -24,7 +24,7 @@ use dom::bindings::codegen::Bindings::WindowBinding::{FrameRequestCallback, Scro
 use dom::bindings::codegen::UnionTypes::NodeOrString;
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::inheritance::{Castable, ElementTypeId, HTMLElementTypeId, NodeTypeId};
-use dom::bindings::js::{JS, LayoutJS, MutNullableHeap, Root};
+use dom::bindings::js::{JS, LayoutJS, MutNullableJS, Root};
 use dom::bindings::js::RootedReference;
 use dom::bindings::num::Finite;
 use dom::bindings::refcounted::{Trusted, TrustedPromise};
@@ -184,8 +184,8 @@ pub struct Document {
     window: JS<Window>,
     
     browsing_context: Option<JS<BrowsingContext>>,
-    implementation: MutNullableHeap<JS<DOMImplementation>>,
-    location: MutNullableHeap<JS<Location>>,
+    implementation: MutNullableJS<DOMImplementation>,
+    location: MutNullableJS<Location>,
     content_type: DOMString,
     last_modified: Option<String>,
     encoding: Cell<EncodingRef>,
@@ -197,29 +197,29 @@ pub struct Document {
     tag_map: DOMRefCell<HashMap<LocalName, JS<HTMLCollection>>>,
     tagns_map: DOMRefCell<HashMap<QualName, JS<HTMLCollection>>>,
     classes_map: DOMRefCell<HashMap<Vec<Atom>, JS<HTMLCollection>>>,
-    images: MutNullableHeap<JS<HTMLCollection>>,
-    embeds: MutNullableHeap<JS<HTMLCollection>>,
-    links: MutNullableHeap<JS<HTMLCollection>>,
-    forms: MutNullableHeap<JS<HTMLCollection>>,
-    scripts: MutNullableHeap<JS<HTMLCollection>>,
-    anchors: MutNullableHeap<JS<HTMLCollection>>,
-    applets: MutNullableHeap<JS<HTMLCollection>>,
+    images: MutNullableJS<HTMLCollection>,
+    embeds: MutNullableJS<HTMLCollection>,
+    links: MutNullableJS<HTMLCollection>,
+    forms: MutNullableJS<HTMLCollection>,
+    scripts: MutNullableJS<HTMLCollection>,
+    anchors: MutNullableJS<HTMLCollection>,
+    applets: MutNullableJS<HTMLCollection>,
     
     stylesheets: DOMRefCell<Option<Vec<StylesheetInDocument>>>,
     
     stylesheets_changed_since_reflow: Cell<bool>,
-    stylesheet_list: MutNullableHeap<JS<StyleSheetList>>,
+    stylesheet_list: MutNullableJS<StyleSheetList>,
     ready_state: Cell<DocumentReadyState>,
     
     domcontentloaded_dispatched: Cell<bool>,
     
-    possibly_focused: MutNullableHeap<JS<Element>>,
+    possibly_focused: MutNullableJS<Element>,
     
-    focused: MutNullableHeap<JS<Element>>,
+    focused: MutNullableJS<Element>,
     
-    current_script: MutNullableHeap<JS<HTMLScriptElement>>,
+    current_script: MutNullableJS<HTMLScriptElement>,
     
-    pending_parsing_blocking_script: MutNullableHeap<JS<HTMLScriptElement>>,
+    pending_parsing_blocking_script: MutNullableJS<HTMLScriptElement>,
     
     script_blocking_stylesheets_count: Cell<u32>,
     
@@ -245,14 +245,14 @@ pub struct Document {
     
     loader: DOMRefCell<DocumentLoader>,
     
-    current_parser: MutNullableHeap<JS<ServoParser>>,
+    current_parser: MutNullableJS<ServoParser>,
     
     reflow_timeout: Cell<Option<u64>>,
     
-    base_element: MutNullableHeap<JS<HTMLBaseElement>>,
+    base_element: MutNullableJS<HTMLBaseElement>,
     
     
-    appropriate_template_contents_owner_document: MutNullableHeap<JS<Document>>,
+    appropriate_template_contents_owner_document: MutNullableJS<Document>,
     
     
     pending_restyles: DOMRefCell<HashMap<JS<Element>, PendingRestyle>>,
@@ -280,7 +280,7 @@ pub struct Document {
     
     referrer: Option<String>,
     
-    target_element: MutNullableHeap<JS<Element>>,
+    target_element: MutNullableJS<Element>,
     
     #[ignore_heap_size_of = "Defined in std"]
     last_click_info: DOMRefCell<Option<(Instant, Point2D<f32>)>>,
@@ -293,7 +293,7 @@ pub struct Document {
     
     dom_count: Cell<u32>,
     
-    fullscreen_element: MutNullableHeap<JS<Element>>,
+    fullscreen_element: MutNullableJS<Element>,
 }
 
 #[derive(JSTraceable, HeapSizeOf)]
@@ -1036,7 +1036,7 @@ impl Document {
     pub fn handle_mouse_move_event(&self,
                                    js_runtime: *mut JSRuntime,
                                    client_point: Option<Point2D<f32>>,
-                                   prev_mouse_over_target: &MutNullableHeap<JS<Element>>) {
+                                   prev_mouse_over_target: &MutNullableJS<Element>) {
         let client_point = match client_point {
             None => {
                 
@@ -1521,8 +1521,11 @@ impl Document {
 
     
     pub fn run_the_animation_frame_callbacks(&self) {
-        let mut animation_frame_list =
-            mem::replace(&mut *self.animation_frame_list.borrow_mut(), vec![]);
+        rooted_vec!(let mut animation_frame_list);
+        mem::swap(
+            &mut *animation_frame_list,
+            &mut *self.animation_frame_list.borrow_mut());
+
         self.running_animation_callbacks.set(true);
         let timing = self.window.Performance().Now();
 
@@ -1538,7 +1541,7 @@ impl Document {
         
         if self.animation_frame_list.borrow().is_empty() {
             mem::swap(&mut *self.animation_frame_list.borrow_mut(),
-                      &mut animation_frame_list);
+                      &mut *animation_frame_list);
             let global_scope = self.window.upcast::<GlobalScope>();
             let event = ConstellationMsg::ChangeRunningAnimationsState(global_scope.pipeline_id(),
                                                                        AnimationState::NoAnimationCallbacksPresent);
@@ -1872,7 +1875,7 @@ impl Document {
             applets: Default::default(),
             stylesheets: DOMRefCell::new(None),
             stylesheets_changed_since_reflow: Cell::new(false),
-            stylesheet_list: MutNullableHeap::new(None),
+            stylesheet_list: MutNullableJS::new(None),
             ready_state: Cell::new(ready_state),
             domcontentloaded_dispatched: Cell::new(domcontentloaded_dispatched),
             possibly_focused: Default::default(),
@@ -1907,11 +1910,11 @@ impl Document {
             origin: origin,
             referrer: referrer,
             referrer_policy: Cell::new(referrer_policy),
-            target_element: MutNullableHeap::new(None),
+            target_element: MutNullableJS::new(None),
             last_click_info: DOMRefCell::new(None),
             ignore_destructive_writes_counter: Default::default(),
             dom_count: Cell::new(1),
-            fullscreen_element: MutNullableHeap::new(None),
+            fullscreen_element: MutNullableJS::new(None),
         }
     }
 

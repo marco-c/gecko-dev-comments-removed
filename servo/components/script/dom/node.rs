@@ -21,7 +21,7 @@ use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::inheritance::{Castable, CharacterDataTypeId, ElementTypeId};
 use dom::bindings::inheritance::{EventTargetTypeId, HTMLElementTypeId, NodeTypeId};
 use dom::bindings::inheritance::{SVGElementTypeId, SVGGraphicsElementTypeId};
-use dom::bindings::js::{JS, LayoutJS, MutNullableHeap};
+use dom::bindings::js::{JS, LayoutJS, MutNullableJS};
 use dom::bindings::js::Root;
 use dom::bindings::js::RootedReference;
 use dom::bindings::reflector::{DomObject, reflect_dom_object};
@@ -95,25 +95,25 @@ pub struct Node {
     eventtarget: EventTarget,
 
     
-    parent_node: MutNullableHeap<JS<Node>>,
+    parent_node: MutNullableJS<Node>,
 
     
-    first_child: MutNullableHeap<JS<Node>>,
+    first_child: MutNullableJS<Node>,
 
     
-    last_child: MutNullableHeap<JS<Node>>,
+    last_child: MutNullableJS<Node>,
 
     
-    next_sibling: MutNullableHeap<JS<Node>>,
+    next_sibling: MutNullableJS<Node>,
 
     
-    prev_sibling: MutNullableHeap<JS<Node>>,
+    prev_sibling: MutNullableJS<Node>,
 
     
-    owner_doc: MutNullableHeap<JS<Document>>,
+    owner_doc: MutNullableJS<Document>,
 
     
-    child_list: MutNullableHeap<JS<NodeList>>,
+    child_list: MutNullableJS<NodeList>,
 
     
     children_count: Cell<u32>,
@@ -1370,7 +1370,7 @@ impl Node {
             last_child: Default::default(),
             next_sibling: Default::default(),
             prev_sibling: Default::default(),
-            owner_doc: MutNullableHeap::new(doc),
+            owner_doc: MutNullableJS::new(doc),
             child_list: Default::default(),
             children_count: Cell::new(0u32),
             flags: Cell::new(flags),

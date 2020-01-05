@@ -59,7 +59,6 @@ use js::glue::{CallObjectTracer, CallUnbarrieredObjectTracer, CallValueTracer};
 use js::jsapi::{GCTraceKindToAscii, Heap, JSObject, JSTracer, TraceKind};
 use js::jsval::JSVal;
 use js::rust::Runtime;
-use libc;
 use msg::constellation_msg::{FrameId, FrameType, PipelineId};
 use net_traits::{Metadata, NetworkError, ReferrerPolicy, ResourceThreads};
 use net_traits::filemanager_thread::RelativePos;
@@ -82,7 +81,7 @@ use serde::{Deserialize, Serialize};
 use servo_atoms::Atom;
 use servo_url::ServoUrl;
 use smallvec::SmallVec;
-use std::cell::{Cell, UnsafeCell};
+use std::cell::{Cell, RefCell, UnsafeCell};
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::hash::{BuildHasher, Hash};
 use std::ops::{Deref, DerefMut};
@@ -569,26 +568,15 @@ unsafe impl JSTraceable for RwLock<MediaList> {
 }
 
 
-struct TraceableInfo {
-    pub ptr: *const libc::c_void,
-    pub trace: unsafe fn(obj: *const libc::c_void, tracer: *mut JSTracer),
-}
-
-
 pub struct RootedTraceableSet {
-    set: Vec<TraceableInfo>,
+    set: Vec<*const JSTraceable>,
 }
 
-#[allow(missing_docs)]  
-mod dummy {  
-    use std::cell::RefCell;
-    use std::rc::Rc;
-    use super::RootedTraceableSet;
-    
-    thread_local!(pub static ROOTED_TRACEABLES: Rc<RefCell<RootedTraceableSet>> =
-                  Rc::new(RefCell::new(RootedTraceableSet::new())));
-}
-pub use self::dummy::ROOTED_TRACEABLES;
+thread_local!(
+    /// TLV Holds a set of JSTraceables that need to be rooted
+    static ROOTED_TRACEABLES: Rc<RefCell<RootedTraceableSet>> =
+        Rc::new(RefCell::new(RootedTraceableSet::new()));
+);
 
 impl RootedTraceableSet {
     fn new() -> RootedTraceableSet {
@@ -597,12 +585,12 @@ impl RootedTraceableSet {
         }
     }
 
-    unsafe fn remove<T: JSTraceable>(traceable: &T) {
+    unsafe fn remove(traceable: *const JSTraceable) {
         ROOTED_TRACEABLES.with(|ref traceables| {
             let mut traceables = traceables.borrow_mut();
             let idx =
                 match traceables.set.iter()
-                                .rposition(|x| x.ptr == traceable as *const T as *const _) {
+                                .rposition(|x| *x == traceable) {
                     Some(idx) => idx,
                     None => unreachable!(),
                 };
@@ -610,25 +598,15 @@ impl RootedTraceableSet {
         });
     }
 
-    unsafe fn add<T: JSTraceable>(traceable: &T) {
+    unsafe fn add(traceable: *const JSTraceable) {
         ROOTED_TRACEABLES.with(|ref traceables| {
-            unsafe fn trace<T: JSTraceable>(obj: *const libc::c_void, tracer: *mut JSTracer) {
-                let obj: &T = &*(obj as *const T);
-                obj.trace(tracer);
-            }
-
-            let mut traceables = traceables.borrow_mut();
-            let info = TraceableInfo {
-                ptr: traceable as *const T as *const libc::c_void,
-                trace: trace::<T>,
-            };
-            traceables.set.push(info);
+            traceables.borrow_mut().set.push(traceable);
         })
     }
 
     unsafe fn trace(&self, tracer: *mut JSTracer) {
-        for info in &self.set {
-            (info.trace)(info.ptr, tracer);
+        for traceable in &self.set {
+            (**traceable).trace(tracer);
         }
     }
 }
@@ -640,11 +618,11 @@ impl RootedTraceableSet {
 
 
 #[derive(JSTraceable)]
-pub struct RootedTraceable<'a, T: 'a + JSTraceable> {
+pub struct RootedTraceable<'a, T: 'static + JSTraceable> {
     ptr: &'a T,
 }
 
-impl<'a, T: JSTraceable> RootedTraceable<'a, T> {
+impl<'a, T: JSTraceable + 'static> RootedTraceable<'a, T> {
     
     pub fn new(traceable: &'a T) -> RootedTraceable<'a, T> {
         unsafe {
@@ -656,7 +634,7 @@ impl<'a, T: JSTraceable> RootedTraceable<'a, T> {
     }
 }
 
-impl<'a, T: JSTraceable> Drop for RootedTraceable<'a, T> {
+impl<'a, T: JSTraceable + 'static> Drop for RootedTraceable<'a, T> {
     fn drop(&mut self) {
         unsafe {
             RootedTraceableSet::remove(self.ptr);
@@ -686,15 +664,29 @@ impl<T: JSTraceable> RootableVec<T> {
 
 
 #[allow_unrooted_interior]
-pub struct RootedVec<'a, T: 'a + JSTraceable> {
+pub struct RootedVec<'a, T: 'static + JSTraceable> {
     root: &'a mut RootableVec<T>,
 }
 
-impl<'a, T: JSTraceable + DomObject> RootedVec<'a, JS<T>> {
+impl<'a, T: 'static + JSTraceable> RootedVec<'a, T> {
     
     
-    pub fn new<I: Iterator<Item = Root<T>>>(root: &'a mut RootableVec<JS<T>>, iter: I)
-                                            -> RootedVec<'a, JS<T>> {
+    pub fn new(root: &'a mut RootableVec<T>) -> Self {
+        unsafe {
+            RootedTraceableSet::add(root);
+        }
+        RootedVec {
+            root: root,
+        }
+    }
+}
+
+impl<'a, T: 'static + JSTraceable + DomObject> RootedVec<'a, JS<T>> {
+    
+    
+    pub fn from_iter<I>(root: &'a mut RootableVec<JS<T>>, iter: I) -> Self
+        where I: Iterator<Item = Root<T>>
+    {
         unsafe {
             RootedTraceableSet::add(root);
         }
@@ -705,7 +697,7 @@ impl<'a, T: JSTraceable + DomObject> RootedVec<'a, JS<T>> {
     }
 }
 
-impl<'a, T: JSTraceable> Drop for RootedVec<'a, T> {
+impl<'a, T: JSTraceable + 'static> Drop for RootedVec<'a, T> {
     fn drop(&mut self) {
         self.clear();
         unsafe {

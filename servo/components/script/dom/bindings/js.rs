@@ -233,20 +233,6 @@ impl LayoutJS<Node> {
 
 
 
-
-pub trait HeapGCValue: JSTraceable {
-}
-
-impl HeapGCValue for Heap<JSVal> {
-}
-
-impl<T: DomObject> HeapGCValue for JS<T> {
-}
-
-
-
-
-
 #[must_root]
 #[derive(JSTraceable)]
 pub struct MutHeapJSVal {
@@ -293,15 +279,15 @@ impl MutHeapJSVal {
 
 #[must_root]
 #[derive(JSTraceable)]
-pub struct MutHeap<T: HeapGCValue> {
-    val: UnsafeCell<T>,
+pub struct MutJS<T: DomObject> {
+    val: UnsafeCell<JS<T>>,
 }
 
-impl<T: DomObject> MutHeap<JS<T>> {
+impl<T: DomObject> MutJS<T> {
     
-    pub fn new(initial: &T) -> MutHeap<JS<T>> {
+    pub fn new(initial: &T) -> MutJS<T> {
         debug_assert!(thread_state::get().is_script());
-        MutHeap {
+        MutJS {
             val: UnsafeCell::new(JS::from_ref(initial)),
         }
     }
@@ -323,14 +309,14 @@ impl<T: DomObject> MutHeap<JS<T>> {
     }
 }
 
-impl<T: HeapGCValue> HeapSizeOf for MutHeap<T> {
+impl<T: DomObject> HeapSizeOf for MutJS<T> {
     fn heap_size_of_children(&self) -> usize {
         
         0
     }
 }
 
-impl<T: DomObject> PartialEq for MutHeap<JS<T>> {
+impl<T: DomObject> PartialEq for MutJS<T> {
    fn eq(&self, other: &Self) -> bool {
         unsafe {
             *self.val.get() == *other.val.get()
@@ -338,7 +324,7 @@ impl<T: DomObject> PartialEq for MutHeap<JS<T>> {
     }
 }
 
-impl<T: DomObject + PartialEq> PartialEq<T> for MutHeap<JS<T>> {
+impl<T: DomObject + PartialEq> PartialEq<T> for MutJS<T> {
     fn eq(&self, other: &T) -> bool {
         unsafe {
             **self.val.get() == *other
@@ -354,15 +340,15 @@ impl<T: DomObject + PartialEq> PartialEq<T> for MutHeap<JS<T>> {
 
 #[must_root]
 #[derive(JSTraceable)]
-pub struct MutNullableHeap<T: HeapGCValue> {
-    ptr: UnsafeCell<Option<T>>,
+pub struct MutNullableJS<T: DomObject> {
+    ptr: UnsafeCell<Option<JS<T>>>,
 }
 
-impl<T: DomObject> MutNullableHeap<JS<T>> {
+impl<T: DomObject> MutNullableJS<T> {
     
-    pub fn new(initial: Option<&T>) -> MutNullableHeap<JS<T>> {
+    pub fn new(initial: Option<&T>) -> MutNullableJS<T> {
         debug_assert!(thread_state::get().is_script());
-        MutNullableHeap {
+        MutNullableJS {
             ptr: UnsafeCell::new(initial.map(JS::from_ref)),
         }
     }
@@ -416,7 +402,7 @@ impl<T: DomObject> MutNullableHeap<JS<T>> {
     }
 }
 
-impl<T: DomObject> PartialEq for MutNullableHeap<JS<T>> {
+impl<T: DomObject> PartialEq for MutNullableJS<T> {
     fn eq(&self, other: &Self) -> bool {
         unsafe {
             *self.ptr.get() == *other.ptr.get()
@@ -424,7 +410,7 @@ impl<T: DomObject> PartialEq for MutNullableHeap<JS<T>> {
     }
 }
 
-impl<'a, T: DomObject> PartialEq<Option<&'a T>> for MutNullableHeap<JS<T>> {
+impl<'a, T: DomObject> PartialEq<Option<&'a T>> for MutNullableJS<T> {
     fn eq(&self, other: &Option<&T>) -> bool {
         unsafe {
             *self.ptr.get() == other.map(JS::from_ref)
@@ -432,17 +418,17 @@ impl<'a, T: DomObject> PartialEq<Option<&'a T>> for MutNullableHeap<JS<T>> {
     }
 }
 
-impl<T: HeapGCValue> Default for MutNullableHeap<T> {
+impl<T: DomObject> Default for MutNullableJS<T> {
     #[allow(unrooted_must_root)]
-    fn default() -> MutNullableHeap<T> {
+    fn default() -> MutNullableJS<T> {
         debug_assert!(thread_state::get().is_script());
-        MutNullableHeap {
+        MutNullableJS {
             ptr: UnsafeCell::new(None),
         }
     }
 }
 
-impl<T: HeapGCValue> HeapSizeOf for MutNullableHeap<T> {
+impl<T: DomObject> HeapSizeOf for MutNullableJS<T> {
     fn heap_size_of_children(&self) -> usize {
         
         0
