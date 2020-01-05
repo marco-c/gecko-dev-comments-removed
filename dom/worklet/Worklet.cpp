@@ -205,9 +205,6 @@ public:
     compileOptions.setFileAndLine(NS_ConvertUTF16toUTF8(mURL).get(), 0);
     compileOptions.setVersion(JSVERSION_DEFAULT);
     compileOptions.setIsRunOnce(true);
-
-    
-    
     compileOptions.setNoScriptRval(true);
 
     JSAutoCompartment comp(cx, globalObj);

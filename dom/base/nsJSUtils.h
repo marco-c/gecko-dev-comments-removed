@@ -154,52 +154,6 @@ public:
                             const nsAString& aScript);
   };
 
-  struct MOZ_STACK_CLASS EvaluateOptions {
-    bool coerceToString;
-    JS::AutoObjectVector scopeChain;
-
-    explicit EvaluateOptions(JSContext* cx)
-      : coerceToString(false)
-      , scopeChain(cx)
-    {}
-
-    EvaluateOptions& setCoerceToString(bool aCoerce) {
-      coerceToString = aCoerce;
-      return *this;
-    }
-  };
-
-  
-  
-  
-  
-  
-  static nsresult EvaluateString(JSContext* aCx,
-                                 const nsAString& aScript,
-                                 JS::Handle<JSObject*> aEvaluationGlobal,
-                                 JS::CompileOptions &aCompileOptions,
-                                 const EvaluateOptions& aEvaluateOptions,
-                                 JS::MutableHandle<JS::Value> aRetValue);
-
-  static nsresult EvaluateString(JSContext* aCx,
-                                 JS::SourceBufferHolder& aSrcBuf,
-                                 JS::Handle<JSObject*> aEvaluationGlobal,
-                                 JS::CompileOptions &aCompileOptions,
-                                 const EvaluateOptions& aEvaluateOptions,
-                                 JS::MutableHandle<JS::Value> aRetValue);
-
-
-  static nsresult EvaluateString(JSContext* aCx,
-                                 const nsAString& aScript,
-                                 JS::Handle<JSObject*> aEvaluationGlobal,
-                                 JS::CompileOptions &aCompileOptions);
-
-  static nsresult EvaluateString(JSContext* aCx,
-                                 JS::SourceBufferHolder& aSrcBuf,
-                                 JS::Handle<JSObject*> aEvaluationGlobal,
-                                 JS::CompileOptions &aCompileOptions,
-                                 void **aOffThreadToken);
-
   static nsresult CompileModule(JSContext* aCx,
                                 JS::SourceBufferHolder& aSrcBuf,
                                 JS::Handle<JSObject*> aEvaluationGlobal,
@@ -219,16 +173,6 @@ public:
                                       JS::AutoObjectVector& aScopeChain);
 
   static void ResetTimeZone();
-
-private:
-  
-  static nsresult EvaluateString(JSContext* aCx,
-                                 JS::SourceBufferHolder& aSrcBuf,
-                                 JS::Handle<JSObject*> aEvaluationGlobal,
-                                 JS::CompileOptions& aCompileOptions,
-                                 const EvaluateOptions& aEvaluateOptions,
-                                 JS::MutableHandle<JS::Value> aRetValue,
-                                 void **aOffThreadToken);
 };
 
 template<typename T>
