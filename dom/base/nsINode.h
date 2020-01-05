@@ -128,8 +128,7 @@ enum {
   NODE_IS_EDITABLE =                      NODE_FLAG_BIT(7),
 
   
-  
-  NODE_MAY_HAVE_CLASS =                   NODE_FLAG_BIT(8),
+  THIS_BIT_BELONGS_TO_BHOLLEY =           NODE_FLAG_BIT(8),
 
   
   NODE_IS_IN_SHADOW_TREE =                NODE_FLAG_BIT(9),
@@ -1498,6 +1497,8 @@ private:
     
     ElementHasID,
     
+    ElementMayHaveClass,
+    
     ElementMayHaveStyle,
     
     ElementHasName,
@@ -1591,6 +1592,8 @@ public:
     { SetBoolFlag(NodeHasRenderingObservers, aValue); }
   bool IsContent() const { return GetBoolFlag(NodeIsContent); }
   bool HasID() const { return GetBoolFlag(ElementHasID); }
+  bool MayHaveClass() const { return GetBoolFlag(ElementMayHaveClass); }
+  void SetMayHaveClass() { SetBoolFlag(ElementMayHaveClass); }
   bool MayHaveStyle() const { return GetBoolFlag(ElementMayHaveStyle); }
   bool HasName() const { return GetBoolFlag(ElementHasName); }
   bool MayHaveContentEditableAttr() const
