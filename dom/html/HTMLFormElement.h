@@ -148,17 +148,8 @@ public:
 
 
 
-
-
-
-
-  enum RemoveElementReason {
-    AttributeUpdated,
-    ElementRemoved
-  };
   nsresult RemoveElementFromTable(nsGenericHTMLFormElement* aElement,
-                                  const nsAString& aName,
-                                  RemoveElementReason aRemoveReason);
+                                  const nsAString& aName);
 
   
 
@@ -188,7 +179,7 @@ public:
 
 
 
-  nsresult RemoveImageElement(mozilla::dom::HTMLImageElement* aElement);
+  nsresult RemoveImageElement(HTMLImageElement* aElement);
 
   
 
@@ -201,16 +192,15 @@ public:
 
 
 
-  nsresult RemoveImageElementFromTable(mozilla::dom::HTMLImageElement* aElement,
-                                      const nsAString& aName,
-                                      RemoveElementReason aRemoveReason);
+  nsresult RemoveImageElementFromTable(HTMLImageElement* aElement,
+                                      const nsAString& aName);
   
 
 
 
 
 
-  nsresult AddImageElement(mozilla::dom::HTMLImageElement* aElement);
+  nsresult AddImageElement(HTMLImageElement* aElement);
 
   
 
@@ -219,8 +209,8 @@ public:
 
 
 
-  nsresult AddImageElementToTable(mozilla::dom::HTMLImageElement* aChild,
-                                 const nsAString& aName);
+  nsresult AddImageElementToTable(HTMLImageElement* aChild,
+                                  const nsAString& aName);
 
    
 
@@ -538,6 +528,10 @@ protected:
   
   void AddToPastNamesMap(const nsAString& aName, nsISupports* aChild);
 
+  
+  
+  void RemoveElementFromPastNamesMap(Element* aElement);
+
   nsresult
   AddElementToTableInternal(
     nsInterfaceHashtable<nsStringHashKey,nsISupports>& aTable,
@@ -606,7 +600,7 @@ protected:
   
   
 
-  nsTArray<mozilla::dom::HTMLImageElement*> mImageElements;  
+  nsTArray<HTMLImageElement*> mImageElements;  
 
   
   
