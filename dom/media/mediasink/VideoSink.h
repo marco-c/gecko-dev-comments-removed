@@ -127,8 +127,7 @@ private:
   MozPromiseRequestHolder<GenericPromise> mVideoSinkEndRequest;
 
   
-  
-  int64_t mVideoFrameEndTime;
+  TimeUnit mVideoFrameEndTime;
 
   
   MediaEventListener mPushListener;
