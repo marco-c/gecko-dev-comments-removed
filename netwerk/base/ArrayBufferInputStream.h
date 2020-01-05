@@ -9,6 +9,7 @@
 #include "nsIArrayBufferInputStream.h"
 #include "js/Value.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 
 #define NS_ARRAYBUFFERINPUTSTREAM_CONTRACTID "@mozilla.org/io/arraybuffer-input-stream;1"
 #define NS_ARRAYBUFFERINPUTSTREAM_CID                \
@@ -28,10 +29,9 @@ public:
 
 private:
   virtual ~ArrayBufferInputStream() {}
-  mozilla::Maybe<JS::PersistentRooted<JSObject*> > mArrayBuffer;
-  uint32_t mBufferLength; 
-  uint32_t mOffset; 
-  uint32_t mPos; 
+  mozilla::UniquePtr<char[]> mArrayBuffer;
+  uint32_t mBufferLength;
+  uint32_t mPos;
   bool mClosed;
 };
 
