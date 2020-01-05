@@ -12,7 +12,6 @@ use euclid::point::Point2D;
 use euclid::rect::Rect;
 use gfx_traits::LayerId;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
-use libc::uintptr_t;
 use msg::compositor_msg::Epoch;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId};
 use msg::constellation_msg::{WindowSizeData};
@@ -25,11 +24,12 @@ use std::any::Any;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use string_cache::Atom;
-use style::animation::PropertyAnimation;
 use style::stylesheets::Stylesheet;
 use url::Url;
 use util::ipc::OptionalOpaqueIpcSender;
 
+pub use style::animation::Animation;
+pub use style::context::ReflowGoal;
 pub use dom::node::TrustedNodeAddress;
 
 
@@ -139,15 +139,6 @@ impl OffsetParentResponse {
 }
 
 
-#[derive(PartialEq, Copy, Clone, Debug)]
-pub enum ReflowGoal {
-    
-    ForDisplay,
-    
-    ForScriptQuery,
-}
-
-
 #[derive(PartialEq)]
 pub enum ReflowQueryType {
     NoQuery,
@@ -223,30 +214,6 @@ impl ScriptLayoutChan for OpaqueScriptLayoutChannel {
     fn receiver(self) -> Receiver<Msg> {
         let OpaqueScriptLayoutChannel((_, receiver)) = self;
         *receiver.downcast::<Receiver<Msg>>().unwrap()
-    }
-}
-
-
-pub type OpaqueNode = uintptr_t;
-
-
-#[derive(Clone)]
-pub struct Animation {
-    
-    pub node: OpaqueNode,
-    
-    pub property_animation: PropertyAnimation,
-    
-    pub start_time: f64,
-    
-    pub end_time: f64,
-}
-
-impl Animation {
-    
-    #[inline]
-    pub fn duration(&self) -> f64 {
-        self.end_time - self.start_time
     }
 }
 

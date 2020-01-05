@@ -4,6 +4,7 @@
 
 use app_units::Au;
 use cssparser::{Color, RGBA};
+use dom::OpaqueNode;
 use euclid::point::Point2D;
 use properties::ComputedValues;
 use properties::longhands::background_position::computed_value::T as BackgroundPosition;
@@ -29,6 +30,28 @@ use util::bezier::Bezier;
 use values::CSSFloat;
 use values::computed::{Angle, LengthOrPercentageOrAuto, LengthOrPercentageOrNone};
 use values::computed::{CalcLengthOrPercentage, Length, LengthOrPercentage, Time};
+
+
+#[derive(Clone)]
+pub struct Animation {
+    
+    pub node: OpaqueNode,
+    
+    pub property_animation: PropertyAnimation,
+    
+    pub start_time: f64,
+    
+    pub end_time: f64,
+}
+
+impl Animation {
+    
+    #[inline]
+    pub fn duration(&self) -> f64 {
+        self.end_time - self.start_time
+    }
+}
+
 
 #[derive(Clone, Debug)]
 pub struct PropertyAnimation {
