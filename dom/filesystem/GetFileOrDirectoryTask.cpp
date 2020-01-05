@@ -27,14 +27,13 @@ namespace dom {
  already_AddRefed<GetFileOrDirectoryTaskChild>
 GetFileOrDirectoryTaskChild::Create(FileSystemBase* aFileSystem,
                                     nsIFile* aTargetPath,
-                                    bool aDirectoryOnly,
                                     ErrorResult& aRv)
 {
   MOZ_ASSERT(NS_IsMainThread(), "Only call on main thread!");
   MOZ_ASSERT(aFileSystem);
 
   RefPtr<GetFileOrDirectoryTaskChild> task =
-    new GetFileOrDirectoryTaskChild(aFileSystem, aTargetPath, aDirectoryOnly);
+    new GetFileOrDirectoryTaskChild(aFileSystem, aTargetPath);
 
   
 
@@ -54,8 +53,7 @@ GetFileOrDirectoryTaskChild::Create(FileSystemBase* aFileSystem,
 }
 
 GetFileOrDirectoryTaskChild::GetFileOrDirectoryTaskChild(FileSystemBase* aFileSystem,
-                                                         nsIFile* aTargetPath,
-                                                         bool aDirectoryOnly)
+                                                         nsIFile* aTargetPath)
   : FileSystemTaskChildBase(aFileSystem)
   , mTargetPath(aTargetPath)
 {

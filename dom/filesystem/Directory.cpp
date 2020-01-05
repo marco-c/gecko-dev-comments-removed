@@ -8,7 +8,6 @@
 
 #include "FileSystemPermissionRequest.h"
 #include "GetDirectoryListingTask.h"
-#include "GetFileOrDirectoryTask.h"
 #include "GetFilesTask.h"
 #include "WorkerPrivate.h"
 
@@ -65,30 +64,6 @@ Directory::WebkitBlinkDirectoryPickerEnabled(JSContext* aCx, JSObject* aObj)
   }
 
   return workerPrivate->WebkitBlinkDirectoryPickerEnabled();
-}
-
- already_AddRefed<Promise>
-Directory::GetRoot(FileSystemBase* aFileSystem, ErrorResult& aRv)
-{
-  
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aFileSystem);
-
-  nsCOMPtr<nsIFile> path;
-  aRv = NS_NewLocalFile(aFileSystem->LocalOrDeviceStorageRootPath(),
-                        true, getter_AddRefs(path));
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  RefPtr<GetFileOrDirectoryTaskChild> task =
-    GetFileOrDirectoryTaskChild::Create(aFileSystem, path, true, aRv);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return nullptr;
-  }
-
-  FileSystemPermissionRequest::RequestForTask(task);
-  return task->GetPromise();
 }
 
  already_AddRefed<Directory>
