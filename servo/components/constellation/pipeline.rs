@@ -6,10 +6,10 @@ use bluetooth_traits::BluetoothRequest;
 use compositing::CompositionPipeline;
 use compositing::CompositorProxy;
 use compositing::compositor_thread::Msg as CompositorMsg;
-use constellation::ScriptChan;
 use devtools_traits::{DevtoolsControlMsg, ScriptToDevtoolsControlMsg};
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
+use event_loop::EventLoop;
 use gfx::font_cache_thread::FontCacheThread;
 use gfx_traits::DevicePixel;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
@@ -43,7 +43,7 @@ pub struct Pipeline {
     
     pub frame_id: FrameId,
     pub parent_info: Option<(PipelineId, FrameType)>,
-    pub script_chan: Rc<ScriptChan>,
+    pub event_loop: Rc<EventLoop>,
     
     pub layout_chan: IpcSender<LayoutControlMsg>,
     
@@ -108,8 +108,7 @@ pub struct InitialPipelineState {
     pub device_pixel_ratio: ScaleFactor<f32, ViewportPx, DevicePixel>,
     
     
-    
-    pub script_chan: Option<Rc<ScriptChan>>,
+    pub event_loop: Option<Rc<EventLoop>>,
     
     pub load_data: LoadData,
     
@@ -146,7 +145,7 @@ impl Pipeline {
             }
         });
 
-        let (script_chan, content_ports) = match state.script_chan {
+        let (script_chan, content_ports) = match state.event_loop {
             Some(script_chan) => {
                 let new_layout_info = NewLayoutInfo {
                     parent_info: state.parent_info,
@@ -166,7 +165,7 @@ impl Pipeline {
             }
             None => {
                 let (script_chan, script_port) = ipc::channel().expect("Pipeline script chan");
-                (ScriptChan::new(script_chan), Some((script_port, pipeline_port)))
+                (EventLoop::new(script_chan), Some((script_port, pipeline_port)))
             }
         };
 
@@ -248,7 +247,7 @@ impl Pipeline {
     pub fn new(id: PipelineId,
                frame_id: FrameId,
                parent_info: Option<(PipelineId, FrameType)>,
-               script_chan: Rc<ScriptChan>,
+               event_loop: Rc<EventLoop>,
                layout_chan: IpcSender<LayoutControlMsg>,
                compositor_proxy: Box<CompositorProxy + 'static + Send>,
                is_private: bool,
@@ -260,7 +259,7 @@ impl Pipeline {
             id: id,
             frame_id: frame_id,
             parent_info: parent_info,
-            script_chan: script_chan,
+            event_loop: event_loop,
             layout_chan: layout_chan,
             compositor_proxy: compositor_proxy,
             url: url,
@@ -294,25 +293,25 @@ impl Pipeline {
 
         // Script thread handles shutting down layout, and layout handles shutting down the painter.
         // For now, if the script thread has failed, we give up on clean shutdown.
-        if let Err(e) = self.script_chan.send(ConstellationControlMsg::ExitPipeline(self.id)) {
+        if let Err(e) = self.event_loop.send(ConstellationControlMsg::ExitPipeline(self.id)) {
             warn!("Sending script exit message failed ({}).", e);
         }
     }
 
     pub fn freeze(&self) {
-        if let Err(e) = self.script_chan.send(ConstellationControlMsg::Freeze(self.id)) {
+        if let Err(e) = self.event_loop.send(ConstellationControlMsg::Freeze(self.id)) {
             warn!("Sending freeze message failed ({}).", e);
         }
     }
 
     pub fn thaw(&self) {
-        if let Err(e) = self.script_chan.send(ConstellationControlMsg::Thaw(self.id)) {
+        if let Err(e) = self.event_loop.send(ConstellationControlMsg::Thaw(self.id)) {
             warn!("Sending freeze message failed ({}).", e);
         }
     }
 
     pub fn force_exit(&self) {
-        if let Err(e) = self.script_chan.send(ConstellationControlMsg::ExitPipeline(self.id)) {
+        if let Err(e) = self.event_loop.send(ConstellationControlMsg::ExitPipeline(self.id)) {
             warn!("Sending script exit message failed ({}).", e);
         }
         if let Err(e) = self.layout_chan.send(LayoutControlMsg::ExitNow) {
@@ -323,7 +322,7 @@ impl Pipeline {
     pub fn to_sendable(&self) -> CompositionPipeline {
         CompositionPipeline {
             id: self.id.clone(),
-            script_chan: self.script_chan.sender(),
+            script_chan: self.event_loop.sender(),
             layout_chan: self.layout_chan.clone(),
         }
     }
@@ -347,16 +346,16 @@ impl Pipeline {
         let event = ConstellationControlMsg::MozBrowserEvent(self.id,
                                                              child_id,
                                                              event);
-        if let Err(e) = self.script_chan.send(event) {
+        if let Err(e) = self.event_loop.send(event) {
             warn!("Sending mozbrowser event to script failed ({}).", e);
         }
     }
 
     fn notify_visibility(&self) {
-        self.script_chan.send(ConstellationControlMsg::ChangeFrameVisibilityStatus(self.id, self.visible))
-                        .expect("Pipeline script chan");
-
-        self.compositor_proxy.send(CompositorMsg::PipelineVisibilityChanged(self.id, self.visible));
+        let script_msg = ConstellationControlMsg::ChangeFrameVisibilityStatus(self.id, self.visible);
+        let compositor_msg = CompositorMsg::PipelineVisibilityChanged(self.id, self.visible);
+        self.event_loop.send(script_msg).expect("Pipeline script chan");
+        self.compositor_proxy.send(compositor_msg);
     }
 
     pub fn change_visibility(&mut self, visible: bool) {
