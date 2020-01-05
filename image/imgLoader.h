@@ -332,6 +332,7 @@ public:
 
   static void GlobalInit(); 
   static void Shutdown(); 
+  static void ShutdownMemoryReporter();
 
   nsresult ClearChromeImageCache();
   nsresult ClearImageCache();
