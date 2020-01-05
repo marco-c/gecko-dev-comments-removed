@@ -579,6 +579,7 @@ AndroidDynamicToolbarAnimator::HandleTouchEnd(StaticToolbarState aCurrentToolbar
   mControllerStartTouch = 0;
   mControllerPreviousTouch = 0;
   mControllerTotalDistance = 0;
+  bool dragThresholdReached = mControllerDragThresholdReached;
   mControllerDragThresholdReached = false;
   mControllerLastEventTimeStamp = 0;
   bool cancelTouchTracking = mControllerCancelTouchTracking;
@@ -592,6 +593,12 @@ AndroidDynamicToolbarAnimator::HandleTouchEnd(StaticToolbarState aCurrentToolbar
   
   
   if (cancelTouchTracking) {
+    return;
+  }
+
+  
+  if (!dragThresholdReached && ((mControllerToolbarHeight == mControllerMaxToolbarHeight) || (mControllerToolbarHeight == 0))) {
+    ShowToolbarIfNotVisible(aCurrentToolbarState);
     return;
   }
 
