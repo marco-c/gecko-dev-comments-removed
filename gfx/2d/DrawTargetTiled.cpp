@@ -317,9 +317,11 @@ DrawTargetTiled::PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
   
   
   for (size_t i = 0; i < mTiles.size(); i++) {
-    IntRect bounds = aBounds;
-    bounds.MoveBy(-mTiles[i].mTileOrigin);
-    mTiles[i].mDrawTarget->PushLayer(aOpaque, aOpacity, aMask, aMaskTransform, aBounds);
+    if (!mTiles[i].mClippedOut) {
+      IntRect bounds = aBounds;
+      bounds.MoveBy(-mTiles[i].mTileOrigin);
+      mTiles[i].mDrawTarget->PushLayer(aOpaque, aOpacity, aMask, aMaskTransform, bounds, aCopyBackground);
+    }
   }
 }
 
@@ -329,7 +331,9 @@ DrawTargetTiled::PopLayer()
   
   
   for (size_t i = 0; i < mTiles.size(); i++) {
-    mTiles[i].mDrawTarget->PopLayer();
+    if (!mTiles[i].mClippedOut) {
+      mTiles[i].mDrawTarget->PopLayer();
+    }
   }
 }
 

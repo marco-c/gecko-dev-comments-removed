@@ -1995,7 +1995,8 @@ DrawTargetSkia::PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
                           const Matrix& aMaskTransform, const IntRect& aBounds,
                           bool aCopyBackground)
 {
-  PushedLayer layer(GetPermitSubpixelAA(), aOpaque, aOpacity, aMask, aMaskTransform);
+  PushedLayer layer(GetPermitSubpixelAA(), aOpaque, aOpacity, aMask, aMaskTransform,
+                    mCanvas->getTopDevice());
   mPushedLayers.push_back(layer);
 
   SkPaint paint;
@@ -2004,7 +2005,16 @@ DrawTargetSkia::PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
   
   paint.setAlpha(aMask ? 0 : ColorFloatToByte(aOpacity));
 
+  
   SkRect bounds = IntRectToSkRect(aBounds);
+  if (!bounds.isEmpty()) {
+    SkMatrix inverseCTM;
+    if (mCanvas->getTotalMatrix().invert(&inverseCTM)) {
+      inverseCTM.mapRect(&bounds);
+    } else {
+      bounds.setEmpty();
+    }
+  }
 
   sk_sp<SkImageFilter> backdrop(aCopyBackground ? new CopyLayerImageFilter : nullptr);
 
@@ -2031,7 +2041,10 @@ DrawTargetSkia::PopLayer()
   MOZ_ASSERT(mPushedLayers.size());
   const PushedLayer& layer = mPushedLayers.back();
 
-  if (layer.mMask) {
+  
+  
+  if (layer.mMask &&
+      layer.mPreviousDevice != mCanvas->getTopDevice()) {
     
     
     
