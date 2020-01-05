@@ -419,8 +419,12 @@ protected:
 
   
   
+  
+  
+  
   void EnsureBaseStyle(nsCSSPropertyID aProperty,
-                       nsStyleContext* aStyleContext);
+                       nsStyleContext* aStyleContext,
+                       RefPtr<nsStyleContext>& aCachedBaseStyleContext);
 
   Maybe<OwningAnimationTarget> mTarget;
 
