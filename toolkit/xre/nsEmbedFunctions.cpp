@@ -50,6 +50,9 @@
 #include "base/message_loop.h"
 #include "base/process_util.h"
 #include "chrome/common/child_process.h"
+#if defined(MOZ_WIDGET_ANDROID)
+#include "chrome/common/ipc_channel.h"
+#endif 
 
 #include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
@@ -221,6 +224,17 @@ namespace startup {
 GeckoProcessType sChildProcessType = GeckoProcessType_Default;
 } 
 } 
+
+#if defined(MOZ_WIDGET_ANDROID)
+void
+XRE_SetAndroidChildFds (int crashFd, int ipcFd)
+{
+#if defined(MOZ_CRASHREPORTER)
+  CrashReporter::SetNotificationPipeForChild(crashFd);
+#endif 
+  IPC::Channel::SetClientChannelFd(ipcFd);
+}
+#endif 
 
 void
 XRE_SetProcessType(const char* aProcessTypeString)
