@@ -508,6 +508,7 @@ var Bookmarks = Object.freeze({
 
 
 
+
   getRecent(numberOfItems) {
     if (numberOfItems === undefined) {
       throw new Error("numberOfItems argument is required");
@@ -1196,9 +1197,16 @@ function fetchRecentBookmarks(numberOfItems) {
        LEFT JOIN moz_bookmarks p ON p.id = b.parent
        LEFT JOIN moz_places h ON h.id = b.fk
        WHERE p.parent <> :tags_folder
+       AND b.type = :type
+       AND url_hash NOT BETWEEN hash("place", "prefix_lo")
+                            AND hash("place", "prefix_hi")
        ORDER BY b.dateAdded DESC, b.ROWID DESC
        LIMIT :numberOfItems
-      `, { tags_folder: PlacesUtils.tagsFolderId, numberOfItems });
+      `, {
+        tags_folder: PlacesUtils.tagsFolderId,
+        type: Bookmarks.TYPE_BOOKMARK,
+        numberOfItems,
+      });
 
     return rows.length ? rowsToItemsArray(rows) : [];
   }));
