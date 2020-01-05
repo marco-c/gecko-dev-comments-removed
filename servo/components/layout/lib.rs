@@ -2,7 +2,6 @@
 
 
 
-#![feature(alloc)]
 #![feature(append)]
 #![feature(arc_unique)]
 #![feature(box_syntax)]
@@ -40,7 +39,6 @@ extern crate profile_traits;
 extern crate util;
 
 extern crate rustc_serialize;
-extern crate alloc;
 extern crate azure;
 extern crate canvas_traits;
 extern crate clock_ticks;
