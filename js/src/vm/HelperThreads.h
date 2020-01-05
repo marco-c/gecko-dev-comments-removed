@@ -675,10 +675,6 @@ struct SourceCompressionTask
     ScriptSource* ss;
 
     
-    
-    mozilla::Atomic<bool, mozilla::Relaxed> abort_;
-
-    
     enum ResultType {
         OOM,
         Aborted,
@@ -692,7 +688,6 @@ struct SourceCompressionTask
       : helperThread(nullptr)
       , cx(cx)
       , ss(nullptr)
-      , abort_(false)
       , result(OOM)
     {}
 
@@ -703,7 +698,6 @@ struct SourceCompressionTask
 
     ResultType work();
     bool complete();
-    void abort() { abort_ = true; }
     bool active() const { return !!ss; }
     ScriptSource* source() { return ss; }
 };
