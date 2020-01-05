@@ -97,7 +97,12 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
     this._highlighterHidden = this._highlighterHidden.bind(this);
     this._onNavigate = this._onNavigate.bind(this);
 
-    this._createHighlighter();
+    let doc = this._tabActor.window.document;
+    
+    
+    if (doc.documentElement && doc.readyState != "uninitialized") {
+      this._createHighlighter();
+    }
 
     
     

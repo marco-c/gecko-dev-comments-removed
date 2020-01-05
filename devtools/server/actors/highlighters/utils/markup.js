@@ -268,13 +268,16 @@ CanvasFrameAnonymousContentHelper.prototype = {
   },
 
   _insert: function () {
+    let doc = this.highlighterEnv.document;
     
     
-    if (!this.highlighterEnv.document.documentElement ||
+    
+    
+    if (doc.readyState == "uninitialized" ||
+        !doc.documentElement ||
         isXUL(this.highlighterEnv.window)) {
       return;
     }
-    let doc = this.highlighterEnv.document;
 
     
     
