@@ -1611,8 +1611,8 @@ nsXULElement::LoadSrc()
         if (!opener) {
             
             nsCOMPtr<nsIDOMChromeWindow> chromeWindow = do_QueryInterface(OwnerDoc()->GetWindow());
-            if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                            NS_LITERAL_STRING("content-primary"), eIgnoreCase) &&
+            if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::primary,
+                            nsGkAtoms::_true, eIgnoreCase) &&
                 chromeWindow) {
                 nsCOMPtr<mozIDOMWindowProxy> wp;
                 chromeWindow->TakeOpenerForInitialContentBrowser(getter_AddRefs(wp));
