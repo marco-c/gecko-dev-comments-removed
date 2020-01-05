@@ -7379,6 +7379,31 @@ nsCSSFrameConstructor::MaybeRecreateForFrameset(nsIFrame* aParentFrame,
 }
 
 void
+nsCSSFrameConstructor::StyleNewChildRange(nsIContent* aStartChild,
+                                          nsIContent* aEndChild)
+{
+  ServoStyleSet* styleSet = mPresShell->StyleSet()->AsServo();
+
+  for (nsIContent* child = aStartChild; child != aEndChild;
+       child = child->GetNextSibling()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (child->IsElement() && !child->AsElement()->HasServoData()) {
+      Element* parent = child->AsElement()->GetFlattenedTreeParentElement();
+      MOZ_ASSERT(parent);
+      styleSet->StyleNewChildren(parent);
+    }
+  }
+}
+
+void
 nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                        nsIContent* aFirstNewContent,
                                        bool aAllowLazyConstruction,
@@ -7473,7 +7498,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
 
   
   if (isNewlyAddedContentForServo) {
-    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContainer->AsElement());
+    StyleNewChildRange(aFirstNewContent, nullptr);
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7950,7 +7975,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   
   if (isNewlyAddedContentForServo) {
-    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContainer->AsElement());
+    StyleNewChildRange(aStartChild, aEndChild);
   }
 
   InsertionPoint insertion;

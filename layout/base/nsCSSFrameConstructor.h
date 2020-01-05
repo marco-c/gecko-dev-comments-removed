@@ -156,6 +156,15 @@ private:
                                   nsIContent* aStartChild,
                                   nsIContent* aEndChild);
 
+  
+
+
+
+
+
+
+  void StyleNewChildRange(nsIContent* aStartChild, nsIContent* aEndChild);
+
 public:
   
 
