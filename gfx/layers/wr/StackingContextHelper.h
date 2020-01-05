@@ -39,6 +39,12 @@ public:
                         float* aOpacityPtr,
                         gfx::Matrix4x4* aTransformPtr);
   
+  
+  
+  
+  StackingContextHelper();
+
+  
   ~StackingContextHelper();
 
   
@@ -46,7 +52,7 @@ public:
   
   
   
-  WrRect ToRelativeWrRect(const LayerRect& aRect);
+  WrRect ToRelativeWrRect(const LayerRect& aRect) const;
 
 private:
   wr::DisplayListBuilder* mBuilder;
