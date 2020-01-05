@@ -22,7 +22,7 @@ namespace mozilla {
 
 
 
-const uint32_t VP9Benchmark::sBenchmarkVersionID = 1;
+const uint32_t VP9Benchmark::sBenchmarkVersionID = 2;
 
 const char* VP9Benchmark::sBenchmarkFpsPref = "media.benchmark.vp9.fps";
 const char* VP9Benchmark::sBenchmarkFpsVersionCheck = "media.benchmark.vp9.versioncheck";
