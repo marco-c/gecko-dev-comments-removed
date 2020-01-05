@@ -2269,10 +2269,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
     LOG(("  No parent load; must be CSSOM"));
     
     
-    
-    MOZ_ASSERT(aParentSheet->IsGecko(),
-               "stylo: ServoStyleSheets don't support child sheet loading yet");
-    observer = aParentSheet->AsGecko();
+    observer = aParentSheet;
   }
 
   

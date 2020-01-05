@@ -113,6 +113,31 @@ ServoStyleSheet::LoadFailed()
   Inner()->mSheet = Servo_StyleSheet_Empty(mParsingMode).Consume();
 }
 
+
+NS_IMETHODIMP
+ServoStyleSheet::StyleSheetLoaded(StyleSheet* aSheet,
+                                  bool aWasAlternate,
+                                  nsresult aStatus)
+{
+  MOZ_ASSERT(aSheet->IsServo(),
+             "why we were called back with a CSSStyleSheet?");
+
+  ServoStyleSheet* sheet = aSheet->AsServo();
+  if (sheet->GetParentSheet() == nullptr) {
+    return NS_OK; 
+  }
+  NS_ASSERTION(this == sheet->GetParentSheet(),
+               "We are being notified of a sheet load for a sheet that is not our child!");
+
+  if (mDocument && NS_SUCCEEDED(aStatus)) {
+    mozAutoDocUpdate updateBatch(mDocument, UPDATE_STYLE, true);
+    NS_WARNING("stylo: Import rule object not implemented");
+    mDocument->StyleRuleAdded(this, nullptr);
+  }
+
+  return NS_OK;
+}
+
 void
 ServoStyleSheet::DropRuleList()
 {
@@ -167,9 +192,9 @@ ServoStyleSheet::InsertRuleInternal(const nsAString& aRule,
   if (aRv.Failed()) {
     return 0;
   }
+  
+  
   if (mDocument) {
-    
-    
     
     
     mDocument->StyleRuleAdded(this, mRuleList->GetRule(aIndex));
