@@ -810,11 +810,11 @@ struct GCManagedDeletePolicy
 {
     void operator()(const T* ptr) {
         if (ptr) {
-            JSContext* cx = TlsContext.get();
-            if (cx->runtime()->zoneGroupFromMainThread()->nursery().isEnabled()) {
+            JSRuntime* rt = TlsContext.get()->runtime();
+            if (CurrentThreadCanAccessRuntime(rt) && rt->zoneGroupFromMainThread()->nursery().isEnabled()) {
                 
                 
-                cx->runtime()->zoneGroupFromMainThread()->callAfterMinorGC(deletePtr, const_cast<T*>(ptr));
+                rt->zoneGroupFromMainThread()->callAfterMinorGC(deletePtr, const_cast<T*>(ptr));
             } else {
                 
                 
