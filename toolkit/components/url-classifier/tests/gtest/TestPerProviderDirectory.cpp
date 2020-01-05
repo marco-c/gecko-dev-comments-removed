@@ -81,12 +81,12 @@ TEST(PerProviderDirectory, LookupCache)
 
     
     
-    VerifyPrivateStorePath<LookupCache>("goog-phish-shavar", "google", rootDir, false);
+    VerifyPrivateStorePath<LookupCacheV2>("goog-phish-shavar", "google", rootDir, false);
 
     
     
-    VerifyPrivateStorePath<LookupCache>("goog-noprovider-proto", "", rootDir, false);
-    VerifyPrivateStorePath<LookupCache>("goog-phish-proto", "google4", rootDir, true);
+    VerifyPrivateStorePath<LookupCacheV4>("goog-noprovider-proto", "", rootDir, false);
+    VerifyPrivateStorePath<LookupCacheV4>("goog-phish-proto", "google4", rootDir, true);
   });
 }
 
