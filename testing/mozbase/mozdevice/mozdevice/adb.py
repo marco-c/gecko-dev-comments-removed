@@ -602,14 +602,14 @@ class ADBDevice(ADBCommand):
         
         
         
-        if self.shell_bool("/system/bin/ls /", timeout=timeout):
+        if self.shell_bool("/system/bin/ls /data/local/tmp", timeout=timeout):
             self._ls = "/system/bin/ls"
-        elif self.shell_bool("/system/xbin/ls /", timeout=timeout):
+        elif self.shell_bool("/system/xbin/ls /data/local/tmp", timeout=timeout):
             self._ls = "/system/xbin/ls"
         else:
             raise ADBError("ADBDevice.__init__: ls not found")
         try:
-            self.shell_output("%s -1A /" % self._ls, timeout=timeout)
+            self.shell_output("%s -1A /data/local/tmp" % self._ls, timeout=timeout)
             self._ls += " -1A"
         except ADBError:
             self._ls += " -a"
