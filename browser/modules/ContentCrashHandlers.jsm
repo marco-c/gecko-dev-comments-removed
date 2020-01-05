@@ -41,9 +41,14 @@ XPCOMUtils.defineLazyGetter(this, "gNavigatorBundle", function() {
 const PENDING_CRASH_REPORT_DAYS = 28;
 const DAY = 24 * 60 * 60 * 1000; 
 const DAYS_TO_SUPPRESS = 30;
+const MAX_UNSEEN_CRASHED_CHILD_IDS = 20;
 
 this.TabCrashHandler = {
   _crashedTabCount: 0,
+  childMap: new Map(),
+  browserMap: new WeakMap(),
+  unseenCrashedChildIDs: [],
+  crashedBrowserQueues: new Map(),
 
   get prefs() {
     delete this.prefs;
@@ -55,13 +60,8 @@ this.TabCrashHandler = {
       return;
     this.initialized = true;
 
-    if (AppConstants.MOZ_CRASHREPORTER) {
-      Services.obs.addObserver(this, "ipc:content-shutdown", false);
-      Services.obs.addObserver(this, "oop-frameloader-crashed", false);
-
-      this.childMap = new Map();
-      this.browserMap = new WeakMap();
-    }
+    Services.obs.addObserver(this, "ipc:content-shutdown", false);
+    Services.obs.addObserver(this, "oop-frameloader-crashed", false);
 
     this.pageListener = new RemotePages("about:tabcrashed");
     
@@ -76,24 +76,57 @@ this.TabCrashHandler = {
 
   observe: function (aSubject, aTopic, aData) {
     switch (aTopic) {
-      case "ipc:content-shutdown":
+      case "ipc:content-shutdown": {
         aSubject.QueryInterface(Ci.nsIPropertyBag2);
 
-        if (!aSubject.get("abnormal"))
+        if (!aSubject.get("abnormal")) {
           return;
+        }
 
-        this.childMap.set(aSubject.get("childID"), aSubject.get("dumpID"));
+        let childID = aSubject.get("childID");
+        let dumpID = aSubject.get("dumpID");
+
+        if (!dumpID) {
+          Services.telemetry
+                  .getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE")
+                  .add(1);
+        } else if (AppConstants.MOZ_CRASHREPORTER) {
+          this.childMap.set(childID, dumpID);
+        }
+
+        if (!this.flushCrashedBrowserQueue(childID)) {
+          this.unseenCrashedChildIDs.push(childID);
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (this.unseenCrashedChildIDs.length > MAX_UNSEEN_CRASHED_CHILD_IDS) {
+            this.unseenCrashedChildIDs.shift();
+          }
+        }
         break;
-
-      case "oop-frameloader-crashed":
+      }
+      case "oop-frameloader-crashed": {
         aSubject.QueryInterface(Ci.nsIFrameLoader);
 
         let browser = aSubject.ownerElement;
-        if (!browser)
+        if (!browser) {
           return;
+        }
 
         this.browserMap.set(browser.permanentKey, aSubject.childID);
         break;
+      }
     }
   },
 
@@ -131,6 +164,133 @@ this.TabCrashHandler = {
         break;
       }
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  flushCrashedBrowserQueue(childID) {
+    let browserQueue = this.crashedBrowserQueues.get(childID);
+    if (!browserQueue) {
+      return false;
+    }
+
+    this.crashedBrowserQueues.delete(childID);
+
+    let sentBrowser = false;
+    for (let weakBrowser of browserQueue) {
+      let browser = weakBrowser.get();
+      if (browser) {
+        this.sendToTabCrashedPage(browser);
+        sentBrowser = true;
+      }
+    }
+
+    return sentBrowser;
+  },
+
+  
+
+
+
+
+
+
+
+  onSelectedBrowserCrash(browser) {
+    if (!browser.isRemoteBrowser) {
+      Cu.reportError("Selected crashed browser is not remote.")
+      return;
+    }
+    if (!browser.frameLoader) {
+      Cu.reportError("Selected crashed browser has no frameloader.");
+      return;
+    }
+
+    let childID = browser.frameLoader.childID;
+    let browserQueue = this.crashedBrowserQueues.get(childID);
+    if (!browserQueue) {
+      browserQueue = [];
+      this.crashedBrowserQueues.set(childID, browserQueue);
+    }
+    
+    
+    
+    
+    
+    
+    browserQueue.push(Cu.getWeakReference(browser));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  willShowCrashedTab(browser) {
+    let childID = this.browserMap.get(browser.permanentKey);
+    
+    
+    
+    
+    
+    
+    
+    if (childID &&
+        this.unseenCrashedChildIDs.indexOf(childID) != -1) {
+      if (UnsubmittedCrashHandler.autoSubmit) {
+        let dumpID = this.childMap.get(childID);
+        if (dumpID) {
+          UnsubmittedCrashHandler.submitReports([dumpID]);
+        }
+      } else {
+        this.sendToTabCrashedPage(browser);
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+  sendToTabCrashedPage(browser) {
+    let title = browser.contentTitle;
+    let uri = browser.currentURI;
+    let gBrowser = browser.ownerGlobal.gBrowser;
+    let tab = gBrowser.getTabForBrowser(browser);
+    
+    gBrowser.updateBrowserRemoteness(browser, false);
+
+    browser.setAttribute("crashedPageTitle", title);
+    browser.docShell.displayLoadError(Cr.NS_ERROR_CONTENT_CRASHED, uri, null);
+    browser.removeAttribute("crashedPageTitle");
+    tab.setAttribute("crashed", true);
   },
 
   
@@ -265,14 +425,14 @@ this.TabCrashHandler = {
 
     let browser = message.target.browser;
 
+    let childID = this.browserMap.get(browser.permanentKey);
+    let index = this.unseenCrashedChildIDs.indexOf(childID);
+    if (index != -1) {
+      this.unseenCrashedChildIDs.splice(index, 1);
+    }
+
     let dumpID = this.getDumpID(browser);
     if (!dumpID) {
-      
-      
-      if (this._crashedTabCount == 1) {
-        Services.telemetry.getHistogramById("FX_CONTENT_CRASH_DUMP_UNAVAILABLE").add(1);
-      }
-
       message.target.sendAsyncMessage("SetCrashReportAvailable", {
         hasReport: false,
       });
@@ -320,7 +480,7 @@ this.TabCrashHandler = {
     if (this._crashedTabCount == 0 && childID) {
       Services.telemetry.getHistogramById("FX_CONTENT_CRASH_NOT_SUBMITTED").add(1);
     }
-},
+  },
 
   
 
@@ -331,7 +491,7 @@ this.TabCrashHandler = {
 
 
   getDumpID(browser) {
-    if (!this.childMap) {
+    if (!AppConstants.MOZ_CRASHREPORTER) {
       return null;
     }
 
@@ -473,8 +633,8 @@ this.UnsubmittedCrashHandler = {
     }
 
     if (reportIDs.length) {
-      if (CrashNotificationBar.autoSubmit) {
-        CrashNotificationBar.submitReports(reportIDs);
+      if (this.autoSubmit) {
+        this.submitReports(reportIDs);
       } else if (this.shouldShowPendingSubmissionsNotification()) {
         return this.showPendingSubmissionsNotification(reportIDs);
       }
@@ -549,7 +709,7 @@ this.UnsubmittedCrashHandler = {
 
     let message = PluralForm.get(count, messageTemplate).replace("#1", count);
 
-    let notification = CrashNotificationBar.show({
+    let notification = this.show({
       notificationID: "pending-crash-reports",
       message,
       reportIDs,
@@ -578,9 +738,7 @@ this.UnsubmittedCrashHandler = {
   dateString(someDate = new Date()) {
     return someDate.toLocaleFormat("%Y%m%d");
   },
-};
 
-this.CrashNotificationBar = {
   
 
 
