@@ -960,7 +960,7 @@ nsTableCellFrame::Reflow(nsPresContext*           aPresContext,
   if (aStatus.IsOverflowIncomplete()) {
     
     
-    NS_FRAME_SET_INCOMPLETE(aStatus);
+    aStatus.SetIncomplete();
     printf("Set table cell incomplete %p\n", static_cast<void*>(this));
   }
 

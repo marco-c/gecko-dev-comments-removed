@@ -1407,7 +1407,7 @@ nsTableRowGroupFrame::Reflow(nsPresContext*           aPresContext,
   
   
   if (GetNextInFlow() && GetNextInFlow()->PrincipalChildList().FirstChild()) {
-    NS_FRAME_SET_INCOMPLETE(aStatus);
+    aStatus.SetIncomplete();
   }
 
   SetHasStyleBSize((NS_UNCONSTRAINEDSIZE != aReflowInput.ComputedBSize()) &&

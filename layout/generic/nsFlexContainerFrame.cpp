@@ -3903,7 +3903,7 @@ ResolveFlexContainerMainSize(const ReflowInput& aReflowInput,
     
     
     
-    NS_FRAME_SET_INCOMPLETE(aStatus);
+    aStatus.SetIncomplete();
     nscoord largestLineOuterSize = GetLargestLineMainSize(aFirstLine);
 
     if (largestLineOuterSize <= aAvailableBSizeForContent) {
@@ -3963,7 +3963,7 @@ nsFlexContainerFrame::ComputeCrossSize(const ReflowInput& aReflowInput,
     
     
     
-    NS_FRAME_SET_INCOMPLETE(aStatus);
+    aStatus.SetIncomplete();
     if (aSumLineCrossSizes <= aAvailableBSizeForContent) {
       return aAvailableBSizeForContent;
     }
@@ -4638,7 +4638,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       desiredSizeInFlexWM.BSize(flexWM) = desiredBSizeWithBEndBP;
     } else {
       
-      NS_FRAME_SET_INCOMPLETE(aStatus);
+      aStatus.SetIncomplete();
     }
   }
 
