@@ -4,7 +4,7 @@ use dom::node::Node;
 
 
 extern mod netsurfcss;
-use netsurfcss::VoidPtrLike;
+use netsurfcss::util::VoidPtrLike;
 
 impl Node: VoidPtrLike {
     static fn from_void_ptr(node: *libc::c_void) -> Node {
