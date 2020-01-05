@@ -27,8 +27,7 @@ namespace {
 
 
 void
-CreateDummyChannel(nsIURI* aHostURI, OriginAttributes& aAttrs, bool aIsPrivate,
-                   nsIChannel** aChannel)
+CreateDummyChannel(nsIURI* aHostURI, OriginAttributes& aAttrs, nsIChannel** aChannel)
 {
   nsCOMPtr<nsIPrincipal> principal =
     BasePrincipal::CreateCodebasePrincipal(aHostURI, aAttrs);
@@ -53,7 +52,7 @@ CreateDummyChannel(nsIURI* aHostURI, OriginAttributes& aAttrs, bool aIsPrivate,
     return;
   }
 
-  pbChannel->SetPrivate(aIsPrivate);
+  pbChannel->SetPrivate(aAttrs.mPrivateBrowsingId > 0);
   dummyChannel.forget(aChannel);
   return;
 }
@@ -101,9 +100,7 @@ CookieServiceParent::RecvGetCookieString(const URIParams& aHost,
   if (!hostURI)
     return IPC_FAIL_NO_REASON(this);
 
-  bool isPrivate = aAttrs.mPrivateBrowsingId > 0;
-  mCookieService->GetCookieStringInternal(hostURI, aIsForeign, false, aAttrs,
-                                          isPrivate, *aResult);
+  mCookieService->GetCookieStringInternal(hostURI, aIsForeign, false, aAttrs, *aResult);
   return IPC_OK();
 }
 
@@ -123,8 +120,6 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
   if (!hostURI)
     return IPC_FAIL_NO_REASON(this);
 
-  bool isPrivate = aAttrs.mPrivateBrowsingId > 0;
-
   
   
   
@@ -134,13 +129,13 @@ CookieServiceParent::RecvSetCookieString(const URIParams& aHost,
   
   nsCOMPtr<nsIChannel> dummyChannel;
   CreateDummyChannel(hostURI, const_cast<OriginAttributes&>(aAttrs),
-                     isPrivate, getter_AddRefs(dummyChannel));
+                     getter_AddRefs(dummyChannel));
 
   
   nsDependentCString cookieString(aCookieString, 0);
   mCookieService->SetCookieStringInternal(hostURI, aIsForeign, cookieString,
                                           aServerTime, false, aAttrs,
-                                          isPrivate, dummyChannel);
+                                          dummyChannel);
   return IPC_OK();
 }
 
