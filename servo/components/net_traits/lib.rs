@@ -113,13 +113,13 @@ pub trait AsyncFetchListener {
 
 pub trait AsyncResponseListener {
     
-    fn headers_available(&mut self, metadata: Metadata);
+    fn headers_available(&mut self, metadata: Result<Metadata, NetworkError>);
     
     
     fn data_available(&mut self, payload: Vec<u8>);
     
     
-    fn response_complete(&mut self, status: Result<(), String>);
+    fn response_complete(&mut self, status: Result<(), NetworkError>);
 }
 
 
@@ -127,11 +127,11 @@ pub trait AsyncResponseListener {
 #[derive(Deserialize, Serialize)]
 pub enum ResponseAction {
     
-    HeadersAvailable(Metadata),
+    HeadersAvailable(Result<Metadata, NetworkError>),
     
     DataAvailable(Vec<u8>),
     
-    ResponseComplete(Result<(), String>)
+    ResponseComplete(Result<(), NetworkError>)
 }
 
 impl ResponseAction {
@@ -376,7 +376,7 @@ pub enum ProgressMsg {
     
     Payload(Vec<u8>),
     
-    Done(Result<(), String>)
+    Done(Result<(), NetworkError>),
 }
 
 
@@ -384,7 +384,7 @@ pub fn load_whole_resource(context: LoadContext,
                            resource_thread: &ResourceThread,
                            url: Url,
                            pipeline_id: Option<PipelineId>)
-        -> Result<(Metadata, Vec<u8>), String> {
+        -> Result<(Metadata, Vec<u8>), NetworkError> {
     let (start_chan, start_port) = ipc::channel().unwrap();
     resource_thread.send(ControlMsg::Load(LoadData::new(context, url, pipeline_id),
                        LoadConsumer::Channel(start_chan), None)).unwrap();
@@ -412,4 +412,14 @@ pub struct ResourceId(pub u32);
 pub enum ConstellationMsg {
     
     IsPrivate(PipelineId, Sender<bool>),
+}
+
+
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, HeapSizeOf)]
+pub enum NetworkError {
+    
+    
+    Internal(String),
+    
+    SslValidation(Url),
 }
