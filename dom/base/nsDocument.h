@@ -1463,20 +1463,6 @@ private:
   void UpdatePossiblyStaleDocumentState();
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 
-  
-
-
-
-
-
-
-
-  const nsString* CheckCustomElementName(
-    const mozilla::dom::ElementCreationOptions& aOptions,
-    const nsAString& aLocalName,
-    uint32_t aNamespaceID,
-    ErrorResult& rv);
-
 public:
   virtual already_AddRefed<mozilla::dom::CustomElementRegistry>
     GetCustomElementRegistry() override;
