@@ -266,6 +266,8 @@ protected:
   bool mNeedsRewind; 
   bool mIsSeeking; 
 
+  bool mHoldingEntries; 
+
   
   uint32_t mPauseState;
 
