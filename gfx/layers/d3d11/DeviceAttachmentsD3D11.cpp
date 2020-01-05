@@ -4,9 +4,9 @@
 
 
 #include "DeviceAttachmentsD3D11.h"
-#include "CompositorD3D11Shaders.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/layers/Compositor.h"
+#include "CompositorD3D11Shaders.h"
 #include "gfxPrefs.h"
 #include "ShaderDefinitionsD3D11.h"
 

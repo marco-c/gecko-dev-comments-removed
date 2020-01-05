@@ -99,6 +99,10 @@ public:
   void ForceDeviceReset(ForcedDeviceResetReason aReason);
   void NotifyD3D9DeviceReset();
 
+  
+  
+  static void PreloadAttachmentsOnCompositorThread();
+
 private:
   IDXGIAdapter1 *GetDXGIAdapter();
 
