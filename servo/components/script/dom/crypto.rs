@@ -22,7 +22,6 @@ no_jsmanaged_fields!(OsRng);
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct Crypto {
     reflector_: Reflector,
     rng: DOMRefCell<OsRng>,

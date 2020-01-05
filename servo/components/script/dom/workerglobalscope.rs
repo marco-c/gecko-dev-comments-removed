@@ -53,7 +53,6 @@ pub struct WorkerGlobalScopeInit {
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct WorkerGlobalScope {
     eventtarget: EventTarget,
     worker_id: WorkerId,

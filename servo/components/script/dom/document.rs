@@ -113,7 +113,6 @@ pub enum IsHTMLDocument {
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct Document {
     node: Node,
     window: JS<Window>,

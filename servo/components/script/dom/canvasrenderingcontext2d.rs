@@ -61,7 +61,6 @@ pub enum CanvasFillOrStrokeStyle {
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct CanvasRenderingContext2D {
     reflector_: Reflector,
     global: GlobalField,

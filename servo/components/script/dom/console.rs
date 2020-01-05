@@ -13,7 +13,6 @@ use util::str::DOMString;
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct Console {
     reflector_: Reflector,
     global: GlobalField,

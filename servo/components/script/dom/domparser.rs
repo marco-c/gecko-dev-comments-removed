@@ -21,7 +21,6 @@ use util::str::DOMString;
 use std::borrow::ToOwned;
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct DOMParser {
     reflector_: Reflector,
     window: JS<Window>, 
@@ -81,4 +80,3 @@ impl<'a> DOMParserMethods for &'a DOMParser {
         }
     }
 }
-

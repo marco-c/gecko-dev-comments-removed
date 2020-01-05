@@ -11,7 +11,6 @@ use std::cell::Cell;
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct DOMPointReadOnly {
     reflector_: Reflector,
     x: Cell<f64>,

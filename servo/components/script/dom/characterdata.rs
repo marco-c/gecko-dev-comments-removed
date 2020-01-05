@@ -24,7 +24,6 @@ use std::cell::Ref;
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct CharacterData {
     node: Node,
     data: DOMRefCell<DOMString>,

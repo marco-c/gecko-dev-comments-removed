@@ -138,7 +138,6 @@ enum MixedMessage {
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct DedicatedWorkerGlobalScope {
     workerglobalscope: WorkerGlobalScope,
     id: PipelineId,

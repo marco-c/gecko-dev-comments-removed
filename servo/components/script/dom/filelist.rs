@@ -12,7 +12,6 @@ use dom::window::Window;
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct FileList {
     reflector_: Reflector,
     list: Vec<JS<File>>
@@ -49,4 +48,3 @@ impl<'a> FileListMethods for &'a FileList {
         item
     }
 }
-

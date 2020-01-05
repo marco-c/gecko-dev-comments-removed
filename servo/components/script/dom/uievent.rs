@@ -28,7 +28,6 @@ pub enum UIEventTypeId {
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct UIEvent {
     event: Event,
     view: MutNullableHeap<JS<Window>>,
@@ -115,4 +114,3 @@ impl<'a> UIEventMethods for &'a UIEvent {
         self.detail.set(detail);
     }
 }
-

@@ -111,7 +111,6 @@ impl Deref for AttrValue {
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct Attr {
     reflector_: Reflector,
     local_name: Atom,

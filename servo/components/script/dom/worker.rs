@@ -39,7 +39,6 @@ pub type TrustedWorkerAddress = Trusted<Worker>;
 
 
 #[dom_struct]
-#[derive(HeapSizeOf)]
 pub struct Worker {
     eventtarget: EventTarget,
     global: GlobalField,
