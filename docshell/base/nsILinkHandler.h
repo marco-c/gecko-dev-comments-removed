@@ -38,15 +38,20 @@ public:
 
 
 
+
+
   NS_IMETHOD OnLinkClick(nsIContent* aContent,
                          nsIURI* aURI,
                          const char16_t* aTargetSpec,
                          const nsAString& aFileName,
                          nsIInputStream* aPostDataStream,
                          nsIInputStream* aHeadersDataStream,
-                         bool aIsTrusted) = 0;
+                         bool aIsTrusted,
+                         nsIPrincipal* aTriggeringPrincipal) = 0;
 
   
+
+
 
 
 
@@ -71,7 +76,8 @@ public:
                              nsIInputStream* aHeadersDataStream = 0,
                              bool aNoOpenerImplied = false,
                              nsIDocShell** aDocShell = 0,
-                             nsIRequest** aRequest = 0) = 0;
+                             nsIRequest** aRequest = 0,
+                             nsIPrincipal* aTriggeringPrincipal = nullptr) = 0;
 
   
 
