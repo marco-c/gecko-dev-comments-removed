@@ -19,6 +19,7 @@
 
 
 
+
 pref("keyword.enabled", false);
 pref("general.useragent.locale", "chrome://global/locale/intl.properties");
 pref("general.useragent.compatMode.firefox", false);
@@ -1236,6 +1237,13 @@ pref("dom.sysmsg.enabled", false);
 pref("dom.webapps.useCurrentProfile", false);
 
 pref("dom.cycle_collector.incremental", true);
+
+
+
+
+
+
+pref("dom.allow_named_properties_object_for_xrays", 1);
 
 
 #ifndef XP_WIN
@@ -5028,14 +5036,6 @@ pref("dom.vr.enabled", false);
 #else
 pref("dom.vr.enabled", true);
 #endif
-
-
-
-
-
-
-
-pref("dom.vr.autoactivate.enabled", false);
 
 
 
