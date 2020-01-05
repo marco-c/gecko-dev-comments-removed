@@ -305,7 +305,7 @@ var ServerLoggingListener = Class({
       
       
       
-      let location = this.parseBacktrace(backtrace);
+      let location = parseBacktrace(backtrace);
       if (location) {
         lastLocation = location;
       } else {
@@ -320,22 +320,6 @@ var ServerLoggingListener = Class({
     }
 
     return parsedMessage;
-  },
-
-  parseBacktrace: function (backtrace) {
-    if (!backtrace) {
-      return null;
-    }
-
-    let result = backtrace.match(/\s*(\d+)$/);
-    if (!result || result.length < 2) {
-      return backtrace;
-    }
-
-    return {
-      url: backtrace.slice(0, -result[0].length),
-      line: result[1]
-    };
   },
 
   getColumnMap: function (data) {
@@ -503,6 +487,22 @@ function format(msg) {
   return msg;
 }
 
+function parseBacktrace(backtrace) {
+  if (!backtrace) {
+    return null;
+  }
+
+  let result = backtrace.match(/^(.+?)\s*:\s*(\d+)$/);
+  if (!result || result.length != 3) {
+    return { url: backtrace };
+  }
+
+  return {
+    url: result[1],
+    line: parseInt(result[2], 10)
+  };
+}
+
 
 
 function getInnerId(win) {
@@ -512,3 +512,4 @@ function getInnerId(win) {
 
 
 exports.ServerLoggingListener = ServerLoggingListener;
+exports.parseBacktrace = parseBacktrace;
