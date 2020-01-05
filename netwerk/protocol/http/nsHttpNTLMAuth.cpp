@@ -27,8 +27,12 @@
 #include "nsISSLStatusProvider.h"
 #endif
 #include "mozilla/Attributes.h"
+#include "mozilla/Tokenizer.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Unused.h"
 #include "nsNetUtil.h"
 #include "nsIChannel.h"
+#include "nsUnicharUtils.h"
 
 namespace mozilla {
 namespace net {
@@ -47,56 +51,92 @@ static bool
 MatchesBaseURI(const nsCSubstring &matchScheme,
                const nsCSubstring &matchHost,
                int32_t             matchPort,
-               const char         *baseStart,
-               const char         *baseEnd)
+               nsDependentCSubstring const& url)
 {
-    
+  
 
-    
-    const char *hostStart, *schemeEnd = strstr(baseStart, "://");
-    if (schemeEnd) {
-        
-        if (!matchScheme.Equals(Substring(baseStart, schemeEnd)))
-            return false;
-        hostStart = schemeEnd + 3;
-    }
-    else
-        hostStart = baseStart;
+  
+  mozilla::Tokenizer t(url);
+  mozilla::Tokenizer::Token token;
 
-    
-    const char *hostEnd = strchr(hostStart, ':');
-    if (hostEnd && hostEnd < baseEnd) {
-        
-        int port = atoi(hostEnd + 1);
-        if (matchPort != (int32_t) port)
-            return false;
-    }
-    else
-        hostEnd = baseEnd;
+  t.SkipWhites();
 
+  
+  
+  t.Record();
 
-    
-    if (hostStart == hostEnd)
-        return true;
+  mozilla::Unused << t.Next(token);
 
-    uint32_t hostLen = hostEnd - hostStart;
-
-    
-    if (matchHost.Length() < hostLen)
-        return false;
-
-    const char *end = matchHost.EndReading();
-    if (PL_strncasecmp(end - hostLen, hostStart, hostLen) == 0) {
-        
-        
-        
-        if (matchHost.Length() == hostLen ||
-            *(end - hostLen) == '.' ||
-            *(end - hostLen - 1) == '.')
-            return true;
+  
+  bool ipv6 = false;
+  if (token.Equals(mozilla::Tokenizer::Token::Char('['))) {
+    nsDependentCSubstring ipv6BareLiteral;
+    if (!t.ReadUntil(mozilla::Tokenizer::Token::Char(']'), ipv6BareLiteral)) {
+      
+      return false;
     }
 
-    return false;
+    nsDependentCSubstring ipv6Literal;
+    t.Claim(ipv6Literal, mozilla::Tokenizer::INCLUDE_LAST);
+    if (!matchHost.Equals(ipv6Literal, nsCaseInsensitiveUTF8StringComparator()) &&
+        !matchHost.Equals(ipv6BareLiteral, nsCaseInsensitiveUTF8StringComparator())) {
+      return false;
+    }
+
+    ipv6 = true;
+  } else if (t.CheckChar(':') && t.CheckChar('/') && t.CheckChar('/')) {
+    if (!matchScheme.Equals(token.Fragment())) {
+      return false;
+    }
+    
+    t.Record();
+  }
+
+  while (t.Next(token)) {
+    bool eof = token.Equals(mozilla::Tokenizer::Token::EndOfFile());
+    bool port = token.Equals(mozilla::Tokenizer::Token::Char(':'));
+
+    if (eof || port) {
+      if (!ipv6) { 
+        nsDependentCSubstring hostName;
+        t.Claim(hostName);
+
+        
+        if (!hostName.IsEmpty()) {
+          if (hostName.First() == '.') {
+            if (!StringEndsWith(matchHost, hostName, nsCaseInsensitiveUTF8StringComparator())) {
+              return false;
+            }
+          } else { 
+            if (!matchHost.Equals(hostName, nsCaseInsensitiveUTF8StringComparator())) {
+              return false;
+            }
+          }
+        }
+      }
+
+      if (port) {
+        uint16_t portNumber;
+        if (!t.ReadInteger(&portNumber)) {
+          
+          return false;
+        }
+        if (matchPort != portNumber) {
+          return false;
+        }
+        if (!t.CheckEOF()) {
+          return false;
+        }
+      }
+    } else if (ipv6) {
+      
+      
+      return false;
+    }
+  }
+
+  
+  return true;
 }
 
 static bool
@@ -134,6 +174,10 @@ TestPref(nsIURI *uri, const char *pref)
     if (NS_FAILED(prefs->GetCharPref(pref, &hostList)) || !hostList)
         return false;
 
+    struct FreePolicy { void operator()(void* p) { free(p); } };
+    mozilla::UniquePtr<char[], FreePolicy> hostListScope;
+    hostListScope.reset(hostList);
+
     
     
     
@@ -146,24 +190,19 @@ TestPref(nsIURI *uri, const char *pref)
     
     
 
-    char *start = hostList, *end;
-    for (;;) {
-        
-        while (*start == ' ' || *start == '\t')
-            ++start;
-        end = strchr(start, ',');
-        if (!end)
-            end = start + strlen(start);
-        if (start == end)
-            break;
-        if (MatchesBaseURI(scheme, host, port, start, end))
-            return true;
-        if (*end == '\0')
-            break;
-        start = end + 1;
+    mozilla::Tokenizer t(hostList);
+    while (!t.CheckEOF()) {
+      t.SkipWhites();
+      nsDependentCSubstring url;
+      mozilla::Unused << t.ReadUntil(mozilla::Tokenizer::Token::Char(','), url);
+      if (url.IsEmpty()) {
+        continue;
+      }
+      if (MatchesBaseURI(scheme, host, port, url)) {
+        return true;
+      }
     }
 
-    free(hostList);
     return false;
 }
 
