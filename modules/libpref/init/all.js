@@ -2824,13 +2824,8 @@ pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 pref("dom.ipc.plugins.asyncInit.enabled", false);
 
-#ifdef RELEASE_BUILD
-
-pref("dom.ipc.plugins.asyncdrawing.enabled", false);
-#else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
-#endif
 
 pref("dom.ipc.processCount", 1);
 
