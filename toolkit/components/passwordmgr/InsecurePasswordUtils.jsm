@@ -91,6 +91,8 @@ this.InsecurePasswordUtils = {
 
   isFormSecure(aForm) {
     
+    
+    
     let isSafePage = aForm.ownerDocument.defaultView.isSecureContextIfOpenerIgnored;
     let { isFormSubmitSecure, isFormSubmitHTTP } = this._checkFormSecurity(aForm);
 

@@ -1,10 +1,8 @@
 "use strict";
 
 module.exports = {
-  "extends": [
-    "../../../../testing/mochitest/mochitest.eslintrc.js"
-  ],
   "rules": {
+    
     
     "mozilla/use-ownerGlobal": "off",
   }

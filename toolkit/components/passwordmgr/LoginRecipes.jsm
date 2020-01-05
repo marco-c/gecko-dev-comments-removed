@@ -258,6 +258,8 @@ var LoginRecipesContent = {
       log.debug("Login field selector wasn't matched:", aSelector);
       return null;
     }
+    
+    
     if (!(field instanceof aParent.ownerDocument.defaultView.HTMLInputElement)) {
       log.warn("Login field isn't an <input> so ignoring it:", aSelector);
       return null;

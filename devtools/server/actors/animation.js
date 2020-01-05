@@ -122,6 +122,8 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
   },
 
   get window() {
+    
+    
     return this.node.ownerDocument.defaultView;
   },
 
@@ -537,6 +539,8 @@ exports.AnimationsActor = protocol.ActorClassWithSpec(animationsSpec, {
     
     
     this.stopAnimationPlayerUpdates();
+    
+    
     let win = nodeActor.rawNode.ownerDocument.defaultView;
     this.observer = new win.MutationObserver(this.onAnimationMutation);
     this.observer.observe(nodeActor.rawNode, {
