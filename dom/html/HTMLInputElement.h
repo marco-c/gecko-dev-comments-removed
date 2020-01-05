@@ -256,10 +256,7 @@ public:
 
   void GetDisplayFileName(nsAString& aFileName) const;
 
-  const nsTArray<OwningFileOrDirectory>& GetFilesOrDirectoriesInternal() const
-  {
-    return mFilesOrDirectories;
-  }
+  const nsTArray<OwningFileOrDirectory>& GetFilesOrDirectoriesInternal() const;
 
   void SetFilesOrDirectories(const nsTArray<OwningFileOrDirectory>& aFilesOrDirectories,
                              bool aSetValueChanged);
@@ -1533,30 +1530,8 @@ protected:
     nsTextEditorState*       mState;
   } mInputData;
 
-  
-
-
-
-
-
-
-
-
-
-  nsTArray<OwningFileOrDirectory> mFilesOrDirectories;
-
-  RefPtr<GetFilesHelper> mGetFilesRecursiveHelper;
-  RefPtr<GetFilesHelper> mGetFilesNonRecursiveHelper;
-
-  
-
-
-  nsString mFirstFilePath;
-
-  RefPtr<FileList>  mFileList;
-  Sequence<RefPtr<FileSystemEntry>> mEntries;
-
-  nsString mStaticDocFileList;
+  struct FileData;
+  UniquePtr<FileData> mFileData;
 
   
 
