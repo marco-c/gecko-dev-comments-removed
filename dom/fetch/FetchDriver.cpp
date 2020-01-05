@@ -316,9 +316,19 @@ FetchDriver::HttpFetch()
     mRequest->Headers()->GetFirst(NS_LITERAL_CSTRING("content-type"), contentType, result);
     
     
+    
     if (result.Failed()) {
       return result.StealNSResult();
     }
+
+    
+    
+#ifdef DEBUG
+    bool hasContentTypeHeader =
+      mRequest->Headers()->Has(NS_LITERAL_CSTRING("content-type"), result);
+    MOZ_ASSERT(!result.Failed());
+    MOZ_ASSERT_IF(!hasContentTypeHeader, contentType.IsVoid());
+#endif 
 
     nsCOMPtr<nsIInputStream> bodyStream;
     mRequest->GetBody(getter_AddRefs(bodyStream));
