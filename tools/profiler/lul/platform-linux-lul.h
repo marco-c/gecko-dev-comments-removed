@@ -18,7 +18,4 @@ read_procmaps(lul::LUL* aLUL);
 void
 logging_sink_for_LUL(const char* str);
 
-
-extern lul::LUL* gLUL;
-
 #endif 

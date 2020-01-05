@@ -23,7 +23,6 @@ ThreadInfo::ThreadInfo(const char* aName, int aThreadId, bool aIsMainThread,
   , mStackTop(aStackTop)
   , mPendingDelete(false)
   , mHasProfile(false)
-  , mMutex(MakeUnique<mozilla::Mutex>("ThreadInfo::mMutex"))
 {
   MOZ_COUNT_CTOR(ThreadInfo);
   mThread = NS_GetCurrentThread();
@@ -196,7 +195,6 @@ ThreadInfo::StreamSamplesAndMarkers(ProfileBuffer* aBuffer,
 void
 ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
                                    const TimeStamp& aStartTime)
-
 {
   
   
@@ -238,12 +236,6 @@ ThreadInfo::FlushSamplesAndMarkers(ProfileBuffer* aBuffer,
   aBuffer->reset();
 }
 
-mozilla::Mutex&
-ThreadInfo::GetMutex()
-{
-  return *mMutex.get();
-}
-
 size_t
 ThreadInfo::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
@@ -255,7 +247,6 @@ ThreadInfo::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   
   n += mPseudoStack->SizeOfIncludingThis(aMallocSizeOf);
 
-  
   
   
   

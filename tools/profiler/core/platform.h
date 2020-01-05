@@ -35,6 +35,7 @@
 #include "mozilla/StaticMutex.h"
 #include "ThreadResponsiveness.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -134,6 +135,23 @@ public:
 
 
 
+
+
+
+
+
+class ProfilerStateMutex : public mozilla::StaticMutex {};
+
+
+
+
+
+
+typedef const mozilla::BaseAutoLock<ProfilerStateMutex>& PSLockRef;
+
+
+
+
 class PlatformData;
 
 
@@ -146,6 +164,7 @@ typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
   UniquePlatformData;
 UniquePlatformData AllocPlatformData(int aThreadId);
 
-mozilla::UniquePtr<char[]> ToJSON(double aSinceTime);
+mozilla::UniquePtr<char[]>
+ToJSON(PSLockRef aLock, double aSinceTime);
 
 #endif 

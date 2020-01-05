@@ -196,6 +196,23 @@ PROFILER_FUNC_VOID(profiler_get_backtrace_noalloc(char *output,
 inline void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {}
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 PROFILER_FUNC(bool profiler_is_active(), false)
 
 
@@ -283,7 +300,7 @@ PROFILER_FUNC_VOID(profiler_js_operation_callback())
 
 PROFILER_FUNC(double profiler_time(), 0)
 
-PROFILER_FUNC(bool profiler_in_privacy_mode(), false)
+PROFILER_FUNC(bool profiler_is_active_and_not_in_privacy_mode(), false)
 
 PROFILER_FUNC_VOID(profiler_log(const char *str))
 PROFILER_FUNC_VOID(profiler_log(const char *fmt, va_list args))
@@ -307,7 +324,6 @@ PROFILER_FUNC_VOID(profiler_log(const char *fmt, va_list args))
 #undef min
 #endif
 
-class Sampler;
 class nsISupports;
 class ProfilerMarkerPayload;
 
@@ -325,7 +341,13 @@ class ProfilerMarkerPayload;
 
 extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
 
-extern bool stack_key_initialized;
+class ProfilerState;
+
+
+
+
+
+extern ProfilerState* gPS;
 
 #ifndef SAMPLE_FUNCTION_NAME
 # if defined(__GNUC__) || defined(_MSC_VER)
@@ -344,24 +366,14 @@ profiler_call_enter(const char* aInfo,
 {
   
 
-  
-  
-  if (!stack_key_initialized)
-    return nullptr;
+  MOZ_RELEASE_ASSERT(gPS);
 
-  PseudoStack *stack = tlsPseudoStack.get();
-  
-  
-  
-  
+  PseudoStack* stack = tlsPseudoStack.get();
   if (!stack) {
     return stack;
   }
   stack->push(aInfo, aCategory, aFrameAddress, aCopy, line);
 
-  
-  
-  
   
   
   return stack;
@@ -372,8 +384,11 @@ profiler_call_exit(void* aHandle)
 {
   
 
-  if (!aHandle)
+  MOZ_RELEASE_ASSERT(gPS);
+
+  if (!aHandle) {
     return;
+  }
 
   PseudoStack *stack = (PseudoStack*)aHandle;
   stack->pop();
@@ -385,6 +400,8 @@ void profiler_add_marker(const char *aMarker,
 MOZ_EXPORT  
 void profiler_save_profile_to_file_async(double aSinceTime,
                                          const char* aFileName);
+
+
 
 void profiler_will_gather_OOP_profile();
 void profiler_gathered_OOP_profile();
@@ -483,12 +500,11 @@ public:
     js::ProfileEntry::Category aCategory, uint32_t line, const char *aFormat, ...)
     : mHandle(nullptr)
   {
-    if (profiler_is_active() && !profiler_in_privacy_mode()) {
+    if (profiler_is_active_and_not_in_privacy_mode()) {
       va_list args;
       va_start(args, aFormat);
       char buff[SAMPLER_MAX_STRING];
 
-      
       
       VsprintfLiteral(buff, aFormat, args);
       SprintfLiteral(mDest, "%s %s", aInfo, buff);
@@ -514,8 +530,8 @@ profiler_get_pseudo_stack(void)
 {
   
 
-  if (!stack_key_initialized)
-    return nullptr;
+  MOZ_RELEASE_ASSERT(gPS);
+
   return tlsPseudoStack.get();
 }
 

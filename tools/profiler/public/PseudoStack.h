@@ -197,7 +197,6 @@ void ProfilerJSEventMarker(const char* aEvent);
 
 
 
-
 struct PseudoStack
 {
 public:
@@ -206,7 +205,6 @@ public:
     , mSleep(AWAKE)
     , mContext(nullptr)
     , mStartJSSampling(false)
-    , mPrivacyMode(false)
   {
     MOZ_COUNT_CTOR(PseudoStack);
   }
@@ -456,10 +454,6 @@ public:
 private:
   
   bool mStartJSSampling;
-
-public:
-  
-  bool mPrivacyMode;
 };
 
 #endif

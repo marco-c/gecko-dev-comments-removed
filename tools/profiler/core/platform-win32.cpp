@@ -95,9 +95,18 @@ private:
   }
 
 public:
-  explicit SamplerThread(double aInterval)
-    : mInterval(std::max(1, int(floor(aInterval + 0.5))))
+  SamplerThread(PS::LockRef aLock, uint32_t aActivityGeneration,
+                double aInterval)
+    : mActivityGeneration(aActivityGeneration)
+    , mInterval(std::max(1, int(floor(aInterval + 0.5))))
   {
+    
+    
+    
+    if (mInterval < 10) {
+      ::timeBeginPeriod(mInterval);
+    }
+
     
     
     
@@ -120,71 +129,74 @@ public:
     }
   }
 
-  void Join() {
-    if (mThreadId != Thread::GetCurrentId()) {
-      WaitForSingleObject(mThread, INFINITE);
+  void Stop(PS::LockRef aLock) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mInterval < 10) {
+      ::timeEndPeriod(mInterval);
     }
   }
 
-  static void StartSampler(double aInterval) {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-    MOZ_RELEASE_ASSERT(!sInstance);
-
-    sInstance = new SamplerThread(aInterval);
-  }
-
-  static void StopSampler() {
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-    sInstance->Join();
-    delete sInstance;
-    sInstance = nullptr;
+  void Join() {
+    WaitForSingleObject(mThread, INFINITE);
   }
 
   void Run() {
     
 
-    
-    
-    
-    if (mInterval < 10)
-        ::timeBeginPeriod(mInterval);
+    while (true) {
+      
+      {
+        PS::AutoLock lock(gPSMutex);
 
-    while (gIsActive) {
-      gBuffer->deleteExpiredStoredMarkers();
-
-      if (!gIsPaused) {
-        mozilla::StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-        bool isFirstProfiledThread = true;
-        for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-          ThreadInfo* info = (*gRegisteredThreads)[i];
-
-          
-          if (!info->HasProfile() || info->IsPendingDelete()) {
-            continue;
-          }
-
-          if (info->Stack()->CanDuplicateLastSampleDueToSleep() &&
-              gBuffer->DuplicateLastSample(info->ThreadId(), gStartTime)) {
-            continue;
-          }
-
-          info->UpdateThreadResponsiveness();
-
-          SampleContext(info, isFirstProfiledThread);
-          isFirstProfiledThread = false;
+        
+        
+        if (PS::ActivityGeneration(lock) != mActivityGeneration) {
+          return;
         }
+
+        gPS->Buffer(lock)->deleteExpiredStoredMarkers();
+
+        if (!gPS->IsPaused(lock)) {
+          bool isFirstProfiledThread = true;
+
+          const PS::ThreadVector& threads = gPS->Threads(lock);
+          for (uint32_t i = 0; i < threads.size(); i++) {
+            ThreadInfo* info = threads[i];
+
+            if (!info->HasProfile() || info->IsPendingDelete()) {
+              
+              continue;
+            }
+
+            if (info->Stack()->CanDuplicateLastSampleDueToSleep() &&
+                gPS->Buffer(lock)->DuplicateLastSample(info->ThreadId(),
+                                                       gPS->StartTime(lock))) {
+              continue;
+            }
+
+            info->UpdateThreadResponsiveness();
+
+            SampleContext(lock, info, isFirstProfiledThread);
+
+            isFirstProfiledThread = false;
+          }
+        }
+        
       }
+
       ::Sleep(mInterval);
     }
-
-    
-    if (mInterval < 10)
-        ::timeEndPeriod(mInterval);
   }
 
-  void SampleContext(ThreadInfo* aThreadInfo, bool isFirstProfiledThread)
+  void SampleContext(PS::LockRef aLock, ThreadInfo* aThreadInfo,
+                     bool isFirstProfiledThread)
   {
     uintptr_t thread = GetThreadHandle(aThreadInfo->GetPlatformData());
     HANDLE profiled_thread = reinterpret_cast<HANDLE>(thread);
@@ -201,18 +213,16 @@ public:
     sample.timestamp = mozilla::TimeStamp::Now();
     sample.threadInfo = aThreadInfo;
 
-    if (isFirstProfiledThread && gProfileMemory) {
-      sample.rssMemory = nsMemoryReporterManager::ResidentFast();
-    } else {
-      sample.rssMemory = 0;
-    }
-
     
+    sample.rssMemory = (isFirstProfiledThread && gPS->FeatureMemory(aLock))
+                     ? nsMemoryReporterManager::ResidentFast()
+                     : 0;
     sample.ussMemory = 0;
 
     static const DWORD kSuspendFailed = static_cast<DWORD>(-1);
-    if (SuspendThread(profiled_thread) == kSuspendFailed)
+    if (SuspendThread(profiled_thread) == kSuspendFailed) {
       return;
+    }
 
     
     
@@ -242,45 +252,29 @@ public:
 
     sample.context = &context;
 
-    Tick(gBuffer, &sample);
+    Tick(aLock, gPS->Buffer(aLock), &sample);
 
     ResumeThread(profiled_thread);
   }
 
 private:
+  
+  const uint32_t mActivityGeneration;
+
+  
   HANDLE mThread;
   Thread::tid_t mThreadId;
 
   
   const int mInterval;
 
-  static SamplerThread* sInstance;
-
   SamplerThread(const SamplerThread&) = delete;
   void operator=(const SamplerThread&) = delete;
 };
 
-SamplerThread* SamplerThread::sInstance = nullptr;
-
 static void
-PlatformInit()
+PlatformInit(PS::LockRef aLock)
 {
-}
-
-static void
-PlatformStart(double aInterval)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  SamplerThread::StartSampler(aInterval);
-}
-
-static void
-PlatformStop()
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  SamplerThread::StopSampler();
 }
 
  Thread::tid_t

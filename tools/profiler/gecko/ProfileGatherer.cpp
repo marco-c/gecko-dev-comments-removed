@@ -3,6 +3,7 @@
 
 
 
+
 #include "ProfileGatherer.h"
 
 #include "mozilla/Services.h"
@@ -37,9 +38,10 @@ ProfileGatherer::ProfileGatherer()
 }
 
 void
-ProfileGatherer::GatheredOOPProfile()
+ProfileGatherer::GatheredOOPProfile(PSLockRef aLock)
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
   if (!mGathering) {
     
     
@@ -58,7 +60,7 @@ ProfileGatherer::GatheredOOPProfile()
   if (mPendingProfiles == 0) {
     
     
-    Finish();
+    Finish(aLock);
   }
 }
 
@@ -69,10 +71,9 @@ ProfileGatherer::WillGatherOOPProfile()
 }
 
 void
-ProfileGatherer::Start(double aSinceTime,
-                       Promise* aPromise)
+ProfileGatherer::Start(PSLockRef aLock, double aSinceTime, Promise* aPromise)
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (mGathering) {
     
@@ -85,14 +86,14 @@ ProfileGatherer::Start(double aSinceTime,
 
   mPromise = aPromise;
 
-  Start2(aSinceTime);
+  Start2(aLock, aSinceTime);
 }
 
 void
-ProfileGatherer::Start(double aSinceTime,
+ProfileGatherer::Start(PSLockRef aLock, double aSinceTime,
                        const nsACString& aFileName)
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIFile> file = do_CreateInstance(NS_LOCAL_FILE_CONTRACTID);
   nsresult rv = file->InitWithNativePath(aFileName);
@@ -106,13 +107,15 @@ ProfileGatherer::Start(double aSinceTime,
 
   mFile = file;
 
-  Start2(aSinceTime);
+  Start2(aLock, aSinceTime);
 }
 
 
 void
-ProfileGatherer::Start2(double aSinceTime)
+ProfileGatherer::Start2(PSLockRef aLock, double aSinceTime)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
   mSinceTime = aSinceTime;
   mGathering = true;
   mPendingProfiles = 0;
@@ -122,19 +125,23 @@ ProfileGatherer::Start2(double aSinceTime)
     DebugOnly<nsresult> rv =
       os->AddObserver(this, "profiler-subprocess", false);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AddObserver failed");
+
+    
+    
+    
     rv = os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NotifyObservers failed");
   }
 
   if (!mPendingProfiles) {
-    Finish();
+    Finish(aLock);
   }
 }
 
 void
-ProfileGatherer::Finish()
+ProfileGatherer::Finish(PSLockRef aLock)
 {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (mIsCancelled) {
     
@@ -142,7 +149,7 @@ ProfileGatherer::Finish()
     return;
   }
 
-  UniquePtr<char[]> buf = ToJSON(mSinceTime);
+  UniquePtr<char[]> buf = ToJSON(aLock, mSinceTime);
 
   if (mFile) {
     nsCOMPtr<nsIFileOutputStream> of =

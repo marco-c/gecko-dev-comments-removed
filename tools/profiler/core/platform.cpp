@@ -4,6 +4,7 @@
 
 
 
+#include <algorithm>
 #include <ostream>
 #include <fstream>
 #include <sstream>
@@ -97,74 +98,11 @@ public:
 };
 #endif
 
+class SamplerThread;
+
+
 MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
 
-static Sampler* gSampler;
-
-static std::vector<ThreadInfo*>* gRegisteredThreads = nullptr;
-static mozilla::StaticMutex gRegisteredThreadsMutex;
-
-
-static StaticRefPtr<mozilla::ProfileGatherer> gGatherer;
-
-
-static ProfileBuffer* gBuffer;
-
-
-
-static Vector<std::string> gThreadNameFilters;
-static mozilla::StaticMutex gThreadNameFiltersMutex;
-
-
-static Vector<std::string> gFeatures;
-
-
-static int gEntries = 0;
-
-
-static double gInterval = 0;
-
-
-
-
-static Atomic<bool> gIsActive(false);
-static Atomic<bool> gIsPaused(false);
-
-
-
-
-
-bool stack_key_initialized;
-
-
-
-
-static mozilla::TimeStamp gStartTime;
-
-
-
-static int gFrameNumber = 0;
-static int gLastFrameNumber = 0;
-
-static int gInitCount = 0; 
-
-static bool gIsProfiling = false; 
-
-
-static bool gProfileJava = false;
-static bool gProfileJS = false;
-static bool gTaskTracer = false;
-
-
-
-static Atomic<bool> gAddLeafAddresses(false);
-static Atomic<bool> gDisplayListDump(false);
-static Atomic<bool> gLayersDump(false);
-static Atomic<bool> gProfileGPU(false);
-static Atomic<bool> gProfileMemory(false);
-static Atomic<bool> gProfileRestyle(false);
-static Atomic<bool> gProfileThreads(false);
-static Atomic<bool> gUseStackWalk(false);
 
 
 
@@ -172,15 +110,239 @@ static Atomic<bool> gUseStackWalk(false);
 
 
 
-static int gEnvVarEntries;    
-static int gEnvVarInterval;   
-
-static mozilla::StaticAutoPtr<mozilla::ProfilerIOInterposeObserver>
-                                                            gInterposeObserver;
 
 
 
-static const char* gGeckoThreadName = "GeckoMain";
+
+
+
+
+class ProfilerState
+{
+public:
+  
+  typedef ProfilerStateMutex Mutex;
+  typedef mozilla::BaseAutoLock<Mutex> AutoLock;
+
+  
+  typedef const AutoLock& LockRef;
+
+  typedef std::vector<ThreadInfo*> ThreadVector;
+
+  ProfilerState()
+    : mEnvVarEntries(0)
+    , mEntries(0)
+    , mEnvVarInterval(0)
+    , mInterval(0)
+    , mFeatureDisplayListDump(false)
+    , mFeatureGPU(false)
+    , mFeatureJava(false)
+    , mFeatureJS(false)
+    , mFeatureLayersDump(false)
+    , mFeatureLeaf(false)
+    , mFeatureMemory(false)
+    , mFeaturePrivacy(false)
+    , mFeatureRestyle(false)
+    , mFeatureStackWalk(false)
+    , mFeatureTaskTracer(false)
+    , mFeatureThreads(false)
+    , mBuffer(nullptr)
+    , mGatherer(nullptr)
+    , mIsPaused(false)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+    , mWasPaused(false)
+#endif
+    , mSamplerThread(nullptr)
+#ifdef USE_LUL_STACKWALK
+    , mLUL(nullptr)
+#endif
+    , mInterposeObserver(nullptr)
+    , mFrameNumber(0)
+    , mLatestRecordedFrameNumber(0)
+  {}
+
+  #define GET_AND_SET(type_, name_) \
+    type_ name_(LockRef) const { return m##name_; } \
+    void Set##name_(LockRef, type_ a##name_) { m##name_ = a##name_; }
+
+  GET_AND_SET(TimeStamp, StartTime)
+
+  GET_AND_SET(int, EnvVarEntries)
+  GET_AND_SET(int, Entries)
+
+  GET_AND_SET(int, EnvVarInterval)
+  GET_AND_SET(double, Interval)
+
+  Vector<std::string>& Features(LockRef) { return mFeatures; }
+
+  Vector<std::string>& ThreadNameFilters(LockRef) { return mThreadNameFilters; }
+
+  GET_AND_SET(bool, FeatureDisplayListDump)
+  GET_AND_SET(bool, FeatureGPU)
+  GET_AND_SET(bool, FeatureJava)
+  GET_AND_SET(bool, FeatureJS)
+  GET_AND_SET(bool, FeatureLayersDump)
+  GET_AND_SET(bool, FeatureLeaf)
+  GET_AND_SET(bool, FeatureMemory)
+  GET_AND_SET(bool, FeaturePrivacy)
+  GET_AND_SET(bool, FeatureRestyle)
+  GET_AND_SET(bool, FeatureStackWalk)
+  GET_AND_SET(bool, FeatureTaskTracer)
+  GET_AND_SET(bool, FeatureThreads)
+
+  GET_AND_SET(ProfileBuffer*, Buffer)
+
+  GET_AND_SET(ProfileGatherer*, Gatherer)
+
+  ThreadVector& Threads(LockRef) { return mThreads; }
+
+  static bool IsActive(LockRef) { return sActivityGeneration > 0; }
+  static uint32_t ActivityGeneration(LockRef) { return sActivityGeneration; }
+  static void SetInactive(LockRef) { sActivityGeneration = 0; }
+  static void SetActive(LockRef)
+  {
+    sActivityGeneration = sNextActivityGeneration;
+    
+    sNextActivityGeneration = (sNextActivityGeneration == 0xffffffff)
+                            ? 1
+                            : sNextActivityGeneration + 1;
+  }
+
+  GET_AND_SET(bool, IsPaused)
+
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+  GET_AND_SET(bool, WasPaused)
+#endif
+
+  GET_AND_SET(class SamplerThread*, SamplerThread)
+
+#ifdef USE_LUL_STACKWALK
+  GET_AND_SET(lul::LUL*, LUL)
+#endif
+
+  GET_AND_SET(mozilla::ProfilerIOInterposeObserver*, InterposeObserver)
+
+  GET_AND_SET(int, FrameNumber)
+  GET_AND_SET(int, LatestRecordedFrameNumber)
+
+  #undef GET_AND_SET
+
+private:
+  
+  mozilla::TimeStamp mStartTime;
+
+  
+  
+  
+  int mEnvVarEntries;
+  int mEntries;
+
+  
+  
+  
+  int mEnvVarInterval;
+  double mInterval;
+
+  
+  
+  Vector<std::string> mFeatures;
+
+  
+  
+  Vector<std::string> mThreadNameFilters;
+
+  
+  
+  bool mFeatureDisplayListDump;
+  bool mFeatureGPU;
+  bool mFeatureJava;
+  bool mFeatureJS;
+  bool mFeatureLayersDump;
+  bool mFeatureLeaf;
+  bool mFeatureMemory;
+  bool mFeaturePrivacy;
+  bool mFeatureRestyle;
+  bool mFeatureStackWalk;
+  bool mFeatureTaskTracer;
+  bool mFeatureThreads;
+
+  
+  
+  ProfileBuffer* mBuffer;
+
+  
+  
+  RefPtr<mozilla::ProfileGatherer> mGatherer;
+
+  
+  ThreadVector mThreads;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static uint32_t sActivityGeneration;
+  static uint32_t sNextActivityGeneration;
+
+  
+  bool mIsPaused;
+
+#if defined(GP_OS_linux) || defined(GP_OS_android)
+  
+  
+  bool mWasPaused;
+#endif
+
+  
+  class SamplerThread* mSamplerThread;
+
+#ifdef USE_LUL_STACKWALK
+  
+  lul::LUL* mLUL;
+#endif
+
+  
+  
+  mozilla::ProfilerIOInterposeObserver* mInterposeObserver;
+
+  
+  
+  int mFrameNumber;
+  int mLatestRecordedFrameNumber;
+};
+
+
+typedef ProfilerState PS;
+
+uint32_t PS::sActivityGeneration = 0;
+uint32_t PS::sNextActivityGeneration = 1;
+
+
+PS* gPS = nullptr;
+
+
+static PS::Mutex gPSMutex;
+
+
+static const char* const kGeckoThreadName = "GeckoMain";
 
 static bool
 CanNotifyObservers()
@@ -549,7 +711,8 @@ StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 }
 
 static void
-DoNativeBacktrace(ProfileBuffer* aBuffer, TickSample* aSample)
+DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
+                  TickSample* aSample)
 {
   void* pc_array[1000];
   void* sp_array[1000];
@@ -590,7 +753,8 @@ DoNativeBacktrace(ProfileBuffer* aBuffer, TickSample* aSample)
 
 #ifdef USE_EHABI_STACKWALK
 static void
-DoNativeBacktrace(Profile* aBuffer, TickSample* aSample)
+DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
+                  TickSample* aSample)
 {
   void* pc_array[1000];
   void* sp_array[1000];
@@ -661,7 +825,8 @@ DoNativeBacktrace(Profile* aBuffer, TickSample* aSample)
 
 #ifdef USE_LUL_STACKWALK
 static void
-DoNativeBacktrace(ProfileBuffer* aBuffer, TickSample* aSample)
+DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
+                  TickSample* aSample)
 {
   const mcontext_t* mc =
     &reinterpret_cast<ucontext_t*>(aSample->context)->uc_mcontext;
@@ -739,10 +904,11 @@ DoNativeBacktrace(ProfileBuffer* aBuffer, TickSample* aSample)
   size_t framesAvail = mozilla::ArrayLength(framePCs);
   size_t framesUsed  = 0;
   size_t scannedFramesAcquired = 0;
-  gLUL->Unwind(&framePCs[0], &frameSPs[0],
-               &framesUsed, &scannedFramesAcquired,
-               framesAvail, scannedFramesAllowed,
-               &startRegs, &stackImg );
+  lul::LUL* lul = gPS->LUL(aLock);
+  lul->Unwind(&framePCs[0], &frameSPs[0],
+              &framesUsed, &scannedFramesAcquired,
+              framesAvail, scannedFramesAllowed,
+              &startRegs, &stackImg);
 
   NativeStack nativeStack = {
     reinterpret_cast<void**>(framePCs),
@@ -757,20 +923,20 @@ DoNativeBacktrace(ProfileBuffer* aBuffer, TickSample* aSample)
 
   
   
-  gLUL->mStats.mContext += 1;
-  gLUL->mStats.mCFI     += framesUsed - 1 - scannedFramesAcquired;
-  gLUL->mStats.mScanned += scannedFramesAcquired;
+  lul->mStats.mContext += 1;
+  lul->mStats.mCFI     += framesUsed - 1 - scannedFramesAcquired;
+  lul->mStats.mScanned += scannedFramesAcquired;
 }
 #endif
 
 static void
-DoSampleStackTrace(ProfileBuffer* aBuffer, TickSample* aSample,
-                   bool aAddLeafAddresses)
+DoSampleStackTrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
+                   TickSample* aSample)
 {
   NativeStack nativeStack = { nullptr, nullptr, 0, 0 };
   MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 
-  if (aSample && aAddLeafAddresses) {
+  if (aSample && gPS->FeatureLeaf(aLock)) {
     aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample->pc));
   }
 }
@@ -778,26 +944,26 @@ DoSampleStackTrace(ProfileBuffer* aBuffer, TickSample* aSample,
 
 
 static void
-Tick(ProfileBuffer* aBuffer, TickSample* aSample)
+Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
 {
   ThreadInfo& threadInfo = *aSample->threadInfo;
 
   aBuffer->addTag(ProfileBufferEntry::ThreadId(threadInfo.ThreadId()));
 
-  mozilla::TimeDuration delta = aSample->timestamp - gStartTime;
+  mozilla::TimeDuration delta = aSample->timestamp - gPS->StartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
   NotNull<PseudoStack*> stack = threadInfo.Stack();
 
 #if defined(USE_NS_STACKWALK) || defined(USE_EHABI_STACKWALK) || \
     defined(USE_LUL_STACKWALK)
-  if (gUseStackWalk) {
-    DoNativeBacktrace(aBuffer, aSample);
+  if (gPS->FeatureStackWalk(aLock)) {
+    DoNativeBacktrace(aLock, aBuffer, aSample);
   } else {
-    DoSampleStackTrace(aBuffer, aSample, gAddLeafAddresses);
+    DoSampleStackTrace(aLock, aBuffer, aSample);
   }
 #else
-  DoSampleStackTrace(aBuffer, aSample, gAddLeafAddresses);
+  DoSampleStackTrace(aLock, aBuffer, aSample);
 #endif
 
   
@@ -820,19 +986,20 @@ Tick(ProfileBuffer* aBuffer, TickSample* aSample)
 
   
   if (aSample->rssMemory != 0) {
-    aBuffer->addTag(ProfileBufferEntry::ResidentMemory(
-      static_cast<double>(aSample->rssMemory)));
+    double rssMemory = static_cast<double>(aSample->rssMemory);
+    aBuffer->addTag(ProfileBufferEntry::ResidentMemory(rssMemory));
   }
 
   
   if (aSample->ussMemory != 0) {
-    aBuffer->addTag(ProfileBufferEntry::UnsharedMemory(
-      static_cast<double>(aSample->ussMemory)));
+    double ussMemory = static_cast<double>(aSample->ussMemory);
+    aBuffer->addTag(ProfileBufferEntry::UnsharedMemory(ussMemory));
   }
 
-  if (gLastFrameNumber != gFrameNumber) {
-    aBuffer->addTag(ProfileBufferEntry::FrameNumber(gFrameNumber));
-    gLastFrameNumber = gFrameNumber;
+  int frameNumber = gPS->FrameNumber(aLock);
+  if (frameNumber != gPS->LatestRecordedFrameNumber(aLock)) {
+    aBuffer->addTag(ProfileBufferEntry::FrameNumber(frameNumber));
+    gPS->SetLatestRecordedFrameNumber(aLock, frameNumber);
   }
 }
 
@@ -902,13 +1069,13 @@ GetSharedLibraryInfoStringInternal()
 }
 
 static void
-StreamTaskTracer(SpliceableJSONWriter& aWriter)
+StreamTaskTracer(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
 {
 #ifdef MOZ_TASK_TRACER
   aWriter.StartArrayProperty("data");
   {
     UniquePtr<nsTArray<nsCString>> data =
-      mozilla::tasktracer::GetLoggedData(gStartTime);
+      mozilla::tasktracer::GetLoggedData(gPS->StartTime(aLock));
     for (uint32_t i = 0; i < data->Length(); ++i) {
       aWriter.StringElement((data->ElementAt(i)).get());
     }
@@ -917,11 +1084,10 @@ StreamTaskTracer(SpliceableJSONWriter& aWriter)
 
   aWriter.StartArrayProperty("threads");
   {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-    for (size_t i = 0; i < gRegisteredThreads->size(); i++) {
+    const PS::ThreadVector& threads = gPS->Threads(aLock);
+    for (size_t i = 0; i < threads.size(); i++) {
       
-      ThreadInfo* info = gRegisteredThreads->at(i);
+      ThreadInfo* info = threads.at(i);
       aWriter.StartObjectElement();
       {
         if (XRE_GetProcessType() == GeckoProcessType_Plugin) {
@@ -943,13 +1109,13 @@ StreamTaskTracer(SpliceableJSONWriter& aWriter)
 }
 
 static void
-StreamMetaJSCustomObject(SpliceableJSONWriter& aWriter)
+StreamMetaJSCustomObject(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   aWriter.IntProperty("version", 3);
-  aWriter.DoubleProperty("interval", gInterval);
-  aWriter.IntProperty("stackwalk", gUseStackWalk);
+  aWriter.DoubleProperty("interval", gPS->Interval(aLock));
+  aWriter.IntProperty("stackwalk", gPS->FeatureStackWalk(aLock));
 
 #ifdef DEBUG
   aWriter.IntProperty("debug", 1);
@@ -962,7 +1128,8 @@ StreamMetaJSCustomObject(SpliceableJSONWriter& aWriter)
   bool asyncStacks = Preferences::GetBool("javascript.options.asyncstack");
   aWriter.IntProperty("asyncstack", asyncStacks);
 
-  mozilla::TimeDuration delta = mozilla::TimeStamp::Now() - gStartTime;
+  mozilla::TimeDuration delta =
+    mozilla::TimeStamp::Now() - gPS->StartTime(aLock);
   aWriter.DoubleProperty(
     "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
 
@@ -1090,9 +1257,10 @@ BuildJavaThreadJSObject(SpliceableJSONWriter& aWriter)
 #endif
 
 static void
-StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
+StreamJSON(PS::LockRef aLock, SpliceableJSONWriter& aWriter, double aSinceTime)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS && gPS->IsActive(aLock));
 
   aWriter.Start(SpliceableJSONWriter::SingleLineStyle);
   {
@@ -1103,28 +1271,27 @@ StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
     
     aWriter.StartObjectProperty("meta");
     {
-      StreamMetaJSCustomObject(aWriter);
+      StreamMetaJSCustomObject(aLock, aWriter);
     }
     aWriter.EndObject();
 
     
-    if (gTaskTracer) {
+    if (gPS->FeatureTaskTracer(aLock)) {
       aWriter.StartObjectProperty("tasktracer");
-      StreamTaskTracer(aWriter);
+      StreamTaskTracer(aLock, aWriter);
       aWriter.EndObject();
     }
 
     
     aWriter.StartArrayProperty("threads");
     {
-      gIsPaused = true;
+      gPS->SetIsPaused(aLock, true);
 
       {
-        StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-        for (size_t i = 0; i < gRegisteredThreads->size(); i++) {
+        const PS::ThreadVector& threads = gPS->Threads(aLock);
+        for (size_t i = 0; i < threads.size(); i++) {
           
-          ThreadInfo* info = gRegisteredThreads->at(i);
+          ThreadInfo* info = threads.at(i);
           if (!info->HasProfile()) {
             continue;
           }
@@ -1132,9 +1299,8 @@ StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
           
           
 
-          MutexAutoLock lock(info->GetMutex());
-
-          info->StreamJSON(gBuffer, aWriter, gStartTime, aSinceTime);
+          info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
+                           aSinceTime);
         }
       }
 
@@ -1152,7 +1318,7 @@ StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
       }
 
 #if defined(PROFILE_JAVA)
-      if (gProfileJava) {
+      if (gPS->FeatureJava(aLock)) {
         java::GeckoJavaSampler::Pause();
 
         aWriter.Start();
@@ -1165,7 +1331,7 @@ StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
       }
 #endif
 
-      gIsPaused = false;
+      gPS->SetIsPaused(aLock, false);
     }
     aWriter.EndArray();
   }
@@ -1173,10 +1339,13 @@ StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
 }
 
 UniquePtr<char[]>
-ToJSON(double aSinceTime)
+ToJSON(PS::LockRef aLock, double aSinceTime)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS && gPS->IsActive(aLock));
+
   SpliceableChunkedJSONWriter b;
-  StreamJSON(b, aSinceTime);
+  StreamJSON(aLock, b, aSinceTime);
   return b.WriteFunc()->CopyData();
 }
 
@@ -1238,11 +1407,16 @@ void ProfilerMarker::StreamJSON(SpliceableJSONWriter& aWriter,
 enum class Verbosity : int8_t { UNCHECKED, NOTVERBOSE, VERBOSE };
 
 
+
+
 static Verbosity gVerbosity = Verbosity::UNCHECKED;
+static StaticMutex gVerbosityMutex;
 
 bool
 profiler_verbose()
 {
+  StaticMutexAutoLock lock(gVerbosityMutex);
+
   if (gVerbosity == Verbosity::UNCHECKED) {
     gVerbosity = getenv("MOZ_PROFILER_VERBOSE")
                ? Verbosity::VERBOSE
@@ -1253,13 +1427,13 @@ profiler_verbose()
 }
 
 static bool
-set_profiler_interval(const char* aInterval)
+set_profiler_interval(PS::LockRef aLock, const char* aInterval)
 {
   if (aInterval) {
     errno = 0;
     long int n = strtol(aInterval, nullptr, 10);
     if (errno == 0 && 1 <= n && n <= 1000) {
-      gEnvVarInterval = n;
+      gPS->SetEnvVarInterval(aLock, n);
       return true;
     }
     return false;
@@ -1269,13 +1443,13 @@ set_profiler_interval(const char* aInterval)
 }
 
 static bool
-set_profiler_entries(const char* aEntries)
+set_profiler_entries(PS::LockRef aLock, const char* aEntries)
 {
   if (aEntries) {
     errno = 0;
     long int n = strtol(aEntries, nullptr, 10);
     if (errno == 0 && n > 0) {
-      gEnvVarEntries = n;
+      gPS->SetEnvVarEntries(aLock, n);
       return true;
     }
     return false;
@@ -1297,8 +1471,16 @@ is_native_unwinding_avail()
 static void
 profiler_usage(int aExitCode)
 {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
+
   
-  gVerbosity = Verbosity::VERBOSE;
+  
+  
+  {
+    StaticMutexAutoLock lock(gVerbosityMutex);
+    gVerbosity = Verbosity::VERBOSE;
+  }
 
   LOG ("");
   LOG ("Environment variable usage:");
@@ -1330,7 +1512,7 @@ profiler_usage(int aExitCode)
 
 
 static void
-ReadProfilerEnvVars()
+ReadProfilerEnvVars(PS::LockRef aLock)
 {
   const char* help     = getenv("MOZ_PROFILER_HELP");
   const char* entries  = getenv("MOZ_PROFILER_ENTRIES");
@@ -1340,23 +1522,21 @@ ReadProfilerEnvVars()
     profiler_usage(0); 
   }
 
-  if (!set_profiler_entries(entries) ||
-      !set_profiler_interval(interval)) {
+  if (!set_profiler_entries(aLock, entries) ||
+      !set_profiler_interval(aLock, interval)) {
     profiler_usage(1); 
   }
 
-  LOG ("");
   LOGF("entries  = %d (zero means \"platform default\")",
-       gEnvVarEntries);
+       gPS->EnvVarEntries(aLock));
   LOGF("interval = %d ms (zero means \"platform default\")",
-       gEnvVarInterval);
-  LOG ("");
+       gPS->EnvVarInterval(aLock));
 }
 
 static bool
 is_main_thread_name(const char* aName)
 {
-  return aName && (strcmp(aName, gGeckoThreadName) == 0);
+  return aName && (strcmp(aName, kGeckoThreadName) == 0);
 }
 
 #ifdef HAVE_VA_COPY
@@ -1375,43 +1555,56 @@ profiler_log(const char* aStr)
   profiler_tracing("log", aStr, TRACING_EVENT);
 }
 
+static void
+locked_profiler_add_marker(PS::LockRef aLock, const char* aMarker,
+                           ProfilerMarkerPayload* aPayload);
+
 void
 profiler_log(const char* aFmt, va_list aArgs)
 {
   
 
-  if (profiler_is_active()) {
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
+    return;
+  }
+
+  
+  
+  char buf[2048];
+  va_list argsCpy;
+  VARARGS_ASSIGN(argsCpy, aArgs);
+  int required = VsprintfLiteral(buf, aFmt, argsCpy);
+  va_end(argsCpy);
+
+  if (required < 0) {
     
-    
-    char buf[2048];
+
+  } else if (required < 2048) {
+    auto marker = new ProfilerMarkerTracing("log", TRACING_EVENT);
+    locked_profiler_add_marker(lock, buf, marker);
+
+  } else {
+    char* heapBuf = new char[required + 1];
     va_list argsCpy;
     VARARGS_ASSIGN(argsCpy, aArgs);
-    int required = VsprintfLiteral(buf, aFmt, argsCpy);
+    vsnprintf(heapBuf, required + 1, aFmt, argsCpy);
     va_end(argsCpy);
-
-    if (required < 0) {
-      return; 
-    } else if (required < 2048) {
-      profiler_tracing("log", buf, TRACING_EVENT);
-    } else {
-      char* heapBuf = new char[required+1];
-      va_list argsCpy;
-      VARARGS_ASSIGN(argsCpy, aArgs);
-      vsnprintf(heapBuf, required+1, aFmt, argsCpy);
-      va_end(argsCpy);
-      
-      
-      
-      profiler_tracing("log", heapBuf, TRACING_EVENT);
-      delete[] heapBuf;
-    }
+    
+    
+    auto marker = new ProfilerMarkerTracing("log", TRACING_EVENT);
+    locked_profiler_add_marker(lock, heapBuf, marker);
+    delete[] heapBuf;
   }
 }
 
 
 
 
-MOZ_DEFINE_MALLOC_SIZE_OF(GeckoProfilerMallocSizeOf);
+MOZ_DEFINE_MALLOC_SIZE_OF(GeckoProfilerMallocSizeOf)
 
 NS_IMETHODIMP
 GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
@@ -1419,38 +1612,43 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
+  PS::AutoLock lock(gPSMutex);
+
   size_t n = 0;
-  {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
+  if (gPS) {
+    n = GeckoProfilerMallocSizeOf(gPS);
 
-    for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-      ThreadInfo* info = gRegisteredThreads->at(i);
-
+    const PS::ThreadVector& threads = gPS->Threads(lock);
+    for (uint32_t i = 0; i < threads.size(); i++) {
+      ThreadInfo* info = threads.at(i);
       n += info->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
     }
-  }
-  MOZ_COLLECT_REPORT(
-    "explicit/profiler/thread-info", KIND_HEAP, UNITS_BYTES, n,
-    "Memory used by the Gecko Profiler's ThreadInfo objects.");
 
-  if (gBuffer) {
-    n = gBuffer->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
+    if (gPS->IsActive(lock)) {
+      n += gPS->Buffer(lock)->SizeOfIncludingThis(GeckoProfilerMallocSizeOf);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+
     MOZ_COLLECT_REPORT(
-      "explicit/profiler/profile-buffer", KIND_HEAP, UNITS_BYTES, n,
-      "Memory used by the Gecko Profiler's ProfileBuffer object.");
-  }
+      "explicit/profiler/profiler-state", KIND_HEAP, UNITS_BYTES, n,
+      "Memory used by the Gecko Profiler's ProfilerState object (excluding "
+      "memory used by LUL).");
 
 #if defined(USE_LUL_STACKWALK)
-  n = gLUL ? gLUL->SizeOfIncludingThis(GeckoProfilerMallocSizeOf) : 0;
-  MOZ_COLLECT_REPORT(
-    "explicit/profiler/lul", KIND_HEAP, UNITS_BYTES, n,
-    "Memory used by LUL, a stack unwinder used by the Gecko Profiler.");
+    lul::LUL* lul = gPS->LUL(lock);
+    n = lul ? lul->SizeOfIncludingThis(GeckoProfilerMallocSizeOf) : 0;
+    MOZ_COLLECT_REPORT(
+      "explicit/profiler/lul", KIND_HEAP, UNITS_BYTES, n,
+      "Memory used by LUL, a stack unwinder used by the Gecko Profiler.");
 #endif
-
-  
-  
-  
-  
+  }
 
   return NS_OK;
 }
@@ -1458,19 +1656,23 @@ GeckoProfilerReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 NS_IMPL_ISUPPORTS(GeckoProfilerReporter, nsIMemoryReporter)
 
 static bool
-ThreadSelected(const char* aThreadName)
+ThreadSelected(PS::LockRef aLock, const char* aThreadName)
 {
-  StaticMutexAutoLock lock(gThreadNameFiltersMutex);
+  
 
-  if (gThreadNameFilters.empty()) {
+  MOZ_RELEASE_ASSERT(gPS);
+
+  const Vector<std::string>& threadNameFilters = gPS->ThreadNameFilters(aLock);
+
+  if (threadNameFilters.empty()) {
     return true;
   }
 
   std::string name = aThreadName;
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-  for (uint32_t i = 0; i < gThreadNameFilters.length(); ++i) {
-    std::string filter = gThreadNameFilters[i];
+  for (uint32_t i = 0; i < threadNameFilters.length(); ++i) {
+    std::string filter = threadNameFilters[i];
     std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);
 
     
@@ -1483,28 +1685,31 @@ ThreadSelected(const char* aThreadName)
 }
 
 static void
-MaybeSetProfile(ThreadInfo* aInfo)
+MaybeSetProfile(PS::LockRef aLock, ThreadInfo* aInfo)
 {
-  if ((aInfo->IsMainThread() || gProfileThreads) &&
-      ThreadSelected(aInfo->Name())) {
+  
+
+  MOZ_RELEASE_ASSERT(gPS);
+
+  if ((aInfo->IsMainThread() || gPS->FeatureThreads(aLock)) &&
+      ThreadSelected(aLock, aInfo->Name())) {
     aInfo->SetHasProfile();
   }
 }
 
 static void
-RegisterCurrentThread(const char* aName, NotNull<PseudoStack*> aPseudoStack,
-                      bool aIsMainThread, void* stackTop)
+RegisterCurrentThread(PS::LockRef aLock, const char* aName,
+                      NotNull<PseudoStack*> aPseudoStack, bool aIsMainThread,
+                      void* stackTop)
 {
-  StaticMutexAutoLock lock(gRegisteredThreadsMutex);
+  
 
-  if (!gRegisteredThreads) {
-    return;
-  }
+  MOZ_RELEASE_ASSERT(gPS);
 
+  PS::ThreadVector& threads = gPS->Threads(aLock);
   Thread::tid_t id = Thread::GetCurrentId();
-
-  for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-    ThreadInfo* info = gRegisteredThreads->at(i);
+  for (uint32_t i = 0; i < threads.size(); i++) {
+    ThreadInfo* info = threads.at(i);
     if (info->ThreadId() == id && !info->IsPendingDelete()) {
       
       
@@ -1516,65 +1721,67 @@ RegisterCurrentThread(const char* aName, NotNull<PseudoStack*> aPseudoStack,
   ThreadInfo* info =
     new ThreadInfo(aName, id, aIsMainThread, aPseudoStack, stackTop);
 
-  MaybeSetProfile(info);
+  MaybeSetProfile(aLock, info);
 
-  gRegisteredThreads->push_back(info);
+  threads.push_back(info);
 }
 
 
-static void PlatformInit();
-static void PlatformStart(double aInterval);
-static void PlatformStop();
 
-void
-profiler_init(void* stackTop)
-{
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  gInitCount++;
-
-  if (stack_key_initialized)
-    return;
-
-#ifdef MOZ_TASK_TRACER
-  mozilla::tasktracer::InitTaskTracer();
+#if defined(GP_OS_windows)
+# include "platform-win32.cpp"
+#elif defined(GP_OS_darwin)
+# include "platform-macos.cpp"
+#elif defined(GP_OS_linux) || defined(GP_OS_android)
+# include "platform-linux-android.cpp"
+#else
+# error "bad platform"
 #endif
 
+static void
+locked_profiler_start(PS::LockRef aLock, const int aEntries, double aInterval,
+                      const char** aFeatures, uint32_t aFeatureCount,
+                      const char** aThreadNameFilters, uint32_t aFilterCount);
+
+void
+profiler_init(void* aStackTop)
+{
   LOG("BEGIN profiler_init");
+
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(!gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
   if (!tlsPseudoStack.init()) {
-    LOG("Failed to init.");
+    LOG("END   profiler_init: TLS init failed");
     return;
   }
+
+  
+  
+  gPS = new PS();
+
+  set_stderr_callback(profiler_log);
+
   bool ignore;
-  gStartTime = mozilla::TimeStamp::ProcessCreation(ignore);
-
-  stack_key_initialized = true;
-
-  {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-    gRegisteredThreads = new std::vector<ThreadInfo*>();
-  }
+  gPS->SetStartTime(lock, mozilla::TimeStamp::ProcessCreation(ignore));
 
   
-  
-  
-  
-  
+  ReadProfilerEnvVars(lock);
 
   NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   tlsPseudoStack.set(stack);
 
   bool isMainThread = true;
-  RegisterCurrentThread(gGeckoThreadName, stack, isMainThread, stackTop);
+  RegisterCurrentThread(lock, kGeckoThreadName, stack, isMainThread, aStackTop);
 
   
-  ReadProfilerEnvVars();
+  PlatformInit(lock);
 
-  
-  PlatformInit();
-
-  set_stderr_callback(profiler_log);
+#ifdef MOZ_TASK_TRACER
+  mozilla::tasktracer::InitTaskTracer();
+#endif
 
 #if defined(PROFILE_JAVA)
   if (mozilla::jni::IsFennec()) {
@@ -1585,108 +1792,141 @@ profiler_init(void* stackTop)
   
   
   
+  
+  
+
+  
+  
+  
   const char *val = getenv("MOZ_PROFILER_STARTUP");
   if (!val || !*val) {
+    LOG("END   profiler_init: MOZ_PROFILER_STARTUP not set");
     return;
   }
 
-  const char* features[] = { "js", "leaf", "threads"
-#if defined(HAVE_NATIVE_UNWIND)
-                           , "stackwalk"
-#endif
+  const char* features[] = { "js"
 #if defined(PROFILE_JAVA)
                            , "java"
 #endif
+                           , "leaf"
+#if defined(HAVE_NATIVE_UNWIND)
+                           , "stackwalk"
+#endif
+                           , "threads"
                            };
 
   const char* threadFilters[] = { "GeckoMain", "Compositor" };
 
-  profiler_start(PROFILE_DEFAULT_ENTRIES, PROFILE_DEFAULT_INTERVAL,
-                 features, MOZ_ARRAY_LENGTH(features),
-                 threadFilters, MOZ_ARRAY_LENGTH(threadFilters));
+  locked_profiler_start(lock, PROFILE_DEFAULT_ENTRIES, PROFILE_DEFAULT_INTERVAL,
+                        features, MOZ_ARRAY_LENGTH(features),
+                        threadFilters, MOZ_ARRAY_LENGTH(threadFilters));
+
   LOG("END   profiler_init");
 }
+
+static void
+locked_profiler_save_profile_to_file(PS::LockRef aLock, const char* aFilename);
+
+static SamplerThread*
+locked_profiler_stop(PS::LockRef aLock);
 
 void
 profiler_shutdown()
 {
+  LOG("BEGIN profiler_shutdown");
+
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  gInitCount--;
-
-  if (gInitCount > 0)
-    return;
+  MOZ_RELEASE_ASSERT(gPS);
 
   
-  if (gSampler) {
-    const char* filename = getenv("MOZ_PROFILER_SHUTDOWN");
-    if (filename) {
-      profiler_save_profile_to_file(filename);
-    }
-  }
-
-  profiler_stop();
-
-  set_stderr_callback(nullptr);
-
+  
+  SamplerThread* samplerThread = nullptr;
   {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
+    PS::AutoLock lock(gPSMutex);
 
-    while (gRegisteredThreads->size() > 0) {
-      delete gRegisteredThreads->back();
-      gRegisteredThreads->pop_back();
+    
+    if (gPS->IsActive(lock)) {
+      const char* filename = getenv("MOZ_PROFILER_SHUTDOWN");
+      if (filename) {
+        locked_profiler_save_profile_to_file(lock, filename);
+      }
+
+      samplerThread = locked_profiler_stop(lock);
     }
 
-    
-    
-    delete gRegisteredThreads;
-    gRegisteredThreads = nullptr;
-  }
+    set_stderr_callback(nullptr);
+
+    PS::ThreadVector& threads = gPS->Threads(lock);
+    while (threads.size() > 0) {
+      delete threads.back();
+      threads.pop_back();
+    }
 
 #if defined(USE_LUL_STACKWALK)
-  
-  if (gLUL) {
-    delete gLUL;
-    gLUL = nullptr;
-  }
+    
+    lul::LUL* lul = gPS->LUL(lock);
+    if (lul) {
+      delete lul;
+      gPS->SetLUL(lock, nullptr);
+    }
 #endif
 
-  
-  
-  
-  
-  delete tlsPseudoStack.get();
-  tlsPseudoStack.set(nullptr);
+    delete gPS;
+    gPS = nullptr;
+
+    
+    
+    
+    
+    delete tlsPseudoStack.get();
+    tlsPseudoStack.set(nullptr);
 
 #ifdef MOZ_TASK_TRACER
-  mozilla::tasktracer::ShutdownTaskTracer();
+    mozilla::tasktracer::ShutdownTaskTracer();
 #endif
+  }
+
+  
+  
+  if (samplerThread) {
+    samplerThread->Join();
+    delete samplerThread;
+  }
+
+  LOG("END   profiler_shutdown");
 }
 
 mozilla::UniquePtr<char[]>
 profiler_get_profile(double aSinceTime)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gSampler) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return nullptr;
   }
 
-  return ToJSON(aSinceTime);
+  return ToJSON(lock, aSinceTime);
 }
 
 JSObject*
 profiler_get_profile_jsobject(JSContext *aCx, double aSinceTime)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gSampler) {
-    return nullptr;
-  }
-
+  
   JS::RootedValue val(aCx);
   {
-    UniquePtr<char[]> buf = ToJSON(aSinceTime);
+    PS::AutoLock lock(gPSMutex);
+
+    if (!gPS->IsActive(lock)) {
+      return nullptr;
+    }
+
+    UniquePtr<char[]> buf = ToJSON(lock, aSinceTime);
     NS_ConvertUTF8toUTF16 js_string(nsDependentCString(buf.get()));
     auto buf16 = static_cast<const char16_t*>(js_string.get());
     MOZ_ALWAYS_TRUE(JS_ParseJSON(aCx, buf16, js_string.Length(), &val));
@@ -1699,26 +1939,35 @@ profiler_get_profile_jsobject_async(double aSinceTime,
                                     mozilla::dom::Promise* aPromise)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gGatherer) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  gGatherer->Start(aSinceTime, aPromise);
+  gPS->Gatherer(lock)->Start(lock, aSinceTime, aPromise);
 }
 
 void
 profiler_save_profile_to_file_async(double aSinceTime, const char* aFileName)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
   nsCString filename(aFileName);
   NS_DispatchToMainThread(NS_NewRunnableFunction([=] () {
-    if (!gGatherer) {
+
+    PS::AutoLock lock(gPSMutex);
+
+    
+    
+    if (!gPS || !gPS->IsActive(lock)) {
       return;
     }
 
-    gGatherer->Start(aSinceTime, filename);
+    gPS->Gatherer(lock)->Start(lock, aSinceTime, filename);
   }));
 }
 
@@ -1728,27 +1977,28 @@ profiler_get_start_params(int* aEntries, double* aInterval,
                           mozilla::Vector<const char*>* aFeatures)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
   if (NS_WARN_IF(!aEntries) || NS_WARN_IF(!aInterval) ||
       NS_WARN_IF(!aFilters) || NS_WARN_IF(!aFeatures)) {
     return;
   }
 
-  *aEntries = gEntries;
-  *aInterval = gInterval;
+  PS::AutoLock lock(gPSMutex);
 
-  {
-    StaticMutexAutoLock lock(gThreadNameFiltersMutex);
+  *aEntries = gPS->Entries(lock);
+  *aInterval = gPS->Interval(lock);
 
-    MOZ_ALWAYS_TRUE(aFilters->resize(gThreadNameFilters.length()));
-    for (uint32_t i = 0; i < gThreadNameFilters.length(); ++i) {
-      (*aFilters)[i] = gThreadNameFilters[i].c_str();
-    }
+  const Vector<std::string>& threadNameFilters = gPS->ThreadNameFilters(lock);
+  MOZ_ALWAYS_TRUE(aFilters->resize(threadNameFilters.length()));
+  for (uint32_t i = 0; i < threadNameFilters.length(); ++i) {
+    (*aFilters)[i] = threadNameFilters[i].c_str();
   }
 
-  MOZ_ALWAYS_TRUE(aFeatures->resize(gFeatures.length()));
-  for (size_t i = 0; i < gFeatures.length(); ++i) {
-    (*aFeatures)[i] = gFeatures[i].c_str();
+  const Vector<std::string>& features = gPS->Features(lock);
+  MOZ_ALWAYS_TRUE(aFeatures->resize(features.length()));
+  for (size_t i = 0; i < features.length(); ++i) {
+    (*aFeatures)[i] = features[i].c_str();
   }
 }
 
@@ -1756,66 +2006,95 @@ void
 profiler_will_gather_OOP_profile()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gGatherer) {
-    return;
-  }
+  
+  
+  
+  
+  
+  gPSMutex.AssertCurrentThreadOwns();
 
-  gGatherer->WillGatherOOPProfile();
+  
+  
+  
+  
+  static PS::Mutex sFakeMutex;
+  PS::AutoLock fakeLock(sFakeMutex);
+
+  MOZ_RELEASE_ASSERT(gPS->IsActive(fakeLock));
+
+  gPS->Gatherer(fakeLock)->WillGatherOOPProfile();
 }
 
 void
 profiler_gathered_OOP_profile()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gGatherer) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  gGatherer->GatheredOOPProfile();
+  gPS->Gatherer(lock)->GatheredOOPProfile(lock);
 }
 
 void
 profiler_OOP_exit_profile(const nsCString& aProfile)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gGatherer) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  gGatherer->OOPExitProfile(aProfile);
+  gPS->Gatherer(lock)->OOPExitProfile(aProfile);
+}
+
+static void
+locked_profiler_save_profile_to_file(PS::LockRef aLock, const char* aFilename)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS && gPS->IsActive(aLock));
+
+  std::ofstream stream;
+  stream.open(aFilename);
+  if (stream.is_open()) {
+    SpliceableJSONWriter w(mozilla::MakeUnique<OStreamJSONWriteFunc>(stream));
+    StreamJSON(aLock, w,  0);
+    stream.close();
+    LOGF("locked_profiler_save_profile_to_file: Saved to %s", aFilename);
+  } else {
+    LOG ("locked_profiler_save_profile_to_file: Failed to open file");
+  }
 }
 
 void
 profiler_save_profile_to_file(const char* aFilename)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gSampler) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  std::ofstream stream;
-  stream.open(aFilename);
-  if (stream.is_open()) {
-    SpliceableJSONWriter w(mozilla::MakeUnique<OStreamJSONWriteFunc>(stream));
-    StreamJSON(w,  0);
-    stream.close();
-    LOGF("Saved to %s", aFilename);
-  } else {
-    LOG("Fail to open profile log file.");
-  }
+  locked_profiler_save_profile_to_file(lock, aFilename);
 }
 
 const char**
 profiler_get_features()
 {
-  
-  
-  
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
   static const char* features[] = {
 #if defined(MOZ_PROFILING) && defined(HAVE_NATIVE_UNWIND)
@@ -1864,17 +2143,17 @@ profiler_get_buffer_info_helper(uint32_t* aCurrentPosition,
   
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!stack_key_initialized)
-    return;
+  PS::AutoLock lock(gPSMutex);
 
-  if (!gBuffer) {
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  *aCurrentPosition = gBuffer->mWritePos;
-  *aEntries = gEntries;
-  *aGeneration = gBuffer->mGeneration;
+  *aCurrentPosition = gPS->Buffer(lock)->mWritePos;
+  *aEntries = gPS->Entries(lock);
+  *aGeneration = gPS->Buffer(lock)->mGeneration;
 }
 
 static bool
@@ -1888,263 +2167,309 @@ hasFeature(const char** aFeatures, uint32_t aFeatureCount, const char* aFeature)
   return false;
 }
 
-
-class Sampler {};
-
-
-void
-profiler_start(int aEntries, double aInterval,
-               const char** aFeatures, uint32_t aFeatureCount,
-               const char** aThreadNameFilters, uint32_t aFilterCount)
-
+static void
+locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
+                      const char** aFeatures, uint32_t aFeatureCount,
+                      const char** aThreadNameFilters, uint32_t aFilterCount)
 {
+  LOG("BEGIN locked_profiler_start");
+
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  LOG("BEGIN profiler_start");
-
-  if (!stack_key_initialized)
-    profiler_init(nullptr);
-
-  
-
-  if (gEnvVarInterval > 0)
-    aInterval = gEnvVarInterval;
-
-  
-  if (gEnvVarEntries > 0)
-    aEntries = gEnvVarEntries;
-
-  
-  profiler_stop();
-
-  
-  
-  {
-    StaticMutexAutoLock lock(gThreadNameFiltersMutex);
-
-    MOZ_ALWAYS_TRUE(gThreadNameFilters.resize(aFilterCount));
-    for (uint32_t i = 0; i < aFilterCount; ++i) {
-      gThreadNameFilters[i] = aThreadNameFilters[i];
-    }
-  }
-
-  
-  MOZ_ALWAYS_TRUE(gFeatures.resize(aFeatureCount));
-  for (uint32_t i = 0; i < aFeatureCount; ++i) {
-    gFeatures[i] = aFeatures[i];
-  }
-
-  bool mainThreadIO = hasFeature(aFeatures, aFeatureCount, "mainthreadio");
-  bool privacyMode  = hasFeature(aFeatures, aFeatureCount, "privacy");
-
-#if defined(PROFILE_JAVA)
-  gProfileJava = mozilla::jni::IsFennec() &&
-                      hasFeature(aFeatures, aFeatureCount, "java");
-#endif
-  gProfileJS   = hasFeature(aFeatures, aFeatureCount, "js");
-  gTaskTracer  = hasFeature(aFeatures, aFeatureCount, "tasktracer");
-
-  gAddLeafAddresses = hasFeature(aFeatures, aFeatureCount, "leaf");
-  gDisplayListDump  = hasFeature(aFeatures, aFeatureCount, "displaylistdump");
-  gLayersDump       = hasFeature(aFeatures, aFeatureCount, "layersdump");
-  gProfileGPU       = hasFeature(aFeatures, aFeatureCount, "gpu");
-  gProfileMemory    = hasFeature(aFeatures, aFeatureCount, "memory");
-  gProfileRestyle   = hasFeature(aFeatures, aFeatureCount, "restyle");
-  
-  
-  
-  gProfileThreads   = hasFeature(aFeatures, aFeatureCount, "threads") ||
-                      aFilterCount > 0;
-  gUseStackWalk     = hasFeature(aFeatures, aFeatureCount, "stackwalk");
-
-  gEntries = aEntries ? aEntries : PROFILE_DEFAULT_ENTRIES;
-  gInterval = aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL;
-  gBuffer = new ProfileBuffer(gEntries);
-  gSampler = new Sampler();
+  MOZ_RELEASE_ASSERT(gPS && !gPS->IsActive(aLock));
 
   bool ignore;
-  gStartTime = mozilla::TimeStamp::ProcessCreation(ignore);
+  gPS->SetStartTime(aLock, mozilla::TimeStamp::ProcessCreation(ignore));
 
-  {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
+  
+  
+  int entries = PROFILE_DEFAULT_ENTRIES;
+  if (aEntries > 0) {
+    entries = aEntries;
+  }
+  if (gPS->EnvVarEntries(aLock) > 0) {
+    entries = gPS->EnvVarEntries(aLock);
+  }
+  gPS->SetEntries(aLock, entries);
 
-    
-    for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-      ThreadInfo* info = gRegisteredThreads->at(i);
+  
+  double interval = PROFILE_DEFAULT_INTERVAL;
+  if (aInterval > 0) {
+    interval = aInterval;
+  }
+  if (gPS->EnvVarInterval(aLock) > 0) {
+    interval = gPS->EnvVarInterval(aLock);
+  }
+  gPS->SetInterval(aLock, interval);
 
-      MaybeSetProfile(info);
+  
+  Vector<std::string>& features = gPS->Features(aLock);
+  MOZ_ALWAYS_TRUE(features.resize(aFeatureCount));
+  for (uint32_t i = 0; i < aFeatureCount; ++i) {
+    features[i] = aFeatures[i];
+  }
+
+  
+  
+  Vector<std::string>& threadNameFilters = gPS->ThreadNameFilters(aLock);
+  MOZ_ALWAYS_TRUE(threadNameFilters.resize(aFilterCount));
+  for (uint32_t i = 0; i < aFilterCount; ++i) {
+    threadNameFilters[i] = aThreadNameFilters[i];
+  }
+
+#define HAS_FEATURE(feature) hasFeature(aFeatures, aFeatureCount, feature)
+
+  gPS->SetFeatureDisplayListDump(aLock, HAS_FEATURE("displaylistdump"));
+  gPS->SetFeatureGPU(aLock, HAS_FEATURE("gpu"));
+#if defined(PROFILE_JAVA)
+  gPS->SetFeatureJava(aLock, mozilla::jni::IsFennec() && HAS_FEATURE("java"));
+#endif
+  bool featureJS = HAS_FEATURE("js");
+  gPS->SetFeatureJS(aLock, featureJS);
+  gPS->SetFeatureLayersDump(aLock, HAS_FEATURE("layersdump"));
+  gPS->SetFeatureLeaf(aLock, HAS_FEATURE("leaf"));
+  bool featureMainThreadIO = HAS_FEATURE("mainthreadio");
+  gPS->SetFeatureMemory(aLock, HAS_FEATURE("memory"));
+  gPS->SetFeaturePrivacy(aLock, HAS_FEATURE("privacy"));
+  gPS->SetFeatureRestyle(aLock, HAS_FEATURE("restyle"));
+  gPS->SetFeatureStackWalk(aLock, HAS_FEATURE("stackwalk"));
+#ifdef MOZ_TASK_TRACER
+  bool featureTaskTracer = HAS_FEATURE("tasktracer");
+  gPS->SetFeatureTaskTracer(aLock, featureTaskTracer);
+#endif
+  
+  
+  
+  gPS->SetFeatureThreads(aLock, HAS_FEATURE("threads") || aFilterCount > 0);
+
+#undef HAS_FEATURE
+
+  gPS->SetBuffer(aLock, new ProfileBuffer(entries));
+
+  gPS->SetGatherer(aLock, new mozilla::ProfileGatherer());
+
+  
+  const PS::ThreadVector& threads = gPS->Threads(aLock);
+  for (uint32_t i = 0; i < threads.size(); i++) {
+    ThreadInfo* info = threads.at(i);
+
+    MaybeSetProfile(aLock, info);
+
+    if (info->IsPendingDelete() || !info->HasProfile()) {
+      continue;
+    }
+    info->Stack()->reinitializeOnResume();
+    if (featureJS) {
+      info->Stack()->enableJSSampling();
     }
   }
 
 #ifdef MOZ_TASK_TRACER
-  if (gTaskTracer) {
+  if (featureTaskTracer) {
     mozilla::tasktracer::StartLogging();
   }
 #endif
 
-  gGatherer = new mozilla::ProfileGatherer();
-
-  gIsActive = true;  
-  gIsPaused = false;
-  PlatformStart(gInterval);
-
-  if (gProfileJS || privacyMode) {
-    mozilla::StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-    for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-      ThreadInfo* info = (*gRegisteredThreads)[i];
-      if (info->IsPendingDelete() || !info->HasProfile()) {
-        continue;
-      }
-      info->Stack()->reinitializeOnResume();
-      if (gProfileJS) {
-        info->Stack()->enableJSSampling();
-      }
-      if (privacyMode) {
-        info->Stack()->mPrivacyMode = true;
-      }
-    }
-  }
-
 #if defined(PROFILE_JAVA)
-  if (gProfileJava) {
-    int javaInterval = aInterval;
+  if (gPS->FeatureJava(aLock)) {
+    int javaInterval = interval;
     
     if (javaInterval < 10) {
-      aInterval = 10;
+      javaInterval = 10;
     }
     mozilla::java::GeckoJavaSampler::Start(javaInterval, 1000);
   }
 #endif
 
-  if (mainThreadIO) {
-    if (!gInterposeObserver) {
-      
-      gInterposeObserver = new mozilla::ProfilerIOInterposeObserver();
-    }
-    mozilla::IOInterposer::Register(mozilla::IOInterposeObserver::OpAll,
-                                    gInterposeObserver);
-  }
+  
+  PS::SetActive(aLock);
 
-  gIsProfiling = true;
+  gPS->SetIsPaused(aLock, false);
+
+  
+  
+  
+  gPS->SetSamplerThread(aLock, new SamplerThread(aLock,
+                                                 PS::ActivityGeneration(aLock),
+                                                 interval));
+
+  if (featureMainThreadIO) {
+    auto interposeObserver = new mozilla::ProfilerIOInterposeObserver();
+    gPS->SetInterposeObserver(aLock, interposeObserver);
+    mozilla::IOInterposer::Register(mozilla::IOInterposeObserver::OpAll,
+                                    interposeObserver);
+  }
 
   if (CanNotifyObservers()) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
       nsTArray<nsCString> featuresArray;
-      nsTArray<nsCString> threadNameFiltersArray;
-
       for (size_t i = 0; i < aFeatureCount; ++i) {
         featuresArray.AppendElement(aFeatures[i]);
       }
 
+      nsTArray<nsCString> threadNameFiltersArray;
       for (size_t i = 0; i < aFilterCount; ++i) {
         threadNameFiltersArray.AppendElement(aThreadNameFilters[i]);
       }
 
       nsCOMPtr<nsIProfilerStartParams> params =
-        new nsProfilerStartParams(aEntries, aInterval, featuresArray,
+        new nsProfilerStartParams(entries, interval, featuresArray,
                                   threadNameFiltersArray);
-
       os->NotifyObservers(params, "profiler-started", nullptr);
     }
   }
 
-  LOG("END   profiler_start");
+  LOG("END   locked_profiler_start");
 }
 
 void
-profiler_stop()
+profiler_start(int aEntries, double aInterval,
+               const char** aFeatures, uint32_t aFeatureCount,
+               const char** aThreadNameFilters, uint32_t aFilterCount)
 {
+  LOG("BEGIN profiler_start");
+
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  LOG("BEGIN profiler_stop");
-
-  if (!stack_key_initialized)
-    return;
-
-  if (!gSampler) {
-    LOG("END   profiler_stop-early");
-    return;
-  }
-
-  bool disableJS = gProfileJS;
-
-  {
-    StaticMutexAutoLock lock(gThreadNameFiltersMutex);
-    gThreadNameFilters.clear();
-  }
-  gFeatures.clear();
-
-  gIsActive = false;  
-  gIsPaused = false;
-  PlatformStop();
-
-  gProfileJava      = false;
-  gProfileJS        = false;
-  gTaskTracer       = false;
-
-  gAddLeafAddresses = false;
-  gDisplayListDump  = false;
-  gLayersDump       = false;
-  gProfileGPU       = false;
-  gProfileMemory    = false;
-  gProfileRestyle   = false;
-  gProfileThreads   = false;
-  gUseStackWalk     = false;
+  PS::AutoLock lock(gPSMutex);
 
   
-  {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-    for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-      ThreadInfo* info = gRegisteredThreads->at(i);
-      
-      
-      if (info->IsPendingDelete()) {
-        delete info;
-        gRegisteredThreads->erase(gRegisteredThreads->begin() + i);
-        i--;
-      }
-    }
+  if (!gPS) {
+    profiler_init(nullptr);
   }
-
-#ifdef MOZ_TASK_TRACER
-  if (gTaskTracer) {
-    mozilla::tasktracer::StopLogging();
-  }
-#endif
-
-  delete gSampler;
-  gSampler = nullptr;
-
-  delete gBuffer;
-  gBuffer = nullptr;
-
-  gEntries = 0;
-  gInterval = 0;
 
   
-  gGatherer->Cancel();
-  gGatherer = nullptr;
-
-  if (disableJS) {
-    PseudoStack *stack = tlsPseudoStack.get();
-    MOZ_ASSERT(stack != nullptr);
-    stack->disableJSSampling();
+  if (gPS->IsActive(lock)) {
+    locked_profiler_stop(lock);
   }
 
-  mozilla::IOInterposer::Unregister(mozilla::IOInterposeObserver::OpAll,
-                                    gInterposeObserver);
-  gInterposeObserver = nullptr;
+  locked_profiler_start(lock, aEntries, aInterval, aFeatures, aFeatureCount,
+                        aThreadNameFilters, aFilterCount);
 
-  gIsProfiling = false;
+  LOG("END   profiler_start");
+}
+
+static SamplerThread*
+locked_profiler_stop(PS::LockRef aLock)
+{
+  LOG("BEGIN locked_profiler_stop");
+
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS && gPS->IsActive(aLock));
+
+  
+  
 
   if (CanNotifyObservers()) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os)
       os->NotifyObservers(nullptr, "profiler-stopped", nullptr);
   }
+
+  mozilla::IOInterposer::Unregister(mozilla::IOInterposeObserver::OpAll,
+                                    gPS->InterposeObserver(aLock));
+  gPS->SetInterposeObserver(aLock, nullptr);
+
+  
+  
+  
+  SamplerThread* samplerThread = gPS->SamplerThread(aLock);
+  samplerThread->Stop(aLock);
+  gPS->SetSamplerThread(aLock, nullptr);
+
+  gPS->SetIsPaused(aLock, false);
+
+  gPS->SetInactive(aLock);
+
+#ifdef MOZ_TASK_TRACER
+  if (gPS->FeatureTaskTracer(aLock)) {
+    mozilla::tasktracer::StopLogging();
+  }
+#endif
+
+  
+  PS::ThreadVector& threads = gPS->Threads(aLock);
+  for (uint32_t i = 0; i < threads.size(); i++) {
+    ThreadInfo* info = threads.at(i);
+    
+    
+    if (info->IsPendingDelete()) {
+      delete info;
+      threads.erase(threads.begin() + i);
+      i--;
+    }
+  }
+
+  
+  gPS->Gatherer(aLock)->Cancel();
+  gPS->SetGatherer(aLock, nullptr);
+
+  delete gPS->Buffer(aLock);
+  gPS->SetBuffer(aLock, nullptr);
+
+  if (gPS->FeatureJS(aLock)) {
+    PseudoStack *stack = tlsPseudoStack.get();
+    MOZ_ASSERT(stack != nullptr);
+    stack->disableJSSampling();
+  }
+
+  gPS->SetFeatureDisplayListDump(aLock, false);
+  gPS->SetFeatureGPU(aLock, false);
+  gPS->SetFeatureJava(aLock, false);
+  gPS->SetFeatureJS(aLock, false);
+  gPS->SetFeatureLayersDump(aLock, false);
+  gPS->SetFeatureLeaf(aLock, false);
+  gPS->SetFeatureMemory(aLock, false);
+  gPS->SetFeaturePrivacy(aLock, false);
+  gPS->SetFeatureRestyle(aLock, false);
+  gPS->SetFeatureStackWalk(aLock, false);
+  gPS->SetFeatureTaskTracer(aLock, false);
+  gPS->SetFeatureThreads(aLock, false);
+
+  gPS->ThreadNameFilters(aLock).clear();
+
+  gPS->Features(aLock).clear();
+
+  gPS->SetInterval(aLock, 0.0);
+
+  gPS->SetEntries(aLock, 0);
+
+  LOG("END   locked_profiler_stop");
+
+  return samplerThread;
+}
+
+void
+profiler_stop()
+{
+  LOG("BEGIN profiler_stop");
+
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
+
+  SamplerThread* samplerThread;
+  {
+    PS::AutoLock lock(gPSMutex);
+
+    if (!gPS->IsActive(lock)) {
+      LOG("END   profiler_stop: inactive");
+      return;
+    }
+
+    samplerThread = locked_profiler_stop(lock);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  samplerThread->Join();
+  delete samplerThread;
 
   LOG("END   profiler_stop");
 }
@@ -2153,24 +2478,31 @@ bool
 profiler_is_paused()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gSampler) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return false;
   }
 
-  return gIsPaused;
+  return gPS->IsPaused(lock);
 }
 
 void
 profiler_pause()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gSampler) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  gIsPaused = true;
+  gPS->SetIsPaused(lock, true);
+
   if (CanNotifyObservers()) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
@@ -2183,12 +2515,16 @@ void
 profiler_resume()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!gSampler) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  gIsPaused = false;
+  gPS->SetIsPaused(lock, false);
+
   if (CanNotifyObservers()) {
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
@@ -2202,24 +2538,28 @@ profiler_feature_active(const char* aName)
 {
   
 
-  if (!gIsProfiling) {
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return false;
   }
 
+  if (strcmp(aName, "displaylistdump") == 0) {
+    return gPS->FeatureDisplayListDump(lock);
+  }
+
   if (strcmp(aName, "gpu") == 0) {
-    return gProfileGPU;
+    return gPS->FeatureGPU(lock);
   }
 
   if (strcmp(aName, "layersdump") == 0) {
-    return gLayersDump;
-  }
-
-  if (strcmp(aName, "displaylistdump") == 0) {
-    return gDisplayListDump;
+    return gPS->FeatureLayersDump(lock);
   }
 
   if (strcmp(aName, "restyle") == 0) {
-    return gProfileRestyle;
+    return gPS->FeatureRestyle(lock);
   }
 
   return false;
@@ -2230,21 +2570,29 @@ profiler_is_active()
 {
   
 
-  return gIsProfiling;
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  return gPS->IsActive(lock);
 }
 
 void
-profiler_set_frame_number(int frameNumber)
+profiler_set_frame_number(int aFrameNumber)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  gFrameNumber = frameNumber;
+  PS::AutoLock lock(gPSMutex);
+
+  gPS->SetFrameNumber(lock, aFrameNumber);
 }
 
 void
 profiler_lock()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
   profiler_stop();
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
@@ -2256,6 +2604,7 @@ void
 profiler_unlock()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os)
@@ -2267,16 +2616,16 @@ profiler_register_thread(const char* aName, void* aGuessStackTop)
 {
   
 
-  if (gInitCount == 0) {
-    return;
-  }
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
 
   MOZ_ASSERT(tlsPseudoStack.get() == nullptr);
   NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   tlsPseudoStack.set(stack);
   bool isMainThread = is_main_thread_name(aName);
   void* stackTop = GetStackTop(aGuessStackTop);
-  RegisterCurrentThread(aName, stack, isMainThread, stackTop);
+  RegisterCurrentThread(lock, aName, stack, isMainThread, stackTop);
 }
 
 void
@@ -2284,37 +2633,30 @@ profiler_unregister_thread()
 {
   
 
-  
-  
-  if (!stack_key_initialized) {
-    return;
-  }
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  Thread::tid_t id = Thread::GetCurrentId();
 
   bool wasPseudoStackTransferred = false;
 
-  {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-    if (gRegisteredThreads) {
-      Thread::tid_t id = Thread::GetCurrentId();
-
-      for (uint32_t i = 0; i < gRegisteredThreads->size(); i++) {
-        ThreadInfo* info = gRegisteredThreads->at(i);
-        if (info->ThreadId() == id && !info->IsPendingDelete()) {
-          if (profiler_is_active()) {
-            
-            
-            
-            
-            info->SetPendingDelete();
-            wasPseudoStackTransferred = true;
-          } else {
-            delete info;
-            gRegisteredThreads->erase(gRegisteredThreads->begin() + i);
-          }
-          break;
-        }
+  PS::ThreadVector& threads = gPS->Threads(lock);
+  for (uint32_t i = 0; i < threads.size(); i++) {
+    ThreadInfo* info = threads.at(i);
+    if (info->ThreadId() == id && !info->IsPendingDelete()) {
+      if (gPS->IsActive(lock)) {
+        
+        
+        
+        
+        info->SetPendingDelete();
+        wasPseudoStackTransferred = true;
+      } else {
+        delete info;
+        threads.erase(threads.begin() + i);
       }
+      break;
     }
   }
 
@@ -2329,9 +2671,7 @@ profiler_thread_sleep()
 {
   
 
-  if (gInitCount == 0) {
-    return;
-  }
+  MOZ_RELEASE_ASSERT(gPS);
 
   PseudoStack *stack = tlsPseudoStack.get();
   if (stack == nullptr) {
@@ -2345,9 +2685,7 @@ profiler_thread_wake()
 {
   
 
-  if (gInitCount == 0) {
-    return;
-  }
+  MOZ_RELEASE_ASSERT(gPS);
 
   PseudoStack *stack = tlsPseudoStack.get();
   if (stack == nullptr) {
@@ -2359,13 +2697,9 @@ profiler_thread_wake()
 bool
 profiler_thread_is_sleeping()
 {
-  
-  
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (gInitCount == 0) {
-    return false;
-  }
   PseudoStack *stack = tlsPseudoStack.get();
   if (stack == nullptr) {
     return false;
@@ -2377,6 +2711,8 @@ void
 profiler_js_operation_callback()
 {
   
+
+  MOZ_RELEASE_ASSERT(gPS);
 
   PseudoStack *stack = tlsPseudoStack.get();
   if (!stack) {
@@ -2391,42 +2727,36 @@ profiler_time()
 {
   
 
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
   mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - gStartTime;
+    mozilla::TimeStamp::Now() - gPS->StartTime(lock);
   return delta.ToMilliseconds();
 }
 
 bool
-profiler_in_privacy_mode()
+profiler_is_active_and_not_in_privacy_mode()
 {
   
 
-  PseudoStack *stack = tlsPseudoStack.get();
-  if (!stack) {
-    return false;
-  }
-  return stack->mPrivacyMode;
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  return gPS->IsActive(lock) && !gPS->FeaturePrivacy(lock);
 }
 
 UniqueProfilerBacktrace
 profiler_get_backtrace()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
-  if (!stack_key_initialized)
-    return nullptr;
+  PS::AutoLock lock(gPSMutex);
 
-  
-  if (!profiler_is_active()) {
-    return nullptr;
-  }
-
-  
-  if (profiler_in_privacy_mode()) {
-    return nullptr;
-  }
-
-  if (!gSampler) {
+  if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
     return nullptr;
   }
 
@@ -2460,7 +2790,7 @@ profiler_get_backtrace()
   sample.isSamplingCurrentThread = true;
   sample.timestamp = mozilla::TimeStamp::Now();
 
-  Tick(buffer, &sample);
+  Tick(lock, buffer, &sample);
 
   return UniqueProfilerBacktrace(new ProfilerBacktrace(buffer, threadInfo));
 }
@@ -2478,6 +2808,7 @@ void
 profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
 
   MOZ_ASSERT(outputSize >= 2);
   char *bound = output + outputSize - 2;
@@ -2501,19 +2832,65 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
   }
 }
 
+static void
+locked_profiler_add_marker(PS::LockRef aLock, const char* aMarker,
+                           ProfilerMarkerPayload* aPayload)
+{
+  
+
+  MOZ_RELEASE_ASSERT(gPS);
+  MOZ_RELEASE_ASSERT(gPS->IsActive(aLock) && !gPS->FeaturePrivacy(aLock));
+
+  
+  mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
+
+  PseudoStack *stack = tlsPseudoStack.get();
+  if (!stack) {
+    return;
+  }
+
+  mozilla::TimeStamp origin = (payload && !payload->GetStartTime().IsNull())
+                            ? payload->GetStartTime()
+                            : mozilla::TimeStamp::Now();
+  mozilla::TimeDuration delta = origin - gPS->StartTime(aLock);
+  stack->addMarker(aMarker, payload.release(), delta.ToMilliseconds());
+}
+
+void
+profiler_add_marker(const char* aMarker, ProfilerMarkerPayload* aPayload)
+{
+  
+
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  
+  mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
+
+  if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
+    return;
+  }
+
+  locked_profiler_add_marker(lock, aMarker, payload.release());
+}
+
 void
 profiler_tracing(const char* aCategory, const char* aInfo,
                  TracingMetadata aMetaData)
 {
   
 
-  
-  
-  if (!stack_key_initialized || !profiler_is_active()) {
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
     return;
   }
 
-  profiler_add_marker(aInfo, new ProfilerMarkerTracing(aCategory, aMetaData));
+  auto marker = new ProfilerMarkerTracing(aCategory, aMetaData);
+  locked_profiler_add_marker(lock, aInfo, marker);
 }
 
 void
@@ -2522,48 +2899,17 @@ profiler_tracing(const char* aCategory, const char* aInfo,
 {
   
 
-  
-  
-  if (!stack_key_initialized || !profiler_is_active()) {
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock) || gPS->FeaturePrivacy(lock)) {
     return;
   }
 
-  profiler_add_marker(aInfo, new ProfilerMarkerTracing(aCategory, aMetaData,
-                                                       mozilla::Move(aCause)));
-}
-
-void
-profiler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload)
-{
-  
-
-  
-  
-  mozilla::UniquePtr<ProfilerMarkerPayload> payload(aPayload);
-
-  if (!stack_key_initialized)
-    return;
-
-  
-  
-  if (!profiler_is_active()) {
-    return;
-  }
-
-  
-  if (profiler_in_privacy_mode()) {
-    return;
-  }
-
-  PseudoStack *stack = tlsPseudoStack.get();
-  if (!stack) {
-    return;
-  }
-
-  mozilla::TimeStamp origin = (aPayload && !aPayload->GetStartTime().IsNull()) ?
-                     aPayload->GetStartTime() : mozilla::TimeStamp::Now();
-  mozilla::TimeDuration delta = origin - gStartTime;
-  stack->addMarker(aMarker, payload.release(), delta.ToMilliseconds());
+  auto marker =
+    new ProfilerMarkerTracing(aCategory, aMetaData, mozilla::Move(aCause));
+  locked_profiler_add_marker(lock, aInfo, marker);
 }
 
 
@@ -2571,46 +2917,33 @@ profiler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload)
 
 void PseudoStack::flushSamplerOnJSShutdown()
 {
+  MOZ_RELEASE_ASSERT(gPS);
   MOZ_ASSERT(mContext);
 
-  if (!gIsActive) {
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
     return;
   }
 
-  gIsPaused = true;
+  gPS->SetIsPaused(lock, true);
 
-  {
-    StaticMutexAutoLock lock(gRegisteredThreadsMutex);
-
-    for (size_t i = 0; i < gRegisteredThreads->size(); i++) {
-      
-      ThreadInfo* info = gRegisteredThreads->at(i);
-      if (!info->HasProfile() || info->IsPendingDelete()) {
-        continue;
-      }
-
-      
-      if (info->Stack()->mContext != mContext) {
-        continue;
-      }
-
-      MutexAutoLock lock(info->GetMutex());
-      info->FlushSamplesAndMarkers(gBuffer, gStartTime);
+  const PS::ThreadVector& threads = gPS->Threads(lock);
+  for (size_t i = 0; i < threads.size(); i++) {
+    
+    ThreadInfo* info = threads.at(i);
+    if (!info->HasProfile() || info->IsPendingDelete()) {
+      continue;
     }
+
+    
+    if (info->Stack()->mContext != mContext) {
+      continue;
+    }
+
+    info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
   }
 
-  gIsPaused = false;
+  gPS->SetIsPaused(lock, false);
 }
-
-
-
-#if defined(GP_OS_windows)
-# include "platform-win32.cpp"
-#elif defined(GP_OS_darwin)
-# include "platform-macos.cpp"
-#elif defined(GP_OS_linux) || defined(GP_OS_android)
-# include "platform-linux-android.cpp"
-#else
-# error "bad platform"
-#endif
 
