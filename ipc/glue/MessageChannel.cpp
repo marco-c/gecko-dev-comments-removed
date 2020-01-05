@@ -2265,14 +2265,18 @@ MessageChannel::Close()
             return;
         }
 
-        if (ChannelConnected != mChannelState) {
+        if (ChannelClosed == mChannelState) {
             
             
             NS_RUNTIMEABORT("Close() called on closed channel!");
         }
 
         
-        mLink->SendMessage(new GoodbyeMessage());
+        
+        
+        if (ChannelConnected == mChannelState) {
+          mLink->SendMessage(new GoodbyeMessage());
+        }
         SynchronouslyClose();
     }
 
