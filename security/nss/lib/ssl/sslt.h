@@ -160,6 +160,7 @@ typedef struct SSLChannelInfoStr {
     
 
 
+
     PRUint32 length;
     PRUint16 protocolVersion;
     PRUint16 cipherSuite;
@@ -194,6 +195,9 @@ typedef struct SSLChannelInfoStr {
 
 
     PRBool earlyDataAccepted;
+
+    
+
 } SSLChannelInfo;
 
 
@@ -205,6 +209,7 @@ typedef struct SSLPreliminaryChannelInfoStr {
     
 
 
+
     PRUint32 length;
     
 
@@ -213,10 +218,14 @@ typedef struct SSLPreliminaryChannelInfoStr {
     PRUint16 protocolVersion;
     
     PRUint16 cipherSuite;
+
+    
+
 } SSLPreliminaryChannelInfo;
 
 typedef struct SSLCipherSuiteInfoStr {
     
+
 
 
     PRUint16 length;
@@ -254,8 +263,11 @@ typedef struct SSLCipherSuiteInfoStr {
     PRUintn reservedBits : 29;
 
     
+    
 
     SSLAuthType authType;
+
+    
 
 } SSLCipherSuiteInfo;
 
