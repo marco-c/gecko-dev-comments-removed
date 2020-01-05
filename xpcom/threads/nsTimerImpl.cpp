@@ -112,68 +112,30 @@ myNS_MeanAndStdDev(double n, double sumOfValues, double sumOfSquaredValues,
   *stdDevResult = stdDev;
 }
 
-NS_IMPL_QUERY_INTERFACE(nsTimerImpl, nsITimer)
-NS_IMPL_ADDREF(nsTimerImpl)
+NS_IMPL_QUERY_INTERFACE(nsTimer, nsITimer)
+NS_IMPL_ADDREF(nsTimer)
 
 NS_IMETHODIMP_(MozExternalRefCountType)
-nsTimerImpl::Release(void)
+nsTimer::Release(void)
 {
-  nsrefcnt count;
+  nsrefcnt count = --mRefCnt;
+  NS_LOG_RELEASE(this, count, "nsTimer");
 
-  MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");
-  count = --mRefCnt;
-  NS_LOG_RELEASE(this, count, "nsTimerImpl");
-  if (count == 0) {
-    mRefCnt = 1; 
-
+  if (count == 1) {
     
     
+    
+    
+    mImpl->Neuter();
+    mImpl = nullptr;
+  } else if (count == 0) {
     delete this;
-    return 0;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (count == 1 && mArmed) {
-    mCanceled = true;
-
-    MOZ_ASSERT(gThread, "Armed timer exists after the thread timer stopped.");
-    if (NS_SUCCEEDED(gThread->RemoveTimer(this))) {
-      return 0;
-    }
   }
 
   return count;
 }
 
-nsTimerImpl::nsTimerImpl() :
+nsTimerImpl::nsTimerImpl(nsITimer* aTimer) :
   mClosure(nullptr),
   mName(nsTimerImpl::Nothing),
   mCallbackType(CallbackType::Unknown),
@@ -181,8 +143,10 @@ nsTimerImpl::nsTimerImpl() :
   mArmed(false),
   mCanceled(false),
   mGeneration(0),
-  mDelay(0)
+  mDelay(0),
+  mITimer(aTimer)
 {
+  MOZ_COUNT_CTOR(nsTimerImpl);
   
   mEventTarget = static_cast<nsIEventTarget*>(NS_GetCurrentThread());
 
@@ -191,6 +155,7 @@ nsTimerImpl::nsTimerImpl() :
 
 nsTimerImpl::~nsTimerImpl()
 {
+  MOZ_COUNT_DTOR(nsTimerImpl);
   ReleaseCallback();
 }
 
@@ -362,10 +327,27 @@ nsTimerImpl::Cancel()
   return NS_OK;
 }
 
+void
+nsTimerImpl::Neuter()
+{
+  if (gThread) {
+    gThread->RemoveTimer(this);
+  }
+
+  
+  
+  
+  ++mGeneration;
+
+  
+  
+  mEventTarget = nullptr;
+}
+
 NS_IMETHODIMP
 nsTimerImpl::SetDelay(uint32_t aDelay)
 {
-  if (mCallbackType == CallbackType::Unknown && mType == TYPE_ONE_SHOT) {
+  if (mCallbackType == CallbackType::Unknown && mType == nsITimer::TYPE_ONE_SHOT) {
     
     
     NS_ERROR("nsITimer->SetDelay() called when the "
@@ -518,13 +500,13 @@ nsTimerImpl::Fire()
 
   switch (callbackType) {
     case CallbackType::Function:
-      callback.c(this, mClosure);
+      callback.c(mITimer, mClosure);
       break;
     case CallbackType::Interface:
-      callback.i->Notify(this);
+      callback.i->Notify(mITimer);
       break;
     case CallbackType::Observer:
-      callback.o->Observe(static_cast<nsITimer*>(this),
+      callback.o->Observe(mITimer,
                           NS_TIMER_CALLBACK_TOPIC,
                           nullptr);
       break;
@@ -535,7 +517,7 @@ nsTimerImpl::Fire()
   
   
   if (mCallbackType == CallbackType::Unknown &&
-      mType != TYPE_ONE_SHOT && !mCanceled) {
+      mType != nsITimer::TYPE_ONE_SHOT && !mCanceled) {
     mCallback = callback;
     mCallbackType = callbackType;
   } else {
@@ -557,7 +539,7 @@ nsTimerImpl::Fire()
   
   
   if (IsRepeating() && !mArmed) {
-    if (mType == TYPE_REPEATING_SLACK) {
+    if (mType == nsITimer::TYPE_REPEATING_SLACK) {
       SetDelayInternal(mDelay);  
     }
     
@@ -583,10 +565,10 @@ nsTimerImpl::LogFiring(CallbackType aCallbackType, CallbackUnion aCallback)
 {
   const char* typeStr;
   switch (mType) {
-    case TYPE_ONE_SHOT:                   typeStr = "ONE_SHOT"; break;
-    case TYPE_REPEATING_SLACK:            typeStr = "SLACK   "; break;
-    case TYPE_REPEATING_PRECISE:          
-    case TYPE_REPEATING_PRECISE_CAN_SKIP: typeStr = "PRECISE "; break;
+    case nsITimer::TYPE_ONE_SHOT:                   typeStr = "ONE_SHOT"; break;
+    case nsITimer::TYPE_REPEATING_SLACK:            typeStr = "SLACK   "; break;
+    case nsITimer::TYPE_REPEATING_PRECISE:          
+    case nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP: typeStr = "PRECISE "; break;
     default:                              MOZ_CRASH("bad type");
   }
 
@@ -602,7 +584,7 @@ nsTimerImpl::LogFiring(CallbackType aCallbackType, CallbackUnion aCallback)
         name = mName.as<NameString>();
 
       } else if (mName.is<NameFunc>()) {
-        mName.as<NameFunc>()(this, mClosure, buf, buflen);
+        mName.as<NameFunc>()(mITimer, mClosure, buf, buflen);
         name = buf;
 
       } else {
@@ -704,8 +686,12 @@ nsTimerImpl::SetDelayInternal(uint32_t aDelay)
   }
 }
 
+nsTimer::~nsTimer()
+{
+}
+
 size_t
-nsTimerImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+nsTimer::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
   return aMallocSizeOf(this);
 }
@@ -724,5 +710,6 @@ nsTimerImpl::GetTracedTask()
 {
   return mTracedTask;
 }
+
 #endif
 
