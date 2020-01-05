@@ -15,7 +15,7 @@ namespace mozilla {
 
 struct DecoderDoctorEvent {
   enum Domain {
-    
+    eAudioSinkStartup,
   } mDomain;
   nsresult mResult;
 };
