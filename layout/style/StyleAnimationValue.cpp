@@ -297,23 +297,6 @@ AppendCSSShadowValue(const nsCSSShadowItem *aShadow,
   aResultTail = &resultItem->mNext;
 }
 
-static already_AddRefed<mozilla::css::URLValue>
-FragmentOrURLToURLValue(FragmentOrURL* aUrl, nsIDocument* aDoc)
-{
-  nsString path;
-  aUrl->GetSourceString(path);
-  RefPtr<nsStringBuffer> uriStringBuffer = nsCSSValue::BufferFromString(path);
-  
-  
-  
-  RefPtr<mozilla::css::URLValue> result =
-    new mozilla::css::URLValue(aUrl->GetSourceURL(), uriStringBuffer,
-                               aUrl->GetSourceURL(), aDoc->GetDocumentURI(),
-                               aDoc->NodePrincipal());
-
-  return result.forget();
-}
-
 
 
 struct PixelCalcValue
