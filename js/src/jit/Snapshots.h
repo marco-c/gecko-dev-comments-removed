@@ -8,6 +8,7 @@
 #define jit_Snapshot_h
 
 #include "mozilla/Alignment.h"
+#include "mozilla/Attributes.h"
 
 #include "jsalloc.h"
 #include "jsbytecode.h"
@@ -504,8 +505,15 @@ class SnapshotReader
     }
 };
 
-class RInstructionStorage
+class MOZ_NON_PARAM RInstructionStorage
 {
+    static constexpr size_t Size = 4 * sizeof(uint32_t);
+
+    
+    
+    
+    static constexpr size_t Alignment = alignof(void*);
+
     
 
 
@@ -521,35 +529,19 @@ class RInstructionStorage
 
 
 
-    static constexpr size_t Size = 4 * sizeof(uint32_t);
-    union U
-    {
-        char mBytes[Size];
-
-        
-        
-        
-        uint64_t mDummy;
-    } u;
+    alignas(Alignment) unsigned char mem[Size];
 
   public:
-    const void* addr() const { return u.mBytes; }
-    void* addr() { return u.mBytes; }
+    const void* addr() const { return mem; }
+    void* addr() { return mem; }
 
     RInstructionStorage() = default;
 
-    RInstructionStorage(const RInstructionStorage& other) {
-        
-        
-        
-        memcpy(addr(), other.addr(), Size);
-    }
-    void operator=(const RInstructionStorage& other) {
-        
-        
-        
-        memcpy(addr(), other.addr(), Size);
-    }
+    
+    
+    
+    RInstructionStorage(const RInstructionStorage& other) = default;
+    RInstructionStorage& operator=(const RInstructionStorage& other) = default;
 };
 
 class RInstruction;
