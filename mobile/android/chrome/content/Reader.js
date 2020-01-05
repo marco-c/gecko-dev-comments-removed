@@ -126,10 +126,7 @@ var Reader = {
       }
 
       case "Reader:SystemUIVisibility":
-        WindowEventDispatcher.sendRequest({
-          type: "SystemUI:Visibility",
-          visible: message.data.visible
-        });
+        this._showSystemUI(message.data.visible);
         break;
 
       case "Reader:ToolbarHidden":
@@ -190,6 +187,9 @@ var Reader = {
     }
 
     
+    this._showSystemUI(true);
+
+    
     UITelemetry.stopSession("reader.1", "", null);
 
     if (browser.isArticle) {
@@ -198,6 +198,13 @@ var Reader = {
     } else {
       UITelemetry.addEvent("show.1", "button", null, "reader_unavailable");
     }
+  },
+
+  _showSystemUI: function(visibility) {
+      WindowEventDispatcher.sendRequest({
+          type: "SystemUI:Visibility",
+          visible: visibility
+      });
   },
 
   
