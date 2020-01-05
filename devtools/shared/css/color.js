@@ -170,17 +170,13 @@ CssColor.prototype = {
       return invalidOrSpecialValue;
     }
 
-    try {
-      let tuple = this.getRGBATuple();
+    let tuple = this.getRGBATuple();
 
-      if (tuple.a !== 1) {
-        return this.hex;
-      }
-      let {r, g, b} = tuple;
-      return rgbToColorName(r, g, b);
-    } catch (e) {
+    if (tuple.a !== 1) {
       return this.hex;
     }
+    let {r, g, b} = tuple;
+    return rgbToColorName(r, g, b) || this.hex;
   },
 
   get hex() {
@@ -453,7 +449,7 @@ CssColor.prototype = {
 
 
   isTransparent: function () {
-    return this._getRGBATuple().a === 0;
+    return this.getRGBATuple().a === 0;
   },
 };
 
@@ -580,11 +576,7 @@ function rgbToColorName(r, g, b) {
       }
     }
   }
-  let value = cssRGBMap[JSON.stringify([r, g, b, 1])];
-  if (!value) {
-    throw new Error("no such color");
-  }
-  return value;
+  return cssRGBMap[JSON.stringify([r, g, b, 1])] || "";
 }
 
 
