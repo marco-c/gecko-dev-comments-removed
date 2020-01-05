@@ -215,7 +215,7 @@ PUSH_APK_SCOPES = {
 PUSH_APK_GOOGLE_PLAY_TRACT = {
     'aurora': 'beta',
     'beta': 'production',
-    'release': 'production',
+    'release': 'rollout',
     'default': 'invalid',
 }
 
@@ -229,11 +229,13 @@ PUSH_APK_BREAKPOINT_WORKER_TYPE = {
 PUSH_APK_DRY_RUN_OPTION = {
     'aurora': False,
     'beta': False,
-    'release': True,
+    'release': False,
     'default': True,
 }
 
 PUSH_APK_ROLLOUT_PERCENTAGE = {
+    
+    
     'release': 10,
     'default': None,
 }
