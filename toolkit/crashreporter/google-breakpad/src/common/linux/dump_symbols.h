@@ -70,6 +70,12 @@ bool WriteSymbolFile(const string &obj_file,
 
 
 
+bool WriteSymbolFileHeader(const string& obj_file,
+                           std::ostream &sym_stream);
+
+
+
+
 bool ReadSymbolData(const string& obj_file,
                     const std::vector<string>& debug_dirs,
                     const DumpOptions& options,

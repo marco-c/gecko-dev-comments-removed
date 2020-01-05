@@ -33,17 +33,18 @@
 
 
 
-#include <cstdio>
 #include <string>
 
+#include "common/stdio_wrapper.h"
+#include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
 #include "google_breakpad/common/minidump_exception_win32.h"
 #include "processor/symbolic_constants_win.h"
 
 namespace google_breakpad {
 
-std::string NTStatusToString(uint32_t ntstatus) {
-  std::string reason;
+string NTStatusToString(uint32_t ntstatus) {
+  string reason;
   
   
   
@@ -6406,7 +6407,7 @@ std::string NTStatusToString(uint32_t ntstatus) {
       break;
     default: {
       char reason_string[11];
-      std::snprintf(reason_string, sizeof(reason_string), "0x%08x", ntstatus);
+      snprintf(reason_string, sizeof(reason_string), "0x%08x", ntstatus);
       reason = reason_string;
       break;
     }

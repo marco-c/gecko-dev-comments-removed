@@ -44,6 +44,47 @@
 #include "third_party/lss/linux_syscall_support.h"
 #endif
 
+#if defined(__ANDROID__)
+#include <errno.h>
+
+namespace {
+
+bool g_need_ftruncate_workaround = false;
+bool g_checked_need_ftruncate_workaround = false;
+
+void CheckNeedsFTruncateWorkAround(int file) {
+  if (g_checked_need_ftruncate_workaround) {
+    return;
+  }
+  g_checked_need_ftruncate_workaround = true;
+
+  
+  
+  off_t offset = sys_lseek(file, 0, SEEK_END);
+  if (offset == -1) {
+    
+    
+    return;
+  }
+
+  int result = ftruncate(file, offset);
+  if (result == -1 && errno == EACCES) {
+    
+    
+    
+    
+    
+    g_need_ftruncate_workaround = true;
+  }
+}
+
+bool NeedsFTruncateWorkAround() {
+  return g_need_ftruncate_workaround;
+}
+
+}  
+#endif  
+
 namespace google_breakpad {
 
 const MDRVA MinidumpFileWriter::kInvalidMDRVA = static_cast<MDRVA>(-1);
@@ -75,15 +116,24 @@ void MinidumpFileWriter::SetFile(const int file) {
   assert(file_ == -1);
   file_ = file;
   close_file_when_destroyed_ = false;
+#if defined(__ANDROID__)
+  CheckNeedsFTruncateWorkAround(file);
+#endif
 }
 
 bool MinidumpFileWriter::Close() {
   bool result = true;
 
   if (file_ != -1) {
-    if (-1 == ftruncate(file_, position_)) {
+#if defined(__ANDROID__)
+    if (!NeedsFTruncateWorkAround() && ftruncate(file_, position_)) {
        return false;
     }
+#else
+    if (ftruncate(file_, position_)) {
+       return false;
+    }
+#endif
 #if defined(__linux__) && __linux__
     result = (sys_close(file_) == 0);
 #else
@@ -220,6 +270,20 @@ bool MinidumpFileWriter::WriteMemory(const void *src, size_t size,
 MDRVA MinidumpFileWriter::Allocate(size_t size) {
   assert(size);
   assert(file_ != -1);
+#if defined(__ANDROID__)
+  if (NeedsFTruncateWorkAround()) {
+    
+    
+    
+    
+    size_ += size;
+
+    
+    MDRVA current_position = position_;
+    position_ += static_cast<MDRVA>(size);
+    return current_position;
+  }
+#endif
   size_t aligned_size = (size + 7) & ~7;  
 
   if (position_ + aligned_size > size_) {
@@ -256,14 +320,16 @@ bool MinidumpFileWriter::Copy(MDRVA position, const void *src, ssize_t size) {
 #if defined(__linux__) && __linux__
   if (sys_lseek(file_, position, SEEK_SET) == static_cast<off_t>(position)) {
     if (sys_write(file_, src, size) == size) {
-#else
-  if (lseek(file_, position, SEEK_SET) == static_cast<off_t>(position)) {
-    if (write(file_, src, size) == size) {
-#endif
       return true;
     }
   }
-
+#else
+  if (lseek(file_, position, SEEK_SET) == static_cast<off_t>(position)) {
+    if (write(file_, src, size) == size) {
+      return true;
+    }
+  }
+#endif
   return false;
 }
 
