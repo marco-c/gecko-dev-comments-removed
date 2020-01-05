@@ -108,6 +108,17 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       yield tunnel.start();
 
       
+      
+      if (gBrowser.isFindBarInitialized(tab)) {
+        let findBar = gBrowser.getFindBar(tab);
+        findBar.browser = tab.linkedBrowser;
+        if (!findBar.hidden) {
+          
+          findBar.onFindCommand();
+        }
+      }
+
+      
       thawNavigationState(tab);
       gBrowser.setTabTitle(tab);
       gBrowser.updateCurrentBrowser(true);
@@ -147,6 +158,18 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       dispatchDevToolsBrowserSwap(contentBrowser, tab.linkedBrowser);
       gBrowser.swapBrowsersAndCloseOther(tab, contentTab);
+
+      
+      
+      if (gBrowser.isFindBarInitialized(tab)) {
+        let findBar = gBrowser.getFindBar(tab);
+        findBar.browser = tab.linkedBrowser;
+        if (!findBar.hidden) {
+          
+          findBar.onFindCommand();
+        }
+      }
+
       gBrowser = null;
 
       

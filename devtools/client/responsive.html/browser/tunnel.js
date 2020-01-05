@@ -23,6 +23,7 @@ function debug(msg) {
 
 
 const SWAPPED_BROWSER_STATE = [
+  "_remoteFinder",
   "_securityUI",
   "_documentURI",
   "_documentContentType",
