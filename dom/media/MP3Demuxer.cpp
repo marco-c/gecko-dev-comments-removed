@@ -259,7 +259,9 @@ MP3TrackDemuxer::ScanUntil(const TimeUnit& aTime)
   }
 
   if (Duration(mFrameIndex) > aTime) {
-    FastSeek(aTime);
+    
+    const int64_t rewind = aTime.ToMicroseconds() / 100;
+    FastSeek(aTime - TimeUnit::FromMicroseconds(rewind));
   }
 
   if (Duration(mFrameIndex + 1) > aTime) {
