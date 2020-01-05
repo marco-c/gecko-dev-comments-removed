@@ -2,28 +2,17 @@
 
 
 
-use ipc_channel::ipc::IpcSender;
 use std::str::FromStr;
 use url::Url;
 use uuid::Uuid;
 
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum BlobURLStoreError {
     
-    InvalidKey,
+    InvalidFileID,
     
     InvalidOrigin,
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum BlobURLStoreMsg {
-    
-    
-    
-    AddEntry(BlobURLStoreEntry, String, IpcSender<Result<String, BlobURLStoreError>>),
-    
-    DeleteEntry(String),
 }
 
 
@@ -31,8 +20,6 @@ pub enum BlobURLStoreMsg {
 pub struct BlobURLStoreEntry {
     
     pub type_string: String,
-    
-    pub filename: Option<String>,
     
     pub size: u64,
     

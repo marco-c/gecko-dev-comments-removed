@@ -8,17 +8,18 @@ use dom::bindings::codegen::Bindings::BlobBinding::BlobMethods;
 use dom::bindings::codegen::UnionTypes::BlobOrString;
 use dom::bindings::error::{Error, Fallible};
 use dom::bindings::global::GlobalRef;
-use dom::bindings::js::Root;
+use dom::bindings::js::{JS, Root};
 use dom::bindings::reflector::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::str::DOMString;
 use encoding::all::UTF_8;
 use encoding::types::{EncoderTrap, Encoding};
 use ipc_channel::ipc;
-use net_traits::filemanager_thread::{FileManagerThreadMsg, SelectedFileId};
-use num_traits::ToPrimitive;
+use net_traits::IpcSend;
+use net_traits::blob_url_store::BlobURLStoreEntry;
+use net_traits::filemanager_thread::{FileManagerThreadMsg, SelectedFileId, RelativePos};
 use std::ascii::AsciiExt;
 use std::cell::Cell;
-use std::cmp::{max, min};
+use std::ops::Range;
 use std::sync::Arc;
 
 #[derive(Clone, JSTraceable)]
@@ -31,36 +32,12 @@ pub struct DataSlice {
 impl DataSlice {
     
     pub fn new(bytes: Arc<Vec<u8>>, start: Option<i64>, end: Option<i64>) -> DataSlice {
-        let size = bytes.len() as i64;
-        let relativeStart: i64 = match start {
-            None => 0,
-            Some(start) => {
-                if start < 0 {
-                    max(size + start, 0)
-                } else {
-                    min(start, size)
-                }
-            }
-        };
-        let relativeEnd: i64 = match end {
-            None => size,
-            Some(end) => {
-                if end < 0 {
-                    max(size + end, 0)
-                } else {
-                    min(end, size)
-                }
-            }
-        };
-
-        let span: i64 = max(relativeEnd - relativeStart, 0);
-        let start = relativeStart.to_usize().unwrap();
-        let end = (relativeStart + span).to_usize().unwrap();
+        let range = RelativePos::from_opts(start, end).to_abs_range(bytes.len());
 
         DataSlice {
             bytes: bytes,
-            bytes_start: start,
-            bytes_end: end
+            bytes_start: range.start,
+            bytes_end: range.end,
         }
     }
 
@@ -87,15 +64,30 @@ impl DataSlice {
     pub fn size(&self) -> u64 {
         (self.bytes_end as u64) - (self.bytes_start as u64)
     }
+
+    
+    pub fn slice(&self, pos: &RelativePos) -> DataSlice {
+        let old_size = self.size();
+        let range = pos.to_abs_range(old_size as usize);
+        DataSlice {
+            bytes: self.bytes.clone(),
+            bytes_start: self.bytes_start + range.start,
+            bytes_end: self.bytes_start + range.end,
+        }
+    }
 }
 
-
-#[derive(Clone, JSTraceable)]
+#[must_root]
+#[derive(JSTraceable)]
 pub enum BlobImpl {
     
     File(SelectedFileId, DOMRefCell<Option<DataSlice>>),
     
     Memory(DataSlice),
+    
+    
+    
+    Sliced(JS<Blob>, RelativePos),
 }
 
 impl BlobImpl {
@@ -120,24 +112,56 @@ impl BlobImpl {
 pub struct Blob {
     reflector_: Reflector,
     #[ignore_heap_size_of = "No clear owner"]
-    blob_impl: BlobImpl,
+    blob_impl: DOMRefCell<BlobImpl>,
     typeString: String,
     isClosed_: Cell<bool>,
 }
 
 impl Blob {
+    #[allow(unrooted_must_root)]
     pub fn new(global: GlobalRef, blob_impl: BlobImpl, typeString: String) -> Root<Blob> {
         let boxed_blob = box Blob::new_inherited(blob_impl, typeString);
         reflect_dom_object(boxed_blob, global, BlobBinding::Wrap)
     }
 
+    #[allow(unrooted_must_root)]
     pub fn new_inherited(blob_impl: BlobImpl, typeString: String) -> Blob {
         Blob {
             reflector_: Reflector::new(),
-            blob_impl: blob_impl,
+            blob_impl: DOMRefCell::new(blob_impl),
             typeString: typeString,
             isClosed_: Cell::new(false),
         }
+    }
+
+    #[allow(unrooted_must_root)]
+    fn new_sliced(parent: &Blob, rel_pos: RelativePos,
+                  relativeContentType: DOMString) -> Root<Blob> {
+        let global = parent.global();
+        let blob_impl = match *parent.blob_impl.borrow() {
+            BlobImpl::File(ref id, _) => {
+                inc_ref_id(global.r(), id.clone());
+
+                
+                BlobImpl::Sliced(JS::from_ref(parent), rel_pos)
+            }
+            BlobImpl::Memory(_) => {
+                
+                BlobImpl::Sliced(JS::from_ref(parent), rel_pos)
+            }
+            BlobImpl::Sliced(ref grandparent, ref old_rel_pos) => {
+                
+                let new_rel_pos = old_rel_pos.slice_inner(&rel_pos);
+
+                if let BlobImpl::File(ref id, _) = *grandparent.blob_impl.borrow() {
+                    inc_ref_id(global.r(), id.clone());
+                }
+
+                BlobImpl::Sliced(grandparent.clone(), new_rel_pos)
+            }
+        };
+
+        Blob::new(global.r(), blob_impl, relativeContentType.into())
     }
 
     
@@ -160,19 +184,29 @@ impl Blob {
 
     
     pub fn get_slice(&self) -> Result<DataSlice, ()> {
-        match self.blob_impl {
-            BlobImpl::File(ref id, ref slice) => {
-                match *slice.borrow() {
+        match *self.blob_impl.borrow() {
+            BlobImpl::File(ref id, ref cached) => {
+                let buffer = match *cached.borrow() {
                     Some(ref s) => Ok(s.clone()),
                     None => {
                         let global = self.global();
                         let s = read_file(global.r(), id.clone())?;
-                        *slice.borrow_mut() = Some(s.clone()); 
                         Ok(s)
                     }
+                };
+
+                
+                if let Ok(buf) = buffer.clone() {
+                    *cached.borrow_mut() = Some(buf);
                 }
+
+                buffer
             }
-            BlobImpl::Memory(ref s) => Ok(s.clone())
+            BlobImpl::Memory(ref s) => Ok(s.clone()),
+            BlobImpl::Sliced(ref parent, ref rel_pos) => {
+                let dataslice = parent.get_slice_or_empty();
+                Ok(dataslice.slice(rel_pos))
+            }
         }
     }
 
@@ -180,12 +214,83 @@ impl Blob {
     pub fn get_slice_or_empty(&self) -> DataSlice {
         self.get_slice().unwrap_or(DataSlice::empty())
     }
+
+    pub fn get_id(&self) -> SelectedFileId {
+        match *self.blob_impl.borrow() {
+            BlobImpl::File(ref id, _) => id.clone(),
+            BlobImpl::Memory(ref slice) => self.promote_to_file(slice),
+            BlobImpl::Sliced(ref parent, ref rel_pos) => {
+                match *parent.blob_impl.borrow() {
+                    BlobImpl::Sliced(_, _) => {
+                        debug!("Sliced can't have a sliced parent");
+                        
+                        SelectedFileId("".to_string())
+                    }
+                    BlobImpl::File(ref parent_id, _) =>
+                        self.create_sliced_id(parent_id, rel_pos),
+                    BlobImpl::Memory(ref parent_slice) => {
+                        let parent_id = parent.promote_to_file(parent_slice);
+                        *self.blob_impl.borrow_mut() = BlobImpl::Sliced(parent.clone(), rel_pos.clone());
+                        self.create_sliced_id(&parent_id, rel_pos)
+                    }
+                }
+            }
+        }
+    }
+
+    
+    
+    fn promote_to_file(&self, self_slice: &DataSlice) -> SelectedFileId {
+        let global = self.global();
+        let origin = global.r().get_url().origin().unicode_serialization();
+        let filemanager = global.r().resource_threads().sender();
+        let bytes = self_slice.get_bytes();
+        let rel_pos = RelativePos::from_abs_range(Range {
+                            start: self_slice.bytes_start,
+                            end: self_slice.bytes_end,
+                        }, self_slice.bytes.len());
+
+        let entry = BlobURLStoreEntry {
+            type_string: self.typeString.clone(),
+            size: self.Size(),
+            bytes: bytes.to_vec(),
+        };
+
+        let (tx, rx) = ipc::channel().unwrap();
+        let _ = filemanager.send(FileManagerThreadMsg::TransferMemory(entry, rel_pos, tx, origin.clone()));
+
+        match rx.recv().unwrap() {
+            Ok(new_id) => SelectedFileId(new_id.0),
+            
+            Err(_) => SelectedFileId("".to_string()),
+        }
+    }
+
+    fn create_sliced_id(&self, parent_id: &SelectedFileId,
+                        rel_pos: &RelativePos) -> SelectedFileId {
+        let global = self.global();
+
+        let origin = global.r().get_url().origin().unicode_serialization();
+
+        let filemanager = global.r().resource_threads().sender();
+        let (tx, rx) = ipc::channel().unwrap();
+        let msg = FileManagerThreadMsg::AddSlicedEntry(parent_id.clone(),
+                                                       rel_pos.clone(),
+                                                       tx, origin.clone());
+        let _ = filemanager.send(msg);
+        let new_id = rx.recv().unwrap().unwrap();
+
+        
+        SelectedFileId(new_id.0)
+    }
 }
 
 fn read_file(global: GlobalRef, id: SelectedFileId) -> Result<DataSlice, ()> {
     let file_manager = global.filemanager_thread();
     let (chan, recv) = ipc::channel().map_err(|_|())?;
-    let _ = file_manager.send(FileManagerThreadMsg::ReadFile(chan, id));
+    let origin = global.get_url().origin().unicode_serialization();
+    let msg = FileManagerThreadMsg::ReadFile(chan, id, origin);
+    let _ = file_manager.send(msg);
 
     let result = match recv.recv() {
         Ok(ret) => ret,
@@ -248,10 +353,8 @@ impl BlobMethods for Blob {
             }
         };
 
-        let global = self.global();
-        let bytes = self.get_slice_or_empty().bytes.clone();
-        let slice = DataSlice::new(bytes, start, end);
-        Blob::new(global.r(), BlobImpl::new_from_slice(slice), relativeContentType.into())
+        let rel_pos = RelativePos::from_opts(start, end);
+        Blob::new_sliced(self, rel_pos, relativeContentType)
     }
 
     
@@ -274,7 +377,6 @@ impl BlobMethods for Blob {
     }
 }
 
-
 impl BlobBinding::BlobPropertyBag {
     
     
@@ -291,4 +393,12 @@ fn is_ascii_printable(string: &str) -> bool {
     
     
     string.chars().all(|c| c >= '\x20' && c <= '\x7E')
+}
+
+
+fn inc_ref_id(global: GlobalRef, id: SelectedFileId) {
+    let file_manager = global.filemanager_thread();
+    let origin = global.get_url().origin().unicode_serialization();
+    let msg = FileManagerThreadMsg::IncRef(id, origin);
+    let _ = file_manager.send(msg);
 }

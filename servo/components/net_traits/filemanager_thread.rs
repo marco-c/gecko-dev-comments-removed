@@ -2,10 +2,101 @@
 
 
 
-use blob_url_store::BlobURLStoreMsg;
+use blob_url_store::{BlobURLStoreEntry, BlobURLStoreError};
 use ipc_channel::ipc::IpcSender;
+use num_traits::ToPrimitive;
+use std::cmp::{max, min};
+use std::ops::Range;
 use std::path::PathBuf;
 use super::{LoadConsumer, LoadData};
+
+
+
+pub type FileOrigin = String;
+
+
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct RelativePos {
+    
+    
+    pub start: i64,
+    
+    
+    
+    pub end: Option<i64>,
+}
+
+impl RelativePos {
+    
+    pub fn full_range() -> RelativePos {
+        RelativePos {
+            start: 0,
+            end: Some(0),
+        }
+    }
+
+    
+    pub fn from_opts(start: Option<i64>, end: Option<i64>) -> RelativePos {
+        RelativePos {
+            start: start.unwrap_or(0),
+            end: end,
+        }
+    }
+
+    
+    pub fn slice_inner(&self, rel_pos: &RelativePos) -> RelativePos {
+        RelativePos {
+            start: self.start + rel_pos.start,
+            end: match (self.end, rel_pos.end) {
+                (Some(old_end), Some(rel_end)) => Some(old_end + rel_end),
+                (old, None) => old,
+                (None, rel) => rel,
+            }
+        }
+    }
+
+    
+    
+    pub fn to_abs_range(&self, size: usize) -> Range<usize> {
+        let size = size as i64;
+
+        let start = {
+            if self.start < 0 {
+                max(size + self.start, 0)
+            } else {
+                min(self.start, size)
+            }
+        };
+
+        let end = match self.end {
+            Some(rel_end) => {
+                if rel_end < 0 {
+                    max(size + rel_end, 0)
+                } else {
+                    min(rel_end, size)
+                }
+            }
+            None => size,
+        };
+
+        let span: i64 = max(end - start, 0);
+
+        Range {
+            start: start.to_usize().unwrap(),
+            end: (start + span).to_usize().unwrap(),
+        }
+    }
+
+    
+    pub fn from_abs_range(range: Range<usize>, size: usize) -> RelativePos {
+        RelativePos {
+            start: range.start as i64,
+            end: Some(size as i64 - range.end as i64),
+        }
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SelectedFileId(pub String);
@@ -27,22 +118,28 @@ pub struct FilterPattern(pub String);
 #[derive(Deserialize, Serialize)]
 pub enum FileManagerThreadMsg {
     
-    SelectFile(Vec<FilterPattern>, IpcSender<FileManagerResult<SelectedFile>>),
+    SelectFile(Vec<FilterPattern>, IpcSender<FileManagerResult<SelectedFile>>, FileOrigin),
 
     
-    SelectFiles(Vec<FilterPattern>, IpcSender<FileManagerResult<Vec<SelectedFile>>>),
+    SelectFiles(Vec<FilterPattern>, IpcSender<FileManagerResult<Vec<SelectedFile>>>, FileOrigin),
 
     
-    ReadFile(IpcSender<FileManagerResult<Vec<u8>>>, SelectedFileId),
-
-    
-    DeleteFileID(SelectedFileId),
-
-    
-    BlobURLStoreMsg(BlobURLStoreMsg),
+    ReadFile(IpcSender<FileManagerResult<Vec<u8>>>, SelectedFileId, FileOrigin),
 
     
     LoadBlob(LoadData, LoadConsumer),
+
+    
+    TransferMemory(BlobURLStoreEntry, RelativePos, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+
+    
+    AddSlicedEntry(SelectedFileId, RelativePos, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+
+    
+    DecRef(SelectedFileId, FileOrigin),
+
+    
+    IncRef(SelectedFileId, FileOrigin),
 
     
     Exit,
