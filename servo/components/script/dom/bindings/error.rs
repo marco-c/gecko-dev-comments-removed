@@ -34,7 +34,8 @@ pub enum Error {
     Security,
     Network,
     Abort,
-    Timeout
+    Timeout,
+    DataClone
 }
 
 
