@@ -1728,6 +1728,9 @@ private:
   nsTArray<nsResolveOrRejectPendingPlayPromisesRunner*> mPendingPlayPromisesRunners;
 };
 
+
+bool HasDebuggerPrivilege(JSContext* aCx, JSObject* aObj);
+
 } 
 } 
 
