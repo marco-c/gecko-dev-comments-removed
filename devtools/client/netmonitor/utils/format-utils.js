@@ -15,29 +15,58 @@ const MAX_KB_SIZE = 1000 * BYTES_IN_KB;
 const MAX_MB_SIZE = 1000 * BYTES_IN_MB;
 
 
+const MAX_MILLISECOND = 1000;
+const MAX_SECOND = 60 * MAX_MILLISECOND;
+
+const CONTENT_SIZE_DECIMALS = 2;
+const REQUEST_TIME_DECIMALS = 2;
+
+function getSizeWithDecimals(size, decimals = REQUEST_TIME_DECIMALS) {
+  return L10N.numberWithDecimals(size, CONTENT_SIZE_DECIMALS);
+}
+
+function getTimeWithDecimals(time) {
+  return L10N.numberWithDecimals(time, REQUEST_TIME_DECIMALS);
+}
 
 
 
 
 
-function getFormattedSize(bytes, decimals = 2) {
+
+
+function getFormattedSize(bytes, decimals = REQUEST_TIME_DECIMALS) {
   if (bytes < MAX_BYTES_SIZE) {
     return L10N.getFormatStr("networkMenu.sizeB", bytes);
   } else if (bytes < MAX_KB_SIZE) {
     let kb = bytes / BYTES_IN_KB;
-    let size = L10N.numberWithDecimals(kb, decimals);
-    return L10N.getFormatStr("networkMenu.sizeKB", size);
+    return L10N.getFormatStr("networkMenu.sizeKB", getSizeWithDecimals(kb, decimals));
   } else if (bytes < MAX_MB_SIZE) {
     let mb = bytes / BYTES_IN_MB;
-    let size = L10N.numberWithDecimals(mb, decimals);
-    return L10N.getFormatStr("networkMenu.sizeMB", size);
+    return L10N.getFormatStr("networkMenu.sizeMB", getSizeWithDecimals(mb, decimals));
   }
   let gb = bytes / BYTES_IN_GB;
-  let size = L10N.numberWithDecimals(gb, decimals);
-  return L10N.getFormatStr("networkMenu.sizeGB", size);
+  return L10N.getFormatStr("networkMenu.sizeGB", getSizeWithDecimals(gb, decimals));
+}
+
+
+
+
+
+function getFormattedTime(ms) {
+  if (ms < MAX_MILLISECOND) {
+    return L10N.getFormatStr("networkMenu.millisecond", ms | 0);
+  } else if (ms < MAX_SECOND) {
+    let sec = ms / MAX_MILLISECOND;
+    return L10N.getFormatStr("networkMenu.second", getTimeWithDecimals(sec));
+  }
+  let min = ms / MAX_SECOND;
+  return L10N.getFormatStr("networkMenu.minute", getTimeWithDecimals(min));
 }
 
 module.exports = {
   getFormattedSize,
+  getFormattedTime,
+  getSizeWithDecimals,
+  getTimeWithDecimals,
 };
-

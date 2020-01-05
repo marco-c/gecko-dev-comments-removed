@@ -14,13 +14,12 @@ const { L10N } = require("../l10n");
 const { getWaterfallScale } = require("../selectors/index");
 const Actions = require("../actions/index");
 const WaterfallBackground = require("../waterfall-background");
+const { getFormattedTime } = require("../utils/format-utils");
 
 
 const REQUESTS_WATERFALL_HEADER_TICKS_MULTIPLE = 5;
 
 const REQUESTS_WATERFALL_HEADER_TICKS_SPACING_MIN = 60;
-
-const REQUEST_TIME_DECIMALS = 2;
 
 const HEADERS = [
   { name: "status", label: "status3" },
@@ -139,25 +138,14 @@ function waterfallDivisionLabels(waterfallWidth, scale) {
   
   for (let x = 0; x < waterfallWidth; x += scaledStep) {
     let millisecondTime = x / scale;
-
-    let normalizedTime = millisecondTime;
     let divisionScale = "millisecond";
 
     
-    if (normalizedTime > 60000) {
-      normalizedTime /= 60000;
+    if (millisecondTime > 60000) {
       divisionScale = "minute";
-    } else if (normalizedTime > 1000) {
+    } else if (millisecondTime > 1000) {
       
-      normalizedTime /= 1000;
       divisionScale = "second";
-    }
-
-    
-    if (divisionScale == "millisecond") {
-      normalizedTime |= 0;
-    } else {
-      normalizedTime = L10N.numberWithDecimals(normalizedTime, REQUEST_TIME_DECIMALS);
     }
 
     let width = (x + scaledStep | 0) - (x | 0);
@@ -177,7 +165,7 @@ function waterfallDivisionLabels(waterfallWidth, scale) {
         "data-division-scale": divisionScale,
         style: { width }
       },
-      L10N.getFormatStr("networkMenu." + divisionScale, normalizedTime)
+      getFormattedTime(millisecondTime)
     ));
   }
 
