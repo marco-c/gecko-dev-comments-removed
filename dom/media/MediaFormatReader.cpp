@@ -751,8 +751,6 @@ public:
 
   RefPtr<ShutdownPromise> Shutdown()
   {
-    mData->mAudioDemuxer = nullptr;
-    mData->mVideoDemuxer = nullptr;
     RefPtr<Data> data = mData.forget();
     return InvokeAsync(mTaskQueue, __func__, [data]() {
       
@@ -760,6 +758,8 @@ public:
       
       
       data->mDemuxer = nullptr;
+      data->mAudioDemuxer = nullptr;
+      data->mVideoDemuxer = nullptr;
       return ShutdownPromise::CreateAndResolve(true, __func__);
     });
   }
