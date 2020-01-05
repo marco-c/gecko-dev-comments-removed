@@ -1,5 +1,5 @@
-use font::{Font, FontDescriptor, FontGroup, FontStyle, SelectorPlatformName, SelectorStubDummy};
-use font::{SpecifiedFontStyle};
+use font::{Font, FontDescriptor, FontGroup, FontStyle, SelectorPlatformIdentifier, SelectorStubDummy};
+use font::{SpecifiedFontStyle, UsedFontStyle};
 use font_list::FontList;
 use native::FontHandle;
 use util::cache;
@@ -27,14 +27,18 @@ pub fn dummy_style() -> FontStyle {
     }
 }
 
-// TODO(Issue #163): this is a workaround for static methods and
-// typedefs not working well together. It should be removed.
 #[cfg(target_os = "macos")]
 type FontContextHandle/& = quartz::font_context::QuartzFontContextHandle;
 
 #[cfg(target_os = "linux")]
 type FontContextHandle/& = freetype::font_context::FreeTypeFontContextHandle;
 
+trait FontContextHandleMethods {
+    fn create_font_from_identifier(~str, UsedFontStyle) -> Result<FontHandle, ()>;
+}
+
+// TODO(Issue #163): this is a workaround for static methods, traits,
+// and typedefs not working well together. It should be removed.
 pub impl FontContextHandle {
     #[cfg(target_os = "macos")]
     static pub fn new() -> FontContextHandle {
@@ -49,7 +53,7 @@ pub impl FontContextHandle {
 
 pub struct FontContext {
     instance_cache: cache::MonoCache<FontDescriptor, @Font>,
-    font_list: Option<FontList>, // only needed by layout
+    font_list: Option<FontList>, 
     handle: FontContextHandle,
     backend: BackendType,
 }
@@ -59,7 +63,7 @@ pub impl FontContext {
         let handle = FontContextHandle::new();
         let font_list = if needs_font_list { Some(FontList::new(&handle)) } else { None };
         FontContext { 
-            // TODO(Rust #3902): remove extraneous type parameters once they are inferred correctly.
+            
             instance_cache: cache::new::<FontDescriptor, @Font, cache::MonoCache<FontDescriptor, @Font>>(10),
             font_list: move font_list,
             handle: move handle,
@@ -72,7 +76,7 @@ pub impl FontContext {
     }
 
     fn get_resolved_font_for_style(style: &SpecifiedFontStyle) -> @FontGroup {
-        // TODO(Issue #178, E): implement a cache of FontGroup instances.
+        
         self.create_font_group(style)
     }
 
@@ -91,32 +95,36 @@ pub impl FontContext {
         }
     }
 
+    
     priv fn create_font_group(style: &SpecifiedFontStyle) -> @FontGroup {
-        // TODO(Issue #174): implement by-platform-name FontSelectors
-        let desc = FontDescriptor::new(&font_context::dummy_style(), &SelectorStubDummy);
         let fonts = DVec();
 
-        match self.get_font_by_descriptor(&desc) {
-            Ok(instance) => fonts.push(instance),
-            Err(()) => {}
-        }
-
-        // TODO(Issue #193): make iteration over 'font-family' more robust.
+        
         for str::split_char_each(style.families, ',') |family| {
             let family_name = str::trim(family);
             let list = self.get_font_list();
 
             let result = list.find_font_in_family(family_name, style);
             do result.iter |font_entry| {
-                let instance = Font::new_from_handle(&self, &font_entry.handle, style, self.backend);
+                
+                let instance = Font::new_from_existing_handle(&self, &font_entry.handle, style, self.backend);
                 do result::iter(&instance) |font: &@Font| { fonts.push(*font); }
             };
         }
 
-        // TODO(Issue #194): attach a fallback font to the font list,
-        // so that this assertion will never fail.
+        
+        
+
+        
+        if fonts.len() == 0 {
+            let desc = FontDescriptor::new(font_context::dummy_style(), SelectorStubDummy);
+            match self.get_font_by_descriptor(&desc) {
+                Ok(instance) => fonts.push(instance),
+                Err(()) => {}
+            }
+        }
         assert fonts.len() > 0;
-        // TODO(Issue #179): Split FontStyle into specified and used styles
+        
         let used_style = copy *style;
 
         @FontGroup::new(style.families.to_managed(), &used_style, dvec::unwrap(move fonts))
@@ -127,8 +135,13 @@ pub impl FontContext {
             SelectorStubDummy => {
                 Font::new_from_buffer(&self, test_font_bin(), &desc.style, self.backend)
             },
-            // TODO(Issue #174): implement by-platform-name font selectors.
-            SelectorPlatformName(_) => { fail ~"FontContext::create_font_instance() can't yet handle SelectorPlatformName." }
+            
+            SelectorPlatformIdentifier(identifier) => { 
+                let result_handle = self.handle.create_font_from_identifier(identifier, copy desc.style);
+                result::chain(move result_handle, |handle| {
+                    Ok(Font::new_from_adopted_handle(&self, move handle, &desc.style, self.backend))
+                })
+            }
         };
     }
 }
