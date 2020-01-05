@@ -12443,7 +12443,7 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
     
     
     
-    rv = CreateAboutBlankContentViewer(triggeringPrincipal, nullptr,
+    rv = CreateAboutBlankContentViewer(principalToInherit, nullptr,
                                        aEntry != mOSHE);
 
     if (NS_FAILED(rv)) {
