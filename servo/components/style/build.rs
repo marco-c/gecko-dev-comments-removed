@@ -2,9 +2,12 @@
 
 
 
+extern crate walkdir;
+
 use std::env;
 use std::path::Path;
 use std::process::{Command, exit};
+use walkdir::WalkDir;
 
 #[cfg(windows)]
 fn find_python() -> String {
@@ -29,6 +32,17 @@ fn find_python() -> String {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
+    for entry in WalkDir::new("properties") {
+        let entry = entry.unwrap();
+        match entry.path().extension().and_then(|e| e.to_str()) {
+            Some("mako") | Some("rs") | Some("py") | Some("zip") => {
+                println!("cargo:rerun-if-changed={}", entry.path().display());
+            }
+            _ => {}
+        }
+    }
+
     let python = env::var("PYTHON").ok().unwrap_or_else(find_python);
     let script = Path::new(file!()).parent().unwrap().join("properties").join("build.py");
     let product = if cfg!(feature = "gecko") { "gecko" } else { "servo" };
