@@ -770,7 +770,10 @@ Factory::CreateWrappingDataSourceSurface(uint8_t *aData,
                                          SourceSurfaceDeallocator aDeallocator ,
                                          void* aClosure )
 {
-  if (!AllowedSurfaceSize(aSize)) {
+  
+  
+  
+  if (aSize.width <= 0 || aSize.height <= 0) {
     return nullptr;
   }
   if (!aDeallocator && aClosure) {
