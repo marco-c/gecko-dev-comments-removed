@@ -1669,7 +1669,8 @@ class ScriptMixin(PlatformMixin):
 
     def is_taskcluster(self):
         """Returns boolean indicating if we're running in TaskCluster."""
-        return 'TASKCLUSTER_INSTANCE_TYPE' in os.environ
+        
+        return 'TASKCLUSTER_WORKER_TYPE' in os.environ
 
 
 def PreScriptRun(func):
