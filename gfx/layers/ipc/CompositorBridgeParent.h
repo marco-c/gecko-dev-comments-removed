@@ -63,6 +63,7 @@ class APZCTreeManagerParent;
 class AsyncCompositionManager;
 class Compositor;
 class CompositorBridgeParent;
+class CompositorOptions;
 class CompositorVsyncScheduler;
 class HostLayerManager;
 class LayerTransactionParent;
@@ -163,7 +164,7 @@ public:
   
   void InitSameProcess(widget::CompositorWidget* aWidget,
                        const uint64_t& aLayerTreeId,
-                       bool aUseAPZ);
+                       const CompositorOptions& aOptions);
 
   
   
