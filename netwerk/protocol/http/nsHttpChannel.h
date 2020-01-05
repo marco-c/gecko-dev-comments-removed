@@ -29,7 +29,7 @@
 #include "nsICorsPreflightCallback.h"
 #include "AlternateServices.h"
 #include "nsIHstsPrimingCallback.h"
-#include <nsIRaceCacheWithNetwork.h>
+#include "nsIRaceCacheWithNetwork.h"
 
 class nsDNSPrefetch;
 class nsICancelable;
@@ -621,6 +621,29 @@ private:
     nsCOMPtr<nsITimer> mCacheOpenTimer;
     nsCOMPtr<nsIRunnable> mCacheOpenRunnable;
     uint32_t mCacheOpenDelay = 0;
+
+    
+    enum {
+        RESPONSE_PENDING,           
+        RESPONSE_FROM_CACHE,        
+        RESPONSE_FROM_NETWORK,      
+    } mFirstResponseSource = RESPONSE_PENDING;
+
+    nsresult TriggerNetwork(int32_t aTimeout);
+    void CancelNetworkRequest(nsresult aStatus);
+    
+    
+    nsCOMPtr<nsITimer> mNetworkTriggerTimer;
+    
+    bool mNetworkTriggered = false;
+    bool mWaitingForProxy = false;
+    
+    Atomic<bool> mOnCacheAvailableCalled;
+    
+    
+    
+    Atomic<bool> mRacingNetAndCache;
+
 protected:
     virtual void DoNotifyListenerCleanup() override;
 
