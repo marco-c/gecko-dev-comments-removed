@@ -5,6 +5,7 @@
 
 const BASE = "http://example.com/browser/browser/components/sessionstore/test/"
 const URL = BASE + "browser_scrollPositions_sample.html";
+const URL2 = BASE + "browser_scrollPositions_sample2.html";
 const URL_FRAMESET = BASE + "browser_scrollPositions_sample_frameset.html";
 
 
@@ -109,6 +110,8 @@ add_task(function* test_scroll_nested() {
 
 
 
+
+
 add_task(function* test_scroll_background_tabs() {
   pushPrefs(["browser.sessionstore.restore_on_demand", true]);
 
@@ -119,7 +122,15 @@ add_task(function* test_scroll_background_tabs() {
 
   
   yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL_X, y: SCROLL_Y});
-  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is fine");
+  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll on first page is fine");
+
+  
+  browser.loadURI(URL2);
+  yield BrowserTestUtils.browserLoaded(browser);
+
+  
+  yield sendMessage(browser, "ss-test:setScrollPosition", {x: SCROLL2_X, y: SCROLL2_Y});
+  yield checkScroll(tab, {scroll: SCROLL2_STR}, "scroll on second page is fine");
 
   
   yield BrowserTestUtils.closeWindow(newWin);
@@ -149,7 +160,17 @@ add_task(function* test_scroll_background_tabs() {
   newWin.gBrowser.selectedTab = tab;
   yield promiseTabRestored(tab);
 
-  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is still fine");
+  yield checkScroll(tab, {scroll: SCROLL2_STR}, "scroll is still fine");
+
+  
+  
+  is(browser.canGoBack, true, "can go back");
+  browser.goBack();
+
+  yield BrowserTestUtils.browserLoaded(browser);
+  yield TabStateFlusher.flush(browser);
+
+  yield checkScroll(tab, {scroll: SCROLL_STR}, "scroll is still fine after navigating back");
 
   yield BrowserTestUtils.closeWindow(newWin);
 });
