@@ -8,8 +8,8 @@ use std::collections::BTreeMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use url::Url;
 
-use servo_util::str::DOMString;
-use servo_util::task::spawn_named;
+use util::str::DOMString;
+use util::task::spawn_named;
 
 
 pub enum StorageTaskMsg {

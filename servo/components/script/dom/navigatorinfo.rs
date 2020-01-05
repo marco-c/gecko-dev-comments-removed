@@ -2,8 +2,8 @@
 
 
 
-use servo_util::str::DOMString;
-use servo_util::opts;
+use util::str::DOMString;
+use util::opts;
 
 use std::borrow::ToOwned;
 

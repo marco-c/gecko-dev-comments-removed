@@ -2,7 +2,7 @@
 
 
 
-use servo_util::str::DOMString;
+use util::str::DOMString;
 use url::Url;
 
 use std::borrow::ToOwned;
