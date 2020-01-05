@@ -162,6 +162,8 @@ public abstract class GeckoApp
 
     protected static final String LAST_SELECTED_TAB        = "lastSelectedTab";
     protected static final String LAST_SESSION_UUID        = "lastSessionUUID";
+    protected static final String STARTUP_SELECTED_TAB     = "restoredSelectedTab";
+    protected static final String STARTUP_SESSION_UUID     = "restorationSessionUUID";
 
     public static final String PREFS_ALLOW_STATE_BUNDLE    = "allowStateBundle";
     public static final String PREFS_FLASH_USAGE           = "playFlashCount";
@@ -228,6 +230,8 @@ public abstract class GeckoApp
         private JSONObject windowObject;
         private boolean isExternalURL;
 
+        private int selectedTabId = INVALID_TAB_ID;
+
         private boolean selectNextTab;
         private boolean tabsWereSkipped;
         private boolean tabsWereProcessed;
@@ -248,6 +252,15 @@ public abstract class GeckoApp
 
         public int getNewTabId(int oldTabId) {
             return tabIdMap.get(oldTabId, INVALID_TAB_ID);
+        }
+
+        
+
+
+
+
+        public int getStoredSelectedTabId() {
+            return selectedTabId;
         }
 
         @Override
@@ -285,6 +298,9 @@ public abstract class GeckoApp
 
             final Tab tab = Tabs.getInstance().loadUrl(sessionTab.getUrl(), flags);
 
+            if (sessionTab.isSelected() || selectNextTab) {
+                selectedTabId = tab.getId();
+            }
             if (selectNextTab) {
                 
                 Tabs.getInstance().selectTab(tab.getId());
@@ -1927,9 +1943,27 @@ public abstract class GeckoApp
             throw new SessionRestoreException("No tabs could be read from session file");
         }
 
+        if (saveSelectedStartupTab()) {
+            
+            
+            
+            SharedPreferences.Editor prefs = getSharedPreferencesForProfile().edit();
+            prefs.putInt(STARTUP_SELECTED_TAB, parser.getStoredSelectedTabId());
+            prefs.putString(STARTUP_SESSION_UUID, GeckoApplication.getSessionUUID());
+            prefs.apply();
+        }
+
         final GeckoBundle restoreData = new GeckoBundle(1);
         restoreData.putString("sessionString", sessionString);
         return restoreData;
+    }
+
+    
+
+
+
+    protected boolean saveSelectedStartupTab() {
+        return false;
     }
 
     @RobocopTarget

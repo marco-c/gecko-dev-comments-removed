@@ -185,6 +185,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import static org.mozilla.gecko.Tab.TabType;
+import static org.mozilla.gecko.Tabs.INVALID_TAB_ID;
 
 public class BrowserApp extends GeckoApp
                         implements TabsPanel.TabsLayoutChangeListener,
@@ -1165,6 +1166,23 @@ public class BrowserApp extends GeckoApp
         if (mResumingAfterOnCreate && !mIsRestoringActivity) {
             
             return;
+        }
+
+        if (mLastSelectedTabId < 0) {
+            
+            
+            
+            
+            
+            
+            SharedPreferences prefs = getSharedPreferencesForProfile();
+            mLastSelectedTabId = prefs.getInt(STARTUP_SELECTED_TAB, INVALID_TAB_ID);
+            mLastSessionUUID = prefs.getString(STARTUP_SESSION_UUID, null);
+
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove(STARTUP_SELECTED_TAB);
+            editor.remove(STARTUP_SESSION_UUID);
+            editor.apply();
         }
 
         final Tabs tabs = Tabs.getInstance();
