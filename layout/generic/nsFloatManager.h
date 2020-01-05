@@ -421,12 +421,12 @@ private:
   };
 
   
-  class BoxShapeInfo final : public ShapeInfo
+  class RoundedBoxShapeInfo final : public ShapeInfo
   {
   public:
-    BoxShapeInfo(const nsRect& aShapeBoxRect,
-                 mozilla::UniquePtr<nscoord[]> aRadii)
-      : mShapeBoxRect(aShapeBoxRect)
+    RoundedBoxShapeInfo(const nsRect& aRect,
+                        mozilla::UniquePtr<nscoord[]> aRadii)
+      : mRect(aRect)
       , mRadii(Move(aRadii))
     {}
 
@@ -436,20 +436,19 @@ private:
     nscoord LineRight(mozilla::WritingMode aWM,
                       const nscoord aBStart,
                       const nscoord aBEnd) const override;
-    nscoord BStart() const override { return mShapeBoxRect.y; }
-    nscoord BEnd() const override { return mShapeBoxRect.YMost(); }
-    bool IsEmpty() const override { return mShapeBoxRect.IsEmpty(); };
+    nscoord BStart() const override { return mRect.y; }
+    nscoord BEnd() const override { return mRect.YMost(); }
+    bool IsEmpty() const override { return mRect.IsEmpty(); };
 
     void Translate(nscoord aLineLeft, nscoord aBlockStart) override
     {
-      mShapeBoxRect.MoveBy(aLineLeft, aBlockStart);
+      mRect.MoveBy(aLineLeft, aBlockStart);
     }
 
   private:
     
     
-    
-    nsRect mShapeBoxRect;
+    nsRect mRect;
     
     
     
