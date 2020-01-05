@@ -31,6 +31,11 @@ impl<K: PartialEq> LRUCache<K> {
         }
     }
 
+    
+    pub fn num_entries(&self) -> usize {
+        self.entries.len()
+    }
+
     #[inline]
     
     pub fn touch(&mut self, pos: usize) {

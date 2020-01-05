@@ -7,6 +7,7 @@
 #![deny(missing_docs)]
 
 use {Atom, LocalName};
+use bit_vec::BitVec;
 use data::ComputedStyle;
 use dom::{AnimationRules, PresentationalHintsSynthetizer, TElement};
 use error_reporting::StdoutErrorReporter;
@@ -112,13 +113,10 @@ pub struct Stylist {
     state_deps: DependencySet,
 
     
-    #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
-    sibling_affecting_selectors: Vec<Selector<SelectorImpl>>,
-
     
     
     #[cfg_attr(feature = "servo", ignore_heap_size_of = "Arc")]
-    style_affecting_attributes_selectors: Vec<Selector<SelectorImpl>>,
+    selectors_for_cache_revalidation: Vec<Selector<SelectorImpl>>,
 }
 
 
@@ -170,8 +168,7 @@ impl Stylist {
             rule_tree: RuleTree::new(),
             state_deps: DependencySet::new(),
 
-            sibling_affecting_selectors: vec![],
-            style_affecting_attributes_selectors: vec![]
+            selectors_for_cache_revalidation: vec![],
         };
 
         SelectorImpl::each_eagerly_cascaded_pseudo_element(|pseudo| {
@@ -225,8 +222,7 @@ impl Stylist {
         self.state_deps.clear();
         self.animations.clear();
 
-        self.sibling_affecting_selectors.clear();
-        self.style_affecting_attributes_selectors.clear();
+        self.selectors_for_cache_revalidation.clear();
 
         extra_data.clear_font_faces();
 
@@ -246,10 +242,8 @@ impl Stylist {
         }
 
         debug!("Stylist stats:");
-        debug!(" - Got {} sibling-affecting selectors",
-               self.sibling_affecting_selectors.len());
-        debug!(" - Got {} non-common-style-attribute-affecting selectors",
-               self.style_affecting_attributes_selectors.len());
+        debug!(" - Got {} selectors for cache revalidation",
+               self.selectors_for_cache_revalidation.len());
         debug!(" - Got {} deps for style-hint calculation",
                self.state_deps.len());
 
@@ -304,12 +298,8 @@ impl Stylist {
                             SelectorDependencyVisitor::new(&mut self.state_deps);
                         selector.visit(&mut visitor);
 
-                        if visitor.affects_siblings() {
-                            self.sibling_affecting_selectors.push(selector.clone());
-                        }
-
-                        if visitor.affected_by_attribute() {
-                            self.style_affecting_attributes_selectors.push(selector.clone());
+                        if visitor.needs_cache_revalidation() {
+                            self.selectors_for_cache_revalidation.push(selector.clone());
                         }
                     }
                 }
@@ -771,43 +761,6 @@ impl Stylist {
     }
 
     
-    
-    
-    
-    
-    pub fn match_same_style_affecting_attributes_rules<E>(&self,
-                                                          element: &E,
-                                                          candidate: &E) -> bool
-        where E: TElement,
-    {
-        use selectors::matching::StyleRelations;
-        use selectors::matching::matches_complex_selector;
-        
-        
-        
-        
-        
-        
-        
-        for ref selector in self.style_affecting_attributes_selectors.iter() {
-            let element_matches =
-                matches_complex_selector(&selector.complex_selector, element,
-                                         None, &mut StyleRelations::empty(),
-                                         &mut |_, _| {});
-            let candidate_matches =
-                matches_complex_selector(&selector.complex_selector, candidate,
-                                         None, &mut StyleRelations::empty(),
-                                         &mut |_, _| {});
-
-            if element_matches != candidate_matches {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    
     #[inline]
     pub fn rule_tree_root(&self) -> StrongRuleNode {
         self.rule_tree.root()
@@ -815,38 +768,30 @@ impl Stylist {
 
     
     
-    
-    pub fn match_same_sibling_affecting_rules<E>(&self,
-                                                 element: &E,
-                                                 candidate: &E) -> bool
+    pub fn match_revalidation_selectors<E, F>(&self,
+                                              element: &E,
+                                              bloom: &BloomFilter,
+                                              flags_setter: &mut F)
+                                              -> BitVec
         where E: TElement,
+              F: FnMut(&E, ElementSelectorFlags)
     {
         use selectors::matching::StyleRelations;
         use selectors::matching::matches_complex_selector;
-        
-        
-        
-        
-        
-        for ref selector in self.sibling_affecting_selectors.iter() {
-            let element_matches =
-                matches_complex_selector(&selector.complex_selector, element,
-                                         None, &mut StyleRelations::empty(),
-                                         &mut |_, _| {});
 
-            let candidate_matches =
-                matches_complex_selector(&selector.complex_selector, candidate,
-                                         None, &mut StyleRelations::empty(),
-                                         &mut |_, _| {});
+        let len = self.selectors_for_cache_revalidation.len();
+        let mut results = BitVec::from_elem(len, false);
 
-            if element_matches != candidate_matches {
-                debug!("match_same_sibling_affecting_rules: Failure due to {:?}",
-                       selector.complex_selector);
-                return false;
-            }
+        for (i, ref selector) in self.selectors_for_cache_revalidation
+                                     .iter().enumerate() {
+            results.set(i, matches_complex_selector(&selector.complex_selector,
+                                                    element,
+                                                    Some(bloom),
+                                                    &mut StyleRelations::empty(),
+                                                    flags_setter));
         }
 
-        true
+        results
     }
 
     
