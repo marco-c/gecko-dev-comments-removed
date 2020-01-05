@@ -1163,13 +1163,26 @@ function reorderChildren(parent, orderedChildrenGuids) {
 
       
       
+      let guidIndices = new Map();
+      for (let i = 0; i < orderedChildrenGuids.length; ++i) {
+        let guid = orderedChildrenGuids[i];
+        guidIndices.set(guid, i);
+      }
+
+      
+      
       children.sort((a, b) => {
-        let i = orderedChildrenGuids.indexOf(a.guid);
-        let j = orderedChildrenGuids.indexOf(b.guid);
         
-        if (i == -1 && j == -1)
+        if (!guidIndices.has(a.guid) && !guidIndices.has(b.guid)) {
           return 0;
-        return (i != -1 && j != -1 && i < j) || (i != -1 && j == -1) ? -1 : 1;
+        }
+        if (!guidIndices.has(a.guid)) {
+          return 1;
+        }
+        if (!guidIndices.has(b.guid)) {
+          return -1;
+        }
+        return guidIndices.get(a.guid) < guidIndices.get(b.guid) ? -1 : 1;
        });
 
       
