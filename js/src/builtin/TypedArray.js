@@ -1436,6 +1436,7 @@ function TypedArraySpecies() {
     
     return this;
 }
+_SetCanonicalName(TypedArraySpecies, "get [Symbol.species]");
 
 
 function TypedArrayToStringTag() {
