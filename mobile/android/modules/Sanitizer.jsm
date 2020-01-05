@@ -168,6 +168,26 @@ Sanitizer.prototype = {
       }
     },
 
+    openTabs: {
+      clear: function ()
+      {
+        return EventDispatcher.instance.sendRequestForResult({ type: "Sanitize:OpenTabs" })
+          .catch(e => Cu.reportError("Java-side tab clearing failed: " + e))
+          .then(function() {
+            try {
+              
+              Services.obs.notifyObservers(null, "browser:purge-session-tabs", "");
+            }
+            catch (e) { }
+          });
+      },
+
+      get canClear()
+      {
+        return true;
+      }
+    },
+
     searchHistory: {
       clear: function ()
       {

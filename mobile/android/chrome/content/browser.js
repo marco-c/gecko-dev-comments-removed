@@ -1470,6 +1470,12 @@ var BrowserApp = {
           promises.push(Sanitizer.clearItem("cookies"));
           promises.push(Sanitizer.clearItem("sessions"));
           break;
+        case "openTabs":
+          if (aShutdown === true) {
+            Services.obs.notifyObservers(null, "browser:purge-session-tabs", "");
+            break;
+          }
+          
         default:
           promises.push(Sanitizer.clearItem(key));
       }

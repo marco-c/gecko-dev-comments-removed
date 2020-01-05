@@ -587,15 +587,18 @@ public abstract class GeckoApp
 
             
             
-            if (clearObj.has("private.data.history")) {
-                final String sessionRestore = getSessionRestorePreference(getSharedPreferences());
-                try {
-                    res.put("dontSaveSession", "quit".equals(sessionRestore));
-                } catch (JSONException ex) {
-                    Log.e(LOGTAG, "Error adding session restore data", ex);
-                }
-            }
+            try {
+                if (clearObj.has("private.data.openTabs")) {
+                    res.put("dontSaveSession", true);
+                } else if (clearObj.has("private.data.history")) {
 
+                    final String sessionRestore = getSessionRestorePreference(getSharedPreferences());
+                    res.put("dontSaveSession", "quit".equals(sessionRestore));
+
+                }
+            } catch (JSONException ex) {
+                Log.e(LOGTAG, "Error adding session restore data", ex);
+            }
             GeckoAppShell.notifyObservers("Browser:Quit", res.toString());
             
             
