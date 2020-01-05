@@ -25,13 +25,18 @@ use util::geometry::{PagePx, ViewportPx};
 use util::mem::HeapSizeOf;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 
-#[derive(Clone)]
-pub struct ConstellationChan(pub Sender<Msg>);
+pub struct ConstellationChan<T>(pub Sender<T>);
 
-impl ConstellationChan {
-    pub fn new() -> (Receiver<Msg>, ConstellationChan) {
+impl<T> ConstellationChan<T> {
+    pub fn new() -> (Receiver<T>, ConstellationChan<T>) {
         let (chan, port) = channel();
         (port, ConstellationChan(chan))
+    }
+}
+
+impl<T> Clone for ConstellationChan<T> {
+    fn clone(&self) -> ConstellationChan<T> {
+        ConstellationChan(self.0.clone())
     }
 }
 
@@ -231,55 +236,36 @@ pub struct IframeLoadInfo {
 
 
 #[derive(Deserialize, Serialize)]
-pub enum Msg {
+pub enum CompositorMsg {
     Exit,
-    Failure(Failure),
-    InitLoadUrl(Url),
-    LoadComplete(PipelineId),
-    
-    DOMLoad(PipelineId),
     FrameSize(PipelineId, Size2D<f32>),
-    LoadUrl(PipelineId, LoadData),
-    ScriptLoadedURLInIFrame(IframeLoadInfo),
-    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
-    PainterReady(PipelineId),
-    ResizedWindow(WindowSizeData),
-    KeyEvent(Key, KeyState, KeyModifiers),
     
     
-    GetPipelineTitle(PipelineId),
-    
-    SetCursor(Cursor),
-    
-    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
-    
-    ChangeRunningAnimationsState(PipelineId, AnimationState),
-    
-    TickAnimation(PipelineId),
+    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
     
     
     GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
     
     
-    GetFrame(PipelineId, IpcSender<Option<FrameId>>),
-    
-    Focus(PipelineId),
-    
-    GetClipboardContents(IpcSender<String>),
-    
-    SetClipboardContents(String),
-    
-    WebDriverCommand(WebDriverCommandMsg),
-    
-    ViewportConstrained(PipelineId, ViewportConstraints),
+    GetPipelineTitle(PipelineId),
+    InitLoadUrl(Url),
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
+    KeyEvent(Key, KeyState, KeyModifiers),
+    LoadUrl(PipelineId, LoadData),
+    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
+    ResizedWindow(WindowSizeData),
     
-    RemoveIFrame(PipelineId),
+    TickAnimation(PipelineId),
     
-    NewFavicon(Url),
+    WebDriverCommand(WebDriverCommandMsg),
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum ScriptMsg {
     
-    HeadParsed,
+    ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     
     CreateCanvasPaintTask(Size2D<i32>, IpcSender<(IpcSender<CanvasMsg>, usize)>),
@@ -289,7 +275,33 @@ pub enum Msg {
                          GLContextAttributes,
                          IpcSender<Result<(IpcSender<CanvasMsg>, usize), String>>),
     
+    DOMLoad(PipelineId),
+    Failure(Failure),
+    
+    Focus(PipelineId),
+    
+    GetClipboardContents(IpcSender<String>),
+    
+    HeadParsed,
+    LoadComplete(PipelineId),
+    LoadUrl(PipelineId, LoadData),
+    
+    MozBrowserEvent(PipelineId, SubpageId, MozBrowserEvent),
+    Navigate(Option<(PipelineId, SubpageId)>, NavigationDirection),
+    
+    NewFavicon(Url),
+    
     NodeStatus(Option<String>),
+    PainterReady(PipelineId),
+    
+    RemoveIFrame(PipelineId),
+    ScriptLoadedURLInIFrame(IframeLoadInfo),
+    
+    SetClipboardContents(String),
+    
+    SetCursor(Cursor),
+    
+    ViewportConstrained(PipelineId, ViewportConstraints),
 }
 
 #[derive(Clone, Eq, PartialEq, Deserialize, Serialize, Debug)]

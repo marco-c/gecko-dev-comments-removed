@@ -7,7 +7,7 @@ use compositor_task::{InitialCompositorState, Msg};
 use euclid::scale_factor::ScaleFactor;
 use euclid::{Point2D, Size2D};
 use msg::constellation_msg::AnimationState;
-use msg::constellation_msg::Msg as ConstellationMsg;
+use msg::constellation_msg::CompositorMsg as ConstellationMsg;
 use msg::constellation_msg::{ConstellationChan, WindowSizeData};
 use profile_traits::mem;
 use profile_traits::time;
@@ -22,7 +22,7 @@ pub struct NullCompositor {
     
     pub port: Box<CompositorReceiver>,
     
-    constellation_chan: ConstellationChan,
+    constellation_chan: ConstellationChan<ConstellationMsg>,
     
     time_profiler_chan: time::ProfilerChan,
     

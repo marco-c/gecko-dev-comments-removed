@@ -14,6 +14,7 @@ use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use ipc_channel::router::ROUTER;
 use layers::geometry::DevicePixel;
 use layout_traits::{LayoutControlChan, LayoutTaskFactory};
+use msg::constellation_msg::ScriptMsg as ConstellationMsg;
 use msg::constellation_msg::{ConstellationChan, Failure, FrameId, PipelineId, SubpageId};
 use msg::constellation_msg::{LoadData, MozBrowserEvent, WindowSizeData};
 use msg::constellation_msg::{PipelineNamespaceId};
@@ -78,7 +79,7 @@ pub struct InitialPipelineState {
     
     pub parent_info: Option<(PipelineId, SubpageId)>,
     
-    pub constellation_chan: ConstellationChan,
+    pub constellation_chan: ConstellationChan<ConstellationMsg>,
     
     pub scheduler_chan: IpcSender<TimerEventRequest>,
     
@@ -317,7 +318,7 @@ impl Pipeline {
 pub struct PipelineContent {
     id: PipelineId,
     parent_info: Option<(PipelineId, SubpageId)>,
-    constellation_chan: ConstellationChan,
+    constellation_chan: ConstellationChan<ConstellationMsg>,
     scheduler_chan: IpcSender<TimerEventRequest>,
     compositor_proxy: Box<CompositorProxy + Send + 'static>,
     devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,

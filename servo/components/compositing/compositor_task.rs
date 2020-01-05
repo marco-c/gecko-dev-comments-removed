@@ -12,6 +12,7 @@ use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::{NativeDisplay, NativeSurface};
 use msg::compositor_msg::{Epoch, EventResult, FrameTreeId, LayerId, LayerProperties};
 use msg::compositor_msg::{PaintListener, ScriptToCompositorMsg};
+use msg::constellation_msg::CompositorMsg as ConstellationMsg;
 use msg::constellation_msg::{AnimationState, ConstellationChan, PipelineId};
 use msg::constellation_msg::{Image, Key, KeyModifiers, KeyState};
 use profile_traits::mem;
@@ -179,7 +180,7 @@ pub enum Msg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan),
+    SetFrameTree(SendableFrameTree, Sender<()>, ConstellationChan<ConstellationMsg>),
     
     LoadStart(bool, bool),
     
@@ -295,7 +296,7 @@ pub struct InitialCompositorState {
     
     pub receiver: Box<CompositorReceiver>,
     
-    pub constellation_chan: ConstellationChan,
+    pub constellation_chan: ConstellationChan<ConstellationMsg>,
     
     pub time_profiler_chan: time::ProfilerChan,
     
