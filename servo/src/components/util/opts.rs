@@ -73,6 +73,11 @@ pub struct Opts {
     
     
     pub show_debug_borders: bool,
+
+    
+    
+    
+    pub enable_text_antialiasing: bool,
 }
 
 fn print_usage(app: &str, opts: &[getopts::OptGroup]) {
@@ -105,6 +110,7 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
         getopts::optflag("f", "hard-fail", "Exit on task failure instead of displaying about:failure"),
         getopts::optflag("b", "bubble-widths", "Bubble intrinsic widths separately like other engines"),
         getopts::optflag("", "show-debug-borders", "Show debugging borders on layers and tiles."),
+        getopts::optflag("", "disable-text-aa", "Disable antialiasing for text rendering."),
         getopts::optflag("h", "help", "Print this message")
     );
 
@@ -194,6 +200,7 @@ pub fn from_cmdline_args(args: &[String]) -> Option<Opts> {
         hard_fail: opt_match.opt_present("f"),
         bubble_inline_sizes_separately: opt_match.opt_present("b"),
         show_debug_borders: opt_match.opt_present("show-debug-borders"),
+        enable_text_antialiasing: !opt_match.opt_present("disable-text-aa"),
     })
 }
 
