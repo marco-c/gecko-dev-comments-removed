@@ -789,8 +789,21 @@ nsHttpConnectionMgr::UpdateCoalescingForNewConn(nsHttpConnection *newConn,
     
     
     for (int32_t index = ent->mHalfOpens.Length() - 1; index >= 0; --index) {
+        nsHalfOpenSocket *half = ent->mHalfOpens[index];
         LOG(("UpdateCoalescingForNewConn() forcing halfopen abandon %p\n",
-             ent->mHalfOpens[index]));
+             half));
+
+        RefPtr<nsHalfOpenSocket> deleteProtector;
+        if (half->IsFastOpenBackupHalfOpen()) {
+            LOG(("UpdateCoalescingForNewConn() halfOpen %p is in Fast Open "
+                 "state.\n", half));
+            
+            
+            
+            
+            deleteProtector = half;
+            half->CancelFastOpenConnection();
+        }
         ent->mHalfOpens[index]->Abandon();
     }
 
@@ -2840,6 +2853,11 @@ nsHttpConnectionMgr::TimeoutTick()
                 index--;
 
                 nsHalfOpenSocket *half = ent->mHalfOpens[index];
+                if (half->IsFastOpenBackupHalfOpen()) {
+                    
+                    
+                    continue;
+                }
                 double delta = half->Duration(currentTime);
                 
                 
@@ -3602,6 +3620,39 @@ nsHalfOpenSocket::SetFastOpenStatus(uint8_t tfoStatus)
     mConnectionNegotiatingFastOpen->SetFastOpenStatus(tfoStatus);
     if (mConnectionNegotiatingFastOpen->Transaction()->QueryHttpTransaction()) {
         mConnectionNegotiatingFastOpen->Transaction()->SetFastOpenStatus(tfoStatus);
+    }
+}
+
+void
+nsHttpConnectionMgr::
+nsHalfOpenSocket::CancelFastOpenConnection()
+{
+    
+    
+    if (!mConnectionNegotiatingFastOpen) {
+        return;
+    }
+
+    
+    
+    mSocketTransport->SetFastOpenCallback(nullptr);
+    RefPtr<nsAHttpTransaction> trans =
+        mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(true);
+    mConnectionNegotiatingFastOpen = nullptr;
+    mSocketTransport = nullptr;
+    mStreamOut = nullptr;
+    mStreamIn = nullptr;
+
+    if (trans && trans->QueryHttpTransaction()) {
+        RefPtr<PendingTransactionInfo> pendingTransInfo =
+            new PendingTransactionInfo(trans->QueryHttpTransaction());
+
+        if (trans->Caps() & NS_HTTP_URGENT_START) {
+            gHttpHandler->ConnMgr()->InsertTransactionSorted(mEnt->mUrgentStartQ,
+                                                             pendingTransInfo);
+        } else {
+            mEnt->InsertTransaction(pendingTransInfo);
+        }
     }
 }
 
