@@ -1796,6 +1796,55 @@ js::ToUint16Slow(JSContext* cx, const HandleValue v, uint16_t* out)
     return true;
 }
 
+bool
+js::NonStandardToIndex(JSContext* cx, HandleValue v, uint64_t* index)
+{
+    
+    if (v.isInt32()) {
+        int32_t i = v.toInt32();
+        if (i >= 0) {
+            *index = i;
+            return true;
+        }
+    }
+
+    
+    double d;
+    if (!ToNumber(cx, v, &d))
+        return false;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    if (!(0 <= d && d <= (uint64_t(1) << 53))) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+        return false;
+    }
+
+    
+    
+    
+    uint64_t i(d);
+    if (d != double(i)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+        return false;
+    }
+
+    *index = i;
+    return true;
+}
+
 
 bool
 js::ToIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
