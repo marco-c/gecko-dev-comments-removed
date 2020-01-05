@@ -63,9 +63,19 @@ public class OfflineTabStatusDelegate extends TabsTrayVisibilityAwareDelegate im
             return;
         }
 
+        
+        if (tab.getState() != Tab.STATE_SUCCESS) {
+            return;
+        }
+
         switch (event) {
             
-            case PAGE_SHOW:
+            
+            
+            
+            
+            case STOP:
+                
                 if (!isTabsTrayVisible() && Tabs.getInstance().isSelectedTab(tab)) {
                     showLoadedOfflineSnackbar(activityReference.get());
                 } else {
