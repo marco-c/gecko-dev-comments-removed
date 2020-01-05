@@ -5611,6 +5611,14 @@ HTMLMediaElement::UpdateReadyStateInternal()
     return;
   }
 
+  
+  
+  
+  if (mTextTrackManager && !mTextTrackManager->IsLoaded()) {
+    ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA);
+    return;
+  }
+
   if (mDownloadSuspendedByCache && mDecoder && !mDecoder->IsEnded()) {
     
     
