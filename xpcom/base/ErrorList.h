@@ -1011,6 +1011,12 @@
   
   
   
+#define MODULE NS_ERROR_MODULE_ERRORRESULT
+#undef MODULE
+
+  
+  
+  
 #define MODULE NS_ERROR_MODULE_GENERAL
   
 
