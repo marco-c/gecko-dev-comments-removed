@@ -566,8 +566,8 @@ nsHttpDigestAuth::ParseChallenge(const char * challenge,
   if (strlen(challenge) > 16000000) {
     return NS_ERROR_INVALID_ARG;
   }
-  
-  const char *p = challenge + 7; 
+
+  const char *p = challenge + 6; 
 
   *stale = false;
   *algorithm = ALGO_MD5; 
