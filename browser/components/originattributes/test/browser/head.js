@@ -281,6 +281,11 @@ this.IsolationTestTools = {
     let firstFrameSetting;
     let secondFrameSetting;
 
+    
+    
+    
+    requestLongerTimeout(3);
+
     if (typeof aURL === "string") {
       pageURL = aURL;
     } else if (typeof aURL === "object") {
