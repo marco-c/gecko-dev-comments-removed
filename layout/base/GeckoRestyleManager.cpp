@@ -866,13 +866,6 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
     newParentContext = providerFrame->StyleContext();
     providerChild = providerFrame;
   }
-  NS_ASSERTION(newParentContext, "Reparenting something that has no usable"
-               " parent? Shouldn't happen!");
-  
-  
-  
-  
-  
 
 #ifdef DEBUG
   {
@@ -897,6 +890,28 @@ GeckoRestyleManager::ReparentStyleContext(nsIFrame* aFrame)
     }
   }
 #endif
+
+  if (!newParentContext && !oldContext->GetParent()) {
+    
+#ifdef DEBUG
+    
+    nsIFrame::ChildListIterator lists(aFrame);
+    for (; !lists.IsDone(); lists.Next()) {
+      MOZ_ASSERT(lists.CurrentList().IsEmpty(),
+                 "Failing to reparent style context for child of "
+                 "non-inheriting anon box");
+    }
+#endif 
+    return NS_OK;
+  }
+
+  NS_ASSERTION(newParentContext, "Reparenting something that has no usable"
+               " parent? Shouldn't happen!");
+  
+  
+  
+  
+  
 
   nsIFrame* prevContinuation =
     GetPrevContinuationWithPossiblySameStyle(aFrame);
