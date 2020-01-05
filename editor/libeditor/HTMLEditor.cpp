@@ -676,7 +676,7 @@ HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
         return NS_OK;
       }
       aKeyboardEvent->PreventDefault(); 
-      if (aKeyboardEvent->IsShift() && !IsPlaintextEditor()) {
+      if (aKeyboardEvent->IsShift()) {
         
         return TypedText(EmptyString(), eTypedBR);
       }
@@ -1000,8 +1000,6 @@ NS_IMETHODIMP
 HTMLEditor::TypedText(const nsAString& aString,
                       ETypingAction aAction)
 {
-  MOZ_ASSERT(!aString.IsEmpty() || aAction != eTypedText);
-
   AutoPlaceHolderBatch batch(this, nsGkAtoms::TypingTxnName);
 
   if (aAction == eTypedBR) {
