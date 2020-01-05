@@ -360,6 +360,9 @@ function cleanUpForContext(extension, context) {
 
 
 const openCollection = Task.async(function* (extension, context) {
+  
+  
+  
   let collectionId = extension.id;
   const db = makeKinto();
   const coll = db.collection(collectionId, {
@@ -429,7 +432,8 @@ this.ExtensionStorageSync = {
       log.info("User was not signed into FxA; cannot sync");
       throw new Error("Not signed in to FxA");
     }
-    const collectionId = extensionIdToCollectionId(signedInUser, extension.id);
+    
+    const collectionId = extension.id;
     let syncResults;
     try {
       syncResults = yield this._syncCollection(collection, {
