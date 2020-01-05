@@ -79,7 +79,7 @@ public:
     return mGlobalOpacity;
   }
 
-  const SVGContextPaint* GetContextPaint() const {
+  const SVGEmbeddingContextPaint* GetContextPaint() const {
     return mContextPaint.get();
   }
 
@@ -88,7 +88,15 @@ public:
   }
 
   bool operator==(const SVGImageContext& aOther) const {
-    return mViewportSize == aOther.mViewportSize &&
+    bool contextPaintIsEqual =
+      
+      (mContextPaint == aOther.mContextPaint) ||
+      
+      (mContextPaint && aOther.mContextPaint &&
+       *mContextPaint == *aOther.mContextPaint);
+
+    return contextPaintIsEqual &&
+           mViewportSize == aOther.mViewportSize &&
            mPreserveAspectRatio == aOther.mPreserveAspectRatio &&
            mGlobalOpacity == aOther.mGlobalOpacity &&
            mIsPaintingSVGImageElement == aOther.mIsPaintingSVGImageElement;
@@ -119,7 +127,7 @@ private:
   }
 
   
-  RefPtr<SVGContextPaint>       mContextPaint;
+  RefPtr<SVGEmbeddingContextPaint> mContextPaint;
   Maybe<CSSIntSize>             mViewportSize;
   Maybe<SVGPreserveAspectRatio> mPreserveAspectRatio;
   gfxFloat                      mGlobalOpacity;
