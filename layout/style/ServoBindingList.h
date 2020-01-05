@@ -204,11 +204,15 @@ SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemoveProperty, void,
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_RemovePropertyById, void,
                    RawServoDeclarationBlockBorrowed declarations,
                    nsCSSPropertyID property)
+
+
+
 SERVO_BINDING_FUNC(Servo_AnimationCompose, void,
-                   RawServoAnimationValueMapBorrowed,
+                   RawServoAnimationValueMapBorrowed animation_values,
+                   void* base_values,
                    nsCSSPropertyID property,
-                   RawGeckoAnimationPropertySegmentBorrowed,
-                   RawGeckoComputedTimingBorrowed)
+                   RawGeckoAnimationPropertySegmentBorrowed animation_segment,
+                   RawGeckoComputedTimingBorrowed computed_timing)
 
 
 SERVO_BINDING_FUNC(Servo_DeclarationBlock_PropertyIsSet, bool,

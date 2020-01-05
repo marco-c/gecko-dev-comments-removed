@@ -201,6 +201,13 @@ double Gecko_GetPositionInSegment(
   mozilla::ComputedTimingFunction::BeforeFlag aBeforeFlag);
 
 
+
+
+RawServoAnimationValueBorrowedOrNull Gecko_AnimationGetBaseStyle(
+  void* aBaseStyles,
+  nsCSSPropertyID aProperty);
+
+
 nsIAtom* Gecko_Atomize(const char* aString, uint32_t aLength);
 void Gecko_AddRefAtom(nsIAtom* aAtom);
 void Gecko_ReleaseAtom(nsIAtom* aAtom);
