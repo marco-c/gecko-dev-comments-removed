@@ -500,7 +500,9 @@ CanvasClientSharedSurface::Updated()
   mNewFront = nullptr;
 
   
-  MOZ_ALWAYS_TRUE( AddTextureClient(mFront) );
+  if (!AddTextureClient(mFront)) {
+    return;
+  }
 
   AutoTArray<CompositableForwarder::TimedTextureClient,1> textures;
   CompositableForwarder::TimedTextureClient* t = textures.AppendElement();
