@@ -7,7 +7,6 @@
 #include "VRManager.h"
 #include "VRManagerParent.h"
 #include "gfxVR.h"
-#include "gfxVROpenVR.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/dom/VRDisplay.h"
 #include "mozilla/dom/GamepadEventTypes.h"
@@ -18,6 +17,7 @@
 #include "gfxVR.h"
 #if defined(XP_WIN)
 #include "gfxVROculus.h"
+#include "gfxVROpenVR.h"
 #endif
 #if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
 #include "gfxVROSVR.h"
@@ -75,15 +75,14 @@ VRManager::VRManager()
   if (mgr) {
     mManagers.AppendElement(mgr);
   }
-#endif
-
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
   
   mgr = VRSystemManagerOpenVR::Create();
   if (mgr) {
     mManagers.AppendElement(mgr);
   }
+#endif
 
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
   
   mgr = VRSystemManagerOSVR::Create();
   if (mgr) {

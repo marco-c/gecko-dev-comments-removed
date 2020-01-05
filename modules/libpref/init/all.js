@@ -5077,8 +5077,6 @@ pref("dom.vr.poseprediction.enabled", true);
 
 pref("dom.vr.require-gesture", true);
 
-pref("gfx.vr.openvr-runtime", "");
-
 pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
 pref("gfx.vr.osvr.clientLibPath", "");
