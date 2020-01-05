@@ -119,7 +119,6 @@ public:
                                     const gfxRect *aOverrideBBox = nullptr,
                                     const nsRect *aPreFilterBounds = nullptr);
 
-private:
   
 
 
@@ -202,6 +201,15 @@ private:
 
   nsRect ComputeSourceNeededRect();
 
+
+  
+
+
+  gfxMatrix GetFilterSpaceToDeviceSpaceTransform() const {
+    return mFilterSpaceToDeviceSpaceTransform;
+  }
+
+private:
   struct SourceInfo {
     
     
@@ -220,20 +228,21 @@ private:
 
 
 
-  DrawResult BuildSourcePaint(SourceInfo *aPrimitive);
+  DrawResult BuildSourcePaint(SourceInfo *aPrimitive,
+                            DrawTarget* aTargetDT);
 
   
 
 
 
 
-  DrawResult BuildSourcePaints();
+  DrawResult BuildSourcePaints(DrawTarget* aTargetDT);
 
   
 
 
 
-  DrawResult BuildSourceImage();
+  DrawResult BuildSourceImage(DrawTarget* aTargetDT);
 
   
 
@@ -329,6 +338,11 @@ private:
 
 
   nsIntRect mTargetBBoxInFilterSpace;
+
+  
+
+
+  gfxMatrix mFilterSpaceToDeviceSpaceTransform;
 
   
 

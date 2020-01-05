@@ -186,6 +186,15 @@ public:
 
 
 
+  static gfxMatrix
+  GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame);
+
+  
+
+
+
+
+
 
 
 
