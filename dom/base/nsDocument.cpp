@@ -2918,73 +2918,6 @@ nsIDocument::IsScriptTracking(const nsACString& aURL) const
   return mTrackingScripts.Contains(aURL);
 }
 
-bool
-nsIDocument::PrerenderHref(nsIURI* aHref)
-{
-  MOZ_ASSERT(aHref);
-
-  static bool sPrerenderEnabled = false;
-  static bool sPrerenderPrefCached = false;
-  if (!sPrerenderPrefCached) {
-    sPrerenderPrefCached = true;
-    Preferences::AddBoolVarCache(&sPrerenderEnabled,
-                                 "dom.linkPrerender.enabled",
-                                 false);
-  }
-
-  
-  if (!sPrerenderEnabled) {
-    return false;
-  }
-
-  nsCOMPtr<nsIURI> referrer = GetDocumentURI();
-  bool urisMatch = false;
-  aHref->EqualsExceptRef(referrer, &urisMatch);
-  if (urisMatch) {
-    
-    
-    return false;
-  }
-
-  nsCOMPtr<nsIDocShell> docShell = GetDocShell();
-  nsCOMPtr<nsIWebNavigation> webNav = do_QueryInterface(docShell);
-  NS_ENSURE_TRUE(webNav, false);
-
-  bool canGoForward = false;
-  nsresult rv = webNav->GetCanGoForward(&canGoForward);
-  if (NS_FAILED(rv) || canGoForward) {
-    
-    
-    return false;
-  }
-
-  
-  
-  if (docShell->GetIsPrerendered()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  if (docShell->GetIsProcessLocked()) {
-    return false;
-  }
-
-  TabChild* tabChild = TabChild::GetFrom(docShell);
-  NS_ENSURE_TRUE(tabChild, false);
-
-  nsCOMPtr<nsIWebBrowserChrome3> wbc3;
-  tabChild->GetWebBrowserChrome(getter_AddRefs(wbc3));
-  NS_ENSURE_TRUE(wbc3, false);
-
-  rv = wbc3->StartPrerenderingDocument(aHref, referrer);
-  NS_ENSURE_SUCCESS(rv, false);
-
-  return true;
-}
-
 NS_IMETHODIMP
 nsDocument::GetApplicationCache(nsIApplicationCache **aApplicationCache)
 {
@@ -11770,6 +11703,13 @@ nsDocument::SetPointerLock(Element* aElement, int aCursorStyle)
   nsIPresShell* shell = GetShell();
   if (!shell) {
     NS_WARNING("SetPointerLock(): No PresShell");
+    if (!aElement) {
+      
+      
+      
+      EventStateManager::SetPointerLock(nullptr, nullptr);
+      return true;
+    }
     return false;
   }
   nsPresContext* presContext = shell->GetPresContext();
@@ -11795,7 +11735,7 @@ nsDocument::SetPointerLock(Element* aElement, int aCursorStyle)
   RefPtr<EventStateManager> esm = presContext->EventStateManager();
   esm->SetCursor(aCursorStyle, nullptr, false,
                  0.0f, 0.0f, widget, true);
-  esm->SetPointerLock(widget, aElement);
+  EventStateManager::SetPointerLock(widget, aElement);
 
   return true;
 }
