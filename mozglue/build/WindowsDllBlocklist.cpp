@@ -225,6 +225,10 @@ static const DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "k7pswsen.dll", MAKE_VERSION(15, 2, 2, 95) },
 
+  
+  { "smci32.dll", ALL_VERSIONS },
+  { "smci64.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
