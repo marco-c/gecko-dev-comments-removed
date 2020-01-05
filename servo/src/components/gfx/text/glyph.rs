@@ -355,14 +355,12 @@ impl<'a> DetailedGlyphStore {
             detail_offset: 0, 
         };
 
-        match self.detail_lookup.as_slice().binary_search_index(&key) {
-            None => fail!("Invalid index not found in detailed glyph lookup table!"),
-            Some(i) => {
-                assert!(i + (count as uint) <= self.detail_buffer.len());
-                
-                self.detail_buffer.slice(i, i + count as uint)
-            }
-        }
+        let i = self.detail_lookup.as_slice().binary_search_index(&key)
+            .expect("Invalid index not found in detailed glyph lookup table!");
+
+        assert!(i + (count as uint) <= self.detail_buffer.len());
+        
+        self.detail_buffer.slice(i, i + count as uint)
     }
 
     fn get_detailed_glyph_with_index(&'a self,
@@ -377,13 +375,11 @@ impl<'a> DetailedGlyphStore {
             detail_offset: 0, 
         };
 
-        match self.detail_lookup.as_slice().binary_search_index(&key) {
-            None => fail!("Invalid index not found in detailed glyph lookup table!"),
-            Some(i) => {
-                assert!(i + (detail_offset as uint)  < self.detail_buffer.len());
-                self.detail_buffer.get(i+(detail_offset as uint))
-            }
-        }
+        let i = self.detail_lookup.as_slice().binary_search_index(&key)
+            .expect("Invalid index not found in detailed glyph lookup table!");
+
+        assert!(i + (detail_offset as uint) < self.detail_buffer.len());
+        self.detail_buffer.get(i + (detail_offset as uint))
     }
 
     fn ensure_sorted(&mut self) {
@@ -432,15 +428,10 @@ impl GlyphData {
                cluster_start: bool,
                ligature_start: bool)
             -> GlyphData {
-        let offset = match offset {
-            None => Zero::zero(),
-            Some(o) => o,
-        };
-
         GlyphData {
             id: id,
             advance: advance,
-            offset: offset,
+            offset: offset.unwrap_or(Zero::zero()),
             is_missing: is_missing,
             cluster_start: cluster_start,
             ligature_start: ligature_start,
@@ -744,20 +735,17 @@ impl<'a> Iterator<(CharIndex, GlyphInfo<'a>)> for GlyphIterator<'a> {
             self.next_glyph_range()
         } else {
             
-            match self.char_range.next() {
-                Some(i) => {
-                    self.char_index = i;
-                    assert!(i < self.store.char_len());
-                    let entry = self.store.entry_buffer.get(i.to_uint());
-                    if entry.is_simple() {
-                        Some((self.char_index, SimpleGlyphInfo(self.store, i)))
-                    } else {
-                        
-                        self.next_complex_glyph(entry, i)
-                    }
-                },
-                None => None
-            }
+            self.char_range.next().and_then(|i| {
+                self.char_index = i;
+                assert!(i < self.store.char_len());
+                let entry = self.store.entry_buffer.get(i.to_uint());
+                if entry.is_simple() {
+                    Some((self.char_index, SimpleGlyphInfo(self.store, i)))
+                } else {
+                    
+                    self.next_complex_glyph(entry, i)
+                }
+            })
         }
     }
 }
