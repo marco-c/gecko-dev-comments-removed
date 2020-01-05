@@ -2023,6 +2023,12 @@ void HTMLMediaElement::NotifyMediaTrackDisabled(MediaTrack* aTrack)
     }
   }
 
+  if (mReadyState == HAVE_NOTHING) {
+    
+    
+    return;
+  }
+
   for (OutputMediaStream& ms : mOutputStreams) {
     if (ms.mCapturingDecoder) {
       MOZ_ASSERT(!ms.mCapturingMediaStream);
