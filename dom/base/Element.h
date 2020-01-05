@@ -518,18 +518,17 @@ protected:
   
   
   
-  
   virtual void AddStates(EventStates aStates)
   {
     NS_PRECONDITION(!aStates.HasAtLeastOneOfStates(INTRINSIC_STATES),
-                    "Should only be adding externally-managed states here");
+                    "Should only be adding ESM-managed states here");
     AddStatesSilently(aStates);
     NotifyStateChange(aStates);
   }
   virtual void RemoveStates(EventStates aStates)
   {
     NS_PRECONDITION(!aStates.HasAtLeastOneOfStates(INTRINSIC_STATES),
-                    "Should only be removing externally-managed states here");
+                    "Should only be removing ESM-managed states here");
     RemoveStatesSilently(aStates);
     NotifyStateChange(aStates);
   }
