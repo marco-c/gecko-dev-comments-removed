@@ -37,21 +37,30 @@ MockObjectRegisterer.prototype = {
       throw new Exception("Invalid object state when calling register()");
 
     
+    var isChrome = location.protocol == "chrome:";
     var providedConstructor = this._replacementCtor;
     this._mockFactory = {
       createInstance: function MF_createInstance(aOuter, aIid) {
         if (aOuter != null)
           throw SpecialPowers.Cr.NS_ERROR_NO_AGGREGATION;
-        return new providedConstructor().QueryInterface(aIid);
+        var inst = new providedConstructor();
+        if (!isChrome) {
+          var QI = inst.QueryInterface;
+          inst = SpecialPowers.wrapCallbackObject(inst);
+          inst.QueryInterface = QI;
+        }
+        return inst.QueryInterface(aIid);
       }
     };
+    if (!isChrome) {
+      this._mockFactory = SpecialPowers.wrapCallbackObject(this._mockFactory);
+    }
 
-    var retVal = SpecialPowers.swapFactoryRegistration(this._cid, this._contractID, this._mockFactory, this._originalFactory);
+    var retVal = SpecialPowers.swapFactoryRegistration(null, this._contractID, this._mockFactory, this._originalFactory);
     if ('error' in retVal) {
       throw new Exception("ERROR: " + retVal.error);
     } else {
-      this._cid = retVal.cid;
-      this._originalFactory = retVal.originalFactory;
+      this._originalFactory = SpecialPowers.wrap(retVal).originalFactory;
     }
   },
 
@@ -63,10 +72,9 @@ MockObjectRegisterer.prototype = {
       throw new Exception("Invalid object state when calling unregister()");
 
     
-    SpecialPowers.swapFactoryRegistration(this._cid, this._contractID, this._mockFactory, this._originalFactory);
+    SpecialPowers.swapFactoryRegistration(null, this._contractID, this._originalFactory, this._mockFactory);
 
     
-    this._cid = null;
     this._originalFactory = null;
     this._mockFactory = null;
   },
@@ -77,11 +85,6 @@ MockObjectRegisterer.prototype = {
 
 
   _originalFactory: null,
-
-  
-
-
-  _cid: null,
 
   
 
