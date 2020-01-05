@@ -28,6 +28,8 @@ using mozilla::Telemetry::ScalarAction;
 using mozilla::Telemetry::KeyedScalarAction;
 using mozilla::Telemetry::ScalarVariant;
 
+namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
+
 
 
 
@@ -171,16 +173,10 @@ TelemetryIPCAccumulator::RecordChildKeyedScalarAction(mozilla::Telemetry::Scalar
 
 
 
-
-
-
-
-
-void
-TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure)
+template<class TActor>
+static void
+SendAccumulatedData(TActor* ipcActor)
 {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
   nsTArray<Accumulation> accumulationsToSend;
   nsTArray<KeyedAccumulation> keyedAccumulationsToSend;
@@ -204,47 +200,43 @@ TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure)
   }
 
   
+  mozilla::Unused << NS_WARN_IF(!ipcActor);
+  if (accumulationsToSend.Length()) {
+    mozilla::Unused <<
+      NS_WARN_IF(!ipcActor->SendAccumulateChildHistograms(accumulationsToSend));
+  }
+  if (keyedAccumulationsToSend.Length()) {
+    mozilla::Unused <<
+      NS_WARN_IF(!ipcActor->SendAccumulateChildKeyedHistograms(keyedAccumulationsToSend));
+  }
+  if (scalarsToSend.Length()) {
+    mozilla::Unused <<
+      NS_WARN_IF(!ipcActor->SendUpdateChildScalars(scalarsToSend));
+  }
+  if (keyedScalarsToSend.Length()) {
+    mozilla::Unused <<
+      NS_WARN_IF(!ipcActor->SendUpdateChildKeyedScalars(keyedScalarsToSend));
+  }
+}
+
+
+
+
+
+
+void
+TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
   switch (XRE_GetProcessType()) {
-    case GeckoProcessType_Content: {
-      mozilla::dom::ContentChild* contentChild = mozilla::dom::ContentChild::GetSingleton();
-      mozilla::Unused << NS_WARN_IF(!contentChild);
-      if (contentChild) {
-        if (accumulationsToSend.Length()) {
-          mozilla::Unused <<
-            NS_WARN_IF(!contentChild->SendAccumulateChildHistogram(accumulationsToSend));
-        }
-        if (keyedAccumulationsToSend.Length()) {
-          mozilla::Unused <<
-            NS_WARN_IF(!contentChild->SendAccumulateChildKeyedHistogram(keyedAccumulationsToSend));
-        }
-        if (scalarsToSend.Length()) {
-          mozilla::Unused <<
-            NS_WARN_IF(!contentChild->SendUpdateChildScalars(scalarsToSend));
-        }
-        if (keyedScalarsToSend.Length()) {
-          mozilla::Unused <<
-            NS_WARN_IF(!contentChild->SendUpdateChildKeyedScalars(keyedScalarsToSend));
-        }
-      }
+    case GeckoProcessType_Content:
+      SendAccumulatedData(mozilla::dom::ContentChild::GetSingleton());
       break;
-    }
-    case GeckoProcessType_GPU: {
-      if (mozilla::gfx::GPUParent* gpu = mozilla::gfx::GPUParent::GetSingleton()) {
-        if (accumulationsToSend.Length()) {
-          mozilla::Unused << gpu->SendAccumulateChildHistogram(accumulationsToSend);
-        }
-        if (keyedAccumulationsToSend.Length()) {
-          mozilla::Unused << gpu->SendAccumulateChildKeyedHistogram(keyedAccumulationsToSend);
-        }
-        if (scalarsToSend.Length()) {
-          mozilla::Unused << gpu->SendUpdateChildScalars(scalarsToSend);
-        }
-        if (keyedScalarsToSend.Length()) {
-          mozilla::Unused << gpu->SendUpdateChildKeyedScalars(keyedScalarsToSend);
-        }
-      }
+    case GeckoProcessType_GPU:
+      SendAccumulatedData(mozilla::gfx::GPUParent::GetSingleton());
       break;
-    }
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported process type");
       break;
@@ -256,6 +248,8 @@ TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure)
 void
 TelemetryIPCAccumulator::DeInitializeGlobalState()
 {
+  MOZ_ASSERT(NS_IsMainThread());
+
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   if (gIPCTimer) {
     NS_RELEASE(gIPCTimer);
