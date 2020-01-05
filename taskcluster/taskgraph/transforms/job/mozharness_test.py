@@ -2,6 +2,8 @@
 
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from voluptuous import Schema, Required
 from taskgraph.util.taskcluster import get_artifact_url
 from taskgraph.transforms.job import run_job_using
@@ -11,7 +13,7 @@ from taskgraph.transforms.tests import (
     normpath
 )
 from taskgraph.transforms.job.common import (
-    docker_worker_support_vcs_checkout,
+    support_vcs_checkout,
 )
 import os
 import re
@@ -117,7 +119,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     
     
-    docker_worker_support_vcs_checkout(config, test, taskdesc)
+    support_vcs_checkout(config, job, taskdesc)
 
     
     

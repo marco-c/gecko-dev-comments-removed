@@ -61,7 +61,7 @@ def docker_worker_add_gecko_vcs_env_vars(config, job, taskdesc):
     })
 
 
-def docker_worker_add_build_dependency(config, job, taskdesc):
+def add_build_dependency(config, job, taskdesc):
     """Add build dependency to the task description and installer_url to env."""
     key = job['platform']
     build_labels = config.config.get('dependent-build-platforms', {})
@@ -90,7 +90,7 @@ def docker_worker_add_build_dependency(config, job, taskdesc):
     env.update({'GECKO_INSTALLER_URL': {'task-reference': installer_url}})
 
 
-def docker_worker_support_vcs_checkout(config, job, taskdesc):
+def support_vcs_checkout(config, job, taskdesc):
     """Update a job/task with parameters to enable a VCS checkout.
 
     The configuration is intended for tasks using "run-task" and its
@@ -98,31 +98,37 @@ def docker_worker_support_vcs_checkout(config, job, taskdesc):
     """
     level = config.params['level']
 
-    taskdesc['worker'].setdefault('caches', []).append({
-        'type': 'persistent',
-        
-        
-        
-        
-        
-        
-        
-        
-        'name': 'level-%s-checkouts-v1' % level,
-        'mount-point': '/home/worker/checkouts',
-    })
+    
+    
+    if job['worker']['implementation'] in ('docker-worker', 'docker-engine'):
+        taskdesc['worker'].setdefault('caches', []).append({
+            'type': 'persistent',
+            
+            
+            
+            
+            
+            
+            
+            
+            'name': 'level-%s-checkouts-v1' % level,
+            'mount-point': '/home/worker/checkouts',
+        })
 
     taskdesc['worker'].setdefault('env', {}).update({
         'GECKO_BASE_REPOSITORY': config.params['base_repository'],
         'GECKO_HEAD_REPOSITORY': config.params['head_repository'],
         'GECKO_HEAD_REV': config.params['head_rev'],
-        'HG_STORE_PATH': '/home/worker/checkouts/hg-store',
+        'HG_STORE_PATH': '~/checkouts/hg-store',
     })
 
     
     
     taskdesc['scopes'].append('secrets:get:project/taskcluster/gecko/hgfingerprint')
-    taskdesc['worker']['taskcluster-proxy'] = True
+
+    
+    if job['worker']['implementation'] in ('docker-worker', 'docker-engine'):
+        taskdesc['worker']['taskcluster-proxy'] = True
 
 
 def docker_worker_setup_secrets(config, job, taskdesc):
