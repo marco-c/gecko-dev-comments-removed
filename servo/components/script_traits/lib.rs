@@ -7,6 +7,7 @@
 
 #![deny(unused_imports, unused_variable)]
 
+extern crate devtools_traits;
 extern crate geom;
 extern crate servo_msg = "msg";
 extern crate servo_net = "net";
@@ -19,6 +20,7 @@ extern crate serialize;
 
 
 
+use devtools_traits::DevtoolsControlChan;
 use servo_msg::constellation_msg::{ConstellationChan, PipelineId, Failure, WindowSizeData};
 use servo_msg::constellation_msg::SubpageId;
 use servo_msg::compositor_msg::ScriptListener;
@@ -91,6 +93,7 @@ pub trait ScriptTaskFactory {
                                         failure_msg: Failure,
                                         resource_task: ResourceTask,
                                         image_cache_task: ImageCacheTask,
+                                        devtools_chan: Option<DevtoolsControlChan>,
                                         window_size: WindowSizeData);
     fn create_layout_channel(_phantom: Option<&mut Self>) -> OpaqueScriptLayoutChannel;
     fn clone_layout_channel(_phantom: Option<&mut Self>, pair: &OpaqueScriptLayoutChannel) -> Box<Any+Send>;
