@@ -187,6 +187,16 @@ TraceActivations(JSContext* cx, const CooperatingContext& target, JSTracer* trc)
 Instance*
 LookupFaultingInstance(WasmActivation* activation, void* pc, void* fp);
 
+
+
+WasmActivation*
+MaybeActiveActivation(JSContext* cx);
+
+
+
+bool
+InCompiledCode(void* pc);
+
 } 
 } 
 

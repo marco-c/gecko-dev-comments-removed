@@ -72,10 +72,6 @@ class MachExceptionHandler
 };
 #endif
 
-
-
-bool IsPCInWasmCode(void *pc);
-
 } 
 } 
 
