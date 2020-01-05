@@ -791,7 +791,9 @@ MediaFormatReader::MediaFormatReader(AbstractMediaDecoder* aDecoder,
            Preferences::GetUint("media.audio-max-decode-error", 3))
   , mVideo(this, MediaData::VIDEO_DATA,
            Preferences::GetUint("media.video-max-decode-error", 2))
-  , mDemuxer(nullptr)
+  , mDemuxer(new DemuxerProxy(aDemuxer, aDecoder
+                                        ? aDecoder->AbstractMainThread()
+                                        : AbstractThread::MainThread()))
   , mDemuxerInitDone(false)
   , mLastReportedNumDecodedFrames(0)
   , mPreviousDecodedKeyframeTime_us(sNoPreviousDecodedKeyframe)
@@ -804,15 +806,10 @@ MediaFormatReader::MediaFormatReader(AbstractMediaDecoder* aDecoder,
   MOZ_ASSERT(aDemuxer);
   MOZ_COUNT_CTOR(MediaFormatReader);
 
-  if (aDecoder) {
-    mDemuxer = MakeUnique<DemuxerProxy>(aDemuxer,
-      aDecoder->AbstractMainThread());
-
-    if (aDecoder->CompositorUpdatedEvent()) {
-      mCompositorUpdatedListener =
-        aDecoder->CompositorUpdatedEvent()->Connect(
-          mTaskQueue, this, &MediaFormatReader::NotifyCompositorUpdated);
-    }
+  if (aDecoder && aDecoder->CompositorUpdatedEvent()) {
+    mCompositorUpdatedListener =
+      aDecoder->CompositorUpdatedEvent()->Connect(
+        mTaskQueue, this, &MediaFormatReader::NotifyCompositorUpdated);
   }
 }
 
@@ -917,10 +914,11 @@ MediaFormatReader::InitInternal()
   mVideo.mTaskQueue =
     new TaskQueue(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER));
 
-  
-  
-  mCrashHelper = mDecoder->GetCrashHelper();
-
+  if (mDecoder) {
+    
+    
+    mCrashHelper = mDecoder->GetCrashHelper();
+  }
   return NS_OK;
 }
 
