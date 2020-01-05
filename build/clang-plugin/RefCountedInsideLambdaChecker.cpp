@@ -28,18 +28,14 @@ void RefCountedInsideLambdaChecker::registerMatchers(MatchFinder* AstMatcher) {
       this);
 }
 
-void RefCountedInsideLambdaChecker::emitDiagnostics(SourceLocation Loc,
-                                                    StringRef Name,
-                                                    QualType Type) {
-  diag(Loc, "Refcounted variable '%0' of type %1 cannot be captured by a lambda",
-       DiagnosticIDs::Error) << Name << Type;
-  diag(Loc, "Please consider using a smart pointer",
-       DiagnosticIDs::Note);
-}
-
 void RefCountedInsideLambdaChecker::check(
     const MatchFinder::MatchResult &Result) {
   static DenseSet<const CXXRecordDecl*> CheckedDecls;
+
+  const char* Error =
+      "Refcounted variable %0 of type %1 cannot be captured by a lambda";
+  const char* Note =
+      "Please consider using a smart pointer";
 
   const CXXRecordDecl *Lambda = Result.Nodes.getNodeAs<CXXRecordDecl>("decl");
 
@@ -62,88 +58,18 @@ void RefCountedInsideLambdaChecker::check(
   }
   CheckedDecls.insert(Lambda);
 
-  bool StrongRefToThisCaptured = false;
-
-  for (const LambdaCapture& Capture : Lambda->captures()) {
-    
-    
-    
-    
-    if (Capture.getCaptureKind() == LCK_ByRef) {
-      return;
-    }
-
-    
-    
-    if (!StrongRefToThisCaptured &&
-        Capture.capturesVariable() &&
-        Capture.getCaptureKind() == LCK_ByCopy) {
-      const VarDecl *Var = Capture.getCapturedVar();
-      if (Var->hasInit()) {
-        const Stmt *Init = Var->getInit();
-
-        
-        while (true) {
-          auto NewInit = IgnoreTrivials(Init);
-          if (auto ConstructExpr = dyn_cast<CXXConstructExpr>(NewInit)) {
-            if (ConstructExpr->getNumArgs() == 1) {
-              NewInit = ConstructExpr->getArg(0);
-            }
-          }
-          if (Init == NewInit) {
-            break;
-          }
-          Init = NewInit;
-        }
-
-        if (isa<CXXThisExpr>(Init)) {
-          StrongRefToThisCaptured = true;
-        }
-      }
-    }
-  }
-
-  
-  for (const LambdaCapture& Capture : Lambda->captures()) {
-    if (Capture.capturesVariable()) {
+  for (const LambdaCapture Capture : Lambda->captures()) {
+    if (Capture.capturesVariable() && Capture.getCaptureKind() != LCK_ByRef) {
       QualType Pointee = Capture.getCapturedVar()->getType()->getPointeeType();
 
       if (!Pointee.isNull() && isClassRefCounted(Pointee)) {
-        emitDiagnostics(Capture.getLocation(), Capture.getCapturedVar()->getName(), Pointee);
-        return;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool ImplicitByRefDefaultedCapture =
-      Capture.isImplicit() && Lambda->getLambdaCaptureDefault() == LCD_ByRef;
-    if (Capture.capturesThis() &&
-        !ImplicitByRefDefaultedCapture &&
-        !StrongRefToThisCaptured) {
-      ThisVisitor V(*this);
-      bool NotAborted = V.TraverseDecl(const_cast<CXXMethodDecl *>(Lambda->getLambdaCallOperator()));
-      if (!NotAborted) {
+        diag(Capture.getLocation(), Error,
+             DiagnosticIDs::Error) << Capture.getCapturedVar()
+                                   << Pointee;
+        diag(Capture.getLocation(), Note,
+             DiagnosticIDs::Note);
         return;
       }
     }
   }
-}
-
-bool RefCountedInsideLambdaChecker::ThisVisitor::VisitCXXThisExpr(CXXThisExpr *This) {
-  QualType Pointee = This->getType()->getPointeeType();
-  if (!Pointee.isNull() && isClassRefCounted(Pointee)) {
-    Checker.emitDiagnostics(This->getLocStart(), "this", Pointee);
-    return false;
-  }
-
-  return true;
 }
