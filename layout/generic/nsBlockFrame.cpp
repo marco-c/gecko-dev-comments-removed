@@ -4255,7 +4255,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
     
     
     
-    if ((!(frameReflowStatus & NS_INLINE_BREAK_FIRST_LETTER_COMPLETE) &&
+    if ((!frameReflowStatus.FirstLetterComplete() &&
          nsGkAtoms::placeholderFrame != aFrame->GetType()) ||
         *aLineReflowStatus == LineReflowStatus::Stop) {
       
