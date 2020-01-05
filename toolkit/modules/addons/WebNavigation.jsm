@@ -29,6 +29,12 @@ var Manager = {
     
     
     this.recentTabTransitionData = new WeakMap();
+
+    
+    
+    
+    this.createdNavigationTargetByOuterWindowId = new Map();
+
     Services.obs.addObserver(this, "autocomplete-did-enter-text", true);
 
     Services.obs.addObserver(this, "webNavigation-createdNavigationTarget", false);
@@ -38,6 +44,7 @@ var Manager = {
     Services.mm.addMessageListener("Extension:StateChange", this);
     Services.mm.addMessageListener("Extension:DocumentChange", this);
     Services.mm.addMessageListener("Extension:HistoryChange", this);
+    Services.mm.addMessageListener("Extension:CreatedNavigationTarget", this);
 
     Services.mm.loadFrameScript("resource://gre/modules/WebNavigationContent.js", true);
   },
@@ -45,8 +52,6 @@ var Manager = {
   uninit() {
     
     Services.obs.removeObserver(this, "autocomplete-did-enter-text");
-    this.recentTabTransitionData = new WeakMap();
-
     Services.obs.removeObserver(this, "webNavigation-createdNavigationTarget");
 
     Services.mm.removeMessageListener("Content:Click", this);
@@ -54,9 +59,13 @@ var Manager = {
     Services.mm.removeMessageListener("Extension:DocumentChange", this);
     Services.mm.removeMessageListener("Extension:HistoryChange", this);
     Services.mm.removeMessageListener("Extension:DOMContentLoaded", this);
+    Services.mm.removeMessageListener("Extension:CreatedNavigationTarget", this);
 
     Services.mm.removeDelayedFrameScript("resource://gre/modules/WebNavigationContent.js");
     Services.mm.broadcastAsyncMessage("Extension:DisableWebNavigation");
+
+    this.recentTabTransitionData = new WeakMap();
+    this.createdNavigationTargetByOuterWindowId.clear();
   },
 
   addListener(type, listener, filters) {
@@ -278,6 +287,10 @@ var Manager = {
       case "Content:Click":
         this.onContentClick(target, data);
         break;
+
+      case "Extension:CreatedNavigationTarget":
+        this.onCreatedNavigationTarget(target, data);
+        break;
     }
   },
 
@@ -290,6 +303,37 @@ var Manager = {
         this.setRecentTabTransitionData({link: true});
       }
     }
+  },
+
+  onCreatedNavigationTarget(browser, data) {
+    const {isSourceTab, createdWindowId, sourceWindowId, url} = data;
+
+    
+    
+    
+    const pairedMessage = this.createdNavigationTargetByOuterWindowId.get(createdWindowId);
+
+    if (!pairedMessage) {
+      this.createdNavigationTargetByOuterWindowId.set(createdWindowId, {browser, data});
+      return;
+    }
+
+    this.createdNavigationTargetByOuterWindowId.delete(createdWindowId);
+
+    let sourceTabBrowser;
+    let createdTabBrowser;
+
+    if (isSourceTab) {
+      sourceTabBrowser = browser;
+      createdTabBrowser = pairedMessage.browser;
+    } else {
+      sourceTabBrowser = pairedMessage.browser;
+      createdTabBrowser = browser;
+    }
+
+    this.fire("onCreatedNavigationTarget", createdTabBrowser, {}, {
+      sourceTabBrowser, sourceWindowId, url,
+    });
   },
 
   onStateChange(browser, data) {

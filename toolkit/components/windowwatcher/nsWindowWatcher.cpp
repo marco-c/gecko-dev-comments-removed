@@ -20,6 +20,7 @@
 
 #include "nsDocShell.h"
 #include "nsGlobalWindow.h"
+#include "nsHashPropertyBag.h"
 #include "nsIBaseWindow.h"
 #include "nsIBrowserDOMWindow.h"
 #include "nsIDocShell.h"
@@ -1208,6 +1209,29 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   
   
   MOZ_ASSERT(CheckUserContextCompatibility(newDocShell));
+
+  
+  
+  if (aCalledFromJS && parentDocShell && newDocShellItem) {
+    nsCOMPtr<nsIObserverService> obsSvc =
+      mozilla::services::GetObserverService();
+
+    if (obsSvc) {
+      RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
+
+      if (uriToLoad) {
+        
+        props->SetPropertyAsACString(NS_LITERAL_STRING("url"),
+                                     uriToLoad->GetSpecOrDefault());
+      }
+
+      props->SetPropertyAsInterface(NS_LITERAL_STRING("sourceTabDocShell"), parentDocShell);
+      props->SetPropertyAsInterface(NS_LITERAL_STRING("createdTabDocShell"), newDocShellItem);
+
+      obsSvc->NotifyObservers(static_cast<nsIPropertyBag2*>(props),
+                              "webNavigation-createdNavigationTarget-from-js", nullptr);
+    }
+  }
 
   if (uriToLoad && aNavigate) {
     newDocShell->LoadURI(
