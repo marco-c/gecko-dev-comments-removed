@@ -1602,8 +1602,9 @@ PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
   }
 
   
-  HTMLIFrameElement* frame = nullptr;
-  nsresult rv = UNWRAP_OBJECT(HTMLIFrameElement, obj, frame);
+  
+  Element* frame = nullptr;
+  nsresult rv = UNWRAP_OBJECT(Element, obj, frame);
   if (NS_WARN_IF(!frame)) {
     ReplyError(NS_ERROR_DOM_OPERATION_ERR);
     return;
