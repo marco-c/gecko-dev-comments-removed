@@ -306,9 +306,6 @@ private:
   const MediaInfo& Info() const { return mInfo.ref(); }
 
   
-  bool HaveNextFrameData();
-
-  
   TaskQueue* OwnerThread() const { return mTaskQueue; }
 
   
@@ -395,13 +392,6 @@ protected:
   
   bool HasLowBufferedData(int64_t aUsecs);
 
-  
-  
-  bool HasFutureAudio();
-
-  
-  
-  void UpdateNextFrameStatus();
   void UpdateNextFrameStatus(NextFrameStatus aStatus);
 
   
