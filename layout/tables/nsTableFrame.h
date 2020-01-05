@@ -270,6 +270,16 @@ public:
 
 
 
+
+  DrawResult PaintTableBorderBackground(nsDisplayListBuilder* aBuilder,
+                                        nsRenderingContext& aRenderingContext,
+                                        const nsRect& aDirtyRect,
+                                        nsPoint aPt);
+
+  
+
+
+
   LogicalMargin GetOuterBCBorder(const WritingMode aWM) const;
 
   
