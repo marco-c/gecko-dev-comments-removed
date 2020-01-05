@@ -8,7 +8,6 @@
 #ifndef mozilla_net_HttpBaseChannel_h
 #define mozilla_net_HttpBaseChannel_h
 
-#include "mozilla/Atomics.h"
 #include "nsHttp.h"
 #include "nsAutoPtr.h"
 #include "nsHashPropertyBag.h"
@@ -206,6 +205,8 @@ public:
   NS_IMETHOD SetChannelId(const nsACString& aChannelId) override;
   NS_IMETHOD GetTopLevelContentWindowId(uint64_t *aContentWindowId) override;
   NS_IMETHOD SetTopLevelContentWindowId(uint64_t aContentWindowId) override;
+  NS_IMETHOD GetTopLevelOuterContentWindowId(uint64_t *aWindowId) override;
+  NS_IMETHOD SetTopLevelOuterContentWindowId(uint64_t aWindowId) override;
   NS_IMETHOD GetIsTrackingResource(bool* aIsTrackingResource) override;
 
   
@@ -360,11 +361,6 @@ public:
       mIsTrackingResource = true;
     }
 
-    void SetTopLevelOuterContentWindowId(uint64_t aTopLevelOuterContentWindowId)
-    {
-      mTopLevelOuterContentWindowId = aTopLevelOuterContentWindowId;
-    }
-
 protected:
   
   void     DoNotifyListener();
@@ -446,10 +442,6 @@ private:
   void ReleaseMainThreadOnlyReferences();
 
 protected:
-  
-  
-  Atomic<bool, ReleaseAcquire> mCanceled;
-
   nsTArray<Pair<nsString, nsString>> mSecurityConsoleMessages;
 
   nsCOMPtr<nsIStreamListener>       mListener;
@@ -493,6 +485,7 @@ protected:
   uint8_t                           mRedirectionLimit;
 
   uint32_t                          mApplyConversion            : 1;
+  uint32_t                          mCanceled                   : 1;
   uint32_t                          mIsPending                  : 1;
   uint32_t                          mWasOpened                  : 1;
   
