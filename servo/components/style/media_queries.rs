@@ -125,7 +125,7 @@ fn parse_value_as_length(value: &ComponentValue) -> Result<Au, ()> {
     
     
     let initial_font_size = longhands::font_size::get_initial_value();
-    Ok(computed::compute_Au_with_font_size(length, initial_font_size))
+    Ok(computed::compute_Au_with_font_size(length, initial_font_size, initial_font_size))
 }
 
 fn parse_media_query_expression(iter: ParserIter) -> Result<Expression, ()> {
