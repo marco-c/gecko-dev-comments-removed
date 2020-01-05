@@ -111,17 +111,25 @@ class PromiseObject : public NativeObject
 
 
 
-MOZ_MUST_USE bool
-EnqueuePromiseReactions(JSContext* cx, Handle<PromiseObject*> promise,
-                        HandleObject dependentPromise,
-                        HandleValue onFulfilled, HandleValue onRejected);
 
 MOZ_MUST_USE JSObject*
 GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 
-MOZ_MUST_USE JSObject*
-OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise, HandleValue onFulfilled,
-                    HandleValue onRejected);
+
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool
+OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise,
+                    HandleValue onFulfilled, HandleValue onRejected,
+                    MutableHandleObject dependent, bool createDependent);
+
 
 MOZ_MUST_USE PromiseObject*
 CreatePromiseObjectForAsync(JSContext* cx, HandleValue generatorVal);

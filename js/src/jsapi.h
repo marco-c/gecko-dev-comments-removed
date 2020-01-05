@@ -4609,6 +4609,9 @@ enum class PromiseState {
 
 
 
+
+
+
 extern JS_PUBLIC_API(PromiseState)
 GetPromiseState(JS::HandleObject promise);
 
