@@ -59,6 +59,16 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
     aRestyleHint |= eRestyle_Self | eRestyle_Subtree;
   }
 
+  
+  
+  
+  
+  
+  if (aRestyleHint & eRestyle_Subtree) {
+    aRestyleHint &= ~eRestyle_Subtree;
+    aRestyleHint |= eRestyle_Self | eRestyle_SomeDescendants;
+  }
+
   if (aRestyleHint || aMinChangeHint) {
     Servo_NoteExplicitHints(aElement, aRestyleHint, aMinChangeHint);
   }
