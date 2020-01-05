@@ -81,8 +81,8 @@ impl Attr {
     }
 
     #[inline]
-    pub fn prefix(&self) -> &Option<Prefix> {
-        &self.identifier.prefix
+    pub fn prefix(&self) -> Option<&Prefix> {
+        self.identifier.prefix.as_ref()
     }
 }
 
@@ -153,7 +153,7 @@ impl AttrMethods for Attr {
     
     fn GetPrefix(&self) -> Option<DOMString> {
         
-        self.prefix().as_ref().map(|p| DOMString::from(&**p))
+        self.prefix().map(|p| DOMString::from(&**p))
     }
 
     

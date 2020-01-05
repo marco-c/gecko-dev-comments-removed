@@ -80,7 +80,6 @@ impl CSSKeyframesRuleMethods for CSSKeyframesRule {
 
     
     fn AppendRule(&self, rule: DOMString) {
-        let global = self.global();
         let rule = Keyframe::parse(&rule, self.cssrule.parent_stylesheet().style_stylesheet(),
                                    ParserContextExtraData::default());
         if let Ok(rule) = rule {
