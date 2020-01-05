@@ -2917,7 +2917,7 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
            "remove a char message, but it's already gone from all message "
            "queues, nextKeyMsg=%s, kFoundCharMsg=%s",
            this, ToString(nextKeyMsg).get(), ToString(kFoundCharMsg).get()));
-        return true;
+        return true; 
       }
       
       
@@ -2933,9 +2933,38 @@ NativeKey::GetFollowingCharMessage(MSG& aCharMsg)
       }
       
       
-      if (IsCharMessage(nextKeyMsgInAllWindows) &&
-          nextKeyMsgInAllWindows.message != nextKeyMsg.message &&
-          IsSamePhysicalKeyMessage(nextKeyMsgInAllWindows, kFoundCharMsg)) {
+      if (!IsCharMessage(nextKeyMsgInAllWindows)) {
+        MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+          ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
+           "remove a char message and next key message becomes non-char "
+           "message, nextKeyMsgInAllWindows=%s, nextKeyMsg=%s, "
+           "kFoundCharMsg=%s",
+           this, ToString(nextKeyMsgInAllWindows).get(),
+           ToString(nextKeyMsg).get(), ToString(kFoundCharMsg).get()));
+        MOZ_ASSERT(!mCharMessageHasGone);
+        mFollowingCharMsgs.Clear();
+        mCharMessageHasGone = true;
+        return false;
+      }
+      
+      
+      
+      if (!IsSamePhysicalKeyMessage(nextKeyMsgInAllWindows, kFoundCharMsg)) {
+        MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
+          ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
+           "remove a char message and next key message becomes differnt key's "
+           "char message, nextKeyMsgInAllWindows=%s, nextKeyMsg=%s, "
+           "kFoundCharMsg=%s",
+           this, ToString(nextKeyMsgInAllWindows).get(),
+           ToString(nextKeyMsg).get(), ToString(kFoundCharMsg).get()));
+        MOZ_ASSERT(!mCharMessageHasGone);
+        mFollowingCharMsgs.Clear();
+        mCharMessageHasGone = true;
+        return false;
+      }
+      
+      
+      if (nextKeyMsgInAllWindows.message != nextKeyMsg.message) {
         MOZ_LOG(sNativeKeyLogger, LogLevel::Warning,
           ("%p   NativeKey::GetFollowingCharMessage(), WARNING, failed to "
            "remove a char message due to message change, let's retry to "
