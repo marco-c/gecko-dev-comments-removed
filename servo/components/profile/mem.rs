@@ -440,14 +440,21 @@ mod system_reporter {
 
     #[cfg(target_os="linux")]
     fn get_system_heap_allocated() -> Option<usize> {
-        let info: struct_mallinfo = unsafe {
-            mallinfo()
-        };
+        let info: struct_mallinfo = unsafe { mallinfo() };
+
         
         
         
         
-        Some((info.hblkhd + info.uordblks) as usize)
+        
+        
+        
+        
+        if info.hblkhd < 0 || info.uordblks < 0 {
+            None
+        } else {
+            Some(info.hblkhd as usize + info.uordblks as usize)
+        }
     }
 
     #[cfg(not(target_os="linux"))]
