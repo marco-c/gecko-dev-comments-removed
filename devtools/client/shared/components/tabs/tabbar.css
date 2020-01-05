@@ -29,6 +29,10 @@
   height: 28px;
 }
 
+.tabs .tabs-menu-item a {
+  cursor: default;
+}
+
 
 
 
