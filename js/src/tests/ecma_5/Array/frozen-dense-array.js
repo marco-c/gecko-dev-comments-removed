@@ -25,6 +25,7 @@ assertThrowsInstanceOf(() => a.splice(0, 1, 1), TypeError);
 assertThrowsInstanceOf(() => a.push("foo"), TypeError);
 assertThrowsInstanceOf(() => { "use strict"; a.length = 5; }, TypeError);
 assertThrowsInstanceOf(() => { "use strict"; delete a[0]; }, TypeError);
+assertThrowsInstanceOf(() => a.splice(Math.a), TypeError);
 
 
 
