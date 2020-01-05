@@ -4919,11 +4919,8 @@ nsComputedDOMStyle::DoGetMinHeight()
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   nsStyleCoord minHeight = StylePosition()->mMinHeight;
 
-  if (eStyleUnit_Auto == minHeight.GetUnit()) {
-    
-    
-    
-    
+  if (eStyleUnit_Auto == minHeight.GetUnit() &&
+      !ShouldHonorMinSizeAutoInAxis(eAxisVertical)) {
     minHeight.SetCoordValue(0);
   }
 
