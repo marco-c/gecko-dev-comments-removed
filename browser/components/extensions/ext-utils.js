@@ -202,6 +202,11 @@ class TabTracker extends TabTrackerBase {
     throw new ExtensionError(`Invalid tab ID: ${tabId}`);
   }
 
+  
+
+
+
+
   handleEvent(event) {
     let tab = event.target;
 
@@ -248,6 +253,14 @@ class TabTracker extends TabTrackerBase {
     }
   }
 
+  
+
+
+
+
+
+
+
   _handleWindowOpen(window) {
     if (window.arguments && window.arguments[0] instanceof window.XULElement) {
       
@@ -285,6 +298,14 @@ class TabTracker extends TabTrackerBase {
     }
   }
 
+  
+
+
+
+
+
+
+
   _handleWindowClose(window) {
     for (let tab of window.gBrowser.tabs) {
       if (this.adoptedTabs.has(tab)) {
@@ -295,12 +316,29 @@ class TabTracker extends TabTrackerBase {
     }
   }
 
+  
+
+
+
+
+
+
   emitAttached(tab) {
     let newWindowId = windowTracker.getId(tab.ownerGlobal);
     let tabId = this.getId(tab);
 
     this.emit("tab-attached", {tab, tabId, newWindowId, newPosition: tab._tPos});
   }
+
+  
+
+
+
+
+
+
+
+
 
   emitDetached(tab, adoptedBy) {
     let oldWindowId = windowTracker.getId(tab.ownerGlobal);
@@ -309,9 +347,26 @@ class TabTracker extends TabTrackerBase {
     this.emit("tab-detached", {tab, adoptedBy, tabId, oldWindowId, oldPosition: tab._tPos});
   }
 
+  
+
+
+
+
+
+
   emitCreated(tab) {
     this.emit("tab-created", {tab});
   }
+
+  
+
+
+
+
+
+
+
+
 
   emitRemoved(tab, isWindowClosing) {
     let windowId = windowTracker.getId(tab.ownerGlobal);
@@ -399,10 +454,6 @@ class Tab extends TabBase {
     return this.tab._tPos;
   }
 
-  get innerWindowID() {
-    return this.browser.innerWindowID;
-  }
-
   get mutedInfo() {
     let tab = this.tab;
 
@@ -448,24 +499,40 @@ class Tab extends TabBase {
     return windowTracker.getId(this.window);
   }
 
-  static convertFromSessionStoreClosedData(extension, tab, window = null) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static convertFromSessionStoreClosedData(extension, tabData, window = null) {
     let result = {
-      sessionId: String(tab.closedId),
-      index: tab.pos ? tab.pos : 0,
+      sessionId: String(tabData.closedId),
+      index: tabData.pos ? tabData.pos : 0,
       windowId: window && windowTracker.getId(window),
       selected: false,
       highlighted: false,
       active: false,
       pinned: false,
-      incognito: Boolean(tab.state && tab.state.isPrivate),
+      incognito: Boolean(tabData.state && tabData.state.isPrivate),
     };
 
-    if (extension.tabManager.hasTabPermission(tab)) {
-      let entries = tab.state ? tab.state.entries : tab.entries;
+    if (extension.tabManager.hasTabPermission(tabData)) {
+      let entries = tabData.state ? tabData.state.entries : tabData.entries;
       result.url = entries[0].url;
       result.title = entries[0].title;
-      if (tab.image) {
-        result.favIconUrl = tab.image;
+      if (tabData.image) {
+        result.favIconUrl = tabData.image;
       }
     }
 
@@ -474,6 +541,22 @@ class Tab extends TabBase {
 }
 
 class Window extends WindowBase {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   updateGeometry(options) {
     let {window} = this;
 
@@ -587,19 +670,32 @@ class Window extends WindowBase {
     }
   }
 
-  static convertFromSessionStoreClosedData(extension, window) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static convertFromSessionStoreClosedData(extension, windowData) {
     let result = {
-      sessionId: String(window.closedId),
+      sessionId: String(windowData.closedId),
       focused: false,
       incognito: false,
       type: "normal", 
       
-      state: this.getState(window),
+      state: this.getState(windowData),
       alwaysOnTop: false,
     };
 
-    if (window.tabs.length) {
-      result.tabs = window.tabs.map(tab => {
+    if (windowData.tabs.length) {
+      result.tabs = windowData.tabs.map(tab => {
         return Tab.convertFromSessionStoreClosedData(extension, tab);
       });
     }

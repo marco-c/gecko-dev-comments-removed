@@ -27,6 +27,40 @@ const {
   ExtensionError,
 } = ExtensionUtils;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class TabBase {
   constructor(extension, tab, id) {
     this.extension = extension;
@@ -100,13 +134,39 @@ class TabBase {
     return this.sendMessage(context, "Extension:Capture", message);
   }
 
+  
+
+
+
+
+
+
+
+
+
   get innerWindowID() {
     return this.browser.innerWindowID;
   }
 
+  
+
+
+
+
+
   get hasTabPermission() {
     return this.extension.hasPermission("tabs") || this.hasActiveTabPermission;
   }
+
+  
+
+
+
+
+
+
+
+
 
   get hasActiveTabPermission() {
     return (this.extension.hasPermission("activeTab") &&
@@ -114,13 +174,30 @@ class TabBase {
             this.activeTabWindowID === this.innerWindowID);
   }
 
+  
+
+
+
+
   get incognito() {
     return PrivateBrowsingUtils.isBrowserPrivate(this.browser);
   }
 
+  
+
+
+
+
+
   get _url() {
     return this.browser.currentURI.spec;
   }
+
+  
+
+
+
+
 
   get url() {
     if (this.hasTabPermission) {
@@ -128,15 +205,33 @@ class TabBase {
     }
   }
 
+  
+
+
+
+
+
   get uri() {
     if (this.hasTabPermission) {
       return this.browser.currentURI;
     }
   }
 
+  
+
+
+
+
+
   get _title() {
     return this.browser.contentTitle || this.tab.label;
   }
+
+
+  
+
+
+
 
 
   get title() {
@@ -145,11 +240,193 @@ class TabBase {
     }
   }
 
+  
+
+
+
+
+
+
+  get _favIconUrl() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
   get favIconUrl() {
     if (this.hasTabPermission) {
       return this._favIconUrl;
     }
   }
+
+  
+
+
+
+
+
+  get audible() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get browser() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get cookieStoreId() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get height() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get index() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get mutedInfo() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get pinned() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get active() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get selected() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get status() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get width() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get window() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get windowId() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   matches(queryInfo) {
     const PROPS = ["active", "audible", "cookieStoreId", "highlighted", "index", "pinned", "status", "title"];
@@ -170,6 +447,13 @@ class TabBase {
 
     return true;
   }
+
+  
+
+
+
+
+
 
   convert() {
     let result = {
@@ -205,6 +489,25 @@ class TabBase {
 
     return result;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   _execute(context, details, kind, method) {
     let options = {
@@ -263,13 +566,55 @@ class TabBase {
     return this.sendMessage(context, "Extension:Execute", {options});
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   executeScript(context, details) {
     return this._execute(context, details, "js", "executeScript");
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
   insertCSS(context, details) {
     return this._execute(context, details, "css", "insertCSS").then(() => {});
   }
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
   removeCSS(context, details) {
     return this._execute(context, details, "css", "removeCSS").then(() => {});
@@ -280,12 +625,29 @@ class TabBase {
 const WINDOW_ID_NONE = -1;
 const WINDOW_ID_CURRENT = -2;
 
+
+
+
+
+
+
+
+
+
+
+
+
 class WindowBase {
   constructor(extension, window, id) {
     this.extension = extension;
     this.window = window;
     this.id = id;
   }
+
+  
+
+
+
 
   get xulWindow() {
     return this.window.QueryInterface(Ci.nsIInterfaceRequestor)
@@ -294,12 +656,27 @@ class WindowBase {
                .getInterface(Ci.nsIXULWindow);
   }
 
+  
+
+
+
+
+
+
+
+
   isCurrentFor(context) {
     if (context && context.currentWindow) {
       return this.window === context.currentWindow;
     }
     return this.isLastFocused;
   }
+
+  
+
+
+
+
 
   get type() {
     let {chromeFlags} = this.xulWindow;
@@ -310,6 +687,21 @@ class WindowBase {
 
     return "normal";
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   convert(getInfo) {
     let result = {
@@ -331,6 +723,29 @@ class WindowBase {
 
     return result;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   matches(queryInfo, context) {
     if (queryInfo.lastFocusedWindow !== null && queryInfo.lastFocusedWindow !== this.isLastFocused) {
@@ -357,9 +772,226 @@ class WindowBase {
 
     return true;
   }
+
+  
+
+
+
+
+
+  get focused() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get top() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get left() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get width() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get height() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get incognito() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get alwaysOnTop() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get isLastFocused() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+  get state() {
+    throw new Error("Not implemented");
+  }
+
+  set state(state) {
+    throw new Error("Not implemented");
+  }
+
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
+  static getState(window) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+  * getTabs() {
+    throw new Error("Not implemented");
+  }
+  
 }
 
 Object.assign(WindowBase, {WINDOW_ID_NONE, WINDOW_ID_CURRENT});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class TabTrackerBase extends EventEmitter {
   on(...args) {
@@ -369,7 +1001,91 @@ class TabTrackerBase extends EventEmitter {
 
     return super.on(...args); 
   }
+
+
+  
+
+
+
+
+
+
+  init() {
+    throw new Error("Not implemented");
+  }
+
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+  getId(tab) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getTab(tabId, default_ = undefined) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  
+  getBrowserData(browser) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  get activeTab() {
+    throw new Error("Not implemented");
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 class StatusListener {
   constructor(listener) {
@@ -406,6 +1122,11 @@ class StatusListener {
   }
 }
 
+
+
+
+
+
 class WindowTrackerBase extends EventEmitter {
   constructor() {
     super();
@@ -436,6 +1157,17 @@ class WindowTrackerBase extends EventEmitter {
 
   
   
+  
+  
+
+
+
+
+
+
+
+
+  
   * browserWindows(includeIncomplete = false) {
     
     
@@ -461,21 +1193,54 @@ class WindowTrackerBase extends EventEmitter {
     }
   }
 
+  
+
+
+
+
+
   get topWindow() {
     return Services.wm.getMostRecentWindow("navigator:browser");
   }
+
+  
+
+
+
+
+
+
+
 
   getId(window) {
     return this._windowIds.get(window);
   }
 
+  
+
+
+
+
+
+
+
+
   getCurrentWindow(context) {
-    let {xulWindow} = context;
-    if (xulWindow && context.viewType !== "background") {
-      return xulWindow;
-    }
-    return this.topWindow;
+    return context.currentWindow || this.topWindow;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
   getWindow(id, context) {
     if (id === WINDOW_ID_CURRENT) {
@@ -490,12 +1255,25 @@ class WindowTrackerBase extends EventEmitter {
     throw new ExtensionError(`Invalid window ID: ${id}`);
   }
 
-  get haveListeners() {
+  
+
+
+
+
+
+  get _haveListeners() {
     return this._openListeners.size > 0 || this._closeListeners.size > 0;
   }
 
+  
+
+
+
+
+
+
   addOpenListener(listener) {
-    if (!this.haveListeners) {
+    if (!this._haveListeners) {
       Services.ww.registerNotification(this);
     }
 
@@ -508,29 +1286,58 @@ class WindowTrackerBase extends EventEmitter {
     }
   }
 
+  
+
+
+
+
+
+
   removeOpenListener(listener) {
     this._openListeners.delete(listener);
 
-    if (!this.haveListeners) {
+    if (!this._haveListeners) {
       Services.ww.unregisterNotification(this);
     }
   }
 
+  
+
+
+
+
+
+
   addCloseListener(listener) {
-    if (!this.haveListeners) {
+    if (!this._haveListeners) {
       Services.ww.registerNotification(this);
     }
 
     this._closeListeners.add(listener);
   }
 
+  
+
+
+
+
+
+
   removeCloseListener(listener) {
     this._closeListeners.delete(listener);
 
-    if (!this.haveListeners) {
+    if (!this._haveListeners) {
       Services.ww.unregisterNotification(this);
     }
   }
+
+  
+
+
+
+
+
+
 
   handleEvent(event) {
     if (event.type === "load") {
@@ -551,7 +1358,18 @@ class WindowTrackerBase extends EventEmitter {
     }
   }
 
-  observe(window, topic, data) {
+  
+
+
+
+
+
+
+
+
+
+
+  observe(window, topic) {
     if (topic === "domwindowclosed") {
       if (!this.isBrowserWindow(window)) {
         return;
@@ -571,8 +1389,23 @@ class WindowTrackerBase extends EventEmitter {
   }
 
   
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   addListener(type, listener) {
     if (type === "domwindowopened") {
       return this.addOpenListener(listener);
@@ -597,38 +1430,60 @@ class WindowTrackerBase extends EventEmitter {
     }
   }
 
-  removeListener(eventType, listener) {
-    if (eventType === "domwindowopened") {
+  
+
+
+
+
+
+
+
+
+
+  removeListener(type, listener) {
+    if (type === "domwindowopened") {
       return this.removeOpenListener(listener);
-    } else if (eventType === "domwindowclosed") {
+    } else if (type === "domwindowclosed") {
       return this.removeCloseListener(listener);
     }
 
-    if (eventType === "status") {
+    if (type === "status") {
       listener = this._statusListeners.get(listener);
-      eventType = "progress";
+      type = "progress";
     }
 
-    let listeners = this._listeners.get(eventType);
+    let listeners = this._listeners.get(type);
     listeners.delete(listener);
 
     if (listeners.size === 0) {
-      this._listeners.delete(eventType);
+      this._listeners.delete(type);
       if (this._listeners.size === 0) {
         this.removeOpenListener(this._handleWindowOpened);
       }
     }
 
     
-    let useCapture = eventType === "focus" || eventType === "blur";
+    let useCapture = type === "focus" || type === "blur";
     for (let window of this.browserWindows()) {
-      if (eventType === "progress") {
+      if (type === "progress") {
         this.removeProgressListener(window, listener);
       } else {
-        window.removeEventListener(eventType, listener, useCapture);
+        window.removeEventListener(type, listener, useCapture);
       }
     }
   }
+
+  
+
+
+
+
+
+
+
+
+
+
 
   _addWindowListener(window, eventType, listener) {
     let useCapture = eventType === "focus" || eventType === "blur";
@@ -640,6 +1495,14 @@ class WindowTrackerBase extends EventEmitter {
     }
   }
 
+  
+
+
+
+
+
+
+
   _handleWindowOpened(window) {
     for (let [eventType, listeners] of this._listeners) {
       for (let listener of listeners) {
@@ -647,7 +1510,40 @@ class WindowTrackerBase extends EventEmitter {
       }
     }
   }
+
+  
+
+
+
+
+
+
+
+
+  addProgressListener(window, listener) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+  removeProgressListener(window, listener) {
+    throw new Error("Not implemented");
+  }
 }
+
+
+
+
+
+
+
 
 class TabManagerBase {
   constructor(extension) {
@@ -655,6 +1551,13 @@ class TabManagerBase {
 
     this._tabs = new DefaultWeakMap(tab => this.wrapTab(tab));
   }
+
+  
+
+
+
+
+
 
   addActiveTabPermission(tab) {
     if (this.extension.hasPermission("activeTab")) {
@@ -667,25 +1570,88 @@ class TabManagerBase {
     }
   }
 
+  
+
+
+
+
+
+
   revokeActiveTabPermission(tab) {
     this.getWrapper(tab).activeTabWindowID = null;
   }
 
   
-  
-  
-  
+
+
+
+
+
+
+
+
   hasActiveTabPermission(tab) {
     return this.getWrapper(tab).hasActiveTabPermission;
   }
+
+  
+
+
+
+
+
+
+
+
+
 
   hasTabPermission(tab) {
     return this.getWrapper(tab).hasTabPermission;
   }
 
+  
+
+
+
+
+
+
+
+
+
   getWrapper(tab) {
     return this._tabs.get(tab);
   }
+
+  
+
+
+
+
+
+
+
+
+
+  convert(tab) {
+    return this.getWrapper(tab).convert();
+  }
+
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
 
   * query(queryInfo = null, context = null) {
     for (let window of this.extension.windowManager.query(queryInfo, context)) {
@@ -697,14 +1663,42 @@ class TabManagerBase {
     }
   }
 
-  convert(tab) {
-    return this.getWrapper(tab).convert();
+  
+
+
+
+
+
+
+
+
+
+
+  get(tabId) {
+    throw new Error("Not implemented");
   }
 
+  
+
+
+
+
+
+
+
+
+
+  
   wrapTab(tab) {
     throw new Error("Not implemented");
   }
 }
+
+
+
+
+
+
 
 class WindowManagerBase {
   constructor(extension) {
@@ -713,13 +1707,52 @@ class WindowManagerBase {
     this._windows = new DefaultWeakMap(window => this.wrapWindow(window));
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
   convert(window, ...args) {
     return this.getWrapper(window).convert(...args);
   }
 
-  getWrapper(tab) {
-    return this._windows.get(tab);
+  
+
+
+
+
+
+
+
+
+
+
+  getWrapper(window) {
+    return this._windows.get(window);
   }
+
+  
+  
+  
+  
+
+
+
+
+
+
+
+
+
+
+
 
   * query(queryInfo = null, context = null) {
     for (let window of this.getAll()) {
@@ -728,4 +1761,48 @@ class WindowManagerBase {
       }
     }
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  get(windowId, context) {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+  * getAll() {
+    throw new Error("Not implemented");
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  wrapWindow(window) {
+    throw new Error("Not implemented");
+  }
+  
 }
