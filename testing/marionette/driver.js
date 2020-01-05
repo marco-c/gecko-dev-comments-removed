@@ -934,18 +934,20 @@ GeckoDriver.prototype.get = function*(cmd, resp) {
   let url = cmd.parameters.url;
 
   let get = this.listener.get({url: url, pageTimeout: this.timeouts.pageLoad});
-  
-  let id = this.listener.activeMessageId;
 
   
   
   
   this.curBrowser.pendingCommands.push(() => {
-    cmd.parameters.command_id = id;
-    cmd.parameters.pageTimeout = this.timeouts.pageLoad;
+    let parameters = {
+      
+      command_id: this.listener.activeMessageId,
+      pageTimeout: this.timeouts.pageLoad,
+      startTime: new Date().getTime(),
+    };
     this.mm.broadcastAsyncMessage(
         "Marionette:pollForReadyState" + this.curBrowser.curFrameId,
-        cmd.parameters);
+        parameters);
   });
 
   yield get;

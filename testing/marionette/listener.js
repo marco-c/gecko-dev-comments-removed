@@ -891,41 +891,55 @@ function multiAction(args, maxLen) {
 
 
 
-function pollForReadyState(msg, start = undefined, callback = undefined) {
-  let {pageTimeout, url, command_id} = msg.json;
-  if (!start) {
-    start = new Date().getTime();
+
+
+
+
+
+
+
+
+
+
+function pollForReadyState(msg) {
+  let {cleanupCallback, command_id, pageTimeout, startTime} = msg.json;
+
+  if (typeof startTime == "undefined") {
+    startTime = new Date().getTime();
   }
-  if (!callback) {
-    callback = () => {};
+
+  if (typeof cleanupCallback == "undefined") {
+    cleanupCallback = () => {};
   }
+
+  let endTime = startTime + pageTimeout;
 
   let checkLoad = () => {
     navTimer.cancel();
 
     let doc = curContainer.frame.document;
-    let now = new Date().getTime();
-    if (pageTimeout == null || (now - start) <= pageTimeout) {
+
+    if (pageTimeout === null || new Date().getTime() <= endTime) {
       
-      if (doc.readyState == "complete") {
-        callback();
+      if (doc.readyState === "complete") {
+        cleanupCallback();
         sendOk(command_id);
 
       
-      } else if (doc.readyState == "interactive" &&
+      } else if (doc.readyState === "interactive" &&
           doc.baseURI.startsWith("about:certerror")) {
-        callback();
+        cleanupCallback();
         sendError(new InsecureCertificateError(), command_id);
 
       
-      } else if (doc.readyState == "interactive" &&
+      } else if (doc.readyState === "interactive" &&
           /about:.+(error)\?/.exec(doc.baseURI)) {
-        callback();
+        cleanupCallback();
         sendError(new UnknownError("Reached error page: " + doc.baseURI), command_id);
 
       
-      } else if (doc.readyState == "interactive" && doc.baseURI.startsWith("about:")) {
-        callback();
+      } else if (doc.readyState === "interactive" && doc.baseURI.startsWith("about:")) {
+        cleanupCallback();
         sendOk(command_id);
 
       
@@ -934,10 +948,11 @@ function pollForReadyState(msg, start = undefined, callback = undefined) {
       }
 
     } else {
-      callback();
+      cleanupCallback();
       sendError(new TimeoutError("Error loading page, timed out (checkLoad)"), command_id);
     }
   };
+
   checkLoad();
 }
 
@@ -948,8 +963,9 @@ function pollForReadyState(msg, start = undefined, callback = undefined) {
 
 
 function get(msg) {
-  let start = new Date().getTime();
   let {pageTimeout, url, command_id} = msg.json;
+
+  let startTime = new Date().getTime();
 
   
   sendSyncMessage("Marionette:switchedToFrame", {frameValue: null});
@@ -1018,9 +1034,15 @@ function get(msg) {
       
       else if (state & Ci.nsIWebProgressListener.STATE_STOP &&
           content.document instanceof content.ImageDocument) {
-        pollForReadyState(msg, start, () => {
-          removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
-        });
+        pollForReadyState({json: {
+          command_id: command_id,
+          pageTimeout: pageTimeout,
+          startTime: startTime,
+          cleanupCallback: () => {
+            webProgress.removeProgressListener(loadListener);
+            removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+          }
+        }});
       }
     },
 
@@ -1056,10 +1078,15 @@ function get(msg) {
         docShell.hasLoadedNonBlankURI;
 
     if (correctFrame && sawLoad && loadedRequestedURI) {
-      pollForReadyState(msg, start, () => {
-        webProgress.removeProgressListener(loadListener);
-        removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
-      });
+      pollForReadyState({json: {
+        command_id: command_id,
+        pageTimeout: pageTimeout,
+        startTime: startTime,
+        cleanupCallback: () => {
+          webProgress.removeProgressListener(loadListener);
+          removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+        }
+      }});
     }
   };
 
