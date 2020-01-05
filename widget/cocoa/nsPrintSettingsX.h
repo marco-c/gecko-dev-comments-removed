@@ -25,6 +25,15 @@ public:
   void SetCocoaPrintInfo(NSPrintInfo* aPrintInfo);
   virtual nsresult ReadPageFormatFromPrefs();
   virtual nsresult WritePageFormatToPrefs();
+  virtual nsresult GetEffectivePageSize(double *aWidth,
+      double *aHeight) override;
+
+  
+  
+  
+  
+  virtual nsresult SetPaperWidth(double aPaperWidth) override;
+  virtual nsresult SetPaperHeight(double aPaperWidth) override;
 
   PMPrintSettings GetPMPrintSettings();
   PMPrintSession GetPMPrintSession();
@@ -35,8 +44,15 @@ public:
   
   nsresult InitUnwriteableMargin();
 
+  
+  
+  nsresult InitAdjustedPaperSize();
+
   void SetInchesScale(float aWidthScale, float aHeightScale);
   void GetInchesScale(float *aWidthScale, float *aHeightScale);
+
+  void SetAdjustedPaperSize(double aWidth, double aHeight);
+  void GetAdjustedPaperSize(double *aWidth, double *aHeight);
 
 protected:
   virtual ~nsPrintSettingsX();
@@ -57,6 +73,8 @@ protected:
   
   float mWidthScale;
   float mHeightScale;
+  double mAdjustedPaperWidth;
+  double mAdjustedPaperHeight;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPrintSettingsX, NS_PRINTSETTINGSX_IID)
