@@ -90,6 +90,9 @@ public:
   static void Initialize();
 
   
+  bool IsTimeoutTracking(uint32_t aTimeoutId);
+
+  
   
   template <class Callable>
   void ForEachUnorderedTimeout(Callable c)
