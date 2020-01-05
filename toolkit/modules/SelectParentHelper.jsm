@@ -25,13 +25,12 @@ var closedWithEnter = false;
 var selectRect;
 
 this.SelectParentHelper = {
-  populate(menulist, items, selectedIndex, zoom, uaBackgroundColor, uaColor) {
+  populate(menulist, items, selectedIndex, zoom) {
     
     menulist.menupopup.textContent = "";
     currentZoom = zoom;
     currentMenulist = menulist;
-    populateChildren(menulist, items, selectedIndex, zoom,
-                     uaBackgroundColor, uaColor);
+    populateChildren(menulist, items, selectedIndex, zoom);
   },
 
   open(browser, menulist, rect, isOpenedViaTouch) {
@@ -140,10 +139,7 @@ this.SelectParentHelper = {
 
       let options = msg.data.options;
       let selectedIndex = msg.data.selectedIndex;
-      let uaBackgroundColor = msg.data.uaBackgroundColor;
-      let uaColor = msg.data.uaColor;
-      this.populate(currentMenulist, options, selectedIndex,
-                    currentZoom, uaBackgroundColor, uaColor);
+      this.populate(currentMenulist, options, selectedIndex, currentZoom);
     }
   },
 
@@ -172,15 +168,15 @@ this.SelectParentHelper = {
 };
 
 function populateChildren(menulist, options, selectedIndex, zoom,
-                          uaBackgroundColor, uaColor,
                           parentElement = null, isGroupDisabled = false,
                           adjustedTextSize = -1, addSearch = true) {
   let element = menulist.menupopup;
-  let win = element.ownerGlobal;
 
   
   
   if (adjustedTextSize == -1) {
+    let win = element.ownerGlobal;
+
     
     
     
@@ -201,21 +197,16 @@ function populateChildren(menulist, options, selectedIndex, zoom,
     item.hiddenByContent = item.hidden;
     item.setAttribute("tooltiptext", option.tooltip);
 
-    let customOptionStylingUsed = false;
-    if (option.backgroundColor &&
-        option.backgroundColor != "transparent" &&
-        option.backgroundColor != uaBackgroundColor) {
+    if (option.backgroundColor && option.backgroundColor != "transparent") {
       item.style.backgroundColor = option.backgroundColor;
-      customOptionStylingUsed = true;
     }
 
-    if (option.color &&
-        option.color != uaColor) {
+    if (option.color && option.color != "transparent") {
       item.style.color = option.color;
-      customOptionStylingUsed = true;
     }
 
-    if (customOptionStylingUsed) {
+    if ((option.backgroundColor && option.backgroundColor != "transparent") ||
+        (option.color && option.color != "rgb(0, 0, 0)")) {
       item.setAttribute("customoptionstyling", "true");
     } else {
       item.removeAttribute("customoptionstyling");
@@ -231,7 +222,6 @@ function populateChildren(menulist, options, selectedIndex, zoom,
 
     if (isOptGroup) {
       populateChildren(menulist, option.children, selectedIndex, zoom,
-                       uaBackgroundColor, uaColor,
                        item, isDisabled, adjustedTextSize, false);
     } else {
       if (option.index == selectedIndex) {
