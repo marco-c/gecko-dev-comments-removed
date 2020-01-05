@@ -333,37 +333,48 @@ add_task(function* test_tab_and_arrows() {
   EventUtils.synthesizeKey("VK_TAB", {});
   is(textbox.selectedButton, oneOffs[0],
      "the first one-off button should be selected");
-  is(searchPopup.selectedIndex, 0, "first suggestion should still be selected");
-
-  
-  
-  EventUtils.synthesizeKey("VK_DOWN", {});
-  is(textbox.selectedButton, oneOffs[0],
-     "the first one-off button should still be selected");
-  is(searchPopup.selectedIndex, 1, "second suggestion should be selected");
-
-  
-  
-  EventUtils.synthesizeKey("VK_UP", {});
-  is(textbox.selectedButton, oneOffs[0],
-     "the first one-off button should still be selected");
-  is(searchPopup.selectedIndex, 0, "second suggestion should be selected again");
-
-  
-  
-  
-  EventUtils.synthesizeKey("VK_UP", {});
   is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
-  is(textbox.value, kUserValue,
-     "the textfield value should be back to user typed value");
-  is(textbox.selectedButton, oneOffs[0],
-     "the first one-off button should still be selected");
 
   
   EventUtils.synthesizeKey("VK_DOWN", {});
   is(textbox.selectedButton, oneOffs[1],
      "the second one-off button should be selected");
-  is(searchPopup.selectedIndex, -1, "there should still be no selected suggestion");
+  is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
+
+  
+  EventUtils.synthesizeKey("VK_RIGHT", {});
+  is(textbox.selectedButton, oneOffs[2],
+     "the third one-off button should be selected");
+  is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
+
+  
+  EventUtils.synthesizeKey("VK_LEFT", {});
+  is(textbox.selectedButton, oneOffs[1],
+     "the second one-off button should be selected again");
+  is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
+
+  
+  EventUtils.synthesizeKey("VK_UP", {});
+  is(textbox.selectedButton, oneOffs[0],
+     "the first one-off button should be selected again");
+  is(searchPopup.selectedIndex, -1, "no suggestion should be selected");
+
+  
+  
+  
+  EventUtils.synthesizeKey("VK_UP", {});
+  is(searchPopup.selectedIndex, kValues.length - 1,
+     "last suggestion should be selected");
+  is(textbox.value, kValues[kValues.length - 1],
+     "the textfield value should match the suggestion");
+  is(textbox.selectedButton, null,
+     "no one-off button should be selected");
+
+  
+  EventUtils.synthesizeKey("VK_DOWN", {});
+  is(textbox.selectedButton, oneOffs[0],
+     "the first one-off button should be selected");
+  is(searchPopup.selectedIndex, -1, "there should be no selected suggestion");
 
   
   let promise = promiseEvent(searchPopup, "popuphidden");
