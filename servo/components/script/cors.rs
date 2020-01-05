@@ -23,7 +23,7 @@ use hyper::header::common::{ContentType, Host};
 use hyper::method::{Method, Get, Head, Post, Options};
 use hyper::status::Success;
 
-use url::{RelativeSchemeData, Url};
+use url::{SchemeData, Url};
 
 #[deriving(Clone)]
 pub struct CORSRequest {
@@ -42,8 +42,8 @@ pub struct CORSRequest {
 
 #[deriving(PartialEq, Clone)]
 pub enum RequestMode {
-    CORSMode, 
-    ForcedPreflightMode 
+    CORS, 
+    ForcedPreflight 
 }
 
 impl CORSRequest {
@@ -60,7 +60,7 @@ impl CORSRequest {
             
             "http" | "https" => {
                 let mut req = CORSRequest::new(referer, destination, mode, method, headers);
-                req.preflight_flag = !is_simple_method(&req.method) || mode == ForcedPreflightMode;
+                req.preflight_flag = !is_simple_method(&req.method) || mode == RequestMode::ForcedPreflight;
                 if req.headers.iter().all(|h| is_simple_header(&h)) {
                     req.preflight_flag = true;
                 }
@@ -73,7 +73,7 @@ impl CORSRequest {
     fn new(mut referer: Url, destination: Url, mode: RequestMode, method: Method,
            headers: Headers) -> CORSRequest {
         match referer.scheme_data {
-            RelativeSchemeData(ref mut data) => data.path = vec!(),
+            SchemeData::Relative(ref mut data) => data.path = vec!(),
             _ => {}
         };
         referer.fragment = None;
@@ -103,7 +103,7 @@ impl CORSRequest {
         if self.preflight_flag &&
            !cache.match_method(self, &self.method) &&
            !self.headers.iter().all(|h| is_simple_header(&h) && cache.match_header(self, h.name())) {
-            if !is_simple_method(&self.method) || self.mode == ForcedPreflightMode {
+            if !is_simple_method(&self.method) || self.mode == RequestMode::ForcedPreflight {
                 return self.preflight_fetch();
                 
                 
@@ -170,7 +170,7 @@ impl CORSRequest {
         };
         
         let methods_substep4 = [self.method.clone()];
-        if methods.len() == 0 || preflight.mode == ForcedPreflightMode {
+        if methods.len() == 0 || preflight.mode == RequestMode::ForcedPreflight {
             methods = methods_substep4.as_slice();
         }
         
@@ -201,14 +201,14 @@ impl CORSRequest {
             let cache_match = cache.match_method_and_update(self, m, max_age);
             if !cache_match {
                 cache.insert(CORSCacheEntry::new(self.origin.clone(), self.destination.clone(),
-                                                 max_age, false, MethodData(m.clone())));
+                                                 max_age, false, HeaderOrMethod::MethodData(m.clone())));
             }
         }
         for h in response.headers.iter() {
             let cache_match = cache.match_header_and_update(self, h.name(), max_age);
             if !cache_match {
                 cache.insert(CORSCacheEntry::new(self.origin.clone(), self.destination.clone(),
-                                                 max_age, false, HeaderData(h.to_string())));
+                                                 max_age, false, HeaderOrMethod::HeaderData(h.to_string())));
             }
         }
         cors_response
@@ -254,14 +254,14 @@ pub enum HeaderOrMethod {
 impl HeaderOrMethod {
     fn match_header(&self, header_name: &str) -> bool {
         match *self {
-            HeaderData(ref s) => s.as_slice().eq_ignore_ascii_case(header_name),
+            HeaderOrMethod::HeaderData(ref s) => s.as_slice().eq_ignore_ascii_case(header_name),
             _ => false
         }
     }
 
     fn match_method(&self, method: &Method) -> bool {
         match *self {
-            MethodData(ref m) => m == method,
+            HeaderOrMethod::MethodData(ref m) => m == method,
             _ => false
         }
     }
@@ -484,9 +484,9 @@ impl Header for AccessControlAllowOrigin {
         if raw.len() == 1 {
             from_utf8(raw[0].as_slice()).and_then(|s| {
                 if s == "*" {
-                    Some(AllowStar)
+                    Some(AccessControlAllowOrigin::AllowStar)
                 } else {
-                    Url::parse(s).ok().map(|url| AllowOrigin(url))
+                    Url::parse(s).ok().map(|url| AccessControlAllowOrigin::AllowOrigin(url))
                 }
             })
         } else {
@@ -498,8 +498,8 @@ impl Header for AccessControlAllowOrigin {
 impl HeaderFormat for AccessControlAllowOrigin {
     fn fmt_header(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            AllowStar => "*".fmt(f),
-            AllowOrigin(ref url) => url.fmt(f)
+            AccessControlAllowOrigin::AllowStar => "*".fmt(f),
+            AccessControlAllowOrigin::AllowOrigin(ref url) => url.fmt(f)
         }
     }
 }
@@ -531,8 +531,8 @@ impl HeaderFormat for AccessControlMaxAge {
 pub fn allow_cross_origin_request(req: &CORSRequest, headers: &Headers) -> bool {
     
     match headers.get() {
-        Some(&AllowStar) => true, 
-        Some(&AllowOrigin(ref url)) =>
+        Some(&AccessControlAllowOrigin::AllowStar) => true, 
+        Some(&AccessControlAllowOrigin::AllowOrigin(ref url)) =>
             url.scheme == req.origin.scheme &&
             url.host() == req.origin.host() &&
             url.port() == req.origin.port(),

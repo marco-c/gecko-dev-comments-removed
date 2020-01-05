@@ -2,6 +2,9 @@
 
 
 
+use self::BreakType::*;
+use self::GlyphInfo::*;
+
 use servo_util::vec::*;
 use servo_util::range;
 use servo_util::range::{Range, RangeIndex, IntRangeIndex, EachIndex};

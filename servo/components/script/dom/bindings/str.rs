@@ -4,9 +4,9 @@
 
 
 
-use std::from_str::FromStr;
 use std::hash::{Hash, sip};
 use std::str;
+use std::str::FromStr;
 
 
 #[deriving(Clone,Eq,PartialEq)]
@@ -89,31 +89,31 @@ impl ByteString {
             SPHT 
         }
         let ByteString(ref vec) = *self;
-        let mut prev = Other; 
+        let mut prev = PreviousCharacter::Other; 
         vec.iter().all(|&x| {
             
             match x {
                 13  => { 
-                    if prev == Other || prev == SPHT {
-                        prev = CR;
+                    if prev == PreviousCharacter::Other || prev == PreviousCharacter::SPHT {
+                        prev = PreviousCharacter::CR;
                         true
                     } else {
                         false
                     }
                 },
                 10 => { 
-                    if prev == CR {
-                        prev = LF;
+                    if prev == PreviousCharacter::CR {
+                        prev = PreviousCharacter::LF;
                         true
                     } else {
                         false
                     }
                 },
                 32 => { 
-                    if prev == LF || prev == SPHT {
-                        prev = SPHT;
+                    if prev == PreviousCharacter::LF || prev == PreviousCharacter::SPHT {
+                        prev = PreviousCharacter::SPHT;
                         true
-                    } else if prev == Other {
+                    } else if prev == PreviousCharacter::Other {
                         
                         
                         
@@ -124,8 +124,8 @@ impl ByteString {
                     }
                 },
                 9 => { 
-                    if prev == LF || prev == SPHT {
-                        prev = SPHT;
+                    if prev == PreviousCharacter::LF || prev == PreviousCharacter::SPHT {
+                        prev = PreviousCharacter::SPHT;
                         true
                     } else {
                         false
@@ -133,8 +133,8 @@ impl ByteString {
                 },
                 0...31 | 127 => false, 
                 x if x > 127 => false, 
-                _ if prev == Other || prev == SPHT => {
-                    prev = Other;
+                _ if prev == PreviousCharacter::Other || prev == PreviousCharacter::SPHT => {
+                    prev = PreviousCharacter::Other;
                     true
                 },
                 _ => false 

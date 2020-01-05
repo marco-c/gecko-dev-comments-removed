@@ -7,6 +7,10 @@
 
 
 
+pub use self::GlobalRef::*;
+pub use self::GlobalRoot::*;
+pub use self::GlobalField::*;
+
 use dom::bindings::conversions::FromJSValConvertible;
 use dom::bindings::js::{JS, JSRef, Root};
 use dom::bindings::utils::{Reflectable, Reflector};

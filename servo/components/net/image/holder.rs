@@ -3,7 +3,7 @@
 
 
 use image::base::Image;
-use image_cache_task::{ImageReady, ImageNotReady, ImageFailed};
+use image_cache_task::ImageResponseMsg::*;
 use local_image_cache::LocalImageCache;
 
 use geom::size::Size2D;

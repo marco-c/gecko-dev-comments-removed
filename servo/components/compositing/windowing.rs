@@ -36,32 +36,32 @@ pub enum WindowEvent {
     
     
     
-    IdleWindowEvent,
+    Idle,
     
     
-    RefreshWindowEvent,
+    Refresh,
     
     
-    InitializeCompositingWindowEvent,
+    InitializeCompositing,
     
-    ResizeWindowEvent(TypedSize2D<DevicePixel, uint>),
+    Resize(TypedSize2D<DevicePixel, uint>),
     
-    LoadUrlWindowEvent(String),
+    LoadUrl(String),
     
     MouseWindowEventClass(MouseWindowEvent),
     
     MouseWindowMoveEventClass(TypedPoint2D<DevicePixel, f32>),
     
     
-    ScrollWindowEvent(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>),
+    Scroll(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>),
     
-    ZoomWindowEvent(f32),
+    Zoom(f32),
     
-    PinchZoomWindowEvent(f32),
+    PinchZoom(f32),
     
-    NavigationWindowEvent(WindowNavigateMsg),
+    Navigation(WindowNavigateMsg),
     
-    QuitWindowEvent,
+    Quit,
     
     KeyEvent(Key, KeyState, KeyModifiers),
 }
@@ -69,19 +69,19 @@ pub enum WindowEvent {
 impl Show for WindowEvent {
     fn fmt(&self, f: &mut Formatter) -> Result<(),FormatError> {
         match *self {
-            IdleWindowEvent => write!(f, "Idle"),
-            RefreshWindowEvent => write!(f, "Refresh"),
-            InitializeCompositingWindowEvent => write!(f, "InitializeCompositing"),
-            ResizeWindowEvent(..) => write!(f, "Resize"),
-            KeyEvent(..) => write!(f, "Key"),
-            LoadUrlWindowEvent(..) => write!(f, "LoadUrl"),
-            MouseWindowEventClass(..) => write!(f, "Mouse"),
-            MouseWindowMoveEventClass(..) => write!(f, "MouseMove"),
-            ScrollWindowEvent(..) => write!(f, "Scroll"),
-            ZoomWindowEvent(..) => write!(f, "Zoom"),
-            PinchZoomWindowEvent(..) => write!(f, "PinchZoom"),
-            NavigationWindowEvent(..) => write!(f, "Navigation"),
-            QuitWindowEvent => write!(f, "Quit"),
+            WindowEvent::Idle => write!(f, "Idle"),
+            WindowEvent::Refresh => write!(f, "Refresh"),
+            WindowEvent::InitializeCompositing => write!(f, "InitializeCompositing"),
+            WindowEvent::Resize(..) => write!(f, "Resize"),
+            WindowEvent::KeyEvent(..) => write!(f, "Key"),
+            WindowEvent::LoadUrl(..) => write!(f, "LoadUrl"),
+            WindowEvent::MouseWindowEventClass(..) => write!(f, "Mouse"),
+            WindowEvent::MouseWindowMoveEventClass(..) => write!(f, "MouseMove"),
+            WindowEvent::Scroll(..) => write!(f, "Scroll"),
+            WindowEvent::Zoom(..) => write!(f, "Zoom"),
+            WindowEvent::PinchZoom(..) => write!(f, "PinchZoom"),
+            WindowEvent::Navigation(..) => write!(f, "Navigation"),
+            WindowEvent::Quit => write!(f, "Quit"),
         }
     }
 }

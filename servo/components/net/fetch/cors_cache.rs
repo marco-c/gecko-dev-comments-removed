@@ -9,6 +9,9 @@
 
 
 
+use self::CORSCacheTaskMsg::*;
+use self::HeaderOrMethod::*;
+
 use hyper::method::Method;
 use std::ascii::AsciiExt;
 use std::comm::{Sender, Receiver, channel};

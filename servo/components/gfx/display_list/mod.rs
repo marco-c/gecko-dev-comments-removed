@@ -14,6 +14,9 @@
 
 
 
+use self::DisplayItem::*;
+use self::DisplayItemIterator::*;
+
 use color::Color;
 use display_list::optimizer::DisplayListOptimizer;
 use paint_context::{PaintContext, ToAzureRect};

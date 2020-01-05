@@ -2,6 +2,8 @@
 
 
 
+use self::CompressionMode::*;
+
 use text::glyph::CharIndex;
 
 #[deriving(PartialEq)]

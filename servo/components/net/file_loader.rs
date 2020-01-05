@@ -2,7 +2,8 @@
 
 
 
-use resource_task::{ProgressMsg, Metadata, Payload, Done, LoadData, start_sending, TargetedLoadResponse, ResponseSenders};
+use resource_task::{ProgressMsg, Metadata, LoadData, start_sending, TargetedLoadResponse, ResponseSenders};
+use resource_task::ProgressMsg::{Payload, Done};
 
 use std::io;
 use std::io::File;

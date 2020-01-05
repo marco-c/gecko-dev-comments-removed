@@ -2,7 +2,8 @@
 
 
 
-use resource_task::{Metadata, Payload, Done, TargetedLoadResponse, LoadData, start_sending_opt, ResponseSenders};
+use resource_task::{Metadata, TargetedLoadResponse, LoadData, start_sending_opt, ResponseSenders};
+use resource_task::ProgressMsg::{Payload, Done};
 
 use log;
 use std::collections::HashSet;

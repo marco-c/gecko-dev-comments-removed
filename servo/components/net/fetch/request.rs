@@ -2,6 +2,12 @@
 
 
 
+use self::ContextFrameType::*;
+use self::CredentialsMode::*;
+use self::Referer::*;
+use self::RequestMode::*;
+use self::ResponseTainting::*;
+
 use url::Url;
 use hyper::method::{Get, Method};
 use hyper::mime::{Mime, Text, Html, Charset, Utf8};

@@ -3,7 +3,7 @@
 
 
 use interfaces::{CefBrowser, CefRenderHandler};
-use types::PET_VIEW;
+use types::cef_paint_element_type_t::PET_VIEW;
 
 use std::ptr;
 

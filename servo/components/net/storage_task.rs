@@ -1,6 +1,9 @@
 
 
 
+
+use self::StorageTaskMsg::*;
+
 use std::comm::{channel, Receiver, Sender};
 use std::collections::HashMap;
 use std::collections::TreeMap;

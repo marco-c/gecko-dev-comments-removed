@@ -2,6 +2,9 @@
 
 
 
+use self::ResponseBody::*;
+use self::ResponseType::*;
+
 use url::Url;
 use hyper::status::StatusCode;
 use hyper::status::Ok as StatusOk;
