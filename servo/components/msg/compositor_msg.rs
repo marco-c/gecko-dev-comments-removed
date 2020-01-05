@@ -52,7 +52,7 @@ pub struct LayerId(
     usize,
     
     
-    bool
+    usize
 );
 
 impl Debug for LayerId {
@@ -65,30 +65,23 @@ impl Debug for LayerId {
             LayerType::AfterPseudoContent => "-AfterPseudoContent",
         };
 
-        let companion_string = if companion {
-            "-companion"
-        } else {
-            ""
-        };
-
-        write!(f, "{}{}{}", id, type_string, companion_string)
+        write!(f, "{}{}-{}", id, type_string, companion)
     }
 }
 
 impl LayerId {
     
     pub fn null() -> LayerId {
-        LayerId(LayerType::FragmentBody, 0, false)
+        LayerId(LayerType::FragmentBody, 0, 0)
     }
 
     pub fn new_of_type(layer_type: LayerType, fragment_id: usize) -> LayerId {
-        LayerId(layer_type, fragment_id, false)
+        LayerId(layer_type, fragment_id, 0)
     }
 
     pub fn companion_layer_id(&self) -> LayerId {
         let LayerId(layer_type, id, companion) = *self;
-        assert!(!companion);
-        LayerId(layer_type, id, true)
+        LayerId(layer_type, id, companion + 1)
     }
 }
 
@@ -172,7 +165,7 @@ pub enum ScriptToCompositorMsg {
 }
 
 
-#[derive(Clone, Copy, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct SubpageLayerInfo {
     
     pub pipeline_id: PipelineId,
