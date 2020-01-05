@@ -36,35 +36,62 @@ impl FrameTreeId {
 }
 
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
+pub enum LayerType {
+    
+    FragmentBody,
+    
+    OverflowScroll,
+    
+    BeforePseudoContent,
+    
+    AfterPseudoContent,
+}
+
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
 pub struct LayerId(
     
-    pub usize,
-
+    LayerType,
     
-    pub u32,
-
+    usize,
     
     
-    
-    pub u32
+    bool
 );
 
 impl Debug for LayerId {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let LayerId(a, b, c) = *self;
-        write!(f, "Layer({}, {}, {})", a, b, c)
+        let LayerId(layer_type, id, companion) = *self;
+        let type_string = match layer_type {
+            LayerType::FragmentBody => "-FragmentBody",
+            LayerType::OverflowScroll => "-OverflowScroll",
+            LayerType::BeforePseudoContent => "-BeforePseudoContent",
+            LayerType::AfterPseudoContent => "-AfterPseudoContent",
+        };
+
+        let companion_string = if companion {
+            "-companion"
+        } else {
+            ""
+        };
+
+        write!(f, "{}{}{}", id, type_string, companion_string)
     }
 }
 
 impl LayerId {
     
     pub fn null() -> LayerId {
-        LayerId(0, 0, 0)
+        LayerId(LayerType::FragmentBody, 0, false)
     }
 
-    pub fn next_layer_id(&self) -> LayerId {
-        let LayerId(a, b, sub_id) = *self;
-        LayerId(a, b, sub_id + 1)
+    pub fn new_of_type(layer_type: LayerType, fragment_id: usize) -> LayerId {
+        LayerId(layer_type, fragment_id, false)
+    }
+
+    pub fn companion_layer_id(&self) -> LayerId {
+        let LayerId(layer_type, id, companion) = *self;
+        assert!(!companion);
+        LayerId(layer_type, id, true)
     }
 }
 
