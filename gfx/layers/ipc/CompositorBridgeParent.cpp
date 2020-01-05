@@ -1007,18 +1007,17 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
     DidComposite(start, end);
   }
 
-  if (mCompositor) {
-    
-    
-    
-    
-    
-    if (!mCompositor->GetCompositeUntilTime().IsNull() ||
-        mLayerManager->DebugOverlayWantsNextFrame()) {
+  
+  
+  
+  
+  
+  
+  
+  if (!mLayerManager->GetCompositeUntilTime().IsNull() ||
+      mLayerManager->DebugOverlayWantsNextFrame())
+  {
       ScheduleComposition();
-    }
-  } else {
-    
   }
 
 #ifdef COMPOSITOR_PERFORMANCE_WARNING
@@ -1041,11 +1040,8 @@ CompositorBridgeParent::CompositeToTarget(DrawTarget* aTarget, const gfx::IntRec
     ScheduleComposition();
   }
 
-  if (mCompositor) {
-    mCompositor->SetCompositionTime(TimeStamp());
-  } else {
-    
-  }
+  
+  mLayerManager->SetCompositionTime(TimeStamp());
 
   mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME, start);
 }

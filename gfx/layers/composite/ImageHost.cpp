@@ -77,17 +77,19 @@ ImageHost::UseTextureHost(const nsTArray<TimedTexture>& aTextures)
     SetCurrentTextureHost(mImages[0].mTextureHost);
   }
 
+  HostLayerManager* lm = GetLayerManager();
+
   
   
   
   
-  if (GetCompositor() && mLastFrameID >= 0) {
+  if (lm && mLastFrameID >= 0) {
     for (size_t i = 0; i < mImages.Length(); ++i) {
       bool frameComesAfter = mImages[i].mFrameID > mLastFrameID ||
                              mImages[i].mProducerID != mLastProducerID;
       if (frameComesAfter && !mImages[i].mTimeStamp.IsNull()) {
-        GetCompositor()->CompositeUntil(mImages[i].mTimeStamp +
-                                        TimeDuration::FromMilliseconds(BIAS_TIME_MS));
+        lm->CompositeUntil(mImages[i].mTimeStamp +
+                           TimeDuration::FromMilliseconds(BIAS_TIME_MS));
         break;
       }
     }
@@ -155,8 +157,8 @@ TimeStamp
 ImageHost::GetCompositionTime() const
 {
   TimeStamp time;
-  if (GetCompositor()) {
-    time = GetCompositor()->GetCompositionTime();
+  if (HostLayerManager* lm = GetLayerManager()) {
+    time = lm->GetCompositionTime();
   }
   return time;
 }
@@ -197,10 +199,8 @@ ImageHost::Composite(LayerComposite* aLayer,
                      const nsIntRegion* aVisibleRegion,
                      const Maybe<gfx::Polygon>& aGeometry)
 {
-  if (!GetCompositor()) {
-    
-    
-    
+  HostLayerManager* lm = GetLayerManager();
+  if (!lm) {
     return;
   }
 
@@ -210,7 +210,7 @@ ImageHost::Composite(LayerComposite* aLayer,
   }
 
   if (uint32_t(imageIndex) + 1 < mImages.Length()) {
-    GetCompositor()->CompositeUntil(mImages[imageIndex + 1].mTimeStamp + TimeDuration::FromMilliseconds(BIAS_TIME_MS));
+    lm->CompositeUntil(mImages[imageIndex + 1].mTimeStamp + TimeDuration::FromMilliseconds(BIAS_TIME_MS));
   }
 
   TimedImage* img = &mImages[imageIndex];
@@ -260,7 +260,7 @@ ImageHost::Composite(LayerComposite* aLayer,
         info.mImageBridgeProcessId = mAsyncRef.mProcessId;
         info.mNotification = ImageCompositeNotification(
           mAsyncRef.mHandle,
-          img->mTimeStamp, GetCompositor()->GetCompositionTime(),
+          img->mTimeStamp, lm->GetCompositionTime(),
           img->mFrameID, img->mProducerID);
         static_cast<LayerManagerComposite*>(aLayer->GetLayerManager())->
             AppendImageCompositeNotification(info);
@@ -337,7 +337,7 @@ ImageHost::Composite(LayerComposite* aLayer,
   
   
   mBias = UpdateBias(
-      GetCompositor()->GetCompositionTime(), mImages[imageIndex].mTimeStamp,
+      lm->GetCompositionTime(), mImages[imageIndex].mTimeStamp,
       uint32_t(imageIndex + 1) < mImages.Length() ?
           mImages[imageIndex + 1].mTimeStamp : TimeStamp(),
       mBias);

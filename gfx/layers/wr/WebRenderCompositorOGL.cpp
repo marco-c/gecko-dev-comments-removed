@@ -106,18 +106,6 @@ WebRenderCompositorOGL::MakeCurrent(MakeCurrentFlags aFlags) {
 }
 
 void
-WebRenderCompositorOGL::CompositeUntil(TimeStamp aTimeStamp)
-{
-  Compositor::CompositeUntil(aTimeStamp);
-  
-  
-  
-  
-  
-  ScheduleComposition();
-}
-
-void
 WebRenderCompositorOGL::AddExternalImageId(uint64_t aExternalImageId, CompositableHost* aHost)
 {
   MOZ_ASSERT(!mCompositableHosts.Get(aExternalImageId));
