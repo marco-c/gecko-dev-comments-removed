@@ -768,9 +768,6 @@ public:
                                  mozilla::dom::VRDisplayEventReason aReason);
   void DispatchVRDisplayDeactivate(uint32_t aDisplayID,
                                    mozilla::dom::VRDisplayEventReason aReason);
-  void DispatchVRDisplayConnect(uint32_t aDisplayID);
-  void DispatchVRDisplayDisconnect(uint32_t aDisplayID);
-  void DispatchVRDisplayPresentChange(uint32_t aDisplayID);
 
 #define EVENT(name_, id_, type_, struct_)                                     \
   mozilla::dom::EventHandlerNonNull* GetOn##name_()                           \
@@ -1946,9 +1943,6 @@ protected:
   
   nsCOMPtr<nsIPrincipal> mDocumentPrincipal;
 
-  typedef nsTArray<RefPtr<mozilla::dom::StorageEvent>> nsStorageEventArray;
-  nsStorageEventArray mPendingStorageEvents;
-
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;
 
@@ -2030,7 +2024,7 @@ protected:
   
   nsTArray<RefPtr<mozilla::dom::VRDisplay>> mVRDisplays;
 
-  RefPtr<mozilla::dom::VREventObserver> mVREventObserver;
+  nsAutoPtr<mozilla::dom::VREventObserver> mVREventObserver;
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;

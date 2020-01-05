@@ -2179,7 +2179,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindow)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDoc)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIdleService)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWakeLock)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingStorageEvents)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIdleRequestExecutor)
   for (IdleRequest* request : tmp->mIdleRequestCallbacks) {
@@ -2260,7 +2259,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindow)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDoc)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIdleService)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWakeLock)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingStorageEvents)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIdleObservers)
 
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGamepads)
@@ -10444,10 +10442,8 @@ void
 nsGlobalWindow::DisableVRUpdates()
 {
   MOZ_ASSERT(IsInnerWindow());
-  if (mVREventObserver) {
-    mVREventObserver->DisconnectFromOwner();
-    mVREventObserver = nullptr;
-  }
+
+  mVREventObserver = nullptr;
 }
 
 void
@@ -11906,49 +11902,66 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
     return NS_OK;
   }
 
-  bool isPrivateBrowsing = IsPrivateBrowsing();
-  if ((!nsCRT::strcmp(aTopic, "dom-storage2-changed") && !isPrivateBrowsing) ||
-      (!nsCRT::strcmp(aTopic, "dom-private-storage2-changed") && isPrivateBrowsing)) {
-    if (!IsInnerWindow() || !AsInner()->IsCurrentInnerWindow()) {
+  
+  
+  
+  
+  bool isNonPrivateLocalStorageChange =
+    !nsCRT::strcmp(aTopic, "dom-storage2-changed");
+  bool isPrivateLocalStorageChange =
+    !nsCRT::strcmp(aTopic, "dom-private-storage2-changed");
+  if (isNonPrivateLocalStorageChange || isPrivateLocalStorageChange) {
+    
+    
+    
+    
+    
+    
+    bool isPrivateBrowsing = IsPrivateBrowsing();
+    if ((isNonPrivateLocalStorageChange && isPrivateBrowsing) ||
+        (isPrivateLocalStorageChange && !isPrivateBrowsing)) {
       return NS_OK;
     }
 
-    nsIPrincipal *principal;
-    nsresult rv;
+    
+    
+    MOZ_ASSERT(aData);
+    if (!aData) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
+    
+    
+    
+    
+    if (!IsInnerWindow() || !AsInner()->IsCurrentInnerWindow() || IsFrozen()) {
+      return NS_OK;
+    }
+
+    nsIPrincipal *principal = GetPrincipal();
+    if (!principal) {
+      return NS_OK;
+    }
 
     RefPtr<StorageEvent> event = static_cast<StorageEvent*>(aSubject);
     if (!event) {
       return NS_ERROR_FAILURE;
     }
 
-    RefPtr<Storage> changingStorage = event->GetStorageArea();
-    if (!changingStorage) {
-      return NS_ERROR_FAILURE;
-    }
-
-    nsCOMPtr<nsIDOMStorage> istorage = changingStorage.get();
-
     bool fireMozStorageChanged = false;
     nsAutoString eventType;
     eventType.AssignLiteral("storage");
-    principal = GetPrincipal();
-    if (!principal) {
-      return NS_OK;
-    }
 
-    if (changingStorage->IsPrivate() != IsPrivateBrowsing()) {
-      return NS_OK;
-    }
+    if (!NS_strcmp(aData, u"sessionStorage")) {
+      nsCOMPtr<nsIDOMStorage> changingStorage = event->GetStorageArea();
+      MOZ_ASSERT(changingStorage);
 
-    switch (changingStorage->GetType())
-    {
-    case Storage::SessionStorage:
-    {
       bool check = false;
 
       nsCOMPtr<nsIDOMStorageManager> storageManager = do_QueryInterface(GetDocShell());
       if (storageManager) {
-        rv = storageManager->CheckStorage(principal, istorage, &check);
+        nsresult rv = storageManager->CheckStorage(principal, changingStorage,
+                                                   &check);
         if (NS_FAILED(rv)) {
           return rv;
         }
@@ -11969,58 +11982,48 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
       if (fireMozStorageChanged) {
         eventType.AssignLiteral("MozSessionStorageChanged");
       }
-      break;
     }
 
-    case Storage::LocalStorage:
-    {
-      
-      
-      nsIPrincipal* storagePrincipal = changingStorage->GetPrincipal();
+    else {
+      MOZ_ASSERT(!NS_strcmp(aData, u"localStorage"));
+      nsIPrincipal* storagePrincipal = event->GetPrincipal();
+      if (!storagePrincipal) {
+        return NS_OK;
+      }
 
       bool equals = false;
-      rv = storagePrincipal->Equals(principal, &equals);
+      nsresult rv = storagePrincipal->Equals(principal, &equals);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      if (!equals)
+      if (!equals) {
         return NS_OK;
+      }
 
-      fireMozStorageChanged = mLocalStorage == changingStorage;
+      fireMozStorageChanged = mLocalStorage == event->GetStorageArea();
+
       if (fireMozStorageChanged) {
         eventType.AssignLiteral("MozLocalStorageChanged");
       }
-      break;
-    }
-    default:
-      return NS_OK;
     }
 
     
     
     ErrorResult error;
-    RefPtr<StorageEvent> newEvent = CloneStorageEvent(eventType, event, error);
+    RefPtr<StorageEvent> clonedEvent =
+      CloneStorageEvent(eventType, event, error);
     if (error.Failed()) {
       return error.StealNSResult();
     }
 
-    newEvent->SetTrusted(true);
+    clonedEvent->SetTrusted(true);
 
     if (fireMozStorageChanged) {
-      WidgetEvent* internalEvent = newEvent->WidgetEventPtr();
+      WidgetEvent* internalEvent = clonedEvent->WidgetEventPtr();
       internalEvent->mFlags.mOnlyChromeDispatch = true;
     }
 
-    if (IsFrozen()) {
-      
-      
-      
-
-      mPendingStorageEvents.AppendElement(newEvent);
-      return NS_OK;
-    }
-
     bool defaultActionEnabled;
-    DispatchEvent(newEvent, &defaultActionEnabled);
+    DispatchEvent(clonedEvent, &defaultActionEnabled);
 
     return NS_OK;
   }
@@ -12111,10 +12114,19 @@ nsGlobalWindow::CloneStorageEvent(const nsAString& aType,
   aEvent->GetUrl(dict.mUrl);
 
   RefPtr<Storage> storageArea = aEvent->GetStorageArea();
-  MOZ_ASSERT(storageArea);
 
   RefPtr<Storage> storage;
-  if (storageArea->GetType() == Storage::LocalStorage) {
+
+  
+  if (!storageArea) {
+    storage = GetLocalStorage(aRv);
+    if (aRv.Failed() || !storage) {
+      return nullptr;
+    }
+
+    
+    storage->ApplyEvent(aEvent);
+  } else if (storageArea->GetType() == Storage::LocalStorage) {
     storage = GetLocalStorage(aRv);
   } else {
     MOZ_ASSERT(storageArea->GetType() == Storage::SessionStorage);
@@ -12126,7 +12138,7 @@ nsGlobalWindow::CloneStorageEvent(const nsAString& aType,
   }
 
   MOZ_ASSERT(storage);
-  MOZ_ASSERT(storage->IsForkOf(storageArea));
+  MOZ_ASSERT_IF(storageArea, storage->IsForkOf(storageArea));
 
   dict.mStorageArea = storage;
 
@@ -12418,11 +12430,6 @@ nsresult
 nsGlobalWindow::FireDelayedDOMEvents()
 {
   FORWARD_TO_INNER(FireDelayedDOMEvents, (), NS_ERROR_UNEXPECTED);
-
-  for (uint32_t i = 0, len = mPendingStorageEvents.Length(); i < len; ++i) {
-    Observe(mPendingStorageEvents[i], "dom-storage2-changed", nullptr);
-    Observe(mPendingStorageEvents[i], "dom-private-storage2-changed", nullptr);
-  }
 
   if (mApplicationCache) {
     static_cast<nsDOMOfflineResourceList*>(mApplicationCache.get())->FirePendingEvents();
@@ -13293,6 +13300,13 @@ nsGlobalWindow::EventListenerAdded(nsIAtom* aType)
       aType == nsGkAtoms::onvrdisplaypresentchange) {
     NotifyVREventListenerAdded();
   }
+
+  
+  if (aType == nsGkAtoms::onstorage) {
+    ErrorResult rv;
+    GetLocalStorage(rv);
+    rv.SuppressException();
+  }
 }
 
 void
@@ -13474,8 +13488,6 @@ void
 nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
                                           mozilla::dom::VRDisplayEventReason aReason)
 {
-  
-  
   for (auto display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID
         && !display->IsAnyPresenting()) {
@@ -13483,7 +13495,7 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
       
 
       VRDisplayEventInit init;
-      init.mBubbles = false;
+      init.mBubbles = true;
       init.mCancelable = false;
       init.mDisplay = display;
       init.mReason.Construct(aReason);
@@ -13498,9 +13510,7 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
       event->SetTrusted(true);
       bool defaultActionEnabled;
       Unused << DispatchEvent(event, &defaultActionEnabled);
-      
-      
-      return;
+      break;
     }
   }
 }
@@ -13509,15 +13519,13 @@ void
 nsGlobalWindow::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
                                             mozilla::dom::VRDisplayEventReason aReason)
 {
-  
-  
   for (auto display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID && display->IsPresenting()) {
       
       
 
       VRDisplayEventInit init;
-      init.mBubbles = false;
+      init.mBubbles = true;
       init.mCancelable = false;
       init.mDisplay = display;
       init.mReason.Construct(aReason);
@@ -13526,96 +13534,9 @@ nsGlobalWindow::DispatchVRDisplayDeactivate(uint32_t aDisplayID,
         VRDisplayEvent::Constructor(this,
                                     NS_LITERAL_STRING("vrdisplaydeactivate"),
                                     init);
-      event->SetTrusted(true);
       bool defaultActionEnabled;
       Unused << DispatchEvent(event, &defaultActionEnabled);
-      
-      
-      return;
-    }
-  }
-}
-
-void
-nsGlobalWindow::DispatchVRDisplayConnect(uint32_t aDisplayID)
-{
-  
-  
-  for (auto display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      
-
-      RefPtr<VRDisplayEvent> event =
-        VRDisplayEvent::Constructor(this,
-                                    NS_LITERAL_STRING("vrdisplayconnect"),
-                                    init);
-      event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
-      
-      
-      return;
-    }
-  }
-}
-
-void
-nsGlobalWindow::DispatchVRDisplayDisconnect(uint32_t aDisplayID)
-{
-  
-  
-  for (auto display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      
-
-      RefPtr<VRDisplayEvent> event =
-        VRDisplayEvent::Constructor(this,
-                                    NS_LITERAL_STRING("vrdisplaydisconnect"),
-                                    init);
-      event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
-      
-      
-      return;
-    }
-  }
-}
-
-void
-nsGlobalWindow::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
-{
-  
-  
-  for (auto display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID) {
-      
-      VRDisplayEventInit init;
-      init.mBubbles = false;
-      init.mCancelable = false;
-      init.mDisplay = display;
-      
-
-      RefPtr<VRDisplayEvent> event =
-        VRDisplayEvent::Constructor(this,
-                                    NS_LITERAL_STRING("vrdisplaypresentchange"),
-                                    init);
-      event->SetTrusted(true);
-      bool defaultActionEnabled;
-      Unused << DispatchEvent(event, &defaultActionEnabled);
-      
-      
-      return;
+      break;
     }
   }
 }

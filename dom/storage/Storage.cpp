@@ -14,6 +14,9 @@
 #include "nsIPrincipal.h"
 #include "nsICookiePermission.h"
 
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/StorageBinding.h"
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
@@ -25,6 +28,9 @@
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla {
+
+using namespace ipc;
+
 namespace dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Storage, mManager, mPrincipal, mWindow)
@@ -58,7 +64,6 @@ Storage::Storage(nsPIDOMWindowInner* aWindow,
 
 Storage::~Storage()
 {
-  mCache->KeepAlive();
 }
 
  JSObject*
@@ -216,27 +221,91 @@ Storage::BroadcastChangeNotification(const nsSubstring& aKey,
                                      const nsSubstring& aOldValue,
                                      const nsSubstring& aNewValue)
 {
+  if (!XRE_IsParentProcess() && GetType() == LocalStorage && mPrincipal) {
+    
+    
+    dom::ContentChild* cc = dom::ContentChild::GetSingleton();
+    Unused << NS_WARN_IF(!cc->SendBroadcastLocalStorageChange(
+      mDocumentURI, nsString(aKey), nsString(aOldValue), nsString(aNewValue),
+      IPC::Principal(mPrincipal), mIsPrivate));
+  }
+
+  DispatchStorageEvent(GetType(), mDocumentURI, aKey, aOldValue, aNewValue,
+                       mPrincipal, mIsPrivate, this);
+}
+
+ void
+Storage::DispatchStorageEvent(StorageType aStorageType,
+                              const nsAString& aDocumentURI,
+                              const nsAString& aKey,
+                              const nsAString& aOldValue,
+                              const nsAString& aNewValue,
+                              nsIPrincipal* aPrincipal,
+                              bool aIsPrivate,
+                              Storage* aStorage)
+{
   StorageEventInit dict;
   dict.mBubbles = false;
   dict.mCancelable = false;
   dict.mKey = aKey;
   dict.mNewValue = aNewValue;
   dict.mOldValue = aOldValue;
-  dict.mStorageArea = this;
-  dict.mUrl = mDocumentURI;
+  dict.mStorageArea = aStorage;
+  dict.mUrl = aDocumentURI;
 
   
   
   RefPtr<StorageEvent> event =
     StorageEvent::Constructor(nullptr, NS_LITERAL_STRING("storage"), dict);
 
+  event->SetPrincipal(aPrincipal);
+
   RefPtr<StorageNotifierRunnable> r =
     new StorageNotifierRunnable(event,
-                                GetType() == LocalStorage
+                                aStorageType == LocalStorage
                                   ? u"localStorage"
                                   : u"sessionStorage",
-                                IsPrivate());
+                                aIsPrivate);
   NS_DispatchToMainThread(r);
+
+  
+  
+  if (aStorageType == LocalStorage && XRE_IsParentProcess() && aPrincipal) {
+    for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
+      Unused << cp->SendDispatchLocalStorageChange(
+        nsString(aDocumentURI), nsString(aKey), nsString(aOldValue),
+        nsString(aNewValue), IPC::Principal(aPrincipal), aIsPrivate);
+    }
+  }
+}
+
+void
+Storage::ApplyEvent(StorageEvent* aStorageEvent)
+{
+  MOZ_ASSERT(aStorageEvent);
+
+  nsAutoString key;
+  nsAutoString old;
+  nsAutoString value;
+
+  aStorageEvent->GetKey(key);
+  aStorageEvent->GetNewValue(value);
+
+  
+  if (key.IsVoid()) {
+    MOZ_ASSERT(value.IsVoid());
+    mCache->Clear(this);
+    return;
+  }
+
+  
+  if (value.IsVoid()) {
+    mCache->RemoveItem(this, key, old);
+    return;
+  }
+
+  
+  mCache->SetItem(this, key, value, old);
 }
 
 static const char kPermissionType[] = "cookie";

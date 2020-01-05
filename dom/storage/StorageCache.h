@@ -98,10 +98,6 @@ public:
 
   
   
-  void KeepAlive();
-
-  
-  
   
   
   nsresult GetLength(const Storage* aStorage, uint32_t* aRetval);
@@ -195,9 +191,6 @@ private:
   
   
   RefPtr<StorageUsage> mUsage;
-
-  
-  nsCOMPtr<nsITimer> mKeepAliveTimer;
 
   
   
