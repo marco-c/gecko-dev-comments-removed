@@ -10,6 +10,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsISupports.h"
 
+class nsIEventTarget;
 class nsIRunnable;
 
 namespace mozilla {
@@ -46,6 +47,12 @@ public:
   virtual nsresult Dispatch(const char* aName,
                             TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable);
+
+  
+  
+  
+  virtual already_AddRefed<nsIEventTarget>
+  CreateEventTarget(const char* aName, TaskCategory aCategory);
 };
 
 
@@ -55,6 +62,11 @@ public:
   virtual nsresult Dispatch(const char* aName,
                             TaskCategory aCategory,
                             already_AddRefed<nsIRunnable>&& aRunnable) = 0;
+
+  
+  
+  virtual already_AddRefed<nsIEventTarget>
+  CreateEventTarget(const char* aName, TaskCategory aCategory);
 };
 
 } 

@@ -1,11 +1,15 @@
+
+
+
+
+
+
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
 #include "mozilla/Telemetry.h"
-#include "nsIURI.h"
-#include "nsIEffectiveTLDService.h"
-#include "mozilla/StaticPtr.h"
-#include "mozilla/ClearOnShutdown.h"
 #include "nsIDocShell.h"
+#include "nsIEffectiveTLDService.h"
+#include "nsIURI.h"
 
 namespace mozilla {
 namespace dom {
