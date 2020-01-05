@@ -160,8 +160,8 @@ OmxDataDecoder::Init()
 
   
   
-  InvokeAsync(mOmxTaskQueue, mOmxLayer.get(), __func__, &OmxPromiseLayer::Init,
-              mTrackInfo.get())
+  InvokeAsync<const TrackInfo*>(mOmxTaskQueue, mOmxLayer.get(), __func__,
+                                &OmxPromiseLayer::Init, mTrackInfo.get())
     ->Then(mOmxTaskQueue, __func__,
       [self] () {
         
