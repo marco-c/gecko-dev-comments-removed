@@ -122,8 +122,7 @@ function RegExpMatch(string) {
         }
 
         
-        var sticky = !!(flags & REGEXP_STICKY_FLAG);
-        return RegExpLocalMatchOpt(rx, S, sticky);
+        return RegExpBuiltinExec(rx, S, false);
     }
 
     
@@ -222,37 +221,6 @@ function RegExpGlobalMatchOpt(rx, S, fullUnicode) {
 
 
 
-function RegExpLocalMatchOpt(rx, S, sticky) {
-    
-    var lastIndex = ToLength(rx.lastIndex);
-
-    
-    if (!sticky) {
-        lastIndex = 0;
-    } else {
-        if (lastIndex > S.length) {
-            
-            rx.lastIndex = 0;
-            return null;
-        }
-    }
-
-    
-    var result = RegExpMatcher(rx, S, lastIndex);
-    if (result === null) {
-        
-        rx.lastIndex = 0;
-    } else {
-        
-        if (sticky)
-            rx.lastIndex = result.index + result[0].length;
-    }
-
-    return result;
-}
-
-
-
 
 
 
@@ -318,9 +286,10 @@ function RegExpReplace(string, replaceValue) {
 
             if (functionalReplace) {
                 var elemBase = GetElemBaseForLambda(replaceValue);
-                if (IsObject(elemBase))
+                if (IsObject(elemBase)) {
                     return RegExpGlobalReplaceOptElemBase(rx, S, lengthS, replaceValue,
                                                           fullUnicode, elemBase);
+                }
                 return RegExpGlobalReplaceOptFunc(rx, S, lengthS, replaceValue,
                                                   fullUnicode);
             }
@@ -336,18 +305,11 @@ function RegExpReplace(string, replaceValue) {
                                           fullUnicode);
         }
 
-        var sticky = !!(flags & REGEXP_STICKY_FLAG);
-
-        if (functionalReplace) {
-            return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue,
-                                             sticky);
-        }
-        if (firstDollarIndex !== -1) {
-            return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue,
-                                              sticky, firstDollarIndex);
-        }
-        return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue,
-                                     sticky);
+        if (functionalReplace)
+            return RegExpLocalReplaceOptFunc(rx, S, lengthS, replaceValue);
+        if (firstDollarIndex !== -1)
+            return RegExpLocalReplaceOptSubst(rx, S, lengthS, replaceValue, firstDollarIndex);
+        return RegExpLocalReplaceOpt(rx, S, lengthS, replaceValue);
     }
 
     

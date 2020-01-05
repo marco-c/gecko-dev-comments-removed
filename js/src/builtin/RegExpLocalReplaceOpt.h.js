@@ -15,20 +15,33 @@
 
 
 
-function FUNC_NAME(rx, S, lengthS, replaceValue, sticky
+function FUNC_NAME(rx, S, lengthS, replaceValue
 #ifdef SUBSTITUTION
                    , firstDollarIndex
 #endif
                   )
 {
-    var lastIndex;
-    if (sticky) {
-        lastIndex = ToLength(rx.lastIndex);
+    
+    var lastIndex = ToLength(rx.lastIndex);
+
+    
+    
+    
+    
+    var flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
+
+    
+    var globalOrSticky = !!(flags & (REGEXP_GLOBAL_FLAG | REGEXP_STICKY_FLAG));
+
+    if (globalOrSticky) {
+        
         if (lastIndex > lengthS) {
+            
             rx.lastIndex = 0;
             return S;
         }
     } else {
+        
         lastIndex = 0;
     }
 
@@ -37,7 +50,11 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, sticky
 
     
     if (result === null) {
+        
+        
         rx.lastIndex = 0;
+
+        
         return S;
     }
 
@@ -61,7 +78,8 @@ function FUNC_NAME(rx, S, lengthS, replaceValue, sticky
     
     var nextSourcePosition = position + matchLength;
 
-    if (sticky)
+    
+    if (globalOrSticky)
        rx.lastIndex = nextSourcePosition;
 
     var replacement;
