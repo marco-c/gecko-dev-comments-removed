@@ -4,6 +4,7 @@
 
 
 
+use std::slice;
 use stylearc::Arc;
 use stylesheets::Stylesheet;
 
@@ -12,6 +13,17 @@ use stylesheets::Stylesheet;
 pub struct StylesheetSetEntry {
     unique_id: u32,
     sheet: Arc<Stylesheet>,
+}
+
+
+#[derive(Clone)]
+pub struct StylesheetIterator<'a>(slice::Iter<'a, StylesheetSetEntry>);
+
+impl<'a> Iterator for StylesheetIterator<'a> {
+    type Item = &'a Arc<Stylesheet>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().map(|entry| &entry.sheet)
+    }
 }
 
 
@@ -109,11 +121,10 @@ impl StylesheetSet {
     }
 
     
-    pub fn flush(&mut self, sheets: &mut Vec<Arc<Stylesheet>>) {
+    
+    pub fn flush(&mut self) -> StylesheetIterator {
         self.dirty = false;
-        for entry in &self.entries {
-            sheets.push(entry.sheet.clone())
-        }
+        StylesheetIterator(self.entries.iter())
     }
 
     

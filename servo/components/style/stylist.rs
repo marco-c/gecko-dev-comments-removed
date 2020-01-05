@@ -296,13 +296,15 @@ impl Stylist {
     
     
     
-    pub fn rebuild<'a>(&mut self,
-                       doc_stylesheets: &[Arc<Stylesheet>],
-                       guards: &StylesheetGuards,
-                       ua_stylesheets: Option<&UserAgentStylesheets>,
-                       stylesheets_changed: bool,
-                       author_style_disabled: bool,
-                       extra_data: &mut ExtraStyleData<'a>) -> bool {
+    pub fn rebuild<'a, 'b, I>(&mut self,
+                              doc_stylesheets: I,
+                              guards: &StylesheetGuards,
+                              ua_stylesheets: Option<&UserAgentStylesheets>,
+                              stylesheets_changed: bool,
+                              author_style_disabled: bool,
+                              extra_data: &mut ExtraStyleData<'a>) -> bool
+        where I: Iterator<Item = &'b Arc<Stylesheet>> + Clone,
+    {
         debug_assert!(!self.is_cleared || self.is_device_dirty);
 
         self.is_cleared = false;
@@ -315,7 +317,7 @@ impl Stylist {
 
         let cascaded_rule = ViewportRule {
             declarations: viewport::Cascade::from_stylesheets(
-                doc_stylesheets, guards.author, &self.device
+                doc_stylesheets.clone(), guards.author, &self.device
             ).finish(),
         };
 
@@ -345,7 +347,7 @@ impl Stylist {
         }
 
         
-        let sheets_to_add = doc_stylesheets.iter().filter(|s| {
+        let sheets_to_add = doc_stylesheets.filter(|s| {
             !author_style_disabled || s.origin != Origin::Author
         });
 
@@ -366,13 +368,15 @@ impl Stylist {
 
     
     
-    pub fn update<'a>(&mut self,
-                      doc_stylesheets: &[Arc<Stylesheet>],
-                      guards: &StylesheetGuards,
-                      ua_stylesheets: Option<&UserAgentStylesheets>,
-                      stylesheets_changed: bool,
-                      author_style_disabled: bool,
-                      extra_data: &mut ExtraStyleData<'a>) -> bool {
+    pub fn update<'a, 'b, I>(&mut self,
+                             doc_stylesheets: I,
+                             guards: &StylesheetGuards,
+                             ua_stylesheets: Option<&UserAgentStylesheets>,
+                             stylesheets_changed: bool,
+                             author_style_disabled: bool,
+                             extra_data: &mut ExtraStyleData<'a>) -> bool
+        where I: Iterator<Item = &'b Arc<Stylesheet>> + Clone,
+    {
         debug_assert!(!self.is_cleared || self.is_device_dirty);
 
         
@@ -385,7 +389,9 @@ impl Stylist {
                      author_style_disabled, extra_data)
     }
 
-    fn add_stylesheet<'a>(&mut self, stylesheet: &Stylesheet, guard: &SharedRwLockReadGuard,
+    fn add_stylesheet<'a>(&mut self,
+                          stylesheet: &Stylesheet,
+                          guard: &SharedRwLockReadGuard,
                           extra_data: &mut ExtraStyleData<'a>) {
         if stylesheet.disabled() || !stylesheet.is_effective_for_device(&self.device, guard) {
             return;
@@ -711,10 +717,12 @@ impl Stylist {
     
     
     #[cfg(feature = "servo")]
-    pub fn set_device(&mut self, mut device: Device, guard: &SharedRwLockReadGuard,
+    pub fn set_device(&mut self,
+                      mut device: Device,
+                      guard: &SharedRwLockReadGuard,
                       stylesheets: &[Arc<Stylesheet>]) {
         let cascaded_rule = ViewportRule {
-            declarations: viewport::Cascade::from_stylesheets(stylesheets, guard, &device).finish(),
+            declarations: viewport::Cascade::from_stylesheets(stylesheets.iter(), guard, &device).finish(),
         };
 
         self.viewport_constraints =
