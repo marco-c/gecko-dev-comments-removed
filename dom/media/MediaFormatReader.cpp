@@ -2213,20 +2213,6 @@ MediaFormatReader::GetBuffered()
   return intervals.Shift(media::TimeUnit() - mInfo.mStartTime);
 }
 
-
-
-RefPtr<MediaDecoderReader::BufferedUpdatePromise>
-MediaFormatReader::UpdateBufferedWithPromise() {
-  MOZ_ASSERT(OnTaskQueue());
-  
-  
-  
-  
-  
-  NotifyDataArrived();
-  return BufferedUpdatePromise::CreateAndResolve(true, __func__);
-}
-
 void MediaFormatReader::ReleaseResources()
 {
   mVideo.ShutdownDecoder();

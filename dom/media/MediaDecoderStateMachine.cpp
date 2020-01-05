@@ -1572,7 +1572,6 @@ ShutdownState::Enter()
 
   master->mIsShutdown = true;
   master->mDelayedScheduler.Reset();
-  master->mBufferedUpdateRequest.DisconnectIfExists();
 
   
   
@@ -2703,22 +2702,11 @@ MediaDecoderStateMachine::EnqueueFirstFrameLoadedEvent()
   
   bool firstFrameBeenLoaded = mSentFirstFrameLoadedEvent;
   mSentFirstFrameLoadedEvent = true;
-  RefPtr<MediaDecoderStateMachine> self = this;
-  mBufferedUpdateRequest.Begin(
-    mReader->UpdateBufferedWithPromise()
-    ->Then(OwnerThread(),
-    __func__,
-    
-    [self, firstFrameBeenLoaded]() {
-      self->mBufferedUpdateRequest.Complete();
-      MediaDecoderEventVisibility visibility =
-        firstFrameBeenLoaded ? MediaDecoderEventVisibility::Suppressed
-                             : MediaDecoderEventVisibility::Observable;
-      self->mFirstFrameLoadedEvent.Notify(
-        nsAutoPtr<MediaInfo>(new MediaInfo(self->Info())), visibility);
-    },
-    
-    []() { MOZ_CRASH("Should not reach"); }));
+  MediaDecoderEventVisibility visibility =
+    firstFrameBeenLoaded ? MediaDecoderEventVisibility::Suppressed
+                         : MediaDecoderEventVisibility::Observable;
+  mFirstFrameLoadedEvent.Notify(
+    nsAutoPtr<MediaInfo>(new MediaInfo(Info())), visibility);
 }
 
 void
