@@ -31,7 +31,7 @@ public:
   nsresult Init(nsICryptoHash* aHasher);
 
 #ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
-  nsCString GetRawTableUpdates() const { return mPending; }
+  virtual nsCString GetRawTableUpdates() const { return mPending; }
 #endif
 
   virtual void SetCurrentTable(const nsACString& aTable) = 0;
@@ -101,6 +101,12 @@ public:
   virtual const nsTArray<ForwardedUpdate> &Forwards() const override { return mForwards; }
   virtual bool ResetRequested() override { return mResetRequested; }
 
+#ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
+  
+  
+  virtual nsCString GetRawTableUpdates() const override { return mRawUpdate; }
+#endif
+
 private:
   virtual TableUpdate* CreateTableUpdate(const nsACString& aTableName) const override;
 
@@ -158,6 +164,10 @@ private:
 
   
   TableUpdateV2 *mTableUpdate;
+
+#ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
+  nsCString mRawUpdate; 
+#endif
 };
 
 
