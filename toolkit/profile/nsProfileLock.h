@@ -53,11 +53,17 @@ public:
     
 
 
+    nsresult                Cleanup();
+
+    
+
+
     nsresult                GetReplacedLockTime(PRTime* aResult);
 
 private:
     bool                    mHaveLock;
     PRTime                  mReplacedLockTime;
+    nsCOMPtr<nsIFile>       mLockFile;
 
 #if defined (XP_WIN)
     HANDLE                  mLockFileHandle;
