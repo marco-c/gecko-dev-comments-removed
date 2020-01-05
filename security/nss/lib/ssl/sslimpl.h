@@ -370,6 +370,10 @@ struct sslGatherStr {
 
     
     unsigned int dtlsPacketOffset;
+
+    
+
+    PRBool rejectV2Records;
 };
 
 

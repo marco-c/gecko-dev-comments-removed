@@ -334,18 +334,12 @@ dbs_readBlob(DBS *dbsp, DBT *data)
     }
 
     len = dbs_getBlobSize(data);
-    mapfile = PR_CreateFileMap(filed, len, PR_PROT_READONLY);
-    if (mapfile == NULL) {
-        
+    
 
 
-        if (PR_GetError() != PR_NOT_IMPLEMENTED_ERROR) {
-            goto loser;
-        }
-        addr = dbs_EmulateMap(filed, len);
-    } else {
-        addr = PR_MemMap(mapfile, 0, len);
-    }
+
+
+    addr = dbs_EmulateMap(filed, len);
     if (addr == NULL) {
         goto loser;
     }
