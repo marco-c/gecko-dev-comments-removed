@@ -65,8 +65,7 @@ void main(void) {
 
     TransformVertexInfo vi = write_clip_tile_vertex(local_rect,
                                                     layer,
-                                                    area,
-                                                    cci.segment_index);
+                                                    area);
     vLocalRect = vi.clipped_local_rect;
     vPos = vi.local_pos;
 
