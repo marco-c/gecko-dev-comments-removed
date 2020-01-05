@@ -317,14 +317,8 @@ struct InternalBarrierMethods<jsid>
 };
 
 
-
-
 template <typename T>
-class BarrieredBaseMixins {};
-
-
-template <typename T>
-class BarrieredBase : public BarrieredBaseMixins<T>
+class BarrieredBase
 {
   protected:
     
@@ -345,9 +339,12 @@ class BarrieredBase : public BarrieredBaseMixins<T>
 
 
 template <class T>
-class WriteBarrieredBase : public BarrieredBase<T>
+class WriteBarrieredBase : public BarrieredBase<T>,
+                           public WrappedPtrOperations<T, WriteBarrieredBase<T>>
 {
   protected:
+    using BarrieredBase<T>::value;
+
     
     explicit WriteBarrieredBase(const T& v) : BarrieredBase<T>(v) {}
 
@@ -566,8 +563,12 @@ class ReadBarrieredBase : public BarrieredBase<T>
 
 
 template <typename T>
-class ReadBarriered : public ReadBarrieredBase<T>
+class ReadBarriered : public ReadBarrieredBase<T>,
+                      public WrappedPtrOperations<T, ReadBarriered<T>>
 {
+  protected:
+    using ReadBarrieredBase<T>::value;
+
   public:
     ReadBarriered() : ReadBarrieredBase<T>(JS::GCPolicy<T>::initial()) {}
 
@@ -633,12 +634,6 @@ class ReadBarriered : public ReadBarrieredBase<T>
 
 template <typename T>
 using WeakRef = ReadBarriered<T>;
-
-
-
-template <>
-class BarrieredBaseMixins<JS::Value> : public ValueOperations<WriteBarrieredBase<JS::Value>>
-{};
 
 
 

@@ -1288,7 +1288,7 @@ struct BarrierMethods<JS::Value>
     }
 };
 
-template <class Outer> class MutableValueOperations;
+template <class Wrapper> class MutableValueOperations;
 
 
 
@@ -1296,12 +1296,10 @@ template <class Outer> class MutableValueOperations;
 
 
 
-template <class Outer>
-class ValueOperations
+template <class Wrapper>
+class WrappedPtrOperations<JS::Value, Wrapper>
 {
-    friend class MutableValueOperations<Outer>;
-
-    const JS::Value& value() const { return static_cast<const Outer*>(this)->get(); }
+    const JS::Value& value() const { return static_cast<const Wrapper*>(this)->get(); }
 
   public:
     bool isUndefined() const { return value().isUndefined(); }
@@ -1350,10 +1348,10 @@ class ValueOperations
 
 
 
-template <class Outer>
-class MutableValueOperations : public ValueOperations<Outer>
+template <class Wrapper>
+class MutableWrappedPtrOperations<JS::Value, Wrapper> : public WrappedPtrOperations<JS::Value, Wrapper>
 {
-    JS::Value& value() { return static_cast<Outer*>(this)->get(); }
+    JS::Value& value() { return static_cast<Wrapper*>(this)->get(); }
 
   public:
     void setNull() { value().setNull(); }
@@ -1378,13 +1376,9 @@ class MutableValueOperations : public ValueOperations<Outer>
 
 
 
-template <>
-class HeapBase<JS::Value> : public ValueOperations<JS::Heap<JS::Value> >
+template <typename Wrapper>
+class HeapBase<JS::Value, Wrapper> : public WrappedPtrOperations<JS::Value, Wrapper>
 {
-    typedef JS::Heap<JS::Value> Outer;
-
-    friend class ValueOperations<Outer>;
-
     void setBarriered(const JS::Value& v) {
         *static_cast<JS::Heap<JS::Value>*>(this) = v;
     }
@@ -1430,22 +1424,6 @@ class HeapBase<JS::Value> : public ValueOperations<JS::Heap<JS::Value> >
             setNull();
     }
 };
-
-template <>
-class HandleBase<JS::Value> : public ValueOperations<JS::Handle<JS::Value> >
-{};
-
-template <>
-class MutableHandleBase<JS::Value> : public MutableValueOperations<JS::MutableHandle<JS::Value> >
-{};
-
-template <>
-class RootedBase<JS::Value> : public MutableValueOperations<JS::Rooted<JS::Value> >
-{};
-
-template <>
-class PersistentRootedBase<JS::Value> : public MutableValueOperations<JS::PersistentRooted<JS::Value>>
-{};
 
 
 

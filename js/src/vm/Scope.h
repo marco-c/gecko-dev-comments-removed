@@ -22,6 +22,7 @@
 namespace js {
 
 class ModuleObject;
+class Scope;
 
 enum class BindingKind : uint8_t
 {
@@ -70,10 +71,7 @@ enum class ScopeKind : uint8_t
     NonSyntactic,
 
     
-    Module,
-
-    
-    WasmFunction
+    Module
 };
 
 static inline bool
@@ -182,6 +180,21 @@ class BindingLocation
     uint16_t argumentSlot() const {
         MOZ_ASSERT(kind_ == Kind::Argument);
         return mozilla::AssertedCast<uint16_t>(slot_);
+    }
+};
+
+
+
+
+template <typename Wrapper>
+class WrappedPtrOperations<Scope*, Wrapper>
+{
+  public:
+    template <class U>
+    JS::Handle<U*> as() const {
+        const Wrapper& self = *static_cast<const Wrapper*>(this);
+        MOZ_ASSERT_IF(self, self->template is<U>());
+        return Handle<U*>::fromMarkedLocation(reinterpret_cast<U* const*>(self.address()));
     }
 };
 
@@ -883,57 +896,6 @@ class ModuleScope : public Scope
 
 
 
-class WasmFunctionScope : public Scope
-{
-    friend class BindingIter;
-    friend class Scope;
-    static const ScopeKind classScopeKind_ = ScopeKind::WasmFunction;
-
-  public:
-    struct Data
-    {
-        uint32_t length;
-        uint32_t nextFrameSlot;
-        uint32_t funcIndex;
-
-        
-        GCPtr<WasmInstanceObject*> instance;
-
-        BindingName names[1];
-
-        void trace(JSTracer* trc);
-    };
-
-    static WasmFunctionScope* create(JSContext* cx, WasmInstanceObject* instance, uint32_t funcIndex);
-
-    static size_t sizeOfData(uint32_t length) {
-        return sizeof(Data) + (length ? length - 1 : 0) * sizeof(BindingName);
-    }
-
-  private:
-    Data& data() {
-        return *reinterpret_cast<Data*>(data_);
-    }
-
-    const Data& data() const {
-        return *reinterpret_cast<Data*>(data_);
-    }
-
-  public:
-    WasmInstanceObject* instance() const {
-        return data().instance;
-    }
-
-    uint32_t funcIndex() const {
-        return data().funcIndex;
-    }
-
-    static Shape* getEmptyEnvironmentShape(ExclusiveContext* cx);
-};
-
-
-
-
 
 
 
@@ -1040,7 +1002,6 @@ class BindingIter
     void init(GlobalScope::Data& data);
     void init(EvalScope::Data& data, bool strict);
     void init(ModuleScope::Data& data);
-    void init(WasmFunctionScope::Data& data);
 
     bool hasFormalParameterExprs() const {
         return flags_ & HasFormalParameterExprs;
@@ -1110,10 +1071,6 @@ class BindingIter
     }
 
     explicit BindingIter(ModuleScope::Data& data) {
-        init(data);
-    }
-
-    explicit BindingIter(WasmFunctionScope::Data& data) {
         init(data);
     }
 
@@ -1328,10 +1285,10 @@ class MOZ_STACK_CLASS ScopeIter
 
 
 
-template <typename Outer>
-class BindingIterOperations
+template <typename Wrapper>
+class WrappedPtrOperations<BindingIter, Wrapper>
 {
-    const BindingIter& iter() const { return static_cast<const Outer*>(this)->get(); }
+    const BindingIter& iter() const { return static_cast<const Wrapper*>(this)->get(); }
 
   public:
     bool done() const { return iter().done(); }
@@ -1351,19 +1308,20 @@ class BindingIterOperations
     uint32_t nextEnvironmentSlot() const { return iter().nextEnvironmentSlot(); }
 };
 
-template <typename Outer>
-class MutableBindingIterOperations : public BindingIterOperations<Outer>
+template <typename Wrapper>
+class MutableWrappedPtrOperations<BindingIter, Wrapper>
+  : public WrappedPtrOperations<BindingIter, Wrapper>
 {
-    BindingIter& iter() { return static_cast<Outer*>(this)->get(); }
+    BindingIter& iter() { return static_cast<Wrapper*>(this)->get(); }
 
   public:
     void operator++(int) { iter().operator++(1); }
 };
 
-template <typename Outer>
-class ScopeIterOperations
+template <typename Wrapper>
+class WrappedPtrOperations<ScopeIter, Wrapper>
 {
-    const ScopeIter& iter() const { return static_cast<const Outer*>(this)->get(); }
+    const ScopeIter& iter() const { return static_cast<const Wrapper*>(this)->get(); }
 
   public:
     bool done() const { return iter().done(); }
@@ -1374,68 +1332,15 @@ class ScopeIterOperations
     bool hasSyntacticEnvironment() const { return iter().hasSyntacticEnvironment(); }
 };
 
-template <typename Outer>
-class MutableScopeIterOperations : public ScopeIterOperations<Outer>
+template <typename Wrapper>
+class MutableWrappedPtrOperations<ScopeIter, Wrapper>
+  : public WrappedPtrOperations<ScopeIter, Wrapper>
 {
-    ScopeIter& iter() { return static_cast<Outer*>(this)->get(); }
+    ScopeIter& iter() { return static_cast<Wrapper*>(this)->get(); }
 
   public:
     void operator++(int) { iter().operator++(1); }
 };
-
-#define SPECIALIZE_ROOTING_CONTAINERS(Iter, BaseIter)                    \
-    template <>                                                          \
-    class RootedBase<Iter>                                               \
-      : public Mutable##BaseIter##Operations<JS::Rooted<Iter>>           \
-    { };                                                                 \
-                                                                         \
-    template <>                                                          \
-    class MutableHandleBase<Iter>                                        \
-      : public Mutable##BaseIter##Operations<JS::MutableHandle<Iter>>    \
-    { };                                                                 \
-                                                                         \
-    template <>                                                          \
-    class HandleBase<Iter>                                               \
-      : public BaseIter##Operations<JS::Handle<Iter>>                    \
-    { };                                                                 \
-                                                                         \
-    template <>                                                          \
-    class PersistentRootedBase<Iter>                                     \
-      : public Mutable##BaseIter##Operations<JS::PersistentRooted<Iter>> \
-    { }
-
-SPECIALIZE_ROOTING_CONTAINERS(BindingIter, BindingIter);
-SPECIALIZE_ROOTING_CONTAINERS(PositionalFormalParameterIter, BindingIter);
-SPECIALIZE_ROOTING_CONTAINERS(ScopeIter, ScopeIter);
-
-#undef SPECIALIZE_ROOTING_CONTAINERS
-
-
-
-
-
-template <typename Outer>
-struct ScopeCastOperation
-{
-    template <class U>
-    JS::Handle<U*> as() const {
-        const Outer& self = *static_cast<const Outer*>(this);
-        MOZ_ASSERT_IF(self, self->template is<U>());
-        return Handle<U*>::fromMarkedLocation(reinterpret_cast<U* const*>(self.address()));
-    }
-};
-
-template <>
-class RootedBase<Scope*> : public ScopeCastOperation<JS::Rooted<Scope*>>
-{ };
-
-template <>
-class HandleBase<Scope*> : public ScopeCastOperation<JS::Handle<Scope*>>
-{ };
-
-template <>
-class MutableHandleBase<Scope*> : public ScopeCastOperation<JS::MutableHandle<Scope*>>
-{ };
 
 } 
 
@@ -1473,7 +1378,6 @@ DEFINE_SCOPE_DATA_GCPOLICY(js::VarScope::Data);
 DEFINE_SCOPE_DATA_GCPOLICY(js::GlobalScope::Data);
 DEFINE_SCOPE_DATA_GCPOLICY(js::EvalScope::Data);
 DEFINE_SCOPE_DATA_GCPOLICY(js::ModuleScope::Data);
-DEFINE_SCOPE_DATA_GCPOLICY(js::WasmFunctionScope::Data);
 
 #undef DEFINE_SCOPE_DATA_GCPOLICY
 
