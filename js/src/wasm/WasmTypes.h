@@ -831,7 +831,7 @@ class CodeRange
         Entry,             
         ImportJitExit,     
         ImportInterpExit,  
-        ImportNativeExit,  
+        BuiltinNativeExit, 
         TrapExit,          
         DebugTrap,         
         FarJumpIsland,     
@@ -875,7 +875,7 @@ class CodeRange
         return kind() == Function;
     }
     bool isImportExit() const {
-        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == ImportNativeExit;
+        return kind() == ImportJitExit || kind() == ImportInterpExit || kind() == BuiltinNativeExit;
     }
     bool isTrapExit() const {
         return kind() == TrapExit;

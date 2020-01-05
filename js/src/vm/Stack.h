@@ -1765,7 +1765,7 @@ class WasmActivation : public Activation
     void* resumePC() const { return resumePC_; }
 
     
-    void unwindExitFP(uint8_t* exitFP) { exitFP_ = exitFP; exitReason_ = wasm::ExitReason::None; }
+    void unwindExitFP(uint8_t* exitFP);
 };
 
 
