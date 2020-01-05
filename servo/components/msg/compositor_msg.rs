@@ -22,15 +22,3 @@ impl FrameTreeId {
         *u += 1;
     }
 }
-
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
-pub enum LayerType {
-    
-    FragmentBody,
-    
-    OverflowScroll,
-    
-    BeforePseudoContent,
-    
-    AfterPseudoContent,
-}

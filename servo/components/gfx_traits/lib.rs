@@ -22,7 +22,6 @@ pub use paint_listener::PaintListener;
 use azure::azure_hl::Color;
 use euclid::matrix::Matrix4;
 use euclid::rect::Rect;
-use msg::compositor_msg::LayerType;
 use msg::constellation_msg::{Failure, PipelineId};
 use std::fmt::{self, Debug, Formatter};
 
@@ -36,6 +35,18 @@ pub enum PaintMsg {
 pub enum LayerKind {
     NoTransform,
     HasTransform,
+}
+
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
+pub enum LayerType {
+    
+    FragmentBody,
+    
+    OverflowScroll,
+    
+    BeforePseudoContent,
+    
+    AfterPseudoContent,
 }
 
 
