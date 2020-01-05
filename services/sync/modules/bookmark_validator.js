@@ -9,6 +9,8 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/PlacesSyncUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
 
 this.EXPORTED_SYMBOLS = ["BookmarkValidator", "BookmarkProblemData"];
 
@@ -152,6 +154,14 @@ class BookmarkProblemData {
   }
 }
 
+
+XPCOMUtils.defineLazyGetter(this, "SYNCED_ROOTS", () => [
+  PlacesUtils.bookmarks.menuGuid,
+  PlacesUtils.bookmarks.toolbarGuid,
+  PlacesUtils.bookmarks.unfiledGuid,
+  PlacesUtils.bookmarks.mobileGuid,
+]);
+
 class BookmarkValidator {
 
   _followQueries(recordMap) {
@@ -208,10 +218,16 @@ class BookmarkValidator {
     
     let records = [];
     let recordsByGuid = new Map();
-    function traverse(treeNode) {
+    let syncedRoots = SYNCED_ROOTS;
+    function traverse(treeNode, synced) {
+      if (!synced) {
+        synced = syncedRoots.includes(treeNode.guid);
+      } else if (isNodeIgnored(treeNode)) {
+        synced = false;
+      }
       let guid = PlacesSyncUtils.bookmarks.guidToSyncId(treeNode.guid);
       let itemType = 'item';
-      treeNode.ignored = isNodeIgnored(treeNode);
+      treeNode.ignored = !synced;
       treeNode.id = guid;
       switch (treeNode.type) {
         case PlacesUtils.TYPE_X_MOZ_PLACE:
@@ -263,14 +279,14 @@ class BookmarkValidator {
           treeNode.children = [];
         }
         for (let child of treeNode.children) {
-          traverse(child);
+          traverse(child, synced);
           child.parent = treeNode;
           child.parentid = guid;
           treeNode.childGUIDs.push(child.guid);
         }
       }
     }
-    traverse(clientTree);
+    traverse(clientTree, false);
     clientTree.id = 'places';
     this._followQueries(recordsByGuid);
     return records;
@@ -368,7 +384,7 @@ class BookmarkValidator {
     if (!root) {
       
       
-      root = { id: 'places', children: [], type: 'folder', title: '' };
+      root = { id: 'places', children: [], type: 'folder', title: '', fake: true };
       resultRecords.push(root);
       idToRecord.set('places', root);
     } else {
@@ -574,13 +590,7 @@ class BookmarkValidator {
   
   _validateClient(problemData, clientRecords) {
     problemData.clientCycles = this._detectCycles(clientRecords);
-    const rootsToCheck = [
-      PlacesUtils.bookmarks.menuGuid,
-      PlacesUtils.bookmarks.toolbarGuid,
-      PlacesUtils.bookmarks.unfiledGuid,
-      PlacesUtils.bookmarks.mobileGuid,
-    ];
-    for (let rootGUID of rootsToCheck) {
+    for (let rootGUID of SYNCED_ROOTS) {
       let record = clientRecords.find(record =>
         record.guid === rootGUID);
       if (!record || record.parentid !== "places") {
@@ -617,6 +627,9 @@ class BookmarkValidator {
     let serverDeletedLookup = new Set(inspectionInfo.deletedRecords.map(r => r.id));
 
     for (let sr of serverRecords) {
+      if (sr.fake) {
+        continue;
+      }
       allRecords.set(sr.id, {client: null, server: sr});
     }
 
