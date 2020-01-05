@@ -148,6 +148,15 @@ ExpandPIDMarker(const char* aFilename, char (&buffer)[2048])
 
 } 
 
+namespace {
+  
+  void empty_va(va_list *va, ...)
+  {
+    va_start(*va, va);
+    va_end(*va);
+  }
+}
+
 class LogModuleManager
 {
 public:
@@ -275,6 +284,14 @@ public:
     
     DebugOnly<detail::LogFile*> prevFile = mToReleaseFile.exchange(oldFile);
     MOZ_ASSERT(!prevFile, "Should be null because rotation is not allowed");
+
+    
+    
+    if (oldFile) {
+      va_list va;
+      empty_va(&va);
+      Print("Logger", LogLevel::Info, "Flushing old log files\n", va);
+    }
   }
 
   uint32_t GetLogFile(char *aBuffer, size_t aLength)
