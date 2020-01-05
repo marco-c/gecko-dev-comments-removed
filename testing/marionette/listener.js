@@ -186,6 +186,8 @@ var loadListener = {
 
 
   handleEvent: function (event) {
+    logger.debug(`Handled DOM event "${event.type}" for "${event.originalTarget.baseURI}"`);
+
     switch (event.type) {
       case "beforeunload":
         this.seenUnload = true;
@@ -244,6 +246,7 @@ var loadListener = {
       
       case this.timerPageUnload:
         if (!this.seenUnload) {
+          logger.debug("Canceled page load listener because no page unload has been detected");
           this.stop();
           sendOk(this.command_id);
         }
@@ -298,7 +301,6 @@ var loadListener = {
 
     }).then(val => {
       if (loadEventExpected) {
-        
         
         if (useUnloadTimer) {
           this.timerPageUnload.initWithCallback(this, "200", Ci.nsITimer.TYPE_ONE_SHOT);
