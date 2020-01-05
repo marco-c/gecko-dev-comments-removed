@@ -224,7 +224,8 @@ impl Request {
     }
 
     
-    pub fn http_fetch(&mut self, cors_flag: bool, cors_preflight_flag: bool, authentication_fetch_flag: bool) -> Response {
+    pub fn http_fetch(&mut self, cors_flag: bool, cors_preflight_flag: bool,
+                      authentication_fetch_flag: bool) -> Response {
         
         let mut response: Option<Response> = None;
         
@@ -335,6 +336,8 @@ impl Request {
                 if self.redirect_mode == RedirectMode::Follow {
                     
                     
+
+                    
                     
                     
                     if cors_flag && (!location_url.username().unwrap_or("").is_empty() ||
@@ -387,7 +390,9 @@ impl Request {
     }
 
     
-    pub fn http_network_or_cache_fetch(&mut self, _credentials_flag: bool, _authentication_fetch_flag: bool) -> Response {
+    pub fn http_network_or_cache_fetch(&mut self,
+                                       _credentials_flag: bool,
+                                       _authentication_fetch_flag: bool) -> Response {
         
         Response::network_error()
     }

@@ -9,12 +9,14 @@ use syntax::ast;
 use utils::match_ty_unwrap;
 
 
-pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, annotatable: Annotatable, push: &mut FnMut(Annotatable)) {
+pub fn expand_reflector(cx: &mut ExtCtxt, span: Span, _: &MetaItem, annotatable: Annotatable,
+                        push: &mut FnMut(Annotatable)) {
     if let Annotatable::Item(item) = annotatable {
         if let ast::ItemStruct(ref def, _) = item.node {
             let struct_name = item.ident;
             
-            match def.fields.iter().find(|f| match_ty_unwrap(&*f.node.ty, &["dom", "bindings", "utils", "Reflector"]).is_some()) {
+            match def.fields.iter().find(
+                    |f| match_ty_unwrap(&*f.node.ty, &["dom", "bindings", "utils", "Reflector"]).is_some()) {
                 
                 Some(f) => {
                     let field_name = f.node.ident();

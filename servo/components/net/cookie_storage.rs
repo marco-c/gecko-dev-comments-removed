@@ -86,7 +86,8 @@ impl CookieStorage {
     
     pub fn cookies_for_url(&mut self, url: &Url, source: CookieSource) -> Option<String> {
         let filterer = |c: &&mut Cookie| -> bool {
-            info!(" === SENT COOKIE : {} {} {:?} {:?}", c.cookie.name, c.cookie.value, c.cookie.domain, c.cookie.path);
+            info!(" === SENT COOKIE : {} {} {:?} {:?}",
+                  c.cookie.name, c.cookie.value, c.cookie.domain, c.cookie.path);
             info!(" === SENT COOKIE RESULT {}", c.appropriate_for_url(url, source));
             
             c.appropriate_for_url(url, source)

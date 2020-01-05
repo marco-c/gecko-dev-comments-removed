@@ -57,6 +57,7 @@ pub struct Response {
     pub headers: Headers,
     pub body: ResponseBody,
     
+    
     pub internal_response: Option<Box<Response>>,
 }
 

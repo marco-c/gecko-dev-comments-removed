@@ -84,5 +84,6 @@ pub fn unsafe_context(map: &ast_map::Map, id: ast::NodeId) -> bool {
             }
         }
         _ => false 
+                   
     }
 }

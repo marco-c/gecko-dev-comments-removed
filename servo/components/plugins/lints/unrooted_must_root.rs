@@ -23,6 +23,9 @@ declare_lint!(UNROOTED_MUST_ROOT, Deny,
 
 
 
+
+
+
 pub struct UnrootedPass;
 
 
@@ -31,7 +34,8 @@ pub struct UnrootedPass;
 fn lint_unrooted_ty(cx: &Context, ty: &ast::Ty, warning: &str) {
     match ty.node {
         ast::TyVec(ref t) | ast::TyFixedLengthVec(ref t, _) |
-        ast::TyPtr(ast::MutTy { ty: ref t, ..}) | ast::TyRptr(_, ast::MutTy { ty: ref t, ..}) => lint_unrooted_ty(cx, &**t, warning),
+        ast::TyPtr(ast::MutTy { ty: ref t, ..}) | ast::TyRptr(_, ast::MutTy { ty: ref t, ..}) =>
+            lint_unrooted_ty(cx, &**t, warning),
         ast::TyPath(..) => {
                 match cx.tcx.def_map.borrow()[&ty.id] {
                     def::PathResolution{ base_def: def::DefTy(def_id, _), .. } => {
@@ -51,7 +55,12 @@ impl LintPass for UnrootedPass {
         lint_array!(UNROOTED_MUST_ROOT)
     }
     
-    fn check_struct_def(&mut self, cx: &Context, def: &ast::StructDef, _i: ast::Ident, _gen: &ast::Generics, id: ast::NodeId) {
+    fn check_struct_def(&mut self,
+                        cx: &Context,
+                        def: &ast::StructDef,
+                        _i: ast::Ident,
+                        _gen: &ast::Generics,
+                        id: ast::NodeId) {
         let item = match cx.tcx.map.get(id) {
             ast_map::Node::NodeItem(item) => item,
             _ => cx.tcx.map.expect_item(cx.tcx.map.get_parent(id)),

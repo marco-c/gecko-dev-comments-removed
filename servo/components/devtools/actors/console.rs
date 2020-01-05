@@ -152,11 +152,15 @@ impl Actor for ConsoleActor {
 
 
 
+
+
                         }
 
                         "LogMessage" => {
                             
                             
+
+
 
 
 
