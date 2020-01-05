@@ -110,22 +110,6 @@ enum nsLayoutPhase {
 };
 #endif
 
-class nsInvalidateRequestList {
-public:
-  struct Request {
-    nsRect   mRect;
-    uint32_t mFlags;
-  };
-
-  void TakeFrom(nsInvalidateRequestList* aList)
-  {
-    mRequests.AppendElements(mozilla::Move(aList->mRequests));
-  }
-  bool IsEmpty() { return mRequests.IsEmpty(); }
-
-  nsTArray<Request> mRequests;
-};
-
 
 #define NS_AUTHOR_SPECIFIED_BACKGROUND      (1 << 0)
 #define NS_AUTHOR_SPECIFIED_BORDER          (1 << 1)
@@ -971,13 +955,13 @@ public:
   
   void EnsureSafeToHandOutCSSRules();
 
-  void NotifyInvalidation(const nsRect& aRect, uint32_t aFlags);
+  void NotifyInvalidation(const nsRect& aRect);
   
-  void NotifyInvalidation(const nsIntRect& aRect, uint32_t aFlags);
+  void NotifyInvalidation(const nsIntRect& aRect);
   
   void NotifyDidPaintForSubtree(uint32_t aFlags, uint64_t aTransactionId = 0,
                                 const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());
-  void FireDOMPaintEvent(nsInvalidateRequestList* aList, uint64_t aTransactionId,
+  void FireDOMPaintEvent(nsTArray<nsRect>* aList, uint64_t aTransactionId,
                          mozilla::TimeStamp aTimeStamp = mozilla::TimeStamp());
 
   
@@ -1303,8 +1287,8 @@ protected:
 
   FramePropertyTable    mPropertyTable;
 
-  nsInvalidateRequestList mInvalidateRequestsSinceLastPaint;
-  nsInvalidateRequestList mUndeliveredInvalidateRequestsBeforeLastPaint;
+  nsTArray<nsRect> mInvalidateRequestsSinceLastPaint;
+  nsTArray<nsRect> mUndeliveredInvalidateRequestsBeforeLastPaint;
 
   
   nsAutoPtr<gfxTextPerfMetrics>   mTextPerf;
