@@ -10,9 +10,13 @@ this.EXPORTED_SYMBOLS = [
 
 const {utils: Cu} = Components;
 const {AppConstants} = Cu.import("resource://gre/modules/AppConstants.jsm", {});
+const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 
 
 const MAX_ROWS = 20;
+
+
+const SEARCH_MINIMUM_ELEMENTS = 40;
 
 var currentBrowser = null;
 var currentMenulist = null;
@@ -155,7 +159,8 @@ this.SelectParentHelper = {
 };
 
 function populateChildren(menulist, options, selectedIndex, zoom,
-                          parentElement = null, isGroupDisabled = false, adjustedTextSize = -1) {
+                          parentElement = null, isGroupDisabled = false,
+                          adjustedTextSize = -1, addSearch = true) {
   let element = menulist.menupopup;
 
   
@@ -178,6 +183,9 @@ function populateChildren(menulist, options, selectedIndex, zoom,
     item.style.direction = option.textDirection;
     item.style.fontSize = adjustedTextSize;
     item.hidden = option.display == "none" || (parentElement && parentElement.hidden);
+    
+    
+    item.hiddenByContent = item.hidden;
     item.setAttribute("tooltiptext", option.tooltip);
 
     element.appendChild(item);
@@ -190,7 +198,7 @@ function populateChildren(menulist, options, selectedIndex, zoom,
 
     if (isOptGroup) {
       populateChildren(menulist, option.children, selectedIndex, zoom,
-                       item, isDisabled, adjustedTextSize);
+                       item, isDisabled, adjustedTextSize, false);
     } else {
       if (option.index == selectedIndex) {
         
@@ -215,4 +223,124 @@ function populateChildren(menulist, options, selectedIndex, zoom,
       }
     }
   }
+
+  
+  
+  if (Services.prefs.getBoolPref("dom.forms.selectSearch") && addSearch
+      && element.childElementCount > SEARCH_MINIMUM_ELEMENTS) {
+
+    
+    let searchbox = element.ownerDocument.createElement("textbox");
+    searchbox.setAttribute("type", "search");
+    searchbox.addEventListener("input", onSearchInput);
+    searchbox.addEventListener("focus", onSearchFocus);
+    searchbox.addEventListener("blur", onSearchBlur);
+
+    
+    searchbox.addEventListener("keydown", function(event) {
+      if (event.defaultPrevented) {
+        return;
+      }
+      switch (event.key) {
+        case "Escape":
+          searchbox.parentElement.hidePopup();
+          break;
+        case "ArrowDown":
+        case "Enter":
+        case "Tab":
+          searchbox.blur();
+          if (searchbox.nextSibling.localName == "menuitem" &&
+              !searchbox.nextSibling.hidden) {
+            menulist.menuBoxObject.activeChild = searchbox.nextSibling;
+          } else {
+            var currentOption = searchbox.nextSibling;
+            while (currentOption && (currentOption.localName != "menuitem" ||
+                  currentOption.hidden)) {
+              currentOption = currentOption.nextSibling;
+            }
+            if (currentOption) {
+              menulist.menuBoxObject.activeChild = currentOption;
+            } else {
+              searchbox.focus();
+            }
+          }
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+    }, true);
+
+    element.insertBefore(searchbox, element.childNodes[0]);
+  }
+
+}
+
+function onSearchInput() {
+  let searchObj = this;
+
+  
+  let input = searchObj.value.toLowerCase();
+  
+  let menupopup = searchObj.parentElement;
+  let menuItems = menupopup.querySelectorAll("menuitem, menucaption");
+
+  
+  
+  let allHidden = true;
+  
+  
+  let prevCaption = null;
+
+  for (let currentItem of menuItems) {
+    
+    if (!currentItem.hiddenByContent) {
+      
+      
+      let itemLabel = currentItem.getAttribute("label").toLowerCase();
+      let itemTooltip = currentItem.getAttribute("title").toLowerCase();
+
+      
+      if (!input) {
+        currentItem.hidden = false;
+      } else if (currentItem.localName == "menucaption") {
+        if (prevCaption != null) {
+          prevCaption.hidden = allHidden;
+        }
+        prevCaption = currentItem;
+        allHidden = true;
+      } else {
+        if (!currentItem.classList.contains("contentSelectDropdown-ingroup") &&
+            currentItem.previousSibling.classList.contains("contentSelectDropdown-ingroup")) {
+          if (prevCaption != null) {
+            prevCaption.hidden = allHidden;
+          }
+          prevCaption = null;
+          allHidden = true;
+        }
+        if (itemLabel.includes(input) || itemTooltip.includes(input)) {
+          currentItem.hidden = false;
+          allHidden = false;
+        } else {
+          currentItem.hidden = true;
+        }
+      }
+      if (prevCaption != null) {
+        prevCaption.hidden = allHidden;
+      }
+    }
+  }
+}
+
+function onSearchFocus() {
+  let searchObj = this;
+  let menupopup = searchObj.parentElement;
+  menupopup.parentElement.menuBoxObject.activeChild = null;
+  menupopup.setAttribute("ignorekeys", "true");
+}
+
+function onSearchBlur() {
+  let searchObj = this;
+  let menupopup = searchObj.parentElement;
+  menupopup.setAttribute("ignorekeys", "false");
 }
