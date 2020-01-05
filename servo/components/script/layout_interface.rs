@@ -179,6 +179,12 @@ pub struct ScriptReflow {
     pub query_type: ReflowQueryType,
 }
 
+impl Drop for ScriptReflow {
+    fn drop(&mut self) {
+        self.script_join_chan.send(()).unwrap();
+    }
+}
+
 
 #[derive(Clone)]
 pub struct LayoutChan(pub Sender<Msg>);
