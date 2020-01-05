@@ -305,6 +305,70 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
   RequestRestyle(EffectCompositor::RestyleType::Layer);
 }
 
+StyleAnimationValue
+KeyframeEffectReadOnly::CompositeValue(
+  nsCSSPropertyID aProperty,
+  const RefPtr<AnimValuesStyleRule>& aAnimationRule,
+  const StyleAnimationValue& aValueToComposite,
+  CompositeOperation aCompositeOperation)
+{
+  MOZ_ASSERT(mTarget, "CompositeValue should be called with target element");
+
+  StyleAnimationValue result = aValueToComposite;
+
+  if (aCompositeOperation == CompositeOperation::Replace) {
+    MOZ_ASSERT(!aValueToComposite.IsNull(),
+      "Input value should be valid in case of replace composite");
+    
+    return result;
+  }
+
+  
+  if (mDocument->IsStyledByServo()) {
+    return result;
+  }
+
+  MOZ_ASSERT(!aValueToComposite.IsNull() ||
+             aCompositeOperation == CompositeOperation::Add,
+             "InputValue should be null only if additive composite");
+
+  if (aAnimationRule->HasValue(aProperty)) {
+    
+    
+    DebugOnly<bool> success = aAnimationRule->GetValue(aProperty, result);
+    MOZ_ASSERT(success, "AnimValuesStyleRule::GetValue should not fail");
+  } else {
+    
+    
+    
+    RefPtr<nsStyleContext> styleContext = GetTargetStyleContext();
+    result = EffectCompositor::GetBaseStyle(aProperty,
+                                            styleContext,
+                                            *mTarget->mElement);
+  }
+
+  switch (aCompositeOperation) {
+    case dom::CompositeOperation::Add:
+      
+      
+      
+      
+      
+      return result;
+    case dom::CompositeOperation::Accumulate:
+      
+      MOZ_ASSERT_UNREACHABLE("Not implemented yet");
+      break;
+    case dom::CompositeOperation::Replace:
+      MOZ_ASSERT_UNREACHABLE("Replace should have already handled");
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown compisite operation type");
+      break;
+  }
+  return result;
+}
+
 void
 KeyframeEffectReadOnly::ComposeStyle(
   RefPtr<AnimValuesStyleRule>& aStyleRule,
@@ -358,8 +422,15 @@ KeyframeEffectReadOnly::ComposeStyle(
       aStyleRule = new AnimValuesStyleRule();
     }
 
-    StyleAnimationValue fromValue = segment->mFromValue;
-    StyleAnimationValue toValue = segment->mToValue;
+    StyleAnimationValue fromValue =
+      CompositeValue(prop.mProperty, aStyleRule,
+                     segment->mFromValue,
+                     segment->mFromComposite);
+    StyleAnimationValue toValue =
+      CompositeValue(prop.mProperty, aStyleRule,
+                     segment->mToValue,
+                     segment->mToComposite);
+
     
     if (mEffectOptions.mIterationComposite ==
           IterationCompositeOperation::Accumulate &&
@@ -639,9 +710,11 @@ KeyframeEffectReadOnly::BuildProperties(nsStyleContext* aStyleContext)
                                 computedValues, aStyleContext);
   }
 
-  result = KeyframeUtils::GetAnimationPropertiesFromKeyframes(keyframesCopy,
-                                                              computedValues,
-                                                              aStyleContext);
+  result =
+    KeyframeUtils::GetAnimationPropertiesFromKeyframes(keyframesCopy,
+                                                       computedValues,
+                                                       mEffectOptions.mComposite,
+                                                       aStyleContext);
 
 #ifdef DEBUG
   MOZ_ASSERT(SpecifiedKeyframeArraysAreEqual(mKeyframes, keyframesCopy),
@@ -796,6 +869,7 @@ CreatePropertyValue(nsCSSPropertyID aProperty,
                     float aOffset,
                     const Maybe<ComputedTimingFunction>& aTimingFunction,
                     const StyleAnimationValue& aValue,
+                    dom::CompositeOperation aComposite,
                     AnimationPropertyValueDetails& aResult)
 {
   aResult.mOffset = aOffset;
@@ -815,7 +889,7 @@ CreatePropertyValue(nsCSSPropertyID aProperty,
     aResult.mEasing.Construct(NS_LITERAL_STRING("linear"));
   }
 
-  aResult.mComposite = CompositeOperation::Replace;
+  aResult.mComposite = aComposite;
 }
 
 void
@@ -850,7 +924,7 @@ KeyframeEffectReadOnly::GetProperties(
       binding_detail::FastAnimationPropertyValueDetails fromValue;
       CreatePropertyValue(property.mProperty, segment.mFromKey,
                           segment.mTimingFunction, segment.mFromValue,
-                          fromValue);
+                          segment.mFromComposite, fromValue);
       
       
       if (segment.mFromKey == segment.mToKey) {
@@ -869,7 +943,8 @@ KeyframeEffectReadOnly::GetProperties(
           property.mSegments[segmentIdx + 1].mFromValue != segment.mToValue) {
         binding_detail::FastAnimationPropertyValueDetails toValue;
         CreatePropertyValue(property.mProperty, segment.mToKey,
-                            Nothing(), segment.mToValue, toValue);
+                            Nothing(), segment.mToValue,
+                            segment.mToComposite, toValue);
         
         
         
@@ -1305,6 +1380,15 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
 
   for (const AnimationProperty& property : mProperties) {
     for (const AnimationPropertySegment& segment : property.mSegments) {
+      
+      
+      
+      
+      if (segment.mFromComposite != CompositeOperation::Replace ||
+          segment.mToComposite != CompositeOperation::Replace) {
+        mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
+        return;
+      }
       RefPtr<nsStyleContext> fromContext =
         CreateStyleContextForAnimationValue(property.mProperty,
                                             segment.mFromValue, aStyleContext);

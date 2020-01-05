@@ -272,6 +272,7 @@ struct KeyframeValueEntry
   StyleAnimationValue mValue;
   float mOffset;
   Maybe<ComputedTimingFunction> mTimingFunction;
+  dom::CompositeOperation mComposite;
 
   struct PropertyOffsetComparator
   {
@@ -465,12 +466,9 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
   }
 
   
-  
-  
-  
-  
-
-  if (RequiresAdditiveAnimation(keyframes, aDocument)) {
+  if ((!AnimationUtils::IsCoreAPIEnabled() ||
+       aDocument->IsStyledByServo()) &&
+      RequiresAdditiveAnimation(keyframes, aDocument)) {
     aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
     keyframes.Clear();
   }
@@ -669,6 +667,7 @@ KeyframeUtils::GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
 KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   const nsTArray<Keyframe>& aKeyframes,
   const nsTArray<ComputedKeyframeValues>& aComputedValues,
+  dom::CompositeOperation aEffectComposite,
   nsStyleContext* aStyleContext)
 {
   MOZ_ASSERT(aKeyframes.Length() == aComputedValues.Length(),
@@ -687,6 +686,8 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
       entry->mProperty = value.mProperty;
       entry->mValue = value.mValue;
       entry->mTimingFunction = frame.mTimingFunction;
+      entry->mComposite =
+        frame.mComposite ? frame.mComposite.value() : aEffectComposite;
     }
   }
 
@@ -1134,6 +1135,94 @@ IsComputeValuesFailureKey(const PropertyValuePair& aPair)
            eCSSPropertyExtra_no_properties;
 }
 
+static void
+AppendInitialSegment(AnimationProperty* aAnimationProperty,
+                     const KeyframeValueEntry& aFirstEntry)
+{
+  AnimationPropertySegment* segment =
+    aAnimationProperty->mSegments.AppendElement();
+  segment->mFromKey        = 0.0f;
+  segment->mFromComposite  = dom::CompositeOperation::Add;
+  segment->mToKey          = aFirstEntry.mOffset;
+  segment->mToValue        = aFirstEntry.mValue;
+  segment->mToComposite    = aFirstEntry.mComposite;
+}
+
+static void
+AppendFinalSegment(AnimationProperty* aAnimationProperty,
+                   const KeyframeValueEntry& aLastEntry)
+{
+  AnimationPropertySegment* segment =
+    aAnimationProperty->mSegments.AppendElement();
+  segment->mFromKey        = aLastEntry.mOffset;
+  segment->mFromValue      = aLastEntry.mValue;
+  segment->mFromComposite  = aLastEntry.mComposite;
+  segment->mToKey          = 1.0f;
+  segment->mToComposite    = dom::CompositeOperation::Add;
+  segment->mTimingFunction = aLastEntry.mTimingFunction;
+}
+
+
+
+
+static AnimationProperty*
+HandleMissingInitialKeyframe(nsTArray<AnimationProperty>& aResult,
+                             const KeyframeValueEntry& aEntry)
+{
+  MOZ_ASSERT(aEntry.mOffset != 0.0f,
+             "The offset of the entry should not be 0.0");
+
+  
+  
+  
+  if (!AnimationUtils::IsCoreAPIEnabled()){
+    return nullptr;
+  }
+
+  AnimationProperty* result = aResult.AppendElement();
+  result->mProperty = aEntry.mProperty;
+
+  AppendInitialSegment(result, aEntry);
+
+  return result;
+}
+
+static void
+HandleMissingFinalKeyframe(nsTArray<AnimationProperty>& aResult,
+                           const KeyframeValueEntry& aEntry,
+                           AnimationProperty* aCurrentAnimationProperty)
+{
+  MOZ_ASSERT(aEntry.mOffset != 1.0f,
+             "The offset of the entry should not be 1.0");
+
+  
+  
+  
+  if (!AnimationUtils::IsCoreAPIEnabled()){
+    
+    
+    if (aCurrentAnimationProperty) {
+      aResult.RemoveElementAt(aResult.Length() - 1);
+    }
+    return;
+  }
+
+  
+  
+  
+  if (!aCurrentAnimationProperty) {
+    aCurrentAnimationProperty = aResult.AppendElement();
+    aCurrentAnimationProperty->mProperty = aEntry.mProperty;
+
+    
+    
+    if (aEntry.mOffset != 0.0f) {
+      AppendInitialSegment(aCurrentAnimationProperty, aEntry);
+    }
+  }
+  AppendFinalSegment(aCurrentAnimationProperty, aEntry);
+}
+
 
 
 
@@ -1173,7 +1262,6 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
   
   
   
-  
 
   nsCSSPropertyID lastProperty = eCSSProperty_UNKNOWN;
   AnimationProperty* animationProperty = nullptr;
@@ -1182,11 +1270,17 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
 
   while (i < n) {
     
+    
     if (i + 1 == n) {
-      if (aEntries[i].mOffset != 1.0f && animationProperty) {
-        aResult.RemoveElementAt(aResult.Length() - 1);
-        animationProperty = nullptr;
+      if (aEntries[i].mOffset != 1.0f) {
+        HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
+      } else if (aEntries[i].mOffset == 1.0f && !animationProperty) {
+        
+        
+        
+        Unused << HandleMissingInitialKeyframe(aResult, aEntries[i]);
       }
+      animationProperty = nullptr;
       break;
     }
 
@@ -1200,17 +1294,24 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
       
       
       
-      ++i;
-      continue;
+      
+      
+      animationProperty = HandleMissingInitialKeyframe(aResult, aEntries[i]);
+      if (animationProperty) {
+        lastProperty = aEntries[i].mProperty;
+      } else {
+        
+        ++i;
+        continue;
+      }
     }
 
     
     if (aEntries[i].mProperty != aEntries[i + 1].mProperty &&
         aEntries[i].mOffset != 1.0f) {
-      if (animationProperty) {
-        aResult.RemoveElementAt(aResult.Length() - 1);
-        animationProperty = nullptr;
-      }
+      HandleMissingFinalKeyframe(aResult, aEntries[i], animationProperty);
+      
+      animationProperty = nullptr;
       ++i;
       continue;
     }
@@ -1322,6 +1423,8 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     return;
   }
 
+  bool isServoBackend = aDocument->IsStyledByServo();
+
   
   nsCSSParser parser(aDocument->CSSLoader());
   nsClassHashtable<nsFloatHashKey, Keyframe> processedKeyframes;
@@ -1331,10 +1434,13 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
       
       continue;
     }
-    if (count == 1) {
-      
-      
-      
+
+    
+    
+    
+    
+    if ((!AnimationUtils::IsCoreAPIEnabled() || isServoBackend) &&
+        count == 1) {
       aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
       return;
     }
