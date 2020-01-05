@@ -2503,6 +2503,12 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     }
   }
 
+  
+  
+  if (!nsContentUtils::PlatformToDOMLineBreaks(newValue, fallible)) {
+    return false;
+  }
+
   if (mEditor && mBoundFrame) {
     
     
@@ -2522,14 +2528,6 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     mBoundFrame->GetText(currentValue);
 
     AutoWeakFrame weakFrame(mBoundFrame);
-
-    
-    
-    if (newValue.FindChar(char16_t('\r')) != -1) {
-      if (!nsContentUtils::PlatformToDOMLineBreaks(newValue, fallible)) {
-        return false;
-      }
-    }
 
     
     if (!currentValue.Equals(newValue))
@@ -2638,14 +2636,7 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     if (!mValue) {
       mValue.emplace();
     }
-    nsString value;
-    if (!value.Assign(newValue, fallible)) {
-      return false;
-    }
-    if (!nsContentUtils::PlatformToDOMLineBreaks(value, fallible)) {
-      return false;
-    }
-    if (!mValue->Assign(value, fallible)) {
+    if (!mValue->Assign(newValue, fallible)) {
       return false;
     }
 
@@ -2653,12 +2644,12 @@ nsTextEditorState::SetValue(const nsAString& aValue, uint32_t aFlags)
     if (IsSelectionCached()) {
       SelectionProperties& props = GetSelectionProperties();
       if (aFlags & eSetValue_MoveCursorToEnd) {
-        props.SetStart(value.Length());
-        props.SetEnd(value.Length());
+        props.SetStart(newValue.Length());
+        props.SetEnd(newValue.Length());
       } else {
         
-        props.SetStart(std::min(props.GetStart(), value.Length()));
-        props.SetEnd(std::min(props.GetEnd(), value.Length()));
+        props.SetStart(std::min(props.GetStart(), newValue.Length()));
+        props.SetEnd(std::min(props.GetEnd(), newValue.Length()));
       }
     }
 
