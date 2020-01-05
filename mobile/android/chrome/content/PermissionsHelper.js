@@ -106,7 +106,7 @@ var PermissionsHelper = {
         
         this._currentPermissions = permissions;
 
-        Messaging.sendRequest({
+        WindowEventDispatcher.sendRequest({
           type: "Permissions:Data",
           permissions: permissions
         });

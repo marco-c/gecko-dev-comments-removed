@@ -29,7 +29,7 @@ public class testAddonManager extends PixelTest  {
         selectMenuItem(mStringHelper.ADDONS_LABEL);
 
         
-        tabEventExpecter = mActions.expectGeckoEvent("Tab:Added");
+        tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
         contentEventExpecter = mActions.expectGeckoEvent("DOMContentLoaded");
 
         
@@ -50,7 +50,7 @@ public class testAddonManager extends PixelTest  {
         verifyUrlBarTitle(aboutAddonsURL);
 
         
-        tabEventExpecter = mActions.expectGeckoEvent("Tab:Added");
+        tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
         contentEventExpecter = mActions.expectGeckoEvent("DOMContentLoaded");
 
         

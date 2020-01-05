@@ -551,13 +551,7 @@ public class GeckoThread extends Thread {
         
         setState(State.EXITED);
 
-        try {
-            final JSONObject msg = new JSONObject();
-            msg.put("type", "Gecko:Exited");
-            EventDispatcher.getInstance().dispatchEvent(msg, null);
-        } catch (final JSONException e) {
-            Log.e(LOGTAG, "unable to dispatch event", e);
-        }
+        EventDispatcher.getInstance().dispatch("Gecko:Exited", null);
 
         
         Looper.myQueue().removeIdleHandler(idleHandler);

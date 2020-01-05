@@ -48,7 +48,7 @@ abstract class ContentContextMenuTest extends PixelTest {
         if (!mSolo.searchText(contextMenuOption)) {
             openWebContentContextMenu(contextMenuOption); 
         }
-        Actions.EventExpecter tabEventExpecter = mActions.expectGeckoEvent("Tab:Added");
+        Actions.EventExpecter tabEventExpecter = mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:Added");
         mSolo.clickOnText(contextMenuOption);
         tabEventExpecter.blockForEvent();
         tabEventExpecter.unregisterListener();
