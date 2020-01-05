@@ -3,9 +3,20 @@ Cu.import("resource://gre/modules/Services.jsm");
 
 this.EXPORTED_SYMBOLS = ["SandboxManager"];
 
+
+
+
+
+
+
+
+
 this.SandboxManager = class {
   constructor() {
-    this._sandbox = makeSandbox();
+    this._sandbox = new Cu.Sandbox(null, {
+      wantComponents: false,
+      wantGlobalProperties: ["URL", "URLSearchParams"],
+    });
     this.holds = [];
   }
 
@@ -65,14 +76,46 @@ this.SandboxManager = class {
       }
     });
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  wrapAsync(wrappedFunction, options = {cloneInto: false, cloneArguments: false}) {
+    
+    
+    const sandboxManager = this;
+    return function(...args) {
+      return new sandboxManager.sandbox.Promise((resolve, reject) => {
+        if (options.cloneArguments) {
+          args = Cu.cloneInto(args, {});
+        }
+
+        wrappedFunction.apply(this, args).then(result => {
+          if (options.cloneInto) {
+            result = sandboxManager.cloneInto(result);
+          }
+
+          resolve(result);
+        }, err => {
+          reject(new sandboxManager.sandbox.Error(err.message, err.fileName, err.lineNumber));
+        });
+      });
+    };
+  }
 };
-
-
-function makeSandbox() {
-  const sandbox = new Cu.Sandbox(null, {
-    wantComponents: false,
-    wantGlobalProperties: ["URL", "URLSearchParams"],
-  });
-
-  return sandbox;
-}

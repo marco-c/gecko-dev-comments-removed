@@ -6,24 +6,38 @@
 
 const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Timer.jsm"); 
-Cu.import("resource://gre/modules/Task.jsm");
-Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
-Cu.import("resource://shield-recipe-client/lib/NormandyDriver.jsm");
-Cu.import("resource://shield-recipe-client/lib/FilterExpressions.jsm");
-Cu.import("resource://shield-recipe-client/lib/NormandyApi.jsm");
-Cu.import("resource://shield-recipe-client/lib/SandboxManager.jsm");
-Cu.import("resource://shield-recipe-client/lib/ClientEnvironment.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.importGlobalProperties(["fetch"]); 
+Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(this, "timerManager",
+                                   "@mozilla.org/updates/timer-manager;1",
+                                   "nsIUpdateTimerManager");
 XPCOMUtils.defineLazyModuleGetter(this, "Preferences", "resource://gre/modules/Preferences.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "Storage", "resource://shield-recipe-client/lib/Storage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Storage",
+                                  "resource://shield-recipe-client/lib/Storage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "NormandyDriver",
+                                  "resource://shield-recipe-client/lib/NormandyDriver.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FilterExpressions",
+                                  "resource://shield-recipe-client/lib/FilterExpressions.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "NormandyApi",
+                                  "resource://shield-recipe-client/lib/NormandyApi.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "SandboxManager",
+                                  "resource://shield-recipe-client/lib/SandboxManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ClientEnvironment",
+                                  "resource://shield-recipe-client/lib/ClientEnvironment.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "CleanupManager",
+                                  "resource://shield-recipe-client/lib/CleanupManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ActionSandboxManager",
+                                  "resource://shield-recipe-client/lib/ActionSandboxManager.jsm");
+
+Cu.importGlobalProperties(["fetch"]); 
 
 this.EXPORTED_SYMBOLS = ["RecipeRunner"];
 
 const log = LogManager.getLogger("recipe-runner");
 const prefs = Services.prefs.getBranch("extensions.shield-recipe-client.");
+const TIMER_NAME = "recipe-client-addon-run";
+const RUN_INTERVAL_PREF = "run_interval_seconds";
 
 this.RecipeRunner = {
   init() {
@@ -31,15 +45,17 @@ this.RecipeRunner = {
       return;
     }
 
-    let delay;
     if (prefs.getBoolPref("dev_mode")) {
-      delay = 0;
-    } else {
       
-      delay = prefs.getIntPref("startup_delay_seconds") * 1000;
+      this.run();
     }
 
-    setTimeout(this.start.bind(this), delay);
+    this.updateRunInterval();
+    CleanupManager.addCleanupHandler(() => timerManager.unregisterTimer(TIMER_NAME));
+
+    
+    prefs.addObserver(RUN_INTERVAL_PREF, this);
+    CleanupManager.addCleanupHandler(() => prefs.removeObserver(RUN_INTERVAL_PREF, this));
   },
 
   checkPrefs() {
@@ -63,46 +79,132 @@ this.RecipeRunner = {
     return true;
   },
 
-  start: Task.async(function* () {
+  
+
+
+  observe(changedPrefBranch, action, changedPref) {
+    if (action === "nsPref:changed" && changedPref === RUN_INTERVAL_PREF) {
+      this.updateRunInterval();
+    } else {
+      log.debug(`Observer fired with unexpected pref change: ${action} ${changedPref}`);
+    }
+  },
+
+  updateRunInterval() {
+    
+    
+    
+    const runInterval = prefs.getIntPref(RUN_INTERVAL_PREF);
+    timerManager.registerTimer(TIMER_NAME, () => this.run(), runInterval);
+  },
+
+  async run() {
+    this.clearCaches();
     
     if (!Preferences.get("extensions.shield-recipe-client.experiments.lazy_classify", false)) {
-      yield ClientEnvironment.getClientClassification();
+      await ClientEnvironment.getClientClassification();
     }
 
+    const actionSandboxManagers = await this.loadActionSandboxManagers();
+    Object.values(actionSandboxManagers).forEach(manager => manager.addHold("recipeRunner"));
+
+    
+    
+    for (const [actionName, manager] of Object.entries(actionSandboxManagers)) {
+      try {
+        await manager.runAsyncCallback("preExecution");
+        manager.disabled = false;
+      } catch (err) {
+        log.error(`Could not run pre-execution hook for ${actionName}:`, err.message);
+        manager.disabled = true;
+      }
+    }
+
+    
     let recipes;
     try {
-      recipes = yield NormandyApi.fetchRecipes({enabled: true});
+      recipes = await NormandyApi.fetchRecipes({enabled: true});
     } catch (e) {
       const apiUrl = prefs.getCharPref("api_url");
       log.error(`Could not fetch recipes from ${apiUrl}: "${e}"`);
       return;
     }
 
+    
     const recipesToRun = [];
-
     for (const recipe of recipes) {
-      if (yield this.checkFilter(recipe)) {
+      if (await this.checkFilter(recipe)) {
         recipesToRun.push(recipe);
       }
     }
 
+    
     if (recipesToRun.length === 0) {
       log.debug("No recipes to execute");
     } else {
       for (const recipe of recipesToRun) {
-        try {
-          log.debug(`Executing recipe "${recipe.name}" (action=${recipe.action})`);
-          yield this.executeRecipe(recipe);
-        } catch (e) {
-          log.error(`Could not execute recipe ${recipe.name}:`, e);
+        const manager = actionSandboxManagers[recipe.action];
+        if (!manager) {
+          log.error(
+            `Could not execute recipe ${recipe.name}:`,
+            `Action ${recipe.action} is either missing or invalid.`
+          );
+        } else if (manager.disabled) {
+          log.warn(
+            `Skipping recipe ${recipe.name} because ${recipe.action} failed during pre-execution.`
+          );
+        } else {
+          try {
+            log.info(`Executing recipe "${recipe.name}" (action=${recipe.action})`);
+            await manager.runAsyncCallback("action", recipe);
+          } catch (e) {
+            log.error(`Could not execute recipe ${recipe.name}:`, e);
+          }
         }
       }
     }
-  }),
 
-  getFilterContext() {
+    
+    for (const [actionName, manager] of Object.entries(actionSandboxManagers)) {
+      
+      if (manager.disabled) {
+        log.info(`Skipping post-execution hook for ${actionName} due to earlier failure.`);
+        continue;
+      }
+
+      try {
+        await manager.runAsyncCallback("postExecution");
+      } catch (err) {
+        log.info(`Could not run post-execution hook for ${actionName}:`, err.message);
+      }
+    }
+
+    
+    Object.values(actionSandboxManagers).forEach(manager => manager.removeHold("recipeRunner"));
+  },
+
+  async loadActionSandboxManagers() {
+    const actions = await NormandyApi.fetchActions();
+    const actionSandboxManagers = {};
+    for (const action of actions) {
+      try {
+        const implementation = await NormandyApi.fetchImplementation(action);
+        actionSandboxManagers[action.name] = new ActionSandboxManager(implementation);
+      } catch (err) {
+        log.warn(`Could not fetch implementation for ${action.name}:`, err);
+      }
+    }
+    return actionSandboxManagers;
+  },
+
+  getFilterContext(recipe) {
     return {
-      normandy: ClientEnvironment.getEnvironment(),
+      normandy: Object.assign(ClientEnvironment.getEnvironment(), {
+        recipe: {
+          id: recipe.id,
+          arguments: recipe.arguments,
+        },
+      }),
     };
   },
 
@@ -113,10 +215,10 @@ this.RecipeRunner = {
 
 
 
-  checkFilter: Task.async(function* (recipe) {
-    const context = this.getFilterContext();
+  async checkFilter(recipe) {
+    const context = this.getFilterContext(recipe);
     try {
-      const result = yield FilterExpressions.eval(recipe.filter_expression, context);
+      const result = await FilterExpressions.eval(recipe.filter_expression, context);
       return !!result;
     } catch (err) {
       log.error(`Error checking filter for "${recipe.name}"`);
@@ -124,69 +226,15 @@ this.RecipeRunner = {
       log.error(`Error: "${err}"`);
       return false;
     }
-  }),
+  },
 
   
 
 
 
-
-  executeRecipe: Task.async(function* (recipe) {
-    const action = yield NormandyApi.fetchAction(recipe.action);
-    const response = yield fetch(action.implementation_url);
-
-    const actionScript = yield response.text();
-    yield this.executeAction(recipe, actionScript);
-  }),
-
-  
-
-
-
-
-
-  executeAction(recipe, actionScript) {
-    return new Promise((resolve, reject) => {
-      const sandboxManager = new SandboxManager();
-      const prepScript = `
-        function registerAction(name, Action) {
-          let a = new Action(sandboxedDriver, sandboxedRecipe);
-          a.execute()
-            .then(actionFinished)
-            .catch(actionFailed);
-        };
-
-        this.window = this;
-        this.registerAction = registerAction;
-        this.setTimeout = sandboxedDriver.setTimeout;
-        this.clearTimeout = sandboxedDriver.clearTimeout;
-      `;
-
-      const driver = new NormandyDriver(sandboxManager);
-      sandboxManager.cloneIntoGlobal("sandboxedDriver", driver, {cloneFunctions: true});
-      sandboxManager.cloneIntoGlobal("sandboxedRecipe", recipe);
-
-      
-      
-      sandboxManager.addGlobal("actionFinished", result => {
-        const clonedResult = Cu.cloneInto(result, {});
-        sandboxManager.removeHold("recipeExecution");
-        resolve(clonedResult);
-      });
-      sandboxManager.addGlobal("actionFailed", err => {
-        Cu.reportError(err);
-
-        
-        
-        const message = err.message;
-        sandboxManager.removeHold("recipeExecution");
-        reject(new Error(message));
-      });
-
-      sandboxManager.addHold("recipeExecution");
-      sandboxManager.evalInSandbox(prepScript);
-      sandboxManager.evalInSandbox(actionScript);
-    });
+  clearCaches() {
+    ClientEnvironment.clearClassifyCache();
+    NormandyApi.clearIndexCache();
   },
 
   
@@ -194,18 +242,17 @@ this.RecipeRunner = {
 
 
 
-  testRun: Task.async(function* (baseApiUrl) {
+  async testRun(baseApiUrl) {
     const oldApiUrl = prefs.getCharPref("api_url");
     prefs.setCharPref("api_url", baseApiUrl);
 
     try {
       Storage.clearAllStorage();
-      ClientEnvironment.clearClassifyCache();
-      NormandyApi.clearIndexCache();
-      yield this.start();
+      this.clearCaches();
+      await this.run();
     } finally {
       prefs.setCharPref("api_url", oldApiUrl);
-      NormandyApi.clearIndexCache();
+      this.clearCaches();
     }
-  }),
+  },
 };
