@@ -480,7 +480,7 @@ private:
                     const nsAString& aMediaString,
                     nsMediaList* aMediaList,
                     dom::Element* aScopeElement,
-                    bool isAlternate);
+                    bool aIsAlternate);
 
   nsresult InsertSheetInDoc(StyleSheet* aSheet,
                             nsIContent* aLinkingContent,
