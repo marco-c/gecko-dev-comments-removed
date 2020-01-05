@@ -27,13 +27,11 @@ struct ShapeUtils final
   
   
   
-  
   static nscoord ComputeShapeRadius(const StyleShapeRadius aType,
                                     const nscoord aCenter,
                                     const nscoord aPosMin,
                                     const nscoord aPosMax);
 
-  
   
   
   
@@ -57,6 +55,13 @@ struct ShapeUtils final
   static nsSize ComputeEllipseRadii(
     mozilla::StyleBasicShape* const aBasicShape,
     const nsPoint& aCenter, const nsRect& aRefBox);
+
+  
+  
+  
+  static nsRect ComputeInsetRect(
+    mozilla::StyleBasicShape* const aBasicShape,
+    const nsRect& aRefBox);
 };
 
 } 
