@@ -22,6 +22,8 @@ pref("app.update.url.manual", "https://www.mozilla.org/firefox/aurora/");
 
 pref("app.update.url.details", "https://www.mozilla.org/firefox/aurora/");
 
+pref("app.releaseNotesURL", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/releasenotes/");
+
 
 
 
