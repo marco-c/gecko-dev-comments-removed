@@ -309,7 +309,7 @@ class UpdateTestCase(FirefoxTestCase):
             self.software_update.force_fallback()
 
         
-        self.restart()
+        self.restart(callback=lambda: about_window.deck.apply.button.click())
 
     def download_and_apply_forced_update(self):
         
@@ -336,8 +336,10 @@ class UpdateTestCase(FirefoxTestCase):
                 self.wait_for_update_applied(about_window)
 
             finally:
-                if about_window:
-                    self.updates[self.current_update_index]['patch'] = self.patch_info
+                self.updates[self.current_update_index]['patch'] = self.patch_info
+
+            
+            self.restart(callback=lambda: about_window.deck.apply.button.click())
 
         else:
             try:
@@ -346,13 +348,12 @@ class UpdateTestCase(FirefoxTestCase):
 
                 
                 self.download_update(dialog)
-                dialog.close()
 
             finally:
                 self.updates[self.current_update_index]['patch'] = self.patch_info
 
-        
-        self.restart()
+            
+            self.restart(callback=lambda: dialog.wizard.finish_button.click())
 
     def read_update_log(self):
         """Read the content of the update log file for the last update attempt."""
