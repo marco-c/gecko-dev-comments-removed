@@ -572,7 +572,6 @@ HTMLTooltip.prototype = {
     panel.setAttribute("animate", false);
     panel.setAttribute("consumeoutsideclicks", false);
     panel.setAttribute("noautofocus", true);
-    panel.setAttribute("noautohide", true);
     panel.setAttribute("ignorekeys", true);
 
     
