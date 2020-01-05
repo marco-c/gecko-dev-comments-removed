@@ -30,8 +30,28 @@ var RuntimePermissions = {
     let permissions = [].concat(permission);
 
     let msg = {
-      type: 'RuntimePermissions:Prompt',
-      permissions: permissions
+      type: 'RuntimePermissions:Check',
+      permissions: permissions,
+      shouldPrompt: true
+    };
+
+    let window = Services.wm.getMostRecentWindow("navigator:browser");
+    return window.WindowEventDispatcher.sendRequestForResult(msg);
+  },
+
+  
+
+
+
+
+
+  checkPermissions: function(permission) {
+    let permissions = [].concat(permission);
+
+    let msg = {
+      type: 'RuntimePermissions:Check',
+      permissions: permissions,
+      shouldPrompt: false
     };
 
     let window = Services.wm.getMostRecentWindow("navigator:browser");

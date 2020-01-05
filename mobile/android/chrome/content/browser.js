@@ -4047,6 +4047,20 @@ Tab.prototype = {
           let errorExtra = decodeURIComponent(docURI.slice(error + 2, duffUrl));
           
           
+          if (errorExtra == "fileAccessDenied") {
+            
+            
+            RuntimePermissions.checkPermission(RuntimePermissions.WRITE_EXTERNAL_STORAGE).then((permissionAlreadyGranted) => {
+              if (!permissionAlreadyGranted) {
+                RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE).then((permissionGranted) => {
+                  if (permissionGranted) {
+                    this.browser.reload();
+                  }
+                });
+              }
+            });
+          }
+
           UITelemetry.addEvent("neterror.1", "content", null, errorExtra);
           errorType = "neterror";
         }
