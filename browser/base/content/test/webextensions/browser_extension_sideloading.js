@@ -72,30 +72,13 @@ class MockProvider {
   }
 }
 
-function promisePopupNotificationShown(name) {
-  return new Promise(resolve => {
-    function popupshown() {
-      let notification = PopupNotifications.getNotification(name);
-      if (!notification) {
-        return;
-      }
-
-      ok(notification, `${name} notification shown`);
-      ok(PopupNotifications.isPanelOpen, "notification panel open");
-
-      PopupNotifications.panel.removeEventListener("popupshown", popupshown);
-      resolve(PopupNotifications.panel.firstChild);
-    }
-
-    PopupNotifications.panel.addEventListener("popupshown", popupshown);
-  });
-}
-
 function promiseSetDisabled(addon) {
   return new Promise(resolve => {
     setCallbacks.set(addon, resolve);
   });
 }
+
+let cleanup;
 
 add_task(function* () {
   
@@ -168,14 +151,15 @@ add_task(function* () {
     flags: AddonManager.TYPE_UI_VIEW_LIST |
            AddonManager.TYPE_SUPPORTS_UNDO_RESTARTLESS_UNINSTALL,
   }]);
-  registerCleanupFunction(function*() {
+
+  testCleanup = async function() {
     AddonManagerPrivate.unregisterProvider(provider);
 
     
     
     ExtensionsUI.sideloaded.clear();
     ExtensionsUI.emit("change");
-  });
+  };
 
   
   
