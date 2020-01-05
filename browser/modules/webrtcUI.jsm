@@ -10,6 +10,7 @@ const Cu = Components.utils;
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
+Cu.import("resource:///modules/syncedtabs/EventEmitter.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -17,12 +18,17 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PluralForm",
                                   "resource://gre/modules/PluralForm.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
   return Services.strings.createBundle("chrome://branding/locale/brand.properties");
 });
 
 this.webrtcUI = {
+  peerConnectionBlockers: new Set(),
+  emitter: new EventEmitter(),
+
   init: function() {
     Services.obs.addObserver(maybeAddMenuIndicator, "browser-delayed-startup-finished", false);
 
@@ -165,49 +171,93 @@ this.webrtcUI = {
     document.getElementById("webRTC-all-windows-shared").hidden = type != "Screen";
   },
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  addPeerConnectionBlocker: function(aCallback) {
+    this.peerConnectionBlockers.add(aCallback);
+  },
+
+  removePeerConnectionBlocker: function(aCallback) {
+    this.peerConnectionBlockers.delete(aCallback);
+  },
+
+  on: function(...args) {
+    return this.emitter.on(...args);
+  },
+
+  off: function(...args) {
+    return this.emitter.off(...args);
+  },
+
   receiveMessage: function(aMessage) {
     switch (aMessage.name) {
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-
       case "rtcpeer:Request": {
-        
-        let { callID, windowID } = aMessage.data;
-        
-        
-        
+        let params = Object.freeze(Object.assign({
+          origin: aMessage.target.contentPrincipal.origin
+        }, aMessage.data));
 
-        let mm = aMessage.target.messageManager;
-        mm.sendAsyncMessage("rtcpeer:Allow",
-                            { callID: callID, windowID: windowID });
+        let blockers = Array.from(this.peerConnectionBlockers);
+
+        Task.spawn(function*() {
+          for (let blocker of blockers) {
+            try {
+              let result = yield blocker(params);
+              if (result == "deny") {
+                return false;
+              }
+            } catch (err) {
+              Cu.reportError(`error in PeerConnection blocker: ${err.message}`);
+            }
+          }
+          return true;
+        }).then(decision => {
+          let message;
+          if (decision) {
+            this.emitter.emit("peer-request-allowed", params);
+            message = "rtcpeer:Allow";
+          } else {
+            this.emitter.emit("peer-request-blocked", params);
+            message = "rtcpeer:Deny";
+          }
+
+          aMessage.target.messageManager.sendAsyncMessage(message, {
+            callID: params.callID,
+            windowID: params.windowID,
+          });
+        });
         break;
       }
-      case "rtcpeer:CancelRequest":
-        
+      case "rtcpeer:CancelRequest": {
+        let params = Object.freeze({
+          origin: aMessage.target.contentPrincipal.origin,
+          callID: aMessage.data
+        });
+        this.emitter.emit("peer-request-cancel", params);
         break;
+      }
       case "webrtc:Request":
         prompt(aMessage.target, aMessage.data);
         break;
