@@ -131,25 +131,6 @@ assert.mobile = function (msg = "") {
 
 
 
-assert.window = function (win, msg = "") {
-  msg = msg || "Unable to locate window";
-  return assert.that(w => w && w.document.defaultView, msg, NoSuchWindowError)(win);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 assert.defined = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be defined`;
   return assert.that(o => typeof o != "undefined", msg)(obj);
