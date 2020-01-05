@@ -6657,20 +6657,14 @@ nsGridContainerFrame::CSSAlignmentForAbsPosChild(const ReflowInput& aChildRI,
              "This method should only be called for abspos children");
 
   uint16_t alignment = (aLogicalAxis == eLogicalAxisInline) ?
-    aChildRI.mStylePosition->UsedJustifySelf(nullptr) :
-    aChildRI.mStylePosition->UsedAlignSelf(nullptr);
+    aChildRI.mStylePosition->UsedJustifySelf(StyleContext()) :
+    aChildRI.mStylePosition->UsedAlignSelf(StyleContext());
 
   
   
   alignment &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
-  
-  
-  
-  
-  
-  if (alignment == NS_STYLE_ALIGN_AUTO ||
-      alignment == NS_STYLE_ALIGN_NORMAL) {
+  if (alignment == NS_STYLE_ALIGN_NORMAL) {
     
     
     
