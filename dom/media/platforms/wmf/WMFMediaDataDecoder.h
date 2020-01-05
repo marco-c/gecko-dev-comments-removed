@@ -117,13 +117,15 @@ public:
 
 private:
 
+  RefPtr<DecodePromise> ProcessError(HRESULT aError, const char* aReason);
+
   
   
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
 
   
   
-  void ProcessOutput();
+  HRESULT ProcessOutput(DecodedData& aResults);
 
   
   
@@ -145,8 +147,6 @@ private:
 
   bool mIsShutDown = false;
 
-  MozPromiseHolder<DecodePromise> mDecodePromise;
-  MozPromiseHolder<DecodePromise> mDrainPromise;
   enum class DrainStatus
   {
     DRAINED,
