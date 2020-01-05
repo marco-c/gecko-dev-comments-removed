@@ -64,9 +64,6 @@ pub enum QuirksMode {
 
 pub struct SharedStyleContext {
     
-    pub viewport_size: Size2D<Au>,
-
-    
     pub stylist: Arc<Stylist>,
 
     
@@ -91,6 +88,13 @@ pub struct SharedStyleContext {
     
     
     pub default_computed_values: Arc<ComputedValues>,
+}
+
+impl SharedStyleContext {
+    
+    pub fn viewport_size(&self) -> Size2D<Au> {
+        self.stylist.device.au_viewport_size()
+    }
 }
 
 

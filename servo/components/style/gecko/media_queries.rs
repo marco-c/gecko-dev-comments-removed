@@ -94,10 +94,10 @@ impl Device {
         self.viewport_override.as_ref().map(|v| {
             Size2D::new(Au::from_f32_px(v.size.width),
                         Au::from_f32_px(v.size.height))
-        }).unwrap_or_else(|| {
+        }).unwrap_or_else(|| unsafe {
             
-            Size2D::new(Au::from_f32_px(1024.0),
-                        Au::from_f32_px(768.0))
+            Size2D::new(Au((*self.pres_context).mVisibleArea.width),
+                        Au((*self.pres_context).mVisibleArea.height))
         })
     }
 }
