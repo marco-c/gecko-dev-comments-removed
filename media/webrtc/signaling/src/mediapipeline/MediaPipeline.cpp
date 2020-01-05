@@ -119,7 +119,6 @@ public:
   VideoFrameConverter()
     : mLength(0)
     , last_img_(-1) 
-    , disabled_frame_sent_(false)
 #ifdef DEBUG
     , mThrottleCount(0)
     , mThrottleRecord(0)
@@ -183,17 +182,22 @@ public:
       
       last_img_ = -1;
 
-      if (disabled_frame_sent_) {
-        
-        
-        
-        
+      
+      
+      
+      
+      const double disabledMinFps = 1.0;
+      TimeStamp t = aChunk.mTimeStamp;
+      MOZ_ASSERT(!t.IsNull());
+      if (!disabled_frame_sent_.IsNull() &&
+          (t - disabled_frame_sent_).ToSeconds() < (1.0 / disabledMinFps)) {
         return;
       }
 
-      disabled_frame_sent_ = true;
+      disabled_frame_sent_ = t;
     } else {
-      disabled_frame_sent_ = false;
+      
+      disabled_frame_sent_ = TimeStamp();
     }
 
     ++mLength; 
@@ -452,7 +456,7 @@ protected:
 
   
   int32_t last_img_; 
-  bool disabled_frame_sent_; 
+  TimeStamp disabled_frame_sent_; 
 #ifdef DEBUG
   uint32_t mThrottleCount;
   uint32_t mThrottleRecord;
