@@ -102,15 +102,37 @@ use dom::bindings::codegen::RegisterBindings;
 #[allow(unsafe_code)]
 fn perform_platform_specific_initialization() {
     use std::mem;
-    const RLIMIT_NOFILE: libc::c_int = 7;
+    
+    const MAX_FILE_LIMIT: libc::rlim_t = 4096;
 
     
     
     unsafe {
-        let mut rlim = mem::uninitialized();
-        assert!(libc::getrlimit(RLIMIT_NOFILE, &mut rlim) == 0);
-        rlim.rlim_cur = rlim.rlim_max;
-        assert!(libc::setrlimit(RLIMIT_NOFILE, &mut rlim) == 0);
+        let mut rlim: libc::rlimit = mem::uninitialized();
+        match libc::getrlimit(libc::RLIMIT_NOFILE, &mut rlim) {
+            0 => {
+                if rlim.rlim_cur >= MAX_FILE_LIMIT {
+                    
+                    return;
+                }
+
+                rlim.rlim_cur = match rlim.rlim_max {
+                    libc::RLIM_INFINITY => MAX_FILE_LIMIT,
+                    _ => {
+                        if rlim.rlim_max < MAX_FILE_LIMIT {
+                            rlim.rlim_max
+                        } else {
+                            MAX_FILE_LIMIT
+                        }
+                    }
+                };
+                match libc::setrlimit(libc::RLIMIT_NOFILE, &mut rlim) {
+                    0 => (),
+                    _ => warn!("Failed to set file count limit"),
+                };
+            },
+            _ => warn!("Failed to get file count limit"),
+        };
     }
 }
 
