@@ -23,7 +23,7 @@ use std::rc::Rc;
 use util::mem::HeapSizeOf;
 use util::str::DOMString;
 
-#[derive(JSTraceable, PartialEq, Eq, Copy, Clone, HeapSizeOf, Hash, PartialOrd, Ord)]
+#[derive(JSTraceable, PartialEq, Eq, Copy, Clone, HeapSizeOf, Hash, PartialOrd, Ord, Debug)]
 pub struct TimerHandle(i32);
 
 #[derive(JSTraceable, HeapSizeOf)]
@@ -253,16 +253,22 @@ impl ActiveTimers {
         
         assert!(base_time >= self.timers.borrow().last().unwrap().next_call);
 
+        
+        
+        let mut timers_to_run: Vec<Timer> = Vec::new();
+
         loop {
-            let timer = {
-                let mut timers = self.timers.borrow_mut();
+            let mut timers = self.timers.borrow_mut();
 
-                if timers.is_empty() || timers.last().unwrap().next_call > base_time {
-                    break;
-                }
+            if timers.is_empty() || timers.last().unwrap().next_call > base_time {
+                break;
+            }
 
-                timers.pop().unwrap()
-            };
+            timers_to_run.push(timers.pop().unwrap());
+        }
+
+        for timer in timers_to_run {
+
             let callback = timer.callback.clone();
 
             
