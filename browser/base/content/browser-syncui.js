@@ -473,7 +473,7 @@ XPCOMUtils.defineLazyGetter(gSyncUI, "_stringBundle", function() {
   
   
   return Services.strings.createBundle(
-    "chrome://weave/locale/services/sync.properties");
+    "chrome://weave/locale/sync.properties");
 });
 
 XPCOMUtils.defineLazyGetter(gSyncUI, "log", function() {
