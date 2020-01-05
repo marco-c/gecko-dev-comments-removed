@@ -418,7 +418,7 @@ CubicBezierWidget.prototype = {
     this.bezierCanvas.plot();
     this.emit("updated", this.bezierCanvas.bezier);
 
-    this.timingPreview.preview(this.bezierCanvas.bezier + "");
+    this.timingPreview.preview(this.bezierCanvas.bezier.toString());
   },
 
   
@@ -721,7 +721,6 @@ CubicBezierPresetWidget.prototype = {
 
 function TimingFunctionPreviewWidget(parent) {
   this.previousValue = null;
-  this.autoRestartAnimation = null;
 
   this.parent = parent;
   this._initMarkup();
@@ -748,7 +747,7 @@ TimingFunctionPreviewWidget.prototype = {
   },
 
   destroy: function () {
-    clearTimeout(this.autoRestartAnimation);
+    this.dot.getAnimations().forEach(anim => anim.cancel());
     this.parent.querySelector(".timing-function-preview").remove();
     this.parent = this.dot = null;
   },
@@ -765,11 +764,8 @@ TimingFunctionPreviewWidget.prototype = {
       return;
     }
 
-    clearTimeout(this.autoRestartAnimation);
-
     if (parseTimingFunction(value)) {
-      this.dot.style.animationTimingFunction = value;
-      this.restartAnimation();
+      this.restartAnimation(value);
     }
 
     this.previousValue = value;
@@ -778,22 +774,32 @@ TimingFunctionPreviewWidget.prototype = {
   
 
 
-  restartAnimation: function () {
+
+  restartAnimation: function (timingFunction) {
     
-    this.dot.animate([
-      { left: "-7px", offset: 0 },
-      { left: "143px", offset: 0.25 },
-      { left: "143px", offset: 0.5 },
-      { left: "-7px", offset: 0.75 },
-      { left: "-7px", offset: 1 }
-    ], {
-      duration: (this.PREVIEW_DURATION * 2),
-      fill: "forwards"
-    });
+    this.dot.getAnimations().forEach(anim => anim.cancel());
 
     
-    this.autoRestartAnimation = setTimeout(this.restartAnimation.bind(this),
-      this.PREVIEW_DURATION * 2);
+    
+    
+    
+    
+    
+    
+    
+    this.dot.animate([
+      { left: "-7px", opacity: .5, offset: 0 },
+      { left: "-7px", opacity: .5, offset: .19 },
+      { left: "-7px", opacity: 1, offset: .2, easing: timingFunction },
+      { left: "143px", opacity: 1, offset: .5 },
+      { left: "143px", opacity: .5, offset: .51 },
+      { left: "143px", opacity: .5, offset: .7 },
+      { left: "143px", opacity: 1, offset: .71, easing: timingFunction },
+      { left: "-7px", opacity: 1, offset: 1 }
+    ], {
+      duration: this.PREVIEW_DURATION * 2,
+      iterations: Infinity
+    });
   }
 };
 
