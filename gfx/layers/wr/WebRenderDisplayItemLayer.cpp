@@ -16,18 +16,19 @@ namespace mozilla {
 namespace layers {
 
 void
-WebRenderDisplayItemLayer::RenderLayer()
+WebRenderDisplayItemLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
 {
   if (mItem) {
+    wr::DisplayListBuilder builder(WrBridge()->GetPipeline());
     
-    mCommands.Clear();
     mParentCommands.Clear();
-    mItem->CreateWebRenderCommands(mCommands, mParentCommands, this);
+    mItem->CreateWebRenderCommands(builder, mParentCommands, this);
+    mBuiltDisplayList = builder.Finalize();
   }
   
   
 
-  WrBridge()->AddWebRenderCommands(mCommands);
+  aBuilder.PushBuiltDisplayList(Move(mBuiltDisplayList));
   WrBridge()->AddWebRenderParentCommands(mParentCommands);
 }
 

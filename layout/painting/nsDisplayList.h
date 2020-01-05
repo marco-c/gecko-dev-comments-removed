@@ -62,6 +62,9 @@ class WebRenderCommand;
 class WebRenderParentCommand;
 class WebRenderDisplayItemLayer;
 } 
+namespace wr {
+class DisplayListBuilder;
+} 
 } 
 
 
@@ -1927,7 +1930,7 @@ public:
 
 
 
-   virtual void CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCommands,
+   virtual void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                         nsTArray<WebRenderParentCommand>& aParentCommands,
                                         WebRenderDisplayItemLayer* aLayer) {}
   
@@ -2824,9 +2827,9 @@ public:
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
-  virtual void CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCommands,
+  virtual void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                        nsTArray<WebRenderParentCommand>& aParentCommands,
-                                        WebRenderDisplayItemLayer* aLayer) override;
+                                       WebRenderDisplayItemLayer* aLayer) override;
 
 protected:
   RefPtr<nsCaret> mCaret;
@@ -3387,7 +3390,7 @@ public:
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
-  virtual void CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCommands,
+  virtual void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                        nsTArray<WebRenderParentCommand>& aParentCommands,
                                        WebRenderDisplayItemLayer* aLayer) override;
 
@@ -3443,7 +3446,7 @@ public:
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
-  virtual void CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCommands,
+  virtual void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                        nsTArray<WebRenderParentCommand>& aParentCommand,
                                        WebRenderDisplayItemLayer* aLayer) override;
 
@@ -3472,7 +3475,7 @@ public:
   virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
                                              LayerManager* aManager,
                                              const ContainerLayerParameters& aContainerParameters) override;
-  virtual void CreateWebRenderCommands(nsTArray<WebRenderCommand>& aCommands,
+  virtual void CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
                                        nsTArray<WebRenderParentCommand>& aParentCommands,
                                        mozilla::layers::WebRenderDisplayItemLayer* aLayer) override;
   virtual bool IsInvisibleInRect(const nsRect& aRect) override;
