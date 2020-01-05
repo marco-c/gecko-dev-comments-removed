@@ -197,7 +197,7 @@ PROT_ListManager.prototype.kickoffUpdate_ = function (onDiskTableData)
   this.startingUpdate_ = false;
   var initialUpdateDelay = 3000;
   
-  initialUpdateDelay += Math.floor(Math.random() * (5 * 60 * 1000));
+  initialUpdateDelay += Math.floor(Math.random() * (1 * 60 * 1000));
 
   
   log("needsUpdate: " + JSON.stringify(this.needsUpdate_, undefined, 2));
