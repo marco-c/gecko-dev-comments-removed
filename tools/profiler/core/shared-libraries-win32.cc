@@ -4,15 +4,12 @@
 
 
 #include <windows.h>
+#include <tlhelp32.h>
 #include <dbghelp.h>
 #include <sstream>
-#include <psapi.h>
 
 #include "shared-libraries.h"
 #include "nsWindowsHelpers.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
-#include "nsNativeCharsetUtils.h"
 
 #define CV_SIGNATURE 0x53445352 // 'SDSR'
 
@@ -21,7 +18,6 @@ struct CodeViewRecord70
   uint32_t signature;
   GUID pdbSignature;
   uint32_t pdbAge;
-  
   char pdbFileName[1];
 };
 
@@ -69,7 +65,13 @@ static bool GetPdbInfo(uintptr_t aStart, nsID& aSignature, uint32_t& aAge, char*
 
   
   
-  *aPdbName = debugInfo->pdbFileName;
+  char * leafName = strrchr(debugInfo->pdbFileName, '\\');
+  if (leafName) {
+    
+    *aPdbName = leafName + 1;
+  } else {
+    *aPdbName = debugInfo->pdbFileName;
+  }
 
   return true;
 }
@@ -79,121 +81,55 @@ static bool IsDashOrBraces(char c)
   return c == '-' || c == '{' || c == '}';
 }
 
-std::string GetVersion(WCHAR* dllPath)
-{
-  DWORD infoSize = GetFileVersionInfoSizeW(dllPath, nullptr);
-  if (infoSize == 0) {
-    return "";
-  }
-
-  mozilla::UniquePtr<unsigned char[]> infoData = mozilla::MakeUnique<unsigned char[]>(infoSize);
-  if (!GetFileVersionInfoW(dllPath, 0, infoSize, infoData.get())) {
-    return "";
-  }
-
-  VS_FIXEDFILEINFO* vInfo;
-  UINT vInfoLen;
-  if (!VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo, &vInfoLen)) {
-    return "";
-  }
-  if (!vInfo) {
-    return "";
-  }
-
-  std::ostringstream stream;
-  stream << (vInfo->dwFileVersionMS >> 16)    << "."
-         << (vInfo->dwFileVersionMS & 0xFFFF) << "."
-         << (vInfo->dwFileVersionLS >> 16)    << "."
-         << (vInfo->dwFileVersionLS & 0xFFFF);
-
-  return stream.str();
-}
-
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
 {
   SharedLibraryInfo sharedLibraryInfo;
 
-  HANDLE hProcess = GetCurrentProcess();
-  mozilla::UniquePtr<HMODULE[]> hMods;
-  size_t modulesNum = 0;
-  if (hProcess != NULL) {
-    DWORD modulesSize;
-    if (!EnumProcessModules(hProcess, nullptr, 0, &modulesSize)) {
-      return sharedLibraryInfo;
-    }
-    modulesNum = modulesSize / sizeof(HMODULE);
-    hMods = mozilla::MakeUnique<HMODULE[]>(modulesNum);
-    if (!EnumProcessModules(hProcess, hMods.get(), modulesNum * sizeof(HMODULE), &modulesSize)) {
-      return sharedLibraryInfo;
-    }
-  }
+  nsAutoHandle snap(CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, GetCurrentProcessId()));
 
-  for (unsigned int i = 0; i <= modulesNum; i++) {
-    nsID pdbSig;
-    uint32_t pdbAge;
-    nsAutoString pdbNameStr;
-    char *pdbName = NULL;
-    std::string breakpadId;
-    WCHAR modulePath[MAX_PATH + 1];
+  MODULEENTRY32 module = {0};
+  module.dwSize = sizeof(MODULEENTRY32);
+  if (Module32First(snap, &module)) {
+    do {
+      nsID pdbSig;
+      uint32_t pdbAge;
+      char *pdbName = NULL;
 
-    if (!GetModuleFileNameEx(hProcess, hMods[i], modulePath, sizeof(modulePath) / sizeof(WCHAR))) {
-      continue;
-    }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      HMODULE handleLock = LoadLibraryEx(module.szExePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
+      MEMORY_BASIC_INFORMATION vmemInfo = {0};
+      if (handleLock &&
+          sizeof(vmemInfo) == VirtualQuery(module.modBaseAddr, &vmemInfo, sizeof(vmemInfo)) &&
+          vmemInfo.State == MEM_COMMIT &&
+          GetPdbInfo((uintptr_t)module.modBaseAddr, pdbSig, pdbAge, &pdbName)) {
+        std::ostringstream stream;
+        stream << pdbSig.ToString() << std::hex << pdbAge;
+        std::string breakpadId = stream.str();
+        std::string::iterator end =
+          std::remove_if(breakpadId.begin(), breakpadId.end(), IsDashOrBraces);
+        breakpadId.erase(end, breakpadId.end());
+        std::transform(breakpadId.begin(), breakpadId.end(),
+                       breakpadId.begin(), toupper);
 
-    MODULEINFO module = {0};
-    if (!GetModuleInformation(hProcess, hMods[i], &module, sizeof(MODULEINFO))) {
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    HMODULE handleLock = LoadLibraryEx(modulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
-    MEMORY_BASIC_INFORMATION vmemInfo = { 0 };
-    if (handleLock &&
-      sizeof(vmemInfo) == VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
-      vmemInfo.State == MEM_COMMIT &&
-      GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
-      std::ostringstream stream;
-      stream << pdbSig.ToString() << std::hex << pdbAge;
-      breakpadId = stream.str();
-      std::string::iterator end =
-        std::remove_if(breakpadId.begin(), breakpadId.end(), IsDashOrBraces);
-      breakpadId.erase(end, breakpadId.end());
-      std::transform(breakpadId.begin(), breakpadId.end(),
-        breakpadId.begin(), toupper);
-
-      pdbNameStr = NS_ConvertUTF8toUTF16(pdbName);
-      int32_t pos = pdbNameStr.RFindChar('\\');
-      if (pos != kNotFound) {
-        pdbNameStr.Cut(0, pos + 1);
+        SharedLibrary shlib((uintptr_t)module.modBaseAddr,
+                            (uintptr_t)module.modBaseAddr+module.modBaseSize,
+                            0, 
+                            breakpadId,
+                            pdbName);
+        sharedLibraryInfo.AddSharedLibrary(shlib);
       }
-    }
-
-    nsAutoString moduleName(modulePath);
-    int32_t pos = moduleName.RFindChar('\\');
-    if (pos != kNotFound) {
-      moduleName.Cut(0, pos + 1);
-    }
-
-    SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
-      (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
-      0, 
-      breakpadId,
-      moduleName,
-      pdbNameStr,
-      GetVersion(modulePath));
-    sharedLibraryInfo.AddSharedLibrary(shlib);
-
-    FreeLibrary(handleLock); 
+      FreeLibrary(handleLock); 
+    } while (Module32Next(snap, &module));
   }
 
   return sharedLibraryInfo;
