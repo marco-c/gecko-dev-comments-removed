@@ -16,6 +16,8 @@ use dom::bindings::codegen::InheritTypes::{CommentCast, DocumentCast, DocumentTy
 use dom::bindings::codegen::InheritTypes::{ElementCast, TextCast, NodeCast, ElementDerived};
 use dom::bindings::codegen::InheritTypes::{CharacterDataCast, NodeBase, NodeDerived};
 use dom::bindings::codegen::InheritTypes::{ProcessingInstructionCast, EventTargetCast};
+use dom::bindings::codegen::InheritTypes::{HTMLLegendElementDerived, HTMLFieldSetElementDerived};
+use dom::bindings::codegen::InheritTypes::HTMLOptGroupElementDerived;
 use dom::bindings::error::{ErrorResult, Fallible, NotFound, HierarchyRequest, Syntax};
 use dom::bindings::global::{GlobalRef, Window};
 use dom::bindings::js::{JS, JSRef, RootedReference, Temporary, Root, OptionalUnrootable};
@@ -30,7 +32,10 @@ use dom::document::{Document, DocumentHelpers, HTMLDocument, NonHTMLDocument};
 use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
 use dom::element::{AttributeHandlers, Element, ElementTypeId};
-use dom::element::{HTMLAnchorElementTypeId, ElementHelpers};
+use dom::element::{HTMLAnchorElementTypeId, HTMLButtonElementTypeId, ElementHelpers};
+use dom::element::{HTMLInputElementTypeId, HTMLSelectElementTypeId};
+use dom::element::{HTMLTextAreaElementTypeId, HTMLOptGroupElementTypeId};
+use dom::element::{HTMLOptionElementTypeId, HTMLFieldSetElementTypeId};
 use dom::eventtarget::{EventTarget, NodeTargetTypeId};
 use dom::nodelist::{NodeList};
 use dom::processinginstruction::ProcessingInstruction;
@@ -123,8 +128,12 @@ bitflags! {
     flags NodeFlags: u8 {
         #[doc = "Specifies whether this node is in a document."]
         static IsInDoc = 0x01,
-        #[doc = "Specifies whether this node is hover state for this node"]
-        static InHoverState = 0x02
+        #[doc = "Specifies whether this node is in hover state."]
+        static InHoverState = 0x02,
+        #[doc = "Specifies whether this node is in disabled state."]
+        static InDisabledState = 0x04,
+        #[doc = "Specifies whether this node is in enabled state."]
+        static InEnabledState = 0x08
     }
 }
 
@@ -383,6 +392,12 @@ pub trait NodeHelpers {
     fn get_hover_state(&self) -> bool;
     fn set_hover_state(&self, state: bool);
 
+    fn get_disabled_state(&self) -> bool;
+    fn set_disabled_state(&self, state: bool);
+
+    fn get_enabled_state(&self) -> bool;
+    fn set_enabled_state(&self, state: bool);
+
     fn dump(&self);
     fn dump_indent(&self, indent: uint);
     fn debug_str(&self) -> String;
@@ -497,6 +512,30 @@ impl<'a> NodeHelpers for JSRef<'a, Node> {
             self.flags.deref().borrow_mut().insert(InHoverState);
         } else {
             self.flags.deref().borrow_mut().remove(InHoverState);
+        }
+    }
+
+    fn get_disabled_state(&self) -> bool {
+        self.flags.deref().borrow().contains(InDisabledState)
+    }
+
+    fn set_disabled_state(&self, state: bool) {
+        if state {
+            self.flags.deref().borrow_mut().insert(InDisabledState);
+        } else {
+            self.flags.deref().borrow_mut().remove(InDisabledState);
+        }
+    }
+
+    fn get_enabled_state(&self) -> bool {
+        self.flags.deref().borrow().contains(InEnabledState)
+    }
+
+    fn set_enabled_state(&self, state: bool) {
+        if state {
+            self.flags.deref().borrow_mut().insert(InEnabledState);
+        } else {
+            self.flags.deref().borrow_mut().remove(InEnabledState);
         }
     }
 
@@ -728,11 +767,19 @@ impl LayoutNodeHelpers for JS<Node> {
 
 pub trait RawLayoutNodeHelpers {
     unsafe fn get_hover_state_for_layout(&self) -> bool;
+    unsafe fn get_disabled_state_for_layout(&self) -> bool;
+    unsafe fn get_enabled_state_for_layout(&self) -> bool;
 }
 
 impl RawLayoutNodeHelpers for Node {
     unsafe fn get_hover_state_for_layout(&self) -> bool {
         self.flags.deref().borrow().contains(InHoverState)
+    }
+    unsafe fn get_disabled_state_for_layout(&self) -> bool {
+        self.flags.deref().borrow().contains(InDisabledState)
+    }
+    unsafe fn get_enabled_state_for_layout(&self) -> bool {
+        self.flags.deref().borrow().contains(InEnabledState)
     }
 }
 
@@ -926,7 +973,7 @@ impl Node {
     }
 
     fn new_(type_id: NodeTypeId, doc: Option<JSRef<Document>>) -> Node {
-        Node {
+        let node = Node {
             eventtarget: EventTarget::new_inherited(NodeTargetTypeId(type_id)),
             type_id: type_id,
 
@@ -941,7 +988,22 @@ impl Node {
             flags: Traceable::new(RefCell::new(NodeFlags::new(type_id))),
 
             layout_data: LayoutDataRef::new(),
+        };
+        match type_id {
+            // The following elements are enabled by default.
+            ElementNodeTypeId(HTMLButtonElementTypeId) |
+            ElementNodeTypeId(HTMLInputElementTypeId) |
+            ElementNodeTypeId(HTMLSelectElementTypeId) |
+            ElementNodeTypeId(HTMLTextAreaElementTypeId) |
+            ElementNodeTypeId(HTMLOptGroupElementTypeId) |
+            ElementNodeTypeId(HTMLOptionElementTypeId) |
+            //ElementNodeTypeId(HTMLMenuItemElementTypeId) |
+            ElementNodeTypeId(HTMLFieldSetElementTypeId) => {
+                node.flags.deref().borrow_mut().insert(InEnabledState);
+            },
+            _ => ()
         }
+        node
     }
 
     // http://dom.spec.whatwg.org/#concept-node-adopt
@@ -1397,13 +1459,13 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-baseuri
     fn GetBaseURI(&self) -> Option<DOMString> {
-        
+        // FIXME (#1824) implement.
         None
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-ownerdocument
     fn GetOwnerDocument(&self) -> Option<Temporary<Document>> {
         match self.type_id {
             ElementNodeTypeId(..) |
@@ -1416,12 +1478,12 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-parentnode
     fn GetParentNode(&self) -> Option<Temporary<Node>> {
         self.parent_node.get().map(|node| Temporary::new(node))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-parentelement
     fn GetParentElement(&self) -> Option<Temporary<Element>> {
         self.parent_node.get()
                         .and_then(|parent| {
@@ -1432,12 +1494,12 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                         })
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-haschildnodes
     fn HasChildNodes(&self) -> bool {
         self.first_child.get().is_some()
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-childnodes
     fn ChildNodes(&self) -> Temporary<NodeList> {
         match self.child_list.get() {
             None => (),
@@ -1451,27 +1513,27 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         Temporary::new(self.child_list.get().get_ref().clone())
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-firstchild
     fn GetFirstChild(&self) -> Option<Temporary<Node>> {
         self.first_child.get().map(|node| Temporary::new(node))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-lastchild
     fn GetLastChild(&self) -> Option<Temporary<Node>> {
         self.last_child.get().map(|node| Temporary::new(node))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-previoussibling
     fn GetPreviousSibling(&self) -> Option<Temporary<Node>> {
         self.prev_sibling.get().map(|node| Temporary::new(node))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-nextsibling
     fn GetNextSibling(&self) -> Option<Temporary<Node>> {
         self.next_sibling.get().map(|node| Temporary::new(node))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-nodevalue
     fn GetNodeValue(&self) -> Option<DOMString> {
         match self.type_id {
             CommentNodeTypeId |
@@ -1486,7 +1548,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-nodevalue
     fn SetNodeValue(&self, val: Option<DOMString>) -> ErrorResult {
         match self.type_id {
             CommentNodeTypeId |
@@ -1498,7 +1560,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-textcontent
     fn GetTextContent(&self) -> Option<DOMString> {
         match self.type_id {
             DocumentFragmentNodeTypeId |
@@ -1525,13 +1587,13 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-textcontent
     fn SetTextContent(&self, value: Option<DOMString>) -> ErrorResult {
         let value = null_str_as_empty(&value);
         match self.type_id {
             DocumentFragmentNodeTypeId |
             ElementNodeTypeId(..) => {
-                
+                // Step 1-2.
                 let node = if value.len() == 0 {
                     None
                 } else {
@@ -1539,7 +1601,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                     Some(NodeCast::from_temporary(document.deref().CreateTextNode(value)))
                 }.root();
 
-                
+                // Step 3.
                 Node::replace_all(node.root_ref(), self);
             }
             CommentNodeTypeId |
@@ -1550,7 +1612,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                 let characterdata: &JSRef<CharacterData> = CharacterDataCast::to_ref(self).unwrap();
                 *characterdata.data.deref().borrow_mut() = value;
 
-                
+                // Notify the document that the content of this node is different
                 let document = self.owner_doc().root();
                 document.deref().content_changed();
             }
@@ -1560,20 +1622,20 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         Ok(())
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-insertbefore
     fn InsertBefore(&self, node: &JSRef<Node>, child: Option<JSRef<Node>>) -> Fallible<Temporary<Node>> {
         Node::pre_insert(node, self, child)
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-appendchild
     fn AppendChild(&self, node: &JSRef<Node>) -> Fallible<Temporary<Node>> {
         Node::pre_insert(node, self, None)
     }
 
-    
+    // http://dom.spec.whatwg.org/#concept-node-replace
     fn ReplaceChild(&self, node: &JSRef<Node>, child: &JSRef<Node>) -> Fallible<Temporary<Node>> {
 
-        
+        // Step 1.
         match self.type_id {
             DocumentNodeTypeId |
             DocumentFragmentNodeTypeId |
@@ -1581,17 +1643,17 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
             _ => return Err(HierarchyRequest)
         }
 
-        
+        // Step 2.
         if node.is_inclusive_ancestor_of(self) {
             return Err(HierarchyRequest);
         }
 
-        
+        // Step 3.
         if !self.is_parent_of(child) {
             return Err(NotFound);
         }
 
-        
+        // Step 4-5.
         match node.type_id() {
             TextNodeTypeId if self.is_document() => return Err(HierarchyRequest),
             DoctypeNodeTypeId if !self.is_document() => return Err(HierarchyRequest),
@@ -1604,19 +1666,19 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
             DocumentNodeTypeId => return Err(HierarchyRequest)
         }
 
-        
+        // Step 6.
         match self.type_id {
             DocumentNodeTypeId => {
                 match node.type_id() {
-                    
+                    // Step 6.1
                     DocumentFragmentNodeTypeId => {
-                        
+                        // Step 6.1.1(b)
                         if node.children().any(|c| c.is_text()) {
                             return Err(HierarchyRequest);
                         }
                         match node.child_elements().count() {
                             0 => (),
-                            
+                            // Step 6.1.2
                             1 => {
                                 if self.child_elements().any(|c| NodeCast::from_ref(&c) != child) {
                                     return Err(HierarchyRequest);
@@ -1626,11 +1688,11 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                                     return Err(HierarchyRequest);
                                 }
                             },
-                            
+                            // Step 6.1.1(a)
                             _ => return Err(HierarchyRequest)
                         }
                     },
-                    
+                    // Step 6.2
                     ElementNodeTypeId(..) => {
                         if self.child_elements().any(|c| NodeCast::from_ref(&c) != child) {
                             return Err(HierarchyRequest);
@@ -1640,7 +1702,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                             return Err(HierarchyRequest);
                         }
                     },
-                    
+                    // Step 6.3
                     DoctypeNodeTypeId => {
                         if self.children().any(|c| c.is_doctype() && &c != child) {
                             return Err(HierarchyRequest);
@@ -1660,32 +1722,32 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
             _ => ()
         }
 
-        
+        // Ok if not caught by previous error checks.
         if *node == *child {
             return Ok(Temporary::from_rooted(child));
         }
 
-        
+        // Step 7-8.
         let next_sibling = child.next_sibling().map(|node| (*node.root()).clone());
         let reference_child = match next_sibling {
             Some(ref sibling) if sibling == node => node.next_sibling().map(|node| (*node.root()).clone()),
             _ => next_sibling
         };
 
-        
+        // Step 9.
         let document = document_from_node(self).root();
         Node::adopt(node, &*document);
 
         {
-            
+            // Step 10.
             Node::remove(child, self, Suppressed);
 
-            
+            // Step 11.
             Node::insert(node, self, reference_child, Suppressed);
         }
 
-        
-        
+        // Step 12-14.
+        // Step 13: mutation records.
         child.node_removed(self.is_in_doc());
         if node.type_id() == DocumentFragmentNodeTypeId {
             for child_node in node.children() {
@@ -1695,17 +1757,17 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
             node.node_inserted();
         }
 
-        
+        // Step 15.
         Ok(Temporary::from_rooted(child))
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-removechild
     fn RemoveChild(&self, node: &JSRef<Node>)
                        -> Fallible<Temporary<Node>> {
         Node::pre_remove(node, self)
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-normalize
     fn Normalize(&self) {
         let mut prev_text = None;
         for child in self.children() {
@@ -1731,7 +1793,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-clonenode
     fn CloneNode(&self, deep: bool) -> Temporary<Node> {
         match deep {
             true => Node::clone(self, None, CloneChildren),
@@ -1739,7 +1801,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-isequalnode
     fn IsEqualNode(&self, maybe_node: Option<JSRef<Node>>) -> bool {
         fn is_equal_doctype(node: &JSRef<Node>, other: &JSRef<Node>) -> bool {
             let doctype: &JSRef<DocumentType> = DocumentTypeCast::to_ref(node).unwrap();
@@ -1751,7 +1813,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         fn is_equal_element(node: &JSRef<Node>, other: &JSRef<Node>) -> bool {
             let element: &JSRef<Element> = ElementCast::to_ref(node).unwrap();
             let other_element: &JSRef<Element> = ElementCast::to_ref(other).unwrap();
-            
+            // FIXME: namespace prefix
             let element = element.deref();
             let other_element = other_element.deref();
             (element.namespace == other_element.namespace) &&
@@ -1784,52 +1846,52 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
             })
         }
         fn is_equal_node(this: &JSRef<Node>, node: &JSRef<Node>) -> bool {
-            
+            // Step 2.
             if this.type_id() != node.type_id() {
                 return false;
             }
 
             match node.type_id() {
-                
+                // Step 3.
                 DoctypeNodeTypeId if !is_equal_doctype(this, node) => return false,
                 ElementNodeTypeId(..) if !is_equal_element(this, node) => return false,
                 ProcessingInstructionNodeTypeId if !is_equal_processinginstruction(this, node) => return false,
                 TextNodeTypeId |
                 CommentNodeTypeId if !is_equal_characterdata(this, node) => return false,
-                
+                // Step 4.
                 ElementNodeTypeId(..) if !is_equal_element_attrs(this, node) => return false,
                 _ => ()
             }
 
-            
+            // Step 5.
             if this.children().count() != node.children().count() {
                 return false;
             }
 
-            
+            // Step 6.
             this.children().zip(node.children()).all(|(ref child, ref other_child)| {
                 is_equal_node(child, other_child)
             })
         }
         match maybe_node {
-            
+            // Step 1.
             None => false,
-            
+            // Step 2-6.
             Some(ref node) => is_equal_node(self, node)
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-comparedocumentposition
     fn CompareDocumentPosition(&self, other: &JSRef<Node>) -> u16 {
         if self == other {
-            
+            // step 2.
             0
         } else {
             let mut lastself = self.clone();
             let mut lastother = other.clone();
             for ancestor in self.ancestors() {
                 if &ancestor == other {
-                    
+                    // step 4.
                     return NodeConstants::DOCUMENT_POSITION_CONTAINS +
                            NodeConstants::DOCUMENT_POSITION_PRECEDING;
                 }
@@ -1837,7 +1899,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
             }
             for ancestor in other.ancestors() {
                 if &ancestor == self {
-                    
+                    // step 5.
                     return NodeConstants::DOCUMENT_POSITION_CONTAINED_BY +
                            NodeConstants::DOCUMENT_POSITION_FOLLOWING;
                 }
@@ -1853,7 +1915,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
                 } else {
                     NodeConstants::DOCUMENT_POSITION_PRECEDING
                 };
-                
+                // step 3.
                 return random +
                     NodeConstants::DOCUMENT_POSITION_DISCONNECTED +
                     NodeConstants::DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC;
@@ -1861,11 +1923,11 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
 
             for child in lastself.traverse_preorder() {
                 if &child == other {
-                    
+                    // step 6.
                     return NodeConstants::DOCUMENT_POSITION_PRECEDING;
                 }
                 if &child == self {
-                    
+                    // step 7.
                     return NodeConstants::DOCUMENT_POSITION_FOLLOWING;
                 }
             }
@@ -1873,7 +1935,7 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-contains
     fn Contains(&self, maybe_other: Option<JSRef<Node>>) -> bool {
         match maybe_other {
             None => false,
@@ -1881,21 +1943,21 @@ impl<'a> NodeMethods for JSRef<'a, Node> {
         }
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-lookupprefix
     fn LookupPrefix(&self, _prefix: Option<DOMString>) -> Option<DOMString> {
-        
+        // FIXME (#1826) implement.
         None
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-lookupnamespaceuri
     fn LookupNamespaceURI(&self, _namespace: Option<DOMString>) -> Option<DOMString> {
-        
+        // FIXME (#1826) implement.
         None
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-node-isdefaultnamespace
     fn IsDefaultNamespace(&self, _namespace: Option<DOMString>) -> bool {
-        
+        // FIXME (#1826) implement.
         false
     }
 }
@@ -1961,8 +2023,56 @@ impl<'a> style::TNode<JSRef<'a, Element>> for JSRef<'a, Node> {
                 self.as_element().get_attribute(ns.clone(), name).root()
                     .map_or(false, |attr| test(attr.deref().Value().as_slice()))
             },
-            
+            // FIXME: https://github.com/mozilla/servo/issues/1558
             style::AnyNamespace => false,
         }
+    }
+}
+
+pub trait DisabledStateHelpers {
+    fn check_ancestors_disabled_state_for_form_control(&self);
+    fn check_parent_disabled_state_for_option(&self);
+    fn check_disabled_attribute(&self);
+}
+
+impl<'a> DisabledStateHelpers for JSRef<'a, Node> {
+    fn check_ancestors_disabled_state_for_form_control(&self) {
+        if self.get_disabled_state() { return; }
+        for ancestor in self.ancestors().filter(|ancestor| ancestor.is_htmlfieldsetelement()) {
+            if !ancestor.get_disabled_state() { continue; }
+            if ancestor.is_parent_of(self) {
+                self.set_disabled_state(true);
+                self.set_enabled_state(false);
+                return;
+            }
+            match ancestor.children().find(|child| child.is_htmllegendelement()) {
+                Some(ref legend) => {
+                    // XXXabinader: should we save previous ancestor to avoid this iteration?
+                    if self.ancestors().any(|ancestor| ancestor == *legend) { continue; }
+                },
+                None => ()
+            }
+            self.set_disabled_state(true);
+            self.set_enabled_state(false);
+            return;
+        }
+    }
+
+    fn check_parent_disabled_state_for_option(&self) {
+        if self.get_disabled_state() { return; }
+        match self.parent_node().root() {
+            Some(ref parent) if parent.is_htmloptgroupelement() && parent.get_disabled_state() => {
+                self.set_disabled_state(true);
+                self.set_enabled_state(false);
+            },
+            _ => ()
+        }
+    }
+
+    fn check_disabled_attribute(&self) {
+        let elem: &JSRef<'a, Element> = ElementCast::to_ref(self).unwrap();
+        let has_disabled_attrib = elem.has_attribute("disabled");
+        self.set_disabled_state(has_disabled_attrib);
+        self.set_enabled_state(!has_disabled_attrib);
     }
 }
