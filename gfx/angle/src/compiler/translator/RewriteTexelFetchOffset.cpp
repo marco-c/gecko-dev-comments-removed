@@ -114,15 +114,10 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
     newsequence.push_back(sequence->at(0));
 
     
-    TIntermBinary *add = new TIntermBinary(EOpAdd);
-    add->setType(node->getType());
-    
     TIntermTyped *texCoordNode = sequence->at(1)->getAsTyped();
     ASSERT(texCoordNode);
-    add->setLine(texCoordNode->getLine());
-    add->setType(texCoordNode->getType());
-    add->setLeft(texCoordNode);
     
+    TIntermTyped *offsetNode = nullptr;
     ASSERT(sequence->at(3)->getAsTyped());
     if (is2DArray)
     {
@@ -143,12 +138,16 @@ bool Traverser::visitAggregate(Visit visit, TIntermAggregate *node)
         ivec3Sequence.push_back(zeroNode);
         constructIVec3Node->insertChildNodes(0, ivec3Sequence);
 
-        add->setRight(constructIVec3Node);
+        offsetNode = constructIVec3Node;
     }
     else
     {
-        add->setRight(sequence->at(3)->getAsTyped());
+        offsetNode = sequence->at(3)->getAsTyped();
     }
+
+    
+    TIntermBinary *add = new TIntermBinary(EOpAdd, texCoordNode, offsetNode);
+    add->setLine(texCoordNode->getLine());
     newsequence.push_back(add);
 
     
