@@ -20,6 +20,7 @@
 #include "harfbuzz/hb.h"
 #include "nsUnicodeScriptCodes.h"
 #include "nsColor.h"
+#include "nsTextFrameUtils.h"
 
 #ifdef DEBUG
 #include <stdio.h>
@@ -431,15 +432,11 @@ public:
     void *GetUserData() const { return mUserData; }
     void SetUserData(void *aUserData) { mUserData = aUserData; }
 
-    void SetFlagBits(uint32_t aFlags) {
-      NS_ASSERTION(!(aFlags & ~gfxTextRunFactory::SETTABLE_FLAGS),
-                   "Only user flags should be mutable");
-      mFlags |= aFlags;
+    void SetFlagBits(uint16_t aFlags) {
+      mFlags2 |= aFlags;
     }
-    void ClearFlagBits(uint32_t aFlags) {
-      NS_ASSERTION(!(aFlags & ~gfxTextRunFactory::SETTABLE_FLAGS),
-                   "Only user flags should be mutable");
-      mFlags &= ~aFlags;
+    void ClearFlagBits(uint16_t aFlags) {
+      mFlags2 &= ~aFlags;
     }
     const gfxSkipChars& GetSkipChars() const { return mSkipChars; }
     gfxFontGroup *GetFontGroup() const { return mFontGroup; }
@@ -450,7 +447,7 @@ public:
     static already_AddRefed<gfxTextRun>
     Create(const gfxTextRunFactory::Parameters *aParams,
            uint32_t aLength, gfxFontGroup *aFontGroup,
-           uint32_t aFlags);
+           uint16_t aFlags, uint16_t aFlags2);
 
     
     
@@ -642,23 +639,27 @@ public:
     virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
       MOZ_MUST_OVERRIDE;
 
+    uint16_t GetFlags2() const {
+        return mFlags2;
+    }
+
     
     size_t MaybeSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)  {
-        if (mFlags & gfxTextRunFactory::TEXT_RUN_SIZE_ACCOUNTED) {
+        if (mFlags2 & nsTextFrameUtils::TEXT_RUN_SIZE_ACCOUNTED) {
             return 0;
         }
-        mFlags |= gfxTextRunFactory::TEXT_RUN_SIZE_ACCOUNTED;
+        mFlags2 |= nsTextFrameUtils::TEXT_RUN_SIZE_ACCOUNTED;
         return SizeOfIncludingThis(aMallocSizeOf);
     }
     void ResetSizeOfAccountingFlags() {
-        mFlags &= ~gfxTextRunFactory::TEXT_RUN_SIZE_ACCOUNTED;
+        mFlags2 &= ~nsTextFrameUtils::TEXT_RUN_SIZE_ACCOUNTED;
     }
 
     
     
     
 
-    enum ShapingState {
+    enum ShapingState : uint8_t {
         eShapingState_Normal,                 
         eShapingState_ShapingWithFeature,     
         eShapingState_ShapingWithFallback,    
@@ -701,7 +702,8 @@ protected:
 
 
     gfxTextRun(const gfxTextRunFactory::Parameters *aParams,
-               uint32_t aLength, gfxFontGroup *aFontGroup, uint32_t aFlags);
+               uint32_t aLength, gfxFontGroup *aFontGroup,
+               uint16_t aFlags, uint16_t aFlags2);
 
     
 
@@ -805,6 +807,8 @@ private:
                                   
     gfxSkipChars      mSkipChars;
 
+    uint16_t          mFlags2; 
+
     bool              mSkipDrawing; 
                                     
                                     
@@ -860,7 +864,8 @@ public:
 
     virtual already_AddRefed<gfxTextRun>
     MakeTextRun(const char16_t *aString, uint32_t aLength,
-                const Parameters *aParams, uint32_t aFlags,
+                const Parameters *aParams,
+                uint16_t aFlags, uint16_t aFlags2,
                 gfxMissingFontRecorder *aMFR);
     
 
@@ -870,7 +875,8 @@ public:
 
     virtual already_AddRefed<gfxTextRun>
     MakeTextRun(const uint8_t *aString, uint32_t aLength,
-                const Parameters *aParams, uint32_t aFlags,
+                const Parameters *aParams,
+                uint16_t aFlags, uint16_t aFlags2,
                 gfxMissingFontRecorder *aMFR);
 
     
@@ -882,13 +888,13 @@ public:
     MakeTextRun(const T* aString, uint32_t aLength,
                 DrawTarget* aRefDrawTarget,
                 int32_t aAppUnitsPerDevUnit,
-                uint32_t aFlags,
+                uint16_t aFlags, uint16_t aFlags2,
                 gfxMissingFontRecorder *aMFR)
     {
         gfxTextRunFactory::Parameters params = {
             aRefDrawTarget, nullptr, nullptr, nullptr, 0, aAppUnitsPerDevUnit
         };
-        return MakeTextRun(aString, aLength, &params, aFlags, aMFR);
+        return MakeTextRun(aString, aLength, &params, aFlags, aFlags2, aMFR);
     }
 
     
@@ -969,7 +975,8 @@ public:
     
     
     
-    gfxTextRun* GetEllipsisTextRun(int32_t aAppUnitsPerDevPixel, uint32_t aFlags,
+    gfxTextRun* GetEllipsisTextRun(int32_t aAppUnitsPerDevPixel,
+                                   uint16_t aFlags,
                                    LazyReferenceDrawTargetGetter& aRefDrawTargetGetter);
 
 protected:
@@ -1161,14 +1168,16 @@ protected:
 
 
     already_AddRefed<gfxTextRun>
-    MakeEmptyTextRun(const Parameters *aParams, uint32_t aFlags);
+    MakeEmptyTextRun(const Parameters *aParams,
+                     uint16_t aFlags, uint16_t aFlags2);
 
     already_AddRefed<gfxTextRun>
-    MakeSpaceTextRun(const Parameters *aParams, uint32_t aFlags);
+    MakeSpaceTextRun(const Parameters *aParams,
+                     uint16_t aFlags, uint16_t aFlags2);
 
     already_AddRefed<gfxTextRun>
     MakeBlankTextRun(uint32_t aLength, const Parameters *aParams,
-                     uint32_t aFlags);
+                     uint16_t aFlags, uint16_t aFlags2);
 
     
     void BuildFontList();

@@ -26,40 +26,48 @@ public:
     
 
     
-    TEXT_HAS_TAB             = 0x010000,
+    TEXT_HAS_TAB             = 0x01,
     
-    TEXT_HAS_SHY             = 0x020000,
-    TEXT_WAS_TRANSFORMED     = 0x040000,
-    TEXT_UNUSED_FLAG         = 0x080000,
+    TEXT_HAS_SHY             = 0x02,
+    TEXT_WAS_TRANSFORMED     = 0x04,
+    TEXT_UNUSED_FLAG         = 0x08,
 
     
 
-    TEXT_IS_SIMPLE_FLOW      = 0x100000,
-    TEXT_INCOMING_WHITESPACE = 0x200000,
-    TEXT_TRAILING_WHITESPACE = 0x400000,
-    TEXT_COMPRESSED_LEADING_WHITESPACE = 0x800000,
-    TEXT_NO_BREAKS           = 0x1000000,
-    TEXT_IS_TRANSFORMED      = 0x2000000,
+    TEXT_IS_SIMPLE_FLOW      = 0x10,
+    TEXT_INCOMING_WHITESPACE = 0x20,
+    TEXT_TRAILING_WHITESPACE = 0x40,
+    TEXT_COMPRESSED_LEADING_WHITESPACE = 0x80,
+    TEXT_NO_BREAKS           = 0x100,
+    TEXT_IS_TRANSFORMED      = 0x200,
     
     
     
     
-    TEXT_HAS_TRAILING_BREAK  = 0x4000000,
-
-    
-    
-    
-    
-    TEXT_IS_SINGLE_CHAR_MI   = 0x8000000,
-
-    
-    TEXT_MIGHT_HAVE_GLYPH_CHANGES = 0x10000000,
+    TEXT_HAS_TRAILING_BREAK  = 0x400,
 
     
     
     
     
+    TEXT_IS_SINGLE_CHAR_MI   = 0x800,
 
+    
+    TEXT_MIGHT_HAVE_GLYPH_CHANGES = 0x1000,
+
+    
+    
+    
+    
+    
+    TEXT_RUN_SIZE_ACCOUNTED      = 0x2000,
+
+    
+    
+    
+    
+    
+    
     
     
   };
@@ -119,7 +127,7 @@ public:
                               CompressionMode aCompression,
                               uint8_t* aIncomingFlags,
                               gfxSkipChars* aSkipChars,
-                              uint32_t* aAnalysisFlags);
+                              uint16_t* aAnalysisFlags);
 
   
 
