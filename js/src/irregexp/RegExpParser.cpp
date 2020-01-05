@@ -1832,7 +1832,7 @@ template <typename CharT>
 static bool
 ParsePattern(frontend::TokenStream& ts, LifoAlloc& alloc, const CharT* chars, size_t length,
              bool multiline, bool match_only, bool unicode, bool ignore_case,
-             RegExpCompileData* data)
+             bool global, bool sticky, RegExpCompileData* data)
 {
     if (match_only) {
         
@@ -1848,7 +1848,11 @@ ParsePattern(frontend::TokenStream& ts, LifoAlloc& alloc, const CharT* chars, si
         
         
         
+        
+        
+        
         if (length >= 3 && !HasRegExpMetaChars(chars, length - 2) &&
+            !global && !sticky &&
             chars[length - 2] == '.' && chars[length - 1] == '*')
         {
             length -= 2;
@@ -1869,14 +1873,14 @@ ParsePattern(frontend::TokenStream& ts, LifoAlloc& alloc, const CharT* chars, si
 bool
 irregexp::ParsePattern(frontend::TokenStream& ts, LifoAlloc& alloc, JSAtom* str,
                        bool multiline, bool match_only, bool unicode, bool ignore_case,
-                       RegExpCompileData* data)
+                       bool global, bool sticky, RegExpCompileData* data)
 {
     JS::AutoCheckCannotGC nogc;
     return str->hasLatin1Chars()
            ? ::ParsePattern(ts, alloc, str->latin1Chars(nogc), str->length(),
-                            multiline, match_only, unicode, ignore_case, data)
+                            multiline, match_only, unicode, ignore_case, global, sticky, data)
            : ::ParsePattern(ts, alloc, str->twoByteChars(nogc), str->length(),
-                            multiline, match_only, unicode, ignore_case, data);
+                            multiline, match_only, unicode, ignore_case, global, sticky, data);
 }
 
 template <typename CharT>

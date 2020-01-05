@@ -578,7 +578,8 @@ RegExpShared::compile(JSContext* cx, HandleAtom pattern, HandleLinearString inpu
     
     irregexp::RegExpCompileData data;
     if (!irregexp::ParsePattern(dummyTokenStream, cx->tempLifoAlloc(), pattern,
-                                multiline(), mode == MatchOnly, unicode(), ignoreCase(), &data))
+                                multiline(), mode == MatchOnly, unicode(), ignoreCase(),
+                                global(), sticky(), &data))
     {
         return false;
     }
