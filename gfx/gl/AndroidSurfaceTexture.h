@@ -8,100 +8,23 @@
 #define AndroidSurfaceTexture_h__
 #ifdef MOZ_WIDGET_ANDROID
 
-#include <jni.h>
-#include <android/native_window.h>
-#include "nsIRunnable.h"
-#include "gfxPlatform.h"
-#include "GLDefs.h"
-#include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/MatrixFwd.h"
-#include "mozilla/Monitor.h"
-
-#include "GeneratedJNIWrappers.h"
+#include "mozilla/gfx/Matrix.h"
 #include "SurfaceTexture.h"
+
+typedef uint32_t AndroidSurfaceTextureHandle;
 
 namespace mozilla {
 namespace gl {
 
-class GLContext;
-
-
-
-
-
-
 class AndroidSurfaceTexture {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidSurfaceTexture)
-
 public:
+  static void GetTransformMatrix(java::sdk::SurfaceTexture::LocalRef aSurfaceTexture,
+                                 mozilla::gfx::Matrix4x4& aMatrix);
 
-  
-  
-  static already_AddRefed<AndroidSurfaceTexture> Create(GLContext* aGLContext, GLuint aTexture);
-
-  
-  
-  
-  
-  static already_AddRefed<AndroidSurfaceTexture> Create();
-
-  
-  
-  
-  
-  
-  
-  nsresult Attach(GLContext* aContext, PRIntervalTime aTiemout = PR_INTERVAL_NO_TIMEOUT);
-
-  nsresult Detach();
-
-  
-  
-  bool CanDetach() const;
-
-  GLContext* AttachedContext() const { return mAttachedContext; }
-
-  ANativeWindow* NativeWindow() const {
-    return mNativeWindow;
-  }
-
-  
-  void UpdateTexImage();
-
-  void GetTransformMatrix(mozilla::gfx::Matrix4x4& aMatrix) const;
-
-  void SetDefaultSize(mozilla::gfx::IntSize size);
-
-  
-  
-  void SetFrameAvailableCallback(nsIRunnable* aRunnable);
-
-  GLuint Texture() const { return mTexture; }
-  const java::sdk::Surface::Ref& JavaSurface() const { return mSurface; }
-
-private:
-  class Listener;
-
-  AndroidSurfaceTexture();
-  ~AndroidSurfaceTexture();
-
-  bool Init(GLContext* aContext, GLuint aTexture);
-
-  GLuint mTexture;
-  java::sdk::SurfaceTexture::GlobalRef mSurfaceTexture;
-  java::sdk::Surface::GlobalRef mSurface;
-  java::SurfaceTextureListener::GlobalRef mListener;
-
-  GLContext* mAttachedContext;
-
-  ANativeWindow* mNativeWindow;
-
-  Monitor mMonitor;
 };
 
-}
-}
+} 
+} 
 
-
-#endif
-#endif
+#endif 
+#endif 
