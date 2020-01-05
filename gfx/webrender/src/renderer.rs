@@ -16,7 +16,7 @@ use device::{TextureFilter, VAOId, VertexUsageHint, FileWatcherHandler, TextureT
 use euclid::Matrix4D;
 use fnv::FnvHasher;
 use internal_types::{CacheTextureId, RendererFrame, ResultMsg, TextureUpdateOp};
-use internal_types::{ExternalImageUpdateList, TextureUpdateList, PackedVertex, RenderTargetMode};
+use internal_types::{TextureUpdateList, PackedVertex, RenderTargetMode};
 use internal_types::{ORTHO_NEAR_PLANE, ORTHO_FAR_PLANE, SourceTexture};
 use internal_types::{BatchTextures, TextureSampler, GLContextHandleWrapper};
 use profiler::{Profiler, BackendProfileCounters};
@@ -740,12 +740,10 @@ impl Renderer {
         
         while let Ok(msg) = self.result_rx.try_recv() {
             match msg {
-                ResultMsg::NewFrame(frame, texture_update_list, external_image_update_list, profile_counters) => {
-                    self.pending_texture_updates.push(texture_update_list);
-
-                    
-                    self.release_external_images(external_image_update_list);
-
+                ResultMsg::UpdateTextureCache(update_list) => {
+                    self.pending_texture_updates.push(update_list);
+                }
+                ResultMsg::NewFrame(frame, profile_counters) => {
                     self.backend_profile_counters = profile_counters;
 
                     
@@ -1265,7 +1263,7 @@ impl Renderer {
                 let props = &deferred_resolve.image_properties;
                 let external_id = props.external_id
                                        .expect("BUG: Deferred resolves must be external images!");
-                let image = handler.lock(external_id);
+                let image = handler.get(external_id);
 
                 let texture_id = match image.source {
                     ExternalImageSource::NativeTexture(texture_id) => TextureId::new(texture_id),
@@ -1280,25 +1278,13 @@ impl Renderer {
         }
     }
 
-    fn unlock_external_images(&mut self) {
+    fn release_external_textures(&mut self) {
         if !self.external_images.is_empty() {
             let handler = self.external_image_handler
                               .as_mut()
                               .expect("Found external image, but no handler set!");
 
             for (external_id, _) in self.external_images.drain() {
-                handler.unlock(external_id);
-            }
-        }
-    }
-
-    fn release_external_images(&mut self, mut pending_external_image_updates: ExternalImageUpdateList) {
-        if !pending_external_image_updates.is_empty() {
-            let handler = self.external_image_handler
-                              .as_mut()
-                              .expect("found external image updates, but no handler set!");
-
-            for external_id in pending_external_image_updates.drain(..) {
                 handler.release(external_id);
             }
         }
@@ -1423,7 +1409,7 @@ impl Renderer {
                                       &projection);
         }
 
-        self.unlock_external_images();
+        self.release_external_textures();
     }
 
     pub fn debug_renderer<'a>(&'a mut self) -> &'a mut DebugRenderer {
@@ -1464,17 +1450,8 @@ pub struct ExternalImage {
 
 
 
-
-
 pub trait ExternalImageHandler {
-    
-    
-    
-    fn lock(&mut self, key: ExternalImageId) -> ExternalImage;
-    
-    
-    fn unlock(&mut self, key: ExternalImageId);
-    
+    fn get(&mut self, key: ExternalImageId) -> ExternalImage;
     fn release(&mut self, key: ExternalImageId);
 }
 
