@@ -6914,7 +6914,9 @@ nsBlockFrame::Init(nsIContent*       aContent,
   
   
   
-  if ((GetParent() && StyleVisibility()->mWritingMode !=
+  
+  if (StyleDisplay()->mDisplay == mozilla::StyleDisplay::FlowRoot ||
+      (GetParent() && StyleVisibility()->mWritingMode !=
                       GetParent()->StyleVisibility()->mWritingMode) ||
       StyleDisplay()->IsContainPaint()) {
     AddStateBits(NS_BLOCK_FLOAT_MGR | NS_BLOCK_MARGIN_ROOT);
