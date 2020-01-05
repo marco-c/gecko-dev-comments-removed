@@ -15,8 +15,8 @@ use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::point::Point2D;
 use euclid::size::Size2D;
 use ipc_channel::ipc::IpcSender;
+use msg::constellation_msg::{FrameId, PipelineId, TraversalDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
-use msg::constellation_msg::{PipelineId, TraversalDirection};
 use net_traits::CoreResourceMsg;
 use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
@@ -132,7 +132,7 @@ pub enum ScriptMsg {
     
     TouchEventProcessed(EventResult),
     
-    LogEntry(Option<PipelineId>, Option<String>, LogEntry),
+    LogEntry(Option<FrameId>, Option<String>, LogEntry),
     
     PipelineExited(PipelineId),
     

@@ -443,6 +443,8 @@ pub struct InitialScriptState {
     
     pub frame_id: FrameId,
     
+    pub top_level_frame_id: FrameId,
+    
     pub control_chan: IpcSender<ConstellationControlMsg>,
     
     pub control_port: IpcReceiver<ConstellationControlMsg>,
@@ -700,7 +702,7 @@ pub enum ConstellationMsg {
     
     Reload,
     
-    LogEntry(Option<PipelineId>, Option<String>, LogEntry),
+    LogEntry(Option<FrameId>, Option<String>, LogEntry),
 }
 
 
