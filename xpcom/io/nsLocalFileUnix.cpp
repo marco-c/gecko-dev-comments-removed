@@ -1436,10 +1436,8 @@ nsLocalFile::GetParent(nsIFile** aParent)
 
   
   char* buffer = mPath.BeginWriting();
-  char* slashp = buffer;
-
   
-  slashp = strrchr(buffer, '/');
+  char* slashp = strrchr(buffer, '/');
   NS_ASSERTION(slashp, "non-canonical path?");
   if (!slashp) {
     return NS_ERROR_FILE_INVALID_PATH;
