@@ -237,7 +237,10 @@ public class RecordsChannel implements
     Logger.trace(LOG_TAG, "Consumer is done. Are we waiting for it? " + waitingForQueueDone);
     if (waitingForQueueDone) {
       waitingForQueueDone = false;
-      this.sink.storeDone();                 
+      if (!allRecordsQueued) {
+        this.sink.storeIncomplete();
+      }
+      this.sink.storeDone(); 
     }
   }
 
