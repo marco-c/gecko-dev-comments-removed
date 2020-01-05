@@ -923,16 +923,46 @@ already_AddRefed<ServoComputedValues>
 ServoStyleSet::ResolveStyleLazily(Element* aElement, nsIAtom* aPseudoTag)
 {
   mPresContext->EffectCompositor()->PreTraverse(aElement, aPseudoTag);
-
   MOZ_ASSERT(!sInServoTraversal);
   sInServoTraversal = true;
+
+  
+
+
+
+
+
+
+
+
+
+
+  Element* elementForStyleResolution = aElement;
+  nsIAtom* pseudoTagForStyleResolution = aPseudoTag;
+  if (aPseudoTag == nsCSSPseudoElements::before) {
+    if (Element* pseudo = nsLayoutUtils::GetBeforePseudo(aElement)) {
+      elementForStyleResolution = pseudo;
+      pseudoTagForStyleResolution = nullptr;
+    }
+  } else if (aPseudoTag == nsCSSPseudoElements::after) {
+    if (Element* pseudo = nsLayoutUtils::GetAfterPseudo(aElement)) {
+      elementForStyleResolution = pseudo;
+      pseudoTagForStyleResolution = nullptr;
+    }
+  }
+
   RefPtr<ServoComputedValues> computedValues =
-    Servo_ResolveStyleLazily(aElement, aPseudoTag, mRawSet.get()).Consume();
+    Servo_ResolveStyleLazily(elementForStyleResolution,
+                             pseudoTagForStyleResolution,
+                             mRawSet.get()).Consume();
 
   if (mPresContext->EffectCompositor()->PreTraverse(aElement, aPseudoTag)) {
     computedValues =
-      Servo_ResolveStyleLazily(aElement, aPseudoTag, mRawSet.get()).Consume();
+      Servo_ResolveStyleLazily(elementForStyleResolution,
+                               pseudoTagForStyleResolution,
+                               mRawSet.get()).Consume();
   }
+
   sInServoTraversal = false;
 
   return computedValues.forget();
