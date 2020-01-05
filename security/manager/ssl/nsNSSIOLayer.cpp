@@ -307,23 +307,34 @@ nsNSSSocketInfo::GetNegotiatedNPN(nsACString& aNegotiatedNPN)
 NS_IMETHODIMP
 nsNSSSocketInfo::GetAlpnEarlySelection(nsACString& aAlpnSelected)
 {
+  aAlpnSelected.Truncate();
+
   nsNSSShutDownPreventionLock locker;
   if (isAlreadyShutDown() || isPK11LoggedOut()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  SSLNextProtoState alpnState;
-  unsigned char chosenAlpn[MAX_ALPN_LENGTH];
-  unsigned int chosenAlpnLen;
-  SECStatus rv = SSL_GetNextProto(mFd, &alpnState, chosenAlpn, &chosenAlpnLen,
-                                  AssertedCast<unsigned int>(ArrayLength(chosenAlpn)));
 
-  if (rv != SECSuccess || alpnState != SSL_NEXT_PROTO_EARLY_VALUE ||
-      chosenAlpnLen == 0) {
+  SSLPreliminaryChannelInfo info;
+  SECStatus rv = SSL_GetPreliminaryChannelInfo(mFd, &info, sizeof(info));
+  if (rv != SECSuccess || !info.canSendEarlyData) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  aAlpnSelected.Assign(BitwiseCast<char*, unsigned char*>(chosenAlpn),
-                       chosenAlpnLen);
+  SSLNextProtoState alpnState;
+  unsigned char chosenAlpn[MAX_ALPN_LENGTH];
+  unsigned int chosenAlpnLen;
+  rv = SSL_GetNextProto(mFd, &alpnState, chosenAlpn, &chosenAlpnLen,
+                        AssertedCast<unsigned int>(ArrayLength(chosenAlpn)));
+
+  if (rv != SECSuccess) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  if (alpnState == SSL_NEXT_PROTO_EARLY_VALUE) {
+    aAlpnSelected.Assign(BitwiseCast<char*, unsigned char*>(chosenAlpn),
+                         chosenAlpnLen);
+  }
+
   return NS_OK;
 }
 
@@ -582,8 +593,8 @@ nsNSSSocketInfo::SetCertVerificationWaiting()
   
   
   
-  MOZ_ASSERT(mCertVerificationState != waiting_for_cert_verification,
-             "Invalid state transition to waiting_for_cert_verification");
+  NS_ASSERTION(mCertVerificationState != waiting_for_cert_verification,
+               "Invalid state transition to waiting_for_cert_verification");
   mCertVerificationState = waiting_for_cert_verification;
 }
 
@@ -595,8 +606,8 @@ void
 nsNSSSocketInfo::SetCertVerificationResult(PRErrorCode errorCode,
                                            SSLErrorMessageType errorMessageType)
 {
-  MOZ_ASSERT(mCertVerificationState == waiting_for_cert_verification,
-             "Invalid state transition to cert_verification_finished");
+  NS_ASSERTION(mCertVerificationState == waiting_for_cert_verification,
+               "Invalid state transition to cert_verification_finished");
 
   if (mFd) {
     SECStatus rv = SSL_AuthCertificateComplete(mFd, errorCode);
@@ -899,7 +910,7 @@ nsSSLIOLayerClose(PRFileDesc* fd)
          (void*) fd));
 
   nsNSSSocketInfo* socketInfo = (nsNSSSocketInfo*) fd->secret;
-  MOZ_ASSERT(socketInfo, "nsNSSSocketInfo was null for an fd");
+  NS_ASSERTION(socketInfo,"nsNSSSocketInfo was null for an fd");
 
   return socketInfo->CloseSocketAndDestroy(locker);
 }
@@ -909,9 +920,9 @@ nsNSSSocketInfo::CloseSocketAndDestroy(
     const nsNSSShutDownPreventionLock& )
 {
   PRFileDesc* popped = PR_PopIOLayer(mFd, PR_TOP_IO_LAYER);
-  MOZ_ASSERT(popped &&
+  NS_ASSERTION(popped &&
                popped->identity == nsSSLIOLayerHelpers::nsSSLIOLayerIdentity,
-             "SSL Layer not on top of stack");
+               "SSL Layer not on top of stack");
 
   
   
@@ -1256,8 +1267,8 @@ nsSSLIOLayerPoll(PRFileDesc* fd, int16_t in_flags, int16_t* out_flags)
                   "or NSS shutdown or SDR logout %d\n",
              fd, (int) in_flags));
 
-    MOZ_ASSERT(in_flags & PR_POLL_EXCEPT,
-               "Caller did not poll for EXCEPT (canceled)");
+    NS_ASSERTION(in_flags & PR_POLL_EXCEPT,
+                 "caller did not poll for EXCEPT (canceled)");
     
     
     
@@ -1971,8 +1982,8 @@ nsNSS_SSLGetClientAuthData(void* arg, PRFileDesc* socket,
 
   UniqueCERTCertificate serverCert(SSL_PeerCertificate(socket));
   if (!serverCert) {
-    MOZ_ASSERT_UNREACHABLE(
-      "Missing server cert should have been detected during server cert auth.");
+    NS_NOTREACHED("Missing server certificate should have been detected during "
+                  "server cert authentication.");
     PR_SetError(SSL_ERROR_NO_CERTIFICATE, 0);
     return SECFailure;
   }
@@ -2291,7 +2302,7 @@ nsSSLIOLayerImportFD(PRFileDesc* fd,
   nsNSSShutDownPreventionLock locker;
   PRFileDesc* sslSock = SSL_ImportFD(nullptr, fd);
   if (!sslSock) {
-    MOZ_ASSERT_UNREACHABLE("NSS: Error importing socket");
+    NS_ASSERTION(false, "NSS: Error importing socket");
     return nullptr;
   }
   SSL_SetPKCS11PinArg(sslSock, (nsIInterfaceRequestor*) infoObject);
@@ -2315,12 +2326,12 @@ nsSSLIOLayerImportFD(PRFileDesc* fd,
   }
   if (SECSuccess != SSL_AuthCertificateHook(sslSock, AuthCertificateHook,
                                             infoObject)) {
-    MOZ_ASSERT_UNREACHABLE("Failed to configure AuthCertificateHook");
+    NS_NOTREACHED("failed to configure AuthCertificateHook");
     goto loser;
   }
 
   if (SECSuccess != SSL_SetURL(sslSock, host)) {
-    MOZ_ASSERT_UNREACHABLE("SSL_SetURL failed");
+    NS_NOTREACHED("SSL_SetURL failed");
     goto loser;
   }
 
@@ -2521,7 +2532,7 @@ nsSSLIOLayerAddToSocket(int32_t family,
 
   PRFileDesc* sslSock = nsSSLIOLayerImportFD(fd, infoObject, host);
   if (!sslSock) {
-    MOZ_ASSERT_UNREACHABLE("NSS: Error importing socket");
+    NS_ASSERTION(false, "NSS: Error importing socket");
     goto loser;
   }
 
