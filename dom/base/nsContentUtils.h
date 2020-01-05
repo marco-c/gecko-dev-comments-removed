@@ -1968,6 +1968,10 @@ public:
   PersistentLayerManagerForDocument(nsIDocument *aDoc);
 
   
+  static bool AppendLFInSerialization()
+    { return sAppendLFInSerialization; }
+
+  
 
 
 
@@ -2820,6 +2824,7 @@ private:
   static bool sGettersDecodeURLHash;
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
+  static bool sAppendLFInSerialization;
   static bool sUseActivityCursor;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;

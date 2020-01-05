@@ -5558,3 +5558,9 @@ pref("media.block-autoplay-until-in-foreground", true);
 
 pref("layout.css.servo.enabled", true);
 #endif
+
+#ifdef NIGHTLY_BUILD
+pref("dom.html_fragment_serialisation.appendLF", true);
+#else
+pref("dom.html_fragment_serialisation.appendLF", false);
+#endif
