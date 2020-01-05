@@ -4,8 +4,8 @@
 
 
 
-#ifndef jit_BaselineCacheIR_h
-#define jit_BaselineCacheIR_h
+#ifndef jit_BaselineCacheIRCompiler_h
+#define jit_BaselineCacheIRCompiler_h
 
 #include "gc/Barrier.h"
 #include "jit/CacheIR.h"

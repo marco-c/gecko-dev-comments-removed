@@ -4,7 +4,7 @@
 
 
 
-#include "jit/BaselineCacheIR.h"
+#include "jit/BaselineCacheIRCompiler.h"
 
 #include "jit/CacheIR.h"
 #include "jit/Linker.h"
