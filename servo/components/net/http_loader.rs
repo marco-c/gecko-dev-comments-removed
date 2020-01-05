@@ -752,6 +752,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         request.redirect_mode.get() == RedirectMode::Error {
         request
     } else {
+        
+        
         Rc::new((*request).clone())
     };
 
@@ -899,11 +901,21 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     let mut response: Option<Response> = None;
 
     
+    let mut revalidation_needed = false;
+
+    
     
     let complete_http_response_from_cache: Option<Response> = None;
     if http_request.cache_mode.get() != CacheMode::NoStore &&
-        http_request.cache_mode.get() != CacheMode::Reload &&
-        complete_http_response_from_cache.is_some() {
+       http_request.cache_mode.get() != CacheMode::Reload &&
+       complete_http_response_from_cache.is_some() {
+        
+
+        
+        if let Some(ref response) = response {
+            revalidation_needed = response_needs_revalidation(&response);
+        };
+
         
         if http_request.cache_mode.get() == CacheMode::ForceCache ||
            http_request.cache_mode.get() == CacheMode::OnlyIfCached {
@@ -911,109 +923,104 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
             
         }
 
-        let revalidation_needed = match response {
-            Some(ref response) => response_needs_revalidation(&response),
-            _ => false
-        };
-
-        
-        if !revalidation_needed && http_request.cache_mode.get() == CacheMode::Default {
+        if revalidation_needed {
             
             
             
-        }
-
-        
-        if revalidation_needed && http_request.cache_mode.get() == CacheMode::Default ||
-            http_request.cache_mode.get() == CacheMode::NoCache {
+        } else {
+            
+            
+            
             
         }
-
-    
-    
-    } else if http_request.cache_mode.get() == CacheMode::Default ||
-        http_request.cache_mode.get() == CacheMode::ForceCache {
-        
     }
 
     
     if response.is_none() {
+        
         if http_request.cache_mode.get() == CacheMode::OnlyIfCached {
-            return Response::network_error(NetworkError::Internal("Couldn't find response in cache".into()))
+            return Response::network_error(
+                NetworkError::Internal("Couldn't find response in cache".into()))
         }
-        response = Some(http_network_fetch(http_request.clone(), credentials_flag,
-                                           done_chan, context));
+        
+        let forward_response = http_network_fetch(http_request.clone(), credentials_flag,
+                                                  done_chan, context);
+        match forward_response.raw_status {
+            
+            Some((200...303, _)) |
+            Some((305...399, _)) => {
+                if !http_request.method.borrow().safe() {
+                    
+                }
+            },
+            
+            Some((304, _)) => {
+                if revalidation_needed {
+                    
+                    
+                }
+            },
+            _ => {}
+        }
+
+        
+        if response.is_none() {
+            response = Some(forward_response);
+        }
     }
+
     let response = response.unwrap();
 
-    if let Some(status) = response.status {
-        match status {
-            StatusCode::NotModified => {
-                
-                if http_request.cache_mode.get() == CacheMode::Default ||
-                   http_request.cache_mode.get() == CacheMode::NoCache {
-                    
-                    
-                    
+    match response.status {
+        Some(StatusCode::Unauthorized) => {
+            
+            
+            if cors_flag && !credentials_flag {
+                return response;
+            }
 
-                    
-                    
-                    
-                    
+            
+            
 
-                    
+            
+            if http_request.body.borrow().is_some() {
+                
+            }
 
-                    
-                    
-
-                    
-                    
-                    
-                }
-            },
-            StatusCode::Unauthorized => {
-                
-                
-                if cors_flag && !credentials_flag {
-                    return response;
-                }
-
-                
-                
-
-                
-                if !http_request.use_url_credentials || authentication_fetch_flag {
-                    
-                    
-                    
-                    
-                    return response;
-                }
-
-                
-                return http_network_or_cache_fetch(http_request, true, cors_flag, done_chan, context);
-            },
-            StatusCode::ProxyAuthenticationRequired => {
-                
-                
-                
-
-                
-                
-
-                
+            
+            if !http_request.use_url_credentials || authentication_fetch_flag {
                 
                 
                 
                 
                 return response;
+            }
 
-                
-                
-                
-            },
-            _ => {}
-        }
+            
+            return http_network_or_cache_fetch(http_request,
+                                               true ,
+                                               cors_flag, done_chan, context);
+        },
+        Some(StatusCode::ProxyAuthenticationRequired) => {
+            
+            
+            
+
+            
+            
+
+            
+            
+            
+            
+            
+            return response;
+
+            
+            
+            
+        },
+        _ => {}
     }
 
     
