@@ -1,14 +1,4 @@
-SimpleTest.requestLongerTimeout(3);
 var manager = new MediaTestManager;
-
-
-if (navigator.platform.startsWith("Win")) {
-  SimpleTest.expectAssertions(0, 5);
-} else {
-  
-  
-  SimpleTest.expectAssertions(0, 5);
-}
 
 function createTestArray() {
   var tests = [];
