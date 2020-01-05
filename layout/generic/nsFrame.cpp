@@ -4970,10 +4970,21 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
       boxSizingAdjust.ISize(aWM);
 
   nscoord iSize, minISize, maxISize, bSize, minBSize, maxBSize;
+  enum class Stretch {
+    
+    eStretchPreservingRatio,
+    
+    eStretch,
+    
+    eNoStretch,
+  };
   
-  bool stretchI = false;
-  
-  bool stretchB = false;
+  const auto eStretchPreservingRatio = Stretch::eStretchPreservingRatio;
+  const auto eStretch = Stretch::eStretch;
+  const auto eNoStretch = Stretch::eNoStretch;
+
+  Stretch stretchI = eNoStretch; 
+  Stretch stretchB = eNoStretch; 
 
   if (!isAutoISize) {
     iSize = ComputeISizeValue(aRenderingContext,
@@ -4989,10 +5000,13 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
           aWM.IsOrthogonalTo(GetParent()->GetWritingMode()) ?
             stylePos->UsedAlignSelf(GetParent()->StyleContext()) :
             stylePos->UsedJustifySelf(GetParent()->StyleContext());
-        stretchI = inlineAxisAlignment == NS_STYLE_ALIGN_NORMAL ||
-                   inlineAxisAlignment == NS_STYLE_ALIGN_STRETCH;
+        if (inlineAxisAlignment == NS_STYLE_ALIGN_NORMAL) {
+          stretchI = eStretchPreservingRatio;
+        } else if (inlineAxisAlignment == NS_STYLE_ALIGN_STRETCH) {
+          stretchI = eStretch;
+        }
       }
-      if (stretchI ||
+      if (stretchI != eNoStretch ||
           (aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize)) {
         iSize = std::max(nscoord(0), cbSize -
                                      aPadding.ISize(aWM) -
@@ -5051,10 +5065,13 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
           !aWM.IsOrthogonalTo(GetParent()->GetWritingMode()) ?
             stylePos->UsedAlignSelf(GetParent()->StyleContext()) :
             stylePos->UsedJustifySelf(GetParent()->StyleContext());
-        stretchB = blockAxisAlignment == NS_STYLE_ALIGN_NORMAL ||
-                   blockAxisAlignment == NS_STYLE_ALIGN_STRETCH;
+        if (blockAxisAlignment == NS_STYLE_ALIGN_NORMAL) {
+          stretchB = eStretchPreservingRatio;
+        } else if (blockAxisAlignment == NS_STYLE_ALIGN_STRETCH) {
+          stretchB = eStretch;
+        }
       }
-      if (stretchB ||
+      if (stretchB != eNoStretch ||
           (aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize)) {
         bSize = std::max(nscoord(0), cbSize -
                                      aPadding.BSize(aWM) -
@@ -5154,7 +5171,7 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
 
       if ((aFlags & ComputeSizeFlags::eIClampMarginBoxMinSize) &&
           tentISize > iSize) {
-        stretchI = true;
+        stretchI = eStretch;
       }
 
       if (hasIntrinsicBSize) {
@@ -5167,31 +5184,40 @@ nsFrame::ComputeSizeWithIntrinsicDimensions(nsRenderingContext*  aRenderingConte
 
       if ((aFlags & ComputeSizeFlags::eBClampMarginBoxMinSize) &&
           tentBSize > bSize) {
-        stretchB = true;
+        stretchB = eStretch;
       }
 
       if (aIntrinsicRatio != nsSize(0, 0)) {
-        if (stretchI || stretchB) {
-          
-          if (stretchI && tentISize != iSize) {
-            tentISize = iSize;  
-            if (logicalRatio.ISize(aWM) > 0) {
-              tentBSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM), logicalRatio.ISize(aWM));
-              if (tentBSize > bSize && stretchB) {
-                
-                
-                
-                tentBSize = bSize;  
-                if (logicalRatio.BSize(aWM) > 0) {
-                  tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
-                }
-              }
-            }
-          } else if (stretchB && tentBSize != bSize) {
+        if (stretchI == eStretch) {
+          tentISize = iSize;  
+          if (stretchB == eStretch) {
+            tentBSize = bSize;  
+          } else if (stretchB == eStretchPreservingRatio && logicalRatio.ISize(aWM) > 0) {
+            
+            tentBSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM), logicalRatio.ISize(aWM));
+          }
+        } else if (stretchB == eStretch) {
+          tentBSize = bSize;  
+          if (stretchI == eStretchPreservingRatio && logicalRatio.BSize(aWM) > 0) {
+            
+            tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
+          }
+        } else if (stretchI == eStretchPreservingRatio) {
+          tentISize = iSize;  
+          if (logicalRatio.ISize(aWM) > 0) {
+            tentBSize = NSCoordMulDiv(iSize, logicalRatio.BSize(aWM), logicalRatio.ISize(aWM));
+          }
+          if (stretchB == eStretchPreservingRatio && tentBSize > bSize) {
+            
             tentBSize = bSize;  
             if (logicalRatio.BSize(aWM) > 0) {
               tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
             }
+          }
+        } else if (stretchB == eStretchPreservingRatio) {
+          tentBSize = bSize;  
+          if (logicalRatio.BSize(aWM) > 0) {
+            tentISize = NSCoordMulDiv(bSize, logicalRatio.ISize(aWM), logicalRatio.BSize(aWM));
           }
         }
 
