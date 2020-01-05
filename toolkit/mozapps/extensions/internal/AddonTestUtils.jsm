@@ -1034,6 +1034,7 @@ var AddonTestUtils = {
       install.install();
     }).then(() => {
       install.removeListener(listener);
+      return install;
     });
   },
 
