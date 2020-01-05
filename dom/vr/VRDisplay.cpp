@@ -543,7 +543,7 @@ VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers, ErrorResult& aRv)
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   NS_ENSURE_TRUE(obs, nullptr);
 
-  if (IsPresenting()) {
+  if (mClient->GetIsPresenting()) {
     
     
     promise->MaybeRejectWithUndefined();
@@ -594,12 +594,20 @@ VRDisplay::ExitPresent(ErrorResult& aRv)
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
-  ExitPresentInternal();
+
 
   RefPtr<Promise> promise = Promise::Create(global, aRv);
   NS_ENSURE_TRUE(!aRv.Failed(), nullptr);
 
-  promise->MaybeResolve(JS::UndefinedHandleValue);
+  if (!IsPresenting()) {
+    
+    
+    promise->MaybeRejectWithUndefined();
+  } else {
+    promise->MaybeResolve(JS::UndefinedHandleValue);
+    ExitPresentInternal();
+  }
+
   return promise.forget();
 }
 
@@ -653,7 +661,9 @@ VRDisplay::CancelAnimationFrame(int32_t aHandle, ErrorResult& aError)
 bool
 VRDisplay::IsPresenting() const
 {
-  return mClient->GetIsPresenting();
+  
+  
+  return mPresentation != nullptr;
 }
 
 bool
