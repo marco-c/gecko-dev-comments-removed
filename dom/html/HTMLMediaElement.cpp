@@ -978,7 +978,7 @@ void HTMLMediaElement::AbortExistingLoads()
   mMediaInfo = MediaInfo();
   mIsEncrypted = false;
   mPendingEncryptedInitData.mInitDatas.Clear();
-  mWaitingForKey = NOT_WAITING_FOR_KEY;
+  mWaitingForKey = false;
   mSourcePointer = nullptr;
 
   mTags = nullptr;
@@ -2891,7 +2891,7 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mMediaSecurityVerified(false),
     mCORSMode(CORS_NONE),
     mIsEncrypted(false),
-    mWaitingForKey(NOT_WAITING_FOR_KEY),
+    mWaitingForKey(false),
     mDownloadSuspendedByCache(false, "HTMLMediaElement::mDownloadSuspendedByCache"),
     mAudioChannelVolume(1.0),
     mPlayingThroughTheAudioChannel(false),
@@ -4354,9 +4354,6 @@ void HTMLMediaElement::MetadataLoaded(const MediaInfo* aInfo,
 
 void HTMLMediaElement::FirstFrameLoaded()
 {
-  LOG(LogLevel::Debug, ("%p, FirstFrameLoaded() mFirstFrameLoaded=%d mWaitingForKey=%d",
-      this, mFirstFrameLoaded, mWaitingForKey));
-
   NS_ASSERTION(!mSuspendedAfterFirstFrame, "Should not have already suspended");
 
   if (!mFirstFrameLoaded) {
@@ -4712,26 +4709,8 @@ HTMLMediaElement::UpdateReadyStateInternal()
   }
 
   enum NextFrameStatus nextFrameStatus = NextFrameStatus();
-  if (nextFrameStatus == NEXT_FRAME_UNAVAILABLE) {
-    if (mWaitingForKey != NOT_WAITING_FOR_KEY) {
-      
-      
-      
-      
-      if (mWaitingForKey == WAITING_FOR_KEY) {
-        mWaitingForKey = WAITING_FOR_KEY_DISPATCHED;
-        DispatchAsyncEvent(NS_LITERAL_STRING("waitingforkey"));
-      }
-      
-      
-      
-      
-      
-      
-      
-    } else if (mDecoder) {
-      nextFrameStatus = mDecoder->NextFrameBufferedStatus();
-    }
+  if (mDecoder && nextFrameStatus == NEXT_FRAME_UNAVAILABLE) {
+    nextFrameStatus = mDecoder->NextFrameBufferedStatus();
   }
 
   if (nextFrameStatus == MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE_SEEKING) {
@@ -4866,7 +4845,7 @@ void HTMLMediaElement::ChangeReadyState(nsMediaReadyState aState)
       mReadyState >= nsIDOMHTMLMediaElement::HAVE_FUTURE_DATA) {
     DispatchAsyncEvent(NS_LITERAL_STRING("canplay"));
     if (!mPaused) {
-      mWaitingForKey = NOT_WAITING_FOR_KEY;
+      mWaitingForKey = false;
       DispatchAsyncEvent(NS_LITERAL_STRING("playing"));
     }
   }
@@ -6259,18 +6238,21 @@ HTMLMediaElement::GetTopLevelPrincipal()
 void
 HTMLMediaElement::CannotDecryptWaitingForKey()
 {
-  LOG(LogLevel::Debug, ("%p, CannotDecryptWaitingForKey()", this));
+  
+  
+  
 
   
   
+
   
-  
-  if (mWaitingForKey == NOT_WAITING_FOR_KEY) {
+  if (!mWaitingForKey) {
     
     
+    DispatchAsyncEvent(NS_LITERAL_STRING("waitingforkey"));
+    mWaitingForKey = true;
     
-    mWaitingForKey = WAITING_FOR_KEY;
-    UpdateReadyStateInternal();
+    
   }
 }
 
