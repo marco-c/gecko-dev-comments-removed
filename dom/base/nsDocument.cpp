@@ -4346,6 +4346,7 @@ nsDocument::SetScopeObject(nsIGlobalObject* aGlobal)
   }
 }
 
+#ifdef MOZ_EME
 static void
 CheckIfContainsEMEContent(nsISupports* aSupports, void* aContainsEME)
 {
@@ -4369,6 +4370,7 @@ nsDocument::ContainsEMEContent()
                              static_cast<void*>(&containsEME));
   return containsEME;
 }
+#endif 
 
 static void
 CheckIfContainsMSEContent(nsISupports* aSupports, void* aContainsMSE)
@@ -5969,30 +5971,6 @@ nsDocument::GetElementsByTagNameNS(const nsAString& aNamespaceURI,
   
   list.forget(aReturn);
   return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocument::GetAsync(bool *aAsync)
-{
-  NS_ERROR("nsDocument::GetAsync() should be overriden by subclass!");
-
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocument::SetAsync(bool aAsync)
-{
-  NS_ERROR("nsDocument::SetAsync() should be overriden by subclass!");
-
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocument::Load(const nsAString& aUrl, bool *aReturn)
-{
-  NS_ERROR("nsDocument::Load() should be overriden by subclass!");
-
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
@@ -8373,11 +8351,13 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
   }
 #endif 
 
+#ifdef MOZ_EME
   
   
   if (ContainsEMEContent()) {
     return false;
   }
+#endif
 
   
   

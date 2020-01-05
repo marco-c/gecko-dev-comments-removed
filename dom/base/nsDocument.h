@@ -19,7 +19,7 @@
 #include "nsWeakReference.h"
 #include "nsWeakPtr.h"
 #include "nsTArray.h"
-#include "nsIDOMXMLDocument.h"
+#include "nsIDOMDocument.h"
 #include "nsIDOMDocumentXBL.h"
 #include "nsStubDocumentObserver.h"
 #include "nsIScriptGlobalObject.h"
@@ -485,16 +485,8 @@ protected:
 };
 
 
-
-
-
-
-
-
-
-
 class nsDocument : public nsIDocument,
-                   public nsIDOMXMLDocument, 
+                   public nsIDOMDocument,
                    public nsIDOMDocumentXBL,
                    public nsSupportsWeakReference,
                    public nsIScriptObjectPrincipal,
@@ -797,9 +789,6 @@ public:
 
   
   NS_DECL_NSIDOMDOCUMENT
-
-  
-  NS_DECL_NSIDOMXMLDOCUMENT
 
   
   NS_DECL_NSIDOMDOCUMENTXBL
@@ -1275,7 +1264,9 @@ public:
 
   js::ExpandoAndGeneration mExpandoAndGeneration;
 
+#ifdef MOZ_EME
   bool ContainsEMEContent();
+#endif
 
   bool ContainsMSEContent();
 
