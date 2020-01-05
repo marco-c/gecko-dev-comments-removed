@@ -55,21 +55,18 @@ public:
 
   PreEffectsVisualOverflowCollector(nsIFrame* aFirstContinuation,
                                     nsIFrame* aCurrentFrame,
-                                    const nsRect& aCurrentFrameOverflowArea,
-                                    bool aCheckPreEffectsBBoxPropChache)
+                                    const nsRect& aCurrentFrameOverflowArea)
     : mFirstContinuation(aFirstContinuation)
     , mCurrentFrame(aCurrentFrame)
     , mCurrentFrameOverflowArea(aCurrentFrameOverflowArea)
-    , mCheckPreEffectsBBoxPropChache(aCheckPreEffectsBBoxPropChache)
   {
     NS_ASSERTION(!mFirstContinuation->GetPrevContinuation(),
                  "We want the first continuation here");
   }
 
   virtual void AddBox(nsIFrame* aFrame) override {
-    nsRect overflow = (aFrame == mCurrentFrame)
-      ? mCurrentFrameOverflowArea
-      : GetPreEffectsVisualOverflowRect(aFrame, mCheckPreEffectsBBoxPropChache);
+    nsRect overflow = (aFrame == mCurrentFrame) ?
+      mCurrentFrameOverflowArea : GetPreEffectsVisualOverflowRect(aFrame);
     mResult.UnionRect(mResult, overflow + aFrame->GetOffsetTo(mFirstContinuation));
   }
 
@@ -79,8 +76,7 @@ public:
 
 private:
 
-  static nsRect GetPreEffectsVisualOverflowRect(nsIFrame* aFrame,
-                                                bool aCheckPropCache) {
+  static nsRect GetPreEffectsVisualOverflowRect(nsIFrame* aFrame) {
     nsRect* r = aFrame->Properties().Get(nsIFrame::PreEffectsBBoxProperty());
     if (r) {
       return *r;
@@ -122,18 +118,21 @@ private:
     
     
     
+    
+    
+    
 #ifdef DEBUG
-    if (aCheckPropCache) {
-      nsIFrame* firstFrame =
-        nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
-      bool mightHaveNoneSVGMask =
-        nsSVGEffects::GetEffectProperties(firstFrame).MightHaveNoneSVGMask();
+    nsIFrame* firstFrame =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
+    bool mightHaveNoneSVGMask =
+      nsSVGEffects::GetEffectProperties(firstFrame).MightHaveNoneSVGMask();
+    bool inRestyle =
+      aFrame->PresContext()->RestyleManager()->AsGecko()->IsInStyleRefresh();
 
-      MOZ_ASSERT(mightHaveNoneSVGMask ||
+    NS_ASSERTION(mightHaveNoneSVGMask || inRestyle ||
                  aFrame->GetParent()->StyleContext()->GetPseudo() ==
-                 nsCSSAnonBoxes::mozAnonymousBlock,
+                   nsCSSAnonBoxes::mozAnonymousBlock,
                  "How did we getting here, then?");
-    }
 #endif
     NS_ASSERTION(!aFrame->Properties().Get(
                    aFrame->PreTransformOverflowAreasProperty()),
@@ -145,7 +144,6 @@ private:
   nsIFrame*     mCurrentFrame;
   const nsRect& mCurrentFrameOverflowArea;
   nsRect        mResult;
-  bool          mCheckPreEffectsBBoxPropChache;
 };
 
 
@@ -156,15 +154,13 @@ static nsRect
 GetPreEffectsVisualOverflowUnion(nsIFrame* aFirstContinuation,
                                  nsIFrame* aCurrentFrame,
                                  const nsRect& aCurrentFramePreEffectsOverflow,
-                                 const nsPoint& aFirstContinuationToUserSpace,
-                                 bool aCheckPreEffectsBBoxPropCache)
+                                 const nsPoint& aFirstContinuationToUserSpace)
 {
   NS_ASSERTION(!aFirstContinuation->GetPrevContinuation(),
                "Need first continuation here");
   PreEffectsVisualOverflowCollector collector(aFirstContinuation,
                                               aCurrentFrame,
-                                              aCurrentFramePreEffectsOverflow,
-                                              aCheckPreEffectsBBoxPropCache);
+                                              aCurrentFramePreEffectsOverflow);
   
   nsLayoutUtils::GetAllInFlowBoxes(aFirstContinuation, &collector);
   
@@ -242,8 +238,7 @@ nsSVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(nsIFrame* aNonSVGFrame)
     nsLayoutUtils::FirstContinuationOrIBSplitSibling(aNonSVGFrame);
   
   nsRect r = GetPreEffectsVisualOverflowUnion(firstFrame, nullptr, nsRect(),
-                                              GetOffsetToBoundingBox(firstFrame),
-                                              true);
+                                              GetOffsetToBoundingBox(firstFrame));
   return nsLayoutUtils::RectToGfxRect(r,
            aNonSVGFrame->PresContext()->AppUnitsPerCSSPixel());
 }
@@ -305,11 +300,7 @@ nsRect
     nsLayoutUtils::RectToGfxRect(
       GetPreEffectsVisualOverflowUnion(firstFrame, aFrame,
                                        aPreEffectsOverflowRect,
-                                       firstFrameToBoundingBox,
-                                       false 
-
-
-),
+                                       firstFrameToBoundingBox),
       aFrame->PresContext()->AppUnitsPerCSSPixel());
   overrideBBox.RoundOut();
 
