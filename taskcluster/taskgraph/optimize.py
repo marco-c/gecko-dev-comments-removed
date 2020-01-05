@@ -206,7 +206,6 @@ def opt_index_search(task, params, index_path):
 def opt_seta(task, params):
     bbb_task = False
 
-
     
     if task.task.get('provisionerId', '') == 'buildbot-bridge':
         label = task.task.get('payload').get('buildername')
