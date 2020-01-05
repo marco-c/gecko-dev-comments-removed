@@ -104,10 +104,6 @@ impl Browser  {
             devtools::start_server(port)
         });
 
-        if let Some(port) = opts.webdriver_port {
-            webdriver_server::start_server(port);
-        }
-
         
         
         
@@ -117,6 +113,10 @@ impl Browser  {
                                                       devtools_chan,
                                                       mem_profiler_chan.clone(),
                                                       shared_task_pool);
+
+        if let Some(port) = opts.webdriver_port {
+            webdriver_server::start_server(port, constellation_chan.clone());
+        };
 
         
         

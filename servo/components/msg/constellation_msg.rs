@@ -218,6 +218,8 @@ pub enum Msg {
     ChangeRunningAnimationsState(PipelineId, bool),
     
     TickAnimation(PipelineId),
+    
+    GetRootPipeline(Sender<Option<PipelineId>>)
 }
 
 
