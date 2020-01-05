@@ -57,6 +57,8 @@
 #include "mozilla/jni/Utils.h"
 #endif 
 
+#include "mozilla/AbstractThread.h"
+
 #include "mozilla/ipc/BrowserProcessSubThread.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/IOThreadChild.h"
@@ -418,6 +420,10 @@ XRE_InitChildProcess(int aArgc,
 
   PROFILER_LABEL("Startup", "XRE_InitChildProcess",
     js::ProfileEntry::Category::OTHER);
+
+  
+  
+  AbstractThread::InitTLS();
 
   
   

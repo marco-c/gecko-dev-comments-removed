@@ -95,7 +95,8 @@ public:
   static AbstractThread* MainThread();
 
   
-  static void InitStatics();
+  static void InitTLS();
+  static void InitMainThread();
 
   void DispatchStateChange(already_AddRefed<nsIRunnable> aRunnable);
 

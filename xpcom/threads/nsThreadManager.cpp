@@ -10,6 +10,7 @@
 #include "nsIClassInfoImpl.h"
 #include "nsTArray.h"
 #include "nsAutoPtr.h"
+#include "mozilla/AbstractThread.h"
 #include "mozilla/ThreadLocal.h"
 #ifdef MOZ_CANARY
 #include <fcntl.h>
@@ -109,6 +110,10 @@ nsThreadManager::Init()
   
   
   mMainThread->GetPRThread(&mMainPRThread);
+
+  
+  AbstractThread::InitTLS();
+  AbstractThread::InitMainThread();
 
   mInitialized = true;
   return NS_OK;
