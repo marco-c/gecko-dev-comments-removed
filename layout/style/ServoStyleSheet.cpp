@@ -10,6 +10,8 @@
 #include "mozilla/ServoCSSRuleList.h"
 #include "mozilla/dom/CSSRuleList.h"
 
+#include "mozAutoDocUpdate.h"
+
 namespace mozilla {
 
 ServoStyleSheet::ServoStyleSheet(css::SheetParsingMode aParsingMode,
@@ -139,14 +141,45 @@ uint32_t
 ServoStyleSheet::InsertRuleInternal(const nsAString& aRule,
                                     uint32_t aIndex, ErrorResult& aRv)
 {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return 0;
+  
+  GetCssRulesInternal(aRv);
+
+  mozAutoDocUpdate updateBatch(mDocument, UPDATE_STYLE, true);
+  aRv = mRuleList->InsertRule(aRule, aIndex);
+  if (aRv.Failed()) {
+    return 0;
+  }
+  if (mDocument) {
+    
+    
+    
+    
+    mDocument->StyleRuleAdded(this, mRuleList->GetRule(aIndex));
+  }
+  return aIndex;
 }
 
 void
 ServoStyleSheet::DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv)
 {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  
+  GetCssRulesInternal(aRv);
+  if (aIndex > mRuleList->Length()) {
+    aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
+    return;
+  }
+
+  mozAutoDocUpdate updateBatch(mDocument, UPDATE_STYLE, true);
+  
+  
+  
+  RefPtr<css::Rule> rule = mRuleList->GetRule(aIndex);
+  aRv = mRuleList->DeleteRule(aIndex);
+  MOZ_ASSERT(!aRv.ErrorCodeIs(NS_ERROR_DOM_INDEX_SIZE_ERR),
+             "IndexSizeError should have been handled earlier");
+  if (!aRv.Failed() && mDocument) {
+    mDocument->StyleRuleRemoved(this, rule);
+  }
 }
 
 } 
