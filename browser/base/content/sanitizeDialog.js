@@ -11,21 +11,18 @@ var {Sanitizer} = Cu.import("resource:///modules/Sanitizer.jsm", {});
 
 var gSanitizePromptDialog = {
 
-  get bundleBrowser()
-  {
+  get bundleBrowser() {
     if (!this._bundleBrowser)
       this._bundleBrowser = document.getElementById("bundleBrowser");
     return this._bundleBrowser;
   },
 
-  get selectedTimespan()
-  {
+  get selectedTimespan() {
     var durList = document.getElementById("sanitizeDurationChoice");
     return parseInt(durList.value);
   },
 
-  get sanitizePreferences()
-  {
+  get sanitizePreferences() {
     if (!this._sanitizePreferences) {
       this._sanitizePreferences =
         document.getElementById("sanitizePreferences");
@@ -33,13 +30,11 @@ var gSanitizePromptDialog = {
     return this._sanitizePreferences;
   },
 
-  get warningBox()
-  {
+  get warningBox() {
     return document.getElementById("sanitizeEverythingWarningBox");
   },
 
-  init: function ()
-  {
+  init() {
     
     this._inited = true;
 
@@ -54,13 +49,11 @@ var gSanitizePromptDialog = {
       this.warningBox.hidden = false;
       document.title =
         this.bundleBrowser.getString("sanitizeDialog2.everything.title");
-    }
-    else
+    } else
       this.warningBox.hidden = true;
   },
 
-  selectByTimespan: function ()
-  {
+  selectByTimespan() {
     
     
     if (!this._inited)
@@ -89,8 +82,7 @@ var gSanitizePromptDialog = {
       window.document.documentElement.getAttribute("noneverythingtitle");
   },
 
-  sanitize: function ()
-  {
+  sanitize() {
     
     this.updatePrefs();
     var s = new Sanitizer();
@@ -114,6 +106,7 @@ var gSanitizePromptDialog = {
       s.sanitize().then(null, Components.utils.reportError)
                   .then(() => window.close())
                   .then(null, Components.utils.reportError);
+      return false;
     } catch (er) {
       Components.utils.reportError("Exception during sanitize: " + er);
       return true; 
@@ -128,7 +121,7 @@ var gSanitizePromptDialog = {
 
 
 
-  prepareWarning: function (aDontShowItemList) {
+  prepareWarning(aDontShowItemList) {
     
     
     
@@ -138,8 +131,7 @@ var gSanitizePromptDialog = {
       warningStringID = "sanitizeSelectedWarning";
       if (!aDontShowItemList)
         this.showItemList();
-    }
-    else {
+    } else {
       warningStringID = "sanitizeEverythingWarning2";
     }
 
@@ -152,8 +144,7 @@ var gSanitizePromptDialog = {
 
 
 
-  onReadGeneric: function ()
-  {
+  onReadGeneric() {
     var found = false;
 
     
@@ -168,8 +159,7 @@ var gSanitizePromptDialog = {
 
     try {
       document.documentElement.getButton("accept").disabled = !found;
-    }
-    catch (e) { }
+    } catch (e) { }
 
     
     this.prepareWarning(true);
@@ -185,9 +175,7 @@ var gSanitizePromptDialog = {
 
 
 
-  updatePrefs : function ()
-  {
-    var tsPref = document.getElementById("privacy.sanitize.timeSpan");
+  updatePrefs() {
     Sanitizer.prefs.setIntPref("timeSpan", this.selectedTimespan);
 
     
@@ -206,7 +194,7 @@ var gSanitizePromptDialog = {
   
 
 
-  hasNonSelectedItems: function () {
+  hasNonSelectedItems() {
     let checkboxes = document.querySelectorAll("#itemList > [preference]");
     for (let i = 0; i < checkboxes.length; ++i) {
       let pref = document.getElementById(checkboxes[i].getAttribute("preference"));
@@ -219,7 +207,7 @@ var gSanitizePromptDialog = {
   
 
 
-  showItemList: function () {
+  showItemList() {
     var itemList = document.getElementById("itemList");
     var expanderButton = document.getElementById("detailsExpander");
 
@@ -234,7 +222,7 @@ var gSanitizePromptDialog = {
   
 
 
-  hideItemList: function () {
+  hideItemList() {
     var itemList = document.getElementById("itemList");
     var expanderButton = document.getElementById("detailsExpander");
 
@@ -248,8 +236,7 @@ var gSanitizePromptDialog = {
   
 
 
-  toggleItemList: function ()
-  {
+  toggleItemList() {
     var itemList = document.getElementById("itemList");
 
     if (itemList.collapsed)
