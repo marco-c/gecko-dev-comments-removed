@@ -52,7 +52,7 @@ public:
 
   
   
-  void GetMozDebugReaderData(nsAString& aString);
+  void GetMozDebugReaderData(nsACString& aString);
 
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 

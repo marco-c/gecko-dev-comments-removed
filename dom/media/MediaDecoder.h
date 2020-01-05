@@ -473,7 +473,7 @@ private:
 
   
   
-  virtual void GetMozDebugReaderData(nsAString& aString) {}
+  virtual void GetMozDebugReaderData(nsACString& aString) {}
 
   virtual void DumpDebugInfo();
 

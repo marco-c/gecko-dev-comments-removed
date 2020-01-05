@@ -76,7 +76,7 @@ public:
 
   
   
-  void GetMozDebugReaderData(nsAString& aString);
+  void GetMozDebugReaderData(nsACString& aString);
 
   void SetVideoBlankDecode(bool aIsBlankDecode) override;
 
