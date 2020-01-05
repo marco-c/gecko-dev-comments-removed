@@ -83,7 +83,7 @@ pub struct SharedLayoutContext {
     pub image_cache_sender: ImageCacheChan,
 
     
-    pub screen_size: Size2D<Au>,
+    pub viewport_size: Size2D<Au>,
 
     
     pub screen_size_changed: bool,
