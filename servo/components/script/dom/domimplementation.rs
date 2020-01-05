@@ -165,4 +165,9 @@ impl<'a> DOMImplementationMethods for JSRef<'a, DOMImplementation> {
         
         Temporary::from_rooted(*doc)
     }
+
+    
+    fn HasFeature(self, _feature: DOMString, _version: DOMString) -> bool {
+        true
+    }
 }
