@@ -186,8 +186,12 @@ OptionsPanel.prototype = {
       "tools-not-supported-label");
     let atleastOneToolNotSupported = false;
 
+    const toolbox = this.toolbox;
+
+    
+    
     let onCheckboxClick = function (id) {
-      let toolDefinition = gDevTools._tools.get(id);
+      let toolDefinition = gDevTools._tools.get(id) || toolbox.getToolDefinition(id);
       
       Services.prefs.setBoolPref(toolDefinition.visibilityswitch, this.checked);
       gDevTools.emit(this.checked ? "tool-registered" : "tool-unregistered", id);
@@ -235,6 +239,13 @@ OptionsPanel.prototype = {
     
     let atleastOneAddon = false;
     for (let tool of gDevTools.getAdditionalTools()) {
+      atleastOneAddon = true;
+      additionalToolsBox.appendChild(createToolCheckbox(tool));
+    }
+
+    
+    
+    for (let tool of this.toolbox.getAdditionalTools()) {
       atleastOneAddon = true;
       additionalToolsBox.appendChild(createToolCheckbox(tool));
     }

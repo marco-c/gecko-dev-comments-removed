@@ -895,6 +895,7 @@ Toolbox.prototype = {
 
 
   _buildTabs: function () {
+    
     for (let definition of gDevTools.getToolDefinitionArray()) {
       this._buildTabForTool(definition);
     }
@@ -1258,6 +1259,81 @@ Toolbox.prototype = {
 
 
 
+
+
+  get additionalToolDefinitions() {
+    if (!this._additionalToolDefinitions) {
+      this._additionalToolDefinitions = new Map();
+    }
+
+    return this._additionalToolDefinitions;
+  },
+
+  
+
+
+
+
+
+  getAdditionalTools() {
+    return Array.from(this.additionalToolDefinitions.values());
+  },
+
+  
+
+
+
+
+
+
+
+
+  hasAdditionalTool(toolId) {
+    return this.additionalToolDefinitions.has(toolId);
+  },
+
+  
+
+
+
+
+
+  addAdditionalTool(definition) {
+    if (!definition.id) {
+      throw new Error("Tool definition id is missing");
+    }
+
+    if (this.isToolRegistered(definition.id)) {
+      throw new Error("Tool definition already registered: " +
+                      definition.id);
+    }
+
+    this.additionalToolDefinitions.set(definition.id, definition);
+    this._buildTabForTool(definition);
+  },
+
+  
+
+
+
+
+
+  removeAdditionalTool(toolId) {
+    if (!this.hasAdditionalTool(toolId)) {
+      throw new Error("Tool definition not registered to this toolbox: " +
+                      toolId);
+    }
+
+    this.unloadTool(toolId);
+    this.additionalToolDefinitions.delete(toolId);
+  },
+
+  
+
+
+
+
+
   loadTool: function (id) {
     if (id === "inspector" && !this._inspector) {
       return this.initInspector().then(() => {
@@ -1280,7 +1356,9 @@ Toolbox.prototype = {
       return deferred.promise;
     }
 
-    let definition = gDevTools.getToolDefinition(id);
+    
+    let definition = this.getToolDefinition(id);
+
     if (!definition) {
       deferred.reject(new Error("no such tool id " + id));
       return deferred.promise;
@@ -1912,8 +1990,13 @@ Toolbox.prototype = {
 
 
 
+
+
+
+
+
   isToolRegistered: function (toolId) {
-    return gDevTools.getToolDefinitionMap().has(toolId);
+    return !!this.getToolDefinition(toolId);
   },
 
   
@@ -1923,12 +2006,13 @@ Toolbox.prototype = {
 
 
 
-  _toolRegistered: function (event, toolId) {
-    let tool = gDevTools.getToolDefinition(toolId);
-    this._buildTabForTool(tool);
-    
-    
-    this.emit("tool-registered", toolId);
+
+
+
+
+  getToolDefinition: function (toolId) {
+    return gDevTools.getToolDefinition(toolId) ||
+      this.additionalToolDefinitions.get(toolId);
   },
 
   
@@ -1938,7 +2022,12 @@ Toolbox.prototype = {
 
 
 
-  _toolUnregistered: function (event, toolId) {
+
+  unloadTool: function (toolId) {
+    if (typeof toolId != "string") {
+      throw new Error("Unexpected non-string toolId received.");
+    }
+
     if (this._toolPanels.has(toolId)) {
       let instance = this._toolPanels.get(toolId);
       instance.destroy();
@@ -1975,6 +2064,38 @@ Toolbox.prototype = {
         key.parentNode.removeChild(key);
       }
     }
+  },
+
+  
+
+
+
+
+
+
+  _toolRegistered: function (event, toolId) {
+    let tool = this.getToolDefinition(toolId);
+    if (!tool) {
+      
+      
+      
+      return;
+    }
+    this._buildTabForTool(tool);
+    
+    
+    this.emit("tool-registered", toolId);
+  },
+
+  
+
+
+
+
+
+
+  _toolUnregistered: function (event, toolId) {
+    this.unloadTool(toolId);
     
     
     this.emit("tool-unregistered", toolId);

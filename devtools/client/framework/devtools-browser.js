@@ -726,7 +726,11 @@ gDevTools.getToolDefinitionArray()
 
 gDevTools.on("tool-registered", function (ev, toolId) {
   let toolDefinition = gDevTools._tools.get(toolId);
-  gDevToolsBrowser._addToolToWindows(toolDefinition);
+  
+  
+  if (toolDefinition) {
+    gDevToolsBrowser._addToolToWindows(toolDefinition);
+  }
 });
 
 gDevTools.on("tool-unregistered", function (ev, toolId) {
