@@ -28,7 +28,6 @@
 #include "nsIObserver.h"                
 #include "nsIObserverService.h"         
 #include "nsIScreen.h"                  
-#include "nsIScreenManager.h"           
 #include "nsISupportsImpl.h"            
 #include "nsISupportsUtils.h"           
 #include "nsIWidget.h"                  
@@ -38,10 +37,12 @@
 #include "nsTArray.h"                   
 #include "nsThreadUtils.h"              
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/widget/ScreenManager.h" 
 
 using namespace mozilla;
 using namespace mozilla::gfx;
 using mozilla::services::GetObserverService;
+using mozilla::widget::ScreenManager;
 
 class nsFontCache final : public nsIObserver
 {
@@ -190,7 +191,7 @@ nsFontCache::Flush()
 }
 
 nsDeviceContext::nsDeviceContext()
-    : mWidth(0), mHeight(0), mDepth(0),
+    : mWidth(0), mHeight(0),
       mAppUnitsPerDevPixel(-1), mAppUnitsPerDevPixelAtUnitFullZoom(-1),
       mAppUnitsPerPhysicalInch(-1),
       mFullZoom(1.0f), mPrintingScale(1.0f)
@@ -399,13 +400,15 @@ nsDeviceContext::CreateRenderingContextCommon(bool aWantReferenceContext)
 nsresult
 nsDeviceContext::GetDepth(uint32_t& aDepth)
 {
-    if (mDepth == 0 && mScreenManager) {
-        nsCOMPtr<nsIScreen> primaryScreen;
-        mScreenManager->GetPrimaryScreen(getter_AddRefs(primaryScreen));
-        primaryScreen->GetColorDepth(reinterpret_cast<int32_t *>(&mDepth));
+    nsCOMPtr<nsIScreen> screen;
+    FindScreen(getter_AddRefs(screen));
+    if (!screen) {
+        ScreenManager& screenManager = ScreenManager::GetSingleton();
+        screenManager.GetPrimaryScreen(getter_AddRefs(screen));
+        MOZ_ASSERT(screen);
     }
+    screen->GetColorDepth(reinterpret_cast<int32_t *>(&aDepth));
 
-    aDepth = mDepth;
     return NS_OK;
 }
 
