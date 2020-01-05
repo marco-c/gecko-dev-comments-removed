@@ -1278,6 +1278,16 @@ SyncEngine.prototype = {
     
   },
 
+  
+  
+  
+  
+  
+  
+  _shouldReviveRemotelyDeletedRecord(remoteItem) {
+    return true;
+  },
+
   _deleteId: function (id) {
     this._tracker.removeChangedID(id);
 
@@ -1353,15 +1363,18 @@ SyncEngine.prototype = {
                         "exists and isn't modified.");
         return true;
       }
+      this._log.trace("Incoming record is deleted but we had local changes.");
 
+      if (remoteIsNewer) {
+        this._log.trace("Remote record is newer -- deleting local record.");
+        return true;
+      }
       
       
-      
-      
-      
-      this._log.trace("Incoming record is deleted but we had local changes. " +
-                      "Applying the youngest record.");
-      return remoteIsNewer;
+      let willRevive = this._shouldReviveRemotelyDeletedRecord(item);
+      this._log.trace("Local record is newer -- reviving? " + willRevive);
+
+      return !willRevive;
     }
 
     

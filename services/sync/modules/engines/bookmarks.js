@@ -472,15 +472,71 @@ BookmarksEngine.prototype = {
     });
 
     this._store._childrenToOrder = {};
+    this._store.clearPendingDeletions();
+  },
+
+  _deletePending() {
+    
+    let newlyModified = Async.promiseSpinningly(this._store.deletePending());
+    let now = this._tracker._now();
+    this._log.debug("Deleted pending items", newlyModified);
+    for (let modifiedSyncID of newlyModified) {
+      if (!this._modified.has(modifiedSyncID)) {
+        this._modified.set(modifiedSyncID, { timestamp: now, deleted: false });
+      }
+    }
+  },
+
+  
+  
+  
+  
+  
+  
+  _shouldReviveRemotelyDeletedRecord(item) {
+    let kind = Async.promiseSpinningly(
+      PlacesSyncUtils.bookmarks.getKindForSyncId(item.id));
+    if (kind === PlacesSyncUtils.bookmarks.KINDS.FOLDER) {
+      return false;
+    }
+
+    
+    
+    
+    let modifiedTimestamp = this._modified.getModifiedTimestamp(item.id);
+    if (!modifiedTimestamp) {
+      
+      
+      this._log.error("_shouldReviveRemotelyDeletedRecord called on unmodified item: " + item.id);
+      return false;
+    }
+
+    let localID = this._store.idForGUID(item.id);
+    let localParentID = PlacesUtils.bookmarks.getFolderIdForItem(localID);
+    let localParentSyncID = this._store.GUIDForId(localParentID);
+
+    this._log.trace(`Reviving item "${item.id}" and marking parent ${localParentSyncID} as modified.`);
+
+    if (!this._modified.has(localParentSyncID)) {
+      this._modified.set(localParentSyncID, {
+        timestamp: modifiedTimestamp,
+        deleted: false
+      });
+    }
+    return true
   },
 
   _processIncoming: function (newitems) {
     try {
       SyncEngine.prototype._processIncoming.call(this, newitems);
     } finally {
-      
-      this._store._orderChildren();
-      delete this._store._childrenToOrder;
+      try {
+        this._deletePending();
+      } finally {
+        
+        this._store._orderChildren();
+        delete this._store._childrenToOrder;
+      }
     }
   },
 
@@ -657,7 +713,8 @@ BookmarksEngine.prototype = {
 
 function BookmarksStore(name, engine) {
   Store.call(this, name, engine);
-
+  this._foldersToDelete = new Set();
+  this._atomsToDelete = new Set();
   
   Svc.Obs.add("places-shutdown", function() {
     for (let query in this._stmts) {
@@ -732,14 +789,18 @@ BookmarksStore.prototype = {
   },
 
   remove: function BStore_remove(record) {
-    try {
-      let info = Async.promiseSpinningly(PlacesSyncUtils.bookmarks.remove(record.id));
-      if (info) {
-        this._log.debug(`Removed item ${record.id} with type ${record.type}`);
-      }
-    } catch (ex) {
-      
-      this._log.debug(`Error removing ${record.id}`, ex);
+    if (PlacesSyncUtils.bookmarks.isRootSyncID(record.id)) {
+      this._log.warn("Refusing to remove special folder " + record.id);
+      return;
+    }
+    let recordKind = Async.promiseSpinningly(
+      PlacesSyncUtils.bookmarks.getKindForSyncId(record.id));
+    let isFolder = recordKind === PlacesSyncUtils.bookmarks.KINDS.FOLDER;
+    this._log.trace(`Buffering removal of item "${record.id}" of type "${recordKind}".`);
+    if (isFolder) {
+      this._foldersToDelete.add(record.id);
+    } else {
+      this._atomsToDelete.add(record.id);
     }
   },
 
@@ -761,6 +822,132 @@ BookmarksStore.prototype = {
     });
     Async.promiseSpinningly(Promise.all(promises));
   },
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  deletePending: Task.async(function* deletePending() {
+    yield this._deletePendingAtoms();
+    let guidsToUpdate = yield this._deletePendingFolders();
+    this.clearPendingDeletions();
+    return guidsToUpdate;
+  }),
+
+  clearPendingDeletions() {
+    this._foldersToDelete.clear();
+    this._atomsToDelete.clear();
+  },
+
+  _deleteAtom: Task.async(function* _deleteAtom(syncID) {
+    try {
+      let info = yield PlacesSyncUtils.bookmarks.remove(syncID, {
+        preventRemovalOfNonEmptyFolders: true
+      });
+      this._log.trace(`Removed item ${syncID} with type ${info.type}`);
+    } catch (ex) {
+      
+      this._log.trace(`Error removing ${syncID}`, ex);
+    }
+  }),
+
+  _deletePendingAtoms() {
+    return Promise.all(
+      [...this._atomsToDelete.values()]
+        .map(syncID => this._deleteAtom(syncID)));
+  },
+
+  
+  _deletePendingFolders: Task.async(function* _deletePendingFolders() {
+    
+    
+    
+    
+    
+    
+    
+    let needUpdate = new Set();
+    for (let syncId of this._foldersToDelete) {
+      let childSyncIds = yield PlacesSyncUtils.bookmarks.fetchChildSyncIds(syncId);
+      if (!childSyncIds.length) {
+        
+        yield this._deleteAtom(syncId)
+        continue;
+      }
+      
+      
+
+      let grandparentSyncId = this.GUIDForId(
+        PlacesUtils.bookmarks.getFolderIdForItem(
+          this.idForGUID(PlacesSyncUtils.bookmarks.syncIdToGuid(syncId))));
+
+      this._log.trace(`Moving ${childSyncIds.length} children of "${syncId}" to ` +
+                      `grandparent "${grandparentSyncId}" before deletion.`);
+
+      
+      yield Promise.all(childSyncIds.map(child => PlacesSyncUtils.bookmarks.update({
+        syncId: child,
+        parentSyncId: grandparentSyncId
+      })));
+
+      
+      try {
+        yield PlacesSyncUtils.bookmarks.remove(syncId, {
+          preventRemovalOfNonEmptyFolders: true
+        });
+      } catch (e) {
+        
+        
+        
+        
+        
+        
+        
+        
+        needUpdate.add(syncId);
+      }
+
+      
+      
+      if (!this._foldersToDelete.has(grandparentSyncId)) {
+        needUpdate.add(grandparentSyncId);
+      }
+      for (let childSyncId of childSyncIds) {
+        if (!this._foldersToDelete.has(childSyncId)) {
+          needUpdate.add(childSyncId);
+        }
+      }
+    }
+    return [...needUpdate];
+  }),
 
   changeItemID: function BStore_changeItemID(oldID, newID) {
     this._log.debug("Changing GUID " + oldID + " to " + newID);
@@ -874,6 +1061,7 @@ BookmarksStore.prototype = {
   },
 
   wipe: function BStore_wipe() {
+    this.clearPendingDeletions();
     Async.promiseSpinningly(Task.spawn(function* () {
       
       yield PlacesBackups.create(null, true);

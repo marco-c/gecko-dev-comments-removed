@@ -134,16 +134,24 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   
 
 
-  remove: Task.async(function* (syncId) {
+
+  remove: Task.async(function* (syncId, options = {}) {
     let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
     if (guid in ROOT_GUID_TO_SYNC_ID) {
       BookmarkSyncLog.warn(`remove: Refusing to remove root ${syncId}`);
       return null;
     }
-    return PlacesUtils.bookmarks.remove(guid, {
+    return PlacesUtils.bookmarks.remove(guid, Object.assign({}, options, {
       source: SOURCE_SYNC,
-    });
+    }));
   }),
+
+  
+
+
+  isRootSyncID(syncID) {
+    return ROOT_SYNC_ID_TO_GUID.hasOwnProperty(syncID);
+  },
 
   
 
@@ -310,6 +318,30 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
     return item;
   }),
+
+  
+
+
+
+
+
+
+
+
+
+
+  getKindForSyncId(syncId) {
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(syncId);
+    let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
+    return PlacesUtils.bookmarks.fetch(guid)
+    .then(item => {
+      if (!item) {
+        return null;
+      }
+      return getKindForItem(item)
+    });
+  },
+
 });
 
 XPCOMUtils.defineLazyGetter(this, "BookmarkSyncLog", () => {
