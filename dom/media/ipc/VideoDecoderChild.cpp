@@ -44,7 +44,7 @@ VideoDecoderChild::RecvOutput(const VideoDataIPDL& aData)
   
   
   
-  RefPtr<Image> image = new GPUVideoImage(GetManager(), aData.sd(), aData.display());
+  RefPtr<Image> image = new GPUVideoImage(GetManager(), aData.sd(), aData.frameSize());
 
   RefPtr<VideoData> video = VideoData::CreateFromImage(info,
                                                        aData.base().offset(),
