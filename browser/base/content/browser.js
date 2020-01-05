@@ -874,9 +874,6 @@ function serializeInputStream(aStream) {
 
 
 function _loadURIWithFlags(browser, uri, params) {
-  let tab = gBrowser.getTabForBrowser(browser);
-  maybeRecordAbandonmentTelemetry(tab, "newURI");
-
   if (!uri) {
     uri = "about:blank";
   }
@@ -1792,16 +1789,6 @@ function HandleAppCommandEvent(evt) {
   evt.preventDefault();
 }
 
-function maybeRecordAbandonmentTelemetry(tab, type) {
-  if (!tab.hasAttribute("busy")) {
-    return;
-  }
-
-  let histogram = Services.telemetry
-                          .getHistogramById("BUSY_TAB_ABANDONED");
-  histogram.add(type);
-}
-
 function gotoHistoryIndex(aEvent) {
   let index = aEvent.target.getAttribute("index");
   if (!index)
@@ -1813,8 +1800,6 @@ function gotoHistoryIndex(aEvent) {
     
 
     try {
-      maybeRecordAbandonmentTelemetry(gBrowser.selectedTab,
-                                      "historyNavigation");
       gBrowser.gotoIndex(index);
     } catch (ex) {
       return false;
@@ -1833,7 +1818,6 @@ function BrowserForward(aEvent) {
 
   if (where == "current") {
     try {
-      maybeRecordAbandonmentTelemetry(gBrowser.selectedTab, "forward");
       gBrowser.goForward();
     } catch (ex) {
     }
@@ -1847,7 +1831,6 @@ function BrowserBack(aEvent) {
 
   if (where == "current") {
     try {
-      maybeRecordAbandonmentTelemetry(gBrowser.selectedTab, "back");
       gBrowser.goBack();
     } catch (ex) {
     }
@@ -1880,7 +1863,6 @@ function BrowserHandleShiftBackspace() {
 
 function BrowserStop() {
   const stopFlags = nsIWebNavigation.STOP_ALL;
-  maybeRecordAbandonmentTelemetry(gBrowser.selectedTab, "stop");
   gBrowser.webNavigation.stop(stopFlags);
 }
 
@@ -3272,12 +3254,6 @@ function BrowserReloadWithFlags(reloadFlags) {
     gBrowser.loadURIWithFlags(url, reloadFlags);
     return;
   }
-
-  
-  
-  
-  
-  maybeRecordAbandonmentTelemetry(gBrowser.selectedTab, "reload");
 
   
   
