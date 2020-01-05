@@ -142,6 +142,17 @@ SVGContextPaint::GetContextPaint(nsIContent* aContent)
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   return static_cast<SVGContextPaint*>(
            ownerDoc->GetProperty(nsGkAtoms::svgContextPaint));
 }
@@ -229,7 +240,7 @@ SVGContextPaintImpl::Paint::GetPattern(const DrawTarget* aDrawTarget,
 }
 
 AutoSetRestoreSVGContextPaint::AutoSetRestoreSVGContextPaint(
-                                 SVGContextPaint* aContextPaint,
+                                 const SVGContextPaint* aContextPaint,
                                  nsIDocument* aSVGDocument)
   : mSVGDocument(aSVGDocument)
   , mOuterContextPaint(aSVGDocument->GetProperty(nsGkAtoms::svgContextPaint))
@@ -247,7 +258,8 @@ AutoSetRestoreSVGContextPaint::AutoSetRestoreSVGContextPaint(
   }
 
   DebugOnly<nsresult> res =
-    mSVGDocument->SetProperty(nsGkAtoms::svgContextPaint, aContextPaint);
+    mSVGDocument->SetProperty(nsGkAtoms::svgContextPaint,
+                              const_cast<SVGContextPaint*>(aContextPaint));
 
   NS_WARNING_ASSERTION(NS_SUCCEEDED(res), "Failed to set context paint");
 }
