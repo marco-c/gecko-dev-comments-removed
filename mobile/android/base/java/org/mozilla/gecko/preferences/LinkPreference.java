@@ -34,7 +34,10 @@ class LinkPreference extends Preference {
 
     @Override
     protected void onClick() {
-        if (AppConstants.Versions.feature24Plus) {
+        if (GeckoPreferences.PREFS_DEFAULT_BROWSER.equals(getKey()) && AppConstants.Versions.feature24Plus) {
+            
+            
+            
             Intent changeDefaultApps = new Intent("android.settings.MANAGE_DEFAULT_APPS_SETTINGS");
             getContext().startActivity(changeDefaultApps);
         } else {
