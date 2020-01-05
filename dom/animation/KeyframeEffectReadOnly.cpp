@@ -1282,7 +1282,7 @@ KeyframeEffectReadOnly::ShouldBlockAsyncTransformAnimations(
   
   
   
-  MOZ_ASSERT(mAnimation && mAnimation->IsPlayableOnCompositor());
+  MOZ_ASSERT(mAnimation && mAnimation->IsPlaying());
 
   EffectSet* effectSet =
     EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);

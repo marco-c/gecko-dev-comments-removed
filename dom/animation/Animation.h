@@ -274,24 +274,13 @@ public:
     return GetEffect() && GetEffect()->IsInEffect();
   }
 
-  
-
-
-
-
-
-
-
-
-
-  bool IsPlayableOnCompositor() const
+  bool IsPlaying() const
   {
-    return HasCurrentEffect() &&
-           mPlaybackRate != 0.0 &&
+    return mPlaybackRate != 0.0 &&
            (PlayState() == AnimationPlayState::Running ||
-            mPendingState == PendingState::PlayPending) &&
-           !GetEffect()->IsActiveDurationZero();
+            mPendingState == PendingState::PlayPending);
   }
+
   bool IsRelevant() const { return mIsRelevant; }
   void UpdateRelevance();
 
