@@ -4168,6 +4168,45 @@ nsPIDOMWindowInner::IsRunningTimeout()
   return TimeoutManager().IsRunningTimeout();
 }
 
+void
+nsPIDOMWindowOuter::NotifyCreatedNewMediaComponent()
+{
+  if (mMediaSuspend != nsISuspendedTypes::SUSPENDED_BLOCK) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  MaybeActiveMediaComponents();
+}
+
+void
+nsPIDOMWindowOuter::MaybeActiveMediaComponents()
+{
+  if (IsInnerWindow()) {
+    return mOuterWindow->MaybeActiveMediaComponents();
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> inner = GetCurrentInnerWindow();
+  if (!inner) {
+    return;
+  }
+
+  nsCOMPtr<nsIDocument> doc = inner->GetExtantDoc();
+  if (!doc) {
+    return;
+  }
+
+  if (!doc->Hidden() &&
+      mMediaSuspend == nsISuspendedTypes::SUSPENDED_BLOCK &&
+      AudioChannelService::IsServiceStarted()) {
+    SetMediaSuspend(nsISuspendedTypes::NONE_SUSPENDED);
+  }
+}
+
 SuspendTypes
 nsPIDOMWindowOuter::GetMediaSuspend() const
 {
