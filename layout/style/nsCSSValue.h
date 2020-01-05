@@ -30,6 +30,7 @@
 #include "nsStringBuffer.h"
 #include "nsTArray.h"
 #include "nsStyleConsts.h"
+#include "nsStyleCoord.h"
 #include "gfxFontFamilyList.h"
 
 class imgRequestProxy;
@@ -910,6 +911,8 @@ public:
   void SetStringValue(const nsString& aValue, nsCSSUnit aUnit);
   void SetColorValue(nscolor aValue);
   void SetIntegerColorValue(nscolor aValue, nsCSSUnit aUnit);
+  
+  void SetIntegerCoordValue(nscoord aCoord);
   void SetFloatColorValue(float aComponent1,
                           float aComponent2,
                           float aComponent3,
@@ -941,6 +944,9 @@ public:
   void SetSystemFontValue();
   void SetDummyValue();
   void SetDummyInheritValue();
+
+  
+  void SetCalcValue(const nsStyleCoord::CalcValue* aCalc);
 
   
   
@@ -1207,7 +1213,7 @@ private:
   ~nsCSSValueSharedList();
 
 public:
-  NS_INLINE_DECL_REFCOUNTING(nsCSSValueSharedList)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsCSSValueSharedList)
 
   void AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
                       nsCSSValue::Serialization aValueSerialization) const;
