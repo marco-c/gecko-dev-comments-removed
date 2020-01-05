@@ -854,6 +854,8 @@ public:
 
     
     mSeekRequest.DisconnectIfExists();
+
+    mWaitRequest.DisconnectIfExists();
   }
 
   void HandleAudioDecoded(MediaData* aAudio) override
@@ -986,6 +988,19 @@ public:
   }
 
 private:
+  void DemuxerSeek()
+  {
+    
+    mSeekRequest.Begin(Reader()->Seek(mSeekJob.mTarget.ref())
+      ->Then(OwnerThread(), __func__,
+             [this] (const media::TimeUnit& aUnit) {
+               OnSeekResolved(aUnit);
+             },
+             [this] (const SeekRejectValue& aReject) {
+               OnSeekRejected(aReject);
+             }));
+  }
+
   void DoSeek() override
   {
     mDoneAudioSeeking = !Info().HasAudio() || mSeekJob.mTarget->IsVideoOnly();
@@ -997,15 +1012,7 @@ private:
       mMaster->Reset();
     }
 
-    
-    mSeekRequest.Begin(Reader()->Seek(mSeekJob.mTarget.ref())
-      ->Then(OwnerThread(), __func__,
-             [this] (media::TimeUnit aUnit) {
-               OnSeekResolved(aUnit);
-             },
-             [this] (const SeekRejectValue& aReject) {
-               OnSeekRejected(aReject);
-             }));
+    DemuxerSeek();
   }
 
   int64_t CalculateNewCurrentTime() const override
@@ -1057,6 +1064,32 @@ private:
 
   void OnSeekRejected(const SeekRejectValue& aReject) {
     mSeekRequest.Complete();
+
+    if (aReject.mError == NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA) {
+      SLOG("OnSeekRejected reason=WAITING_FOR_DATA type=%d", aReject.mType);
+      MOZ_ASSERT(!mMaster->IsRequestingAudioData());
+      MOZ_ASSERT(!mMaster->IsRequestingVideoData());
+      MOZ_ASSERT(!mMaster->IsWaitingAudioData());
+      MOZ_ASSERT(!mMaster->IsWaitingVideoData());
+      
+      mMaster->UpdateNextFrameStatus(MediaDecoderOwner::NEXT_FRAME_UNAVAILABLE_SEEKING);
+      mWaitRequest.Begin(
+        Reader()->WaitForData(aReject.mType)->Then(
+          OwnerThread(), __func__,
+          [this] (MediaData::Type aType) {
+            SLOG("OnSeekRejected wait promise resolved");
+            mWaitRequest.Complete();
+            DemuxerSeek();
+          },
+          [this] (const WaitForDataRejectValue& aRejection) {
+            SLOG("OnSeekRejected wait promise rejected");
+            mWaitRequest.Complete();
+            mMaster->DecodeError(NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA);
+          })
+      );
+      return;
+    }
+
     MOZ_ASSERT(NS_FAILED(aReject.mError), "Cancels should also disconnect mSeekRequest");
     mMaster->DecodeError(aReject.mError);
   }
@@ -1219,6 +1252,7 @@ private:
   media::TimeUnit mCurrentTimeBeforeSeek;
   bool mDoneAudioSeeking = false;
   bool mDoneVideoSeeking = false;
+  MozPromiseRequestHolder<WaitForDataPromise> mWaitRequest;
 
   
   
