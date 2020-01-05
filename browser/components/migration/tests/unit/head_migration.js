@@ -1,3 +1,7 @@
+"use strict";
+
+
+
 var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
 Cu.importGlobalProperties([ "URL" ]);
@@ -15,7 +19,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "MigrationUtils",
 
 var gProfD = do_get_profile();
 
-Cu.import("resource://testing-common/AppInfo.jsm");
+Cu.import("resource://testing-common/AppInfo.jsm"); 
 updateAppInfo();
 
 

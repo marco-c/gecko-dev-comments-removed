@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = {
+module.exports = { 
   "extends": [
     "../../../../../testing/xpcshell/xpcshell.eslintrc.js"
   ]

@@ -15,7 +15,7 @@ Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource:///modules/MigrationUtils.jsm");
 Cu.import("resource://gre/modules/LoginHelper.jsm");
 
-Cu.importGlobalProperties(['FileReader']);
+Cu.importGlobalProperties(["FileReader"]);
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
@@ -54,7 +54,7 @@ const wintypes = {
   PDWORD: ctypes.uint32_t.ptr,
   VOIDP: ctypes.voidptr_t,
   WORD: ctypes.uint16_t,
-}
+};
 
 
 function CtypesKernelHelpers() {
@@ -262,7 +262,7 @@ CtypesVaultHelpers.prototype = {
     } catch (ex) {}
     this._vaultcliLib = null;
   }
-}
+};
 
 
 
@@ -333,15 +333,15 @@ Bookmarks.prototype = {
     if (!this.__favoritesFolder) {
       if (this._migrationType == MSMigrationUtils.MIGRATION_TYPE_IE) {
         let favoritesFolder = Services.dirsvc.get("Favs", Ci.nsIFile);
-        if (favoritesFolder.exists() && favoritesFolder.isReadable())
-          return this.__favoritesFolder = favoritesFolder;
-      }
-      if (this._migrationType == MSMigrationUtils.MIGRATION_TYPE_EDGE) {
+        if (favoritesFolder.exists() && favoritesFolder.isReadable()) {
+          this.__favoritesFolder = favoritesFolder;
+        }
+      } else if (this._migrationType == MSMigrationUtils.MIGRATION_TYPE_EDGE) {
         let edgeDir = getEdgeLocalDataFolder();
         if (edgeDir) {
           edgeDir.appendRelativePath(EDGE_FAVORITES);
           if (edgeDir.exists() && edgeDir.isReadable() && edgeDir.isDirectory()) {
-            return this.__favoritesFolder = edgeDir;
+            this.__favoritesFolder = edgeDir;
           }
         }
       }
@@ -377,7 +377,7 @@ Bookmarks.prototype = {
       }
       yield this._migrateFolder(this._favoritesFolder, folderGuid);
     }.bind(this)).then(() => aCallback(true),
-                        e => { Cu.reportError(e); aCallback(false) });
+                       e => { Cu.reportError(e); aCallback(false) });
   },
 
   _migrateFolder: Task.async(function* (aSourceFolder, aDestFolderGuid) {
@@ -507,7 +507,8 @@ Cookies.prototype = {
         }
       }
     }
-    return this.__cookiesFolders = folders.length ? folders : null;
+    this.__cookiesFolders = folders.length ? folders : null;
+    return this.__cookiesFolders;
   },
 
   migrate(aCallback) {
@@ -694,8 +695,8 @@ function getTypedURLs(registryKeyPath) {
             urlTimeHex.unshift(c);
           }
           try {
-            let hi = parseInt(urlTimeHex.slice(0, 4).join(''), 16);
-            let lo = parseInt(urlTimeHex.slice(4, 8).join(''), 16);
+            let hi = parseInt(urlTimeHex.slice(0, 4).join(""), 16);
+            let lo = parseInt(urlTimeHex.slice(4, 8).join(""), 16);
             
             timeTyped = cTypes.fileTimeToSecondsSinceEpoch(hi, lo);
             
@@ -765,14 +766,11 @@ WindowsVaultFormPasswords.prototype = {
     let successfulVaultOpen = false;
     let error, vault;
     try {
-
       
       let vaultGuid = new ctypesVaultHelpers._structs.GUID(WEB_CREDENTIALS_VAULT_ID);
+      error = new wintypes.DWORD();
       
-      let vaultCount = new wintypes.DWORD;
-      error = new wintypes.DWORD;
-      
-      vault = new wintypes.VOIDP;
+      vault = new wintypes.VOIDP();
       
       error = ctypesVaultHelpers._functions.VaultOpenVault(vaultGuid.address(), 0, vault.address());
       if (error != RESULT_SUCCESS) {
@@ -780,8 +778,8 @@ WindowsVaultFormPasswords.prototype = {
       }
       successfulVaultOpen = true;
 
-      let item = new ctypesVaultHelpers._structs.VAULT_ELEMENT.ptr;
-      let itemCount = new wintypes.DWORD;
+      let item = new ctypesVaultHelpers._structs.VAULT_ELEMENT.ptr();
+      let itemCount = new wintypes.DWORD();
       
       
       error = ctypesVaultHelpers._functions.VaultEnumerateItems(vault, VAULT_ENUMERATE_ALL_ITEMS,
@@ -813,7 +811,7 @@ WindowsVaultFormPasswords.prototype = {
           }
           let username = item.contents.pIdentityElement.contents.itemValue.readString();
           
-          let credential = new ctypesVaultHelpers._structs.VAULT_ELEMENT.ptr;
+          let credential = new ctypesVaultHelpers._structs.VAULT_ELEMENT.ptr();
           error = ctypesVaultHelpers._functions.VaultGetItem(vault,
                                                              item.contents.schemaId.address(),
                                                              item.contents.pResourceElement,
