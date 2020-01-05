@@ -2732,6 +2732,11 @@ GeckoDriver.prototype.acceptConnections = function (cmd, resp) {
 
 
 
+
+
+
+
+
 GeckoDriver.prototype.quitApplication = function* (cmd, resp) {
   const quits = ["eConsiderQuit", "eAttemptQuit", "eForceQuit"];
 
@@ -2767,11 +2772,18 @@ GeckoDriver.prototype.quitApplication = function* (cmd, resp) {
   this.deleteSession();
 
   
-  let quitApplication = new Promise(resolve =>
-      Services.obs.addObserver(resolve, "quit-application", false));
+  let quitApplication = new Promise(resolve => {
+    Services.obs.addObserver(
+        (subject, topic, data) => resolve(data),
+        "quit-application",
+        false);
+  });
 
   Services.startup.quit(mode);
-  yield quitApplication.then(() => resp.send());
+
+  yield quitApplication
+      .then(cause => resp.body.cause = cause)
+      .then(() => resp.send());
 };
 
 GeckoDriver.prototype.installAddon = function (cmd, resp) {
