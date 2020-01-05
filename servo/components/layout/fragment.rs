@@ -22,7 +22,7 @@ use inline::{InlineMetrics, LAST_FRAGMENT_OF_ELEMENT};
 use ipc_channel::ipc::IpcSender;
 use layout_debug;
 use model::{self, IntrinsicISizes, IntrinsicISizesContribution, MaybeAuto, specified};
-use msg::constellation_msg::{ConstellationChan, Msg, PipelineId, SubpageId};
+use msg::constellation_msg::{PipelineId, SubpageId};
 use net_traits::image::base::Image;
 use net_traits::image_cache_task::UsePlaceholder;
 use rustc_serialize::{Encodable, Encoder};
@@ -2103,6 +2103,16 @@ impl Fragment {
     }
 
     
+    pub fn needs_layer(&self) -> bool {
+        
+        
+        match self.specific {
+            SpecificFragmentInfo::Canvas(_) | SpecificFragmentInfo::Iframe(_) => true,
+            _ => false,
+        }
+    }
+
+    
     pub fn establishes_stacking_context(&self) -> bool {
         if self.flags.contains(HAS_LAYER) {
             return true
@@ -2126,9 +2136,7 @@ impl Fragment {
             transform_style::T::auto => {}
         }
 
-        
-        
-        if let SpecificFragmentInfo::Canvas(_) = self.specific {
+        if self.needs_layer() {
             return true
         }
 
@@ -2161,12 +2169,10 @@ impl Fragment {
 
     
     pub fn compute_overflow(&self,
-                            relative_containing_block_size: &LogicalSize<Au>,
-                            relative_containing_block_mode: WritingMode)
+                            flow_size: &Size2D<Au>,
+                            relative_containing_block_size: &LogicalSize<Au>)
                             -> Rect<Au> {
-        let container_size =
-            relative_containing_block_size.to_physical(relative_containing_block_mode);
-        let mut border_box = self.border_box.to_physical(self.style.writing_mode, container_size);
+        let mut border_box = self.border_box.to_physical(self.style.writing_mode, *flow_size);
 
         
         
@@ -2207,23 +2213,6 @@ impl Fragment {
         
         
         overflow
-    }
-
-    
-    
-    
-    
-    
-    pub fn remove_compositor_layers(&self, constellation_chan: ConstellationChan) {
-        match self.specific {
-            SpecificFragmentInfo::Iframe(ref iframe_info) => {
-                let ConstellationChan(ref chan) = constellation_chan;
-                chan.send(Msg::FrameRect(iframe_info.pipeline_id,
-                                         iframe_info.subpage_id,
-                                         Rect::zero())).unwrap();
-            }
-            _ => {}
-        }
     }
 
     pub fn requires_line_break_afterward_if_wrapping_on_newlines(&self) -> bool {

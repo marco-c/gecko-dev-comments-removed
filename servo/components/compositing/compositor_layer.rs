@@ -3,7 +3,7 @@
 
 
 use azure::azure_hl;
-use compositor::IOCompositor;
+use compositor::{IOCompositor, RemovedPipelineInfo};
 use euclid::length::Length;
 use euclid::point::{Point2D, TypedPoint2D};
 use euclid::rect::Rect;
@@ -12,7 +12,7 @@ use layers::color::Color;
 use layers::geometry::LayerPixel;
 use layers::layers::{Layer, LayerBufferSet};
 use msg::compositor_msg::{Epoch, LayerId, LayerProperties, ScrollPolicy};
-use msg::constellation_msg::PipelineId;
+use msg::constellation_msg::{PipelineId, SubpageId};
 use script_traits::CompositorEvent::{ClickEvent, MouseDownEvent, MouseMoveEvent, MouseUpEvent};
 use script_traits::ConstellationControlMsg;
 use std::rc::Rc;
@@ -42,6 +42,9 @@ pub struct CompositorData {
     
     
     pub scroll_offset: TypedPoint2D<LayerPixel, f32>,
+
+    
+    pub subpage_info: Option<(PipelineId, SubpageId)>,
 }
 
 impl CompositorData {
@@ -58,6 +61,9 @@ impl CompositorData {
             requested_epoch: Epoch(0),
             painted_epoch: Epoch(0),
             scroll_offset: Point2D::typed(0., 0.),
+            subpage_info: layer_properties.subpage_layer_info.map(|subpage_layer_info| {
+                (subpage_layer_info.pipeline_id, subpage_layer_info.subpage_id)
+            }),
         };
 
         Rc::new(Layer::new(Rect::from_untyped(&layer_properties.rect),
@@ -96,14 +102,6 @@ pub trait CompositorLayer {
                                                   compositor: &mut IOCompositor<Window>,
                                                   pipeline_id: PipelineId)
                                                   where Window: WindowMethods;
-
-    
-    
-    fn collect_old_layers<Window>(&self,
-                                  compositor: &mut IOCompositor<Window>,
-                                  pipeline_id: PipelineId,
-                                  new_layers: &[LayerProperties])
-                                  where Window: WindowMethods;
 
     
     
@@ -149,6 +147,17 @@ pub trait CompositorLayer {
 
     
     fn pipeline_id(&self) -> PipelineId;
+}
+
+pub trait RcCompositorLayer {
+    
+    
+    fn collect_old_layers<Window>(&self,
+                                  compositor: &mut IOCompositor<Window>,
+                                  pipeline_id: PipelineId,
+                                  new_layers: &[LayerProperties],
+                                  pipelines_removed: &mut Vec<RemovedPipelineInfo>)
+                                  where Window: WindowMethods;
 }
 
 #[derive(Copy, PartialEq, Clone, Debug)]
@@ -279,43 +288,6 @@ impl CompositorLayer for Layer<CompositorData> {
         }
     }
 
-    fn collect_old_layers<Window>(&self,
-                                  compositor: &mut IOCompositor<Window>,
-                                  pipeline_id: PipelineId,
-                                  new_layers: &[LayerProperties])
-                                  where Window: WindowMethods {
-        
-        
-        
-        for kid in &*self.children() {
-            kid.collect_old_layers(compositor, pipeline_id, new_layers);
-        }
-
-        
-        self.children().retain(|child| {
-            let extra_data = child.extra_data.borrow();
-
-            
-            if pipeline_id != extra_data.pipeline_id ||
-               extra_data.id == LayerId::null() {
-                true
-            } else {
-                
-                let keep_layer = new_layers.iter().any(|properties| {
-                    properties.id == extra_data.id
-                });
-
-                
-                
-                if !keep_layer {
-                    child.clear_all_tiles(compositor);
-                }
-
-                keep_layer
-            }
-        });
-    }
-
     
     
     
@@ -403,8 +375,11 @@ impl CompositorLayer for Layer<CompositorData> {
                 MouseUpEvent(button, event_point),
         };
 
-        let pipeline = compositor.pipeline(self.pipeline_id());
-        let _ = pipeline.script_chan.send(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message));
+        if let Some(pipeline) = compositor.pipeline(self.pipeline_id()) {
+            pipeline.script_chan
+                    .send(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message))
+                    .unwrap();
+        }
     }
 
     fn send_mouse_move_event<Window>(&self,
@@ -412,8 +387,11 @@ impl CompositorLayer for Layer<CompositorData> {
                                      cursor: TypedPoint2D<LayerPixel, f32>)
                                      where Window: WindowMethods {
         let message = MouseMoveEvent(cursor.to_untyped());
-        let pipeline = compositor.pipeline(self.pipeline_id());
-        let _ = pipeline.script_chan.send(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message));
+        if let Some(pipeline) = compositor.pipeline(self.pipeline_id()) {
+            pipeline.script_chan
+                    .send(ConstellationControlMsg::SendEvent(pipeline.id.clone(), message))
+                    .unwrap();
+        }
     }
 
     fn scroll_layer_and_all_child_layers(&self, new_offset: TypedPoint2D<LayerPixel, f32>)
@@ -443,3 +421,97 @@ impl CompositorLayer for Layer<CompositorData> {
         self.extra_data.borrow().pipeline_id
     }
 }
+
+impl RcCompositorLayer for Rc<Layer<CompositorData>> {
+    fn collect_old_layers<Window>(&self,
+                                  compositor: &mut IOCompositor<Window>,
+                                  pipeline_id: PipelineId,
+                                  new_layers: &[LayerProperties],
+                                  pipelines_removed: &mut Vec<RemovedPipelineInfo>)
+                                  where Window: WindowMethods {
+        fn find_root_layer_for_pipeline(layer: &Rc<Layer<CompositorData>>, pipeline_id: PipelineId)
+                                        -> Option<Rc<Layer<CompositorData>>> {
+            let extra_data = layer.extra_data.borrow();
+            if extra_data.pipeline_id == pipeline_id {
+                return Some((*layer).clone())
+            }
+
+            for kid in &*layer.children() {
+                if let Some(layer) = find_root_layer_for_pipeline(kid, pipeline_id) {
+                    return Some(layer.clone())
+                }
+            }
+            None
+        }
+
+        fn collect_old_layers_for_pipeline<Window>(
+                layer: &Layer<CompositorData>,
+                compositor: &mut IOCompositor<Window>,
+                pipeline_id: PipelineId,
+                new_layers: &[LayerProperties],
+                pipelines_removed: &mut Vec<RemovedPipelineInfo>)
+                where Window: WindowMethods {
+            
+            
+            
+            for kid in &*layer.children() {
+                collect_old_layers_for_pipeline(kid,
+                                                compositor,
+                                                pipeline_id,
+                                                new_layers,
+                                                pipelines_removed);
+            }
+
+            
+            layer.children().retain(|child| {
+                let extra_data = child.extra_data.borrow();
+                if pipeline_id == extra_data.pipeline_id {
+                    
+                    if extra_data.id == LayerId::null() {
+                        return true
+                    }
+
+                    
+                    return new_layers.iter().any(|properties| properties.id == extra_data.id);
+                }
+
+                if let Some(ref subpage_info_for_this_layer) = extra_data.subpage_info {
+                    for layer_properties in new_layers.iter() {
+                        
+                        if let Some(ref subpage_layer_info) = layer_properties.subpage_layer_info {
+                            if subpage_layer_info.pipeline_id == subpage_info_for_this_layer.0 &&
+                                    subpage_layer_info.subpage_id ==
+                                    subpage_info_for_this_layer.1 {
+                                return true
+                            }
+                        }
+                    }
+
+                    pipelines_removed.push(RemovedPipelineInfo {
+                        parent_pipeline_id: subpage_info_for_this_layer.0,
+                        parent_subpage_id: subpage_info_for_this_layer.1,
+                        child_pipeline_id: extra_data.pipeline_id,
+                    });
+                }
+
+                
+                child.clear_all_tiles(compositor);
+                false
+            });
+        }
+
+        
+        let root_layer = match find_root_layer_for_pipeline(self, pipeline_id) {
+            Some(root_layer) => root_layer,
+            None => return,
+        };
+
+        
+        collect_old_layers_for_pipeline(&root_layer,
+                                        compositor,
+                                        pipeline_id,
+                                        new_layers,
+                                        pipelines_removed);
+    }
+}
+

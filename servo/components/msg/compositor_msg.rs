@@ -3,12 +3,13 @@
 
 
 use azure::azure_hl::Color;
-use constellation_msg::{Key, KeyModifiers, KeyState, PipelineId};
+use constellation_msg::{Key, KeyModifiers, KeyState, PipelineId, SubpageId};
 use euclid::{Matrix4, Point2D, Rect, Size2D};
 use ipc_channel::ipc::IpcSender;
 use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::NativeDisplay;
 use std::fmt::{self, Debug, Formatter};
+use util::geometry::Au;
 
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]
@@ -125,6 +126,9 @@ pub struct LayerProperties {
     
     pub perspective: Matrix4,
     
+    
+    pub subpage_layer_info: Option<SubpageLayerInfo>,
+    
     pub establishes_3d_context: bool,
     
     pub scrolls_overflow_area: bool,
@@ -166,3 +170,15 @@ pub enum ScriptToCompositorMsg {
     ResizeTo(Size2D<u32>),
     Exit,
 }
+
+
+#[derive(Clone, Copy, Deserialize, Serialize, HeapSizeOf)]
+pub struct SubpageLayerInfo {
+    
+    pub pipeline_id: PipelineId,
+    
+    pub subpage_id: SubpageId,
+    
+    pub origin: Point2D<Au>,
+}
+
