@@ -7,6 +7,12 @@
 const { Ci, Cc } = require("chrome");
 const nodeFilterConstants = require("devtools/shared/dom-node-filter-constants");
 
+const SHEET_TYPE = {
+  "agent": "AGENT_SHEET",
+  "user": "USER_SHEET",
+  "author": "AUTHOR_SHEET"
+};
+
 loader.lazyRequireGetter(this, "setIgnoreLayoutChanges", "devtools/server/actors/reflow", true);
 exports.setIgnoreLayoutChanges = (...args) =>
   this.setIgnoreLayoutChanges(...args);
@@ -715,3 +721,49 @@ function getWindowFor(node) {
   }
   return null;
 }
+
+
+
+
+
+
+
+
+
+
+
+function loadSheet(window, url, type = "author") {
+  if (!(type in SHEET_TYPE)) {
+    type = "author";
+  }
+
+  let windowUtils = utilsFor(window);
+  try {
+    windowUtils.loadSheetUsingURIString(url, windowUtils[SHEET_TYPE[type]]);
+  } catch (e) {
+    
+  }
+}
+exports.loadSheet = loadSheet;
+
+
+
+
+
+
+
+
+
+function removeSheet(window, url, type = "author") {
+  if (!(type in SHEET_TYPE)) {
+    type = "author";
+  }
+
+  let windowUtils = utilsFor(window);
+  try {
+    windowUtils.removeSheetUsingURIString(url, windowUtils[SHEET_TYPE[type]]);
+  } catch (e) {
+    
+  }
+}
+exports.removeSheet = removeSheet;
