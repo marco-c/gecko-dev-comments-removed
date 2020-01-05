@@ -419,10 +419,6 @@ def _killProcess(pid):
                ExprVar('base::PROCESS_END_KILLED_BY_USER'),
                ExprLiteral.FALSE ])
 
-def _badTransition():
-    
-    return [ _printWarningMessage('bad state transition!') ]
-
 
 
 class _Result:
