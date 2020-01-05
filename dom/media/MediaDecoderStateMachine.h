@@ -190,14 +190,13 @@ public:
   RefPtr<ShutdownPromise> BeginShutdown();
 
   
-  void DispatchSetFragmentEndTime(int64_t aEndTime)
+  void DispatchSetFragmentEndTime(const media::TimeUnit& aEndTime)
   {
     RefPtr<MediaDecoderStateMachine> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self, aEndTime] () {
       
-      self->mFragmentEndTime = aEndTime >= 0
-        ? media::TimeUnit::FromMicroseconds(aEndTime)
-        : media::TimeUnit::Invalid();
+      self->mFragmentEndTime = aEndTime >= media::TimeUnit::Zero()
+        ? aEndTime : media::TimeUnit::Invalid();
     });
     OwnerThread()->Dispatch(r.forget());
   }
