@@ -2457,7 +2457,7 @@ gfxPlatform::AsyncPanZoomEnabled()
   }
 #ifdef MOZ_ENABLE_WEBRENDER
   
-  if (!gfxPrefs::APZAllowWithWebRender()) {
+  if (gfxPrefs::WebRenderEnabled() && !gfxPrefs::APZAllowWithWebRender()) {
     return false;
   }
 #endif 
