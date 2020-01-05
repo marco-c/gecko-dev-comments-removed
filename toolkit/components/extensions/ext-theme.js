@@ -7,10 +7,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
 XPCOMUtils.defineLazyModuleGetter(this, "LightweightThemeManager",
                                   "resource://gre/modules/LightweightThemeManager.jsm");
 
-XPCOMUtils.defineLazyGetter(this, "gThemesEnabled", () => {
-  return Preferences.get("extensions.webextensions.themes.enabled");
-});
-
 
 let themeMap = new WeakMap();
 
@@ -158,7 +154,7 @@ class Theme {
 
 
 extensions.on("manifest_theme", (type, directive, extension, manifest) => {
-  if (!gThemesEnabled) {
+  if (!Preferences.get("extensions.webextensions.themes.enabled")) {
     
     return;
   }
@@ -185,18 +181,11 @@ extensions.registerSchemaAPI("theme", "addon_parent", context => {
   return {
     theme: {
       update(details) {
-        if (!gThemesEnabled) {
-          
-          return;
-        }
-
         let theme = themeMap.get(extension);
 
         
-        
-        
         if (!theme) {
-          themeMap.set(extension, new Theme(extension.baseURI));
+          return;
         }
 
         theme.load(details);
