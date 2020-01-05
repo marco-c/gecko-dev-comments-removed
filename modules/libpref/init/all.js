@@ -367,6 +367,8 @@ pref("media.opus.enabled", true);
 pref("media.wave.enabled", true);
 pref("media.webm.enabled", true);
 
+pref("media.eme.chromium-api.enabled", false);
+
 #ifdef MOZ_APPLEMEDIA
 #ifdef MOZ_WIDGET_UIKIT
 pref("media.mp3.enabled", true);
@@ -2637,6 +2639,10 @@ pref("layout.css.contain.enabled", false);
 
 
 pref("layout.css.display-flow-root.enabled", true);
+
+
+pref("layout.css.appearance.enabled", true);
+pref("layout.css.moz-appearance.enabled", true);
 
 
 pref("layout.css.box-decoration-break.enabled", true);
@@ -5642,11 +5648,15 @@ pref("fuzzing.enabled", false);
 #endif
 
 
-pref("layers.advanced.border-layers", false);
+
+
+
+
+
+pref("layers.advanced.border-layers", 2);
+pref("layers.advanced.boxshadow-outer-layers", 2);
+pref("layers.advanced.caret-layers", 2);
+
 #ifdef MOZ_ENABLE_WEBRENDER
-pref("layers.advanced.caret-layers", true);
-pref("layers.advanced.boxshadow-outer-layers", false);
 pref("layers.advanced.boxshadow-inset-layers", true);
-#else
-pref("layers.advanced.caret-layers", false);
 #endif
