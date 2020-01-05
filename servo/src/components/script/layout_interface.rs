@@ -105,6 +105,8 @@ pub struct Reflow {
     window_size: Size2D<uint>,
     
     script_join_chan: Chan<()>,
+    
+    id: uint
 }
 
 
