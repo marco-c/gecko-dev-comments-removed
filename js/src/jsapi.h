@@ -565,11 +565,16 @@ typedef enum JSFinalizeStatus {
 
 
 
-    JSFINALIZE_GROUP_START,
+    JSFINALIZE_GROUP_PREPARE,
 
     
 
 
+
+
+    JSFINALIZE_GROUP_START,
+
+    
 
 
 
@@ -5073,9 +5078,9 @@ class MOZ_RAII JSAutoByteString
     }
 
     
-    void initBytes(JS::UniqueChars&& bytes) {
+    void initBytes(char* bytes) {
         MOZ_ASSERT(!mBytes);
-        mBytes = bytes.release();
+        mBytes = bytes;
     }
 
     char* encodeLatin1(JSContext* cx, JSString* str) {
