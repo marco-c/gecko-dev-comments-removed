@@ -4309,7 +4309,6 @@ nsresult HTMLMediaElement::BindToTree(nsIDocument* aDocument, nsIContent* aParen
     
     
     UpdatePreloadAction();
-    aDocument->AddMediaContent(this);
   }
 
   NotifyDecoderActivityChanges();
@@ -4542,9 +4541,6 @@ void HTMLMediaElement::UnbindFromTree(bool aDeep,
 {
   mUnboundFromTree = true;
   mVisibilityState = Visibility::UNTRACKED;
-  if (OwnerDoc()) {
-    OwnerDoc()->RemoveMediaContent(this);
-  }
 
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
 
