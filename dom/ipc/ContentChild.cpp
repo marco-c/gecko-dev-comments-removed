@@ -3450,5 +3450,26 @@ ContentChild::RecvGetFilesResponse(const nsID& aUUID,
   return true;
 }
 
+ void
+ContentChild::FatalErrorIfNotUsingGPUProcess(const char* const aProtocolName,
+                                             const char* const aErrorMsg,
+                                             base::ProcessId aOtherPid)
+{
+  
+  
+  
+  if (aOtherPid == base::GetCurrentProcId() ||
+      (GetSingleton() && GetSingleton()->OtherPid() == aOtherPid)) {
+    mozilla::ipc::FatalError(aProtocolName, aErrorMsg, false);
+  } else {
+    nsAutoCString formattedMessage("IPDL error [");
+    formattedMessage.AppendASCII(aProtocolName);
+    formattedMessage.AppendLiteral("]: \"");
+    formattedMessage.AppendASCII(aErrorMsg);
+    formattedMessage.AppendLiteral("\".");
+    NS_WARNING(formattedMessage.get());
+  }
+}
+
 } 
 } 

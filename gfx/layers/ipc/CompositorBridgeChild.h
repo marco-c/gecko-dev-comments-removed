@@ -134,6 +134,8 @@ public:
                                        TextureFlags aFlags,
                                        uint64_t aSerial) override;
 
+  virtual void FatalError(const char* const aName, const char* const aMsg) const override;
+
   
 
 

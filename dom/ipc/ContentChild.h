@@ -671,6 +671,16 @@ public:
   virtual bool
   RecvBlobURLUnregistration(const nsCString& aURI) override;
 
+  
+
+
+
+
+
+  static void FatalErrorIfNotUsingGPUProcess(const char* const aProtocolName,
+                                             const char* const aErrorMsg,
+                                             base::ProcessId aOtherPid);
+
 private:
   static void ForceKillTimerCallback(nsITimer* aTimer, void* aClosure);
   void StartForceKillTimer();
