@@ -6387,11 +6387,11 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
   Matrix4x4 result;
   
   
-  Matrix svgTransform, transformFromSVGParent;
+  
+  Matrix svgTransform, parentsChildrenOnlyTransform;
   bool hasSVGTransforms =
-    frame && frame->IsSVGTransformed(&svgTransform, &transformFromSVGParent);
-  bool hasTransformFromSVGParent =
-    hasSVGTransforms && !transformFromSVGParent.IsIdentity();
+    frame && frame->IsSVGTransformed(&svgTransform,
+                                     &parentsChildrenOnlyTransform);
   
   if (aProperties.mTransformList) {
     result = nsStyleTransformMatrix::ReadTransforms(aProperties.mTransformList->mHead,
@@ -6408,47 +6408,36 @@ nsDisplayTransform::GetResultingTransformMatrixInternal(const FrameTransformProp
     result = Matrix4x4::From2D(svgTransform);
   }
 
+  
+  result.ChangeBasis(aProperties.mToTransformOrigin);
+
+  
+  
+  bool parentHasChildrenOnlyTransform =
+    hasSVGTransforms && !parentsChildrenOnlyTransform.IsIdentity();
+
+  if (parentHasChildrenOnlyTransform) {
+    float pixelsPerCSSPx =
+      frame->PresContext()->AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
+    parentsChildrenOnlyTransform._31 *= pixelsPerCSSPx;
+    parentsChildrenOnlyTransform._32 *= pixelsPerCSSPx;
+
+    Point3D frameOffset(
+      NSAppUnitsToFloatPixels(-frame->GetPosition().x, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(-frame->GetPosition().y, aAppUnitsPerPixel),
+      0);
+    Matrix4x4 parentsChildrenOnlyTransform3D =
+      Matrix4x4::From2D(parentsChildrenOnlyTransform).ChangeBasis(frameOffset);
+
+    result *= parentsChildrenOnlyTransform3D;
+  }
 
   Matrix4x4 perspectiveMatrix;
   bool hasPerspective = aFlags & INCLUDE_PERSPECTIVE;
   if (hasPerspective) {
-    hasPerspective = ComputePerspectiveMatrix(frame, aAppUnitsPerPixel,
-                                              perspectiveMatrix);
-  }
-
-  if (!hasSVGTransforms || !hasTransformFromSVGParent) {
-    
-    
-    
-    result.ChangeBasis(aProperties.mToTransformOrigin);
-  } else {
-    Point3D refBoxOffset(NSAppUnitsToFloatPixels(refBox.X(), aAppUnitsPerPixel),
-                         NSAppUnitsToFloatPixels(refBox.Y(), aAppUnitsPerPixel),
-                         0);
-    
-    
-    
-    
-    
-    
-    result.ChangeBasis(aProperties.mToTransformOrigin - refBoxOffset);
-
-    
-    
-    float pixelsPerCSSPx =
-      frame->PresContext()->AppUnitsPerCSSPixel() / aAppUnitsPerPixel;
-    transformFromSVGParent._31 *= pixelsPerCSSPx;
-    transformFromSVGParent._32 *= pixelsPerCSSPx;
-    result = result * Matrix4x4::From2D(transformFromSVGParent);
-
-    
-    
-    
-    result.ChangeBasis(refBoxOffset);
-  }
-
-  if (hasPerspective) {
-    result = result * perspectiveMatrix;
+    if (ComputePerspectiveMatrix(frame, aAppUnitsPerPixel, perspectiveMatrix)) {
+      result *= perspectiveMatrix;
+    }
   }
 
   if ((aFlags & INCLUDE_PRESERVE3D_ANCESTORS) &&
