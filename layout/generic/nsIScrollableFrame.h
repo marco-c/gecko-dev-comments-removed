@@ -474,8 +474,6 @@ public:
 
   virtual ScrollSnapInfo GetScrollSnapInfo() const = 0;
 
-  virtual void SetScrollsClipOnUnscrolledOutOfFlow() = 0;
-
   
 
 
