@@ -4,82 +4,15 @@
 
 
 
+use profile_traits::mem::{ProfilerChan, ProfilerMsg, Reporter, ReportsChan};
 use self::system_reporter::SystemReporter;
 use std::borrow::ToOwned;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::old_io::timer::sleep;
-use std::sync::mpsc::{Sender, channel, Receiver};
+use std::sync::mpsc::{channel, Receiver};
 use std::time::duration::Duration;
 use util::task::spawn_named;
-
-#[derive(Clone)]
-pub struct ProfilerChan(pub Sender<ProfilerMsg>);
-
-impl ProfilerChan {
-    pub fn send(&self, msg: ProfilerMsg) {
-        let ProfilerChan(ref c) = *self;
-        c.send(msg).unwrap();
-    }
-}
-
-
-#[macro_export]
-macro_rules! path {
-    ($($x:expr),*) => {{
-        use std::borrow::ToOwned;
-        vec![$( $x.to_owned() ),*]
-    }}
-}
-
-
-pub struct Report {
-    
-    pub path: Vec<String>,
-
-    
-    pub size: usize,
-}
-
-
-#[derive(Clone)]
-pub struct ReportsChan(pub Sender<Vec<Report>>);
-
-impl ReportsChan {
-    pub fn send(&self, report: Vec<Report>) {
-        let ReportsChan(ref c) = *self;
-        c.send(report).unwrap();
-    }
-}
-
-
-
-
-
-
-pub trait Reporter {
-    
-    fn collect_reports(&self, reports_chan: ReportsChan) -> bool;
-}
-
-
-pub enum ProfilerMsg {
-    
-    
-    
-    RegisterReporter(String, Box<Reporter + Send>),
-
-    
-    
-    
-    UnregisterReporter(String),
-
-    
-    Print,
-
-    
-    Exit,
-}
 
 pub struct Profiler {
     
@@ -363,11 +296,11 @@ impl ReportsForest {
 
 mod system_reporter {
     use libc::{c_char, c_int, c_void, size_t};
+    use profile_traits::mem::{Report, Reporter, ReportsChan};
     use std::borrow::ToOwned;
     use std::ffi::CString;
     use std::mem::size_of;
     use std::ptr::null_mut;
-    use super::{Report, Reporter, ReportsChan};
     #[cfg(target_os="macos")]
     use task_info::task_basic_info::{virtual_size, resident_size};
 
