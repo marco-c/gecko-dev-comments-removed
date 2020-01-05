@@ -2,6 +2,9 @@
 
 
 
+import re
+
+
 INTEGRATION_PROJECTS = set([
     'mozilla-inbound',
     'autoland',
@@ -36,6 +39,27 @@ def attrmatch(attributes, **kwargs):
         elif kwval != attributes[kwkey]:
             return False
     return True
+
+
+def keymatch(attributes, target):
+    """Determine if any keys in attributes are a match to target, then return
+    a list of matching values. First exact matches will be checked. Failing
+    that, regex matches and finally a default key.
+    """
+    
+    if target in attributes:
+        return [attributes[target]]
+
+    
+    matches = [v for k, v in attributes.iteritems() if re.match(k + '$', target)]
+    if matches:
+        return matches
+
+    
+    if 'default' in attributes:
+        return [attributes['default']]
+
+    return []
 
 
 def match_run_on_projects(project, run_on_projects):
