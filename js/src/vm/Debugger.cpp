@@ -32,7 +32,6 @@
 #include "js/Vector.h"
 #include "proxy/ScriptedProxyHandler.h"
 #include "vm/ArgumentsObject.h"
-#include "vm/AsyncFunction.h"
 #include "vm/DebuggerMemory.h"
 #include "vm/GeckoProfiler.h"
 #include "vm/GeneratorObject.h"
@@ -1606,12 +1605,7 @@ CheckResumptionValue(JSContext* cx, AbstractFramePtr frame, const Maybe<HandleVa
         
         
         RootedFunction callee(cx, frame.callee());
-        if (callee->isAsync()) {
-            if (!CheckAsyncResumptionValue(cx, vp)) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_BAD_AWAIT);
-                return false;
-            }
-        } else if (callee->isStarGenerator() || callee->isAsync()) {
+        if (callee->isStarGenerator()) {
             if (!CheckStarGeneratorResumptionValue(cx, vp)) {
                 JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEBUG_BAD_YIELD);
                 return false;
