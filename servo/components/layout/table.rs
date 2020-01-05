@@ -7,8 +7,8 @@
 #![deny(unsafe_code)]
 
 use app_units::Au;
+use block::{BlockFlow, CandidateBSizeIterator, ISizeAndMarginsComputer};
 use block::{ISizeConstraintInput, ISizeConstraintSolution};
-use block::{self, BlockFlow, CandidateBSizeIterator, ISizeAndMarginsComputer};
 use context::LayoutContext;
 use display_list_builder::{BlockFlowDisplayListBuilding, BorderPaintingMode};
 use euclid::{Point2D, Rect};
@@ -775,11 +775,7 @@ impl TableLikeFlow for BlockFlow {
 
             
             
-            let mut layers_needed_for_descendants = false;
             for kid in self.base.child_iter() {
-                
-                block::propagate_layer_flag_from_child(&mut layers_needed_for_descendants, kid);
-
                 
                 if kid.is_table_row() {
                     has_rows = true;
