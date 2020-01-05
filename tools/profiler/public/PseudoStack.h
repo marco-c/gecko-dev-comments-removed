@@ -3,15 +3,20 @@
 
 
 
+
 #ifndef PROFILER_PSEUDO_STACK_H_
 #define PROFILER_PSEUDO_STACK_H_
 
 #include "mozilla/ArrayUtils.h"
-#include <stdint.h>
 #include "js/ProfilingStack.h"
 #include <stdlib.h>
 #include "mozilla/Atomics.h"
 #include "nsISupportsImpl.h"
+
+#include <stdlib.h>
+#include <stdint.h>
+
+#include <algorithm>
 
 
 
@@ -55,12 +60,6 @@ LinuxKernelMemoryBarrierFunc pLinuxKernelMemoryBarrier __attribute__((weak)) =
 
 
 
-static inline uint32_t sMin(uint32_t l, uint32_t r) {
-  return l < r ? l : r;
-}
-
-
-
 
 
 
@@ -77,26 +76,24 @@ class ProfilerLinkedList;
 class SpliceableJSONWriter;
 class UniqueStacks;
 
-class ProfilerMarker {
+class ProfilerMarker
+{
   friend class ProfilerLinkedList<ProfilerMarker>;
+
 public:
   explicit ProfilerMarker(const char* aMarkerName,
                           ProfilerMarkerPayload* aPayload = nullptr,
                           double aTime = 0);
-
   ~ProfilerMarker();
 
-  const char* GetMarkerName() const {
-    return mMarkerName;
-  }
+  const char* GetMarkerName() const { return mMarkerName; }
 
-  void StreamJSON(SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks) const;
+  void StreamJSON(SpliceableJSONWriter& aWriter,
+                  UniqueStacks& aUniqueStacks) const;
 
   void SetGeneration(uint32_t aGenID);
 
-  bool HasExpired(uint32_t aGenID) const {
-    return mGenID + 2 <= aGenID;
-  }
+  bool HasExpired(uint32_t aGenID) const { return mGenID + 2 <= aGenID; }
 
   double GetTime() const;
 
@@ -109,23 +106,24 @@ private:
 };
 
 template<typename T>
-class ProfilerLinkedList {
+class ProfilerLinkedList
+{
 public:
   ProfilerLinkedList()
     : mHead(nullptr)
     , mTail(nullptr)
   {}
 
-  void insert(T* elem)
+  void insert(T* aElem)
   {
     if (!mTail) {
-      mHead = elem;
-      mTail = elem;
+      mHead = aElem;
+      mTail = aElem;
     } else {
-      mTail->mNext = elem;
-      mTail = elem;
+      mTail->mNext = aElem;
+      mTail = aElem;
     }
-    elem->mNext = nullptr;
+    aElem->mNext = nullptr;
   }
 
   T* popHead()
@@ -181,8 +179,8 @@ public:
   
   
   
-  
-  void insert(T* aElement) {
+  void insert(T* aElement)
+  {
     MOZ_ASSERT(aElement);
 
     mSignalLock = true;
@@ -200,10 +198,7 @@ public:
   
   ProfilerLinkedList<T>* accessList()
   {
-    if (mSignalLock) {
-      return nullptr;
-    }
-    return &mList;
+    return mSignalLock ? nullptr : &mList;
   }
 
 private:
@@ -215,7 +210,11 @@ private:
 };
 
 
-void ProfilerJSEventMarker(const char *event);
+void ProfilerJSEventMarker(const char* aEvent);
+
+
+
+
 
 
 
@@ -234,7 +233,8 @@ public:
     MOZ_COUNT_CTOR(PseudoStack);
   }
 
-  ~PseudoStack() {
+  ~PseudoStack()
+  {
     MOZ_COUNT_DTOR(PseudoStack);
 
     
@@ -244,13 +244,17 @@ public:
   }
 
   
-  void reinitializeOnResume() {
+  
+  void reinitializeOnResume()
+  {
+    
     
     
     mSleepId++;
   }
 
-  void addMarker(const char* aMarkerStr, ProfilerMarkerPayload* aPayload, double aTime)
+  void addMarker(const char* aMarkerStr, ProfilerMarkerPayload* aPayload,
+                 double aTime)
   {
     ProfilerMarker* marker = new ProfilerMarker(aMarkerStr, aPayload, aTime);
     mPendingMarkers.insert(marker);
@@ -265,20 +269,21 @@ public:
     return mPendingMarkers.accessList();
   }
 
-  void push(const char *aName, js::ProfileEntry::Category aCategory, uint32_t line)
+  void push(const char* aName, js::ProfileEntry::Category aCategory,
+            uint32_t line)
   {
     push(aName, aCategory, nullptr, false, line);
   }
 
-  void push(const char *aName, js::ProfileEntry::Category aCategory,
-    void *aStackAddress, bool aCopy, uint32_t line)
+  void push(const char* aName, js::ProfileEntry::Category aCategory,
+            void* aStackAddress, bool aCopy, uint32_t line)
   {
     if (size_t(mStackPointer) >= mozilla::ArrayLength(mStack)) {
       mStackPointer++;
       return;
     }
 
-    volatile StackEntry &entry = mStack[mStackPointer];
+    volatile StackEntry& entry = mStack[mStackPointer];
 
     
     
@@ -288,10 +293,11 @@ public:
     entry.setCategory(aCategory);
 
     
-    if (aCopy)
+    if (aCopy) {
       entry.setFlag(js::ProfileEntry::FRAME_LABEL_COPY);
-    else
+    } else {
       entry.unsetFlag(js::ProfileEntry::FRAME_LABEL_COPY);
+    }
 
     
     STORE_SEQUENCER();
@@ -303,10 +309,12 @@ public:
 
   uint32_t stackSize() const
   {
-    return sMin(mStackPointer, mozilla::sig_safe_t(mozilla::ArrayLength(mStack)));
+    return std::min(mStackPointer,
+                    mozilla::sig_safe_t(mozilla::ArrayLength(mStack)));
   }
 
-  void sampleContext(JSContext* context) {
+  void sampleContext(JSContext* context)
+  {
     if (mContext && !context) {
       
       
@@ -325,11 +333,13 @@ public:
                                  (js::ProfileEntry*) mStack,
                                  (uint32_t*) &mStackPointer,
                                  (uint32_t) mozilla::ArrayLength(mStack));
-    if (mStartJSSampling)
+    if (mStartJSSampling) {
       enableJSSampling();
+    }
   }
 
-  void enableJSSampling() {
+  void enableJSSampling()
+  {
     if (mContext) {
       js::EnableContextProfilingStack(mContext, true);
       js::RegisterContextProfilingEventMarker(mContext, &ProfilerJSEventMarker);
@@ -339,18 +349,23 @@ public:
     }
   }
 
-  void jsOperationCallback() {
-    if (mStartJSSampling)
+  void jsOperationCallback()
+  {
+    if (mStartJSSampling) {
       enableJSSampling();
+    }
   }
 
-  void disableJSSampling() {
+  void disableJSSampling()
+  {
     mStartJSSampling = false;
-    if (mContext)
+    if (mContext) {
       js::EnableContextProfilingStack(mContext, false);
+    }
   }
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+  {
     size_t n = aMallocSizeOf(this);
 
     
@@ -366,41 +381,13 @@ public:
     return n;
   }
 
-  
-  StackEntry volatile mStack[1024];
-
-private:
-  
-  PseudoStack(const PseudoStack&) = delete;
-  void operator=(const PseudoStack&) = delete;
-
-  void flushSamplerOnJSShutdown();
+  enum SleepState { NOT_SLEEPING, SLEEPING_FIRST, SLEEPING_AGAIN };
 
   
   
-  ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
   
-  
-  mozilla::sig_safe_t mStackPointer;
-  
-  int mSleepId;
-  
-  mozilla::Atomic<int> mSleepIdObserved;
-  
-  mozilla::Atomic<int> mSleeping;
-
- public:
-  
-  JSContext *mContext;
-  
-  bool mStartJSSampling;
-  bool mPrivacyMode;
-
-  enum SleepState {NOT_SLEEPING, SLEEPING_FIRST, SLEEPING_AGAIN};
-
-  
-  
-  SleepState observeSleeping() {
+  SleepState observeSleeping()
+  {
     if (mSleeping != 0) {
       if (mSleepIdObserved == mSleepId) {
         return SLEEPING_AGAIN;
@@ -413,18 +400,58 @@ private:
     }
   }
 
-
   
   
-  void setSleeping(int sleeping) {
+  void setSleeping(int sleeping)
+  {
     MOZ_ASSERT(mSleeping != sleeping);
     mSleepId++;
     mSleeping = sleeping;
   }
 
-  bool isSleeping() {
-    return !!mSleeping;
-  }
+  bool isSleeping() { return !!mSleeping; }
+
+private:
+  
+  PseudoStack(const PseudoStack&) = delete;
+  void operator=(const PseudoStack&) = delete;
+
+  void flushSamplerOnJSShutdown();
+
+public:
+  
+  StackEntry volatile mStack[1024];
+
+private:
+  
+  ProfilerSignalSafeLinkedList<ProfilerMarker> mPendingMarkers;
+
+  
+  
+  mozilla::sig_safe_t mStackPointer;
+
+  
+  int mSleepId;
+
+  
+  
+  mozilla::Atomic<int> mSleepIdObserved;
+
+  
+  
+  mozilla::Atomic<int> mSleeping;
+
+public:
+  
+  JSContext* mContext;
+
+private:
+  
+  bool mStartJSSampling;
+
+public:
+  
+  bool mPrivacyMode;
 };
 
 #endif
