@@ -186,6 +186,8 @@ impl TextRunScanner {
                     
                     
                     let mut font_index = 0;
+                    
+                    assert!(fontgroup.fonts.len() > 0);
                     while font_index < fontgroup.fonts.len() - 1 {
                         if fontgroup.fonts.get(font_index).unwrap().borrow()
                                           .glyph_index(character)
