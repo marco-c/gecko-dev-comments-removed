@@ -2541,7 +2541,10 @@ function URLBarSetURI(aURI) {
 
     
     
-    if (gInitialPages.includes(uri.spec) &&
+    
+    let defaultRemoteURL = gAboutNewTabService.remoteEnabled &&
+                           uri.spec === gAboutNewTabService.newTabURL;
+    if ((gInitialPages.includes(uri.spec) || defaultRemoteURL) &&
         checkEmptyPageOrigin(gBrowser.selectedBrowser, uri)) {
       value = "";
     } else {
@@ -5076,7 +5079,6 @@ nsBrowserAccess.prototype = {
                                       fromExternal: aIsExternal,
                                       inBackground: loadInBackground,
                                       forceNotRemote: aForceNotRemote,
-                                      forceBrowserInsertion: true,
                                       opener: aOpener,
                                       });
     let browser = win.gBrowser.getBrowserForTab(tab);
