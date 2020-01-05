@@ -122,6 +122,8 @@ public:
 
   virtual mozilla::ipc::IPCResult RecvSyncWithCompositor() override { return IPC_OK(); }
 
+  virtual void ObserveLayerUpdate(uint64_t aLayersId, uint64_t aEpoch, bool aActive) = 0;
+
   
   virtual base::ProcessId GetChildProcessId() override;
   virtual void NotifyNotUsed(PTextureParent* aTexture, uint64_t aTransactionId) override;
@@ -256,6 +258,8 @@ public:
 
   PCompositorWidgetParent* AllocPCompositorWidgetParent(const CompositorWidgetInitData& aInitData) override;
   bool DeallocPCompositorWidgetParent(PCompositorWidgetParent* aActor) override;
+
+  void ObserveLayerUpdate(uint64_t aLayersId, uint64_t aEpoch, bool aActive) override { }
 
   
 
@@ -458,7 +462,6 @@ public:
   PWebRenderBridgeParent* AllocPWebRenderBridgeParent(const uint64_t& aPipelineId,
                                                       TextureFactoryIdentifier* aTextureFactoryIdentifier) override;
   bool DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor) override;
-  static void SetWebRenderProfilerEnabled(bool aEnabled);
 
 private:
 

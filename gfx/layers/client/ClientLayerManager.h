@@ -32,6 +32,7 @@ namespace layers {
 class ClientPaintedLayer;
 class CompositorBridgeChild;
 class ImageLayer;
+class PLayerChild;
 class FrameUniformityData;
 
 class ClientLayerManager final : public LayerManager
@@ -78,7 +79,6 @@ public:
   virtual void SetRoot(Layer* aLayer) override;
 
   virtual void Mutated(Layer* aLayer) override;
-  virtual void MutatedSimple(Layer* aLayer) override;
 
   virtual already_AddRefed<PaintedLayer> CreatePaintedLayer() override;
   virtual already_AddRefed<PaintedLayer> CreatePaintedLayerWithHint(PaintedLayerCreationHint aHint) override;
@@ -91,8 +91,7 @@ public:
   virtual already_AddRefed<BorderLayer> CreateBorderLayer() override;
   virtual already_AddRefed<RefLayer> CreateRefLayer() override;
 
-  void UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aNewIdentifier,
-                                      uint64_t aDeviceResetSeqNo);
+  void UpdateTextureFactoryIdentifier(const TextureFactoryIdentifier& aNewIdentifier);
   TextureFactoryIdentifier GetTextureFactoryIdentifier()
   {
     return AsShadowForwarder()->GetTextureFactoryIdentifier();
@@ -173,10 +172,12 @@ public:
 
   virtual void Composite() override;
   virtual void GetFrameUniformity(FrameUniformityData* aFrameUniformityData) override;
+  virtual bool RequestOverfill(mozilla::dom::OverfillCallback* aCallback) override;
+  virtual void RunOverfillCallback(const uint32_t aOverfill) override;
 
-  void DidComposite(uint64_t aTransactionId,
-                    const mozilla::TimeStamp& aCompositeStart,
-                    const mozilla::TimeStamp& aCompositeEnd);
+  virtual void DidComposite(uint64_t aTransactionId,
+                            const mozilla::TimeStamp& aCompositeStart,
+                            const mozilla::TimeStamp& aCompositeEnd) override;
 
   virtual bool AreComponentAlphaLayersEnabled() override;
 
@@ -223,7 +224,7 @@ public:
 
   void SetNextPaintSyncId(int32_t aSyncId);
 
-  void SetLayerObserverEpoch(uint64_t aLayerObserverEpoch);
+  virtual void SetLayerObserverEpoch(uint64_t aLayerObserverEpoch) override;
 
   class DidCompositeObserver {
   public:
@@ -285,6 +286,8 @@ private:
                               void* aCallbackData,
                               EndTransactionFlags);
 
+  bool DependsOnStaleDevice() const;
+
   LayerRefArray mKeepAlive;
 
   nsIWidget* mWidget;
@@ -326,18 +329,16 @@ private:
   
   uint32_t mPaintSequenceNumber;
 
-  
-  
-  uint64_t mDeviceResetSequenceNumber;
-
   APZTestData mApzTestData;
 
   RefPtr<ShadowLayerForwarder> mForwarder;
+  AutoTArray<dom::OverfillCallback*,0> mOverfillCallbacks;
   mozilla::TimeStamp mTransactionStart;
 
   nsTArray<DidCompositeObserver*> mDidCompositeObservers;
 
   RefPtr<MemoryPressureObserver> mMemoryPressureObserver;
+  uint64_t mDeviceCounter;
 };
 
 class ClientLayer : public ShadowableLayer
@@ -349,6 +350,22 @@ public:
   }
 
   ~ClientLayer();
+
+  void SetShadow(PLayerChild* aShadow)
+  {
+    MOZ_ASSERT(!mShadow, "can't have two shadows (yet)");
+    mShadow = aShadow;
+  }
+
+  virtual void Disconnect()
+  {
+    
+    
+    
+    
+    
+    mShadow = nullptr;
+  }
 
   virtual void ClearCachedResources() { }
 
@@ -386,12 +403,12 @@ CreateShadowFor(ClientLayer* aLayer,
                 ClientLayerManager* aMgr,
                 CreatedMethod aMethod)
 {
-  LayerHandle shadow = aMgr->AsShadowForwarder()->ConstructShadowFor(aLayer);
+  PLayerChild* shadow = aMgr->AsShadowForwarder()->ConstructShadowFor(aLayer);
   if (!shadow) {
     return;
   }
 
-  aLayer->SetShadow(aMgr->AsShadowForwarder(), shadow);
+  aLayer->SetShadow(shadow);
   (aMgr->AsShadowForwarder()->*aMethod)(aLayer);
   aMgr->Hold(aLayer->AsLayer());
 }
