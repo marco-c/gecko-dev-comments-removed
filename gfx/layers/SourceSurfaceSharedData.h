@@ -105,11 +105,23 @@ public:
   
 
 
+
   void FinishedSharing()
   {
     MutexAutoLock lock(mMutex);
     mShared = true;
     CloseHandleInternal();
+  }
+
+  
+
+
+
+
+  bool CanShare() const
+  {
+    MutexAutoLock lock(mMutex);
+    return !mClosed;
   }
 
   
@@ -150,7 +162,7 @@ private:
 
   void CloseHandleInternal();
 
-  Mutex mMutex;
+  mutable Mutex mMutex;
   int32_t mStride;
   int32_t mMapCount;
   IntSize mSize;
