@@ -18,28 +18,16 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
                                    bool aUseTrackingProtection,
                                    bool* aSuccess)
 {
-  mStartClassifyLog = 1;
-  if (*aSuccess) {
-    mStartClassifyLog |= 32;
-  }
   nsresult rv = NS_OK;
   
   
   nsCOMPtr<nsIURIClassifier> uriClassifier =
     do_GetService(NS_URICLASSIFIERSERVICE_CONTRACTID, &rv);
   if (NS_SUCCEEDED(rv)) {
-    mStartClassifyLog |= 2;
     rv = uriClassifier->Classify(aPrincipal, aUseTrackingProtection,
                                  this, aSuccess);
-    if (NS_SUCCEEDED(rv)) {
-      mStartClassifyLog |= 4;
-    }
-    if (*aSuccess) {
-      mStartClassifyLog |= 8;
-    }
   }
   if (NS_FAILED(rv) || !*aSuccess) {
-    mStartClassifyLog |= 16;
     
     
     
@@ -48,28 +36,12 @@ URLClassifierParent::StartClassify(nsIPrincipal* aPrincipal,
     
     Unused << Send__delete__(this, void_t());
   }
-  mStartClassifyRv = rv;
   return IPC_OK();
 }
 
 nsresult
 URLClassifierParent::OnClassifyComplete(nsresult aRv)
 {
-#ifdef MOZ_CRASHREPORTER
-  if (mStartClassifyLog & 16) {
-    
-    
-    
-    nsAutoCString log;
-    log.AppendPrintf("%d", mStartClassifyLog);
-    nsAutoCString rv;
-    rv.AppendPrintf("0x%x", mStartClassifyRv);
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("URLClassifierParentLog"),
-                                       log);
-    CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("URLClassifierParentRv"),
-                                       rv);
-  }
-#endif
   Unused << Send__delete__(this, aRv);
   return NS_OK;
 }

@@ -29,11 +29,6 @@ class URLClassifierParent : public nsIURIClassifierCallback,
 
  private:
   ~URLClassifierParent() = default;
-
-  
-  
-  uint32_t mStartClassifyLog = 0;
-  nsresult mStartClassifyRv = NS_OK;
 };
 
 } 
