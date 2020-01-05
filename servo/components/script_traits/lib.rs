@@ -41,7 +41,7 @@ use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId, WindowSizeData};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData, MouseButton};
-use msg::constellation_msg::{MozBrowserEvent, PipelineNamespaceId, SubpageId};
+use msg::constellation_msg::{PipelineNamespaceId, SubpageId};
 use msg::webdriver_msg::WebDriverScriptCommand;
 use net_traits::ResourceThread;
 use net_traits::image_cache_thread::ImageCacheThread;
@@ -205,169 +205,226 @@ pub enum CompositorEvent {
 
 pub struct OpaqueScriptLayoutChannel(pub (Box<Any + Send>, Box<Any + Send>));
 
-
+/// Requests a TimerEvent-Message be sent after the given duration.
 #[derive(Deserialize, Serialize)]
 pub struct TimerEventRequest(pub IpcSender<TimerEvent>,
                              pub TimerSource,
                              pub TimerEventId,
                              pub MsDuration);
 
-
-
-
+/// Notifies the script thread to fire due timers.
+/// TimerSource must be FromWindow when dispatched to ScriptThread and
+/// must be FromWorker when dispatched to a DedicatedGlobalWorkerScope
 #[derive(Deserialize, Serialize)]
 pub struct TimerEvent(pub TimerSource, pub TimerEventId);
 
-
+/// Describes the thread that requested the TimerEvent.
 #[derive(Copy, Clone, HeapSizeOf, Deserialize, Serialize)]
 pub enum TimerSource {
-    
+    /// The event was requested from a window (ScriptThread).
     FromWindow(PipelineId),
-    
+    /// The event was requested from a worker (DedicatedGlobalWorkerScope).
     FromWorker
 }
 
-
+/// The id to be used for a TimerEvent is defined by the corresponding TimerEventRequest.
 #[derive(PartialEq, Eq, Copy, Clone, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct TimerEventId(pub u32);
 
-
+/// Unit of measurement.
 #[derive(Clone, Copy, HeapSizeOf)]
 pub enum Milliseconds {}
-
+/// Unit of measurement.
 #[derive(Clone, Copy, HeapSizeOf)]
 pub enum Nanoseconds {}
 
-
+/// Amount of milliseconds.
 pub type MsDuration = Length<Milliseconds, u64>;
-
+/// Amount of nanoseconds.
 pub type NsDuration = Length<Nanoseconds, u64>;
 
-
+/// Returns the duration since an unspecified epoch measured in ms.
 pub fn precise_time_ms() -> MsDuration {
     Length::new(time::precise_time_ns() / (1000 * 1000))
 }
-
+/// Returns the duration since an unspecified epoch measured in ns.
 pub fn precise_time_ns() -> NsDuration {
     Length::new(time::precise_time_ns())
 }
 
-
-
-
-
+/// Data needed to construct a script thread.
+///
+/// NB: *DO NOT* add any Senders or Receivers here! pcwalton will have to rewrite your code if you
+/// do! Use IPC senders and receivers instead.
 pub struct InitialScriptState {
-    
+    /// The ID of the pipeline with which this script thread is associated.
     pub id: PipelineId,
-    
-    
+    /// The subpage ID of this pipeline to create in its pipeline parent.
+    /// If `None`, this is the root.
     pub parent_info: Option<(PipelineId, SubpageId)>,
-    
+    /// The compositor.
     pub compositor: IpcSender<ScriptToCompositorMsg>,
-    
+    /// A channel with which messages can be sent to us (the script thread).
     pub control_chan: IpcSender<ConstellationControlMsg>,
-    
+    /// A port on which messages sent by the constellation to script can be received.
     pub control_port: IpcReceiver<ConstellationControlMsg>,
-    
+    /// A channel on which messages can be sent to the constellation from script.
     pub constellation_chan: ConstellationChan<ScriptMsg>,
-    
+    /// A channel for the layout thread to send messages to the constellation.
     pub layout_to_constellation_chan: ConstellationChan<LayoutMsg>,
-    
+    /// A channel to schedule timer events.
     pub scheduler_chan: IpcSender<TimerEventRequest>,
-    
+    /// Information that script sends out when it panics.
     pub failure_info: Failure,
-    
+    /// A channel to the resource manager thread.
     pub resource_thread: ResourceThread,
-    
+    /// A channel to the storage thread.
     pub storage_thread: StorageThread,
-    
+    /// A channel to the image cache thread.
     pub image_cache_thread: ImageCacheThread,
-    
+    /// A channel to the time profiler thread.
     pub time_profiler_chan: profile_traits::time::ProfilerChan,
-    
+    /// A channel to the memory profiler thread.
     pub mem_profiler_chan: mem::ProfilerChan,
-    
+    /// A channel to the developer tools, if applicable.
     pub devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
-    
+    /// Information about the initial window size.
     pub window_size: Option<WindowSizeData>,
-    
+    /// The ID of the pipeline namespace for this script thread.
     pub pipeline_namespace_id: PipelineNamespaceId,
-    
+    /// A ping will be sent on this channel once the script thread shuts down.
     pub content_process_shutdown_chan: IpcSender<()>,
 }
 
-
+/// Encapsulates external communication with the script thread.
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ScriptControlChan(pub IpcSender<ConstellationControlMsg>);
 
-
-
+/// This trait allows creating a `ScriptThread` without depending on the `script`
+/// crate.
 pub trait ScriptThreadFactory {
-    
+    /// Create a `ScriptThread`.
     fn create(_phantom: Option<&mut Self>,
               state: InitialScriptState,
               layout_chan: &OpaqueScriptLayoutChannel,
               load_data: LoadData);
-    
+    /// Create a script -> layout channel (`Sender`, `Receiver` pair).
     fn create_layout_channel(_phantom: Option<&mut Self>) -> OpaqueScriptLayoutChannel;
-    
+    /// Clone the `Sender` in `pair`.
     fn clone_layout_channel(_phantom: Option<&mut Self>, pair: &OpaqueScriptLayoutChannel)
                             -> Box<Any + Send>;
 }
 
-
+/// Messages sent from the script thread to the compositor
 #[derive(Deserialize, Serialize)]
 pub enum ScriptToCompositorMsg {
-    
+    /// Scroll a page in a window
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
-    
-    
+    /// Set title of current page
+    /// https://html.spec.whatwg.org/multipage/#document.title
     SetTitle(PipelineId, Option<String>),
-    
+    /// Send a key event
     SendKeyEvent(Key, KeyState, KeyModifiers),
-    
+    /// Get Window Informations size and position
     GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
-    
+    /// Move the window to a point
     MoveTo(Point2D<i32>),
-    
+    /// Resize the window to size
     ResizeTo(Size2D<u32>),
-    
+    /// Script has handled a touch event, and either prevented or allowed default actions.
     TouchEventProcessed(EventResult),
-    
+    /// Requests that the compositor shut down.
     Exit,
 }
 
-
+/// Whether a DOM event was prevented by web content
 #[derive(Deserialize, Serialize)]
 pub enum EventResult {
-    
+    /// Allowed by web content
     DefaultAllowed,
-    
+    /// Prevented by web content
     DefaultPrevented,
 }
 
-
+/// Whether the sandbox attribute is present for an iframe element
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Deserialize, Serialize)]
 pub enum IFrameSandboxState {
-    
+    /// Sandbox attribute is present
     IFrameSandboxed,
-    
+    /// Sandbox attribute is not present
     IFrameUnsandboxed
 }
 
-
+/// Specifies the information required to load a URL in an iframe.
 #[derive(Deserialize, Serialize)]
 pub struct IFrameLoadInfo {
-    
+    /// Url to load
     pub url: Option<Url>,
-    
+    /// Pipeline ID of the parent of this iframe
     pub containing_pipeline_id: PipelineId,
-    
+    /// The new subpage ID for this load
     pub new_subpage_id: SubpageId,
-    
+    /// The old subpage ID for this iframe, if a page was previously loaded.
     pub old_subpage_id: Option<SubpageId>,
-    
+    /// The new pipeline ID that the iframe has generated.
     pub new_pipeline_id: PipelineId,
-    
+    /// Sandbox type of this iframe
     pub sandbox: IFrameSandboxState,
+}
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Using_the_Browser_API#Events
+/// The events fired in a Browser API context (`<iframe mozbrowser>`)
+#[derive(Deserialize, Serialize)]
+pub enum MozBrowserEvent {
+    /// Sent when the scroll position within a browser `<iframe>` changes.
+    AsyncScroll,
+    /// Sent when window.close() is called within a browser `<iframe>`.
+    Close,
+    /// Sent when a browser `<iframe>` tries to open a context menu. This allows
+    /// handling `<menuitem>` element available within the browser `<iframe>`'s content.
+    ContextMenu,
+    /// Sent when an error occurred while trying to load content within a browser `<iframe>`.
+    Error,
+    /// Sent when the favicon of a browser `<iframe>` changes.
+    IconChange(String, String, String),
+    /// Sent when the browser `<iframe>` has finished loading all its assets.
+    LoadEnd,
+    /// Sent when the browser `<iframe>` starts to load a new page.
+    LoadStart,
+    /// Sent when a browser `<iframe>`'s location changes.
+    LocationChange(String),
+    /// Sent when window.open() is called within a browser `<iframe>`.
+    OpenWindow,
+    /// Sent when the SSL state changes within a browser `<iframe>`.
+    SecurityChange,
+    /// Sent when alert(), confirm(), or prompt() is called within a browser `<iframe>`.
+    ShowModalPrompt(String, String, String, String), // TODO(simartin): Handle unblock()
+    /// Sent when the document.title changes within a browser `<iframe>`.
+    TitleChange(String),
+    /// Sent when an HTTP authentification is requested.
+    UsernameAndPasswordRequired,
+    /// Sent when a link to a search engine is found.
+    OpenSearch,
+}
+
+impl MozBrowserEvent {
+    /// Get the name of the event as a `& str`
+    pub fn name(&self) -> &'static str {
+        match *self {
+            MozBrowserEvent::AsyncScroll => "mozbrowserasyncscroll",
+            MozBrowserEvent::Close => "mozbrowserclose",
+            MozBrowserEvent::ContextMenu => "mozbrowsercontextmenu",
+            MozBrowserEvent::Error => "mozbrowsererror",
+            MozBrowserEvent::IconChange(_, _, _) => "mozbrowsericonchange",
+            MozBrowserEvent::LoadEnd => "mozbrowserloadend",
+            MozBrowserEvent::LoadStart => "mozbrowserloadstart",
+            MozBrowserEvent::LocationChange(_) => "mozbrowserlocationchange",
+            MozBrowserEvent::OpenWindow => "mozbrowseropenwindow",
+            MozBrowserEvent::SecurityChange => "mozbrowsersecuritychange",
+            MozBrowserEvent::ShowModalPrompt(_, _, _, _) => "mozbrowsershowmodalprompt",
+            MozBrowserEvent::TitleChange(_) => "mozbrowsertitlechange",
+            MozBrowserEvent::UsernameAndPasswordRequired => "mozbrowserusernameandpasswordrequired",
+            MozBrowserEvent::OpenSearch => "mozbrowseropensearch"
+        }
+    }
 }
