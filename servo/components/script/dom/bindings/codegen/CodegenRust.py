@@ -3442,8 +3442,6 @@ class CGUnionStruct(CGThing):
             "            %s::e%s(ref inner) => inner.to_jsval(cx, rval),"
             % (self.type, v["name"]) for v in templateVars
         ]
-        
-        
         return ("""\
 pub enum %s {
 %s
