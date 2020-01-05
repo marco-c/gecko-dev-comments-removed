@@ -97,13 +97,13 @@ public:
   
   void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
 
+  
+  void UpdateAndRender(wr::WindowId aWindowId);
 private:
   explicit RenderThread(base::Thread* aThread);
 
   ~RenderThread();
 
-  
-  void UpdateAndRender(wr::WindowId aWindowId);
 
   base::Thread* const mThread;
 
