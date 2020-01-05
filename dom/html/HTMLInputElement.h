@@ -1460,7 +1460,6 @@ protected:
   };
   nsresult InitFilePicker(FilePickerType aType);
   nsresult InitColorPicker();
-  nsresult InitDatePicker();
 
   
 
@@ -1693,13 +1692,6 @@ private:
 
   static bool
   IsDirPickerEnabled();
-
-  
-
-
-
-  static bool
-  IsDatePickerEnabled();
 
   
 
