@@ -6564,6 +6564,12 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
         NS_NOTREACHED("Shouldn't happen");
         return false;
       }
+      if (aContent->IsNodeOfType(nsINode::eCOMMENT) ||
+          aContent->IsNodeOfType(nsINode::ePROCESSING_INSTRUCTION)) {
+        
+        
+        return false;
+      }
       
       
       RefPtr<nsStyleContext> styleContext =
