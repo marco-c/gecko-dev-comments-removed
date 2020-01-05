@@ -148,6 +148,8 @@ public:
   
   
   
+  
+  
   nsresult ReadCacheFile(int64_t aOffset, void* aData, int32_t aLength,
                          int32_t* aBytes);
   
@@ -668,15 +670,23 @@ InitMediaCache()
 }
 
 nsresult
-MediaCache::ReadCacheFile(int64_t aOffset, void* aData, int32_t aLength,
-                            int32_t* aBytes)
+MediaCache::ReadCacheFile(
+  int64_t aOffset, void* aData, int32_t aLength, int32_t* aBytes)
 {
   mReentrantMonitor.AssertCurrentThreadIn();
-
-  if (!mFileCache)
+  RefPtr<FileBlockCache> fileCache = mFileCache;
+  if (!fileCache) {
     return NS_ERROR_FAILURE;
-
-  return mFileCache->Read(aOffset, reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
+  }
+  {
+    
+    
+    
+    
+    ReentrantMonitorAutoExit unlock(mReentrantMonitor);
+    return fileCache->Read(aOffset,
+      reinterpret_cast<uint8_t*>(aData), aLength, aBytes);
+  }
 }
 
 nsresult
