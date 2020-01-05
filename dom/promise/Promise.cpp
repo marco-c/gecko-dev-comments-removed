@@ -92,18 +92,6 @@ Promise::~Promise()
 }
 
 
-bool
-Promise::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
-                    JS::MutableHandle<JSObject*> aWrapper)
-{
-#ifdef DEBUG
-  binding_detail::AssertReflectorHasGivenProto(aCx, mPromiseObj, aGivenProto);
-#endif 
-  aWrapper.set(mPromiseObj);
-  return true;
-}
-
-
 already_AddRefed<Promise>
 Promise::Create(nsIGlobalObject* aGlobal, ErrorResult& aRv)
 {

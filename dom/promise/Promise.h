@@ -120,10 +120,6 @@ public:
     return mGlobal;
   }
 
-  bool
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
-             JS::MutableHandle<JSObject*> aWrapper);
-
   
   
   
