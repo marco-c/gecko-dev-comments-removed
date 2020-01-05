@@ -2918,6 +2918,46 @@ GeckoDriver.prototype.maximizeWindow = function* (cmd, resp) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.fullscreen = function* (cmd, resp) {
+  assert.firefox();
+  const win = assert.window(this.getCurrentWindow());
+  assert.noUserPrompt(this.dialog);
+
+  yield new Promise(resolve => {
+    win.addEventListener("resize", resolve, {once: true});
+
+    if (win.windowState == win.STATE_FULLSCREEN) {
+      win.document.exitFullscreen();
+    } else {
+      win.document.documentElement.requestFullscreen();
+    }
+  });
+
+  resp.body = {
+    x: win.screenX,
+    y: win.screenY,
+    width: win.outerWidth,
+    height: win.outerHeight,
+  };
+};
+
+
+
+
+
 GeckoDriver.prototype.dismissDialog = function (cmd, resp) {
   assert.window(this.getCurrentWindow());
   this._checkIfAlertIsPresent();
@@ -3358,6 +3398,7 @@ GeckoDriver.prototype.commands = {
   "getWindowSize": GeckoDriver.prototype.getWindowRect, 
   "setWindowSize": GeckoDriver.prototype.setWindowRect, 
   "maximizeWindow": GeckoDriver.prototype.maximizeWindow,
+  "fullscreen": GeckoDriver.prototype.fullscreen,
   "dismissDialog": GeckoDriver.prototype.dismissDialog,
   "acceptDialog": GeckoDriver.prototype.acceptDialog,
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
