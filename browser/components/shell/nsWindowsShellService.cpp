@@ -12,6 +12,7 @@
 #include "nsIDOMElement.h"
 #include "nsIDOMHTMLImageElement.h"
 #include "nsIImageLoadingContent.h"
+#include "nsIOutputStream.h"
 #include "nsIPrefService.h"
 #include "nsIPrefLocalizedString.h"
 #include "nsIServiceManager.h"
@@ -465,7 +466,7 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
         return NS_OK;
       }
 
-      res = ::RegOpenKeyExW(HKEY_CLASSES_ROOT, PromiseFlatString(keyName).get(),
+      res = ::RegOpenKeyExW(HKEY_CLASSES_ROOT, keyName.get(),
                             0, KEY_SET_VALUE, &theKey);
       if (REG_FAILED(res)) {
         
@@ -474,10 +475,9 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
         return NS_OK;
       }
 
-      const nsString &flatValue = PromiseFlatString(valueData);
       res = ::RegSetValueExW(theKey, L"", 0, REG_SZ,
-                             (const BYTE *) flatValue.get(),
-                             (flatValue.Length() + 1) * sizeof(char16_t));
+                             (const BYTE *) valueData.get(),
+                             (valueData.Length() + 1) * sizeof(char16_t));
       
       ::RegCloseKey(theKey);
       if (REG_FAILED(res)) {
@@ -529,9 +529,8 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
       if (REG_FAILED(res) || char16_t('\0') != *currValue) {
         
         
-        const nsString &flatName = PromiseFlatString(keyName);
-        ::SHDeleteKeyW(HKEY_CURRENT_USER, flatName.get());
-        res = ::RegCreateKeyExW(HKEY_CURRENT_USER, flatName.get(), 0, nullptr,
+        ::SHDeleteKeyW(HKEY_CURRENT_USER, keyName.get());
+        res = ::RegCreateKeyExW(HKEY_CURRENT_USER, keyName.get(), 0, nullptr,
                                 REG_OPTION_NON_VOLATILE, KEY_SET_VALUE,
                                 nullptr, &theKey, nullptr);
         if (REG_FAILED(res)) {
@@ -583,10 +582,9 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
 
     NS_ConvertUTF8toUTF16 valueData(VAL_OPEN);
     valueData.Replace(offset, 9, appLongPath);
-    const nsString &flatValue = PromiseFlatString(valueData);
     res = ::RegSetValueExW(theKey, L"", 0, REG_SZ,
-                           (const BYTE *) flatValue.get(),
-                           (flatValue.Length() + 1) * sizeof(char16_t));
+                           (const BYTE *) valueData.get(),
+                           (valueData.Length() + 1) * sizeof(char16_t));
     
     ::RegCloseKey(theKey);
     
