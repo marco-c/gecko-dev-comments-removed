@@ -2661,7 +2661,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
                                            
                                            
   uint8_t mContain;             
-
+private:
   friend class nsComputedDOMStyle;
   friend class nsRuleNode;
   uint8_t mMozAppearance;       

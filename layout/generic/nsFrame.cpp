@@ -1155,7 +1155,7 @@ nsIFrame::GetUsedBorder() const
     nsIntMargin result;
     nsPresContext *presContext = PresContext();
     presContext->GetTheme()->GetWidgetBorder(presContext->DeviceContext(),
-                                             mutable_this, disp->mAppearance,
+                                             mutable_this, disp->UsedAppearance(),
                                              &result);
     border.left = presContext->DevPixelsToAppUnits(result.left);
     border.top = presContext->DevPixelsToAppUnits(result.top);
@@ -1191,7 +1191,7 @@ nsIFrame::GetUsedPadding() const
     nsIntMargin widget;
     if (presContext->GetTheme()->GetWidgetPadding(presContext->DeviceContext(),
                                                   mutable_this,
-                                                  disp->mAppearance,
+                                                  disp->UsedAppearance(),
                                                   &widget)) {
       padding.top = presContext->DevPixelsToAppUnits(widget.top);
       padding.right = presContext->DevPixelsToAppUnits(widget.right);
@@ -2060,7 +2060,7 @@ nsFrame::DisplayBackgroundUnconditional(nsDisplayListBuilder* aBuilder,
   
   
   if (aBuilder->IsForEventDelivery() || aForceBackground ||
-      !StyleBackground()->IsTransparent(this) || StyleDisplay()->mAppearance) {
+      !StyleBackground()->IsTransparent(this) || StyleDisplay()->UsedAppearance()) {
     return nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
         aBuilder, this, GetRectRelativeToSelf(), aLists.BorderBackground());
   }
@@ -2984,7 +2984,7 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   
   
   if (IsThemed(ourDisp) &&
-      !PresContext()->GetTheme()->WidgetIsContainer(ourDisp->mAppearance))
+      !PresContext()->GetTheme()->WidgetIsContainer(ourDisp->UsedAppearance()))
     return;
 
   
@@ -4884,7 +4884,7 @@ IntrinsicSizeOffsets(nsIFrame* aFrame, bool aForISize)
 
     nsIntMargin border;
     presContext->GetTheme()->GetWidgetBorder(presContext->DeviceContext(),
-                                             aFrame, disp->mAppearance,
+                                             aFrame, disp->UsedAppearance(),
                                              &border);
     result.hBorder =
       presContext->DevPixelsToAppUnits(verticalAxis ? border.TopBottom()
@@ -4892,7 +4892,7 @@ IntrinsicSizeOffsets(nsIFrame* aFrame, bool aForISize)
 
     nsIntMargin padding;
     if (presContext->GetTheme()->GetWidgetPadding(presContext->DeviceContext(),
-                                                  aFrame, disp->mAppearance,
+                                                  aFrame, disp->UsedAppearance(),
                                                   &padding)) {
       result.hPadding =
         presContext->DevPixelsToAppUnits(verticalAxis ? padding.TopBottom()
@@ -5164,7 +5164,7 @@ nsFrame::ComputeSize(nsRenderingContext* aRenderingContext,
     bool canOverride = true;
     nsPresContext *presContext = PresContext();
     presContext->GetTheme()->
-      GetMinimumWidgetSize(presContext, this, disp->mAppearance,
+      GetMinimumWidgetSize(presContext, this, disp->UsedAppearance(),
                            &widget, &canOverride);
 
     
@@ -5624,7 +5624,7 @@ nsFrame::ComputeSimpleTightBounds(DrawTarget* aDrawTarget) const
 {
   if (StyleOutline()->mOutlineStyle != NS_STYLE_BORDER_STYLE_NONE ||
       StyleBorder()->HasBorder() || !StyleBackground()->IsTransparent(this) ||
-      StyleDisplay()->mAppearance) {
+      StyleDisplay()->UsedAppearance()) {
     
     
     return GetVisualOverflowRect();
@@ -8985,7 +8985,7 @@ nsIFrame::FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
     nsPresContext *presContext = PresContext();
     if (presContext->GetTheme()->
           GetWidgetOverflow(presContext->DeviceContext(), this,
-                            disp->mAppearance, &r)) {
+                            disp->UsedAppearance(), &r)) {
       nsRect& vo = aOverflowAreas.VisualOverflow();
       vo.UnionRectEdges(vo, r);
     }
