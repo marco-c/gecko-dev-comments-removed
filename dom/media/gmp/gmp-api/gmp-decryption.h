@@ -216,18 +216,6 @@ public:
   virtual ~GMPDecryptorCallback() {}
 };
 
-
-class GMPDecryptorHost {
-public:
-  virtual void GetSandboxVoucher(const uint8_t** aVoucher,
-                                 uint32_t* aVoucherLength) = 0;
-
-  virtual void GetPluginVoucher(const uint8_t** aVoucher,
-                                uint32_t* aVoucherLength) = 0;
-
-  virtual ~GMPDecryptorHost() {}
-};
-
 enum GMPSessionType {
   kGMPTemporySession = 0,
   kGMPPersistentSession = 1,
@@ -235,7 +223,6 @@ enum GMPSessionType {
 };
 
 #define GMP_API_DECRYPTOR "eme-decrypt-v9"
-
 
 
 
