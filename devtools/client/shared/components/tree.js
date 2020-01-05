@@ -202,6 +202,14 @@ module.exports = createClass({
     
     
     
+    labelledby: PropTypes.string,
+    
+    label: PropTypes.string,
+
+    
+    
+    
+    
     
     
     
@@ -555,7 +563,7 @@ module.exports = createClass({
     
     
     
-    const { itemHeight } = this.props;
+    const { itemHeight, focused } = this.props;
     const { scroll, height } = this.state;
     const begin = Math.max(((scroll / itemHeight) | 0) - NUMBER_OF_OFFSCREEN_ITEMS, 0);
     const end = Math.ceil((scroll + height) / itemHeight) + NUMBER_OF_OFFSCREEN_ITEMS;
@@ -566,6 +574,7 @@ module.exports = createClass({
     const nodes = [
       dom.div({
         key: "top-spacer",
+        role: "presentation",
         style: {
           padding: 0,
           margin: 0,
@@ -579,26 +588,30 @@ module.exports = createClass({
       const first = index == 0;
       const last = index == traversal.length - 1;
       const { item, depth } = toRender[i];
+      const key = this.props.getKey(item);
       nodes.push(TreeNode({
-        key: this.props.getKey(item),
+        key,
         index,
         first,
         last,
         item,
         depth,
+        id: key,
         renderItem: this.props.renderItem,
-        focused: this.props.focused === item,
+        focused: focused === item,
         expanded: this.props.isExpanded(item),
         hasChildren: !!this.props.getChildren(item).length,
         onExpand: this._onExpand,
         onCollapse: this._onCollapse,
-        onFocus: () => this._focus(begin + i, item),
-        onFocusedNodeUnmount: () => this.refs.tree && this.refs.tree.focus(),
+        onClick: () => this._focus(begin + i, item),
+        
+        onFocusedNodeUnmount: () => this._focusPrevNode(),
       }));
     }
 
     nodes.push(dom.div({
       key: "bottom-spacer",
+      role: "presentation",
       style: {
         padding: 0,
         margin: 0,
@@ -610,10 +623,33 @@ module.exports = createClass({
       {
         className: "tree",
         ref: "tree",
+        role: "tree",
+        tabIndex: "0",
         onKeyDown: this._onKeyDown,
         onKeyPress: this._preventArrowKeyScrolling,
         onKeyUp: this._preventArrowKeyScrolling,
         onScroll: this._onScroll,
+        onFocus: ({nativeEvent}) => {
+          if (focused || !nativeEvent || !this.refs.tree) {
+            return;
+          }
+
+          let { explicitOriginalTarget } = nativeEvent;
+          
+          
+          
+          if (explicitOriginalTarget !== this.refs.tree &&
+              !this.refs.tree.contains(explicitOriginalTarget)) {
+            this._focus(begin, toRender[0].item);
+          }
+        },
+        onClick: () => {
+          
+          this.refs.tree.focus();
+        },
+        "aria-label": this.props.label,
+        "aria-labelledby": this.props.labelledby,
+        "aria-activedescendant": focused && this.props.getKey(focused),
         style: {
           padding: 0,
           margin: 0
@@ -669,6 +705,7 @@ const ArrowExpander = createFactory(createClass({
 
 const TreeNode = createFactory(createClass({
   propTypes: {
+    id: PropTypes.any.isRequired,
     focused: PropTypes.bool.isRequired,
     onFocusedNodeUnmount: PropTypes.func,
     item: PropTypes.any.isRequired,
@@ -678,52 +715,17 @@ const TreeNode = createFactory(createClass({
     index: PropTypes.number.isRequired,
     first: PropTypes.bool,
     last: PropTypes.bool,
-    onFocus: PropTypes.func,
-    onBlur: PropTypes.func,
+    onClick: PropTypes.func,
     onCollapse: PropTypes.func.isRequired,
     depth: PropTypes.number.isRequired,
     renderItem: PropTypes.func.isRequired,
   },
 
-  componentDidMount() {
-    if (this.props.focused) {
-      this.refs.button.focus();
-    }
-  },
-
-  componentDidUpdate() {
-    if (this.props.focused) {
-      this.refs.button.focus();
-    }
-  },
-
   componentWillUnmount() {
-    
-    
-    
-    
-    
     if (this.props.focused) {
-      this.refs.button.blur();
       if (this.props.onFocusedNodeUnmount) {
         this.props.onFocusedNodeUnmount();
       }
-    }
-  },
-
-  _buttonAttrs: {
-    ref: "button",
-    style: {
-      opacity: 0,
-      width: "0 !important",
-      height: "0 !important",
-      padding: "0 !important",
-      outline: "none",
-      MozAppearance: "none",
-      
-      
-      
-      MozMarginStart: "-1000px !important",
     }
   },
 
@@ -747,12 +749,22 @@ const TreeNode = createFactory(createClass({
       classList.push("tree-node-last");
     }
 
+    let ariaExpanded;
+    if (this.props.hasChildren) {
+      ariaExpanded = false;
+    }
+    if (this.props.expanded) {
+      ariaExpanded = true;
+    }
+
     return dom.div(
       {
+        id: this.props.id,
         className: classList.join(" "),
-        onFocus: this.props.onFocus,
-        onClick: this.props.onFocus,
-        onBlur: this.props.onBlur,
+        role: "treeitem",
+        "aria-level": this.props.depth,
+        onClick: this.props.onClick,
+        "aria-expanded": ariaExpanded,
         "data-expanded": this.props.expanded ? "" : undefined,
         "data-depth": this.props.depth,
         style: {
@@ -766,10 +778,6 @@ const TreeNode = createFactory(createClass({
                             this.props.focused,
                             arrow,
                             this.props.expanded),
-
-      
-      
-      dom.button(this._buttonAttrs)
     );
   }
 }));
