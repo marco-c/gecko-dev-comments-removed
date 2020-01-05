@@ -42,8 +42,11 @@ private:
 };
 
 VideoDecoderParent::VideoDecoderParent(VideoDecoderManagerParent* aParent,
+                                       const VideoInfo& aVideoInfo,
+                                       const layers::TextureFactoryIdentifier& aIdentifier,
                                        TaskQueue* aManagerTaskQueue,
-                                       TaskQueue* aDecodeTaskQueue)
+                                       TaskQueue* aDecodeTaskQueue,
+                                       bool* aSuccess)
   : mParent(aParent)
   , mManagerTaskQueue(aManagerTaskQueue)
   , mDecodeTaskQueue(aDecodeTaskQueue)
@@ -56,6 +59,28 @@ VideoDecoderParent::VideoDecoderParent(VideoDecoderManagerParent* aParent,
   
   
   mIPDLSelfRef = this;
+
+  mKnowsCompositor->IdentifyTextureHost(aIdentifier);
+
+#ifdef XP_WIN
+  
+  
+  WMFDecoderModule::Init();
+  RefPtr<WMFDecoderModule> pdm(new WMFDecoderModule());
+  pdm->Startup();
+
+  CreateDecoderParams params(aVideoInfo);
+  params.mTaskQueue = mDecodeTaskQueue;
+  params.mCallback = this;
+  params.mKnowsCompositor = mKnowsCompositor;
+  params.mImageContainer = new layers::ImageContainer();
+
+  mDecoder = pdm->CreateVideoDecoder(params);
+#else
+  MOZ_ASSERT(false, "Can't use RemoteVideoDecoder on non-Windows platforms yet");
+#endif
+
+  *aSuccess = !!mDecoder;
 }
 
 VideoDecoderParent::~VideoDecoderParent()
@@ -72,32 +97,8 @@ VideoDecoderParent::Destroy()
 }
 
 mozilla::ipc::IPCResult
-VideoDecoderParent::RecvInit(const VideoInfo& aInfo, const layers::TextureFactoryIdentifier& aIdentifier)
+VideoDecoderParent::RecvInit()
 {
-  mKnowsCompositor->IdentifyTextureHost(aIdentifier);
-
-#ifdef XP_WIN
-  
-  
-  WMFDecoderModule::Init();
-  RefPtr<WMFDecoderModule> pdm(new WMFDecoderModule());
-  pdm->Startup();
-
-  CreateDecoderParams params(aInfo);
-  params.mTaskQueue = mDecodeTaskQueue;
-  params.mCallback = this;
-  params.mKnowsCompositor = mKnowsCompositor;
-  params.mImageContainer = new layers::ImageContainer();
-
-  mDecoder = pdm->CreateVideoDecoder(params);
-  if (!mDecoder) {
-    Unused << SendInitFailed(NS_ERROR_DOM_MEDIA_FATAL_ERR);
-    return IPC_OK();
-  }
-#else
-  MOZ_ASSERT(false, "Can't use RemoteVideoDecoder on non-Windows platforms yet");
-#endif
-
   RefPtr<VideoDecoderParent> self = this;
   mDecoder->Init()->Then(mManagerTaskQueue, __func__,
     [self] (TrackInfo::TrackType aTrack) {

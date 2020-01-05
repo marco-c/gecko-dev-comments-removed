@@ -125,7 +125,7 @@ VideoDecoderChild::ActorDestroy(ActorDestroyReason aWhy)
   mCanSend = false;
 }
 
-void
+bool
 VideoDecoderChild::InitIPDL(MediaDataDecoderCallback* aCallback,
                             const VideoInfo& aVideoInfo,
                             const layers::TextureFactoryIdentifier& aIdentifier)
@@ -137,16 +137,16 @@ VideoDecoderChild::InitIPDL(MediaDataDecoderCallback* aCallback,
   
   
   if (!manager || !manager->CanSend()) {
-    return;
+    return true;
   }
 
   mIPDLSelfRef = this;
   mCallback = aCallback;
-  mVideoInfo = aVideoInfo;
-  mIdentifier = aIdentifier;
-  if (manager->SendPVideoDecoderConstructor(this)) {
+  bool success = false;
+  if (manager->SendPVideoDecoderConstructor(this, aVideoInfo, aIdentifier, &success)) {
     mCanSend = true;
   }
+  return success;
 }
 
 void
@@ -177,7 +177,7 @@ VideoDecoderChild::Init()
   
   
   if (mCanSend) {
-    SendInit(mVideoInfo, mIdentifier);
+    SendInit();
   }
   return mInitPromise.Ensure(__func__);
 }
