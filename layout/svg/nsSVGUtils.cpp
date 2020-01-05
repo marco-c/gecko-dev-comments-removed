@@ -515,18 +515,7 @@ nsSVGUtils::DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
   nsTArray<nsSVGMaskFrame*> maskFrames = effectProperties.GetMaskFrames();
 
 #ifdef MOZ_ENABLE_MASK_AS_SHORTHAND
-  
-  
-  
-  
-  
-  
-  
-  
-  aUsage.shouldGenerateMaskLayer =
-    (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)
-      ? maskFrames.Length() == 1 && maskFrames[0]
-      : maskFrames.Length() > 0;
+  aUsage.shouldGenerateMaskLayer = (maskFrames.Length() > 0);
 #else
   
   
