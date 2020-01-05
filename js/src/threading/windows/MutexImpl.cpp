@@ -12,48 +12,16 @@
 #include "threading/Mutex.h"
 #include "threading/windows/MutexPlatformData.h"
 
-namespace {
-
-
-
-
-
-
-
-struct MutexNativeImports
-{
-  using InitializeCriticalSectionExT = BOOL (WINAPI*)(CRITICAL_SECTION*, DWORD, DWORD);
-  InitializeCriticalSectionExT InitializeCriticalSectionEx;
-
-  MutexNativeImports() {
-    HMODULE kernel32_dll = GetModuleHandle("kernel32.dll");
-    MOZ_RELEASE_ASSERT(kernel32_dll != NULL);
-    InitializeCriticalSectionEx = reinterpret_cast<InitializeCriticalSectionExT>(
-      GetProcAddress(kernel32_dll, "InitializeCriticalSectionEx"));
-  }
-
-  bool hasInitializeCriticalSectionEx() const {
-    return InitializeCriticalSectionEx;
-  }
-};
-
-static MutexNativeImports NativeImports;
-
-} 
-
 js::detail::MutexImpl::MutexImpl()
 {
   
   const static DWORD LockSpinCount = 1500;
-  BOOL r;
-  if (NativeImports.hasInitializeCriticalSectionEx()) {
-    r = NativeImports.InitializeCriticalSectionEx(&platformData()->criticalSection,
-                                                  LockSpinCount,
-                                                  CRITICAL_SECTION_NO_DEBUG_INFO);
-  } else {
-    r = InitializeCriticalSectionAndSpinCount(&platformData()->criticalSection,
-                                              LockSpinCount);
-  }
+  
+  
+  
+  BOOL r = InitializeCriticalSectionEx(&platformData()->criticalSection,
+                                       LockSpinCount,
+                                       CRITICAL_SECTION_NO_DEBUG_INFO);
   MOZ_RELEASE_ASSERT(r);
 }
 
