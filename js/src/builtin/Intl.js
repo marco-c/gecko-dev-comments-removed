@@ -946,12 +946,17 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
     
     var i = 0;
     var len = relevantExtensionKeys.length;
+    var foundLocaleData;
+    if (len > 0) {
+        
+        
+        foundLocaleData = localeData(foundLocale);
+    }
     while (i < len) {
         
         var key = relevantExtensionKeys[i];
 
         
-        var foundLocaleData = localeData(foundLocale);
         var keyLocaleData = foundLocaleData[key];
 
         
