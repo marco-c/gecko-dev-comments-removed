@@ -152,6 +152,7 @@ enum ETrackedDeviceClass
 	TrackedDeviceClass_Invalid = 0,				
 	TrackedDeviceClass_HMD = 1,					
 	TrackedDeviceClass_Controller = 2,			
+	TrackedDeviceClass_GenericTracker = 3,		
 	TrackedDeviceClass_TrackingReference = 4,	
 
 	TrackedDeviceClass_Other = 1000,
