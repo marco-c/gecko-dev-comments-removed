@@ -131,20 +131,6 @@ NewPromiseAllDataHolder(JSContext* cx, HandleObject resultPromise, HandleValue v
     return dataHolder;
 }
 
-
-
-
-
-
-static bool
-MaybeGetAndClearException(JSContext* cx, MutableHandleValue rval)
-{
-    if (!cx->isExceptionPending())
-        return false;
-
-    return GetAndClearException(cx, rval);
-}
-
 static MOZ_MUST_USE bool RunResolutionFunction(JSContext *cx, HandleObject resolutionFun,
                                                HandleValue result, ResolutionMode mode,
                                                HandleObject promiseObj);
@@ -157,8 +143,12 @@ static bool
 AbruptRejectPromise(JSContext *cx, CallArgs& args, HandleObject promiseObj, HandleObject reject)
 {
     
+    if (!cx->isExceptionPending())
+        return false;
+
+    
     RootedValue reason(cx);
-    if (!MaybeGetAndClearException(cx, &reason))
+    if (!GetAndClearException(cx, &reason))
         return false;
 
     if (!RunResolutionFunction(cx, reject, reason, RejectMode, promiseObj))
@@ -361,8 +351,7 @@ ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resoluti
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                   JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
         RootedValue selfResolutionError(cx);
-        if (!MaybeGetAndClearException(cx, &selfResolutionError))
-            return false;
+        MOZ_ALWAYS_TRUE(GetAndClearException(cx, &selfResolutionError));
 
         
         return RejectMaybeWrappedPromise(cx, promise, selfResolutionError);
@@ -375,7 +364,7 @@ ResolvePromiseInternal(JSContext* cx, HandleObject promise, HandleValue resoluti
     
     if (!status) {
         RootedValue error(cx);
-        if (!MaybeGetAndClearException(cx, &error))
+        if (!GetAndClearException(cx, &error))
             return false;
 
         return RejectMaybeWrappedPromise(cx, promise, error);
@@ -910,7 +899,9 @@ PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
         args2[0].set(argument);
         if (!Call(cx, handlerVal, UndefinedHandleValue, args2, &handlerResult)) {
             resolutionMode = RejectMode;
-            if (!MaybeGetAndClearException(cx, &handlerResult))
+            
+            
+            if (!cx->isExceptionPending() || !GetAndClearException(cx, &handlerResult))
                 return false;
         }
     }
@@ -987,7 +978,7 @@ PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp)
     if (Call(cx, then, thenable, args2, &rval))
         return true;
 
-    if (!MaybeGetAndClearException(cx, &rval))
+    if (!GetAndClearException(cx, &rval))
         return false;
 
     FixedInvokeArgs<1> rejectArgs(cx);
@@ -1330,7 +1321,9 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto ,
     
     if (!success) {
         RootedValue exceptionVal(cx);
-        if (!MaybeGetAndClearException(cx, &exceptionVal))
+        
+        
+        if (!cx->isExceptionPending() || !GetAndClearException(cx, &exceptionVal))
             return nullptr;
 
         FixedInvokeArgs<1> args(cx);
@@ -2133,8 +2126,12 @@ MOZ_MUST_USE bool
 js::AsyncFunctionThrown(JSContext* cx, Handle<PromiseObject*> resultPromise)
 {
     
+    if (!cx->isExceptionPending())
+        return false;
+
+    
     RootedValue exc(cx);
-    if (!MaybeGetAndClearException(cx, &exc))
+    if (!GetAndClearException(cx, &exc))
         return false;
 
     if (!RejectMaybeWrappedPromise(cx, resultPromise, exc))
