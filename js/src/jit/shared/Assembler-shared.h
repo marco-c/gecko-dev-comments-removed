@@ -669,28 +669,6 @@ namespace wasm {
 
 
 
-
-
-struct Frame
-{
-    
-    
-    
-    
-    uint8_t* callerFP;
-
-    
-    
-    void* returnAddress;
-};
-
-static_assert(sizeof(Frame) == 2 * sizeof(void*), "?!");
-static const uint32_t FrameBytesAfterReturnAddress = sizeof(void*);
-
-
-
-
-
 struct SymbolicAccess
 {
     SymbolicAccess(jit::CodeOffset patchAt, SymbolicAddress target)

@@ -2049,6 +2049,8 @@ Debugger::onSingleStep(JSContext* cx, MutableHandleValue vp)
                 for (FrameMap::Range r = dbg->frames.all(); !r.empty(); r.popFront()) {
                     AbstractFramePtr frame = r.front().key();
                     NativeObject* frameobj = r.front().value();
+                    if (frame.isWasmDebugFrame())
+                        continue;
                     if (frame.script() == trappingScript &&
                         !frameobj->getReservedSlot(JSSLOT_DEBUGFRAME_ONSTEP_HANDLER).isUndefined())
                     {
@@ -6261,6 +6263,9 @@ DebuggerScript_getLineOffsets(JSContext* cx, unsigned argc, Value* vp)
 bool
 Debugger::observesFrame(AbstractFramePtr frame) const
 {
+    if (frame.isWasmDebugFrame())
+        return observesWasm(frame.wasmInstance());
+
     return observesScript(frame.script());
 }
 
@@ -6274,7 +6279,7 @@ Debugger::observesFrame(const FrameIter& iter) const
             return false;
     }
     if (iter.isWasm())
-        return false;
+        return observesWasm(iter.wasmInstance());
     return observesScript(iter.script());
 }
 
@@ -6286,6 +6291,14 @@ Debugger::observesScript(JSScript* script) const
     
     
     return observesGlobal(&script->global()) && !script->selfHosted();
+}
+
+bool
+Debugger::observesWasm(wasm::Instance* instance) const
+{
+    if (!enabled || !instance->code().metadata().debugEnabled)
+        return false;
+    return false; 
 }
 
  bool
@@ -7375,6 +7388,11 @@ DebuggerFrame::getIsConstructing(JSContext* cx, HandleDebuggerFrame frame, bool&
 static void
 UpdateFrameIterPc(FrameIter& iter)
 {
+    if (iter.abstractFramePtr().isWasmDebugFrame()) {
+        
+        return;
+    }
+
     if (iter.abstractFramePtr().isRematerializedFrame()) {
 #ifdef DEBUG
         
