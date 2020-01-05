@@ -5796,7 +5796,7 @@ class CGNonNamespacedEnum(CGThing):
         entries = ["%s = %s" % (names[0], first)] + names[1:]
 
         
-        entries.append('Last = ' + str(first + len(entries)))
+        entries.append('#[allow(dead_code)] Last = ' + str(first + len(entries)))
 
         
         entries = ['    ' + e for e in entries]
