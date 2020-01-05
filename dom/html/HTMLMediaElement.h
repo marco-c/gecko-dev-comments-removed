@@ -1268,6 +1268,10 @@ protected:
 
   void OpenUnsupportedMediaWithExtenalAppIfNeeded();
 
+  
+  
+  void MaybeNotifyMediaResumed(SuspendTypes aSuspend);
+
   class nsAsyncEventRunner;
   using nsGenericHTMLElement::DispatchEvent;
   
