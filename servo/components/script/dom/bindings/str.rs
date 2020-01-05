@@ -176,6 +176,11 @@ impl DOMString {
     }
 
     
+    pub fn truncate(&mut self, new_len: usize) {
+        self.0.truncate(new_len);
+    }
+
+    
     pub fn bytes(&self) -> Bytes {
         self.0.bytes()
     }

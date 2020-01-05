@@ -306,6 +306,10 @@ impl EventTarget {
         event.dispatch(self, None)
     }
 
+    pub fn remove_all_listeners(&self) {
+        *self.handlers.borrow_mut() = Default::default();
+    }
+
     
     fn set_inline_event_listener(&self,
                                  ty: Atom,
