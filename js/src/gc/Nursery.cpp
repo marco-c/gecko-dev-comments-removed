@@ -149,7 +149,8 @@ js::Nursery::init(uint32_t maxNurseryBytes, AutoLockGC& lock)
     if (!freeMallocedBuffersTask || !freeMallocedBuffersTask->init())
         return false;
 
-    updateNumChunksLocked(1, lock);
+    AutoMaybeStartBackgroundAllocation maybeBgAlloc;
+    updateNumChunksLocked(1, maybeBgAlloc, lock);
     if (numChunks() == 0)
         return false;
 
@@ -549,14 +550,14 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
 
     if (!isEnabled() || isEmpty()) {
         
-
-
-
-
-
+        
+        
+        
         rt->gc.storeBuffer.clear();
-        return;
     }
+
+    if (!isEnabled())
+        return;
 
     rt->gc.incMinorGcNumber();
 
@@ -578,7 +579,14 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
     JS::AutoSuppressGCAnalysis nogc;
 
     TenureCountCache tenureCounts;
-    double promotionRate = doCollection(rt, reason, tenureCounts);
+    double promotionRate = 0;
+    if (!isEmpty())
+        promotionRate = doCollection(rt, reason, tenureCounts);
+
+    
+    maybeStartProfile(ProfileKey::Resize);
+    maybeResizeNursery(reason, promotionRate);
+    maybeEndProfile(ProfileKey::Resize);
 
     
     
@@ -750,12 +758,7 @@ js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
     maybeEndProfile(ProfileKey::CheckHashTables);
 
     
-    maybeStartProfile(ProfileKey::Resize);
-    double promotionRate = mover.tenuredSize / double(initialNurserySize);
-    maybeResizeNursery(reason, promotionRate);
-    maybeEndProfile(ProfileKey::Resize);
-
-    return promotionRate;
+    return mover.tenuredSize / double(initialNurserySize);
 }
 
 void
@@ -933,21 +936,22 @@ void
 js::Nursery::updateNumChunks(unsigned newCount)
 {
     if (numChunks() != newCount) {
+        AutoMaybeStartBackgroundAllocation maybeBgAlloc;
         AutoLockGC lock(runtime());
-        updateNumChunksLocked(newCount, lock);
+        updateNumChunksLocked(newCount, maybeBgAlloc, lock);
     }
 }
 
 void
-js::Nursery::updateNumChunksLocked(unsigned newCount, AutoLockGC& lock)
+js::Nursery::updateNumChunksLocked(unsigned newCount,
+                                   AutoMaybeStartBackgroundAllocation& maybeBgAlloc,
+                                   AutoLockGC& lock)
 {
     
     
 
     unsigned priorCount = numChunks();
     MOZ_ASSERT(priorCount != newCount);
-
-    AutoMaybeStartBackgroundAllocation maybeBgAlloc;
 
     if (newCount < priorCount) {
         
