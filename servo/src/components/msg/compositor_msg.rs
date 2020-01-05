@@ -69,6 +69,7 @@ pub trait RenderListener {
 
 pub trait ScriptListener : Clone {
     fn set_ready_state(&self, ReadyState);
+    fn invalidate_rect(&self, PipelineId, Rect<uint>);
 }
 
 

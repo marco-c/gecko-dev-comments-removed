@@ -66,6 +66,10 @@ impl ScriptListener for CompositorChan {
         self.chan.send(msg);
     }
 
+    fn invalidate_rect(&self, id: PipelineId, rect: Rect<uint>) {
+        self.chan.send(InvalidateRect(id, rect));
+    }
+
 }
 
 
@@ -131,6 +135,8 @@ pub enum Msg {
     ResizeLayer(PipelineId, Size2D<uint>),
     
     DeleteLayer(PipelineId),
+    
+    InvalidateRect(PipelineId, Rect<uint>),
 
     
     Paint(PipelineId, arc::Arc<LayerBufferSet>),
@@ -311,6 +317,19 @@ impl CompositorTask {
                         }
                         // TODO: Recycle the old buffers; send them back to the renderer to reuse if
                         // it wishes.
+                    }
+
+                    InvalidateRect(id, rect) => {
+                        match compositor_layer {
+                            Some(ref mut layer) => {
+                                layer.invalidate_rect(id, Rect(Point2D(rect.origin.x as f32,
+                                                                       rect.origin.y as f32),
+                                                               Size2D(rect.size.width as f32,
+                                                                      rect.size.height as f32)));
+                                ask_for_tiles();
+                            }
+                            None => {} // Nothing to do
+                        }
                     }
                 }
             }
