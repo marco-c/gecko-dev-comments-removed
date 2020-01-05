@@ -2909,10 +2909,6 @@ PluginInstanceChild::NPN_FinalizeAsyncSurface(NPAsyncSurface *surface)
         return NPERR_GENERIC_ERROR;
     }
 
-    
-    
-    MOZ_ASSERT(!surface || mCurrentDirectSurface != surface);
-
     switch (mDrawingModel) {
     case NPDrawingModelAsyncBitmapSurface: {
         RefPtr<DirectBitmap> bitmap;
