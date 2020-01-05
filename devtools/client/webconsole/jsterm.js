@@ -378,6 +378,7 @@ JSTerm.prototype = {
     if (this.hud.NEW_CONSOLE_OUTPUT_ENABLED) {
       this.hud.newConsoleOutput.dispatchMessageAdd(response);
       
+      callback && callback();
       return;
     }
     let msg = new Messages.JavaScriptEvalOutput(response,
@@ -423,12 +424,17 @@ JSTerm.prototype = {
 
   execute: function (executeString, callback) {
     let deferred = promise.defer();
-    let resultCallback = function (msg) {
-      deferred.resolve(msg);
-      if (callback) {
-        callback(msg);
-      }
-    };
+    let resultCallback;
+    if (this.hud.NEW_CONSOLE_OUTPUT_ENABLED) {
+      resultCallback = () => deferred.resolve();
+    } else {
+      resultCallback = (msg) => {
+        deferred.resolve(msg);
+        if (callback) {
+          callback(msg);
+        }
+      };
+    }
 
     
     executeString = executeString || this.getInputValue();
