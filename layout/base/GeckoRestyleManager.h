@@ -493,8 +493,7 @@ public:
 
 
 
-
-  nsChangeHint HintsHandledForFrame() { return mHintsHandled; }
+  nsChangeHint HintsHandledForFrame() { return mHintsHandledBySelf; }
 
   
 
@@ -721,8 +720,11 @@ private:
   
   
   
+  const nsChangeHint mHintsHandledByAncestors;
   
-  nsChangeHint mHintsHandled;
+  
+  
+  nsChangeHint mHintsHandledBySelf;
   
   nsChangeHint mParentFrameHintsNotHandledForDescendants;
   nsChangeHint mHintsNotHandledForDescendants;

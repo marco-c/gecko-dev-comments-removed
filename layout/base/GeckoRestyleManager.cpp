@@ -1084,8 +1084,8 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
     
   , mContent(mFrame->GetContent() ? mFrame->GetContent() : mParentContent)
   , mChangeList(aChangeList)
-  , mHintsHandled(aHintsHandledByAncestors &
-                  ~NS_HintsNotHandledForDescendantsIn(aHintsHandledByAncestors))
+  , mHintsHandledByAncestors(aHintsHandledByAncestors)
+  , mHintsHandledBySelf(nsChangeHint(0))
   , mParentFrameHintsNotHandledForDescendants(nsChangeHint(0))
   , mHintsNotHandledForDescendants(nsChangeHint(0))
   , mRestyleTracker(aRestyleTracker)
@@ -1106,6 +1106,9 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
 #endif
 {
   MOZ_ASSERT_IF(mContent, !mContent->IsStyledByServo());
+  MOZ_ASSERT(!(mHintsHandledByAncestors & nsChangeHint_ReconstructFrame),
+             "why restyle descendants if we are reconstructing the frame for "
+             "an ancestor?");
 }
 
 ElementRestyler::ElementRestyler(const ElementRestyler& aParentRestyler,
@@ -1118,8 +1121,22 @@ ElementRestyler::ElementRestyler(const ElementRestyler& aParentRestyler,
     
   , mContent(mFrame->GetContent() ? mFrame->GetContent() : mParentContent)
   , mChangeList(aParentRestyler.mChangeList)
-  , mHintsHandled(aParentRestyler.mHintsHandled &
-                  ~NS_HintsNotHandledForDescendantsIn(aParentRestyler.mHintsHandled))
+  , mHintsHandledByAncestors(
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      (aParentRestyler.mHintsHandledByAncestors |
+       aParentRestyler.mHintsHandledBySelf) &
+      ((aConstructorFlags & FOR_OUT_OF_FLOW_CHILD) ?
+       ~nsChangeHint_AllReflowHints : ~nsChangeHint(0)))
+  , mHintsHandledBySelf(nsChangeHint(0))
   , mParentFrameHintsNotHandledForDescendants(
       aParentRestyler.mHintsNotHandledForDescendants)
   , mHintsNotHandledForDescendants(nsChangeHint(0))
@@ -1141,19 +1158,9 @@ ElementRestyler::ElementRestyler(const ElementRestyler& aParentRestyler,
 #endif
 {
   MOZ_ASSERT_IF(mContent, !mContent->IsStyledByServo());
-  if (aConstructorFlags & FOR_OUT_OF_FLOW_CHILD) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mHintsHandled &= ~nsChangeHint_AllReflowHints;
-  }
+  MOZ_ASSERT(!(mHintsHandledByAncestors & nsChangeHint_ReconstructFrame),
+             "why restyle descendants if we are reconstructing the frame for "
+             "an ancestor?");
 }
 
 ElementRestyler::ElementRestyler(ParentContextFromChildFrame,
@@ -1166,8 +1173,9 @@ ElementRestyler::ElementRestyler(ParentContextFromChildFrame,
     
   , mContent(mFrame->GetContent() ? mFrame->GetContent() : mParentContent)
   , mChangeList(aParentRestyler.mChangeList)
-  , mHintsHandled(aParentRestyler.mHintsHandled &
-                  ~NS_HintsNotHandledForDescendantsIn(aParentRestyler.mHintsHandled))
+  , mHintsHandledByAncestors(aParentRestyler.mHintsHandledByAncestors |
+                             aParentRestyler.mHintsHandledBySelf)
+  , mHintsHandledBySelf(nsChangeHint(0))
   , mParentFrameHintsNotHandledForDescendants(
       
       nsChangeHint_Hints_NotHandledForDescendants)
@@ -1190,6 +1198,9 @@ ElementRestyler::ElementRestyler(ParentContextFromChildFrame,
 #endif
 {
   MOZ_ASSERT_IF(mContent, !mContent->IsStyledByServo());
+  MOZ_ASSERT(!(mHintsHandledByAncestors & nsChangeHint_ReconstructFrame),
+             "why restyle descendants if we are reconstructing the frame for "
+             "an ancestor?");
 }
 
 ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
@@ -1209,8 +1220,8 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
   , mParentContent(nullptr)
   , mContent(aContent)
   , mChangeList(aChangeList)
-  , mHintsHandled(aHintsHandledByAncestors &
-                  ~NS_HintsNotHandledForDescendantsIn(aHintsHandledByAncestors))
+  , mHintsHandledByAncestors(aHintsHandledByAncestors)
+  , mHintsHandledBySelf(nsChangeHint(0))
   , mParentFrameHintsNotHandledForDescendants(nsChangeHint(0))
   , mHintsNotHandledForDescendants(nsChangeHint(0))
   , mRestyleTracker(aRestyleTracker)
@@ -1227,6 +1238,9 @@ ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
   , mVisibleKidsOfHiddenElement(aVisibleKidsOfHiddenElement)
 #endif
 {
+  MOZ_ASSERT(!(mHintsHandledByAncestors & nsChangeHint_ReconstructFrame),
+             "why restyle descendants if we are reconstructing the frame for "
+             "an ancestor?");
 }
 
 void
@@ -1316,15 +1330,32 @@ ElementRestyler::CaptureChange(nsStyleContext* aOldContext,
   }
 
   ourChange |= aChangeToAssume;
-  if (!NS_IsHintSubset(ourChange, mHintsHandled)) {
-    mHintsHandled |= ourChange;
+
+  nsChangeHint changeToAppend =
+    NS_RemoveSubsumedHints(ourChange, mHintsHandledByAncestors);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!NS_IsHintSubset(changeToAppend, mHintsHandledBySelf)) {
+    mHintsHandledBySelf |= changeToAppend;
     if (!(ourChange & nsChangeHint_ReconstructFrame) || mContent) {
       LOG_RESTYLE("appending change %s",
-                  GeckoRestyleManager::ChangeHintToString(ourChange).get());
-      mChangeList->AppendChange(mFrame, mContent, ourChange);
+                  RestyleManager::ChangeHintToString(changeToAppend).get());
+      mChangeList->AppendChange(mFrame, mContent, changeToAppend);
     } else {
-      LOG_RESTYLE("change has already been handled");
+      LOG_RESTYLE("ignoring ReconstructFrame change with no content");
     }
+  } else {
+    LOG_RESTYLE("change has already been handled");
   }
   mHintsNotHandledForDescendants |=
     NS_HintsNotHandledForDescendantsIn(ourChange);
@@ -1795,9 +1826,13 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
     mContent->OwnerDoc()->FlushPendingLinkUpdates();
     nsAutoPtr<RestyleTracker::RestyleData> restyleData;
     if (mRestyleTracker.GetRestyleData(mContent->AsElement(), restyleData)) {
-      if (!NS_IsHintSubset(restyleData->mChangeHint, mHintsHandled)) {
-        mHintsHandled |= restyleData->mChangeHint;
-        mChangeList->AppendChange(mFrame, mContent, restyleData->mChangeHint);
+      nsChangeHint changeToAppend =
+        NS_RemoveSubsumedHints(restyleData->mChangeHint,
+                               mHintsHandledByAncestors);
+      
+      if (!NS_IsHintSubset(changeToAppend, mHintsHandledBySelf)) {
+        mHintsHandledBySelf |= changeToAppend;
+        mChangeList->AppendChange(mFrame, mContent, changeToAppend);
       }
       mSelectorsForDescendants.AppendElements(
           restyleData->mRestyleHintData.mSelectorsForDescendants);
@@ -1915,7 +1950,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
 
     
     
-    if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+    if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
       InitializeAccessibilityNotifications(mFrame->StyleContext());
       SendAccessibilityNotifications();
     }
@@ -1928,7 +1963,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
   }
 
   if (result == RestyleResult::eStopWithStyleChange &&
-      !(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+      !(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
     MOZ_ASSERT(mFrame->StyleContext() != oldContext,
                "RestyleResult::eStopWithStyleChange should only be returned "
                "if we got a new style context or we will reconstruct");
@@ -1947,7 +1982,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
     if (canStop) {
       
       
-      if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+      if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
         InitializeAccessibilityNotifications(mFrame->StyleContext());
         SendAccessibilityNotifications();
       }
@@ -1988,7 +2023,7 @@ ElementRestyler::Restyle(nsRestyleHint aRestyleHint)
   
   
   
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
     RestyleChildren(childRestyleHint);
   }
 
@@ -2552,7 +2587,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
                                                          mTreeMatchContext);
           if (!newContext) {
             
-            mHintsHandled |= nsChangeHint_ReconstructFrame;
+            mHintsHandledBySelf |= nsChangeHint_ReconstructFrame;
             mChangeList->AppendChange(aSelf, element,
                                       nsChangeHint_ReconstructFrame);
             
@@ -2773,7 +2808,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
       result = RestyleResult::eContinueAndForceDescendants;
     }
 
-    if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+    if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
       
       
       
@@ -2909,7 +2944,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
       uint32_t samePointerStructs;
       CaptureChange(oldExtraContext, newExtraContext, assumeDifferenceHint,
                     &equalStructs, &samePointerStructs);
-      if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+      if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
         LOG_RESTYLE("setting new extra style context");
         aSelf->SetAdditionalStyleContext(contextIndex, newExtraContext);
       } else {
@@ -2926,7 +2961,7 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
 void
 ElementRestyler::RestyleChildren(nsRestyleHint aChildRestyleHint)
 {
-  MOZ_ASSERT(!(mHintsHandled & nsChangeHint_ReconstructFrame),
+  MOZ_ASSERT(!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame),
              "No need to do this if we're planning to reframe already.");
 
   
@@ -2952,7 +2987,7 @@ ElementRestyler::RestyleChildren(nsRestyleHint aChildRestyleHint)
   
   
   
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame) &&
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame) &&
       mightReframePseudos) {
     MaybeReframeForBeforePseudo();
   }
@@ -2967,7 +3002,7 @@ ElementRestyler::RestyleChildren(nsRestyleHint aChildRestyleHint)
   
   
   nsIFrame* lastContinuation;
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
     InitializeAccessibilityNotifications(mFrame->StyleContext());
 
     for (nsIFrame* f = mFrame; f;
@@ -2981,7 +3016,7 @@ ElementRestyler::RestyleChildren(nsRestyleHint aChildRestyleHint)
 
   
   
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame) &&
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame) &&
       mightReframePseudos) {
     MaybeReframeForAfterPseudo(lastContinuation);
   }
@@ -2996,19 +3031,22 @@ ElementRestyler::RestyleChildrenOfDisplayContentsElement(
   nsRestyleHint          aRestyleHint,
   const RestyleHintData& aRestyleHintData)
 {
-  MOZ_ASSERT(!(mHintsHandled & nsChangeHint_ReconstructFrame), "why call me?");
+  MOZ_ASSERT(!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame),
+             "why call me?");
 
   const bool mightReframePseudos = aRestyleHint & eRestyle_Subtree;
   DoRestyleUndisplayedDescendants(nsRestyleHint(0), mContent, aNewContext);
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame) && mightReframePseudos) {
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame) &&
+      mightReframePseudos) {
     MaybeReframeForPseudo(CSSPseudoElementType::before,
                           aParentFrame, nullptr, mContent, aNewContext);
   }
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame) && mightReframePseudos) {
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame) &&
+      mightReframePseudos) {
     MaybeReframeForPseudo(CSSPseudoElementType::after,
                           aParentFrame, nullptr, mContent, aNewContext);
   }
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
     InitializeAccessibilityNotifications(aNewContext);
 
     
@@ -3030,7 +3068,7 @@ ElementRestyler::RestyleChildrenOfDisplayContentsElement(
       }
     }
   }
-  if (!(mHintsHandled & nsChangeHint_ReconstructFrame)) {
+  if (!(mHintsHandledBySelf & nsChangeHint_ReconstructFrame)) {
     SendAccessibilityNotifications();
   }
 }
@@ -3296,7 +3334,7 @@ ElementRestyler::MaybeReframeForPseudo(CSSPseudoElementType aPseudoType,
     
     LOG_RESTYLE("MaybeReframeForPseudo, appending "
                 "nsChangeHint_ReconstructFrame");
-    mHintsHandled |= nsChangeHint_ReconstructFrame;
+    mHintsHandledBySelf |= nsChangeHint_ReconstructFrame;
     mChangeList->AppendChange(aFrame, aContent, nsChangeHint_ReconstructFrame);
   }
 }

@@ -369,6 +369,26 @@ static_assert(!(nsChangeHint_Hints_AlwaysHandledForDescendants &
 )
 
 
+#define NS_STYLE_HINT_VISUAL \
+  nsChangeHint(nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView | \
+               nsChangeHint_SchedulePaint)
+#define nsChangeHint_AllReflowHints                     \
+  nsChangeHint(nsChangeHint_NeedReflow |                \
+               nsChangeHint_ReflowChangesSizeOrPosition|\
+               nsChangeHint_ClearAncestorIntrinsics |   \
+               nsChangeHint_ClearDescendantIntrinsics | \
+               nsChangeHint_NeedDirtyReflow)
+#define NS_STYLE_HINT_REFLOW \
+  nsChangeHint(NS_STYLE_HINT_VISUAL | nsChangeHint_AllReflowHints)
+
+#define nsChangeHint_Hints_CanIgnoreIfNotVisible   \
+  nsChangeHint(NS_STYLE_HINT_VISUAL |              \
+               nsChangeHint_NeutralChange |        \
+               nsChangeHint_UpdateOpacityLayer |   \
+               nsChangeHint_UpdateTransformLayer | \
+               nsChangeHint_UpdateUsesOpacity)
+
+
 
 inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint) {
   nsChangeHint result =
@@ -403,25 +423,36 @@ inline nsChangeHint NS_HintsNotHandledForDescendantsIn(nsChangeHint aChangeHint)
   return result;
 }
 
+inline nsChangeHint
+NS_HintsHandledForDescendantsIn(nsChangeHint aChangeHint)
+{
+  return aChangeHint & ~NS_HintsNotHandledForDescendantsIn(aChangeHint);
+}
 
-#define NS_STYLE_HINT_VISUAL \
-  nsChangeHint(nsChangeHint_RepaintFrame | nsChangeHint_SyncFrameView | \
-               nsChangeHint_SchedulePaint)
-#define nsChangeHint_AllReflowHints                     \
-  nsChangeHint(nsChangeHint_NeedReflow |                \
-               nsChangeHint_ReflowChangesSizeOrPosition|\
-               nsChangeHint_ClearAncestorIntrinsics |   \
-               nsChangeHint_ClearDescendantIntrinsics | \
-               nsChangeHint_NeedDirtyReflow)
-#define NS_STYLE_HINT_REFLOW \
-  nsChangeHint(NS_STYLE_HINT_VISUAL | nsChangeHint_AllReflowHints)
 
-#define nsChangeHint_Hints_CanIgnoreIfNotVisible   \
-  nsChangeHint(NS_STYLE_HINT_VISUAL |              \
-               nsChangeHint_NeutralChange |        \
-               nsChangeHint_UpdateOpacityLayer |   \
-               nsChangeHint_UpdateTransformLayer | \
-               nsChangeHint_UpdateUsesOpacity)
+
+inline nsChangeHint
+NS_RemoveSubsumedHints(nsChangeHint aOurChange, nsChangeHint aHintsHandled)
+{
+  nsChangeHint result =
+    aOurChange & ~NS_HintsHandledForDescendantsIn(aHintsHandled);
+
+  if (result & (nsChangeHint_ClearAncestorIntrinsics |
+                nsChangeHint_ClearDescendantIntrinsics |
+                nsChangeHint_NeedDirtyReflow |
+                nsChangeHint_ReflowChangesSizeOrPosition |
+                nsChangeHint_UpdateComputedBSize)) {
+    result |= nsChangeHint_NeedReflow;
+  }
+
+  if (result & (nsChangeHint_ClearDescendantIntrinsics)) {
+    MOZ_ASSERT(result & nsChangeHint_ClearAncestorIntrinsics);
+    result |= 
+              nsChangeHint_NeedDirtyReflow;
+  }
+
+  return result;
+}
 
 
 
