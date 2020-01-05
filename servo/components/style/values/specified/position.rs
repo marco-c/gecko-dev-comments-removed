@@ -8,6 +8,7 @@
 
 
 use cssparser::{Parser, ToCss, Token};
+use parser::Parse;
 use std::fmt;
 use values::HasViewportPercentage;
 use values::computed::{CalcLengthOrPercentage, Context};
