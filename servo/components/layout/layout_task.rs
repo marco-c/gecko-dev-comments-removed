@@ -73,7 +73,8 @@ use util::opts;
 use util::task;
 use util::task_state;
 use util::workqueue::WorkQueue;
-use wrapper::{LayoutDocument, LayoutElement, LayoutNode, ServoLayoutNode};
+use wrapper::{LayoutDocument, LayoutElement, LayoutNode};
+use wrapper::{ServoLayoutNode, ThreadSafeLayoutNode};
 
 
 pub const DISPLAY_PORT_SIZE_FACTOR: i32 = 8;
