@@ -381,9 +381,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.15.0"
-#define SQLITE_VERSION_NUMBER 3015000
-#define SQLITE_SOURCE_ID      "2016-10-14 10:20:30 707875582fcba352b4906a595ad89198d84711d8"
+#define SQLITE_VERSION        "3.15.1"
+#define SQLITE_VERSION_NUMBER 3015001
+#define SQLITE_SOURCE_ID      "2016-11-04 12:08:49 1136863c76576110e710dd5d69ab6bf347c65e36"
 
 
 
@@ -1261,6 +1261,12 @@ struct sqlite3_io_methods {
 
 
 
+
+
+
+
+
+
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_FCNTL_GET_LOCKPROXYFILE       2
 #define SQLITE_FCNTL_SET_LOCKPROXYFILE       3
@@ -1288,6 +1294,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_RBU                    26
 #define SQLITE_FCNTL_VFS_POINTER            27
 #define SQLITE_FCNTL_JOURNAL_POINTER        28
+#define SQLITE_FCNTL_WIN32_GET_HANDLE       29
 
 
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -13088,10 +13095,13 @@ SQLITE_PRIVATE   int sqlite3PagerWalSupported(Pager *pPager);
 SQLITE_PRIVATE   int sqlite3PagerWalCallback(Pager *pPager);
 SQLITE_PRIVATE   int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
 SQLITE_PRIVATE   int sqlite3PagerCloseWal(Pager *pPager);
+SQLITE_PRIVATE   int sqlite3PagerUseWal(Pager *pPager);
 # ifdef SQLITE_ENABLE_SNAPSHOT
 SQLITE_PRIVATE   int sqlite3PagerSnapshotGet(Pager *pPager, sqlite3_snapshot **ppSnapshot);
 SQLITE_PRIVATE   int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSnapshot);
 # endif
+#else
+# define sqlite3PagerUseWal(x) 0
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
@@ -18107,8 +18117,8 @@ struct PreUpdate {
   int iNewReg;                    
   i64 iKey1;                      
   i64 iKey2;                      
-  int iPKey;                      
   Mem *aNew;                      
+  Table *pTab;                              
 };
 
 
@@ -40676,6 +40686,12 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_WIN32_GET_HANDLE: {
+      LPHANDLE phFile = (LPHANDLE)pArg;
+      *phFile = pFile->h;
+      OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
+      return SQLITE_OK;
+    }
 #ifdef SQLITE_TEST
     case SQLITE_FCNTL_WIN32_SET_HANDLE: {
       LPHANDLE phFile = (LPHANDLE)pArg;
@@ -47166,9 +47182,10 @@ static const unsigned char aJournalMagic[] = {
 
 
 #ifndef SQLITE_OMIT_WAL
-static int pagerUseWal(Pager *pPager){
+SQLITE_PRIVATE int sqlite3PagerUseWal(Pager *pPager){
   return (pPager->pWal!=0);
 }
+# define pagerUseWal(x) sqlite3PagerUseWal(x)
 #else
 # define pagerUseWal(x) 0
 # define pagerRollbackWal(x) 0
@@ -62827,7 +62844,7 @@ static int accessPayload(
          && (bEnd || a==ovflSize)                              
          && pBt->inTransaction==TRANS_READ                     
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     
-         && pBt->pPage1->aData[19]==0x01                       
+         && 0==sqlite3PagerUseWal(pBt->pPager)                 
          && &pBuf[-4]>=pBufStart                               
         ){
           u8 aSave[4];
@@ -75078,7 +75095,7 @@ SQLITE_PRIVATE void sqlite3VdbePreUpdateHook(
   preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
-  preupdate.iPKey = pTab->iPKey;
+  preupdate.pTab = pTab;
 
   db->pPreUpdate = &preupdate;
   db->xPreUpdateCallback(db->pPreUpdateArg, db, op, zDb, zTbl, iKey1, iKey2);
@@ -76810,9 +76827,14 @@ SQLITE_API int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppVa
   if( iIdx>=p->pUnpacked->nField ){
     *ppValue = (sqlite3_value *)columnNullValue();
   }else{
+    Mem *pMem = *ppValue = &p->pUnpacked->aMem[iIdx];
     *ppValue = &p->pUnpacked->aMem[iIdx];
-    if( iIdx==p->iPKey ){
-      sqlite3VdbeMemSetInt64(*ppValue, p->iKey1);
+    if( iIdx==p->pTab->iPKey ){
+      sqlite3VdbeMemSetInt64(pMem, p->iKey1);
+    }else if( p->pTab->aCol[iIdx].affinity==SQLITE_AFF_REAL ){
+      if( pMem->flags & MEM_Int ){
+        sqlite3VdbeMemRealify(pMem);
+      }
     }
   }
 
@@ -76889,7 +76911,7 @@ SQLITE_API int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppVa
       pMem = (sqlite3_value *)columnNullValue();
     }else{
       pMem = &pUnpack->aMem[iIdx];
-      if( iIdx==p->iPKey ){
+      if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }
     }
@@ -76910,7 +76932,7 @@ SQLITE_API int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppVa
     assert( iIdx>=0 && iIdx<p->pCsr->nField );
     pMem = &p->aNew[iIdx];
     if( pMem->flags==0 ){
-      if( iIdx==p->iPKey ){
+      if( iIdx==p->pTab->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }else{
         rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
@@ -122356,7 +122378,7 @@ SQLITE_PRIVATE int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db, int iDb){
 
   sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));
-  sqlite3BtreeSetPagerFlags(pTemp, PAGER_SYNCHRONOUS_OFF);
+  sqlite3BtreeSetPagerFlags(pTemp, PAGER_SYNCHRONOUS_OFF|PAGER_CACHESPILL);
 
   
 
@@ -127539,6 +127561,7 @@ static void exprAnalyze(
       Expr *pRight = sqlite3ExprForVectorField(pParse, pExpr->pRight, i);
 
       pNew = sqlite3PExpr(pParse, pExpr->op, pLeft, pRight, 0);
+      transferJoinMarkings(pNew, pExpr);
       idxNew = whereClauseInsert(pWC, pNew, TERM_DYNAMIC);
       exprAnalyze(pSrc, pWC, idxNew);
     }
@@ -132642,13 +132665,15 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
 #endif
     if( pLevel->iLeftJoin ){
+      int ws = pLoop->wsFlags;
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin); VdbeCoverage(v);
-      assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
-           || (pLoop->wsFlags & WHERE_INDEXED)!=0 );
-      if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 ){
+      assert( (ws & WHERE_IDX_ONLY)==0 || (ws & WHERE_INDEXED)!=0 );
+      if( (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
       }
-      if( pLoop->wsFlags & WHERE_INDEXED ){
+      if( (ws & WHERE_INDEXED) 
+       || ((ws & WHERE_MULTI_OR) && pLevel->u.pCovidx) 
+      ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
       if( pLevel->op==OP_Return ){
@@ -195598,7 +195623,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-10-14 10:20:30 707875582fcba352b4906a595ad89198d84711d8", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-11-04 12:08:49 1136863c76576110e710dd5d69ab6bf347c65e36", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
