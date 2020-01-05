@@ -3526,9 +3526,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
 
   nsStyleSVGPaint  mFill;             
   nsStyleSVGPaint  mStroke;           
-  mozilla::FragmentOrURL mMarkerEnd;        
-  mozilla::FragmentOrURL mMarkerMid;        
-  mozilla::FragmentOrURL mMarkerStart;      
+  RefPtr<mozilla::css::URLValue> mMarkerEnd;   
+  RefPtr<mozilla::css::URLValue> mMarkerMid;   
+  RefPtr<mozilla::css::URLValue> mMarkerStart; 
   nsTArray<nsStyleCoord> mStrokeDasharray;  
 
   nsStyleCoord     mStrokeDashoffset; 
@@ -3590,8 +3590,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG
   }
 
   bool HasMarker() const {
-    return mMarkerStart.GetSourceURL() || mMarkerMid.GetSourceURL() ||
-           mMarkerEnd.GetSourceURL();
+    return mMarkerStart || mMarkerMid || mMarkerEnd;
   }
 
   
