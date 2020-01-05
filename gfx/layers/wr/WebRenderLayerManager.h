@@ -61,6 +61,8 @@ private:
 
 class WebRenderLayerManager final : public LayerManager
 {
+  typedef nsTArray<RefPtr<Layer> > LayerRefArray;
+
 public:
   explicit WebRenderLayerManager(nsIWidget* aWidget);
   void Initialize(PCompositorBridgeChild* aCBChild, uint64_t aLayersId, TextureFactoryIdentifier* aTextureFactoryIdentifier);
@@ -131,6 +133,8 @@ public:
 
   WebRenderBridgeChild* WRBridge() const { return mWRChild; }
 
+  void Hold(Layer* aLayer);
+
 private:
   
 
@@ -155,6 +159,8 @@ private:
   uint64_t mLatestTransactionId;
 
   nsTArray<DidCompositeObserver*> mDidCompositeObservers;
+
+  LayerRefArray mKeepAlive;
 
  
  
