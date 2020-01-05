@@ -94,6 +94,17 @@ impl<T: Float + FromJSValConvertible<Config=()>> FromJSValConvertible for Finite
     }
 }
 
+impl <T: Reflectable + IDLInterface> FromJSValConvertible for Root<T> {
+    type Config = ();
+
+    unsafe fn from_jsval(_cx: *mut JSContext,
+                         value: HandleValue,
+                         _config: Self::Config)
+        -> Result<Root<T>, ()> {
+        root_from_handlevalue(value)
+    }
+}
+
 
 
 pub fn jsid_to_str(cx: *mut JSContext, id: HandleId) -> DOMString {
