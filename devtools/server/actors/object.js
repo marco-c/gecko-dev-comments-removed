@@ -1127,6 +1127,10 @@ DebuggerServer.ObjectActorPreviewers = {
       grip.parameterNames = obj.parameterNames;
     }
 
+    let type = DevToolsUtils.getProperty(obj, "constructor").name;
+    grip.isAsync = type === "AsyncFunction";
+    grip.isGenerator = type === "GeneratorFunction";
+
     
     
     let userDisplayName;
