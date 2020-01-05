@@ -157,6 +157,20 @@ pub enum DocumentState {
 }
 
 
+
+#[derive(Clone, Eq, PartialEq, Deserialize, Serialize, Debug)]
+pub enum AnimationState {
+    
+    AnimationsPresent,
+    
+    AnimationCallbacksPresent,
+    
+    NoAnimationsPresent,
+    
+    NoAnimationCallbacksPresent,
+}
+
+
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum TouchEventType {
     
