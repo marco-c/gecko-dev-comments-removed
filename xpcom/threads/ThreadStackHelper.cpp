@@ -163,6 +163,12 @@ public:
 void
 ThreadStackHelper::GetStack(Stack& aStack)
 {
+  GetStackInternal(aStack,  false);
+}
+
+void
+ThreadStackHelper::GetStackInternal(Stack& aStack, bool aAppendNativeStack)
+{
   
   if (!PrepareStackBuffer(aStack)) {
     
@@ -195,6 +201,13 @@ ThreadStackHelper::GetStack(Stack& aStack)
     MOZ_ASSERT(false);
     return;
   }
+#ifdef _WIN64
+  AcquireStackWalkWorkaroundLock();
+#endif
+  if (aAppendNativeStack) {
+    aStack.EnsureNativeFrameCapacity(Telemetry::HangStack::sMaxNativeFrames);
+  }
+
   if (::SuspendThread(mThreadID) == DWORD(-1)) {
     MOZ_ASSERT(false);
     return;
@@ -207,6 +220,22 @@ ThreadStackHelper::GetStack(Stack& aStack)
   context.ContextFlags = CONTEXT_CONTROL;
   if (::GetThreadContext(mThreadID, &context)) {
     FillStackBuffer();
+  }
+
+#ifdef _WIN64
+  ReleaseStackWalkWorkaroundLock();
+#endif
+
+  if (aAppendNativeStack) {
+    auto callback = [](uint32_t, void* aPC, void*, void* aClosure) {
+      Stack* stack = static_cast<Stack*>(aClosure);
+      stack->AppendNativeFrame(reinterpret_cast<uintptr_t>(aPC));
+    };
+
+    MozStackWalk(callback,  0,
+                  Telemetry::HangStack::sMaxNativeFrames,
+                 reinterpret_cast<void*>(&aStack),
+                 reinterpret_cast<uintptr_t>(mThreadID), nullptr);
   }
 
   MOZ_ALWAYS_TRUE(::ResumeThread(mThreadID) != DWORD(-1));
@@ -236,10 +265,7 @@ void
 ThreadStackHelper::GetNativeStack(Stack& aStack)
 {
 #ifdef MOZ_THREADSTACKHELPER_NATIVE
-  
-  GetStack(aStack);
-
-  
+  GetStackInternal(aStack,  true);
 #endif 
 }
 

@@ -283,7 +283,7 @@ HangMonitorChild::HangMonitorChild(ProcessHangMonitor* aMonitor)
   mForcePaintMonitor =
     MakeUnique<mozilla::BackgroundHangMonitor>("Gecko_Child_ForcePaint",
                                                128, 
-                                               8192 ,
+                                               1024, 
                                                BackgroundHangMonitor::THREAD_PRIVATE);
 }
 
