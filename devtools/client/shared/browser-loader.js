@@ -18,10 +18,6 @@ const BROWSER_BASED_DIRS = [
   "resource://devtools/client/shared/redux",
 ];
 
-const COMMON_LIBRARY_DIRS = [
-  "resource://devtools/client/shared/vendor",
-];
-
 
 
 
@@ -86,11 +82,7 @@ function BrowserLoader(options) {
 
 
 
-
-
-
-
-function BrowserLoaderBuilder({ baseURI, window, useOnlyShared, commonLibRequire }) {
+function BrowserLoaderBuilder({ baseURI, window, useOnlyShared }) {
   assert(!!baseURI !== !!useOnlyShared,
     "Cannot use both `baseURI` and `useOnlyShared`.");
 
@@ -117,14 +109,14 @@ function BrowserLoaderBuilder({ baseURI, window, useOnlyShared, commonLibRequire
       }
 
       const uri = require.resolve(id);
-
-      if (commonLibRequire && COMMON_LIBRARY_DIRS.some(dir => uri.startsWith(dir))) {
-        return commonLibRequire(uri);
-      }
+      let isBrowserDir = BROWSER_BASED_DIRS.filter(dir => {
+        return uri.startsWith(dir);
+      }).length > 0;
 
       
-      let isBrowserDir = BROWSER_BASED_DIRS.some(dir => uri.startsWith(dir)) ||
-                         uri.match(browserBasedDirsRegExp) != null;
+      if (!isBrowserDir) {
+        isBrowserDir = uri.match(browserBasedDirsRegExp) != null;
+      }
 
       if ((useOnlyShared || !uri.startsWith(baseURI)) && !isBrowserDir) {
         return devtools.require(uri);
