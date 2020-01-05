@@ -26,6 +26,9 @@ public:
   
   
   virtual void Commit(const LayoutDeviceIntRegion& aInvalidRegion) = 0;
+
+  
+  virtual bool IsFallback() const { return false; }
 };
 
 }  
