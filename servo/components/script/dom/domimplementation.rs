@@ -159,7 +159,7 @@ impl<'a> DOMImplementationMethods for JSRef<'a, DOMImplementation> {
     }
 
     
-    fn HasFeature(self, _feature: DOMString, _version: DOMString) -> bool {
+    fn HasFeature(self) -> bool {
         true
     }
 }
