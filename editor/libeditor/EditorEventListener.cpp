@@ -790,7 +790,11 @@ EditorEventListener::HandleText(nsIDOMEvent* aTextEvent)
     return NS_OK;
   }
 
-  return mEditorBase->UpdateIMEComposition(aTextEvent);
+  
+  
+  WidgetCompositionEvent* compositionChangeEvent =
+    aTextEvent->WidgetEventPtr()->AsCompositionEvent();
+  return mEditorBase->UpdateIMEComposition(compositionChangeEvent);
 }
 
 
