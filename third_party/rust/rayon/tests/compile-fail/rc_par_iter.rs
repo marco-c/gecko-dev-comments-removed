@@ -3,7 +3,7 @@ extern crate rayon;
 
 
 
-use rayon::par_iter::IntoParallelIterator;
+use rayon::iter::IntoParallelIterator;
 use std::rc::Rc;
 
 fn main() {
