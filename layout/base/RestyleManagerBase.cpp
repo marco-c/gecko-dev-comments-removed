@@ -680,14 +680,12 @@ FrameHasPositionedPlaceholderDescendants(nsIFrame* aFrame,
       uint32_t positionMask = aPositionMask;
       
       
-      if (f->IsAbsPosContainingBlock()) {
-        if (f->IsFixedPosContainingBlock()) {
-          continue;
-        }
-        
-        
-        positionMask = (1 << NS_STYLE_POSITION_FIXED);
-      }
+      
+      
+      
+      
+      
+      
       if (FrameHasPositionedPlaceholderDescendants(f, positionMask)) {
         return true;
       }
@@ -1135,7 +1133,17 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
             }
           } else {
             if (cont->IsAbsoluteContainer()) {
-              cont->MarkAsNotAbsoluteContainingBlock();
+              if (cont->HasAbsolutelyPositionedChildren()) {
+                
+                
+                
+                
+                
+                
+                NS_WARNING("skipping removal of absolute containing block");
+              } else {
+                cont->MarkAsNotAbsoluteContainingBlock();
+              }
             }
           }
         }
