@@ -415,20 +415,22 @@ protected:
   
   
   
-  bool
+  template<typename StyleType> bool
   UpdateTransitions(const nsStyleDisplay* aDisp,
                     mozilla::dom::Element* aElement,
+                    mozilla::CSSPseudoElementType aPseudoType,
                     CSSTransitionCollection*& aElementTransitions,
-                    nsStyleContext* aOldStyleContext,
-                    nsStyleContext* aNewStyleContext);
+                    StyleType aOldStyle,
+                    StyleType aNewStyle);
 
-  void
+  template<typename StyleType> void
   ConsiderInitiatingTransition(nsCSSPropertyID aProperty,
                                const mozilla::StyleTransition& aTransition,
                                mozilla::dom::Element* aElement,
+                               mozilla::CSSPseudoElementType aPseudoType,
                                CSSTransitionCollection*& aElementTransitions,
-                               nsStyleContext* aOldStyleContext,
-                               nsStyleContext* aNewStyleContext,
+                               StyleType aOldStyle,
+                               StyleType aNewStyle,
                                bool* aStartedAny,
                                nsCSSPropertyIDSet* aWhichStarted);
 
