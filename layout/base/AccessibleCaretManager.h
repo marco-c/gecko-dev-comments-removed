@@ -187,6 +187,7 @@ protected:
   dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
   already_AddRefed<nsFrameSelection> GetFrameSelection() const;
+  nsAutoString StringifiedSelection() const;
 
   
   
