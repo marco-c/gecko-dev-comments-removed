@@ -103,6 +103,9 @@ DECL_ARC_REF_TYPE_FOR(ServoComputedValues)
 DECL_ARC_REF_TYPE_FOR(RawServoStyleSheet)
 DECL_ARC_REF_TYPE_FOR(RawServoDeclarationBlock)
 
+
+DECL_NULLABLE_BORROWED_REF_TYPE_FOR(RawServoDeclarationBlockStrong)
+
 DECL_OWNED_REF_TYPE_FOR(RawServoStyleSet)
 DECL_NULLABLE_OWNED_REF_TYPE_FOR(StyleChildrenIterator)
 DECL_OWNED_REF_TYPE_FOR(StyleChildrenIterator)
