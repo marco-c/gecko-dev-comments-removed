@@ -549,14 +549,14 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
 
     if (!isEnabled() || isEmpty()) {
         
-
-
-
-
-
+        
+        
+        
         rt->gc.storeBuffer.clear();
-        return;
     }
+
+    if (!isEnabled())
+        return;
 
     rt->gc.incMinorGcNumber();
 
@@ -578,7 +578,14 @@ js::Nursery::collect(JSRuntime* rt, JS::gcreason::Reason reason)
     JS::AutoSuppressGCAnalysis nogc;
 
     TenureCountCache tenureCounts;
-    double promotionRate = doCollection(rt, reason, tenureCounts);
+    double promotionRate = 0;
+    if (!isEmpty())
+        promotionRate = doCollection(rt, reason, tenureCounts);
+
+    
+    maybeStartProfile(ProfileKey::Resize);
+    maybeResizeNursery(reason, promotionRate);
+    maybeEndProfile(ProfileKey::Resize);
 
     
     
@@ -750,12 +757,7 @@ js::Nursery::doCollection(JSRuntime* rt, JS::gcreason::Reason reason,
     maybeEndProfile(ProfileKey::CheckHashTables);
 
     
-    maybeStartProfile(ProfileKey::Resize);
-    double promotionRate = mover.tenuredSize / double(initialNurserySize);
-    maybeResizeNursery(reason, promotionRate);
-    maybeEndProfile(ProfileKey::Resize);
-
-    return promotionRate;
+    return mover.tenuredSize / double(initialNurserySize);
 }
 
 void
