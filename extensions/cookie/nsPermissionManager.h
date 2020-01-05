@@ -254,8 +254,6 @@ private:
                        int64_t aExpireTime,
                        int64_t aModificationTime);
 
-  nsresult RemoveExpiredPermissionsForApp(uint32_t aAppId);
-
   
 
 
@@ -281,13 +279,6 @@ private:
 
   
   nsTArray<nsCString>          mTypeArray;
-
-  
-  struct ApplicationCounter {
-    uint32_t mAppId;
-    uint32_t mCounter;
-  };
-  nsTArray<ApplicationCounter> mAppIdRefcounts;
 
   
   

@@ -334,18 +334,6 @@ public:
                   const ContentParentId& aCpId,
                   bool aMarkedDestroying);
 
-  
-
-
-  static bool
-  PermissionManagerAddref(const ContentParentId& aCpId, const TabId& aTabId);
-
-  
-
-
-  static bool
-  PermissionManagerRelease(const ContentParentId& aCpId, const TabId& aTabId);
-
   void ReportChildAlreadyBlocked();
 
   bool RequestRunToCompletion();

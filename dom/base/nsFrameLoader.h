@@ -325,10 +325,6 @@ private:
              ? nsGkAtoms::type : nsGkAtoms::mozframetype;
   }
 
-  
-  
-  void ResetPermissionManagerStatus();
-
   void InitializeBrowserAPI();
   void DestroyBrowserFrameScripts();
 
@@ -353,9 +349,6 @@ private:
   
   
   RefPtr<mozilla::dom::Element> mOwnerContentStrong;
-
-  
-  uint32_t mAppIdSentToPermissionManager;
 
   
   
