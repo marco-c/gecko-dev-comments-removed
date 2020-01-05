@@ -6,14 +6,14 @@ use blob_loader::load_blob;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use mime_classifier::MimeClassifier;
 use mime_guess::guess_mime_type_opt;
-use net_traits::blob_url_store::{BlobURLStoreEntry, BlobURLStoreError, parse_blob_url};
+use net_traits::blob_url_store::{BlobBuf, BlobURLStoreError, parse_blob_url};
 use net_traits::filemanager_thread::{FileManagerThreadMsg, FileManagerResult, FilterPattern, FileOrigin};
 use net_traits::filemanager_thread::{SelectedFile, RelativePos, FileManagerThreadError, SelectedFileId};
 use net_traits::{LoadConsumer, LoadData, NetworkError};
 use resource_thread::send_error;
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Seek, SeekFrom};
 use std::ops::Index;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{self, AtomicUsize, AtomicBool, Ordering};
@@ -28,6 +28,9 @@ use uuid::Uuid;
 pub trait FileManagerThreadFactory<UI: 'static + UIProvider> {
     fn new(&'static UI) -> Self;
 }
+
+
+
 
 pub trait UIProvider where Self: Sync {
     fn open_file_dialog(&self, path: &str, patterns: Vec<FilterPattern>) -> Option<String>;
@@ -92,22 +95,38 @@ impl<UI: 'static + UIProvider> FileManagerThreadFactory<UI> for IpcSender<FileMa
     }
 }
 
+
 struct FileStoreEntry {
     
     origin: FileOrigin,
     
     file_impl: FileImpl,
     
+    
     refs: AtomicUsize,
     
+    
+    
     is_valid_url: AtomicBool
+}
+
+#[derive(Clone)]
+struct FileMetaData {
+    path: PathBuf,
+    
+    modified: u64,
+    size: u64,
 }
 
 
 #[derive(Clone)]
 enum FileImpl {
-    PathOnly(PathBuf),
-    Memory(BlobURLStoreEntry),
+    
+    MetaDataOnly(FileMetaData),
+    
+    Memory(BlobBuf),
+    
+    
     Sliced(Uuid, RelativePos),
 }
 
@@ -145,13 +164,15 @@ impl<UI: 'static + UIProvider> FileManager<UI> {
                     spawn_named("read file".to_owned(), move || {
                         match store.try_read_file(id, origin) {
                             Ok(buffer) => { let _ = sender.send(Ok(buffer)); }
-                            Err(_) => { let _ = sender.send(Err(FileManagerThreadError::ReadFileError)); }
+                            Err(e) => {
+                                let _ = sender.send(Err(FileManagerThreadError::BlobURLStoreError(e)));
+                            }
                         }
                     })
                 }
-                FileManagerThreadMsg::PromoteMemory(entry, sender, origin) => {
+                FileManagerThreadMsg::PromoteMemory(blob_buf, sender, origin) => {
                     spawn_named("transfer memory".to_owned(), move || {
-                        store.promote_memory(entry, sender, origin);
+                        store.promote_memory(blob_buf, sender, origin);
                     })
                 }
                 FileManagerThreadMsg::AddSlicedURLEntry(id, rel_pos, sender, origin) =>{
@@ -167,8 +188,7 @@ impl<UI: 'static + UIProvider> FileManager<UI> {
                             send_error(load_data.url.clone(), format_err, consumer);
                         }
                         Some((id, _fragment)) => {
-                            
-                            self.process_request(load_data, consumer, RelativePos::full_range(), id, true);
+                            self.process_request(load_data, consumer, id);
                         }
                     }
                 },
@@ -214,54 +234,21 @@ impl<UI: 'static + UIProvider> FileManager<UI> {
         }
     }
 
-    fn process_request(&self, load_data: LoadData, consumer: LoadConsumer,
-                       rel_pos: RelativePos, id: Uuid, check_url_validity: bool) {
+    fn process_request(&self, load_data: LoadData, consumer: LoadConsumer, id: Uuid) {
         let origin_in = load_data.url.origin().unicode_serialization();
-        match self.store.get_impl(&id, &origin_in, check_url_validity) {
-            Ok(file_impl) => {
-                match file_impl {
-                    FileImpl::Memory(buffered) => {
-                        let classifier = self.classifier.clone();
-                        spawn_named("load blob".to_owned(), move ||
-                            load_blob(load_data, consumer, classifier,
-                                      None, rel_pos, buffered));
-                    }
-                    FileImpl::PathOnly(filepath) => {
-                        let opt_filename = filepath.file_name()
-                                                   .and_then(|osstr| osstr.to_str())
-                                                   .map(|s| s.to_string());
-
-                        let mut bytes = vec![];
-                        let mut handler = File::open(&filepath).unwrap();
-                        let mime = guess_mime_type_opt(filepath);
-                        let size = handler.read_to_end(&mut bytes).unwrap();
-
-                        let entry = BlobURLStoreEntry {
-                            type_string: match mime {
-                                Some(x) => format!("{}", x),
-                                None    => "".to_string(),
-                            },
-                            size: size as u64,
-                            bytes: bytes,
-                        };
-                        let classifier = self.classifier.clone();
-                        spawn_named("load blob".to_owned(), move ||
-                            load_blob(load_data, consumer, classifier,
-                                      opt_filename, rel_pos, entry));
-                    },
-                    FileImpl::Sliced(id, rel_pos) => {
-                        
-                        
-                        self.process_request(load_data, consumer, rel_pos, id, false);
-                    }
-                }
+        
+        match self.store.get_blob_buf(&id, &origin_in, RelativePos::full_range(), true) {
+            Ok(blob_buf) => {
+                let classifier = self.classifier.clone();
+                spawn_named("load blob".to_owned(), move || load_blob(load_data, consumer, classifier, blob_buf));
             }
-            Err(e) => {
-                send_error(load_data.url.clone(), NetworkError::Internal(format!("{:?}", e)), consumer);
-            }
+            Err(e) => send_error(load_data.url.clone(), NetworkError::Internal(format!("{:?}", e)), consumer),
         }
     }
 }
+
+
+
 
 struct FileManagerStore<UI: 'static + UIProvider> {
     entries: RwLock<HashMap<Uuid, FileStoreEntry>>,
@@ -358,11 +345,8 @@ impl <UI: 'static + UIProvider> FileManagerStore<UI> {
         match opt_s {
             Some(s) => {
                 let selected_path = Path::new(&s);
-
-                match self.create_entry(selected_path, &origin) {
-                    Some(triple) => { let _ = sender.send(Ok(triple)); }
-                    None => { let _ = sender.send(Err(FileManagerThreadError::InvalidSelection)); }
-                };
+                let result = self.create_entry(selected_path, &origin);
+                let _ = sender.send(result);
             }
             None => {
                 let _ = sender.send(Err(FileManagerThreadError::UserCancelled));
@@ -395,8 +379,11 @@ impl <UI: 'static + UIProvider> FileManagerStore<UI> {
 
                 for path in selected_paths {
                     match self.create_entry(path, &origin) {
-                        Some(triple) => replies.push(triple),
-                        None => { let _ = sender.send(Err(FileManagerThreadError::InvalidSelection)); }
+                        Ok(triple) => replies.push(triple),
+                        Err(e) => {
+                            let _ = sender.send(Err(e));
+                            return;
+                        }
                     };
                 }
 
@@ -409,78 +396,114 @@ impl <UI: 'static + UIProvider> FileManagerStore<UI> {
         }
     }
 
-    fn create_entry(&self, file_path: &Path, origin: &str) -> Option<SelectedFile> {
-        match File::open(file_path) {
-            Ok(handler) => {
-                let id = Uuid::new_v4();
-                let file_impl = FileImpl::PathOnly(file_path.to_path_buf());
+    fn create_entry(&self, file_path: &Path, origin: &str) -> Result<SelectedFile, FileManagerThreadError> {
+        use net_traits::filemanager_thread::FileManagerThreadError::FileSystemError;
 
-                self.insert(id, FileStoreEntry {
-                    origin: origin.to_string(),
-                    file_impl: file_impl,
-                    refs: AtomicUsize::new(1),
-                    
-                    is_valid_url: AtomicBool::new(false),
-                });
+        let handler = try!(File::open(file_path).map_err(|e| FileSystemError(e.to_string())));
+        let metadata = try!(handler.metadata().map_err(|e| FileSystemError(e.to_string())));
+        let modified = try!(metadata.modified().map_err(|e| FileSystemError(e.to_string())));
+        let elapsed = try!(modified.elapsed().map_err(|e| FileSystemError(e.to_string())));
+        
+        let modified_epoch = elapsed.as_secs() * 1000 + elapsed.subsec_nanos() as u64 / 1000000;
+        let file_size = metadata.len();
+        let file_name = try!(file_path.file_name().ok_or(FileSystemError("Invalid filepath".to_string())));
 
+        let file_impl = FileImpl::MetaDataOnly(FileMetaData {
+            path: file_path.to_path_buf(),
+            modified: modified_epoch,
+            size: file_size,
+        });
+
+        let id = Uuid::new_v4();
+
+        self.insert(id, FileStoreEntry {
+            origin: origin.to_string(),
+            file_impl: file_impl,
+            refs: AtomicUsize::new(1),
+            
+            is_valid_url: AtomicBool::new(false),
+        });
+
+        let filename_path = Path::new(file_name);
+        let type_string = match guess_mime_type_opt(filename_path) {
+            Some(x) => format!("{}", x),
+            None    => "".to_string(),
+        };
+
+        Ok(SelectedFile {
+            id: SelectedFileId(id.simple().to_string()),
+            filename: filename_path.to_path_buf(),
+            modified: modified_epoch,
+            size: file_size,
+            type_string: type_string,
+        })
+    }
+
+    fn get_blob_buf(&self, id: &Uuid, origin_in: &FileOrigin, rel_pos: RelativePos,
+                    check_url_validity: bool) -> Result<BlobBuf, BlobURLStoreError> {
+        let file_impl = try!(self.get_impl(id, origin_in, check_url_validity));
+        match file_impl {
+            FileImpl::Memory(buf) => {
+                let range = rel_pos.to_abs_range(buf.size as usize);
+                Ok(BlobBuf {
+                    filename: None,
+                    type_string: buf.type_string,
+                    size: range.len() as u64,
+                    bytes: buf.bytes.index(range).to_vec(),
+                })
+            }
+            FileImpl::MetaDataOnly(metadata) => {
                 
-                let epoch = handler.metadata().and_then(|metadata| metadata.modified()).map_err(|_| ())
-                                              .and_then(|systime| systime.elapsed().map_err(|_| ()))
-                                              .and_then(|elapsed| {
-                                                    let secs = elapsed.as_secs();
-                                                    let nsecs = elapsed.subsec_nanos();
-                                                    let msecs = secs * 1000 + nsecs as u64 / 1000000;
-                                                    Ok(msecs)
-                                                });
 
-                let filename = file_path.file_name();
 
-                match (epoch, filename) {
-                    (Ok(epoch), Some(filename)) => {
-                        let filename_path = Path::new(filename);
-                        let mime = guess_mime_type_opt(filename_path);
-                        Some(SelectedFile {
-                            id: SelectedFileId(id.simple().to_string()),
-                            filename: filename_path.to_path_buf(),
-                            modified: epoch,
-                            type_string: match mime {
-                                Some(x) => format!("{}", x),
-                                None    => "".to_string(),
-                            },
-                        })
-                    }
-                    _ => None
+
+
+
+                let opt_filename = metadata.path.file_name()
+                                           .and_then(|osstr| osstr.to_str())
+                                           .map(|s| s.to_string());
+
+                let mime = guess_mime_type_opt(metadata.path.clone());
+                let range = rel_pos.to_abs_range(metadata.size as usize);
+
+                let mut handler = try!(File::open(&metadata.path)
+                                      .map_err(|e| BlobURLStoreError::External(e.to_string())));
+                let seeked_start = try!(handler.seek(SeekFrom::Start(range.start as u64))
+                                       .map_err(|e| BlobURLStoreError::External(e.to_string())));
+
+                if seeked_start == (range.start as u64) {
+                    let mut bytes = vec![0; range.len()];
+                    try!(handler.read_exact(&mut bytes)
+                        .map_err(|e| BlobURLStoreError::External(e.to_string())));
+
+                    Ok(BlobBuf {
+                        filename: opt_filename,
+                        type_string: match mime {
+                            Some(x) => format!("{}", x),
+                            None    => "".to_string(),
+                        },
+                        size: range.len() as u64,
+                        bytes: bytes,
+                    })
+                } else {
+                    Err(BlobURLStoreError::InvalidEntry)
                 }
-            },
-            Err(_) => None
+            }
+            FileImpl::Sliced(parent_id, inner_rel_pos) => {
+                
+                
+                self.get_blob_buf(&parent_id, origin_in, rel_pos.slice_inner(&inner_rel_pos), false)
+            }
         }
     }
 
     fn try_read_file(&self, id: SelectedFileId, origin_in: FileOrigin) -> Result<Vec<u8>, BlobURLStoreError> {
         let id = try!(Uuid::parse_str(&id.0).map_err(|_| BlobURLStoreError::InvalidFileID));
 
-        match self.get_impl(&id, &origin_in, false) {
-            Ok(file_impl) => {
-                match file_impl {
-                    FileImpl::PathOnly(filepath) => {
-                        let mut buffer = vec![];
-                        let mut handler = try!(File::open(filepath)
-                                              .map_err(|_| BlobURLStoreError::InvalidEntry));
-                        try!(handler.read_to_end(&mut buffer)
-                            .map_err(|_| BlobURLStoreError::External));
-                        Ok(buffer)
-                    },
-                    FileImpl::Memory(buffered) => {
-                        Ok(buffered.bytes)
-                    },
-                    FileImpl::Sliced(id, rel_pos) => {
-                        self.try_read_file(SelectedFileId(id.simple().to_string()), origin_in)
-                            .map(|bytes| bytes.index(rel_pos.to_abs_range(bytes.len())).to_vec())
-                    }
-                }
-            },
-            Err(e) => Err(e),
-        }
+        
+        let blob_buf = try!(self.get_blob_buf(&id, &origin_in, RelativePos::full_range(), false));
+
+        Ok(blob_buf.bytes)
     }
 
     fn dec_ref(&self, id: &Uuid, origin_in: &FileOrigin,
@@ -525,14 +548,14 @@ impl <UI: 'static + UIProvider> FileManagerStore<UI> {
         Ok(())
     }
 
-    fn promote_memory(&self, entry: BlobURLStoreEntry,
+    fn promote_memory(&self, blob_buf: BlobBuf,
                        sender: IpcSender<Result<SelectedFileId, BlobURLStoreError>>, origin: FileOrigin) {
         match Url::parse(&origin) { 
             Ok(_) => {
                 let id = Uuid::new_v4();
                 self.insert(id, FileStoreEntry {
                     origin: origin.clone(),
-                    file_impl: FileImpl::Memory(entry),
+                    file_impl: FileImpl::Memory(blob_buf),
                     refs: AtomicUsize::new(1),
                     
                     is_valid_url: AtomicBool::new(true),

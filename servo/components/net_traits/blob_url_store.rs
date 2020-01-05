@@ -16,12 +16,13 @@ pub enum BlobURLStoreError {
     
     InvalidEntry,
     
-    External,
+    External(String),
 }
 
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct BlobURLStoreEntry {
+pub struct BlobBuf {
+    pub filename: Option<String>,
     
     pub type_string: String,
     

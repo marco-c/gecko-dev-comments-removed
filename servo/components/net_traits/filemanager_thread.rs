@@ -2,13 +2,14 @@
 
 
 
-use blob_url_store::{BlobURLStoreEntry, BlobURLStoreError};
+use blob_url_store::{BlobBuf, BlobURLStoreError};
 use ipc_channel::ipc::IpcSender;
 use num_traits::ToPrimitive;
 use std::cmp::{max, min};
 use std::ops::Range;
 use std::path::PathBuf;
 use super::{LoadConsumer, LoadData};
+
 
 
 
@@ -33,7 +34,7 @@ impl RelativePos {
     pub fn full_range() -> RelativePos {
         RelativePos {
             start: 0,
-            end: Some(0),
+            end: None,
         }
     }
 
@@ -98,14 +99,18 @@ impl RelativePos {
     }
 }
 
+
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SelectedFileId(pub String);
+
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SelectedFile {
     pub id: SelectedFileId,
     pub filename: PathBuf,
     pub modified: u64,
+    pub size: u64,
     
     pub type_string: String,
 }
@@ -131,7 +136,7 @@ pub enum FileManagerThreadMsg {
 
     
     
-    PromoteMemory(BlobURLStoreEntry, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+    PromoteMemory(BlobBuf, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
 
     
     
@@ -162,7 +167,7 @@ pub enum FileManagerThreadError {
     
     UserCancelled,
     
-    FileInfoProcessingError,
+    FileSystemError(String),
     
-    ReadFileError,
+    BlobURLStoreError(BlobURLStoreError),
 }
