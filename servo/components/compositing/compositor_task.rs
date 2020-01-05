@@ -48,10 +48,7 @@ pub trait CompositorReceiver : 'static {
 
 impl CompositorReceiver for Receiver<Msg> {
     fn try_recv_compositor_msg(&mut self) -> Option<Msg> {
-        match self.try_recv() {
-            Ok(msg) => Some(msg),
-            Err(_) => None,
-        }
+        self.try_recv().ok()
     }
     fn recv_compositor_msg(&mut self) -> Msg {
         self.recv().unwrap()
