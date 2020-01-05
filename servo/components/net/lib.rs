@@ -29,6 +29,7 @@ extern crate openssl;
 extern crate rustc_serialize;
 extern crate threadpool;
 extern crate time;
+extern crate unicase;
 extern crate url;
 extern crate util;
 extern crate uuid;
