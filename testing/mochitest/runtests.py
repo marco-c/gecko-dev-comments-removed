@@ -2278,6 +2278,10 @@ toolbar#nav-bar {
             options.e10s = False
         mozinfo.update({"e10s": options.e10s})  
 
+        
+        if os.getenv('GCOV_PREFIX') is not None:
+            mozinfo.update({"coverage": True})
+
         self.setTestRoot(options)
 
         

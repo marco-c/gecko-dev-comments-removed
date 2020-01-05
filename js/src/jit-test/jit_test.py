@@ -234,6 +234,13 @@ def main(argv):
     if read_all:
         test_list = jittests.find_tests()
 
+    
+    if os.getenv('GCOV_PREFIX') is not None:
+        if options.exclude:
+            options.exclude += ['asm.js/testSIMD.js']
+        else:
+            options.exclude = ['asm.js/testSIMD.js']
+
     if options.exclude:
         exclude_list = []
         for exclude in options.exclude:
