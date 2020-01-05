@@ -544,9 +544,6 @@ pref("media.getusermedia.audiocapture.enabled", false);
 pref("media.webvtt.regions.enabled", false);
 
 
-pref("media.webvtt.pseudo.enabled", true);
-
-
 pref("media.track.enabled", false);
 
 
@@ -4914,6 +4911,12 @@ pref("dom.w3c_touch_events.enabled", 2);
 pref("dom.w3c_pointer_events.enabled", true);
 #else
 pref("dom.w3c_pointer_events.enabled", false);
+#endif
+
+
+
+#if defined(XP_WIN)
+pref("dom.w3c_pointer_events.dispatch_by_pointer_messages", false);
 #endif
 
 

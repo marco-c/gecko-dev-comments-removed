@@ -3036,7 +3036,6 @@ nsWindow::SetCursor(imgIContainer* aCursor,
 
 
 
-
 #ifdef MOZ_XUL
 nsTransparencyMode nsWindow::GetTransparencyMode()
 {
@@ -3045,20 +3044,7 @@ nsTransparencyMode nsWindow::GetTransparencyMode()
 
 void nsWindow::SetTransparencyMode(nsTransparencyMode aMode)
 {
-  nsWindow* window = GetTopLevelWindow(true);
-  MOZ_ASSERT(window);
-
-  if (!window || window->DestroyCalled()) {
-      return;
-  }
-
-  if (nsWindowType::eWindowType_toplevel == window->mWindowType &&
-      !nsUXThemeData::CheckForCompositor()) {
-      NS_WARNING("Cannot set transparency mode on top-level windows.");
-      return;
-  }
-
-  window->SetWindowTranslucencyInner(aMode);
+  GetTopLevelWindow(true)->SetWindowTranslucencyInner(aMode);
 }
 
 void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion)
@@ -5453,7 +5439,8 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       result = DispatchMouseEvent(eMouseMove, wParam, lParam,
                                   false, WidgetMouseEvent::eLeftButton,
-                                  MOUSE_INPUT_SOURCE());
+                                  MOUSE_INPUT_SOURCE(),
+                                  mPointerEvents.GetCachedPointerInfo(msg, wParam));
       if (userMovedMouse) {
         DispatchPendingEvents();
       }
@@ -5471,7 +5458,8 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     {
       result = DispatchMouseEvent(eMouseDown, wParam, lParam,
                                   false, WidgetMouseEvent::eLeftButton,
-                                  MOUSE_INPUT_SOURCE());
+                                  MOUSE_INPUT_SOURCE(),
+                                  mPointerEvents.GetCachedPointerInfo(msg, wParam));
       DispatchPendingEvents();
     }
     break;
@@ -5480,7 +5468,8 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
     {
       result = DispatchMouseEvent(eMouseUp, wParam, lParam,
                                   false, WidgetMouseEvent::eLeftButton,
-                                  MOUSE_INPUT_SOURCE());
+                                  MOUSE_INPUT_SOURCE(),
+                                  mPointerEvents.GetCachedPointerInfo(msg, wParam));
       DispatchPendingEvents();
     }
     break;
@@ -5631,7 +5620,8 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       result = DispatchMouseEvent(eMouseDown, wParam,
                                   lParam, false,
                                   WidgetMouseEvent::eRightButton,
-                                  MOUSE_INPUT_SOURCE());
+                                  MOUSE_INPUT_SOURCE(),
+                                  mPointerEvents.GetCachedPointerInfo(msg, wParam));
       DispatchPendingEvents();
       break;
 
@@ -5639,7 +5629,8 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       result = DispatchMouseEvent(eMouseUp, wParam,
                                   lParam, false,
                                   WidgetMouseEvent::eRightButton,
-                                  MOUSE_INPUT_SOURCE());
+                                  MOUSE_INPUT_SOURCE(),
+                                  mPointerEvents.GetCachedPointerInfo(msg, wParam));
       DispatchPendingEvents();
       break;
 
@@ -7795,7 +7786,7 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
     case WM_POINTERDOWN:
       {
         WinPointerEvents pointerEvents;
-        if (!pointerEvents.ShouldRollupOnPointerEvent(aWParam)) {
+        if (!pointerEvents.ShouldRollupOnPointerEvent(nativeMessage, aWParam)) {
           return false;
         }
         if (!GetPopupsToRollup(rollupListener, &popupsToRollup)) {
@@ -8211,14 +8202,18 @@ nsWindow::OnWindowedPluginKeyEvent(const NativeEventData& aKeyEventData,
 
 bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam)
 {
-  if (!mPointerEvents.ShouldFireCompatibilityMouseEventsForPen(aWParam)) {
+  if (!mPointerEvents.ShouldHandleWinPointerMessages(msg, aWParam)) {
+    return false;
+  }
+  if (!mPointerEvents.ShouldFirePointerEventByWinPointerMessages()) {
     
     
     
+    
+    mPointerEvents.ConvertAndCachePointerInfo(msg, aWParam);
     
     return false;
   }
-
   
   
   
