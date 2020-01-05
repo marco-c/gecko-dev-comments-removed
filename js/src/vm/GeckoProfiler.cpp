@@ -49,7 +49,7 @@ GeckoProfiler::init()
 }
 
 void
-GeckoProfiler::setProfilingStack(ProfileEntry* stack, mozilla::Atomic<uint32_t>* size, uint32_t max)
+GeckoProfiler::setProfilingStack(ProfileEntry* stack, uint32_t* size, uint32_t max)
 {
     MOZ_ASSERT_IF(size_ && *size_ != 0, !enabled());
     MOZ_ASSERT(strings.lock()->initialized());
@@ -236,7 +236,7 @@ GeckoProfiler::exit(JSScript* script, JSFunction* maybeFun)
         
         if (!stack_[*size_].isJs()) {
             fprintf(stderr, "--- ABOUT TO FAIL ASSERTION ---\n");
-            fprintf(stderr, " stack=%p size=%d/%d\n", (void*) stack_, size(), max_);
+            fprintf(stderr, " stack=%p size=%d/%d\n", (void*) stack_, *size_, max_);
             for (int32_t i = *size_; i >= 0; i--) {
                 if (stack_[i].isJs())
                     fprintf(stderr, "  [%d] JS %s\n", i, stack_[i].label());
@@ -259,7 +259,8 @@ GeckoProfiler::beginPseudoJS(const char* string, void* sp)
 {
     
     volatile ProfileEntry* stack = stack_;
-    uint32_t current = *size_;
+    volatile uint32_t* size = size_;
+    uint32_t current = *size;
 
     MOZ_ASSERT(installed());
     if (current < max_) {
@@ -267,7 +268,7 @@ GeckoProfiler::beginPseudoJS(const char* string, void* sp)
         stack[current].initCppFrame(sp, 0);
         stack[current].setFlag(ProfileEntry::BEGIN_PSEUDO_JS);
     }
-    *size_ = current + 1;
+    *size = current + 1;
 }
 
 void
@@ -279,7 +280,8 @@ GeckoProfiler::push(const char* string, void* sp, JSScript* script, jsbytecode* 
 
     
     volatile ProfileEntry* stack = stack_;
-    uint32_t current = *size_;
+    volatile uint32_t* size = size_;
+    uint32_t current = *size;
 
     MOZ_ASSERT(installed());
     if (current < max_) {
@@ -304,7 +306,7 @@ GeckoProfiler::push(const char* string, void* sp, JSScript* script, jsbytecode* 
         else
             entry.unsetFlag(js::ProfileEntry::FRAME_LABEL_COPY);
     }
-    *size_ = current + 1;
+    *size = current + 1;
 }
 
 void
@@ -373,7 +375,7 @@ void
 GeckoProfiler::trace(JSTracer* trc)
 {
     if (stack_) {
-        size_t limit = Min(uint32_t(*size_), max_);
+        size_t limit = Min(*size_, max_);
         for (size_t i = 0; i < limit; i++)
             stack_[i].trace(trc);
     }
@@ -552,7 +554,7 @@ ProfileEntry::setPC(jsbytecode* pc) volatile
 }
 
 JS_FRIEND_API(void)
-js::SetContextProfilingStack(JSContext* cx, ProfileEntry* stack, mozilla::Atomic<uint32_t>* size, uint32_t max)
+js::SetContextProfilingStack(JSContext* cx, ProfileEntry* stack, uint32_t* size, uint32_t max)
 {
     cx->runtime()->geckoProfiler().setProfilingStack(stack, size, max);
 }
@@ -569,12 +571,6 @@ js::RegisterContextProfilingEventMarker(JSContext* cx, void (*fn)(const char*))
 {
     MOZ_ASSERT(cx->runtime()->geckoProfiler().enabled());
     cx->runtime()->geckoProfiler().setEventMarker(fn);
-}
-
-JS_FRIEND_API(jsbytecode*)
-js::ProfilingGetPC(JSContext* cx, JSScript* script, void* ip)
-{
-    return cx->runtime()->geckoProfiler().ipToPC(script, size_t(ip));
 }
 
 AutoSuppressProfilerSampling::AutoSuppressProfilerSampling(JSContext* cx

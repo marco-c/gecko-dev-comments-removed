@@ -473,8 +473,7 @@ static const int SAMPLER_MAX_STRING_LENGTH = 128;
 
 static void
 AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
-               volatile js::ProfileEntry& entry, PseudoStack* stack,
-               void* lastpc)
+               volatile js::ProfileEntry& entry, PseudoStack* stack)
 {
   
   
@@ -509,15 +508,6 @@ AddPseudoEntry(PSLockRef aLock, ProfileBuffer* aBuffer,
         if (!entry.pc()) {
           
           MOZ_ASSERT(&entry == &stack->mStack[stack->stackSize() - 1]);
-
-          
-          if (lastpc) {
-            jsbytecode* jspc = js::ProfilingGetPC(stack->mContext, script,
-                                                  lastpc);
-            if (jspc) {
-              lineno = JS_PCToLineNumber(script, jspc);
-            }
-          }
         } else {
           lineno = JS_PCToLineNumber(script, entry.pc());
         }
@@ -706,7 +696,7 @@ MergeStacksIntoProfile(PSLockRef aLock, ProfileBuffer* aBuffer,
     if (pseudoStackAddr > jsStackAddr && pseudoStackAddr > nativeStackAddr) {
       MOZ_ASSERT(pseudoIndex < pseudoCount);
       volatile js::ProfileEntry& pseudoFrame = pseudoFrames[pseudoIndex];
-      AddPseudoEntry(aLock, aBuffer, pseudoFrame, pseudoStack, nullptr);
+      AddPseudoEntry(aLock, aBuffer, pseudoFrame, pseudoStack);
       pseudoIndex++;
       continue;
     }
