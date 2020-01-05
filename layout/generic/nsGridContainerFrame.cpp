@@ -2009,8 +2009,15 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput
   
   uint32_t mStartRow;
   
+
+
+
+  uint32_t mNextFragmentStartRow;
+  
   LogicalSides mSkipSides;
   const WritingMode mWM;
+  
+  bool mInFragmentainer;
 
 private:
   GridReflowInput(nsGridContainerFrame*    aFrame,
@@ -2035,7 +2042,9 @@ private:
     , mBorderPadding(aWM)
     , mFragBStart(0)
     , mStartRow(0)
+    , mNextFragmentStartRow(0)
     , mWM(aWM)
+    , mInFragmentainer(false)
   {
     MOZ_ASSERT(!aReflowInput || aReflowInput->mFrame == mFrame);
     if (aReflowInput) {
@@ -5415,6 +5424,7 @@ nsGridContainerFrame::ReflowRowsInFragmentainer(
   }
 
   
+  aState.mNextFragmentStartRow = aEndRow;
   if (aEndRow < aState.mRows.mSizes.Length()) {
     aState.mRows.BreakBeforeRow(aEndRow);
     if (aState.mSharedGridData) {
@@ -5563,6 +5573,7 @@ nsGridContainerFrame::ReflowChildren(GridReflowInput&     aState,
   nscoord bSize = aContentArea.BSize(wm);
   Maybe<Fragmentainer> fragmentainer = GetNearestFragmentainer(aState);
   if (MOZ_UNLIKELY(fragmentainer.isSome())) {
+    aState.mInFragmentainer = true;
     bSize = ReflowInFragmentainer(aState, aContentArea, aDesiredSize, aStatus,
                                   *fragmentainer, containerSize);
   } else {
