@@ -19,6 +19,7 @@ config = {
     'debug_build': True,
     'objdir': 'obj-firefox',
     'enable_talos_sendchange': False,
+    'enable_unittest_sendchange': False,
     
     'env': {
         'MOZBUILD_STATE_PATH': os.path.join(os.getcwd(), '.mozbuild'),
