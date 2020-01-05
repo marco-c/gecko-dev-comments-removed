@@ -1361,7 +1361,11 @@ pref("media.gmp.trial-create.enabled", true);
 
 #ifdef MOZ_ADOBE_EME
 pref("media.gmp-eme-adobe.visible", true);
-pref("media.gmp-eme-adobe.enabled", true);
+
+
+
+
+pref("media.gmp-eme-adobe.enabled", false);
 #endif
 
 #ifdef MOZ_WIDEVINE_EME
