@@ -1163,6 +1163,8 @@ public:
 
 
 
+
+
   virtual void NodeInfoChanged(nsIDocument* aOldDoc) {}
 
   

@@ -47,6 +47,8 @@ public:
     return 0;   
   }
 
+  virtual void NodeInfoChanged(nsIDocument* aOldDoc) final override {}
+
 protected:
   ~mock_Link() {
     

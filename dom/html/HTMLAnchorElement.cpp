@@ -172,13 +172,6 @@ HTMLAnchorElement::UnbindFromTree(bool aDeep, bool aNullParent)
   
   Link::ResetLinkState(false, Link::ElementHasHref());
 
-  
-  
-  nsIDocument* doc = OwnerDoc();
-  if (doc) {
-    doc->UnregisterPendingLinkUpdate(this);
-  }
-
   nsGenericHTMLElement::UnbindFromTree(aDeep, aNullParent);
 }
 

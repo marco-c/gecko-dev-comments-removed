@@ -35,6 +35,7 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/LinkedList.h"
+#include "mozilla/SegmentedVector.h"
 #include "mozilla/StyleBackendType.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/TimeStamp.h"
@@ -2464,11 +2465,9 @@ public:
 
   
   
-  void UnregisterPendingLinkUpdate(mozilla::dom::Link* aElement);
-
-  
-  
   void FlushPendingLinkUpdates();
+
+  void FlushPendingLinkUpdatesFromRunnable();
 
 #define DEPRECATED_OPERATION(_op) e##_op,
   enum DeprecatedOperations {
@@ -3045,8 +3044,11 @@ protected:
 
   
   
-  
-  nsTHashtable<nsPtrHashKey<mozilla::dom::Link> > mLinksToUpdate;
+  static const size_t kSegmentSize = 128;
+  mozilla::SegmentedVector<nsCOMPtr<mozilla::dom::Link>,
+                           kSegmentSize,
+                           InfallibleAllocPolicy>
+    mLinksToUpdate;
 
   
   RefPtr<nsSMILAnimationController> mAnimationController;
@@ -3138,6 +3140,9 @@ protected:
 
   
   bool mHasLinksToUpdate : 1;
+
+  
+  bool mHasLinksToUpdateRunnable : 1;
 
   
   bool mMayHaveDOMMutationObservers : 1;

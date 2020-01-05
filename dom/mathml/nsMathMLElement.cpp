@@ -136,11 +136,6 @@ nsMathMLElement::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   Link::ResetLinkState(false, Link::ElementHasHref());
-  
-  nsIDocument* doc = GetUncomposedDoc();
-  if (doc) {
-    doc->UnregisterPendingLinkUpdate(this);
-  }
 
   nsMathMLElementBase::UnbindFromTree(aDeep, aNullParent);
 }
