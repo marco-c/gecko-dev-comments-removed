@@ -116,12 +116,17 @@ WebRenderLayer::BuildWrMaskLayer(bool aUnapplyLayerTransform)
 {
   if (GetLayer()->GetMaskLayer()) {
     WebRenderLayer* maskLayer = ToWebRenderLayer(GetLayer()->GetMaskLayer());
+
     
     
-    gfx::Matrix4x4 transform;
+    
+    gfx::Matrix4x4 transform = maskLayer->GetLayer()->GetTransform();
     if (aUnapplyLayerTransform) {
-      transform = GetWrBoundTransform().Inverse();
+      gfx::Rect bounds = IntRectToRect(GetLayer()->GetVisibleRegion().GetBounds().ToUnknownRect());
+      transform = transform.PreTranslate(-bounds.x, -bounds.y, 0);
+      transform = transform * GetLayer()->GetTransform().Inverse();
     }
+
     return maskLayer->RenderMaskLayer(transform);
   }
 
