@@ -43,6 +43,11 @@ const { addDevice, removeDevice } = require("devtools/client/shared/devices");
 SimpleTest.requestCompleteLog();
 SimpleTest.waitForExplicitFinish();
 
+
+
+
+requestLongerTimeout(2);
+
 flags.testing = true;
 Services.prefs.clearUserPref("devtools.responsive.html.displayedDeviceList");
 Services.prefs.setCharPref("devtools.devices.url",
