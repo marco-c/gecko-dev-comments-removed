@@ -696,6 +696,141 @@ GlobalShapeForGetPropFunction(ICStub* stub)
     return nullptr;
 }
 
+static bool
+MatchCacheIRReceiverGuard(CacheIRReader& reader, ICCacheIR_Monitored* stub, ObjOperandId objId,
+                          ReceiverGuard* receiver)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    *receiver = ReceiverGuard();
+
+    if (reader.matchOp(CacheOp::GuardShape, objId)) {
+        
+        receiver->shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+        return true;
+    }
+
+    if (!reader.matchOp(CacheOp::GuardGroup, objId))
+        return false;
+    receiver->group = stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+
+    if (!reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
+        
+        reader.matchOp(CacheOp::GuardNoUnboxedExpando, objId);
+        return true;
+    }
+
+    
+    ObjOperandId expandoId = reader.objOperandId();
+    if (!reader.matchOp(CacheOp::GuardShape, expandoId))
+        return false;
+
+    receiver->shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+    return true;
+}
+
+static bool
+AddCacheIRGetPropFunction(ICCacheIR_Monitored* stub, JSObject** holder, Shape** holderShape,
+                          JSFunction** commonGetter, Shape** globalShape, bool* isOwnProperty,
+                          BaselineInspector::ReceiverVector& receivers,
+                          BaselineInspector::ObjectGroupVector& convertUnboxedGroups)
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    CacheIRReader reader(stub->stubInfo());
+
+    ObjOperandId objId = ObjOperandId(0);
+    if (!reader.matchOp(CacheOp::GuardIsObject, objId))
+        return false;
+
+    ReceiverGuard receiver;
+    if (!MatchCacheIRReceiverGuard(reader, stub, objId, &receiver))
+        return false;
+
+    if (reader.matchOp(CacheOp::CallScriptedGetterResult, objId)) {
+        
+        MOZ_ASSERT(receiver.shape);
+        MOZ_ASSERT(!receiver.group);
+
+        size_t offset = reader.stubOffset();
+        JSFunction* getter =
+            &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
+
+        if (*commonGetter && (!*isOwnProperty || *globalShape || *holderShape != receiver.shape))
+            return false;
+
+        MOZ_ASSERT_IF(*commonGetter, *commonGetter == getter);
+        *holder = nullptr;
+        *holderShape = receiver.shape;
+        *commonGetter = getter;
+        *isOwnProperty = true;
+        return true;
+    }
+
+    if (!reader.matchOp(CacheOp::LoadObject))
+        return false;
+    ObjOperandId holderId = reader.objOperandId();
+    JSObject* obj = stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset());
+
+    if (!reader.matchOp(CacheOp::GuardShape, holderId))
+        return false;
+    Shape* objShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+
+    if (!reader.matchOp(CacheOp::CallScriptedGetterResult, objId))
+        return false;
+
+    
+    size_t offset = reader.stubOffset();
+    JSFunction* getter =
+        &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
+
+    if (*commonGetter && (*isOwnProperty || *globalShape || *holderShape != objShape))
+        return false;
+
+    MOZ_ASSERT_IF(*commonGetter, *commonGetter == getter);
+
+    if (!AddReceiver(receiver, receivers, convertUnboxedGroups))
+        return false;
+
+    if (obj->as<NativeObject>().lastProperty() != objShape) {
+        
+        return true;
+    }
+
+    *holder = obj;
+    *holderShape = objShape;
+    *commonGetter = getter;
+    *isOwnProperty = false;
+    return true;
+}
+
 bool
 BaselineInspector::commonGetPropFunction(jsbytecode* pc, JSObject** holder, Shape** holderShape,
                                          JSFunction** commonGetter, Shape** globalShape,
@@ -709,12 +844,12 @@ BaselineInspector::commonGetPropFunction(jsbytecode* pc, JSObject** holder, Shap
     MOZ_ASSERT(receivers.empty());
     MOZ_ASSERT(convertUnboxedGroups.empty());
 
+    *globalShape = nullptr;
     *commonGetter = nullptr;
     const ICEntry& entry = icEntryFromPC(pc);
 
     for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        if (stub->isGetProp_CallScripted() ||
-            stub->isGetProp_CallNative() ||
+        if (stub->isGetProp_CallNative() ||
             stub->isGetProp_CallNativeGlobal())
         {
             ICGetPropCallGetter* nstub = static_cast<ICGetPropCallGetter*>(stub);
@@ -735,6 +870,13 @@ BaselineInspector::commonGetPropFunction(jsbytecode* pc, JSObject** holder, Shap
                 return false;
             } else {
                 MOZ_ASSERT(*commonGetter == nstub->getter());
+            }
+        } else if (stub->isCacheIR_Monitored()) {
+            if (!AddCacheIRGetPropFunction(stub->toCacheIR_Monitored(), holder, holderShape,
+                                           commonGetter, globalShape, isOwnProperty, receivers,
+                                           convertUnboxedGroups))
+            {
+                return false;
             }
         } else if (stub->isGetProp_Fallback()) {
             
@@ -847,7 +989,6 @@ BaselineInspector::expectedPropertyAccessInputType(jsbytecode* pc)
             
             return MIRType::Value;
 
-          case ICStub::GetProp_CallScripted:
           case ICStub::GetProp_CallNative:
           case ICStub::GetProp_CallDOMProxyNative:
           case ICStub::GetProp_CallDOMProxyWithGenerationNative:

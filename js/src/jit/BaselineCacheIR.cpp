@@ -15,6 +15,8 @@
 using namespace js;
 using namespace js::jit;
 
+using mozilla::Maybe;
+
 
 
 class OperandLocation
@@ -146,6 +148,8 @@ class MOZ_RAII CacheRegisterAllocator
     
     LiveGeneralRegisterSet currentOpRegs_;
 
+    const AllocatableGeneralRegisterSet allocatableRegs_;
+
     
     AllocatableGeneralRegisterSet availableRegs_;
 
@@ -160,11 +164,15 @@ class MOZ_RAII CacheRegisterAllocator
     CacheRegisterAllocator(const CacheRegisterAllocator&) = delete;
     CacheRegisterAllocator& operator=(const CacheRegisterAllocator&) = delete;
 
+    void freeDeadOperandRegisters();
+
   public:
     friend class AutoScratchRegister;
+    friend class AutoScratchRegisterExcluding;
 
     explicit CacheRegisterAllocator(const CacheIRWriter& writer)
-      : stackPushed_(0),
+      : allocatableRegs_(GeneralRegisterSet::All()),
+        stackPushed_(0),
         currentInstruction_(0),
         writer_(writer)
     {}
@@ -198,9 +206,24 @@ class MOZ_RAII CacheRegisterAllocator
         return stackPushed_;
     }
 
+    bool isAllocatable(Register reg) const {
+        return allocatableRegs_.has(reg);
+    }
+
     
     Register allocateRegister(MacroAssembler& masm);
     ValueOperand allocateValueRegister(MacroAssembler& masm);
+    void allocateFixedRegister(MacroAssembler& masm, Register reg);
+
+    
+    void releaseRegister(Register reg) {
+        MOZ_ASSERT(currentOpRegs_.has(reg));
+        availableRegs_.add(reg);
+    }
+
+    
+    
+    void discardStack(MacroAssembler& masm);
 
     
     
@@ -219,15 +242,51 @@ class MOZ_RAII AutoScratchRegister
     Register reg_;
 
   public:
-    AutoScratchRegister(CacheRegisterAllocator& alloc, MacroAssembler& masm)
+    AutoScratchRegister(CacheRegisterAllocator& alloc, MacroAssembler& masm,
+                        Register reg = InvalidReg)
       : alloc_(alloc)
     {
-        reg_ = alloc.allocateRegister(masm);
+        if (reg != InvalidReg) {
+            alloc.allocateFixedRegister(masm, reg);
+            reg_ = reg;
+        } else {
+            reg_ = alloc.allocateRegister(masm);
+        }
         MOZ_ASSERT(alloc_.currentOpRegs_.has(reg_));
     }
     ~AutoScratchRegister() {
+        alloc_.releaseRegister(reg_);
+    }
+    operator Register() const { return reg_; }
+};
+
+
+
+class MOZ_RAII AutoScratchRegisterExcluding
+{
+    CacheRegisterAllocator& alloc_;
+    Register reg_;
+
+  public:
+    AutoScratchRegisterExcluding(CacheRegisterAllocator& alloc, MacroAssembler& masm,
+                                 Register excluding)
+      : alloc_(alloc)
+    {
+        MOZ_ASSERT(excluding != InvalidReg);
+
+        reg_ = alloc.allocateRegister(masm);
+
+        if (reg_ == excluding) {
+            
+            reg_ = alloc.allocateRegister(masm);
+            MOZ_ASSERT(reg_ != excluding);
+            alloc_.releaseRegister(excluding);
+        }
+
         MOZ_ASSERT(alloc_.currentOpRegs_.has(reg_));
-        alloc_.availableRegs_.add(reg_);
+    }
+    ~AutoScratchRegisterExcluding() {
+        alloc_.releaseRegister(reg_);
     }
     operator Register() const { return reg_; }
 };
@@ -380,24 +439,46 @@ CacheIRCompiler::emitFailurePath(size_t i)
         }
     }
 
-    if (stackPushed > 0)
-        masm.addToStackPtr(Imm32(stackPushed));
+    allocator.discardStack(masm);
 }
 
 
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler
 {
+    
+    
+    
+    ICStubEngine engine_;
+
+#ifdef DEBUG
+    uint32_t framePushedAtEnterStubFrame_;
+#endif
+
     uint32_t stubDataOffset_;
+    bool inStubFrame_;
+    bool makesGCCalls_;
+
+    void enterStubFrame(MacroAssembler& masm, Register scratch);
+    void leaveStubFrame(MacroAssembler& masm, bool calledIntoIon);
 
   public:
-    BaselineCacheIRCompiler(JSContext* cx, const CacheIRWriter& writer, uint32_t stubDataOffset)
+    BaselineCacheIRCompiler(JSContext* cx, const CacheIRWriter& writer, ICStubEngine engine,
+                            uint32_t stubDataOffset)
       : CacheIRCompiler(cx, writer),
-        stubDataOffset_(stubDataOffset)
+        engine_(engine),
+#ifdef DEBUG
+        framePushedAtEnterStubFrame_(0),
+#endif
+        stubDataOffset_(stubDataOffset),
+        inStubFrame_(false),
+        makesGCCalls_(false)
     {}
 
     MOZ_MUST_USE bool init(CacheKind kind);
 
     JitCode* compile();
+
+    bool makesGCCalls() const { return makesGCCalls_; }
 
   private:
 #define DEFINE_OP(op) MOZ_MUST_USE bool emit##op();
@@ -430,16 +511,50 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler
         return true;
     }
     void emitEnterTypeMonitorIC() {
-        if (allocator.stackPushed() > 0)
-            masm.addToStackPtr(Imm32(allocator.stackPushed()));
+        allocator.discardStack(masm);
         EmitEnterTypeMonitorIC(masm);
     }
     void emitReturnFromIC() {
-        if (allocator.stackPushed() > 0)
-            masm.addToStackPtr(Imm32(allocator.stackPushed()));
+        allocator.discardStack(masm);
         EmitReturnFromIC(masm);
     }
 };
+
+void
+BaselineCacheIRCompiler::enterStubFrame(MacroAssembler& masm, Register scratch)
+{
+    if (engine_ == ICStubEngine::Baseline) {
+        EmitBaselineEnterStubFrame(masm, scratch);
+#ifdef DEBUG
+        framePushedAtEnterStubFrame_ = masm.framePushed();
+#endif
+    } else {
+        EmitIonEnterStubFrame(masm, scratch);
+    }
+
+    MOZ_ASSERT(!inStubFrame_);
+    inStubFrame_ = true;
+    makesGCCalls_ = true;
+}
+
+void
+BaselineCacheIRCompiler::leaveStubFrame(MacroAssembler& masm, bool calledIntoIon)
+{
+    MOZ_ASSERT(inStubFrame_);
+    inStubFrame_ = false;
+
+    if (engine_ == ICStubEngine::Baseline) {
+#ifdef DEBUG
+        masm.setFramePushed(framePushedAtEnterStubFrame_);
+        if (calledIntoIon)
+            masm.adjustFrame(sizeof(intptr_t)); 
+#endif
+
+        EmitBaselineLeaveStubFrame(masm, calledIntoIon);
+    } else {
+        EmitIonLeaveStubFrame(masm);
+    }
+}
 
 JitCode*
 BaselineCacheIRCompiler::compile()
@@ -602,33 +717,53 @@ CacheRegisterAllocator::defineRegister(MacroAssembler& masm, ObjOperandId op)
     return reg;
 }
 
+void
+CacheRegisterAllocator::freeDeadOperandRegisters()
+{
+    
+    
+    
+    for (size_t i = writer_.numInputOperands(); i < operandLocations_.length(); i++) {
+        if (!writer_.operandIsDead(i, currentInstruction_))
+            continue;
+
+        OperandLocation& loc = operandLocations_[i];
+        switch (loc.kind()) {
+          case OperandLocation::PayloadReg:
+            availableRegs_.add(loc.payloadReg());
+            break;
+          case OperandLocation::ValueReg:
+            availableRegs_.add(loc.valueReg());
+            break;
+          case OperandLocation::Uninitialized:
+          case OperandLocation::PayloadStack:
+          case OperandLocation::ValueStack:
+            break;
+        }
+        loc.setUninitialized();
+    }
+}
+
+void
+CacheRegisterAllocator::discardStack(MacroAssembler& masm)
+{
+    
+    
+    
+    for (size_t i = 0; i < operandLocations_.length(); i++)
+        operandLocations_[i].setUninitialized();
+
+    if (stackPushed_ > 0) {
+        masm.addToStackPtr(Imm32(stackPushed_));
+        stackPushed_ = 0;
+    }
+}
+
 Register
 CacheRegisterAllocator::allocateRegister(MacroAssembler& masm)
 {
-    if (availableRegs_.empty()) {
-        
-        
-        
-        for (size_t i = writer_.numInputOperands(); i < operandLocations_.length(); i++) {
-            if (!writer_.operandIsDead(i, currentInstruction_))
-                continue;
-
-            OperandLocation& loc = operandLocations_[i];
-            switch (loc.kind()) {
-              case OperandLocation::PayloadReg:
-                availableRegs_.add(loc.payloadReg());
-                break;
-              case OperandLocation::ValueReg:
-                availableRegs_.add(loc.valueReg());
-                break;
-              case OperandLocation::Uninitialized:
-              case OperandLocation::PayloadStack:
-              case OperandLocation::ValueStack:
-                break;
-            }
-            loc.setUninitialized();
-        }
-    }
+    if (availableRegs_.empty())
+        freeDeadOperandRegisters();
 
     if (availableRegs_.empty()) {
         
@@ -668,6 +803,51 @@ CacheRegisterAllocator::allocateRegister(MacroAssembler& masm)
     Register reg = availableRegs_.takeAny();
     currentOpRegs_.add(reg);
     return reg;
+}
+
+void
+CacheRegisterAllocator::allocateFixedRegister(MacroAssembler& masm, Register reg)
+{
+    
+    
+    MOZ_ASSERT(!currentOpRegs_.has(reg), "Register is in use");
+
+    freeDeadOperandRegisters();
+
+    if (availableRegs_.has(reg)) {
+        availableRegs_.take(reg);
+        currentOpRegs_.add(reg);
+        return;
+    }
+
+    
+    for (size_t i = 0; i < operandLocations_.length(); i++) {
+        OperandLocation& loc = operandLocations_[i];
+        if (loc.kind() == OperandLocation::PayloadReg) {
+            if (loc.payloadReg() != reg)
+                continue;
+
+            masm.push(reg);
+            stackPushed_ += sizeof(uintptr_t);
+            loc.setPayloadStack(stackPushed_, loc.payloadType());
+            currentOpRegs_.add(reg);
+            return;
+        }
+        if (loc.kind() == OperandLocation::ValueReg) {
+            if (!loc.valueReg().aliases(reg))
+                continue;
+
+            masm.pushValue(loc.valueReg());
+            stackPushed_ += sizeof(js::Value);
+            loc.setValueStack(stackPushed_);
+            availableRegs_.add(loc.valueReg());
+            availableRegs_.take(reg);
+            currentOpRegs_.add(reg);
+            return;
+        }
+    }
+
+    MOZ_CRASH("Invalid register");
 }
 
 ValueOperand
@@ -869,6 +1049,78 @@ BaselineCacheIRCompiler::emitLoadDynamicSlotResult()
     masm.load32(stubAddress(reader.stubOffset()), scratch);
     masm.loadPtr(Address(obj, NativeObject::offsetOfSlots()), obj);
     masm.loadValue(BaseIndex(obj, scratch, TimesOne), R0);
+    emitEnterTypeMonitorIC();
+    return true;
+}
+
+bool
+BaselineCacheIRCompiler::emitCallScriptedGetterResult()
+{
+    MOZ_ASSERT(engine_ == ICStubEngine::Baseline);
+
+    
+    
+    Maybe<AutoScratchRegister> tail;
+    if (allocator.isAllocatable(ICTailCallReg))
+        tail.emplace(allocator, masm, ICTailCallReg);
+
+    Register obj = allocator.useRegister(masm, reader.objOperandId());
+    Address getterAddr(stubAddress(reader.stubOffset()));
+
+    AutoScratchRegisterExcluding code(allocator, masm, ArgumentsRectifierReg);
+    AutoScratchRegister callee(allocator, masm);
+    AutoScratchRegister scratch(allocator, masm);
+
+    
+    {
+        FailurePath* failure;
+        if (!addFailurePath(&failure))
+            return false;
+
+        masm.loadPtr(getterAddr, callee);
+        masm.branchIfFunctionHasNoScript(callee, failure->label());
+        masm.loadPtr(Address(callee, JSFunction::offsetOfNativeOrScript()), code);
+        masm.loadBaselineOrIonRaw(code, code, failure->label());
+    }
+
+    allocator.discardStack(masm);
+
+    
+    enterStubFrame(masm, scratch);
+
+    
+    
+    masm.alignJitStackBasedOnNArgs(0);
+
+    
+    
+    
+    masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(obj)));
+
+    EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
+    masm.Push(Imm32(0));  
+    masm.Push(callee);
+    masm.Push(scratch);
+
+    
+    Label noUnderflow;
+    masm.load16ZeroExtend(Address(callee, JSFunction::offsetOfNargs()), callee);
+    masm.branch32(Assembler::Equal, callee, Imm32(0), &noUnderflow);
+    {
+        
+        MOZ_ASSERT(ArgumentsRectifierReg != code);
+
+        JitCode* argumentsRectifier = cx_->runtime()->jitRuntime()->getArgumentsRectifier();
+        masm.movePtr(ImmGCPtr(argumentsRectifier), code);
+        masm.loadPtr(Address(code, JitCode::offsetOfCode()), code);
+        masm.movePtr(ImmWord(0), ArgumentsRectifierReg);
+    }
+
+    masm.bind(&noUnderflow);
+    masm.callJit(code);
+
+    leaveStubFrame(masm, true);
+
     emitEnterTypeMonitorIC();
     return true;
 }
@@ -1131,13 +1383,18 @@ HashNumber
 CacheIRStubKey::hash(const CacheIRStubKey::Lookup& l)
 {
     HashNumber hash = mozilla::HashBytes(l.code, l.length);
-    return mozilla::AddToHash(hash, uint32_t(l.kind));
+    hash = mozilla::AddToHash(hash, uint32_t(l.kind));
+    hash = mozilla::AddToHash(hash, uint32_t(l.engine));
+    return hash;
 }
 
 bool
 CacheIRStubKey::match(const CacheIRStubKey& entry, const CacheIRStubKey::Lookup& l)
 {
     if (entry.stubInfo->kind() != l.kind)
+        return false;
+
+    if (entry.stubInfo->engine() != l.engine)
         return false;
 
     if (entry.stubInfo->codeLength() != l.length)
@@ -1154,7 +1411,8 @@ CacheIRReader::CacheIRReader(const CacheIRStubInfo* stubInfo)
 {}
 
 CacheIRStubInfo*
-CacheIRStubInfo::New(CacheKind kind, uint32_t stubDataOffset, const CacheIRWriter& writer)
+CacheIRStubInfo::New(CacheKind kind, ICStubEngine engine, bool makesGCCalls,
+                     uint32_t stubDataOffset, const CacheIRWriter& writer)
 {
     size_t numStubFields = writer.numStubFields();
     size_t bytesNeeded = sizeof(CacheIRStubInfo) +
@@ -1177,13 +1435,15 @@ CacheIRStubInfo::New(CacheKind kind, uint32_t stubDataOffset, const CacheIRWrite
         gcTypes[i] = uint8_t(writer.stubFieldGCType(i));
     gcTypes[numStubFields] = uint8_t(StubField::GCType::Limit);
 
-    return new(p) CacheIRStubInfo(kind, stubDataOffset, codeStart, writer.codeLength(), gcTypes);
+    return new(p) CacheIRStubInfo(kind, engine, makesGCCalls, stubDataOffset, codeStart,
+                                  writer.codeLength(), gcTypes);
 }
 
 static const size_t MaxOptimizedCacheIRStubs = 16;
 
 ICStub*
-jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
+jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
+                               CacheKind kind, ICStubEngine engine, JSScript* outerScript,
                                ICFallbackStub* stub)
 {
     
@@ -1204,12 +1464,12 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer, Cache
 
     
     CacheIRStubInfo* stubInfo;
-    CacheIRStubKey::Lookup lookup(kind, writer.codeStart(), writer.codeLength());
+    CacheIRStubKey::Lookup lookup(kind, engine, writer.codeStart(), writer.codeLength());
     JitCode* code = jitCompartment->getCacheIRStubCode(lookup, &stubInfo);
     if (!code) {
         
         JitContext jctx(cx, nullptr);
-        BaselineCacheIRCompiler comp(cx, writer, stubDataOffset);
+        BaselineCacheIRCompiler comp(cx, writer, engine, stubDataOffset);
         if (!comp.init(kind))
             return nullptr;
 
@@ -1221,7 +1481,7 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer, Cache
         
         
         MOZ_ASSERT(!stubInfo);
-        stubInfo = CacheIRStubInfo::New(kind, stubDataOffset, writer);
+        stubInfo = CacheIRStubInfo::New(kind, engine, comp.makesGCCalls(), stubDataOffset, writer);
         if (!stubInfo)
             return nullptr;
 
@@ -1236,12 +1496,13 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer, Cache
     MOZ_ASSERT(code);
     MOZ_ASSERT(stubInfo);
     MOZ_ASSERT(stub->isMonitoredFallback());
+    MOZ_ASSERT(stubInfo->stubDataSize() == writer.stubDataSize());
 
-    size_t bytesNeeded = stubInfo->stubDataOffset() + writer.stubDataSize();
+    size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
 
-    
-    
-    void* newStub = cx->zone()->jitZone()->optimizedStubSpace()->alloc(bytesNeeded);
+    ICStubSpace* stubSpace = ICStubCompiler::StubSpaceForStub(stubInfo->makesGCCalls(),
+                                                              outerScript, engine);
+    void* newStub = stubSpace->alloc(bytesNeeded);
     if (!newStub)
         return nullptr;
 
@@ -1280,4 +1541,71 @@ jit::TraceBaselineCacheIRStub(JSTracer* trc, ICStub* stub, const CacheIRStubInfo
         }
         field++;
     }
+}
+
+size_t
+CacheIRStubInfo::stubDataSize() const
+{
+    size_t field = 0;
+    size_t size = 0;
+    while (true) {
+        switch (gcType(field++)) {
+          case StubField::GCType::NoGCThing:
+          case StubField::GCType::Shape:
+          case StubField::GCType::ObjectGroup:
+          case StubField::GCType::JSObject:
+            size += sizeof(uintptr_t);
+            continue;
+          case StubField::GCType::Limit:
+            return size;
+        }
+        MOZ_CRASH("unreachable");
+    }
+}
+
+void
+CacheIRStubInfo::copyStubData(ICStub* src, ICStub* dest) const
+{
+    uintptr_t* srcWords = reinterpret_cast<uintptr_t*>(src);
+    uintptr_t* destWords = reinterpret_cast<uintptr_t*>(dest);
+
+    size_t field = 0;
+    while (true) {
+        switch (gcType(field)) {
+          case StubField::GCType::NoGCThing:
+            destWords[field] = srcWords[field];
+            break;
+          case StubField::GCType::Shape:
+            getStubField<Shape*>(dest, field).init(getStubField<Shape*>(src, field));
+            break;
+          case StubField::GCType::JSObject:
+            getStubField<JSObject*>(dest, field).init(getStubField<JSObject*>(src, field));
+            break;
+          case StubField::GCType::ObjectGroup:
+            getStubField<ObjectGroup*>(dest, field).init(getStubField<ObjectGroup*>(src, field));
+            break;
+          case StubField::GCType::Limit:
+            return; 
+        }
+        field++;
+    }
+}
+
+
+ ICCacheIR_Monitored*
+ICCacheIR_Monitored::Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
+                           ICCacheIR_Monitored& other)
+{
+    const CacheIRStubInfo* stubInfo = other.stubInfo();
+    MOZ_ASSERT(stubInfo->makesGCCalls());
+
+    size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
+    void* newStub = space->alloc(bytesNeeded);
+    if (!newStub)
+        return nullptr;
+
+    ICCacheIR_Monitored* res = new(newStub) ICCacheIR_Monitored(other.jitCode(), firstMonitorStub,
+                                                                stubInfo);
+    stubInfo->copyStubData(&other, res);
+    return res;
 }
