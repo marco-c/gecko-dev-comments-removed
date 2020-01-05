@@ -615,6 +615,11 @@ StorageUI.prototype = {
         let otherProps = itemProps.filter(
           e => !["name", "value", "valueActor"].includes(e));
         for (let prop of otherProps) {
+          let column = this.table.columns.get(prop);
+          if (column && column.private) {
+            continue;
+          }
+
           let cookieProp = COOKIE_KEY_MAP[prop] || prop;
           
           rawObject[cookieProp] = (prop === "isDomain") ? !item[prop] : item[prop];
@@ -626,6 +631,11 @@ StorageUI.prototype = {
     } else {
       
       for (let key in item) {
+        let column = this.table.columns.get(key);
+        if (column && column.private) {
+          continue;
+        }
+
         mainScope.addItem(key, {}, true).setGrip(item[key]);
         this.parseItemValue(key, item[key]);
       }

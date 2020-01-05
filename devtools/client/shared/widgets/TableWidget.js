@@ -719,6 +719,10 @@ TableWidget.prototype = {
       if (hiddenColumns.includes(id) || privateColumns.includes(id)) {
         
         this.columns.get(id).toggleColumn();
+
+        if (privateColumns.includes(id)) {
+          this.columns.get(id).private = true;
+        }
       }
     }
     this.sortedOn = sortOn;
@@ -978,6 +982,9 @@ module.exports.TableWidget = TableWidget;
 
 
 function Column(table, id, header) {
+  
+  this._private = false;
+
   this.tbody = table.tbody;
   this.document = table.document;
   this.window = table.window;
@@ -1058,6 +1065,23 @@ Column.prototype = {
 
   get sorted() {
     return this._sortState || 0;
+  },
+
+  
+
+
+  get private() {
+    return this._private;
+  },
+
+  
+
+
+
+
+
+  set private(state) {
+    this._private = state;
   },
 
   

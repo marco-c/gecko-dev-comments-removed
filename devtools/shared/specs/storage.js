@@ -40,6 +40,7 @@ function createStorageSpec(options) {
 
 
 types.addDictType("cookieobject", {
+  uniqueKey: "string",
   name: "string",
   value: "longstring",
   path: "nullable:string",
@@ -176,11 +177,13 @@ createStorageSpec({
 
 
 types.addDictType("idbobject", {
+  uniqueKey: "string",
   name: "nullable:string",
   db: "nullable:string",
   objectStore: "nullable:string",
   origin: "nullable:string",
   version: "nullable:number",
+  storage: "nullable:string",
   objectStores: "nullable:number",
   keyPath: "nullable:string",
   autoIncrement: "nullable:boolean",
