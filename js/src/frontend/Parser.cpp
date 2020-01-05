@@ -4161,10 +4161,8 @@ Parser<ParseHandler>::initializerInNameDeclaration(Node decl, Node binding,
 
                 
                 
-                
-                
                 *forHeadKind = PNK_FORIN;
-                if (!report(ParseWarning, pc->sc()->strict(), initializer,
+                if (!report(ParseStrictError, pc->sc()->strict(), initializer,
                             JSMSG_INVALID_FOR_IN_DECL_WITH_INIT))
                 {
                     return false;
