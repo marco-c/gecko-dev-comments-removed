@@ -54,7 +54,7 @@ use hyper::method::Method;
 use hyper::mime::Mime;
 use hyper::status::StatusCode;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
-use js::glue::{CallObjectTracer, CallUnbarrieredObjectTracer, CallValueTracer};
+use js::glue::{CallObjectTracer, CallValueTracer};
 use js::jsapi::{GCTraceKindToAscii, Heap, JSObject, JSTracer, TraceKind};
 use js::jsval::JSVal;
 use js::rust::Runtime;
@@ -139,12 +139,8 @@ pub fn trace_jsval(tracer: *mut JSTracer, description: &str, val: &Heap<JSVal>) 
 
 #[allow(unrooted_must_root)]
 pub fn trace_reflector(tracer: *mut JSTracer, description: &str, reflector: &Reflector) {
-    unsafe {
-        trace!("tracing reflector {}", description);
-        CallUnbarrieredObjectTracer(tracer,
-                                    reflector.rootable(),
-                                    GCTraceKindToAscii(TraceKind::Object));
-    }
+    trace!("tracing reflector {}", description);
+    trace_object(tracer, description, reflector.rootable())
 }
 
 
