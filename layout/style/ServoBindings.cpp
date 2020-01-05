@@ -7,6 +7,8 @@
 #include "mozilla/ServoBindings.h"
 
 #include "ChildIterator.h"
+#include "NullPrincipalURI.h"
+#include "GeckoProfiler.h"
 #include "gfxFontFamilyList.h"
 #include "nsAnimationManager.h"
 #include "nsAttrValueInlines.h"
@@ -1352,7 +1354,7 @@ Gecko_NewURLValue(ServoBundledURI aURI)
 
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(css::URLValue, CSSURLValue);
 
-NS_IMPL_THREADSAFE_FFI_REFCOUNTING(URLExtraData, URLExtraData);
+NS_IMPL_THREADSAFE_FFI_REFCOUNTING(css::URLExtraData, URLExtraData);
 
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsStyleCoord::Calc, Calc);
 
@@ -1626,6 +1628,15 @@ Gecko_LoadStyleSheet(css::Loader* aLoader,
   aLoader->LoadChildSheet(aParent, uri, media, nullptr, aChildSheet, nullptr);
 }
 
+RawGeckoURLExtraData*
+Gecko_URLExtraData_CreateDummy()
+{
+  RefPtr<css::URLExtraData> data =
+    new css::URLExtraData(NullPrincipalURI::Create(), nullptr,
+                          NullPrincipal::Create());
+  return data.forget().take();
+}
+
 const nsMediaFeature*
 Gecko_GetMediaFeatures()
 {
@@ -1676,6 +1687,19 @@ void
 Gecko_Construct_nsStyleVariables(nsStyleVariables* ptr)
 {
   new (ptr) nsStyleVariables();
+}
+
+void
+Gecko_RegisterProfilerThread(const char* name)
+{
+  char stackTop;
+  profiler_register_thread(name, &stackTop);
+}
+
+void
+Gecko_UnregisterProfilerThread()
+{
+  profiler_unregister_thread();
 }
 
 #include "nsStyleStructList.h"
