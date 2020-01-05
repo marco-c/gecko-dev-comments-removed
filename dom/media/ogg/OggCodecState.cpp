@@ -11,6 +11,7 @@
 
 #include "nsDebug.h"
 #include "OggCodecState.h"
+#include "OpusDecoder.h"
 #include "OpusParser.h"
 #include "VideoUtils.h"
 #include <algorithm>
@@ -995,6 +996,19 @@ OpusState::Init(void)
                                              mParser->mMappingTable,
                                              &error);
 
+  mInfo.mMimeType = NS_LITERAL_CSTRING("audio/opus");
+  mInfo.mRate = mParser->mRate;
+  mInfo.mChannels = mParser->mChannels;
+  mInfo.mBitDepth = 16;
+  
+  OpusDataDecoder::AppendCodecDelay(mInfo.mCodecSpecificConfig,
+                                    Time(0, mParser->mPreSkip));
+  if (!mHeaders.PeekFront()) {
+    return false;
+  }
+  mInfo.mCodecSpecificConfig->AppendElements(mHeaders.PeekFront()->packet,
+                                             mHeaders.PeekFront()->bytes);
+  mHeaders.Erase();
   LOG(LogLevel::Debug, ("Opus decoder init"));
 
   return error == OPUS_OK;
@@ -1011,9 +1025,7 @@ OpusState::DecodeHeader(ogg_packet* aPacket)
       if (!mParser->DecodeHeader(aPacket->packet, aPacket->bytes)) {
         return false;
       }
-      mRate = mParser->mRate;
-      mChannels = mParser->mChannels;
-      mPreSkip = mParser->mPreSkip;
+      mHeaders.Append(autoRelease.disown());
       break;
 
     
@@ -1146,7 +1158,7 @@ OpusState::ReconstructOpusGranulepos(void)
     if (mPrevPageGranulepos != -1) {
       
       
-      if (!mDoneReadingHeaders && last->granulepos < mPreSkip)
+      if (!mDoneReadingHeaders && last->granulepos < mParser->mPreSkip)
         return false;
       int64_t last_gp = last->granulepos;
       gp = mPrevPageGranulepos;

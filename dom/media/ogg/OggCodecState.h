@@ -398,25 +398,21 @@ public:
   bool IsHeader(ogg_packet* aPacket) override;
   nsresult PageIn(ogg_page* aPage) override;
   already_AddRefed<MediaRawData> PacketOutAsMediaRawData() override;
+  const TrackInfo* GetInfo() const override { return &mInfo; }
+
   
   static int64_t Time(int aPreSkip, int64_t aGranulepos);
 
   
-  int mRate;        
-  int mChannels;    
-  uint16_t mPreSkip; 
+  MetadataTags* GetTags() override;
 
+private:
   nsAutoPtr<OpusParser> mParser;
   OpusMSDecoder* mDecoder;
 
   
   
   int64_t mPrevPacketGranulepos;
-
-  
-  MetadataTags* GetTags() override;
-
-private:
 
   
   
@@ -429,7 +425,8 @@ private:
   
   
   int64_t mPrevPageGranulepos;
-
+  AudioInfo mInfo;
+  OggPacketQueue mHeaders;
 };
 
 
