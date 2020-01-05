@@ -336,7 +336,9 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
       
-      LOG(LS_INFO) << "Failed to find extension id: " << id;
+      
+      
+      LOG(LS_VERBOSE) << "Failed to find extension id: " << id;
     } else {
       switch (type) {
         case kRtpExtensionTransmissionTimeOffset: {
