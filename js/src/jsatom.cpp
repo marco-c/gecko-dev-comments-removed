@@ -307,6 +307,25 @@ AtomIsPinned(JSContext* cx, JSAtom* atom)
     return p->isPinned();
 }
 
+#ifdef DEBUG
+
+bool
+AtomIsPinnedInRuntime(JSRuntime* rt, JSAtom* atom)
+{
+    Maybe<AutoLockForExclusiveAccess> lock;
+    if (!rt->currentThreadHasExclusiveAccess())
+        lock.emplace(rt);
+
+    AtomHasher::Lookup lookup(atom);
+
+    AtomSet::Ptr p = rt->unsafeAtoms().lookup(lookup);
+    MOZ_ASSERT(p);
+
+    return p->isPinned();
+}
+
+#endif 
+
 
 template <typename CharT>
 MOZ_ALWAYS_INLINE
@@ -336,31 +355,36 @@ AtomizeAndCopyChars(ExclusiveContext* cx, const CharT* tbchars, size_t length, P
     if (p) {
         JSAtom* atom = p->asPtr(cx);
         p->setPinned(bool(pin));
+        cx->markAtom(atom);
         return atom;
     }
 
-    AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
+    JSAtom* atom;
+    {
+        AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
 
-    JSFlatString* flat = NewStringCopyN<NoGC>(cx, tbchars, length);
-    if (!flat) {
+        JSFlatString* flat = NewStringCopyN<NoGC>(cx, tbchars, length);
+        if (!flat) {
+            
+            
+            
+            ReportOutOfMemory(cx);
+            return nullptr;
+        }
+
+        atom = flat->morphAtomizedStringIntoAtom(lookup.hash);
+        MOZ_ASSERT(atom->hash() == lookup.hash);
+
         
         
         
-        ReportOutOfMemory(cx);
-        return nullptr;
+        if (!atoms.add(p, AtomStateEntry(atom, bool(pin)))) {
+            ReportOutOfMemory(cx); 
+            return nullptr;
+        }
     }
 
-    JSAtom* atom = flat->morphAtomizedStringIntoAtom(lookup.hash);
-    MOZ_ASSERT(atom->hash() == lookup.hash);
-
-    
-    
-    
-    if (!atoms.add(p, AtomStateEntry(atom, bool(pin)))) {
-        ReportOutOfMemory(cx); 
-        return nullptr;
-    }
-
+    cx->markAtom(atom);
     return atom;
 }
 

@@ -323,8 +323,11 @@ JSCompartment::wrap(JSContext* cx, MutableHandleString strp)
         return true;
 
     
+
+
+
     if (str->isAtom()) {
-        MOZ_ASSERT(str->isPermanentAtom() || str->zone()->isAtomsZone());
+        cx->markAtom(str);
         return true;
     }
 

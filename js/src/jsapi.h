@@ -1430,6 +1430,22 @@ JS_IterateCompartments(JSContext* cx, void* data,
 
 
 
+extern JS_PUBLIC_API(void)
+JS_MarkCrossZoneId(JSContext* cx, jsid id);
+
+
+
+
+
+extern JS_PUBLIC_API(void)
+JS_MarkCrossZoneIdValue(JSContext* cx, const JS::Value& value);
+
+
+
+
+
+
+
 
 extern JS_PUBLIC_API(bool)
 JS_InitStandardClasses(JSContext* cx, JS::Handle<JSObject*> obj);

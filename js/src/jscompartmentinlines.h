@@ -68,8 +68,11 @@ JSCompartment::wrap(JSContext* cx, JS::MutableHandleValue vp)
 
 
 
-    if (vp.isSymbol())
+
+    if (vp.isSymbol()) {
+        cx->markAtomValue(vp);
         return true;
+    }
 
     
     if (vp.isString()) {

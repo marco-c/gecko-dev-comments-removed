@@ -345,6 +345,7 @@ regexp_compile_impl(JSContext* cx, const CallArgs& args)
             sourceAtom = g->getSource();
             flags = g->getFlags();
         }
+        cx->markAtom(sourceAtom);
 
         
         regexp->initIgnoringLastIndex(sourceAtom, flags);

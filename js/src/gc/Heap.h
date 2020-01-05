@@ -532,11 +532,24 @@ class Arena
                   "Arena::auxNextLink packing assumes that ArenaShift has "
                   "enough bits to cover allocKind and hasDelayedMarking.");
 
-    
+  private:
+    union {
+        
 
 
 
-    ArenaCellSet* bufferedCells;
+
+        ArenaCellSet* bufferedCells_;
+
+        
+
+
+
+
+
+        size_t atomBitmapStart_;
+    };
+  public:
 
     
 
@@ -558,6 +571,8 @@ class Arena
         last->initAsEmpty();
     }
 
+    
+    
     void setAsNotAllocated() {
         firstFreeSpan.initAsEmpty();
         zone = nullptr;
@@ -566,8 +581,11 @@ class Arena
         allocatedDuringIncremental = 0;
         markOverflow = 0;
         auxNextLink = 0;
-        bufferedCells = nullptr;
+        bufferedCells_ = nullptr;
     }
+
+    
+    inline void release();
 
     uintptr_t address() const {
         checkAddress();
@@ -600,8 +618,9 @@ class Arena
     size_t getThingSize() const { return thingSize(getAllocKind()); }
     size_t getThingsPerArena() const { return thingsPerArena(getAllocKind()); }
     size_t getThingsSpan() const { return getThingsPerArena() * getThingSize(); }
+    size_t getFirstThingOffset() const { return firstThingOffset(getAllocKind()); }
 
-    uintptr_t thingsStart() const { return address() + firstThingOffset(getAllocKind()); }
+    uintptr_t thingsStart() const { return address() + getFirstThingOffset(); }
     uintptr_t thingsEnd() const { return address() + ArenaSize; }
 
     bool isEmpty() const {
@@ -685,16 +704,15 @@ class Arena
         auxNextLink = 0;
     }
 
+    inline ArenaCellSet*& bufferedCells();
+    inline size_t& atomBitmapStart();
+
     template <typename T>
     size_t finalize(FreeOp* fop, AllocKind thingKind, size_t thingSize);
 
     static void staticAsserts();
 
     void unmarkAll();
-
-    static size_t offsetOfBufferedCells() {
-        return offsetof(Arena, bufferedCells);
-    }
 };
 
 static_assert(ArenaZoneOffset == offsetof(Arena, zone),

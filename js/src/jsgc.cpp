@@ -181,6 +181,10 @@
 
 
 
+
+
+
+
 #include "jsgcinlines.h"
 
 #include "mozilla/ArrayUtils.h"
@@ -238,6 +242,7 @@
 #include "jsobjinlines.h"
 #include "jsscriptinlines.h"
 
+#include "gc/Heap-inl.h"
 #include "vm/Stack-inl.h"
 #include "vm/String-inl.h"
 
@@ -722,7 +727,7 @@ Chunk::releaseArena(JSRuntime* rt, Arena* arena, const AutoLockGC& lock)
     MOZ_ASSERT(arena->allocated());
     MOZ_ASSERT(!arena->hasDelayedMarking);
 
-    arena->setAsNotAllocated();
+    arena->release();
     addArenaToFreeList(rt, arena);
     updateChunkListAfterFree(rt, lock);
 }
@@ -1940,7 +1945,7 @@ RelocateArena(Arena* arena, SliceBudget& sliceBudget)
     MOZ_ASSERT(!arena->hasDelayedMarking);
     MOZ_ASSERT(!arena->markOverflow);
     MOZ_ASSERT(!arena->allocatedDuringIncremental);
-    MOZ_ASSERT(arena->bufferedCells->isEmpty());
+    MOZ_ASSERT(arena->bufferedCells()->isEmpty());
 
     Zone* zone = arena->zone;
 
@@ -3785,8 +3790,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
 
 
 
-
-    if (isFull && !rt->keepAtoms()) {
+    if (!rt->keepAtoms()) {
         Zone* atomsZone = rt->atomsCompartment(lock)->zone();
         if (atomsZone->isGCScheduled()) {
             MOZ_ASSERT(!atomsZone->isCollecting());
@@ -4845,7 +4849,19 @@ MAKE_GC_SWEEP_TASK(SweepMiscTask);
  void
 SweepAtomsTask::run()
 {
+    AtomMarkingRuntime::Bitmap marked;
+    if (runtime->gc.atomMarking.computeBitmapFromChunkMarkBits(runtime, marked)) {
+        for (GCZonesIter zone(runtime); !zone.done(); zone.next())
+            runtime->gc.atomMarking.updateZoneBitmap(zone, marked);
+    } else {
+        
+        
+        
+    }
+
+    runtime->gc.atomMarking.updateChunkMarkBits(runtime);
     runtime->sweepAtoms();
+    runtime->unsafeSymbolRegistry().sweep();
     for (CompartmentsIter comp(runtime, SkipAtoms); !comp.done(); comp.next())
         comp->sweepVarNames();
 }
@@ -5070,11 +5086,6 @@ GCRuntime::beginSweepingZoneGroup(AutoLockForExclusiveAccess& lock)
             for (GCZoneGroupIter zone(rt); !zone.done(); zone.next())
                 zone->sweepUniqueIds(&fop);
         }
-    }
-
-    if (sweepingAtoms) {
-        gcstats::AutoPhase ap(stats, gcstats::PHASE_SWEEP_SYMBOL_REGISTRY);
-        rt->symbolRegistry(lock).sweep();
     }
 
     
@@ -6718,6 +6729,9 @@ gc::MergeCompartments(JSCompartment* source, JSCompartment* target)
 
     
     target->zone()->types.typeLifoAlloc.transferFrom(&source->zone()->types.typeLifoAlloc);
+
+    
+    cx->atomMarking().adoptMarkedAtoms(target->zone(), source->zone());
 }
 
 void

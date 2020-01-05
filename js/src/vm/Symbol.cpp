@@ -47,8 +47,13 @@ Symbol::new_(ExclusiveContext* cx, JS::SymbolCode code, JSString* description)
     
     
     AutoLockForExclusiveAccess lock(cx);
-    AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
-    return newInternal(cx, code, cx->compartment()->randomHashCode(), atom, lock);
+    Symbol* sym;
+    {
+        AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
+        sym = newInternal(cx, code, cx->compartment()->randomHashCode(), atom, lock);
+    }
+    cx->markAtom(sym);
+    return sym;
 }
 
 Symbol*
@@ -62,21 +67,27 @@ Symbol::for_(js::ExclusiveContext* cx, HandleString description)
 
     SymbolRegistry& registry = cx->symbolRegistry(lock);
     SymbolRegistry::AddPtr p = registry.lookupForAdd(atom);
-    if (p)
+    if (p) {
+        cx->markAtom(*p);
         return *p;
-
-    AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
-    Symbol* sym = newInternal(cx, SymbolCode::InSymbolRegistry, atom->hash(), atom, lock);
-    if (!sym)
-        return nullptr;
-
-    
-    
-    if (!registry.add(p, sym)) {
-        
-        ReportOutOfMemory(cx);
-        return nullptr;
     }
+
+    Symbol* sym;
+    {
+        AutoCompartment ac(cx, cx->atomsCompartment(lock), &lock);
+        sym = newInternal(cx, SymbolCode::InSymbolRegistry, atom->hash(), atom, lock);
+        if (!sym)
+            return nullptr;
+
+        
+        
+        if (!registry.add(p, sym)) {
+            
+            ReportOutOfMemory(cx);
+            return nullptr;
+        }
+    }
+    cx->markAtom(sym);
     return sym;
 }
 
