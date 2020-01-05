@@ -376,6 +376,32 @@ private:
 
   friend class MoveGuard;
   friend class EventTree;
+
+  
+
+
+  class EventMap
+  {
+  public:
+    enum EventType
+    {
+      ShowEvent = 0x0,
+      HideEvent = 0x1,
+      ReorderEvent = 0x2,
+    };
+
+    void PutEvent(AccTreeMutationEvent* aEvent);
+    AccTreeMutationEvent* GetEvent(Accessible* aTarget, EventType aType);
+    void RemoveEvent(AccTreeMutationEvent* aEvent);
+    void Clear() { mTable.Clear(); }
+
+  private:
+    EventType GetEventType(AccTreeMutationEvent* aEvent);
+
+    nsRefPtrHashtable<nsUint64HashKey, AccTreeMutationEvent> mTable;
+  };
+
+  EventMap mMutationMap;
 };
 
 } 
