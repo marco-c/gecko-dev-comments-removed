@@ -570,7 +570,7 @@ nsZipArchive::FindInit(const char * aPattern, nsZipFind **aFind)
 
       default:
         
-        PR_ASSERT(false);
+        MOZ_ASSERT(false);
         return NS_ERROR_ILLEGAL_VALUE;
     }
 
