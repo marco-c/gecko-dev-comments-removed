@@ -23,7 +23,7 @@ static const char* kBrowserThreadNames[BrowserProcessSubThread::ID_COUNT] = {
 
 
 
-#if defined(OS_LINUX)
+#if defined(OS_LINUX) || defined(OS_SOLARIS)
   "Gecko_Background_X11Thread",  
 #endif
 };
@@ -34,7 +34,7 @@ BrowserProcessSubThread* BrowserProcessSubThread::sBrowserThreads[ID_COUNT] = {
 
 
 
-#if defined(OS_LINUX)
+#if defined(OS_LINUX) || defined(OS_SOLARIS)
   nullptr,  
 #endif
 };

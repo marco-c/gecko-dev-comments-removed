@@ -15,7 +15,7 @@
 
 #if defined(OS_WIN)
 #include <windows.h>
-#elif defined(OS_LINUX)
+#elif defined(OS_LINUX) || defined(OS_SOLARIS)
 #include "chrome/common/x11_util.h"
 #endif
 
@@ -68,7 +68,7 @@ class TransportDIB {
   typedef base::SharedMemoryHandle Handle;
   
   typedef base::SharedMemoryId Id;
-#elif defined(OS_LINUX)
+#elif defined(OS_LINUX) || defined(OS_SOLARIS)
   typedef int Handle;  
   typedef int Id;
 #endif
@@ -98,7 +98,7 @@ class TransportDIB {
   
   Handle handle() const;
 
-#if defined(OS_LINUX)
+#if defined(OS_LINUX) || defined(OS_SOLARIS)
   
   
   XID MapToX(Display* connection);
@@ -109,7 +109,7 @@ class TransportDIB {
 #if defined(OS_WIN) || defined(OS_MACOSX) || defined(OS_BSD)
   explicit TransportDIB(base::SharedMemoryHandle dib);
   base::SharedMemory shared_memory_;
-#elif defined(OS_LINUX)
+#elif defined(OS_LINUX) || defined(OS_SOLARIS)
   int key_;  
   void* address_;  
   XID x_shm_;  
