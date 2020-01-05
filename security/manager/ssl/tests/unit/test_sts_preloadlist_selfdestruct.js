@@ -5,19 +5,21 @@
 function run_test() {
   let SSService = Cc["@mozilla.org/ssservice;1"]
                     .getService(Ci.nsISiteSecurityService);
-  let uri = Services.io.newURI("https://bugzilla.mozilla.org");
 
   
-  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
+  ok(SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
+                            "bugzilla.mozilla.org", 0));
 
   
   let offsetSeconds = 19 * 7 * 24 * 60 * 60;
   Services.prefs.setIntPref("test.currentTimeOffsetSeconds", offsetSeconds);
 
   
-  ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
+  ok(!SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
+                             "bugzilla.mozilla.org", 0));
 
   
   Services.prefs.clearUserPref("test.currentTimeOffsetSeconds");
-  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
+  ok(SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
+                            "bugzilla.mozilla.org", 0));
 }

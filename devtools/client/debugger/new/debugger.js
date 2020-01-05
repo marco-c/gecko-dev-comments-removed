@@ -8966,14 +8966,10 @@ var Debugger =
 	        let flags = (httpActivity.private) ?
 	                      Ci.nsISocketProvider.NO_PERMANENT_STORAGE : 0;
 	
-                if (!uri) {
-                  
-                  let host = httpActivity.hostname;
-                  uri = Services.io.newURI("https://" + host);
-                }
-
-	        info.hsts = sss.isSecureURI(sss.HEADER_HSTS, uri, flags);
-	        info.hpkp = sss.isSecureURI(sss.HEADER_HPKP, uri, flags);
+	        let host = httpActivity.hostname;
+	
+	        info.hsts = sss.isSecureHost(sss.HEADER_HSTS, host, flags);
+	        info.hpkp = sss.isSecureHost(sss.HEADER_HPKP, host, flags);
 	      } else {
 	        DevToolsUtils.reportException("NetworkHelper.parseSecurityInfo",
 	          "Could not get HSTS/HPKP status as hostname is not available.");
@@ -37661,14 +37657,10 @@ var Debugger =
 	        let flags = (httpActivity.private) ?
 	                      Ci.nsISocketProvider.NO_PERMANENT_STORAGE : 0;
 	
-                if (!uri) {
-                  
-                  let host = httpActivity.hostname;
-                  uri = Services.io.newURI("https://" + host);
-                }
-
-	        info.hsts = sss.isSecureURI(sss.HEADER_HSTS, uri, flags);
-	        info.hpkp = sss.isSecureURI(sss.HEADER_HPKP, uri, flags);
+	        let host = httpActivity.hostname;
+	
+	        info.hsts = sss.isSecureHost(sss.HEADER_HSTS, host, flags);
+	        info.hpkp = sss.isSecureHost(sss.HEADER_HPKP, host, flags);
 	      } else {
 	        DevToolsUtils.reportException("NetworkHelper.parseSecurityInfo",
 	          "Could not get HSTS/HPKP status as hostname is not available.");
