@@ -68,7 +68,7 @@ use style::properties::{ComputedValues, Importance, PropertyDeclaration};
 use style::properties::{PropertyDeclarationParseResult, PropertyDeclarationBlock, PropertyId};
 use style::properties::animated_properties::{AnimationValue, Interpolate, TransitionProperty};
 use style::properties::parse_one_declaration;
-use style::restyle_hints::RestyleHint;
+use style::restyle_hints::{self, RestyleHint};
 use style::selector_parser::PseudoElementCascadeType;
 use style::sequential;
 use style::string_cache::Atom;
@@ -98,6 +98,9 @@ pub extern "C" fn Servo_Initialize() -> () {
 
     
     thread_state::initialize(thread_state::LAYOUT);
+
+    
+    restyle_hints::assert_restyle_hints_match();
 }
 
 #[no_mangle]
