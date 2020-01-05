@@ -256,10 +256,18 @@ MainThreadHandoff::FixArrayElements(ICallFrame* aFrame,
       return hr;
     }
     PVOID stackBase = aFrame->GetStackLocation();
-    
-    
-    arrayPtr = *reinterpret_cast<PVOID*>(reinterpret_cast<PBYTE>(stackBase) +
-                                         paramInfo.stackOffset);
+    if (aArrayData.mFlag == ArrayData::Flag::eAllocatedByServer) {
+      
+      
+      
+      arrayPtr = **reinterpret_cast<PVOID**>(reinterpret_cast<PBYTE>(stackBase) +
+                                             paramInfo.stackOffset);
+    } else {
+      
+      
+      arrayPtr = *reinterpret_cast<PVOID*>(reinterpret_cast<PBYTE>(stackBase) +
+                                           paramInfo.stackOffset);
+    }
   } else if (FAILED(hr)) {
     return hr;
   } else {
