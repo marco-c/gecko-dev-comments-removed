@@ -813,21 +813,16 @@ BL_Unload(void)
 
     char *disableUnload = NULL;
     vector = NULL;
-    
-
-
-    if (blLib) {
-        disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
-        if (!disableUnload) {
+    disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
+    if (!disableUnload) {
 #ifdef DEBUG
-            PRStatus status = PR_UnloadLibrary(blLib);
-            PORT_Assert(PR_SUCCESS == status);
+        PRStatus status = PR_UnloadLibrary(blLib);
+        PORT_Assert(PR_SUCCESS == status);
 #else
-            PR_UnloadLibrary(blLib);
+        PR_UnloadLibrary(blLib);
 #endif
-        }
-        blLib = NULL;
     }
+    blLib = NULL;
     loadFreeBLOnce = pristineCallOnce;
 }
 

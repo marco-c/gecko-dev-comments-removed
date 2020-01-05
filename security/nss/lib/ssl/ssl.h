@@ -102,11 +102,8 @@ SSL_IMPORT PRFileDesc *DTLS_ImportFD(PRFileDesc *model, PRFileDesc *fd);
 #define SSL_ENABLE_TLS 13 /* enable TLS (on by default) */
 
 #define SSL_ROLLBACK_DETECTION 14       /* for compatibility, default: on */
-#define SSL_NO_STEP_DOWN 15             /* Disable export cipher suites   */
-                                        
-                                        
-                                        
-#define SSL_BYPASS_PKCS11 16            /* use PKCS#11 for pub key only   */
+#define SSL_NO_STEP_DOWN 15             /* (unsupported, deprecated, off) */
+#define SSL_BYPASS_PKCS11 16            /* (unsupported, deprecated, off) */
 #define SSL_NO_LOCKS 17                 /* Don't use locks for protection */
 #define SSL_ENABLE_SESSION_TICKETS 18   /* Enable TLS SessionTicket       */
                                         
@@ -400,6 +397,22 @@ SSL_IMPORT unsigned int SSL_SignatureMaxCount();
 SSL_IMPORT SECStatus SSL_NamedGroupConfig(PRFileDesc *fd,
                                           const SSLNamedGroup *groups,
                                           unsigned int num_groups);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SSL_IMPORT SECStatus SSL_SendAdditionalKeyShares(PRFileDesc *fd,
+                                                 unsigned int count);
 
 
 
@@ -1202,30 +1215,10 @@ SSL_IMPORT SECStatus SSL_ExportKeyingMaterial(PRFileDesc *fd,
 
 SSL_IMPORT CERTCertificate *SSL_LocalCertificate(PRFileDesc *fd);
 
+#define SSL_CBP_SSL3 0x0001   /* (deprecated) */
+#define SSL_CBP_TLS1_0 0x0002 /* (deprecated) */
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define SSL_CBP_SSL3 0x0001   /* test SSL v3 mechanisms */
-#define SSL_CBP_TLS1_0 0x0002 /* test TLS v1.0 mechanisms */
 
 SSL_IMPORT SECStatus SSL_CanBypass(CERTCertificate *cert,
                                    SECKEYPrivateKey *privKey,

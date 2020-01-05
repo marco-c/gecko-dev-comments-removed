@@ -26,7 +26,7 @@ typedef struct sslServerCertTypeStr {
 
 
 
-    const namedGroupDef *namedCurve;
+    const sslNamedGroupDef *namedCurve;
 } sslServerCertType;
 
 typedef struct sslServerCertStr {
