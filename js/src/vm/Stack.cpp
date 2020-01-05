@@ -1554,7 +1554,7 @@ jit::JitActivation::getRematerializedFrame(JSContext* cx, const JitFrameIterator
         
         
         
-        AutoCompartment ac(cx, compartment_);
+        AutoCompartmentUnchecked ac(cx, compartment_);
 
         if (!RematerializedFrame::RematerializeInlineFrames(cx, top, inlineIter, recover,
                                                             p->value()))

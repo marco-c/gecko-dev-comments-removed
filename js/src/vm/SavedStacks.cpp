@@ -1312,7 +1312,7 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
                 
                 
                 
-                AutoCompartment ac(cx, iter.compartment());
+                AutoCompartmentUnchecked ac(cx, iter.compartment());
                 const char* cause = activation.asyncCause();
                 UTF8Chars utf8Chars(cause, strlen(cause));
                 size_t twoByteCharsLen = 0;
@@ -1335,7 +1335,7 @@ SavedStacks::insertFrames(JSContext* cx, FrameIter& iter, MutableHandleSavedFram
 
         Rooted<LocationValue> location(cx);
         {
-            AutoCompartment ac(cx, iter.compartment());
+            AutoCompartmentUnchecked ac(cx, iter.compartment());
             if (!cx->compartment()->savedStacks().getLocation(cx, iter, &location))
                 return false;
         }
