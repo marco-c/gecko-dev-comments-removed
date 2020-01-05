@@ -410,10 +410,14 @@ ContentClientRemoteBuffer::Updated(const nsIntRegion& aRegionToDraw,
     t->mPictureRect = nsIntRect(0, 0, size.width, size.height);
     GetForwarder()->UseTextures(this, textures);
   }
+  
+  
+  
   mForwarder->UpdateTextureRegion(this,
                                   ThebesBufferData(BufferRect(),
                                                    BufferRotation()),
                                   updatedRegion);
+  SwapBuffers(updatedRegion);
 }
 
 void

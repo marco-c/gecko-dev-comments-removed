@@ -322,11 +322,8 @@ AddWrappedRegion(const nsIntRegion& aInput, nsIntRegion& aOutput,
 bool
 ContentHostSingleBuffered::UpdateThebes(const ThebesBufferData& aData,
                                         const nsIntRegion& aUpdated,
-                                        const nsIntRegion& aOldValidRegionBack,
-                                        nsIntRegion* aUpdatedRegionBack)
+                                        const nsIntRegion& aOldValidRegionBack)
 {
-  aUpdatedRegionBack->SetEmpty();
-
   if (!mTextureHost) {
     mInitialised = false;
     return true; 
@@ -385,13 +382,10 @@ ContentHostSingleBuffered::UpdateThebes(const ThebesBufferData& aData,
 bool
 ContentHostDoubleBuffered::UpdateThebes(const ThebesBufferData& aData,
                                         const nsIntRegion& aUpdated,
-                                        const nsIntRegion& aOldValidRegionBack,
-                                        nsIntRegion* aUpdatedRegionBack)
+                                        const nsIntRegion& aOldValidRegionBack)
 {
   if (!mTextureHost) {
     mInitialised = false;
-
-    *aUpdatedRegionBack = aUpdated;
     return true;
   }
 
@@ -406,8 +400,6 @@ ContentHostDoubleBuffered::UpdateThebes(const ThebesBufferData& aData,
 
   mBufferRect = aData.rect();
   mBufferRotation = aData.rotation();
-
-  *aUpdatedRegionBack = aUpdated;
 
   
   
