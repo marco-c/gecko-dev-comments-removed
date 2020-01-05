@@ -15,11 +15,13 @@ const GRID_CELL_MOUSEOVER_TIMEOUT = 150;
 
 
 
-const TRANSLATE_X = -100;
+const TRANSLATE_X = 0;
 const TRANSLATE_Y = 0;
 
-const VIEWPORT_HEIGHT = 100;
-const VIEWPORT_WIDTH = 450;
+const GRID_CELL_SCALE_FACTOR = 50;
+
+const VIEWPORT_MIN_HEIGHT = 100;
+const VIEWPORT_MAX_HEIGHT = 150;
 
 module.exports = createClass({
 
@@ -36,6 +38,8 @@ module.exports = createClass({
   getInitialState() {
     return {
       selectedGrids: [],
+      height: 0,
+      width: 0,
     };
   },
 
@@ -47,6 +51,12 @@ module.exports = createClass({
   },
 
   componentWillReceiveProps({ grids }) {
+    if (this.state.selectedGrids.length < 2) {
+      this.setState({
+        height: 0,
+        width: 0,
+      });
+    }
     this.setState({
       selectedGrids: grids.filter(grid => grid.highlighted),
     });
@@ -77,6 +87,23 @@ module.exports = createClass({
     return gridArea.name;
   },
 
+  
+
+
+
+
+  getHeight() {
+    const { height } = this.state;
+
+    if (height >= VIEWPORT_MAX_HEIGHT) {
+      return VIEWPORT_MAX_HEIGHT;
+    } else if (height <= VIEWPORT_MIN_HEIGHT) {
+      return VIEWPORT_MIN_HEIGHT;
+    }
+
+    return height;
+  },
+
   highlightCell({ target }) {
     const {
       grids,
@@ -97,7 +124,7 @@ module.exports = createClass({
     }
 
     if (fragmentIndex && rowNumber && columnNumber) {
-      onShowGridCellHighlight(grids[id].nodeFront, fragmentIndex,
+      onShowGridCellHighlight(grids[id].nodeFront, color, fragmentIndex,
         rowNumber, columnNumber);
     }
   },
@@ -117,22 +144,23 @@ module.exports = createClass({
     const numberOfColumns = cols.lines.length - 1;
     const numberOfRows = rows.lines.length - 1;
     const rectangles = [];
-
-    
-    const border = this.renderGridOutlineBorder(numberOfRows, numberOfColumns, color);
-    rectangles.push(border);
-
     let x = 1;
     let y = 1;
-    const width = 10;
-    const height = 10;
-
+    let width = 0;
+    let height = 0;
     
+    let totalHeight = 0;
+    let totalWidth = 0;
+
+      
     for (let rowNumber = 1; rowNumber <= numberOfRows; rowNumber++) {
+      height = GRID_CELL_SCALE_FACTOR * (rows.tracks[rowNumber - 1].breadth / 100);
       for (let columnNumber = 1; columnNumber <= numberOfColumns; columnNumber++) {
+        width = GRID_CELL_SCALE_FACTOR * (cols.tracks[columnNumber - 1].breadth / 100);
+
         const gridAreaName = this.getGridAreaName(columnNumber, rowNumber, areas);
-        const gridCell = this.renderGridCell(id, gridFragmentIndex, x, y, rowNumber,
-          columnNumber, color, gridAreaName);
+        const gridCell = this.renderGridCell(id, gridFragmentIndex, x, y,
+          rowNumber, columnNumber, color, gridAreaName, width, height);
 
         rectangles.push(gridCell);
         x += width;
@@ -140,7 +168,27 @@ module.exports = createClass({
 
       x = 1;
       y += height;
+      totalHeight += height;
     }
+
+    
+    for (let columnNumber = 0; columnNumber < numberOfColumns; columnNumber++) {
+      totalWidth += GRID_CELL_SCALE_FACTOR * (cols.tracks[columnNumber].breadth / 100);
+    }
+
+    
+    
+    
+    if (totalHeight > this.state.height || totalWidth > this.state.width) {
+      this.setState({
+        height: totalHeight + 20,
+        width: totalWidth,
+      });
+    }
+
+    
+    const border = this.renderGridOutlineBorder(totalWidth, totalHeight, color);
+    rectangles.unshift(border);
 
     return rectangles;
   },
@@ -163,8 +211,12 @@ module.exports = createClass({
 
 
 
+
+
+
+
   renderGridCell(id, gridFragmentIndex, x, y, rowNumber, columnNumber, color,
-    gridAreaName) {
+    gridAreaName, width, height) {
     return dom.rect(
       {
         className: "grid-outline-cell",
@@ -175,8 +227,8 @@ module.exports = createClass({
         "data-grid-column": columnNumber,
         x,
         y,
-        width: 10,
-        height: 10,
+        width,
+        height,
         fill: "none",
         stroke: color,
         onMouseOver: this.onMouseOverCell,
@@ -194,14 +246,14 @@ module.exports = createClass({
     );
   },
 
-  renderGridOutlineBorder(numberOfRows, numberOfColumns, color) {
+  renderGridOutlineBorder(borderWidth, borderHeight, color) {
     return dom.rect(
       {
         className: "grid-outline-border",
         x: 1,
         y: 1,
-        width: numberOfColumns * 10,
-        height: numberOfRows * 10,
+        width: borderWidth,
+        height: borderHeight,
         stroke: color,
       }
     );
@@ -219,7 +271,7 @@ module.exports = createClass({
     target.setAttribute("fill", "none");
 
     onShowGridAreaHighlight(grids[id].nodeFront, null, color);
-    onShowGridCellHighlight(grids[id].nodeFront);
+    onShowGridCellHighlight(grids[id].nodeFront, color);
   },
 
   onMouseOverCell(event) {
@@ -228,15 +280,17 @@ module.exports = createClass({
   },
 
   render() {
-    return this.state.selectedGrids.length ?
+    const { selectedGrids, height, width } = this.state;
+
+    return selectedGrids.length ?
       dom.svg(
         {
           className: "grid-outline",
           width: "100%",
-          height: 100,
-          viewBox: `${TRANSLATE_X} ${TRANSLATE_Y} ${VIEWPORT_WIDTH} ${VIEWPORT_HEIGHT}`,
+          height: this.getHeight(),
+          viewBox: `${TRANSLATE_X} ${TRANSLATE_Y} ${width} ${height}`,
         },
-        this.renderGridOutline(this.state.selectedGrids)
+        this.renderGridOutline(selectedGrids)
       )
       :
       null;

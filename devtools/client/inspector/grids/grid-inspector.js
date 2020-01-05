@@ -355,9 +355,14 @@ GridInspector.prototype = {
 
 
 
-  onShowGridCellHighlight(node, gridFragmentIndex, rowNumber, columnNumber) {
+
+
+
+  onShowGridCellHighlight(node, color, gridFragmentIndex, rowNumber, columnNumber) {
     let { highlighterSettings } = this.store.getState();
+
     highlighterSettings.showGridCell = { gridFragmentIndex, rowNumber, columnNumber };
+    highlighterSettings.color = color;
 
     this.highlighters.showGridHighlighter(node, highlighterSettings);
   },
