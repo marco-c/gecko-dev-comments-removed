@@ -11,8 +11,11 @@
 #include "base/basictypes.h"
 #include "base/message_loop.h"
 
+#include "nsIMemoryReporter.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Vector.h"
 #if defined(OS_WIN)
 #include "mozilla/ipc/Neutering.h"
@@ -26,8 +29,9 @@
 
 #include <deque>
 #include <functional>
-#include <stack>
+#include <map>
 #include <math.h>
+#include <stack>
 
 namespace mozilla {
 namespace ipc {
@@ -61,6 +65,13 @@ enum class SyncSendError {
     ReplyError,
 };
 
+enum class PromiseRejectReason {
+    SendError,
+    ChannelClosed,
+    HandlerRejected,
+    EndGuard_,
+};
+
 enum ChannelState {
     ChannelClosed,
     ChannelOpening,
@@ -81,6 +92,14 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     class InterruptFrame;
 
     typedef mozilla::Monitor Monitor;
+
+    struct PromiseHolder
+    {
+        RefPtr<MozPromiseRefcountable> mPromise;
+        std::function<void(const char*)> mRejectFunction;
+    };
+    static Atomic<size_t> gUnresolvedPromises;
+    friend class PromiseReporter;
 
   public:
     static const int32_t kNoTimeout;
@@ -154,6 +173,25 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     
     bool Send(Message* aMsg);
 
+    
+    
+    template<typename Promise>
+    bool Send(Message* aMsg, Promise* aPromise) {
+        int32_t seqno = NextSeqno();
+        aMsg->set_seqno(seqno);
+        if (!Send(aMsg)) {
+            return false;
+        }
+        PromiseHolder holder;
+        holder.mPromise = aPromise;
+        holder.mRejectFunction = [aPromise](const char* aRejectSite) {
+            aPromise->Reject(PromiseRejectReason::ChannelClosed, aRejectSite);
+        };
+        mPendingPromises.insert(std::make_pair(seqno, Move(holder)));
+        gUnresolvedPromises++;
+        return true;
+    }
+
     void SendBuildID();
 
     
@@ -170,6 +208,9 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     bool WaitForIncomingMessage();
 
     bool CanSend() const;
+
+    
+    already_AddRefed<MozPromiseRefcountable> PopPromise(const Message& aMsg);
 
     
     
@@ -490,6 +531,7 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
 
     typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
     typedef std::map<size_t, Message> MessageMap;
+    typedef std::map<size_t, PromiseHolder> PromiseMap;
     typedef IPC::Message::msgid_t msgid_t;
 
     void WillDestroyCurrentMessageLoop() override;
@@ -690,6 +732,9 @@ class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
     MessageMap mOutOfTurnReplies;
 
     
+    PromiseMap mPendingPromises;
+
+    
     
     std::stack<Message> mDeferred;
 
@@ -720,6 +765,15 @@ void
 CancelCPOWs();
 
 } 
+} 
+
+namespace IPC {
+template <>
+struct ParamTraits<mozilla::ipc::PromiseRejectReason>
+    : public ContiguousEnumSerializer<mozilla::ipc::PromiseRejectReason,
+                                      mozilla::ipc::PromiseRejectReason::SendError,
+                                      mozilla::ipc::PromiseRejectReason::EndGuard_>
+{ };
 } 
 
 #endif  
