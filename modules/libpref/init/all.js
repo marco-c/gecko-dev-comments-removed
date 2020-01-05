@@ -613,6 +613,9 @@ pref("layers.async-pan-zoom.enabled", true);
 pref("layout.event-regions.enabled", false);
 
 
+pref("layers.geometry.opengl.enabled", true);
+
+
 
 pref("apz.allow_checkerboarding", true);
 pref("apz.allow_immediate_handoff", true);
@@ -5553,3 +5556,4 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 
 pref("browser.storageManager.enabled", false);
 
+pref("dom.IntersectionObserver.enabled", true);
