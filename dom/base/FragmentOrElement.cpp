@@ -433,7 +433,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(nsChildContentList)
 
 
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(nsChildContentList)
-  return tmp->IsBlack();
+  return tmp->HasKnownLiveWrapper();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_END
 
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_IN_CC_BEGIN(nsChildContentList)
@@ -1550,7 +1550,7 @@ FragmentOrElement::CanSkipInCC(nsINode* aNode)
   
   AutoTArray<nsINode*, 1020> grayNodes;
 
-  bool foundBlack = root->IsBlack();
+  bool foundLiveWrapper = root->HasKnownLiveWrapper();
   if (root != currentDoc) {
     currentDoc = nullptr;
     if (NeedsScriptTraverse(root)) {
@@ -1566,8 +1566,8 @@ FragmentOrElement::CanSkipInCC(nsINode* aNode)
   
   for (nsIContent* node = root->GetFirstChild(); node;
        node = node->GetNextNode(root)) {
-    foundBlack = foundBlack || node->IsBlack();
-    if (foundBlack && currentDoc) {
+    foundLiveWrapper = foundLiveWrapper || node->HasKnownLiveWrapper();
+    if (foundLiveWrapper && currentDoc) {
       
       
       
@@ -1582,10 +1582,10 @@ FragmentOrElement::CanSkipInCC(nsINode* aNode)
   }
 
   root->SetCCMarkedRoot(true);
-  root->SetInCCBlackTree(foundBlack);
+  root->SetInCCBlackTree(foundLiveWrapper);
   gCCBlackMarkedNodes->PutEntry(root);
 
-  if (!foundBlack) {
+  if (!foundLiveWrapper) {
     return false;
   }
 
@@ -1720,11 +1720,11 @@ FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed)
   
   AutoTArray<nsIContent*, 1020> nodesToClear;
 
-  bool foundBlack = root->IsBlack();
+  bool foundLiveWrapper = root->HasKnownLiveWrapper();
   bool domOnlyCycle = false;
   if (root != currentDoc) {
     currentDoc = nullptr;
-    if (!foundBlack) {
+    if (!foundLiveWrapper) {
       domOnlyCycle = static_cast<nsIContent*>(root)->OwnedOnlyByTheDOMTree();
     }
     if (ShouldClearPurple(static_cast<nsIContent*>(root))) {
@@ -1738,8 +1738,8 @@ FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed)
   
   for (nsIContent* node = root->GetFirstChild(); node;
        node = node->GetNextNode(root)) {
-    foundBlack = foundBlack || node->IsBlack();
-    if (foundBlack) {
+    foundLiveWrapper = foundLiveWrapper || node->HasKnownLiveWrapper();
+    if (foundLiveWrapper) {
       domOnlyCycle = false;
       if (currentDoc) {
         
@@ -1763,7 +1763,7 @@ FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed)
     }
   }
 
-  if (!currentDoc || !foundBlack) {
+  if (!currentDoc || !foundLiveWrapper) {
     root->SetIsPurpleRoot(true);
     if (domOnlyCycle) {
       if (!gNodesToUnbind) {
@@ -1785,7 +1785,7 @@ FragmentOrElement::CanSkip(nsINode* aNode, bool aRemovingAllowed)
     }
   }
 
-  if (!foundBlack) {
+  if (!foundLiveWrapper) {
     return false;
   }
 
@@ -1817,7 +1817,7 @@ FragmentOrElement::CanSkipThis(nsINode* aNode)
   if (nsCCUncollectableMarker::sGeneration == 0) {
     return false;
   }
-  if (aNode->IsBlack()) {
+  if (aNode->HasKnownLiveWrapper()) {
     return true;
   }
   nsIDocument* c = aNode->GetUncomposedDoc();

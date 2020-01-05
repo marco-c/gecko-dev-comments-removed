@@ -22,8 +22,13 @@ nsWrapperCache::GetWrapper() const
 }
 
 inline bool
-nsWrapperCache::IsBlack() const
+nsWrapperCache::HasKnownLiveWrapper() const
 {
+  
+  
+  
+  
+  
   JSObject* o = GetWrapperPreserveColor();
   return o && !JS::ObjectIsMarkedGray(o);
 }
@@ -50,7 +55,7 @@ nsWrapperCache::HasNothingToTrace(nsISupports* aThis)
 inline bool
 nsWrapperCache::IsBlackAndDoesNotNeedTracing(nsISupports* aThis)
 {
-  return IsBlack() && HasNothingToTrace(aThis);
+  return HasKnownLiveWrapper() && HasNothingToTrace(aThis);
 }
 
 inline void

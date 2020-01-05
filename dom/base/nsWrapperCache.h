@@ -164,7 +164,8 @@ public:
   
 
 
-  bool IsBlack() const;
+
+  bool HasKnownLiveWrapper() const;
 
   
 
