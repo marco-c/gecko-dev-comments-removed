@@ -8,7 +8,7 @@
 
 
 
-var { Ci, Cu } = require("chrome");
+var { Ci, Cu, Cr } = require("chrome");
 var Services = require("Services");
 var { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 var promise = require("promise");
@@ -2497,7 +2497,25 @@ DebuggerProgressListener.prototype = {
     if (isWindow && isStop) {
       
       
-      this._tabActor._navigate(window);
+      if (request.status != Cr.NS_OK) {
+        
+        
+        
+        
+        let handler = getDocShellChromeEventHandler(progress);
+        let onLoad = evt => {
+          
+          if (evt.target == window.document) {
+            handler.removeEventListener("DOMContentLoaded", onLoad, true);
+            this._tabActor._navigate(window);
+          }
+        };
+        handler.addEventListener("DOMContentLoaded", onLoad, true);
+      } else {
+        
+        
+        this._tabActor._navigate(window);
+      }
     }
   }, "DebuggerProgressListener.prototype.onStateChange")
 };
