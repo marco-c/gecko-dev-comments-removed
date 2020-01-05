@@ -182,6 +182,12 @@ function init() {
   let setModulesButton = document.getElementById("set-log-modules-button");
   setModulesButton.addEventListener("click", setLogModules);
 
+  let startLoggingButton = document.getElementById("start-logging-button");
+  startLoggingButton.addEventListener("click", startLogging);
+
+  let stopLoggingButton = document.getElementById("stop-logging-button");
+  stopLoggingButton.addEventListener("click", stopLogging);
+
   try {
     let file = gDirServ.getFile("TmpD",  {});
     file.append("log.txt");
@@ -195,6 +201,13 @@ function init() {
 
   
   updateLogModules();
+
+  
+  
+  if (setLogButton.disabled && setModulesButton.disabled) {
+    startLoggingButton.disabled = true;
+    stopLoggingButton.disabled = true;
+  }
 }
 
 function updateLogFile() {
@@ -213,7 +226,6 @@ function updateLogFile() {
   } else {
     
     currentLogFile.innerText = gDashboard.getLogPath();
-    setLogFileButton.disabled = false;
   }
 }
 
@@ -264,48 +276,70 @@ function updateLogModules() {
 }
 
 function setLogFile() {
+  let setLogButton = document.getElementById("set-log-file-button");
+  if (setLogButton.disabled) {
+    
+    return;
+  }
   let logFile = document.getElementById("log-file").value.trim();
   Services.prefs.setCharPref("logging.config.LOG_FILE", logFile);
   updateLogFile();
 }
 
-function setLogModules() {
-  let modules = document.getElementById("log-modules").value.trim();
-  if (modules.length == 0) {
-    
-    let children = Services.prefs.getBranch("logging.").getChildList("", {});
-    for (let pref of children) {
-      if (!pref.startsWith("config.")) {
-        Services.prefs.clearUserPref(`logging.${pref}`);
-      }
+function clearLogModules() {
+  
+  let children = Services.prefs.getBranch("logging.").getChildList("", {});
+  for (let pref of children) {
+    if (!pref.startsWith("config.")) {
+      Services.prefs.clearUserPref(`logging.${pref}`);
     }
-    Services.prefs.clearUserPref("logging.config.add_timestamp");
-    Services.prefs.clearUserPref("logging.config.sync");
-    updateLogModules();
+  }
+  Services.prefs.clearUserPref("logging.config.add_timestamp");
+  Services.prefs.clearUserPref("logging.config.sync");
+  updateLogModules();
+}
+
+function setLogModules() {
+  let setLogModulesButton = document.getElementById("set-log-modules-button");
+  if (setLogModulesButton.disabled) {
+    
     return;
   }
 
+  let modules = document.getElementById("log-modules").value.trim();
+
+  
+  clearLogModules();
+
   let logModules = modules.split(",");
-  let isSync = false;
-  let addTimestamp = false;
   for (let module of logModules) {
     if (module == "timestamp") {
-      addTimestamp = true;
+      Services.prefs.setBoolPref("logging.config.add_timestamp", true);
     } else if (module == "rotate") {
       
     } else if (module == "append") {
       
     } else if (module == "sync") {
-      isSync = true;
+      Services.prefs.setBoolPref("logging.config.sync", true);
     } else {
       let [key, value] = module.split(":");
       Services.prefs.setIntPref(`logging.${key}`, parseInt(value, 10));
     }
   }
-  Services.prefs.setBoolPref("logging.config.add_timestamp", addTimestamp);
-  Services.prefs.setBoolPref("logging.config.sync", isSync);
 
   updateLogModules();
+}
+
+function startLogging() {
+  setLogFile();
+  setLogModules();
+}
+
+function stopLogging() {
+  clearLogModules();
+  
+  Services.prefs.clearUserPref("logging.config.LOG_FILE");
+  updateLogFile();
 }
 
 function confirm () {
