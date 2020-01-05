@@ -210,10 +210,15 @@ impl ServiceWorkerGlobalScope {
             global.dispatch_activate();
             let reporter_name = format!("service-worker-reporter-{}", random::<u64>());
             scope.upcast::<GlobalScope>().mem_profiler_chan().run_with_memory_reporting(|| {
+                
+                
                 while let Ok(event) = global.receive_event() {
+                    
                     if !global.handle_event(event) {
                         break;
                     }
+                    
+                    global.upcast::<WorkerGlobalScope>().perform_a_microtask_checkpoint();
                 }
             }, reporter_name, scope.script_chan(), CommonScriptMsg::CollectReports);
         }).expect("Thread spawning failed");
