@@ -109,9 +109,9 @@ start_pass_huff_decoder (j_decompress_ptr cinfo)
     actbl = compptr->ac_tbl_no;
     
     
-    pdtbl = entropy->dc_derived_tbls + dctbl;
+    pdtbl = (d_derived_tbl **)(entropy->dc_derived_tbls) + dctbl;
     jpeg_make_d_derived_tbl(cinfo, TRUE, dctbl, pdtbl);
-    pdtbl = entropy->ac_derived_tbls + actbl;
+    pdtbl = (d_derived_tbl **)(entropy->ac_derived_tbls) + actbl;
     jpeg_make_d_derived_tbl(cinfo, FALSE, actbl, pdtbl);
     
     entropy->saved.last_dc_val[ci] = 0;

@@ -382,7 +382,7 @@ decode_mcu_AC_first (j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       if (arith_decode(cinfo, st)) v |= m;
     v += 1; if (sign) v = -v;
     
-    (*block)[jpeg_natural_order[k]] = (JCOEF) (v << cinfo->Al);
+    (*block)[jpeg_natural_order[k]] = (JCOEF) ((unsigned)v << cinfo->Al);
   }
 
   return TRUE;

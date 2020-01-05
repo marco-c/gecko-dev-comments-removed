@@ -77,6 +77,14 @@ init_simd (void)
   if (!parse_proc_cpuinfo("MIPS 74K"))
     return;
 #endif
+
+  
+  env = getenv("JSIMD_FORCEDSPR2");
+  if ((env != NULL) && (strcmp(env, "1") == 0))
+    simd_support = JSIMD_MIPS_DSPR2;
+  env = getenv("JSIMD_FORCENONE");
+  if ((env != NULL) && (strcmp(env, "1") == 0))
+    simd_support = 0;
 }
 
 static const int mips_idct_ifast_coefs[4] = {

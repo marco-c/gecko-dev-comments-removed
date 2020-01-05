@@ -310,6 +310,48 @@ h2v1_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info *compptr,
 
 
 
+METHODDEF(void)
+h1v2_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info *compptr,
+                     JSAMPARRAY input_data, JSAMPARRAY *output_data_ptr)
+{
+  JSAMPARRAY output_data = *output_data_ptr;
+  JSAMPROW inptr0, inptr1, outptr;
+#if BITS_IN_JSAMPLE == 8
+  int thiscolsum;
+#else
+  JLONG thiscolsum;
+#endif
+  JDIMENSION colctr;
+  int inrow, outrow, v;
+
+  inrow = outrow = 0;
+  while (outrow < cinfo->max_v_samp_factor) {
+    for (v = 0; v < 2; v++) {
+      
+      inptr0 = input_data[inrow];
+      if (v == 0)               
+        inptr1 = input_data[inrow-1];
+      else                      
+        inptr1 = input_data[inrow+1];
+      outptr = output_data[outrow++];
+
+      for(colctr = 0; colctr < compptr->downsampled_width; colctr++) {
+        thiscolsum = GETJSAMPLE(*inptr0++) * 3 + GETJSAMPLE(*inptr1++);
+        *outptr++ = (JSAMPLE) ((thiscolsum + 1) >> 2);
+      }
+    }
+    inrow++;
+  }
+}
+
+
+
+
+
+
+
+
+
 
 METHODDEF(void)
 h2v2_fancy_upsample (j_decompress_ptr cinfo, jpeg_component_info *compptr,
@@ -431,6 +473,11 @@ jinit_upsampler (j_decompress_ptr cinfo)
         else
           upsample->methods[ci] = h2v1_upsample;
       }
+    } else if (h_in_group == h_out_group &&
+               v_in_group * 2 == v_out_group && do_fancy) {
+      
+      upsample->methods[ci] = h1v2_fancy_upsample;
+      upsample->pub.need_context_rows = TRUE;
     } else if (h_in_group * 2 == h_out_group &&
                v_in_group * 2 == v_out_group) {
       

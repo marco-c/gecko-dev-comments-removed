@@ -170,12 +170,12 @@ start_pass_phuff_decoder (j_decompress_ptr cinfo)
     if (is_DC_band) {
       if (cinfo->Ah == 0) {     
         tbl = compptr->dc_tbl_no;
-        pdtbl = entropy->derived_tbls + tbl;
+        pdtbl = (d_derived_tbl **)(entropy->derived_tbls) + tbl;
         jpeg_make_d_derived_tbl(cinfo, TRUE, tbl, pdtbl);
       }
     } else {
       tbl = compptr->ac_tbl_no;
-      pdtbl = entropy->derived_tbls + tbl;
+      pdtbl = (d_derived_tbl **)(entropy->derived_tbls) + tbl;
       jpeg_make_d_derived_tbl(cinfo, FALSE, tbl, pdtbl);
       
       entropy->ac_derived_tbl = entropy->derived_tbls[tbl];
