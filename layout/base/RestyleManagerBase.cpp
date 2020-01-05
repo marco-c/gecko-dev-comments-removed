@@ -1233,6 +1233,13 @@ RestyleManagerBase::ProcessRestyledFrames(nsStyleChangeList& aChangeList)
         hint |= nsChangeHint_RepaintFrame;
       }
 
+      
+      
+      if ((hint & nsChangeHint_UpdateUsesOpacity) &&
+          frame->StyleDisplay()->mTransformStyle == NS_STYLE_TRANSFORM_STYLE_PRESERVE_3D) {
+        hint |= nsChangeHint_UpdateSubtreeOverflow;
+      }
+
       if (hint & nsChangeHint_UpdateBackgroundPosition) {
         
         
