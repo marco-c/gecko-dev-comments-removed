@@ -2331,25 +2331,35 @@ profiler_start(int aEntries, double aInterval,
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  PS::AutoLock lock(gPSMutex);
+  SamplerThread* samplerThread = nullptr;
+  {
+    PS::AutoLock lock(gPSMutex);
 
-  
-  if (!gPS) {
-    profiler_init(nullptr);
+    
+    if (!gPS) {
+      profiler_init(nullptr);
+    }
+
+    
+    if (gPS->IsActive(lock)) {
+      samplerThread = locked_profiler_stop(lock);
+    }
+
+    locked_profiler_start(lock, aEntries, aInterval, aFeatures, aFeatureCount,
+                          aThreadNameFilters, aFilterCount);
   }
 
   
-  if (gPS->IsActive(lock)) {
-    locked_profiler_stop(lock);
+  
+  if (samplerThread) {
+    samplerThread->Join();
+    delete samplerThread;
   }
-
-  locked_profiler_start(lock, aEntries, aInterval, aFeatures, aFeatureCount,
-                        aThreadNameFilters, aFilterCount);
 
   LOG("END   profiler_start");
 }
 
-static SamplerThread*
+static MOZ_MUST_USE SamplerThread*
 locked_profiler_stop(PS::LockRef aLock)
 {
   LOG("BEGIN locked_profiler_stop");
