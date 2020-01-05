@@ -81,14 +81,10 @@ pub enum Command {
     Exit(Sender<()>),
 }
 
-unsafe impl Send for Command {}
-
 
 pub enum Reply {
     GetFontTemplateReply(Option<Arc<FontTemplateData>>),
 }
-
-unsafe impl Send for Reply {}
 
 
 

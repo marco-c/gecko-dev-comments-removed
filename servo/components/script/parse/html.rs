@@ -2,7 +2,7 @@
 
 
 
-#![allow(unsafe_code, unrooted_must_root)]
+#![allow(unrooted_must_root)]
 
 use document_loader::DocumentLoader;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;

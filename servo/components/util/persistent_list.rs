@@ -4,7 +4,6 @@
 
 
 
-use std::mem;
 use std::sync::Arc;
 
 pub struct PersistentList<T> {
@@ -81,15 +80,7 @@ impl<'a, T> Iterator for PersistentListIterator<'a, T> where T: Send + Sync + 's
     fn next(&mut self) -> Option<&'a T> {
         let entry = match self.entry {
             None => return None,
-            Some(entry) => {
-                
-                
-                
-                unsafe {
-                    mem::transmute::<&'a PersistentListEntry<T>,
-                                     &'static PersistentListEntry<T>>(entry)
-                }
-            }
+            Some(entry) => entry,
         };
         let value = &entry.value;
         self.entry = match entry.next {
