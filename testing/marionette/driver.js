@@ -2713,19 +2713,65 @@ GeckoDriver.prototype.acceptConnections = function (cmd, resp) {
 
 
 
-GeckoDriver.prototype.quitApplication = function (cmd, resp) {
-  assert.firefox("Bug 1298921 - In app initiated quit not yet available beside Firefox")
 
-  let flags = Ci.nsIAppStartup.eAttemptQuit;
-  for (let k of cmd.parameters.flags || []) {
-    flags |= Ci.nsIAppStartup[k];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GeckoDriver.prototype.quitApplication = function* (cmd, resp) {
+  const quits = ["eConsiderQuit", "eAttemptQuit", "eForceQuit"];
+
+  let flags = [];
+  if (typeof cmd.parameters.flags != "undefined") {
+    flags = assert.array(cmd.parameters.flags);
+  }
+
+  
+  assert.firefox()
+
+  let quitSeen;
+  let mode = 0;
+  if (flags.length > 0) {
+    for (let k of flags) {
+      assert.in(k, Ci.nsIAppStartup);
+
+      if (quits.includes(k)) {
+        if (quitSeen) {
+          throw new InvalidArgumentError(
+              `${k} cannot be combined with ${quitSeen}`);
+        }
+        quitSeen = k;
+      }
+
+      mode |= Ci.nsIAppStartup[k];
+    }
+  } else {
+    mode = Ci.nsIAppStartup.eAttemptQuit;
   }
 
   this._server.acceptConnections = false;
-  resp.send();
-
   this.deleteSession();
-  Services.startup.quit(flags);
+
+  
+  let quitApplication = new Promise(resolve =>
+      Services.obs.addObserver(resolve, "quit-application", false));
+
+  Services.startup.quit(mode);
+  yield quitApplication.then(() => resp.send());
 };
 
 GeckoDriver.prototype.installAddon = function (cmd, resp) {
