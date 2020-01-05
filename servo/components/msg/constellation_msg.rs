@@ -6,13 +6,15 @@
 
 
 use compositor_msg::Epoch;
+
 use euclid::rect::Rect;
 use euclid::size::TypedSize2D;
 use euclid::scale_factor::ScaleFactor;
 use hyper::header::Headers;
 use hyper::method::Method;
+use ipc_channel::ipc::IpcSender;
 use layers::geometry::DevicePixel;
-use png;
+use png::Image;
 use util::cursor::Cursor;
 use util::geometry::{PagePx, ViewportPx};
 use std::collections::HashMap;
@@ -31,20 +33,20 @@ impl ConstellationChan {
     }
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Deserialize, Serialize)]
 pub enum IFrameSandboxState {
     IFrameSandboxed,
     IFrameUnsandboxed
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 pub struct Failure {
     pub pipeline_id: PipelineId,
     pub parent_info: Option<(PipelineId, SubpageId)>,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Deserialize, Serialize)]
 pub struct WindowSizeData {
     
     
@@ -209,6 +211,7 @@ pub enum FocusType {
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub enum Msg {
     Exit,
     Failure(Failure),
@@ -234,14 +237,14 @@ pub enum Msg {
     TickAnimation(PipelineId),
     
     
-    GetPipeline(Option<FrameId>, Sender<Option<PipelineId>>),
+    GetPipeline(Option<FrameId>, IpcSender<Option<PipelineId>>),
     
     
-    GetFrame(PipelineId, SubpageId, Sender<Option<FrameId>>),
+    GetFrame(PipelineId, SubpageId, IpcSender<Option<FrameId>>),
     
     Focus(PipelineId),
     
-    GetClipboardContents(Sender<String>),
+    GetClipboardContents(IpcSender<String>),
     
     WebDriverCommand(WebDriverCommandMsg),
     
@@ -256,7 +259,7 @@ pub enum Msg {
     HeadParsed,
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Deserialize, Serialize)]
 pub enum AnimationState {
     AnimationsPresent,
     AnimationCallbacksPresent,
@@ -265,6 +268,7 @@ pub enum AnimationState {
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub enum MozBrowserEvent {
     
     AsyncScroll,
@@ -329,16 +333,17 @@ impl MozBrowserEvent {
     }
 }
 
+#[derive(Deserialize, Serialize)]
 pub enum WebDriverCommandMsg {
-    LoadUrl(PipelineId, LoadData, Sender<LoadStatus>),
+    LoadUrl(PipelineId, LoadData, IpcSender<LoadStatus>),
     ScriptCommand(PipelineId, WebDriverScriptCommand),
-    TakeScreenshot(PipelineId, Sender<Option<png::Image>>)
+    TakeScreenshot(PipelineId, IpcSender<Option<Image>>)
 }
 
 
 
 
-#[derive(Clone)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct LoadData {
     pub url: Url,
     pub method: Method,
@@ -357,16 +362,16 @@ impl LoadData {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize)]
 pub enum NavigationDirection {
     Forward,
     Back,
 }
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize)]
 pub struct FrameId(pub u32);
 
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize)]
 pub struct WorkerId(pub u32);
 
 #[derive(Clone, PartialEq, Eq, Copy, Hash, Debug, Deserialize, Serialize)]

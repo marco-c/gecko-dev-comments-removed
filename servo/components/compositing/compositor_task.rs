@@ -13,7 +13,7 @@ use windowing::{WindowEvent, WindowMethods};
 
 use euclid::point::Point2D;
 use euclid::rect::Rect;
-use ipc_channel::ipc::IpcReceiver;
+use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use layers::platform::surface::NativeDisplay;
 use layers::layers::{BufferRequest, LayerBuffer, LayerBufferSet};
 use msg::compositor_msg::{Epoch, LayerId, LayerProperties, FrameTreeId};
@@ -183,7 +183,7 @@ pub enum Msg {
     
     SetCursor(Cursor),
     
-    CreatePng(Sender<Option<png::Image>>),
+    CreatePng(IpcSender<Option<png::Image>>),
     
     PaintTaskExited(PipelineId),
     
