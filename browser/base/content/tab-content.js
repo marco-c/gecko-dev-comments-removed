@@ -704,9 +704,9 @@ var WebBrowserChrome = {
   },
 
   
-  shouldLoadURI(aDocShell, aURI, aReferrer, aTriggeringPrincipal) {
+  shouldLoadURI(aDocShell, aURI, aReferrer) {
     if (!E10SUtils.shouldLoadURI(aDocShell, aURI, aReferrer)) {
-      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, false);
+      E10SUtils.redirectLoad(aDocShell, aURI, aReferrer);
       return false;
     }
 
@@ -718,8 +718,8 @@ var WebBrowserChrome = {
   },
 
   
-  reloadInFreshProcess(aDocShell, aURI, aReferrer, aTriggeringPrincipal) {
-    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, aTriggeringPrincipal, true);
+  reloadInFreshProcess(aDocShell, aURI, aReferrer) {
+    E10SUtils.redirectLoad(aDocShell, aURI, aReferrer, true);
     return true;
   },
 
