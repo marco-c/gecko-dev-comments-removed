@@ -11,18 +11,12 @@
 
 using namespace js;
 
-static void
-ReportUnwrapDenied(JSContext *cx)
-{
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_UNWRAP_DENIED);
-}
-
 template <class Base>
 bool
 SecurityWrapper<Base>::enter(JSContext* cx, HandleObject wrapper, HandleId id,
                              Wrapper::Action act, bool* bp) const
 {
-    ReportUnwrapDenied(cx);
+    ReportAccessDenied(cx);
     *bp = false;
     return false;
 }
@@ -32,7 +26,7 @@ bool
 SecurityWrapper<Base>::nativeCall(JSContext* cx, IsAcceptableThis test, NativeImpl impl,
                                   const CallArgs& args) const
 {
-    ReportUnwrapDenied(cx);
+    ReportAccessDenied(cx);
     return false;
 }
 
@@ -41,7 +35,7 @@ bool
 SecurityWrapper<Base>::setPrototype(JSContext* cx, HandleObject wrapper, HandleObject proto,
                                     ObjectOpResult& result) const
 {
-    ReportUnwrapDenied(cx);
+    ReportAccessDenied(cx);
     return false;
 }
 
@@ -50,7 +44,7 @@ bool
 SecurityWrapper<Base>::setImmutablePrototype(JSContext* cx, HandleObject wrapper,
                                              bool* succeeded) const
 {
-    ReportUnwrapDenied(cx);
+    ReportAccessDenied(cx);
     return false;
 }
 
@@ -135,7 +129,7 @@ bool
 SecurityWrapper<Base>::watch(JSContext* cx, HandleObject proxy,
                              HandleId id, HandleObject callable) const
 {
-    ReportUnwrapDenied(cx);
+    ReportAccessDenied(cx);
     return false;
 }
 
@@ -144,7 +138,7 @@ bool
 SecurityWrapper<Base>::unwatch(JSContext* cx, HandleObject proxy,
                                HandleId id) const
 {
-    ReportUnwrapDenied(cx);
+    ReportAccessDenied(cx);
     return false;
 }
 
