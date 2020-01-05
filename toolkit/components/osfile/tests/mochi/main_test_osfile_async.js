@@ -185,7 +185,7 @@ var test_stat = maketest("stat", function stat(test) {
 
 
 var test_info_features_detect = maketest("features_detect", function features_detect(test) {
-  return (function() {
+  return (async function() {
     if (OS.Constants.Win) {
       
       if ("winBirthDate" in OS.File.Info.prototype) {

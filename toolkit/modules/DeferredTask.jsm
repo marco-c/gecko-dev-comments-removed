@@ -272,7 +272,7 @@ this.DeferredTask.prototype = {
 
     runningDeferred.resolve((async () => {
       
-      await (this._taskFn)().then(null, Cu.reportError);
+      await (this._taskFn() || Promise.resolve()).then(null, Cu.reportError);
 
       
       
@@ -284,7 +284,7 @@ this.DeferredTask.prototype = {
           
           
           this._armed = false;
-          await (this._taskFn)().then(null, Cu.reportError);
+          await (this._taskFn() || Promise.resolve()).then(null, Cu.reportError);
         }
       }
 

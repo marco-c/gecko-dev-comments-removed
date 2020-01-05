@@ -7,8 +7,8 @@
 
 
 
-
-Promise.Debugging.clearUncaughtErrorObservers();
+Cu.import("resource://testing-common/PromiseTestUtils.jsm");
+PromiseTestUtils.thisTestLeaksUncaughtRejectionsAndShouldBeFixed();
 
 function run_test() {
   run_next_test();

@@ -539,7 +539,7 @@ var TransactionsManager = {
       let rv;
       try {
         
-        rv = (await (aTask)());
+        rv = await aTask();
       } finally {
         this._batching = false;
         this._createdBatchEntry = false;

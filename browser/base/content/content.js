@@ -1192,7 +1192,7 @@ var PageInfoListener = {
   
   getMediaInfo(document, window, strings) {
     let frameList = this.goThroughFrames(document, window);
-    (() => this.processFrames(document, frameList, strings))();
+    this.processFrames(document, frameList, strings);
   },
 
   goThroughFrames(document, window) {

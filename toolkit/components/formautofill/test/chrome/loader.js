@@ -73,7 +73,7 @@ window.addEventListener("load", function() {
         if (taskType == "content") {
           
           info("Running " + taskFn.name);
-          await (taskFn)();
+          await taskFn();
         } else {
           
           info("Running task in parent process: " + taskFn.name);

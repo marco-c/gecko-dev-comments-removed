@@ -52,7 +52,7 @@ add_task(async function() {
 
   while (gTests.length) {
     
-    await (gTests.shift())();
+    await gTests.shift();
 
     
     Object.defineProperty(PlacesUIUtils, "leftPaneFolderId", gLeftPaneFolderIdGetter);

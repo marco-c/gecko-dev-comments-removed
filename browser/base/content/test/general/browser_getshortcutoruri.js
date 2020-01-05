@@ -70,11 +70,11 @@ var testData = [
 
   
   
-  [new bmKeywordData("bmget-escaping", "http://bmget/?esc=%s&raw=%S", null, "fo�"),
-   new keywordResult("http://bmget/?esc=fo%C3%A9&raw=fo�", null)],
+  [new bmKeywordData("bmget-escaping", "http://bmget/?esc=%s&raw=%S", null, "fo\xE9"),
+   new keywordResult("http://bmget/?esc=fo%C3%A9&raw=fo\xE9", null)],
   
-  [new bmKeywordData("bmget-escaping2", "http://bmget/?esc=%s&raw=%S&mozcharset=ISO-8859-1", null, "fo�"),
-   new keywordResult("http://bmget/?esc=fo%E9&raw=fo�", null)],
+  [new bmKeywordData("bmget-escaping2", "http://bmget/?esc=%s&raw=%S&mozcharset=ISO-8859-1", null, "fo\xE9"),
+   new keywordResult("http://bmget/?esc=fo%E9&raw=fo\xE9", null)],
 
   
   
@@ -137,7 +137,7 @@ async function setupKeywords() {
   }
 }
 
-function cleanupKeywords() {
-  PlacesUtils.bookmarks.remove(folder);
+async function cleanupKeywords() {
+  await PlacesUtils.bookmarks.remove(folder);
   gAddedEngines.map(Services.search.removeEngine);
 }

@@ -705,7 +705,7 @@ SimpleTest._pendingWaitForFocusCount = 0;
 
 
 
-SimpleTest.promiseFocus = function *(targetWindow, expectBlankPage)
+SimpleTest.promiseFocus = function (targetWindow, expectBlankPage)
 {
     return new Promise(function (resolve, reject) {
         SimpleTest.waitForFocus(win => {
