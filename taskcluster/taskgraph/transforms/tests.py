@@ -410,15 +410,11 @@ def set_tier(config, tests):
 
         
         if 'tier' not in test or test['tier'] == 'default':
-            if test['test-platform'] in ['linux32/opt',
-                                         'linux32/debug',
-                                         'linux64/opt',
+            if test['test-platform'] in ['linux32/debug',
                                          'linux64/debug',
-                                         'linux64-pgo/opt',
                                          'linux64-asan/opt',
-                                         'android-4.3-arm7-api-15/opt',
                                          'android-4.3-arm7-api-15/debug',
-                                         'android-4.2-x86/opt']:
+                                         'android-x86/opt']:
                 test['tier'] = 1
             elif test['test-platform'].startswith('windows'):
                 test['tier'] = 3
