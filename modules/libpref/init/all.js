@@ -631,11 +631,7 @@ pref("apz.axis_lock.breakout_threshold", "0.03125");
 pref("apz.axis_lock.breakout_angle", "0.3926991");    
 pref("apz.axis_lock.direct_pan_angle", "1.047197");   
 pref("apz.content_response_timeout", 400);
-#ifdef NIGHTLY_BUILD
-pref("apz.drag.enabled", true);
-#else
 pref("apz.drag.enabled", false);
-#endif
 pref("apz.danger_zone_x", 50);
 pref("apz.danger_zone_y", 100);
 pref("apz.disable_for_scroll_linked_effects", false);
@@ -1229,7 +1225,7 @@ pref("privacy.trackingprotection.lower_network_priority",  false);
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
-#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA) || defined(XP_MACOSX) && !defined(RELEASE_OR_BETA)
+#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)
 pref("dom.event.highrestimestamp.enabled",  true);
 #else
 pref("dom.event.highrestimestamp.enabled",  false);
@@ -5566,4 +5562,4 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 
 pref("browser.storageManager.enabled", false);
 
-pref("dom.IntersectionObserver.enabled", false);
+pref("dom.IntersectionObserver.enabled", true);
