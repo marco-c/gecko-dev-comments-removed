@@ -3,6 +3,6 @@
 module.exports = { 
   "rules": {
     
-    "mozilla/var-only-at-top-level": 2
+    "mozilla/var-only-at-top-level": "error"
   }
 };

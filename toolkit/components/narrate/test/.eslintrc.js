@@ -18,6 +18,6 @@ module.exports = {
   },
 
   "rules": {
-    "mozilla/import-headjs-globals": 1
+    "mozilla/import-headjs-globals": "warn"
   }
 };

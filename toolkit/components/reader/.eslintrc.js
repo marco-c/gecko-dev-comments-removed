@@ -12,69 +12,10 @@ module.exports = {
     
 
     
-    "brace-style": 2,
+    "brace-style": "error",
 
     
-    "comma-spacing": [2, {"before": false, "after": true}],
-
-    
-    
-
-    
-    
-
-    
-    "consistent-return": 2,
-
-    
-    
-    
-    
-
-    
-    "eol-last": 2,
-
-    
-    
-
-    
-    "indent": [2, 2, { "SwitchCase": 1 }],
-
-    
-    "key-spacing": [2, { "beforeColon": false, "afterColon": true, "mode": "minimum" }],
-
-    
-    "linebreak-style": [2, "unix"],
-
-    
-    "new-parens": 2,
-
-    
-    
-
-    
-    "no-dupe-args": 2,
-
-    
-    "no-dupe-keys": 2,
-
-    
-    "no-duplicate-case": 2,
-
-    
-    "no-labels": 2,
-
-    
-    "no-else-return": 2,
-
-    
-    "no-empty": 2,
-
-    
-    "no-empty-character-class": 2,
-
-    
-    "no-empty-pattern": 2,
+    "comma-spacing": ["error", {"before": false, "after": true}],
 
     
     
@@ -83,97 +24,153 @@ module.exports = {
     
 
     
-    "no-extra-semi": 2,
+    "consistent-return": "error",
 
     
-    "no-func-assign": 2,
+    
+    
+    
 
     
-    "no-inner-declarations": 2,
-
-    
-    "no-invalid-regexp": 2,
-
-    
-    "no-irregular-whitespace": 2,
-
-    
-    "no-lonely-if": 2,
-
-    
-    "no-mixed-spaces-and-tabs": [2, "smart-tabs"],
-
-    
-    "no-multi-spaces": [2, { exceptions: { "AssignmentExpression": true, "VariableDeclarator": true, "ArrayExpression": true, "ObjectExpression": true } }],
-
-    
-    "no-native-reassign": 2,
-
-    
-    "no-negated-in-lhs": 2,
-
-    
-    "no-nested-ternary": 2,
+    "eol-last": "error",
 
     
     
 
     
-    "no-obj-calls": 2,
+    "indent": ["error", 2, { "SwitchCase": 1 }],
 
     
-    "no-octal": 2,
+    "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "minimum" }],
 
     
-    "no-redeclare": 2,
+    "linebreak-style": ["error", "unix"],
 
     
-    "no-self-compare": 2,
-
-    
-    "no-shadow": 2,
-
-    
-    "no-shadow-restricted-names": 2,
-
-    
-    "no-spaced-func": 2,
-
-    
-    "no-trailing-spaces": 2,
+    "new-parens": "error",
 
     
     
 
     
-    "no-unexpected-multiline": 2,
+    "no-dupe-args": "error",
 
     
-    "no-unreachable": 2,
+    "no-dupe-keys": "error",
 
     
-    
+    "no-duplicate-case": "error",
 
     
-    "no-unused-vars": [2, {"vars": "all", "args": "none"}],
+    "no-labels": "error",
 
     
-    
+    "no-else-return": "error",
 
     
-    "no-with": 2,
+    "no-empty": "error",
 
     
-    "semi": [2, "always"],
+    "no-empty-character-class": "error",
 
     
-    "keyword-spacing": 2,
-
-    
-    "space-before-blocks": 2,
+    "no-empty-pattern": "error",
 
     
     
+
+    
+    
+
+    
+    "no-extra-semi": "error",
+
+    
+    "no-func-assign": "error",
+
+    
+    "no-inner-declarations": "error",
+
+    
+    "no-invalid-regexp": "error",
+
+    
+    "no-irregular-whitespace": "error",
+
+    
+    "no-lonely-if": "error",
+
+    
+    "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
+
+    
+    "no-multi-spaces": ["error", { exceptions: { "AssignmentExpression": true, "VariableDeclarator": true, "ArrayExpression": true, "ObjectExpression": true } }],
+
+    
+    "no-native-reassign": "error",
+
+    
+    "no-negated-in-lhs": "error",
+
+    
+    "no-nested-ternary": "error",
+
+    
+    
+
+    
+    "no-obj-calls": "error",
+
+    
+    "no-octal": "error",
+
+    
+    "no-redeclare": "error",
+
+    
+    "no-self-compare": "error",
+
+    
+    "no-shadow": "error",
+
+    
+    "no-shadow-restricted-names": "error",
+
+    
+    "no-spaced-func": "error",
+
+    
+    "no-trailing-spaces": "error",
+
+    
+    
+
+    
+    "no-unexpected-multiline": "error",
+
+    
+    "no-unreachable": "error",
+
+    
+    
+
+    
+    "no-unused-vars": ["error", {"vars": "all", "args": "none"}],
+
+    
+    
+
+    
+    "no-with": "error",
+
+    
+    "semi": ["error", "always"],
+
+    
+    "keyword-spacing": "error",
+
+    
+    "space-before-blocks": "error",
 
     
     
@@ -191,9 +188,12 @@ module.exports = {
     
 
     
-    "use-isnan": 2,
+    
 
     
-    "valid-typeof": 2,
+    "use-isnan": "error",
+
+    
+    "valid-typeof": "error",
   },
 }

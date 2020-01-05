@@ -3,6 +3,6 @@
 module.exports = { 
   "rules": {
     
-    "no-undef": 2,
+    "no-undef": "error",
   }
 };

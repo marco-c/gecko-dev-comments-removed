@@ -8,165 +8,33 @@ module.exports = {
     
 
     
-    "arrow-spacing": 2,
+    "arrow-spacing": "error",
 
     
-    "block-spacing": 2,
-
-    
-    
-
-    
-    "comma-spacing": [2, {"before": false, "after": true}],
+    "block-spacing": "error",
 
     
     
 
     
-    "computed-property-spacing": [2, "never"],
-
-    
-    "consistent-return": 2,
-
-    
-    
-    
-    
-
-    
-    "eol-last": 2,
+    "comma-spacing": ["error", {"before": false, "after": true}],
 
     
     
 
     
+    "computed-property-spacing": ["error", "never"],
+
     
+    "consistent-return": "error",
 
     
     
-
-    
-    "keyword-spacing": 2,
-
-    
-    "linebreak-style": [2, "unix"],
-
     
     
 
     
-    
-
-    
-    "no-dupe-args": 2,
-
-    
-    "no-dupe-keys": 2,
-
-    
-    "no-duplicate-case": 2,
-
-    
-    "no-labels": 2,
-
-    
-    "no-else-return": 2,
-
-    
-    "no-empty": [2, {"allowEmptyCatch": true}],
-
-    
-    "no-empty-character-class": 2,
-
-    
-    "no-empty-pattern": 2,
-
-    
-    "no-ex-assign": 2,
-
-    
-    "no-extra-boolean-cast": 2,
-
-    
-    "no-extra-semi": 2,
-
-    
-    "no-func-assign": 2,
-
-    
-    "no-invalid-regexp": 2,
-
-    
-    "no-irregular-whitespace": 2,
-
-    
-    "no-lonely-if": 2,
-
-    
-    "no-mixed-spaces-and-tabs": [2, "smart-tabs"],
-
-    
-    
-
-    
-    "no-native-reassign": 2,
-
-    
-    "no-negated-in-lhs": 2,
-
-    
-    "no-nested-ternary": 2,
-
-    
-    "no-new-object": 2,
-
-    
-    "no-obj-calls": 2,
-
-    
-    "no-octal": 2,
-
-    
-    "no-redeclare": 2,
-
-    
-    "no-self-compare": 2,
-
-    
-    
-
-    
-    "no-shadow-restricted-names": 2,
-
-    
-    
-
-    
-    "no-trailing-spaces": 2,
-
-    
-    
-
-    
-    "no-unexpected-multiline": 2,
-
-    
-    "no-unreachable": 2,
-
-    
-    
-
-    
-    
-
-    
-    "no-with": 2,
-
-    
-    
-
-    
-    "space-before-blocks": 2,
+    "eol-last": "error",
 
     
     
@@ -178,16 +46,148 @@ module.exports = {
     
 
     
+    "keyword-spacing": "error",
+
+    
+    "linebreak-style": ["error", "unix"],
+
+    
     
 
     
-    "spaced-comment": 2,
+    
 
     
-    "use-isnan": 2,
+    "no-dupe-args": "error",
 
     
-    "valid-typeof": 2,
+    "no-dupe-keys": "error",
+
+    
+    "no-duplicate-case": "error",
+
+    
+    "no-labels": "error",
+
+    
+    "no-else-return": "error",
+
+    
+    "no-empty": ["error", {"allowEmptyCatch": true}],
+
+    
+    "no-empty-character-class": "error",
+
+    
+    "no-empty-pattern": "error",
+
+    
+    "no-ex-assign": "error",
+
+    
+    "no-extra-boolean-cast": "error",
+
+    
+    "no-extra-semi": "error",
+
+    
+    "no-func-assign": "error",
+
+    
+    "no-invalid-regexp": "error",
+
+    
+    "no-irregular-whitespace": "error",
+
+    
+    "no-lonely-if": "error",
+
+    
+    "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
+
+    
+    
+
+    
+    "no-native-reassign": "error",
+
+    
+    "no-negated-in-lhs": "error",
+
+    
+    "no-nested-ternary": "error",
+
+    
+    "no-new-object": "error",
+
+    
+    "no-obj-calls": "error",
+
+    
+    "no-octal": "error",
+
+    
+    "no-redeclare": "error",
+
+    
+    "no-self-compare": "error",
+
+    
+    
+
+    
+    "no-shadow-restricted-names": "error",
+
+    
+    
+
+    
+    "no-trailing-spaces": "error",
+
+    
+    
+
+    
+    "no-unexpected-multiline": "error",
+
+    
+    "no-unreachable": "error",
+
+    
+    
+
+    
+    
+
+    
+    "no-with": "error",
+
+    
+    
+
+    
+    "space-before-blocks": "error",
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    
+
+    
+    "spaced-comment": "error",
+
+    
+    "use-isnan": "error",
+
+    
+    "valid-typeof": "error",
   },
   "env": {
     "es6": true,

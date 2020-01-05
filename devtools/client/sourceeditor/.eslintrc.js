@@ -10,6 +10,6 @@ module.exports = {
     
     
     
-    "mozilla/reject-some-requires": [2, "^(chrome|chrome:.*|resource:.*|devtools/server/.*|.*\\.jsm)$"],
+    "mozilla/reject-some-requires": ["error", "^(chrome|chrome:.*|resource:.*|devtools/server/.*|.*\\.jsm)$"],
   },
 };

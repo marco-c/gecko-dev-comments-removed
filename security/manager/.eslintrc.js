@@ -3,125 +3,125 @@
 module.exports = { 
   "rules": {
     
-    "arrow-body-style": [2, "as-needed"],
+    "arrow-body-style": ["error", "as-needed"],
 
     
-    "arrow-spacing": 2,
+    "arrow-spacing": "error",
 
     
-    "block-spacing": 2,
+    "block-spacing": "error",
 
     
-    "comma-spacing": [2, {"before": false, "after": true}],
+    "comma-spacing": ["error", {"before": false, "after": true}],
 
     
-    "comma-style": 2,
+    "comma-style": "error",
 
     
-    "computed-property-spacing": [2, "never"],
+    "computed-property-spacing": ["error", "never"],
 
     
-    "consistent-return": 2,
+    "consistent-return": "error",
 
     
-    "curly": [2, "multi-line"],
+    "curly": ["error", "multi-line"],
 
     
-    "eol-last": 2,
+    "eol-last": "error",
 
     
-    "generator-star-spacing": [2, {"before": false, "after": true}],
+    "generator-star-spacing": ["error", {"before": false, "after": true}],
 
     
-    "key-spacing": [2, { "beforeColon": false, "afterColon": true, "mode": "minimum" }],
+    "key-spacing": ["error", { "beforeColon": false, "afterColon": true, "mode": "minimum" }],
 
     
-    "keyword-spacing": 2,
+    "keyword-spacing": "error",
 
     
-    "linebreak-style": [2, "unix"],
+    "linebreak-style": ["error", "unix"],
 
     
-    "new-parens": 2,
+    "new-parens": "error",
 
     
-    "no-alert": 2,
+    "no-alert": "error",
 
     
-    "no-array-constructor": 2,
+    "no-array-constructor": "error",
 
     
-    "no-caller": 2,
+    "no-caller": "error",
 
     
-    "no-class-assign": 2,
+    "no-class-assign": "error",
 
     
     
-    "no-cond-assign": [2, "except-parens"],
+    "no-cond-assign": ["error", "except-parens"],
 
     
-    "no-console": 2,
+    "no-console": "error",
 
     
-    "no-const-assign": 2,
+    "no-const-assign": "error",
 
     
-    "no-debugger": 2,
+    "no-debugger": "error",
 
     
-    "no-delete-var": 2,
+    "no-delete-var": "error",
 
     
-    "no-dupe-args": 2,
+    "no-dupe-args": "error",
 
     
-    "no-dupe-keys": 2,
+    "no-dupe-keys": "error",
 
     
-    "no-duplicate-case": 2,
+    "no-duplicate-case": "error",
 
     
-    "no-eval": 2,
+    "no-eval": "error",
 
     
-    "no-labels": 2,
+    "no-labels": "error",
 
     
-    "no-else-return": 2,
+    "no-else-return": "error",
 
     
-    "no-empty-character-class": 2,
+    "no-empty-character-class": "error",
 
     
-    "no-empty-pattern": 2,
+    "no-empty-pattern": "error",
 
     
-    "no-ex-assign": 2,
+    "no-ex-assign": "error",
 
     
-    "no-extra-boolean-cast": 2,
+    "no-extra-boolean-cast": "error",
 
     
-    "no-extra-semi": 2,
+    "no-extra-semi": "error",
 
     
-    "no-func-assign": 2,
+    "no-func-assign": "error",
 
     
-    "no-invalid-regexp": 2,
+    "no-invalid-regexp": "error",
 
     
-    "no-irregular-whitespace": 2,
+    "no-irregular-whitespace": "error",
 
     
-    "no-lonely-if": 2,
+    "no-lonely-if": "error",
 
     
-    "no-mixed-spaces-and-tabs": [2, "smart-tabs"],
+    "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
 
     
-    "no-multi-spaces": [2, { "exceptions": {
+    "no-multi-spaces": ["error", { "exceptions": {
       "AssignmentExpression": true,
       "VariableDeclarator": true,
       "ArrayExpression": true,
@@ -129,89 +129,89 @@ module.exports = {
     }}],
 
     
-    "no-native-reassign": 2,
+    "no-native-reassign": "error",
 
     
-    "no-negated-in-lhs": 2,
+    "no-negated-in-lhs": "error",
 
     
-    "no-nested-ternary": 2,
+    "no-nested-ternary": "error",
 
     
-    "no-new-object": 2,
+    "no-new-object": "error",
 
     
-    "no-obj-calls": 2,
+    "no-obj-calls": "error",
 
     
-    "no-octal": 2,
+    "no-octal": "error",
 
     
-    "no-redeclare": 2,
+    "no-redeclare": "error",
 
     
-    "no-return-assign": [2, "always"],
+    "no-return-assign": ["error", "always"],
 
     
-    "no-self-assign": 2,
+    "no-self-assign": "error",
 
     
-    "no-self-compare": 2,
+    "no-self-compare": "error",
 
     
-    "no-shadow-restricted-names": 2,
+    "no-shadow-restricted-names": "error",
 
     
-    "no-spaced-func": 2,
+    "no-spaced-func": "error",
 
     
-    "no-sparse-arrays": 2,
+    "no-sparse-arrays": "error",
 
     
     
-    "no-throw-literal": 2,
+    "no-throw-literal": "error",
 
     
-    "no-trailing-spaces": 2,
+    "no-trailing-spaces": "error",
 
     
-    "no-undef": 2,
+    "no-undef": "error",
 
     
-    "no-unexpected-multiline": 2,
+    "no-unexpected-multiline": "error",
 
     
-    "no-unreachable": 2,
+    "no-unreachable": "error",
 
     
-    "no-unused-expressions": 2,
+    "no-unused-expressions": "error",
 
     
-    "no-with": 2,
+    "no-with": "error",
 
     
-    "semi": [2, "always"],
+    "semi": ["error", "always"],
 
     
-    "space-before-blocks": 2,
+    "space-before-blocks": "error",
 
     
-    "space-in-parens": [2, "never"],
+    "space-in-parens": ["error", "never"],
 
     
-    "space-infix-ops": 2,
+    "space-infix-ops": "error",
 
     
-    "space-unary-ops": [2, { "words": true, "nonwords": false }],
+    "space-unary-ops": ["error", { "words": true, "nonwords": false }],
 
     
-    "strict": [2, "global"],
+    "strict": ["error", "global"],
 
     
-    "use-isnan": 2,
+    "use-isnan": "error",
 
     
-    "valid-typeof": 2
+    "valid-typeof": "error"
   },
   "env": {
     "browser": true
