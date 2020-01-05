@@ -3022,7 +3022,7 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           
           
           const nsStyleDisplay* display = currFrame->StyleDisplay();
-          if (display->mDisplay == StyleDisplay::Popup) {
+          if (display->mDisplay == StyleDisplay::MozPopup) {
             newFocus = nullptr;
             break;
           }

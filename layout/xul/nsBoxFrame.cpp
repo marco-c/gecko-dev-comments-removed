@@ -1237,7 +1237,7 @@ nsBoxFrame::AttributeChanged(int32_t aNameSpaceID,
     
     
     if (parent && !(GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&
-        StyleDisplay()->mDisplay != mozilla::StyleDisplay::Popup) {
+        StyleDisplay()->mDisplay != mozilla::StyleDisplay::MozPopup) {
       parent->XULRelayoutChildAtOrdinal(this);
       
       PresContext()->PresShell()->
