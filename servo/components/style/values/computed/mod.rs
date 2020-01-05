@@ -20,7 +20,7 @@ pub use self::image::{LengthOrKeyword, LengthOrPercentageOrKeyword};
 pub use super::{Auto, Either, None_};
 #[cfg(feature = "gecko")]
 pub use super::specified::{AlignItems, AlignJustifyContent, AlignJustifySelf, JustifyItems};
-pub use super::specified::{Angle, BorderStyle, GridLine, Percentage, Time, UrlOrNone};
+pub use super::specified::{BorderStyle, GridLine, Percentage, UrlOrNone};
 pub use super::specified::url::SpecifiedUrl;
 pub use self::length::{CalcLengthOrPercentage, Length, LengthOrNumber, LengthOrPercentage, LengthOrPercentageOrAuto};
 pub use self::length::{LengthOrPercentageOrAutoOrContent, LengthOrPercentageOrNone, LengthOrNone};
@@ -111,6 +111,76 @@ impl<T> ToComputedValue for T
     #[inline]
     fn from_computed_value(computed: &T) -> Self {
         computed.clone()
+    }
+}
+
+
+#[derive(Clone, PartialEq, PartialOrd, Copy, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
+pub struct Angle {
+    radians: CSSFloat,
+}
+
+impl Angle {
+    
+    pub fn from_radians(radians: CSSFloat) -> Self {
+        Angle {
+            radians: radians,
+        }
+    }
+
+    
+    #[inline]
+    pub fn radians(&self) -> CSSFloat {
+        self.radians
+    }
+
+    
+    pub fn zero() -> Self {
+        Self::from_radians(0.0)
+    }
+}
+
+impl ToCss for Angle {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
+        write!(dest, "{}rad", self.radians())
+    }
+}
+
+
+#[derive(Clone, PartialEq, PartialOrd, Copy, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf, Deserialize, Serialize))]
+pub struct Time {
+    seconds: CSSFloat,
+}
+
+impl Time {
+    
+    pub fn from_seconds(seconds: CSSFloat) -> Self {
+        Time {
+            seconds: seconds,
+        }
+    }
+
+    
+    pub fn zero() -> Self {
+        Self::from_seconds(0.0)
+    }
+
+    
+    #[inline]
+    pub fn seconds(&self) -> CSSFloat {
+        self.seconds
+    }
+}
+
+impl ToCss for Time {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+        where W: fmt::Write,
+    {
+        write!(dest, "{}s", self.seconds())
     }
 }
 
