@@ -287,6 +287,8 @@ assert.string = function (obj, msg = "") {
 assert.object = function (obj, msg = "") {
   msg = msg || error.pprint`Expected ${obj} to be an object`;
   return assert.that(o => {
+    
+    
     let s = Object.prototype.toString.call(o);
     return s == "[object Object]" || s == "[object nsJSIID]";
   })(obj);

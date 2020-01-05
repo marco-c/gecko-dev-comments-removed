@@ -58,6 +58,17 @@ this.error = {};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 error.isError = function (val) {
   if (val === null || typeof val != "object") {
     return false;
