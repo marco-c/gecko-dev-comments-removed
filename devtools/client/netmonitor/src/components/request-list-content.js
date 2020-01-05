@@ -40,10 +40,11 @@ const RequestListContent = createClass({
     displayedRequests: PropTypes.object.isRequired,
     firstRequestStartedMillis: PropTypes.number.isRequired,
     fromCache: PropTypes.bool,
-    onCauseBadgeClick: PropTypes.func.isRequired,
+    onCauseBadgeMouseDown: PropTypes.func.isRequired,
     onItemMouseDown: PropTypes.func.isRequired,
-    onSecurityIconClick: PropTypes.func.isRequired,
+    onSecurityIconMouseDown: PropTypes.func.isRequired,
     onSelectDelta: PropTypes.func.isRequired,
+    onThumbnailMouseDown: PropTypes.func.isRequired,
     scale: PropTypes.number,
     selectedRequestId: PropTypes.string,
   },
@@ -224,9 +225,10 @@ const RequestListContent = createClass({
       columns,
       displayedRequests,
       firstRequestStartedMillis,
-      onCauseBadgeClick,
+      onCauseBadgeMouseDown,
       onItemMouseDown,
-      onSecurityIconClick,
+      onSecurityIconMouseDown,
+      onThumbnailMouseDown,
       selectedRequestId,
     } = this.props;
 
@@ -250,8 +252,9 @@ const RequestListContent = createClass({
               onContextMenu: this.onContextMenu,
               onFocusedNodeChange: this.onFocusedNodeChange,
               onMouseDown: () => onItemMouseDown(item.id),
-              onCauseBadgeClick: () => onCauseBadgeClick(item.cause),
-              onSecurityIconClick: () => onSecurityIconClick(item.securityState),
+              onCauseBadgeMouseDown: () => onCauseBadgeMouseDown(item.cause),
+              onSecurityIconMouseDown: () => onSecurityIconMouseDown(item.securityState),
+              onThumbnailMouseDown: () => onThumbnailMouseDown(),
             }))
           )
         )
@@ -273,7 +276,7 @@ module.exports = connect(
     
 
 
-    onCauseBadgeClick: (cause) => {
+    onCauseBadgeMouseDown: (cause) => {
       if (cause.stacktrace && cause.stacktrace.length > 0) {
         dispatch(Actions.selectDetailsPanelTab("stack-trace"));
       }
@@ -283,11 +286,18 @@ module.exports = connect(
 
 
 
-    onSecurityIconClick: (securityState) => {
+    onSecurityIconMouseDown: (securityState) => {
       if (securityState && securityState !== "insecure") {
         dispatch(Actions.selectDetailsPanelTab("security"));
       }
     },
     onSelectDelta: (delta) => dispatch(Actions.selectDelta(delta)),
+    
+
+
+
+    onThumbnailMouseDown: () => {
+      dispatch(Actions.selectDetailsPanelTab("response"));
+    },
   }),
 )(RequestListContent);
