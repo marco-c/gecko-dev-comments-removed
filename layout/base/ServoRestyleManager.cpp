@@ -335,25 +335,16 @@ ServoRestyleManager::FrameForPseudoElement(const nsIContent* aContent,
                                            nsIAtom* aPseudoTagOrNull)
 {
   MOZ_ASSERT_IF(aPseudoTagOrNull, aContent->IsElement());
-  nsIFrame* primaryFrame = aContent->GetPrimaryFrame();
-
   if (!aPseudoTagOrNull) {
-    return primaryFrame;
+    return aContent->GetPrimaryFrame();
   }
 
-  
-  if (!primaryFrame) {
-    return nullptr;
-  }
-
-  
-  
   if (aPseudoTagOrNull == nsCSSPseudoElements::before) {
-    return nsLayoutUtils::GetBeforeFrameForContent(primaryFrame, aContent);
+    return nsLayoutUtils::GetBeforeFrame(aContent);
   }
 
   if (aPseudoTagOrNull == nsCSSPseudoElements::after) {
-    return nsLayoutUtils::GetAfterFrameForContent(primaryFrame, aContent);
+    return nsLayoutUtils::GetAfterFrame(aContent);
   }
 
   MOZ_CRASH("Unkown pseudo-element given to "

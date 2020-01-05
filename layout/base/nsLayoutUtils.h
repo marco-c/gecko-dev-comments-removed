@@ -288,48 +288,24 @@ public:
   
 
 
-
-
-
-
-
-
-  static nsIFrame* GetBeforeFrameForContent(nsIFrame* aGenConParentFrame,
-                                            const nsIContent* aContent);
+  static mozilla::dom::Element* GetBeforePseudo(const nsIContent* aContent);
 
   
 
 
 
+  static nsIFrame* GetBeforeFrame(const nsIContent* aContent);
+
+  
 
 
-
-
-  static nsIFrame* GetBeforeFrame(nsIFrame* aFrame);
+  static mozilla::dom::Element* GetAfterPseudo(const nsIContent* aContent);
 
   
 
 
 
-
-
-
-
-
-
-  static nsIFrame* GetAfterFrameForContent(nsIFrame* aGenConParentFrame,
-                                           const nsIContent* aContent);
-
-  
-
-
-
-
-
-
-
-
-  static nsIFrame* GetAfterFrame(nsIFrame* aFrame);
+  static nsIFrame* GetAfterFrame(const nsIContent* aContent);
 
   
 
