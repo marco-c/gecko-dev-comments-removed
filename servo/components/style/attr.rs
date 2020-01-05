@@ -35,13 +35,13 @@ pub enum AttrValue {
 
 
 
-fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i64> {
+fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Result<i64, ()> {
     let mut input = input.skip_while(|c| {
         HTML_SPACE_CHARACTERS.iter().any(|s| s == c)
     }).peekable();
 
     let sign = match input.peek() {
-        None => return None,
+        None => return Err(()),
         Some(&'-') => {
             input.next();
             -1
@@ -55,23 +55,23 @@ fn do_parse_integer<T: Iterator<Item=char>>(input: T) -> Option<i64> {
 
     let (value, _) = read_numbers(input);
 
-    value.and_then(|value| value.checked_mul(sign))
+    value.and_then(|value| value.checked_mul(sign)).ok_or(())
 }
 
 
 
 pub fn parse_integer<T: Iterator<Item=char>>(input: T) -> Result<i32, ()> {
     do_parse_integer(input).and_then(|result| {
-        result.to_i32()
-    }).ok_or(())
+        result.to_i32().ok_or(())
+    })
 }
 
 
 
 pub fn parse_unsigned_integer<T: Iterator<Item=char>>(input: T) -> Result<u32, ()> {
     do_parse_integer(input).and_then(|result| {
-        result.to_u32()
-    }).ok_or(())
+        result.to_u32().ok_or(())
+    })
 }
 
 
