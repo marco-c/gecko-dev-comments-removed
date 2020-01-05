@@ -624,7 +624,6 @@ private:
 
   
   RefPtr<SeekTask> mSeekTask;
-  MozPromiseRequestHolder<SeekTask::SeekTaskPromise> mSeekTaskRequest;
 
   
   
