@@ -2098,10 +2098,9 @@ nsObjectLoadingContent::LoadObject(bool aNotify,
   nsresult rv = NS_OK;
 
   
-  
-  if (!doc->IsCurrentActiveDocument()) {
-    LoadFallback(eFallbackAlternate, false);
-    return NS_OK;
+  if (!InActiveDocument(thisContent)) {
+    NS_NOTREACHED("LoadObject called while not bound to an active document");
+    return NS_ERROR_UNEXPECTED;
   }
 
   
