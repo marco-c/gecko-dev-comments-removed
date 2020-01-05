@@ -11,9 +11,14 @@ const LAYOUT_ERRORS_L10N =
 
 
 const EXPECTED_PROPERTIES = [
+  "background-attachment",
+  "background-clip",
   "background-color",
+  "background-image",
+  "background-origin",
   "background-position-x",
   "background-position-y",
+  "background-repeat",
   "background-size",
   "border-bottom-left-radius",
   "border-bottom-right-radius",
