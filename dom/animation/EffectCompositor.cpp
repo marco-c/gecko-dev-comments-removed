@@ -74,6 +74,14 @@ FindAnimationsForCompositor(const nsIFrame* aFrame,
     return false;
   }
 
+  
+  
+  
+  if (effects->PropertiesWithImportantRules().HasProperty(aProperty) &&
+      effects->PropertiesForAnimationsLevel().HasProperty(aProperty)) {
+    return false;
+  }
+
   if (aFrame->RefusedAsyncAnimation()) {
     return false;
   }
