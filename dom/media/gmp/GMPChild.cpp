@@ -168,7 +168,10 @@ GetPluginPaths(const nsAString& aPluginPath,
 
   
   
+  libDirectory->Normalize();
   aPluginDirectoryPath = GetNativeTarget(libDirectory);
+
+  libFile->Normalize();
   aPluginFilePath = GetNativeTarget(libFile);
 
   return true;
