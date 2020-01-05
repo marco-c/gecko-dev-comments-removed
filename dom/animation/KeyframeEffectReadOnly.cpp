@@ -653,10 +653,7 @@ KeyframeEffectParamsFromUnion(const OptionsType& aOptions,
     
     if (AnimationUtils::IsCoreAPIEnabledForCaller(aCallerType)) {
       result.mIterationComposite = options.mIterationComposite;
-      
-      if (options.mComposite != dom::CompositeOperation::Add) {
-        result.mComposite = options.mComposite;
-      }
+      result.mComposite = options.mComposite;
     }
   }
   return result;
