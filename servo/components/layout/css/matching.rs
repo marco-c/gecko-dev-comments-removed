@@ -153,6 +153,10 @@ impl ApplicableDeclarationsCache {
     fn insert(&mut self, declarations: Vec<DeclarationBlock>, style: Arc<ComputedValues>) {
         self.cache.insert(ApplicableDeclarationsCacheEntry::new(declarations), style)
     }
+
+    pub fn evict_all(&mut self) {
+        self.cache.evict_all();
+    }
 }
 
 
