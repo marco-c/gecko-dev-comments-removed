@@ -9876,18 +9876,10 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 #endif
     }
 
-    
-    nsCOMPtr<nsIPrincipal> requestingPrincipal = aTriggeringPrincipal;
-    if (!requestingPrincipal && aReferrer) {
-      rv =
-        CreatePrincipalFromReferrer(aReferrer, getter_AddRefs(requestingPrincipal));
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
     int16_t shouldLoad = nsIContentPolicy::ACCEPT;
     rv = NS_CheckContentLoadPolicy(contentType,
                                    aURI,
-                                   requestingPrincipal,
+                                   aTriggeringPrincipal,
                                    requestingContext,
                                    EmptyCString(),  
                                    nullptr,  
