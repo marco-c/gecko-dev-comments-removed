@@ -36,25 +36,24 @@ var LoginManagerParent = {
 
   _recipeManager: null,
 
+  
+  
+  
+  
   init() {
     let mm = Cc["@mozilla.org/globalmessagemanager;1"]
                .getService(Ci.nsIMessageListenerManager);
+    
     mm.addMessageListener("RemoteLogins:findLogins", this);
     mm.addMessageListener("RemoteLogins:findRecipes", this);
     mm.addMessageListener("RemoteLogins:onFormSubmit", this);
     mm.addMessageListener("RemoteLogins:autoCompleteLogins", this);
     mm.addMessageListener("RemoteLogins:removeLogin", this);
     mm.addMessageListener("RemoteLogins:insecureLoginFormPresent", this);
-
-    XPCOMUtils.defineLazyGetter(this, "recipeParentPromise", () => {
-      const { LoginRecipesParent } = Cu.import("resource://gre/modules/LoginRecipes.jsm", {});
-      this._recipeManager = new LoginRecipesParent({
-        defaults: Services.prefs.getStringPref("signon.recipes.path"),
-      });
-      return this._recipeManager.initializationPromise;
-    });
+    
   },
 
+  
   receiveMessage(msg) {
     let data = msg.data;
     switch (msg.name) {
@@ -476,3 +475,11 @@ var LoginManagerParent = {
                                  .CustomEvent("InsecureLoginFormsStateChange"));
   },
 };
+
+XPCOMUtils.defineLazyGetter(LoginManagerParent, "recipeParentPromise", function() {
+  const { LoginRecipesParent } = Cu.import("resource://gre/modules/LoginRecipes.jsm", {});
+  this._recipeManager = new LoginRecipesParent({
+    defaults: Services.prefs.getStringPref("signon.recipes.path"),
+  });
+  return this._recipeManager.initializationPromise;
+});

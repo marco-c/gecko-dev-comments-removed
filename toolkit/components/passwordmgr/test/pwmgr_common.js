@@ -373,6 +373,7 @@ if (this.addMessageListener) {
   
   ok = is = () => {}; 
 
+  Cu.import("resource://gre/modules/AppConstants.jsm");
   Cu.import("resource://gre/modules/LoginHelper.jsm");
   Cu.import("resource://gre/modules/LoginManagerParent.jsm");
   Cu.import("resource://gre/modules/Services.jsm");
@@ -398,7 +399,9 @@ if (this.addMessageListener) {
   addMessageListener("setupParent", ({selfFilling = false} = {selfFilling: false}) => {
     
     
-    LoginManagerParent.init();
+    if (AppConstants.platform == "android") {
+      LoginManagerParent.init();
+    }
 
     commonInit(selfFilling);
     sendAsyncMessage("doneSetup");
