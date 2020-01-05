@@ -5,6 +5,7 @@
 use app_units::Au;
 use euclid::{Point2D, Rect, Size2D};
 use font_template::FontTemplateDescriptor;
+use ordered_float::NotNaN;
 use platform::font::{FontHandle, FontTable};
 use platform::font_context::FontContextHandle;
 use platform::font_template::FontTemplateData;
@@ -157,7 +158,7 @@ pub struct ShapingOptions {
     
     pub letter_spacing: Option<Au>,
     
-    pub word_spacing: Au,
+    pub word_spacing: (Au, NotNaN<f32>),
     
     pub script: Script,
     
@@ -225,7 +226,9 @@ impl Font {
 
             let mut advance = Au::from_f64_px(self.glyph_h_advance(glyph_id));
             if character == ' ' {
-                advance += options.word_spacing;
+                
+                let (length, percent) = options.word_spacing;
+                advance = (advance + length) + Au((advance.0 as f32 * percent.into_inner()) as i32);
             }
             if let Some(letter_spacing) = options.letter_spacing {
                 advance += letter_spacing;

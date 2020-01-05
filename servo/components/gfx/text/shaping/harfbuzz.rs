@@ -403,7 +403,9 @@ impl Shaper {
         
         
         if character == ' ' || character == '\u{a0}' {
-            advance = advance + options.word_spacing
+            
+            let (length, percent) = options.word_spacing;
+            advance = (advance + length) + Au((advance.0 as f32 * percent.into_inner()) as i32);
         }
 
         advance

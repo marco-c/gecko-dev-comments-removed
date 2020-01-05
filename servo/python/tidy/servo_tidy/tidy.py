@@ -261,7 +261,7 @@ def check_lock(file_name, contents):
         raise StopIteration
 
     
-    exceptions = ["lazy_static"]
+    exceptions = ["lazy_static", "unreachable", "void"]
 
     import toml
     content = toml.loads(contents)
