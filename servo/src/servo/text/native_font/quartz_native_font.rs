@@ -86,7 +86,10 @@ struct QuartzNativeFont/& {
             }
         };
 
-        assert result != false; 
+        if !result {
+            
+            return None;
+        }
 
         CFRelease(ctfont);
 
