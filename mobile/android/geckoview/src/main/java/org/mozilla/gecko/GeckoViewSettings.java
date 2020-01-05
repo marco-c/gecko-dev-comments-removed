@@ -22,23 +22,10 @@ public final class GeckoViewSettings {
         }
     }
 
-    
-
-
     public static final Key<Boolean> USE_TRACKING_PROTECTION =
         new Key<Boolean>("useTrackingProtection");
-    
-
-
     public static final Key<Boolean> USE_PRIVATE_MODE =
         new Key<Boolean>("usePrivateMode");
-    
-
-
-
-
-    public static final Key<Boolean> USE_MULTIPROCESS =
-        new Key<Boolean>("useMultiprocess");
 
     private final EventDispatcher mEventDispatcher;
     private final GeckoBundle mBundle;
@@ -53,7 +40,6 @@ public final class GeckoViewSettings {
 
         setBoolean(USE_TRACKING_PROTECTION, false);
         setBoolean(USE_PRIVATE_MODE, false);
-        setBoolean(USE_MULTIPROCESS, true);
     }
 
      GeckoViewSettings(GeckoViewSettings settings, EventDispatcher eventDispatcher) {
