@@ -153,7 +153,9 @@ class GeckoInstance(object):
         
         
         env.update({'MOZ_CRASHREPORTER': '1',
-                    'MOZ_CRASHREPORTER_NO_REPORT': '1'})
+                    'MOZ_CRASHREPORTER_NO_REPORT': '1',
+                    'MOZ_CRASHREPORTER_SHUTDOWN': '1',
+                    })
 
         return {
             'binary': self.binary,
