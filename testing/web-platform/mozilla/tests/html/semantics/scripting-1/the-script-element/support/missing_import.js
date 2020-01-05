@@ -1,0 +1,2 @@
+
+import {not_found} from "./module.js";
