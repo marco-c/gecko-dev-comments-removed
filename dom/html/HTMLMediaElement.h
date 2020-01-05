@@ -617,7 +617,11 @@ public:
 
   void MozDumpDebugInfo();
 
+  
   void SetVisible(bool aVisible);
+
+  
+  bool HasSuspendTaint() const;
 
   
   
