@@ -221,28 +221,6 @@ xpc_UnmarkSkippableJSHolders();
 
 class XPCStringConvert
 {
-    
-    
-    
-    
-    
-    struct ZoneStringCache
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        void* mBuffer = nullptr;
-        uint32_t mLength = 0;
-        JSString* mString = nullptr;
-    };
-
 public:
 
     
@@ -257,45 +235,15 @@ public:
     StringBufferToJSVal(JSContext* cx, nsStringBuffer* buf, uint32_t length,
                         JS::MutableHandleValue rval, bool* sharedBuffer)
     {
-        JS::Zone* zone = js::GetContextZone(cx);
-        ZoneStringCache* cache = static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone));
-        if (cache && buf == cache->mBuffer && length == cache->mLength) {
-            MOZ_ASSERT(JS::GetStringZone(cache->mString) == zone);
-            JS::StringReadBarrier(cache->mString);
-            rval.setString(cache->mString);
-            *sharedBuffer = false;
-            return true;
-        }
-
-        bool isExternal;
         JSString* str = JS_NewMaybeExternalString(cx,
                                                   static_cast<char16_t*>(buf->Data()),
-                                                  length, &sDOMStringFinalizer, &isExternal);
+                                                  length, &sDOMStringFinalizer, sharedBuffer);
         if (!str) {
             return false;
         }
         rval.setString(str);
-
-        
-        
-        if (!isExternal) {
-            *sharedBuffer = false;
-            return true;
-        }
-
-        if (!cache) {
-            cache = new ZoneStringCache();
-            JS_SetZoneUserData(zone, cache);
-        }
-        cache->mBuffer = buf;
-        cache->mLength = length;
-        cache->mString = str;
-        *sharedBuffer = true;
         return true;
     }
-
-    static void FreeZoneCache(JS::Zone* zone);
-    static void ClearZoneCache(JS::Zone* zone);
 
     static MOZ_ALWAYS_INLINE bool IsLiteral(JSString* str)
     {

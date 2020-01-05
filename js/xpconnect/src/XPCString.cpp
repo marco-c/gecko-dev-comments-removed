@@ -29,32 +29,6 @@ using namespace JS;
 
 
 void
-XPCStringConvert::FreeZoneCache(JS::Zone* zone)
-{
-    
-    
-    nsAutoPtr<ZoneStringCache> cache(static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone)));
-    JS_SetZoneUserData(zone, nullptr);
-}
-
-
-void
-XPCStringConvert::ClearZoneCache(JS::Zone* zone)
-{
-    
-    
-    
-
-    ZoneStringCache* cache = static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone));
-    if (cache) {
-        cache->mBuffer = nullptr;
-        cache->mLength = 0;
-        cache->mString = nullptr;
-    }
-}
-
-
-void
 XPCStringConvert::FinalizeLiteral(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
 {
 }
@@ -67,16 +41,6 @@ void
 XPCStringConvert::FinalizeDOMString(JS::Zone* zone, const JSStringFinalizer* fin, char16_t* chars)
 {
     nsStringBuffer* buf = nsStringBuffer::FromData(chars);
-
-    
-    
-    ZoneStringCache* cache = static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone));
-    if (cache && cache->mBuffer == buf) {
-        cache->mBuffer = nullptr;
-        cache->mLength = 0;
-        cache->mString = nullptr;
-    }
-
     buf->Release();
 }
 

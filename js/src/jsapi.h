@@ -707,9 +707,6 @@ typedef size_t
                                              JSCompartment* compartment);
 
 typedef void
-(* JSZoneCallback)(JS::Zone* zone);
-
-typedef void
 (* JSCompartmentNameCallback)(JSContext* cx, JSCompartment* compartment,
                               char* buf, size_t bufsize);
 
@@ -1324,12 +1321,6 @@ JS_SetSizeOfIncludingThisCompartmentCallback(JSContext* cx,
                                              JSSizeOfIncludingThisCompartmentCallback callback);
 
 extern JS_PUBLIC_API(void)
-JS_SetDestroyZoneCallback(JSContext* cx, JSZoneCallback callback);
-
-extern JS_PUBLIC_API(void)
-JS_SetSweepZoneCallback(JSContext* cx, JSZoneCallback callback);
-
-extern JS_PUBLIC_API(void)
 JS_SetCompartmentNameCallback(JSContext* cx, JSCompartmentNameCallback callback);
 
 extern JS_PUBLIC_API(void)
@@ -1863,7 +1854,7 @@ JS_NewExternalString(JSContext* cx, const char16_t* chars, size_t length,
 
 extern JS_PUBLIC_API(JSString*)
 JS_NewMaybeExternalString(JSContext* cx, const char16_t* chars, size_t length,
-                          const JSStringFinalizer* fin, bool* isExternal);
+                          const JSStringFinalizer* fin, bool* allocatedExternal);
 
 
 

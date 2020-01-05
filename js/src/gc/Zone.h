@@ -88,6 +88,23 @@ template <typename T>
 class ZoneCellIter;
 
 } 
+
+class MOZ_NON_TEMPORARY_CLASS ExternalStringCache
+{
+    static const size_t NumEntries = 4;
+    mozilla::Array<JSString*, NumEntries> entries_;
+
+    ExternalStringCache(const ExternalStringCache&) = delete;
+    void operator=(const ExternalStringCache&) = delete;
+
+  public:
+    ExternalStringCache() { purge(); }
+    void purge() { mozilla::PodArrayZero(entries_); }
+
+    MOZ_ALWAYS_INLINE JSString* lookup(const char16_t* chars, size_t len) const;
+    MOZ_ALWAYS_INLINE void put(JSString* s);
+};
+
 } 
 
 namespace JS {
@@ -438,10 +455,15 @@ struct Zone : public JS::shadow::Zone,
     
     js::ZoneGroupOrGCTaskData<js::AtomSet> atomCache_;
 
+    
+    js::ZoneGroupOrGCTaskData<js::ExternalStringCache> externalStringCache_;
+
   public:
     js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 
     js::AtomSet& atomCache() { return atomCache_.ref(); }
+
+    js::ExternalStringCache& externalStringCache() { return externalStringCache_.ref(); };
 
     
     js::gc::HeapUsage usage;
