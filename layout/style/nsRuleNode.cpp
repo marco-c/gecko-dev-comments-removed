@@ -7418,16 +7418,12 @@ nsRuleNode::ComputeBackgroundData(void* aStartStruct,
   COMPUTE_START_RESET(Background, bg, parentBG)
 
   
-  const nsCSSValue* backColorValue = aRuleData->ValueForBackgroundColor();
-  if (eCSSUnit_Initial == backColorValue->GetUnit() ||
-      eCSSUnit_Unset == backColorValue->GetUnit()) {
-    bg->mBackgroundColor = NS_RGBA(0, 0, 0, 0);
-  } else if (!SetColor(*backColorValue, parentBG->mBackgroundColor,
-                       mPresContext, aContext, bg->mBackgroundColor,
-                       conditions)) {
-    NS_ASSERTION(eCSSUnit_Null == backColorValue->GetUnit(),
-                 "unexpected color unit");
-  }
+  SetComplexColor<eUnsetInitial>(*aRuleData->ValueForBackgroundColor(),
+                                 parentBG->mBackgroundColor,
+                                 StyleComplexColor::FromColor(
+                                     NS_RGBA(0, 0, 0, 0)),
+                                 mPresContext,
+                                 bg->mBackgroundColor, conditions);
 
   uint32_t maxItemCount = 1;
   bool rebuild = false;

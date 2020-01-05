@@ -943,7 +943,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   }
 
   
-  bool IsTransparent() const;
+  nscolor BackgroundColor(const nsIFrame* aFrame) const;
+  nscolor BackgroundColor(nsStyleContext* aContext) const;
+
+  
+  bool IsTransparent(const nsIFrame* aFrame) const;
+  bool IsTransparent(nsStyleContext* aContext) const;
 
   
   
@@ -958,7 +963,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   const nsStyleImageLayers::Layer& BottomLayer() const { return mImage.BottomLayer(); }
 
   nsStyleImageLayers mImage;
-  nscolor mBackgroundColor;       
+  mozilla::StyleComplexColor mBackgroundColor;       
 };
 
 #define NS_SPACING_MARGIN   0
