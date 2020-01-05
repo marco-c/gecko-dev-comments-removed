@@ -188,8 +188,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel)
     return false;
   }
 
-  gfxDWriteFont::UpdateClearTypeUsage();
-
   
   
   
