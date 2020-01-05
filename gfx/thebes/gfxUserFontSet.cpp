@@ -636,6 +636,16 @@ gfxUserFontEntry::LoadPlatformFont(const uint8_t* aFontData, uint32_t& aLength)
         SanitizeOpenTypeData(aFontData, aLength, saneLen, fontType);
     if (!saneData) {
         mFontSet->LogMessage(this, "rejected by sanitizer");
+    } else {
+        
+        
+        
+        if (gfxFontUtils::DetermineFontDataType(saneData, saneLen) !=
+            GFX_USERFONT_OPENTYPE) {
+            mFontSet->LogMessage(this, "not a supported OpenType format");
+            free((void*)saneData);
+            saneData = nullptr;
+        }
     }
     if (saneData) {
         if (saneLen) {
