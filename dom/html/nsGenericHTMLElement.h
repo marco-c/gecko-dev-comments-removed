@@ -654,7 +654,7 @@ public:
 
 
   static void MapCommonAttributesInto(const nsMappedAttributes* aAttributes, 
-                                      GenericSpecifiedValues* aGenericData);
+                                      mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -663,7 +663,7 @@ public:
 
 
   static void MapCommonAttributesIntoExceptHidden(const nsMappedAttributes* aAttributes,
-                                                  GenericSpecifiedValues* aGenericData);
+                                                  mozilla::GenericSpecifiedValues* aGenericData);
 
   static const MappedAttributeEntry sCommonAttributeMap[];
   static const MappedAttributeEntry sImageMarginSizeAttributeMap[];
@@ -681,7 +681,7 @@ public:
 
 
   static void MapImageAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                         GenericSpecifiedValues* aGenericData);
+                                         mozilla::GenericSpecifiedValues* aGenericData);
 
   
 
@@ -692,7 +692,7 @@ public:
 
 
   static void MapDivAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                    GenericSpecifiedValues* aGenericData);
+                                       mozilla::GenericSpecifiedValues* aGenericData);
 
   
 
@@ -703,7 +703,7 @@ public:
 
 
   static void MapVAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                    GenericSpecifiedValues* aGenericData);
+                                     mozilla::GenericSpecifiedValues* aGenericData);
 
   
 
@@ -713,7 +713,7 @@ public:
 
 
   static void MapImageBorderAttributeInto(const nsMappedAttributes* aAttributes,
-                                          GenericSpecifiedValues* aGenericData);
+                                          mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -722,7 +722,7 @@ public:
 
 
   static void MapImageMarginAttributeInto(const nsMappedAttributes* aAttributes,
-                                          GenericSpecifiedValues* aGenericData);
+                                          mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -731,7 +731,7 @@ public:
 
 
   static void MapImageSizeAttributesInto(const nsMappedAttributes* aAttributes,
-                                         GenericSpecifiedValues* aGenericData);
+                                         mozilla::GenericSpecifiedValues* aGenericData);
 
   
 
@@ -741,7 +741,7 @@ public:
 
 
   static void MapWidthAttributeInto(const nsMappedAttributes* aAttributes,
-                                    GenericSpecifiedValues* aGenericData);
+                                    mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -750,7 +750,7 @@ public:
 
 
   static void MapHeightAttributeInto(const nsMappedAttributes* aAttributes,
-                                     GenericSpecifiedValues* aGenericData);
+                                     mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -760,7 +760,7 @@ public:
 
 
   static void MapBackgroundInto(const nsMappedAttributes* aAttributes,
-                                GenericSpecifiedValues* aGenericData);
+                                mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -770,7 +770,7 @@ public:
 
 
   static void MapBGColorInto(const nsMappedAttributes* aAttributes,
-                             GenericSpecifiedValues* aGenericData);
+                             mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -780,7 +780,7 @@ public:
 
 
   static void MapBackgroundAttributesInto(const nsMappedAttributes* aAttributes,
-                                          GenericSpecifiedValues* aGenericData);
+                                          mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
@@ -790,7 +790,7 @@ public:
 
 
   static void MapScrollingAttributeInto(const nsMappedAttributes* aAttributes,
-                                        GenericSpecifiedValues* aGenericData);
+                                        mozilla::GenericSpecifiedValues* aGenericData);
   
 
 
