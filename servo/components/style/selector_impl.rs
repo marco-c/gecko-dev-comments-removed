@@ -8,6 +8,53 @@ use selectors::Element;
 use selectors::parser::{ParserContext, SelectorImpl};
 use stylesheets::Stylesheet;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PseudoElementCascadeType {
+    Eager,
+    Lazy,
+    Precomputed,
+}
+
+impl PseudoElementCascadeType {
+    #[inline]
+    pub fn is_eager(&self) -> bool {
+        *self == PseudoElementCascadeType::Eager
+    }
+
+    #[inline]
+    pub fn is_lazy(&self) -> bool {
+        *self == PseudoElementCascadeType::Lazy
+    }
+
+    #[inline]
+    pub fn is_precomputed(&self) -> bool {
+        *self == PseudoElementCascadeType::Precomputed
+    }
+}
+
 pub trait ElementExt: Element {
     fn is_link(&self) -> bool;
 }
@@ -15,48 +62,31 @@ pub trait ElementExt: Element {
 pub trait SelectorImplExt : SelectorImpl + Sized {
     type ComputedValues: properties::ComputedValues;
 
-    fn each_pseudo_element<F>(mut fun: F)
-        where F: FnMut(<Self as SelectorImpl>::PseudoElement);
+    fn pseudo_element_cascade_type(pseudo: &Self::PseudoElement) -> PseudoElementCascadeType;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn is_eagerly_cascaded_pseudo_element(pseudo: &<Self as SelectorImpl>::PseudoElement) -> bool;
+    fn each_pseudo_element<F>(mut fun: F)
+        where F: FnMut(Self::PseudoElement);
 
     #[inline]
     fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
         where F: FnMut(<Self as SelectorImpl>::PseudoElement) {
         Self::each_pseudo_element(|pseudo| {
-            if Self::is_eagerly_cascaded_pseudo_element(&pseudo) {
+            if Self::pseudo_element_cascade_type(&pseudo).is_eager() {
                 fun(pseudo)
             }
         })
     }
 
     #[inline]
-    fn each_non_eagerly_cascaded_pseudo_element<F>(mut fun: F)
+    fn each_precomputed_pseudo_element<F>(mut fun: F)
         where F: FnMut(<Self as SelectorImpl>::PseudoElement) {
         Self::each_pseudo_element(|pseudo| {
-            if !Self::is_eagerly_cascaded_pseudo_element(&pseudo) {
+            if Self::pseudo_element_cascade_type(&pseudo).is_precomputed() {
                 fun(pseudo)
             }
         })
     }
+
 
     fn pseudo_class_state_flag(pc: &Self::NonTSPseudoClass) -> ElementState;
 
@@ -76,13 +106,13 @@ pub enum PseudoElement {
 
 impl PseudoElement {
     #[inline]
-    pub fn is_eagerly_cascaded(&self) -> bool {
+    pub fn cascade_type(&self) -> PseudoElementCascadeType {
         match *self {
             PseudoElement::Before |
             PseudoElement::After |
-            PseudoElement::Selection |
-            PseudoElement::DetailsSummary => true,
-            PseudoElement::DetailsContent => false,
+            PseudoElement::Selection => PseudoElementCascadeType::Eager,
+            PseudoElement::DetailsSummary => PseudoElementCascadeType::Lazy,
+            PseudoElement::DetailsContent => PseudoElementCascadeType::Precomputed,
         }
     }
 }
@@ -191,8 +221,8 @@ impl SelectorImplExt for ServoSelectorImpl {
     type ComputedValues = ServoComputedValues;
 
     #[inline]
-    fn is_eagerly_cascaded_pseudo_element(pseudo: &PseudoElement) -> bool {
-        pseudo.is_eagerly_cascaded()
+    fn pseudo_element_cascade_type(pseudo: &PseudoElement) -> PseudoElementCascadeType {
+        pseudo.cascade_type()
     }
 
     #[inline]
