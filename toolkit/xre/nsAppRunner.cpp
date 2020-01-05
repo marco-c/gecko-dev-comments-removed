@@ -277,7 +277,7 @@ extern "C" MOZ_EXPORT void XRE_LibFuzzerSetMain(int argc, char** argv, LibFuzzer
 #endif
 
 namespace mozilla {
-int (*RunGTest)() = 0;
+int (*RunGTest)(int*, char**) = 0;
 } 
 
 using namespace mozilla;
@@ -3740,7 +3740,7 @@ XREMain::XRE_mainStartup(bool* aExitFlag)
     
     if (mozilla::RunGTest) {
       gIsGtest = true;
-      result = mozilla::RunGTest();
+      result = mozilla::RunGTest(&gArgc, gArgv);
       gIsGtest = false;
     } else {
       result = 1;
