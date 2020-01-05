@@ -492,7 +492,7 @@ WR_FUNC;
 
 
 
-WR_INLINE const uint8_t*
+WR_INLINE void
 wr_renderer_readback(WrRenderer* renderer,
                      uint32_t width, uint32_t height,
                      uint8_t* dst_buffer, size_t buffer_length)
