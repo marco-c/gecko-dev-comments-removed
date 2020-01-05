@@ -947,6 +947,8 @@ WebGLContext::Hint(GLenum target, GLenum mode)
 
     switch (target) {
     case LOCAL_GL_GENERATE_MIPMAP_HINT:
+        mGenerateMipmapHint = mode;
+
         
         if (gl->IsCoreProfile())
             return;
