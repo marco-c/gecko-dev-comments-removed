@@ -770,6 +770,10 @@ MessageChannel::Send(Message* aMsg)
                               nsDependentCString(aMsg->name()), aMsg->size());
     }
 
+    MOZ_RELEASE_ASSERT(!aMsg->is_sync());
+    
+    MOZ_RELEASE_ASSERT(aMsg->priority() != IPC::Message::PRIORITY_HIGH);
+
     CxxStackFrame frame(*this, OUT_MESSAGE, aMsg);
 
     nsAutoPtr<Message> msg(aMsg);
@@ -840,6 +844,7 @@ MessageChannel::ShouldDeferMessage(const Message& aMsg)
     if (aMsg.priority() == IPC::Message::PRIORITY_URGENT)
         return false;
 
+    
     
     if (!aMsg.is_sync()) {
         MOZ_RELEASE_ASSERT(aMsg.priority() == IPC::Message::PRIORITY_NORMAL);
