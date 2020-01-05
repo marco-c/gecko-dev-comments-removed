@@ -720,6 +720,10 @@ SessionStore.prototype = {
       
       
       this.onTabInput(aWindow, aBrowser);
+      
+      
+      
+      this.onTabScroll(aWindow, aBrowser);
     }
 
     log("onTabLoad() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id);
