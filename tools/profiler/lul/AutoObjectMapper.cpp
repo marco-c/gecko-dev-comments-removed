@@ -16,7 +16,7 @@
 #include "PlatformMacros.h"
 #include "AutoObjectMapper.h"
 
-#if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
+#if defined(USE_FAULTY_LIB)
 # include <dlfcn.h>
 # include "mozilla/Types.h"
   
@@ -108,7 +108,7 @@ bool AutoObjectMapperPOSIX::Map(void** start, size_t* length,
 }
 
 
-#if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
+#if defined(USE_FAULTY_LIB)
 
 
 

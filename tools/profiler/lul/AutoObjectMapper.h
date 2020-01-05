@@ -12,6 +12,10 @@
 #include "mozilla/Attributes.h"
 #include "PlatformMacros.h"
 
+#if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
+#define USE_FAULTY_LIB
+#endif
+
 
 
 
@@ -61,8 +65,7 @@ private:
   void  operator delete[](void*);
 };
 
-
-#if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
+#if defined(USE_FAULTY_LIB)
 
 
 
