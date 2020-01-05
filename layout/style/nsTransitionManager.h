@@ -39,7 +39,7 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
   ElementPropertyTransition(nsIDocument* aDocument,
                             Maybe<OwningAnimationTarget>& aTarget,
                             const TimingParams &aTiming,
-                            StyleAnimationValue aStartForReversingTest,
+                            AnimationValue aStartForReversingTest,
                             double aReversePortion,
                             const KeyframeEffectParams& aEffectOptions)
     : dom::KeyframeEffectReadOnly(aDocument, aTarget, aTiming, aEffectOptions)
@@ -63,7 +63,7 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
     return mKeyframes[0].mPropertyValues[0].mProperty;
   }
 
-  StyleAnimationValue ToValue() const {
+  AnimationValue ToValue() const {
     
     
     
@@ -71,9 +71,9 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
     if (mProperties.Length() < 1 ||
         mProperties[0].mSegments.Length() < 1) {
       NS_WARNING("Failed to generate transition property values");
-      return StyleAnimationValue();
+      return AnimationValue();
     }
-    return mProperties[0].mSegments[0].mToValue.mGecko;
+    return mProperties[0].mSegments[0].mToValue;
   }
 
   
@@ -81,7 +81,7 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
   
   
   
-  StyleAnimationValue mStartForReversingTest;
+  AnimationValue mStartForReversingTest;
   
   
   
@@ -108,7 +108,7 @@ struct ElementPropertyTransition : public dom::KeyframeEffectReadOnly
     double mPlaybackRate;
     TimingParams mTiming;
     Maybe<ComputedTimingFunction> mTimingFunction;
-    StyleAnimationValue mFromValue, mToValue;
+    AnimationValue mFromValue, mToValue;
   };
   Maybe<ReplacedTransitionProperties> mReplacedTransition;
 };
@@ -175,7 +175,7 @@ public:
   void Tick() override;
 
   nsCSSPropertyID TransitionProperty() const;
-  StyleAnimationValue ToValue() const;
+  AnimationValue ToValue() const;
 
   bool HasLowerCompositeOrderThan(const CSSTransition& aOther) const;
   EffectCompositor::CascadeLevel CascadeLevel() const override
@@ -275,7 +275,7 @@ protected:
   
   
   nsCSSPropertyID mTransitionProperty;
-  StyleAnimationValue mTransitionToValue;
+  AnimationValue mTransitionToValue;
 };
 
 } 
