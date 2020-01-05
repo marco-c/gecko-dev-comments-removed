@@ -236,9 +236,13 @@ impl WebGLPaintThread {
                 
                 
                 webrender_api.update_image(image_key,
-                                           width as u32,
-                                           height as u32,
-                                           webrender_traits::ImageFormat::RGBA8,
+                                           webrender_traits::ImageDescriptor {
+                                               width: width as u32,
+                                               height: height as u32,
+                                               stride: None,
+                                               format: webrender_traits::ImageFormat::RGBA8,
+                                               is_opaque: false,
+                                           },
                                            pixels.clone());
 
                 let image_data = CanvasImageData {
