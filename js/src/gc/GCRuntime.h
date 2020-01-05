@@ -721,14 +721,6 @@ class GCRuntime
         --noNurseryAllocationCheck;
     }
 
-    bool isStrictProxyCheckingEnabled() { return disableStrictProxyCheckingCount == 0; }
-    void disableStrictProxyChecking() { ++disableStrictProxyCheckingCount; }
-    void enableStrictProxyChecking() {
-        MOZ_ASSERT(disableStrictProxyCheckingCount > 0);
-        --disableStrictProxyCheckingCount;
-    }
-#endif 
-
     bool isInsideUnsafeRegion() { return inUnsafeRegion != 0; }
     void enterUnsafeRegion() { ++inUnsafeRegion; }
     void leaveUnsafeRegion() {
@@ -736,10 +728,13 @@ class GCRuntime
         --inUnsafeRegion;
     }
 
-    void verifyIsSafeToGC() {
-        MOZ_DIAGNOSTIC_ASSERT(!isInsideUnsafeRegion(),
-                              "[AutoAssertOnGC] possible GC in GC-unsafe region");
+    bool isStrictProxyCheckingEnabled() { return disableStrictProxyCheckingCount == 0; }
+    void disableStrictProxyChecking() { ++disableStrictProxyCheckingCount; }
+    void enableStrictProxyChecking() {
+        MOZ_ASSERT(disableStrictProxyCheckingCount > 0);
+        --disableStrictProxyCheckingCount;
     }
+#endif 
 
     void setAlwaysPreserveCode() { alwaysPreserveCode = true; }
 
@@ -1349,6 +1344,7 @@ class GCRuntime
     
     bool alwaysPreserveCode;
 
+#ifdef DEBUG
     
 
 
@@ -1357,7 +1353,6 @@ class GCRuntime
 
     int inUnsafeRegion;
 
-#ifdef DEBUG
     size_t noGCOrAllocationCheck;
     size_t noNurseryAllocationCheck;
 
