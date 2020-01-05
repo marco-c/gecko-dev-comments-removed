@@ -4,7 +4,9 @@
 
 
 
-use dom::bindings::codegen::InheritTypes::{DocumentTypeCast, ElementCast, TextCast, NodeCast};
+use dom::attr::Attr;
+use dom::bindings::codegen::InheritTypes::{CommentCast, DocumentCast, DocumentTypeCast};
+use dom::bindings::codegen::InheritTypes::{ElementCast, TextCast, NodeCast};
 use dom::bindings::codegen::InheritTypes::{CharacterDataCast, NodeBase, NodeDerived};
 use dom::bindings::codegen::InheritTypes::ProcessingInstructionCast;
 use dom::bindings::js::JS;
@@ -12,7 +14,9 @@ use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::bindings::error::{ErrorResult, Fallible, NotFound, HierarchyRequest};
 use dom::bindings::utils;
 use dom::characterdata::CharacterData;
-use dom::document::Document;
+use dom::comment::Comment;
+use dom::document::{Document, HTMLDocument, NonHTMLDocument};
+use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
 use dom::element::{Element, ElementTypeId, HTMLAnchorElementTypeId, IElement};
 use dom::eventtarget::{EventTarget, NodeTargetTypeId};
@@ -20,6 +24,7 @@ use dom::nodelist::{NodeList};
 use dom::text::Text;
 use dom::processinginstruction::ProcessingInstruction;
 use dom::window::Window;
+use html::hubbub_html_parser::build_element_from_tag;
 use layout_interface::{LayoutChan, ReapLayoutDataMsg, UntrustedNodeAddress};
 use layout_interface::TrustedNodeAddress;
 use servo_util::str::{DOMString, null_str_as_empty};
@@ -722,6 +727,12 @@ fn gather_abstract_nodes(cur: &JS<Node>, refs: &mut ~[JS<Node>], postorder: bool
     }
 }
 
+/// Specifies whether children must be recursively cloned or not.
+enum CloneChildrenFlag {
+    CloneChildren,
+    DoNotCloneChildren
+}
+
 impl Node {
     pub fn ancestors(&self) -> AncestorIterator {
         AncestorIterator {
@@ -1271,7 +1282,125 @@ impl Node {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-insertbefore
+    // http://dom.spec.whatwg.org/#concept-node-clone
+    fn clone(node: &JS<Node>, maybe_doc: Option<&JS<Document>>, clone_children: CloneChildrenFlag)
+             -> JS<Node> {
+        fn clone_recursively(node: &JS<Node>, copy: &mut JS<Node>, doc: &JS<Document>) {
+            for ref child in node.get().children() {
+                let mut cloned = Node::clone(child, Some(doc), DoNotCloneChildren);
+                match Node::pre_insert(&mut cloned, copy, None) {
+                    Ok(ref mut appended) => clone_recursively(child, appended, doc),
+                    Err(..) => fail!("an error occurred while appending children")
+                }
+            }
+        }
+
+        
+        let mut document = match maybe_doc {
+            Some(doc) => doc.clone(),
+            None => node.get().owner_doc().clone()
+        };
+
+        
+        
+        let mut copy: JS<Node> = match node.type_id() {
+            DoctypeNodeTypeId => {
+                let doctype: JS<DocumentType> = DocumentTypeCast::to(node);
+                let doctype = doctype.get();
+                let doctype = DocumentType::new(doctype.name.clone(),
+                                                Some(doctype.public_id.clone()),
+                                                Some(doctype.system_id.clone()), &document);
+                NodeCast::from(&doctype)
+            },
+            DocumentFragmentNodeTypeId => {
+                let doc_fragment = DocumentFragment::new(&document);
+                NodeCast::from(&doc_fragment)
+            },
+            CommentNodeTypeId => {
+                let comment: JS<Comment> = CommentCast::to(node);
+                let comment = comment.get();
+                let comment = Comment::new(comment.characterdata.data.clone(), &document);
+                NodeCast::from(&comment)
+            },
+            DocumentNodeTypeId => {
+                let document: JS<Document> = DocumentCast::to(node);
+                let document = document.get();
+                let is_html_doc = match document.is_html_document {
+                    true => HTMLDocument,
+                    false => NonHTMLDocument
+                };
+                let document = Document::new(&document.window, Some(document.url().clone()),
+                                             is_html_doc, None);
+                NodeCast::from(&document)
+            },
+            ElementNodeTypeId(..) => {
+                let element: JS<Element> = ElementCast::to(node);
+                let element = element.get();
+                let element = build_element_from_tag(element.tag_name.clone(), &document);
+                NodeCast::from(&element)
+            },
+            TextNodeTypeId => {
+                let text: JS<Text> = TextCast::to(node);
+                let text = text.get();
+                let text = Text::new(text.characterdata.data.clone(), &document);
+                NodeCast::from(&text)
+            },
+            ProcessingInstructionNodeTypeId => {
+                let pi: JS<ProcessingInstruction> = ProcessingInstructionCast::to(node);
+                let pi = pi.get();
+                let pi = ProcessingInstruction::new(pi.target.clone(),
+                                                    pi.characterdata.data.clone(), &document);
+                NodeCast::from(&pi)
+            },
+        };
+
+        
+        if copy.is_document() {
+            document = DocumentCast::to(&copy);
+        }
+        assert_eq!(copy.get().owner_doc(), &document);
+
+        
+        match node.type_id() {
+            DocumentNodeTypeId => {
+                let node_doc: JS<Document> = DocumentCast::to(node);
+                let node_doc = node_doc.get();
+                let mut copy_doc: JS<Document> = DocumentCast::to(&copy);
+                let copy_doc = copy_doc.get_mut();
+                copy_doc.set_encoding_name(node_doc.encoding_name.clone());
+                copy_doc.set_quirks_mode(node_doc.quirks_mode());
+            },
+            ElementNodeTypeId(..) => {
+                let node_elem: JS<Element> = ElementCast::to(node);
+                let node_elem = node_elem.get();
+                let mut copy_elem: JS<Element> = ElementCast::to(&copy);
+                let copy_elem = copy_elem.get_mut();
+                
+                copy_elem.namespace = node_elem.namespace.clone();
+                for attr in node_elem.attrs.iter() {
+                    let attr = attr.get();
+                    copy_elem.attrs.push(Attr::new_ns(&document.get().window,
+                                                      attr.local_name.clone(), attr.value.clone(),
+                                                      attr.name.clone(), attr.namespace.clone(),
+                                                      attr.prefix.clone()));
+                }
+            },
+            _ => ()
+        }
+
+        
+
+        
+        match clone_children {
+            CloneChildren => clone_recursively(node, &mut copy, &document),
+            DoNotCloneChildren => ()
+        }
+
+        
+        copy
+    }
+
+    
     pub fn InsertBefore(&self, abstract_self: &mut JS<Node>, node: &mut JS<Node>, child: Option<JS<Node>>)
                         -> Fallible<JS<Node>> {
         Node::pre_insert(node, abstract_self, child)
@@ -1282,16 +1411,16 @@ impl Node {
         document.get().wait_until_safe_to_modify_dom();
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-appendchild
+    
     pub fn AppendChild(&self, abstract_self: &mut JS<Node>, node: &mut JS<Node>)
                        -> Fallible<JS<Node>> {
         Node::pre_insert(node, abstract_self, None)
     }
 
-    // http://dom.spec.whatwg.org/#concept-node-replace
+    
     pub fn ReplaceChild(&self, parent: &mut JS<Node>, node: &mut JS<Node>, child: &mut JS<Node>)
                         -> Fallible<JS<Node>> {
-        // Step 1.
+        
         match parent.type_id() {
             DocumentNodeTypeId |
             DocumentFragmentNodeTypeId |
@@ -1299,17 +1428,17 @@ impl Node {
             _ => return Err(HierarchyRequest)
         }
 
-        // Step 2.
+        
         if node.is_inclusive_ancestor_of(parent) {
             return Err(HierarchyRequest);
         }
 
-        // Step 3.
+        
         if !parent.is_parent_of(child) {
             return Err(NotFound);
         }
 
-        // Step 4-5.
+        
         match node.type_id() {
             TextNodeTypeId if parent.is_document() => return Err(HierarchyRequest),
             DoctypeNodeTypeId if !parent.is_document() => return Err(HierarchyRequest),
@@ -1322,19 +1451,19 @@ impl Node {
             DocumentNodeTypeId => return Err(HierarchyRequest)
         }
 
-        // Step 6.
+        
         match parent.type_id() {
             DocumentNodeTypeId => {
                 match node.type_id() {
-                    // Step 6.1
+                    
                     DocumentFragmentNodeTypeId => {
-                        // Step 6.1.1(b)
+                        
                         if node.children().any(|c| c.is_text()) {
                             return Err(HierarchyRequest);
                         }
                         match node.child_elements().len() {
                             0 => (),
-                            // Step 6.1.2
+                            
                             1 => {
                                 if parent.child_elements().any(|c| &NodeCast::from(&c) != child) {
                                     return Err(HierarchyRequest);
@@ -1344,11 +1473,11 @@ impl Node {
                                     return Err(HierarchyRequest);
                                 }
                             },
-                            // Step 6.1.1(a)
+                            
                             _ => return Err(HierarchyRequest)
                         }
                     },
-                    // Step 6.2
+                    
                     ElementNodeTypeId(..) => {
                         if parent.child_elements().any(|c| &NodeCast::from(&c) != child) {
                             return Err(HierarchyRequest);
@@ -1358,7 +1487,7 @@ impl Node {
                             return Err(HierarchyRequest);
                         }
                     },
-                    // Step 6.3
+                    
                     DoctypeNodeTypeId => {
                         if parent.children().any(|c| c.is_doctype() && &c != child) {
                             return Err(HierarchyRequest);
@@ -1378,31 +1507,31 @@ impl Node {
             _ => ()
         }
 
-        // Ok if not caught by previous error checks.
+        
         if *node == *child {
             return Ok(child.clone());
         }
 
-        // Step 7-8.
+        
         let next_sibling = child.next_sibling();
         let reference_child = match next_sibling {
             Some(ref sibling) if sibling == node => node.next_sibling(),
             _ => next_sibling
         };
 
-        // Step 9.
+        
         Node::adopt(node, &document_from_node(parent));
 
         {
-            // Step 10.
+            
             Node::remove(child, parent, Suppressed);
 
-            // Step 11.
+            
             Node::insert(node, parent, reference_child, Suppressed);
         }
 
-        // Step 12-14.
-        // Step 13: mutation records.
+        
+        
         child.node_removed();
         if node.type_id() == DocumentFragmentNodeTypeId {
             for child_node in node.children() {
@@ -1412,25 +1541,27 @@ impl Node {
             node.node_inserted();
         }
 
-        // Step 15.
+        
         Ok(child.clone())
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-removechild
+    
     pub fn RemoveChild(&self, abstract_self: &mut JS<Node>, node: &mut JS<Node>)
                        -> Fallible<JS<Node>> {
         Node::pre_remove(node, abstract_self)
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-normalize
+    
     pub fn Normalize(&mut self) {
-        // FIXME (#1823) implement.
+        
     }
 
-    // http://dom.spec.whatwg.org/#dom-node-clonenode
-    pub fn CloneNode(&self, _deep: bool) -> Fallible<JS<Node>> {
-        // FIXME: stub - https://github.com/mozilla/servo/issues/1240
-        fail!("stub")
+    
+    pub fn CloneNode(&self, abstract_self: &mut JS<Node>, deep: bool) -> JS<Node> {
+        match deep {
+            true => Node::clone(abstract_self, None, CloneChildren),
+            false => Node::clone(abstract_self, None, DoNotCloneChildren)
+        }
     }
 
     
