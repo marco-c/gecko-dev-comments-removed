@@ -3,9 +3,9 @@
 
 
 
-namespace mozilla {
+#include "LibFuzzerRegistry.h"
 
-typedef int(*LibFuzzerMain)(int, char**);
+namespace mozilla {
 
 class LibFuzzerRunner {
 public:
