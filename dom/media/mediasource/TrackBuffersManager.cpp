@@ -670,7 +670,12 @@ TrackBuffersManager::SegmentParserLoop()
     }
 
     int64_t start, end;
-    bool newData = mParser->ParseStartAndEndTimestamps(mInputBuffer, start, end);
+    MediaResult newData =
+      mParser->ParseStartAndEndTimestamps(mInputBuffer, start, end);
+    if (!NS_SUCCEEDED(newData) && newData.Code() != NS_ERROR_NOT_AVAILABLE) {
+      RejectAppend(newData, __func__);
+      return;
+    }
     mProcessedInput += mInputBuffer->Length();
 
     
@@ -697,13 +702,13 @@ TrackBuffersManager::SegmentParserLoop()
       
       
       if (mNewMediaSegmentStarted) {
-        if (newData && mLastParsedEndTime.isSome() &&
+        if (NS_SUCCEEDED(newData) && mLastParsedEndTime.isSome() &&
             start < mLastParsedEndTime.ref().ToMicroseconds()) {
           MSE_DEBUG("Re-creating demuxer");
           ResetDemuxingState();
           return;
         }
-        if (newData || !mParser->MediaSegmentRange().IsEmpty()) {
+        if (NS_SUCCEEDED(newData) || !mParser->MediaSegmentRange().IsEmpty()) {
           if (mPendingInputBuffer) {
             
             

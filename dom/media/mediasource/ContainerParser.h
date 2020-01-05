@@ -41,8 +41,9 @@ public:
   
   
   
-  virtual bool ParseStartAndEndTimestamps(MediaByteBuffer* aData,
-                                          int64_t& aStart, int64_t& aEnd);
+  
+  virtual MediaResult ParseStartAndEndTimestamps(MediaByteBuffer* aData,
+                                                 int64_t& aStart, int64_t& aEnd);
 
   
   
