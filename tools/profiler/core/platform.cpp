@@ -1438,6 +1438,24 @@ locked_profiler_stream_json_for_this_process(PS::LockRef aLock, SpliceableJSONWr
   aWriter.EndArray();
 }
 
+static bool
+profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter, double aSinceTime)
+{
+  LOG("profiler_stream_json_for_this_process");
+
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  if (!gPS->IsActive(lock)) {
+    return false;
+  }
+
+  locked_profiler_stream_json_for_this_process(lock, aWriter, aSinceTime);
+  return true;
+}
+
 
 
 
@@ -2130,22 +2148,14 @@ profiler_get_profile(double aSinceTime)
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS);
 
-  PS::AutoLock lock(gPSMutex);
-
-  if (!gPS->IsActive(lock)) {
-    return nullptr;
-  }
-
   SpliceableChunkedJSONWriter b;
   b.Start(SpliceableJSONWriter::SingleLineStyle);
   {
-    locked_profiler_stream_json_for_this_process(lock, b, aSinceTime);
+    if (!profiler_stream_json_for_this_process(b, aSinceTime)) {
+      return nullptr;
+    }
 
     b.StartArrayProperty("processes");
-    
-    
-    
-    
     if (CanNotifyObservers()) {
       
       
