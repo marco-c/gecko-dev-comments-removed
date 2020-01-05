@@ -110,17 +110,14 @@ WrappedAsyncFunction(JSContext* cx, unsigned argc, Value* vp)
 
 
 JSObject*
-js::WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped)
+js::WrapAsyncFunctionWithProto(JSContext* cx, HandleFunction unwrapped, HandleObject proto)
 {
     MOZ_ASSERT(unwrapped->isStarGenerator());
+    MOZ_ASSERT(proto, "We need an explicit prototype to avoid the default"
+                      "%FunctionPrototype% fallback in NewFunctionWithProto().");
 
     
     
-
-    
-    RootedObject proto(cx, GlobalObject::getOrCreateAsyncFunctionPrototype(cx, cx->global()));
-    if (!proto)
-        return nullptr;
 
     RootedAtom funName(cx, unwrapped->name());
     uint16_t length;
@@ -142,6 +139,16 @@ js::WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped)
     wrapped->setExtendedSlot(WRAPPED_ASYNC_UNWRAPPED_SLOT, ObjectValue(*unwrapped));
 
     return wrapped;
+}
+
+JSObject*
+js::WrapAsyncFunction(JSContext* cx, HandleFunction unwrapped)
+{
+    RootedObject proto(cx, GlobalObject::getOrCreateAsyncFunctionPrototype(cx, cx->global()));
+    if (!proto)
+        return nullptr;
+
+    return WrapAsyncFunctionWithProto(cx, unwrapped, proto);
 }
 
 enum class ResumeKind {
