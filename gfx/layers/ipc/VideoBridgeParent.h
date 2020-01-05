@@ -12,6 +12,8 @@
 namespace mozilla {
 namespace layers {
 
+class CompositorThreadHolder;
+
 class VideoBridgeParent final : public PVideoBridgeParent,
                                 public HostIPCAllocator,
                                 public ShmemAllocator
@@ -61,6 +63,7 @@ private:
   
   
   RefPtr<VideoBridgeParent> mSelfRef;
+  RefPtr<CompositorThreadHolder> mCompositorThreadRef;
 
   std::map<uint64_t, PTextureParent*> mTextureMap;
 
