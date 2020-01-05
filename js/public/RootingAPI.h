@@ -309,8 +309,14 @@ ObjectIsTenured(const Heap<JSObject*>& obj)
 static MOZ_ALWAYS_INLINE bool
 ObjectIsMarkedGray(JSObject* obj)
 {
-    auto cell = reinterpret_cast<js::gc::Cell*>(obj);
-    return js::gc::detail::CellIsMarkedGrayIfKnown(cell);
+    
+
+
+
+
+    if (js::gc::IsInsideNursery(reinterpret_cast<js::gc::Cell*>(obj)))
+        return false;
+    return js::gc::detail::CellIsMarkedGray(reinterpret_cast<js::gc::Cell*>(obj));
 }
 
 static MOZ_ALWAYS_INLINE bool
@@ -322,8 +328,7 @@ ObjectIsMarkedGray(const JS::Heap<JSObject*>& obj)
 static MOZ_ALWAYS_INLINE bool
 ScriptIsMarkedGray(JSScript* script)
 {
-    auto cell = reinterpret_cast<js::gc::Cell*>(script);
-    return js::gc::detail::CellIsMarkedGrayIfKnown(cell);
+    return js::gc::detail::CellIsMarkedGray(reinterpret_cast<js::gc::Cell*>(script));
 }
 
 static MOZ_ALWAYS_INLINE bool

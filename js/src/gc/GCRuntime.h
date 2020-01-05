@@ -816,6 +816,9 @@ class GCRuntime
     bool isFullGc() const { return isFull; }
     bool isCompactingGc() const { return isCompacting; }
 
+    bool areGrayBitsValid() const { return grayBitsValid; }
+    void setGrayBitsInvalid() { grayBitsValid = false; }
+
     bool minorGCRequested() const { return minorGCTriggerReason != JS::gcreason::NO_REASON; }
     bool majorGCRequested() const { return majorGCTriggerReason != JS::gcreason::NO_REASON; }
     bool isGcNeeded() { return minorGCRequested() || majorGCRequested(); }
@@ -1126,6 +1129,12 @@ class GCRuntime
         grayBufferState = GrayBufferState::Unused;
         resetBufferedGrayRoots();
     }
+
+    
+
+
+
+    bool grayBitsValid;
 
     mozilla::Atomic<JS::gcreason::Reason, mozilla::Relaxed> majorGCTriggerReason;
 

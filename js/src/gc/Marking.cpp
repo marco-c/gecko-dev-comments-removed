@@ -2917,7 +2917,7 @@ UnmarkGrayTracer::onChild(const JS::GCCellPtr& thing)
 
 
 
-        runtime()->setGCGrayBitsValid(false);
+        runtime()->gc.setGrayBitsInvalid();
         return;
     }
 
