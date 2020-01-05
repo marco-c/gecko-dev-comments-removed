@@ -27,6 +27,7 @@
 #include "nsISSLStatusProvider.h"
 #endif
 #include "mozilla/Attributes.h"
+#include "mozilla/Base64.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -379,14 +380,9 @@ nsHttpNTLMAuth::GenerateCredentials(nsIHttpAuthenticableChannel *authChannel,
           len--;
 
         
-        inBufLen = (len * 3)/4;      
-        inBuf = moz_xmalloc(inBufLen);
-        if (!inBuf)
-            return NS_ERROR_OUT_OF_MEMORY;
-
-        if (PL_Base64Decode(challenge, len, (char *) inBuf) == nullptr) {
-            free(inBuf);
-            return NS_ERROR_UNEXPECTED; 
+        rv = Base64Decode(challenge, len, (char**)&inBuf, &inBufLen);
+        if (NS_FAILED(rv)) {
+            return rv;
         }
     }
 
