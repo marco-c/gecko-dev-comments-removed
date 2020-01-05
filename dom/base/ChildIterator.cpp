@@ -494,52 +494,6 @@ AllChildrenIterator::GetPreviousChild()
   return nullptr;
 }
 
-static bool
-IsNativeAnonymousImplementationOfPseudoElement(nsIContent* aContent)
-{
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIFrame* f = aContent->GetPrimaryFrame();
-  if (!f) {
-    return false;
-  }
-
-  
-  CSSPseudoElementType pseudoType = f->StyleContext()->GetPseudoType();
-
-  
-  
-  
-  
-  
-  
-  
-  if (pseudoType == CSSPseudoElementType::InheritingAnonBox) {
-    MOZ_ASSERT(f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::mozText ||
-               f->StyleContext()->GetPseudo() == nsCSSAnonBoxes::tableWrapper);
-    return false;
-  }
-
-  MOZ_ASSERT(pseudoType != CSSPseudoElementType::NonInheritingAnonBox);
-
-  
-  bool isImpl = pseudoType != CSSPseudoElementType::NotPseudo;
-  MOZ_ASSERT_IF(isImpl, aContent->IsRootOfNativeAnonymousSubtree());
-  return isImpl;
-}
-
  bool
 StyleChildrenIterator::IsNeeded(const Element* aElement)
 {
@@ -571,18 +525,7 @@ StyleChildrenIterator::IsNeeded(const Element* aElement)
 nsIContent*
 StyleChildrenIterator::GetNextChild()
 {
-  while (nsIContent* child = AllChildrenIterator::GetNextChild()) {
-    if (IsNativeAnonymousImplementationOfPseudoElement(child)) {
-      
-      
-      
-      
-    } else {
-      return child;
-    }
-  }
-
-  return nullptr;
+  return AllChildrenIterator::GetNextChild();
 }
 
 } 
