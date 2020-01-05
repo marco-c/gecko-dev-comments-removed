@@ -26,18 +26,27 @@ using namespace mozilla;
 static bool sShowPreviousPage = true;
 
 nsView::nsView(nsViewManager* aViewManager, nsViewVisibility aVisibility)
+  : mViewManager(aViewManager)
+  , mParent(nullptr)
+  , mNextSibling(nullptr)
+  , mFirstChild(nullptr)
+  , mFrame(nullptr)
+  , mDirtyRegion(nullptr)
+  , mZIndex(0)
+  , mVis(aVisibility)
+  , mPosX(0)
+  , mPosY(0)
+  , mVFlags(0)
+  , mWidgetIsTopLevel(false)
+  , mForcedRepaint(false)
+  , mNeedsWindowPropertiesSync(false)
 {
   MOZ_COUNT_CTOR(nsView);
 
-  mVis = aVisibility;
   
   
   
   
-  mVFlags = 0;
-  mViewManager = aViewManager;
-  mDirtyRegion = nullptr;
-  mWidgetIsTopLevel = false;
 
   static bool sShowPreviousPageInitialized = false;
   if (!sShowPreviousPageInitialized) {
