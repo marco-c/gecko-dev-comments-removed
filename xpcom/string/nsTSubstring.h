@@ -1113,6 +1113,20 @@ protected:
   
 
 
+  static MOZ_MUST_USE bool CheckCapacity(size_type aCapacity) {
+    if (aCapacity > kMaxCapacity) {
+      
+      
+      NS_ASSERTION(aCapacity != size_type(-1), "Bogus capacity");
+      return false;
+    }
+
+    return true;
+  }
+
+  
+
+
   void SetDataFlags(uint32_t aDataFlags)
   {
     NS_ASSERTION((aDataFlags & 0xFFFF0000) == 0, "bad flags");
@@ -1122,6 +1136,7 @@ protected:
   void NS_FASTCALL ReplaceLiteral(index_type aCutStart, size_type aCutLength,
                                   const char_type* aData, size_type aLength);
 
+  static const size_type kMaxCapacity;
 public:
 
   
