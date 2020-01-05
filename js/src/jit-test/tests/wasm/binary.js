@@ -190,18 +190,16 @@ function tableSection(initialSize) {
     var body = [];
     body.push(...varU32(1));           
     body.push(...varU32(AnyFuncCode));
-    body.push(...varU32(DefaultFlag)); 
+    body.push(...varU32(0x0));         
     body.push(...varU32(initialSize));
-    
     return { name: tableId, body };
 }
 
 function memorySection(initialSize) {
     var body = [];
     body.push(...varU32(1));           
-    body.push(...varU32(DefaultFlag)); 
+    body.push(...varU32(0x0));         
     body.push(...varU32(initialSize));
-    
     return { name: memoryId, body };
 }
 
