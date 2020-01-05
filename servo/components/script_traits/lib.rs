@@ -193,6 +193,8 @@ pub enum ConstellationControlMsg {
     FramedContentChanged(PipelineId, SubpageId),
     
     ReportCSSError(PipelineId, String, usize, usize, String),
+    
+    Reload(PipelineId),
 }
 
 
@@ -553,4 +555,6 @@ pub enum ConstellationMsg {
     TickAnimation(PipelineId, AnimationTickType),
     
     WebDriverCommand(WebDriverCommandMsg),
+    
+    Reload,
 }

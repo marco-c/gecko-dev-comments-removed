@@ -77,6 +77,8 @@ pub enum WindowEvent {
     Quit,
     
     KeyEvent(Key, KeyState, KeyModifiers),
+    
+    Reload,
 }
 
 impl Debug for WindowEvent {
@@ -99,6 +101,7 @@ impl Debug for WindowEvent {
             WindowEvent::ResetZoom => write!(f, "ResetZoom"),
             WindowEvent::Navigation(..) => write!(f, "Navigation"),
             WindowEvent::Quit => write!(f, "Quit"),
+            WindowEvent::Reload => write!(f, "Reload"),
         }
     }
 }
