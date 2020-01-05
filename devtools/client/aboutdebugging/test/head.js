@@ -10,7 +10,6 @@
 
 
 
-
 "use strict";
 
 
@@ -130,26 +129,6 @@ function getInstalledAddonNames(document) {
 function getServiceWorkerList(document) {
   return document.querySelector("#service-workers .target-list") ||
     document.querySelector("#service-workers.targets");
-}
-
-
-
-
-
-
-
-
-
-
-
-function getServiceWorkerContainer(name, document) {
-  let nameElements = [...document.querySelectorAll("#service-workers .target-name")];
-  let nameElement = nameElements.filter(element => element.textContent === name)[0];
-  if (nameElement) {
-    return nameElement.closest(".target-container");
-  }
-
-  return null;
 }
 
 
@@ -417,21 +396,4 @@ function* waitForServiceWorkerActivation(swUrl, document) {
     
     yield waitForMutation(serviceWorkersElement, { childList: true, subtree: true });
   }
-}
-
-
-
-
-function enableServiceWorkerDebugging() {
-  return new Promise(done => {
-    let options = { "set": [
-      
-      ["dom.serviceWorkers.enabled", true],
-      
-      ["dom.serviceWorkers.testing.enabled", true],
-      
-      ["dom.ipc.processCount", 1],
-    ]};
-    SpecialPowers.pushPrefEnv(options, done);
-  });
 }

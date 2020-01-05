@@ -15,7 +15,15 @@ const SERVICE_WORKER = URL_ROOT + "service-workers/push-sw.js";
 const TAB_URL = URL_ROOT + "service-workers/push-sw.html";
 
 add_task(function* () {
-  yield enableServiceWorkerDebugging();
+  info("Turn on workers via mochitest http.");
+  yield new Promise(done => {
+    let options = { "set": [
+      
+      ["dom.serviceWorkers.testing.enabled", true],
+    ]};
+    SpecialPowers.pushPrefEnv(options, done);
+  });
+
   let { tab, document } = yield openAboutDebugging("workers");
 
   
