@@ -3885,6 +3885,15 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
   bool snap;
   nsRect bounds = aMaskItem->GetBounds(mBuilder, &snap);
   nsIntRect itemRect = ScaleToOutsidePixels(bounds, snap);
+
+  
+  
+  
+  Matrix4x4 matrix;
+  matrix.PreTranslate(itemRect.x, itemRect.y, 0);
+  matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
+  maskLayer->SetBaseTransform(matrix);
+
   CSSMaskLayerUserData newUserData(aMaskItem->Frame(), itemRect.Size());
   nsRect dirtyRect;
   if (!aMaskItem->IsInvalid(dirtyRect) && *oldUserData == newUserData) {
@@ -3915,13 +3924,6 @@ ContainerState::SetupMaskLayerForCSSMask(Layer* aLayer,
     
     return;
   }
-
-  
-  Matrix4x4 matrix;
-  matrix.PreTranslate(itemRect.x, itemRect.y, 0);
-  matrix.PreTranslate(mParameters.mOffset.x, mParameters.mOffset.y, 0);
-
-  maskLayer->SetBaseTransform(matrix);
 
   RefPtr<ImageContainer> imgContainer =
     imageData.CreateImageAndImageContainer();
