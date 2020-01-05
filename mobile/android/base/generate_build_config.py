@@ -26,16 +26,14 @@ import os
 import sys
 
 import buildconfig
-from mozbuild.preprocessor import Preprocessor
+
+from mozbuild import preprocessor
 
 
-def main(output_file, input_filename):
-    
-    pp = Preprocessor(defines=buildconfig.defines, marker='//#')
-
+def _defines():
     CONFIG = defaultdict(lambda: None)
     CONFIG.update(buildconfig.substs)
-    DEFINES = {}
+    DEFINES = dict(buildconfig.defines)
 
     for var in ('MOZ_ANDROID_ACTIVITY_STREAM'
                 'MOZ_ANDROID_ANR_REPORTER',
@@ -101,16 +99,15 @@ def main(output_file, input_filename):
     if CONFIG['MOZ_INSTALL_TRACKING']:
         DEFINES['MOZ_INSTALL_TRACKING_ADJUST_SDK_APP_TOKEN'] = CONFIG['MOZ_ADJUST_SDK_KEY']
 
-    
     DEFINES['MOZ_BUILDID'] = open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
 
-    pp.context.update(DEFINES)
-
-    with open(input_filename, 'rU') as input:
-        pp.processFile(input=input, output=output_file)
-
-    return 0
+    return DEFINES
 
 
-if __name__ == '__main__':
-    sys.exit(main(sys.stdout, *sys.argv[1:]))
+def generate_java(output_file, input_filename):
+    includes = preprocessor.preprocess(includes=[input_filename],
+                                   defines=_defines(),
+                                   output=output_file,
+                                   marker="//#")
+    includes.add(os.path.join(buildconfig.topobjdir, 'buildid.h'))
+    return includes
