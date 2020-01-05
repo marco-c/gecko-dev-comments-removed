@@ -25,7 +25,7 @@ use std::slice;
 use str::DOMString;
 
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum StringificationBehavior {
     
     Default,
