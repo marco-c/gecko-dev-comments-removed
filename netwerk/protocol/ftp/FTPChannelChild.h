@@ -23,6 +23,9 @@
 #include "PrivateBrowsingChannel.h"
 
 namespace mozilla {
+
+class Dispatcher;
+
 namespace net {
 
 
@@ -150,6 +153,10 @@ private:
   
   
   bool mSuspendSent;
+
+  RefPtr<Dispatcher> mDispatcher;
+
+  void EnsureDispatcher();
 };
 
 inline bool
