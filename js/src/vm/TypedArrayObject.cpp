@@ -37,6 +37,7 @@
 #include "vm/ArrayBufferObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/Interpreter.h"
+#include "vm/PIC.h"
 #include "vm/SelfHosting.h"
 #include "vm/TypedArrayCommon.h"
 #include "vm/WrapperObject.h"
@@ -1241,6 +1242,20 @@ TypedArrayObjectTemplate<T>::fromTypedArray(JSContext* cx, HandleObject other, b
     return obj;
 }
 
+static MOZ_ALWAYS_INLINE bool
+IsOptimizableInit(JSContext* cx, HandleObject iterable, bool* optimized)
+{
+    MOZ_ASSERT(!*optimized);
+
+    if (!IsPackedArray(iterable))
+        return true;
+
+    ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
+    if (!stubChain)
+        return false;
+
+    return stubChain->tryOptimizeArray(cx, iterable.as<ArrayObject>(), optimized);
+}
 
 
 
@@ -1248,13 +1263,93 @@ template<typename T>
  JSObject*
 TypedArrayObjectTemplate<T>::fromObject(JSContext* cx, HandleObject other, HandleObject newTarget)
 {
+    
+
+    
     RootedObject proto(cx);
-    Rooted<ArrayBufferObject*> buffer(cx);
-    uint32_t len;
-    if (!GetLengthProperty(cx, other, &len))
-        return nullptr;
     if (!GetPrototypeForInstance(cx, newTarget, &proto))
         return nullptr;
+
+    bool optimized = false;
+    if (!IsOptimizableInit(cx, other, &optimized))
+        return nullptr;
+
+    
+    if (optimized) {
+        
+        RootedArrayObject array(cx, &other->as<ArrayObject>());
+
+        
+        uint32_t len = array->getDenseInitializedLength();
+
+        
+        Rooted<ArrayBufferObject*> buffer(cx);
+        if (!maybeCreateArrayBuffer(cx, len, BYTES_PER_ELEMENT, nullptr, &buffer))
+            return nullptr;
+
+        Rooted<TypedArrayObject*> obj(cx, makeInstance(cx, buffer, 0, len, proto));
+        if (!obj)
+            return nullptr;
+
+        
+        if (!TypedArrayMethods<TypedArrayObject>::initFromIterablePackedArray(cx, obj, array))
+            return nullptr;
+
+        
+
+        
+        return obj;
+    }
+
+    
+    RootedValue callee(cx);
+    RootedId iteratorId(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().iterator));
+    if (!GetProperty(cx, other, other, iteratorId, &callee))
+        return nullptr;
+
+    
+    RootedObject arrayLike(cx);
+    if (!callee.isNullOrUndefined()) {
+        
+        if (!callee.isObject() || !callee.toObject().isCallable()) {
+            RootedValue otherVal(cx, ObjectValue(*other));
+            UniqueChars bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, otherVal, nullptr);
+            if (!bytes)
+                return nullptr;
+            JS_ReportErrorNumberLatin1(cx, GetErrorMessage, nullptr, JSMSG_NOT_ITERABLE,
+                                       bytes.get());
+            return nullptr;
+        }
+
+        FixedInvokeArgs<2> args2(cx);
+        args2[0].setObject(*other);
+        args2[1].set(callee);
+
+        
+        RootedValue rval(cx);
+        if (!CallSelfHostedFunction(cx, cx->names().IterableToList, UndefinedHandleValue, args2,
+                                    &rval))
+        {
+            return nullptr;
+        }
+
+        
+        arrayLike = &rval.toObject();
+    } else {
+        
+        
+
+        
+        arrayLike = other;
+    }
+
+    
+    uint32_t len;
+    if (!GetLengthProperty(cx, arrayLike, &len))
+        return nullptr;
+
+    
+    Rooted<ArrayBufferObject*> buffer(cx);
     if (!maybeCreateArrayBuffer(cx, len, BYTES_PER_ELEMENT, nullptr, &buffer))
         return nullptr;
 
@@ -1262,8 +1357,11 @@ TypedArrayObjectTemplate<T>::fromObject(JSContext* cx, HandleObject other, Handl
     if (!obj)
         return nullptr;
 
-    if (!TypedArrayMethods<TypedArrayObject>::setFromNonTypedArray(cx, obj, other, len))
+    
+    if (!TypedArrayMethods<TypedArrayObject>::setFromNonTypedArray(cx, obj, arrayLike, len))
         return nullptr;
+
+    
     return obj;
 }
 

@@ -1490,6 +1490,9 @@ MaybeNativeObject(JSObject* obj)
     return obj ? &obj->as<NativeObject>() : nullptr;
 }
 
+
+bool IsPackedArray(JSObject* obj);
+
 } 
 
 
