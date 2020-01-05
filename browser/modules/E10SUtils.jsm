@@ -153,6 +153,13 @@ this.E10SUtils = {
       return true;
 
     
+    
+    
+    if (aDocShell.inFreshProcess && aDocShell.isOnlyToplevelInTabGroup) {
+      return false;
+    }
+
+    
     return this.shouldLoadURIInThisProcess(aURI);
   },
 

@@ -153,7 +153,9 @@ add_task(function*() {
 
     let pid3 = yield getPID(aBrowser);
 
-    is(pid2, pid3);
+    
+    
+    is(pid1, pid3); 
 
     yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.document.location = TEST_URI;
@@ -197,18 +199,26 @@ add_task(function*() {
 
     let pid3 = yield getPID(aBrowser);
 
-    is(pid2, pid3, "PIDs 2 and 3 should match");
+    
+    
+    is(pid1, pid3, "PIDs 1 and 3 should match");
 
+    stopExpectNoProcess();
+
+    epc = expectProcessCreated();
+
+    
     
     yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
       content.window.history.back();
     });
 
+    yield epc;
+
     let pid4 = yield getPID(aBrowser);
 
     isnot(pid1, pid4, "PID 4 shouldn't match PID 1");
-    is(pid2, pid4, "PID 4 should match PID 2");
+    isnot(pid2, pid4, "PID 4 shouldn't match PID 2");
 
-    stopExpectNoProcess();
   });
 });
