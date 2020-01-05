@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 define(function (require, exports, module) {
@@ -42,17 +41,15 @@ define(function (require, exports, module) {
 
   input.actions = {
     onCopyJson: function () {
-      let value = input.prettified ? input.jsonPretty : input.jsonText;
-      postChromeMessage("copy", value);
+      dispatchEvent("copy", input.prettified ? input.jsonPretty : input.jsonText);
     },
 
     onSaveJson: function () {
-      let value = input.prettified ? input.jsonPretty : input.jsonText;
-      postChromeMessage("save", value);
+      dispatchEvent("save", input.prettified ? input.jsonPretty : input.jsonText);
     },
 
     onCopyHeaders: function () {
-      postChromeMessage("copy-headers", input.headers);
+      dispatchEvent("copy-headers", input.headers);
     },
 
     onSearch: function (value) {
@@ -72,6 +69,24 @@ define(function (require, exports, module) {
       input.prettified = !input.prettified;
     },
   };
+
+  
+
+
+
+
+
+  function dispatchEvent(type, value) {
+    let data = {
+      detail: {
+        type,
+        value,
+      }
+    };
+
+    let contentMessageEvent = new CustomEvent("contentMessage", data);
+    window.dispatchEvent(contentMessageEvent);
+  }
 
   
 
