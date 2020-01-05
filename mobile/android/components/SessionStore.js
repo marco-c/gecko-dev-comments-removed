@@ -356,8 +356,10 @@ SessionStore.prototype = {
         
         
         let window = Services.wm.getMostRecentWindow("navigator:browser");
-        let tab = window.BrowserApp.selectedTab;
-        this.restoreZombieTab(tab);
+        if (window) { 
+          let tab = window.BrowserApp.selectedTab;
+          this.restoreZombieTab(tab);
+        }
         break;
       case "ClosedTabs:StartNotifications":
         this._notifyClosedTabs = true;
