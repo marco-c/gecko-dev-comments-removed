@@ -20,9 +20,6 @@
 
 
 #pragma warning(disable:4324)
-
-
-#pragma warning(disable:4365)
 #endif 
 #include "mozilla/BasePrincipal.h"
 #if defined(_MSC_VER)
