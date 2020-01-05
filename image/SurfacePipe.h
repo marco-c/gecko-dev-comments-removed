@@ -109,17 +109,6 @@ public:
 
 
 
-  void ZeroOutRestOfSurface()
-  {
-    DoZeroOutRestOfSurface();
-    mCol = 0;
-    mRowPointer = nullptr;
-  }
-
-  
-
-
-
 
 
 
@@ -310,11 +299,7 @@ public:
       NS_WARNING("Provided starting column is out-of-bounds in WriteBuffer");
     }
 
-    uint8_t clear = 0;
-    bool clearRequired = GetClearValue(clear);
-    if (clearRequired) {
-      memset(dest, clear, mInputSize.width * sizeof(PixelType));
-    }
+    memset(dest, 0, mInputSize.width * sizeof(PixelType));
     dest += prefixLength;
 
     
@@ -329,9 +314,7 @@ public:
 
     
     const size_t suffixLength = mInputSize.width - (prefixLength + bufferLength);
-    if (clearRequired) {
-      memset(dest, clear, suffixLength * sizeof(PixelType));
-    }
+    memset(dest, 0, suffixLength * sizeof(PixelType));
 
     AdvanceRow();
 
@@ -352,17 +335,12 @@ public:
       return WriteState::FINISHED;  
     }
 
-    uint8_t clear = 0;
-    if (GetClearValue(clear)) {
-      memset(mRowPointer, clear, mInputSize.width * mPixelSize);
-    }
+    memset(mRowPointer, 0, mInputSize.width * mPixelSize);
     AdvanceRow();
 
     return IsSurfaceFinished() ? WriteState::FINISHED
                                : WriteState::NEED_MORE_DATA;
   }
-
-  virtual bool GetClearValue(uint8_t& aValue) const = 0;
 
   
 
@@ -428,13 +406,6 @@ public:
   virtual Maybe<SurfaceInvalidRect> TakeInvalidRect() = 0;
 
 protected:
-  
-  int32_t CurrentColumn() const { return mCol; }
-
-  
-
-
-  virtual void DoZeroOutRestOfSurface() = 0;
 
   
 
@@ -450,6 +421,7 @@ protected:
 
 
   virtual uint8_t* DoAdvanceRow() = 0;
+
 
   
   
@@ -512,7 +484,7 @@ private:
           return Some(WriteState::NEED_MORE_DATA);
 
         case WriteState::FINISHED:
-          ZeroOutRestOfSurface();
+          ZeroOutRestOfSurface<PixelType>();
           return Some(WriteState::FINISHED);
 
         case WriteState::FAILURE:
@@ -528,6 +500,12 @@ private:
 
     return IsSurfaceFinished() ? Some(WriteState::FINISHED)
                                : Nothing();
+  }
+
+  template <typename PixelType>
+  void ZeroOutRestOfSurface()
+  {
+    WritePixels<PixelType>([]{ return AsVariant(PixelType(0)); });
   }
 
   gfx::IntSize mInputSize;  
@@ -565,10 +543,7 @@ public:
 
   Maybe<SurfaceInvalidRect> TakeInvalidRect() override { return Nothing(); }
 
-  bool GetClearValue(uint8_t& aValue) const override { return false; }
-
 protected:
-  void DoZeroOutRestOfSurface() override { }
   uint8_t* DoResetToFirstRow() override { return nullptr; }
   uint8_t* DoAdvanceRow() override { return nullptr; }
 
@@ -689,22 +664,6 @@ public:
   }
 
   
-
-
-
-
-
-  void ZeroOutRestOfSurface()
-  {
-    mHead->ZeroOutRestOfSurface();
-  }
-
-  bool GetClearValue(uint8_t& aValue) const
-  {
-    return mHead->GetClearValue(aValue);
-  }
-
-  
   bool IsSurfaceFinished() const { return mHead->IsSurfaceFinished(); }
 
   
@@ -739,34 +698,21 @@ public:
     , mImageDataLength(0)
     , mRow(0)
     , mFlipVertically(false)
-    , mClearRequired(false)
-    , mClearValue(0)
   { }
 
   Maybe<SurfaceInvalidRect> TakeInvalidRect() override final;
 
-  bool GetClearValue(uint8_t& aValue) const override final
-  {
-    aValue = mClearValue;
-    return mClearRequired;
-  }
-
 protected:
-  void DoZeroOutRestOfSurface() override final;
   uint8_t* DoResetToFirstRow() override final;
   uint8_t* DoAdvanceRow() override final;
   virtual uint8_t* GetRowPointer() const = 0;
 
   gfx::IntRect mInvalidRect;  
                               
-  gfx::IntRect mWrittenRect;  
-                              
   uint8_t*  mImageData;       
   uint32_t  mImageDataLength; 
   uint32_t  mRow;             
   bool      mFlipVertically;  
-  bool      mClearRequired;   
-  uint8_t   mClearValue;      
 };
 
 class SurfaceSink;

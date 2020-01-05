@@ -31,13 +31,44 @@ namespace image {
 
 enum TestCaseFlags
 {
-  TEST_CASE_DEFAULT_FLAGS       = 0,
-  TEST_CASE_IS_FUZZY            = 1 << 0,
-  TEST_CASE_HAS_ERROR           = 1 << 1,
-  TEST_CASE_IS_TRANSPARENT      = 1 << 2,
-  TEST_CASE_IS_ANIMATED         = 1 << 3,
-  TEST_CASE_IGNORE_OUTPUT       = 1 << 4,
-  TEST_CASE_HAS_TRUNCATED_COLOR = 1 << 5,
+  TEST_CASE_DEFAULT_FLAGS   = 0,
+  TEST_CASE_IS_FUZZY        = 1 << 0,
+  TEST_CASE_HAS_ERROR       = 1 << 1,
+  TEST_CASE_IS_TRANSPARENT  = 1 << 2,
+  TEST_CASE_IS_ANIMATED     = 1 << 3,
+  TEST_CASE_IGNORE_OUTPUT   = 1 << 4,
+};
+
+struct ImageTestCase
+{
+  ImageTestCase(const char* aPath,
+                const char* aMimeType,
+                gfx::IntSize aSize,
+                uint32_t aFlags = TEST_CASE_DEFAULT_FLAGS)
+    : mPath(aPath)
+    , mMimeType(aMimeType)
+    , mSize(aSize)
+    , mOutputSize(aSize)
+    , mFlags(aFlags)
+  { }
+
+  ImageTestCase(const char* aPath,
+                const char* aMimeType,
+                gfx::IntSize aSize,
+                gfx::IntSize aOutputSize,
+                uint32_t aFlags = TEST_CASE_DEFAULT_FLAGS)
+    : mPath(aPath)
+    , mMimeType(aMimeType)
+    , mSize(aSize)
+    , mOutputSize(aOutputSize)
+    , mFlags(aFlags)
+  { }
+
+  const char* mPath;
+  const char* mMimeType;
+  gfx::IntSize mSize;
+  gfx::IntSize mOutputSize;
+  uint32_t mFlags;
 };
 
 struct BGRAColor
@@ -54,8 +85,6 @@ struct BGRAColor
   static BGRAColor Green() { return BGRAColor(0x00, 0xFF, 0x00, 0xFF); }
   static BGRAColor Red()   { return BGRAColor(0x00, 0x00, 0xFF, 0xFF); }
   static BGRAColor Blue()   { return BGRAColor(0xFF, 0x00, 0x00, 0xFF); }
-  static BGRAColor White() { return BGRAColor(0xFF, 0xFF, 0xFF, 0xFF); }
-  static BGRAColor Black() { return BGRAColor(0x00, 0x00, 0x00, 0xFF); }
   static BGRAColor Transparent() { return BGRAColor(0x00, 0x00, 0x00, 0x00); }
 
   uint32_t AsPixel() const { return gfxPackedPixel(mAlpha, mRed, mGreen, mBlue); }
@@ -64,55 +93,6 @@ struct BGRAColor
   uint8_t mGreen;
   uint8_t mRed;
   uint8_t mAlpha;
-};
-
-struct ImageTestCase
-{
-  ImageTestCase(const char* aPath,
-                const char* aMimeType,
-                gfx::IntSize aSize,
-                uint32_t aFlags = TEST_CASE_DEFAULT_FLAGS)
-    : mPath(aPath)
-    , mMimeType(aMimeType)
-    , mSize(aSize)
-    , mOutputSize(aSize)
-    , mTruncatedBytes(0)
-    , mFlags(aFlags)
-  { }
-
-  ImageTestCase(const char* aPath,
-                const char* aMimeType,
-                gfx::IntSize aSize,
-                gfx::IntSize aOutputSize,
-                uint32_t aFlags = TEST_CASE_DEFAULT_FLAGS)
-    : mPath(aPath)
-    , mMimeType(aMimeType)
-    , mSize(aSize)
-    , mOutputSize(aOutputSize)
-    , mTruncatedBytes(0)
-    , mFlags(aFlags)
-  { }
-
-  void Truncate(uint32_t aTruncatedBytes,
-                gfx::IntRect aTruncatedRect,
-                gfx::IntRect aTruncatedPartialRow = gfx::IntRect(),
-                BGRAColor aTruncatedColor = BGRAColor::Transparent())
-  {
-    mTruncatedBytes = aTruncatedBytes;
-    mTruncatedRect = aTruncatedRect;
-    mTruncatedPartialRow = aTruncatedPartialRow;
-    mTruncatedColor = aTruncatedColor;
-  }
-
-  const char* mPath;
-  const char* mMimeType;
-  gfx::IntSize mSize;
-  gfx::IntSize mOutputSize;
-  gfx::IntRect mTruncatedRect;
-  gfx::IntRect mTruncatedPartialRow;
-  BGRAColor mTruncatedColor;
-  uint32_t mTruncatedBytes;
-  uint32_t mFlags;
 };
 
 
@@ -327,12 +307,9 @@ void AssertCorrectPipelineFinalState(SurfaceFilter* aFilter,
 
 
 
-
-
 void CheckGeneratedImage(Decoder* aDecoder,
                          const gfx::IntRect& aRect,
-                         uint8_t aFuzz = 0,
-                         bool aPartial = false);
+                         uint8_t aFuzz = 0);
 
 
 
@@ -345,11 +322,7 @@ void CheckGeneratedImage(Decoder* aDecoder,
 
 
 
-
-
-void CheckGeneratedPalettedImage(Decoder* aDecoder,
-                                 const gfx::IntRect& aRect,
-                                 bool aPartial = false);
+void CheckGeneratedPalettedImage(Decoder* aDecoder, const gfx::IntRect& aRect);
 
 
 
