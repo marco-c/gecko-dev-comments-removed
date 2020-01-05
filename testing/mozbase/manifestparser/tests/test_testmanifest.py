@@ -73,7 +73,7 @@ class TestTestManifest(unittest.TestCase):
 
         
         tests = manifest.active_tests(exists=False, **info)
-        self.assertEquals(len(tests), 7)
+        self.assertEquals(len(tests), 6)
 
         
         tests = manifest.active_tests(exists=False,
@@ -86,11 +86,11 @@ class TestTestManifest(unittest.TestCase):
         tests = manifest.active_tests(exists=False,
                                       filters=[subsuite('baz')],
                                       **info)
-        self.assertEquals(len(tests), 2)
+        self.assertEquals(len(tests), 1)
         tests = manifest.active_tests(exists=False,
                                       filters=[subsuite('baz')],
                                       **other)
-        self.assertEquals(len(tests), 2)
+        self.assertEquals(len(tests), 1)
 
         
         
