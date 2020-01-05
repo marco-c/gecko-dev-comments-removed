@@ -16,7 +16,7 @@ use values::computed::basic_shape as computed_basic_shape;
 use values::computed::{Context, ToComputedValue, ComputedValueAsSpecified};
 use values::specified::UrlExtraData;
 use values::specified::position::{Keyword, Position};
-use values::specified::{BorderRadiusSize, LengthOrPercentage};
+use values::specified::{BorderRadiusSize, LengthOrPercentage, Percentage};
 
 
 
@@ -241,6 +241,89 @@ impl ToComputedValue for InsetRect {
     }
 }
 
+
+
+
+
+
+
+fn serialize_basicshape_position<W>(position: &Position, dest: &mut W)
+    -> fmt::Result where W: fmt::Write {
+        use values::specified::Length;
+        use values::specified::position::Keyword;
+
+        
+        fn fold_keyword(keyword: Option<Keyword>, length: Option<LengthOrPercentage>)
+            -> Option<LengthOrPercentage> {
+            let pc = match length.map(replace_with_percent) {
+                None => Percentage(0.0), 
+                Some(LengthOrPercentage::Percentage(pc)) => pc,
+                _ => return None
+            };
+            let percent = match keyword {
+                Some(Keyword::Center) => {
+                    
+                    assert!(length.is_none());
+                    Percentage(0.5)
+                },
+                Some(Keyword::Left) | Some(Keyword::Top) | None => pc,
+                Some(Keyword::Right) | Some(Keyword::Bottom) => Percentage(1.0 - pc.0),
+            };
+            Some(LengthOrPercentage::Percentage(percent))
+        }
+
+        
+        fn replace_with_percent(input: LengthOrPercentage) -> LengthOrPercentage {
+            match input {
+                LengthOrPercentage::Length(Length::Absolute(au)) if au.0 == 0 => {
+                    LengthOrPercentage::Percentage(Percentage(0.0))
+                }
+                _ => {
+                    input
+                }
+            }
+        }
+
+        fn serialize_position_pair<W>(x: LengthOrPercentage, y: LengthOrPercentage,
+                                      dest: &mut W) -> fmt::Result where W: fmt::Write {
+            try!(replace_with_percent(x).to_css(dest));
+            try!(dest.write_str(" "));
+            replace_with_percent(y).to_css(dest)
+        }
+
+        match (position.horiz_keyword, position.horiz_position,
+               position.vert_keyword, position.vert_position) {
+            (Some(hk), None, Some(vk), None) => {
+                
+                serialize_position_pair(hk.to_length_or_percentage(),
+                                        vk.to_length_or_percentage(),
+                                        dest)
+            }
+            (None, Some(hp), None, Some(vp)) => {
+                
+                serialize_position_pair(hp, vp, dest)
+            }
+            (hk, hp, vk, vp) => {
+                
+                
+                if let (Some(x), Some(y)) = (fold_keyword(hk, hp), fold_keyword(vk, vp)) {
+                    serialize_position_pair(x, y, dest)
+                } else {
+                    
+                    
+                    let zero = LengthOrPercentage::Percentage(Percentage(0.0));
+                    try!(hk.unwrap_or(Keyword::Left).to_css(dest));
+                    try!(dest.write_str(" "));
+                    try!(replace_with_percent(hp.unwrap_or(zero)).to_css(dest));
+                    try!(dest.write_str(" "));
+                    try!(vk.unwrap_or(Keyword::Top).to_css(dest));
+                    try!(dest.write_str(" "));
+                    replace_with_percent(vp.unwrap_or(zero)).to_css(dest)
+                }
+            }
+        }
+}
+
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 
@@ -286,7 +369,7 @@ impl ToCss for Circle {
             try!(dest.write_str(" "));
         }
         try!(dest.write_str("at "));
-        try!(self.position.to_css(dest));
+        try!(serialize_basicshape_position(&self.position, dest));
         dest.write_str(")")
     }
 }
@@ -355,7 +438,7 @@ impl ToCss for Ellipse {
             try!(dest.write_str(" "));
         }
         try!(dest.write_str("at "));
-        try!(self.position.to_css(dest));
+        try!(serialize_basicshape_position(&self.position, dest));
         dest.write_str(")")
     }
 }
