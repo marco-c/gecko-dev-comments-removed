@@ -124,8 +124,6 @@ add_task(function test_scroll_background_tabs() {
   
   yield BrowserTestUtils.closeWindow(newWin);
 
-  yield forceSaveState();
-
   
   newWin = ss.undoCloseWindow(0);
 

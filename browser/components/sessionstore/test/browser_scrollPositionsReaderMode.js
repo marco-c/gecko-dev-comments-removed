@@ -35,8 +35,6 @@ add_task(function test_scroll_background_about_reader_tabs() {
   
   yield BrowserTestUtils.closeWindow(newWin);
 
-  yield forceSaveState();
-
   
   newWin = ss.undoCloseWindow(0);
 
