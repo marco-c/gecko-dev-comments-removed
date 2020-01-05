@@ -14,6 +14,7 @@
 extern crate msg;
 extern crate rustc_serialize;
 extern crate url;
+extern crate hyper;
 extern crate util;
 extern crate time;
 
@@ -21,6 +22,10 @@ use rustc_serialize::{Decodable, Decoder};
 use msg::constellation_msg::{PipelineId, WorkerId};
 use util::str::DOMString;
 use url::Url;
+
+use hyper::header::Headers;
+use hyper::http::RawStatus;
+use hyper::method::Method;
 
 use std::net::TcpStream;
 use std::sync::mpsc::{Sender, Receiver};
@@ -41,7 +46,8 @@ pub enum DevtoolsControlMsg {
     AddClient(TcpStream),
     NewGlobal((PipelineId, Option<WorkerId>), Sender<DevtoolScriptControlMsg>, DevtoolsPageInfo),
     SendConsoleMessage(PipelineId, ConsoleMessage),
-    ServerExitMsg
+    ServerExitMsg,
+    NetworkEventMessage(String, NetworkEvent),
 }
 
 
@@ -143,6 +149,12 @@ pub enum ConsoleMessage {
     
     LogMessage(String, String, u32, u32),
     
+}
+
+#[derive(Clone)]
+pub enum NetworkEvent {
+    HttpRequest(Url, Method, Headers, Option<Vec<u8>>),
+    HttpResponse(Option<Headers>, Option<RawStatus>, Option<Vec<u8>>)
 }
 
 impl TimelineMarker {
