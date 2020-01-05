@@ -184,7 +184,7 @@ nsAsyncInstantiateEvent::Run()
 class CheckPluginStopEvent : public Runnable {
 public:
   explicit CheckPluginStopEvent(nsObjectLoadingContent* aContent)
-  : mContent(aContent) {}
+  : Runnable("CheckPluginStopEvent"), mContent(aContent) {}
 
   ~CheckPluginStopEvent() override = default;
 
@@ -237,8 +237,7 @@ CheckPluginStopEvent::Run()
       LOG(("OBJLC [%p]: CheckPluginStopEvent - superseded in layout flush",
            this));
       return NS_OK;
-    }
-    if (content->GetPrimaryFrame()) {
+    } else if (content->GetPrimaryFrame()) {
       LOG(("OBJLC [%p]: CheckPluginStopEvent - frame gained in layout flush",
            this));
       objLC->mPendingCheckPluginStopEvent = nullptr;
@@ -1034,9 +1033,10 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
     }
     if (MakePluginListener()) {
       return mFinalListener->OnStartRequest(aRequest, nullptr);
+    } else {
+      NS_NOTREACHED("Failed to create PluginStreamListener, aborting channel");
+      return NS_BINDING_ABORTED;
     }
-    NS_NOTREACHED("Failed to create PluginStreamListener, aborting channel");
-    return NS_BINDING_ABORTED;
   }
 
   
@@ -1069,8 +1069,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
     Telemetry::Accumulate(Telemetry::PLUGIN_BLOCKED_FOR_STABILITY, 1);
     mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
-  }
-  if (status == NS_ERROR_TRACKING_URI) {
+  } else if (status == NS_ERROR_TRACKING_URI) {
     mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }

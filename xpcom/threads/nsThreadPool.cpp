@@ -146,7 +146,7 @@ nsThreadPool::ShutdownThread(nsIThread* aThread)
   
   
   
-  NS_DispatchToMainThread(NewRunnableMethod(aThread,
+  NS_DispatchToMainThread(NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
                                             &nsIThread::AsyncShutdown));
 }
 

@@ -40,6 +40,7 @@
 #include "nsIMessageManager.h"
 #include "mozilla/RestyleLogging.h"
 #include "Units.h"
+#include "mozilla/RestyleManagerHandle.h"
 #include "prenv.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/StyleBackendType.h"
@@ -72,7 +73,6 @@ namespace mozilla {
 class EffectCompositor;
 class EventStateManager;
 class CounterStyleManager;
-class RestyleManager;
 namespace layers {
 class ContainerLayer;
 class LayerManager;
@@ -245,7 +245,7 @@ public:
 
   nsRefreshDriver* RefreshDriver() { return mRefreshDriver; }
 
-  mozilla::RestyleManager* RestyleManager() {
+  mozilla::RestyleManagerHandle RestyleManager() {
     MOZ_ASSERT(mRestyleManager);
     return mRestyleManager;
   }
@@ -1263,7 +1263,7 @@ protected:
   RefPtr<mozilla::EffectCompositor> mEffectCompositor;
   RefPtr<nsTransitionManager> mTransitionManager;
   RefPtr<nsAnimationManager> mAnimationManager;
-  RefPtr<mozilla::RestyleManager> mRestyleManager;
+  mozilla::RestyleManagerHandle::RefPtr mRestyleManager;
   RefPtr<mozilla::CounterStyleManager> mCounterStyleManager;
   nsIAtom* MOZ_UNSAFE_REF("always a static atom") mMedium; 
   nsCOMPtr<nsIAtom> mMediaEmulated;
@@ -1585,7 +1585,9 @@ protected:
 
   class RunWillPaintObservers : public mozilla::Runnable {
   public:
-    explicit RunWillPaintObservers(nsRootPresContext* aPresContext) : mPresContext(aPresContext) {}
+    explicit RunWillPaintObservers(nsRootPresContext* aPresContext)
+      : Runnable("nsPresContextType::RunWillPaintObservers")
+      , mPresContext(aPresContext) {}
     void Revoke() { mPresContext = nullptr; }
     NS_IMETHOD Run() override
     {

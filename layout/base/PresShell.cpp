@@ -181,8 +181,8 @@
 #include "nsPlaceholderFrame.h"
 #include "nsTransitionManager.h"
 #include "ChildIterator.h"
-#include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
+#include "mozilla/RestyleManagerHandle.h"
+#include "mozilla/RestyleManagerHandleInlines.h"
 #include "nsIDOMHTMLElement.h"
 #include "nsIDragSession.h"
 #include "nsIFrameInlines.h"
@@ -2035,7 +2035,8 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, nscoord a
       }
     } else {
       RefPtr<nsRunnableMethod<PresShell> > resizeEvent =
-        NewRunnableMethod(this, &PresShell::FireResizeEvent);
+        NewRunnableMethod("PresShell::FireResizeEvent",
+                          this, &PresShell::FireResizeEvent);
       if (NS_SUCCEEDED(NS_DispatchToCurrentThread(resizeEvent))) {
         mResizeEvent = resizeEvent;
         SetNeedStyleFlush();
@@ -2971,7 +2972,7 @@ PresShell::RecreateFramesFor(nsIContent* aContent)
 
   
   ++mChangeNestCount;
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
+  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
   nsresult rv = restyleManager->ProcessRestyledFrames(changeList);
   restyleManager->FlushOverflowChangedTracker();
   --mChangeNestCount;
@@ -3758,7 +3759,7 @@ void
 PresShell::DispatchSynthMouseMove(WidgetGUIEvent* aEvent,
                                   bool aFlushOnHoverChange)
 {
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
+  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
   uint32_t hoverGenerationBefore =
     restyleManager->GetHoverGeneration();
   nsEventStatus status;
@@ -4603,7 +4604,7 @@ nsIPresShell::RestyleForCSSRuleChanges()
     return;
   }
 
-  RestyleManager* restyleManager = mPresContext->RestyleManager();
+  RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
 
   if (mStyleSet->IsServo()) {
     
@@ -6246,7 +6247,8 @@ PresShell::ScheduleApproximateFrameVisibilityUpdateNow()
   }
 
   RefPtr<nsRunnableMethod<PresShell> > ev =
-    NewRunnableMethod(this, &PresShell::UpdateApproximateFrameVisibility);
+    NewRunnableMethod("PresShell::UpdateApproximateFrameVisibility",
+                      this, &PresShell::UpdateApproximateFrameVisibility);
   if (NS_SUCCEEDED(NS_DispatchToCurrentThread(ev))) {
     mUpdateApproximateFrameVisibilityEvent = ev;
   }
@@ -9601,7 +9603,7 @@ PresShell::Observe(nsISupports* aSubject,
         {
           nsAutoScriptBlocker scriptBlocker;
           ++mChangeNestCount;
-          RestyleManager* restyleManager = mPresContext->RestyleManager();
+          RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
           if (restyleManager->IsServo()) {
             MOZ_CRASH("stylo: PresShell::Observe(\"chrome-flush-skin-caches\") "
                       "not implemented for Servo-backed style system");

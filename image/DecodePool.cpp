@@ -65,7 +65,8 @@ public:
   {
     
     
-    NS_DispatchToMainThread(NewRunnableMethod(aThisThread, &nsIThread::Shutdown));
+    NS_DispatchToMainThread(NewRunnableMethod("DecodePoolImpl::ShutdownThread",
+                                              aThisThread, &nsIThread::Shutdown));
   }
 
   

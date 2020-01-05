@@ -35,9 +35,9 @@
 #include "nsFrameManager.h"
 #include "nsLayoutUtils.h"
 #include "nsViewManager.h"
-#include "mozilla/GeckoRestyleManager.h"
 #include "mozilla/RestyleManager.h"
-#include "mozilla/RestyleManagerInlines.h"
+#include "mozilla/RestyleManagerHandle.h"
+#include "mozilla/RestyleManagerHandleInlines.h"
 #include "SurfaceCacheUtils.h"
 #include "nsCSSRuleProcessor.h"
 #include "nsRuleNode.h"
@@ -119,7 +119,8 @@ class CharSetChangingRunnable : public Runnable
 public:
   CharSetChangingRunnable(nsPresContext* aPresContext,
                           const nsCString& aCharSet)
-    : mPresContext(aPresContext),
+    : Runnable("CharSetChangingRunnable"),
+      mPresContext(aPresContext),
       mCharSet(aCharSet)
   {
   }
@@ -923,7 +924,7 @@ nsPresContext::Init(nsDeviceContext* aDeviceContext)
   mEventManager->SetPresContext(this);
 
 #ifdef RESTYLE_LOGGING
-  mRestyleLoggingEnabled = GeckoRestyleManager::RestyleLoggingInitiallyEnabled();
+  mRestyleLoggingEnabled = RestyleManager::RestyleLoggingInitiallyEnabled();
 #endif
 
 #ifdef DEBUG
@@ -944,7 +945,10 @@ nsPresContext::AttachShell(nsIPresShell* aShell, StyleBackendType aBackendType)
   if (aBackendType == StyleBackendType::Servo) {
     mRestyleManager = new ServoRestyleManager(this);
   } else {
-    mRestyleManager = new GeckoRestyleManager(this);
+    
+    
+    
+    mRestyleManager = new mozilla::RestyleManager(this);
   }
 
   
@@ -2086,7 +2090,8 @@ nsPresContext::PostMediaFeatureValuesChangedEvent()
   
   if (!mPendingMediaFeatureValuesChanged && mShell) {
     nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod(this, &nsPresContext::HandleMediaFeatureValuesChangedEvent);
+      NewRunnableMethod("nsPresContext::HandleMediaFeatureValuesChangedEvent",
+                        this, &nsPresContext::HandleMediaFeatureValuesChangedEvent);
     if (NS_SUCCEEDED(NS_DispatchToCurrentThread(ev))) {
       mPendingMediaFeatureValuesChanged = true;
       mShell->SetNeedStyleFlush();
@@ -2278,7 +2283,8 @@ nsPresContext::RebuildCounterStyles()
   }
   if (!mPostedFlushCounterStyles) {
     nsCOMPtr<nsIRunnable> ev =
-      NewRunnableMethod(this, &nsPresContext::HandleRebuildCounterStyles);
+      NewRunnableMethod("nsPresContext::HandleRebuildCounterStyles",
+                        this, &nsPresContext::HandleRebuildCounterStyles);
     if (NS_SUCCEEDED(NS_DispatchToCurrentThread(ev))) {
       mPostedFlushCounterStyles = true;
     }

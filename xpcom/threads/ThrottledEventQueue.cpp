@@ -205,7 +205,8 @@ class ThrottledEventQueue::Inner final : public nsIObserver
     
     if (shouldShutdown) {
       MOZ_ASSERT(IsEmpty());
-      NS_DispatchToMainThread(NewRunnableMethod(this, &Inner::ShutdownComplete));
+      NS_DispatchToMainThread(NewRunnableMethod("ThrottledEventQueue::Inner::ShutdownComplete",
+                                                this, &Inner::ShutdownComplete));
     }
   }
 
@@ -283,7 +284,8 @@ public:
     }
 
     
-    NS_DispatchToMainThread(NewRunnableMethod(this, &Inner::ShutdownComplete));
+    NS_DispatchToMainThread(NewRunnableMethod("ThrottledEventQueue::Inner::ShutdownComplete",
+                                              this, &Inner::ShutdownComplete));
   }
 
   bool
