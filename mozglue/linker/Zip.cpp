@@ -65,6 +65,7 @@ Zip::Zip(const char *filename, void *mapped, size_t size)
 , nextDir(nullptr)
 , entries(nullptr)
 {
+  pthread_mutex_init(&mutex, nullptr);
   
   
   if (!nextFile)
@@ -79,11 +80,14 @@ Zip::~Zip()
     DEBUG_LOG("Unmapped %s @%p", name, mapped);
     free(name);
   }
+  pthread_mutex_destroy(&mutex);
 }
 
 bool
 Zip::GetStream(const char *path, Zip::Stream *out) const
 {
+  AutoLock lock(&mutex);
+
   DEBUG_LOG("%s - GetFile %s", name, path);
   
 
