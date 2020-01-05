@@ -2108,8 +2108,8 @@ CSSParserImpl::ParseVariable(const nsAString& aVariableName,
     OUTPUT_ERROR();
   } else {
     CLEAR_ERROR();
-    aDeclaration->AddVariableDeclaration(aVariableName, variableType,
-                                         variableValue, aIsImportant, true);
+    aDeclaration->AddVariable(aVariableName, variableType,
+                              variableValue, aIsImportant, true);
     *aChanged = true;
   }
 
@@ -6097,8 +6097,7 @@ CSSParserImpl::ParsePseudoSelector(int32_t&       aDataMask,
 
   if (aSelector.IsPseudoElement()) {
     CSSPseudoElementType type = aSelector.PseudoType();
-    if (type >= CSSPseudoElementType::Count ||
-        !nsCSSPseudoElements::PseudoElementSupportsUserActionState(type)) {
+    if (!nsCSSPseudoElements::PseudoElementSupportsUserActionState(type)) {
       
       REPORT_UNEXPECTED_TOKEN(PEPseudoSelNoUserActionPC);
       UngetToken();
@@ -7493,8 +7492,8 @@ CSSParserImpl::ParseDeclaration(css::Declaration* aDeclaration,
                          CSS_CUSTOM_NAME_PREFIX_LENGTH).EqualsLiteral("--"));
     
     nsDependentString varName(propertyName, CSS_CUSTOM_NAME_PREFIX_LENGTH);
-    aDeclaration->AddVariableDeclaration(varName, variableType, variableValue,
-                                         status == ePriority_Important, false);
+    aDeclaration->AddVariable(varName, variableType, variableValue,
+                              status == ePriority_Important, false);
   } else {
     *aChanged |= mData.TransferFromBlock(mTempData, propID, EnabledState(),
                                          status == ePriority_Important,

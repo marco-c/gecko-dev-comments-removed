@@ -121,18 +121,19 @@ public:
 
   void ValueAppended(nsCSSPropertyID aProperty);
 
-  void RemoveProperty(nsCSSPropertyID aProperty);
+  void GetPropertyValue(const nsAString& aProperty, nsAString& aValue) const;
+  void GetPropertyValueByID(nsCSSPropertyID aPropID, nsAString& aValue) const;
+  void GetAuthoredPropertyValue(const nsAString& aProperty,
+                                nsAString& aValue) const;
+  bool GetPropertyIsImportant(const nsAString& aProperty) const;
+  void RemoveProperty(const nsAString& aProperty);
+  void RemovePropertyByID(nsCSSPropertyID aProperty);
 
   bool HasProperty(nsCSSPropertyID aProperty) const;
-
-  void GetValue(nsCSSPropertyID aProperty, nsAString& aValue) const;
-  void GetAuthoredValue(nsCSSPropertyID aProperty, nsAString& aValue) const;
 
   bool HasImportantData() const {
     return mImportantData || mImportantVariables;
   }
-  bool GetValueIsImportant(nsCSSPropertyID aProperty) const;
-  bool GetValueIsImportant(const nsAString& aProperty) const;
 
   
 
@@ -145,18 +146,18 @@ public:
 
 
 
-  void AddVariableDeclaration(const nsAString& aName,
-                              CSSVariableDeclarations::Type aType,
-                              const nsString& aValue,
-                              bool aIsImportant,
-                              bool aOverrideImportant);
+  void AddVariable(const nsAString& aName,
+                   CSSVariableDeclarations::Type aType,
+                   const nsString& aValue,
+                   bool aIsImportant,
+                   bool aOverrideImportant);
 
   
 
 
 
 
-  void RemoveVariableDeclaration(const nsAString& aName);
+  void RemoveVariable(const nsAString& aName);
 
   
 
@@ -167,13 +168,13 @@ public:
 
 
 
-  void GetVariableDeclaration(const nsAString& aName, nsAString& aValue) const;
+  void GetVariableValue(const nsAString& aName, nsAString& aValue) const;
 
   
 
 
 
-  bool GetVariableValueIsImportant(const nsAString& aName) const;
+  bool GetVariableIsImportant(const nsAString& aName) const;
 
   uint32_t Count() const {
     return mOrder.Length();
@@ -309,8 +310,10 @@ private:
   Declaration& operator=(const Declaration& aCopy) = delete;
   bool operator==(const Declaration& aCopy) const = delete;
 
-  void GetValue(nsCSSPropertyID aProperty, nsAString& aValue,
-                nsCSSValue::Serialization aValueSerialization) const;
+  void GetPropertyValueInternal(nsCSSPropertyID aProperty, nsAString& aValue,
+                                nsCSSValue::Serialization aValueSerialization)
+    const;
+  bool GetPropertyIsImportantByID(nsCSSPropertyID aProperty) const;
 
   static void AppendImportanceToString(bool aIsImportant, nsAString& aString);
   

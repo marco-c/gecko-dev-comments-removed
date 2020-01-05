@@ -160,15 +160,12 @@ protected:
                               const nsAString& aPropValue,
                               bool aIsImportant);
 
-  
-  
-  nsresult RemoveProperty(const nsCSSPropertyID aPropID);
-
-  void GetCustomPropertyValue(const nsAString& aPropertyName, nsAString& aValue);
-  nsresult RemoveCustomProperty(const nsAString& aPropertyName);
   nsresult ParseCustomPropertyValue(const nsAString& aPropertyName,
                                     const nsAString& aPropValue,
                                     bool aIsImportant);
+
+  nsresult RemovePropertyInternal(nsCSSPropertyID aPropID);
+  nsresult RemovePropertyInternal(const nsAString& aProperty);
 
 protected:
   virtual ~nsDOMCSSDeclaration();

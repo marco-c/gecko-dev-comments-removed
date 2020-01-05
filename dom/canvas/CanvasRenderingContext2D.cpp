@@ -2686,7 +2686,7 @@ GetFontStyleContext(Element* aElement, const nsAString& aFont,
   
   
   
-  decl->GetValue(eCSSProperty_font, aOutUsedFont);
+  decl->GetPropertyValueByID(eCSSProperty_font, aOutUsedFont);
 
   return sc.forget();
 }
