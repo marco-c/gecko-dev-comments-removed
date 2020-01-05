@@ -43,13 +43,28 @@ function search(messages, text = "") {
 
   return messages.filter(function (message) {
     
-    if (!Array.isArray(message.parameters)) {
+    if ([ MESSAGE_TYPE.RESULT, MESSAGE_TYPE.COMMAND ].includes(message.type)) {
       return true;
     }
-    return message
-      .parameters.join("")
-      .toLocaleLowerCase()
-      .includes(text.toLocaleLowerCase());
+
+    return (
+      
+      
+      message.parameters !== null && !Array.isArray(message.parameters)
+      
+      
+      || Object.keys(message.frame)
+        .map(key => message.frame[key])
+        .join(":")
+        .includes(text)
+      
+      || (message.messageText !== null
+            && message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
+      
+      || (message.parameters !== null
+          && message.parameters.join("").toLocaleLowerCase()
+              .includes(text.toLocaleLowerCase()))
+    );
   });
 }
 

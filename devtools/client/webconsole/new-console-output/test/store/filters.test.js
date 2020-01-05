@@ -12,25 +12,16 @@ const { getAllMessages } = require("devtools/client/webconsole/new-console-outpu
 const { getAllFilters } = require("devtools/client/webconsole/new-console-output/selectors/filters");
 const { setupStore } = require("devtools/client/webconsole/new-console-output/test/helpers");
 const { MESSAGE_LEVEL } = require("devtools/client/webconsole/new-console-output/constants");
+const { stubPackets } = require("devtools/client/webconsole/new-console-output/test/fixtures/stubs/index");
 
 describe("Filtering", () => {
-  const numMessages = 7;
-  const store = setupStore([
-    
-    "console.log('foobar', 'test')",
-    "console.warn('danger, will robinson!')",
-    "console.log(undefined)",
-    "console.count('bar')",
-    
-    "new Date(0)",
-    
-    "ReferenceError: asdf is not defined"
-  ]);
-  
-  store.dispatch(messageAdd(new ConsoleCommand({ messageText: `console.warn("x")` })));
+  let store;
+  let numMessages;
 
   beforeEach(() => {
+    store = prepareBaseStore();
     store.dispatch(actions.filtersClear());
+    numMessages = getAllMessages(store.getState()).size;
   });
 
   describe("Level filter", () => {
@@ -38,7 +29,7 @@ describe("Filtering", () => {
       store.dispatch(actions.filterToggle(MESSAGE_LEVEL.LOG));
 
       let messages = getAllMessages(store.getState());
-      expect(messages.size).toEqual(numMessages - 2);
+      expect(messages.size).toEqual(numMessages - 3);
     });
 
     it("filters debug messages", () => {
@@ -72,8 +63,38 @@ describe("Filtering", () => {
 
       let messages = getAllMessages(store.getState());
       
+      expect(messages.size).toEqual(3);
+    });
+
+    it("matches unicode values", () => {
+      store.dispatch(actions.filterTextSet("鼬"));
+
+      let messages = getAllMessages(store.getState());
       
-      expect(messages.size).toEqual(5);
+      expect(messages.size).toEqual(3);
+    });
+
+    it("matches locations", () => {
+      
+      let locationMsg =
+        Object.assign({}, stubPackets.get("console.log('foobar', 'test')"));
+      locationMsg.message =
+        Object.assign({}, locationMsg.message, { filename: "search-location-test.js" });
+      store.dispatch(messageAdd(locationMsg));
+
+      store.dispatch(actions.filterTextSet("search-location-test.js"));
+
+      let messages = getAllMessages(store.getState());
+      
+      expect(messages.size).toEqual(3);
+    });
+
+    it("restores all messages once text is cleared", () => {
+      store.dispatch(actions.filterTextSet("danger"));
+      store.dispatch(actions.filterTextSet(""));
+
+      let messages = getAllMessages(store.getState());
+      expect(messages.size).toEqual(numMessages);
     });
   });
 
@@ -113,3 +134,23 @@ describe("Clear filters", () => {
     });
   });
 });
+
+function prepareBaseStore() {
+  const store = setupStore([
+    
+    "console.log('foobar', 'test')",
+    "console.warn('danger, will robinson!')",
+    "console.log(undefined)",
+    "console.count('bar')",
+    "console.log('鼬')",
+    
+    "new Date(0)",
+    
+    "ReferenceError: asdf is not defined"
+  ]);
+
+  
+  store.dispatch(messageAdd(new ConsoleCommand({ messageText: `console.warn("x")` })));
+
+  return store;
+}
