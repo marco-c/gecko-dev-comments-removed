@@ -528,6 +528,36 @@ DialogValueHolder::Get(JSContext* aCx, JS::Handle<JSObject*> aScope,
   }
 }
 
+class IdleRequestExecutor;
+
+class IdleRequestExecutorTimeoutHandler final : public TimeoutHandler
+{
+public:
+  explicit IdleRequestExecutorTimeoutHandler(IdleRequestExecutor* aExecutor)
+    : mExecutor(aExecutor)
+  {
+  }
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IdleRequestExecutorTimeoutHandler,
+                                           TimeoutHandler)
+
+  nsresult Call() override;
+
+private:
+  ~IdleRequestExecutorTimeoutHandler() {}
+  RefPtr<IdleRequestExecutor> mExecutor;
+};
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(IdleRequestExecutorTimeoutHandler, TimeoutHandler, mExecutor)
+
+NS_IMPL_ADDREF_INHERITED(IdleRequestExecutorTimeoutHandler, TimeoutHandler)
+NS_IMPL_RELEASE_INHERITED(IdleRequestExecutorTimeoutHandler, TimeoutHandler)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdleRequestExecutorTimeoutHandler)
+NS_INTERFACE_MAP_END_INHERITING(TimeoutHandler)
+
+
 class IdleRequestExecutor final : public nsIRunnable
                                 , public nsICancelableRunnable
                                 , public nsIIncrementalRunnable
@@ -540,6 +570,8 @@ public:
   {
     MOZ_DIAGNOSTIC_ASSERT(mWindow);
     MOZ_DIAGNOSTIC_ASSERT(mWindow->IsInnerWindow());
+
+    mIdlePeriodLimit = { mDeadline, mWindow->LastIdleRequestHandle() };
   }
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -549,12 +581,37 @@ public:
   nsresult Cancel() override;
   void SetDeadline(TimeStamp aDeadline) override;
 
-  void MaybeDispatch();
+  bool IsCancelled() const { return !mWindow; }
+  
+  
+  
+  bool IneligibleForCurrentIdlePeriod(IdleRequest* aRequest) const
+  {
+    return aRequest->Handle() >= mIdlePeriodLimit.mLastRequestIdInIdlePeriod &&
+           TimeStamp::Now() <= mIdlePeriodLimit.mEndOfIdlePeriod;
+  }
+
+  void MaybeUpdateIdlePeriodLimit();
+
+  
+  
+  
+  void MaybeDispatch(TimeStamp aDelayUntil = TimeStamp());
+  void ScheduleDispatch();
 private:
+  struct IdlePeriodLimit
+  {
+    TimeStamp mEndOfIdlePeriod;
+    uint32_t mLastRequestIdInIdlePeriod;
+  };
+
+  void ThrottledDispatch(uint32_t aDelay);
+
   ~IdleRequestExecutor() {}
 
   bool mDispatched;
   TimeStamp mDeadline;
+  IdlePeriodLimit mIdlePeriodLimit;
   RefPtr<nsGlobalWindow> mWindow;
 };
 
@@ -613,7 +670,15 @@ IdleRequestExecutor::SetDeadline(TimeStamp aDeadline)
 }
 
 void
-IdleRequestExecutor::MaybeDispatch()
+IdleRequestExecutor::MaybeUpdateIdlePeriodLimit()
+{
+  if (TimeStamp::Now() > mIdlePeriodLimit.mEndOfIdlePeriod) {
+    mIdlePeriodLimit = { mDeadline, mWindow->LastIdleRequestHandle() };
+  }
+}
+
+void
+IdleRequestExecutor::MaybeDispatch(TimeStamp aDelayUntil)
 {
   
   
@@ -624,69 +689,57 @@ IdleRequestExecutor::MaybeDispatch()
   }
 
   mDispatched = true;
+
+  nsPIDOMWindowOuter* outer = mWindow->GetOuterWindow();
+  if (outer && outer->AsOuter()->IsBackground()) {
+    
+    
+    
+    ThrottledDispatch(0);
+  } else if (aDelayUntil) {
+    ThrottledDispatch(
+      static_cast<uint32_t>((aDelayUntil - TimeStamp::Now()).ToMilliseconds()));
+  } else {
+    ScheduleDispatch();
+  }
+}
+
+void
+IdleRequestExecutor::ScheduleDispatch()
+{
+  MOZ_ASSERT(mWindow);
   RefPtr<IdleRequestExecutor> request = this;
   NS_IdleDispatchToCurrentThread(request.forget());
 }
 
-class IdleRequestExecutorTimeoutHandler final : public TimeoutHandler
+void
+IdleRequestExecutor::ThrottledDispatch(uint32_t aDelay)
 {
-public:
-  explicit IdleRequestExecutorTimeoutHandler(IdleRequestExecutor* aExecutor)
-    : mExecutor(aExecutor)
-  {
+  MOZ_ASSERT(mWindow);
+
+  nsCOMPtr<nsITimeoutHandler> handler =
+    new IdleRequestExecutorTimeoutHandler(this);
+  int32_t dummy;
+  mWindow->AsInner()->TimeoutManager().SetTimeout(
+    handler, aDelay, false, Timeout::Reason::eIdleCallbackTimeout, &dummy);
+}
+
+nsresult
+IdleRequestExecutorTimeoutHandler::Call()
+{
+  if (!mExecutor->IsCancelled()) {
+    mExecutor->ScheduleDispatch();
   }
-
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(IdleRequestExecutorTimeoutHandler,
-                                           TimeoutHandler)
-
-  nsresult Call() override
-  {
-    mExecutor->MaybeDispatch();
-    return NS_OK;
-  }
-private:
-  ~IdleRequestExecutorTimeoutHandler() {}
-  RefPtr<IdleRequestExecutor> mExecutor;
-};
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(IdleRequestExecutorTimeoutHandler, TimeoutHandler, mExecutor)
-
-NS_IMPL_ADDREF_INHERITED(IdleRequestExecutorTimeoutHandler, TimeoutHandler)
-NS_IMPL_RELEASE_INHERITED(IdleRequestExecutorTimeoutHandler, TimeoutHandler)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdleRequestExecutorTimeoutHandler)
-  NS_INTERFACE_MAP_ENTRY(nsITimeoutHandler)
-NS_INTERFACE_MAP_END_INHERITING(TimeoutHandler)
+  return NS_OK;
+}
 
 void
 nsGlobalWindow::ScheduleIdleRequestDispatch()
 {
   AssertIsOnMainThread();
 
-  if (mIdleRequestCallbacks.isEmpty()) {
-    if (mIdleRequestExecutor) {
-      mIdleRequestExecutor->Cancel();
-      mIdleRequestExecutor = nullptr;
-    }
-
-    return;
-  }
-
   if (!mIdleRequestExecutor) {
     mIdleRequestExecutor = new IdleRequestExecutor(this);
-  }
-
-  nsPIDOMWindowOuter* outer = GetOuterWindow();
-  if (outer && outer->AsOuter()->IsBackground()) {
-    nsCOMPtr<nsITimeoutHandler> handler = new IdleRequestExecutorTimeoutHandler(mIdleRequestExecutor);
-    int32_t dummy;
-    
-    
-    
-    mTimeoutManager->SetTimeout(handler, 0, false,
-                                Timeout::Reason::eIdleCallbackTimeout, &dummy);
-    return;
   }
 
   mIdleRequestExecutor->MaybeDispatch();
@@ -754,15 +807,24 @@ nsGlobalWindow::ExecuteIdleRequest(TimeStamp aDeadline)
     return NS_OK;
   }
 
+  
+  
+  
+  if (mIdleRequestExecutor->IneligibleForCurrentIdlePeriod(request)) {
+    mIdleRequestExecutor->MaybeDispatch(aDeadline);
+    return NS_OK;
+  }
+
   DOMHighResTimeStamp deadline = 0.0;
 
   if (Performance* perf = GetPerformance()) {
     deadline = perf->GetDOMTiming()->TimeStampToDOMHighRes(aDeadline);
   }
 
+  mIdleRequestExecutor->MaybeUpdateIdlePeriodLimit();
   nsresult result = RunIdleRequest(request, deadline, false);
 
-  ScheduleIdleRequestDispatch();
+  mIdleRequestExecutor->MaybeDispatch();
   return result;
 }
 
@@ -803,7 +865,6 @@ NS_IMPL_ADDREF_INHERITED(IdleRequestTimeoutHandler, TimeoutHandler)
 NS_IMPL_RELEASE_INHERITED(IdleRequestTimeoutHandler, TimeoutHandler)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdleRequestTimeoutHandler)
-  NS_INTERFACE_MAP_ENTRY(nsITimeoutHandler)
 NS_INTERFACE_MAP_END_INHERITING(TimeoutHandler)
 
 uint32_t
@@ -836,14 +897,9 @@ nsGlobalWindow::RequestIdleCallback(JSContext* aCx,
   }
 
   
-  
-  
-  
-  bool needsScheduling = !IsSuspended() && mIdleRequestCallbacks.isEmpty();
-  
   InsertIdleCallback(request);
 
-  if (needsScheduling) {
+  if (!IsSuspended()) {
     ScheduleIdleRequestDispatch();
   }
 
