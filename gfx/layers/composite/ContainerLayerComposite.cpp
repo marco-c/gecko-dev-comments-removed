@@ -451,7 +451,9 @@ RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
 
       
       
-      if (geometry && !layer->Is3DContextLeaf()) {
+      const bool isLeafLayer = layer->AsContainerLayer() == nullptr;
+
+      if (geometry && isLeafLayer) {
         TransformLayerGeometry(layer, geometry);
       }
 
