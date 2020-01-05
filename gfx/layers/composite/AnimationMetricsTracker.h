@@ -38,6 +38,12 @@ public:
   void UpdateAnimationInProgress(AnimationProcessTypes aActive, uint64_t aLayerArea,
                                  TimeDuration aVsyncInterval);
 
+  
+
+
+
+  void UpdateApzAnimationInProgress(bool aInProgress, TimeDuration aVsyncInterval);
+
 private:
   void AnimationStarted();
   void AnimationEnded();
@@ -64,6 +70,10 @@ private:
   TimeStamp mContentAnimationStart;
   
   uint32_t mContentAnimationFrameCount;
+  
+  TimeStamp mApzAnimationStart;
+  
+  uint32_t mApzAnimationFrameCount;
 };
 
 } 
