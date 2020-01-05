@@ -882,7 +882,7 @@ GeckoDriver.prototype.executeScript = function*(cmd, resp) {
 
 
 
-GeckoDriver.prototype.executeAsyncScript = function (cmd, resp) {
+GeckoDriver.prototype.executeAsyncScript = function* (cmd, resp) {
   let {script, args, scriptTimeout} = cmd.parameters;
   scriptTimeout = scriptTimeout || this.scriptTimeout;
 
@@ -932,7 +932,7 @@ GeckoDriver.prototype.execute_ = function (script, args, timeout, opts = {}) {
 
 
 
-GeckoDriver.prototype.executeJSScript = function (cmd, resp) {
+GeckoDriver.prototype.executeJSScript = function* (cmd, resp) {
   let {script, args, scriptTimeout} = cmd.parameters;
   scriptTimeout = scriptTimeout || this.scriptTimeout;
 
@@ -2241,9 +2241,6 @@ GeckoDriver.prototype.closeChromeWindow = function (cmd, resp) {
   }
 
   try {
-    
-    this.curFrame = null;
-
     this.mm.removeDelayedFrameScript(FRAME_SCRIPT);
     this.getCurrentWindow().close();
   } catch (e) {
