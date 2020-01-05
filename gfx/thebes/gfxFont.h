@@ -1551,7 +1551,7 @@ public:
             return GetHorizontalMetrics();
         }
         if (!mVerticalMetrics) {
-            mVerticalMetrics.reset(CreateVerticalMetrics());
+            mVerticalMetrics = CreateVerticalMetrics();
         }
         return *mVerticalMetrics;
     }
@@ -1868,7 +1868,7 @@ public:
 protected:
     virtual const Metrics& GetHorizontalMetrics() = 0;
 
-    const Metrics* CreateVerticalMetrics();
+    mozilla::UniquePtr<const Metrics> CreateVerticalMetrics();
 
     
     
