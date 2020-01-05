@@ -922,6 +922,8 @@ var LoginManagerContent = {
                         userTriggered, foundLogins, recipes, {inputElement} = {}) {
     log("_fillForm", form.elements);
     let ignoreAutocomplete = true;
+    
+    let autofillResult = -1;
     const AUTOFILL_RESULT = {
       FILLED: 0,
       NO_PASSWORD_FIELD: 1,
@@ -936,15 +938,6 @@ var LoginManagerContent = {
       INSECURE: 10,
     };
 
-    function recordAutofillResult(result) {
-      if (userTriggered) {
-        
-        return;
-      }
-      const autofillResultHist = Services.telemetry.getHistogramById("PWMGR_FORM_AUTOFILL_RESULT");
-      autofillResultHist.add(result);
-    }
-
     try {
       
       
@@ -952,7 +945,7 @@ var LoginManagerContent = {
           (InsecurePasswordUtils.isFormSecure(form) ||
           !LoginHelper.showInsecureFieldWarning)) {
         
-        recordAutofillResult(AUTOFILL_RESULT.NO_SAVED_LOGINS);
+        autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;
         return;
       }
 
@@ -982,7 +975,7 @@ var LoginManagerContent = {
       
       if (passwordField == null) {
         log("not filling form, no password field found");
-        recordAutofillResult(AUTOFILL_RESULT.NO_PASSWORD_FIELD);
+        autofillResult = AUTOFILL_RESULT.NO_PASSWORD_FIELD;
         return;
       }
 
@@ -991,7 +984,7 @@ var LoginManagerContent = {
       
       if (passwordField.disabled || passwordField.readOnly) {
         log("not filling form, password field disabled or read-only");
-        recordAutofillResult(AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY);
+        autofillResult = AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY;
         return;
       }
 
@@ -1009,7 +1002,7 @@ var LoginManagerContent = {
       
       if (foundLogins.length == 0) {
         
-        recordAutofillResult(AUTOFILL_RESULT.NO_SAVED_LOGINS);
+        autofillResult = AUTOFILL_RESULT.NO_SAVED_LOGINS;
         return;
       }
 
@@ -1017,7 +1010,7 @@ var LoginManagerContent = {
       if (!userTriggered && !LoginHelper.insecureAutofill &&
           !InsecurePasswordUtils.isFormSecure(form)) {
         log("not filling form since it's insecure");
-        recordAutofillResult(AUTOFILL_RESULT.INSECURE);
+        autofillResult = AUTOFILL_RESULT.INSECURE;
         return;
       }
 
@@ -1052,14 +1045,14 @@ var LoginManagerContent = {
 
       if (logins.length == 0) {
         log("form not filled, none of the logins fit in the field");
-        recordAutofillResult(AUTOFILL_RESULT.NO_LOGINS_FIT);
+        autofillResult = AUTOFILL_RESULT.NO_LOGINS_FIT;
         return;
       }
 
       
       if (passwordField.value && !clobberPassword) {
         log("form not filled, the password field was already filled");
-        recordAutofillResult(AUTOFILL_RESULT.EXISTING_PASSWORD);
+        autofillResult = AUTOFILL_RESULT.EXISTING_PASSWORD;
         return;
       }
 
@@ -1076,7 +1069,7 @@ var LoginManagerContent = {
                                            l.username.toLowerCase() == username);
         if (matchingLogins.length == 0) {
           log("Password not filled. None of the stored logins match the username already present.");
-          recordAutofillResult(AUTOFILL_RESULT.EXISTING_USERNAME);
+          autofillResult = AUTOFILL_RESULT.EXISTING_USERNAME;
           return;
         }
 
@@ -1105,7 +1098,7 @@ var LoginManagerContent = {
 
         if (matchingLogins.length != 1) {
           log("Multiple logins for form, so not filling any.");
-          recordAutofillResult(AUTOFILL_RESULT.MULTIPLE_LOGINS);
+          autofillResult = AUTOFILL_RESULT.MULTIPLE_LOGINS;
           return;
         }
 
@@ -1116,13 +1109,13 @@ var LoginManagerContent = {
 
       if (!autofillForm) {
         log("autofillForms=false but form can be filled");
-        recordAutofillResult(AUTOFILL_RESULT.NO_AUTOFILL_FORMS);
+        autofillResult = AUTOFILL_RESULT.NO_AUTOFILL_FORMS;
         return;
       }
 
       if (isAutocompleteOff && !ignoreAutocomplete) {
         log("Not filling the login because we're respecting autocomplete=off");
-        recordAutofillResult(AUTOFILL_RESULT.AUTOCOMPLETE_OFF);
+        autofillResult = AUTOFILL_RESULT.AUTOCOMPLETE_OFF;
         return;
       }
 
@@ -1148,12 +1141,22 @@ var LoginManagerContent = {
       }
 
       log("_fillForm succeeded");
-      recordAutofillResult(AUTOFILL_RESULT.FILLED);
+      autofillResult = AUTOFILL_RESULT.FILLED;
       let doc = form.ownerDocument;
       let win = doc.defaultView;
       let messageManager = messageManagerFromWindow(win);
       messageManager.sendAsyncMessage("LoginStats:LoginFillSuccessful");
     } finally {
+      if (autofillResult == -1) {
+        
+        throw new Error("_fillForm: autofillResult must be specified");
+      }
+
+      if (!userTriggered) {
+        
+        Services.telemetry.getHistogramById("PWMGR_FORM_AUTOFILL_RESULT").add(autofillResult);
+      }
+
       Services.obs.notifyObservers(form.rootElement, "passwordmgr-processed-form", null);
     }
   },
