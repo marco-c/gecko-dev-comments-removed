@@ -707,9 +707,8 @@ static bool
 HasCameraPermission(const nsCString& aOrigin)
 {
   
-  static const char* cameraPermission = "camera";
+  static const char* cameraPermission = "MediaManagerVideo";
   bool allowed = false;
-  bool permanent = false;
   nsresult rv;
   nsCOMPtr<nsIPermissionManager> mgr =
     do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
@@ -728,19 +727,9 @@ HasCameraPermission(const nsCString& aOrigin)
                                                    &video);
         if (NS_SUCCEEDED(rv)) {
           allowed = (video == nsIPermissionManager::ALLOW_ACTION);
-          
-          
-          if (allowed) {
-            rv = mgr->TestExactPermanentPermission(principal,
-                                                   cameraPermission,
-                                                   &video);
-            if (NS_SUCCEEDED(rv)) {
-              permanent = (video == nsIPermissionManager::ALLOW_ACTION);
-            }
-          }
         }
         
-        if (allowed && !permanent) {
+        if (allowed) {
           mgr->RemoveFromPrincipal(principal, cameraPermission);
         }
       }
