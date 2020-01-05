@@ -541,8 +541,6 @@ protected:
   
   void StepDecoding();
   
-  void StepBuffering();
-  
   void StepCompleted();
 
   bool IsStateMachineScheduled() const;
