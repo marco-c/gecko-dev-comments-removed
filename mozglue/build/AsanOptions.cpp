@@ -27,9 +27,15 @@
 
 
 
+
+
+
+
+
 extern "C" MOZ_ASAN_BLACKLIST
 const char* __asan_default_options() {
-    return "allow_user_segv_handler=1:alloc_dealloc_mismatch=0:detect_leaks=0";
+    return "allow_user_segv_handler=1:alloc_dealloc_mismatch=0:detect_leaks=0"
+           ":allocator_may_return_null=1";
 }
 
 #endif
