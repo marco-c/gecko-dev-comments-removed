@@ -370,21 +370,6 @@ typedef mozilla::gfx::SurfaceFormat gfxImageFormat;
 namespace mozilla {
 
 
-
-
-struct RectCorner {
-  enum {
-    
-    
-    TopLeft = 0,
-    TopRight = 1,
-    BottomRight = 2,
-    BottomLeft = 3,
-    Count = 4
-  };
-};
-
-
 enum Side { eSideTop, eSideRight, eSideBottom, eSideLeft };
 
 enum SideBits {
@@ -423,6 +408,11 @@ enum Corner {
   eCornerBottomRight = 2,
   eCornerBottomLeft = 3
 };
+
+
+
+
+constexpr int eCornerCount = 4;
 
 
 
