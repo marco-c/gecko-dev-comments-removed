@@ -122,8 +122,7 @@ typedef uint8_t* Address;
 
 
 class OS {
- public:
-
+public:
   
   static void Sleep(const int milliseconds);
 
@@ -132,14 +131,7 @@ class OS {
 
   
   static void Startup();
-
- private:
-  static const int msPerSecond = 1000;
-
 };
-
-
-
 
 
 
