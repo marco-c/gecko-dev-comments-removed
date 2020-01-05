@@ -7,12 +7,11 @@ use cssparser::{self, Color, RGBA};
 use euclid::num::Zero;
 use num_traits::ToPrimitive;
 use std::ascii::AsciiExt;
-use std::ops::Deref;
 use std::str::FromStr;
 use string_cache::{Atom, Namespace};
 use url::Url;
 use util::str::{DOMString, LengthOrPercentageOrAuto, HTML_SPACE_CHARACTERS};
-use util::str::{read_exponent, read_fraction, read_numbers, split_html_space_chars, str_join};
+use util::str::{read_exponent, read_fraction, read_numbers, split_html_space_chars};
 use values::specified::{Length};
 
 
@@ -125,7 +124,9 @@ impl AttrValue {
         AttrValue::TokenList(tokens, atoms)
     }
 
+    #[cfg(not(feature = "gecko"))] 
     pub fn from_atomic_tokens(atoms: Vec<Atom>) -> AttrValue {
+        use util::str::str_join;
         
         let tokens = DOMString::from(str_join(&atoms, "\x20"));
         AttrValue::TokenList(tokens, atoms)
@@ -293,7 +294,8 @@ impl AttrValue {
     }
 }
 
-impl Deref for AttrValue {
+#[cfg(not(feature = "gecko"))] 
+impl ::std::ops::Deref for AttrValue {
     type Target = str;
 
     fn deref(&self) -> &str {
