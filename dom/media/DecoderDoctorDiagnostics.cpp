@@ -32,14 +32,6 @@ static mozilla::LazyLogModule sDecoderDoctorLog("DecoderDoctor");
 
 namespace mozilla {
 
-struct NotificationAndReportStringId
-{
-  
-  dom::DecoderDoctorNotificationType mNotificationType;
-  
-  const char* mReportStringId;
-};
-
 
 
 
@@ -246,6 +238,14 @@ DecoderDoctorDocumentWatcher::EnsureTimerIsStarted()
     }
   }
 }
+
+struct NotificationAndReportStringId
+{
+  
+  dom::DecoderDoctorNotificationType mNotificationType;
+  
+  const char* mReportStringId;
+};
 
 
 static const NotificationAndReportStringId sMediaWidevineNoWMF=
