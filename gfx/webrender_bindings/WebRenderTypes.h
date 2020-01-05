@@ -10,20 +10,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/Types.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-#define MOZ_USE_RENDER_THREAD true
-
 typedef mozilla::Maybe<WrImageMask> MaybeImageMask;
 
 namespace mozilla {
