@@ -732,14 +732,48 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
         currentOtherURI->GetScheme(otherScheme);
 
         bool schemesMatch = scheme.Equals(otherScheme, stringComparator);
-        bool isSamePage;
+        bool isSamePage = false;
         
-        if (scheme.EqualsLiteral("about")) {
-            nsAutoCString module, otherModule;
-            isSamePage = schemesMatch &&
-                NS_SUCCEEDED(NS_GetAboutModuleName(currentURI, module)) &&
-                NS_SUCCEEDED(NS_GetAboutModuleName(currentOtherURI, otherModule)) &&
-                module.Equals(otherModule);
+        if (scheme.EqualsLiteral("about") && schemesMatch) {
+            nsAutoCString moduleName, otherModuleName;
+            
+            isSamePage =
+              NS_SUCCEEDED(NS_GetAboutModuleName(currentURI, moduleName)) &&
+              NS_SUCCEEDED(NS_GetAboutModuleName(currentOtherURI, otherModuleName)) &&
+              moduleName.Equals(otherModuleName);
+            if (!isSamePage) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                nsCOMPtr<nsIAboutModule> module, otherModule;
+                bool knowBothModules =
+                    NS_SUCCEEDED(NS_GetAboutModule(currentURI, getter_AddRefs(module))) &&
+                    NS_SUCCEEDED(NS_GetAboutModule(currentOtherURI, getter_AddRefs(otherModule)));
+                uint32_t aboutModuleFlags = 0;
+                uint32_t otherAboutModuleFlags = 0;
+                knowBothModules = knowBothModules &&
+                    NS_SUCCEEDED(module->GetURIFlags(currentURI, &aboutModuleFlags)) &&
+                    NS_SUCCEEDED(otherModule->GetURIFlags(currentOtherURI, &otherAboutModuleFlags));
+                if (knowBothModules) {
+                    isSamePage =
+                        !(aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) &&
+                        (otherAboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT);
+                    if (isSamePage && otherAboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
+                        
+                        
+                        
+                        
+                        
+                        return NS_OK;
+                    }
+                }
+            }
         } else {
             bool equalExceptRef = false;
             rv = currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef);
