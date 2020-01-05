@@ -1,8 +1,3 @@
-
-
-
-
-
 "use strict";
 
 var gSSService = Cc["@mozilla.org/ssservice;1"]
@@ -40,7 +35,7 @@ function test_part1() {
   
   ok(!gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://nonexistent.mozilla.com"), 0));
+       Services.io.newURI("https://nonexistent.example.com"), 0));
 
   
   ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
@@ -49,38 +44,38 @@ function test_part1() {
   
   Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", false);
   ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             Services.io.newURI("https://bugzilla.mozilla.org"),
+                             Services.io.newURI("https://includesubdomains.preloaded.test"),
                              0));
   Services.prefs.setBoolPref("network.stricttransportsecurity.preloadlist", true);
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            Services.io.newURI("https://bugzilla.mozilla.org"),
+                            Services.io.newURI("https://includesubdomains.preloaded.test"),
                             0));
 
   
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
 
   
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://a.b.c.def.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://a.b.c.def.includesubdomains.preloaded.test"), 0));
 
   
   ok(!gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.www.torproject.org"), 0));
+       Services.io.newURI("https://subdomain.noincludesubdomains.preloaded.test"), 0));
 
   
   ok(!gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://notsts.nonexistent.mozilla.com."), 0));
+       Services.io.newURI("https://notsts.nonexistent.example.com."), 0));
 
   
   
-  let uri = Services.io.newURI("https://bugzilla.mozilla.org");
+  let uri = Services.io.newURI("https://includesubdomains.preloaded.test");
   let subDomainUri =
-    Services.io.newURI("https://subdomain.bugzilla.mozilla.org");
+    Services.io.newURI("https://subdomain.includesubdomains.preloaded.test");
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=0", sslStatus, 0);
   ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
@@ -98,15 +93,15 @@ function test_part1() {
 
   
   
-  uri = Services.io.newURI("https://subdomain.www.torproject.org");
+  uri = Services.io.newURI("https://subdomain.noincludesubdomains.preloaded.test");
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=0", sslStatus, 0);
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            Services.io.newURI("https://www.torproject.org"),
+                            Services.io.newURI("https://noincludesubdomains.preloaded.test"),
                             0));
   ok(!gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
-  uri = Services.io.newURI("https://subdomain.bugzilla.mozilla.org");
+  uri = Services.io.newURI("https://subdomain.includesubdomains.preloaded.test");
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=0", sslStatus, 0);
   
@@ -119,17 +114,17 @@ function test_part1() {
   
   
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            Services.io.newURI("https://bugzilla.mozilla.org"),
+                            Services.io.newURI("https://includesubdomains.preloaded.test"),
                             0));
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://sibling.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://sibling.includesubdomains.preloaded.test"), 0));
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://another.subdomain.bugzilla.mozilla.org"),
+       Services.io.newURI("https://another.subdomain.includesubdomains.preloaded.test"),
        0));
 
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
@@ -141,13 +136,13 @@ function test_part1() {
   
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://sibling.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://sibling.includesubdomains.preloaded.test"), 0));
   ok(!gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://another.subdomain.bugzilla.mozilla.org"),
+       Services.io.newURI("https://another.subdomain.includesubdomains.preloaded.test"),
        0));
 
   
@@ -156,7 +151,7 @@ function test_part1() {
   
   
   
-  uri = Services.io.newURI("https://login.persona.org");
+  uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                            "max-age=1", sslStatus, 0);
@@ -170,9 +165,9 @@ const IS_PRIVATE = Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
 
 function test_private_browsing1() {
   gSSService.clearAll();
-  let uri = Services.io.newURI("https://bugzilla.mozilla.org");
+  let uri = Services.io.newURI("https://includesubdomains.preloaded.test");
   let subDomainUri =
-    Services.io.newURI("https://a.b.c.subdomain.bugzilla.mozilla.org");
+    Services.io.newURI("https://a.b.c.subdomain.includesubdomains.preloaded.test");
   
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                             IS_PRIVATE));
@@ -208,7 +203,7 @@ function test_private_browsing1() {
   
   
   
-  uri = Services.io.newURI("https://login.persona.org");
+  uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
   ok(gSSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                             IS_PRIVATE));
   gSSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
@@ -225,17 +220,17 @@ function test_private_browsing2() {
   
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://includesubdomains.preloaded.test"), 0));
   
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://subdomain.bugzilla.mozilla.org"), 0));
+       Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"), 0));
 
   
   
   ok(gSSService.isSecureURI(
        Ci.nsISiteSecurityService.HEADER_HSTS,
-       Services.io.newURI("https://login.persona.org"), 0));
+       Services.io.newURI("https://includesubdomains2.preloaded.test"), 0));
 
   run_next_test();
 }
