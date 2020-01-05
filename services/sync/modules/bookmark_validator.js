@@ -52,8 +52,6 @@ this.EXPORTED_SYMBOLS = ["BookmarkValidator", "BookmarkProblemData"];
 
 
 
-
-
 class BookmarkProblemData {
   constructor() {
     this.rootOnServer = false;
@@ -72,7 +70,6 @@ class BookmarkProblemData {
     this.duplicateChildren = [];
     this.parentNotFolder = [];
 
-    this.badClientRoots = [];
     this.clientMissing = [];
     this.serverMissing = [];
     this.serverDeleted = [];
@@ -125,7 +122,6 @@ class BookmarkProblemData {
       { name: "parentChildMismatches", count: this.parentChildMismatches.length },
       { name: "cycles", count: this.cycles.length },
       { name: "clientCycles", count: this.clientCycles.length },
-      { name: "badClientRoots", count: this.badClientRoots.length },
       { name: "orphans", count: this.orphans.length },
       { name: "missingChildren", count: this.missingChildren.length },
       { name: "deletedChildren", count: this.deletedChildren.length },
@@ -563,24 +559,6 @@ class BookmarkValidator {
   }
 
   
-  _validateClient(problemData, clientRecords) {
-    problemData.clientCycles = this._detectCycles(clientRecords);
-    const rootsToCheck = [
-      PlacesUtils.bookmarks.menuGuid,
-      PlacesUtils.bookmarks.toolbarGuid,
-      PlacesUtils.bookmarks.unfiledGuid,
-      PlacesUtils.bookmarks.mobileGuid,
-    ];
-    for (let rootGUID of rootsToCheck) {
-      let record = clientRecords.find(record =>
-        record.guid === rootGUID);
-      if (!record || record.parentid !== "places") {
-        problemData.badClientRoots.push(rootGUID);
-      }
-    }
-  }
-
-  
 
 
 
@@ -600,7 +578,7 @@ class BookmarkValidator {
     serverRecords = inspectionInfo.records;
     let problemData = inspectionInfo.problemData;
 
-    this._validateClient(problemData, clientRecords);
+    problemData.clientCycles = this._detectCycles(clientRecords);
 
     let matches = [];
 
