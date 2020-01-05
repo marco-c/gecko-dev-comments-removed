@@ -10532,14 +10532,10 @@ void nsCSSFrameConstructor::CreateNeededPseudoSiblings(
 static bool
 FrameWantsToBeInAnonymousItem(const nsIAtom* aParentType, const nsIFrame* aFrame)
 {
-  
-  
-  if (aParentType == nsGkAtoms::gridContainerFrame) {
-    return aFrame->IsFrameOfType(nsIFrame::eLineParticipant);
-  }
-  MOZ_ASSERT(aParentType == nsGkAtoms::flexContainerFrame);
-  return aFrame->IsFrameOfType(nsIFrame::eLineParticipant) ||
-         aFrame->GetType() == nsGkAtoms::placeholderFrame;
+  MOZ_ASSERT(aParentType == nsGkAtoms::flexContainerFrame ||
+             aParentType == nsGkAtoms::gridContainerFrame);
+
+  return aFrame->IsFrameOfType(nsIFrame::eLineParticipant);
 }
 #endif
 
@@ -12683,17 +12679,6 @@ nsCSSFrameConstructor::FrameConstructionItem::
                           bool aIsWebkitBox)
 {
   if (mFCData->mBits & FCDATA_IS_LINE_PARTICIPANT) {
-    
-    return true;
-  }
-
-  
-  if (aContainerType == nsGkAtoms::flexContainerFrame &&
-      !(mFCData->mBits & FCDATA_DISALLOW_OUT_OF_FLOW) &&
-      aState.GetGeometricParent(mStyleContext->StyleDisplay(), nullptr)) {
-    
-    
-    
     
     return true;
   }
