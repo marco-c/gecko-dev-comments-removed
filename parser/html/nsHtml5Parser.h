@@ -280,7 +280,8 @@ class nsHtml5Parser final : public nsIParser,
     
 
 
-    bool                          mBlocked;
+
+    uint32_t                      mBlocked;
 
     
 
