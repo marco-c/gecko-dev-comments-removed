@@ -667,6 +667,27 @@ intl_GetLocaleInfo(JSContext* cx, unsigned argc, Value* vp);
 extern MOZ_MUST_USE bool
 intl_ComputeDisplayNames(JSContext* cx, unsigned argc, Value* vp);
 
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp);
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp);
+
 #if ENABLE_INTL_API
 
 
