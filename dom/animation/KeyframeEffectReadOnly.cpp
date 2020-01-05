@@ -1360,13 +1360,7 @@ KeyframeEffectReadOnly::CanThrottleTransformChanges(nsIFrame& aFrame) const
     return true;
   }
 
-  nsPresContext* presContext = GetPresContext();
-  
-  
-  MOZ_ASSERT(presContext);
-
-  TimeStamp now =
-    presContext->RefreshDriver()->MostRecentRefresh();
+  TimeStamp now = aFrame.PresContext()->RefreshDriver()->MostRecentRefresh();
 
   EffectSet* effectSet = EffectSet::GetEffectSet(mTarget->mElement,
                                                  mTarget->mPseudoType);
