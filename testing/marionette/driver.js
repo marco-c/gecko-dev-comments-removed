@@ -1375,36 +1375,40 @@ GeckoDriver.prototype.getWindowRect = function (cmd, resp) {
 
 
 GeckoDriver.prototype.setWindowRect = function* (cmd, resp) {
-  assert.firefox();
+  assert.firefox()
   const win = assert.window(this.getCurrentWindow());
   assert.noUserPrompt(this.dialog);
 
-  let {x, y, height, width} = cmd.parameters;
+  let {x, y, width, height} = cmd.parameters;
 
   if (height != null && width != null) {
     assert.positiveInteger(height);
     assert.positiveInteger(width);
-    yield new Promise(resolve => {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      const fps15 = 66;
-      const synchronousResize = () => win.setTimeout(resolve, fps15);
-      win.addEventListener("resize", synchronousResize, {once: true});
-      win.resizeTo(width, height);
-    });
+
+    if (win.outerWidth != width && win.outerHeight != height) {
+      yield new Promise(resolve => {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        const fps15 = 66;
+        const synchronousResize = () => win.setTimeout(resolve, fps15);
+        win.addEventListener("resize", synchronousResize, {once: true});
+        win.resizeTo(width, height);
+      });
+    }
   }
 
   if (x != null && y != null) {
     assert.integer(x);
     assert.integer(y);
-    let orig = {screenX: win.screenX, screenY: win.screenY};
+    const orig = {screenX: win.screenX, screenY: win.screenY};
+
     win.moveTo(x, y);
     yield wait.until((resolve, reject) => {
       if ((x == win.screenX && y == win.screenY) ||
@@ -1422,7 +1426,6 @@ GeckoDriver.prototype.setWindowRect = function* (cmd, resp) {
     "width": win.outerWidth,
     "height": win.outerHeight,
   };
-
 };
 
 
