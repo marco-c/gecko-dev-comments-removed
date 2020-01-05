@@ -656,6 +656,8 @@ RemoteDataDecoder::DrainComplete()
   }
   mDrainStatus = DrainStatus::DRAINED;
   ReturnDecodedData();
+  
+  mJavaDecoder->Flush();
 }
 
 void
