@@ -11597,6 +11597,10 @@ nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
           shAvailable, updateSHistory, updateGHistory, equalUri));
 
   if (shAvailable && mCurrentURI && !mOSHE && aLoadType != LOAD_ERROR_PAGE) {
+    
+    
+    
+    
     NS_ASSERTION(NS_IsAboutBlank(mCurrentURI),
                  "no SHEntry for a non-transient viewer?");
   }
