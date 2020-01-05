@@ -452,8 +452,7 @@ wasm::GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, Si
 {
     masm.setFramePushed(0);
 
-    unsigned tlsBytes = sizeof(void*);
-    unsigned framePushed = StackDecrementForCall(masm, WasmStackAlignment, fi.sig().args(), tlsBytes);
+    unsigned framePushed = StackDecrementForCall(masm, WasmStackAlignment, fi.sig().args());
 
     FuncOffsets offsets;
     GenerateFunctionPrologue(masm, framePushed, sigId, &offsets);
@@ -475,15 +474,11 @@ wasm::GenerateImportFunction(jit::MacroAssembler& masm, const FuncImport& fi, Si
     }
 
     
-    uint32_t tlsStackOffset = i.stackBytesConsumedSoFar();
-    masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), tlsStackOffset));
-
-    
     CallSiteDesc desc(CallSiteDesc::Dynamic);
     masm.wasmCallImport(desc, CalleeDesc::import(fi.tlsDataOffset()));
 
     
-    masm.loadPtr(Address(masm.getStackPointer(), tlsStackOffset), WasmTlsReg);
+    masm.loadWasmTlsRegFromFrame();
     masm.loadWasmPinnedRegsFromTls();
 
     GenerateFunctionEpilogue(masm, framePushed, &offsets);
@@ -621,8 +616,6 @@ wasm::GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi, uint3
     return offsets;
 }
 
-static const unsigned SavedTlsReg = sizeof(void*);
-
 
 
 
@@ -640,7 +633,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
     unsigned sizeOfRetAddr = sizeof(void*);
     unsigned jitFrameBytes = 3 * sizeof(void*) + (1 + fi.sig().args().length()) * sizeof(Value);
-    unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes + SavedTlsReg;
+    unsigned totalJitFrameBytes = sizeOfRetAddr + jitFrameBytes;
     unsigned jitFramePushed = StackDecrementForCall(masm, JitStackAlignment, totalJitFrameBytes) -
                               sizeOfRetAddr;
 
@@ -683,12 +676,6 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
     FillArgumentArray(masm, fi.sig().args(), argOffset, offsetToCallerStackArgs, scratch, ToValue(true));
     argOffset += fi.sig().args().length() * sizeof(Value);
     MOZ_ASSERT(argOffset == jitFrameBytes);
-
-    
-    
-    
-    static_assert(SavedTlsReg == sizeof(void*), "stack frame accounting");
-    masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), jitFrameBytes));
 
     {
         
@@ -797,9 +784,7 @@ wasm::GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi, Label* t
 
     
     
-    
-    
-    masm.loadPtr(Address(masm.getStackPointer(), jitFrameBytes + sizeOfRetAddr), WasmTlsReg);
+    masm.loadWasmTlsRegFromFrame();
 
     GenerateExitEpilogue(masm, masm.framePushed(), ExitReason::ImportJit, &offsets);
 
