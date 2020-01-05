@@ -81,6 +81,19 @@ function transformPacket(packet) {
             type = MESSAGE_TYPE.NULL_MESSAGE;
           }
           break;
+        case "table":
+          const supportedClasses = [
+            "Array", "Object", "Map", "Set", "WeakMap", "WeakSet"];
+          if (
+            !Array.isArray(parameters) ||
+            parameters.length === 0 ||
+            !supportedClasses.includes(parameters[0].class)
+          ) {
+            
+            
+            type = "log";
+          }
+          break;
       }
 
       const frame = message.filename ? {
