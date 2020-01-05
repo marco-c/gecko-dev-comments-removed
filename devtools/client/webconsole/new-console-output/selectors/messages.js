@@ -5,6 +5,7 @@
 
 "use strict";
 
+const { l10n } = require("devtools/client/webconsole/new-console-output/utils/messages");
 const { getAllFilters } = require("devtools/client/webconsole/new-console-output/selectors/filters");
 const { getLogLimit } = require("devtools/client/webconsole/new-console-output/selectors/prefs");
 const {
@@ -52,11 +53,21 @@ function search(messages, text = "") {
       
       message.parameters !== null && !Array.isArray(message.parameters)
       
+      || isTextInFrame(text, message.frame)
       
-      || Object.keys(message.frame)
-        .map(key => message.frame[key])
-        .join(":")
-        .includes(text)
+      || (
+        Array.isArray(message.stacktrace) &&
+        message.stacktrace.some(frame => isTextInFrame(text,
+          
+          
+          {
+            functionName: frame.functionName ||
+              l10n.getStr("stacktrace.anonymousFunction"),
+            filename: frame.filename,
+            lineNumber: frame.lineNumber,
+            columnNumber: frame.columnNumber
+          }))
+      )
       
       || (message.messageText !== null
             && message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
@@ -66,6 +77,15 @@ function search(messages, text = "") {
               .includes(text.toLocaleLowerCase()))
     );
   });
+}
+
+function isTextInFrame(text, frame) {
+  
+  return Object.keys(frame)
+    .map(key => frame[key])
+    .join(":")
+    .toLocaleLowerCase()
+    .includes(text.toLocaleLowerCase());
 }
 
 function prune(messages, logLimit) {
