@@ -28,6 +28,7 @@
 
 #computedview-toolbar {
   display: flex;
+  align-items: center;
 }
 
 #browser-style-checkbox {
@@ -36,15 +37,11 @@
 
   margin-inline-start: 5px;
   margin-inline-end: 5px;
+
 }
 
 #browser-style-checkbox-label {
   margin-right: 5px;
-
-  
-
-  display: flex;
-  align-items: center;
 }
 
 #propertyContainer {
