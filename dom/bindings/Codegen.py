@@ -9237,13 +9237,26 @@ class CGMemberJITInfo(CGThing):
             
             getter = ("(JSJitGetterOp)get_%s" %
                       IDLToCIdentifier(self.member.identifier.name))
-            getterinfal = "infallible" in self.descriptor.getExtendedAttributes(self.member, getter=True)
+            extendedAttrs = self.descriptor.getExtendedAttributes(self.member, getter=True)
+            getterinfal = "infallible" in extendedAttrs
 
+            
+            
+            
+            
+            
+            
+            
+            
             movable = self.mayBeMovable() and getterinfal
             eliminatable = self.mayBeEliminatable() and getterinfal
             aliasSet = self.aliasSet()
 
-            getterinfal = getterinfal and infallibleForMember(self.member, self.member.type, self.descriptor)
+            
+            
+            getterinfal = (getterinfal and
+                           "canOOM" not in extendedAttrs and
+                           infallibleForMember(self.member, self.member.type, self.descriptor))
             isAlwaysInSlot = self.member.getExtendedAttribute("StoreInSlot")
             if self.member.slotIndices is not None:
                 assert isAlwaysInSlot or self.member.getExtendedAttribute("Cached")
@@ -9306,7 +9319,16 @@ class CGMemberJITInfo(CGThing):
                 
                 
                 
-                hasInfallibleImpl = "infallible" in self.descriptor.getExtendedAttributes(self.member)
+                extendedAttrs = self.descriptor.getExtendedAttributes(self.member)
+                hasInfallibleImpl = "infallible" in extendedAttrs
+                
+                
+                
+                
+                
+                
+                
+                
                 movable = self.mayBeMovable() and hasInfallibleImpl
                 eliminatable = self.mayBeEliminatable() and hasInfallibleImpl
                 
@@ -9316,7 +9338,8 @@ class CGMemberJITInfo(CGThing):
                     
                     methodInfal = False
                 else:
-                    methodInfal = hasInfallibleImpl
+                    methodInfal = (hasInfallibleImpl and
+                                   "canOOM" not in extendedAttrs)
                 
                 if self.member.affects == "Nothing":
                     args = sig[1]
