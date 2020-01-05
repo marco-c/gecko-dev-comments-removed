@@ -57,7 +57,13 @@ private:
   uint32_t mGlobalIndexOffset;
 
   
+  int32_t mActive;
+
+  
   nsCOMPtr<nsIFrameLoader> mOwnerFrameLoader;
+
+  
+  nsCOMPtr<nsIGroupedSHistory> mGroupedSHistory;
 };
 
 } 

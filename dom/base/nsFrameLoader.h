@@ -351,7 +351,6 @@ private:
   mozilla::ScreenIntSize mLazySize;
 
   nsCOMPtr<nsIPartialSHistory> mPartialSessionHistory;
-  nsCOMPtr<nsIGroupedSHistory> mGroupedSessionHistory;
 
   
   
