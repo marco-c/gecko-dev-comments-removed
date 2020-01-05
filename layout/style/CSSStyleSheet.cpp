@@ -422,16 +422,8 @@ CSSStyleSheet::CSSStyleSheet(const CSSStyleSheet& aCopy,
 
 CSSStyleSheet::~CSSStyleSheet()
 {
-  for (StyleSheet* child = GetFirstChild();
-       child;
-       child = child->mNext) {
-    
-    
-    if (child->mParent == this) {
-      child->mParent = nullptr;
-      child->mDocument = nullptr;
-    }
-  }
+  UnparentChildren();
+
   DropRuleCollection();
   mInner->RemoveSheet(this);
   

@@ -218,6 +218,8 @@ private:
                          ErrorResult& aRv);
 
 protected:
+  void UnparentChildren();
+
   
   
   
@@ -259,7 +261,9 @@ protected:
 
   
   
+  
   friend class mozilla::CSSStyleSheet;
+  friend class mozilla::ServoStyleSheet;
 };
 
 } 
