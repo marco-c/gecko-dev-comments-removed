@@ -1376,6 +1376,10 @@ public:
 
 
 
+
+
+
+
   enum class IntrinsicISizeType { MIN_ISIZE, PREF_ISIZE };
   static const auto MIN_ISIZE = IntrinsicISizeType::MIN_ISIZE;
   static const auto PREF_ISIZE = IntrinsicISizeType::PREF_ISIZE;
@@ -1390,6 +1394,7 @@ public:
                    nsRenderingContext*   aRenderingContext,
                    nsIFrame*             aFrame,
                    IntrinsicISizeType    aType,
+                   const mozilla::Maybe<mozilla::LogicalSize>& aPercentageBasis = mozilla::Nothing(),
                    uint32_t              aFlags = 0,
                    nscoord               aMarginBoxMinSizeClamp = NS_MAXSIZE);
   
