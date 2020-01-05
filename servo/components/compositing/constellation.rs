@@ -77,9 +77,6 @@ pub struct Constellation<LTF, STF> {
     next_pipeline_id: PipelineId,
 
     
-    next_frame_id: FrameId,
-
-    
     pending_frames: Vec<FrameChange>,
 
     pending_sizes: HashMap<(PipelineId, SubpageId), TypedRect<PagePx, f32>>,
@@ -91,13 +88,7 @@ pub struct Constellation<LTF, STF> {
 }
 
 
-#[derive(Copy)]
-pub struct FrameId(u32);
-
-
 struct FrameTree {
-    
-    pub id: FrameId,
     
     pub pipeline: RefCell<Rc<Pipeline>>,
     
@@ -109,10 +100,9 @@ struct FrameTree {
 }
 
 impl FrameTree {
-    fn new(id: FrameId, pipeline: Rc<Pipeline>, parent_pipeline: Option<Rc<Pipeline>>)
+    fn new(pipeline: Rc<Pipeline>, parent_pipeline: Option<Rc<Pipeline>>)
            -> FrameTree {
         FrameTree {
-            id: id,
             pipeline: RefCell::new(pipeline.clone()),
             parent: RefCell::new(parent_pipeline),
             children: RefCell::new(vec!()),
@@ -364,7 +354,6 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 pipelines: HashMap::new(),
                 navigation_context: NavigationContext::new(),
                 next_pipeline_id: PipelineId(0),
-                next_frame_id: FrameId(0),
                 pending_frames: vec!(),
                 pending_sizes: HashMap::new(),
                 time_profiler_chan: time_profiler_chan,
@@ -415,14 +404,6 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
     fn get_next_pipeline_id(&mut self) -> PipelineId {
         let id = self.next_pipeline_id;
         let PipelineId(ref mut i) = self.next_pipeline_id;
-        *i += 1;
-        id
-    }
-
-    
-    fn get_next_frame_id(&mut self) -> FrameId {
-        let id = self.next_frame_id;
-        let FrameId(ref mut i) = self.next_frame_id;
         *i += 1;
         id
     }
@@ -567,12 +548,11 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         debug!("creating replacement pipeline for about:failure");
 
         let new_id = self.get_next_pipeline_id();
-        let new_frame_id = self.get_next_frame_id();
         let pipeline = self.new_pipeline(new_id, parent, None,
                                          LoadData::new(Url::parse("about:failure").unwrap()));
 
         self.browse(Some(pipeline_id),
-                    Rc::new(FrameTree::new(new_frame_id, pipeline.clone(), None)),
+                    Rc::new(FrameTree::new(pipeline.clone(), None)),
                     NavigationType::Load);
 
         self.pipelines.insert(new_id, pipeline);
@@ -594,10 +574,9 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
     fn handle_init_load(&mut self, url: Url) {
         let next_pipeline_id = self.get_next_pipeline_id();
-        let next_frame_id = self.get_next_frame_id();
         let pipeline = self.new_pipeline(next_pipeline_id, None, None, LoadData::new(url));
         self.browse(None,
-                    Rc::new(FrameTree::new(next_frame_id, pipeline.clone(), None)),
+                    Rc::new(FrameTree::new(pipeline.clone(), None)),
                     NavigationType::Load);
         self.pipelines.insert(pipeline.id, pipeline);
     }
@@ -729,8 +708,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 self.update_child_pipeline(frame_tree.clone(), new_pipeline, old_subpage_id),
             None => {
                 let child_tree = Rc::new(
-                    FrameTree::new(self.get_next_frame_id(),
-                                   new_pipeline,
+                    FrameTree::new(new_pipeline,
                                    Some(frame_tree.pipeline.borrow().clone())));
                 frame_tree.add_child(ChildFrameTree::new(child_tree, new_rect));
             }
@@ -826,11 +804,9 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         let parent = source_frame.parent.clone();
         let parent_id = source_frame.pipeline.borrow().parent;
         let next_pipeline_id = self.get_next_pipeline_id();
-        let next_frame_id = self.get_next_frame_id();
         let pipeline = self.new_pipeline(next_pipeline_id, parent_id, None, load_data);
         self.browse(Some(source_id),
-                    Rc::new(FrameTree::new(next_frame_id,
-                                           pipeline.clone(),
+                    Rc::new(FrameTree::new(pipeline.clone(),
                                            parent.borrow().clone())),
                     NavigationType::Load);
         // Send message to ScriptTask that will suspend all timers

@@ -5,7 +5,7 @@
 
 
 pub use windowing;
-pub use constellation::{FrameId, SendableFrameTree};
+pub use constellation::SendableFrameTree;
 
 use compositor;
 use headless;
