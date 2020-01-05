@@ -679,12 +679,6 @@ bitflags! {
 
 
 
-
-static HAS_FLOATED_DESCENDANTS_BITMASK: FlowFlags = FlowFlags { bits: 0b0000_0011 };
-
-
-
-
 static TEXT_ALIGN_SHIFT: usize = 11;
 
 impl FlowFlags {
@@ -697,11 +691,6 @@ impl FlowFlags {
     pub fn set_text_align(&mut self, value: text_align::T) {
         *self = (*self & !TEXT_ALIGN) |
                 FlowFlags::from_bits(value.to_u32() << TEXT_ALIGN_SHIFT).unwrap();
-    }
-
-    #[inline]
-    pub fn union_floated_descendants_flags(&mut self, other: FlowFlags) {
-        self.insert(other & HAS_FLOATED_DESCENDANTS_BITMASK);
     }
 
     #[inline]
