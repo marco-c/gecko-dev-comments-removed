@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_dom_ServiceWorkerManagerService_h
 #define mozilla_dom_ServiceWorkerManagerService_h
@@ -17,7 +17,7 @@ class OriginAttributes;
 
 namespace ipc {
 class PrincipalInfo;
-} // namespace ipc
+} 
 
 namespace dom {
 
@@ -26,6 +26,7 @@ class ServiceWorkerRegistrationData;
 namespace workers {
 
 class ServiceWorkerManagerParent;
+class ServiceWorkerUpdaterParent;
 
 class ServiceWorkerManagerService final
 {
@@ -53,15 +54,31 @@ public:
 
   void PropagateRemoveAll(uint64_t aParentID);
 
+  void ProcessUpdaterActor(ServiceWorkerUpdaterParent* aActor,
+                           const OriginAttributes& aOriginAttributes,
+                           const nsACString& aScope,
+                           uint64_t aParentID);
+
+  void UpdaterActorDestroyed(ServiceWorkerUpdaterParent* aActor);
+
 private:
   ServiceWorkerManagerService();
   ~ServiceWorkerManagerService();
 
   nsTHashtable<nsPtrHashKey<ServiceWorkerManagerParent>> mAgents;
+
+  struct PendingUpdaterActor
+  {
+    nsCString mScope;
+    ServiceWorkerUpdaterParent* mActor;
+    uint64_t mParentId;
+  };
+
+  nsTArray<PendingUpdaterActor> mPendingUpdaterActors;
 };
 
-} // namespace workers
-} // namespace dom
-} // namespace mozilla
+} 
+} 
+} 
 
-#endif // mozilla_dom_ServiceWorkerManagerService_h
+#endif 

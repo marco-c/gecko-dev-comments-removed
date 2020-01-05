@@ -1,12 +1,13 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ServiceWorkerManagerService.h"
 #include "ServiceWorkerManagerParent.h"
 #include "ServiceWorkerRegistrar.h"
+#include "ServiceWorkerUpdaterParent.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/Unused.h"
@@ -23,13 +24,13 @@ namespace {
 
 ServiceWorkerManagerService* sInstance = nullptr;
 
-} // namespace
+} 
 
 ServiceWorkerManagerService::ServiceWorkerManagerService()
 {
   AssertIsOnBackgroundThread();
 
-  // sInstance is a raw ServiceWorkerManagerService*.
+  
   MOZ_ASSERT(!sInstance);
   sInstance = this;
 }
@@ -43,7 +44,7 @@ ServiceWorkerManagerService::~ServiceWorkerManagerService()
   sInstance = nullptr;
 }
 
-/* static */ already_AddRefed<ServiceWorkerManagerService>
+ already_AddRefed<ServiceWorkerManagerService>
 ServiceWorkerManagerService::Get()
 {
   AssertIsOnBackgroundThread();
@@ -52,7 +53,7 @@ ServiceWorkerManagerService::Get()
   return instance.forget();
 }
 
-/* static */ already_AddRefed<ServiceWorkerManagerService>
+ already_AddRefed<ServiceWorkerManagerService>
 ServiceWorkerManagerService::GetOrCreate()
 {
   AssertIsOnBackgroundThread();
@@ -151,8 +152,8 @@ ServiceWorkerManagerService::PropagateUnregister(
     dom::ServiceWorkerRegistrar::Get();
   MOZ_ASSERT(service);
 
-  // It's possible that we don't have any ServiceWorkerManager managing this
-  // scope but we still need to unregister it from the ServiceWorkerRegistrar.
+  
+  
   service->UnregisterServiceWorker(aPrincipalInfo,
                                    NS_ConvertUTF16toUTF8(aScope));
 
@@ -232,6 +233,51 @@ ServiceWorkerManagerService::PropagateRemoveAll(uint64_t aParentID)
 #endif
 }
 
-} // namespace workers
-} // namespace dom
-} // namespace mozilla
+void
+ServiceWorkerManagerService::ProcessUpdaterActor(ServiceWorkerUpdaterParent* aActor,
+                                                 const OriginAttributes& aOriginAttributes,
+                                                 const nsACString& aScope,
+                                                 uint64_t aParentId)
+{
+  AssertIsOnBackgroundThread();
+
+  nsAutoCString suffix;
+  aOriginAttributes.CreateSuffix(suffix);
+
+  nsCString scope(aScope);
+  scope.Append(suffix);
+
+  for (uint32_t i = 0; i < mPendingUpdaterActors.Length(); ++i) {
+    
+    if (mPendingUpdaterActors[i].mScope.Equals(scope) &&
+        mPendingUpdaterActors[i].mParentId != aParentId) {
+      Unused << aActor->SendProceed(false);
+      return;
+    }
+  }
+
+  if (aActor->Proceed(this)) {
+    PendingUpdaterActor* pua = mPendingUpdaterActors.AppendElement();
+    pua->mActor = aActor;
+    pua->mScope = scope;
+    pua->mParentId = aParentId;
+  }
+}
+
+void
+ServiceWorkerManagerService::UpdaterActorDestroyed(ServiceWorkerUpdaterParent* aActor)
+{
+  for (uint32_t i = 0; i < mPendingUpdaterActors.Length(); ++i) {
+    
+    if (mPendingUpdaterActors[i].mActor == aActor) {
+      mPendingUpdaterActors.RemoveElementAt(i);
+      return;
+    }
+  }
+
+  MOZ_CRASH("The actor should be found");
+}
+
+} 
+} 
+} 
