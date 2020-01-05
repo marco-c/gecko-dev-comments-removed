@@ -30,9 +30,14 @@ public:
   {
     
     
+    
+    
+    
+    
+    
     mTextureClient =
       TextureClient::CreateWithData(new GPUVideoTextureData(aManager, aSD, aSize),
-                                    TextureFlags::DEFAULT,
+                                    TextureFlags::RECYCLE,
                                     ImageBridgeChild::GetSingleton().get());
   }
 
