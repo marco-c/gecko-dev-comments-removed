@@ -10,6 +10,7 @@ const Ci = Components.interfaces;
 const Cr = Components.results;
 const Cu = Components.utils;
 
+Cu.import("resource://gre/modules/debug.js", this);
 Cu.import("resource://gre/modules/Log.jsm");
 Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
@@ -17,9 +18,11 @@ Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/DeferredTask.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
-Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySend",
+                                  "resource://gre/modules/TelemetrySend.jsm");
 
 const Utils = TelemetryUtils;
 
@@ -1123,16 +1126,15 @@ var Impl = {
     
     
     let boundHandleMemoryReport = this.handleMemoryReport.bind(this);
-    let h = (id, units, amountName) => {
+    function h(id, units, amountName) {
       try {
         
         
         
         
         let amount = mgr[amountName];
-        if (amount === undefined) {
-          this._log.error("gatherMemory - telemetry accessed an unknown distinguished amount");
-        }
+        NS_ASSERT(amount !== undefined,
+                  "telemetry accessed an unknown distinguished amount");
         boundHandleMemoryReport(id, units, amount);
       } catch (e) {
       }
@@ -1219,7 +1221,7 @@ var Impl = {
       val = amount - this._prevValues[id];
       this._prevValues[id] = amount;
     } else {
-      this._log.error("handleMemoryReport - Can't handle memory reporter with units " + units);
+      NS_ASSERT(false, "Can't handle memory reporter with units " + units);
       return;
     }
 
