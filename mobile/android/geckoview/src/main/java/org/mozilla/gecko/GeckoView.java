@@ -3,7 +3,6 @@
 
 
 
-
 package org.mozilla.gecko;
 
 import java.util.Set;
@@ -49,7 +48,6 @@ public class GeckoView extends LayerView
     private InputConnectionListener mInputConnectionListener;
 
     private boolean onAttachedToWindowCalled;
-    private int screenId = 0; 
 
     @Override
     public void handleMessage(final String event, final JSONObject message) {
@@ -116,7 +114,7 @@ public class GeckoView extends LayerView
          Window() {}
 
         static native void open(Window instance, GeckoView view, Object compositor,
-                                String chromeURI, int width, int height, int screenId);
+                                String chromeURI, int width, int height);
 
         @Override protected native void disposeNative();
         native void close();
@@ -233,12 +231,11 @@ public class GeckoView extends LayerView
 
         if (GeckoThread.isStateAtLeast(GeckoThread.State.PROFILE_READY)) {
             Window.open(window, this, getCompositor(),
-                        chromeURI, metrics.widthPixels, metrics.heightPixels, screenId);
+                        chromeURI, metrics.widthPixels, metrics.heightPixels);
         } else {
             GeckoThread.queueNativeCallUntil(GeckoThread.State.PROFILE_READY, Window.class,
                     "open", window, GeckoView.class, this, Object.class, getCompositor(),
-                    String.class, chromeURI, metrics.widthPixels, metrics.heightPixels,
-                    screenId);
+                    String.class, chromeURI, metrics.widthPixels, metrics.heightPixels);
         }
     }
 

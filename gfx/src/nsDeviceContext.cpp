@@ -3,7 +3,6 @@
 
 
 
-
 #include "nsDeviceContext.h"
 #include <algorithm>                    
 #include "gfxASurface.h"                
@@ -612,15 +611,7 @@ nsDeviceContext::FindScreen(nsIScreen** outScreen)
         mScreenManager->ScreenForNativeWidget(mWidget->GetNativeData(NS_NATIVE_WINDOW),
                                               outScreen);
     }
-
-#ifdef MOZ_WIDGET_ANDROID
-    if (!(*outScreen)) {
-        nsCOMPtr<nsIScreen> screen = mWidget->GetWidgetScreen();
-        screen.forget(outScreen);
-    }
-#endif
-
-    if (!(*outScreen)) {
+    else {
         mScreenManager->GetPrimaryScreen(outScreen);
     }
 }

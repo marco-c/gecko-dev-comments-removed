@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef NSWINDOW_H_
 #define NSWINDOW_H_
 
@@ -46,11 +45,8 @@ public:
     NS_DECL_ISUPPORTS_INHERITED
 
     static void InitNatives();
-    void SetScreenId(uint32_t aScreenId) { mScreenId = aScreenId; }
 
 private:
-    uint32_t mScreenId;
-
     
     template<typename Lambda,
              bool IsStatic = Lambda::isStatic,
@@ -169,7 +165,6 @@ public:
     NS_IMETHOD DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
                              nsEventStatus& aStatus) override;
     nsEventStatus DispatchEvent(mozilla::WidgetGUIEvent* aEvent);
-    virtual already_AddRefed<nsIScreen> GetWidgetScreen() override;
     virtual nsresult MakeFullScreen(bool aFullScreen,
                                     nsIScreen* aTargetScreen = nullptr)
                                     override;
