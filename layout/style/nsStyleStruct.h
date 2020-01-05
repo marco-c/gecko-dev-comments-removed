@@ -1710,23 +1710,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   
 
 
-  uint16_t ComputedAlignContent() const { return mAlignContent; }
-
-  
-
-
-  uint8_t ComputedAlignItems() const { return mAlignItems; }
-
-  
-
-
 
   uint8_t UsedAlignSelf(nsStyleContext* aParent) const;
-
-  
-
-
-  uint16_t ComputedJustifyContent() const { return mJustifyContent; }
 
   
 
@@ -1755,15 +1740,17 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
   nsStyleCoord  mGridAutoRowsMax;       
   uint8_t       mGridAutoFlow;          
   mozilla::StyleBoxSizing mBoxSizing;   
-private:
-  friend class nsRuleNode;
 
   uint16_t      mAlignContent;          
   uint8_t       mAlignItems;            
-public:
   uint8_t       mAlignSelf;             
-private:
   uint16_t      mJustifyContent;        
+private:
+  friend class nsRuleNode;
+
+  
+  
+  
   uint8_t       mJustifyItems;          
 public:
   uint8_t       mJustifySelf;           
