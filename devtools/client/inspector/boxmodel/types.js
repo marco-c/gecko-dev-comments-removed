@@ -17,7 +17,4 @@ exports.boxModel = {
   
   layout: PropTypes.object,
 
-  
-  offsetParent: PropTypes.object,
-
 };

@@ -14,7 +14,4 @@ createEnum([
   
   "UPDATE_LAYOUT",
 
-  
-  "UPDATE_OFFSET_PARENT",
-
 ], module.exports);
