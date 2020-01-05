@@ -182,11 +182,9 @@ class JSObject : public js::gc::Cell
 
 
 
-    static inline JSObject* create(js::ExclusiveContext* cx,
-                                   js::gc::AllocKind kind,
-                                   js::gc::InitialHeap heap,
-                                   js::HandleShape shape,
-                                   js::HandleObjectGroup group);
+    static inline JS::Result<JSObject*, JS::OOM&>
+    create(js::ExclusiveContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
+           js::HandleShape shape, js::HandleObjectGroup group);
 
     
     
@@ -1196,7 +1194,7 @@ ToPropertyDescriptor(JSContext* cx, HandleValue descval, bool checkAccessors,
 
 
 
-bool
+Result<>
 CheckPropertyDescriptorAccessors(JSContext* cx, Handle<JS::PropertyDescriptor> desc);
 
 void
