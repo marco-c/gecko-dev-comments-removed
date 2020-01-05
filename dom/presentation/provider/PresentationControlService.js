@@ -118,8 +118,6 @@ PresentationControlService.prototype = {
     DEBUG && log("PresentationControlService - service start on port: " + this._port); 
 
     
-    
-    Services.obs.addObserver(this, "network-active-changed", false);
     Services.obs.addObserver(this, "network:offline-status-changed", false);
 
     this._notifyServerReady();
@@ -324,7 +322,6 @@ PresentationControlService.prototype = {
       this._serverSocket.close();
       this._serverSocket = null;
 
-      Services.obs.removeObserver(this, "network-active-changed");
       Services.obs.removeObserver(this, "network:offline-status-changed");
 
       this._notifyServerStopped(Cr.NS_OK);
@@ -336,21 +333,6 @@ PresentationControlService.prototype = {
   observe: function(aSubject, aTopic, aData) {
     DEBUG && log("PresentationControlService - observe: " + aTopic); 
     switch (aTopic) {
-      case "network-active-changed": {
-        if (!aSubject) {
-          DEBUG && log("No active network"); 
-          return;
-        }
-
-        
-
-
-
-        if (!Services.io.offline) {
-          this._restartServer();
-        }
-        break;
-      }
       case "network:offline-status-changed": {
         if (aData == "offline") {
           DEBUG && log("network offline"); 
