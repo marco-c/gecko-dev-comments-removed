@@ -345,7 +345,7 @@ def check_for_java_exception(logcat, quiet=False):
         
         
         
-        if "REPORTING UNCAUGHT EXCEPTION" in line or "FATAL EXCEPTION" in line:
+        if "REPORTING UNCAUGHT EXCEPTION" in line:
             
             
             found_exception = True
