@@ -19,6 +19,7 @@ Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
 Cu.import("resource://gre/modules/TelemetryEnvironment.jsm", this);
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
+Cu.import("resource://gre/modules/TelemetryReportingPolicy.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
 Cu.import("resource://gre/modules/Promise.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
@@ -65,6 +66,7 @@ const PREF_SERVER = PREF_BRANCH + "server";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_BYPASS_NOTIFICATION = "datareporting.policy.dataSubmissionPolicyBypassNotification";
 const PREF_SHUTDOWN_PINGSENDER = "toolkit.telemetry.shutdownPingSender.enabled";
+const PREF_POLICY_FIRSTRUN = "toolkit.telemetry.reportingpolicy.firstRun";
 
 const DATAREPORTING_DIR = "datareporting";
 const ABORTED_PING_FILE_NAME = "aborted-session-ping";
@@ -1377,6 +1379,10 @@ add_task(function* test_sendShutdownPing() {
   }
 
   Preferences.set(PREF_SHUTDOWN_PINGSENDER, true);
+  Preferences.set(PREF_POLICY_FIRSTRUN, false);
+  
+  TelemetryReportingPolicy.reset();
+  Services.obs.notifyObservers(null, "sessionstore-windows-restored", null);
   PingServer.clearRequests();
 
   
@@ -1406,12 +1412,27 @@ add_task(function* test_sendShutdownPing() {
   yield TelemetryController.testReset();
   yield TelemetryController.testShutdown();
 
-
   
-  Preferences.reset(PREF_SHUTDOWN_PINGSENDER);
+  yield TelemetryStorage.testClearPendingPings();
+
   
   
   Preferences.set(PREF_BYPASS_NOTIFICATION, true);
+
+  
+  
+  
+  Preferences.set(PREF_POLICY_FIRSTRUN, true);
+  
+  TelemetryReportingPolicy.reset();
+  Services.obs.notifyObservers(null, "sessionstore-windows-restored", null);
+
+  yield TelemetryController.testReset();
+  yield TelemetryController.testShutdown();
+
+  
+  Preferences.set(PREF_SHUTDOWN_PINGSENDER, false);
+  Preferences.reset(PREF_POLICY_FIRSTRUN);
   PingServer.resetPingHandler();
   yield TelemetryController.testReset();
 });
