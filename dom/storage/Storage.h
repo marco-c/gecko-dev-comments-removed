@@ -60,7 +60,8 @@ public:
           StorageManagerBase* aManager,
           StorageCache* aCache,
           const nsAString& aDocumentURI,
-          nsIPrincipal* aPrincipal);
+          nsIPrincipal* aPrincipal,
+          bool aIsPrivate);
 
   
   JSObject* WrapObject(JSContext* aCx,
@@ -119,7 +120,7 @@ public:
   void Clear(nsIPrincipal& aSubjectPrincipal,
              ErrorResult& aRv);
 
-  bool IsPrivate() const;
+  bool IsPrivate() const { return mIsPrivate; }
   bool IsSessionOnly() const { return mIsSessionOnly; }
 
   bool IsForkOf(const Storage* aOther) const
@@ -152,6 +153,9 @@ private:
   
   
   nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  
+  bool mIsPrivate : 1;
 
   
   
