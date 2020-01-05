@@ -921,7 +921,8 @@ class MacroAssembler : public MacroAssemblerSpecific
 
     
     
-    inline void popcnt32(Register src, Register dest, Register temp) DEFINED_ON(arm, x86_shared);
+    inline void popcnt32(Register src, Register dest, Register temp)
+        DEFINED_ON(arm, x86_shared, mips_shared);
 
     
     inline void popcnt64(Register64 src, Register64 dest, Register temp) DEFINED_ON(x86, x64, arm);
