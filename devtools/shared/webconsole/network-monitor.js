@@ -272,12 +272,52 @@ function NetworkResponseListener(owner, httpActivity) {
   this.receivedData = "";
   this.httpActivity = httpActivity;
   this.bodySize = 0;
+  
+  
+  let channel = this.httpActivity.channel;
+  this._wrappedNotificationCallbacks = channel.notificationCallbacks;
+  channel.notificationCallbacks = this;
 }
 
 NetworkResponseListener.prototype = {
   QueryInterface:
     XPCOMUtils.generateQI([Ci.nsIStreamListener, Ci.nsIInputStreamCallback,
-                           Ci.nsIRequestObserver, Ci.nsISupports]),
+                           Ci.nsIRequestObserver, Ci.nsIInterfaceRequestor,
+                           Ci.nsISupports]),
+
+  
+
+  
+
+
+
+  getInterface(iid) {
+    if (iid.equals(Ci.nsIProgressEventSink)) {
+      return this;
+    }
+    if (this._wrappedNotificationCallbacks) {
+      return this._wrappedNotificationCallbacks.getInterface(iid);
+    }
+    throw Cr.NS_ERROR_NO_INTERFACE;
+  },
+
+  
+
+
+
+  _forwardNotification(iid, method, args) {
+    if (!this._wrappedNotificationCallbacks) {
+      return;
+    }
+    try {
+      let impl = this._wrappedNotificationCallbacks.getInterface(iid);
+      impl[method].apply(impl, args);
+    } catch (e) {
+      if (e.result != Cr.NS_ERROR_NO_INTERFACE) {
+        throw e;
+      }
+    }
+  },
 
   
 
@@ -285,6 +325,12 @@ NetworkResponseListener.prototype = {
 
 
   _foundOpenResponse: false,
+
+  
+
+
+
+  _wrappedNotificationCallbacks: null,
 
   
 
@@ -382,6 +428,9 @@ NetworkResponseListener.prototype = {
     this.request = request;
     this._getSecurityInfo();
     this._findOpenResponse();
+    
+    
+    this.offset = 0;
 
     
     
@@ -448,6 +497,23 @@ NetworkResponseListener.prototype = {
   onStopRequest: function () {
     this._findOpenResponse();
     this.sink.outputStream.close();
+  },
+
+  
+
+  
+
+
+
+  onProgress: function (request, context, progress, progressMax) {
+    this.transferredSize = progress;
+    
+    
+    this._forwardNotification(Ci.nsIProgressEventSink, "onProgress", arguments);
+  },
+
+  onStatus: function () {
+    this._forwardNotification(Ci.nsIProgressEventSink, "onStatus", arguments);
   },
 
   
@@ -557,6 +623,7 @@ NetworkResponseListener.prototype = {
       this.httpActivity.discardResponseBody
     );
 
+    this._wrappedNotificationCallbacks = null;
     this.httpActivity = null;
     this.sink = null;
     this.inputStream = null;
@@ -587,23 +654,20 @@ NetworkResponseListener.prototype = {
     }
 
     if (available != -1) {
-      if (this.transferredSize === null) {
-        this.transferredSize = 0;
-      }
-
       if (available != 0) {
         if (this.converter) {
           this.converter.onDataAvailable(this.request, null, stream,
-                                         this.transferredSize, available);
+                                         this.offset, available);
         } else {
-          this.onDataAvailable(this.request, null, stream, this.transferredSize,
+          this.onDataAvailable(this.request, null, stream, this.offset,
                                available);
         }
       }
-      this.transferredSize += available;
+      this.offset += available;
       this.setAsyncListener(stream, this);
     } else {
       this.onStreamClose();
+      this.offset = 0;
     }
   },
 };
