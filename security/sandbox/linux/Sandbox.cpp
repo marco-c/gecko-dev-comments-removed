@@ -73,6 +73,8 @@ int gSeccompTsyncBroadcastSignum = 0;
 
 namespace mozilla {
 
+static bool gSandboxCrashOnError = false;
+
 
 SandboxCrashFunc gSandboxCrashFunc;
 
@@ -148,15 +150,18 @@ SigSysHandler(int nr, siginfo_t *info, void *void_context)
   
   
   SANDBOX_LOG_ERROR("seccomp sandbox violation: pid %d, syscall %d,"
-                    " args %d %d %d %d %d %d.  Killing process.",
+                    " args %d %d %d %d %d %d.%s",
                     pid, syscall_nr,
-                    args[0], args[1], args[2], args[3], args[4], args[5]);
+                    args[0], args[1], args[2], args[3], args[4], args[5],
+                    gSandboxCrashOnError ? "  Killing process." : "");
 
-  
-  info->si_addr = reinterpret_cast<void*>(syscall_nr);
+  if (gSandboxCrashOnError) {
+    
+    info->si_addr = reinterpret_cast<void*>(syscall_nr);
 
-  gSandboxCrashFunc(nr, info, &savedCtx);
-  _exit(127);
+    gSandboxCrashFunc(nr, info, &savedCtx);
+    _exit(127);
+  }
 }
 
 
@@ -514,6 +519,21 @@ SandboxEarlyInit(GeckoProcessType aType)
     return;
   }
   MOZ_RELEASE_ASSERT(IsSingleThreaded());
+
+  
+  
+  
+  
+  
+  
+#ifdef NIGHTLY_BUILD
+  gSandboxCrashOnError = true;
+#endif
+  if (const char* envVar = getenv("MOZ_SANDBOX_CRASH_ON_ERROR")) {
+    if (envVar[0]) {
+      gSandboxCrashOnError = envVar[0] != '0';
+    }
+  }
 
   
   
