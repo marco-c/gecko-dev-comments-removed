@@ -2,11 +2,8 @@
 
 
 
-use cssparser::Parser;
-use media_queries::CSSErrorReporterTest;
 use parsing::parse;
-use style::parser::{Parse, ParserContext};
-use style::stylesheets::{CssRuleType, Origin};
+use style::parser::Parse;
 use style::values::specified::basic_shape::*;
 use style_traits::ToCss;
 

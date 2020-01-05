@@ -2,15 +2,12 @@
 
 
 
-use cssparser::Parser;
 use euclid::size::TypedSize2D;
-use media_queries::CSSErrorReporterTest;
+use parsing::parse;
 use std::f32::consts::PI;
 use style::font_metrics::ServoMetricsProvider;
 use style::media_queries::{Device, MediaType};
-use style::parser::ParserContext;
 use style::properties::ComputedValues;
-use style::stylesheets::{CssRuleType, Origin};
 use style::values::computed;
 use style::values::computed::{Angle, Context, ToComputedValue};
 use style::values::specified;

@@ -2,11 +2,7 @@
 
 
 
-use cssparser::Parser;
-use media_queries::CSSErrorReporterTest;
-use servo_url::ServoUrl;
-use style::parser::ParserContext;
-use style::stylesheets::{CssRuleType, Origin};
+use parsing::parse;
 use style_traits::ToCss;
 
 #[test]
@@ -18,12 +14,7 @@ fn test_column_width() {
     assert_roundtrip_with_context!(column_width::parse, "2.5em");
     assert_roundtrip_with_context!(column_width::parse, "0.3vw");
 
-    let url = ServoUrl::parse("http://localhost").unwrap();
-    let reporter = CSSErrorReporterTest;
-    let context = ParserContext::new(Origin::Author, &url, &reporter, Some(CssRuleType::Style));
-
-    let mut negative = Parser::new("-6px");
-    assert!(column_width::parse(&context, &mut negative).is_err());
+    assert!(parse(column_width::parse, "-6px").is_err());
 }
 
 #[test]
@@ -35,10 +26,5 @@ fn test_column_gap() {
     assert_roundtrip_with_context!(column_gap::parse, "2.5em");
     assert_roundtrip_with_context!(column_gap::parse, "0.3vw");
 
-    let url = ServoUrl::parse("http://localhost").unwrap();
-    let reporter = CSSErrorReporterTest;
-    let context = ParserContext::new(Origin::Author, &url, &reporter, Some(CssRuleType::Style));
-
-    let mut negative = Parser::new("-6px");
-    assert!(column_gap::parse(&context, &mut negative).is_err());
+    assert!(parse(column_gap::parse, "-6px").is_err());
 }

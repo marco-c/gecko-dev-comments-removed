@@ -2,10 +2,7 @@
 
 
 
-use cssparser::Parser;
-use media_queries::CSSErrorReporterTest;
-use style::parser::ParserContext;
-use style::stylesheets::{CssRuleType, Origin};
+use parsing::parse;
 
 #[test]
 fn image_orientation_longhand_should_parse_properly() {

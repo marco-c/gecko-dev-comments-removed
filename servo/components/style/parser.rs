@@ -12,6 +12,24 @@ use style_traits::OneOrMoreCommaSeparated;
 use stylesheets::{CssRuleType, Origin, UrlExtraData};
 
 
+#[derive(PartialEq, Eq, Copy, Clone)]
+pub enum LengthParsingMode {
+    
+    
+    Default,
+    
+    
+    SVG,
+}
+
+impl LengthParsingMode {
+    
+    pub fn allows_unitless_lengths(&self) -> bool {
+        *self == LengthParsingMode::SVG
+    }
+}
+
+
 pub struct ParserContext<'a> {
     
     
@@ -24,6 +42,8 @@ pub struct ParserContext<'a> {
     pub rule_type: Option<CssRuleType>,
     
     pub line_number_offset: u64,
+    
+    pub length_parsing_mode: LengthParsingMode,
 }
 
 impl<'a> ParserContext<'a> {
@@ -31,7 +51,8 @@ impl<'a> ParserContext<'a> {
     pub fn new(stylesheet_origin: Origin,
                url_data: &'a UrlExtraData,
                error_reporter: &'a ParseErrorReporter,
-               rule_type: Option<CssRuleType>)
+               rule_type: Option<CssRuleType>,
+               length_parsing_mode: LengthParsingMode)
                -> ParserContext<'a> {
         ParserContext {
             stylesheet_origin: stylesheet_origin,
@@ -39,15 +60,17 @@ impl<'a> ParserContext<'a> {
             error_reporter: error_reporter,
             rule_type: rule_type,
             line_number_offset: 0u64,
+            length_parsing_mode: length_parsing_mode,
         }
     }
 
     
     pub fn new_for_cssom(url_data: &'a UrlExtraData,
                          error_reporter: &'a ParseErrorReporter,
-                         rule_type: Option<CssRuleType>)
+                         rule_type: Option<CssRuleType>,
+                         length_parsing_mode: LengthParsingMode)
                          -> ParserContext<'a> {
-        Self::new(Origin::Author, url_data, error_reporter, rule_type)
+        Self::new(Origin::Author, url_data, error_reporter, rule_type, length_parsing_mode)
     }
 
     
@@ -60,19 +83,16 @@ impl<'a> ParserContext<'a> {
             error_reporter: context.error_reporter,
             rule_type: rule_type,
             line_number_offset: context.line_number_offset,
+            length_parsing_mode: context.length_parsing_mode,
         }
-    }
-
-    
-    pub fn rule_type(&self) -> CssRuleType {
-        self.rule_type.expect("Rule type expected, but none was found.")
     }
 
     
     pub fn new_with_line_number_offset(stylesheet_origin: Origin,
                                        url_data: &'a UrlExtraData,
                                        error_reporter: &'a ParseErrorReporter,
-                                       line_number_offset: u64)
+                                       line_number_offset: u64,
+                                       length_parsing_mode: LengthParsingMode)
                                        -> ParserContext<'a> {
         ParserContext {
             stylesheet_origin: stylesheet_origin,
@@ -80,7 +100,13 @@ impl<'a> ParserContext<'a> {
             error_reporter: error_reporter,
             rule_type: None,
             line_number_offset: line_number_offset,
+            length_parsing_mode: length_parsing_mode,
         }
+    }
+
+    
+    pub fn rule_type(&self) -> CssRuleType {
+        self.rule_type.expect("Rule type expected, but none was found.")
     }
 }
 

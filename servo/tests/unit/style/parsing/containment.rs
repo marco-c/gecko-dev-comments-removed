@@ -2,10 +2,7 @@
 
 
 
-use cssparser::Parser;
-use media_queries::CSSErrorReporterTest;
-use style::parser::ParserContext;
-use style::stylesheets::{CssRuleType, Origin};
+use parsing::parse;
 
 #[test]
 fn contain_longhand_should_parse_correctly() {
@@ -22,5 +19,5 @@ fn contain_longhand_should_parse_correctly() {
     assert_eq!(style_paint, contain::STYLE | contain::PAINT);
 
     
-    assert_parser_exhausted!(contain, "layout 2px", false);
+    assert_parser_exhausted!(contain::parse, "layout 2px", false);
 }

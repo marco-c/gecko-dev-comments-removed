@@ -2,10 +2,7 @@
 
 
 
-use cssparser::Parser;
-use media_queries::CSSErrorReporterTest;
-use style::parser::ParserContext;
-use style::stylesheets::{CssRuleType, Origin};
+use parsing::parse;
 use style_traits::ToCss;
 
 #[test]
@@ -23,16 +20,7 @@ fn test_outline_style() {
     assert_roundtrip_with_context!(outline_style::parse, r#"inset"#);
     assert_roundtrip_with_context!(outline_style::parse, r#"outset"#);
 
-    {
-        
-        
-
-        let url = ::servo_url::ServoUrl::parse("http://localhost").unwrap();
-        let reporter = CSSErrorReporterTest;
-        let context = ParserContext::new(Origin::Author, &url, &reporter, Some(CssRuleType::Style));
-        let mut parser = Parser::new(r#"hidden"#);
-        let parsed = outline_style::parse(&context, &mut parser);
-        assert!(parsed.is_err());
-    };
-
+    
+    
+    assert!(parse(outline_style::parse, r#"hidden"#).is_err());
 }
