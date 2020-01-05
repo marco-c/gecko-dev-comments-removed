@@ -49,7 +49,7 @@ void DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
 
 
 
-bool CoerceDouble(JS::Value v, double* d);
+bool CoerceDouble(const JS::Value& v, double* d);
 
     
 #define VALIDATE(_f)  if (!IsFinite(_f)) return false

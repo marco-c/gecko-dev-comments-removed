@@ -348,7 +348,7 @@ public:
 };
 
 WorkerCrossThreadDispatcher*
-GetWorkerCrossThreadDispatcher(JSContext* aCx, JS::Value aWorker);
+GetWorkerCrossThreadDispatcher(JSContext* aCx, const JS::Value& aWorker);
 
 
 const uint32_t kJSPrincipalsDebugToken = 0x7e2df9d2;
