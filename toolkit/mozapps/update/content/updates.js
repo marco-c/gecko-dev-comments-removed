@@ -7,7 +7,10 @@
 
 
 
+
+
 const {classes: CoC, interfaces: CoI, results: CoR, utils: CoU} = Components;
+
 
 CoU.import("resource://gre/modules/DownloadUtils.jsm", this);
 CoU.import("resource://gre/modules/Services.jsm", this);

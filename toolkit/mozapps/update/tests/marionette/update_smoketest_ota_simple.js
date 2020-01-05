@@ -1,6 +1,9 @@
 
 
 
+
+
+
 function testForceCheck() {
   addChromeEventListener("update-available", function(evt) {
     isFinishUpdate(evt.detail);

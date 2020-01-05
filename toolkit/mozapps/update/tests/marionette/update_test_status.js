@@ -1,6 +1,8 @@
 
 
 
+
+
 const TEST_URL = "http://localhost";
 
 setPref("b2g.update.apply-idle-timeout", 0);

@@ -1,6 +1,8 @@
 
 
 
+
+
 function testForceCheck() {
   addChromeEventListener("update-available", function(evt) {
     let update = evt.detail;

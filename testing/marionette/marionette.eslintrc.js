@@ -1,0 +1,8 @@
+
+module.exports = {
+  
+  "globals": {
+    "ok": false,
+    "is": false,
+  }
+};

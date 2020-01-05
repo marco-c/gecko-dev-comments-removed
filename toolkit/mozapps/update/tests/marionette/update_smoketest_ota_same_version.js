@@ -1,6 +1,8 @@
 
 
 
+
+
 function testSameVersion() {
   let mozSettings = window.navigator.mozSettings;
   let forceSent = false;

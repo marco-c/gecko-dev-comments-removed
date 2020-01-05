@@ -4,6 +4,7 @@
 
 
 
+
 Cu.import("resource://gre/modules/FileUtils.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
@@ -70,6 +71,7 @@ const PR_TRUNCATE    = 0x20;
 const DEFAULT_UPDATE_VERSION = "999999.0";
 
 var gChannel;
+
 
 Services.scriptloader.loadSubScript(DATA_URI_SPEC + "sharedUpdateXML.js", this);
 
