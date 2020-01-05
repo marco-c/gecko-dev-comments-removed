@@ -2,7 +2,8 @@
 
 
 
-use script_thread::{CommonScriptMsg, MainThreadScriptMsg, ScriptChan};
+use script_runtime::{CommonScriptMsg, ScriptChan};
+use script_thread::MainThreadScriptMsg;
 use std::sync::mpsc::Sender;
 
 #[derive(JSTraceable)]
