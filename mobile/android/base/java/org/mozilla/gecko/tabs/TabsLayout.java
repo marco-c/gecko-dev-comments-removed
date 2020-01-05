@@ -12,6 +12,7 @@ import org.mozilla.gecko.widget.RecyclerViewClickSupport;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.View;
@@ -169,10 +170,15 @@ public abstract class TabsLayout extends RecyclerView
     }
 
     
-    protected void updateSelectedPosition() {
+
+
+
+
+
+    protected void scrollSelectedTabToTopOfTray() {
         final int selected = getSelectedAdapterPosition();
         if (selected != NO_POSITION) {
-            scrollToPosition(selected);
+            ((LinearLayoutManager)getLayoutManager()).scrollToPositionWithOffset(selected, 0);
         }
     }
 
@@ -189,7 +195,7 @@ public abstract class TabsLayout extends RecyclerView
         }
 
         tabsAdapter.setTabs(tabData);
-        updateSelectedPosition();
+        scrollSelectedTabToTopOfTray();
     }
 
     private void closeTab(View view) {
