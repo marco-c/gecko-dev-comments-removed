@@ -46,6 +46,7 @@ public:
 
     RefPtr<gl::GLContext> gl = gl::GLContextProvider::CreateForCompositorWidget(mCompositorWidget, true);
     if (!gl || !gl->MakeCurrent()) {
+      gfxCriticalNote << "Failed GL context creation for WebRender: " << hexa(gl.get());
       return;
     }
 
@@ -55,6 +56,7 @@ public:
     WrRenderer* wrRenderer = nullptr;
     if (!wr_window_new(aWindowId, mSize.width, mSize.height, gl.get(),
                        this->mEnableProfiler, mWrApi, &wrRenderer)) {
+      
       return;
     }
     MOZ_ASSERT(wrRenderer);
@@ -299,17 +301,7 @@ WebRenderAPI::AddImage(ImageKey key, const ImageDescriptor& aDescriptor,
   wr_api_add_image(mWrApi,
                    key,
                    &aDescriptor,
-                   RangeToByteSlice(aBytes));
-}
-
-void
-WebRenderAPI::AddBlobImage(ImageKey key, const ImageDescriptor& aDescriptor,
-                           Range<uint8_t> aBytes)
-{
-  wr_api_add_blob_image(mWrApi,
-                        key,
-                        &aDescriptor,
-                        RangeToByteSlice(aBytes));
+                   &aBytes[0], aBytes.length());
 }
 
 void
@@ -344,7 +336,7 @@ WebRenderAPI::UpdateImageBuffer(ImageKey aKey,
   wr_api_update_image(mWrApi,
                       aKey,
                       &aDescriptor,
-                      RangeToByteSlice(aBytes));
+                      &aBytes[0], aBytes.length());
 }
 
 void
