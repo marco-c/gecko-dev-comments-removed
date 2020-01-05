@@ -12,8 +12,6 @@ use dom::{PresentationalHintsSynthetizer, TElement};
 use error_reporting::StdoutErrorReporter;
 use keyframes::KeyframesAnimation;
 use media_queries::Device;
-#[cfg(feature = "servo")]
-use media_queries::MediaType;
 use parking_lot::RwLock;
 use properties::{self, CascadeFlags, ComputedValues, INHERIT_ALL, Importance};
 use properties::{PropertyDeclaration, PropertyDeclarationBlock};
@@ -36,7 +34,6 @@ use std::slice;
 use std::sync::Arc;
 use style_traits::viewport::ViewportConstraints;
 use stylesheets::{CssRule, Origin, StyleRule, Stylesheet, UserAgentStylesheets};
-#[cfg(feature = "servo")]
 use viewport::{self, MaybeNew, ViewportRule};
 
 pub use ::fnv::FnvHashMap;
@@ -391,18 +388,22 @@ impl Stylist {
     
     
     
-    #[cfg(feature = "servo")]
+    
+    
+    
+    
+    
+    
     pub fn set_device(&mut self, mut device: Device, stylesheets: &[Arc<Stylesheet>]) {
         let cascaded_rule = ViewportRule {
             declarations: viewport::Cascade::from_stylesheets(stylesheets, &device).finish(),
         };
 
-        self.viewport_constraints = ViewportConstraints::maybe_new(device.viewport_size, &cascaded_rule);
+        self.viewport_constraints =
+            ViewportConstraints::maybe_new(&device, &cascaded_rule);
+
         if let Some(ref constraints) = self.viewport_constraints {
-            
-            
-            
-            device = Device::new(MediaType::Screen, constraints.size);
+            device.account_for_viewport_rule(constraints);
         }
 
         fn mq_eval_changed(rules: &[CssRule], before: &Device, after: &Device) -> bool {
@@ -450,7 +451,6 @@ impl Stylist {
     
     
     
-    #[allow(unsafe_code)]
     pub fn push_applicable_declarations<E, V>(
                                         &self,
                                         element: &E,
@@ -856,7 +856,6 @@ impl SelectorMap {
 
     
     
-    #[allow(unsafe_code)]
     pub fn get_universal_rules<V>(&self,
                                   matching_rules_list: &mut V)
         where V: VecLike<ApplicableDeclarationBlock>
@@ -913,7 +912,6 @@ impl SelectorMap {
     }
 
     
-    #[allow(unsafe_code)]
     fn get_matching_rules<E, V>(element: &E,
                                 parent_bf: Option<&BloomFilter>,
                                 rules: &[Rule],

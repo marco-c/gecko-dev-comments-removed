@@ -9,28 +9,21 @@
 
 #![deny(missing_docs)]
 
-#[cfg(feature = "servo")]
 use app_units::Au;
 use cssparser::{AtRuleParser, DeclarationListParser, DeclarationParser, Parser, parse_important};
 use cssparser::ToCss as ParserToCss;
-#[cfg(feature = "servo")]
 use euclid::scale_factor::ScaleFactor;
-#[cfg(feature = "servo")]
-use euclid::size::Size2D;
 use euclid::size::TypedSize2D;
 use media_queries::Device;
 use parser::{ParserContext, log_css_error};
-#[cfg(feature = "servo")]
-use properties::ComputedValues;
 use std::ascii::AsciiExt;
 use std::borrow::Cow;
 use std::fmt;
 use std::iter::Enumerate;
 use std::str::Chars;
-use style_traits::{ToCss, ViewportPx};
+use style_traits::ToCss;
 use style_traits::viewport::{Orientation, UserZoom, ViewportConstraints, Zoom};
 use stylesheets::{Stylesheet, Origin};
-#[cfg(feature = "servo")]
 use values::computed::{Context, ToComputedValue};
 use values::specified::{Length, LengthOrPercentageOrAuto, ViewportPercentageLength};
 
@@ -606,18 +599,13 @@ impl Cascade {
 pub trait MaybeNew {
     
     
-    fn maybe_new(initial_viewport: TypedSize2D<f32, ViewportPx>,
+    fn maybe_new(device: &Device,
                  rule: &ViewportRule)
                  -> Option<ViewportConstraints>;
 }
 
-
-
-
-
-#[cfg(feature = "servo")]
 impl MaybeNew for ViewportConstraints {
-    fn maybe_new(initial_viewport: TypedSize2D<f32, ViewportPx>,
+    fn maybe_new(device: &Device,
                  rule: &ViewportRule)
                  -> Option<ViewportConstraints>
     {
@@ -695,15 +683,14 @@ impl MaybeNew for ViewportConstraints {
         
         
         
-        let initial_viewport = Size2D::new(Au::from_f32_px(initial_viewport.width),
-                                           Au::from_f32_px(initial_viewport.height));
+        let initial_viewport = device.au_viewport_size();
 
-
+        
         let context = Context {
             is_root_element: false,
             viewport_size: initial_viewport,
-            inherited_style: ComputedValues::initial_values(),
-            style: ComputedValues::initial_values().clone(),
+            inherited_style: device.default_values(),
+            style: device.default_values().clone(),
             font_metrics_provider: None, 
         };
 
