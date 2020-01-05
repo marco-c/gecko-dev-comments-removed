@@ -13,6 +13,7 @@ const Cu = Components.utils;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
+Cu.importGlobalProperties(["btoa"]);
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
   "resource://gre/modules/PlacesUtils.jsm");
@@ -52,6 +53,12 @@ const LINKS_GET_LINKS_LIMIT = 100;
 
 
 const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
+
+
+const TOP_SITES_LENGTH = 6;
+
+
+const TOP_SITES_LIMIT = TOP_SITES_LENGTH * 2;
 
 
 
@@ -348,6 +355,14 @@ var GridPrefs = {
     Services.prefs.addObserver(PREF_NEWTAB_COLUMNS, this);
   },
 
+ 
+
+
+  uninit: function GridPrefs_uninit() {
+    Services.prefs.removeObserver(PREF_NEWTAB_ROWS, this);
+    Services.prefs.removeObserver(PREF_NEWTAB_COLUMNS, this);
+  },
+
   
 
 
@@ -509,6 +524,13 @@ var BlockedLinks = {
 
   addObserver(aObserver) {
     this._observers.push(aObserver);
+  },
+
+  
+
+
+  removeObservers() {
+    this._observers = [];
   },
 
   
@@ -798,6 +820,409 @@ var PlacesProvider = {
 
   QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver,
                                          Ci.nsISupportsWeakReference]),
+};
+
+
+
+
+
+var ActivityStreamProvider = {
+
+  
+
+
+
+
+
+
+
+  _processLinks(aLinks) {
+    let links_ = aLinks.filter(link => LinkChecker.checkLoadURI(link.url));
+    links_ = this._faviconBytesToDataURI(links_);
+    return this._addETLD(links_);
+  },
+
+  
+
+
+
+
+
+
+
+  _faviconBytesToDataURI(aLinks) {
+    return aLinks.map(link => {
+      if (link.favicon) {
+        let encodedData = btoa(String.fromCharCode.apply(null, link.favicon));
+        link.favicon = `data:${link.mimeType};base64,${encodedData}`;
+      }
+      delete link.mimeType;
+      return link;
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+  _addFavicons: Task.async(function*(aLinks) {
+    if (aLinks.length) {
+      
+      
+      
+      
+      yield Promise.all(aLinks.map(link => new Promise(resolve => {
+        return PlacesUtils.favicons.getFaviconDataForPage(
+            Services.io.newURI(link.url),
+            (iconuri, len, data, mime) => {
+              
+              
+              
+              
+              
+              
+              if (!iconuri) {
+                link.favicon = null;
+                link.mimeType = null;
+              } else {
+                link.favicon = data;
+                link.mimeType = mime;
+                link.faviconLength = len;
+              }
+              return resolve(link);
+            });
+        }).catch(() => {
+          
+          
+          link.favicon = null;
+          link.mimeType = null;
+          return link;
+        })
+      ));
+    }
+    return aLinks;
+  }),
+
+  
+
+
+
+
+
+
+
+  _addETLD(aLinks) {
+    return aLinks.map(link => {
+      try {
+        link.eTLD = Services.eTLD.getPublicSuffix(Services.io.newURI(link.url));
+      } catch (e) {
+        link.eTLD = "";
+      }
+      return link;
+    });
+  },
+
+  
+
+
+
+  init() {
+    PlacesUtils.history.addObserver(this.historyObserver, true);
+    PlacesUtils.bookmarks.addObserver(this.bookmarksObsever, true);
+  },
+
+  
+
+
+
+  historyObserver: {
+    onDeleteURI(uri) {
+      Services.obs.notifyObservers(null, "newtab-deleteURI", {url: uri.spec});
+    },
+
+    onClearHistory() {
+      Services.obs.notifyObservers(null, "newtab-clearHistory");
+    },
+
+    onFrecencyChanged(uri, newFrecency, guid, hidden, lastVisitDate) {
+      if (!hidden && lastVisitDate) {
+        Services.obs.notifyObservers(null, "newtab-linkChanged", {
+          url: uri.spec,
+          frecency: newFrecency,
+          lastVisitDate,
+          type: "history"
+        });
+      }
+    },
+
+    onManyFrecenciesChanged() {
+      Services.obs.notifyObservers(null, "newtab-manyLinksChanged");
+    },
+
+    onTitleChanged(uri, newTitle) {
+      Services.obs.notifyObservers(null, "newtab-linkChanged", {url: uri.spec, title: newTitle});
+    },
+
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver,
+                                           Ci.nsISupportsWeakReference])
+  },
+
+  
+
+
+
+  bookmarksObsever: {
+    onItemAdded(id, folderId, index, type, uri, title, dateAdded, guid) {
+      if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK) {
+        ActivityStreamProvider.getBookmark(guid).then(bookmark => {
+          Services.obs.notifyObservers(null, "newtab-bookmarkAdded", bookmark);
+        }).catch(Cu.reportError);
+      }
+    },
+
+    onItemRemoved(id, folderId, index, type, uri) {
+      if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK) {
+        Services.obs.notifyObservers(null, "newtab-bookmarkRemoved", {bookmarkId: id, url: uri.spec});
+      }
+    },
+
+    onItemChanged(id, property, isAnnotation, value, lastModified, type, parent, guid) {
+      if (type === PlacesUtils.bookmarks.TYPE_BOOKMARK) {
+        ActivityStreamProvider.getBookmark(guid).then(bookmark => {
+          Services.obs.notifyObservers(null, "newtab-bookmarkChanged", bookmark);
+        }).catch(Cu.reportError);
+      }
+    },
+
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsINavBookmarkObserver,
+                                           Ci.nsISupportsWeakReference])
+  },
+
+  
+
+
+
+
+
+
+
+  getTopFrecentSites: Task.async(function*(aOptions = {}) {
+    let {ignoreBlocked} = aOptions;
+
+    
+    
+    
+    
+    
+    
+    
+
+    const limit = Object.keys(BlockedLinks.links).length + TOP_SITES_LIMIT;
+    let sqlQuery = `/* do not warn (bug N/A): do not need index */
+                    SELECT url, title, SUM(frecency) frecency, guid, bookmarkGuid,
+                     last_visit_date / 1000 as lastVisitDate, "history" as type
+                    FROM (SELECT * FROM (
+                      SELECT
+                        rev_host,
+                        fixup_url(get_unreversed_host(rev_host)) AS rev_nowww,
+                        moz_places.url,
+                        moz_places.title,
+                        frecency,
+                        last_visit_date,
+                        moz_places.guid AS guid,
+                        moz_bookmarks.guid AS bookmarkGuid
+                      FROM moz_places
+                      LEFT JOIN moz_bookmarks
+                      on moz_places.id = moz_bookmarks.fk
+                      WHERE hidden = 0 AND last_visit_date NOTNULL
+                      ORDER BY frecency, last_visit_date, moz_places.url DESC
+                    ) GROUP BY rev_host)
+                    GROUP BY rev_nowww
+                    ORDER BY frecency DESC, lastVisitDate DESC, url
+                    LIMIT ${limit}`;
+
+    let links = yield this.executePlacesQuery(sqlQuery, {
+      columns: [
+        "bookmarkGuid",
+        "frecency",
+        "guid",
+        "lastVisitDate",
+        "title",
+        "type",
+        "url"
+      ]
+    });
+
+    if (!ignoreBlocked) {
+      links = links.filter(link => !BlockedLinks.isBlocked(link));
+    }
+    links = links.slice(0, TOP_SITES_LIMIT);
+    links = yield this._addFavicons(links);
+    return this._processLinks(links);
+  }),
+
+  
+
+
+
+
+
+  getBookmark: Task.async(function*(aGuid) {
+    let bookmark = yield PlacesUtils.bookmarks.fetch(aGuid);
+    if (!bookmark) {
+      return null;
+    }
+    let result = {};
+    result.bookmarkGuid = bookmark.guid;
+    result.bookmarkTitle = bookmark.title;
+    result.lastModified = bookmark.lastModified.getTime();
+    result.url = bookmark.url.href;
+    return result;
+  }),
+
+  
+
+
+
+
+  getHistorySize: Task.async(function*() {
+    let sqlQuery = `SELECT count(*) FROM moz_places
+                    WHERE hidden = 0 AND last_visit_date NOT NULL`;
+
+    let result = yield this.executePlacesQuery(sqlQuery);
+    return result;
+  }),
+
+  
+
+
+
+
+  getBookmarksSize: Task.async(function*() {
+    let sqlQuery = `SELECT count(*) FROM moz_bookmarks WHERE type = :type`;
+
+    let result = yield this.executePlacesQuery(sqlQuery, {params: {type: PlacesUtils.bookmarks.TYPE_BOOKMARK}});
+    return result;
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  executePlacesQuery: Task.async(function*(aQuery, aOptions = {}) {
+    let {columns, params} = aOptions;
+    let items = [];
+    let queryError = null;
+    let conn = yield PlacesUtils.promiseDBConnection();
+    yield conn.executeCached(aQuery, params, aRow => {
+      try {
+        let item = null;
+        
+        if (columns && Array.isArray(columns)) {
+          item = {};
+          columns.forEach(column => {
+            item[column] = aRow.getResultByName(column);
+          });
+        } else {
+          
+          item = [];
+          for (let i = 0; i < aRow.numEntries; i++) {
+            item.push(aRow.getResultByIndex(i));
+          }
+        }
+        items.push(item);
+      } catch (e) {
+        queryError = e;
+        throw StopIteration;
+      }
+    });
+    if (queryError) {
+      throw new Error(queryError);
+    }
+    return items;
+  })
+};
+
+
+
+
+var ActivityStreamLinks = {
+  
+
+
+
+
+
+  blockURL(aLink) {
+    BlockedLinks.block(aLink);
+  },
+
+  onLinkBlocked(aLink) {
+    Services.obs.notifyObservers(null, "newtab-linkChanged", {url: aLink.url, blocked: true})
+  },
+
+  
+
+
+
+
+
+
+
+  addBookmark(aUrl) {
+    return PlacesUtils.bookmarks.insert({
+      url: aUrl,
+      parentGuid: PlacesUtils.bookmarks.unfiledGuid
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+  deleteBookmark(aBookmarkGuid) {
+    return PlacesUtils.bookmarks.remove(aBookmarkGuid);
+  },
+
+  
+
+
+
+
+
+
+
+  deleteHistoryEntry(aUrl) {
+    return PlacesUtils.history.remove(aUrl);
+  },
+
+  
+
+
+
+
+  getTopSites: Task.async(function*(aOptions = {}) {
+    return ActivityStreamProvider.getTopFrecentSites(aOptions);
+  })
 };
 
 
@@ -1294,6 +1719,10 @@ var Telemetry = {
     Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY);
   },
 
+  uninit: function Telemetry_uninit() {
+    Services.obs.removeObserver(this, TOPIC_GATHER_TELEMETRY);
+  },
+
   
 
 
@@ -1414,8 +1843,10 @@ this.NewTabUtils = {
   init: function NewTabUtils_init() {
     if (this.initWithoutProviders()) {
       PlacesProvider.init();
+      ActivityStreamProvider.init();
       Links.addProvider(PlacesProvider);
       BlockedLinks.addObserver(Links);
+      BlockedLinks.addObserver(ActivityStreamLinks);
     }
   },
 
@@ -1427,6 +1858,14 @@ this.NewTabUtils = {
       return true;
     }
     return false;
+  },
+
+  uninit: function NewTabUtils_uninit() {
+    if (this.initialized) {
+      Telemetry.uninit();
+      GridPrefs.uninit();
+      BlockedLinks.removeObservers();
+    }
   },
 
   getProviderLinks(aProvider) {
@@ -1481,5 +1920,7 @@ this.NewTabUtils = {
   pinnedLinks: PinnedLinks,
   blockedLinks: BlockedLinks,
   gridPrefs: GridPrefs,
-  placesProvider: PlacesProvider
+  placesProvider: PlacesProvider,
+  activityStreamLinks: ActivityStreamLinks,
+  activityStreamProvider: ActivityStreamProvider
 };

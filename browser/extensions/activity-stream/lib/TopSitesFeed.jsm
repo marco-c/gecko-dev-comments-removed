@@ -7,7 +7,7 @@
 const {utils: Cu} = Components;
 const {actionTypes: at, actionCreators: ac} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 
-Cu.import("resource:///modules/PlacesProvider.jsm");
+Cu.import("resource://gre/modules/NewTabUtils.jsm");
 Cu.import("resource:///modules/PreviewProvider.jsm");
 
 const TOP_SITES_SHOWMORE_LENGTH = 12;
@@ -31,7 +31,7 @@ this.TopSitesFeed = class TopSitesFeed {
     this.store.dispatch(ac.BroadcastToContent(action));
   }
   async getLinksWithDefaults(action) {
-    let links = await PlacesProvider.links.getLinks();
+    let links = await NewTabUtils.activityStreamLinks.getTopSites();
 
     if (!links) {
       links = [];

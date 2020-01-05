@@ -65,7 +65,6 @@ XPCOMUtils.defineLazyServiceGetter(this, "AlertsService", "@mozilla.org/alerts-s
   ["LoginHelper", "resource://gre/modules/LoginHelper.jsm"],
   ["LoginManagerParent", "resource://gre/modules/LoginManagerParent.jsm"],
   ["NetUtil", "resource://gre/modules/NetUtil.jsm"],
-  ["NewTabMessages", "resource:///modules/NewTabMessages.jsm"],
   ["NewTabUtils", "resource://gre/modules/NewTabUtils.jsm"],
   ["OS", "resource://gre/modules/osfile.jsm"],
   ["PageThumbs", "resource://gre/modules/PageThumbs.jsm"],
@@ -509,8 +508,6 @@ BrowserGlue.prototype = {
     NewTabUtils.links.addProvider(DirectoryLinksProvider);
     AboutNewTab.init();
 
-    NewTabMessages.init();
-
     SessionStore.init();
     BrowserUsageTelemetry.init();
     BrowserUITelemetry.init();
@@ -896,8 +893,8 @@ BrowserGlue.prototype = {
     BrowserUsageTelemetry.uninit();
     SelfSupportBackend.uninit();
     PageThumbs.uninit();
-    NewTabMessages.uninit();
     AboutNewTab.uninit();
+    NewTabUtils.uninit();
     webrtcUI.uninit();
     FormValidationHandler.uninit();
     AutoCompletePopup.uninit();
