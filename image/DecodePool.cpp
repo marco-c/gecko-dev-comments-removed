@@ -252,7 +252,7 @@ DecodePool::DecodePool()
   }
   
   
-  if (limit > 4 && XRE_IsParentProcess() && BrowserTabsRemoteAutostart()) {
+  if (limit > 4 && XRE_IsE10sParentProcess()) {
     limit = 4;
   }
 

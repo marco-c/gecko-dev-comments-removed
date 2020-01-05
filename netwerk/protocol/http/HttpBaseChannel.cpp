@@ -3849,7 +3849,7 @@ HttpBaseChannel::GetPerformance()
 
   
   
-  if (XRE_IsParentProcess() && BrowserTabsRemoteAutostart()) {
+  if (XRE_IsE10sParentProcess()) {
     return nullptr;
   }
 
