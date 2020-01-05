@@ -139,15 +139,21 @@ MessagePortService::RequestEntangling(MessagePortParent* aParent,
     
     data->mParent = aParent;
     data->mWaitingForNewParent = false;
-    FallibleTArray<MessagePortMessage> array;
+
+    
+    
+    
+    
+    
+    FallibleTArray<RefPtr<SharedMessagePortMessage>>
+      messages(Move(data->mMessages));
+    FallibleTArray<ClonedMessageData> array;
     if (!SharedMessagePortMessage::FromSharedToMessagesParent(aParent,
-                                                              data->mMessages,
+                                                              messages,
                                                               array)) {
       CloseAll(aParent->ID());
       return false;
     }
-
-    data->mMessages.Clear();
 
     
     if (!aParent->Entangled(array)) {
@@ -226,7 +232,7 @@ MessagePortService::DisentanglePort(
   data->mParent = nextParent;
   data->mNextParents.RemoveElementAt(index);
 
-  FallibleTArray<MessagePortMessage> array;
+  FallibleTArray<ClonedMessageData> array;
   if (!SharedMessagePortMessage::FromSharedToMessagesParent(data->mParent,
                                                             aMessages,
                                                             array)) {
@@ -348,15 +354,19 @@ MessagePortService::PostMessages(
 
   
   if (data->mParent && data->mParent->CanSendData()) {
-    FallibleTArray<MessagePortMessage> messages;
-    if (!SharedMessagePortMessage::FromSharedToMessagesParent(data->mParent,
-                                                              data->mMessages,
-                                                              messages)) {
-      return false;
-    }
+    {
+      FallibleTArray<ClonedMessageData> messages;
+      if (!SharedMessagePortMessage::FromSharedToMessagesParent(data->mParent,
+                                                                data->mMessages,
+                                                                messages)) {
+        return false;
+      }
 
+      Unused << data->mParent->SendReceiveData(messages);
+    }
+    
+    
     data->mMessages.Clear();
-    Unused << data->mParent->SendReceiveData(messages);
   }
 
   return true;
