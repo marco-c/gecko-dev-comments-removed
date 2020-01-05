@@ -106,7 +106,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
       return;
     }
 
-    this._getProfiles({info, searchString}).then((profiles) => {
+    this._getAddresses({info, searchString}).then((addresses) => {
       if (this.forceStop) {
         return;
       }
@@ -115,7 +115,7 @@ AutofillProfileAutoCompleteSearch.prototype = {
       let result = new ProfileAutoCompleteResult(searchString,
                                                  info.fieldName,
                                                  allFieldNames,
-                                                 profiles,
+                                                 addresses,
                                                  {});
 
       listener.onSearchResult(this, result);
@@ -144,15 +144,15 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 
 
-  _getProfiles(data) {
-    this.log.debug("_getProfiles with data:", data);
+  _getAddresses(data) {
+    this.log.debug("_getAddresses with data:", data);
     return new Promise((resolve) => {
-      Services.cpmm.addMessageListener("FormAutofill:Profiles", function getResult(result) {
-        Services.cpmm.removeMessageListener("FormAutofill:Profiles", getResult);
+      Services.cpmm.addMessageListener("FormAutofill:Addresses", function getResult(result) {
+        Services.cpmm.removeMessageListener("FormAutofill:Addresses", getResult);
         resolve(result.data);
       });
 
-      Services.cpmm.sendAsyncMessage("FormAutofill:GetProfiles", data);
+      Services.cpmm.sendAsyncMessage("FormAutofill:GetAddresses", data);
     });
   },
 };

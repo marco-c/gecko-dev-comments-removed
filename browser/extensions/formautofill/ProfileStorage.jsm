@@ -47,6 +47,7 @@
 
 
 
+
 "use strict";
 
 this.EXPORTED_SYMBOLS = ["ProfileStorage"];
@@ -87,20 +88,6 @@ const VALID_FIELDS = [
   "email",
 ];
 
-
-const MOCK_MODE = false;
-const MOCK_STORAGE = [{
-  guid: "test-guid-1",
-  organization: "Sesame Street",
-  "street-address": "123 Sesame Street.",
-  tel: "1-345-345-3456",
-}, {
-  guid: "test-guid-2",
-  organization: "Mozilla",
-  "street-address": "331 E. Evelyn Avenue",
-  tel: "1-650-903-0800",
-}];
-
 function ProfileStorage(path) {
   this._path = path;
 }
@@ -130,24 +117,24 @@ ProfileStorage.prototype = {
 
 
 
-  add(profile) {
-    log.debug("add:", profile);
+  add(address) {
+    log.debug("add:", address);
     this._store.ensureDataReady();
 
-    let profileToSave = this._clone(profile);
-    this._normalizeProfile(profileToSave);
+    let addressToSave = this._clone(address);
+    this._normalizeAddress(addressToSave);
 
-    profileToSave.guid = gUUIDGenerator.generateUUID().toString()
+    addressToSave.guid = gUUIDGenerator.generateUUID().toString()
                                        .replace(/[{}-]/g, "").substring(0, 12);
 
     
     let now = Date.now();
-    profileToSave.timeCreated = now;
-    profileToSave.timeLastModified = now;
-    profileToSave.timeLastUsed = 0;
-    profileToSave.timesUsed = 0;
+    addressToSave.timeCreated = now;
+    addressToSave.timeLastModified = now;
+    addressToSave.timeLastUsed = 0;
+    addressToSave.timesUsed = 0;
 
-    this._store.data.profiles.push(profileToSave);
+    this._store.data.addresses.push(addressToSave);
 
     this._store.saveSoon();
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "add");
@@ -161,27 +148,27 @@ ProfileStorage.prototype = {
 
 
 
-  update(guid, profile) {
-    log.debug("update:", guid, profile);
+  update(guid, address) {
+    log.debug("update:", guid, address);
     this._store.ensureDataReady();
 
-    let profileFound = this._findByGUID(guid);
-    if (!profileFound) {
-      throw new Error("No matching profile.");
+    let addressFound = this._findByGUID(guid);
+    if (!addressFound) {
+      throw new Error("No matching record.");
     }
 
-    let profileToUpdate = this._clone(profile);
-    this._normalizeProfile(profileToUpdate);
+    let addressToUpdate = this._clone(address);
+    this._normalizeAddress(addressToUpdate);
 
     for (let field of VALID_FIELDS) {
-      if (profileToUpdate[field] !== undefined) {
-        profileFound[field] = profileToUpdate[field];
+      if (addressToUpdate[field] !== undefined) {
+        addressFound[field] = addressToUpdate[field];
       } else {
-        delete profileFound[field];
+        delete addressFound[field];
       }
     }
 
-    profileFound.timeLastModified = Date.now();
+    addressFound.timeLastModified = Date.now();
 
     this._store.saveSoon();
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "update");
@@ -197,13 +184,13 @@ ProfileStorage.prototype = {
   notifyUsed(guid) {
     this._store.ensureDataReady();
 
-    let profileFound = this._findByGUID(guid);
-    if (!profileFound) {
-      throw new Error("No matching profile.");
+    let addressFound = this._findByGUID(guid);
+    if (!addressFound) {
+      throw new Error("No matching record.");
     }
 
-    profileFound.timesUsed++;
-    profileFound.timeLastUsed = Date.now();
+    addressFound.timesUsed++;
+    addressFound.timeLastUsed = Date.now();
 
     this._store.saveSoon();
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "notifyUsed");
@@ -219,8 +206,8 @@ ProfileStorage.prototype = {
     log.debug("remove:", guid);
     this._store.ensureDataReady();
 
-    this._store.data.profiles =
-      this._store.data.profiles.filter(profile => profile.guid != guid);
+    this._store.data.addresses =
+      this._store.data.addresses.filter(address => address.guid != guid);
     this._store.saveSoon();
     Services.obs.notifyObservers(null, "formautofill-storage-changed", "remove");
   },
@@ -237,15 +224,15 @@ ProfileStorage.prototype = {
     log.debug("get:", guid);
     this._store.ensureDataReady();
 
-    let profileFound = this._findByGUID(guid);
-    if (!profileFound) {
-      throw new Error("No matching profile.");
+    let addressFound = this._findByGUID(guid);
+    if (!addressFound) {
+      throw new Error("No matching record.");
     }
 
     
-    let clonedProfile = this._clone(profileFound);
-    this._computeFields(clonedProfile);
-    return clonedProfile;
+    let clonedAddress = this._clone(addressFound);
+    this._computeFields(clonedAddress);
+    return clonedAddress;
   },
 
   
@@ -259,9 +246,9 @@ ProfileStorage.prototype = {
     this._store.ensureDataReady();
 
     
-    let clonedProfiles = this._store.data.profiles.map(this._clone);
-    clonedProfiles.forEach(this._computeFields);
-    return clonedProfiles;
+    let clonedAddresses = this._store.data.addresses.map(this._clone);
+    clonedAddresses.forEach(this._computeFields);
+    return clonedAddresses;
   },
 
   
@@ -274,11 +261,11 @@ ProfileStorage.prototype = {
     log.debug("getByFilter:", info, searchString);
 
     let lcSearchString = searchString.toLowerCase();
-    let result = this.getAll().filter(profile => {
+    let result = this.getAll().filter(address => {
       
       
       
-      let name = profile[info.fieldName];
+      let name = address[info.fieldName];
 
       if (!searchString) {
         return !!name;
@@ -291,88 +278,88 @@ ProfileStorage.prototype = {
     return result;
   },
 
-  _clone(profile) {
-    return Object.assign({}, profile);
+  _clone(record) {
+    return Object.assign({}, record);
   },
 
   _findByGUID(guid) {
-    return this._store.data.profiles.find(profile => profile.guid == guid);
+    return this._store.data.addresses.find(address => address.guid == guid);
   },
 
-  _computeFields(profile) {
+  _computeFields(address) {
     
-    profile.name = FormAutofillNameUtils.joinNameParts({
-      given: profile["given-name"],
-      middle: profile["additional-name"],
-      family: profile["family-name"],
+    address.name = FormAutofillNameUtils.joinNameParts({
+      given: address["given-name"],
+      middle: address["additional-name"],
+      family: address["family-name"],
     });
 
     
-    if (profile["street-address"]) {
-      let streetAddress = profile["street-address"].split("\n");
+    if (address["street-address"]) {
+      let streetAddress = address["street-address"].split("\n");
       
       
       for (let i = 0; i < 3; i++) {
         if (streetAddress[i]) {
-          profile["address-line" + (i + 1)] = streetAddress[i];
+          address["address-line" + (i + 1)] = streetAddress[i];
         }
       }
     }
   },
 
-  _normalizeAddress(profile) {
-    if (profile["address-line1"] || profile["address-line2"] ||
-        profile["address-line3"]) {
+  _normalizeAddressLines(address) {
+    if (address["address-line1"] || address["address-line2"] ||
+        address["address-line3"]) {
       
       
-      if (!profile["address-line1"] && profile["street-address"] &&
-          !profile["street-address"].includes("\n")) {
-        profile["address-line1"] = profile["street-address"];
-        delete profile["street-address"];
+      if (!address["address-line1"] && address["street-address"] &&
+          !address["street-address"].includes("\n")) {
+        address["address-line1"] = address["street-address"];
+        delete address["street-address"];
       }
 
       
       let addressLines = [1, 2, 3].map(i => {
-        let value = profile["address-line" + i];
-        delete profile["address-line" + i];
+        let value = address["address-line" + i];
+        delete address["address-line" + i];
         return value;
       });
 
       
-      if (!profile["street-address"]) {
-        profile["street-address"] = addressLines.join("\n");
+      if (!address["street-address"]) {
+        address["street-address"] = addressLines.join("\n");
       }
     }
   },
 
-  _normalizeName(profile) {
-    if (!profile.name) {
+  _normalizeName(address) {
+    if (!address.name) {
       return;
     }
 
-    let nameParts = FormAutofillNameUtils.splitName(profile.name);
-    if (!profile["given-name"] && nameParts.given) {
-      profile["given-name"] = nameParts.given;
+    let nameParts = FormAutofillNameUtils.splitName(address.name);
+    if (!address["given-name"] && nameParts.given) {
+      address["given-name"] = nameParts.given;
     }
-    if (!profile["additional-name"] && nameParts.middle) {
-      profile["additional-name"] = nameParts.middle;
+    if (!address["additional-name"] && nameParts.middle) {
+      address["additional-name"] = nameParts.middle;
     }
-    if (!profile["family-name"] && nameParts.family) {
-      profile["family-name"] = nameParts.family;
+    if (!address["family-name"] && nameParts.family) {
+      address["family-name"] = nameParts.family;
     }
-    delete profile.name;
+    delete address.name;
   },
 
-  _normalizeProfile(profile) {
-    this._normalizeName(profile);
-    this._normalizeAddress(profile);
+  _normalizeAddress(address) {
+    this._normalizeName(address);
+    this._normalizeAddressLines(address);
 
-    for (let key in profile) {
+    for (let key in address) {
       if (!VALID_FIELDS.includes(key)) {
         throw new Error(`"${key}" is not a valid field.`);
       }
-      if (typeof profile[key] !== "string" &&
-          typeof profile[key] !== "number") {
+      if (typeof address[key] !== "string" &&
+          typeof address[key] !== "number") {
         throw new Error(`"${key}" contains invalid data type.`);
       }
     }
@@ -380,8 +367,8 @@ ProfileStorage.prototype = {
 
   _dataPostProcessor(data) {
     data.version = SCHEMA_VERSION;
-    if (!data.profiles) {
-      data.profiles = MOCK_MODE ? MOCK_STORAGE : [];
+    if (!data.addresses) {
+      data.addresses = [];
     }
     return data;
   },
