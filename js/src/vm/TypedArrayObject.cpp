@@ -4,6 +4,7 @@
 
 
 
+#include "vm/TypedArrayObject-inl.h"
 #include "vm/TypedArrayObject.h"
 
 #include "mozilla/Alignment.h"
@@ -41,7 +42,6 @@
 #include "vm/PIC.h"
 #include "vm/SelfHosting.h"
 #include "vm/SharedMem.h"
-#include "vm/TypedArrayCommon.h"
 #include "vm/WrapperObject.h"
 
 #include "jsatominlines.h"

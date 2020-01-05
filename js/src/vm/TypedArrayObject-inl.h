@@ -4,10 +4,12 @@
 
 
 
-#ifndef vm_TypedArrayCommon_h
-#define vm_TypedArrayCommon_h
+#ifndef vm_TypedArrayObject_inl_h
+#define vm_TypedArrayObject_inl_h
 
 
+
+#include "vm/TypedArrayObject.h"
 
 #include "mozilla/Assertions.h"
 #include "mozilla/FloatingPoint.h"
@@ -23,7 +25,6 @@
 #include "js/Value.h"
 
 #include "vm/NativeObject.h"
-#include "vm/TypedArrayObject.h"
 
 namespace js {
 
