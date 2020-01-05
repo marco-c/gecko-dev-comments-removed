@@ -246,15 +246,15 @@ this.PopupNotifications = function PopupNotifications(tabbrowser, panel,
     }
 
     let doc = this.window.document;
-    let activeElement = doc.activeElement;
+    let focusedElement = Services.focus.focusedElement;
 
     
-    if (!activeElement ||
-        activeElement == doc.body ||
-        activeElement == this.tabbrowser.selectedBrowser ||
+    if (!focusedElement ||
+        focusedElement == doc.body ||
+        focusedElement == this.tabbrowser.selectedBrowser ||
         
-        getNotificationFromElement(activeElement) == notification ||
-        notification.contains(activeElement)) {
+        getNotificationFromElement(focusedElement) == notification ||
+        notification.contains(focusedElement)) {
       this._onButtonEvent(aEvent, "secondarybuttoncommand", notification);
     }
   };
@@ -431,6 +431,8 @@ PopupNotifications.prototype = {
 
 
 
+
+
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -465,6 +467,14 @@ PopupNotifications.prototype = {
 
     if (isActiveBrowser) {
       if (isActiveWindow) {
+
+        
+        if (options && !options.dismissed && options.autofocus) {
+          this.panel.removeAttribute("noautofocus");
+        } else {
+          this.panel.setAttribute("noautofocus", "true");
+        }
+
         
         this._update(notifications, new Set([notification.anchorElement]), true);
       } else {
@@ -1317,6 +1327,12 @@ PopupNotifications.prototype = {
     if (event.target != this.panel) {
       return;
     }
+
+    
+    
+    
+    
+    this.panel.setAttribute("noautofocus", "true");
 
     
     if (this._ignoreDismissal) {

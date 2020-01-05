@@ -8,7 +8,8 @@ function test() {
   ok(PopupNotifications, "PopupNotifications object exists");
   ok(PopupNotifications.panel, "PopupNotifications panel exists");
 
-  setup();
+  
+  SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]}).then(setup);
 }
 
 var tests = [
@@ -53,7 +54,6 @@ var tests = [
   
   { id: "Test#3",
     *run() {
-      yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
       this.notifyObj = new BasicNotification(this.id);
       this.notifyObj.anchorID = "geo-notification-icon";
       this.notifyObj.addOptions({
@@ -76,8 +76,6 @@ var tests = [
   
   { id: "Test#4",
     *run() {
-      yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
-
       let notifyObj1 = new BasicNotification(this.id);
       notifyObj1.id += "_1";
       notifyObj1.anchorID = "default-notification-icon";
@@ -131,5 +129,47 @@ var tests = [
       notification2.remove();
       goNext();
     },
+  },
+  
+  { id: "Test#5",
+    *run() {
+      this.notifyObj = new BasicNotification(this.id);
+      this.notifyObj.anchorID = "geo-notification-icon";
+      this.notifyObj.addOptions({
+        autofocus: true,
+      });
+      this.notification = showNotification(this.notifyObj);
+    },
+    *onShown(popup) {
+      checkPopup(popup, this.notifyObj);
+
+      
+      
+      is(Services.focus.focusedElement, null);
+
+      EventUtils.synthesizeKey("VK_TAB", {});
+      is(Services.focus.focusedElement, popup.childNodes[0].closebutton);
+      dismissNotification(popup);
+    },
+    *onHidden() {
+      
+      gURLBar.focus();
+
+      
+      let notifyObj = new BasicNotification(this.id);
+      notifyObj.id += "_2";
+      notifyObj.anchorID = "default-notification-icon";
+
+      let opened = waitForNotificationPanel();
+      let notification = showNotification(notifyObj);
+      let popup = yield opened;
+      checkPopup(popup, notifyObj);
+
+      
+      is(Services.focus.focusedElement, gURLBar.inputField);
+
+      this.notification.remove();
+      notification.remove();
+    }
   },
 ];
