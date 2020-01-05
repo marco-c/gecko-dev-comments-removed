@@ -2265,13 +2265,13 @@ LIRGenerator::visitTruncateToInt32(MTruncateToInt32* truncate)
 
       case MIRType::Double:
         
-        gen->setPerformsCall();
+        gen->setNeedsStaticStackAlignment();
         lowerTruncateDToInt32(truncate);
         break;
 
       case MIRType::Float32:
         
-        gen->setPerformsCall();
+        gen->setNeedsStaticStackAlignment();
         lowerTruncateFToInt32(truncate);
         break;
 
@@ -3707,8 +3707,7 @@ LIRGenerator::visitGetNameCache(MGetNameCache* ins)
 
     
     
-    
-    gen->setPerformsCall();
+    gen->setNeedsOverrecursedCheck();
 
     LGetNameCache* lir = new(alloc()) LGetNameCache(useRegister(ins->envObj()), temp());
     defineBox(lir, ins);
@@ -3738,8 +3737,7 @@ LIRGenerator::visitGetPropertyCache(MGetPropertyCache* ins)
     if (ins->monitoredResult()) {
         
         
-        
-        gen->setPerformsCall();
+        gen->setNeedsOverrecursedCheck();
     }
 
     
@@ -4013,8 +4011,7 @@ LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins)
 
     
     
-    
-    gen->setPerformsCall();
+    gen->setNeedsOverrecursedCheck();
 
     
     
@@ -4212,11 +4209,11 @@ LIRGenerator::visitHasOwnCache(MHasOwnCache* ins)
                id->type() == MIRType::Int32 ||
                id->type() == MIRType::Value);
 
-    gen->setPerformsCall();
+    
+    
+    gen->setNeedsOverrecursedCheck();
 
-    LHasOwnCache* lir =
-        new(alloc()) LHasOwnCache(useBoxOrTyped(value),
-                                  useBoxOrTyped(id));
+    LHasOwnCache* lir = new(alloc()) LHasOwnCache(useBoxOrTyped(value), useBoxOrTyped(id));
     define(lir, ins);
     assignSafepoint(lir, ins);
 }
@@ -4933,8 +4930,10 @@ LIRGenerator::visitInstruction(MInstruction* ins)
         return false;
     ins->accept(this);
 
-    if (ins->possiblyCalls())
-        gen->setPerformsCall();
+    if (ins->possiblyCalls()) {
+        gen->setNeedsStaticStackAlignment();
+        gen->setNeedsOverrecursedCheck();
+    }
 
     if (ins->resumePoint())
         updateResumeState(ins);

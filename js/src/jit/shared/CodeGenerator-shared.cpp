@@ -89,14 +89,14 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, Mac
         if (gen->usesSimd()) {
             
             
-            frameInitialAdjustment_ = ComputeByteAlignment(sizeof(wasm::Frame),
-                                                           WasmStackAlignment);
+            frameInitialAdjustment_ = ComputeByteAlignment(sizeof(wasm::Frame), WasmStackAlignment);
             frameDepth_ += frameInitialAdjustment_;
+
             
             
             frameDepth_ += ComputeByteAlignment(sizeof(wasm::Frame) + frameDepth_,
                                                 WasmStackAlignment);
-        } else if (gen->performsCall()) {
+        } else if (gen->needsStaticStackAlignment()) {
             
             
             
@@ -1490,7 +1490,7 @@ CodeGeneratorShared::omitOverRecursedCheck() const
     
     
     
-    return frameSize() < 64 && !gen->performsCall();
+    return frameSize() < 64 && !gen->needsOverrecursedCheck();
 }
 
 void
