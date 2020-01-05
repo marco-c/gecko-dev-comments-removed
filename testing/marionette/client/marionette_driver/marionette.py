@@ -811,7 +811,8 @@ class Marionette(object):
             if returncode is None:
                 message = ('Process killed because the connection to Marionette server is '
                            'lost. Check gecko.log for errors')
-                self.quit()
+                
+                self.cleanup()
             else:
                 
                 crash_count = self.check_for_crash()
