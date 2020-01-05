@@ -2071,9 +2071,7 @@ class ForOfLoopControl : public LoopControl
         
         
         
-        if (!bce->emit1(JSOP_POP))                        
-            return false;
-        if (!bce->emit1(JSOP_POP))                        
+        if (!bce->emitPopN(2))                            
             return false;
 
         
@@ -2456,6 +2454,21 @@ BytecodeEmitter::emitDupAt(unsigned slotFromTop)
 }
 
 bool
+BytecodeEmitter::emitPopN(unsigned n)
+{
+    MOZ_ASSERT(n != 0);
+
+    if (n == 1)
+        return emit1(JSOP_POP);
+
+    
+    if (n == 2)
+        return emit1(JSOP_POP) && emit1(JSOP_POP);
+
+    return emitUint16Operand(JSOP_POPN, n);
+}
+
+bool
 BytecodeEmitter::emitCheckIsObj(CheckIsObjectKind kind)
 {
     return emit2(JSOP_CHECKISOBJ, uint8_t(kind));
@@ -2615,8 +2628,7 @@ BytecodeEmitter::emitUint32Operand(JSOp op, uint32_t operand)
 bool
 BytecodeEmitter::flushPops(int* npops)
 {
-    MOZ_ASSERT(*npops != 0);
-    if (!emitUint16Operand(JSOP_POPN, *npops))
+    if (!emitPopN(*npops))
         return false;
 
     *npops = 0;
@@ -5330,9 +5342,7 @@ BytecodeEmitter::emitIteratorClose(CompletionKind completionKind ,
         
         if (!emit2(JSOP_UNPICK, 2))                       
             return false;
-        if (!emit1(JSOP_POP))                             
-            return false;
-        if (!emit1(JSOP_POP))                             
+        if (!emitPopN(2))                                 
             return false;
     } else {
         if (!emitCheckIsObj(CheckIsObjectKind::IteratorReturn)) 
@@ -6821,7 +6831,7 @@ BytecodeEmitter::emitSpread(bool allowSelfHosted)
     if (!emit2(JSOP_PICK, 3))                             
         return false;
 
-    return emitUint16Operand(JSOP_POPN, 2);               
+    return emitPopN(2);                                   
 }
 
 bool
@@ -7044,7 +7054,7 @@ BytecodeEmitter::emitForOf(ParseNode* forOfLoop, EmitterScope* headLexicalEmitte
     if (!tryNoteList.append(JSTRY_FOR_OF, stackDepth, top.offset, breakTarget.offset))
         return false;
 
-    return emitUint16Operand(JSOP_POPN, 3);               
+    return emitPopN(3);                                   
 }
 
 bool
@@ -7567,7 +7577,7 @@ BytecodeEmitter::emitComprehensionForOf(ParseNode* pn)
     }
 
     
-    return emitUint16Operand(JSOP_POPN, 3);               
+    return emitPopN(3);                                   
 }
 
 bool
@@ -8541,7 +8551,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
         return false;
     if (!emit2(JSOP_UNPICK, 3))                           
         return false;
-    if (!emitUint16Operand(JSOP_POPN, 3))                 
+    if (!emitPopN(3))                                     
         return false;
     {
         
@@ -8556,9 +8566,7 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter)
 
     if (!ifReturnMethodIsDefined.emitElse())              
         return false;
-    if (!emit1(JSOP_POP))                                 
-        return false;
-    if (!emit1(JSOP_POP))                                 
+    if (!emitPopN(2))                                     
         return false;
     if (!ifReturnMethodIsDefined.emitEnd())
         return false;

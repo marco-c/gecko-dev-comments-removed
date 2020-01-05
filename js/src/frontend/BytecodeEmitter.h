@@ -471,6 +471,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter
     MOZ_MUST_USE bool emitDupAt(unsigned slotFromTop);
 
     
+    MOZ_MUST_USE bool emitPopN(unsigned n);
+
+    
     MOZ_MUST_USE bool emitCheckIsObj(CheckIsObjectKind kind);
 
     
