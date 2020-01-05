@@ -194,8 +194,8 @@ fn main_fetch(request: Rc<Request>, cache: &mut CORSCache, cors_flag: bool,
             };
 
             if (same_origin && !cors_flag ) ||
-                (current_url.scheme() == "data" && request.same_origin_data.get()) ||
-                (current_url.scheme() == "file" && request.same_origin_data.get()) ||
+                current_url.scheme() == "data" ||
+                current_url.scheme() == "file" ||
                 current_url.scheme() == "about" ||
                 request.mode == RequestMode::Navigate {
                 basic_fetch(request.clone(), cache, target, done_chan, context)
@@ -641,8 +641,6 @@ fn http_redirect_fetch(request: Rc<Request>,
     assert_eq!(response.return_internal.get(), true);
 
     
-    
-    
     if !response.actual_response().headers.has::<Location>() {
         return Rc::try_unwrap(response).ok().unwrap();
     }
@@ -650,19 +648,17 @@ fn http_redirect_fetch(request: Rc<Request>,
     
     let location = match response.actual_response().headers.get::<Location>() {
         Some(&Location(ref location)) => location.clone(),
-        
         _ => return Response::network_error()
     };
-
-    
     let response_url = response.actual_response().url.as_ref().unwrap();
     let location_url = response_url.join(&*location);
-
-    
     let location_url = match location_url {
         Ok(url) => url,
         _ => return Response::network_error()
     };
+
+    
+    
 
     
     if request.redirect_count.get() >= 20 {
@@ -673,8 +669,6 @@ fn http_redirect_fetch(request: Rc<Request>,
     request.redirect_count.set(request.redirect_count.get() + 1);
 
     
-    request.same_origin_data.set(false);
-
     let same_origin = if let Origin::Origin(ref origin) = *request.origin.borrow() {
         *origin == request.current_url().origin()
     } else {
@@ -682,7 +676,6 @@ fn http_redirect_fetch(request: Rc<Request>,
     };
     let has_credentials = has_credentials(&location_url);
 
-    
     if request.mode == RequestMode::CORSMode && !same_origin && has_credentials {
         return Response::network_error();
     }
@@ -708,6 +701,9 @@ fn http_redirect_fetch(request: Rc<Request>,
 
     
     request.url_list.borrow_mut().push(location_url);
+
+    
+    
 
     
     main_fetch(request, cache, cors_flag, true, target, done_chan, context)
