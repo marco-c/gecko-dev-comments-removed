@@ -675,10 +675,6 @@ public:
       return false;
     }
 
-    uint64_t GetDeviceCounter() const {
-      return mDeviceCounter;
-    }
-
     
 
 
@@ -861,9 +857,6 @@ private:
 
     int32_t mScreenDepth;
     mozilla::gfx::IntSize mScreenSize;
-
-    
-    uint64_t mDeviceCounter;
 
     
     
