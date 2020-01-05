@@ -53,7 +53,6 @@ class nsCaret;
 
 namespace mozilla {
 class FrameLayerBuilder;
-class DisplayItemScrollClip;
 namespace layers {
 class Layer;
 class ImageLayer;
@@ -281,7 +280,6 @@ public:
   typedef mozilla::DisplayItemClip DisplayItemClip;
   typedef mozilla::DisplayItemClipChain DisplayItemClipChain;
   typedef mozilla::DisplayListClipState DisplayListClipState;
-  typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
   typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
   typedef nsIWidget::ThemeGeometry ThemeGeometry;
   typedef mozilla::layers::Layer Layer;
@@ -763,17 +761,10 @@ public:
   
 
 
-
-  const DisplayItemClip* AllocateDisplayItemClip(const DisplayItemClip& aOriginal);
-
-  
-
-
-
-  DisplayItemScrollClip* AllocateDisplayItemScrollClip(const DisplayItemScrollClip* aParent,
-                                                 nsIScrollableFrame* aScrollableFrame,
-                                                 const DisplayItemClip* aClip,
-                                                 bool aIsAsyncScrollable);
+  void SetActiveScrolledRootForRootScrollframe(const ActiveScrolledRoot* aASR)
+  { mActiveScrolledRootForRootScrollframe = aASR; }
+  const ActiveScrolledRoot* ActiveScrolledRootForRootScrollframe() const
+  { return mActiveScrolledRootForRootScrollframe; }
 
   
 
@@ -979,6 +970,7 @@ public:
     explicit AutoCurrentActiveScrolledRootSetter(nsDisplayListBuilder* aBuilder)
       : mBuilder(aBuilder)
       , mSavedActiveScrolledRoot(aBuilder->mCurrentActiveScrolledRoot)
+      , mContentClipASR(aBuilder->ClipState().GetContentClipASR())
       , mDescendantsStartIndex(aBuilder->mActiveScrolledRoots.Length())
       , mUsed(false)
     {
@@ -992,9 +984,38 @@ public:
     void SetCurrentActiveScrolledRoot(const ActiveScrolledRoot* aActiveScrolledRoot)
     {
       MOZ_ASSERT(!mUsed);
+
+      
       mBuilder->mCurrentActiveScrolledRoot = aActiveScrolledRoot;
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      
+      const ActiveScrolledRoot* finiteBoundsASR = ActiveScrolledRoot::PickDescendant(
+        mContentClipASR, aActiveScrolledRoot);
+
+      
+      
       mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickAncestor(
-        mBuilder->mCurrentContainerASR, aActiveScrolledRoot);
+        mBuilder->mCurrentContainerASR, finiteBoundsASR);
+
       mUsed = true;
     }
 
@@ -1011,8 +1032,29 @@ public:
 
   private:
     nsDisplayListBuilder* mBuilder;
+    
+
+
+
     const ActiveScrolledRoot* mSavedActiveScrolledRoot;
+    
+
+
+
+
+
+    const ActiveScrolledRoot* mContentClipASR;
+    
+
+
+
+
     size_t mDescendantsStartIndex;
+    
+
+
+
+
     bool mUsed;
   };
 
@@ -1031,7 +1073,9 @@ public:
       : mBuilder(aBuilder)
       , mSavedContainerASR(aBuilder->mCurrentContainerASR)
     {
-      mBuilder->mCurrentContainerASR = mBuilder->mCurrentActiveScrolledRoot;
+      mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickDescendant(
+        mBuilder->ClipState().GetContentClipASR(),
+        mBuilder->mCurrentActiveScrolledRoot);
     }
 
     const ActiveScrolledRoot* GetContainerASR()
@@ -1166,15 +1210,15 @@ public:
   void SetCurrentTableItem(nsDisplayTableItem* aTableItem) { mCurrentTableItem = aTableItem; }
 
   struct OutOfFlowDisplayData {
-    OutOfFlowDisplayData(const DisplayItemClip* aContainingBlockClip,
-                         const DisplayItemScrollClip* aContainingBlockScrollClip,
+    OutOfFlowDisplayData(const DisplayItemClipChain* aContainingBlockClipChain,
+                         const ActiveScrolledRoot* aContainingBlockActiveScrolledRoot,
                          const nsRect &aDirtyRect)
-      : mContainingBlockClip(aContainingBlockClip ? *aContainingBlockClip : DisplayItemClip())
-      , mContainingBlockScrollClip(aContainingBlockScrollClip)
+      : mContainingBlockClipChain(aContainingBlockClipChain)
+      , mContainingBlockActiveScrolledRoot(aContainingBlockActiveScrolledRoot)
       , mDirtyRect(aDirtyRect)
     {}
-    DisplayItemClip mContainingBlockClip;
-    const DisplayItemScrollClip* mContainingBlockScrollClip;
+    const DisplayItemClipChain* mContainingBlockClipChain;
+    const ActiveScrolledRoot* mContainingBlockActiveScrolledRoot;
     nsRect mDirtyRect;
   };
 
@@ -1188,6 +1232,12 @@ public:
 
   nsPresContext* CurrentPresContext() {
     return CurrentPresShellState()->mPresShell->GetPresContext();
+  }
+
+  OutOfFlowDisplayData* GetCurrentFixedBackgroundDisplayData()
+  {
+    auto& displayData = CurrentPresShellState()->mFixedBackgroundDisplayData;
+    return displayData ? displayData.ptr() : nullptr;
   }
 
   
@@ -1319,6 +1369,12 @@ public:
     mBuildingInvisibleItems = aBuildingInvisibleItems;
   }
 
+  
+
+
+
+  AnimatedGeometryRoot* AnimatedGeometryRootForASR(const ActiveScrolledRoot* aASR);
+
   bool HitTestShouldStopAtFirstOpaque() const {
     return mHitTestShouldStopAtFirstOpaque;
   }
@@ -1347,11 +1403,11 @@ private:
   friend class nsDisplayFixedPosition;
   AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsDisplayItem* aItem);
 
-  AnimatedGeometryRoot* WrapAGRForFrame(nsIFrame* aAnimatedGeometryRoot,
-                                        AnimatedGeometryRoot* aParent = nullptr);
-
   friend class nsDisplayItem;
   AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsIFrame* aFrame);
+
+  AnimatedGeometryRoot* WrapAGRForFrame(nsIFrame* aAnimatedGeometryRoot,
+                                        AnimatedGeometryRoot* aParent = nullptr);
 
   nsDataHashtable<nsPtrHashKey<nsIFrame>, AnimatedGeometryRoot*> mFrameToAnimatedGeometryRootMap;
 
@@ -1366,6 +1422,7 @@ private:
     nsIPresShell* mPresShell;
     nsIFrame*     mCaretFrame;
     nsRect        mCaretRect;
+    mozilla::Maybe<OutOfFlowDisplayData> mFixedBackgroundDisplayData;
     uint32_t      mFirstFrameMarkedForDisplay;
     bool          mIsBackgroundOnly;
     
@@ -1438,10 +1495,9 @@ private:
   
   
   nsDisplayList*                 mScrollInfoItemsForHoisting;
-  nsTArray<DisplayItemScrollClip*> mScrollClipsToDestroy;
-  nsTArray<DisplayItemClip*>     mDisplayItemClipsToDestroy;
   nsTArray<ActiveScrolledRoot*>  mActiveScrolledRoots;
   nsTArray<DisplayItemClipChain*> mClipChainsToDestroy;
+  const ActiveScrolledRoot*      mActiveScrolledRootForRootScrollframe;
   nsDisplayListBuilderMode       mMode;
   ViewID                         mCurrentScrollParentId;
   ViewID                         mCurrentScrollbarTarget;
@@ -1518,7 +1574,6 @@ class nsDisplayItem : public nsDisplayItemLink {
 public:
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::DisplayItemClip DisplayItemClip;
-  typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
   typedef mozilla::DisplayItemClipChain DisplayItemClipChain;
   typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
   typedef mozilla::layers::FrameMetrics FrameMetrics;
@@ -1532,15 +1587,16 @@ public:
   
   nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
   nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                const DisplayItemScrollClip* aScrollClip);
+                const ActiveScrolledRoot* aActiveScrolledRoot);
   
 
 
 
   explicit nsDisplayItem(nsIFrame* aFrame)
     : mFrame(aFrame)
+    , mClipChain(nullptr)
     , mClip(nullptr)
-    , mScrollClip(nullptr)
+    , mActiveScrolledRoot(nullptr)
     , mReferenceFrame(nullptr)
     , mAnimatedGeometryRoot(nullptr)
     , mForceNotVisible(false)
@@ -1959,7 +2015,7 @@ public:
 
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                             float aOpacity,
-                            const DisplayItemClip* aClip) {
+                            const DisplayItemClipChain* aClip) {
     NS_ASSERTION(CanApplyOpacity(), "ApplyOpacity not supported on this type");
   }
   
@@ -2042,28 +2098,20 @@ public:
   {
     return mClip ? *mClip : DisplayItemClip::NoClip();
   }
-  void SetClip(nsDisplayListBuilder* aBuilder, const DisplayItemClip& aClip)
-  {
-    if (!aClip.HasClip()) {
-      mClip = nullptr;
-      return;
-    }
-    mClip = aBuilder->AllocateDisplayItemClip(aClip);
-  }
+  void IntersectClip(nsDisplayListBuilder* aBuilder, const DisplayItemClipChain* aOther);
 
-  void IntersectClip(nsDisplayListBuilder* aBuilder, const DisplayItemClip& aClip)
-  {
-    if (mClip) {
-      DisplayItemClip temp = *mClip;
-      temp.IntersectWith(aClip);
-      SetClip(aBuilder, temp);
-    } else {
-      SetClip(aBuilder, aClip);
-    }
-  }
+  void SetActiveScrolledRoot(const ActiveScrolledRoot* aActiveScrolledRoot) { mActiveScrolledRoot = aActiveScrolledRoot; }
+  const ActiveScrolledRoot* GetActiveScrolledRoot() const { return mActiveScrolledRoot; }
 
-  void SetScrollClip(const DisplayItemScrollClip* aScrollClip) { mScrollClip = aScrollClip; }
-  const DisplayItemScrollClip* ScrollClip() const { return mScrollClip; }
+  virtual void SetClipChain(const DisplayItemClipChain* aClipChain);
+  const DisplayItemClipChain* GetClipChain() const { return mClipChain; }
+
+  
+
+
+
+  void FuseClipChainUpTo(nsDisplayListBuilder* aBuilder,
+                         const ActiveScrolledRoot* aASR);
 
   bool BackfaceIsHidden() {
     return mFrame->BackfaceIsHidden();
@@ -2075,8 +2123,9 @@ protected:
   nsDisplayItem() { mAbove = nullptr; }
 
   nsIFrame* mFrame;
+  const DisplayItemClipChain* mClipChain;
   const DisplayItemClip* mClip;
-  const DisplayItemScrollClip* mScrollClip;
+  const ActiveScrolledRoot* mActiveScrolledRoot;
   
   const nsIFrame* mReferenceFrame;
   struct AnimatedGeometryRoot* mAnimatedGeometryRoot;
@@ -2113,7 +2162,7 @@ protected:
 
 class nsDisplayList {
 public:
-  typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
+  typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::PaintedLayer PaintedLayer;
@@ -2351,6 +2400,7 @@ public:
 
 
   nsRect GetBounds(nsDisplayListBuilder* aBuilder) const;
+
   
 
 
@@ -2361,8 +2411,9 @@ public:
 
 
 
-  nsRect GetScrollClippedBoundsUpTo(nsDisplayListBuilder* aBuilder,
-                                    const DisplayItemScrollClip* aIncludeScrollClipsUpTo) const;
+  nsRect GetClippedBoundsWithRespectToASR(nsDisplayListBuilder* aBuilder,
+                                          const ActiveScrolledRoot* aASR) const;
+
   
 
 
@@ -3171,7 +3222,7 @@ public:
 
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                             float aOpacity,
-                            const DisplayItemClip* aClip) override;
+                            const DisplayItemClipChain* aClip) override;
   virtual bool CanApplyOpacity() const override;
 
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) override
@@ -3280,13 +3331,11 @@ public:
   
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                             float aOpacity,
-                            const DisplayItemClip* aClip) override
+                            const DisplayItemClipChain* aClip) override
   {
     NS_ASSERTION(CanApplyOpacity(), "ApplyOpacity should be allowed");
     mOpacity = aOpacity;
-    if (aClip) {
-      IntersectClip(aBuilder, *aClip);
-    }
+    IntersectClip(aBuilder, aClip);
   }
   virtual bool CanApplyOpacity() const override
   {
@@ -3433,7 +3482,7 @@ public:
 
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                             float aOpacity,
-                            const DisplayItemClip* aClip) override
+                            const DisplayItemClipChain* aClip) override
   {
     NS_ASSERTION(CanApplyOpacity(), "ApplyOpacity should be allowed");
   }
@@ -3517,7 +3566,7 @@ public:
                     nsDisplayList* aList);
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                     nsDisplayList* aList,
-                    const DisplayItemScrollClip* aScrollClip);
+                    const ActiveScrolledRoot* aActiveScrolledRoot);
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                     nsDisplayItem* aItem);
   nsDisplayWrapList(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
@@ -3532,7 +3581,7 @@ public:
 
   virtual void UpdateBounds(nsDisplayListBuilder* aBuilder) override
   {
-    mBounds = mList.GetScrollClippedBoundsUpTo(aBuilder, mScrollClip);
+    mBounds = mList.GetClippedBoundsWithRespectToASR(aBuilder, mActiveScrolledRoot);
     
     
     
@@ -3676,7 +3725,7 @@ class nsDisplayOpacity : public nsDisplayWrapList {
 public:
   nsDisplayOpacity(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                    nsDisplayList* aList,
-                   const DisplayItemScrollClip* aScrollClip,
+                   const ActiveScrolledRoot* aActiveScrolledRoot,
                    bool aForEventsAndPluginsOnly);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayOpacity();
@@ -3708,7 +3757,7 @@ public:
   }
   virtual void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                             float aOpacity,
-                            const DisplayItemClip* aClip) override;
+                            const DisplayItemClipChain* aClip) override;
   virtual bool CanApplyOpacity() const override;
   virtual bool ShouldFlattenAway(nsDisplayListBuilder* aBuilder) override;
   static bool NeedsActiveLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
@@ -3726,7 +3775,7 @@ class nsDisplayBlendMode : public nsDisplayWrapList {
 public:
   nsDisplayBlendMode(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                         nsDisplayList* aList, uint8_t aBlendMode,
-                        const DisplayItemScrollClip* aScrollClip,
+                        const ActiveScrolledRoot* aActiveScrolledRoot,
                         uint32_t aIndex = 0);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayBlendMode();
@@ -3768,11 +3817,13 @@ class nsDisplayBlendContainer : public nsDisplayWrapList {
 public:
     static nsDisplayBlendContainer*
     CreateForMixBlendMode(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                          nsDisplayList* aList, const DisplayItemScrollClip* aScrollClip);
+                          nsDisplayList* aList,
+                          const ActiveScrolledRoot* aActiveScrolledRoot);
 
     static nsDisplayBlendContainer*
     CreateForBackgroundBlendMode(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                                 nsDisplayList* aList, const DisplayItemScrollClip* aScrollClip);
+                                 nsDisplayList* aList,
+                                 const ActiveScrolledRoot* aActiveScrolledRoot);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
     virtual ~nsDisplayBlendContainer();
@@ -3797,7 +3848,7 @@ public:
 private:
     nsDisplayBlendContainer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                             nsDisplayList* aList,
-                            const DisplayItemScrollClip* aScrollClip,
+                            const ActiveScrolledRoot* aActiveScrolledRoot,
                             bool aIsForBackground);
 
     
@@ -3835,7 +3886,9 @@ public:
 
 
   nsDisplayOwnLayer(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                    nsDisplayList* aList, uint32_t aFlags = 0,
+                    nsDisplayList* aList,
+                    const ActiveScrolledRoot* aActiveScrolledRoot,
+                    uint32_t aFlags = 0,
                     ViewID aScrollTarget = mozilla::layers::FrameMetrics::NULL_SCROLL_ID,
                     float aScrollbarThumbRatio = 0.0f,
                     bool aForceActive = true);
@@ -3932,7 +3985,8 @@ public:
 class nsDisplayStickyPosition : public nsDisplayOwnLayer {
 public:
   nsDisplayStickyPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                          nsDisplayList* aList);
+                          nsDisplayList* aList,
+                          const ActiveScrolledRoot* aActiveScrolledRoot);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayStickyPosition();
 #endif
@@ -3953,7 +4007,8 @@ public:
 class nsDisplayFixedPosition : public nsDisplayOwnLayer {
 public:
   nsDisplayFixedPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                          nsDisplayList* aList);
+                         nsDisplayList* aList,
+                         const ActiveScrolledRoot* aActiveScrolledRoot);
 
   static nsDisplayFixedPosition* CreateForFixedBackground(nsDisplayListBuilder* aBuilder,
                                                           nsIFrame* aFrame,
@@ -4094,7 +4149,7 @@ class nsDisplaySVGEffects: public nsDisplayWrapList {
 public:
   nsDisplaySVGEffects(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                       nsDisplayList* aList, bool aHandleOpacity,
-                      const DisplayItemScrollClip* aScrollClip);
+                      const ActiveScrolledRoot* aActiveScrolledRoot);
   nsDisplaySVGEffects(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                       nsDisplayList* aList, bool aHandleOpacity);
 #ifdef NS_BUILD_REFCNT_LOGGING
@@ -4137,7 +4192,7 @@ public:
 
   nsDisplayMask(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                 nsDisplayList* aList, bool aHandleOpacity,
-                const DisplayItemScrollClip* aScrollClip);
+                const ActiveScrolledRoot* aActiveScrolledRoot);
 #ifdef NS_BUILD_REFCNT_LOGGING
   virtual ~nsDisplayMask();
 #endif

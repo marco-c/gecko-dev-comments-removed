@@ -8,7 +8,6 @@
 
 #include "DisplayItemClip.h"
 #include "DisplayItemClipChain.h"
-#include "DisplayItemScrollClip.h"
 
 #include "mozilla/DebugOnly.h"
 
@@ -25,34 +24,30 @@ namespace mozilla {
 class DisplayListClipState {
 public:
   DisplayListClipState()
-    : mClipContentDescendants(nullptr)
-    , mClipContainingBlockDescendants(nullptr)
-    , mCurrentCombinedClip(nullptr)
-    , mScrollClipContentDescendants(nullptr)
-    , mScrollClipContainingBlockDescendants(nullptr)
-    , mStackingContextAncestorSC(nullptr)
+    : mClipChainContentDescendants(nullptr)
+    , mClipChainContainingBlockDescendants(nullptr)
+    , mCurrentCombinedClipChain(nullptr)
+    , mCurrentCombinedClipChainIsValid(false)
   {}
 
   
 
 
 
-  const DisplayItemClip* GetCurrentCombinedClip(nsDisplayListBuilder* aBuilder);
+  const DisplayItemClipChain* GetCurrentCombinedClipChain(nsDisplayListBuilder* aBuilder);
 
-  const DisplayItemClip* GetClipForContainingBlockDescendants() const
+  const DisplayItemClipChain* GetClipChainForContainingBlockDescendants() const
   {
-    return mClipContainingBlockDescendants;
+    return mClipChainContainingBlockDescendants;
   }
-  const DisplayItemClip* GetClipForContentDescendants() const
+  const DisplayItemClipChain* GetClipChainForContentDescendants() const
   {
-    return mClipContentDescendants;
+    return mClipChainContentDescendants;
   }
 
-  const DisplayItemScrollClip* GetCurrentInnermostScrollClip();
-
-  const DisplayItemScrollClip* CurrentAncestorScrollClipForStackingContextContents()
+  const ActiveScrolledRoot* GetContentClipASR() const
   {
-    return mStackingContextAncestorSC;
+    return mClipChainContentDescendants ? mClipChainContentDescendants->mASR : nullptr;
   }
 
   class AutoSaveRestore;
@@ -69,79 +64,44 @@ public:
   };
 
 private:
-  void SetClipForContainingBlockDescendants(const DisplayItemClip* aClip)
-  {
-    mClipContainingBlockDescendants = aClip;
-    mCurrentCombinedClip = nullptr;
-  }
-
-  void SetScrollClipForContainingBlockDescendants(const DisplayItemScrollClip* aScrollClip)
-  {
-    mScrollClipContainingBlockDescendants = aScrollClip;
-    mStackingContextAncestorSC = DisplayItemScrollClip::PickAncestor(mStackingContextAncestorSC, aScrollClip);
-  }
 
   void Clear()
   {
-    mClipContentDescendants = nullptr;
-    mClipContainingBlockDescendants = nullptr;
-    mCurrentCombinedClip = nullptr;
-    
+    mClipChainContentDescendants = nullptr;
+    mClipChainContainingBlockDescendants = nullptr;
+    mCurrentCombinedClipChain = nullptr;
+    mCurrentCombinedClipChainIsValid = false;
   }
 
-  void EnterStackingContextContents(bool aClear)
+  void ClearUpToASR(const ActiveScrolledRoot* aASR);
+
+  void SetClipChainForContainingBlockDescendants(const DisplayItemClipChain* aClipChain)
   {
-    if (aClear) {
-      mClipContentDescendants = nullptr;
-      mClipContainingBlockDescendants = nullptr;
-      mCurrentCombinedClip = nullptr;
-      mScrollClipContentDescendants = nullptr;
-      mScrollClipContainingBlockDescendants = nullptr;
-      mStackingContextAncestorSC = nullptr;
-    } else {
-      mStackingContextAncestorSC = GetCurrentInnermostScrollClip();
-    }
+    mClipChainContainingBlockDescendants = aClipChain;
+    InvalidateCurrentCombinedClipChain(aClipChain ? aClipChain->mASR : nullptr);
   }
 
   
 
 
 
-  void TurnClipIntoScrollClipForContentDescendants(nsDisplayListBuilder* aBuilder,
-                                                   nsIScrollableFrame* aScrollableFrame);
-  void TurnClipIntoScrollClipForContainingBlockDescendants(nsDisplayListBuilder* aBuilder,
-                                                           nsIScrollableFrame* aScrollableFrame);
 
-  
-
-
-
-
-
-  DisplayItemScrollClip* InsertInactiveScrollClipForContentDescendants(nsDisplayListBuilder* aBuilder,
-                                                                       nsIScrollableFrame* aScrollableFrame);
-  DisplayItemScrollClip* InsertInactiveScrollClipForContainingBlockDescendants(nsDisplayListBuilder* aBuilder,
-                                                                               nsIScrollableFrame* aScrollableFrame);
-
-  DisplayItemScrollClip* CreateInactiveScrollClip(nsDisplayListBuilder* aBuilder,
-                                                  nsIScrollableFrame* aScrollableFrame);
-
-  
-
-
-
-
-  void ClipContainingBlockDescendants(const nsRect& aRect,
+  void ClipContainingBlockDescendants(nsDisplayListBuilder* aBuilder,
+                                      const nsRect& aRect,
                                       const nscoord* aRadii,
-                                      DisplayItemClip& aClipOnStack);
+                                      DisplayItemClipChain& aClipChainOnStack);
 
-  void ClipContentDescendants(const nsRect& aRect,
+  void ClipContentDescendants(nsDisplayListBuilder* aBuilder,
+                              const nsRect& aRect,
                               const nscoord* aRadii,
-                              DisplayItemClip& aClipOnStack);
-  void ClipContentDescendants(const nsRect& aRect,
+                              DisplayItemClipChain& aClipChainOnStack);
+  void ClipContentDescendants(nsDisplayListBuilder* aBuilder,
+                              const nsRect& aRect,
                               const nsRect& aRoundedRect,
                               const nscoord* aRadii,
-                              DisplayItemClip& aClipOnStack);
+                              DisplayItemClipChain& aClipChainOnStack);
+
+  void InvalidateCurrentCombinedClipChain(const ActiveScrolledRoot* aInvalidateUpTo);
 
   
 
@@ -153,7 +113,7 @@ private:
 
   void ClipContainingBlockDescendantsToContentBox(nsDisplayListBuilder* aBuilder,
                                                   nsIFrame* aFrame,
-                                                  DisplayItemClip& aClipOnStack,
+                                                  DisplayItemClipChain& aClipChainOnStack,
                                                   uint32_t aFlags);
 
   
@@ -161,14 +121,14 @@ private:
 
 
 
-  const DisplayItemClip* mClipContentDescendants;
+  const DisplayItemClipChain* mClipChainContentDescendants;
   
 
 
 
 
 
-  const DisplayItemClip* mClipContainingBlockDescendants;
+  const DisplayItemClipChain* mClipChainContainingBlockDescendants;
   
 
 
@@ -176,20 +136,8 @@ private:
 
 
 
-  const DisplayItemClip* mCurrentCombinedClip;
-
-  
-
-
-  const DisplayItemScrollClip* mScrollClipContentDescendants;
-  const DisplayItemScrollClip* mScrollClipContainingBlockDescendants;
-
-  
-
-
-
-
-  const DisplayItemScrollClip* mStackingContextAncestorSC;
+  const DisplayItemClipChain* mCurrentCombinedClipChain;
+  bool mCurrentCombinedClipChainIsValid;
 };
 
 
@@ -204,12 +152,6 @@ public:
   explicit AutoSaveRestore(nsDisplayListBuilder* aBuilder);
   void Restore()
   {
-    if (!mClearedForStackingContextContents) {
-      
-      mSavedState.mStackingContextAncestorSC =
-        DisplayItemScrollClip::PickAncestor(mSavedState.mStackingContextAncestorSC,
-                                            mState.mStackingContextAncestorSC);
-    }
     mState = mSavedState;
 #ifdef DEBUG
     mRestored = true;
@@ -229,101 +171,18 @@ public:
 #endif
   }
 
-  void EnterStackingContextContents(bool aClear)
+  void ClearUpToASR(const ActiveScrolledRoot* aASR)
   {
     NS_ASSERTION(!mRestored, "Already restored!");
-    mState.EnterStackingContextContents(aClear);
-    mClearedForStackingContextContents = aClear;
-  }
-
-  void ExitStackingContextContents(const DisplayItemScrollClip** aOutContainerSC)
-  {
-    if (mClearedForStackingContextContents) {
-      
-      
-      
-      *aOutContainerSC = mSavedState.GetCurrentInnermostScrollClip();
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      *aOutContainerSC = mState.CurrentAncestorScrollClipForStackingContextContents();
-    }
-    Restore();
-  }
-
-  bool SavedStateHasRoundedCorners()
-  {
-    const DisplayItemScrollClip* scrollClip = mSavedState.GetCurrentInnermostScrollClip();
-    if (scrollClip && scrollClip->HasRoundedCorners()) {
-      return true;
-    }
-    const DisplayItemClip* clip = mSavedState.GetClipForContainingBlockDescendants();
-    if (clip && clip->GetRoundedRectCount() > 0) {
-      return true;
-    }
-
-    clip = mSavedState.GetClipForContentDescendants();
-    if (clip && clip->GetRoundedRectCount() > 0) {
-      return true;
-    }
-    return false;
-  }
-
-  void TurnClipIntoScrollClipForContentDescendants(nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
-  {
-    NS_ASSERTION(!mRestored, "Already restored!");
-    mState.TurnClipIntoScrollClipForContentDescendants(aBuilder, aScrollableFrame);
+    mState.ClearUpToASR(aASR);
 #ifdef DEBUG
-    mClipUsed = true;
+    mClipUsed = false;
 #endif
   }
 
-  void TurnClipIntoScrollClipForContainingBlockDescendants(nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
+  void SetClipChainForContainingBlockDescendants(const DisplayItemClipChain* aClipChain)
   {
-    NS_ASSERTION(!mRestored, "Already restored!");
-    mState.TurnClipIntoScrollClipForContainingBlockDescendants(aBuilder, aScrollableFrame);
-#ifdef DEBUG
-    mClipUsed = true;
-#endif
-  }
-
-  DisplayItemScrollClip* InsertInactiveScrollClipForContentDescendants(nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
-  {
-    NS_ASSERTION(!mRestored, "Already restored!");
-    DisplayItemScrollClip* scrollClip = mState.InsertInactiveScrollClipForContentDescendants(aBuilder, aScrollableFrame);
-#ifdef DEBUG
-    mClipUsed = true;
-#endif
-    return scrollClip;
-  }
-
-  DisplayItemScrollClip* InsertInactiveScrollClipForContainingBlockDescendants(nsDisplayListBuilder* aBuilder, nsIScrollableFrame* aScrollableFrame)
-  {
-    NS_ASSERTION(!mRestored, "Already restored!");
-    DisplayItemScrollClip* scrollClip = mState.InsertInactiveScrollClipForContainingBlockDescendants(aBuilder, aScrollableFrame);
-#ifdef DEBUG
-    mClipUsed = true;
-#endif
-    return scrollClip;
+    mState.SetClipChainForContainingBlockDescendants(aClipChain);
   }
 
   
@@ -339,7 +198,7 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendants(aRect, aRadii, mClip);
+    mState.ClipContainingBlockDescendants(mBuilder, aRect, aRadii, mClipChain);
   }
 
   void ClipContentDescendants(const nsRect& aRect,
@@ -350,7 +209,7 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContentDescendants(aRect, aRadii, mClip);
+    mState.ClipContentDescendants(mBuilder, aRect, aRadii, mClipChain);
   }
 
   void ClipContentDescendants(const nsRect& aRect,
@@ -362,7 +221,7 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContentDescendants(aRect, aRoundedRect, aRadii, mClip);
+    mState.ClipContentDescendants(mBuilder, aRect, aRoundedRect, aRadii, mClipChain);
   }
 
   
@@ -382,18 +241,18 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendantsToContentBox(aBuilder, aFrame, mClip, aFlags);
+    mState.ClipContainingBlockDescendantsToContentBox(aBuilder, aFrame, mClipChain, aFlags);
   }
 
 protected:
+  nsDisplayListBuilder* mBuilder;
   DisplayListClipState& mState;
   DisplayListClipState mSavedState;
-  DisplayItemClip mClip;
+  DisplayItemClipChain mClipChain;
 #ifdef DEBUG
   bool mClipUsed;
   bool mRestored;
 #endif
-  bool mClearedForStackingContextContents;
 };
 
 class DisplayListClipState::AutoClipContainingBlockDescendantsToContentBox : public AutoSaveRestore {
@@ -406,7 +265,7 @@ public:
 #ifdef DEBUG
     mClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendantsToContentBox(aBuilder, aFrame, mClip, aFlags);
+    mState.ClipContainingBlockDescendantsToContentBox(aBuilder, aFrame, mClipChain, aFlags);
   }
 };
 
@@ -427,19 +286,6 @@ public:
   
 
 
-  void SetClipForContainingBlockDescendants(const DisplayItemClip* aClip)
-  {
-    mState.SetClipForContainingBlockDescendants(aClip);
-  }
-
-  void SetScrollClipForContainingBlockDescendants(const DisplayItemScrollClip* aScrollClip)
-  {
-    mState.SetScrollClipForContainingBlockDescendants(aScrollClip);
-  }
-
-  
-
-
 
 
   void ClipContainingBlockDescendantsExtra(const nsRect& aRect,
@@ -450,11 +296,11 @@ public:
 #ifdef DEBUG
     mExtraClipUsed = true;
 #endif
-    mState.ClipContainingBlockDescendants(aRect, aRadii, mExtraClip);
+    mState.ClipContainingBlockDescendants(mBuilder, aRect, aRadii, mExtraClipChain);
   }
 
 protected:
-  DisplayItemClip mExtraClip;
+  DisplayItemClipChain mExtraClipChain;
 #ifdef DEBUG
   bool mExtraClipUsed;
 #endif
