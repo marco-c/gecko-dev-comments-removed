@@ -2937,6 +2937,8 @@ nsFrameLoader::TryRemoteBrowser()
   if (!mRemoteBrowser) {
     return false;
   }
+  
+  mRemoteBrowser->InitRenderFrame();
 
   MaybeUpdatePrimaryTabParent(eTabParentChanged);
 
