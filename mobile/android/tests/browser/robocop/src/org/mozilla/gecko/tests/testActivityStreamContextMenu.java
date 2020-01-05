@@ -61,35 +61,37 @@ public class testActivityStreamContextMenu extends BaseTest {
 
 
     private void testMenuForUrl(final String url, final Boolean isBookmarkedKnownState, final boolean isBookmarked, final Boolean isPinnedKnownState, final boolean isPinned, final boolean isVisited) {
-        final View anchor = new View(getActivity());
+        
+        
 
-        final ActivityStreamContextMenu menu = ActivityStreamContextMenu.show(
-                getActivity(), anchor, ActivityStreamTelemetry.Extras.builder(), ActivityStreamContextMenu.MenuMode.HIGHLIGHT, "foobar", url, isBookmarkedKnownState, isPinnedKnownState, null, null, 100, 100);
 
-        final int expectedBookmarkString;
-        if (isBookmarked) {
-            expectedBookmarkString = R.string.bookmark_remove;
-        } else {
-            expectedBookmarkString = R.string.bookmark;
-        }
 
-        final int expectedPinnedString;
-        if (isPinned) {
-            expectedPinnedString = R.string.contextmenu_top_sites_unpin;
-        } else {
-            expectedPinnedString = R.string.contextmenu_top_sites_pin;
-        }
 
-        final MenuItem pinItem = menu.getItemByID(R.id.pin);
-        assertMenuItemHasString(pinItem, expectedPinnedString);
 
-        final MenuItem bookmarkItem = menu.getItemByID(R.id.bookmark);
-        assertMenuItemHasString(bookmarkItem, expectedBookmarkString);
 
-        final MenuItem deleteItem = menu.getItemByID(R.id.delete);
-        assertMenuItemIsVisible(deleteItem, isVisited);
 
-        menu.dismiss();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
     private void assertMenuItemIsVisible(final MenuItem item, final boolean shouldBeVisible) {
