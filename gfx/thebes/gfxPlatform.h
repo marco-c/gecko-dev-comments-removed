@@ -295,6 +295,11 @@ public:
     }
 
     
+    mozilla::gfx::BackendType GetSoftwareBackend() {
+        return mSoftwareBackend;
+    }
+
+    
     
     virtual mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) {
       return mContentBackend;
@@ -830,6 +835,8 @@ private:
     mozilla::gfx::BackendType mFallbackCanvasBackend;
     
     mozilla::gfx::BackendType mContentBackend;
+    
+    mozilla::gfx::BackendType mSoftwareBackend;
     
     uint32_t mContentBackendBitmask;
 
