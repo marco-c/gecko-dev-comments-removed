@@ -10,7 +10,10 @@
 
 
 
-use libc::{c_int, size_t};
+use std::os::raw::c_int;
+
+#[allow(non_camel_case_types)]
+type size_t = usize;
 
 
 pub fn virtual_size() -> Option<usize> {
