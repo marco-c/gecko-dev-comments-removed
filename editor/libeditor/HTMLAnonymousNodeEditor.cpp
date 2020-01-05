@@ -286,12 +286,12 @@ HTMLEditor::RemoveListenerAndDeleteRef(const nsAString& aEvent,
   if (evtTarget) {
     evtTarget->RemoveEventListener(aEvent, aListener, aUseCapture);
   }
-  DeleteRefToAnonymousNode(static_cast<nsIDOMElement*>(GetAsDOMNode(aElement)), aParentContent, aShell);
+  DeleteRefToAnonymousNode(aElement, aParentContent, aShell);
 }
 
 
 void
-HTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
+HTMLEditor::DeleteRefToAnonymousNode(nsIContent* aContent,
                                      nsIContent* aParentContent,
                                      nsIPresShell* aShell)
 {
@@ -299,38 +299,37 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
   
   
 
-  if (aElement) {
-    nsCOMPtr<nsIContent> content = do_QueryInterface(aElement);
-    if (content) {
-      nsAutoScriptBlocker scriptBlocker;
-      
-      
-      
-      if (content->IsInComposedDoc() && aShell && aShell->GetPresContext() &&
-          aShell->GetPresContext()->GetPresShell() == aShell) {
-        nsCOMPtr<nsIDocumentObserver> docObserver = do_QueryInterface(aShell);
-        if (docObserver) {
-          
-          
-          nsCOMPtr<nsIDocument> document = GetDocument();
-          if (document) {
-            docObserver->BeginUpdate(document, UPDATE_CONTENT_MODEL);
-          }
+  if (NS_WARN_IF(!aContent)) {
+    return;
+  }
 
-          
-          
-          
-          docObserver->ContentRemoved(content->GetComposedDoc(),
-                                      aParentContent, content, -1,
-                                      content->GetPreviousSibling());
-          if (document) {
-            docObserver->EndUpdate(document, UPDATE_CONTENT_MODEL);
-          }
-        }
+  nsAutoScriptBlocker scriptBlocker;
+  
+  
+  
+  if (aContent->IsInComposedDoc() && aShell && aShell->GetPresContext() &&
+      aShell->GetPresContext()->GetPresShell() == aShell) {
+    nsCOMPtr<nsIDocumentObserver> docObserver = do_QueryInterface(aShell);
+    if (docObserver) {
+      
+      
+      nsCOMPtr<nsIDocument> document = GetDocument();
+      if (document) {
+        docObserver->BeginUpdate(document, UPDATE_CONTENT_MODEL);
       }
-      content->UnbindFromTree();
+
+      
+      
+      
+      docObserver->ContentRemoved(aContent->GetComposedDoc(),
+                                  aParentContent, aContent, -1,
+                                  aContent->GetPreviousSibling());
+      if (document) {
+        docObserver->EndUpdate(document, UPDATE_CONTENT_MODEL);
+      }
     }
   }
+  aContent->UnbindFromTree();
 }
 
 
@@ -569,10 +568,10 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
 void
 HTMLEditor::SetAnonymousElementPosition(int32_t aX,
                                         int32_t aY,
-                                        nsIDOMElement* aElement)
+                                        Element* aElement)
 {
-  mCSSEditUtils->SetCSSPropertyPixels(aElement, NS_LITERAL_STRING("left"), aX);
-  mCSSEditUtils->SetCSSPropertyPixels(aElement, NS_LITERAL_STRING("top"), aY);
+  mCSSEditUtils->SetCSSPropertyPixels(*aElement, *nsGkAtoms::left, aX);
+  mCSSEditUtils->SetCSSPropertyPixels(*aElement, *nsGkAtoms::top, aY);
 }
 
 } 
