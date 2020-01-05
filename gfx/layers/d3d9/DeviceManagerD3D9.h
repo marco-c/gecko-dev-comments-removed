@@ -107,11 +107,11 @@ public:
 private:
   friend class DeviceManagerD3D9;
 
-  SwapChainD3D9(DeviceManagerD3D9 *aDeviceManager);
+  explicit SwapChainD3D9(DeviceManagerD3D9 *aDeviceManager);
 
   
   ~SwapChainD3D9();
-  
+
   bool Init(HWND hWnd);
 
   
