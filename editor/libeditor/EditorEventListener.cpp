@@ -772,7 +772,9 @@ EditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
 {
   
   
-  mEditorBase->ForceCompositionEnd();
+  if (mEditorBase) {
+    mEditorBase->ForceCompositionEnd();
+  }
   return NS_OK;
 }
 
