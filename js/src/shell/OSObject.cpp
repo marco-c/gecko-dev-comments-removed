@@ -112,16 +112,18 @@ ResolvePath(JSContext* cx, HandleString filenameStr, PathResolutionMode resolveM
     if (IsAbsolutePath(filename))
         return filenameStr;
 
-    
     JS::AutoFilename scriptFilename;
-    if (!DescribeScriptedCaller(cx, &scriptFilename))
-        return nullptr;
+    if (resolveMode == ScriptRelative) {
+        
+        if (!DescribeScriptedCaller(cx, &scriptFilename))
+            return nullptr;
 
-    if (!scriptFilename.get())
-        return nullptr;
+        if (!scriptFilename.get())
+            return nullptr;
 
-    if (strcmp(scriptFilename.get(), "-e") == 0 || strcmp(scriptFilename.get(), "typein") == 0)
-        resolveMode = RootRelative;
+        if (strcmp(scriptFilename.get(), "-e") == 0 || strcmp(scriptFilename.get(), "typein") == 0)
+            resolveMode = RootRelative;
+    }
 
     static char buffer[PATH_MAX+1];
     if (resolveMode == ScriptRelative) {
