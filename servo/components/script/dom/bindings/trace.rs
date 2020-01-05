@@ -2,6 +2,8 @@
 
 
 
+#![deny(missing_doc)]
+
 
 
 
@@ -58,6 +60,12 @@ use dom::node::{Node, TrustedNodeAddress};
 use dom::bindings::utils::WindowProxyHandler;
 use html5ever::tree_builder::QuirksMode;
 
+
+pub trait JSTraceable {
+    
+    fn trace(&self, trc: *mut JSTracer);
+}
+
 impl<T: Reflectable> JSTraceable for JS<T> {
     fn trace(&self, trc: *mut JSTracer) {
         trace_reflector(trc, "", self.reflector());
@@ -65,11 +73,6 @@ impl<T: Reflectable> JSTraceable for JS<T> {
 }
 
 no_jsmanaged_fields!(Reflector)
-
-
-pub trait JSTraceable {
-    fn trace(&self, trc: *mut JSTracer);
-}
 
 
 pub fn trace_jsval(tracer: *mut JSTracer, description: &str, val: JSVal) {

@@ -2,6 +2,8 @@
 
 
 
+#![deny(missing_doc)]
+
 
 
 use dom::bindings::global::global_object_for_js_object;
@@ -33,6 +35,7 @@ pub struct CallbackFunction {
 }
 
 impl CallbackFunction {
+    
     pub fn new(callback: *mut JSObject) -> CallbackFunction {
         CallbackFunction {
             object: CallbackObject {

@@ -2,6 +2,8 @@
 
 
 
+#![deny(missing_doc)]
+
 
 
 use dom::bindings::js::{JS, JSRef, Root};
@@ -31,8 +33,13 @@ use dom::bindings::codegen::PrototypeList;
 
 
 
+
+
 pub trait IDLInterface {
+    
     fn get_prototype_id(_: Option<Self>) -> PrototypeList::id::ID;
+    
+    
     fn get_prototype_depth(_: Option<Self>) -> uint;
 }
 
