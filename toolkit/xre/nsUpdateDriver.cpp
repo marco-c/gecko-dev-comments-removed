@@ -798,6 +798,16 @@ ProcessUpdates(nsIFile *greDir, nsIFile *appDir, nsIFile *updRootDir,
     return rv;
   }
 
+  
+  
+  
+  
+  nsCOMPtr<nsIFile> versionFile;
+  if (!GetVersionFile(updatesDir, versionFile) ||
+      IsOlderVersion(versionFile, appVersion)) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsIFile> statusFile;
   UpdateStatus status = GetUpdateStatus(updatesDir, statusFile);
   switch (status) {
@@ -816,16 +826,7 @@ ProcessUpdates(nsIFile *greDir, nsIFile *appDir, nsIFile *updRootDir,
   }
   case ePendingUpdate:
   case ePendingService: {
-    nsCOMPtr<nsIFile> versionFile;
-    
-    
-    
-    if (!GetVersionFile(updatesDir, versionFile) ||
-        IsOlderVersion(versionFile, appVersion)) {
-      updatesDir->Remove(true);
-    } else {
-      ApplyUpdate(greDir, updatesDir, appDir, argc, argv, restart, false, pid);
-    }
+    ApplyUpdate(greDir, updatesDir, appDir, argc, argv, restart, false, pid);
     break;
   }
   case eAppliedUpdate:
