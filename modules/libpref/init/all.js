@@ -1919,6 +1919,11 @@ pref("network.dns.blockDotOnion", true);
 pref("network.dns.localDomains", "");
 
 
+
+
+pref("network.dns.forceResolve", "");
+
+
 pref("network.dns.offline-localhost", true);
 
 

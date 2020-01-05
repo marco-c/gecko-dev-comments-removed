@@ -60,12 +60,14 @@ private:
     
     
     nsAdoptingCString                         mIPv4OnlyDomains;
+    nsAdoptingCString                         mForceResolve;
     bool                                      mDisableIPv6;
     bool                                      mDisablePrefetch;
     bool                                      mBlockDotOnion;
     bool                                      mFirstTime;
     bool                                      mNotifyResolution;
     bool                                      mOfflineLocalhost;
+    bool                                      mForceResolveOn;
     nsTHashtable<nsCStringHashKey>            mLocalDomains;
 };
 
