@@ -159,6 +159,13 @@ public:
                       nsIFrame *aReplacedBlock = nullptr,
                       uint32_t aFlags = 0);
 
+  nsFloatManager* FloatManager() const {
+    MOZ_ASSERT(mReflowInput.mFloatManager,
+               "Float manager should be valid during the lifetime of "
+               "BlockReflowInput!");
+    return mReflowInput.mFloatManager;
+  }
+
   
   
   
@@ -239,8 +246,6 @@ public:
   nsPresContext* mPresContext;
 
   const ReflowInput& mReflowInput;
-
-  nsFloatManager* mFloatManager;
 
   
   

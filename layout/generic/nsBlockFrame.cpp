@@ -1268,7 +1268,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   
   if (NS_UNCONSTRAINEDSIZE != reflowInput->AvailableBSize() &&
       NS_FRAME_IS_COMPLETE(state.mReflowStatus) &&
-      state.mFloatManager->ClearContinues(FindTrailingClear())) {
+      state.FloatManager()->ClearContinues(FindTrailingClear())) {
     NS_FRAME_SET_INCOMPLETE(state.mReflowStatus);
   }
 
@@ -1457,12 +1457,6 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   }
 
   FinishAndStoreOverflow(&aMetrics);
-
-  
-  
-  
-  if (needFloatManager)
-    state.mFloatManager = nullptr;
 
   aStatus = state.mReflowStatus;
 
@@ -2039,7 +2033,7 @@ nsBlockFrame::PropagateFloatDamage(BlockReflowInput& aState,
                                    nsLineBox* aLine,
                                    nscoord aDeltaBCoord)
 {
-  nsFloatManager *floatManager = aState.mReflowInput.mFloatManager;
+  nsFloatManager* floatManager = aState.FloatManager();
   NS_ASSERTION((aState.mReflowInput.mParentReflowInput &&
                 aState.mReflowInput.mParentReflowInput->mFloatManager == floatManager) ||
                 aState.mReflowInput.mBlockDelta == 0, "Bad block delta passed in");
@@ -3452,7 +3446,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
 
       
       if (mayNeedRetry || replacedBlock) {
-        aState.mFloatManager->PushState(&floatManagerState);
+        aState.FloatManager()->PushState(&floatManagerState);
       }
 
       if (mayNeedRetry) {
@@ -3528,7 +3522,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       }
 
       
-      aState.mFloatManager->PopState(&floatManagerState);
+      aState.FloatManager()->PopState(&floatManagerState);
 
       if (!treatWithClearance && !applyBStartMargin &&
           aState.mReflowInput.mDiscoveredClearance) {
@@ -3560,7 +3554,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     } while (true);
 
     if (mayNeedRetry && clearanceFrame) {
-      aState.mFloatManager->PopState(&floatManagerState);
+      aState.FloatManager()->PopState(&floatManagerState);
       aState.mBCoord = startingBCoord;
       aState.mPrevBEndMargin = incomingMargin;
       continue;
@@ -3813,7 +3807,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
       gfxBreakPriority forceBreakPriority = gfxBreakPriority::eNoBreak;
       do {
         nsFloatManager::SavedState floatManagerState;
-        aState.mReflowInput.mFloatManager->PushState(&floatManagerState);
+        aState.FloatManager()->PushState(&floatManagerState);
 
         
         
@@ -3823,7 +3817,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
         
         
         nsLineLayout lineLayout(aState.mPresContext,
-                                aState.mReflowInput.mFloatManager,
+                                aState.FloatManager(),
                                 &aState.mReflowInput, &aLine, nullptr);
         lineLayout.Init(&aState, aState.mMinLineHeight, aState.mLineNumber);
         if (forceBreakInFrame) {
@@ -3849,7 +3843,7 @@ nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
             forceBreakInFrame = nullptr;
           }
           
-          aState.mReflowInput.mFloatManager->PopState(&floatManagerState);
+          aState.FloatManager()->PopState(&floatManagerState);
           
           aState.mCurrentLineFloats.DeleteAll();
           aState.mBelowCurrentLineFloats.DeleteAll();
@@ -4049,7 +4043,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
       
       
       
-      aState.mFloatManager->AssertStateMatches(aFloatStateBeforeLine);
+      aState.FloatManager()->AssertStateMatches(aFloatStateBeforeLine);
       aState.mBCoord += aFloatAvailableSpace.mRect.BSize(outerWM);
       aFloatAvailableSpace = aState.GetFloatAvailableSpace();
     } else {
@@ -4062,7 +4056,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
         
         
         
-        aState.mFloatManager->AssertStateMatches(aFloatStateBeforeLine);
+        aState.FloatManager()->AssertStateMatches(aFloatStateBeforeLine);
         aFloatAvailableSpace = aState.GetFloatAvailableSpace();
       } else {
         
@@ -4323,10 +4317,10 @@ nsBlockFrame::SplitFloat(BlockReflowInput& aState,
   StyleFloat floatStyle =
     aFloat->StyleDisplay()->PhysicalFloats(aState.mReflowInput.GetWritingMode());
   if (floatStyle == StyleFloat::Left) {
-    aState.mFloatManager->SetSplitLeftFloatAcrossBreak();
+    aState.FloatManager()->SetSplitLeftFloatAcrossBreak();
   } else {
     MOZ_ASSERT(floatStyle == StyleFloat::Right, "Unexpected float side!");
-    aState.mFloatManager->SetSplitRightFloatAcrossBreak();
+    aState.FloatManager()->SetSplitRightFloatAcrossBreak();
   }
 
   aState.AppendPushedFloatChain(nextInFlow);
@@ -7285,7 +7279,7 @@ nsBlockFrame::CheckFloats(BlockReflowInput& aState)
     
     
     
-    aState.mFloatManager->RemoveTrailingRegions(oofs->FirstChild());
+    aState.FloatManager()->RemoveTrailingRegions(oofs->FirstChild());
   }
 }
 
