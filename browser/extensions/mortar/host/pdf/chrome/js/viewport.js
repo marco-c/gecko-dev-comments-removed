@@ -6,6 +6,13 @@
 
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
+
+
+
+
+
+const PAGE_COORDINATE_RATIO = 0.75;
+
 class Viewport {
   constructor() {
     this._viewerContainer = document.getElementById('viewerContainer');
@@ -33,6 +40,10 @@ class Viewport {
     
     this._runtimeSize = this.getBoundingClientRect();
     this._runtimeOnResizedListener = [];
+
+    
+    
+    this._initPosition = null;
 
     this.onProgressChanged = null;
     this.onZoomChanged = null;
@@ -64,8 +75,7 @@ class Viewport {
   }
 
   set fitting(newFitting) {
-    let VALID_VALUE = ['none', 'auto', 'page-actual', 'page-width', 'page-fit'];
-    if (!VALID_VALUE.includes(newFitting)) {
+    if (!this._isValidFitting(newFitting)) {
       return;
     }
 
@@ -126,6 +136,11 @@ class Viewport {
     });
   }
 
+  _isValidFitting(fitting) {
+    let VALID_VALUE = ['none', 'auto', 'page-actual', 'page-width', 'page-fit'];
+    return VALID_VALUE.includes(fitting);
+  }
+
   _getScrollbarWidth() {
     let div = document.createElement('div');
     div.style.visibility = 'hidden';
@@ -175,7 +190,13 @@ class Viewport {
     if (typeof this.onDimensionChanged === 'function') {
       this.onDimensionChanged();
     }
-    this._refresh();
+
+    if (this._initPosition) {
+      this._jumpToBookmark(this._initPosition);
+      this._initPosition = null;
+    } else {
+      this._refresh();
+    }
   }
 
   _computeFittingZoom(pageIndex) {
@@ -487,6 +508,92 @@ class Viewport {
     gClipboardHelper.copyString(text);
   }
 
+  _getPageCoordinate() {
+    let currentPos = this._nextPosition || this.getScrollOffset();
+    let pageDimension = this._pageDimensions[this._page];
+
+    let pageOrigin = {
+      x: pageDimension.x,
+      y: pageDimension.y + pageDimension.height
+    };
+    currentPos.x /= this._zoom;
+    currentPos.y /= this._zoom;
+
+    let pageCoordinate = {
+      x: Math.round((currentPos.x - pageOrigin.x) * PAGE_COORDINATE_RATIO),
+      y: Math.round((pageOrigin.y - currentPos.y) * PAGE_COORDINATE_RATIO)
+    };
+    return pageCoordinate;
+  }
+
+  _getScreenCooridnate(pageNo, pageX, pageY) {
+    let pageDimension = this._pageDimensions[pageNo];
+    
+    
+    pageX = Number.isInteger(pageX) ? pageX : 0;
+    pageY = Number.isInteger(pageY) ? pageY : pageDimension.height *
+                                              PAGE_COORDINATE_RATIO;
+    pageX /= PAGE_COORDINATE_RATIO;
+    pageY /= PAGE_COORDINATE_RATIO;
+
+    let pageOrigin = {
+      x: pageDimension.x,
+      y: pageDimension.y + pageDimension.height
+    };
+
+    return {
+      x: Math.round((pageX - pageOrigin.x) * this._zoom),
+      y: Math.round((pageOrigin.y - pageY) * this._zoom)
+    };
+  }
+
+  
+
+
+
+
+
+
+
+  _jumpToBookmark(hash) {
+    let params = {};
+    hash.split('&').forEach(param => {
+      let [name, value] = param.split('=');
+      params[name.toLowerCase()] = value.toLowerCase();
+    });
+
+    let pageNo = parseInt(params.page, 10);
+    pageNo = Number.isNaN(pageNo) ? this._page : pageNo;
+    pageNo = Math.max(0, Math.min(this.pageCount - 1, pageNo - 1));
+
+    params.zoom = (typeof(params.zoom) == 'string') ? params.zoom : "";
+    let [scale, pageX, pageY] = params.zoom.split(',');
+    pageX = parseInt(pageX, 10);
+    pageY = parseInt(pageY, 10);
+
+    if (this._isValidFitting(scale)) {
+      this._fitting = scale;
+    } else {
+      this._fitting = 'none';
+      let zoom = parseFloat(scale);
+      zoom = (Number.isNaN(zoom) || zoom <= 0) ? 100 : zoom;
+      this._zoom = zoom / 100;
+    }
+
+    let screenPos = this._getScreenCooridnate(pageNo, pageX, pageY);
+    this._setPosition(screenPos.x, screenPos.y);
+    this._setZoom(this._computeFittingZoom());
+    this._refresh();
+  }
+
+  _handleHashChange(hash) {
+    if (!this._documentDimensions) {
+      this._initPosition = hash;
+    } else {
+      this._jumpToBookmark(hash);
+    }
+  }
+
   verifyPassword(password) {
     this._doAction({
       type: 'getPasswordComplete',
@@ -548,6 +655,21 @@ class Viewport {
     if (typeof handler === 'function') {
       this._actionHandler = handler;
     }
+  }
+
+  createBookmarkHash() {
+    let pagePosition = this._getPageCoordinate();
+    let scale = this._fitting == 'none' ?
+                  Math.round(this._zoom * 100) :
+                  this._fitting;
+    let hash = "page=" + (this._page + 1) +
+               "&zoom=" + scale +
+               "," + pagePosition.x +
+               "," + pagePosition.y;
+    this._doAction({
+      type: 'setHash',
+      hash: hash
+    })
   }
 
   
@@ -630,6 +752,9 @@ class Viewport {
         
         
         this._copyToClipboard(message.selectedText);
+        break;
+      case 'hashChange':
+        this._handleHashChange(message.hash);
         break;
     }
   }
