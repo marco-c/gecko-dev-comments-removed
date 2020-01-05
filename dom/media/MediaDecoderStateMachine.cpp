@@ -2768,8 +2768,6 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   MOZ_ASSERT(OnTaskQueue());
   
   MOZ_ASSERT(mSentFirstFrameLoadedEvent);
-  MOZ_ASSERT(mState == DECODER_STATE_DECODING ||
-             mState == DECODER_STATE_COMPLETED);
 
   if (IsPlaying()) {
     
