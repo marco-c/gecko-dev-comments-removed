@@ -2428,8 +2428,6 @@ static const char * const months[] =
 };
 
 
-
-
 static void
 print_gmt_string(char* buf, size_t size, double utctime)
 {
@@ -2569,7 +2567,6 @@ date_toJSON(JSContext* cx, unsigned argc, Value* vp)
 }
 
 
-
 static void
 new_explode(double timeval, PRMJTime* split)
 {
@@ -2586,14 +2583,12 @@ new_explode(double timeval, PRMJTime* split)
     split->tm_yday = int16_t(DayWithinYear(timeval, year));
 
     
-
     split->tm_isdst = (DaylightSavingTA(timeval) != 0);
 }
 
 typedef enum formatspec {
     FORMATSPEC_FULL, FORMATSPEC_DATE, FORMATSPEC_TIME
 } formatspec;
-
 
 static bool
 date_format(JSContext* cx, double date, formatspec format, MutableHandleValue rval)
@@ -2613,6 +2608,8 @@ date_format(JSContext* cx, double date, formatspec format, MutableHandleValue rv
 
         
 
+
+
         int minutes = (int) floor(AdjustTime(date) / msPerMinute);
 
         
@@ -2627,12 +2624,13 @@ date_format(JSContext* cx, double date, formatspec format, MutableHandleValue rv
 
 
 
-        
 
+
+        
         new_explode(date, &split);
         if (PRMJ_FormatTime(tzbuf, sizeof tzbuf, "(%Z)", &split) != 0) {
-
             
+
 
 
 
@@ -2661,10 +2659,6 @@ date_format(JSContext* cx, double date, formatspec format, MutableHandleValue rv
 
         switch (format) {
           case FORMATSPEC_FULL:
-            
-
-
-
             
             SprintfLiteral(buf, "%s %s %.2d %.4d %.2d:%.2d:%.2d GMT%+.4d%s%s",
                            days[int(WeekDay(local))],
