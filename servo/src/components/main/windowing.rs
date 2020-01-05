@@ -33,7 +33,7 @@ pub enum WindowEvent {
     
     MouseWindowEventClass(MouseWindowEvent),
     
-    ScrollWindowEvent(Point2D<f32>),
+    ScrollWindowEvent(Point2D<f32>, Point2D<i32>),
     
     ZoomWindowEvent(f32),
     
@@ -64,5 +64,8 @@ pub trait WindowMethods<A> {
     pub fn set_ready_state(@mut self, ready_state: ReadyState);
     
     pub fn set_render_state(@mut self, render_state: RenderState);
+
+    
+    pub fn hidpi_factor(@mut self) -> f32;
 }
 
