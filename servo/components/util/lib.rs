@@ -51,8 +51,6 @@ pub mod opts;
 pub mod persistent_list;
 pub mod range;
 pub mod resource_files;
-
-
 pub mod smallvec;
 pub mod sort;
 pub mod str;
@@ -71,7 +69,7 @@ pub fn breakpoint() {
 
 #[inline]
 pub fn arc_ptr_eq<T: 'static + Send + Sync>(a: &Arc<T>, b: &Arc<T>) -> bool {
-    let a: &T = a.deref();
-    let b: &T = b.deref();
+    let a: &T = &**a;
+    let b: &T = &**b;
     (a as *const T) == (b as *const T)
 }

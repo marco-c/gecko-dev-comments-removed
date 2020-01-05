@@ -23,7 +23,7 @@ use servo_util::time::{TimeProfilerCategory, ProfilerMetadata, TimeProfilerChan,
 use servo_util::workqueue::{WorkQueue, WorkUnit, WorkerProxy};
 use std::mem;
 use std::ptr;
-use std::sync::atomic::{AtomicInt, Relaxed, SeqCst};
+use std::sync::atomic::{AtomicInt, Ordering};
 
 #[allow(dead_code)]
 fn static_assertion(node: UnsafeLayoutNode) {
@@ -108,7 +108,7 @@ pub trait ParallelPreorderDomTraversal : PreorderDomTraversal {
         {
             let mut layout_data_ref = node.mutate_layout_data();
             let layout_data = layout_data_ref.as_mut().expect("no layout data");
-            layout_data.data.parallel.children_count.store(child_count as int, Relaxed);
+            layout_data.data.parallel.children_count.store(child_count as int, Ordering::Relaxed);
         }
 
         
@@ -173,7 +173,7 @@ trait ParallelPostorderDomTraversal : PostorderDomTraversal {
                     .data
                     .parallel
                     .children_count
-                    .fetch_sub(1, SeqCst) == 1 {
+                    .fetch_sub(1, Ordering::SeqCst) == 1 {
                     
                 } else {
                     
@@ -223,15 +223,15 @@ trait ParallelPostorderFlowTraversal : PostorderFlowTraversal {
                 let flow: &mut FlowRef = mem::transmute(&unsafe_flow);
 
                 
-                if self.should_process(flow.deref_mut()) {
-                    self.process(flow.deref_mut());
+                if self.should_process(&mut **flow) {
+                    self.process(&mut **flow);
                 }
 
 
-                let base = flow::mut_base(flow.deref_mut());
+                let base = flow::mut_base(&mut **flow);
 
                 
-                base.parallel.children_count.store(base.children.len() as int, Relaxed);
+                base.parallel.children_count.store(base.children.len() as int, Ordering::Relaxed);
 
                 
                 let unsafe_parent = base.parallel.parent;
@@ -244,8 +244,8 @@ trait ParallelPostorderFlowTraversal : PostorderFlowTraversal {
                 
                 
                 let parent: &mut FlowRef = mem::transmute(&unsafe_parent);
-                let parent_base = flow::mut_base(parent.deref_mut());
-                if parent_base.parallel.children_count.fetch_sub(1, SeqCst) == 1 {
+                let parent_base = flow::mut_base(&mut **parent);
+                if parent_base.parallel.children_count.fetch_sub(1, Ordering::SeqCst) == 1 {
                     
                     unsafe_flow = unsafe_parent
                 } else {
@@ -278,13 +278,13 @@ trait ParallelPreorderFlowTraversal : PreorderFlowTraversal {
             
             let flow: &mut FlowRef = mem::transmute(&unsafe_flow);
 
-            if self.should_process(flow.deref_mut()) {
+            if self.should_process(&mut **flow) {
                 
-                self.process(flow.deref_mut());
+                self.process(&mut **flow);
             }
 
             
-            for kid in flow::child_iter(flow.deref_mut()) {
+            for kid in flow::child_iter(&mut **flow) {
                 had_children = true;
                 proxy.push(WorkUnit {
                     fun: top_down_func,
@@ -427,7 +427,7 @@ pub fn traverse_flow_tree_preorder(root: &mut FlowRef,
     if opts::get().bubble_inline_sizes_separately {
         let layout_context = LayoutContext::new(shared_layout_context);
         let bubble_inline_sizes = BubbleISizes { layout_context: &layout_context };
-        root.deref_mut().traverse_postorder(&bubble_inline_sizes);
+        root.traverse_postorder(&bubble_inline_sizes);
     }
 
     queue.data = shared_layout_context as *const _;
