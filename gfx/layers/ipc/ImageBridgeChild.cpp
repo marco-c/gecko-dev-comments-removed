@@ -452,7 +452,9 @@ ImageBridgeChild::ShutdownStep1(SynchronousTask* aTask)
     }
   }
 
-  SendWillClose();
+  if (mCanSend) {
+    SendWillClose();
+  }
   MarkShutDown();
 
   
@@ -858,9 +860,11 @@ ImageBridgeChild::InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint)
 
   gfxPlatform::GetPlatform();
 
-  sImageBridgeChildThread = new ImageBridgeThread();
-  if (!sImageBridgeChildThread->Start()) {
-    return false;
+  if (!sImageBridgeChildThread) {
+    sImageBridgeChildThread = new ImageBridgeThread();
+    if (!sImageBridgeChildThread->Start()) {
+      return false;
+    }
   }
 
   RefPtr<ImageBridgeChild> child = new ImageBridgeChild();
@@ -878,6 +882,20 @@ ImageBridgeChild::InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint)
   }
 
   return true;
+}
+
+bool
+ImageBridgeChild::ReinitForContent(Endpoint<PImageBridgeChild>&& aEndpoint)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  ShutdownSingleton();
+
+  return InitForContent(Move(aEndpoint));
 }
 
 void
@@ -908,7 +926,19 @@ ImageBridgeChild::BindSameProcess(RefPtr<ImageBridgeParent> aParent)
   SendImageBridgeThreadId();
 }
 
-void ImageBridgeChild::ShutDown()
+ void
+ImageBridgeChild::ShutDown()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ShutdownSingleton();
+
+  delete sImageBridgeChildThread;
+  sImageBridgeChildThread = nullptr;
+}
+
+ void
+ImageBridgeChild::ShutdownSingleton()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -918,9 +948,6 @@ void ImageBridgeChild::ShutDown()
     StaticMutexAutoLock lock(sImageBridgeSingletonLock);
     sImageBridgeChildSingleton = nullptr;
   }
-
-  delete sImageBridgeChildThread;
-  sImageBridgeChildThread = nullptr;
 }
 
 void

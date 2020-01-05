@@ -5,6 +5,7 @@
 
 #include "GPUProcessManager.h"
 #include "GPUProcessHost.h"
+#include "GPUProcessListener.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/layers/APZCTreeManager.h"
@@ -246,14 +247,87 @@ GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
   nsTArray<RefPtr<RemoteCompositorSession>> sessions;
   for (auto& session : mRemoteSessions) {
     sessions.AppendElement(session);
   }
 
   
+  
   for (const auto& session : sessions) {
     session->NotifySessionLost();
+  }
+
+  
+  
+  
+  for (const auto& listener : mListeners) {
+    listener->OnCompositorUnexpectedShutdown();
   }
 }
 
@@ -611,6 +685,18 @@ void
 GPUProcessManager::UnregisterSession(RemoteCompositorSession* aSession)
 {
   mRemoteSessions.RemoveElement(aSession);
+}
+
+void
+GPUProcessManager::AddListener(GPUProcessListener* aListener)
+{
+  mListeners.AppendElement(aListener);
+}
+
+void
+GPUProcessManager::RemoveListener(GPUProcessListener* aListener)
+{
+  mListeners.RemoveElement(aListener);
 }
 
 } 

@@ -128,6 +128,7 @@ public:
 
   static void InitWithGPUProcess(Endpoint<PImageBridgeChild>&& aEndpoint);
   static bool InitForContent(Endpoint<PImageBridgeChild>&& aEndpoint);
+  static bool ReinitForContent(Endpoint<PImageBridgeChild>&& aEndpoint);
 
   
 
@@ -388,6 +389,8 @@ protected:
   void DeallocPImageBridgeChild() override;
 
   bool CanSend() const;
+
+  static void ShutdownSingleton();
 
 private:
   class ShutdownObserver final : public nsIObserver

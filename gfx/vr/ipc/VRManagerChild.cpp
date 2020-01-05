@@ -96,6 +96,16 @@ VRManagerChild::InitForContent(Endpoint<PVRManagerChild>&& aEndpoint)
   return true;
 }
 
+ bool
+VRManagerChild::ReinitForContent(Endpoint<PVRManagerChild>&& aEndpoint)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  ShutDown();
+
+  return InitForContent(Move(aEndpoint));
+}
+
  void
 VRManagerChild::InitSameProcess()
 {
