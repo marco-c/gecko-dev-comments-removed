@@ -204,6 +204,9 @@ ContentRestoreInternal.prototype = {
             : Ci.nsIHttpChannel.REFERRER_POLICY_UNSET);
         let postData = loadArguments.postData ?
                        Utils.makeInputStream(loadArguments.postData) : null;
+        let triggeringPrincipal = loadArguments.triggeringPrincipal
+                                  ? Utils.deserializePrincipal(loadArguments.triggeringPrincipal)
+                                  : null;
 
         if (loadArguments.userContextId) {
           webNavigation.setOriginAttributesBeforeLoading({ userContextId: loadArguments.userContextId });
@@ -211,7 +214,7 @@ ContentRestoreInternal.prototype = {
 
         webNavigation.loadURIWithOptions(loadArguments.uri, loadArguments.flags,
                                          referrer, referrerPolicy, postData,
-                                         null, null);
+                                         null, null, triggeringPrincipal);
       } else if (tabData.userTypedValue && tabData.userTypedClear) {
         
         
