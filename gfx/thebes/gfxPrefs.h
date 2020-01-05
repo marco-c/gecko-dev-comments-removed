@@ -563,7 +563,6 @@ private:
   DECL_GFX_PREF(Live, "layers.shared-buffer-provider.enabled", PersistentBufferProviderSharedEnabled, bool, false);
   DECL_GFX_PREF(Live, "layers.single-tile.enabled",            LayersSingleTileEnabled, bool, true);
   DECL_GFX_PREF(Once, "layers.stereo-video.enabled",           StereoVideoEnabled, bool, false);
-  DECL_GFX_PREF(Live, "layers.force-synchronous-resize",       LayersForceSynchronousResize, bool, false);
 
   
   
@@ -685,6 +684,7 @@ private:
   DECL_GFX_PREF(Live, "webgl.max-acceptable-fb-status-invals", WebGLMaxAcceptableFBStatusInvals, int32_t, 0);
 
   DECL_GFX_PREF(Live, "webgl.webgl2-compat-mode",              WebGL2CompatMode, bool, false);
+  DECL_GFX_PREF(Live, "webrender.blob-images",                 WebRenderBlobImages, bool, false);
   DECL_GFX_PREF(Live, "webrender.highlight-painted-layers",    WebRenderHighlightPaintedLayers, bool, false);
 
   

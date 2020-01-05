@@ -459,6 +459,32 @@ struct WrGlyphInstance {
   }
 };
 
+struct MutByteSlice {
+  uint8_t* buffer;
+  size_t len;
+
+  bool operator==(const MutByteSlice& aOther) const {
+    return buffer == aOther.buffer &&
+      len == aOther.len;
+  }
+};
+
+struct WrWindowId {
+  uint64_t mHandle;
+
+  bool operator==(const WrWindowId& aOther) const {
+    return mHandle == aOther.mHandle;
+  }
+
+  bool operator<(const WrWindowId& aOther) const {
+    return mHandle < aOther.mHandle;
+  }
+
+  bool operator<=(const WrWindowId& aOther) const {
+    return mHandle <= aOther.mHandle;
+  }
+};
+
 struct WrRenderedEpochs;
 
 struct WrRenderer;
@@ -498,22 +524,6 @@ struct WrExternalImageHandler {
     return external_image_obj == aOther.external_image_obj &&
       lock_func == aOther.lock_func &&
       unlock_func == aOther.unlock_func;
-  }
-};
-
-struct WrWindowId {
-  uint64_t mHandle;
-
-  bool operator==(const WrWindowId& aOther) const {
-    return mHandle == aOther.mHandle;
-  }
-
-  bool operator<(const WrWindowId& aOther) const {
-    return mHandle < aOther.mHandle;
-  }
-
-  bool operator<=(const WrWindowId& aOther) const {
-    return mHandle <= aOther.mHandle;
   }
 };
 
