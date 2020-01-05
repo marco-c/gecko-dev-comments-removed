@@ -4,11 +4,17 @@
 
 use compositing::*;
 
+use geom::size::Size2D;
+use servo_msg::constellation_msg::ResizedWindowMsg;
+
 
 
 
 
 pub fn run_compositor(compositor: &CompositorTask) {
+    
+    compositor.constellation_chan.send(ResizedWindowMsg(Size2D(640u, 480u)));
+
     loop {
         match compositor.port.recv() {
             Exit => break,
