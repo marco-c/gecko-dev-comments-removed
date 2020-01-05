@@ -169,8 +169,8 @@ impl<'self> Element {
         // TODO: update owner document's id hashmap for `document.getElementById()`
         //       if `name` == "id".
 
-        //XXXjdm We really need something like a vtable so we can call AfterSetAttr.
-        //       This hardcoding is awful.
+        
+        
         match abstract_self.type_id() {
             ElementNodeTypeId(HTMLImageElementTypeId) => {
                 do abstract_self.with_mut_image_element |image| {
@@ -274,7 +274,7 @@ impl Element {
 
     pub fn GetClientRects(&self, abstract_self: AbstractNode<ScriptView>) -> @mut ClientRectList {
         let document = self.node.owner_doc;
-        let win = document.with_base(|doc| doc.window).expect("no window");
+        let win = document.with_base(|doc| doc.window);
         let node = abstract_self;
         assert!(node.is_element());
         let (port, chan) = comm::stream();
@@ -301,7 +301,7 @@ impl Element {
 
     pub fn GetBoundingClientRect(&self, abstract_self: AbstractNode<ScriptView>) -> @mut ClientRect {
         let document = self.node.owner_doc;
-        let win = document.with_base(|doc| doc.window).expect("no window");
+        let win = document.with_base(|doc| doc.window);
         let node = abstract_self;
         assert!(node.is_element());
         let (port, chan) = comm::stream();
