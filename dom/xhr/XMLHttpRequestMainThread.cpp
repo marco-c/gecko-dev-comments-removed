@@ -867,10 +867,6 @@ XMLHttpRequestMainThread::IsCrossSiteCORSRequest() const
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
   MOZ_ASSERT(loadInfo);
 
-  if (!loadInfo) {
-    return false;
-  }
-
   return loadInfo->GetTainting() == LoadTainting::CORS;
 }
 
@@ -1612,9 +1608,7 @@ XMLHttpRequestMainThread::SetOriginAttributes(const OriginAttributesDictionary& 
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
   MOZ_ASSERT(loadInfo);
-  if (loadInfo) {
-    loadInfo->SetOriginAttributes(attrs);
-  }
+  loadInfo->SetOriginAttributes(attrs);
 }
 
 void
@@ -1864,7 +1858,11 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest *request,
       NS_ENSURE_SUCCESS(rv, rv);
 
       ChangeState(State::loading);
-      return request->Cancel(NS_OK);
+
+      
+      
+      
+      return request->Cancel(NS_ERROR_FILE_ALREADY_EXISTS);
     }
   }
 
@@ -2113,10 +2111,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest *request, nsISupports *ctxt)
 
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
     MOZ_ASSERT(loadInfo);
-    bool isCrossSite = false;
-    if (loadInfo) {
-      isCrossSite = loadInfo->GetTainting() != LoadTainting::Basic;
-    }
+    bool isCrossSite = loadInfo->GetTainting() != LoadTainting::Basic;
 
     if (isCrossSite) {
       nsCOMPtr<nsIHTMLDocument> htmlDoc = do_QueryInterface(mResponseXML);
@@ -2194,7 +2189,10 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
 
   bool waitingForBlobCreation = false;
 
-  if (NS_SUCCEEDED(status) &&
+  
+  
+  
+  if (status == NS_ERROR_FILE_ALREADY_EXISTS &&
       (mResponseType == XMLHttpRequestResponseType::Blob ||
        mResponseType == XMLHttpRequestResponseType::Moz_blob)) {
     nsCOMPtr<nsIFile> file;
@@ -2224,41 +2222,48 @@ XMLHttpRequestMainThread::OnStopRequest(nsIRequest *request, nsISupports *ctxt, 
 
       FileCreationHandler::Create(promise, this);
       waitingForBlobCreation = true;
+      status = NS_OK;
+
+      NS_ASSERTION(mResponseBody.IsEmpty(), "mResponseBody should be empty");
+      NS_ASSERTION(mResponseText.IsEmpty(), "mResponseText should be empty");
+    }
+  }
+
+  if (NS_SUCCEEDED(status) &&
+      (mResponseType == XMLHttpRequestResponseType::Blob ||
+       mResponseType == XMLHttpRequestResponseType::Moz_blob) &&
+      !waitingForBlobCreation) {
+    
+    
+    nsAutoCString contentType;
+    mChannel->GetContentType(contentType);
+
+    if (mResponseType == XMLHttpRequestResponseType::Blob) {
+      
+      
+      MaybeCreateBlobStorage();
+      mBlobStorage->GetBlobWhenReady(GetOwner(), contentType, this);
+      waitingForBlobCreation = true;
     } else {
       
-
       
-      
-      nsAutoCString contentType;
-      mChannel->GetContentType(contentType);
-
-      if (mResponseType == XMLHttpRequestResponseType::Blob) {
-        
-        
-        MaybeCreateBlobStorage();
-        mBlobStorage->GetBlobWhenReady(GetOwner(), contentType, this);
-        waitingForBlobCreation = true;
-      } else {
-        
-        
-        if (!mBlobSet) {
-          mBlobSet = new BlobSet();
-        }
-
-        ErrorResult error;
-        nsTArray<RefPtr<BlobImpl>> subImpls(mBlobSet->GetBlobImpls());
-        RefPtr<BlobImpl> blobImpl =
-          MultipartBlobImpl::Create(Move(subImpls),
-                                    NS_ConvertASCIItoUTF16(contentType),
-                                    error);
-        mBlobSet = nullptr;
-
-        if (NS_WARN_IF(error.Failed())) {
-          return error.StealNSResult();
-        }
-
-        mResponseBlob = Blob::Create(GetOwner(), blobImpl);
+      if (!mBlobSet) {
+        mBlobSet = new BlobSet();
       }
+
+      ErrorResult error;
+      nsTArray<RefPtr<BlobImpl>> subImpls(mBlobSet->GetBlobImpls());
+      RefPtr<BlobImpl> blobImpl =
+        MultipartBlobImpl::Create(Move(subImpls),
+                                  NS_ConvertASCIItoUTF16(contentType),
+                                  error);
+      mBlobSet = nullptr;
+
+      if (NS_WARN_IF(error.Failed())) {
+        return error.StealNSResult();
+      }
+
+      mResponseBlob = Blob::Create(GetOwner(), blobImpl);
     }
 
     NS_ASSERTION(mResponseBody.IsEmpty(), "mResponseBody should be empty");
@@ -2511,10 +2516,8 @@ XMLHttpRequestMainThread::CreateChannel()
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-  if (loadInfo) {
-    rv = loadInfo->SetPrincipalToInherit(resultingDocumentPrincipal);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  rv = loadInfo->SetPrincipalToInherit(resultingDocumentPrincipal);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }
@@ -2619,9 +2622,7 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
   
   if (!IsSystemXHR() && !mIsAnon && mFlagACwithCredentials) {
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    if (loadInfo) {
-      static_cast<net::LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
-    }
+    static_cast<net::LoadInfo*>(loadInfo.get())->SetIncludeCookiesSecFlag();
   }
 
   
@@ -2682,10 +2683,8 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
     nsTArray<nsCString> CORSUnsafeHeaders;
     mAuthorRequestHeaders.GetCORSUnsafeHeaders(CORSUnsafeHeaders);
     nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
-    if (loadInfo) {
-      loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
-                                     mFlagHadUploadListenersOnSend);
-    }
+    loadInfo->SetCorsPreflightInfo(CORSUnsafeHeaders,
+                                   mFlagHadUploadListenersOnSend);
   }
 
   
