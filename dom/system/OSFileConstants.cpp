@@ -60,6 +60,7 @@
 #include "nsXPCOMCIDInternal.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
+#include "nsSystemInfo.h"
 #include "nsAutoPtr.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsXULAppAPI.h"
@@ -326,14 +327,9 @@ nsresult InitOSFileConstants()
   
   
   
-  nsCOMPtr<nsIPropertyBag2> infoService =
-    do_GetService("@mozilla.org/system-info;1");
-  MOZ_ASSERT(infoService, "Could not access the system information service");
-  rv = infoService->GetPropertyAsUint32(NS_LITERAL_STRING("umask"),
-                                        &gUserUmask);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  
+  
+  gUserUmask = nsSystemInfo::gUserUmask;
 
   return NS_OK;
 }
