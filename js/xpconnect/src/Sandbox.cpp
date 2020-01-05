@@ -1308,7 +1308,8 @@ GetPrincipalOrSOP(JSContext* cx, HandleObject from, nsISupports** out)
 
 
 static bool
-GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj, nsIExpandedPrincipal** out)
+GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj,
+                     const SandboxOptions& options, nsIExpandedPrincipal** out)
 {
     MOZ_ASSERT(out);
     uint32_t length;
@@ -1326,6 +1327,37 @@ GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj, nsIExpandedPrincipal*
     nsTArray< nsCOMPtr<nsIPrincipal> > allowedDomains(length);
     allowedDomains.SetLength(length);
 
+    
+    
+    
+    
+    
+    
+    
+    Maybe<PrincipalOriginAttributes> attrs;
+    if (options.originAttributes) {
+        attrs.emplace();
+        JS::RootedValue val(cx, JS::ObjectValue(*options.originAttributes));
+        if (!attrs->Init(cx, val)) {
+            
+            JS_ReportError(cx, "Expected a valid OriginAttributes object");
+            return false;
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
     for (uint32_t i = 0; i < length; ++i) {
         RootedValue allowed(cx);
         if (!JS_GetElement(cx, arrayObj, i, &allowed))
@@ -1333,17 +1365,7 @@ GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj, nsIExpandedPrincipal*
 
         nsresult rv;
         nsCOMPtr<nsIPrincipal> principal;
-        if (allowed.isString()) {
-            
-            RootedString str(cx, allowed.toString());
-
-            
-            
-            PrincipalOriginAttributes attrs;
-            if (!ParsePrincipal(cx, str, attrs, getter_AddRefs(principal)))
-                return false;
-
-        } else if (allowed.isObject()) {
+        if (allowed.isObject()) {
             
             nsCOMPtr<nsISupports> prinOrSop;
             RootedObject obj(cx, &allowed.toObject());
@@ -1354,23 +1376,73 @@ GetExpandedPrincipal(JSContext* cx, HandleObject arrayObj, nsIExpandedPrincipal*
             principal = do_QueryInterface(prinOrSop);
             if (sop)
                 principal = sop->GetPrincipal();
-        }
-        NS_ENSURE_TRUE(principal, false);
+            NS_ENSURE_TRUE(principal, false);
 
-        
-        bool isSystem;
-        rv = nsXPConnect::SecurityManager()->IsSystemPrincipal(principal, &isSystem);
-        NS_ENSURE_SUCCESS(rv, false);
-        if (isSystem) {
-            JS_ReportError(cx, "System principal is not allowed in an expanded principal");
+            if (!options.originAttributes) {
+                const PrincipalOriginAttributes prinAttrs =
+                    BasePrincipal::Cast(principal)->OriginAttributesRef();
+                if (attrs.isNothing()) {
+                    attrs.emplace(prinAttrs);
+                } else if (prinAttrs != attrs.ref()) {
+                    
+                    
+                    
+                    
+                    
+                    return false;
+                }
+            }
+
+            
+            bool isSystem;
+            rv = nsXPConnect::SecurityManager()->IsSystemPrincipal(principal, &isSystem);
+            NS_ENSURE_SUCCESS(rv, false);
+            if (isSystem) {
+                JS_ReportError(cx, "System principal is not allowed in an expanded principal");
+                return false;
+            }
+            allowedDomains[i] = principal;
+        } else if (allowed.isString()) {
+            
+        } else {
+            
             return false;
         }
-        allowedDomains[i] = principal;
-  }
+    }
 
-  nsCOMPtr<nsIExpandedPrincipal> result = new nsExpandedPrincipal(allowedDomains);
-  result.forget(out);
-  return true;
+    if (attrs.isNothing()) {
+        
+        attrs.emplace();
+    }
+
+    
+    for (uint32_t i = 0; i < length; ++i) {
+        RootedValue allowed(cx);
+        if (!JS_GetElement(cx, arrayObj, i, &allowed))
+            return false;
+
+        nsCOMPtr<nsIPrincipal> principal;
+        if (allowed.isString()) {
+            
+            RootedString str(cx, allowed.toString());
+
+            
+            
+            
+            
+            if (!ParsePrincipal(cx, str, attrs.ref(), getter_AddRefs(principal)))
+                return false;
+            NS_ENSURE_TRUE(principal, false);
+            allowedDomains[i] = principal;
+        } else {
+            MOZ_ASSERT(allowed.isObject());
+        }
+    }
+
+    nsCOMPtr<nsIExpandedPrincipal> result =
+        new nsExpandedPrincipal(allowedDomains, attrs.ref());
+    result.forget(out);
+    return true;
 }
 
 
@@ -1605,7 +1677,8 @@ SandboxOptions::Parse()
               ParseBoolean("writeToGlobalPrototype", &writeToGlobalPrototype) &&
               ParseGlobalProperties() &&
               ParseValue("metadata", &metadata) &&
-              ParseUInt32("userContextId", &userContextId);
+              ParseUInt32("userContextId", &userContextId) &&
+              ParseObject("originAttributes", &originAttributes);
     if (!ok)
         return false;
 
@@ -1681,6 +1754,14 @@ nsXPCComponents_utils_Sandbox::CallOrConstruct(nsIXPConnectWrappedNative* wrappe
     if (args[0].isString()) {
         RootedString str(cx, args[0].toString());
         PrincipalOriginAttributes attrs;
+        if (options.originAttributes) {
+            JS::RootedValue val(cx, JS::ObjectValue(*options.originAttributes));
+            if (!attrs.Init(cx, val)) {
+                
+                JS_ReportError(cx, "Expected a valid OriginAttributes object");
+                return ThrowAndFail(NS_ERROR_INVALID_ARG, cx, _retval);
+            }
+        }
         attrs.mUserContextId = options.userContextId;
         ok = ParsePrincipal(cx, str, attrs, getter_AddRefs(principal));
         prinOrSop = principal;
@@ -1694,7 +1775,7 @@ nsXPCComponents_utils_Sandbox::CallOrConstruct(nsIXPConnectWrappedNative* wrappe
                 
                 ok = false;
             } else {
-                ok = GetExpandedPrincipal(cx, obj, getter_AddRefs(expanded));
+                ok = GetExpandedPrincipal(cx, obj, options, getter_AddRefs(expanded));
                 prinOrSop = expanded;
             }
         } else {
