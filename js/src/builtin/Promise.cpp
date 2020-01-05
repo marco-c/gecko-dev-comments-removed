@@ -139,6 +139,10 @@ static bool
 AbruptRejectPromise(JSContext *cx, CallArgs& args, HandleObject promiseObj, HandleObject reject)
 {
     
+    if (!cx->isExceptionPending())
+        return false;
+
+    
     RootedValue reason(cx);
     if (!GetAndClearException(cx, &reason))
         return false;
