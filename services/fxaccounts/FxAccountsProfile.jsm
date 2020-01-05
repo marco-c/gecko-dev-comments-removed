@@ -99,16 +99,16 @@ this.FxAccountsProfile.prototype = {
         return this.client.fetchProfile(etag);
       })
       .then(response => {
-        return this._cacheProfile(response);
+        
+        return response ? this._cacheProfile(response) : null;
       })
       .then(body => { 
         onFinally();
+        
         return body;
       }, err => {
         onFinally();
-        if (err.code != 304) { 
-          throw err;
-        }
+        throw err;
       });
   },
 

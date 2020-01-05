@@ -131,6 +131,7 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
+
   _rawRequest(path, method, token, etag) {
     return new Promise((resolve, reject) => {
       let profileDataUrl = this.serverURL + path;
@@ -154,6 +155,9 @@ this.FxAccountsProfileClient.prototype = {
 
         let body = null;
         try {
+          if (request.response.status == 304) {
+            return resolve(null);
+          }
           body = JSON.parse(request.response.body);
         } catch (e) {
           return reject(new FxAccountsProfileClientError({
