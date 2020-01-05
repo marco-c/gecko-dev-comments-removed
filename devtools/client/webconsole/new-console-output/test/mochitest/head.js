@@ -109,9 +109,25 @@ function* waitFor(condition, message = "waitFor", interval = 100, maxTries = 50)
 
 
 function findMessage(hud, text, selector = ".message") {
+  const elements = findMessages(hud, text, selector);
+  return elements.pop();
+}
+
+
+
+
+
+
+
+
+
+
+
+function findMessages(hud, text, selector = ".message") {
+  const messages = hud.ui.experimentalOutputNode.querySelectorAll(selector);
   const elements = Array.prototype.filter.call(
-    hud.ui.experimentalOutputNode.querySelectorAll(selector),
+    messages,
     (el) => el.textContent.includes(text)
   );
-  return elements.length > 0 ? elements.pop() : false;
+  return elements;
 }
