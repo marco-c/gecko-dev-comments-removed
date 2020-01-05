@@ -70,8 +70,11 @@ define(function (require, exports, module) {
       });
 
       let ownProperties = object.preview ? object.preview.ownProperties : {};
+      let propertiesLength = object.preview && object.preview.ownPropertiesLength
+        ? object.preview.ownPropertiesLength
+        : object.ownPropertyLength;
       let indexes = this.getPropIndexes(ownProperties, max, isInterestingProp);
-      if (indexes.length < max && indexes.length < object.ownPropertyLength) {
+      if (indexes.length < max && indexes.length < propertiesLength) {
         
         indexes = indexes.concat(
           this.getPropIndexes(ownProperties, max - indexes.length, (t, value, name) => {
