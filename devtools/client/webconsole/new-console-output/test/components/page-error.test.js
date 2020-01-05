@@ -23,6 +23,12 @@ describe("PageError component:", () => {
     
     const frameLinks = wrapper.find(`.stack-trace`);
     expect(frameLinks.length).toBe(0);
+
+    
+    const locationLink = wrapper.find(`.message-location`);
+    expect(locationLink.length).toBe(1);
+    
+    expect(locationLink.text()).toBe("http://example.com/browser/devtools/client/webconsole/new-console-output/test/fixtures/stub-generato");
   });
 
   it("has a stacktrace which can be openned", () => {
