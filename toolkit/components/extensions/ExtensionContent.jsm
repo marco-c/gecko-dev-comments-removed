@@ -101,6 +101,7 @@ function Script(extension, options, deferred = PromiseUtils.defer()) {
   this.js = this.options.js || [];
   this.css = this.options.css || [];
   this.remove_css = this.options.remove_css;
+  this.match_about_blank = this.options.match_about_blank;
 
   this.deferred = deferred;
 
@@ -140,6 +141,12 @@ Script.prototype = {
       return false;
     }
 
+    if (this.match_about_blank && ["about:blank", "about:srcdoc"].includes(uri.spec)) {
+      
+      
+      uri = window.document.nodePrincipal.URI;
+    }
+
     if (!(this.matches_.matches(uri) || this.matches_host_.matchesIgnoringPath(uri))) {
       return false;
     }
@@ -165,8 +172,6 @@ Script.prototype = {
     } else if (!this.options.all_frames && window.top != window) {
       return false;
     }
-
-    
 
     return true;
   },
@@ -426,11 +431,13 @@ DocumentManager = {
   extensionPageWindows: new Map(),
 
   init() {
+    Services.obs.addObserver(this, "content-document-global-created", false);
     Services.obs.addObserver(this, "document-element-inserted", false);
     Services.obs.addObserver(this, "inner-window-destroyed", false);
   },
 
   uninit() {
+    Services.obs.removeObserver(this, "content-document-global-created");
     Services.obs.removeObserver(this, "document-element-inserted");
     Services.obs.removeObserver(this, "inner-window-destroyed");
   },
@@ -446,10 +453,41 @@ DocumentManager = {
     return "document_start";
   },
 
+  loadInto(window) {
+    
+    
+    const {
+      NO_PRIVILEGES,
+      CONTENTSCRIPT_PRIVILEGES,
+      FULL_PRIVILEGES,
+    } = ExtensionManagement.API_LEVELS;
+    let extensionId = ExtensionManagement.getAddonIdForWindow(window);
+    let apiLevel = ExtensionManagement.getAPILevelForWindow(window, extensionId);
+
+    if (apiLevel != NO_PRIVILEGES) {
+      let extension = ExtensionManager.get(extensionId);
+      if (extension) {
+        if (apiLevel == CONTENTSCRIPT_PRIVILEGES) {
+          DocumentManager.getExtensionPageContext(extension, window);
+        } else if (apiLevel == FULL_PRIVILEGES) {
+          ExtensionChild.createExtensionContext(extension, window);
+        }
+      }
+    }
+  },
+
   observe: function(subject, topic, data) {
-    if (topic == "document-element-inserted") {
+    
+    
+    if (topic == "content-document-global-created" || topic == "document-element-inserted") {
       let document = subject;
       let window = document && document.defaultView;
+
+      if (topic == "content-document-global-created") {
+        window = subject;
+        document = window && window.document;
+      }
+
       if (!document || !document.location || !window) {
         return;
       }
@@ -463,26 +501,11 @@ DocumentManager = {
 
       
       
-      const {
-        NO_PRIVILEGES,
-        CONTENTSCRIPT_PRIVILEGES,
-        FULL_PRIVILEGES,
-      } = ExtensionManagement.API_LEVELS;
-      let extensionId = ExtensionManagement.getAddonIdForWindow(window);
-      let apiLevel = ExtensionManagement.getAPILevelForWindow(window, extensionId);
-
-      if (apiLevel != NO_PRIVILEGES) {
-        let extension = ExtensionManager.get(extensionId);
-        if (extension) {
-          if (apiLevel == CONTENTSCRIPT_PRIVILEGES) {
-            DocumentManager.getExtensionPageContext(extension, window);
-          } else if (apiLevel == FULL_PRIVILEGES) {
-            ExtensionChild.createExtensionContext(extension, window);
-          }
-        }
+      if (topic === "document-element-inserted") {
+        this.loadInto(window);
+        this.trigger("document_start", window);
       }
 
-      this.trigger("document_start", window);
       
       window.addEventListener("DOMContentLoaded", this, true);
       window.addEventListener("load", this, true);
@@ -526,6 +549,12 @@ DocumentManager = {
     
 
     if (event.type == "DOMContentLoaded") {
+      
+      
+      if (window.location.href === "about:blank") {
+        this.loadInto(window);
+        this.trigger("document_start", window);
+      }
       this.trigger("document_end", window);
     } else if (event.type == "load") {
       this.trigger("document_idle", window);
@@ -667,9 +696,7 @@ DocumentManager = {
   },
 
   trigger(when, window) {
-    let state = this.getWindowState(window);
-
-    if (state == "document_start") {
+    if (when === "document_start") {
       for (let extension of ExtensionManager.extensions.values()) {
         for (let script of extension.scripts) {
           if (script.matches(window)) {
@@ -681,7 +708,7 @@ DocumentManager = {
     } else {
       let contexts = this.contentScriptWindows.get(getInnerWindowID(window)) || new Map();
       for (let context of contexts.values()) {
-        context.triggerScripts(state);
+        context.triggerScripts(this.getWindowState(window));
       }
     }
   },
