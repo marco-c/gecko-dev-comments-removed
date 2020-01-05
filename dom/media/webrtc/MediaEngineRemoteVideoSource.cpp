@@ -207,6 +207,10 @@ MediaEngineRemoteVideoSource::Stop(mozilla::SourceMediaStream* aSource,
   {
     MonitorAutoLock lock(mMonitor);
 
+    
+    
+    mImage = nullptr;
+
     size_t i = mSources.IndexOf(aSource);
     if (i == mSources.NoIndex) {
       
@@ -227,9 +231,6 @@ MediaEngineRemoteVideoSource::Stop(mozilla::SourceMediaStream* aSource,
     }
 
     mState = kStopped;
-    
-    
-    mImage = nullptr;
   }
 
   mozilla::camera::GetChildAndCall(
