@@ -475,8 +475,6 @@ function* setStyle(animation, panel, name, value, selector) {
     propertyValue: value
   });
   yield onAnimationChanged;
-  const onSelected = animation ? waitForAnimationSelecting(panel) : Promise.resolve();
-  yield onSelected;
 
   
   

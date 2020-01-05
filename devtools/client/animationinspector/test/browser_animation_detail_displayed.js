@@ -12,6 +12,7 @@
 
 
 
+
 requestLongerTimeout(5);
 
 add_task(function* () {
@@ -57,4 +58,10 @@ add_task(function* () {
         "animation-detail element should display");
   is(animationDetailEl.offsetHeight, previousHeight,
      "The height of animation-detail should keep the height");
+
+  
+  yield selectNodeAndWaitForAnimations("#target1", inspector);
+  yield clickTimelineRewindButton(panel);
+  ok(animationDetailEl.querySelector(".property"),
+     "The property in animation-detail element should stay as is");
 });

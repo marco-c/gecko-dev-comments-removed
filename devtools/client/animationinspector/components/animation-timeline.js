@@ -258,6 +258,7 @@ AnimationsTimeline.prototype = {
     this.animatedPropertiesEl = null;
     this.animationDetailCloseButton = null;
     this.animationRootEl = null;
+    this.selectedAnimation = null;
   },
 
   
@@ -277,6 +278,11 @@ AnimationsTimeline.prototype = {
   },
 
   unrender: function () {
+    this.unrenderButLeaveDetailsComponent();
+    this.details.unrender();
+  },
+
+  unrenderButLeaveDetailsComponent: function () {
     for (let animation of this.animations) {
       animation.off("changed", this.onAnimationStateChanged);
     }
@@ -284,7 +290,6 @@ AnimationsTimeline.prototype = {
     TimeScale.reset();
     this.destroySubComponents("targetNodes");
     this.destroySubComponents("timeBlocks");
-    this.details.unrender();
     this.animationsEl.innerHTML = "";
     this.off("timeline-data-changed", this.onTimelineDataChanged);
   },
@@ -337,9 +342,13 @@ AnimationsTimeline.prototype = {
     const selectedAnimationEl = animationEls[index];
     selectedAnimationEl.classList.add("selected");
     this.animationRootEl.classList.add("animation-detail-visible");
-    yield this.details.render(animation);
+    if (animation !== this.details.animation) {
+      this.selectedAnimation = animation;
+      
+      yield this.details.render(animation);
+      this.animationAnimationNameEl.textContent = getFormattedAnimationTitle(animation);
+    }
     this.onTimelineDataChanged(null, { time: this.currentTime || 0 });
-    this.animationAnimationNameEl.textContent = getFormattedAnimationTitle(animation);
     this.emit("animation-selected", animation);
   }),
 
@@ -421,7 +430,7 @@ AnimationsTimeline.prototype = {
   },
 
   render: function (animations, documentCurrentTime) {
-    this.unrender();
+    this.unrenderButLeaveDetailsComponent();
 
     this.animations = animations;
     if (!this.animations.length) {
@@ -497,9 +506,20 @@ AnimationsTimeline.prototype = {
     this.on("timeline-data-changed", this.onTimelineDataChanged);
 
     
+    
     if (this.animations.length === 1) {
       this.onAnimationSelected(null, this.animations[0]);
+      return;
     }
+    if (!this.animationRootEl.classList.contains("animation-detail-visible")) {
+      
+      return;
+    }
+    if (this.animations.indexOf(this.selectedAnimation) >= 0) {
+      this.onAnimationSelected(null, this.selectedAnimation);
+      return;
+    }
+    this.onDetailCloseButtonClick();
   },
 
   isAtLeastOneAnimationPlaying: function () {
