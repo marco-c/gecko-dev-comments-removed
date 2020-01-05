@@ -40,6 +40,10 @@ protected:
     PMPrintSession    mPrintSession;              
     PMPageFormat      mPageFormat;                
     PMPrintSettings   mPrintSettings;             
+#ifdef MOZ_ENABLE_SKIA_PDF
+    nsCOMPtr<nsIFile> mTempFile;                  
+    bool              mPrintViaSkPDF;
+#endif
 };
 
 #endif 
