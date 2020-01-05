@@ -61,6 +61,9 @@ module.exports = {
     
 
     
+    "no-cond-assign": "error",
+
+    
     "no-debugger": "error",
 
     

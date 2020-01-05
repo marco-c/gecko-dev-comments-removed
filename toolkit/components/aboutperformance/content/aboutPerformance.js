@@ -1016,7 +1016,7 @@ var SubprocessMonitor = {
         
         
         
-        for (let i = 1, row; row = resultTable.rows[i]; i++) {
+        for (let i = 1, row; (row = resultTable.rows[i]); i++) {
           let rowPid = row.dataset.pid;
           let summary = summaries[rowPid];
           if (summary) {
