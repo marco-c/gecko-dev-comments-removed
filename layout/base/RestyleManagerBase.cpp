@@ -378,6 +378,12 @@ VerifyStyleTree(nsIFrame* aFrame)
 void
 RestyleManagerBase::DebugVerifyStyleTree(nsIFrame* aFrame)
 {
+  if (IsServo()) {
+    
+    
+    
+    return;
+  }
   if (aFrame) {
     VerifyStyleTree(aFrame);
   }
