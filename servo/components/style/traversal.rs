@@ -104,7 +104,7 @@ pub struct PerLevelTraversalData {
 
 pub struct PreTraverseToken {
     traverse: bool,
-    skip_root: bool,
+    unstyled_children_only: bool,
 }
 
 impl PreTraverseToken {
@@ -112,8 +112,8 @@ impl PreTraverseToken {
         self.traverse
     }
 
-    pub fn should_skip_root(&self) -> bool {
-        self.skip_root
+    pub fn traverse_unstyled_children_only(&self) -> bool {
+        self.unstyled_children_only
     }
 }
 
@@ -142,14 +142,14 @@ pub trait DomTraversalContext<N: TNode> {
     
     
     
-    fn pre_traverse(root: N::ConcreteElement, stylist: &Stylist, skip_root: bool)
+    fn pre_traverse(root: N::ConcreteElement, stylist: &Stylist,
+                    unstyled_children_only: bool)
                     -> PreTraverseToken
     {
-        
-        if skip_root {
+        if unstyled_children_only {
             return PreTraverseToken {
                 traverse: true,
-                skip_root: true,
+                unstyled_children_only: true,
             };
         }
 
@@ -159,16 +159,16 @@ pub trait DomTraversalContext<N: TNode> {
         
         
         
-        debug_assert!(root.next_sibling_element().is_none());
         if let Some(mut data) = root.mutate_data() {
             if let Some(r) = data.as_restyle_mut() {
+                debug_assert!(root.next_sibling_element().is_none());
                 let _later_siblings = r.expand_snapshot(root, stylist);
             }
         }
 
         PreTraverseToken {
             traverse: Self::node_needs_traversal(root.as_node()),
-            skip_root: false,
+            unstyled_children_only: false,
         }
     }
 

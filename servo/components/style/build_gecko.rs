@@ -220,7 +220,7 @@ mod bindings {
             "mozilla::ConsumeStyleBehavior",
             "mozilla::LazyComputeBehavior",
             "mozilla::css::SheetParsingMode",
-            "mozilla::SkipRootBehavior",
+            "mozilla::TraversalRootBehavior",
             "mozilla::DisplayItemClip",  
                                          
                                          
@@ -444,7 +444,7 @@ mod bindings {
             "ThreadSafePrincipalHolder",
             "ConsumeStyleBehavior",
             "LazyComputeBehavior",
-            "SkipRootBehavior",
+            "TraversalRootBehavior",
             "FontFamilyList",
             "FontFamilyType",
             "ServoElementSnapshot",

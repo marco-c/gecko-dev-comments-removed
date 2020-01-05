@@ -31,10 +31,14 @@ pub fn traverse_dom<N, C>(root: N::ConcreteElement,
     
     
     
-    debug_assert!(!token.should_skip_root() || !C::needs_postorder_traversal());
-    let (nodes, depth) = if token.should_skip_root() {
+    let (nodes, depth) = if token.traverse_unstyled_children_only() {
+        debug_assert!(!C::needs_postorder_traversal());
         let mut children = vec![];
-        C::traverse_children(root, |kid| children.push(kid.to_unsafe()));
+        for kid in root.as_node().children() {
+            if kid.as_element().map_or(false, |el| el.get_data().is_none()) {
+                children.push(kid.to_unsafe());
+            }
+        }
         (children, known_root_dom_depth.map(|x| x + 1))
     } else {
         (vec![root.as_node().to_unsafe()], known_root_dom_depth)
