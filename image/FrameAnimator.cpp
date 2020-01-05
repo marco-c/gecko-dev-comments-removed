@@ -32,6 +32,17 @@ AnimationState::NotifyDecodeComplete()
   
   if (!mDiscarded) {
     mIsCurrentlyDecoded = true;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mCompositedFrameInvalid = false;
   }
   mHasBeenDecoded = true;
 }
