@@ -80,6 +80,10 @@ public:
 
 private:
   pthread_mutex_t mutex;
+
+  
+  owned_critical_section(const owned_critical_section&);
+  owned_critical_section& operator=(const owned_critical_section&);
 };
 
 #endif 
