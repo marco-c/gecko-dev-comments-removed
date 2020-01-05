@@ -5,7 +5,7 @@ use std::arc::{ARC, get, clone};
 
 use core::dvec::DVec;
 use newcss::values::*;
-use newcss::Stylesheet;
+use newcss::SelectCtx;
 use dom::element::{HTMLDivElement, HTMLHeadElement, HTMLImageElement, UnknownElement, HTMLScriptElement};
 use dom::node::{Comment, Doctype, Element, Text,
                 Node, NodeKind, NodeTree, LayoutData};
@@ -107,7 +107,7 @@ trait StyleMethods {
 
     fn style() -> SpecifiedStyle;
     fn initialize_style_for_subtree(ctx: &LayoutContext, refs: &DVec<@LayoutData>);
-    fn recompute_style_for_subtree(ctx: &LayoutContext, styles : &Stylesheet);
+    fn recompute_style_for_subtree(ctx: &LayoutContext, styles : &SelectCtx);
 }
 
 impl Node : StyleMethods {
@@ -160,7 +160,7 @@ impl Node : StyleMethods {
 
 
 
-    fn recompute_style_for_subtree(ctx: &LayoutContext, styles : &Stylesheet) {
+    fn recompute_style_for_subtree(ctx: &LayoutContext, styles : &SelectCtx) {
         let mut i = 0u;
         
         
