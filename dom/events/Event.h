@@ -265,6 +265,14 @@ public:
     mEvent->mSpecifiedEventType = nullptr;
   }
 
+  
+
+
+
+
+
+  static void GetWidgetEventType(WidgetEvent* aEvent, nsAString& aType);
+
 protected:
 
   
