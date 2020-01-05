@@ -3,7 +3,6 @@
 
 
 
-#![deny(missing_docs)]
 
 use animation::{Animation, PropertyAnimation};
 use app_units::Au;
@@ -20,6 +19,7 @@ use font_metrics::FontMetricsProvider;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
 #[cfg(feature = "gecko")] use properties::ComputedValues;
+use selector_parser::SnapshotMap;
 use selectors::matching::ElementSelectorFlags;
 #[cfg(feature = "servo")] use servo_config::opts;
 use shared_lock::StylesheetGuards;
@@ -135,6 +135,9 @@ pub struct SharedStyleContext<'a> {
 
     
     pub traversal_flags: TraversalFlags,
+
+    
+    pub snapshot_map: &'a SnapshotMap,
 }
 
 impl<'a> SharedStyleContext<'a> {

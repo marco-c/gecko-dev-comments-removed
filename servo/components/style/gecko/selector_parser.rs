@@ -16,6 +16,8 @@ use std::fmt;
 use std::ptr;
 use string_cache::{Atom, Namespace, WeakAtom, WeakNamespace};
 
+pub use gecko::snapshot::SnapshotMap;
+
 
 
 

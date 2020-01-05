@@ -6,19 +6,17 @@
 
 #![deny(missing_docs)]
 
+use context::SharedStyleContext;
 use dom::TElement;
 use properties::ComputedValues;
 use properties::longhands::display::computed_value as display;
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use rule_tree::StrongRuleNode;
-use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage, Snapshot};
+use selector_parser::{EAGER_PSEUDO_COUNT, PseudoElement, RestyleDamage};
 #[cfg(feature = "servo")] use std::collections::HashMap;
 use std::fmt;
 #[cfg(feature = "servo")] use std::hash::BuildHasherDefault;
-use std::ops::Deref;
 use stylearc::Arc;
-use stylist::Stylist;
-use thread_state;
 use traversal::TraversalFlags;
 
 
@@ -199,9 +197,7 @@ impl StoredRestyleHint {
         
         
         if traversal_flags.for_animation_only() {
-            if self.0.intersects(RestyleHint::for_animations()) {
-                self.0.remove(RestyleHint::for_animations());
-            }
+            self.0.remove(RestyleHint::for_animations());
             return Self::empty();
         }
 
@@ -275,55 +271,6 @@ impl From<RestyleHint> for StoredRestyleHint {
     }
 }
 
-static NO_SNAPSHOT: Option<Snapshot> = None;
-
-
-
-
-#[derive(Debug, Default)]
-pub struct SnapshotOption {
-    snapshot: Option<Snapshot>,
-    destroyed: bool,
-}
-
-impl SnapshotOption {
-    
-    pub fn empty() -> Self {
-        SnapshotOption {
-            snapshot: None,
-            destroyed: false,
-        }
-    }
-
-    
-    pub fn destroy(&mut self) {
-        self.destroyed = true;
-        debug_assert!(self.is_none());
-    }
-
-    
-    pub fn ensure<F: FnOnce() -> Snapshot>(&mut self, create: F) -> &mut Snapshot {
-        debug_assert!(thread_state::get().is_layout());
-        if self.is_none() {
-            self.snapshot = Some(create());
-            self.destroyed = false;
-        }
-
-        self.snapshot.as_mut().unwrap()
-    }
-}
-
-impl Deref for SnapshotOption {
-    type Target = Option<Snapshot>;
-    fn deref(&self) -> &Option<Snapshot> {
-        if self.destroyed {
-            &NO_SNAPSHOT
-        } else {
-            &self.snapshot
-        }
-    }
-}
-
 
 
 
@@ -350,54 +297,17 @@ pub struct RestyleData {
     
     #[cfg(feature = "gecko")]
     pub damage_handled: RestyleDamage,
-
-    
-    
-    pub snapshot: SnapshotOption,
 }
 
 impl RestyleData {
     
-    
-    
-    
-    
-    
-    pub fn compute_final_hint<E: TElement>(&mut self,
-                                           element: E,
-                                           stylist: &Stylist)
-                                           -> bool {
-        let mut hint = self.hint.0;
-
-        if let Some(snapshot) = self.snapshot.as_ref() {
-            hint |= stylist.compute_restyle_hint(&element, snapshot);
-        }
-
-        
-        
-        let later_siblings = hint.contains(RESTYLE_LATER_SIBLINGS);
-        hint.remove(RESTYLE_LATER_SIBLINGS);
-
-        
-        
-        self.hint = hint.into();
-
-        
-        self.snapshot.destroy();
-
-        later_siblings
-    }
-
-    
     pub fn has_invalidations(&self) -> bool {
-        self.hint.has_self_invalidations() ||
-            self.recascade ||
-            self.snapshot.is_some()
+        self.hint.has_self_invalidations() || self.recascade
     }
 
     
     pub fn has_sibling_invalidations(&self) -> bool {
-        self.hint.has_sibling_invalidations() || self.snapshot.is_some()
+        self.hint.has_sibling_invalidations()
     }
 
     
@@ -453,6 +363,51 @@ pub enum RestyleKind {
 
 impl ElementData {
     
+    
+    
+    
+    
+    
+    
+    pub fn compute_final_hint<E: TElement>(
+        &mut self,
+        element: E,
+        context: &SharedStyleContext)
+        -> bool
+    {
+        debug!("compute_final_hint: {:?}, {:?}",
+               element,
+               context.traversal_flags);
+
+        let mut hint = match self.get_restyle() {
+            Some(r) => r.hint.0,
+            None => RestyleHint::empty(),
+        };
+
+        if element.has_snapshot() && !element.handled_snapshot() {
+            hint |= context.stylist.compute_restyle_hint(&element, context.snapshot_map);
+            unsafe { element.set_handled_snapshot() }
+            debug_assert!(element.handled_snapshot());
+        }
+
+        let empty_hint = hint.is_empty();
+
+        
+        
+        let later_siblings = hint.contains(RESTYLE_LATER_SIBLINGS);
+        hint.remove(RESTYLE_LATER_SIBLINGS);
+
+        
+        
+        if !empty_hint {
+            self.ensure_restyle().hint = hint.into();
+        }
+
+        later_siblings
+    }
+
+
+    
     pub fn new(existing: Option<ElementStyles>) -> Self {
         ElementData {
             styles: existing,
@@ -466,16 +421,15 @@ impl ElementData {
     }
 
     
-    
-    pub fn has_current_styles(&self) -> bool {
-        self.has_styles() &&
-            self.restyle.as_ref().map_or(true, |r| !r.has_invalidations())
+    pub fn has_invalidations(&self) -> bool {
+        self.restyle.as_ref().map_or(false, |r| r.has_invalidations())
     }
 
     
     
     pub fn restyle_kind(&self) -> RestyleKind {
-        debug_assert!(!self.has_current_styles(), "Should've stopped earlier");
+        debug_assert!(!self.has_styles() || self.has_invalidations(),
+                      "Should've stopped earlier");
         if !self.has_styles() {
             return RestyleKind::MatchAndCascade;
         }
@@ -527,8 +481,6 @@ impl ElementData {
 
     
     pub fn set_styles(&mut self, styles: ElementStyles) {
-        debug_assert!(self.get_restyle().map_or(true, |r| r.snapshot.is_none()),
-                      "Traversal should have expanded snapshots");
         self.styles = Some(styles);
     }
 

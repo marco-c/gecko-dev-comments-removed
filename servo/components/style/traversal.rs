@@ -13,7 +13,6 @@ use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
 use selector_parser::RestyleDamage;
 #[cfg(feature = "servo")] use servo_config::opts;
 use std::borrow::BorrowMut;
-use stylist::Stylist;
 
 
 
@@ -200,7 +199,9 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     
     
-    fn pre_traverse(root: E, stylist: &Stylist, traversal_flags: TraversalFlags)
+    fn pre_traverse(root: E,
+                    shared_context: &SharedStyleContext,
+                    traversal_flags: TraversalFlags)
                     -> PreTraverseToken
     {
         debug_assert!(!(traversal_flags.for_reconstruct() &&
@@ -226,14 +227,12 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if let Some(mut data) = root.mutate_data() {
-            if let Some(r) = data.get_restyle_mut() {
-                let later_siblings = r.compute_final_hint(root, stylist);
-                if later_siblings {
-                    if let Some(next) = root.next_sibling_element() {
-                        if let Some(mut next_data) = next.mutate_data() {
-                            let hint = StoredRestyleHint::subtree_and_later_siblings();
-                            next_data.ensure_restyle().hint.insert(&hint);
-                        }
+            let later_siblings = data.compute_final_hint(root, shared_context);
+            if later_siblings {
+                if let Some(next) = root.next_sibling_element() {
+                    if let Some(mut next_data) = next.mutate_data() {
+                        let hint = StoredRestyleHint::subtree_and_later_siblings();
+                        next_data.ensure_restyle().hint.insert(&hint);
                     }
                 }
             }
@@ -375,6 +374,7 @@ pub trait DomTraversal<E: TElement> : Sync {
             return true;
         }
 
+        trace!("{:?} doesn't need traversal", el);
         false
     }
 
@@ -390,7 +390,7 @@ pub trait DomTraversal<E: TElement> : Sync {
                                 log: LogBehavior) -> bool
     {
         
-        debug_assert!(cfg!(feature = "gecko") || parent_data.has_current_styles());
+        debug_assert!(cfg!(feature = "gecko") || parent.has_current_styles(parent_data));
 
         
         if parent_data.styles().is_display_none() {
@@ -597,11 +597,13 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 {
     context.thread_local.begin_element(element, &data);
     context.thread_local.statistics.elements_traversed += 1;
+    debug_assert!(!element.has_snapshot() || element.handled_snapshot(),
+                  "Should've handled snapshots here already");
     debug_assert!(data.get_restyle().map_or(true, |r| {
-        r.snapshot.is_none() && !r.has_sibling_invalidations()
+        !r.has_sibling_invalidations()
     }), "Should've computed the final hint and handled later_siblings already");
 
-    let compute_self = !data.has_current_styles();
+    let compute_self = !element.has_current_styles(data);
     let mut inherited_style_changed = false;
 
     debug!("recalc_style_at: {:?} (compute_self={:?}, dirty_descendants={:?}, data={:?})",
@@ -613,9 +615,9 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
         
         
-        let display_none = data.styles().is_display_none();
-        if display_none {
-            debug!("New element style is display:none - clearing data from descendants.");
+        if data.styles().is_display_none() {
+            debug!("{:?} style is display:none - clearing data from descendants.",
+                   element);
             clear_descendant_data(element, &|e| unsafe { D::clear_element_data(&e) });
         }
 
@@ -636,15 +638,15 @@ pub fn recalc_style_at<E, D>(traversal: &D,
             r.hint.propagate(&context.shared.traversal_flags)
         },
     };
-    debug_assert!(data.has_current_styles() ||
-                  context.shared.traversal_flags.for_animation_only(),
-                  "Should have computed style or haven't yet valid computed \
-                   style in case of animation-only restyle");
     trace!("propagated_hint={:?}, inherited_style_changed={:?}, \
             is_display_none={:?}, implementing_pseudo={:?}",
            propagated_hint, inherited_style_changed,
            data.styles().is_display_none(),
            element.implemented_pseudo_element());
+    debug_assert!(element.has_current_styles(data) ||
+                  context.shared.traversal_flags.for_animation_only(),
+                  "Should have computed style or haven't yet valid computed \
+                   style in case of animation-only restyle");
 
     let has_dirty_descendants_for_this_restyle =
         if context.shared.traversal_flags.for_animation_only() {
@@ -782,10 +784,23 @@ fn preprocess_children<E, D>(traversal: &D,
         
         
         
+        let later_siblings =
+            child_data.compute_final_hint(child, traversal.shared_context());
+
+        trace!(" > {:?} -> {:?} + {:?}, later_siblings: {:?}",
+               child,
+               child_data.get_restyle().map(|r| &r.hint),
+               propagated_hint,
+               later_siblings);
+
+        
+        
+        
         if propagated_hint.is_empty() && !parent_inherited_style_changed &&
            damage_handled.is_empty() && !child_data.has_restyle() {
             continue;
         }
+
         let mut restyle_data = child_data.ensure_restyle();
 
         
@@ -793,11 +808,6 @@ fn preprocess_children<E, D>(traversal: &D,
             restyle_data.hint.insert(&propagated_hint);
         }
 
-        
-        let stylist = &traversal.shared_context().stylist;
-        let later_siblings = restyle_data.compute_final_hint(child, stylist);
-        trace!(" > {:?} -> {:?}, later_siblings: {:?}",
-               child, restyle_data.hint, later_siblings);
         if later_siblings {
             propagated_hint.insert(&(RESTYLE_SELF | RESTYLE_DESCENDANTS).into());
         }
@@ -805,6 +815,8 @@ fn preprocess_children<E, D>(traversal: &D,
         
         restyle_data.set_damage_handled(damage_handled);
 
+        
+        
         
         
         
