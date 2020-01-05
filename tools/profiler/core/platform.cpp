@@ -1864,6 +1864,27 @@ MaybeSetProfile(PS::LockRef aLock, ThreadInfo* aInfo)
   }
 }
 
+
+
+static ThreadInfo*
+FindThreadInfo(PS::LockRef aLock, int* aIndexOut = nullptr)
+{
+  
+
+  Thread::tid_t id = Thread::GetCurrentId();
+  const PS::ThreadVector& threads = gPS->Threads(aLock);
+  for (uint32_t i = 0; i < threads.size(); i++) {
+    ThreadInfo* info = threads.at(i);
+    if (info->ThreadId() == id && !info->IsPendingDelete()) {
+      if (aIndexOut) {
+        *aIndexOut = i;
+      }
+      return info;
+    }
+  }
+  return nullptr;
+}
+
 static void
 locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
 {
@@ -1871,17 +1892,7 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
 
   MOZ_RELEASE_ASSERT(gPS);
 
-  PS::ThreadVector& threads = gPS->Threads(aLock);
-  Thread::tid_t id = Thread::GetCurrentId();
-  for (uint32_t i = 0; i < threads.size(); i++) {
-    ThreadInfo* info = threads.at(i);
-    if (info->ThreadId() == id && !info->IsPendingDelete()) {
-      
-      
-      MOZ_ASSERT(false);
-      return;
-    }
-  }
+  MOZ_RELEASE_ASSERT(!FindThreadInfo(aLock));
 
   if (!tlsPseudoStack.init()) {
     return;
@@ -1889,8 +1900,8 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
   NotNull<PseudoStack*> stack = WrapNotNull(new PseudoStack());
   tlsPseudoStack.set(stack);
 
-  ThreadInfo* info =
-    new ThreadInfo(aName, id, NS_IsMainThread(), stack, stackTop);
+  ThreadInfo* info = new ThreadInfo(aName, Thread::GetCurrentId(),
+                                    NS_IsMainThread(), stack, stackTop);
 
   MaybeSetProfile(aLock, info);
 
@@ -1902,7 +1913,7 @@ locked_register_thread(PS::LockRef aLock, const char* aName, void* stackTop)
     stack->pollJSSampling();
   }
 
-  threads.push_back(info);
+  gPS->Threads(aLock).push_back(info);
 }
 
 static void
@@ -2842,28 +2853,34 @@ profiler_unregister_thread()
 
   PS::AutoLock lock(gPSMutex);
 
-  Thread::tid_t id = Thread::GetCurrentId();
-
   bool wasPseudoStackTransferred = false;
 
-  PS::ThreadVector& threads = gPS->Threads(lock);
-  for (uint32_t i = 0; i < threads.size(); i++) {
-    ThreadInfo* info = threads.at(i);
-    if (info->ThreadId() == id && !info->IsPendingDelete()) {
-      DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
-      if (gPS->IsActive(lock)) {
-        
-        
-        
-        
-        info->SetPendingDelete();
-        wasPseudoStackTransferred = true;
-      } else {
-        delete info;
-        threads.erase(threads.begin() + i);
-      }
-      break;
+  int i;
+  ThreadInfo* info = FindThreadInfo(lock, &i);
+  if (info) {
+    DEBUG_LOG("profiler_unregister_thread: %s", info->Name());
+    if (gPS->IsActive(lock)) {
+      
+      
+      
+      
+      info->SetPendingDelete();
+      wasPseudoStackTransferred = true;
+    } else {
+      delete info;
+      PS::ThreadVector& threads = gPS->Threads(lock);
+      threads.erase(threads.begin() + i);
     }
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(!tlsPseudoStack.get());
   }
 
   
@@ -3179,14 +3196,10 @@ profiler_clear_js_context()
     gPS->SetIsPaused(lock, true);
 
     
-    
-    const PS::ThreadVector& threads = gPS->Threads(lock);
-    for (size_t i = 0; i < threads.size(); i++) {
-      ThreadInfo* info = threads.at(i);
-      if (info->HasProfile() && !info->IsPendingDelete() &&
-          info->Stack() == stack) {
-        info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
-      }
+    ThreadInfo* info = FindThreadInfo(lock);
+    MOZ_RELEASE_ASSERT(info);
+    if (info->HasProfile()) {
+      info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
     }
 
     gPS->SetIsPaused(lock, false);
