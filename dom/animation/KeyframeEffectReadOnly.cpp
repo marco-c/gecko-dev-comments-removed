@@ -1374,11 +1374,11 @@ KeyframeEffectReadOnly::CanThrottleTransformChanges(nsIFrame& aFrame) const
                         " on an effect in an effect set");
   MOZ_ASSERT(mAnimation, "CanThrottleTransformChanges is expected to be called"
                          " on an effect with a parent animation");
-  TimeStamp animationRuleRefreshTime =
-    effectSet->AnimationRuleRefreshTime(mAnimation->CascadeLevel());
+  TimeStamp lastSyncTime =
+    effectSet->LastTransformSyncTime(mAnimation->CascadeLevel());
   
-  if (!animationRuleRefreshTime.IsNull() &&
-      (now - animationRuleRefreshTime) < OverflowRegionRefreshInterval()) {
+  if (!lastSyncTime.IsNull() &&
+      (now - lastSyncTime) < OverflowRegionRefreshInterval()) {
     return true;
   }
 

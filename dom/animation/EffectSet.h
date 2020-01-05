@@ -169,16 +169,16 @@ public:
     return mAnimationRule[aCascadeLevel];
   }
 
-  const TimeStamp& AnimationRuleRefreshTime(EffectCompositor::CascadeLevel
-                                              aCascadeLevel) const
+  const TimeStamp& LastTransformSyncTime(EffectCompositor::CascadeLevel
+                                           aCascadeLevel) const
   {
-    return mAnimationRuleRefreshTime[aCascadeLevel];
+    return mLastTransformSyncTime[aCascadeLevel];
   }
-  void UpdateAnimationRuleRefreshTime(EffectCompositor::CascadeLevel
-                                        aCascadeLevel,
-                                      const TimeStamp& aRefreshTime)
+  void UpdateLastTransformSyncTime(EffectCompositor::CascadeLevel
+                                     aCascadeLevel,
+                                   const TimeStamp& aRefreshTime)
   {
-    mAnimationRuleRefreshTime[aCascadeLevel] = aRefreshTime;
+    mLastTransformSyncTime[aCascadeLevel] = aRefreshTime;
   }
 
   bool CascadeNeedsUpdate() const { return mCascadeNeedsUpdate; }
@@ -221,7 +221,7 @@ private:
   EnumeratedArray<EffectCompositor::CascadeLevel,
                   EffectCompositor::CascadeLevel(
                     EffectCompositor::kCascadeLevelCount),
-                  TimeStamp> mAnimationRuleRefreshTime;
+                  TimeStamp> mLastTransformSyncTime;
 
   
   
