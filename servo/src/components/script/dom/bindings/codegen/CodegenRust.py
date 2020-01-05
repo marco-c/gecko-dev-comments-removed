@@ -4423,29 +4423,6 @@ class CGBindingRoot(CGThing):
         
         cgthings = [CGEnum(e) for e in config.getEnums(webIDLFile)]
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        reSortedDictionaries = []
-        dictionaries = set(dictionaries)
-        while len(dictionaries) != 0:
-            
-            
-            toMove = [d for d in dictionaries if
-                      len(CGDictionary.getDictionaryDependencies(d) &
-                          dictionaries) == 0]
-            if len(toMove) == 0:
-                raise TypeError("Loop in dictionary dependency graph")
-            dictionaries = dictionaries - set(toMove)
-            reSortedDictionaries.extend(toMove)
-
-        dictionaries = reSortedDictionaries
         cgthings.extend([CGDictionary(d, config.getDescriptorProvider())
                          for d in dictionaries])
 
