@@ -2,6 +2,7 @@
 
 
 
+use app_units::Au;
 use core_graphics::data_provider::CGDataProvider;
 use core_graphics::font::CGFont;
 use core_text;
@@ -9,6 +10,7 @@ use core_text::font::CTFont;
 use serde::de::{Error, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::ToOwned;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::ops::Deref;
@@ -41,29 +43,38 @@ unsafe impl Sync for FontTemplateData {}
 impl FontTemplateData {
     pub fn new(identifier: Atom, font_data: Option<Vec<u8>>) -> FontTemplateData {
         FontTemplateData {
-            ctfont: CachedCTFont(Mutex::new(None)),
+            ctfont: CachedCTFont(Mutex::new(HashMap::new())),
             identifier: identifier.to_owned(),
             font_data: font_data
         }
     }
 
     
-    pub fn ctfont(&self) -> Option<CTFont> {
-        let mut ctfont = self.ctfont.lock().unwrap();
-        if ctfont.is_none() {
-            *ctfont = match self.font_data {
+    pub fn ctfont(&self, pt_size: f64) -> Option<CTFont> {
+        let mut ctfonts = self.ctfont.lock().unwrap();
+        let pt_size_key = Au::from_f64_px(pt_size);
+        if !ctfonts.contains_key(&pt_size_key) {
+            
+            
+            let clamped_pt_size = pt_size.max(0.01);
+            let ctfont = match self.font_data {
                 Some(ref bytes) => {
                     let fontprov = CGDataProvider::from_buffer(bytes);
                     let cgfont_result = CGFont::from_data_provider(fontprov);
                     match cgfont_result {
-                        Ok(cgfont) => Some(core_text::font::new_from_CGFont(&cgfont, 0.0)),
+                        Ok(cgfont) => {
+                            Some(core_text::font::new_from_CGFont(&cgfont, clamped_pt_size))
+                        }
                         Err(_) => None
                     }
                 }
-                None => core_text::font::new_from_name(&*self.identifier, 0.0).ok(),
+                None => core_text::font::new_from_name(&*self.identifier, clamped_pt_size).ok(),
+            };
+            if let Some(ctfont) = ctfont {
+                ctfonts.insert(pt_size_key, ctfont);
             }
         }
-        ctfont.as_ref().map(|ctfont| (*ctfont).clone())
+        ctfonts.get(&pt_size_key).map(|ctfont| (*ctfont).clone())
     }
 
     
@@ -75,7 +86,7 @@ impl FontTemplateData {
             None => {}
         }
 
-        let path = Url::parse(&*self.ctfont()
+        let path = Url::parse(&*self.ctfont(0.0)
                                     .expect("No Core Text font available!")
                                     .url()
                                     .expect("No URL for Core Text font!")
@@ -96,16 +107,16 @@ impl FontTemplateData {
 
     
     pub fn native_font(&self) -> Option<CGFont> {
-        self.ctfont().map(|ctfont| ctfont.copy_to_CGFont())
+        self.ctfont(0.0).map(|ctfont| ctfont.copy_to_CGFont())
     }
 }
 
 #[derive(Debug)]
-pub struct CachedCTFont(Mutex<Option<CTFont>>);
+pub struct CachedCTFont(Mutex<HashMap<Au, CTFont>>);
 
 impl Deref for CachedCTFont {
-    type Target = Mutex<Option<CTFont>>;
-    fn deref(&self) -> &Mutex<Option<CTFont>> {
+    type Target = Mutex<HashMap<Au, CTFont>>;
+    fn deref(&self) -> &Mutex<HashMap<Au, CTFont>> {
         &self.0
     }
 }
@@ -126,7 +137,7 @@ impl Deserialize for CachedCTFont {
 
             #[inline]
             fn visit_none<E>(&mut self) -> Result<CachedCTFont, E> where E: Error {
-                Ok(CachedCTFont(Mutex::new(None)))
+                Ok(CachedCTFont(Mutex::new(HashMap::new())))
             }
         }
 
