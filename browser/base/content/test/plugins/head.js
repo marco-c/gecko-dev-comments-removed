@@ -78,7 +78,6 @@ function waitForEvent(subject, eventName, checkFn, useCapture, useUntrusted) {
 
 
 function promiseTabLoadEvent(tab, url) {
-  let deferred = PromiseUtils.defer();
   info("Wait tab event: load");
 
   function handle(loadedUrl) {
@@ -95,22 +94,10 @@ function promiseTabLoadEvent(tab, url) {
   
   let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
 
-  let timeout = setTimeout(() => {
-    deferred.reject(new Error("Timed out while waiting for a 'load' event"));
-  }, 30000);
-
-  loaded.then(() => {
-    clearTimeout(timeout);
-    deferred.resolve()
-  });
-
   if (url)
     BrowserTestUtils.loadURI(tab.linkedBrowser, url);
 
-  
-  
-  
-  return Promise.all([deferred.promise, loaded]);
+  return loaded;
 }
 
 function waitForCondition(condition, nextTest, errorMsg, aTries, aWait) {
