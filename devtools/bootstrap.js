@@ -10,12 +10,78 @@
 const Cu = Components.utils;
 const Ci = Components.interfaces;
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
+const {NetUtil} = Cu.import("resource://gre/modules/NetUtil.jsm", {});
+
+let prefs = {
+  
+  "browser.dom.window.dump.enabled": true,
+  
+  "devtools.chrome.enabled": true,
+  "devtools.debugger.remote-enabled": true,
+  
+  "devtools.debugger.prompt-connection": false,
+};
+
+
+let originalPrefValues = {};
+
+let listener;
+
+let resourceURI;
 
 function actionOccurred(id) {
   let {require} = Cu.import("resource://devtools/shared/Loader.jsm", {});
   let Telemetry = require("devtools/client/shared/telemetry");
   let telemetry = new Telemetry();
   telemetry.actionOccurred(id);
+}
+
+
+function readURI(uri) {
+  let stream = NetUtil.newChannel({
+    uri: NetUtil.newURI(uri, "UTF-8"),
+    loadUsingSystemPrincipal: true}
+  ).open2();
+  let count = stream.available();
+  let data = NetUtil.readInputStreamToString(stream, count, {
+    charset: "UTF-8"
+  });
+
+  stream.close();
+
+  return data;
+}
+
+
+
+function processPrefFile(url) {
+  let content = readURI(url);
+  content.match(/pref\("[^"]+",\s*.+\s*\)/g).forEach(item => {
+    let m = item.match(/pref\("([^"]+)",\s*(.+)\s*\)/);
+    let name = m[1];
+    let val = m[2];
+
+    
+    if (Services.prefs.prefHasUserValue(name)) {
+      return;
+    }
+    let defaultBranch = Services.prefs.getDefaultBranch("");
+    if ((val.startsWith("\"") && val.endsWith("\"")) ||
+        (val.startsWith("'") && val.endsWith("'"))) {
+      defaultBranch.setCharPref(name, val.substr(1, val.length - 2));
+    } else if (val.match(/[0-9]+/)) {
+      defaultBranch.setIntPref(name, parseInt(val, 10));
+    } else if (val == "true" || val == "false") {
+      defaultBranch.setBoolPref(name, val == "true");
+    } else {
+      console.log("Unable to match preference type for value:", val);
+    }
+  });
+}
+
+function setPrefs() {
+  processPrefFile(resourceURI.spec + "./client/preferences/devtools.js");
+  processPrefFile(resourceURI.spec + "./client/preferences/debugger.js");
 }
 
 
@@ -136,6 +202,10 @@ function reload(event) {
   Cu.unload("resource://devtools/client/responsivedesign/responsivedesign.jsm");
   Cu.unload("resource://devtools/client/shared/widgets/AbstractTreeItem.jsm");
   Cu.unload("resource://devtools/shared/deprecated-sync-thenables.js");
+
+  
+  setPrefs();
+
   const {devtools} = Cu.import("resource://devtools/shared/Loader.jsm", {});
   devtools.require("devtools/client/framework/devtools-browser");
 
@@ -194,20 +264,11 @@ function reload(event) {
   actionOccurred("reloadAddonReload");
 }
 
-let prefs = {
-  
-  "browser.dom.window.dump.enabled": true,
-  
-  "devtools.chrome.enabled": true,
-  "devtools.debugger.remote-enabled": true,
-  
-  "devtools.debugger.prompt-connection": false,
-};
-let originalPrefValues = {};
-
-let listener;
-function startup() {
+function startup(data) {
   dump("DevTools addon started.\n");
+
+  resourceURI = data.resourceURI;
+
   listener = new MultiWindowKeyListener({
     keyCode: Ci.nsIDOMKeyEvent.DOM_VK_R, ctrlKey: true, altKey: true,
     callback: reload
