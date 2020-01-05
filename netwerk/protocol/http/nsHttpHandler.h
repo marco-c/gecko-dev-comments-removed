@@ -375,6 +375,11 @@ public:
         return mDefaultHpackBuffer;
     }
 
+    uint32_t MaxHttpResponseHeaderSize() const
+    {
+        return mMaxHttpResponseHeaderSize;
+    }
+
 private:
     virtual ~nsHttpHandler();
 
@@ -594,6 +599,9 @@ private:
 
     
     uint32_t mDefaultHpackBuffer;
+
+    
+    uint32_t mMaxHttpResponseHeaderSize;
 
 private:
     
