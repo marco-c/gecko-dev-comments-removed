@@ -6,7 +6,7 @@
 
 const EXCLUDE_FROM_BACKUP_ANNO = "places/excludeFromBackup";
 
-const PLACES_ROOTS_COUNT  = 4;
+const PLACES_ROOTS_COUNT  = 5;
 var tests = [];
 
 

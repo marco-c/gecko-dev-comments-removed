@@ -18,7 +18,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 34
+#define DATABASE_SCHEMA_VERSION 35
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -270,10 +270,16 @@ protected:
   nsresult MigrateV32Up();
   nsresult MigrateV33Up();
   nsresult MigrateV34Up();
+  nsresult MigrateV35Up();
 
   nsresult UpdateBookmarkRootTitles();
 
   friend class ConnectionShutdownBlocker;
+
+  int64_t CreateMobileRoot();
+  nsresult GetItemsWithAnno(const nsACString& aAnnoName, int32_t aItemType,
+                            nsTArray<int64_t>& aItemIds);
+  nsresult DeleteBookmarkItem(int32_t aItemId);
 
 private:
   ~Database();

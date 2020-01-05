@@ -19,7 +19,9 @@ var histograms = {
   
   PLACES_IDLE_FRECENCY_DECAY_TIME_MS: val => do_check_true(val > 0),
   PLACES_IDLE_MAINTENANCE_TIME_MS: val => do_check_true(val > 0),
-  PLACES_ANNOS_BOOKMARKS_COUNT: val => do_check_eq(val, 1),
+  
+  
+  PLACES_ANNOS_BOOKMARKS_COUNT: val => do_check_eq(val, 2),
   PLACES_ANNOS_PAGES_COUNT: val => do_check_eq(val, 1),
   PLACES_MAINTENANCE_DAYSFROMLAST: val => do_check_true(val >= 0),
 }

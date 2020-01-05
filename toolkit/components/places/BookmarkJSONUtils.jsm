@@ -322,6 +322,9 @@ BookmarkImporter.prototype = {
                 case "toolbarFolder":
                   container = PlacesUtils.toolbarFolderId;
                   break;
+                case "mobileFolder":
+                  container = PlacesUtils.mobileFolderId;
+                  break;
               }
 
               
@@ -336,19 +339,24 @@ BookmarkImporter.prototype = {
                 searchIds = searchIds.concat(searches);
               }
             } else {
-              this.importJSONNode(
+              let [folders, searches] = this.importJSONNode(
                 node, PlacesUtils.placesRootId, node.index, 0);
+              for (let i = 0; i < folders.length; i++) {
+                if (folders[i])
+                  folderIdMap[i] = folders[i];
+              }
+              searchIds = searchIds.concat(searches);
             }
           }
 
           
-          searchIds.forEach(function(aId) {
-            let oldURI = PlacesUtils.bookmarks.getBookmarkURI(aId);
+          for (let id of searchIds) {
+            let oldURI = PlacesUtils.bookmarks.getBookmarkURI(id);
             let uri = fixupQuery(oldURI, folderIdMap);
             if (!uri.equals(oldURI)) {
-              PlacesUtils.bookmarks.changeBookmarkURI(aId, uri, this._source);
+              PlacesUtils.bookmarks.changeBookmarkURI(id, uri, this._source);
             }
-          });
+          }
 
           deferred.resolve();
         }.bind(this)
@@ -439,8 +447,20 @@ BookmarkImporter.prototype = {
             this._importPromises.push(lmPromise);
           }
         } else {
-          id = PlacesUtils.bookmarks.createFolder(
-                 aContainer, aData.title, aIndex, aData.guid, this._source);
+          let isMobileFolder = aData.annos &&
+                               aData.annos.some(anno => anno.name == PlacesUtils.MOBILE_ROOT_ANNO);
+          if (isMobileFolder) {
+            
+            
+            
+            
+            id = PlacesUtils.mobileFolderId;
+          } else {
+            
+            
+            id = PlacesUtils.bookmarks.createFolder(
+                   aContainer, aData.title, aIndex, aData.guid, this._source);
+          }
           folderIdMap[aData.id] = id;
           
           if (aData.children) {
@@ -526,7 +546,9 @@ BookmarkImporter.prototype = {
     }
 
     
-    if (id != -1 && aContainer != PlacesUtils.tagsFolderId &&
+    
+    if (id != -1 && id != PlacesUtils.mobileFolderId &&
+        aContainer != PlacesUtils.tagsFolderId &&
         aGrandParentId != PlacesUtils.tagsFolderId) {
       if (aData.dateAdded)
         PlacesUtils.bookmarks.setItemDateAdded(id, aData.dateAdded,
