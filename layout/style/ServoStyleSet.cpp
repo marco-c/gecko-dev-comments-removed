@@ -125,34 +125,16 @@ ServoStyleSet::ResolveStyleForText(nsIContent* aTextNode,
 {
   MOZ_ASSERT(aTextNode && aTextNode->IsNodeOfType(nsINode::eTEXT));
   MOZ_ASSERT(aTextNode->GetParent());
+  MOZ_ASSERT(aParentContext);
 
-  nsIContent* parent = aTextNode->GetParent();
-
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<ServoComputedValues> computedValues;
-  if (parent->IsGeneratedContentContainerForBefore() ||
-      parent->IsGeneratedContentContainerForAfter()) {
-    MOZ_ASSERT(aParentContext);
-    const ServoComputedValues* parentComputedValues =
-      aParentContext->StyleSource().AsServoComputedValues();
-    computedValues =
-      Servo_ComputedValues_Inherit(parentComputedValues).Consume();
-  } else {
-    computedValues = Servo_ComputedValues_Get(aTextNode).Consume();
-  }
+  const ServoComputedValues* parentComputedValues =
+    aParentContext->StyleSource().AsServoComputedValues();
+  RefPtr<ServoComputedValues> computedValues =
+    Servo_ComputedValues_Inherit(parentComputedValues).Consume();
 
   return GetContext(computedValues.forget(), aParentContext,
                     nsCSSAnonBoxes::mozText, CSSPseudoElementType::AnonBox);

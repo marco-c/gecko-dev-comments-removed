@@ -10641,7 +10641,8 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
       
       
       
-      MOZ_ASSERT_IF(content->IsStyledByServo(), content->HasServoData());
+      MOZ_ASSERT_IF(content->IsStyledByServo() && content->IsElement(),
+                    content->HasServoData());
       styleContext = ResolveStyleContext(aFrame, content, &aState);
     }
 
