@@ -13,11 +13,11 @@
 #include "nsIMIMEInfo.h"
 #include "nsMIMEInfoWin.h"
 #include "nsMimeTypes.h"
+#include "nsILocalFileWin.h"
 #include "nsIProcess.h"
 #include "plstr.h"
 #include "nsAutoPtr.h"
 #include "nsNativeCharsetUtils.h"
-#include "nsLocalFile.h"
 #include "nsIWindowsRegKey.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WindowsVersion.h"
@@ -287,6 +287,114 @@ nsOSHelperAppService::typeFromExtEquals(const char16_t* aExt, const char *aType)
 }
 
 
+static void CleanupHandlerPath(nsString& aPath)
+{
+  
+
+  
+  
+  
+  
+
+  int32_t lastCommaPos = aPath.RFindChar(',');
+  if (lastCommaPos != kNotFound)
+    aPath.Truncate(lastCommaPos);
+
+  aPath.Append(' ');
+
+  
+  uint32_t index = aPath.Find(".exe ", true);
+  if (index == kNotFound)
+    index = aPath.Find(".dll ", true);
+  if (index == kNotFound)
+    index = aPath.Find(".cpl ", true);
+
+  if (index != kNotFound)
+    aPath.Truncate(index + 4);
+  aPath.Trim(" ", true, true);
+}
+
+
+
+static void StripRundll32(nsString& aCommandString)
+{
+  
+  
+  
+  
+  
+
+  NS_NAMED_LITERAL_STRING(rundllSegment, "rundll32.exe ");
+  NS_NAMED_LITERAL_STRING(rundllSegmentShort, "rundll32 ");
+
+  
+  int32_t strLen = rundllSegment.Length();
+  int32_t index = aCommandString.Find(rundllSegment, true);
+  if (index == kNotFound) {
+    strLen = rundllSegmentShort.Length();
+    index = aCommandString.Find(rundllSegmentShort, true);
+  }
+
+  if (index != kNotFound) {
+    uint32_t rundllSegmentLength = index + strLen;
+    aCommandString.Cut(0, rundllSegmentLength);
+  }
+}
+
+
+
+
+
+
+ bool nsOSHelperAppService::CleanupCmdHandlerPath(nsAString& aCommandHandler)
+{
+  nsAutoString handlerCommand(aCommandHandler);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  uint32_t bufLength = ::ExpandEnvironmentStringsW(handlerCommand.get(),
+                                                   L"", 0);
+  if (bufLength == 0) 
+    return false;
+
+  auto destination = mozilla::MakeUniqueFallible<wchar_t[]>(bufLength);
+  if (!destination)
+    return false;
+  if (!::ExpandEnvironmentStringsW(handlerCommand.get(), destination.get(),
+                                   bufLength))
+    return false;
+
+  handlerCommand.Assign(destination.get());
+
+  
+  handlerCommand.StripChars("\"");
+
+  
+  
+  StripRundll32(handlerCommand);
+
+  
+  
+  CleanupHandlerPath(handlerCommand);
+
+  aCommandHandler.Assign(handlerCommand);
+  return true;
+}
+
+
 
 
 
@@ -374,20 +482,28 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
     }
   }
 
+  if (!CleanupCmdHandlerPath(handlerCommand))
+    return NS_ERROR_FAILURE;
+
   
   
   
   
   
-  nsCOMPtr<nsIFile> lf = new nsLocalFile();
+  nsCOMPtr<nsIFile> lf;
+  NS_NewLocalFile(handlerCommand, true, getter_AddRefs(lf));
+  if (!lf)
+    return NS_ERROR_FILE_NOT_FOUND;
+
   nsILocalFileWin* lfw = nullptr;
   CallQueryInterface(lf, &lfw);
-  rv = lfw->InitWithCommandLine(handlerCommand);
-  NS_ENSURE_SUCCESS(rv, rv);
-  
-  lfw->GetVersionInfoField("FileDescription", aDefaultDescription);
-  
-  *aDefaultApplication = lfw;
+
+  if (lfw) {
+    
+    lfw->GetVersionInfoField("FileDescription", aDefaultDescription);
+    
+    *aDefaultApplication = lfw;
+  }
 
   return NS_OK;
 }
