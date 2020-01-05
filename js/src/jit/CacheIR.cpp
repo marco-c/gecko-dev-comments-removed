@@ -210,7 +210,7 @@ CanAttachNativeGetProp(JSContext* cx, HandleObject obj, HandleId id,
 
     if (IsCacheableGetPropCallScripted(obj, holder, shape, isTemporarilyUnoptimizable)) {
         
-        if (engine == ICStubEngine::Baseline)
+        if (engine != ICStubEngine::IonSharedIC)
             return CanAttachCallGetter;
     }
 
@@ -1070,6 +1070,16 @@ GetPropIRGenerator::tryAttachTypedElement(HandleObject obj, ObjOperandId objId,
         return false;
     }
 
+    if (idVal_.toNumber() < 0 || floor(idVal_.toNumber()) != idVal_.toNumber())
+        return false;
+
+    
+    if (obj->is<TypedArrayObject>() &&
+        idVal_.toNumber() >= double(obj->as<TypedArrayObject>().length()))
+    {
+        return false;
+    }
+
     
     
     if (IsPrimitiveArrayTypedObject(obj) && cx_->compartment()->detachedTypedObjects)
@@ -1083,7 +1093,13 @@ GetPropIRGenerator::tryAttachTypedElement(HandleObject obj, ObjOperandId objId,
 
     Int32OperandId int32IndexId = writer.guardIsInt32(indexId);
     writer.loadTypedElementResult(objId, int32IndexId, layout, TypedThingElementType(obj));
-    writer.returnFromIC();
+
+    
+    
+    if (TypedThingElementType(obj) == Scalar::Type::Uint32)
+        writer.typeMonitorResult();
+    else
+        writer.returnFromIC();
     return true;
 }
 
