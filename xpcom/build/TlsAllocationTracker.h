@@ -1,0 +1,27 @@
+
+
+
+
+
+
+#ifndef mozilla_TlsAllocationTracker_h
+#define mozilla_TlsAllocationTracker_h
+
+#include <string>
+
+#include "mozilla/Types.h"
+
+namespace mozilla {
+
+void
+InitTlsAllocationTracker();
+
+const char*
+GetTlsAllocationStacks();
+
+void
+ShutdownTlsAllocationTracker();
+
+}
+
+#endif
