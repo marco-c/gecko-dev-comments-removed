@@ -8,7 +8,6 @@ use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::fmt;
 use std::hash::{Hash, Hasher};
-use std::mem;
 use std::ops;
 use std::ops::{Deref, DerefMut};
 use std::str;
@@ -29,12 +28,6 @@ impl ByteString {
     
     pub fn as_str(&self) -> Option<&str> {
         str::from_utf8(&self.0).ok()
-    }
-
-    
-    
-    pub fn bytes(&mut self) -> Vec<u8> {
-        mem::replace(&mut self.0, Vec::new())
     }
 
     

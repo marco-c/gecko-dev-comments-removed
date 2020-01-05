@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrValue};
+use dom::attr::Attr;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
 use dom::bindings::codegen::Bindings::HTMLTextAreaElementBinding;
@@ -29,6 +29,7 @@ use script_traits::ScriptMsg as ConstellationMsg;
 use std::cell::Cell;
 use std::ops::Range;
 use string_cache::Atom;
+use style::attr::AttrValue;
 use style::element_state::*;
 use textinput::{KeyReaction, Lines, TextInput, SelectionDirection};
 

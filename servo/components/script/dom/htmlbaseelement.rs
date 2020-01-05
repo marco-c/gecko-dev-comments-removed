@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrValue};
+use dom::attr::Attr;
 use dom::bindings::codegen::Bindings::HTMLBaseElementBinding;
 use dom::bindings::codegen::Bindings::HTMLBaseElementBinding::HTMLBaseElementMethods;
 use dom::bindings::inheritance::Castable;
@@ -14,6 +14,7 @@ use dom::htmlelement::HTMLElement;
 use dom::node::{Node, UnbindContext, document_from_node};
 use dom::virtualmethods::VirtualMethods;
 use string_cache::Atom;
+use style::attr::AttrValue;
 use url::Url;
 
 #[dom_struct]

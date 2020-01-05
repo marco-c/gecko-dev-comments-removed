@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrValue};
+use dom::attr::Attr;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::inheritance::ElementTypeId;
 use dom::bindings::inheritance::HTMLElementTypeId;
@@ -47,7 +47,7 @@ use dom::htmltextareaelement::HTMLTextAreaElement;
 use dom::htmltitleelement::HTMLTitleElement;
 use dom::node::{ChildrenMutation, CloneChildrenFlag, Node, UnbindContext};
 use string_cache::Atom;
-
+use style::attr::AttrValue;
 
 
 

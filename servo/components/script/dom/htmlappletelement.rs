@@ -2,7 +2,6 @@
 
 
 
-use dom::attr::AttrValue;
 use dom::bindings::codegen::Bindings::HTMLAppletElementBinding;
 use dom::bindings::codegen::Bindings::HTMLAppletElementBinding::HTMLAppletElementMethods;
 use dom::bindings::inheritance::Castable;
@@ -13,6 +12,7 @@ use dom::htmlelement::HTMLElement;
 use dom::node::Node;
 use dom::virtualmethods::VirtualMethods;
 use string_cache::Atom;
+use style::attr::AttrValue;
 
 #[dom_struct]
 pub struct HTMLAppletElement {

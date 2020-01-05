@@ -2,7 +2,7 @@
 
 
 
-use dom::attr::{Attr, AttrValue};
+use dom::attr::Attr;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::HTMLMetaElementBinding;
 use dom::bindings::codegen::Bindings::HTMLMetaElementBinding::HTMLMetaElementMethods;
@@ -19,6 +19,7 @@ use dom::virtualmethods::VirtualMethods;
 use std::ascii::AsciiExt;
 use std::sync::Arc;
 use string_cache::Atom;
+use style::attr::AttrValue;
 use style::servo::Stylesheet;
 use style::stylesheets::{CSSRule, Origin};
 use style::viewport::ViewportRule;
