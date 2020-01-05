@@ -161,7 +161,7 @@ private:
   bool EnsureProcessLoaded();
   RefPtr<GenericPromise> ReadGMPMetaData();
   RefPtr<GenericPromise> ReadGMPInfoFile(nsIFile* aFile);
-  RefPtr<GenericPromise> ParseChromiumManifest(nsString aJSON); 
+  RefPtr<GenericPromise> ParseChromiumManifest(const nsAString& aJSON); 
   RefPtr<GenericPromise> ReadChromiumManifestFile(nsIFile* aFile); 
 #ifdef MOZ_CRASHREPORTER
   void WriteExtraDataForMinidump(CrashReporter::AnnotationTable& notes);
