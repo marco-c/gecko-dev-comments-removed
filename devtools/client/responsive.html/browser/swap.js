@@ -4,6 +4,7 @@
 
 "use strict";
 
+const { Ci } = require("chrome");
 const promise = require("promise");
 const { Task } = require("devtools/shared/task");
 const { tunnelToInnerBrowser } = require("./tunnel");
@@ -58,11 +59,16 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       freezeNavigationState(tab);
 
       
-      let containerTab = gBrowser.addTab(containerURL, {
+      let containerTab = gBrowser.addTab("about:blank", {
         skipAnimation: true,
+        forceNotRemote: true,
       });
       gBrowser.hideTab(containerTab);
       let containerBrowser = containerTab.linkedBrowser;
+      
+      containerBrowser.loadURIWithFlags(containerURL, {
+        flags: Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY,
+      });
 
       
       

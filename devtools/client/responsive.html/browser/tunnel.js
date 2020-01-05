@@ -7,7 +7,6 @@
 const { Ci } = require("chrome");
 const Services = require("Services");
 const { Task } = require("devtools/shared/task");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { BrowserElementWebNavigation } = require("./web-navigation");
 const { getStack } = require("devtools/shared/platform/stack");
 
@@ -127,7 +126,8 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      copyPermanentKey(outer, inner);
+      debug("Copy inner permanentKey to outer browser");
+      outer.permanentKey = inner.permanentKey;
 
       
       
@@ -303,33 +303,6 @@ function tunnelToInnerBrowser(outer, inner) {
 }
 
 exports.tunnelToInnerBrowser = tunnelToInnerBrowser;
-
-function copyPermanentKey(outer, inner) {
-  
-  
-  
-  
-  
-  
-  
-  
-  let outerMM = outer[FRAME_LOADER].messageManager;
-  let onHistoryEntry = message => {
-    let data = message.data.data;
-    let history = data.history || data.historychange;
-    if (!history || !history.entries) {
-      
-      return;
-    }
-    outerMM.removeMessageListener("SessionStore:update", onHistoryEntry);
-    debug("Got session update for outer browser");
-    DevToolsUtils.executeSoon(() => {
-      debug("Copy inner permanentKey to outer browser");
-      outer.permanentKey = inner.permanentKey;
-    });
-  };
-  outerMM.addMessageListener("SessionStore:update", onHistoryEntry);
-}
 
 
 
