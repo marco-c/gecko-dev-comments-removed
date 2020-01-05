@@ -26,6 +26,8 @@ class nsIContentIterator;
 class nsIFrame;
 class nsFrameSelection;
 struct SelectionDetails;
+class nsCopySupport;
+class nsHTMLCopyEncoder;
 
 namespace mozilla {
 class ErrorResult;
@@ -243,6 +245,12 @@ private:
 
   
   nsresult DoAutoScroll(nsIFrame *aFrame, nsPoint& aPoint);
+
+  
+  
+  friend class ::nsCopySupport;
+  friend class ::nsHTMLCopyEncoder;
+  void AddRangeInternal(nsRange& aRange, nsIDocument* aDocument, ErrorResult&);
 
 public:
   SelectionType GetType() const { return mSelectionType; }
