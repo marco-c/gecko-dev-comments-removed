@@ -33,6 +33,9 @@ public @interface WrapForJNI {
 
 
 
+
+
+
     String exceptionMode() default "abort";
 
     
@@ -42,6 +45,12 @@ public @interface WrapForJNI {
     String calledFrom() default "any";
 
     
+
+
+
+
+
+
 
 
 
