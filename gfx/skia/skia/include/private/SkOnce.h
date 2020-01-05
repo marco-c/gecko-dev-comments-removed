@@ -31,6 +31,7 @@ public:
 
         
         if (state == NotStarted && fState.compare_exchange_strong(state, Claimed,
+                                                                  std::memory_order_relaxed,
                                                                   std::memory_order_relaxed)) {
             
             fn(std::forward<Args>(args)...);
