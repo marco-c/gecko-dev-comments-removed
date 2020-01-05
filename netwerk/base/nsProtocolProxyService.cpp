@@ -643,9 +643,10 @@ nsProtocolProxyService::PrefsChanged(nsIPrefBranch *prefBranch,
                          mFailedProxyTimeout);
 
     if (!pref || !strcmp(pref, PROXY_PREF("no_proxies_on"))) {
-        nsCString no_proxies;
-        proxy_GetStringPref(prefBranch, PROXY_PREF("no_proxies_on"), no_proxies);
-        LoadHostFilters(no_proxies.get());
+        rv = prefBranch->GetCharPref(PROXY_PREF("no_proxies_on"),
+                                     getter_Copies(tempString));
+        if (NS_SUCCEEDED(rv))
+            LoadHostFilters(tempString.get());
     }
 
     
