@@ -134,6 +134,14 @@ window.alert(document.getElementsByTagName('iframe')[0]);
 
 window.alert(document.getElementsByTagName("body")[0]);
 
+window.alert("OList:");
+let tags = document.getElementsByTagName("ol");
+window.alert(tags);
+window.alert(tags.length);
+window.alert(tags[0]);
+window.alert(tags[0].tagName);
+
+
 
 
 
