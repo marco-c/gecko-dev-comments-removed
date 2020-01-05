@@ -238,6 +238,30 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
     return this.player.effect.getComputedTiming().iterationStart;
   },
 
+  
+
+
+
+  getEasing: function () {
+    return this.player.effect.timing.easing;
+  },
+
+  
+
+
+
+  getFill: function () {
+    return this.player.effect.getComputedTiming().fill;
+  },
+
+  
+
+
+
+  getDirection: function () {
+    return this.player.effect.getComputedTiming().direction;
+  },
+
   getPropertiesCompositorStatus: function () {
     let properties = this.player.effect.getProperties();
     return properties.map(prop => {
@@ -280,6 +304,9 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       endDelay: this.getEndDelay(),
       iterationCount: this.getIterationCount(),
       iterationStart: this.getIterationStart(),
+      fill: this.getFill(),
+      easing: this.getEasing(),
+      direction: this.getDirection(),
       
       
       isRunningOnCompositor:
