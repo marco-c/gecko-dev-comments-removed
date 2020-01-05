@@ -302,9 +302,9 @@ impl CompositorLayer for Layer<CompositorData> {
                 true
             } else {
                 
-                let keep_layer = new_layers.iter().position(|properties| {
+                let keep_layer = new_layers.iter().any(|properties| {
                     properties.id == extra_data.id
-                }).is_some();
+                });
 
                 
                 
