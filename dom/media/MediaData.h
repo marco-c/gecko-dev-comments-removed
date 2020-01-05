@@ -220,6 +220,10 @@ private:
   
   bool EnsureCapacity(size_t aLength)
   {
+    if (!aLength) {
+      
+      return true;
+    }
     const CheckedInt<size_t> sizeNeeded =
       CheckedInt<size_t>(aLength) * sizeof(Type) + AlignmentPaddingSize();
 
