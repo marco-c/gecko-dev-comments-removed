@@ -6,7 +6,6 @@
 
 
 
-
 "use strict";
 
 
@@ -18,11 +17,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/commandline/test/helpers.js",
-  this);
 
 
 Services.scriptloader.loadSubScript(
