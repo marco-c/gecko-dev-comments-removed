@@ -484,6 +484,11 @@ LoginManager.prototype = {
 
     let form = LoginFormFactory.createFromField(aElement);
     let isSecure = InsecurePasswordUtils.isFormSecure(form);
+    let isPasswordField = aElement.type == "password";
+    if (isPasswordField) {
+      
+      aSearchString = "";
+    }
 
     if (!this._remember) {
       setTimeout(function() {
@@ -518,6 +523,7 @@ LoginManager.prototype = {
                                  new UserAutoCompleteResult(aSearchString, logins, {
                                    messageManager,
                                    isSecure,
+                                   isPasswordField,
                                  });
                                aCallback.onSearchCompletion(results);
                              })
