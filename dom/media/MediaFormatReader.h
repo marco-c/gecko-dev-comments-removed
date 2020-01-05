@@ -586,6 +586,9 @@ private:
   void MaybeResolveMetadataPromise();
 
   UniquePtr<MetadataTags> mTags;
+
+  
+  bool mHasStartTime = false;
 };
 
 } 

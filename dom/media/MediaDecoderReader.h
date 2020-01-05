@@ -278,6 +278,9 @@ protected:
   virtual ~MediaDecoderReader();
 
   
+  virtual void UpdateBuffered();
+
+  
   
   
   
@@ -382,9 +385,6 @@ private:
   {
     MOZ_CRASH();
   }
-
-  
-  virtual void UpdateBuffered();
 
   virtual void VisibilityChanged();
 
