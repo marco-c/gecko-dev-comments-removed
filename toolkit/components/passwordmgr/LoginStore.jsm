@@ -40,24 +40,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use strict";
 
 this.EXPORTED_SYMBOLS = [
@@ -70,34 +52,10 @@ this.EXPORTED_SYMBOLS = [
 const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "AsyncShutdown",
-                                  "resource://gre/modules/AsyncShutdown.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
-                                  "resource://gre/modules/DeferredTask.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
-                                  "resource://gre/modules/FileUtils.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "OS",
-                                  "resource://gre/modules/osfile.jsm");
-
-XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function () {
-  return new TextDecoder();
-});
-
-XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function () {
-  return new TextEncoder();
-});
-
-const FileInputStream =
-      Components.Constructor("@mozilla.org/network/file-input-stream;1",
-                             "nsIFileInputStream", "init");
-
-
-
-
-const kSaveDelayMs = 1500;
+XPCOMUtils.defineLazyModuleGetter(this, "JSONFile",
+                                  "resource://gre/modules/JSONFile.jsm");
 
 
 
@@ -124,207 +82,53 @@ const PERMISSION_SAVE_LOGINS = "login-saving";
 
 
 
-function LoginStore(aPath) {
-  this.path = aPath;
 
-  this._saver = new DeferredTask(() => this.save(), kSaveDelayMs);
-  AsyncShutdown.profileBeforeChange.addBlocker("Login store: writing data",
-                                               () => this._saver.finalize());
+function LoginStore(aPath) {
+  JSONFile.call(this, {
+    path: aPath,
+    dataPostProcessor: this._dataPostProcessor.bind(this)
+  });
 }
 
-LoginStore.prototype = {
+LoginStore.prototype = Object.create(JSONFile.prototype);
+LoginStore.prototype.constructor = LoginStore;
+
+
+
+
+LoginStore.prototype._dataPostProcessor = function(data) {
   
-
-
-  path: "",
-
-  
-
-
-
-
-
-
-  data: null,
+  if (!data.logins) {
+    data.logins = [];
+  }
 
   
+  if (!data.disabledHosts) {
+    data.disabledHosts = [];
+  }
 
-
-  dataReady: false,
-
-  
-
-
-
-
-
-
-  load() {
-    return Task.spawn(function* () {
-      try {
-        let bytes = yield OS.File.read(this.path);
-
-        
-        if (this.dataReady) {
-          return;
-        }
-
-        this.data = JSON.parse(gTextDecoder.decode(bytes));
-      } catch (ex) {
-        
-        
-        
-        
-        if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
-          Cu.reportError(ex);
-
-          
-          try {
-            let openInfo = yield OS.File.openUnique(this.path + ".corrupt",
-                                                    { humanReadable: true });
-            yield openInfo.file.close();
-            yield OS.File.move(this.path, openInfo.path);
-          } catch (e2) {
-            Cu.reportError(e2);
-          }
-        }
-
-        
-        
-        
-        
-        if (this.dataReady) {
-          return;
-        }
-
-        
-        this.data = {
-          nextId: 1,
-        };
-      }
-
-      this._processLoadedData();
-    }.bind(this));
-  },
+  if (data.version === 1) {
+    this._migrateDisabledHosts(data);
+  }
 
   
+  data.version = kDataVersion;
+
+  return data;
+};
 
 
-  ensureDataReady() {
-    if (this.dataReady) {
-      return;
-    }
 
+
+LoginStore.prototype._migrateDisabledHosts = function (data) {
+  for (let host of this.data.disabledHosts) {
     try {
-      
-      let inputStream = new FileInputStream(new FileUtils.File(this.path),
-                                            FileUtils.MODE_RDONLY,
-                                            FileUtils.PERMS_FILE, 0);
-      try {
-        let json = Cc["@mozilla.org/dom/json;1"].createInstance(Ci.nsIJSON);
-        this.data = json.decodeFromStream(inputStream,
-                                          inputStream.available());
-      } finally {
-        inputStream.close();
-      }
-    } catch (ex) {
-      
-      
-      
-      
-      if (!(ex instanceof Components.Exception &&
-            ex.result == Cr.NS_ERROR_FILE_NOT_FOUND)) {
-        Cu.reportError(ex);
-        
-        try {
-          let originalFile = new FileUtils.File(this.path);
-          let backupFile = originalFile.clone();
-          backupFile.leafName += ".corrupt";
-          backupFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE,
-                                  FileUtils.PERMS_FILE);
-          backupFile.remove(false);
-          originalFile.moveTo(backupFile.parent, backupFile.leafName);
-        } catch (e2) {
-          Cu.reportError(e2);
-        }
-      }
-
-      
-      this.data = {
-        nextId: 1,
-      };
+      let uri = Services.io.newURI(host, null, null);
+      Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
+    } catch (e) {
+      Cu.reportError(e);
     }
+  }
 
-    this._processLoadedData();
-  },
-
-  
-
-
-  _processLoadedData() {
-    
-    if (!this.data.logins) {
-      this.data.logins = [];
-    }
-
-    
-    if (!this.data.disabledHosts) {
-      this.data.disabledHosts = [];
-    }
-
-    if (this.data.version === 1) {
-      this._migrateDisabledHosts();
-    }
-
-    
-    this.data.version = kDataVersion;
-
-    this.dataReady = true;
-  },
-
-  
-
-
-  _migrateDisabledHosts: function () {
-    for (let host of this.data.disabledHosts) {
-      try {
-        let uri = Services.io.newURI(host, null, null);
-        Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
-      } catch (e) {
-        Cu.reportError(e);
-      }
-    }
-
-    delete this.data.disabledHosts;
-  },
-
-  
-
-
-  saveSoon() {
-    return this._saver.arm();
-  },
-
-  
-
-
-  _saver: null,
-
-  
-
-
-
-
-
-
-
-
-  save() {
-    return Task.spawn(function* () {
-      
-      let bytes = gTextEncoder.encode(JSON.stringify(this.data));
-      yield OS.File.writeAtomic(this.path, bytes,
-                                { tmpPath: this.path + ".tmp" });
-    }.bind(this));
-  },
+  delete this.data.disabledHosts;
 };
