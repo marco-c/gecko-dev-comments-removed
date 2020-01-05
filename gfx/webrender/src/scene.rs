@@ -7,8 +7,7 @@ use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use tiling::AuxiliaryListsMap;
 use webrender_traits::{AuxiliaryLists, BuiltDisplayList, PipelineId, Epoch, ColorF};
-use webrender_traits::{DisplayItem, SpecificDisplayItem, StackingContext};
-use webrender_traits::LayerSize;
+use webrender_traits::{DisplayItem, LayerSize};
 
 
 #[derive(Debug)]
