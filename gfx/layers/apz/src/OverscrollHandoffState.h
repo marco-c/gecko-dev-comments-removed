@@ -11,7 +11,7 @@
 #include "mozilla/RefPtr.h"   
 #include "nsISupportsImpl.h"  
 #include "APZUtils.h"         
-#include "Layers.h"           
+#include "mozilla/layers/LayersTypes.h" 
 #include "Units.h"            
 
 namespace mozilla {
@@ -81,7 +81,7 @@ public:
   
   
   bool CanScrollInDirection(const AsyncPanZoomController* aApzc,
-                            Layer::ScrollDirection aDirection) const;
+                            ScrollDirection aDirection) const;
 
   
   bool HasOverscrolledApzc() const;

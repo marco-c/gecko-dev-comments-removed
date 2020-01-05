@@ -89,11 +89,11 @@ AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
   
   
   
-  if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, Layer::HORIZONTAL)) {
+  if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, ScrollDirection::HORIZONTAL)) {
     ReentrantMonitorAutoEnter lock(mApzc.mMonitor);
     mApzc.mX.SetVelocity(0);
   }
-  if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, Layer::VERTICAL)) {
+  if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, ScrollDirection::VERTICAL)) {
     ReentrantMonitorAutoEnter lock(mApzc.mMonitor);
     mApzc.mY.SetVelocity(0);
   }

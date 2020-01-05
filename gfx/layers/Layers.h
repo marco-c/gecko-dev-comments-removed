@@ -1277,12 +1277,6 @@ public:
     }
   }
 
-  enum ScrollDirection {
-    NONE,
-    VERTICAL,
-    HORIZONTAL
-  };
-
   
 
 
