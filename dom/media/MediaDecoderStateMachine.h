@@ -305,19 +305,9 @@ private:
 
   MediaStatistics GetStatistics();
 
-  
-  
-  bool HasAudio() const {
-    MOZ_ASSERT(OnTaskQueue());
-    return mInfo.HasAudio();
-  }
-
-  
-  
-  bool HasVideo() const {
-    MOZ_ASSERT(OnTaskQueue());
-    return mInfo.HasVideo();
-  }
+  bool HasAudio() const { return mInfo.ref().HasAudio(); }
+  bool HasVideo() const { return mInfo.ref().HasVideo(); }
+  const MediaInfo& Info() const { return mInfo.ref(); }
 
   
   bool HaveNextFrameData();
@@ -770,8 +760,7 @@ private:
   bool mDecodeThreadWaiting;
 
   
-  
-  MediaInfo mInfo;
+  Maybe<MediaInfo> mInfo;
 
   nsAutoPtr<MetadataTags> mMetadataTags;
 
