@@ -26,6 +26,7 @@ const message = require("./utils/message");
 const App = createFactory(require("./app"));
 const Store = require("./store");
 const { changeLocation } = require("./actions/location");
+const { changeDisplayPixelRatio } = require("./actions/display-pixel-ratio");
 const { addViewport, resizeViewport } = require("./actions/viewports");
 const { loadDevices } = require("./actions/devices");
 
@@ -92,9 +93,27 @@ Object.defineProperty(window, "store", {
 
 
 
+function onDPRChange() {
+  let dpr = window.devicePixelRatio;
+  let mql = window.matchMedia(`(resolution: ${dpr}dppx)`);
+
+  function listener() {
+    bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));
+    mql.removeListener(listener);
+    onDPRChange();
+  }
+
+  mql.addListener(listener);
+}
+
+
+
+
 window.addInitialViewport = contentURI => {
   try {
+    onDPRChange();
     bootstrap.dispatch(changeLocation(contentURI));
+    bootstrap.dispatch(changeDisplayPixelRatio(window.devicePixelRatio));
     bootstrap.dispatch(addViewport());
   } catch (e) {
     console.error(e);

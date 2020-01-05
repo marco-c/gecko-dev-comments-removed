@@ -29,7 +29,17 @@ createEnum([
   "CHANGE_LOCATION",
 
   
+  
+  
+  "CHANGE_DISPLAY_PIXEL_RATIO",
+
+  
   "CHANGE_NETWORK_THROTTLING",
+
+  
+  
+  
+  "CHANGE_VIEWPORT_PIXEL_RATIO",
 
   
   "LOAD_DEVICE_LIST_START",
