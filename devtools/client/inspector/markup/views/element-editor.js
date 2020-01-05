@@ -271,8 +271,7 @@ ElementEditor.prototype = {
       
       
       this.textEditor = new TextEditor(this.container, node, "text");
-      this.elt.insertBefore(this.textEditor.elt,
-                            this.elt.firstChild.nextSibling.nextSibling);
+      this.elt.insertBefore(this.textEditor.elt, this.elt.querySelector(".close"));
     }
 
     if (this.textEditor) {
