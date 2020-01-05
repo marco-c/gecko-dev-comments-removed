@@ -147,7 +147,7 @@ public:
 
 
 
-   
+
   
 
 
@@ -213,13 +213,13 @@ public:
 
 
 
-  DrawResult DrawBackground(nsPresContext*       aPresContext,
-                            nsRenderingContext&  aRenderingContext,
-                            const nsRect&        aDest,
-                            const nsRect&        aFill,
-                            const nsPoint&       aAnchor,
-                            const nsRect&        aDirty,
-                            const nsSize&        aRepeatSize);
+  DrawResult DrawLayer(nsPresContext*       aPresContext,
+                       nsRenderingContext&  aRenderingContext,
+                       const nsRect&        aDest,
+                       const nsRect&        aFill,
+                       const nsPoint&       aAnchor,
+                       const nsRect&        aDirty,
+                       const nsSize&        aRepeatSize);
 
   
 
@@ -669,7 +669,7 @@ struct nsCSSRendering {
        compositionOp(aCompositionOp) {}
   };
 
-  static DrawResult PaintBackground(const PaintBGParams& aParams);
+  static DrawResult PaintStyleImageLayer(const PaintBGParams& aParams);
 
 
   
@@ -684,9 +684,10 @@ struct nsCSSRendering {
 
 
 
-  static DrawResult PaintBackgroundWithSC(const PaintBGParams& aParams,
-                                          nsStyleContext *mBackgroundSC,
-                                          const nsStyleBorder& aBorder);
+
+  static DrawResult PaintStyleImageLayerWithSC(const PaintBGParams& aParams,
+                                               nsStyleContext *mBackgroundSC,
+                                               const nsStyleBorder& aBorder);
 
   
 
