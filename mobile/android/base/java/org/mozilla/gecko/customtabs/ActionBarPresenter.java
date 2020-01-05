@@ -16,12 +16,17 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.v4.graphics.drawable.DrawableCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.mozilla.gecko.R;
@@ -106,6 +111,41 @@ public class ActionBarPresenter {
             }
         };
         mHandler.postDelayed(mUpdateAction, CUSTOM_VIEW_UPDATE_DELAY);
+    }
+
+    
+
+
+
+
+
+
+
+    public View addActionButton(@NonNull final Menu menu,
+                                @NonNull final Drawable icon,
+                                final boolean tint) {
+        final Resources res = mActionBar.getThemedContext().getResources();
+
+        
+        
+        
+        final ImageButton btn = new ImageButton(mActionBar.getThemedContext(), null, 0);
+        final int size = res.getDimensionPixelSize(R.dimen.custom_tab_action_button_size);
+        final int padding = res.getDimensionPixelSize(R.dimen.custom_tab_action_button_padding);
+        btn.setPadding(padding, padding, padding, padding);
+        btn.setLayoutParams(new ViewGroup.LayoutParams(size, size));
+        btn.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+        if (tint) {
+            DrawableCompat.setTint(icon, mTextPrimaryColor);
+        }
+        btn.setImageDrawable(icon);
+
+        
+        final MenuItem item = menu.add(Menu.NONE, -1, Menu.NONE, "");
+        item.setActionView(btn);
+        MenuItemCompat.setShowAsAction(item, MenuItemCompat.SHOW_AS_ACTION_ALWAYS);
+        return btn;
     }
 
     
