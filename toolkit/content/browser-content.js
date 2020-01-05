@@ -1766,6 +1766,8 @@ DateTimePickerListener.init();
 
 
 
+
+
 addEventListener("DOMWindowCreated", function() {
   if (event.target !== content.document ||
       content.location == "" ||
@@ -1774,11 +1776,22 @@ addEventListener("DOMWindowCreated", function() {
   }
 
   let amountHistogram = Services.telemetry.getHistogramById("TOTAL_SCROLL_Y");
+  let maxHistogram = Services.telemetry.getHistogramById("PAGE_MAX_SCROLL_Y");
+
   let prevScrollY = 0;
+  let maxScrollY = 0;
 
   content.addEventListener("scroll", function() {
     let amount = Math.abs(content.scrollY - prevScrollY);
     amountHistogram.add(amount);
     prevScrollY = content.scrollY;
+
+    if (content.scrollY > maxScrollY) {
+      maxScrollY = content.scrollY;
+    }
   }, { passive: true });
+
+  content.addEventListener("unload", function() {
+    maxHistogram.add(maxScrollY);
+  });
 });
