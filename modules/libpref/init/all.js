@@ -2419,13 +2419,6 @@ pref("bidi.numeral", 0);
 
 
 
-
-
-
-pref("bidi.support", 1);
-
-
-
 pref("bidi.edit.delete_immediately", true);
 
 
