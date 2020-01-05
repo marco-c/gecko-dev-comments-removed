@@ -515,6 +515,7 @@
 
 
   function reportFailure(msg) {
+    msg = String(msg);
     var lines = StringSplit(msg, "\n");
     var funcName = currentFunc();
     var prefix = funcName ? "[reported from " + funcName + "] ": "";

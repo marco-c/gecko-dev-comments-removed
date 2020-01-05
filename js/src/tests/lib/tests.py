@@ -168,6 +168,7 @@ class RefTestCase(RefTest):
     def __init__(self, path):
         RefTest.__init__(self, path)
         self.enable = True   
+        self.error = None    
         self.expect = True   
         self.random = False  
         self.slow = False    
@@ -185,6 +186,8 @@ class RefTestCase(RefTest):
         ans = self.path
         if not self.enable:
             ans += ', skip'
+        if self.error is not None:
+            ans += ', error=' + self.error
         if not self.expect:
             ans += ', fails'
         if self.random:
