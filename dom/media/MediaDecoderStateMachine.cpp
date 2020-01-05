@@ -650,7 +650,70 @@ class MediaDecoderStateMachine::SeekingState
   : public MediaDecoderStateMachine::StateObject
 {
 public:
-  explicit SeekingState(Master* aPtr) : StateObject(aPtr) {}
+  explicit SeekingState(Master* aPtr, SeekJob aSeekJob)
+    : StateObject(aPtr), mSeekJob(Move(aSeekJob)) {}
+
+  void Enter() override
+  {
+    
+    mMaster->DiscardSeekTaskIfExist();
+
+    mMaster->mSeekTaskRequest.DisconnectIfExists();
+
+    
+    mMaster->CancelMediaDecoderReaderWrapperCallback();
+
+    
+    if (mSeekJob.mTarget.IsAccurate() ||
+        mSeekJob.mTarget.IsFast()) {
+      mMaster->mSeekTask = new AccurateSeekTask(
+        mMaster->mDecoderID, OwnerThread(), Reader(), mSeekJob.mTarget,
+        mMaster->mInfo, mMaster->Duration(), mMaster->GetMediaTime());
+    } else if (mSeekJob.mTarget.IsNextFrame()) {
+      mMaster->mSeekTask = new NextFrameSeekTask(
+        mMaster->mDecoderID, OwnerThread(), Reader(), mSeekJob.mTarget,
+        mMaster->mInfo, mMaster->Duration(),mMaster->GetMediaTime(),
+        mMaster->AudioQueue(), mMaster->VideoQueue());
+    } else {
+      MOZ_DIAGNOSTIC_ASSERT(false, "Cannot handle this seek task.");
+    }
+
+    
+    if (!mSeekJob.mTarget.IsVideoOnly()) {
+      mMaster->StopPlayback();
+    }
+
+    
+    
+    
+    
+    mMaster->UpdatePlaybackPositionInternal(
+      mMaster->mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
+
+    if (mSeekJob.mTarget.mEventVisibility ==
+        MediaDecoderEventVisibility::Observable) {
+      mMaster->mOnPlaybackEvent.Notify(MediaEventType::SeekStarted);
+    }
+
+    
+    if (mMaster->mSeekTask->NeedToResetMDSM()) {
+      if (mSeekJob.mTarget.IsVideoOnly()) {
+        mMaster->Reset(TrackInfo::kVideoTrack);
+      } else {
+        mMaster->Reset();
+      }
+    }
+
+    
+    mMaster->mSeekTaskRequest.Begin(mMaster->mSeekTask->Seek(mMaster->Duration())
+      ->Then(OwnerThread(), __func__, mMaster,
+             &MediaDecoderStateMachine::OnSeekTaskResolved,
+             &MediaDecoderStateMachine::OnSeekTaskRejected));
+
+    MOZ_ASSERT(!mMaster->mQueuedSeek.Exists());
+    MOZ_ASSERT(!mMaster->mCurrentSeek.Exists());
+    mMaster->mCurrentSeek = Move(mSeekJob);
+  }
 
   State GetState() const override
   {
@@ -698,6 +761,9 @@ public:
     mMaster->InitiateSeek(Move(seekJob));
     return mMaster->mCurrentSeek.mPromise.Ensure(__func__);
   }
+
+private:
+  SeekJob mSeekJob;
 };
 
 class MediaDecoderStateMachine::BufferingState
@@ -2119,64 +2185,8 @@ MediaDecoderStateMachine::InitiateSeek(SeekJob aSeekJob)
   
   mStateObj->Exit();
   mState = DECODER_STATE_SEEKING;
-  mStateObj = MakeUnique<SeekingState>(this);
+  mStateObj = MakeUnique<SeekingState>(this, Move(aSeekJob));
   mStateObj->Enter();
-
-  
-  DiscardSeekTaskIfExist();
-
-  mSeekTaskRequest.DisconnectIfExists();
-
-  
-  CancelMediaDecoderReaderWrapperCallback();
-
-  
-  if (aSeekJob.mTarget.IsAccurate() ||
-      aSeekJob.mTarget.IsFast()) {
-    mSeekTask = new AccurateSeekTask(mDecoderID, OwnerThread(),
-                                     mReader.get(), aSeekJob.mTarget,
-                                     mInfo, Duration(), GetMediaTime());
-  } else if (aSeekJob.mTarget.IsNextFrame()) {
-    mSeekTask = new NextFrameSeekTask(mDecoderID, OwnerThread(), mReader.get(),
-                                      aSeekJob.mTarget, mInfo, Duration(),
-                                      GetMediaTime(), AudioQueue(), VideoQueue());
-  } else {
-    MOZ_DIAGNOSTIC_ASSERT(false, "Cannot handle this seek task.");
-  }
-
-  
-  if (!aSeekJob.mTarget.IsVideoOnly()) {
-    StopPlayback();
-  }
-
-  
-  
-  
-  
-  UpdatePlaybackPositionInternal(mSeekTask->GetSeekTarget().GetTime().ToMicroseconds());
-
-  if (aSeekJob.mTarget.mEventVisibility == MediaDecoderEventVisibility::Observable) {
-    mOnPlaybackEvent.Notify(MediaEventType::SeekStarted);
-  }
-
-  
-  if (mSeekTask->NeedToResetMDSM()) {
-    if (aSeekJob.mTarget.IsVideoOnly()) {
-      Reset(TrackInfo::kVideoTrack);
-    } else {
-      Reset();
-    }
-  }
-
-  
-  mSeekTaskRequest.Begin(mSeekTask->Seek(Duration())
-    ->Then(OwnerThread(), __func__, this,
-           &MediaDecoderStateMachine::OnSeekTaskResolved,
-           &MediaDecoderStateMachine::OnSeekTaskRejected));
-
-  MOZ_ASSERT(!mQueuedSeek.Exists());
-  MOZ_ASSERT(!mCurrentSeek.Exists());
-  mCurrentSeek = Move(aSeekJob);
 }
 
 void
