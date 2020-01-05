@@ -6,6 +6,7 @@
 #ifndef mozilla_image_DrawResult_h
 #define mozilla_image_DrawResult_h
 
+#include <cstdint> 
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 
