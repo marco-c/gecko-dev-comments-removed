@@ -1267,7 +1267,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
   
   
   if (NS_UNCONSTRAINEDSIZE != reflowInput->AvailableBSize() &&
-      NS_FRAME_IS_COMPLETE(state.mReflowStatus) &&
+      state.mReflowStatus.IsComplete() &&
       state.FloatManager()->ClearContinues(FindTrailingClear())) {
     NS_FRAME_SET_INCOMPLETE(state.mReflowStatus);
   }
@@ -1472,7 +1472,7 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
     IndentBy(stdout, gNoiseIndent);
     ListTag(stdout);
     printf(": status=%x (%scomplete) metrics=%d,%d carriedMargin=%d",
-           aStatus, NS_FRAME_IS_COMPLETE(aStatus) ? "" : "not ",
+           aStatus, aStatus.IsComplete() ? "" : "not ",
            aMetrics.ISize(parentWM), aMetrics.BSize(parentWM),
            aMetrics.mCarriedOutBEndMargin.get());
     if (HasOverflowAreas()) {
@@ -1613,7 +1613,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     ComputeFinalBSize(aReflowInput, &aState.mReflowStatus,
                       aState.mBCoord + nonCarriedOutBDirMargin,
                       borderPadding, finalSize, aState.mConsumedBSize);
-    if (!NS_FRAME_IS_COMPLETE(aState.mReflowStatus)) {
+    if (!aState.mReflowStatus.IsComplete()) {
       
       
       
@@ -1635,7 +1635,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     aMetrics.mCarriedOutBEndMargin.Zero();
   }
-  else if (NS_FRAME_IS_COMPLETE(aState.mReflowStatus)) {
+  else if (aState.mReflowStatus.IsComplete()) {
     nscoord contentBSize = blockEndEdgeOfChildren - borderPadding.BStart(wm);
     nscoord autoBSize = aReflowInput.ApplyMinMaxBSize(contentBSize);
     if (autoBSize != contentBSize) {
@@ -1667,7 +1667,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     }
   } else if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
              !NS_INLINE_IS_BREAK_BEFORE(aState.mReflowStatus) &&
-             NS_FRAME_IS_COMPLETE(aState.mReflowStatus)) {
+             aState.mReflowStatus.IsComplete()) {
     
     
     
@@ -1684,7 +1684,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 
   
   if (MOZ_UNLIKELY(aReflowInput.mFlags.mBClampMarginBoxMinSize) &&
-      NS_FRAME_IS_COMPLETE(aState.mReflowStatus)) {
+      aState.mReflowStatus.IsComplete()) {
     bool found;
     nscoord cbSize = Properties().Get(BClampMarginBoxMinSizeProperty(), &found);
     if (found) {
@@ -4228,7 +4228,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
         }
       }
       aLine->SetBreakTypeAfter(breakType);
-      if (NS_FRAME_IS_COMPLETE(frameReflowStatus)) {
+      if (frameReflowStatus.IsComplete()) {
         
         SplitLine(aState, aLineLayout, aLine, aFrame->GetNextSibling(), aLineReflowStatus);
 
@@ -7416,7 +7416,7 @@ nsBlockFrame::ComputeFinalBSize(const ReflowInput& aReflowInput,
     NS_FRAME_SET_OVERFLOW_INCOMPLETE(*aStatus);
   }
 
-  if (NS_FRAME_IS_COMPLETE(*aStatus)) {
+  if (aStatus->IsComplete()) {
     if (computedBSizeLeftOver > 0 &&
         NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize() &&
         aFinalSize.BSize(wm) > aReflowInput.AvailableBSize()) {

@@ -734,7 +734,7 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
     }
   }
 
-  NS_ASSERTION(!NS_FRAME_IS_COMPLETE(aStatus) || !GetOverflowFrames(),
+  NS_ASSERTION(!aStatus.IsComplete() || !GetOverflowFrames(),
                "We can't be complete AND have overflow frames!");
 
   
@@ -771,7 +771,7 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
 
 
 
-  if ((NS_FRAME_IS_COMPLETE(aStatus) &&
+  if ((aStatus.IsComplete() &&
        !LastInFlow()->GetNextContinuation() &&
        !FrameIsNonLastInIBSplit()) ||
       boxDecorationBreakClone) {

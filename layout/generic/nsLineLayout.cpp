@@ -1072,7 +1072,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
     
     
     
-    if (NS_FRAME_IS_COMPLETE(aReflowStatus)) {
+    if (aReflowStatus.IsComplete()) {
       nsIFrame* kidNextInFlow = aFrame->GetNextInFlow();
       if (nullptr != kidNextInFlow) {
         

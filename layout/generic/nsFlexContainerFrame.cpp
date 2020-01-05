@@ -1846,7 +1846,7 @@ nsFlexContainerFrame::MeasureAscentAndHeightForFlexItem(
   
   
   
-  MOZ_ASSERT(NS_FRAME_IS_COMPLETE(childReflowStatus),
+  MOZ_ASSERT(childReflowStatus.IsComplete(),
              "We gave flex item unconstrained available height, so it "
              "should be complete");
 
@@ -4626,7 +4626,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   
   
   
-  if (NS_FRAME_IS_COMPLETE(aStatus)) {
+  if (aStatus.IsComplete()) {
     nscoord desiredBSizeWithBEndBP =
       desiredSizeInFlexWM.BSize(flexWM) + blockEndContainerBP;
 
@@ -4780,7 +4780,7 @@ nsFlexContainerFrame::ReflowFlexItem(nsPresContext* aPresContext,
   
   
   
-  MOZ_ASSERT(NS_FRAME_IS_COMPLETE(childReflowStatus),
+  MOZ_ASSERT(childReflowStatus.IsComplete(),
              "We gave flex item unconstrained available height, so it "
              "should be complete");
 

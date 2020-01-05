@@ -268,7 +268,7 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
   if (!NS_INLINE_IS_BREAK_BEFORE(aReflowStatus)) {
     
     
-    if (NS_FRAME_IS_COMPLETE(aReflowStatus)) {
+    if (aReflowStatus.IsComplete()) {
       if (aReflowInput.mLineLayout) {
         aReflowInput.mLineLayout->SetFirstLetterStyleOK(false);
       }
