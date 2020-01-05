@@ -170,6 +170,14 @@ impl PrivateLayoutData {
             parallel: DomParallelInfo::new(),
         }
     }
+
+    
+    pub fn init_applicable_declarations(&mut self) {
+        
+        self.applicable_declarations = SmallVec16::new();
+        self.before_applicable_declarations = SmallVec0::new();
+        self.after_applicable_declarations = SmallVec0::new();
+    }
 }
 
 pub struct LayoutDataWrapper {
