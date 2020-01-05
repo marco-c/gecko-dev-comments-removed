@@ -5997,8 +5997,27 @@ PresShell::MarkFramesInSubtreeApproximatelyVisible(nsIFrame* aFrame,
   nsIScrollableFrame* scrollFrame = do_QueryFrame(aFrame);
   if (scrollFrame) {
     scrollFrame->NotifyApproximateFrameVisibilityUpdate();
+
+    bool ignoreDisplayPort = false;
+    if (nsLayoutUtils::IsMissingDisplayPortBaseRect(aFrame->GetContent())) {
+      
+      
+      
+      
+      
+      nsPresContext* pc = aFrame->PresContext();
+      if (scrollFrame->IsRootScrollFrameOfDocument() &&
+          (pc->IsRootContentDocument() || !pc->GetParentPresContext())) {
+        nsRect baseRect =
+          nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(aFrame));
+        nsLayoutUtils::SetDisplayPortBase(aFrame->GetContent(), baseRect);
+      } else {
+        ignoreDisplayPort = true;
+      }
+    }
+
     nsRect displayPort;
-    bool usingDisplayport =
+    bool usingDisplayport = !ignoreDisplayPort &&
       nsLayoutUtils::GetDisplayPortForVisibilityTesting(
         aFrame->GetContent(), &displayPort, RelativeTo::ScrollFrame);
     if (usingDisplayport) {
