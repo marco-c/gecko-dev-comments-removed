@@ -2973,7 +2973,7 @@ JSScript::finalize(FreeOp* fop)
     if (scriptData_)
         scriptData_->decRefCount();
 
-    zone()->group()->caches().lazyScriptCache.remove(this);
+    fop->runtime()->caches().lazyScriptCache.remove(this);
 
     
     

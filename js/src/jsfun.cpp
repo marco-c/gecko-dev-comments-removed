@@ -1430,7 +1430,7 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
         
         if (canRelazify && !JS::IsIncrementalGCInProgress(cx)) {
             LazyScriptCache::Lookup lookup(cx, lazy);
-            cx->zone()->group()->caches().lazyScriptCache.lookup(lookup, script.address());
+            cx->caches().lazyScriptCache.lookup(lookup, script.address());
         }
 
         if (script) {
@@ -1482,7 +1482,7 @@ JSFunction::createScriptForLazilyInterpretedFunction(JSContext* cx, HandleFuncti
             script->setColumn(lazy->column());
 
             LazyScriptCache::Lookup lookup(cx, lazy);
-            cx->zone()->group()->caches().lazyScriptCache.insert(lookup, script);
+            cx->caches().lazyScriptCache.insert(lookup, script);
 
             
             

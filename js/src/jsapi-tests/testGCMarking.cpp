@@ -165,7 +165,7 @@ BEGIN_TEST(testDeadNurseryCCW)
 
     
     CHECK(countWrappers(global1->compartment()) == 1);
-    cx->zone()->group()->evictNursery();
+    cx->runtime()->gc.evictNursery();
     CHECK(countWrappers(global1->compartment()) == 0);
 
     
@@ -193,7 +193,7 @@ BEGIN_TEST(testLiveNurseryCCW)
 
     
     CHECK(countWrappers(global1->compartment()) == 1);
-    cx->zone()->group()->evictNursery();
+    cx->runtime()->gc.evictNursery();
     CHECK(countWrappers(global1->compartment()) == 1);
 
     CHECK(!js::gc::IsInsideNursery(wrappee));
@@ -230,7 +230,7 @@ BEGIN_TEST(testLiveNurseryWrapperCCW)
 
     
     CHECK(countWrappers(global1->compartment()) == 1);
-    cx->zone()->group()->evictNursery();
+    cx->runtime()->gc.evictNursery();
     CHECK(countWrappers(global1->compartment()) == 1);
 
     CHECK(!js::gc::IsInsideNursery(wrapper));
@@ -264,7 +264,7 @@ BEGIN_TEST(testLiveNurseryWrappeeCCW)
 
     
     CHECK(countWrappers(global1->compartment()) == 1);
-    cx->zone()->group()->evictNursery();
+    cx->runtime()->gc.evictNursery();
     CHECK(countWrappers(global1->compartment()) == 0);
 
     CHECK(!js::gc::IsInsideNursery(wrappee));
@@ -330,7 +330,7 @@ BEGIN_TEST(testIncrementalRoots)
 
     
     
-    cx->zone()->group()->minorGC(JS::gcreason::API);
+    cx->runtime()->gc.minorGC(JS::gcreason::API);
 
     
     obj = root = nullptr;

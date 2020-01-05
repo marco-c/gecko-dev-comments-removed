@@ -194,7 +194,7 @@ JSObject* newCCW(JS::HandleObject sourceZone, JS::HandleObject destZone)
 
     
     
-    cx->zone()->group()->evictNursery();
+    cx->runtime()->gc.evictNursery();
 
     return object;
 }

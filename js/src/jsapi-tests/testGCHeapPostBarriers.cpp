@@ -187,7 +187,7 @@ BEGIN_TEST(testUnbarrieredEquality)
     
     JS::RootedObject robj(cx, JS_NewArrayBuffer(cx, 20));
     JS::RootedObject robj2(cx, JS_NewArrayBuffer(cx, 30));
-    cx->zone()->group()->evictNursery(); 
+    cx->runtime()->gc.evictNursery(); 
 
     
     JSObject* obj = robj;

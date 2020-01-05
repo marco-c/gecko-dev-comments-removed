@@ -41,9 +41,6 @@ js::Allocate(JSContext* cx, AllocKind kind, size_t nDynamicSlots, InitialHeap he
 
     
     if (cx->helperThread()) {
-        
-        
-        MOZ_ASSERT(!cx->nursery().isEnabled());
         JSObject* obj = GCRuntime::tryNewTenuredObject<NoGC>(cx, kind, thingSize, nDynamicSlots);
         if (MOZ_UNLIKELY(allowGC && !obj))
             ReportOutOfMemory(cx);
@@ -91,7 +88,7 @@ GCRuntime::tryNewNurseryObject(JSContext* cx, size_t thingSize, size_t nDynamicS
         return obj;
 
     if (allowGC && !cx->suppressGC) {
-        cx->zone()->group()->minorGC(JS::gcreason::OUT_OF_NURSERY);
+        cx->runtime()->gc.minorGC(JS::gcreason::OUT_OF_NURSERY);
 
         
         if (cx->nursery().isEnabled()) {

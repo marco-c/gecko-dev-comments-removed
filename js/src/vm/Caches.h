@@ -202,7 +202,7 @@ class NewObjectCache
     void purge() { mozilla::PodZero(this); }
 
     
-    void clearNurseryObjects(ZoneGroup* group);
+    void clearNurseryObjects(JSRuntime* rt);
 
     
 
@@ -275,7 +275,7 @@ class NewObjectCache
     }
 };
 
-class ZoneGroupCaches
+class RuntimeCaches
 {
     UniquePtr<js::MathCache> mathCache_;
 

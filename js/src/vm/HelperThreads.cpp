@@ -544,8 +544,7 @@ CreateGlobalForOffThreadParse(JSContext* cx, ParseTaskKind kind, const gc::AutoS
 
     creationOptions.setInvisibleToDebugger(true)
                    .setMergeable(true)
-                   .setNewZoneInNewZoneGroup()
-                   .setDisableNursery(true);
+                   .setNewZoneInNewZoneGroup();
 
     
     creationOptions.setTrace(nullptr);

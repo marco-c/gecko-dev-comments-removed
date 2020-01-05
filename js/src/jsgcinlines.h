@@ -288,7 +288,7 @@ class ZoneCellIter<TenuredCell> {
         
         
         if (IsNurseryAllocable(kind))
-            zone->group()->evictNursery();
+            zone->runtimeFromActiveCooperatingThread()->gc.evictNursery();
 
         init(zone, kind);
     }
