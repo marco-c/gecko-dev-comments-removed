@@ -186,5 +186,5 @@ add_task(function* reorder_empty_folder_invalid_children() {
   });
   
   
-  yield PlacesUtils.bookmarks.reorder(f1.guid, ['123456789012']);
+  yield PlacesUtils.bookmarks.reorder(f1.guid, ["123456789012"]);
 });
