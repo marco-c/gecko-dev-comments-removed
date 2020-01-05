@@ -2295,7 +2295,8 @@ if (privileged) {
 
   RefPtr<PledgeSourceSet> p = EnumerateDevicesImpl(windowID, videoType,
                                                    audioType, fake);
-  p->Then([this, onSuccess, onFailure, windowID, c, listener, askPermission,
+  RefPtr<MediaManager> self = this;
+  p->Then([self, onSuccess, onFailure, windowID, c, listener, askPermission,
            prefs, isHTTPS, callID, principalInfo,
            isChrome](SourceSet*& aDevices) mutable {
 
@@ -2303,15 +2304,14 @@ if (privileged) {
          new Refcountable<UniquePtr<SourceSet>>(aDevices)); 
 
     
-    if (!MediaManager::Exists() ||
-        !nsGlobalWindow::GetInnerWindowWithId(windowID)) {
+    if (!nsGlobalWindow::GetInnerWindowWithId(windowID)) {
       return;
     }
 
     
-    RefPtr<PledgeChar> p2 = SelectSettings(c, isChrome, devices);
+    RefPtr<PledgeChar> p2 = self->SelectSettings(c, isChrome, devices);
 
-    p2->Then([this, onSuccess, onFailure, windowID, c,
+    p2->Then([self, onSuccess, onFailure, windowID, c,
               listener, askPermission, prefs, isHTTPS, callID, principalInfo,
               isChrome, devices](const char*& badConstraint) mutable {
 
@@ -2359,13 +2359,13 @@ if (privileged) {
                                                           isChrome,
                                                           devices->release()));
       
-      mActiveCallbacks.Put(callID, task.forget());
+      self->mActiveCallbacks.Put(callID, task.forget());
 
       
       nsTArray<nsString>* array;
-      if (!mCallIds.Get(windowID, &array)) {
+      if (!self->mCallIds.Get(windowID, &array)) {
         array = new nsTArray<nsString>();
-        mCallIds.Put(windowID, array);
+        self->mCallIds.Put(windowID, array);
       }
       array->AppendElement(callID);
 
@@ -3002,7 +3002,9 @@ MediaManager::Shutdown()
   
 
   
-  RefPtr<MediaManager> that(sSingleton);
+  MOZ_ASSERT(this == sSingleton);
+  RefPtr<MediaManager> that = this;
+
   
   
   RefPtr<ShutdownTask> shutdown = new ShutdownTask(this,
