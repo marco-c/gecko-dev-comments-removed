@@ -302,8 +302,15 @@ MediaSourceTrackDemuxer::MediaSourceTrackDemuxer(MediaSourceDemuxer* aParent,
   , mMonitor("MediaSourceTrackDemuxer")
   , mReset(true)
   , mPreRoll(TimeUnit::FromMicroseconds(
-      OpusDataDecoder::IsOpus(mParent->GetTrackInfo(mType)->mMimeType) ? 80000
-                                                                       : 0))
+      OpusDataDecoder::IsOpus(mParent->GetTrackInfo(mType)->mMimeType)
+      ? 80000
+      : mParent->GetTrackInfo(mType)->mMimeType.EqualsLiteral("audio/mp4a-latm")
+        
+        
+        
+        ? (2112 * 1000000ULL
+           / mParent->GetTrackInfo(mType)->GetAsAudioInfo()->mRate)
+        : 0))
 {
 }
 
