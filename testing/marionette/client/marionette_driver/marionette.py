@@ -622,7 +622,8 @@ class Marionette(object):
                 
                 pass
         if self.instance:
-            self.instance.close()
+            
+            self.instance.close(clean=True)
 
     def __del__(self):
         self.cleanup()
