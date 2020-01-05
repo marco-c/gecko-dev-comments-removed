@@ -177,7 +177,7 @@ class ExecutableAllocator
     
     
     
-    void* alloc(size_t n, ExecutablePool** poolp, CodeKind type);
+    void* alloc(JSContext* cx, size_t n, ExecutablePool** poolp, CodeKind type);
 
     void releasePoolPages(ExecutablePool* pool);
 

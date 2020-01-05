@@ -14,6 +14,14 @@ namespace jit {
 
 
 
+#if JS_BITS_PER_WORD == 32
+static const size_t MaxCodeBytesPerProcess = 128 * 1024 * 1024;
+#else
+static const size_t MaxCodeBytesPerProcess = 640 * 1024 * 1024;
+#endif
+
+
+
 
 static const size_t ExecutableCodePageSize = 64 * 1024;
 

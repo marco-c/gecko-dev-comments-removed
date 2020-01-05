@@ -238,7 +238,7 @@ ExecutableAllocator::createPool(size_t n)
 }
 
 void*
-ExecutableAllocator::alloc(size_t n, ExecutablePool** poolp, CodeKind type)
+ExecutableAllocator::alloc(JSContext* cx, size_t n, ExecutablePool** poolp, CodeKind type)
 {
     
     JitRuntime::AutoPreventBackedgePatching apbp(rt_);
@@ -261,6 +261,9 @@ ExecutableAllocator::alloc(size_t n, ExecutablePool** poolp, CodeKind type)
     
     void* result = (*poolp)->alloc(n, type);
     MOZ_ASSERT(result);
+
+    cx->zone()->updateJitCodeMallocBytes(n);
+
     return result;
 }
 
