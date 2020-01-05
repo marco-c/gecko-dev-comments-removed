@@ -201,6 +201,15 @@ ModuleGenerator::initWasm(const CompileArgs& args)
             return false;
     }
 
+    if (metadata_->debugEnabled) {
+        if (!debugFuncArgTypes_.resize(env_->funcSigs.length()))
+            return false;
+        for (size_t i = 0; i < debugFuncArgTypes_.length(); i++) {
+            if (!debugFuncArgTypes_[i].appendAll(env_->funcSigs[i]->args()))
+                return false;
+        }
+    }
+
     return true;
 }
 
@@ -1150,6 +1159,11 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
     metadata_->customSections = Move(env_->customSections);
 
     
+    metadata_->debugFuncArgTypes = Move(debugFuncArgTypes_);
+    if (metadata_->debugEnabled)
+        metadata_->debugFuncToCodeRange = Move(funcToCodeRange_);
+
+    
     
     metadata_->memoryAccesses.podResizeToFit();
     metadata_->memoryPatches.podResizeToFit();
@@ -1158,6 +1172,7 @@ ModuleGenerator::finish(const ShareableBytes& bytecode)
     metadata_->callSites.podResizeToFit();
     metadata_->callThunks.podResizeToFit();
     metadata_->debugTrapFarJumpOffsets.podResizeToFit();
+    metadata_->debugFuncToCodeRange.podResizeToFit();
 
     
     

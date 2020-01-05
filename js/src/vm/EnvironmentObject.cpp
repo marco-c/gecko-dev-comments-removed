@@ -1284,8 +1284,10 @@ EnvironmentIter::settle()
 
     
     
-    if (frame_ && (frame_.isWasmDebugFrame() ||
-                   (!si_ || si_.scope() == frame_.script()->enclosingScope())))
+    if (frame_ &&
+        (!si_ ||
+         (frame_.hasScript() && si_.scope() == frame_.script()->enclosingScope()) ||
+         (frame_.isWasmDebugFrame() && !si_.scope()->is<WasmFunctionScope>())))
     {
         frame_ = NullFramePtr();
     }
@@ -1638,6 +1640,35 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
             return true;
         }
 
+        if (env->is<WasmFunctionCallObject>()) {
+            if (maybeLiveEnv) {
+                RootedScope scope(cx, getEnvironmentScope(*env));
+                uint32_t index = 0;
+                for (BindingIter bi(scope); bi; bi++) {
+                    if (JSID_IS_ATOM(id, bi.name()))
+                        break;
+                    MOZ_ASSERT(!bi.isLast());
+                    index++;
+                }
+
+                AbstractFramePtr frame = maybeLiveEnv->frame();
+                MOZ_ASSERT(frame.isWasmDebugFrame());
+                wasm::DebugFrame* wasmFrame = frame.asWasmDebugFrame();
+                if (action == GET) {
+                    if (!wasmFrame->getLocal(index, vp)) {
+                        ReportOutOfMemory(cx);
+                        return false;
+                    }
+                    *accessResult = ACCESS_UNALIASED;
+                } else { 
+                    
+                }
+            } else {
+                *accessResult = ACCESS_LOST;
+            }
+            return true;
+        }
+
         
         MOZ_ASSERT(!IsSyntacticEnvironment(env) ||
                    env->is<WithEnvironmentObject>());
@@ -1672,6 +1703,8 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler
             return &env.as<LexicalEnvironmentObject>().scope();
         if (env.is<VarEnvironmentObject>())
             return &env.as<VarEnvironmentObject>().scope();
+        if (env.is<WasmFunctionCallObject>())
+            return &env.as<WasmFunctionCallObject>().scope();
         return nullptr;
     }
 
@@ -2496,9 +2529,7 @@ DebugEnvironments::addDebugEnvironment(JSContext* cx, const EnvironmentIter& ei,
     MOZ_ASSERT(cx->compartment() == debugEnv->compartment());
     
     MOZ_ASSERT_IF(ei.scope().is<FunctionScope>(),
-                  !ei.scope().as<FunctionScope>().canonicalFunction()->isStarGenerator() &&
-                  !ei.scope().as<FunctionScope>().canonicalFunction()->isLegacyGenerator() &&
-                  !ei.scope().as<FunctionScope>().canonicalFunction()->isAsync());
+                  !ei.scope().as<FunctionScope>().canonicalFunction()->isGenerator());
 
     if (!CanUseDebugEnvironmentMaps(cx))
         return true;
@@ -2644,11 +2675,8 @@ DebugEnvironments::onPopCall(JSContext* cx, AbstractFramePtr frame)
         if (!frame.environmentChain()->is<CallObject>())
             return;
 
-        if (frame.callee()->isStarGenerator() || frame.callee()->isLegacyGenerator() ||
-            frame.callee()->isAsync())
-        {
+        if (frame.callee()->isGenerator())
             return;
-        }
 
         CallObject& callobj = frame.environmentChain()->as<CallObject>();
         envs->liveEnvs.remove(&callobj);
@@ -2780,13 +2808,8 @@ DebugEnvironments::updateLiveEnvironments(JSContext* cx)
         if (frame.environmentChain()->compartment() != cx->compartment())
             continue;
 
-        if (frame.isFunctionFrame()) {
-            if (frame.callee()->isStarGenerator() || frame.callee()->isLegacyGenerator() ||
-                frame.callee()->isAsync())
-            {
-                continue;
-            }
-        }
+        if (frame.isFunctionFrame() && frame.callee()->isGenerator())
+            continue;
 
         if (!frame.isDebuggee())
             continue;
@@ -2947,8 +2970,7 @@ GetDebugEnvironmentForMissing(JSContext* cx, const EnvironmentIter& ei)
     if (ei.scope().is<FunctionScope>()) {
         RootedFunction callee(cx, ei.scope().as<FunctionScope>().canonicalFunction());
         
-        MOZ_ASSERT(!callee->isStarGenerator() && !callee->isLegacyGenerator() &&
-                   !callee->isAsync());
+        MOZ_ASSERT(!callee->isGenerator());
 
         JS::ExposeObjectToActiveJS(callee);
         Rooted<CallObject*> callobj(cx, CallObject::createHollowForDebug(cx, callee));

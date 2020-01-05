@@ -427,6 +427,7 @@ struct CustomSection
 };
 
 typedef Vector<CustomSection, 0, SystemAllocPolicy> CustomSectionVector;
+typedef Vector<ValTypeVector, 0, SystemAllocPolicy> FuncArgTypesVector;
 
 
 
@@ -476,6 +477,8 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     
     bool                  debugEnabled;
     Uint32Vector          debugTrapFarJumpOffsets;
+    Uint32Vector          debugFuncToCodeRange;
+    FuncArgTypesVector    debugFuncArgTypes;
 
     bool usesMemory() const { return UsesMemory(memoryUsage); }
     bool hasSharedMemory() const { return memoryUsage == MemoryUsage::Shared; }
@@ -614,7 +617,6 @@ class Code
 
     const CallSite* lookupCallSite(void* returnAddress) const;
     const CodeRange* lookupRange(void* pc) const;
-    const CodeRange* lookupRangeByFuncIndexSlow(uint32_t funcIndex) const;
     const MemoryAccess* lookupMemoryAccess(void* pc) const;
 
     
@@ -665,6 +667,10 @@ class Code
     bool stepModeEnabled(uint32_t funcIndex) const;
     bool incrementStepModeCount(JSContext* cx, uint32_t funcIndex);
     bool decrementStepModeCount(JSContext* cx, uint32_t funcIndex);
+
+    
+
+    bool debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals, size_t* argsLength);
 
     
 
