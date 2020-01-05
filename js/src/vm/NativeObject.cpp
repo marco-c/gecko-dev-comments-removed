@@ -25,6 +25,7 @@
 
 using namespace js;
 
+using JS::AutoCheckCannotGC;
 using JS::GenericNaN;
 using mozilla::ArrayLength;
 using mozilla::DebugOnly;
@@ -139,22 +140,23 @@ js::NativeObject::checkShapeConsistency()
     Shape* shape = lastProperty();
     Shape* prev = nullptr;
 
+    AutoCheckCannotGC nogc;
     if (inDictionaryMode()) {
-        MOZ_ASSERT(shape->hasTable());
+        if (ShapeTable* table = shape->maybeTable(nogc)) {
+            for (uint32_t fslot = table->freeList();
+                 fslot != SHAPE_INVALID_SLOT;
+                 fslot = getSlot(fslot).toPrivateUint32())
+            {
+                MOZ_ASSERT(fslot < slotSpan());
+            }
 
-        ShapeTable& table = shape->table();
-        for (uint32_t fslot = table.freeList();
-             fslot != SHAPE_INVALID_SLOT;
-             fslot = getSlot(fslot).toPrivateUint32())
-        {
-            MOZ_ASSERT(fslot < slotSpan());
-        }
+            for (int n = throttle; --n >= 0 && shape->parent; shape = shape->parent) {
+                MOZ_ASSERT_IF(lastProperty() != shape, !shape->hasTable());
 
-        for (int n = throttle; --n >= 0 && shape->parent; shape = shape->parent) {
-            MOZ_ASSERT_IF(lastProperty() != shape, !shape->hasTable());
-
-            ShapeTable::Entry& entry = table.search<MaybeAdding::NotAdding>(shape->propid());
-            MOZ_ASSERT(entry.shape() == shape);
+                ShapeTable::Entry& entry = table->search<MaybeAdding::NotAdding>(shape->propid(),
+                                                                                 nogc);
+                MOZ_ASSERT(entry.shape() == shape);
+            }
         }
 
         shape = lastProperty();
@@ -170,11 +172,11 @@ js::NativeObject::checkShapeConsistency()
         }
     } else {
         for (int n = throttle; --n >= 0 && shape->parent; shape = shape->parent) {
-            if (shape->hasTable()) {
-                ShapeTable& table = shape->table();
+            if (ShapeTable* table = shape->maybeTable(nogc)) {
                 MOZ_ASSERT(shape->parent);
                 for (Shape::Range<NoGC> r(shape); !r.empty(); r.popFront()) {
-                    ShapeTable::Entry& entry = table.search<MaybeAdding::NotAdding>(r.front().propid());
+                    ShapeTable::Entry& entry =
+                        table->search<MaybeAdding::NotAdding>(r.front().propid(), nogc);
                     MOZ_ASSERT(entry.shape() == &r.front());
                 }
             }
@@ -251,8 +253,7 @@ Shape*
 js::NativeObject::lookup(ExclusiveContext* cx, jsid id)
 {
     MOZ_ASSERT(isNative());
-    ShapeTable::Entry* entry;
-    return Shape::search(cx, lastProperty(), id, &entry);
+    return Shape::search(cx, lastProperty(), id);
 }
 
 Shape*
@@ -522,15 +523,20 @@ NativeObject::sparsifyDenseElement(ExclusiveContext* cx, HandleNativeObject obj,
 
     RootedId id(cx, INT_TO_JSID(index));
 
+    AutoKeepShapeTables keep(cx);
     ShapeTable::Entry* entry = nullptr;
-    if (obj->inDictionaryMode())
-        entry = &obj->lastProperty()->table().search<MaybeAdding::Adding>(id);
+    if (obj->inDictionaryMode()) {
+        ShapeTable* table = obj->lastProperty()->ensureTableForDictionary(cx, keep);
+        if (!table)
+            return false;
+        entry = &table->search<MaybeAdding::Adding>(id, keep);
+    }
 
     
     
     if (!addPropertyInternal(cx, obj, id, nullptr, nullptr, slot,
                              obj->getElementsHeader()->elementAttributes(),
-                             0, entry, true)) {
+                             0, entry, true, keep)) {
         obj->setDenseElementUnchecked(index, value);
         return false;
     }
@@ -947,25 +953,27 @@ NativeObject::allocSlot(ExclusiveContext* cx, HandleNativeObject obj, uint32_t* 
     MOZ_ASSERT(slot >= JSSLOT_FREE(obj->getClass()));
 
     
-
-
-
+    
+    
+    
     if (obj->inDictionaryMode()) {
-        ShapeTable& table = obj->lastProperty()->table();
-        uint32_t last = table.freeList();
-        if (last != SHAPE_INVALID_SLOT) {
+        AutoCheckCannotGC nogc;
+        if (ShapeTable* table = obj->lastProperty()->maybeTable(nogc)) {
+            uint32_t last = table->freeList();
+            if (last != SHAPE_INVALID_SLOT) {
 #ifdef DEBUG
-            MOZ_ASSERT(last < slot);
-            uint32_t next = obj->getSlot(last).toPrivateUint32();
-            MOZ_ASSERT_IF(next != SHAPE_INVALID_SLOT, next < slot);
+                MOZ_ASSERT(last < slot);
+                uint32_t next = obj->getSlot(last).toPrivateUint32();
+                MOZ_ASSERT_IF(next != SHAPE_INVALID_SLOT, next < slot);
 #endif
 
-            *slotp = last;
+                *slotp = last;
 
-            const Value& vref = obj->getSlot(last);
-            table.setFreeList(vref.toPrivateUint32());
-            obj->setSlot(last, UndefinedValue());
-            return true;
+                const Value& vref = obj->getSlot(last);
+                table->setFreeList(vref.toPrivateUint32());
+                obj->setSlot(last, UndefinedValue());
+                return true;
+            }
         }
     }
 
@@ -983,26 +991,33 @@ NativeObject::allocSlot(ExclusiveContext* cx, HandleNativeObject obj, uint32_t* 
 }
 
 void
-NativeObject::freeSlot(uint32_t slot)
+NativeObject::freeSlot(ExclusiveContext* cx, uint32_t slot)
 {
     MOZ_ASSERT(slot < slotSpan());
 
     if (inDictionaryMode()) {
-        ShapeTable& table = lastProperty()->table();
-        uint32_t last = table.freeList();
-
         
-        MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan() && last != slot);
-
         
+        AutoCheckCannotGC nogc;
+        if (ShapeTable* table = lastProperty()->ensureTableForDictionary(cx, nogc)) {
+            uint32_t last = table->freeList();
 
+            
+            MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan() && last != slot);
 
-
-        if (JSSLOT_FREE(getClass()) <= slot) {
-            MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan());
-            setSlot(slot, PrivateUint32Value(last));
-            table.setFreeList(slot);
-            return;
+            
+            
+            if (JSSLOT_FREE(getClass()) <= slot) {
+                MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan());
+                setSlot(slot, PrivateUint32Value(last));
+                table->setFreeList(slot);
+                return;
+            }
+        } else {
+            
+            
+            
+            cx->recoverFromOutOfMemory();
         }
     }
     setSlot(slot, UndefinedValue());
