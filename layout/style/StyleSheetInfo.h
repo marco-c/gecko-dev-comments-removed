@@ -32,6 +32,14 @@ struct StyleSheetInfo
                  ReferrerPolicy aReferrerPolicy,
                  const dom::SRIMetadata& aIntegrity);
 
+  StyleSheetInfo(StyleSheetInfo& aCopy,
+                 StyleSheet* aPrimarySheet);
+
+  virtual ~StyleSheetInfo() {}
+
+  virtual void AddSheet(StyleSheet* aSheet);
+  virtual void RemoveSheet(StyleSheet* aSheet);
+
   nsCOMPtr<nsIURI>       mSheetURI; 
   nsCOMPtr<nsIURI>       mOriginalSheetURI;  
   nsCOMPtr<nsIURI>       mBaseURI; 
@@ -49,6 +57,8 @@ struct StyleSheetInfo
   
   
   RefPtr<StyleSheet>     mFirstChild;
+  AutoTArray<StyleSheet*, 8> mSheets;
+
 #ifdef DEBUG
   bool                   mPrincipalSet;
 #endif
