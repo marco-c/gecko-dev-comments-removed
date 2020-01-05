@@ -464,6 +464,7 @@ class RustLibrary(StaticLibrary):
     __slots__ = (
         'cargo_file',
         'crate_type',
+        'deps_path',
     )
 
     def __init__(self, context, basename, cargo_file, crate_type, **args):
@@ -474,23 +475,18 @@ class RustLibrary(StaticLibrary):
         
         
         
-        assert self.crate_type == 'staticlib'
-        self.lib_name = '%s%s%s' % (
-            context.config.lib_prefix,
-            basename.replace('-', '_'),
-            context.config.lib_suffix
-        )
+        assert self.crate_type == 'rlib'
+        self.lib_name = 'lib%s.rlib' % basename.replace('-', '_')
         
         
         
         rust_build_kind = 'release'
         if context.config.substs.get('MOZ_DEBUG'):
             rust_build_kind = 'debug'
-        self.import_name = '%s/%s/%s' % (
-            context.config.substs['RUST_TARGET'],
-            rust_build_kind,
-            self.lib_name,
-        )
+        build_dir = mozpath.join(context.config.substs['RUST_TARGET'],
+                                 rust_build_kind)
+        self.import_name = mozpath.join(build_dir, self.lib_name)
+        self.deps_path = mozpath.join(build_dir, 'deps')
 
 
 class SharedLibrary(Library):
