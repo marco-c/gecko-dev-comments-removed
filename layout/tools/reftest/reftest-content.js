@@ -143,7 +143,7 @@ function StartTestURI(type, uri, timeout)
     
     
     ++gTestCount;
-    if (gTestCount % 3000 == 0) {
+    if (gTestCount % 1000 == 0) {
         CU.forceGC();
         CU.forceCC();
     }
