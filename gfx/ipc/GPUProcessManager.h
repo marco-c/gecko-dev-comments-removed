@@ -105,6 +105,11 @@ public:
   void MapLayerTreeId(uint64_t aLayersId, base::ProcessId aOwningId);
 
   
+  
+  
+  void UnmapLayerTreeId(uint64_t aLayersId, base::ProcessId aOwningId);
+
+  
   bool IsLayerTreeIdMapped(uint64_t aLayersId, base::ProcessId aRequestingId);
 
   
@@ -113,10 +118,6 @@ public:
   
   uint64_t AllocateLayerTreeId();
 
-  
-  
-  
-  void DeallocateLayerTreeId(uint64_t aLayersId);
 
   void OnProcessLaunchComplete(GPUProcessHost* aHost) override;
   void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) override;

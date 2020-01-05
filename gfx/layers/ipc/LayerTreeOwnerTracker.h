@@ -9,6 +9,7 @@
 
 #include "base/process.h"  
 #include "mozilla/Mutex.h" 
+#include "mozilla/Function.h"
 
 #include <map>
 
@@ -44,10 +45,18 @@ public:
 
 
   void Map(uint64_t aLayersId, base::ProcessId aProcessId);
+
+  
+
+
+  void Unmap(uint64_t aLayersId, base::ProcessId aProcessId);
+
   
 
 
   bool IsMapped(uint64_t aLayersId, base::ProcessId aProcessId);
+
+  void Iterate(function<void(uint64_t aLayersId, base::ProcessId aProcessId)> aCallback);
 
 private:
   LayerTreeOwnerTracker();
