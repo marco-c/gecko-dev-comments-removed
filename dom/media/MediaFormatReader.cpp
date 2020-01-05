@@ -187,6 +187,129 @@ GlobalAllocPolicy::operator=(std::nullptr_t)
   delete this;
 }
 
+
+
+
+
+
+
+
+
+class LocalAllocPolicy
+{
+  using TrackType = TrackInfo::TrackType;
+  using Promise = GlobalAllocPolicy::Promise;
+  using Token = GlobalAllocPolicy::Token;
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LocalAllocPolicy)
+
+public:
+  LocalAllocPolicy(TrackType aTrack, TaskQueue* aOwnerThread)
+    : mTrack(aTrack)
+    , mOwnerThread(aOwnerThread)
+  {
+  }
+
+  
+  
+  
+  
+  RefPtr<Promise> Alloc();
+
+  
+  
+  void Cancel();
+
+private:
+  
+
+
+  class AutoDeallocToken : public Token
+  {
+  public:
+    explicit AutoDeallocToken(LocalAllocPolicy* aOwner)
+      : mOwner(aOwner)
+    {
+      MOZ_DIAGNOSTIC_ASSERT(mOwner->mDecoderLimit > 0);
+      --mOwner->mDecoderLimit;
+    }
+    
+    
+    
+    void Append(Token* aToken)
+    {
+      mToken = aToken;
+    }
+  private:
+    
+    
+    ~AutoDeallocToken()
+    {
+      mToken = nullptr; 
+      ++mOwner->mDecoderLimit; 
+      mOwner->ProcessRequest(); 
+    }
+    RefPtr<LocalAllocPolicy> mOwner;
+    RefPtr<Token> mToken;
+  };
+
+  ~LocalAllocPolicy() { }
+  void ProcessRequest();
+
+  int mDecoderLimit = 1;
+  const TrackType mTrack;
+  RefPtr<TaskQueue> mOwnerThread;
+  MozPromiseHolder<Promise> mPendingPromise;
+  MozPromiseRequestHolder<Promise> mTokenRequest;
+};
+
+RefPtr<LocalAllocPolicy::Promise>
+LocalAllocPolicy::Alloc()
+{
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+  MOZ_DIAGNOSTIC_ASSERT(mPendingPromise.IsEmpty());
+  RefPtr<Promise> p = mPendingPromise.Ensure(__func__);
+  if (mDecoderLimit > 0) {
+    ProcessRequest();
+  }
+  return p.forget();
+}
+
+void
+LocalAllocPolicy::ProcessRequest()
+{
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+  MOZ_DIAGNOSTIC_ASSERT(mDecoderLimit > 0);
+
+  
+  if (mPendingPromise.IsEmpty()) {
+    return;
+  }
+
+  RefPtr<AutoDeallocToken> token = new AutoDeallocToken(this);
+  RefPtr<LocalAllocPolicy> self = this;
+
+  GlobalAllocPolicy::Instance(mTrack).Alloc()->Then(
+    mOwnerThread, __func__,
+    [self, token](Token* aToken) {
+      self->mTokenRequest.Complete();
+      token->Append(aToken);
+      self->mPendingPromise.Resolve(token, __func__);
+    },
+    [self, token]() {
+      self->mTokenRequest.Complete();
+      self->mPendingPromise.Reject(true, __func__);
+    })->Track(mTokenRequest);
+}
+
+void
+LocalAllocPolicy::Cancel()
+{
+  MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
+  mPendingPromise.RejectIfExists(true, __func__);
+  mTokenRequest.DisconnectIfExists();
+}
+
 class MediaFormatReader::DecoderFactory
 {
   using InitPromise = MediaDataDecoder::InitPromise;
@@ -195,8 +318,8 @@ class MediaFormatReader::DecoderFactory
 
 public:
   explicit DecoderFactory(MediaFormatReader* aOwner)
-    : mAudio(aOwner->mAudio, TrackInfo::kAudioTrack)
-    , mVideo(aOwner->mVideo, TrackInfo::kVideoTrack)
+    : mAudio(aOwner->mAudio, TrackInfo::kAudioTrack, aOwner->OwnerThread())
+    , mVideo(aOwner->mVideo, TrackInfo::kVideoTrack, aOwner->OwnerThread())
     , mOwner(WrapNotNull(aOwner)) { }
 
   void CreateDecoder(TrackType aTrack);
@@ -206,6 +329,7 @@ public:
     MOZ_ASSERT(aTrack == TrackInfo::kAudioTrack
                || aTrack == TrackInfo::kVideoTrack);
     auto& data = aTrack == TrackInfo::kAudioTrack ? mAudio : mVideo;
+    data.mPolicy->Cancel();
     data.mTokenRequest.DisconnectIfExists();
     data.mInitRequest.DisconnectIfExists();
     if (!data.mDecoder) {
@@ -235,13 +359,13 @@ private:
 
   struct Data
   {
-    Data(DecoderData& aOwnerData, TrackType aTrack)
+    Data(DecoderData& aOwnerData, TrackType aTrack, TaskQueue* aThread)
       : mOwnerData(aOwnerData)
       , mTrack(aTrack)
-      , mPolicy(GlobalAllocPolicy::Instance(aTrack)) { }
+      , mPolicy(new LocalAllocPolicy(aTrack, aThread)) { }
     DecoderData& mOwnerData;
     const TrackType mTrack;
-    GlobalAllocPolicy& mPolicy;
+    RefPtr<LocalAllocPolicy> mPolicy;
     Stage mStage = Stage::None;
     RefPtr<Token> mToken;
     RefPtr<MediaDataDecoder> mDecoder;
@@ -324,7 +448,7 @@ MediaFormatReader::DecoderFactory::RunStage(Data& aData)
   switch (aData.mStage) {
     case Stage::None: {
       MOZ_ASSERT(!aData.mToken);
-      aData.mPolicy.Alloc()->Then(
+      aData.mPolicy->Alloc()->Then(
         mOwner->OwnerThread(), __func__,
         [this, &aData] (Token* aToken) {
           aData.mTokenRequest.Complete();
