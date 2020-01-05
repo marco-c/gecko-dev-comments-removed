@@ -213,8 +213,22 @@ TouchEvent::PrefEnabled(nsIDocShell* aDocShell)
       if (!sDidCheckTouchDeviceSupport) {
         sDidCheckTouchDeviceSupport = true;
         sIsTouchDeviceSupportPresent = WidgetUtils::IsTouchDeviceSupportPresent();
+        
+        
+        
+        
+        sIsTouchDeviceSupportPresent &= gfxPlatform::AsyncPanZoomEnabled();
       }
       enabled = sIsTouchDeviceSupportPresent;
+      if (enabled && aDocShell) {
+        
+        
+        nsPresContext* pc = nullptr;
+        aDocShell->GetPresContext(&pc);
+        if (pc && pc->GetRootWidget()) {
+          enabled &= pc->GetRootWidget()->AsyncPanZoomEnabled();
+        }
+      }
 #else
       enabled = false;
 #endif
