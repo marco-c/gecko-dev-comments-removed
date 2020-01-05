@@ -106,7 +106,12 @@ impl AsyncResponseListener for HTMLMediaElementContext {
         let elem = self.elem.root();
 
         
-        if status.is_ok() {
+        
+        if !self.have_metadata {
+            elem.queue_dedicated_media_source_failure_steps();
+        }
+        
+        else if status.is_ok() {
             elem.change_ready_state(HAVE_ENOUGH_DATA);
 
             elem.fire_simple_event("progress");
