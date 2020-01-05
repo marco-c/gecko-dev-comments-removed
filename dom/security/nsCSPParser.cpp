@@ -1116,7 +1116,7 @@ nsCSPParser::directiveName()
 
   
   if (CSP_IsDirective(mCurToken, nsIContentSecurityPolicy::FRAME_SRC_DIRECTIVE)) {
-    const char16_t* params[] = { mCurToken.get(), NS_LITERAL_STRING("child-src").get() };
+    const char16_t* params[] = { mCurToken.get(), u"child-src" };
     logWarningErrorToConsole(nsIScriptError::warningFlag, "deprecatedDirective",
                              params, ArrayLength(params));
     mFrameSrc = new nsCSPDirective(CSP_StringToCSPDirective(mCurToken));

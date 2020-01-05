@@ -252,19 +252,19 @@ TEST(ObserverService, TestNotify)
   testResult(svc->AddObserver(bObserver, topicB.get(), false));
 
   
-  NS_NAMED_LITERAL_STRING(dataA, "Testing Notify(observer-A, topic-A)");
+  const char16_t* dataA = u"Testing Notify(observer-A, topic-A)";
   aObserver->mExpectedData = dataA;
   bObserver->mExpectedData = dataA;
   nsresult rv =
-      svc->NotifyObservers(ToSupports(aObserver), topicA.get(), dataA.get());
+      svc->NotifyObservers(ToSupports(aObserver), topicA.get(), dataA);
   testResult(rv);
   ASSERT_EQ(aObserver->mObservations, 1);
   ASSERT_EQ(bObserver->mObservations, 1);
 
   
-  NS_NAMED_LITERAL_STRING(dataB, "Testing Notify(observer-B, topic-B)");
+  const char16_t* dataB = u"Testing Notify(observer-B, topic-B)";
   bObserver->mExpectedData = dataB;
-  rv = svc->NotifyObservers(ToSupports(bObserver), topicB.get(), dataB.get());
+  rv = svc->NotifyObservers(ToSupports(bObserver), topicB.get(), dataB);
   testResult(rv);
   ASSERT_EQ(aObserver->mObservations, 1);
   ASSERT_EQ(bObserver->mObservations, 2);
@@ -274,14 +274,14 @@ TEST(ObserverService, TestNotify)
 
   
   bObserver->mExpectedData = dataA;
-  rv = svc->NotifyObservers(ToSupports(aObserver), topicA.get(), dataA.get());
+  rv = svc->NotifyObservers(ToSupports(aObserver), topicA.get(), dataA);
   testResult(rv);
   ASSERT_EQ(aObserver->mObservations, 1);
   ASSERT_EQ(bObserver->mObservations, 3);
 
   
   testResult(svc->RemoveObserver(bObserver, topicA.get()));
-  rv = svc->NotifyObservers(ToSupports(aObserver), topicA.get(), dataA.get());
+  rv = svc->NotifyObservers(ToSupports(aObserver), topicA.get(), dataA);
   testResult(rv);
   ASSERT_EQ(aObserver->mObservations, 1);
   ASSERT_EQ(bObserver->mObservations, 3);

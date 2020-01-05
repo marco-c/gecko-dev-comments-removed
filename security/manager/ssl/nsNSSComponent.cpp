@@ -1848,12 +1848,10 @@ nsNSSComponent::Init()
   
   
   {
-    NS_NAMED_LITERAL_STRING(dummy_name, "dummy");
+    const char16_t* dummy = u"dummy";
     nsXPIDLString result;
-    mPIPNSSBundle->GetStringFromName(dummy_name.get(),
-                                     getter_Copies(result));
-    mNSSErrorsBundle->GetStringFromName(dummy_name.get(),
-                                        getter_Copies(result));
+    mPIPNSSBundle->GetStringFromName(dummy, getter_Copies(result));
+    mNSSErrorsBundle->GetStringFromName(dummy, getter_Copies(result));
   }
 
 

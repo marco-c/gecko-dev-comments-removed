@@ -458,11 +458,8 @@ nsAppStartup::Quit(uint32_t aMode)
     
     
     if (obsService) {
-      NS_NAMED_LITERAL_STRING(shutdownStr, "shutdown");
-      NS_NAMED_LITERAL_STRING(restartStr, "restart");
       obsService->NotifyObservers(nullptr, "quit-application",
-        (mRestart || mRestartNotSameProfile) ?
-         restartStr.get() : shutdownStr.get());
+        (mRestart || mRestartNotSameProfile) ? u"restart" : u"shutdown");
     }
 
     if (!mRunning) {
