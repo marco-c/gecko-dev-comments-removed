@@ -1083,8 +1083,7 @@ nsView::DidCompositeWindow(uint64_t aTransactionId,
     nsPresContext* context = presShell->GetPresContext();
     nsRootPresContext* rootContext = context->GetRootPresContext();
     MOZ_ASSERT(rootContext, "rootContext must be valid.");
-    rootContext->NotifyDidPaintForSubtree(nsIPresShell::PAINT_COMPOSITE, aTransactionId,
-                                          aCompositeEnd);
+    rootContext->NotifyDidPaintForSubtree(aTransactionId, aCompositeEnd);
 
     
     
