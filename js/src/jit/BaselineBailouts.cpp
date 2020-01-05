@@ -513,7 +513,8 @@ HasLiveStackValueAtDepth(JSScript* script, jsbytecode* pc, uint32_t stackDepth)
           case JSTRY_FOR_OF:
             
             
-            if (stackDepth == tn->stackDepth - 1)
+            
+            if (stackDepth == tn->stackDepth - 2)
                 return true;
             break;
 
