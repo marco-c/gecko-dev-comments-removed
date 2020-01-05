@@ -291,6 +291,14 @@ class ProxyContextParent extends BaseContext {
       value: principal, enumerable: true, configurable: true,
     });
 
+    
+    
+    if (params.cloneScope) {
+      Object.defineProperty(this, "cloneScope", {
+        value: params.cloneScope, enumerable: true, configurable: true,
+      });
+    }
+
     this.listenerProxies = new Map();
 
     apiManager.emit("proxy-context-load", this);
