@@ -16,57 +16,52 @@ function run_test() {
   let SSService = Cc["@mozilla.org/ssservice;1"]
                     .getService(Ci.nsISiteSecurityService);
   let sslStatus = new FakeSSLStatus();
+  let unlikelyHost = "highlyunlikely.example.com";
+  let uri = Services.io.newURI("https://" + unlikelyHost);
+  let subDomainUri = Services.io.newURI("https://subdomain." + unlikelyHost);
 
   
   
-  let unlikelyHost = "highlyunlikely.example.com";
-  ok(!SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             unlikelyHost, 0));
+  ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
   SSService.setHSTSPreload(unlikelyHost, false, Date.now() + 60000);
 
   
-  ok(SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            unlikelyHost, 0));
+  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
-  ok(!SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             "subdomain." + unlikelyHost, 0));
+  ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, subDomainUri,
+                            0));
 
   
   SSService.clearAll();
 
   
-  ok(SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            unlikelyHost, 0));
+  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
   SSService.clearPreloads();
 
   
   
-  ok(!SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             unlikelyHost, 0));
+  ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
   SSService.setHSTSPreload(unlikelyHost, true, Date.now() + 60000);
 
   
-  ok(SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            unlikelyHost, 0));
+  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 
   
-  ok(SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                            "subdomain." + unlikelyHost, 0));
+  ok(SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, subDomainUri,
+                           0));
 
   
   
-  let uri = Services.io.newURI("https://" + unlikelyHost);
   SSService.processHeader(Ci.nsISiteSecurityService.HEADER_HSTS, uri,
                           "max-age=0", sslStatus, 0);
 
   
-  ok(!SSService.isSecureHost(Ci.nsISiteSecurityService.HEADER_HSTS,
-                             unlikelyHost, 0));
+  ok(!SSService.isSecureURI(Ci.nsISiteSecurityService.HEADER_HSTS, uri, 0));
 }
