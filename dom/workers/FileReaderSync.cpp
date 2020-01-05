@@ -25,6 +25,9 @@
 #include "nsISupportsImpl.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
+#include "nsIAsyncInputStream.h"
+#include "WorkerPrivate.h"
+#include "WorkerRunnable.h"
 
 #include "RuntimeService.h"
 
@@ -75,7 +78,7 @@ FileReaderSync::ReadAsArrayBuffer(JSContext* aCx,
   }
 
   uint32_t numRead;
-  aRv = stream->Read(bufferData.get(), blobSize, &numRead);
+  aRv = Read(stream, bufferData.get(), blobSize, &numRead);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -107,7 +110,7 @@ FileReaderSync::ReadAsBinaryString(Blob& aBlob,
   uint32_t numRead;
   do {
     char readBuf[4096];
-    aRv = stream->Read(readBuf, sizeof(readBuf), &numRead);
+    aRv = Read(stream, readBuf, sizeof(readBuf), &numRead);
     if (NS_WARN_IF(aRv.Failed())) {
       return;
     }
@@ -142,7 +145,7 @@ FileReaderSync::ReadAsText(Blob& aBlob,
   }
 
   uint32_t numRead = 0;
-  aRv = stream->Read(sniffBuf.BeginWriting(), sniffBuf.Length(), &numRead);
+  aRv = Read(stream, sniffBuf.BeginWriting(), sniffBuf.Length(), &numRead);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -288,3 +291,122 @@ FileReaderSync::ConvertStream(nsIInputStream *aStream,
   return rv;
 }
 
+namespace {
+
+
+class ReadReadyRunnable final : public WorkerSyncRunnable
+{
+public:
+  ReadReadyRunnable(WorkerPrivate* aWorkerPrivate,
+                    nsIEventTarget* aSyncLoopTarget)
+    : WorkerSyncRunnable(aWorkerPrivate, aSyncLoopTarget)
+  {}
+
+  bool
+  WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
+  {
+    aWorkerPrivate->AssertIsOnWorkerThread();
+    MOZ_ASSERT(mSyncLoopTarget);
+
+    nsCOMPtr<nsIEventTarget> syncLoopTarget;
+    mSyncLoopTarget.swap(syncLoopTarget);
+
+    aWorkerPrivate->StopSyncLoop(syncLoopTarget, true);
+    return true;
+  }
+
+private:
+  ~ReadReadyRunnable()
+  {}
+};
+
+
+
+class ReadCallback final : public nsIInputStreamCallback
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  ReadCallback(WorkerPrivate* aWorkerPrivate, nsIEventTarget* aEventTarget)
+    : mWorkerPrivate(aWorkerPrivate)
+    , mEventTarget(aEventTarget)
+  {}
+
+  NS_IMETHOD
+  OnInputStreamReady(nsIAsyncInputStream* aStream) override
+  {
+    
+    RefPtr<ReadReadyRunnable> runnable =
+      new ReadReadyRunnable(mWorkerPrivate, mEventTarget);
+    return mEventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+  }
+
+private:
+  ~ReadCallback()
+  {}
+
+  
+  WorkerPrivate* mWorkerPrivate;
+  nsCOMPtr<nsIEventTarget> mEventTarget;
+};
+
+NS_IMPL_ADDREF(ReadCallback);
+NS_IMPL_RELEASE(ReadCallback);
+
+NS_INTERFACE_MAP_BEGIN(ReadCallback)
+  NS_INTERFACE_MAP_ENTRY(nsIInputStreamCallback)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStreamCallback)
+NS_INTERFACE_MAP_END
+
+} 
+
+nsresult
+FileReaderSync::Read(nsIInputStream* aStream, char* aBuffer, uint32_t aBufferSize,
+                     uint32_t* aRead)
+{
+  MOZ_ASSERT(aStream);
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aRead);
+
+  
+  nsresult rv = aStream->Read(aBuffer, aBufferSize, aRead);
+  if (NS_SUCCEEDED(rv) || rv != NS_BASE_STREAM_WOULD_BLOCK) {
+    return rv;
+  }
+
+  
+  nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aStream);
+  if (!asyncStream) {
+    return rv;
+  }
+
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  MOZ_ASSERT(workerPrivate);
+
+  AutoSyncLoopHolder syncLoop(workerPrivate, Closing);
+
+  nsCOMPtr<nsIEventTarget> syncLoopTarget = syncLoop.GetEventTarget();
+  if (!syncLoopTarget) {
+    
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  RefPtr<ReadCallback> callback =
+    new ReadCallback(workerPrivate, syncLoopTarget);
+
+  nsCOMPtr<nsIEventTarget> target =
+    do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+  MOZ_ASSERT(target);
+
+  rv = asyncStream->AsyncWait(callback, 0, aBufferSize, target);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  if (!syncLoop.Run()) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  
+  return Read(aStream, aBuffer, aBufferSize, aRead);
+}
