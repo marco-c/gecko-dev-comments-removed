@@ -238,21 +238,18 @@ DataTransferItem::FillInExternalData()
 }
 
 already_AddRefed<File>
-DataTransferItem::GetAsFile(ErrorResult& aRv)
+DataTransferItem::GetAsFile(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                            ErrorResult& aRv)
 {
-  return GetAsFileWithPrincipal(nsContentUtils::SubjectPrincipal(), aRv);
-}
+  MOZ_ASSERT(aSubjectPrincipal.isSome());
 
-already_AddRefed<File>
-DataTransferItem::GetAsFileWithPrincipal(nsIPrincipal* aPrincipal, ErrorResult& aRv)
-{
   if (mKind != KIND_FILE) {
     return nullptr;
   }
 
   
   
-  nsCOMPtr<nsIVariant> data = Data(aPrincipal, aRv);
+  nsCOMPtr<nsIVariant> data = Data(aSubjectPrincipal.value(), aRv);
   if (NS_WARN_IF(!data || aRv.Failed())) {
     return nullptr;
   }
@@ -286,16 +283,12 @@ DataTransferItem::GetAsFileWithPrincipal(nsIPrincipal* aPrincipal, ErrorResult& 
 }
 
 already_AddRefed<FileSystemEntry>
-DataTransferItem::GetAsEntry(ErrorResult& aRv)
+DataTransferItem::GetAsEntry(const Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                             ErrorResult& aRv)
 {
-  return GetAsEntryWithPrincipal(nsContentUtils::SubjectPrincipal(), aRv);
-}
+  MOZ_ASSERT(aSubjectPrincipal.isSome());
 
-already_AddRefed<FileSystemEntry>
-DataTransferItem::GetAsEntryWithPrincipal(nsIPrincipal* aPrincipal,
-                                          ErrorResult& aRv)
-{
-  RefPtr<File> file = GetAsFileWithPrincipal(aPrincipal, aRv);
+  RefPtr<File> file = GetAsFile(aSubjectPrincipal, aRv);
   if (NS_WARN_IF(aRv.Failed()) || !file) {
     return nullptr;
   }
@@ -393,8 +386,11 @@ DataTransferItem::CreateFileFromInputStream(nsIInputStream* aStream)
 
 void
 DataTransferItem::GetAsString(FunctionStringCallback* aCallback,
+                              const Maybe<nsIPrincipal*>& aSubjectPrincipal,
                               ErrorResult& aRv)
 {
+  MOZ_ASSERT(aSubjectPrincipal.isSome());
+
   if (!aCallback || mKind != KIND_STRING) {
     return;
   }
@@ -402,7 +398,7 @@ DataTransferItem::GetAsString(FunctionStringCallback* aCallback,
   
   
   
-  nsCOMPtr<nsIVariant> data = Data(nsContentUtils::SubjectPrincipal(), aRv);
+  nsCOMPtr<nsIVariant> data = Data(aSubjectPrincipal.value(), aRv);
   if (NS_WARN_IF(!data || aRv.Failed())) {
     return;
   }

@@ -50,7 +50,9 @@ public:
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   
-  void GetAsString(FunctionStringCallback* aCallback, ErrorResult& aRv);
+  void GetAsString(FunctionStringCallback* aCallback,
+                   const Maybe<nsIPrincipal*>& aPrincipal,
+                   ErrorResult& aRv);
 
   void GetKind(nsAString& aKind) const
   {
@@ -82,15 +84,11 @@ public:
     mKind = aKind;
   }
 
-  
-  already_AddRefed<File> GetAsFile(ErrorResult& aRv);
-  already_AddRefed<File> GetAsFileWithPrincipal(nsIPrincipal* aPrincipal,
-                                                ErrorResult& aRv);
+  already_AddRefed<File>
+  GetAsFile(const Maybe<nsIPrincipal*>& aSubjectPrincipal, ErrorResult& aRv);
 
-  
-  already_AddRefed<FileSystemEntry> GetAsEntry(ErrorResult& aRv);
-  already_AddRefed<FileSystemEntry> GetAsEntryWithPrincipal(nsIPrincipal* aPrincipal,
-                                                            ErrorResult& aRv);
+  already_AddRefed<FileSystemEntry>
+  GetAsEntry(const Maybe<nsIPrincipal*>& aSubjectPrincipal, ErrorResult& aRv);
 
   DataTransfer* GetParentObject() const
   {
