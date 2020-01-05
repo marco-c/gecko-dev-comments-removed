@@ -23,7 +23,6 @@ declare_lint!(UNROOTED_MUST_ROOT, Deny,
 
 
 
-#[allow(missing_copy_implementations)]
 pub struct UnrootedPass;
 
 
