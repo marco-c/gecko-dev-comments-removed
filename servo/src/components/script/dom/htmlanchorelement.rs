@@ -2,11 +2,28 @@
 
 
 
-use dom::htmlelement::HTMLElement;
+use dom::bindings::codegen::HTMLAnchorElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLAnchorElementTypeId;
+use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLAnchorElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLAnchorElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLAnchorElement {
+        HTMLAnchorElement {
+            htmlelement: HTMLElement::new_inherited(HTMLAnchorElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLAnchorElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLAnchorElementBinding::Wrap)
+    }
 }
 
 impl HTMLAnchorElement {

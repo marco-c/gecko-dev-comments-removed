@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLAppletElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLAppletElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLAppletElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLAppletElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLAppletElement {
+        HTMLAppletElement {
+            htmlelement: HTMLElement::new_inherited(HTMLAppletElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLAppletElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLAppletElementBinding::Wrap)
+    }
 }
 
 impl HTMLAppletElement {

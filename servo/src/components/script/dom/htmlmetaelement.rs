@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLMetaElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLMetaElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLMetaElement {
     htmlelement: HTMLElement,
+}
+
+impl HTMLMetaElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLMetaElement {
+        HTMLMetaElement {
+            htmlelement: HTMLElement::new_inherited(HTMLMetaElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLMetaElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLMetaElementBinding::Wrap)
+    }
 }
 
 impl HTMLMetaElement {

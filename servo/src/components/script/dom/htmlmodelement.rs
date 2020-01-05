@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLModElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLModElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLModElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLModElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLModElement {
+        HTMLModElement {
+            htmlelement: HTMLElement::new_inherited(HTMLModElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLModElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLModElementBinding::Wrap)
+    }
 }
 
 impl HTMLModElement {

@@ -2,11 +2,28 @@
 
 
 
+use dom::bindings::codegen::HTMLBaseElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLBaseElementTypeId;
 use dom::htmlelement::HTMLElement;
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLBaseElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLBaseElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLBaseElement {
+        HTMLBaseElement {
+            htmlelement: HTMLElement::new_inherited(HTMLBaseElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLBaseElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLBaseElementBinding::Wrap)
+    }
 }
 
 impl HTMLBaseElement {

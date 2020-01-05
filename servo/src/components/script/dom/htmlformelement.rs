@@ -2,13 +2,29 @@
 
 
 
+use dom::bindings::codegen::HTMLFormElementBinding;
 use dom::bindings::utils::{DOMString, ErrorResult};
+use dom::document::AbstractDocument;
+use dom::element::HTMLFormElementTypeId;
 use dom::htmlcollection::HTMLCollection;
 use dom::htmlelement::HTMLElement;
-use dom::node::{AbstractNode, ScriptView};
+use dom::node::{AbstractNode, Node, ScriptView};
 
 pub struct HTMLFormElement {
     htmlelement: HTMLElement
+}
+
+impl HTMLFormElement {
+    pub fn new_inherited(localName: ~str, document: AbstractDocument) -> HTMLFormElement {
+        HTMLFormElement {
+            htmlelement: HTMLElement::new_inherited(HTMLFormElementTypeId, localName, document)
+        }
+    }
+
+    pub fn new(localName: ~str, document: AbstractDocument) -> AbstractNode<ScriptView> {
+        let element = HTMLFormElement::new_inherited(localName, document);
+        Node::reflect_node(@mut element, document, HTMLFormElementBinding::Wrap)
+    }
 }
 
 impl HTMLFormElement {
