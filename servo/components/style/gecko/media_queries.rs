@@ -8,7 +8,7 @@ use app_units::Au;
 use cssparser::{CssStringWriter, Parser, Token};
 use euclid::Size2D;
 use gecko_bindings::bindings;
-use gecko_bindings::structs::{nsCSSValue, nsCSSUnit, nsStringBuffer, nsresult};
+use gecko_bindings::structs::{nsCSSValue, nsCSSUnit, nsStringBuffer};
 use gecko_bindings::structs::{nsMediaExpression_Range, nsMediaFeature};
 use gecko_bindings::structs::{nsMediaFeature_ValueType, nsMediaFeature_RangeType, nsMediaFeature_RequirementFlags};
 use gecko_bindings::structs::RawGeckoPresContextOwned;
@@ -460,20 +460,11 @@ impl Expression {
     
     pub fn matches(&self, device: &Device) -> bool {
         let mut css_value = nsCSSValue::null();
-        let result = unsafe {
+        unsafe {
             (self.feature.mGetter.unwrap())(device.pres_context,
                                             self.feature,
                                             &mut css_value)
         };
-
-        if result != nsresult::NS_OK {
-            
-            
-            
-            error!("Media feature getter errored: {:?}, {:?}",
-                   result, Atom::from(unsafe { *self.feature.mName }));
-            return false;
-        }
 
         let value = match MediaExpressionValue::from_css_value(self, &css_value) {
             Some(v) => v,
