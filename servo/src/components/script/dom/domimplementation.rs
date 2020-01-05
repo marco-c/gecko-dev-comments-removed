@@ -43,15 +43,13 @@ impl Reflectable for DOMImplementation {
 impl DOMImplementation {
     
     pub fn CreateDocumentType(&self, qname: DOMString, pubid: DOMString, sysid: DOMString) -> Fallible<AbstractNode> {
-        
-        let force_quirks : bool = false;
         match xml_name_type(qname) {
             
             InvalidXMLName => Err(InvalidCharacter),
             
             Name => Err(NamespaceError),
             
-            QName => Ok(DocumentType::new(qname, Some(pubid), Some(sysid), force_quirks, self.owner.Document()))
+            QName => Ok(DocumentType::new(qname, Some(pubid), Some(sysid), self.owner.Document()))
         }
     }
 }
