@@ -126,11 +126,6 @@ pub trait TLayoutNode {
 
     
     fn first_child(&self) -> Option<Self>;
-
-    
-    fn dump(&self) {
-        
-    }
 }
 
 
@@ -204,6 +199,28 @@ impl<'ln> LayoutNode<'ln> {
             node: node,
             chain: ContravariantLifetime,
         })
+    }
+
+    pub fn dump(self) {
+        self.dump_indent(0);
+    }
+
+    fn dump_indent(self, indent: uint) {
+        let mut s = String::new();
+        for _ in range(0, indent) {
+            s.push_str("  ");
+        }
+
+        s.push_str(self.debug_str().as_slice());
+        println!("{:s}", s);
+
+        for kid in self.children() {
+            kid.dump_indent(indent + 1);
+        }
+    }
+
+    fn debug_str(self) -> String {
+        format!("{}: dirty={}", self.type_id(), self.is_dirty())
     }
 
     pub fn flow_debug_id(self) -> uint {
