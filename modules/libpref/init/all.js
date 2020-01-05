@@ -398,7 +398,7 @@ pref("media.gmp.storage.version.expected", 1);
 
 
 
-pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaNoDecoders");
+pref("media.decoder-doctor.notifications-allowed", "MediaWMFNeeded,MediaWidevineNoWMFNoSilverlight,MediaCannotInitializePulseAudio,MediaCannotPlayNoDecoders,MediaNoDecoders,MediaUnsupportedLibavcodec");
 
 pref("media.decoder-doctor.verbose", false);
 
@@ -5424,9 +5424,7 @@ pref("narrate.enabled", false);
 
 pref("narrate.test", false);
 pref("narrate.rate", 0);
-pref("narrate.voice", " { \"default\": \"automatic\" }");
-
-pref("narrate.filter-voices", true);
+pref("narrate.voice", "automatic");
 
 #if defined(XP_LINUX) && defined(MOZ_GMP_SANDBOX)
 
