@@ -67,12 +67,12 @@ function checkResponsePanelDisplaysJSON(doc) {
 
 
 
-function openResponsePanel(doc) {
-  let onReponsePanelReady = waitForDOM(doc, "#response-panel");
+function openResponsePanel(document) {
+  let onReponsePanelReady = waitForDOM(document, "#response-panel");
   EventUtils.sendMouseEvent(
     { type: "mousedown" },
-    doc.getElementById("details-pane-toggle")
+    document.querySelector(".network-details-panel-toggle")
   );
-  doc.querySelector("#response-tab").click();
+  document.querySelector("#response-tab").click();
   return onReponsePanelReady;
 }

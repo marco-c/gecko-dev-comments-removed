@@ -5,7 +5,7 @@
 "use strict";
 
 const {
-  OPEN_SIDEBAR,
+  OPEN_NETWORK_DETAILS,
   OPEN_STATISTICS,
   SELECT_DETAILS_PANEL_TAB,
   WATERFALL_RESIZE,
@@ -16,9 +16,9 @@ const {
 
 
 
-function openSidebar(open) {
+function openNetworkDetails(open) {
   return {
-    type: OPEN_SIDEBAR,
+    type: OPEN_NETWORK_DETAILS,
     open,
   };
 }
@@ -60,8 +60,9 @@ function selectDetailsPanelTab(id) {
 
 
 
-function toggleSidebar() {
-  return (dispatch, getState) => dispatch(openSidebar(!getState().ui.sidebarOpen));
+function toggleNetworkDetails() {
+  return (dispatch, getState) =>
+    dispatch(openNetworkDetails(!getState().ui.networkDetailsOpen));
 }
 
 
@@ -72,10 +73,10 @@ function toggleStatistics() {
 }
 
 module.exports = {
-  openSidebar,
+  openNetworkDetails,
   openStatistics,
   resizeWaterfall,
   selectDetailsPanelTab,
-  toggleSidebar,
+  toggleNetworkDetails,
   toggleStatistics,
 };

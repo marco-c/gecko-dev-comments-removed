@@ -37,7 +37,7 @@ const PREVIEW_TITLE = L10N.getStr("netmonitor.tab.preview");
 
 
 
-function DetailsPanel({
+function TabboxPanel({
   activeTabId,
   cloneSelectedRequest,
   request,
@@ -104,13 +104,13 @@ function DetailsPanel({
   );
 }
 
-DetailsPanel.displayName = "DetailsPanel";
+TabboxPanel.displayName = "TabboxPanel";
 
-DetailsPanel.propTypes = {
+TabboxPanel.propTypes = {
+  activeTabId: PropTypes.string,
   cloneSelectedRequest: PropTypes.func.isRequired,
   request: PropTypes.object,
-  setTabIndex: PropTypes.func.isRequired,
-  selectedTab: PropTypes.number.isRequired,
+  selectTab: PropTypes.func.isRequired,
   toolbox: PropTypes.object.isRequired,
 };
 
@@ -123,4 +123,4 @@ module.exports = connect(
     cloneSelectedRequest: () => dispatch(Actions.cloneSelectedRequest()),
     selectTab: (tabId) => dispatch(Actions.selectDetailsPanelTab(tabId)),
   }),
-)(DetailsPanel);
+)(TabboxPanel);

@@ -60,9 +60,6 @@ const EVENTS = {
     "NetMonitor:ResponseImageThumbnailAvailable",
 
   
-  SIDEBAR_POPULATED: "NetMonitor:SidebarPopulated",
-
-  
   PLACEHOLDER_CHARTS_DISPLAYED: "NetMonitor:PlaceholderChartsDisplayed",
   PRIMED_CACHE_CHART_DISPLAYED: "NetMonitor:PrimedChartsDisplayed",
   EMPTY_CACHE_CHART_DISPLAYED: "NetMonitor:EmptyChartsDisplayed",

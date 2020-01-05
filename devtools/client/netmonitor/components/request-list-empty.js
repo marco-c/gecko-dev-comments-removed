@@ -3,13 +3,20 @@
 
 
 
+
 "use strict";
 
-const { createClass, PropTypes, DOM } = require("devtools/client/shared/vendor/react");
-const { L10N } = require("../l10n");
-const { div, span, button } = DOM;
+const {
+  createClass,
+  DOM,
+  PropTypes,
+} = require("devtools/client/shared/vendor/react");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const Actions = require("../actions/index");
+const { ACTIVITY_TYPE } = require("../constants");
+const { L10N } = require("../l10n");
+
+const { button, div, span } = DOM;
 
 
 
@@ -61,6 +68,7 @@ module.exports = connect(
   undefined,
   dispatch => ({
     onPerfClick: e => dispatch(Actions.openStatistics(true)),
-    onReloadClick: e => NetMonitorView.reloadPage(),
+    onReloadClick: e =>
+      NetMonitorController.triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_DEFAULT),
   })
 )(RequestListEmptyNotice);

@@ -84,7 +84,7 @@ RequestsMenuView.prototype = {
     
     this.store.subscribe(storeWatcher(
       false,
-      () => this.store.getState().ui.sidebarOpen,
+      () => this.store.getState().ui.networkDetailsOpen,
       () => this.onResize()
     ));
 
@@ -385,11 +385,10 @@ RequestsMenuView.prototype = {
   onSelectionUpdate(newSelected, oldSelected) {
     if (newSelected) {
       
-      NetMonitorView.Sidebar.populate(newSelected);
-      NetMonitorView.Sidebar.toggle(true);
+      this.store.dispatch(Actions.openNetworkDetails(true));
     } else {
       
-      NetMonitorView.Sidebar.toggle(false);
+      this.store.dispatch(Actions.openNetworkDetails(false));
     }
   },
 
