@@ -8,7 +8,8 @@
 
 const {Task} = require("devtools/shared/task");
 const EventEmitter = require("devtools/shared/event-emitter");
-const {createNode} = require("devtools/client/animationinspector/utils");
+const {createNode, getCssPropertyName} =
+  require("devtools/client/animationinspector/utils");
 const {Keyframes} = require("devtools/client/animationinspector/components/keyframes");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
@@ -328,14 +329,3 @@ AnimationDetails.prototype = {
     return this.containerEl.ownerDocument.defaultView;
   }
 };
-
-
-
-
-
-
-
-function getCssPropertyName(jsPropertyName) {
-  return jsPropertyName.replace(/[A-Z]/g, "-$&").toLowerCase();
-}
-exports.getCssPropertyName = getCssPropertyName;

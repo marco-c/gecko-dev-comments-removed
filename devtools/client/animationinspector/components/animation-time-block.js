@@ -7,8 +7,10 @@
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
-const {createNode, TimeScale, getFormattedAnimationTitle} =
+const {createNode, createSVGNode, TimeScale, getFormattedAnimationTitle} =
   require("devtools/client/animationinspector/utils");
+const {createPathSegments, appendPathElement, DEFAULT_MIN_PROGRESS_THRESHOLD} =
+  require("devtools/client/animationinspector/graph-helper");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const L10N =
@@ -16,23 +18,7 @@ const L10N =
 
 
 
-
-
-
-
-
-
-const DURATION_RESOLUTION = 4;
-
-const MIN_PROGRESS_THRESHOLD = 0.1;
-
-
-const BOUND_EXCLUDING_TIME = 0.001;
-
-
 const MAX_INFINITE_ANIMATIONS_ITERATIONS = 10;
-
-const SVG_NS = "http://www.w3.org/2000/svg";
 
 
 
@@ -77,9 +63,8 @@ AnimationTimeBlock.prototype = {
       TimeScale.getAnimationDimensions(animation);
 
     
-    const summaryEl = createNode({
+    const summaryEl = createSVGNode({
       parent: this.containerEl,
-      namespace: "http://www.w3.org/2000/svg",
       nodeType: "svg",
       attributes: {
         "class": "summary",
@@ -108,7 +93,7 @@ AnimationTimeBlock.prototype = {
     const minSegmentDuration =
       totalDisplayedDuration / this.containerEl.clientWidth;
     
-    let minProgressThreshold = MIN_PROGRESS_THRESHOLD;
+    let minProgressThreshold = DEFAULT_MIN_PROGRESS_THRESHOLD;
     
     
     const stepFunction = state.easing.match(/steps\((\d+)/);
@@ -614,87 +599,4 @@ function getSegmentHelper(state, win) {
       return { x: time, y: Math.max(progress, 0) };
     }
   };
-}
-
-
-
-
-
-
-
-
-
-
-
-function createPathSegments(startTime, endTime, minSegmentDuration,
-                            minProgressThreshold, segmentHelper) {
-  
-  if (endTime - startTime < minSegmentDuration) {
-    return [segmentHelper.getSegment(startTime),
-            segmentHelper.getSegment(endTime)];
-  }
-
-  
-  let pathSegments = [];
-
-  
-  const startTimeSegment = segmentHelper.getSegment(startTime);
-  pathSegments.push(startTimeSegment);
-  let previousSegment = startTimeSegment;
-
-  
-  
-  const interval = (endTime - startTime) / DURATION_RESOLUTION;
-  for (let index = 1; index <= DURATION_RESOLUTION; index++) {
-    
-    const currentSegment =
-      segmentHelper.getSegment(startTime + index * interval);
-
-    
-    
-    
-    
-    if (Math.abs(currentSegment.y - previousSegment.y) > minProgressThreshold) {
-      
-      
-      pathSegments = pathSegments.concat(
-        createPathSegments(previousSegment.x + BOUND_EXCLUDING_TIME,
-                           currentSegment.x - BOUND_EXCLUDING_TIME,
-                           minSegmentDuration, minProgressThreshold,
-                           segmentHelper));
-    }
-
-    pathSegments.push(currentSegment);
-    previousSegment = currentSegment;
-  }
-
-  return pathSegments;
-}
-
-
-
-
-
-
-
-
-function appendPathElement(parentEl, pathSegments, cls) {
-  
-  let path = `M${ pathSegments[0].x },0`;
-  pathSegments.forEach(pathSegment => {
-    path += ` L${ pathSegment.x },${ pathSegment.y }`;
-  });
-  path += ` L${ pathSegments[pathSegments.length - 1].x },0 Z`;
-  
-  return createNode({
-    parent: parentEl,
-    namespace: SVG_NS,
-    nodeType: "path",
-    attributes: {
-      "d": path,
-      "class": cls,
-      "vector-effect": "non-scaling-stroke",
-      "transform": "scale(1, -1)"
-    }
-  });
 }
