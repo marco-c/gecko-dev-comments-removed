@@ -188,8 +188,6 @@ private:
 
 
 
-
-
   void AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoot,
                                  FrameMetrics::ViewID aTransformScrollId,
                                  const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
