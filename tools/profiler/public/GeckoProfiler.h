@@ -330,7 +330,6 @@ class ProfilerMarkerPayload;
 
 
 
-
 extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
 
 class ProfilerState;

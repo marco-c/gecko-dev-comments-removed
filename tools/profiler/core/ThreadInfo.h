@@ -45,7 +45,6 @@ private:
   const bool mIsMainThread;
 
   
-  
   mozilla::NotNull<PseudoStack*> mPseudoStack;
 
   UniquePlatformData mPlatformData;

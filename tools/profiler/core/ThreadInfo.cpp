@@ -50,9 +50,7 @@ ThreadInfo::~ThreadInfo()
 {
   MOZ_COUNT_DTOR(ThreadInfo);
 
-  if (mPendingDelete) {
-    delete mPseudoStack;
-  }
+  delete mPseudoStack;
 }
 
 void
@@ -243,11 +241,7 @@ size_t
 ThreadInfo::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 {
   size_t n = aMallocSizeOf(this);
-
   n += aMallocSizeOf(mName.get());
-
-  
-  
   n += mPseudoStack->SizeOfIncludingThis(aMallocSizeOf);
 
   

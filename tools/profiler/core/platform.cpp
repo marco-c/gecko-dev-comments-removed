@@ -2115,9 +2115,6 @@ profiler_shutdown()
 
     
     
-    
-    
-    delete tlsPseudoStack.get();
     tlsPseudoStack.set(nullptr);
 
 #ifdef MOZ_TASK_TRACER
@@ -2853,7 +2850,8 @@ profiler_unregister_thread()
 
   PS::AutoLock lock(gPSMutex);
 
-  bool wasPseudoStackTransferred = false;
+  
+  
 
   int i;
   ThreadInfo* info = FindThreadInfo(lock, &i);
@@ -2863,14 +2861,17 @@ profiler_unregister_thread()
       
       
       
-      
       info->SetPendingDelete();
-      wasPseudoStackTransferred = true;
     } else {
       delete info;
       PS::ThreadVector& threads = gPS->Threads(lock);
       threads.erase(threads.begin() + i);
     }
+
+    
+    
+    tlsPseudoStack.set(nullptr);
+
   } else {
     
     
@@ -2882,14 +2883,6 @@ profiler_unregister_thread()
     
     MOZ_RELEASE_ASSERT(!tlsPseudoStack.get());
   }
-
-  
-  
-
-  if (!wasPseudoStackTransferred) {
-    delete tlsPseudoStack.get();
-  }
-  tlsPseudoStack.set(nullptr);
 }
 
 void
