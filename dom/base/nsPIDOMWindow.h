@@ -318,7 +318,7 @@ public:
 
 
 
-  virtual void EnsureSizeUpToDate() = 0;
+  virtual void EnsureSizeAndPositionUpToDate() = 0;
 
   
 

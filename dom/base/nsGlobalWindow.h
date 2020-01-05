@@ -423,7 +423,7 @@ public:
                                bool aOriginalOpener) override;
 
   
-  virtual void EnsureSizeUpToDate() override;
+  virtual void EnsureSizeAndPositionUpToDate() override;
 
   virtual void EnterModalState() override;
   virtual void LeaveModalState() override;
