@@ -58,6 +58,10 @@ var gTests = [
 
       
       yield closeStream();
+
+      
+      
+      yield promiseWaitForCondition(() => !tab.getAttribute("sharing"));
       is(tab.getAttribute("sharing"), "",
          "the tab no longer has the 'sharing' attribute after closing the stream");
     }
