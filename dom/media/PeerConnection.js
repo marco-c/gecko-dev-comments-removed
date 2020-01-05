@@ -184,17 +184,9 @@ GlobalPCList.prototype = {
                topic == "network:offline-about-to-go-offline") {
       
       
-      
-      
-      
-      
-      for (let winId in this._list) {
-        cleanupWinId(this._list, winId);
-      }
       this._networkdown = true;
     } else if (topic == "network:offline-status-changed") {
       if (data == "offline") {
-        
         this._networkdown = true;
       } else if (data == "online") {
         this._networkdown = false;
@@ -1211,9 +1203,11 @@ RTCPeerConnection.prototype = {
   },
 
   changeIceConnectionState: function(state) {
-    this._iceConnectionState = state;
-    _globalPCList.notifyLifecycleObservers(this, "iceconnectionstatechange");
-    this.dispatchEvent(new this._win.Event("iceconnectionstatechange"));
+    if (state != this._iceConnectionState) {
+      this._iceConnectionState = state;
+      _globalPCList.notifyLifecycleObservers(this, "iceconnectionstatechange");
+      this.dispatchEvent(new this._win.Event("iceconnectionstatechange"));
+    }
   },
 
   getStats: function(selector, onSucc, onErr) {
@@ -1365,16 +1359,6 @@ PeerConnectionObserver.prototype = {
   },
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
   

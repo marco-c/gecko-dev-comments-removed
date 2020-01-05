@@ -315,6 +315,9 @@ class NrIceCtx {
   nsresult StartChecks();
 
   
+  void UpdateNetworkState(bool online);
+
+  
   
   nsresult Finalize();
 
