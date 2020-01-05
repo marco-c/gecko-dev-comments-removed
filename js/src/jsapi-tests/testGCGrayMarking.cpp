@@ -5,6 +5,8 @@
 
 
 
+#include "jsweakmap.h"
+
 #include "gc/Heap.h"
 #include "gc/Zone.h"
 
@@ -12,6 +14,27 @@
 
 using namespace js;
 using namespace js::gc;
+
+namespace JS {
+
+template <>
+struct DeletePolicy<js::ObjectWeakMap> : public js::GCManagedDeletePolicy<js::ObjectWeakMap>
+{};
+
+template <>
+struct MapTypeToRootKind<js::ObjectWeakMap*> {
+    static const JS::RootKind kind = JS::RootKind::Traceable;
+};
+
+template <>
+struct GCPolicy<js::ObjectWeakMap*> {
+    static void trace(JSTracer* trc, js::ObjectWeakMap** tp, const char* name) {
+        (*tp)->trace(trc);
+    }
+};
+
+} 
+
 
 class AutoNoAnalysisForTest
 {
@@ -28,7 +51,12 @@ BEGIN_TEST(testGCGrayMarking)
 
     InitGrayRootTracer();
 
-    bool ok = TestMarking() && TestWeakMaps() && TestWatchpoints() && TestCCWs();
+    bool ok =
+        TestMarking() &&
+        TestWeakMaps() &&
+        TestUnassociatedWeakMaps() &&
+        TestWatchpoints() &&
+        TestCCWs();
 
     global1 = nullptr;
     global2 = nullptr;
@@ -283,6 +311,107 @@ TestWeakMaps()
 
     blackRoot1 = nullptr;
     blackRoot2 = nullptr;
+    grayRoots.grayRoot1 = nullptr;
+    grayRoots.grayRoot2 = nullptr;
+
+    return true;
+}
+
+bool
+TestUnassociatedWeakMaps()
+{
+    
+    auto weakMap = cx->make_unique<ObjectWeakMap>(cx);
+    CHECK(weakMap);
+    CHECK(weakMap->init());
+
+    
+    Rooted<ObjectWeakMap*> rootMap(cx, weakMap.get());
+
+    JSObject* key = AllocWeakmapKeyObject();
+    CHECK(key);
+
+    JSObject* value = AllocPlainObject();
+    CHECK(value);
+
+    CHECK(weakMap->add(cx, key, value));
+
+    
+    
+
+    grayRoots.grayRoot1 = key;
+    JS_GC(cx);
+    CHECK(IsMarkedGray(key));
+    CHECK(IsMarkedGray(value));
+
+    
+
+    grayRoots.grayRoot1 = key;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedGray(key));
+    CHECK(IsMarkedGray(value));
+
+    
+    
+
+    JS::RootedObject blackRoot(cx);
+    blackRoot = key;
+    grayRoots.grayRoot1 = nullptr;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedBlack(key));
+    CHECK(IsMarkedBlack(value));
+
+    
+
+    JSObject* delegate = AllocDelegateForKey(key);
+    blackRoot = nullptr;
+    grayRoots.grayRoot1 = delegate;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedGray(delegate));
+    CHECK(IsMarkedGray(key));
+    CHECK(IsMarkedGray(value));
+
+    
+
+    blackRoot = delegate;
+    grayRoots.grayRoot1 = nullptr;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedBlack(delegate));
+    CHECK(IsMarkedBlack(key));
+    CHECK(IsMarkedBlack(value));
+
+    blackRoot = delegate;
+    grayRoots.grayRoot1 = key;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedBlack(delegate));
+    CHECK(IsMarkedBlack(key));
+    CHECK(IsMarkedBlack(value));
+
+    
+    
+
+    delegate = nullptr;
+    blackRoot = key;
+    grayRoots.grayRoot1 = nullptr;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedBlack(key));
+    CHECK(IsMarkedBlack(value));
+
+    CHECK(AllocDelegateForKey(key));
+    blackRoot = nullptr;
+    grayRoots.grayRoot1 = key;
+    grayRoots.grayRoot2 = nullptr;
+    JS_GC(cx);
+    CHECK(IsMarkedGray(key));
+    CHECK(IsMarkedGray(value));
+
+    blackRoot = nullptr;
     grayRoots.grayRoot1 = nullptr;
     grayRoots.grayRoot2 = nullptr;
 
