@@ -202,7 +202,7 @@ template <>
 class ZoneCellIter<TenuredCell> {
     ArenaIter arenaIter;
     ArenaCellIterImpl cellIter;
-    JS::AutoAssertNoAlloc noAlloc;
+    mozilla::Maybe<JS::AutoAssertNoGC> nogc;
 
   protected:
     
@@ -221,7 +221,7 @@ class ZoneCellIter<TenuredCell> {
         
         if (!rt->isHeapBusy()) {
             
-            noAlloc.disallowAlloc(rt);
+            nogc.emplace(rt);
         }
 
         

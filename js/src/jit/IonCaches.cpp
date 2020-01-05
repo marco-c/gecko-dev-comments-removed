@@ -3657,7 +3657,7 @@ SetPropertyIC::tryAttachAddSlot(JSContext* cx, HandleScript outerScript, IonScri
     
     
     
-    JS::AutoAssertNoAlloc nogc;
+    JS::AutoAssertNoGC nogc;
     if (ion->invalidated())
         return true;
 
