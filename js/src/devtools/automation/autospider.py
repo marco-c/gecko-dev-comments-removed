@@ -46,9 +46,6 @@ parser.add_argument('--timeout', '-t', type=int, metavar='TIMEOUT',
 parser.add_argument('--objdir', type=str, metavar='DIR',
                     default=env.get('OBJDIR', 'obj-spider'),
                     help='object directory')
-parser.add_argument('--optimize', type=bool, metavar='OPT',
-                    default=None,
-                    help='whether to generate an optimized build. Overrides variant setting.')
 parser.add_argument('--run-tests', '--tests', type=str, metavar='TESTSUITE',
                     default='',
                     help="comma-separated set of test suites to add to the variant's default set")
@@ -135,15 +132,9 @@ OUTDIR = os.path.join(OBJDIR, "out")
 POBJDIR = posixpath.join(PDIR.source, args.objdir)
 AUTOMATION = env.get('AUTOMATION', False)
 MAKE = env.get('MAKE', 'make')
-MAKEFLAGS = env.get('MAKEFLAGS', '-j6')
-UNAME_M = subprocess.check_output(['uname', '-m']).strip()
-
+MAKEFLAGS = env.get('MAKEFLAGS', '-j6' + ('' if AUTOMATION else ' -s'))
 CONFIGURE_ARGS = variant['configure-args']
-opt = args.optimize
-if opt is None:
-    opt = variant.get('optimize')
-if opt is not None:
-    CONFIGURE_ARGS += (" --enable-optimize" if opt else " --disable-optimize")
+UNAME_M = subprocess.check_output(['uname', '-m']).strip()
 
 
 
@@ -290,7 +281,7 @@ if not args.nobuild:
 
     
     run_command(['sh', '-c', posixpath.join(PDIR.js_src, 'configure') + ' ' + CONFIGURE_ARGS], check=True)
-    run_command('%s -s -w %s' % (MAKE, MAKEFLAGS), shell=True, check=True)
+    run_command('%s -w %s' % (MAKE, MAKEFLAGS), shell=True, check=True)
 
 COMMAND_PREFIX = []
 
