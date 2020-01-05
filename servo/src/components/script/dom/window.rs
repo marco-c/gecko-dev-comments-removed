@@ -191,6 +191,11 @@ impl<'a> WindowMethods for JSRef<'a, Window> {
         self.Window()
     }
 
+    fn Parent(&self) -> Temporary<Window> {
+        
+        self.Window()
+    }
+
     fn Performance(&self) -> Temporary<Performance> {
         if self.performance.get().is_none() {
             let performance = Performance::new(self);
