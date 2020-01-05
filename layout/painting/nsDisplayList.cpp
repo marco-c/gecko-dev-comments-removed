@@ -4576,10 +4576,9 @@ RequiredLayerStateForChildren(nsDisplayListBuilder* aBuilder,
                               LayerManager* aManager,
                               const ContainerLayerParameters& aParameters,
                               const nsDisplayList& aList,
-                              AnimatedGeometryRoot* aExpectedAnimatedGeometryRootForChildren,
-                              LayerState aDefaultState = LAYER_INACTIVE)
+                              AnimatedGeometryRoot* aExpectedAnimatedGeometryRootForChildren)
 {
-  LayerState result = aDefaultState;
+  LayerState result = LAYER_INACTIVE;
   for (nsDisplayItem* i = aList.GetBottom(); i; i = i->GetAbove()) {
     if (result == LAYER_INACTIVE &&
         i->GetAnimatedGeometryRoot() != aExpectedAnimatedGeometryRootForChildren) {
@@ -7337,8 +7336,7 @@ nsDisplayMask::GetLayerState(nsDisplayListBuilder* aBuilder,
 {
   if (ShouldPaintOnMaskLayer(aManager)) {
     return RequiredLayerStateForChildren(aBuilder, aManager, aParameters,
-                                         mList, GetAnimatedGeometryRoot(),
-                                         LAYER_SVG_EFFECTS);
+                                         mList, GetAnimatedGeometryRoot());
   }
 
   return LAYER_SVG_EFFECTS;
@@ -7355,7 +7353,9 @@ bool nsDisplayMask::ShouldPaintOnMaskLayer(LayerManager* aManager)
 
   
   
-  if (maskUsage.opacity != 1.0) {
+  
+  
+  if (maskUsage.opacity != 1.0 || maskUsage.shouldApplyClipPath) {
     return false;
   }
 
