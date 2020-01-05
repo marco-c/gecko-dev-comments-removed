@@ -113,6 +113,10 @@ class TestQuitRestart(MarionetteTestCase):
             self.marionette.restart(in_app=True, clean=True)
 
     def test_in_app_restart(self):
+        
+        if self.marionette.session_capabilities["platformName"] == "darwin":
+            return
+
         self.marionette.restart(in_app=True)
         self.assertEqual(self.marionette.session_id, self.session_id)
 
@@ -127,6 +131,10 @@ class TestQuitRestart(MarionetteTestCase):
             self.marionette.get_pref("browser.startup.page"), 3)
 
     def test_in_app_restart_with_callback(self):
+        
+        if self.marionette.session_capabilities["platformName"] == "darwin":
+            return
+
         self.marionette.restart(in_app=True,
                                 callback=lambda: self.shutdown(restart=True))
 
@@ -167,6 +175,10 @@ class TestQuitRestart(MarionetteTestCase):
 
     def test_reset_context_after_quit_by_set_context(self):
         
+        if self.marionette.session_capabilities["platformName"] == "darwin":
+            return
+
+        
         
         self.assertNotIn("chrome://", self.marionette.get_url(),
                          "Context does not default to content")
@@ -180,6 +192,10 @@ class TestQuitRestart(MarionetteTestCase):
 
     def test_reset_context_after_quit_by_using_context(self):
         
+        if self.marionette.session_capabilities["platformName"] == "darwin":
+            return
+
+        
         
         self.assertNotIn("chrome://", self.marionette.get_url(),
                          "Context does not default to content")
@@ -192,6 +208,10 @@ class TestQuitRestart(MarionetteTestCase):
                              "Not in content context after quit with using_context")
 
     def test_keep_context_after_restart_by_set_context(self):
+        
+        if self.marionette.session_capabilities["platformName"] == "darwin":
+            return
+
         
         
         self.assertNotIn("chrome://", self.marionette.get_url(),
@@ -211,6 +231,10 @@ class TestQuitRestart(MarionetteTestCase):
                       "Not in chrome context after a restart with set_context")
 
     def test_keep_context_after_restart_by_using_context(self):
+        
+        if self.marionette.session_capabilities["platformName"] == "darwin":
+            return
+
         
         
         self.assertNotIn("chrome://", self.marionette.get_url(),
