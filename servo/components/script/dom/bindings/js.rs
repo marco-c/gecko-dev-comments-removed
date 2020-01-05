@@ -310,11 +310,13 @@ impl<T: Reflectable> MutNullableHeap<JS<T>> {
 
     
     
+    #[allow(unrooted_must_root)]
     pub unsafe fn get_inner_as_layout(&self) -> Option<LayoutJS<T>> {
         ptr::read(self.ptr.get()).map(|js| js.to_layout())
     }
 
     
+    #[allow(unrooted_must_root)]
     pub fn get(&self) -> Option<Root<T>> {
         unsafe {
             ptr::read(self.ptr.get()).map(|o| o.root())
