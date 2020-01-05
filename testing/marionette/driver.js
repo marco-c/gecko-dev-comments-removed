@@ -108,37 +108,29 @@ this.GeckoDriver = function(appName, server) {
   this.browsers = {};
   
   this.curBrowser = null;
+  this.context = Context.CONTENT;
+
+  this.scriptTimeout = 30000;  
+  this.searchTimeout = 0;
+  this.pageTimeout = 300000;  
+
+  this.timer = null;
+  this.inactivityTimer = null;
+  this.marionetteLog = new logging.ContentLogger();
   
   this.mainFrame = null;
   
   this.curFrame = null;
   this.mainContentFrameId = null;
-  this.mozBrowserClose = null;
+  this.importedScripts = new evaluate.ScriptStorageService([Context.CHROME, Context.CONTENT]);
   this.currentFrameElement = null;
+  this.testName = null;
+  this.mozBrowserClose = null;
+  this.sandboxes = new Sandboxes(() => this.getCurrentWindow());
   
   this.oopFrameId = null;
   this.observing = null;
   this._browserIds = new WeakMap();
-
-  
-  this.scriptTimeout = 30000;  
-  this.searchTimeout = null;
-  this.pageTimeout = 300000;  
-
-  
-  
-  this.context = Context.CONTENT;
-
-  this.importedScripts = new evaluate.ScriptStorageService(
-      [Context.CHROME, Context.CONTENT]);
-  this.sandboxes = new Sandboxes(() => this.getCurrentWindow());
-  this.actions = new action.Chain();
-
-  this.timer = null;
-  this.inactivityTimer = null;
-
-  this.marionetteLog = new logging.ContentLogger();
-  this.testName = null;
 
   this.sessionCapabilities = {
     
