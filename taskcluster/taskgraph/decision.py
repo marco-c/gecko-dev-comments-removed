@@ -17,6 +17,7 @@ from .generator import TaskGraphGenerator
 from .create import create_tasks
 from .parameters import Parameters
 from .taskgraph import TaskGraph
+from actions import render_actions_json
 
 from taskgraph.util.templates import Templates
 from taskgraph.util.time import (
@@ -86,6 +87,9 @@ def taskgraph_decision(options):
 
     
     write_artifact('action.yml', get_action_yml(parameters))
+
+    
+    write_artifact('actions.json', render_actions_json(parameters))
 
     
     full_task_json = tgg.full_task_graph.to_json()
