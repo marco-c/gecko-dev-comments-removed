@@ -5,61 +5,21 @@
 "use strict";
 
 const {
-  ADD_REQUEST,
-  UPDATE_REQUEST,
-  CLONE_SELECTED_REQUEST,
-  REMOVE_SELECTED_CUSTOM_REQUEST,
-  CLEAR_REQUESTS,
+  UPDATE_REQUESTS,
 } = require("../constants");
 
-function addRequest(id, data, batch) {
+
+
+
+
+
+function updateRequests(items) {
   return {
-    type: ADD_REQUEST,
-    id,
-    data,
-    meta: { batch },
-  };
-}
-
-function updateRequest(id, data, batch) {
-  return {
-    type: UPDATE_REQUEST,
-    id,
-    data,
-    meta: { batch },
-  };
-}
-
-
-
-
-
-function cloneSelectedRequest() {
-  return {
-    type: CLONE_SELECTED_REQUEST
-  };
-}
-
-
-
-
-
-function removeSelectedCustomRequest() {
-  return {
-    type: REMOVE_SELECTED_CUSTOM_REQUEST
-  };
-}
-
-function clearRequests() {
-  return {
-    type: CLEAR_REQUESTS
+    type: UPDATE_REQUESTS,
+    items,
   };
 }
 
 module.exports = {
-  addRequest,
-  updateRequest,
-  cloneSelectedRequest,
-  removeSelectedCustomRequest,
-  clearRequests,
+  updateRequests,
 };

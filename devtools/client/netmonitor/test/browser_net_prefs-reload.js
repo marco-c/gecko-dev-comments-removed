@@ -9,8 +9,6 @@
 
 add_task(function* () {
   let Actions = require("devtools/client/netmonitor/actions/index");
-  let { getActiveFilters } = require("devtools/client/netmonitor/selectors/index");
-
   let { monitor } = yield initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
 
@@ -21,8 +19,8 @@ add_task(function* () {
   
   
   
+  let getView = () => monitor.panelWin.NetMonitorView;
   let getStore = () => monitor.panelWin.gStore;
-  let getState = () => getStore().getState();
 
   let prefsToCheck = {
     filters: {
@@ -30,7 +28,7 @@ add_task(function* () {
       newValue: ["html", "css"],
       
       
-      validateValue: ($) => getActiveFilters(getState()),
+      validateValue: ($) => getView().RequestsMenu._activeFilters,
       
       
       modifyFrontend: ($, value) => value.forEach(e =>

@@ -18,7 +18,6 @@ const { ToolbarView } = require("./toolbar-view");
 const { SidebarView } = require("./sidebar-view");
 const { DetailsView } = require("./details-view");
 const { PerformanceStatisticsView } = require("./performance-statistics-view");
-var {Prefs} = require("./prefs");
 
 
 var gStore = configureStore();
@@ -81,6 +80,12 @@ var NetMonitorView = {
     this._detailsPane.setAttribute("width", Prefs.networkDetailsWidth);
     this._detailsPane.setAttribute("height", Prefs.networkDetailsHeight);
     this.toggleDetailsPane({ visible: false });
+
+    
+    if (!Prefs.statistics) {
+      $("#request-menu-context-perf").hidden = true;
+      $("#notice-perf-message").hidden = true;
+    }
   },
 
   
@@ -164,6 +169,7 @@ var NetMonitorView = {
 
   showNetworkInspectorView: function () {
     this._body.selectedPanel = $("#network-inspector-view");
+    this.RequestsMenu._flushWaterfallViews(true);
   },
 
   
@@ -186,7 +192,7 @@ var NetMonitorView = {
         
         
         
-        yield whenDataAvailable(requestsView.store, [
+        yield whenDataAvailable(requestsView, [
           "responseHeaders", "status", "contentSize", "mimeType", "totalTime"
         ]);
       } catch (ex) {
@@ -194,9 +200,8 @@ var NetMonitorView = {
         console.error(ex);
       }
 
-      const requests = requestsView.store.getState().requests.requests;
-      statisticsView.createPrimedCacheChart(requests);
-      statisticsView.createEmptyCacheChart(requests);
+      statisticsView.createPrimedCacheChart(requestsView.items);
+      statisticsView.createEmptyCacheChart(requestsView.items);
     });
   },
 
@@ -254,28 +259,26 @@ var $all = (selector, target = document) => target.querySelectorAll(selector);
 
 
 
-function whenDataAvailable(dataStore, mandatoryFields) {
-  return new Promise((resolve, reject) => {
-    let interval = setInterval(() => {
-      const { requests } = dataStore.getState().requests;
-      const allFieldsPresent = !requests.isEmpty() && requests.every(
-        item => mandatoryFields.every(
-          field => item.get(field) !== undefined
-        )
-      );
+function whenDataAvailable(requestsView, mandatoryFields) {
+  let deferred = promise.defer();
 
-      if (allFieldsPresent) {
-        clearInterval(interval);
-        clearTimeout(timer);
-        resolve();
-      }
-    }, WDA_DEFAULT_VERIFY_INTERVAL);
-
-    let timer = setTimeout(() => {
+  let interval = setInterval(() => {
+    const { attachments } = requestsView;
+    if (attachments.length > 0 && attachments.every(item => {
+      return mandatoryFields.every(field => field in item);
+    })) {
       clearInterval(interval);
-      reject(new Error("Timed out while waiting for data"));
-    }, WDA_DEFAULT_GIVE_UP_TIMEOUT);
-  });
+      clearTimeout(timer);
+      deferred.resolve();
+    }
+  }, WDA_DEFAULT_VERIFY_INTERVAL);
+
+  let timer = setTimeout(() => {
+    clearInterval(interval);
+    deferred.reject(new Error("Timed out while waiting for data"));
+  }, WDA_DEFAULT_GIVE_UP_TIMEOUT);
+
+  return deferred.promise;
 }
 
 

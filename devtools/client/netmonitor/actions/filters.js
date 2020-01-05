@@ -44,10 +44,10 @@ function enableFilterTypeOnly(filter) {
 
 
 
-function setFilterText(text) {
+function setFilterText(url) {
   return {
     type: SET_FILTER_TEXT,
-    text,
+    url,
   };
 }
 
