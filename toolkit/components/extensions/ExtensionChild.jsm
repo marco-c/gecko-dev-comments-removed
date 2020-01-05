@@ -44,8 +44,6 @@ var {
 
 XPCOMUtils.defineLazyGetter(this, "findPathInObject",
   () => Cu.import("resource://gre/modules/Extension.jsm", {}).findPathInObject);
-XPCOMUtils.defineLazyGetter(this, "GlobalManager",
-  () => Cu.import("resource://gre/modules/Extension.jsm", {}).GlobalManager);
 XPCOMUtils.defineLazyGetter(this, "ParentAPIManager",
   () => Cu.import("resource://gre/modules/Extension.jsm", {}).ParentAPIManager);
 
@@ -125,17 +123,21 @@ class WannabeChildAPIManager extends ChildAPIManager {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
 class ExtensionContext extends BaseContext {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   constructor(extension, params) {
     super("addon_child", extension);
     if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
@@ -367,10 +369,6 @@ this.ExtensionChild = {
 
 
   createExtensionContext(extension, contentWindow) {
-    
-    
-    
-    extension = GlobalManager.extensionMap.get(extension.id);
     let windowId = getInnerWindowID(contentWindow);
     let context = this.extensionContexts.get(windowId);
     if (context) {
