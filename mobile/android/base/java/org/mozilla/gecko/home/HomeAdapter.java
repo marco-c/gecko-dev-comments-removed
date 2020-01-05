@@ -200,7 +200,7 @@ public class HomeAdapter extends FragmentStatePagerAdapter {
 
             
             
-            if (type.toString() == "top_sites" &&
+            if ("top_sites".equals(type.toString()) &&
                 ActivityStream.isEnabled(context) &&
                 ActivityStream.isHomePanel()) {
                 return ActivityStreamHomeFragment.class.getName();
