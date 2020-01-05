@@ -1139,18 +1139,16 @@ this.XPIDatabase = {
 
 
 
-  getAddonsByType(...aTypes) {
+  getAddonsByType(aType) {
     if (!this.addonDB) {
       
       
       
-      logger.warn("Synchronous load of XPI database due to getAddonsByType([" +
-        aTypes.join(", ") + "])");
+      logger.warn("Synchronous load of XPI database due to getAddonsByType(" + aType + ")");
       AddonManagerPrivate.recordSimpleMeasure("XPIDB_lateOpen_byType", XPIProvider.runPhase);
       this.syncLoadDB(true);
     }
-
-    return _filterDB(this.addonDB, aAddon => aTypes.includes(aAddon.type));
+    return _filterDB(this.addonDB, aAddon => (aAddon.type == aType));
   },
 
   
