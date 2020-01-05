@@ -2,11 +2,12 @@
 
 
 
+use Epoch;
 use LayerId;
 use LayerProperties;
 use layers::layers::{BufferRequest, LayerBufferSet};
 use layers::platform::surface::NativeDisplay;
-use msg::compositor_msg::{Epoch, FrameTreeId};
+use msg::compositor_msg::FrameTreeId;
 use msg::constellation_msg::PipelineId;
 
 

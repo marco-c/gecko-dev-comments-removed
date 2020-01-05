@@ -125,3 +125,14 @@ pub struct LayerProperties {
     
     pub scrolls_overflow_area: bool,
 }
+
+
+#[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]
+pub struct Epoch(pub u32);
+
+impl Epoch {
+    pub fn next(&mut self) {
+        let Epoch(ref mut u) = *self;
+        *u += 1;
+    }
+}

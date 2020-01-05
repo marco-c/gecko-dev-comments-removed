@@ -2,17 +2,6 @@
 
 
 
-
-#[derive(PartialEq, Eq, Debug, Copy, Clone, PartialOrd, Ord, Deserialize, Serialize)]
-pub struct Epoch(pub u32);
-
-impl Epoch {
-    pub fn next(&mut self) {
-        let Epoch(ref mut u) = *self;
-        *u += 1;
-    }
-}
-
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct FrameTreeId(pub u32);
 
