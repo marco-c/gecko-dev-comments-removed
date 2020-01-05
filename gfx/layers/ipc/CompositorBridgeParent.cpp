@@ -1316,9 +1316,8 @@ CompositorBridgeParent::FlushApzRepaints(const LayerTransactionParent* aLayerTre
     
     layersId = mRootLayerTreeID;
   }
-  RefPtr<CompositorBridgeParent> self = this;
   APZThreadUtils::RunOnControllerThread(NS_NewRunnableFunction([=] () {
-    self->mApzcTreeManager->FlushApzRepaints(layersId);
+    mApzcTreeManager->FlushApzRepaints(layersId);
   }));
 }
 
@@ -1572,7 +1571,8 @@ CompositorBridgeParent::RecvAdoptChild(const uint64_t& child)
 
 PWebRenderBridgeParent*
 CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipelineId,
-                                                    TextureFactoryIdentifier* aTextureFactoryIdentifier)
+                                                    TextureFactoryIdentifier* aTextureFactoryIdentifier,
+                                                    uint32_t* aIdNamespace)
 {
 #ifndef MOZ_ENABLE_WEBRENDER
   
@@ -1591,6 +1591,7 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipel
   RefPtr<WebRenderCompositableHolder> holder = new WebRenderCompositableHolder();
   MOZ_ASSERT(api); 
   api->SetRootPipeline(aPipelineId);
+  *aIdNamespace = api->GetNamespace().mHandle;
   mWrBridge = new WebRenderBridgeParent(this, aPipelineId, mWidget, Move(api), Move(holder));
 
   mCompositorScheduler = mWrBridge->CompositorScheduler();
@@ -1843,7 +1844,7 @@ CompositorBridgeParent::NotifyDidComposite(uint64_t aTransactionId, TimeStamp& a
 
   MonitorAutoLock lock(*sIndirectLayerTreesLock);
   ForEachIndirectLayerTree([&] (LayerTreeState* lts, const uint64_t& aLayersId) -> void {
-    if (lts->mCrossProcessParent && lts->mParent == this) {
+    if (lts->mCrossProcessParent) {
       CrossProcessCompositorBridgeParent* cpcp = lts->mCrossProcessParent;
       cpcp->DidComposite(aLayersId, aCompositeStart, aCompositeEnd);
     }
