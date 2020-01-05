@@ -364,7 +364,7 @@ GenerateProfilingEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason
 
 void
 wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const SigIdDesc& sigId,
-                               const TrapOffset& trapOffset, FuncOffsets* offsets)
+                               FuncOffsets* offsets)
 {
 #if defined(JS_CODEGEN_ARM)
     
@@ -381,6 +381,7 @@ wasm::GenerateFunctionPrologue(MacroAssembler& masm, unsigned framePushed, const
     
     masm.haltingAlign(CodeAlignment);
     offsets->tableEntry = masm.currentOffset();
+    TrapOffset trapOffset(0);  
     TrapDesc trap(trapOffset, Trap::IndirectCallBadSig, masm.framePushed());
     switch (sigId.kind()) {
       case SigIdDesc::Kind::Global: {
