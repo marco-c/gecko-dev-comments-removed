@@ -52,6 +52,9 @@ l10n_description_schema = Schema({
     Required('run-time'): _by_platform(int),
 
     
+    Required('ignore-locales'): _by_platform([basestring]),
+
+    
     Required('mozharness'): {
         
         Required('script'): _by_platform(basestring),
@@ -150,11 +153,11 @@ def _parse_locales_file(locales_file, platform=None):
     return locales
 
 
-def _remove_ja_jp_mac_locale(locales):
+def _remove_locales(locales, to_remove=None):
     
     
     return {
-        locale: revision for locale, revision in locales.items() if locale != 'ja-JP-mac'
+        locale: revision for locale, revision in locales.items() if locale not in to_remove
     }
 
 
@@ -225,6 +228,7 @@ def handle_keyed_by(config, jobs):
         "run-time",
         "tooltool",
         "env",
+        "ignore-locales",
         "mozharness.config",
         "mozharness.options",
         "mozharness.actions",
@@ -246,7 +250,8 @@ def handle_keyed_by(config, jobs):
 def all_locales_attribute(config, jobs):
     for job in jobs:
         locales_with_changesets = _parse_locales_file(job["locales-file"])
-        locales_with_changesets = _remove_ja_jp_mac_locale(locales_with_changesets)
+        locales_with_changesets = _remove_locales(locales_with_changesets,
+                                                  to_remove=job['ignore-locales'])
 
         locales = sorted(locales_with_changesets.keys())
         attributes = job.setdefault('attributes', {})
