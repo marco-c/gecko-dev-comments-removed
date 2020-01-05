@@ -26,6 +26,7 @@
 #include "nsIWeakReferenceUtils.h"      
 #include "nsLiteralString.h"            
 #include "nsString.h"                   
+#include "nsTArray.h"                   
 #include "nsWeakReference.h"            
 #include "nscore.h"                     
 
@@ -1003,11 +1004,17 @@ protected:
   RefPtr<TextComposition> mComposition;
 
   
-  nsTArray<OwningNonNull<nsIEditActionListener>> mActionListeners;
+  typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 5>
+            AutoActionListenerArray;
+  AutoActionListenerArray mActionListeners;
   
-  nsTArray<OwningNonNull<nsIEditorObserver>> mEditorObservers;
+  typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 3>
+            AutoEditorObserverArray;
+  AutoEditorObserverArray mEditorObservers;
   
-  nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
+  typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
+            AutoDocumentStateListenerArray;
+  AutoDocumentStateListenerArray mDocStateListeners;
 
   
   SelectionState mSavedSel;
