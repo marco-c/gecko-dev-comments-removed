@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const { PropTypes } = require("devtools/client/shared/vendor/react");
+
+
+
+
+exports.boxModel = {
+
+  
+  layout: PropTypes.object,
+
+};
