@@ -94,6 +94,12 @@ public:
 
   static already_AddRefed<AudioChannelService> GetOrCreate();
 
+  
+
+
+
+  static already_AddRefed<AudioChannelService> Get();
+
   static bool IsAudioChannelMutedByDefault();
 
   static PRLogModuleInfo* GetAudioChannelLog();
@@ -149,6 +155,8 @@ public:
                             bool aMuted);
 
   bool IsAudioChannelActive(nsPIDOMWindowOuter* aWindow, AudioChannel aChannel);
+
+  bool IsWindowActive(nsPIDOMWindowOuter* aWindow);
 
   
 

@@ -36,7 +36,8 @@ TimeoutManager::DOMMinTimeoutValue(bool aIsTracking) const {
   int32_t value = std::max(mBackPressureDelayMS, 0);
   
   
-  bool isBackground = !mWindow.AsInner()->HasAudioContexts() &&
+  
+  bool isBackground = !mWindow.AsInner()->IsPlayingAudio() &&
     mWindow.IsBackgroundInternal();
   auto minValue = aIsTracking ? (isBackground ? gMinTrackingBackgroundTimeoutValue
                                               : gMinTrackingTimeoutValue)
