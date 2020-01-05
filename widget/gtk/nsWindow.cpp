@@ -2073,11 +2073,13 @@ nsWindow::OnExposeEvent(cairo_t *cr)
     LayoutDeviceIntRegion region = exposeRegion;
     region.ScaleRoundOut(scale, scale);
 
-    if (GetLayerManager()->AsKnowsCompositor() && mCompositorSession) {
+    ClientLayerManager *clientLayers = GetLayerManager()->AsClientLayerManager();
+
+    if (clientLayers && mCompositorSession) {
         
         
-        GetLayerManager()->SetNeedsComposite(true);
-        GetLayerManager()->SendInvalidRegion(region.ToUnknownRegion());
+        clientLayers->SetNeedsComposite(true);
+        clientLayers->SendInvalidRegion(region.ToUnknownRegion());
     }
 
     RefPtr<nsWindow> strongThis(this);
@@ -2099,9 +2101,9 @@ nsWindow::OnExposeEvent(cairo_t *cr)
             return FALSE;
     }
 
-    if (GetLayerManager()->AsKnowsCompositor() && GetLayerManager()->NeedsComposite()) {
-      GetLayerManager()->Composite();
-      GetLayerManager()->SetNeedsComposite(false);
+    if (clientLayers && clientLayers->NeedsComposite()) {
+      clientLayers->Composite();
+      clientLayers->SetNeedsComposite(false);
     }
 
     LOGDRAW(("sending expose event [%p] %p 0x%lx (rects follow):\n",
@@ -4303,15 +4305,14 @@ nsWindow::SetTransparencyMode(nsTransparencyMode aMode)
         return;
     }
 
-    if (mWindowType != eWindowType_popup) {
+    bool isTransparent = aMode == eTransparencyTransparent;
+
+    if (mIsTransparent == isTransparent) {
+        return;
+    } else if (mWindowType != eWindowType_popup) {
         NS_WARNING("Cannot set transparency mode on non-popup windows.");
         return;
     }
-
-    bool isTransparent = aMode == eTransparencyTransparent;
-
-    if (mIsTransparent == isTransparent)
-        return;
 
     if (!isTransparent) {
         ClearTransparencyBitmap();
