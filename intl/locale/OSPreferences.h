@@ -11,6 +11,8 @@
 #include "nsTArray.h"
 #include "unicode/uloc.h"
 
+#include "mozIOSPreferences.h"
+
 namespace mozilla {
 namespace intl {
 
@@ -38,13 +40,44 @@ namespace intl {
 
 
 
-class OSPreferences
+class OSPreferences: public mozIOSPreferences
 {
 
 public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZIOSPREFERENCES
+
+  enum class DateTimeFormatStyle {
+    Invalid = -1,
+    None,
+    Short,   
+    Medium,  
+    Long,    
+    Full     
+  };
+
+  
+
+
+
+
+
+
   static OSPreferences* GetInstance();
 
   
+
+
+
+  static already_AddRefed<OSPreferences> GetInstanceAddRefed()
+  {
+    return RefPtr<OSPreferences>(GetInstance()).forget();
+  }
+
+
+  
+
+
 
 
 
@@ -70,9 +103,32 @@ protected:
   nsTArray<nsCString> mSystemLocales;
 
 private:
-  static StaticAutoPtr<OSPreferences> sInstance;
+  virtual ~OSPreferences() {};
+
+  static StaticRefPtr<OSPreferences> sInstance;
 
   static bool CanonicalizeLanguageTag(nsCString& aLoc);
+
+  
+
+
+
+  bool GetDateTimePatternForStyle(DateTimeFormatStyle aDateStyle,
+                                  DateTimeFormatStyle aTimeStyle,
+                                  const nsACString& aLocale,
+                                  nsAString& aRetVal);
+
+  bool GetDateTimeSkeletonForStyle(DateTimeFormatStyle aDateStyle,
+                                   DateTimeFormatStyle aTimeStyle,
+                                   const nsACString& aLocale,
+                                   nsAString& aRetVal);
+
+  bool GetPatternForSkeleton(const nsAString& aSkeleton,
+                             const nsACString& aLocale,
+                             nsAString& aRetVal);
+
+  bool GetDateTimeConnectorPattern(const nsACString& aLocale,
+                                   nsAString& aRetVal);
 
   
 
@@ -84,6 +140,37 @@ private:
 
 
   bool ReadSystemLocales(nsTArray<nsCString>& aRetVal);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  bool ReadDateTimePattern(DateTimeFormatStyle aDateFormatStyle,
+                           DateTimeFormatStyle aTimeFormatStyle,
+                           const nsACString& aLocale,
+                           nsAString& aRetVal);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void Refresh();
 };
 
 } 
