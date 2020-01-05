@@ -2820,7 +2820,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
   uint8_t mOverflowY;           
   uint8_t mOverflowClipBox;     
   uint8_t mResize;              
-  uint8_t mOrient;              
+  mozilla::StyleOrient mOrient; 
   uint8_t mIsolation;           
   uint8_t mTopLayer;            
   uint8_t mWillChangeBitField;  
