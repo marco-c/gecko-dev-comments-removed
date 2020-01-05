@@ -22,16 +22,16 @@ use js::glue::{RUST_JSID_TO_INT, UnwrapObject};
 use js::jsapi::{CallArgs, CompartmentOptions, DOMCallbacks, GetGlobalForObjectCrossCompartment};
 use js::jsapi::{HandleId, HandleObject, HandleValue, Heap, JSAutoCompartment, JSClass, JSContext};
 use js::jsapi::{JSJitInfo, JSObject, JSTraceOp, JSTracer, JSVersion, JSWrapObjectCallbacks};
-use js::jsapi::{JS_DefineProperty, JS_DeletePropertyById1, JS_FireOnNewGlobalObject};
+use js::jsapi::{JS_DeletePropertyById1, JS_FireOnNewGlobalObject};
 use js::jsapi::{JS_ForwardGetPropertyTo, JS_GetClass, JS_GetProperty, JS_GetPrototype};
 use js::jsapi::{JS_GetReservedSlot, JS_HasProperty, JS_HasPropertyById, JS_InitStandardClasses};
 use js::jsapi::{JS_IsExceptionPending, JS_NewGlobalObject, JS_ObjectToOuterObject, JS_SetProperty};
 use js::jsapi::{JS_SetReservedSlot, MutableHandleValue, ObjectOpResult, OnNewGlobalHookOption};
-use js::jsapi::{RootedObject, RootedValue};
-use js::jsval::{BooleanValue, DoubleValue, Int32Value, JSVal, NullValue};
-use js::jsval::{PrivateValue, UInt32Value, UndefinedValue};
+use js::jsapi::{RootedObject};
+use js::jsval::{JSVal};
+use js::jsval::{PrivateValue, UndefinedValue};
 use js::rust::{GCMethods, ToString};
-use js::{JS_CALLEE, JSPROP_ENUMERATE, JSPROP_PERMANENT, JSPROP_READONLY};
+use js::{JS_CALLEE};
 use libc::{self, c_uint};
 use std::default::Default;
 use std::ffi::CString;
@@ -80,42 +80,6 @@ pub const DOM_PROTOTYPE_SLOT: u32 = js::JSCLASS_GLOBAL_SLOT_COUNT;
 pub const JSCLASS_DOM_GLOBAL: u32 = js::JSCLASS_USERBIT1;
 
 
-#[derive(Clone)]
-pub enum ConstantVal {
-    
-    IntVal(i32),
-    
-    UintVal(u32),
-    
-    DoubleVal(f64),
-    
-    BoolVal(bool),
-    
-    NullVal,
-}
-
-
-#[derive(Clone)]
-pub struct ConstantSpec {
-    
-    pub name: &'static [u8],
-    
-    pub value: ConstantVal,
-}
-
-impl ConstantSpec {
-    
-    pub fn get_value(&self) -> JSVal {
-        match self.value {
-            ConstantVal::NullVal => NullValue(),
-            ConstantVal::IntVal(i) => Int32Value(i),
-            ConstantVal::UintVal(u) => UInt32Value(u),
-            ConstantVal::DoubleVal(d) => DoubleValue(d),
-            ConstantVal::BoolVal(b) => BooleanValue(b),
-        }
-    }
-}
-
 
 #[derive(Copy, Clone)]
 pub struct DOMClass {
@@ -152,27 +116,6 @@ pub fn get_proto_or_iface_array(global: *mut JSObject) -> *mut ProtoOrIfaceArray
     unsafe {
         assert!(((*JS_GetClass(global)).flags & JSCLASS_DOM_GLOBAL) != 0);
         JS_GetReservedSlot(global, DOM_PROTOTYPE_SLOT).to_private() as *mut ProtoOrIfaceArray
-    }
-}
-
-
-pub type NonNullJSNative =
-    unsafe extern "C" fn (arg1: *mut JSContext, arg2: c_uint, arg3: *mut JSVal) -> bool;
-
-
-
-pub fn define_constants(cx: *mut JSContext, obj: HandleObject, constants: &'static [ConstantSpec]) {
-    for spec in constants {
-        let value = RootedValue::new(cx, spec.get_value());
-        unsafe {
-            assert!(JS_DefineProperty(cx,
-                                      obj,
-                                      spec.name.as_ptr() as *const libc::c_char,
-                                      value.handle(),
-                                      JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT,
-                                      None,
-                                      None));
-        }
     }
 }
 
