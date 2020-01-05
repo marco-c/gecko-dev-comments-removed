@@ -1261,10 +1261,7 @@ class IDLInterfaceOrNamespace(IDLObjectWithScope, IDLExposureMixins):
                         member.getExtendedAttribute("ChromeOnly") or
                         member.getExtendedAttribute("Pref") or
                         member.getExtendedAttribute("Func") or
-                        member.getExtendedAttribute("SecureContext") or
-                        member.getExtendedAttribute("AvailableIn") or
-                        member.getExtendedAttribute("CheckAnyPermissions") or
-                        member.getExtendedAttribute("CheckAllPermissions")):
+                        member.getExtendedAttribute("SecureContext")):
                         raise WebIDLError("[Alias] must not be used on a "
                                           "conditionally exposed operation",
                                           [member.location])
@@ -1290,17 +1287,11 @@ class IDLInterfaceOrNamespace(IDLObjectWithScope, IDLExposureMixins):
                                               alias,
                                               [member.location, m.location])
 
-        for attribute in ["CheckAnyPermissions", "CheckAllPermissions"]:
-            if (self.getExtendedAttribute(attribute) and
-                self._exposureGlobalNames != set([self.parentScope.primaryGlobalName])):
-                raise WebIDLError("[%s] used on an interface that is "
-                                  "not %s-only" %
-                                  (attribute, self.parentScope.primaryGlobalName),
-                                  [self.location])
-
         
         
-        if (self.isExposedConditionally() and
+        
+        
+        if (self.isExposedConditionally(exclusions=["SecureContext"]) and
             not self.hasInterfaceObject() and
             not self.isNavigatorProperty()):
             raise WebIDLError("Interface with no interface object is "
@@ -1538,8 +1529,8 @@ class IDLInterfaceOrNamespace(IDLObjectWithScope, IDLExposureMixins):
                                     "SecureContext",
                                     "CheckAnyPermissions",
                                     "CheckAllPermissions" ]
-    def isExposedConditionally(self):
-        return any(self.getExtendedAttribute(a) for a in self.conditionExtendedAttributes)
+    def isExposedConditionally(self, exclusions=[]):
+        return any(((not a in exclusions) and self.getExtendedAttribute(a)) for a in self.conditionExtendedAttributes)
 
 class IDLInterface(IDLInterfaceOrNamespace):
     def __init__(self, location, parentScope, name, parent, members,
@@ -1715,10 +1706,7 @@ class IDLInterface(IDLInterfaceOrNamespace):
                   identifier == "JSImplementation" or
                   identifier == "HeaderFile" or
                   identifier == "NavigatorProperty" or
-                  identifier == "AvailableIn" or
                   identifier == "Func" or
-                  identifier == "CheckAnyPermissions" or
-                  identifier == "CheckAllPermissions" or
                   identifier == "Deprecated"):
                 
                 if not attr.hasValue():
@@ -3544,14 +3532,6 @@ class IDLInterfaceMember(IDLObjectWithIdentifier, IDLExposureMixins):
         IDLExposureMixins.finish(self, scope)
 
     def validate(self):
-        for attribute in ["CheckAnyPermissions", "CheckAllPermissions"]:
-            if (self.getExtendedAttribute(attribute) and
-                self.exposureSet != set([self._globalScope.primaryGlobalName])):
-                raise WebIDLError("[%s] used on an interface member that is "
-                                  "not %s-only" %
-                                  (attribute, self.parentScope.primaryGlobalName),
-                                  [self.location])
-
         if self.isAttr() or self.isMethod():
             if self.affects == "Everything" and self.dependsOn != "Everything":
                 raise WebIDLError("Interface member is flagged as affecting "
@@ -3968,10 +3948,7 @@ class IDLConst(IDLInterfaceMember):
         elif (identifier == "Pref" or
               identifier == "ChromeOnly" or
               identifier == "Func" or
-              identifier == "SecureContext" or
-              identifier == "AvailableIn" or
-              identifier == "CheckAnyPermissions" or
-              identifier == "CheckAllPermissions"):
+              identifier == "SecureContext"):
             
             pass
         else:
@@ -4311,11 +4288,8 @@ class IDLAttribute(IDLInterfaceMember):
               identifier == "Func" or
               identifier == "SecureContext" or
               identifier == "Frozen" or
-              identifier == "AvailableIn" or
               identifier == "NewObject" or
               identifier == "UnsafeInPrerendering" or
-              identifier == "CheckAnyPermissions" or
-              identifier == "CheckAllPermissions" or
               identifier == "BinaryName"):
             
             pass
@@ -5037,9 +5011,6 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
               identifier == "Deprecated" or
               identifier == "Func" or
               identifier == "SecureContext" or
-              identifier == "AvailableIn" or
-              identifier == "CheckAnyPermissions" or
-              identifier == "CheckAllPermissions" or
               identifier == "BinaryName" or
               identifier == "StaticClassOverride"):
             
