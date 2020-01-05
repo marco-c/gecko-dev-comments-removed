@@ -29,7 +29,7 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
 
   
   
-  function* triggerUpdate(win, addon) {
+  async function triggerUpdate(win, addon) {
     let manualUpdatePromise;
     if (!autoUpdate) {
       manualUpdatePromise = new Promise(resolve => {
@@ -43,10 +43,10 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
       });
     }
 
-    checkFn(win, addon);
+    let promise = checkFn(win, addon);
 
     if (manualUpdatePromise) {
-      yield manualUpdatePromise;
+      await manualUpdatePromise;
 
       let list = win.document.getElementById("addon-list");
 
@@ -56,6 +56,8 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
       let item = list.children.find(_item => _item.value == ID);
       EventUtils.synthesizeMouseAtCenter(item._updateBtn, {}, win);
     }
+
+    return {promise};
   }
 
   
@@ -72,7 +74,7 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
 
   
   let popupPromise = promisePopupNotificationShown("addon-webext-permissions");
-  yield triggerUpdate(win, addon);
+  let {promise: checkPromise} = yield triggerUpdate(win, addon);
   let panel = yield popupPromise;
 
   
@@ -84,8 +86,11 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
   is(addon.version, "1.0", "Should still be running the old version");
 
   
+  yield checkPromise;
+
+  
   popupPromise = promisePopupNotificationShown("addon-webext-permissions");
-  yield triggerUpdate(win, addon);
+  checkPromise = (yield triggerUpdate(win, addon)).promise;
 
   
   let updatePromise = promiseInstallEvent(addon, "onInstallEnded");
@@ -95,6 +100,8 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
   addon = yield updatePromise;
   is(addon.version, "2.0", "Should have upgraded");
 
+  yield checkPromise;
+
   yield BrowserTestUtils.removeTab(gBrowser.selectedTab);
   addon.uninstall();
   yield SpecialPowers.popPrefEnv();
@@ -103,6 +110,15 @@ function* interactiveUpdateTest(autoUpdate, checkFn) {
 
 function checkAll(win) {
   win.gViewController.doCommand("cmd_findAllUpdates");
+  return new Promise(resolve => {
+    let observer = {
+      observe(subject, topic, data) {
+        Services.obs.removeObserver(observer, "EM-update-check-finished");
+        resolve();
+      },
+    };
+    Services.obs.addObserver(observer, "EM-update-check-finished", false);
+  });
 }
 
 
