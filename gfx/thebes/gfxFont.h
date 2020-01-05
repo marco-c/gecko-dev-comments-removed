@@ -303,7 +303,7 @@ public:
     already_AddRefed<gfxFont>
     Lookup(const gfxFontEntry* aFontEntry,
            const gfxFontStyle* aStyle,
-           const gfxCharacterMap* aUnicodeRangeMap = nullptr);
+           const gfxCharacterMap* aUnicodeRangeMap);
 
     
     
