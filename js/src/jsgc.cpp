@@ -3810,6 +3810,14 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
 
 
 
+
+
+
+
+
+
+
+
     if (isFull && !rt->keepAtoms()) {
         Zone* atomsZone = rt->atomsCompartment(lock)->zone();
         if (atomsZone->isGCScheduled()) {
@@ -5993,9 +6001,6 @@ gc::IsIncrementalGCUnsafe(JSRuntime* rt)
 {
     MOZ_ASSERT(!rt->mainThread.suppressGC);
 
-    if (rt->keepAtoms())
-        return gc::AbortReason::KeepAtomsSet;
-
     if (!rt->gc.isIncrementalGCAllowed())
         return gc::AbortReason::IncrementalDisabled;
 
@@ -6166,6 +6171,10 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
     }
 
     State prevState = incrementalState;
+
+    
+    
+    MOZ_ASSERT_IF(rt->activeGCInAtomsZone(), !rt->exclusiveThreadsPresent());
 
     if (nonincrementalByAPI) {
         
