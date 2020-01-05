@@ -49,12 +49,12 @@ impl Blob {
                            BlobBinding::Wrap)
     }
 
-    // http://dev.w3.org/2006/webapi/FileAPI/#constructorBlob
+    // https://w3c.github.io/FileAPI/#constructorBlob
     pub fn Constructor(global: GlobalRef) -> Fallible<Root<Blob>> {
         Ok(Blob::new(global, None, ""))
     }
 
-    // http://dev.w3.org/2006/webapi/FileAPI/#constructorBlob
+    // https://w3c.github.io/FileAPI/#constructorBlob
     pub fn Constructor_(global: GlobalRef,
                         blobParts: DOMString,
                         blobPropertyBag: &BlobBinding::BlobPropertyBag)
