@@ -3863,7 +3863,7 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
            SETVAL_ENUMERATED | SETVAL_UNSET_INHERIT,
            aParentFont->mFont.synthesis,
            defaultVariableFont->synthesis,
-           Unused,  0, Unused, systemFont.synthesis);
+           Unused,  0, Unused, Unused);
 
   
   
