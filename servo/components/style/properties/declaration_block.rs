@@ -128,10 +128,9 @@ impl PropertyDeclarationBlock {
                 
                 
                 
-                let importance = Importance::Normal;
                 match shorthand.get_shorthand_appendable_value(list) {
                     Some(appendable_value) =>
-                        append_declaration_value(dest, appendable_value, importance, false),
+                        append_declaration_value(dest, appendable_value),
                     None => return Ok(()),
                 }
             }
@@ -344,21 +343,24 @@ impl ToCss for PropertyDeclarationBlock {
                     };
 
                     
-                    let was_serialized =
-                        try!(
-                            shorthand.serialize_shorthand_to_buffer(
-                                dest,
-                                current_longhands.iter().cloned(),
-                                &mut is_first_serialization,
-                                importance
-                            )
-                        );
                     
+                    let mut value = String::new();
+                    match shorthand.get_shorthand_appendable_value(current_longhands.iter().cloned()) {
+                        None => continue,
+                        Some(appendable_value) => {
+                            try!(append_declaration_value(&mut value, appendable_value));
+                        }
+                    }
 
                     
-                    if !was_serialized {
-                        continue;
+                    if value.is_empty() {
+                        continue
                     }
+
+                    
+                    try!(append_serialization::<W, Cloned<slice::Iter< _>>, _>(
+                             dest, &shorthand, AppendableValue::Css(&value), importance,
+                             &mut is_first_serialization));
 
                     for current_longhand in current_longhands {
                         
@@ -414,6 +416,7 @@ pub enum AppendableValue<'a, I>
     
     DeclarationsForShorthand(ShorthandId, I),
     
+    
     Css(&'a str)
 }
 
@@ -434,9 +437,7 @@ fn handle_first_serialization<W>(dest: &mut W,
 
 
 pub fn append_declaration_value<'a, W, I>(dest: &mut W,
-                                          appendable_value: AppendableValue<'a, I>,
-                                          importance: Importance,
-                                          is_overflow_with_name: bool)
+                                          appendable_value: AppendableValue<'a, I>)
                                           -> fmt::Result
     where W: fmt::Write,
           I: Iterator<Item=&'a PropertyDeclaration>,
@@ -447,18 +448,10 @@ pub fn append_declaration_value<'a, W, I>(dest: &mut W,
         },
         AppendableValue::Declaration(decl) => {
             try!(decl.to_css(dest));
-         },
-         AppendableValue::DeclarationsForShorthand(shorthand, decls) => {
-            if is_overflow_with_name {
-              try!(shorthand.overflow_longhands_to_css(decls, dest));
-            } else {
-              try!(shorthand.longhands_to_css(decls, dest));
-            }
-         }
-    }
-
-    if importance.important() {
-        try!(write!(dest, " !important"));
+        },
+        AppendableValue::DeclarationsForShorthand(shorthand, decls) => {
+            try!(shorthand.longhands_to_css(decls, dest));
+        }
     }
 
     Ok(())
@@ -477,12 +470,6 @@ pub fn append_serialization<'a, W, I, N>(dest: &mut W,
 {
     try!(handle_first_serialization(dest, is_first_serialization));
 
-    
-    
-    if shorthands::is_overflow_shorthand(&appendable_value) {
-        return append_declaration_value(dest, appendable_value, importance, true);
-    }
-
     try!(property_name.to_css(dest));
     try!(dest.write_char(':'));
 
@@ -496,11 +483,18 @@ pub fn append_serialization<'a, W, I, N>(dest: &mut W,
                 
                 try!(write!(dest, " "));
             }
-         },
-         &AppendableValue::DeclarationsForShorthand(..) => try!(write!(dest, " "))
+        },
+        
+        
+        &AppendableValue::DeclarationsForShorthand(..) => unreachable!()
     }
 
-    try!(append_declaration_value(dest, appendable_value, importance, false));
+    try!(append_declaration_value(dest, appendable_value));
+
+    if importance.important() {
+        try!(write!(dest, " !important"));
+    }
+
     write!(dest, ";")
 }
 

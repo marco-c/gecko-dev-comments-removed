@@ -1196,23 +1196,21 @@ mod shorthand_serialization {
             
             
             
-            let block = property_declaration_block("\
-                animation-name: bounce, roll, flip, jump;\
-                animation-duration: 1s, 0.2s;\
-                animation-timing-function: ease-in, linear;\
-                animation-delay: 0s, 1s, 0.5s;\
-                animation-direction: normal;\
-                animation-fill-mode: forwards, backwards;\
-                animation-iteration-count: infinite, 2;\
-                animation-play-state: paused, running;");
+            
+            let block_text = "\
+                animation-name: bounce, roll, flip, jump; \
+                animation-duration: 1s, 0.2s; \
+                animation-timing-function: ease-in, linear; \
+                animation-delay: 0s, 1s, 0.5s; \
+                animation-direction: normal; \
+                animation-fill-mode: forwards, backwards; \
+                animation-iteration-count: infinite, 2; \
+                animation-play-state: paused, running;";
+            let block = property_declaration_block(block_text);
 
             let serialization = block.to_css_string();
 
-            assert_eq!(serialization, "animation: \
-                1s ease-in 0s normal forwards infinite paused bounce, \
-                0.2s linear 1s normal backwards 2 running roll, \
-                1s ease-in 0.5s normal forwards infinite paused flip, \
-                0.2s linear 0s normal backwards 2 running jump;")
+            assert_eq!(serialization, block_text);
         }
 
         #[test]
