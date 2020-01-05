@@ -3593,7 +3593,7 @@ SearchService.prototype = {
   _findJAREngines: function SRCH_SVC_findJAREngines() {
     LOG("_findJAREngines: looking for engines in JARs")
 
-    let chan = makeChannel(APP_SEARCH_PREFIX + "list.txt");
+    let chan = makeChannel(APP_SEARCH_PREFIX + "list.json");
     if (!chan) {
       LOG("_findJAREngines: " + APP_SEARCH_PREFIX + " isn't registered");
       return [];
@@ -3603,8 +3603,17 @@ SearchService.prototype = {
 
     let sis = Cc["@mozilla.org/scriptableinputstream;1"].
                 createInstance(Ci.nsIScriptableInputStream);
-    sis.init(chan.open2());
-    this._parseListTxt(sis.read(sis.available()), uris);
+    try {
+      sis.init(chan.open2());
+      this._parseListJSON(sis.read(sis.available()), uris);
+      
+      
+      
+    } catch (e) {
+      chan = makeChannel(APP_SEARCH_PREFIX + "list.txt");
+      sis.init(chan.open2());
+      this._parseListTxt(sis.read(sis.available()), uris);
+    }
     return uris;
   },
 
@@ -3618,7 +3627,7 @@ SearchService.prototype = {
     return Task.spawn(function() {
       LOG("_asyncFindJAREngines: looking for engines in JARs")
 
-      let listURL = APP_SEARCH_PREFIX + "list.txt";
+      let listURL = APP_SEARCH_PREFIX + "list.json";
       let chan = makeChannel(listURL);
       if (!chan) {
         LOG("_asyncFindJAREngines: " + APP_SEARCH_PREFIX + " isn't registered");
@@ -3637,15 +3646,87 @@ SearchService.prototype = {
       };
       request.onerror = function(aEvent) {
         LOG("_asyncFindJAREngines: failed to read " + listURL);
-        deferred.resolve("");
+        
+        request.onerror = function(aEvent) {
+          LOG("_asyncFindJAREngines: failed to read " + APP_SEARCH_PREFIX + "list.txt");
+          deferred.resolve("");
+        }
+        request.open("GET", NetUtil.newURI(APP_SEARCH_PREFIX + "list.txt").spec, true);
+        request.send();
       };
       request.open("GET", NetUtil.newURI(listURL).spec, true);
       request.send();
       let list = yield deferred.promise;
 
-      this._parseListTxt(list, uris);
+      if (request.responseURL.endsWith(".txt")) {
+        this._parseListTxt(list, uris);
+      } else {
+        this._parseListJSON(list, uris);
+      }
       throw new Task.Result(uris);
     }.bind(this));
+  },
+
+  _parseListJSON: function SRCH_SVC_parseListJSON(list, uris) {
+    let searchSettings;
+    try {
+      searchSettings = JSON.parse(list);
+    } catch(e) {
+      LOG("failing to parse list.json: " + e);
+      return;
+    }
+
+    let jarNames = new Set();
+    for (let region in searchSettings) {
+      
+      
+      if (!("visibleDefaultEngines" in searchSettings[region])) {
+        continue;
+      }
+      for (let engine of searchSettings[region]["visibleDefaultEngines"]) {
+        jarNames.add(engine);
+      }
+    }
+
+    
+    let engineNames;
+    let visibleDefaultEngines = this.getVerifiedGlobalAttr("visibleDefaultEngines");
+    if (visibleDefaultEngines) {
+      engineNames = visibleDefaultEngines.split(",");
+      for (let engineName of engineNames) {
+        
+        
+        
+        
+        
+        
+        if (!jarNames.has(engineName)) {
+          LOG("_parseListJSON: ignoring visibleDefaultEngines value because " +
+              engineName + " is not in the jar engines we have found");
+          engineNames = null;
+          break;
+        }
+      }
+    }
+
+    
+    if (!engineNames || !engineNames.length) {
+      let region;
+      if (Services.prefs.prefHasUserValue("browser.search.region")) {
+        region = Services.prefs.getCharPref("browser.search.region");
+      }
+      if (!region || !(region in searchSettings)) {
+        region = "default";
+      }
+      engineNames = searchSettings[region]["visibleDefaultEngines"];
+    }
+
+    for (let name of engineNames) {
+      uris.push(APP_SEARCH_PREFIX + name + ".xml");
+    }
+
+    
+    this._visibleDefaultEngines = engineNames;
   },
 
   _parseListTxt: function SRCH_SVC_parseListTxt(list, uris) {
