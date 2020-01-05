@@ -12,19 +12,12 @@
 namespace mozilla {
 namespace net {
 
-
-
-
-
-
-
 nsresult AttachTCPFastOpenIOLayer(PRFileDesc *fd);
 
 
-void TCPFastOpenFinish(PRFileDesc *fd, PRErrorCode *err,
-                       bool *fastOpenNotSupported);
+void TCPFastOpenConnectResult(PRFileDesc *fd, PRErrorCode *err,
+                              bool *fastOpenNotSupported);
 
-int32_t TCPFastOpenGetBufferSizeLeft(PRFileDesc *fd);
 }
 }
 
