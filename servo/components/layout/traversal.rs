@@ -17,7 +17,7 @@ use std::cell::RefCell;
 use std::mem;
 use util::opts;
 use util::tid::tid;
-use wrapper::{LayoutNode, layout_node_to_unsafe_layout_node};
+use wrapper::{LayoutNode, ServoLayoutNode, layout_node_to_unsafe_layout_node};
 use wrapper::{ThreadSafeLayoutNode, UnsafeLayoutNode};
 
 
@@ -51,7 +51,7 @@ thread_local!(
 
 
 
-fn take_task_local_bloom_filter(parent_node: Option<LayoutNode>,
+fn take_task_local_bloom_filter(parent_node: Option<ServoLayoutNode>,
                                 root: OpaqueNode,
                                 layout_context: &LayoutContext)
                                 -> Box<BloomFilter> {
@@ -98,7 +98,7 @@ fn put_task_local_bloom_filter(bf: Box<BloomFilter>,
 
 
 fn insert_ancestors_into_bloom_filter(bf: &mut Box<BloomFilter>,
-                                      mut n: LayoutNode,
+                                      mut n: ServoLayoutNode,
                                       root: OpaqueNode) {
     debug!("[{}] Inserting ancestors.", tid());
     let mut ancestors = 0;
@@ -118,13 +118,13 @@ fn insert_ancestors_into_bloom_filter(bf: &mut Box<BloomFilter>,
 
 pub trait PreorderDomTraversal {
     
-    fn process(&self, node: LayoutNode);
+    fn process(&self, node: ServoLayoutNode);
 }
 
 
 pub trait PostorderDomTraversal {
     
-    fn process(&self, node: LayoutNode);
+    fn process(&self, node: ServoLayoutNode);
 }
 
 
@@ -144,7 +144,7 @@ pub struct RecalcStyleForNode<'a> {
 impl<'a> PreorderDomTraversal for RecalcStyleForNode<'a> {
     #[inline]
     #[allow(unsafe_code)]
-    fn process(&self, node: LayoutNode) {
+    fn process(&self, node: ServoLayoutNode) {
         
         
         
@@ -249,7 +249,7 @@ pub struct ConstructFlows<'a> {
 impl<'a> PostorderDomTraversal for ConstructFlows<'a> {
     #[inline]
     #[allow(unsafe_code)]
-    fn process(&self, node: LayoutNode) {
+    fn process(&self, node: ServoLayoutNode) {
         
         {
             let tnode = ThreadSafeLayoutNode::new(&node);
