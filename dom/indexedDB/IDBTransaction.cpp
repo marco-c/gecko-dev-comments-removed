@@ -653,6 +653,12 @@ IDBTransaction::AbortInternal(nsresult aAbortCode,
       mDatabase->RevertToPreviousState();
     }
 
+    
+    
+    
+    
+    
+
     const nsTArray<ObjectStoreSpec>& specArray =
       mDatabase->Spec()->objectStores();
 
