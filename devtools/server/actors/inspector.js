@@ -190,6 +190,11 @@ exports.setInspectingNode = function (val) {
 
 
 const getNodeDisplayName = function (rawNode) {
+  if (rawNode.nodeName && !rawNode.localName) {
+    
+    
+    return rawNode.nodeName;
+  }
   return (rawNode.prefix ? rawNode.prefix + ":" : "") + rawNode.localName;
 };
 exports.getNodeDisplayName = getNodeDisplayName;

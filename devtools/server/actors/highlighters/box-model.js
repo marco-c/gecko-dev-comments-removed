@@ -350,8 +350,10 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     if (this._updateBoxModel()) {
       
-      if (!this.options.hideInfoBar &&
-          this.currentNode.nodeType === this.currentNode.ELEMENT_NODE) {
+      
+      if (!this.options.hideInfoBar && (
+          this.currentNode.nodeType === this.currentNode.ELEMENT_NODE ||
+          this.currentNode.nodeType === this.currentNode.TEXT_NODE)) {
         this._showInfobar();
       } else {
         this._hideInfobar();
@@ -697,9 +699,7 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
                     ? "." + [...node.classList].join(".")
                     : "";
 
-    let pseudos = PSEUDO_CLASSES.filter(pseudo => {
-      return hasPseudoClassLock(node, pseudo);
-    }, this).join("");
+    let pseudos = this._getPseudoClasses(node).join("");
     if (pseudo) {
       
       pseudos += ":" + pseudo;
@@ -717,6 +717,15 @@ BoxModelHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.getElement("infobar-dimensions").setTextContent(dim);
 
     this._moveInfobar();
+  },
+
+  _getPseudoClasses: function (node) {
+    if (node.nodeType !== nodeConstants.ELEMENT_NODE) {
+      
+      return [];
+    }
+
+    return PSEUDO_CLASSES.filter(pseudo => hasPseudoClassLock(node, pseudo));
   },
 
   
