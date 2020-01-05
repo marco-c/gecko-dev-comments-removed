@@ -8,6 +8,7 @@
 #include "mozilla/RefPtr.h"
 
 extern "C" void report_mapping() { }
+extern "C" void delete_mapping() { }
 
 
 
