@@ -167,6 +167,47 @@ ProxyAccessibleBase<Derived>::OuterDocOfRemoteBrowser() const
   return chromeDoc ? chromeDoc->GetAccessible(frame) : nullptr;
 }
 
+template<class Derived>
+void
+ProxyAccessibleBase<Derived>::SetParent(Derived* aParent)
+{
+  MOZ_ASSERT(IsDoc(), "we should only reparent documents");
+  if (!aParent) {
+    mParent = kNoParent;
+  } else {
+    MOZ_ASSERT(!aParent->IsDoc());
+    mParent = aParent->ID();
+  }
+}
+
+template<class Derived>
+Derived*
+ProxyAccessibleBase<Derived>::Parent() const
+{
+  if (mParent == kNoParent) {
+    return nullptr;
+  }
+
+  
+  
+  
+  if (!IsDoc()) {
+    return Document()->GetAccessible(mParent);
+  }
+
+  
+  if (AsDoc()->IsTopLevel()) {
+    return nullptr;
+  }
+
+  
+  
+  DocAccessibleParent* parentDoc = AsDoc()->ParentDoc();
+  MOZ_ASSERT(parentDoc);
+  MOZ_ASSERT(mParent);
+  return parentDoc->GetAccessible(mParent);
+}
+
 template class ProxyAccessibleBase<ProxyAccessible>;
 
 } 
