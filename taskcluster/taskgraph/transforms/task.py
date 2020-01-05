@@ -245,14 +245,10 @@ task_description_schema = Schema({
             Extra: basestring,  
         },
     }, {
-        'implementation': 'native-engine',
+        'implementation': 'macosx-engine',
 
         
-        Optional('context'): basestring,
-
-        
-        
-        Optional('reboot'): bool,
+        Optional('link'): basestring,
 
         
         Required('command'): [taskref_or_string],
@@ -580,7 +576,7 @@ def build_balrog_payload(config, task, task_def):
     }
 
 
-@payload_builder('native-engine')
+@payload_builder('macosx-engine')
 def build_macosx_engine_payload(config, task, task_def):
     worker = task['worker']
     artifacts = map(lambda artifact: {
@@ -591,15 +587,14 @@ def build_macosx_engine_payload(config, task, task_def):
     }, worker['artifacts'])
 
     task_def['payload'] = {
-        'context': worker['context'],
+        'link': worker['link'],
         'command': worker['command'],
         'env': worker['env'],
-        'reboot': worker['reboot'],
         'artifacts': artifacts,
     }
 
     if task.get('needs-sccache'):
-        raise Exception('needs-sccache not supported in native-engine')
+        raise Exception('needs-sccache not supported in macosx-engine')
 
 
 @payload_builder('buildbot-bridge')
@@ -743,6 +738,25 @@ def add_index_routes(config, tasks):
             extra_index['rank'] = rank
 
         del task['index']
+        yield task
+
+
+@transforms.add
+def add_files_changed(config, tasks):
+    for task in tasks:
+        if 'files-changed' not in task.get('when', {}):
+            yield task
+            continue
+
+        task['when']['files-changed'].extend([
+            '{}/**'.format(config.path),
+            'taskcluster/taskgraph/**',
+        ])
+
+        if 'in-tree' in task['worker'].get('docker-image', {}):
+            task['when']['files-changed'].append('taskcluster/docker/{}/**'.format(
+                task['worker']['docker-image']['in-tree']))
+
         yield task
 
 
