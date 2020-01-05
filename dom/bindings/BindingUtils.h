@@ -49,6 +49,7 @@ namespace mozilla {
 enum UseCounter : int16_t;
 
 namespace dom {
+class CustomElementReactionsStack;
 template<typename KeyType, typename ValueType> class Record;
 
 nsresult
@@ -3196,6 +3197,12 @@ bool
 GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
                 JS::MutableHandle<JSObject*> aDesiredProto);
 
+
+
+
+
+CustomElementReactionsStack*
+GetCustomElementReactionsStack(JS::Handle<JSObject*> aObj);
 
 
 
